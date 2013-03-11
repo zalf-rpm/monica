@@ -1,0 +1,3 @@
+Field_ID  mm SCc IrrDat NCc 
+301000001 01 334 050592 000
+end
