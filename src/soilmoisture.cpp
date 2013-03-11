@@ -765,7 +765,7 @@ SoilMoisture::SoilMoisture(SoilColumn& sc, const SiteParameters& stps, MonicaMod
 //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
   pm_LayerThickness = env_params.p_LayerThickness;
 
-  pm_LeachingDepthLayer = floor(0.5 + (pm_LeachingDepth / pm_LayerThickness)) - 1;
+  pm_LeachingDepthLayer = int(floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
 
   for (int i=0; i<vm_NumberOfLayers; i++) {
     vm_SaturatedHydraulicConductivity.resize(vm_NumberOfLayers, sm_params.pm_SaturatedHydraulicConductivity); // original [8640 mm d-1]

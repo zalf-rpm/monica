@@ -197,7 +197,7 @@ namespace Monica
     double get_NetPhotosynthesis() const;
     double get_LeafAreaIndex() const;
     double get_CropHeight() const;
-    double get_RootingDepth() const;
+    int get_RootingDepth() const;
     double get_SoilCoverage() const;
     double get_KcFactor() const;
     double get_StomataResistance() const;
@@ -209,7 +209,7 @@ namespace Monica
     double get_ActualTranspiration() const;
     double get_OxygenDeficit() const;
     double get_CurrentTemperatureSum() const;
-    double get_DevelopmentalStage() const;
+    int get_DevelopmentalStage() const;
     double get_RelativeTotalDevelopment() const;
     double get_OrganBiomass(int i_Organ) const;
     double get_AbovegroundBiomass() const;

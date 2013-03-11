@@ -11,17 +11,17 @@
 #include <iostream>
 #include <map>
 
-#include "climate/climate.h"
+#include "util/climate-common.h"
 #include "soilcolumn.h"
 #include "soiltemperature.h"
 #include "soilmoisture.h"
 #include "soilorganic.h"
 #include "soiltransport.h"
 #include "crop.h"
-#include "tools/date.h"
-#include "tools/datastructures.h"
+#include "util/date.h"
+#include "util/datastructures.h"
 #include "monica-parameters.h"
-#include "tools/helper.h"
+#include "util/helper.h"
 
 namespace Monica
 {
@@ -29,7 +29,8 @@ namespace Monica
   /**
    * @class Env
    */
-  struct Env {
+  struct Env 
+  {
 
     /**
      * @brief
@@ -88,7 +89,7 @@ namespace Monica
     Climate::DataAccessor da;     //! object holding the climate data
     std::vector<ProductionProcess> cropRotation; //! vector of elements holding the data of the single crops in the rotation
 
-    Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
+    Util::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
 
     SiteParameters site;        //! site specific parameters
     GeneralParameters general;  //! general parameters to the model
@@ -113,19 +114,18 @@ namespace Monica
 
 
   //----------------------------------------------------------------------------
-
-
-
+  
   /*!
    * @brief structure holding all results of one monica run
    */
-  class Result {
+  class Result 
+  {
     public:
       Result(){}
       ~Result(){}
 
     //! just to keep track of the grid point the calculation is being made for
-    Tools::GridPoint gp;
+    Util::GridPoint gp;
 
     //! vector of the result of one crop per year
     std::vector<PVResult> pvrs;

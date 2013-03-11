@@ -11,24 +11,26 @@
 #include <algorithm>
 
 #include "boost/foreach.hpp"
-#include "tools/use-stl-algo-boost-lambda.h"
+#include "util/use-stl-algo-boost-lambda.h"
 
+#include "util/db.h"
 #include "debug.h"
 #include "monica.h"
 #include "monica-eom.h"
 #include "monica-parameters.h"
-#include "climate/climate.h"
-#include "tools/date.h"
-#include "tools/time-measurement.h"
+//#include "climate/climate.h"
+#include "util/date.h"
+//#include "tools/time-measurement.h"
 #include "simulation.h"
-#include "tools/algorithms.h"
-#include "db/abstract-db-connections.h"
+#include "util/algorithms.h"
+#include "util/abstract-db-connections.h"
+#include "util/helper.h"
 
 using namespace std;
-using namespace Climate;
-using namespace Tools;
-using namespace Monica;
 using namespace Db;
+//using namespace Climate;
+using namespace Util;
+using namespace Monica;
 
 #ifdef TEST_LANDCARE_DSS
 
@@ -612,7 +614,7 @@ int main(int argc, char** argv)
   testLandcareDSS(argc, argv);
 #endif
 
-#ifdef TEST_WITH_HERMES_DATA
+#ifdef HERMES_MODE
   runWithHermesData(argc == 2 ? string(argv[1])+"/" : "");
 #endif
 

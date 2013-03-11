@@ -11,17 +11,18 @@
 #define LOKI_OBJECT_LEVEL_THREADING
 
 #include "loki/Threads.h"
-#include "debug.h"
-#include <boost/foreach.hpp>
-#include "tools/use-stl-algo-boost-lambda.h"
+#include "boost/foreach.hpp"
+#include "util/use-stl-algo-boost-lambda.h"
 
+#include "debug.h"
 #include "monica.h"
-#include "db/abstract-db-connections.h"
+#include "util/climate-common.h"
+#include "util/abstract-db-connections.h"
 
 using namespace Monica;
 using namespace std;
 using namespace Climate;
-using namespace Tools;
+using namespace Util;
 
 namespace
 {
@@ -2189,7 +2190,7 @@ void Monica::dumpMonicaParametersIntoFile(std::string path, CentralParameterProv
       debug() << "Could not write file\"" << (path + "monica_parameters.txt").c_str() << "\"" << endl;
       return;
   }
-  double po_AtmosphericResistance; //0.0025 [s m-1], from Sadeghi et al. 1988
+  //double po_AtmosphericResistance; //0.0025 [s m-1], from Sadeghi et al. 1988
 
   // userSoilOrganicParameters
   parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SOM_SlowDecCoeffStandard" << "\t" << cpp.userSoilOrganicParameters.po_SOM_SlowDecCoeffStandard << endl;

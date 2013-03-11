@@ -6,16 +6,16 @@
 /** @todo Christian: Strahlungskonzept. Welche Information wird wo verwendet? */
 
 #include <cmath>
+#include <string>
+
+#include "boost/foreach.hpp"
 
 #include "crop.h"
 #include "debug.h"
 #include "soilmoisture.h"
 #include "monica-parameters.h"
-#include "tools/helper.h"
-#include "string"
-#include "boost/foreach.hpp"
+#include "util/helper.h"
 
-//#define PI (3.14159265358979323)
 const double PI = 3.14159265358979323;
 
 using namespace std;
@@ -739,7 +739,7 @@ double CropGrowth::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
       + soilColumn[2].get_Saturation()) - (soilColumn[0].get_Vs_SoilMoisture_m3() + soilColumn[1].get_Vs_SoilMoisture_m3()
       + soilColumn[2].get_Vs_SoilMoisture_m3())) / 3.0;
   if (vc_AirFilledPoreVolume < d_CriticalOxygenContent) {
-    vc_TimeUnderAnoxia += vc_TimeStep;
+    vc_TimeUnderAnoxia += int(vc_TimeStep);
     if (vc_TimeUnderAnoxia > 4)
       vc_TimeUnderAnoxia = 4;
     if (vc_AirFilledPoreVolume < 0.0)
@@ -861,7 +861,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
     if (vw_MeanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
 
 			if (vw_MeanAirTemperature > pc_OptimumTemperature[vc_DevelopmentalStage]){
-                vw_MeanAirTemperature == pc_OptimumTemperature[vc_DevelopmentalStage];
+                vw_MeanAirTemperature = pc_OptimumTemperature[vc_DevelopmentalStage];
 			}
 
       vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vw_MeanAirTemperature
@@ -1670,7 +1670,7 @@ void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
  */
 void CropGrowth::fc_DroughtImpactOnFertility(double vc_TranspirationDeficit)
 {
-    if (vc_TranspirationDeficit < 0.0) vc_TranspirationDeficit == 0.0;
+    if (vc_TranspirationDeficit < 0.0) vc_TranspirationDeficit = 0.0;
 
 	// Fertility of the crop is reduced in cases of severe drought during bloom
 	if ((vc_TranspirationDeficit < (pc_DroughtImpactOnFertilityFactor *
@@ -2879,7 +2879,7 @@ double CropGrowth::get_CropHeight() const {
  * @brief Returns rooting depth [layer]
  * @return rooting depth
  */
-double CropGrowth::get_RootingDepth() const {
+int CropGrowth::get_RootingDepth() const {
   return vc_RootingDepth;
 }
 
@@ -2982,7 +2982,7 @@ double CropGrowth::get_CurrentTemperatureSum() const {
  * @brief Returns developmental stage[]
  * @return deveklopmental stage
  */
-double CropGrowth::get_DevelopmentalStage() const {
+int CropGrowth::get_DevelopmentalStage() const {
   return vc_DevelopmentalStage;
 }
 

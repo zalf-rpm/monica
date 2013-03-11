@@ -9,7 +9,6 @@
 #include <cmath>
 #include <utility>
 
-
 #define LOKI_OBJECT_LEVEL_THREADING
 
 #include "loki/Threads.h"
@@ -17,18 +16,20 @@
 #include "boost/foreach.hpp"
 #include "debug.h"
 
-#include "db/abstract-db-connections.h"
+#include "util/abstract-db-connections.h"
 #include "monica-parameters.h"
-#include "tools/use-stl-algo-boost-lambda.h"
-#include "tools/auto-deleter.h"
-#include "tools/algorithms.h"
+#include "util/use-stl-algo-boost-lambda.h"
+//#include "util/auto-deleter.h"
+#include "util/helper.h"
+#include "util/algorithms.h"
 #include "monica.h"
 #include "eva2_methods.h"
+#include "util/climate-common.h"
 
 using namespace Db;
 using namespace std;
 using namespace Monica;
-using namespace Tools;
+using namespace Util;
 using namespace Climate;
 
 // Some profile definitions for eva2
@@ -303,8 +304,7 @@ namespace
  * @param name
  * @return
  */
-  pair<FertiliserType, int>
-      hermesFertiliserName2monicaFertiliserId(const string& name)
+  pair<FertiliserType, int> hermesFertiliserName2monicaFertiliserId(const string& name)
   {
     if (name == "KN")
       return make_pair(mineral, 7); //0.00 1.00 0.00 01.00 M Kaliumnitrat (Einh : kg N / ha)
@@ -397,8 +397,6 @@ namespace
 } // namespace
 
 //------------------------------------------------------------------------------
-
-
 
 /**
  * @brief Returns sand content from soil survey manual code
@@ -1227,13 +1225,13 @@ ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
   }
 
 
-  std::vector<Tools::Date> cuttingDates = crop->getCuttingDates();
+  std::vector<Date> cuttingDates = crop->getCuttingDates();
   unsigned int size = cuttingDates.size();
 
   for (unsigned int i=0; i<size; i++) {
-    debug() << "Add cutting date: " << Tools::Date(cuttingDates.at(i)).toString().c_str() << endl;
+    debug() << "Add cutting date: " << Util::Date(cuttingDates.at(i)).toString().c_str() << endl;
 //    if (i<size-1) {
-      addApplication(Cutting(Tools::Date(cuttingDates.at(i)), crop));
+      addApplication(Cutting(Util::Date(cuttingDates.at(i)), crop));
 //    } else {
 //      addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
 //    }
@@ -1264,9 +1262,9 @@ ProductionProcess ProductionProcess::deepCloneAndClearWorksteps() const
   return clone;
 }
 
-void ProductionProcess::apply(const Tools::Date& date, MonicaModel* model) const
+void ProductionProcess::apply(const Date& date, MonicaModel* model) const
 {
-  typedef multimap<Tools::Date, WSPtr>::const_iterator CI;
+  typedef multimap<Date, WSPtr>::const_iterator CI;
   pair<CI, CI> p = _worksteps.equal_range(date);
   if (p.first != p.second)
   {
@@ -1280,7 +1278,7 @@ void ProductionProcess::apply(const Tools::Date& date, MonicaModel* model) const
 
 Date ProductionProcess::nextDate(const Date& date) const
 {
-  typedef multimap<Tools::Date, WSPtr>::const_iterator CI;
+  typedef multimap<Date, WSPtr>::const_iterator CI;
   CI ci = _worksteps.upper_bound(date);
   return ci != _worksteps.end() ? ci->first : Date();
 }
@@ -1305,7 +1303,7 @@ std::string ProductionProcess::toString() const
   s << "name: " << name() << " start: " << start().toString()
       << " end: " << end().toString() << endl;
   s << "worksteps:" << endl;
-  typedef multimap<Tools::Date, WSPtr>::const_iterator CI;
+  typedef multimap<Date, WSPtr>::const_iterator CI;
   for (CI ci = _worksteps.begin(); ci != _worksteps.end(); ci++)
   {
     s << "at: " << ci->first.toString()
@@ -1612,8 +1610,9 @@ string CropParameters::toString() const
 
       // above-ground organ
       << "pc_AbovegroundOrgan:" << endl;
+
   for (unsigned i = 0; i < pc_AbovegroundOrgan.size(); i++)
-    s << bool(pc_AbovegroundOrgan[i]) << " ";
+    s << (pc_AbovegroundOrgan[i] == 1) << " ";
   s << endl
 
       // organ maintenance respiration rate
@@ -1702,10 +1701,10 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
   static L lockable;
 
   static bool initialized = false;
-  typedef map<int, CropParameters*> CPS;
+  typedef boost::shared_ptr<CropParameters> CPPtr;
+  typedef map<int, CPPtr> CPS;
 
-  static AutoDeleter<CPS, ExtractSecond> ad;
-  static CPS& cpss = ad.collection;
+  static CPS cpss;
 
   // only initialize once
   if (!initialized)
@@ -1748,10 +1747,10 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 
         debug() << "Reading in crop Parameters for: " << id << endl;
         CPS::iterator cpsi = cpss.find(id);
-        CropParameters* cps;
+        CPPtr cps;
 
         if (cpsi == cpss.end()) {
-          cpss.insert(make_pair(id, cps = new CropParameters));
+          cpss.insert(make_pair(id, cps = boost::shared_ptr<CropParameters>(new CropParameters)));
         }  else {
           cps = cpsi->second;
         }
@@ -1815,14 +1814,14 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 
         int cropId = satoi(row[0]);
 //        debug() << "Organ for crop: " << cropId << endl;
-        CropParameters& cps = *(cpss[cropId]);
+        auto cps = cpss[cropId];
 
-        cps.pc_NumberOfOrgans++;
-        cps.pc_InitialOrganBiomass.push_back(satof(row[2]));
-        cps.pc_OrganMaintenanceRespiration.push_back(satof(row[3]));
-        cps.pc_AbovegroundOrgan.push_back(satoi(row[4]) == 1);
-        cps.pc_OrganGrowthRespiration.push_back(satof(row[5]));
-        cps.pc_StorageOrgan.push_back(satoi(row[6]));
+        cps->pc_NumberOfOrgans++;
+        cps->pc_InitialOrganBiomass.push_back(satof(row[2]));
+        cps->pc_OrganMaintenanceRespiration.push_back(satof(row[3]));
+        cps->pc_AbovegroundOrgan.push_back(satoi(row[4]) == 1);
+        cps->pc_OrganGrowthRespiration.push_back(satof(row[5]));
+        cps->pc_StorageOrgan.push_back(satoi(row[6]));
       }
 
       std::string req4 = "select crop_id, id, stage_temperature_sum, "
@@ -1839,23 +1838,27 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
       while (!(row = con->getRow()).empty())
       {
         int cropId = satoi(row[0]);
-        CropParameters& cps = *(cpss[cropId]);
-        cps.pc_NumberOfDevelopmentalStages++;
-        cps.pc_StageTemperatureSum.push_back(satof(row[2]));
-        cps.pc_BaseTemperature.push_back(satof(row[3]));
-        cps.pc_OptimumTemperature.push_back(satof(row[4]));
-        cps.pc_VernalisationRequirement.push_back(satof(row[5]));
-        cps.pc_DaylengthRequirement.push_back(satof(row[6]));
-        cps.pc_BaseDaylength.push_back(satof(row[7]));
-        cps.pc_DroughtStressThreshold.push_back(satof(row[8]));
-        cps.pc_CriticalOxygenContent.push_back(satof(row[9]));
-        cps.pc_SpecificLeafArea.push_back(satof(row[10]));
-        cps.pc_StageMaxRootNConcentration.push_back(satof(row[11]));
-        cps.pc_StageKcFactor.push_back(satof(row[12]));
+        auto cps = cpss[cropId];
+        cps->pc_NumberOfDevelopmentalStages++;
+        cps->pc_StageTemperatureSum.push_back(satof(row[2]));
+        cps->pc_BaseTemperature.push_back(satof(row[3]));
+        cps->pc_OptimumTemperature.push_back(satof(row[4]));
+        cps->pc_VernalisationRequirement.push_back(satof(row[5]));
+        cps->pc_DaylengthRequirement.push_back(satof(row[6]));
+        cps->pc_BaseDaylength.push_back(satof(row[7]));
+        cps->pc_DroughtStressThreshold.push_back(satof(row[8]));
+        cps->pc_CriticalOxygenContent.push_back(satof(row[9]));
+        cps->pc_SpecificLeafArea.push_back(satof(row[10]));
+        cps->pc_StageMaxRootNConcentration.push_back(satof(row[11]));
+        cps->pc_StageKcFactor.push_back(satof(row[12]));
       }
 
-      for (CPS::iterator it = cpss.begin(); it != cpss.end(); it++)
-        it->second->resizeStageOrganVectors();
+      BOOST_FOREACH(CPS::value_type vt, cpss)
+      {
+        vt.second->resizeStageOrganVectors();
+      }
+      //for (CPS::iterator it = cpss.begin(); it != cpss.end(); it++)
+      //  it->second->resizeStageOrganVectors();
 
       std::string req3 = "select crop_id, organ_id, dev_stage_id, "
                         "ods_dependent_param_id, value "
@@ -1869,10 +1872,10 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 
         int cropId = satoi(row[0]);
 //        debug() << "ods_dependent_param " << cropId << "\t" << satoi(row[3]) <<"\t" << satoi(row[2]) <<"\t" << satoi(row[1])<< endl;
-        CropParameters& cps = *(cpss[cropId]);
+        auto cps = cpss[cropId];
         vector<vector<double> >& sov = satoi(row[3]) == 1
-                                       ? cps.pc_AssimilatePartitioningCoeff
-                                         : cps.pc_OrganSenescenceRate;
+                                       ? cps->pc_AssimilatePartitioningCoeff
+                                         : cps->pc_OrganSenescenceRate;
         sov[satoi(row[2]) - 1][satoi(row[1]) - 1] = satof(row[4]);
       }
 
@@ -1886,16 +1889,16 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         double percentage = satof(row[3]) / 100.0;
         double yieldDryMatter = satof(row[4]);
 
-        CropParameters& cps = *(cpss[cropId]);
+        auto cps = cpss[cropId];
 
          // normal case, uses yield partitioning from crop database
          if (isPrimary) {
 //            cout << cropId<< " Add primary organ: " << organId << endl;
-            cps.organIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+            cps->organIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
 
          } else {
 //            cout << cropId << " Add secondary organ: " << organId << endl;
-            cps.organIdsForSecondaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+            cps->organIdsForSecondaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
          }
 
       }
@@ -1910,11 +1913,11 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         double percentage = satof(row[3]) / 100.0;
         double yieldDryMatter = satof(row[4]);
 
-        CropParameters& cps = *(cpss[cropId]);
-        cps.organIdsForCutting.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+        auto cps = cpss[cropId];
+        cps->organIdsForCutting.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
         if (cropId!=18) {
             // do not add cutting part organ id for sudan gras because they are already added
-            cps.organIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+            cps->organIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
         }
       }
 
@@ -1934,7 +1937,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
   CPS::const_iterator ci = cpss.find(cropId);
 
   debug() << "Find crop parameter: " << cropId << endl;
-  return ci != cpss.end() ? ci->second : &nothing;
+  return ci != cpss.end() ? ci->second.get() : &nothing;
 }
 
 //------------------------------------------------------------------------------
@@ -2199,16 +2202,15 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
                                             bool loadSingleParameter)
 {
   //cout << "getting soilparameters for STR: " << str << endl;
-  int lt = gps.ps_LayerThickness.front() * 100; //cm
-  int maxDepth = gps.ps_ProfileDepth * 100; //cm
+  int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+  int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
   int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
   static L lockable;
-
-  typedef map<string, SoilPMs*> Map;
+   
+  typedef map<string, SoilPMsPtr> Map;
   static bool initialized = false;
-  static AutoDeleter<Map, ExtractSecond> adw;
-  static Map& spss = adw.collection;
+  static Map spss;
 
   if (!initialized)
   {
@@ -2233,10 +2235,10 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
       {
         string id = row[0];
         Map::iterator spsi = spss.find(id);
-        vector<SoilParameters>* sps;
+        SoilPMsPtr sps;
 
         if (spsi == spss.end())
-          spss.insert(make_pair(id, sps = new vector<SoilParameters> ));
+          spss.insert(make_pair(id, sps = SoilPMsPtr(new SoilPMs)));
         else
           sps = spsi->second;
 
@@ -2246,7 +2248,7 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
         int ho = sps->size() * lt;
         int hu = satoi(row[4]) ? satoi(row[4]) : maxDepth;
         int hsize = hu - ho;
-				int subhcount = Tools::round(double(hsize) / double(lt));//std::floor(double(hsize) / double(lt));
+				int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
         if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
           subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2301,7 +2303,7 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
     }
   }
   */
-  return ci != spss.end() ? ci->second : &nothing;
+  return ci != spss.end() ? ci->second.get() : &nothing;
 }
 
 /**
@@ -2361,8 +2363,8 @@ const SoilPMs* Monica::weisseritzSoilParameters(int bk50GridId,
 {
 	static SoilPMs nothing;
 
-  int lt = gps.ps_LayerThickness.front() * 100; //cm
-  int maxDepth = gps.ps_ProfileDepth * 100; //cm
+  int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+  int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
   int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
   static L lockable;
@@ -2413,7 +2415,7 @@ const SoilPMs* Monica::weisseritzSoilParameters(int bk50GridId,
         int ho = sps->size() * lt;
                                 int hu = satof(row[4]) ? int(satof(row[4])*100) : maxDepth;
         int hsize = hu - ho;
-				int subhcount = Tools::round(double(hsize) / double(lt));//std::floor(double(hsize) / double(lt));
+				int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
         if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
           subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2471,8 +2473,8 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 {
 	static SoilPMs nothing;
 
-	int lt = gps.ps_LayerThickness.front() * 100; //cm
-	int maxDepth = gps.ps_ProfileDepth * 100; //cm
+	int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+	int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
 	int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
 	static L lockable;
@@ -2535,7 +2537,7 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 				int ho = sps->size() * lt;
 				int hu = int(satof(row[1])*100);
 				int hsize = hu - ho;
-				int subhcount = Tools::round(double(hsize) / double(lt));//std::floor(double(hsize) / double(lt));
+				int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
 				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
 					subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2650,16 +2652,15 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 																										double soil_ph)
 {
 	debug() << pathToFile.c_str() << endl;
-	int lt = gps.ps_LayerThickness.front() * 100; //cm
-	int maxDepth = gps.ps_ProfileDepth * 100; //cm
+	int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+	int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
   int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
   static L lockable;
 
-  typedef map<int, SoilPMs*> Map;
+  typedef map<int, SoilPMsPtr> Map;
   static bool initialized = false;
-  static AutoDeleter<Map, ExtractSecond> adw;
-  static Map& spss = adw.collection;
+  static Map spss;
   if (!initialized)
     {
       L::Lock lock(lockable);
@@ -2696,16 +2697,16 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
                 currenth = 1;
 
               Map::iterator spsi = spss.find(soilId);
-              vector<SoilParameters>* sps;
+              SoilPMsPtr sps;
               if (spsi == spss.end()) {
-                  spss.insert(make_pair(soilId, sps = new vector<SoilParameters> ));
+                  spss.insert(make_pair(soilId, sps = SoilPMsPtr(new SoilPMs)));
               } else {
                   sps = spsi->second;
               }
 
               int ho = sps->size() * lt;
               int hsize = hu - ho;
-							int subhcount = Tools::round(double(hsize) / double(lt));//std::floor(double(hsize) / double(lt));
+							int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
               if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
                 subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2765,10 +2766,7 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 
   static SoilPMs nothing;
   Map::const_iterator ci = spss.find(soilId);
-  if (ci != spss.end())
-    return (const SoilPMs*) ci->second;
-
-  return ci != spss.end() ? ci->second : &nothing;
+  return ci != spss.end() ? ci->second.get() : &nothing;
 }
 
 //------------------------------------------------------------------------------
@@ -3433,9 +3431,8 @@ Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 {
   static L lockable;
   static bool initialized = false;
-  typedef map<int, OrganicMatterParameters*> Map;
-  static AutoDeleter<Map, ExtractSecond> ad;
-  static Map& m = ad.collection;
+  typedef map<int, OMPPtr> Map;
+  static Map m;
 
   if (!initialized)
   {
@@ -3450,7 +3447,7 @@ Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
                  "from organic_fertiliser");
       while (!(row = con->getRow()).empty())
       {
-        OrganicMatterParameters* omp = new OrganicMatterParameters();
+        auto omp = OMPPtr(new OMP);
         omp->name = row[0];
         omp->vo_AOM_DryMatterContent = satof(row[1]);
         omp->vo_AOM_NH4Content = satof(row[2]);
@@ -3476,8 +3473,8 @@ Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 
   static OrganicMatterParameters nothing;
 
-  map<int, OrganicMatterParameters*>::const_iterator ci = m.find(id);
-  return ci != m.end() ? ci->second : &nothing;
+  Map::const_iterator ci = m.find(id);
+  return ci != m.end() ? ci->second.get() : &nothing;
 }
 
 /*
@@ -3506,9 +3503,8 @@ const OrganicMatterParameters*
 {
   static L lockable;
   static bool initialized = false;
-  typedef map<int, OrganicMatterParameters*> Map;
-  static AutoDeleter<Map, ExtractSecond> ad;
-  static Map& m = ad.collection;
+  typedef map<int, OMPPtr> Map;
+  static Map m;
 
   if (!initialized)
   {
@@ -3523,7 +3519,7 @@ const OrganicMatterParameters*
                  "from residue_table");
       while (!(row = con->getRow()).empty())
       {
-        OrganicMatterParameters* omp = new OrganicMatterParameters();
+        auto omp = OMPPtr(new OMP);
         omp->name = row[0];
         omp->vo_AOM_DryMatterContent = satoi(row[1]);
         omp->vo_AOM_NH4Content = satof(row[2]);
@@ -3549,8 +3545,8 @@ const OrganicMatterParameters*
 
   static OrganicMatterParameters nothing;
 
-  map<int, OrganicMatterParameters*>::const_iterator ci = m.find(cropId);
-  return ci != m.end() ? ci->second : &nothing;
+  Map::const_iterator ci = m.find(cropId);
+  return ci != m.end() ? ci->second.get() : &nothing;
 }
 
 //------------------------------------------------------------------------------
@@ -3700,9 +3696,9 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
         else if (name == "growth_respiration_parameter_1")
           user_crops.pc_GrowthRespirationParameter1 = satof(row[1]);
         else if (name == "use_automatic_irrigation")
-          user_env.p_UseAutomaticIrrigation = satoi(row[1]);
+          user_env.p_UseAutomaticIrrigation = satoi(row[1]) == 1;
         else if (name == "use_nmin_mineral_fertilising_method")
-          user_env.p_UseNMinMineralFertilisingMethod = satoi(row[1]);
+          user_env.p_UseNMinMineralFertilisingMethod = satoi(row[1]) == 1;
         else if (name == "layer_thickness")
           user_env.p_LayerThickness = satof(row[1]);
         else if (name == "number_of_layers")
@@ -3716,7 +3712,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
         else if (name == "wind_speed_height")
           user_env.p_WindSpeedHeight = satof(row[1]);
         else if (name == "use_secondary_yields")
-          user_env.p_UseSecondaryYields = satoi(row[1]);
+          user_env.p_UseSecondaryYields = satoi(row[1]) == 1;
         else if (name == "julian_day_automatic_fertilising")
           user_env.p_JulianDayAutomaticFertilising = satoi(row[1]);
         else if (name == "critical_moisture_depth")
@@ -3896,7 +3892,7 @@ namespace
   {
     double sat, fc, pwp;
 
-		static int makeInt(double value) { return int(Tools::round(value, 1)*10); }
+		static int makeInt(double value) { return int(Util::round(value, 1)*10); }
   };
 
   void readXSoilCharacteristicY(std::string key1, double key2,

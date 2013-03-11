@@ -1,7 +1,6 @@
 #ifndef SIMULATION_H_
 #define SIMULATION_H_
 
-
 // must be activated when building monica for python
 //#define TEST_WITH_HERMES_DATA
 //#define RUN_EVA2
@@ -9,12 +8,13 @@
 //#define RUN_GIS
 
 #include <string>
-#include "tools/date.h"
+#include "util/date.h"
 #include "monica-parameters.h"
 #include "monica.h"
 #include "gis_simulation_methods.h"
 
-namespace Monica {
+namespace Monica 
+{
 
 #ifdef RUN_EVA2
 
@@ -90,8 +90,7 @@ class Eva2SimulationConfiguration
 #endif /*#ifdef RUN_EVA2*/
 
 
-#ifdef TEST_WITH_HERMES_DATA
-
+#ifdef HERMES_MODE
 class HermesSimulationConfiguration
 {
 public:
@@ -137,7 +136,7 @@ public:
     void setPH(double v) {pH = v; }
     void setWindSpeedHeight(double v) { windSpeedHeight=v; }
     void setLeachingDepth(double v) { leachingDepth=v; }
-    void setMinGWDepthMonth(double v) { minGWDepthMonth=v; }
+    void setMinGWDepthMonth(int v) { minGWDepthMonth=v; }
     void setNDeposition(double v) { NDeposition=v; }
 
     void setGroundwaterDischarge(double v) {groundwaterDischarge = v; }
@@ -368,7 +367,7 @@ const Monica::Result runCCGermanySimulation(const CCGermanySimulationConfigurati
 const Monica::Result runGISSimulation(const GISSimulationConfiguration *simulation_config=0);
 #endif
 
-#ifdef TEST_WITH_HERMES_DATA
+#ifdef HERMES_MODE
 const Monica::Result runWithHermesData( HermesSimulationConfiguration *hermes_config=0);
 const Monica::Result runWithHermesData(const std::string);
 #endif

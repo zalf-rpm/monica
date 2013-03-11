@@ -10,7 +10,8 @@
 #include "monica-parameters.h"
 #include "crop.h"
 
-namespace Monica {
+namespace Monica 
+{
 
   // forward declarations
   class SoilColumn;
