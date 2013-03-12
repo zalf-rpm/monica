@@ -39,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..;C:\Users\michael\development\C++\libs\loki-lib\include;C:\Users\michael\development\C++\libs\boost_1_53_0;$(IncludePath)</IncludePath>
+    <IncludePath>..;../loki-lib\include;..\..\C++\libs\boost_1_53_0;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

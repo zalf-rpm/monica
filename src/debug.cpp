@@ -7,7 +7,6 @@ Maintainers:
 Currently maintained by the authors.
 
 This file is part of the MONICA model. 
-<one line to give the program's name and a brief idea of what it does.>
 Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 This program is free software: you can redistribute it and/or modify
