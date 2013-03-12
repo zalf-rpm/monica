@@ -1,6 +1,29 @@
 /**
- * @file monica-parameters.cpp
- */
+Authors: 
+Dr. Claas Nendel <claas.nendel@zalf.de>
+Xenia Specka <xenia.specka@zalf.de>
+Michael Berg <michael.berg@zalf.de>
+
+Maintainers: 
+Currently maintained by the authors.
+
+This file is part of the MONICA model. 
+<one line to give the program's name and a brief idea of what it does.>
+Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <map>
 #include <sstream>
@@ -2202,7 +2225,7 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
                                             bool loadSingleParameter)
 {
   //cout << "getting soilparameters for STR: " << str << endl;
-  int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+  int lt = int(gps.ps_LayerThickness.front() * 100); //cm
   int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
   int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
@@ -2363,7 +2386,7 @@ const SoilPMs* Monica::weisseritzSoilParameters(int bk50GridId,
 {
 	static SoilPMs nothing;
 
-  int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+  int lt = int(gps.ps_LayerThickness.front() * 100); //cm
   int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
   int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
@@ -2473,7 +2496,7 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 {
 	static SoilPMs nothing;
 
-	int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+	int lt = int(gps.ps_LayerThickness.front() * 100); //cm
 	int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
 	int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
@@ -2652,7 +2675,7 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 																										double soil_ph)
 {
 	debug() << pathToFile.c_str() << endl;
-	int lt = int(gps.ps_LayerThickness.front()) * 100; //cm
+	int lt = int(gps.ps_LayerThickness.front() * 100); //cm
 	int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
   int maxNoOfLayers = int(double(maxDepth) / double(lt));
 
