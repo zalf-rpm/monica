@@ -1,0 +1,28 @@
+MAINICON ICON "installer/monica_icon.ico"
+1 VERSIONINFO
+ FILEVERSION 1,0,1,0
+ PRODUCTVERSION 1,0,1,0
+ FILEFLAGSMASK 0x17L
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040c04b0"
+        BEGIN
+            VALUE "CompanyName", "Leibniz-Zentrum für Agrarlandschaftsforschung (ZALF) e.V."
+            VALUE "FileDescription", "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems"
+            VALUE "FileVersion", "1,0,1,0"
+            VALUE "InternalName", "MONICA"
+            VALUE "LegalCopyright", "Copyright (C) 2011"
+            VALUE "OriginalFilename", "monica.exe"
+            VALUE "ProductName", "MONICA"
+            VALUE "ProductVersion", "1,0,1,0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x40c, 1200
+    END
+END

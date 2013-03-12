@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4F5DE99E-6402-426E-9422-D42B5A34067C}</ProjectGuid>
+    <RootNamespace>monica</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>..;C:\Users\michael\development\C++\libs\loki-lib\include;C:\Users\michael\development\C++\libs\boost_1_53_0;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>HERMES_MODE;WIN32;NO_MYSQL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\util\abstract-db-connections.cpp" />
+    <ClCompile Include="..\util\algorithms.cpp" />
+    <ClCompile Include="..\util\climate-common.cpp" />
+    <ClCompile Include="..\util\date.cpp" />
+    <ClCompile Include="..\util\db.cpp" />
+    <ClCompile Include="..\util\read-ini.cpp" />
+    <ClCompile Include="..\util\sqlite3.c" />
+    <ClCompile Include="src\crop.cpp" />
+    <ClCompile Include="src\debug.cpp" />
+    <ClCompile Include="src\monica-eom.cpp" />
+    <ClCompile Include="src\monica-main.cpp" />
+    <ClCompile Include="src\monica-parameters.cpp" />
+    <ClCompile Include="src\monica.cpp" />
+    <ClCompile Include="src\simulation.cpp" />
+    <ClCompile Include="src\soilcolumn.cpp" />
+    <ClCompile Include="src\soilmoisture.cpp" />
+    <ClCompile Include="src\soilorganic.cpp" />
+    <ClCompile Include="src\soiltemperature.cpp" />
+    <ClCompile Include="src\soiltransport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\util\abstract-db-connections.h" />
+    <ClInclude Include="..\util\algorithms.h" />
+    <ClInclude Include="..\util\climate-common.h" />
+    <ClInclude Include="..\util\datastructures.h" />
+    <ClInclude Include="..\util\date.h" />
+    <ClInclude Include="..\util\db.h" />
+    <ClInclude Include="..\util\helper.h" />
+    <ClInclude Include="..\util\read-ini.h" />
+    <ClInclude Include="..\util\sqlite3.h" />
+    <ClInclude Include="src\crop.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\monica-eom.h" />
+    <ClInclude Include="src\monica-parameters.h" />
+    <ClInclude Include="src\monica.h" />
+    <ClInclude Include="src\simulation.h" />
+    <ClInclude Include="src\soilcolumn.h" />
+    <ClInclude Include="src\soilmoisture.h" />
+    <ClInclude Include="src\soilorganic.h" />
+    <ClInclude Include="src\soiltemperature.h" />
+    <ClInclude Include="src\soiltransport.h" />
+    <ClInclude Include="src\typedefs.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
