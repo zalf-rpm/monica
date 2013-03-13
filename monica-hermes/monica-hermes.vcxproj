@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4F5DE99E-6402-426E-9422-D42B5A34067C}</ProjectGuid>
-    <RootNamespace>monica</RootNamespace>
+    <ProjectGuid>{A5570924-90D5-458B-B16B-08E03AC4C1CD}</ProjectGuid>
+    <RootNamespace>monicahermes</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -39,15 +39,15 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..;../loki-lib\include;..\..\C++\libs\boost_1_53_0;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\michael\development\C++\libs\boost_1_53_0;..\..;..\..\loki-lib\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>HERMES_MODE;WIN32;NO_MYSQL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>HERMES_MODE;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -67,48 +67,48 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\util\abstract-db-connections.cpp" />
-    <ClCompile Include="..\util\algorithms.cpp" />
-    <ClCompile Include="..\util\climate-common.cpp" />
-    <ClCompile Include="..\util\date.cpp" />
-    <ClCompile Include="..\util\db.cpp" />
-    <ClCompile Include="..\util\read-ini.cpp" />
-    <ClCompile Include="..\util\sqlite3.c" />
-    <ClCompile Include="src\crop.cpp" />
-    <ClCompile Include="src\debug.cpp" />
-    <ClCompile Include="src\monica-eom.cpp" />
-    <ClCompile Include="src\monica-main.cpp" />
-    <ClCompile Include="src\monica-parameters.cpp" />
-    <ClCompile Include="src\monica.cpp" />
-    <ClCompile Include="src\simulation.cpp" />
-    <ClCompile Include="src\soilcolumn.cpp" />
-    <ClCompile Include="src\soilmoisture.cpp" />
-    <ClCompile Include="src\soilorganic.cpp" />
-    <ClCompile Include="src\soiltemperature.cpp" />
-    <ClCompile Include="src\soiltransport.cpp" />
+    <ClInclude Include="..\..\util\abstract-db-connections.h" />
+    <ClInclude Include="..\..\util\algorithms.h" />
+    <ClInclude Include="..\..\util\climate-common.h" />
+    <ClInclude Include="..\..\util\datastructures.h" />
+    <ClInclude Include="..\..\util\date.h" />
+    <ClInclude Include="..\..\util\db.h" />
+    <ClInclude Include="..\..\util\helper.h" />
+    <ClInclude Include="..\..\util\read-ini.h" />
+    <ClInclude Include="..\..\util\sqlite3.h" />
+    <ClInclude Include="..\src\crop.h" />
+    <ClInclude Include="..\src\debug.h" />
+    <ClInclude Include="..\src\monica-eom.h" />
+    <ClInclude Include="..\src\monica-parameters.h" />
+    <ClInclude Include="..\src\monica.h" />
+    <ClInclude Include="..\src\simulation.h" />
+    <ClInclude Include="..\src\soilcolumn.h" />
+    <ClInclude Include="..\src\soilmoisture.h" />
+    <ClInclude Include="..\src\soilorganic.h" />
+    <ClInclude Include="..\src\soiltemperature.h" />
+    <ClInclude Include="..\src\soiltransport.h" />
+    <ClInclude Include="..\src\typedefs.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\util\abstract-db-connections.h" />
-    <ClInclude Include="..\util\algorithms.h" />
-    <ClInclude Include="..\util\climate-common.h" />
-    <ClInclude Include="..\util\datastructures.h" />
-    <ClInclude Include="..\util\date.h" />
-    <ClInclude Include="..\util\db.h" />
-    <ClInclude Include="..\util\helper.h" />
-    <ClInclude Include="..\util\read-ini.h" />
-    <ClInclude Include="..\util\sqlite3.h" />
-    <ClInclude Include="src\crop.h" />
-    <ClInclude Include="src\debug.h" />
-    <ClInclude Include="src\monica-eom.h" />
-    <ClInclude Include="src\monica-parameters.h" />
-    <ClInclude Include="src\monica.h" />
-    <ClInclude Include="src\simulation.h" />
-    <ClInclude Include="src\soilcolumn.h" />
-    <ClInclude Include="src\soilmoisture.h" />
-    <ClInclude Include="src\soilorganic.h" />
-    <ClInclude Include="src\soiltemperature.h" />
-    <ClInclude Include="src\soiltransport.h" />
-    <ClInclude Include="src\typedefs.h" />
+    <ClCompile Include="..\..\util\abstract-db-connections.cpp" />
+    <ClCompile Include="..\..\util\algorithms.cpp" />
+    <ClCompile Include="..\..\util\climate-common.cpp" />
+    <ClCompile Include="..\..\util\date.cpp" />
+    <ClCompile Include="..\..\util\db.cpp" />
+    <ClCompile Include="..\..\util\read-ini.cpp" />
+    <ClCompile Include="..\..\util\sqlite3.c" />
+    <ClCompile Include="..\src\crop.cpp" />
+    <ClCompile Include="..\src\debug.cpp" />
+    <ClCompile Include="..\src\monica-eom.cpp" />
+    <ClCompile Include="..\src\monica-main.cpp" />
+    <ClCompile Include="..\src\monica-parameters.cpp" />
+    <ClCompile Include="..\src\monica.cpp" />
+    <ClCompile Include="..\src\simulation.cpp" />
+    <ClCompile Include="..\src\soilcolumn.cpp" />
+    <ClCompile Include="..\src\soilmoisture.cpp" />
+    <ClCompile Include="..\src\soilorganic.cpp" />
+    <ClCompile Include="..\src\soiltemperature.cpp" />
+    <ClCompile Include="..\src\soiltransport.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
