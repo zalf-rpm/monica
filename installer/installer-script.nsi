@@ -76,20 +76,18 @@
 
 Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 
+	;SetOutPath "c:\temp"
+	;install Visual C++ 2012 runtime
+	;File "vcredist_${Arch}.exe"
+	;ExecWait "c:\temp\vcredist_${ARCH}.exe /q:a"
+	;Delete "c:\temp\vcredist_${ARCH}.exe"
+
   SetOutPath "$INSTDIR"
   
   ;ADD YOUR OWN FILES HERE...
-  File "..\release\monica.exe"  
-	File "..\..\..\sys-libs\windows\runtime\VC\${Arch}\*.dll"
-  ;File "..\..\..\sys-libs\windows\runtime\MinGW\x86\mingwm10.dll"
-  ;File "..\..\..\sys-libs\windows\runtime\MinGW\x86\libgcc_s_dw2-1.dll"
-  File "..\db-connections.ini"
-  ;libs are being statically linked
-	;File "..\..\..\user-libs\lib\climate.dll"
-  ;File "..\..\..\user-libs\lib\tools.dll"
-  ;File "..\..\..\user-libs\lib\db.dll"
-	File "..\..\..\sys-libs\windows\${Arch}\libmysql.dll"
-  ;File "..\..\..\sys-libs\windows\mysql\x86\lib\opt\libmysql.dll"
+  File /oname=monica.exe "..\release\monica-hermes.exe"  
+	File "C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\redist\${Arch}\Microsoft.VC110.CRT\*.dll"
+	File "..\db-connections.ini"
   File "license.txt"
   File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
@@ -131,7 +129,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "$\"%USERPROFILE%$\"\MONICA\Examples\Hohenfinow2"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk" "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk" "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1.pdf"		
+	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"		
 	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "$\"%USERPROFILE%$\"\MONICA\Examples\Hohenfinow2"
 	
   !insertmacro MUI_STARTMENU_WRITE_END
@@ -156,7 +154,7 @@ Section "Uninstall"
 
   Delete "$INSTDIR\monica.exe"
   Delete "$INSTDIR\db-connections.ini"
-  Delete "$INSTDIR\*.dll"
+  ;Delete "$INSTDIR\*.dll"
   ;Delete "$INSTDIR\climate.dll"
   ;Delete "$INSTDIR\tools.dll"
   ;Delete "$INSTDIR\db.dll"
