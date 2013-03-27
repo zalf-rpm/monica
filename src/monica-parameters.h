@@ -37,8 +37,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/shared_ptr.hpp>
 
-#include "util/climate-common.h"
-#include "util/date.h"
+#include "climate/climate-common.h"
+#include "tools/date.h"
 #include "typedefs.h"
 
 namespace Monica
@@ -647,7 +647,7 @@ namespace Monica
     _cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED) { }
 
     Crop(CropId id, const std::string& name,
-         const Util::Date& seedDate, const Util::Date& harvestDate,
+         const Tools::Date& seedDate, const Tools::Date& harvestDate,
          const CropParameters* cps = NULL, const OrganicMatterParameters* rps = NULL,
          double crossCropAdaptionFactor = 1) :
     _id(id), _name(name), _seedDate(seedDate), _harvestDate(harvestDate),
@@ -699,19 +699,19 @@ namespace Monica
       _residueParams = rps;
     }
 
-    Util::Date seedDate() const { return _seedDate; }
+    Tools::Date seedDate() const { return _seedDate; }
 
-    Util::Date harvestDate() const { return _harvestDate; }
+    Tools::Date harvestDate() const { return _harvestDate; }
 
-    std::vector<Util::Date> getCuttingDates() const { return _cuttingDates; }
+    std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
 
-    void setSeedAndHarvestDate(const Util::Date& sd, const Util::Date& hd)
+    void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd)
     {
       _seedDate = sd;
       _harvestDate = hd;
     }
 
-    void addCuttingDate(const Util::Date cd) { _cuttingDates.push_back(cd); }
+    void addCuttingDate(const Tools::Date cd) { _cuttingDates.push_back(cd); }
 
     //void applyCutting();
 
@@ -770,9 +770,9 @@ namespace Monica
   private:
     CropId _id;
     std::string _name;
-    Util::Date _seedDate;
-    Util::Date _harvestDate;
-    std::vector<Util::Date> _cuttingDates;
+    Tools::Date _seedDate;
+    Tools::Date _harvestDate;
+    std::vector<Tools::Date> _cuttingDates;
     const CropParameters* _cropParams;
     const OrganicMatterParameters* _residueParams;
     double _primaryYield;
@@ -882,10 +882,10 @@ namespace Monica
   {
   public:
 
-    WorkStep(const Util::Date& d) : _date(d) { }
+    WorkStep(const Tools::Date& d) : _date(d) { }
 
-    Util::Date date() const { return _date; }
-    virtual void setDate(Util::Date date) {_date = date; }
+    Tools::Date date() const { return _date; }
+    virtual void setDate(Tools::Date date) {_date = date; }
 
     //! do whatever the workstep has to do
     virtual void apply(MonicaModel* model) = 0;
@@ -896,7 +896,7 @@ namespace Monica
 
 
   protected:
-    Util::Date _date;
+    Tools::Date _date;
   };
 
   typedef boost::shared_ptr<WorkStep> WSPtr;
@@ -909,12 +909,12 @@ namespace Monica
   {
   public:
 
-    Seed(const Util::Date& at, CropPtr crop)
+    Seed(const Tools::Date& at, CropPtr crop)
     : WorkStep(at), _crop(crop) { }
 
     virtual void apply(MonicaModel* model);
 
-    void setDate(Util::Date date)
+    void setDate(Tools::Date date)
     {
       this->_date = date;
       _crop.get()->setSeedAndHarvestDate(date, _crop.get()->harvestDate());
@@ -934,12 +934,12 @@ namespace Monica
   {
   public:
 
-    Harvest(const Util::Date& at, CropPtr crop, PVResultPtr cropResult)
+    Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult)
     : WorkStep(at), _crop(crop), _cropResult(cropResult) { }
 
     virtual void apply(MonicaModel* model);
 
-    void setDate(Util::Date date)
+    void setDate(Tools::Date date)
     {
       this->_date = date;
       _crop.get()->setSeedAndHarvestDate(_crop.get()->seedDate(), date);
@@ -958,7 +958,7 @@ namespace Monica
   {
   public:
 
-    Cutting(const Util::Date& at, CropPtr crop) : WorkStep(at), _crop(crop) { }
+    Cutting(const Tools::Date& at, CropPtr crop) : WorkStep(at), _crop(crop) { }
 
     virtual void apply(MonicaModel* model);
 
@@ -1008,7 +1008,7 @@ namespace Monica
   class MineralFertiliserApplication : public WorkStep
   {
   public:
-    MineralFertiliserApplication(const Util::Date& at,
+    MineralFertiliserApplication(const Tools::Date& at,
                                  MineralFertiliserParameters partition,
                                  double amount)
     : WorkStep(at), _partition(partition), _amount(amount) { }
@@ -1036,7 +1036,7 @@ namespace Monica
   {
   public:
 
-    OrganicFertiliserApplication(const Util::Date& at,
+    OrganicFertiliserApplication(const Tools::Date& at,
                                  const OrganicMatterParameters* params,
                                  double amount,
                                  bool incorp = true)
@@ -1072,7 +1072,7 @@ namespace Monica
   class TillageApplication : public WorkStep
   {
   public:
-    TillageApplication(const Util::Date& at, double depth)
+    TillageApplication(const Tools::Date& at, double depth)
     : WorkStep(at), _depth(depth) { }
 
     virtual void apply(MonicaModel* model);
@@ -1122,7 +1122,7 @@ namespace Monica
   class IrrigationApplication : public WorkStep
   {
   public:
-    IrrigationApplication(const Util::Date& at, double amount,
+    IrrigationApplication(const Tools::Date& at, double amount,
                           IrrigationParameters params) :
     WorkStep(at), _amount(amount), _params(params) { }
 
@@ -1176,9 +1176,9 @@ namespace Monica
       _worksteps.insert(std::make_pair((a.get())->date(), a));
     }
 
-    void apply(const Util::Date& date, MonicaModel* model) const;
+    void apply(const Tools::Date& date, MonicaModel* model) const;
 
-    Util::Date nextDate(const Util::Date & date) const;
+    Tools::Date nextDate(const Tools::Date & date) const;
 
     std::string name() const { return _name; }
 
@@ -1187,12 +1187,12 @@ namespace Monica
     bool isFallow() const { return !_crop->isValid();  }
 
     //! when does the PV start
-    Util::Date start() const;
+    Tools::Date start() const;
 
     //! when does the whole PV end
-    Util::Date end() const;
+    Tools::Date end() const;
 
-    std::multimap<Util::Date, WSPtr> getWorksteps() {return _worksteps; }
+    std::multimap<Tools::Date, WSPtr> getWorksteps() {return _worksteps; }
 
     void clearWorksteps() { _worksteps.clear(); }
 
@@ -1206,7 +1206,7 @@ namespace Monica
     CropPtr _crop;
 
     //!ordered list of worksteps to be done for this PV
-    std::multimap<Util::Date, WSPtr> _worksteps;
+    std::multimap<Tools::Date, WSPtr> _worksteps;
 
     //store results of the productionprocess
     PVResultPtr _cropResult;

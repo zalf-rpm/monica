@@ -38,20 +38,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "boost/foreach.hpp"
 #include "debug.h"
 
-#include "util/abstract-db-connections.h"
+#include "db/abstract-db-connections.h"
 #include "monica-parameters.h"
-#include "util/use-stl-algo-boost-lambda.h"
-//#include "util/auto-deleter.h"
-#include "util/helper.h"
-#include "util/algorithms.h"
+#include "tools/use-stl-algo-boost-lambda.h"
+//#include "tools/auto-deleter.h"
+#include "tools/helper.h"
+#include "tools/algorithms.h"
 #include "monica.h"
 #include "eva2_methods.h"
-#include "util/climate-common.h"
+#include "climate/climate-common.h"
 
 using namespace Db;
 using namespace std;
 using namespace Monica;
-using namespace Util;
+using namespace Tools;
 using namespace Climate;
 
 // Some profile definitions for eva2
@@ -1251,9 +1251,9 @@ ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
   unsigned int size = cuttingDates.size();
 
   for (unsigned int i=0; i<size; i++) {
-    debug() << "Add cutting date: " << Util::Date(cuttingDates.at(i)).toString().c_str() << endl;
+    debug() << "Add cutting date: " << Tools::Date(cuttingDates.at(i)).toString().c_str() << endl;
 //    if (i<size-1) {
-      addApplication(Cutting(Util::Date(cuttingDates.at(i)), crop));
+      addApplication(Cutting(Tools::Date(cuttingDates.at(i)), crop));
 //    } else {
 //      addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
 //    }
@@ -2270,7 +2270,7 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
         int ho = sps->size() * lt;
         int hu = satoi(row[4]) ? satoi(row[4]) : maxDepth;
         int hsize = hu - ho;
-				int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
+				int subhcount = int(Tools::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
         if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
           subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2437,7 +2437,7 @@ const SoilPMs* Monica::weisseritzSoilParameters(int bk50GridId,
         int ho = sps->size() * lt;
                                 int hu = satof(row[4]) ? int(satof(row[4])*100) : maxDepth;
         int hsize = hu - ho;
-				int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
+				int subhcount = int(Tools::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
         if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
           subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2559,7 +2559,7 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 				int ho = sps->size() * lt;
 				int hu = int(satof(row[1])*100);
 				int hsize = hu - ho;
-				int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
+				int subhcount = int(Tools::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
 				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
 					subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -2728,7 +2728,7 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 
               int ho = sps->size() * lt;
               int hsize = hu - ho;
-							int subhcount = int(Util::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
+							int subhcount = int(Tools::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
               if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
                 subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -3915,7 +3915,7 @@ namespace
   {
     double sat, fc, pwp;
 
-		static int makeInt(double value) { return int(Util::round(value, 1)*10); }
+		static int makeInt(double value) { return int(Tools::round(value, 1)*10); }
   };
 
   void readXSoilCharacteristicY(std::string key1, double key2,

@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "soilmoisture.h"
 #include "monica-parameters.h"
-#include "util/helper.h"
+#include "tools/helper.h"
 
 const double PI = 3.14159265358979323;
 

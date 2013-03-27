@@ -34,17 +34,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "loki/Threads.h"
 #include "boost/foreach.hpp"
-#include "util/use-stl-algo-boost-lambda.h"
+#include "tools/use-stl-algo-boost-lambda.h"
 
 #include "debug.h"
 #include "monica.h"
-#include "util/climate-common.h"
-#include "util/abstract-db-connections.h"
+#include "climate/climate-common.h"
+#include "db/abstract-db-connections.h"
 
 using namespace Monica;
 using namespace std;
 using namespace Climate;
-using namespace Util;
+using namespace Tools;
 
 namespace
 {

@@ -53,7 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iomanip>
 
 
-//#include "util/climate-common.h"
+//#include "climate/climate-common.h"
 #include "soilcolumn.h"
 
 namespace Monica {

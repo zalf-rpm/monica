@@ -37,17 +37,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <map>
 
-#include "util/climate-common.h"
+#include "climate/climate-common.h"
 #include "soilcolumn.h"
 #include "soiltemperature.h"
 #include "soilmoisture.h"
 #include "soilorganic.h"
 #include "soiltransport.h"
 #include "crop.h"
-#include "util/date.h"
-#include "util/datastructures.h"
+#include "tools/date.h"
+#include "tools/datastructures.h"
 #include "monica-parameters.h"
-#include "util/helper.h"
+#include "tools/helper.h"
 
 namespace Monica
 {
@@ -115,7 +115,7 @@ namespace Monica
     Climate::DataAccessor da;     //! object holding the climate data
     std::vector<ProductionProcess> cropRotation; //! vector of elements holding the data of the single crops in the rotation
 
-    Util::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
+    Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
 
     SiteParameters site;        //! site specific parameters
     GeneralParameters general;  //! general parameters to the model
@@ -151,7 +151,7 @@ namespace Monica
       ~Result(){}
 
     //! just to keep track of the grid point the calculation is being made for
-    Util::GridPoint gp;
+    Tools::GridPoint gp;
 
     //! vector of the result of one crop per year
     std::vector<PVResult> pvrs;
