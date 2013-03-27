@@ -203,10 +203,10 @@ vs_SoilTemperature(0)
   vs_SoilNO3 = cpp.userInitValues.p_initSoilNitrate;
   vs_SoilNH4 = cpp.userInitValues.p_initSoilAmmonium;
 
-//  cout  << "Constructor 3" << endl;
-//  cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.userInitValues.p_initPercentageFC << endl;
-//  cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
-//  cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
+  //cout  << "Constructor 3" << endl;
+  //cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.userInitValues.p_initPercentageFC << endl;
+  //cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
+  //cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
  }
 
 /**
