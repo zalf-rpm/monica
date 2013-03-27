@@ -1,29 +1,3 @@
-/**
-Authors: 
-Dr. Claas Nendel <claas.nendel@zalf.de>
-Xenia Specka <xenia.specka@zalf.de>
-Michael Berg <michael.berg@zalf.de>
-
-Maintainers: 
-Currently maintained by the authors.
-
-This file is part of the MONICA model. 
-Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include <cmath>
 #include <algorithm>
 
@@ -106,19 +80,16 @@ _vs_SoilMoisture_pF(-1),
 vs_SoilMoisture_m3(0.25),
 vs_SoilTemperature(0)
 {
-  if (vs_FieldCapacity > 0.0){
-		vs_SoilMoisture_m3 = 1.0 * vs_FieldCapacity;
-		vs_SoilMoistureOld_m3 = 1.0 * vs_FieldCapacity;
-  } else {
-		vs_SoilMoisture_m3 = 1.0 * get_FieldCapacity();
-		vs_SoilMoistureOld_m3 = 1.0 * get_FieldCapacity();
-  }
-//  double portion_koeff = CentralParameterProvider::instance()->getUserSoilMoistureParameters()->getPm_MoistureInitValue();
-//  cout << portion_koeff << "\t" << vs_FieldCapacity() <<  endl;
-//  vs_SoilMoisture_m3 = portion_koeff * vs_FieldCapacity();
-//  vs_SoilMoistureOld_m3 = portion_koeff * vs_FieldCapacity();
-//  cout << "Init soil moisture - 1. constructor:\t" << portion_koeff << "\t" << vs_FieldCapacity() << "\t" << vs_SoilMoisture_m3 << "\t" << vs_SoilMoistureOld_m3 << endl;
 
+  vs_SoilMoisture_m3 = vs_FieldCapacity * centralParameterProvider.userInitValues.p_initPercentageFC;
+	vs_SoilMoistureOld_m3 = vs_FieldCapacity * centralParameterProvider.userInitValues.p_initPercentageFC;
+	vs_SoilNO3 = centralParameterProvider.userInitValues.p_initSoilNitrate;
+	vs_SoilNH4 = centralParameterProvider.userInitValues.p_initSoilAmmonium;
+
+//	cout  << "Constructor 1" << endl;
+//  cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << centralParameterProvider.userInitValues.p_initPercentageFC << endl;
+//  cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
+//  cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
 }
 
 /**
@@ -153,20 +124,15 @@ _vs_SoilMoisture_pF(-1),
 vs_SoilMoisture_m3(0.25),
 vs_SoilTemperature(0)
 {
-  if (vs_FieldCapacity > 0.0){
-        vs_SoilMoisture_m3 = 1.0 * vs_FieldCapacity;
-        vs_SoilMoistureOld_m3 = 1.0 * vs_FieldCapacity;
-  } else {
-        vs_SoilMoisture_m3 = 1.0 * get_FieldCapacity();
-        vs_SoilMoistureOld_m3 = 1.0 * get_FieldCapacity();
-  }
+  vs_SoilMoisture_m3 = vs_FieldCapacity * centralParameterProvider.userInitValues.p_initPercentageFC;
+  vs_SoilMoistureOld_m3 = vs_FieldCapacity * centralParameterProvider.userInitValues.p_initPercentageFC;
+  vs_SoilNO3 = centralParameterProvider.userInitValues.p_initSoilNitrate;
+  vs_SoilNH4 = centralParameterProvider.userInitValues.p_initSoilAmmonium;
 
-//  double portion_koeff = CentralParameterProvider::instance()->getUserSoilMoistureParameters()->getPm_MoistureInitValue();
-//  cout << portion_koeff << "\t" << vs_FieldCapacity() <<  endl;
-//  vs_SoilMoisture_m3 = portion_koeff * vs_FieldCapacity();
-//  vs_SoilMoistureOld_m3 = portion_koeff * vs_FieldCapacity();
-//  cout << "Init soil moisture - 1. constructor:\t" << portion_koeff << "\t" << vs_FieldCapacity() << "\t" << vs_SoilMoisture_m3 << "\t" << vs_SoilMoistureOld_m3 << endl;
-
+//  cout  << "Constructor 2" << endl;
+//  cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << centralParameterProvider.userInitValues.p_initPercentageFC << endl;
+//  cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
+//  cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
 }
 
 /**
@@ -206,19 +172,15 @@ vs_SoilTemperature(0)
 {
 	assert((_vs_SoilOrganicCarbon - (_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C)) < 0.00001);
 
-//  double portion_koeff = CentralParameterProvider::instance()->getUserSoilMoistureParameters()->getPm_MoistureInitValue();
-//  vs_SoilMoisture_m3 = portion_koeff * vs_FieldCapacity();
-//  vs_SoilMoistureOld_m3 =portion_koeff * vs_FieldCapacity();
+  vs_SoilMoisture_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
+  vs_SoilMoistureOld_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
+  vs_SoilNO3 = cpp.userInitValues.p_initSoilNitrate;
+  vs_SoilNH4 = cpp.userInitValues.p_initSoilAmmonium;
 
-  if (vs_FieldCapacity > 0.0){
-        vs_SoilMoisture_m3 = 1.0 * vs_FieldCapacity;
-        vs_SoilMoistureOld_m3 = 1.0 * vs_FieldCapacity;
-  } else {
-        vs_SoilMoisture_m3 = 1.0 * get_FieldCapacity();
-        vs_SoilMoistureOld_m3 = 1.0 * get_FieldCapacity();
-  }
-
- // cout << "Init soil moisture - 2. constructor:\t" << portion_koeff << "\t" << vs_FieldCapacity() << "\t" << vs_SoilMoisture_m3 << "\t" << vs_SoilMoistureOld_m3 << endl;
+//  cout  << "Constructor 3" << endl;
+//  cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.userInitValues.p_initPercentageFC << endl;
+//  cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
+//  cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
  }
 
 /**

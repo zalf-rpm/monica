@@ -1,40 +1,9 @@
-/**
-Authors: 
-Dr. Claas Nendel <claas.nendel@zalf.de>
-Xenia Specka <xenia.specka@zalf.de>
-Michael Berg <michael.berg@zalf.de>
-
-Maintainers: 
-Currently maintained by the authors.
-
-This file is part of the MONICA model. 
-Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include "simulation.h"
 
-#ifdef RUN_EVA2
 #include "eva2_methods.h"
-#endif
-
-#ifdef RUN_CC_GERMANY
 #include "cc_germany_methods.h"
-#endif
 
-#include "util/climate-common.h"
+#include "climate/climate.h"
 
 #include <iostream>
 
@@ -46,11 +15,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "crop.h"
 #include "debug.h"
 #include "monica-parameters.h"
-#include "util/read-ini.h"
+#include "tools/read-ini.h"
 
 #if defined RUN_CC_GERMANY || defined RUN_GIS
 #include "grid/grid.h"
 #endif
+
 
 #include <fstream>
 #include <sys/stat.h>
@@ -59,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace Monica;
 using namespace std;
-using namespace Util;
+using namespace Tools;
 
 #ifdef RUN_EVA2
 
@@ -365,7 +335,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
 //------------------------------------------------------------------
 
-#ifdef HERMES_MODE
+#ifdef TEST_WITH_HERMES_DATA
 
 /**
  * Method for compatibility issues. Hermes configuration is hard coded
@@ -373,7 +343,8 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
  *
  * @param output_path Path to input and output files
  */
-const Monica::Result Monica::runWithHermesData(const std::string output_path)
+const Monica::Result
+Monica::runWithHermesData(const std::string output_path)
 {
   Monica::activateDebug = true;
 
@@ -398,7 +369,7 @@ const Monica::Result Monica::runWithHermesData(const std::string output_path)
   hermes_config->setStartYear(ipm.valueAsInt("simulation_time", "startyear"));
   hermes_config->setEndYear(ipm.valueAsInt("simulation_time", "endyear"));
 
-  bool use_nmin_fertiliser = ipm.valueAsInt("nmin_fertiliser", "activated") == 1;
+  bool use_nmin_fertiliser = ipm.valueAsInt("nmin_fertiliser", "activated");
   if (use_nmin_fertiliser) {
       hermes_config->setOrganicFertiliserID(ipm.valueAsInt("nmin_fertiliser", "organic_fert_id"));
       hermes_config->setMineralFertiliserID(ipm.valueAsInt("nmin_fertiliser", "mineral_fert_id"));
@@ -409,7 +380,7 @@ const Monica::Result Monica::runWithHermesData(const std::string output_path)
       hermes_config->setNMinUserParameters(min, max, delay);
   }
 
-  bool use_automatic_irrigation = ipm.valueAsInt("automatic_irrigation", "activated") == 1;
+  bool use_automatic_irrigation = ipm.valueAsInt("automatic_irrigation", "activated");
   if (use_automatic_irrigation) {
       double amount = ipm.valueAsDouble("automatic_irrigation", "amount", 0.0);
       double treshold = ipm.valueAsDouble("automatic_irrigation", "treshold", 0.15);
@@ -429,7 +400,7 @@ const Monica::Result Monica::runWithHermesData(const std::string output_path)
   hermes_config->setLeachingDepth(ipm.valueAsDouble("site_parameters", "leaching_depth", -1.0));
   hermes_config->setMinGWDepth(ipm.valueAsDouble("site_parameters", "groundwater_depth_min", -1.0));
   hermes_config->setMaxGWDepth(ipm.valueAsDouble("site_parameters", "groundwater_depth_max", -1.0));
-  hermes_config->setMinGWDepthMonth(ipm.valueAsInt("site_parameters", "groundwater_depth_min_month", -1));
+  hermes_config->setMinGWDepthMonth(ipm.valueAsDouble("site_parameters", "groundwater_depth_min_month", -1));
 
   hermes_config->setGroundwaterDischarge(ipm.valueAsDouble("site_parameters", "groundwater_discharge", -1.0));
   hermes_config->setLayerThickness(ipm.valueAsDouble("site_parameters", "layer_thickness", -1.0));
@@ -444,6 +415,11 @@ const Monica::Result Monica::runWithHermesData(const std::string output_path)
   // general parameters
   hermes_config->setSecondaryYields(ipm.valueAsBool("general_parameters", "use_secondary_yields", true));
 
+  // initial values
+  hermes_config->setInitPercentageFC(ipm.valueAsDouble("init_values", "init_percentage_FC", -1.0));
+  hermes_config->setInitSoilNitrate(ipm.valueAsDouble("init_values", "init_soil_nitrate", -1.0));
+  hermes_config->setInitSoilAmmonium(ipm.valueAsDouble("init_values", "init_soil_ammonium", -1.0));
+
 
   const Monica::Result result = runWithHermesData(hermes_config);
 
@@ -451,11 +427,11 @@ const Monica::Result Monica::runWithHermesData(const std::string output_path)
   return result;
 }
 
-#endif /*#ifdef HERMES_MODE*/
+#endif /*#ifdef TEST_WITH_HERMES_DATA*/
 
 //------------------------------------------------------------------
 
-#ifdef HERMES_MODE
+#ifdef TEST_WITH_HERMES_DATA
 
 /**
  *
@@ -520,6 +496,18 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
       siteParams.vq_NDeposition = hermes_config->getNDeposition();
   }
 
+  if (hermes_config->getInitPercentageFC() != -1.0) {
+      centralParameterProvider.userInitValues.p_initPercentageFC = hermes_config->getInitPercentageFC();
+  }
+
+  if (hermes_config->getInitSoilNitrate() != -1.0) {
+      centralParameterProvider.userInitValues.p_initSoilNitrate = hermes_config->getInitSoilNitrate();
+  }
+
+  if (hermes_config->getInitSoilAmmonium() != -1.0) {
+      centralParameterProvider.userInitValues.p_initSoilAmmonium = hermes_config->getInitSoilAmmonium();
+  }
+
 
   double layer_thickness = centralParameterProvider.userEnvironmentParameters.p_LayerThickness;
   double profile_depth = layer_thickness * double(centralParameterProvider.userEnvironmentParameters.p_NumberOfLayers);
@@ -530,8 +518,8 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
 
   //climate data
   std::string file = outputPath+hermes_config->getWeatherFile();
-  Climate::DataAccessor climateData = climateDataFromHermesFiles(file, hermes_config->getStartYear(), 
-    hermes_config->getEndYear(), centralParameterProvider, true);
+  Climate::DataAccessor climateData =
+      climateDataFromHermesFiles(file, hermes_config->getStartYear(), hermes_config->getEndYear(), centralParameterProvider, true);
 
 
   // test if precipitation values should be manipulated; used for carboZALF simulation
@@ -614,7 +602,7 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
   return res;
 }
 
-#endif /*#ifdef HERMES_MODE*/
+#endif /*#ifdef TEST_WITH_HERMES_DATA*/
 //------------------------------------------------------------------
 
 /**
