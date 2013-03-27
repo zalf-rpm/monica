@@ -1,6 +1,31 @@
+/**
+Authors: 
+Dr. Claas Nendel <claas.nendel@zalf.de>
+Xenia Specka <xenia.specka@zalf.de>
+Michael Berg <michael.berg@zalf.de>
+
+Maintainers: 
+Currently maintained by the authors.
+
+This file is part of the MONICA model. 
+Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef SIMULATION_H_
 #define SIMULATION_H_
-
 
 // must be activated when building monica for python
 //#define TEST_WITH_HERMES_DATA
@@ -9,12 +34,13 @@
 //#define RUN_GIS
 
 #include <string>
-#include "tools/date.h"
+#include "util/date.h"
 #include "monica-parameters.h"
 #include "monica.h"
 #include "gis_simulation_methods.h"
 
-namespace Monica {
+namespace Monica 
+{
 
 #ifdef RUN_EVA2
 
@@ -90,7 +116,7 @@ class Eva2SimulationConfiguration
 #endif /*#ifdef RUN_EVA2*/
 
 
-#ifdef TEST_WITH_HERMES_DATA
+#ifdef HERMES_MODE
 
 class HermesSimulationConfiguration
 {
@@ -137,7 +163,7 @@ public:
     void setPH(double v) {pH = v; }
     void setWindSpeedHeight(double v) { windSpeedHeight=v; }
     void setLeachingDepth(double v) { leachingDepth=v; }
-    void setMinGWDepthMonth(double v) { minGWDepthMonth=v; }
+    void setMinGWDepthMonth(int v) { minGWDepthMonth=v; }
     void setNDeposition(double v) { NDeposition=v; }
 
     void setGroundwaterDischarge(double v) {groundwaterDischarge = v; }
@@ -383,7 +409,7 @@ const Monica::Result runCCGermanySimulation(const CCGermanySimulationConfigurati
 const Monica::Result runGISSimulation(const GISSimulationConfiguration *simulation_config=0);
 #endif
 
-#ifdef TEST_WITH_HERMES_DATA
+#ifdef HERMES_MODE
 const Monica::Result runWithHermesData( HermesSimulationConfiguration *hermes_config=0);
 const Monica::Result runWithHermesData(const std::string);
 #endif

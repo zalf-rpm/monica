@@ -1,9 +1,35 @@
+/**
+Authors: 
+Dr. Claas Nendel <claas.nendel@zalf.de>
+Xenia Specka <xenia.specka@zalf.de>
+Michael Berg <michael.berg@zalf.de>
+
+Maintainers: 
+Currently maintained by the authors.
+
+This file is part of the MONICA model. 
+Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "simulation.h"
 
 #include "eva2_methods.h"
 #include "cc_germany_methods.h"
 
-#include "climate/climate.h"
+#include "util/climate-common.h"
 
 #include <iostream>
 
@@ -15,7 +41,7 @@
 #include "crop.h"
 #include "debug.h"
 #include "monica-parameters.h"
-#include "tools/read-ini.h"
+#include "util/read-ini.h"
 
 #if defined RUN_CC_GERMANY || defined RUN_GIS
 #include "grid/grid.h"
@@ -29,7 +55,7 @@
 
 using namespace Monica;
 using namespace std;
-using namespace Tools;
+using namespace Util;
 
 #ifdef RUN_EVA2
 
@@ -335,7 +361,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
 //------------------------------------------------------------------
 
-#ifdef TEST_WITH_HERMES_DATA
+#ifdef HERMES_MODE
 
 /**
  * Method for compatibility issues. Hermes configuration is hard coded
@@ -369,7 +395,7 @@ Monica::runWithHermesData(const std::string output_path)
   hermes_config->setStartYear(ipm.valueAsInt("simulation_time", "startyear"));
   hermes_config->setEndYear(ipm.valueAsInt("simulation_time", "endyear"));
 
-  bool use_nmin_fertiliser = ipm.valueAsInt("nmin_fertiliser", "activated");
+  bool use_nmin_fertiliser = ipm.valueAsInt("nmin_fertiliser", "activated") == 1;
   if (use_nmin_fertiliser) {
       hermes_config->setOrganicFertiliserID(ipm.valueAsInt("nmin_fertiliser", "organic_fert_id"));
       hermes_config->setMineralFertiliserID(ipm.valueAsInt("nmin_fertiliser", "mineral_fert_id"));
@@ -380,7 +406,7 @@ Monica::runWithHermesData(const std::string output_path)
       hermes_config->setNMinUserParameters(min, max, delay);
   }
 
-  bool use_automatic_irrigation = ipm.valueAsInt("automatic_irrigation", "activated");
+  bool use_automatic_irrigation = ipm.valueAsInt("automatic_irrigation", "activated") == 1;
   if (use_automatic_irrigation) {
       double amount = ipm.valueAsDouble("automatic_irrigation", "amount", 0.0);
       double treshold = ipm.valueAsDouble("automatic_irrigation", "treshold", 0.15);
@@ -400,7 +426,7 @@ Monica::runWithHermesData(const std::string output_path)
   hermes_config->setLeachingDepth(ipm.valueAsDouble("site_parameters", "leaching_depth", -1.0));
   hermes_config->setMinGWDepth(ipm.valueAsDouble("site_parameters", "groundwater_depth_min", -1.0));
   hermes_config->setMaxGWDepth(ipm.valueAsDouble("site_parameters", "groundwater_depth_max", -1.0));
-  hermes_config->setMinGWDepthMonth(ipm.valueAsDouble("site_parameters", "groundwater_depth_min_month", -1));
+  hermes_config->setMinGWDepthMonth(ipm.valueAsInt("site_parameters", "groundwater_depth_min_month", -1));
 
   hermes_config->setGroundwaterDischarge(ipm.valueAsDouble("site_parameters", "groundwater_discharge", -1.0));
   hermes_config->setLayerThickness(ipm.valueAsDouble("site_parameters", "layer_thickness", -1.0));
@@ -427,11 +453,11 @@ Monica::runWithHermesData(const std::string output_path)
   return result;
 }
 
-#endif /*#ifdef TEST_WITH_HERMES_DATA*/
+#endif /*#ifdef HERMES_MODE*/
 
 //------------------------------------------------------------------
 
-#ifdef TEST_WITH_HERMES_DATA
+#ifdef HERMES_MODE
 
 /**
  *
@@ -602,7 +628,7 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
   return res;
 }
 
-#endif /*#ifdef TEST_WITH_HERMES_DATA*/
+#endif /*#ifdef HERMES_MODE*/
 //------------------------------------------------------------------
 
 /**
