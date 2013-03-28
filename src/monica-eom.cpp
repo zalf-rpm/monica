@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef TEST_LANDCARE_DSS
+#ifdef RUN_LANDCARE_DSS
 
 #include <cstdlib>
 #include <iostream>
@@ -135,4 +135,4 @@ int Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
   return ci != m.end() ? ci->second : -1;
 }
 
-#endif /*#ifdef TEST_LANDCARE_DSS*/
+#endif /*#ifdef RUN_LANDCARE_DSS*/

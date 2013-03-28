@@ -50,7 +50,7 @@ using namespace Db;
 using namespace Tools;
 using namespace Monica;
 
-#ifdef TEST_LANDCARE_DSS
+#ifdef RUN_LANDCARE_DSS
 
 #include "eom/src/eom.h"
 using namespace Eom;
@@ -628,7 +628,7 @@ int main(int argc, char** argv)
 		dbConnectionParameters("db-connections.ini");//-win32.ini");
 #endif
 
-#ifdef TEST_LANDCARE_DSS
+#ifdef RUN_LANDCARE_DSS
   testLandcareDSS(argc, argv);
 #endif
 

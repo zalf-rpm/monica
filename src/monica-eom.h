@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MONICAEOM_H
 #define MONICAEOM_H
 
-#ifdef TEST_LANDCARE_DSS
+#ifdef RUN_LANDCARE_DSS
 
 #include "typedefs.h"
 #include "eom/src/typedefs.h"
@@ -51,6 +51,6 @@ namespace Monica
   int eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
 }
 
-#endif /*#ifdef TEST_LANDCARE_DSS*/
+#endif /*#ifdef RUN_LANDCARE_DSS*/
 
 #endif // MONICAEOM_H
