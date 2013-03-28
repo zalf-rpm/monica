@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define RUN_GIS
 
 #include <string>
-#include "util/date.h"
+#include "tools/date.h"
 #include "monica-parameters.h"
 #include "monica.h"
 #include "gis_simulation_methods.h"

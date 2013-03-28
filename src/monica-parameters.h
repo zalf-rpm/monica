@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include <boost/shared_ptr.hpp>
 
@@ -538,7 +539,7 @@ namespace Monica
 //        std::cout << "Get capillary rise rate: " << bodart.c_str() << "\t" << distance << std::endl;
         T_BodArtMap map = getMap(bodart);
         if (map.size() <= 0 ) {
-          std::cout << "Error. No capillary rise rates in data structure available.\n" << std::endl;
+					std::cout << "Error. No capillary rise rates in data structure available.\n" << std::endl;
           exit(-1);
         }
 

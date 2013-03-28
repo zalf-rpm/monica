@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "eva2_methods.h"
 #include "cc_germany_methods.h"
 
-#include "util/climate-common.h"
+#include "climate/climate-common.h"
 
 #include <iostream>
 
@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "crop.h"
 #include "debug.h"
 #include "monica-parameters.h"
-#include "util/read-ini.h"
+#include "tools/read-ini.h"
 
 #if defined RUN_CC_GERMANY || defined RUN_GIS
 #include "grid/grid.h"
@@ -55,7 +55,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace Monica;
 using namespace std;
-using namespace Util;
+using namespace Tools;
 
 #ifdef RUN_EVA2
 

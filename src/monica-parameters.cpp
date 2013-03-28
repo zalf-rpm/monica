@@ -3601,7 +3601,7 @@ CentralParameterProvider::
 	userSoilOrganicParameters = cpp.userSoilOrganicParameters;
 	sensitivityAnalysisParameters = cpp.sensitivityAnalysisParameters;
   capillaryRiseRates = cpp.capillaryRiseRates;
-  userInitValues = cpp.userInitValues;
+	userInitValues = cpp.userInitValues;
 
   for (int i=0; i<12; i++)
     precipCorrectionValues[i] = cpp.precipCorrectionValues[i];
@@ -3684,8 +3684,8 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           centralParameterProvider.userSoilTransportParameters;
 			UserSoilOrganicParameters& user_soil_organic =
 					centralParameterProvider.userSoilOrganicParameters;
-UserInitialValues& user_init_values =
-          centralParameterProvider.userInitValues;
+			UserInitialValues& user_init_values =
+					centralParameterProvider.userInitValues;
 
       while (!(row = con->getRow()).empty())
       {
@@ -3820,7 +3820,7 @@ UserInitialValues& user_init_values =
           user_soil_temperature.pt_SpecificHeatCapacityHumus = satof(row[1]);
         else if (name == "max_percolation_rate")
           user_soil_moisture.pm_MaxPercolationRate = satof(row[1]);
-        else if (name == "max_groundwater_depth")
+				else if (name == "max_groundwater_depth")
           user_env.p_MaxGroundwaterDepth = satof(row[1]);
         else if (name == "min_groundwater_depth")
           user_env.p_MinGroundwaterDepth = satof(row[1]);
@@ -4284,3 +4284,4 @@ Monica::Crop::applyCutting()
 
 }
 */
+

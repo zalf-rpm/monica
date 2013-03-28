@@ -31,25 +31,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 
 #include "boost/foreach.hpp"
-#include "util/use-stl-algo-boost-lambda.h"
 
-#include "util/db.h"
+#include "tools/use-stl-algo-boost-lambda.h"
+#include "db/db.h"
+#include "db/abstract-db-connections.h"
+#include "tools/date.h"
+#include "tools/algorithms.h"
+#include "tools/helper.h"
+
 #include "debug.h"
 #include "monica.h"
 #include "monica-eom.h"
 #include "monica-parameters.h"
-//#include "climate/climate.h"
-#include "util/date.h"
-//#include "tools/time-measurement.h"
 #include "simulation.h"
-#include "util/algorithms.h"
-#include "util/abstract-db-connections.h"
-#include "util/helper.h"
 
 using namespace std;
 using namespace Db;
-//using namespace Climate;
-using namespace Util;
+using namespace Tools;
 using namespace Monica;
 
 #ifdef TEST_LANDCARE_DSS
