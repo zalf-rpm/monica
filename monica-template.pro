@@ -1,0 +1,185 @@
+#CONFIG += DSS #RUN_LANDCARE_DSS
+CONFIG += HERMES #RUN_HERMES
+#CONFIG += EVA2 #RUN_EVA2
+#CONFIG += CCG #RUN_CC_GERMANY
+#CONFIG += GIS #RUN_GIS_SIMULATION
+
+isEmpty(ARCH){
+ARCH = x64
+}
+
+message("monica: building code for " $$ARCH " architecture")
+
+unix:QMAKE_CXXFLAGS += -std=c++0x
+
+TEMPLATE = app
+DESTDIR = .
+TARGET = monica
+OBJECTS_DIR = obj
+
+UTIL_DIR = ../util
+
+CONFIG -= qt
+CONFIG += console
+
+# add flags to create profiling file
+unix {
+#QMAKE_CFLAGS_DEBUG += -pg
+#QMAKE_CXXFLAGS += -pg
+#QMAKE_LFLAGS += -pg
+}
+
+# defining stand alone version of MONICA
+DEFINES += STANDALONE
+
+HERMES:DEFINES += NO_MYSQL
+
+# monica code
+HEADERS += src/soilcolumn.h
+HEADERS += src/soiltransport.h
+HEADERS += src/soiltemperature.h
+HEADERS += src/soilmoisture.h
+HEADERS += src/soilorganic.h
+HEADERS += src/monica.h
+HEADERS += src/monica-parameters.h
+HEADERS += src/crop.h
+HEADERS += src/eva2_methods.h
+HEADERS += src/monica-eom.h
+HEADERS += src/simulation.h
+HEADERS += src/debug.h
+HEADERS += src/cc_germany_methods.h
+HEADERS += src/gis_simulation_methods.h
+
+SOURCES += src/monica-main.cpp
+SOURCES += src/soilcolumn.cpp
+SOURCES += src/soiltransport.cpp
+SOURCES += src/soiltemperature.cpp
+SOURCES += src/soilmoisture.cpp
+SOURCES += src/soilorganic.cpp
+SOURCES += src/monica.cpp
+SOURCES += src/monica-parameters.cpp
+SOURCES += src/crop.cpp
+SOURCES += src/eva2_methods.cpp
+SOURCES += src/monica-eom.cpp
+SOURCES += src/simulation.cpp
+SOURCES += src/debug.cpp
+SOURCES += src/cc_germany_methods.cpp
+SOURCES += src/gis_simulation_methods.cpp
+
+# db library code
+HEADERS += $${UTIL_DIR}/db/db.h
+HEADERS += $${UTIL_DIR}/db/abstract-db-connections.h
+HEADERS += $${UTIL_DIR}/db/sqlite3.h
+
+SOURCES += $${UTIL_DIR}/db/db.cpp
+SOURCES += $${UTIL_DIR}/db/abstract-db-connections.cpp
+SOURCES += $${UTIL_DIR}/db/sqlite3.c
+
+# climate library code
+HEADERS += $${UTIL_DIR}/climate/climate-common.h
+
+SOURCES += $${UTIL_DIR}/climate/climate-common.cpp
+
+# tools library code
+HEADERS += $${UTIL_DIR}/tools/algorithms.h
+HEADERS += $${UTIL_DIR}/tools/date.h
+HEADERS += $${UTIL_DIR}/tools/read-ini.h
+HEADERS += $${UTIL_DIR}/tools/datastructures.h
+HEADERS += $${UTIL_DIR}/tools/helper.h
+HEADERS += $${UTIL_DIR}/tools/use-stl-algo-boost-lambda.h
+HEADERS += $${UTIL_DIR}/tools/stl-algo-boost-lambda.h
+
+DSS|CCG|GIS:HEADERS += $${UTIL_DIR}/tools/coord-trans.h
+
+SOURCES += $${UTIL_DIR}/tools/algorithms.cpp
+SOURCES += $${UTIL_DIR}/tools/date.cpp
+SOURCES += $${UTIL_DIR}/tools/read-ini.cpp
+
+DSS|CCG|GIS:SOURCES += $${UTIL_DIR}/tools/coord-trans.cpp
+
+#includes
+#-------------------------------------------------------------
+
+INCLUDEPATH += \
+../../boost_1_53_0 \
+../util \
+../loki-lib/include
+
+#libs
+#------------------------------------------------------------
+
+#win32:LIBS += -L"C:/Program Files (x86)/Microsoft Visual Studio 11.0/VC/lib"
+
+#CONFIG(debug, debug|release):LIBS += \
+#-llibmysqld
+#CONFIG(release, debug|release):LIBS += \
+#-llibmysql
+
+#CONFIG(debug, debug|release):QMAKE_LFLAGS += \
+#/NODEFAULTLIB:msvcrt.lib #\
+#/VERBOSE:lib
+
+#CONFIG(release, debug|release):QMAKE_LFLAGS += \
+#/NODEFAULTLIB:msvcrtd.lib
+
+
+unix {
+LIBS += \
+-lm -ldl \
+-lpthread \
+#-L$${SYS_LIBS_DIR}/linux/hdf5-1.8.7/$${ARCH}/lib \
+#-lmysqlclient \
+#-L$${SYS_LIBS_DIR}/lib \
+#-lproj \
+#-lhdf5
+}
+
+#rc files
+#------------------------------------------------------
+
+win32:RC_FILE = monica.rc
+
+# build configuration specific stuff
+#--------------------------------------------------------
+
+DSS {
+CONFIG += USE_EOM
+DEFINES += RUN_LANDCARE_DSS
+LIBS += \
+-lgrid
+win32:LIBS += \
+-lhdf5dll
+unix:LIBS += \
+-lhdf5
+message("Configuration: RUN_LANDCARE_DSS")
+}
+else:HERMES {
+DEFINES += RUN_HERMES
+message("Configuration: RUN_HERMES")
+}
+else:EVA2 {
+DEFINES += RUN_EVA2
+message("Configuration: RUN_EVA2")
+}
+else:CCG {
+DEFINES += RUN_CC_GERMANY
+LIBS += \
+-lgrid \
+-linterpol
+message("Configuration: RUN_CC_GERMANY")
+}
+else:GIS {
+DEFINES += RUN_GIS
+LIBS += \
+-lgrid \
+-linterpol
+message("Configuration: RUN_GIS")
+}
+else:error("No configuration at the start of monica.pro chosen.")
+
+# test if eom should be used
+USE_EOM { 
+#HEADERS += ../eom/src/eom.h
+#SOURCES += ../eom/src/eom.cpp
+message( "Using EOM ... " )
+}

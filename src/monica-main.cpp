@@ -632,7 +632,7 @@ int main(int argc, char** argv)
   testLandcareDSS(argc, argv);
 #endif
 
-#ifdef HERMES_MODE
+#ifdef RUN_HERMES
   runWithHermesData(argc == 2 ? string(argv[1])+"/" : "");
 #endif
 

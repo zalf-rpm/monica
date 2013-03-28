@@ -361,7 +361,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
 //------------------------------------------------------------------
 
-#ifdef HERMES_MODE
+#ifdef RUN_HERMES
 
 /**
  * Method for compatibility issues. Hermes configuration is hard coded
@@ -453,11 +453,11 @@ Monica::runWithHermesData(const std::string output_path)
   return result;
 }
 
-#endif /*#ifdef HERMES_MODE*/
+#endif /*#ifdef RUN_HERMES*/
 
 //------------------------------------------------------------------
 
-#ifdef HERMES_MODE
+#ifdef RUN_HERMES
 
 /**
  *
@@ -628,7 +628,7 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
   return res;
 }
 
-#endif /*#ifdef HERMES_MODE*/
+#endif /*#ifdef RUN_HERMES*/
 //------------------------------------------------------------------
 
 /**

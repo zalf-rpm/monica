@@ -166,3 +166,7 @@ pip-log.txt
 /monica-hermes/monica-hermes.vcxproj
 /monica-eva2/monica-eva2.vcxproj.filters
 /monica-eva2/monica-eva2.vcxproj
+/Makefile.Release
+/Makefile
+/Makefile.Debug
+/monica.pro

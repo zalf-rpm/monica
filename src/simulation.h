@@ -116,7 +116,7 @@ class Eva2SimulationConfiguration
 #endif /*#ifdef RUN_EVA2*/
 
 
-#ifdef HERMES_MODE
+#ifdef RUN_HERMES
 
 class HermesSimulationConfiguration
 {
@@ -409,7 +409,7 @@ const Monica::Result runCCGermanySimulation(const CCGermanySimulationConfigurati
 const Monica::Result runGISSimulation(const GISSimulationConfiguration *simulation_config=0);
 #endif
 
-#ifdef HERMES_MODE
+#ifdef RUN_HERMES
 const Monica::Result runWithHermesData( HermesSimulationConfiguration *hermes_config=0);
 const Monica::Result runWithHermesData(const std::string);
 #endif
