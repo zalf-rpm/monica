@@ -1,27 +1,47 @@
 /**
- * @file eva2_methods.cpp
- */
+Authors: 
+Xenia Specka <xenia.specka@zalf.de>
 
-#ifdef RUN_EVA2
+Maintainers: 
+Currently maintained by the authors.
+
+This file is part of the MONICA model. 
+Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include <cassert>
+#include <vector>
+#include <sstream>
+#include <ctime>
 
 #include "eva2_methods.h"
 #include "monica-parameters.h"
-#include "loki/Threads.h"
-#include "tools/auto-deleter.h"
+#include "debug.h"
+
 #include "tools/algorithms.h"
 #include "db/abstract-db-connections.h"
-#include <assert.h>
-#include <vector>
-#include <sstream>
-#include <time.h>
-#include "debug.h"
+
+#define LOKI_OBJECT_LEVEL_THREADING
+#include "loki/Threads.h"
 
 using namespace Db;
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace Climate;
-
 
 /**
  * @brief Lockable object
@@ -1777,7 +1797,3 @@ Monica::getEva2CropId2Crop(std::string eva2_crop, int location)
   return CropPtr();
 }
 
-//insert here
-
-
-#endif

@@ -637,7 +637,25 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef RUN_EVA2
-  runEVA2Simulation(0);
+	//MYSQL* con = mysql_init(NULL);
+  //MYSQL* con2 = mysql_real_connect(con, "141.30.160.222", "landcare", "c.1axvPb", "landcare",	3306, NULL, 0);
+	//MYSQL* con2 = mysql_real_connect(con, "mysql.zalf.de", "gast", "gast", "eva2",	3306, NULL, 0);
+	
+	//string q = "select * from header where stat_id = 1";
+	//int success = mysql_real_query(con2, q.c_str(), (unsigned int)strlen(q.c_str()));
+
+	/*
+	Eva2SimulationConfiguration *config = new Eva2SimulationConfiguration();
+	config->setClassification(1);
+	config->setFruchtFolge("01");
+	config->setLocation(16);
+	config->setVariante(1);
+	config->setOutputPath(".");
+	config->setProfil_number(1);
+	runEVA2Simulation(config);
+	*/
+	
+	runEVA2Simulation(0);
 #endif
 
 #ifdef RUN_CC_GERMANY

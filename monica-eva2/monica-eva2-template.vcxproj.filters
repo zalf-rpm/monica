@@ -78,6 +78,9 @@
     <ClInclude Include="..\..\util\db\sqlite3.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\eva2_methods.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\crop.cpp">
@@ -135,6 +138,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\..\util\db\sqlite3.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\eva2_methods.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

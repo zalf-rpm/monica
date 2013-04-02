@@ -31,22 +31,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <utility>
 
-#define LOKI_OBJECT_LEVEL_THREADING
-
-#include "loki/Threads.h"
-
 #include "boost/foreach.hpp"
-#include "debug.h"
 
 #include "db/abstract-db-connections.h"
-#include "monica-parameters.h"
+#include "climate/climate-common.h"
 #include "tools/use-stl-algo-boost-lambda.h"
-//#include "tools/auto-deleter.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
+
+#include "monica-parameters.h"
 #include "monica.h"
 #include "eva2_methods.h"
-#include "climate/climate-common.h"
+#include "debug.h"
+
+#define LOKI_OBJECT_LEVEL_THREADING
+#include "loki/Threads.h"
 
 using namespace Db;
 using namespace std;
