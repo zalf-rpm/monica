@@ -146,6 +146,11 @@ Monica::readSoilParametersForEva2(const GeneralParameters &gps, int profil_nr, i
 
         double stone = -1;
         if (! row[10].empty()) {
+            // Please test hear if a conversion of the stone content is necessary!
+            // According to Matthias Willms, the stone content provided in the
+            // eva2 database is a volumetric percent. According to the MONICA documentation
+            // the unit of the stone content is kg kg-1, a weight-based percent.
+            // Maybe a conversion is needed, a possible value can be found in the KA5.
 //            stone = satof(row[10]);
         }
 
