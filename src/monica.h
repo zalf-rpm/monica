@@ -270,6 +270,10 @@ namespace Monica
       return vs_GroundwaterDepth;
     }
 
+    bool writeOutputFiles() {return centralParameterProvider.writeOutputFiles; }
+
+
+
     double avgCorg(double depth_m) const;
     double mean90cmWaterContent() const;
     double meanWaterContent(int layer, int number_of_layers) const;

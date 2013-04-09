@@ -768,6 +768,8 @@ namespace Monica
       return _accumulatedETa;
     }
 
+    void writeCropParameters(std::string path);
+
   private:
     CropId _id;
     std::string _name;
@@ -1607,6 +1609,8 @@ namespace Monica
 
     double getPrecipCorrectionValue(int month) const;
     void setPrecipCorrectionValue(int month, double value);
+    
+    bool writeOutputFiles;
 
   private:
     double precipCorrectionValues[12];

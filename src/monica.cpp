@@ -271,6 +271,10 @@ void MonicaModel::seedCrop(CropPtr crop)
                               cps->pc_TargetN30));
 			addDailySumFertiliser(fert_amount);
 		}
+
+    if (this->writeOutputFiles()) {
+        _currentCrop->writeCropParameters(_env.pathToOutputDir);
+    }
   }
 }
 
@@ -998,7 +1002,9 @@ Result Monica::runMonica(Env env)
   {
     debug() << "write_output_files: " << write_output_files << endl;
     write_output_files = true;
+
   }
+   env.centralParameterProvider.writeOutputFiles = write_output_files;
 
   debug() << "-----" << endl;
 
@@ -2262,3 +2268,5 @@ void Monica::dumpMonicaParametersIntoFile(std::string path, CentralParameterProv
 
   parameter_output_file.close();
 }
+
+

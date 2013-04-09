@@ -1027,6 +1027,8 @@ string Seed::toString() const
   return s.str();
 }
 
+
+
 //------------------------------------------------------------------------------
 
 void Harvest::apply(MonicaModel* model)
@@ -1576,130 +1578,217 @@ void CropParameters::resizeStageOrganVectors()
 string CropParameters::toString() const
 {
   ostringstream s;
-  s << "pc_CropName: " << pc_CropName << endl
-      << "pc_NumberOfDevelopmentalStages: " << pc_NumberOfDevelopmentalStages
-      << endl << "pc_NumberOfOrgans: " << pc_NumberOfOrgans << endl
-      << "pc_AssimilatePartitioningCoeff: " << endl;
+
+  s << "pc_CropName:\t" << pc_CropName << endl;
+
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_NumberOfDevelopmentalStages:\t" << pc_NumberOfDevelopmentalStages << endl;
+  s << "pc_NumberOfOrgans:\t\t\t\t" << pc_NumberOfOrgans << endl;
+  
+  s << "------------------------------------------------" << endl;
 
   // assimilate partitioning coefficient matrix
-  for (unsigned int i = 0; i < pc_AssimilatePartitioningCoeff.size(); i++)
-  {
-    for (unsigned int j = 0; j < pc_AssimilatePartitioningCoeff[i].size(); j++)
+  s << "pc_AssimilatePartitioningCoeff:\t" << endl;
+  for (unsigned int i = 0; i < pc_AssimilatePartitioningCoeff.size(); i++)   {
+    for (unsigned int j = 0; j < pc_AssimilatePartitioningCoeff[i].size(); j++) {
       s << pc_AssimilatePartitioningCoeff[i][j] << " ";
+    }
     s << endl;
   }
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_CarboxylationPathway:\t\t\t\t" << pc_CarboxylationPathway << endl;
+  s << "pc_MaxAssimilationRate:\t\t\t\t\t" << pc_MaxAssimilationRate << endl;
+  s << "pc_MinimumTemperatureForAssimilation:\t" << pc_MinimumTemperatureForAssimilation << endl;
+  s << "pc_CropSpecificMaxRootingDepth:\t\t\t" << pc_CropSpecificMaxRootingDepth << endl;
+  s << "pc_InitialKcFactor:\t\t\t\t\t\t" << pc_InitialKcFactor << endl;
+  s << "pc_MaxCropDiameter:\t\t\t\t\t\t" << pc_MaxCropDiameter << endl;
+  s << "pc_StageAtMaxDiameter:\t\t\t\t\t" << pc_StageAtMaxDiameter << endl;
+  s << "pc_PlantDensity:\t\t\t\t\t\t" << pc_PlantDensity << endl;
+  s << "pc_DefaultRadiationUseEfficiency:\t\t" << pc_DefaultRadiationUseEfficiency << endl;
+  s << "pc_StageAfterCut:\t\t\t\t\t\t" << pc_StageAfterCut << endl;
+  s << "pc_CuttingDelayDays:\t\t\t\t\t" << pc_CuttingDelayDays << endl;
+
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_RootDistributionParam:\t\t\t" << pc_RootDistributionParam << endl;
+  s << "pc_RootGrowthLag:\t\t\t\t\t" << pc_RootGrowthLag << endl;
+  s << "pc_MinimumTemperatureRootGrowth:\t" << pc_MinimumTemperatureRootGrowth << endl;
+  s << "pc_InitialRootingDepth:\t\t\t\t" << pc_InitialRootingDepth << endl;
+  s << "pc_RootPenetrationRate:\t\t\t\t" << pc_RootPenetrationRate << endl;
+  s << "pc_RootFormFactor:\t\t\t\t\t" << pc_RootFormFactor << endl;
+  s << "pc_SpecificRootLength:\t\t\t\t" << pc_SpecificRootLength << endl;
+
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_MaxCropHeight:\t\t" << pc_MaxCropHeight << endl;
+  s << "pc_CropHeightP1:\t\t" << pc_CropHeightP1 << endl;
+  s << "pc_CropHeightP2:\t\t" << pc_CropHeightP2 << endl;
+  s << "pc_StageAtMaxHeight:\t" << pc_StageAtMaxHeight << endl;
+
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_FixingN:\t\t\t\t\t" << pc_FixingN << endl;
+  s << "pc_MinimumNConcentration:\t" << pc_MinimumNConcentration << endl;
+  s << "pc_LuxuryNCoeff:\t\t\t" << pc_LuxuryNCoeff << endl;
+  s << "pc_NConcentrationB0:\t\t" << pc_NConcentrationB0 << endl;
+  s << "pc_NConcentrationPN:\t\t" << pc_NConcentrationPN << endl;
+  s << "pc_NConcentrationRoot:\t\t" << pc_NConcentrationRoot << endl;
+  s << "pc_ResidueNRatio:\t\t\t" << pc_ResidueNRatio << endl;
+  s << "pc_MaxNUptakeParam:\t\t\t" << pc_MaxNUptakeParam << endl;
+
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_DevelopmentAccelerationByNitrogenStress:\t" << pc_DevelopmentAccelerationByNitrogenStress << endl;
+  s << "pc_NConcentrationAbovegroundBiomass:\t\t" << pc_NConcentrationAbovegroundBiomass << endl;
+  s << "pc_DroughtImpactOnFertilityFactor:\t\t\t" << pc_DroughtImpactOnFertilityFactor << endl;
+
+  s << "------------------------------------------------" << endl;
+
+  s << "pc_SamplingDepth:\t\t\t\t\t" << pc_SamplingDepth << endl;
+  s << "pc_TargetNSamplingDepth:\t\t\t" << pc_TargetNSamplingDepth << endl;
+  s << "pc_TargetN30:\t\t\t\t\t\t" << pc_TargetN30 << endl;
+  s << "pc_HeatSumIrrigationStart:\t\t\t" << pc_HeatSumIrrigationStart << endl;
+  s << "pc_HeatSumIrrigationEnd:\t\t\t" << pc_HeatSumIrrigationEnd << endl;
+  s << "pc_CriticalTemperatureHeatStress:\t" << pc_CriticalTemperatureHeatStress << endl;
+  s << "pc_LimitingTemperatureHeatStress:\t" << pc_LimitingTemperatureHeatStress << endl;
+  s << "pc_BeginSensitivePhaseHeatStress:\t" << pc_BeginSensitivePhaseHeatStress << endl;
+  s << "pc_EndSensitivePhaseHeatStress:\t\t" << pc_EndSensitivePhaseHeatStress << endl;
+
+  //s << endl;
+  s << "------------------------------------------------" << endl;
+  // above-ground organ
+  s << "pc_AbovegroundOrgan:" << endl;
+  for (unsigned i = 0; i < pc_AbovegroundOrgan.size(); i++) 
+    s << (pc_AbovegroundOrgan[i] == 1) << " ";
+
+  s << endl;
+  s << endl;
+
+  // initial organic biomass
+  s  << "pc_InitialOrganBiomass:" << endl;
+  for (unsigned int i = 0; i < pc_InitialOrganBiomass.size(); i++)
+    s << pc_InitialOrganBiomass[i] << " ";
+
+  s << endl;
+  s << endl;
+
+  // organ maintenance respiration rate
+  s << "pc_OrganMaintenanceRespiration:" << endl;
+  for (unsigned int i = 0; i < pc_OrganMaintenanceRespiration.size(); i++)
+    s << pc_OrganMaintenanceRespiration[i] << " ";
+
+  s << endl;
+  s << endl;
+
+  // organ growth respiration rate
+  s  << "pc_OrganGrowthRespiration:" << endl;
+  for (unsigned int i = 0; i < pc_OrganGrowthRespiration.size(); i++)
+    s << pc_OrganGrowthRespiration[i] << " ";
+
+  s << endl;
+  s << endl;
+
+  // organ senescence rate
+  s << "pc_OrganSenescenceRate:" << endl;
+  for (unsigned int i = 0; i < pc_OrganSenescenceRate.size(); i++) {
+    for (unsigned int j = 0; j < pc_OrganSenescenceRate[i].size(); j++) {
+      s << pc_OrganSenescenceRate[i][j] << " ";    
+    }
+    s << endl;
+ }
+
+  s << "------------------------------------------------" << endl;
+  //s << endl;  
+  //s << endl;  
+
+  // stage temperature sum
+  s << "pc_StageTemperatureSum:" << endl;
+  for (unsigned int i = 0; i < pc_StageTemperatureSum.size(); i++)
+    s << pc_StageTemperatureSum[i] << " ";
+
+  s << endl;
+  s << endl;  
 
   // Base day length
   s << "pc_BaseDaylength: " << endl;
   for (unsigned int i = 0; i < pc_BaseDaylength.size(); i++)
     s << pc_BaseDaylength[i] << " ";
-  s << endl
 
-      // base temperature
-      << "pc_BaseTemperature: " << endl;
+  s << endl;
+  s << endl;  
+
+  // base temperature
+  s << "pc_BaseTemperature: " << endl;
   for (unsigned int i = 0; i < pc_BaseTemperature.size(); i++)
     s << pc_BaseTemperature[i] << " ";
-  s << endl
 
-      << "pc_CarboxylationPathway: " << pc_CarboxylationPathway << endl
-      << "pc_CropSpecificMaxRootingDepth: " << pc_CropSpecificMaxRootingDepth << endl
+  s << endl;
+  s << endl;  
 
-      // day length requirement
-      << "pc_DaylengthRequirement: " << endl;
+  // optimum temperature
+  s << "pc_OptimumTemperature: " << endl;
+  for (unsigned int i = 0; i < pc_OptimumTemperature.size(); i++)
+    s << pc_OptimumTemperature[i] << " ";
+
+  s << endl;
+  s << endl;  
+
+  // day length requirement
+  s << "pc_DaylengthRequirement: " << endl;
   for (unsigned int i = 0; i < pc_DaylengthRequirement.size(); i++)
     s << pc_DaylengthRequirement[i] << " ";
-  s << endl
 
-      << "pc_DefaultRadiationUseEfficiency: " << pc_DefaultRadiationUseEfficiency << endl
+  s << endl;
+  s << endl;  
 
-      // drought stress treshold
-      << "pc_DroughtStressThreshold:" << endl;
+  // specific leaf area
+  s << "pc_SpecificLeafArea:" << endl;
+  for (unsigned int i = 0; i < pc_SpecificLeafArea.size(); i++)
+    s << pc_SpecificLeafArea[i] << " ";
+
+  s << endl;
+  s << endl;  
+
+  // stage max root n content
+  s << "pc_StageMaxRootNConcentration:" << endl;
+  for (unsigned int i = 0; i < pc_StageMaxRootNConcentration.size(); i++)
+    s << pc_StageMaxRootNConcentration[i] << " ";
+
+  s << endl;
+  s << endl;  
+
+  // stage kc factor
+  s << "pc_StageKcFactor:" << endl;
+  for (unsigned int i = 0; i < pc_StageKcFactor.size(); i++)
+    s << pc_StageKcFactor[i] << " ";
+
+  s << endl;
+  s << endl;  
+
+  // drought stress treshold
+  s << "pc_DroughtStressThreshold:" << endl;
   for (unsigned int i = 0; i < pc_DroughtStressThreshold.size(); i++)
     s << pc_DroughtStressThreshold[i] << " ";
 
-  s << "pc_FixingN: " << pc_FixingN << endl
-      << "pc_InitialKcFactor: " << pc_InitialKcFactor << endl
-      << "pc_LuxuryNCoeff: " << pc_LuxuryNCoeff << endl
-      << "pc_MaxAssimilationRate: " << pc_MaxAssimilationRate << endl
-      << "pc_MaxCropHeight: " << pc_MaxCropHeight << endl
-      << "pc_MinimumNConcentration: " << pc_MinimumNConcentration << endl
-      << "pc_MinimumTemperatureForAssimilation: " << pc_MinimumTemperatureForAssimilation << endl
-      << "pc_NConcentrationAbovegroundBiomass: " << pc_NConcentrationAbovegroundBiomass << endl
-      << "pc_NConcentrationB0: " << pc_NConcentrationB0 << endl
-      << "pc_NConcentrationPN: " << pc_NConcentrationPN
-      << endl << "pc_NConcentrationRoot: " << pc_NConcentrationRoot << endl
-
-      // above-ground organ
-      << "pc_AbovegroundOrgan:" << endl;
-
-  for (unsigned i = 0; i < pc_AbovegroundOrgan.size(); i++)
-    s << (pc_AbovegroundOrgan[i] == 1) << " ";
-  s << endl
-
-      // organ maintenance respiration rate
-      << "pc_OrganMaintenanceRespiration:" << endl;
-  for (unsigned int i = 0; i < pc_OrganMaintenanceRespiration.size(); i++)
-    s << pc_OrganMaintenanceRespiration[i] << " ";
-  s << endl
-
-      // organ senescence rate
-      << "pc_OrganSenescenceRate:" << endl;
-  for (unsigned int i = 0; i < pc_OrganSenescenceRate.size(); i++)
-    for (unsigned int j = 0; j < pc_OrganSenescenceRate[i].size(); j++)
-      s << pc_OrganSenescenceRate[i][j] << " ";
-  s << endl
-
-      // organ growth respiration rate
-      << "pc_OrganGrowthRespiration:" << endl;
-  for (unsigned int i = 0; i < pc_OrganGrowthRespiration.size(); i++)
-    s << pc_OrganGrowthRespiration[i] << " ";
   s << endl;
+  s << endl;  
 
-  s << "pc_ResidueNRatio: " << pc_ResidueNRatio << endl
-
-      // specific leaf area
-      << "pc_SpecificLeafArea:" << endl;
-  for (unsigned int i = 0; i < pc_SpecificLeafArea.size(); i++)
-    s << pc_SpecificLeafArea[i] << " ";
-  s << endl
-
-      // stage max root n content
-      << "pc_StageMaxRootNConcentration:" << endl;
-  for (unsigned int i = 0; i < pc_StageMaxRootNConcentration.size(); i++)
-    s << pc_StageMaxRootNConcentration[i] << " ";
-  s << endl
-
-      // stage kc factor
-      << "pc_StageKcFactor:" << endl;
-  for (unsigned int i = 0; i < pc_StageKcFactor.size(); i++)
-    s << pc_StageKcFactor[i] << " ";
-  s << endl
-
-      // stage temperature sum
-      << "pc_StageTemperatureSum:" << endl;
-  for (unsigned int i = 0; i < pc_StageTemperatureSum.size(); i++)
-    s << pc_StageTemperatureSum[i] << " ";
-  s << endl
-
-      // vernalisation requirement
-      << "pc_VernalisationRequirement:" << endl;
+  // vernalisation requirement
+  s << "pc_VernalisationRequirement:" << endl;
   for (unsigned int i = 0; i < pc_VernalisationRequirement.size(); i++)
     s << pc_VernalisationRequirement[i] << " ";
-  s << endl
 
-      << "pc_DevelopmentAccelerationByNitrogenStress: " << pc_DevelopmentAccelerationByNitrogenStress << endl
+  s << endl;
+  s << endl;  
 
-      // initial organic biomass
-      << "pc_InitialOrganBiomass:" << endl;
-  for (unsigned int i = 0; i < pc_InitialOrganBiomass.size(); i++)
-    s << pc_InitialOrganBiomass[i] << " ";
-  s << endl
-
-      // critical oxygen content
-      << "pc_CriticalOxygenContent:" << endl;
+  // critical oxygen content
+  s << "pc_CriticalOxygenContent:" << endl;
   for (unsigned int i = 0; i < pc_CriticalOxygenContent.size(); i++)
     s << pc_CriticalOxygenContent[i] << " ";
-  s << endl << "-------------------------------------------" << endl;
+
+  s << endl;
 
   return s.str();
 }
@@ -3118,6 +3207,26 @@ string Crop::toString(bool detailed) const
   return s.str();
 }
 
+
+//------------------------------------------------------------------------------
+
+void Crop::writeCropParameters(std::string path)
+{
+    ofstream parameter_output_file;
+    parameter_output_file.open((path + "crop_parameters-" + _name.c_str() + ".txt").c_str());
+    if (parameter_output_file.fail()){
+        debug() << "Could not write file\"" << (path + "crop_parameters-" + _name.c_str() + ".txt").c_str() << "\"" << endl;
+        return;
+  }
+
+  parameter_output_file << _cropParams->toString().c_str();
+
+  parameter_output_file.close();
+
+}
+
+//------------------------------------------------------------------------------
+
 /**
  * Default constructor for mineral fertilisers
  * @return
@@ -3580,6 +3689,7 @@ CentralParameterProvider::CentralParameterProvider()
   for (int i=0; i<MONTH; i++) {
     precipCorrectionValues[i] = 1.0;
   }
+  writeOutputFiles = false;
 
 }
 
