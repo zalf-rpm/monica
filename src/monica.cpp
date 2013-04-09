@@ -1714,7 +1714,7 @@ Monica::initializeGoutHeader(ofstream &gout)
   gout << "\tM0-90";
   gout << "\tPAW0-200";
   gout << "\tPAW0-130";
-  gout << "\tPAW0-140";
+  gout << "\tPAW0-150";
   gout << "\tN0-30";
   gout << "\tN30-60";
   gout << "\tN60-90";
@@ -1723,7 +1723,7 @@ Monica::initializeGoutHeader(ofstream &gout)
   gout << "\tN0-90";
   gout << "\tN0-200";
   gout << "\tN0-130";
-  gout << "\tN0-140";
+  gout << "\tN0-150";
   gout << "\tNH430";
   gout << "\tNH460";
   gout << "\tNH490";
@@ -2149,11 +2149,11 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   }
   gout << fixed << setprecision(1) << "\t" << (PAW0_130 * 0.1 * 1000.0); // [mm]
 
-    double PAW0_140 = 0.0;
-    for(int i_Layer = 0; i_Layer < 14; i_Layer++) {
-            PAW0_140 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint()) ;
+    double PAW0_150 = 0.0;
+    for(int i_Layer = 0; i_Layer < 15; i_Layer++) {
+            PAW0_150 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint()) ;
   }
-    gout << fixed << setprecision(1) << "\t" << (PAW0_140 * 0.1 * 1000.0); // [mm]
+    gout << fixed << setprecision(1) << "\t" << (PAW0_150 * 0.1 * 1000.0); // [mm]
 
   gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(0).get_SoilNmin() + msc.soilLayer(1).get_SoilNmin() + msc.soilLayer(2).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
   gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(3).get_SoilNmin() + msc.soilLayer(4).get_SoilNmin() + msc.soilLayer(5).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
@@ -2184,11 +2184,11 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   }
   gout << fixed << setprecision(2) << "\t" << (N0_130 / 13.0 * 1.3 * 10000);  // [kg m-3] -> [kg ha-1]
 
-  double N0_140 = 0.0;
-  for(int i_Layer = 0; i_Layer < 14; i_Layer++) {
-    N0_140 += msc.soilLayer(i_Layer).get_SoilNmin();
+  double N0_150 = 0.0;
+  for(int i_Layer = 0; i_Layer < 15; i_Layer++) {
+    N0_150 += msc.soilLayer(i_Layer).get_SoilNmin();
   }
-  gout << fixed << setprecision(2) << "\t" << (N0_140 / 14.0 * 1.4 * 10000);  // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (N0_150 / 14.0 * 1.5 * 10000);  // [kg m-3] -> [kg ha-1]
 
   gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(0).get_SoilNH4() + msc.soilLayer(1).get_SoilNH4() + msc.soilLayer(2).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
   gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(3).get_SoilNH4() + msc.soilLayer(4).get_SoilNH4() + msc.soilLayer(5).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
