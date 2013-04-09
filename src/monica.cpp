@@ -2164,31 +2164,31 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
     N0_60 += msc.soilLayer(i_Layer).get_SoilNmin();
   }
-  gout << fixed << setprecision(2) << "\t" << (N0_60 / 6.0 * 0.6 * 10000);  // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (N0_60 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
   double N0_90 = 0.0;
   for(int i_Layer = 0; i_Layer < 9; i_Layer++) {
     N0_90 += msc.soilLayer(i_Layer).get_SoilNmin();
   }
-  gout << fixed << setprecision(2) << "\t" << (N0_90 / 9.0 * 0.9 * 10000);  // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (N0_90 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
   double N0_200 = 0.0;
   for(int i_Layer = 0; i_Layer < 20; i_Layer++) {
     N0_200 += msc.soilLayer(i_Layer).get_SoilNmin();
   }
-  gout << fixed << setprecision(2) << "\t" << (N0_200 / 20.0 * 2.0 * 10000);  // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (N0_200 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
   double N0_130 = 0.0;
   for(int i_Layer = 0; i_Layer < 13; i_Layer++) {
     N0_130 += msc.soilLayer(i_Layer).get_SoilNmin();
   }
-  gout << fixed << setprecision(2) << "\t" << (N0_130 / 13.0 * 1.3 * 10000);  // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (N0_130 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
   double N0_150 = 0.0;
   for(int i_Layer = 0; i_Layer < 15; i_Layer++) {
     N0_150 += msc.soilLayer(i_Layer).get_SoilNmin();
   }
-  gout << fixed << setprecision(2) << "\t" << (N0_150 / 14.0 * 1.5 * 10000);  // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (N0_150 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
   gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(0).get_SoilNH4() + msc.soilLayer(1).get_SoilNH4() + msc.soilLayer(2).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
   gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(3).get_SoilNH4() + msc.soilLayer(4).get_SoilNH4() + msc.soilLayer(5).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
