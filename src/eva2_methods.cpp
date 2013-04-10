@@ -485,7 +485,10 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
   if (location == LOCATION_GUETERFELDE) {
     //id_parameter[5] = WIND_3m;
     id_parameter[5] = WIND_2m;
-    id_parameter[3] = SUNHOURS;
+    
+    // Since 2013-04-09 global radiation is used for Güterfelde simulations
+    //id_parameter[3] = SUNHOURS;
+    
     cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
   }
 
