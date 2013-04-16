@@ -510,9 +510,7 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
   if  (location == LOCATION_BERNBURG) {
       //id_parameter[5] = WIND_10m;
       cpp.userEnvironmentParameters.p_WindSpeedHeight = 8;
-      id_parameter[5] = WIND_8m;
-      id_parameter[3] = SUNHOURS;
-
+      id_parameter[5] = WIND_8m;    
   }
 
   std::vector<WStation> id_wstation[WETTER_PARAMETER_COUNT];
