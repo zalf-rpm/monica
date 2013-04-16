@@ -77,10 +77,10 @@ Monica::readSoilParametersForEva2(const GeneralParameters &gps, int profil_nr, i
     if (!initialized) {
 
       // prepare request
-      const char *request_base = "select p.Profil_Nr, p.Hor_Nr, p.HO, p.HU, p.S, p.T, p.TRD_g_jecm3, c.Corg, c.ph, p.BoArt, p.Skellet "
+      const char *request_base = "select p.id_profil, p.id_hor, p.HO_cm, p.HU_cm, p.S, p.T, p.TRD_g_jecm3, c.Corg, c.ph, p.BoArt, p.Skellet "
         "from eva2.3_31_Boden_Physik as p inner join eva2.3_32_Boden_Chemie as c "
-        "on p.Profil_Nr = c.Profil_Nr AND p.Hor_Nr = c.Hor_Nr "
-        "where p.Profil_Nr=%i and p.id_standort=%i order by Hor_Nr";
+        "on p.id_profil = c.id_profil AND p.id_hor = c.id_hor "
+        "where p.id_profil=%i and p.id_standort=%i order by id_hor";
 
 
       char request[300];
@@ -272,7 +272,7 @@ double Monica::getEffictiveRootingDepth(int profile)
   L::Lock lock(lockable);
   ostringstream request;
   request << "SELECT WE FROM 3_30_Boden_Geografie B "
-          << "WHERE profil_nr = " << profile;
+          << "WHERE id_profil = " << profile;
 
   debug() << request.str() << endl;
 
@@ -810,7 +810,7 @@ Monica::readSiteParametersForEva2(int location, int profil_nr)
 
   ostringstream request2;
   request2 << "SELECT latitude FROM 3_30_Boden_Geografie "
-            << "WHERE profil_nr=" << profil_nr;
+            << "WHERE id_profil=" << profil_nr;
   debug() << request2.str() << endl;
 
   DBRow row2;
