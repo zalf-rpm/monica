@@ -376,7 +376,20 @@ Monica::runWithHermesData(const std::string output_path)
 
   debug() << "Running hermes with configuration information from \"" << output_path.c_str() << "\"" << endl;
 
+  HermesSimulationConfiguration *hermes_config = getHermesConfigFromIni(output_path);
+
+  const Monica::Result result = runWithHermesData(hermes_config);
+
+  delete hermes_config;
+  return result;
+}
+
+
+Monica::HermesSimulationConfiguration *
+Monica::getHermesConfigFromIni(std::string output_path)
+{
   HermesSimulationConfiguration *hermes_config = new HermesSimulationConfiguration();
+
   hermes_config->setOutputPath(output_path);
   string ini_path;
   ini_path.append(output_path);
@@ -446,11 +459,7 @@ Monica::runWithHermesData(const std::string output_path)
   hermes_config->setInitSoilNitrate(ipm.valueAsDouble("init_values", "init_soil_nitrate", -1.0));
   hermes_config->setInitSoilAmmonium(ipm.valueAsDouble("init_values", "init_soil_ammonium", -1.0));
 
-
-  const Monica::Result result = runWithHermesData(hermes_config);
-
-  delete hermes_config;
-  return result;
+  return hermes_config;
 }
 
 #endif /*#ifdef RUN_HERMES*/
@@ -467,6 +476,21 @@ const Monica::Result
 Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
 {
   Monica::activateDebug = true;
+
+  Env env = getHermesEnvFromConfiguration(hermes_config);
+
+  /** @todo Do something useful with the result */
+  // start calucation of model
+  const Monica::Result& res = runMonica(env);
+
+  debug() << "Monica with data from Hermes executed" << endl;
+
+  return res;
+}
+
+Monica::Env
+Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_config)
+{
 
   debug() << "Running hermes with configuration object" << endl;
   std::string outputPath = hermes_config->getOutputPath();
@@ -608,6 +632,8 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
   env.da = climateData;
   env.cropRotation = ff;
 
+
+
   if (hermes_config->useAutomaticIrrigation()) {
     env.useAutomaticIrrigation = true;
     env.autoIrrigationParams = hermes_config->getAutomaticIrrigationParameters();
@@ -619,13 +645,7 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
     env.nMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
   }
 
-  /** @todo Do something useful with the result */
-  // start calucation of model
-  const Monica::Result& res = runMonica(env);
-
-  debug() << "Monica with data from Hermes executed" << endl;
-
-  return res;
+  return env;
 }
 
 #endif /*#ifdef RUN_HERMES*/
