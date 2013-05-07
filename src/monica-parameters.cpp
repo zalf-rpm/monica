@@ -714,45 +714,46 @@ const vector<int>& Monica::sensitivityAnalysisResultIds()
 {
   static ResultId ids[] =
   {
-    primaryYield,                   // done
-    secondaryYield,                 // done
-    cropHeight,                     // done
-    mean90cmMonthlyAvgWaterContent, // done
-    sum90cmYearlyNatDay,            // done
-    sum90cmYearlyNO3AtDay,          // done
-    maxSnowDepth,                   // done
-    sumSnowDepth,                   // done
-    sumFrostDepth,                  // done
-    avg30cmSoilTemperature,         // done
-    sum30cmSoilTemperature,         // done
-    avg0_30cmSoilMoisture,          // done
-    avg30_60cmSoilMoisture,         // done
-    avg60_90cmSoilMoisture,         // done
-    monthlySumGroundWaterRecharge,  // done
-    waterFluxAtLowerBoundary,       // done
-    avg0_30cmCapillaryRise,         // done
-    avg30_60cmCapillaryRise,        // done
-    avg60_90cmCapillaryRise,        // done
-    avg0_30cmPercolationRate,       // done
-    avg30_60cmPercolationRate,      // done
-    avg60_90cmPercolationRate,      // done
-    sumSurfaceRunOff,               // done
-    evapotranspiration,             // done
-    transpiration,                  // done
-    evaporation,                    // done
-    biomassNContent,                // done
-    sumTotalNUptake,                // done
-    sum30cmSMB_CO2EvolutionRate,    // done
-    NH3Volatilised,                 // done
-    sumNH3Volatilised,              // done
-    sum30cmActDenitrificationRate,  // done
-    leachingNAtBoundary,             // done
-    yearlySumGroundWaterRecharge,
-    yearlySumNLeaching
+//    primaryYield,                   // done
+//    secondaryYield,                 // done
+//    cropHeight,                     // done
+//    mean90cmMonthlyAvgWaterContent, // done
+//    sum90cmYearlyNatDay,            // done
+//    sum90cmYearlyNO3AtDay,          // done
+//    maxSnowDepth,                   // done
+//    sumSnowDepth,                   // done
+//    sumFrostDepth,                  // done
+//    avg30cmSoilTemperature,         // done
+//    sum30cmSoilTemperature,         // done
+//    avg0_30cmSoilMoisture,          // done
+//    avg30_60cmSoilMoisture,         // done
+//    avg60_90cmSoilMoisture,         // done
+//    monthlySumGroundWaterRecharge,  // done
+//    waterFluxAtLowerBoundary,       // done
+//    avg0_30cmCapillaryRise,         // done
+//    avg30_60cmCapillaryRise,        // done
+//    avg60_90cmCapillaryRise,        // done
+//    avg0_30cmPercolationRate,       // done
+//    avg30_60cmPercolationRate,      // done
+//    avg60_90cmPercolationRate,      // done
+//    sumSurfaceRunOff,               // done
+//    evapotranspiration,             // done
+//    transpiration,                  // done
+//    evaporation,                    // done
+//    biomassNContent,                // done
+//    sumTotalNUptake,                // done
+//    sum30cmSMB_CO2EvolutionRate,    // done
+//    NH3Volatilised,                 // done
+//    sumNH3Volatilised,              // done
+//    sum30cmActDenitrificationRate,  // done
+//    leachingNAtBoundary,             // done
+//    yearlySumGroundWaterRecharge,
+//    yearlySumNLeaching,
+    dev_stage
   };
 
   //static vector<int> v(ids, ids+2);
-  static vector<int> v(ids, ids+35);
+  static vector<int> v(ids, ids+1);
 
   return v;
 }
@@ -997,7 +998,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "heatStress");
   case OxygenStress:
     return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "oxygenStress");
-
+  case dev_stage:
+    return ResultIdInfo("Liste mit täglichen Werten für das Entwicklungsstadium", "[]", "devStage");
 	default: ;
 	}
 	return ResultIdInfo("", "");
@@ -1323,6 +1325,7 @@ Date ProductionProcess::end() const
 std::string ProductionProcess::toString() const
 {
   ostringstream s;
+
   s << "name: " << name() << " start: " << start().toString()
       << " end: " << end().toString() << endl;
   s << "worksteps:" << endl;
@@ -4163,24 +4166,66 @@ std::vector<ProductionProcess>
   BOOST_FOREACH(ProductionProcess pp, ff)
   {
     CropPtr crop = pp.crop();
+
+    const SensitivityAnalysisParameters& saps =  centralParameterProvider.sensitivityAnalysisParameters;
+
+    if (saps.sa_crop_id != crop->id() && saps.sa_crop_id>0){
+        //cout << "Do not apply SA values" << endl;
+      continue;
+    } else {
+        //cout << "CropIds: SA:\t"<< saps.sa_crop_id << "\tMONICA:\t" << crop->id() << endl;
+    }
+
     CropParameters* cps = new CropParameters((*crop->cropParameters()));
 
-    const SensitivityAnalysisParameters& saps =
-        centralParameterProvider.sensitivityAnalysisParameters;
-
     CropParameters sa_crop_params = centralParameterProvider.sensitivityAnalysisParameters.crop_parameters;
+
     // pc_DaylengthRequirement
     if (saps.crop_parameters.pc_DaylengthRequirement.size() > 0) {
-      cps->pc_DaylengthRequirement = saps.crop_parameters.pc_DaylengthRequirement;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_DaylengthRequirement.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_DaylengthRequirement.at(i);
+        double default_value = cps->pc_DaylengthRequirement.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_DaylengthRequirement = new_values;
     }
 
     // pc_VernalisationRequirement
     if (saps.crop_parameters.pc_VernalisationRequirement.size() > 0) {
-      cps->pc_VernalisationRequirement = saps.crop_parameters.pc_VernalisationRequirement;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_VernalisationRequirement.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_VernalisationRequirement.at(i);
+        double default_value = cps->pc_VernalisationRequirement.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+
+      cps->pc_VernalisationRequirement = new_values;
     }
 
     if (saps.crop_parameters.pc_CriticalOxygenContent.size() > 0) {
-      cps->pc_CriticalOxygenContent = saps.crop_parameters.pc_CriticalOxygenContent;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_CriticalOxygenContent.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_CriticalOxygenContent.at(i);
+        double default_value = cps->pc_CriticalOxygenContent.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_CriticalOxygenContent = new_values;
     }
 
     if (saps.crop_parameters.pc_InitialKcFactor != UNDEFINED) {
@@ -4188,7 +4233,18 @@ std::vector<ProductionProcess>
     }
 
     if (saps.crop_parameters.pc_StageKcFactor.size() > 0) {
-      cps->pc_StageKcFactor = saps.crop_parameters.pc_StageKcFactor;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_StageKcFactor.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_StageKcFactor.at(i);
+        double default_value = cps->pc_StageKcFactor.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_StageKcFactor = new_values;
     }
 
     // pc_StageAtMaxHeight
@@ -4204,16 +4260,38 @@ std::vector<ProductionProcess>
     if (saps.crop_parameters.pc_CropHeightP2 != UNDEFINED) {
       cps->pc_CropHeightP2 = saps.crop_parameters.pc_CropHeightP2;
     }
-
     // pc_SpecificLeafArea
     if (saps.crop_parameters.pc_SpecificLeafArea.size() > 0) {
-      cps->pc_SpecificLeafArea = saps.crop_parameters.pc_SpecificLeafArea;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_SpecificLeafArea.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_SpecificLeafArea.at(i);
+        double default_value = cps->pc_SpecificLeafArea.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_SpecificLeafArea = new_values;
     }
 
     // pc_StageTemperatureSum
     if (saps.crop_parameters.pc_StageTemperatureSum.size() > 0) {
-      cps->pc_StageTemperatureSum = saps.crop_parameters.pc_StageTemperatureSum;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_StageTemperatureSum.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_StageTemperatureSum.at(i);
+        double default_value = cps->pc_StageTemperatureSum.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_StageTemperatureSum = new_values;
     }
+
 
     // pc_LuxuryNCoeff
     if (saps.crop_parameters.pc_LuxuryNCoeff != UNDEFINED) {
@@ -4222,7 +4300,18 @@ std::vector<ProductionProcess>
 
     // pc_StageMaxRootNConcentration
     if (saps.crop_parameters.pc_StageMaxRootNConcentration.size() > 0) {
-      cps->pc_StageMaxRootNConcentration = saps.crop_parameters.pc_StageMaxRootNConcentration;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_StageMaxRootNConcentration.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_StageMaxRootNConcentration.at(i);
+        double default_value = cps->pc_StageMaxRootNConcentration.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_StageMaxRootNConcentration = new_values;
     }
 
     // pc_ResidueNRatio
@@ -4262,17 +4351,23 @@ std::vector<ProductionProcess>
 
     // pc_BaseDaylength
     if (saps.crop_parameters.pc_BaseDaylength.size() > 0) {
-      cps->pc_BaseDaylength = saps.crop_parameters.pc_BaseDaylength;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_BaseDaylength.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_BaseDaylength.at(i);
+        double default_value = cps->pc_BaseDaylength.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_BaseDaylength = new_values;
     }
 
     // pc_CarboxylationPathway
     if (saps.crop_parameters.pc_CarboxylationPathway > -9999) { // UNDEFINED
       cps->pc_CarboxylationPathway = saps.crop_parameters.pc_CarboxylationPathway;
-    }
-
-    // pc_CriticalOxygenContent
-    if (saps.crop_parameters.pc_CriticalOxygenContent.size() > 0) {
-      cps->pc_CriticalOxygenContent = saps.crop_parameters.pc_CriticalOxygenContent;
     }
 
     // pc_DefaultRadiationUseEfficiency
@@ -4282,7 +4377,18 @@ std::vector<ProductionProcess>
 
     // pc_DroughtStressThreshold {
     if (saps.crop_parameters.pc_DroughtStressThreshold.size() > 0) {
-      cps->pc_DroughtStressThreshold = saps.crop_parameters.pc_DroughtStressThreshold;
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_DroughtStressThreshold.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_DroughtStressThreshold.at(i);
+        double default_value = cps->pc_DroughtStressThreshold.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_DroughtStressThreshold = new_values;
     }
 
     // pc_MaxAssimilationRate
@@ -4336,6 +4442,7 @@ std::vector<ProductionProcess>
     }
 
 
+    //cout << cps->toString().c_str() << endl;
     crop->setCropParameters(cps);
     new_ff.push_back(pp);
   }

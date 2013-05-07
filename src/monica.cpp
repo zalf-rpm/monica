@@ -1045,8 +1045,8 @@ Result Monica::runMonica(Env env)
     dumpMonicaParametersIntoFile(env.pathToOutputDir, env.centralParameterProvider);
   }
 
-  debug() << "MonicaModel" << endl;
-  debug() << env.toString().c_str();
+  //debug() << "MonicaModel" << endl;
+  //debug() << env.toString().c_str();
   MonicaModel monica(env, env.da);
   debug() << "currentDate" << endl;
   Date currentDate = env.da.startDate();
@@ -1112,21 +1112,21 @@ Result Monica::runMonica(Env env)
     //there's something to at this day
     if(nextAbsolutePPApplicationDate == currentDate)
     {
-      cout << "applying at: " << nextPPApplicationDate.toString()
+      debug() << "applying at: " << nextPPApplicationDate.toString()
       << " absolute-at: " << nextAbsolutePPApplicationDate.toString() << endl;
       //apply everything to do at current day
-      cout << currentPP.toString().c_str() << endl;
+      //cout << currentPP.toString().c_str() << endl;
       currentPP.apply(nextPPApplicationDate, &monica);
-      cout << "1" << endl;
+
       //get the next application date to wait for (either absolute or relative)
       Date prevPPApplicationDate = nextPPApplicationDate;
-      cout << "2" << endl;
+
       nextPPApplicationDate =  currentPP.nextDate(nextPPApplicationDate);
-      cout << "3" << endl;
+
       nextAbsolutePPApplicationDate =  useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
           (currentDate.year() + (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
            true) : nextPPApplicationDate;
-      cout << "4" << endl;
+
 
       debug() << "next app-date: " << nextPPApplicationDate.toString()
           << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
@@ -1309,6 +1309,17 @@ Result Monica::runMonica(Env env)
         yearly_nleaching += monica.nLeaching();
     }
 
+    if (monica.isCropPlanted()) {
+      //cout << "monica.cropGrowth()->get_GrossPrimaryProduction()\t" << monica.cropGrowth()->get_GrossPrimaryProduction() << endl;
+
+      res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage()+1);
+
+
+    } else {
+      res.generalResults[dev_stage].push_back(0.0);
+    }
+
+    res.dates.push_back(currentDate.toMysqlString());
 
     if (write_output_files)
     {
@@ -1321,6 +1332,7 @@ Result Monica::runMonica(Env env)
     gout.close();
   }
 
+  //cout << res.dates.size() << endl;
 //  cout << res.toString().c_str();
   debug() << "returning from runMonica" << endl;
 

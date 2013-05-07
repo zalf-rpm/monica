@@ -164,6 +164,8 @@ namespace Monica
 
     int sizeGeneralResults() { return generalResults.size(); }
 
+    std::vector<std::string> dates;
+
     std::string toString();
   };
 
