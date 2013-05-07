@@ -271,7 +271,7 @@ double Monica::getEffictiveRootingDepth(int profile)
   static L lockable;
   L::Lock lock(lockable);
   ostringstream request;
-  request << "SELECT WE FROM 3_30_Boden_Geografie B "
+  request << "SELECT WE_cm FROM 3_30_Boden_Geografie B "
           << "WHERE id_profil = " << profile;
 
   debug() << request.str() << endl;
