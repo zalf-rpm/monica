@@ -4161,6 +4161,7 @@ std::vector<ProductionProcess>
     Monica::applySAChanges(std::vector<ProductionProcess> ff,
                            const CentralParameterProvider &centralParameterProvider)
 {
+  cout << "Apply SA values method" << endl;
   std::vector<ProductionProcess> new_ff;
 
   BOOST_FOREACH(ProductionProcess pp, ff)
@@ -4170,15 +4171,13 @@ std::vector<ProductionProcess>
     const SensitivityAnalysisParameters& saps =  centralParameterProvider.sensitivityAnalysisParameters;
 
     if (saps.sa_crop_id != crop->id() && saps.sa_crop_id>0){
-        //cout << "Do not apply SA values" << endl;
+        cout << "Do not apply SA values" << endl;
       continue;
     } else {
-        //cout << "CropIds: SA:\t"<< saps.sa_crop_id << "\tMONICA:\t" << crop->id() << endl;
+        cout << "CropIds: SA:\t"<< saps.sa_crop_id << "\tMONICA:\t" << crop->id() << endl;
     }
 
     CropParameters* cps = new CropParameters((*crop->cropParameters()));
-
-    CropParameters sa_crop_params = centralParameterProvider.sensitivityAnalysisParameters.crop_parameters;
 
     // pc_DaylengthRequirement
     if (saps.crop_parameters.pc_DaylengthRequirement.size() > 0) {
@@ -4291,6 +4290,24 @@ std::vector<ProductionProcess>
 
       cps->pc_StageTemperatureSum = new_values;
     }
+
+    // pc_BaseTemperature
+    if (saps.crop_parameters.pc_BaseTemperature.size() > 0) {
+      std::vector<double> new_values;
+      for (unsigned int i=0; i<cps->pc_BaseTemperature.size(); i++) {
+        double sa_value = saps.crop_parameters.pc_BaseTemperature.at(i);
+        double default_value = cps->pc_BaseTemperature.at(i);
+        if (sa_value == -9999) {
+            new_values.push_back(default_value);
+        } else {
+            new_values.push_back(sa_value);
+        }
+      }
+
+      cps->pc_BaseTemperature = new_values;
+    }
+
+
 
 
     // pc_LuxuryNCoeff
