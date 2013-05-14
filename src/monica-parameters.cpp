@@ -4161,7 +4161,7 @@ std::vector<ProductionProcess>
     Monica::applySAChanges(std::vector<ProductionProcess> ff,
                            const CentralParameterProvider &centralParameterProvider)
 {
-  cout << "Apply SA values method" << endl;
+//  cout << "Apply SA values method" << endl;
   std::vector<ProductionProcess> new_ff;
 
   BOOST_FOREACH(ProductionProcess pp, ff)
@@ -4171,10 +4171,10 @@ std::vector<ProductionProcess>
     const SensitivityAnalysisParameters& saps =  centralParameterProvider.sensitivityAnalysisParameters;
 
     if (saps.sa_crop_id != crop->id() && saps.sa_crop_id>0){
-        cout << "Do not apply SA values" << endl;
+//        cout << "Do not apply SA values" << endl;
       continue;
     } else {
-        cout << "CropIds: SA:\t"<< saps.sa_crop_id << "\tMONICA:\t" << crop->id() << endl;
+//        cout << "CropIds: SA:\t"<< saps.sa_crop_id << "\tMONICA:\t" << crop->id() << endl;
     }
 
     CropParameters* cps = new CropParameters((*crop->cropParameters()));
