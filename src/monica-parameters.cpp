@@ -1391,8 +1391,9 @@ vector<ProductionProcess>
     istringstream ss(s);
     string crp;
     string sowingDate, harvestDate, tillageDate;
+    double exp, tillage_depth;
     int t;
-    ss >> t >> crp >> sowingDate >> harvestDate >> tillageDate;
+    ss >> t >> crp >> sowingDate >> harvestDate >> tillageDate >> exp  >> tillage_depth;
 
     Date sd = parseDate(sowingDate).toDate(true);
     Date hd = parseDate(harvestDate).toDate(true);
@@ -1414,7 +1415,7 @@ vector<ProductionProcess>
     crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
 
     ProductionProcess pp(crp, crop);
-    pp.addApplication(TillageApplication(td, 0.3));
+    pp.addApplication(TillageApplication(td, (tillage_depth/100.0) ));
     //cout << "production-process: " << pp.toString() << endl;
 
     ff.push_back(pp);
@@ -1429,7 +1430,8 @@ vector<ProductionProcess>
 DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
                                                 int fromYear, int toYear,
                                                 const CentralParameterProvider& cpp,
-                                                bool useLeapYears)
+                                                bool useLeapYears,
+                                                double latitude)
 {
   DataAccessor da(Date(1, 1, fromYear, useLeapYears),
                   Date(31, 12, toYear, useLeapYears));
@@ -1447,6 +1449,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 
   for (int y = fromYear; y <= toYear; y++)
   {
+
     ostringstream yss;
     yss << y;
     string ys = yss.str();
@@ -1468,7 +1471,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
     int daysCount = 0;
     int allowedDays = Date(31, 12, y, useLeapYears).dayOfYear();
     //    cout << "tavg\t" << "tmin\t" << "tmax\t" << "wind\t"
-    debug() << "allowedDays: " << allowedDays << " " << y<< "\t" << useLeapYears << endl;
+    debug() << "allowedDays: " << allowedDays << " " << y<< "\t" << useLeapYears << "\tlatitude:\t" << latitude << endl;
     //<< "sunhours\t" << "globrad\t" << "precip\t" << "ti\t" << "relhumid\n";
     while (getline(ifs, s))
     {
@@ -1483,9 +1486,35 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
       ss >> tavg >> tmin >> tmax >> td >> td >> td >> wind
           >> sunhours >> globrad >> precip >> ti >> relhumid;
 
-      // HERMES weather files deliver global radiation as [J cm-2]
-      // Here, we push back [MJ m-2 d-1]
-      double globradMJpm2pd = globrad * 100.0 * 100.0 / 1000000.0;
+
+    
+
+      // test if globrad or sunhours should be used
+      if (globrad>=0.0 && sunhours<=0.0) {
+
+        // use globrad
+        // HERMES weather files deliver global radiation as [J cm-2]
+        // Here, we push back [MJ m-2 d-1]
+        double globradMJpm2pd = globrad * 100.0 * 100.0 / 1000000.0;
+        _globrad.push_back(globradMJpm2pd);
+
+      } else if (sunhours>=0.0 && globrad<=0.0) {
+
+         // invalid globrad use sunhours
+         // convert sunhours into globrad
+         debug() << "Invalid globrad - use sunhours instead" << endl;
+        _globrad.push_back(sunshine2globalRadiation(date.dayOfYear(), sunhours, latitude, true));         
+
+      } else {
+
+        // error case
+        debug() << "Error: No global radiation or sunhours specified for day " << date.toString().c_str() << endl;
+        debug() << "Aborting now ..." << endl;
+        exit(-1);
+      }
+        
+
+
 
       // precipitation correction by Richter values
       precip*=cpp.getPrecipCorrectionValue(date.month()-1);
@@ -1498,8 +1527,8 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
       _tmax.push_back(tmax);
       _wind.push_back(wind);
 
-      _sunhours.push_back(sunhours);
-      _globrad.push_back(globradMJpm2pd);
+
+
       _precip.push_back(precip);
       _relhumid.push_back(relhumid);
 

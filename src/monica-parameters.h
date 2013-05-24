@@ -1240,7 +1240,7 @@ namespace Monica
   Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
                                                    int fromYear, int toYear,
                                                    const CentralParameterProvider& cpp,
-                                                   bool useLeapYears = true);
+                                                   bool useLeapYears = true, double latitude = 51.2);
 
   //----------------------------------------------------------------------------
 
