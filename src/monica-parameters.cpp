@@ -267,6 +267,12 @@ namespace
       return CropPtr(new Crop(11, hermesCropId)); // Mustard
     if(hermesCropId == "PH")
       return CropPtr(new Crop(12, hermesCropId)); // Phacelia
+    if(hermesCropId == "CLV")
+      return CropPtr(new Crop(13, hermesCropId)); // Kleegras
+    if(hermesCropId == "LZG")
+      return CropPtr(new Crop(14, hermesCropId)); // Luzerne-Gras
+    if(hermesCropId == "WDG")
+      return CropPtr(new Crop(16, hermesCropId)); // Weidelgras
     if(hermesCropId == "FP")
       return CropPtr(new Crop(26, hermesCropId)); // Field pea
     if(hermesCropId == "OR")
