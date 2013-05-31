@@ -1357,7 +1357,7 @@ struct ParseDate
     r.d = atoi(d.substr(0, 2).c_str());
     r.m = atoi(d.substr(2, 2).c_str());
     r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 77 ? 2000 + r.y : 1900 + r.y;
+    r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
     return r;
   }
 } parseDate;
