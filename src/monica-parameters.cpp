@@ -1480,42 +1480,42 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
     debug() << "allowedDays: " << allowedDays << " " << y<< "\t" << useLeapYears << "\tlatitude:\t" << latitude << endl;
     //<< "sunhours\t" << "globrad\t" << "precip\t" << "ti\t" << "relhumid\n";
     while (getline(ifs, s))
-    {
-      //if(trim(s) == "end") break;
+		{
+			//if(trim(s) == "end") break;
 
-      //Tp_av Tpmin Tpmax T_s10 T_s20 vappd wind sundu radia prec jday RF
-      double td;
-      int ti;
-      double tmin, tmax, tavg, wind, sunhours, globrad, precip, relhumid;
-      istringstream ss(s);
+			//Tp_av Tpmin Tpmax T_s10 T_s20 vappd wind sundu radia prec jday RF
+			double td;
+			int ti;
+			double tmin, tmax, tavg, wind, sunhours, globrad, precip, relhumid;
+			istringstream ss(s);
 
-      ss >> tavg >> tmin >> tmax >> td >> td >> td >> wind
-          >> sunhours >> globrad >> precip >> ti >> relhumid;
+			ss >> tavg >> tmin >> tmax >> td >> td >> td >> wind
+				>> sunhours >> globrad >> precip >> ti >> relhumid;
 
-      // test if globrad or sunhours should be used
-      if(globrad >=0.0) 
+			// test if globrad or sunhours should be used
+			if(globrad >=0.0) 
       {
-	// use globrad
-        // HERMES weather files deliver global radiation as [J cm-2]
-        // Here, we push back [MJ m-2 d-1]
-        double globradMJpm2pd = globrad * 100.0 * 100.0 / 1000000.0;
-        _globrad.push_back(globradMJpm2pd);
-      } 
-      else if(sunhours >= 0.0) 
-      {
-	// invalid globrad use sunhours
-        // convert sunhours into globrad
-        // debug() << "Invalid globrad - use sunhours instead" << endl;
-        _globrad.push_back(sunshine2globalRadiation(date.dayOfYear(), sunhours, latitude, true));    
-	_sunhours.push_back(sunhours);
-      } 
-      else
-      {
-	// error case
-        debug() << "Error: No global radiation or sunhours specified for day " << date.toString().c_str() << endl;
-        debug() << "Aborting now ..." << endl;
-        exit(-1);
-      }
+				// use globrad
+				// HERMES weather files deliver global radiation as [J cm-2]
+				// Here, we push back [MJ m-2 d-1]
+				double globradMJpm2pd = globrad * 100.0 * 100.0 / 1000000.0;
+				_globrad.push_back(globradMJpm2pd);
+			} 
+			else if(sunhours >= 0.0) 
+			{
+				// invalid globrad use sunhours
+				// convert sunhours into globrad
+				// debug() << "Invalid globrad - use sunhours instead" << endl;
+				_globrad.push_back(sunshine2globalRadiation(date.dayOfYear(), sunhours, latitude, true));    
+				_sunhours.push_back(sunhours);
+			} 
+			else
+			{
+				// error case
+				debug() << "Error: No global radiation or sunhours specified for day " << date.toString().c_str() << endl;
+				debug() << "Aborting now ..." << endl;
+				exit(-1);
+			}
 			        
       // precipitation correction by Richter values
       precip*=cpp.getPrecipCorrectionValue(date.month()-1);
