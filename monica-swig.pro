@@ -3,10 +3,10 @@ include(monica.pro)
 ##################################################
 # Project file for python swig wrapping of monica
 #################################################
-SWIG_DIR = python
+SWIG_DIR = .
 # swig configuration ###################################
 #global defaults
-isEmpty(SWIG_DIR):SWIG_DIR = python
+isEmpty(SWIG_DIR):SWIG_DIR = .
 isEmpty(SWIG_CMD):SWIG_CMD = swig -python -c++ -w -shadow
 
 #dependency to generate *_wrap.cxx from *.i
@@ -36,7 +36,7 @@ QMAKE_EXTRA_COMPILERS += swig
 TEMPLATE = lib
 TARGET = _monica
 OBJECTS_DIR = obj
-DESTDIR = python
+DESTDIR = .
 CONFIG  += console plugin no_plugin_name_prefix debug
 CONFIG  += no_include_pwd -w
 CONFIG -= qt
@@ -52,7 +52,7 @@ QMAKE_CXXFLAGS += -pg -w
 QMAKE_LFLAGS += -pg -w
 
 
-SWIG_FILES = python/monica.i
+SWIG_FILES = monica.i
 
 # HEADERS += src/monica-swig.h
 

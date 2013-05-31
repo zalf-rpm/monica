@@ -170,3 +170,10 @@ pip-log.txt
 /Makefile
 /Makefile.Debug
 /monica.pro
+
+# Python SWIG
+_monica.so
+monica.py
+monica
+monica_wrap.cxx
+

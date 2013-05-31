@@ -233,7 +233,8 @@ namespace Monica
     NStress,
     WaterStress,
     HeatStress,
-    OxygenStress
+    OxygenStress,
+    dev_stage,
 
 
 
@@ -1239,7 +1240,7 @@ namespace Monica
   Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
                                                    int fromYear, int toYear,
                                                    const CentralParameterProvider& cpp,
-                                                   bool useLeapYears = true);
+                                                   bool useLeapYears = true, double latitude = 51.2);
 
   //----------------------------------------------------------------------------
 
@@ -1521,7 +1522,8 @@ namespace Monica
           vs_SoilTemperature(UNDEFINED),
           vc_SoilCoverage(UNDEFINED),
           vc_MaxRootingDepth(UNDEFINED),
-          vc_RootDiameter(UNDEFINED)
+          vc_RootDiameter(UNDEFINED),
+          sa_crop_id(-1)
       {
           crop_parameters.pc_InitialKcFactor = UNDEFINED;
           crop_parameters.pc_StageAtMaxHeight = UNDEFINED;
@@ -1535,7 +1537,7 @@ namespace Monica
           crop_parameters.pc_InitialRootingDepth = UNDEFINED;
           crop_parameters.pc_RootFormFactor = UNDEFINED;
           crop_parameters.pc_MaxNUptakeParam = UNDEFINED;
-          crop_parameters.pc_CarboxylationPathway = UNDEFINED_INT;
+          crop_parameters.pc_CarboxylationPathway = UNDEFINED;
           crop_parameters.pc_MaxAssimilationRate = UNDEFINED;
           crop_parameters.pc_MaxCropDiameter = UNDEFINED;
           crop_parameters.pc_MinimumNConcentration = UNDEFINED;
@@ -1578,6 +1580,7 @@ namespace Monica
 
       CropParameters crop_parameters;
       OrganicMatterParameters organic_matter_parameters;
+      int sa_crop_id;
   };
 
   //----------------------------------------------------------------------------

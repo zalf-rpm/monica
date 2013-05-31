@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SIMULATION_H_
 
 // must be activated when building monica for python
-//#define TEST_WITH_HERMES_DATA
+// #define RUN_HERMES
 // #define RUN_EVA2
 //#define RUN_CC_GERMANY
 //#define RUN_GIS
@@ -143,6 +143,8 @@ public:
 	    NMinFertiliser(false)
 	{}
 	~HermesSimulationConfiguration(){}
+
+
 
     // setter
     void setOutputPath(std::string output_path) { this->outputPath = output_path; }
@@ -296,6 +298,10 @@ public:
     Monica::NMinUserParameters nMinUserParameters;
     Monica::AutomaticIrrigationParameters automaticIrrigationParameters;
 };
+
+
+HermesSimulationConfiguration * getHermesConfigFromIni(std::string output_path);
+Monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
 
 #endif
 

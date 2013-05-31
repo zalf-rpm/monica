@@ -195,7 +195,7 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 void SoilOrganic::addOrganicMatter(const OrganicMatterParameters* params,
 			     double amount, double nConcentration)
 {
-  cout << "SoilOrganic: addOrganicMatter: " << params->toString().c_str() << endl;
+  debug() << "SoilOrganic: addOrganicMatter: " << params->toString().c_str() << endl;
   double vo_AddedOrganicMatterAmount = amount;
   double vo_AddedOrganicMatterNConcentration = nConcentration;
 
