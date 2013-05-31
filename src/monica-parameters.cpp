@@ -1494,24 +1494,24 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 
       // test if globrad or sunhours should be used
       if(globrad >=0.0) 
-			{
-				// use globrad
+      {
+	// use globrad
         // HERMES weather files deliver global radiation as [J cm-2]
         // Here, we push back [MJ m-2 d-1]
         double globradMJpm2pd = globrad * 100.0 * 100.0 / 1000000.0;
         _globrad.push_back(globradMJpm2pd);
-			} 
-			else if(sunhours >= 0.0) 
-			{
-				// invalid globrad use sunhours
-         // convert sunhours into globrad
-         debug() << "Invalid globrad - use sunhours instead" << endl;
+      } 
+      else if(sunhours >= 0.0) 
+      {
+	// invalid globrad use sunhours
+        // convert sunhours into globrad
+        // debug() << "Invalid globrad - use sunhours instead" << endl;
         _globrad.push_back(sunshine2globalRadiation(date.dayOfYear(), sunhours, latitude, true));    
-				_sunhours.push_back(sunhours);
-			} 
-			else
-			{
-				// error case
+	_sunhours.push_back(sunhours);
+      } 
+      else
+      {
+	// error case
         debug() << "Error: No global radiation or sunhours specified for day " << date.toString().c_str() << endl;
         debug() << "Aborting now ..." << endl;
         exit(-1);
