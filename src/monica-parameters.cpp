@@ -3364,6 +3364,8 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
   Date currentEnd = it->end();
   while (getline(ifs, s))
   {
+	  if(trim(s) == "")
+		  continue;
     if (trim(s) == "end")
       break;
 
@@ -3507,7 +3509,8 @@ Monica::attachIrrigationApplicationsToCropRotation(std::vector<ProductionProcess
     }
 
     //finally add the application to the current crops list
-    it->addApplication(IrrigationApplication(idate, mm, IrrigationParameters(ncc, scc)));
+	if(it != cr.end())
+		it->addApplication(IrrigationApplication(idate, mm, IrrigationParameters(ncc, scc)));
 
     //cout << "----------------------------------" << endl;
   }
