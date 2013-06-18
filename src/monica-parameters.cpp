@@ -415,6 +415,9 @@ namespace
       return make_pair(organic, 22); // Weeds
     if (name == "YP3")
       return make_pair(mineral, 13); //01.00 0.43 0.57 0.00 1.00 1.00 kg N/ha 	M Yara Pellon Y3
+    if (name == "PIAM")
+      return make_pair(mineral, 17); //0.00 0.23 0.77 Piammon - Ammonsulfat Harnstoff
+      
 
     cout << "Error: Cannot find fertiliser " << name << " in hermes fertiliser map. Aborting..." << endl;
     exit(-1);
