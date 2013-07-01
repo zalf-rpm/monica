@@ -569,7 +569,8 @@ void MonicaModel::cropStep(unsigned int stepNo)
   double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
   double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
   double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-  double sunhours = _dataAccessor.dataForTimestep(Climate::sunhours, stepNo);
+  double sunhours = _dataAccessor.hasAvailableClimateData(Climate::sunhours) ?
+	  _dataAccessor.dataForTimestep(Climate::sunhours, stepNo) : -1.0;		
   double relhumid =  _dataAccessor.dataForTimestep(Climate::relhumid, stepNo);
   double wind =  _dataAccessor.dataForTimestep(Climate::wind, stepNo);
   double precip =  _dataAccessor.dataForTimestep(Climate::precip, stepNo);

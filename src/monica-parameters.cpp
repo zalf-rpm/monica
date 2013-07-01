@@ -1555,7 +1555,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 	da.addClimateData(relhumid, _relhumid);
 	da.addClimateData(wind, _wind);
 	da.addClimateData(precip, _precip);
-	if(!_sunhours.empty())
+	if(_sunhours.size() == _globrad.size())
 		da.addClimateData(sunhours, _sunhours);
 
   return da;
