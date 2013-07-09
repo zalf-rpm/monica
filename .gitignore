@@ -62,6 +62,9 @@ local.properties
 *.vspscc
 .builds
 *.dotCover
+*.tlog
+
+
 
 ## TODO: If you have NuGet Package Restore enabled, uncomment this
 #packages/
@@ -176,4 +179,15 @@ _monica.so
 monica.py
 monica
 monica_wrap.cxx
+monica-swig/monica_wrap.cxx
+monica-swig/_monica.pyd
+monica-swig/monica.lastbuildstate
+monica-swig/monica.py
+monica-swig/monica.log
+monica-swig/*.log
+monica-swig/UpgradeLog.htm
+
+installer/Hohenfinow2/crop_parameters*.txt
+installer/Hohenfinow2/monica_parameters.txt
+installer/Hohenfinow2/*.dat
 
