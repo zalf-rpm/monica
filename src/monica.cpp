@@ -1023,19 +1023,19 @@ Result Monica::runMonica(Env env)
 //    ___c++;
 
     // open rmout.dat
-    debug() << "Outputpath: " << (env.pathToOutputDir+"rmout.dat").c_str() << endl;
-    fout.open((env.pathToOutputDir+"rmout.dat").c_str());
+    debug() << "Outputpath: " << (env.pathToOutputDir+"/rmout.dat").c_str() << endl;
+    fout.open((env.pathToOutputDir+"/rmout.dat").c_str());
     if (fout.fail())
     {
-      debug() << "Error while opening output file \"" << (env.pathToOutputDir+"rmout.dat").c_str() << "\"" << endl;
+      debug() << "Error while opening output file \"" << (env.pathToOutputDir+"/rmout.dat").c_str() << "\"" << endl;
       return res;
     }
 
     // open smout.dat
-    gout.open((env.pathToOutputDir+"smout.dat").c_str());
+    gout.open((env.pathToOutputDir+"/smout.dat").c_str());
     if (gout.fail())
     {
-      debug() << "Error while opening output file \"" << (env.pathToOutputDir+"smout.dat").c_str() << "\"" << endl;
+      debug() << "Error while opening output file \"" << (env.pathToOutputDir+"/smout.dat").c_str() << "\"" << endl;
       return res;
     }
 
@@ -2226,9 +2226,9 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 void Monica::dumpMonicaParametersIntoFile(std::string path, CentralParameterProvider &cpp)
 {
   ofstream parameter_output_file;
-  parameter_output_file.open((path + "monica_parameters.txt").c_str());
+  parameter_output_file.open((path + "/monica_parameters.txt").c_str());
   if (parameter_output_file.fail()){
-      debug() << "Could not write file\"" << (path + "monica_parameters.txt").c_str() << "\"" << endl;
+      debug() << "Could not write file\"" << (path + "/monica_parameters.txt").c_str() << "\"" << endl;
       return;
   }
   //double po_AtmosphericResistance; //0.0025 [s m-1], from Sadeghi et al. 1988

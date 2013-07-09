@@ -50,12 +50,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <fstream>
 #include <sys/stat.h>
+#include <io.h>
 
 #include <boost/foreach.hpp>
 
 using namespace Monica;
 using namespace std;
 using namespace Tools;
+
 
 #ifdef RUN_EVA2
 
@@ -71,6 +73,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 {
   cout<< "runEVA2Simulation" << endl;
   Monica::activateDebug = true;
+
 
   // eva2 controlling parameters
   int location;
@@ -145,24 +148,26 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
       classification = simulation_config->getClassification();
       variante = simulation_config->getVariante();
       fruchtfolge = simulation_config->getFruchtFolge();
-
+	  
+	  
       output_path = simulation_config->getOutputPath();
       start_date = simulation_config->getStartDate();
       end_date = simulation_config->getEndDate();
-
-      fruchtart = simulation_config->getFruchtArt();
+	  fruchtart = simulation_config->getFruchtArt();
       fruchtfolge_glied = simulation_config->getFruchtfolgeGlied();
       fruchtfolgeYear = simulation_config->getFruchtfolgeYear();
       anlagen = simulation_config->getFfgAnlage();
-
+	  
       // creating output directory if this does not exist
-      struct stat st;
-      if (stat(output_path.c_str(),&st) != 0) {
+      
+      if (access( output_path.c_str(), 0 ) != 0 ) {
           // creating output dir if this does not exist
           ostringstream command;
-          command << "mkdir " << output_path;
-          system(command.str().c_str());
+          command << "mkdir \"" << output_path << "\"";
+
+		  system(command.str().c_str());
       }
+	  debug() << "Test 5" << endl;
       pseudo = simulation_config->isPseudoSimulation();
   }
 
@@ -170,7 +175,8 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   debug() << "* Running eva2 simulation" << endl;
   debug() << "* Standort:\t" << location << endl;
   debug() << "* Profil:\t" << profil_nr << endl;
-
+  debug() << "* Startdate:\t" << start_date.toString().c_str() << endl;
+  debug() << "* Enddate:\t" << end_date.toString().c_str() << endl;
 
   unsigned int size = fruchtfolge_glied.size();
   cout << fruchtfolge_glied.size() << endl;
@@ -309,7 +315,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   // write crop rotation data into file
   ostringstream ff_filestream;
   std::transform(locationName.begin(), locationName.end(), locationName.begin(), ::tolower);
-  ff_filestream << output_path <<  locationName << "_arbeitsschritte" << "_ff" + fruchtfolge << "_anlage"
+  ff_filestream << output_path  << "/" <<  locationName << "_arbeitsschritte" << "_ff" + fruchtfolge << "_anlage"
       << variante << "_profil-" << profil_nr << ".txt";
   ofstream ff_file;
   ff_file.open((ff_filestream.str()).c_str());
@@ -321,7 +327,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
   // write soil information of each individual soil layer to file
   ostringstream soildata_file;
-  soildata_file << output_path <<  locationName << "_soildata" << "_ff" + fruchtfolge << "_anlage"
+  soildata_file << output_path << "/"<< locationName << "_soildata" << "_ff" + fruchtfolge << "_anlage"
       << variante << "_profil-" << profil_nr << ".txt";
   ofstream file;
   file.open((soildata_file.str()).c_str());

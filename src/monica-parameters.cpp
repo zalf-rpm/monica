@@ -3247,7 +3247,7 @@ string Crop::toString(bool detailed) const
 void Crop::writeCropParameters(std::string path)
 {
     ofstream parameter_output_file;
-    parameter_output_file.open((path + "crop_parameters-" + _name.c_str() + ".txt").c_str());
+    parameter_output_file.open((path + "/crop_parameters-" + _name.c_str() + ".txt").c_str());
     if (parameter_output_file.fail()){
         debug() << "Could not write file\"" << (path + "crop_parameters-" + _name.c_str() + ".txt").c_str() << "\"" << endl;
         return;
