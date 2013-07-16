@@ -430,7 +430,7 @@ Monica::checkUnit(int id_parameter, std::string wstation)
   // request conversion factor from database
   ostringstream request_conv;
   request_conv << "SELECT faktor FROM S_Umrechnung_Einheiten "
-      << "WHERE original_einheit=\"" << unit << "\" AND ziel_einheit_monica=\"MJ/m2d\"";
+      << "WHERE quell_einheit=\"" << unit << "\" AND ziel_einheit=\"MJ/m2d\"";
   debug() << request_conv.str() << endl;
 
   double conversion_factor=1.0;

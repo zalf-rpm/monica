@@ -626,6 +626,7 @@ int main(int argc, char** argv)
 
     //use the non-default db-conections-core.ini
 		dbConnectionParameters("db-connections.ini");//-win32.ini");
+
 #endif
 
 #ifdef RUN_LANDCARE_DSS

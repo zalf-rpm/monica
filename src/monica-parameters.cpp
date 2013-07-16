@@ -415,6 +415,9 @@ namespace
       return make_pair(organic, 22); // Weeds
     if (name == "YP3")
       return make_pair(mineral, 13); //01.00 0.43 0.57 0.00 1.00 1.00 kg N/ha 	M Yara Pellon Y3
+    if (name == "PIAM")
+      return make_pair(mineral, 17); //0.00 0.23 0.77 Piammon - Ammonsulfat Harnstoff
+      
 
     cout << "Error: Cannot find fertiliser " << name << " in hermes fertiliser map. Aborting..." << endl;
     exit(-1);
@@ -1366,7 +1369,7 @@ struct ParseDate
     r.d = atoi(d.substr(0, 2).c_str());
     r.m = atoi(d.substr(2, 2).c_str());
     r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 77 ? 2000 + r.y : 1900 + r.y;
+    r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
     return r;
   }
 } parseDate;
@@ -1552,7 +1555,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 	da.addClimateData(relhumid, _relhumid);
 	da.addClimateData(wind, _wind);
 	da.addClimateData(precip, _precip);
-	if(!_sunhours.empty())
+	if(_sunhours.size() == _globrad.size())
 		da.addClimateData(sunhours, _sunhours);
 
   return da;
@@ -3244,7 +3247,7 @@ string Crop::toString(bool detailed) const
 void Crop::writeCropParameters(std::string path)
 {
     ofstream parameter_output_file;
-    parameter_output_file.open((path + "crop_parameters-" + _name.c_str() + ".txt").c_str());
+    parameter_output_file.open((path + "/crop_parameters-" + _name.c_str() + ".txt").c_str());
     if (parameter_output_file.fail()){
         debug() << "Could not write file\"" << (path + "crop_parameters-" + _name.c_str() + ".txt").c_str() << "\"" << endl;
         return;
@@ -3364,6 +3367,8 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
   Date currentEnd = it->end();
   while (getline(ifs, s))
   {
+	  if(trim(s) == "")
+		  continue;
     if (trim(s) == "end")
       break;
 
@@ -3507,7 +3512,8 @@ Monica::attachIrrigationApplicationsToCropRotation(std::vector<ProductionProcess
     }
 
     //finally add the application to the current crops list
-    it->addApplication(IrrigationApplication(idate, mm, IrrigationParameters(ncc, scc)));
+	if(it != cr.end())
+		it->addApplication(IrrigationApplication(idate, mm, IrrigationParameters(ncc, scc)));
 
     //cout << "----------------------------------" << endl;
   }

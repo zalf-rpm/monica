@@ -830,10 +830,10 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
        sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian */
 
       /** @todo Claas: Bodenwasser ist hier noch konstant wegen Test mit HERMES*/
-      d_SoilMoisture_m3 = 0.6;
+      //d_SoilMoisture_m3 = 0.6;
 
 
-			if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)
+	  if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)
 					&& (soilColumn.vs_SurfaceWaterStorage < 0.001)){
 				// Germination only if soil water content in top layer exceeds
 				// 20% of capillary water, but is not beyond field capacity and
