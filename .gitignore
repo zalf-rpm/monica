@@ -191,3 +191,4 @@ installer/Hohenfinow2/crop_parameters*.txt
 installer/Hohenfinow2/monica_parameters.txt
 installer/Hohenfinow2/*.dat
 
+/db-connections.ini
