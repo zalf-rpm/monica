@@ -20,11 +20,12 @@
     <ClInclude Include="..\..\util\tools\date.h" />
     <ClInclude Include="..\..\util\tools\helper.h" />
     <ClInclude Include="..\..\util\tools\read-ini.h" />
+    <ClInclude Include="..\src\conversion.h" />
     <ClInclude Include="..\src\crop.h" />
     <ClInclude Include="..\src\debug.h" />
     <ClInclude Include="..\src\eva2_methods.h" />
-    <ClInclude Include="..\src\monica-eom.h" />
     <ClInclude Include="..\src\monica-parameters.h" />
+    <ClInclude Include="..\src\monica-typedefs.h" />
     <ClInclude Include="..\src\monica.h" />
     <ClInclude Include="..\src\simulation.h" />
     <ClInclude Include="..\src\soilcolumn.h" />
@@ -32,7 +33,6 @@
     <ClInclude Include="..\src\soilorganic.h" />
     <ClInclude Include="..\src\soiltemperature.h" />
     <ClInclude Include="..\src\soiltransport.h" />
-    <ClInclude Include="..\src\typedefs.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\util\climate\climate-common.cpp" />
@@ -42,11 +42,11 @@
     <ClCompile Include="..\..\util\tools\algorithms.cpp" />
     <ClCompile Include="..\..\util\tools\date.cpp" />
     <ClCompile Include="..\..\util\tools\read-ini.cpp" />
+    <ClCompile Include="..\src\conversion.cpp" />
     <ClCompile Include="..\src\crop.cpp" />
     <ClCompile Include="..\src\debug.cpp" />
     <ClCompile Include="..\src\eva2_methods.cpp" />
-    <ClCompile Include="..\src\monica-eom.cpp" />
-    <ClCompile Include="..\src\monica-main.cpp" />
+    <ClCompile Include="..\src\monica-eva-main.cpp" />
     <ClCompile Include="..\src\monica-parameters.cpp" />
     <ClCompile Include="..\src\monica.cpp" />
     <ClCompile Include="..\src\simulation.cpp" />
@@ -84,26 +84,25 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\..\mariadb_client-1.0.0-win32\mariadbclient\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\mariadb_client-1.0.0-win32\lib;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\..\..\mariadb_client-1.0.0-win32\mariadbclient\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>..\..\..\mariadb_client-1.0.0-win32\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86);</LibraryPath>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>RUN_EVA2;WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RUN_EVA2;WINSOCK2;WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalIncludeDirectories>..\..\..\mariadb_client-1.0.0-win32\mariadbclient\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>libmariadb.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\mariadb_client-1.0.0-win32\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,7 +111,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>RUN_EVA2;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RUN_EVA2;WINSOCK2;WIN32;MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\mariadb_client-1.0.0-win32\mariadbclient\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -120,6 +120,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>libmariadb.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\mariadb_client-1.0.0-win32\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

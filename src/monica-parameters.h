@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
-#include "typedefs.h"
+#include "monica-typedefs.h"
 
 namespace Monica
 {
@@ -60,8 +60,8 @@ namespace Monica
   const double UNDEFINED = -9999.9;
   const int UNDEFINED_INT = -9999;
   
-  double KA52clay(std::string bodenart);
-  double KA52sand(std::string bodenart);
+//  double KA52clay(std::string bodenart);
+//  double KA52sand(std::string bodenart);
 
   enum Region
   {
@@ -425,10 +425,10 @@ namespace Monica
      */
     int ps_NumberOfLayers() const { return ps_LayerThickness.size(); }
 
-    std::vector<double> ps_LayerThickness; /**<  */
+    std::vector<double> ps_LayerThickness; 
 
-    double ps_ProfileDepth; /**<  */
-    double ps_MaxMineralisationDepth; /**<  */
+    double ps_ProfileDepth; 
+    double ps_MaxMineralisationDepth;
   };
 
   //----------------------------------------------------------------------------

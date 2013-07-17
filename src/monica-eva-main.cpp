@@ -1,5 +1,7 @@
 /**
 Authors: 
+Dr. Claas Nendel <claas.nendel@zalf.de>
+Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
 Maintainers: 
@@ -22,14 +24,40 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MONICA_TYPEDEFS_H
-#define MONICA_TYPEDEFS_H
 
 #include <string>
 
-namespace Monica
-{
-  typedef int CropId;
-}
+#include "db/abstract-db-connections.h"
+#include "simulation.h"
 
-#endif // TYPEDEFS_H
+using namespace std;
+using namespace Db;
+
+/**
+ * Main routine of stand alone model.
+ * @param argc Number of program's arguments
+ * @param argv Pointer of program's arguments
+ */
+int main(int argc, char** argv)
+{
+#if WIN32
+    setlocale(LC_ALL, "");
+    setlocale(LC_NUMERIC, "C");
+
+    //use the non-default db-conections-core.ini
+		dbConnectionParameters("db-connections.ini");
+#endif
+	
+	/*
+	Eva2SimulationConfiguration *config = new Eva2SimulationConfiguration();
+	config->setClassification(1);
+	config->setFruchtFolge("01");
+	config->setLocation(16);
+	config->setVariante(1);
+	config->setOutputPath(".");
+	config->setProfil_number(1);
+	runEVA2Simulation(config);
+	*/
+	
+	Monica::runEVA2Simulation(0);
+}

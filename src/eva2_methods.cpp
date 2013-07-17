@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "eva2_methods.h"
 #include "monica-parameters.h"
 #include "debug.h"
+#include "conversion.h"
 
 #include "tools/algorithms.h"
 #include "db/abstract-db-connections.h"

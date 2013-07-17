@@ -1,6 +1,8 @@
 /**
 Authors: 
 Michael Berg <michael.berg@zalf.de>
+Dr. Claas Nendel <claas.nendel@zalf.de>
+Xenia Specka <xenia.specka@zalf.de>
 
 Maintainers: 
 Currently maintained by the authors.
@@ -23,30 +25,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MONICAEOM_H
-#define MONICAEOM_H
+#ifndef CONVERSION_H_
+#define CONVERSION_H_
 
-#include "monica-typedefs.h"
-#include "eom/src/eom-typedefs.h"
+#include <string>
 
-namespace Monica
+namespace Tools
 {
-  enum TillageType { plough = 1, conserving = 2, noTillage = 3 };
+	double humus_st2corg(int humus_st);
 
-  struct EomPVPInfo
-  {
-    EomPVPInfo()
-      : pvpId(-1), cropId(-1), tillageType(plough),
-      crossCropAdaptionFactor(0.0) {}
-    Eom::PVPId pvpId;
-    CropId cropId;
-    TillageType tillageType;
-    double crossCropAdaptionFactor;
-  };
+	double ld_eff2trd(int ldEff, double clay);
 
-  EomPVPInfo eomPVPId2cropId(Eom::PVPId pvpId);
+	double texture2lambda(double sand, double clay);
 
-  int eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
+	//! sand and clay [0 - 1]
+	std::string texture2KA5(double sand, double clay);
+
+	double KA52sand(std::string soilType);
+
+	double KA52clay(std::string soilType);
 }
 
-#endif // MONICAEOM_H
+
+#endif //CONVERSION_H_

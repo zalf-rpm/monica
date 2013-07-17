@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // must be activated when building monica for python
 // #define RUN_HERMES
-#define RUN_EVA2
+// #define RUN_EVA2
 //#define RUN_CC_GERMANY
 //#define RUN_GIS
 
@@ -422,7 +422,6 @@ const Monica::Result runWithHermesData(const std::string);
 
 //void writeSoilPMsToFile(std::string path, const std::vector<SoilParameters> *soil_pms, int mode);
 void activateDebugOutput(bool);
-
 
 }
 

@@ -1,12 +1,13 @@
 /**
 Authors: 
+Dr. Claas Nendel <claas.nendel@zalf.de>
+Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
 Maintainers: 
 Currently maintained by the authors.
 
-This file is part of the util library used by models created at the Institute of 
-Landscape Systems Analysis at the ZALF.
+This file is part of the MONICA model. 
 Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 This program is free software: you can redistribute it and/or modify
@@ -23,30 +24,29 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MONICAEOM_H
-#define MONICAEOM_H
+#include <string>
 
-#include "monica-typedefs.h"
-#include "eom/src/eom-typedefs.h"
+#include "db/abstract-db-connections.h"
 
-namespace Monica
+#include "debug.h"
+#include "simulation.h"
+
+using namespace std;
+
+/**
+ * Main routine of stand alone model.
+ * @param argc Number of program's arguments
+ * @param argv Pointer of program's arguments
+ */
+int main(int argc, char** argv)
 {
-  enum TillageType { plough = 1, conserving = 2, noTillage = 3 };
+#if WIN32
+    setlocale(LC_ALL, "");
+    setlocale(LC_NUMERIC, "C");
 
-  struct EomPVPInfo
-  {
-    EomPVPInfo()
-      : pvpId(-1), cropId(-1), tillageType(plough),
-      crossCropAdaptionFactor(0.0) {}
-    Eom::PVPId pvpId;
-    CropId cropId;
-    TillageType tillageType;
-    double crossCropAdaptionFactor;
-  };
+    //use the non-default db-conections-core.ini
+		Db::dbConnectionParameters("db-connections.ini");
+#endif
 
-  EomPVPInfo eomPVPId2cropId(Eom::PVPId pvpId);
-
-  int eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
+		Monica::runWithHermesData(argc == 2 ? string(argv[1])+"/" : "");
 }
-
-#endif // MONICAEOM_H

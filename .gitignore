@@ -192,3 +192,7 @@ installer/Hohenfinow2/monica_parameters.txt
 installer/Hohenfinow2/*.dat
 
 /db-connections.ini
+/monica-mpmas/BRA010
+/monica-mpmas/BRA009BSL_.err
+/monica-mpmas/BRA010BSL_.err
+/monica-mpmas/BRA009

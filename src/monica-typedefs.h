@@ -5,8 +5,7 @@ Michael Berg <michael.berg@zalf.de>
 Maintainers: 
 Currently maintained by the authors.
 
-This file is part of the util library used by models created at the Institute of 
-Landscape Systems Analysis at the ZALF.
+This file is part of the MONICA model. 
 Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 This program is free software: you can redistribute it and/or modify
@@ -23,30 +22,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MONICAEOM_H
-#define MONICAEOM_H
+#ifndef MONICA_TYPEDEFS_H
+#define MONICA_TYPEDEFS_H
 
-#include "monica-typedefs.h"
-#include "eom/src/eom-typedefs.h"
+#include <string>
 
 namespace Monica
 {
-  enum TillageType { plough = 1, conserving = 2, noTillage = 3 };
-
-  struct EomPVPInfo
-  {
-    EomPVPInfo()
-      : pvpId(-1), cropId(-1), tillageType(plough),
-      crossCropAdaptionFactor(0.0) {}
-    Eom::PVPId pvpId;
-    CropId cropId;
-    TillageType tillageType;
-    double crossCropAdaptionFactor;
-  };
-
-  EomPVPInfo eomPVPId2cropId(Eom::PVPId pvpId);
-
-  int eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
+  typedef int CropId;
 }
 
-#endif // MONICAEOM_H
+#endif // MONICA_TYPEDEFS_H
