@@ -21,9 +21,6 @@
     <ClInclude Include="..\src\debug.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\monica-eom.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\monica-parameters.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -48,10 +45,13 @@
     <ClInclude Include="..\src\soiltransport.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\typedefs.h">
+    <ClInclude Include="..\..\util\db\abstract-db-connections.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\..\util\tools\algorithms.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\climate\climate-common.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\..\util\tools\datastructures.h">
@@ -60,22 +60,25 @@
     <ClInclude Include="..\..\util\tools\date.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\util\db\db.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\util\tools\helper.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\..\util\tools\read-ini.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\util\db\abstract-db-connections.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\util\db\db.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\util\db\sqlite3.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\util\climate\climate-common.h">
+    <ClInclude Include="..\src\monica-typedefs.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\conversion.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\eva_methods.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -84,12 +87,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\src\debug.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\monica-eom.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\monica-main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\src\monica-parameters.cpp">
@@ -116,10 +113,19 @@
     <ClCompile Include="..\src\soiltransport.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\util\tools\algorithms.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\util\climate\climate-common.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\util\tools\date.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\db\db.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\..\util\tools\read-ini.cpp">
@@ -128,19 +134,14 @@
     <ClCompile Include="..\..\util\db\sqlite3.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp">
+    <ClCompile Include="..\src\monica-eva-main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\util\db\db.cpp">
+    <ClCompile Include="..\src\conversion.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\util\climate\climate-common.cpp">
+    <ClCompile Include="..\src\eva_methods.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\monica.rc">
-      <Filter>Ressourcendateien</Filter>
-    </ResourceCompile>
   </ItemGroup>
 </Project>

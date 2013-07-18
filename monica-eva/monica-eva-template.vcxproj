@@ -23,7 +23,7 @@
     <ClInclude Include="..\src\conversion.h" />
     <ClInclude Include="..\src\crop.h" />
     <ClInclude Include="..\src\debug.h" />
-    <ClInclude Include="..\src\eva2_methods.h" />
+    <ClInclude Include="..\src\eva_methods.h" />
     <ClInclude Include="..\src\monica-parameters.h" />
     <ClInclude Include="..\src\monica-typedefs.h" />
     <ClInclude Include="..\src\monica.h" />
@@ -45,7 +45,7 @@
     <ClCompile Include="..\src\conversion.cpp" />
     <ClCompile Include="..\src\crop.cpp" />
     <ClCompile Include="..\src\debug.cpp" />
-    <ClCompile Include="..\src\eva2_methods.cpp" />
+    <ClCompile Include="..\src\eva_methods.cpp" />
     <ClCompile Include="..\src\monica-eva-main.cpp" />
     <ClCompile Include="..\src\monica-parameters.cpp" />
     <ClCompile Include="..\src\monica.cpp" />
@@ -59,6 +59,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{73C97EAD-0BEC-41AF-88A4-2C830A9F7DF1}</ProjectGuid>
     <RootNamespace>monicaeva2</RootNamespace>
+    <ProjectName>monica-eva</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -94,15 +95,15 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>RUN_EVA2;WINSOCK2;WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RUN_EVA;WINSOCK2;WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
-      <AdditionalIncludeDirectories>..\..\..\mariadb_client-1.0.0-win32\mariadbclient\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libmariadb.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\mariadb_client-1.0.0-win32\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -111,16 +112,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>RUN_EVA2;WINSOCK2;WIN32;MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mariadb_client-1.0.0-win32\mariadbclient\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>RUN_EVA;WINSOCK2;WIN32;MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libmariadb.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\mariadb_client-1.0.0-win32\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

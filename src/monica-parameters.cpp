@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "monica-parameters.h"
 #include "monica.h"
-#include "eva2_methods.h"
+#include "eva_methods.h"
 #include "debug.h"
 #include "conversion.h"
 

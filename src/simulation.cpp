@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "simulation.h"
 
-#include "eva2_methods.h"
+#include "eva_methods.h"
 #include "cc_germany_methods.h"
 
 #include "climate/climate-common.h"
@@ -59,7 +59,7 @@ using namespace std;
 using namespace Tools;
 
 
-#ifdef RUN_EVA2
+#ifdef RUN_EVA
 
 /**
  * Method for starting a simulation with data from eva2 database.
@@ -363,7 +363,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   return result;
 }
 
-#endif /*#ifdef RUN_EVA2*/
+#endif /*#ifdef RUN_EVA*/
 
 //------------------------------------------------------------------
 

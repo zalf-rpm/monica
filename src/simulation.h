@@ -42,7 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace Monica 
 {
 
-#ifdef RUN_EVA2
+#ifdef RUN_EVA
 
 /**
  * Class that contains all information for running a eva2 simulation
@@ -113,7 +113,7 @@ class Eva2SimulationConfiguration
 
 };
 
-#endif /*#ifdef RUN_EVA2*/
+#endif /*#ifdef RUN_EVA*/
 
 
 #ifdef RUN_HERMES
@@ -403,7 +403,7 @@ class GISSimulationConfiguration
 
 #endif /*#ifdef RUN_GIS*/
 
-#ifdef RUN_EVA2
+#ifdef RUN_EVA
 const Monica::Result runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config=0);
 #endif
 
