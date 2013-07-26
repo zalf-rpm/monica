@@ -1067,8 +1067,13 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate, double vc_Percen
     vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[0];
     vm_PercolationRate[0] = (vm_GravitationalWater[0] * vm_GravitationalWater[0] * vm_LambdaReduced)
         / vm_PercolationFactor;
+	if (vm_PercolationRate[0] > pm_MaxPercolationRate) {
+        vm_PercolationRate[0] = pm_MaxPercolationRate;
+    }
     vm_GravitationalWater[0] = vm_GravitationalWater[0] - vm_PercolationRate[0];
     vm_GravitationalWater[0] = max(0.0, vm_GravitationalWater[0]);
+
+
 
     // Adding the excess water remaining after the percolation event to soil moisture
     vm_SoilMoisture[0] = vm_FieldCapacity[0] + (vm_GravitationalWater[0] / 1000.0

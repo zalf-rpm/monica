@@ -1390,6 +1390,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tLeaf";
   fout << "\tShoot";
   fout << "\tFruit";
+  fout << "\tYield";
 
   fout << "\tGroPhot";
   fout << "\tAssim";
@@ -1429,6 +1430,7 @@ Monica::initializeFoutHeader(ofstream &fout)
     fout << "\tMois" << i_Layer;
   }
   fout << "\tPrecip";
+  fout << "\tIrrig";
   fout << "\tInfilt";
   fout << "\tSurface";
   fout << "\tRunOff";
@@ -1533,6 +1535,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(1)
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(2)
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(3)
+  fout << "\t[kgDM/ha]";    // get_PrimaryCropYield(3)
 
   fout << "\t[kgCH2O/ha]";  // GrossPhotosynthesisHaRate
   fout << "\t[kgCH2O/ha]";  // Assimilates
@@ -1573,6 +1576,7 @@ Monica::initializeFoutHeader(ofstream &fout)
     fout << "\t[m3/m3]"; // Soil moisture content
   }
   fout << "\t[mm]"; // Precipitation
+  fout << "\t[mm]"; // Irrigation
   fout << "\t[mm]"; // Infiltration
   fout << "\t[mm]"; // Surface water storage
   fout << "\t[mm]"; // Surface water runoff
@@ -1858,6 +1862,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t" << mcg->get_OrganBiomass(1);
     fout << "\t" << mcg->get_OrganBiomass(2);
     fout << "\t" << mcg->get_OrganBiomass(3);
+	fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
 
     fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
     fout << fixed << setprecision(4) << "\t" << mcg->get_Assimilates(); // [kg CH2O ha-1 d-1]
@@ -1951,6 +1956,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.0";    // get_OrganBiomass(1)
     fout << "\t0.0";    // get_OrganBiomass(2)
     fout << "\t0.0";    // get_OrganBiomass(3)
+	fout << "\t0.0";    // get_PrimaryCropYield(3)
 
     fout << "\t0.000";  // GrossPhotosynthesisHaRate
     fout << "\t0.000";  // Assimilates
@@ -2042,6 +2048,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
     fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer);
   }
   fout << fixed << setprecision(2) << "\t" << env.da.dataForTimestep(Climate::precip, d);
+  fout << fixed << setprecision(1) << "\t" << monica.dailySumIrrigationWater();
   fout << "\t" << msm.get_Infiltration(); // {mm]
   fout << "\t" << msm.get_SurfaceWaterStorage();// {mm]
   fout << "\t" << msm.get_SurfaceRunOff();// {mm]

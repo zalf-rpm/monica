@@ -247,7 +247,9 @@ namespace
     if(hermesCropId == "WR")
       return CropPtr(new Crop(3, hermesCropId)); // Winter rye
     if(hermesCropId == "SR")
-      return CropPtr(new Crop(3, hermesCropId)); // Spring rye
+      return CropPtr(new Crop(20, hermesCropId)); // Spring rye
+    if(hermesCropId == "OAT")
+      return CropPtr(new Crop(22, hermesCropId)); // Oats
     if(hermesCropId == "ZR")
       return CropPtr(new Crop(10, hermesCropId)); // Sugar beet
     if(hermesCropId == "SM")
@@ -275,13 +277,17 @@ namespace
     if(hermesCropId == "WDG")
       return CropPtr(new Crop(16, hermesCropId)); // Weidelgras
     if(hermesCropId == "FP")
-      return CropPtr(new Crop(26, hermesCropId)); // Field pea
+      return CropPtr(new Crop(24, hermesCropId)); // Field pea
     if(hermesCropId == "OR")
-      return CropPtr(new Crop(21, hermesCropId)); // Oil raddish
+      return CropPtr(new Crop(17, hermesCropId)); // Oil raddish
+    if(hermesCropId == "SDG")
+      return CropPtr(new Crop(18, hermesCropId)); // Sudan grass
     if(hermesCropId == "WTR")
       return CropPtr(new Crop(19, hermesCropId)); // Winter triticale
-    if(hermesCropId == "FH")
-      return CropPtr(new Crop(23, hermesCropId)); // Sorghum
+    if(hermesCropId == "STR")
+      return CropPtr(new Crop(23, hermesCropId)); // Spring triticale
+    if(hermesCropId == "SOR")
+      return CropPtr(new Crop(21, hermesCropId)); // Sorghum
     if(hermesCropId == "SX0")
       return CropPtr(new Crop(28, hermesCropId)); // Soy bean maturity group 000
     if(hermesCropId == "S00")
