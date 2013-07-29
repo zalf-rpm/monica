@@ -20,7 +20,7 @@
 
   ;Name and file
   Name "MONICA"
-  OutFile "MONICA-Setup-1.1.1-${Arch}-${ArchBit}.exe"
+  OutFile "MONICA-Setup-1.2-${Arch}-${ArchBit}.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\MONICA"
@@ -129,7 +129,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "$\"%USERPROFILE%$\"\MONICA\Examples\Hohenfinow2"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk" "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk" "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"		
+	;CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"		
 	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "$\"%USERPROFILE%$\"\MONICA\Examples\Hohenfinow2"
 	
   !insertmacro MUI_STARTMENU_WRITE_END
