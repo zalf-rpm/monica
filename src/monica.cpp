@@ -69,10 +69,10 @@ namespace
 //------------------------------------------------------------------------------
 
 Env::Env(const SoilPMs* sps, const CentralParameterProvider cpp)
-  : soilParams(sps),
-  centralParameterProvider(cpp)
+	: soilParams(sps),
+		customCallerId(-1),
+		centralParameterProvider(cpp)
 {
-
   UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
   windSpeedHeight = user_env.p_WindSpeedHeight;
   atmosphericCO2 = user_env.p_AthmosphericCO2;
@@ -89,15 +89,19 @@ string Env::toString() const
 {
   ostringstream s;
   s << "soilParams: " << endl;
-  BOOST_FOREACH(const SoilParameters& sps, *soilParams)
-    s << sps.toString() << endl;
-  s << " noOfLayers: " << noOfLayers << " layerThickness: " << layerThickness
-    << endl;
-  s << "ClimateData: from: " << da.startDate().toString()
+	BOOST_FOREACH(const SoilParameters& sps, *soilParams)
+	{
+			s << sps.toString() << endl;
+	}
+	s << " noOfLayers: " << noOfLayers << " layerThickness: " << layerThickness
+		<< endl;
+	s << "ClimateData: from: " << da.startDate().toString()
     << " to: " << da.endDate().toString() << endl;
-  s << "Fruchtfolge: " << endl;
-  BOOST_FOREACH(const ProductionProcess& pv, cropRotation)
-    s << pv.toString() << endl;
+	s << "Fruchtfolge: " << endl;
+	BOOST_FOREACH(const ProductionProcess& pv, cropRotation)
+	{
+			s << pv.toString() << endl;
+	}
   s << "gridPoint: " << gridPoint.toString();
   return s.str();
 }
@@ -108,6 +112,7 @@ string Env::toString() const
  * @return
  */
 Env::Env(const Env& env)
+	: customCallerId(env.customCallerId)
 {
   debug() << "Copy constructor: Env" << "\tsoil param size: " << env.soilParams->size() << endl;
   soilParams = env.soilParams;
@@ -141,7 +146,6 @@ Env::Env(const Env& env)
 
   pathToOutputDir = env.pathToOutputDir;
   mode = env.mode;
-
 }
 
 Env::~Env()
@@ -181,25 +185,25 @@ Env::numberOfPossibleSteps()
 void
 Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 {
-  int acd=0;
-  if (name == "tmin")
-    acd = tmin;
-  else if (name == "tmax")
-    acd = tmax;
-  else if (name == "tavg")
-    acd = tavg;
-  else if (name == "precip")
-    acd = precip;
-  else if (name == "globrad")
-    acd = globrad;
-  else if (name == "wind")
-    acd = wind;
-  else if (name == "sunhours")
-    acd = sunhours;
-  else if (name == "relhumid")
-    acd = relhumid;
+	int acd=0;
+	if (name == "tmin")
+		acd = tmin;
+	else if (name == "tmax")
+		acd = tmax;
+	else if (name == "tavg")
+		acd = tavg;
+	else if (name == "precip")
+		acd = precip;
+	else if (name == "globrad")
+		acd = globrad;
+	else if (name == "wind")
+		acd = wind;
+	else if (name == "sunhours")
+		acd = sunhours;
+	else if (name == "relhumid")
+		acd = relhumid;
 
-  da.addOrReplaceClimateData((AvailableClimateData)acd, data);
+	da.addOrReplaceClimateData((AvailableClimateData)acd, data);
 }
 //------------------------------------------------------------------------------
 
@@ -980,6 +984,7 @@ Result Monica::runMonica(Env env)
 {
 
   Result res;
+	res.customCallerId = env.customCallerId;
   res.gp = env.gridPoint;
 
   if(env.cropRotation.begin() == env.cropRotation.end())
@@ -1009,96 +1014,96 @@ Result Monica::runMonica(Env env)
 
   debug() << "-----" << endl;
 
-  if (write_output_files)
-  {
-    //    static int ___c = 1;
-//    ofstream fout("/home/nendel/devel/lsa/models/monica/rmout.dat");
-//    ostringstream fs;
-//    fs << "/home/michael/development/lsa/landcare-dss/rmout-" << ___c << ".dat";
-//    ostringstream gs;
-//    gs << "/home/michael/development/lsa/landcare-dss/smout-" << ___c << ".dat";
-//    env.pathToOutputDir = "/home/nendel/devel/git/models/monica/";
-//    ofstream fout(fs.str().c_str());//env.pathToOutputDir+"rmout.dat").c_str());
-//    ofstream gout(gs.str().c_str());//env.pathToOutputDir+"smout.dat").c_str());
-//    ___c++;
+	if (write_output_files)
+	{
+		//    static int ___c = 1;
+		//    ofstream fout("/home/nendel/devel/lsa/models/monica/rmout.dat");
+		//    ostringstream fs;
+		//    fs << "/home/michael/development/lsa/landcare-dss/rmout-" << ___c << ".dat";
+		//    ostringstream gs;
+		//    gs << "/home/michael/development/lsa/landcare-dss/smout-" << ___c << ".dat";
+		//    env.pathToOutputDir = "/home/nendel/devel/git/models/monica/";
+		//    ofstream fout(fs.str().c_str());//env.pathToOutputDir+"rmout.dat").c_str());
+		//    ofstream gout(gs.str().c_str());//env.pathToOutputDir+"smout.dat").c_str());
+		//    ___c++;
 
-    // open rmout.dat
-    debug() << "Outputpath: " << (env.pathToOutputDir+"/rmout.dat").c_str() << endl;
-    fout.open((env.pathToOutputDir+"/rmout.dat").c_str());
-    if (fout.fail())
-    {
-      debug() << "Error while opening output file \"" << (env.pathToOutputDir+"/rmout.dat").c_str() << "\"" << endl;
-      return res;
-    }
+		// open rmout.dat
+		debug() << "Outputpath: " << (env.pathToOutputDir+"/rmout.dat").c_str() << endl;
+		fout.open((env.pathToOutputDir+"/rmout.dat").c_str());
+		if (fout.fail())
+		{
+			debug() << "Error while opening output file \"" << (env.pathToOutputDir+"/rmout.dat").c_str() << "\"" << endl;
+			return res;
+		}
 
-    // open smout.dat
-    gout.open((env.pathToOutputDir+"/smout.dat").c_str());
-    if (gout.fail())
-    {
-      debug() << "Error while opening output file \"" << (env.pathToOutputDir+"/smout.dat").c_str() << "\"" << endl;
-      return res;
-    }
+		// open smout.dat
+		gout.open((env.pathToOutputDir+"/smout.dat").c_str());
+		if (gout.fail())
+		{
+			debug() << "Error while opening output file \"" << (env.pathToOutputDir+"/smout.dat").c_str() << "\"" << endl;
+			return res;
+		}
 
-    // writes the header line to output files
-    initializeFoutHeader(fout);
-    initializeGoutHeader(gout);
+		// writes the header line to output files
+		initializeFoutHeader(fout);
+		initializeGoutHeader(gout);
 
-    dumpMonicaParametersIntoFile(env.pathToOutputDir, env.centralParameterProvider);
-  }
+		dumpMonicaParametersIntoFile(env.pathToOutputDir, env.centralParameterProvider);
+	}
 
-  //debug() << "MonicaModel" << endl;
-  //debug() << env.toString().c_str();
-  MonicaModel monica(env, env.da);
-  debug() << "currentDate" << endl;
-  Date currentDate = env.da.startDate();
-  unsigned int nods = env.da.noOfStepsPossible();
-  debug() << "nods: " << nods << endl;
+	//debug() << "MonicaModel" << endl;
+	//debug() << env.toString().c_str();
+	MonicaModel monica(env, env.da);
+	debug() << "currentDate" << endl;
+	Date currentDate = env.da.startDate();
+	unsigned int nods = env.da.noOfStepsPossible();
+	debug() << "nods: " << nods << endl;
 
-  unsigned int currentMonth = currentDate.month();
-  unsigned int dim = 0; //day in current month
+	unsigned int currentMonth = currentDate.month();
+	unsigned int dim = 0; //day in current month
 
-  double avg10corg = 0, avg30corg = 0, watercontent = 0,
-    groundwater = 0,  nLeaching= 0, yearly_groundwater=0,
-    yearly_nleaching=0, monthSurfaceRunoff = 0.0;
-  double monthPrecip = 0.0;
-  double monthETa = 0.0;
+	double avg10corg = 0, avg30corg = 0, watercontent = 0,
+			groundwater = 0,  nLeaching= 0, yearly_groundwater=0,
+			yearly_nleaching=0, monthSurfaceRunoff = 0.0;
+	double monthPrecip = 0.0;
+	double monthETa = 0.0;
 
-  //iterator through the production processes
-  vector<ProductionProcess>::const_iterator ppci = env.cropRotation.begin();
-  //direct handle to current process
-  ProductionProcess currentPP = *ppci;
-  //are the dates in the production process relative dates
-  //or are they absolute as produced by the hermes inputs
-  bool useRelativeDates =  currentPP.start().isRelativeDate();
-  //the next application date, either a relative or an absolute date
-  //to get the correct applications out of the production processes
-  Date nextPPApplicationDate = currentPP.start();
-  //a definitely absolute next application date to keep track where
-  //we are in the list of climate data
-  Date nextAbsolutePPApplicationDate =
-      useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-      (currentDate.year() + 1) : nextPPApplicationDate;
-  debug() << "next app-date: " << nextPPApplicationDate.toString()
-      << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
+	//iterator through the production processes
+	vector<ProductionProcess>::const_iterator ppci = env.cropRotation.begin();
+	//direct handle to current process
+	ProductionProcess currentPP = *ppci;
+	//are the dates in the production process relative dates
+	//or are they absolute as produced by the hermes inputs
+	bool useRelativeDates =  currentPP.start().isRelativeDate();
+	//the next application date, either a relative or an absolute date
+	//to get the correct applications out of the production processes
+	Date nextPPApplicationDate = currentPP.start();
+	//a definitely absolute next application date to keep track where
+	//we are in the list of climate data
+	Date nextAbsolutePPApplicationDate =
+			useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
+												 (currentDate.year() + 1) : nextPPApplicationDate;
+	debug() << "next app-date: " << nextPPApplicationDate.toString()
+					<< " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
 
-  //if for some reason there are no applications (no nothing) in the
-  //production process: quit
-  if(!nextAbsolutePPApplicationDate.isValid())
-  {
-    debug() << "start of production-process: " << currentPP.toString()
-    << " is not valid" << endl;
-    return res;
-  }
+	//if for some reason there are no applications (no nothing) in the
+	//production process: quit
+	if(!nextAbsolutePPApplicationDate.isValid())
+	{
+		debug() << "start of production-process: " << currentPP.toString()
+						<< " is not valid" << endl;
+		return res;
+	}
 
-  //beware: !!!! if there are absolute days used, then there is basically
-  //no rotation if the last crop in the crop rotation has changed
-  //the loop starts anew but the first crops date has already passed
-  //so the crop won't be seeded again or any work applied
-  //thus for absolute dates the crop rotation has to be as long as there
-  //are climate data !!!!!
-  for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
-  {
-    debug() << "currentDate: " << currentDate.toString() << endl;
+	//beware: !!!! if there are absolute days used, then there is basically
+	//no rotation if the last crop in the crop rotation has changed
+	//the loop starts anew but the first crops date has already passed
+	//so the crop won't be seeded again or any work applied
+	//thus for absolute dates the crop rotation has to be as long as there
+	//are climate data !!!!!
+	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
+	{
+		debug() << "currentDate: " << currentDate.toString() << endl;
     monica.resetDailyCounter();
 
 //    if (currentDate.year() == 2012) {
@@ -1147,9 +1152,7 @@ Result Monica::runMonica(Env env)
         r.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
         r.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
 
-
-
-        res.pvrs.push_back(r);
+				res.pvrs.push_back(r);
         debug() << "py: " << r.pvResults[primaryYield]
             << " sy: " << r.pvResults[secondaryYield]
             << " iw: " << r.pvResults[sumIrrigation]
@@ -1164,9 +1167,8 @@ Result Monica::runMonica(Env env)
 
         ppci++;
         //start anew if we reached the end of the crop rotation
-        if(ppci == env.cropRotation.end()) {
-          ppci = env.cropRotation.begin();
-        }
+				if(ppci == env.cropRotation.end())
+					ppci = env.cropRotation.begin();
 
         currentPP = *ppci;
         nextPPApplicationDate = currentPP.start();
@@ -1284,50 +1286,56 @@ Result Monica::runMonica(Env env)
     }
     else
     {
-      avg10corg += monica.avgCorg(0.1);
-      avg30corg += monica.avgCorg(0.3);
-      watercontent += monica.mean90cmWaterContent();
-      groundwater += monica.groundWaterRecharge();
+			avg10corg += monica.avgCorg(0.1);
+			avg30corg += monica.avgCorg(0.3);
+			watercontent += monica.mean90cmWaterContent();
+			groundwater += monica.groundWaterRecharge();
 
-      //cout << "groundwater-recharge at: " << currentDate.toString() << " value: " << monica.groundWaterRecharge() << " monthlySum: " << groundwater << endl;
-      nLeaching += monica.nLeaching();
-      monthSurfaceRunoff += monica.surfaceRunoff();
-      monthPrecip += env.da.dataForTimestep(Climate::precip, d);
-      monthETa += monica.getETa();
-    }
+			//cout << "groundwater-recharge at: " << currentDate.toString() << " value: " << monica.groundWaterRecharge() << " monthlySum: " << groundwater << endl;
+			nLeaching += monica.nLeaching();
+			monthSurfaceRunoff += monica.surfaceRunoff();
+			monthPrecip += env.da.dataForTimestep(Climate::precip, d);
+			monthETa += monica.getETa();
+		}
 
-    // Yearly accumulated values
-    if ((currentDate.year() != (currentDate-1).year()) && (currentDate.year()!= env.da.startDate().year())) {
-        res.generalResults[yearlySumGroundWaterRecharge].push_back(yearly_groundwater);
-//        cout << "#######################################################" << endl;
-//        cout << "Push back yearly_nleaching: " << currentDate.year()  << "\t" << yearly_nleaching << endl;
-//        cout << "#######################################################" << endl;
-        res.generalResults[yearlySumNLeaching].push_back(yearly_nleaching);
-        yearly_groundwater = 0.0;
-        yearly_nleaching = 0.0;
-    } else {
-        yearly_groundwater += monica.groundWaterRecharge();
-        yearly_nleaching += monica.nLeaching();
-    }
+		// Yearly accumulated values
+		if ((currentDate.year() != (currentDate-1).year()) && (currentDate.year()!= env.da.startDate().year()))
+		{
+			res.generalResults[yearlySumGroundWaterRecharge].push_back(yearly_groundwater);
+			//        cout << "#######################################################" << endl;
+			//        cout << "Push back yearly_nleaching: " << currentDate.year()  << "\t" << yearly_nleaching << endl;
+			//        cout << "#######################################################" << endl;
+			res.generalResults[yearlySumNLeaching].push_back(yearly_nleaching);
+			yearly_groundwater = 0.0;
+			yearly_nleaching = 0.0;
+		}
+		else
+		{
+			yearly_groundwater += monica.groundWaterRecharge();
+			yearly_nleaching += monica.nLeaching();
+		}
 
-    if (monica.isCropPlanted()) {
-      //cout << "monica.cropGrowth()->get_GrossPrimaryProduction()\t" << monica.cropGrowth()->get_GrossPrimaryProduction() << endl;
+		if (monica.isCropPlanted())
+		{
+			//cout << "monica.cropGrowth()->get_GrossPrimaryProduction()\t" << monica.cropGrowth()->get_GrossPrimaryProduction() << endl;
 
-      res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage()+1);
+			res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage()+1);
 
 
-    } else {
-      res.generalResults[dev_stage].push_back(0.0);
-    }
+		}
+		else
+		{
+			res.generalResults[dev_stage].push_back(0.0);
+		}
 
-    res.dates.push_back(currentDate.toMysqlString());
+		res.dates.push_back(currentDate.toMysqlString());
 
-    if (write_output_files)
-    {
-      writeGeneralResults(fout, gout, env, monica, d);
-    }
-  }
-  if (write_output_files)
+		if (write_output_files)
+		{
+			writeGeneralResults(fout, gout, env, monica, d);
+		}
+	}
+	if (write_output_files)
   {
     fout.close();
     gout.close();
