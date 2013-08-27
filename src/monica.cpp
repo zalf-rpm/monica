@@ -1547,7 +1547,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[m]";          // CropHeight
   fout << "\t[m2/m2]";      // LeafAreaIndex
   fout << "\t[layer]";      // RootingDepth
-  fout << "\t[g/m2]";       // AbovegroundBiomass
+  fout << "\t[kg/ha]";       // AbovegroundBiomass
 
   fout << "\t[kgN/ha]";     // TotalBiomassNContent
   fout << "\t[kgN/ha]";     // SumTotalNUptake
@@ -1874,8 +1874,8 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
 
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();// [m]
     fout << fixed << setprecision(2) << "\t" << mcg->get_LeafAreaIndex(); //[m2 m-2]
-    fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth();
-    fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass();
+    fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth(); //[layer]
+    fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
 
     fout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
     fout << fixed << setprecision(2) << "\t" << mcg->get_SumTotalNUptake();
