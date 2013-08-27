@@ -436,7 +436,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
   }
 
   //site configuration
-  hermes_config->setLattitude(ipm.valueAsDouble("site_parameters", "latitude", -1.0));
+  hermes_config->setlatitude(ipm.valueAsDouble("site_parameters", "latitude", -1.0));
   hermes_config->setSlope(ipm.valueAsDouble("site_parameters", "slope", -1.0));
   hermes_config->setHeightNN(ipm.valueAsDouble("site_parameters", "heightNN", -1.0));
   hermes_config->setSoilCNRatio(ipm.valueAsDouble("site_parameters", "soilCNRatio", -1.0));
@@ -508,8 +508,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   if (hermes_config->getAtmosphericCO2()!=-1.0){
       centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = hermes_config->getAtmosphericCO2();
   }
-  if (hermes_config->getLattitude()!=-1.0){
-      siteParams.vs_Latitude = hermes_config->getLattitude();
+  if (hermes_config->getlatitude()!=-1.0){
+      siteParams.vs_Latitude = hermes_config->getlatitude();
   }
 
   if (hermes_config->getSlope()!=-1.0){

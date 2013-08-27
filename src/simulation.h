@@ -130,7 +130,7 @@ public:
 			NDeposition(20),
 			minGWDepth(-1.0),
 			maxGWDepth(-1.0),
-			lattitude(-1.0),
+			latitude(-1.0),
 			slope(-1.0),
 			heightNN(-1.0),
 			soilCNRatio(-1.0),
@@ -157,7 +157,7 @@ public:
 
     void setMinGWDepth(double v) { minGWDepth=v; }
     void setMaxGWDepth(double v) { maxGWDepth=v; }
-    void setLattitude(double v) { lattitude=v; }
+    void setlatitude(double v) { latitude=v; }
     void setSlope(double v) { slope=v; }
     void setHeightNN(double v) { heightNN=v; }
     void setSoilCNRatio(double v) { soilCNRatio=v; }
@@ -218,7 +218,7 @@ public:
 
     double getMinGWDepth() const {return minGWDepth; }
     double getMaxGWDepth() const {return maxGWDepth; }
-    double getLattitude() const {return lattitude; }
+    double getlatitude() const {return latitude; }
     double getSlope() const {return slope; }
     double getHeightNN() const {return heightNN; }
     double getSoilCNRatio() const {return soilCNRatio; }
@@ -266,7 +266,7 @@ public:
     double NDeposition;
     double minGWDepth;
     double maxGWDepth;
-    double lattitude;
+    double latitude;
     double slope;
     double heightNN;
     double soilCNRatio;
