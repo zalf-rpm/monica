@@ -140,7 +140,9 @@ public:
 			leachingDepth(-1.0),
 			minGWDepthMonth(-1),
 	    automaticIrrigation(false),
-	    NMinFertiliser(false)
+	    NMinFertiliser(false),
+		nitrogenResponseOn(true),
+		waterDeficitResponseOn(true)
 	{}
 	~HermesSimulationConfiguration(){}
 
@@ -177,6 +179,8 @@ public:
     void setMaxPercolationRate(double v) {maxPercolationRate = v; }
 
     void setSecondaryYields(bool v) {secondaryYields = v; }
+	void setNitrogenResponseOn(bool v) {nitrogenResponseOn = v; }
+	void setWaterDeficitResponseOn(bool v) {waterDeficitResponseOn = v; }
 
     void setStartYear(int year) { this->startYear = year; }
     void setEndYear(int year) { this->endYear = year; }
@@ -238,6 +242,8 @@ public:
     double getMaxPercolationRate() { return maxPercolationRate; }
 
     bool getSecondaryYields() { return secondaryYields; }
+    bool getNitrogenResponseOn() { return nitrogenResponseOn; }
+	bool getWaterDeficitResponseOn() { return waterDeficitResponseOn; }
 
     bool useNMinFertiliser() { return this->NMinFertiliser;}
     bool useAutomaticIrrigation() { return this->automaticIrrigation;}
@@ -284,6 +290,8 @@ public:
     double dispersionLength;
     double maxPercolationRate;
     bool secondaryYields;
+	bool nitrogenResponseOn;
+	bool waterDeficitResponseOn;
     int julianDayOfIrrigation;
 
     bool automaticIrrigation;

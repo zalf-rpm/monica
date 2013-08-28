@@ -2093,14 +2093,21 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 /**
  * @brief Constructor
  * @param ps_LayerThickness
- * @param ps_ProfileDepthps_ProfileDepth
- * @param mmd
+ * @param ps_ProfileDepth
+ * @param ps_MaxMineralisationDepth
+ * @param ps_NitrogenResponseOn
+ * @param ps_WaterDeficitResponseOn
  */
 GeneralParameters::GeneralParameters(double ps_LayerThickness,
-                                     double ps_ProfileDepth, double mmd) :
+                                     double ps_ProfileDepth, 
+									 double ps_MaximumMineralisationDepth,
+									 bool pc_NitrogenResponseOn,
+					                 bool pc_WaterDeficitResponseOn) :
 ps_LayerThickness(int(ps_ProfileDepth / ps_LayerThickness), ps_LayerThickness),
 ps_ProfileDepth(ps_ProfileDepth),
-ps_MaxMineralisationDepth(mmd)
+ps_MaxMineralisationDepth(ps_MaximumMineralisationDepth),
+pc_NitrogenResponseOn(pc_NitrogenResponseOn),
+pc_WaterDeficitResponseOn(pc_WaterDeficitResponseOn)
 {}
 
 //------------------------------------------------------------------------------
@@ -3829,10 +3836,10 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           centralParameterProvider.userSoilTemperatureParameters;
       UserSoilTransportParameters& user_soil_transport =
           centralParameterProvider.userSoilTransportParameters;
-			UserSoilOrganicParameters& user_soil_organic =
-					centralParameterProvider.userSoilOrganicParameters;
-			UserInitialValues& user_init_values =
-					centralParameterProvider.userInitValues;
+      UserSoilOrganicParameters& user_soil_organic =
+          centralParameterProvider.userSoilOrganicParameters;
+      UserInitialValues& user_init_values =
+          centralParameterProvider.userInitValues;
 
       while (!(row = con->getRow()).empty())
       {
@@ -3877,7 +3884,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           user_env.p_NumberOfLayers = satoi(row[1]);
         else if (name == "start_pv_index")
           user_env.p_StartPVIndex = satoi(row[1]);
-				else if (name == "albedo")
+		else if (name == "albedo")
           user_env.p_Albedo = satof(row[1]);
         else if (name == "athmospheric_co2")
           user_env.p_AthmosphericCO2 = satof(row[1]);
@@ -3973,76 +3980,76 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           user_env.p_MinGroundwaterDepth = satof(row[1]);
         else if (name == "min_groundwater_depth_month")
           user_env.p_MinGroundwaterDepthMonth = satoi(row[1]);
-				else if (name == "SOM_SlowDecCoeffStandard")
-					user_soil_organic.po_SOM_SlowDecCoeffStandard = satof(row[1]);
-				else if (name == "SOM_FastDecCoeffStandard")
-					user_soil_organic.po_SOM_FastDecCoeffStandard = satof(row[1]);
-				else if (name == "SMB_SlowMaintRateStandard")
-					user_soil_organic.po_SMB_SlowMaintRateStandard = satof(row[1]);
-				else if (name == "SMB_FastMaintRateStandard")
-					user_soil_organic.po_SMB_FastMaintRateStandard = satof(row[1]);
-				else if (name == "SMB_SlowDeathRateStandard")
-					user_soil_organic.po_SMB_SlowDeathRateStandard = satof(row[1]);
-				else if (name == "SMB_FastDeathRateStandard")
-					user_soil_organic.po_SMB_FastDeathRateStandard = satof(row[1]);
-				else if (name == "SMB_UtilizationEfficiency")
-					user_soil_organic.po_SMB_UtilizationEfficiency = satof(row[1]);
-				else if (name == "SOM_SlowUtilizationEfficiency")
-					user_soil_organic.po_SOM_SlowUtilizationEfficiency = satof(row[1]);
-				else if (name == "SOM_FastUtilizationEfficiency")
-					user_soil_organic.po_SOM_FastUtilizationEfficiency = satof(row[1]);
-				else if (name == "AOM_SlowUtilizationEfficiency")
-					user_soil_organic.po_AOM_SlowUtilizationEfficiency = satof(row[1]);
-				else if (name == "AOM_FastUtilizationEfficiency")
-					user_soil_organic.po_AOM_FastUtilizationEfficiency = satof(row[1]);
-				else if (name == "AOM_FastMaxC_to_N")
-					user_soil_organic.po_AOM_FastMaxC_to_N = satof(row[1]);
-				else if (name == "PartSOM_Fast_to_SOM_Slow")
-					user_soil_organic.po_PartSOM_Fast_to_SOM_Slow = satof(row[1]);
-				else if (name == "PartSMB_Slow_to_SOM_Fast")
-					user_soil_organic.po_PartSMB_Slow_to_SOM_Fast = satof(row[1]);
-				else if (name == "PartSMB_Fast_to_SOM_Fast")
-					user_soil_organic.po_PartSMB_Fast_to_SOM_Fast = satof(row[1]);
-				else if (name == "PartSOM_to_SMB_Slow")
-					user_soil_organic.po_PartSOM_to_SMB_Slow = satof(row[1]);
-				else if (name == "PartSOM_to_SMB_Fast")
-					user_soil_organic.po_PartSOM_to_SMB_Fast = satof(row[1]);
-				else if (name == "CN_Ratio_SMB")
-					user_soil_organic.po_CN_Ratio_SMB = satof(row[1]);
-				else if (name == "LimitClayEffect")
-					user_soil_organic.po_LimitClayEffect = satof(row[1]);
-				else if (name == "AmmoniaOxidationRateCoeffStandard")
-					user_soil_organic.po_AmmoniaOxidationRateCoeffStandard = satof(row[1]);
-				else if (name == "NitriteOxidationRateCoeffStandard")
-					user_soil_organic.po_NitriteOxidationRateCoeffStandard = satof(row[1]);
-				else if (name == "TransportRateCoeff")
-					user_soil_organic.po_TransportRateCoeff = satof(row[1]);
-				else if (name == "SpecAnaerobDenitrification")
-					user_soil_organic.po_SpecAnaerobDenitrification = satof(row[1]);
-				else if (name == "ImmobilisationRateCoeffNO3")
-					user_soil_organic.po_ImmobilisationRateCoeffNO3 = satof(row[1]);
-				else if (name == "ImmobilisationRateCoeffNH4")
-					user_soil_organic.po_ImmobilisationRateCoeffNH4 = satof(row[1]);
-				else if (name == "Denit1")
-					user_soil_organic.po_Denit1 = satof(row[1]);
-				else if (name == "Denit2")
-					user_soil_organic.po_Denit2 = satof(row[1]);
-				else if (name == "Denit3")
-					user_soil_organic.po_Denit3 = satof(row[1]);
-				else if (name == "HydrolysisKM")
-					user_soil_organic.po_HydrolysisKM = satof(row[1]);
-				else if (name == "ActivationEnergy")
-					user_soil_organic.po_ActivationEnergy = satof(row[1]);
-				else if (name == "HydrolysisP1")
-					user_soil_organic.po_HydrolysisP1 = satof(row[1]);
-				else if (name == "HydrolysisP2")
-					user_soil_organic.po_HydrolysisP2 = satof(row[1]);
-				else if (name == "AtmosphericResistance")
-					user_soil_organic.po_AtmosphericResistance = satof(row[1]);
-				else if (name == "N2OProductionRate")
-					user_soil_organic.po_N2OProductionRate = satof(row[1]);
-				else if (name == "Inhibitor_NH3")
-					user_soil_organic.po_Inhibitor_NH3 = satof(row[1]);
+		else if (name == "SOM_SlowDecCoeffStandard")
+			user_soil_organic.po_SOM_SlowDecCoeffStandard = satof(row[1]);
+		else if (name == "SOM_FastDecCoeffStandard")
+			user_soil_organic.po_SOM_FastDecCoeffStandard = satof(row[1]);
+		else if (name == "SMB_SlowMaintRateStandard")
+			user_soil_organic.po_SMB_SlowMaintRateStandard = satof(row[1]);
+		else if (name == "SMB_FastMaintRateStandard")
+			user_soil_organic.po_SMB_FastMaintRateStandard = satof(row[1]);
+		else if (name == "SMB_SlowDeathRateStandard")
+			user_soil_organic.po_SMB_SlowDeathRateStandard = satof(row[1]);
+		else if (name == "SMB_FastDeathRateStandard")
+			user_soil_organic.po_SMB_FastDeathRateStandard = satof(row[1]);
+		else if (name == "SMB_UtilizationEfficiency")
+			user_soil_organic.po_SMB_UtilizationEfficiency = satof(row[1]);
+		else if (name == "SOM_SlowUtilizationEfficiency")
+			user_soil_organic.po_SOM_SlowUtilizationEfficiency = satof(row[1]);
+		else if (name == "SOM_FastUtilizationEfficiency")
+			user_soil_organic.po_SOM_FastUtilizationEfficiency = satof(row[1]);
+		else if (name == "AOM_SlowUtilizationEfficiency")
+			user_soil_organic.po_AOM_SlowUtilizationEfficiency = satof(row[1]);
+		else if (name == "AOM_FastUtilizationEfficiency")
+			user_soil_organic.po_AOM_FastUtilizationEfficiency = satof(row[1]);
+		else if (name == "AOM_FastMaxC_to_N")
+			user_soil_organic.po_AOM_FastMaxC_to_N = satof(row[1]);
+		else if (name == "PartSOM_Fast_to_SOM_Slow")
+			user_soil_organic.po_PartSOM_Fast_to_SOM_Slow = satof(row[1]);
+		else if (name == "PartSMB_Slow_to_SOM_Fast")
+			user_soil_organic.po_PartSMB_Slow_to_SOM_Fast = satof(row[1]);
+		else if (name == "PartSMB_Fast_to_SOM_Fast")
+			user_soil_organic.po_PartSMB_Fast_to_SOM_Fast = satof(row[1]);
+		else if (name == "PartSOM_to_SMB_Slow")
+			user_soil_organic.po_PartSOM_to_SMB_Slow = satof(row[1]);
+		else if (name == "PartSOM_to_SMB_Fast")
+			user_soil_organic.po_PartSOM_to_SMB_Fast = satof(row[1]);
+		else if (name == "CN_Ratio_SMB")
+			user_soil_organic.po_CN_Ratio_SMB = satof(row[1]);
+		else if (name == "LimitClayEffect")
+			user_soil_organic.po_LimitClayEffect = satof(row[1]);
+		else if (name == "AmmoniaOxidationRateCoeffStandard")
+			user_soil_organic.po_AmmoniaOxidationRateCoeffStandard = satof(row[1]);
+		else if (name == "NitriteOxidationRateCoeffStandard")
+			user_soil_organic.po_NitriteOxidationRateCoeffStandard = satof(row[1]);
+		else if (name == "TransportRateCoeff")
+			user_soil_organic.po_TransportRateCoeff = satof(row[1]);
+		else if (name == "SpecAnaerobDenitrification")
+			user_soil_organic.po_SpecAnaerobDenitrification = satof(row[1]);
+		else if (name == "ImmobilisationRateCoeffNO3")
+			user_soil_organic.po_ImmobilisationRateCoeffNO3 = satof(row[1]);
+		else if (name == "ImmobilisationRateCoeffNH4")
+			user_soil_organic.po_ImmobilisationRateCoeffNH4 = satof(row[1]);
+		else if (name == "Denit1")
+			user_soil_organic.po_Denit1 = satof(row[1]);
+		else if (name == "Denit2")
+			user_soil_organic.po_Denit2 = satof(row[1]);
+		else if (name == "Denit3")
+			user_soil_organic.po_Denit3 = satof(row[1]);
+		else if (name == "HydrolysisKM")
+			user_soil_organic.po_HydrolysisKM = satof(row[1]);
+		else if (name == "ActivationEnergy")
+			user_soil_organic.po_ActivationEnergy = satof(row[1]);
+		else if (name == "HydrolysisP1")
+			user_soil_organic.po_HydrolysisP1 = satof(row[1]);
+		else if (name == "HydrolysisP2")
+			user_soil_organic.po_HydrolysisP2 = satof(row[1]);
+		else if (name == "AtmosphericResistance")
+			user_soil_organic.po_AtmosphericResistance = satof(row[1]);
+		else if (name == "N2OProductionRate")
+			user_soil_organic.po_N2OProductionRate = satof(row[1]);
+		else if (name == "Inhibitor_NH3")
+			user_soil_organic.po_Inhibitor_NH3 = satof(row[1]);
       }
       delete con;
       initialized = true;

@@ -459,6 +459,8 @@ Monica::getHermesConfigFromIni(std::string output_path)
 
   // general parameters
   hermes_config->setSecondaryYields(ipm.valueAsBool("general_parameters", "use_secondary_yields", true));
+  hermes_config->setNitrogenResponseOn(ipm.valueAsBool("general_parameters", "nitrogen_response_on", true));
+  hermes_config->setWaterDeficitResponseOn(ipm.valueAsBool("general_parameters", "water_deficit_response_on", true));
 
   // initial values
   hermes_config->setInitPercentageFC(ipm.valueAsDouble("init_values", "init_percentage_FC", -1.0));
@@ -567,7 +569,10 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   double layer_thickness = centralParameterProvider.userEnvironmentParameters.p_LayerThickness;
   double profile_depth = layer_thickness * double(centralParameterProvider.userEnvironmentParameters.p_NumberOfLayers);
-  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth);
+  double max_mineralisation_depth = 0.4;
+  bool nitrogen_response_on = hermes_config->getNitrogenResponseOn();
+  bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
+  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, nitrogen_response_on, water_deficit_response_on);
 
   //soil data
   const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), gps, hermes_config->getPH());

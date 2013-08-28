@@ -417,7 +417,10 @@ namespace Monica
   struct GeneralParameters
   {
     GeneralParameters(double ps_LayerThickness = 0.1,
-                      double ps_ProfileDepth = 2.0, double mmd = 0.4);
+                      double ps_ProfileDepth = 2.0, 
+					  double ps_MaximumMineralisationDepth = 0.4,
+					  bool pc_NitrogenResponseOn = true,
+					  bool pc_WaterDeficitResponseOn = true);
 
     /**
      * @brief Returns number of layers.
@@ -429,6 +432,8 @@ namespace Monica
 
     double ps_ProfileDepth; 
     double ps_MaxMineralisationDepth;
+	bool pc_NitrogenResponseOn;
+	bool pc_WaterDeficitResponseOn;
   };
 
   //----------------------------------------------------------------------------

@@ -149,6 +149,7 @@ pc_NConcentrationPN(cropParams.pc_NConcentrationPN),
 pc_NConcentrationRoot(cropParams.pc_NConcentrationRoot),
 vc_NConcentrationRoot(0.0),
 vc_NConcentrationRootOld(0.0),
+pc_NitrogenResponseOn(generalParams.pc_NitrogenResponseOn),
 pc_NumberOfDevelopmentalStages(cropParams.pc_NumberOfDevelopmentalStages),
 pc_NumberOfOrgans(cropParams.pc_NumberOfOrgans),
 vc_NUptakeFromLayer(vs_NumberOfLayers, 0.0),
@@ -217,17 +218,18 @@ vc_TranspirationDeficit(1.0),
 vc_VernalisationDays(0.0),
 vc_VernalisationFactor(0.0),
 pc_VernalisationRequirement(cropParams.pc_VernalisationRequirement),
+pc_WaterDeficitResponseOn(generalParams.pc_WaterDeficitResponseOn),
 eva2_usage(usage),
 dyingOut(false),
 vc_accumulatedETa(0.0),
 cutting_delay_days(0)
 {
 
-//  cout << "pc_CropHeightP1:\t" << pc_CropHeightP1 << endl;
-//  cout << "pc_CropHeightP2:\t" << pc_CropHeightP2 << endl;
 
   // Initialising the crop
-  vs_Tortuosity = centralParameterProvider.userCropParameters.pc_Tortuosity;
+ 
+	//vs_Tortuosity = centralParameterProvider.userCropParameters.pc_Tortuosity;
+  
 
   // Determining the total temperature sum of all developmental stages after
   // emergence (that's why i_Stage starts with 1) until before senescence
@@ -1780,6 +1782,10 @@ void CropGrowth::fc_CropNitrogen()
   } else {
     vc_CropNRedux = 1.0;
   }
+
+  if (pc_NitrogenResponseOn == false){
+	  vc_CropNRedux = 1.0;
+  }
 }
 
 /**
@@ -2583,6 +2589,11 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
     if (vm_GroundwaterDistance <= 1) {
       vc_TranspirationDeficit = 1.0;
     }
+
+	if (pc_WaterDeficitResponseOn == false){
+		vc_TranspirationDeficit = 1.0;
+	}
+
 
   } //if
 }

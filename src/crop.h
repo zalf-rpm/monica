@@ -406,6 +406,7 @@ namespace Monica
     double pc_NConcentrationRoot;	        //! initial value to WUGEH
     double vc_NConcentrationRoot;		//! old WUGEH
     double vc_NConcentrationRootOld;		//! old
+	bool pc_NitrogenResponseOn;
     int pc_NumberOfDevelopmentalStages;
     int pc_NumberOfOrgans;							//! old NRKOM
     std::vector<double> vc_NUptakeFromLayer; //! old PE
@@ -475,6 +476,7 @@ namespace Monica
     double vc_VernalisationDays; //
     double vc_VernalisationFactor;					//! old FV
     const std::vector<double>& pc_VernalisationRequirement;	//! old VSCHWELL
+	bool pc_WaterDeficitResponseOn;
 
     int eva2_usage;
     std::vector<YieldComponent> eva2_primaryYieldComponents;
