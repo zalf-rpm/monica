@@ -1747,7 +1747,12 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   vm_SaturatedVapourPressure = (vm_SaturatedVapourPressureMax + vm_SaturatedVapourPressureMin) / 2.0;
 
   // Calculation of the water vapour pressure
-  vm_VapourPressure = vw_RelativeHumidity * vm_SaturatedVapourPressure;
+  if (vw_RelativeHumidity <= 0.0){
+	  // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
+	  vm_VapourPressure = vm_SaturatedVapourPressureMin;
+  } else {
+	  vm_VapourPressure = vw_RelativeHumidity * vm_SaturatedVapourPressure;
+  }
 
   // Calculation of the air saturation deficit
   vm_SaturationDeficit = vm_SaturatedVapourPressure - vm_VapourPressure;

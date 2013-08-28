@@ -2338,7 +2338,12 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN, double vw_
   vc_SaturatedVapourPressure = (vc_SaturatedVapourPressureMax + vc_SaturatedVapourPressureMin) / 2.0;
 
   // Calculation of the water vapour pressure
-  vc_VapourPressure = vw_RelativeHumidity * vc_SaturatedVapourPressure;
+  if (vw_RelativeHumidity <= 0.0){
+	  // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
+	  vc_VapourPressure = vc_SaturatedVapourPressureMin;
+  } else {
+	  vc_VapourPressure = vw_RelativeHumidity * vc_SaturatedVapourPressure;
+  }
 
   // Calculation of the air saturation deficit
   vc_SaturationDeficit = vc_SaturatedVapourPressure - vc_VapourPressure;
