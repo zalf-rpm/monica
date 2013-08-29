@@ -430,233 +430,6 @@ namespace
 
 } // namespace
 
-//------------------------------------------------------------------------------
-
-/**
- * @brief Returns sand content from soil survey manual code
- *
- * @param bodenart
- *
- * @return
- */
-//double Monica::KA52sand(string bodenart)
-//{
-//  double x = 0.0;
-
-//  if (bodenart == "fS")
-//    x = 0.84;
-//  else if (bodenart == "fSms")
-//    x = 0.86;
-//  else if (bodenart == "fSgs")
-//    x = 0.88;
-//  else if (bodenart == "gS")
-//    x = 0.93;
-//  else if (bodenart == "mSgs")
-//    x = 0.96;
-//  else if (bodenart == "mSfs")
-//    x = 0.93;
-//  else if (bodenart == "mS")
-//    x = 0.96;
-//  else if (bodenart == "Ss")
-//    x = 0.93;
-//  else if (bodenart == "Sl2")
-//    x = 0.76;
-//  else if (bodenart == "Sl3")
-//    x = 0.65;
-//  else if (bodenart == "Sl4")
-//    x = 0.60;
-//  else if (bodenart == "Slu")
-//    x = 0.43;
-//  else if (bodenart == "St2")
-//    x = 0.84;
-//  else if (bodenart == "St3")
-//    x = 0.71;
-//  else if (bodenart == "Su2")
-//    x = 0.80;
-//  else if (bodenart == "Su3")
-//    x = 0.63;
-//  else if (bodenart == "Su4")
-//    x = 0.56;
-//  else if (bodenart == "Ls2")
-//    x = 0.34;
-//  else if (bodenart == "Ls3")
-//    x = 0.44;
-//  else if (bodenart == "Ls4")
-//    x = 0.56;
-//  else if (bodenart == "Lt2")
-//    x = 0.30;
-//  else if (bodenart == "Lt3")
-//    x = 0.20;
-//  else if (bodenart == "LtS")
-//    x = 0.42;
-//  else if (bodenart == "Lu")
-//    x = 0.19;
-//  else if (bodenart == "Uu")
-//    x = 0.10;
-//  else if (bodenart == "Uls")
-//    x = 0.30;
-//  else if (bodenart == "Us")
-//    x = 0.31;
-//  else if (bodenart == "Ut2")
-//    x = 0.13;
-//  else if (bodenart == "Ut3")
-//    x = 0.11;
-//  else if (bodenart == "Ut4")
-//    x = 0.09;
-//  else if (bodenart == "Utl")
-//    x = 0.19;
-//  else if (bodenart == "Tt")
-//    x = 0.17;
-//  else if (bodenart == "Tl")
-//    x = 0.17;
-//  else if (bodenart == "Tu2")
-//    x = 0.12;
-//  else if (bodenart == "Tu3")
-//    x = 0.10;
-//  else if (bodenart == "Ts3")
-//    x = 0.52;
-//  else if (bodenart == "Ts2")
-//    x = 0.37;
-//  else if (bodenart == "Ts4")
-//    x = 0.62;
-//  else if (bodenart == "Tu4")
-//    x = 0.05;
-//  else if (bodenart == "L")
-//    x = 0.35;
-//  else if (bodenart == "S")
-//    x = 0.93;
-//  else if (bodenart == "U")
-//    x = 0.10;
-//  else if (bodenart == "T")
-//    x = 0.17;
-//  else if (bodenart == "HZ1")
-//    x = 0.30;
-//  else if (bodenart == "HZ2")
-//    x = 0.30;
-//  else if (bodenart == "HZ3")
-//    x = 0.30;
-//  else if (bodenart == "Hh")
-//    x = 0.15;
-//  else if (bodenart == "Hn")
-//    x = 0.15;
-//  else
-//    x = 0.66;
-
-//  return x;
-//}
-
-//----------------------------------------------------------------------------
-
-/**
- * @brief Returns clay content from soil survey manual code
- *
- * @param bodenart
- *
- * @return
- */
-//double Monica::KA52clay(string bodenart)
-//{
-//  double x = 0.0;
-
-//  if (bodenart == "fS")
-//    x = 0.02;
-//  else if (bodenart == "fSms")
-//    x = 0.02;
-//  else if (bodenart == "fSgs")
-//    x = 0.02;
-//  else if (bodenart == "gS")
-//    x = 0.02;
-//  else if (bodenart == "mSgs")
-//    x = 0.02;
-//  else if (bodenart == "mSfs")
-//    x = 0.02;
-//  else if (bodenart == "mS")
-//    x = 0.02;
-//  else if (bodenart == "Ss")
-//    x = 0.02;
-//  else if (bodenart == "Sl2")
-//    x = 0.06;
-//  else if (bodenart == "Sl3")
-//    x = 0.10;
-//  else if (bodenart == "Sl4")
-//    x = 0.14;
-//  else if (bodenart == "Slu")
-//    x = 0.12;
-//  else if (bodenart == "St2")
-//    x = 0.11;
-//  else if (bodenart == "St3")
-//    x = 0.21;
-//  else if (bodenart == "Su2")
-//    x = 0.02;
-//  else if (bodenart == "Su3")
-//    x = 0.04;
-//  else if (bodenart == "Su4")
-//    x = 0.04;
-//  else if (bodenart == "Ls2")
-//    x = 0.21;
-//  else if (bodenart == "Ls3")
-//    x = 0.21;
-//  else if (bodenart == "Ls4")
-//    x = 0.21;
-//  else if (bodenart == "Lt2")
-//    x = 0.30;
-//  else if (bodenart == "Lt3")
-//    x = 0.40;
-//  else if (bodenart == "Lts")
-//    x = 0.35;
-//  else if (bodenart == "Lu")
-//    x = 0.23;
-//  else if (bodenart == "Uu")
-//    x = 0.04;
-//  else if (bodenart == "Uls")
-//    x = 0.12;
-//  else if (bodenart == "Us")
-//    x = 0.04;
-//  else if (bodenart == "Ut2")
-//    x = 0.10;
-//  else if (bodenart == "Ut3")
-//    x = 0.14;
-//  else if (bodenart == "Ut4")
-//    x = 0.21;
-//  else if (bodenart == "Utl")
-//    x = 0.23;
-//  else if (bodenart == "Tt")
-//    x = 0.82;
-//  else if (bodenart == "Tl")
-//    x = 0.55;
-//  else if (bodenart == "Tu2")
-//    x = 0.55;
-//  else if (bodenart == "Tu3")
-//    x = 0.37;
-//  else if (bodenart == "Ts3")
-//    x = 0.40;
-//  else if (bodenart == "Ts2")
-//    x = 0.55;
-//  else if (bodenart == "Ts4")
-//    x = 0.30;
-//  else if (bodenart == "Tu4")
-//    x = 0.30;
-//  else if (bodenart == "L")
-//    x = 0.31;
-//  else if (bodenart == "S")
-//    x = 0.02;
-//  else if (bodenart == "U")
-//    x = 0.04;
-//  else if (bodenart == "T")
-//    x = 0.82;
-//  else if (bodenart == "HZ1")
-//    x = 0.15;
-//  else if (bodenart == "HZ2")
-//    x = 0.15;
-//  else if (bodenart == "HZ3")
-//    x = 0.15;
-//  else if (bodenart == "Hh")
-//    x = 0.1;
-//  else if (bodenart == "Hn")
-//    x = 0.1;
-
-//  return x;
-//}
 
 //------------------------------------------------------------------------------
 
@@ -1523,6 +1296,10 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 				debug() << "Aborting now ..." << endl;
 				exit(-1);
 			}
+
+			if (relhumid>0) {
+			    _relhumid.push_back(relhumid);
+			}
 			        
       // precipitation correction by Richter values
       precip*=cpp.getPrecipCorrectionValue(date.month()-1);
@@ -1535,7 +1312,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
       _tmax.push_back(tmax);
       _wind.push_back(wind);
 			_precip.push_back(precip);
-      _relhumid.push_back(relhumid);
+
 			
       daysCount++;
       date++;
@@ -1556,11 +1333,14 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
   da.addClimateData(tmax, _tmax);
   da.addClimateData(tavg, _tavg);
 	da.addClimateData(globrad, _globrad);
-	da.addClimateData(relhumid, _relhumid);
 	da.addClimateData(wind, _wind);
 	da.addClimateData(precip, _precip);
 	if(!_sunhours.empty())
 		da.addClimateData(sunhours, _sunhours);
+
+	if (!_relhumid.empty()) {
+	    da.addClimateData(relhumid, _relhumid);
+	}
 
   return da;
 }

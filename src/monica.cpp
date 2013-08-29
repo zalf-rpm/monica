@@ -468,8 +468,11 @@ void MonicaModel::generalStep(unsigned int stepNo)
   double precip = _dataAccessor.dataForTimestep(Climate::precip, stepNo);
   double wind = _dataAccessor.dataForTimestep(Climate::wind, stepNo);
   double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-  double relhumid = _dataAccessor.dataForTimestep(Climate::relhumid, stepNo);
-  //double sunhours = _dataAccessor.dataForTimestep(Climate::sunhours, stepNo);
+
+  // test if data for relhumid are available; if not, value is set to -1.0
+  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
+       _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
+
 //
 //  cout << "tmin:\t" << tmin << endl;
 //  cout << "tavg:\t" << tavg << endl;
@@ -569,9 +572,16 @@ void MonicaModel::cropStep(unsigned int stepNo)
   double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
   double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
   double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
+
+  // test if data for sunhours are available; if not, value is set to -1.0
   double sunhours = _dataAccessor.hasAvailableClimateData(Climate::sunhours) ?
 	  _dataAccessor.dataForTimestep(Climate::sunhours, stepNo) : -1.0;		
-  double relhumid =  _dataAccessor.dataForTimestep(Climate::relhumid, stepNo);
+
+
+  // test if data for relhumid are available; if not, value is set to -1.0
+  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
+      _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
+
   double wind =  _dataAccessor.dataForTimestep(Climate::wind, stepNo);
   double precip =  _dataAccessor.dataForTimestep(Climate::precip, stepNo);
 
