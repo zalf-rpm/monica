@@ -50,7 +50,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <fstream>
 #include <sys/stat.h>
-#include <io.h>
+
+#ifdef __unix__
+  #include <sys/io.h>
+#else
+  #include <io.h>
+#endif
 
 #include <boost/foreach.hpp>
 
