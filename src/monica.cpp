@@ -1377,7 +1377,7 @@ Monica::initializeFoutHeader(ofstream &fout)
 {
   int outLayers = 20;
   fout << "Datum     ";
-
+  fout << "\tCrop";
   fout << "\tTraDef";
   fout << "\tTra";
   fout << "\tNDef";
@@ -1522,7 +1522,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << endl;
 
   //**** Second header line ***
-  fout << "TTMMYYY";
+  fout << "TTMMYYY";	// Date
+  fout << "\t[ ]";		// Crop name
   fout << "\t[0;1]";    // TranspirationDeficit
   fout << "\t[mm]";     // ActualTranspiration
   fout << "\t[0;1]";    // CropNRedux
@@ -1850,6 +1851,7 @@ void
 Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, bool crop_is_planted)
 {
   if(crop_is_planted) {
+    fout << "\t" << mcg->get_CropName();
     fout << fixed << setprecision(2) << "\t" << mcg->get_TranspirationDeficit();// [0;1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_ActualTranspiration();
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropNRedux();// [0;1]
@@ -1943,7 +1945,8 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
 
   } else { // crop is not planted
 
-    fout << "\t1.00"; // TranspirationDeficit
+    fout << "\t"; // Crop Name
+	fout << "\t1.00"; // TranspirationDeficit
     fout << "\t0.00"; // ActualTranspiration
     fout << "\t1.00"; // CropNRedux
     fout << "\t1.00"; // HeatStressRedux

@@ -211,6 +211,7 @@ namespace Monica
     double get_RemainingEvapotranspiration() const;
     double get_EvaporatedFromIntercept() const;
     double get_NetPrecipitation() const;
+	std::string get_CropName() const;
     double get_GrossPhotosynthesisRate() const;
     double get_GrossPhotosynthesisHaRate() const;
     double get_AssimilationRate() const;

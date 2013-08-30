@@ -2785,6 +2785,13 @@ double CropGrowth::fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
  return vc_NPP;
 }
 
+/**
+ * @brief Returns crop name [ ]
+ * @return crop name
+ */
+std::string CropGrowth::get_CropName() const {
+  return pc_CropName;
+}
 
 /**
  * @brief Returns gross photosynthesis rate [mol m-2 s-1]
