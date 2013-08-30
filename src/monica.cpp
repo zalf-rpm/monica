@@ -1701,6 +1701,7 @@ void
 Monica::initializeGoutHeader(ofstream &gout)
 {
   gout << "Datum     ";
+  gout << "\tCrop";
   gout << "\tStage";
   gout << "\tHeight";
   gout << "\tRoot";
@@ -1772,6 +1773,7 @@ Monica::initializeGoutHeader(ofstream &gout)
   // **** Second header line ****
 
   gout << "TTMMYYYY";
+  gout << "\t[ ]";
   gout << "\t[ ]";
   gout << "\t[m]";
   gout << "\t[kgDM/ha]";
@@ -1922,6 +1924,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
         fout << fixed << setprecision(2) << "\t0.0";
     }
 
+	gout << "\t" << mcg->get_CropName();
     gout << fixed << setprecision(0) << "\t" << mcg->get_DevelopmentalStage()  + 1;
     gout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();
     gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
@@ -2006,7 +2009,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.0"; // Ra shoot - OrganSpecificTotalRespired
     fout << "\t0.0"; // Ra fruit - OrganSpecificTotalRespired
 
-
+	gout << "\t";       // Crop Name
     gout << "\t0";      // DevelopmentalStage
     gout << "\t0.00";   // CropHeight
     gout << "\t0.0";    // OrganBiomass(0)
