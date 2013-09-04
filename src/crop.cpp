@@ -2664,7 +2664,11 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
 				       (vs_SoilMineralNContent[i_Layer] / 1000.0 / // [kg m-3]
 				        soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - 0.000014) * // [m3 m-3]
 				       sqrt(PI * vc_RootDensity[i_Layer])) * // [m m-3]
-	vc_RootDensity[i_Layer] * 1000.0 * vc_TimeStep; // -->[kg m-2]
+	                   vc_RootDensity[i_Layer] * 1000.0 * vc_TimeStep; // -->[kg m-2]
+	  
+	  if(vc_DiffusiveNUptakeFromLayer[i_Layer] < 0.0){
+		  vc_DiffusiveNUptakeFromLayer[i_Layer] = 0;
+	  }
 
       vc_DiffusiveNUptake += vc_DiffusiveNUptakeFromLayer[i_Layer]; // [kg m-2]
 
