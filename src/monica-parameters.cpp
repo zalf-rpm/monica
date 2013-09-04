@@ -2334,7 +2334,7 @@ const SoilPMs* Monica::weisseritzSoilParameters(int bk50GridId,
       {
         int id = satoi(row[0]);
 
-				//skip elements which are incomplete
+				//Skip elements which are incomplete
 				if(skip.find(id) != skip.end())
 					continue;
 
@@ -2404,8 +2404,8 @@ const SoilPMs* Monica::weisseritzSoilParameters(int bk50GridId,
  * @return Soil parameters
  */
 const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
-																					const GeneralParameters& gps,
-																					bool loadSingleParameter)
+										  const GeneralParameters& gps,
+										  bool loadSingleParameter)
 {
 	static SoilPMs nothing;
 
@@ -2455,7 +2455,7 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 			{
 				int id = satoi(row[0]);
 
-				//skip elements which are incomplete
+				//Skip elements which are incomplete
 				if(skip.find(id) != skip.end())
 					continue;
 
@@ -2583,9 +2583,9 @@ string Monica::bk50GridId2KA4Layers(int bk50GridId)
 }
 
 const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
-																										const string& pathToFile,
-																										const GeneralParameters& gps,
-																										double soil_ph)
+													const string& pathToFile,
+													const GeneralParameters& gps,
+													double soil_ph)
 {
 	debug() << pathToFile.c_str() << endl;
 	int lt = int(gps.ps_LayerThickness.front() * 100); //cm
@@ -2628,7 +2628,7 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
               //double vs_SoilSpecificMaxRootingDepth = wmax / 10.0; //[dm] --> [m]
 
               hu *= 10;
-              //reset horizont count to start new soil definition
+              //Reset horizont count to start new soil definition
               if (hcount > 0)
                 currenth = 1;
 
@@ -2661,13 +2661,12 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
               }
 
               SoilParameters p;
-//              cout << "Bodenart:\t" << ba << "\tld: " << ld << endl;
               p.set_vs_SoilOrganicCarbon(corg / 100.0);
               p.set_vs_SoilRawDensity(ld_eff2trd(ld, KA52clay(ba)));
               p.vs_SoilSandContent = KA52sand(ba);
               p.vs_SoilClayContent = KA52clay(ba);
               p.vs_SoilStoneContent = stone / 100.0;
-              p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+			  p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
               p.vs_SoilTexture = ba;
 
               if (soil_ph != -1.0) {
@@ -2675,7 +2674,6 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
               }
               // initialization of saturation, field capacity and perm. wilting point
               soilCharacteristicsKA5(p);
-              //        cout << p.toString() << endl;
 
               bool valid_soil_params = p.isValid();
               if (!valid_soil_params) {
@@ -2685,7 +2683,6 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 
               for (int i = 0; i < subhcount; i++)
                 sps->push_back(p);
-//              cout << "sps: " << sps->size() << endl;
               currenth++;
             }
 
