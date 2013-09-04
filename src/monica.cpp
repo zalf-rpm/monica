@@ -1504,8 +1504,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   }
 
   fout << "\tNetNmin";
-  fout << "\tSumDenit";
-	fout << "\tSumN2O";
+  fout << "\tDenit";
+	fout << "\tN2O";
 	fout << "\tSoilpH";
   fout << "\tNEP";
   fout << "\tNEE";
@@ -1673,8 +1673,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   }
 
   fout << "\t[kgN/m2]";  // NetNmin
-  fout << "\t[kgN/m2]";  // SumDenit
-	fout << "\t[kgN/m2]";  // SumN2O
+  fout << "\t[kgN/m2]";  // Denit
+	fout << "\t[kgN/m2]";  // N2O
 	fout << "\t[ ]";       // SoilpH
   fout << "\t[kgC/m2]";  // NEP
   fout << "\t[kgC/m2]";  // NEE
@@ -2133,8 +2133,8 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   }
 
   fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_SumDenitrification(); // [kg N m-2]
-	fout << fixed << setprecision(5) << "\t" << mso.get_SumN2O_Produced(); // [kg N m-2]
+  fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N m-2]
+	fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N m-2]
 	fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
 	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C m-2]
   fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C m-2]
