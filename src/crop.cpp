@@ -228,7 +228,7 @@ cutting_delay_days(0)
 
   // Initialising the crop
  
-	//vs_Tortuosity = centralParameterProvider.userCropParameters.pc_Tortuosity;
+  vs_Tortuosity = centralParameterProvider.userCropParameters.pc_Tortuosity;
   
 
   // Determining the total temperature sum of all developmental stages after
