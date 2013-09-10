@@ -72,6 +72,8 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
+
+
   enum ResultId {
     //! primary yield for the crop (e.g. the actual fruit)
     primaryYield,
@@ -1631,6 +1633,8 @@ namespace Monica
   std::vector<ProductionProcess>
       applySAChanges(std::vector<ProductionProcess> ff,
                      const CentralParameterProvider &centralParameterProvider);
+
+  CropPtr hermesCropId2Crop(const std::string&);
 }
 
 #endif
