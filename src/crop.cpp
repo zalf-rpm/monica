@@ -1190,6 +1190,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
   double pc_CanopyReflectionCoeff = user_crops.pc_CanopyReflectionCoefficient; // old REFLC;
 
 
+
   // Calculation of CO2 impact on crop growth
   if (pc_CO2Method == 3) {
 
@@ -1520,6 +1521,10 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
 
   // Converting photosynthesis rate from [kg CO2 ha leaf-1 d-1] to [kg CH2O ha-1  d-1]
   vc_Assimilates = vc_GrossCO2Assimilation * 30.0 / 44.0;
+
+  // reduction value for assimilate amount to simulate field conditions;
+  vc_Assimilates *= cropParams.pc_FieldConditionModifier;
+
 	if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {
     vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
 

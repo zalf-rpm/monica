@@ -1034,7 +1034,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 				exit(-1);
 			}
 
-			if (relhumid>0) {
+			if (relhumid>=0.0) {
 			    _relhumid.push_back(relhumid);
 			}
 			        
@@ -1110,7 +1110,8 @@ CropParameters::CropParameters() :
     pc_NConcentrationRoot(0),
     pc_ResidueNRatio(0),
     pc_DevelopmentAccelerationByNitrogenStress(0),
-    pc_CuttingDelayDays(0)
+    pc_CuttingDelayDays(0),
+    pc_FieldConditionModifier(1.0)
 {}
 
 /**
@@ -1401,7 +1402,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "stage_after_cut, crit_temperature_heat_stress, "
           "lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-          "cutting_delay_days from crop";
+          "cutting_delay_days, field_condition_modifier from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1464,6 +1465,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_EndSensitivePhaseHeatStress = satof(row[i++]);
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
+        cps->pc_FieldConditionModifier = satof(row[i++]);
 
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "

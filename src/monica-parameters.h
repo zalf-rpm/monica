@@ -355,6 +355,7 @@ namespace Monica
     double pc_NConcentrationRoot; /**<  */
     double pc_ResidueNRatio; /**<  */
     int pc_DevelopmentAccelerationByNitrogenStress; /**<  */
+    double pc_FieldConditionModifier;
 
     std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
     std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
