@@ -512,6 +512,8 @@ namespace Monica
     double vs_Saturation;
     double vs_PermanentWiltingPoint;
     std::string vs_SoilTexture;
+    double vs_SoilAmmonium;
+    double vs_SoilNitrate;
 
   private:
     double _vs_SoilRawDensity;

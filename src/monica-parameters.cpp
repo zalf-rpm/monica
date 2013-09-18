@@ -1687,7 +1687,9 @@ SoilParameters::SoilParameters() :
     vs_SoilpH(6.9),
     _vs_SoilRawDensity(0),
     _vs_SoilOrganicCarbon(-1),
-    _vs_SoilOrganicMatter(-1)
+    _vs_SoilOrganicMatter(-1),
+    vs_SoilAmmonium(-1),
+    vs_SoilNitrate(-1)
 {}
 
 
