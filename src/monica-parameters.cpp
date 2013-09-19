@@ -65,271 +65,8 @@ namespace
 
   //----------------------------------------------------------------------------
 
-  /**
- * @brief
- *
- * @param humus_st
- *
- * @return
- */
-//  double humus_st2corg(int humus_st)
-//  {
-//    switch (humus_st)
-//    {
-//    case 0:
-//      return 0.0;
-//    case 1:
-//      return 0.5 / 1.72;
-//    case 2:
-//      return 1.5 / 1.72;
-//    case 3:
-//      return 3.0 / 1.72;
-//    case 4:
-//      return 6.0 / 1.72;
-//    case 5:
-//      return 11.5 / 2.0;
-//    case 6:
-//      return 17.5 / 2.0;
-//    case 7:
-//      return 30.0 / 2.0;
-//    }
-//    return 0.0;
-//  }
-
-  //----------------------------------------------------------------------------
-
-  /**
- * @brief
- *
- * @param ldEff
- * @param clayPercent
- *
- * @return
- */
-//  double ld_eff2trd(int ldEff, double clay)
-//  {
-//    double x = 0.0;
-
-//    switch (ldEff)
-//    {
-//    case 1:
-//      x = 1.3;
-//      break;
-//    case 2:
-//      x = 1.5;
-//      break;
-//    case 3:
-//      x = 1.7;
-//      break;
-//    case 4:
-//      x = 1.9;
-//      break;
-//    case 5:
-//      x = 2.1;
-//      break;
-//    }
-//    return x - (0.9 * clay);
-//  }
-
-  //----------------------------------------------------------------------------
-
-  /**
- * @brief Returns lambda from soil texture
- *
- * @param lambda
- *
- * @return
- */
-//  double texture2lambda(double sand, double clay)
-//  {
-//    double lambda = (2.0 * (sand * sand * 0.575)) +
-//                    (clay * 0.1) + ((1.0 - sand - clay) * 0.35);
-//    // lambda = 1.0; /** @todo <b>Claas:</b> Temporary override until we have solved the problem with low water percolation loam soils **/
-//    return lambda;
-//  }
-
-  //----------------------------------------------------------------------------
-
-  /**
- * @brief Returns KA5 texture class from soil texture
- *
- * @param Soil texture
- *
- * @return
- */
-
-//  std::string texture2KA5(double sand, double clay)
-//  {
-//    double silt = 1.0 - sand - clay;
-//    std::string soilTexture;
-
-//    if ((silt < 0.1) && (clay < 0.05)){
-//      soilTexture = "Ss";
-//    } else if ((silt < 0.25) && (clay < 0.05)){
-//      soilTexture = "Su2";
-//    } else if ((silt < 0.25) && (clay < 0.08)){
-//      soilTexture = "Sl2";
-//    } else if ((silt < 0.40) && (clay < 0.08)){
-//      soilTexture = "Su3";
-//    } else if ((silt < 0.50) && (clay < 0.08)){
-//      soilTexture = "Su4";
-//    } else if ((silt < 0.8) && (clay < 0.08)){
-//      soilTexture = "Us";
-//    } else if ((silt >= 0.8) && (clay < 0.08)){
-//      soilTexture = "Uu";
-//    } else if ((silt < 0.1) && (clay < 0.17)){
-//      soilTexture = "St2";
-//    } else if ((silt < 0.4) && (clay < 0.12)){
-//      soilTexture = "Sl3";
-//    } else if ((silt < 0.4) && (clay < 0.17)){
-//      soilTexture = "Sl4";
-//    } else if ((silt < 0.5) && (clay < 0.17)){
-//      soilTexture = "Slu";
-//    } else if ((silt < 0.65) && (clay < 0.17)){
-//      soilTexture = "Uls";
-//    } else if ((silt >= 0.65) && (clay < 0.12)){
-//      soilTexture = "Ut2";
-//    } else if ((silt >= 0.65) && (clay < 0.17)){
-//      soilTexture = "Ut3";
-//    } else if ((silt < 0.15) && (clay < 0.25)){
-//      soilTexture = "St3";
-//    } else if ((silt < 0.30) && (clay < 0.25)){
-//      soilTexture = "Ls4";
-//    } else if ((silt < 0.40) && (clay < 0.25)){
-//      soilTexture = "Ls3";
-//    } else if ((silt < 0.50) && (clay < 0.25)){
-//      soilTexture = "Ls2";
-//    } else if ((silt < 0.65) && (clay < 0.30)){
-//      soilTexture = "Lu";
-//    } else if ((silt >= 0.65) && (clay < 0.25)){
-//      soilTexture = "Ut4";
-//    } else if ((silt < 0.15) && (clay < 0.35)){
-//      soilTexture = "Ts4";
-//    } else if ((silt < 0.30) && (clay < 0.45)){
-//      soilTexture = "Lts";
-//    } else if ((silt < 0.50) && (clay < 0.35)){
-//      soilTexture = "Lt2";
-//    } else if ((silt < 0.65) && (clay < 0.45)){
-//      soilTexture = "Tu3";
-//    } else if ((silt >= 0.65) && (clay >= 0.25)){
-//      soilTexture = "Tu4";
-//    } else if ((silt < 0.15) && (clay < 0.45)){
-//      soilTexture = "Ts3";
-//    } else if ((silt < 0.50) && (clay < 0.45)){
-//      soilTexture = "Lt3";
-//    } else if ((silt < 0.15) && (clay < 0.65)){
-//      soilTexture = "Ts2";
-//    } else if ((silt < 0.30) && (clay < 0.65)){
-//      soilTexture = "Tl";
-//    } else if ((silt >= 0.30) && (clay < 0.65)){
-//      soilTexture = "Tu2";
-//    } else if (clay >= 0.65){
-//      soilTexture = "Tt";
-//    } else soilTexture = "";
-
-//    return soilTexture;
-//  }
-
-  //----------------------------------------------------------------------------
 
 
-
-  CropPtr hermesCropId2Crop(const string& hermesCropId)
-  {
-    if(hermesCropId == "WW")
-      return CropPtr(new Crop(1, hermesCropId)); // Winter wheat
-    if(hermesCropId == "SW")
-      return CropPtr(new Crop(1, hermesCropId)); // Spring wheat
-    if(hermesCropId == "WG")
-      return CropPtr(new Crop(2, hermesCropId)); // Winter barley
-    if(hermesCropId == "SG")
-      return CropPtr(new Crop(4, hermesCropId)); // Spring barley
-    if(hermesCropId == "WR")
-      return CropPtr(new Crop(3, hermesCropId)); // Winter rye
-    if(hermesCropId == "SR")
-      return CropPtr(new Crop(20, hermesCropId)); // Spring rye
-    if(hermesCropId == "OAT")
-      return CropPtr(new Crop(22, hermesCropId)); // Oats
-    if(hermesCropId == "ZR")
-      return CropPtr(new Crop(10, hermesCropId)); // Sugar beet
-    if(hermesCropId == "SM")
-      return CropPtr(new Crop(7, hermesCropId)); // Silage maize
-    if(hermesCropId == "GM")
-      return CropPtr(new Crop(5, hermesCropId)); // Grain maize
-    if(hermesCropId == "GMB")
-      return CropPtr(new Crop(6, hermesCropId)); // Grain maize Brazil (Pioneer)
-    if(hermesCropId == "MEP")
-      return CropPtr(new Crop(8, hermesCropId)); // Late potato
-    if(hermesCropId == "MLP")
-      return CropPtr(new Crop(8, hermesCropId)); // Early potato
-    if(hermesCropId == "WC")
-      return CropPtr(new Crop(9, hermesCropId)); // Winter canola
-    if(hermesCropId == "SC")
-      return CropPtr(new Crop(9, hermesCropId)); // Spring canola
-    if(hermesCropId == "MU")
-      return CropPtr(new Crop(11, hermesCropId)); // Mustard
-    if(hermesCropId == "PH")
-      return CropPtr(new Crop(12, hermesCropId)); // Phacelia
-    if(hermesCropId == "CLV")
-      return CropPtr(new Crop(13, hermesCropId)); // Kleegras
-    if(hermesCropId == "LZG")
-      return CropPtr(new Crop(14, hermesCropId)); // Luzerne-Gras
-    if(hermesCropId == "WDG")
-      return CropPtr(new Crop(16, hermesCropId)); // Weidelgras
-    if(hermesCropId == "FP")
-      return CropPtr(new Crop(24, hermesCropId)); // Field pea
-    if(hermesCropId == "OR")
-      return CropPtr(new Crop(17, hermesCropId)); // Oil raddish
-    if(hermesCropId == "SDG")
-      return CropPtr(new Crop(18, hermesCropId)); // Sudan grass
-    if(hermesCropId == "WTR")
-      return CropPtr(new Crop(19, hermesCropId)); // Winter triticale
-    if(hermesCropId == "STR")
-      return CropPtr(new Crop(23, hermesCropId)); // Spring triticale
-    if(hermesCropId == "SOR")
-      return CropPtr(new Crop(21, hermesCropId)); // Sorghum
-    if(hermesCropId == "SX0")
-      return CropPtr(new Crop(28, hermesCropId)); // Soy bean maturity group 000
-    if(hermesCropId == "S00")
-      return CropPtr(new Crop(29, hermesCropId)); // Soy bean maturity group 00
-    if(hermesCropId == "S0X")
-      return CropPtr(new Crop(30, hermesCropId)); // Soy bean maturity group 0
-    if(hermesCropId == "S01")
-      return CropPtr(new Crop(31, hermesCropId)); // Soy bean maturity group I
-    if(hermesCropId == "S02")
-      return CropPtr(new Crop(32, hermesCropId)); // Soy bean maturity group II
-    if(hermesCropId == "S03")
-      return CropPtr(new Crop(33, hermesCropId)); // Soy bean maturity group III
-    if(hermesCropId == "S04")
-      return CropPtr(new Crop(34, hermesCropId)); // Soy bean maturity group IV
-    if(hermesCropId == "S05")
-      return CropPtr(new Crop(35, hermesCropId)); // Soy bean maturity group V
-    if(hermesCropId == "S06")
-      return CropPtr(new Crop(36, hermesCropId)); // Soy bean maturity group VI
-    if(hermesCropId == "S07")
-      return CropPtr(new Crop(37, hermesCropId)); // Soy bean maturity group VII
-    if(hermesCropId == "S08")
-      return CropPtr(new Crop(38, hermesCropId)); // Soy bean maturity group VIII
-    if(hermesCropId == "S09")
-      return CropPtr(new Crop(39, hermesCropId)); // Soy bean maturity group IX
-    if(hermesCropId == "S10")
-      return CropPtr(new Crop(40, hermesCropId)); // Soy bean maturity group X
-    if(hermesCropId == "S11")
-      return CropPtr(new Crop(41, hermesCropId)); // Soy bean maturity group XI
-    if(hermesCropId == "S12")
-      return CropPtr(new Crop(42, hermesCropId)); // Soy bean maturity group XII
-    if(hermesCropId == "COS")
-      return CropPtr(new Crop(43, hermesCropId)); // Cotton short
-    if(hermesCropId == "COM")
-      return CropPtr(new Crop(44, hermesCropId)); // Cotton medium
-    if(hermesCropId == "COL")
-      return CropPtr(new Crop(45, hermesCropId)); // Cotton long
-    if(hermesCropId == "BR")
-      return CropPtr(new Crop(hermesCropId));
-
-
-    return CropPtr();
-  }
 
   //----------------------------------------------------------------------------
 
@@ -1297,7 +1034,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 				exit(-1);
 			}
 
-			if (relhumid>0) {
+			if (relhumid>=0.0) {
 			    _relhumid.push_back(relhumid);
 			}
 			        
@@ -1373,7 +1110,8 @@ CropParameters::CropParameters() :
     pc_NConcentrationRoot(0),
     pc_ResidueNRatio(0),
     pc_DevelopmentAccelerationByNitrogenStress(0),
-    pc_CuttingDelayDays(0)
+    pc_CuttingDelayDays(0),
+    pc_FieldConditionModifier(1.0)
 {}
 
 /**
@@ -1664,7 +1402,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "stage_after_cut, crit_temperature_heat_stress, "
           "lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-          "cutting_delay_days from crop";
+          "cutting_delay_days, field_condition_modifier from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1727,6 +1465,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_EndSensitivePhaseHeatStress = satof(row[i++]);
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
+        cps->pc_FieldConditionModifier = satof(row[i++]);
 
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
@@ -1950,7 +1689,9 @@ SoilParameters::SoilParameters() :
     vs_SoilpH(6.9),
     _vs_SoilRawDensity(0),
     _vs_SoilOrganicCarbon(-1),
-    _vs_SoilOrganicMatter(-1)
+    _vs_SoilOrganicMatter(-1),
+    vs_SoilAmmonium(-1),
+    vs_SoilNitrate(-1)
 {}
 
 
@@ -3038,7 +2779,7 @@ string Crop::toString(bool detailed) const
 void Crop::writeCropParameters(std::string path)
 {
     ofstream parameter_output_file;
-    parameter_output_file.open((path + "crop_parameters-" + _name.c_str() + ".txt").c_str());
+    parameter_output_file.open((path + "/crop_parameters-" + _name.c_str() + ".txt").c_str());
     if (parameter_output_file.fail()){
         debug() << "Could not write file\"" << (path + "crop_parameters-" + _name.c_str() + ".txt").c_str() << "\"" << endl;
         return;
@@ -3601,6 +3342,9 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
       case Env::MODE_EVA2:
         con->select("select name, value_eva2 from user_parameter");
         break;
+      case Env::MODE_MACSUR_SCALING:
+        con->select("select name, value_macsur_scaling from user_parameter");
+        break;
       default:
         con->select("select name, value_hermes from user_parameter");
         break;
@@ -3833,6 +3577,9 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
       }
       delete con;
       initialized = true;
+#ifdef RUN_MACSUR_SCALING
+      initialized = false;
+#endif
 
       centralParameterProvider.capillaryRiseRates = readCapillaryRiseRates();
     }
@@ -3971,6 +3718,106 @@ void
         << endl;
   }
 }
+
+
+Monica::CropPtr
+Monica::hermesCropId2Crop(const string& hermesCropId)
+  {
+    if(hermesCropId == "WW")
+      return CropPtr(new Crop(1, hermesCropId)); // Winter wheat
+    if(hermesCropId == "SW")
+      return CropPtr(new Crop(1, hermesCropId)); // Spring wheat
+    if(hermesCropId == "WG")
+      return CropPtr(new Crop(2, hermesCropId)); // Winter barley
+    if(hermesCropId == "SG")
+      return CropPtr(new Crop(4, hermesCropId)); // Spring barley
+    if(hermesCropId == "WR")
+      return CropPtr(new Crop(3, hermesCropId)); // Winter rye
+    if(hermesCropId == "SR")
+      return CropPtr(new Crop(20, hermesCropId)); // Spring rye
+    if(hermesCropId == "OAT")
+      return CropPtr(new Crop(22, hermesCropId)); // Oats
+    if(hermesCropId == "ZR")
+      return CropPtr(new Crop(10, hermesCropId)); // Sugar beet
+    if(hermesCropId == "SM")
+      return CropPtr(new Crop(7, hermesCropId)); // Silage maize
+    if(hermesCropId == "GM")
+      return CropPtr(new Crop(5, hermesCropId)); // Grain maize
+    if(hermesCropId == "GMB")
+      return CropPtr(new Crop(6, hermesCropId)); // Grain maize Brazil (Pioneer)
+    if(hermesCropId == "MEP")
+      return CropPtr(new Crop(8, hermesCropId)); // Late potato
+    if(hermesCropId == "MLP")
+      return CropPtr(new Crop(8, hermesCropId)); // Early potato
+    if(hermesCropId == "WC")
+      return CropPtr(new Crop(9, hermesCropId)); // Winter canola
+    if(hermesCropId == "SC")
+      return CropPtr(new Crop(9, hermesCropId)); // Spring canola
+    if(hermesCropId == "MU")
+      return CropPtr(new Crop(11, hermesCropId)); // Mustard
+    if(hermesCropId == "PH")
+      return CropPtr(new Crop(12, hermesCropId)); // Phacelia
+    if(hermesCropId == "CLV")
+      return CropPtr(new Crop(13, hermesCropId)); // Kleegras
+    if(hermesCropId == "LZG")
+      return CropPtr(new Crop(14, hermesCropId)); // Luzerne-Gras
+    if(hermesCropId == "WDG")
+      return CropPtr(new Crop(16, hermesCropId)); // Weidelgras
+    if(hermesCropId == "FP")
+      return CropPtr(new Crop(24, hermesCropId)); // Field pea
+    if(hermesCropId == "OR")
+      return CropPtr(new Crop(17, hermesCropId)); // Oil raddish
+    if(hermesCropId == "SDG")
+      return CropPtr(new Crop(18, hermesCropId)); // Sudan grass
+    if(hermesCropId == "WTR")
+      return CropPtr(new Crop(19, hermesCropId)); // Winter triticale
+    if(hermesCropId == "STR")
+      return CropPtr(new Crop(23, hermesCropId)); // Spring triticale
+    if(hermesCropId == "SOR")
+      return CropPtr(new Crop(21, hermesCropId)); // Sorghum
+    if(hermesCropId == "SX0")
+      return CropPtr(new Crop(28, hermesCropId)); // Soy bean maturity group 000
+    if(hermesCropId == "S00")
+      return CropPtr(new Crop(29, hermesCropId)); // Soy bean maturity group 00
+    if(hermesCropId == "S0X")
+      return CropPtr(new Crop(30, hermesCropId)); // Soy bean maturity group 0
+    if(hermesCropId == "S01")
+      return CropPtr(new Crop(31, hermesCropId)); // Soy bean maturity group I
+    if(hermesCropId == "S02")
+      return CropPtr(new Crop(32, hermesCropId)); // Soy bean maturity group II
+    if(hermesCropId == "S03")
+      return CropPtr(new Crop(33, hermesCropId)); // Soy bean maturity group III
+    if(hermesCropId == "S04")
+      return CropPtr(new Crop(34, hermesCropId)); // Soy bean maturity group IV
+    if(hermesCropId == "S05")
+      return CropPtr(new Crop(35, hermesCropId)); // Soy bean maturity group V
+    if(hermesCropId == "S06")
+      return CropPtr(new Crop(36, hermesCropId)); // Soy bean maturity group VI
+    if(hermesCropId == "S07")
+      return CropPtr(new Crop(37, hermesCropId)); // Soy bean maturity group VII
+    if(hermesCropId == "S08")
+      return CropPtr(new Crop(38, hermesCropId)); // Soy bean maturity group VIII
+    if(hermesCropId == "S09")
+      return CropPtr(new Crop(39, hermesCropId)); // Soy bean maturity group IX
+    if(hermesCropId == "S10")
+      return CropPtr(new Crop(40, hermesCropId)); // Soy bean maturity group X
+    if(hermesCropId == "S11")
+      return CropPtr(new Crop(41, hermesCropId)); // Soy bean maturity group XI
+    if(hermesCropId == "S12")
+      return CropPtr(new Crop(42, hermesCropId)); // Soy bean maturity group XII
+    if(hermesCropId == "COS")
+      return CropPtr(new Crop(43, hermesCropId)); // Cotton short
+    if(hermesCropId == "COM")
+      return CropPtr(new Crop(44, hermesCropId)); // Cotton medium
+    if(hermesCropId == "COL")
+      return CropPtr(new Crop(45, hermesCropId)); // Cotton long
+    if(hermesCropId == "BR")
+      return CropPtr(new Crop(hermesCropId));
+
+
+    return CropPtr();
+  }
+
 
 /**
  * Check, if some parameters should be changed according to sensitivity analysis simulation.

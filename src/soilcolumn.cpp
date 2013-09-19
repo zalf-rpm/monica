@@ -200,8 +200,18 @@ vs_SoilTemperature(0)
 
   vs_SoilMoisture_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
   vs_SoilMoistureOld_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
-  vs_SoilNO3 = cpp.userInitValues.p_initSoilNitrate;
-  vs_SoilNH4 = cpp.userInitValues.p_initSoilAmmonium;
+
+  if (sps.vs_SoilAmmonium < 0.0) {
+      vs_SoilNH4 = cpp.userInitValues.p_initSoilAmmonium;
+  } else {
+      vs_SoilNH4 = sps.vs_SoilAmmonium; // kg m-3
+  }
+  if (sps.vs_SoilNitrate < 0.0) {
+      vs_SoilNO3 = cpp.userInitValues.p_initSoilNitrate;
+  } else {
+      vs_SoilNO3 = sps.vs_SoilNitrate;  // kg m-3
+  }
+
 
   //cout  << "Constructor 3" << endl;
   //cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.userInitValues.p_initPercentageFC << endl;

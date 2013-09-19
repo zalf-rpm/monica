@@ -72,6 +72,8 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
+
+
   enum ResultId {
     //! primary yield for the crop (e.g. the actual fruit)
     primaryYield,
@@ -353,6 +355,7 @@ namespace Monica
     double pc_NConcentrationRoot; /**<  */
     double pc_ResidueNRatio; /**<  */
     int pc_DevelopmentAccelerationByNitrogenStress; /**<  */
+    double pc_FieldConditionModifier;
 
     std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
     std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
@@ -511,6 +514,8 @@ namespace Monica
     double vs_Saturation;
     double vs_PermanentWiltingPoint;
     std::string vs_SoilTexture;
+    double vs_SoilAmmonium;
+    double vs_SoilNitrate;
 
   private:
     double _vs_SoilRawDensity;
@@ -1633,6 +1638,8 @@ namespace Monica
   std::vector<ProductionProcess>
       applySAChanges(std::vector<ProductionProcess> ff,
                      const CentralParameterProvider &centralParameterProvider);
+
+  CropPtr hermesCropId2Crop(const std::string&);
 }
 
 #endif
