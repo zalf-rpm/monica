@@ -466,6 +466,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
   hermes_config->setSecondaryYields(ipm.valueAsBool("general_parameters", "use_secondary_yields", true));
   hermes_config->setNitrogenResponseOn(ipm.valueAsBool("general_parameters", "nitrogen_response_on", true));
   hermes_config->setWaterDeficitResponseOn(ipm.valueAsBool("general_parameters", "water_deficit_response_on", true));
+  hermes_config->setEmergenceFloodingControlOn(ipm.valueAsBool("general_parameters", "emergence_flooding_control_on", true));
   hermes_config->setEmergenceMoistureControlOn(ipm.valueAsBool("general_parameters", "emergence_moisture_control_on", true));
 
   // initial values
@@ -578,8 +579,9 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   double max_mineralisation_depth = 0.4;
   bool nitrogen_response_on = hermes_config->getNitrogenResponseOn();
   bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
+  bool emergence_flooding_control_on = hermes_config->getEmergenceFloodingControlOn(); 
   bool emergence_moisture_control_on = hermes_config->getEmergenceMoistureControlOn(); 
-  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, nitrogen_response_on, water_deficit_response_on, emergence_moisture_control_on);
+  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, nitrogen_response_on, water_deficit_response_on, emergence_flooding_control_on, emergence_moisture_control_on);
 
   //soil data
   const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), gps, hermes_config->getPH());
