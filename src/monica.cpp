@@ -1676,16 +1676,16 @@ Monica::initializeFoutHeader(ofstream &fout)
 
   // NetNMineralisationRate
   for(int i_Layer = 0; i_Layer < 3; i_Layer++) {
-    fout << "\t[kgN/m2]";
+    fout << "\t[kgN/ha]";
   }
 
-  fout << "\t[kgN/m2]";  // NetNmin
-  fout << "\t[kgN/m2]";  // Denit
-	fout << "\t[kgN/m2]";  // N2O
+  fout << "\t[kgN/ha]";  // NetNmin
+  fout << "\t[kgN/ha]";  // Denit
+	fout << "\t[kgN/ha]";  // N2O
 	fout << "\t[ ]";       // SoilpH
-  fout << "\t[kgC/m2]";  // NEP
-  fout << "\t[kgC/m2]";  // NEE
-  fout << "\t[kg C m-2 d-1]"; // Rh
+  fout << "\t[kgC/ha]";  // NEP
+  fout << "\t[kgC/ha]";  // NEE
+  fout << "\t[kgC/ha]"; // Rh
 
   fout << "\t[°C]";     // tmin
   fout << "\t[°C]";     // tavg
@@ -2154,16 +2154,16 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
     fout << fixed << setprecision(4) << "\t" << mso.get_CBalance(i_Layer) ;
   }
   for(int i_Layer = 0; i_Layer < 3; i_Layer++) {
-    fout << fixed << setprecision(6) << "\t" << mso.get_NetNMineralisationRate(i_Layer) ; // [kg N m-2]
+    fout << fixed << setprecision(6) << "\t" << mso.get_NetNMineralisationRate(i_Layer) ; // [kg N ha-1]
   }
 
-  fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N m-2]
+  fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N ha-1]
   fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
   fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C ha-1]
   fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C ha-1]
-  fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C m-2 d-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
 
 
   fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::tmin, d);

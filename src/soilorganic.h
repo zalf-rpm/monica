@@ -100,9 +100,10 @@ class SoilOrganic {
     double get_NetNMineralisationRate(int i_Layer) const;
     double get_NH3_Volatilised() const;
     double get_SumNH3_Volatilised() const;
-		double get_N2O_Produced() const;
-		double get_SumN2O_Produced() const;
-    double get_NetNMineralisation() const;
+	double get_N2O_Produced() const;
+	double get_SumN2O_Produced() const;
+	double get_NetNMineralisation() const;
+	double get_SumNetNMineralisation() const;
     double get_SumDenitrification() const;
     double get_Denitrification() const;
     double get_DecomposerRespiration() const;
@@ -149,14 +150,14 @@ private:
     double              vo_DecomposerRespiration;
     std::string         vo_ErrorMessage;
     std::vector<double> vo_InertSoilOrganicC;
-		double              vo_N2O_Produced;
+	double              vo_N2O_Produced;
     double              vo_NetEcosystemExchange;
     double              vo_NetEcosystemProduction;
     double              vo_NetNMineralisation;
     std::vector<double> vo_NetNMineralisationRate;
     double              vo_Total_NH3_Volatilised;
     double              vo_NH3_Volatilised;
-		std::vector<double> vo_SMB_CO2EvolutionRate;
+	std::vector<double> vo_SMB_CO2EvolutionRate;
     std::vector<double> vo_SMB_FastDelta;
     std::vector<double> vo_SMB_SlowDelta;
     std::vector<double> vs_SoilMineralNContent;
@@ -165,7 +166,8 @@ private:
     double              vo_SOM_FastInput;// SOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_SOM_SlowDelta;
     double              vo_SumDenitrification;
-		double              vo_SumN2O_Produced;
+	double              vo_SumNetNMineralisation;
+	double              vo_SumN2O_Produced;
     double              vo_SumNH3_Volatilised;
     double              vo_TotalDenitrification;
 
