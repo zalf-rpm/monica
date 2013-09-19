@@ -120,7 +120,7 @@ private:
 		void fo_N2OProduction();
     void fo_PoolUpdate();
     double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
-    double fo_NetEcosystemExchange();
+    double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
     double fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect);
     double fo_TempOnDecompostion(double d_SoilTemperature);
     double fo_MoistOnDecompostion(double d_SoilMoisture_pF);
