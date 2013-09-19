@@ -420,7 +420,8 @@ namespace Monica
                       double ps_ProfileDepth = 2.0, 
 					  double ps_MaximumMineralisationDepth = 0.4,
 					  bool pc_NitrogenResponseOn = true,
-					  bool pc_WaterDeficitResponseOn = true);
+					  bool pc_WaterDeficitResponseOn = true,
+					  bool pc_EmergenceMoistureControlOn = true);
 
     /**
      * @brief Returns number of layers.
@@ -434,6 +435,7 @@ namespace Monica
     double ps_MaxMineralisationDepth;
 	bool pc_NitrogenResponseOn;
 	bool pc_WaterDeficitResponseOn;
+	bool pc_EmergenceMoistureControlOn;
   };
 
   //----------------------------------------------------------------------------

@@ -142,7 +142,8 @@ public:
 	    automaticIrrigation(false),
 	    NMinFertiliser(false),
 		nitrogenResponseOn(true),
-		waterDeficitResponseOn(true)
+		waterDeficitResponseOn(true),
+		emergenceMoistureControlOn(true)
 	{}
 	~HermesSimulationConfiguration(){}
 
@@ -181,6 +182,7 @@ public:
     void setSecondaryYields(bool v) {secondaryYields = v; }
 	void setNitrogenResponseOn(bool v) {nitrogenResponseOn = v; }
 	void setWaterDeficitResponseOn(bool v) {waterDeficitResponseOn = v; }
+    void setEmergenceMoistureControlOn(bool v) {emergenceMoistureControlOn = v; } 
 
     void setStartYear(int year) { this->startYear = year; }
     void setEndYear(int year) { this->endYear = year; }
@@ -244,6 +246,7 @@ public:
     bool getSecondaryYields() { return secondaryYields; }
     bool getNitrogenResponseOn() { return nitrogenResponseOn; }
 	bool getWaterDeficitResponseOn() { return waterDeficitResponseOn; }
+	bool getEmergenceMoistureControlOn() { return emergenceMoistureControlOn; }
 
     bool useNMinFertiliser() { return this->NMinFertiliser;}
     bool useAutomaticIrrigation() { return this->automaticIrrigation;}
@@ -292,6 +295,7 @@ public:
     bool secondaryYields;
 	bool nitrogenResponseOn;
 	bool waterDeficitResponseOn;
+	bool emergenceMoistureControlOn;
     int julianDayOfIrrigation;
 
     bool automaticIrrigation;

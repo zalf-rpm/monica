@@ -577,7 +577,6 @@ void MonicaModel::cropStep(unsigned int stepNo)
   double sunhours = _dataAccessor.hasAvailableClimateData(Climate::sunhours) ?
 	  _dataAccessor.dataForTimestep(Climate::sunhours, stepNo) : -1.0;		
 
-
   // test if data for relhumid are available; if not, value is set to -1.0
   double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
       _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
@@ -1475,7 +1474,7 @@ Monica::initializeFoutHeader(ofstream &fout)
 	for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
 		fout << "\tNO2-" << i_Layer;
 	}
-  for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
+  for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
     fout << "\tSOC-" << i_Layer;
   }
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
@@ -1631,8 +1630,8 @@ Monica::initializeFoutHeader(ofstream &fout)
 	}
 
   // get_SoilOrganicC
-  for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
-    fout << "\t[kgC/m3]";
+  for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
+    fout << "\t[kgC/kg]";
   }
 
   // get_AOM_FastSum
@@ -2104,8 +2103,8 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 	for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
 		fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).get_SoilNO2();
 	}
-	for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
-    fout << fixed << setprecision(4) << "\t" << mso.get_SoilOrganicC(i_Layer) ;
+	for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
+    fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).vs_SoilOrganicCarbon();
   }
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
     fout << fixed << setprecision(4) << "\t" << mso.get_AOM_FastSum(i_Layer) ;

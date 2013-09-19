@@ -101,6 +101,7 @@ vc_DevelopmentalStage(0),
 pc_DroughtStressThreshold(cropParams.pc_DroughtStressThreshold),
 vc_DroughtImpactOnFertility(1.0),
 pc_DroughtImpactOnFertilityFactor(cropParams.pc_DroughtImpactOnFertilityFactor),
+pc_EmergenceMoistureControlOn(generalParams.pc_EmergenceMoistureControlOn),
 pc_EndSensitivePhaseHeatStress(cropParams.pc_EndSensitivePhaseHeatStress),
 vc_EffectiveDayLength(0.0),
 vc_ErrorStatus(false),
@@ -831,26 +832,32 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
       /** @todo Claas: Schränkt trockener Boden das Aufsummieren der Wärmeeinheiten ein, oder
        sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian */
 
-      /** @todo Claas: Bodenwasser ist hier noch konstant wegen Test mit HERMES*/
-      //d_SoilMoisture_m3 = 0.6;
+      if (pc_EmergenceMoistureControlOn == true){
 
-
-	  if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)
+	    if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)
 					&& (soilColumn.vs_SurfaceWaterStorage < 0.001)){
 				// Germination only if soil water content in top layer exceeds
 				// 20% of capillary water, but is not beyond field capacity and
 				// if no water is stored on the soil surface.
 
-        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
             - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
 
-        if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
             vc_DevelopmentalStage++;
 
+          }
         }
-      }
+	  } else {
+		  vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
+            - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
+
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
+            vc_DevelopmentalStage++;
+		  }
+	  }
     }
-	} else if (vc_DevelopmentalStage > 0) {
+  } else if (vc_DevelopmentalStage > 0) {
 
 		// Development acceleration by N deficit in crop tissue
 		if ((pc_DevelopmentAccelerationByNitrogenStress == 1) &&

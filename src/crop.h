@@ -358,6 +358,7 @@ namespace Monica
     double vc_DroughtImpactOnFertility;
     double pc_DroughtImpactOnFertilityFactor;
     const std::vector<double>& pc_DroughtStressThreshold;	//! old DRYswell
+	bool pc_EmergenceMoistureControlOn;
     double pc_EndSensitivePhaseHeatStress;
     double vc_EffectiveDayLength;		//! old DLE
     bool vc_ErrorStatus;
