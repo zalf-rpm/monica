@@ -116,7 +116,7 @@ crop(NULL)
 			      * soilColumn[i_Layer].vs_LayerThickness // [kg C m-2]
 			      / 1000 * 10000.0), 1.139); // [t C ha-1]
 
-    vo_SoilOrganicC[i_Layer] -= vo_InertSoilOrganicC[i_Layer];
+    vo_SoilOrganicC[i_Layer] -= vo_InertSoilOrganicC[i_Layer]; // [kg C m-3]
 
     // Initialisation of pool SMB_Slow
 		soilColumn[i_Layer].vs_SMB_Slow = po_SOM_SlowUtilizationEfficiency
@@ -136,9 +136,9 @@ crop(NULL)
     // Soil Organic Matter pool update
     vo_SoilOrganicC[i_Layer] -= soilColumn[i_Layer].vs_SMB_Slow + soilColumn[i_Layer].vs_SMB_Fast;
 
-    soilColumn[i_Layer].set_SoilOrganicCarbon(vo_SoilOrganicC[i_Layer] / soilColumn[i_Layer].vs_SoilBulkDensity());
+    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity());
 
-		soilColumn[i_Layer].set_SoilOrganicMatter(vo_SoilOrganicC[i_Layer] / OrganicConstants::po_SOM_to_C
+		soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / OrganicConstants::po_SOM_to_C
 				      / soilColumn[i_Layer].vs_SoilBulkDensity());
 
 
@@ -176,7 +176,7 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   vo_NetEcosystemProduction =
           fo_NetEcosystemProduction(vc_NetPrimaryProduction, vo_DecomposerRespiration);
   vo_NetEcosystemExchange =
-          fo_NetEcosystemExchange();
+          fo_NetEcosystemExchange(vc_NetPrimaryProduction, vo_DecomposerRespiration);
 
   vo_SumNH3_Volatilised += vo_NH3_Volatilised;
 
@@ -1262,12 +1262,12 @@ void SoilOrganic::fo_PoolUpdate() {
     }
 
 
-    vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity();
+    vo_SoilOrganicC[i_Layer] = (soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity()) - vo_InertSoilOrganicC[i_Layer]; // [kg C m-3]
     vo_SoilOrganicC[i_Layer] += vo_CBalance[i_Layer];
     
-    soilColumn[i_Layer].set_SoilOrganicCarbon(vo_SoilOrganicC[i_Layer] / soilColumn[i_Layer].vs_SoilBulkDensity());
+    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity());
 
-		soilColumn[i_Layer].set_SoilOrganicMatter(vo_SoilOrganicC[i_Layer] / OrganicConstants::po_SOM_to_C
+		soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer])/ OrganicConstants::po_SOM_to_C
 				      / soilColumn[i_Layer].vs_SoilBulkDensity());
   } // for
 }
@@ -1509,13 +1509,13 @@ double SoilOrganic::fo_NetEcosystemProduction(double d_NetPrimaryProduction, dou
  * @brief Calculates Net ecosystem production [kg C m-2 d-1].
  *
  */
-double SoilOrganic::fo_NetEcosystemExchange() {
+double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
 
-  // This section is not yet defined!!!
+  // NEE = NEP (M.U.F. Kirschbaum and R. Mueller (2001): Net Ecosystem Exchange. Workshop Proceedings CRC for greenhouse accounting.
 
   double vo_NEE = 0.0;
 
-  vo_NEE = 0.0; // [kg C m-2 d-1]
+  vo_NEE = d_NetPrimaryProduction - d_DecomposerRespiration; // [kg C m-2 d-1]
 
   return vo_NEE;
 }

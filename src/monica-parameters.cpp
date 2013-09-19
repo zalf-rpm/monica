@@ -1622,12 +1622,14 @@ GeneralParameters::GeneralParameters(double ps_LayerThickness,
                                      double ps_ProfileDepth, 
 									 double ps_MaximumMineralisationDepth,
 									 bool pc_NitrogenResponseOn,
-					                 bool pc_WaterDeficitResponseOn) :
+					                 bool pc_WaterDeficitResponseOn,
+									 bool pc_EmergenceMoistureControlOn) :
 ps_LayerThickness(int(ps_ProfileDepth / ps_LayerThickness), ps_LayerThickness),
 ps_ProfileDepth(ps_ProfileDepth),
 ps_MaxMineralisationDepth(ps_MaximumMineralisationDepth),
 pc_NitrogenResponseOn(pc_NitrogenResponseOn),
-pc_WaterDeficitResponseOn(pc_WaterDeficitResponseOn)
+pc_WaterDeficitResponseOn(pc_WaterDeficitResponseOn),
+pc_EmergenceMoistureControlOn(pc_EmergenceMoistureControlOn)
 {}
 
 //------------------------------------------------------------------------------
