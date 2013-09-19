@@ -2159,10 +2159,10 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 
   fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N m-2]
   fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N m-2]
-	fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N m-2]
-	fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
-	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C m-2]
+  fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N m-2]
+  fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
+  fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C ha-1]
   fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C m-2 d-1]
 
 

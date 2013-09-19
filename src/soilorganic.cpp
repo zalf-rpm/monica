@@ -1492,21 +1492,21 @@ double SoilOrganic::fo_NH3onNitriteOxidation(double d_SoilNH4, double d_SoilpH) 
 }
 
 /**
- * @brief Calculates Net ecosystem production [kg C m-2 d-1].
+ * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
 double SoilOrganic::fo_NetEcosystemProduction(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
 
   double vo_NEP = 0.0;
 
-  vo_NEP = d_NetPrimaryProduction - d_DecomposerRespiration; // [kg C m-2 d-1]
+  vo_NEP = d_NetPrimaryProduction - (d_DecomposerRespiration * 10000.0); // [kg C ha-1 d-1]
 
   return vo_NEP;
 }
 
 
 /**
- * @brief Calculates Net ecosystem production [kg C m-2 d-1].
+ * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
 double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
@@ -1515,7 +1515,7 @@ double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, doubl
 
   double vo_NEE = 0.0;
 
-  vo_NEE = d_NetPrimaryProduction - d_DecomposerRespiration; // [kg C m-2 d-1]
+  vo_NEE = d_NetPrimaryProduction - (d_DecomposerRespiration * 10000.0); // [kg C ha-1 d-1]
 
   return vo_NEE;
 }
@@ -1694,7 +1694,7 @@ double SoilOrganic::get_DecomposerRespiration() const
 
 /**
  * Returns daily net ecosystem production
- * @return daily net ecosystem production [kg C m-2 d-1]
+ * @return daily net ecosystem production [kg C ha-1 d-1]
  */
 double SoilOrganic::get_NetEcosystemProduction() const
 {
@@ -1704,7 +1704,7 @@ double SoilOrganic::get_NetEcosystemProduction() const
 
 /**
  * Returns daily net ecosystem exchange
- * @return daily net ecosystem exchange [kg C m-2 d-1]
+ * @return daily net ecosystem exchange [kg C ha-1 d-1]
  */
 double SoilOrganic::get_NetEcosystemExchange() const
 {
