@@ -3316,7 +3316,7 @@ double CropGrowth::get_PotNUptake() const
 }
 
 /**
- * @brief Returns the gross primary production [kg C m-2 d-1]
+ * @brief Returns the gross primary production [kg C ha-1 d-1]
  * @return Gross primary production
  */
 double CropGrowth::get_GrossPrimaryProduction() const
@@ -3325,7 +3325,7 @@ double CropGrowth::get_GrossPrimaryProduction() const
 }
 
 /**
- * @brief Returns the net primary production [kg C m-2 d-1]
+ * @brief Returns the net primary production [kg C ha-1 d-1]
  * @return Net primary production
  */
 double CropGrowth::get_NetPrimaryProduction() const
