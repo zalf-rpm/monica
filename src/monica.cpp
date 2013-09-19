@@ -1479,6 +1479,7 @@ Monica::initializeFoutHeader(ofstream &fout)
     fout << "\tSOC-" << i_Layer;
   }
 
+  fout << "\tSOC-0-30";
   fout << "\tSOC-0-200";
 
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
@@ -1638,7 +1639,8 @@ Monica::initializeFoutHeader(ofstream &fout)
     fout << "\t[kgC/kg]";
   }
 
-  fout << "\t[gC m-2]";
+  fout << "\t[gC m-2]";   // SOC-0-30
+  fout << "\t[gC m-2]";   // SOC-0-200
 
   // get_AOM_FastSum
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
@@ -2113,6 +2115,16 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
     fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).vs_SoilOrganicCarbon();
   }
 
+	// SOC-0-30 [g C m-2]
+  double soc_30_accumulator = 0.0;
+  for (int i_Layer = 0; i_Layer < 3; i_Layer++) {
+      // kg C / kg --> g C / m2
+      soc_30_accumulator += msc.soilLayer(i_Layer).vs_SoilOrganicCarbon() * msc.soilLayer(i_Layer).vs_SoilBulkDensity() * msc.soilLayer(i_Layer).vs_LayerThickness * 1000;
+  }
+  fout << fixed << setprecision(4) << "\t" << soc_30_accumulator ;
+
+
+  // SOC-0-200   [g C m-2]
 	double soc_200_accumulator = 0.0;
 	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
 	    // kg C / kg --> g C / m2
