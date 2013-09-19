@@ -1512,10 +1512,11 @@ double SoilOrganic::fo_NetEcosystemProduction(double d_NetPrimaryProduction, dou
 double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
 
   // NEE = NEP (M.U.F. Kirschbaum and R. Mueller (2001): Net Ecosystem Exchange. Workshop Proceedings CRC for greenhouse accounting.
+  // Per definition: NPP is negative and respiration is positive
 
   double vo_NEE = 0.0;
 
-  vo_NEE = d_NetPrimaryProduction - (d_DecomposerRespiration * 10000.0); // [kg C ha-1 d-1]
+  vo_NEE = - d_NetPrimaryProduction + (d_DecomposerRespiration * 10000.0); // [kg C ha-1 d-1]
 
   return vo_NEE;
 }
