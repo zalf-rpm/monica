@@ -1978,8 +1978,6 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.000";  // GrossPhotosynthesisHaRate
     fout << "\t0.000";  // Assimilates
     fout << "\t0.000";  // MaintenanceRespirationAS
-    fout << "\t0.000";  // GrossPrimaryProduction
-    fout << "\t0.000";  // NetPrimaryProduction
 
     fout << "\t0.00";   // StomataResistance
     fout << "\t0.00";   // CropHeight
