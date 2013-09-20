@@ -424,6 +424,7 @@ namespace Monica
 					  double ps_MaximumMineralisationDepth = 0.4,
 					  bool pc_NitrogenResponseOn = true,
 					  bool pc_WaterDeficitResponseOn = true,
+					  bool pc_EmergenceFloodingControlOn = true,
 					  bool pc_EmergenceMoistureControlOn = true);
 
     /**
@@ -438,6 +439,7 @@ namespace Monica
     double ps_MaxMineralisationDepth;
 	bool pc_NitrogenResponseOn;
 	bool pc_WaterDeficitResponseOn;
+	bool pc_EmergenceFloodingControlOn;
 	bool pc_EmergenceMoistureControlOn;
   };
 
