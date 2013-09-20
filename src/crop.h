@@ -218,7 +218,8 @@ namespace Monica
     double get_Assimilates() const;
     double get_NetMaintenanceRespiration() const;
     double get_MaintenanceRespirationAS() const;
-    double get_VernalisationFactor() const;
+    double get_GrowthRespirationAS() const;
+	double get_VernalisationFactor() const;
     double get_DaylengthFactor() const;
     double get_OrganGrowthIncrement(int i_Organ) const;
     double get_NetPhotosynthesis() const;
@@ -377,6 +378,7 @@ namespace Monica
     double vc_GrossPhotosynthesis_mol;
     double vc_GrossPhotosynthesisReference_mol;
     double vc_GrossPrimaryProduction;
+	double vc_GrowthRespirationAS;
     double vs_HeightNN;
     double pc_InitialKcFactor;						//! old Kcini
     const std::vector<double>& pc_InitialOrganBiomass;

@@ -162,7 +162,8 @@ SoilOrganic::~SoilOrganic() {
 void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 		   double vw_WindSpeed) {
 
-  double vc_NetPrimaryProduction = crop ? crop->get_NetPrimaryProduction() : 0;
+  double vc_NetPrimaryProduction = 0.0;
+  vc_NetPrimaryProduction = crop ? crop->get_NetPrimaryProduction() : 0;
 
   //fo_OM_Input(vo_AOM_Addition);
   fo_Urea(vw_Precipitation + irrigationAmount);
@@ -972,11 +973,11 @@ void SoilOrganic::fo_MIT() {
       soilColumn[i_Layer].vs_SoilNH4 += fabs(vo_NBalance[i_Layer]);
     }
 
-		vo_NetNMineralisationRate[i_Layer] = fabs(vo_NBalance[i_Layer])
-				* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
-		vo_NetNMineralisation += fabs(vo_NBalance[i_Layer])
-				* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
-		vo_SumNetNMineralisation += fabs(vo_NBalance[i_Layer])
+	vo_NetNMineralisationRate[i_Layer] = fabs(vo_NBalance[i_Layer])
+			* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
+	vo_NetNMineralisation += fabs(vo_NBalance[i_Layer])
+			* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
+	vo_SumNetNMineralisation += fabs(vo_NBalance[i_Layer])
 				* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
 
   }

@@ -255,6 +255,7 @@ void MonicaModel::seedCrop(CropPtr crop)
     _soilTransport.put_Crop(_currentCropGrowth);
     _soilColumn.put_Crop(_currentCropGrowth);
     _soilMoisture.put_Crop(_currentCropGrowth);
+	_soilOrganic.put_Crop(_currentCropGrowth);
 
     debug() << "seedDate: "<< _currentCrop->seedDate().toString()
         << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
@@ -1393,9 +1394,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tIncShoot";
   fout << "\tIncFruit";
 
-  fout << "\tNetPhot";
   fout << "\tRelDev";
-
   fout << "\tRoot";
   fout << "\tLeaf";
   fout << "\tShoot";
@@ -1403,9 +1402,9 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tYield";
 
   fout << "\tGroPhot";
-  fout << "\tAssim";
-  fout << "\tMaint";
-
+  fout << "\tNetPhot";
+  fout << "\tMaintR";
+  fout << "\tGrowthR";
   fout << "\tStomRes";
   fout << "\tHeight";
   fout << "\tLAI";
@@ -1541,7 +1540,6 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kg/ha]";  // OrganGrowthIncrement shoot
   fout << "\t[kg/ha]";  // OrganGrowthIncrement fruit
 
-  fout << "\t[kgCH2O/ha]";  // NetPhotosynthesis
   fout << "\t[0;1]";        // RelativeTotalDevelopment
 
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(0)
@@ -1551,9 +1549,9 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kgDM/ha]";    // get_PrimaryCropYield(3)
 
   fout << "\t[kgCH2O/ha]";  // GrossPhotosynthesisHaRate
-  fout << "\t[kgCH2O/ha]";  // Assimilates
+  fout << "\t[kgCH2O/ha]";  // NetPhotosynthesis
   fout << "\t[kgCH2O/ha]";  // MaintenanceRespirationAS
-
+  fout << "\t[kgCH2O/ha]";  // GrowthRespirationAS
   fout << "\t[s/m]";        // StomataResistance
   fout << "\t[m]";          // CropHeight
   fout << "\t[m2/m2]";      // LeafAreaIndex
@@ -1872,8 +1870,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(1);
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(2);
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(3);
-    fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();
-
+    
     fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
     fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
     fout << "\t" << mcg->get_OrganBiomass(1);
@@ -1882,8 +1879,9 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
 	fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
 
     fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
-    fout << fixed << setprecision(4) << "\t" << mcg->get_Assimilates(); // [kg CH2O ha-1 d-1]
+	fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();  // [kg CH2O ha-1 d-1]
     fout << fixed << setprecision(4) << "\t" << mcg->get_MaintenanceRespirationAS();// [kg CH2O ha-1]
+	fout << fixed << setprecision(4) << "\t" << mcg->get_GrowthRespirationAS();// [kg CH2O ha-1]
 
     fout << fixed << setprecision(2) << "\t" << mcg->get_StomataResistance();// [s m-1]
 
@@ -1965,9 +1963,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00";   // OrganGrowthIncrement leaf
     fout << "\t0.00";   // OrganGrowthIncrement shoot
     fout << "\t0.00";   // OrganGrowthIncrement fruit
-
-    fout << "\t0.00";   // NetPhotosynthesis
-    fout << "\t0.00";   // RelativeTotalDevelopment
+	fout << "\t0.00";   // RelativeTotalDevelopment
 
     fout << "\t0.0";    // get_OrganBiomass(0)
     fout << "\t0.0";    // get_OrganBiomass(1)
@@ -1976,9 +1972,9 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
 	fout << "\t0.0";    // get_PrimaryCropYield(3)
 
     fout << "\t0.000";  // GrossPhotosynthesisHaRate
-    fout << "\t0.000";  // Assimilates
-    fout << "\t0.000";  // MaintenanceRespirationAS
-
+    fout << "\t0.00";   // NetPhotosynthesis
+	fout << "\t0.000";  // MaintenanceRespirationAS
+	fout << "\t0.000";  // GrowthRespirationAS
     fout << "\t0.00";   // StomataResistance
     fout << "\t0.00";   // CropHeight
     fout << "\t0.00";   // LeafAreaIndex

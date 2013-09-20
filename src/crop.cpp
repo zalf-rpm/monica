@@ -120,6 +120,7 @@ vc_GrossPhotosynthesis(0.0),
 vc_GrossPhotosynthesis_mol(0.0),
 vc_GrossPhotosynthesisReference_mol(0.0),
 vc_GrossPrimaryProduction(0.0),
+vc_GrowthRespirationAS(0.0),
 vs_HeightNN(stps.vs_HeightNN),
 pc_InitialKcFactor(cropParams.pc_InitialKcFactor),
 pc_InitialOrganBiomass(cropParams.pc_InitialOrganBiomass),
@@ -1626,7 +1627,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
     }
 
   }
-
+  vc_GrowthRespirationAS = vc_PhotoGrowthRespiration + vc_DarkGrowthRespiration; // [kg CH2O ha-1]
   vc_TotalRespired = vc_GrossAssimilates - vc_Assimilates; // [kg CH2O ha-1]
 
   /** to reactivate HERMES algorithms, needs to be vc_NetPhotosynthesis
@@ -2886,6 +2887,14 @@ double CropGrowth::get_MaintenanceRespirationAS() const {
   return vc_MaintenanceRespirationAS;
 }
 
+
+/**
+ * @brief Returns growth respiration rate from AGROSIM [kg CO2 ha-1]
+ * @return GRowth respiration rate
+ */
+double CropGrowth::get_GrowthRespirationAS() const {
+  return vc_GrowthRespirationAS;
+}
 
 /**
  */
