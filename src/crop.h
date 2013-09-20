@@ -267,7 +267,7 @@ namespace Monica
     double get_GrossPrimaryProduction() const;
     double get_NetPrimaryProduction() const;
     
-    double get_VcRespiration() const;
+    double get_AutotrophicRespiration() const;
     double get_OrganSpecificTotalRespired(int organ) const;
     double get_OrganSpecificNPP(int organ) const;
     int get_NumberOfOrgans() const { return pc_NumberOfOrgans; }

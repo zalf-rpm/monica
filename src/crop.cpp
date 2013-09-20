@@ -3361,13 +3361,17 @@ double CropGrowth::get_NetPrimaryProduction() const
   return vc_NetPrimaryProduction;
 }
 
-double CropGrowth::get_VcRespiration() const
+/**
+ * @brief Returns the respiration [kg C ha-1 d-1]
+ * @return Net primary production
+ */
+double CropGrowth::get_AutotrophicRespiration() const
 {
-  return vc_Respiration;  // [kg C m-2 d-1]
+  return vc_TotalRespired / 30.0 * 12.0;;  // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
 }
 
 /**
- * Returns the individual respiration of the organs
+ * Returns the individual respiration of the organs [kg C ha-1 d-1]
  * based on the current ratio of the crop's biomass.
  */
 double CropGrowth::get_OrganSpecificTotalRespired(int organ)  const
@@ -3377,12 +3381,13 @@ double CropGrowth::get_OrganSpecificTotalRespired(int organ)  const
 
   // get biomass of specific organ and calculates ratio
   double organ_percentage = get_OrganBiomass(organ) / total_biomass;
-  return (get_VcRespiration() * organ_percentage);
+  return (get_AutotrophicRespiration() * organ_percentage);
 }
 
 
 /**
- *
+ * @brief Returns the organ-specific net primary production [kg C ha-1 d-1]
+ * @return Organ-specific net primary production
  */
 double CropGrowth::get_OrganSpecificNPP(int organ)  const
 {

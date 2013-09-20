@@ -1405,8 +1405,6 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tGroPhot";
   fout << "\tAssim";
   fout << "\tMaint";
-  fout << "\tGPP";
-  fout << "\tNPP";
 
   fout << "\tStomRes";
   fout << "\tHeight";
@@ -1555,8 +1553,6 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kgCH2O/ha]";  // GrossPhotosynthesisHaRate
   fout << "\t[kgCH2O/ha]";  // Assimilates
   fout << "\t[kgCH2O/ha]";  // MaintenanceRespirationAS
-  fout << "\t[kgC/ha]";     // GrossPrimaryProduction
-  fout << "\t[kgC/ha]";     // NetPrimaryProduction
 
   fout << "\t[s/m]";        // StomataResistance
   fout << "\t[m]";          // CropHeight
@@ -1573,18 +1569,18 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kgN/kg]";     // CriticalNConcentration
   fout << "\t[kgN/kg]";     // AbovegroundBiomassNConcentration
 
-  fout << "\t[kg C m-2]";   // NPP
-  fout << "\t[kg C m-2]";   // NPP root
-  fout << "\t[kg C m-2]";   // NPP leaf
-  fout << "\t[kg C m-2]";   // NPP shoot
-  fout << "\t[kg C m-2]";   // NPP fruit
+  fout << "\t[kg C ha-1]";   // NPP
+  fout << "\t[kg C ha-1]";   // NPP root
+  fout << "\t[kg C ha-1]";   // NPP leaf
+  fout << "\t[kg C ha-1]";   // NPP shoot
+  fout << "\t[kg C ha-1]";   // NPP fruit
 
-  fout << "\t[kg C m-2]";   // GPP
-  fout << "\t[kg C m-2]";   // Ra
-	fout << "\t[kg C m-2]";   // Ra root
-	fout << "\t[kg C m-2]";   // Ra leaf
-	fout << "\t[kg C m-2]";   // Ra shoot
-	fout << "\t[kg C m-2]";   // Ra fruit
+  fout << "\t[kg C ha-1]";   // GPP
+  fout << "\t[kg C ha-1]";   // Ra
+  fout << "\t[kg C ha-1]";   // Ra root
+  fout << "\t[kg C ha-1]";   // Ra leaf
+  fout << "\t[kg C ha-1]";   // Ra shoot
+  fout << "\t[kg C ha-1]";   // Ra fruit
 
 
   for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
@@ -1889,8 +1885,6 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(4) << "\t" << mcg->get_Assimilates(); // [kg CH2O ha-1 d-1]
     fout << fixed << setprecision(4) << "\t" << mcg->get_MaintenanceRespirationAS();// [kg CH2O ha-1]
 
-    fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPrimaryProduction(); // [kg C ha-1 d-1]
-    fout << fixed << setprecision(4) << "\t" << mcg->get_NetPrimaryProduction(); // [kg C ha-1 d-1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_StomataResistance();// [s m-1]
 
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();// [m]
@@ -1907,22 +1901,22 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(3) << "\t" << mcg->get_CriticalNConcentration();//[kg N kg-1]
     fout << fixed << setprecision(3) << "\t" << mcg->get_AbovegroundBiomassNConcentration();//[kg N kg-1]
 
-    fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C m-2]
+    fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
-        fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C m-2]
+        fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C ha-1]
     }
     // if there less than 4 organs we have to fill the column that
     // was added in the output header of rmout; in this header there
     // are statically 4 columns initialised for the organ NPP
     for (int i=mcg->get_NumberOfOrgans(); i<4; i++) {
-        fout << fixed << setprecision(2) << "\t0.0"; // NPP organs, [kg C m-2]
+        fout << fixed << setprecision(2) << "\t0.0"; // NPP organs, [kg C ha-1]
     }
 
-    fout << fixed << setprecision(5) << "\t" << mcg->get_GrossPrimaryProduction(); // GPP, [kg C m-2]
+    fout << fixed << setprecision(5) << "\t" << mcg->get_GrossPrimaryProduction(); // GPP, [kg C ha-1]
 
-    fout << fixed << setprecision(5) << "\t" << mcg->get_VcRespiration(); // Ra, [kg C m-2]
+    fout << fixed << setprecision(5) << "\t" << mcg->get_AutotrophicRespiration(); // Ra, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
-      fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C m-2]
+      fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C ha-1]
     }
     // if there less than 4 organs we have to fill the column that
     // was added in the output header of rmout; in this header there
