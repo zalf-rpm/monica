@@ -292,8 +292,8 @@ double SoilLayer::vs_SoilOrganicCarbon() const {
 /**
  * @brief Returns value for soil organic matter.
  *
- * If value for soil organic carbon is not defined, because DB does not
- * contain the according value, than the store value for organic matter
+ * If the value for soil organic carbon is not defined, because the DB does
+ * not contain any value, than the stored value for organic matter
  * is returned. If the soil organic carbon parameter is defined,
  * than the value for soil organic matter is calculated depending on
  * the soil organic carbon.
@@ -311,15 +311,14 @@ double SoilLayer::vs_SoilOrganicMatter() const {
 }
 
 /**
- * @brief Returns part of silt content of the layer.
+ * @brief Returns fraction of silt content of the layer.
  *
- * Calculates part of silt the layer contains dependant to
- * the sand and clay content.
+ * Calculates the silt particle size fraction in the layer in dependence
+ * of its sand and clay content.
  *
- * @return Part of silt in the layer.
+ * @return Fraction of silt in the layer.
  */
 double SoilLayer::vs_SoilSiltContent() const {
-  // Berechnung des Schluffgehalts in Abhängigkeit der anderen Komponenten
   return (1 - vs_SoilSandContent - vs_SoilClayContent);
 }
 

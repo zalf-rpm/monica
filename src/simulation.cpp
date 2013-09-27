@@ -445,6 +445,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
   hermes_config->setSlope(ipm.valueAsDouble("site_parameters", "slope", -1.0));
   hermes_config->setHeightNN(ipm.valueAsDouble("site_parameters", "heightNN", -1.0));
   hermes_config->setSoilCNRatio(ipm.valueAsDouble("site_parameters", "soilCNRatio", -1.0));
+  hermes_config->setDrainageCoeff(ipm.valueAsDouble("site_parameters", "drainageCoeff", -1.0));
   hermes_config->setAtmosphericCO2(ipm.valueAsDouble("site_parameters", "atmospheric_CO2", -1.0));
   hermes_config->setWindSpeedHeight(ipm.valueAsDouble("site_parameters", "wind_speed_height", -1.0));
   hermes_config->setLeachingDepth(ipm.valueAsDouble("site_parameters", "leaching_depth", -1.0));
@@ -517,8 +518,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   if (hermes_config->getAtmosphericCO2()!=-1.0){
       centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = hermes_config->getAtmosphericCO2();
   }
-  if (hermes_config->getlatitude()!=-1.0){
-      siteParams.vs_Latitude = hermes_config->getlatitude();
+  if (hermes_config->getLatitude()!=-1.0){
+      siteParams.vs_Latitude = hermes_config->getLatitude();
   }
 
   if (hermes_config->getSlope()!=-1.0){
@@ -531,6 +532,10 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   if (hermes_config->getSoilCNRatio()!=-1.0){
       siteParams.vs_Soil_CN_Ratio = hermes_config->getSoilCNRatio();
+  }
+  
+  if (hermes_config->getDrainageCoeff()!=-1.0){
+      siteParams.vs_DrainageCoeff = hermes_config->getDrainageCoeff();
   }
 
   if (hermes_config->getMinGWDepth()!=-1.0){
@@ -584,7 +589,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, nitrogen_response_on, water_deficit_response_on, emergence_flooding_control_on, emergence_moisture_control_on);
 
   //soil data
-  const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), gps, hermes_config->getPH());
+  const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), gps, hermes_config->getPH(), hermes_config->getDrainageCoeff());
 
   //climate data
   std::string file = outputPath+hermes_config->getWeatherFile();

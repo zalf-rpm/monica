@@ -1661,6 +1661,7 @@ SiteParameters::SiteParameters() :
     vs_HeightNN(50.0),
     vs_GroundwaterDepth(70.0),
     vs_Soil_CN_Ratio(10.0),
+	vs_DrainageCoeff(1.0),
     vq_NDeposition(30.0)
 {}
 
@@ -1673,7 +1674,7 @@ string SiteParameters::toString() const
   ostringstream s;
   s << "vs_Latitude: " << vs_Latitude << " vs_Slope: " << vs_Slope << " vs_HeightNN: " << vs_HeightNN
       << " vs_DepthGroundwaterTable: " << vs_GroundwaterDepth << " vs_Soil_CN_Ratio: " << vs_Soil_CN_Ratio
-      << " vq_NDeposition: " << vq_NDeposition
+      << "vs_DrainageCoeff: " << vs_DrainageCoeff << " vq_NDeposition: " << vq_NDeposition
       << endl;
   return s.str();
 }
@@ -2330,7 +2331,8 @@ string Monica::bk50GridId2KA4Layers(int bk50GridId)
 const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 													const string& pathToFile,
 													const GeneralParameters& gps,
-													double soil_ph)
+													double soil_ph,
+													double drainage_coeff)
 {
 	debug() << pathToFile.c_str() << endl;
 	int lt = int(gps.ps_LayerThickness.front() * 100); //cm
@@ -2417,6 +2419,11 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
               if (soil_ph != -1.0) {
                   p.vs_SoilpH = soil_ph;
               }
+
+			  if (drainage_coeff != -1.0) {
+                  p.vs_Lambda = drainage_coeff;
+              }
+
               // initialization of saturation, field capacity and perm. wilting point
               soilCharacteristicsKA5(p);
 
@@ -3748,9 +3755,9 @@ Monica::hermesCropId2Crop(const string& hermesCropId)
     if(hermesCropId == "GMB")
       return CropPtr(new Crop(6, hermesCropId)); // Grain maize Brazil (Pioneer)
     if(hermesCropId == "MEP")
-      return CropPtr(new Crop(8, hermesCropId)); // Late potato
-    if(hermesCropId == "MLP")
       return CropPtr(new Crop(8, hermesCropId)); // Early potato
+    if(hermesCropId == "MLP")
+      return CropPtr(new Crop(8, hermesCropId)); // Late potato
     if(hermesCropId == "WC")
       return CropPtr(new Crop(9, hermesCropId)); // Winter canola
     if(hermesCropId == "SC")

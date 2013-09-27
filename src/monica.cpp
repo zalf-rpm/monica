@@ -2247,9 +2247,9 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(0);
   gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(2);
   gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(5);
-  gout << fixed << setprecision(2) << "\t" << mso.get_DecomposerRespiration()* 10000.0; // Rh, [kg C ha-1 d-1]
+  gout << fixed << setprecision(2) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
 
-  gout << fixed << setprecision(3) << "\t" << mso.get_NH3_Volatilised() * 10000; // [kg N ha-1]
+  gout << fixed << setprecision(3) << "\t" << mso.get_NH3_Volatilised(); // [kg N ha-1]
   gout << "\t0"; //! @todo
   gout << "\t0"; //! @todo
   gout << "\t0"; //! @todo

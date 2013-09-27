@@ -134,6 +134,7 @@ public:
 			slope(-1.0),
 			heightNN(-1.0),
 			soilCNRatio(-1.0),
+			drainageCoeff(-1.0),
 			atmosphericCO2(-1.0),
 			pH(-1.0),
 			windSpeedHeight(-1.0),
@@ -165,7 +166,8 @@ public:
     void setSlope(double v) { slope=v; }
     void setHeightNN(double v) { heightNN=v; }
     void setSoilCNRatio(double v) { soilCNRatio=v; }
-    void setAtmosphericCO2(double v) { atmosphericCO2=v; }
+    void setDrainageCoeff(double v) { drainageCoeff=v; }
+	void setAtmosphericCO2(double v) { atmosphericCO2=v; }
     void setPH(double v) {pH = v; }
     void setWindSpeedHeight(double v) { windSpeedHeight=v; }
     void setLeachingDepth(double v) { leachingDepth=v; }
@@ -226,10 +228,11 @@ public:
 
     double getMinGWDepth() const {return minGWDepth; }
     double getMaxGWDepth() const {return maxGWDepth; }
-    double getlatitude() const {return latitude; }
+    double getLatitude() const {return latitude; }
     double getSlope() const {return slope; }
     double getHeightNN() const {return heightNN; }
     double getSoilCNRatio() const {return soilCNRatio; }
+	double getDrainageCoeff() const {return drainageCoeff; }
     double getAtmosphericCO2() const {return atmosphericCO2; }
     double getPH() const { return pH; }
     double getWindSpeedHeight() const {return windSpeedHeight; }
@@ -282,7 +285,8 @@ public:
     double slope;
     double heightNN;
     double soilCNRatio;
-    double atmosphericCO2;
+    double drainageCoeff;
+	double atmosphericCO2;
     double pH;
     double windSpeedHeight;
     double leachingDepth;

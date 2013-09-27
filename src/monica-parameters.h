@@ -475,6 +475,7 @@ namespace Monica
     double vs_HeightNN;               //!< [m]
     double vs_GroundwaterDepth;  //!< Tiefe des Grundwasserspiegels [m]
     double vs_Soil_CN_Ratio;
+	double vs_DrainageCoeff;
 	double vq_NDeposition;
 
     std::string toString() const;
@@ -623,7 +624,8 @@ namespace Monica
   const SoilPMs* soilParametersFromHermesFile(int soilId,
                                               const std::string& pathToFile,
                                               const GeneralParameters& gps = GeneralParameters(),
-											  double soil_ph=-1.0);
+											  double soil_ph=-1.0,
+											  double drainage_coeff=-1.0);
 
 
   void readPrincipalSoilCharacteristicData(std::string soil_type,
