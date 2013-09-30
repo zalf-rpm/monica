@@ -2100,7 +2100,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 		fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).get_SoilNO2();
 	}
 	for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
-    fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).vs_SoilOrganicCarbon();
+    fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).vs_SoilOrganicCarbon(); // [kg C kg-1]
   }
 
 	// SOC-0-30 [g C m-2]

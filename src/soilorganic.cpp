@@ -108,39 +108,42 @@ crop(NULL)
   //Conversion of soil organic carbon weight fraction to volume unit
   for(int i_Layer = 0; i_Layer < vs_NumberOfOrganicLayers; i_Layer++) {
 
-    vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity();
+    vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity(); //[kg C kg-1] * [kg m-3] --> [kg C m-3]
 
     // Falloon et al. (1998): Estimating the size of the inert organic matter pool
     // from total soil oragnic carbon content for use in the Rothamsted Carbon model.
     // Soil Biol. Biochem. 30 (8/9), 1207-1211. for values in t C ha-1.
-    vo_InertSoilOrganicC[i_Layer] = 0.049 * pow((vo_SoilOrganicC[i_Layer] // [kg C m-3]
+	// vo_InertSoilOrganicC is calculated back to [kg C m-3].
+    vo_InertSoilOrganicC[i_Layer] = (0.049 * pow((vo_SoilOrganicC[i_Layer] // [kg C m-3]
 			      * soilColumn[i_Layer].vs_LayerThickness // [kg C m-2]
-			      / 1000 * 10000.0), 1.139); // [t C ha-1]
+			      / 1000 * 10000.0), 1.139)) // [t C ha-1]
+				  / 10000.0 * 1000.0 // [kg C m-2]
+				  / soilColumn[i_Layer].vs_LayerThickness; // [kg C m-3]
 
     vo_SoilOrganicC[i_Layer] -= vo_InertSoilOrganicC[i_Layer]; // [kg C m-3]
 
-    // Initialisation of pool SMB_Slow
+    // Initialisation of pool SMB_Slow [kg C m-3]
 		soilColumn[i_Layer].vs_SMB_Slow = po_SOM_SlowUtilizationEfficiency
 				 * po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i_Layer];
 
-    // Initialisation of pool SMB_Fast
+    // Initialisation of pool SMB_Fast [kg C m-3]
 		soilColumn[i_Layer].vs_SMB_Fast = po_SOM_FastUtilizationEfficiency
 							* po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i_Layer];
 
-    // Initialisation of pool SOM_Slow
+    // Initialisation of pool SOM_Slow [kg C m-3]
 		soilColumn[i_Layer].vs_SOM_Slow = vo_SoilOrganicC[i_Layer] / (1.0 + po_SOM_SlowDecCoeffStandard
 							/ (po_SOM_FastDecCoeffStandard * po_PartSOM_Fast_to_SOM_Slow));
 
-    // Initialisation of pool SOM_Fast
+    // Initialisation of pool SOM_Fast [kg C m-3]
     soilColumn[i_Layer].vs_SOM_Fast = vo_SoilOrganicC[i_Layer] - soilColumn[i_Layer].vs_SOM_Slow;
 
-    // Soil Organic Matter pool update
+    // Soil Organic Matter pool update [kg C m-3]
     vo_SoilOrganicC[i_Layer] -= soilColumn[i_Layer].vs_SMB_Slow + soilColumn[i_Layer].vs_SMB_Fast;
 
-    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity());
+    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
-		soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / OrganicConstants::po_SOM_to_C
-				      / soilColumn[i_Layer].vs_SoilBulkDensity());
+	soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / OrganicConstants::po_SOM_to_C
+				      / soilColumn[i_Layer].vs_SoilBulkDensity());  // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
 
     vo_ActDenitrificationRate.at(i_Layer) = 0.0;
@@ -1267,13 +1270,13 @@ void SoilOrganic::fo_PoolUpdate() {
     }
 
 
-    vo_SoilOrganicC[i_Layer] = (soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity()) - vo_InertSoilOrganicC[i_Layer]; // [kg C m-3]
+    vo_SoilOrganicC[i_Layer] = (soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity()) - vo_InertSoilOrganicC[i_Layer]; // ([kg C kg-1] * [kg m-3]) - [kg C m-3]
     vo_SoilOrganicC[i_Layer] += vo_CBalance[i_Layer];
     
-    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity());
+    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
-		soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer])/ OrganicConstants::po_SOM_to_C
-				      / soilColumn[i_Layer].vs_SoilBulkDensity());
+	soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer])/ OrganicConstants::po_SOM_to_C
+				      / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
   } // for
 }
 

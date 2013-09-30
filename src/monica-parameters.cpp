@@ -2408,7 +2408,7 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
               }
 
               SoilParameters p;
-              p.set_vs_SoilOrganicCarbon(corg / 100.0);
+              p.set_vs_SoilOrganicCarbon(corg / 100.0); //[kg C 100kg] --> [kg C kg-1]
               p.set_vs_SoilRawDensity(ld_eff2trd(ld, KA52clay(ba)));
               p.vs_SoilSandContent = KA52sand(ba);
               p.vs_SoilClayContent = KA52clay(ba);

@@ -279,7 +279,7 @@ SoilLayer::SoilLayer(const SoilLayer &sl)
  */
 double SoilLayer::vs_SoilOrganicCarbon() const {
   // if soil organic carbon is not defined, than calculate from soil organic
-  // matter value
+  // matter value [kg C kg-1]
   if(_vs_SoilOrganicCarbon >= 0.0) {
     return _vs_SoilOrganicCarbon;
   }
@@ -307,7 +307,7 @@ double SoilLayer::vs_SoilOrganicMatter() const {
   }
 
   // ansonsten berechne den Wert aus dem C-Gehalt
-	return (_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C);
+	return (_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C); //[kg C kg-1]
 }
 
 /**
