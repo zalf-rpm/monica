@@ -70,7 +70,7 @@ namespace
 
 Env::Env(const SoilPMs* sps, const CentralParameterProvider cpp)
 	: soilParams(sps),
-		customCallerId(-1),
+		customId(-1),
 		centralParameterProvider(cpp)
 {
   UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
@@ -112,7 +112,7 @@ string Env::toString() const
  * @return
  */
 Env::Env(const Env& env)
-	: customCallerId(env.customCallerId)
+	: customId(env.customId)
 {
   debug() << "Copy constructor: Env" << "\tsoil param size: " << env.soilParams->size() << endl;
   soilParams = env.soilParams;
@@ -984,7 +984,7 @@ Result Monica::runMonica(Env env)
 {
 
   Result res;
-	res.customCallerId = env.customCallerId;
+	res.customId = env.customId;
   res.gp = env.gridPoint;
 
   if(env.cropRotation.begin() == env.cropRotation.end())
@@ -1008,11 +1008,11 @@ Result Monica::runMonica(Env env)
   {
     debug() << "write_output_files: " << write_output_files << endl;
     write_output_files = true;
-
   }
-   env.centralParameterProvider.writeOutputFiles = write_output_files;
 
-  debug() << "-----" << endl;
+	env.centralParameterProvider.writeOutputFiles = write_output_files;
+
+	debug() << "-----" << endl;
 
 	if (write_output_files)
 	{
@@ -1143,6 +1143,8 @@ Result Monica::runMonica(Env env)
       {
         //get yieldresults for crop
         PVResult r = currentPP.cropResult();
+				r.customId = currentPP.customId();
+
         if(!env.useSecondaryYields)
           r.pvResults[secondaryYield] = 0;
         r.pvResults[sumFertiliser] = monica.sumFertiliser();

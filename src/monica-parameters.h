@@ -49,7 +49,8 @@ namespace Monica
 
 	class CentralParameterProvider;
 
-	enum Eva2_Nutzung {
+	enum Eva2_Nutzung
+	{
 		NUTZUNG_UNDEFINED=0,
 		NUTZUNG_GANZPFLANZE=1,
 		NUTZUNG_KORN=2,
@@ -282,10 +283,14 @@ namespace Monica
 		 * @brief default constructor initializing to sensible values
 		 * especially for use as value type
 		 */
-		PVResult() : id(-1) { }
+		PVResult() : id(-1), customId(-1) { }
 
 		//! id of crop
 		CropId id;
+
+		//custom id to enable mapping of monica results to user defined other entities
+		//e.g. a crop activity id from Carbiocial
+		int customId;
 
 		//! different results for a particular crop
 		std::map<ResultId, double> pvResults;
@@ -580,26 +585,26 @@ namespace Monica
 	typedef std::vector<SoilParameters> SoilPMs;
 	typedef boost::shared_ptr<SoilPMs> SoilPMsPtr;
 
-	const SoilPMs* ueckerSoilParameters(const std::string& str = "D1a01",
-																			const GeneralParameters& gps
-																			= GeneralParameters(),
+	const SoilPMs* ueckerSoilParameters(const std::string& str,
+																			int layerThicknessCm,
+																			int maxDepthCm,
 																			bool loadSingleParameter = false);
 
 	const SoilPMs* ueckerSoilParameters(int mmkGridId,
-																			const GeneralParameters& gps
-																			= GeneralParameters(),
+																			int layerThicknessCm,
+																			int maxDepthCm,
 																			bool loadSingleParameter = false);
 
 	std::string ueckerGridId2STR(int ugid);
 
-	const SoilPMs* weisseritzSoilParameters(int bk50GridId,
-																					const GeneralParameters& gps =
-			GeneralParameters(),
-																					bool loadSingleParameter = false);
+//	const SoilPMs* weisseritzSoilParameters(int bk50GridId,
+//																					int layerThicknessCm,
+//																					int maxDepthCm,
+//																					bool loadSingleParameter = false);
 
 	const SoilPMs* bk50SoilParameters(int bk50GridId,
-																		const GeneralParameters& gps =
-			GeneralParameters(),
+																		int layerThicknessCm,
+																		int maxDepthCm,
 																		bool loadSingleParameter = false);
 
 	std::string bk50GridId2ST(int bk50GridId);
@@ -607,17 +612,28 @@ namespace Monica
 
 	const SoilPMs* soilParametersFromHermesFile(int soilId,
 																							const std::string& pathToFile,
-																							const GeneralParameters& gps =
-			GeneralParameters(),
-																							double soil_ph=-1.0);
+																							int layerThicknessCm,
+																							int maxDepthCm,
+																							double soil_ph = -1.0);
 
+	struct RPSCDRes
+	{
+		RPSCDRes() : sat(0), fc(0), pwp(0), initialized(false) {}
+		RPSCDRes(bool initialized) : sat(0), fc(0), pwp(0), initialized(initialized) {}
+		double sat, fc, pwp;
+		bool initialized;
+	};
+	RPSCDRes readPrincipalSoilCharacteristicData(std::string soilType,
+																							 double rawDensity);
+	RPSCDRes readSoilCharacteristicModifier(std::string soilType,
+																					double organicMatter);
 
-	void readPrincipalSoilCharacteristicData(std::string soil_type,
-																					 double raw_density, double &sat,
-																					 double &fc, double &pwp);
-	void readSoilCharacteristicModifier(std::string soil_type,
-																			double organic_matter, double &sat,
-																			double &fc, double &pwp);
+//	void readPrincipalSoilCharacteristicData(std::string soil_type,
+//																					 double raw_density, double &sat,
+//																					 double &fc, double &pwp);
+//	void readSoilCharacteristicModifier(std::string soil_type,
+//																			double organic_matter, double &sat,
+//																			double &fc, double &pwp);
 	void soilCharacteristicsKA5(SoilParameters&);
 
 	CapillaryRiseRates readCapillaryRiseRates();
@@ -1197,8 +1213,15 @@ namespace Monica
 
 		PVResult cropResult() const { return *(_cropResult.get()); }
 		PVResultPtr cropResultPtr() const { return _cropResult; }
+
+		//the custom id is used to keep a potentially usage defined
+		//mapping to entity from another domain,
+		//e.g. the an Carbiocial CropActivity which is ProductionProcess was based on
+		void setCustomId(int cid) { _customId = cid; }
+		int customId() const { return _customId; }
+
 	private:
-		//int _id;
+		int _customId;
 		std::string _name;
 		CropPtr _crop;
 
@@ -1217,7 +1240,8 @@ namespace Monica
 	 const std::string& pathToFertiliserFile);
 
 	std::vector<ProductionProcess>
-	attachFertiliserSA(std::vector<ProductionProcess> cropRotation, const std::string pathToFertiliserFile);
+	attachFertiliserSA(std::vector<ProductionProcess> cropRotation,
+										 const std::string pathToFertiliserFile);
 
 	void attachIrrigationApplicationsToCropRotation
 	(std::vector<ProductionProcess>& cropRotation,

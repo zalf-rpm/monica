@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <cmath>
 #include <utility>
+#include <cassert>
 
 #include "boost/foreach.hpp"
 
@@ -56,6 +57,33 @@ namespace
 	struct L: public Loki::ObjectLevelLockable<L> {};
 }
 
+void mpmasScope::exitfun()
+{
+#ifndef NO_MPMAS
+	cout << "EXITING ..." << endl;
+	
+	//deallocateAll();
+	//delete mpmasPointer;
+
+	cout << "-------------------------------------------------------------------------" << endl << "SimName:  "
+			<< SIMNAME().c_str() << endl;
+	cout << "INDIR():  " << INDIR().c_str() << " true: " << strcmp(INDIR().c_str(), ".") << endl;
+	cout << "OUTDIR(): " << OUTDIR().c_str() << " true: " << strcmp(OUTDIR().c_str(), ".") << endl;
+	cout << "XMLDIR(): " << XMLDIR().c_str() << endl;
+	cout << "KEYDIR(): " << KEYDIR().c_str() << endl
+			<< "-------------------------------------------------------------------------" << endl;
+	//exit(1);
+#endif
+}
+
+string IdPlusCode::toString(const string& indent, bool /*detailed*/) const
+{
+	ostringstream s;
+	s << Identifiable::toString(indent) << ", " << code;
+	return s.str();
+}
+
+/*
 CropData Carbiocial::cropDataFor(CropId cropId)
 {
 	CropData cd;
@@ -89,214 +117,805 @@ CropData Carbiocial::cropDataFor(CropId cropId)
 	}
 	return cd;
 }
+*/
 
-Monica::ProductionProcess Carbiocial::productionProcessFrom(CropId cropId)
+Monica::ProductionProcess Carbiocial::productionProcessFrom(ProductionPractice* prp)
 {
 	Monica::CropPtr cp;
-	CropData cd = cropDataFor(cropId);
+	//CropData cd = cropDataFor(pp);
 
-	switch(cropId)
+	Product* p = prp->product;
+
+	int pid = prp->product->id;
+	if(pid == 1 && pid == 25) //cassava
 	{
-	case maize: cp = Monica::CropPtr(new Monica::Crop(6, nameFor(cropId)));
+		cp = Monica::CropPtr(new Monica::Crop(8, p->name));
+	}
+	else if(2 <= pid && pid <= 7) //cotton
+	{
+		cp = Monica::CropPtr(new Monica::Crop(43, p->name));
+	}
+	else if(11 <= pid && pid <= 14) //maize
+	{
+		cp = Monica::CropPtr(new Monica::Crop(6, p->name));
+	}
+	else if(pid == 15) //millet
+	{
+		cp = Monica::CropPtr(new Monica::Crop(21, p->name));
+	}
+	else if(18 <= pid && pid <= 19) //rice
+	{
+		cp = Monica::CropPtr(new Monica::Crop("fallow"));
+	}
+	else if(pid == 20) //sorghum
+	{
+		cp = Monica::CropPtr(new Monica::Crop(21, p->name));
+	}
+	else if(21 <= pid && pid <= 22) //soy
+	{
+		cp = Monica::CropPtr(new Monica::Crop(37, p->name));
+	}
+	else if(pid == 23) //sugar cane
+	{
+		cp = Monica::CropPtr(new Monica::Crop("fallow"));
+	}
+	else if(pid == 24) //sun flower
+	{
+		cp = Monica::CropPtr(new Monica::Crop("fallow"));
+	}
+	else if(pid == 26) //brachiaria
+	{
+		cp = Monica::CropPtr(new Monica::Crop("fallow"));
+	}
+	else //fallow
+	{
+		cp = Monica::CropPtr(new Monica::Crop("fallow"));
+	}
 
-	case sugarcane: cp = Monica::CropPtr(new Monica::Crop(nameFor(fallow)));
+	if(cp->isValid())
+	{
+		auto smonths = p->operationId2month.equal_range(2);
+		auto hmonths = p->operationId2month.equal_range(3);
+		//there should be just one seeding and havesting month
+		int smonth = smonths.first->second;
+		int hmonth = hmonths.first->second;
+		Date seeding = Date::relativeDate(1, smonth, hmonth < smonth ? -1 : 0);
+		Date harvesting = Date::relativeDate(Date::daysInMonth(Date::notALeapYear(), hmonth), hmonth);
 
-	case soy: cp = Monica::CropPtr(new Monica::Crop(28, nameFor(cropId)));
-
-	case cotton: cp = Monica::CropPtr(new Monica::Crop(44, nameFor(cropId)));
-
-	case millet: cp = Monica::CropPtr(new Monica::Crop(nameFor(fallow)));
-
-	case fallow:
-	default: cp = Monica::CropPtr(new Monica::Crop(nameFor(fallow)));
-	};
-
-	cp->setSeedAndHarvestDate(cd.sowing, cd.harvesting);
-	cp->setCropParameters(getCropParametersFromMonicaDB(cp->id()));
-	cp->setResidueParameters(getResidueParametersFromMonicaDB(cp->id()));
+		cp->setSeedAndHarvestDate(seeding, harvesting);
+		cp->setCropParameters(getCropParametersFromMonicaDB(cp->id()));
+		cp->setResidueParameters(getResidueParametersFromMonicaDB(cp->id()));
+	}
 
 	ProductionProcess pp(cp->name(), cp);
+	pp.setCustomId(prp->id);
 
+	/*
 	BOOST_FOREACH(Date tillage, cd.tillages)
 	{
 		pp.addApplication(TillageApplication(tillage, 0.3));
 	}
+	*/
 
 	return pp;
 }
 
-string Carbiocial::nameFor(CropId cropId, Language l)
+void Carbiocial::writeInactiveSectorsFile(int activeSectorId, const std::string& pathToFile)
 {
-	switch(l)
+	ostringstream oss;
+
+	vector<Municipality*> ms = Municipality::all();
+	int count = 0;
+	BOOST_FOREACH(Municipality* m, ms)
 	{
-	case de:
-		switch(cropId)
+		const map<SectorId, Sector*>& sid2s = m->sectorId2sector;
+		for_each(sid2s.begin(), sid2s.end(), [&](pair<SectorId, Sector*> p)
 		{
-		case maize: return "Mais";
-		case sugarcane: return "Zuckerrohr";
-		case soy: return "Soja";
-		case cotton: return "Baumwolle";
-		case millet: return "Hirse";
-		case fallow: return "Brache";
-		default: return "unbekannte Fruchtart";
-		};
-		break;
-	case en:
-		switch(cropId)
-		{
-		case maize: return "maize";
-		case sugarcane: return "sugar cane";
-		case soy: return "soy";
-		case cotton: return "cotton";
-		case millet: return "millet";
-		case fallow: return "fallow";
-		default: return "unknown crop";
-		}
-	case br:
-		switch(cropId)
-		{
-		case maize: return "maize";
-		case sugarcane: return "sugar cane";
-		case soy: return "soy";
-		case cotton: return "cotton";
-		case millet: return "millet";
-		case fallow: return "fallow";
-		default: "unknown crop";
-		}
+			int inactiveSectorId = makeSectorId(m->id, p.first);
+			if(inactiveSectorId != activeSectorId)
+			{
+				oss << inactiveSectorId << endl;
+				count++;
+			}
+		});
 	}
-	return "";
+
+	ofstream ofs(pathToFile);
+	ofs << count << endl
+			<< oss.str() << endl;
 }
 
 //-------------------------------------------------------------------------------------------------------
 
-Mpmas::Mpmas()
+Mpmas::Mpmas(const string& pathToMpmas)
 	: _mpmas(NULL),
 		_noOfYears(0),
-		_noOfSpinUpYears(0)
+		_noOfSpinUpYears(0),
+		_noOfCropActivities(0),
+		_cropAreas(NULL),
+		_monicaYields(NULL),
+		_monicaStoverYields(NULL),
+		_cropActivitiesDisabled(false),
+		_inputPathToMpmas(NULL),
+		_outputPathToMpmas(NULL),
+		_pathToInactiveSectorsFile(NULL)
 {
+	ostringstream oss;
+	oss << "-B" << pathToMpmas << "/input/dat/tf__InactiveSectors0.dat";
+	_pathToInactiveSectorsFile = new char[oss.str().size()];
+	strcpy(_pathToInactiveSectorsFile, oss.str().c_str());
+
+	oss = ostringstream();
+	oss <<  "-I" << pathToMpmas;
+	_inputPathToMpmas = new char[oss.str().size()];
+	strcpy(_inputPathToMpmas, oss.str().c_str());
+
+	oss = ostringstream();
+	oss <<  "-O" << pathToMpmas;
+	_outputPathToMpmas = new char[oss.str().size()];
+	strcpy(_outputPathToMpmas, oss.str().c_str());
+
 	char* argv[] =
 	{
 		"mpmas-lib",
-		"-IBRA020" ,
-		"-OBRA020",
+		_inputPathToMpmas,
+		_outputPathToMpmas,
 		"-Ntf__",
 		"-T82",
 		"-Pgis/carbiocial_typical_farms/",
-		"-BBRA020/input/dat/tf__InactiveSectors0.dat",
-		"-T19",
-		"-T93",
-		"-T94"
+		_pathToInactiveSectorsFile,
+//		"-T93",
+//		"-T94",
+//		"-T1",
+//		"-T34",
+		"-T19"
 	};
 
-	_mpmas = new mpmas(10, argv);
-	mpmasScope::mpmasPointer = _mpmas;
+#ifndef NO_MPMAS
+	_mpmas = new mpmas(8, argv);
+	//mpmasScope::mpmasPointer = _mpmas;
 
 	//allocate memory
-	mpmas.allocateMemoryForMonica(CropActivity::all().size());
+	_mpmas->allocateMemoryForMonica(CropActivity::all().size());
 
 			//get length of simulation horizon and number of spin-up rounds
 	_noOfYears = _mpmas->getNumberOfYearsToSimulate();
 	_noOfSpinUpYears = _mpmas->getNumberOfSpinUpRounds();
+#endif
+
+	_noOfCropActivities = CropActivity::all().size();
+
+	_cropActivityIds = new int[_noOfCropActivities];
+	_cropAreas = new double[_noOfCropActivities];
+	_monicaYields = new double[_noOfCropActivities];
+	_monicaStoverYields = new double[_noOfCropActivities];
+	_grossMargins = new double[_noOfCropActivities];
 }
 
-vector<CropActivity*> Mpmas::landuse(int year, Farm* farm,
-																		const map<int, int>& soilClassId2areaPercent,
-																		vector<ProductionPractice*> pps)
+Mpmas::~Mpmas()
 {
-	int noOfCropActivitys = CropActivity::all().size();
-	int noOfSoilClasses = soilClassId2areaPercent.size();
-	int noOfProductionPractices = pps.size();
+	delete[] _cropActivityIds;
+	delete[] _cropAreas;
+	delete[] _monicaYields;
+	delete[] _monicaStoverYields;
+	delete[] _grossMargins;
+//	delete _inputPathToMpmas;
+//	delete _outputPathToMpmas;
+//	delete _pathToInactiveSectorsFile;
+}
+
+vector<CropActivity*> Mpmas::landuse(int year,
+																		 const map<int, int>& /*soilClassId2areaPercent*/,
+																		 vector<ProductionPractice*> pps)
+{
+	cout << "entering Mpmas::landuse" << endl;
 
 	map<int, ProductionPractice*> id2pp;
-	for_each(pps.begin(), pps.end(), [&id2pp](ProductionPractice* pp)
+	for_each(pps.begin(), pps.end(), [&](ProductionPractice* pp)
 	{
 		id2pp[pp->id] = pp;
 	});
 
-	int* cropActivityIds = new int[noOfCropActivitys];
-	double* cropAreas = new double[noOfCropActivitys];
+//	vector<CropActivityId> disCAs;
+//	BOOST_FOREACH(CropActivity* ca, CropActivity::all())
+//	{
+//		if(soilClassId2areaPercent.find(ca->soilClass->id) == soilClassId2areaPercent.end() ||
+//			 id2pp.find(ca->productionPractice->id) == id2pp.end())
+//			disCAs.push_back(ca->id);
+//	}
 
-	int* disabledCropActivities = new int[noOfCropActivitys - noOfSoilClasses*noOfProductionPractices];
-	int disabledCAcount = 0;
-	BOOST_FOREACH(CropActivity* ca, CropActivity::all())
+//	if(!_cropActivitiesDisabled)
+//	{
+//		int* disabledCropActivities = new int[disCAs.size()];
+//		for(int i = 0, size = disCAs.size(); i < size; i++)
+//			disabledCropActivities[i] = disCAs.at(i);
+
+//		//if needed, exclude crop activities from being grown
+//		_mpmas->disableCropActivities(disCAs.size(), disabledCropActivities);
+
+//		_cropActivitiesDisabled = true;
+//	}
+
+	//get landuse from MPMAS
+	int rtCode = -1;
+#ifndef NO_MPMAS
+	rtCode = _mpmas->simulateOnePeriodExportingLandUse(year, _noOfCropActivities, _cropActivityIds, _cropAreas);
+#endif
+
+	vector<CropActivity*> res;
+	for(int i = 0; rtCode >= 0 && i < _noOfCropActivities; i++)
 	{
-		SoilClass* sc = ca->soilClass;
-		ProductionPractice* pp = ca->productionPractice;
-		if(soilClassId2areaPercent.find(sc->id) != soilClassId2areaPercent.end() &&
-			 id2pp.find(pp->id) != id2pp.end())
-			continue; //user choose that combination
+		cout << "caId: " << _cropActivityIds[i];
+		if(_cropAreas[i] > 0)
+		{
+			cout << " area: " << _cropAreas[i] << " !!!!!!!" << endl;
+			res.push_back(CropActivity::p4id(_cropActivityIds[i]));
+		}
 		else
-			disabledCropActivities[disabledCAcount++] = ca->id;
+		{
+			cout << " area: " << _cropAreas[i] << endl;
+		}
 	}
 
-	cassert(disabledCAcount == noOfCropActivitys - noOfSoilClasses*noOfProductionPractices);
+	cout << "leaving Mpmas::landuse" << endl;
+	cout.flush();
 
-	//if needed, exclude crop activities from being grown
-	_mpmas.disableCropActivities(disabledCAcount, disabledCropActivities);
-
-	//is not any more needed because of the disabled sectors file being written
-	int catchmentID = 0;
-	int numDisabledSectors = 1;
-	int disabledSectorID[1];
-	disabledSectorID[0] = 0;
-
-	//if needed, exclude specific sectors from simulation (their agents will be deleted)
-	//mpmas.disableAgentsInSectors(catchmentID, numDisabledSectors, disabledSectorID);
-
-				//export land-use maps
-				int rtcode1 = mpmas.simulateOnePeriodExportingLandUse(year, numCropActs, cropActIDX, cropAreaX);
-
-
-	return vector<CropActivity*>();
+	return res;
 }
 
-Result Mpmas::calculateEconomicStuff(int year, const Mpmas::CAId2MonicaYields& caId2mYields)
+MpmasResult Mpmas::calculateFarmEconomy(int year, Municipality* municipality, int sectorId,
+																				Farm* farm, std::map<CropActivityId, double> caId2monicaYields)
 {
-	return Result();
-}
+	cout << "entering Mpmas::calculateFarmEconomy" << endl;
 
-
-//-------------------------------------------------------------------------------------------------------
-
-vector<vector<ProductionProcess> >
-Carbiocial::cropRotationsFromUsedCrops(vector<CropActivity> cas)
-{
-	vector<vector<ProductionProcess> > crs;
-
-	map<Period, vector<CropActivity> > period2cas;
-	for_each(cas.begin(), cas.end(), [&period2cas](CropActivity cas)
+	cout << "storing monica yields in mpmas structure: " << endl;
+	for(int i = 0; i < _noOfCropActivities; i++)
 	{
-		period2cas[cas.period].push_back(cas);
-	});
+		int caId = _cropActivityIds[i];
+		auto cit = caId2monicaYields.find(caId);
+		_monicaYields[i] = cit == caId2monicaYields.end() ? 0.0 : cit->second;
 
-	BOOST_FOREACH(CropActivity safraCA, period2cas[safra])
+		cout << "caId: " << caId << " -> " << _monicaYields[i] << " dt/ha" << endl;
+
+		_monicaStoverYields[i] = 0.0;
+	}
+
+	//import yields maps
+	int rtCode = -1;
+#ifndef NO_MPMAS
+	rtCode = _mpmas->simulateOnePeriodImportingYields(year, _noOfCropActivities,
+																												_cropActivityIds, _monicaYields,
+																												_monicaStoverYields);
+#endif
+
+	int noOfAgents = 1;
+	int agentIds[1];
+	agentIds[0] = makeAgentId(municipality, sectorId, farm);
+	double farmIncome[1];
+	double* individualGrossMargins[1];
+	individualGrossMargins[0] = _grossMargins;
+
+	//get also economic indicators of selected agents
+#ifndef NO_MPMAS
+	_mpmas->getPerformanceDataForSelectedAgents(noOfAgents, agentIds, farmIncome,
+																							_noOfCropActivities, _cropActivityIds,
+																							individualGrossMargins);
+#endif
+
+	MpmasResult r;
+	r.farmProfit = farmIncome[0];
+
+	for(int i = 0; i < _noOfCropActivities; i++)
 	{
-		ProductionProcess safraPP = productionProcessFrom(safraCA.cropId);
-
-		BOOST_FOREACH(CropActivity safrinhaCA, period2cas[safrinha])
+		CropActivityId caId = _cropActivityIds[i];
+		if(caId2monicaYields.find(caId) != caId2monicaYields.end())
 		{
-			ProductionProcess safrinhaPP = productionProcessFrom(safrinhaCA.cropId);
+			cout << "caId: " << _cropActivityIds[i] << " -> gm: " << _grossMargins[i] << endl;
 
-			BOOST_FOREACH(CropActivity offseasonCA, period2cas[offseason])
+			if(_grossMargins[i] > 0)
 			{
-				ProductionProcess offseasonPP = productionProcessFrom(offseasonCA.cropId);
-
-				vector<ProductionProcess> cr;
-				cr.push_back(safraPP);
-				cr.push_back(safrinhaPP);
-				cr.push_back(offseasonPP);
-
-				crs.push_back(cr);
+				r.cropActivityId2grossMargin[caId] = _grossMargins[i];
+			}
+			else
+			{
+				r.cropActivityId2grossMargin[caId] = 0.0;
 			}
 		}
 	}
 
-	return crs;
+	//assert(r.cropActivityId2grossMargin.size() == caId2monicaYields.size());
+
+	cout << "leaving Mpmas::calculateFarmEconomy" << endl;
+	cout.flush();
+
+	return r;
 }
 
 //-------------------------------------------------------------------------------------------------------
 
-std::pair<const SoilPMs *, int> Carbiocial::carbiocialSoilParameters(int profileId, const GeneralParameters& gps)
+
+//map<SoilClassId, vector<vector<ProductionProcess> > >
+//Carbiocial::cropRotationsFromUsedCropActivities2(vector<CropActivity*> cas)
+//{
+//	map<SoilClassId, vector<vector<ProductionProcess>>> scId2crs;
+
+//	map<SoilClassId, map<SeasonId, vector<CropActivity*>>> scId2season2cas;
+//	BOOST_FOREACH(CropActivity* ca, cas)
+//	{
+//		scId2season2cas[ca->soilClass->id][ca->productionPractice->product->season->id].push_back(ca);
+//	}
+
+//	//iterate over all soil classes
+//	for(auto cit = scId2season2cas.begin(); cit != scId2season2cas.end(); cit++)
+//	{
+//		SoilClassId scId = cit->first;
+
+//		//do we have safra crops?
+//		if(cit->second.find(1) != cit->second.end())
+//		{
+//			BOOST_FOREACH(CropActivity* safraCA, (cit->second)[1]) //safra
+//			{
+//				ProductionProcess safraPP = productionProcessFrom(safraCA->productionPractice);
+//				safraPP.setCustomId(safraCA->id);
+
+//				//do we have safrinha crops?
+//				if(cit->second.find(2) != cit->second.end())
+//				{
+//					BOOST_FOREACH(CropActivity* safrinhaCA, (cit->second)[2]) //safrinha
+//					{
+//						ProductionProcess safrinhaPP = productionProcessFrom(safrinhaCA->productionPractice);
+//						safrinhaPP.setCustomId(safrinhaCA->id);
+
+//						//do we have offseason crops?
+//						if(cit->second.find(3) != cit->second.end())
+//						{
+//							BOOST_FOREACH(CropActivity* offseasonCA, (cit->second)[3]) //offseason
+//							{
+//								ProductionProcess offseasonPP = productionProcessFrom(offseasonCA->productionPractice);
+//								offseasonPP.setCustomId(offseasonCA->id);
+
+//								vector<ProductionProcess> cr;
+//								cr.push_back(safraPP);
+//								cr.push_back(safrinhaPP);
+//								cr.push_back(offseasonPP);
+
+//								scId2crs[scId].push_back(cr);
+//							}
+//						}
+//						else //no offseason, but store safra and safrinha
+//						{
+//							vector<ProductionProcess> cr;
+//							cr.push_back(safraPP);
+//							cr.push_back(safrinhaPP);
+
+//							scId2crs[scId].push_back(cr);
+//						}
+//					}
+//				}
+//				else //no safrinha, but maybe offseason
+//				{
+//					//do we have offseason crops?
+//					if(cit->second.find(3) != cit->second.end())
+//					{
+//						BOOST_FOREACH(CropActivity* offseasonCA, (cit->second)[3]) //offseason
+//						{
+//							ProductionProcess offseasonPP = productionProcessFrom(offseasonCA->productionPractice);
+//							offseasonPP.setCustomId(offseasonCA->id);
+
+//							vector<ProductionProcess> cr;
+//							cr.push_back(safraPP);
+//							cr.push_back(offseasonPP);
+
+//							scId2crs[scId].push_back(cr);
+//						}
+//					}
+//					else //no offseason, but at least we got safra left
+//					{
+//						vector<ProductionProcess> cr;
+//						cr.push_back(safraPP);
+
+//						scId2crs[scId].push_back(cr);
+//					}
+//				}
+//			}
+//		}
+//		else //no safra crops, just possibly safrinha and offseason
+//		{
+//			//but do we have safrinha crops?
+//			if(cit->second.find(2) != cit->second.end())
+//			{
+//				BOOST_FOREACH(CropActivity* safrinhaCA, (cit->second)[2]) //safrinha
+//				{
+//					ProductionProcess safrinhaPP = productionProcessFrom(safrinhaCA->productionPractice);
+//					safrinhaPP.setCustomId(safrinhaCA->id);
+
+//					//do we have offseason crops?
+//					if(cit->second.find(3) != cit->second.end())
+//					{
+//						BOOST_FOREACH(CropActivity* offseasonCA, (cit->second)[3]) //offseason
+//						{
+//							ProductionProcess offseasonPP = productionProcessFrom(offseasonCA->productionPractice);
+//							offseasonPP.setCustomId(offseasonCA->id);
+
+//							vector<ProductionProcess> cr;
+//							cr.push_back(safrinhaPP);
+//							cr.push_back(offseasonPP);
+
+//							scId2crs[scId].push_back(cr);
+//						}
+//					}
+//					else //no safra, no offseason, store safrinha crop
+//					{
+//						vector<ProductionProcess> cr;
+//						cr.push_back(safrinhaPP);
+
+//						scId2crs[scId].push_back(cr);
+//					}
+//				}
+//			}
+//			else //no safra, no safrinha, but maybe offseason
+//			{
+//				//finally check for offseason
+//				if(cit->second.find(3) != cit->second.end())
+//				{
+//					BOOST_FOREACH(CropActivity* offseasonCA, (cit->second)[3]) //offseason
+//					{
+//						ProductionProcess offseasonPP = productionProcessFrom(offseasonCA->productionPractice);
+//						offseasonPP.setCustomId(offseasonCA->id);
+
+//						vector<ProductionProcess> cr;
+//						cr.push_back(offseasonPP);
+
+//						scId2crs[scId].push_back(cr);
+//					}
+//				}
+//			}
+//		}
+//	}
+
+//	return scId2crs;
+//}
+
+map<SoilClassId, vector<vector<ProductionProcess> > >
+Carbiocial::cropRotationsFromUsedCropActivities(vector<CropActivity*> cas)
+{
+	cout << "entering Carbiocial::cropRotationsFromUsedCropActivities" << endl;
+
+	map<SoilClassId, vector<vector<ProductionProcess>>> scId2crs;
+
+	map<SoilClassId, vector<CropActivity*>> scId2cas;
+	BOOST_FOREACH(CropActivity* ca, cas)
+	{
+		scId2cas[ca->soilClass->id].push_back(ca);
+	}
+
+	vector<ProductionProcess> unsupportedPPs;
+
+	//all crop activities for a soil class are treated independently
+	for(auto cit = scId2cas.begin(); cit != scId2cas.end(); cit++)
+	{
+		SoilClassId scId = cit->first;
+
+		//the temporary list crop rotations being creatable
+		//from the CropActivities for soilclass with id scId
+		vector<vector<ProductionProcess>> crs(1);
+
+		map<int, ProductionProcess> customId2pp;
+
+		//try to fit every CropActivity into one or more crop rotations
+		BOOST_FOREACH(CropActivity* ca, cit->second)
+		{
+			ProductionProcess newPP = productionProcessFrom(ca->productionPractice);
+			if(newPP.isFallow())
+			{
+				unsupportedPPs.push_back(newPP);
+				continue;
+			}
+
+			customId2pp[newPP.customId()] = newPP;
+
+			//vector<vector<ProductionProcess>> newCrs;
+			map<int, map<int, map<int, int>>> newCrs;
+
+			BOOST_FOREACH(vector<ProductionProcess>& cr, crs)
+			{
+				//if cr is empty just insert the current pp
+				if(cr.empty())
+				{
+					cr.push_back(newPP);
+				}
+				//normal case, try to put new pp somewhere
+				else
+				{
+					vector<ProductionProcess> newCr;
+
+					auto prevCri = cr.begin();
+					for(auto cri = cr.begin(); cri != cr.end(); cri++)
+					{
+						ProductionProcess currentPP = *cri;
+//						customId2pp[currentPP.customId()] = currentPP;
+						ProductionProcess prevPP = *prevCri;
+
+						//new pp lies after previous pp and before current pp
+						if((prevPP.end() < newPP.start() && newPP.end() < currentPP.start()) ||
+							 (cri == prevCri && newPP.end() < currentPP.start()))
+						{
+							cr.insert(cr.begin(), newPP);
+
+							//delete eventually build up newCr, because newPP has gone into old crop rotation
+							newCr.clear();
+
+							break;
+						}
+						//new pp starts after current pp, so copy current pp to new cr
+						else if(currentPP.end() < newPP.start())
+						{
+							newCr.push_back(currentPP);
+						}
+						//new pp starts somewhere before, so copy cr and replace current pp
+						else
+						{
+							newCr.push_back(newPP);
+						}
+
+						prevCri = cri;
+					}
+
+					//if we reached the end of the current crop rotation and
+					//haven't put the newPP somewhere, append it to the end of newCr
+					//(basically just happends when the currentPP gets copied to newCr in
+					//the else if part
+					if(!newCr.empty() && newCr.back().customId() != newPP.customId())
+						newCr.push_back(newPP);
+
+					if(!newCr.empty())
+					{
+						if(newCr.size() == 1)
+							newCrs[newCr.at(0).customId()];
+						else if(newCr.size() == 2)
+							newCrs[newCr.at(0).customId()][newCr.at(1).customId()];
+						else if(newCr.size() == 3)
+							newCrs[newCr.at(0).customId()][newCr.at(1).customId()][newCr.at(2).customId()];
+						//newCrs.push_back(newCr);
+					}
+				}
+			}
+
+//			//add copies of crop rotations with replaced elements to total list of crop rotations
+//			BOOST_FOREACH(vector<ProductionProcess>& newCr, newCrs)
+//			{
+//				crs.push_back(newCr);
+//			}
+			for(auto ci = newCrs.begin(); ci != newCrs.end(); ci++)
+			{
+				ProductionProcess fstPP = customId2pp[ci->first];
+				vector<ProductionProcess> newCr;
+				newCr.push_back(fstPP);
+
+				if(ci->second.empty())
+					crs.push_back(newCr);
+				else
+				{
+					for(auto ci2 = ci->second.begin(); ci2 != ci->second.end(); ci2++)
+					{
+						ProductionProcess sndPP = customId2pp[ci2->first];
+						vector<ProductionProcess> newCr2 = newCr;
+						newCr2.push_back(sndPP);
+
+						if(ci2->second.empty())
+							crs.push_back(newCr2);
+						else
+						{
+							for(auto ci3 = ci2->second.begin(); ci3 != ci2->second.end(); ci3++)
+							{
+								ProductionProcess thrdPP = customId2pp[ci3->second];
+								vector<ProductionProcess> newCr3 = newCr2;
+								newCr3.push_back(thrdPP);
+
+								crs.push_back(newCr3);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		scId2crs[scId] = crs;
+	}
+
+	scId2crs[-1].push_back(unsupportedPPs);
+
+	cout << "leaving Carbiocial::cropRotationsFromUsedCropActivities" << endl;
+	cout.flush();
+
+	return scId2crs;
+}
+
+
+//map<SoilClassId, vector<vector<ProductionProcess> > >
+//cropRotationsFromUsedCropActivities3(vector<CropActivity*> cas)
+//{
+//	map<SoilClassId, vector<vector<ProductionProcess>>> scId2crs;
+
+//	map<SoilClassId, vector<CropActivity*>> scId2cas;
+//	BOOST_FOREACH(CropActivity* ca, cas)
+//	{
+//		scId2cas[ca->soilClass->id].push_back(ca);
+//	}
+
+//	//all crop activities for a soil class are treated independently
+//	for(auto cit = scId2cas.begin(); cit != scId2cas.end(); cit++)
+//	{
+//		SoilClassId scId = cit->first;
+
+//		//the temporary list crop rotations being creatable
+//		//from the CropActivities for soilclass with id scId
+//		vector<list<ProductionProcess>> crs(1);
+
+//		//try to fit every CropActivity into one or more crop rotations
+//		BOOST_FOREACH(CropActivity* ca, cit->second)
+//		{
+//			ProductionProcess newPP = productionProcessFrom(ca->productionPractice);
+//			bool putIntoNewCropRotation = true;
+//			vector<list<ProductionProcess>> newCrs;
+
+//			BOOST_FOREACH(list<ProductionProcess>& cr, crs)
+//			{
+//				//if cr is empty just insert the current pp
+//				if(cr.empty())
+//				{
+//					cr.push_back(newPP);
+//					putIntoNewCropRotation = false;
+//				}
+//				//normal case, try to put new pp somewhere
+//				else
+//				{
+//					//try to figure out where in the current crop rotation put the new pp
+//					for(auto cri = cr.begin(); cri != cr.end(); cri++)
+//					{
+//						ProductionProcess currentPP = *cri;
+
+//						//new pp lies completely before current pp
+//						if(newPP.end() < currentPP.start())
+//						{
+//							cr.insert(cr.begin(), newPP);
+//							putIntoNewCropRotation = false;
+//							break; //go to next crop rotation
+//						}
+//						//new pp lies completely behind current pp
+//						else if(currentPP.end() < newPP.start())
+//						{
+//							auto cri1 = cri;
+//							cri1++;
+//							//has the crop rotation one more element?
+//							if(cri1 != cr.end())
+//							{
+//								ProductionProcess nextPP = *cri1;
+//								//new pp lies completely before next pp
+//								if(newPP.end() < nextPP.start())
+//								{
+//									cr.insert(cri1, newPP);
+//									putIntoNewCropRotation = false;
+//									break; //go to next crop rotation
+//								}
+//								//new pp lies after current pp but ends before or exactly with the next pp,
+//								//thus we could replace next pp by new pp, means we copy the whole
+//								//pp and replace next pp by new pp
+//								else if(newPP.end() <= nextPP.end())
+//								{
+//									//new crop rotation copy
+//									list<ProductionProcess> newCr;
+//									//copy until/including current element
+//									copy(cr.begin(), cri1, back_inserter(newCr));
+//									//add new pp instead of next pp
+//									newCr.push_back(newPP);
+//									//get interator to element after next pp
+//									auto cri2 = cri1;
+//									cri2++;
+//									//copy everything after next pp to new crop rotation
+//									copy(cri2, cr.end(), back_inserter(newCr));
+//									//store new crop rotation to be append to crop rotation list after loop
+//									newCrs.push_back(newCr);
+//								}
+//								//new pp lies after current pp but ends also after next pp,
+//								//but maybe still before the next next pp starts
+//								else
+//								{
+//									auto cri2 = cri1;
+//									cri2++;
+
+//									//there is a next next pp
+//									if(cri2 != cr.end())
+//									{
+//										ProductionProcess nextNextPP = *cri2;
+
+//										//new pp ends before next next pp starts
+//										if(newPP.end() < nextNextPP.start())
+//										{
+//											//new crop rotation copy
+//											list<ProductionProcess> newCr;
+//											//copy until/including current element
+//											copy(cr.begin(), cri1, back_inserter(newCr));
+//											//add new pp instead of next pp
+//											newCr.push_back(newPP);
+//											//copy everything starting from next next pp to new crop rotation
+//											copy(cri2, cr.end(), back_inserter(newCr));
+//											//store new crop rotation to be append to crop rotation list after loop
+//											newCrs.push_back(newCr);
+//										}
+//										//new pp ends somewhere in between next next pp, thus
+//										//we've got to create a new crop rotation for the new pp
+//										else
+//										{
+//											list<ProductionProcess> newCr;
+//											newCr.push_back(newPP);
+//											newCrs.push_back(newCr);
+//											break;
+//										}
+//									}
+
+//									else
+//									{
+
+//									}
+
+//									continue; //try next pair of elements in crop rotation
+//								}
+//							}
+//							//no more element, just insert the current pp at the end
+//							else
+//							{
+//								cr.insert(cr.end(), newPP);
+//								putIntoNewCropRotation = false;
+//								break; //go to next crop rotation
+//							}
+//						}
+//						//new pp lies somewhere inbetween, thus create stop traversing this
+//						//crop rotation
+//						else
+//							break;
+
+//					}
+//				}
+//			}
+
+//			//add a left over element into its own crop rotation
+//			if(putIntoNewCropRotation)
+//			{
+//				list<ProductionProcess> cr;
+//				cr.push_back(newPP);
+//				crs.push_back(cr);
+//			}
+
+//			//add copies of crop rotations with replaced elements to total list of crop rotations
+//			BOOST_FOREACH(list<ProductionProcess>& newCr, newCrs)
+//			{
+//				crs.push_back(newCr);
+//			}
+//		}
+
+//		//transform list of pps to vector of pps and store for current soilclass id
+//		vector<vector<ProductionProcess>> crs2;
+//		BOOST_FOREACH(list<ProductionProcess>& cr, crs)
+//		{
+//			vector<ProductionProcess> cr2;
+//			BOOST_FOREACH(ProductionProcess& pp, cr)
+//			{
+//				cr2.push_back(pp);
+//			}
+//			crs2.push_back(cr2);
+//		}
+
+//		scId2crs[scId] = crs2;
+//	}
+
+//	return scId2crs;
+//}
+
+
+//-------------------------------------------------------------------------------------------------------
+
+std::pair<const SoilPMs *, SoilClassId> Carbiocial::carbiocialSoilParameters(int profileId, const GeneralParameters& gps)
 {
 	//cout << "getting soilparameters for STR: " << str << endl;
 	int lt = int(gps.ps_LayerThickness.front() * 100); //cm
@@ -347,7 +966,7 @@ std::pair<const SoilPMs *, int> Carbiocial::carbiocialSoilParameters(int profile
 				Carbiocial::ProfileId id = Carbiocial::ProfileId(satoi(row[0]));
 
 				Carbiocial::SoilClassId soilClassId = Carbiocial::SoilClassId(satoi(row[2]));
-				if(profileId2soilClassId.find(id) != profileId2soilClassId.end())
+				if(profileId2soilClassId.find(id) == profileId2soilClassId.end())
 					profileId2soilClassId[id] = soilClassId;
 
 				Map::iterator spsi = spss.find(id);
@@ -421,7 +1040,7 @@ std::pair<const SoilPMs *, int> Carbiocial::carbiocialSoilParameters(int profile
 	}
 	*/
 	return ci != spss.end() ? make_pair(ci->second.get(), profileId2soilClassId[profileId])
-													: make_pair(&nothing, none);
+													: make_pair(&nothing, -1);
 }
 
 pair<int, int> roundTo5(int value)
@@ -437,15 +1056,14 @@ pair<int, int> roundTo5(int value)
 }
 
 #ifndef NO_GRIDS
-map<int, int> Carbiocial::roundedSoilFrequency(const Grids::GridP* soilGrid, int roundToDigits)
+map<SoilClassId, int> Carbiocial::roundedSoilFrequency(const Grids::GridP* soilGrid, int roundToDigits)
 {
-	typedef int SoilId;
-
 	auto roundValue = [=](double v){ return Tools::roundRT<int>(v, 0); };
 	auto roundPercentage = [=](double v){ return Tools::roundRT<int>(v, roundToDigits); };
 	auto rsf = soilGrid->frequency<int, int>(false, roundValue, roundPercentage);
-	int sumRoundedPercentage = accumulate(rsf.begin(), rsf.end(), 0, 
-		[](int acc, pair<SoilId, int> p){ return acc + p.second; });
+	int sumRoundedPercentage =
+			accumulate(rsf.begin(), rsf.end(), 0,
+								 [](int acc, pair<SoilClassId, int> p){ return acc + p.second; });
 				
 	int roundError = sumRoundedPercentage - 100;
 	if(roundError != 0)
@@ -454,7 +1072,7 @@ map<int, int> Carbiocial::roundedSoilFrequency(const Grids::GridP* soilGrid, int
 								? -1 //we got too much percent = over 100%
 								: 1; //we got too few percent = below 100%
 
-		map<SoilId, int>::iterator i = rsf.begin();
+		map<SoilClassId, int>::iterator i = rsf.begin();
 		while(roundError != 0)
 		{
 			if(i == rsf.end())
@@ -466,8 +1084,8 @@ map<int, int> Carbiocial::roundedSoilFrequency(const Grids::GridP* soilGrid, int
 			i++;
 		}
 
-		map<SoilId, int> rsf2;
-		for_each(rsf.begin(), rsf.end(), [&](pair<SoilId, int> p)
+		map<SoilClassId, int> rsf2;
+		for_each(rsf.begin(), rsf.end(), [&](pair<SoilClassId, int> p)
 		{
 			if(p.second > 0)
 				rsf2.insert(p);
@@ -479,6 +1097,7 @@ map<int, int> Carbiocial::roundedSoilFrequency(const Grids::GridP* soilGrid, int
 	return rsf;
 }
 #endif
+
 
 void Carbiocial::runMonicaCarbiocial()
 {

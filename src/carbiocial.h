@@ -35,10 +35,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef NO_GRIDS
 #include "grid/grid+.h"
 #endif
+
+#ifndef NO_MPMAS
 #include "MpmasMaster.h"
+#endif
+
+namespace mpmasScope
+{	// just for now, so that this simple exit function can still be used
+	//mpmas* mpmasPointer;
+	void exitfun();
+}
 
 namespace Carbiocial
 {
+
 	struct IdPlusCode : public Db::Identifiable
 	{
 		//! default constructor
@@ -84,13 +94,13 @@ namespace Carbiocial
 		typedef std::vector<SoilClass*> Collection;
 		static Collection& all()
 		{
-			return Db::LoadAllOfT<SetCodeFields<SoilClass> >()
+			return Db::LoadAllOfT<SetCodeFields<SoilClass>>("carbiocial")
 					("SELECT soil_type_id, soil_type_txt, soil_type_code "
 					 "FROM tbl_soil_types "
 					 "ORDER BY soil_type_id");
 		}
 
-		static const SoilClass* f4id(int id){ return Db::t4id<SoilClass>(id); }
+		static SoilClass* sc4id(int id){ return Db::t4id<SoilClass>(id); }
 
 		static std::string collectionToString()
 		{
@@ -99,6 +109,8 @@ namespace Carbiocial
 	};
 
 	//----------------------------------------------------------------------------
+
+	struct Municipality;
 
 	typedef int SectorId;
 	struct Sector : public Db::Identifiable
@@ -109,6 +121,7 @@ namespace Carbiocial
 
 	//----------------------------------------------------------------------------
 
+	typedef int MunicipalityId;
 	struct Municipality : public IdPlusCode
 	{
 		std::map<SectorId, Sector*> sectorId2sector;
@@ -117,8 +130,14 @@ namespace Carbiocial
 		struct PostCode_SetSectors
 		{
 			template<class PS>
-			void operator()(PS& /*list*/)
+			void operator()(PS& ms)
 			{
+				std::map<MunicipalityId, Municipality*> id2m;
+				BOOST_FOREACH(Municipality* m, ms)
+				{
+					id2m[m->id] = m;
+				}
+
 				Db::DBPtr con(Db::newConnection("carbiocial"));
 				Db::DBRow row;
 
@@ -128,7 +147,7 @@ namespace Carbiocial
 				while(!(row=con->getRow()).empty())
 				{
 					int municipId = Tools::satoi(row[0]);
-					Municipality* m = Municipality::m4id(municipId);
+					Municipality* m = id2m[municipId];
 
 					int sectorId = Tools::satoi(row[1]);
 					int soilClassId = Tools::satoi(row[2]);
@@ -143,6 +162,7 @@ namespace Carbiocial
 						s->id = sectorId;
 						s->municipality = m;
 						s->name = row[1];
+						m->sectorId2sector[sectorId] = s;
 					}
 
 					s->soilClassId2percentage[soilClassId] = percentage;
@@ -153,13 +173,13 @@ namespace Carbiocial
 		typedef std::vector<Municipality*> Collection;
 		static Collection& all()
 		{
-			return Db::LoadAllOfT<SetCodeFields<Municipality>, PostCode_SetSectors>()
+			return Db::LoadAllOfT<SetCodeFields<Municipality>, PostCode_SetSectors>("carbiocial")
 					("SELECT municip_id, municip_name, municip_code "
 					 "FROM tbl_municipalities "
-					 "ORDER BY municp_id");
+					 "ORDER BY municip_id");
 		}
 
-		static const Municipality* m4id(int id){ return Db::t4id<Municipality>(id); }
+		static Municipality* m4id(int id){ return Db::t4id<Municipality>(id); }
 
 		static std::string collectionToString()
 		{
@@ -244,7 +264,7 @@ namespace Carbiocial
 				{
 				case 0:
 				case 1:
-					Db::SetNameFields<Season>()(col, s, value);
+					Db::SetNameFields<Farm>()(col, s, value);
 					break;
 				case 2:
 					s->agriculturalType = value;
@@ -258,11 +278,11 @@ namespace Carbiocial
 		{
 			return Db::LoadAllOfT<SetFarmFields>("carbiocial")
 					("SELECT farm_type_id, farm_size_txt, agriculture_type_txt "
-					 "FROM tbl_farm_type "
+					 "FROM tbl_farm_types "
 					 "ORDER BY farm_type_id");
 		}
 
-		static const Farm* f4id(int id){ return Db::t4id<Farm>(id); }
+		static Farm* f4id(int id){ return Db::t4id<Farm>(id); }
 
 		static std::string collectionToString()
 		{
@@ -330,7 +350,7 @@ namespace Carbiocial
 		typedef std::vector<Operation*> Collection;
 		static Collection& all()
 		{
-			return Db::LoadAllOfT<SetCodeFields<Operation> >()
+			return Db::LoadAllOfT<SetCodeFields<Operation>>("carbiocial")
 					("SELECT operation_id, operation_txt, operation_code "
 					 "FROM tbl_operations "
 					 "ORDER BY operation_id");
@@ -381,8 +401,14 @@ namespace Carbiocial
 		struct PostCode_SetOperationsOnProduct
 		{
 			template<class PS>
-			void operator()(PS& /*list*/)
+			void operator()(PS& ps)
 			{
+				std::map<ProductId, Product*> id2p;
+				BOOST_FOREACH(Product* p, ps)
+				{
+					id2p[p->id] = p;
+				}
+
 				Db::DBPtr con(Db::newConnection("carbiocial"));
 				Db::DBRow row;
 
@@ -391,7 +417,7 @@ namespace Carbiocial
 										"ORDER BY product_id, operation_id");
 				while(!(row=con->getRow()).empty())
 				{
-					Product* p = Product::p4id(Tools::satoi(row[0]));
+					Product* p = id2p[Tools::satoi(row[0])];
 					int operationId = Tools::satoi(row[1]);
 					int month = Tools::satoi(row[2]);
 					p->operationId2month.insert(make_pair(operationId, month));
@@ -417,21 +443,7 @@ namespace Carbiocial
 
 	};
 
-	struct CropData
-	{
-		std::string name;
-		Tools::Date sowing, harvesting;
-		std::vector<Tools::Date> tillages;
-	};
-	CropData cropDataFor(CropId cropId);
-
-	Monica::ProductionProcess productionProcessFrom(CropId cropId);
-
-	enum Language { de = 0, en, br };
-
-	std::string nameFor(CropId cropId, Language l = en);
-
-	//----------------------------------------------------------------------------
+	//---------------------------------------------------------------------------
 
 	typedef int ProductionPracticeId;
 	struct ProductionPractice : public IdPlusCode
@@ -468,8 +480,14 @@ namespace Carbiocial
 		struct PostCode_SetFerilizersOnProductionPractice
 		{
 			template<class PS>
-			void operator()(PS& /*list*/)
+			void operator()(PS& pps)
 			{
+				std::map<ProductionPracticeId, ProductionPractice*> id2pp;
+				BOOST_FOREACH(ProductionPractice* pp, pps)
+				{
+					id2pp[pp->id] = pp;
+				}
+
 				Db::DBPtr con(Db::newConnection("carbiocial"));
 				Db::DBRow row;
 
@@ -483,7 +501,7 @@ namespace Carbiocial
 										"ORDER BY pr_practice_id");
 				while(!(row=con->getRow()).empty())
 				{
-					ProductionPractice* p = ProductionPractice::p4id(Tools::satoi(row[0]));
+					ProductionPractice* p = id2pp[Tools::satoi(row[0])];
 					int fertilizerId = Tools::satoi(row[1]);
 					int year = Tools::satoi(row[3]);
 					int amountKg = row[2] == "ton" ? Tools::satoi(row[4])*1000 : 0;
@@ -497,11 +515,11 @@ namespace Carbiocial
 		{
 			return Db::LoadAllOfT<SetProductionPracticeFields, PostCode_SetFerilizersOnProductionPractice>("carbiocial")(
 						"SELECT pr_practice_id, practice_txt, practice_code, source, product_id "
-						"FROM tbl_product_practices "
+						"FROM tbl_production_practices "
 						"ORDER BY pr_practice_id");
 		}
 
-		static ProductionPractice* p4id(int id){ return Db::t4id<ProductionPractice>(id); }
+		static ProductionPractice* pp4id(int id){ return Db::t4id<ProductionPractice>(id); }
 
 		static std::string collectionToString()
 		{
@@ -509,6 +527,10 @@ namespace Carbiocial
 		}
 
 	};
+
+	//----------------------------------------------------------------------------
+
+	Monica::ProductionProcess productionProcessFrom(ProductionPractice* prp);
 
 	//----------------------------------------------------------------------------
 
@@ -523,7 +545,7 @@ namespace Carbiocial
 	public: //static
 		struct SetCropActivityFields : public Db::SetFields<CropActivity>
 		{
-			enum { noOfCols = 5 };
+			enum { noOfCols = 4 };
 			void operator()(int col, CropActivity* ca, const std::string& value)
 			{
 				switch(col)
@@ -533,10 +555,10 @@ namespace Carbiocial
 					Db::SetNameFields<CropActivity>()(col, ca, value);
 					break;
 				case 2:
-					ca->productionPractice = ProductionPractice::p4id(Tools::satoi(value));
+					ca->productionPractice = ProductionPractice::pp4id(Tools::satoi(value));
 					break;
 				case 3:
-					ca->soilClass = SoilClass::f4id(Tools::satoi(value));
+					ca->soilClass = SoilClass::sc4id(Tools::satoi(value));
 					break;
 				}
 			}
@@ -562,13 +584,15 @@ namespace Carbiocial
 
 	//----------------------------------------------------------------------------
 
-	inline int makeAgentId(Municipality m, int sectorId, Farm f)
+	inline int makeAgentId(Municipality* m, int sectorId, Farm* f)
 	{ 
-		return m.id*1000000 + sectorId*100 + f.id;
+		return m->id*1000000 + sectorId*100 + f->id;
 	}
 
-	inline int makeInactiveSectorId(MunicipalityId mid, int sid){ return int(mid)*10000 + sid; }
+	inline int makeSectorId(MunicipalityId mid, int sid){ return int(mid)*10000 + sid; }
 	
+	void writeInactiveSectorsFile(int activeSectorId, const std::string& pathToFile);
+
 	//----------------------------------------------------------------------------
 
 
@@ -576,8 +600,7 @@ namespace Carbiocial
 	enum RunMode
 	{
 		dynamicMonicaStaticMPMAS = 0,
-		staticMonicaDynamicMPMAS,
-		onlyMonica
+		staticMonicaDynamicMPMAS
 	};
 
 	typedef int CropActivityId;
@@ -616,17 +639,19 @@ namespace Carbiocial
 		double stoverYield;
 	};
 
-	struct Result
+	struct MpmasResult
 	{
-		Result() : farmProfit(0) {}
+		MpmasResult() : farmProfit(0) {}
 
-		std::map<int, double> cropActivityId2grossMargin;
+		std::map<CropActivityId, double> cropActivityId2grossMargin;
 		double farmProfit;
 	};
 
 	struct Mpmas 
 	{
-		Mpmas();
+		Mpmas(const std::string& pathToMpmas);
+
+		~Mpmas();
 
 		//this method returns the landuse for the given input parameters
 		//the only thing that seams to be really needed for MONICA is a plain list of CropActivity, from which MONICA has to determine
@@ -634,7 +659,7 @@ namespace Carbiocial
 		//and what other parameters to apply to each crop (nitrogen use etc.)
 		//!!!! calling this method multiple times will mean that MPMAS in is dynamic use and we want to observe the changes of landuse over the years
 		//-> is option 4 static MONICA and dynamic MPMAS
-		std::vector<CropActivity*> landuse(int year, Farm* farm,
+		std::vector<CropActivity*> landuse(int year,
 																			 const std::map<int, int>& soilClassId2areaPercent,
 																			 std::vector<ProductionPractice*> pps);
 
@@ -642,18 +667,40 @@ namespace Carbiocial
 		//return for every CropActivity the gross-margin and for the whole farm the farm-profit
 		//!!!! this method can be called multiple times with different yields for the option 2 when MPMAS is used statically
 		//-> the landuse won't change, and initially the year is not used, as product prices and the like won't change either
-		Result calculateEconomicStuff(int year, const std::map<int, double>& cropActivityId2monicaYields);
+		MpmasResult calculateFarmEconomy(int year, Municipality* municipality,
+																		 int sectorId, Farm* farm,
+																		 std::map<CropActivityId, double> caId2monicaYields);
 
-
+#ifndef NO_MPMAS
 		mpmas* _mpmas;
+#else
+		void* _mpmas;
+#endif
 		int _noOfYears;
 		int _noOfSpinUpYears;
+		int _noOfCropActivities;
+		int* _cropActivityIds;
+		double* _cropAreas;
+		double* _monicaYields;
+		double* _monicaStoverYields;
+		double* _grossMargins;
+
+		bool _cropActivitiesDisabled;
+
+		char* _inputPathToMpmas;
+		char* _outputPathToMpmas;
+		char* _pathToInactiveSectorsFile;
 	};
 
-	std::vector<std::vector<Monica::ProductionProcess>>
-	cropRotationsFromUsedCrops(std::vector<CropActivity> cas);
+	typedef boost::shared_ptr<Mpmas> MpmasPtr;
 
-	std::pair<const Monica::SoilPMs*, int>
+	std::map<SoilClassId, std::vector<std::vector<Monica::ProductionProcess> > >
+	cropRotationsFromUsedCropActivities(std::vector<CropActivity*> cas);
+
+//	std::map<SoilClassId, std::vector<std::vector<Monica::ProductionProcess> > >
+//	cropRotationsFromUsedCropActivities2(vector<CropActivity*> cas);
+
+	std::pair<const Monica::SoilPMs*, SoilClassId>
 	carbiocialSoilParameters(int profileId, const Monica::GeneralParameters& gps
 													 = Monica::GeneralParameters());
 
@@ -665,7 +712,7 @@ namespace Carbiocial
 	//expenive for large grids, because the vector can get very large
 	//so only way to circumvent this is to add an iterator to GridP which is difficult, so I won't do it .... :-(
 #ifndef NO_GRIDS
-	std::map<int, int> roundedSoilFrequency(const Grids::GridP* soilGrid, int roundToDigits);
+	std::map<SoilClassId, int> roundedSoilFrequency(const Grids::GridP* soilGrid, int roundToDigits);
 #endif	
 
 	void runMonicaCarbiocial();

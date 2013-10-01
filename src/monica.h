@@ -80,7 +80,7 @@ namespace Monica
 				useAutomaticIrrigation(false),
 				useSecondaryYields(true),
 				atmosphericCO2(-1),
-				customCallerId(-1)
+				customId(-1)
 		{ }
 
     Env(const Env&);
@@ -121,7 +121,7 @@ namespace Monica
     std::vector<ProductionProcess> cropRotation; //! vector of elements holding the data of the single crops in the rotation
 
     Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
-		int customCallerId;
+		int customId;
 
     SiteParameters site;        //! site specific parameters
     GeneralParameters general;  //! general parameters to the model
@@ -159,10 +159,10 @@ namespace Monica
     Tools::GridPoint gp;
 		//is as gp before used to track results when multiple parallel
 		//unordered invocations of monica will happen
-		int customCallerId;
+		int customId;
 
     //! vector of the result of one crop per year
-    std::vector<PVResult> pvrs;
+		std::vector<PVResult> pvrs;
 
     //! results not regarding a particular crop in a rotation
     typedef std::map<ResultId, std::vector<double> > RId2Vector;
@@ -170,7 +170,7 @@ namespace Monica
 
     std::vector<double> getResultsById(int id);
 
-    int sizeGeneralResults() { return generalResults.size(); }
+		int sizeGeneralResults() { return int(generalResults.size()); }
 
     std::vector<std::string> dates;
 
@@ -191,7 +191,8 @@ namespace Monica
     /**
      * @brief Destructor
      */
-    ~MonicaModel() {
+		~MonicaModel()
+		{
       delete _currentCropGrowth;
     }
 

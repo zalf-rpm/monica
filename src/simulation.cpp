@@ -570,7 +570,10 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth);
 
   //soil data
-  const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), gps, hermes_config->getPH());
+  const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), 
+		int(layer_thickness*100.0), 
+		int(profile_depth*100.0),
+		hermes_config->getPH());
 
   //climate data
   std::string file = outputPath+hermes_config->getWeatherFile();
