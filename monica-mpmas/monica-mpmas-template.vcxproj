@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{82821596-FF75-4167-9FAF-12D417C07ACC}</ProjectGuid>
+    <RootNamespace>monicampmas</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v100</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v100</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ExecutablePath>C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE;$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <LibraryPath>C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <IncludePath>C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <ExecutablePath>C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE;$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <LibraryPath>C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NO_GRIDS;MONICA;RUN_MPMAS;WIN32;NO_HDF5;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\IbmOslV3Lib\osllib\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;C:\Users\michael\development\GitHub\monica\monica-mpmas\BRA018\code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\michael\development\GitHub\monica\monica-mpmas\BRA020;C:\Program Files (x86)\IbmOslV3Lib\osllib\lib</AdditionalLibraryDirectories>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libMpmas.lib;oslmd6030.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NO_GRIDS;MONICA;RUN_MPMAS;WIN32;NO_HDF5;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\IbmOslV3Lib\osllib\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;C:\Users\michael\development\GitHub\monica\monica-mpmas\BRA020\code;C:\Users\michael\development\GitHub\monica\monica-mpmas\BRA018\code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Users\michael\development\GitHub\monica\monica-mpmas\BRA020;C:\Program Files (x86)\IbmOslV3Lib\osllib\lib</AdditionalLibraryDirectories>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libMpmas.lib;oslmd6030.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\util\climate\climate-common.h" />
+    <ClInclude Include="..\..\util\db\abstract-db-connections.h" />
+    <ClInclude Include="..\..\util\db\db.h" />
+    <ClInclude Include="..\..\util\db\orm--.h" />
+    <ClInclude Include="..\..\util\db\orm--typedefs.h" />
+    <ClInclude Include="..\..\util\db\sqlite3.h" />
+    <ClInclude Include="..\..\util\tools\algorithms.h" />
+    <ClInclude Include="..\..\util\tools\auto-deleter.h" />
+    <ClInclude Include="..\..\util\tools\datastructures.h" />
+    <ClInclude Include="..\..\util\tools\date.h" />
+    <ClInclude Include="..\..\util\tools\helper.h" />
+    <ClInclude Include="..\..\util\tools\read-ini.h" />
+    <ClInclude Include="..\src\carbiocial.h" />
+    <ClInclude Include="..\src\conversion.h" />
+    <ClInclude Include="..\src\crop.h" />
+    <ClInclude Include="..\src\debug.h" />
+    <ClInclude Include="..\src\monica-parameters.h" />
+    <ClInclude Include="..\src\monica-typedefs.h" />
+    <ClInclude Include="..\src\monica.h" />
+    <ClInclude Include="..\src\simulation.h" />
+    <ClInclude Include="..\src\soilcolumn.h" />
+    <ClInclude Include="..\src\soilmoisture.h" />
+    <ClInclude Include="..\src\soilorganic.h" />
+    <ClInclude Include="..\src\soiltemperature.h" />
+    <ClInclude Include="..\src\soiltransport.h" />
+    <ClInclude Include="BRA018\code\Agent.h" />
+    <ClInclude Include="BRA018\code\AgentFarmHousehold.h" />
+    <ClInclude Include="BRA018\code\AgentHouseholdList.h" />
+    <ClInclude Include="BRA018\code\AgentHouseholdMember.h" />
+    <ClInclude Include="BRA018\code\AgentLivestockList.h" />
+    <ClInclude Include="BRA018\code\AgentLivestockUnit.h" />
+    <ClInclude Include="BRA018\code\AgentOtherFarms.h" />
+    <ClInclude Include="BRA018\code\AgentParcel.h" />
+    <ClInclude Include="BRA018\code\AgentParcelGridCellInterface.h" />
+    <ClInclude Include="BRA018\code\AgentParcelList.h" />
+    <ClInclude Include="BRA018\code\AgentPopulationHandler.h" />
+    <ClInclude Include="BRA018\code\BasicData.h" />
+    <ClInclude Include="BRA018\code\BasicDefines.h" />
+    <ClInclude Include="BRA018\code\BasicEnums.h" />
+    <ClInclude Include="BRA018\code\BasicFunctions.h" />
+    <ClInclude Include="BRA018\code\BasicStreams.h" />
+    <ClInclude Include="BRA018\code\BasicStrings.h" />
+    <ClInclude Include="BRA018\code\CatchmentHandler.h" />
+    <ClInclude Include="BRA018\code\CatchmentSector.h" />
+    <ClInclude Include="BRA018\code\CatchmentSectorAuxiliary.h" />
+    <ClInclude Include="BRA018\code\CatchmentSectorSpecific.h" />
+    <ClInclude Include="BRA018\code\Catchment_DynamicRiverFlows.h" />
+    <ClInclude Include="BRA018\code\CropActualPrecipitation.h" />
+    <ClInclude Include="BRA018\code\CropGrowthHandler.h" />
+    <ClInclude Include="BRA018\code\CropLucia.h" />
+    <ClInclude Include="BRA018\code\CropSoil.h" />
+    <ClInclude Include="BRA018\code\CropWater.h" />
+    <ClInclude Include="BRA018\code\FinancialMathFunctions.h" />
+    <ClInclude Include="BRA018\code\GridCellHandler.h" />
+    <ClInclude Include="BRA018\code\lp9.h" />
+    <ClInclude Include="BRA018\code\MainAuxiliaryFunctions.h" />
+    <ClInclude Include="BRA018\code\MarketNonTradablesBid.h" />
+    <ClInclude Include="BRA018\code\MarketTradablesHandler.h" />
+    <ClInclude Include="BRA018\code\MatrixDouble.h" />
+    <ClInclude Include="BRA018\code\MpmasMaster.h" />
+    <ClInclude Include="BRA018\code\OutputDataHandler.h" />
+    <ClInclude Include="BRA018\code\PopulationCluster.h" />
+    <ClInclude Include="BRA018\code\PopulationClusterList.h" />
+    <ClInclude Include="BRA018\code\PopulationNetworkSegment.h" />
+    <ClInclude Include="BRA018\code\PopulationNetworkSegmentList.h" />
+    <ClInclude Include="BRA018\code\RandomDataHandler.h" />
+    <ClInclude Include="BRA018\code\Raster2D.h" />
+    <ClInclude Include="BRA018\code\RegionHandler.h" />
+    <ClInclude Include="BRA018\code\TimeHandlerClass.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\util\climate\climate-common.cpp" />
+    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp" />
+    <ClCompile Include="..\..\util\db\db.cpp" />
+    <ClCompile Include="..\..\util\db\orm--.cpp" />
+    <ClCompile Include="..\..\util\db\sqlite3.c" />
+    <ClCompile Include="..\..\util\tools\algorithms.cpp" />
+    <ClCompile Include="..\..\util\tools\date.cpp" />
+    <ClCompile Include="..\..\util\tools\read-ini.cpp" />
+    <ClCompile Include="..\src\carbiocial.cpp" />
+    <ClCompile Include="..\src\conversion.cpp" />
+    <ClCompile Include="..\src\crop.cpp" />
+    <ClCompile Include="..\src\debug.cpp" />
+    <ClCompile Include="..\src\monica-mpmas-main.cpp" />
+    <ClCompile Include="..\src\monica-parameters.cpp" />
+    <ClCompile Include="..\src\monica.cpp" />
+    <ClCompile Include="..\src\simulation.cpp" />
+    <ClCompile Include="..\src\soilcolumn.cpp" />
+    <ClCompile Include="..\src\soilmoisture.cpp" />
+    <ClCompile Include="..\src\soilorganic.cpp" />
+    <ClCompile Include="..\src\soiltemperature.cpp" />
+    <ClCompile Include="..\src\soiltransport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\db-connections.ini" />
+    <None Include="BRA018\code\tree.hh" />
+    <None Include="BRA018\code\tree_util.hh" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

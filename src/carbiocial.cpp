@@ -308,7 +308,7 @@ vector<CropActivity*> Mpmas::landuse(int year,
 																		 const map<int, int>& /*soilClassId2areaPercent*/,
 																		 vector<ProductionPractice*> pps)
 {
-	cout << "entering Mpmas::landuse" << endl;
+//	cout << "entering Mpmas::landuse" << endl;
 
 	map<int, ProductionPractice*> id2pp;
 	for_each(pps.begin(), pps.end(), [&](ProductionPractice* pp)
@@ -345,20 +345,20 @@ vector<CropActivity*> Mpmas::landuse(int year,
 	vector<CropActivity*> res;
 	for(int i = 0; rtCode >= 0 && i < _noOfCropActivities; i++)
 	{
-		cout << "caId: " << _cropActivityIds[i];
+//		cout << "caId: " << _cropActivityIds[i];
 		if(_cropAreas[i] > 0)
 		{
-			cout << " area: " << _cropAreas[i] << " !!!!!!!" << endl;
+//			cout << " area: " << _cropAreas[i] << " !!!!!!!" << endl;
 			res.push_back(CropActivity::p4id(_cropActivityIds[i]));
 		}
-		else
-		{
-			cout << " area: " << _cropAreas[i] << endl;
-		}
+//		else
+//		{
+//			cout << " area: " << _cropAreas[i] << endl;
+//		}
 	}
 
-	cout << "leaving Mpmas::landuse" << endl;
-	cout.flush();
+//	cout << "leaving Mpmas::landuse" << endl;
+//	cout.flush();
 
 	return res;
 }
@@ -366,16 +366,16 @@ vector<CropActivity*> Mpmas::landuse(int year,
 MpmasResult Mpmas::calculateFarmEconomy(int year, Municipality* municipality, int sectorId,
 																				Farm* farm, std::map<CropActivityId, double> caId2monicaYields)
 {
-	cout << "entering Mpmas::calculateFarmEconomy" << endl;
+//	cout << "entering Mpmas::calculateFarmEconomy" << endl;
 
-	cout << "storing monica yields in mpmas structure: " << endl;
+//	cout << "storing monica yields in mpmas structure: " << endl;
 	for(int i = 0; i < _noOfCropActivities; i++)
 	{
 		int caId = _cropActivityIds[i];
 		auto cit = caId2monicaYields.find(caId);
 		_monicaYields[i] = cit == caId2monicaYields.end() ? 0.0 : cit->second;
 
-		cout << "caId: " << caId << " -> " << _monicaYields[i] << " dt/ha" << endl;
+//		cout << "caId: " << caId << " -> " << _monicaYields[i] << " dt/ha" << endl;
 
 		_monicaStoverYields[i] = 0.0;
 	}
@@ -410,7 +410,7 @@ MpmasResult Mpmas::calculateFarmEconomy(int year, Municipality* municipality, in
 		CropActivityId caId = _cropActivityIds[i];
 		if(caId2monicaYields.find(caId) != caId2monicaYields.end())
 		{
-			cout << "caId: " << _cropActivityIds[i] << " -> gm: " << _grossMargins[i] << endl;
+//			cout << "caId: " << _cropActivityIds[i] << " -> gm: " << _grossMargins[i] << endl;
 
 			if(_grossMargins[i] > 0)
 			{
@@ -425,8 +425,8 @@ MpmasResult Mpmas::calculateFarmEconomy(int year, Municipality* municipality, in
 
 	//assert(r.cropActivityId2grossMargin.size() == caId2monicaYields.size());
 
-	cout << "leaving Mpmas::calculateFarmEconomy" << endl;
-	cout.flush();
+//	cout << "leaving Mpmas::calculateFarmEconomy" << endl;
+//	cout.flush();
 
 	return r;
 }
@@ -579,7 +579,7 @@ MpmasResult Mpmas::calculateFarmEconomy(int year, Municipality* municipality, in
 map<SoilClassId, vector<vector<ProductionProcess> > >
 Carbiocial::cropRotationsFromUsedCropActivities(vector<CropActivity*> cas)
 {
-	cout << "entering Carbiocial::cropRotationsFromUsedCropActivities" << endl;
+//	cout << "entering Carbiocial::cropRotationsFromUsedCropActivities" << endl;
 
 	map<SoilClassId, vector<vector<ProductionProcess>>> scId2crs;
 
@@ -725,8 +725,8 @@ Carbiocial::cropRotationsFromUsedCropActivities(vector<CropActivity*> cas)
 
 	scId2crs[-1].push_back(unsupportedPPs);
 
-	cout << "leaving Carbiocial::cropRotationsFromUsedCropActivities" << endl;
-	cout.flush();
+//	cout << "leaving Carbiocial::cropRotationsFromUsedCropActivities" << endl;
+//	cout.flush();
 
 	return scId2crs;
 }
@@ -915,12 +915,12 @@ Carbiocial::cropRotationsFromUsedCropActivities(vector<CropActivity*> cas)
 
 //-------------------------------------------------------------------------------------------------------
 
-std::pair<const SoilPMs *, SoilClassId> Carbiocial::carbiocialSoilParameters(int profileId, const GeneralParameters& gps)
+std::pair<const SoilPMs *, SoilClassId>
+Carbiocial::carbiocialSoilParameters(int profileId, int layerThicknessCm,
+																		 int maxDepthCm)
 {
 	//cout << "getting soilparameters for STR: " << str << endl;
-	int lt = int(gps.ps_LayerThickness.front() * 100); //cm
-	int maxDepth = int(gps.ps_ProfileDepth) * 100; //cm
-	int maxNoOfLayers = int(double(maxDepth) / double(lt));
+	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
 
 	static L lockable;
 
@@ -980,10 +980,10 @@ std::pair<const SoilPMs *, SoilClassId> Carbiocial::carbiocialSoilParameters(int
 				int hcount = id2layerCount[int(id)];
 				int currenth = satoi(row[1]);
 
-				int ho = sps->size() * lt;
-				int hu = satoi(row[4]) ? satoi(row[4]) : maxDepth;
-				int hsize = hu - ho;
-				int subhcount = int(Tools::round(double(hsize) / double(lt)));
+				int ho = sps->size()*layerThicknessCm;
+				int hu = satoi(row[4]) ? satoi(row[4]) : maxDepthCm;
+				int hsize = max(0, hu - ho);
+				int subhcount = Tools::roundRT<int>(double(hsize) / double(layerThicknessCm), 0);
 				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
 					subhcount += maxNoOfLayers - sps->size() - subhcount;
 
@@ -1013,32 +1013,11 @@ std::pair<const SoilPMs *, SoilClassId> Carbiocial::carbiocialSoilParameters(int
 			}
 
 			initialized = true;
-
-			//      BOOST_FOREACH(Map::value_type p, spss)
-			//      {
-			//        cout << "code: " << p.first << endl;
-			//        BOOST_FOREACH(SoilParameters sp, *p.second)
-			//        {
-			//          cout << sp.toString();
-			//          cout << "---------------------------------" << endl;
-			//        }
-			//      }
 		}
 	}
 
 	static SoilPMs nothing;
 	Map::const_iterator ci = spss.find(profileId);
-	/*
-	if(ci != spss.end())
-	{
-		cout << "code: " << str << endl;
-		BOOST_FOREACH(SoilParameters sp, *ci->second)
-		{
-			cout << sp.toString();
-			cout << "---------------------------------" << endl;
-		}
-	}
-	*/
 	return ci != spss.end() ? make_pair(ci->second.get(), profileId2soilClassId[profileId])
 													: make_pair(&nothing, -1);
 }

@@ -32,8 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "boost/foreach.hpp"
 
-#include "MpmasMaster.h"
-
 #include "tools/use-stl-algo-boost-lambda.h"
 #include "db/db.h"
 #include "db/abstract-db-connections.h"
@@ -45,12 +43,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "monica.h"
 #include "monica-parameters.h"
 #include "simulation.h"
+#include "carbiocial.h"
+
+#include "MpmasMaster.h"
 
 using namespace std;
 using namespace Db;
 using namespace Tools;
 using namespace Monica;
 
+/*
 namespace mpmasScope
 {	// just for now, so that this simple exit function can still be used
 	mpmas* mpmasPointer;
@@ -75,6 +77,7 @@ void mpmasScope::exitfun()
 			<< "-------------------------------------------------------------------------" << endl;
 	//exit(1);
 }
+*/
 
 /*
 
@@ -122,7 +125,7 @@ int main(int argc, char** argv)
 		
 		//create instance of Mpmas and set pointer for exit function
 		mpmas mpmas(argc, argv);
-		mpmasScope::mpmasPointer = &mpmas;
+		//mpmasScope::mpmasPointer = &mpmas;
 
 #ifdef MONICA
 		//just for debugging ...
@@ -164,14 +167,23 @@ int main(int argc, char** argv)
 			//if needed, exclude crop activities from being grown
 			//mpmas.disableCropActivities(numDisabled, disabledCropActID);
 
-			//just for debugging
-			int catchmentID = 0;
-			int numDisabledSectors = 1;
-			int disabledSectorID[1];
-			disabledSectorID[0] = 0;
+			//-BBRA020/input/dat/tf__InactiveSectors0.dat
 
+			//just for debugging
+			//int catchmentID = 2;
+			/*
+			int numDisabledSectors = 1;
+			int disabledSectorID2[408];
+			int disabledSectorID4[96];
+			for(int i = 0; i < 408; i++)
+				disabledSectorID2[i] = Carbiocial::makeInactiveSectorId(2, i+1);
+			for(int i = 0; i < 96; i++)
+				disabledSectorID4[i] = Carbiocial::makeInactiveSectorId(4, i);
+			
 			//if needed, exclude specific sectors from simulation (their agents will be deleted)
-			//mpmas.disableAgentsInSectors(catchmentID, numDisabledSectors, disabledSectorID);
+			mpmas.disableAgentsInSectors(2, 408, disabledSectorID2);
+			mpmas.disableAgentsInSectors(4, 96, disabledSectorID4);
+			*/
 
 			//export land-use maps
 			int rtcode1 = mpmas.simulateOnePeriodExportingLandUse(year, numCropActs, cropActIDX, cropAreaX);

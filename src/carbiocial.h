@@ -701,8 +701,7 @@ namespace Carbiocial
 //	cropRotationsFromUsedCropActivities2(vector<CropActivity*> cas);
 
 	std::pair<const Monica::SoilPMs*, SoilClassId>
-	carbiocialSoilParameters(int profileId, const Monica::GeneralParameters& gps
-													 = Monica::GeneralParameters());
+	carbiocialSoilParameters(int profileId, int layerThicknessCm, int maxDepthCm);
 
 	//just temporary define to not have to include all the grids stuff if I don't need the rounded soil frequency
 	//stupid thing is actually that it's hard to not use a grid as parameter, because either I have to move
