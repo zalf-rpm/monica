@@ -198,3 +198,5 @@ installer/Hohenfinow2/*.dat
 /monica-mpmas/ReadCropActIds.txt
 /monica-mpmas/ReadCropYields.txt
 /monica-mpmas/DEF237
+/monica-mpmas/monica-mpmas.vcxproj
+/monica-mpmas/monica-mpmas.vcxproj.filters
