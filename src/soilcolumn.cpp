@@ -200,8 +200,18 @@ vs_SoilTemperature(0)
 
   vs_SoilMoisture_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
   vs_SoilMoistureOld_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
-  vs_SoilNO3 = cpp.userInitValues.p_initSoilNitrate;
-  vs_SoilNH4 = cpp.userInitValues.p_initSoilAmmonium;
+
+  if (sps.vs_SoilAmmonium < 0.0) {
+      vs_SoilNH4 = cpp.userInitValues.p_initSoilAmmonium;
+  } else {
+      vs_SoilNH4 = sps.vs_SoilAmmonium; // kg m-3
+  }
+  if (sps.vs_SoilNitrate < 0.0) {
+      vs_SoilNO3 = cpp.userInitValues.p_initSoilNitrate;
+  } else {
+      vs_SoilNO3 = sps.vs_SoilNitrate;  // kg m-3
+  }
+
 
   //cout  << "Constructor 3" << endl;
   //cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.userInitValues.p_initPercentageFC << endl;
@@ -269,7 +279,7 @@ SoilLayer::SoilLayer(const SoilLayer &sl)
  */
 double SoilLayer::vs_SoilOrganicCarbon() const {
   // if soil organic carbon is not defined, than calculate from soil organic
-  // matter value
+  // matter value [kg C kg-1]
   if(_vs_SoilOrganicCarbon >= 0.0) {
     return _vs_SoilOrganicCarbon;
   }
@@ -282,8 +292,8 @@ double SoilLayer::vs_SoilOrganicCarbon() const {
 /**
  * @brief Returns value for soil organic matter.
  *
- * If value for soil organic carbon is not defined, because DB does not
- * contain the according value, than the store value for organic matter
+ * If the value for soil organic carbon is not defined, because the DB does
+ * not contain any value, than the stored value for organic matter
  * is returned. If the soil organic carbon parameter is defined,
  * than the value for soil organic matter is calculated depending on
  * the soil organic carbon.
@@ -297,19 +307,18 @@ double SoilLayer::vs_SoilOrganicMatter() const {
   }
 
   // ansonsten berechne den Wert aus dem C-Gehalt
-	return (_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C);
+	return (_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C); //[kg C kg-1]
 }
 
 /**
- * @brief Returns part of silt content of the layer.
+ * @brief Returns fraction of silt content of the layer.
  *
- * Calculates part of silt the layer contains dependant to
- * the sand and clay content.
+ * Calculates the silt particle size fraction in the layer in dependence
+ * of its sand and clay content.
  *
- * @return Part of silt in the layer.
+ * @return Fraction of silt in the layer.
  */
 double SoilLayer::vs_SoilSiltContent() const {
-  // Berechnung des Schluffgehalts in Abhängigkeit der anderen Komponenten
   return (1 - vs_SoilSandContent - vs_SoilClayContent);
 }
 

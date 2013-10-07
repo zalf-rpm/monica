@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // must be activated when building monica for python
 // #define RUN_HERMES
-// #define RUN_EVA2
+// #define RUN_EVA
 //#define RUN_CC_GERMANY
 //#define RUN_GIS
 
@@ -130,17 +130,22 @@ public:
 			NDeposition(20),
 			minGWDepth(-1.0),
 			maxGWDepth(-1.0),
-			lattitude(-1.0),
+			latitude(-1.0),
 			slope(-1.0),
 			heightNN(-1.0),
 			soilCNRatio(-1.0),
+			drainageCoeff(-1.0),
 			atmosphericCO2(-1.0),
 			pH(-1.0),
 			windSpeedHeight(-1.0),
 			leachingDepth(-1.0),
 			minGWDepthMonth(-1),
 	    automaticIrrigation(false),
-	    NMinFertiliser(false)
+	    NMinFertiliser(false),
+		nitrogenResponseOn(true),
+		waterDeficitResponseOn(true),
+		emergenceFloodingControlOn(true),
+		emergenceMoistureControlOn(true)
 	{}
 	~HermesSimulationConfiguration(){}
 
@@ -157,11 +162,12 @@ public:
 
     void setMinGWDepth(double v) { minGWDepth=v; }
     void setMaxGWDepth(double v) { maxGWDepth=v; }
-    void setLattitude(double v) { lattitude=v; }
+    void setlatitude(double v) { latitude=v; }
     void setSlope(double v) { slope=v; }
     void setHeightNN(double v) { heightNN=v; }
     void setSoilCNRatio(double v) { soilCNRatio=v; }
-    void setAtmosphericCO2(double v) { atmosphericCO2=v; }
+    void setDrainageCoeff(double v) { drainageCoeff=v; }
+	void setAtmosphericCO2(double v) { atmosphericCO2=v; }
     void setPH(double v) {pH = v; }
     void setWindSpeedHeight(double v) { windSpeedHeight=v; }
     void setLeachingDepth(double v) { leachingDepth=v; }
@@ -177,6 +183,10 @@ public:
     void setMaxPercolationRate(double v) {maxPercolationRate = v; }
 
     void setSecondaryYields(bool v) {secondaryYields = v; }
+	void setNitrogenResponseOn(bool v) {nitrogenResponseOn = v; }
+	void setWaterDeficitResponseOn(bool v) {waterDeficitResponseOn = v; }
+    void setEmergenceFloodingControlOn(bool v) {emergenceFloodingControlOn = v; } 
+	void setEmergenceMoistureControlOn(bool v) {emergenceMoistureControlOn = v; } 
 
     void setStartYear(int year) { this->startYear = year; }
     void setEndYear(int year) { this->endYear = year; }
@@ -218,10 +228,11 @@ public:
 
     double getMinGWDepth() const {return minGWDepth; }
     double getMaxGWDepth() const {return maxGWDepth; }
-    double getLattitude() const {return lattitude; }
+    double getLatitude() const {return latitude; }
     double getSlope() const {return slope; }
     double getHeightNN() const {return heightNN; }
     double getSoilCNRatio() const {return soilCNRatio; }
+	double getDrainageCoeff() const {return drainageCoeff; }
     double getAtmosphericCO2() const {return atmosphericCO2; }
     double getPH() const { return pH; }
     double getWindSpeedHeight() const {return windSpeedHeight; }
@@ -238,6 +249,10 @@ public:
     double getMaxPercolationRate() { return maxPercolationRate; }
 
     bool getSecondaryYields() { return secondaryYields; }
+    bool getNitrogenResponseOn() { return nitrogenResponseOn; }
+	bool getWaterDeficitResponseOn() { return waterDeficitResponseOn; }
+	bool getEmergenceFloodingControlOn() { return emergenceFloodingControlOn; }
+	bool getEmergenceMoistureControlOn() { return emergenceMoistureControlOn; }
 
     bool useNMinFertiliser() { return this->NMinFertiliser;}
     bool useAutomaticIrrigation() { return this->automaticIrrigation;}
@@ -266,11 +281,12 @@ public:
     double NDeposition;
     double minGWDepth;
     double maxGWDepth;
-    double lattitude;
+    double latitude;
     double slope;
     double heightNN;
     double soilCNRatio;
-    double atmosphericCO2;
+    double drainageCoeff;
+	double atmosphericCO2;
     double pH;
     double windSpeedHeight;
     double leachingDepth;
@@ -284,6 +300,10 @@ public:
     double dispersionLength;
     double maxPercolationRate;
     bool secondaryYields;
+	bool nitrogenResponseOn;
+	bool waterDeficitResponseOn;
+	bool emergenceFloodingControlOn;
+	bool emergenceMoistureControlOn;
     int julianDayOfIrrigation;
 
     bool automaticIrrigation;

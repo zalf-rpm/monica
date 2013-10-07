@@ -87,6 +87,7 @@ vo_SOM_FastDelta(sc.vs_NumberOfOrganicLayers()),
 vo_SOM_FastInput(0),
 vo_SOM_SlowDelta(sc.vs_NumberOfOrganicLayers()),
 vo_SumDenitrification(0.0),
+vo_SumNetNMineralisation(0.0),
 vo_SumN2O_Produced(0.0),
 vo_SumNH3_Volatilised(0.0),
 vo_TotalDenitrification(0.0),
@@ -107,39 +108,42 @@ crop(NULL)
   //Conversion of soil organic carbon weight fraction to volume unit
   for(int i_Layer = 0; i_Layer < vs_NumberOfOrganicLayers; i_Layer++) {
 
-    vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity();
+    vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity(); //[kg C kg-1] * [kg m-3] --> [kg C m-3]
 
     // Falloon et al. (1998): Estimating the size of the inert organic matter pool
     // from total soil oragnic carbon content for use in the Rothamsted Carbon model.
     // Soil Biol. Biochem. 30 (8/9), 1207-1211. for values in t C ha-1.
-    vo_InertSoilOrganicC[i_Layer] = 0.049 * pow((vo_SoilOrganicC[i_Layer] // [kg C m-3]
+	// vo_InertSoilOrganicC is calculated back to [kg C m-3].
+    vo_InertSoilOrganicC[i_Layer] = (0.049 * pow((vo_SoilOrganicC[i_Layer] // [kg C m-3]
 			      * soilColumn[i_Layer].vs_LayerThickness // [kg C m-2]
-			      / 1000 * 10000.0), 1.139); // [t C ha-1]
+			      / 1000 * 10000.0), 1.139)) // [t C ha-1]
+				  / 10000.0 * 1000.0 // [kg C m-2]
+				  / soilColumn[i_Layer].vs_LayerThickness; // [kg C m-3]
 
-    vo_SoilOrganicC[i_Layer] -= vo_InertSoilOrganicC[i_Layer];
+    vo_SoilOrganicC[i_Layer] -= vo_InertSoilOrganicC[i_Layer]; // [kg C m-3]
 
-    // Initialisation of pool SMB_Slow
+    // Initialisation of pool SMB_Slow [kg C m-3]
 		soilColumn[i_Layer].vs_SMB_Slow = po_SOM_SlowUtilizationEfficiency
 				 * po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i_Layer];
 
-    // Initialisation of pool SMB_Fast
+    // Initialisation of pool SMB_Fast [kg C m-3]
 		soilColumn[i_Layer].vs_SMB_Fast = po_SOM_FastUtilizationEfficiency
 							* po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i_Layer];
 
-    // Initialisation of pool SOM_Slow
+    // Initialisation of pool SOM_Slow [kg C m-3]
 		soilColumn[i_Layer].vs_SOM_Slow = vo_SoilOrganicC[i_Layer] / (1.0 + po_SOM_SlowDecCoeffStandard
 							/ (po_SOM_FastDecCoeffStandard * po_PartSOM_Fast_to_SOM_Slow));
 
-    // Initialisation of pool SOM_Fast
+    // Initialisation of pool SOM_Fast [kg C m-3]
     soilColumn[i_Layer].vs_SOM_Fast = vo_SoilOrganicC[i_Layer] - soilColumn[i_Layer].vs_SOM_Slow;
 
-    // Soil Organic Matter pool update
+    // Soil Organic Matter pool update [kg C m-3]
     vo_SoilOrganicC[i_Layer] -= soilColumn[i_Layer].vs_SMB_Slow + soilColumn[i_Layer].vs_SMB_Fast;
 
-    soilColumn[i_Layer].set_SoilOrganicCarbon(vo_SoilOrganicC[i_Layer] / soilColumn[i_Layer].vs_SoilBulkDensity());
+    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
-		soilColumn[i_Layer].set_SoilOrganicMatter(vo_SoilOrganicC[i_Layer] / OrganicConstants::po_SOM_to_C
-				      / soilColumn[i_Layer].vs_SoilBulkDensity());
+	soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / OrganicConstants::po_SOM_to_C
+				      / soilColumn[i_Layer].vs_SoilBulkDensity());  // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
 
     vo_ActDenitrificationRate.at(i_Layer) = 0.0;
@@ -161,7 +165,8 @@ SoilOrganic::~SoilOrganic() {
 void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 		   double vw_WindSpeed) {
 
-  double vc_NetPrimaryProduction = crop ? crop->get_NetPrimaryProduction() : 0;
+  double vc_NetPrimaryProduction = 0.0;
+  vc_NetPrimaryProduction = crop ? crop->get_NetPrimaryProduction() : 0;
 
   //fo_OM_Input(vo_AOM_Addition);
   fo_Urea(vw_Precipitation + irrigationAmount);
@@ -176,7 +181,7 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   vo_NetEcosystemProduction =
           fo_NetEcosystemProduction(vc_NetPrimaryProduction, vo_DecomposerRespiration);
   vo_NetEcosystemExchange =
-          fo_NetEcosystemExchange();
+          fo_NetEcosystemExchange(vc_NetPrimaryProduction, vo_DecomposerRespiration);
 
   vo_SumNH3_Volatilised += vo_NH3_Volatilised;
 
@@ -865,6 +870,7 @@ void SoilOrganic::fo_MIT() {
 
   // Check for Nmin availablity in case of immobilisation
 
+  vo_NetNMineralisation = 0.0;
 
   for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
 
@@ -970,9 +976,11 @@ void SoilOrganic::fo_MIT() {
       soilColumn[i_Layer].vs_SoilNH4 += fabs(vo_NBalance[i_Layer]);
     }
 
-		vo_NetNMineralisationRate[i_Layer] = fabs(vo_NBalance[i_Layer])
-				* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
-		vo_NetNMineralisation += fabs(vo_NBalance[i_Layer])
+	vo_NetNMineralisationRate[i_Layer] = fabs(vo_NBalance[i_Layer])
+			* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
+	vo_NetNMineralisation += fabs(vo_NBalance[i_Layer])
+			* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
+	vo_SumNetNMineralisation += fabs(vo_NBalance[i_Layer])
 				* soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2]
 
   }
@@ -1262,13 +1270,13 @@ void SoilOrganic::fo_PoolUpdate() {
     }
 
 
-    vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity();
+    vo_SoilOrganicC[i_Layer] = (soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity()) - vo_InertSoilOrganicC[i_Layer]; // ([kg C kg-1] * [kg m-3]) - [kg C m-3]
     vo_SoilOrganicC[i_Layer] += vo_CBalance[i_Layer];
     
-    soilColumn[i_Layer].set_SoilOrganicCarbon(vo_SoilOrganicC[i_Layer] / soilColumn[i_Layer].vs_SoilBulkDensity());
+    soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
-		soilColumn[i_Layer].set_SoilOrganicMatter(vo_SoilOrganicC[i_Layer] / OrganicConstants::po_SOM_to_C
-				      / soilColumn[i_Layer].vs_SoilBulkDensity());
+	soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer])/ OrganicConstants::po_SOM_to_C
+				      / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
   } // for
 }
 
@@ -1492,30 +1500,31 @@ double SoilOrganic::fo_NH3onNitriteOxidation(double d_SoilNH4, double d_SoilpH) 
 }
 
 /**
- * @brief Calculates Net ecosystem production [kg C m-2 d-1].
+ * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
 double SoilOrganic::fo_NetEcosystemProduction(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
 
   double vo_NEP = 0.0;
 
-  vo_NEP = d_NetPrimaryProduction - d_DecomposerRespiration; // [kg C m-2 d-1]
+  vo_NEP = d_NetPrimaryProduction - (d_DecomposerRespiration * 10000.0); // [kg C ha-1 d-1]
 
   return vo_NEP;
 }
 
 
 /**
- * @brief Calculates Net ecosystem production [kg C m-2 d-1].
+ * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
-double SoilOrganic::fo_NetEcosystemExchange() {
+double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
 
-  // This section is not yet defined!!!
+  // NEE = NEP (M.U.F. Kirschbaum and R. Mueller (2001): Net Ecosystem Exchange. Workshop Proceedings CRC for greenhouse accounting.
+  // Per definition: NPP is negative and respiration is positive
 
   double vo_NEE = 0.0;
 
-  vo_NEE = 0.0; // [kg C m-2 d-1]
+  vo_NEE = - d_NetPrimaryProduction + (d_DecomposerRespiration * 10000.0); // [kg C ha-1 d-1]
 
   return vo_NEE;
 }
@@ -1608,93 +1617,102 @@ double SoilOrganic::get_ActDenitrificationRate(int i_Layer) const
 /**
  * Returns actual N mineralisation rate in layer
  * @param i_Layer
- * @return N mineralisation rate [kg N m-2 d-1]
+ * @return N mineralisation rate [kg N ha-1 d-1]
  */
 double SoilOrganic::get_NetNMineralisationRate(int i_Layer) const
 {
-  return vo_NetNMineralisationRate.at(i_Layer);
+  return vo_NetNMineralisationRate.at(i_Layer) * 10000.0;
 }
 
 /**
  * Returns cumulative total N mineralisation
- * @return Total N mineralistaion [kg N m-2]
+ * @return Total N mineralistaion [kg N ha-1]
  */
 double SoilOrganic::get_NetNMineralisation() const
 {
-  return vo_NetNMineralisation;
+  return vo_NetNMineralisation * 10000.0;
+}
+
+/**
+ * Returns cumulative total N mineralisation
+ * @return Total N mineralistaion [kg N ha-1]
+ */
+double SoilOrganic::get_SumNetNMineralisation() const
+{
+  return vo_SumNetNMineralisation * 10000.0;
 }
 
 /**
  * Returns cumulative total N denitrification
- * @return Total N denitrification [kg N m-2]
+ * @return Total N denitrification [kg N ha-1]
  */
 double SoilOrganic::get_SumDenitrification() const
 {
-  return vo_SumDenitrification;
+  return vo_SumDenitrification * 10000.0;
 }
 
 
 /**
  * Returns N denitrification
- * @return N denitrification [kg N m-2]
+ * @return N denitrification [kg N ha-1]
  */
 double SoilOrganic::get_Denitrification() const
 {
-  return vo_TotalDenitrification;
+  return vo_TotalDenitrification * 10000.0;
 }
 
 /**
  * Returns NH3 volatilisation
- * @return NH3 volatilisation [kg N m-2]
+ * @return NH3 volatilisation [kg N ha-1]
  */
 double SoilOrganic::get_NH3_Volatilised() const
 {
-  return vo_Total_NH3_Volatilised;
+  return vo_Total_NH3_Volatilised * 10000.0;
 }
 
 /**
  * Returns cumulative total NH3 volatilisation
- * @return Total NH3 volatilisation [kg N m-2]
+ * @return Total NH3 volatilisation [kg N ha-1]
  */
 double SoilOrganic::get_SumNH3_Volatilised() const
 {
-  return vo_SumNH3_Volatilised;
+  return vo_SumNH3_Volatilised * 10000.0;
 }
 
 
 /**
  * Returns N2O Production
- * @return N2O Production [kg N m-2]
+ * @return N2O Production [kg N ha-1]
  */
 double SoilOrganic::get_N2O_Produced() const
 {
-	return vo_N2O_Produced;
+	return vo_N2O_Produced * 10000.0;
 }
 
 
 /**
  * Returns cumulative total N2O Production
- * @return Cumulative total N2O Production [kg N m-2]
+ * @return Cumulative total N2O Production [kg N ha-1]
  */
 double SoilOrganic::get_SumN2O_Produced() const
 {
-	return vo_SumN2O_Produced;
+	return vo_SumN2O_Produced * 10000.0;
 }
 
 
 /**
  * Returns daily decomposer respiration
- * @return daily decomposer respiration [kg C m-2 d-1]
+ * @return daily decomposer respiration [kg C ha-1 d-1]
  */
 double SoilOrganic::get_DecomposerRespiration() const
 {
-  return vo_DecomposerRespiration;
+  return vo_DecomposerRespiration * 10000.0;
 }
 
 
 /**
  * Returns daily net ecosystem production
- * @return daily net ecosystem production [kg C m-2 d-1]
+ * @return daily net ecosystem production [kg C ha-1 d-1]
  */
 double SoilOrganic::get_NetEcosystemProduction() const
 {
@@ -1704,7 +1722,7 @@ double SoilOrganic::get_NetEcosystemProduction() const
 
 /**
  * Returns daily net ecosystem exchange
- * @return daily net ecosystem exchange [kg C m-2 d-1]
+ * @return daily net ecosystem exchange [kg C ha-1 d-1]
  */
 double SoilOrganic::get_NetEcosystemExchange() const
 {

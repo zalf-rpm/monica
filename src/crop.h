@@ -211,13 +211,15 @@ namespace Monica
     double get_RemainingEvapotranspiration() const;
     double get_EvaporatedFromIntercept() const;
     double get_NetPrecipitation() const;
+	std::string get_CropName() const;
     double get_GrossPhotosynthesisRate() const;
     double get_GrossPhotosynthesisHaRate() const;
     double get_AssimilationRate() const;
     double get_Assimilates() const;
     double get_NetMaintenanceRespiration() const;
     double get_MaintenanceRespirationAS() const;
-    double get_VernalisationFactor() const;
+    double get_GrowthRespirationAS() const;
+	double get_VernalisationFactor() const;
     double get_DaylengthFactor() const;
     double get_OrganGrowthIncrement(int i_Organ) const;
     double get_NetPhotosynthesis() const;
@@ -266,7 +268,7 @@ namespace Monica
     double get_GrossPrimaryProduction() const;
     double get_NetPrimaryProduction() const;
     
-    double get_VcRespiration() const;
+    double get_AutotrophicRespiration() const;
     double get_OrganSpecificTotalRespired(int organ) const;
     double get_OrganSpecificNPP(int organ) const;
     int get_NumberOfOrgans() const { return pc_NumberOfOrgans; }
@@ -357,6 +359,8 @@ namespace Monica
     double vc_DroughtImpactOnFertility;
     double pc_DroughtImpactOnFertilityFactor;
     const std::vector<double>& pc_DroughtStressThreshold;	//! old DRYswell
+	bool pc_EmergenceFloodingControlOn;
+    bool pc_EmergenceMoistureControlOn;
     double pc_EndSensitivePhaseHeatStress;
     double vc_EffectiveDayLength;		//! old DLE
     bool vc_ErrorStatus;
@@ -374,6 +378,7 @@ namespace Monica
     double vc_GrossPhotosynthesis_mol;
     double vc_GrossPhotosynthesisReference_mol;
     double vc_GrossPrimaryProduction;
+	double vc_GrowthRespirationAS;
     double vs_HeightNN;
     double pc_InitialKcFactor;						//! old Kcini
     const std::vector<double>& pc_InitialOrganBiomass;
@@ -406,6 +411,7 @@ namespace Monica
     double pc_NConcentrationRoot;	        //! initial value to WUGEH
     double vc_NConcentrationRoot;		//! old WUGEH
     double vc_NConcentrationRootOld;		//! old
+	bool pc_NitrogenResponseOn;
     int pc_NumberOfDevelopmentalStages;
     int pc_NumberOfOrgans;							//! old NRKOM
     std::vector<double> vc_NUptakeFromLayer; //! old PE
@@ -475,6 +481,7 @@ namespace Monica
     double vc_VernalisationDays; //
     double vc_VernalisationFactor;					//! old FV
     const std::vector<double>& pc_VernalisationRequirement;	//! old VSCHWELL
+	bool pc_WaterDeficitResponseOn;
 
     int eva2_usage;
     std::vector<YieldComponent> eva2_primaryYieldComponents;

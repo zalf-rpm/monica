@@ -61,9 +61,6 @@ namespace Monica
 	const double UNDEFINED = -9999.9;
 	const int UNDEFINED_INT = -9999;
 
-	//  double KA52clay(std::string bodenart);
-	//  double KA52sand(std::string bodenart);
-
 	enum Region
 	{
 		weisseritz, uecker
@@ -334,28 +331,29 @@ namespace Monica
 		// members
 		std::string pc_CropName; /**< Name */
 
-		int pc_NumberOfDevelopmentalStages; /**<  */
-		int pc_NumberOfOrgans; /**<  */
-		int pc_CarboxylationPathway; /**<  */
-		double pc_DefaultRadiationUseEfficiency; /**<  */
-		int pc_FixingN; /**<  */
-		double pc_InitialKcFactor; /**<  */
-		double pc_LuxuryNCoeff; /**<  */
-		double pc_MaxAssimilationRate; /**<  */
+		int pc_NumberOfDevelopmentalStages; 
+		int pc_NumberOfOrgans; 
+		int pc_CarboxylationPathway; 
+		double pc_DefaultRadiationUseEfficiency;
+		int pc_FixingN;
+		double pc_InitialKcFactor; 
+		double pc_LuxuryNCoeff; 
+		double pc_MaxAssimilationRate;
 		double pc_MaxCropDiameter;
-		double pc_MaxCropHeight; /**<  */
-		double pc_CropHeightP1; /**<  */
-		double pc_CropHeightP2; /**<  */
+		double pc_MaxCropHeight;
+		double pc_CropHeightP1; 
+		double pc_CropHeightP2; 
 		double pc_StageAtMaxHeight;
-		double pc_StageAtMaxDiameter; /**<  */
-		double pc_MinimumNConcentration; /**<  */
-		double pc_MinimumTemperatureForAssimilation; /**<  */
-		double pc_NConcentrationAbovegroundBiomass; /**<  */
-		double pc_NConcentrationB0; /**<  */
-		double pc_NConcentrationPN; /**<  */
-		double pc_NConcentrationRoot; /**<  */
-		double pc_ResidueNRatio; /**<  */
-		int pc_DevelopmentAccelerationByNitrogenStress; /**<  */
+		double pc_StageAtMaxDiameter; 
+		double pc_MinimumNConcentration; 
+		double pc_MinimumTemperatureForAssimilation; 
+		double pc_NConcentrationAbovegroundBiomass; 
+		double pc_NConcentrationB0; 
+		double pc_NConcentrationPN; 
+		double pc_NConcentrationRoot; 
+		double pc_ResidueNRatio; 
+		int pc_DevelopmentAccelerationByNitrogenStress; 
+		double pc_FieldConditionModifier;
 
 		std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
 		std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
@@ -420,7 +418,12 @@ namespace Monica
 	struct GeneralParameters
 	{
 		GeneralParameters(double ps_LayerThickness = 0.1,
-											double ps_ProfileDepth = 2.0, double mmd = 0.4);
+											double ps_ProfileDepth = 2.0, 
+											double ps_MaximumMineralisationDepth = 0.4,
+											bool pc_NitrogenResponseOn = true,
+											bool pc_WaterDeficitResponseOn = true,
+											bool pc_EmergenceFloodingControlOn = true,
+											bool pc_EmergenceMoistureControlOn = true);
 
 		/**
 		 * @brief Returns number of layers.
@@ -432,6 +435,10 @@ namespace Monica
 
 		double ps_ProfileDepth;
 		double ps_MaxMineralisationDepth;
+		bool pc_NitrogenResponseOn;
+		bool pc_WaterDeficitResponseOn;
+		bool pc_EmergenceFloodingControlOn;
+		bool pc_EmergenceMoistureControlOn;
 	};
 
 	//----------------------------------------------------------------------------
@@ -466,7 +473,7 @@ namespace Monica
 		double vs_HeightNN;               //!< [m]
 		double vs_GroundwaterDepth;  //!< Tiefe des Grundwasserspiegels [m]
 		double vs_Soil_CN_Ratio;
-
+		double vs_DrainageCoeff;
 		double vq_NDeposition;
 
 		std::string toString() const;
@@ -508,7 +515,9 @@ namespace Monica
 		double vs_Saturation;
 		double vs_PermanentWiltingPoint;
 		std::string vs_SoilTexture;
-
+		double vs_SoilAmmonium;
+    double vs_SoilNitrate;
+		
 	private:
 		double _vs_SoilRawDensity;
 		double _vs_SoilOrganicCarbon;
@@ -597,11 +606,6 @@ namespace Monica
 
 	std::string ueckerGridId2STR(int ugid);
 
-//	const SoilPMs* weisseritzSoilParameters(int bk50GridId,
-//																					int layerThicknessCm,
-//																					int maxDepthCm,
-//																					bool loadSingleParameter = false);
-
 	const SoilPMs* bk50SoilParameters(int bk50GridId,
 																		int layerThicknessCm,
 																		int maxDepthCm,
@@ -614,7 +618,8 @@ namespace Monica
 																							const std::string& pathToFile,
 																							int layerThicknessCm,
 																							int maxDepthCm,
-																							double soil_ph = -1.0);
+																							double soil_ph = -1.0,
+																							double drainage_coeff=-1.0);
 
 	struct RPSCDRes
 	{
@@ -628,12 +633,6 @@ namespace Monica
 	RPSCDRes readSoilCharacteristicModifier(std::string soilType,
 																					double organicMatter);
 
-//	void readPrincipalSoilCharacteristicData(std::string soil_type,
-//																					 double raw_density, double &sat,
-//																					 double &fc, double &pwp);
-//	void readSoilCharacteristicModifier(std::string soil_type,
-//																			double organic_matter, double &sat,
-//																			double &fc, double &pwp);
 	void soilCharacteristicsKA5(SoilParameters&);
 
 	CapillaryRiseRates readCapillaryRiseRates();

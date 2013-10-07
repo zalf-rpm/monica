@@ -20,7 +20,7 @@
 
   ;Name and file
   Name "MONICA"
-  OutFile "MONICA-Setup-1.1.1-${Arch}-${ArchBit}.exe"
+  OutFile "MONICA-Setup-1.2-${Arch}-${ArchBit}.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\MONICA"
@@ -88,10 +88,10 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   File /oname=monica.exe "..\release\monica-hermes.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\redist\${Arch}\Microsoft.VC110.CRT\*.dll"
 	File "..\db-connections.ini"
-  File "license.txt"
-  File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
+	File "license.txt"
+	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
-	File "..\documentation\Modellbeschreibung_MONICA_Version_1-1-1.pdf"
+  	File "..\documentation\version.txt"
   
   ;CreateDirectory "$PROFILE\MONICA\sqlite-db"
   SetOutPath $INSTDIR\sqlite-db
@@ -129,7 +129,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "$\"%USERPROFILE%$\"\MONICA\Examples\Hohenfinow2"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk" "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk" "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"		
+	;CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"		
 	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "$\"%USERPROFILE%$\"\MONICA\Examples\Hohenfinow2"
 	
   !insertmacro MUI_STARTMENU_WRITE_END
@@ -166,7 +166,7 @@ Section "Uninstall"
   ;Delete "$INSTDIR\Readme.pdf"
 	Delete "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
 	Delete "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	Delete "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1.pdf"
+	Delete "$INSTDIR\version.txt"
 	
   Delete "$INSTDIR\sqlite-db\monica.sqlite"
   RMDir $INSTDIR\sqlite-db

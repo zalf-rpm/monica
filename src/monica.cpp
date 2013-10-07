@@ -259,6 +259,7 @@ void MonicaModel::seedCrop(CropPtr crop)
     _soilTransport.put_Crop(_currentCropGrowth);
     _soilColumn.put_Crop(_currentCropGrowth);
     _soilMoisture.put_Crop(_currentCropGrowth);
+	_soilOrganic.put_Crop(_currentCropGrowth);
 
     debug() << "seedDate: "<< _currentCrop->seedDate().toString()
         << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
@@ -472,9 +473,12 @@ void MonicaModel::generalStep(unsigned int stepNo)
   double precip = _dataAccessor.dataForTimestep(Climate::precip, stepNo);
   double wind = _dataAccessor.dataForTimestep(Climate::wind, stepNo);
   double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-  double relhumid = _dataAccessor.dataForTimestep(Climate::relhumid, stepNo);
-  //double sunhours = _dataAccessor.dataForTimestep(Climate::sunhours, stepNo);
-//
+
+  // test if data for relhumid are available; if not, value is set to -1.0
+  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
+       _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
+
+
 //  cout << "tmin:\t" << tmin << endl;
 //  cout << "tavg:\t" << tavg << endl;
 //  cout << "tmax:\t" << tmax << endl;
@@ -573,9 +577,15 @@ void MonicaModel::cropStep(unsigned int stepNo)
   double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
   double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
   double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
+
+  // test if data for sunhours are available; if not, value is set to -1.0
   double sunhours = _dataAccessor.hasAvailableClimateData(Climate::sunhours) ?
 	  _dataAccessor.dataForTimestep(Climate::sunhours, stepNo) : -1.0;		
-  double relhumid =  _dataAccessor.dataForTimestep(Climate::relhumid, stepNo);
+
+  // test if data for relhumid are available; if not, value is set to -1.0
+  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
+      _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
+
   double wind =  _dataAccessor.dataForTimestep(Climate::wind, stepNo);
   double precip =  _dataAccessor.dataForTimestep(Climate::precip, stepNo);
 
@@ -1003,11 +1013,12 @@ Result Monica::runMonica(Env env)
   // activate writing to output files only in special modes
   if (env.getMode() == Env::MODE_HERMES ||
       env.getMode() == Env::MODE_EVA2 ||
-      //env.getMode() == Env::MODE_CC_GERMANY ||
+      env.getMode() == Env::MODE_MACSUR_SCALING ||
       env.getMode() == Env::MODE_ACTIVATE_OUTPUT_FILES)
   {
-    debug() << "write_output_files: " << write_output_files << endl;
+
     write_output_files = true;
+    debug() << "write_output_files: " << write_output_files << endl;
   }
 
 	env.centralParameterProvider.writeOutputFiles = write_output_files;
@@ -1377,7 +1388,7 @@ Monica::initializeFoutHeader(ofstream &fout)
 {
   int outLayers = 20;
   fout << "Datum     ";
-
+  fout << "\tCrop";
   fout << "\tTraDef";
   fout << "\tTra";
   fout << "\tNDef";
@@ -1393,20 +1404,17 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tIncShoot";
   fout << "\tIncFruit";
 
-  fout << "\tNetPhot";
   fout << "\tRelDev";
-
   fout << "\tRoot";
   fout << "\tLeaf";
   fout << "\tShoot";
   fout << "\tFruit";
+  fout << "\tYield";
 
   fout << "\tGroPhot";
-  fout << "\tAssim";
-  fout << "\tMaint";
-  fout << "\tGPP";
-  fout << "\tNPP";
-
+  fout << "\tNetPhot";
+  fout << "\tMaintR";
+  fout << "\tGrowthR";
   fout << "\tStomRes";
   fout << "\tHeight";
   fout << "\tLAI";
@@ -1439,6 +1447,7 @@ Monica::initializeFoutHeader(ofstream &fout)
     fout << "\tMois" << i_Layer;
   }
   fout << "\tPrecip";
+  fout << "\tIrrig";
   fout << "\tInfilt";
   fout << "\tSurface";
   fout << "\tRunOff";
@@ -1473,9 +1482,13 @@ Monica::initializeFoutHeader(ofstream &fout)
 	for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
 		fout << "\tNO2-" << i_Layer;
 	}
-  for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
+  for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
     fout << "\tSOC-" << i_Layer;
   }
+
+  fout << "\tSOC-0-30";
+  fout << "\tSOC-0-200";
+
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
     fout << "\tAOMf-" << i_Layer;
   }
@@ -1502,8 +1515,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   }
 
   fout << "\tNetNmin";
-  fout << "\tSumDenit";
-	fout << "\tSumN2O";
+  fout << "\tDenit";
+	fout << "\tN2O";
 	fout << "\tSoilpH";
   fout << "\tNEP";
   fout << "\tNEE";
@@ -1520,7 +1533,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << endl;
 
   //**** Second header line ***
-  fout << "TTMMYYY";
+  fout << "TTMMYYY";	// Date
+  fout << "\t[ ]";		// Crop name
   fout << "\t[0;1]";    // TranspirationDeficit
   fout << "\t[mm]";     // ActualTranspiration
   fout << "\t[0;1]";    // CropNRedux
@@ -1536,25 +1550,23 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kg/ha]";  // OrganGrowthIncrement shoot
   fout << "\t[kg/ha]";  // OrganGrowthIncrement fruit
 
-  fout << "\t[kgCH2O/ha]";  // NetPhotosynthesis
   fout << "\t[0;1]";        // RelativeTotalDevelopment
 
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(0)
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(1)
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(2)
   fout << "\t[kgDM/ha]";    // get_OrganBiomass(3)
+  fout << "\t[kgDM/ha]";    // get_PrimaryCropYield(3)
 
   fout << "\t[kgCH2O/ha]";  // GrossPhotosynthesisHaRate
-  fout << "\t[kgCH2O/ha]";  // Assimilates
+  fout << "\t[kgCH2O/ha]";  // NetPhotosynthesis
   fout << "\t[kgCH2O/ha]";  // MaintenanceRespirationAS
-  fout << "\t[kgC/ha]";     // GrossPrimaryProduction
-  fout << "\t[kgC/ha]";     // NetPrimaryProduction
-
+  fout << "\t[kgCH2O/ha]";  // GrowthRespirationAS
   fout << "\t[s/m]";        // StomataResistance
   fout << "\t[m]";          // CropHeight
   fout << "\t[m2/m2]";      // LeafAreaIndex
   fout << "\t[layer]";      // RootingDepth
-  fout << "\t[g/m2]";       // AbovegroundBiomass
+  fout << "\t[kg/ha]";       // AbovegroundBiomass
 
   fout << "\t[kgN/ha]";     // TotalBiomassNContent
   fout << "\t[kgN/ha]";     // SumTotalNUptake
@@ -1565,24 +1577,25 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kgN/kg]";     // CriticalNConcentration
   fout << "\t[kgN/kg]";     // AbovegroundBiomassNConcentration
 
-  fout << "\t[kg C m-2]";   // NPP
-  fout << "\t[kg C m-2]";   // NPP root
-  fout << "\t[kg C m-2]";   // NPP leaf
-  fout << "\t[kg C m-2]";   // NPP shoot
-  fout << "\t[kg C m-2]";   // NPP fruit
+  fout << "\t[kg C ha-1]";   // NPP
+  fout << "\t[kg C ha-1]";   // NPP root
+  fout << "\t[kg C ha-1]";   // NPP leaf
+  fout << "\t[kg C ha-1]";   // NPP shoot
+  fout << "\t[kg C ha-1]";   // NPP fruit
 
-  fout << "\t[kg C m-2]";   // GPP
-  fout << "\t[kg C m-2]";   // Ra
-	fout << "\t[kg C m-2]";   // Ra root
-	fout << "\t[kg C m-2]";   // Ra leaf
-	fout << "\t[kg C m-2]";   // Ra shoot
-	fout << "\t[kg C m-2]";   // Ra fruit
+  fout << "\t[kg C ha-1]";   // GPP
+  fout << "\t[kg C ha-1]";   // Ra
+  fout << "\t[kg C ha-1]";   // Ra root
+  fout << "\t[kg C ha-1]";   // Ra leaf
+  fout << "\t[kg C ha-1]";   // Ra shoot
+  fout << "\t[kg C ha-1]";   // Ra fruit
 
 
   for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
     fout << "\t[m3/m3]"; // Soil moisture content
   }
   fout << "\t[mm]"; // Precipitation
+  fout << "\t[mm]"; // Irrigation
   fout << "\t[mm]"; // Infiltration
   fout << "\t[mm]"; // Surface water storage
   fout << "\t[mm]"; // Surface water runoff
@@ -1626,9 +1639,12 @@ Monica::initializeFoutHeader(ofstream &fout)
 	}
 
   // get_SoilOrganicC
-  for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
-    fout << "\t[kgC/m3]";
+  for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
+    fout << "\t[kgC/kg]";
   }
+
+  fout << "\t[gC m-2]";   // SOC-0-30
+  fout << "\t[gC m-2]";   // SOC-0-200
 
   // get_AOM_FastSum
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
@@ -1664,16 +1680,16 @@ Monica::initializeFoutHeader(ofstream &fout)
 
   // NetNMineralisationRate
   for(int i_Layer = 0; i_Layer < 3; i_Layer++) {
-    fout << "\t[kgN/m2]";
+    fout << "\t[kgN/ha]";
   }
 
-  fout << "\t[kgN/m2]";  // NetNmin
-  fout << "\t[kgN/m2]";  // SumDenit
-	fout << "\t[kgN/m2]";  // SumN2O
+  fout << "\t[kgN/ha]";  // NetNmin
+  fout << "\t[kgN/ha]";  // Denit
+	fout << "\t[kgN/ha]";  // N2O
 	fout << "\t[ ]";       // SoilpH
-  fout << "\t[kgC/m2]";  // NEP
-  fout << "\t[kgC/m2]";  // NEE
-  fout << "\t[kg C m-2 d-1]"; // Rh
+  fout << "\t[kgC/ha]";  // NEP
+  fout << "\t[kgC/ha]";  // NEE
+  fout << "\t[kgC/ha]"; // Rh
 
   fout << "\t[°C]";     // tmin
   fout << "\t[°C]";     // tavg
@@ -1696,6 +1712,7 @@ void
 Monica::initializeGoutHeader(ofstream &gout)
 {
   gout << "Datum     ";
+  gout << "\tCrop";
   gout << "\tStage";
   gout << "\tHeight";
   gout << "\tRoot";
@@ -1767,6 +1784,7 @@ Monica::initializeGoutHeader(ofstream &gout)
   // **** Second header line ****
 
   gout << "TTMMYYYY";
+  gout << "\t[ ]";
   gout << "\t[ ]";
   gout << "\t[m]";
   gout << "\t[kgDM/ha]";
@@ -1846,6 +1864,7 @@ void
 Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, bool crop_is_planted)
 {
   if(crop_is_planted) {
+    fout << "\t" << mcg->get_CropName();
     fout << fixed << setprecision(2) << "\t" << mcg->get_TranspirationDeficit();// [0;1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_ActualTranspiration();
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropNRedux();// [0;1]
@@ -1861,26 +1880,25 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(1);
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(2);
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(3);
-    fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();
-
+    
     fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
     fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
     fout << "\t" << mcg->get_OrganBiomass(1);
     fout << "\t" << mcg->get_OrganBiomass(2);
     fout << "\t" << mcg->get_OrganBiomass(3);
+	fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
 
     fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
-    fout << fixed << setprecision(4) << "\t" << mcg->get_Assimilates(); // [kg CH2O ha-1 d-1]
+	fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();  // [kg CH2O ha-1 d-1]
     fout << fixed << setprecision(4) << "\t" << mcg->get_MaintenanceRespirationAS();// [kg CH2O ha-1]
+	fout << fixed << setprecision(4) << "\t" << mcg->get_GrowthRespirationAS();// [kg CH2O ha-1]
 
-    fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPrimaryProduction(); // [kg C ha-1 d-1]
-    fout << fixed << setprecision(4) << "\t" << mcg->get_NetPrimaryProduction(); // [kg C ha-1 d-1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_StomataResistance();// [s m-1]
 
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();// [m]
     fout << fixed << setprecision(2) << "\t" << mcg->get_LeafAreaIndex(); //[m2 m-2]
-    fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth();
-    fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass();
+    fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth(); //[layer]
+    fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
 
     fout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
     fout << fixed << setprecision(2) << "\t" << mcg->get_SumTotalNUptake();
@@ -1891,22 +1909,22 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(3) << "\t" << mcg->get_CriticalNConcentration();//[kg N kg-1]
     fout << fixed << setprecision(3) << "\t" << mcg->get_AbovegroundBiomassNConcentration();//[kg N kg-1]
 
-    fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C m-2]
+    fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
-        fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C m-2]
+        fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C ha-1]
     }
     // if there less than 4 organs we have to fill the column that
     // was added in the output header of rmout; in this header there
     // are statically 4 columns initialised for the organ NPP
     for (int i=mcg->get_NumberOfOrgans(); i<4; i++) {
-        fout << fixed << setprecision(2) << "\t0.0"; // NPP organs, [kg C m-2]
+        fout << fixed << setprecision(2) << "\t0.0"; // NPP organs, [kg C ha-1]
     }
 
-    fout << fixed << setprecision(5) << "\t" << mcg->get_GrossPrimaryProduction(); // GPP, [kg C m-2]
+    fout << fixed << setprecision(5) << "\t" << mcg->get_GrossPrimaryProduction(); // GPP, [kg C ha-1]
 
-    fout << fixed << setprecision(5) << "\t" << mcg->get_VcRespiration(); // Ra, [kg C m-2]
+    fout << fixed << setprecision(5) << "\t" << mcg->get_AutotrophicRespiration(); // Ra, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
-      fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C m-2]
+      fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C ha-1]
     }
     // if there less than 4 organs we have to fill the column that
     // was added in the output header of rmout; in this header there
@@ -1915,6 +1933,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
         fout << fixed << setprecision(2) << "\t0.0";
     }
 
+	gout << "\t" << mcg->get_CropName();
     gout << fixed << setprecision(0) << "\t" << mcg->get_DevelopmentalStage()  + 1;
     gout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();
     gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
@@ -1938,7 +1957,8 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
 
   } else { // crop is not planted
 
-    fout << "\t1.00"; // TranspirationDeficit
+    fout << "\t"; // Crop Name
+	fout << "\t1.00"; // TranspirationDeficit
     fout << "\t0.00"; // ActualTranspiration
     fout << "\t1.00"; // CropNRedux
     fout << "\t1.00"; // HeatStressRedux
@@ -1953,21 +1973,18 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00";   // OrganGrowthIncrement leaf
     fout << "\t0.00";   // OrganGrowthIncrement shoot
     fout << "\t0.00";   // OrganGrowthIncrement fruit
-
-    fout << "\t0.00";   // NetPhotosynthesis
-    fout << "\t0.00";   // RelativeTotalDevelopment
+	fout << "\t0.00";   // RelativeTotalDevelopment
 
     fout << "\t0.0";    // get_OrganBiomass(0)
     fout << "\t0.0";    // get_OrganBiomass(1)
     fout << "\t0.0";    // get_OrganBiomass(2)
     fout << "\t0.0";    // get_OrganBiomass(3)
+	fout << "\t0.0";    // get_PrimaryCropYield(3)
 
     fout << "\t0.000";  // GrossPhotosynthesisHaRate
-    fout << "\t0.000";  // Assimilates
-    fout << "\t0.000";  // MaintenanceRespirationAS
-    fout << "\t0.000";  // GrossPrimaryProduction
-    fout << "\t0.000";  // NetPrimaryProduction
-
+    fout << "\t0.00";   // NetPhotosynthesis
+	fout << "\t0.000";  // MaintenanceRespirationAS
+	fout << "\t0.000";  // GrowthRespirationAS
     fout << "\t0.00";   // StomataResistance
     fout << "\t0.00";   // CropHeight
     fout << "\t0.00";   // LeafAreaIndex
@@ -1997,7 +2014,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.0"; // Ra shoot - OrganSpecificTotalRespired
     fout << "\t0.0"; // Ra fruit - OrganSpecificTotalRespired
 
-
+	gout << "\t";       // Crop Name
     gout << "\t0";      // DevelopmentalStage
     gout << "\t0.00";   // CropHeight
     gout << "\t0.0";    // OrganBiomass(0)
@@ -2052,6 +2069,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
     fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer);
   }
   fout << fixed << setprecision(2) << "\t" << env.da.dataForTimestep(Climate::precip, d);
+  fout << fixed << setprecision(1) << "\t" << monica.dailySumIrrigationWater();
   fout << "\t" << msm.get_Infiltration(); // {mm]
   fout << "\t" << msm.get_SurfaceWaterStorage();// {mm]
   fout << "\t" << msm.get_SurfaceRunOff();// {mm]
@@ -2091,9 +2109,27 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 	for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
 		fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).get_SoilNO2();
 	}
-	for(int i_Layer = 0; i_Layer < 4; i_Layer++) {
-    fout << fixed << setprecision(4) << "\t" << mso.get_SoilOrganicC(i_Layer) ;
+	for(int i_Layer = 0; i_Layer < 6; i_Layer++) {
+    fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).vs_SoilOrganicCarbon(); // [kg C kg-1]
   }
+
+	// SOC-0-30 [g C m-2]
+  double soc_30_accumulator = 0.0;
+  for (int i_Layer = 0; i_Layer < 3; i_Layer++) {
+      // kg C / kg --> g C / m2
+      soc_30_accumulator += msc.soilLayer(i_Layer).vs_SoilOrganicCarbon() * msc.soilLayer(i_Layer).vs_SoilBulkDensity() * msc.soilLayer(i_Layer).vs_LayerThickness * 1000;
+  }
+  fout << fixed << setprecision(4) << "\t" << soc_30_accumulator ;
+
+
+  // SOC-0-200   [g C m-2]
+	double soc_200_accumulator = 0.0;
+	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+	    // kg C / kg --> g C / m2
+	    soc_200_accumulator += msc.soilLayer(i_Layer).vs_SoilOrganicCarbon() * msc.soilLayer(i_Layer).vs_SoilBulkDensity() * msc.soilLayer(i_Layer).vs_LayerThickness * 1000;
+	}
+	fout << fixed << setprecision(4) << "\t" << soc_200_accumulator ;
+
   for(int i_Layer = 0; i_Layer < 1; i_Layer++) {
     fout << fixed << setprecision(4) << "\t" << mso.get_AOM_FastSum(i_Layer) ;
   }
@@ -2116,16 +2152,16 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
     fout << fixed << setprecision(4) << "\t" << mso.get_CBalance(i_Layer) ;
   }
   for(int i_Layer = 0; i_Layer < 3; i_Layer++) {
-    fout << fixed << setprecision(6) << "\t" << mso.get_NetNMineralisationRate(i_Layer) ; // [kg N m-2]
+    fout << fixed << setprecision(6) << "\t" << mso.get_NetNMineralisationRate(i_Layer) ; // [kg N ha-1]
   }
 
-  fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_SumDenitrification(); // [kg N m-2]
-	fout << fixed << setprecision(5) << "\t" << mso.get_SumN2O_Produced(); // [kg N m-2]
-	fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
-	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C m-2]
-  fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C m-2 d-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N ha-1]
+  fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
+  fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C ha-1]
+  fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
 
 
   fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::tmin, d);
@@ -2221,9 +2257,9 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(0);
   gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(2);
   gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(5);
-  gout << fixed << setprecision(2) << "\t" << mso.get_DecomposerRespiration()* 10000.0; // Rh, [kg C ha-1 d-1]
+  gout << fixed << setprecision(2) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
 
-  gout << fixed << setprecision(3) << "\t" << mso.get_NH3_Volatilised() * 10000; // [kg N ha-1]
+  gout << fixed << setprecision(3) << "\t" << mso.get_NH3_Volatilised(); // [kg N ha-1]
   gout << "\t0"; //! @todo
   gout << "\t0"; //! @todo
   gout << "\t0"; //! @todo

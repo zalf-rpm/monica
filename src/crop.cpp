@@ -101,6 +101,8 @@ vc_DevelopmentalStage(0),
 pc_DroughtStressThreshold(cropParams.pc_DroughtStressThreshold),
 vc_DroughtImpactOnFertility(1.0),
 pc_DroughtImpactOnFertilityFactor(cropParams.pc_DroughtImpactOnFertilityFactor),
+pc_EmergenceFloodingControlOn(generalParams.pc_EmergenceFloodingControlOn),
+pc_EmergenceMoistureControlOn(generalParams.pc_EmergenceMoistureControlOn),
 pc_EndSensitivePhaseHeatStress(cropParams.pc_EndSensitivePhaseHeatStress),
 vc_EffectiveDayLength(0.0),
 vc_ErrorStatus(false),
@@ -118,6 +120,7 @@ vc_GrossPhotosynthesis(0.0),
 vc_GrossPhotosynthesis_mol(0.0),
 vc_GrossPhotosynthesisReference_mol(0.0),
 vc_GrossPrimaryProduction(0.0),
+vc_GrowthRespirationAS(0.0),
 vs_HeightNN(stps.vs_HeightNN),
 pc_InitialKcFactor(cropParams.pc_InitialKcFactor),
 pc_InitialOrganBiomass(cropParams.pc_InitialOrganBiomass),
@@ -149,6 +152,7 @@ pc_NConcentrationPN(cropParams.pc_NConcentrationPN),
 pc_NConcentrationRoot(cropParams.pc_NConcentrationRoot),
 vc_NConcentrationRoot(0.0),
 vc_NConcentrationRootOld(0.0),
+pc_NitrogenResponseOn(generalParams.pc_NitrogenResponseOn),
 pc_NumberOfDevelopmentalStages(cropParams.pc_NumberOfDevelopmentalStages),
 pc_NumberOfOrgans(cropParams.pc_NumberOfOrgans),
 vc_NUptakeFromLayer(vs_NumberOfLayers, 0.0),
@@ -217,17 +221,18 @@ vc_TranspirationDeficit(1.0),
 vc_VernalisationDays(0.0),
 vc_VernalisationFactor(0.0),
 pc_VernalisationRequirement(cropParams.pc_VernalisationRequirement),
+pc_WaterDeficitResponseOn(generalParams.pc_WaterDeficitResponseOn),
 eva2_usage(usage),
 dyingOut(false),
 vc_accumulatedETa(0.0),
 cutting_delay_days(0)
 {
 
-//  cout << "pc_CropHeightP1:\t" << pc_CropHeightP1 << endl;
-//  cout << "pc_CropHeightP2:\t" << pc_CropHeightP2 << endl;
 
   // Initialising the crop
+ 
   vs_Tortuosity = centralParameterProvider.userCropParameters.pc_Tortuosity;
+  
 
   // Determining the total temperature sum of all developmental stages after
   // emergence (that's why i_Stage starts with 1) until before senescence
@@ -829,26 +834,59 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
       /** @todo Claas: Schränkt trockener Boden das Aufsummieren der Wärmeeinheiten ein, oder
        sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian */
 
-      /** @todo Claas: Bodenwasser ist hier noch konstant wegen Test mit HERMES*/
-      //d_SoilMoisture_m3 = 0.6;
+      if (pc_EmergenceMoistureControlOn == true && pc_EmergenceFloodingControlOn == true){
 
-
-	  if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)
+	    if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)
 					&& (soilColumn.vs_SurfaceWaterStorage < 0.001)){
 				// Germination only if soil water content in top layer exceeds
 				// 20% of capillary water, but is not beyond field capacity and
 				// if no water is stored on the soil surface.
 
-        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
             - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
 
-        if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
             vc_DevelopmentalStage++;
 
+          }
         }
-      }
+	  } else if (pc_EmergenceMoistureControlOn == true && pc_EmergenceFloodingControlOn == false){
+
+	    if (d_SoilMoisture_m3 > ((0.2 * vc_CapillaryWater) + d_PermanentWiltingPoint)){
+				// Germination only if soil water content in top layer exceeds
+				// 20% of capillary water, but is not beyond field capacity.
+
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
+            - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
+
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
+            vc_DevelopmentalStage++;
+
+          }
+        }
+	  } else if (pc_EmergenceMoistureControlOn == false && pc_EmergenceFloodingControlOn == true){
+
+	    if (soilColumn.vs_SurfaceWaterStorage < 0.001){
+				// Germination only if no water is stored on the soil surface.
+
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
+            - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
+
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
+            vc_DevelopmentalStage++;
+
+          }
+        }
+	  } else {
+		  vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vc_SoilTemperature
+            - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
+
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
+            vc_DevelopmentalStage++;
+		  }
+	  }
     }
-	} else if (vc_DevelopmentalStage > 0) {
+  } else if (vc_DevelopmentalStage > 0) {
 
 		// Development acceleration by N deficit in crop tissue
 		if ((pc_DevelopmentAccelerationByNitrogenStress == 1) &&
@@ -1188,6 +1226,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
   double pc_CanopyReflectionCoeff = user_crops.pc_CanopyReflectionCoefficient; // old REFLC;
 
 
+
   // Calculation of CO2 impact on crop growth
   if (pc_CO2Method == 3) {
 
@@ -1518,6 +1557,10 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
 
   // Converting photosynthesis rate from [kg CO2 ha leaf-1 d-1] to [kg CH2O ha-1  d-1]
   vc_Assimilates = vc_GrossCO2Assimilation * 30.0 / 44.0;
+
+  // reduction value for assimilate amount to simulate field conditions;
+  vc_Assimilates *= cropParams.pc_FieldConditionModifier;
+
 	if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {
     vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
 
@@ -1584,7 +1627,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
     }
 
   }
-
+  vc_GrowthRespirationAS = vc_PhotoGrowthRespiration + vc_DarkGrowthRespiration; // [kg CH2O ha-1]
   vc_TotalRespired = vc_GrossAssimilates - vc_Assimilates; // [kg CH2O ha-1]
 
   /** to reactivate HERMES algorithms, needs to be vc_NetPhotosynthesis
@@ -1779,6 +1822,10 @@ void CropGrowth::fc_CropNitrogen()
     }
   } else {
     vc_CropNRedux = 1.0;
+  }
+
+  if (pc_NitrogenResponseOn == false){
+	  vc_CropNRedux = 1.0;
   }
 }
 
@@ -2332,7 +2379,12 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN, double vw_
   vc_SaturatedVapourPressure = (vc_SaturatedVapourPressureMax + vc_SaturatedVapourPressureMin) / 2.0;
 
   // Calculation of the water vapour pressure
-  vc_VapourPressure = vw_RelativeHumidity * vc_SaturatedVapourPressure;
+  if (vw_RelativeHumidity <= 0.0){
+	  // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
+	  vc_VapourPressure = vc_SaturatedVapourPressureMin;
+  } else {
+	  vc_VapourPressure = vw_RelativeHumidity * vc_SaturatedVapourPressure;
+  }
 
   // Calculation of the air saturation deficit
   vc_SaturationDeficit = vc_SaturatedVapourPressure - vc_VapourPressure;
@@ -2584,6 +2636,11 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
       vc_TranspirationDeficit = 1.0;
     }
 
+	if (pc_WaterDeficitResponseOn == false){
+		vc_TranspirationDeficit = 1.0;
+	}
+
+
   } //if
 }
 
@@ -2648,7 +2705,11 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
 				       (vs_SoilMineralNContent[i_Layer] / 1000.0 / // [kg m-3]
 				        soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - 0.000014) * // [m3 m-3]
 				       sqrt(PI * vc_RootDensity[i_Layer])) * // [m m-3]
-	vc_RootDensity[i_Layer] * 1000.0 * vc_TimeStep; // -->[kg m-2]
+	                   vc_RootDensity[i_Layer] * 1000.0 * vc_TimeStep; // -->[kg m-2]
+	  
+	  if(vc_DiffusiveNUptakeFromLayer[i_Layer] < 0.0){
+		  vc_DiffusiveNUptakeFromLayer[i_Layer] = 0;
+	  }
 
       vc_DiffusiveNUptake += vc_DiffusiveNUptakeFromLayer[i_Layer]; // [kg m-2]
 
@@ -2769,6 +2830,13 @@ double CropGrowth::fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
  return vc_NPP;
 }
 
+/**
+ * @brief Returns crop name [ ]
+ * @return crop name
+ */
+std::string CropGrowth::get_CropName() const {
+  return pc_CropName;
+}
 
 /**
  * @brief Returns gross photosynthesis rate [mol m-2 s-1]
@@ -2819,6 +2887,14 @@ double CropGrowth::get_MaintenanceRespirationAS() const {
   return vc_MaintenanceRespirationAS;
 }
 
+
+/**
+ * @brief Returns growth respiration rate from AGROSIM [kg CO2 ha-1]
+ * @return GRowth respiration rate
+ */
+double CropGrowth::get_GrowthRespirationAS() const {
+  return vc_GrowthRespirationAS;
+}
 
 /**
  */
@@ -3277,7 +3353,7 @@ double CropGrowth::get_PotNUptake() const
 }
 
 /**
- * @brief Returns the gross primary production [kg C m-2 d-1]
+ * @brief Returns the gross primary production [kg C ha-1 d-1]
  * @return Gross primary production
  */
 double CropGrowth::get_GrossPrimaryProduction() const
@@ -3286,7 +3362,7 @@ double CropGrowth::get_GrossPrimaryProduction() const
 }
 
 /**
- * @brief Returns the net primary production [kg C m-2 d-1]
+ * @brief Returns the net primary production [kg C ha-1 d-1]
  * @return Net primary production
  */
 double CropGrowth::get_NetPrimaryProduction() const
@@ -3294,13 +3370,17 @@ double CropGrowth::get_NetPrimaryProduction() const
   return vc_NetPrimaryProduction;
 }
 
-double CropGrowth::get_VcRespiration() const
+/**
+ * @brief Returns the respiration [kg C ha-1 d-1]
+ * @return Net primary production
+ */
+double CropGrowth::get_AutotrophicRespiration() const
 {
-  return vc_Respiration;  // [kg C m-2 d-1]
+  return vc_TotalRespired / 30.0 * 12.0;;  // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
 }
 
 /**
- * Returns the individual respiration of the organs
+ * Returns the individual respiration of the organs [kg C ha-1 d-1]
  * based on the current ratio of the crop's biomass.
  */
 double CropGrowth::get_OrganSpecificTotalRespired(int organ)  const
@@ -3310,12 +3390,13 @@ double CropGrowth::get_OrganSpecificTotalRespired(int organ)  const
 
   // get biomass of specific organ and calculates ratio
   double organ_percentage = get_OrganBiomass(organ) / total_biomass;
-  return (get_VcRespiration() * organ_percentage);
+  return (get_AutotrophicRespiration() * organ_percentage);
 }
 
 
 /**
- *
+ * @brief Returns the organ-specific net primary production [kg C ha-1 d-1]
+ * @return Organ-specific net primary production
  */
 double CropGrowth::get_OrganSpecificNPP(int organ)  const
 {

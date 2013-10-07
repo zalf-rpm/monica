@@ -50,7 +50,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <fstream>
 #include <sys/stat.h>
-#include <io.h>
+
+#ifdef __unix__
+  #include <sys/io.h>
+#else
+  #include <io.h>
+#endif
 
 #include <boost/foreach.hpp>
 
@@ -436,10 +441,11 @@ Monica::getHermesConfigFromIni(std::string output_path)
   }
 
   //site configuration
-  hermes_config->setLattitude(ipm.valueAsDouble("site_parameters", "latitude", -1.0));
+  hermes_config->setlatitude(ipm.valueAsDouble("site_parameters", "latitude", -1.0));
   hermes_config->setSlope(ipm.valueAsDouble("site_parameters", "slope", -1.0));
   hermes_config->setHeightNN(ipm.valueAsDouble("site_parameters", "heightNN", -1.0));
   hermes_config->setSoilCNRatio(ipm.valueAsDouble("site_parameters", "soilCNRatio", -1.0));
+  hermes_config->setDrainageCoeff(ipm.valueAsDouble("site_parameters", "drainageCoeff", -1.0));
   hermes_config->setAtmosphericCO2(ipm.valueAsDouble("site_parameters", "atmospheric_CO2", -1.0));
   hermes_config->setWindSpeedHeight(ipm.valueAsDouble("site_parameters", "wind_speed_height", -1.0));
   hermes_config->setLeachingDepth(ipm.valueAsDouble("site_parameters", "leaching_depth", -1.0));
@@ -459,6 +465,10 @@ Monica::getHermesConfigFromIni(std::string output_path)
 
   // general parameters
   hermes_config->setSecondaryYields(ipm.valueAsBool("general_parameters", "use_secondary_yields", true));
+  hermes_config->setNitrogenResponseOn(ipm.valueAsBool("general_parameters", "nitrogen_response_on", true));
+  hermes_config->setWaterDeficitResponseOn(ipm.valueAsBool("general_parameters", "water_deficit_response_on", true));
+  hermes_config->setEmergenceFloodingControlOn(ipm.valueAsBool("general_parameters", "emergence_flooding_control_on", true));
+  hermes_config->setEmergenceMoistureControlOn(ipm.valueAsBool("general_parameters", "emergence_moisture_control_on", true));
 
   // initial values
   hermes_config->setInitPercentageFC(ipm.valueAsDouble("init_values", "init_percentage_FC", -1.0));
@@ -508,8 +518,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   if (hermes_config->getAtmosphericCO2()!=-1.0){
       centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = hermes_config->getAtmosphericCO2();
   }
-  if (hermes_config->getLattitude()!=-1.0){
-      siteParams.vs_Latitude = hermes_config->getLattitude();
+  if (hermes_config->getLatitude()!=-1.0){
+      siteParams.vs_Latitude = hermes_config->getLatitude();
   }
 
   if (hermes_config->getSlope()!=-1.0){
@@ -522,6 +532,10 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   if (hermes_config->getSoilCNRatio()!=-1.0){
       siteParams.vs_Soil_CN_Ratio = hermes_config->getSoilCNRatio();
+  }
+  
+  if (hermes_config->getDrainageCoeff()!=-1.0){
+      siteParams.vs_DrainageCoeff = hermes_config->getDrainageCoeff();
   }
 
   if (hermes_config->getMinGWDepth()!=-1.0){
@@ -567,7 +581,12 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   double layer_thickness = centralParameterProvider.userEnvironmentParameters.p_LayerThickness;
   double profile_depth = layer_thickness * double(centralParameterProvider.userEnvironmentParameters.p_NumberOfLayers);
-  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth);
+  double max_mineralisation_depth = 0.4;
+  bool nitrogen_response_on = hermes_config->getNitrogenResponseOn();
+  bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
+  bool emergence_flooding_control_on = hermes_config->getEmergenceFloodingControlOn(); 
+  bool emergence_moisture_control_on = hermes_config->getEmergenceMoistureControlOn(); 
+  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, nitrogen_response_on, water_deficit_response_on, emergence_flooding_control_on, emergence_moisture_control_on);
 
   //soil data
   const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), 

@@ -8,7 +8,7 @@
 #include "../src/simulation.h"
 #include "../src/monica-parameters.h"
 #include "../src/monica.h"
-#include "../src/eva2_methods.h"
+#include "../src/eva_methods.h"
 #include "../src/cc_germany_methods.h"
 #include "../src/gis_simulation_methods.h"
 %}
@@ -27,7 +27,7 @@ namespace std {
 
 /* Parse the header file to generate wrappers */
 %include "../src/simulation.h"
-%include "../src/typedefs.h"
+%include "../src/monica-typedefs.h"
 %include "../src/monica-parameters.h"
 %include "../src/soiltemperature.h"
 %include "../src/soilmoisture.h"
@@ -36,4 +36,4 @@ namespace std {
 %include "../src/monica.h"
 %include "../src/cc_germany_methods.h"
 %include "../src/gis_simulation_methods.h"
-%include "../src/eva2_methods.h"
+%include "../src/eva_methods.h"

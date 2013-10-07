@@ -1067,8 +1067,13 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate, double vc_Percen
     vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[0];
     vm_PercolationRate[0] = (vm_GravitationalWater[0] * vm_GravitationalWater[0] * vm_LambdaReduced)
         / vm_PercolationFactor;
+	if (vm_PercolationRate[0] > pm_MaxPercolationRate) {
+        vm_PercolationRate[0] = pm_MaxPercolationRate;
+    }
     vm_GravitationalWater[0] = vm_GravitationalWater[0] - vm_PercolationRate[0];
     vm_GravitationalWater[0] = max(0.0, vm_GravitationalWater[0]);
+
+
 
     // Adding the excess water remaining after the percolation event to soil moisture
     vm_SoilMoisture[0] = vm_FieldCapacity[0] + (vm_GravitationalWater[0] / 1000.0
@@ -1742,7 +1747,12 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   vm_SaturatedVapourPressure = (vm_SaturatedVapourPressureMax + vm_SaturatedVapourPressureMin) / 2.0;
 
   // Calculation of the water vapour pressure
-  vm_VapourPressure = vw_RelativeHumidity * vm_SaturatedVapourPressure;
+  if (vw_RelativeHumidity <= 0.0){
+	  // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
+	  vm_VapourPressure = vm_SaturatedVapourPressureMin;
+  } else {
+	  vm_VapourPressure = vw_RelativeHumidity * vm_SaturatedVapourPressure;
+  }
 
   // Calculation of the air saturation deficit
   vm_SaturationDeficit = vm_SaturatedVapourPressure - vm_VapourPressure;

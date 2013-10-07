@@ -150,10 +150,6 @@ namespace
     if(hermesCropId == "BR")
       return CropPtr(new Crop(hermesCropId));
 
-
-    return CropPtr();
-  }
-
   //----------------------------------------------------------------------------
 
   /*!
@@ -1117,6 +1113,10 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 				debug() << "Aborting now ..." << endl;
 				exit(-1);
 			}
+
+			if (relhumid>=0.0) {
+			    _relhumid.push_back(relhumid);
+			}
 			        
       // precipitation correction by Richter values
       precip*=cpp.getPrecipCorrectionValue(date.month()-1);
@@ -1129,7 +1129,7 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
       _tmax.push_back(tmax);
       _wind.push_back(wind);
 			_precip.push_back(precip);
-      _relhumid.push_back(relhumid);
+
 			
       daysCount++;
       date++;
@@ -1150,11 +1150,15 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
   da.addClimateData(tmax, _tmax);
   da.addClimateData(tavg, _tavg);
 	da.addClimateData(globrad, _globrad);
-	da.addClimateData(relhumid, _relhumid);
 	da.addClimateData(wind, _wind);
 	da.addClimateData(precip, _precip);
+
 	if(!_sunhours.empty())
 		da.addClimateData(sunhours, _sunhours);
+
+	if (!_relhumid.empty()) {
+	    da.addClimateData(relhumid, _relhumid);
+	}
 
   return da;
 }
@@ -1186,7 +1190,8 @@ CropParameters::CropParameters() :
     pc_NConcentrationRoot(0),
     pc_ResidueNRatio(0),
     pc_DevelopmentAccelerationByNitrogenStress(0),
-    pc_CuttingDelayDays(0)
+    pc_CuttingDelayDays(0),
+    pc_FieldConditionModifier(1.0)
 {}
 
 /**
@@ -1477,7 +1482,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "stage_after_cut, crit_temperature_heat_stress, "
           "lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-          "cutting_delay_days from crop";
+          "cutting_delay_days, field_condition_modifier from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1540,6 +1545,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_EndSensitivePhaseHeatStress = satof(row[i++]);
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
+        cps->pc_FieldConditionModifier = satof(row[i++]);
 
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
@@ -1687,14 +1693,25 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 /**
  * @brief Constructor
  * @param ps_LayerThickness
- * @param ps_ProfileDepthps_ProfileDepth
- * @param mmd
+ * @param ps_ProfileDepth
+ * @param ps_MaxMineralisationDepth
+ * @param ps_NitrogenResponseOn
+ * @param ps_WaterDeficitResponseOn
  */
 GeneralParameters::GeneralParameters(double ps_LayerThickness,
-                                     double ps_ProfileDepth, double mmd) :
+                                     double ps_ProfileDepth, 
+									 double ps_MaximumMineralisationDepth,
+									 bool pc_NitrogenResponseOn,
+					                 bool pc_WaterDeficitResponseOn,
+									 bool pc_EmergenceFloodingControlOn,
+									 bool pc_EmergenceMoistureControlOn) :
 ps_LayerThickness(int(ps_ProfileDepth / ps_LayerThickness), ps_LayerThickness),
 ps_ProfileDepth(ps_ProfileDepth),
-ps_MaxMineralisationDepth(mmd)
+ps_MaxMineralisationDepth(ps_MaximumMineralisationDepth),
+pc_NitrogenResponseOn(pc_NitrogenResponseOn),
+pc_WaterDeficitResponseOn(pc_WaterDeficitResponseOn),
+pc_EmergenceFloodingControlOn(pc_EmergenceFloodingControlOn),
+pc_EmergenceMoistureControlOn(pc_EmergenceMoistureControlOn)
 {}
 
 //------------------------------------------------------------------------------
@@ -1724,6 +1741,7 @@ SiteParameters::SiteParameters() :
     vs_HeightNN(50.0),
     vs_GroundwaterDepth(70.0),
     vs_Soil_CN_Ratio(10.0),
+	vs_DrainageCoeff(1.0),
     vq_NDeposition(30.0)
 {}
 
@@ -1736,7 +1754,7 @@ string SiteParameters::toString() const
   ostringstream s;
   s << "vs_Latitude: " << vs_Latitude << " vs_Slope: " << vs_Slope << " vs_HeightNN: " << vs_HeightNN
       << " vs_DepthGroundwaterTable: " << vs_GroundwaterDepth << " vs_Soil_CN_Ratio: " << vs_Soil_CN_Ratio
-      << " vq_NDeposition: " << vq_NDeposition
+      << "vs_DrainageCoeff: " << vs_DrainageCoeff << " vq_NDeposition: " << vq_NDeposition
       << endl;
   return s.str();
 }
@@ -1754,7 +1772,9 @@ SoilParameters::SoilParameters() :
     vs_SoilpH(6.9),
     _vs_SoilRawDensity(0),
     _vs_SoilOrganicCarbon(-1),
-    _vs_SoilOrganicMatter(-1)
+    _vs_SoilOrganicMatter(-1),
+    vs_SoilAmmonium(-1),
+    vs_SoilNitrate(-1)
 {}
 
 
@@ -2139,7 +2159,7 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 			{
 				int id = satoi(row[0]);
 
-				//skip elements which are incomplete
+				//Skip elements which are incomplete
 				if(skip.find(id) != skip.end())
 					continue;
 
@@ -2279,92 +2299,95 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 			ifstream ifs(pathToFile.c_str(), ios::binary);
 			string s;
 
-			//skip first line(s)
-			getline(ifs, s);
+          //skip first line(s)
+          getline(ifs, s);
 
-			int currenth = 1;
-			while (getline(ifs, s))
-			{
-//				cout << "s: " << s << endl;
-				if (trim(s) == "end")
-					break;
+          int currenth = 1;
+          while (getline(ifs, s))
+            {
+//              cout << "s: " << s << endl;
+              if (trim(s) == "end")
+                break;
 
-				//BdID Corg Bart UKT LD Stn C/N C/S Hy Wmx AzHo
-				int ti;
-				string ba, ts;
-				int id, hu, ld, stone, cn, hcount;
-				double corg, wmax;
-				istringstream ss(s);
-				ss >> id >> corg >> ba >> hu >> ld >> stone >> cn >> ts
-					 >> ti >> wmax >> hcount;
+              //BdID Corg Bart UKT LD Stn C/N C/S Hy Wmx AzHo
+              int ti;
+              string ba, ts;
+              int id, hu, ld, stone, cn, hcount;
+              double corg, wmax;
+              istringstream ss(s);
+              ss >> id >> corg >> ba >> hu >> ld >> stone >> cn >> ts
+              >> ti >> wmax >> hcount;
 
-				//double vs_SoilSpecificMaxRootingDepth = wmax / 10.0; //[dm] --> [m]
+              //double vs_SoilSpecificMaxRootingDepth = wmax / 10.0; //[dm] --> [m]
 
-				hu *= 10;
-				//reset horizont count to start new soil definition
-				if(hcount > 0)
-					currenth = 1;
+              hu *= 10;
+              //Reset horizont count to start new soil definition
+              if (hcount > 0)
+                currenth = 1;
 
-				Map::iterator spsi = spss.find(soilId);
-				SoilPMsPtr sps;
-				if (spsi == spss.end())
-					spss.insert(make_pair(soilId, sps = SoilPMsPtr(new SoilPMs)));
-				else
-					sps = spsi->second;
+              Map::iterator spsi = spss.find(soilId);
+              SoilPMsPtr sps;
+              if (spsi == spss.end()) {
+                  spss.insert(make_pair(soilId, sps = SoilPMsPtr(new SoilPMs)));
+              } else {
+                  sps = spsi->second;
+              }
 
-				int ho = sps->size()*layerThicknessCm;
-				int hsize = max(0, hu - ho);
-				int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
-				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
-					subhcount += maxNoOfLayers - sps->size() - subhcount;
+              int ho = sps->size() * lt;
+              int hsize = hu - ho;
+							int subhcount = int(Tools::round(double(hsize) / double(lt)));//std::floor(double(hsize) / double(lt));
+              if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
+                subhcount += maxNoOfLayers - sps->size() - subhcount;
 
-				if ((ba != "Ss") && (ba != "Sl2") && (ba != "Sl3") && (ba != "Sl4") &&
-						(ba != "Slu") && (ba != "St2") && (ba != "St3") && (ba != "Su2") &&
-						(ba != "Su3") && (ba != "Su4") && (ba != "Ls2") && (ba != "Ls3") &&
-						(ba != "Ls4") && (ba != "Lt2") && (ba != "Lt3") && (ba != "Lts") &&
-						(ba != "Lu") && (ba != "Uu") && (ba != "Uls") && (ba != "Us") &&
-						(ba != "Ut2") && (ba != "Ut3") && (ba != "Ut4") && (ba != "Tt") &&
-						(ba != "Tl") && (ba != "Tu2") && (ba != "Tu3") && (ba != "Tu4") &&
-						(ba != "Ts2") && (ba != "Ts3") && (ba != "Ts4") && (ba != "fS")  &&
-						(ba != "fS") && (ba != "fSms") && (ba != "fSgs") && (ba != "mS") &&
-						(ba != "mSfs") && (ba != "mSgs") && (ba != "gS"))
-				{
-					cerr << "no valid texture class defined" << endl;
-					exit(1);
-				}
+              if ((ba != "Ss") && (ba != "Sl2") && (ba != "Sl3") && (ba != "Sl4") &&
+                  (ba != "Slu") && (ba != "St2") && (ba != "St3") && (ba != "Su2") &&
+                  (ba != "Su3") && (ba != "Su4") && (ba != "Ls2") && (ba != "Ls3") &&
+                  (ba != "Ls4") && (ba != "Lt2") && (ba != "Lt3") && (ba != "Lts") &&
+                  (ba != "Lu") && (ba != "Uu") && (ba != "Uls") && (ba != "Us") &&
+                  (ba != "Ut2") && (ba != "Ut3") && (ba != "Ut4") && (ba != "Tt") &&
+                  (ba != "Tl") && (ba != "Tu2") && (ba != "Tu3") && (ba != "Tu4") &&
+                  (ba != "Ts2") && (ba != "Ts3") && (ba != "Ts4") && (ba != "fS")  &&
+                  (ba != "fS") && (ba != "fSms") && (ba != "fSgs") && (ba != "mS") &&
+                  (ba != "mSfs") && (ba != "mSgs") && (ba != "gS")){
+                  cerr << "no valid texture class defined" << endl;
+                  exit(1);
+              }
 
-				SoilParameters p;
-				//              cout << "Bodenart:\t" << ba << "\tld: " << ld << endl;
-				p.set_vs_SoilOrganicCarbon(corg / 100.0);
-				p.set_vs_SoilRawDensity(ld_eff2trd(ld, KA52clay(ba)));
-				p.vs_SoilSandContent = KA52sand(ba);
-				p.vs_SoilClayContent = KA52clay(ba);
-				p.vs_SoilStoneContent = stone / 100.0;
-				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
-				p.vs_SoilTexture = ba;
+              SoilParameters p;
+              p.set_vs_SoilOrganicCarbon(corg / 100.0); //[kg C 100kg] --> [kg C kg-1]
+              p.set_vs_SoilRawDensity(ld_eff2trd(ld, KA52clay(ba)));
+              p.vs_SoilSandContent = KA52sand(ba);
+              p.vs_SoilClayContent = KA52clay(ba);
+              p.vs_SoilStoneContent = stone / 100.0;
+			  p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+              p.vs_SoilTexture = ba;
 
-				if (soil_ph != -1.0)
-					p.vs_SoilpH = soil_ph;
+              if (soil_ph != -1.0) {
+                  p.vs_SoilpH = soil_ph;
+              }
 
-				// initialization of saturation, field capacity and perm. wilting point
-				soilCharacteristicsKA5(p);
+			  if (drainage_coeff != -1.0) {
+                  p.vs_Lambda = drainage_coeff;
+              }
 
-				bool valid_soil_params = p.isValid();
-				if (!valid_soil_params)
-				{
-					cout << "Error in soil parameters. Aborting now simulation";
-					exit(-1);
-				}
+              // initialization of saturation, field capacity and perm. wilting point
+              soilCharacteristicsKA5(p);
 
-				for (int i = 0; i < subhcount; i++)
-					sps->push_back(p);
+              bool valid_soil_params = p.isValid();
+              if (!valid_soil_params) {
+                  cout << "Error in soil parameters. Aborting now simulation";
+                  exit(-1);
+              }
 
-				currenth++;
-			}
+              for (int i = 0; i < subhcount; i++)
+                sps->push_back(p);
+              currenth++;
+            }
 
-			initialized = true;
-		}
-	}
+          initialized = true;
+					
+        }
+    }
 
 	static SoilPMs nothing;
   Map::const_iterator ci = spss.find(soilId);
@@ -2624,7 +2647,7 @@ string Crop::toString(bool detailed) const
 void Crop::writeCropParameters(std::string path)
 {
     ofstream parameter_output_file;
-    parameter_output_file.open((path + "crop_parameters-" + _name.c_str() + ".txt").c_str());
+    parameter_output_file.open((path + "/crop_parameters-" + _name.c_str() + ".txt").c_str());
     if (parameter_output_file.fail()){
         debug() << "Could not write file\"" << (path + "crop_parameters-" + _name.c_str() + ".txt").c_str() << "\"" << endl;
         return;
@@ -3187,6 +3210,9 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
       case Env::MODE_EVA2:
         con->select("select name, value_eva2 from user_parameter");
         break;
+      case Env::MODE_MACSUR_SCALING:
+        con->select("select name, value_macsur_scaling from user_parameter");
+        break;
       default:
         con->select("select name, value_hermes from user_parameter");
         break;
@@ -3202,10 +3228,10 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           centralParameterProvider.userSoilTemperatureParameters;
       UserSoilTransportParameters& user_soil_transport =
           centralParameterProvider.userSoilTransportParameters;
-			UserSoilOrganicParameters& user_soil_organic =
-					centralParameterProvider.userSoilOrganicParameters;
-			UserInitialValues& user_init_values =
-					centralParameterProvider.userInitValues;
+      UserSoilOrganicParameters& user_soil_organic =
+          centralParameterProvider.userSoilOrganicParameters;
+      UserInitialValues& user_init_values =
+          centralParameterProvider.userInitValues;
 
       while (!(row = con->getRow()).empty())
       {
@@ -3250,7 +3276,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           user_env.p_NumberOfLayers = satoi(row[1]);
         else if (name == "start_pv_index")
           user_env.p_StartPVIndex = satoi(row[1]);
-				else if (name == "albedo")
+		else if (name == "albedo")
           user_env.p_Albedo = satof(row[1]);
         else if (name == "athmospheric_co2")
           user_env.p_AthmosphericCO2 = satof(row[1]);
@@ -3346,79 +3372,82 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
           user_env.p_MinGroundwaterDepth = satof(row[1]);
         else if (name == "min_groundwater_depth_month")
           user_env.p_MinGroundwaterDepthMonth = satoi(row[1]);
-				else if (name == "SOM_SlowDecCoeffStandard")
-					user_soil_organic.po_SOM_SlowDecCoeffStandard = satof(row[1]);
-				else if (name == "SOM_FastDecCoeffStandard")
-					user_soil_organic.po_SOM_FastDecCoeffStandard = satof(row[1]);
-				else if (name == "SMB_SlowMaintRateStandard")
-					user_soil_organic.po_SMB_SlowMaintRateStandard = satof(row[1]);
-				else if (name == "SMB_FastMaintRateStandard")
-					user_soil_organic.po_SMB_FastMaintRateStandard = satof(row[1]);
-				else if (name == "SMB_SlowDeathRateStandard")
-					user_soil_organic.po_SMB_SlowDeathRateStandard = satof(row[1]);
-				else if (name == "SMB_FastDeathRateStandard")
-					user_soil_organic.po_SMB_FastDeathRateStandard = satof(row[1]);
-				else if (name == "SMB_UtilizationEfficiency")
-					user_soil_organic.po_SMB_UtilizationEfficiency = satof(row[1]);
-				else if (name == "SOM_SlowUtilizationEfficiency")
-					user_soil_organic.po_SOM_SlowUtilizationEfficiency = satof(row[1]);
-				else if (name == "SOM_FastUtilizationEfficiency")
-					user_soil_organic.po_SOM_FastUtilizationEfficiency = satof(row[1]);
-				else if (name == "AOM_SlowUtilizationEfficiency")
-					user_soil_organic.po_AOM_SlowUtilizationEfficiency = satof(row[1]);
-				else if (name == "AOM_FastUtilizationEfficiency")
-					user_soil_organic.po_AOM_FastUtilizationEfficiency = satof(row[1]);
-				else if (name == "AOM_FastMaxC_to_N")
-					user_soil_organic.po_AOM_FastMaxC_to_N = satof(row[1]);
-				else if (name == "PartSOM_Fast_to_SOM_Slow")
-					user_soil_organic.po_PartSOM_Fast_to_SOM_Slow = satof(row[1]);
-				else if (name == "PartSMB_Slow_to_SOM_Fast")
-					user_soil_organic.po_PartSMB_Slow_to_SOM_Fast = satof(row[1]);
-				else if (name == "PartSMB_Fast_to_SOM_Fast")
-					user_soil_organic.po_PartSMB_Fast_to_SOM_Fast = satof(row[1]);
-				else if (name == "PartSOM_to_SMB_Slow")
-					user_soil_organic.po_PartSOM_to_SMB_Slow = satof(row[1]);
-				else if (name == "PartSOM_to_SMB_Fast")
-					user_soil_organic.po_PartSOM_to_SMB_Fast = satof(row[1]);
-				else if (name == "CN_Ratio_SMB")
-					user_soil_organic.po_CN_Ratio_SMB = satof(row[1]);
-				else if (name == "LimitClayEffect")
-					user_soil_organic.po_LimitClayEffect = satof(row[1]);
-				else if (name == "AmmoniaOxidationRateCoeffStandard")
-					user_soil_organic.po_AmmoniaOxidationRateCoeffStandard = satof(row[1]);
-				else if (name == "NitriteOxidationRateCoeffStandard")
-					user_soil_organic.po_NitriteOxidationRateCoeffStandard = satof(row[1]);
-				else if (name == "TransportRateCoeff")
-					user_soil_organic.po_TransportRateCoeff = satof(row[1]);
-				else if (name == "SpecAnaerobDenitrification")
-					user_soil_organic.po_SpecAnaerobDenitrification = satof(row[1]);
-				else if (name == "ImmobilisationRateCoeffNO3")
-					user_soil_organic.po_ImmobilisationRateCoeffNO3 = satof(row[1]);
-				else if (name == "ImmobilisationRateCoeffNH4")
-					user_soil_organic.po_ImmobilisationRateCoeffNH4 = satof(row[1]);
-				else if (name == "Denit1")
-					user_soil_organic.po_Denit1 = satof(row[1]);
-				else if (name == "Denit2")
-					user_soil_organic.po_Denit2 = satof(row[1]);
-				else if (name == "Denit3")
-					user_soil_organic.po_Denit3 = satof(row[1]);
-				else if (name == "HydrolysisKM")
-					user_soil_organic.po_HydrolysisKM = satof(row[1]);
-				else if (name == "ActivationEnergy")
-					user_soil_organic.po_ActivationEnergy = satof(row[1]);
-				else if (name == "HydrolysisP1")
-					user_soil_organic.po_HydrolysisP1 = satof(row[1]);
-				else if (name == "HydrolysisP2")
-					user_soil_organic.po_HydrolysisP2 = satof(row[1]);
-				else if (name == "AtmosphericResistance")
-					user_soil_organic.po_AtmosphericResistance = satof(row[1]);
-				else if (name == "N2OProductionRate")
-					user_soil_organic.po_N2OProductionRate = satof(row[1]);
-				else if (name == "Inhibitor_NH3")
-					user_soil_organic.po_Inhibitor_NH3 = satof(row[1]);
+		else if (name == "SOM_SlowDecCoeffStandard")
+			user_soil_organic.po_SOM_SlowDecCoeffStandard = satof(row[1]);
+		else if (name == "SOM_FastDecCoeffStandard")
+			user_soil_organic.po_SOM_FastDecCoeffStandard = satof(row[1]);
+		else if (name == "SMB_SlowMaintRateStandard")
+			user_soil_organic.po_SMB_SlowMaintRateStandard = satof(row[1]);
+		else if (name == "SMB_FastMaintRateStandard")
+			user_soil_organic.po_SMB_FastMaintRateStandard = satof(row[1]);
+		else if (name == "SMB_SlowDeathRateStandard")
+			user_soil_organic.po_SMB_SlowDeathRateStandard = satof(row[1]);
+		else if (name == "SMB_FastDeathRateStandard")
+			user_soil_organic.po_SMB_FastDeathRateStandard = satof(row[1]);
+		else if (name == "SMB_UtilizationEfficiency")
+			user_soil_organic.po_SMB_UtilizationEfficiency = satof(row[1]);
+		else if (name == "SOM_SlowUtilizationEfficiency")
+			user_soil_organic.po_SOM_SlowUtilizationEfficiency = satof(row[1]);
+		else if (name == "SOM_FastUtilizationEfficiency")
+			user_soil_organic.po_SOM_FastUtilizationEfficiency = satof(row[1]);
+		else if (name == "AOM_SlowUtilizationEfficiency")
+			user_soil_organic.po_AOM_SlowUtilizationEfficiency = satof(row[1]);
+		else if (name == "AOM_FastUtilizationEfficiency")
+			user_soil_organic.po_AOM_FastUtilizationEfficiency = satof(row[1]);
+		else if (name == "AOM_FastMaxC_to_N")
+			user_soil_organic.po_AOM_FastMaxC_to_N = satof(row[1]);
+		else if (name == "PartSOM_Fast_to_SOM_Slow")
+			user_soil_organic.po_PartSOM_Fast_to_SOM_Slow = satof(row[1]);
+		else if (name == "PartSMB_Slow_to_SOM_Fast")
+			user_soil_organic.po_PartSMB_Slow_to_SOM_Fast = satof(row[1]);
+		else if (name == "PartSMB_Fast_to_SOM_Fast")
+			user_soil_organic.po_PartSMB_Fast_to_SOM_Fast = satof(row[1]);
+		else if (name == "PartSOM_to_SMB_Slow")
+			user_soil_organic.po_PartSOM_to_SMB_Slow = satof(row[1]);
+		else if (name == "PartSOM_to_SMB_Fast")
+			user_soil_organic.po_PartSOM_to_SMB_Fast = satof(row[1]);
+		else if (name == "CN_Ratio_SMB")
+			user_soil_organic.po_CN_Ratio_SMB = satof(row[1]);
+		else if (name == "LimitClayEffect")
+			user_soil_organic.po_LimitClayEffect = satof(row[1]);
+		else if (name == "AmmoniaOxidationRateCoeffStandard")
+			user_soil_organic.po_AmmoniaOxidationRateCoeffStandard = satof(row[1]);
+		else if (name == "NitriteOxidationRateCoeffStandard")
+			user_soil_organic.po_NitriteOxidationRateCoeffStandard = satof(row[1]);
+		else if (name == "TransportRateCoeff")
+			user_soil_organic.po_TransportRateCoeff = satof(row[1]);
+		else if (name == "SpecAnaerobDenitrification")
+			user_soil_organic.po_SpecAnaerobDenitrification = satof(row[1]);
+		else if (name == "ImmobilisationRateCoeffNO3")
+			user_soil_organic.po_ImmobilisationRateCoeffNO3 = satof(row[1]);
+		else if (name == "ImmobilisationRateCoeffNH4")
+			user_soil_organic.po_ImmobilisationRateCoeffNH4 = satof(row[1]);
+		else if (name == "Denit1")
+			user_soil_organic.po_Denit1 = satof(row[1]);
+		else if (name == "Denit2")
+			user_soil_organic.po_Denit2 = satof(row[1]);
+		else if (name == "Denit3")
+			user_soil_organic.po_Denit3 = satof(row[1]);
+		else if (name == "HydrolysisKM")
+			user_soil_organic.po_HydrolysisKM = satof(row[1]);
+		else if (name == "ActivationEnergy")
+			user_soil_organic.po_ActivationEnergy = satof(row[1]);
+		else if (name == "HydrolysisP1")
+			user_soil_organic.po_HydrolysisP1 = satof(row[1]);
+		else if (name == "HydrolysisP2")
+			user_soil_organic.po_HydrolysisP2 = satof(row[1]);
+		else if (name == "AtmosphericResistance")
+			user_soil_organic.po_AtmosphericResistance = satof(row[1]);
+		else if (name == "N2OProductionRate")
+			user_soil_organic.po_N2OProductionRate = satof(row[1]);
+		else if (name == "Inhibitor_NH3")
+			user_soil_organic.po_Inhibitor_NH3 = satof(row[1]);
       }
       delete con;
       initialized = true;
+#ifdef RUN_MACSUR_SCALING
+      initialized = false;
+#endif
 
       centralParameterProvider.capillaryRiseRates = readCapillaryRiseRates();
     }
@@ -3668,6 +3697,106 @@ void
         << endl;
   }
 }
+
+
+Monica::CropPtr
+Monica::hermesCropId2Crop(const string& hermesCropId)
+  {
+    if(hermesCropId == "WW")
+      return CropPtr(new Crop(1, hermesCropId)); // Winter wheat
+    if(hermesCropId == "SW")
+      return CropPtr(new Crop(1, hermesCropId)); // Spring wheat
+    if(hermesCropId == "WG")
+      return CropPtr(new Crop(2, hermesCropId)); // Winter barley
+    if(hermesCropId == "SG")
+      return CropPtr(new Crop(4, hermesCropId)); // Spring barley
+    if(hermesCropId == "WR")
+      return CropPtr(new Crop(3, hermesCropId)); // Winter rye
+    if(hermesCropId == "SR")
+      return CropPtr(new Crop(20, hermesCropId)); // Spring rye
+    if(hermesCropId == "OAT")
+      return CropPtr(new Crop(22, hermesCropId)); // Oats
+    if(hermesCropId == "ZR")
+      return CropPtr(new Crop(10, hermesCropId)); // Sugar beet
+    if(hermesCropId == "SM")
+      return CropPtr(new Crop(7, hermesCropId)); // Silage maize
+    if(hermesCropId == "GM")
+      return CropPtr(new Crop(5, hermesCropId)); // Grain maize
+    if(hermesCropId == "GMB")
+      return CropPtr(new Crop(6, hermesCropId)); // Grain maize Brazil (Pioneer)
+    if(hermesCropId == "MEP")
+      return CropPtr(new Crop(8, hermesCropId)); // Early potato
+    if(hermesCropId == "MLP")
+      return CropPtr(new Crop(8, hermesCropId)); // Late potato
+    if(hermesCropId == "WC")
+      return CropPtr(new Crop(9, hermesCropId)); // Winter canola
+    if(hermesCropId == "SC")
+      return CropPtr(new Crop(9, hermesCropId)); // Spring canola
+    if(hermesCropId == "MU")
+      return CropPtr(new Crop(11, hermesCropId)); // Mustard
+    if(hermesCropId == "PH")
+      return CropPtr(new Crop(12, hermesCropId)); // Phacelia
+    if(hermesCropId == "CLV")
+      return CropPtr(new Crop(13, hermesCropId)); // Kleegras
+    if(hermesCropId == "LZG")
+      return CropPtr(new Crop(14, hermesCropId)); // Luzerne-Gras
+    if(hermesCropId == "WDG")
+      return CropPtr(new Crop(16, hermesCropId)); // Weidelgras
+    if(hermesCropId == "FP")
+      return CropPtr(new Crop(24, hermesCropId)); // Field pea
+    if(hermesCropId == "OR")
+      return CropPtr(new Crop(17, hermesCropId)); // Oil raddish
+    if(hermesCropId == "SDG")
+      return CropPtr(new Crop(18, hermesCropId)); // Sudan grass
+    if(hermesCropId == "WTR")
+      return CropPtr(new Crop(19, hermesCropId)); // Winter triticale
+    if(hermesCropId == "STR")
+      return CropPtr(new Crop(23, hermesCropId)); // Spring triticale
+    if(hermesCropId == "SOR")
+      return CropPtr(new Crop(21, hermesCropId)); // Sorghum
+    if(hermesCropId == "SX0")
+      return CropPtr(new Crop(28, hermesCropId)); // Soy bean maturity group 000
+    if(hermesCropId == "S00")
+      return CropPtr(new Crop(29, hermesCropId)); // Soy bean maturity group 00
+    if(hermesCropId == "S0X")
+      return CropPtr(new Crop(30, hermesCropId)); // Soy bean maturity group 0
+    if(hermesCropId == "S01")
+      return CropPtr(new Crop(31, hermesCropId)); // Soy bean maturity group I
+    if(hermesCropId == "S02")
+      return CropPtr(new Crop(32, hermesCropId)); // Soy bean maturity group II
+    if(hermesCropId == "S03")
+      return CropPtr(new Crop(33, hermesCropId)); // Soy bean maturity group III
+    if(hermesCropId == "S04")
+      return CropPtr(new Crop(34, hermesCropId)); // Soy bean maturity group IV
+    if(hermesCropId == "S05")
+      return CropPtr(new Crop(35, hermesCropId)); // Soy bean maturity group V
+    if(hermesCropId == "S06")
+      return CropPtr(new Crop(36, hermesCropId)); // Soy bean maturity group VI
+    if(hermesCropId == "S07")
+      return CropPtr(new Crop(37, hermesCropId)); // Soy bean maturity group VII
+    if(hermesCropId == "S08")
+      return CropPtr(new Crop(38, hermesCropId)); // Soy bean maturity group VIII
+    if(hermesCropId == "S09")
+      return CropPtr(new Crop(39, hermesCropId)); // Soy bean maturity group IX
+    if(hermesCropId == "S10")
+      return CropPtr(new Crop(40, hermesCropId)); // Soy bean maturity group X
+    if(hermesCropId == "S11")
+      return CropPtr(new Crop(41, hermesCropId)); // Soy bean maturity group XI
+    if(hermesCropId == "S12")
+      return CropPtr(new Crop(42, hermesCropId)); // Soy bean maturity group XII
+    if(hermesCropId == "COS")
+      return CropPtr(new Crop(43, hermesCropId)); // Cotton short
+    if(hermesCropId == "COM")
+      return CropPtr(new Crop(44, hermesCropId)); // Cotton medium
+    if(hermesCropId == "COL")
+      return CropPtr(new Crop(45, hermesCropId)); // Cotton long
+    if(hermesCropId == "BR")
+      return CropPtr(new Crop(hermesCropId));
+
+
+    return CropPtr();
+  }
+
 
 /**
  * Check, if some parameters should be changed according to sensitivity analysis simulation.
