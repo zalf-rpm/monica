@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
-#include "tools/use-stl-algo-boost-lambda.h"
+//#include "tools/use-stl-algo-boost-lambda.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
 

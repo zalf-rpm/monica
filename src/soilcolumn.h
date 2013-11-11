@@ -459,7 +459,7 @@ namespace Monica {
 
     CropGrowth* cropGrowth;
 
-    std::list<boost::function<double()> > _delayedNMinApplications;
+    std::list<std::function<double()> > _delayedNMinApplications;
 
     const CentralParameterProvider& centralParameterProvider;
 

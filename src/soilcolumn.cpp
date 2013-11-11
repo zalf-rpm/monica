@@ -725,7 +725,7 @@ double SoilColumn::applyPossibleTopDressing() {
  * then removes the first fertilizer item in list.
  */
 double SoilColumn::applyPossibleDelayedFerilizer() {
-	list<boost::function<double()> > delayedApps = _delayedNMinApplications;
+	list<std::function<double()> > delayedApps = _delayedNMinApplications;
 	double n_amount = 0.0;
 	while(!delayedApps.empty()) {
     n_amount += delayedApps.front()();
