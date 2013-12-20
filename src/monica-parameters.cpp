@@ -2217,7 +2217,7 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 			int currenth = 1;
 			while (getline(ifs, s))
 			{
-				//              cout << "s: " << s << endl;
+				//cout << "s: " << s << endl;
 				if (trim(s) == "end")
 					break;
 
@@ -2260,8 +2260,9 @@ const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 					(ba != "Tl") && (ba != "Tu2") && (ba != "Tu3") && (ba != "Tu4") &&
 					(ba != "Ts2") && (ba != "Ts3") && (ba != "Ts4") && (ba != "fS")  &&
 					(ba != "fS") && (ba != "fSms") && (ba != "fSgs") && (ba != "mS") &&
-					(ba != "mSfs") && (ba != "mSgs") && (ba != "gS")){
-						cerr << "no valid texture class defined" << endl;
+					(ba != "mSfs") && (ba != "mSgs") && (ba != "gS") && (ba != "Hh") &&
+					(ba != "Hn")) {
+						cerr << "No valid texture class defined: " << ba.c_str() << endl;
 						exit(1);
 				}
 

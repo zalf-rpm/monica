@@ -1594,8 +1594,10 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
 
   vc_MaintenanceRespirationAS = vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration; // [kg CH2O ha-1]
 
-
   vc_Assimilates -= vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration; // [kg CH2O ha-1]
+
+
+
   double vc_GrowthRespirationSum = 0.0;
 
   for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++) {
@@ -1603,9 +1605,11 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
         * pc_OrganGrowthRespiration[i_Organ];
   }
 
+
   if (vc_Assimilates > 0.0) {
     vc_PhotoGrowthRespiration = vc_GrowthRespirationSum * pow(2.0, (pc_GrowthRespirationParameter_1
         * (vc_PhotoTemperature - pc_GrowthRespirationParameter_2))) * (2.0 - vc_NormalisedDayLength); // [kg CH2O ha-1]
+
     if (vc_Assimilates > vc_PhotoGrowthRespiration) {
       vc_Assimilates -= vc_PhotoGrowthRespiration;
 
@@ -1615,9 +1619,13 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
     }
   }
 
+
+
+
   if (vc_Assimilates > 0.0) {
     vc_DarkGrowthRespiration = vc_GrowthRespirationSum * pow(2.0, (pc_GrowthRespirationParameter_1
         * (vc_PhotoTemperature - pc_GrowthRespirationParameter_2))) * vc_NormalisedDayLength; // [kg CH2O ha-1]
+
     if (vc_Assimilates > vc_DarkGrowthRespiration) {
 
       vc_Assimilates -= vc_DarkGrowthRespiration;
@@ -3462,4 +3470,20 @@ double
 CropGrowth::get_AccumulatedETa() const
 {
   return vc_accumulatedETa;
+}
+
+/**
+ * Returns the depth of the maximum active and effective root.
+ * [m]
+ */
+double
+CropGrowth::getEffectiveRootingDepth() const
+{
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
+    if (vc_RootEffectivity[i_Layer] == 0.0) {
+        return i_Layer / 10.0;
+    } // if
+  } // for
+
+  return (vs_NumberOfLayers + 1) / 10.0;
 }

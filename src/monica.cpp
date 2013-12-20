@@ -328,6 +328,7 @@ void MonicaModel::harvestCurrentCrop()
   _soilTransport.remove_Crop();
   _soilColumn.remove_Crop();
   _soilMoisture.remove_Crop();
+  _soilOrganic.remove_Crop();
 }
 
 
@@ -1419,6 +1420,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tHeight";
   fout << "\tLAI";
   fout << "\tRootDep";
+  fout << "\tEffRootDep";
   fout << "\tAbBiom";
 
   fout << "\tNBiom";
@@ -1566,6 +1568,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[m]";          // CropHeight
   fout << "\t[m2/m2]";      // LeafAreaIndex
   fout << "\t[layer]";      // RootingDepth
+  fout << "\t[m]";          // Effective RootingDepth
   fout << "\t[kg/ha]";       // AbovegroundBiomass
 
   fout << "\t[kgN/ha]";     // TotalBiomassNContent
@@ -1898,6 +1901,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();// [m]
     fout << fixed << setprecision(2) << "\t" << mcg->get_LeafAreaIndex(); //[m2 m-2]
     fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth(); //[layer]
+    fout << fixed << setprecision(2) << "\t" << mcg->getEffectiveRootingDepth(); //[m]
     fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
 
     fout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
@@ -1989,6 +1993,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00";   // CropHeight
     fout << "\t0.00";   // LeafAreaIndex
     fout << "\t0";      // RootingDepth
+    fout << "\t0.0";      // EffectiveRootingDepth
     fout << "\t0.0";    // AbovegroundBiomass
 
     fout << "\t0.0";    // TotalBiomassNContent
