@@ -271,9 +271,12 @@ namespace Monica
     double get_AutotrophicRespiration() const;
     double get_OrganSpecificTotalRespired(int organ) const;
     double get_OrganSpecificNPP(int organ) const;
+
+    double getEffectiveRootingDepth() const;
     int get_NumberOfOrgans() const { return pc_NumberOfOrgans; }
 
     inline void accumulateEvapotranspiration(double ETa) { vc_accumulatedETa += ETa;}
+
 
     /**
 	 * @brief Getter for total biomass.
