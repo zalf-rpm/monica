@@ -3623,6 +3623,8 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 		return CropPtr(new Crop(4, hermesCropId)); // Spring barley
 	if(hermesCropId == "WR")
 		return CropPtr(new Crop(3, hermesCropId)); // Winter rye
+  if(hermesCropId == "WR_GD")
+    return CropPtr(new Crop(51, hermesCropId)); // Winter rye
 	if(hermesCropId == "SR")
 		return CropPtr(new Crop(20, hermesCropId)); // Spring rye
 	if(hermesCropId == "OAT")
