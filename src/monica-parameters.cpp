@@ -1918,7 +1918,7 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
         int currenth = satoi(row[2]);
 
 				int ho = sps->size()*layerThicknessCm;
-				int hu = satoi(row[4]) ? satoi(row[4]) : maxDepthCm;
+				int hu = satoi(row[4], maxDepthCm);
 				int hsize = max(0, hu - ho);
 				int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
         if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
@@ -1927,7 +1927,7 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
         SoilParameters p;
 				if (!row[5].empty())
           p.vs_SoilpH = satof(row[5]);
-        p.set_vs_SoilOrganicCarbon(satof(row[6]) ? (satof(row[6]) / 100.0) : 0);
+				p.set_vs_SoilOrganicCarbon(satof(row[6]) / 100.0);
         p.set_vs_SoilRawDensity(satof(row[7]));
         p.vs_SoilSandContent = satof(row[8]) / 100.0;
         p.vs_SoilClayContent = satof(row[9]) / 100.0;
