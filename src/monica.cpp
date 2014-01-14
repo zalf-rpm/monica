@@ -142,6 +142,7 @@ Env::Env(const Env& env)
   nMinFertiliserPartition = env.nMinFertiliserPartition;
   nMinUserParams = env.nMinUserParams;
   autoIrrigationParams = env.autoIrrigationParams;
+  groundwaterInformation = env.groundwaterInformation;
   centralParameterProvider = env.centralParameterProvider;
 
   pathToOutputDir = env.pathToOutputDir;
@@ -505,12 +506,21 @@ void MonicaModel::generalStep(unsigned int stepNo)
                                    ? user_env.p_AthmosphericCO2
                                      : _env.atmosphericCO2;
 
+
+  // test if simulated gw or measured values should be used
+  double gw_value = getGroundwaterInformation(currentDate);
+
+  if (gw_value == -1) {
 //  cout << "vs_GroundwaterDepth:\t" << user_env.p_MinGroundwaterDepth << "\t" << user_env.p_MaxGroundwaterDepth << endl;
   vs_GroundwaterDepth = GroundwaterDepthForDate(user_env.p_MaxGroundwaterDepth,
 				        user_env.p_MinGroundwaterDepth,
 				        user_env.p_MinGroundwaterDepthMonth,
 				        julday,
 				        leapYear);
+  } else {
+      vs_GroundwaterDepth = gw_value / 100.0; // [cm] --> [m]
+  }
+
   if (stepNo<=1) {
     //    : << "Monica: tmin: " << tmin << endl;
     //    cout << "Monica: tmax: " << tmax << endl;

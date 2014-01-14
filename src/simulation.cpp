@@ -414,6 +414,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
   hermes_config->setRotationFile(ipm.value("files", "croprotation"));
   hermes_config->setFertiliserFile(ipm.value("files", "fertiliser"));
   hermes_config->setIrrigationFile(ipm.value("files", "irrigation"));
+  hermes_config->setGroundwaterTableFile(ipm.value("files","groundwater"));
 
   // simulation time
   hermes_config->setStartYear(ipm.valueAsInt("simulation_time", "startyear"));
@@ -462,6 +463,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
   hermes_config->setMaxPercolationRate(ipm.valueAsDouble("site_parameters", "max_percolation_rate", -1.0));
   hermes_config->setPH(ipm.valueAsDouble("site_parameters", "pH", -1.0));
   hermes_config->setNDeposition(ipm.valueAsDouble("site_parameters", "N_deposition", -1.0));
+  hermes_config->setMaxEffectiveRootingDepth(ipm.valueAsDouble("site_parameters", "max_effective_rooting_depth", -1.0));
 
   // general parameters
   hermes_config->setSecondaryYields(ipm.valueAsBool("general_parameters", "use_secondary_yields", true));
@@ -514,6 +516,11 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   SiteParameters siteParams;
   siteParams.vq_NDeposition = hermes_config->getNDeposition();
+
+
+  if (hermes_config->getMaxEffectiveRootingDepth()!=-1.0){
+      siteParams.vs_MaxEffectiveRootingDepth = hermes_config->getMaxEffectiveRootingDepth();
+  }
 
   if (hermes_config->getAtmosphericCO2()!=-1.0){
       centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = hermes_config->getAtmosphericCO2();
@@ -600,6 +607,13 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
       climateDataFromHermesFiles(file, hermes_config->getStartYear(), hermes_config->getEndYear(), centralParameterProvider, true);
 
 
+  MeasuredGroundwaterTableInformation gw_infos;
+  if (hermes_config->getGroundwaterFile() != "") {
+    std::string gw_file = outputPath + hermes_config->getGroundwaterFile();
+    gw_infos.readInGroundwaterInformation(gw_file);
+  }
+
+
   // test if precipitation values should be manipulated; used for carboZALF simulation
   double precip_manipulation_value = hermes_config->precipManipulationValue();
   debug() << "precip_manipulation_value: " << precip_manipulation_value << endl;
@@ -653,6 +667,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   env.general = gps;
   env.pathToOutputDir = outputPath;
   env.setMode(Env::MODE_HERMES);
+  env.groundwaterInformation = gw_infos;
 
 
   env.site = siteParams;

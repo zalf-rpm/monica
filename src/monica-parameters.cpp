@@ -749,6 +749,64 @@ string IrrigationApplication::toString() const
 
 //------------------------------------------------------------------------------
 
+
+void
+MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path)
+{
+  ifstream ifs(path.c_str(), ios::in);
+   if (!ifs.is_open()) {
+       cout << "ERROR while opening file " << path.c_str() << endl;
+       return;
+   }
+
+   groundwaterInformationAvailable = true;
+
+   // read in information from groundwater table file
+   string s;
+   while (getline(ifs, s))
+   {
+
+     // date, value
+     std::string date_string;
+     double gw_cm;
+
+     istringstream ss(s);
+     ss >> date_string >> gw_cm;
+
+     Date gw_date = Tools::fromMysqlString(date_string.c_str());
+
+     if (!gw_date.isValid())
+     {
+       debug() << "ERROR - Invalid date in \"" << path.c_str() << "\"" << endl;
+       debug() << "Line: " << s.c_str() << endl;
+       continue;
+     }
+     cout << "Added gw value\t" << gw_date.toString().c_str() << "\t" << gw_cm << endl;
+     groundwaterInfo[gw_date] = gw_cm;
+   }
+
+}
+
+double
+MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate)
+{
+  if (groundwaterInformationAvailable && groundwaterInfo.size()>0) {
+
+      std::map<Tools::Date, double>::iterator it = groundwaterInfo.find(gwDate);
+      if (it != groundwaterInfo.end())
+        return it->second;
+
+
+  }
+  return -1;
+}
+
+
+
+
+
+//------------------------------------------------------------------------------
+
 ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
     _name(name),
     _crop(crop),
@@ -1653,7 +1711,8 @@ SiteParameters::SiteParameters() :
     vs_GroundwaterDepth(70.0),
     vs_Soil_CN_Ratio(10.0),
 	vs_DrainageCoeff(1.0),
-    vq_NDeposition(30.0)
+    vq_NDeposition(30.0),
+    vs_MaxEffectiveRootingDepth(2.0)
 {}
 
 /**
@@ -1666,6 +1725,7 @@ string SiteParameters::toString() const
   s << "vs_Latitude: " << vs_Latitude << " vs_Slope: " << vs_Slope << " vs_HeightNN: " << vs_HeightNN
       << " vs_DepthGroundwaterTable: " << vs_GroundwaterDepth << " vs_Soil_CN_Ratio: " << vs_Soil_CN_Ratio
       << "vs_DrainageCoeff: " << vs_DrainageCoeff << " vq_NDeposition: " << vq_NDeposition
+      << " vs_MaxEffectiveRootingDepth: " << vs_MaxEffectiveRootingDepth
       << endl;
   return s.str();
 }

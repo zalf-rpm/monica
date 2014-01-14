@@ -140,6 +140,7 @@ public:
 			windSpeedHeight(-1.0),
 			leachingDepth(-1.0),
 			minGWDepthMonth(-1),
+			maxEffectiveRootingDepth(-1.0),
 	    automaticIrrigation(false),
 	    NMinFertiliser(false),
 		nitrogenResponseOn(true),
@@ -158,6 +159,7 @@ public:
     void setFertiliserFile(std::string fertiliserFile) { this->fertiliserFile = fertiliserFile; }
     void setIrrigationFile(std::string irrigationFile) { this->irrigationFile = irrigationFile; }
     void setRotationFile(std::string rotationFile) { this->rotationFile = rotationFile; }
+    void setGroundwaterTableFile(std::string gwFile) { this->groundwaterFile = gwFile; }
     void setPrecipManipulationValue(double value) {precipManipulator = value; }
 
     void setMinGWDepth(double v) { minGWDepth=v; }
@@ -173,6 +175,8 @@ public:
     void setLeachingDepth(double v) { leachingDepth=v; }
     void setMinGWDepthMonth(int v) { minGWDepthMonth=v; }
     void setNDeposition(double v) { NDeposition=v; }
+    void setMaxEffectiveRootingDepth(double v) { maxEffectiveRootingDepth=v; }
+
 
     void setGroundwaterDischarge(double v) {groundwaterDischarge = v; }
     void setLayerThickness(double v) {layerThickness = v; }
@@ -218,6 +222,7 @@ public:
     std::string getFertiliserFile() const { return fertiliserFile; }
     std::string getIrrigationFile() const { return irrigationFile; }
     std::string getRotationFile() const { return rotationFile; }
+    std::string getGroundwaterFile() const { return groundwaterFile; }
 
     int getStartYear() const { return startYear; }
     int getEndYear() const { return endYear; }
@@ -239,6 +244,7 @@ public:
     double getLeachingDepth() const {return leachingDepth; }
     int getMinGWDepthMonth() const {return minGWDepthMonth; }
     double getNDeposition() const {return NDeposition; }
+    double getMaxEffectiveRootingDepth() const {return maxEffectiveRootingDepth; }
 
     double getGroundwaterDischarge() {return groundwaterDischarge; }
     double getLayerThickness() { return layerThickness; }
@@ -271,6 +277,7 @@ public:
     std::string rotationFile;
     std::string fertiliserFile;
     std::string irrigationFile;
+    std::string groundwaterFile;
 
     int startYear;
     int endYear;
@@ -299,6 +306,8 @@ public:
     double surfaceRoughness;
     double dispersionLength;
     double maxPercolationRate;
+    double maxEffectiveRootingDepth;
+
     bool secondaryYields;
 	bool nitrogenResponseOn;
 	bool waterDeficitResponseOn;

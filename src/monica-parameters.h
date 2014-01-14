@@ -475,6 +475,7 @@ namespace Monica
 		double vs_Soil_CN_Ratio;
 		double vs_DrainageCoeff;
 		double vq_NDeposition;
+		double vs_MaxEffectiveRootingDepth;
 
 		std::string toString() const;
 	};
@@ -1155,6 +1156,25 @@ namespace Monica
 	private:
 		double _amount;
 		IrrigationParameters _params;
+	};
+
+	//----------------------------------------------------------------------------
+
+	class MeasuredGroundwaterTableInformation
+	{
+	public:
+	    MeasuredGroundwaterTableInformation() : groundwaterInformationAvailable(false)  {}
+	    ~MeasuredGroundwaterTableInformation() {}
+
+	    void readInGroundwaterInformation(std::string path);
+
+	    double getGroundwaterInformation(Tools::Date gwDate);
+
+	    bool isGroundwaterInformationAvailable() {return this->groundwaterInformationAvailable; }
+
+	private:
+	    bool groundwaterInformationAvailable;
+	    std::map<Tools::Date, double> groundwaterInfo;
 	};
 
 	//----------------------------------------------------------------------------

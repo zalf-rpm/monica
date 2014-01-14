@@ -110,6 +110,7 @@ namespace Monica
 
     bool useAutomaticIrrigation;
     AutomaticIrrigationParameters autoIrrigationParams;
+    MeasuredGroundwaterTableInformation groundwaterInformation;
 
     bool useSecondaryYields;              //! tell if farmer uses the secondary yield products
 
@@ -359,6 +360,8 @@ namespace Monica
     double getAccumulatedWaterStress() { return p_accuWaterStress; }
     double getAccumulatedHeatStress() { return p_accuHeatStress; }
     double getAccumulatedOxygenStress() { return p_accuOxygenStress; }
+
+    double getGroundwaterInformation(Tools::Date date) {return _env.groundwaterInformation.getGroundwaterInformation(date); }
 
   private:
 		//! environment describing the conditions under which the model runs

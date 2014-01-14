@@ -225,7 +225,8 @@ pc_WaterDeficitResponseOn(generalParams.pc_WaterDeficitResponseOn),
 eva2_usage(usage),
 dyingOut(false),
 vc_accumulatedETa(0.0),
-cutting_delay_days(0)
+cutting_delay_days(0),
+vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
 {
 
 
@@ -2581,6 +2582,10 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
       if (i_Layer > vc_GroundwaterTable) { // old GRW
         vc_RootEffectivity[i_Layer] = 0.0;
       }
+      if ( (i_Layer * 10.0) >= vs_MaxEffectiveRootingDepth*100.0) {
+          vc_RootEffectivity[i_Layer] = 0.0;
+      }
+
       vc_TotalRootEffectivity += vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]; //[m m-3]
       vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
     }
@@ -3481,7 +3486,7 @@ CropGrowth::getEffectiveRootingDepth() const
 {
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
     if (vc_RootEffectivity[i_Layer] == 0.0) {
-        return i_Layer / 10.0;
+        return (i_Layer+1) / 10.0;
     } // if
   } // for
 

@@ -494,6 +494,7 @@ namespace Monica
     double vc_accumulatedETa;
 
     int cutting_delay_days;
+    double vs_MaxEffectiveRootingDepth;
   };
 } // namespace Monica
 
