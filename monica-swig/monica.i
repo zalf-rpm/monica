@@ -5,12 +5,10 @@
 %{
 #define SWIG_COMPILATION
 /* Includes the header in the wrapper code */
-#include "../src/simulation.h"
-#include "../src/monica-parameters.h"
-#include "../src/monica.h"
-#include "../src/eva_methods.h"
-#include "../src/cc_germany_methods.h"
-#include "../src/gis_simulation_methods.h"
+#include "/home/specka/devel/github/monica/src/simulation.h"
+#include "/home/specka/devel/github/monica/src/monica-parameters.h"
+#include "/home/specka/devel/github/monica/src/monica.h"
+#include "macsur_scaling_interface.h"
 %}
 
 
@@ -26,14 +24,12 @@ namespace std {
 
 
 /* Parse the header file to generate wrappers */
-%include "../src/simulation.h"
-%include "../src/monica-typedefs.h"
-%include "../src/monica-parameters.h"
-%include "../src/soiltemperature.h"
-%include "../src/soilmoisture.h"
-%include "../src/soilorganic.h"
-%include "../src/soiltransport.h"
-%include "../src/monica.h"
-%include "../src/cc_germany_methods.h"
-%include "../src/gis_simulation_methods.h"
-%include "../src/eva_methods.h"
+%include "/home/specka/devel/github/monica/src/simulation.h"
+%include "/home/specka/devel/github/monica/src/monica-typedefs.h"
+%include "/home/specka/devel/github/monica/src/monica-parameters.h"
+%include "/home/specka/devel/github/monica/src/soiltemperature.h"
+%include "/home/specka/devel/github/monica/src/soilmoisture.h"
+%include "/home/specka/devel/github/monica/src/soilorganic.h"
+%include "/home/specka/devel/github/monica/src/soiltransport.h"
+%include "/home/specka/devel/github/monica/src/monica.h"
+%include "macsur_scaling_interface.h"
