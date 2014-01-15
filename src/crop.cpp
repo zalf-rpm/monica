@@ -2180,11 +2180,16 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
     vc_RootingDepth_m = vc_MaxRootingDepth; // [m]
   }
 
+
+  if (vc_RootingDepth_m>vs_MaxEffectiveRootingDepth) {
+      vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
+  }
+
   // Calculating rooting depth layer []
   vc_RootingDepth = int(floor(0.5 + (vc_RootingDepth_m / vs_LayerThickness))); // []
 
-  vc_RootingZone = int(floor(0.5 + ((1.3 * vc_RootingDepth_m) / vs_LayerThickness))); // []
 
+  vc_RootingZone = int(floor(0.5 + ((1.3 * vc_RootingDepth_m) / vs_LayerThickness))); // []
   if (vc_RootingZone > vs_NumberOfLayers){
     vc_RootingZone = vs_NumberOfLayers;
   }
@@ -2193,7 +2198,7 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
 
   // Calculating a root density distribution factor []
   std::vector<double> vc_RootDensityFactor(vs_NumberOfLayers, 0.0);
-  for (int i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
     if (i_Layer < vc_RootingDepth){
       vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * vs_LayerThickness)); // []
     } else if (i_Layer < vc_RootingZone){
@@ -2582,8 +2587,8 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
       if (i_Layer > vc_GroundwaterTable) { // old GRW
         vc_RootEffectivity[i_Layer] = 0.0;
       }
-      if ( (i_Layer * 10.0) >= vs_MaxEffectiveRootingDepth*100.0) {
-          vc_RootEffectivity[i_Layer] = 0.0;
+      if ( ( (i_Layer+1)*vs_LayerThickness) >= vs_MaxEffectiveRootingDepth) {
+        vc_RootEffectivity[i_Layer] = 0.0;
       }
 
       vc_TotalRootEffectivity += vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]; //[m m-3]
@@ -2601,35 +2606,39 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
     }
 
     for (int i_Layer = 0; i_Layer < min(vc_RootingZone, vc_GroundwaterTable + 1); i_Layer++) {
-      vc_RemainingTotalRootEffectivity -= vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]; // [m m-3]
-      if (vc_RemainingTotalRootEffectivity < 0.0)
-        vc_RemainingTotalRootEffectivity = 0.00001;
-      if (((vc_Transpiration[i_Layer] / 1000.0) / vs_LayerThickness) > ((soilColumn[i_Layer].get_Vs_SoilMoisture_m3()
-        - soilColumn[i_Layer].get_PermanentWiltingPoint()))) {
-        vc_PotentialTranspirationDeficit = (((vc_Transpiration[i_Layer] / 1000.0) / vs_LayerThickness)
-				    - (soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].get_PermanentWiltingPoint()))
-				   * vs_LayerThickness * 1000.0; // [mm]
-        if (vc_PotentialTranspirationDeficit < 0.0) {
-	vc_PotentialTranspirationDeficit = 0.0;
-        }
-        if (vc_PotentialTranspirationDeficit > vc_Transpiration[i_Layer]) {
-	vc_PotentialTranspirationDeficit = vc_Transpiration[i_Layer]; //[mm]
-        }
-      } else {
-        vc_PotentialTranspirationDeficit = 0.0;
-      }
-      vc_TranspirationReduced = vc_Transpiration[i_Layer] * (1.0 - vc_TranspirationRedux[i_Layer]);
 
-      //! @todo Claas: How can we lower the groundwater table if crop water uptake is restricted in that layer?
-      vc_ActualTranspirationDeficit = max(vc_TranspirationReduced, vc_PotentialTranspirationDeficit); //[mm]
-      if (vc_ActualTranspirationDeficit > 0.0) {
-        if (i_Layer < min(vc_RootingZone, vc_GroundwaterTable + 1)) {
-	for (int i_Layer2 = i_Layer + 1; i_Layer2 < min(vc_RootingZone, vc_GroundwaterTable + 1); i_Layer2++) {
-	  vc_Transpiration[i_Layer2] += vc_ActualTranspirationDeficit * (vc_RootEffectivity[i_Layer2]
-							     * vc_RootDensity[i_Layer2] / vc_RemainingTotalRootEffectivity);
-	}
+
+        vc_RemainingTotalRootEffectivity -= vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]; // [m m-3]
+
+        if (vc_RemainingTotalRootEffectivity <= 0.0)
+          vc_RemainingTotalRootEffectivity = 0.00001;
+        if (((vc_Transpiration[i_Layer] / 1000.0) / vs_LayerThickness) > ((soilColumn[i_Layer].get_Vs_SoilMoisture_m3()
+            - soilColumn[i_Layer].get_PermanentWiltingPoint()))) {
+            vc_PotentialTranspirationDeficit = (((vc_Transpiration[i_Layer] / 1000.0) / vs_LayerThickness)
+                - (soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].get_PermanentWiltingPoint()))
+                * vs_LayerThickness * 1000.0; // [mm]
+            if (vc_PotentialTranspirationDeficit < 0.0) {
+                vc_PotentialTranspirationDeficit = 0.0;
+            }
+            if (vc_PotentialTranspirationDeficit > vc_Transpiration[i_Layer]) {
+                vc_PotentialTranspirationDeficit = vc_Transpiration[i_Layer]; //[mm]
+            }
+        } else {
+            vc_PotentialTranspirationDeficit = 0.0;
         }
-      }
+        vc_TranspirationReduced = vc_Transpiration[i_Layer] * (1.0 - vc_TranspirationRedux[i_Layer]);
+
+        //! @todo Claas: How can we lower the groundwater table if crop water uptake is restricted in that layer?
+        vc_ActualTranspirationDeficit = max(vc_TranspirationReduced, vc_PotentialTranspirationDeficit); //[mm]
+        if (vc_ActualTranspirationDeficit > 0.0) {
+            if (i_Layer < min(vc_RootingZone, vc_GroundwaterTable + 1)) {
+                for (int i_Layer2 = i_Layer + 1; i_Layer2 < min(vc_RootingZone, vc_GroundwaterTable + 1); i_Layer2++) {
+                    vc_Transpiration[i_Layer2] += vc_ActualTranspirationDeficit * (vc_RootEffectivity[i_Layer2]
+                       * vc_RootDensity[i_Layer2] / vc_RemainingTotalRootEffectivity);
+
+                }
+            }
+        }
       vc_Transpiration[i_Layer] = vc_Transpiration[i_Layer] - vc_ActualTranspirationDeficit;
       if (vc_Transpiration[i_Layer] < 0.0)
         vc_Transpiration[i_Layer] = 0.0;
