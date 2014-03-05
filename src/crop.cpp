@@ -1226,7 +1226,13 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
   double pc_GrowthRespirationParameter_2 = user_crops.pc_GrowthRespirationParameter2;
   double pc_CanopyReflectionCoeff = user_crops.pc_CanopyReflectionCoefficient; // old REFLC;
 
-
+	//std::cout << setprecision(15) << "pc_ReferenceLeafAreaIndex: " << pc_ReferenceLeafAreaIndex << std::endl;
+	//std::cout << setprecision(15) << "pc_ReferenceMaxAssimilationRate: " << pc_ReferenceMaxAssimilationRate << std::endl;
+	//std::cout << setprecision(15) << "pc_MaintenanceRespirationParameter_1: " << pc_MaintenanceRespirationParameter_1 << std::endl;
+	//std::cout << setprecision(15) << "pc_MaintenanceRespirationParameter_2: " << pc_MaintenanceRespirationParameter_2 << std::endl;
+	//std::cout << setprecision(15) << "pc_GrowthRespirationParameter_1: " << pc_GrowthRespirationParameter_1 << std::endl;
+	//std::cout << setprecision(15) << "pc_GrowthRespirationParameter_2: " << pc_GrowthRespirationParameter_2 << std::endl;
+	//std::cout << setprecision(15) << "pc_CanopyReflectionCoeff: " << pc_CanopyReflectionCoeff << std::endl;
 
   // Calculation of CO2 impact on crop growth
   if (pc_CO2Method == 3) {
@@ -1638,6 +1644,11 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
   }
   vc_GrowthRespirationAS = vc_PhotoGrowthRespiration + vc_DarkGrowthRespiration; // [kg CH2O ha-1]
   vc_TotalRespired = vc_GrossAssimilates - vc_Assimilates; // [kg CH2O ha-1]
+
+	// JV! debug
+	//std::cout << setprecision(15) << "vc_GrossAssimilates: " << vc_GrossAssimilates << std::endl;
+	//std::cout << setprecision(15) << "vc_Assimilates: " << vc_Assimilates << std::endl;
+	//std::cout << setprecision(15) << "vc_TotalRespired: " << vc_TotalRespired << std::endl;
 
   /** to reactivate HERMES algorithms, needs to be vc_NetPhotosynthesis
    * used instead of  vc_Assimilates in the subsequent methods */
@@ -2185,6 +2196,14 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
       vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
   }
 
+	//std::cout << "vs_MaxEffectiveRootingDepth: " << vs_MaxEffectiveRootingDepth << std::endl;
+	//std::cout << "vc_RootPenetrationRate: " << vc_RootPenetrationRate << std::endl;
+	//std::cout << "pc_RootPenetrationRate: " << pc_RootPenetrationRate << std::endl;
+	//std::cout << "vc_CurrentTotalTemperatureSumRoot: " << vc_CurrentTotalTemperatureSumRoot << std::endl;
+	//std::cout << "vc_DailyTemperatureRoot: " << vc_DailyTemperatureRoot << std::endl;
+	//std::cout << "pc_RootGrowthLag: " << pc_RootGrowthLag << std::endl;
+	//std::cout << "pc_InitialRootingDepth: " << pc_InitialRootingDepth << std::endl;
+
   // Calculating rooting depth layer []
   vc_RootingDepth = int(floor(0.5 + (vc_RootingDepth_m / vs_LayerThickness))); // []
 
@@ -2195,6 +2214,15 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
   }
 
   vc_TotalRootLength = vc_RootBiomass * pc_SpecificRootLength; //[m m-2]
+
+	//std::cout << "vc_MaxRootingDepth: " << vc_MaxRootingDepth << std::endl;
+	//std::cout << "vc_RootingDepth: " << vc_RootingDepth << std::endl;
+	//std::cout << "vc_RootingZone: " << vc_RootingZone << std::endl;
+	//std::cout << "vc_RootingDepth_m: " << vc_RootingDepth_m << std::endl;
+	//std::cout << "vc_TotalRootLength: " << vc_TotalRootLength << std::endl;
+	//std::cout << "vs_LayerThickness: " << vs_LayerThickness << std::endl;
+	//std::cout << "pc_RootFormFactor: " << pc_RootFormFactor << std::endl;
+	//std::cout << "pc_SpecificRootLength: " << pc_SpecificRootLength << std::endl;
 
   // Calculating a root density distribution factor []
   std::vector<double> vc_RootDensityFactor(vs_NumberOfLayers, 0.0);
@@ -2207,6 +2235,7 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
     } else {
       vc_RootDensityFactor[i_Layer] = 0.0; // []
     }
+		//std::cout << setprecision(11) << "vc_RootDensityFactor[i_Layer]: " << i_Layer << ", " << vc_RootDensityFactor[i_Layer] << std::endl;
   }
 
   // Summing up all factors to scale to a relative factor between [0;1]
@@ -2595,12 +2624,20 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
       vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
     }
 
+		//std::cout << setprecision(11) << "vc_TotalRootEffectivity: " << vc_TotalRootEffectivity << std::endl;
+		//std::cout << setprecision(11) << "vc_OxygenDeficit: " << vc_OxygenDeficit << std::endl;
+
     for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
       if (i_Layer > min(vc_RootingZone, vc_GroundwaterTable + 1)) {
         vc_Transpiration[i_Layer] = 0.0; //[mm]
       } else {
         vc_Transpiration[i_Layer] = vc_PotentialTranspiration * ((vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer])
 						     / vc_TotalRootEffectivity) * vc_OxygenDeficit;
+
+				//std::cout << setprecision(11) << "vc_Transpiration[i_Layer]: " << i_Layer << ", " << vc_Transpiration[i_Layer] << std::endl;
+				//std::cout << setprecision(11) << "vc_RootEffectivity[i_Layer]: " << i_Layer << ", " << vc_RootEffectivity[i_Layer] << std::endl;
+				//std::cout << setprecision(11) << "vc_RootDensity[i_Layer]: " << i_Layer << ", " << vc_RootDensity[i_Layer] << std::endl;
+
         // [mm]
       }
     }
@@ -2654,6 +2691,7 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
     }
 
     int vm_GroundwaterDistance = vc_GroundwaterTable - vc_RootingDepth;
+		//std::cout << "vm_GroundwaterDistance: " << vm_GroundwaterDistance << std::endl;
     if (vm_GroundwaterDistance <= 1) {
       vc_TranspirationDeficit = 1.0;
     }
@@ -3427,6 +3465,9 @@ double CropGrowth::get_OrganSpecificNPP(int organ)  const
 
   // get biomass of specific organ and calculates ratio
   double organ_percentage = get_OrganBiomass(organ) / total_biomass;
+
+	//cout << "get_OrganBiomass(organ) : " << organ << ", " << organ_percentage << std::endl; // JV!
+	//cout << "total_biomass : " << total_biomass << std::endl; // JV!
   return (get_NetPrimaryProduction() * organ_percentage);
 }
 

@@ -1,0 +1,19 @@
+{
+  "time": {
+    "dateFormat": "YYYY-MM-DD",
+    "startYear": 1991,
+    "endYear": 1997
+  },
+  "switch": {
+    "useSecondaryYieldOn": true,
+    "nitrogenResponseOn": false,
+    "waterDeficitResponseOn": true,
+    "emergenceMoistureControlOn": false,
+    "emergenceFloodingControlOn": false
+  },
+  "init": {
+    "percentageFC": 1.0,
+    "soilNitrate": 0.01,
+    "lsoilAmmonium": 0.0001
+  }
+}

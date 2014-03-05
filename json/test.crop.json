@@ -1,0 +1,194 @@
+{
+  "crops": [
+    {
+      "name": "winter rye",
+      "genType": "",
+      "spec": "",
+      "sowingDate": "131091",
+      "rowWidth": 5.0,
+      "plantSpace": 5.0,
+      "plantDryWeight": 225.00,
+      "percNTRansplant": 0.0,
+      "finalHarvestDate": "080892",
+      "residuesRemoval": 85.0,
+      "tillageOps": [
+        {
+          "date": "081091",
+          "method": "Plough",
+          "depth": 30.0
+        }
+      ],
+      "irrigations": [
+        {
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          "NConc": 0.0,
+          "date": "080692"
+        }
+      ],
+      "mineralFertilisers": [
+        {
+          "date": "151091",
+          "method": "Fixed",
+          "type": "AN",
+          "amount": 90.0
+        }
+      ]
+    },
+    {
+      "name": "winter wheat",
+      "genType": "",
+      "spec": "",
+      "sowingDate": "131092",
+      "rowWidth": 5.0,
+      "plantSpace": 5.0,
+      "plantDryWeight": 225.00,
+      "percNTRansplant": 0.0,
+      "finalHarvestDate": "080893",
+      "residuesRemoval": 85.0,
+      "tillageOps": [
+        {
+          "date": "081092",
+          "method": "Plough",
+          "depth": 30.0
+        }
+      ],
+      "irrigations": [
+        {
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          "NConc": 0.0,
+          "date": "080693"
+        }
+      ],
+      "mineralFertilisers": [
+        {
+          "date": "150393",
+          "method": "Fixed",
+          "type": "AN",
+          "amount": 90.0
+        }
+      ]
+    },
+    {
+      "name": "winter rye",
+      "genType": "",
+      "spec": "",
+      "sowingDate": "131093",
+      "rowWidth": 5.0,
+      "plantSpace": 5.0,
+      "plantDryWeight": 225.00,
+      "percNTRansplant": 0.0,
+      "finalHarvestDate": "080894",
+      "residuesRemoval": 85.0,
+      "tillageOps": [
+        {
+          "date": "081093",
+          "method": "Plough",
+          "depth": 30.0
+        }
+      ],
+      "irrigations": [
+        {
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          "NConc": 0.0,
+          "date": "080694"
+        }
+      ],
+      "mineralFertilisers": [
+        {
+          "date": "151094",
+          "method": "Fixed",
+          "type": "AN",
+          "amount": 90.0
+        }
+      ]
+    },
+    {
+      "name": "winter wheat",
+      "genType": "",
+      "spec": "",
+      "sowingDate": "131095",
+      "rowWidth": 5.0,
+      "plantSpace": 5.0,
+      "plantDryWeight": 225.00,
+      "percNTRansplant": 0.0,
+      "finalHarvestDate": "080896",
+      "residuesRemoval": 85.0,
+      "tillageOps": [
+        {
+          "date": "081095",
+          "method": "Plough",
+          "depth": 30.0
+        }
+      ],
+      "irrigations": [
+        {
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          "NConc": 0.0,
+          "date": "080696"
+        }
+      ],
+      "mineralFertilisers": [
+        {
+          "date": "150396",
+          "method": "Fixed",
+          "type": "AN",
+          "amount": 90.0
+        }
+      ]
+    },
+    {
+      "name": "winter rye",
+      "genType": "",
+      "spec": "",
+      "sowingDate": "131096",
+      "rowWidth": 5.0,
+      "plantSpace": 5.0,
+      "plantDryWeight": 225.00,
+      "percNTRansplant": 0.0,
+      "finalHarvestDate": "080897",
+      "residuesRemoval": 85.0,
+      "tillageOps": [
+        {
+          "date": "081096",
+          "method": "Plough",
+          "depth": 30.0
+        }
+      ],
+      "irrigations": [
+        {
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          "NConc": 0.0,
+          "date": "080697"
+        }
+      ],
+      "mineralFertilisers": [
+        {
+          "date": "151096",
+          "method": "Fixed",
+          "type": "AN",
+          "amount": 90.0
+        }
+      ]
+    }
+  ]
+}

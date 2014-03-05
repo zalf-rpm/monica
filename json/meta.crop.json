@@ -1,0 +1,179 @@
+{
+  "crops": [
+    {
+      "name": {
+        "desc": "Crop name",
+        "db": {
+          "table": "crop",
+          "column": "name"
+        }
+      },
+      "genType": {
+        "desc": "Crop genetic type, cultivar",
+        "db": {
+          "table": "crop",
+          "column": "gen_type"
+        }
+      },
+      "spec": {
+        "desc": "Crop specifier",
+        "db": {
+          "table": "crop",
+          "column": "spec"
+        }
+      },
+      "sowingDate": {
+        "desc": ""
+      },
+      "rowWidth": {
+        "desc": "Row width",
+        "unit": "cm",
+        "min": null,
+        "max": null
+      },
+      "plantSpace": {
+        "desc": "Plant spacing",
+        "unit": "cm",
+        "min": null,
+        "max": null
+      },
+      "plantDryWeight": {
+        "desc": "Dry weight at planting or seed dry weight",
+        "unit": "kg (dwt) ha-1",
+        "min": null,
+        "max": null
+      },
+      "percNTRansplant": {
+        "desc": "Percentage N in transplant (0.0 if not known)",
+        "unit": "kg kg-1",
+        "min": null,
+        "max": null
+      },
+      "finalHarvestDate": {
+        "desc": "Time of final harvest"
+      },
+      "residuesRemoval": {
+        "desc": "Percentage of crop residues removed from field",
+        "unit": "kg (dwt) kg-1 (dwt)",
+        "min": null,
+        "max": null
+      },
+      "tillageOps": [
+        {
+          "date": {
+            "desc": "Tillage date"
+          },
+          "method": {
+            "desc": "Tillage Method",
+            "enum": [
+              "Plough",
+              "Cultivator"
+            ]
+          },
+          "depth": {
+            "desc": "Tillage depth",
+            "unit": "cm",
+            "min": null,
+            "max": null
+          }
+        }
+      ],
+      "irrigations": [
+        {
+          "method": {
+            "desc": "Irrigation method",
+            "enum": [
+              "Sprinkler"
+            ]
+          },
+          "eventType": {
+            "desc": "Event type",
+            "enum": [
+              "Fixed",
+              "Content",
+              "Evapo"
+            ]
+          },
+          "threshold": {
+            "desc": "Soil water content threshold",
+            "unit": "mm mm-1",
+            "min": null,
+            "max": null
+          },
+          "area": {
+            "desc": "Fraction of wetted soil surface",
+            "unit": "m2 m-2",
+            "min": null,
+            "max": null
+          },
+          "amount": {
+            "desc": "Irrigation amount",
+            "unit": "mm",
+            "min": null,
+            "max": null
+          },
+          "NConc": {
+            "desc": "N concentration in irrigtaion water",
+            "unit": "g l-1",
+            "min": null,
+            "max": null
+          }
+        }
+      ],
+      "organicFertilisers": [
+        {
+          "date": {
+            "desc": "Fertilising date"
+          },
+          "method": {
+            "desc": "Event type",
+            "enum": [
+              "Fixed",
+              "Automated"
+            ]
+          },
+          "type": {
+            "desc": "Organic fertiliser type",
+            "db": {
+              "table": "organic_fertiliser",
+              "column": "type"
+            }
+          },
+          "amount": {
+            "desc": "Amount of N applied",
+            "unit": "kg (N) ha-1",
+            "min": null,
+            "max": null
+          }
+        }
+      ],
+      "mineralFertilisers": [
+        {
+          "date": {
+            "desc": "Fertilising date"
+          },
+          "method": {
+            "desc": "Event type",
+            "enum": [
+              "Fixed",
+              "Automated"
+            ]
+          },
+          "type": {
+            "desc": "Mineral fertiliser type",
+            "db": {
+              "table": "mineral_fertilisers",
+              "column": "type"
+            }
+          },
+          "amount": {
+            "desc": "Amount of N applied",
+            "unit": "kg (N) ha-1",
+            "min": null,
+            "max": null
+          }
+        }
+      ]
+    }
+  ]
+}

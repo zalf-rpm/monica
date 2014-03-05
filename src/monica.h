@@ -51,6 +51,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Monica
 {
+	/* forward declaration */
+	class Configuration;
+
   /**
    * @class Env
    */
@@ -409,7 +412,7 @@ namespace Monica
    * @param env the environment completely defining what the model needs and gets
    * @return a structure with all the Monica results
    */
-  Result runMonica(Env env);
+	Result runMonica(Env env, Configuration *cfg = NULL);
 
   void initializeFoutHeader(std::ofstream&);
   void initializeGoutHeader(std::ofstream&);

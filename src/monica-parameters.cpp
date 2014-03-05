@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "monica-parameters.h"
 #include "monica.h"
-#include "eva_methods.h"
+//#include "eva_methods.h"
 #include "debug.h"
 #include "conversion.h"
 
@@ -1742,6 +1742,7 @@ SoilParameters::SoilParameters() :
     vs_SoilClayContent(0.05),
     vs_SoilpH(6.9),
     _vs_SoilRawDensity(0),
+		_vs_SoilBulkDensity(0),
     _vs_SoilOrganicCarbon(-1),
     _vs_SoilOrganicMatter(-1),
     vs_SoilAmmonium(-1),
@@ -1825,6 +1826,25 @@ void SoilParameters::set_vs_SoilRawDensity(double srd)
 }
 
 /**
+* @brief Getter for soil bulk density.
+* @return bulk density
+*/
+double SoilParameters::vs_SoilBulkDensity() const
+{
+	//  return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
+	return _vs_SoilBulkDensity * 1000;
+}
+
+/**
+* @brief Sets soil bulk density
+* @param srd New soil rad density
+*/
+void SoilParameters::set_vs_SoilBulkDensity(double sbd)
+{
+	_vs_SoilBulkDensity = sbd;
+}
+
+/**
  * @brief Returns soil organic carbon.
  * @return soil organic carbon
  */
@@ -1875,15 +1895,6 @@ double SoilParameters::vs_SoilSiltContent() const
     return 0;
 
   return 1 - vs_SoilSandContent - vs_SoilClayContent;
-}
-
-/**
- * @brief Getter for soil bulk density.
- * @return bulk density
- */
-double SoilParameters::vs_SoilBulkDensity() const
-{
-  return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
 }
 
 /**

@@ -41,6 +41,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define LOKI_OBJECT_LEVEL_THREADING
 #include "loki/Threads.h"
 
+#ifdef MONICA_GUI
+#include "../gui/workerconfiguration.h"
+#else
+#include "configuration.h"
+#endif
+
 using namespace Monica;
 using namespace std;
 using namespace Climate;
@@ -1001,7 +1007,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
  * @brief Static method for starting calculation
  * @param env
  */
-Result Monica::runMonica(Env env)
+Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 {
 
   Result res;
@@ -1123,8 +1129,40 @@ Result Monica::runMonica(Env env)
 	//so the crop won't be seeded again or any work applied
 	//thus for absolute dates the crop rotation has to be as long as there
 	//are climate data !!!!!
+
+	/* post progress of calculation */
+#ifndef	MONICA_GUI
+	float progress = 0.0;
+#else
+	WorkerConfiguration* wCfg = static_cast<WorkerConfiguration*>(cfg);
+#endif
+		
 	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
 	{
+		/* little progress bar */
+#ifndef MONICA_GUI
+		//    if (d % int(nods / 100) == 0 && !activateDebug) {
+		//      int barWidth = 70;
+		//      std::cout << "[";
+		//      int pos = barWidth * progress;
+		//      for (int i = 0; i < barWidth; ++i) {
+		//        if (i < pos) std::cout << "=";
+		//        else if (i == pos) std::cout << ">";
+		//        else std::cout << " ";
+		//      }
+		//      if (progress >= 1.0) /* some days missing due to rounding */
+		//        std::cout << "] " << 100 << "% (" << nods << " of " << nods << " days)\r";
+		//      else
+		//        std::cout << "] " << int(progress * 100) << "% (" << d << " of " << nods << " days)\r";
+		//      std::cout.flush();
+		//      progress += 0.01;
+		//    }
+		//    else if (d == nods - 1)
+		//      std::cout << std::endl;
+#else
+		wCfg->setProgress(double(d) / double(nods));
+#endif
+		
 		debug() << "currentDate: " << currentDate.toString() << endl;
     monica.resetDailyCounter();
 
@@ -1177,11 +1215,11 @@ Result Monica::runMonica(Env env)
         r.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
 
 				res.pvrs.push_back(r);
-        debug() << "py: " << r.pvResults[primaryYield]
-            << " sy: " << r.pvResults[secondaryYield]
-            << " iw: " << r.pvResults[sumIrrigation]
-            << " sf: " << monica.sumFertiliser()
-            << endl;
+				//        debug() << "py: " << r.pvResults[primaryYield] << endl;
+				//            << " sy: " << r.pvResults[secondaryYield]
+				//            << " iw: " << r.pvResults[sumIrrigation]
+				//            << " sf: " << monica.sumFertiliser()
+				//            << endl;
 
 				//to count the applied fertiliser for the next production process
 				monica.resetFertiliserCounter();
@@ -1896,9 +1934,9 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     
     fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
     fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
-    fout << "\t" << mcg->get_OrganBiomass(1);
-    fout << "\t" << mcg->get_OrganBiomass(2);
-    fout << "\t" << mcg->get_OrganBiomass(3);
+		fout << fixed << setprecision(10) << "\t" << mcg->get_OrganBiomass(1); // JV! + fixed << setprecision(10)
+		fout << fixed << setprecision(10) << "\t" << mcg->get_OrganBiomass(2); // JV! + fixed << setprecision(10)
+		fout << fixed << setprecision(10) << "\t" << mcg->get_OrganBiomass(3); // JV! + fixed << setprecision(10)
 	fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
 
     fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
@@ -2085,12 +2123,12 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   }
   fout << fixed << setprecision(2) << "\t" << env.da.dataForTimestep(Climate::precip, d);
   fout << fixed << setprecision(1) << "\t" << monica.dailySumIrrigationWater();
-  fout << "\t" << msm.get_Infiltration(); // {mm]
-  fout << "\t" << msm.get_SurfaceWaterStorage();// {mm]
-  fout << "\t" << msm.get_SurfaceRunOff();// {mm]
-  fout << "\t" << msm.get_SnowDepth(); // [mm]
-  fout << "\t" << msm.get_FrostDepth();
-  fout << "\t" << msm.get_ThawDepth();
+	fout << fixed << setprecision(10) << "\t" << msm.get_Infiltration(); // {mm]
+	fout << fixed << setprecision(10) << "\t" << msm.get_SurfaceWaterStorage();// {mm]
+	fout << fixed << setprecision(10) << "\t" << msm.get_SurfaceRunOff();// {mm]
+	fout << fixed << setprecision(10) << "\t" << msm.get_SnowDepth(); // [mm]
+	fout << fixed << setprecision(10) << "\t" << msm.get_FrostDepth();
+	fout << fixed << setprecision(10) << "\t" << msm.get_ThawDepth();
   for(int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
     fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint();
   }
@@ -2108,7 +2146,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   fout << "\t" << monica.get_AtmosphericCO2Concentration();// [ppm]
   fout << fixed << setprecision(2) << "\t" << monica.get_GroundwaterDepth();// [m]
   fout << fixed << setprecision(1) << "\t" << msm.get_GroundwaterRecharge();// [mm]
-  fout << "\t" << msq.get_NLeaching(); // [kg N ha-1]
+	fout << fixed << setprecision(10) << "\t" << msq.get_NLeaching(); // [kg N ha-1] // JV! + fixed << setprecision(10)
 
 
   for(int i_Layer = 0; i_Layer < outLayers; i_Layer++) {

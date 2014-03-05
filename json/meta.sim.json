@@ -1,0 +1,68 @@
+{
+  "time": {
+    "startYear": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    },
+    "endYear": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    }
+  },
+  "switch": {
+    "useSecondaryYieldOn": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    },
+    "nitrogenResponseOn": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    },
+    "waterDeficitResponseOn": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    },
+    "emergenceMoistureControlOn": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    },
+    "emergenceFloodingControlOn": {
+      "desc": "",
+      "unit": "",
+      "min": null,
+      "max": null
+    }
+  },
+  "init": {
+    "percentageFC": {
+      "desc": "Initial soil moisture content in percent field capacity",
+      "unit": "mm mm-1",
+      "min": 0,
+      "max": 1
+    },
+    "soilNitrate": {
+      "desc": "Initial soil nitrate content",
+      "unit": "kg (NO3) m-3",
+      "min": null,
+      "max": null
+    },
+    "soilAmmonium": {
+      "desc": "Initial soil ammonium content",
+      "unit": "kg (NH4) m-3",
+      "min": null,
+      "max": null
+    }
+  }
+}

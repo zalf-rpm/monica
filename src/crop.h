@@ -313,7 +313,7 @@ namespace Monica
 
     //! old N
     int vs_NumberOfLayers;
-    static const double vw_AtmosphericCO2Concentration;
+//    static const double vw_AtmosphericCO2Concentration;
     double vw_MeanAirTemperature;
     double vw_GlobalRadiation;
     double vw_SunshineHours;

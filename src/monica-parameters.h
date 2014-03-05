@@ -492,6 +492,9 @@ namespace Monica
 		double vs_SoilRawDensity() const;
 		void set_vs_SoilRawDensity(double srd);
 
+		double vs_SoilBulkDensity() const;
+		void set_vs_SoilBulkDensity(double sbd);
+
 		double vs_SoilOrganicCarbon() const;
 		void set_vs_SoilOrganicCarbon(double soc);
 
@@ -499,7 +502,7 @@ namespace Monica
 		void set_vs_SoilOrganicMatter(double som);
 
 		double vs_SoilSiltContent() const;
-		double vs_SoilBulkDensity() const;
+		
 		std::string toString() const;
 
 		double texture2lambda(double sand, double clay);
@@ -521,6 +524,7 @@ namespace Monica
 		
 	private:
 		double _vs_SoilRawDensity;
+		double _vs_SoilBulkDensity;
 		double _vs_SoilOrganicCarbon;
 		double _vs_SoilOrganicMatter;
 	};

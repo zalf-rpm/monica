@@ -1627,6 +1627,8 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
           // already considered in crop part!
           vm_Transpiration[i_Layer] = monica.cropGrowth()->get_Transpiration(i_Layer);
 
+					//std::cout << setprecision(11) << "vm_Transpiration[i_Layer]: " << i_Layer << ", " << vm_Transpiration[i_Layer] << std::endl;
+
           // Transpiration is capped in case potential ET after surface
           // and interception evaporation has occurred on same day
           if (vm_EvaporationFromSurface) {
@@ -1659,6 +1661,12 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   } // vm_PotentialEvapotranspiration > 0.0
   vm_ActualEvapotranspiration = vm_ActualTranspiration + vm_ActualEvaporation + vc_EvaporatedFromIntercept
       + vm_EvaporatedFromSurface;
+
+	//std::cout << setprecision(11) << "vm_ActualTranspiration: " << vm_ActualTranspiration << std::endl;
+	//std::cout << setprecision(11) << "vm_ActualEvaporation: " << vm_ActualEvaporation << std::endl;
+	//std::cout << setprecision(11) << "vc_EvaporatedFromIntercept: " << vc_EvaporatedFromIntercept << std::endl;
+	//std::cout << setprecision(11) << "vm_EvaporatedFromSurface: " << vm_EvaporatedFromSurface << std::endl;
+
   if (crop) {
     crop->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
   }

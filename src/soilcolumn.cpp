@@ -357,7 +357,7 @@ void SoilLayer::calc_vs_SoilMoisture_pF() {
   double vs_VanGenuchtenN = exp(0.053
                                 - (0.9 * vs_SoilSandContent)
                                 - (1.3 * vs_SoilClayContent)
-			  + (1.5 * (pow(vs_SoilSandContent, 2.0))));
+																+ (0.015 * (pow(vs_SoilSandContent, 2.0)))); // JV! 1.5 -> 0.015
 
   /** Van Genuchten retention curve */
   double vs_MatricHead;
@@ -386,7 +386,23 @@ void SoilLayer::calc_vs_SoilMoisture_pF() {
       );
   }
 
+	//  debug() << "get_Vs_SoilMoisture_m3: " << get_Vs_SoilMoisture_m3() << std::endl;
+	//  debug() << "vs_SoilSandContent: " << vs_SoilSandContent << std::endl;
+	//  debug() << "vs_SoilOrganicCarbon: " << vs_SoilOrganicCarbon() << std::endl;
+	//  debug() << "vs_SoilBulkDensity: " << vs_SoilBulkDensity() << std::endl;
+	//  debug() << "that.vs_SoilClayContent: " << vs_SoilClayContent << std::endl;
+	//  debug() << "vs_ThetaR: " << vs_ThetaR << std::endl;
+	//  debug() << "vs_ThetaS: " << vs_ThetaS << std::endl;
+	//  debug() << "vs_VanGenuchtenAlpha: " << vs_VanGenuchtenAlpha << std::endl;
+	//  debug() << "vs_VanGenuchtenM: " << vs_VanGenuchtenM << std::endl;
+	//  debug() << "vs_VanGenuchtenN: " << vs_VanGenuchtenN << std::endl;
+	//  debug() << "vs_MatricHead: " << vs_MatricHead << std::endl;
+
   _vs_SoilMoisture_pF = log10(vs_MatricHead);
+
+	/* JV! set _vs_SoilMoisture_pF to "small" number in case of vs_Theta "close" to vs_ThetaS (vs_Psi < 1 -> log(vs_Psi) < 0) */
+	_vs_SoilMoisture_pF = (_vs_SoilMoisture_pF < 0.0) ? 5.0E-7 : _vs_SoilMoisture_pF;
+	//  debug() << "_vs_SoilMoisture_pF: " << _vs_SoilMoisture_pF << std::endl;
 }
 
 /**
@@ -436,7 +452,7 @@ double SoilLayer::get_FieldCapacity()
     double vs_VanGenuchtenN = exp(0.053
 			    - 0.9 * vs_SoilSandContent
 			    - 1.3 * vs_SoilClayContent
-			    + 1.5 * (pow(vs_SoilSandContent, 2.0)));
+					+ 0.015 * (pow(vs_SoilSandContent, 2.0))); // JV! 1.5 -> 0.015
 
     //***** Van Genuchten retention curve to calculate volumetric water content at
     //***** moisture equivalent (Field capacity definition KA5)
@@ -571,9 +587,11 @@ centralParameterProvider(cpp)
  * in private member variable _vs_NumberOfOrganicLayers.
  */
 void SoilColumn::set_vs_NumberOfOrganicLayers() {
+	//std::cout << "--------- set_vs_NumberOfOrganicLayers -----------" << std::endl;
   double lsum = 0;
   int count = 0;
   for(int i = 0; i < vs_NumberOfLayers(); i++) {
+		//std::cout << vs_SoilLayers[i].vs_LayerThickness << std::endl;
     count++;
     lsum += vs_SoilLayers[i].vs_LayerThickness;
 
@@ -581,6 +599,10 @@ void SoilColumn::set_vs_NumberOfOrganicLayers() {
       break;
   }
   _vs_NumberOfOrganicLayers = count;
+
+	//std::cout << vs_NumberOfLayers() << std::endl;
+	//std::cout << generalParams.ps_MaxMineralisationDepth << std::endl;
+	//std::cout << _vs_NumberOfOrganicLayers << std::endl;
 }
 
 /**
