@@ -88,20 +88,24 @@ namespace Monica
 		{ }
 
     Env(const Env&);
-
-    ~Env();
-
+		    
     /**
      * @brief Constructor
      * @param sps Soil parameters
      * @param nols Number of layers
      * @param lt Layer thickness
      */
-    Env(const SoilPMs* sps, const CentralParameterProvider cpp);
+    Env(const SoilPMs* sps, CentralParameterProvider cpp);
+
+		//use this version if soil parameters can't be safely kept elsewhere and Env is responsible for deleting them
+		Env(SoilPMsPtr sps, CentralParameterProvider cpp);
 
     int numberOfPossibleSteps();
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 
+	private:
+		SoilPMsPtr _soilParamsPtr;
+	public:
     const SoilPMs* soilParams;  //! a vector of soil parameter objects = layers of soil
 
     unsigned int noOfLayers;              //! number of layers

@@ -21,9 +21,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <iostream>
+#include <fstream>
+#include <sys/stat.h>
 
-#include "configuration.h"
-
+#include "monica-parameters.h"
 #include "monica.h"
 #include "soilcolumn.h"
 #include "soiltemperature.h"
@@ -31,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilorganic.h"
 #include "soiltransport.h"
 #include "crop.h"
-#include "monica-parameters.h"
 
 #include "conversion.h"
 #include "climate/climate-common.h"
@@ -39,9 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/algorithms.h"
 #include "tools/read-ini.h"
 
-#include <iostream>
-#include <fstream>
-#include <sys/stat.h>
+#include "configuration.h"
 
 #ifdef __unix__
   #include <sys/io.h>
@@ -308,8 +307,8 @@ const Result Configuration::run()
   // TODO: Bedeutung unklar. Scheint weder die max. Anzahl je Horizont noch je Boden zu sein
   int maxNoOfLayers = int(maxDepthCm / lThicknessCm);
 
-  std::vector<SoilParameters> layers;
-  if (!createLayers(layers, horizonsArr, lThicknessCm, maxNoOfLayers)) {
+  SoilPMsPtr layers(new SoilPMs());
+  if (!createLayers(*(layers.get()), horizonsArr, lThicknessCm, maxNoOfLayers)) {
     std::cerr << "Error fetching soil data"  << std::endl;
     return Result();
   }
@@ -334,7 +333,7 @@ const Result Configuration::run()
   
   debug() << "fetched crop data"  << std::endl;
 
-  Env env (&layers, cpp);
+	Env env(layers, cpp);
   env.general = gp;
   env.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
@@ -735,7 +734,7 @@ bool Configuration::addIrrigations(ProductionProcess &pp, cson_array* irriArr)
 bool Configuration::createClimate(Climate::DataAccessor &da, CentralParameterProvider &cpp, double latitude, bool useLeapYears)
 {
   bool ok = true;
-  std::string pathToFile = _dirNameMet + '/' + _preMetFiles;
+  std::string pathToFile = _dirNameMet + pathSeparator() + _preMetFiles;
 
   std::vector<double> _tmin;
   std::vector<double> _tavg;

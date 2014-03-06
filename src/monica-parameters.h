@@ -593,9 +593,6 @@ namespace Monica
 		std::map<std::string, std::map<int, double> > cap_rates_map;
 	};
 
-	/**
-	 *
-	 */
 	typedef std::vector<SoilParameters> SoilPMs;
 	typedef boost::shared_ptr<SoilPMs> SoilPMsPtr;
 

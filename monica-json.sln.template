@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "monica-hermes", "monica-hermes\monica-hermes.vcxproj", "{A5570924-90D5-458B-B16B-08E03AC4C1CD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "monica-json", "monica-json\monica-json.vcxproj", "{A5570924-90D5-458B-B16B-08E03AC4C1CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

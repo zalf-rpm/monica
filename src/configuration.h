@@ -31,8 +31,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cson/cson_amalgamation_core.h"
 #include "climate/climate-common.h"
 
-namespace Monica 
+namespace Monica
 {
+
+	inline std::string pathSeparator()
+	{
+		return 
+#ifdef __unix__
+		"/";
+#else
+		"\\";
+#endif
+	}
 
 class Result;
 class SoilParameters;

@@ -22,8 +22,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
+
 #include <string>
-#include <boost/filesystem/operations.hpp>
+//#include <boost/filesystem/operations.hpp>
 
 #include "db/abstract-db-connections.h"
 
@@ -36,6 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #include "monica.h"
 #endif
+
+using namespace std;
+using namespace Monica;
 
 /* embedded meta.xxx.json.o */
 // extern char _binary_meta_sim_json_start;
@@ -58,7 +63,7 @@ static int initMetaCson()
 {
   /* open and parse meta.xxx files */
   int rc = 0;
-  FILE* metaSimFile = fopen("meta.json/meta.sim.json", "r" );
+	FILE* metaSimFile = fopen((string("meta.json") + pathSeparator() + "meta.sim.json").c_str(), "r" );
   if (!metaSimFile) {
     std::cerr << "Error opening meta.sim.json file [meta.json/meta.sim.json]!" << std::endl;
     return 3;
@@ -72,7 +77,7 @@ static int initMetaCson()
     }    
   }
 
-  FILE* metaSiteFile = fopen("meta.json/meta.site.json", "r" );
+	FILE* metaSiteFile = fopen((string("meta.json") + pathSeparator() + "meta.site.json").c_str(), "r");
   if (!metaSiteFile) {
     std::cerr << "Error opening meta.site.json file [meta.json/meta.site.json]!" << std::endl;
     return 3;
@@ -86,7 +91,7 @@ static int initMetaCson()
     }    
   }
 
-  FILE* metaCropFile = fopen("meta.json/meta.crop.json", "r" );
+	FILE* metaCropFile = fopen((string("meta.json") + pathSeparator() + "meta.crop.json").c_str(), "r");
   if (!metaCropFile) {
     std::cerr << "Error opening meta.crop.json file [meta.json/meta.crop.json]!" << std::endl;
     return 3;
@@ -251,23 +256,23 @@ int main(int argc, char** argv)
       return 0;
     }
   }
-
+		
   if( dirNameJSON && (0!=strcmp("-",dirNameJSON)) && projectName && (0!=strcmp("-",projectName))) {
-    std::string simFilePath = std::string(dirNameJSON) + "/" + std::string(projectName) + ".sim.json";
+		std::string simFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".sim.json";
     simFile = fopen( simFilePath.c_str(), "r" );
     if (!simFile) {
       std::cerr << "Error opening sim file [" << simFilePath << "]!" << std::endl;
       return 3;
     }
 
-    std::string siteFilePath = std::string(dirNameJSON) + "/" + std::string(projectName) + ".site.json";
+		std::string siteFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".site.json";
     siteFile = fopen( siteFilePath.c_str(), "r" );
     if (!siteFile) {
       std::cerr << "Error opening site file [" << siteFilePath << "]!" << std::endl;
       return 3;
     }
     
-    std::string cropFilePath = std::string(dirNameJSON) + "/" + std::string(projectName) + ".crop.json";
+		std::string cropFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".crop.json";
     cropFile = fopen( cropFilePath.c_str(), "r" );
     if (!cropFile) {
       std::cerr << "Error opening crop file [" << cropFilePath << "]!" << std::endl;
@@ -280,10 +285,10 @@ int main(int argc, char** argv)
   }
 
   if (dbIniName && (0!=strcmp("-",dbIniName))) {
-    if (!boost::filesystem::exists(dbIniName)) {
-      std::cerr << "Error finding db ini [" << dbIniName << "]!" << std::endl;
-      return 4;
-    }   
+    //if (!boost::filesystem::exists(dbIniName)) {
+    //  std::cerr << "Error finding db ini [" << dbIniName << "]!" << std::endl;
+    //  return 4;
+    //}   
   }
   else {
     showHelp();
@@ -291,10 +296,10 @@ int main(int argc, char** argv)
   }
 
   if( outPath && (0!=strcmp("-",outPath))) {
-    if (!boost::filesystem::exists(outPath)) {
-      std::cerr << "Error finding output [" << outPath << "]!" << std::endl;
-      return 4;
-    }   
+    //if (!boost::filesystem::exists(outPath)) {
+    //  std::cerr << "Error finding output [" << outPath << "]!" << std::endl;
+    //  return 4;
+    //}   
   }
   else {
     showHelp();

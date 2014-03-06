@@ -200,3 +200,6 @@ installer/Hohenfinow2/*.dat
 /monica-mpmas/DEF237
 /monica-mpmas/monica-mpmas.vcxproj
 /monica-mpmas/monica-mpmas.vcxproj.filters
+monica-json/monica-json.vcxproj
+monica-json/monica-json.vcxproj.filters
+monica-json.sln

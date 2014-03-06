@@ -74,12 +74,12 @@ namespace
 
 //------------------------------------------------------------------------------
 
-Env::Env(const SoilPMs* sps, const CentralParameterProvider cpp)
-	: soilParams(sps),
-		customId(-1),
-		centralParameterProvider(cpp)
+Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
+: soilParams(sps),
+customId(-1),
+centralParameterProvider(cpp)
 {
-  UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
+	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
   windSpeedHeight = user_env.p_WindSpeedHeight;
   atmosphericCO2 = user_env.p_AthmosphericCO2;
   albedo = user_env.p_Albedo;
@@ -90,6 +90,26 @@ Env::Env(const SoilPMs* sps, const CentralParameterProvider cpp)
   useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
   useSecondaryYields = user_env.p_UseSecondaryYields;
 }
+
+Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp) :
+_soilParamsPtr(spsPtr),
+soilParams(spsPtr.get()),
+customId(-1),
+centralParameterProvider(cpp)
+{
+	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
+	windSpeedHeight = user_env.p_WindSpeedHeight;
+	atmosphericCO2 = user_env.p_AthmosphericCO2;
+	albedo = user_env.p_Albedo;
+
+	noOfLayers = user_env.p_NumberOfLayers;
+	layerThickness = user_env.p_LayerThickness;
+	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
+	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
+	useSecondaryYields = user_env.p_UseSecondaryYields;
+}
+
+
 
 string Env::toString() const
 {
@@ -117,8 +137,9 @@ string Env::toString() const
  * @param env
  * @return
  */
-Env::Env(const Env& env)
-	: customId(env.customId)
+Env::Env(const Env& env) : 
+_soilParamsPtr(env._soilParamsPtr),
+customId(env.customId)
 {
   debug() << "Copy constructor: Env" << "\tsoil param size: " << env.soilParams->size() << endl;
   soilParams = env.soilParams;
@@ -153,10 +174,6 @@ Env::Env(const Env& env)
 
   pathToOutputDir = env.pathToOutputDir;
   mode = env.mode;
-}
-
-Env::~Env()
-{
 }
 
 /**
