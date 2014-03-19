@@ -1095,7 +1095,7 @@ CropParameters::CropParameters() :
     pc_NumberOfOrgans(0),
     pc_CarboxylationPathway(0),
     pc_DefaultRadiationUseEfficiency(0),
-    pc_FixingN(0),
+    pc_PartBiologicalNFixation(0),
     pc_InitialKcFactor(0),
     pc_LuxuryNCoeff(0),
     pc_MaxAssimilationRate(0),
@@ -1186,7 +1186,7 @@ string CropParameters::toString() const
 
   s << "------------------------------------------------" << endl;
 
-  s << "pc_FixingN:\t\t\t\t\t" << pc_FixingN << endl;
+  s << "pc_FixingN:\t\t\t\t\t" << pc_PartBiologicalNFixation << endl;
   s << "pc_MinimumNConcentration:\t" << pc_MinimumNConcentration << endl;
   s << "pc_LuxuryNCoeff:\t\t\t" << pc_LuxuryNCoeff << endl;
   s << "pc_NConcentrationB0:\t\t" << pc_NConcentrationB0 << endl;
@@ -1434,7 +1434,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_NConcentrationRoot = satof(row[i++]);
         cps->pc_InitialKcFactor = satof(row[i++]);
         cps->pc_DevelopmentAccelerationByNitrogenStress = satoi(row[i++]);
-        cps->pc_FixingN = satoi(row[i++]);
+        cps->pc_PartBiologicalNFixation = satof(row[i++]);
         cps->pc_LuxuryNCoeff = satof(row[i++]);
         cps->pc_MaxCropHeight = satof(row[i++]);
         cps->pc_ResidueNRatio = satof(row[i++]);

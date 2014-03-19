@@ -1415,10 +1415,13 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tSumNUp";
   fout << "\tActNup";
   fout << "\tPotNup";
+  fout << "\tNFixed";
   fout << "\tTarget";
 
   fout << "\tCritN";
   fout << "\tAbBiomN";
+  fout << "\tYieldN";
+  fout << "\tProtein";
 
   fout << "\tNPP";
   fout << "\tNPPRoot";
@@ -1506,8 +1509,8 @@ Monica::initializeFoutHeader(ofstream &fout)
 
   fout << "\tNetNmin";
   fout << "\tDenit";
-	fout << "\tN2O";
-	fout << "\tSoilpH";
+  fout << "\tN2O";
+  fout << "\tSoilpH";
   fout << "\tNEP";
   fout << "\tNEE";
   fout << "\tRh";
@@ -1556,16 +1559,18 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[m]";          // CropHeight
   fout << "\t[m2/m2]";      // LeafAreaIndex
   fout << "\t[layer]";      // RootingDepth
-  fout << "\t[kg/ha]";       // AbovegroundBiomass
+  fout << "\t[kg/ha]";      // AbovegroundBiomass
 
   fout << "\t[kgN/ha]";     // TotalBiomassNContent
   fout << "\t[kgN/ha]";     // SumTotalNUptake
   fout << "\t[kgN/ha]";     // ActNUptake
   fout << "\t[kgN/ha]";     // PotNUptake
+  fout << "\t[kgN/ha]";     // NFixed
   fout << "\t[kgN/kg]";     // TargetNConcentration
-
   fout << "\t[kgN/kg]";     // CriticalNConcentration
   fout << "\t[kgN/kg]";     // AbovegroundBiomassNConcentration
+  fout << "\t[kgN/kg]";     // PrimaryYieldNConcentration
+  fout << "\t[kg/kg]";      // RawProteinConcentration
 
   fout << "\t[kg C ha-1]";   // NPP
   fout << "\t[kg C ha-1]";   // NPP root
@@ -1894,11 +1899,13 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_SumTotalNUptake();
     fout << fixed << setprecision(2) << "\t" << mcg->get_ActNUptake(); // [kg N ha-1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_PotNUptake(); // [kg N ha-1]
-    fout << fixed << setprecision(3) << "\t" << mcg->get_TargetNConcentration();//[kg N kg-1]
+    fout << fixed << setprecision(2) << "\t" << mcg->get_BiologicalNFixation(); // [kg N ha-1]
+	fout << fixed << setprecision(3) << "\t" << mcg->get_TargetNConcentration();//[kg N kg-1]
 
     fout << fixed << setprecision(3) << "\t" << mcg->get_CriticalNConcentration();//[kg N kg-1]
     fout << fixed << setprecision(3) << "\t" << mcg->get_AbovegroundBiomassNConcentration();//[kg N kg-1]
-
+	fout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();//[kg N kg-1]
+    fout << fixed << setprecision(3) << "\t" << mcg->get_RawProteinConcentration();//[kg kg-1]
     fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
         fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C ha-1]
@@ -1942,7 +1949,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     gout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomassNContent();
     gout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryYieldNContent();
     gout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
-    gout << "\t0"; //! @todo
+    gout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();
     gout << fixed << setprecision(3) << "\t" << mcg->get_RawProteinConcentration();
 
   } else { // crop is not planted
@@ -1985,13 +1992,15 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00";   // SumTotalNUptake
     fout << "\t0.00";   // ActNUptake
     fout << "\t0.00";   // PotNUptake
+	fout << "\t0.00";   // NFixed
     fout << "\t0.000";  // TargetNConcentration
-
     fout << "\t0.000";  // CriticalNConcentration
     fout << "\t0.000";  // AbovegroundBiomassNConcentration
-    fout << "\t0.0"; // NetPrimaryProduction
+	fout << "\t0.000";  // PrimaryYieldNConcentration
+    fout << "\t0.000";  // RawProteinConcentration
 
-    fout << "\t0.0"; // NPP root
+	fout << "\t0.0";    // NetPrimaryProduction
+	fout << "\t0.0"; // NPP root
     fout << "\t0.0"; // NPP leaf
     fout << "\t0.0"; // NPP shoot
     fout << "\t0.0"; // NPP fruit

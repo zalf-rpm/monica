@@ -111,7 +111,7 @@ vc_EvaporatedFromIntercept(0.0),
 vc_ExtraterrestrialRadiation(0.0),
 vc_FinalDevelopmentalStage(0),
 vc_FixedN(0.0),
-pc_FixingN(cropParams.pc_FixingN),
+pc_PartBiologicalNFixation(cropParams.pc_PartBiologicalNFixation),
 vo_FreshSoilOrganicMatter(vs_NumberOfLayers, 0.0),
 vc_GlobalRadiation(0.0),
 vc_GreenAreaIndex(0.0),
@@ -209,6 +209,7 @@ vc_TimeUnderAnoxia(0),
 vc_TotalBiomass(0.0),
 vc_TotalBiomassNContent(0.0),
 vc_TotalCropHeatImpact(0.0),
+vc_TotalNInput(0.0),
 vc_TotalNUptake(0.0),
 vc_TotalRespired(0.0),
 vc_Respiration(0.0),
@@ -1794,7 +1795,7 @@ void CropGrowth::fc_CropNitrogen()
     vc_RootNRedux = 1.0;
   }
 
-  if (pc_FixingN == 0){
+//  if (pc_PartBiologicalNFixation <= 0.01){
     if (vc_NConcentrationAbovegroundBiomass < vc_CriticalNConcentration) {
 
       if (vc_NConcentrationAbovegroundBiomass <= pc_MinimumNConcentration) {
@@ -1814,15 +1815,14 @@ void CropGrowth::fc_CropNitrogen()
     } else {
       vc_CropNRedux = 1.0;
     }
-  } else if (pc_FixingN == 1){
+ /* } else {
     if (vc_NConcentrationAbovegroundBiomass < vc_CriticalNConcentration) {
       vc_FixedN = vc_CriticalNConcentration - vc_NConcentrationAbovegroundBiomass;
       vc_NConcentrationAbovegroundBiomass = vc_CriticalNConcentration;
       vc_CropNRedux = 1.0;
     }
-  } else {
-    vc_CropNRedux = 1.0;
   }
+  */
 
   if (pc_NitrogenResponseOn == false){
 	  vc_CropNRedux = 1.0;
@@ -1886,7 +1886,7 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
   vc_TotalBiomass = 0.0;
 
   //old PESUM [kg m-2 --> kg ha-1]
-  vc_TotalBiomassNContent += soilColumn.vq_CropNUptake * 10000.0;
+  vc_TotalBiomassNContent += (soilColumn.vq_CropNUptake * 10000.0) + vc_FixedN;
 
 
 
@@ -2674,6 +2674,8 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
   double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
 
   vc_TotalNUptake = 0.0;
+  vc_TotalNInput = 0.0;
+  vc_FixedN = 0.0;
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++){
     vc_NUptakeFromLayer[i_Layer] = 0.0;
   }
@@ -2720,31 +2722,31 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
       if (vc_CropNDemand > 0.0) {
 
         if (vc_ConvectiveNUptake >= vc_CropNDemand) {
-	// convective N uptake is sufficient
-	vc_NUptakeFromLayer[i_Layer] = vc_CropNDemand * vc_ConvectiveNUptakeFromLayer[i_Layer] / vc_ConvectiveNUptake;
+	    // convective N uptake is sufficient
+	         vc_NUptakeFromLayer[i_Layer] = vc_CropNDemand * vc_ConvectiveNUptakeFromLayer[i_Layer] / vc_ConvectiveNUptake;
         } else {
-	// N demand is not covered
-	if ((vc_CropNDemand - vc_ConvectiveNUptake) < vc_DiffusiveNUptake) {
-	  vc_NUptakeFromLayer[i_Layer] = vc_ConvectiveNUptakeFromLayer[i_Layer] + ((vc_CropNDemand
+	   // N demand is not covered
+	      if ((vc_CropNDemand - vc_ConvectiveNUptake) < vc_DiffusiveNUptake) {
+	           vc_NUptakeFromLayer[i_Layer] = vc_ConvectiveNUptakeFromLayer[i_Layer] + ((vc_CropNDemand
 				   - vc_ConvectiveNUptake) * vc_DiffusiveNUptakeFromLayer[i_Layer] / vc_DiffusiveNUptake);
-	} else {
-	  vc_NUptakeFromLayer[i_Layer] = vc_ConvectiveNUptakeFromLayer[i_Layer] + vc_DiffusiveNUptakeFromLayer[i_Layer];
-	}
+	      } else {
+	           vc_NUptakeFromLayer[i_Layer] = vc_ConvectiveNUptakeFromLayer[i_Layer] + vc_DiffusiveNUptakeFromLayer[i_Layer];
+	      }
         }
 
         vc_ConvectiveNUptake_1 += vc_ConvectiveNUptakeFromLayer[i_Layer];
         vc_DiffusiveNUptake_1 += vc_DiffusiveNUptakeFromLayer[i_Layer];
 
         if (vc_NUptakeFromLayer[i_Layer] > ((vs_SoilMineralNContent[i_Layer] * vs_LayerThickness) - pc_MinimumAvailableN)) {
-	vc_NUptakeFromLayer[i_Layer] = (vs_SoilMineralNContent[i_Layer] * vs_LayerThickness )- pc_MinimumAvailableN;
+	         vc_NUptakeFromLayer[i_Layer] = (vs_SoilMineralNContent[i_Layer] * vs_LayerThickness )- pc_MinimumAvailableN;
         }
 
         if (vc_NUptakeFromLayer[i_Layer] > (pc_MaxCropNDemand / 10000.0 * 0.75)) {
-	vc_NUptakeFromLayer[i_Layer] = (pc_MaxCropNDemand / 10000.0 * 0.75);
+	         vc_NUptakeFromLayer[i_Layer] = (pc_MaxCropNDemand / 10000.0 * 0.75);
         }
 
         if (vc_NUptakeFromLayer[i_Layer] < 0.0) {
-	vc_NUptakeFromLayer[i_Layer] = 0.0;
+	         vc_NUptakeFromLayer[i_Layer] = 0.0;
         }
       } else {
         vc_NUptakeFromLayer[i_Layer] = 0.0;
@@ -2753,9 +2755,20 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
       vc_TotalNUptake += vc_NUptakeFromLayer[i_Layer] * 10000.0; //[kg m-2] --> [kg ha-1]
 
     } // for
+
+    vc_FixedN = pc_PartBiologicalNFixation * vc_CropNDemand * 10000.0; // [kg N ha-1]
+    //Part of the deficit which can be covered by biologocal N fixation.
+
+    if (((vc_CropNDemand * 10000.0) - vc_TotalNUptake) < vc_FixedN){
+       vc_TotalNInput = vc_CropNDemand * 10000.0;
+       vc_FixedN = (vc_CropNDemand * 10000.0) - vc_TotalNUptake;
+    } else {
+       vc_TotalNInput = vc_TotalNUptake + vc_FixedN;
+    }
   } // if
 
   vc_SumTotalNUptake += vc_TotalNUptake;
+
 
   if (vc_RootBiomass > vc_RootBiomassOld) {
 
@@ -2763,7 +2776,7 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
     vc_NConcentrationRoot = ((vc_RootBiomassOld * vc_NConcentrationRoot)
         + ((vc_RootBiomass - vc_RootBiomassOld) / (vc_AbovegroundBiomass
         - vc_AbovegroundBiomassOld + vc_BelowgroundBiomass - vc_BelowgroundBiomassOld
-        + vc_RootBiomass - vc_RootBiomassOld) * vc_TotalNUptake)) / vc_RootBiomass;
+        + vc_RootBiomass - vc_RootBiomassOld) * vc_TotalNInput)) / vc_RootBiomass;
 
     vc_NConcentrationRoot = min(vc_NConcentrationRoot, pc_StageMaxRootNConcentration[vc_DevelopmentalStage]);
 
@@ -2773,7 +2786,7 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
     }
   }
 
-  vc_NConcentrationAbovegroundBiomass = (vc_TotalBiomassNContent + vc_TotalNUptake
+  vc_NConcentrationAbovegroundBiomass = (vc_TotalBiomassNContent + vc_TotalNInput
 				 - (vc_RootBiomass * vc_NConcentrationRoot))
 				 / (vc_AbovegroundBiomass + (vc_BelowgroundBiomass / pc_ResidueNRatio));
 
@@ -2783,7 +2796,7 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
     vc_NConcentrationAbovegroundBiomass = vc_AbovegroundBiomassOld * vc_NConcentrationAbovegroundBiomassOld
 				  / vc_AbovegroundBiomass;
 
-    vc_NConcentrationRoot = (vc_TotalBiomassNContent + vc_TotalNUptake
+    vc_NConcentrationRoot = (vc_TotalBiomassNContent + vc_TotalNInput
 		         - (vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass)
 		         - (vc_NConcentrationAbovegroundBiomass / pc_ResidueNRatio * vc_BelowgroundBiomass)) / vc_RootBiomass;
   }
@@ -3296,6 +3309,10 @@ double CropGrowth::get_ResiduesNConcentration() const
          (vc_TotalBiomass - get_OrganBiomass(0) - get_PrimaryCropYield()));
 }
 
+/**
+ * @brief Returns primary yield N concentration [kg kg-1]
+ * @return primary yield N concentration
+ */
 double CropGrowth::get_PrimaryYieldNConcentration() const
 {
   return (vc_TotalBiomassNContent -
@@ -3350,6 +3367,15 @@ double CropGrowth::get_ActNUptake() const
 double CropGrowth::get_PotNUptake() const
 {
   return vc_CropNDemand * 10000.0;
+}
+
+/**
+ * @brief Returns the crop's N input via atmospheric fixation [kg N ha-1]
+ * @return Biological N fixation
+ */
+double CropGrowth::get_BiologicalNFixation() const
+{
+  return vc_FixedN;
 }
 
 /**

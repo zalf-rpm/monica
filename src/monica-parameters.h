@@ -337,7 +337,7 @@ namespace Monica
     int pc_NumberOfOrgans; /**<  */
     int pc_CarboxylationPathway; /**<  */
     double pc_DefaultRadiationUseEfficiency; /**<  */
-    int pc_FixingN; /**<  */
+    double pc_PartBiologicalNFixation; /**<  */
     double pc_InitialKcFactor; /**<  */
     double pc_LuxuryNCoeff; /**<  */
     double pc_MaxAssimilationRate; /**<  */

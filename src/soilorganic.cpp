@@ -1111,17 +1111,17 @@ void SoilOrganic::fo_Nitrification() {
 
     // Calculate nitrification rate coefficients
 //    cout << "SO-2:\t" << soilColumn[i_Layer].vs_SoilMoisture_pF() << endl;
-		vo_AmmoniaOxidationRateCoeff[i_Layer] = po_AmmoniaOxidationRateCoeffStandard * fo_TempOnNitrification(
+    vo_AmmoniaOxidationRateCoeff[i_Layer] = po_AmmoniaOxidationRateCoeffStandard * fo_TempOnNitrification(
         soilColumn[i_Layer].get_Vs_SoilTemperature()) * fo_MoistOnNitrification(soilColumn[i_Layer].vs_SoilMoisture_pF());
 
     vo_AmmoniaOxidationRate[i_Layer] = vo_AmmoniaOxidationRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SoilNH4;
 
-		vo_NitriteOxidationRateCoeff[i_Layer] = po_NitriteOxidationRateCoeffStandard
+    vo_NitriteOxidationRateCoeff[i_Layer] = po_NitriteOxidationRateCoeffStandard
         * fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
         * fo_MoistOnNitrification(soilColumn[i_Layer].vs_SoilMoisture_pF())
-            * fo_NH3onNitriteOxidation(soilColumn[i_Layer].vs_SoilNH4,soilColumn[i_Layer].vs_SoilpH);
+        * fo_NH3onNitriteOxidation(soilColumn[i_Layer].vs_SoilNH4,soilColumn[i_Layer].vs_SoilpH);
 
-    vo_NitriteOxidationRate[i_Layer] = vo_NitriteOxidationRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SoilNH4;
+    vo_NitriteOxidationRate[i_Layer] = vo_NitriteOxidationRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SoilNO2;
 
   }
 
@@ -1214,10 +1214,11 @@ void SoilOrganic::fo_N2OProduction() {
 
   for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
 
+	  // pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being available at higer pH values
 			vo_N2OProduction[i_Layer] = soilColumn[i_Layer].vs_SoilNO2
 					 * fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
 					 * po_N2OProductionRate * (1.0 / (1.0 +
-					 (pow(10.0,soilColumn[i_Layer].vs_SoilpH) - OrganicConstants::po_pKaHNO2)));
+					 (pow(2.0,soilColumn[i_Layer].vs_SoilpH) - OrganicConstants::po_pKaHNO2)));
 
 			vo_N2O_Produced += vo_N2OProduction[i_Layer];
   }

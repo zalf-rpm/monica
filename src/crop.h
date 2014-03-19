@@ -264,6 +264,7 @@ namespace Monica
     double get_SumTotalNUptake() const;
     double get_ActNUptake() const;
     double get_PotNUptake() const;
+	double get_BiologicalNFixation() const;
     double get_AccumulatedETa() const;
     double get_GrossPrimaryProduction() const;
     double get_NetPrimaryProduction() const;
@@ -369,7 +370,6 @@ namespace Monica
     double vc_ExtraterrestrialRadiation;
     int vc_FinalDevelopmentalStage;
     double vc_FixedN;
-    int pc_FixingN;
     std::vector<double> vo_FreshSoilOrganicMatter;	//! old NFOS
     double vc_GlobalRadiation;
     double vc_GreenAreaIndex;
@@ -426,6 +426,7 @@ namespace Monica
     const std::vector<std::vector<double> >& pc_OrganSenescenceRate;	//! old DEAD
     double vc_OvercastDayRadiation;					//! old DRO
     double vc_OxygenDeficit;					//! old LURED
+	double pc_PartBiologicalNFixation;
     double vc_PhotoperiodicDaylength;				//! old DLP
     double vc_PhotActRadiationMean;					//! old RDN
     double pc_PlantDensity;
@@ -469,7 +470,8 @@ namespace Monica
     double vc_TotalBiomass;
     double vc_TotalBiomassNContent; //! old PESUM
     double vc_TotalCropHeatImpact;
-    double vc_TotalNUptake; 			//! old SUMPE
+    double vc_TotalNInput; 
+	double vc_TotalNUptake; 			//! old SUMPE
     double vc_TotalRespired;
     double vc_Respiration;
     double vc_SumTotalNUptake;    //! summation of all calculated NUptake; needed for sensitivity analysis
