@@ -47,7 +47,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\development\boost_1_55_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -62,7 +62,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\development\boost_1_55_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

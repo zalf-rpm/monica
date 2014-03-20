@@ -357,7 +357,7 @@ void SoilLayer::calc_vs_SoilMoisture_pF() {
   double vs_VanGenuchtenN = exp(0.053
                                 - (0.9 * vs_SoilSandContent)
                                 - (1.3 * vs_SoilClayContent)
-																+ (0.015 * (pow(vs_SoilSandContent, 2.0)))); // JV! 1.5 -> 0.015
+																+ (1.5 * (pow(vs_SoilSandContent, 2.0)))); 
 
   /** Van Genuchten retention curve */
   double vs_MatricHead;
@@ -452,7 +452,7 @@ double SoilLayer::get_FieldCapacity()
     double vs_VanGenuchtenN = exp(0.053
 			    - 0.9 * vs_SoilSandContent
 			    - 1.3 * vs_SoilClayContent
-					+ 0.015 * (pow(vs_SoilSandContent, 2.0))); // JV! 1.5 -> 0.015
+					+ 1.5 * (pow(vs_SoilSandContent, 2.0))); 
 
     //***** Van Genuchten retention curve to calculate volumetric water content at
     //***** moisture equivalent (Field capacity definition KA5)
