@@ -168,6 +168,9 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   double vc_NetPrimaryProduction = 0.0;
   vc_NetPrimaryProduction = crop ? crop->get_NetPrimaryProduction() : 0;
 
+	//cout << "get_OrganBiomass(organ) : " << organ << ", " << organ_percentage << std::endl; // JV!
+	//cout << "total_biomass : " << total_biomass << std::endl; // JV!
+
   //fo_OM_Input(vo_AOM_Addition);
   fo_Urea(vw_Precipitation + irrigationAmount);
   // Mineralisation Immobilisitation Turn-Over

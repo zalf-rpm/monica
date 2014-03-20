@@ -192,12 +192,14 @@ installer/Hohenfinow2/monica_parameters.txt
 installer/Hohenfinow2/*.dat
 
 /db-connections.ini
-/monica-mpmas/BRA010
-/monica-mpmas/BRA009BSL_.err
-/monica-mpmas/BRA010BSL_.err
-/monica-mpmas/BRA009
-/monica-eva/monica-eva.vcxproj
+/monica-mpmas/BRA*
 /monica-eva/monica-eva.vcxproj.filters
-/monica-swig/monica-swig.lastbuildstate
-/monica-swig/monica-swig.vcxproj
-/monica-swig/monica-swig.vcxproj.filters
+/monica-eva/monica-eva.vcxproj
+/monica-mpmas/ReadCropActIds.txt
+/monica-mpmas/ReadCropYields.txt
+/monica-mpmas/DEF237
+/monica-mpmas/monica-mpmas.vcxproj
+/monica-mpmas/monica-mpmas.vcxproj.filters
+monica-json/monica-json.vcxproj
+monica-json/monica-json.vcxproj.filters
+monica-json.sln

@@ -272,9 +272,12 @@ namespace Monica
     double get_AutotrophicRespiration() const;
     double get_OrganSpecificTotalRespired(int organ) const;
     double get_OrganSpecificNPP(int organ) const;
+
+    double getEffectiveRootingDepth() const;
     int get_NumberOfOrgans() const { return pc_NumberOfOrgans; }
 
     inline void accumulateEvapotranspiration(double ETa) { vc_accumulatedETa += ETa;}
+
 
     /**
 	 * @brief Getter for total biomass.
@@ -311,7 +314,7 @@ namespace Monica
 
     //! old N
     int vs_NumberOfLayers;
-    static const double vw_AtmosphericCO2Concentration;
+//    static const double vw_AtmosphericCO2Concentration;
     double vw_MeanAirTemperature;
     double vw_GlobalRadiation;
     double vw_SunshineHours;
@@ -493,6 +496,7 @@ namespace Monica
     double vc_accumulatedETa;
 
     int cutting_delay_days;
+    double vs_MaxEffectiveRootingDepth;
   };
 } // namespace Monica
 

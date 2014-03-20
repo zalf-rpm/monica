@@ -157,7 +157,7 @@ Monica::readSoilParametersForEva2(const GeneralParameters &gps, int profil_nr, i
 
                 // calc number of layers that lay in the horizon
         double horiz_width = double(horiz_unten - horiz_oben);
-        horiz_width = (round(horiz_width / 10.0)) * 10.0;
+        horiz_width = (std::round(horiz_width / 10.0)) * 10.0;
         int layer_in_horiz = int(horiz_width) / layer_thickness_cm;
 
         // read soil parameter

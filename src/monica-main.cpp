@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "debug.h"
 #include "monica.h"
-#include "monica-eom.h"
+//#include "monica-eom.h"
 #include "monica-parameters.h"
 #include "simulation.h"
 
@@ -52,8 +52,8 @@ using namespace Monica;
 
 #ifdef RUN_LANDCARE_DSS
 
-#include "eom/src/eom.h"
-using namespace Eom;
+//#include "eom/src/eom.h"
+//using namespace Eom;
 
 struct E
 {

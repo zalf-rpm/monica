@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\util\climate\climate-common.h" />
+    <ClInclude Include="..\..\util\db\abstract-db-connections.h" />
+    <ClInclude Include="..\..\util\db\db.h" />
+    <ClInclude Include="..\..\util\db\sqlite3.h" />
+    <ClInclude Include="..\..\util\tools\algorithms.h" />
+    <ClInclude Include="..\..\util\tools\datastructures.h" />
+    <ClInclude Include="..\..\util\tools\date.h" />
+    <ClInclude Include="..\..\util\tools\helper.h" />
+    <ClInclude Include="..\..\util\tools\read-ini.h" />
+    <ClInclude Include="..\src\conversion.h" />
+    <ClInclude Include="..\src\crop.h" />
+    <ClInclude Include="..\src\debug.h" />
+    <ClInclude Include="..\src\eva_methods.h" />
+    <ClInclude Include="..\src\monica-parameters.h" />
+    <ClInclude Include="..\src\monica.h" />
+    <ClInclude Include="..\src\simulation.h" />
+    <ClInclude Include="..\src\soilcolumn.h" />
+    <ClInclude Include="..\src\soilmoisture.h" />
+    <ClInclude Include="..\src\soilorganic.h" />
+    <ClInclude Include="..\src\soiltemperature.h" />
+    <ClInclude Include="..\src\soiltransport.h" />
+    <ClInclude Include="..\src\typedefs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="monica.i">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">echo In order to function correctly, please ensure the following environment variables are correctly set: 
+echo PYTHON_INCLUDE: %PYTHON_INCLUDE% 
+echo PYTHON_LIB: %PYTHON_LIB% 
+echo on ..\..\swigwin-2.10.0\swig.exe -c++ -python "%(FullPath)" </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(InputName)_wrap.cxx;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">echo In order to function correctly, please ensure the following environment variables are correctly set: 
+echo PYTHON_INCLUDE: %PYTHON_INCLUDE% 
+echo PYTHON_LIB: %PYTHON_LIB% 
+echo on 
+..\..\..\swigwin-2.0.10\swig.exe -DRUN_EVA -c++ -python "%(FullPath)" </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(InputName)_wrap.cxx;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\util\climate\climate-common.cpp" />
+    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp" />
+    <ClCompile Include="..\..\util\db\db.cpp" />
+    <ClCompile Include="..\..\util\db\sqlite3.c" />
+    <ClCompile Include="..\..\util\tools\algorithms.cpp" />
+    <ClCompile Include="..\..\util\tools\date.cpp" />
+    <ClCompile Include="..\..\util\tools\read-ini.cpp" />
+    <ClCompile Include="..\src\conversion.cpp" />
+    <ClCompile Include="..\src\crop.cpp" />
+    <ClCompile Include="..\src\debug.cpp" />
+    <ClCompile Include="..\src\eva_methods.cpp" />
+    <ClCompile Include="..\src\monica-eva-main.cpp" />
+    <ClCompile Include="..\src\monica-parameters.cpp" />
+    <ClCompile Include="..\src\monica.cpp" />
+    <ClCompile Include="..\src\simulation.cpp" />
+    <ClCompile Include="..\src\soilcolumn.cpp" />
+    <ClCompile Include="..\src\soilmoisture.cpp" />
+    <ClCompile Include="..\src\soilorganic.cpp" />
+    <ClCompile Include="..\src\soiltemperature.cpp" />
+    <ClCompile Include="..\src\soiltransport.cpp" />
+    <ClCompile Include="monica_wrap.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\monica.rc" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <ProjectGuid>{8482B9F0-AB4B-4FF5-AC7E-18BDCD42EC97}</ProjectGuid>
+    <ProjectName>monica-swig</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Debug\</OutDir>
+    <IntDir>.\Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.</OutDir>
+    <IntDir>.</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>true</MinimalRebuild>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;$(PYTHON_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WINSOCK2;RUN_EVA;WIN32;_DEBUG;_WINDOWS;_USRDLL;EXAMPLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\Debug\monica.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Debug\monica.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Debug\monica.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>_monica.pyd</OutputFile>
+      <ImportLibrary>.\Debug\_monica.lib</ImportLibrary>
+      <AdditionalDependencies>libmysql.lib;$(PYTHON_LIB);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\lib;</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\include;..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;$(PYTHON_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WINSOCK2;RUN_EVA;WIN32;NDEBUG;_WINDOWS;_USRDLL;EXAMPLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\Release\monica.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Release\monica.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Release\monica.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>_monica.pyd</OutputFile>
+      <ImportLibrary>.\Release\_monica.lib</ImportLibrary>
+      <AdditionalDependencies>libmysql.lib;$(PYTHON_LIB);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\mysql-connector-c-noinstall-6.0.2-win32\lib;</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,323 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\MPMAS Header Files">
+      <UniqueIdentifier>{60da05b4-9bfc-43a4-a058-9b9ad041b910}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tools">
+      <UniqueIdentifier>{38949dc2-9acd-429b-8e4f-a647933fa7c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\db">
+      <UniqueIdentifier>{8721d4ef-1472-4c07-9040-eb19e6645214}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\climate">
+      <UniqueIdentifier>{585245e7-82b7-44c2-b87a-4d033e172b87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\tools">
+      <UniqueIdentifier>{92c48f3b-cf8e-4769-ac23-8d96ac1e71e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\db">
+      <UniqueIdentifier>{399d98ee-efd3-4446-9455-e13821f4d0c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\climate">
+      <UniqueIdentifier>{cea989bf-fcc2-41ad-9aeb-fab29383a363}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\crop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\monica-parameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\monica.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\simulation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\soilcolumn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\soilmoisture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\soilorganic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\soiltemperature.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\soiltransport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\carbiocial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\conversion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\monica-typedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\db\abstract-db-connections.h">
+      <Filter>Header Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\db\db.h">
+      <Filter>Header Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\climate\climate-common.h">
+      <Filter>Header Files\climate</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\tools\datastructures.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\tools\algorithms.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\tools\helper.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\tools\read-ini.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\db\sqlite3.h">
+      <Filter>Header Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\tools\date.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\Agent.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentFarmHousehold.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentHouseholdList.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentHouseholdMember.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentLivestockList.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentLivestockUnit.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentOtherFarms.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentParcel.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentParcelGridCellInterface.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentParcelList.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\AgentPopulationHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\BasicData.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\BasicDefines.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\BasicEnums.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\BasicFunctions.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\BasicStreams.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\BasicStrings.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\Catchment_DynamicRiverFlows.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CatchmentHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CatchmentSector.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CatchmentSectorAuxiliary.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CatchmentSectorSpecific.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CropActualPrecipitation.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CropGrowthHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CropLucia.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CropSoil.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\CropWater.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\FinancialMathFunctions.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\GridCellHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\lp9.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\MainAuxiliaryFunctions.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\MarketNonTradablesBid.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\MarketTradablesHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\MatrixDouble.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\MpmasMaster.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\OutputDataHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\PopulationCluster.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\PopulationClusterList.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\PopulationNetworkSegment.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\PopulationNetworkSegmentList.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\RandomDataHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\Raster2D.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\RegionHandler.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BRA018\code\TimeHandlerClass.h">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\tools\auto-deleter.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\db\orm--.h">
+      <Filter>Header Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\db\orm--typedefs.h">
+      <Filter>Header Files\db</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\crop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\monica-parameters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\monica.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\simulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\soilcolumn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\soilmoisture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\soilorganic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\soiltemperature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\soiltransport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\carbiocial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\conversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\monica-mpmas-main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\db\db.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\db\sqlite3.c">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\tools\algorithms.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\tools\date.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\tools\read-ini.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\climate\climate-common.cpp">
+      <Filter>Source Files\climate</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\db\orm--.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\db-connections.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="BRA018\code\tree.hh">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </None>
+    <None Include="BRA018\code\tree_util.hh">
+      <Filter>Header Files\MPMAS Header Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

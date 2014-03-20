@@ -51,17 +51,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Monica
 {
+	/* forward declaration */
+	class Configuration;
 
   /**
    * @class Env
    */
   struct Env 
   {
-
     /**
      * @brief
      */
-    enum{
+		enum
+		{
 			MODE_LC_DSS = 0,
       MODE_ACTIVATE_OUTPUT_FILES,
 			MODE_HERMES,
@@ -74,26 +76,36 @@ namespace Monica
     /**
      * @brief default constructor for value object use
      */
-    Env()
-    : soilParams(NULL) , noOfLayers(0), layerThickness(0),
-    useNMinMineralFertilisingMethod(false), useAutomaticIrrigation(false),
-    useSecondaryYields(true), atmosphericCO2(-1) { }
+		Env()
+			: soilParams(NULL),
+				noOfLayers(0),
+				layerThickness(0),
+				useNMinMineralFertilisingMethod(false),
+				useAutomaticIrrigation(false),
+				useSecondaryYields(true),
+				atmosphericCO2(-1),
+				customId(-1)
+		{ }
 
     Env(const Env&);
-
-    ~Env();
-
+		    
     /**
      * @brief Constructor
      * @param sps Soil parameters
      * @param nols Number of layers
      * @param lt Layer thickness
      */
-    Env(const SoilPMs* sps, const CentralParameterProvider cpp);
+    Env(const SoilPMs* sps, CentralParameterProvider cpp);
+
+		//use this version if soil parameters can't be safely kept elsewhere and Env is responsible for deleting them
+		Env(SoilPMsPtr sps, CentralParameterProvider cpp);
 
     int numberOfPossibleSteps();
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 
+	private:
+		SoilPMsPtr _soilParamsPtr;
+	public:
     const SoilPMs* soilParams;  //! a vector of soil parameter objects = layers of soil
 
     unsigned int noOfLayers;              //! number of layers
@@ -105,6 +117,7 @@ namespace Monica
 
     bool useAutomaticIrrigation;
     AutomaticIrrigationParameters autoIrrigationParams;
+    MeasuredGroundwaterTableInformation groundwaterInformation;
 
     bool useSecondaryYields;              //! tell if farmer uses the secondary yield products
 
@@ -117,6 +130,7 @@ namespace Monica
     std::vector<ProductionProcess> cropRotation; //! vector of elements holding the data of the single crops in the rotation
 
     Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
+		int customId;
 
     SiteParameters site;        //! site specific parameters
     GeneralParameters general;  //! general parameters to the model
@@ -139,7 +153,6 @@ namespace Monica
       int mode;   //! Variable for differentiate betweend execution modes of MONICA
   };
 
-
   //----------------------------------------------------------------------------
   
   /*!
@@ -153,9 +166,12 @@ namespace Monica
 
     //! just to keep track of the grid point the calculation is being made for
     Tools::GridPoint gp;
+		//is as gp before used to track results when multiple parallel
+		//unordered invocations of monica will happen
+		int customId;
 
     //! vector of the result of one crop per year
-    std::vector<PVResult> pvrs;
+		std::vector<PVResult> pvrs;
 
     //! results not regarding a particular crop in a rotation
     typedef std::map<ResultId, std::vector<double> > RId2Vector;
@@ -163,7 +179,7 @@ namespace Monica
 
     std::vector<double> getResultsById(int id);
 
-    int sizeGeneralResults() { return generalResults.size(); }
+		int sizeGeneralResults() { return int(generalResults.size()); }
 
     std::vector<std::string> dates;
 
@@ -176,14 +192,16 @@ namespace Monica
    * @brief Core class of MONICA
    * @author Claas Nendel, Michael Berg
    */
-  class MonicaModel {
+	class MonicaModel
+	{
   public:
     MonicaModel(const Env& env, const Climate::DataAccessor& da);
 
     /**
      * @brief Destructor
      */
-    ~MonicaModel() {
+		~MonicaModel()
+		{
       delete _currentCropGrowth;
     }
 
@@ -201,11 +219,10 @@ namespace Monica
     void seedCrop(CropPtr crop);
 
     //! what crop is currently seeded ?
-    CropPtr currentCrop() const {
-      return _currentCrop;
-    }
+		CropPtr currentCrop() const { return _currentCrop; }
 
-    bool isCropPlanted() const {
+		bool isCropPlanted() const
+		{
       return _currentCrop.get() && _currentCrop->isValid();
     }
 
@@ -223,39 +240,35 @@ namespace Monica
     void applyOrganicFertiliser(const OrganicMatterParameters*, double amount,
 																bool incorporation);
 
-    bool useNMinMineralFertilisingMethod() const {
+		bool useNMinMineralFertilisingMethod() const
+		{
       return _env.useNMinMineralFertilisingMethod;
     }
 
     double applyMineralFertiliserViaNMinMethod
         (MineralFertiliserParameters partition, NMinCropParameters cropParams);
 
-    double dailySumFertiliser() const {
-      return _dailySumFertiliser;
-    }
+		double dailySumFertiliser() const { return _dailySumFertiliser; }
 
-    void addDailySumFertiliser(double amount) {
+		void addDailySumFertiliser(double amount)
+		{
       _dailySumFertiliser+=amount;
       _sumFertiliser +=amount;
     }
 
-    double dailySumIrrigationWater() const {
-      return _dailySumIrrigationWater;
-    }
+		double dailySumIrrigationWater() const { return _dailySumIrrigationWater; }
 
-    void addDailySumIrrigationWater(double amount) {
+		void addDailySumIrrigationWater(double amount)
+		{
       _dailySumIrrigationWater += amount;
     }
 
-    double sumFertiliser() const {
-      return _sumFertiliser;
-    }
+		double sumFertiliser() const { return _sumFertiliser; }
 
-    void resetFertiliserCounter(){
-      _sumFertiliser = 0;
-    }
+		void resetFertiliserCounter(){ _sumFertiliser = 0; }
 
-    void resetDailyCounter() {
+		void resetDailyCounter()
+		{
       _dailySumIrrigationWater = 0.0;
       _dailySumFertiliser = 0.0;
     }
@@ -265,17 +278,14 @@ namespace Monica
 
     void applyTillage(double depth);
 
-    double get_AtmosphericCO2Concentration() const {
+		double get_AtmosphericCO2Concentration() const
+		{
       return vw_AtmosphericCO2Concentration;
     }
 
-    double get_GroundwaterDepth() const {
-      return vs_GroundwaterDepth;
-    }
+		double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
 
     bool writeOutputFiles() {return centralParameterProvider.writeOutputFiles; }
-
-
 
     double avgCorg(double depth_m) const;
     double mean90cmWaterContent() const;
@@ -311,68 +321,54 @@ namespace Monica
      * @brief Returns soil temperature
      * @return temperature
      */
-    const SoilTemperature& soilTemperature() {
-      return _soilTemperature;
-    }
+		const SoilTemperature& soilTemperature() { return _soilTemperature; }
 
     /**
      * @brief Returns soil moisture.
      * @return Moisture
      */
-    const SoilMoisture& soilMoisture() {
-      return _soilMoisture;
-    }
+		const SoilMoisture& soilMoisture() { return _soilMoisture; }
 
     /**
      * @brief Returns soil organic mass.
      * @return soil organic
      */
-    const SoilOrganic& soilOrganic() {
-      return _soilOrganic;
-    }
+		const SoilOrganic& soilOrganic() { return _soilOrganic; }
 
     /**
      * @brief Returns soil transport
      * @return soil transport
      */
-    const SoilTransport& soilTransport() {
-      return _soilTransport;
-    }
+		const SoilTransport& soilTransport() { return _soilTransport; }
 
     /**
      * @brief Returns soil column
      * @return soil column
      */
-    const SoilColumn& soilColumn() {
-      return _soilColumn;
-    }
+		const SoilColumn& soilColumn() { return _soilColumn; }
 
-    SoilColumn& soilColumnNC() {
-      return _soilColumn;
-    }
+		SoilColumn& soilColumnNC() { return _soilColumn; }
 
     /**
      * @brief returns value for current crop.
      * @return crop growth
      */
-    CropGrowth* cropGrowth() {
-      return _currentCropGrowth;
-    }
+		CropGrowth* cropGrowth() { return _currentCropGrowth; }
 
     /**
      * @brief Returns net radiation.
      * @param globrad
      * @return radiation
      */
-    double netRadiation(double globrad) {
-      return globrad * (1 - _env.albedo);
-    }
+		double netRadiation(double globrad) { return globrad * (1 - _env.albedo); }
 
     int daysWithCrop() {return p_daysWithCrop; }
     double getAccumulatedNStress() { return p_accuNStress; }
     double getAccumulatedWaterStress() { return p_accuWaterStress; }
     double getAccumulatedHeatStress() { return p_accuHeatStress; }
     double getAccumulatedOxygenStress() { return p_accuOxygenStress; }
+
+    double getGroundwaterInformation(Tools::Date date) {return _env.groundwaterInformation.getGroundwaterInformation(date); }
 
   private:
 		//! environment describing the conditions under which the model runs
@@ -411,7 +407,6 @@ namespace Monica
     double p_accuWaterStress;
     double p_accuHeatStress;
     double p_accuOxygenStress;
-
   };
 
   //----------------------------------------------------------------------------
@@ -421,14 +416,14 @@ namespace Monica
    * @param env the environment completely defining what the model needs and gets
    * @return a structure with all the Monica results
    */
-  Result runMonica(Env env);
+	Result runMonica(Env env, Configuration *cfg = NULL);
 
   void initializeFoutHeader(std::ofstream&);
   void initializeGoutHeader(std::ofstream&);
   void writeCropResults(const CropGrowth*, std::ofstream&, std::ofstream&, bool);
-  void writeGeneralResults(std::ofstream &fout, std::ofstream &gout, Env &env, MonicaModel &monica, int d);
+	void writeGeneralResults(std::ofstream &fout, std::ofstream &gout, Env &env,
+													 MonicaModel &monica, int d);
   void dumpMonicaParametersIntoFile(std::string, CentralParameterProvider &cpp);
-
 }
 
 #endif

@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "simulation.h"
 
+#include "monica-parameters.h"
+
 using namespace std;
 
 /**
@@ -47,6 +49,6 @@ int main(int argc, char** argv)
     //use the non-default db-conections-core.ini
 		Db::dbConnectionParameters("db-connections.ini");
 #endif
-
+				
 		Monica::runWithHermesData(argc == 2 ? string(argv[1])+"/" : "");
 }

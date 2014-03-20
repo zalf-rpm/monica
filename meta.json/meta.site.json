@@ -1,0 +1,144 @@
+{
+  "latitude": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "slope": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "heightNN": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "atmosphericCO2": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "windSpeedHeight": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "leachingDepth": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "NDeposition": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "groundwaterDepthMin": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "groundwaterDepthMax": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "groundwaterDepthMinMonth": {
+    "desc": "",
+    "unit": "",
+    "min": null,
+    "max": null
+  },
+  "horizons": [
+    {
+      "upperBoundary": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "lowerBoundary": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "Corg": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "textureClass": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "sand": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "clay": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "sceleton": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "poreVolume": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "fieldCapacity": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "permanentWiltingPoint": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "pH": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "CN": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      },
+      "bulkDensity": {
+        "desc": "",
+        "unit": "",
+        "min": null,
+        "max": null
+      }
+    }
+  ]
+}
