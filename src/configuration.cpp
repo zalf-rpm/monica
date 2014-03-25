@@ -76,41 +76,25 @@ struct DMY_
   }
 };
 
-// to read HERMES two digit date format in management files
+// copied ParseDate from monica-parameters.cpp
 struct ParseDate_
 {
   DMY_ operator()(const std::string & d)
   {
-//    ISO Date YYYY-MM-DD
-//    if (std::regex_match(d, "(\d{4}\-\d\d\-\d\d)")) {
-//      DMY_ r;
-//      r.d = atoi(d.substr(8, 2).c_str());
-//      r.m = atoi(d.substr(5, 2).c_str());
-//      r.y = atoi(d.substr(2, 2).c_str());
-//      r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
-//      std::cout << d << r.toDate().toString() << std::endl;
-//      return r;
-//    }
 
-//    ISO Date YYYY-MM-DD
+    DMY_ r;
+
+    /* ISO Date YYYY-MM-DD */
+//    TODO: use regexp if available in new gcc version
     if (d.length() == 10 &&
         std::count(d.begin(), d.end(), '-') == 2 &&
         d.at(4) == '-'
         && d.at(7) == '-') {
-      DMY_ r;
       r.d = atoi(d.substr(8, 2).c_str());
       r.m = atoi(d.substr(5, 2).c_str());
-      r.y = atoi(d.substr(2, 2).c_str());
-      r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
-//      std::cout << d << " -> " << r.toDate().toString() << std::endl;
-      return r;
+      r.y = atoi(d.substr(0, 4).c_str());
     }
 
-    DMY_ r;
-    r.d = atoi(d.substr(0, 2).c_str());
-    r.m = atoi(d.substr(2, 2).c_str());
-    r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
     return r;
   }
 } parseDate_;
