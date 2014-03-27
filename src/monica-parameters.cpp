@@ -3687,7 +3687,7 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 	if(hermesCropId == "WW")
 		return CropPtr(new Crop(1, hermesCropId)); // Winter wheat
 	if(hermesCropId == "SW")
-		return CropPtr(new Crop(1, hermesCropId)); // Spring wheat
+		return CropPtr(new Crop(25, hermesCropId)); // Spring wheat
 	if(hermesCropId == "WG")
 		return CropPtr(new Crop(2, hermesCropId)); // Winter barley
 	if(hermesCropId == "SG")
