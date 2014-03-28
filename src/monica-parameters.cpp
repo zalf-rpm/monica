@@ -1831,8 +1831,8 @@ void SoilParameters::set_vs_SoilRawDensity(double srd)
 */
 double SoilParameters::vs_SoilBulkDensity() const
 {
-	//  return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
-	return _vs_SoilBulkDensity * 1000;
+	  return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
+	//return _vs_SoilBulkDensity * 1000;
 }
 
 /**
