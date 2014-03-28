@@ -33,17 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Monica
 {
-
-	inline std::string pathSeparator()
-	{
-		return 
-#ifdef __unix__
-		"/";
-#else
-		"\\";
-#endif
-	}
-
 class Result;
 class SoilParameters;
 class ProductionProcess;

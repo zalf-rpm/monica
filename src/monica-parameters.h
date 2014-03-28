@@ -47,6 +47,16 @@ namespace Monica
 #undef min
 #undef max
 
+	inline std::string pathSeparator()
+	{
+		return
+#ifdef __unix__
+			"/";
+#else
+			"\\";
+#endif
+	}
+
 	class CentralParameterProvider;
 
 	enum Eva2_Nutzung
