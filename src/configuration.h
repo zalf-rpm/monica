@@ -112,14 +112,13 @@ class Configuration
     /* free cson root objects*/
     void freeCson();
 
+    cson_value* _sim;
+    cson_value* _site;
+    cson_value* _crop;
 
-    cson_value* _sim = NULL;
-    cson_value* _site = NULL;
-    cson_value* _crop = NULL;
-
-    std::string _outPath = "";
-    std::string _dirNameMet = "";
-    std::string _preMetFiles = "";
+    std::string _outPath;
+    std::string _dirNameMet;
+    std::string _preMetFiles;
 };
 
 }  /* namespace Monica */

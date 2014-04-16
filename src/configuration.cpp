@@ -107,7 +107,7 @@ const cson_value* Monica::Configuration::metaCrop = NULL;
 using namespace Monica;
 
 Configuration::Configuration(const std::string& outPath, const std::string& dirNameMet, const std::string& preMetFiles, const std::string& dbIniName)
-  : _outPath(outPath), _dirNameMet(dirNameMet), _preMetFiles(preMetFiles)
+  : _sim(NULL), _site(NULL), _crop(NULL), _outPath(outPath), _dirNameMet(dirNameMet), _preMetFiles(preMetFiles)
 {
   Db::dbConnectionParameters(dbIniName);
 }
