@@ -1074,18 +1074,18 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 
 		// open rmout.dat
 		debug() << "Outputpath: " << (env.pathToOutputDir+pathSeparator()+"rmout.dat").c_str() << endl;
-		fout.open((env.pathToOutputDir+"\\rmout.dat").c_str());
+		fout.open((env.pathToOutputDir + pathSeparator()+ "rmout.dat").c_str());
 		if (fout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator()+"rmout.dat").c_str() << "\"" << endl;
+			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator() + "rmout.dat").c_str() << "\"" << endl;
 			return res;
 		}
 
 		// open smout.dat
-		gout.open((env.pathToOutputDir + pathSeparator()+"smout.dat").c_str());
+		gout.open((env.pathToOutputDir + pathSeparator() + "smout.dat").c_str());
 		if (gout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator()+"smout.dat").c_str() << "\"" << endl;
+			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator() + "smout.dat").c_str() << "\"" << endl;
 			return res;
 		}
 
