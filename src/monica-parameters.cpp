@@ -85,31 +85,33 @@ namespace
     if (name == "DAP")
       return make_pair(mineral, 2); //1.00 0.00 0.00 01.00   M Diammoniumphosphat (Einh: kg N/ha)
     if (name == "SG")
-      return make_pair(organic, 3); //0.67 0.00 1.00 06.70   O Schweineguelle (Einh: z. B. m3/ha)
-    if (name == "RG1")
-      return make_pair(organic, 3); //0.43 0.00 1.00 02.40   O Rinderguelle (Einh: z. B. m3/ha)
+      return make_pair(organic, 7); //0.67 0.00 1.00 06.70   O Schweineguelle (Einh: kg FM/ha)
+	if (name == "SU")
+	  return make_pair(organic, 8); //0.67 0.00 1.00 06.70   O Schweineurin (Einh: kg FM/ha)
+	if (name == "RG1")
+      return make_pair(organic, 3); //0.43 0.00 1.00 02.40   O Rinderguelle (Einh: kg FM/ha)
     if (name == "RG2")
-      return make_pair(organic, 3); //0.43 0.00 1.00 01.80   O Rinderguelle (Einh: z. B. m3/ha)
+      return make_pair(organic, 3); //0.43 0.00 1.00 01.80   O Rinderguelle (Einh: kg FM/ha)
     if (name == "RG3")
-      return make_pair(organic, 3); //0.43 0.00 1.00 03.40   O Rinderguelle (Einh: z. B. m3/ha)
+      return make_pair(organic, 3); //0.43 0.00 1.00 03.40   O Rinderguelle (Einh: kg FM/ha)
     if (name == "RG4")
-      return make_pair(organic, 3); //0.43 0.00 1.00 03.70   O Rinderguelle (Einh: z. B. m3/ha)
+      return make_pair(organic, 3); //0.43 0.00 1.00 03.70   O Rinderguelle (Einh: kg FM/ha)
     if (name == "RG5")
-      return make_pair(organic, 3); //0.43 0.00 1.00 03.30   O Rinderguelle (Einh: z. B. m3/ha)
+      return make_pair(organic, 3); //0.43 0.00 1.00 03.30   O Rinderguelle (Einh: kg FM/ha)
     if (name == "SM")
-      return make_pair(organic, 1); //0.15 0.20 0.80 00.60   O Stallmist (Einh: z. B.  dt/ha)
+      return make_pair(organic, 1); //0.15 0.20 0.80 00.60   O Stallmist (Einh: kg FM/ha)
     if (name == "ST1")
-      return make_pair(organic, 1); //0.07 0.10 0.90 00.48   O Stallmist (Einh: z. B.  dt/ha)
+      return make_pair(organic, 1); //0.07 0.10 0.90 00.48   O Stallmist (Einh: kg FM/ha)
     if (name == "ST2")
-      return make_pair(organic, 1); //0.07 0.10 0.90 00.63   O Stallmist (Einh: z. B.  dt/ha)
+      return make_pair(organic, 1); //0.07 0.10 0.90 00.63   O Stallmist (Einh: kg FM/ha)
     if (name == "ST3")
-      return make_pair(organic, 1); //0.07 0.10 0.90 00.82   O Stallmist (Einh: z. B.  dt/ha)
+      return make_pair(organic, 1); //0.07 0.10 0.90 00.82   O Stallmist (Einh: kg FM/ha)
     if (name == "RM1")
-      return make_pair(organic, 2); //0.15 0.20 0.80 00.60   O Stallmist (Einh: z. B.  dt/ha)
+      return make_pair(organic, 2); //0.15 0.20 0.80 00.60   O Stallmist (Einh: kg FM/ha)
     if (name == "FM")
-      return make_pair(organic, 1); //0.65 0.80 0.20 01.00   O Stallmist (Einh: z. B.  kg N/ha)
+      return make_pair(organic, 1); //0.65 0.80 0.20 01.00   O Stallmist (Einh: kg FM/ha)
     if (name == "LM")
-      return make_pair(organic, 3); //0.85 0.80 0.20 01.00   O Jauche (Einh: z. B.  kg N/ha)
+      return make_pair(organic, 3); //0.85 0.80 0.20 01.00   O Jauche (Einh: kg FM/ha)
     if (name == "H")
       return make_pair(mineral, 8); //01.00 1.00 0.00 0.00 1.00 0.15 kg N/ha 	M Harnstoff
     if (name == "NPK")
@@ -123,25 +125,29 @@ namespace
     if (name == "SSA")
       return make_pair(mineral, 3); //01.00 1.00 0.00 0.00 1.00 0.10 kg N/ha 	M schwefelsaures Ammoniak
     if (name == "RG")
-      return make_pair(organic, 3); //04.70 0.43 0.00 1.00 1.00 0.40 m3 / ha 	O Rindergülle
+      return make_pair(organic, 3); //04.70 0.43 0.00 1.00 1.00 0.40 m3 / ha 	O Rindergülle (Einh: kg FM/ha)
     if (name == "RM")
-      return make_pair(organic, 1); //00.60 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Rindermist
-    if (name == "RSG")
-      return make_pair(organic, 3); //05.70 0.55 0.00 1.00 1.00 0.40 m3 / ha 	O Rinder/Schweinegülle
-    if (name == "SSM")
-      return make_pair(organic, 5); //00.76 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Schweinemist
-    if (name == "HG")
-      return make_pair(organic, 12); //10.70 0.68 0.00 1.00 1.00 0.40 m3 / ha 	O Hühnergülle
+      return make_pair(organic, 1); //00.60 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Rinderfestmist (Einh: kg FM/ha)
+	if (name == "RM")
+	  return make_pair(organic, 2); //00.60 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Rindermist (Einh: kg FM/ha)
+	if (name == "RSG")
+      return make_pair(organic, 3); //05.70 0.55 0.00 1.00 1.00 0.40 m3 / ha 	O Rinder/Schweinegülle (Einh: kg FM/ha)
+    if (name == "SM")
+      return make_pair(organic, 6); //00.76 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Schweinemist (Einh: kg FM/ha)
+	if (name == "SSM")
+	  return make_pair(organic, 5); //00.76 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Schweinefestmist (Einh: kg FM/ha)
+	if (name == "HG")
+      return make_pair(organic, 12); //10.70 0.68 0.00 1.00 1.00 0.40 m3 / ha 	O Hühnergülle (Einh: kg FM/ha)
     if (name == "HFM")
-      return make_pair(organic, 11); //02.30 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Hähnchentrockenmist
+      return make_pair(organic, 11); //02.30 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Hähnchentrockenmist (Einh: kg FM/ha)
     if (name == "HM")
-      return make_pair(organic, 11); //02.80 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Hühnermist
+      return make_pair(organic, 11); //02.80 0.15 0.20 0.80 1.00 0.40 dt / ha 	O Hühnermist (Einh: kg FM/ha)
     if (name == "CK")
       return make_pair(mineral, 1); //00.30 0.00 1.00 0.00 0.00 0.00 dt / ha 	M Carbokalk
     if (name == "KSL")
-      return make_pair(organic, 16); //01.00 0.25 0.20 0.80 0.00 0.10 dt / ha 	O Klärschlamm
+      return make_pair(organic, 16); //01.00 0.25 0.20 0.80 0.00 0.10 dt / ha 	O Klärschlamm (Einh: kg FM/ha)
     if (name == "BAK")
-      return make_pair(organic, 15); //01.63 0.00 0.05 0.60 0.00 0.00 dt / ha 	O Bioabfallkompst
+      return make_pair(organic, 15); //01.63 0.00 0.05 0.60 0.00 0.00 dt / ha 	O Bioabfallkompst (Einh: kg FM/ha)
     if (name == "MST")
       return make_pair(organic, 21); // Maize straw
     if (name == "WST")
@@ -152,6 +158,8 @@ namespace
       return make_pair(organic, 22); // Weeds
     if (name == "YP3")
       return make_pair(mineral, 13); //01.00 0.43 0.57 0.00 1.00 1.00 kg N/ha 	M Yara Pellon Y3
+	if (name == "ASH")
+	  return make_pair(organic, 24); // Ashes from burnt forest understorey
 
     cout << "Error: Cannot find fertiliser " << name << " in hermes fertiliser map. Aborting..." << endl;
     exit(-1);
@@ -3774,6 +3782,10 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 		return CropPtr(new Crop(44, hermesCropId)); // Cotton medium
 	if(hermesCropId == "COL")
 		return CropPtr(new Crop(45, hermesCropId)); // Cotton long
+	if (hermesCropId == "EMM")
+		return CropPtr(new Crop(47, hermesCropId)); // Emmer 3000 b.c.
+	if (hermesCropId == "EIN")
+		return CropPtr(new Crop(48, hermesCropId)); // Einkorn 3000 b.c.
 	if(hermesCropId == "BR")
 		return CropPtr(new Crop(hermesCropId));
 
