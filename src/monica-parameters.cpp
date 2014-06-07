@@ -1749,8 +1749,8 @@ SoilParameters::SoilParameters() :
     vs_SoilSandContent(0.4),
     vs_SoilClayContent(0.05),
     vs_SoilpH(6.9),
-    _vs_SoilRawDensity(0),
-		_vs_SoilBulkDensity(0),
+    _vs_SoilRawDensity(-1),
+		_vs_SoilBulkDensity(-1),
     _vs_SoilOrganicCarbon(-1),
     _vs_SoilOrganicMatter(-1),
     vs_SoilAmmonium(-1),
@@ -1805,12 +1805,12 @@ SoilParameters::isValid()
       cout << "SoilParameters::Error: Invalid value for permanent wilting point: "<< vs_PermanentWiltingPoint << endl;
       is_valid = false;
   }
-
+	/*
   if (_vs_SoilRawDensity<0) {
       cout << "SoilParameters::Error: Invalid soil raw density: "<< _vs_SoilRawDensity << endl;
       is_valid = false;
   }
-
+	*/
   return is_valid;
 }
 
@@ -1839,7 +1839,10 @@ void SoilParameters::set_vs_SoilRawDensity(double srd)
 */
 double SoilParameters::vs_SoilBulkDensity() const
 {
-	  return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
+	if (_vs_SoilRawDensity < 0)
+		return _vs_SoilBulkDensity;
+
+	return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
 	//return _vs_SoilBulkDensity * 1000;
 }
 

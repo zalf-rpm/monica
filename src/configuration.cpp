@@ -69,12 +69,14 @@ extern "C" {
 /* TODO: nach Tools:: ? */
 struct DMY_
 {
+	DMY_() : d(-1), m(-1), y(-1) {}
   int d, m, y;
   Tools::Date toDate(bool useLeapYears = true) const
   {
     return Tools::Date(d, m, y, useLeapYears);
   }
 };
+
 
 // copied ParseDate from monica-parameters.cpp
 struct ParseDate_
@@ -393,7 +395,7 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
 
     SoilParameters layer;
     layer.set_vs_SoilOrganicCarbon(getDbl(horizonObj, "Corg")); //TODO: / 100 ?
-    layer.set_vs_SoilBulkDensity(getDbl(horizonObj, "bulkDensity") / 1000);
+    layer.set_vs_SoilBulkDensity(getDbl(horizonObj, "bulkDensity"));
     layer.vs_SoilSandContent = getDbl(horizonObj, "sand");
     layer.vs_SoilClayContent = getDbl(horizonObj, "clay");
     layer.vs_SoilStoneContent = getDbl(horizonObj, "sceleton"); //TODO: / 100 ?
