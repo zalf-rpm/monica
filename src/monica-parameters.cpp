@@ -1755,15 +1755,15 @@ SoilParameters::isValid()
 {
   bool is_valid = true;
 
-  if (vs_FieldCapacity <= 0) {
+  if (vs_FieldCapacity < 0) {
       cout << "SoilParameters::Error: No field capacity defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: "<< _vs_SoilRawDensity << endl;
       is_valid = false;
   }
-  if (vs_Saturation <= 0) {
+  if (vs_Saturation < 0) {
       cout << "SoilParameters::Error: No saturation defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: " << _vs_SoilRawDensity << endl;
       is_valid = false;
   }
-  if (vs_PermanentWiltingPoint <= 0) {
+  if (vs_PermanentWiltingPoint < 0) {
       cout << "SoilParameters::Error: No saturation defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: " << _vs_SoilRawDensity << endl;
       is_valid = false;
   }
@@ -1831,13 +1831,13 @@ void SoilParameters::set_vs_SoilRawDensity(double srd)
 */
 double SoilParameters::vs_SoilBulkDensity() const
 {
-	  return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
+	return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
 	//return _vs_SoilBulkDensity * 1000;
 }
 
 /**
 * @brief Sets soil bulk density
-* @param srd New soil rad density
+* @param sbd New soil bulk density
 */
 void SoilParameters::set_vs_SoilBulkDensity(double sbd)
 {
@@ -1912,7 +1912,15 @@ string SoilParameters::toString() const
       << "vs_SoilSandContent: " << vs_SoilSandContent << endl
       << "vs_SoilClayContent: " << vs_SoilClayContent << endl
       << "vs_SoilSiltContent: " << vs_SoilSiltContent() << endl
-      << "vs_SoilStoneContent: " << vs_SoilStoneContent
+      << "vs_SoilStoneContent: " << vs_SoilStoneContent << endl
+      << "vs_SoilpH: " << vs_SoilpH << endl
+      << "vs_Lambda: " << vs_Lambda << endl
+      << "vs_FieldCapacity: " << vs_FieldCapacity << endl
+      << "vs_Saturation: " << vs_Saturation << endl
+      << "vs_PermanentWiltingPoint: " << vs_PermanentWiltingPoint << endl
+      << "vs_SoilTexture: " << vs_SoilTexture.c_str() << endl
+      << "vs_SoilAmmonium: " << vs_SoilAmmonium << endl
+      << "vs_SoilNitrate: " << vs_SoilNitrate
       << endl;
 
   return s.str();

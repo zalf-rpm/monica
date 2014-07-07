@@ -2164,6 +2164,12 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   for(int i_Layer = 0; i_Layer < 5; i_Layer++) {
     fout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(i_Layer);// [°C]
   }
+//  for(int i_Layer = 0; i_Layer < 20; i_Layer++) {
+//    cout << mst.get_SoilTemperature(i_Layer) << "\t";
+//  }
+//  cout << endl;
+
+
 
   fout << "\t" << msm.get_ActualEvaporation();// [mm]
   fout << "\t" << msm.get_Evapotranspiration();// [mm]

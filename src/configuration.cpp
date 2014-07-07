@@ -968,7 +968,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
       cson_value* metaVal = cson_array_get(metaArr, 0);
       /* check objects in array */
       for (int i = 0; i < len; i++) {
-        ok = isValid(cson_array_get(valArr, i), metaVal, path + '[' + std::to_string(i) + ']');
+        ok = isValid(cson_array_get(valArr, i), metaVal, path + '[' + std::to_string(static_cast<long long>(i) ) + ']');
         if (!ok) {
           break;
         }
