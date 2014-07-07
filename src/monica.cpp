@@ -1956,9 +1956,9 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     
     fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
     fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
-		fout << fixed << setprecision(10) << "\t" << mcg->get_OrganBiomass(1); // JV! + fixed << setprecision(10)
-		fout << fixed << setprecision(10) << "\t" << mcg->get_OrganBiomass(2); // JV! + fixed << setprecision(10)
-		fout << fixed << setprecision(10) << "\t" << mcg->get_OrganBiomass(3); // JV! + fixed << setprecision(10)
+	fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(1); // JV! + fixed << setprecision(10)
+	fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(2); // JV! + fixed << setprecision(10)
+	fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(3); // JV! + fixed << setprecision(10)
 	fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
 
     fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
@@ -2149,12 +2149,12 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   }
   fout << fixed << setprecision(2) << "\t" << env.da.dataForTimestep(Climate::precip, d);
   fout << fixed << setprecision(1) << "\t" << monica.dailySumIrrigationWater();
-	fout << fixed << setprecision(10) << "\t" << msm.get_Infiltration(); // {mm]
-	fout << fixed << setprecision(10) << "\t" << msm.get_SurfaceWaterStorage();// {mm]
-	fout << fixed << setprecision(10) << "\t" << msm.get_SurfaceRunOff();// {mm]
-	fout << fixed << setprecision(10) << "\t" << msm.get_SnowDepth(); // [mm]
-	fout << fixed << setprecision(10) << "\t" << msm.get_FrostDepth();
-	fout << fixed << setprecision(10) << "\t" << msm.get_ThawDepth();
+  fout << fixed << setprecision(1) << "\t" << msm.get_Infiltration(); // {mm]
+  fout << fixed << setprecision(1) << "\t" << msm.get_SurfaceWaterStorage();// {mm]
+  fout << fixed << setprecision(1) << "\t" << msm.get_SurfaceRunOff();// {mm]
+  fout << fixed << setprecision(1) << "\t" << msm.get_SnowDepth(); // [mm]
+  fout << fixed << setprecision(1) << "\t" << msm.get_FrostDepth();
+  fout << fixed << setprecision(1) << "\t" << msm.get_ThawDepth();
   for(int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
     fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint();
   }
@@ -2177,8 +2177,8 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
   fout << "\t" << msm.get_KcFactor();
   fout << "\t" << monica.get_AtmosphericCO2Concentration();// [ppm]
   fout << fixed << setprecision(2) << "\t" << monica.get_GroundwaterDepth();// [m]
-  fout << fixed << setprecision(1) << "\t" << msm.get_GroundwaterRecharge();// [mm]
-	fout << fixed << setprecision(10) << "\t" << msq.get_NLeaching(); // [kg N ha-1] // JV! + fixed << setprecision(10)
+  fout << fixed << setprecision(3) << "\t" << msm.get_GroundwaterRecharge();// [mm]
+  fout << fixed << setprecision(3) << "\t" << msq.get_NLeaching(); // [kg N ha-1]
 
 
   for(int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
