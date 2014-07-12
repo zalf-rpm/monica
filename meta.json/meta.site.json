@@ -61,14 +61,8 @@
   },
   "horizons": [
     {
-      "upperBoundary": {
-        "desc": "Upper boundary of soil horizon",
-        "unit": "m",
-        "min": 0.0,
-        "max": 1.9
-      },
-      "lowerBoundary": {
-        "desc": "Lower boundary of soil horizon",
+      "Thickness": {
+        "desc": "Thickness of soil horizon",
         "unit": "m",
         "min": 0.1,
         "max": 2.0
@@ -89,37 +83,37 @@
         "desc": "Volume fraction of fine soil (< 2.0 mm particle diameter) occupied by sand (0.063 mm to 2.0 mm)",
         "unit": "m3 m-3",
         "min": 0.0,
-        "max": 100.0
+        "max": 1.0
       },
       "clay": {
         "desc": "Volume fraction of fine soil (< 2.0 mm particle diameter) occupied by clay (< 2.0 μm particle diameter)",
         "unit": "m3 m-3",
         "min": 0.0,
-        "max": 100.0
+        "max": 1.0
       },
       "sceleton": {
         "desc": "Volume fraction of total soil matrix occupied by stones (> 2.0 mm particle diameter)",
         "unit": "m3 m-3",
         "min": 0.0,
-        "max": 65.00
+        "max": 0.65
       },
       "poreVolume": {
         "desc": "Volume fraction of soil pores",
         "unit": "m3 m-3",
         "min": 0.0,
-        "max": 60.0
+        "max": 0.60
       },
       "fieldCapacity": {
         "desc": "Maximum water content being held back against gravity",
         "unit": "m3 m-3",
         "min": 0.0,
-        "max": 40.0
+        "max": 0.40
       },
       "permanentWiltingPoint": {
         "desc": "Water content below which crops start to wilt",
         "unit": "m3 m-3",
         "min": 0.0,
-        "max": 40.0
+        "max": 0.40
       },
       "pH": {
         "desc": "pH value of the soil solution (CaCl2)",
