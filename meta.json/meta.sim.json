@@ -1,66 +1,66 @@
 {
   "time": {
-    "startYear": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+    "startDate": {
+      "desc": "Date at which the simulation starts",
+      "unit": "YYYY-MM-DD",
+      "min": 0000-01-01,
+      "max": 2999-11-30
     },
-    "endYear": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+    "endDate": {
+      "desc": "Date at which the simulation ends",
+      "unit": "YYYY-MM-DD",
+      "min": 0000-02-01,
+      "max": 2999-12-31
     }
   },
   "switch": {
     "useSecondaryYieldOn": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+      "desc": "Switches the utilisation of secondary yields off",
+      "unit": "-",
+      "min": false,
+      "max": true
     },
     "nitrogenResponseOn": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+      "desc": "Switches the crop nitrogen response off for potential growth simulations",
+      "unit": "-",
+      "min": false,
+      "max": true
     },
     "waterDeficitResponseOn": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+      "desc": "Switches the crop soil moisture response off for potential growth simulations",
+      "unit": "-",
+      "min": false,
+      "max": true
     },
     "emergenceMoistureControlOn": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+      "desc": "Switches the seed response to soil moisture off for simulations with unknown initial conditions",
+      "unit": "-",
+      "min": false,
+      "max": true
     },
     "emergenceFloodingControlOn": {
-      "desc": "",
-      "unit": "",
-      "min": null,
-      "max": null
+      "desc": "Switches the seed response to flooded surface off for simulations with unknown surface slope",
+      "unit": "-",
+      "min": false,
+      "max": true
     }
   },
   "init": {
     "percentageFC": {
       "desc": "Initial soil moisture content in percent field capacity",
-      "unit": "mm mm-1",
+      "unit": "m m-3",
       "min": 0,
       "max": 1
     },
     "soilNitrate": {
       "desc": "Initial soil nitrate content",
-      "unit": "kg (NO3) m-3",
+      "unit": "kg (NO3-N) m-3",
       "min": null,
       "max": null
     },
     "soilAmmonium": {
       "desc": "Initial soil ammonium content",
-      "unit": "kg (NH4) m-3",
+      "unit": "kg (NH4-N) m-3",
       "min": null,
       "max": null
     }
