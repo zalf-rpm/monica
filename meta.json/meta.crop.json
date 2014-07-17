@@ -2,14 +2,14 @@
   "crops": [
     {
       "name": {
-        "desc": "Crop name",
+        "desc": "Crop species name",
         "db": {
           "table": "crop",
           "column": "name"
         }
       },
       "genType": {
-        "desc": "Crop genetic type, cultivar",
+        "desc": "Crop cultivar name",
         "db": {
           "table": "crop",
           "column": "gen_type"
@@ -23,7 +23,10 @@
         }
       },
       "sowingDate": {
-        "desc": ""
+        "desc": "Date at which the crop is sown or transplanted",
+        "unit": "YYYY-MM-DD",
+        "min": 0000-01-01,
+        "max": 2999-12-31
       },
       "rowWidth": {
         "desc": "Row width",
@@ -113,7 +116,7 @@
             "max": null
           },
           "NConc": {
-            "desc": "N concentration in irrigtaion water",
+            "desc": "N concentration in irrigation water",
             "unit": "g l-1",
             "min": null,
             "max": null
