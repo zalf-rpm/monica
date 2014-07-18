@@ -416,7 +416,11 @@ namespace Monica
    * @param env the environment completely defining what the model needs and gets
    * @return a structure with all the Monica results
    */
-	Result runMonica(Env env, Configuration *cfg = NULL);
+#ifndef	MONICA_GUI
+  Result runMonica(Env env);
+#else
+  Result runMonica(Env env, Configuration* cfg = NULL);
+#endif
 
   void initializeFoutHeader(std::ofstream&);
   void initializeGoutHeader(std::ofstream&);

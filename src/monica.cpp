@@ -1018,13 +1018,15 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
 //------------------------------------------------------------------------------
 
-
-
 /**
  * @brief Static method for starting calculation
  * @param env
  */
-Result Monica::runMonica(Env env, Monica::Configuration* cfg)
+#ifndef	MONICA_GUI
+  Result Monica::runMonica(Env env)
+#else
+  Result Monica::runMonica(Env env, Monica::Configuration* cfg)
+#endif
 {
 
   Result res;
