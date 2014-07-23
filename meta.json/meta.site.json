@@ -37,7 +37,7 @@
   },
   "NDeposition": {
     "desc": "Annual deposition of nitrogen compounds with rainfall or dust",
-    "unit": "kg N ha-1",
+    "unit": "kg (N) ha-1",
     "min": 0.0,
     "max": 100.0
   },
@@ -55,9 +55,21 @@
   },
   "groundwaterDepthMinMonth": {
     "desc": "Month in which the minimum distance of the groundwater table to the ground surface is commonly observed",
-    "unit": "MMM",
-    "min": null,
-    "max": null
+    "unit": "month",
+    "enum": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ]
   },
   "horizons": [
     {
@@ -78,7 +90,9 @@
         "unit": "-",
         "db": {
           "table": "view_soil_characteristic_data",
-          "columns": [ "soil_type" ]
+          "columns": [
+            "soil_type"
+          ]
         }
       },
       "sand": {

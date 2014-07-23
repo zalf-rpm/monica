@@ -5,16 +5,17 @@
         "desc": "Crop species name",
         "db": {
           "table": "crop",
-          "columns": [ "name", "gen_type" ]
+          "columns": [
+            "name",
+            "gen_type"
+          ]
         }
-      }
-      ,
+      },
       "sowingDate": {
         "desc": "Date at which the crop is sown or transplanted",
         "unit": "date",
-        "min": 0000-01-01,
-        "max": 2999-12-31,
-        "default": null
+        "min": "0000-01-01",
+        "max": "2999-12-31"
       },
       "rowWidth": {
         "desc": "Row width",
@@ -22,8 +23,7 @@
         "min": 0,
         "max": 5000,
         "default": 14.5,
-        "advanced": true 
-        
+        "advanced": true
       },
       "plantSpace": {
         "desc": "Plant spacing",
@@ -37,23 +37,18 @@
         "desc": "Dry weight at planting or seed dry weight",
         "unit": "kg (DM) ha-1",
         "min": 1,
-        "max": null,
-        "default": null
+        "max": null
       },
       "percNTRansplant": {
         "desc": "Nitrogen concentration in transplant (0.0 if not known)",
         "unit": "kg kg-1",
         "min": 0.0,
         "max": 0.1,
-        "default": 0.07 
+        "default": 0.07
       },
       "finalHarvestDate": {
-        "desc": "Time of final harvest"
-        "unit": "date",
-        "min": null,
-        "max": null,
-        "default": null 
-  
+        "desc": "Date of final harvest",
+        "unit": "date"
       },
       "residuesRemoval": {
         "desc": "Share of crop residues removed from field",
@@ -150,15 +145,16 @@
             "desc": "Organic fertiliser type",
             "db": {
               "table": "organic_fertiliser",
-              "columns": [ "type" ]
+              "columns": [
+                "type"
+              ]
             }
           },
           "amount": {
             "desc": "Amount of N applied",
             "unit": "kg (N) ha-1",
             "min": 0,
-            "max": null,
-            "default": null
+            "max": null
           }
         }
       ],
@@ -180,15 +176,16 @@
             "desc": "Mineral fertiliser type",
             "db": {
               "table": "mineral_fertilisers",
-              "columns": [ "type" ]
+              "columns": [
+                "type"
+              ]
             }
           },
           "amount": {
             "desc": "Amount of N applied",
             "unit": "kg (N) ha-1",
             "min": 0,
-            "max": null,
-            "default": null
+            "max": null
           }
         }
       ]

@@ -2,45 +2,45 @@
   "time": {
     "startDate": {
       "desc": "Date at which the simulation starts",
-      "unit": "YYYY-MM-DD",
-      "min": 0000-01-01,
-      "max": 2999-11-30
+      "unit": "date",
+      "min": "0000-01-01",
+      "max": "2999-11-30"
     },
     "endDate": {
       "desc": "Date at which the simulation ends",
-      "unit": "YYYY-MM-DD",
-      "min": 0000-02-01,
-      "max": 2999-12-31
+      "unit": "date",
+      "min": "0000-02-01",
+      "max": "2999-12-31"
     }
   },
   "switch": {
     "useSecondaryYieldOn": {
       "desc": "Switches the utilisation of secondary yields off",
-      "unit": "-",
+      "unit": "bool",
       "min": false,
       "max": true
     },
     "nitrogenResponseOn": {
       "desc": "Switches the crop nitrogen response off for potential growth simulations",
-      "unit": "-",
+      "unit": "bool",
       "min": false,
       "max": true
     },
     "waterDeficitResponseOn": {
       "desc": "Switches the crop soil moisture response off for potential growth simulations",
-      "unit": "-",
+      "unit": "bool",
       "min": false,
       "max": true
     },
     "emergenceMoistureControlOn": {
       "desc": "Switches the seed response to soil moisture off for simulations with unknown initial conditions",
-      "unit": "-",
+      "unit": "bool",
       "min": false,
       "max": true
     },
     "emergenceFloodingControlOn": {
       "desc": "Switches the seed response to flooded surface off for simulations with unknown surface slope",
-      "unit": "-",
+      "unit": "bool",
       "min": false,
       "max": true
     }
@@ -55,13 +55,13 @@
     "soilNitrate": {
       "desc": "Initial soil nitrate content",
       "unit": "kg (NO3-N) m-3",
-      "min": null,
+      "min": 0,
       "max": null
     },
     "soilAmmonium": {
       "desc": "Initial soil ammonium content",
       "unit": "kg (NH4-N) m-3",
-      "min": null,
+      "min": 0,
       "max": null
     }
   }
