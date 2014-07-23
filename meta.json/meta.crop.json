@@ -5,66 +5,68 @@
         "desc": "Crop species name",
         "db": {
           "table": "crop",
-          "column": "name"
+          "columns": [ "name", "gen_type" ]
         }
-      },
-      "genType": {
-        "desc": "Crop cultivar name",
-        "db": {
-          "table": "crop",
-          "column": "gen_type"
-        }
-      },
-      "spec": {
-        "desc": "Crop specifier",
-        "db": {
-          "table": "crop",
-          "column": "spec"
-        }
-      },
+      }
+      ,
       "sowingDate": {
         "desc": "Date at which the crop is sown or transplanted",
-        "unit": "YYYY-MM-DD",
+        "unit": "date",
         "min": 0000-01-01,
-        "max": 2999-12-31
+        "max": 2999-12-31,
+        "default": null
       },
       "rowWidth": {
         "desc": "Row width",
         "unit": "cm",
-        "min": null,
-        "max": null
+        "min": 0,
+        "max": 5000,
+        "default": 14.5,
+        "advanced": true 
+        
       },
       "plantSpace": {
         "desc": "Plant spacing",
         "unit": "cm",
-        "min": null,
-        "max": null
+        "min": 0,
+        "max": 5000,
+        "default": 0,
+        "advanced": true
       },
       "plantDryWeight": {
         "desc": "Dry weight at planting or seed dry weight",
-        "unit": "kg (dwt) ha-1",
-        "min": null,
-        "max": null
+        "unit": "kg (DM) ha-1",
+        "min": 1,
+        "max": null,
+        "default": null
       },
       "percNTRansplant": {
-        "desc": "Percentage N in transplant (0.0 if not known)",
+        "desc": "Nitrogen concentration in transplant (0.0 if not known)",
         "unit": "kg kg-1",
-        "min": null,
-        "max": null
+        "min": 0.0,
+        "max": 0.1,
+        "default": 0.07 
       },
       "finalHarvestDate": {
         "desc": "Time of final harvest"
+        "unit": "date",
+        "min": null,
+        "max": null,
+        "default": null 
+  
       },
       "residuesRemoval": {
-        "desc": "Percentage of crop residues removed from field",
-        "unit": "kg (dwt) kg-1 (dwt)",
-        "min": null,
-        "max": null
+        "desc": "Share of crop residues removed from field",
+        "unit": "kg (DM) kg-1 (DM)",
+        "min": 0,
+        "max": 1,
+        "default": 0.85
       },
-      "tillageOps": [
+      "tillageOperations": [
         {
           "date": {
-            "desc": "Tillage date"
+            "desc": "Tillage date",
+            "unit": "date"
           },
           "method": {
             "desc": "Tillage Method",
@@ -76,8 +78,9 @@
           "depth": {
             "desc": "Tillage depth",
             "unit": "cm",
-            "min": null,
-            "max": null
+            "min": 10,
+            "max": 200,
+            "default": 30
           }
         }
       ],
@@ -87,7 +90,8 @@
             "desc": "Irrigation method",
             "enum": [
               "Sprinkler"
-            ]
+            ],
+            "default": "Sprinkler"
           },
           "eventType": {
             "desc": "Event type",
@@ -95,85 +99,96 @@
               "Fixed",
               "Content",
               "Evapo"
-            ]
+            ],
+            "default": "Fixed"
           },
           "threshold": {
-            "desc": "Soil water content threshold",
+            "desc": "Soil water content threshold (if triggered event type is selected)",
             "unit": "mm mm-1",
-            "min": null,
-            "max": null
+            "min": 0,
+            "max": null,
+            "deafault": 0.2
           },
           "area": {
             "desc": "Fraction of wetted soil surface",
             "unit": "m2 m-2",
-            "min": null,
-            "max": null
+            "min": 0,
+            "max": 1,
+            "default": 1
           },
           "amount": {
             "desc": "Irrigation amount",
             "unit": "mm",
-            "min": null,
-            "max": null
+            "min": 0,
+            "max": null,
+            "default": 5
           },
           "NConc": {
-            "desc": "N concentration in irrigation water",
+            "desc": "Nitrogen concentration in irrigation water",
             "unit": "g l-1",
-            "min": null,
-            "max": null
+            "min": 0,
+            "max": null,
+            "default": 0
           }
         }
       ],
       "organicFertilisers": [
         {
           "date": {
-            "desc": "Fertilising date"
+            "desc": "Fertilising date",
+            "unit": "date"
           },
           "method": {
             "desc": "Event type",
             "enum": [
               "Fixed",
               "Automated"
-            ]
+            ],
+            "default": "Fixed"
           },
           "type": {
             "desc": "Organic fertiliser type",
             "db": {
               "table": "organic_fertiliser",
-              "column": "type"
+              "columns": [ "type" ]
             }
           },
           "amount": {
             "desc": "Amount of N applied",
             "unit": "kg (N) ha-1",
-            "min": null,
-            "max": null
+            "min": 0,
+            "max": null,
+            "default": null
           }
         }
       ],
       "mineralFertilisers": [
         {
           "date": {
-            "desc": "Fertilising date"
+            "desc": "Fertilising date",
+            "unit": "date"
           },
           "method": {
             "desc": "Event type",
             "enum": [
               "Fixed",
               "Automated"
-            ]
+            ],
+            "default": "Fixed"
           },
           "type": {
             "desc": "Mineral fertiliser type",
             "db": {
               "table": "mineral_fertilisers",
-              "column": "type"
+              "columns": [ "type" ]
             }
           },
           "amount": {
             "desc": "Amount of N applied",
             "unit": "kg (N) ha-1",
-            "min": null,
-            "max": null
+            "min": 0,
+            "max": null,
+            "default": null
           }
         }
       ]
