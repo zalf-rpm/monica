@@ -1,0 +1,56 @@
+** parameter meta description **
+
+{
+  /* required */
+  
+    desc: not null, text: description
+    unit: not null, text: "-", "bool", "date" or any other physical unit. 
+  
+  /* optional */
+  
+    default: null, text or number
+    min: null, text or number,
+    max: null, text or number,
+    advanced: not null, true or false  (for "advanced" users or probably not implemented or experimental)
+    enum: not null, array with text e.g. ["option1", "option2"]
+    OR
+    db: not null, object { table: "tableName", columns: ["columnName1", "columnName2"] }
+}  
+
+
+** units / examples **
+
+Boolean
+{
+  unit: "bool",
+  min: false,
+  max: true,
+  default: true or false
+}  
+
+Date (default date format is "YYYY-MM-DD")
+{
+  unit: "date",
+  min: any date as "YYYY-MM-DD",
+  max: any date as "YYYY-MM-DD",
+  default: any date within min max
+}
+
+Percent, usually implies min = 0.0 and max = 100.0
+{
+  unit: "%" or e.g. "100 kg kg-1",
+  ...
+}
+
+Physical fraction, decimal, usually implies min = 0.0 and max = 1.0
+{ 
+  unit: "kg (DM) kg-1 (DM)"
+  ...
+}
+
+No unit
+{
+  unit: "-"
+  ...
+}
+
