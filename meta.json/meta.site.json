@@ -76,8 +76,10 @@
       "textureClass": {
         "desc": "Texture class according to the German Soil Survey Manual 5th ed.",
         "unit": "-",
-        "min": null,
-        "max": null
+        "db": {
+          "table": "view_soil_characteristic_data",
+          "columns": [ "soil_type" ]
+        }
       },
       "sand": {
         "desc": "Volume fraction of fine soil (< 2.0 mm particle diameter) occupied by sand (0.063 mm to 2.0 mm)",
