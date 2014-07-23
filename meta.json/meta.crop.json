@@ -102,7 +102,7 @@
             "unit": "mm mm-1",
             "min": 0,
             "max": null,
-            "deafault": 0.2
+            "default": 0.2
           },
           "area": {
             "desc": "Fraction of wetted soil surface",
