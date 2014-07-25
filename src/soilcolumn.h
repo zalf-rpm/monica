@@ -75,9 +75,10 @@ namespace Monica {
     double vo_AOM_Fast; /**< C content in rapidly decomposing added organic matter pool [kgC m-3] */
 
 
-    double vo_AOM_SlowDecRate; /**< Rate for slow AOM transformation that will be calculated. */
-    double vo_AOM_FastDecRate; /**< Rate for fast AOM transformation that will be calculated. */
-
+		double vo_AOM_SlowDecRate_to_SMB_Slow; /**< Rate for slow AOM consumed by SMB Slow is calculated. */
+		double vo_AOM_SlowDecRate_to_SMB_Fast; /**< Rate for slow AOM consumed by SMB Fast is calculated. */
+		double vo_AOM_FastDecRate_to_SMB_Slow; /**< Rate for fast AOM consumed by SMB Slow is calculated. */
+		double vo_AOM_FastDecRate_to_SMB_Fast; /**< Rate for fast AOM consumed by SMB Fast is calculated. */
 
     double vo_AOM_SlowDecCoeff; /**< Is dependent on environment */
     double vo_AOM_FastDecCoeff; /**< Is dependent on environment */
