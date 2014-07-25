@@ -631,6 +631,7 @@ void SoilOrganic::fo_MIT() {
 	double po_SOM_FastUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SOM_FastUtilizationEfficiency;
 	double po_PartSOM_Fast_to_SOM_Slow = centralParameterProvider.userSoilOrganicParameters.po_PartSOM_Fast_to_SOM_Slow;
 	double po_PartSMB_Slow_to_SOM_Fast = centralParameterProvider.userSoilOrganicParameters.po_PartSMB_Slow_to_SOM_Fast;
+	double po_PartSMB_Fast_to_SOM_Fast = centralParameterProvider.userSoilOrganicParameters.po_PartSMB_Fast_to_SOM_Fast; 
 	double po_SMB_UtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SMB_UtilizationEfficiency;
 	double po_CN_Ratio_SMB = centralParameterProvider.userSoilOrganicParameters.po_CN_Ratio_SMB;
 	double po_AOM_SlowUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_AOM_SlowUtilizationEfficiency;
@@ -681,9 +682,15 @@ void SoilOrganic::fo_MIT() {
   std::vector<double> vo_SMB_FastDeathRateCoeff(nools, 0.0);
 
   // Fast fraction of soil microbial biomass decomposition rate [d-1]
-  std::vector<double> vo_SMB_FastDecCoeff(nools, 0.0);
+  std::vector<double> vo_SMB_FastDecRate(nools, 0.0);
 
-  // Soil microbial biomass fast pool change [kg C m-3]
+	// Fast fraction of soil microbial biomass maintenance rate coefficient [d-1]
+	std::vector<double> vo_SMB_FastMaintRateCoeff(nools, 0.0);
+
+	// Fast fraction of soil microbial biomass maintenance rate [d-1]
+	std::vector<double> vo_SMB_FastMaintRate(nools, 0.0);
+	
+	// Soil microbial biomass fast pool change [kg C m-3]
   fill(vo_SMB_FastDelta.begin(), vo_SMB_FastDelta.end(), 0.0);
 
   // CO2 preduced from slow fraction of soil microbial biomass [kg C m-3 d-1]
@@ -696,13 +703,22 @@ void SoilOrganic::fo_MIT() {
   std::vector<double> vo_SMB_SlowDeathRateCoeff(nools, 0.0);
 
   // Slow fraction of soil microbial biomass decomposition rate [d-1]
-  std::vector<double> vo_SMB_SlowDecCoeff(nools, 0.0);
+  std::vector<double> vo_SMB_SlowDecRate(nools, 0.0);
 
-  // Soil microbial biomass slow pool change [kg C m-3]
+	// Slow fraction of soil microbial biomass maintenance rate coefficient [d-1]
+	std::vector<double> vo_SMB_SlowMaintRateCoeff(nools, 0.0);
+	
+	// Slow fraction of soil microbial biomass maintenance rate [d-1]
+	std::vector<double> vo_SMB_SlowMaintRate(nools, 0.0);
+	
+	// Soil microbial biomass slow pool change [kg C m-3]
   fill(vo_SMB_SlowDelta.begin(), vo_SMB_SlowDelta.end(), 0.0);
 
   // Decomposition coefficient for rapidly decomposing soil organic matter [d-1]
   std::vector<double> vo_SOM_FastDecCoeff(nools, 0.0);
+
+	// Decomposition rate for rapidly decomposing soil organic matter [d-1]
+	std::vector<double> vo_SOM_FastDecRate(nools, 0.0);
 
   // Soil organic matter fast pool change [kg C m-3]
   fill(vo_SOM_FastDelta.begin(), vo_SOM_FastDelta.end(), 0.0);
@@ -712,6 +728,9 @@ void SoilOrganic::fo_MIT() {
 
   // Decomposition coefficient for slowly decomposing soil organic matter [d-1]
   std::vector<double> vo_SOM_SlowDecCoeff(nools, 0.0);
+
+	// Decomposition rate for slowly decomposing soil organic matter [d-1]
+	std::vector<double> vo_SOM_SlowDecRate(nools, 0.0);
 
   // Soil organic matter slow pool change, unit [kg C m-3]
   fill(vo_SOM_SlowDelta.begin(), vo_SOM_SlowDelta.end(), 0.0);
@@ -725,23 +744,27 @@ void SoilOrganic::fo_MIT() {
 
     double tod = fo_TempOnDecompostion(soilColumn[i_Layer].get_Vs_SoilTemperature());
     double mod = fo_MoistOnDecompostion(soilColumn[i_Layer].vs_SoilMoisture_pF());
-//    cout << "SO-5\t" << mod << endl;
 
 		vo_SOM_SlowDecCoeff[i_Layer] = po_SOM_SlowDecCoeffStandard * tod * mod;
 		vo_SOM_FastDecCoeff[i_Layer] = po_SOM_FastDecCoeffStandard * tod * mod;
+		vo_SOM_SlowDecRate[i_Layer] = vo_SOM_SlowDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SOM_Slow;
+		vo_SOM_FastDecRate[i_Layer] = vo_SOM_FastDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SOM_Fast;
 
-		vo_SMB_SlowDecCoeff[i_Layer] = (po_SMB_SlowDeathRateStandard
-					 + po_SMB_SlowMaintRateStandard)
-			     * fo_ClayOnDecompostion(soilColumn[i_Layer].vs_SoilClayContent,
-						 po_LimitClayEffect) * tod * mod;
+		vo_SMB_SlowMaintRateCoeff[i_Layer] = po_SMB_SlowMaintRateStandard
+			* fo_ClayOnDecompostion(soilColumn[i_Layer].vs_SoilClayContent,
+			po_LimitClayEffect) * tod * mod;
 
-		vo_SMB_FastDecCoeff[i_Layer] = (po_SMB_FastDeathRateStandard
-						+ po_SMB_FastMaintRateStandard) * tod * mod;
+		vo_SMB_FastMaintRateCoeff[i_Layer] = po_SMB_FastMaintRateStandard * tod * mod;
 
+		vo_SMB_SlowMaintRate[i_Layer] = vo_SMB_SlowMaintRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Slow;
+		vo_SMB_FastMaintRate[i_Layer] = vo_SMB_FastMaintRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Fast;
 		vo_SMB_SlowDeathRateCoeff[i_Layer] = po_SMB_SlowDeathRateStandard * tod * mod;
 		vo_SMB_FastDeathRateCoeff[i_Layer] = po_SMB_FastDeathRateStandard * tod * mod;
     vo_SMB_SlowDeathRate[i_Layer] = vo_SMB_SlowDeathRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Slow;
     vo_SMB_FastDeathRate[i_Layer] = vo_SMB_FastDeathRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Fast;
+
+		vo_SMB_SlowDecRate[i_Layer] = vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_SlowMaintRate[i_Layer];
+		vo_SMB_FastDecRate[i_Layer] = vo_SMB_FastDeathRate[i_Layer] + vo_SMB_FastMaintRate[i_Layer];
 
     BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
       AOM_Pool.vo_AOM_SlowDecCoeff = AOM_Pool.vo_AOM_SlowDecCoeffStandard * tod * mod;
@@ -771,47 +794,54 @@ void SoilOrganic::fo_MIT() {
     vo_AOM_SlowDecRateSum[i_Layer] = 0.0;
 
     BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
-      AOM_Pool.vo_AOM_SlowDecRate = AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow;
-      vo_AOM_SlowDecRateSum[i_Layer] += AOM_Pool.vo_AOM_SlowDecRate;
+      AOM_Pool.vo_AOM_SlowDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow 
+				   * AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow;
+
+			AOM_Pool.vo_AOM_SlowDecRate_to_SMB_Fast = AOM_Pool.vo_PartAOM_Slow_to_SMB_Fast
+				* AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow;
+
+			vo_AOM_SlowDecRateSum[i_Layer] += AOM_Pool.vo_AOM_SlowDecRate_to_SMB_Slow 
+				   + AOM_Pool.vo_AOM_SlowDecRate_to_SMB_Fast;
     }
 
-		vo_SMB_SlowDelta[i_Layer] = (po_SOM_SlowUtilizationEfficiency * vo_SOM_SlowDecCoeff[i_Layer]
-			  * soilColumn[i_Layer].vs_SOM_Slow)
-				+ (po_SOM_FastUtilizationEfficiency * (1.0
-				- po_PartSOM_Fast_to_SOM_Slow)
-			  * vo_SOM_FastDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SOM_Fast)
-				+ (po_AOM_SlowUtilizationEfficiency
-			  * vo_AOM_SlowDecRateSum[i_Layer])
-			  - (vo_SMB_SlowDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Slow
-			  + vo_SMB_SlowDeathRate[i_Layer]);
+		vo_SMB_SlowDelta[i_Layer] = (po_SOM_SlowUtilizationEfficiency * vo_SOM_SlowDecRate[i_Layer])
+				+ (po_SOM_FastUtilizationEfficiency * (1.0 - po_PartSOM_Fast_to_SOM_Slow) * vo_SOM_FastDecRate[i_Layer])
+				+ (po_AOM_SlowUtilizationEfficiency * vo_AOM_SlowDecRateSum[i_Layer])
+			  - vo_SMB_SlowDecRate[i_Layer];
 
-    // Eq.6-8 in the DAISY manual
+  // Eq.6-8 in the DAISY manual
     vo_AOM_FastDecRateSum[i_Layer] = 0.0;
 
     BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
-      AOM_Pool.vo_AOM_FastDecRate = AOM_Pool.vo_AOM_FastDecCoeff * AOM_Pool.vo_AOM_Fast;
-      vo_AOM_FastDecRateSum[i_Layer] += AOM_Pool.vo_AOM_FastDecRate;
+			AOM_Pool.vo_AOM_FastDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow
+				    * AOM_Pool.vo_AOM_FastDecCoeff * AOM_Pool.vo_AOM_Fast;
+			
+			AOM_Pool.vo_AOM_FastDecRate_to_SMB_Fast = AOM_Pool.vo_PartAOM_Slow_to_SMB_Fast
+				* AOM_Pool.vo_AOM_FastDecCoeff * AOM_Pool.vo_AOM_Fast; 
+			
+			vo_AOM_FastDecRateSum[i_Layer] += AOM_Pool.vo_AOM_FastDecRate_to_SMB_Slow 
+				   + AOM_Pool.vo_AOM_FastDecRate_to_SMB_Fast;
     }
 
-		vo_SMB_FastDelta[i_Layer] = (po_SMB_UtilizationEfficiency * (1.0
-				- po_PartSMB_Slow_to_SOM_Fast)
-			  * (vo_SMB_SlowDeathRate[i_Layer]
-			  + vo_SMB_FastDeathRate[i_Layer]))
-				+ (po_AOM_FastUtilizationEfficiency
-			  * vo_AOM_FastDecRateSum[i_Layer])
-			  - ((vo_SMB_FastDecCoeff[i_Layer]
-			  * soilColumn[i_Layer].vs_SMB_Fast)
-			  + vo_SMB_FastDeathRate[i_Layer]);
+		vo_SMB_FastDelta[i_Layer] = (po_SMB_UtilizationEfficiency * 
+			  (1.0 - po_PartSMB_Slow_to_SOM_Fast) * (vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_FastDeathRate[i_Layer]))
+				+ (po_AOM_FastUtilizationEfficiency * vo_AOM_FastDecRateSum[i_Layer])
+			  - vo_SMB_FastDecRate[i_Layer];
 
     //!Eq.6-9 in the DAISY manual
-		vo_SOM_SlowDelta[i_Layer] = po_PartSOM_Fast_to_SOM_Slow * vo_SOM_FastDecCoeff[i_Layer]
-			  * soilColumn[i_Layer].vs_SOM_Fast - vo_SOM_SlowDecCoeff[i_Layer]
-			  * soilColumn[i_Layer].vs_SOM_Slow;
+		vo_SOM_SlowDelta[i_Layer] = po_PartSOM_Fast_to_SOM_Slow * vo_SOM_FastDecRate[i_Layer]
+			  - vo_SOM_SlowDecRate[i_Layer];
+
+		if ((soilColumn[i_Layer].vs_SOM_Slow + vo_SOM_SlowDelta[i_Layer]) < 0.0)
+			vo_SOM_SlowDelta[i_Layer] = soilColumn[i_Layer].vs_SOM_Slow;
 
     // Eq.6-10 in the DAISY manual
-		vo_SOM_FastDelta[i_Layer] = po_PartSMB_Slow_to_SOM_Fast * (vo_SMB_SlowDeathRate[i_Layer]
-			  + vo_SMB_FastDeathRate[i_Layer]) - vo_SOM_FastDecCoeff[i_Layer]
-			  * soilColumn[i_Layer].vs_SOM_Fast;
+		vo_SOM_FastDelta[i_Layer] = po_PartSMB_Slow_to_SOM_Fast 
+			  * (vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_FastDeathRate[i_Layer]) 
+				- vo_SOM_FastDecRate[i_Layer];
+
+		if ((soilColumn[i_Layer].vs_SOM_Fast + vo_SOM_FastDelta[i_Layer]) < 0.0)
+			vo_SOM_FastDelta[i_Layer] = soilColumn[i_Layer].vs_SOM_Fast;
 
     vo_AOM_SlowDeltaSum[i_Layer] = 0.0;
     vo_AOM_FastDeltaSum[i_Layer] = 0.0;
@@ -826,19 +856,20 @@ void SoilOrganic::fo_MIT() {
   vo_DecomposerRespiration = 0.0;
 
   // Calculation of CO2 evolution
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+	for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
 		vo_SMB_SlowCO2EvolutionRate[i_Layer] = ((1.0 - po_SOM_SlowUtilizationEfficiency)
-				    * vo_SOM_SlowDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SOM_Slow) + ((1.0
-						- po_SOM_FastUtilizationEfficiency) * (1.0 - po_PartSOM_Fast_to_SOM_Slow)
-				    * vo_SOM_FastDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SOM_Fast) + ((1.0
-						- po_AOM_SlowUtilizationEfficiency) * vo_AOM_SlowDecRateSum[i_Layer])
-						+ (po_SMB_UtilizationEfficiency
-				    * (vo_SMB_SlowDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Slow));
+			   * vo_SOM_SlowDecRate[i_Layer])
+			   + ((1.0 - po_SOM_FastUtilizationEfficiency) * (1.0 - po_PartSOM_Fast_to_SOM_Slow)
+			   * vo_SOM_FastDecRate[i_Layer])
+			   + ((1.0 - po_AOM_SlowUtilizationEfficiency) * vo_AOM_SlowDecRateSum[i_Layer]) 
+			   + vo_SMB_SlowMaintRate[i_Layer];
+						
 
-		vo_SMB_FastCO2EvolutionRate[i_Layer] = ((1.0 - po_SMB_UtilizationEfficiency) * (1.0
-					 - po_PartSMB_Slow_to_SOM_Fast) * (vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_FastDeathRate[i_Layer]))
-					 + ((1.0 - po_AOM_FastUtilizationEfficiency) * vo_AOM_FastDecRateSum[i_Layer])
-				   + ((vo_SMB_FastDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Fast));
+		vo_SMB_FastCO2EvolutionRate[i_Layer] = (1.0 - po_SMB_UtilizationEfficiency)
+			   * (((1.0 - po_PartSMB_Slow_to_SOM_Fast) * vo_SMB_SlowDeathRate[i_Layer]) 
+				 + ((1.0 - po_PartSMB_Fast_to_SOM_Fast) * vo_SMB_FastDeathRate[i_Layer]))
+				 + ((1.0 - po_AOM_FastUtilizationEfficiency) * vo_AOM_FastDecRateSum[i_Layer])
+			   + vo_SMB_FastMaintRate[i_Layer];
 
     vo_SMB_CO2EvolutionRate[i_Layer] = vo_SMB_SlowCO2EvolutionRate[i_Layer] + vo_SMB_FastCO2EvolutionRate[i_Layer];
 
@@ -881,21 +912,21 @@ void SoilOrganic::fo_MIT() {
 
 			if (fabs(vo_NBalance[i_Layer]) >= ((soilColumn[i_Layer].vs_SoilNH4 * po_ImmobilisationRateCoeffNH4)
 				+ (soilColumn[i_Layer].vs_SoilNO3 * po_ImmobilisationRateCoeffNO3))) {
-        vo_AOM_SlowDeltaSum[i_Layer] = 0.0;
-        vo_AOM_FastDeltaSum[i_Layer] = 0.0;
+				vo_AOM_SlowDeltaSum[i_Layer] = 0.0;
+				vo_AOM_FastDeltaSum[i_Layer] = 0.0;
 
-        vector<AOM_Properties>& AOM_Pool = soilColumn[i_Layer].vo_AOM_Pool;
+				vector<AOM_Properties>& AOM_Pool = soilColumn[i_Layer].vo_AOM_Pool;
 
-        for (vector<AOM_Properties>::iterator it_AOM_Pool = AOM_Pool.begin(); it_AOM_Pool != AOM_Pool.end(); it_AOM_Pool++) {
+				for (vector<AOM_Properties>::iterator it_AOM_Pool = AOM_Pool.begin(); it_AOM_Pool != AOM_Pool.end(); it_AOM_Pool++) {
 
 					if (it_AOM_Pool->vo_CN_Ratio_AOM_Slow >= (po_CN_Ratio_SMB
-							 / po_AOM_SlowUtilizationEfficiency)) {
+						/ po_AOM_SlowUtilizationEfficiency)) {
 
 						it_AOM_Pool->vo_AOM_SlowDelta = 0.0;
 					} // if
 
 					if (it_AOM_Pool->vo_CN_Ratio_AOM_Fast >= (po_CN_Ratio_SMB
-							 / po_AOM_FastUtilizationEfficiency)) {
+						/ po_AOM_FastUtilizationEfficiency)) {
 
 						it_AOM_Pool->vo_AOM_FastDelta = 0.0;
 					} // if
@@ -903,7 +934,7 @@ void SoilOrganic::fo_MIT() {
 					vo_AOM_SlowDeltaSum[i_Layer] += it_AOM_Pool->vo_AOM_SlowDelta;
 					vo_AOM_FastDeltaSum[i_Layer] += it_AOM_Pool->vo_AOM_FastDelta;
 
-        } // for
+				} // for
 
 				if (vo_CN_Ratio_SOM_Slow >= (po_CN_Ratio_SMB / po_SOM_SlowUtilizationEfficiency)) {
 
@@ -915,21 +946,26 @@ void SoilOrganic::fo_MIT() {
 					vo_SOM_FastDelta[i_Layer] = 0.0;
 				} // if
 
-        // Recalculation of SMB pool changes
+				// Recalculation of SMB pool changes
 
-        /** @todo <b>Claas: </b> Folgende Algorithmen prüfen: Was verändert sich? */
-				vo_SMB_SlowDelta[i_Layer] = (po_SOM_SlowUtilizationEfficiency * vo_SOM_SlowDecCoeff[i_Layer]
-						 * soilColumn[i_Layer].vs_SOM_Slow) + (po_SOM_FastUtilizationEfficiency * (1.0
-						 - po_PartSOM_Fast_to_SOM_Slow) * vo_SOM_FastDecCoeff[i_Layer]
-						 * soilColumn[i_Layer].vs_SOM_Fast) + (po_AOM_SlowUtilizationEfficiency
-			       * (-vo_AOM_SlowDeltaSum[i_Layer])) - (vo_SMB_SlowDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Slow
-			       + vo_SMB_SlowDeathRate[i_Layer]);
+				/** @todo <b>Claas: </b> Folgende Algorithmen prüfen: Was verändert sich? */
+				vo_SMB_SlowDelta[i_Layer] = (po_SOM_SlowUtilizationEfficiency * vo_SOM_SlowDecRate[i_Layer])
+					+ (po_SOM_FastUtilizationEfficiency * (1.0 - po_PartSOM_Fast_to_SOM_Slow) * vo_SOM_FastDecRate[i_Layer])
+					+ (po_AOM_SlowUtilizationEfficiency * vo_AOM_SlowDecRateSum[i_Layer])
+					- vo_SMB_SlowDecRate[i_Layer];
 
-				vo_SMB_FastDelta[i_Layer] = (po_SMB_UtilizationEfficiency * (1.0
-						- po_PartSMB_Slow_to_SOM_Fast) * (vo_SMB_SlowDeathRate[i_Layer]
-						+ vo_SMB_FastDeathRate[i_Layer])) + (po_AOM_FastUtilizationEfficiency
-			      * (-vo_AOM_FastDeltaSum[i_Layer])) - ((vo_SMB_FastDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SMB_Fast)
-			      + vo_SMB_FastDeathRate[i_Layer]);
+				if ((soilColumn[i_Layer].vs_SMB_Slow + vo_SMB_SlowDelta[i_Layer]) < 0.0){
+				  vo_SMB_SlowDelta[i_Layer] = soilColumn[i_Layer].vs_SMB_Slow;
+			  }
+
+				vo_SMB_FastDelta[i_Layer] = (po_SMB_UtilizationEfficiency *
+					(1.0 - po_PartSMB_Slow_to_SOM_Fast) * (vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_FastDeathRate[i_Layer]))
+					+ (po_AOM_FastUtilizationEfficiency * vo_AOM_FastDecRateSum[i_Layer])
+					- vo_SMB_FastDecRate[i_Layer];
+
+				if ((soilColumn[i_Layer].vs_SMB_Fast + vo_SMB_FastDelta[i_Layer]) < 0.0){
+					vo_SMB_FastDelta[i_Layer] = soilColumn[i_Layer].vs_SMB_Fast;
+				}
 
         // Recalculation of N balance under conditions of immobilisation
 				vo_NBalance[i_Layer] = -(vo_SMB_SlowDelta[i_Layer] / po_CN_Ratio_SMB)
@@ -1279,7 +1315,7 @@ void SoilOrganic::fo_PoolUpdate() {
     
     soilColumn[i_Layer].set_SoilOrganicCarbon((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer]) / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
 
-	soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer])/ OrganicConstants::po_SOM_to_C
+	  soilColumn[i_Layer].set_SoilOrganicMatter((vo_SoilOrganicC[i_Layer] + vo_InertSoilOrganicC[i_Layer])/ OrganicConstants::po_SOM_to_C
 				      / soilColumn[i_Layer].vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
   } // for
 }

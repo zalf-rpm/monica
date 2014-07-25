@@ -54,8 +54,10 @@ using namespace boost;
 AOM_Properties::AOM_Properties()
 : vo_AOM_Slow(0.0),
 vo_AOM_Fast(0.0),
-vo_AOM_SlowDecRate(0.0),
-vo_AOM_FastDecRate(0.0),
+vo_AOM_SlowDecRate_to_SMB_Slow(0.0),
+vo_AOM_SlowDecRate_to_SMB_Fast(0.0),
+vo_AOM_FastDecRate_to_SMB_Slow(0.0),
+vo_AOM_FastDecRate_to_SMB_Fast(0.0),
 vo_AOM_SlowDecCoeff(0.0),
 vo_AOM_FastDecCoeff(0.0),
 vo_AOM_SlowDecCoeffStandard(1.0),
