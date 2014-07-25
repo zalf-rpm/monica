@@ -102,7 +102,8 @@ class Configuration
 
     /* create production processes */
     bool createProcesses(std::vector<ProductionProcess> &pps, cson_array* cropsArr);
-    bool addTillageOps(ProductionProcess &pp, cson_array* tillArr);
+		bool addHarvestOps(ProductionProcess &pp, cson_array* harvArr);
+		bool addTillageOps(ProductionProcess &pp, cson_array* tillArr);
     bool addFertilizers(ProductionProcess &pp, cson_array* fertArr, bool isOrganic = false);
     bool addIrrigations(ProductionProcess &pp, cson_array* irriArr);
 

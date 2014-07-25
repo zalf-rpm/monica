@@ -56,12 +56,14 @@ namespace Monica
   /**
  * @brief  Crop part of model
  *
- * The crop is divided into several organs e.g. root, Sprossachse, leaf and Speicherorgan.
+ * The crop is divided into several organs e.g. root, shoot, leaf, storage organ 
+ * and eventually a permanent structure.
  * In the source code, the organs are mapped to numbers:<br>
  * 0 - Root<br>
  * 1 - Leaf<br>
  * 2 - Shoot<br>
  * 3 - Storage organ<br>
+ * 4 - Permanent structure <br>
  *
  * @author Michael Berg
  */
@@ -74,6 +76,7 @@ namespace Monica
     ~CropGrowth();
 
     void applyCutting();
+		void applyFruitHarvest(double percentage);
 
     void step(double vw_MeanAirTemperature, double vw_MaxAirTemperature,
               double vw_MinAirTemperature, double vw_GlobalRadiation,
@@ -104,7 +107,9 @@ namespace Monica
                                    std::vector<double> pc_BaseTemperature,
 																	 std::vector<double> pc_OptimumTemperature,
 																	 std::vector<double> pc_StageTemperatureSum,
-                                   double vc_TimeStep,
+																	 bool pc_Perennial,
+																	 bool vc_GrowthCycleEnded, 
+																	 double vc_TimeStep,
                                    double d_SoilMoisture_m3,
                                    double d_FieldCapacity,
                                    double d_PermanentWiltingPoint,
@@ -211,7 +216,7 @@ namespace Monica
     double get_RemainingEvapotranspiration() const;
     double get_EvaporatedFromIntercept() const;
     double get_NetPrecipitation() const;
-	std::string get_CropName() const;
+	  std::string get_CropName() const;
     double get_GrossPhotosynthesisRate() const;
     double get_GrossPhotosynthesisHaRate() const;
     double get_AssimilationRate() const;
@@ -219,7 +224,7 @@ namespace Monica
     double get_NetMaintenanceRespiration() const;
     double get_MaintenanceRespirationAS() const;
     double get_GrowthRespirationAS() const;
-	double get_VernalisationFactor() const;
+    double get_VernalisationFactor() const;
     double get_DaylengthFactor() const;
     double get_OrganGrowthIncrement(int i_Organ) const;
     double get_NetPhotosynthesis() const;
@@ -242,16 +247,19 @@ namespace Monica
     double get_OrganBiomass(int i_Organ) const;
     double get_AbovegroundBiomass() const;
     double get_AbovegroundBiomassNContent() const;
+		double get_FruitBiomassNConcentration() const; 
+		double get_FruitBiomassNContent() const;
     double get_HeatSumIrrigationStart() const;
     double get_HeatSumIrrigationEnd() const;
     double get_NUptakeFromLayer(int i_Layer) const;
-    double get_TotalBiomassNContent() const;
+		double get_TotalBiomass() const;
+		double get_TotalBiomassNContent() const;
     double get_RootNConcentration() const;
     double get_TargetNConcentration() const;
     double get_CriticalNConcentration() const;
     double get_AbovegroundBiomassNConcentration() const;
     double get_PrimaryCropYield() const;
-    double get_SecondaryCropYield() const;
+		double get_SecondaryCropYield() const;
     double get_FreshPrimaryCropYield() const;
     double get_FreshSecondaryCropYield() const;
     double get_ResidueBiomass(bool useSecondaryCropYields = true) const;
@@ -264,19 +272,19 @@ namespace Monica
     double get_SumTotalNUptake() const;
     double get_ActNUptake() const;
     double get_PotNUptake() const;
-	double get_BiologicalNFixation() const;
+	  double get_BiologicalNFixation() const;
     double get_AccumulatedETa() const;
-    double get_GrossPrimaryProduction() const;
+		double get_AccumulatedPrimaryCropYield() const; 
+		double get_GrossPrimaryProduction() const;
     double get_NetPrimaryProduction() const;
-    
     double get_AutotrophicRespiration() const;
     double get_OrganSpecificTotalRespired(int organ) const;
     double get_OrganSpecificNPP(int organ) const;
-
     double getEffectiveRootingDepth() const;
-    int get_NumberOfOrgans() const { return pc_NumberOfOrgans; }
+		int get_NumberOfOrgans() const;
+		int get_StageAfterCut() const;
 
-    inline void accumulateEvapotranspiration(double ETa) { vc_accumulatedETa += ETa;}
+    inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa;}
 
 
     /**
@@ -290,7 +298,64 @@ namespace Monica
      */
     inline bool isDying() const { return this->dyingOut; }
 
-  private:
+		/**
+		* @brief Setter for organ biomass.
+		* @sets organ biomass
+		*/
+		void set_OrganBiomass(int organ, double organBiomass) 
+		{ 
+			vc_OrganBiomass[organ] = organBiomass;
+		}
+
+		/**
+		* @brief Setter for organ biomass.
+		* @sets organ biomass
+		*/
+		void set_DevelopmentalStage(int devStage)
+		{
+			vc_DevelopmentalStage = devStage;
+			for (int stage = devStage; stage<pc_NumberOfDevelopmentalStages; stage++) {
+				vc_CurrentTemperatureSum[stage] = 0.0;
+			}
+			vc_CurrentTotalTemperatureSum = 0.0;
+		}
+
+		void set_CuttingDelayDays()
+		{
+			vc_CuttingDelayDays = pc_CuttingDelayDays;
+		}
+
+		/**
+		* @brief Setter for maximum assimilation rate.
+		* @modifies maximum assimilation rate
+		*/
+		void set_MaxAssimilationRate(double modifier)
+		{
+			pc_MaxAssimilationRate = modifier * pc_MaxAssimilationRate;
+		}
+
+		/**
+		* @brief Setter for organ biomass.
+		* @sets organ biomass
+		*/
+		void set_TotalBiomassNContent(double BiomassNContent)
+		{
+			vc_TotalBiomassNContent = BiomassNContent;
+		}
+		/**
+		* @brief Setter for primary crop yield.
+		* @sets primary crop yield
+		*/
+		void accumulatePrimaryCropYield(double primaryCropYield)
+		{
+			vc_AccumulatedPrimaryCropYield += primaryCropYield;
+		}
+
+		void setPerennialCropParameters(const CropParameters* cps) { perennialCropParams = cps; }
+
+		void fc_UpdateCropParametersForPerennial();
+
+private:
     //methods
     void calculateCropGrowthStep(double vw_MeanAirTemperature,
                                  double vw_MaxAirTemperature,
@@ -309,7 +374,8 @@ namespace Monica
     // members
     SoilColumn& soilColumn;
     GeneralParameters generalParams;
-    const CropParameters& cropParams;
+		//const CropParameters& cropParams;
+		const CropParameters* perennialCropParams;
     const CentralParameterProvider& centralParameterProvider;
 
     //! old N
@@ -322,14 +388,15 @@ namespace Monica
     double vs_JulianDay;
     double vc_AbovegroundBiomass;//! old OBMAS
     double vc_AbovegroundBiomassOld; //! old OBALT
-    const std::vector<int>& pc_AbovegroundOrgan;	//! old KOMP
+    std::vector<int> pc_AbovegroundOrgan;	//! old KOMP
     double vc_ActualTranspiration;
-    const std::vector<std::vector<double> >& pc_AssimilatePartitioningCoeff; //! old PRO
+    std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; //! old PRO
+		double pc_AssimilateReallocation;
     double vc_Assimilates;
     double vc_AssimilationRate; //! old AMAX
     double vc_AstronomicDayLenght;	//! old DL
-    const std::vector<double>& pc_BaseDaylength;	//! old DLBAS
-    const std::vector<double>& pc_BaseTemperature;	//! old BAS
+    std::vector<double> pc_BaseDaylength;	//! old DLBAS
+    std::vector<double> pc_BaseTemperature;	//! old BAS
     double pc_BeginSensitivePhaseHeatStress;
     double vc_BelowgroundBiomass;
     double vc_BelowgroundBiomassOld;
@@ -337,7 +404,7 @@ namespace Monica
     double vc_ClearDayRadiation;		//! old DRC
     int pc_CO2Method;
     double vc_CriticalNConcentration; //! old GEHMIN
-    const std::vector<double>& pc_CriticalOxygenContent; //! old LUKRIT
+    std::vector<double> pc_CriticalOxygenContent; //! old LUKRIT
     double pc_CriticalTemperatureHeatStress;
     double vc_CropDiameter;
     double vc_CropHeatRedux;
@@ -352,8 +419,9 @@ namespace Monica
     std::vector<double> vc_CurrentTemperatureSum;	//! old SUM
     double vc_CurrentTotalTemperatureSum;			//! old FP
     double vc_CurrentTotalTemperatureSumRoot;
+		int pc_CuttingDelayDays;
     double vc_DaylengthFactor;						//! old DAYL
-    const std::vector<double>& pc_DaylengthRequirement;		//! old DEC
+    std::vector<double> pc_DaylengthRequirement;		//! old DEC
     int vc_DaysAfterBeginFlowering;
     double vc_Declination;							//! old EFF0
     double pc_DefaultRadiationUseEfficiency;
@@ -362,8 +430,8 @@ namespace Monica
     int vc_DevelopmentalStage;			//! old INTWICK
     double vc_DroughtImpactOnFertility;
     double pc_DroughtImpactOnFertilityFactor;
-    const std::vector<double>& pc_DroughtStressThreshold;	//! old DRYswell
-	bool pc_EmergenceFloodingControlOn;
+    std::vector<double> pc_DroughtStressThreshold;	//! old DRYswell
+	  bool pc_EmergenceFloodingControlOn;
     bool pc_EmergenceMoistureControlOn;
     double pc_EndSensitivePhaseHeatStress;
     double vc_EffectiveDayLength;		//! old DLE
@@ -371,6 +439,7 @@ namespace Monica
     std::string vc_ErrorMessage;
     double vc_EvaporatedFromIntercept;
     double vc_ExtraterrestrialRadiation;
+		double pc_FieldConditionModifier;
     int vc_FinalDevelopmentalStage;
     double vc_FixedN;
     std::vector<double> vo_FreshSoilOrganicMatter;	//! old NFOS
@@ -381,10 +450,13 @@ namespace Monica
     double vc_GrossPhotosynthesis_mol;
     double vc_GrossPhotosynthesisReference_mol;
     double vc_GrossPrimaryProduction;
-	double vc_GrowthRespirationAS;
+		bool vc_GrowthCycleEnded;
+	  double vc_GrowthRespirationAS;
+		double pc_HeatSumIrrigationStart;
+		double pc_HeatSumIrrigationEnd;
     double vs_HeightNN;
     double pc_InitialKcFactor;						//! old Kcini
-    const std::vector<double>& pc_InitialOrganBiomass;
+    std::vector<double> pc_InitialOrganBiomass;
     double pc_InitialRootingDepth;
     double vc_InterceptionStorage;
     double vc_KcFactor;			//! old FKc
@@ -414,22 +486,26 @@ namespace Monica
     double pc_NConcentrationRoot;	        //! initial value to WUGEH
     double vc_NConcentrationRoot;		//! old WUGEH
     double vc_NConcentrationRootOld;		//! old
-	bool pc_NitrogenResponseOn;
+    bool pc_NitrogenResponseOn;
     int pc_NumberOfDevelopmentalStages;
     int pc_NumberOfOrgans;							//! old NRKOM
     std::vector<double> vc_NUptakeFromLayer; //! old PE
-    const std::vector<double>& pc_OptimumTemperature;
+    std::vector<double> pc_OptimumTemperature;
     std::vector<double> vc_OrganBiomass;	//! old WORG
     std::vector<double> vc_OrganDeadBiomass;	//! old WDORG
     std::vector<double> vc_OrganGreenBiomass;
     std::vector<double> vc_OrganGrowthIncrement;			//! old GORG
-    const std::vector<double>& pc_OrganGrowthRespiration;	//! old MAIRT
-    const std::vector<double>& pc_OrganMaintenanceRespiration;	//! old MAIRT
+    std::vector<double> pc_OrganGrowthRespiration;	//! old MAIRT
+		std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
+		std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
+		std::vector<YieldComponent> pc_OrganIdsForCutting;
+    std::vector<double> pc_OrganMaintenanceRespiration;	//! old MAIRT
     std::vector<double> vc_OrganSenescenceIncrement; //! old DGORG
-    const std::vector<std::vector<double> >& pc_OrganSenescenceRate;	//! old DEAD
+    std::vector<std::vector<double> > pc_OrganSenescenceRate;	//! old DEAD
     double vc_OvercastDayRadiation;					//! old DRO
     double vc_OxygenDeficit;					//! old LURED
-	double pc_PartBiologicalNFixation;
+	  double pc_PartBiologicalNFixation;
+		bool pc_Perennial;
     double vc_PhotoperiodicDaylength;				//! old DLP
     double vc_PhotActRadiationMean;					//! old RDN
     double pc_PlantDensity;
@@ -456,13 +532,14 @@ namespace Monica
     std::vector<double> vs_SoilMineralNContent;		//! old C1
     double vc_SoilSpecificMaxRootingDepth;				//! old WURZMAX [m]
     double vs_SoilSpecificMaxRootingDepth;
-		const std::vector<double>& pc_SpecificLeafArea;		//! old LAIFKT [ha kg-1]
+		std::vector<double> pc_SpecificLeafArea;		//! old LAIFKT [ha kg-1]
     double pc_SpecificRootLength;
+		int pc_StageAfterCut;
     double pc_StageAtMaxDiameter;
     double pc_StageAtMaxHeight;
-    const std::vector<double>& pc_StageMaxRootNConcentration;	//! old WGMAX
-    const std::vector<double>& pc_StageKcFactor;		//! old Kc
-    const std::vector<double>& pc_StageTemperatureSum;	//! old TSUM
+    std::vector<double> pc_StageMaxRootNConcentration;	//! old WGMAX
+    std::vector<double> pc_StageKcFactor;		//! old Kc
+    std::vector<double> pc_StageTemperatureSum;	//! old TSUM
     double vc_StomataResistance;					//! old RSTOM
     std::vector<int> pc_StorageOrgan;
     int vc_StorageOrgan;
@@ -474,7 +551,7 @@ namespace Monica
     double vc_TotalBiomassNContent; //! old PESUM
     double vc_TotalCropHeatImpact;
     double vc_TotalNInput; 
-	double vc_TotalNUptake; 			//! old SUMPE
+	  double vc_TotalNUptake; 			//! old SUMPE
     double vc_TotalRespired;
     double vc_Respiration;
     double vc_SumTotalNUptake;    //! summation of all calculated NUptake; needed for sensitivity analysis
@@ -485,18 +562,21 @@ namespace Monica
     double vc_TranspirationDeficit;					//! old TRREL
     double vc_VernalisationDays; //
     double vc_VernalisationFactor;					//! old FV
-    const std::vector<double>& pc_VernalisationRequirement;	//! old VSCHWELL
-	bool pc_WaterDeficitResponseOn;
+    std::vector<double> pc_VernalisationRequirement;	//! old VSCHWELL
+	  bool pc_WaterDeficitResponseOn;
 
     int eva2_usage;
     std::vector<YieldComponent> eva2_primaryYieldComponents;
     std::vector<YieldComponent> eva2_secondaryYieldComponents;
 
     bool dyingOut;
-    double vc_accumulatedETa;
+    double vc_AccumulatedETa;
+		double vc_AccumulatedPrimaryCropYield;
 
-    int cutting_delay_days;
+    int vc_CuttingDelayDays;
     double vs_MaxEffectiveRootingDepth;
+
+		
   };
 } // namespace Monica
 

@@ -340,7 +340,7 @@ namespace Monica
 
 		// members
 		std::string pc_CropName; /**< Name */
-
+		bool pc_Perennial;
 		int pc_NumberOfDevelopmentalStages; 
 		int pc_NumberOfOrgans; 
 		int pc_CarboxylationPathway; 
@@ -364,6 +364,7 @@ namespace Monica
 		double pc_ResidueNRatio; 
 		int pc_DevelopmentAccelerationByNitrogenStress; 
 		double pc_FieldConditionModifier;
+		double pc_AssimilateReallocation;
 
 		std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
 		std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
@@ -409,9 +410,9 @@ namespace Monica
 		int pc_CuttingDelayDays;
 		double pc_DroughtImpactOnFertilityFactor;
 
-		std::vector<YieldComponent> organIdsForPrimaryYield;
-		std::vector<YieldComponent> organIdsForSecondaryYield;
-		std::vector<YieldComponent> organIdsForCutting;
+		std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
+		std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
+		std::vector<YieldComponent> pc_OrganIdsForCutting;
 	};
 
 	//----------------------------------------------------------------------------
@@ -653,13 +654,16 @@ namespace Monica
 
 	class OrganicMatterParameters;
 
+	class Crop;
+	typedef boost::shared_ptr<Crop> CropPtr;
+	
 	class Crop
 	{
 	public:
 		//! default constructor for value object use
 
 		Crop(const std::string& name = "fallow") :
-			_id(-1), _name(name), _cropParams(NULL), _residueParams(NULL),
+			_id(-1), _name(name), _cropParams(NULL), _perennialCropParams(NULL), _residueParams(NULL),
 			_primaryYield(0), _secondaryYield(0),_primaryYieldTM(0), _secondaryYieldTM(0),
 			_appliedAmountIrrigation(0),_primaryYieldN(0), _secondaryYieldN(0),
 			_sumTotalNUptake(0), _crossCropAdaptionFactor(1),
@@ -668,7 +672,7 @@ namespace Monica
 		Crop(CropId id, const std::string& name, const CropParameters* cps = NULL,
 				 const OrganicMatterParameters* rps = NULL,
 				 double crossCropAdaptionFactor = 1) :
-			_id(id), _name(name), _cropParams(cps), _residueParams(rps),
+				 _id(id), _name(name), _cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
 			_primaryYield(0), _secondaryYield(0),  _primaryYieldTM(0), _secondaryYieldTM(0),_appliedAmountIrrigation(0), _primaryYieldN(0), _secondaryYieldN(0),
 			_sumTotalNUptake(0), _crossCropAdaptionFactor(crossCropAdaptionFactor),
 			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED) { }
@@ -678,7 +682,7 @@ namespace Monica
 				 const CropParameters* cps = NULL, const OrganicMatterParameters* rps = NULL,
 				 double crossCropAdaptionFactor = 1) :
 			_id(id), _name(name), _seedDate(seedDate), _harvestDate(harvestDate),
-			_cropParams(cps), _residueParams(rps),
+			_cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
 			_primaryYield(0), _secondaryYield(0),
 			_primaryYieldTM(0), _secondaryYieldTM(0), _primaryYieldN(0), _secondaryYieldN(0),
 			_sumTotalNUptake(0),
@@ -692,6 +696,7 @@ namespace Monica
 			_seedDate = new_crop._seedDate;
 			_harvestDate = new_crop._harvestDate;
 			_cropParams = new_crop._cropParams;
+			_perennialCropParams = new_crop._perennialCropParams;
 			_residueParams = new_crop._residueParams;
 			_primaryYield = new_crop._primaryYield;
 			_secondaryYield = new_crop._secondaryYield;
@@ -714,7 +719,11 @@ namespace Monica
 
 		const CropParameters* cropParameters() const { return _cropParams; }
 
+		const CropParameters* perennialCropParameters() const { return _perennialCropParams; }
+
 		void setCropParameters(const CropParameters* cps) { _cropParams = cps; }
+
+		void setPerennialCropParameters(const CropParameters* cps) { _perennialCropParams = cps; }
 
 		const OrganicMatterParameters* residueParameters() const
 		{
@@ -796,6 +805,8 @@ namespace Monica
 
 		void writeCropParameters(std::string path);
 
+		
+
 	private:
 		CropId _id;
 		std::string _name;
@@ -803,6 +814,7 @@ namespace Monica
 		Tools::Date _harvestDate;
 		std::vector<Tools::Date> _cuttingDates;
 		const CropParameters* _cropParams;
+		const CropParameters* _perennialCropParams;
 		const OrganicMatterParameters* _residueParams;
 		double _primaryYield;
 		double _secondaryYield;
@@ -818,10 +830,10 @@ namespace Monica
 		double _accumulatedETa;
 
 		int eva2_typeUsage;
+
 	};
 
-	typedef boost::shared_ptr<Crop> CropPtr;
-
+	
 	//----------------------------------------------------------------------------
 
 	enum FertiliserType { mineral, organic, undefined };
@@ -961,8 +973,8 @@ namespace Monica
 	{
 	public:
 
-		Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult)
-			: WorkStep(at), _crop(crop), _cropResult(cropResult) { }
+		Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, std::string method = "total")
+			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method) { }
 
 		virtual void apply(MonicaModel* model);
 
@@ -972,6 +984,17 @@ namespace Monica
 			_crop.get()->setSeedAndHarvestDate(_crop.get()->seedDate(), date);
 		}
 
+		void setPercentage(double percentage)
+		{
+			_percentage = percentage;
+		}
+
+		void setExported(bool exported)
+		{
+			_exported = exported;
+		}
+
+		
 		virtual std::string toString() const;
 
 		virtual Harvest* clone() const { return new Harvest(*this); }
@@ -979,6 +1002,9 @@ namespace Monica
 	private:
 		CropPtr _crop;
 		PVResultPtr _cropResult;
+		std::string _method;
+		double _percentage;
+		bool _exported;
 	};
 
 	class Cutting : public WorkStep
@@ -1075,7 +1101,7 @@ namespace Monica
 		//! Returns parameter for organic fertilizer
 		const OrganicMatterParameters* parameters() const { return _params; }
 
-		//! Return fertilization amount
+		//! Returns fertilization amount
 		double amount() const { return _amount; }
 
 		//! Returns TRUE, if fertilizer is applied with incorporation
@@ -1091,6 +1117,33 @@ namespace Monica
 		double _amount;
 		bool _incorporation;
 
+	};
+
+	//----------------------------------------------------------------------------
+
+	class HarvestApplication : public WorkStep
+	{
+	public:
+		HarvestApplication(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, 
+			std::string method, double percentage)
+			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method), _percentage(percentage) { }
+		
+		virtual void apply(MonicaModel* model);
+
+		//! Returns percentage of harvested fruit biomass
+		double percentage() const { return _percentage; }
+
+		//! Returns harvest method
+		std::string method() const { return _method; }
+
+		virtual std::string toString() const;
+
+		virtual HarvestApplication* clone() const { return new HarvestApplication(*this); }
+	private:
+		CropPtr _crop;
+		PVResultPtr _cropResult; 
+		double _percentage;
+		std::string _method;
 	};
 
 	//----------------------------------------------------------------------------

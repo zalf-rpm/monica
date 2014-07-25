@@ -437,30 +437,34 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 
     cson_object* cropObj = cson_value_get_object(cson_array_get(cropsArr, c));
     int cropId = -1;
+		int permCropId = -1;
 
     std::string name = getStr(cropObj, "name");
     std::string genType = getStr(cropObj, "genType");
-    std::string spec = getStr(cropObj, "spec");
 
     Db::DB *con = Db::newConnection("monica");
     if (con) {
       bool ok = con->select(
-        "SELECT id " 
+        "SELECT id, permanent_crop_id " 
         "FROM crop "
         "WHERE name='" + name + "' "
         "AND gen_type='" + genType + "' "
-        "AND spec='" + spec + "' "
       );
 
-      if (ok)
-        cropId = Tools::satoi(con->getRow()[0]);
+			if (ok)
+			{
+				Db::DBRow row = con->getRow();
+				cropId = Tools::satoi(row[0]);
+				permCropId = Tools::satoi(row[1], -1);
+			}
+       
 
       delete con;
     }    
     
     if (cropId < 0) {
       ok = false;
-      std::cerr << "Invalid crop id:" << name << genType << spec << std::endl;
+      std::cerr << "Invalid crop id:" << name << genType << std::endl;
     }
 
     Tools::Date sd = parseDate_(getStr(cropObj, "sowingDate")).toDate(true);
@@ -471,12 +475,26 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
       std::cerr << "Invalid date" << std::endl;
     }
 
-    CropPtr crop = CropPtr(new Crop(cropId, name /*TODO: hermesCropId?*/));
+    CropPtr crop = CropPtr(new Crop(cropId, name));
     crop->setSeedAndHarvestDate(sd, hd);
     crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
     crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
 
+		if (permCropId > -1)
+		{
+			crop->setPerennialCropParameters(getCropParametersFromMonicaDB(permCropId));
+		}
+
     ProductionProcess pp(name, crop);
+
+		/* harvest */
+		cson_array* harvArr = cson_value_get_array(cson_object_get(cropObj, "harvestOps"));
+		if (harvArr) { /* in case no intermediate harvest has been added */
+			if (!addHarvestOps(pp, harvArr)) {
+				ok = false;
+				std::cerr << "Error adding harvest events" << std::endl;
+			}
+		}
 
     /* tillage */
     cson_array* tillArr = cson_value_get_array(cson_object_get(cropObj, "tillageOps"));
@@ -521,6 +539,37 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 
   return ok;
 }
+
+
+bool Configuration::addHarvestOps(ProductionProcess &pp, cson_array* harvArr)
+{
+	bool ok = true;
+
+	unsigned int hs = cson_array_length_get(harvArr);
+	debug() << "fetching " << hs << " harvests" << std::endl;
+	unsigned int h;
+	for (h = 0; h < hs; ++h) {
+		cson_object* harvObj = cson_value_get_object(cson_array_get(harvArr, h));
+		Tools::Date hDate = parseDate_(getStr(harvObj, "date")).toDate(true);
+		double percentage = getDbl(harvObj, "percentage") / 100; // [%] -> [kg/kg]
+		bool exported = getDbl(harvObj, "exported");
+		std::string method = getStr(harvObj, "method");
+
+		if (!hDate.isValid()) {
+			ok = false;
+			std::cerr << "Invalid harvest date" << method << std::endl;
+		}
+
+		Harvest h(hDate, pp.crop(), pp.cropResultPtr(), method);
+		h.setPercentage(percentage);
+		h.setExported(exported);
+		pp.addApplication(h);
+
+	}
+
+	return ok;
+}
+
 
 bool Configuration::addTillageOps(ProductionProcess &pp, cson_array* tillArr)
 {

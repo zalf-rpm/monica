@@ -227,12 +227,24 @@ namespace Monica
     }
 
     //! harvest the currently seeded crop
-    void harvestCurrentCrop();
+		void harvestCurrentCrop(bool exported);
+		
+		//! harvest the fruit of the current crop
+		void fruitHarvestCurrentCrop(double percentage, bool exported);
+
+		//! prune the leaves of the current crop
+		void leafPruningCurrentCrop(double percentage, bool exported);
+
+		//! prune the tips of the current crop
+		void tipPruningCurrentCrop(double percentage, bool exported);
+
+		//! prune the shoots of the current crop
+		void shootPruningCurrentCrop(double percentage, bool exported);
+
+		//! prune the shoots of the current crop
+		void cuttingCurrentCrop(double percentage, bool exported);
 
     void incorporateCurrentCrop();
-
-    //! cutting crop but not harvesting
-    //void cutCurrentCrop();
 
     void applyMineralFertiliser(MineralFertiliserParameters partition,
                                 double amount);

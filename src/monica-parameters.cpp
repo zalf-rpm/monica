@@ -561,53 +561,104 @@ void Harvest::apply(MonicaModel* model)
 
   if (model->cropGrowth()) {
 
-      debug() << "harvesting crop: " << _crop->toString() << " at: " << date().toString() << endl;
-      if (model->currentCrop() == _crop)
-        {
+		if ((_method == "total") || (_method == "fruitHarvest") || (_method == "cutting"))
+		{
+			debug() << "harvesting crop: " << _crop->toString() << " at: " << date().toString() << endl;
+			if (model->currentCrop() == _crop)
+			{
 
-          if (model->cropGrowth()) {
-              _crop->setHarvestYields
-              (model->cropGrowth()->get_FreshPrimaryCropYield() /
-                  100.0, model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
-              _crop->setHarvestYieldsTM
-                        (model->cropGrowth()->get_PrimaryCropYield() / 100.0,
-                         model->cropGrowth()->get_SecondaryCropYield() / 100.0);
+				if (model->cropGrowth()) {
+					_crop->setHarvestYields
+						(model->cropGrowth()->get_FreshPrimaryCropYield() /
+						100.0, model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
+					_crop->setHarvestYieldsTM
+						(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
+						model->cropGrowth()->get_SecondaryCropYield() / 100.0);
 
-              _crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
-                  model->cropGrowth()->get_SecondaryYieldNContent());
-              _crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
-              _crop->setCropHeight(model->cropGrowth()->get_CropHeight());
-              _crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
-          }
+					_crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
+						model->cropGrowth()->get_SecondaryYieldNContent());
+					_crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
+					_crop->setCropHeight(model->cropGrowth()->get_CropHeight());
+					_crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
+				}
 
+				//store results for this crop
+				_cropResult->pvResults[primaryYield] = _crop->primaryYield();
+				_cropResult->pvResults[secondaryYield] = _crop->secondaryYield();
+				_cropResult->pvResults[primaryYieldTM] = _crop->primaryYieldTM();
+				_cropResult->pvResults[secondaryYieldTM] = _crop->secondaryYieldTM();
+				_cropResult->pvResults[sumIrrigation] = _crop->appliedIrrigationWater();
+				_cropResult->pvResults[biomassNContent] = _crop->primaryYieldN();
+				_cropResult->pvResults[aboveBiomassNContent] = _crop->aboveGroundBiomasseN();
+				_cropResult->pvResults[daysWithCrop] = model->daysWithCrop();
+				_cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
+				_cropResult->pvResults[cropHeight] = _crop->cropHeight();
+				_cropResult->pvResults[sumETaPerCrop] = _crop->get_AccumulatedETa();
+				_cropResult->pvResults[cropname] = _crop->id();
+				_cropResult->pvResults[NStress] = model->getAccumulatedNStress();
+				_cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
+				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
+				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
 
-
-          //store results for this crop
-          _cropResult->pvResults[primaryYield] = _crop->primaryYield();
-          _cropResult->pvResults[secondaryYield] = _crop->secondaryYield();
-          _cropResult->pvResults[primaryYieldTM] = _crop->primaryYieldTM();
-          _cropResult->pvResults[secondaryYieldTM] = _crop->secondaryYieldTM();
-          _cropResult->pvResults[sumIrrigation] = _crop->appliedIrrigationWater();
-          _cropResult->pvResults[biomassNContent] = _crop->primaryYieldN();
-          _cropResult->pvResults[aboveBiomassNContent] = _crop->aboveGroundBiomasseN();
-          _cropResult->pvResults[daysWithCrop] = model->daysWithCrop();
-          _cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
-          _cropResult->pvResults[cropHeight] = _crop->cropHeight();
-          _cropResult->pvResults[sumETaPerCrop] = _crop->get_AccumulatedETa();
-          _cropResult->pvResults[cropname] = _crop->id();
-          _cropResult->pvResults[NStress] = model->getAccumulatedNStress();
-          _cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
-          _cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
-          _cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
-
-          model->harvestCurrentCrop();
-        }
-      else
-        {
-          debug() << "Crop: " << model->currentCrop()->toString()
-            << " to be harvested isn't actual crop of this Harvesting action: "
-            << _crop->toString() << endl;
-        }
+				if (_method == "total"){
+					model->harvestCurrentCrop(_exported);
+				}
+				else if (_method == "fruitHarvest") {
+					model->fruitHarvestCurrentCrop(_percentage, _exported);
+				}
+				else if (_method == "cutting") {
+					model->cuttingCurrentCrop(_percentage, _exported);
+				}
+			}
+			else
+			{
+				debug() << "Crop: " << model->currentCrop()->toString()
+					<< " to be harvested isn't actual crop of this Harvesting action: "
+					<< _crop->toString() << endl;
+			}
+		}
+		else if (_method == "leafPruning")
+		{
+			debug() << "pruning leaves of: " << _crop->toString() << " at: " << date().toString() << endl;
+			if (model->currentCrop() == _crop)
+			{
+				model->leafPruningCurrentCrop(_percentage, _exported);
+			}
+			else
+			{
+				debug() << "Crop: " << model->currentCrop()->toString()
+					<< " to be pruned isn't actual crop of this harvesting action: "
+					<< _crop->toString() << endl;
+			}
+		}
+		else if (_method == "tipPruning")
+		{
+			debug() << "pruning tips of: " << _crop->toString() << " at: " << date().toString() << endl;
+			if (model->currentCrop() == _crop)
+			{
+				model->tipPruningCurrentCrop(_percentage, _exported);
+			}
+			else
+			{
+				debug() << "Crop: " << model->currentCrop()->toString()
+					<< " to be pruned isn't actual crop of this harvesting action: "
+					<< _crop->toString() << endl;
+			}
+		}
+		else if (_method == "shootPruning")
+		{
+			debug() << "pruning shoots of: " << _crop->toString() << " at: " << date().toString() << endl;
+			if (model->currentCrop() == _crop)
+			{
+				model->shootPruningCurrentCrop(_percentage, _exported);
+			}
+			else
+			{
+				debug() << "Crop: " << model->currentCrop()->toString()
+					<< " to be pruned isn't actual crop of this harvesting action: "
+					<< _crop->toString() << endl;
+			}
+		}
   }
 }
 
@@ -621,6 +672,7 @@ string Harvest::toString() const
 //------------------------------------------------------------------------------
 
 
+// ----------------------------------------------------------------------------
 void Cutting::apply(MonicaModel* model)
 {
   debug() << "Cutting crop: " << _crop->toString() << " at: " << date().toString() << endl;
@@ -837,11 +889,7 @@ ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
 	for (unsigned int i=0; i<size; i++)
 	{
 		debug() << "Add cutting date: " << Tools::Date(cuttingDates.at(i)).toString().c_str() << endl;
-		//    if (i<size-1) {
 		addApplication(Cutting(Tools::Date(cuttingDates.at(i)), crop));
-		//    } else {
-		//      addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
-		//    }
 	}
 }
 
@@ -1442,7 +1490,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 
       DB *con = newConnection("monica");
       DBRow row;
-      std::string text_request = "select id, name, max_assimilation_rate, "
+      std::string text_request = "select id, name, perennial, max_assimilation_rate, "
           "carboxylation_pathway, minimum_temperature_for_assimilation, "
           "crop_specific_max_rooting_depth, min_n_content, "
           "n_content_pn, n_content_b0, "
@@ -1459,7 +1507,8 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "stage_after_cut, crit_temperature_heat_stress, "
           "lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-          "cutting_delay_days, field_condition_modifier from crop";
+          "cutting_delay_days, field_condition_modifier, assimilate_reallocation "
+					"from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1480,6 +1529,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         }
 
         cps->pc_CropName = row[i++].c_str();
+				cps->pc_Perennial = satoi(row[i++]);
         cps->pc_MaxAssimilationRate = satof(row[i++]);
         cps->pc_CarboxylationPathway = satoi(row[i++]);
         cps->pc_MinimumTemperatureForAssimilation = satof(row[i++]);
@@ -1523,7 +1573,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
         cps->pc_FieldConditionModifier = satof(row[i++]);
-
+				cps->pc_AssimilateReallocation = satof(row[i++]);
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
                         "o.organ_maintainance_respiration, o.is_above_ground, "
@@ -1619,11 +1669,11 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
          // normal case, uses yield partitioning from crop database
          if (isPrimary) {
 //            cout << cropId<< " Add primary organ: " << organId << endl;
-            cps->organIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+            cps->pc_OrganIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
 
          } else {
 //            cout << cropId << " Add secondary organ: " << organId << endl;
-            cps->organIdsForSecondaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+            cps->pc_OrganIdsForSecondaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
          }
 
       }
@@ -1639,10 +1689,10 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         double yieldDryMatter = satof(row[4]);
 
         auto cps = cpss[cropId];
-        cps->organIdsForCutting.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+        cps->pc_OrganIdsForCutting.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
         if (cropId!=18) {
             // do not add cutting part organ id for sudan gras because they are already added
-            cps->organIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+            cps->pc_OrganIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
         }
       }
 

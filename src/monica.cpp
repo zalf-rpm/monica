@@ -280,6 +280,10 @@ void MonicaModel::seedCrop(CropPtr crop)
 		const CropParameters* cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn, _env.general,
                                         *cps, _env.site, _env.centralParameterProvider, crop->getEva2TypeUsage());
+		
+		if (_currentCrop->perennialCropParameters())
+			_currentCropGrowth->setPerennialCropParameters(_currentCrop->perennialCropParameters());
+
     _soilTransport.put_Crop(_currentCropGrowth);
     _soilColumn.put_Crop(_currentCropGrowth);
     _soilMoisture.put_Crop(_currentCropGrowth);
@@ -312,38 +316,60 @@ void MonicaModel::seedCrop(CropPtr crop)
  *
  * Deletes the current crop.
  */
-void MonicaModel::harvestCurrentCrop()
+void MonicaModel::harvestCurrentCrop(bool exported)
 {
 	//could be just a fallow, so there might be no CropGrowth object
-  if(_currentCrop && _currentCrop->isValid())
+	if (_currentCrop.get() && _currentCrop->isValid())
   {
-		//prepare to add root and crop residues to soilorganic (AOMs)
-		double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
-		double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
-		debug() << "adding organic matter from root to soilOrganic" << endl;
-    debug() << "root biomass: " << rootBiomass
-        << " Root N concentration: " << rootNConcentration << endl;
+		if (!exported){
+			//prepare to add the total plant to soilorganic (AOMs)
+			double abovegroundBiomass = _currentCropGrowth->get_AbovegroundBiomass();
+			double abovegroundBiomassNConcentration = 
+				_currentCropGrowth->get_AbovegroundBiomassNConcentration();
+			debug() << "adding organic matter from aboveground biomass to soilOrganic" << endl;
+			debug() << "aboveground biomass: " << abovegroundBiomass
+				<< " Aboveground biomass N concentration: " << abovegroundBiomassNConcentration << endl;
+			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
+			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
+			debug() << "adding organic matter from root to soilOrganic" << endl;
+			debug() << "root biomass: " << rootBiomass
+				<< " Root N concentration: " << rootNConcentration << endl;
+			
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				abovegroundBiomass, abovegroundBiomassNConcentration);
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				rootBiomass, rootNConcentration);
+		}
+		else 
+		{
+			//prepare to add root and crop residues to soilorganic (AOMs)
+			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
+			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
+			debug() << "adding organic matter from root to soilOrganic" << endl;
+			debug() << "root biomass: " << rootBiomass
+				<< " Root N concentration: " << rootNConcentration << endl;
 
-    _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                  rootBiomass, rootNConcentration);
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				rootBiomass, rootNConcentration); 
+			
+			double residueBiomass =
+				_currentCropGrowth->get_ResidueBiomass(_env.useSecondaryYields);
+			//!@todo Claas: das hier noch berechnen
+			double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
+			debug() << "adding organic matter from residues to soilOrganic" << endl;
+			debug() << "residue biomass: " << residueBiomass
+				<< " Residue N concentration: " << residueNConcentration << endl;
+			debug() << "primary yield biomass: " << _currentCropGrowth->get_PrimaryCropYield()
+				<< " Primary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration() << endl;
+			debug() << "secondary yield biomass: " << _currentCropGrowth->get_SecondaryCropYield()
+				<< " Secondary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration() << endl;
+			debug() << "Residues N content: " << _currentCropGrowth->get_ResiduesNContent()
+				<< " Primary yield N content: " << _currentCropGrowth->get_PrimaryYieldNContent()
+				<< " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
 
-    double residueBiomass =
-        _currentCropGrowth->get_ResidueBiomass(_env.useSecondaryYields);
-		//!@todo Claas: das hier noch berechnen
-		double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
-		debug() << "adding organic matter from residues to soilOrganic" << endl;
-    debug() << "residue biomass: " << residueBiomass
-        << " Residue N concentration: " << residueNConcentration << endl;
-    debug() << "primary yield biomass: " << _currentCropGrowth->get_PrimaryCropYield()
-        << " Primary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration()<< endl;
-    debug() << "secondary yield biomass: " << _currentCropGrowth->get_SecondaryCropYield()
-        << " Secondary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration()<< endl;
-    debug() << "Residues N content: " << _currentCropGrowth->get_ResiduesNContent()
-        << " Primary yield N content: " << _currentCropGrowth->get_PrimaryYieldNContent()
-        << " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
-
-    _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                  residueBiomass, residueNConcentration);
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				residueBiomass, residueNConcentration);
+		}
 	}
 
   delete _currentCropGrowth;
@@ -355,7 +381,120 @@ void MonicaModel::harvestCurrentCrop()
   _soilOrganic.remove_Crop();
 }
 
+void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
+{
+	//could be just a fallow, so there might be no CropGrowth object
+	if (_currentCrop.get() && _currentCrop->isValid())
+	{
+		//prepare to remove fruit
+		double totalBiomassNContent = _currentCropGrowth->get_TotalBiomassNContent();
+		double currentFruitBiomass = _currentCropGrowth->get_OrganBiomass(3);
+		double currentFruitNContent = _currentCropGrowth->get_FruitBiomassNContent();
+		double fruitToRemove = percentage * currentFruitBiomass;
+		double fruitNToRemove = percentage * currentFruitNContent;
+		double fruitToRemain = (1.0 - percentage) * currentFruitBiomass;
+		double totalBiomassNToRemain = totalBiomassNContent - fruitNToRemove;
+		
+		_currentCropGrowth->accumulatePrimaryCropYield(_currentCropGrowth->get_PrimaryCropYield());
+		_currentCropGrowth->set_OrganBiomass(3, fruitToRemain);
+		_currentCropGrowth->set_TotalBiomassNContent(totalBiomassNToRemain);
 
+	
+
+		if (!exported){
+		}
+		else 
+		{
+			//no crop residues are added to soilorganic (AOMs)
+			debug() << "adding no organic matter from fruit residues to soilOrganic" << endl;
+		}
+	}
+}
+
+
+void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
+{
+	//could be just a fallow, so there might be no CropGrowth object
+	if (_currentCrop.get() && _currentCrop->isValid())
+	{
+		//prepare to remove leaves
+		double currentLeafBiomass = _currentCropGrowth->get_OrganBiomass(1);
+		double leavesToRemove = percentage * currentLeafBiomass;
+		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
+		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
+
+		if (!exported){
+			//prepare to add crop residues to soilorganic (AOMs)
+			double leafResidueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
+			debug() << "adding organic matter from leaf residues to soilOrganic" << endl;
+			debug() << "leaf residue biomass: " << leavesToRemove
+				<< " Leaf residue N concentration: " << leafResidueNConcentration << endl;
+			
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				leavesToRemove, leafResidueNConcentration);
+
+		}
+		
+	}
+}
+
+void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
+{
+	//could be just a fallow, so there might be no CropGrowth object
+	if (_currentCrop.get() && _currentCrop->isValid())
+	{
+		//prepare to remove tips
+		double currentLeafBiomass = _currentCropGrowth->get_OrganBiomass(1);
+		double currentShootBiomass = _currentCropGrowth->get_OrganBiomass(2);
+		double leavesToRemove = percentage * currentLeafBiomass;
+		double shootsToRemove = percentage * currentShootBiomass;
+		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
+		double shootsToRemain = (1.0 - percentage) * currentShootBiomass;
+		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
+		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
+
+		if (!exported){
+			//prepare to add crop residues to soilorganic (AOMs)
+			double tipResidues = leavesToRemove + shootsToRemove;
+			double tipResidueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
+			debug() << "adding organic matter from tip residues to soilOrganic" << endl;
+			debug() << "Tip residue biomass: " << tipResidues
+				<< " Tip residue N concentration: " << tipResidueNConcentration << endl;
+
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				tipResidues, tipResidueNConcentration);
+		}
+	}
+}
+
+	void MonicaModel::shootPruningCurrentCrop(double percentage, bool exported)
+{
+	//could be just a fallow, so there might be no CropGrowth object
+	if (_currentCrop.get() && _currentCrop->isValid())
+	{
+		//prepare to remove tips
+		double currentLeafBiomass = _currentCropGrowth->get_OrganBiomass(1);
+		double currentShootBiomass = _currentCropGrowth->get_OrganBiomass(2);
+		double leavesToRemove = percentage * currentLeafBiomass;
+		double shootsToRemove = percentage * currentShootBiomass;
+		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
+		double shootsToRemain = (1.0 - percentage) * currentShootBiomass;
+		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
+		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
+
+		if (!exported){
+			//prepare to add crop residues to soilorganic (AOMs)
+			double tipResidues = leavesToRemove + shootsToRemove;
+			double tipResidueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
+			debug() << "adding organic matter from shoot and leaf residues to soilOrganic" << endl;
+			debug() << "Shoot and leaf residue biomass: " << tipResidues
+				<< " Tip residue N concentration: " << tipResidueNConcentration << endl;
+
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				tipResidues, tipResidueNConcentration);
+		}
+	}
+}
 /**
  * @brief Simulating plowing or incorporating of total crop.
  *
@@ -393,26 +532,45 @@ void MonicaModel::incorporateCurrentCrop()
  *
  * Only removes some biomass of crop but not harvesting the crop.
  */
-/*
-void MonicaModel::cutCurrentCrop()
+
+void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 {
-  //could be just a fallow, so there might be no CropGrowth object
-  if(_currentCrop->isValid())
-  {
+	//could be just a fallow, so there might be no CropGrowth object
+	if (_currentCrop.get() && _currentCrop->isValid())
+	{
+		//prepare to remove tips
+		double currentLeafBiomass = _currentCropGrowth->get_OrganBiomass(1);
+		double currentShootBiomass = _currentCropGrowth->get_OrganBiomass(2);
+		double currentFruitBiomass = _currentCropGrowth->get_OrganBiomass(3);
+		double leavesToRemove = percentage * currentLeafBiomass;
+		double shootsToRemove = percentage * currentShootBiomass;
+		double fruitsToRemove = currentFruitBiomass;
+		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
+		double shootsToRemain = (1.0 - percentage) * currentShootBiomass;
+		int stageAfterCut = _currentCropGrowth->get_StageAfterCut();
+		_currentCropGrowth->accumulatePrimaryCropYield(_currentCropGrowth->get_PrimaryCropYield());
+		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
+		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
+		_currentCropGrowth->set_OrganBiomass(3, 0.0); // fruit is not present after cutting
+		_currentCropGrowth->set_OrganBiomass(5, 0.0); // sugar is not present after cutting
+		_currentCropGrowth->set_DevelopmentalStage(stageAfterCut); // sets developmentag stage according to crop database
+		_currentCropGrowth->set_CuttingDelayDays(); // sets delay after cutting according to crop database
+		_currentCropGrowth->set_MaxAssimilationRate(0.9); // Reduces maximum assimilation rate by 10%
 
-    debug() << "primary yield biomass: " << _currentCropGrowth->get_PrimaryCropYield()
-        << " Primary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration()<< endl;
-    debug() << "secondary yield biomass: " << _currentCropGrowth->get_SecondaryCropYield()
-        << " Secondary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration()<< endl;
-    debug() << "Residues N content: " << _currentCropGrowth->get_ResiduesNContent()
-        << " Primary yield N content: " << _currentCropGrowth->get_PrimaryYieldNContent()
-        << " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
+		if (!exported){
+			//prepare to add crop residues to soilorganic (AOMs)
+			double residues = leavesToRemove + shootsToRemove + fruitsToRemove;
+			double residueNConcentration = _currentCropGrowth->get_AbovegroundBiomassNConcentration();
+			debug() << "adding organic matter from cut residues to soilOrganic" << endl;
+			debug() << "Residue biomass: " << residues
+				<< " Residue N concentration: " << residueNConcentration << endl;
 
-    //_currentCrop->applyCutting();
-  }
-
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				residues, residueNConcentration);
+		}
+	}
 }
-*/
+
 
 /**
  * @brief Applying of fertilizer.
@@ -1061,6 +1219,8 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
 	debug() << "-----" << endl;
 
+	MonicaModel monica(env, env.da);
+
 	if (write_output_files)
 	{
 		//    static int ___c = 1;
@@ -1091,6 +1251,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 			return res;
 		}
 
+		MonicaModel monica(env, env.da);
 		// writes the header line to output files
 		initializeFoutHeader(fout);
 		initializeGoutHeader(gout);
@@ -1100,7 +1261,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
 	//debug() << "MonicaModel" << endl;
 	//debug() << env.toString().c_str();
-	MonicaModel monica(env, env.da);
+	
 	debug() << "currentDate" << endl;
 	Date currentDate = env.da.startDate();
 	unsigned int nods = env.da.noOfStepsPossible();
@@ -1455,6 +1616,7 @@ void
 Monica::initializeFoutHeader(ofstream &fout)
 {
   int outLayers = 20;
+	int numberOfOrgans = 5;
   fout << "Datum     ";
   fout << "\tCrop";
   fout << "\tTraDef";
@@ -1473,11 +1635,17 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tIncFruit";
 
   fout << "\tRelDev";
-  fout << "\tRoot";
-  fout << "\tLeaf";
-  fout << "\tShoot";
-  fout << "\tFruit";
-  fout << "\tYield";
+	fout << "\tAbBiom";
+	
+	fout << "\tRoot";
+	fout << "\tLeaf"; 
+	fout << "\tShoot";
+	fout << "\tFruit";
+	fout << "\tStruct";
+	fout << "\tSugar";
+
+	fout << "\tYield";
+	fout << "\tSumYield";
 
   fout << "\tGroPhot";
   fout << "\tNetPhot";
@@ -1488,7 +1656,6 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tLAI";
   fout << "\tRootDep";
   fout << "\tEffRootDep";
-  fout << "\tAbBiom";
 
   fout << "\tNBiom";
   fout << "\tSumNUp";
@@ -1507,6 +1674,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tNPPLeaf";
   fout << "\tNPPShoot";
   fout << "\tNPPFruit";
+	fout << "\tNPPStruct";
+	fout << "\tNPPSugar";
 
   fout << "\tGPP";
   fout << "\tRa";
@@ -1514,6 +1683,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tRaLeaf";
   fout << "\tRaShoot";
   fout << "\tRaFruit";
+	fout << "\tRaStruct";
+	fout << "\tRaSugar";
 
   for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
     fout << "\tMois" << i_Layer;
@@ -1623,12 +1794,14 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kg/ha]";  // OrganGrowthIncrement fruit
 
   fout << "\t[0;1]";        // RelativeTotalDevelopment
+	fout << "\t[kg/ha]";      // AbovegroundBiomass
 
-  fout << "\t[kgDM/ha]";    // get_OrganBiomass(0)
-  fout << "\t[kgDM/ha]";    // get_OrganBiomass(1)
-  fout << "\t[kgDM/ha]";    // get_OrganBiomass(2)
-  fout << "\t[kgDM/ha]";    // get_OrganBiomass(3)
+	for (int i = 0; i < 6; i++) {
+		fout << "\t[kgDM/ha]"; // get_OrganBiomass(i)
+	}
+
   fout << "\t[kgDM/ha]";    // get_PrimaryCropYield(3)
+	fout << "\t[kgDM/ha]";    // get_AccumulatedPrimaryCropYield(3)
 
   fout << "\t[kgCH2O/ha]";  // GrossPhotosynthesisHaRate
   fout << "\t[kgCH2O/ha]";  // NetPhotosynthesis
@@ -1639,7 +1812,6 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[m2/m2]";      // LeafAreaIndex
   fout << "\t[layer]";      // RootingDepth
   fout << "\t[m]";          // Effective RootingDepth
-  fout << "\t[kg/ha]";       // AbovegroundBiomass
 
   fout << "\t[kgN/ha]";     // TotalBiomassNContent
   fout << "\t[kgN/ha]";     // SumTotalNUptake
@@ -1657,6 +1829,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kg C ha-1]";   // NPP leaf
   fout << "\t[kg C ha-1]";   // NPP shoot
   fout << "\t[kg C ha-1]";   // NPP fruit
+	fout << "\t[kg C ha-1]";   // NPP struct
+	fout << "\t[kg C ha-1]";   // NPP sugar
 
   fout << "\t[kg C ha-1]";   // GPP
   fout << "\t[kg C ha-1]";   // Ra
@@ -1664,7 +1838,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kg C ha-1]";   // Ra leaf
   fout << "\t[kg C ha-1]";   // Ra shoot
   fout << "\t[kg C ha-1]";   // Ra fruit
-
+	fout << "\t[kg C ha-1]";   // Ra struct
+	fout << "\t[kg C ha-1]";   // Ra sugar
 
   for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
     fout << "\t[m3/m3]"; // Soil moisture content
@@ -1951,22 +2126,27 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_VernalisationFactor();
     fout << fixed << setprecision(2) << "\t" << mcg->get_DaylengthFactor();
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(0);
-
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(1);
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(2);
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(3);
-    
+
     fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
-    fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
-	fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(1); // JV! + fixed << setprecision(10)
-	fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(2); // JV! + fixed << setprecision(10)
-	fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(3); // JV! + fixed << setprecision(10)
-	fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
+		fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
+		for (int i = 0; i<mcg->get_NumberOfOrgans(); i++) {
+			fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(i); // biomass organs, [kg C ha-1]
+		}
+
+		for (int i = 0; i<(6 - mcg->get_NumberOfOrgans()); i++) {
+			fout << fixed << setprecision(1) << "\t" << 0.0; // adding zero fill if biomass organs < 6,
+		}
+
+		fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
+	  fout << fixed << setprecision(1) << "\t" << mcg->get_AccumulatedPrimaryCropYield();
 
     fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
-	fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();  // [kg CH2O ha-1 d-1]
+	  fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();  // [kg CH2O ha-1 d-1]
     fout << fixed << setprecision(4) << "\t" << mcg->get_MaintenanceRespirationAS();// [kg CH2O ha-1]
-	fout << fixed << setprecision(4) << "\t" << mcg->get_GrowthRespirationAS();// [kg CH2O ha-1]
+	  fout << fixed << setprecision(4) << "\t" << mcg->get_GrowthRespirationAS();// [kg CH2O ha-1]
 
     fout << fixed << setprecision(2) << "\t" << mcg->get_StomataResistance();// [s m-1]
 
@@ -1974,27 +2154,26 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_LeafAreaIndex(); //[m2 m-2]
     fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth(); //[layer]
     fout << fixed << setprecision(2) << "\t" << mcg->getEffectiveRootingDepth(); //[m]
-    fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
 
     fout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
     fout << fixed << setprecision(2) << "\t" << mcg->get_SumTotalNUptake();
     fout << fixed << setprecision(2) << "\t" << mcg->get_ActNUptake(); // [kg N ha-1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_PotNUptake(); // [kg N ha-1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_BiologicalNFixation(); // [kg N ha-1]
-	fout << fixed << setprecision(3) << "\t" << mcg->get_TargetNConcentration();//[kg N kg-1]
+	  fout << fixed << setprecision(3) << "\t" << mcg->get_TargetNConcentration();//[kg N kg-1]
 
     fout << fixed << setprecision(3) << "\t" << mcg->get_CriticalNConcentration();//[kg N kg-1]
     fout << fixed << setprecision(3) << "\t" << mcg->get_AbovegroundBiomassNConcentration();//[kg N kg-1]
-	fout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();//[kg N kg-1]
+	  fout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();//[kg N kg-1]
     fout << fixed << setprecision(3) << "\t" << mcg->get_RawProteinConcentration();//[kg kg-1]
     fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
-        fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C ha-1]
+        fout << fixed << setprecision(4) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C ha-1]
     }
-    // if there less than 4 organs we have to fill the column that
+    // if there less than 6 organs we have to fill the column that
     // was added in the output header of rmout; in this header there
-    // are statically 4 columns initialised for the organ NPP
-    for (int i=mcg->get_NumberOfOrgans(); i<4; i++) {
+    // are statically 6 columns initialised for the organ NPP
+    for (int i=mcg->get_NumberOfOrgans(); i<6; i++) {
         fout << fixed << setprecision(2) << "\t0.0"; // NPP organs, [kg C ha-1]
     }
 
@@ -2002,16 +2181,16 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
 
     fout << fixed << setprecision(5) << "\t" << mcg->get_AutotrophicRespiration(); // Ra, [kg C ha-1]
     for (int i=0; i<mcg->get_NumberOfOrgans(); i++) {
-      fout << fixed << setprecision(7) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C ha-1]
+      fout << fixed << setprecision(4) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C ha-1]
     }
-    // if there less than 4 organs we have to fill the column that
+    // if there less than 6 organs we have to fill the column that
     // was added in the output header of rmout; in this header there
-    // are statically 4 columns initialised for the organ RA
-    for (int i=mcg->get_NumberOfOrgans(); i<4; i++) {
+    // are statically 6 columns initialised for the organ RA
+    for (int i=mcg->get_NumberOfOrgans(); i<6; i++) {
         fout << fixed << setprecision(2) << "\t0.0";
     }
 
-	gout << "\t" << mcg->get_CropName();
+	  gout << "\t" << mcg->get_CropName();
     gout << fixed << setprecision(0) << "\t" << mcg->get_DevelopmentalStage()  + 1;
     gout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();
     gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
@@ -2036,7 +2215,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
   } else { // crop is not planted
 
     fout << "\t"; // Crop Name
-	fout << "\t1.00"; // TranspirationDeficit
+	  fout << "\t1.00"; // TranspirationDeficit
     fout << "\t0.00"; // ActualTranspiration
     fout << "\t1.00"; // CropNRedux
     fout << "\t1.00"; // HeatStressRedux
@@ -2051,42 +2230,46 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00";   // OrganGrowthIncrement leaf
     fout << "\t0.00";   // OrganGrowthIncrement shoot
     fout << "\t0.00";   // OrganGrowthIncrement fruit
-	fout << "\t0.00";   // RelativeTotalDevelopment
+  	fout << "\t0.00";   // RelativeTotalDevelopment
 
+		fout << "\t0.0";    // AbovegroundBiomass
     fout << "\t0.0";    // get_OrganBiomass(0)
     fout << "\t0.0";    // get_OrganBiomass(1)
     fout << "\t0.0";    // get_OrganBiomass(2)
     fout << "\t0.0";    // get_OrganBiomass(3)
-	fout << "\t0.0";    // get_PrimaryCropYield(3)
+		fout << "\t0.0";    // get_OrganBiomass(4)
+		fout << "\t0.0";    // get_OrganBiomass(5)
+		fout << "\t0.0";    // get_PrimaryCropYield(3)
+		fout << "\t0.0";    // get_AccumulatedPrimaryCropYield(3)
 
     fout << "\t0.000";  // GrossPhotosynthesisHaRate
     fout << "\t0.00";   // NetPhotosynthesis
-	fout << "\t0.000";  // MaintenanceRespirationAS
-	fout << "\t0.000";  // GrowthRespirationAS
+	  fout << "\t0.000";  // MaintenanceRespirationAS
+	  fout << "\t0.000";  // GrowthRespirationAS
     fout << "\t0.00";   // StomataResistance
     fout << "\t0.00";   // CropHeight
     fout << "\t0.00";   // LeafAreaIndex
     fout << "\t0";      // RootingDepth
-    fout << "\t0.0";      // EffectiveRootingDepth
-    fout << "\t0.0";    // AbovegroundBiomass
+    fout << "\t0.0";    // EffectiveRootingDepth
 
     fout << "\t0.0";    // TotalBiomassNContent
     fout << "\t0.00";   // SumTotalNUptake
     fout << "\t0.00";   // ActNUptake
     fout << "\t0.00";   // PotNUptake
-	fout << "\t0.00";   // NFixed
+	  fout << "\t0.00";   // NFixed
     fout << "\t0.000";  // TargetNConcentration
     fout << "\t0.000";  // CriticalNConcentration
     fout << "\t0.000";  // AbovegroundBiomassNConcentration
-	fout << "\t0.000";  // PrimaryYieldNConcentration
+	  fout << "\t0.000";  // PrimaryYieldNConcentration
     fout << "\t0.000";  // RawProteinConcentration
 
-	fout << "\t0.0";    // NetPrimaryProduction
-	fout << "\t0.0"; // NPP root
+	  fout << "\t0.0";    // NetPrimaryProduction
+	  fout << "\t0.0"; // NPP root
     fout << "\t0.0"; // NPP leaf
     fout << "\t0.0"; // NPP shoot
     fout << "\t0.0"; // NPP fruit
-
+		fout << "\t0.0"; // NPP struct
+		fout << "\t0.0"; // NPP sugar
 
     fout << "\t0.0"; // GrossPrimaryProduction
     fout << "\t0.0"; // Ra - VcRespiration
@@ -2094,8 +2277,10 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.0"; // Ra leaf - OrganSpecificTotalRespired
     fout << "\t0.0"; // Ra shoot - OrganSpecificTotalRespired
     fout << "\t0.0"; // Ra fruit - OrganSpecificTotalRespired
+		fout << "\t0.0"; // Ra struct - OrganSpecificTotalRespired
+		fout << "\t0.0"; // Ra sugar - OrganSpecificTotalRespired
 
-	gout << "\t";       // Crop Name
+	  gout << "\t";       // Crop Name
     gout << "\t0";      // DevelopmentalStage
     gout << "\t0.00";   // CropHeight
     gout << "\t0.0";    // OrganBiomass(0)
