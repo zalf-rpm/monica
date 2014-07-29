@@ -15,6 +15,18 @@
 		!define ArchBit "64bit"
 	!endif
 	
+	!ifdef HERMES
+		!define MonicaVersion "hermes"
+	!else
+		!define MonicaVersion "json"
+	!endif
+	
+	!ifdef VC11
+		!define VCversion "11"
+	!else
+		!define VCversion "12"
+	!endif
+	
 ;--------------------------------
 ;General
 
@@ -85,8 +97,8 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   SetOutPath "$INSTDIR"
   
   ;ADD YOUR OWN FILES HERE...
-  File /oname=monica.exe "..\release\monica-hermes.exe"  
-	File "C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\redist\${Arch}\Microsoft.VC110.CRT\*.dll"
+  File /oname=monica.exe "..\release\monica-${MonicaVersion}.exe"  
+	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
 	File "..\db-connections.ini"
 	File "license.txt"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
@@ -113,6 +125,12 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   File "Hohenfinow2\SLAGDUNG.txt"
   File "Hohenfinow2\SOIL.txt"
 
+  CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2\json
+  SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\json
+  File "Hohenfinow2\json\test.crop.json"
+  File "Hohenfinow2\json\test.sim.json"
+  File "Hohenfinow2\json\test.site.json"
+  	
   SetOutPath "$INSTDIR"
   
   ;Store installation folder
