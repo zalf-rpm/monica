@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/algorithms.h"
 #include "tools/read-ini.h"
 
+
 #include "configuration.h"
 
 #ifdef __unix__
@@ -245,8 +246,10 @@ const Result Configuration::run()
   cson_array* cropsArr = cson_value_get_array(cson_object_get(cropObj, "crops"));
 
   /* sim */
-  int startYear = getInt(simObj, "time.startYear");
-  int endYear = getInt(simObj, "time.endYear");
+	int startYear = getMysqlDate(simObj, "time.startDate").year();
+  //int startYear = getInt(simObj, "time.startYear");
+	int endYear = getMysqlDate(simObj, "time.endDate").year();
+  //int endYear = getInt(simObj, "time.endYear");
 
   cpp.userEnvironmentParameters.p_UseSecondaryYields = getBool(simObj, "switch.useSecondaryYieldOn");
   gp.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn");
@@ -342,7 +345,11 @@ const Result Configuration::run()
 
   debug() << "run monica" << std::endl;
 
-  return runMonica(env, this);
+#ifndef MONICA_GUI
+	return runMonica(env);
+#else
+	rturn runMonica(env, this);
+#endif
 }
 
 void Configuration::setProgress(double progress)
@@ -467,8 +474,10 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
       std::cerr << "Invalid crop id:" << name << genType << std::endl;
     }
 
-    Tools::Date sd = parseDate_(getStr(cropObj, "sowingDate")).toDate(true);
-    Tools::Date hd = parseDate_(getStr(cropObj, "finalHarvestDate")).toDate(true);
+    //Tools::Date sd = parseDate_(getStr(cropObj, "sowingDate")).toDate(true);
+		Tools::Date sd = getMysqlDate(cropObj, "sowingDate");
+    //Tools::Date hd = parseDate_(getStr(cropObj, "finalHarvestDate")).toDate(true);
+		Tools::Date hd = getMysqlDate(cropObj, "finalHarvestDate");
 
     if (!sd.isValid() || !hd.isValid()) {
       ok = false;
@@ -1061,6 +1070,13 @@ std::string Configuration::getStr(const cson_object* obj, const std::string& pat
   else
     return std::string(cson_string_cstr(cson_value_get_string(cson_object_get(obj, path.c_str()))));
 }
+
+Tools::Date Configuration::getMysqlDate(const cson_object* obj, const std::string& path)
+{
+	auto dateStr = getStr(obj, path);
+	return Tools::fromMysqlString(dateStr);
+}
+
 
 bool Configuration::isNull(const cson_object* obj, const std::string& path)
 {

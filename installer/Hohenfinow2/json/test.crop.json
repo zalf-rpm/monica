@@ -4,16 +4,16 @@
       "name": "winter rye",
       "genType": "",
       "spec": "",
-      "sowingDate": "131091",
+      "sowingDate": "1991-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
       "percNTRansplant": 0.0,
-      "finalHarvestDate": "080892",
+      "finalHarvestDate": "1992-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
         {
-          "date": "081091",
+          "date": "1991-10-08",
           "method": "Plough",
           "depth": 30.0
         }
@@ -26,12 +26,12 @@
           "area": 1.0,
           "amount": 11.0,
           "NConc": 0.0,
-          "date": "080692"
+          "date": "1992-06-08"
         }
       ],
       "mineralFertilisers": [
         {
-          "date": "151091",
+          "date": "1991-10-15",
           "method": "Fixed",
           "type": "AN",
           "amount": 90.0
@@ -42,16 +42,16 @@
       "name": "winter wheat",
       "genType": "",
       "spec": "",
-      "sowingDate": "131092",
+      "sowingDate": "1992-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
       "percNTRansplant": 0.0,
-      "finalHarvestDate": "080893",
+      "finalHarvestDate": "1993-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
         {
-          "date": "081092",
+          "date": "1992-10-08",
           "method": "Plough",
           "depth": 30.0
         }
@@ -64,12 +64,12 @@
           "area": 1.0,
           "amount": 11.0,
           "NConc": 0.0,
-          "date": "080693"
+          "date": "1993-06-08"
         }
       ],
       "mineralFertilisers": [
         {
-          "date": "150393",
+          "date": "1993-03-15",
           "method": "Fixed",
           "type": "AN",
           "amount": 90.0
@@ -80,16 +80,16 @@
       "name": "winter rye",
       "genType": "",
       "spec": "",
-      "sowingDate": "131093",
+      "sowingDate": "1993-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
       "percNTRansplant": 0.0,
-      "finalHarvestDate": "080894",
+      "finalHarvestDate": "1994-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
         {
-          "date": "081093",
+          "date": "1993-10-08",
           "method": "Plough",
           "depth": 30.0
         }
@@ -102,12 +102,12 @@
           "area": 1.0,
           "amount": 11.0,
           "NConc": 0.0,
-          "date": "080694"
+          "date": "1994-06-08"
         }
       ],
       "mineralFertilisers": [
         {
-          "date": "151094",
+          "date": "1994-10-15",
           "method": "Fixed",
           "type": "AN",
           "amount": 90.0
@@ -118,16 +118,16 @@
       "name": "winter wheat",
       "genType": "",
       "spec": "",
-      "sowingDate": "131095",
+      "sowingDate": "1995-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
       "percNTRansplant": 0.0,
-      "finalHarvestDate": "080896",
+      "finalHarvestDate": "1996-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
         {
-          "date": "081095",
+          "date": "1995-10-08",
           "method": "Plough",
           "depth": 30.0
         }
@@ -140,12 +140,12 @@
           "area": 1.0,
           "amount": 11.0,
           "NConc": 0.0,
-          "date": "080696"
+          "date": "1996-06-08"
         }
       ],
       "mineralFertilisers": [
         {
-          "date": "150396",
+          "date": "1996-03-15",
           "method": "Fixed",
           "type": "AN",
           "amount": 90.0
@@ -156,16 +156,16 @@
       "name": "winter rye",
       "genType": "",
       "spec": "",
-      "sowingDate": "131096",
+      "sowingDate": "1996-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
       "percNTRansplant": 0.0,
-      "finalHarvestDate": "080897",
+      "finalHarvestDate": "1997-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
         {
-          "date": "081096",
+          "date": "1996-10-08",
           "method": "Plough",
           "depth": 30.0
         }
@@ -178,12 +178,12 @@
           "area": 1.0,
           "amount": 11.0,
           "NConc": 0.0,
-          "date": "080697"
+          "date": "1997-06-08"
         }
       ],
       "mineralFertilisers": [
         {
-          "date": "151096",
+          "date": "1996-10-15",
           "method": "Fixed",
           "type": "AN",
           "amount": 90.0

@@ -109,6 +109,12 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   SetOutPath $INSTDIR\sqlite-db
   File "..\sqlite-db\monica.sqlite"
     
+	SetOutPath $INSTDIR\meta.json
+  File "..\meta.json\meta.crop.json"
+  File "..\meta.json\meta.sim.json"
+  File "..\meta.json\meta.site.json"
+  File "..\meta.json\howto.meta.txt"
+	
   CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2
   SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2
   File "Hohenfinow2\monica.ini"

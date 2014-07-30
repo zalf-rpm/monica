@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "cson/cson_amalgamation_core.h"
 #include "climate/climate-common.h"
+#include "tools/date.h"
 
 namespace Monica
 {
@@ -88,6 +89,7 @@ class Configuration
     static int getInt(const cson_object* obj, const std::string& path);
     static double getDbl(const cson_object* obj, const std::string& path);
     static std::string getStr(const cson_object* obj, const std::string& path);
+		static Tools::Date getMysqlDate(const cson_object* obj, const std::string& path);
     static bool isNull(const cson_object* obj, const std::string& path);
 
     /* print formated cson error to std:cerr */
