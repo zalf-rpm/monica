@@ -85,11 +85,11 @@ class Configuration
     static bool isValid(const cson_value* val, const cson_value* meta, const std::string& path = "root");
 
     /* simplify cson calls */
-    static bool getBool(const cson_object* obj, const std::string& path);
-    static int getInt(const cson_object* obj, const std::string& path);
-    static double getDbl(const cson_object* obj, const std::string& path);
-    static std::string getStr(const cson_object* obj, const std::string& path);
-		static Tools::Date getMysqlDate(const cson_object* obj, const std::string& path);
+    static bool getBool(const cson_object* obj, const std::string& path, bool def = false);
+    static int getInt(const cson_object* obj, const std::string& path, int def = 0);
+    static double getDbl(const cson_object* obj, const std::string& path, double def = 0.0);
+    static std::string getStr(const cson_object* obj, const std::string& path, std::string def = std::string());
+		static Tools::Date getIsoDate(const cson_object* obj, const std::string& path, Tools::Date def = Tools::Date(true));
     static bool isNull(const cson_object* obj, const std::string& path);
 
     /* print formated cson error to std:cerr */

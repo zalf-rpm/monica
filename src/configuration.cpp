@@ -67,42 +67,6 @@ extern "C" {
   }
 }
 
-/* TODO: nach Tools:: ? */
-struct DMY_
-{
-	DMY_() : d(-1), m(-1), y(-1) {}
-  int d, m, y;
-  Tools::Date toDate(bool useLeapYears = true) const
-  {
-    return Tools::Date(d, m, y, useLeapYears);
-  }
-};
-
-
-// copied ParseDate from monica-parameters.cpp
-struct ParseDate_
-{
-  DMY_ operator()(const std::string & d)
-  {
-
-    DMY_ r;
-
-    /* ISO Date YYYY-MM-DD */
-//    TODO: use regexp if available in new gcc version
-    if (d.length() == 10 &&
-        std::count(d.begin(), d.end(), '-') == 2 &&
-        d.at(4) == '-'
-        && d.at(7) == '-') {
-      r.d = atoi(d.substr(8, 2).c_str());
-      r.m = atoi(d.substr(5, 2).c_str());
-      r.y = atoi(d.substr(0, 4).c_str());
-    }
-
-    return r;
-  }
-} parseDate_;
-
-
 const cson_value* Monica::Configuration::metaSim = NULL;
 const cson_value* Monica::Configuration::metaSite = NULL;
 const cson_value* Monica::Configuration::metaCrop = NULL;
@@ -246,42 +210,40 @@ const Result Configuration::run()
   cson_array* cropsArr = cson_value_get_array(cson_object_get(cropObj, "crops"));
 
   /* sim */
-	int startYear = getMysqlDate(simObj, "time.startDate").year();
+	int startYear = getIsoDate(simObj, "time.startDate").year();
   //int startYear = getInt(simObj, "time.startYear");
-	int endYear = getMysqlDate(simObj, "time.endDate").year();
+	int endYear = getIsoDate(simObj, "time.endDate").year();
   //int endYear = getInt(simObj, "time.endYear");
 
-  cpp.userEnvironmentParameters.p_UseSecondaryYields = getBool(simObj, "switch.useSecondaryYieldOn");
-  gp.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn");
-  gp.pc_WaterDeficitResponseOn = getBool(simObj, "switch.waterDeficitResponseOn");
-  gp.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn");
-  gp.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn");
+	cpp.userEnvironmentParameters.p_UseSecondaryYields = 
+		getBool(simObj, "switch.useSecondaryYieldOn", cpp.userEnvironmentParameters.p_UseSecondaryYields);
+	gp.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn", gp.pc_NitrogenResponseOn);
+	gp.pc_WaterDeficitResponseOn = getBool(simObj, "switch.waterDeficitResponseOn", gp.pc_WaterDeficitResponseOn);
+	gp.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn", gp.pc_EmergenceMoistureControlOn);
+	gp.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn", gp.pc_EmergenceFloodingControlOn);
 
-  cpp.userInitValues.p_initPercentageFC = getDbl(simObj, "init.percentageFC");
-  cpp.userInitValues.p_initSoilNitrate = getDbl(simObj, "init.soilNitrate");
-  cpp.userInitValues.p_initSoilAmmonium = getDbl(simObj, "init.soilAmmonium");
+	cpp.userInitValues.p_initPercentageFC = getDbl(simObj, "init.percentageFC", cpp.userInitValues.p_initPercentageFC);
+	cpp.userInitValues.p_initSoilNitrate = getDbl(simObj, "init.soilNitrate", cpp.userInitValues.p_initSoilNitrate);
+	cpp.userInitValues.p_initSoilAmmonium = getDbl(simObj, "init.soilAmmonium", cpp.userInitValues.p_initSoilAmmonium);
 
   debug() << "fetched sim data"  << std::endl;
   
   /* site */
-  sp.vq_NDeposition = getDbl(siteObj, "NDeposition");
-  sp.vs_Latitude = getDbl(siteObj, "latitude");
-  sp.vs_Slope = getDbl(siteObj, "slope");
-  sp.vs_HeightNN = getDbl(siteObj, "heightNN");
+	sp.vq_NDeposition = getDbl(siteObj, "NDeposition", sp.vq_NDeposition);
+	sp.vs_Latitude = getDbl(siteObj, "latitude", sp.vs_Latitude);
+	sp.vs_Slope = getDbl(siteObj, "slope", sp.vs_Slope);
+	sp.vs_HeightNN = getDbl(siteObj, "heightNN", sp.vs_HeightNN);
   sp.vs_Soil_CN_Ratio = 10; //TODO: per layer?
   sp.vs_DrainageCoeff = -1; //TODO: ?
 
   cpp.userEnvironmentParameters.p_AthmosphericCO2 = getDbl(siteObj, "atmosphericCO2");
 
-  if (!isNull(siteObj, "groundwaterDepthMin"))
-    cpp.userEnvironmentParameters.p_MinGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMin");
-  if (!isNull(siteObj, "groundwaterDepthMax"))
-    cpp.userEnvironmentParameters.p_MaxGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMax");
-  if (!isNull(siteObj, "groundwaterDepthMinMonth"))
-    cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth = getDbl(siteObj, "groundwaterDepthMinMonth");
+	cpp.userEnvironmentParameters.p_MinGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMin", cpp.userEnvironmentParameters.p_MinGroundwaterDepth);
+	cpp.userEnvironmentParameters.p_MaxGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMax", cpp.userEnvironmentParameters.p_MaxGroundwaterDepth);
+	cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth = getDbl(siteObj, "groundwaterDepthMinMonth", cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth);
 
-  cpp.userEnvironmentParameters.p_WindSpeedHeight = getDbl(siteObj, "windSpeedHeight");  
-  cpp.userEnvironmentParameters.p_LeachingDepth = getDbl(siteObj, "leachingDepth");  
+	cpp.userEnvironmentParameters.p_WindSpeedHeight = getDbl(siteObj, "windSpeedHeight", cpp.userEnvironmentParameters.p_WindSpeedHeight);
+	cpp.userEnvironmentParameters.p_LeachingDepth = getDbl(siteObj, "leachingDepth", cpp.userEnvironmentParameters.p_LeachingDepth);
 //  cpp.userEnvironmentParameters.p_NumberOfLayers = getInt(siteObj, "numberOfLayers"); ; // JV! currently not present in json
 
   // TODO: maxMineralisationDepth? (Fehler in gp ps_MaxMineralisationDepth und ps_MaximumMineralisationDepth?)
@@ -348,7 +310,7 @@ const Result Configuration::run()
 #ifndef MONICA_GUI
 	return runMonica(env);
 #else
-	rturn runMonica(env, this);
+	return runMonica(env, this);
 #endif
 }
 
@@ -392,24 +354,25 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
   {
     cson_object* horizonObj = cson_value_get_object(cson_array_get(horizonsArr, h));
 
-    int hLoBoundaryCm = 100 * getDbl(horizonObj, "lowerBoundary");
-    int hUpBoundaryCm = layers.size() * lThicknessCm;
-    int hThicknessCm = std::max(0, hLoBoundaryCm - hUpBoundaryCm);
-    int lInHCount = int(std::round(double(hThicknessCm) / double(lThicknessCm)));
+    //int hLoBoundaryCm = 100 * getDbl(horizonObj, "lowerBoundary");
+    //int hUpBoundaryCm = layers.size() * lThicknessCm;
+		//int hThicknessCm = std::max(0, hLoBoundaryCm - hUpBoundaryCm);
+    int hThicknessCm = std::max(0, Tools::roundRT<int>(100*getDbl(horizonObj, "thickness"), 0));
+    int lInHCount = Tools::roundRT<int>(double(hThicknessCm) / double(lThicknessCm), 0);
     /* fill all (maxNoOfLayers) layers if available horizons depth < lThicknessCm * maxNoOfLayers */
     if (h == (hs - 1) && (int(layers.size()) + lInHCount) < maxNoOfLayers)
       lInHCount += maxNoOfLayers - layers.size() - lInHCount;
 
     SoilParameters layer;
-    layer.set_vs_SoilOrganicCarbon(getDbl(horizonObj, "Corg")); //TODO: / 100 ?
-    layer.set_vs_SoilBulkDensity(getDbl(horizonObj, "bulkDensity"));
-    layer.vs_SoilSandContent = getDbl(horizonObj, "sand");
-    layer.vs_SoilClayContent = getDbl(horizonObj, "clay");
+    layer.set_vs_SoilOrganicCarbon(getDbl(horizonObj, "Corg", -1.0)); //TODO: / 100 ?
+    layer.set_vs_SoilBulkDensity(getDbl(horizonObj, "bulkDensity", -1.0));
+		layer.vs_SoilSandContent = getDbl(horizonObj, "sand", layer.vs_SoilSandContent);
+		layer.vs_SoilClayContent = getDbl(horizonObj, "clay", layer.vs_SoilClayContent);
     layer.vs_SoilStoneContent = getDbl(horizonObj, "sceleton"); //TODO: / 100 ?
     layer.vs_Lambda = Tools::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
     // TODO: Wo wird textureClass verwendet?
     layer.vs_SoilTexture = getStr(horizonObj, "textureClass");
-    layer.vs_SoilpH = getDbl(horizonObj, "pH");
+		layer.vs_SoilpH = getDbl(horizonObj, "pH", layer.vs_SoilpH);
     /* TODO: ? lambda = drainage_coeff ? */
     layer.vs_Lambda = Tools::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
     layer.vs_FieldCapacity = getDbl(horizonObj, "fieldCapacity");
@@ -474,10 +437,8 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
       std::cerr << "Invalid crop id:" << name << genType << std::endl;
     }
 
-    //Tools::Date sd = parseDate_(getStr(cropObj, "sowingDate")).toDate(true);
-		Tools::Date sd = getMysqlDate(cropObj, "sowingDate");
-    //Tools::Date hd = parseDate_(getStr(cropObj, "finalHarvestDate")).toDate(true);
-		Tools::Date hd = getMysqlDate(cropObj, "finalHarvestDate");
+		Tools::Date sd = getIsoDate(cropObj, "sowingDate");
+		Tools::Date hd = getIsoDate(cropObj, "finalHarvestDate");
 
     if (!sd.isValid() || !hd.isValid()) {
       ok = false;
@@ -559,7 +520,7 @@ bool Configuration::addHarvestOps(ProductionProcess &pp, cson_array* harvArr)
 	unsigned int h;
 	for (h = 0; h < hs; ++h) {
 		cson_object* harvObj = cson_value_get_object(cson_array_get(harvArr, h));
-		Tools::Date hDate = parseDate_(getStr(harvObj, "date")).toDate(true);
+		Tools::Date hDate = getIsoDate(harvObj, "date");
 		double percentage = getDbl(harvObj, "percentage") / 100; // [%] -> [kg/kg]
 		bool exported = getDbl(harvObj, "exported");
 		std::string method = getStr(harvObj, "method");
@@ -589,7 +550,7 @@ bool Configuration::addTillageOps(ProductionProcess &pp, cson_array* tillArr)
   unsigned int t;
   for (t = 0; t < ts; ++t) {
     cson_object* tillObj = cson_value_get_object(cson_array_get(tillArr, t));
-    Tools::Date tDate = parseDate_(getStr(tillObj, "date")).toDate(true);
+		Tools::Date tDate = getIsoDate(tillObj, "date");
     double depth = getDbl(tillObj, "depth") / 100; // TODO: cm -> m ????
     std::string method = "bla"; //getStr(tillObj, "method"))));
 
@@ -643,7 +604,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
   unsigned int f;
   for (f = 0; f < fs; ++f) {
     cson_object* fertObj = cson_value_get_object(cson_array_get(fertArr, f));
-    Tools::Date fDate = parseDate_(getStr(fertObj, "date")).toDate(true);
+    Tools::Date fDate = getIsoDate(fertObj, "date");
     std::string method = getStr(fertObj, "method");
     std::string type = getStr(fertObj, "type");
     double amount = getDbl(fertObj, "amount");
@@ -762,7 +723,7 @@ bool Configuration::addIrrigations(ProductionProcess &pp, cson_array* irriArr)
     double amount = getDbl(irriObj, "amount");
     double NConc = getDbl(irriObj, "NConc");
     // TODO: eigentlich kein date in JSON vorgesehen
-    Tools::Date iDate = parseDate_(getStr(irriObj, "date")).toDate(true);
+    Tools::Date iDate = getIsoDate(irriObj, "date");
 
     if (!iDate.isValid()) {
       ok = false;
@@ -1039,44 +1000,50 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
   return ok;      
 }
 
-bool Configuration::getBool(const cson_object* obj, const std::string& path)
+bool Configuration::getBool(const cson_object* obj, const std::string& path, bool def)
 {
-  if (path.find('.') < std::string::npos)
-    return cson_value_get_bool(cson_object_get_sub(obj, path.c_str(), '.'));
-  else
-    return cson_value_get_bool(cson_object_get(obj, path.c_str()));
+	auto value = path.find('.') < std::string::npos
+		? cson_object_get_sub(obj, path.c_str(), '.')
+		: cson_object_get(obj, path.c_str());
+
+	return value ? cson_value_get_bool(value) : def;
 }
 
-int Configuration::getInt(const cson_object* obj, const std::string& path)
+int Configuration::getInt(const cson_object* obj, const std::string& path, int def)
 {
-  if (path.find('.') < std::string::npos)
-    return cson_value_get_integer(cson_object_get_sub(obj, path.c_str(), '.'));
-  else
-    return cson_value_get_integer(cson_object_get(obj, path.c_str()));
+	auto value = path.find('.') < std::string::npos
+		? cson_object_get_sub(obj, path.c_str(), '.')
+		: cson_object_get(obj, path.c_str());
+
+	return value ? cson_value_get_integer(value) : def;
 }
 
-double Configuration::getDbl(const cson_object* obj, const std::string& path)
+double Configuration::getDbl(const cson_object* obj, const std::string& path, double def)
 {
-  if (path.find('.') < std::string::npos)
-    return cson_value_get_double(cson_object_get_sub(obj, path.c_str(), '.'));
-  else
-    return cson_value_get_double(cson_object_get(obj, path.c_str()));
+	auto value = path.find('.') < std::string::npos
+		? cson_object_get_sub(obj, path.c_str(), '.')
+		: cson_object_get(obj, path.c_str());
+
+	return value ? cson_value_get_double(value) : def;
 }
 
-std::string Configuration::getStr(const cson_object* obj, const std::string& path)
+std::string Configuration::getStr(const cson_object* obj, const std::string& path, std::string def)
 {
-  if (path.find('.') < std::string::npos)
-    return std::string(cson_string_cstr(cson_value_get_string(cson_object_get_sub(obj, path.c_str(), '.'))));
-  else
-    return std::string(cson_string_cstr(cson_value_get_string(cson_object_get(obj, path.c_str()))));
+	auto value = path.find('.') < std::string::npos
+		? cson_object_get_sub(obj, path.c_str(), '.')
+		: cson_object_get(obj, path.c_str());
+
+	return value ? std::string(cson_string_cstr(cson_value_get_string(value))) : def;
 }
 
-Tools::Date Configuration::getMysqlDate(const cson_object* obj, const std::string& path)
+Tools::Date Configuration::getIsoDate(const cson_object* obj, const std::string& path, Tools::Date def)
 {
-	auto dateStr = getStr(obj, path);
-	return Tools::fromMysqlString(dateStr);
-}
+	auto value = path.find('.') < std::string::npos
+		? cson_object_get_sub(obj, path.c_str(), '.')
+		: cson_object_get(obj, path.c_str());
 
+	return value ? Tools::fromMysqlString(getStr(obj, path)) : def;
+}
 
 bool Configuration::isNull(const cson_object* obj, const std::string& path)
 {

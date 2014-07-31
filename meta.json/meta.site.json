@@ -73,7 +73,7 @@
   },
   "horizons": [
     {
-      "Thickness": {
+      "thickness": {
         "desc": "Thickness of soil horizon",
         "unit": "m",
         "min": 0.1,
