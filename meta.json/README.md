@@ -1,16 +1,16 @@
 HOWTO meta
 ==========
-- - - -
-### Files ###
+
+## Files ##
 
   - meta.sim.json (simulation settings)
   - meta.site.json (site description and soil horizons)
   - meta.crop.json (crop rotation and operations)
 
-- - - -
-### Format ###
 
-#### Required properties ####
+## Format ##
+
+### Required properties ###
 
   * *desc*: not null, string: any
 
@@ -21,7 +21,7 @@ HOWTO meta
 }
 ```
 
-#### Optional properties ####
+### Optional properties ###
 
   * *unit*: not null, string: "-", "bool", "date" (default date format is "YYYY-MM-DD") or any other physical unit.
     Usally not necessary if enum or db are used.
