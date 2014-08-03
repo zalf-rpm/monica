@@ -2,15 +2,11 @@
   "time": {
     "startDate": {
       "desc": "Date at which the simulation starts",
-      "unit": "date",
-      "min": "0000-01-01",
-      "max": "2999-11-30"
+      "unit": "date"
     },
     "endDate": {
       "desc": "Date at which the simulation ends",
-      "unit": "date",
-      "min": "0000-02-01",
-      "max": "2999-12-31"
+      "unit": "date"
     }
   },
   "switch": {
@@ -18,31 +14,36 @@
       "desc": "Switches the utilisation of secondary yields off",
       "unit": "bool",
       "min": false,
-      "max": true
+      "max": true,
+      "default": false
     },
     "nitrogenResponseOn": {
       "desc": "Switches the crop nitrogen response off for potential growth simulations",
       "unit": "bool",
       "min": false,
-      "max": true
+      "max": true,
+      "default": true
     },
     "waterDeficitResponseOn": {
       "desc": "Switches the crop soil moisture response off for potential growth simulations",
       "unit": "bool",
       "min": false,
-      "max": true
+      "max": true,
+      "default": true
     },
     "emergenceMoistureControlOn": {
       "desc": "Switches the seed response to soil moisture off for simulations with unknown initial conditions",
       "unit": "bool",
       "min": false,
-      "max": true
+      "max": true,
+      "default": false
     },
     "emergenceFloodingControlOn": {
       "desc": "Switches the seed response to flooded surface off for simulations with unknown surface slope",
       "unit": "bool",
       "min": false,
-      "max": true
+      "max": true,
+      "default": false
     }
   },
   "init": {
@@ -50,19 +51,22 @@
       "desc": "Initial soil moisture content in percent field capacity",
       "unit": "m m-3",
       "min": 0,
-      "max": 1
+      "max": 1,
+      "default": 1.0
     },
     "soilNitrate": {
       "desc": "Initial soil nitrate content",
       "unit": "kg (NO3-N) m-3",
       "min": 0,
-      "max": null
+      "max": null,
+      "default": 0.001
     },
     "soilAmmonium": {
       "desc": "Initial soil ammonium content",
       "unit": "kg (NH4-N) m-3",
       "min": 0,
-      "max": null
+      "max": null,
+      "default": 0.0001
     }
   }
 }

@@ -2,20 +2,22 @@
   "crops": [
     {
       "name": {
-        "desc": "Crop species name",
+        "desc": "Crop species identifier (name and genetic type)",
         "db": {
           "table": "crop",
           "columns": [
+            "id",
             "name",
             "gen_type"
+          ],
+          "keys": [
+            "id"
           ]
         }
       },
       "sowingDate": {
         "desc": "Date at which the crop is sown or transplanted",
-        "unit": "date",
-        "min": "0000-01-01",
-        "max": "2999-12-31"
+        "unit": "date"
       },
       "rowWidth": {
         "desc": "Row width",
@@ -81,6 +83,10 @@
       ],
       "irrigations": [
         {
+          "date": {
+            "desc": "Irrigation date",
+            "unit": "date"
+          },
           "method": {
             "desc": "Irrigation method",
             "enum": [
@@ -146,7 +152,11 @@
             "db": {
               "table": "organic_fertiliser",
               "columns": [
-                "type"
+                "id",
+                "om_type"
+              ],
+              "keys": [
+                "id"
               ]
             }
           },
@@ -154,7 +164,8 @@
             "desc": "Amount of N applied",
             "unit": "kg (N) ha-1",
             "min": 0,
-            "max": null
+            "max": null,
+            "default": 0
           }
         }
       ],
@@ -177,7 +188,11 @@
             "db": {
               "table": "mineral_fertilisers",
               "columns": [
-                "type"
+                "id",
+                "name"
+              ],
+              "keys": [
+                "id"
               ]
             }
           },
@@ -185,7 +200,8 @@
             "desc": "Amount of N applied",
             "unit": "kg (N) ha-1",
             "min": 0,
-            "max": null
+            "max": null,
+            "default": 0
           }
         }
       ]

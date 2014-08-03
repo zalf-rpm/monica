@@ -8,7 +8,7 @@ message("building code for $$ARCH architecture")
 
 TEMPLATE = app
 TARGET = monica
-DESTDIR = ../bin
+DESTDIR = dest
 OBJECTS_DIR = temp/obj
 DEFINES -= MONICA_GUI
 
@@ -38,30 +38,30 @@ DEFINES += STANDALONE
 HERMES:DEFINES += NO_MYSQL
 
 # monica code
-HEADERS += src/soilcolumn.h
-HEADERS += src/soiltransport.h
-HEADERS += src/soiltemperature.h
-HEADERS += src/soilmoisture.h
-HEADERS += src/soilorganic.h
-HEADERS += src/monica.h
-HEADERS += src/monica-parameters.h
-HEADERS += src/crop.h
-HEADERS += src/debug.h
-HEADERS += src/conversion.h
-HEADERS += src/configuration.h
+HEADERS += $$_PRO_FILE_PWD_/src/soilcolumn.h
+HEADERS += $$_PRO_FILE_PWD_/src/soiltransport.h
+HEADERS += $$_PRO_FILE_PWD_/src/soiltemperature.h
+HEADERS += $$_PRO_FILE_PWD_/src/soilmoisture.h
+HEADERS += $$_PRO_FILE_PWD_/src/soilorganic.h
+HEADERS += $$_PRO_FILE_PWD_/src/monica.h
+HEADERS += $$_PRO_FILE_PWD_/src/monica-parameters.h
+HEADERS += $$_PRO_FILE_PWD_/src/crop.h
+HEADERS += $$_PRO_FILE_PWD_/src/debug.h
+HEADERS += $$_PRO_FILE_PWD_/src/conversion.h
+HEADERS += $$_PRO_FILE_PWD_/src/configuration.h
 
-SOURCES += src/main.cpp
-SOURCES += src/soilcolumn.cpp
-SOURCES += src/soiltransport.cpp
-SOURCES += src/soiltemperature.cpp
-SOURCES += src/soilmoisture.cpp
-SOURCES += src/soilorganic.cpp
-SOURCES += src/monica.cpp
-SOURCES += src/monica-parameters.cpp
-SOURCES += src/crop.cpp
-SOURCES += src/debug.cpp
-SOURCES += src/conversion.cpp
-SOURCES += src/configuration.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/monica-json-main.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/soilcolumn.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/soiltransport.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/soiltemperature.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/soilmoisture.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/soilorganic.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/monica.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/monica-parameters.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/crop.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/debug.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/conversion.cpp
+SOURCES += $$_PRO_FILE_PWD_/src/configuration.cpp
 
 # db library code
 HEADERS += $${UTIL_DIR}/db/db.h
@@ -104,6 +104,8 @@ INCLUDEPATH += \
 #../../boost_1_53_0 \
 ../util \
 ../loki-lib/include
+
+message($$INCLUDEPATH)
 
 #libs
 #------------------------------------------------------------

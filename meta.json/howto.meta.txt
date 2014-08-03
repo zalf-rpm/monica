@@ -3,18 +3,20 @@
 {
   /* required */
   
-    desc: not null, text: description
-    unit: not null, text: "-", "bool", "date" or any other physical unit. 
+    desc: not null, string: description
+
+  /* not required if enum or db is present */   
+    unit: not null, string: "-", "bool", "date" or any other physical unit. 
   
   /* optional */
   
-    default: null, text or number
-    min: null, text or number,
-    max: null, text or number,
+    default: null, string or number
+    min: null, string or number,
+    max: null, string or number,
     advanced: not null, true or false  (for "advanced" users or probably not implemented or experimental)
-    enum: not null, array with text e.g. ["option1", "option2"]
+    enum: not null, array with strings or numbers e.g. ["option1", "option2"]
     OR
-    db: not null, object { table: "tableName", columns: ["columnName1", "columnName2"] }
+    db: not null, object { table: "tableName", columns: ["columnName1", "columnName2", ..], keys: ["columnName1", ...] }
 }  
 
 

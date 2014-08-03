@@ -189,10 +189,12 @@ bool Configuration::setJSON(cson_value* sim, cson_value* site, cson_value* crop)
 
 const Result Configuration::run()
 {
+
   if (!_sim || !_site || !_crop) {
     std::cerr << "Configuration is empty" << std::endl;
     return Result();
   }
+
   
   /* fetch root objects */
   cson_object* simObj = cson_value_get_object(_sim);
@@ -212,7 +214,7 @@ const Result Configuration::run()
   /* sim */
 	int startYear = getIsoDate(simObj, "time.startDate").year();
   //int startYear = getInt(simObj, "time.startYear");
-	int endYear = getIsoDate(simObj, "time.endDate").year();
+  int endYear = getIsoDate(simObj, "time.endDate").year();
   //int endYear = getInt(simObj, "time.endYear");
 
 	cpp.userEnvironmentParameters.p_UseSecondaryYields = 
@@ -226,7 +228,7 @@ const Result Configuration::run()
 	cpp.userInitValues.p_initSoilNitrate = getDbl(simObj, "init.soilNitrate", cpp.userInitValues.p_initSoilNitrate);
 	cpp.userInitValues.p_initSoilAmmonium = getDbl(simObj, "init.soilAmmonium", cpp.userInitValues.p_initSoilAmmonium);
 
-  debug() << "fetched sim data"  << std::endl;
+  std::cout << "fetched sim data"  << std::endl;
   
   /* site */
 	sp.vq_NDeposition = getDbl(siteObj, "NDeposition", sp.vq_NDeposition);
@@ -249,7 +251,7 @@ const Result Configuration::run()
   // TODO: maxMineralisationDepth? (Fehler in gp ps_MaxMineralisationDepth und ps_MaximumMineralisationDepth?)
   gp.ps_MaxMineralisationDepth = 0.4;
 
-  debug() << "fetched site data"  << std::endl;
+  std::cout << "fetched site data"  << std::endl;
 
   /* soil */
   double lThicknessCm = 100.0 * cpp.userEnvironmentParameters.p_LayerThickness;
@@ -264,7 +266,7 @@ const Result Configuration::run()
     return Result();
   }
   
-  debug() << "fetched soil data"  << std::endl;
+  std::cout << "fetched soil data"  << std::endl;
 
   /* weather */
   Climate::DataAccessor da(Tools::Date(1, 1, startYear, true), Tools::Date(31, 12, endYear, true));
@@ -273,7 +275,7 @@ const Result Configuration::run()
     return Result();
   }
   
-  debug() << "fetched climate data"  << std::endl;
+  std::cout << "fetched climate data"  << std::endl;
 
   /* crops */
   std::vector<ProductionProcess> pps;
@@ -282,7 +284,7 @@ const Result Configuration::run()
     return Result();
   }
   
-  debug() << "fetched crop data"  << std::endl;
+  std::cout << "fetched crop data"  << std::endl;
 
 	Env env(layers, cpp);
   env.general = gp;
@@ -305,7 +307,7 @@ const Result Configuration::run()
   //   env.nMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
   // }
 
-  debug() << "run monica" << std::endl;
+  std::cout << "run monica" << std::endl;
 
 #ifndef MONICA_GUI
 	return runMonica(env);
@@ -316,7 +318,7 @@ const Result Configuration::run()
 
 void Configuration::setProgress(double progress)
 {
-  debug() << progress;
+  std::cout << progress;
 }
 
 bool Configuration::isValidated() {
@@ -348,8 +350,11 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
 {
   bool ok = true;
   unsigned int hs = cson_array_length_get(horizonsArr);
-  debug() << "fetching " << hs << " horizons" << std::endl;
+  std::cout << "fetching " << hs << " horizons" << std::endl;
+  /* track total depth in case input horizons exceed total layer depth */
+  double depth = 0.0;
   unsigned int h;
+
   for( h = 0; h < hs; ++h )
   {
     cson_object* horizonObj = cson_value_get_object(cson_array_get(horizonsArr, h));
@@ -387,11 +392,21 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
     }
 
     for (int l = 0; l < lInHCount; l++) {
+      
+      /* stop if we reach max. depth */
+      if (depth >= maxNoOfLayers * lThicknessCm) {
+        std::cout << "Maximum soil layer depth (" << (maxNoOfLayers * lThicknessCm) 
+          << " cm) reached. Remaining layers in horizon " << h << " ignored." << std::endl;
+        break;
+      }
+
+      depth += lThicknessCm;
+
       layers.push_back(layer);
-      debug() << "fetched layer " << layers.size() << " in horizon " << h << std::endl;
+      std::cout << "fetched layer " << layers.size() << " in horizon " << h << std::endl;
     }
 
-    debug() << "fetched horizon " << h << std::endl;
+    std::cout << "fetched horizon " << h << std::endl;
   }  
 
   return ok;
@@ -401,41 +416,39 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 {
   bool ok = true;
   unsigned int cs = cson_array_length_get(cropsArr);
-  debug() << "fetching " << cs << " crops" << std::endl;
+  std::cout << "fetching " << cs << " crops" << std::endl;
   unsigned int c;
   for (c = 0; c < cs; ++c) {
 
     cson_object* cropObj = cson_value_get_object(cson_array_get(cropsArr, c));
-    int cropId = -1;
-		int permCropId = -1;
+    int cropId = getInt(cropObj, "name.id");
+    std::string name = getStr(cropObj, "name.name");
+    std::string genType = getStr(cropObj, "name.gen_type");
+    int permCropId = -1;
 
-    std::string name = getStr(cropObj, "name");
-    std::string genType = getStr(cropObj, "genType");
+    if (!cropId || cropId < 0) {
+      ok = false;
+      std::cerr << "Invalid crop id:" << name << genType << std::endl;
+    }
+
 
     Db::DB *con = Db::newConnection("monica");
     if (con) {
       bool ok = con->select(
-        "SELECT id, permanent_crop_id " 
+        "SELECT permanent_crop_id " 
         "FROM crop "
-        "WHERE name='" + name + "' "
-        "AND gen_type='" + genType + "' "
+        "WHERE id=" + std::to_string(cropId)
       );
 
-			if (ok)
-			{
-				Db::DBRow row = con->getRow();
-				cropId = Tools::satoi(row[0]);
-				permCropId = Tools::satoi(row[1], -1);
-			}
-       
+      if (ok)
+      {
+        Db::DBRow row = con->getRow();
+        permCropId = Tools::satoi(row[0], -1);
+      }
 
       delete con;
     }    
     
-    if (cropId < 0) {
-      ok = false;
-      std::cerr << "Invalid crop id:" << name << genType << std::endl;
-    }
 
 		Tools::Date sd = getIsoDate(cropObj, "sowingDate");
 		Tools::Date hd = getIsoDate(cropObj, "finalHarvestDate");
@@ -458,7 +471,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
     ProductionProcess pp(name, crop);
 
 		/* harvest */
-		cson_array* harvArr = cson_value_get_array(cson_object_get(cropObj, "harvestOps"));
+		cson_array* harvArr = cson_value_get_array(cson_object_get(cropObj, "harvestOperations"));
 		if (harvArr) { /* in case no intermediate harvest has been added */
 			if (!addHarvestOps(pp, harvArr)) {
 				ok = false;
@@ -467,7 +480,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 		}
 
     /* tillage */
-    cson_array* tillArr = cson_value_get_array(cson_object_get(cropObj, "tillageOps"));
+    cson_array* tillArr = cson_value_get_array(cson_object_get(cropObj, "tillageOperations"));
     if (tillArr) { /* in case no tillage has been added */
       if (!addTillageOps(pp, tillArr)) {
         ok = false;
@@ -504,7 +517,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 
     pps.push_back(pp);
 
-    debug() << "fetched crop " << c << ", name: " << name.c_str() << ", id: " << cropId << std::endl;
+    std::cout << "fetched crop " << c << ", name: " << name.c_str() << ", id: " << cropId << std::endl;
   }
 
   return ok;
@@ -516,7 +529,7 @@ bool Configuration::addHarvestOps(ProductionProcess &pp, cson_array* harvArr)
 	bool ok = true;
 
 	unsigned int hs = cson_array_length_get(harvArr);
-	debug() << "fetching " << hs << " harvests" << std::endl;
+	std::cout << "fetching " << hs << " harvests" << std::endl;
 	unsigned int h;
 	for (h = 0; h < hs; ++h) {
 		cson_object* harvObj = cson_value_get_object(cson_array_get(harvArr, h));
@@ -546,7 +559,7 @@ bool Configuration::addTillageOps(ProductionProcess &pp, cson_array* tillArr)
   bool ok = true;
 
   unsigned int ts = cson_array_length_get(tillArr);
-  debug() << "fetching " << ts << " tillages" << std::endl;
+  std::cout << "fetching " << ts << " tillages" << std::endl;
   unsigned int t;
   for (t = 0; t < ts; ++t) {
     cson_object* tillObj = cson_value_get_object(cson_array_get(tillArr, t));
@@ -574,8 +587,8 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
 
   if (!fDateate.isValid())
   {
-    debug() << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
-    debug() << "Line: " << s.c_str() << endl;
+    std::cout << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
+    std::cout << "Line: " << s.c_str() << endl;
     ok = false;
   }
 
@@ -600,25 +613,26 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
 
   Db::DB *con = Db::newConnection("monica");
   unsigned int fs = cson_array_length_get(fertArr);
-  debug() << "fetching " << fs << " fertilizers" << std::endl;
+  std::cout << "fetching " << fs << " fertilizers" << std::endl;
   unsigned int f;
   for (f = 0; f < fs; ++f) {
     cson_object* fertObj = cson_value_get_object(cson_array_get(fertArr, f));
     Tools::Date fDate = getIsoDate(fertObj, "date");
     std::string method = getStr(fertObj, "method");
-    std::string type = getStr(fertObj, "type");
+    int fertId = getInt(fertObj, "type.id");
+    std::string fertName = isOrganic ? getStr(fertObj, "type.om_type") : getStr(fertObj, "type.name");
     double amount = getDbl(fertObj, "amount");
 
     if (!fDate.isValid()) {
       ok = false;
-      std::cerr << "Invalid fertilization date" << type << method << std::endl;
+      std::cerr << "Invalid fertilization date" << fertName << method << std::endl;
     }
 
     if (isOrganic)  {
       if (con && con->select(
         "SELECT om_Type, dm, nh4_n, no3_n, nh2_n, k_slow, k_fast, part_s, part_f, cn_s, cn_f, smb_s, smb_f, id "
         "FROM organic_fertiliser "
-        "WHERE type='" + type + "'"
+        "WHERE id=" + std::to_string(fertId)
       )) {
         Db::DBRow row = con->getRow();
         if (!(row).empty()) {
@@ -642,7 +656,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
         }
         else {
           ok = false;
-          std::cerr << "Invalid organic fertilizer type" << type << method << std::endl;        
+          std::cerr << "Invalid organic fertilizer type" << fertName << method << std::endl;        
         }
       }
     }
@@ -650,7 +664,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
       if (con && con->select(
         "SELECT id, name, no3, nh4, carbamid " 
         "FROM mineral_fertilisers "
-        "WHERE type='" + type + "'"
+        "WHERE id=" + std::to_string(fertId)
       )) {
         Db::DBRow row = con->getRow();
         if (!(row).empty()) {
@@ -665,7 +679,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
         }
         else {
           ok = false;
-          std::cerr << "Invalid mineral fertilizer type" << type << method << std::endl;        
+          std::cerr << "Invalid mineral fertilizer type" << fertName << method << std::endl;        
         }
       }
     }
@@ -683,9 +697,9 @@ bool Configuration::addIrrigations(ProductionProcess &pp, cson_array* irriArr)
   /*Date idate = parseDate(irrDate).toDate(it->crop()->seedDate().useLeapYears());
   if (!idate.isValid())
   {
-    debug() << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
-    debug() << "Line: " << s.c_str() << endl;
-    debug() << "Aborting simulation now!" << endl;
+    std::cout << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
+    std::cout << "Line: " << s.c_str() << endl;
+    std::cout << "Aborting simulation now!" << endl;
     exit(-1);
   }
 
@@ -712,7 +726,7 @@ bool Configuration::addIrrigations(ProductionProcess &pp, cson_array* irriArr)
   }*/
 
   unsigned int is = cson_array_length_get(irriArr);
-  debug() << "fetching " << is << " irrigations" << std::endl;
+  std::cout << "fetching " << is << " irrigations" << std::endl;
   unsigned int i;
   for (i = 0; i < is; ++i) {
     cson_object* irriObj = cson_value_get_object(cson_array_get(irriArr, i));
@@ -758,7 +772,7 @@ bool Configuration::createClimate(Climate::DataAccessor &da, CentralParameterPro
     std::string ys = yss.str();
     std::ostringstream oss;
     oss << pathToFile << ys.substr(1, 3);
-    debug() << "File: " << oss.str().c_str() << std::endl;
+    std::cout << "File: " << oss.str().c_str() << std::endl;
     std::ifstream ifs(oss.str().c_str(), std::ios::binary);
     if (! ifs.good()) {
       std::cerr << "Could not open file " << oss.str().c_str() << " . Aborting now!" << std::endl;
@@ -775,7 +789,7 @@ bool Configuration::createClimate(Climate::DataAccessor &da, CentralParameterPro
       int daysCount = 0;
       int allowedDays = Tools::Date(31, 12, y, useLeapYears).dayOfYear();
       //    cout << "tavg\t" << "tmin\t" << "tmax\t" << "wind\t"
-      debug() << "allowedDays: " << allowedDays << " " << y<< "\t" << useLeapYears << "\tlatitude:\t" << latitude << std::endl;
+      std::cout << "allowedDays: " << allowedDays << " " << y<< "\t" << useLeapYears << "\tlatitude:\t" << latitude << std::endl;
       //<< "sunhours\t" << "globrad\t" << "precip\t" << "ti\t" << "relhumid\n";
       while (getline(ifs, s)) {
 
@@ -799,7 +813,7 @@ bool Configuration::createClimate(Climate::DataAccessor &da, CentralParameterPro
         else if(sunhours >= 0.0) {
           // invalid globrad use sunhours
           // convert sunhours into globrad
-          // debug() << "Invalid globrad - use sunhours instead" << endl;
+          // std::cout << "Invalid globrad - use sunhours instead" << endl;
           _globrad.push_back(Tools::sunshine2globalRadiation(date.dayOfYear(), sunhours, latitude, true));    
           _sunhours.push_back(sunhours);
         } 
@@ -931,7 +945,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
     cson_object* metaObj = cson_value_get_object(meta);
     
     if (!valObj || !metaObj) {
-      debug() << "valObj: " << valObj << " metaObj: " << metaObj << path << std::endl;
+      std::cout << "valObj: " << valObj << " metaObj: " << metaObj << path << std::endl;
       return false;
     }
 
@@ -940,7 +954,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
     cson_kvp* kvp;
     while ((kvp = cson_object_iter_next(&iter))) {
       cson_string const* key = cson_kvp_key(kvp);
-      debug() << "meta key: " << cson_string_cstr(key) << std::endl;
+      std::cout << "meta key: " << cson_string_cstr(key) << std::endl;
       cson_value* metaVal = cson_kvp_value(kvp);
       std::string valPath = path + "." + std::string(cson_string_cstr(key));
       /* check if key exists */
@@ -951,7 +965,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
         }
       }
       else if (cson_value_is_array(metaVal)) {
-        debug() << "meta key is array: " << cson_string_cstr(key) << std::endl;
+        std::cout << "meta key is array: " << cson_string_cstr(key) << std::endl;
         ok = isValid(cson_object_get(valObj, cson_string_cstr(key)), metaVal, valPath);
         if (!ok)
           return ok;
@@ -963,7 +977,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
         }
       }
       else if (cson_value_is_object(metaVal)) {
-        debug() << "meta key is object: " << cson_string_cstr(key) << std::endl;
+        std::cout << "meta key is object: " << cson_string_cstr(key) << std::endl;
         ok = isValid(cson_object_get(valObj, cson_string_cstr(key)), metaVal, valPath);
         if (!ok)
           return ok;
@@ -977,7 +991,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
 
     /* missing array allowed? */
     if (/*!valArr || */!metaArr) {
-      debug() << "valArr: " << valArr << " metaArr: " << metaArr << path << std::endl;
+      std::cout << "valArr: " << valArr << " metaArr: " << metaArr << path << std::endl;
       return false;
     }
 
@@ -1006,7 +1020,7 @@ bool Configuration::getBool(const cson_object* obj, const std::string& path, boo
 		? cson_object_get_sub(obj, path.c_str(), '.')
 		: cson_object_get(obj, path.c_str());
 
-	return value ? cson_value_get_bool(value) : def;
+	return (!cson_value_is_null(value) && value) ? cson_value_get_bool(value) : def;
 }
 
 int Configuration::getInt(const cson_object* obj, const std::string& path, int def)
@@ -1015,7 +1029,7 @@ int Configuration::getInt(const cson_object* obj, const std::string& path, int d
 		? cson_object_get_sub(obj, path.c_str(), '.')
 		: cson_object_get(obj, path.c_str());
 
-	return value ? cson_value_get_integer(value) : def;
+	return (!cson_value_is_null(value) && value) ? cson_value_get_integer(value) : def;
 }
 
 double Configuration::getDbl(const cson_object* obj, const std::string& path, double def)
@@ -1024,7 +1038,7 @@ double Configuration::getDbl(const cson_object* obj, const std::string& path, do
 		? cson_object_get_sub(obj, path.c_str(), '.')
 		: cson_object_get(obj, path.c_str());
 
-	return value ? cson_value_get_double(value) : def;
+	return (!cson_value_is_null(value) && value) ? cson_value_get_double(value) : def;
 }
 
 std::string Configuration::getStr(const cson_object* obj, const std::string& path, std::string def)
@@ -1033,7 +1047,7 @@ std::string Configuration::getStr(const cson_object* obj, const std::string& pat
 		? cson_object_get_sub(obj, path.c_str(), '.')
 		: cson_object_get(obj, path.c_str());
 
-	return value ? std::string(cson_string_cstr(cson_value_get_string(value))) : def;
+	return (!cson_value_is_null(value) && value) ? std::string(cson_string_cstr(cson_value_get_string(value))) : def;
 }
 
 Tools::Date Configuration::getIsoDate(const cson_object* obj, const std::string& path, Tools::Date def)
@@ -1042,7 +1056,7 @@ Tools::Date Configuration::getIsoDate(const cson_object* obj, const std::string&
 		? cson_object_get_sub(obj, path.c_str(), '.')
 		: cson_object_get(obj, path.c_str());
 
-	return value ? Tools::fromMysqlString(getStr(obj, path)) : def;
+	return (!cson_value_is_null(value) && value) ? Tools::fromMysqlString(getStr(obj, path)) : def;
 }
 
 bool Configuration::isNull(const cson_object* obj, const std::string& path)

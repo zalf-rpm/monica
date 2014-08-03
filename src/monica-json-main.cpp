@@ -61,6 +61,9 @@ static int freeMetaCsonAndReturn(int x)
 
 static int initMetaCson()
 {
+
+  std::cerr << "initMetaCson" << std::endl;
+
   /* open and parse meta.xxx files */
   int rc = 0;
 	FILE* metaSimFile = fopen((string("meta.json") + pathSeparator() + "meta.sim.json").c_str(), "r" );
@@ -176,10 +179,12 @@ int main(int argc, char** argv)
   setlocale( LC_ALL, "C" ) /* supposedly important for underlying JSON parser. */;
   for( ; i < argc; ++i ) {
     char const * arg = argv[i];
+    // std::cout << "arg " << arg << std::endl;
     if( 0 == strcmp("-p",arg) ) {
       ++i;
       if( i < argc ) {
         projectName = argv[i];
+        std::cout << "projectName: " << projectName << std::endl;
         continue;
       }
       else {
@@ -191,6 +196,7 @@ int main(int argc, char** argv)
       ++i;
       if( i < argc ) {
         dirNameJSON = argv[i];
+        std::cout << "dirNameJSON: " << dirNameJSON << std::endl;
         continue;
       }
       else {
@@ -202,6 +208,7 @@ int main(int argc, char** argv)
       ++i;
       if( i < argc ) {
         dbIniName = argv[i];
+        std::cout << "dbIniName: " << dbIniName << std::endl;
         continue;
       }
       else {
@@ -213,6 +220,7 @@ int main(int argc, char** argv)
       ++i;
       if( i < argc ) {
         dirNameMet = argv[i];
+        std::cout << "dirNameMet: " << dirNameMet << std::endl;
         continue;
       }
       else {
@@ -224,6 +232,7 @@ int main(int argc, char** argv)
       ++i;
       if( i < argc ) {
         preMetFiles = argv[i];
+        std::cout << "preMetFiles: " << preMetFiles << std::endl;
         continue;
       }
       else {
@@ -235,6 +244,7 @@ int main(int argc, char** argv)
       ++i;
       if( i < argc ) {
         outPath = argv[i];
+        std::cout << "outPath: " << outPath << std::endl;
         continue;
       }
       else {
@@ -259,13 +269,15 @@ int main(int argc, char** argv)
 		
   if( dirNameJSON && (0!=strcmp("-",dirNameJSON)) && projectName && (0!=strcmp("-",projectName))) {
 		std::string simFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".sim.json";
+    std::cout << "simFilePath: " << simFilePath << std::endl;
     simFile = fopen( simFilePath.c_str(), "r" );
     if (!simFile) {
       std::cerr << "Error opening sim file [" << simFilePath << "]!" << std::endl;
       return 3;
     }
 
-		std::string siteFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".site.json";
+    std::string siteFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".site.json";
+    std::cout << "siteFilePath: " << siteFilePath << std::endl;
     siteFile = fopen( siteFilePath.c_str(), "r" );
     if (!siteFile) {
       std::cerr << "Error opening site file [" << siteFilePath << "]!" << std::endl;
@@ -273,6 +285,7 @@ int main(int argc, char** argv)
     }
     
 		std::string cropFilePath = std::string(dirNameJSON) + pathSeparator() + std::string(projectName) + ".crop.json";
+    std::cout << "cropFilePath: " << cropFilePath << std::endl;
     cropFile = fopen( cropFilePath.c_str(), "r" );
     if (!cropFile) {
       std::cerr << "Error opening crop file [" << cropFilePath << "]!" << std::endl;
@@ -313,10 +326,13 @@ int main(int argc, char** argv)
   /* setup config & run monica */
   Monica::Result res;
   Monica::Configuration* cfg = new Monica::Configuration(std::string(outPath), std::string(dirNameMet), std::string(preMetFiles), std::string(dbIniName));
+  std::cout << "Monica::Configuration" << std::endl;
   bool ok = cfg->setJSON(simFile, siteFile, cropFile);  
+  std::cout << "Monica::Configuration::setJSON" << std::endl;
   fclose(simFile);
   fclose(siteFile);
   fclose(cropFile);
+  std::cout << ok << std::endl;
   if (ok) 
     res = cfg->run();
   

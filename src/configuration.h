@@ -84,7 +84,7 @@ class Configuration
     /* compare meta and project json files */
     static bool isValid(const cson_value* val, const cson_value* meta, const std::string& path = "root");
 
-    /* simplify cson calls */
+    /* simplify cson calls: return value if value != JSON null otherwise return def (default) */
     static bool getBool(const cson_object* obj, const std::string& path, bool def = false);
     static int getInt(const cson_object* obj, const std::string& path, int def = 0);
     static double getDbl(const cson_object* obj, const std::string& path, double def = 0.0);
