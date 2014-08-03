@@ -58,11 +58,11 @@ HOWTO meta
   "db": {
     "table": "a_table",
     "columns": [
-      "id",
-      "name"
+      "column1",
+      "column2"
     ],
     "keys": [
-      "id"
+      "column1"
     ]
   }
 }
