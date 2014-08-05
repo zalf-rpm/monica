@@ -94,8 +94,8 @@
         "desc": "Organic carbon concentration in the soild phase of the soil horizon",
         "unit": "kg kg-1",
         "min": 0.0,
-        "max": 50.0,
-        "default": 10.0
+        "max": 1.0,
+        "default": 0.1
       },
       "textureClass": {
         "desc": "Texture class according to the German Soil Survey Manual 5th ed.",

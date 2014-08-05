@@ -369,7 +369,7 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
       lInHCount += maxNoOfLayers - layers.size() - lInHCount;
 
     SoilParameters layer;
-    layer.set_vs_SoilOrganicCarbon(getDbl(horizonObj, "Corg", -1.0)); //TODO: / 100 ?
+    layer.set_vs_SoilOrganicCarbon(getDbl(horizonObj, "Corg", -1.0));
     layer.set_vs_SoilBulkDensity(getDbl(horizonObj, "bulkDensity", -1.0));
 		layer.vs_SoilSandContent = getDbl(horizonObj, "sand", layer.vs_SoilSandContent);
 		layer.vs_SoilClayContent = getDbl(horizonObj, "clay", layer.vs_SoilClayContent);
