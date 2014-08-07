@@ -13,36 +13,26 @@
     "useSecondaryYieldOn": {
       "desc": "Switches the utilisation of secondary yields off",
       "unit": "bool",
-      "min": false,
-      "max": true,
       "default": false
     },
     "nitrogenResponseOn": {
       "desc": "Switches the crop nitrogen response off for potential growth simulations",
       "unit": "bool",
-      "min": false,
-      "max": true,
       "default": true
     },
     "waterDeficitResponseOn": {
       "desc": "Switches the crop soil moisture response off for potential growth simulations",
       "unit": "bool",
-      "min": false,
-      "max": true,
       "default": true
     },
     "emergenceMoistureControlOn": {
       "desc": "Switches the seed response to soil moisture off for simulations with unknown initial conditions",
       "unit": "bool",
-      "min": false,
-      "max": true,
       "default": false
     },
     "emergenceFloodingControlOn": {
       "desc": "Switches the seed response to flooded surface off for simulations with unknown surface slope",
       "unit": "bool",
-      "min": false,
-      "max": true,
       "default": false
     }
   },
