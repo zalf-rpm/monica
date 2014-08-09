@@ -12,7 +12,7 @@
       "plantDryWeight": 225,
       "percNTRansplant": 0.07,
       "finalHarvestDate": "1992-08-01",
-      "residuesRemoval": 85,
+      "residuesRemoval": 0.85,
       "tillageOperations": [
         {
           "date": "1991-09-01",
