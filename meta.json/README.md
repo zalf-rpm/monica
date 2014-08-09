@@ -14,6 +14,9 @@ HOWTO meta
 
   * *desc*: not null, string: any
 
+  (*min*&*max* are required if we have a number type)
+
+
 **Example**
 ```javascript
 "myParameter" : {
@@ -26,8 +29,8 @@ HOWTO meta
   * *unit*: not null, string: "-", "bool", "date" (default date format is "YYYY-MM-DD") or any other physical unit.
     Usally not necessary if enum or db are used.
   * *default*: null, string or number
-  * *min*: null or number,
-  * *max*: null or number,
+  * *min*: null or number, null implies -Infinity (-Infinity itself not allowed in JSON)
+  * *max*: null or number, null implies Infinity (Infinity itself not allowed in JSON)
   * *advanced*: not null, true or false  (for "advanced" users or probably not implemented or experimental)
   * *enum* **OR** *db*
     * enum: not null, array with strings or numbers
