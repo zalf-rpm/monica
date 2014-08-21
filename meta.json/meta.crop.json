@@ -41,7 +41,7 @@
         "min": 1,
         "max": null
       },
-      "percNTRansplant": {
+      "percNTransplant": {
         "desc": "Nitrogen concentration in transplant (0.0 if not known)",
         "unit": "kg kg-1",
         "min": 0.0,
