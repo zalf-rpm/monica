@@ -82,8 +82,6 @@
           "exported": {
             "desc": "Is the harvested biomass exported from the field?",
             "unit": "bool",
-            "min": false,
-            "max": true,
             "default": true
           }
         }
