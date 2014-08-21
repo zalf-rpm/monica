@@ -59,6 +59,35 @@
         "max": 1,
         "default": 0.85
       },
+      "harvestOperations": [
+        {
+          "date": {
+            "desc": "Harvest date",
+            "unit": "date"
+          },
+          "method": {
+            "desc": "Harvest Method",
+            "enum": [
+              "Cutting",
+              "Fruit harvest"
+            ]
+          },
+          "percentage": {
+            "desc": "Fraction of biomass being harvested",
+            "unit": "kg kg-1",
+            "min": 0.01,
+            "max": 1.00,
+            "default": 0.90
+          },
+          "exported": {
+            "desc": "Is the harvested biomass exported from the field?",
+            "unit": "bool",
+            "min": false,
+            "max": true,
+            "default": true
+          }
+        }
+      ],
       "tillageOperations": [
         {
           "date": {
