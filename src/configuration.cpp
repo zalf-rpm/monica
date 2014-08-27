@@ -213,9 +213,7 @@ const Result Configuration::run()
 
   /* sim */
 	int startYear = getIsoDate(simObj, "time.startDate").year();
-  //int startYear = getInt(simObj, "time.startYear");
   int endYear = getIsoDate(simObj, "time.endDate").year();
-  //int endYear = getInt(simObj, "time.endYear");
 
 	cpp.userEnvironmentParameters.p_UseSecondaryYields = 
 		getBool(simObj, "switch.useSecondaryYieldOn", cpp.userEnvironmentParameters.p_UseSecondaryYields);
@@ -235,8 +233,8 @@ const Result Configuration::run()
 	sp.vs_Latitude = getDbl(siteObj, "latitude", sp.vs_Latitude);
 	sp.vs_Slope = getDbl(siteObj, "slope", sp.vs_Slope);
 	sp.vs_HeightNN = getDbl(siteObj, "heightNN", sp.vs_HeightNN);
-  sp.vs_Soil_CN_Ratio = 10; //TODO: per layer?
-  sp.vs_DrainageCoeff = -1; //TODO: ?
+  sp.vs_Soil_CN_Ratio = 10; //TODO: per layer!
+  sp.vs_DrainageCoeff = -1; //TODO: per layer!
 
   cpp.userEnvironmentParameters.p_AthmosphericCO2 = getDbl(siteObj, "atmosphericCO2");
 
@@ -424,7 +422,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
     int cropId = getInt(cropObj, "name.id");
     std::string name = getStr(cropObj, "name.name");
     std::string genType = getStr(cropObj, "name.gen_type");
-    int permCropId = -1;
+    int permCropId = -1; 
 
     if (!cropId || cropId < 0) {
       ok = false;
