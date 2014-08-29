@@ -548,7 +548,7 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
 		double shootsToRemain = (1.0 - percentage) * currentShootBiomass;
 		int stageAfterCut = _currentCropGrowth->get_StageAfterCut();
-		_currentCropGrowth->accumulatePrimaryCropYield(_currentCropGrowth->get_PrimaryCropYield());
+		_currentCropGrowth->accumulatePrimaryCropYield(_currentCropGrowth->get_CropYieldAfterCutting());
 		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
 		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
 		_currentCropGrowth->set_OrganBiomass(3, 0.0); // fruit is not present after cutting

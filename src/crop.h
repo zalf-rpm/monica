@@ -260,8 +260,10 @@ namespace Monica
     double get_AbovegroundBiomassNConcentration() const;
     double get_PrimaryCropYield() const;
 		double get_SecondaryCropYield() const;
+		double get_CropYieldAfterCutting() const;
     double get_FreshPrimaryCropYield() const;
     double get_FreshSecondaryCropYield() const;
+		double get_FreshCropYieldAfterCutting() const;
     double get_ResidueBiomass(bool useSecondaryCropYields = true) const;
     double get_ResiduesNConcentration() const;
     double get_PrimaryYieldNConcentration() const;

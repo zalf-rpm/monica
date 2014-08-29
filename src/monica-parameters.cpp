@@ -1690,10 +1690,10 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 
         auto cps = cpss[cropId];
         cps->pc_OrganIdsForCutting.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
-        if (cropId!=18) {
-            // do not add cutting part organ id for sudan gras because they are already added
-            cps->pc_OrganIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
-        }
+        //if (cropId!=18) {
+        //    // do not add cutting part organ id for sudan gras because they are already added
+        //    cps->pc_OrganIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
+        //}
       }
 
 

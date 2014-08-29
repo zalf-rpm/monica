@@ -3453,6 +3453,19 @@ double CropGrowth::get_SecondaryCropYield() const {
 }
 
 /**
+* @brief Returns crop yield after cutting
+* @return crop yield after cutting
+*/
+double CropGrowth::get_CropYieldAfterCutting() const {
+
+	if (eva2_usage == NUTZUNG_GANZPFLANZE) {
+		return _cropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
+	}
+
+	return _cropYield(pc_OrganIdsForCutting, vc_OrganBiomass);
+}
+
+/**
  * @brief Returns primary crop yield fresh matter
  * @return primary yield
  */
@@ -3473,6 +3486,20 @@ double CropGrowth::get_FreshSecondaryCropYield() const {
   }
   return _cropFreshMatterYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
 }
+
+/**
+* @brief Returns fresh matter crop yield after cutting
+* @return fresh crop yield after cutting
+*/
+double CropGrowth::get_FreshCropYieldAfterCutting() const {
+
+	if (eva2_usage == NUTZUNG_GANZPFLANZE) {
+		return _cropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
+	}
+
+	return _cropFreshMatterYield(pc_OrganIdsForCutting, vc_OrganBiomass);
+}
+
 /**
  * @brief Returns residue biomass
  * @return residue biomass
