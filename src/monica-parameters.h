@@ -627,6 +627,12 @@ namespace Monica
 	std::string bk50GridId2ST(int bk50GridId);
 	std::string bk50GridId2KA4Layers(int bk50GridId);
 
+  const SoilPMs* soilParameters(const std::string& abstractDbSchema,
+                                int profileId,
+                                int layerThicknessCm,
+                                int maxDepthCm,
+                                bool loadSingleParameter = false);
+
 	const SoilPMs* soilParametersFromHermesFile(int soilId,
 																							const std::string& pathToFile,
 																							int layerThicknessCm,
