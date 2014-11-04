@@ -607,24 +607,25 @@ namespace Monica
 	typedef std::vector<SoilParameters> SoilPMs;
 	typedef boost::shared_ptr<SoilPMs> SoilPMsPtr;
 
-	const SoilPMs* ueckerSoilParameters(const std::string& str,
-																			int layerThicknessCm,
-																			int maxDepthCm,
-																			bool loadSingleParameter = false);
 
-	const SoilPMs* ueckerSoilParameters(int mmkGridId,
-																			int layerThicknessCm,
-																			int maxDepthCm,
-																			bool loadSingleParameter = false);
+//	const SoilPMs* ueckerSoilParameters(const std::string& str,
+//																			int layerThicknessCm,
+//																			int maxDepthCm,
+//																			bool loadSingleParameter = false);
+
+//	const SoilPMs* ueckerSoilParameters(int mmkGridId,
+//																			int layerThicknessCm,
+//																			int maxDepthCm,
+//																			bool loadSingleParameter = false);
 
 	std::string ueckerGridId2STR(int ugid);
 
-	const SoilPMs* bk50SoilParameters(int bk50GridId,
-																		int layerThicknessCm,
-																		int maxDepthCm,
-																		bool loadSingleParameter = false);
+//	const SoilPMs* bk50SoilParameters(int bk50GridId,
+//																		int layerThicknessCm,
+//																		int maxDepthCm,
+//																		bool loadSingleParameter = false);
 
-	std::string bk50GridId2ST(int bk50GridId);
+//	std::string bk50GridId2ST(int bk50GridId);
 	std::string bk50GridId2KA4Layers(int bk50GridId);
 
   const SoilPMs* soilParameters(const std::string& abstractDbSchema,
