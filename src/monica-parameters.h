@@ -365,6 +365,11 @@ namespace Monica
 		int pc_DevelopmentAccelerationByNitrogenStress; 
 		double pc_FieldConditionModifier;
 		double pc_AssimilateReallocation;
+		double pc_LT50cultivar;
+		double pc_FrostHardening;
+		double pc_FrostDehardening;
+		double pc_LowTemperatureExposure;
+		double pc_RespiratoryStress;
 
 		std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
 		std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */

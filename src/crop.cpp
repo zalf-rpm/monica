@@ -80,7 +80,8 @@ vc_CriticalNConcentration(0.0),
 pc_CriticalOxygenContent(cps.pc_CriticalOxygenContent),
 pc_CriticalTemperatureHeatStress(cps.pc_CriticalTemperatureHeatStress),
 vc_CropDiameter(0.0),
-vc_CropHeatRedux(1.0),
+vc_CropFrostRedux(1.0),
+vc_CropHeatRedux(1.0), 
 vc_CropHeight(0.0),
 pc_CropHeightP1(cps.pc_CropHeightP1),
 pc_CropHeightP2(cps.pc_CropHeightP2),
@@ -116,6 +117,8 @@ vc_FinalDevelopmentalStage(0),
 vc_FixedN(0.0),
 pc_PartBiologicalNFixation(cps.pc_PartBiologicalNFixation),
 vo_FreshSoilOrganicMatter(vs_NumberOfLayers, 0.0),
+pc_FrostDehardening(cps.pc_FrostDehardening),
+pc_FrostHardening(cps.pc_FrostHardening), 
 vc_GlobalRadiation(0.0),
 vc_GreenAreaIndex(0.0),
 vc_GrossAssimilates(0.0),
@@ -134,7 +137,10 @@ pc_InitialRootingDepth(cps.pc_InitialRootingDepth),
 vc_InterceptionStorage(0.0),
 vc_KcFactor(0.6),
 vc_LeafAreaIndex(0.0),
+pc_LowTemperatureExposure(cps.pc_LowTemperatureExposure),
 pc_LimitingTemperatureHeatStress(cps.pc_LimitingTemperatureHeatStress),
+vc_LT50(-1.0),
+pc_LT50cultivar(cps.pc_LT50cultivar),
 pc_LuxuryNCoeff(cps.pc_LuxuryNCoeff),
 vc_MaintenanceRespirationAS(0.0),
 pc_MaxAssimilationRate(cps.pc_MaxAssimilationRate),
@@ -182,10 +188,11 @@ vc_PhotActRadiationMean(0.0),
 pc_PlantDensity(cps.pc_PlantDensity),
 vc_PotentialTranspiration(0.0),
 vc_ReferenceEvapotranspiration(0.0),
-pc_ResidueNRatio(cps.pc_ResidueNRatio),
 vc_RelativeTotalDevelopment(0.0),
 vc_RemainingEvapotranspiration(0.0),
 vc_ReserveAssimilatePool(0.0),
+pc_ResidueNRatio(cps.pc_ResidueNRatio),
+pc_RespiratoryStress(cps.pc_RespiratoryStress),
 vc_RootBiomass(0.0),
 vc_RootBiomassOld(0.0),
 vc_RootDensity(vs_NumberOfLayers, 0.0),
@@ -529,6 +536,9 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
     fc_HeatStressImpact(vw_MaxAirTemperature,
 		    vw_MinAirTemperature,
 		    vc_CurrentTotalTemperatureSum);
+
+		fc_FrostKill(vw_MaxAirTemperature,
+			vw_MinAirTemperature);
 
 		fc_DroughtImpactOnFertility(vc_TranspirationDeficit);
 
@@ -1315,122 +1325,124 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
 	//std::cout << setprecision(15) << "pc_GrowthRespirationParameter_2: " << pc_GrowthRespirationParameter_2 << std::endl;
 	//std::cout << setprecision(15) << "pc_CanopyReflectionCoeff: " << pc_CanopyReflectionCoeff << std::endl;
 
-  // Calculation of CO2 impact on crop growth
-  if (pc_CO2Method == 3) {
+	vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
+	vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
+  
+	if (pc_CarboxylationPathway == 1) {
 
-    //////////////////////////////////////////////////////////////////////////
-    // Method 3:
-    // Long, S.P. 1991. Modification of the response of photosynthetic
-    // productivity to rising temperature by atmospheric CO2
-    // concentrations - Has its importance been underestimated. Plant
-    // Cell Environ. 14(8): 729-739.
-    // and
-    // Mitchell, R.A.C., D.W. Lawlor, V.J. Mitchell, C.L. Gibbard, E.M.
-    // White, and J.R. Porter. 1995. Effects of elevated CO2
-    // concentration and increased temperature on winter-wheat - Test
-    // of ARCWHEAT1 simulation model. Plant Cell Environ. 18(7):736-748.
-    //////////////////////////////////////////////////////////////////////////
+		// Calculation of CO2 impact on crop growth
+		if (pc_CO2Method == 3) {
 
-    KTvmax = exp(68800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0)
-        / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314)) * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
+			//////////////////////////////////////////////////////////////////////////
+			// Method 3:
+			// Long, S.P. 1991. Modification of the response of photosynthetic
+			// productivity to rising temperature by atmospheric CO2
+			// concentrations - Has its importance been underestimated. Plant
+			// Cell Environ. 14(8): 729-739.
+			// and
+			// Mitchell, R.A.C., D.W. Lawlor, V.J. Mitchell, C.L. Gibbard, E.M.
+			// White, and J.R. Porter. 1995. Effects of elevated CO2
+			// concentration and increased temperature on winter-wheat - Test
+			// of ARCWHEAT1 simulation model. Plant Cell Environ. 18(7):736-748.
+			//////////////////////////////////////////////////////////////////////////
 
-    KTkc = exp(65800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
-        * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
+			KTvmax = exp(68800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0)
+					/ (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314)) * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
 
-    KTko = exp(1400.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
-        * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
+			KTkc = exp(65800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
+					* pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
 
-    // Berechnung des Transformationsfaktors fr pflanzenspez. AMAX bei 25 grad
-    vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
-    vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
-    vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
-    vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
+			KTko = exp(1400.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
+					* pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
 
-    Mkc = 460.0 * KTkc; //[µmol mol-1]
-    Mko = 330.0 * KTko; //[mmol mol-1]
+			// Berechnung des Transformationsfaktors fr pflanzenspez. AMAX bei 25 grad
+			vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
+			vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
+			vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
+			vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
 
-    Oi = 210.0 + (0.047 - 0.0013087 * vw_MeanAirTemperature + 0.000025603 * (vw_MeanAirTemperature
-        * vw_MeanAirTemperature) - 0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature
-        * vw_MeanAirTemperature)) / 0.026934;
+			Mkc = 460.0 * KTkc; //[µmol mol-1]
+			Mko = 330.0 * KTko; //[mmol mol-1]
 
-    Ci = vw_AtmosphericCO2Concentration * 0.7 * (1.674 - 0.061294 * vw_MeanAirTemperature + 0.0011688
-        * (vw_MeanAirTemperature * vw_MeanAirTemperature) - 0.0000088741 * (vw_MeanAirTemperature
-        * vw_MeanAirTemperature * vw_MeanAirTemperature)) / 0.73547;
+			Oi = 210.0 + (0.047 - 0.0013087 * vw_MeanAirTemperature + 0.000025603 * (vw_MeanAirTemperature
+					* vw_MeanAirTemperature) - 0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature
+					* vw_MeanAirTemperature)) / 0.026934;// [mmol mol-1]
 
-    vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Oi / (vc_Vcmax * Mko);
-    vc_CO2CompensationPointReference = 0.5 * 0.21 * vc_VcmaxReference * Oi / (vc_VcmaxReference * Mko);
+			Ci = vw_AtmosphericCO2Concentration * 0.7 * (1.674 - 0.061294 * vw_MeanAirTemperature + 0.0011688
+					* (vw_MeanAirTemperature * vw_MeanAirTemperature) - 0.0000088741 * (vw_MeanAirTemperature
+					* vw_MeanAirTemperature * vw_MeanAirTemperature)) / 0.73547;// [µmol mol-1]
 
-    vc_RadiationUseEfficiency = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPoint) / (4.5 * Ci + 10.5
-        * vc_CO2CompensationPoint) * 8.3769), 0.5);
-    vc_RadiationUseEfficiencyReference = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference) / (4.5 * Ci + 10.5
-        * vc_CO2CompensationPointReference) * 8.3769), 0.5);
+			vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko); // [µmol mol-1] 
+			vc_CO2CompensationPointReference = 0.5 * 0.21 * vc_VcmaxReference * Mkc * Oi / (vc_VcmaxReference * Mko); // [µmol mol-1]
 
-  } else {
-    vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
-    vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
-  }
+			// Mitchell et al. 1995:
+			vc_RadiationUseEfficiency = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPoint) / (4.5 * Ci + 10.5
+					* vc_CO2CompensationPoint) * 8.3769), 0.5);
+			vc_RadiationUseEfficiencyReference = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference) / (4.5 * Ci + 10.5
+					* vc_CO2CompensationPointReference) * 8.3769), 0.5);
 
-  if (pc_CarboxylationPathway == 1) {
+			vc_AssimilationRate = (Ci - vc_CO2CompensationPoint) * vc_Vcmax / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
+			vc_AssimilationRateReference = (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0
+				+ Oi / Mko)) * 1.656;
 
-    if (pc_CO2Method == 2) {
+			if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
+				vc_AssimilationRate = 0.0;
+				vc_AssimilationRateReference = 0.0;
+			}
 
-      //////////////////////////////////////////////////////////////////////////
-      // Method 2:
-      // Hoffmann, F. 1995. Fagus, a model for growth and development of
-      // beech. Ecol. Mod. 83 (3):327-348.
-      //////////////////////////////////////////////////////////////////////////
+		}
+		else if (pc_CO2Method == 2) {
 
-      if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
-        vc_AssimilationRate = 0.0;
-        vc_AssimilationRateReference = 0.0;
-      } else if (vw_MeanAirTemperature < 10.0) {
-        vc_AssimilationRate = pc_MaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.4;
-        vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.4;
-      } else if (vw_MeanAirTemperature < 15.0) {
-        vc_AssimilationRate = pc_MaxAssimilationRate * (0.4 + (vw_MeanAirTemperature - 10.0) / 5.0 * 0.5);
-        vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.4 + (vw_MeanAirTemperature - 10.0) / 5.0
-            * 0.5);
-      } else if (vw_MeanAirTemperature < 25.0) {
-        vc_AssimilationRate = pc_MaxAssimilationRate * (0.9 + (vw_MeanAirTemperature - 15.0) / 10.0 * 0.1);
-        vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.9 + (vw_MeanAirTemperature - 15.0) / 10.0
-            * 0.1);
-      } else if (vw_MeanAirTemperature < 35.0) {
-        vc_AssimilationRate = pc_MaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 25.0) / 10.0);
-        vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 25.0) / 10.0);
-      } else {
-        vc_AssimilationRate = 0.0;
-        vc_AssimilationRateReference = 0.0;
-      }
+			//////////////////////////////////////////////////////////////////////////
+			// Method 2:
+			// Hoffmann, F. 1995. Fagus, a model for growth and development of
+			// beech. Ecol. Mod. 83 (3):327-348.
+			//////////////////////////////////////////////////////////////////////////
+
+			if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
+				vc_AssimilationRate = 0.0;
+				vc_AssimilationRateReference = 0.0;
+			}
+			else if (vw_MeanAirTemperature < 10.0) {
+				vc_AssimilationRate = pc_MaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.4;
+				vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.4;
+			}
+			else if (vw_MeanAirTemperature < 15.0) {
+				vc_AssimilationRate = pc_MaxAssimilationRate * (0.4 + (vw_MeanAirTemperature - 10.0) / 5.0 * 0.5);
+				vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.4 + (vw_MeanAirTemperature - 10.0) / 5.0
+					* 0.5);
+			}
+			else if (vw_MeanAirTemperature < 25.0) {
+				vc_AssimilationRate = pc_MaxAssimilationRate * (0.9 + (vw_MeanAirTemperature - 15.0) / 10.0 * 0.1);
+				vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.9 + (vw_MeanAirTemperature - 15.0) / 10.0
+					* 0.1);
+			}
+			else if (vw_MeanAirTemperature < 35.0) {
+				vc_AssimilationRate = pc_MaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 25.0) / 10.0);
+				vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 25.0) / 10.0);
+			}
+			else {
+				vc_AssimilationRate = 0.0;
+				vc_AssimilationRateReference = 0.0;
+			}
 
 
-      /** @FOR_PARAM */
-      vc_HoffmannK1 = 220.0 + 0.158 * (vc_GlobalRadiation * 86400.0 / 1000000.0);
+			/** @FOR_PARAM */
+			vc_HoffmannK1 = 220.0 + 0.158 * (vc_GlobalRadiation * 86400.0 / 1000000.0);
 
-      // PAR [MJ m-2], Hoffmann's model requires [W m-2] ->
-      // conversion of [MJ m-2] to [W m-2]
+			// PAR [MJ m-2], Hoffmann's model requires [W m-2] ->
+			// conversion of [MJ m-2] to [W m-2]
 
-      vc_HoffmannC0 = 80.0 - 0.036 * (vc_GlobalRadiation * 86400.0 / 1000000.0);
+			vc_HoffmannC0 = 80.0 - 0.036 * (vc_GlobalRadiation * 86400.0 / 1000000.0);
 
 
-      vc_HoffmannKCO2 = ((vw_AtmosphericCO2Concentration - vc_HoffmannC0) / (vc_HoffmannK1
-          + vw_AtmosphericCO2Concentration - vc_HoffmannC0)) / ((350.0 - vc_HoffmannC0) / (vc_HoffmannK1 + 350.0
-          - vc_HoffmannC0));
+			vc_HoffmannKCO2 = ((vw_AtmosphericCO2Concentration - vc_HoffmannC0) / (vc_HoffmannK1
+				+ vw_AtmosphericCO2Concentration - vc_HoffmannC0)) / ((350.0 - vc_HoffmannC0) / (vc_HoffmannK1 + 350.0
+				- vc_HoffmannC0));
 
-      vc_AssimilationRate = vc_AssimilationRate * vc_HoffmannKCO2;
-      vc_AssimilationRateReference = vc_AssimilationRateReference * vc_HoffmannKCO2;
-
-    } else if (pc_CO2Method == 3) {
-
-      vc_AssimilationRate = (Ci - vc_CO2CompensationPoint) * vc_Vcmax / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
-      vc_AssimilationRateReference = (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0
-          + Oi / Mko)) * 1.656;
-
-      if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
-        vc_AssimilationRate = 0.0;
-        vc_AssimilationRateReference = 0.0;
-      }
-    }
-
+			vc_AssimilationRate = vc_AssimilationRate * vc_HoffmannKCO2;
+			vc_AssimilationRateReference = vc_AssimilationRateReference * vc_HoffmannKCO2;
+		}
 
   } else { //if pc_CarboxylationPathway = 2
     if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
@@ -1649,6 +1661,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature, double vw_M
   // reduction value for assimilate amount to simulate field conditions;
   vc_Assimilates *= pc_FieldConditionModifier;
 
+	// reduction value for assimilate amount to simulate frost damage;
+	vc_Assimilates *= vc_CropFrostRedux;
+
 	if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {
     vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
 
@@ -1773,10 +1788,8 @@ void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
 {
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature = vw_MaxAirTemperature - ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
-
   double vc_FractionOpenFlowers = 0.0;
   double vc_YesterdaysFractionOpenFlowers = 0.0;
-
 
   if ((pc_BeginSensitivePhaseHeatStress == 0.0) && (pc_EndSensitivePhaseHeatStress == 0.0)){
     vc_TotalCropHeatImpact = 1.0;
@@ -1827,6 +1840,96 @@ void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
 
 }
 
+
+/**
+* @brief Frost kill
+*
+* @param vw_MaxAirTemperature
+* @param vw_MinAirTemperature
+*/
+
+void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
+	vw_MinAirTemperature){
+
+// ************************************************************
+// ** Fowler, D.B., B.M. Byrns, K.J. Greer. 2014. Overwinter **
+// **	Low-Temperature Responses of Cereals: Analyses and     **
+// **	Simulation. Crop Sci. 54:2395–2405.                    **
+// ************************************************************
+
+	vc_AbovegroundBiomass = 0.0;
+	vc_BelowgroundBiomass = 0.0;
+	vc_TotalBiomass = 0.0;
+
+	double vc_LT50old = vc_LT50;
+	double vc_NightTemperature = 0.0;
+	vc_NightTemperature = vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
+
+	double vc_CrownTemperature = 0.0;
+	if (vc_DevelopmentalStage <= 1){
+		vc_CrownTemperature = (3.0 * soilColumn.vt_SoilSurfaceTemperature 
+			+ 2.0 * soilColumn[0].get_Vs_SoilTemperature()) / 5.0;
+	} else {
+		vc_CrownTemperature = vc_NightTemperature * 0.8;
+	}
+
+	double vc_FrostHardening = 0.0;
+	double vc_ThresholdInductionTemperature = 3.72135 - 0.401124 * pc_LT50cultivar;
+
+	if ((vc_VernalisationFactor < 1.0) && (vc_CrownTemperature < vc_ThresholdInductionTemperature)){
+		vc_FrostHardening = pc_FrostHardening * (vc_ThresholdInductionTemperature - vc_CrownTemperature) 
+			* (vc_LT50old - pc_LT50cultivar);
+	}
+	else {
+		vc_FrostHardening = 0.0;
+	}
+	
+	double vc_FrostDehardening = 0.0;
+	if (((vc_VernalisationFactor < 1.0) && (vc_CrownTemperature >= vc_ThresholdInductionTemperature)) ||
+		((vc_VernalisationFactor >= 1.0) && (vc_CrownTemperature >= -4.0))){
+
+		vc_FrostDehardening = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
+
+  }
+	double vc_LowTemperatureExposure = 0.0;
+
+	if ((vc_CrownTemperature < -3.0) && ((vc_LT50old - vc_CrownTemperature)) > -12.0){
+		vc_LowTemperatureExposure = (vc_LT50old - vc_CrownTemperature) /
+			exp(pc_LowTemperatureExposure * (vc_LT50old - vc_CrownTemperature) - 3.74);
+	}	else {
+
+		vc_LowTemperatureExposure = 0.0;
+
+	}
+
+	double vc_RespirationFactor = (exp(0.84 + 0.051 * vc_CrownTemperature) - 2.0) / 1.85;
+	double vc_SnowDepthFactor = 0.0;
+
+	if (soilColumn.vm_SnowDepth <= 125.0){
+		vc_SnowDepthFactor = soilColumn.vm_SnowDepth / 125.0;
+	}
+	else {
+		vc_SnowDepthFactor = 1.0;
+	}
+		
+	double vc_RespiratoryStress = pc_RespiratoryStress * vc_RespirationFactor * vc_SnowDepthFactor;
+
+	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening + vc_LowTemperatureExposure + vc_RespiratoryStress;
+	
+	if (vc_LT50 > -1.0){
+
+		vc_LT50 = -1.0;
+
+	}
+
+	if (vc_CrownTemperature < vc_LT50){
+		
+		vc_CropFrostRedux *= 0.5;	
+		
+	}
+
+	return;
+}
 
 /**
  * @brief Drought impact on crop fertility
@@ -2088,10 +2191,6 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
 //                          // provided by plant itselft
 //                          // now the plant is dying - sorry
 //                          dyingOut = true;
-//                          cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! " << endl;
-//                          cout << "Oh noo - I am dying - There has not been enough biomass required by " <<
-//                              "maintenance respiration etc.\n Not long now and I am death ... " << endl;
-//                          cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 //                      }
 
                   }
@@ -2119,21 +2218,11 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
       if (i_Organ != vc_StorageOrgan) {
         // Wurzel, Sprossachse, Blatt
         vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-        - (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
-        vc_OrganBiomass[vc_StorageOrgan] += 0.35 * vc_OrganSenescenceIncrement[i_Organ]; // [kg CH2O ha-1]
+          - (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+				vc_OrganBiomass[vc_StorageOrgan] += pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ]; // [kg CH2O ha-1]
       } else {
-          if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages) {
-              // Reallocation of asimilates to storage organ in final developmental stage
-
-              vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-                      - (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep)
-											+ pc_AssimilateReallocation * ((vc_OrganSenescenceIncrement[i_Organ - 1] * vc_TimeStep)
-                          + (vc_OrganSenescenceIncrement[i_Organ - 2] * vc_TimeStep)
-                          + vc_OrganSenescenceIncrement[i_Organ  - 3] * vc_TimeStep); // [kg CH2O ha-1]
-          } else {
-              vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-                      - (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
-          }
+        vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
+          - (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
       }
 
       vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
@@ -2535,9 +2624,16 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN, double vw_
   if (vc_GrossPhotosynthesisReference_mol <= 0.0) {
     vc_StomataResistance = 999999.9; // [s m-1]
   } else {
-    vc_StomataResistance = // [s m-1]
-        (vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit / pc_SaturationBeta))
-            / (pc_StomataConductanceAlpha * vc_GrossPhotosynthesisReference_mol);
+
+		if (pc_CarboxylationPathway = 1){
+			vc_StomataResistance = // [s m-1]
+				(vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit / pc_SaturationBeta))
+				/ (pc_StomataConductanceAlpha * vc_GrossPhotosynthesisReference_mol);
+		} else {
+			vc_StomataResistance = // [s m-1]
+				(vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit / pc_SaturationBeta))
+				/ (pc_StomataConductanceAlpha * vc_GrossPhotosynthesisReference_mol);
+		}
   }
 
   vc_SurfaceResistance = vc_StomataResistance / 1.44;
@@ -3229,6 +3325,9 @@ double CropGrowth::get_HeatStressRedux() const {
   return vc_CropHeatRedux;
 }
 
+double CropGrowth::get_FrostStressRedux() const {
+	return vc_CropFrostRedux;
+}
 
 /**
  * @brief Returns current total temperature sum [°Cd]
@@ -3276,6 +3375,14 @@ double CropGrowth::get_OrganBiomass(int i_Organ) const {
  */
 double CropGrowth::get_AbovegroundBiomass() const {
   return vc_AbovegroundBiomass;
+}
+
+/**
+* @brief Returns crop's lethal temperature LT50 [°C]
+* @return LT50
+*/
+double CropGrowth::get_LT50() const {
+	return vc_LT50;
 }
 
 /**

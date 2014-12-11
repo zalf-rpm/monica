@@ -53,7 +53,8 @@ using namespace Monica;
  * liquid water in snow. Snow parameters from
  * user data base are initialized.
  */
-SnowComponent::SnowComponent(const CentralParameterProvider& cpp) :
+SnowComponent::SnowComponent(SoilColumn& sc, const CentralParameterProvider& cpp) :
+    soilColumn(sc), 
     vm_SnowDensity(0.0),
     vm_SnowDepth(0.0),
     vm_FrozenWaterInSnow(0.0),
@@ -361,6 +362,8 @@ SnowComponent::calcSnowDepth(double snow_water_equivalent)
     vm_FrozenWaterInSnow = 0.0;
     vm_LiquidWaterInSnow = 0.0;
   }
+	
+	soilColumn.vm_SnowDepth = vm_SnowDepth;
   vm_AccumulatedSnowDepth+=vm_SnowDepth;
 }
 
@@ -380,7 +383,8 @@ FrostComponent::FrostComponent(SoilColumn& sc, const CentralParameterProvider& c
     vm_NegativeDegreeDays(0.0),
     vm_ThawDepth(0.0),
     vm_FrostDays(0),
-    vm_LambdaRedux(sc.vs_NumberOfLayers() + 1, 1.0)
+    vm_LambdaRedux(sc.vs_NumberOfLayers() + 1, 1.0),
+		vm_TemperatureUnderSnow(0.0)
 {
   pt_TimeStep = centralParameterProvider.userEnvironmentParameters.p_timeStep;
   vm_HydraulicConductivityRedux = centralParameterProvider.userSoilMoistureParameters.pm_HydraulicConductivityRedux;
@@ -407,14 +411,14 @@ void FrostComponent::calcSoilFrost(double mean_air_temperature, double snow_dept
   double heat_conductivity_unfrozen = calcHeatConductivityUnfrozen(mean_bulk_density, mean_field_capacity);
 
   // temperature under snow
-  double temperature_under_snow = calcTemperatureUnderSnow(mean_air_temperature, snow_depth);
+  vm_TemperatureUnderSnow = calcTemperatureUnderSnow(mean_air_temperature, snow_depth);
 
   // frost depth
-  vm_FrostDepth = calcFrostDepth(mean_field_capacity, heat_conductivity_frozen, temperature_under_snow);
+  vm_FrostDepth = calcFrostDepth(mean_field_capacity, heat_conductivity_frozen, vm_TemperatureUnderSnow);
   vm_accumulatedFrostDepth+=vm_FrostDepth;
 
   // thaw depth
-  vm_ThawDepth = calcThawDepth(temperature_under_snow, heat_conductivity_unfrozen, mean_field_capacity);
+  vm_ThawDepth = calcThawDepth(vm_TemperatureUnderSnow, heat_conductivity_unfrozen, mean_field_capacity);
 
   updateLambdaRedux();
 }
@@ -534,7 +538,7 @@ FrostComponent::calcHeatConductivityUnfrozen(double mean_bulk_density, double me
 
 /**
  *
- * @param temperature_under_snow
+ * @param vm_TemperatureUnderSnow
  * @param heat_conductivity_unfrozen
  * @param mean_field_capacity
  * @return
@@ -776,7 +780,7 @@ SoilMoisture::SoilMoisture(SoilColumn& sc, const SiteParameters& stps, MonicaMod
 {
   debug() << "Constructor: SoilMoisture" << endl;
 
-  snowComponent = new SnowComponent(centralParameterProvider);
+  snowComponent = new SnowComponent(soilColumn, centralParameterProvider);
   frostComponent = new FrostComponent(soilColumn,centralParameterProvider);
 
   const UserSoilMoistureParameters& sm_params = centralParameterProvider.userSoilMoistureParameters;
@@ -2013,12 +2017,21 @@ double SoilMoisture::getMaxSnowDepth() const {
   return snowComponent->getMaxSnowDepth();
 }
 
-double SoilMoisture::accumulatedSnowDepth() const {
-  return snowComponent->accumulatedSnowDepth();
+double SoilMoisture::getAccumulatedSnowDepth() const {
+  return snowComponent->getAccumulatedSnowDepth();
 }
 
 double SoilMoisture::getAccumulatedFrostDepth() const {
   return frostComponent->getAccumulatedFrostDepth();
+}
+
+
+/**
+* @brief Returns snow depth [mm]
+* @return Value for snow depth
+*/
+double SoilMoisture::getTemperatureUnderSnow() const {
+	return frostComponent->getTemperatureUnderSnow();
 }
 
 void SoilMoisture::put_Crop(CropGrowth* c) {

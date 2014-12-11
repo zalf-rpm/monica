@@ -445,6 +445,8 @@ namespace Monica {
     int vm_GroundwaterTable; /**< Layer of current groundwater table */
     double vs_FluxAtLowerBoundary; /** Water flux out of bottom layer */
     double vq_CropNUptake; /** Daily amount of N taken up by the crop [kg m-2] */
+		double vt_SoilSurfaceTemperature;
+		double vm_SnowDepth;
 
   private:
 

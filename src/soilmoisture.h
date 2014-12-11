@@ -59,7 +59,7 @@ namespace Monica
   class SnowComponent
   {
     public:
-      SnowComponent(const CentralParameterProvider& cpp);
+			SnowComponent(SoilColumn& sc, const CentralParameterProvider& cpp);
       ~SnowComponent() {}
 
       void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
@@ -67,7 +67,7 @@ namespace Monica
       double getVm_SnowDepth() const { return this->vm_SnowDepth; }
       double getWaterToInfiltrate() const { return this->vm_WaterToInfiltrate; }
       double getMaxSnowDepth() const {return this->vm_maxSnowDepth; }
-      double accumulatedSnowDepth() const {return this->vm_AccumulatedSnowDepth; }
+      double getAccumulatedSnowDepth() const {return this->vm_AccumulatedSnowDepth; }
 
     private:
       double calcSnowMelt(double vw_MeanAirTemperature);
@@ -79,6 +79,7 @@ namespace Monica
       double calcPotentialInfiltration(double net_precipitation, double snow_layer_water_release, double snow_depth);
       void calcSnowDepth(double snow_water_equivalent);
 
+			SoilColumn& soilColumn;
 
       double vm_SnowDensity; /**< Snow density [kg dm-3] */
       double vm_SnowDepth; /**< Snow depth [mm] */
@@ -124,6 +125,7 @@ namespace Monica
       double getThawDepth() const { return this->vm_ThawDepth; }
       double getLambdaRedux(int layer) { return this->vm_LambdaRedux[layer]; }
       double getAccumulatedFrostDepth() { return this->vm_accumulatedFrostDepth; }
+			double getTemperatureUnderSnow() { return this->vm_TemperatureUnderSnow; }
 
     private:
 
@@ -146,6 +148,7 @@ namespace Monica
       double vm_ThawDepth;
       int vm_FrostDays;
       std::vector<double> vm_LambdaRedux; /**< Reduction factor for Lambda [] */
+			double vm_TemperatureUnderSnow;
 
 
       // user defined or data base parameter
@@ -286,9 +289,11 @@ namespace Monica
 
     double getMaxSnowDepth() const;
 
-    double accumulatedSnowDepth() const;
+    double getAccumulatedSnowDepth() const;
 
     double getAccumulatedFrostDepth() const;
+
+		double getTemperatureUnderSnow() const;
 
     double get_EReducer_1(int i_Layer,
 		      double vm_PercentageSoilCoverage,

@@ -988,7 +988,7 @@ struct ParseDate
     r.d = atoi(d.substr(0, 2).c_str());
     r.m = atoi(d.substr(2, 2).c_str());
     r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
+    r.y = r.y <= 61 ? 2000 + r.y : 1900 + r.y;
     return r;
   }
 } parseDate;
@@ -1216,7 +1216,9 @@ CropParameters::CropParameters() :
     pc_ResidueNRatio(0),
     pc_DevelopmentAccelerationByNitrogenStress(0),
     pc_CuttingDelayDays(0),
-    pc_FieldConditionModifier(1.0)
+    pc_FieldConditionModifier(1.0),
+		pc_AssimilateReallocation(0.0),
+		pc_LT50cultivar(0.0)
 {}
 
 /**
@@ -1507,8 +1509,9 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "stage_after_cut, crit_temperature_heat_stress, "
           "lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-          "cutting_delay_days, field_condition_modifier, assimilate_reallocation "
-					"from crop";
+          "cutting_delay_days, field_condition_modifier, assimilate_reallocation, "
+					"LT50cultivar, frost_hardening, frost_dehardening, "
+					"low_temperature_exposure, respiratory_stress from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1574,6 +1577,11 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_CuttingDelayDays = satoi(row[i++]);
         cps->pc_FieldConditionModifier = satof(row[i++]);
 				cps->pc_AssimilateReallocation = satof(row[i++]);
+				cps->pc_LT50cultivar = satof(row[i++]);
+				cps->pc_FrostHardening = satof(row[i++]);
+				cps->pc_FrostDehardening = satof(row[i++]);
+				cps->pc_LowTemperatureExposure = satof(row[i++]);
+				cps->pc_RespiratoryStress = satof(row[i++]);
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
                         "o.organ_maintainance_respiration, o.is_above_ground, "

@@ -308,8 +308,8 @@ namespace Monica
     double sumSoilTemperature(int layers);
     double sumNO3AtDay(double depth);
     double maxSnowDepth() const;
-    double accumulatedSnowDepth() const;
-    double accumulatedFrostDepth() const;
+    double getAccumulatedSnowDepth() const;
+    double getAccumulatedFrostDepth() const;
     double avg30cmSoilTemperature();
     double avgSoilMoisture(int start_layer, int end_layer);
     double avgCapillaryRise(int start_layer, int end_layer);

@@ -85,15 +85,12 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
   double pt_DensityAir = user_temp.pt_DensityAir;       // [kg m-3]
   double pt_DensityHumus = user_temp.pt_DensityHumus;   // [kg m-3]
 
-//  cout << "Monica: pt_BaseTemperature: " << pt_BaseTemperature << endl;
-//  cout << "Monica: pt_InitialSurfaceTemperature: " << pt_InitialSurfaceTemperature << endl;
-//  cout << "Monica: NTau: " << pt_Ntau << endl;
 
   // according to sensitivity tests, soil moisture has minor
   // influence to the temperature and thus can be set as constant
   // by xenia
   double ps_SoilMoisture_const = user_temp.pt_SoilMoisture;
-//  cout << "Monica: ps_SoilMoisture_const: " << ps_SoilMoisture_const << endl;
+
 
   // Initialising the soil properties until a database feed is realised
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
@@ -361,6 +358,7 @@ double SoilTemperature::f_SoilSurfaceTemperature(double tmin, double tmax, doubl
   shading_coefficient =  0.1 + ((soil_coverage * dampingFactor) + ((1-soil_coverage) * (1-dampingFactor)));
 
 
+
   // Soil surface temperature caluclation following Williams 1984
   double vt_SoilSurfaceTemperatureOld = vt_SoilSurfaceTemperature;
 
@@ -377,6 +375,19 @@ double SoilTemperature::f_SoilSurfaceTemperature(double tmin, double tmax, doubl
   if (vt_SoilSurfaceTemperature < 0.0){
     vt_SoilSurfaceTemperature = vt_SoilSurfaceTemperature * 0.5;
   }
+
+	double vt_SnowDepth = 0.0;
+	vt_SnowDepth = monica.soilMoisture().get_SnowDepth();
+
+	double vt_TemperatureUnderSnow = 0.0;
+	vt_TemperatureUnderSnow = monica.soilMoisture().getTemperatureUnderSnow();
+
+	if (vt_SnowDepth > 0.0){
+		vt_SoilSurfaceTemperature = vt_TemperatureUnderSnow;
+	}
+
+	soilColumn.sc.vt_SoilSurfaceTemperature = vt_SoilSurfaceTemperature;
+
   return vt_SoilSurfaceTemperature;
 }
 

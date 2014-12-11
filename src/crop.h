@@ -164,6 +164,9 @@ namespace Monica
 		         double vw_MaxAirTemperature,
 		         double vc_CurrentTotalTemperatureSum);
 
+		void fc_FrostKill(double vw_MeanAirTemperature,
+			double vw_MaxAirTemperature);
+
 		void fc_DroughtImpactOnFertility(double vc_TranspirationDeficit);
 
     void fc_CropNitrogen();
@@ -237,7 +240,8 @@ namespace Monica
     double get_Transpiration(int i_Layer) const;
     double get_TranspirationDeficit() const;
     double get_CropNRedux() const;
-    double get_HeatStressRedux() const;
+		double get_FrostStressRedux() const; 
+		double get_HeatStressRedux() const;
     double get_PotentialTranspiration() const;
     double get_ActualTranspiration() const;
     double get_OxygenDeficit() const;
@@ -246,6 +250,7 @@ namespace Monica
     double get_RelativeTotalDevelopment() const;
     double get_OrganBiomass(int i_Organ) const;
     double get_AbovegroundBiomass() const;
+		double get_LT50() const;
     double get_AbovegroundBiomassNContent() const;
 		double get_FruitBiomassNConcentration() const; 
 		double get_FruitBiomassNContent() const;
@@ -409,8 +414,9 @@ private:
     std::vector<double> pc_CriticalOxygenContent; //! old LUKRIT
     double pc_CriticalTemperatureHeatStress;
     double vc_CropDiameter;
-    double vc_CropHeatRedux;
-    double vc_CropHeight;
+    double vc_CropFrostRedux;
+		double vc_CropHeatRedux; 
+		double vc_CropHeight;
     double pc_CropHeightP1;
     double pc_CropHeightP2;
     std::string pc_CropName;			//! old FRUCHT$(AKF)
@@ -445,6 +451,8 @@ private:
     int vc_FinalDevelopmentalStage;
     double vc_FixedN;
     std::vector<double> vo_FreshSoilOrganicMatter;	//! old NFOS
+		double pc_FrostDehardening;
+		double pc_FrostHardening;
     double vc_GlobalRadiation;
     double vc_GreenAreaIndex;
     double vc_GrossAssimilates;
@@ -463,7 +471,10 @@ private:
     double vc_InterceptionStorage;
     double vc_KcFactor;			//! old FKc
     double vc_LeafAreaIndex;	//! old LAI
+		double pc_LowTemperatureExposure;
     double pc_LimitingTemperatureHeatStress;
+		double vc_LT50;
+		double pc_LT50cultivar;
     double pc_LuxuryNCoeff;
     double vc_MaintenanceRespirationAS;
     double pc_MaxAssimilationRate;	//! old MAXAMAX
@@ -502,7 +513,7 @@ private:
 		std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
 		std::vector<YieldComponent> pc_OrganIdsForCutting;
     std::vector<double> pc_OrganMaintenanceRespiration;	//! old MAIRT
-    std::vector<double> vc_OrganSenescenceIncrement; //! old DGORG
+		std::vector<double> vc_OrganSenescenceIncrement; //! old DGORG
     std::vector<std::vector<double> > pc_OrganSenescenceRate;	//! old DEAD
     double vc_OvercastDayRadiation;					//! old DRO
     double vc_OxygenDeficit;					//! old LURED
@@ -513,10 +524,11 @@ private:
     double pc_PlantDensity;
     double vc_PotentialTranspiration;
     double vc_ReferenceEvapotranspiration;
-    double pc_ResidueNRatio;
     double vc_RelativeTotalDevelopment;
     double vc_RemainingEvapotranspiration;
     double vc_ReserveAssimilatePool;				//! old ASPOO
+		double pc_ResidueNRatio;
+		double pc_RespiratoryStress;
     double vc_RootBiomass;							//! old WUMAS
     double vc_RootBiomassOld;						//! old WUMALT
     std::vector<double> vc_RootDensity;				//! old WUDICH
