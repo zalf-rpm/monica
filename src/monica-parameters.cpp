@@ -2009,15 +2009,7 @@ double SoilParameters::texture2lambda(double sand, double clay)
 
 //------------------------------------------------------------------------------
 
-/**
- * @brief Overloaded function that returns soil parameter for ucker.
- *
- * Parameters are read from database.
- *
- * @param str
- * @param gps General parameters
- * @return Soil parameters
- */
+/*
 const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
 																						int layerThicknessCm,
 																						int maxDepthCm,
@@ -2115,13 +2107,9 @@ const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
   Map::const_iterator ci = spss.find(str);
   return ci != spss.end() ? ci->second.get() : &nothing;
 }
+*/
 
-/**
- * @brief Overloaded function that returns soil parameter for ucker.
- * @param mmkGridId
- * @param gps General parameters
- * @return Soil parameters
- */
+/*
 const SoilPMs* Monica::ueckerSoilParameters(int mmkGridId,
 																						int layerThicknessCm,
 																						int maxDepthCm,
@@ -2132,6 +2120,8 @@ const SoilPMs* Monica::ueckerSoilParameters(int mmkGridId,
 	return str.empty() ? NULL : ueckerSoilParameters(str, layerThicknessCm,
 																									 maxDepthCm, loadSingleParameter);
 }
+*/
+
 
 string Monica::ueckerGridId2STR(int ugid)
 {
@@ -2147,7 +2137,7 @@ string Monica::ueckerGridId2STR(int ugid)
 
     if (!initialized)
     {
-			DBPtr con(newConnection("landcare-dss"));
+      DBPtr con(newConnection("soil-profiles-uecker"));
       DBRow row;
 
       con->select("SELECT grid_id, str FROM uecker_grid_id_2_str");
@@ -2161,14 +2151,10 @@ string Monica::ueckerGridId2STR(int ugid)
   return ci != m.end() ? ci->second : "";
 }
 
+
 //----------------------------------------------------------------------------
 
-/**
- * @brief Returns soil parameter of weisseritz
- * @param bk50GridId
- * @param gps General parameters
- * @return Soil parameters
- */
+/*
 const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 																					int layerThicknessCm,
 																					int maxDepthCm,
@@ -2271,7 +2257,9 @@ const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
 	Map::const_iterator ci = spss.find(bk50GridId);
 	return ci != spss.end() ? ci->second.get() : &nothing;
 }
+*/
 
+/*
 string Monica::bk50GridId2ST(int bk50GridId)
 {
   static L lockable;
@@ -2285,7 +2273,7 @@ string Monica::bk50GridId2ST(int bk50GridId)
 
     if (!initialized)
     {
-			DBPtr con(newConnection("landcare-dss"));
+      DBPtr con(newConnection("landcare-dss"));
       con->setCharacterSet("utf8");
       DBRow row;
 
@@ -2300,6 +2288,7 @@ string Monica::bk50GridId2ST(int bk50GridId)
   Map::const_iterator ci = m.find(bk50GridId);
   return ci != m.end() ? ci->second : "ST unbekannt";
 }
+*/
 
 string Monica::bk50GridId2KA4Layers(int bk50GridId)
 {
@@ -2314,7 +2303,7 @@ string Monica::bk50GridId2KA4Layers(int bk50GridId)
 
 		if (!initialized)
 		{
-			DBPtr con(newConnection("landcare-dss"));
+      DBPtr con(newConnection("soil-profiles-sachsen"));
 			con->setCharacterSet("utf8");
 			DBRow row;
 
@@ -2334,6 +2323,115 @@ string Monica::bk50GridId2KA4Layers(int bk50GridId)
 	Map::const_iterator ci = m.find(bk50GridId);
 	return ci != m.end() ? ci->second : "Kein Bodenprofil vorhanden!";
 }
+
+
+const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
+                                      int profileId,
+                                      int layerThicknessCm,
+                                      int maxDepthCm,
+                                      bool loadSingleParameter)
+{
+  int maxNoOfLayers = int(double(maxDepthCm)/double(layerThicknessCm));
+
+  static L lockable;
+
+  typedef map<int, SoilPMsPtr> Map;
+  static bool initialized = false;
+  static Map spss;
+  if(!initialized)
+  {
+    L::Lock lock(lockable);
+
+    if (!initialized)
+    {
+      DBPtr con(newConnection(abstractDbSchema));
+      DBRow row;
+
+      ostringstream s;
+      s << "select id, count(id) "
+           "from soil_profiles "
+           "group by id";
+      con->select(s.str().c_str());
+
+      map<int, int> id2layerCount;
+      while (!(row = con->getRow()).empty())
+        id2layerCount[satoi(row[0])] = satoi(row[1]);
+      con->freeResultSet();
+
+      set<int> skip;
+
+      ostringstream s2;
+      s2 << "select id, layer_depth_cm, soil_organic_carbon_percent, soil_raw_density_t_per_m3, "
+            "sand_content_percent, clay_content_percent, ph_value, soil_type "
+            "from soil_profiles ";
+      if(loadSingleParameter)
+        s2 << "where id = " << profileId << " ";
+      s2 << "order by id, layer_depth_cm";
+
+      con->select(s2.str().c_str());
+      int currenth = 0;
+      while(!(row = con->getRow()).empty())
+      {
+        int id = satoi(row[0]);
+
+        //Skip elements which are incomplete
+        if(skip.find(id) != skip.end())
+          continue;
+
+        SoilPMsPtr sps = spss[id];
+        if(!sps)
+        {
+          sps = spss[id] = SoilPMsPtr(new SoilPMs);
+          currenth = 0;
+        }
+
+        int hcount = id2layerCount[id];
+        currenth++;
+
+        int ho = sps->size()*layerThicknessCm;
+        int hu = !row[1].empty() ? satoi(row[1]) : maxDepthCm;
+        int hsize = max(0, hu - ho);
+        int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
+        if(currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
+          subhcount += maxNoOfLayers - sps->size() - subhcount;
+
+        SoilParameters p;
+        p.set_vs_SoilOrganicCarbon(satof(row[2]) / 100.);
+        p.set_vs_SoilRawDensity(satof(row[3]));
+        p.vs_SoilSandContent = satof(row[4]) / 100.0;
+        p.vs_SoilClayContent = satof(row[5]) / 100.0;
+        if(!row[6].empty())
+          p.vs_SoilpH = satof(row[6]);
+        if(row[7].empty())
+          p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
+        else
+          p.vs_SoilTexture = row[7];
+        p.vs_SoilStoneContent = 0.0;
+        p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+
+        // initialization of saturation, field capacity and perm. wilting point
+        soilCharacteristicsKA5(p);
+        if(!p.isValid())
+        {
+          skip.insert(id);
+          cout << "Error in soil parameters. Skipping profileId: " << id << endl;
+          spss.erase(id);
+          continue;
+        }
+
+        for(int i = 0; i < subhcount; i++)
+          sps->push_back(p);
+      }
+
+      initialized = true;
+    }
+  }
+
+  static SoilPMs nothing;
+  Map::const_iterator ci = spss.find(profileId);
+  return ci != spss.end() ? ci->second.get() : &nothing;
+}
+
 
 const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
 																										const string& pathToFile,
