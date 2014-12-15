@@ -1857,9 +1857,6 @@ void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
 // **	Simulation. Crop Sci. 54:2395–2405.                    **
 // ************************************************************
 
-	vc_AbovegroundBiomass = 0.0;
-	vc_BelowgroundBiomass = 0.0;
-	vc_TotalBiomass = 0.0;
 
 	double vc_LT50old = vc_LT50;
 	double vc_NightTemperature = 0.0;
