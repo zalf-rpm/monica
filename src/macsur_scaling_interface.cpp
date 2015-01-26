@@ -23,10 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "macsur_scaling_interface.h"
-#include <tools/algorithms.h>
+#include "tools/algorithms.h"
 #include "db/abstract-db-connections.h"
-#include <src/simulation.h>
-#include <src/conversion.h>
+#include "simulation.h"
+#include "conversion.h"
 
 #include "boost/foreach.hpp"
 
