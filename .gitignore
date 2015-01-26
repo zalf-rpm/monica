@@ -167,15 +167,10 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
-/monica.sln
-/monica-hermes/monica-hermes.vcxproj.filters
-/monica-hermes/monica-hermes.vcxproj
-/monica-eva2/monica-eva2.vcxproj.filters
-/monica-eva2/monica-eva2.vcxproj
+
 /Makefile.Release
 /Makefile
 /Makefile.Debug
-/monica.pro
 
 # Python SWIG
 _monica.so
@@ -196,13 +191,11 @@ installer/Hohenfinow2/*.dat
 
 /db-connections.ini
 /monica-mpmas/BRA*
-/monica-eva/monica-eva.vcxproj.filters
-/monica-eva/monica-eva.vcxproj
 /monica-mpmas/ReadCropActIds.txt
 /monica-mpmas/ReadCropYields.txt
 /monica-mpmas/DEF237
-/monica-mpmas/monica-mpmas.vcxproj
-/monica-mpmas/monica-mpmas.vcxproj.filters
-monica-json/monica-json.vcxproj
-monica-json/monica-json.vcxproj.filters
-monica-json.sln
+
+*.pro
+*.sln
+*.vcxproj
+*.filters
