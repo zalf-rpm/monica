@@ -7,7 +7,7 @@ SWIG_DIR = .
 # swig configuration ###################################
 #global defaults
 isEmpty(SWIG_DIR):SWIG_DIR = .
-isEmpty(SWIG_CMD):SWIG_CMD = swig -python -c++ -w -shadow -DNO_MPMAS -DNO_MYSQL -DNO_GRIDS
+isEmpty(SWIG_CMD):SWIG_CMD = swig -python -c++ -w -shadow $$SWIG_CMD_MONICA_DEFS
 
 #dependency to generate *_wrap.cxx from *.i
 swig_cxx.name = SWIG_CXX ${QMAKE_FILE_IN}
