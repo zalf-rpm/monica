@@ -48,7 +48,11 @@ namespace mpmasScope
 
 namespace Carbiocial
 {
+	typedef int SoilClassId;
+	typedef int ProfileId;
+	typedef int Year;
 
+#ifndef NO_MPMAS
 	struct IdPlusCode : public Db::Identifiable
 	{
 		//! default constructor
@@ -81,13 +85,7 @@ namespace Carbiocial
 	};
 
 	//----------------------------------------------------------------------------
-
-	typedef int ProfileId;
-	typedef int Year;
-
-	//----------------------------------------------------------------------------
-
-	typedef int SoilClassId;
+	
 	struct SoilClass : public IdPlusCode
 	{
 	public: //static
@@ -153,7 +151,7 @@ namespace Carbiocial
 					int soilClassId = Tools::satoi(row[2]);
 					int percentage = Tools::satoi(row[3]);
 					Sector* s = NULL;
-					map<int, Sector*>::iterator it = m->sectorId2sector.find(sectorId);
+					std::map<int, Sector*>::iterator it = m->sectorId2sector.find(sectorId);
 					if(it != m->sectorId2sector.end())
 						s = it->second;
 					else
@@ -420,7 +418,7 @@ namespace Carbiocial
 					Product* p = id2p[Tools::satoi(row[0])];
 					int operationId = Tools::satoi(row[1]);
 					int month = Tools::satoi(row[2]);
-					p->operationId2month.insert(make_pair(operationId, month));
+					p->operationId2month.insert(std::make_pair(operationId, month));
 				}
 			}
 		};
@@ -505,7 +503,7 @@ namespace Carbiocial
 					int fertilizerId = Tools::satoi(row[1]);
 					int year = Tools::satoi(row[3]);
 					int amountKg = row[2] == "ton" ? Tools::satoi(row[4])*1000 : 0;
-					p->fertilizerId2appYearAndAmountKg[fertilizerId] = make_pair(year, amountKg);
+					p->fertilizerId2appYearAndAmountKg[fertilizerId] = std::make_pair(year, amountKg);
 				}
 			}
 		};
@@ -671,11 +669,11 @@ namespace Carbiocial
 																		 int sectorId, Farm* farm,
 																		 std::map<CropActivityId, double> caId2monicaYields);
 
-#ifndef NO_MPMAS
+//#ifndef NO_MPMAS
 		mpmas* _mpmas;
-#else
+//#else
 		void* _mpmas;
-#endif
+//#endif
 		int _noOfYears;
 		int _noOfSpinUpYears;
 		int _noOfCropActivities;
@@ -700,8 +698,7 @@ namespace Carbiocial
 //	std::map<SoilClassId, std::vector<std::vector<Monica::ProductionProcess> > >
 //	cropRotationsFromUsedCropActivities2(vector<CropActivity*> cas);
 
-	std::pair<const Monica::SoilPMs*, SoilClassId>
-	carbiocialSoilParameters(int profileId, int layerThicknessCm, int maxDepthCm);
+	
 
 	//just temporary define to not have to include all the grids stuff if I don't need the rounded soil frequency
 	//stupid thing is actually that it's hard to not use a grid as parameter, because either I have to move
@@ -715,7 +712,10 @@ namespace Carbiocial
 #endif	
 
 	void runMonicaCarbiocial();
+#endif
 
+	std::pair<const Monica::SoilPMs*, SoilClassId>
+		carbiocialSoilParameters(int profileId, int layerThicknessCm, int maxDepthCm);
 
 	class CarbiocialConfiguration
 	{

@@ -76,6 +76,8 @@ void mpmasScope::exitfun()
 #endif
 }
 
+#ifndef NO_MPMAS
+
 string IdPlusCode::toString(const string& indent, bool /*detailed*/) const
 {
 	ostringstream s;
@@ -245,15 +247,15 @@ Mpmas::Mpmas(const string& pathToMpmas)
 	_pathToInactiveSectorsFile = new char[oss.str().size()];
 	strcpy(_pathToInactiveSectorsFile, oss.str().c_str());
 
-	oss = ostringstream();
-	oss <<  "-I" << pathToMpmas;
-	_inputPathToMpmas = new char[oss.str().size()];
-	strcpy(_inputPathToMpmas, oss.str().c_str());
+	ostringstream oss2;
+	oss2 <<  "-I" << pathToMpmas;
+	_inputPathToMpmas = new char[oss2.str().size()];
+	strcpy(_inputPathToMpmas, oss2.str().c_str());
 
-	oss = ostringstream();
-	oss <<  "-O" << pathToMpmas;
-	_outputPathToMpmas = new char[oss.str().size()];
-	strcpy(_outputPathToMpmas, oss.str().c_str());
+	ostringstream oss3;
+	oss3 <<  "-O" << pathToMpmas;
+	_outputPathToMpmas = new char[oss3.str().size()];
+	strcpy(_outputPathToMpmas, oss3.str().c_str());
 
 	char* argv[] =
 	{
@@ -271,7 +273,7 @@ Mpmas::Mpmas(const string& pathToMpmas)
 		"-T19"
 	};
 
-#ifndef NO_MPMAS
+//#ifndef NO_MPMAS
 	_mpmas = new mpmas(8, argv);
 	//mpmasScope::mpmasPointer = _mpmas;
 
@@ -281,7 +283,7 @@ Mpmas::Mpmas(const string& pathToMpmas)
 			//get length of simulation horizon and number of spin-up rounds
 	_noOfYears = _mpmas->getNumberOfYearsToSimulate();
 	_noOfSpinUpYears = _mpmas->getNumberOfSpinUpRounds();
-#endif
+//#endif
 
 	_noOfCropActivities = CropActivity::all().size();
 
@@ -338,9 +340,9 @@ vector<CropActivity*> Mpmas::landuse(int year,
 
 	//get landuse from MPMAS
 	int rtCode = -1;
-#ifndef NO_MPMAS
+//#ifndef NO_MPMAS
 	rtCode = _mpmas->simulateOnePeriodExportingLandUse(year, _noOfCropActivities, _cropActivityIds, _cropAreas);
-#endif
+//#endif
 
 	vector<CropActivity*> res;
 	for(int i = 0; rtCode >= 0 && i < _noOfCropActivities; i++)
@@ -382,11 +384,11 @@ MpmasResult Mpmas::calculateFarmEconomy(int year, Municipality* municipality, in
 
 	//import yields maps
 	int rtCode = -1;
-#ifndef NO_MPMAS
+//#ifndef NO_MPMAS
 	rtCode = _mpmas->simulateOnePeriodImportingYields(year, _noOfCropActivities,
 																												_cropActivityIds, _monicaYields,
 																												_monicaStoverYields);
-#endif
+//#endif
 
 	int noOfAgents = 1;
 	int agentIds[1];
@@ -915,112 +917,7 @@ Carbiocial::cropRotationsFromUsedCropActivities(vector<CropActivity*> cas)
 
 //-------------------------------------------------------------------------------------------------------
 
-std::pair<const SoilPMs *, SoilClassId>
-Carbiocial::carbiocialSoilParameters(int profileId, int layerThicknessCm,
-																		 int maxDepthCm)
-{
-	//cout << "getting soilparameters for STR: " << str << endl;
-	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
 
-	static L lockable;
-
-	typedef map<Carbiocial::ProfileId, SoilPMsPtr> Map;
-	typedef map<Carbiocial::ProfileId, Carbiocial::SoilClassId> PId2SCId;
-	static bool initialized = false;
-	static Map spss;
-	static PId2SCId profileId2soilClassId;
-
-	if (!initialized)
-	{
-		L::Lock lock(lockable);
-
-		if (!initialized)
-		{
-			DBPtr con(newConnection("carbiocial"));
-			DBRow row;
-
-			ostringstream s;
-			s << "select id, count(horizon_id) "
-					 "from soil_profile_data "
-					 "where id not null "
-					 "group by id";
-			con->select(s.str().c_str());
-
-			map<int, int> id2layerCount;
-			while (!(row = con->getRow()).empty())
-				id2layerCount[satoi(row[0])] = satoi(row[1]);
-			con->freeResultSet();
-
-			ostringstream s2;
-			s2 << "select id, horizon_id, soil_class_id, "
-						"upper_horizon_cm, lower_horizon_cm, "
-						"silt_percent, clay_percent, sand_percent, "
-						"ph_kcl, c_org_percent, c_n, bulk_density_t_per_m3 "
-						"from soil_profile_data "
-						"where id not null "
-						"order by id, horizon_id";
-			con->select(s2.str().c_str());
-
-			while (!(row = con->getRow()).empty())
-			{
-				Carbiocial::ProfileId id = Carbiocial::ProfileId(satoi(row[0]));
-
-				Carbiocial::SoilClassId soilClassId = Carbiocial::SoilClassId(satoi(row[2]));
-				if(profileId2soilClassId.find(id) == profileId2soilClassId.end())
-					profileId2soilClassId[id] = soilClassId;
-
-				Map::iterator spsi = spss.find(id);
-				SoilPMsPtr sps;
-
-				if (spsi == spss.end())
-					spss.insert(make_pair(id, sps = SoilPMsPtr(new SoilPMs)));
-				else
-					sps = spsi->second;
-
-				int hcount = id2layerCount[int(id)];
-				int currenth = satoi(row[1]);
-
-				int ho = sps->size()*layerThicknessCm;
-				int hu = satoi(row[4]) ? satoi(row[4]) : maxDepthCm;
-				int hsize = max(0, hu - ho);
-				int subhcount = Tools::roundRT<int>(double(hsize) / double(layerThicknessCm), 0);
-				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
-					subhcount += maxNoOfLayers - sps->size() - subhcount;
-
-				SoilParameters p;
-				if (!row[8].empty())
-					p.vs_SoilpH = satof(row[8]);
-				p.set_vs_SoilOrganicCarbon(row[9].empty() ? 0 : satof(row[9]) / 100.0);
-				p.set_vs_SoilRawDensity(satof(row[11]));
-				p.vs_SoilSandContent = satof(row[7]) / 100.0;
-				p.vs_SoilClayContent = satof(row[6]) / 100.0;
-				p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
-				p.vs_SoilStoneContent = 0.0;
-				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
-
-				// initialization of saturation, field capacity and perm. wilting point
-				soilCharacteristicsKA5(p);
-
-				bool valid_soil_params = p.isValid();
-				if (!valid_soil_params)
-				{
-					cout << "Error in soil parameters. Aborting now simulation";
-					exit(-1);
-				}
-
-				for (int i = 0; i < subhcount; i++)
-					sps->push_back(p);
-			}
-
-			initialized = true;
-		}
-	}
-
-	static SoilPMs nothing;
-	Map::const_iterator ci = spss.find(profileId);
-	return ci != spss.end() ? make_pair(ci->second.get(), profileId2soilClassId[profileId])
-													: make_pair(&nothing, -1);
-}
 
 pair<int, int> roundTo5(int value)
 {
@@ -1251,11 +1148,115 @@ void Carbiocial::runMonicaCarbiocial()
 		return PVPsList(result.begin(), result.end());
 	}
 	*/
+}
 
+#endif
 
+std::pair<const SoilPMs *, SoilClassId>
+Carbiocial::carbiocialSoilParameters(int profileId, int layerThicknessCm,
+int maxDepthCm)
+{
+	//cout << "getting soilparameters for STR: " << str << endl;
+	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
 
+	static L lockable;
 
+	typedef map<Carbiocial::ProfileId, SoilPMsPtr> Map;
+	typedef map<Carbiocial::ProfileId, Carbiocial::SoilClassId> PId2SCId;
+	static bool initialized = false;
+	static Map spss;
+	static PId2SCId profileId2soilClassId;
 
+	if (!initialized)
+	{
+		L::Lock lock(lockable);
+
+		if (!initialized)
+		{
+			DBPtr con(newConnection("carbiocial"));
+			DBRow row;
+
+			ostringstream s;
+			s << "select id, count(horizon_id) "
+				"from soil_profile_data "
+				"where id not null "
+				"group by id";
+			con->select(s.str().c_str());
+
+			map<int, int> id2layerCount;
+			while (!(row = con->getRow()).empty())
+				id2layerCount[satoi(row[0])] = satoi(row[1]);
+			con->freeResultSet();
+
+			ostringstream s2;
+			s2 << "select id, horizon_id, soil_class_id, "
+				"upper_horizon_cm, lower_horizon_cm, "
+				"silt_percent, clay_percent, sand_percent, "
+				"ph_kcl, c_org_percent, c_n, bulk_density_t_per_m3 "
+				"from soil_profile_data "
+				"where id not null "
+				"order by id, horizon_id";
+			con->select(s2.str().c_str());
+
+			while (!(row = con->getRow()).empty())
+			{
+				Carbiocial::ProfileId id = Carbiocial::ProfileId(satoi(row[0]));
+
+				Carbiocial::SoilClassId soilClassId = Carbiocial::SoilClassId(satoi(row[2]));
+				if (profileId2soilClassId.find(id) == profileId2soilClassId.end())
+					profileId2soilClassId[id] = soilClassId;
+
+				Map::iterator spsi = spss.find(id);
+				SoilPMsPtr sps;
+
+				if (spsi == spss.end())
+					spss.insert(make_pair(id, sps = SoilPMsPtr(new SoilPMs)));
+				else
+					sps = spsi->second;
+
+				int hcount = id2layerCount[int(id)];
+				int currenth = satoi(row[1]);
+
+				int ho = sps->size()*layerThicknessCm;
+				int hu = satoi(row[4]) ? satoi(row[4]) : maxDepthCm;
+				int hsize = max(0, hu - ho);
+				int subhcount = Tools::roundRT<int>(double(hsize) / double(layerThicknessCm), 0);
+				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
+					subhcount += maxNoOfLayers - sps->size() - subhcount;
+
+				SoilParameters p;
+				if (!row[8].empty())
+					p.vs_SoilpH = satof(row[8]);
+				p.set_vs_SoilOrganicCarbon(row[9].empty() ? 0 : satof(row[9]) / 100.0);
+				p.set_vs_SoilRawDensity(satof(row[11]));
+				p.vs_SoilSandContent = satof(row[7]) / 100.0;
+				p.vs_SoilClayContent = satof(row[6]) / 100.0;
+				p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
+				p.vs_SoilStoneContent = 0.0;
+				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+
+				// initialization of saturation, field capacity and perm. wilting point
+				soilCharacteristicsKA5(p);
+
+				bool valid_soil_params = p.isValid();
+				if (!valid_soil_params)
+				{
+					cout << "Error in soil parameters. Aborting now simulation";
+					exit(-1);
+				}
+
+				for (int i = 0; i < subhcount; i++)
+					sps->push_back(p);
+			}
+
+			initialized = true;
+		}
+	}
+
+	static SoilPMs nothing;
+	Map::const_iterator ci = spss.find(profileId);
+	return ci != spss.end() ? make_pair(ci->second.get(), profileId2soilClassId[profileId])
+		: make_pair(&nothing, -1);
 }
 
 

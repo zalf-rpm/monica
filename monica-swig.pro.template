@@ -49,6 +49,6 @@ QMAKE_CFLAGS_DEBUG += -pg -w
 QMAKE_CXXFLAGS += -pg -w
 QMAKE_LFLAGS += -pg -w
 
-SWIG_FILES = monica.i
+SWIG_FILES = monica-swig/monica.i
 
 LIBS += -lpython2.6
