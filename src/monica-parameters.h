@@ -660,7 +660,7 @@ namespace Monica
 
 	void soilCharacteristicsKA5(SoilParameters&);
 
-	CapillaryRiseRates readCapillaryRiseRates();
+	const CapillaryRiseRates& readCapillaryRiseRates();
 
 	//----------------------------------------------------------------------------
 

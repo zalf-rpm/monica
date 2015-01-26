@@ -34,7 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
-//#include "tools/use-stl-algo-boost-lambda.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
 
@@ -42,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "monica-parameters.h"
 #include "conversion.h"
+#include "simulation.h"
 
 #define LOKI_OBJECT_LEVEL_THREADING
 #include "loki/Threads.h"
@@ -1253,4 +1253,334 @@ void Carbiocial::runMonicaCarbiocial()
 	*/
 
 
+
+
+
 }
+
+
+/**
+* Method for starting a simulation with coordinates from ascii grid.
+* A configuration object is passed that stores all relevant
+* information e.g. location, output path etc.
+*
+* @param simulation_config Configuration object that stores all simulation information
+*/
+std::map<int, double> Carbiocial::runCarbiocialSimulation(const CarbiocialConfiguration* simulation_config)
+{
+	//std::cout << "Start Carbiocial cluster Simulation" << std::endl;
+
+	//  int phase = simulation_config->getPhase();
+	//  int step = simulation_config->getStep();
+
+	std::string input_path = simulation_config->getInputPath();
+	std::string output_path = simulation_config->getOutputPath();
+
+	// read in ini - file ------------------------------------------
+	IniParameterMap ipm(input_path + simulation_config->getIniFile());
+
+	std::string crop_rotation_file = ipm.value("files", "croprotation");
+	std::string fertilisation_file = ipm.value("files", "fertiliser");
+
+	//std::cout << "soil_file: " << soil_file.c_str() << "\t" << ipm.value("files", "soil").c_str() << endl;
+	//std::cout << "crop_rotation_file: " << crop_rotation_file.c_str() << endl;
+	//std::cout << "fertilisation_file: " << fertilisation_file.c_str() << endl << endl;
+
+	bool use_automatic_irrigation = ipm.valueAsInt("automatic_irrigation", "activated") == 1;
+	double amount, treshold, nitrate, sulfate;
+	if (use_automatic_irrigation) {
+		amount = ipm.valueAsDouble("automatic_irrigation", "amount", 0.0);
+		treshold = ipm.valueAsDouble("automatic_irrigation", "treshold", 0.15);
+		nitrate = ipm.valueAsDouble("automatic_irrigation", "nitrate", 0.0);
+		sulfate = ipm.valueAsDouble("automatic_irrigation", "sulfate", 0.0);
+	}
+	//  std::cout << "use_automatic_irrigation: " << use_automatic_irrigation << endl;
+	//  std::cout << "amount: " << amount << endl;
+	//  std::cout << "treshold: " << treshold << endl;
+	//  std::cout << "nitrate: " << nitrate << endl;
+	//  std::cout << "sulfate: " << sulfate << endl << endl;
+
+
+	//site configuration
+	double latitude = ipm.valueAsDouble("site_parameters", "latitude", -1.0);
+	//  double slope = ipm.valueAsDouble("site_parameters", "slope", -1.0);
+	//  double heightNN = ipm.valueAsDouble("site_parameters", "heightNN", -1.0);
+	double CN_ratio = ipm.valueAsDouble("site_parameters", "soilCNRatio", -1.0);
+	double atmospheric_CO2 = ipm.valueAsDouble("site_parameters", "atmospheric_CO2", -1.0);
+	double wind_speed_height = ipm.valueAsDouble("site_parameters", "wind_speed_height", -1.0);
+	double leaching_depth = ipm.valueAsDouble("site_parameters", "leaching_depth", -1.0);
+	//  double critical_moisture_depth = ipm.valueAsDouble("site_parameters", "critical_moisture_depth", -1.0);
+	//double ph = ipm.valueAsDouble("site_parameters", "pH", -1.0);
+
+	//  std::cout << "latitude: " << latitude << endl;
+	//  std::cout << "slope: " << slope << endl;
+	//  std::cout << "heightNN: " << heightNN << endl;
+	//  std::cout << "CN_ratio: " << CN_ratio << endl;
+	//  std::cout << "atmospheric_CO2: " << atmospheric_CO2 << endl;
+	//  std::cout << "wind_speed_height: " << wind_speed_height << endl;
+	//  std::cout << "leaching_depth: " << leaching_depth << endl;
+	//  std::cout << "critical_moisture_depth: " << critical_moisture_depth << endl;
+	//  std::cout << "ph: " << ph << endl << endl;
+
+	// general parameters
+	bool n_response = ipm.valueAsInt("general_parameters", "nitrogen_response_on", 1) == 1;
+	bool water_deficit_response = ipm.valueAsInt("general_parameters", "water_deficit_response_on", 1) == 1;
+	bool emergence_flooding_control = ipm.valueAsInt("general_parameters", "emergence_flooding_control_on", 1) == 1;
+	bool emergence_moisture_control = ipm.valueAsInt("general_parameters", "emergence_moisture_control_on", 1) == 1;
+	//  std::cout << "n_response: " << n_response << endl;
+	//  std::cout << "water_deficit_response: " << water_deficit_response << endl << endl;
+
+	// initial values
+	double init_FC = ipm.valueAsDouble("init_values", "init_percentage_FC", -1.0);
+
+
+	//  std::cout << "init_FC: " << init_FC << endl;
+
+	// ---------------------------------------------------------------------
+
+	CentralParameterProvider centralParameterProvider = readUserParameterFromDatabase();
+	centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = atmospheric_CO2;
+	centralParameterProvider.userEnvironmentParameters.p_WindSpeedHeight = wind_speed_height;
+	centralParameterProvider.userEnvironmentParameters.p_LeachingDepth = leaching_depth;
+	centralParameterProvider.userInitValues.p_initPercentageFC = init_FC;
+
+	SiteParameters siteParams;
+	siteParams.vs_Latitude = simulation_config->getLatitude();
+	siteParams.vs_Slope = 0.01;
+	siteParams.vs_HeightNN = simulation_config->getElevation();
+	siteParams.vs_Soil_CN_Ratio = CN_ratio; // TODO: xeh CN_Ratio aus Bodendatei auslesen
+
+	//cout << "Site parameters " << endl;
+	//cout << siteParams.toString().c_str() << endl;
+
+	double layer_thickness = centralParameterProvider.userEnvironmentParameters.p_LayerThickness;
+	double profile_depth = layer_thickness * double(centralParameterProvider.userEnvironmentParameters.p_NumberOfLayers);
+	double max_mineralisation_depth = 0.4;
+
+	GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, n_response, water_deficit_response, emergence_flooding_control, emergence_moisture_control);
+
+	//soil data
+	const SoilPMs* sps;
+
+	//  std::string project_id = simulation_config->getProjectId();
+	//  std::string lookup_project_id = simulation_config->getLookupProjectId();
+
+	pair<const SoilPMs*, Carbiocial::SoilClassId> p =
+		Carbiocial::carbiocialSoilParameters(simulation_config->getProfileId(),
+		int(layer_thickness * 100),
+		int(profile_depth * 100));
+	sps = p.first;
+
+	//no soil available, return no yields
+	if (sps->empty())
+		return std::map<int, double>();
+
+	//	sps = soilParametersFromCarbiocialFile(soil_file, gps, ph);
+
+	//cout << "Groundwater min:\t" << centralParameterProvider.userEnvironmentParameters.p_MinGroundwaterDepth << endl;
+	//cout << "Groundwater max:\t" << centralParameterProvider.userEnvironmentParameters.p_MaxGroundwaterDepth << endl;
+	//cout << "Groundwater month:\t" << centralParameterProvider.userEnvironmentParameters.p_MinGroundwaterDepthMonth << endl;
+
+	// climate data
+	Climate::DataAccessor climateData = 
+		climateDataFromCarbiocialFiles(simulation_config->getClimateFile(), centralParameterProvider, latitude, simulation_config);
+	//cout << "Return from climateDataFromMacsurFiles" << endl;
+
+	// fruchtfolge
+	std::string file = input_path + crop_rotation_file;
+	vector<ProductionProcess> ff = cropRotationFromHermesFile(file);
+	//cout << "Return from cropRotationFromHermesFile" << endl;
+	// fertilisation
+	file = input_path + fertilisation_file;
+	attachFertiliserApplicationsToCropRotation(ff, file);
+	//cout << "Return from attachFertiliserApplicationsToCropRotation" << endl;
+	//  BOOST_FOREACH(const ProductionProcess& pv, ff){
+	//    cout << "pv: " << pv.toString() << endl;
+	//  }
+
+
+	//build up the monica environment
+	Env env(sps, centralParameterProvider);
+	env.general = gps;
+	env.pathToOutputDir = output_path;
+	env.setMode(Env::MODE_CARBIOCIAL_CLUSTER);
+	env.site = siteParams;
+
+	env.da = climateData;
+	env.cropRotation = ff;
+
+	if (use_automatic_irrigation) 
+	{
+		env.useAutomaticIrrigation = true;
+		env.autoIrrigationParams = AutomaticIrrigationParameters(amount, treshold, nitrate, sulfate);
+	}
+	//cout << env.toString() << endl;
+	//cout << "Before runMonica" << endl;
+	Monica::Result res = runMonica(env);
+	//cout << "After runMonica" << endl;
+
+	std::map<int, double> year2yield;
+	int ey = env.da.endDate().year();
+	for (int i = 0, size = res.pvrs.size(); i < size; i++)
+	{
+		int year = ey - size + 1 + i;
+		double yield = res.pvrs[i].pvResults[primaryYieldTM] / 10.0;
+		debug() << "year: " << year << " yield: " << yield << " tTM" << endl;
+		year2yield[year] = Tools::round(yield, 3);
+	}
+
+	return year2yield;
+}
+
+/**
+* Read climate information from macsur file
+*/
+Climate::DataAccessor Carbiocial::climateDataFromCarbiocialFiles(const std::string& pathToFile,
+	const CentralParameterProvider& cpp, double latitude, const CarbiocialConfiguration* simulationConfig)
+{
+	bool reorderData = simulationConfig->create2013To2040ClimateData;
+	map<int, map<int, map<int, vector<int>>>> year2month2day2newDMY;
+	if (reorderData)
+	{
+		string pathToReorderingFile = simulationConfig->pathToClimateDataReorderingFile;
+		ifstream ifs(pathToReorderingFile.c_str());
+		if (!ifs.good()) {
+			cerr << "Could not open file " << pathToReorderingFile << " . Aborting now!" << endl;
+			exit(1);
+		}
+
+		string s;
+		while (getline(ifs, s)) 
+		{
+			istringstream iss(s);
+			string arrow;
+			int fy, fm, fd;
+			vector<int> to(3);
+
+			iss >> to[0] >> to[1] >> to[2] >> arrow >> fd >> fm >> fy;
+
+			year2month2day2newDMY[fy][fm][fd] = to;
+		}
+	}
+
+
+	//cout << "climateDataFromMacsurFiles: " << pathToFile << endl;
+	Climate::DataAccessor da(simulationConfig->getStartDate(), simulationConfig->getEndDate());
+
+	Date startDate = simulationConfig->getStartDate();
+	Date endDate = simulationConfig->getEndDate();
+	int dayCount = endDate - startDate + 1;
+	//  cout << "startDate: " << startDate.toString() << endl;
+	//  cout << "endDate: " << endDate.toString() << endl;
+
+	ifstream ifs(pathToFile.c_str(), ios::binary);
+	if (!ifs.good()) {
+		cerr << "Could not open file " << pathToFile.c_str() << " . Aborting now!" << endl;
+		exit(1);
+	}
+
+	//if have to store all data before adding them to the DataAccessor
+	//because the climate files may contain duplicate entries and might
+	//not be fully ordered due to problems during processing
+	typedef vector<double> Values;
+	typedef map<int, Values> DailyValues;
+	typedef map<int, DailyValues> MonthlyValues;
+	typedef map<int, MonthlyValues> YearlyValues;
+	YearlyValues data;
+	
+	string s;
+	while (getline(ifs, s)) 
+	{
+		//skip (repeated) headers
+		if (s.substr(0, 3) == "day")
+			continue;
+
+		vector<string> r = splitString(s, ",");
+
+		int day = satoi(r.at(0));
+		int month = satoi(r.at(1));
+		int year = satoi(r.at(2));
+
+		if (reorderData)
+		{
+			auto to = year2month2day2newDMY[year][month][day];
+			day = to[0];
+			month = to[1];
+			year = to[2];
+		}
+		
+		if (year < startDate.year())
+			continue;
+		else if (month < startDate.month())
+			continue;
+		else if (day < startDate.day())
+			continue;
+
+		if (year > endDate.year())
+			continue;
+		else if (month > endDate.month())
+			continue;
+		else if (day > endDate.day())
+			continue;
+
+		//double tmin, tavg, tmax ,precip, globrad, relhumid, windspeed;
+		vector<double> d;
+		d.push_back(satof(r.at(4)));
+		d.push_back(satof(r.at(5)));
+		d.push_back(satof(r.at(6)));
+		d.push_back(satof(r.at(7)));
+		d.push_back(satof(r.at(8)));
+		d.push_back(satof(r.at(9)));
+		d.push_back(satof(r.at(10)));
+
+		//    cout << "[" << day << "." << month << "." << year << "] ";
+
+		data[year][month][day] = d;
+	}
+
+	//  cout << endl;
+
+	vector<double> tavgs, tmins, tmaxs, precips, globrads, relhumids, winds;
+
+	int daysAdded = 0;
+	for (auto yci = data.begin(); yci != data.end(); yci++)
+	{
+		auto md = yci->second;
+		for (auto mci = md.begin(); mci != md.end(); mci++)
+		{
+			auto dd = mci->second;
+			for (auto dci = dd.begin(); dci != dd.end(); dci++)
+			{
+				auto d = dci->second;
+				tavgs.push_back(d.at(0));
+				tmins.push_back(d.at(1));
+				tmaxs.push_back(d.at(2));
+				precips.push_back(d.at(3));
+				globrads.push_back(d.at(4));
+				relhumids.push_back(d.at(5));
+				winds.push_back(d.at(6));
+
+				daysAdded++;
+			}
+		}
+	}
+
+	//  cout << "daysAdded: " << daysAdded << endl;
+	if (daysAdded != dayCount) {
+		cout << "Wrong number of days in " << pathToFile.c_str() << " ." << " Found " << daysAdded << " days but should have been "
+			<< dayCount << " days. Aborting." << endl;
+		exit(1);
+	}
+
+	da.addClimateData(Climate::tmin, tmins);
+	da.addClimateData(Climate::tmax, tmaxs);
+	da.addClimateData(Climate::tavg, tavgs);
+	da.addClimateData(Climate::precip, precips);
+	da.addClimateData(Climate::globrad, globrads);
+	da.addClimateData(Climate::relhumid, relhumids);
+	da.addClimateData(Climate::wind, winds);
+
+	return da;
+}
+
+

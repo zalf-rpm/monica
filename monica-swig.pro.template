@@ -32,7 +32,6 @@ QMAKE_EXTRA_COMPILERS += swig
 # monica configuration
 ################################################
 
-
 TEMPLATE = lib
 TARGET = _monica
 OBJECTS_DIR = obj
@@ -42,7 +41,6 @@ CONFIG  += no_include_pwd -w
 CONFIG -= qt
 DEFINES  += COMPILE_DL=1
 
-
 QMAKE_CFLAGS += -I/usr/include/python2.6 
 QMAKE_CXXFLAGS += -I/usr/include/python2.6
 
@@ -51,14 +49,6 @@ QMAKE_CFLAGS_DEBUG += -pg -w
 QMAKE_CXXFLAGS += -pg -w
 QMAKE_LFLAGS += -pg -w
 
-
 SWIG_FILES = monica.i
 
-# HEADERS += src/monica-swig.h
-
-
 LIBS += -lpython2.6
-INCLUDEPATH += ../.. \
-
-
-
