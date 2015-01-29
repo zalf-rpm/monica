@@ -1,4 +1,4 @@
-﻿/**
+/**
 Authors: 
 Michael Berg <michael.berg@zalf.de>
 

@@ -1,4 +1,4 @@
-﻿/**
+/**
 Authors: 
 Michael Berg <michael.berg@zalf.de>
 
@@ -241,7 +241,6 @@ std::map<int, double> Carbiocial::runCarbiocialSimulation(const CarbiocialConfig
 
 	// initial values
 	double init_FC = ipm.valueAsDouble("init_values", "init_percentage_FC", -1.0);
-
 
 	//  std::cout << "init_FC: " << init_FC << endl;
 
