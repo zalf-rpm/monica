@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "climate/climate-common.h"
 #include "tools/date.h"
 #include "monica.h"
-#include "src/debug.h"
+#include "debug.h"
 
 namespace Monica 
 {
