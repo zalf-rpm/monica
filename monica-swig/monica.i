@@ -6,16 +6,18 @@
 %{
 #define SWIG_COMPILATION
 /* Includes the header in the wrapper code */
+/* Includes the header in the wrapper code */
 #include "src/simulation.h"
 #include "src/monica-parameters.h"
 #include "src/monica.h"
-#include "src/eva_methods.h"
-#include "src/cc_germany_methods.h"
-#include "src/gis_simulation_methods.h"
 #include "src/conversion.h"
 #include "../util/tools/date.h"
+
 #include "src/carbiocial.h"
-#include "src/macsur_scaling_interface.h"
+/*#include "src/macsur_scaling_interface.h"*/
+/*#include "src/eva_methods.h"*/
+/*#include "src/cc_germany_methods.h"*/
+/*#include "src/gis_simulation_methods.h"*/
 %}
 
 // Instantiate templates used by example
@@ -39,8 +41,9 @@ namespace std {
 %include "src/soilorganic.h"
 %include "src/soiltransport.h"
 %include "src/monica.h"
+
 %include "src/carbiocial.h"
-%include "src/cc_germany_methods.h"
-%include "src/gis_simulation_methods.h"
-%include "src/eva_methods.h"
-%include "src/macsur_scaling_interface.h"
+/*%include "src/cc_germany_methods.h"*/
+/*%include "src/gis_simulation_methods.h"*/
+/*%include "src/eva_methods.h"*/
+/*%include "src/macsur_scaling_interface.h"*/
