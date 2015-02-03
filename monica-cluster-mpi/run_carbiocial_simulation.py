@@ -3,7 +3,7 @@
 
 import sys
 
-sys.path.append('../monica-src')   # path to monica.py
+sys.path.append('.')   # path to monica.py
 
 import mpi_helper
 import monica
@@ -25,12 +25,14 @@ name = MPI.Get_processor_name()
 
 pathToCarbiocialData = "/media/san1_data1/data1/berg/carbiocial/macsur_scaling/"
 pathToClimateData = "/media/archiv/md/berg/carbiocial/climate-data-out-0-2544/"
+pathToClimateDataReorderingFile = "/media/archiv/md/berg/carbiocial/final_order_dates_l9_sres_a1b_2013-2040.dat" 
 
 sep = ","
 remove_monica_files_after_simulation = False  # True
 
 startDate = "1981-01-01"
-endDate = "2012-12-31"
+#startDate = "2011-01-01"
+endDate = "2015-12-31"
 
 asciiGridHeaders = []
 noOfGridRows = 2545
@@ -70,6 +72,8 @@ def main():
   monica_simulation_config = monica.CarbiocialConfiguration()
   monica_simulation_config.setInputPath(input_path)
   monica_simulation_config.setIniFile(ini_file)
+  monica_simulation_config.pathToClimateDataReorderingFile = pathToClimateDataReorderingFile;
+  monica_simulation_config.create2013To2040ClimateData = True
   #monica_simulation_config.setCropName(crop)
 
   #node_simulation_results = []
@@ -103,7 +107,7 @@ def main():
     monica_simulation_config.setLatitude(-9.41)
     monica_simulation_config.setElevation(300.0)
 
-    monica.activateDebugOutput(False);
+    monica.activateDebugOutput(True);
     #monica.activateDebugFileOutput(False);
     #monica.setPathToDebugFile(output_path + "row-" + str(row) + "/col-" + str(col) + "-debug.out");
     year2yield = monica.runCarbiocialSimulation(monica_simulation_config)
@@ -129,8 +133,8 @@ def main():
 
     print rank, "###################################"
 
-    #if index == 9:
-    #  break
+    if index == 1:
+      break
 
     index = index + 1
 

@@ -347,10 +347,14 @@ Climate::DataAccessor Carbiocial::climateDataFromCarbiocialFiles(const std::stri
 	const CentralParameterProvider& cpp, double latitude, const CarbiocialConfiguration* simulationConfig)
 {
 	bool reorderData = simulationConfig->create2013To2040ClimateData;
-	map<int, map<int, map<int, vector<int>>>> year2month2day2newDMY;
+	map<int, map<int, map<int, vector<int>>>> year2month2day2oldDMY;
 	if (reorderData)
 	{
 		string pathToReorderingFile = simulationConfig->pathToClimateDataReorderingFile;
+		
+		cout << "pathToReorderingFile: " << pathToReorderingFile << endl;
+		cout << "reorderData: " << reorderData << endl;
+
 		ifstream ifs(pathToReorderingFile.c_str());
 		if (!ifs.good()) {
 			cerr << "Could not open file " << pathToReorderingFile << " . Aborting now!" << endl;
@@ -362,15 +366,17 @@ Climate::DataAccessor Carbiocial::climateDataFromCarbiocialFiles(const std::stri
 		{
 			istringstream iss(s);
 			string arrow;
-			int fy, fm, fd;
-			vector<int> to(3);
+			int ty(0), tm(0), td(0);
+			vector<int> from(3);
+			
+			iss >> td >> tm >> ty >> arrow >> from[0] >> from[1] >> from[2];
 
-			iss >> to[0] >> to[1] >> to[2] >> arrow >> fd >> fm >> fy;
-
-			year2month2day2newDMY[fy][fm][fd] = to;
+			//cout << "arrow: " << arrow << " to[0]: " << to[0] << " to[1]: " << to[1] << " to[2]: " << to[2] << " fd: " << fd << " fm: " << fm << " fy: " << fy << endl;
+			
+			if(ty > 0 && tm > 0 && td > 0)
+				year2month2day2oldDMY[ty][tm][td] = from;
 		}
 	}
-
 
 	//cout << "climateDataFromMacsurFiles: " << pathToFile << endl;
 	Climate::DataAccessor da(simulationConfig->getStartDate(), simulationConfig->getEndDate());
@@ -378,9 +384,9 @@ Climate::DataAccessor Carbiocial::climateDataFromCarbiocialFiles(const std::stri
 	Date startDate = simulationConfig->getStartDate();
 	Date endDate = simulationConfig->getEndDate();
 	int dayCount = endDate - startDate + 1;
-	//  cout << "startDate: " << startDate.toString() << endl;
-	//  cout << "endDate: " << endDate.toString() << endl;
-
+//	cout << "startDate: " << startDate.toString() << endl;
+//	cout << "endDate: " << endDate.toString() << endl;
+	
 	ifstream ifs(pathToFile.c_str(), ios::binary);
 	if (!ifs.good()) {
 		cerr << "Could not open file " << pathToFile.c_str() << " . Aborting now!" << endl;
@@ -405,32 +411,27 @@ Climate::DataAccessor Carbiocial::climateDataFromCarbiocialFiles(const std::stri
 
 		vector<string> r = splitString(s, ",");
 
-		int day = satoi(r.at(0));
-		int month = satoi(r.at(1));
-		int year = satoi(r.at(2));
+		unsigned int day = satoi(r.at(0));
+		unsigned int month = satoi(r.at(1));
+		unsigned int year = satoi(r.at(2));
 
-		if (reorderData)
+		if (!reorderData)
 		{
-			auto to = year2month2day2newDMY[year][month][day];
-			day = to[0];
-			month = to[1];
-			year = to[2];
+			if (year < startDate.year())
+				continue;
+			else if (month < startDate.month())
+				continue;
+			else if (day < startDate.day())
+				continue;
+
+			if (year > endDate.year())
+				continue;
+			else if (month > endDate.month())
+				continue;
+			else if (day > endDate.day())
+				continue;
 		}
 		
-		if (year < startDate.year())
-			continue;
-		else if (month < startDate.month())
-			continue;
-		else if (day < startDate.day())
-			continue;
-
-		if (year > endDate.year())
-			continue;
-		else if (month > endDate.month())
-			continue;
-		else if (day > endDate.day())
-			continue;
-
 		//double tmin, tavg, tmax ,precip, globrad, relhumid, windspeed;
 		vector<double> d;
 		d.push_back(satof(r.at(4)));
@@ -445,32 +446,41 @@ Climate::DataAccessor Carbiocial::climateDataFromCarbiocialFiles(const std::stri
 
 		data[year][month][day] = d;
 	}
-
+	
 	//  cout << endl;
 
 	vector<double> tavgs, tmins, tmaxs, precips, globrads, relhumids, winds;
 
 	int daysAdded = 0;
-	for (auto yci = data.begin(); yci != data.end(); yci++)
+	for (Date d = startDate, ed = endDate; d <= ed; d++)
 	{
-		auto md = yci->second;
-		for (auto mci = md.begin(); mci != md.end(); mci++)
+		//cout << "date: " << d.toString() << endl;
+		int year = d.year();
+		int month = d.month();
+		int day = d.day();
+		
+		if (reorderData && year >= 2013 && year <= 2040)
 		{
-			auto dd = mci->second;
-			for (auto dci = dd.begin(); dci != dd.end(); dci++)
+			auto from = year2month2day2oldDMY[year][month][day];
+			if (!from.empty())
 			{
-				auto d = dci->second;
-				tavgs.push_back(d.at(0));
-				tmins.push_back(d.at(1));
-				tmaxs.push_back(d.at(2));
-				precips.push_back(d.at(3));
-				globrads.push_back(d.at(4));
-				relhumids.push_back(d.at(5));
-				winds.push_back(d.at(6));
-
-				daysAdded++;
+				year = from[2];
+				month = from[1];
+				day = from[0];
 			}
 		}
+	
+		auto v = data[year][month][day];
+
+		tavgs.push_back(v.at(0));
+		tmins.push_back(v.at(1));
+		tmaxs.push_back(v.at(2));
+		precips.push_back(v.at(3));
+		globrads.push_back(v.at(4));
+		relhumids.push_back(v.at(5));
+		winds.push_back(v.at(6));
+
+		daysAdded++;
 	}
 
 	//  cout << "daysAdded: " << daysAdded << endl;

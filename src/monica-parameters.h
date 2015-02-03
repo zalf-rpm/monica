@@ -1133,6 +1133,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	/*
 	class HarvestApplication : public WorkStep
 	{
 	public:
@@ -1157,6 +1158,7 @@ namespace Monica
 		double _percentage;
 		std::string _method;
 	};
+	*/
 
 	//----------------------------------------------------------------------------
 
