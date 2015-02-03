@@ -31,8 +31,7 @@ sep = ","
 remove_monica_files_after_simulation = False  # True
 
 startDate = "1981-01-01"
-#startDate = "2011-01-01"
-endDate = "2015-12-31"
+endDate = "2012-12-31"
 
 asciiGridHeaders = []
 noOfGridRows = 2545
@@ -72,8 +71,8 @@ def main():
   monica_simulation_config = monica.CarbiocialConfiguration()
   monica_simulation_config.setInputPath(input_path)
   monica_simulation_config.setIniFile(ini_file)
-  monica_simulation_config.pathToClimateDataReorderingFile = pathToClimateDataReorderingFile;
-  monica_simulation_config.create2013To2040ClimateData = True
+  #monica_simulation_config.pathToClimateDataReorderingFile = pathToClimateDataReorderingFile;
+  #monica_simulation_config.create2013To2040ClimateData = True
   #monica_simulation_config.setCropName(crop)
 
   #node_simulation_results = []
@@ -107,7 +106,8 @@ def main():
     monica_simulation_config.setLatitude(-9.41)
     monica_simulation_config.setElevation(300.0)
 
-    monica.activateDebugOutput(True);
+    #monica.activateDebugOutput(True);
+    monica.activateDebugOutput(False);
     #monica.activateDebugFileOutput(False);
     #monica.setPathToDebugFile(output_path + "row-" + str(row) + "/col-" + str(col) + "-debug.out");
     year2yield = monica.runCarbiocialSimulation(monica_simulation_config)
@@ -133,8 +133,8 @@ def main():
 
     print rank, "###################################"
 
-    if index == 1:
-      break
+    #if index == 1:
+    #  break
 
     index = index + 1
 
