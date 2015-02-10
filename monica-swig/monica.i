@@ -8,7 +8,7 @@
 #include "/home/specka/devel/github/monica/src/simulation.h"
 #include "/home/specka/devel/github/monica/src/monica-parameters.h"
 #include "/home/specka/devel/github/monica/src/monica.h"
-#include "macsur_scaling_interface.h"
+//#include "macsur_scaling_interface.h"
 %}
 
 
@@ -32,4 +32,4 @@ namespace std {
 %include "/home/specka/devel/github/monica/src/soilorganic.h"
 %include "/home/specka/devel/github/monica/src/soiltransport.h"
 %include "/home/specka/devel/github/monica/src/monica.h"
-%include "macsur_scaling_interface.h"
+//%include "macsur_scaling_interface.h"
