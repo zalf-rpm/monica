@@ -660,7 +660,7 @@ namespace Monica
 
 	void soilCharacteristicsKA5(SoilParameters&);
 
-	CapillaryRiseRates readCapillaryRiseRates();
+	const CapillaryRiseRates& readCapillaryRiseRates();
 
 	//----------------------------------------------------------------------------
 
@@ -1133,6 +1133,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	/*
 	class HarvestApplication : public WorkStep
 	{
 	public:
@@ -1157,6 +1158,7 @@ namespace Monica
 		double _percentage;
 		std::string _method;
 	};
+	*/
 
 	//----------------------------------------------------------------------------
 

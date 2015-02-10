@@ -23,6 +23,7 @@ zalf-wettreg = db.zalf-mysql
 ; abstract schemata for data on zalf server
 landcare = db.zalf-mysql
 monica = db.monica.sqlite
+carbiocial = db.carbiocial.sqlite
 ;monica = db.monica.sqlite
 monica_buek = db.zalf-mysql
 eom = db.eom.sqlite
@@ -65,6 +66,9 @@ eva2 = eva2
 
 [db.monica.sqlite]
 filename = sqlite-db/monica.sqlite
+
+[db.carbiocial.sqlite]
+filename = sqlite-db/carbiocial.sqlite
 
 [db.monica-jv.sqlite]
 filename = sqlite-db/monica-jv.sqlite
