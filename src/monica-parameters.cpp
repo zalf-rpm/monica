@@ -4285,20 +4285,18 @@ std::vector<ProductionProcess>
   return ff;
 }
 
-CapillaryRiseRates
-Monica::readCapillaryRiseRates()
+const CapillaryRiseRates& Monica::readCapillaryRiseRates()
 {
-  static L lockable;
-//  static bool initialized = false;
+	static L lockable;
+	static bool initialized = false;
+  static CapillaryRiseRates cap_rates;
 
-  CapillaryRiseRates cap_rates;
-
-//  if(!initialized)
+	if (!initialized)
   {
     L::Lock lock(lockable);
 
-//    if(!initialized)
-//    {
+    if(!initialized)
+		{
 
       static const string query =
           "select soil_type, distance, capillary_rate "
@@ -4315,15 +4313,15 @@ Monica::readCapillaryRiseRates()
         int distance = satoi(row[1]);
         double rate = satof(row[2]);
         cap_rates.addRate(soil_type, distance, rate);
-
       }
 
-      delete con;
+			delete con;
 
-//      initialized = true;
+			initialized = true;
     }
-//  }
-  return cap_rates;
+	}
+
+	return cap_rates;
 }
 
 /*

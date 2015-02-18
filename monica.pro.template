@@ -32,7 +32,8 @@ unix {
 # defining stand alone version of MONICA
 DEFINES += STANDALONE
 
-HERMES:DEFINES += NO_MYSQL
+HERMES:DEFINES += NO_MYSQL NO_GRIDS NO_MPMAS
+SWIG_CMD_MONICA_DEFS += -DNO_MYSQL -DNO_GRIDS -DNO_MPMAS
 
 # monica code
 HEADERS += src/soilcolumn.h
@@ -43,12 +44,15 @@ HEADERS += src/soilorganic.h
 HEADERS += src/monica.h
 HEADERS += src/monica-parameters.h
 HEADERS += src/crop.h
-HEADERS += src/eva_methods.h
 HEADERS += src/monica-eom.h
 HEADERS += src/simulation.h
 HEADERS += src/debug.h
-HEADERS += src/cc_germany_methods.h
-HEADERS += src/gis_simulation_methods.h
+HEADERS += src/conversion.h
+
+#HEADERS += src/cc_germany_methods.h
+#HEADERS += src/gis_simulation_methods.h
+#HEADERS += src/eva_methods.h
+HEADERS += src/carbiocial.h
 
 SOURCES += src/monica-main.cpp
 SOURCES += src/soilcolumn.cpp
@@ -59,21 +63,26 @@ SOURCES += src/soilorganic.cpp
 SOURCES += src/monica.cpp
 SOURCES += src/monica-parameters.cpp
 SOURCES += src/crop.cpp
-SOURCES += src/eva_methods.cpp
 SOURCES += src/monica-eom.cpp
 SOURCES += src/simulation.cpp
 SOURCES += src/debug.cpp
-SOURCES += src/cc_germany_methods.cpp
-SOURCES += src/gis_simulation_methods.cpp
+SOURCES += src/conversion.cpp
+
+#SOURCES += src/eva_methods.cpp
+#SOURCES += src/cc_germany_methods.cpp
+#SOURCES += src/gis_simulation_methods.cpp
+SOURCES += src/carbiocial.cpp
 
 # db library code
 HEADERS += $${UTIL_DIR}/db/db.h
 HEADERS += $${UTIL_DIR}/db/abstract-db-connections.h
 HEADERS += $${UTIL_DIR}/db/sqlite3.h
+HEADERS += $${UTIL_DIR}/db/orm--.h
 
 SOURCES += $${UTIL_DIR}/db/db.cpp
 SOURCES += $${UTIL_DIR}/db/abstract-db-connections.cpp
 SOURCES += $${UTIL_DIR}/db/sqlite3.c
+SOURCES += $${UTIL_DIR}/db/orm--.cpp
 
 # climate library code
 HEADERS += $${UTIL_DIR}/climate/climate-common.h
@@ -101,7 +110,7 @@ DSS|CCG|GIS:SOURCES += $${UTIL_DIR}/tools/coord-trans.cpp
 #-------------------------------------------------------------
 
 INCLUDEPATH += \
-../../boost_1_53_0 \
+../boost_1_55_0 \
 ../util \
 ../loki-lib/include
 
