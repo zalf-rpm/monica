@@ -988,7 +988,7 @@ struct ParseDate
     r.d = atoi(d.substr(0, 2).c_str());
     r.m = atoi(d.substr(2, 2).c_str());
     r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 61 ? 2000 + r.y : 1900 + r.y;
+    r.y = r.y <= 72 ? 2000 + r.y : 1900 + r.y;
     return r;
   }
 } parseDate;
@@ -3870,7 +3870,7 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 	if(hermesCropId == "WR")
 		return CropPtr(new Crop(3, hermesCropId)); // Winter rye
   if(hermesCropId == "WR_GD")
-    return CropPtr(new Crop(51, hermesCropId)); // Winter rye
+    return CropPtr(new Crop(51, hermesCropId)); // Silage winter rye
 	if(hermesCropId == "SR")
 		return CropPtr(new Crop(20, hermesCropId)); // Spring rye
 	if(hermesCropId == "OAT")
@@ -3953,7 +3953,15 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 		return CropPtr(new Crop(47, hermesCropId)); // Emmer 3000 b.c.
 	if (hermesCropId == "EIN")
 		return CropPtr(new Crop(48, hermesCropId)); // Einkorn 3000 b.c.
-	if(hermesCropId == "BR")
+	if (hermesCropId == "COB")
+		return CropPtr(new Crop(46, hermesCropId)); // Cotton medium Brazil
+	if (hermesCropId == "SC")
+		return CropPtr(new Crop(49, hermesCropId)); // Sugar cane transplant	
+	if (hermesCropId == "SCT")
+	  return CropPtr(new Crop(50, hermesCropId)); // Sugar cane ratoon
+	if (hermesCropId == "DUW")
+		return CropPtr(new Crop(52, hermesCropId)); // Durum wheat
+	if (hermesCropId == "BR")
 		return CropPtr(new Crop(hermesCropId));
 
 
