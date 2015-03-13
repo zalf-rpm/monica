@@ -4334,3 +4334,32 @@ Monica::Crop::applyCutting()
 }
 */
 
+
+const vector<pair<int, string>>& Monica::availableMonicaCrops()
+{
+  static L lockable;
+  static vector<pair<int, string>> v;
+  static bool initialized = false;
+  if(!initialized)
+  {
+    L::Lock lock(lockable);
+
+    if(!initialized)
+    {
+      DBPtr con(newConnection("monica"));
+
+      string query("select id, name "
+                   "from crop "
+                   "order by id");
+      con->select(query.c_str());
+
+      DBRow row;
+      while(!(row = con->getRow()).empty())
+        v.push_back(make_pair(satoi(row[0]), row[1]));
+
+      initialized = true;
+    }
+  }
+
+  return v;
+}
