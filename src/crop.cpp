@@ -139,7 +139,7 @@ vc_KcFactor(0.6),
 vc_LeafAreaIndex(0.0),
 pc_LowTemperatureExposure(cps.pc_LowTemperatureExposure),
 pc_LimitingTemperatureHeatStress(cps.pc_LimitingTemperatureHeatStress),
-vc_LT50(-1.0),
+vc_LT50(-3.0),
 pc_LT50cultivar(cps.pc_LT50cultivar),
 pc_LuxuryNCoeff(cps.pc_LuxuryNCoeff),
 vc_MaintenanceRespirationAS(0.0),
@@ -1913,9 +1913,9 @@ void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
 
 	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening + vc_LowTemperatureExposure + vc_RespiratoryStress;
 	
-	if (vc_LT50 > -1.0){
+	if (vc_LT50 > -3.0){
 
-		vc_LT50 = -1.0;
+		vc_LT50 = -3.0;
 
 	}
 
