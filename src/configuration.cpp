@@ -435,7 +435,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
       bool ok = con->select(
         "SELECT permanent_crop_id " 
         "FROM crop "
-        "WHERE id=" + std::to_string(cropId)
+        "WHERE id=" + std::to_string(static_cast<long long>(cropId))
       );
 
       if (ok)
@@ -630,7 +630,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
       if (con && con->select(
         "SELECT om_Type, dm, nh4_n, no3_n, nh2_n, k_slow, k_fast, part_s, part_f, cn_s, cn_f, smb_s, smb_f, id "
         "FROM organic_fertiliser "
-        "WHERE id=" + std::to_string(fertId)
+        "WHERE id=" + std::to_string(static_cast<long long>(fertId))
       )) {
         Db::DBRow row = con->getRow();
         if (!(row).empty()) {
@@ -662,7 +662,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
       if (con && con->select(
         "SELECT id, name, no3, nh4, carbamid " 
         "FROM mineral_fertilisers "
-        "WHERE id=" + std::to_string(fertId)
+        "WHERE id=" + std::to_string(static_cast<long long>(fertId))
       )) {
         Db::DBRow row = con->getRow();
         if (!(row).empty()) {

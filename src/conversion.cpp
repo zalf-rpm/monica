@@ -90,7 +90,7 @@ string Tools::texture2KA5(double sand, double clay)
 {
 	double silt = 1.0 - sand - clay;
 	string soilTexture;
-
+  //cout << "sand:\t" << sand << "clay:\t" << clay << endl;
 	if(silt < 0.1 && clay < 0.05)
 		soilTexture = "Ss";
 	else if(silt < 0.25 && clay < 0.05)

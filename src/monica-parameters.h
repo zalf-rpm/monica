@@ -1739,11 +1739,10 @@ namespace Monica
 
 	void testClimateData(Climate::DataAccessor &climateData);
 
-	std::vector<ProductionProcess>
-	applySAChanges(std::vector<ProductionProcess> ff,
-								 const CentralParameterProvider &centralParameterProvider);
+
 
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
+    const std::vector< std::pair< int, std::string > >& availableMonicaCrops();
 }
 
 #endif
