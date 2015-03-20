@@ -1746,6 +1746,7 @@ namespace Monica
 	applySAChanges(std::vector<ProductionProcess> ff,
 								 const CentralParameterProvider &centralParameterProvider);
 
+
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
 
   //----------------------------------------------------------------------------
