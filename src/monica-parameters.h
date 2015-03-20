@@ -251,6 +251,9 @@ namespace Monica
 	 */
 	const std::vector<ResultId>& cropResultIds();
 
+  std::pair<std::string, std::string>
+  nameAndUnitForResultId(ResultId rid);
+
 	const std::vector<int>& eva2CropResultIds();
 	const std::vector<int>& eva2MonthlyResultIds();
 
@@ -1744,6 +1747,10 @@ namespace Monica
 								 const CentralParameterProvider &centralParameterProvider);
 
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
+
+  //----------------------------------------------------------------------------
+
+  const std::vector<std::pair<int, std::string>>& availableMonicaCrops();
 }
 
 #endif

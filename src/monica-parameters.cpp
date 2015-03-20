@@ -209,11 +209,23 @@ const vector<ResultId>& Monica::cropResultIds()
   static ResultId ids[] =
   {
     primaryYield, secondaryYield, sumFertiliser,
-    sumIrrigation, sumMineralisation
+    sumIrrigation//, sumMineralisation
   };
-  static vector<ResultId> v(ids, ids + 5);
+  static vector<ResultId> v(ids, ids + 4);//5);
 
   return v;
+}
+
+pair<string, string> Monica::nameAndUnitForResultId(ResultId rid)
+{
+  switch(rid)
+  {
+  case primaryYield: return make_pair("Primär-Ertrag", "dt/ha");
+  case secondaryYield: return make_pair("Sekundär-Ertrag", "dt/ha");
+  case sumFertiliser: return make_pair("N-Düngung", "kg/ha");
+  case sumIrrigation: return make_pair("Beregnungswasser", "mm/ha");
+  }
+  return make_pair("", "");
 }
 
 //------------------------------------------------------------------------------
