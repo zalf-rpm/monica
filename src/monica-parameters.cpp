@@ -2338,8 +2338,14 @@ const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
   static L lockable;
 
   typedef map<int, SoilPMsPtr> Map;
+  typedef map<string, Map> Map2;
   static bool initialized = false;
-  static Map spss;
+  static Map2 spss2;
+
+  //yet unloaded schema
+  if(initialized && spss2.find(abstractDbSchema) == spss2.end())
+    initialized = false;
+
   if(!initialized)
   {
     L::Lock lock(lockable);
@@ -2369,6 +2375,8 @@ const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
       if(loadSingleParameter)
         s2 << "where id = " << profileId << " ";
       s2 << "order by id, layer_depth_cm";
+
+      Map& spss = spss2[abstractDbSchema];
 
       con->select(s2.str().c_str());
       int currenth = 0;
@@ -2430,8 +2438,15 @@ const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
   }
 
   static SoilPMs nothing;
-  Map::const_iterator ci = spss.find(profileId);
-  return ci != spss.end() ? ci->second.get() : &nothing;
+  auto ci2 = spss2.find(abstractDbSchema);
+  if(ci2 != spss2.end())
+  {
+    Map& spss = ci2->second;
+    Map::const_iterator ci = spss.find(profileId);
+    return ci != spss.end() ? ci->second.get() : &nothing;
+  }
+  else
+    &nothing;
 }
 
 
