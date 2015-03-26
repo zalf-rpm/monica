@@ -70,7 +70,8 @@ namespace Monica
 			MODE_EVA2,
 			MODE_SENSITIVITY_ANALYSIS,
 			MODE_CC_GERMANY,
-			MODE_MACSUR_SCALING
+			MODE_MACSUR_SCALING, 
+			MODE_CARBIOCIAL_CLUSTER
 		};
 
     /**
@@ -308,8 +309,8 @@ namespace Monica
     double sumSoilTemperature(int layers);
     double sumNO3AtDay(double depth);
     double maxSnowDepth() const;
-    double accumulatedSnowDepth() const;
-    double accumulatedFrostDepth() const;
+    double getAccumulatedSnowDepth() const;
+    double getAccumulatedFrostDepth() const;
     double avg30cmSoilTemperature();
     double avgSoilMoisture(int start_layer, int end_layer);
     double avgCapillaryRise(int start_layer, int end_layer);

@@ -251,6 +251,9 @@ namespace Monica
 	 */
 	const std::vector<ResultId>& cropResultIds();
 
+  std::pair<std::string, std::string>
+  nameAndUnitForResultId(ResultId rid);
+
 	const std::vector<int>& eva2CropResultIds();
 	const std::vector<int>& eva2MonthlyResultIds();
 
@@ -365,6 +368,11 @@ namespace Monica
 		int pc_DevelopmentAccelerationByNitrogenStress; 
 		double pc_FieldConditionModifier;
 		double pc_AssimilateReallocation;
+		double pc_LT50cultivar;
+		double pc_FrostHardening;
+		double pc_FrostDehardening;
+		double pc_LowTemperatureExposure;
+		double pc_RespiratoryStress;
 
 		std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
 		std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
@@ -655,7 +663,7 @@ namespace Monica
 
 	void soilCharacteristicsKA5(SoilParameters&);
 
-	CapillaryRiseRates readCapillaryRiseRates();
+	const CapillaryRiseRates& readCapillaryRiseRates();
 
 	//----------------------------------------------------------------------------
 
@@ -1128,6 +1136,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	/*
 	class HarvestApplication : public WorkStep
 	{
 	public:
@@ -1152,6 +1161,7 @@ namespace Monica
 		double _percentage;
 		std::string _method;
 	};
+	*/
 
 	//----------------------------------------------------------------------------
 
@@ -1736,7 +1746,12 @@ namespace Monica
 	applySAChanges(std::vector<ProductionProcess> ff,
 								 const CentralParameterProvider &centralParameterProvider);
 
+
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
+
+  //----------------------------------------------------------------------------
+
+  const std::vector<std::pair<int, std::string>>& availableMonicaCrops();
 }
 
 #endif

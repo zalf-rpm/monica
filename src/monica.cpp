@@ -822,7 +822,9 @@ double MonicaModel::CO2ForDate(double year, double julianday, bool leapYear)
   else
     decimalDate = year + (julianday/365.0);
 
-  co2 = 222.0 + exp(0.0119 * (decimalDate - 1580.0)) + 2.5 * sin((decimalDate - 0.5) / 0.1592);
+	// Atmospheric CO2 conenctration according to RCP 8.5
+
+  co2 = 222.0 + exp(0.01467 * (decimalDate - 1650.0)) + 2.5 * sin((decimalDate - 0.5) / 0.1592);
   return co2;
 }
 
@@ -984,16 +986,16 @@ MonicaModel::maxSnowDepth() const
  * Returns sum of all snowdepth during whole simulation
  * @return
  */
-double MonicaModel::accumulatedSnowDepth() const
+double MonicaModel::getAccumulatedSnowDepth() const
 {
-  return _soilMoisture.accumulatedSnowDepth();
+  return _soilMoisture.getAccumulatedSnowDepth();
 }
 
 /**
  * Returns sum of frost depth during whole simulation.
  * @return Accumulated frost depth
  */
-double MonicaModel::accumulatedFrostDepth() const
+double MonicaModel::getAccumulatedFrostDepth() const
 {
   return _soilMoisture.getAccumulatedFrostDepth();
 }
@@ -1484,8 +1486,8 @@ double MonicaModel::getsum30cmActDenitrificationRate()
       res.generalResults[monthlySumGroundWaterRecharge].push_back(groundwater);
       res.generalResults[monthlySumNLeaching].push_back(nLeaching);
       res.generalResults[maxSnowDepth].push_back(monica.maxSnowDepth());
-      res.generalResults[sumSnowDepth].push_back(monica.accumulatedSnowDepth());
-      res.generalResults[sumFrostDepth].push_back(monica.accumulatedFrostDepth());
+      res.generalResults[sumSnowDepth].push_back(monica.getAccumulatedSnowDepth());
+      res.generalResults[sumFrostDepth].push_back(monica.getAccumulatedFrostDepth());
       res.generalResults[sumSurfaceRunOff].push_back(monica.sumSurfaceRunOff());
       res.generalResults[sumNH3Volatilised].push_back(monica.getSumNH3Volatilised());
       res.generalResults[monthlySurfaceRunoff].push_back(monthSurfaceRunoff);
@@ -1623,8 +1625,9 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tTra";
   fout << "\tNDef";
   fout << "\tHeatRed";
-  fout << "\tOxRed";
-
+	fout << "\tFrostRed"; 
+	fout << "\tOxRed";
+	
   fout << "\tStage";
   fout << "\tTempSum";
   fout << "\tVernF";
@@ -1635,6 +1638,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tIncFruit";
 
   fout << "\tRelDev";
+	fout << "\tLT50";
 	fout << "\tAbBiom";
 	
 	fout << "\tRoot";
@@ -1657,16 +1661,17 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tRootDep";
   fout << "\tEffRootDep";
 
-  fout << "\tNBiom";
-  fout << "\tSumNUp";
+  fout << "\tTotBiomN";
+	fout << "\tAbBiomN";
+	fout << "\tSumNUp";
   fout << "\tActNup";
   fout << "\tPotNup";
   fout << "\tNFixed";
   fout << "\tTarget";
 
   fout << "\tCritN";
-  fout << "\tAbBiomN";
-  fout << "\tYieldN";
+  fout << "\tAbBiomNc";
+  fout << "\tYieldNc";
   fout << "\tProtein";
 
   fout << "\tNPP";
@@ -1764,8 +1769,7 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\tNEP";
   fout << "\tNEE";
   fout << "\tRh";
-
-
+	
   fout << "\ttmin";
   fout << "\ttavg";
   fout << "\ttmax";
@@ -1782,7 +1786,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[mm]";     // ActualTranspiration
   fout << "\t[0;1]";    // CropNRedux
   fout << "\t[0;1]";    // HeatStressRedux
-  fout << "\t[0;1]";    // OxygenDeficit
+	fout << "\t[0;1]";    // FrostStressRedux
+	fout << "\t[0;1]";    // OxygenDeficit
 
   fout << "\t[ ]";      // DevelopmentalStage
   fout << "\t[°Cd]";    // CurrentTemperatureSum
@@ -1793,8 +1798,9 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[kg/ha]";  // OrganGrowthIncrement shoot
   fout << "\t[kg/ha]";  // OrganGrowthIncrement fruit
 
-  fout << "\t[0;1]";        // RelativeTotalDevelopment
-	fout << "\t[kg/ha]";      // AbovegroundBiomass
+  fout << "\t[0;1]";    // RelativeTotalDevelopment
+	fout << "\t[°C]";     // LT50
+	fout << "\t[kg/ha]";  // AbovegroundBiomass
 
 	for (int i = 0; i < 6; i++) {
 		fout << "\t[kgDM/ha]"; // get_OrganBiomass(i)
@@ -1814,7 +1820,8 @@ Monica::initializeFoutHeader(ofstream &fout)
   fout << "\t[m]";          // Effective RootingDepth
 
   fout << "\t[kgN/ha]";     // TotalBiomassNContent
-  fout << "\t[kgN/ha]";     // SumTotalNUptake
+	fout << "\t[kgN/ha]";     // AbovegroundBiomassNContent
+	fout << "\t[kgN/ha]";     // SumTotalNUptake
   fout << "\t[kgN/ha]";     // ActNUptake
   fout << "\t[kgN/ha]";     // PotNUptake
   fout << "\t[kgN/ha]";     // NFixed
@@ -1939,8 +1946,8 @@ Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\t[ ]";       // SoilpH
   fout << "\t[kgC/ha]";  // NEP
   fout << "\t[kgC/ha]";  // NEE
-  fout << "\t[kgC/ha]"; // Rh
-
+  fout << "\t[kgC/ha]";  // Rh
+	
   fout << "\t[°C]";     // tmin
   fout << "\t[°C]";     // tavg
   fout << "\t[°C]";     // tmax
@@ -2119,7 +2126,8 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_ActualTranspiration();
     fout << fixed << setprecision(2) << "\t" << mcg->get_CropNRedux();// [0;1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_HeatStressRedux();// [0;1]
-    fout << fixed << setprecision(2) << "\t" << mcg->get_OxygenDeficit();// [0;1]
+		fout << fixed << setprecision(2) << "\t" << mcg->get_FrostStressRedux();// [0;1]
+		fout << fixed << setprecision(2) << "\t" << mcg->get_OxygenDeficit();// [0;1]
 
     fout << fixed << setprecision(0) << "\t" << mcg->get_DevelopmentalStage() + 1;
     fout << fixed << setprecision(1) << "\t" << mcg->get_CurrentTemperatureSum();
@@ -2131,6 +2139,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(3);
 
     fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
+		fout << fixed << setprecision(1) << "\t" << mcg->get_LT50(); //  [°C] 
 		fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
 		for (int i = 0; i<mcg->get_NumberOfOrgans(); i++) {
 			fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(i); // biomass organs, [kg C ha-1]
@@ -2156,6 +2165,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << fixed << setprecision(2) << "\t" << mcg->getEffectiveRootingDepth(); //[m]
 
     fout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
+		fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomassNContent();
     fout << fixed << setprecision(2) << "\t" << mcg->get_SumTotalNUptake();
     fout << fixed << setprecision(2) << "\t" << mcg->get_ActNUptake(); // [kg N ha-1]
     fout << fixed << setprecision(2) << "\t" << mcg->get_PotNUptake(); // [kg N ha-1]
@@ -2219,7 +2229,8 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00"; // ActualTranspiration
     fout << "\t1.00"; // CropNRedux
     fout << "\t1.00"; // HeatStressRedux
-    fout << "\t1.00"; // OxygenDeficit
+		fout << "\t1.00"; // FrostStressRedux
+		fout << "\t1.00"; // OxygenDeficit
 
     fout << "\t0";      // DevelopmentalStage
     fout << "\t0.0";    // CurrentTemperatureSum
@@ -2231,6 +2242,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.00";   // OrganGrowthIncrement shoot
     fout << "\t0.00";   // OrganGrowthIncrement fruit
   	fout << "\t0.00";   // RelativeTotalDevelopment
+		fout << "\t0.0";   // LT50
 
 		fout << "\t0.0";    // AbovegroundBiomass
     fout << "\t0.0";    // get_OrganBiomass(0)
@@ -2253,7 +2265,8 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.0";    // EffectiveRootingDepth
 
     fout << "\t0.0";    // TotalBiomassNContent
-    fout << "\t0.00";   // SumTotalNUptake
+		fout << "\t0.0";    // AbovegroundBiomassNContent
+		fout << "\t0.00";   // SumTotalNUptake
     fout << "\t0.00";   // ActNUptake
     fout << "\t0.00";   // PotNUptake
 	  fout << "\t0.00";   // NFixed
@@ -2261,7 +2274,7 @@ Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, 
     fout << "\t0.000";  // CriticalNConcentration
     fout << "\t0.000";  // AbovegroundBiomassNConcentration
 	  fout << "\t0.000";  // PrimaryYieldNConcentration
-    fout << "\t0.000";  // RawProteinConcentration
+    fout << "\t0.000";  // CrudeProteinConcentration
 
 	  fout << "\t0.0";    // NetPrimaryProduction
 	  fout << "\t0.0"; // NPP root

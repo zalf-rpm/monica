@@ -1,14 +1,17 @@
 {
   "crops": [
     {
-      "name": "winter rye",
-      "genType": "",
+      "name": {
+				"id": 3,
+				"name": "winter rye",
+				"genType": ""
+				},
       "spec": "",
       "sowingDate": "1991-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
-      "percNTRansplant": 0.0,
+      "percNTransplant": 0.0,
       "finalHarvestDate": "1992-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
@@ -33,20 +36,25 @@
         {
           "date": "1991-10-15",
           "method": "Fixed",
-          "type": "AN",
+          "type": {
+					"id": 1,
+					"name": "AN"
+					},
           "amount": 90.0
         }
       ]
     },
     {
-      "name": "winter wheat",
-      "genType": "",
-      "spec": "",
+      "name": {
+				"id": 1,
+				"name": "winter wheat",
+				"genType": ""
+				},
       "sowingDate": "1992-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
-      "percNTRansplant": 0.0,
+      "percNTransplant": 0.0,
       "finalHarvestDate": "1993-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
@@ -71,20 +79,26 @@
         {
           "date": "1993-03-15",
           "method": "Fixed",
-          "type": "AN",
+          "type": {
+					"id": 1,
+					"name": "AN"
+					},
           "amount": 90.0
         }
       ]
     },
     {
-      "name": "winter rye",
-      "genType": "",
+      "name": {
+				"id": 3,
+				"name": "winter rye",
+				"genType": ""
+				},
       "spec": "",
       "sowingDate": "1993-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
-      "percNTRansplant": 0.0,
+      "percNTransplant": 0.0,
       "finalHarvestDate": "1994-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
@@ -109,20 +123,26 @@
         {
           "date": "1994-10-15",
           "method": "Fixed",
-          "type": "AN",
+          "type": {
+					"id": 1,
+					"name": "AN"
+					},
           "amount": 90.0
         }
       ]
     },
     {
-      "name": "winter wheat",
-      "genType": "",
+      "name": {
+				"id": 1,
+				"name": "winter wheat",
+				"genType": ""
+				},
       "spec": "",
       "sowingDate": "1995-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
-      "percNTRansplant": 0.0,
+      "percNTransplant": 0.0,
       "finalHarvestDate": "1996-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
@@ -147,20 +167,26 @@
         {
           "date": "1996-03-15",
           "method": "Fixed",
-          "type": "AN",
+          "type": {
+					"id": 1,
+					"name": "AN"
+					},
           "amount": 90.0
         }
       ]
     },
     {
-      "name": "winter rye",
-      "genType": "",
+      "name": {
+				"id": 3,
+				"name": "winter rye",
+				"genType": ""
+				},
       "spec": "",
       "sowingDate": "1996-10-13",
       "rowWidth": 5.0,
       "plantSpace": 5.0,
       "plantDryWeight": 225.00,
-      "percNTRansplant": 0.0,
+      "percNTransplant": 0.0,
       "finalHarvestDate": "1997-08-08",
       "residuesRemoval": 85.0,
       "tillageOps": [
@@ -185,7 +211,10 @@
         {
           "date": "1996-10-15",
           "method": "Fixed",
-          "type": "AN",
+          "type": {
+					"id": 1,
+					"name": "AN"
+					},
           "amount": 90.0
         }
       ]
