@@ -506,12 +506,22 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
       id_parameter[5] = WIND_2m;
       cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
   }
+// Added 16/3/2015 by AKP due to new WindSpeedHeight in EVA2-DB
+  if (location == LOCATION_DORNBURG) {
+	  id_parameter[5] = WIND_2m;
+	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
+  }
 
+// Added 17/3/2015 by AKP due to new WindSpeedHeight in EVA2-DB
+  if (location == LOCATION_ETTLINGEN) {
+	  id_parameter[5] = WIND_2m;
+	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
+  }
 
   if  (location == LOCATION_BERNBURG) {
       //id_parameter[5] = WIND_10m;
       cpp.userEnvironmentParameters.p_WindSpeedHeight = 8;
-      id_parameter[5] = WIND_8m;    
+      id_parameter[5] = WIND_19m;    
   }
 
   std::vector<WStation> id_wstation[WETTER_PARAMETER_COUNT];
@@ -1197,7 +1207,7 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
     // check if there are cutting dates provided
     std::ostringstream request_cutting;
     request_cutting << "SELECT DatumErnte FROM 2_10_Ertraege T where id_pg like \""
-                     << id_string << "%\" and (id_termin>=62 and id_termin<=69) and datumernte is not null "
+                     << id_string << "%\" and (id_termin>=62 and id_termin<=70) and datumernte is not null "
                      << " group by DatumErnte";
     con->select(request_cutting.str().c_str());
     debug() << request_cutting.str().c_str() << endl;
@@ -1485,16 +1495,18 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
       return make_pair(mineral,15);  // Ammoniumnitrat-Harnstoff-Lösung + Ammoniumthiosulfat
   } else if (name == "D206") {
     return make_pair(mineral,16);  // Alzon flüssig S
+  } else if (name == "D213") {
+	return make_pair(mineral, 19);  // Entec 26
   } else if (name == "D40") {
     return make_pair(mineral,17);  // Piamon
   }
 
   else if (name == "D611") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);  //parameter ID = 25 represents digestate (AKP 16/03/2015)
   } else if (name == "D612") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D613") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D614") {
       return make_pair(organic, 3);
   } else if (name == "D615") {
@@ -1524,17 +1536,17 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
   } else if (name == "D627") {
       return make_pair(organic, 3);
   } else if (name == "D628") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D629") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D630") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D631") {
       return make_pair(organic, 3);
   } else if (name == "D632") {
       return make_pair(organic, 3);
   } else if (name == "D633") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D634") {
       return make_pair(organic, 3);
   } else if (name == "D635") {
@@ -1560,7 +1572,7 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
   } else if (name == "D645") {
       return make_pair(organic, 3);
   } else if (name == "D646") {
-      return make_pair(organic, 3);
+      return make_pair(organic, 25);
   } else if (name == "D647") {
       return make_pair(organic, 3);
   } else if (name == "D648") {
@@ -1583,8 +1595,15 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
       return make_pair(organic, 3);
   } else if (name == "D657") {
       return make_pair(organic, 3);
+  } else if (name == "D664") {
+	  return make_pair(organic, 25);
+  } else if (name == "D674") {
+	  return make_pair(organic, 25);
+  } else if (name == "D675") {
+	  return make_pair(organic, 25);
+  } else if (name == "D679") {
+	  return make_pair(organic, 25);
   }
-
 
 
   // undefined mineral fertilisers
@@ -1644,7 +1663,11 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
     return make_pair(undefined,0);  // Thomaskali
   } else if (name == "D205") {
     return make_pair(undefined,0);  // PK-Dünger mit Mg und S 11-22 (4+6)
-  }else if (name == "0") {
+  } else if (name == "D211") {
+	return make_pair(undefined, 0);  // PK-Dünger mit Mg, S, Ca, CaO
+  } else if (name == "D214") {
+	return make_pair(undefined, 0);  // PK-Dünger mit Mg
+  } else if (name == "0") {
     return make_pair(undefined,0);
   }
 
