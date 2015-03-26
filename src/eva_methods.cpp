@@ -2,6 +2,8 @@
 Authors: 
 Xenia Specka <xenia.specka@zalf.de>
 
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 Maintainers: 
 Currently maintained by the authors.
 
@@ -520,7 +522,9 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
 
   if  (location == LOCATION_BERNBURG) {
       //id_parameter[5] = WIND_10m;
-      cpp.userEnvironmentParameters.p_WindSpeedHeight = 8;
+     // cpp.userEnvironmentParameters.p_WindSpeedHeight = 8;
+     // id_parameter[5] = WIND_8m;    
+	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 19;
       id_parameter[5] = WIND_19m;    
   }
 
@@ -1651,6 +1655,8 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
     return make_pair(undefined,0);  // Calcium Carbonat
   } else if (name == "D147") {
     return make_pair(undefined,0);  // Mangan Chelat
+  } else if (name == "D147neu") {
+    return make_pair(undefined,0);  // Mangan Chelat neu
   } else if (name == "D148") {
     return make_pair(undefined,0);  // Nutribor
   } else if (name == "D150") {
@@ -1808,7 +1814,7 @@ Monica::getEva2CropId2Crop(std::string eva2_crop, int location)
   }
 
   if(eva2_crop == EVA2_WINTER_RAPS) return CropPtr(new Crop(9, "Winterraps"));
-  if(eva2_crop == EVA2_SOMMER_RAPS) return CropPtr(new Crop(50, "Sommerraps"));
+  if(eva2_crop == EVA2_SOMMER_RAPS) return CropPtr(new Crop(9, "Sommerraps")); //was parameter id = 50 before, but not calibrated yet (AKP, 29/11/13)
 
 
 
