@@ -3005,6 +3005,7 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
       {
         //create organic fertiliser application
         OrganicMatterParameters* omp = getOrganicFertiliserParametersFromMonicaDB(fertTypeAndId.second);
+		//omp->vo_NConcentration = 100.0;
         it->addApplication(OrganicFertiliserApplication(fdate, omp, n, incorp));
         break;
       }
