@@ -48,6 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/datastructures.h"
 #include "monica-parameters.h"
 #include "tools/helper.h"
+#include "soil/soil.h"
 
 namespace Monica
 {
@@ -96,18 +97,18 @@ namespace Monica
      * @param nols Number of layers
      * @param lt Layer thickness
      */
-    Env(const SoilPMs* sps, CentralParameterProvider cpp);
+    Env(const Soil::SoilPMs* sps, CentralParameterProvider cpp);
 
 		//use this version if soil parameters can't be safely kept elsewhere and Env is responsible for deleting them
-		Env(SoilPMsPtr sps, CentralParameterProvider cpp);
+    Env(Soil::SoilPMsPtr sps, CentralParameterProvider cpp);
 
     int numberOfPossibleSteps();
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 
 	private:
-		SoilPMsPtr _soilParamsPtr;
+    Soil::SoilPMsPtr _soilParamsPtr;
 	public:
-    const SoilPMs* soilParams;  //! a vector of soil parameter objects = layers of soil
+    const Soil::SoilPMs* soilParams;  //! a vector of soil parameter objects = layers of soil
 
     unsigned int noOfLayers;              //! number of layers
     double layerThickness;                //! thickness of a single layer

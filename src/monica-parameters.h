@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
+#include "soil/soil.h"
 #include "monica-typedefs.h"
 
 namespace Monica
@@ -301,6 +302,7 @@ namespace Monica
 		//custom id to enable mapping of monica results to user defined other entities
 		//e.g. a crop activity id from Carbiocial
 		int customId;
+    Tools::Date date;
 
 		//! different results for a particular crop
 		std::map<ResultId, double> pvResults;
@@ -501,169 +503,151 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	/**
-	 * @author Claas Nendel, Michael Berg
-	 */
-	struct SoilParameters
-	{
-		SoilParameters();
+//	/**
+//	 * @author Claas Nendel, Michael Berg
+//	 */
+//	struct SoilParameters
+//	{
+//		SoilParameters();
 
-		double vs_SoilRawDensity() const;
-		void set_vs_SoilRawDensity(double srd);
+//		double vs_SoilRawDensity() const;
+//		void set_vs_SoilRawDensity(double srd);
 
-		double vs_SoilBulkDensity() const;
-		void set_vs_SoilBulkDensity(double sbd);
+//		double vs_SoilBulkDensity() const;
+//		void set_vs_SoilBulkDensity(double sbd);
 
-		double vs_SoilOrganicCarbon() const;
-		void set_vs_SoilOrganicCarbon(double soc);
+//		double vs_SoilOrganicCarbon() const;
+//		void set_vs_SoilOrganicCarbon(double soc);
 
-		double vs_SoilOrganicMatter() const;
-		void set_vs_SoilOrganicMatter(double som);
+//		double vs_SoilOrganicMatter() const;
+//		void set_vs_SoilOrganicMatter(double som);
 
-		double vs_SoilSiltContent() const;
+//		double vs_SoilSiltContent() const;
 		
-		std::string toString() const;
+//		std::string toString() const;
 
-		double texture2lambda(double sand, double clay);
+//		double texture2lambda(double sand, double clay);
 
-		bool isValid();
+//		bool isValid();
 
-		// members
-		double vs_SoilSandContent;
-		double vs_SoilClayContent;
-		double vs_SoilpH;
-		double vs_SoilStoneContent;
-		double vs_Lambda;
-		double vs_FieldCapacity;
-		double vs_Saturation;
-		double vs_PermanentWiltingPoint;
-		std::string vs_SoilTexture;
-		double vs_SoilAmmonium;
-    double vs_SoilNitrate;
+//		// members
+//		double vs_SoilSandContent;
+//		double vs_SoilClayContent;
+//		double vs_SoilpH;
+//		double vs_SoilStoneContent;
+//		double vs_Lambda;
+//		double vs_FieldCapacity;
+//		double vs_Saturation;
+//		double vs_PermanentWiltingPoint;
+//		std::string vs_SoilTexture;
+//		double vs_SoilAmmonium;
+//    double vs_SoilNitrate;
 		
-	private:
-		double _vs_SoilRawDensity;
-		double _vs_SoilBulkDensity;
-		double _vs_SoilOrganicCarbon;
-		double _vs_SoilOrganicMatter;
-	};
+//	private:
+//		double _vs_SoilRawDensity;
+//		double _vs_SoilBulkDensity;
+//		double _vs_SoilOrganicCarbon;
+//		double _vs_SoilOrganicMatter;
+//	};
 
-	/**
-	 * Data structure that holds information about capillary rise rates.
-	 */
-	class CapillaryRiseRates
-	{
-	public:
-		CapillaryRiseRates() {}
-		~CapillaryRiseRates() {}
+//	/**
+//	 * Data structure that holds information about capillary rise rates.
+//	 */
+//	class CapillaryRiseRates
+//	{
+//	public:
+//		CapillaryRiseRates() {}
+//		~CapillaryRiseRates() {}
 
-		/**
-			 * Adds a capillary rise rate to data structure.
-			 */
-		void addRate(std::string bodart, int distance, double value)
-		{
-			//        std::cout << "Add cap rate: " << bodart.c_str() << "\tdist: " << distance << "\tvalue: " << value << std::endl;
-			//cap_rates_map.insert(std::pair<std::string,std::map<int,double> >(bodart,std::pair<int,double>(distance,value)));
-			cap_rates_map[bodart][distance] = value;
-		}
+//		/**
+//			 * Adds a capillary rise rate to data structure.
+//			 */
+//		void addRate(std::string bodart, int distance, double value)
+//		{
+//			//        std::cout << "Add cap rate: " << bodart.c_str() << "\tdist: " << distance << "\tvalue: " << value << std::endl;
+//			//cap_rates_map.insert(std::pair<std::string,std::map<int,double> >(bodart,std::pair<int,double>(distance,value)));
+//			cap_rates_map[bodart][distance] = value;
+//		}
 
-		/**
-			 * Returns capillary rise rate for given soil type and distance to ground water.
-			 */
-		double getRate(std::string bodart, int distance) const
-		{
-			typedef std::map<int, double> T_BodArtMap;
-			//        std::cout << "Get capillary rise rate: " << bodart.c_str() << "\t" << distance << std::endl;
-			T_BodArtMap map = getMap(bodart);
-			if (map.size() <= 0 )
-			{
-				std::cout << "Error. No capillary rise rates in data structure available.\n" << std::endl;
-				exit(-1);
-			}
+//		/**
+//			 * Returns capillary rise rate for given soil type and distance to ground water.
+//			 */
+//		double getRate(std::string bodart, int distance) const
+//		{
+//			typedef std::map<int, double> T_BodArtMap;
+//			//        std::cout << "Get capillary rise rate: " << bodart.c_str() << "\t" << distance << std::endl;
+//			T_BodArtMap map = getMap(bodart);
+//			if (map.size() <= 0 )
+//			{
+//				std::cout << "Error. No capillary rise rates in data structure available.\n" << std::endl;
+//				exit(-1);
+//			}
 
-			T_BodArtMap::iterator it = map.find(distance);
-			if (it != map.end())
-				return it->second;
+//			T_BodArtMap::iterator it = map.find(distance);
+//			if (it != map.end())
+//				return it->second;
 
-			return 0.0;
-		}
-
-
-		std::map<int,double> getMap(std::string bodart) const
-		{
-			typedef std::map<int, double> T_BodArtMap;
-			typedef std::map<std::string, T_BodArtMap> T_CapRatesMap;
-
-			T_CapRatesMap::const_iterator it2 = cap_rates_map.find(bodart);
-			if (it2 != cap_rates_map.end())
-				return it2->second;
-
-			T_BodArtMap tmp;
-			return tmp;
-		}
-
-		/**
-			 * Returns number of elements of internal map data structure.
-			 */
-		int size() const { return cap_rates_map.size(); }
+//			return 0.0;
+//		}
 
 
-	private:
-		std::map<std::string, std::map<int, double> > cap_rates_map;
-	};
+//		std::map<int,double> getMap(std::string bodart) const
+//		{
+//			typedef std::map<int, double> T_BodArtMap;
+//			typedef std::map<std::string, T_BodArtMap> T_CapRatesMap;
 
-	typedef std::vector<SoilParameters> SoilPMs;
-	typedef boost::shared_ptr<SoilPMs> SoilPMsPtr;
+//			T_CapRatesMap::const_iterator it2 = cap_rates_map.find(bodart);
+//			if (it2 != cap_rates_map.end())
+//				return it2->second;
+
+//			T_BodArtMap tmp;
+//			return tmp;
+//		}
+
+//		/**
+//			 * Returns number of elements of internal map data structure.
+//			 */
+//		int size() const { return cap_rates_map.size(); }
 
 
-//	const SoilPMs* ueckerSoilParameters(const std::string& str,
-//																			int layerThicknessCm,
-//																			int maxDepthCm,
-//																			bool loadSingleParameter = false);
+//	private:
+//		std::map<std::string, std::map<int, double> > cap_rates_map;
+//	};
 
-//	const SoilPMs* ueckerSoilParameters(int mmkGridId,
-//																			int layerThicknessCm,
-//																			int maxDepthCm,
-//																			bool loadSingleParameter = false);
+//	typedef std::vector<SoilParameters> SoilPMs;
+//	typedef boost::shared_ptr<SoilPMs> SoilPMsPtr;
 
-	std::string ueckerGridId2STR(int ugid);
+//  const SoilPMs* soilParameters(const std::string& abstractDbSchema,
+//                                int profileId,
+//                                int layerThicknessCm,
+//                                int maxDepthCm,
+//                                bool loadSingleParameter = false);
 
-//	const SoilPMs* bk50SoilParameters(int bk50GridId,
-//																		int layerThicknessCm,
-//																		int maxDepthCm,
-//																		bool loadSingleParameter = false);
+//  std::string soilProfileId2KA5Layers(const std::string& abstractDbSchema,
+//                                      int soilProfileId);
 
-//	std::string bk50GridId2ST(int bk50GridId);
-	std::string bk50GridId2KA4Layers(int bk50GridId);
+//	const SoilPMs* soilParametersFromHermesFile(int soilId,
+//																							const std::string& pathToFile,
+//																							int layerThicknessCm,
+//																							int maxDepthCm,
+//																							double soil_ph = -1.0,
+//																							double drainage_coeff=-1.0);
 
-  const SoilPMs* soilParameters(const std::string& abstractDbSchema,
-                                int profileId,
-                                int layerThicknessCm,
-                                int maxDepthCm,
-                                bool loadSingleParameter = false);
+//	struct RPSCDRes
+//	{
+//		RPSCDRes() : sat(0), fc(0), pwp(0), initialized(false) {}
+//		RPSCDRes(bool initialized) : sat(0), fc(0), pwp(0), initialized(initialized) {}
+//		double sat, fc, pwp;
+//		bool initialized;
+//	};
+//	RPSCDRes readPrincipalSoilCharacteristicData(std::string soilType,
+//																							 double rawDensity);
+//	RPSCDRes readSoilCharacteristicModifier(std::string soilType,
+//																					double organicMatter);
 
-	const SoilPMs* soilParametersFromHermesFile(int soilId,
-																							const std::string& pathToFile,
-																							int layerThicknessCm,
-																							int maxDepthCm,
-																							double soil_ph = -1.0,
-																							double drainage_coeff=-1.0);
+//	void soilCharacteristicsKA5(SoilParameters&);
 
-	struct RPSCDRes
-	{
-		RPSCDRes() : sat(0), fc(0), pwp(0), initialized(false) {}
-		RPSCDRes(bool initialized) : sat(0), fc(0), pwp(0), initialized(initialized) {}
-		double sat, fc, pwp;
-		bool initialized;
-	};
-	RPSCDRes readPrincipalSoilCharacteristicData(std::string soilType,
-																							 double rawDensity);
-	RPSCDRes readSoilCharacteristicModifier(std::string soilType,
-																					double organicMatter);
-
-	void soilCharacteristicsKA5(SoilParameters&);
-
-	const CapillaryRiseRates& readCapillaryRiseRates();
+//	const CapillaryRiseRates& readCapillaryRiseRates();
 
 	//----------------------------------------------------------------------------
 
@@ -1725,7 +1709,7 @@ namespace Monica
 		SensitivityAnalysisParameters sensitivityAnalysisParameters;
 		UserInitialValues userInitValues;
 
-		CapillaryRiseRates capillaryRiseRates;
+    Soil::CapillaryRiseRates capillaryRiseRates;
 
 		double getPrecipCorrectionValue(int month) const;
 		void setPrecipCorrectionValue(int month, double value);

@@ -51,6 +51,7 @@ using namespace Monica;
 using namespace std;
 using namespace Climate;
 using namespace Tools;
+using namespace Soil;
 
 namespace
 {
@@ -115,7 +116,7 @@ string Env::toString() const
 {
   ostringstream s;
   s << "soilParams: " << endl;
-	BOOST_FOREACH(const SoilParameters& sps, *soilParams)
+  BOOST_FOREACH(const Soil::SoilParameters& sps, *soilParams)
 	{
 			s << sps.toString() << endl;
 	}
@@ -1386,6 +1387,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
         //get yieldresults for crop
         PVResult r = currentPP.cropResult();
 				r.customId = currentPP.customId();
+        r.date = currentDate;
 
         if(!env.useSecondaryYields)
           r.pvResults[secondaryYield] = 0;

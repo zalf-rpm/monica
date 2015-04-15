@@ -121,7 +121,7 @@ namespace Monica {
       SoilLayer();
       SoilLayer(const SoilLayer&);
       SoilLayer(const CentralParameterProvider& cpp);
-      SoilLayer(double vs_LayerThickness, const SoilParameters& soilParams, const CentralParameterProvider& cpp);
+      SoilLayer(double vs_LayerThickness, const Soil::SoilParameters& soilParams, const CentralParameterProvider& cpp);
 
 
     void calc_vs_SoilMoisture_pF();
@@ -329,7 +329,7 @@ namespace Monica {
   public:
 
     SoilColumn(const GeneralParameters& generalParams,
-               const SoilPMs& soilParams, const CentralParameterProvider& cpp);
+               const Soil::SoilPMs& soilParams, const CentralParameterProvider& cpp);
 
     void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
                                 double amount);
@@ -453,7 +453,7 @@ namespace Monica {
     void set_vs_NumberOfOrganicLayers();
 
     const GeneralParameters& generalParams; /**< */
-    const SoilPMs& soilParams; /**< Vector of soil parameter*/
+    const Soil::SoilPMs& soilParams; /**< Vector of soil parameter*/
 
     int _vs_NumberOfOrganicLayers; /**< Number of organic layers. */
     double _vf_TopDressing;

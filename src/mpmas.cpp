@@ -255,7 +255,7 @@ RunMpmas::RunMpmas(const string& pathToMpmas)
 	_outputPathToMpmas = new char[oss3.str().size()];
 	strcpy(_outputPathToMpmas, oss3.str().c_str());
 
-	char* argv[] =
+  const char* argv[] =
 	{
 		"mpmas-lib",
 		_inputPathToMpmas,

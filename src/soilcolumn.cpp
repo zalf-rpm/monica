@@ -47,6 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace Monica;
 using namespace std;
 using namespace boost;
+using namespace Soil;
 
 /**
  * Constructor with default parameter initialization
