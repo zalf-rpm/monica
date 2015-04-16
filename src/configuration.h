@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-#include "debug.h"
+#include "tools/debug.h"
 #include "cson/cson_amalgamation_core.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"

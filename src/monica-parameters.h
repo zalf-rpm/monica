@@ -464,21 +464,21 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	/**
-	 * @author Claas Nendel
-	 */
-	struct OrganicConstants
-	{
-		static const double po_UreaMolecularWeight;
-		static const double po_Urea_to_N;
-		static const double po_NH3MolecularWeight;
-		static const double po_NH4MolecularWeight;
-		static const double po_H2OIonConcentration;
-		static const double po_pKaHNO2;
-		static const double po_pKaNH3;
-		static const double po_SOM_to_C;
-		static const double po_AOM_to_C;
-	};
+//	/**
+//	 * @author Claas Nendel
+//	 */
+//	struct OrganicConstants
+//	{
+//		static const double po_UreaMolecularWeight;
+//		static const double po_Urea_to_N;
+//		static const double po_NH3MolecularWeight;
+//		static const double po_NH4MolecularWeight;
+//		static const double po_H2OIonConcentration;
+//		static const double po_pKaHNO2;
+//		static const double po_pKaNH3;
+//		static const double po_SOM_to_C;
+//		static const double po_AOM_to_C;
+//	};
 
 	//----------------------------------------------------------------------------
 

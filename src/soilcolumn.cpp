@@ -39,15 +39,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * @see Monica::FertilizerTriggerThunk
  */
 
-#include "boost/lambda/bind.hpp"
 #include "crop.h"
 #include "soilcolumn.h"
-#include "debug.h"
+#include "tools/debug.h"
+#include "soil/constants.h"
 
 using namespace Monica;
 using namespace std;
 using namespace boost;
 using namespace Soil;
+using namespace Tools;
 
 /**
  * Constructor with default parameter initialization
@@ -632,12 +633,18 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 			      int vf_TopDressingDelay ) {
 
   // Wassergehalt > Feldkapazität
-  if(soilLayer(0).get_Vs_SoilMoisture_m3() > soilLayer(0).get_FieldCapacity()) {
+  if(soilLayer(0).get_Vs_SoilMoisture_m3() > soilLayer(0).get_FieldCapacity())
+  {
     _delayedNMinApplications.push_back
-			(boost::lambda::bind(&SoilColumn::applyMineralFertiliserViaNMinMethod, this, fp,
-            vf_SamplingDepth, vf_CropNTarget,
-	  vf_CropNTarget30, vf_FertiliserMinApplication,
-	  vf_FertiliserMaxApplication, vf_TopDressingDelay));
+        ([=](){ return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
+                                                                 vf_CropNTarget30, vf_FertiliserMinApplication,
+                                                                 vf_FertiliserMaxApplication, vf_TopDressingDelay); });
+    //    _delayedNMinApplications.push_back
+    //			(boost::lambda::bind(&SoilColumn::applyMineralFertiliserViaNMinMethod, this, fp,
+    //            vf_SamplingDepth, vf_CropNTarget,
+    //	  vf_CropNTarget30, vf_FertiliserMinApplication,
+    //	  vf_FertiliserMaxApplication, vf_TopDressingDelay))
+
 
     //cerr << "Soil too wet for fertilisation. "
     //  "Fertiliser event adjourned to next day." << endl;

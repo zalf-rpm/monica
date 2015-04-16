@@ -35,11 +35,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soiltemperature.h"
 #include "soilcolumn.h"
 #include "monica.h"
-#include "debug.h"
+#include "tools/debug.h"
 
 using namespace std;
 using namespace Climate;
 using namespace Monica;
+using namespace Tools;
 
 /**
  * @brief Constructor

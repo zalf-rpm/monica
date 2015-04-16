@@ -38,9 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/algorithms.h"
 
 #include "carbiocial.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "monica-parameters.h"
-#include "conversion.h"
+#include "soil/conversion.h"
 #include "simulation.h"
 
 #define LOKI_OBJECT_LEVEL_THREADING
@@ -142,7 +142,7 @@ int maxDepthCm)
 				p.vs_SoilClayContent = satof(row[6]) / 100.0;
 				p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
 				p.vs_SoilStoneContent = 0.0;
-				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+        p.vs_Lambda = Soil::texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
 
 				// initialization of saturation, field capacity and perm. wilting point
 				soilCharacteristicsKA5(p);

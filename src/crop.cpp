@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "boost/foreach.hpp"
 
 #include "crop.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "soilmoisture.h"
 #include "monica-parameters.h"
 #include "tools/helper.h"
@@ -41,6 +41,7 @@ const double PI = 3.14159265358979323;
 
 using namespace std;
 using namespace Monica;
+using namespace Tools;
 
 /**
  * @brief Constructor

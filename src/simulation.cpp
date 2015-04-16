@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilorganic.h"
 #include "soiltransport.h"
 #include "crop.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "monica-parameters.h"
 #include "tools/read-ini.h"
 

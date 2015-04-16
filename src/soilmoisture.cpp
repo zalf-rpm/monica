@@ -36,10 +36,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilcolumn.h"
 #include "crop.h"
 #include "monica.h"
-#include "debug.h"
+#include "tools/debug.h"
 
 using namespace std;
 using namespace Monica;
+using namespace Tools;
 
 // ------------------------------------------------------------------------
 // SNOW MODULE

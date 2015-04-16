@@ -49,6 +49,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "monica-parameters.h"
 #include "tools/helper.h"
 #include "soil/soil.h"
+#include "soil/constants.h"
 
 namespace Monica
 {
@@ -136,7 +137,7 @@ namespace Monica
 
     SiteParameters site;        //! site specific parameters
     GeneralParameters general;  //! general parameters to the model
-		OrganicConstants organic;  //! constant organic parameters to the model
+    Soil::OrganicConstants organic;  //! constant organic parameters to the model
 
     CentralParameterProvider centralParameterProvider;
 

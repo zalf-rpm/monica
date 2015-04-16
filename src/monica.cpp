@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "boost/foreach.hpp"
 #include "tools/use-stl-algo-boost-lambda.h"
 
-#include "debug.h"
+#include "tools/debug.h"
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"

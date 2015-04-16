@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soiltransport.h"
 #include "crop.h"
 
-#include "conversion.h"
+#include "soil/conversion.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
 #include "tools/algorithms.h"
@@ -72,6 +72,8 @@ const cson_value* Monica::Configuration::metaSite = NULL;
 const cson_value* Monica::Configuration::metaCrop = NULL;
 
 using namespace Monica;
+using namespace Tools;
+using namespace Soil;
 
 Configuration::Configuration(const std::string& outPath, const std::string& dirNameMet, const std::string& preMetFiles, const std::string& dbIniName)
   : _sim(NULL), _site(NULL), _crop(NULL), _outPath(outPath), _dirNameMet(dirNameMet), _preMetFiles(preMetFiles)

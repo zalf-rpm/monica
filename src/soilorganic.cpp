@@ -37,10 +37,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilcolumn.h"
 #include "monica.h"
 #include "crop.h"
-#include "debug.h"
+#include "tools/debug.h"
+#include "soil/constants.h"
 
 using namespace std;
 using namespace Monica;
+using namespace Tools;
+using namespace Soil;
 
 /**
  * @brief Constructor

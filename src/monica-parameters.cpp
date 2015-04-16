@@ -42,7 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "monica-parameters.h"
 #include "monica.h"
 //#include "eva_methods.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "soil/conversion.h"
 #include "soil/soil.h"
 
@@ -1756,18 +1756,18 @@ pc_EmergenceMoistureControlOn(pc_EmergenceMoistureControlOn)
 //------------------------------------------------------------------------------
 
 
-/**
- * @brief Definition of organic constants
- */
-double const OrganicConstants::po_UreaMolecularWeight = 0.06006;//[kg mol-1]
-double const OrganicConstants::po_Urea_to_N = 0.46667; //Converts 1 kg urea to 1 kg N
-double const OrganicConstants::po_NH3MolecularWeight = 0.01401; //[kg mol-1]
-double const OrganicConstants::po_NH4MolecularWeight = 0.01401; //[kg mol-1]
-double const OrganicConstants::po_H2OIonConcentration = 1.0;
-double const OrganicConstants::po_pKaHNO2 = 3.29; // [] pKa value for nitrous acid
-double const OrganicConstants::po_pKaNH3 = 6.5; // [] pKa value for ammonium
-double const OrganicConstants::po_SOM_to_C = 0.57; // = 0.58; // [] converts soil organic matter to carbon
-double const OrganicConstants::po_AOM_to_C = 0.45; // [] converts added organic matter to carbon
+///**
+// * @brief Definition of organic constants
+// */
+//double const OrganicConstants::po_UreaMolecularWeight = 0.06006;//[kg mol-1]
+//double const OrganicConstants::po_Urea_to_N = 0.46667; //Converts 1 kg urea to 1 kg N
+//double const OrganicConstants::po_NH3MolecularWeight = 0.01401; //[kg mol-1]
+//double const OrganicConstants::po_NH4MolecularWeight = 0.01401; //[kg mol-1]
+//double const OrganicConstants::po_H2OIonConcentration = 1.0;
+//double const OrganicConstants::po_pKaHNO2 = 3.29; // [] pKa value for nitrous acid
+//double const OrganicConstants::po_pKaNH3 = 6.5; // [] pKa value for ammonium
+//double const OrganicConstants::po_SOM_to_C = 0.57; // = 0.58; // [] converts soil organic matter to carbon
+//double const OrganicConstants::po_AOM_to_C = 0.45; // [] converts added organic matter to carbon
 
 //------------------------------------------------------------------------------
 
