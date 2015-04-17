@@ -31,8 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <cmath>
 
-#include <boost/foreach.hpp>
-
 #include "soilorganic.h"
 #include "soilcolumn.h"
 #include "monica.h"
@@ -769,7 +767,7 @@ void SoilOrganic::fo_MIT() {
 		vo_SMB_SlowDecRate[i_Layer] = vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_SlowMaintRate[i_Layer];
 		vo_SMB_FastDecRate[i_Layer] = vo_SMB_FastDeathRate[i_Layer] + vo_SMB_FastMaintRate[i_Layer];
 
-    BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
       AOM_Pool.vo_AOM_SlowDecCoeff = AOM_Pool.vo_AOM_SlowDecCoeffStandard * tod * mod;
       AOM_Pool.vo_AOM_FastDecCoeff = AOM_Pool.vo_AOM_FastDecCoeffStandard * tod * mod;
     }
@@ -778,7 +776,7 @@ void SoilOrganic::fo_MIT() {
   // Calculation of pool changes by decomposition
   for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
 
-    BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
       // Eq.6-5 and 6-6 in the DAISY manual
       AOM_Pool.vo_AOM_SlowDelta = -(AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow);
 
@@ -796,7 +794,7 @@ void SoilOrganic::fo_MIT() {
     // Eq.6-7 in the DAISY manual
     vo_AOM_SlowDecRateSum[i_Layer] = 0.0;
 
-    BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
       AOM_Pool.vo_AOM_SlowDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow 
 				   * AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow;
 
@@ -815,7 +813,7 @@ void SoilOrganic::fo_MIT() {
   // Eq.6-8 in the DAISY manual
     vo_AOM_FastDecRateSum[i_Layer] = 0.0;
 
-    BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
 			AOM_Pool.vo_AOM_FastDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow
 				    * AOM_Pool.vo_AOM_FastDecCoeff * AOM_Pool.vo_AOM_Fast;
 			
@@ -849,7 +847,7 @@ void SoilOrganic::fo_MIT() {
     vo_AOM_SlowDeltaSum[i_Layer] = 0.0;
     vo_AOM_FastDeltaSum[i_Layer] = 0.0;
 
-    BOOST_FOREACH(AOM_Properties& AOM_Pool, soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
       vo_AOM_SlowDeltaSum[i_Layer] += AOM_Pool.vo_AOM_SlowDelta;
       vo_AOM_FastDeltaSum[i_Layer] += AOM_Pool.vo_AOM_FastDelta;
     }

@@ -30,9 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <sstream>
 
-#include "boost/foreach.hpp"
-#include "tools/use-stl-algo-boost-lambda.h"
-
 #include "tools/debug.h"
 #include "monica.h"
 #include "climate/climate-common.h"
@@ -116,7 +113,7 @@ string Env::toString() const
 {
   ostringstream s;
   s << "soilParams: " << endl;
-  BOOST_FOREACH(const Soil::SoilParameters& sps, *soilParams)
+  for(const Soil::SoilParameters& sps : *soilParams)
 	{
 			s << sps.toString() << endl;
 	}
@@ -125,7 +122,7 @@ string Env::toString() const
 	s << "ClimateData: from: " << da.startDate().toString()
     << " to: " << da.endDate().toString() << endl;
 	s << "Fruchtfolge: " << endl;
-	BOOST_FOREACH(const ProductionProcess& pv, cropRotation)
+  for(const ProductionProcess& pv : cropRotation)
 	{
 			s << pv.toString() << endl;
 	}

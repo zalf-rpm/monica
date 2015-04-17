@@ -33,11 +33,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 
 #define LOKI_OBJECT_LEVEL_THREADING
-
 #include "loki/Threads.h"
 
 #include <boost/foreach.hpp>
-#include "tools/use-stl-algo-boost-lambda.h"
 #include "db/abstract-db-connections.h"
 #include "monica-eom.h"
 #include "tools/helper.h"

@@ -29,8 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <string>
 
-#include "boost/foreach.hpp"
-
 #include "crop.h"
 #include "tools/debug.h"
 #include "soilmoisture.h"
@@ -333,7 +331,7 @@ vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
       std::vector<YieldComponent> prim = pc_OrganIdsForPrimaryYield;
       std::vector<YieldComponent> sec = pc_OrganIdsForSecondaryYield;
 
-      BOOST_FOREACH(YieldComponent yc, prim){
+      for(YieldComponent yc : prim){
         eva2_primaryYieldComponents.push_back(yc);
       }
 //      vector<YieldComponent>::iterator it = prim.begin();
@@ -342,7 +340,7 @@ vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
 //          eva2_primaryYieldComponents.push_back(y);
 //      }
 
-      BOOST_FOREACH(YieldComponent yc, sec){
+      for(YieldComponent yc : sec){
          eva2_primaryYieldComponents.push_back(yc);
       }
 //      it = sec.begin();

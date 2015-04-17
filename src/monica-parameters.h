@@ -1735,7 +1735,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  const std::vector<std::pair<int, std::string>>& availableMonicaCrops();
+  const std::map<int, std::string>& availableMonicaCrops();
 }
 
 #endif

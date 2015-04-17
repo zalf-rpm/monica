@@ -31,17 +31,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <utility>
 
-#include "boost/foreach.hpp"
-
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
-#include "tools/use-stl-algo-boost-lambda.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
 
 #include "monica-parameters.h"
 #include "monica.h"
-//#include "eva_methods.h"
 #include "tools/debug.h"
 #include "soil/conversion.h"
 #include "soil/soil.h"
@@ -1640,7 +1636,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_StageKcFactor.push_back(satof(row[12]));
       }
 
-      BOOST_FOREACH(CPS::value_type vt, cpss)
+      for(CPS::value_type vt : cpss)
       {
         vt.second->resizeStageOrganVectors();
       }
@@ -3774,10 +3770,10 @@ Monica::Crop::applyCutting()
 */
 
 
-const vector<pair<int, string>>& Monica::availableMonicaCrops()
+const map<int, string>& Monica::availableMonicaCrops()
 {
   static L lockable;
-  static vector<pair<int, string>> v;
+  static map<int, string> m;
   static bool initialized = false;
   if(!initialized)
   {
@@ -3794,11 +3790,11 @@ const vector<pair<int, string>>& Monica::availableMonicaCrops()
 
       DBRow row;
       while(!(row = con->getRow()).empty())
-        v.push_back(make_pair(satoi(row[0]), row[1]));
+        m[satoi(row[0])] = capitalize(row[1]);
 
       initialized = true;
     }
   }
 
-  return v;
+  return m;
 }
