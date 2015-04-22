@@ -185,9 +185,10 @@ Result::getResultsById(int id)
   // test if crop results are requested
   if (id == primaryYield || id == secondaryYield || id == sumIrrigation ||
       id == sumFertiliser || id == biomassNContent || id == sumTotalNUptake ||
-      id == cropHeight || id == cropname || id == sumETaPerCrop ||
+      id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
-      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress
+      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == anthesisDay ||
+	  id == maturityDay
       )
   {
     vector<double> result_vector;
@@ -209,9 +210,9 @@ const vector<ResultId>& Monica::cropResultIds()
   static ResultId ids[] =
   {
     primaryYield, secondaryYield, sumFertiliser,
-    sumIrrigation//, sumMineralisation
+    sumIrrigation, anthesisDay, maturityDay//, sumMineralisation
   };
-  static vector<ResultId> v(ids, ids + 4);//5);
+  static vector<ResultId> v(ids, ids + 6);//5);
 
   return v;
 }
@@ -244,44 +245,6 @@ const vector<ResultId>& Monica::monthlyResultIds()
 }
 
 //------------------------------------------------------------------------------
-
-const vector<int>& Monica::sensitivityAnalysisResultIds()
-{
-  static ResultId ids[] =
-  {
-    primaryYield,                   // done
-    cropHeight,                     // done
-    biomassNContent,
-    daysWithCrop,
-    aboveBiomassNContent,
-    mean90cmMonthlyAvgWaterContent, // done
-    sum30cmSoilTemperature,
-    avg0_30cmSoilMoisture,
-    avg30_60cmSoilMoisture,         // done
-    avg60_90cmSoilMoisture,         // done
-    yearlySumGroundWaterRecharge,    
-    yearlySumNLeaching,
-    sum90cmYearlyNatDay,
-    monthlySumGroundWaterRecharge,  // done
-    waterFluxAtLowerBoundary,       // done
-    evapotranspiration,             // done
-    transpiration,                  // done
-    evaporation,                    // done
-    sumTotalNUptake,                // done
-    NH3Volatilised,                 // done
-    sumNH3Volatilised,              // done
-    leachingNAtBoundary,             // done
-    dev_stage,
-    daysWithCrop,
-    avg30cmMonthlyAvgCorg
-    
-  };
-
-  //static vector<int> v(ids, ids+2);
-  static vector<int> v(ids, ids+25);
-
-  return v;
-}
 
 //------------------------------------------------------------------------------
 
@@ -379,6 +342,10 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Hauptertrag", "dt/ha", "primYield");
   case secondaryYield:
     return ResultIdInfo("Nebenertrag", "dt/ha", "secYield");
+  case anthesisDay:
+	  return ResultIdInfo("Tag der Blüte", "Jul. day", "anthesisDay");
+  case maturityDay:
+	  return ResultIdInfo("Tag der Reife", "Jul. day", "maturityDay");
   case sumFertiliser:
     return ResultIdInfo("N", "kg/ha", "sumFert");
   case sumIrrigation:
@@ -463,6 +430,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Gesamt-akkumulierte N-Auswaschung im Jahr", "kg N/ha", "Yearly_monthLeachN");
   case sumETaPerCrop:
     return ResultIdInfo("Evapotranspiration pro Vegetationszeit der Pflanze", "mm", "ETa_crop");
+  case sumTraPerCrop:
+	  return ResultIdInfo("Transpiration pro Vegetationszeit der Pflanze", "mm", "Tra_crop");
   case cropname:
     return ResultIdInfo("Pflanzenname", "", "cropname");
   case primaryYieldTM:
@@ -582,6 +551,9 @@ void Harvest::apply(MonicaModel* model)
 					_crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
 					_crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 					_crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
+					_crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
+					_crop->setAnthesisDay(model->cropGrowth()->getAnthesisDay());
+					_crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
 				}
 
 				//store results for this crop
@@ -596,11 +568,13 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
 				_cropResult->pvResults[cropHeight] = _crop->cropHeight();
 				_cropResult->pvResults[sumETaPerCrop] = _crop->get_AccumulatedETa();
+				_cropResult->pvResults[sumTraPerCrop] = _crop->get_AccumulatedTranspiration();
 				_cropResult->pvResults[cropname] = _crop->id();
 				_cropResult->pvResults[NStress] = model->getAccumulatedNStress();
 				_cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
+				_cropResult->pvResults[OxygenStress] = _crop->getAnthesisDay();
 
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);
@@ -696,7 +670,7 @@ void Cutting::apply(MonicaModel* model)
 
     _crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
     _crop->setCropHeight(model->cropGrowth()->get_CropHeight());
-
+	
 
     if (model->cropGrowth()) {
         model->cropGrowth()->applyCutting();
