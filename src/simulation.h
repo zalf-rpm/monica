@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SIMULATION_H_
 
 // must be activated when building monica for python
-// #define RUN_HERMES
+#define RUN_HERMES
 // #define RUN_EVA
 //#define RUN_CC_GERMANY
 //#define RUN_GIS
@@ -329,8 +329,8 @@ public:
 };
 
 
-HermesSimulationConfiguration * getHermesConfigFromIni(std::string output_path);
-Monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
+
+
 
 #endif
 
@@ -447,6 +447,8 @@ const Monica::Result runGISSimulation(const GISSimulationConfiguration *simulati
 #ifdef RUN_HERMES
 const Monica::Result runWithHermesData( HermesSimulationConfiguration *hermes_config=0);
 const Monica::Result runWithHermesData(const std::string);
+HermesSimulationConfiguration * getHermesConfigFromIni(std::string output_path);
+Monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
 #endif
 
 //void writeSoilPMsToFile(std::string path, const std::vector<SoilParameters> *soil_pms, int mode);

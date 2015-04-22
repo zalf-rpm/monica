@@ -88,6 +88,9 @@ namespace Monica
 		//! secondary yield for the crop (e.g. leafs and other stuff useable)
 		secondaryYield,
 
+    //! above ground biomass of the crop
+    aboveGroundBiomass,
+
 		//! sum of applied fertilizer for that crop during growth period
 		sumFertiliser,
 
@@ -147,6 +150,9 @@ namespace Monica
 
 		//! Average soilmoisture content in 60-90cm soil at special, hardcoded date
 		avg60_90cmSoilMoisture,
+
+		//! Average soilmoisture content in 0-90cm soil at special, hardcoded date
+		avg0_90cmSoilMoisture,
 
 		//! water flux at bottom layer of soil at special, hardcoded date
 		waterFluxAtLowerBoundary,
@@ -259,10 +265,7 @@ namespace Monica
 	 */
 	const std::vector<ResultId>& monthlyResultIds();
 
-	/**
-	 * @return list if ids used for sensitivity analysis
-	 */
-	const std::vector<int>& sensitivityAnalysisResultIds();
+
 
 
 	/**
@@ -793,6 +796,7 @@ namespace Monica
 		double appliedIrrigationWater() const { return _appliedAmountIrrigation; }
 		double sumTotalNUptake() const {return _sumTotalNUptake; }
 		double primaryYield() const { return _primaryYield * _crossCropAdaptionFactor; }
+		double aboveGroundBiomass() const { return _primaryYield * _crossCropAdaptionFactor + _secondaryYield * _crossCropAdaptionFactor; }
 		double secondaryYield() const { return _secondaryYield * _crossCropAdaptionFactor; }
 		double primaryYieldTM() const {  return _primaryYieldTM * _crossCropAdaptionFactor; }
 		double secondaryYieldTM() const { return _secondaryYieldTM * _crossCropAdaptionFactor; }

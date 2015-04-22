@@ -187,7 +187,7 @@ Result::getResultsById(int id)
       id == sumFertiliser || id == biomassNContent || id == sumTotalNUptake ||
       id == cropHeight || id == cropname || id == sumETaPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
-      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress
+      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass
       )
   {
     vector<double> result_vector;
@@ -231,45 +231,7 @@ const vector<ResultId>& Monica::monthlyResultIds()
   return v;
 }
 
-//------------------------------------------------------------------------------
 
-const vector<int>& Monica::sensitivityAnalysisResultIds()
-{
-  static ResultId ids[] =
-  {
-    primaryYield,                   // done
-    cropHeight,                     // done
-    biomassNContent,
-    daysWithCrop,
-    aboveBiomassNContent,
-    mean90cmMonthlyAvgWaterContent, // done
-    sum30cmSoilTemperature,
-    avg0_30cmSoilMoisture,
-    avg30_60cmSoilMoisture,         // done
-    avg60_90cmSoilMoisture,         // done
-    yearlySumGroundWaterRecharge,    
-    yearlySumNLeaching,
-    sum90cmYearlyNatDay,
-    monthlySumGroundWaterRecharge,  // done
-    waterFluxAtLowerBoundary,       // done
-    evapotranspiration,             // done
-    transpiration,                  // done
-    evaporation,                    // done
-    sumTotalNUptake,                // done
-    NH3Volatilised,                 // done
-    sumNH3Volatilised,              // done
-    leachingNAtBoundary,             // done
-    dev_stage,
-    daysWithCrop,
-    avg30cmMonthlyAvgCorg
-    
-  };
-
-  //static vector<int> v(ids, ids+2);
-  static vector<int> v(ids, ids+25);
-
-  return v;
-}
 
 //------------------------------------------------------------------------------
 
@@ -367,6 +329,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Hauptertrag", "dt/ha", "primYield");
   case secondaryYield:
     return ResultIdInfo("Nebenertrag", "dt/ha", "secYield");
+  case aboveGroundBiomass:
+    return ResultIdInfo("Oberirdische Biomasse", "dt/ha", "AbBiom");
   case sumFertiliser:
     return ResultIdInfo("N", "kg/ha", "sumFert");
   case sumIrrigation:
@@ -407,6 +371,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 30-60cm Boden am 31.03.", "%","Moist30_60");
   case avg60_90cmSoilMoisture:
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 60-90cm Boden am 31.03.", "%","Moist60_90");
+  case avg0_90cmSoilMoisture:
+    return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-90cm Boden am 31.03.", "%","Moist0_90");
   case waterFluxAtLowerBoundary:
     return ResultIdInfo("Sickerwasser der unteren Bodengrenze am 31.03.", "mm/d", "waterFlux");
   case avg0_30cmCapillaryRise:
@@ -580,6 +546,7 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[sumIrrigation] = _crop->appliedIrrigationWater();
 				_cropResult->pvResults[biomassNContent] = _crop->primaryYieldN();
 				_cropResult->pvResults[aboveBiomassNContent] = _crop->aboveGroundBiomasseN();
+				_cropResult->pvResults[aboveGroundBiomass] = _crop->aboveGroundBiomass();
 				_cropResult->pvResults[daysWithCrop] = model->daysWithCrop();
 				_cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
 				_cropResult->pvResults[cropHeight] = _crop->cropHeight();
