@@ -99,35 +99,30 @@ private:
 
     struct SC
     {
-        SoilColumn & sc;
-        SoilLayer & gl;
-        SoilLayer & bl;
-        int vs_nols;
-        SC(SoilColumn & sc, SoilLayer & gl, SoilLayer & bl, int vs_nols)
+      SoilColumn & sc;
+      SoilLayer & gl;
+      SoilLayer & bl;
+      std::size_t vs_nols;
+      SC(SoilColumn & sc, SoilLayer & gl, SoilLayer & bl, int vs_nols)
         :sc(sc), gl(gl), bl(bl), vs_nols(vs_nols)
-        {
-        }
+      {}
 
-        SoilLayer & operator [](int i) const
-        {
-            if(i < vs_nols){
-                return sc[i];
-            }else
-                if(i < vs_nols + 1){
-                    return gl;
-                }
+      SoilLayer & operator [](std::size_t i) const
+      {
+        if(i < vs_nols)
+          return sc[i];
+        else if(i < vs_nols + 1)
+          return gl;
 
-            return bl;
-        }
+        return bl;
+      }
 
-        const SoilLayer & at(int i) const
-        {
-            return (*this)[i];
-        }
+      const SoilLayer & at(std::size_t i) const { return (*this)[i]; }
 
     } soilColumn;
-    const int vt_NumberOfLayers;
-    const int vs_NumberOfLayers;
+
+    const std::size_t vt_NumberOfLayers;
+    const std::size_t vs_NumberOfLayers;
     std::vector<double> vs_SoilMoisture_const;
     std::vector<double> vt_SoilTemperature;
     std::vector<double> vt_V;

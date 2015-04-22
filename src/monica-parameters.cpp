@@ -30,20 +30,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <cmath>
 #include <utility>
+#include <mutex>
 
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
-
 #include "monica-parameters.h"
 #include "monica.h"
 #include "tools/debug.h"
 #include "soil/conversion.h"
 #include "soil/soil.h"
-
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
 
 using namespace Db;
 using namespace std;
@@ -56,11 +53,6 @@ using namespace Climate;
 
 namespace
 {
-  /**
- * @brief Lockable object
- */
-  struct L: public Loki::ObjectLevelLockable<L> {};
-	
   /*!
  * @todo Claas bitte ausfüllen
  * @param name
@@ -1472,10 +1464,10 @@ string CropParameters::toString() const
  */
 const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 {
-  static L lockable;
+  static mutex lockable;
 
   static bool initialized = false;
-  typedef boost::shared_ptr<CropParameters> CPPtr;
+  typedef std::shared_ptr<CropParameters> CPPtr;
   typedef map<int, CPPtr> CPS;
 
   static CPS cpss;
@@ -1483,7 +1475,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
   // only initialize once
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     //test if after waiting for the lock the other thread
     //already initialized the whole thing
@@ -1525,14 +1517,13 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         CPS::iterator cpsi = cpss.find(id);
         CPPtr cps;
 
-        if (cpsi == cpss.end()) {
-          cpss.insert(make_pair(id, cps = boost::shared_ptr<CropParameters>(new CropParameters)));
-        }  else {
+        if (cpsi == cpss.end())
+          cpss.insert(make_pair(id, cps = std::shared_ptr<CropParameters>(new CropParameters)));
+        else
           cps = cpsi->second;
-        }
 
         cps->pc_CropName = row[i++].c_str();
-				cps->pc_Perennial = satoi(row[i++]);
+        cps->pc_Perennial = satob(row[i++]);
         cps->pc_MaxAssimilationRate = satof(row[i++]);
         cps->pc_CarboxylationPathway = satoi(row[i++]);
         cps->pc_MinimumTemperatureForAssimilation = satof(row[i++]);
@@ -2017,7 +2008,7 @@ string SiteParameters::toString() const
 //{
 //  int maxNoOfLayers = int(double(maxDepthCm)/double(layerThicknessCm));
 
-//  static L lockable;
+//  static mutex lockable;
 
 //  typedef map<int, SoilPMsPtr> Map;
 //  typedef map<string, Map> Map2;
@@ -2030,7 +2021,7 @@ string SiteParameters::toString() const
 
 //  if(!initialized)
 //  {
-//    L::Lock lock(lockable);
+//    lock_guard<mutex> lock(lockable);
 
 //    if (!initialized)
 //    {
@@ -2134,7 +2125,7 @@ string SiteParameters::toString() const
 //string Monica::soilProfileId2KA5Layers(const string& abstractDbSchema,
 //                                       int soilProfileId)
 //{
-//  static L lockable;
+//  static mutex lockable;
 
 //  typedef map<int, string> Map;
 //  typedef map<string, Map> Map2;
@@ -2147,7 +2138,7 @@ string SiteParameters::toString() const
 
 //  if (!initialized)
 //  {
-//    L::Lock lock(lockable);
+//    lock_guard<mutex> lock(lockable);
 
 //    if (!initialized)
 //    {
@@ -2193,14 +2184,14 @@ string SiteParameters::toString() const
 //	debug() << pathToFile.c_str() << endl;
 //	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
 
-//  static L lockable;
+//  static mutex lockable;
 
 //  typedef map<int, SoilPMsPtr> Map;
 //  static bool initialized = false;
 //	static Map spss;
 //	if (!initialized)
 //	{
-//		L::Lock lock(lockable);
+//		lock_guard<mutex> lock(lockable);
 
 //		if (!initialized)
 //		{
@@ -2617,13 +2608,13 @@ string MineralFertiliserParameters::toString() const
 MineralFertiliserParameters
     Monica::getMineralFertiliserParametersFromMonicaDB(int id)
 {
-  static L lockable;
+  static mutex lockable;
   static bool initialized = false;
   static map<int, MineralFertiliserParameters> m;
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -2902,14 +2893,14 @@ string OrganicMatterParameters::toString() const
 OrganicMatterParameters*
 Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 {
-  static L lockable;
+  static mutex lockable;
   static bool initialized = false;
   typedef map<int, OMPPtr> Map;
   static Map m;
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -2974,14 +2965,14 @@ Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 const OrganicMatterParameters*
     Monica::getResidueParametersFromMonicaDB(int cropId)
 {
-  static L lockable;
+  static mutex lockable;
   static bool initialized = false;
   typedef map<int, OMPPtr> Map;
   static Map m;
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -3096,7 +3087,7 @@ void CentralParameterProvider::setPrecipCorrectionValue(int month, double value)
 CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 {
 
-  static L lockable;
+  static mutex lockable;
 
   static bool initialized = false;
 
@@ -3104,7 +3095,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -3369,14 +3360,14 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 
 //RPSCDRes Monica::readPrincipalSoilCharacteristicData(string soilType, double rawDensity)
 //{
-//	static L lockable;
+//	static mutex lockable;
 //	typedef map<int, RPSCDRes> M1;
 //	typedef map<string, M1> M2;
 //	static M2 m;
 //	static bool initialized = false;
 //	if(!initialized)
 //	{
-//		L::Lock lock(lockable);
+//		lock_guard<mutex> lock(lockable);
 
 //		if(!initialized)
 //		{
@@ -3430,14 +3421,14 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 
 //RPSCDRes Monica::readSoilCharacteristicModifier(string soilType, double organicMatter)
 //{
-//	static L lockable;
+//	static mutex lockable;
 //	typedef map<int, RPSCDRes> M1;
 //	typedef map<string, M1> M2;
 //	static M2 m;
 //	static bool initialized = false;
 //	if(!initialized)
 //	{
-//		L::Lock lock(lockable);
+//		lock_guard<mutex> lock(lockable);
 
 //		if(!initialized)
 //		{
@@ -3493,7 +3484,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 //                                double &sat, double &fc, double &pwp,
 //                                string query)
 //  {
-//    static L lockable;
+//    static mutex lockable;
 //    typedef map<int, X> M1;
 //    typedef map<string, M1> M2;
 //    typedef map<string, M2> M3;
@@ -3501,7 +3492,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 //    static bool initialized = false;
 //    if(!initialized)
 //    {
-//      L::Lock lock(lockable);
+//      lock_guard<mutex> lock(lockable);
 
 //      if(!initialized)
 //      {
@@ -3722,13 +3713,13 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 
 //const CapillaryRiseRates& Monica::readCapillaryRiseRates()
 //{
-//	static L lockable;
+//	static mutex lockable;
 //	static bool initialized = false;
 //  static CapillaryRiseRates cap_rates;
 
 //	if (!initialized)
 //  {
-//    L::Lock lock(lockable);
+//    lock_guard<mutex> lock(lockable);
 
 //    if(!initialized)
 //		{
@@ -3772,12 +3763,12 @@ Monica::Crop::applyCutting()
 
 const map<int, string>& Monica::availableMonicaCrops()
 {
-  static L lockable;
+  static mutex lockable;
   static map<int, string> m;
   static bool initialized = false;
   if(!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if(!initialized)
     {

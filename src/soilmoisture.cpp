@@ -438,9 +438,9 @@ FrostComponent::getMeanBulkDensity()
     return centralParameterProvider.sensitivityAnalysisParameters.p_MeanBulkDensity;
   }
 
-  int vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double bulk_density_accu = 0.0;
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     bulk_density_accu += soilColumn[i_Layer].vs_SoilBulkDensity();
   }
   return (bulk_density_accu / double(vs_number_of_layers) / 1000.0); // [Mg m-3]
@@ -459,9 +459,9 @@ FrostComponent::getMeanFieldCapacity()
     return centralParameterProvider.sensitivityAnalysisParameters.p_MeanFieldCapacity;
   }
 
-  int vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double mean_field_capacity_accu = 0.0;
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     mean_field_capacity_accu += soilColumn[i_Layer].get_FieldCapacity();
   }
   return (mean_field_capacity_accu / double(vs_number_of_layers));
@@ -658,10 +658,9 @@ FrostComponent::calcTemperatureUnderSnow(double mean_air_temperature, double sno
 void
 FrostComponent::updateLambdaRedux()
 {
-  int vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
 
-
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
 
     if (i_Layer < (int(floor((vm_FrostDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
 

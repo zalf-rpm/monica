@@ -689,7 +689,7 @@ namespace Mpmas
 		char* _pathToInactiveSectorsFile;
 	};
 
-	typedef boost::shared_ptr<RunMpmas> RunMpmasPtr;
+  typedef std::shared_ptr<RunMpmas> RunMpmasPtr;
 
 	std::map<SoilClassId, std::vector<std::vector<Monica::ProductionProcess> > >
 	cropRotationsFromUsedCropActivities(std::vector<CropActivity*> cas);

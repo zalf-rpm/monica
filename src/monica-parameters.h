@@ -35,8 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 #include <iostream>
-
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
@@ -308,7 +307,7 @@ namespace Monica
 		std::map<ResultId, double> pvResults;
 	};
 
-	typedef boost::shared_ptr<PVResult> PVResultPtr;
+  typedef std::shared_ptr<PVResult> PVResultPtr;
 
 	//----------------------------------------------------------------------------
 
@@ -450,7 +449,7 @@ namespace Monica
 		 * @brief Returns number of layers.
 		 * @return Number of layers.
 		 */
-		int ps_NumberOfLayers() const { return ps_LayerThickness.size(); }
+    size_t ps_NumberOfLayers() const { return ps_LayerThickness.size(); }
 
 		std::vector<double> ps_LayerThickness;
 
@@ -654,75 +653,115 @@ namespace Monica
 	class OrganicMatterParameters;
 
 	class Crop;
-	typedef boost::shared_ptr<Crop> CropPtr;
+  typedef std::shared_ptr<Crop> CropPtr;
 	
 	class Crop
 	{
 	public:
 		//! default constructor for value object use
 
-		Crop(const std::string& name = "fallow") :
-			_id(-1), _name(name), _cropParams(NULL), _perennialCropParams(NULL), _residueParams(NULL),
-			_primaryYield(0), _secondaryYield(0),_primaryYieldTM(0), _secondaryYieldTM(0),
-			_appliedAmountIrrigation(0),_primaryYieldN(0), _secondaryYieldN(0),
-			_sumTotalNUptake(0), _crossCropAdaptionFactor(1),
-			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(Monica::NUTZUNG_UNDEFINED){ }
+    Crop(const std::string& name = "fallow")
+      : _id(-1),
+        _name(name),
+        _cropParams(NULL),
+        _perennialCropParams(NULL),
+        _residueParams(NULL),
+        _primaryYield(0),
+        _secondaryYield(0),
+        _primaryYieldTM(0),
+        _secondaryYieldTM(0),
+        _appliedAmountIrrigation(0),
+        _primaryYieldN(0),
+        _secondaryYieldN(0),
+        _sumTotalNUptake(0),
+        _crossCropAdaptionFactor(1),
+        _cropHeight(0.0),
+        _accumulatedETa(0.0),
+        eva2_typeUsage(Monica::NUTZUNG_UNDEFINED)
+    {}
 
-		Crop(CropId id, const std::string& name, const CropParameters* cps = NULL,
-				 const OrganicMatterParameters* rps = NULL,
-				 double crossCropAdaptionFactor = 1) :
-				 _id(id), _name(name), _cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
-			_primaryYield(0), _secondaryYield(0),  _primaryYieldTM(0), _secondaryYieldTM(0),_appliedAmountIrrigation(0), _primaryYieldN(0), _secondaryYieldN(0),
-			_sumTotalNUptake(0), _crossCropAdaptionFactor(crossCropAdaptionFactor),
-			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED) { }
+    Crop(CropId id, const std::string& name, const CropParameters* cps = NULL,
+         const OrganicMatterParameters* rps = NULL,
+         double crossCropAdaptionFactor = 1)
+      :
+      _id(id),
+      _name(name),
+      _cropParams(cps),
+      _perennialCropParams(NULL),
+      _residueParams(rps),
+      _primaryYield(0),
+      _secondaryYield(0),
+      _primaryYieldTM(0),
+      _secondaryYieldTM(0),
+      _appliedAmountIrrigation(0),
+      _primaryYieldN(0),
+      _secondaryYieldN(0),
+      _sumTotalNUptake(0),
+      _crossCropAdaptionFactor(crossCropAdaptionFactor),
+      _cropHeight(0.0),
+      _accumulatedETa(0.0),
+      eva2_typeUsage(NUTZUNG_UNDEFINED)
+    {}
 
-		Crop(CropId id, const std::string& name,
-				 const Tools::Date& seedDate, const Tools::Date& harvestDate,
-				 const CropParameters* cps = NULL, const OrganicMatterParameters* rps = NULL,
-				 double crossCropAdaptionFactor = 1) :
-			_id(id), _name(name), _seedDate(seedDate), _harvestDate(harvestDate),
-			_cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
-			_primaryYield(0), _secondaryYield(0),
-			_primaryYieldTM(0), _secondaryYieldTM(0), _primaryYieldN(0), _secondaryYieldN(0),
-			_sumTotalNUptake(0),
-			_crossCropAdaptionFactor(crossCropAdaptionFactor),
-			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED){ }
+    Crop(CropId id, const std::string& name,
+         const Tools::Date& seedDate, const Tools::Date& harvestDate,
+         const CropParameters* cps = NULL, const OrganicMatterParameters* rps = NULL,
+         double crossCropAdaptionFactor = 1) :
+      _id(id),
+      _name(name),
+      _seedDate(seedDate),
+      _harvestDate(harvestDate),
+      _cropParams(cps),
+      _perennialCropParams(NULL),
+      _residueParams(rps),
+      _primaryYield(0),
+      _secondaryYield(0),
+      _primaryYieldTM(0),
+      _secondaryYieldTM(0),
+      _appliedAmountIrrigation(0),
+      _primaryYieldN(0),
+      _secondaryYieldN(0),
+      _sumTotalNUptake(0),
+      _crossCropAdaptionFactor(crossCropAdaptionFactor),
+      _cropHeight(0.0),
+      _accumulatedETa(0.0),
+      eva2_typeUsage(NUTZUNG_UNDEFINED){ }
 
-		Crop(const Crop& new_crop)
-		{
-			_id = new_crop._id;
-			_name  = new_crop._name;
-			_seedDate = new_crop._seedDate;
-			_harvestDate = new_crop._harvestDate;
-			_cropParams = new_crop._cropParams;
-			_perennialCropParams = new_crop._perennialCropParams;
-			_residueParams = new_crop._residueParams;
-			_primaryYield = new_crop._primaryYield;
-			_secondaryYield = new_crop._secondaryYield;
-			_primaryYieldTM = new_crop._primaryYieldTM;
-			_secondaryYieldTM = new_crop._secondaryYieldTM;
-			_primaryYieldN = new_crop._primaryYieldN;
-			_secondaryYieldN = new_crop._secondaryYieldN;
-			_sumTotalNUptake = new_crop._sumTotalNUptake;
-			_appliedAmountIrrigation = new_crop._appliedAmountIrrigation;
-			_crossCropAdaptionFactor = new_crop._crossCropAdaptionFactor;
-			_cropHeight = new_crop._cropHeight;
-			eva2_typeUsage = new_crop.eva2_typeUsage;
-		}
+    Crop(const Crop& new_crop)
+    {
+      _id = new_crop._id;
+      _name  = new_crop._name;
+      _seedDate = new_crop._seedDate;
+      _harvestDate = new_crop._harvestDate;
+      _cropParams = new_crop._cropParams;
+      _perennialCropParams = new_crop._perennialCropParams;
+      _residueParams = new_crop._residueParams;
+      _primaryYield = new_crop._primaryYield;
+      _secondaryYield = new_crop._secondaryYield;
+      _primaryYieldTM = new_crop._primaryYieldTM;
+      _secondaryYieldTM = new_crop._secondaryYieldTM;
+      _primaryYieldN = new_crop._primaryYieldN;
+      _secondaryYieldN = new_crop._secondaryYieldN;
+      _sumTotalNUptake = new_crop._sumTotalNUptake;
+      _appliedAmountIrrigation = new_crop._appliedAmountIrrigation;
+      _crossCropAdaptionFactor = new_crop._crossCropAdaptionFactor;
+      _cropHeight = new_crop._cropHeight;
+      eva2_typeUsage = new_crop.eva2_typeUsage;
+    }
 
-		CropId id() const { return _id; }
+    CropId id() const { return _id; }
 
-		std::string name() const { return _name; }
+    std::string name() const { return _name; }
 
-		bool isValid() const { return _id > -1; }
+    bool isValid() const { return _id > -1; }
 
-		const CropParameters* cropParameters() const { return _cropParams; }
+    const CropParameters* cropParameters() const { return _cropParams; }
 
-		const CropParameters* perennialCropParameters() const { return _perennialCropParams; }
+    const CropParameters* perennialCropParameters() const { return _perennialCropParams; }
 
-		void setCropParameters(const CropParameters* cps) { _cropParams = cps; }
+    void setCropParameters(const CropParameters* cps) { _cropParams = cps; }
 
-		void setPerennialCropParameters(const CropParameters* cps) { _perennialCropParams = cps; }
+    void setPerennialCropParameters(const CropParameters* cps) { _perennialCropParams = cps; }
 
 		const OrganicMatterParameters* residueParameters() const
 		{
@@ -803,8 +842,6 @@ namespace Monica
 		}
 
 		void writeCropParameters(std::string path);
-
-		
 
 	private:
 		CropId _id;
@@ -939,7 +976,7 @@ namespace Monica
 		Tools::Date _date;
 	};
 
-	typedef boost::shared_ptr<WorkStep> WSPtr;
+  typedef std::shared_ptr<WorkStep> WSPtr;
 
 	//----------------------------------------------------------------------------
 
@@ -1381,7 +1418,7 @@ namespace Monica
 	};
 
 	typedef OrganicMatterParameters OMP;
-	typedef boost::shared_ptr<OMP> OMPPtr;
+  typedef std::shared_ptr<OMP> OMPPtr;
 
 	OrganicMatterParameters*
 	getOrganicFertiliserParametersFromMonicaDB(int organ_fert_id);

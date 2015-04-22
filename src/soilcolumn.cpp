@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include <algorithm>
+#include <assert.h>
 
 /**
  * @file soilcolumn.cpp
@@ -46,7 +47,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace Monica;
 using namespace std;
-using namespace boost;
 using namespace Soil;
 using namespace Tools;
 
@@ -200,7 +200,7 @@ _vs_SoilMoisture_pF(0),
 vs_SoilMoisture_m3(0.25), // QUESTION - Warum wird hier mit 0.25 initialisiert?
 vs_SoilTemperature(0)
 {
-	assert((_vs_SoilOrganicCarbon - (_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C)) < 0.00001);
+  assert((_vs_SoilOrganicCarbon - (_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C)) < 0.00001);
 
   vs_SoilMoisture_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
   vs_SoilMoistureOld_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
@@ -639,12 +639,6 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
         ([=](){ return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
                                                                  vf_CropNTarget30, vf_FertiliserMinApplication,
                                                                  vf_FertiliserMaxApplication, vf_TopDressingDelay); });
-    //    _delayedNMinApplications.push_back
-    //			(boost::lambda::bind(&SoilColumn::applyMineralFertiliserViaNMinMethod, this, fp,
-    //            vf_SamplingDepth, vf_CropNTarget,
-    //	  vf_CropNTarget30, vf_FertiliserMinApplication,
-    //	  vf_FertiliserMaxApplication, vf_TopDressingDelay))
-
 
     //cerr << "Soil too wet for fertilisation. "
     //  "Fertiliser event adjourned to next day." << endl;
@@ -911,7 +905,7 @@ void SoilColumn::applyIrrigation(double vi_IrrigationAmount,
  */
 void SoilColumn::applyTillage(double depth)
 {
-  int layer_index = getLayerNumberForDepth(depth)+1;
+  size_t layer_index = getLayerNumberForDepth(depth)+1;
 
   double soil_organic_carbon = 0.0;
   double soil_organic_matter = 0.0;
@@ -995,7 +989,7 @@ void SoilColumn::applyTillage(double depth)
     //cout << "Soil parameters before applying tillage for the first "<< layer_index+1 << " layers: " << endl;
 
     // add up pools for affected layer with same index
-    for (int j=0; j<layer_index; j++) {
+    for (size_t j=0; j<layer_index; j++) {
       //cout << "Layer " << j << endl << endl;
 
       SoilLayer &layer = soilLayer(j);
@@ -1064,8 +1058,7 @@ void SoilColumn::applyTillage(double depth)
  * @param depth Depth in meters
  * @return Index of layer
  */
-int
-SoilColumn::getLayerNumberForDepth(double depth)
+size_t SoilColumn::getLayerNumberForDepth(double depth)
 {
   int layer=0;
   int size= vs_SoilLayers.size();

@@ -29,14 +29,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <mutex>
 
 #include "tools/debug.h"
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
-
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
 
 #ifdef MONICA_GUI
 #include "../gui/workerconfiguration.h"
@@ -52,8 +50,6 @@ using namespace Soil;
 
 namespace
 {
-	struct L : public Loki::ObjectLevelLockable<L> {};
-
 	//! simple functor for use in fertiliser trigger
   struct AddFertiliserAmountsCallback
   {
