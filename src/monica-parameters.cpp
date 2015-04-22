@@ -577,7 +577,8 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
-				_cropResult->pvResults[OxygenStress] = _crop->getAnthesisDay();
+				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
+				_cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
 
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);

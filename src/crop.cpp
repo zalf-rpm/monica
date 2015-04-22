@@ -465,11 +465,11 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 				vc_CropNRedux);
 
   if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
-	  vc_AnthesisDay = vs_JulianDay;
+	  vc_AnthesisDay = int(vs_JulianDay);    
   }
 
   if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
-	  vc_MaturityDay = vs_JulianDay;
+	  vc_MaturityDay = int(vs_JulianDay);
   }
 
   vc_DaylengthFactor =
@@ -4011,6 +4011,7 @@ bool CropGrowth::isMaturityDay(int old_dev_stage, int new_dev_stage)
 int 
 CropGrowth::getAnthesisDay() const
 {
+  //cout << "Getter anthesis " << vc_AnthesisDay << endl;
 	return vc_AnthesisDay;
 }
 
@@ -4021,5 +4022,6 @@ CropGrowth::getAnthesisDay() const
 int
 CropGrowth::getMaturityDay() const
 {
+  //cout << "Getter maturity " << vc_MaturityDay << endl;
 	return vc_MaturityDay;
 }
