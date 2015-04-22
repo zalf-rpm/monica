@@ -427,9 +427,9 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
     if (!cropId || cropId < 0) {
       ok = false;
       std::cerr << "Invalid crop id:" << name << genType << std::endl;
+			exit(1);
     }
-
-
+		
     Db::DB *con = Db::newConnection("monica");
     if (con) {
       bool ok = con->select(

@@ -185,10 +185,10 @@ Result::getResultsById(int id)
   // test if crop results are requested
   if (id == primaryYield || id == secondaryYield || id == sumIrrigation ||
       id == sumFertiliser || id == biomassNContent || id == sumTotalNUptake ||
-      id == cropHeight || id == cropname || id == sumETaPerCrop ||
+      id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
-      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass
-      )
+      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass || 
+      id == anthesisDay || id == maturityDay )
   {
     vector<double> result_vector;
     int size = pvrs.size();
@@ -209,11 +209,23 @@ const vector<ResultId>& Monica::cropResultIds()
   static ResultId ids[] =
   {
     primaryYield, secondaryYield, sumFertiliser,
-    sumIrrigation, sumMineralisation
+    sumIrrigation, anthesisDay, maturityDay//, sumMineralisation
   };
-  static vector<ResultId> v(ids, ids + 5);
+  static vector<ResultId> v(ids, ids + 6);//5);
 
   return v;
+}
+
+pair<string, string> Monica::nameAndUnitForResultId(ResultId rid)
+{
+  switch(rid)
+  {
+  case primaryYield: return make_pair("Primär-Ertrag", "dt/ha");
+  case secondaryYield: return make_pair("Sekundär-Ertrag", "dt/ha");
+  case sumFertiliser: return make_pair("N-Düngung", "kg/ha");
+  case sumIrrigation: return make_pair("Beregnungswasser", "mm/ha");
+  }
+  return make_pair("", "");
 }
 
 //------------------------------------------------------------------------------
@@ -230,7 +242,6 @@ const vector<ResultId>& Monica::monthlyResultIds()
 
   return v;
 }
-
 
 
 //------------------------------------------------------------------------------
@@ -331,6 +342,10 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Nebenertrag", "dt/ha", "secYield");
   case aboveGroundBiomass:
     return ResultIdInfo("Oberirdische Biomasse", "dt/ha", "AbBiom");
+  case anthesisDay:
+	  return ResultIdInfo("Tag der Blüte", "Jul. day", "anthesisDay");
+  case maturityDay:
+	  return ResultIdInfo("Tag der Reife", "Jul. day", "maturityDay");
   case sumFertiliser:
     return ResultIdInfo("N", "kg/ha", "sumFert");
   case sumIrrigation:
@@ -417,6 +432,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Gesamt-akkumulierte N-Auswaschung im Jahr", "kg N/ha", "Yearly_monthLeachN");
   case sumETaPerCrop:
     return ResultIdInfo("Evapotranspiration pro Vegetationszeit der Pflanze", "mm", "ETa_crop");
+  case sumTraPerCrop:
+	  return ResultIdInfo("Transpiration pro Vegetationszeit der Pflanze", "mm", "Tra_crop");
   case cropname:
     return ResultIdInfo("Pflanzenname", "", "cropname");
   case primaryYieldTM:
@@ -536,6 +553,9 @@ void Harvest::apply(MonicaModel* model)
 					_crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
 					_crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 					_crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
+					_crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
+					_crop->setAnthesisDay(model->cropGrowth()->getAnthesisDay());
+					_crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
 				}
 
 				//store results for this crop
@@ -551,11 +571,13 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
 				_cropResult->pvResults[cropHeight] = _crop->cropHeight();
 				_cropResult->pvResults[sumETaPerCrop] = _crop->get_AccumulatedETa();
+				_cropResult->pvResults[sumTraPerCrop] = _crop->get_AccumulatedTranspiration();
 				_cropResult->pvResults[cropname] = _crop->id();
 				_cropResult->pvResults[NStress] = model->getAccumulatedNStress();
 				_cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
+				_cropResult->pvResults[OxygenStress] = _crop->getAnthesisDay();
 
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);
@@ -651,7 +673,7 @@ void Cutting::apply(MonicaModel* model)
 
     _crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
     _crop->setCropHeight(model->cropGrowth()->get_CropHeight());
-
+	
 
     if (model->cropGrowth()) {
         model->cropGrowth()->applyCutting();
@@ -2293,8 +2315,14 @@ const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
   static L lockable;
 
   typedef map<int, SoilPMsPtr> Map;
+  typedef map<string, Map> Map2;
   static bool initialized = false;
-  static Map spss;
+  static Map2 spss2;
+
+  //yet unloaded schema
+  if(initialized && spss2.find(abstractDbSchema) == spss2.end())
+    initialized = false;
+
   if(!initialized)
   {
     L::Lock lock(lockable);
@@ -2324,6 +2352,8 @@ const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
       if(loadSingleParameter)
         s2 << "where id = " << profileId << " ";
       s2 << "order by id, layer_depth_cm";
+
+      Map& spss = spss2[abstractDbSchema];
 
       con->select(s2.str().c_str());
       int currenth = 0;
@@ -2385,8 +2415,15 @@ const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
   }
 
   static SoilPMs nothing;
-  Map::const_iterator ci = spss.find(profileId);
-  return ci != spss.end() ? ci->second.get() : &nothing;
+  auto ci2 = spss2.find(abstractDbSchema);
+  if(ci2 != spss2.end())
+  {
+    Map& spss = ci2->second;
+    Map::const_iterator ci = spss.find(profileId);
+    return ci != spss.end() ? ci->second.get() : &nothing;
+  }
+  else
+    &nothing;
 }
 
 
@@ -2945,6 +2982,7 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
       {
         //create organic fertiliser application
         OrganicMatterParameters* omp = getOrganicFertiliserParametersFromMonicaDB(fertTypeAndId.second);
+		//omp->vo_NConcentration = 100.0;
         it->addApplication(OrganicFertiliserApplication(fdate, omp, n, incorp));
         break;
       }
