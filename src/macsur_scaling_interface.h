@@ -22,19 +22,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #ifndef MACSUR_SCALING_INTERFFACE_H_
 #define MACSUR_SCALING_INTERFFACE_H_
-
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
 #include "monica.h"
-#include "debug.h"
+#include "tools/debug.h"
+#include "soil/soil.h"
 
 namespace Monica 
 {
-
 
 class MacsurScalingConfiguration
 {
@@ -101,8 +99,8 @@ class MacsurScalingConfiguration
 };
 
 void runMacsurScalingSimulation(const MacsurScalingConfiguration *simulation_config=0);
-const SoilPMs* soilParametersFromFile(const std::string pathToFile, const GeneralParameters& gps = GeneralParameters(), double soil_ph=-1.0);
-const SoilPMs* phase2SoilParametersFromFile(const std::string pathToFile, const GeneralParameters& gps, CentralParameterProvider &cpp, double soil_ph=-1.0, std::string project_id="");
+const Soil::SoilPMs* soilParametersFromFile(const std::string pathToFile, const GeneralParameters& gps = GeneralParameters(), double soil_ph=-1.0);
+const Soil::SoilPMs* phase2SoilParametersFromFile(const std::string pathToFile, const GeneralParameters& gps, CentralParameterProvider &cpp, double soil_ph=-1.0, std::string project_id="");
 Climate::DataAccessor climateDataFromMacsurFiles(const std::string pathToFile, const CentralParameterProvider& cpp, double latitude, const MacsurScalingConfiguration *simulation_config);
 
 }

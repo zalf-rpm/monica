@@ -29,33 +29,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <utility>
 #include <cassert>
-
-#include "boost/foreach.hpp"
+#include <mutex>
 
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
+#include "tools/debug.h"
+#include "soil/soil.h"
+#include "soil/conversion.h"
 
 #include "mpmas.h"
-#include "debug.h"
 #include "monica-parameters.h"
-#include "conversion.h"
 #include "simulation.h"
-
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
 
 using namespace Db;
 using namespace std;
 using namespace Mpmas;
 using namespace Monica;
 using namespace Tools;
-
-namespace
-{
-	struct L: public Loki::ObjectLevelLockable<L> {};
-}
+using namespace Soil;
 
 void mpmasScope::exitfun()
 {

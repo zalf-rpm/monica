@@ -40,8 +40,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/algorithms.h"
 #include "tools/read-ini.h"
 
-
 #include "configuration.h"
+
+using namespace Monica;
+using namespace Tools;
+using namespace Soil;
 
 #ifdef __unix__
   #include <sys/io.h>
@@ -49,19 +52,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #include <io.h>
 #endif
 
-#include <boost/foreach.hpp>
-#include <boost/format.hpp>
-
 /* write cson to string */
 extern "C" {
-  static int cson_data_dest_string(void * state, void const * src, unsigned int n )
+  static int cson_data_dest_string(void * state, void const * src, unsigned int n)
   {
-    if( ! state ) return cson_rc.ArgError;
-    if( !src || !n ) return 0;
+    if (!state) return cson_rc.ArgError;
+    if (!src || !n) return 0;
     else
     {
       std::string *str = static_cast<std::string*>(state);
-      str->append((char*) src, n);
+      str->append((char*)src, n);
       return 0;
     }
   }
@@ -70,10 +70,6 @@ extern "C" {
 const cson_value* Monica::Configuration::metaSim = NULL;
 const cson_value* Monica::Configuration::metaSite = NULL;
 const cson_value* Monica::Configuration::metaCrop = NULL;
-
-using namespace Monica;
-using namespace Tools;
-using namespace Soil;
 
 Configuration::Configuration(const std::string& outPath, const std::string& dirNameMet, const std::string& preMetFiles, const std::string& dbIniName)
   : _sim(NULL), _site(NULL), _crop(NULL), _outPath(outPath), _dirNameMet(dirNameMet), _preMetFiles(preMetFiles)
@@ -374,12 +370,12 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
 		layer.vs_SoilSandContent = getDbl(horizonObj, "sand", layer.vs_SoilSandContent);
 		layer.vs_SoilClayContent = getDbl(horizonObj, "clay", layer.vs_SoilClayContent);
     layer.vs_SoilStoneContent = getDbl(horizonObj, "sceleton"); //TODO: / 100 ?
-    layer.vs_Lambda = Tools::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
+    layer.vs_Lambda = Soil::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
     // TODO: Wo wird textureClass verwendet?
     layer.vs_SoilTexture = getStr(horizonObj, "textureClass");
 		layer.vs_SoilpH = getDbl(horizonObj, "pH", layer.vs_SoilpH);
     /* TODO: ? lambda = drainage_coeff ? */
-    layer.vs_Lambda = Tools::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
+    layer.vs_Lambda = Soil::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
     layer.vs_FieldCapacity = getDbl(horizonObj, "fieldCapacity");
     /* TODO: name? */
     layer.vs_Saturation = getDbl(horizonObj, "poreVolume");
@@ -1069,6 +1065,6 @@ bool Configuration::isNull(const cson_object* obj, const std::string& path)
 
 void Configuration::printCsonError(int rc, const cson_parse_info &info)
 {
-  std::cerr << boost::format("JSON parse error, code=%1% (%2%), at line %3%, column %4%.") %
-          info.errorCode % cson_rc_string(rc) % info.line % info.col << std::endl;
+  std::cerr << "JSON parse error, code=" << info.errorCode
+    << " (" << cson_rc_string(rc) << "), at line " << info.line << ", column " << info.col << "." << std::endl;
 }

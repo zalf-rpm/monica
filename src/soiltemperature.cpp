@@ -268,7 +268,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 		 + (vt_VolumeMatrix[0] - vt_VolumeMatrixOld[0]) / soilColumn[0].vs_LayerThickness)
       * vt_SoilTemperature[0] + vt_HeatFlow;
 
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     vt_Solution[i_Layer] =   (vt_VolumeMatrixOld[i_Layer]
 			+ (vt_VolumeMatrix[i_Layer] - vt_VolumeMatrixOld[i_Layer])
@@ -288,7 +288,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   // Determination of the lower matrix triangle L and the diagonal matrix D
   vt_MatrixDiagonal[0] = vt_MatrixPrimaryDiagonal[0];
 
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     vt_MatrixLowerTriangle[i_Layer] = vt_MatrixSecundaryDiagonal[i_Layer] / vt_MatrixDiagonal[i_Layer - 1];
     vt_MatrixDiagonal[i_Layer] =   vt_MatrixPrimaryDiagonal[i_Layer]
@@ -296,7 +296,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   }
 
   // Solution of LY=Z
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     vt_Solution[i_Layer] =   vt_Solution[i_Layer]
 		         - (vt_MatrixLowerTriangle[i_Layer] * vt_Solution[i_Layer - 1]);
@@ -316,11 +316,11 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   // end subroutine CholeskyMethod
 
   // Internal Subroutine Rearrangement
-  for(int i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
     vt_SoilTemperature[i_Layer] = vt_Solution[i_Layer];
   }
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
 
     vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
     soilColumn[i_Layer].set_Vs_SoilTemperature(vt_SoilTemperature[i_Layer]);
@@ -427,7 +427,7 @@ SoilTemperature::get_AvgTopSoilTemperature(double sumLT) const
   double tempSum = 0;
   int count = 0;
 
-  for (int i = 0; i < vs_NumberOfLayers; i++) {
+  for (size_t i = 0; i < vs_NumberOfLayers; i++) {
     count++;
     tempSum += soilColumn[i].get_Vs_SoilTemperature();
     lsum += soilColumn[i].vs_LayerThickness;

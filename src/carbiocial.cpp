@@ -29,8 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <utility>
 #include <cassert>
-
-#include "boost/foreach.hpp"
+#include <mutex>
 
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
@@ -43,20 +42,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soil/conversion.h"
 #include "simulation.h"
 
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
-
 using namespace Db;
 using namespace std;
 using namespace Carbiocial;
 using namespace Monica;
 using namespace Tools;
 using namespace Soil;
-
-namespace
-{
-	struct L: public Loki::ObjectLevelLockable<L> {};
-}
 
 std::pair<const SoilPMs *, int>
 Carbiocial::carbiocialSoilParameters(int profileId, int layerThicknessCm,
@@ -65,7 +56,7 @@ int maxDepthCm)
 	//cout << "getting soilparameters for STR: " << str << endl;
 	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
 
-	static L lockable;
+	static mutex lockable;
 
 	typedef int ProfileId;
 	typedef int SoilClassId;
@@ -78,7 +69,7 @@ int maxDepthCm)
 
 	if (!initialized)
 	{
-		L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
 		if (!initialized)
 		{

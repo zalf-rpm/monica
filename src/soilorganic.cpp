@@ -107,7 +107,7 @@ SoilOrganic::SoilOrganic(SoilColumn& sc,
   double po_PartSOM_Fast_to_SOM_Slow = centralParameterProvider.userSoilOrganicParameters.po_PartSOM_Fast_to_SOM_Slow;
 
   //Conversion of soil organic carbon weight fraction to volume unit
-  for(int i_Layer = 0; i_Layer < vs_NumberOfOrganicLayers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfOrganicLayers; i_Layer++) {
 
     vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity(); //[kg C kg-1] * [kg m-3] --> [kg C m-3]
 
@@ -741,7 +741,7 @@ void SoilOrganic::fo_MIT() {
 
   // Calculation of decay rate coefficients
 
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
 
     double tod = fo_TempOnDecompostion(soilColumn[i_Layer].get_Vs_SoilTemperature());
     double mod = fo_MoistOnDecompostion(soilColumn[i_Layer].vs_SoilMoisture_pF());
@@ -774,7 +774,7 @@ void SoilOrganic::fo_MIT() {
   } // for
 
   // Calculation of pool changes by decomposition
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
 
     for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
       // Eq.6-5 and 6-6 in the DAISY manual
@@ -857,7 +857,7 @@ void SoilOrganic::fo_MIT() {
   vo_DecomposerRespiration = 0.0;
 
   // Calculation of CO2 evolution
-	for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
 		vo_SMB_SlowCO2EvolutionRate[i_Layer] = ((1.0 - po_SOM_SlowUtilizationEfficiency)
 			   * vo_SOM_SlowDecRate[i_Layer])
 			   + ((1.0 - po_SOM_FastUtilizationEfficiency) * (1.0 - po_PartSOM_Fast_to_SOM_Slow)
@@ -882,7 +882,7 @@ void SoilOrganic::fo_MIT() {
   vo_CN_Ratio_SOM_Slow = siteParams.vs_Soil_CN_Ratio;
   vo_CN_Ratio_SOM_Fast = siteParams.vs_Soil_CN_Ratio;
 
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
 
 		vo_NBalance[i_Layer] = -(vo_SMB_SlowDelta[i_Layer] / po_CN_Ratio_SMB)
 				- (vo_SMB_FastDelta[i_Layer] / po_CN_Ratio_SMB)
@@ -907,7 +907,7 @@ void SoilOrganic::fo_MIT() {
 
   vo_NetNMineralisation = 0.0;
 
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
 
     if (vo_NBalance[i_Layer] < 0.0) {
 

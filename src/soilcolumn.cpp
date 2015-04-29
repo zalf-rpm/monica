@@ -596,7 +596,7 @@ void SoilColumn::set_vs_NumberOfOrganicLayers() {
 	//std::cout << "--------- set_vs_NumberOfOrganicLayers -----------" << std::endl;
   double lsum = 0;
   int count = 0;
-  for(int i = 0; i < vs_NumberOfLayers(); i++) {
+  for(size_t i = 0; i < vs_NumberOfLayers(); i++) {
 		//std::cout << vs_SoilLayers[i].vs_LayerThickness << std::endl;
     count++;
     lsum += vs_SoilLayers[i].vs_LayerThickness;
@@ -795,7 +795,7 @@ void SoilColumn::deleteAOMPool() {
     double vo_SumAOM_Slow = 0.0;
     double vo_SumAOM_Fast = 0.0;
 
-    for(int i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
+    for (size_t i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
 
       vo_SumAOM_Slow += soilLayer(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Slow;
       vo_SumAOM_Fast += soilLayer(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Fast;
@@ -805,7 +805,7 @@ void SoilColumn::deleteAOMPool() {
     //cout << "Pool " << i_AOMPool << " -> Slow: " << vo_SumAOM_Slow << "; Fast: " << vo_SumAOM_Fast << endl;
 
     if ((vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001){
-      for(int i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
+      for (size_t i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
         vector<AOM_Properties>::iterator it_AOMPool = soilLayer(i_Layer).vo_AOM_Pool.begin();
         it_AOMPool += i_AOMPool;
 
@@ -922,7 +922,7 @@ void SoilColumn::applyTillage(double depth)
   double no3 = 0.0;
 
   // add up all parameters that are affected by tillage
-  for (int i=0; i<layer_index; i++) {
+  for (size_t i = 0; i<layer_index; i++) {
     soil_organic_carbon += this->soilLayer(i).vs_SoilOrganicCarbon();
     soil_organic_matter += this->soilLayer(i).vs_SoilOrganicMatter();
     soil_temperature += this->soilLayer(i).get_Vs_SoilTemperature();
@@ -954,7 +954,7 @@ void SoilColumn::applyTillage(double depth)
   no3 = double(no3/double(layer_index));
 
   // use calculated mean values for all affected layers
-  for (int i=0; i < layer_index; i++) {
+  for (size_t i = 0; i < layer_index; i++) {
 		//assert((soil_organic_carbon - (soil_organic_matter * OrganicConstants::po_SOM_to_C)) < 0.00001);
     this->soilLayer(i).set_SoilOrganicCarbon(soil_organic_carbon);
     this->soilLayer(i).set_SoilOrganicMatter(soil_organic_matter);
@@ -1018,7 +1018,7 @@ void SoilColumn::applyTillage(double depth)
     //cout << "Soil parameters after applying tillage for the first "<< layer_index+1 << " layers: " << endl;
 
     // rewrite parameters of aom pool with mean values
-    for (int j=0; j<layer_index; j++) {
+    for (size_t j = 0; j<layer_index; j++) {
       SoilLayer &layer = soilLayer(j);
       //cout << "Layer " << j << endl << endl;
       unsigned int pool_index = 0;

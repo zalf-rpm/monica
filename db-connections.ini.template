@@ -32,6 +32,8 @@ landcare-dss = db.landcare-dss.sqlite
 eva2 = db.zalf-mysql
 write.eom = db.zalf-mysql.write
 
+ka5-soil-data = ka5-soil-data.sqlite
+
 ; db settings for climate data landcare server in Dresden
 [db.climate-data-server]
 host = 
@@ -79,3 +81,5 @@ filename = ../eom/eom.sqlite
 [db.landcare-dss.sqlite]
 filename = sqlite-db/landcare-dss.sqlite
 
+[ka5-soil-data.sqlite]
+filename = sqlite-db/ka5-soil-data.sqlite

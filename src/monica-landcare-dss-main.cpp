@@ -30,16 +30,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <algorithm>
 
-#include "boost/foreach.hpp"
-
-#include "tools/use-stl-algo-boost-lambda.h"
 #include "db/db.h"
 #include "db/abstract-db-connections.h"
 #include "tools/date.h"
 #include "tools/algorithms.h"
 #include "tools/helper.h"
+#include "tools/debug.h"
+#include "soil/soil.h"
 
-#include "debug.h"
 #include "monica.h"
 #include "monica-eom.h"
 #include "monica-parameters.h"
@@ -49,6 +47,7 @@ using namespace std;
 using namespace Db;
 using namespace Tools;
 using namespace Monica;
+using namespace Soil;
 
 #ifdef RUN_LANDCARE_DSS
 
@@ -159,7 +158,7 @@ void runLandcareDSSMonica(E e)
 
   typedef map<string, DataAccessor> DAS;
   DAS das;
-  BOOST_FOREACH(ClimateRealization* r, scen->realizations())
+  for(ClimateRealization* r : scen->realizations())
   {
     if(e.realization == "all" ||
        r->name() == e.realization ||
@@ -170,7 +169,7 @@ void runLandcareDSSMonica(E e)
 
 	//the betrieb to use
   Betrieb* farm = NULL;
-  BOOST_FOREACH(Betrieb* f, Betrieb::all())
+  for(Betrieb* f : Betrieb::all())
   {
 		//if(f->name.find(e.farmName) == 0)
 		if(f->name == e.farmName)
@@ -188,7 +187,7 @@ void runLandcareDSSMonica(E e)
   }
 
   Fruchtfolge* cr = NULL;
-  BOOST_FOREACH(Fruchtfolge* ff, farm->ffs)
+  for(Fruchtfolge* ff : farm->ffs)
   {
 		//if(ff->name.find(e.cropRotationName) == 0)
 		if(ff->name == e.cropRotationName)
@@ -266,7 +265,7 @@ void runLandcareDSSMonica(E e)
   FertiliserApplicationData organicFertilisingData =
     extractFertiliserData(cr, organicFertiliserIds());
 
-  BOOST_FOREACH(Produktionsverfahren* pv, cr->pvs)
+  for(Produktionsverfahren* pv : cr->pvs)
   {
     PVPId pvpId = pv->base->id;
     const EomPVPInfo& i = eomPVPId2cropId(pvpId);
@@ -279,7 +278,7 @@ void runLandcareDSSMonica(E e)
     ProductionProcess pp(crop->name(), crop);
     if(!env.useNMinMineralFertilisingMethod)
     {
-      BOOST_FOREACH(FertiliserData mfd, mineralFertilisingData[pv])
+      for(FertiliserData mfd : mineralFertilisingData[pv])
       {
         Fertilizer* f = mfd.fertiliser;
         MineralFertiliserParameters mfps(f->name, f->amidn / f->n,
@@ -288,7 +287,7 @@ void runLandcareDSSMonica(E e)
                           (mfd.at, mfps, mfd.amountN / mfd.fraction));
       }
 
-      BOOST_FOREACH(FertiliserData ofd, organicFertilisingData[pv])
+      for(FertiliserData ofd : organicFertilisingData[pv])
       {
         Fertilizer* f = ofd.fertiliser;
 
@@ -323,7 +322,7 @@ void runLandcareDSSMonica(E e)
   GeneralResults avgGeneralResults;
 
   //initialize with current env
-  BOOST_FOREACH(DAS::value_type p, das)
+  for(DAS::value_type p : das)
   {
     string realizationName = p.first;
     DataAccessor da = p.second;
@@ -349,12 +348,12 @@ void runLandcareDSSMonica(E e)
       int year = start.year() + 1;
       cout << "noys: " << res.pvrs.size() << endl;
       //show crop results
-      BOOST_FOREACH(Monica::PVResult pvr, res.pvrs)
+      for(Monica::PVResult pvr : res.pvrs)
       {
         cout << "year: " << year++ << " cropId: " << pvr.id << endl;
         cout << "---------------------------" << endl;
         typedef map<Monica::ResultId, double> M;
-        BOOST_FOREACH(M::value_type p, pvr.pvResults)
+        for(M::value_type p : pvr.pvResults)
         {
           Monica::ResultId rid = p.first;
           ResultIdInfo info = resultIdInfo(rid);
@@ -371,7 +370,7 @@ void runLandcareDSSMonica(E e)
         cout << "general results (monthly and yearly values)" << endl;
         //show general results
         cout << "---------------------------" << endl;
-        BOOST_FOREACH(Monica::Result::RId2Vector::value_type p, res.generalResults)
+        for(Monica::Result::RId2Vector::value_type p : res.generalResults)
         {
           Monica::ResultId rid = p.first;
           ResultIdInfo info = resultIdInfo(rid);
@@ -405,17 +404,17 @@ void runLandcareDSSMonica(E e)
 
   cout << "crop results:" << endl
       << "---------------" << endl;
-  BOOST_FOREACH(YearlyCropResults::value_type p, avgYearlyCropResults)
+  for(YearlyCropResults::value_type p : avgYearlyCropResults)
   {
     Year year = p.first;
     cout << "year: " << year << endl;
 
-    BOOST_FOREACH(CropResults::value_type p2, p.second)
+    for(CropResults::value_type p2 : p.second)
     {
       CropId cropId = p2.first;
       cout << "cropId: " << cropId << endl;
 
-      BOOST_FOREACH(CR::value_type p3, p2.second)
+      for(CR::value_type p3 : p2.second)
       {
         Monica::ResultId rid = p3.first;
         pair<double, double> p4 = standardDeviationAndAvg(p3.second);
@@ -433,12 +432,12 @@ void runLandcareDSSMonica(E e)
   {
     cout << "general results:" << endl
         << "---------------" << endl;
-    BOOST_FOREACH(YearlyGeneralResults::value_type p, avgYearlyGeneralResults)
+    for(YearlyGeneralResults::value_type p : avgYearlyGeneralResults)
     {
       Year year = p.first;
       cout << "year: " << year << endl;
 
-      BOOST_FOREACH(GeneralResults::value_type p2, p.second)
+      for(GeneralResults::value_type p2 : p.second)
       {
         Monica::ResultId rid = p2.first;
         pair<double, double> p3 = standardDeviationAndAvg(p2.second);
@@ -460,12 +459,12 @@ void runLandcareDSSMonica(E e)
   cout << "crop results:" << endl
       << "---------------" << endl;
 
-  BOOST_FOREACH(CropResults::value_type p, avgCropResults)
+  for(CropResults::value_type p : avgCropResults)
   {
     CropId cropId = p.first;
     cout << "cropId: " << cropId << endl;
 
-    BOOST_FOREACH(CR::value_type p2, p.second)
+    for(CR::value_type p2 : p.second)
     {
       Monica::ResultId rid = p2.first;
       pair<double, double> p3 = standardDeviationAndAvg(p2.second);
@@ -482,7 +481,7 @@ void runLandcareDSSMonica(E e)
     cout << "general results:" << endl
         << "---------------" << endl;
 
-    BOOST_FOREACH(GeneralResults::value_type p, avgGeneralResults)
+    for(GeneralResults::value_type p : avgGeneralResults)
     {
       Monica::ResultId rid = p.first;
       pair<double, double> p2 = standardDeviationAndAvg(p.second);

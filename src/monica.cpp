@@ -607,7 +607,7 @@ double MonicaModel::
 }
 
 void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
-          double /*sulfateConcentration*/)
+                                  double /*sulfateConcentration*/)
 {
   //if the production process has still some defined manual irrigation dates
   if(!_env.useAutomaticIrrigation)

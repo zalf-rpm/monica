@@ -10,7 +10,7 @@ ARCH = x64
 
 message("monica: building code for " $$ARCH " architecture")
 
-unix:QMAKE_CXXFLAGS += -std=c++0x
+unix:QMAKE_CXXFLAGS += -std=c++11
 
 TEMPLATE = app
 DESTDIR = .
@@ -46,8 +46,6 @@ HEADERS += src/monica-parameters.h
 HEADERS += src/crop.h
 HEADERS += src/monica-eom.h
 HEADERS += src/simulation.h
-HEADERS += src/debug.h
-HEADERS += src/conversion.h
 
 #HEADERS += src/cc_germany_methods.h
 #HEADERS += src/gis_simulation_methods.h
@@ -65,8 +63,6 @@ SOURCES += src/monica-parameters.cpp
 SOURCES += src/crop.cpp
 SOURCES += src/monica-eom.cpp
 SOURCES += src/simulation.cpp
-SOURCES += src/debug.cpp
-SOURCES += src/conversion.cpp
 
 #SOURCES += src/eva_methods.cpp
 #SOURCES += src/cc_germany_methods.cpp
@@ -95,24 +91,32 @@ HEADERS += $${UTIL_DIR}/tools/date.h
 HEADERS += $${UTIL_DIR}/tools/read-ini.h
 HEADERS += $${UTIL_DIR}/tools/datastructures.h
 HEADERS += $${UTIL_DIR}/tools/helper.h
-HEADERS += $${UTIL_DIR}/tools/use-stl-algo-boost-lambda.h
-HEADERS += $${UTIL_DIR}/tools/stl-algo-boost-lambda.h
+HEADERS += $${UTIL_DIR}/tools/debug.h
 
 DSS|CCG|GIS:HEADERS += $${UTIL_DIR}/tools/coord-trans.h
 
 SOURCES += $${UTIL_DIR}/tools/algorithms.cpp
 SOURCES += $${UTIL_DIR}/tools/date.cpp
 SOURCES += $${UTIL_DIR}/tools/read-ini.cpp
+SOURCES += $${UTIL_DIR}/tools/debug.cpp
 
 DSS|CCG|GIS:SOURCES += $${UTIL_DIR}/tools/coord-trans.cpp
+
+
+# soil library code
+HEADERS += $${UTIL_DIR}/soil/constants.h
+HEADERS += $${UTIL_DIR}/soil/conversion.h
+HEADERS += $${UTIL_DIR}/soil/soil.h
+
+SOURCES += $${UTIL_DIR}/soil/constants.cpp
+SOURCES += $${UTIL_DIR}/soil/conversion.cpp
+SOURCES += $${UTIL_DIR}/soil/soil.cpp
+
 
 #includes
 #-------------------------------------------------------------
 
-INCLUDEPATH += \
-../boost_1_55_0 \
-../util \
-../loki-lib/include
+INCLUDEPATH += ../util 
 
 #libs
 #------------------------------------------------------------

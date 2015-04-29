@@ -31,11 +31,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cson/cson_amalgamation_core.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
+#include "soil/soil.h"
 
 namespace Monica
 {
 class Result;
-class SoilParameters;
 class ProductionProcess;
 class CentralParameterProvider;
 
@@ -100,7 +100,7 @@ class Configuration
     bool isValidated();
 
     /* create layers from horizons */
-    bool createLayers(std::vector<SoilParameters> &layers, cson_array* horizonsArr, double layerThicknessCm, int maxNoOfLayers);
+    bool createLayers(std::vector<Soil::SoilParameters> &layers, cson_array* horizonsArr, double layerThicknessCm, int maxNoOfLayers);
 
     /* create production processes */
     bool createProcesses(std::vector<ProductionProcess> &pps, cson_array* cropsArr);

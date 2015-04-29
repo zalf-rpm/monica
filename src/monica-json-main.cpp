@@ -25,11 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 #include <string>
-//#include <boost/filesystem/operations.hpp>
 
 #include "db/abstract-db-connections.h"
 
-#include "debug.h"
+#include "tools/debug.h"
 #include "configuration.h"
 
 #ifdef MONICA_GUI
@@ -161,7 +160,7 @@ int main(int argc, char** argv)
   // }
   // cson_value_free(metaSimVal);
   // cson_value_free(metaSimVal);
-  Monica::activateDebug = false;
+  Tools::activateDebug = false;
 
 #ifdef MONICA_GUI
   /* MONICA_GUI part */
@@ -253,8 +252,8 @@ int main(int argc, char** argv)
       }
     }
     else if( 0 == strcmp("debug",arg) ) {
-      Monica::activateDebug = true;
-      std::cout << "Monica::activateDebug: " << Monica::activateDebug << std::endl;
+      Tools::activateDebug = true;
+      std::cout << "Monica::activateDebug: " << Tools::activateDebug << std::endl;
       continue;
     }
     else if( (0 == strcmp("-?",arg)) || (0 == strcmp("--help",arg) ) ) {
@@ -338,7 +337,7 @@ int main(int argc, char** argv)
   
   delete cfg;
 
-  Monica::debug() << "sizeGeneralResults: " << res.sizeGeneralResults() << std::endl;
+  Tools::debug() << "sizeGeneralResults: " << res.sizeGeneralResults() << std::endl;
 
   if (res.sizeGeneralResults() == 0)
     return freeMetaCsonAndReturn(1);

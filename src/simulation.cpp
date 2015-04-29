@@ -47,7 +47,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "grid/grid.h"
 #endif
 
-
 #include <fstream>
 #include <sys/stat.h>
 
@@ -57,12 +56,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #include <io.h>
 #endif
 
-#include <boost/foreach.hpp>
-
 using namespace Monica;
 using namespace std;
 using namespace Tools;
-
+using namespace Soil;
 
 #ifdef RUN_EVA
 
@@ -258,7 +255,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
           int years_diff = end_year - current_year;
           //vector<ProductionProcess>::iterator it = ff_orig.begin();
           int ff_index = 0;
-          BOOST_FOREACH(ProductionProcess& pp, ff_orig){
+          for(ProductionProcess& pp : ff_orig){
             //for (; it!=ff_orig.end(); it++) {
             cout << "pp.start " << pp.start().year() << endl;
             cout << "pp.start().year()-years_diff: " << pp.start().year()-years_diff << endl;
@@ -325,7 +322,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   ofstream ff_file;
   ff_file.open((ff_filestream.str()).c_str());
   if (ff_file.fail()) debug() << "Error while opening output file \"" << ff_filestream.str().c_str() << "\"" << endl;
-  BOOST_FOREACH(ProductionProcess& pp, ff) {
+  for(ProductionProcess& pp : ff) {
     ff_file << pp.toString().c_str() << endl << endl;
   }
   ff_file.close();
@@ -380,10 +377,9 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
  *
  * @param output_path Path to input and output files
  */
-const Monica::Result
-Monica::runWithHermesData(const std::string output_path)
+const Monica::Result Monica::runWithHermesData(const std::string output_path)
 {
-  Monica::activateDebug = true;
+  Tools::activateDebug = true;
 
   debug() << "Running hermes with configuration information from \"" << output_path.c_str() << "\"" << endl;
 
@@ -396,8 +392,7 @@ Monica::runWithHermesData(const std::string output_path)
 }
 
 
-Monica::HermesSimulationConfiguration *
-Monica::getHermesConfigFromIni(std::string output_path)
+Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::string output_path)
 {
   HermesSimulationConfiguration *hermes_config = new HermesSimulationConfiguration();
 
@@ -493,7 +488,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
 const Monica::Result
 Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
 {
-  Monica::activateDebug = true;
+  Tools::activateDebug = true;
 
   Env env = getHermesEnvFromConfiguration(hermes_config);
 
@@ -651,9 +646,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   debug() << "------------------------------------" << endl;
 
-  BOOST_FOREACH(const ProductionProcess& pv, ff){
+  for(const ProductionProcess& pv : ff)
     debug() << "pv: " << pv.toString() << endl;
-  }
 
   // fertilisation parameter
   /** @todo fertiliser IDs are not set static, but must be read dynamically or specified by user. */
@@ -701,7 +695,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 void
 Monica::activateDebugOutput(bool status)
 {
-  Monica::activateDebug = status;
+  Tools::activateDebug = status;
 }
 
 

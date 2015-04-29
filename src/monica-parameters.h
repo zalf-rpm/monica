@@ -1675,7 +1675,7 @@ namespace Monica
 			crop_parameters.pc_InitialRootingDepth = UNDEFINED;
 			crop_parameters.pc_RootFormFactor = UNDEFINED;
 			crop_parameters.pc_MaxNUptakeParam = UNDEFINED;
-			crop_parameters.pc_CarboxylationPathway = UNDEFINED;
+			crop_parameters.pc_CarboxylationPathway = UNDEFINED_INT;
 			crop_parameters.pc_MaxAssimilationRate = UNDEFINED;
 			crop_parameters.pc_MaxCropDiameter = UNDEFINED;
 			crop_parameters.pc_MinimumNConcentration = UNDEFINED;
