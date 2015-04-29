@@ -1673,6 +1673,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
   if (crop) {
     crop->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
+	crop->accumulateTranspiration(vm_ActualTranspiration);
   }
 }
 

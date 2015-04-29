@@ -883,6 +883,8 @@ double MonicaModel::avgCorg(double depth_m) const
   return sum / double(count) * 100.0;
 }
 
+
+
 /**
  * @brief Returns the soil moisture up to 90 cm depth
  * @return water content
@@ -1211,6 +1213,10 @@ double MonicaModel::getsum30cmActDenitrificationRate()
     debug() << "write_output_files: " << write_output_files << endl;
   }
 
+  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS) {
+    write_output_files = false;
+  }
+
 	env.centralParameterProvider.writeOutputFiles = write_output_files;
 
 	debug() << "-----" << endl;
@@ -1455,6 +1461,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
       res.generalResults[avg0_30cmSoilMoisture].push_back(monica.avgSoilMoisture(0,3));
       res.generalResults[avg30_60cmSoilMoisture].push_back(monica.avgSoilMoisture(3,6));
       res.generalResults[avg60_90cmSoilMoisture].push_back(monica.avgSoilMoisture(6,9));
+      res.generalResults[avg0_90cmSoilMoisture].push_back(monica.avgSoilMoisture(0,9));
       res.generalResults[waterFluxAtLowerBoundary].push_back(monica.groundWaterRecharge());
       res.generalResults[avg0_30cmCapillaryRise].push_back(monica.avgCapillaryRise(0,3));
       res.generalResults[avg30_60cmCapillaryRise].push_back(monica.avgCapillaryRise(3,6));

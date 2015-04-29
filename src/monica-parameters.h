@@ -88,6 +88,16 @@ namespace Monica
 		//! secondary yield for the crop (e.g. leafs and other stuff useable)
 		secondaryYield,
 
+
+    //! above ground biomass of the crop
+    aboveGroundBiomass,
+
+		//! Julian day of anthesis of the crop
+		anthesisDay,
+
+		//! Julian day of maturity of the crop
+		maturityDay,
+
 		//! sum of applied fertilizer for that crop during growth period
 		sumFertiliser,
 
@@ -147,6 +157,9 @@ namespace Monica
 
 		//! Average soilmoisture content in 60-90cm soil at special, hardcoded date
 		avg60_90cmSoilMoisture,
+
+		//! Average soilmoisture content in 0-90cm soil at special, hardcoded date
+		avg0_90cmSoilMoisture,
 
 		//! water flux at bottom layer of soil at special, hardcoded date
 		waterFluxAtLowerBoundary,
@@ -213,6 +226,7 @@ namespace Monica
 
 		//! Evapotranspiration in time of crop cultivation
 		sumETaPerCrop,
+		sumTraPerCrop,
 		cropname,
 		primaryYieldTM,
 		secondaryYieldTM,
@@ -261,12 +275,6 @@ namespace Monica
 	 * @return list of the montly results
 	 */
 	const std::vector<ResultId>& monthlyResultIds();
-
-	/**
-	 * @return list if ids used for sensitivity analysis
-	 */
-	const std::vector<int>& sensitivityAnalysisResultIds();
-
 
 	/**
 	 * @return list if ids used for sensitivity analysis
@@ -660,94 +668,60 @@ namespace Monica
 	public:
 		//! default constructor for value object use
 
-    Crop(const std::string& name = "fallow")
-      : _id(-1),
-        _name(name),
-        _cropParams(NULL),
-        _perennialCropParams(NULL),
-        _residueParams(NULL),
-        _primaryYield(0),
-        _secondaryYield(0),
-        _primaryYieldTM(0),
-        _secondaryYieldTM(0),
-        _appliedAmountIrrigation(0),
-        _primaryYieldN(0),
-        _secondaryYieldN(0),
-        _sumTotalNUptake(0),
-        _crossCropAdaptionFactor(1),
-        _cropHeight(0.0),
-        _accumulatedETa(0.0),
-        eva2_typeUsage(Monica::NUTZUNG_UNDEFINED)
-    {}
+		Crop(const std::string& name = "fallow") :
+			_id(-1), _name(name), _cropParams(NULL), _perennialCropParams(NULL), _residueParams(NULL),
+			_primaryYield(0), _secondaryYield(0),_primaryYieldTM(0), _secondaryYieldTM(0),
+			_appliedAmountIrrigation(0),_primaryYieldN(0), _secondaryYieldN(0),
+			_sumTotalNUptake(0), _crossCropAdaptionFactor(1),
+			_cropHeight(0.0), _accumulatedETa(0.0), _accumulatedTranspiration(0.0), eva2_typeUsage(Monica::NUTZUNG_UNDEFINED),
+			_anthesisDay(-1), _maturityDay(-1){ }
 
-    Crop(CropId id, const std::string& name, const CropParameters* cps = NULL,
-         const OrganicMatterParameters* rps = NULL,
-         double crossCropAdaptionFactor = 1)
-      :
-      _id(id),
-      _name(name),
-      _cropParams(cps),
-      _perennialCropParams(NULL),
-      _residueParams(rps),
-      _primaryYield(0),
-      _secondaryYield(0),
-      _primaryYieldTM(0),
-      _secondaryYieldTM(0),
-      _appliedAmountIrrigation(0),
-      _primaryYieldN(0),
-      _secondaryYieldN(0),
-      _sumTotalNUptake(0),
-      _crossCropAdaptionFactor(crossCropAdaptionFactor),
-      _cropHeight(0.0),
-      _accumulatedETa(0.0),
-      eva2_typeUsage(NUTZUNG_UNDEFINED)
-    {}
+		Crop(CropId id, const std::string& name, const CropParameters* cps = NULL,
+				 const OrganicMatterParameters* rps = NULL,
+				 double crossCropAdaptionFactor = 1) :
+				 _id(id), _name(name), _cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
+			_primaryYield(0), _secondaryYield(0),  _primaryYieldTM(0), _secondaryYieldTM(0),_appliedAmountIrrigation(0), _primaryYieldN(0), _secondaryYieldN(0),
+			_sumTotalNUptake(0), _crossCropAdaptionFactor(crossCropAdaptionFactor),
+			_cropHeight(0.0), _accumulatedETa(0.0), _accumulatedTranspiration(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED),
+			_anthesisDay(-1), _maturityDay(-1){ }
 
-    Crop(CropId id, const std::string& name,
-         const Tools::Date& seedDate, const Tools::Date& harvestDate,
-         const CropParameters* cps = NULL, const OrganicMatterParameters* rps = NULL,
-         double crossCropAdaptionFactor = 1) :
-      _id(id),
-      _name(name),
-      _seedDate(seedDate),
-      _harvestDate(harvestDate),
-      _cropParams(cps),
-      _perennialCropParams(NULL),
-      _residueParams(rps),
-      _primaryYield(0),
-      _secondaryYield(0),
-      _primaryYieldTM(0),
-      _secondaryYieldTM(0),
-      _appliedAmountIrrigation(0),
-      _primaryYieldN(0),
-      _secondaryYieldN(0),
-      _sumTotalNUptake(0),
-      _crossCropAdaptionFactor(crossCropAdaptionFactor),
-      _cropHeight(0.0),
-      _accumulatedETa(0.0),
-      eva2_typeUsage(NUTZUNG_UNDEFINED){ }
+		Crop(CropId id, const std::string& name,
+				 const Tools::Date& seedDate, const Tools::Date& harvestDate,
+				 const CropParameters* cps = NULL, const OrganicMatterParameters* rps = NULL,
+				 double crossCropAdaptionFactor = 1) :
+			_id(id), _name(name), _seedDate(seedDate), _harvestDate(harvestDate),
+			_cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
+			_primaryYield(0), _secondaryYield(0),
+			_primaryYieldTM(0), _secondaryYieldTM(0), _primaryYieldN(0), _secondaryYieldN(0),
+			_sumTotalNUptake(0),
+			_crossCropAdaptionFactor(crossCropAdaptionFactor),
+			_cropHeight(0.0), _accumulatedETa(0.0), _accumulatedTranspiration(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED),
+			_anthesisDay(-1), _maturityDay(-1){ }
 
-    Crop(const Crop& new_crop)
-    {
-      _id = new_crop._id;
-      _name  = new_crop._name;
-      _seedDate = new_crop._seedDate;
-      _harvestDate = new_crop._harvestDate;
-      _cropParams = new_crop._cropParams;
-      _perennialCropParams = new_crop._perennialCropParams;
-      _residueParams = new_crop._residueParams;
-      _primaryYield = new_crop._primaryYield;
-      _secondaryYield = new_crop._secondaryYield;
-      _primaryYieldTM = new_crop._primaryYieldTM;
-      _secondaryYieldTM = new_crop._secondaryYieldTM;
-      _primaryYieldN = new_crop._primaryYieldN;
-      _secondaryYieldN = new_crop._secondaryYieldN;
-      _sumTotalNUptake = new_crop._sumTotalNUptake;
-      _appliedAmountIrrigation = new_crop._appliedAmountIrrigation;
-      _crossCropAdaptionFactor = new_crop._crossCropAdaptionFactor;
-      _cropHeight = new_crop._cropHeight;
-      eva2_typeUsage = new_crop.eva2_typeUsage;
-    }
+		Crop(const Crop& new_crop)
+		{
+			_id = new_crop._id;
+			_name  = new_crop._name;
+			_seedDate = new_crop._seedDate;
+			_harvestDate = new_crop._harvestDate;
+			_cropParams = new_crop._cropParams;
+			_perennialCropParams = new_crop._perennialCropParams;
+			_residueParams = new_crop._residueParams;
+			_primaryYield = new_crop._primaryYield;
+			_secondaryYield = new_crop._secondaryYield;
+			_primaryYieldTM = new_crop._primaryYieldTM;
+			_secondaryYieldTM = new_crop._secondaryYieldTM;
+			_primaryYieldN = new_crop._primaryYieldN;
+			_secondaryYieldN = new_crop._secondaryYieldN;
+			_sumTotalNUptake = new_crop._sumTotalNUptake;
+			_appliedAmountIrrigation = new_crop._appliedAmountIrrigation;
+			_crossCropAdaptionFactor = new_crop._crossCropAdaptionFactor;
+			_cropHeight = new_crop._cropHeight;
+			eva2_typeUsage = new_crop.eva2_typeUsage;
+			_anthesisDay = new_crop._anthesisDay;
+			_maturityDay = new_crop._maturityDay;
+
+		}
 
     CropId id() const { return _id; }
 
@@ -815,10 +789,12 @@ namespace Monica
 		void setSumTotalNUptake(double sum) { _sumTotalNUptake = sum; }
 		void setCropHeight(double height) {_cropHeight = height; }
 		void setAccumulatedETa(double eta) { _accumulatedETa = eta; }
+		void setAccumulatedTranspiration(double transp) { _accumulatedTranspiration = transp;  }
 
 		double appliedIrrigationWater() const { return _appliedAmountIrrigation; }
 		double sumTotalNUptake() const {return _sumTotalNUptake; }
 		double primaryYield() const { return _primaryYield * _crossCropAdaptionFactor; }
+		double aboveGroundBiomass() const { return _primaryYield * _crossCropAdaptionFactor + _secondaryYield * _crossCropAdaptionFactor; }
 		double secondaryYield() const { return _secondaryYield * _crossCropAdaptionFactor; }
 		double primaryYieldTM() const {  return _primaryYieldTM * _crossCropAdaptionFactor; }
 		double secondaryYieldTM() const { return _secondaryYieldTM * _crossCropAdaptionFactor; }
@@ -830,18 +806,26 @@ namespace Monica
 		void reset()
 		{
 			_primaryYield = _secondaryYield = _appliedAmountIrrigation = 0;
-			_primaryYieldN = _secondaryYieldN = _accumulatedETa = 0.0;
+			_primaryYieldN = _secondaryYieldN = _accumulatedETa = _accumulatedTranspiration =  0.0;
 			_primaryYieldTM = _secondaryYield = 0.0;
+			_anthesisDay = _maturityDay = -1;
+
 		}
 
 		void setEva2TypeUsage(int type) { eva2_typeUsage = type; }
 		int getEva2TypeUsage() const { return eva2_typeUsage; }
 
-		double get_AccumulatedETa() const {
-			return _accumulatedETa;
-		}
+		double get_AccumulatedETa() const {return _accumulatedETa;}
+		double get_AccumulatedTranspiration() const { return _accumulatedTranspiration; }
 
 		void writeCropParameters(std::string path);
+
+		void setAnthesisDay(int day) { _anthesisDay = day; }
+		int getAnthesisDay() const { return _anthesisDay; }
+
+		void setMaturityDay(int day) { _maturityDay = day; }
+		int getMaturityDay() const { return _maturityDay; }
+		
 
 	private:
 		CropId _id;
@@ -864,9 +848,12 @@ namespace Monica
 		double _crossCropAdaptionFactor;
 		double _cropHeight;
 		double _accumulatedETa;
+		double _accumulatedTranspiration;
 
 		int eva2_typeUsage;
 
+		int _anthesisDay;
+		int _maturityDay;
 	};
 
 	
@@ -1762,10 +1749,6 @@ namespace Monica
 	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
 
 	void testClimateData(Climate::DataAccessor &climateData);
-
-	std::vector<ProductionProcess>
-	applySAChanges(std::vector<ProductionProcess> ff,
-								 const CentralParameterProvider &centralParameterProvider);
 
 
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
