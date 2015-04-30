@@ -47,7 +47,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\util;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -62,7 +62,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_53_0;..\..\util;..\..\loki-lib\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\util</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -77,15 +77,17 @@
     <ClInclude Include="..\..\util\db\abstract-db-connections.h" />
     <ClInclude Include="..\..\util\db\db.h" />
     <ClInclude Include="..\..\util\db\sqlite3.h" />
+    <ClInclude Include="..\..\util\soil\constants.h" />
+    <ClInclude Include="..\..\util\soil\conversion.h" />
+    <ClInclude Include="..\..\util\soil\soil.h" />
     <ClInclude Include="..\..\util\tools\algorithms.h" />
     <ClInclude Include="..\..\util\tools\datastructures.h" />
     <ClInclude Include="..\..\util\tools\date.h" />
+    <ClInclude Include="..\..\util\tools\debug.h" />
     <ClInclude Include="..\..\util\tools\helper.h" />
     <ClInclude Include="..\..\util\tools\read-ini.h" />
     <ClInclude Include="..\src\configuration.h" />
-    <ClInclude Include="..\src\conversion.h" />
     <ClInclude Include="..\src\crop.h" />
-    <ClInclude Include="..\src\debug.h" />
     <ClInclude Include="..\src\monica-parameters.h" />
     <ClInclude Include="..\src\monica.h" />
     <ClInclude Include="..\src\simulation.h" />
@@ -102,13 +104,15 @@
     <ClCompile Include="..\..\util\db\abstract-db-connections.cpp" />
     <ClCompile Include="..\..\util\db\db.cpp" />
     <ClCompile Include="..\..\util\db\sqlite3.c" />
+    <ClCompile Include="..\..\util\soil\constants.cpp" />
+    <ClCompile Include="..\..\util\soil\conversion.cpp" />
+    <ClCompile Include="..\..\util\soil\soil.cpp" />
     <ClCompile Include="..\..\util\tools\algorithms.cpp" />
     <ClCompile Include="..\..\util\tools\date.cpp" />
+    <ClCompile Include="..\..\util\tools\debug.cpp" />
     <ClCompile Include="..\..\util\tools\read-ini.cpp" />
     <ClCompile Include="..\src\configuration.cpp" />
-    <ClCompile Include="..\src\conversion.cpp" />
     <ClCompile Include="..\src\crop.cpp" />
-    <ClCompile Include="..\src\debug.cpp" />
     <ClCompile Include="..\src\monica-json-main.cpp" />
     <ClCompile Include="..\src\monica-parameters.cpp" />
     <ClCompile Include="..\src\monica.cpp" />
