@@ -96,26 +96,26 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
   if (simulation_config == 0) {
       debug() << "Using hard coded information for eva2 simulation" << endl;
-      location = 18;
-      locationName = "guelzow";
-      profil_nr = 73;
+      location = 16;
+      locationName = "dornburg";
+      profil_nr = 1;
       classification = 1;
       variante = 1;
       pseudo=false;
-      fruchtfolge = "01";
+      fruchtfolge = "03";
 
       fruchtfolge_glied.push_back(1);
-      fruchtart.push_back("145");       // Sommergerste
+      fruchtart.push_back("141");       // Sommergerste
       fruchtfolgeYear.push_back("2005");
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(2);
-      fruchtart.push_back("041");       // Ölrettich
-      fruchtfolgeYear.push_back("2005");
+      fruchtart.push_back("172");       // Ölrettich
+      fruchtfolgeYear.push_back("2006");
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(3);
-      fruchtart.push_back("141");       // Silomais
+      fruchtart.push_back("160");       // Silomais
       fruchtfolgeYear.push_back("2006");
       anlagen.push_back(1);
 
@@ -125,12 +125,12 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(5);
-      fruchtart.push_back("180");       // Futterhirse
+      fruchtart.push_back("182");       // Futterhirse
       fruchtfolgeYear.push_back("2007");
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(6);
-      fruchtart.push_back("176");       // Winterweizen
+      fruchtart.push_back("1176");       // Winterweizen
       fruchtfolgeYear.push_back("2008");
       anlagen.push_back(1);
 
@@ -336,18 +336,21 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   if (file.fail()) {
     debug() << "Error while opening output file \"" << soildata_file.str().c_str() << "\"" << endl;
   }
-  file << "Layer;Saturation [Vol-%];FC [Vol-%];PWP [Vol-%];BoArt;Dichte [kg m-3];LeachingDepth" << endl;
+  file << "Layer;Corg;Saturation [Vol-%];FC [Vol-%];PWP [Vol-%];BoArt;Dichte [kg m-3];LeachingDepth:Stone" << endl;
 
   unsigned int soil_size = sps->size();
 
   for (unsigned i=0; i<soil_size; i++) {
     SoilParameters parameters = sps->at(i);
-    file << i << ";" << parameters.vs_Saturation * 100.0
-        << ";" << parameters.vs_FieldCapacity * 100.0
-        << ";" << parameters.vs_PermanentWiltingPoint * 100.0
-        << ";" << parameters.vs_SoilTexture.c_str()
-        << ";" << parameters.vs_SoilRawDensity()
-        << ";" << centralParameterProvider.userEnvironmentParameters.p_LeachingDepth
+	file << i
+		<< ";" << parameters.vs_SoilOrganicCarbon()
+		<< ";" << parameters.vs_Saturation * 100.0
+		<< ";" << parameters.vs_FieldCapacity * 100.0
+		<< ";" << parameters.vs_PermanentWiltingPoint * 100.0
+		<< ";" << parameters.vs_SoilTexture.c_str()
+		<< ";" << parameters.vs_SoilRawDensity()
+		<< ";" << centralParameterProvider.userEnvironmentParameters.p_LeachingDepth
+		<< ";" << parameters.vs_SoilStoneContent
         << endl;
 
 
