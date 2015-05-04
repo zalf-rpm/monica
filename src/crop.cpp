@@ -248,7 +248,8 @@ vc_AccumulatedPrimaryCropYield(0.0),
 vc_CuttingDelayDays(0),
 vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth),
 vc_AnthesisDay(-1),
-vc_MaturityDay(-1)
+vc_MaturityDay(-1), 
+vc_MaturityReached(false)
 {
 
 
@@ -469,6 +470,7 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 
   if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
 	  vc_MaturityDay = int(vs_JulianDay);
+	  vc_MaturityReached = true;
   }
 
   vc_DaylengthFactor =
@@ -4023,4 +4025,12 @@ CropGrowth::getMaturityDay() const
 {
   //cout << "Getter maturity " << vc_MaturityDay << endl;
 	return vc_MaturityDay;
+}
+
+
+bool
+CropGrowth::maturityReached() const
+{
+	debug() << "vc_MaturityReached: " << vc_MaturityReached << endl;
+	return vc_MaturityReached;
 }

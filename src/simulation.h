@@ -146,7 +146,9 @@ public:
 		nitrogenResponseOn(true),
 		waterDeficitResponseOn(true),
 		emergenceFloodingControlOn(true),
-		emergenceMoistureControlOn(true)
+		emergenceMoistureControlOn(true),
+		automaticHarvest(false)
+		
 	{}
 	~HermesSimulationConfiguration(){}
 
@@ -199,6 +201,13 @@ public:
 
     void setNMinUserParameters(double min, double max, int delayInDays) { this->nMinUserParameters = NMinUserParameters(min,max,delayInDays); }
 
+	/**
+	* @brief
+	* @param amout
+	* @param treshold
+	* @param nitrateConcentration
+	* @param sulfateConcentration
+	*/
     void setAutomaticIrrigationParameters(double amount=0,
                                           double treshold=0.1,
                                           double nitrateConcentration=0,
@@ -207,8 +216,16 @@ public:
       this->automaticIrrigationParameters = AutomaticIrrigationParameters(amount, treshold, nitrateConcentration, sulfateConcentration);
     }
 
+	/**
+	* @brief Setter for automatic yield parameters.
+	* 
+	*/
+	void setAutomaticHarvestParameters(Monica::AutomaticHarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
+
+
     void setNMinFertiliser(bool state) { this->NMinFertiliser = state;}
     void setAutomaticIrrigation(bool state) { this->automaticIrrigation = state;}
+	void setAutomaticHarvest(bool state) { this->automaticHarvest = state; }
 
     void setInitPercentageFC(double perc) { this->initPercentageFC = perc; }
     void setInitSoilNitrate(double nitrate) { this->initSoilNitrate = nitrate; }
@@ -262,13 +279,18 @@ public:
 
     bool useNMinFertiliser() { return this->NMinFertiliser;}
     bool useAutomaticIrrigation() { return this->automaticIrrigation;}
+	bool useAutomaticHarvest() { return this->automaticHarvest; }
 
     Monica::NMinUserParameters getNMinUserParameters() const { return nMinUserParameters; }
     Monica::AutomaticIrrigationParameters getAutomaticIrrigationParameters() const { return automaticIrrigationParameters; }
+	Monica::AutomaticHarvestParameters getAutomaticHarvestParameters() const { return automaticHarvestParameters; }
+
 
     double getInitPercentageFC() { return this->initPercentageFC; }
     double getInitSoilNitrate() { return this->initSoilNitrate; }
     double getInitSoilAmmonium() { return this->initSoilAmmonium; }
+
+	
 
   private:
     std::string outputPath;
@@ -317,6 +339,8 @@ public:
 
     bool automaticIrrigation;
     bool NMinFertiliser;
+	bool automaticHarvest;
+	
 
     // initialisation values
     double initPercentageFC;    // Initial soil moisture content in percent field capacity
@@ -326,6 +350,10 @@ public:
 
     Monica::NMinUserParameters nMinUserParameters;
     Monica::AutomaticIrrigationParameters automaticIrrigationParameters;
+	Monica::AutomaticHarvestParameters automaticHarvestParameters;
+
+	
+	
 };
 
 

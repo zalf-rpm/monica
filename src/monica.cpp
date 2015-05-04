@@ -74,15 +74,16 @@ customId(-1),
 centralParameterProvider(cpp)
 {
 	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-  windSpeedHeight = user_env.p_WindSpeedHeight;
-  atmosphericCO2 = user_env.p_AthmosphericCO2;
-  albedo = user_env.p_Albedo;
+	windSpeedHeight = user_env.p_WindSpeedHeight;
+	atmosphericCO2 = user_env.p_AthmosphericCO2;
+	albedo = user_env.p_Albedo;
 
-  noOfLayers = user_env.p_NumberOfLayers;
-  layerThickness = user_env.p_LayerThickness;
-  useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
-  useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
-  useSecondaryYields = user_env.p_UseSecondaryYields;
+	noOfLayers = user_env.p_NumberOfLayers;
+	layerThickness = user_env.p_LayerThickness;
+	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
+	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
+	useSecondaryYields = user_env.p_UseSecondaryYields;
+	
 }
 
 Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp) :
@@ -101,6 +102,7 @@ centralParameterProvider(cpp)
 	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
 	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
 	useSecondaryYields = user_env.p_UseSecondaryYields;
+	
 }
 
 
@@ -1197,6 +1199,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
   debug() << "starting Monica" << endl;
 
+
   ofstream fout;
   ofstream gout;
 
@@ -1357,6 +1360,41 @@ double MonicaModel::getsum30cmActDenitrificationRate()
         monica.incorporateCurrentCrop();
     }
 
+	/////////////////////////////////////////////////////////////////
+	// AUTOMATIC HARVEST TRIGGER
+	/////////////////////////////////////////////////////////////////
+
+	/**
+	* @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+	* The automatic harvest trigger is passed globally to the method that reads in crop rotation
+	* via hermes files because it cannot be configured crop specific with the HERMES format.
+	* The harvest trigger prevents the adding of a harvest application as done in the normal case
+	* that uses hard coded harvest data configured via the rotation file.
+	*
+	* When using the Json format, for each crop individual settings can be specified. The automatic
+	* harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
+	* harvest date via json parameters too, that is now specified in the sqlite database globally
+	* for each crop.
+	*/
+
+	// Test if automatic harvest trigger is used
+	if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
+
+		// Test if crop should be harvested at maturity 
+		if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
+
+			if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
+				
+				debug() << "####################################################" << endl;
+				debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
+				debug() << "####################################################" << endl;
+
+				Harvest *harvestApplication = new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+				harvestApplication->apply(&monica);
+			}
+		}
+	}
+
     //there's something to at this day
     if(nextAbsolutePPApplicationDate == currentDate)
     {
@@ -1381,6 +1419,8 @@ double MonicaModel::getsum30cmActDenitrificationRate()
       //if application date was not valid, we're (probably) at the end
       //of the application list of this production process
       //-> go to the next one in the crop rotation
+
+
       if(!nextAbsolutePPApplicationDate.isValid())
       {
         //get yieldresults for crop

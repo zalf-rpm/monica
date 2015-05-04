@@ -777,6 +777,24 @@ string IrrigationApplication::toString() const
   return s.str();
 }
 
+
+//------------------------------------------------------------------------------
+
+/**
+ * @brief Returns a short summary with information about automatic yield parameter configuration.
+ * @brief String
+ */
+string AutomaticHarvestParameters::toString() const
+{
+	ostringstream s;
+	if (_harvestTime == AutomaticHarvestTime::maturity) {
+		s << "Automatic harvestTime: Maturity ";
+	}
+
+	return s.str();
+}
+
+
 //------------------------------------------------------------------------------
 
 
@@ -838,20 +856,24 @@ MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDat
 //------------------------------------------------------------------------------
 
 ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
-    _name(name),
-    _crop(crop),
-    _cropResult(new PVResult())
+_name(name),
+_crop(crop),
+_cropResult(new PVResult())
 {
-  debug() << "ProductionProcess: " << name.c_str() << endl;
-  _cropResult->id = _crop->id();
+	debug() << "ProductionProcess: " << name.c_str() << endl;
+	_cropResult->id = _crop->id();
 
-	if ((crop->seedDate() != Date(1,1,1951)) && (crop->seedDate() != Date(0,0,0)))
+	if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0))) {
 		addApplication(Seed(crop->seedDate(), crop));
-	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)))
-	{
-    debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
-    addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
-  }
+	}
+	
+
+	
+	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) && (! crop->useAutomaticHarvestTrigger()) ) {
+	
+		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
+		addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
+	}
 
   std::vector<Date> cuttingDates = crop->getCuttingDates();
   unsigned int size = cuttingDates.size();
@@ -966,7 +988,7 @@ struct ParseDate
 //----------------------------------------------------------------------------
 
 vector<ProductionProcess>
-    Monica::cropRotationFromHermesFile(const string& pathToFile)
+    Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
 {
   vector<ProductionProcess> ff;
 
@@ -993,14 +1015,26 @@ vector<ProductionProcess>
     int t;
     ss >> t >> crp >> sowingDate >> harvestDate >> tillageDate >> exp  >> tillage_depth;
 
-    Date sd = parseDate(sowingDate).toDate(true);
-    Date hd = parseDate(harvestDate).toDate(true);
-    Date td = parseDate(tillageDate).toDate(true);
+    Date sd = parseDate(sowingDate).toDate(true);    
+	Date td = parseDate(tillageDate).toDate(true);
+	Date hd;
+
+	if (! useAutomaticHarvestTrigger) {
+		
+		hd = parseDate(harvestDate).toDate(true);
+		
+		if (!hd.isValid()) {
+			debug() << "Error - Invalid harvest date in \"" << pathToFile.c_str() << "\"" << endl;
+			debug() << "Line: " << s.c_str() << endl;
+			debug() << "Aborting simulation now!" << endl;
+			exit(-1);
+		}
+	}
 
     // tst if dates are valid
-    if (!sd.isValid() || !hd.isValid() || !td.isValid())
+    if (!sd.isValid() || !td.isValid())
     {
-      debug() << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
+      debug() << "Error - Invalid sowing or tillage date in \"" << pathToFile.c_str() << "\"" << endl;
       debug() << "Line: " << s.c_str() << endl;
       debug() << "Aborting simulation now!" << endl;
       exit(-1);
@@ -1011,6 +1045,12 @@ vector<ProductionProcess>
     crop->setSeedAndHarvestDate(sd, hd);
     crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
     crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
+	
+	if (useAutomaticHarvestTrigger) {
+		// change latest harvest date to crop specific fallback harvest doy
+		autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->pc_LatestHarvestDoy);
+		crop->activateAutomaticHarvestTrigger(autoHarvestParams);
+	}
 
     ProductionProcess pp(crp, crop);
     pp.addApplication(TillageApplication(td, (tillage_depth/100.0) ));
@@ -1187,8 +1227,9 @@ CropParameters::CropParameters() :
     pc_DevelopmentAccelerationByNitrogenStress(0),
     pc_CuttingDelayDays(0),
     pc_FieldConditionModifier(1.0),
-		pc_AssimilateReallocation(0.0),
-		pc_LT50cultivar(0.0)
+	pc_AssimilateReallocation(0.0),
+	pc_LT50cultivar(0.0),
+	pc_LatestHarvestDoy(-1)
 {}
 
 /**
@@ -1289,6 +1330,9 @@ string CropParameters::toString() const
   s << "pc_LimitingTemperatureHeatStress:\t" << pc_LimitingTemperatureHeatStress << endl;
   s << "pc_BeginSensitivePhaseHeatStress:\t" << pc_BeginSensitivePhaseHeatStress << endl;
   s << "pc_EndSensitivePhaseHeatStress:\t\t" << pc_EndSensitivePhaseHeatStress << endl;
+
+  s << "------------------------------------------------" << endl;
+  s << "pc_LatestHarvestDoy:\t\t" << pc_LatestHarvestDoy  << endl;
 
   //s << endl;
   s << "------------------------------------------------" << endl;
@@ -1481,7 +1525,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
           "cutting_delay_days, field_condition_modifier, assimilate_reallocation, "
 					"LT50cultivar, frost_hardening, frost_dehardening, "
-					"low_temperature_exposure, respiratory_stress from crop";
+					"low_temperature_exposure, respiratory_stress, latest_harvest_doy from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1545,12 +1589,14 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
         cps->pc_FieldConditionModifier = satof(row[i++]);
-				cps->pc_AssimilateReallocation = satof(row[i++]);
-				cps->pc_LT50cultivar = satof(row[i++]);
-				cps->pc_FrostHardening = satof(row[i++]);
-				cps->pc_FrostDehardening = satof(row[i++]);
-				cps->pc_LowTemperatureExposure = satof(row[i++]);
-				cps->pc_RespiratoryStress = satof(row[i++]);
+		cps->pc_AssimilateReallocation = satof(row[i++]);
+		cps->pc_LT50cultivar = satof(row[i++]);
+		cps->pc_FrostHardening = satof(row[i++]);
+		cps->pc_FrostDehardening = satof(row[i++]);
+		cps->pc_LowTemperatureExposure = satof(row[i++]);
+		cps->pc_RespiratoryStress = satof(row[i++]);
+		cps->pc_LatestHarvestDoy = satoi(row[i++]);
+
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
                         "o.organ_maintainance_respiration, o.is_above_ground, "

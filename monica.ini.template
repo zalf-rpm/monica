@@ -30,6 +30,10 @@ activated=0
 ;nitrate=0
 ;sulfate=0
 
+[harvest_trigger]
+activated = 0
+;harvest_time=maturity
+
 [site_parameters]
 latitude=52.809399
 slope=0.0

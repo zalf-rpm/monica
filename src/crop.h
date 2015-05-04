@@ -294,6 +294,7 @@ namespace Monica
 	int get_StageAfterCut() const;
 	int getAnthesisDay() const;
 	int getMaturityDay() const;
+	bool maturityReached() const;
 
     inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa;}
 	inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
@@ -601,6 +602,8 @@ private:
 
 	int vc_AnthesisDay;
 	int vc_MaturityDay;
+
+	bool vc_MaturityReached;
 
 		
   };

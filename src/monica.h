@@ -67,7 +67,7 @@ namespace Monica
 		enum
 		{
 			MODE_LC_DSS = 0,
-      MODE_ACTIVATE_OUTPUT_FILES,
+			MODE_ACTIVATE_OUTPUT_FILES,
 			MODE_HERMES,
 			MODE_EVA2,
 			MODE_SENSITIVITY_ANALYSIS,
@@ -85,9 +85,11 @@ namespace Monica
 				layerThickness(0),
 				useNMinMineralFertilisingMethod(false),
 				useAutomaticIrrigation(false),
+				//useAutomaticHarvestTrigger(false),
 				useSecondaryYields(true),
 				atmosphericCO2(-1),
 				customId(-1)
+				
 		{ }
 
     Env(const Env&);
@@ -121,6 +123,10 @@ namespace Monica
     bool useAutomaticIrrigation;
     AutomaticIrrigationParameters autoIrrigationParams;
     MeasuredGroundwaterTableInformation groundwaterInformation;
+
+	//bool useAutomaticHarvestTrigger;
+	//AutomaticHarvestParameters automaticHarvestParams;
+
 
     bool useSecondaryYields;              //! tell if farmer uses the secondary yield products
 
