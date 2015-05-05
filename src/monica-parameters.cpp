@@ -977,10 +977,32 @@ struct ParseDate
   DMY operator()(const string & d)
   {
     DMY r;
-    r.d = atoi(d.substr(0, 2).c_str());
-    r.m = atoi(d.substr(2, 2).c_str());
-    r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 72 ? 2000 + r.y : 1900 + r.y;
+	int length = d.size();
+
+	if (length == 6) {
+		// old HERMES format ddmmyy
+		r.d = atoi(d.substr(0, 2).c_str());
+		r.m = atoi(d.substr(2, 2).c_str());
+		r.y = atoi(d.substr(4, 2).c_str());
+		r.y = r.y <= 72 ? 2000 + r.y : 1900 + r.y;
+
+	}
+	else if (length == 8) {
+		
+		//ddmmyyyy
+		r.d = atoi(d.substr(0, 2).c_str());
+		r.m = atoi(d.substr(2, 2).c_str());
+		r.y = atoi(d.substr(4, 4).c_str());
+
+	}
+	else {
+		// other unexpected length
+		cout << "ERROR - Cannot parse date \"" << d.c_str() << "\"" << endl;
+		cout << "Should be of format DDMMYY or DDMMYYYY" << endl;		
+		cout << "Aborting simulation now!" << endl;
+		exit(-1);
+	}
+	
     return r;
   }
 } parseDate;
