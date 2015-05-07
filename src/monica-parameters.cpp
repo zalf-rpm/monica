@@ -3979,6 +3979,8 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 	  return CropPtr(new Crop(50, hermesCropId)); // Sugar cane ratoon
 	if (hermesCropId == "DUW")
 		return CropPtr(new Crop(52, hermesCropId)); // Durum wheat
+	if (hermesCropId == "FTO")
+		return CropPtr(new Crop(53, hermesCropId)); // Field tomato
 	if (hermesCropId == "BR")
 		return CropPtr(new Crop(hermesCropId));
 
