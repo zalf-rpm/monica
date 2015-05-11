@@ -51,7 +51,7 @@ using namespace Soil;
 
 std::pair<const SoilPMs *, int>
 Carbiocial::carbiocialSoilParameters(int profileId, int layerThicknessCm,
-int maxDepthCm)
+int maxDepthCm, GeneralParameters gps, string output_path, CentralParameterProvider centralParameterProvider)
 {
 	//cout << "getting soilparameters for STR: " << str << endl;
 	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
@@ -155,6 +155,34 @@ int maxDepthCm)
 
 	static SoilPMs nothing;
 	Map::const_iterator ci = spss.find(profileId);
+	
+	///////////////////////////////////////////////////////////
+  // write soil information of each individual soil layer to file
+
+  const SoilPMs* sps = ci->second.get();
+
+  ostringstream soildata_file;
+  soildata_file << output_path << "/" << profileId << ".txt";
+  ofstream file;
+  file.open((soildata_file.str()).c_str());
+  if (file.fail()) {
+    debug() << "Error while opening output file \"" << soildata_file.str().c_str() << "\"" << endl;
+  }
+  file << "Layer;Saturation [Vol-%];FC [Vol-%];PWP [Vol-%];BoArt;Dichte [kg m-3];LeachingDepth" << endl;
+  
+	int i = 0;
+  for (auto p : *ci->second)
+	{
+    file << i++ << ";" << p.vs_Saturation * 100.0
+        << ";" << p.vs_FieldCapacity * 100.0
+        << ";" << p.vs_PermanentWiltingPoint * 100.0
+        << ";" << p.vs_SoilTexture.c_str()
+        << ";" << p.vs_SoilRawDensity()
+        << ";" << centralParameterProvider.userEnvironmentParameters.p_LeachingDepth
+        << endl;
+	}
+  file.close();
+	
 	return ci != spss.end() ? make_pair(ci->second.get(), profileId2soilClassId[profileId])
 		: make_pair(&nothing, -1);
 }
@@ -268,7 +296,8 @@ std::map<int, double> Carbiocial::runCarbiocialSimulation(const CarbiocialConfig
 	pair<const SoilPMs*, int> p =
 		Carbiocial::carbiocialSoilParameters(simulation_config->getProfileId(),
 		int(layer_thickness * 100),
-		int(profile_depth * 100));
+		int(profile_depth * 100),
+		 gps, output_path, centralParameterProvider);
 	sps = p.first;
 
 	//no soil available, return no yields
