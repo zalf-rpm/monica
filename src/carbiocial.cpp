@@ -102,9 +102,9 @@ int maxDepthCm, GeneralParameters gps, string output_path, CentralParameterProvi
 			{
 				ProfileId id = ProfileId(satoi(row[0]));
 
-				SoilClassId soilClassId = SoilClassId(satoi(row[2]));
-				if (profileId2soilClassId.find(id) == profileId2soilClassId.end())
-					profileId2soilClassId[id] = soilClassId;
+				//SoilClassId soilClassId = SoilClassId(satoi(row[2]));
+				//if (profileId2soilClassId.find(id) == profileId2soilClassId.end())
+				//	profileId2soilClassId[id] = soilClassId;
 
 				Map::iterator spsi = spss.find(id);
 				SoilPMsPtr sps;
@@ -183,7 +183,7 @@ int maxDepthCm, GeneralParameters gps, string output_path, CentralParameterProvi
 	}
   file.close();
 	
-	return ci != spss.end() ? make_pair(ci->second.get(), profileId2soilClassId[profileId])
+	return ci != spss.end() ? make_pair(ci->second.get(), -1)//profileId2soilClassId[profileId])
 		: make_pair(&nothing, -1);
 }
 
