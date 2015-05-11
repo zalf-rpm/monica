@@ -5,10 +5,10 @@
 %{
 #define SWIG_COMPILATION
 /* Includes the header in the wrapper code */
-#include "../src/simulation.h"
-#include "../src/monica-parameters.h"
-#include "../src/monica.h"
-#include "../src/eva_methods.h"
+#include "src/simulation.h"
+#include "src/monica-parameters.h"
+#include "src/monica.h"
+#include "src/eva_methods.h"
 %}
 
 
@@ -24,12 +24,12 @@ namespace std {
 
 
 /* Parse the header file to generate wrappers */
-%include "../src/simulation.h"
-%include "../src/monica-typedefs.h"
-%include "../src/monica-parameters.h"
-%include "../src/soiltemperature.h"
-%include "../src/soilmoisture.h"
-%include "../src/soilorganic.h"
-%include "../src/soiltransport.h"
-%include "../src/monica.h"
-%include "../src/eva_methods.h"
+%include "src/simulation.h"
+%include "src/monica-typedefs.h"
+%include "src/monica-parameters.h"
+%include "src/soiltemperature.h"
+%include "src/soilmoisture.h"
+%include "src/soilorganic.h"
+%include "src/soiltransport.h"
+%include "src/monica.h"
+%include "src/eva_methods.h"
