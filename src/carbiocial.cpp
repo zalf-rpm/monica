@@ -179,6 +179,8 @@ int maxDepthCm, GeneralParameters gps, string output_path, CentralParameterProvi
 					<< ";" << p.vs_FieldCapacity * 100.0
 					<< ";" << p.vs_PermanentWiltingPoint * 100.0
 					<< ";" << p.vs_SoilTexture.c_str()
+					<< ";" << p.vs_SoilSandContent
+					<< ";" << p.vs_SoilClayContent
 					<< ";" << p.vs_SoilRawDensity()
 					<< ";" << centralParameterProvider.userEnvironmentParameters.p_LeachingDepth
 					<< endl;
