@@ -1,6 +1,7 @@
 %module monica
 %include "std_string.i"
-%include "std_vector.i"
+%include "std_vector.i"i
+%include "std_map.i"
 %include "std_shared_ptr.i"
 
 %shared_ptr(Monica::WorkStep)
@@ -29,6 +30,7 @@ namespace std {
    %template(StringVector) vector<std::string>;
    %template(PPVector) vector<Monica::ProductionProcess>; 	
    %nodefaultdtor Climate::DataAccessor;
+	 %template(IntDoubleMap) map<int, double>;
 }
 
 /* Parse the header file to generate wrappers */
