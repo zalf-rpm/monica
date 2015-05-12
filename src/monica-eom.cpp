@@ -31,13 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <sstream>
 #include <fstream>
+#include <mutex>
 
-#define LOKI_OBJECT_LEVEL_THREADING
-
-#include "loki/Threads.h"
-
-#include <boost/foreach.hpp>
-#include "tools/use-stl-algo-boost-lambda.h"
 #include "db/abstract-db-connections.h"
 #include "monica-eom.h"
 #include "tools/helper.h"
@@ -50,18 +45,16 @@ using namespace Db;
 
 namespace
 {
-  struct L : public Loki::ObjectLevelLockable<L> {};
-
   typedef map<PVPId, EomPVPInfo> PVPId2CropIdMap;
   const PVPId2CropIdMap& eomPVPId2cropIdMap()
   {
-    static L lockable;
+    static mutex lockable;
     typedef map<PVPId, EomPVPInfo> M;
     static M m;
     static bool initialized = false;
     if(!initialized)
     {
-      L::Lock lock(lockable);
+      lock_guard<mutex> lock(lockable);
 
       if(!initialized)
       {
@@ -108,7 +101,7 @@ EomPVPInfo Monica::eomPVPId2cropId(PVPId pvpId)
 
 int Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
 {
-  static L lockable;
+  static mutex lockable;
 
   static bool initialized = false;
   typedef map<int, int> M;
@@ -116,7 +109,7 @@ int Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
 
   if(!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {

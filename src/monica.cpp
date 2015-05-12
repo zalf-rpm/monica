@@ -29,17 +29,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <mutex>
 
-#include "boost/foreach.hpp"
-#include "tools/use-stl-algo-boost-lambda.h"
-
-#include "debug.h"
+#include "tools/debug.h"
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
-
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
 
 #ifdef MONICA_GUI
 #include "../gui/workerconfiguration.h"
@@ -51,11 +46,10 @@ using namespace Monica;
 using namespace std;
 using namespace Climate;
 using namespace Tools;
+using namespace Soil;
 
 namespace
 {
-	struct L : public Loki::ObjectLevelLockable<L> {};
-
 	//! simple functor for use in fertiliser trigger
   struct AddFertiliserAmountsCallback
   {
@@ -80,15 +74,16 @@ customId(-1),
 centralParameterProvider(cpp)
 {
 	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-  windSpeedHeight = user_env.p_WindSpeedHeight;
-  atmosphericCO2 = user_env.p_AthmosphericCO2;
-  albedo = user_env.p_Albedo;
+	windSpeedHeight = user_env.p_WindSpeedHeight;
+	atmosphericCO2 = user_env.p_AthmosphericCO2;
+	albedo = user_env.p_Albedo;
 
-  noOfLayers = user_env.p_NumberOfLayers;
-  layerThickness = user_env.p_LayerThickness;
-  useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
-  useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
-  useSecondaryYields = user_env.p_UseSecondaryYields;
+	noOfLayers = user_env.p_NumberOfLayers;
+	layerThickness = user_env.p_LayerThickness;
+	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
+	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
+	useSecondaryYields = user_env.p_UseSecondaryYields;
+	
 }
 
 Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp) :
@@ -107,6 +102,7 @@ centralParameterProvider(cpp)
 	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
 	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
 	useSecondaryYields = user_env.p_UseSecondaryYields;
+	
 }
 
 
@@ -115,7 +111,7 @@ string Env::toString() const
 {
   ostringstream s;
   s << "soilParams: " << endl;
-	BOOST_FOREACH(const SoilParameters& sps, *soilParams)
+  for(const Soil::SoilParameters& sps : *soilParams)
 	{
 			s << sps.toString() << endl;
 	}
@@ -124,7 +120,7 @@ string Env::toString() const
 	s << "ClimateData: from: " << da.startDate().toString()
     << " to: " << da.endDate().toString() << endl;
 	s << "Fruchtfolge: " << endl;
-	BOOST_FOREACH(const ProductionProcess& pv, cropRotation)
+  for(const ProductionProcess& pv : cropRotation)
 	{
 			s << pv.toString() << endl;
 	}
@@ -613,7 +609,7 @@ double MonicaModel::
 }
 
 void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
-          double /*sulfateConcentration*/)
+                                  double /*sulfateConcentration*/)
 {
   //if the production process has still some defined manual irrigation dates
   if(!_env.useAutomaticIrrigation)
@@ -888,6 +884,8 @@ double MonicaModel::avgCorg(double depth_m) const
 
   return sum / double(count) * 100.0;
 }
+
+
 
 /**
  * @brief Returns the soil moisture up to 90 cm depth
@@ -1201,6 +1199,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
   debug() << "starting Monica" << endl;
 
+
   ofstream fout;
   ofstream gout;
 
@@ -1215,6 +1214,10 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
     write_output_files = true;
     debug() << "write_output_files: " << write_output_files << endl;
+  }
+
+  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS) {
+    write_output_files = false;
   }
 
 	env.centralParameterProvider.writeOutputFiles = write_output_files;
@@ -1357,6 +1360,41 @@ double MonicaModel::getsum30cmActDenitrificationRate()
         monica.incorporateCurrentCrop();
     }
 
+	/////////////////////////////////////////////////////////////////
+	// AUTOMATIC HARVEST TRIGGER
+	/////////////////////////////////////////////////////////////////
+
+	/**
+	* @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+	* The automatic harvest trigger is passed globally to the method that reads in crop rotation
+	* via hermes files because it cannot be configured crop specific with the HERMES format.
+	* The harvest trigger prevents the adding of a harvest application as done in the normal case
+	* that uses hard coded harvest data configured via the rotation file.
+	*
+	* When using the Json format, for each crop individual settings can be specified. The automatic
+	* harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
+	* harvest date via json parameters too, that is now specified in the sqlite database globally
+	* for each crop.
+	*/
+
+	// Test if automatic harvest trigger is used
+	if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
+
+		// Test if crop should be harvested at maturity 
+		if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
+
+			if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
+				
+				debug() << "####################################################" << endl;
+				debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
+				debug() << "####################################################" << endl;
+
+				Harvest *harvestApplication = new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+				harvestApplication->apply(&monica);
+			}
+		}
+	}
+
     //there's something to at this day
     if(nextAbsolutePPApplicationDate == currentDate)
     {
@@ -1381,11 +1419,14 @@ double MonicaModel::getsum30cmActDenitrificationRate()
       //if application date was not valid, we're (probably) at the end
       //of the application list of this production process
       //-> go to the next one in the crop rotation
+
+
       if(!nextAbsolutePPApplicationDate.isValid())
       {
         //get yieldresults for crop
         PVResult r = currentPP.cropResult();
 				r.customId = currentPP.customId();
+        r.date = currentDate;
 
         if(!env.useSecondaryYields)
           r.pvResults[secondaryYield] = 0;
@@ -1460,6 +1501,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
       res.generalResults[avg0_30cmSoilMoisture].push_back(monica.avgSoilMoisture(0,3));
       res.generalResults[avg30_60cmSoilMoisture].push_back(monica.avgSoilMoisture(3,6));
       res.generalResults[avg60_90cmSoilMoisture].push_back(monica.avgSoilMoisture(6,9));
+      res.generalResults[avg0_90cmSoilMoisture].push_back(monica.avgSoilMoisture(0,9));
       res.generalResults[waterFluxAtLowerBoundary].push_back(monica.groundWaterRecharge());
       res.generalResults[avg0_30cmCapillaryRise].push_back(monica.avgCapillaryRise(0,3));
       res.generalResults[avg30_60cmCapillaryRise].push_back(monica.avgCapillaryRise(3,6));

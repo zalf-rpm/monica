@@ -43,10 +43,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soiltransport.h"
 #include "crop.h"
 #include "monica.h"
+#include "soil/soil.h"
 
 namespace Monica 
 {
-
 	/**
 	* Profil numbers for eva2 locations with different profiles. The
 	* number of profiles can be found in eva2 database in table
@@ -128,7 +128,6 @@ namespace Monica
 #define EVA2_BASTARD_WEIDELGRAS "183"
 #define EVA2_WELSCHES_WEIDELGRAS "179"
 
-
 #define EVA2_OEL_RETTICH "041"
 #define EVA2_SENF "043"
 #define EVA2_PHACELIA "025"
@@ -180,7 +179,7 @@ namespace Monica
 
 	};
 
-	const SoilPMs* readSoilParametersForEva2(const GeneralParameters& gps, int profil_nr, int standort_id, int variante = -1);
+	const Soil::SoilPMs* readSoilParametersForEva2(const GeneralParameters& gps, int profil_nr, int standort_id, int variante = -1);
 	Climate::DataAccessor climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_date, Tools::Date end_date, CentralParameterProvider& cpp, double latitude = 0.0);
 	SiteParameters readSiteParametersForEva2(int location, int profil_nr);
 	double getEffictiveRootingDepth(int profile);

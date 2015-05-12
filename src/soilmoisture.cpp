@@ -36,10 +36,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilcolumn.h"
 #include "crop.h"
 #include "monica.h"
-#include "debug.h"
+#include "tools/debug.h"
 
 using namespace std;
 using namespace Monica;
+using namespace Tools;
 
 // ------------------------------------------------------------------------
 // SNOW MODULE
@@ -437,9 +438,9 @@ FrostComponent::getMeanBulkDensity()
     return centralParameterProvider.sensitivityAnalysisParameters.p_MeanBulkDensity;
   }
 
-  int vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double bulk_density_accu = 0.0;
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     bulk_density_accu += soilColumn[i_Layer].vs_SoilBulkDensity();
   }
   return (bulk_density_accu / double(vs_number_of_layers) / 1000.0); // [Mg m-3]
@@ -458,9 +459,9 @@ FrostComponent::getMeanFieldCapacity()
     return centralParameterProvider.sensitivityAnalysisParameters.p_MeanFieldCapacity;
   }
 
-  int vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double mean_field_capacity_accu = 0.0;
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     mean_field_capacity_accu += soilColumn[i_Layer].get_FieldCapacity();
   }
   return (mean_field_capacity_accu / double(vs_number_of_layers));
@@ -657,12 +658,11 @@ FrostComponent::calcTemperatureUnderSnow(double mean_air_temperature, double sno
 void
 FrostComponent::updateLambdaRedux()
 {
-  int vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
 
+  for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
 
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-
-    if (i_Layer < (int(floor((vm_FrostDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
+    if (i_Layer < (size_t(floor((vm_FrostDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
 
       // soil layer is frozen
       soilColumn[i_Layer].vs_SoilFrozen = true;
@@ -673,7 +673,7 @@ FrostComponent::updateLambdaRedux()
       }
     }
 
-    if (i_Layer < (int(floor((vm_ThawDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
+    if (i_Layer < (size_t(floor((vm_ThawDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
       // soil layer is thawing
 
       if (vm_ThawDepth < (double(i_Layer + 1) * soilColumn[i_Layer].vs_LayerThickness) && (vm_ThawDepth < vm_FrostDepth)) {
@@ -702,7 +702,7 @@ FrostComponent::updateLambdaRedux()
       vm_FrostDays = 0;
 
       vm_HydraulicConductivityRedux = centralParameterProvider.userSoilMoistureParameters.pm_HydraulicConductivityRedux;
-      for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+      for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
         soilColumn[i_Layer].vs_SoilFrozen = false;
         vm_LambdaRedux[i_Layer] = 1.0;
       }
@@ -1673,6 +1673,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
   if (crop) {
     crop->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
+	crop->accumulateTranspiration(vm_ActualTranspiration);
   }
 }
 

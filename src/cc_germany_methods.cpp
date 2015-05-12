@@ -3,34 +3,23 @@
  */
 
 #if defined RUN_CC_GERMANY  ||  defined RUN_GIS
+#include <mutex>
 
 #include "cc_germany_methods.h"
 #include "debug.h"
 
-#include "loki/Threads.h"
 #include "tools/auto-deleter.h"
 #include "tools/algorithms.h"
 #include "tools/helper.h"
 #include "db/abstract-db-connections.h"
 #include "crop.h"
 
-#include <boost/foreach.hpp>
-
 using namespace Db;
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace Climate;
-
-
-
-
-
-/**
- * @brief Lockable object
- */
-struct L: public Loki::ObjectLevelLockable<L> {
-};
+using namespace Soil;
 
 /**
  * @brief Overloaded function that returns soil parameter for ucker.
@@ -52,10 +41,10 @@ Monica::readBUEKDataFromMonicaDB(const int leg1000_id,  const GeneralParameters&
   int max_depth_cm = gps.ps_ProfileDepth * 100; //cm
   int number_of_layers = int(double(max_depth_cm) / double(layer_thickness_cm));
 
-  static L lockable;
+  static mutex lockable;
+	lock_guard<mutex> lock(lockable);
+	
   vector<SoilParameters>* sps = new vector<SoilParameters> ;
-
-  L::Lock lock(lockable);
 
   ostringstream request;
   request << "SELECT leg1000, hornum, otief, utief, boart, ton, schluff, sand, ph, rohd, humus "
@@ -164,8 +153,8 @@ Monica::getCropManagementData(int crop_id, std::string start_date_s, std::string
   debug() << "Start: " << start_date_s << endl;
   debug() << "End: " << end_date_s << endl;
   debug() << "----------------------------------------------------------------" << endl;
-  static L lockable;
-  L::Lock lock(lockable);
+  static mutex lockable;
+  lock_guard<mutex> lock(lockable);
   
   Tools::Date start_date = Tools::fromMysqlString(start_date_s.c_str());
   Tools::Date end_date = Tools::fromMysqlString(end_date_s.c_str());
@@ -267,9 +256,9 @@ Monica::getGeoCorrdOfStatId(int stat_id)
   debug() << "----------------------------------------------------------------" << endl;
   LatLngCoord llc;
 
-  static L lockable;
+  static mutex lockable;
 
-  L::Lock lock(lockable);
+  lock_guard<mutex> lock(lockable);
 
   ostringstream request;
   request << "SELECT breite_dez, laenge_dez FROM header h where stat_id=" << stat_id;
@@ -302,9 +291,9 @@ Monica::getLatitudeOfStatId(int stat_id)
 
   LatLngCoord llc;
 
-  static L lockable;
+  static mutex lockable;
 
-  L::Lock lock(lockable);
+  lock_guard<mutex> lock(lockable);
 
   ostringstream request;
   request << "SELECT breite_dez FROM header h where stat_id=" << stat_id;
@@ -333,9 +322,8 @@ Monica::getStationName(int stat_id)
   debug() << "----------------------------------------------------------------" << endl;
   LatLngCoord llc;
 
-  static L lockable;
-
-  L::Lock lock(lockable);
+  static mutex lockable;
+  lock_guard<mutex> lock(lockable);
 
   ostringstream request;
   request << "SELECT datei_name FROM wettreg_stolist h where stat_id=" << stat_id;
@@ -366,9 +354,9 @@ Monica::getDatId(int stat_id)
   debug () << "1" << endl;
   LatLngCoord llc;
   debug () << "2" << endl;
-  static L lockable;
+  static mutex lockable;
   debug () << "3" << endl;
-  L::Lock lock(lockable);
+  lock_guard<mutex> lock(lockable);
   debug () << "4" << endl;
   ostringstream request;
   request << "SELECT dat_id FROM wettreg_stolist h where stat_KE=\"Klim\" AND stat_id=" << stat_id;
@@ -394,8 +382,8 @@ Monica::getDatId(int stat_id)
 Climate::DataAccessor
 Monica::climateDataForCCGermany2(int stat_id, std::string start_date_s, std::string end_date_s, std::string realisation, CentralParameterProvider& cpp)
 {
-  static L lockable;
-  L::Lock lock(lockable);
+  static mutex lockable;
+  lock_guard<mutex> lock(lockable);
 
   debug() << "----------------------------------------------------------------" << endl;
   debug() << "CC: climateDataForCCGermany2: " << stat_id << "\t" << start_date_s.c_str() << "\t" << end_date_s.c_str()<< endl;

@@ -30,10 +30,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#include <set>
 
 #include "monica-parameters.h"
+#include "soil/soil.h"
 
 namespace Carbiocial
 {
-	std::pair<const Monica::SoilPMs*, int>
+  std::pair<const Soil::SoilPMs*, int>
 		carbiocialSoilParameters(int profileId, int layerThicknessCm, int maxDepthCm);
 
 	class CarbiocialConfiguration

@@ -199,3 +199,4 @@ installer/Hohenfinow2/*.dat
 *.sln
 *.vcxproj
 *.filters
+HF2_automatic_yield

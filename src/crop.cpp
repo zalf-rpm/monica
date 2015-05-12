@@ -29,10 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <string>
 
-#include "boost/foreach.hpp"
-
 #include "crop.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "soilmoisture.h"
 #include "monica-parameters.h"
 #include "tools/helper.h"
@@ -41,6 +39,7 @@ const double PI = 3.14159265358979323;
 
 using namespace std;
 using namespace Monica;
+using namespace Tools;
 
 /**
  * @brief Constructor
@@ -202,7 +201,7 @@ vc_RootEffectivity(vs_NumberOfLayers, 0.0),
 pc_RootFormFactor(cps.pc_RootFormFactor),
 pc_RootGrowthLag(cps.pc_RootGrowthLag),
 vc_RootingDepth(0),
-vc_RootingDepth_m (0.0),
+vc_RootingDepth_m(0.0),
 vc_RootingZone(0),
 pc_RootPenetrationRate(cps.pc_RootPenetrationRate),
 vm_SaturationDeficit(0.0),
@@ -244,9 +243,13 @@ pc_WaterDeficitResponseOn(generalParams.pc_WaterDeficitResponseOn),
 eva2_usage(usage),
 dyingOut(false),
 vc_AccumulatedETa(0.0),
+vc_AccumulatedTranspiration(0.0),
 vc_AccumulatedPrimaryCropYield(0.0),
 vc_CuttingDelayDays(0),
-vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth),
+vc_AnthesisDay(-1),
+vc_MaturityDay(-1), 
+vc_MaturityReached(false)
 {
 
 
@@ -332,7 +335,7 @@ vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
       std::vector<YieldComponent> prim = pc_OrganIdsForPrimaryYield;
       std::vector<YieldComponent> sec = pc_OrganIdsForSecondaryYield;
 
-      BOOST_FOREACH(YieldComponent yc, prim){
+      for(YieldComponent yc : prim){
         eva2_primaryYieldComponents.push_back(yc);
       }
 //      vector<YieldComponent>::iterator it = prim.begin();
@@ -341,7 +344,7 @@ vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
 //          eva2_primaryYieldComponents.push_back(y);
 //      }
 
-      BOOST_FOREACH(YieldComponent yc, sec){
+      for(YieldComponent yc : sec){
          eva2_primaryYieldComponents.push_back(yc);
       }
 //      it = sec.begin();
@@ -444,6 +447,8 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 
   vc_OxygenDeficit = fc_OxygenDeficiency(pc_CriticalOxygenContent[vc_DevelopmentalStage]);
 
+  double old_DevelopmentalStage = vc_DevelopmentalStage;
+
   fc_CropDevelopmentalStage(vw_MeanAirTemperature,
 		        pc_BaseTemperature,
 						pc_OptimumTemperature,
@@ -457,7 +462,16 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 		        pc_NumberOfDevelopmentalStages,
 		        vc_VernalisationFactor,
 		        vc_DaylengthFactor,
-		        vc_CropNRedux);
+				vc_CropNRedux);
+
+  if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+	  vc_AnthesisDay = int(vs_JulianDay);    
+  }
+
+  if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+	  vc_MaturityDay = int(vs_JulianDay);
+	  vc_MaturityReached = true;
+  }
 
   vc_DaylengthFactor =
       fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
@@ -848,7 +862,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
 		std::vector<double> pc_OptimumTemperature, std::vector<double> pc_StageTemperatureSum, 
 		bool pc_Perennial, bool vc_GrowthCycleEnded, double vc_TimeStep, double d_SoilMoisture_m3, double d_FieldCapacity,
     double d_PermanentWiltingPoint, int pc_NumberOfDevelopmentalStages, double vc_VernalisationFactor,
-    double vc_DaylengthFactor, double vc_CropNRedux) {
+	double vc_DaylengthFactor, double vc_CropNRedux) {
   double vc_CapillaryWater;
   double vc_DevelopmentAccelerationByNitrogenStress = 0.0; // old NPROG
   double vc_DevelopmentAccelerationByWaterStress = 0.0; // old WPROG
@@ -856,6 +870,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
   double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature();
 	double vc_StageExcessTemperatureSum = 0.0;
 
+	double old_DevelopmentalStage = vc_DevelopmentalStage;
   if (vc_DevelopmentalStage == 0) 
 	{
 		if (pc_Perennial) 
@@ -1032,6 +1047,9 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
     vc_ErrorStatus = true;
     vc_ErrorMessage = "irregular developmental stage";
   }
+
+  
+
   debug() << "devstage: " << vc_DevelopmentalStage << endl;
 }
 
@@ -3853,6 +3871,12 @@ CropGrowth::get_AccumulatedETa() const
 }
 
 double
+CropGrowth::get_AccumulatedTranspiration() const
+{
+	return vc_AccumulatedTranspiration;
+}
+
+double
 CropGrowth::get_AccumulatedPrimaryCropYield() const
 {
 	return vc_AccumulatedPrimaryCropYield;
@@ -3939,4 +3963,74 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 	pc_StageTemperatureSum = perennialCropParams->pc_StageTemperatureSum,
 	pc_StorageOrgan = perennialCropParams->pc_StorageOrgan;
 	pc_VernalisationRequirement = perennialCropParams->pc_VernalisationRequirement;
+}
+
+/**
+* @brief Test if anthesis state is reached
+* @return True, if anthesis is reached, false otherwise.
+*
+* Method is called after calculation of the developmental stage.
+*/
+bool CropGrowth::isAnthesisDay(int old_dev_stage, int new_dev_stage)
+{
+	if (pc_NumberOfDevelopmentalStages == 6) {
+		return (old_dev_stage == 4 && new_dev_stage == 5);
+	}
+	else if (pc_NumberOfDevelopmentalStages == 7) {
+		return (old_dev_stage == 5 && new_dev_stage == 6);
+	}
+
+	return false;
+}
+
+/**
+* @brief Test if maturity state is reached
+* @return True, if maturity is reached, false otherwise.
+*
+* Method is called after calculation of the developmental stage.
+*/
+bool CropGrowth::isMaturityDay(int old_dev_stage, int new_dev_stage)
+{
+	// corn crops
+	if (pc_NumberOfDevelopmentalStages == 6)
+	{
+		return (old_dev_stage == 5 && new_dev_stage == 6);
+	}
+	// maize, sorghum and other crops with 7 developmental stages
+	else if (pc_NumberOfDevelopmentalStages == 7) 
+	{
+		return (old_dev_stage == 6 && new_dev_stage == 7);
+	}
+
+	return false;
+}
+
+/**
+ * @brief Getter for anthesis day.
+ * @return Julian day of crop's anthesis
+ */
+int 
+CropGrowth::getAnthesisDay() const
+{
+  //cout << "Getter anthesis " << vc_AnthesisDay << endl;
+	return vc_AnthesisDay;
+}
+
+/**
+* @brief Getter for maturity day.
+* @return Julian day of crop's maturity.
+*/
+int
+CropGrowth::getMaturityDay() const
+{
+  //cout << "Getter maturity " << vc_MaturityDay << endl;
+	return vc_MaturityDay;
+}
+
+
+bool
+CropGrowth::maturityReached() const
+{
+	debug() << "vc_MaturityReached: " << vc_MaturityReached << endl;
+	return vc_MaturityReached;
 }

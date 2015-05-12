@@ -1,32 +1,26 @@
 /**
  * @file cc_germany_methods.cpp
  */
-
 #if defined RUN_GIS
+
+#include <mutex>
 
 #include "gis_simulation_methods.h"
 #include "cc_germany_methods.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "db/abstract-db-connections.h"
+#include "soil/soil.h"
 
 using namespace Db;
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace Climate;
-
+using namespace Soil;
 
 // thuringia simulation
 
 interpolation* inter(NULL);
-
-/**
- * @brief Lockable object
- */
-struct L: public Loki::ObjectLevelLockable<L> {
-};
-
-
   
 Result
 Monica::createGISSimulation(int i, int j, std::string start_date_s, std::string end_date_s, double julian_sowing_date, char* hdf_filename, char* hdf_voronoi, std::string path, int ext_buek_id)
@@ -437,8 +431,8 @@ Monica::runSinglePointSimulation(char* station_id, int soiltype, double slope, d
 DataAccessor  
 Monica::getClimateDateOfThuringiaStation(char *station, std::string start_date_s, std::string end_date_s, CentralParameterProvider& cpp)
 {
-  static L lockable;
-  L::Lock lock(lockable);
+  static mutex lockable;
+  lock_guard<mutex> lock(lockable);
   
   std::string station_name = getThurStationName(std::atoi(station));
 

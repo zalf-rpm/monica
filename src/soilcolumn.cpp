@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include <algorithm>
+#include <assert.h>
 
 /**
  * @file soilcolumn.cpp
@@ -39,14 +40,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * @see Monica::FertilizerTriggerThunk
  */
 
-#include "boost/lambda/bind.hpp"
 #include "crop.h"
 #include "soilcolumn.h"
-#include "debug.h"
+#include "tools/debug.h"
+#include "soil/constants.h"
 
 using namespace Monica;
 using namespace std;
-using namespace boost;
+using namespace Soil;
+using namespace Tools;
 
 /**
  * Constructor with default parameter initialization
@@ -198,7 +200,7 @@ _vs_SoilMoisture_pF(0),
 vs_SoilMoisture_m3(0.25), // QUESTION - Warum wird hier mit 0.25 initialisiert?
 vs_SoilTemperature(0)
 {
-	assert((_vs_SoilOrganicCarbon - (_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C)) < 0.00001);
+  assert((_vs_SoilOrganicCarbon - (_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C)) < 0.00001);
 
   vs_SoilMoisture_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
   vs_SoilMoistureOld_m3 = vs_FieldCapacity * cpp.userInitValues.p_initPercentageFC;
@@ -594,7 +596,7 @@ void SoilColumn::set_vs_NumberOfOrganicLayers() {
 	//std::cout << "--------- set_vs_NumberOfOrganicLayers -----------" << std::endl;
   double lsum = 0;
   int count = 0;
-  for(int i = 0; i < vs_NumberOfLayers(); i++) {
+  for(size_t i = 0; i < vs_NumberOfLayers(); i++) {
 		//std::cout << vs_SoilLayers[i].vs_LayerThickness << std::endl;
     count++;
     lsum += vs_SoilLayers[i].vs_LayerThickness;
@@ -631,12 +633,12 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 			      int vf_TopDressingDelay ) {
 
   // Wassergehalt > Feldkapazität
-  if(soilLayer(0).get_Vs_SoilMoisture_m3() > soilLayer(0).get_FieldCapacity()) {
+  if(soilLayer(0).get_Vs_SoilMoisture_m3() > soilLayer(0).get_FieldCapacity())
+  {
     _delayedNMinApplications.push_back
-			(boost::lambda::bind(&SoilColumn::applyMineralFertiliserViaNMinMethod, this, fp,
-            vf_SamplingDepth, vf_CropNTarget,
-	  vf_CropNTarget30, vf_FertiliserMinApplication,
-	  vf_FertiliserMaxApplication, vf_TopDressingDelay));
+        ([=](){ return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
+                                                                 vf_CropNTarget30, vf_FertiliserMinApplication,
+                                                                 vf_FertiliserMaxApplication, vf_TopDressingDelay); });
 
     //cerr << "Soil too wet for fertilisation. "
     //  "Fertiliser event adjourned to next day." << endl;
@@ -793,7 +795,7 @@ void SoilColumn::deleteAOMPool() {
     double vo_SumAOM_Slow = 0.0;
     double vo_SumAOM_Fast = 0.0;
 
-    for(int i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
+    for (size_t i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
 
       vo_SumAOM_Slow += soilLayer(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Slow;
       vo_SumAOM_Fast += soilLayer(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Fast;
@@ -803,7 +805,7 @@ void SoilColumn::deleteAOMPool() {
     //cout << "Pool " << i_AOMPool << " -> Slow: " << vo_SumAOM_Slow << "; Fast: " << vo_SumAOM_Fast << endl;
 
     if ((vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001){
-      for(int i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
+      for (size_t i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++){
         vector<AOM_Properties>::iterator it_AOMPool = soilLayer(i_Layer).vo_AOM_Pool.begin();
         it_AOMPool += i_AOMPool;
 
@@ -903,7 +905,7 @@ void SoilColumn::applyIrrigation(double vi_IrrigationAmount,
  */
 void SoilColumn::applyTillage(double depth)
 {
-  int layer_index = getLayerNumberForDepth(depth)+1;
+  size_t layer_index = getLayerNumberForDepth(depth)+1;
 
   double soil_organic_carbon = 0.0;
   double soil_organic_matter = 0.0;
@@ -920,7 +922,7 @@ void SoilColumn::applyTillage(double depth)
   double no3 = 0.0;
 
   // add up all parameters that are affected by tillage
-  for (int i=0; i<layer_index; i++) {
+  for (size_t i = 0; i<layer_index; i++) {
     soil_organic_carbon += this->soilLayer(i).vs_SoilOrganicCarbon();
     soil_organic_matter += this->soilLayer(i).vs_SoilOrganicMatter();
     soil_temperature += this->soilLayer(i).get_Vs_SoilTemperature();
@@ -952,7 +954,7 @@ void SoilColumn::applyTillage(double depth)
   no3 = double(no3/double(layer_index));
 
   // use calculated mean values for all affected layers
-  for (int i=0; i < layer_index; i++) {
+  for (size_t i = 0; i < layer_index; i++) {
 		//assert((soil_organic_carbon - (soil_organic_matter * OrganicConstants::po_SOM_to_C)) < 0.00001);
     this->soilLayer(i).set_SoilOrganicCarbon(soil_organic_carbon);
     this->soilLayer(i).set_SoilOrganicMatter(soil_organic_matter);
@@ -987,7 +989,7 @@ void SoilColumn::applyTillage(double depth)
     //cout << "Soil parameters before applying tillage for the first "<< layer_index+1 << " layers: " << endl;
 
     // add up pools for affected layer with same index
-    for (int j=0; j<layer_index; j++) {
+    for (size_t j=0; j<layer_index; j++) {
       //cout << "Layer " << j << endl << endl;
 
       SoilLayer &layer = soilLayer(j);
@@ -1016,7 +1018,7 @@ void SoilColumn::applyTillage(double depth)
     //cout << "Soil parameters after applying tillage for the first "<< layer_index+1 << " layers: " << endl;
 
     // rewrite parameters of aom pool with mean values
-    for (int j=0; j<layer_index; j++) {
+    for (size_t j = 0; j<layer_index; j++) {
       SoilLayer &layer = soilLayer(j);
       //cout << "Layer " << j << endl << endl;
       unsigned int pool_index = 0;
@@ -1056,8 +1058,7 @@ void SoilColumn::applyTillage(double depth)
  * @param depth Depth in meters
  * @return Index of layer
  */
-int
-SoilColumn::getLayerNumberForDepth(double depth)
+size_t SoilColumn::getLayerNumberForDepth(double depth)
 {
   int layer=0;
   int size= vs_SoilLayers.size();

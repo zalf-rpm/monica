@@ -22,28 +22,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <mutex> 
+ 
 #include "macsur_scaling_interface.h"
 #include "tools/algorithms.h"
 #include "db/abstract-db-connections.h"
 #include "simulation.h"
-#include "conversion.h"
-
-#include "boost/foreach.hpp"
-
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
+#include "soil/conversion.h"
 
 using namespace Db;
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace Climate;
-
-
-/**
- * @brief Lockable object
- */
-struct L: public Loki::ObjectLevelLockable<L> {};
+using namespace Soil;
 
 /**
  * Method for starting a simulation with coordinates from ascii grid.
@@ -247,8 +239,8 @@ const SoilPMs* Monica::soilParametersFromFile(const string pathToFile, const Gen
 
   vector<SoilParameters>* sps = new vector<SoilParameters> ;
 
-  static L lockable;
-  L::Lock lock(lockable);
+  static mutex lockable;
+  lock_guard<mutex> lock(lockable);
 
   ifstream ifs(pathToFile.c_str(), ios::binary);
   if (! ifs.good()) {
@@ -349,9 +341,8 @@ const SoilPMs* Monica::phase2SoilParametersFromFile(const string pathToFile, con
 
   vector<SoilParameters>* sps = new vector<SoilParameters> ;
 
-  static L lockable;
-
-  L::Lock lock(lockable);
+  static mutex lockable;
+  lock_guard<mutex> lock(lockable);
 
   ifstream ifs(pathToFile.c_str(), ios::binary);
   if (! ifs.good()) {

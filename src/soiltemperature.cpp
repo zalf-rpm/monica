@@ -35,11 +35,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soiltemperature.h"
 #include "soilcolumn.h"
 #include "monica.h"
-#include "debug.h"
+#include "tools/debug.h"
 
 using namespace std;
 using namespace Climate;
 using namespace Monica;
+using namespace Tools;
 
 /**
  * @brief Constructor
@@ -93,8 +94,8 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
 
 
   // Initialising the soil properties until a database feed is realised
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  {
     // Initialising the soil temperature
     vt_SoilTemperature[i_Layer] =  (  (1.0 - (double(i_Layer) / vs_NumberOfLayers))
 			        * pt_InitialSurfaceTemperature)
@@ -105,7 +106,6 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
     // If dynamic soil moisture should be used, the energy balance
     // must be extended by latent heat flow.
     vs_SoilMoisture_const[i_Layer] = ps_SoilMoisture_const;
-
   }
 
   // Determination of the geometry parameters for soil temperature calculation
@@ -114,8 +114,8 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
   vt_V[0] = soilColumn[0].vs_LayerThickness;
   vt_B[0] = 2.0 / soilColumn[0].vs_LayerThickness;
 
-  int vt_GroundLayer = vt_NumberOfLayers - 2;
-  int vt_BottomLayer = vt_NumberOfLayers - 1;
+  auto vt_GroundLayer = vt_NumberOfLayers - 2;
+  auto vt_BottomLayer = vt_NumberOfLayers - 1;
 
   soilColumn[vt_GroundLayer].vs_LayerThickness = 2.0 * soilColumn[vt_GroundLayer - 1].vs_LayerThickness;
   soilColumn[vt_BottomLayer].vs_LayerThickness = 1.0;
@@ -124,8 +124,8 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
 
   double vt_h0 = soilColumn[0].vs_LayerThickness;
 
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
-
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
+  {
     double vt_h1 = soilColumn[i_Layer].vs_LayerThickness; // [m]
     vt_B[i_Layer] = 2.0 / (vt_h1 + vt_h0); // [m]
     vt_V[i_Layer] = vt_h1 * pt_Ntau; // [m3]
@@ -134,10 +134,9 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
 
   // End determination of the geometry parameters for soil temperature calculation
 
-
   // initialising heat state variables
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  {
     ///////////////////////////////////////////////////////////////////////////////////////
     // Calculate heat conductivity following Neusypina 1979
     // Neusypina, T.A. (1979): Rascet teplovo rezima pocvi v modeli formirovanija urozaja.
@@ -173,7 +172,6 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
     const double spv = soilColumn[i_Layer].get_Saturation();
     const double som = soilColumn.at(i_Layer).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
 
-
     vt_HeatCapacity[i_Layer] = (smi * dw * cw)
 			 +((spv-smi) * da * ca)
 			 + (som * dh * ch)
@@ -200,7 +198,7 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
   // Calculation of the mean heat conductivity per layer
   vt_HeatConductivityMean[0] = vt_HeatConductivity[0];
 
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     const double lti_1 = soilColumn.at(i_Layer-1).vs_LayerThickness;
     const double lti = soilColumn.at(i_Layer).vs_LayerThickness;
@@ -213,8 +211,8 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
   } // for
 
   // Determination of the volume matrix
-  for (int i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
+  {
     vt_VolumeMatrix[i_Layer] = vt_V[i_Layer] * vt_HeatCapacity[i_Layer]; // [J K-1]
 
     // If initial entry, rearrengement of volume matrix
@@ -222,17 +220,13 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
 
     // Determination of the matrix secundary diagonal
     vt_MatrixSecundaryDiagonal[i_Layer] = -vt_B[i_Layer] * vt_HeatConductivityMean[i_Layer]; //[J K-1]
-
   }
-
-
-
 
   vt_MatrixSecundaryDiagonal[vt_BottomLayer + 1] = 0.0;
 
   // Determination of the matrix primary diagonal
-  for (int i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
+  {
     vt_MatrixPrimaryDiagonal[i_Layer] =   vt_VolumeMatrix[i_Layer]
 				  - vt_MatrixSecundaryDiagonal[i_Layer]
 				  - vt_MatrixSecundaryDiagonal[i_Layer + 1]; //[J K-1]
@@ -274,7 +268,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 		 + (vt_VolumeMatrix[0] - vt_VolumeMatrixOld[0]) / soilColumn[0].vs_LayerThickness)
       * vt_SoilTemperature[0] + vt_HeatFlow;
 
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     vt_Solution[i_Layer] =   (vt_VolumeMatrixOld[i_Layer]
 			+ (vt_VolumeMatrix[i_Layer] - vt_VolumeMatrixOld[i_Layer])
@@ -294,7 +288,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   // Determination of the lower matrix triangle L and the diagonal matrix D
   vt_MatrixDiagonal[0] = vt_MatrixPrimaryDiagonal[0];
 
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     vt_MatrixLowerTriangle[i_Layer] = vt_MatrixSecundaryDiagonal[i_Layer] / vt_MatrixDiagonal[i_Layer - 1];
     vt_MatrixDiagonal[i_Layer] =   vt_MatrixPrimaryDiagonal[i_Layer]
@@ -302,7 +296,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   }
 
   // Solution of LY=Z
-  for (int i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
 
     vt_Solution[i_Layer] =   vt_Solution[i_Layer]
 		         - (vt_MatrixLowerTriangle[i_Layer] * vt_Solution[i_Layer - 1]);
@@ -322,11 +316,11 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   // end subroutine CholeskyMethod
 
   // Internal Subroutine Rearrangement
-  for(int i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
     vt_SoilTemperature[i_Layer] = vt_Solution[i_Layer];
   }
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
 
     vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
     soilColumn[i_Layer].set_Vs_SoilTemperature(vt_SoilTemperature[i_Layer]);
@@ -433,7 +427,7 @@ SoilTemperature::get_AvgTopSoilTemperature(double sumLT) const
   double tempSum = 0;
   int count = 0;
 
-  for (int i = 0; i < vs_NumberOfLayers; i++) {
+  for (size_t i = 0; i < vs_NumberOfLayers; i++) {
     count++;
     tempSum += soilColumn[i].get_Vs_SoilTemperature();
     lsum += soilColumn[i].vs_LayerThickness;

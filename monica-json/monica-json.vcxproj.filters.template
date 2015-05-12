@@ -37,12 +37,15 @@
     <Filter Include="Quelldateien\cson">
       <UniqueIdentifier>{966e935f-f4c9-4489-bd9c-28e63de23706}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headerdateien\soil">
+      <UniqueIdentifier>{f37ce209-c7b5-4253-9b44-d7c75986e521}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\soil">
+      <UniqueIdentifier>{e02a0226-8f19-437b-b6b2-d7a241762a88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\crop.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\debug.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\src\monica-parameters.h">
@@ -70,9 +73,6 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\src\monica-typedefs.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\conversion.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\..\util\db\abstract-db-connections.h">
@@ -108,12 +108,21 @@
     <ClInclude Include="..\..\util\cson\cson_amalgamation_core.h">
       <Filter>Headerdateien\cson</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\util\tools\debug.h">
+      <Filter>Headerdateien\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\soil\soil.h">
+      <Filter>Headerdateien\soil</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\soil\conversion.h">
+      <Filter>Headerdateien\soil</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util\soil\constants.h">
+      <Filter>Headerdateien\soil</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\crop.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\debug.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\src\monica-parameters.cpp">
@@ -138,9 +147,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\src\soiltransport.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\conversion.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\..\util\db\sqlite3.c">
@@ -172,6 +178,18 @@
     </ClCompile>
     <ClCompile Include="..\src\monica-json-main.cpp">
       <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\tools\debug.cpp">
+      <Filter>Quelldateien\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\soil\constants.cpp">
+      <Filter>Quelldateien\soil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\soil\conversion.cpp">
+      <Filter>Quelldateien\soil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\soil\soil.cpp">
+      <Filter>Quelldateien\soil</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

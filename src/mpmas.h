@@ -130,7 +130,7 @@ namespace Mpmas
 			void operator()(PS& ms)
 			{
 				std::map<MunicipalityId, Municipality*> id2m;
-				BOOST_FOREACH(Municipality* m, ms)
+        for(Municipality* m : ms)
 				{
 					id2m[m->id] = m;
 				}
@@ -401,7 +401,7 @@ namespace Mpmas
 			void operator()(PS& ps)
 			{
 				std::map<ProductId, Product*> id2p;
-				BOOST_FOREACH(Product* p, ps)
+        for(Product* p : ps)
 				{
 					id2p[p->id] = p;
 				}
@@ -480,7 +480,7 @@ namespace Mpmas
 			void operator()(PS& pps)
 			{
 				std::map<ProductionPracticeId, ProductionPractice*> id2pp;
-				BOOST_FOREACH(ProductionPractice* pp, pps)
+        for(ProductionPractice* pp : pps)
 				{
 					id2pp[pp->id] = pp;
 				}
@@ -689,7 +689,7 @@ namespace Mpmas
 		char* _pathToInactiveSectorsFile;
 	};
 
-	typedef boost::shared_ptr<RunMpmas> RunMpmasPtr;
+  typedef std::shared_ptr<RunMpmas> RunMpmasPtr;
 
 	std::map<SoilClassId, std::vector<std::vector<Monica::ProductionProcess> > >
 	cropRotationsFromUsedCropActivities(std::vector<CropActivity*> cas);

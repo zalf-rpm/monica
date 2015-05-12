@@ -30,27 +30,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <cmath>
 #include <utility>
-
-#include "boost/foreach.hpp"
+#include <mutex>
 
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
-#include "tools/use-stl-algo-boost-lambda.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
-
 #include "monica-parameters.h"
 #include "monica.h"
-//#include "eva_methods.h"
-#include "debug.h"
-#include "conversion.h"
-
-#define LOKI_OBJECT_LEVEL_THREADING
-#include "loki/Threads.h"
+#include "tools/debug.h"
+#include "soil/conversion.h"
+#include "soil/soil.h"
 
 using namespace Db;
 using namespace std;
 using namespace Monica;
+using namespace Soil;
 using namespace Tools;
 using namespace Climate;
 
@@ -58,11 +53,6 @@ using namespace Climate;
 
 namespace
 {
-  /**
- * @brief Lockable object
- */
-  struct L: public Loki::ObjectLevelLockable<L> {};
-	
   /*!
  * @todo Claas bitte ausfüllen
  * @param name
@@ -185,10 +175,10 @@ Result::getResultsById(int id)
   // test if crop results are requested
   if (id == primaryYield || id == secondaryYield || id == sumIrrigation ||
       id == sumFertiliser || id == biomassNContent || id == sumTotalNUptake ||
-      id == cropHeight || id == cropname || id == sumETaPerCrop ||
+      id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
-      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress
-      )
+      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass || 
+      id == anthesisDay || id == maturityDay )
   {
     vector<double> result_vector;
     int size = pvrs.size();
@@ -209,9 +199,9 @@ const vector<ResultId>& Monica::cropResultIds()
   static ResultId ids[] =
   {
     primaryYield, secondaryYield, sumFertiliser,
-    sumIrrigation//, sumMineralisation
+    sumIrrigation, anthesisDay, maturityDay//, sumMineralisation
   };
-  static vector<ResultId> v(ids, ids + 4);//5);
+  static vector<ResultId> v(ids, ids + 6);//5);
 
   return v;
 }
@@ -243,45 +233,6 @@ const vector<ResultId>& Monica::monthlyResultIds()
   return v;
 }
 
-//------------------------------------------------------------------------------
-
-const vector<int>& Monica::sensitivityAnalysisResultIds()
-{
-  static ResultId ids[] =
-  {
-    primaryYield,                   // done
-    cropHeight,                     // done
-    biomassNContent,
-    daysWithCrop,
-    aboveBiomassNContent,
-    mean90cmMonthlyAvgWaterContent, // done
-    sum30cmSoilTemperature,
-    avg0_30cmSoilMoisture,
-    avg30_60cmSoilMoisture,         // done
-    avg60_90cmSoilMoisture,         // done
-    yearlySumGroundWaterRecharge,    
-    yearlySumNLeaching,
-    sum90cmYearlyNatDay,
-    monthlySumGroundWaterRecharge,  // done
-    waterFluxAtLowerBoundary,       // done
-    evapotranspiration,             // done
-    transpiration,                  // done
-    evaporation,                    // done
-    sumTotalNUptake,                // done
-    NH3Volatilised,                 // done
-    sumNH3Volatilised,              // done
-    leachingNAtBoundary,             // done
-    dev_stage,
-    daysWithCrop,
-    avg30cmMonthlyAvgCorg
-    
-  };
-
-  //static vector<int> v(ids, ids+2);
-  static vector<int> v(ids, ids+25);
-
-  return v;
-}
 
 //------------------------------------------------------------------------------
 
@@ -379,6 +330,12 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Hauptertrag", "dt/ha", "primYield");
   case secondaryYield:
     return ResultIdInfo("Nebenertrag", "dt/ha", "secYield");
+  case aboveGroundBiomass:
+    return ResultIdInfo("Oberirdische Biomasse", "dt/ha", "AbBiom");
+  case anthesisDay:
+	  return ResultIdInfo("Tag der Blüte", "Jul. day", "anthesisDay");
+  case maturityDay:
+	  return ResultIdInfo("Tag der Reife", "Jul. day", "maturityDay");
   case sumFertiliser:
     return ResultIdInfo("N", "kg/ha", "sumFert");
   case sumIrrigation:
@@ -419,6 +376,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 30-60cm Boden am 31.03.", "%","Moist30_60");
   case avg60_90cmSoilMoisture:
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 60-90cm Boden am 31.03.", "%","Moist60_90");
+  case avg0_90cmSoilMoisture:
+    return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-90cm Boden am 31.03.", "%","Moist0_90");
   case waterFluxAtLowerBoundary:
     return ResultIdInfo("Sickerwasser der unteren Bodengrenze am 31.03.", "mm/d", "waterFlux");
   case avg0_30cmCapillaryRise:
@@ -463,6 +422,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Gesamt-akkumulierte N-Auswaschung im Jahr", "kg N/ha", "Yearly_monthLeachN");
   case sumETaPerCrop:
     return ResultIdInfo("Evapotranspiration pro Vegetationszeit der Pflanze", "mm", "ETa_crop");
+  case sumTraPerCrop:
+	  return ResultIdInfo("Transpiration pro Vegetationszeit der Pflanze", "mm", "Tra_crop");
   case cropname:
     return ResultIdInfo("Pflanzenname", "", "cropname");
   case primaryYieldTM:
@@ -582,6 +543,9 @@ void Harvest::apply(MonicaModel* model)
 					_crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
 					_crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 					_crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
+					_crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
+					_crop->setAnthesisDay(model->cropGrowth()->getAnthesisDay());
+					_crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
 				}
 
 				//store results for this crop
@@ -592,15 +556,19 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[sumIrrigation] = _crop->appliedIrrigationWater();
 				_cropResult->pvResults[biomassNContent] = _crop->primaryYieldN();
 				_cropResult->pvResults[aboveBiomassNContent] = _crop->aboveGroundBiomasseN();
+				_cropResult->pvResults[aboveGroundBiomass] = _crop->aboveGroundBiomass();
 				_cropResult->pvResults[daysWithCrop] = model->daysWithCrop();
 				_cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
 				_cropResult->pvResults[cropHeight] = _crop->cropHeight();
 				_cropResult->pvResults[sumETaPerCrop] = _crop->get_AccumulatedETa();
+				_cropResult->pvResults[sumTraPerCrop] = _crop->get_AccumulatedTranspiration();
 				_cropResult->pvResults[cropname] = _crop->id();
 				_cropResult->pvResults[NStress] = model->getAccumulatedNStress();
 				_cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
+				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
+				_cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
 
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);
@@ -696,7 +664,7 @@ void Cutting::apply(MonicaModel* model)
 
     _crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
     _crop->setCropHeight(model->cropGrowth()->get_CropHeight());
-
+	
 
     if (model->cropGrowth()) {
         model->cropGrowth()->applyCutting();
@@ -809,6 +777,24 @@ string IrrigationApplication::toString() const
   return s.str();
 }
 
+
+//------------------------------------------------------------------------------
+
+/**
+ * @brief Returns a short summary with information about automatic yield parameter configuration.
+ * @brief String
+ */
+string AutomaticHarvestParameters::toString() const
+{
+	ostringstream s;
+	if (_harvestTime == AutomaticHarvestTime::maturity) {
+		s << "Automatic harvestTime: Maturity ";
+	}
+
+	return s.str();
+}
+
+
 //------------------------------------------------------------------------------
 
 
@@ -870,20 +856,24 @@ MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDat
 //------------------------------------------------------------------------------
 
 ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
-    _name(name),
-    _crop(crop),
-    _cropResult(new PVResult())
+_name(name),
+_crop(crop),
+_cropResult(new PVResult())
 {
-  debug() << "ProductionProcess: " << name.c_str() << endl;
-  _cropResult->id = _crop->id();
+	debug() << "ProductionProcess: " << name.c_str() << endl;
+	_cropResult->id = _crop->id();
 
-	if ((crop->seedDate() != Date(1,1,1951)) && (crop->seedDate() != Date(0,0,0)))
+	if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0))) {
 		addApplication(Seed(crop->seedDate(), crop));
-	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)))
-	{
-    debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
-    addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
-  }
+	}
+	
+
+	
+	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) && (! crop->useAutomaticHarvestTrigger()) ) {
+	
+		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
+		addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
+	}
 
   std::vector<Date> cuttingDates = crop->getCuttingDates();
   unsigned int size = cuttingDates.size();
@@ -987,10 +977,32 @@ struct ParseDate
   DMY operator()(const string & d)
   {
     DMY r;
-    r.d = atoi(d.substr(0, 2).c_str());
-    r.m = atoi(d.substr(2, 2).c_str());
-    r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 72 ? 2000 + r.y : 1900 + r.y;
+	int length = d.size();
+
+	if (length == 6) {
+		// old HERMES format ddmmyy
+		r.d = atoi(d.substr(0, 2).c_str());
+		r.m = atoi(d.substr(2, 2).c_str());
+		r.y = atoi(d.substr(4, 2).c_str());
+		r.y = r.y <= 72 ? 2000 + r.y : 1900 + r.y;
+
+	}
+	else if (length == 8) {
+		
+		//ddmmyyyy
+		r.d = atoi(d.substr(0, 2).c_str());
+		r.m = atoi(d.substr(2, 2).c_str());
+		r.y = atoi(d.substr(4, 4).c_str());
+
+	}
+	else {
+		// other unexpected length
+		cout << "ERROR - Cannot parse date \"" << d.c_str() << "\"" << endl;
+		cout << "Should be of format DDMMYY or DDMMYYYY" << endl;		
+		cout << "Aborting simulation now!" << endl;
+		exit(-1);
+	}
+	
     return r;
   }
 } parseDate;
@@ -998,7 +1010,7 @@ struct ParseDate
 //----------------------------------------------------------------------------
 
 vector<ProductionProcess>
-    Monica::cropRotationFromHermesFile(const string& pathToFile)
+    Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
 {
   vector<ProductionProcess> ff;
 
@@ -1025,14 +1037,26 @@ vector<ProductionProcess>
     int t;
     ss >> t >> crp >> sowingDate >> harvestDate >> tillageDate >> exp  >> tillage_depth;
 
-    Date sd = parseDate(sowingDate).toDate(true);
-    Date hd = parseDate(harvestDate).toDate(true);
-    Date td = parseDate(tillageDate).toDate(true);
+    Date sd = parseDate(sowingDate).toDate(true);    
+	Date td = parseDate(tillageDate).toDate(true);
+	Date hd;
+
+	if (! useAutomaticHarvestTrigger) {
+		
+		hd = parseDate(harvestDate).toDate(true);
+		
+		if (!hd.isValid()) {
+			debug() << "Error - Invalid harvest date in \"" << pathToFile.c_str() << "\"" << endl;
+			debug() << "Line: " << s.c_str() << endl;
+			debug() << "Aborting simulation now!" << endl;
+			exit(-1);
+		}
+	}
 
     // tst if dates are valid
-    if (!sd.isValid() || !hd.isValid() || !td.isValid())
+    if (!sd.isValid() || !td.isValid())
     {
-      debug() << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
+      debug() << "Error - Invalid sowing or tillage date in \"" << pathToFile.c_str() << "\"" << endl;
       debug() << "Line: " << s.c_str() << endl;
       debug() << "Aborting simulation now!" << endl;
       exit(-1);
@@ -1043,6 +1067,12 @@ vector<ProductionProcess>
     crop->setSeedAndHarvestDate(sd, hd);
     crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
     crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
+	
+	if (useAutomaticHarvestTrigger) {
+		// change latest harvest date to crop specific fallback harvest doy
+		autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->pc_LatestHarvestDoy);
+		crop->activateAutomaticHarvestTrigger(autoHarvestParams);
+	}
 
     ProductionProcess pp(crp, crop);
     pp.addApplication(TillageApplication(td, (tillage_depth/100.0) ));
@@ -1219,8 +1249,9 @@ CropParameters::CropParameters() :
     pc_DevelopmentAccelerationByNitrogenStress(0),
     pc_CuttingDelayDays(0),
     pc_FieldConditionModifier(1.0),
-		pc_AssimilateReallocation(0.0),
-		pc_LT50cultivar(0.0)
+	pc_AssimilateReallocation(0.0),
+	pc_LT50cultivar(0.0),
+	pc_LatestHarvestDoy(-1)
 {}
 
 /**
@@ -1321,6 +1352,9 @@ string CropParameters::toString() const
   s << "pc_LimitingTemperatureHeatStress:\t" << pc_LimitingTemperatureHeatStress << endl;
   s << "pc_BeginSensitivePhaseHeatStress:\t" << pc_BeginSensitivePhaseHeatStress << endl;
   s << "pc_EndSensitivePhaseHeatStress:\t\t" << pc_EndSensitivePhaseHeatStress << endl;
+
+  s << "------------------------------------------------" << endl;
+  s << "pc_LatestHarvestDoy:\t\t" << pc_LatestHarvestDoy  << endl;
 
   //s << endl;
   s << "------------------------------------------------" << endl;
@@ -1474,10 +1508,10 @@ string CropParameters::toString() const
  */
 const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 {
-  static L lockable;
+  static mutex lockable;
 
   static bool initialized = false;
-  typedef boost::shared_ptr<CropParameters> CPPtr;
+  typedef std::shared_ptr<CropParameters> CPPtr;
   typedef map<int, CPPtr> CPS;
 
   static CPS cpss;
@@ -1485,7 +1519,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
   // only initialize once
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     //test if after waiting for the lock the other thread
     //already initialized the whole thing
@@ -1513,7 +1547,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
           "cutting_delay_days, field_condition_modifier, assimilate_reallocation, "
 					"LT50cultivar, frost_hardening, frost_dehardening, "
-					"low_temperature_exposure, respiratory_stress from crop";
+					"low_temperature_exposure, respiratory_stress, latest_harvest_doy from crop";
       con->select(text_request.c_str());
 
       debug () << text_request.c_str() << endl;
@@ -1527,14 +1561,13 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         CPS::iterator cpsi = cpss.find(id);
         CPPtr cps;
 
-        if (cpsi == cpss.end()) {
-          cpss.insert(make_pair(id, cps = boost::shared_ptr<CropParameters>(new CropParameters)));
-        }  else {
+        if (cpsi == cpss.end())
+          cpss.insert(make_pair(id, cps = std::shared_ptr<CropParameters>(new CropParameters)));
+        else
           cps = cpsi->second;
-        }
 
         cps->pc_CropName = row[i++].c_str();
-				cps->pc_Perennial = satoi(row[i++]);
+        cps->pc_Perennial = satob(row[i++]);
         cps->pc_MaxAssimilationRate = satof(row[i++]);
         cps->pc_CarboxylationPathway = satoi(row[i++]);
         cps->pc_MinimumTemperatureForAssimilation = satof(row[i++]);
@@ -1578,12 +1611,14 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
         cps->pc_FieldConditionModifier = satof(row[i++]);
-				cps->pc_AssimilateReallocation = satof(row[i++]);
-				cps->pc_LT50cultivar = satof(row[i++]);
-				cps->pc_FrostHardening = satof(row[i++]);
-				cps->pc_FrostDehardening = satof(row[i++]);
-				cps->pc_LowTemperatureExposure = satof(row[i++]);
-				cps->pc_RespiratoryStress = satof(row[i++]);
+		cps->pc_AssimilateReallocation = satof(row[i++]);
+		cps->pc_LT50cultivar = satof(row[i++]);
+		cps->pc_FrostHardening = satof(row[i++]);
+		cps->pc_FrostDehardening = satof(row[i++]);
+		cps->pc_LowTemperatureExposure = satof(row[i++]);
+		cps->pc_RespiratoryStress = satof(row[i++]);
+		cps->pc_LatestHarvestDoy = satoi(row[i++]);
+
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
                         "o.organ_maintainance_respiration, o.is_above_ground, "
@@ -1638,7 +1673,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_StageKcFactor.push_back(satof(row[12]));
       }
 
-      BOOST_FOREACH(CPS::value_type vt, cpss)
+      for(CPS::value_type vt : cpss)
       {
         vt.second->resizeStageOrganVectors();
       }
@@ -1754,18 +1789,18 @@ pc_EmergenceMoistureControlOn(pc_EmergenceMoistureControlOn)
 //------------------------------------------------------------------------------
 
 
-/**
- * @brief Definition of organic constants
- */
-double const OrganicConstants::po_UreaMolecularWeight = 0.06006;//[kg mol-1]
-double const OrganicConstants::po_Urea_to_N = 0.46667; //Converts 1 kg urea to 1 kg N
-double const OrganicConstants::po_NH3MolecularWeight = 0.01401; //[kg mol-1]
-double const OrganicConstants::po_NH4MolecularWeight = 0.01401; //[kg mol-1]
-double const OrganicConstants::po_H2OIonConcentration = 1.0;
-double const OrganicConstants::po_pKaHNO2 = 3.29; // [] pKa value for nitrous acid
-double const OrganicConstants::po_pKaNH3 = 6.5; // [] pKa value for ammonium
-double const OrganicConstants::po_SOM_to_C = 0.57; // = 0.58; // [] converts soil organic matter to carbon
-double const OrganicConstants::po_AOM_to_C = 0.45; // [] converts added organic matter to carbon
+///**
+// * @brief Definition of organic constants
+// */
+//double const OrganicConstants::po_UreaMolecularWeight = 0.06006;//[kg mol-1]
+//double const OrganicConstants::po_Urea_to_N = 0.46667; //Converts 1 kg urea to 1 kg N
+//double const OrganicConstants::po_NH3MolecularWeight = 0.01401; //[kg mol-1]
+//double const OrganicConstants::po_NH4MolecularWeight = 0.01401; //[kg mol-1]
+//double const OrganicConstants::po_H2OIonConcentration = 1.0;
+//double const OrganicConstants::po_pKaHNO2 = 3.29; // [] pKa value for nitrous acid
+//double const OrganicConstants::po_pKaNH3 = 6.5; // [] pKa value for ammonium
+//double const OrganicConstants::po_SOM_to_C = 0.57; // = 0.58; // [] converts soil organic matter to carbon
+//double const OrganicConstants::po_AOM_to_C = 0.45; // [] converts added organic matter to carbon
 
 //------------------------------------------------------------------------------
 
@@ -1800,1007 +1835,742 @@ string SiteParameters::toString() const
 
 //------------------------------------------------------------------------------
 
-/**
- * @brief Constructor
- *
- * Parameter initialization
- */
-SoilParameters::SoilParameters() :
-    vs_SoilSandContent(0.4),
-    vs_SoilClayContent(0.05),
-    vs_SoilpH(6.9),
-    _vs_SoilRawDensity(-1),
-		_vs_SoilBulkDensity(-1),
-    _vs_SoilOrganicCarbon(-1),
-    _vs_SoilOrganicMatter(-1),
-    vs_SoilAmmonium(-1),
-    vs_SoilNitrate(-1)
-{}
-
-
-bool
-SoilParameters::isValid()
-{
-  bool is_valid = true;
-
-  if (vs_FieldCapacity < 0) {
-      cout << "SoilParameters::Error: No field capacity defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: "<< _vs_SoilRawDensity << endl;
-      is_valid = false;
-  }
-  if (vs_Saturation < 0) {
-      cout << "SoilParameters::Error: No saturation defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: " << _vs_SoilRawDensity << endl;
-      is_valid = false;
-  }
-  if (vs_PermanentWiltingPoint < 0) {
-      cout << "SoilParameters::Error: No saturation defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: " << _vs_SoilRawDensity << endl;
-      is_valid = false;
-  }
-
-  if (vs_SoilSandContent<0) {
-      cout << "SoilParameters::Error: Invalid soil sand content: "<< vs_SoilSandContent << endl;
-      is_valid = false;
-  }
-
-  if (vs_SoilClayContent<0) {
-      cout << "SoilParameters::Error: Invalid soil clay content: "<< vs_SoilClayContent << endl;
-      is_valid = false;
-  }
-
-  if (vs_SoilpH<0) {
-      cout << "SoilParameters::Error: Invalid soil ph value: "<< vs_SoilpH << endl;
-      is_valid = false;
-  }
-
-  if (vs_SoilStoneContent<0) {
-      cout << "SoilParameters::Error: Invalid soil stone content: "<< vs_SoilStoneContent << endl;
-      is_valid = false;
-  }
-
-  if (vs_Saturation<0) {
-      cout << "SoilParameters::Error: Invalid value for saturation: "<< vs_Saturation << endl;
-      is_valid = false;
-  }
-
-  if (vs_PermanentWiltingPoint<0) {
-      cout << "SoilParameters::Error: Invalid value for permanent wilting point: "<< vs_PermanentWiltingPoint << endl;
-      is_valid = false;
-  }
-	/*
-  if (_vs_SoilRawDensity<0) {
-      cout << "SoilParameters::Error: Invalid soil raw density: "<< _vs_SoilRawDensity << endl;
-      is_valid = false;
-  }
-	*/
-  return is_valid;
-}
-
-/**
- * @brief Returns raw density of soil
- * @return raw density of soil
- */
-double SoilParameters::vs_SoilRawDensity() const
-{
-  // conversion from g cm-3 in kg m-3
-  return _vs_SoilRawDensity * 1000;
-}
-
-/**
- * @brief Sets soil raw density
- * @param srd New soil rad density
- */
-void SoilParameters::set_vs_SoilRawDensity(double srd)
-{
-  _vs_SoilRawDensity = srd;
-}
-
-/**
-* @brief Getter for soil bulk density.
-* @return bulk density
-*/
-double SoilParameters::vs_SoilBulkDensity() const
-{
-	if (_vs_SoilRawDensity < 0)
-		return _vs_SoilBulkDensity;
-
-	return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
-	//return _vs_SoilBulkDensity * 1000;
-}
-
-/**
-* @brief Sets soil bulk density
-* @param sbd New soil bulk density
-*/
-void SoilParameters::set_vs_SoilBulkDensity(double sbd)
-{
-	_vs_SoilBulkDensity = sbd;
-}
-
-/**
- * @brief Returns soil organic carbon.
- * @return soil organic carbon
- */
-double SoilParameters::vs_SoilOrganicCarbon() const
-{
-  if (_vs_SoilOrganicMatter < 0)
-    return _vs_SoilOrganicCarbon;
-
-	return _vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C;
-}
-
-/**
- * @brief Setter of soil organic carbon.
- * @param soc New soil organic carbon
- */
-void SoilParameters::set_vs_SoilOrganicCarbon(double soc)
-{
-  _vs_SoilOrganicCarbon = soc;
-}
-
-/**
- * @brief Getter for soil organic matter.
- * @return Soil organic matter
- */
-double SoilParameters::vs_SoilOrganicMatter() const
-{
-  if (_vs_SoilOrganicCarbon < 0)
-    return _vs_SoilOrganicMatter;
-	return _vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C;
-}
-
-/**
- * @brief Setter for soil organic matter.
- * @param som New soil organic matter
- */
-void SoilParameters::set_vs_SoilOrganicMatter(double som)
-{
-  _vs_SoilOrganicMatter = som;
-}
-
-/**
- * @brief Getter for silt content
- * @return silt content
- */
-double SoilParameters::vs_SoilSiltContent() const
-{
-  if ((vs_SoilSandContent - 0.001) < 0 && (vs_SoilClayContent - 0.001) < 0)
-    return 0;
-
-  return 1 - vs_SoilSandContent - vs_SoilClayContent;
-}
-
-/**
- * @brief Serializes soil parameters into a string.
- * @return String of soil parameters
- */
-string SoilParameters::toString() const
-{
-  ostringstream s;
-  s << "vs_Soilph: " << vs_SoilpH << endl
-      << "vs_SoilOrganicCarbon: " << vs_SoilOrganicCarbon() << endl
-      << "vs_SoilOrganicMatter: " << vs_SoilOrganicMatter() << endl
-      << "vs_SoilRawDensity: " << vs_SoilRawDensity() << endl
-      << "vs_SoilBulkDensity: " << vs_SoilBulkDensity() << endl
-      << "vs_SoilSandContent: " << vs_SoilSandContent << endl
-      << "vs_SoilClayContent: " << vs_SoilClayContent << endl
-      << "vs_SoilSiltContent: " << vs_SoilSiltContent() << endl
-      << "vs_SoilStoneContent: " << vs_SoilStoneContent << endl
-      << "vs_SoilpH: " << vs_SoilpH << endl
-      << "vs_Lambda: " << vs_Lambda << endl
-      << "vs_FieldCapacity: " << vs_FieldCapacity << endl
-      << "vs_Saturation: " << vs_Saturation << endl
-      << "vs_PermanentWiltingPoint: " << vs_PermanentWiltingPoint << endl
-      << "vs_SoilTexture: " << vs_SoilTexture.c_str() << endl
-      << "vs_SoilAmmonium: " << vs_SoilAmmonium << endl
-      << "vs_SoilNitrate: " << vs_SoilNitrate
-      << endl;
-
-  return s.str();
-}
-
-/**
- * @brief Returns lambda from soil texture
- *
- * @param lambda
- *
- * @return
- */
-double SoilParameters::texture2lambda(double sand, double clay)
-{
-	return Tools::texture2lambda(sand, clay);
-}
-
-//------------------------------------------------------------------------------
-
-/*
-const SoilPMs* Monica::ueckerSoilParameters(const std::string& str,
-																						int layerThicknessCm,
-																						int maxDepthCm,
-																						bool loadSingleParameter)
-{
-  //cout << "getting soilparameters for STR: " << str << endl;
-	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
-
-  static L lockable;
-   
-  typedef map<string, SoilPMsPtr> Map;
-  static bool initialized = false;
-  static Map spss;
-
-  if (!initialized)
-  {
-    L::Lock lock(lockable);
-
-    if (!initialized)
-    {
-			DBPtr con(newConnection("landcare-dss"));
-      DBRow row;
-
-      ostringstream s;
-      s << "select str, anzhor, hor, ho, hu, ph, corg, trd, s, t "
-          "from mmk_profile "
-          "where ho <= 201 ";
-      if(loadSingleParameter)
-        s << "and str = '" << str << "' ";
-      s << "order by str, hor";
-
-      con->select(s.str().c_str());
-
-      while (!(row = con->getRow()).empty())
-      {
-        string id = row[0];
-
-				SoilPMsPtr sps = spss[id];
-				if(!sps)
-				{
-					spss[id] = SoilPMsPtr(new SoilPMs);
-					sps = spss[id];
-				}
-
-        int hcount = satoi(row[1]);
-        int currenth = satoi(row[2]);
-
-				int ho = sps->size()*layerThicknessCm;
-				int hu = satoi(row[4], maxDepthCm);
-				int hsize = max(0, hu - ho);
-				int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
-        if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
-          subhcount += maxNoOfLayers - sps->size() - subhcount;
-
-        SoilParameters p;
-				if (!row[5].empty())
-          p.vs_SoilpH = satof(row[5]);
-				p.set_vs_SoilOrganicCarbon(satof(row[6]) / 100.0);
-        p.set_vs_SoilRawDensity(satof(row[7]));
-        p.vs_SoilSandContent = satof(row[8]) / 100.0;
-        p.vs_SoilClayContent = satof(row[9]) / 100.0;
-        p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
-        p.vs_SoilStoneContent = 0.0;
-        p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
-
-        // initialization of saturation, field capacity and perm. wilting point
-        soilCharacteristicsKA5(p);
-
-        bool valid_soil_params = p.isValid();
-				if (!valid_soil_params)
-				{
-            cout << "Error in soil parameters. Aborting now simulation";
-            exit(-1);
-        }
-
-        for (int i = 0; i < subhcount; i++)
-          sps->push_back(p);
-      }
-
-      initialized = true;
-
-      //      BOOST_FOREACH(Map::value_type p, spss)
-      //      {
-      //        cout << "code: " << p.first << endl;
-      //        BOOST_FOREACH(SoilParameters sp, *p.second)
-      //        {
-      //          cout << sp.toString();
-      //          cout << "---------------------------------" << endl;
-      //        }
-      //      }
-    }
-  }
-
-  static SoilPMs nothing;
-  Map::const_iterator ci = spss.find(str);
-  return ci != spss.end() ? ci->second.get() : &nothing;
-}
-*/
-
-/*
-const SoilPMs* Monica::ueckerSoilParameters(int mmkGridId,
-																						int layerThicknessCm,
-																						int maxDepthCm,
-                                            bool loadSingleParameter)
-{
-  //cout << "mmkGridId: " << mmkGridId << " -> str: " << ueckerGridId2STR(mmkGridId) << endl;
-  string str = ueckerGridId2STR(mmkGridId);
-	return str.empty() ? NULL : ueckerSoilParameters(str, layerThicknessCm,
-																									 maxDepthCm, loadSingleParameter);
-}
-*/
-
-
-string Monica::ueckerGridId2STR(int ugid)
-{
-  static L lockable;
-  static bool initialized = false;
-
-  typedef map<int, string> Map;
-  static Map m;
-
-  if (!initialized)
-  {
-    L::Lock lock(lockable);
-
-    if (!initialized)
-    {
-      DBPtr con(newConnection("soil-profiles-uecker"));
-      DBRow row;
-
-      con->select("SELECT grid_id, str FROM uecker_grid_id_2_str");
-      while (!(row = con->getRow()).empty())
-        m.insert(make_pair(satoi(row[0]), row[1]));
-
-			initialized = true;
-    }
-  }
-  Map::const_iterator ci = m.find(ugid);
-  return ci != m.end() ? ci->second : "";
-}
-
-
-//----------------------------------------------------------------------------
-
-/*
-const SoilPMs* Monica::bk50SoilParameters(int bk50GridId,
-																					int layerThicknessCm,
-																					int maxDepthCm,
-																					bool loadSingleParameter)
-{
-	int maxNoOfLayers = int(double(maxDepthCm)/double(layerThicknessCm));
-
-	static L lockable;
-
-	typedef map<int, SoilPMsPtr> Map;
-	static bool initialized = false;
-	static Map spss;
-	if(!initialized)
-	{
-		L::Lock lock(lockable);
-
-		if (!initialized)
-		{
-			DBPtr con(newConnection("landcare-dss"));
-			DBRow row;
-
-			ostringstream s;
-			s << "select grid_id, count(grid_id) "
-						"from bk50_sachsen_juli_2012 "
-						"group by grid_id";
-			con->select(s.str().c_str());
-
-			map<int, int> id2layerCount;
-			while (!(row = con->getRow()).empty())
-				id2layerCount[satoi(row[0])] = satoi(row[1]);
-			con->freeResultSet();
-
-			set<int> skip;
-
-			ostringstream s2;
-			s2 << "select bk.grid_id, bk.lower_depth_m, "
-					 "bk.humus_class, bk.ld_eff_class, w.s, w.t "
-					 "from bk50_sachsen_juli_2012 as bk inner join ka4wind as w on "
-					 "bk.ka4_soil_type = w.bodart ";
-			if(loadSingleParameter)
-				s2 << "where bk.grid_id = " << bk50GridId << " ";
-			s2 << "order by bk.grid_id, bk.lower_depth_m";
-
-			con->select(s2.str().c_str());
-			int currenth = 0;
-			while(!(row = con->getRow()).empty())
-			{
-				int id = satoi(row[0]);
-
-				//Skip elements which are incomplete
-				if(skip.find(id) != skip.end())
-					continue;
-
-				SoilPMsPtr sps = spss[id];
-				if(!sps)
-				{
-					sps = spss[id] = SoilPMsPtr(new SoilPMs);
-					currenth = 0;
-				}
-
-				int hcount = id2layerCount[id];
-				currenth++;
-
-				int ho = sps->size()*layerThicknessCm;
-				int hu = int(satof(row[1])*100);
-				int hsize = max(0, hu - ho);
-				int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
-				if(currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
-					subhcount += maxNoOfLayers - sps->size() - subhcount;
-
-				SoilParameters p;
-				p.set_vs_SoilOrganicCarbon(humus_st2corg(satoi(row[2])) / 100.0);
-				double clayPercent = satof(row[5]);
-				p.set_vs_SoilRawDensity(ld_eff2trd(satoi(row[3]), clayPercent / 100.0));
-				p.vs_SoilSandContent = satof(row[4]) / 100.0;
-				p.vs_SoilClayContent = clayPercent / 100.0;
-				p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
-				p.vs_SoilStoneContent = 0.0;
-				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
-
-				// initialization of saturation, field capacity and perm. wilting point
-				soilCharacteristicsKA5(p);
-				if(!p.isValid())
-				{
-					skip.insert(id);
-					cout << "Error in soil parameters. Skipping bk50Id: " << id << endl;
-					spss.erase(id);
-					continue;
-				}
-
-				for(int i = 0; i < subhcount; i++)
-					sps->push_back(p);
-			}
-
-			initialized = true;
-		}
-	}
-
-	static SoilPMs nothing;
-	Map::const_iterator ci = spss.find(bk50GridId);
-	return ci != spss.end() ? ci->second.get() : &nothing;
-}
-*/
-
-/*
-string Monica::bk50GridId2ST(int bk50GridId)
-{
-  static L lockable;
-
-  typedef map<int, string> Map;
-  static Map m;
-  static bool initialized = false;
-  if (!initialized)
-  {
-    L::Lock lock(lockable);
-
-    if (!initialized)
-    {
-      DBPtr con(newConnection("landcare-dss"));
-      con->setCharacterSet("utf8");
-      DBRow row;
-
-      con->select("SELECT grid_id, st from bk50 where st is not null");
-      while (!(row = con->getRow()).empty())
-        m[satoi(row[0])] = row[1];
-
-      initialized = true;
-    }
-  }
-
-  Map::const_iterator ci = m.find(bk50GridId);
-  return ci != m.end() ? ci->second : "ST unbekannt";
-}
-*/
-
-string Monica::bk50GridId2KA4Layers(int bk50GridId)
-{
-	static L lockable;
-
-	typedef map<int, string> Map;
-	static Map m;
-	static bool initialized = false;
-	if (!initialized)
-	{
-		L::Lock lock(lockable);
-
-		if (!initialized)
-		{
-      DBPtr con(newConnection("soil-profiles-sachsen"));
-			con->setCharacterSet("utf8");
-			DBRow row;
-
-			con->select("SELECT grid_id, ka4_soil_type "
-									"from bk50_sachsen_juli_2012 "
-									"order by grid_id, lower_depth_m");
-			while (!(row = con->getRow()).empty())
-			{
-				string pre = m[satoi(row[0])].empty() ? "" : "|";
-				m[satoi(row[0])].append(pre).append(row[1]);
-			}
-
-			initialized = true;
-		}
-	}
-
-	Map::const_iterator ci = m.find(bk50GridId);
-	return ci != m.end() ? ci->second : "Kein Bodenprofil vorhanden!";
-}
-
-
-const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
-                                      int profileId,
-                                      int layerThicknessCm,
-                                      int maxDepthCm,
-                                      bool loadSingleParameter)
-{
-  int maxNoOfLayers = int(double(maxDepthCm)/double(layerThicknessCm));
-
-  static L lockable;
-
-  typedef map<int, SoilPMsPtr> Map;
-  typedef map<string, Map> Map2;
-  static bool initialized = false;
-  static Map2 spss2;
-
-  //yet unloaded schema
-  if(initialized && spss2.find(abstractDbSchema) == spss2.end())
-    initialized = false;
-
-  if(!initialized)
-  {
-    L::Lock lock(lockable);
-
-    if (!initialized)
-    {
-      DBPtr con(newConnection(abstractDbSchema));
-      DBRow row;
-
-      ostringstream s;
-      s << "select id, count(id) "
-           "from soil_profiles "
-           "group by id";
-      con->select(s.str().c_str());
-
-      map<int, int> id2layerCount;
-      while (!(row = con->getRow()).empty())
-        id2layerCount[satoi(row[0])] = satoi(row[1]);
-      con->freeResultSet();
-
-      set<int> skip;
-
-      ostringstream s2;
-      s2 << "select id, layer_depth_cm, soil_organic_carbon_percent, soil_raw_density_t_per_m3, "
-            "sand_content_percent, clay_content_percent, ph_value, soil_type "
-            "from soil_profiles ";
-      if(loadSingleParameter)
-        s2 << "where id = " << profileId << " ";
-      s2 << "order by id, layer_depth_cm";
-
-      Map& spss = spss2[abstractDbSchema];
-
-      con->select(s2.str().c_str());
-      int currenth = 0;
-      while(!(row = con->getRow()).empty())
-      {
-        int id = satoi(row[0]);
-
-        //Skip elements which are incomplete
-        if(skip.find(id) != skip.end())
-          continue;
-
-        SoilPMsPtr sps = spss[id];
-        if(!sps)
-        {
-          sps = spss[id] = SoilPMsPtr(new SoilPMs);
-          currenth = 0;
-        }
-
-        int hcount = id2layerCount[id];
-        currenth++;
-
-        int ho = sps->size()*layerThicknessCm;
-        int hu = !row[1].empty() ? satoi(row[1]) : maxDepthCm;
-        int hsize = max(0, hu - ho);
-        int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
-        if(currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
-          subhcount += maxNoOfLayers - sps->size() - subhcount;
-
-        SoilParameters p;
-        p.set_vs_SoilOrganicCarbon(satof(row[2]) / 100.);
-        p.set_vs_SoilRawDensity(satof(row[3]));
-        p.vs_SoilSandContent = satof(row[4]) / 100.0;
-        p.vs_SoilClayContent = satof(row[5]) / 100.0;
-        if(!row[6].empty())
-          p.vs_SoilpH = satof(row[6]);
-        if(row[7].empty())
-          p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
-        else
-          p.vs_SoilTexture = row[7];
-        p.vs_SoilStoneContent = 0.0;
-        p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
-
-        // initialization of saturation, field capacity and perm. wilting point
-        soilCharacteristicsKA5(p);
-        if(!p.isValid())
-        {
-          skip.insert(id);
-          cout << "Error in soil parameters. Skipping profileId: " << id << endl;
-          spss.erase(id);
-          continue;
-        }
-
-        for(int i = 0; i < subhcount; i++)
-          sps->push_back(p);
-      }
-
-      initialized = true;
-    }
-  }
-
-  static SoilPMs nothing;
-  auto ci2 = spss2.find(abstractDbSchema);
-  if(ci2 != spss2.end())
-  {
-    Map& spss = ci2->second;
-    Map::const_iterator ci = spss.find(profileId);
-    return ci != spss.end() ? ci->second.get() : &nothing;
-  }
-  else
-    &nothing;
-}
-
-
-const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
-																										const string& pathToFile,
-																										int layerThicknessCm,
-																										int maxDepthCm,
-																										double soil_ph,
-																										double drainage_coeff)
-{
-	debug() << pathToFile.c_str() << endl;
-	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
-
-  static L lockable;
-
-  typedef map<int, SoilPMsPtr> Map;
-  static bool initialized = false;
-	static Map spss;
-	if (!initialized)
-	{
-		L::Lock lock(lockable);
-
-		if (!initialized)
-		{
-			ifstream ifs(pathToFile.c_str(), ios::binary);
-			string s;
-
-			//skip first line(s)
-			getline(ifs, s);
-
-			int currenth = 1;
-			while (getline(ifs, s))
-			{
-				//cout << "s: " << s << endl;
-				if (trim(s) == "end")
-					break;
-
-				//BdID Corg Bart UKT LD Stn C/N C/S Hy Wmx AzHo
-				int ti;
-				string ba, ts;
-				int id, hu, ld, stone, cn, hcount;
-				double corg, wmax;
-				istringstream ss(s);
-				ss >> id >> corg >> ba >> hu >> ld >> stone >> cn >> ts
-					>> ti >> wmax >> hcount;
-
-				//double vs_SoilSpecificMaxRootingDepth = wmax / 10.0; //[dm] --> [m]
-
-				hu *= 10;
-				//Reset horizont count to start new soil definition
-				if (hcount > 0)
-					currenth = 1;
-
-				Map::iterator spsi = spss.find(soilId);
-				SoilPMsPtr sps;
-				if (spsi == spss.end()) {
-					spss.insert(make_pair(soilId, sps = SoilPMsPtr(new SoilPMs)));
-				} else {
-					sps = spsi->second;
-				}
-
-				int ho = sps->size()*layerThicknessCm;
-				int hsize = max(0, hu - ho);
-				int subhcount = int(Tools::round(double(hsize) / double(layerThicknessCm)));
-				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
-					subhcount += maxNoOfLayers - sps->size() - subhcount;
-
-				if ((ba != "Ss") && (ba != "Sl2") && (ba != "Sl3") && (ba != "Sl4") &&
-					(ba != "Slu") && (ba != "St2") && (ba != "St3") && (ba != "Su2") &&
-					(ba != "Su3") && (ba != "Su4") && (ba != "Ls2") && (ba != "Ls3") &&
-					(ba != "Ls4") && (ba != "Lt2") && (ba != "Lt3") && (ba != "Lts") &&
-					(ba != "Lu") && (ba != "Uu") && (ba != "Uls") && (ba != "Us") &&
-					(ba != "Ut2") && (ba != "Ut3") && (ba != "Ut4") && (ba != "Tt") &&
-					(ba != "Tl") && (ba != "Tu2") && (ba != "Tu3") && (ba != "Tu4") &&
-					(ba != "Ts2") && (ba != "Ts3") && (ba != "Ts4") && (ba != "fS")  &&
-					(ba != "fS") && (ba != "fSms") && (ba != "fSgs") && (ba != "mS") &&
-					(ba != "mSfs") && (ba != "mSgs") && (ba != "gS") && (ba != "Hh") &&
-					(ba != "Hn")) {
-						cerr << "No valid texture class defined: " << ba.c_str() << endl;
-						exit(1);
-				}
-
-				SoilParameters p;
-				p.set_vs_SoilOrganicCarbon(corg / 100.0); //[kg C 100kg] --> [kg C kg-1]
-				p.set_vs_SoilRawDensity(ld_eff2trd(ld, KA52clay(ba)));
-				p.vs_SoilSandContent = KA52sand(ba);
-				p.vs_SoilClayContent = KA52clay(ba);
-				p.vs_SoilStoneContent = stone / 100.0;
-				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
-				p.vs_SoilTexture = ba;
-
-				if (soil_ph != -1.0) {
-					p.vs_SoilpH = soil_ph;
-				}
-
-				if (drainage_coeff != -1.0) {
-					p.vs_Lambda = drainage_coeff;
-				}
-
-				// initialization of saturation, field capacity and perm. wilting point
-				soilCharacteristicsKA5(p);
-
-				bool valid_soil_params = p.isValid();
-				if (!valid_soil_params) {
-					cout << "Error in soil parameters. Aborting now simulation";
-					exit(-1);
-				}
-
-				for (int i = 0; i < subhcount; i++)
-					sps->push_back(p);
-				currenth++;
-			}
-
-			initialized = true;
-
-		}
-	}
-
-	static SoilPMs nothing;
-	Map::const_iterator ci = spss.find(soilId);
-	return ci != spss.end() ? ci->second.get() : &nothing;
-}
-
-//------------------------------------------------------------------------------
-
-void Monica::soilCharacteristicsKA5(SoilParameters& soilParameter)
-{
-	debug() << "soilCharacteristicsKA5" << endl;
-	std::string texture = soilParameter.vs_SoilTexture;
-	double stoneContent = soilParameter.vs_SoilStoneContent;
-
-	double fc = 0.0;
-	double sat = 0.0;
-	double pwp = 0.0;
-
-	if (texture != "")
-	{
-		double srd = soilParameter.vs_SoilRawDensity()/1000.0; // [kg m-3] -> [g cm-3]
-		double som = soilParameter.vs_SoilOrganicMatter()*100.0; // [kg kg-1] -> [%]
-
-		// ***************************************************************************
-		// *** The following boundaries are extracted from:                        ***
-		// *** Wessolek, G., M. Kaupenjohann, M. Renger (2009) Bodenphysikalische  ***
-		// *** Kennwerte und Berechnungsverfahren für die Praxis. Bodenökologie    ***
-		// *** und Bodengenese 40, Selbstverlag Technische Universität Berlin      ***
-		// *** (Tab. 4).                                                           ***
-		// ***************************************************************************
-
-		double srd_lowerBound = 0.0;
-		double srd_upperBound = 0.0;
-		if (srd < 1.1)
-		{
-			srd_lowerBound = 1.1;
-			srd_upperBound = 1.1;
-		}
-		else if ((srd >= 1.1) && (srd < 1.3))
-		{
-			srd_lowerBound = 1.1;
-			srd_upperBound = 1.3;
-		}
-		else if ((srd >= 1.3) && (srd < 1.5))
-		{
-			srd_lowerBound = 1.3;
-			srd_upperBound = 1.5;
-		}
-		else if ((srd >= 1.5) && (srd < 1.7))
-		{
-			srd_lowerBound = 1.5;
-			srd_upperBound = 1.7;
-		}
-		else if ((srd >= 1.7) && (srd < 1.9))
-		{
-			srd_lowerBound = 1.7;
-			srd_upperBound = 1.9;
-		}
-		else if (srd >= 1.9)
-		{
-			srd_lowerBound = 1.9;
-			srd_upperBound = 1.9;
-		}
-
-		// special treatment for "torf" soils
-		if (texture=="Hh" || texture=="Hn") {
-				srd_lowerBound = -1;
-				srd_upperBound = -1;
-		}
-
-		// Boundaries for linear interpolation
-		auto lbRes = readPrincipalSoilCharacteristicData(texture, srd_lowerBound);
-		double sat_lowerBound = lbRes.sat;
-		double fc_lowerBound = lbRes.fc;
-		double pwp_lowerBound = lbRes.pwp;
-
-		auto ubRes = readPrincipalSoilCharacteristicData(texture, srd_upperBound);
-		double sat_upperBound = ubRes.sat;
-		double fc_upperBound = ubRes.fc;
-		double pwp_upperBound = ubRes.pwp;
-
-		if(lbRes.initialized && ubRes.initialized)
-		{
-			//    cout << "Soil Raw Density:\t" << vs_SoilRawDensity << endl;
-			//    cout << "Saturation:\t\t" << vs_SaturationLowerBoundary << "\t" << vs_SaturationUpperBoundary << endl;
-			//    cout << "Field Capacity:\t" << vs_FieldCapacityLowerBoundary << "\t" << vs_FieldCapacityUpperBoundary << endl;
-			//    cout << "PermanentWP:\t" << vs_PermanentWiltingPointLowerBoundary << "\t" << vs_PermanentWiltingPointUpperBoundary << endl;
-			//    cout << "Soil Organic Matter:\t" << vs_SoilOrganicMatter << endl;
-
-			// ***************************************************************************
-			// *** The following boundaries are extracted from:                        ***
-			// *** Wessolek, G., M. Kaupenjohann, M. Renger (2009) Bodenphysikalische  ***
-			// *** Kennwerte und Berechnungsverfahren für die Praxis. Bodenökologie    ***
-			// *** und Bodengenese 40, Selbstverlag Technische Universität Berlin      ***
-			// *** (Tab. 5).                                                           ***
-			// ***************************************************************************
-
-			double som_lowerBound = 0.0;
-			double som_upperBound = 0.0;
-
-			if(som >= 0.0 && som < 1.0)
-			{
-				som_lowerBound = 0.0;
-				som_upperBound = 0.0;
-			}
-			else if(som >= 1.0 && som < 1.5)
-			{
-				som_lowerBound = 0.0;
-				som_upperBound = 1.5;
-			}
-			else if(som >= 1.5 && som < 3.0)
-			{
-				som_lowerBound = 1.5;
-				som_upperBound = 3.0;
-			}
-			else if(som >= 3.0 && som < 6.0)
-			{
-				som_lowerBound = 3.0;
-				som_upperBound = 6.0;
-			}
-			else if(som >= 6.0 && som < 11.5)
-			{
-				som_lowerBound = 6.0;
-				som_upperBound = 11.5;
-			}
-			else if(som >= 11.5)
-			{
-				som_lowerBound = 11.5;
-				som_upperBound = 11.5;
-			}
-
-			// special treatment for "torf" soils
-			if (texture=="Hh" || texture=="Hn")
-			{
-				som_lowerBound = 0.0;
-				som_upperBound = 0.0;
-			}
-
-			// Boundaries for linear interpolation
-			double fc_mod_lowerBound = 0.0;
-			double sat_mod_lowerBound = 0.0;
-			double pwp_mod_lowerBound = 0.0;
-			// modifier values are given only for organic matter > 1.0% (class h2)
-			if (som_lowerBound != 0.0)
-			{
-				auto lbRes = readSoilCharacteristicModifier(texture, som_lowerBound);
-				sat_mod_lowerBound = lbRes.sat;
-				fc_mod_lowerBound = lbRes.fc;
-				pwp_mod_lowerBound = lbRes.pwp;
-			}
-
-			double fc_mod_upperBound = 0.0;
-			double sat_mod_upperBound = 0.0;
-			double pwp_mod_upperBound = 0.0;
-			if (som_upperBound != 0.0)
-			{
-				auto ubRes = readSoilCharacteristicModifier(texture, som_upperBound);
-				sat_mod_upperBound = ubRes.sat;
-				fc_mod_upperBound = ubRes.fc;
-				pwp_mod_upperBound = ubRes.pwp;
-			}
-
-//			cout << "Saturation-Modifier:\t" << sat_mod_lowerBound << "\t" << sat_mod_upperBound << endl;
-//			cout << "Field capacity-Modifier:\t" << fc_mod_lowerBound << "\t" << fc_mod_upperBound << endl;
-//			cout << "PWP-Modifier:\t" << pwp_mod_lowerBound << "\t" << pwp_mod_upperBound << endl;
-
-			// Linear interpolation
-			double fc_unmod = fc_lowerBound;
-			if (fc_upperBound < 0.5 && fc_lowerBound >= 1.0)
-				fc_unmod = fc_lowerBound;
-			else if(fc_lowerBound < 0.5 && fc_upperBound >= 1.0)
-				fc_unmod = fc_upperBound;
-			else if(srd_upperBound != srd_lowerBound)
-				fc_unmod = (srd - srd_lowerBound)/
-									 (srd_upperBound - srd_lowerBound)*
-									 (fc_upperBound - fc_lowerBound) + fc_lowerBound;
-
-			double sat_unmod = sat_lowerBound;
-			if(sat_upperBound < 0.5 && sat_lowerBound >= 1.0)
-				sat_unmod = sat_lowerBound;
-			else if(sat_lowerBound < 0.5 && sat_upperBound >= 1.0)
-				sat_unmod = sat_upperBound;
-			else if(srd_upperBound != srd_lowerBound)
-				sat_unmod = (srd - srd_lowerBound)/
-										(srd_upperBound - srd_lowerBound)*
-										(sat_upperBound - sat_lowerBound) + sat_lowerBound;
-
-			double pwp_unmod = pwp_lowerBound;
-			if(pwp_upperBound < 0.5 && pwp_lowerBound >= 1.0)
-				pwp_unmod = pwp_lowerBound;
-			else if(pwp_lowerBound < 0.5 && pwp_upperBound >= 1.0)
-				pwp_unmod = pwp_upperBound;
-			else if(srd_upperBound != srd_lowerBound)
-				pwp_unmod = (srd - srd_lowerBound)/
-										(srd_upperBound - srd_lowerBound)*
-										(pwp_upperBound - pwp_lowerBound) + pwp_lowerBound;
-
-			//in this case upper and lower boundary are equal, so doesn't matter.
-			double fc_mod = fc_mod_lowerBound;
-			double sat_mod = sat_mod_lowerBound;
-			double pwp_mod = pwp_mod_lowerBound;
-			if(som_upperBound != som_lowerBound)
-			{
-				fc_mod = (som - som_lowerBound)/
-								 (som_upperBound - som_lowerBound)*
-								 (fc_mod_upperBound - fc_mod_lowerBound) + fc_mod_lowerBound;
-
-				sat_mod = (som - som_lowerBound)/
-									(som_upperBound - som_lowerBound)*
-									(sat_mod_upperBound - sat_mod_lowerBound) + sat_mod_lowerBound;
-
-				pwp_mod = (som - som_lowerBound)/
-									(som_upperBound - som_lowerBound)*
-									(pwp_mod_upperBound - pwp_mod_lowerBound) + pwp_mod_lowerBound;
-			}
-
-			// Modifying the principal values by organic matter
-			fc = (fc_unmod + fc_mod)/100.0; // [m3 m-3]
-			sat = (sat_unmod + sat_mod)/100.0; // [m3 m-3]
-			pwp = (pwp_unmod + pwp_mod)/100.0; // [m3 m-3]
-
-			// Modifying the principal values by stone content
-			fc *= (1.0 - stoneContent);
-			sat *= (1.0 - stoneContent);
-			pwp *= (1.0 - stoneContent);
-		}
-	}
-
-	debug() << "vs_SoilTexture:\t\t\t" << texture << endl;
-	debug() << "vs_Saturation:\t\t\t" << sat << endl;
-	debug() << "vs_FieldCapacity:\t\t" << fc << endl;
-	debug() << "vs_PermanentWiltingPoint:\t" << pwp << endl << endl;
-
-	soilParameter.vs_FieldCapacity = fc;
-	soilParameter.vs_Saturation = sat;
-	soilParameter.vs_PermanentWiltingPoint = pwp;
-}
+///**
+// * @brief Constructor
+// *
+// * Parameter initialization
+// */
+//SoilParameters::SoilParameters() :
+//    vs_SoilSandContent(0.4),
+//    vs_SoilClayContent(0.05),
+//    vs_SoilpH(6.9),
+//    _vs_SoilRawDensity(-1),
+//		_vs_SoilBulkDensity(-1),
+//    _vs_SoilOrganicCarbon(-1),
+//    _vs_SoilOrganicMatter(-1),
+//    vs_SoilAmmonium(-1),
+//    vs_SoilNitrate(-1)
+//{}
+
+
+//bool
+//SoilParameters::isValid()
+//{
+//  bool is_valid = true;
+
+//  if (vs_FieldCapacity < 0) {
+//      cout << "SoilParameters::Error: No field capacity defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: "<< _vs_SoilRawDensity << endl;
+//      is_valid = false;
+//  }
+//  if (vs_Saturation < 0) {
+//      cout << "SoilParameters::Error: No saturation defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: " << _vs_SoilRawDensity << endl;
+//      is_valid = false;
+//  }
+//  if (vs_PermanentWiltingPoint < 0) {
+//      cout << "SoilParameters::Error: No saturation defined in database for " << vs_SoilTexture.c_str() << " , RawDensity: " << _vs_SoilRawDensity << endl;
+//      is_valid = false;
+//  }
+
+//  if (vs_SoilSandContent<0) {
+//      cout << "SoilParameters::Error: Invalid soil sand content: "<< vs_SoilSandContent << endl;
+//      is_valid = false;
+//  }
+
+//  if (vs_SoilClayContent<0) {
+//      cout << "SoilParameters::Error: Invalid soil clay content: "<< vs_SoilClayContent << endl;
+//      is_valid = false;
+//  }
+
+//  if (vs_SoilpH<0) {
+//      cout << "SoilParameters::Error: Invalid soil ph value: "<< vs_SoilpH << endl;
+//      is_valid = false;
+//  }
+
+//  if (vs_SoilStoneContent<0) {
+//      cout << "SoilParameters::Error: Invalid soil stone content: "<< vs_SoilStoneContent << endl;
+//      is_valid = false;
+//  }
+
+//  if (vs_Saturation<0) {
+//      cout << "SoilParameters::Error: Invalid value for saturation: "<< vs_Saturation << endl;
+//      is_valid = false;
+//  }
+
+//  if (vs_PermanentWiltingPoint<0) {
+//      cout << "SoilParameters::Error: Invalid value for permanent wilting point: "<< vs_PermanentWiltingPoint << endl;
+//      is_valid = false;
+//  }
+//	/*
+//  if (_vs_SoilRawDensity<0) {
+//      cout << "SoilParameters::Error: Invalid soil raw density: "<< _vs_SoilRawDensity << endl;
+//      is_valid = false;
+//  }
+//	*/
+//  return is_valid;
+//}
+
+///**
+// * @brief Returns raw density of soil
+// * @return raw density of soil
+// */
+//double SoilParameters::vs_SoilRawDensity() const
+//{
+//  // conversion from g cm-3 in kg m-3
+//  return _vs_SoilRawDensity * 1000;
+//}
+
+///**
+// * @brief Sets soil raw density
+// * @param srd New soil rad density
+// */
+//void SoilParameters::set_vs_SoilRawDensity(double srd)
+//{
+//  _vs_SoilRawDensity = srd;
+//}
+
+///**
+//* @brief Getter for soil bulk density.
+//* @return bulk density
+//*/
+//double SoilParameters::vs_SoilBulkDensity() const
+//{
+//	if (_vs_SoilRawDensity < 0)
+//		return _vs_SoilBulkDensity;
+
+//	return (_vs_SoilRawDensity + (0.009 * 100 * vs_SoilClayContent)) * 1000;
+//	//return _vs_SoilBulkDensity * 1000;
+//}
+
+///**
+//* @brief Sets soil bulk density
+//* @param sbd New soil bulk density
+//*/
+//void SoilParameters::set_vs_SoilBulkDensity(double sbd)
+//{
+//	_vs_SoilBulkDensity = sbd;
+//}
+
+///**
+// * @brief Returns soil organic carbon.
+// * @return soil organic carbon
+// */
+//double SoilParameters::vs_SoilOrganicCarbon() const
+//{
+//  if (_vs_SoilOrganicMatter < 0)
+//    return _vs_SoilOrganicCarbon;
+
+//	return _vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C;
+//}
+
+///**
+// * @brief Setter of soil organic carbon.
+// * @param soc New soil organic carbon
+// */
+//void SoilParameters::set_vs_SoilOrganicCarbon(double soc)
+//{
+//  _vs_SoilOrganicCarbon = soc;
+//}
+
+///**
+// * @brief Getter for soil organic matter.
+// * @return Soil organic matter
+// */
+//double SoilParameters::vs_SoilOrganicMatter() const
+//{
+//  if (_vs_SoilOrganicCarbon < 0)
+//    return _vs_SoilOrganicMatter;
+//	return _vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C;
+//}
+
+///**
+// * @brief Setter for soil organic matter.
+// * @param som New soil organic matter
+// */
+//void SoilParameters::set_vs_SoilOrganicMatter(double som)
+//{
+//  _vs_SoilOrganicMatter = som;
+//}
+
+///**
+// * @brief Getter for silt content
+// * @return silt content
+// */
+//double SoilParameters::vs_SoilSiltContent() const
+//{
+//  if ((vs_SoilSandContent - 0.001) < 0 && (vs_SoilClayContent - 0.001) < 0)
+//    return 0;
+
+//  return 1 - vs_SoilSandContent - vs_SoilClayContent;
+//}
+
+///**
+// * @brief Serializes soil parameters into a string.
+// * @return String of soil parameters
+// */
+//string SoilParameters::toString() const
+//{
+//  ostringstream s;
+//  s << "vs_Soilph: " << vs_SoilpH << endl
+//      << "vs_SoilOrganicCarbon: " << vs_SoilOrganicCarbon() << endl
+//      << "vs_SoilOrganicMatter: " << vs_SoilOrganicMatter() << endl
+//      << "vs_SoilRawDensity: " << vs_SoilRawDensity() << endl
+//      << "vs_SoilBulkDensity: " << vs_SoilBulkDensity() << endl
+//      << "vs_SoilSandContent: " << vs_SoilSandContent << endl
+//      << "vs_SoilClayContent: " << vs_SoilClayContent << endl
+//      << "vs_SoilSiltContent: " << vs_SoilSiltContent() << endl
+//      << "vs_SoilStoneContent: " << vs_SoilStoneContent << endl
+//      << "vs_SoilpH: " << vs_SoilpH << endl
+//      << "vs_Lambda: " << vs_Lambda << endl
+//      << "vs_FieldCapacity: " << vs_FieldCapacity << endl
+//      << "vs_Saturation: " << vs_Saturation << endl
+//      << "vs_PermanentWiltingPoint: " << vs_PermanentWiltingPoint << endl
+//      << "vs_SoilTexture: " << vs_SoilTexture.c_str() << endl
+//      << "vs_SoilAmmonium: " << vs_SoilAmmonium << endl
+//      << "vs_SoilNitrate: " << vs_SoilNitrate
+//      << endl;
+
+//  return s.str();
+//}
+
+///**
+// * @brief Returns lambda from soil texture
+// *
+// * @param lambda
+// *
+// * @return
+// */
+//double SoilParameters::texture2lambda(double sand, double clay)
+//{
+//	return Tools::texture2lambda(sand, clay);
+//}
+
+////------------------------------------------------------------------------------
+
+//const SoilPMs* Monica::soilParameters(const string& abstractDbSchema,
+//                                      int profileId,
+//                                      int layerThicknessCm,
+//                                      int maxDepthCm,
+//                                      bool loadSingleParameter)
+//{
+//  int maxNoOfLayers = int(double(maxDepthCm)/double(layerThicknessCm));
+
+//  static mutex lockable;
+
+//  typedef map<int, SoilPMsPtr> Map;
+//  typedef map<string, Map> Map2;
+//  static bool initialized = false;
+//  static Map2 spss2;
+
+//  //yet unloaded schema
+//  if(initialized && spss2.find(abstractDbSchema) == spss2.end())
+//    initialized = false;
+
+//  if(!initialized)
+//  {
+//    lock_guard<mutex> lock(lockable);
+
+//    if (!initialized)
+//    {
+//      DBPtr con(newConnection(abstractDbSchema));
+//      DBRow row;
+
+//      ostringstream s;
+//      s << "select id, count(id) "
+//           "from soil_profiles "
+//           "group by id";
+//      con->select(s.str().c_str());
+
+//      map<int, int> id2layerCount;
+//      while (!(row = con->getRow()).empty())
+//        id2layerCount[satoi(row[0])] = satoi(row[1]);
+//      con->freeResultSet();
+
+//      set<int> skip;
+
+//      ostringstream s2;
+//      s2 << "select id, layer_depth_cm, soil_organic_carbon_percent, soil_raw_density_t_per_m3, "
+//            "sand_content_percent, clay_content_percent, ph_value, soil_type "
+//            "from soil_profiles ";
+//      if(loadSingleParameter)
+//        s2 << "where id = " << profileId << " ";
+//      s2 << "order by id, layer_depth_cm";
+
+//      Map& spss = spss2[abstractDbSchema];
+
+//      con->select(s2.str().c_str());
+//      int currenth = 0;
+//      while(!(row = con->getRow()).empty())
+//      {
+//        int id = satoi(row[0]);
+
+//        //Skip elements which are incomplete
+//        if(skip.find(id) != skip.end())
+//          continue;
+
+//        SoilPMsPtr sps = spss[id];
+//        if(!sps)
+//        {
+//          sps = spss[id] = SoilPMsPtr(new SoilPMs);
+//          currenth = 0;
+//        }
+
+//        int hcount = id2layerCount[id];
+//        currenth++;
+
+//        int ho = sps->size()*layerThicknessCm;
+//        int hu = !row[1].empty() ? satoi(row[1]) : maxDepthCm;
+//        int hsize = max(0, hu - ho);
+//        int subhcount = Tools::roundRT<int>(double(hsize)/double(layerThicknessCm), 0);
+//        if(currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
+//          subhcount += maxNoOfLayers - sps->size() - subhcount;
+
+//        SoilParameters p;
+//        p.set_vs_SoilOrganicCarbon(satof(row[2]) / 100.);
+//        p.set_vs_SoilRawDensity(satof(row[3]));
+//        p.vs_SoilSandContent = satof(row[4]) / 100.0;
+//        p.vs_SoilClayContent = satof(row[5]) / 100.0;
+//        if(!row[6].empty())
+//          p.vs_SoilpH = satof(row[6]);
+//        if(row[7].empty())
+//          p.vs_SoilTexture = texture2KA5(p.vs_SoilSandContent, p.vs_SoilClayContent);
+//        else
+//          p.vs_SoilTexture = row[7];
+//        p.vs_SoilStoneContent = 0.0;
+//        p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+
+//        // initialization of saturation, field capacity and perm. wilting point
+//        soilCharacteristicsKA5(p);
+//        if(!p.isValid())
+//        {
+//          skip.insert(id);
+//          cout << "Error in soil parameters. Skipping profileId: " << id << endl;
+//          spss.erase(id);
+//          continue;
+//        }
+
+//        for(int i = 0; i < subhcount; i++)
+//          sps->push_back(p);
+//      }
+
+//      initialized = true;
+//    }
+//  }
+
+//  static SoilPMs nothing;
+//  auto ci2 = spss2.find(abstractDbSchema);
+//  if(ci2 != spss2.end())
+//  {
+//    Map& spss = ci2->second;
+//    Map::const_iterator ci = spss.find(profileId);
+//    return ci != spss.end() ? ci->second.get() : &nothing;
+//  }
+
+//  return &nothing;
+//}
+
+//string Monica::soilProfileId2KA5Layers(const string& abstractDbSchema,
+//                                       int soilProfileId)
+//{
+//  static mutex lockable;
+
+//  typedef map<int, string> Map;
+//  typedef map<string, Map> Map2;
+//  static bool initialized = false;
+//  static Map2 m;
+
+//  //yet unloaded schema
+//  if(initialized && m.find(abstractDbSchema) == m.end())
+//    initialized = false;
+
+//  if (!initialized)
+//  {
+//    lock_guard<mutex> lock(lockable);
+
+//    if (!initialized)
+//    {
+//      DBPtr con(newConnection(abstractDbSchema));
+//      con->setCharacterSet("utf8");
+//      DBRow row;
+
+//      Map& m2 = m[abstractDbSchema];
+
+//      con->select("SELECT id, soil_type "
+//                  "from soil_profiles "
+//                  "order by id, layer_depth_cm");
+//      while (!(row = con->getRow()).empty())
+//      {
+//        string pre = m2[satoi(row[0])].empty() ? "" : "|";
+//        m2[satoi(row[0])].append(pre).append(row[1]);
+//      }
+
+//      initialized = true;
+//    }
+//  }
+
+//  auto ci2 = m.find(abstractDbSchema);
+//  if(ci2 != m.end())
+//  {
+//    Map& m2 = ci2->second;
+//    Map::const_iterator ci = m2.find(soilProfileId);
+//    return ci != m2.end() ? ci->second : "Soil profile not found!";
+//  }
+
+//  return "Soil profile database not found!";
+//}
+
+////------------------------------------------------------------------------------
+
+//const SoilPMs* Monica::soilParametersFromHermesFile(int soilId,
+//																										const string& pathToFile,
+//																										int layerThicknessCm,
+//																										int maxDepthCm,
+//																										double soil_ph,
+//																										double drainage_coeff)
+//{
+//	debug() << pathToFile.c_str() << endl;
+//	int maxNoOfLayers = int(double(maxDepthCm) / double(layerThicknessCm));
+
+//  static mutex lockable;
+
+//  typedef map<int, SoilPMsPtr> Map;
+//  static bool initialized = false;
+//	static Map spss;
+//	if (!initialized)
+//	{
+//		lock_guard<mutex> lock(lockable);
+
+//		if (!initialized)
+//		{
+//			ifstream ifs(pathToFile.c_str(), ios::binary);
+//			string s;
+
+//			//skip first line(s)
+//			getline(ifs, s);
+
+//			int currenth = 1;
+//			while (getline(ifs, s))
+//			{
+//				//cout << "s: " << s << endl;
+//				if (trim(s) == "end")
+//					break;
+
+//				//BdID Corg Bart UKT LD Stn C/N C/S Hy Wmx AzHo
+//				int ti;
+//				string ba, ts;
+//				int id, hu, ld, stone, cn, hcount;
+//				double corg, wmax;
+//				istringstream ss(s);
+//				ss >> id >> corg >> ba >> hu >> ld >> stone >> cn >> ts
+//					>> ti >> wmax >> hcount;
+
+//				//double vs_SoilSpecificMaxRootingDepth = wmax / 10.0; //[dm] --> [m]
+
+//				hu *= 10;
+//				//Reset horizont count to start new soil definition
+//				if (hcount > 0)
+//					currenth = 1;
+
+//				Map::iterator spsi = spss.find(soilId);
+//				SoilPMsPtr sps;
+//				if (spsi == spss.end()) {
+//					spss.insert(make_pair(soilId, sps = SoilPMsPtr(new SoilPMs)));
+//				} else {
+//					sps = spsi->second;
+//				}
+
+//				int ho = sps->size()*layerThicknessCm;
+//				int hsize = max(0, hu - ho);
+//				int subhcount = int(Tools::round(double(hsize) / double(layerThicknessCm)));
+//				if (currenth == hcount && (int(sps->size()) + subhcount) < maxNoOfLayers)
+//					subhcount += maxNoOfLayers - sps->size() - subhcount;
+
+//				if ((ba != "Ss") && (ba != "Sl2") && (ba != "Sl3") && (ba != "Sl4") &&
+//					(ba != "Slu") && (ba != "St2") && (ba != "St3") && (ba != "Su2") &&
+//					(ba != "Su3") && (ba != "Su4") && (ba != "Ls2") && (ba != "Ls3") &&
+//					(ba != "Ls4") && (ba != "Lt2") && (ba != "Lt3") && (ba != "Lts") &&
+//					(ba != "Lu") && (ba != "Uu") && (ba != "Uls") && (ba != "Us") &&
+//					(ba != "Ut2") && (ba != "Ut3") && (ba != "Ut4") && (ba != "Tt") &&
+//					(ba != "Tl") && (ba != "Tu2") && (ba != "Tu3") && (ba != "Tu4") &&
+//					(ba != "Ts2") && (ba != "Ts3") && (ba != "Ts4") && (ba != "fS")  &&
+//					(ba != "fS") && (ba != "fSms") && (ba != "fSgs") && (ba != "mS") &&
+//					(ba != "mSfs") && (ba != "mSgs") && (ba != "gS") && (ba != "Hh") &&
+//					(ba != "Hn")) {
+//						cerr << "No valid texture class defined: " << ba.c_str() << endl;
+//						exit(1);
+//				}
+
+//				SoilParameters p;
+//				p.set_vs_SoilOrganicCarbon(corg / 100.0); //[kg C 100kg] --> [kg C kg-1]
+//				p.set_vs_SoilRawDensity(ld_eff2trd(ld, KA52clay(ba)));
+//				p.vs_SoilSandContent = KA52sand(ba);
+//				p.vs_SoilClayContent = KA52clay(ba);
+//				p.vs_SoilStoneContent = stone / 100.0;
+//				p.vs_Lambda = texture2lambda(p.vs_SoilSandContent, p.vs_SoilClayContent);
+//				p.vs_SoilTexture = ba;
+
+//				if (soil_ph != -1.0) {
+//					p.vs_SoilpH = soil_ph;
+//				}
+
+//				if (drainage_coeff != -1.0) {
+//					p.vs_Lambda = drainage_coeff;
+//				}
+
+//				// initialization of saturation, field capacity and perm. wilting point
+//				soilCharacteristicsKA5(p);
+
+//				bool valid_soil_params = p.isValid();
+//				if (!valid_soil_params) {
+//					cout << "Error in soil parameters. Aborting now simulation";
+//					exit(-1);
+//				}
+
+//				for (int i = 0; i < subhcount; i++)
+//					sps->push_back(p);
+//				currenth++;
+//			}
+
+//			initialized = true;
+
+//		}
+//	}
+
+//	static SoilPMs nothing;
+//	Map::const_iterator ci = spss.find(soilId);
+//	return ci != spss.end() ? ci->second.get() : &nothing;
+//}
+
+////------------------------------------------------------------------------------
+
+//void Monica::soilCharacteristicsKA5(SoilParameters& soilParameter)
+//{
+//	debug() << "soilCharacteristicsKA5" << endl;
+//	std::string texture = soilParameter.vs_SoilTexture;
+//	double stoneContent = soilParameter.vs_SoilStoneContent;
+
+//	double fc = 0.0;
+//	double sat = 0.0;
+//	double pwp = 0.0;
+
+//	if (texture != "")
+//	{
+//		double srd = soilParameter.vs_SoilRawDensity()/1000.0; // [kg m-3] -> [g cm-3]
+//		double som = soilParameter.vs_SoilOrganicMatter()*100.0; // [kg kg-1] -> [%]
+
+//		// ***************************************************************************
+//		// *** The following boundaries are extracted from:                        ***
+//		// *** Wessolek, G., M. Kaupenjohann, M. Renger (2009) Bodenphysikalische  ***
+//		// *** Kennwerte und Berechnungsverfahren für die Praxis. Bodenökologie    ***
+//		// *** und Bodengenese 40, Selbstverlag Technische Universität Berlin      ***
+//		// *** (Tab. 4).                                                           ***
+//		// ***************************************************************************
+
+//		double srd_lowerBound = 0.0;
+//		double srd_upperBound = 0.0;
+//		if (srd < 1.1)
+//		{
+//			srd_lowerBound = 1.1;
+//			srd_upperBound = 1.1;
+//		}
+//		else if ((srd >= 1.1) && (srd < 1.3))
+//		{
+//			srd_lowerBound = 1.1;
+//			srd_upperBound = 1.3;
+//		}
+//		else if ((srd >= 1.3) && (srd < 1.5))
+//		{
+//			srd_lowerBound = 1.3;
+//			srd_upperBound = 1.5;
+//		}
+//		else if ((srd >= 1.5) && (srd < 1.7))
+//		{
+//			srd_lowerBound = 1.5;
+//			srd_upperBound = 1.7;
+//		}
+//		else if ((srd >= 1.7) && (srd < 1.9))
+//		{
+//			srd_lowerBound = 1.7;
+//			srd_upperBound = 1.9;
+//		}
+//		else if (srd >= 1.9)
+//		{
+//			srd_lowerBound = 1.9;
+//			srd_upperBound = 1.9;
+//		}
+
+//		// special treatment for "torf" soils
+//		if (texture=="Hh" || texture=="Hn") {
+//				srd_lowerBound = -1;
+//				srd_upperBound = -1;
+//		}
+
+//		// Boundaries for linear interpolation
+//		auto lbRes = readPrincipalSoilCharacteristicData(texture, srd_lowerBound);
+//		double sat_lowerBound = lbRes.sat;
+//		double fc_lowerBound = lbRes.fc;
+//		double pwp_lowerBound = lbRes.pwp;
+
+//		auto ubRes = readPrincipalSoilCharacteristicData(texture, srd_upperBound);
+//		double sat_upperBound = ubRes.sat;
+//		double fc_upperBound = ubRes.fc;
+//		double pwp_upperBound = ubRes.pwp;
+
+//		if(lbRes.initialized && ubRes.initialized)
+//		{
+//			//    cout << "Soil Raw Density:\t" << vs_SoilRawDensity << endl;
+//			//    cout << "Saturation:\t\t" << vs_SaturationLowerBoundary << "\t" << vs_SaturationUpperBoundary << endl;
+//			//    cout << "Field Capacity:\t" << vs_FieldCapacityLowerBoundary << "\t" << vs_FieldCapacityUpperBoundary << endl;
+//			//    cout << "PermanentWP:\t" << vs_PermanentWiltingPointLowerBoundary << "\t" << vs_PermanentWiltingPointUpperBoundary << endl;
+//			//    cout << "Soil Organic Matter:\t" << vs_SoilOrganicMatter << endl;
+
+//			// ***************************************************************************
+//			// *** The following boundaries are extracted from:                        ***
+//			// *** Wessolek, G., M. Kaupenjohann, M. Renger (2009) Bodenphysikalische  ***
+//			// *** Kennwerte und Berechnungsverfahren für die Praxis. Bodenökologie    ***
+//			// *** und Bodengenese 40, Selbstverlag Technische Universität Berlin      ***
+//			// *** (Tab. 5).                                                           ***
+//			// ***************************************************************************
+
+//			double som_lowerBound = 0.0;
+//			double som_upperBound = 0.0;
+
+//			if(som >= 0.0 && som < 1.0)
+//			{
+//				som_lowerBound = 0.0;
+//				som_upperBound = 0.0;
+//			}
+//			else if(som >= 1.0 && som < 1.5)
+//			{
+//				som_lowerBound = 0.0;
+//				som_upperBound = 1.5;
+//			}
+//			else if(som >= 1.5 && som < 3.0)
+//			{
+//				som_lowerBound = 1.5;
+//				som_upperBound = 3.0;
+//			}
+//			else if(som >= 3.0 && som < 6.0)
+//			{
+//				som_lowerBound = 3.0;
+//				som_upperBound = 6.0;
+//			}
+//			else if(som >= 6.0 && som < 11.5)
+//			{
+//				som_lowerBound = 6.0;
+//				som_upperBound = 11.5;
+//			}
+//			else if(som >= 11.5)
+//			{
+//				som_lowerBound = 11.5;
+//				som_upperBound = 11.5;
+//			}
+
+//			// special treatment for "torf" soils
+//			if (texture=="Hh" || texture=="Hn")
+//			{
+//				som_lowerBound = 0.0;
+//				som_upperBound = 0.0;
+//			}
+
+//			// Boundaries for linear interpolation
+//			double fc_mod_lowerBound = 0.0;
+//			double sat_mod_lowerBound = 0.0;
+//			double pwp_mod_lowerBound = 0.0;
+//			// modifier values are given only for organic matter > 1.0% (class h2)
+//			if (som_lowerBound != 0.0)
+//			{
+//				auto lbRes = readSoilCharacteristicModifier(texture, som_lowerBound);
+//				sat_mod_lowerBound = lbRes.sat;
+//				fc_mod_lowerBound = lbRes.fc;
+//				pwp_mod_lowerBound = lbRes.pwp;
+//			}
+
+//			double fc_mod_upperBound = 0.0;
+//			double sat_mod_upperBound = 0.0;
+//			double pwp_mod_upperBound = 0.0;
+//			if (som_upperBound != 0.0)
+//			{
+//				auto ubRes = readSoilCharacteristicModifier(texture, som_upperBound);
+//				sat_mod_upperBound = ubRes.sat;
+//				fc_mod_upperBound = ubRes.fc;
+//				pwp_mod_upperBound = ubRes.pwp;
+//			}
+
+////			cout << "Saturation-Modifier:\t" << sat_mod_lowerBound << "\t" << sat_mod_upperBound << endl;
+////			cout << "Field capacity-Modifier:\t" << fc_mod_lowerBound << "\t" << fc_mod_upperBound << endl;
+////			cout << "PWP-Modifier:\t" << pwp_mod_lowerBound << "\t" << pwp_mod_upperBound << endl;
+
+//			// Linear interpolation
+//			double fc_unmod = fc_lowerBound;
+//			if (fc_upperBound < 0.5 && fc_lowerBound >= 1.0)
+//				fc_unmod = fc_lowerBound;
+//			else if(fc_lowerBound < 0.5 && fc_upperBound >= 1.0)
+//				fc_unmod = fc_upperBound;
+//			else if(srd_upperBound != srd_lowerBound)
+//				fc_unmod = (srd - srd_lowerBound)/
+//									 (srd_upperBound - srd_lowerBound)*
+//									 (fc_upperBound - fc_lowerBound) + fc_lowerBound;
+
+//			double sat_unmod = sat_lowerBound;
+//			if(sat_upperBound < 0.5 && sat_lowerBound >= 1.0)
+//				sat_unmod = sat_lowerBound;
+//			else if(sat_lowerBound < 0.5 && sat_upperBound >= 1.0)
+//				sat_unmod = sat_upperBound;
+//			else if(srd_upperBound != srd_lowerBound)
+//				sat_unmod = (srd - srd_lowerBound)/
+//										(srd_upperBound - srd_lowerBound)*
+//										(sat_upperBound - sat_lowerBound) + sat_lowerBound;
+
+//			double pwp_unmod = pwp_lowerBound;
+//			if(pwp_upperBound < 0.5 && pwp_lowerBound >= 1.0)
+//				pwp_unmod = pwp_lowerBound;
+//			else if(pwp_lowerBound < 0.5 && pwp_upperBound >= 1.0)
+//				pwp_unmod = pwp_upperBound;
+//			else if(srd_upperBound != srd_lowerBound)
+//				pwp_unmod = (srd - srd_lowerBound)/
+//										(srd_upperBound - srd_lowerBound)*
+//										(pwp_upperBound - pwp_lowerBound) + pwp_lowerBound;
+
+//			//in this case upper and lower boundary are equal, so doesn't matter.
+//			double fc_mod = fc_mod_lowerBound;
+//			double sat_mod = sat_mod_lowerBound;
+//			double pwp_mod = pwp_mod_lowerBound;
+//			if(som_upperBound != som_lowerBound)
+//			{
+//				fc_mod = (som - som_lowerBound)/
+//								 (som_upperBound - som_lowerBound)*
+//								 (fc_mod_upperBound - fc_mod_lowerBound) + fc_mod_lowerBound;
+
+//				sat_mod = (som - som_lowerBound)/
+//									(som_upperBound - som_lowerBound)*
+//									(sat_mod_upperBound - sat_mod_lowerBound) + sat_mod_lowerBound;
+
+//				pwp_mod = (som - som_lowerBound)/
+//									(som_upperBound - som_lowerBound)*
+//									(pwp_mod_upperBound - pwp_mod_lowerBound) + pwp_mod_lowerBound;
+//			}
+
+//			// Modifying the principal values by organic matter
+//			fc = (fc_unmod + fc_mod)/100.0; // [m3 m-3]
+//			sat = (sat_unmod + sat_mod)/100.0; // [m3 m-3]
+//			pwp = (pwp_unmod + pwp_mod)/100.0; // [m3 m-3]
+
+//			// Modifying the principal values by stone content
+//			fc *= (1.0 - stoneContent);
+//			sat *= (1.0 - stoneContent);
+//			pwp *= (1.0 - stoneContent);
+//		}
+//	}
+
+//	debug() << "vs_SoilTexture:\t\t\t" << texture << endl;
+//	debug() << "vs_Saturation:\t\t\t" << sat << endl;
+//	debug() << "vs_FieldCapacity:\t\t" << fc << endl;
+//	debug() << "vs_PermanentWiltingPoint:\t" << pwp << endl << endl;
+
+//	soilParameter.vs_FieldCapacity = fc;
+//	soilParameter.vs_Saturation = sat;
+//	soilParameter.vs_PermanentWiltingPoint = pwp;
+//}
 
 //------------------------------------------------------------------------------
 
@@ -2884,13 +2654,13 @@ string MineralFertiliserParameters::toString() const
 MineralFertiliserParameters
     Monica::getMineralFertiliserParametersFromMonicaDB(int id)
 {
-  static L lockable;
+  static mutex lockable;
   static bool initialized = false;
   static map<int, MineralFertiliserParameters> m;
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -3170,14 +2940,14 @@ string OrganicMatterParameters::toString() const
 OrganicMatterParameters*
 Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 {
-  static L lockable;
+  static mutex lockable;
   static bool initialized = false;
   typedef map<int, OMPPtr> Map;
   static Map m;
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -3242,14 +3012,14 @@ Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 const OrganicMatterParameters*
     Monica::getResidueParametersFromMonicaDB(int cropId)
 {
-  static L lockable;
+  static mutex lockable;
   static bool initialized = false;
   typedef map<int, OMPPtr> Map;
   static Map m;
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -3364,7 +3134,7 @@ void CentralParameterProvider::setPrecipCorrectionValue(int month, double value)
 CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 {
 
-  static L lockable;
+  static mutex lockable;
 
   static bool initialized = false;
 
@@ -3372,7 +3142,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 
   if (!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if (!initialized)
     {
@@ -3635,117 +3405,117 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 
 //----------------------------------------------------------------------------
 
-RPSCDRes Monica::readPrincipalSoilCharacteristicData(string soilType, double rawDensity)
-{
-	static L lockable;
-	typedef map<int, RPSCDRes> M1;
-	typedef map<string, M1> M2;
-	static M2 m;
-	static bool initialized = false;
-	if(!initialized)
-	{
-		L::Lock lock(lockable);
+//RPSCDRes Monica::readPrincipalSoilCharacteristicData(string soilType, double rawDensity)
+//{
+//	static mutex lockable;
+//	typedef map<int, RPSCDRes> M1;
+//	typedef map<string, M1> M2;
+//	static M2 m;
+//	static bool initialized = false;
+//	if(!initialized)
+//	{
+//		lock_guard<mutex> lock(lockable);
 
-		if(!initialized)
-		{
-			DBPtr con(newConnection("monica"));
+//		if(!initialized)
+//		{
+//			DBPtr con(newConnection("monica"));
 
-			string query("select soil_type, soil_raw_density*10, "
-									 "air_capacity, field_capacity, n_field_capacity "
-									 "from soil_characteristic_data "
-									 "where air_capacity != 0 and field_capacity != 0 and n_field_capacity != 0 "
-									 "order by soil_type, soil_raw_density");
-			con->select(query.c_str());
+//			string query("select soil_type, soil_raw_density*10, "
+//									 "air_capacity, field_capacity, n_field_capacity "
+//									 "from soil_characteristic_data "
+//									 "where air_capacity != 0 and field_capacity != 0 and n_field_capacity != 0 "
+//									 "order by soil_type, soil_raw_density");
+//			con->select(query.c_str());
 
-			debug() << endl << query.c_str() << endl;
-			DBRow row;
-			while(!(row = con->getRow()).empty())
-			{
-				double ac = satof(row[2]);
-				double fc = satof(row[3]);
-				double nfc = satof(row[4]);
+//			debug() << endl << query.c_str() << endl;
+//			DBRow row;
+//			while(!(row = con->getRow()).empty())
+//			{
+//				double ac = satof(row[2]);
+//				double fc = satof(row[3]);
+//				double nfc = satof(row[4]);
 
-				RPSCDRes r(true);
-				r.sat = ac + fc;
-				r.fc = fc;
-				r.pwp = fc - nfc;
+//				RPSCDRes r(true);
+//				r.sat = ac + fc;
+//				r.fc = fc;
+//				r.pwp = fc - nfc;
 
-				m[row[0]][satoi(row[1])] = r;
-			}
+//				m[row[0]][satoi(row[1])] = r;
+//			}
 
-			initialized = true;
-		}
-	}
+//			initialized = true;
+//		}
+//	}
 
-	auto ci = m.find(soilType);
-	if(ci != m.end())
-	{
-		int rd10 = int(rawDensity*10);
-		int delta = rd10 < 15 ? 2 : -2;
+//	auto ci = m.find(soilType);
+//	if(ci != m.end())
+//	{
+//		int rd10 = int(rawDensity*10);
+//		int delta = rd10 < 15 ? 2 : -2;
 
-		M1::const_iterator ci2;
-		//if we didn't find values for a given raw density, e.g. 1.1 (= 11)
-		//we try to find the closest next one (up (1.1) or down (1.9))
-		while((ci2 = ci->second.find(rd10)) == ci->second.end() &&
-					(11 <= rd10 && rd10 <= 19))
-			rd10 += delta;
+//		M1::const_iterator ci2;
+//		//if we didn't find values for a given raw density, e.g. 1.1 (= 11)
+//		//we try to find the closest next one (up (1.1) or down (1.9))
+//		while((ci2 = ci->second.find(rd10)) == ci->second.end() &&
+//					(11 <= rd10 && rd10 <= 19))
+//			rd10 += delta;
 
-		return ci2 != ci->second.end() ? ci2->second : RPSCDRes();
-	}
+//		return ci2 != ci->second.end() ? ci2->second : RPSCDRes();
+//	}
 
-	return RPSCDRes();
-}
+//	return RPSCDRes();
+//}
 
-RPSCDRes Monica::readSoilCharacteristicModifier(string soilType, double organicMatter)
-{
-	static L lockable;
-	typedef map<int, RPSCDRes> M1;
-	typedef map<string, M1> M2;
-	static M2 m;
-	static bool initialized = false;
-	if(!initialized)
-	{
-		L::Lock lock(lockable);
+//RPSCDRes Monica::readSoilCharacteristicModifier(string soilType, double organicMatter)
+//{
+//	static mutex lockable;
+//	typedef map<int, RPSCDRes> M1;
+//	typedef map<string, M1> M2;
+//	static M2 m;
+//	static bool initialized = false;
+//	if(!initialized)
+//	{
+//		lock_guard<mutex> lock(lockable);
 
-		if(!initialized)
-		{
-			DBPtr con(newConnection("monica"));
+//		if(!initialized)
+//		{
+//			DBPtr con(newConnection("monica"));
 
-			string query("select soil_type, organic_matter*10, "
-									 "air_capacity, field_capacity, n_field_capacity "
-									 "from soil_aggregation_values "
-									 "order by soil_type, organic_matter");
-			con->select(query.c_str());
+//			string query("select soil_type, organic_matter*10, "
+//									 "air_capacity, field_capacity, n_field_capacity "
+//									 "from soil_aggregation_values "
+//									 "order by soil_type, organic_matter");
+//			con->select(query.c_str());
 
-			debug() << endl << query.c_str() << endl;
-			DBRow row;
-			while(!(row = con->getRow()).empty())
-			{
-				double ac = satof(row[2]);
-				double fc = satof(row[3]);
-				double nfc = satof(row[4]);
+//			debug() << endl << query.c_str() << endl;
+//			DBRow row;
+//			while(!(row = con->getRow()).empty())
+//			{
+//				double ac = satof(row[2]);
+//				double fc = satof(row[3]);
+//				double nfc = satof(row[4]);
 
-				RPSCDRes r(true);
-				r.sat = ac + fc;
-				r.fc = fc;
-				r.pwp = fc - nfc;
+//				RPSCDRes r(true);
+//				r.sat = ac + fc;
+//				r.fc = fc;
+//				r.pwp = fc - nfc;
 
-				m[row[0]][satoi(row[1])] = r;
-			}
+//				m[row[0]][satoi(row[1])] = r;
+//			}
 
-			initialized = true;
-		}
-	}
+//			initialized = true;
+//		}
+//	}
 
-	auto ci = m.find(soilType);
-	if(ci != m.end())
-	{
-		auto ci2 = ci->second.find(int(organicMatter*10));
-		return ci2 != ci->second.end() ? ci2->second : RPSCDRes();
-	}
+//	auto ci = m.find(soilType);
+//	if(ci != m.end())
+//	{
+//		auto ci2 = ci->second.find(int(organicMatter*10));
+//		return ci2 != ci->second.end() ? ci2->second : RPSCDRes();
+//	}
 
-	return RPSCDRes();
-}
+//	return RPSCDRes();
+//}
 
 
 //namespace
@@ -3761,7 +3531,7 @@ RPSCDRes Monica::readSoilCharacteristicModifier(string soilType, double organicM
 //                                double &sat, double &fc, double &pwp,
 //                                string query)
 //  {
-//    static L lockable;
+//    static mutex lockable;
 //    typedef map<int, X> M1;
 //    typedef map<string, M1> M2;
 //    typedef map<string, M2> M3;
@@ -3769,7 +3539,7 @@ RPSCDRes Monica::readSoilCharacteristicModifier(string soilType, double organicM
 //    static bool initialized = false;
 //    if(!initialized)
 //    {
-//      L::Lock lock(lockable);
+//      lock_guard<mutex> lock(lockable);
 
 //      if(!initialized)
 //      {
@@ -3990,44 +3760,44 @@ Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 
 
 
-const CapillaryRiseRates& Monica::readCapillaryRiseRates()
-{
-	static L lockable;
-	static bool initialized = false;
-  static CapillaryRiseRates cap_rates;
+//const CapillaryRiseRates& Monica::readCapillaryRiseRates()
+//{
+//	static mutex lockable;
+//	static bool initialized = false;
+//  static CapillaryRiseRates cap_rates;
 
-	if (!initialized)
-  {
-    L::Lock lock(lockable);
+//	if (!initialized)
+//  {
+//    lock_guard<mutex> lock(lockable);
 
-    if(!initialized)
-		{
+//    if(!initialized)
+//		{
 
-      static const string query =
-          "select soil_type, distance, capillary_rate "
-          "from capillary_rise_rate";
+//      static const string query =
+//          "select soil_type, distance, capillary_rate "
+//          "from capillary_rise_rate";
 
-      // read capillary rise rates from database
-      DB *con = newConnection("monica");
-      con->select(query.c_str());
+//      // read capillary rise rates from database
+//      DB *con = newConnection("monica");
+//      con->select(query.c_str());
 
-      DBRow row;
-      while (!(row = con->getRow()).empty())
-      {
-        string soil_type = row[0];
-        int distance = satoi(row[1]);
-        double rate = satof(row[2]);
-        cap_rates.addRate(soil_type, distance, rate);
-      }
+//      DBRow row;
+//      while (!(row = con->getRow()).empty())
+//      {
+//        string soil_type = row[0];
+//        int distance = satoi(row[1]);
+//        double rate = satof(row[2]);
+//        cap_rates.addRate(soil_type, distance, rate);
+//      }
 
-			delete con;
+//			delete con;
 
-			initialized = true;
-    }
-	}
+//			initialized = true;
+//    }
+//	}
 
-	return cap_rates;
-}
+//	return cap_rates;
+//}
 
 /*
 void
@@ -4040,14 +3810,14 @@ Monica::Crop::applyCutting()
 */
 
 
-const vector<pair<int, string>>& Monica::availableMonicaCrops()
+const map<int, string>& Monica::availableMonicaCrops()
 {
-  static L lockable;
-  static vector<pair<int, string>> v;
+  static mutex lockable;
+  static map<int, string> m;
   static bool initialized = false;
   if(!initialized)
   {
-    L::Lock lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
     if(!initialized)
     {
@@ -4060,11 +3830,11 @@ const vector<pair<int, string>>& Monica::availableMonicaCrops()
 
       DBRow row;
       while(!(row = con->getRow()).empty())
-        v.push_back(make_pair(satoi(row[0]), row[1]));
+        m[satoi(row[0])] = capitalize(row[1]);
 
       initialized = true;
     }
   }
 
-  return v;
+  return m;
 }

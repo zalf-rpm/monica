@@ -43,12 +43,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <iostream>
 
-#include "boost/function.hpp"
-
 #include "monica-parameters.h"
 
-namespace Monica {
-
+namespace Monica
+{
   // forward declarations
   class FertilizerTriggerThunk;
   class SoilLayer;
@@ -68,12 +66,12 @@ namespace Monica {
    *
    * <img src="../images/aom-diagramm.png" width="600" height="420">
    */
-  struct AOM_Properties {
+  struct AOM_Properties
+  {
     AOM_Properties();
 
     double vo_AOM_Slow; /**< C content in slowly decomposing added organic matter pool [kgC m-3] */
     double vo_AOM_Fast; /**< C content in rapidly decomposing added organic matter pool [kgC m-3] */
-
 
 		double vo_AOM_SlowDecRate_to_SMB_Slow; /**< Rate for slow AOM consumed by SMB Slow is calculated. */
 		double vo_AOM_SlowDecRate_to_SMB_Fast; /**< Rate for slow AOM consumed by SMB Fast is calculated. */
@@ -103,8 +101,6 @@ namespace Monica {
   };
 
   //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
 
   /**
    * @author Claas Nendel, Michael Berg
@@ -116,13 +112,13 @@ namespace Monica {
    * allows different sizes for a layer, too.
    *
    */
-  class SoilLayer {
+  class SoilLayer
+  {
   public:
-      SoilLayer();
-      SoilLayer(const SoilLayer&);
-      SoilLayer(const CentralParameterProvider& cpp);
-      SoilLayer(double vs_LayerThickness, const SoilParameters& soilParams, const CentralParameterProvider& cpp);
-
+    SoilLayer();
+    SoilLayer(const SoilLayer&);
+    SoilLayer(const CentralParameterProvider& cpp);
+    SoilLayer(double vs_LayerThickness, const Soil::SoilParameters& soilParams, const CentralParameterProvider& cpp);
 
     void calc_vs_SoilMoisture_pF();
 
@@ -135,33 +131,25 @@ namespace Monica {
      * Sets value of soil organic matter parameter.
      * @param som New value for soil organic matter parameter
      */
-    void set_SoilOrganicMatter(double som) {
-      _vs_SoilOrganicMatter = som;
-    }
+    void set_SoilOrganicMatter(double som) { _vs_SoilOrganicMatter = som; }
 
     /**
      * Sets value for soil organic carbon.
      * @param soc New value for soil organic carbon.
      */
-    void set_SoilOrganicCarbon(double soc) {
-      _vs_SoilOrganicCarbon = soc;
-    }
+    void set_SoilOrganicCarbon(double soc) { _vs_SoilOrganicCarbon = soc; }
 
     /**
      * Returns bulk density of soil layer [kg m-3]
      * @return bulk density of soil layer [kg m-3]
      */
-    double vs_SoilBulkDensity() const {
-      return _vs_SoilBulkDensity;
-    }
+    double vs_SoilBulkDensity() const { return _vs_SoilBulkDensity; }
 
 		/**
 		 * Returns pH value of soil layer
 		 * @return pH value of soil layer [ ]
 		 */
-		double get_SoilpH() const {
-			return vs_SoilpH;
-		}
+    double get_SoilpH() const { return vs_SoilpH; }
 
     /**
      * Returns soil water pressure head as common logarithm pF.
@@ -252,8 +240,6 @@ namespace Monica {
 
     }
 
-
-
     // members ------------------------------------------------------------
 
     double vs_LayerThickness; /**< Soil layer's vertical extension [m] */
@@ -266,8 +252,6 @@ namespace Monica {
     double vs_SoilpH; /**< Soil pH value [] */
     double vs_SoilOrganicCarbon() const; /**< Soil layer's organic carbon content [kg C kg-1] */
     double vs_SoilOrganicMatter() const; /**< Soil layer's organic matter content [kg OM kg-1] */
-
-
 
     double vs_SoilMoistureOld_m3; /**< Soil layer's moisture content of previous day [m3 m-3] */
     double vs_SoilWaterFlux; /**< Water flux at the upper boundary of the soil layer [l m-2] */
@@ -293,7 +277,6 @@ namespace Monica {
     CentralParameterProvider centralParameterProvider;
 
   private:
-
     //! only one of the two is being initialized and used for calculations
     double _vs_SoilOrganicCarbon; /**< Soil organic carbon content [kg C kg-1] */
     double _vs_SoilOrganicMatter; /**< Soil organic matter content [kg OM kg-1] */
@@ -303,14 +286,8 @@ namespace Monica {
 
     double vs_SoilMoisture_m3; /**< Soil layer's moisture content [m3 m-3] */
     double vs_SoilTemperature; /**< Soil layer's temperature [°C] */
-
-
-
   }; // class soil layer
 
-
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
 
   /**
@@ -325,11 +302,11 @@ namespace Monica {
    * @see Monica::SoilLayer
    *
    */
-  class SoilColumn {
+  class SoilColumn
+  {
   public:
-
     SoilColumn(const GeneralParameters& generalParams,
-               const SoilPMs& soilParams, const CentralParameterProvider& cpp);
+               const Soil::SoilPMs& soilParams, const CentralParameterProvider& cpp);
 
     void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
                                 double amount);
@@ -360,9 +337,7 @@ namespace Monica {
      * Returns number of layers.
      * @return Number of layers.
      */
-    inline int vs_NumberOfLayers() const {
-      return vs_SoilLayers.size();
-    }
+    inline std::size_t vs_NumberOfLayers() const { return vs_SoilLayers.size(); }
 		void applyTillage(double depth);
 
     /**
@@ -370,15 +345,13 @@ namespace Monica {
      * of layers in the first 30 cm depth of soil.
      * @return Number of organic layers
      */
-    inline int vs_NumberOfOrganicLayers() const {
-      return _vs_NumberOfOrganicLayers;
-    }
+    inline std::size_t vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
 
     /**
      * Overloaded operator for a fortran-similar access to a C-array.
      * @return SoilLayer at given Index.
      */
-    SoilLayer & operator[](int i_Layer) {
+    SoilLayer& operator[](size_t i_Layer) {
       return vs_SoilLayers[i_Layer];
     }
 
@@ -386,7 +359,7 @@ namespace Monica {
      * Overloaded operator for a fortran-similar access to a C-array.
      * @return SoilLayer at given Index.
      */
-    const SoilLayer & operator[](int i_Layer) const {
+    const SoilLayer & operator[](size_t i_Layer) const {
       return vs_SoilLayers.at(i_Layer);
     }
 
@@ -394,7 +367,7 @@ namespace Monica {
      * Returns a soil layer at given Index.
      * @return Reference to a soil layer
      */
-    SoilLayer& soilLayer(int i_Layer) {
+    SoilLayer& soilLayer(size_t i_Layer) {
       return vs_SoilLayers[i_Layer];
     }
 
@@ -402,7 +375,7 @@ namespace Monica {
      * Returns a soil layer at given Index.
      * @return Reference to a soil layer
      */
-    const SoilLayer& soilLayer(int i_Layer) const {
+    const SoilLayer& soilLayer(size_t i_Layer) const {
       return vs_SoilLayers.at(i_Layer);
     }
 
@@ -430,7 +403,7 @@ namespace Monica {
 
 
 
-    int getLayerNumberForDepth(double depth);
+    std::size_t getLayerNumberForDepth(double depth);
 
     void put_Crop(CropGrowth* crop);
 
@@ -453,9 +426,9 @@ namespace Monica {
     void set_vs_NumberOfOrganicLayers();
 
     const GeneralParameters& generalParams; /**< */
-    const SoilPMs& soilParams; /**< Vector of soil parameter*/
+    const Soil::SoilPMs& soilParams; /**< Vector of soil parameter*/
 
-    int _vs_NumberOfOrganicLayers; /**< Number of organic layers. */
+    std::size_t _vs_NumberOfOrganicLayers; /**< Number of organic layers. */
     double _vf_TopDressing;
     MineralFertiliserParameters _vf_TopDressingPartition;
     int _vf_TopDressingDelay;

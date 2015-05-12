@@ -39,14 +39,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilorganic.h"
 #include "soiltransport.h"
 #include "crop.h"
-#include "debug.h"
+#include "tools/debug.h"
 #include "monica-parameters.h"
 #include "tools/read-ini.h"
 
 #if defined RUN_CC_GERMANY || defined RUN_GIS
 #include "grid/grid.h"
 #endif
-
 
 #include <fstream>
 #include <sys/stat.h>
@@ -57,12 +56,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #include <io.h>
 #endif
 
-#include <boost/foreach.hpp>
-
 using namespace Monica;
 using namespace std;
 using namespace Tools;
-
+using namespace Soil;
 
 #ifdef RUN_EVA
 
@@ -99,26 +96,26 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
   if (simulation_config == 0) {
       debug() << "Using hard coded information for eva2 simulation" << endl;
-      location = 18;
-      locationName = "guelzow";
-      profil_nr = 73;
+      location = 16;
+      locationName = "dornburg";
+      profil_nr = 1;
       classification = 1;
       variante = 1;
       pseudo=false;
-      fruchtfolge = "01";
+      fruchtfolge = "03";
 
       fruchtfolge_glied.push_back(1);
-      fruchtart.push_back("145");       // Sommergerste
+      fruchtart.push_back("141");       // Sommergerste
       fruchtfolgeYear.push_back("2005");
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(2);
-      fruchtart.push_back("041");       // Ölrettich
-      fruchtfolgeYear.push_back("2005");
+      fruchtart.push_back("172");       // Ölrettich
+      fruchtfolgeYear.push_back("2006");
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(3);
-      fruchtart.push_back("141");       // Silomais
+      fruchtart.push_back("160");       // Silomais
       fruchtfolgeYear.push_back("2006");
       anlagen.push_back(1);
 
@@ -128,12 +125,12 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(5);
-      fruchtart.push_back("180");       // Futterhirse
+      fruchtart.push_back("182");       // Futterhirse
       fruchtfolgeYear.push_back("2007");
       anlagen.push_back(1);
 
       fruchtfolge_glied.push_back(6);
-      fruchtart.push_back("176");       // Winterweizen
+      fruchtart.push_back("1176");       // Winterweizen
       fruchtfolgeYear.push_back("2008");
       anlagen.push_back(1);
 
@@ -258,7 +255,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
           int years_diff = end_year - current_year;
           //vector<ProductionProcess>::iterator it = ff_orig.begin();
           int ff_index = 0;
-          BOOST_FOREACH(ProductionProcess& pp, ff_orig){
+          for(ProductionProcess& pp : ff_orig){
             //for (; it!=ff_orig.end(); it++) {
             cout << "pp.start " << pp.start().year() << endl;
             cout << "pp.start().year()-years_diff: " << pp.start().year()-years_diff << endl;
@@ -325,7 +322,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   ofstream ff_file;
   ff_file.open((ff_filestream.str()).c_str());
   if (ff_file.fail()) debug() << "Error while opening output file \"" << ff_filestream.str().c_str() << "\"" << endl;
-  BOOST_FOREACH(ProductionProcess& pp, ff) {
+  for(ProductionProcess& pp : ff) {
     ff_file << pp.toString().c_str() << endl << endl;
   }
   ff_file.close();
@@ -339,18 +336,21 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   if (file.fail()) {
     debug() << "Error while opening output file \"" << soildata_file.str().c_str() << "\"" << endl;
   }
-  file << "Layer;Saturation [Vol-%];FC [Vol-%];PWP [Vol-%];BoArt;Dichte [kg m-3];LeachingDepth" << endl;
+  file << "Layer;Corg;Saturation [Vol-%];FC [Vol-%];PWP [Vol-%];BoArt;Dichte [kg m-3];LeachingDepth:Stone" << endl;
 
   unsigned int soil_size = sps->size();
 
   for (unsigned i=0; i<soil_size; i++) {
     SoilParameters parameters = sps->at(i);
-    file << i << ";" << parameters.vs_Saturation * 100.0
-        << ";" << parameters.vs_FieldCapacity * 100.0
-        << ";" << parameters.vs_PermanentWiltingPoint * 100.0
-        << ";" << parameters.vs_SoilTexture.c_str()
-        << ";" << parameters.vs_SoilRawDensity()
-        << ";" << centralParameterProvider.userEnvironmentParameters.p_LeachingDepth
+	file << i
+		<< ";" << parameters.vs_SoilOrganicCarbon()
+		<< ";" << parameters.vs_Saturation * 100.0
+		<< ";" << parameters.vs_FieldCapacity * 100.0
+		<< ";" << parameters.vs_PermanentWiltingPoint * 100.0
+		<< ";" << parameters.vs_SoilTexture.c_str()
+		<< ";" << parameters.vs_SoilRawDensity()
+		<< ";" << centralParameterProvider.userEnvironmentParameters.p_LeachingDepth
+		<< ";" << parameters.vs_SoilStoneContent
         << endl;
 
 
@@ -380,10 +380,9 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
  *
  * @param output_path Path to input and output files
  */
-const Monica::Result
-Monica::runWithHermesData(const std::string output_path)
+const Monica::Result Monica::runWithHermesData(const std::string output_path)
 {
-  Monica::activateDebug = true;
+  Tools::activateDebug = true;
 
   debug() << "Running hermes with configuration information from \"" << output_path.c_str() << "\"" << endl;
 
@@ -396,8 +395,7 @@ Monica::runWithHermesData(const std::string output_path)
 }
 
 
-Monica::HermesSimulationConfiguration *
-Monica::getHermesConfigFromIni(std::string output_path)
+Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::string output_path)
 {
   HermesSimulationConfiguration *hermes_config = new HermesSimulationConfiguration();
 
@@ -439,6 +437,24 @@ Monica::getHermesConfigFromIni(std::string output_path)
       double sulfate = ipm.valueAsDouble("automatic_irrigation", "sulfate", 0.0);
       hermes_config->setAutomaticIrrigation(true);
       hermes_config->setAutomaticIrrigationParameters(amount, treshold, nitrate, sulfate);
+  }
+
+  // Read information about automatic yield trigger
+  bool use_automatic_harvest_trigger = ipm.valueAsInt("harvest_trigger", "activated") == 1;
+  if (use_automatic_harvest_trigger) {
+	  
+	  hermes_config->setAutomaticHarvest(true);
+	  	  
+	  std::string harvest_time_string = ipm.valueAsString("harvest_trigger", "harvest_time", "");
+	  
+	  if (harvest_time_string == "maturity") {		  
+		  hermes_config->setAutomaticHarvestParameters(AutomaticHarvestTime::maturity);
+	  }
+	  else {
+		  // Abort simulation if no harvest date is configured but automatic harvest trigger should be used.		  
+		  cout << "ERROR in monica.ini configuration. Automatic harvest trigger is used but no or an anknown harvest time is configured. Aborting simulation now ..." << endl;
+		  exit(-1);
+	  }
   }
 
   //site configuration
@@ -493,7 +509,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
 const Monica::Result
 Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
 {
-  Monica::activateDebug = true;
+  Tools::activateDebug = true;
 
   Env env = getHermesEnvFromConfiguration(hermes_config);
 
@@ -635,9 +651,24 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   debug() << "--------------------------" << endl;
 
+
+
   //fruchtfolge
   file = outputPath+hermes_config->getRotationFile();
-  vector<ProductionProcess> ff = cropRotationFromHermesFile(file);
+
+  /**
+   * @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+   * The automatic harvest trigger is passed globally to the method that reads in crop rotation
+   * via hermes files because it cannot be configured crop specific with the HERMES format.
+   * The harvest trigger prevents the adding of a harvest application as done in the normal case
+   * that uses hard coded harvest data configured via the rotation file.
+   *
+   * When using the Json format, for each crop individual settings can be specified. The automatic
+   * harvest trigger should be one of those options. Don't forget to pass a crop-specific latest 
+   * harvest date via json parameters too, that is now specified in the sqlite database globally
+   * for each crop.
+   */
+  vector<ProductionProcess> ff = cropRotationFromHermesFile(file, hermes_config->useAutomaticHarvest(), hermes_config->getAutomaticHarvestParameters());
 
   // fertilisation
   file = outputPath+hermes_config->getFertiliserFile();
@@ -651,9 +682,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   debug() << "------------------------------------" << endl;
 
-  BOOST_FOREACH(const ProductionProcess& pv, ff){
+  for(const ProductionProcess& pv : ff)
     debug() << "pv: " << pv.toString() << endl;
-  }
 
   // fertilisation parameter
   /** @todo fertiliser IDs are not set static, but must be read dynamically or specified by user. */
@@ -688,6 +718,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
     env.nMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
   }
 
+
   return env;
 }
 
@@ -701,7 +732,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 void
 Monica::activateDebugOutput(bool status)
 {
-  Monica::activateDebug = status;
+  Tools::activateDebug = status;
 }
 
 
