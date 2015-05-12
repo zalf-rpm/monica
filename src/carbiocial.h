@@ -35,7 +35,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace Carbiocial
 {
   std::pair<const Soil::SoilPMs*, int>
-		carbiocialSoilParameters(int profileId, int layerThicknessCm, int maxDepthCm);
+		carbiocialSoilParameters(int profileId, int layerThicknessCm, int maxDepthCm, 
+		Monica::GeneralParameters gps, std::string s, Monica::CentralParameterProvider cpp);
 
 	class CarbiocialConfiguration
 	{
