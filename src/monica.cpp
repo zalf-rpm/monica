@@ -144,32 +144,31 @@ customId(env.customId)
   useNMinMineralFertilisingMethod = env.useNMinMineralFertilisingMethod;
   useAutomaticIrrigation = env.useAutomaticIrrigation;
   useSecondaryYields = env.useSecondaryYields;
-
+    
   windSpeedHeight = env.windSpeedHeight;
   atmosphericCO2 = env.atmosphericCO2;
   albedo = env.albedo;
-
+  
   da = env.da;
+  
   cropRotation = env.cropRotation;
-//  std::vector<ProductionProcess>::const_iterator it = env.cropRotation.begin();
-//  for (; it!=env.cropRotation.end(); it++) {
-//    cropRotation.push_back(*it);
-//  }
-
+  
+  
   gridPoint = env.gridPoint;
-
+  
   site = env.site;
   general = env.general;
   organic = env.organic;
-
+  
   nMinFertiliserPartition = env.nMinFertiliserPartition;
   nMinUserParams = env.nMinUserParams;
   autoIrrigationParams = env.autoIrrigationParams;
   groundwaterInformation = env.groundwaterInformation;
   centralParameterProvider = env.centralParameterProvider;
-
+  
   pathToOutputDir = env.pathToOutputDir;
   mode = env.mode;
+  debug() << "Return copy constructor env" << endl;
 }
 
 /**
@@ -671,7 +670,7 @@ void MonicaModel::generalStep(unsigned int stepNo)
 //      climate_file << "Tp_av\t"<<"Tpmin\t"<<"Tpmax\t"<<"T_s10\t"<<"T_s20\t"<<"vappd\t"<<"wind\t"<<"sundu\t"<<"radia\t"<<"prec\t"<<"tagesnummer\t"<<"RF\t"<< endl;
 //      climate_file << "C_deg\t"<<"C_deg\t"<<"C_deg\t"<<"C_deg\t"<<"C_deg\t"<<"mm_Hg\t"<<"m/se\t"<<"hours\t"<<"J/cm²\t"<<"mm\t"<<"jday\t"<<"%\t"<<endl;
 //      climate_file << "-----------------------------------" << endl;
-//  }
+// }
 //
 //  climate_file << tavg <<"\t" << tmin <<"\t" << tmax <<"\t" << 0.0 <<"\t" << 0.0 <<"\t"
 //      << 0.0 <<"\t" << wind <<"\t" << sunhours <<"\t" << globrad <<"\t" << precip <<"\t" << stepNo <<"\t" << relhumid << endl;
@@ -1186,7 +1185,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
   Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 #endif
 {
-
+  
   Result res;
 	res.customId = env.customId;
   res.gp = env.gridPoint;
@@ -1216,7 +1215,9 @@ double MonicaModel::getsum30cmActDenitrificationRate()
     debug() << "write_output_files: " << write_output_files << endl;
   }
 
-  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS) {
+  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS ||
+      env.getMode() == Env::MODE_MACSUR_SCALING_CALIBRATION ) 
+  {
     write_output_files = false;
   }
 
@@ -1391,6 +1392,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
 				Harvest *harvestApplication = new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr());
 				harvestApplication->apply(&monica);
+                
 			}
 		}
 	}

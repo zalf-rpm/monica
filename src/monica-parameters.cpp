@@ -178,7 +178,7 @@ Result::getResultsById(int id)
       id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
       id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass || 
-      id == anthesisDay || id == maturityDay )
+      id == anthesisDay || id == maturityDay || id == harvestDay )
   {
     vector<double> result_vector;
     int size = pvrs.size();
@@ -199,7 +199,7 @@ const vector<ResultId>& Monica::cropResultIds()
   static ResultId ids[] =
   {
     primaryYield, secondaryYield, sumFertiliser,
-    sumIrrigation, anthesisDay, maturityDay//, sumMineralisation
+    sumIrrigation, anthesisDay, maturityDay, harvestDay//, sumMineralisation
   };
   static vector<ResultId> v(ids, ids + 6);//5);
 
@@ -336,6 +336,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
 	  return ResultIdInfo("Tag der Blüte", "Jul. day", "anthesisDay");
   case maturityDay:
 	  return ResultIdInfo("Tag der Reife", "Jul. day", "maturityDay");
+  case harvestDay:
+      return ResultIdInfo("Tag der Ernte", "Date", "harvestDay");
   case sumFertiliser:
     return ResultIdInfo("N", "kg/ha", "sumFert");
   case sumIrrigation:
@@ -569,6 +571,7 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
 				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
 				_cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
+                _cropResult->pvResults[harvestDay] = date().julianDay();
 
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);
@@ -629,6 +632,11 @@ void Harvest::apply(MonicaModel* model)
 					<< _crop->toString() << endl;
 			}
 		}
+  } else {
+      debug() << "Cannot harvest crop because there is not one anymore" << endl;
+      debug() << "Maybe automatic harvest trigger was already activated so that the ";
+      debug() << "crop was already harvested. This must be the fallback harvest application ";
+      debug() << "that is not necessary anymore and should be ignored" << endl;
   }
 }
 
@@ -869,7 +877,7 @@ _cropResult(new PVResult())
 	
 
 	
-	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) && (! crop->useAutomaticHarvestTrigger()) ) {
+	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) ) {
 	
 		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
 		addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
@@ -1040,18 +1048,9 @@ vector<ProductionProcess>
     Date sd = parseDate(sowingDate).toDate(true);    
 	Date td = parseDate(tillageDate).toDate(true);
 	Date hd;
+    
 
-	if (! useAutomaticHarvestTrigger) {
-		
-		hd = parseDate(harvestDate).toDate(true);
-		
-		if (!hd.isValid()) {
-			debug() << "Error - Invalid harvest date in \"" << pathToFile.c_str() << "\"" << endl;
-			debug() << "Line: " << s.c_str() << endl;
-			debug() << "Aborting simulation now!" << endl;
-			exit(-1);
-		}
-	}
+
 
     // tst if dates are valid
     if (!sd.isValid() || !td.isValid())
@@ -1061,18 +1060,71 @@ vector<ProductionProcess>
       debug() << "Aborting simulation now!" << endl;
       exit(-1);
     }
-
+    
     //create crop
     CropPtr crop = hermesCropId2Crop(crp);
-    crop->setSeedAndHarvestDate(sd, hd);
     crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
     crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
-	
-	if (useAutomaticHarvestTrigger) {
-		// change latest harvest date to crop specific fallback harvest doy
+    
+    if (! useAutomaticHarvestTrigger) {
+        // Do not use automatic harvest trigger
+        // Adds harvest date from crop rotation file
+		hd = parseDate(harvestDate).toDate(true);
+		
+		if (!hd.isValid()) {
+			debug() << "Error - Invalid harvest date in \"" << pathToFile.c_str() << "\"" << endl;
+			debug() << "Line: " << s.c_str() << endl;
+			debug() << "Aborting simulation now!" << endl;
+			exit(-1);
+		}
+	} else {
+        
+        debug() << "Activate automatic Harvest Trigger" << endl;  
+        
+        // use harvest trigger
+        // change latest harvest date to crop specific fallback harvest doy        
 		autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->pc_LatestHarvestDoy);
-		crop->activateAutomaticHarvestTrigger(autoHarvestParams);
-	}
+        crop->activateAutomaticHarvestTrigger(autoHarvestParams);
+        
+        int harvest_year = sd.year();
+        if (crp == "WW" || crp=="SW" || crp=="WG" || crp=="WR" || crp=="WR_GD" || crp=="SB" ||
+            crp=="WC" || crp=="WTR") 
+        {
+            // increment harvest year based on sowing year for winter crops
+            // to determine harvest year for automatic harvest trigger
+            harvest_year++;                
+        } 
+        
+        debug() << "harvest_year:\t" << harvest_year << endl;
+        
+        // ###################################################################
+        // # Important notes for the automatic harvest trigger (by XS)
+        // ###################################################################        
+        // @TODO: Change work flow of automatic harvest trigger
+        // ###################################################################
+        // Automatic harvest trigger works as follows:
+        // If activated the latest harvest doy for the crop is automatically  used as
+        // harvest date. A harvest application is added as usual when creating
+        // the production process (constructor).
+        // If the harvest trigger is activated during simulation (main loop in monica.cpp)
+        // a new harvest application is created and directly applied without adding
+        // it to the list of applications in the production process.
+        // Because the fallback harvest application was already added as a harvest event
+        // in the production process during creation of the PP, a crop may be harvested 
+        // two times. But the apply method of the harvest application tests before
+        // doing anything if there is a valid crop pointer. If not, nothing is done.
+        // So if a harvest application is called a second time nothing happens ...
+        // ###################################################################
+        
+        // set harvest date to latest crop specific fallback harvest date
+        hd = Date::julianDate(crop->cropParameters()->pc_LatestHarvestDoy, harvest_year, true);
+        
+    }
+
+    
+    crop->setSeedAndHarvestDate(sd, hd);
+    
+
 
     ProductionProcess pp(crp, crop);
     pp.addApplication(TillageApplication(td, (tillage_depth/100.0) ));

@@ -73,6 +73,7 @@ namespace Monica
 			MODE_SENSITIVITY_ANALYSIS,
 			MODE_CC_GERMANY,
 			MODE_MACSUR_SCALING, 
+			MODE_MACSUR_SCALING_CALIBRATION,
 			MODE_CARBIOCIAL_CLUSTER
 		};
 
@@ -85,7 +86,6 @@ namespace Monica
 				layerThickness(0),
 				useNMinMineralFertilisingMethod(false),
 				useAutomaticIrrigation(false),
-				//useAutomaticHarvestTrigger(false),
 				useSecondaryYields(true),
 				atmosphericCO2(-1),
 				customId(-1)
@@ -123,9 +123,6 @@ namespace Monica
     bool useAutomaticIrrigation;
     AutomaticIrrigationParameters autoIrrigationParams;
     MeasuredGroundwaterTableInformation groundwaterInformation;
-
-	//bool useAutomaticHarvestTrigger;
-	//AutomaticHarvestParameters automaticHarvestParams;
 
 
     bool useSecondaryYields;              //! tell if farmer uses the secondary yield products

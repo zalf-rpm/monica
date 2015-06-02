@@ -103,14 +103,17 @@ namespace Monica
 		secondaryYield,
 
 
-    //! above ground biomass of the crop
-    aboveGroundBiomass,
+		//! above ground biomass of the crop
+		aboveGroundBiomass,
 
 		//! Julian day of anthesis of the crop
 		anthesisDay,
 
 		//! Julian day of maturity of the crop
 		maturityDay,
+		
+		//! Julian day of harvest
+		harvestDay,
 
 		//! sum of applied fertilizer for that crop during growth period
 		sumFertiliser,
@@ -892,7 +895,8 @@ namespace Monica
 
 		void setMaturityDay(int day) { _maturityDay = day; }
 		int getMaturityDay() const { return _maturityDay; }
-
+		
+		
 		// Automatic yiedl trigger parameters
 		bool useAutomaticHarvestTrigger() { return _automaticHarvest; }
 		void activateAutomaticHarvestTrigger(AutomaticHarvestParameters params) { _automaticHarvest = true; _automaticHarvestParams = params; }
@@ -926,7 +930,7 @@ namespace Monica
 
 		int _anthesisDay;
 		int _maturityDay;
-
+		
 		bool _automaticHarvest;
 		AutomaticHarvestParameters _automaticHarvestParams;
 	};

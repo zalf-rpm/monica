@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SIMULATION_H_
 
 // must be activated when building monica for python
-#define RUN_HERMES
+//#define RUN_HERMES
 // #define RUN_EVA
 //#define RUN_CC_GERMANY
 //#define RUN_GIS
