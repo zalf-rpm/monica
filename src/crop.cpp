@@ -237,7 +237,7 @@ pc_WaterDeficitResponseOn(generalParams.pc_WaterDeficitResponseOn),
 eva2_usage(usage),
 dyingOut(false),
 vc_AccumulatedETa(0.0),
-vc_AccumulatedTranspiration(0.0)
+vc_AccumulatedTranspiration(0.0),
 vc_AccumulatedPrimaryCropYield(0.0),
 vc_CuttingDelayDays(0),
 vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth),

@@ -188,7 +188,7 @@ Result::getResultsById(int id)
 	  id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||      
 	  id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass ||
-	  id == anthesisDay || id == maturityDay || id == harvestDOY
+	  id == anthesisDay || id == maturityDay || id == harvestDay
       )
   {
     vector<double> result_vector;
@@ -379,7 +379,7 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
   case avg60_90cmSoilMoisture:
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 60-90cm Boden am 31.03.", "%","Moist60_90");
   case avg0_90cmSoilMoisture:
-	  +return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-90cm Boden am 31.03.", "%", "Moist0_90");
+	  return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-90cm Boden am 31.03.", "%", "Moist0_90");
   case waterFluxAtLowerBoundary:
     return ResultIdInfo("Sickerwasser der unteren Bodengrenze am 31.03.", "mm/d", "waterFlux");
   case avg0_30cmCapillaryRise:
@@ -866,9 +866,6 @@ MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDat
 //------------------------------------------------------------------------------
 
 ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
-    _name(name),
-    _crop(crop),
-    _cropResult(new PVResult()),
 	_name(name),
 	_crop(crop),
 	_cropResult(new PVResult())
@@ -886,7 +883,7 @@ ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
 		addApplication(Harvest(crop->harvestDate(), crop, _cropResult));		
 	}
 
-  }
+  
 
   std::vector<Date> cuttingDates = crop->getCuttingDates();
   unsigned int size = cuttingDates.size();
@@ -1307,8 +1304,7 @@ CropParameters::CropParameters() :
     pc_DevelopmentAccelerationByNitrogenStress(0),
     pc_CuttingDelayDays(0),
     pc_FieldConditionModifier(1.0),	
-	pc_AssimilateReallocation(0.0),
-	pc_LT50cultivar(0.0),
+	pc_AssimilateReallocation(0.0),	
 	pc_LatestHarvestDoy(-1)
 {}
 

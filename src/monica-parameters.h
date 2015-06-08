@@ -87,7 +87,7 @@ namespace Monica
 	* Definition of different harvest time definition for the automatic
 	* yield trigger
 	*/
-	enum class AutomaticHarvestTime
+	enum AutomaticHarvestTime
 	{
 		maturity,	/**< crop is harvested when maturity is reached */
 		unknown		/**< default error value */

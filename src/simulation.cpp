@@ -445,7 +445,7 @@ Monica::getHermesConfigFromIni(std::string output_path)
 	bool use_automatic_harvest_trigger = ipm.valueAsInt("harvest_trigger", "activated") == 1;
 	if (use_automatic_harvest_trigger) {
 	  
-	hermes_config->setAutomaticHarvest(true);
+        hermes_config->setAutomaticHarvest(true);
 	  
 		std::string harvest_time_string = ipm.valueAsString("harvest_trigger", "harvest_time", "");
 	  

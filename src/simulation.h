@@ -223,6 +223,7 @@ public:
 
     void setNMinFertiliser(bool state) { this->NMinFertiliser = state;}
     void setAutomaticIrrigation(bool state) { this->automaticIrrigation = state;}
+    void setAutomaticHarvest(bool state) { this->automaticHarvest = state; }
 
     void setInitPercentageFC(double perc) { this->initPercentageFC = perc; }
     void setInitSoilNitrate(double nitrate) { this->initSoilNitrate = nitrate; }
