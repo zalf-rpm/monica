@@ -342,7 +342,7 @@ const Result Configuration::run()
 
   debug() << "run monica" << std::endl;
 
-  return runMonica(env, this);
+  return runMonica(env); //, this);
 }
 
 void Configuration::setProgress(double progress)

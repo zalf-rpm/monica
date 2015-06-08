@@ -259,11 +259,7 @@ namespace Monica
 	 */
 	const std::vector<ResultId>& monthlyResultIds();
 
-	/**
-	 * @return list if ids used for sensitivity analysis
-	 */
-	const std::vector<int>& sensitivityAnalysisResultIds();
-
+	
 
 	/**
 	 * @return list if ids used for sensitivity analysis
@@ -1121,7 +1117,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class HarvestApplication : public WorkStep
+	/*class HarvestApplication : public WorkStep
 	{
 	public:
 		HarvestApplication(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, 
@@ -1144,7 +1140,7 @@ namespace Monica
 		PVResultPtr _cropResult; 
 		double _percentage;
 		std::string _method;
-	};
+	};*/
 
 	//----------------------------------------------------------------------------
 
@@ -1725,10 +1721,7 @@ namespace Monica
 
 	void testClimateData(Climate::DataAccessor &climateData);
 
-	std::vector<ProductionProcess>
-	applySAChanges(std::vector<ProductionProcess> ff,
-								 const CentralParameterProvider &centralParameterProvider);
-
+	
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
 }
 
