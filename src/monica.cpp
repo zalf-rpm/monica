@@ -1215,6 +1215,13 @@ double MonicaModel::getsum30cmActDenitrificationRate()
     debug() << "write_output_files: " << write_output_files << endl;
   }
 
+  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS || 
+	  env.getMode() == Env::MODE_MACSUR_SCALING_CALIBRATION) 
+  {
+	  write_output_files = false;
+	  
+  }
+
 	env.centralParameterProvider.writeOutputFiles = write_output_files;
 
 	debug() << "-----" << endl;
@@ -1355,6 +1362,46 @@ double MonicaModel::getsum30cmActDenitrificationRate()
         monica.incorporateCurrentCrop();
     }
 
+
+	/////////////////////////////////////////////////////////////////
+	// AUTOMATIC HARVEST TRIGGER
+	/////////////////////////////////////////////////////////////////
+	
+	/**
+	* @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+	* The automatic harvest trigger is passed globally to the method that reads in crop rotation
+	* via hermes files because it cannot be configured crop specific with the HERMES format.
+	* The harvest trigger prevents the adding of a harvest application as done in the normal case
+	* that uses hard coded harvest data configured via the rotation file.
+	*
+	* When using the Json format, for each crop individual settings can be specified. The automatic
+	* harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
+	* harvest date via json parameters too, that is now specified in the sqlite database globally
+	* for each crop.
+	*/
+	
+	// Test if automatic harvest trigger is used
+	if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
+	
+		// Test if crop should be harvested at maturity 
+		if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
+		
+			if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
+		
+				debug() << "####################################################" << endl;
+				debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
+				debug() << "####################################################" << endl;
+			
+				Harvest *harvestApplication = new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+				harvestApplication->apply(&monica);
+			
+			}
+		
+		}
+		
+	}
+
+
     //there's something to at this day
     if(nextAbsolutePPApplicationDate == currentDate)
     {
@@ -1458,6 +1505,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
       res.generalResults[avg0_30cmSoilMoisture].push_back(monica.avgSoilMoisture(0,3));
       res.generalResults[avg30_60cmSoilMoisture].push_back(monica.avgSoilMoisture(3,6));
       res.generalResults[avg60_90cmSoilMoisture].push_back(monica.avgSoilMoisture(6,9));
+	  res.generalResults[avg0_90cmSoilMoisture].push_back(monica.avgSoilMoisture(0, 9));
       res.generalResults[waterFluxAtLowerBoundary].push_back(monica.groundWaterRecharge());
       res.generalResults[avg0_30cmCapillaryRise].push_back(monica.avgCapillaryRise(0,3));
       res.generalResults[avg30_60cmCapillaryRise].push_back(monica.avgCapillaryRise(3,6));

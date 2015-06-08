@@ -68,6 +68,8 @@ namespace Monica
 		NUTZUNG_CCM=8
 	};
 
+	
+
 	const double UNDEFINED = -9999.9;
 	const int UNDEFINED_INT = -9999;
 
@@ -80,6 +82,19 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	/**
+	* @brief Enumeration for defining automatic harvesting times
+	* Definition of different harvest time definition for the automatic
+	* yield trigger
+	*/
+	enum class AutomaticHarvestTime
+	{
+		maturity,	/**< crop is harvested when maturity is reached */
+		unknown		/**< default error value */
+	};
+
+	//----------------------------------------------------------------------------
+
 	enum ResultId
 	{
 		//! primary yield for the crop (e.g. the actual fruit)
@@ -87,6 +102,18 @@ namespace Monica
 
 		//! secondary yield for the crop (e.g. leafs and other stuff useable)
 		secondaryYield,
+
+		//! above ground biomass of the crop
+		aboveGroundBiomass,
+
+		//! Julian day of anthesis of the crop
+		anthesisDay,
+		
+		//! Julian day of maturity of the crop
+		maturityDay,
+		
+		//! Julian day of harvest
+		harvestDay,
 
 		//! sum of applied fertilizer for that crop during growth period
 		sumFertiliser,
@@ -147,6 +174,9 @@ namespace Monica
 
 		//! Average soilmoisture content in 60-90cm soil at special, hardcoded date
 		avg60_90cmSoilMoisture,
+
+		//! Average soilmoisture content in 0-90cm soil at special, hardcoded date
+		avg0_90cmSoilMoisture,
 
 		//! water flux at bottom layer of soil at special, hardcoded date
 		waterFluxAtLowerBoundary,
@@ -213,6 +243,7 @@ namespace Monica
 
 		//! Evapotranspiration in time of crop cultivation
 		sumETaPerCrop,
+		sumTraPerCrop,
 		cropname,
 		primaryYieldTM,
 		secondaryYieldTM,
@@ -361,6 +392,7 @@ namespace Monica
 		int pc_DevelopmentAccelerationByNitrogenStress; 
 		double pc_FieldConditionModifier;
 		double pc_AssimilateReallocation;
+		int pc_LatestHarvestDoy;
 
 		std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
 		std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
@@ -646,11 +678,63 @@ namespace Monica
 
 	CapillaryRiseRates readCapillaryRiseRates();
 
+
+	/**
+	* @brief Data structure that containts all relevant parameters for the automatic yield trigger.
+	*/
+	class AutomaticHarvestParameters
+	{
+		public:
+			/** @brief Constructor */
+			AutomaticHarvestParameters() :
+			_harvestTime(AutomaticHarvestTime::unknown),
+			_latestHarvestDOY(-1) {}
+			
+			/** @brief Constructor */
+			AutomaticHarvestParameters(AutomaticHarvestTime yt) :
+			_harvestTime(yt),
+			_latestHarvestDOY(-1) {}
+			
+			/**
+			 * @brief Setter for automatic harvest time
+			 */
+			void setHarvestTime(AutomaticHarvestTime time) { _harvestTime = time; }
+			
+			/**
+			 * @brief Getter for automatic harvest time
+			 */
+			AutomaticHarvestTime getHarvestTime() const { return _harvestTime; }
+			
+			/**
+			 * @brief Setter for fallback automatic harvest day
+			 */
+			void setLatestHarvestDOY(int doy) { _latestHarvestDOY = doy; }
+			
+			/**
+			* @brief Getter for fallback automatic harvest day
+			*/
+			int getLatestHarvestDOY() const { return _latestHarvestDOY; }
+			
+			std::string toString() const;
+			
+			private:
+			
+			AutomaticHarvestTime _harvestTime;		/**< Harvest time parameter */
+			int _latestHarvestDOY;					/**< Fallback day for latest harvest of the crop */
+			
+			
+		}; // class AutomaticHarvestParameters
+	
+	
+		//----------------------------------------------------------------------------
+
+
 	//----------------------------------------------------------------------------
 
 	class OrganicMatterParameters;
-
+	class AutomaticHarvestParameters;
 	class Crop;
+
 	typedef boost::shared_ptr<Crop> CropPtr;
 	
 	class Crop
@@ -663,7 +747,8 @@ namespace Monica
 			_primaryYield(0), _secondaryYield(0),_primaryYieldTM(0), _secondaryYieldTM(0),
 			_appliedAmountIrrigation(0),_primaryYieldN(0), _secondaryYieldN(0),
 			_sumTotalNUptake(0), _crossCropAdaptionFactor(1),
-			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(Monica::NUTZUNG_UNDEFINED){ }
+			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(Monica::NUTZUNG_UNDEFINED), 
+			_anthesisDay(-1), _maturityDay(-1), _automaticHarvest(false){ }
 
 		Crop(CropId id, const std::string& name, const CropParameters* cps = NULL,
 				 const OrganicMatterParameters* rps = NULL,
@@ -671,7 +756,8 @@ namespace Monica
 				 _id(id), _name(name), _cropParams(cps), _perennialCropParams(NULL), _residueParams(rps),
 			_primaryYield(0), _secondaryYield(0),  _primaryYieldTM(0), _secondaryYieldTM(0),_appliedAmountIrrigation(0), _primaryYieldN(0), _secondaryYieldN(0),
 			_sumTotalNUptake(0), _crossCropAdaptionFactor(crossCropAdaptionFactor),
-			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED) { }
+			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED),
+			_anthesisDay(-1), _maturityDay(-1), _automaticHarvest(false) { }
 
 		Crop(CropId id, const std::string& name,
 				 const Tools::Date& seedDate, const Tools::Date& harvestDate,
@@ -683,7 +769,8 @@ namespace Monica
 			_primaryYieldTM(0), _secondaryYieldTM(0), _primaryYieldN(0), _secondaryYieldN(0),
 			_sumTotalNUptake(0),
 			_crossCropAdaptionFactor(crossCropAdaptionFactor),
-			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED){ }
+			_cropHeight(0.0), _accumulatedETa(0.0), eva2_typeUsage(NUTZUNG_UNDEFINED),
+			_anthesisDay(-1), _maturityDay(-1), _automaticHarvest(false){ }
 
 		Crop(const Crop& new_crop)
 		{
@@ -705,6 +792,10 @@ namespace Monica
 			_crossCropAdaptionFactor = new_crop._crossCropAdaptionFactor;
 			_cropHeight = new_crop._cropHeight;
 			eva2_typeUsage = new_crop.eva2_typeUsage;
+			_anthesisDay = new_crop._anthesisDay;
+			_maturityDay = new_crop._maturityDay;
+			_automaticHarvest = new_crop._automaticHarvest;
+			_automaticHarvestParams = new_crop._automaticHarvestParams;
 		}
 
 		CropId id() const { return _id; }
@@ -773,6 +864,7 @@ namespace Monica
 		void setSumTotalNUptake(double sum) { _sumTotalNUptake = sum; }
 		void setCropHeight(double height) {_cropHeight = height; }
 		void setAccumulatedETa(double eta) { _accumulatedETa = eta; }
+		void setAccumulatedTranspiration(double transp) { _accumulatedTranspiration = transp; }
 
 		double appliedIrrigationWater() const { return _appliedAmountIrrigation; }
 		double sumTotalNUptake() const {return _sumTotalNUptake; }
@@ -782,24 +874,36 @@ namespace Monica
 		double secondaryYieldTM() const { return _secondaryYieldTM * _crossCropAdaptionFactor; }
 		double primaryYieldN() const { return _primaryYieldN; }
 		double aboveGroundBiomasseN() const { return _primaryYieldN + _secondaryYieldN; }
+		double aboveGroundBiomass() const { return _primaryYield * _crossCropAdaptionFactor + _secondaryYield * _crossCropAdaptionFactor; }
 		double secondaryYieldN() const { return _secondaryYieldN; }
 		double cropHeight() const { return _cropHeight; }
 
 		void reset()
 		{
 			_primaryYield = _secondaryYield = _appliedAmountIrrigation = 0;
-			_primaryYieldN = _secondaryYieldN = _accumulatedETa = 0.0;
+			_primaryYieldN = _secondaryYieldN = _accumulatedETa = _accumulatedTranspiration = 0.0;
 			_primaryYieldTM = _secondaryYield = 0.0;
+			_anthesisDay = _maturityDay = -1;
 		}
 
 		void setEva2TypeUsage(int type) { eva2_typeUsage = type; }
 		int getEva2TypeUsage() const { return eva2_typeUsage; }
 
-		double get_AccumulatedETa() const {
-			return _accumulatedETa;
-		}
+		double get_AccumulatedETa() const {	return _accumulatedETa;	}
+		double get_AccumulatedTranspiration() const { return _accumulatedTranspiration; }
 
 		void writeCropParameters(std::string path);
+
+		void setAnthesisDay(int day) { _anthesisDay = day; }
+		int getAnthesisDay() const { return _anthesisDay; }
+		
+		void setMaturityDay(int day) { _maturityDay = day; }
+		int getMaturityDay() const { return _maturityDay; }
+		
+		// Automatic yiedl trigger parameters
+		bool useAutomaticHarvestTrigger() { return _automaticHarvest; }
+		void activateAutomaticHarvestTrigger(AutomaticHarvestParameters params) { _automaticHarvest = true; _automaticHarvestParams = params; }
+		AutomaticHarvestParameters getAutomaticHarvestParams() { return _automaticHarvestParams; }
 
 		
 
@@ -824,8 +928,15 @@ namespace Monica
 		double _crossCropAdaptionFactor;
 		double _cropHeight;
 		double _accumulatedETa;
+		double _accumulatedTranspiration;
 
 		int eva2_typeUsage;
+
+		int _anthesisDay;
+		int _maturityDay;
+		
+		bool _automaticHarvest;
+		AutomaticHarvestParameters _automaticHarvestParams;
 
 	};
 
@@ -1331,7 +1442,7 @@ namespace Monica
 	 * - the returned production processes contain absolute dates
 	 */
 	std::vector<ProductionProcess>
-	cropRotationFromHermesFile(const std::string& pathToFile);
+		cropRotationFromHermesFile(const std::string& pathToFile, bool useAutomaticHarvestTrigger = false, AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
 
 	Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
 																									 int fromYear, int toYear,
@@ -1431,6 +1542,7 @@ namespace Monica
 		bool p_UseAutomaticIrrigation;
 		bool p_UseNMinMineralFertilisingMethod;
 		bool p_UseSecondaryYields;
+		bool p_UseAutomaticHarvestTrigger;
 
 		double p_LayerThickness;
 		double p_Albedo;

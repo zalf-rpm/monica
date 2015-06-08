@@ -441,6 +441,26 @@ Monica::getHermesConfigFromIni(std::string output_path)
       hermes_config->setAutomaticIrrigationParameters(amount, treshold, nitrate, sulfate);
   }
 
+	// Read information about automatic yield trigger
+	bool use_automatic_harvest_trigger = ipm.valueAsInt("harvest_trigger", "activated") == 1;
+	if (use_automatic_harvest_trigger) {
+	  
+	hermes_config->setAutomaticHarvest(true);
+	  
+		std::string harvest_time_string = ipm.valueAsString("harvest_trigger", "harvest_time", "");
+	  
+		if (harvest_time_string == "maturity") {
+			hermes_config->setAutomaticHarvestParameters(AutomaticHarvestTime::maturity);
+		  
+		} else {
+		  
+			// Abort simulation if no harvest date is configured but automatic harvest trigger should be used.		  
+			cout << "ERROR in monica.ini configuration. Automatic harvest trigger is used but no or an anknown harvest time is configured. Aborting simulation now ..." << endl;
+		    exit(-1);		  
+		}	  
+	}
+  
+
   //site configuration
   hermes_config->setlatitude(ipm.valueAsDouble("site_parameters", "latitude", -1.0));
   hermes_config->setSlope(ipm.valueAsDouble("site_parameters", "slope", -1.0));
@@ -637,7 +657,20 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   //fruchtfolge
   file = outputPath+hermes_config->getRotationFile();
-  vector<ProductionProcess> ff = cropRotationFromHermesFile(file);
+  
+  /**
+   * @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+   * The automatic harvest trigger is passed globally to the method that reads in crop rotation
+   * via hermes files because it cannot be configured crop specific with the HERMES format.
+   * The harvest trigger prevents the adding of a harvest application as done in the normal case
+   * that uses hard coded harvest data configured via the rotation file.
+   *
+   * When using the Json format, for each crop individual settings can be specified. The automatic
+   * harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
+   * harvest date via json parameters too, that is now specified in the sqlite database globally
+   * for each crop.
+   */
+  vector<ProductionProcess> ff = cropRotationFromHermesFile(file, hermes_config->useAutomaticHarvest(), hermes_config->getAutomaticHarvestParameters());
 
   // fertilisation
   file = outputPath+hermes_config->getFertiliserFile();

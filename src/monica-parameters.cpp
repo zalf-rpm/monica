@@ -185,9 +185,10 @@ Result::getResultsById(int id)
   // test if crop results are requested
   if (id == primaryYield || id == secondaryYield || id == sumIrrigation ||
       id == sumFertiliser || id == biomassNContent || id == sumTotalNUptake ||
-      id == cropHeight || id == cropname || id == sumETaPerCrop ||
-      id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
-      id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress
+	  id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
+      id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||      
+	  id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass ||
+	  id == anthesisDay || id == maturityDay || id == harvestDOY
       )
   {
     vector<double> result_vector;
@@ -209,9 +210,9 @@ const vector<ResultId>& Monica::cropResultIds()
   static ResultId ids[] =
   {
     primaryYield, secondaryYield, sumFertiliser,
-    sumIrrigation, sumMineralisation
+	sumIrrigation, anthesisDay, maturityDay,  harvestDay //sumMineralisation
   };
-  static vector<ResultId> v(ids, ids + 5);
+  static vector<ResultId> v(ids, ids + 6);
 
   return v;
 }
@@ -329,6 +330,14 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Hauptertrag", "dt/ha", "primYield");
   case secondaryYield:
     return ResultIdInfo("Nebenertrag", "dt/ha", "secYield");
+  case aboveGroundBiomass:
+	  return ResultIdInfo("Oberirdische Biomasse", "dt/ha", "AbBiom");
+  case anthesisDay:
+	return ResultIdInfo("Tag der Blüte", "Jul. day", "anthesisDay");
+  case maturityDay:
+	return ResultIdInfo("Tag der Reife", "Jul. day", "maturityDay");
+  case harvestDay:
+	  return ResultIdInfo("Tag der Ernte", "Date", "harvestDay");
   case sumFertiliser:
     return ResultIdInfo("N", "kg/ha", "sumFert");
   case sumIrrigation:
@@ -369,6 +378,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 30-60cm Boden am 31.03.", "%","Moist30_60");
   case avg60_90cmSoilMoisture:
     return ResultIdInfo("Durchschnittlicher Wassergehalt in 60-90cm Boden am 31.03.", "%","Moist60_90");
+  case avg0_90cmSoilMoisture:
+	  +return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-90cm Boden am 31.03.", "%", "Moist0_90");
   case waterFluxAtLowerBoundary:
     return ResultIdInfo("Sickerwasser der unteren Bodengrenze am 31.03.", "mm/d", "waterFlux");
   case avg0_30cmCapillaryRise:
@@ -413,6 +424,8 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Gesamt-akkumulierte N-Auswaschung im Jahr", "kg N/ha", "Yearly_monthLeachN");
   case sumETaPerCrop:
     return ResultIdInfo("Evapotranspiration pro Vegetationszeit der Pflanze", "mm", "ETa_crop");
+  case sumTraPerCrop:
+	return ResultIdInfo("Transpiration pro Vegetationszeit der Pflanze", "mm", "Tra_crop");
   case cropname:
     return ResultIdInfo("Pflanzenname", "", "cropname");
   case primaryYieldTM:
@@ -532,6 +545,9 @@ void Harvest::apply(MonicaModel* model)
 					_crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
 					_crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 					_crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
+					_crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
+					_crop->setAnthesisDay(model->cropGrowth()->getAnthesisDay());
+					_crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
 				}
 
 				//store results for this crop
@@ -542,15 +558,20 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[sumIrrigation] = _crop->appliedIrrigationWater();
 				_cropResult->pvResults[biomassNContent] = _crop->primaryYieldN();
 				_cropResult->pvResults[aboveBiomassNContent] = _crop->aboveGroundBiomasseN();
+				_cropResult->pvResults[aboveGroundBiomass] = roundf(_crop->aboveGroundBiomass()*100)/100;	// only save 2 decimal places
 				_cropResult->pvResults[daysWithCrop] = model->daysWithCrop();
 				_cropResult->pvResults[sumTotalNUptake] = _crop->sumTotalNUptake();
 				_cropResult->pvResults[cropHeight] = _crop->cropHeight();
 				_cropResult->pvResults[sumETaPerCrop] = _crop->get_AccumulatedETa();
+				_cropResult->pvResults[sumTraPerCrop] = _crop->get_AccumulatedTranspiration();
 				_cropResult->pvResults[cropname] = _crop->id();
 				_cropResult->pvResults[NStress] = model->getAccumulatedNStress();
 				_cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
+				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
+				_cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
+				_cropResult->pvResults[harvestDay] = date().julianDay();
 
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);
@@ -612,6 +633,14 @@ void Harvest::apply(MonicaModel* model)
 			}
 		}
   }
+	
+  
+	else {
+		debug() << "Cannot harvest crop because there is not one anymore" << endl;
+		debug() << "Maybe automatic harvest trigger was already activated so that the ";
+		debug() << "crop was already harvested. This must be the fallback harvest application ";
+		debug() << "that is not necessary anymore and should be ignored" << endl;
+	}
 }
 
 string Harvest::toString() const
@@ -761,6 +790,23 @@ string IrrigationApplication::toString() const
 
 //------------------------------------------------------------------------------
 
+/**
+ * @brief Returns a short summary with information about automatic yield parameter configuration.
+ * @brief String
+ */
+string AutomaticHarvestParameters::toString() const
+ {
+	ostringstream s;
+	if (_harvestTime == AutomaticHarvestTime::maturity) {
+		s << "Automatic harvestTime: Maturity ";
+		
+	}
+	
+		return s.str();
+	}
+
+//------------------------------------------------------------------------------
+
 
 void
 MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path)
@@ -822,17 +868,24 @@ MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDat
 ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
     _name(name),
     _crop(crop),
-    _cropResult(new PVResult())
+    _cropResult(new PVResult()),
+	_name(name),
+	_crop(crop),
+	_cropResult(new PVResult())
 {
-  debug() << "ProductionProcess: " << name.c_str() << endl;
-  _cropResult->id = _crop->id();
+	debug() << "ProductionProcess: " << name.c_str() << endl;
+	_cropResult->id = _crop->id();
 
-	if ((crop->seedDate() != Date(1,1,1951)) && (crop->seedDate() != Date(0,0,0)))
+	if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0))) {
 		addApplication(Seed(crop->seedDate(), crop));
-	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)))
-	{
-    debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
-    addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
+	}
+	
+    
+	if ((crop->harvestDate() != Date(1, 1, 1951)) && (crop->harvestDate() != Date(0, 0, 0)) ) {		
+		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
+		addApplication(Harvest(crop->harvestDate(), crop, _cropResult));		
+	}
+
   }
 
   std::vector<Date> cuttingDates = crop->getCuttingDates();
@@ -937,10 +990,29 @@ struct ParseDate
   DMY operator()(const string & d)
   {
     DMY r;
-    r.d = atoi(d.substr(0, 2).c_str());
-    r.m = atoi(d.substr(2, 2).c_str());
-    r.y = atoi(d.substr(4, 2).c_str());
-    r.y = r.y <= 76 ? 2000 + r.y : 1900 + r.y;
+	int length = d.size();
+	
+	if (length == 6) {
+		// old HERMES format ddmmyy
+		r.d = atoi(d.substr(0, 2).c_str());
+		r.m = atoi(d.substr(2, 2).c_str());
+		r.y = atoi(d.substr(4, 2).c_str());
+		r.y = r.y <= 72 ? 2000 + r.y : 1900 + r.y;
+	}
+	else if (length == 8) {
+		
+		//ddmmyyyy
+		r.d = atoi(d.substr(0, 2).c_str());
+		r.m = atoi(d.substr(2, 2).c_str());
+		r.y = atoi(d.substr(4, 4).c_str());
+	}
+	else {
+		// other unexpected length
+		cout << "ERROR - Cannot parse date \"" << d.c_str() << "\"" << endl;
+		cout << "Should be of format DDMMYY or DDMMYYYY" << endl;
+		cout << "Aborting simulation now!" << endl;
+		exit(-1);		
+	}
     return r;
   }
 } parseDate;
@@ -948,61 +1020,127 @@ struct ParseDate
 //----------------------------------------------------------------------------
 
 vector<ProductionProcess>
-    Monica::cropRotationFromHermesFile(const string& pathToFile)
+Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
 {
-  vector<ProductionProcess> ff;
+	vector<ProductionProcess> ff;
 
-  ifstream ifs(pathToFile.c_str(), ios::binary);
-  if (! ifs.good()) {
-    cerr << "Could not open file " << pathToFile.c_str() << " . Aborting now!" << endl;
-    exit(1);
-  }
+	ifstream ifs(pathToFile.c_str(), ios::binary);
+	if (!ifs.good()) {
+		cerr << "Could not open file " << pathToFile.c_str() << " . Aborting now!" << endl;
+		exit(1);
+	}
 
-  string s;
+	string s;
 
-  //skip first line
-  getline(ifs, s);
+	//skip first line
+	getline(ifs, s);
 
-  while (getline(ifs, s))
-  {
-    if (trim(s) == "end")
-      break;
+	while (getline(ifs, s))
+	{
+		if (trim(s) == "end")
+			break;
 
-    istringstream ss(s);
-    string crp;
-    string sowingDate, harvestDate, tillageDate;
-    double exp, tillage_depth;
-    int t;
-    ss >> t >> crp >> sowingDate >> harvestDate >> tillageDate >> exp  >> tillage_depth;
+		istringstream ss(s);
+		string crp;
+		string sowingDate, harvestDate, tillageDate;
+		double exp, tillage_depth;
+		int t;
+		ss >> t >> crp >> sowingDate >> harvestDate >> tillageDate >> exp >> tillage_depth;
 
-    Date sd = parseDate(sowingDate).toDate(true);
-    Date hd = parseDate(harvestDate).toDate(true);
-    Date td = parseDate(tillageDate).toDate(true);
+		Date sd = parseDate(sowingDate).toDate(true);
+		Date td = parseDate(tillageDate).toDate(true);
+		Date hd;
 
-    // tst if dates are valid
-    if (!sd.isValid() || !hd.isValid() || !td.isValid())
-    {
-      debug() << "Error - Invalid date in \"" << pathToFile.c_str() << "\"" << endl;
-      debug() << "Line: " << s.c_str() << endl;
-      debug() << "Aborting simulation now!" << endl;
-      exit(-1);
-    }
 
-    //create crop
-    CropPtr crop = hermesCropId2Crop(crp);
-    crop->setSeedAndHarvestDate(sd, hd);
-    crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
-    crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
+		// tst if dates are valid
+		if (!sd.isValid() || !td.isValid())
+		{
+			debug() << "Error - Invalid sowing or tillage date in \"" << pathToFile.c_str() << "\"" << endl;
+			debug() << "Line: " << s.c_str() << endl;
+			debug() << "Aborting simulation now!" << endl;
+			exit(-1);
+		}
 
-    ProductionProcess pp(crp, crop);
-    pp.addApplication(TillageApplication(td, (tillage_depth/100.0) ));
-    //cout << "production-process: " << pp.toString() << endl;
+		//create crop
+		CropPtr crop = hermesCropId2Crop(crp);
+		
+		crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
+		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
 
-    ff.push_back(pp);
-  }
+		if (!useAutomaticHarvestTrigger) {
+			// Do not use automatic harvest trigger
+			// Adds harvest date from crop rotation file
+			hd = parseDate(harvestDate).toDate(true);
+			
+			if (!hd.isValid()) {
+				debug() << "Error - Invalid harvest date in \"" << pathToFile.c_str() << "\"" << endl;
+				debug() << "Line: " << s.c_str() << endl;
+				debug() << "Aborting simulation now!" << endl;
+				exit(-1);
+				
+			}			
+		} else {
+			
+			debug() << "Activate automatic Harvest Trigger" << endl;
+		
+			// change latest harvest date to crop specific fallback harvest doy
+			autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->pc_LatestHarvestDoy);
+			
+		
+		
+			crop->activateAutomaticHarvestTrigger(autoHarvestParams);
+		
+			int harvest_year = sd.year();
+			if (crp == "WW" || crp == "SW" || crp == "WG" || crp == "WR" || crp == "WR_GD" || crp == "SB" ||
+				crp == "WC" || crp == "WTR")
+			{
+			    // increment harvest year based on sowing year for winter crops
+	            // to determine harvest year for automatic harvest trigger
+				harvest_year++;
+			}
+		
+			debug() << "harvest_year:\t" << harvest_year << endl;
+		
+			// ###################################################################
+			// # Important notes for the automatic harvest trigger (by XS)
+			// ###################################################################        
+			// @TODO: Change work flow of automatic harvest trigger
+			// ###################################################################
+			// Automatic harvest trigger works as follows:
+			// If activated the latest harvest doy for the crop is automatically  used as
+			// harvest date. A harvest application is added as usual when creating
+			// the production process (constructor).
+			// If the harvest trigger is activated during simulation (main loop in monica.cpp)
+			// a new harvest application is created and directly applied without adding
+			// it to the list of applications in the production process.
+			// Because the fallback harvest application was already added as a harvest event
+			// in the production process during creation of the PP, a crop may be harvested 
+			// two times. But the apply method of the harvest application tests before
+			// doing anything if there is a valid crop pointer. If not, nothing is done.
+			// So if a harvest application is called a second time nothing happens ...
+			// ###################################################################
+			
+			// set harvest date to latest crop specific fallback harvest date
+			hd = Date::julianDate(crop->cropParameters()->pc_LatestHarvestDoy, harvest_year, true);
+		
+			
+		}
+	
+	
+		crop->setSeedAndHarvestDate(sd, hd);
+	
+	
 
-  return ff;
+		ProductionProcess pp(crp, crop);
+		pp.addApplication(TillageApplication(td, (tillage_depth / 100.0)));
+		//cout << "production-process: " << pp.toString() << endl;
+
+		ff.push_back(pp);
+	}
+
+	return ff;
 }
+
 
 /**
  * @todo Micha/Xenia: Überprüfen, ob YearIndex rauskommen kann.
@@ -1168,7 +1306,10 @@ CropParameters::CropParameters() :
     pc_ResidueNRatio(0),
     pc_DevelopmentAccelerationByNitrogenStress(0),
     pc_CuttingDelayDays(0),
-    pc_FieldConditionModifier(1.0)
+    pc_FieldConditionModifier(1.0),	
+	pc_AssimilateReallocation(0.0),
+	pc_LT50cultivar(0.0),
+	pc_LatestHarvestDoy(-1)
 {}
 
 /**
@@ -1459,7 +1600,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           "stage_after_cut, crit_temperature_heat_stress, "
           "lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
           "end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-          "cutting_delay_days, field_condition_modifier, assimilate_reallocation "
+          "cutting_delay_days, field_condition_modifier, assimilate_reallocation, latest_harvest_doy "
 					"from crop";
       con->select(text_request.c_str());
 
@@ -1525,7 +1666,8 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
         cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
         cps->pc_CuttingDelayDays = satoi(row[i++]);
         cps->pc_FieldConditionModifier = satof(row[i++]);
-				cps->pc_AssimilateReallocation = satof(row[i++]);
+		cps->pc_AssimilateReallocation = satof(row[i++]);
+		cps->pc_LatestHarvestDoy = satoi(row[i++]);
       }
       std::string req2 ="select o.crop_id, o.id, o.initial_organ_biomass, "
                         "o.organ_maintainance_respiration, o.is_above_ground, "

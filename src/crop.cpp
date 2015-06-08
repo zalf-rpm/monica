@@ -237,9 +237,13 @@ pc_WaterDeficitResponseOn(generalParams.pc_WaterDeficitResponseOn),
 eva2_usage(usage),
 dyingOut(false),
 vc_AccumulatedETa(0.0),
+vc_AccumulatedTranspiration(0.0)
 vc_AccumulatedPrimaryCropYield(0.0),
 vc_CuttingDelayDays(0),
-vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth),
+vc_AnthesisDay(-1),
+vc_MaturityDay(-1),
+vc_MaturityReached(false)
 {
 
 
@@ -437,6 +441,8 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 
   vc_OxygenDeficit = fc_OxygenDeficiency(pc_CriticalOxygenContent[vc_DevelopmentalStage]);
 
+  double old_DevelopmentalStage = vc_DevelopmentalStage;
+
   fc_CropDevelopmentalStage(vw_MeanAirTemperature,
 		        pc_BaseTemperature,
 						pc_OptimumTemperature,
@@ -451,6 +457,15 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 		        vc_VernalisationFactor,
 		        vc_DaylengthFactor,
 		        vc_CropNRedux);
+
+  if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+	  vc_AnthesisDay = int(vs_JulianDay);
+  }
+
+  if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+	  vc_MaturityDay = int(vs_JulianDay);
+	  vc_MaturityReached = true;
+  }
 
   vc_DaylengthFactor =
       fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
@@ -3722,6 +3737,12 @@ CropGrowth::get_AccumulatedETa() const
 }
 
 double
+CropGrowth::get_AccumulatedTranspiration() const
+{
+	return vc_AccumulatedTranspiration;
+}
+
+double
 CropGrowth::get_AccumulatedPrimaryCropYield() const
 {
 	return vc_AccumulatedPrimaryCropYield;
@@ -3808,4 +3829,74 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 	pc_StageTemperatureSum = perennialCropParams->pc_StageTemperatureSum,
 	pc_StorageOrgan = perennialCropParams->pc_StorageOrgan;
 	pc_VernalisationRequirement = perennialCropParams->pc_VernalisationRequirement;
+}
+
+/**
+* @brief Test if anthesis state is reached
+* @return True, if anthesis is reached, false otherwise.
+*
+* Method is called after calculation of the developmental stage.
+*/
+bool CropGrowth::isAnthesisDay(int old_dev_stage, int new_dev_stage)
+{
+	if (pc_NumberOfDevelopmentalStages == 6) {
+		return (old_dev_stage == 4 && new_dev_stage == 5);
+	}
+	else if (pc_NumberOfDevelopmentalStages == 7) {
+		return (old_dev_stage == 5 && new_dev_stage == 6);
+	}
+
+	return false;
+}
+
+/**
+* @brief Test if maturity state is reached
+* @return True, if maturity is reached, false otherwise.
+*
+* Method is called after calculation of the developmental stage.
+*/
+bool CropGrowth::isMaturityDay(int old_dev_stage, int new_dev_stage)
+{
+	// corn crops
+	if (pc_NumberOfDevelopmentalStages == 6)
+	{
+		return (old_dev_stage == 4 && new_dev_stage == 5);
+	}
+	// maize, sorghum and other crops with 7 developmental stages
+	else if (pc_NumberOfDevelopmentalStages == 7)
+	{
+		return (old_dev_stage == 5 && new_dev_stage == 6);
+	}
+
+	return false;
+}
+
+/**
+* @brief Getter for anthesis day.
+* @return Julian day of crop's anthesis
+*/
+int
+CropGrowth::getAnthesisDay() const
+{
+	//cout << "Getter anthesis " << vc_AnthesisDay << endl;
+	return vc_AnthesisDay;
+}
+
+/**
+* @brief Getter for maturity day.
+* @return Julian day of crop's maturity.
+*/
+int
+CropGrowth::getMaturityDay() const
+{
+	//cout << "Getter maturity " << vc_MaturityDay << endl;
+	return vc_MaturityDay;
+}
+
+
+bool
+CropGrowth::maturityReached() const
+{
+	debug() << "vc_MaturityReached: " << vc_MaturityReached << endl;
+	return vc_MaturityReached;
 }

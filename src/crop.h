@@ -272,19 +272,24 @@ namespace Monica
     double get_SumTotalNUptake() const;
     double get_ActNUptake() const;
     double get_PotNUptake() const;
-	  double get_BiologicalNFixation() const;
+	double get_BiologicalNFixation() const;
     double get_AccumulatedETa() const;
-		double get_AccumulatedPrimaryCropYield() const; 
-		double get_GrossPrimaryProduction() const;
+	double get_AccumulatedTranspiration() const;
+	double get_AccumulatedPrimaryCropYield() const; 
+	double get_GrossPrimaryProduction() const;
     double get_NetPrimaryProduction() const;
     double get_AutotrophicRespiration() const;
     double get_OrganSpecificTotalRespired(int organ) const;
     double get_OrganSpecificNPP(int organ) const;
     double getEffectiveRootingDepth() const;
-		int get_NumberOfOrgans() const;
-		int get_StageAfterCut() const;
+	int get_NumberOfOrgans() const;
+	int get_StageAfterCut() const;
+	int getAnthesisDay() const;
+	int getMaturityDay() const;		
+	bool maturityReached() const;
 
     inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa;}
+	inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
 
 
     /**
@@ -369,6 +374,9 @@ private:
                                  double vw_GrossPrecipitation);
 
     int pc_NumberOfAbovegroundOrgans() const;
+
+	bool isAnthesisDay(int old_dev_stage, int new_dev_stage);
+	bool isMaturityDay(int old_dev_stage, int new_dev_stage);
 
 
     // members
@@ -571,10 +579,16 @@ private:
 
     bool dyingOut;
     double vc_AccumulatedETa;
-		double vc_AccumulatedPrimaryCropYield;
+	double vc_AccumulatedTranspiration;
+	double vc_AccumulatedPrimaryCropYield;
 
     int vc_CuttingDelayDays;
     double vs_MaxEffectiveRootingDepth;
+
+	int vc_AnthesisDay;
+	int vc_MaturityDay;
+
+	bool vc_MaturityReached;
 
 		
   };
