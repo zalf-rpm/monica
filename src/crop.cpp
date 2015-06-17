@@ -255,7 +255,7 @@ vc_MaturityReached(false)
   // Determining the total temperature sum of all developmental stages after
   // emergence (that's why i_Stage starts with 1) until before senescence
   for (int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++) {
-
+    //cout << "pc_StageTemperatureSum:\t"<< i_Stage << "\t"  << pc_StageTemperatureSum[i_Stage] << endl;
     vc_TotalTemperatureSum += pc_StageTemperatureSum[i_Stage];
   }
 
@@ -462,9 +462,11 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 	  vc_AnthesisDay = int(vs_JulianDay);
   }
 
+    //cout << "Maturity? JD: " << vs_JulianDay << "\told_dev_stage: " << old_DevelopmentalStage << "\tDev_Stage: " << vc_DevelopmentalStage << endl;
   if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
 	  vc_MaturityDay = int(vs_JulianDay);
 	  vc_MaturityReached = true;
+      //cout << "Maturity reached" << endl;
   }
 
   vc_DaylengthFactor =
@@ -861,6 +863,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
   double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature();
 	double vc_StageExcessTemperatureSum = 0.0;
 
+  //cout << "fc_CropDevelopmentalStage: vw_MeanAirTemperature: " <<  vw_MeanAirTemperature << "\t" << vc_CurrentTotalTemperatureSum << "\t" <<pc_StageTemperatureSum[vc_DevelopmentalStage] << endl;
   if (vc_DevelopmentalStage == 0) 
 	{
 		if (pc_Perennial) 

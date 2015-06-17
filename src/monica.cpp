@@ -1381,16 +1381,22 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 	*/
 	
 	// Test if automatic harvest trigger is used
+    //cout << "currentPP.crop()->useAutomaticHarvestTrigger(): " << currentPP.crop()->useAutomaticHarvestTrigger() << endl;
+    //if (monica.cropGrowth()) {
+    //    cout << "monica.cropGrowth()->maturityReached(): " << monica.cropGrowth()->maturityReached() << endl;
+    //    cout << "currentPP.crop()->useAutomaticHarvestTrigger(): " << currentPP.crop()->useAutomaticHarvestTrigger() << endl;
+    //    
+    //}
 	if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
 	
 		// Test if crop should be harvested at maturity 
 		if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
 		
-			if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
+			if (monica.cropGrowth()->maturityReached()) {
 		
-				debug() << "####################################################" << endl;
-				debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
-				debug() << "####################################################" << endl;
+				//cout << "####################################################" << endl;
+				//cout << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
+				//cout << "####################################################" << endl;
 			
 				Harvest *harvestApplication = new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr());
 				harvestApplication->apply(&monica);
