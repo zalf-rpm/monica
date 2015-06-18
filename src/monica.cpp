@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <sstream>
 #include <mutex>
+#include <memory>
 
 #include "tools/debug.h"
 #include "monica.h"
@@ -69,62 +70,54 @@ namespace
 //------------------------------------------------------------------------------
 
 Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
-: soilParams(sps),
-customId(-1),
-centralParameterProvider(cpp)
+  : soilParams(sps),
+    customId(-1),
+    centralParameterProvider(cpp)
+{
+  UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
+  windSpeedHeight = user_env.p_WindSpeedHeight;
+  atmosphericCO2 = user_env.p_AthmosphericCO2;
+  albedo = user_env.p_Albedo;
+
+  noOfLayers = user_env.p_NumberOfLayers;
+  layerThickness = user_env.p_LayerThickness;
+	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
+  useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
+  useSecondaryYields = user_env.p_UseSecondaryYields;
+}
+
+Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp)
+  : _soilParamsPtr(spsPtr),
+    soilParams(spsPtr.get()),
+    customId(-1),
+    centralParameterProvider(cpp)
 {
 	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-	windSpeedHeight = user_env.p_WindSpeedHeight;
-	atmosphericCO2 = user_env.p_AthmosphericCO2;
+  windSpeedHeight = user_env.p_WindSpeedHeight;
+  atmosphericCO2 = user_env.p_AthmosphericCO2;
 	albedo = user_env.p_Albedo;
 
-	noOfLayers = user_env.p_NumberOfLayers;
+  noOfLayers = user_env.p_NumberOfLayers;
 	layerThickness = user_env.p_LayerThickness;
 	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
 	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
 	useSecondaryYields = user_env.p_UseSecondaryYields;
-	
 }
-
-Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp) :
-_soilParamsPtr(spsPtr),
-soilParams(spsPtr.get()),
-customId(-1),
-centralParameterProvider(cpp)
-{
-	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-	windSpeedHeight = user_env.p_WindSpeedHeight;
-	atmosphericCO2 = user_env.p_AthmosphericCO2;
-	albedo = user_env.p_Albedo;
-
-	noOfLayers = user_env.p_NumberOfLayers;
-	layerThickness = user_env.p_LayerThickness;
-	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
-	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
-	useSecondaryYields = user_env.p_UseSecondaryYields;
-	
-}
-
-
 
 string Env::toString() const
 {
   ostringstream s;
   s << "soilParams: " << endl;
   for(const Soil::SoilParameters& sps : *soilParams)
-	{
-			s << sps.toString() << endl;
-	}
-	s << " noOfLayers: " << noOfLayers << " layerThickness: " << layerThickness
-		<< endl;
+    s << sps.toString() << endl;
+  s << " noOfLayers: " << noOfLayers << " layerThickness: " << layerThickness
+    << endl;
 	s << "ClimateData: from: " << da.startDate().toString()
     << " to: " << da.endDate().toString() << endl;
-	s << "Fruchtfolge: " << endl;
+  s << "Fruchtfolge: " << endl;
   for(const ProductionProcess& pv : cropRotation)
-	{
-			s << pv.toString() << endl;
-	}
-  s << "gridPoint: " << gridPoint.toString();
+    s << pv.toString() << endl;
+  s << "customId: " << customId;
   return s.str();
 }
 
@@ -133,9 +126,9 @@ string Env::toString() const
  * @param env
  * @return
  */
-Env::Env(const Env& env) : 
-_soilParamsPtr(env._soilParamsPtr),
-customId(env.customId)
+Env::Env(const Env& env)
+  : _soilParamsPtr(env._soilParamsPtr),
+    customId(env.customId)
 {
   debug() << "Copy constructor: Env" << "\tsoil param size: " << env.soilParams->size() << endl;
   soilParams = env.soilParams;
@@ -153,8 +146,7 @@ customId(env.customId)
   
   cropRotation = env.cropRotation;
   
-  
-  gridPoint = env.gridPoint;
+//  gridPoint = env.gridPoint;
   
   site = env.site;
   general = env.general;
@@ -169,29 +161,6 @@ customId(env.customId)
   pathToOutputDir = env.pathToOutputDir;
   mode = env.mode;
   debug() << "Return copy constructor env" << endl;
-}
-
-/**
- * Set execution mode of Monica.
- * Disables debug outputs for some modes.
- *
- * @param mode
- */
-void Env::setMode(int mode)
-{
-  this->mode = mode;
-}
-
-/**
- * Interface method for python wrapping. Simply returns number
- * of possible simulation steps according to avaible climate data.
- *
- * @return Number of steps
- */
-int
-Env::numberOfPossibleSteps()
-{
-  return da.noOfStepsPossible();
 }
 
 /**
@@ -222,8 +191,9 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 	else if (name == "relhumid")
 		acd = relhumid;
 
-	da.addOrReplaceClimateData((AvailableClimateData)acd, data);
+  da.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
+
 //------------------------------------------------------------------------------
 
 /**
@@ -233,24 +203,24 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
  *
  * Parameter initialization
  */
-MonicaModel::MonicaModel(const Env& env, const Climate::DataAccessor& da) :
-_env(env),
-_soilColumn(_env.general, *_env.soilParams, _env.centralParameterProvider),
-_soilTemperature(_soilColumn, *this, _env.centralParameterProvider),
-_soilMoisture(_soilColumn, _env.site, *this, _env.centralParameterProvider),
-_soilOrganic(_soilColumn, _env.general, _env.site,_env.centralParameterProvider),
-_soilTransport(_soilColumn, _env.site, _env.centralParameterProvider),
-_currentCropGrowth(NULL),
-_sumFertiliser(0),
-_dailySumFertiliser(0),
-_dailySumIrrigationWater(0),
-_dataAccessor(da),
-centralParameterProvider(_env.centralParameterProvider),
-p_daysWithCrop(0),
-p_accuNStress(0.0),
-p_accuWaterStress(0.0),
-p_accuHeatStress(0.0),
-p_accuOxygenStress(0.0)
+MonicaModel::MonicaModel(const Env& env, const Climate::DataAccessor& da)
+  : _env(env),
+    _soilColumn(_env.general, *_env.soilParams, _env.centralParameterProvider),
+    _soilTemperature(_soilColumn, *this, _env.centralParameterProvider),
+    _soilMoisture(_soilColumn, _env.site, *this, _env.centralParameterProvider),
+    _soilOrganic(_soilColumn, _env.general, _env.site,_env.centralParameterProvider),
+    _soilTransport(_soilColumn, _env.site, _env.centralParameterProvider),
+    _currentCropGrowth(NULL),
+    _sumFertiliser(0),
+    _dailySumFertiliser(0),
+    _dailySumIrrigationWater(0),
+    _dataAccessor(da),
+    centralParameterProvider(_env.centralParameterProvider),
+    p_daysWithCrop(0),
+    p_accuNStress(0.0),
+    p_accuWaterStress(0.0),
+    p_accuHeatStress(0.0),
+    p_accuOxygenStress(0.0)
 {
 }
 
@@ -272,37 +242,36 @@ void MonicaModel::seedCrop(CropPtr crop)
   _currentCrop = crop;
   if(_currentCrop->isValid())
   {
-		const CropParameters* cps = _currentCrop->cropParameters();
+    const CropParameters* cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn, _env.general,
                                         *cps, _env.site, _env.centralParameterProvider, crop->getEva2TypeUsage());
-		
-		if (_currentCrop->perennialCropParameters())
-			_currentCropGrowth->setPerennialCropParameters(_currentCrop->perennialCropParameters());
+
+    if (_currentCrop->perennialCropParameters())
+      _currentCropGrowth->setPerennialCropParameters(_currentCrop->perennialCropParameters());
 
     _soilTransport.put_Crop(_currentCropGrowth);
     _soilColumn.put_Crop(_currentCropGrowth);
     _soilMoisture.put_Crop(_currentCropGrowth);
-	_soilOrganic.put_Crop(_currentCropGrowth);
+    _soilOrganic.put_Crop(_currentCropGrowth);
 
     debug() << "seedDate: "<< _currentCrop->seedDate().toString()
-        << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
+            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
-		if(_env.useNMinMineralFertilisingMethod
+    if(_env.useNMinMineralFertilisingMethod
        && _currentCrop->seedDate().dayOfYear() <=
        _currentCrop->harvestDate().dayOfYear())
     {
       debug() << "nMin fertilising summer crop" << endl;
-			double fert_amount = applyMineralFertiliserViaNMinMethod
-          (_env.nMinFertiliserPartition,
-           NMinCropParameters(cps->pc_SamplingDepth,
-                              cps->pc_TargetNSamplingDepth,
-                              cps->pc_TargetN30));
-			addDailySumFertiliser(fert_amount);
-		}
-
-    if (this->writeOutputFiles()) {
-        _currentCrop->writeCropParameters(_env.pathToOutputDir);
+      double fert_amount = applyMineralFertiliserViaNMinMethod
+                           (_env.nMinFertiliserPartition,
+                            NMinCropParameters(cps->pc_SamplingDepth,
+                                               cps->pc_TargetNSamplingDepth,
+                                               cps->pc_TargetN30));
+      addDailySumFertiliser(fert_amount);
     }
+
+    if(this->writeOutputFiles())
+      _currentCrop->writeCropParameters(_env.pathToOutputDir);
   }
 }
 
@@ -393,8 +362,6 @@ void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 		_currentCropGrowth->accumulatePrimaryCropYield(_currentCropGrowth->get_PrimaryCropYield());
 		_currentCropGrowth->set_OrganBiomass(3, fruitToRemain);
 		_currentCropGrowth->set_TotalBiomassNContent(totalBiomassNToRemain);
-
-	
 
 		if (!exported){
 		}
@@ -643,7 +610,7 @@ void MonicaModel::generalStep(unsigned int stepNo)
   Date startDate = _dataAccessor.startDate();
   Date currentDate = startDate + stepNo;
   unsigned int julday = _dataAccessor.julianDayForStep(stepNo);
-  unsigned int year = currentDate.year();
+//  unsigned int year = currentDate.year();
   bool leapYear = currentDate.isLeapYear();
   double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
   double tavg = _dataAccessor.dataForTimestep(Climate::tavg, stepNo);
@@ -706,7 +673,7 @@ void MonicaModel::generalStep(unsigned int stepNo)
 
 
   if (int(vw_AtmosphericCO2Concentration) == 0)
-    vw_AtmosphericCO2Concentration = CO2ForDate(year, julday, leapYear);
+    vw_AtmosphericCO2Concentration = CO2ForDate(currentDate);
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;
 
@@ -803,25 +770,26 @@ void MonicaModel::cropStep(unsigned int stepNo)
 /**
 * @brief Returns atmospheric CO2 concentration for date [ppm]
 *
-* @param co2
+* @param year, julianDay, leapYear
 *
 * @return
 */
-double MonicaModel::CO2ForDate(double year, double julianday, bool leapYear)
+double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear)
 {
-  double co2;
-  double decimalDate;
+  double decimalDate = year + julianDay/(leapYear ? 366.0 : 365);
 
-  if (leapYear)
-    decimalDate = year + (julianday/366.0);
-  else
-    decimalDate = year + (julianday/365.0);
-
-	// Atmospheric CO2 conenctration according to RCP 8.5
-
-  co2 = 222.0 + exp(0.01467 * (decimalDate - 1650.0)) + 2.5 * sin((decimalDate - 0.5) / 0.1592);
-  return co2;
+  //Atmospheric CO2 concentration according to RCP 8.5
+  return 222.0 + exp(0.01467*(decimalDate - 1650.0)) + 2.5*sin((decimalDate - 0.5)/0.1592);
 }
+
+double MonicaModel::CO2ForDate(Date d)
+{
+  double decimalDate = d.year() + d.julianDay()/(d.useLeapYears() && d.isLeapYear() ? 366.0 : 365);
+
+  //Atmospheric CO2 concentration according to RCP 8.5
+  return 222.0 + exp(0.01467*(decimalDate - 1650.0)) + 2.5*sin((decimalDate - 0.5)/0.1592);
+}
+
 
 /**
 * @brief Returns groundwater table for date [m]
@@ -1188,7 +1156,7 @@ double MonicaModel::getsum30cmActDenitrificationRate()
   
   Result res;
 	res.customId = env.customId;
-  res.gp = env.gridPoint;
+//  res.gp = env.gridPoint;
 
   if(env.cropRotation.begin() == env.cropRotation.end())
   {
@@ -1282,6 +1250,10 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 	double monthPrecip = 0.0;
 	double monthETa = 0.0;
 
+  //next irrigation application cycle days, tells when to check again for
+  //the next irrigation application
+  int niaCycleDays = 0;
+
 	//iterator through the production processes
 	vector<ProductionProcess>::const_iterator ppci = env.cropRotation.begin();
 	//direct handle to current process
@@ -1361,47 +1333,61 @@ double MonicaModel::getsum30cmActDenitrificationRate()
         monica.incorporateCurrentCrop();
     }
 
-	/////////////////////////////////////////////////////////////////
-	// AUTOMATIC HARVEST TRIGGER
-	/////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    // AUTOMATIC HARVEST TRIGGER
+    /////////////////////////////////////////////////////////////////
 
-	/**
-	* @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
-	* The automatic harvest trigger is passed globally to the method that reads in crop rotation
-	* via hermes files because it cannot be configured crop specific with the HERMES format.
-	* The harvest trigger prevents the adding of a harvest application as done in the normal case
-	* that uses hard coded harvest data configured via the rotation file.
-	*
-	* When using the Json format, for each crop individual settings can be specified. The automatic
-	* harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
-	* harvest date via json parameters too, that is now specified in the sqlite database globally
-	* for each crop.
-	*/
+    /**
+  * @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+  * The automatic harvest trigger is passed globally to the method that reads in crop rotation
+  * via hermes files because it cannot be configured crop specific with the HERMES format.
+  * The harvest trigger prevents the adding of a harvest application as done in the normal case
+  * that uses hard coded harvest data configured via the rotation file.
+  *
+  * When using the Json format, for each crop individual settings can be specified. The automatic
+  * harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
+  * harvest date via json parameters too, that is now specified in the sqlite database globally
+  * for each crop.
+  */
 
-	// Test if automatic harvest trigger is used
-	if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
+    // Test if automatic harvest trigger is used
+    if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
 
-		// Test if crop should be harvested at maturity 
-		if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
+      // Test if crop should be harvested at maturity
+      if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
 
-			if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
-				
-				debug() << "####################################################" << endl;
-				debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
-				debug() << "####################################################" << endl;
+        if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
 
-				Harvest *harvestApplication = new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr());
-				harvestApplication->apply(&monica);
-                
-			}
-		}
-	}
+          debug() << "####################################################" << endl;
+          debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
+          debug() << "####################################################" << endl;
+
+          auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+          harvestApplication->apply(&monica);
+
+        }
+      }
+    }
+
+    //calculate the next irrigation application (simple prototype for coupling to BEREST webservice)
+    if(env.nextIrrigationApplication && --niaCycleDays > 0)
+    {
+      vector<double> sms;
+      //calculate current soil-moistures in mm*(m2)/dm*(m2)
+      for(auto sl : monica.soilColumn().vs_SoilLayers)
+        sms.push_back(sl.get_Vs_SoilMoisture_m3()*100.0);
+      auto res = env.nextIrrigationApplication(currentDate.dayOfYear(), sms);
+
+      niaCycleDays = res.cycleDays;
+      auto ia = make_unique<IrrigationApplication>(currentDate, res.donation);
+      ia->apply(&monica);
+    }
 
     //there's something to at this day
     if(nextAbsolutePPApplicationDate == currentDate)
     {
       debug() << "applying at: " << nextPPApplicationDate.toString()
-      << " absolute-at: " << nextAbsolutePPApplicationDate.toString() << endl;
+              << " absolute-at: " << nextAbsolutePPApplicationDate.toString() << endl;
       //apply everything to do at current day
       //cout << currentPP.toString().c_str() << endl;
       currentPP.apply(nextPPApplicationDate, &monica);

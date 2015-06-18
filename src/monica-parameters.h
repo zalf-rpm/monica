@@ -1273,13 +1273,16 @@ namespace Monica
 
 	struct IrrigationParameters
 	{
-		IrrigationParameters(double nitrateConcentration = 0,
-												 double sulfateConcentration = 0) :
-			nitrateConcentration(nitrateConcentration),
-			sulfateConcentration(sulfateConcentration) { }
+    IrrigationParameters() {}
 
-		double nitrateConcentration;
-		double sulfateConcentration;
+    IrrigationParameters(double nitrateConcentration,
+                         double sulfateConcentration)
+      : nitrateConcentration(nitrateConcentration),
+        sulfateConcentration(sulfateConcentration)
+    {}
+
+    double nitrateConcentration{0};
+    double sulfateConcentration{0};
 
 		std::string toString() const;
 	};
@@ -1288,29 +1291,22 @@ namespace Monica
 
 	struct AutomaticIrrigationParameters : public IrrigationParameters
 	{
-		AutomaticIrrigationParameters(double amount = 17, double treshold = 0.35,
-																	double nitrateConcentration = 0,
-																	double sulfateConcentration = 0) :
-			IrrigationParameters(nitrateConcentration, sulfateConcentration),
-			amount(amount), treshold(treshold) { }
+    AutomaticIrrigationParameters() {}
 
-		double amount;
-		double treshold;
+    double amount{17.0};
+    double treshold{0.35};
 
 		std::string toString() const;
 	};
-
-
-
 
 	//----------------------------------------------------------------------------
 
 	class IrrigationApplication : public WorkStep
 	{
 	public:
-		IrrigationApplication(const Tools::Date& at, double amount,
-													IrrigationParameters params) :
-			WorkStep(at), _amount(amount), _params(params) { }
+    IrrigationApplication(const Tools::Date& at, double amount,
+                          IrrigationParameters params = IrrigationParameters())
+      : WorkStep(at), _amount(amount), _params(params) {}
 
 		virtual void apply(MonicaModel* model);
 
@@ -1325,7 +1321,7 @@ namespace Monica
 		virtual IrrigationApplication* clone() const {return new IrrigationApplication(*this); }
 
 	private:
-		double _amount;
+    double _amount{0};
 		IrrigationParameters _params;
 	};
 

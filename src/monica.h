@@ -61,9 +61,6 @@ namespace Monica
    */
   struct Env 
   {
-    /**
-     * @brief
-     */
 		enum
 		{
 			MODE_LC_DSS = 0,
@@ -77,66 +74,57 @@ namespace Monica
 			MODE_CARBIOCIAL_CLUSTER
 		};
 
-    /**
-     * @brief default constructor for value object use
-     */
-		Env()
-			: soilParams(NULL),
-				noOfLayers(0),
-				layerThickness(0),
-				useNMinMineralFertilisingMethod(false),
-				useAutomaticIrrigation(false),
-				useSecondaryYields(true),
-				atmosphericCO2(-1),
-				customId(-1)
-				
-		{ }
+    Env() {}
 
     Env(const Env&);
 		    
     /**
      * @brief Constructor
      * @param sps Soil parameters
-     * @param nols Number of layers
-     * @param lt Layer thickness
      */
     Env(const Soil::SoilPMs* sps, CentralParameterProvider cpp);
 
-		//use this version if soil parameters can't be safely kept elsewhere and Env is responsible for deleting them
     Env(Soil::SoilPMsPtr sps, CentralParameterProvider cpp);
 
-    int numberOfPossibleSteps();
+    //Interface method for python wrapping. Simply returns number
+    //of possible simulation steps according to avaible climate data.
+    int numberOfPossibleSteps() const { return da.noOfStepsPossible(); }
+
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 
 	private:
     Soil::SoilPMsPtr _soilParamsPtr;
 	public:
-    const Soil::SoilPMs* soilParams;  //! a vector of soil parameter objects = layers of soil
+    //! a vector of soil parameter objects = layers of soil
+    const Soil::SoilPMs* soilParams{nullptr};
 
-    unsigned int noOfLayers;              //! number of layers
-    double layerThickness;                //! thickness of a single layer
+    size_t noOfLayers{0};
+    double layerThickness{0.0};
 
-    bool useNMinMineralFertilisingMethod;
+    bool useNMinMineralFertilisingMethod{false};
     MineralFertiliserParameters nMinFertiliserPartition;
     NMinUserParameters nMinUserParams;
 
-    bool useAutomaticIrrigation;
+    bool useAutomaticIrrigation{false};
     AutomaticIrrigationParameters autoIrrigationParams;
     MeasuredGroundwaterTableInformation groundwaterInformation;
 
-
-    bool useSecondaryYields;              //! tell if farmer uses the secondary yield products
+    //! tell if farmer uses the secondary yield products
+    bool useSecondaryYields{true};
 
     //static const int depthGroundwaterTable;   /**<  */
-    double windSpeedHeight; /**<  */
-    double atmosphericCO2; /**< [ppm] */
-    double albedo; /**< Albedo [] */
+    double windSpeedHeight{0}; /**<  */
+    double atmosphericCO2{-1}; /**< [ppm] */
+    double albedo{0}; /**< Albedo [] */
 
-    Climate::DataAccessor da;     //! object holding the climate data
-    std::vector<ProductionProcess> cropRotation; //! vector of elements holding the data of the single crops in the rotation
+    //! object holding the climate data
+    Climate::DataAccessor da;
 
-    Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
-		int customId;
+    //! vector of elements holding the data of the single crops in the rotation
+    std::vector<ProductionProcess> cropRotation;
+
+//    Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
+    int customId{-1};
 
     SiteParameters site;        //! site specific parameters
     GeneralParameters general;  //! general parameters to the model
@@ -147,16 +135,28 @@ namespace Monica
     std::string toString() const;
 		std::string pathToOutputDir;
 
-		void setMode(int mode);
-		int getMode() {return this->mode; }
+    //Set execution mode of Monica.
+    //Disables debug outputs for some modes.
+    void setMode(int m){ mode = m; }
 
-		void setCropRotation(std::vector<ProductionProcess> ff)
-		{
-		  cropRotation = ff;
-		}
+    int getMode() const { return mode; }
 
-    private:
-      int mode;   //! Variable for differentiate betweend execution modes of MONICA
+    void setCropRotation(std::vector<ProductionProcess> cr) { cropRotation = cr; }
+
+    struct NIAResult
+    {
+      NIAResult(){}
+      double donation{0};
+      int cycleDays{0};
+    };
+    //a callback which can be used to calculate todays (if any) irrigation application "donation"
+    //and after how many days (cycleDays) to check again
+    //input to the callback is the day of year (doy) and a vector of soil-moisture values
+    std::function<NIAResult(int, std::vector<double>)> nextIrrigationApplication;
+
+  private:
+    //! Variable for differentiate betweend execution modes of MONICA
+    int mode{MODE_LC_DSS};
   };
 
   //----------------------------------------------------------------------------
@@ -214,6 +214,7 @@ namespace Monica
     void generalStep(unsigned int stepNo);
     void cropStep(unsigned int stepNo);
     double CO2ForDate(double year, double julianDay, bool isLeapYear);
+    double CO2ForDate(Tools::Date);
     double GroundwaterDepthForDate(double maxGroundwaterDepth,
 			    double minGroundwaterDepth,
 			    int minGroundwaterDepthMonth,
