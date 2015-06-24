@@ -863,33 +863,27 @@ MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDat
 
 //------------------------------------------------------------------------------
 
-ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop) :
-_name(name),
-_crop(crop),
-_cropResult(new PVResult())
+ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop)
+  : _name(name),
+    _crop(crop),
+    _cropResult(new PVResult())
 {
-	debug() << "ProductionProcess: " << name.c_str() << endl;
-	_cropResult->id = _crop->id();
+  debug() << "ProductionProcess: " << name.c_str() << endl;
+  _cropResult->id = _crop->id();
 
-	if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0))) {
-		addApplication(Seed(crop->seedDate(), crop));
-	}
+  if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0)))
+    addApplication(Seed(crop->seedDate(), crop));
 	
+  if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) )
+  {
+    debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
+    addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
+  }
 
-	
-	if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) ) {
-	
-		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
-		addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
-	}
-
-  std::vector<Date> cuttingDates = crop->getCuttingDates();
-  unsigned int size = cuttingDates.size();
-
-	for (unsigned int i=0; i<size; i++)
+  for(Date cd : crop->getCuttingDates())
 	{
-		debug() << "Add cutting date: " << Tools::Date(cuttingDates.at(i)).toString().c_str() << endl;
-		addApplication(Cutting(Tools::Date(cuttingDates.at(i)), crop));
+    debug() << "Add cutting date: " << cd.toString() << endl;
+    addApplication(Cutting(cd, crop));
 	}
 }
 
@@ -917,22 +911,28 @@ ProductionProcess ProductionProcess::deepCloneAndClearWorksteps() const
 
 void ProductionProcess::apply(const Date& date, MonicaModel* model) const
 {
-  typedef multimap<Date, WSPtr>::const_iterator CI;
-  pair<CI, CI> p = _worksteps.equal_range(date);
-  if (p.first != p.second)
+//  typedef multimap<Date, WSPtr>::const_iterator CI;
+//  pair<CI, CI> p = _worksteps.equal_range(date);
+//  if (p.first != p.second)
+//  {
+//    while (p.first != p.second)
+//    {
+//      p.first->second->apply(model);
+//      p.first++;
+//    }
+//  }
+  auto p = _worksteps.equal_range(date);
+  while (p.first != p.second)
   {
-    while (p.first != p.second)
-    {
-      p.first->second->apply(model);
-      p.first++;
-    }
+    p.first->second->apply(model);
+    p.first++;
   }
 }
 
 Date ProductionProcess::nextDate(const Date& date) const
 {
-  typedef multimap<Date, WSPtr>::const_iterator CI;
-  CI ci = _worksteps.upper_bound(date);
+  //typedef multimap<Date, WSPtr>::const_iterator CI;
+  auto ci = _worksteps.upper_bound(date);
   return ci != _worksteps.end() ? ci->first : Date();
 }
 
@@ -2663,10 +2663,17 @@ void Crop::writeCropParameters(std::string path)
  * Default constructor for mineral fertilisers
  * @return
  */
-MineralFertiliserParameters::MineralFertiliserParameters() :
-    vo_Carbamid(0),
+MineralFertiliserParameters::MineralFertiliserParameters()
+  : vo_Carbamid(0),
     vo_NH4(0),
     vo_NO3(0)
+{}
+
+MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
+  : name(j["name"].string_value()),
+    vo_Carbamid(j["Carbamid"].number_value()),
+    vo_NH4(j["NH4"].number_value()),
+    vo_NO3(j["NO3"].number_value())
 {}
 
 /**
@@ -2678,9 +2685,9 @@ MineralFertiliserParameters::MineralFertiliserParameters() :
  * @return
  */
 MineralFertiliserParameters::
-    MineralFertiliserParameters(const std::string& name, double carbamid,
-                                double no3, double nh4) :
-    name(name),
+MineralFertiliserParameters(const std::string& name, double carbamid,
+                            double no3, double nh4)
+  : name(name),
     vo_Carbamid(carbamid),
     vo_NH4(nh4),
     vo_NO3(no3)
@@ -2936,6 +2943,24 @@ OrganicMatterParameters::OrganicMatterParameters() :
     vo_PartAOM_Slow_to_SMB_Fast(0.0),
     vo_NConcentration(0.0)
 {}
+
+OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
+  : name(j["name"].string_value()),
+    vo_AOM_DryMatterContent(j["AOM_DryMatterContent"].number_value()),
+    vo_AOM_NH4Content(j["AOM_NH4Content"].number_value()),
+    vo_AOM_NO3Content(j["AOM_NO3Content"].number_value()),
+    vo_AOM_CarbamidContent(j["AOM_CarbamidContent"].number_value()),
+    vo_AOM_SlowDecCoeffStandard(j["AOM_SlowDecCoeffStandard"].number_value()),
+    vo_AOM_FastDecCoeffStandard(j["AOM_FastDecCoeffStandard"].number_value()),
+    vo_PartAOM_to_AOM_Slow(j["PartAOM_to_AOM_Slow"].number_value()),
+    vo_PartAOM_to_AOM_Fast(j["PartAOM_to_AOM_Fast"].number_value()),
+    vo_CN_Ratio_AOM_Slow(j["CN_Ratio_AOM_Slow"].number_value()),
+    vo_CN_Ratio_AOM_Fast(j["CN_Ratio_AOM_Fast"].number_value()),
+    vo_PartAOM_Slow_to_SMB_Slow(j["PartAOM_Slow_to_SMB_Slow"].number_value()),
+    vo_PartAOM_Slow_to_SMB_Fast(j["PartAOM_Slow_to_SMB_Fast"].number_value()),
+    vo_NConcentration(j["NConcentration"].number_value())
+{}
+
 
 OrganicMatterParameters::OrganicMatterParameters(const OrganicMatterParameters& omp)
 {

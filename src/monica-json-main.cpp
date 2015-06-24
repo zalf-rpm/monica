@@ -325,7 +325,7 @@ int main(int argc, char** argv)
   /* setup config & run monica */
   Monica::Result res;
   Monica::Configuration* cfg = new Monica::Configuration(std::string(outPath), std::string(dirNameMet), std::string(preMetFiles), std::string(dbIniName));
-  Monica::debug() << outPath << "\t" << dirNameMet << "\t" << preMetFiles << "\t" << dbIniName << endl;
+  Tools::debug() << outPath << "\t" << dirNameMet << "\t" << preMetFiles << "\t" << dbIniName << endl;
   std::cout << "Monica::Configuration" << std::endl;
   bool ok = cfg->setJSON(simFile, siteFile, cropFile);  
   std::cout << "Monica::Configuration::setJSON" << std::endl;

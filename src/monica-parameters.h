@@ -37,6 +37,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <memory>
 
+#include "json11/json11.hpp"
+
 #include "climate/climate-common.h"
 #include "tools/date.h"
 #include "soil/soil.h"
@@ -489,24 +491,6 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-//	/**
-//	 * @author Claas Nendel
-//	 */
-//	struct OrganicConstants
-//	{
-//		static const double po_UreaMolecularWeight;
-//		static const double po_Urea_to_N;
-//		static const double po_NH3MolecularWeight;
-//		static const double po_NH4MolecularWeight;
-//		static const double po_H2OIonConcentration;
-//		static const double po_pKaHNO2;
-//		static const double po_pKaNH3;
-//		static const double po_SOM_to_C;
-//		static const double po_AOM_to_C;
-//	};
-
-	//----------------------------------------------------------------------------
-
 	/**
 	 * @author Claas Nendel, Michael Berg
 	 */
@@ -527,154 +511,6 @@ namespace Monica
 	};
 
 	//----------------------------------------------------------------------------
-
-//	/**
-//	 * @author Claas Nendel, Michael Berg
-//	 */
-//	struct SoilParameters
-//	{
-//		SoilParameters();
-
-//		double vs_SoilRawDensity() const;
-//		void set_vs_SoilRawDensity(double srd);
-
-//		double vs_SoilBulkDensity() const;
-//		void set_vs_SoilBulkDensity(double sbd);
-
-//		double vs_SoilOrganicCarbon() const;
-//		void set_vs_SoilOrganicCarbon(double soc);
-
-//		double vs_SoilOrganicMatter() const;
-//		void set_vs_SoilOrganicMatter(double som);
-
-//		double vs_SoilSiltContent() const;
-		
-//		std::string toString() const;
-
-//		double texture2lambda(double sand, double clay);
-
-//		bool isValid();
-
-//		// members
-//		double vs_SoilSandContent;
-//		double vs_SoilClayContent;
-//		double vs_SoilpH;
-//		double vs_SoilStoneContent;
-//		double vs_Lambda;
-//		double vs_FieldCapacity;
-//		double vs_Saturation;
-//		double vs_PermanentWiltingPoint;
-//		std::string vs_SoilTexture;
-//		double vs_SoilAmmonium;
-//    double vs_SoilNitrate;
-		
-//	private:
-//		double _vs_SoilRawDensity;
-//		double _vs_SoilBulkDensity;
-//		double _vs_SoilOrganicCarbon;
-//		double _vs_SoilOrganicMatter;
-//	};
-
-//	/**
-//	 * Data structure that holds information about capillary rise rates.
-//	 */
-//	class CapillaryRiseRates
-//	{
-//	public:
-//		CapillaryRiseRates() {}
-//		~CapillaryRiseRates() {}
-
-//		/**
-//			 * Adds a capillary rise rate to data structure.
-//			 */
-//		void addRate(std::string bodart, int distance, double value)
-//		{
-//			//        std::cout << "Add cap rate: " << bodart.c_str() << "\tdist: " << distance << "\tvalue: " << value << std::endl;
-//			//cap_rates_map.insert(std::pair<std::string,std::map<int,double> >(bodart,std::pair<int,double>(distance,value)));
-//			cap_rates_map[bodart][distance] = value;
-//		}
-
-//		/**
-//			 * Returns capillary rise rate for given soil type and distance to ground water.
-//			 */
-//		double getRate(std::string bodart, int distance) const
-//		{
-//			typedef std::map<int, double> T_BodArtMap;
-//			//        std::cout << "Get capillary rise rate: " << bodart.c_str() << "\t" << distance << std::endl;
-//			T_BodArtMap map = getMap(bodart);
-//			if (map.size() <= 0 )
-//			{
-//				std::cout << "Error. No capillary rise rates in data structure available.\n" << std::endl;
-//				exit(-1);
-//			}
-
-//			T_BodArtMap::iterator it = map.find(distance);
-//			if (it != map.end())
-//				return it->second;
-
-//			return 0.0;
-//		}
-
-
-//		std::map<int,double> getMap(std::string bodart) const
-//		{
-//			typedef std::map<int, double> T_BodArtMap;
-//			typedef std::map<std::string, T_BodArtMap> T_CapRatesMap;
-
-//			T_CapRatesMap::const_iterator it2 = cap_rates_map.find(bodart);
-//			if (it2 != cap_rates_map.end())
-//				return it2->second;
-
-//			T_BodArtMap tmp;
-//			return tmp;
-//		}
-
-//		/**
-//			 * Returns number of elements of internal map data structure.
-//			 */
-//		int size() const { return cap_rates_map.size(); }
-
-
-//	private:
-//		std::map<std::string, std::map<int, double> > cap_rates_map;
-//	};
-
-//	typedef std::vector<SoilParameters> SoilPMs;
-//	typedef boost::shared_ptr<SoilPMs> SoilPMsPtr;
-
-//  const SoilPMs* soilParameters(const std::string& abstractDbSchema,
-//                                int profileId,
-//                                int layerThicknessCm,
-//                                int maxDepthCm,
-//                                bool loadSingleParameter = false);
-
-//  std::string soilProfileId2KA5Layers(const std::string& abstractDbSchema,
-//                                      int soilProfileId);
-
-//	const SoilPMs* soilParametersFromHermesFile(int soilId,
-//																							const std::string& pathToFile,
-//																							int layerThicknessCm,
-//																							int maxDepthCm,
-//																							double soil_ph = -1.0,
-//																							double drainage_coeff=-1.0);
-
-//	struct RPSCDRes
-//	{
-//		RPSCDRes() : sat(0), fc(0), pwp(0), initialized(false) {}
-//		RPSCDRes(bool initialized) : sat(0), fc(0), pwp(0), initialized(initialized) {}
-//		double sat, fc, pwp;
-//		bool initialized;
-//	};
-//	RPSCDRes readPrincipalSoilCharacteristicData(std::string soilType,
-//																							 double rawDensity);
-//	RPSCDRes readSoilCharacteristicModifier(std::string soilType,
-//																					double organicMatter);
-
-//	void soilCharacteristicsKA5(SoilParameters&);
-
-//	const CapillaryRiseRates& readCapillaryRiseRates();
-
-//----------------------------------------------------------------------------
 
 	/**
 	* @brief Data structure that containts all relevant parameters for the automatic yield trigger.
@@ -721,7 +557,6 @@ namespace Monica
 
 		
 	};
-
 
 	//----------------------------------------------------------------------------
 
@@ -950,6 +785,8 @@ namespace Monica
 	public:
 		MineralFertiliserParameters();
 
+    MineralFertiliserParameters(json11::Json);
+
 		MineralFertiliserParameters(const std::string& name,
 																double carbamid, double no3, double nh4);
 
@@ -1010,6 +847,15 @@ namespace Monica
 		 */
 		inline void setNO3(double vo_NO3) { this->vo_NO3 = vo_NO3; }
 
+    json11::Json json() const
+    {
+      return json11::object {
+        {"name", name},
+        {"Carbamid", vo_Carbamid},
+        {"NH4", vo_NH4},
+        {"NO3", vo_NO3}};
+    }
+
 	private:
 		std::string name;
 		double vo_Carbamid;
@@ -1020,6 +866,15 @@ namespace Monica
 	//----------------------------------------------------------------------------
 
 	class MonicaModel;
+
+  enum WorkStepType { eSeed = 0,
+                      eHarvest,
+                      eCutting,
+                      eMineralFertiliserApplication,
+                      eOrganicFertiliserApplication,
+                      eTillageApplication,
+                      eIrrigationApplication
+                    };
 
 	class WorkStep
 	{
@@ -1037,6 +892,9 @@ namespace Monica
 
 		virtual WorkStep* clone() const = 0;
 
+    virtual WorkstepType workstepType() const = 0;
+
+    virtual json11::Json json() const = 0;
 
 	protected:
 		Tools::Date _date;
@@ -1051,7 +909,12 @@ namespace Monica
 	public:
 
 		Seed(const Tools::Date& at, CropPtr crop)
-			: WorkStep(at), _crop(crop) { }
+      : WorkStep(at),
+        _crop(crop) { }
+
+    Seed(json11::Json j, CropPtr crop)
+      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
+        _crop(crop) {}
 
 		virtual void apply(MonicaModel* model);
 
@@ -1065,6 +928,15 @@ namespace Monica
 
 		virtual Seed* clone() const {return new Seed(*this); }
 
+    virtual WorkstepType workstepType() const { return eSeed; }
+
+    virtual json11::Json json() const
+    {
+      return json11::object {
+        {"type", "Seed"},
+        {"date", date().toIsoDateString()}};
+    }
+
 	private:
 		CropPtr _crop;
 	};
@@ -1077,6 +949,14 @@ namespace Monica
 
 		Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, std::string method = "total")
 			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method) { }
+
+    Harvest(json11::Json j, CropPtr crop)
+      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
+        _crop(crop),
+        _method(j["method"].string_value()),
+        _percentage(j["percentage"].number_value()),
+        _exported(j["exported"].bool_value())
+    {}
 
 		virtual void apply(MonicaModel* model);
 
@@ -1101,6 +981,18 @@ namespace Monica
 
 		virtual Harvest* clone() const { return new Harvest(*this); }
 
+    virtual WorkstepType workstepType() const { return eHarvest; }
+
+    virtual json11::Json jsonMessage() const
+    {
+      return json11::object {
+        {"type", "Harvest"},
+        {"date", date().toIsoDateString()},
+        {"method", _method},
+        {"percentage", _percentage},
+        {"exported", _exported}};
+    }
+
 	private:
 		CropPtr _crop;
 		PVResultPtr _cropResult;
@@ -1109,17 +1001,32 @@ namespace Monica
 		bool _exported;
 	};
 
+  //----------------------------------------------------------------------------
+
 	class Cutting : public WorkStep
 	{
 	public:
 
 		Cutting(const Tools::Date& at, CropPtr crop) : WorkStep(at), _crop(crop) { }
 
+    Cutting(json11::Json j, CropPtr crop)
+      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
+        _crop(crop) {}
+
 		virtual void apply(MonicaModel* model);
 
 		virtual std::string toString() const;
 
 		virtual Cutting* clone() const {return new Cutting(*this); }
+
+    virtual WorkstepType workstepType() const { return eCutting; }
+
+    virtual json11::Json jsonMessage() const
+    {
+      return json11::object {
+        {"type", "Cutting"},
+        {"date", date().toIsoDateString()}};
+    }
 
 	private:
 		CropPtr _crop;
@@ -1167,6 +1074,12 @@ namespace Monica
 																 double amount)
 			: WorkStep(at), _partition(partition), _amount(amount) { }
 
+    MineralFertiliserApplication(json11::Json j)
+      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
+        _partition(j["parameters"]),
+        _amount(j["amount"].number_value())
+    {}
+
 		virtual void apply(MonicaModel* model);
 
 		MineralFertiliserParameters partition() const
@@ -1179,6 +1092,18 @@ namespace Monica
 		virtual std::string toString() const;
 
 		virtual MineralFertiliserApplication* clone() const {return new MineralFertiliserApplication(*this); }
+
+    virtual WorkstepType workstepType() const { return eMineralFertiliserApplication; }
+
+    virtual json11::Json jsonMessage() const
+    {
+      return json11::object {
+        {"type", "MineralFertiliserApplication"},
+        {"date", date().toIsoDateString()},
+        {"amount", _amount},
+        {"parameters", _partition.jsonMessage()}};
+    }
+
 	private:
 		MineralFertiliserParameters _partition;
 		double _amount;
@@ -1198,6 +1123,12 @@ namespace Monica
 		{
 		}
 
+    OrganicFertiliserApplication(json11::Json j)
+      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
+        _params(j["parameters"]),
+        _amount(j["amount"].number_value()),
+        _incorporation(j["incorporation"].bool_value()) {}
+
 		virtual void apply(MonicaModel* model);
 
 		//! Returns parameter for organic fertilizer
@@ -1214,41 +1145,24 @@ namespace Monica
 
 		virtual OrganicFertiliserApplication* clone() const {return new OrganicFertiliserApplication(*this); }
 
+    virtual WorkstepType workstepType() const { return eOrganicFertiliserApplication; }
+
+    virtual json11::Json jsonMessage() const
+    {
+      return json11::object {
+        {"type", "OrganicFertiliserApplication"},
+        {"date", date().toIsoDateString()},
+        {"amount", _amount},
+        {"parameters", _params.jsonMessage()},
+        {"incorporation", _incorporation}};
+    }
+
 	private:
 		const OrganicMatterParameters* _params;
 		double _amount;
 		bool _incorporation;
 
 	};
-
-	//----------------------------------------------------------------------------
-
-	/*
-	class HarvestApplication : public WorkStep
-	{
-	public:
-		HarvestApplication(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, 
-			std::string method, double percentage)
-			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method), _percentage(percentage) { }
-		
-		virtual void apply(MonicaModel* model);
-
-		//! Returns percentage of harvested fruit biomass
-		double percentage() const { return _percentage; }
-
-		//! Returns harvest method
-		std::string method() const { return _method; }
-
-		virtual std::string toString() const;
-
-		virtual HarvestApplication* clone() const { return new HarvestApplication(*this); }
-	private:
-		CropPtr _crop;
-		PVResultPtr _cropResult; 
-		double _percentage;
-		std::string _method;
-	};
-	*/
 
 	//----------------------------------------------------------------------------
 
@@ -1265,6 +1179,8 @@ namespace Monica
 		virtual std::string toString() const;
 
 		virtual TillageApplication* clone() const {return new TillageApplication(*this); }
+
+    virtual WorkstepType workstepType() const { return eTillageApplication; }
 	private:
 		double _depth;
 	};
@@ -1319,6 +1235,8 @@ namespace Monica
 		virtual std::string toString() const;
 
 		virtual IrrigationApplication* clone() const {return new IrrigationApplication(*this); }
+
+    virtual WorkstepType workstepType() const { return eIrrigationApplication; }
 
 	private:
     double _amount{0};
@@ -1401,8 +1319,8 @@ namespace Monica
 		PVResultPtr cropResultPtr() const { return _cropResult; }
 
 		//the custom id is used to keep a potentially usage defined
-		//mapping to entity from another domain,
-		//e.g. the an Carbiocial CropActivity which is ProductionProcess was based on
+    //mapping to an entity from another domain,
+    //e.g. a Carbiocial CropActivity which the ProductionProcess was based on
 		void setCustomId(int cid) { _customId = cid; }
 		int customId() const { return _customId; }
 
@@ -1454,11 +1372,31 @@ namespace Monica
 	{
 	public:
 		OrganicMatterParameters();
+    OrganicMatterParameters(json11::Json);
 		OrganicMatterParameters(const OrganicMatterParameters&);
 
 		~OrganicMatterParameters() { }
 
 		std::string toString() const;
+
+    json11::Json json() const
+    {
+      return json11::object {
+        {"name", name},
+        {"AOM_DryMatterContent", vo_AOM_DryMatterContent},
+        {"AOM_AOM_NH4Content", vo_AOM_NH4Content},
+        {"AOM_AOM_NO3Content", vo_AOM_NO3Content},
+        {"AOM_AOM_NO3Content", vo_AOM_NO3Content},
+        {"AOM_AOM_SlowDecCoeffStandard", vo_AOM_SlowDecCoeffStandard},
+        {"AOM_AOM_FastDecCoeffStandard", vo_AOM_FastDecCoeffStandard},
+        {"AOM_PartAOM_to_AOM_Slow", vo_PartAOM_to_AOM_Slow},
+        {"AOM_PartAOM_to_AOM_Fast", vo_PartAOM_to_AOM_Fast},
+        {"AOM_CN_Ratio_AOM_Slow", vo_CN_Ratio_AOM_Slow},
+        {"AOM_CN_Ratio_AOM_Fast", vo_CN_Ratio_AOM_Fast},
+        {"AOM_PartAOM_Slow_to_SMB_Slow", vo_PartAOM_Slow_to_SMB_Slow},
+        {"AOM_PartAOM_Slow_to_SMB_Fast", vo_PartAOM_Slow_to_SMB_Fast},
+        {"AOM_NConcentration", vo_NConcentration}};
+    }
 
 		std::string name;
 

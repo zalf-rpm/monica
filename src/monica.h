@@ -27,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MONICA_H_
 #define MONICA_H_
 
-
 #include <string>
 #include <vector>
 #include <list>
@@ -36,6 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
+
+#include "zmq.hpp"
 
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
@@ -154,6 +156,19 @@ namespace Monica
     //input to the callback is the day of year (doy) and a vector of soil-moisture values
     std::function<NIAResult(int, std::vector<double>)> nextIrrigationApplication;
 
+    //zeromq reply socket for datastream controlled MONICA run
+//    std::unique_ptr<zmq::socket_t> datastream;
+//    std::string inputDatastreamAddress;
+    std::string inputDatastreamProtocol;
+    std::string inputDatastreamPort;
+
+    //zeromq publish socket for outputs of MONICA
+//    std::unique_ptr<zmq::socket_t> outputstream;
+//    std::string outputDatastreamAddress;
+    std::string outputDatastreamProtocol;
+    std::string outputDatastreamPort;
+
+    zmq::context_t* zmqContext;
   private:
     //! Variable for differentiate betweend execution modes of MONICA
     int mode{MODE_LC_DSS};
@@ -211,8 +226,13 @@ namespace Monica
       delete _currentCropGrowth;
     }
 
+
+    void generalStep(Tools::Date date, const std::map<int, double>& climateData);
     void generalStep(unsigned int stepNo);
+
+    void cropStep(Tools::Date date, const std::map<int, double>& climateData);
     void cropStep(unsigned int stepNo);
+
     double CO2ForDate(double year, double julianDay, bool isLeapYear);
     double CO2ForDate(Tools::Date);
     double GroundwaterDepthForDate(double maxGroundwaterDepth,
@@ -440,6 +460,8 @@ namespace Monica
 #else
   Result runMonica(Env env, Configuration* cfg = NULL);
 #endif
+
+  void startZeroMQMonica(Env env);
 
   void initializeFoutHeader(std::ofstream&);
   void initializeGoutHeader(std::ofstream&);
