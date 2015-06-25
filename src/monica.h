@@ -216,7 +216,33 @@ namespace Monica
 	class MonicaModel
 	{
   public:
-    MonicaModel(const Env& env, const Climate::DataAccessor& da);
+    MonicaModel::MonicaModel(const Env& env, const Climate::DataAccessor& da)
+      : //_env(env),
+        _generalParams(env.general),
+        _siteParams(env.site),
+        _centralParameterProvider(env.centralParameterProvider),
+        _soilColumn(_env.general, *_env.soilParams, _env.centralParameterProvider),
+        _soilTemperature(_soilColumn, *this, _env.centralParameterProvider),
+        _soilMoisture(_soilColumn, _env.site, *this, _env.centralParameterProvider),
+        _soilOrganic(_soilColumn, _env.general, _env.site,_env.centralParameterProvider),
+        _soilTransport(_soilColumn, _env.site, _env.centralParameterProvider),
+        _dataAccessor(da),
+        centralParameterProvider(_env.centralParameterProvider)
+    {}
+
+    MonicaModel::MonicaModel(const GeneralParameters& general, const SiteParameters& site,
+                             const SoilPMs& soil, const CentralParameterProvider& cpp)
+      : //_env(env),
+        _generalParams(general),
+        _siteParams(site),
+        _centralParameterProvider(cpp),
+        _soilColumn(general, soil, cpp),
+        _soilTemperature(_soilColumn, *this, cpp),
+        _soilMoisture(_soilColumn, site, *this, cpp),
+        _soilOrganic(_soilColumn, general, site, cpp),
+        _soilTransport(_soilColumn, site, cpp),
+        centralParameterProvider(cpp)
+    {}
 
     /**
      * @brief Destructor
@@ -411,7 +437,11 @@ namespace Monica
 
   private:
 		//! environment describing the conditions under which the model runs
-    Env _env; 
+//    Env _env;
+
+    GeneralParameters _generalParams;
+    SiteParameters _siteParams;
+    CentralParameterProvider _centralParameterProvider;
 
 		//! main soil data structure
     SoilColumn _soilColumn;
@@ -424,28 +454,28 @@ namespace Monica
 		//! transport code
     SoilTransport _soilTransport;
 		//! crop code for possibly planted crop
-    CropGrowth* _currentCropGrowth;
+    CropGrowth* _currentCropGrowth{nullptr};
 		//! currently possibly planted crop
     CropPtr _currentCrop;
 
 		//! store applied fertiliser during one production process
-    double _sumFertiliser;
+    double _sumFertiliser{0.0};
 
 		//! stores the daily sum of applied fertiliser
-    double _dailySumFertiliser;
+    double _dailySumFertiliser{0.0};
 
-    double _dailySumIrrigationWater;
+    double _dailySumIrrigationWater{0.0};
 
 		//! climate data available to the model
     const Climate::DataAccessor& _dataAccessor;
 
     const CentralParameterProvider& centralParameterProvider;
 
-    int p_daysWithCrop;
-    double p_accuNStress;
-    double p_accuWaterStress;
-    double p_accuHeatStress;
-    double p_accuOxygenStress;
+    int p_daysWithCrop{0};
+    double p_accuNStress{0.0};
+    double p_accuWaterStress{0.0};
+    double p_accuHeatStress{0.0};
+    double p_accuOxygenStress{0.0};
   };
 
   //----------------------------------------------------------------------------

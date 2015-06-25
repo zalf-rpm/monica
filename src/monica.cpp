@@ -212,26 +212,7 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
  *
  * Parameter initialization
  */
-MonicaModel::MonicaModel(const Env& env, const Climate::DataAccessor& da)
-  : _env(env),
-    _soilColumn(_env.general, *_env.soilParams, _env.centralParameterProvider),
-    _soilTemperature(_soilColumn, *this, _env.centralParameterProvider),
-    _soilMoisture(_soilColumn, _env.site, *this, _env.centralParameterProvider),
-    _soilOrganic(_soilColumn, _env.general, _env.site,_env.centralParameterProvider),
-    _soilTransport(_soilColumn, _env.site, _env.centralParameterProvider),
-    _currentCropGrowth(NULL),
-    _sumFertiliser(0),
-    _dailySumFertiliser(0),
-    _dailySumIrrigationWater(0),
-    _dataAccessor(da),
-    centralParameterProvider(_env.centralParameterProvider),
-    p_daysWithCrop(0),
-    p_accuNStress(0.0),
-    p_accuWaterStress(0.0),
-    p_accuHeatStress(0.0),
-    p_accuOxygenStress(0.0)
-{
-}
+
 
 /**
  * @brief Simulation of crop seed.
@@ -252,8 +233,8 @@ void MonicaModel::seedCrop(CropPtr crop)
   if(_currentCrop->isValid())
   {
     const CropParameters* cps = _currentCrop->cropParameters();
-    _currentCropGrowth = new CropGrowth(_soilColumn, _env.general,
-                                        *cps, _env.site, _env.centralParameterProvider, crop->getEva2TypeUsage());
+    _currentCropGrowth = new CropGrowth(_soilColumn, _generalParams,
+                                        *cps, _siteParams, _centralParameterProvider, crop->getEva2TypeUsage());
 
     if (_currentCrop->perennialCropParameters())
       _currentCropGrowth->setPerennialCropParameters(_currentCrop->perennialCropParameters());
@@ -266,13 +247,13 @@ void MonicaModel::seedCrop(CropPtr crop)
     debug() << "seedDate: "<< _currentCrop->seedDate().toString()
             << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
-    if(_env.useNMinMineralFertilisingMethod
+    if(_generalParams.useNMinMineralFertilisingMethod
        && _currentCrop->seedDate().dayOfYear() <=
        _currentCrop->harvestDate().dayOfYear())
     {
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = applyMineralFertiliserViaNMinMethod
-                           (_env.nMinFertiliserPartition,
+                           (_generalParams.nMinFertiliserPartition,
                             NMinCropParameters(cps->pc_SamplingDepth,
                                                cps->pc_TargetNSamplingDepth,
                                                cps->pc_TargetN30));
@@ -280,7 +261,7 @@ void MonicaModel::seedCrop(CropPtr crop)
     }
 
     if(this->writeOutputFiles())
-      _currentCrop->writeCropParameters(_env.pathToOutputDir);
+      _currentCrop->writeCropParameters(_generalParams.pathToOutputDir);
   }
 }
 
@@ -326,7 +307,7 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 				rootBiomass, rootNConcentration); 
 			
 			double residueBiomass =
-				_currentCropGrowth->get_ResidueBiomass(_env.useSecondaryYields);
+        _currentCropGrowth->get_ResidueBiomass(_generalParams.useSecondaryYields);
 			//!@todo Claas: das hier noch berechnen
 			double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
 			debug() << "adding organic matter from residues to soilOrganic" << endl;
@@ -551,7 +532,7 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 void MonicaModel::applyMineralFertiliser(MineralFertiliserParameters partition,
                                          double amount)
 {
-  if(!_env.useNMinMineralFertilisingMethod)
+  if(!_generalParams.useNMinMineralFertilisingMethod)
   {
 		_soilColumn.applyMineralFertiliser(partition, amount);
 		addDailySumFertiliser(amount);
@@ -573,7 +554,7 @@ double MonicaModel::
 {
   //AddFertiliserAmountsCallback x(_sumFertiliser, _dailySumFertiliser);
 
-  const NMinUserParameters& ups = _env.nMinUserParams;
+  const NMinUserParameters& ups = _generalParams.nMinUserParams;
 
   double fert_amount = _soilColumn.applyMineralFertiliserViaNMinMethod
       (partition, cps.samplingDepth, cps.nTarget, cps.nTarget30,
@@ -587,7 +568,7 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/)
 {
   //if the production process has still some defined manual irrigation dates
-  if(!_env.useAutomaticIrrigation)
+  if(!_generalParams.useAutomaticIrrigation)
   {
     _soilOrganic.addIrrigationWater(amount);
     _soilColumn.applyIrrigation(amount, nitrateConcentration);
@@ -650,10 +631,10 @@ void MonicaModel::generalStep(Date date, const std::map<int, double>& climateDat
 //  climate_file.close();
 
 
-  const UserEnvironmentParameters &user_env = centralParameterProvider.userEnvironmentParameters;
-  vw_AtmosphericCO2Concentration = _env.atmosphericCO2 == -1
+  const UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
+  vw_AtmosphericCO2Concentration = _generalParams.atmosphericCO2 == -1
                                    ? user_env.p_AthmosphericCO2
-                                     : _env.atmosphericCO2;
+                                   : _generalParams.atmosphericCO2;
 
 
   // test if simulated gw or measured values should be used
@@ -694,14 +675,14 @@ void MonicaModel::generalStep(Date date, const std::map<int, double>& climateDat
   addDailySumFertiliser(delayed_fert_amount);
 
   if(_currentCrop && _currentCrop->isValid() &&
-     _env.useNMinMineralFertilisingMethod
+     _generalParams.useNMinMineralFertilisingMethod
 		 && _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear()
     && _dataAccessor.julianDayForStep(stepNo) == pc_JulianDayAutomaticFertilising)
     {
     debug() << "nMin fertilising winter crop" << endl;
 		const CropParameters* cps = _currentCrop->cropParameters();
 		double fert_amount = applyMineralFertiliserViaNMinMethod
-        (_env.nMinFertiliserPartition,
+        (_generalParams.nMinFertiliserPartition,
          NMinCropParameters(cps->pc_SamplingDepth,
                             cps->pc_TargetNSamplingDepth,
                             cps->pc_TargetN30));
@@ -713,7 +694,7 @@ void MonicaModel::generalStep(Date date, const std::map<int, double>& climateDat
   _soilMoisture.step(vs_GroundwaterDepth,
                      precip, tmax, tmin,
                      (relhumid / 100.0), tavg, wind,
-                     _env.windSpeedHeight,
+                     _generalParams.windSpeedHeight,
 		 globrad, julday);
 
   _soilOrganic.step(tavg, precip, wind);
@@ -776,9 +757,9 @@ void MonicaModel::cropStep(Tools::Date date, const std::map<int, double>& climat
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, julday,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
                            vw_AtmosphericCO2Concentration, precip);
-  if(_env.useAutomaticIrrigation)
+  if(_generalParams.useAutomaticIrrigation)
   {
-    const AutomaticIrrigationParameters& aips = _env.autoIrrigationParams;
+    const AutomaticIrrigationParameters& aips = _generalParams.autoIrrigationParams;
     if(_soilColumn.applyIrrigationViaTrigger(aips.treshold, aips.amount,
                                              aips.nitrateConcentration))
     {
@@ -901,7 +882,7 @@ double MonicaModel::avgCorg(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _env.noOfLayers; i < nols; i++)
+  for(int i = 0, nols = _generalParams.ps_NumberOfLayers(); i < nols; i++)
   {
     count++;
     sum +=_soilColumn[i].vs_SoilOrganicCarbon(); //[kg C / kg Boden]
@@ -942,7 +923,7 @@ double MonicaModel::sumNmin(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _env.noOfLayers; i < nols; i++)
+  for(int i = 0, nols = _generalParams.ps_NumberOfLayers(); i < nols; i++)
   {
     count++;
     sum += _soilColumn[i].get_SoilNmin(); //[kg N m-3]
@@ -965,7 +946,7 @@ MonicaModel::sumNO3AtDay(double depth_m)
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _env.noOfLayers; i < nols; i++)
+  for(int i = 0, nols = _generalParams.ps_NumberOfLayers(); i < nols; i++)
   {
     count++;
     sum += _soilColumn[i].get_SoilNO3(); //[kg m-3]
@@ -1764,52 +1745,32 @@ void Monica::startZeroMQMonica(Env env)
   zmq::socket_t publisher(*env.zmqContext, ZMQ_PUB);
   publisher.bind((env.outputDatastreamProtocol + "://*:" + env.outputDatastreamPort).c_str());
 
+  unique_ptr<MonicaModel> monica;
+
+  string initStr = s_recv(receiver);
+  if(initStr == "break")
+    break;
+  string err;
+  Json initMsg = Json::parse(initStr, err);
+  string msgType = initMsg["type"].string_value();
+
+  if(msgType == "finish")
+    return;
+  else if(msgType == "init")
+  {
+    GeneralParameters general(initMsg["general"]);
+    SiteParameters site(initMsg["site"]);
+    SoilPMsPtr soil = make_shared<SoilPMs>();
+
+
+
+    monica = make_unique<MonicaModel>();
+  }
 
 
   debug() << "currentDate" << endl;
   Date currentDate = env.da.startDate();
-  unsigned int nods = env.da.noOfStepsPossible();
-  debug() << "nods: " << nods << endl;
 
-  unsigned int currentMonth = currentDate.month();
-  unsigned int dim = 0; //day in current month
-
-  //iterator through the production processes
-  vector<ProductionProcess>::const_iterator ppci = env.cropRotation.begin();
-  //direct handle to current process
-  ProductionProcess currentPP = *ppci;
-  //are the dates in the production process relative dates
-  //or are they absolute as produced by the hermes inputs
-  bool useRelativeDates =  currentPP.start().isRelativeDate();
-  //the next application date, either a relative or an absolute date
-  //to get the correct applications out of the production processes
-  Date nextPPApplicationDate = currentPP.start();
-  //a definitely absolute next application date to keep track where
-  //we are in the list of climate data
-  Date nextAbsolutePPApplicationDate =
-      useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-                         (currentDate.year() + 1) : nextPPApplicationDate;
-  debug() << "next app-date: " << nextPPApplicationDate.toString()
-          << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
-
-  //if for some reason there are no applications (no nothing) in the
-  //production process: quit
-  if(!nextAbsolutePPApplicationDate.isValid())
-  {
-    debug() << "start of production-process: " << currentPP.toString()
-            << " is not valid" << endl;
-    //return res;
-  }
-
-  //beware: !!!! if there are absolute days used, then there is basically
-  //no rotation if the last crop in the crop rotation has changed
-  //the loop starts anew but the first crops date has already passed
-  //so the crop won't be seeded again or any work applied
-  //thus for absolute dates the crop rotation has to be as long as there
-  //are climate data !!!!!
-
-
-  for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
 
 
 
@@ -1852,9 +1813,12 @@ void Monica::startZeroMQMonica(Env env)
 
       nextPPApplicationDate =  currentPP.nextDate(nextPPApplicationDate);
 
-      nextAbsolutePPApplicationDate =  useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-          (currentDate.year() + (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-           true) : nextPPApplicationDate;
+      nextAbsolutePPApplicationDate =
+          useRelativeDates
+          ? nextPPApplicationDate.toAbsoluteDate(currentDate.year() +
+                                                 (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
+                                                 true)
+          : nextPPApplicationDate;
 
 
       debug() << "next app-date: " << nextPPApplicationDate.toString()
