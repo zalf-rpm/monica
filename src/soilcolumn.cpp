@@ -546,8 +546,6 @@ double SoilLayer::get_PermanentWiltingPoint()
 }
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 
 /**
  * @brief Constructor
@@ -560,30 +558,16 @@ double SoilLayer::get_PermanentWiltingPoint()
  */
 SoilColumn::SoilColumn(const GeneralParameters& gps,
                        const SoilPMs& soilParams, const CentralParameterProvider& cpp)
-:
-vs_SurfaceWaterStorage(0.0),
-vs_InterceptionStorage(0.0),
-vm_GroundwaterTable(0),
-vs_FluxAtLowerBoundary(0.0),
-vq_CropNUptake(0.0),
-vt_SoilSurfaceTemperature(0.0),
-vm_SnowDepth(0.0),
-generalParams(gps),
-soilParams(soilParams),
-_vf_TopDressing(0.0),
-_vf_TopDressingDelay(0),
-cropGrowth(NULL),
-centralParameterProvider(cpp)
+: generalParams(gps),
+  soilParams(soilParams),
+  centralParameterProvider(cpp)
 {
   debug() << "Constructor: SoilColumn "  << soilParams.size() << endl;
-  for(unsigned int i = 0; i < soilParams.size(); i++) {
-    vs_SoilLayers.push_back(SoilLayer(gps.ps_LayerThickness.front(), soilParams.at(i), cpp));
-  }
+  for(auto sp : soilParams)
+    vs_SoilLayers.push_back(SoilLayer(gps.ps_LayerThickness.front(), sp, cpp));
 
-  set_vs_NumberOfOrganicLayers();
+  _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
-
-
 
 /**
  * @brief Calculates number of organic layers.
@@ -592,10 +576,11 @@ centralParameterProvider(cpp)
  * the layer depth and the ps_MaxMineralisationDepth. Result is saved
  * in private member variable _vs_NumberOfOrganicLayers.
  */
-void SoilColumn::set_vs_NumberOfOrganicLayers() {
+size_t SoilColumn::calculateNumberOfOrganicLayers()
+{
 	//std::cout << "--------- set_vs_NumberOfOrganicLayers -----------" << std::endl;
   double lsum = 0;
-  int count = 0;
+  size_t count = 0;
   for(size_t i = 0; i < vs_NumberOfLayers(); i++) {
 		//std::cout << vs_SoilLayers[i].vs_LayerThickness << std::endl;
     count++;
@@ -604,11 +589,12 @@ void SoilColumn::set_vs_NumberOfOrganicLayers() {
     if(lsum >= generalParams.ps_MaxMineralisationDepth)
       break;
   }
-  _vs_NumberOfOrganicLayers = count;
 
 	//std::cout << vs_NumberOfLayers() << std::endl;
 	//std::cout << generalParams.ps_MaxMineralisationDepth << std::endl;
 	//std::cout << _vs_NumberOfOrganicLayers << std::endl;
+
+  return count;
 }
 
 /**

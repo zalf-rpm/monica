@@ -226,8 +226,7 @@ namespace Monica
         _soilMoisture(_soilColumn, _env.site, *this, _env.centralParameterProvider),
         _soilOrganic(_soilColumn, _env.general, _env.site,_env.centralParameterProvider),
         _soilTransport(_soilColumn, _env.site, _env.centralParameterProvider),
-        _dataAccessor(da),
-        centralParameterProvider(_env.centralParameterProvider)
+        _dataAccessor(da)
     {}
 
     MonicaModel::MonicaModel(const GeneralParameters& general, const SiteParameters& site,
@@ -240,8 +239,7 @@ namespace Monica
         _soilTemperature(_soilColumn, *this, cpp),
         _soilMoisture(_soilColumn, site, *this, cpp),
         _soilOrganic(_soilColumn, general, site, cpp),
-        _soilTransport(_soilColumn, site, cpp),
-        centralParameterProvider(cpp)
+        _soilTransport(_soilColumn, site, cpp)
     {}
 
     /**
@@ -262,10 +260,10 @@ namespace Monica
     double CO2ForDate(double year, double julianDay, bool isLeapYear);
     double CO2ForDate(Tools::Date);
     double GroundwaterDepthForDate(double maxGroundwaterDepth,
-			    double minGroundwaterDepth,
-			    int minGroundwaterDepthMonth,
-			    double julianday,
-			    bool leapYear);
+                                   double minGroundwaterDepth,
+                                   int minGroundwaterDepthMonth,
+                                   double julianday,
+                                   bool leapYear);
 
 
     //! seed given crop
@@ -350,7 +348,7 @@ namespace Monica
 
 		double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
 
-    bool writeOutputFiles() {return centralParameterProvider.writeOutputFiles; }
+    bool writeOutputFiles() {return _centralParameterProvider.writeOutputFiles; }
 
     double avgCorg(double depth_m) const;
     double mean90cmWaterContent() const;
@@ -425,7 +423,7 @@ namespace Monica
      * @param globrad
      * @return radiation
      */
-		double netRadiation(double globrad) { return globrad * (1 - _env.albedo); }
+    double netRadiation(double globrad) { return globrad * (1 - _generalParams.albedo); }
 
     int daysWithCrop() {return p_daysWithCrop; }
     double getAccumulatedNStress() { return p_accuNStress; }
@@ -433,7 +431,7 @@ namespace Monica
     double getAccumulatedHeatStress() { return p_accuHeatStress; }
     double getAccumulatedOxygenStress() { return p_accuOxygenStress; }
 
-    double getGroundwaterInformation(Tools::Date date) {return _env.groundwaterInformation.getGroundwaterInformation(date); }
+    double getGroundwaterInformation(Tools::Date date) {return _generalParams.groundwaterInformation.getGroundwaterInformation(date); }
 
   private:
 		//! environment describing the conditions under which the model runs
@@ -467,9 +465,7 @@ namespace Monica
     double _dailySumIrrigationWater{0.0};
 
 		//! climate data available to the model
-    const Climate::DataAccessor& _dataAccessor;
-
-    const CentralParameterProvider& centralParameterProvider;
+    Climate::DataAccessor _dataAccessor;
 
     int p_daysWithCrop{0};
     double p_accuNStress{0.0};

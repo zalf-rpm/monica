@@ -413,34 +413,33 @@ namespace Monica
 
     std::vector<SoilLayer> vs_SoilLayers; /**< Vector of all layers in column. */
 
-    double vs_SurfaceWaterStorage; /**< Content of above-ground water storage [mm] */
-    double vs_InterceptionStorage; /**< Amount of intercepted water on crop surface [mm] */
-    int vm_GroundwaterTable; /**< Layer of current groundwater table */
-    double vs_FluxAtLowerBoundary; /** Water flux out of bottom layer */
-    double vq_CropNUptake; /** Daily amount of N taken up by the crop [kg m-2] */
-		double vt_SoilSurfaceTemperature;
-		double vm_SnowDepth;
+    double vs_SurfaceWaterStorage{0.0}; /**< Content of above-ground water storage [mm] */
+    double vs_InterceptionStorage{0.0}; /**< Amount of intercepted water on crop surface [mm] */
+    int vm_GroundwaterTable{0}; /**< Layer of current groundwater table */
+    double vs_FluxAtLowerBoundary{0.0}; /** Water flux out of bottom layer */
+    double vq_CropNUptake{0.0}; /** Daily amount of N taken up by the crop [kg m-2] */
+    double vt_SoilSurfaceTemperature{0.0};
+    double vm_SnowDepth{0.0};
 
   private:
 
-    void set_vs_NumberOfOrganicLayers();
+    std::size_t calculateNumberOfOrganicLayers();
 
     const GeneralParameters& generalParams; /**< */
     const Soil::SoilPMs& soilParams; /**< Vector of soil parameter*/
 
-    std::size_t _vs_NumberOfOrganicLayers; /**< Number of organic layers. */
-    double _vf_TopDressing;
+    std::size_t _vs_NumberOfOrganicLayers{0}; /**< Number of organic layers. */
+    double _vf_TopDressing{0.0};
     MineralFertiliserParameters _vf_TopDressingPartition;
-    int _vf_TopDressingDelay;
+    int _vf_TopDressingDelay{0};
 
-    CropGrowth* cropGrowth;
+    CropGrowth* cropGrowth{nullptr};
 
-    std::list<std::function<double()> > _delayedNMinApplications;
+    std::list<std::function<double()>> _delayedNMinApplications;
 
     const CentralParameterProvider& centralParameterProvider;
 
   }; // class soil column
-
 } /* namespace monica */
 
 #endif

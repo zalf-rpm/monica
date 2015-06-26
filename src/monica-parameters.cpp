@@ -523,15 +523,13 @@ string Seed::toString() const
 
 void Harvest::apply(MonicaModel* model)
 {
-
-  if (model->cropGrowth()) {
-
-		if ((_method == "total") || (_method == "fruitHarvest") || (_method == "cutting"))
+  if(model->cropGrowth())
+  {
+    if ((_method == "total") || (_method == "fruitHarvest") || (_method == "cutting"))
 		{
 			debug() << "harvesting crop: " << _crop->toString() << " at: " << date().toString() << endl;
 			if (model->currentCrop() == _crop)
 			{
-
 				if (model->cropGrowth()) {
 					_crop->setHarvestYields
 						(model->cropGrowth()->get_FreshPrimaryCropYield() /
@@ -570,19 +568,16 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
 				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
-				_cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
-                _cropResult->pvResults[harvestDay] = date().julianDay();
+        _cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
+        _cropResult->pvResults[harvestDay] = date().julianDay();
 
-				if (_method == "total"){
-					model->harvestCurrentCrop(_exported);
-				}
-				else if (_method == "fruitHarvest") {
-					model->fruitHarvestCurrentCrop(_percentage, _exported);
-				}
-				else if (_method == "cutting") {
-					model->cuttingCurrentCrop(_percentage, _exported);
-				}
-			}
+        if (_method == "total")
+          model->harvestCurrentCrop(_exported);
+        else if (_method == "fruitHarvest")
+          model->fruitHarvestCurrentCrop(_percentage, _exported);
+        else if (_method == "cutting")
+          model->cuttingCurrentCrop(_percentage, _exported);
+      }
 			else
 			{
 				debug() << "Crop: " << model->currentCrop()->toString()
@@ -700,6 +695,26 @@ string NMinCropParameters::toString() const
 
 //------------------------------------------------------------------------------
 
+NMinUserParameters::NMinUserParameters(double min, double max, int delayInDays)
+  : min(min),
+    max(max),
+    delayInDays(delayInDays) { }
+
+NMinUserParameters::NMinUserParameters(json11::Json j)
+  : min(j["min"].number_value()),
+    max(j["max"].number_value()),
+    delayInDays(j["delayInDays"].int_value())
+{}
+
+json11::Json NMinUserParameters::to_json() const
+{
+  return json11::Json::object {
+    {"type", "NMinUserParameters"},
+    {"min", min},
+    {"max", max},
+    {"delayInDays", delayInDays}};
+}
+
 string NMinUserParameters::toString() const
 {
   ostringstream s;
@@ -724,6 +739,35 @@ string MineralFertiliserApplication::toString() const
 }
 
 //------------------------------------------------------------------------------
+
+OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at,
+                             const OrganicMatterParameters* params,
+                             double amount,
+                             bool incorp = true)
+  : WorkStep(at),
+    _params(params),
+    _amount(amount),
+    _incorporation(incorp)
+{}
+
+OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
+  : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
+    _paramsPtr(std::make_unique<OrganicMatterParameters>(j["parameters"])),
+    _params(_paramsPtr.get()),
+    _amount(j["amount"].number_value()),
+    _incorporation(j["incorporation"].bool_value())
+{}
+
+json11::Json OrganicFertiliserApplication::to_json() const
+{
+  auto p = _params ? _params->to_json() : json11::Json();
+  return json11::Json::object {
+    {"type", "OrganicFertiliserApplication"},
+    {"date", date().toIsoDateString()},
+    {"amount", _amount},
+    {"parameters", p },
+    {"incorporation", _incorporation}};
+}
 
 void OrganicFertiliserApplication::apply(MonicaModel* model)
 {
@@ -1830,7 +1874,87 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 //pc_EmergenceMoistureControlOn(pc_EmergenceMoistureControlOn)
 //{}
 
+GeneralParameters::GeneralParameters(double layerThickness = 0.1)
+  : ps_LayerThickness(int(ps_ProfileDepth / layerThickness), layerThickness)
+{}
+
+GeneralParameters::GeneralParameters(json11::Json j)
+  : ps_ProfileDepth(j["ProfileDepth"].number_value()),
+    ps_MaxMineralisationDepth(j["MaxMineralisationDepth"].number_value()),
+    pc_NitrogenResponseOn(j["NitrogenResponseOn"].bool_value()),
+    pc_WaterDeficitResponseOn(j["WaterDeficitResponseOn"].bool_value()),
+    pc_EmergenceFloodingControlOn(j["EmergenceFloodingControlOn"].bool_value()),
+    pc_EmergenceMoistureControlOn(j["EmergenceMoistureControlOn"].bool_value()),
+    useNMinMineralFertilisingMethod(j["useNMinMineralFertilisingMethod"].bool_value()),
+    nMinFertiliserPartition(j["nMinFertiliserPartition"]),
+    nMinUserParams(j["nMinUserParams"]),
+    atmosphericCO2(j["atmosphericCO2"].number_value()),
+    useAutomaticIrrigation(j["useAutomaticIrrigation"].bool_value()),
+    autoIrrigationParams(j["autoIrrigationParams"]),
+    useSecondaryYields(j["useSecondaryYields"].bool_value()),
+    windSpeedHeight(j["windSpeedHeight"].number_value()),
+    albedo(j["albedo"].number_value()),
+    groundwaterInformation(j["groundwaterInformation"]),
+    pathToOutputDir(j["pathToOutputDir"].string_value())
+{
+  auto lts = j["LayerThickness"].array_items();
+  for_each(begin(lts), end(lts),
+           [](json11::Json j){ ps_LayerThickness.push_back(j.number_value());});
+}
+
+json11::Json GeneralParameters::to_json() const
+{
+  json11::Json::array lts;
+  std::for_each(begin(ps_LayerThickness), end(ps_LayerThickness),
+                [](double d){ lts.push_back(d);});
+  return json11::Json::object {
+    {"type", "GeneralParameters"},
+    {"ProfileDepth", ps_ProfileDepth},
+    {"MaxMineralisationDepth", ps_MaxMineralisationDepth},
+    {"NitrogenResponseOn", pc_NitrogenResponseOn},
+    {"WaterDeficitResponseOn", pc_WaterDeficitResponseOn},
+    {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
+    {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
+    {"LayerThickness", lts},
+    {"useNMinMineralFertilisingMethod", useNMinMineralFertilisingMethod},
+    {"nMinFertiliserPartition", nMinFertiliserPartition},
+    {"nMinUserParams", nMinUserParams},
+    {"atmosphericCO2", atmosphericCO2},
+    {"useAutomaticIrrigation", useAutomaticIrrigation},
+    {"autoIrrigationParams", autoIrrigationParams},
+    {"useSecondaryYields", useSecondaryYields},
+    {"windSpeedHeight", windSpeedHeight},
+    {"albedo", albedo},
+    {"groundwaterInformation", groundwaterInformation},
+    {"pathToOutputDir", pathToOutputDir}};
+}
+
 //------------------------------------------------------------------------------
+
+SiteParameters::SiteParameters(json11::Json j)
+  : vs_Latitude(j["Latitude"].number_value()),
+    vs_Slope(j["Slope"].number_value()),
+    vs_HeightNN(j["HeightNN"].number_value()),
+    vs_GroundwaterDepth(j["_GroundwaterDepth"].number_value()),
+    vs_Soil_CN_Ratio(j["Soil_CN_Ratio"].number_value()),
+    vs_DrainageCoeff(j["vs_DrainageCoeff"].number_value()),
+    vq_NDeposition(j["vq_NDeposition"].number_value()),
+    vs_MaxEffectiveRootingDepth(j["vs_MaxEffectiveRootingDepth"].number_value())
+{}
+
+json11::Json SiteParameters::to_json() const
+{
+  return json11::Json::object {
+    {"type", "SiteParameters"},
+    {"Latitude", vs_Latitude},
+    {"Slope", vs_Slope},
+    {"HeightNN", vs_HeightNN},
+    {"GroundwaterDepth", vs_GroundwaterDepth},
+    {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
+    {"DrainageCoeff", vs_DrainageCoeff},
+    {"NDeposition", vq_NDeposition},
+    {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
+}
 
 /**
  * @brief Serializes site parameters into a string.
@@ -1849,6 +1973,91 @@ string SiteParameters::toString() const
 
 //------------------------------------------------------------------------------
 
+Crop::Crop(const std::string& name = "fallow")
+  : _name(name)
+{}
+
+Crop::Crop(CropId id, const std::string& name, const CropParameters* cps = nullptr,
+           const OrganicMatterParameters* rps = nullptr, double crossCropAdaptionFactor = 1)
+  : _id(id),
+    _name(name),
+    _cropParams(cps),
+    _residueParams(rps),
+    _crossCropAdaptionFactor(crossCropAdaptionFactor)
+{}
+
+Crop::Crop(CropId id, const std::string& name,
+           const Tools::Date& seedDate, const Tools::Date& harvestDate,
+           const CropParameters* cps = nullptr, const OrganicMatterParameters* rps = nullptr,
+           double crossCropAdaptionFactor = 1)
+  : _id(id),
+    _name(name),
+    _seedDate(seedDate),
+    _harvestDate(harvestDate),
+    _cropParams(cps),
+    _residueParams(rps),
+    _crossCropAdaptionFactor(crossCropAdaptionFactor)
+{}
+
+Crop::Crop(json11::Json j)
+  : _id(j["id"].int_value()),
+    _name(j["name"].string_value()),
+    _seedDate(Tools::Date::fromIsoDateString(j["seedDate"].string_value())),
+    _harvestDate(Tools::Date::fromIsoDateString(j["havestDate"].string_value()))
+{
+  if(_id > -1)
+  {
+    _cropParams = getCropParametersFromMonicaDB(_id);
+    _residueParams = getResidueParametersFromMonicaDB(_id);
+  }
+
+  auto cds = j["cuttingDates"].array_items();
+  std::for_each(begin(cds), end(cds),
+                [](json11::Json j){ _cuttingDates.push_back(Tools::Date::fromIsoDateString(j.string_value()));});
+}
+
+json11::Json Crop::to_json() const
+{
+  json11::Json::array cds;
+  std::for_each(begin(_cuttingDates), end(_cuttingDates),
+                [](Tools::Date d){ cds.push_back(d.toIsoDateString());});
+  return json11::Json::object {
+    {"type", "Crop"},
+    {"id", id},
+    {"name", name},
+    {"seedDate", _seedDate.toIsoDateString()},
+    {"harvestDate", _harvestDate.toIsoDateString()},
+    {"cuttingDates", cds},
+    //        {"automaticHarvest", _automaticHarvest}
+  };
+}
+
+//		Crop::Crop(const Crop& new_crop)
+//		{
+//			_id = new_crop._id;
+//			_name  = new_crop._name;
+//			_seedDate = new_crop._seedDate;
+//			_harvestDate = new_crop._harvestDate;
+//			_cropParams = new_crop._cropParams;
+//			_perennialCropParams = new_crop._perennialCropParams;
+//			_residueParams = new_crop._residueParams;
+//			_primaryYield = new_crop._primaryYield;
+//			_secondaryYield = new_crop._secondaryYield;
+//			_primaryYieldTM = new_crop._primaryYieldTM;
+//			_secondaryYieldTM = new_crop._secondaryYieldTM;
+//			_primaryYieldN = new_crop._primaryYieldN;
+//			_secondaryYieldN = new_crop._secondaryYieldN;
+//			_sumTotalNUptake = new_crop._sumTotalNUptake;
+//			_appliedAmountIrrigation = new_crop._appliedAmountIrrigation;
+//			_crossCropAdaptionFactor = new_crop._crossCropAdaptionFactor;
+//			_cropHeight = new_crop._cropHeight;
+//			eva2_typeUsage = new_crop.eva2_typeUsage;
+//			_anthesisDay = new_crop._anthesisDay;
+//			_maturityDay = new_crop._maturityDay;
+//			_automaticHarvest = new_crop._automaticHarvest;
+//			_automaticHarvestParams = new_crop._automaticHarvestParams;
+//		}
+
 string Crop::toString(bool detailed) const
 {
   ostringstream s;
@@ -1861,9 +2070,6 @@ string Crop::toString(bool detailed) const
   }
   return s.str();
 }
-
-
-//------------------------------------------------------------------------------
 
 void Crop::writeCropParameters(std::string path)
 {
@@ -1881,6 +2087,30 @@ void Crop::writeCropParameters(std::string path)
 }
 
 //------------------------------------------------------------------------------
+
+MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
+  : name(j["name"].string_value()),
+    vo_Carbamid(j["Carbamid"].number_value()),
+    vo_NH4(j["NH4"].number_value()),
+    vo_NO3(j["NO3"].number_value())
+{}
+
+MineralFertiliserParameters::MineralFertiliserParameters(const std::string& name, double carbamid,
+                            double no3, double nh4)
+  : name(name),
+    vo_Carbamid(carbamid),
+    vo_NH4(nh4),
+    vo_NO3(no3)
+{}
+
+json11::Json MineralFertiliserParameters::to_json() const
+{
+  return json11::Json::object {
+    {"name", name},
+    {"Carbamid", vo_Carbamid},
+    {"NH4", vo_NH4},
+    {"NO3", vo_NO3}};
+}
 
 /**
  * @brief Serializes all object information into a string.

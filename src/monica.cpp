@@ -344,7 +344,7 @@ void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 		double totalBiomassNContent = _currentCropGrowth->get_TotalBiomassNContent();
 		double currentFruitBiomass = _currentCropGrowth->get_OrganBiomass(3);
 		double currentFruitNContent = _currentCropGrowth->get_FruitBiomassNContent();
-		double fruitToRemove = percentage * currentFruitBiomass;
+//		double fruitToRemove = percentage * currentFruitBiomass;
 		double fruitNToRemove = percentage * currentFruitNContent;
 		double fruitToRemain = (1.0 - percentage) * currentFruitBiomass;
 		double totalBiomassNToRemain = totalBiomassNContent - fruitNToRemove;
@@ -631,7 +631,7 @@ void MonicaModel::generalStep(Date date, const std::map<int, double>& climateDat
 //  climate_file.close();
 
 
-  const UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
+  const UserEnvironmentParameters& user_env = _centralParameterProvider.userEnvironmentParameters;
   vw_AtmosphericCO2Concentration = _generalParams.atmosphericCO2 == -1
                                    ? user_env.p_AthmosphericCO2
                                    : _generalParams.atmosphericCO2;
@@ -674,20 +674,20 @@ void MonicaModel::generalStep(Date date, const std::map<int, double>& climateDat
   double delayed_fert_amount = _soilColumn.applyPossibleTopDressing();
   addDailySumFertiliser(delayed_fert_amount);
 
-  if(_currentCrop && _currentCrop->isValid() &&
-     _generalParams.useNMinMineralFertilisingMethod
-		 && _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear()
-    && _dataAccessor.julianDayForStep(stepNo) == pc_JulianDayAutomaticFertilising)
-    {
+  if(_currentCrop &&
+     _currentCrop->isValid() &&
+     _generalParams.useNMinMineralFertilisingMethod &&
+     _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() &&
+     julday == pc_JulianDayAutomaticFertilising)
+  {
     debug() << "nMin fertilising winter crop" << endl;
 		const CropParameters* cps = _currentCrop->cropParameters();
-		double fert_amount = applyMineralFertiliserViaNMinMethod
-        (_generalParams.nMinFertiliserPartition,
-         NMinCropParameters(cps->pc_SamplingDepth,
-                            cps->pc_TargetNSamplingDepth,
-                            cps->pc_TargetN30));
-		addDailySumFertiliser(fert_amount);
-
+    double fert_amount = applyMineralFertiliserViaNMinMethod
+                         (_generalParams.nMinFertiliserPartition,
+                          NMinCropParameters(cps->pc_SamplingDepth,
+                                             cps->pc_TargetNSamplingDepth,
+                                             cps->pc_TargetN30));
+    addDailySumFertiliser(fert_amount);
 	}
 
   _soilTemperature.step(tmin, tmax, globrad);
@@ -751,8 +751,7 @@ void MonicaModel::cropStep(Tools::Date date, const std::map<int, double>& climat
   double wind =  climateData[Climate::wind];
   double precip =  climateData[Climate::precip];
 
-  double vw_WindSpeedHeight =
-      centralParameterProvider.userEnvironmentParameters.p_WindSpeedHeight;
+  double vw_WindSpeedHeight = _centralParameterProvider.userEnvironmentParameters.p_WindSpeedHeight;
 
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, julday,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
@@ -841,31 +840,26 @@ double MonicaModel::CO2ForDate(Date d)
 * @return
 */
 double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
-				    double minGroundwaterDepth,
-				    int minGroundwaterDepthMonth,
-				    double julianday,
-				    bool leapYear)
+                                            double minGroundwaterDepth,
+                                            int minGroundwaterDepthMonth,
+                                            double julianday,
+                                            bool leapYear)
 {
-  double groundwaterDepth;
-  double days;
-  double meanGroundwaterDepth;
-  double groundwaterAmplitude;
-
-  if (leapYear)
+  double days = 365;
+  if(leapYear)
     days = 366.0;
-  else
-    days = 365.0;
 
-  meanGroundwaterDepth = (maxGroundwaterDepth + minGroundwaterDepth) / 2.0;
-  groundwaterAmplitude = (maxGroundwaterDepth - minGroundwaterDepth) / 2.0;
+  double meanGroundwaterDepth = (maxGroundwaterDepth + minGroundwaterDepth) / 2.0;
+  double groundwaterAmplitude = (maxGroundwaterDepth - minGroundwaterDepth) / 2.0;
 
-  double sinus = sin(((julianday / days * 360.0) - 90.0 -
-	       ((double(minGroundwaterDepthMonth) * 30.0) - 15.0)) *
-	       3.14159265358979 / 180.0);
+  double sinus = sin(((julianday/days*360.0) - 90.0 -
+                      ((double(minGroundwaterDepthMonth)*30.0) - 15.0)) *
+                     3.14159265358979/180.0);
 
-  groundwaterDepth = meanGroundwaterDepth + (sinus * groundwaterAmplitude);
+  double groundwaterDepth = meanGroundwaterDepth + (sinus*groundwaterAmplitude);
 
-  if (groundwaterDepth < 0.0) groundwaterDepth = 20.0;
+  if (groundwaterDepth < 0.0)
+    groundwaterDepth = 20.0;
 
   return groundwaterDepth;
 }
@@ -1746,149 +1740,120 @@ void Monica::startZeroMQMonica(Env env)
   publisher.bind((env.outputDatastreamProtocol + "://*:" + env.outputDatastreamPort).c_str());
 
   unique_ptr<MonicaModel> monica;
+  int customId = -1;
 
   string initStr = s_recv(receiver);
   if(initStr == "break")
     break;
   string err;
   Json initMsg = Json::parse(initStr, err);
-  string msgType = initMsg["type"].string_value();
 
+  string msgType = initMsg["type"].string_value();
   if(msgType == "finish")
     return;
   else if(msgType == "init")
   {
+    customId = initMsg["customId"].int_value();
     GeneralParameters general(initMsg["general"]);
     SiteParameters site(initMsg["site"]);
-    SoilPMsPtr soil = make_shared<SoilPMs>();
+    SoilPMsPtr soil(new SoilPMs());
+    for(auto sp : initMsg["soil"].array_items())
+      soil->push_back(sp);
+    CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
+    monica = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
 
-
-
-    monica = make_unique<MonicaModel>();
   }
 
-
-  debug() << "currentDate" << endl;
-  Date currentDate = env.da.startDate();
-
-
-
-
-
-
+  //the possibly active crop
+  CropPtr crop;
   while(true)
   {
     zmq::message_t message;
     receiver.recv(&message);
 
-    string jsonStr = s_recv(receiver);
-    if(jsonStr == "break")
-      break;
+    string dailyStepStr = s_recv(receiver);
     string err;
-    Json jsonMsg = Json::parse(jsonStr, err);
+    Json dailyStepMsg = Json::parse(dailyStepStr, err);
 
-    cout << "jsonStr: " << jsonStr << endl;
-
-    auto cd = jsonMsg["climateData"].object_items();
-
-    Date date = Date::fromIsoDateString(cd["date"].string_value());
-    map<int, double> climateData = {{Climate::tmin, cd["tmin"].number_value()},
-                                    {Climate::tavg, cd[tavg].number_value()},
-                                    {Climate::tmax, cd[tmax].number_value()},
-                                    {Climate::precip, cd[precip].number_value()},
-                                    {Climate::wind, cd[wind].number_value()},
-                                    {Climate::globrad, cd[globrad].number_value()},
-                                    {Climate::relhumid, cd[relhumid].number_value()}};
-
-    if(nextAbsolutePPApplicationDate == currentDate)
+    string msgType = dailyStepMsg["type"].string_value();
+    if(msgType == "finish")
+      return;
+    else if(msgType == "dailyStep")
     {
-      debug() << "applying at: " << nextPPApplicationDate.toString()
-              << " absolute-at: " << nextAbsolutePPApplicationDate.toString() << endl;
-      //apply everything to do at current day
-      //cout << currentPP.toString().c_str() << endl;
-      currentPP.apply(nextPPApplicationDate, &monica);
+      cout << "dailyStepStr: " << dailyStepStr << endl;
 
-      //get the next application date to wait for (either absolute or relative)
-      Date prevPPApplicationDate = nextPPApplicationDate;
+      auto dsm = dailyStepMsg["climateData"].object_items();
 
-      nextPPApplicationDate =  currentPP.nextDate(nextPPApplicationDate);
+      Date date = Date::fromIsoDateString(dsm["date"].string_value());
+      map<int, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
+                                      {Climate::tavg, dsm["tavg"].number_value()},
+                                      {Climate::tmax, dsm["tmax"].number_value()},
+                                      {Climate::precip, dsm["precip"].number_value()},
+                                      {Climate::wind, dsm["wind"].number_value()},
+                                      {Climate::globrad, dsm["globrad"].number_value()},
+                                      {Climate::relhumid, dsm["relhumid"].number_value()}};
 
-      nextAbsolutePPApplicationDate =
-          useRelativeDates
-          ? nextPPApplicationDate.toAbsoluteDate(currentDate.year() +
-                                                 (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-                                                 true)
-          : nextPPApplicationDate;
-
-
-      debug() << "next app-date: " << nextPPApplicationDate.toString()
-          << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
-      //if application date was not valid, we're (probably) at the end
-      //of the application list of this production process
-      //-> go to the next one in the crop rotation
-
-
-      if(!nextAbsolutePPApplicationDate.isValid())
+      //apply worksteps
+      if(dailyStepMsg.has_shape({{"worksteps", Json::OBJECT}}, err))
       {
-        //get yieldresults for crop
-        PVResult r = currentPP.cropResult();
-        r.customId = currentPP.customId();
-        r.date = currentDate;
-
-        if(!env.useSecondaryYields)
-          r.pvResults[secondaryYield] = 0;
-        r.pvResults[sumFertiliser] = monica.sumFertiliser();
-        r.pvResults[daysWithCrop] = monica.daysWithCrop();
-        r.pvResults[NStress] = monica.getAccumulatedNStress();
-        r.pvResults[WaterStress] = monica.getAccumulatedWaterStress();
-        r.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
-        r.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
-
-        res.pvrs.push_back(r);
-        //        debug() << "py: " << r.pvResults[primaryYield] << endl;
-        //            << " sy: " << r.pvResults[secondaryYield]
-        //            << " iw: " << r.pvResults[sumIrrigation]
-        //            << " sf: " << monica.sumFertiliser()
-        //            << endl;
-
-        //to count the applied fertiliser for the next production process
-        monica.resetFertiliserCounter();
-
-        //resets crop values for use in next year
-        currentPP.crop()->reset();
-
-        ppci++;
-        //start anew if we reached the end of the crop rotation
-        if(ppci == env.cropRotation.end())
-          ppci = env.cropRotation.begin();
-
-        currentPP = *ppci;
-        nextPPApplicationDate = currentPP.start();
-        nextAbsolutePPApplicationDate =
-            useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-            (currentDate.year() + (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-             true) : nextPPApplicationDate;
-        debug() << "new valid next app-date: " << nextPPApplicationDate.toString()
-            << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
+        for(auto ws : dailyStepMsg["worksteps"].object_items())
+        {
+          auto wsType = ws["type"].string_value();
+          if(wsType == "Seed")
+          {
+            Seed seed(ws, crop);
+            seed.apply(monica.get());
+            crop = seed.crop();
+          }
+          else if(wsType == "Harvest")
+          {
+            Harvest(ws, crop).apply(monica.get());
+            crop.reset();
+          }
+          else if(wsType == "Cutting")
+            Cutting(ws, crop).apply(monica.get());
+          else if(wsType == "MineralFertiliserApplication")
+            MineralFertiliserApplication(ws).apply(monica.get());
+          else if(wsType == "OrganicFertiliserApplication")
+            OrganicFertiliserApplication(ws).apply(monica.get());
+          else if(wsType == "TillageApplication")
+            TillageApplication(ws).apply(monica.get());
+          else if(wsType == "IrrigationApplication")
+            IrrigationApplication(ws).apply(monica.get());
+        }
       }
-      //if we got our next date relative it might be possible that
-      //the actual relative date belongs into the next year
-      //this is the case if we're already (dayOfYear) past the next dayOfYear
-      if(useRelativeDates && currentDate > nextAbsolutePPApplicationDate)
-        nextAbsolutePPApplicationDate.addYears(1);
+
+      if(monica.isCropPlanted())
+        monica.cropStep(date, climateData);
+
+      monica.generalStep(date, climateData);
     }
 
 
+//    if(nextAbsolutePPApplicationDate == currentDate)
+//    {
+//      if(!nextAbsolutePPApplicationDate.isValid())
+//      {
+//        //get yieldresults for crop
+//        PVResult r = currentPP.cropResult();
+//        r.customId = currentPP.customId();
+//        r.date = currentDate;
 
+//        if(!env.useSecondaryYields)
+//          r.pvResults[secondaryYield] = 0;
+//        r.pvResults[sumFertiliser] = monica.sumFertiliser();
+//        r.pvResults[daysWithCrop] = monica.daysWithCrop();
+//        r.pvResults[NStress] = monica.getAccumulatedNStress();
+//        r.pvResults[WaterStress] = monica.getAccumulatedWaterStress();
+//        r.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
+//        r.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
 
+//        res.pvrs.push_back(r);
 
-    if(monica.isCropPlanted())
-      monica.cropStep(date, climateData);
-
-    monica.generalStep(date, climateData);
-
-
-
+//        //to count the applied fertiliser for the next production process
+//        monica.resetFertiliserCounter();
+//      }
+//    }
 
   }
 
