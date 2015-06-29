@@ -464,10 +464,205 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  class MineralFertiliserParameters;
-  struct NMinUserParameters;
-  struct AutomaticIrrigationParameters;
-  class MeasuredGroundwaterTableInformation;
+  enum FertiliserType { mineral, organic, undefined };
+
+  /**
+   * @brief Parameters for mineral fertiliser.
+   * Simple data structure that holds information about mineral fertiliser.
+   * @author Xenia Holtmann, Dr. Claas Nendel
+   */
+  class MineralFertiliserParameters
+  {
+  public:
+    MineralFertiliserParameters() {}
+
+    MineralFertiliserParameters(json11::Json j);
+
+    MineralFertiliserParameters(const std::string& name, double carbamid,
+                                double no3, double nh4);
+
+    json11::Json to_json() const;
+
+    std::string toString() const;
+
+
+    /**
+     * @brief Returns name of fertiliser.
+     * @return Name
+     */
+    inline std::string getName() const { return name; }
+
+    /**
+     * @brief Returns carbamid part in percentage of fertiliser.
+     * @return Carbamid in percent
+     */
+    inline double getCarbamid() const { return vo_Carbamid; }
+
+    /**
+     * @brief Returns ammonium part of fertliser.
+     * @return Ammonium in percent
+     */
+    inline double getNH4() const { return vo_NH4; }
+
+    /**
+     * @brief Returns nitrat part of fertiliser
+     * @return Nitrat in percent
+     */
+    inline double getNO3() const { return vo_NO3; }
+
+    // Setter ------------------------------------
+
+    /**
+     * @brief Sets name of fertiliser
+     * @param name
+     */
+    inline void setName(const std::string& name) { this->name = name; }
+
+    /**
+     * Sets carbamid part of fertilisers
+     * @param vo_Carbamid percent
+     */
+    inline void setCarbamid(double vo_Carbamid)
+    {
+      this->vo_Carbamid = vo_Carbamid;
+    }
+
+    /**
+     * @brief Sets nitrat part of fertiliser.
+     * @param vo_NH4
+     */
+    inline void setNH4(double vo_NH4) { this->vo_NH4 = vo_NH4; }
+
+    /**
+     * @brief Sets nitrat part of fertiliser.
+     * @param vo_NO3
+     */
+    inline void setNO3(double vo_NO3) { this->vo_NO3 = vo_NO3; }
+
+
+
+  private:
+    std::string name;
+    double vo_Carbamid{0.0};
+    double vo_NH4{0.0};
+    double vo_NO3{0.0};
+  };
+
+  //----------------------------------------------------------------------------
+
+  struct NMinUserParameters
+  {
+    NMinUserParameters() {}
+
+    NMinUserParameters(double min, double max, int delayInDays);
+
+    NMinUserParameters(json11::Json j);
+
+    json11::Json to_json() const;
+
+    std::string toString() const;
+
+    double min{0.0}, max{0.0};
+    int delayInDays{0};
+  };
+
+  //----------------------------------------------------------------------------
+
+  struct IrrigationParameters
+  {
+    IrrigationParameters() {}
+
+    IrrigationParameters(double nitrateConcentration,
+                         double sulfateConcentration)
+      : nitrateConcentration(nitrateConcentration),
+        sulfateConcentration(sulfateConcentration)
+    {}
+
+    IrrigationParameters(json11::Json j)
+      : nitrateConcentration(j["nitrateConcentration"].number_value()),
+        sulfateConcentration(j["sulfateConcentration"].number_value())
+    {}
+
+    virtual json11::Json to_json() const
+    {
+      return json11::Json::object {
+        {"type", "IrrigationParameters"},
+        {"nitrateConcentration", nitrateConcentration},
+        {"sulfateConcentration", sulfateConcentration}};
+    }
+
+    double nitrateConcentration{0.0};
+    double sulfateConcentration{0.0};
+
+    std::string toString() const;
+  };
+
+  //----------------------------------------------------------------------------
+
+  struct AutomaticIrrigationParameters : public IrrigationParameters
+  {
+    AutomaticIrrigationParameters() {}
+
+    AutomaticIrrigationParameters(json11::Json j)
+      : IrrigationParameters(j["irrigationParameters"]),
+        amount(j["amount"].number_value()),
+        treshold(j["treshold"].number_value())
+    {}
+
+    virtual json11::Json to_json() const
+    {
+      return json11::Json::object {
+        {"type", "AutomaticIrrigationParameters"},
+        {"irrigationParameters", IrrigationParameters::to_json()},
+        {"amount", amount},
+        {"treshold", treshold}};
+    }
+
+    double amount{17.0};
+    double treshold{0.35};
+
+    std::string toString() const;
+  };
+
+  //----------------------------------------------------------------------------
+
+  class MeasuredGroundwaterTableInformation
+  {
+  public:
+    MeasuredGroundwaterTableInformation() {}
+//    ~MeasuredGroundwaterTableInformation() {}
+
+    MeasuredGroundwaterTableInformation(json11::Json j)
+      : groundwaterInformationAvailable(j["groundwaterInformationAvailable"].bool_value())
+    {
+      for(auto p : j["groundwaterInfo"].object_items())
+        groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
+    }
+
+    void readInGroundwaterInformation(std::string path);
+
+    double getGroundwaterInformation(Tools::Date gwDate);
+
+    bool isGroundwaterInformationAvailable() const { return groundwaterInformationAvailable; }
+
+    json11::Json to_json() const
+    {
+      json11::Json::object gi;
+      for(auto p : groundwaterInfo)
+        gi[p.first.toIsoDateString()] = p.second;
+
+      return json11::Json::object {
+        {"type", "MeasuredGroundwaterTableInformation"},
+        {"groundwaterInformationAvailable", groundwaterInformationAvailable},
+        {"groundwaterInfo", gi}};
+    }
+
+  private:
+      bool groundwaterInformationAvailable{false};
+      std::map<Tools::Date, double> groundwaterInfo;
+  };
+
+  //----------------------------------------------------------------------------
 
 	struct GeneralParameters
 	{
@@ -479,14 +674,14 @@ namespace Monica
 
     size_t ps_NumberOfLayers() const { return ps_LayerThickness.size(); }
 
-		std::vector<double> ps_LayerThickness;
-
     double ps_ProfileDepth{2.0};
     double ps_MaxMineralisationDepth{0.4};
     bool pc_NitrogenResponseOn{true};
     bool pc_WaterDeficitResponseOn{true};
     bool pc_EmergenceFloodingControlOn{true};
     bool pc_EmergenceMoistureControlOn{true};
+
+    std::vector<double> ps_LayerThickness;
 
     bool useNMinMineralFertilisingMethod{false};
     MineralFertiliserParameters nMinFertiliserPartition;
@@ -737,91 +932,7 @@ namespace Monica
 	
 	//----------------------------------------------------------------------------
 
-	enum FertiliserType { mineral, organic, undefined };
 
-	/**
-	 * @brief Parameters for mineral fertiliser.
-	 * Simple data structure that holds information about mineral fertiliser.
-	 * @author Xenia Holtmann, Dr. Claas Nendel
-	 */
-	class MineralFertiliserParameters
-	{
-	public:
-    MineralFertiliserParameters() {}
-
-    MineralFertiliserParameters(json11::Json j);
-
-    MineralFertiliserParameters(const std::string& name, double carbamid,
-                                double no3, double nh4);
-
-    json11::Json to_json() const;
-
-		std::string toString() const;
-
-
-		/**
-		 * @brief Returns name of fertiliser.
-		 * @return Name
-		 */
-		inline std::string getName() const { return name; }
-
-		/**
-		 * @brief Returns carbamid part in percentage of fertiliser.
-		 * @return Carbamid in percent
-		 */
-		inline double getCarbamid() const { return vo_Carbamid; }
-
-		/**
-		 * @brief Returns ammonium part of fertliser.
-		 * @return Ammonium in percent
-		 */
-		inline double getNH4() const { return vo_NH4; }
-
-		/**
-		 * @brief Returns nitrat part of fertiliser
-		 * @return Nitrat in percent
-		 */
-		inline double getNO3() const { return vo_NO3; }
-
-		// Setter ------------------------------------
-
-		/**
-		 * @brief Sets name of fertiliser
-		 * @param name
-		 */
-		inline void setName(const std::string& name) { this->name = name; }
-
-		/**
-		 * Sets carbamid part of fertilisers
-		 * @param vo_Carbamid percent
-		 */
-		inline void setCarbamid(double vo_Carbamid)
-		{
-			this->vo_Carbamid = vo_Carbamid;
-		}
-
-		/**
-		 * @brief Sets nitrat part of fertiliser.
-		 * @param vo_NH4
-		 */
-		inline void setNH4(double vo_NH4) { this->vo_NH4 = vo_NH4; }
-
-		/**
-		 * @brief Sets nitrat part of fertiliser.
-		 * @param vo_NO3
-		 */
-		inline void setNO3(double vo_NO3) { this->vo_NO3 = vo_NO3; }
-
-
-
-	private:
-		std::string name;
-    double vo_Carbamid{0.0};
-    double vo_NH4{0.0};
-    double vo_NO3{0.0};
-	};
-
-	//----------------------------------------------------------------------------
 
 	class MonicaModel;
 
@@ -897,12 +1008,21 @@ namespace Monica
 	{
 	public:
 
-		Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, std::string method = "total")
-			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method) { }
+    Harvest(const Tools::Date& at,
+            CropPtr crop,
+            PVResultPtr cropResult,
+            std::string method = "total")
+      : WorkStep(at),
+        _crop(crop),
+        _cropResult(cropResult),
+        _method(method)
+    {}
 
-    Harvest(json11::Json j, CropPtr crop)
+    Harvest(json11::Json j,
+            CropPtr crop)
       : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
         _crop(crop),
+        _cropResult(new PVResult),
         _method(j["method"].string_value()),
         _percentage(j["percentage"].number_value()),
         _exported(j["exported"].bool_value())
@@ -1013,23 +1133,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct NMinUserParameters
-	{
-    NMinUserParameters() {}
 
-    NMinUserParameters(double min, double max, int delayInDays);
-
-    NMinUserParameters(json11::Json j);
-
-    json11::Json to_json() const;
-
-		std::string toString() const;
-
-    double min{0.0}, max{0.0};
-    int delayInDays{0};
-	};
-
-	//----------------------------------------------------------------------------
 
 	class MineralFertiliserApplication : public WorkStep
 	{
@@ -1105,7 +1209,7 @@ namespace Monica
 
 
   private:
-    std::unique_ptr<OrganicMatterParameters> _paramsPtr;
+    std::shared_ptr<OrganicMatterParameters> _paramsPtr;
     const OrganicMatterParameters* _params{nullptr};
     double _amount{0.0};
     bool _incorporation{false};
@@ -1147,63 +1251,9 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct IrrigationParameters
-	{
-    IrrigationParameters() {}
 
-    IrrigationParameters(double nitrateConcentration,
-                         double sulfateConcentration)
-      : nitrateConcentration(nitrateConcentration),
-        sulfateConcentration(sulfateConcentration)
-    {}
 
-    IrrigationParameters(json11::Json j)
-      : nitrateConcentration(j["nitrateConcentration"].number_value()),
-        sulfateConcentration(j["sulfateConcentration"].number_value())
-    {}
 
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "IrrigationParameters"},
-        {"nitrateConcentration", nitrateConcentration},
-        {"sulfateConcentration", sulfateConcentration}};
-    }
-
-    double nitrateConcentration{0.0};
-    double sulfateConcentration{0.0};
-
-		std::string toString() const;
-	};
-
-	//----------------------------------------------------------------------------
-
-	struct AutomaticIrrigationParameters : public IrrigationParameters
-	{
-    AutomaticIrrigationParameters() {}
-
-    AutomaticIrrigationParameters(json11::Json j)
-      : IrrigationParameters(j["irrigationParameters"]),
-        amount(j["amount"].number_value()),
-        treshold(j["treshold"].number_value())
-    {}
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "AutomaticIrrigationParameters"},
-        {"irrigationParameters", IrrigationParameters::to_json()},
-        {"amount", amount},
-        {"treshold", treshold}};
-    }
-
-    double amount{17.0};
-    double treshold{0.35};
-
-		std::string toString() const;
-	};
-
-	//----------------------------------------------------------------------------
 
 	class IrrigationApplication : public WorkStep
 	{
@@ -1249,43 +1299,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class MeasuredGroundwaterTableInformation
-	{
-	public:
-    MeasuredGroundwaterTableInformation() {}
-//    ~MeasuredGroundwaterTableInformation() {}
 
-    MeasuredGroundwaterTableInformation(json11::Json j)
-      : groundwaterInformationAvailable(j["groundwaterInformationAvailable"].bool_value())
-    {
-      for(auto p : j["groundwaterInfo"].object_items())
-        groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
-    }
-
-    void readInGroundwaterInformation(std::string path);
-
-    double getGroundwaterInformation(Tools::Date gwDate);
-
-    bool isGroundwaterInformationAvailable() const { return groundwaterInformationAvailable; }
-
-    json11::Json to_json() const
-    {
-      json11::Json::object gi;
-      for(auto p : groundwaterInfo)
-        gi[p.first.toIsoDateString()] = p.second;
-
-      return json11::Json::object {
-        {"type", "MeasuredGroundwaterTableInformation"},
-        {"groundwaterInformationAvailable", groundwaterInformationAvailable},
-        {"groundwaterInfo", gi}};
-    }
-
-  private:
-      bool groundwaterInformationAvailable{false};
-	    std::map<Tools::Date, double> groundwaterInfo;
-	};
-
-	//----------------------------------------------------------------------------
 
 	/**
 	 * @class PV
@@ -1332,7 +1346,7 @@ namespace Monica
 		//! when does the whole PV end
 		Tools::Date end() const;
 
-		std::multimap<Tools::Date, WSPtr> getWorksteps() {return _worksteps; }
+    const std::multimap<Tools::Date, WSPtr>& getWorksteps() { return _worksteps; }
 
 		void clearWorksteps() { _worksteps.clear(); }
 
@@ -1402,7 +1416,7 @@ namespace Monica
 
 		std::string toString() const;
 
-    json11::Json json() const
+    json11::Json to_json() const
     {
       return json11::Json::object {
         {"name", name},

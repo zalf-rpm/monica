@@ -221,16 +221,16 @@ namespace Monica
         _generalParams(env.general),
         _siteParams(env.site),
         _centralParameterProvider(env.centralParameterProvider),
-        _soilColumn(_env.general, *_env.soilParams, _env.centralParameterProvider),
-        _soilTemperature(_soilColumn, *this, _env.centralParameterProvider),
-        _soilMoisture(_soilColumn, _env.site, *this, _env.centralParameterProvider),
-        _soilOrganic(_soilColumn, _env.general, _env.site,_env.centralParameterProvider),
-        _soilTransport(_soilColumn, _env.site, _env.centralParameterProvider),
+        _soilColumn(env.general, *env.soilParams, env.centralParameterProvider),
+        _soilTemperature(_soilColumn, *this, env.centralParameterProvider),
+        _soilMoisture(_soilColumn, env.site, *this, env.centralParameterProvider),
+        _soilOrganic(_soilColumn, env.general, env.site, env.centralParameterProvider),
+        _soilTransport(_soilColumn, env.site, env.centralParameterProvider),
         _dataAccessor(da)
     {}
 
     MonicaModel::MonicaModel(const GeneralParameters& general, const SiteParameters& site,
-                             const SoilPMs& soil, const CentralParameterProvider& cpp)
+                             const Soil::SoilPMs& soil, const CentralParameterProvider& cpp)
       : //_env(env),
         _generalParams(general),
         _siteParams(site),
@@ -251,10 +251,10 @@ namespace Monica
     }
 
 
-    void generalStep(Tools::Date date, const std::map<int, double>& climateData);
+    void generalStep(Tools::Date date, std::map<int, double> climateData);
     void generalStep(unsigned int stepNo);
 
-    void cropStep(Tools::Date date, const std::map<int, double>& climateData);
+    void cropStep(Tools::Date date, std::map<int, double> climateData);
     void cropStep(unsigned int stepNo);
 
     double CO2ForDate(double year, double julianDay, bool isLeapYear);
@@ -305,7 +305,7 @@ namespace Monica
 
 		bool useNMinMineralFertilisingMethod() const
 		{
-      return _env.useNMinMineralFertilisingMethod;
+      return _generalParams.useNMinMineralFertilisingMethod;
     }
 
     double applyMineralFertiliserViaNMinMethod

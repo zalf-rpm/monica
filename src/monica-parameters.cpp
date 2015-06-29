@@ -743,7 +743,7 @@ string MineralFertiliserApplication::toString() const
 OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at,
                              const OrganicMatterParameters* params,
                              double amount,
-                             bool incorp = true)
+                             bool incorp)
   : WorkStep(at),
     _params(params),
     _amount(amount),
@@ -752,7 +752,7 @@ OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at
 
 OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
   : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-    _paramsPtr(std::make_unique<OrganicMatterParameters>(j["parameters"])),
+    _paramsPtr(std::make_shared<OrganicMatterParameters>(j["parameters"])),
     _params(_paramsPtr.get()),
     _amount(j["amount"].number_value()),
     _incorporation(j["incorporation"].bool_value())
@@ -765,7 +765,7 @@ json11::Json OrganicFertiliserApplication::to_json() const
     {"type", "OrganicFertiliserApplication"},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
-    {"parameters", p },
+    {"parameters", p},
     {"incorporation", _incorporation}};
 }
 
@@ -1874,7 +1874,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 //pc_EmergenceMoistureControlOn(pc_EmergenceMoistureControlOn)
 //{}
 
-GeneralParameters::GeneralParameters(double layerThickness = 0.1)
+GeneralParameters::GeneralParameters(double layerThickness)
   : ps_LayerThickness(int(ps_ProfileDepth / layerThickness), layerThickness)
 {}
 
@@ -1898,15 +1898,15 @@ GeneralParameters::GeneralParameters(json11::Json j)
     pathToOutputDir(j["pathToOutputDir"].string_value())
 {
   auto lts = j["LayerThickness"].array_items();
-  for_each(begin(lts), end(lts),
-           [](json11::Json j){ ps_LayerThickness.push_back(j.number_value());});
+  for(auto lt : lts)
+    ps_LayerThickness.push_back(lt.number_value());
 }
 
 json11::Json GeneralParameters::to_json() const
 {
   json11::Json::array lts;
-  std::for_each(begin(ps_LayerThickness), end(ps_LayerThickness),
-                [](double d){ lts.push_back(d);});
+  for(auto lt : ps_LayerThickness)
+    lts.push_back(lt);
   return json11::Json::object {
     {"type", "GeneralParameters"},
     {"ProfileDepth", ps_ProfileDepth},
@@ -1973,12 +1973,15 @@ string SiteParameters::toString() const
 
 //------------------------------------------------------------------------------
 
-Crop::Crop(const std::string& name = "fallow")
+Crop::Crop(const std::string& name)
   : _name(name)
 {}
 
-Crop::Crop(CropId id, const std::string& name, const CropParameters* cps = nullptr,
-           const OrganicMatterParameters* rps = nullptr, double crossCropAdaptionFactor = 1)
+Crop::Crop(CropId id,
+           const std::string& name,
+           const CropParameters* cps,
+           const OrganicMatterParameters* rps,
+           double crossCropAdaptionFactor)
   : _id(id),
     _name(name),
     _cropParams(cps),
@@ -1986,10 +1989,13 @@ Crop::Crop(CropId id, const std::string& name, const CropParameters* cps = nullp
     _crossCropAdaptionFactor(crossCropAdaptionFactor)
 {}
 
-Crop::Crop(CropId id, const std::string& name,
-           const Tools::Date& seedDate, const Tools::Date& harvestDate,
-           const CropParameters* cps = nullptr, const OrganicMatterParameters* rps = nullptr,
-           double crossCropAdaptionFactor = 1)
+Crop::Crop(CropId id,
+           const std::string& name,
+           const Tools::Date& seedDate,
+           const Tools::Date& harvestDate,
+           const CropParameters* cps,
+           const OrganicMatterParameters* rps,
+           double crossCropAdaptionFactor)
   : _id(id),
     _name(name),
     _seedDate(seedDate),
@@ -2012,19 +2018,19 @@ Crop::Crop(json11::Json j)
   }
 
   auto cds = j["cuttingDates"].array_items();
-  std::for_each(begin(cds), end(cds),
-                [](json11::Json j){ _cuttingDates.push_back(Tools::Date::fromIsoDateString(j.string_value()));});
+  for(auto cd : cds)
+   _cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
 }
 
 json11::Json Crop::to_json() const
 {
   json11::Json::array cds;
-  std::for_each(begin(_cuttingDates), end(_cuttingDates),
-                [](Tools::Date d){ cds.push_back(d.toIsoDateString());});
+  for(auto cd : _cuttingDates)
+    cds.push_back(cd.toIsoDateString());
   return json11::Json::object {
     {"type", "Crop"},
-    {"id", id},
-    {"name", name},
+    {"id", _id},
+    {"name", _name},
     {"seedDate", _seedDate.toIsoDateString()},
     {"harvestDate", _harvestDate.toIsoDateString()},
     {"cuttingDates", cds},
