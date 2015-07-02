@@ -323,6 +323,10 @@ namespace Monica
 		 */
 		PVResult() : id(-1), customId(-1) { }
 
+    PVResult(json11::Json j);
+
+    json11::Json to_json() const;
+
 		//! id of crop
 		CropId id;
 
@@ -1045,7 +1049,6 @@ namespace Monica
 		{
 			_exported = exported;
 		}
-
 		
 		virtual std::string toString() const;
 
@@ -1060,6 +1063,8 @@ namespace Monica
         {"percentage", _percentage},
         {"exported", _exported}};
     }
+
+    PVResultPtr cropResult() const { return _cropResult; }
 
 	private:
 		CropPtr _crop;

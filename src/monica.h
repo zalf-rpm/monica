@@ -425,13 +425,13 @@ namespace Monica
      */
     double netRadiation(double globrad) { return globrad * (1 - _generalParams.albedo); }
 
-    int daysWithCrop() {return p_daysWithCrop; }
-    double getAccumulatedNStress() { return p_accuNStress; }
-    double getAccumulatedWaterStress() { return p_accuWaterStress; }
-    double getAccumulatedHeatStress() { return p_accuHeatStress; }
-    double getAccumulatedOxygenStress() { return p_accuOxygenStress; }
+    int daysWithCrop() const {return p_daysWithCrop; }
+    double getAccumulatedNStress() const { return p_accuNStress; }
+    double getAccumulatedWaterStress() const { return p_accuWaterStress; }
+    double getAccumulatedHeatStress() const { return p_accuHeatStress; }
+    double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
-    double getGroundwaterInformation(Tools::Date date) {return _generalParams.groundwaterInformation.getGroundwaterInformation(date); }
+    double getGroundwaterInformation(Tools::Date date) const {return _generalParams.groundwaterInformation.getGroundwaterInformation(date); }
 
   private:
 		//! environment describing the conditions under which the model runs

@@ -495,6 +495,29 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
 
 //------------------------------------------------------------------------------
 
+PVResult::PVResult(json11::Json j)
+  : id(j["cropId"].int_value()),
+    customId(j["customId"].int_value()),
+    date(Tools::Date::fromIsoDateString(j["date"].string_value()))
+{
+  for(auto jpvr : j["pvResults"])
+    pvResults[jpvr.first.int_value()] = jpvr.second.number_value();
+}
+
+json11::Json PVResult::to_json() const
+{
+  json11::Json::object pvrs;
+  for(auto pvr : pvResults)
+    pvrs[to_string(pvr.first)] = pvr.second;
+  return json11::Json::object {
+    {"cropId", cropId},
+    {"customId", customId},
+    {"date", date.toIsoDateString()},
+    {"pvResults", pvrs}};
+}
+
+//------------------------------------------------------------------------------
+
 string WorkStep::toString() const
 {
   ostringstream s;

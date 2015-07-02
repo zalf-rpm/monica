@@ -1650,78 +1650,26 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
   return res;
 }
 
+namespace
+{
+  void sendHarvestingResults(zmq::socket_t& socket, PVResult pvResult, const MonicaModel& monica)
+  {
+//    r.customId = currentPP.customId();
+    r.date = currentDate;
+    r.pvResults[sumFertiliser] = monica.sumFertiliser();
+    r.pvResults[daysWithCrop] = monica.daysWithCrop();
+    r.pvResults[NStress] = monica.getAccumulatedNStress();
+    r.pvResults[WaterStress] = monica.getAccumulatedWaterStress();
+    r.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
+    r.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
+
+    s_send(publisher, string("harvest") + r.to_json().dump());
+  }
+}
+
 void Monica::startZeroMQMonica(Env env)
 {
-
   Result res;
-
-//  ofstream fout;
-//  ofstream gout;
-
-//  bool write_output_files = false;
-
-  // activate writing to output files only in special modes
-//  if (env.getMode() == Env::MODE_HERMES ||
-//      env.getMode() == Env::MODE_EVA2 ||
-//      env.getMode() == Env::MODE_MACSUR_SCALING ||
-//      env.getMode() == Env::MODE_ACTIVATE_OUTPUT_FILES)
-//  {
-
-//    write_output_files = true;
-//    debug() << "write_output_files: " << write_output_files << endl;
-//  }
-
-//  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS ||
-//      env.getMode() == Env::MODE_MACSUR_SCALING_CALIBRATION )
-//  {
-//    write_output_files = false;
-//  }
-
-//	env.centralParameterProvider.writeOutputFiles = write_output_files;
-
-//	debug() << "-----" << endl;
-
-//	if (write_output_files)
-//	{
-//		//    static int ___c = 1;
-//		//    ofstream fout("/home/nendel/devel/lsa/models/monica/rmout.dat");
-//		//    ostringstream fs;
-//		//    fs << "/home/michael/development/lsa/landcare-dss/rmout-" << ___c << ".dat";
-//		//    ostringstream gs;
-//		//    gs << "/home/michael/development/lsa/landcare-dss/smout-" << ___c << ".dat";
-//		//    env.pathToOutputDir = "/home/nendel/devel/git/models/monica/";
-//		//    ofstream fout(fs.str().c_str());//env.pathToOutputDir+"rmout.dat").c_str());
-//		//    ofstream gout(gs.str().c_str());//env.pathToOutputDir+"smout.dat").c_str());
-//		//    ___c++;
-
-//		// open rmout.dat
-//		debug() << "Outputpath: " << (env.pathToOutputDir+pathSeparator()+"rmout.dat").c_str() << endl;
-//		fout.open((env.pathToOutputDir + pathSeparator()+ "rmout.dat").c_str());
-//		if (fout.fail())
-//		{
-//			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator() + "rmout.dat").c_str() << "\"" << endl;
-//			return res;
-//		}
-
-//		// open smout.dat
-//		gout.open((env.pathToOutputDir + pathSeparator() + "smout.dat").c_str());
-//		if (gout.fail())
-//		{
-//			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator() + "smout.dat").c_str() << "\"" << endl;
-//			return res;
-//		}
-
-//		MonicaModel monica(env, env.da);
-//		// writes the header line to output files
-//		initializeFoutHeader(fout);
-//		initializeGoutHeader(gout);
-
-//		dumpMonicaParametersIntoFile(env.pathToOutputDir, env.centralParameterProvider);
-//	}
-
-  //debug() << "MonicaModel" << endl;
-  //debug() << env.toString().c_str();
-
 
   zmq::socket_t receiver(*env.zmqContext, ZMQ_PULL);
   receiver.connect((env.inputDatastreamProtocol + "://localhost:" + env.inputDatastreamPort).c_str());
@@ -1756,9 +1704,6 @@ void Monica::startZeroMQMonica(Env env)
   CropPtr crop;
   while(true)
   {
-//    zmq::message_t message;
-//    receiver.recv(&message);
-
     string dailyStepStr = s_recv(receiver);
     cout << "received dailyStepStr: " << dailyStepStr << endl;
     string err;
@@ -1796,8 +1741,15 @@ void Monica::startZeroMQMonica(Env env)
           }
           else if(wsType == "Harvest")
           {
-            Harvest(ws, crop).apply(monica.get());
+            Harvest h(ws, crop);
+            auto cr = h.cropResult();
+            cr->date = date;
+
+            h.apply(monica.get());
             crop.reset();
+
+            sendHarvestingResults(publisher, *cr.get(), *monica.get());
+
           }
           else if(wsType == "Cutting")
             Cutting(ws, crop).apply(monica.get());
