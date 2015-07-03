@@ -645,7 +645,7 @@ namespace Monica
 
     void readInGroundwaterInformation(std::string path);
 
-    double getGroundwaterInformation(Tools::Date gwDate);
+    double getGroundwaterInformation(Tools::Date gwDate) const;
 
     bool isGroundwaterInformationAvailable() const { return groundwaterInformationAvailable; }
 

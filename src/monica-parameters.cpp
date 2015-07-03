@@ -500,8 +500,8 @@ PVResult::PVResult(json11::Json j)
     customId(j["customId"].int_value()),
     date(Tools::Date::fromIsoDateString(j["date"].string_value()))
 {
-  for(auto jpvr : j["pvResults"])
-    pvResults[jpvr.first.int_value()] = jpvr.second.number_value();
+  for(auto jpvr : j["pvResults"].object_items())
+    pvResults[ResultId(stoi(jpvr.first))] = jpvr.second.number_value();
 }
 
 json11::Json PVResult::to_json() const
@@ -510,7 +510,7 @@ json11::Json PVResult::to_json() const
   for(auto pvr : pvResults)
     pvrs[to_string(pvr.first)] = pvr.second;
   return json11::Json::object {
-    {"cropId", cropId},
+    {"cropId", id},
     {"customId", customId},
     {"date", date.toIsoDateString()},
     {"pvResults", pvrs}};
@@ -909,7 +909,7 @@ void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::stri
 
 }
 
-double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate)
+double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const
 {
   if (groundwaterInformationAvailable && groundwaterInfo.size()>0)
   {

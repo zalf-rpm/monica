@@ -1087,8 +1087,7 @@ void SoilColumn::remove_Crop(){
  * @param layers Number of layers that are of interest
  * @return Temperature sum
  */
-double
-SoilColumn::sumSoilTemperature(int layers)
+double SoilColumn::sumSoilTemperature(int layers) const
 {
   double accu = 0.0;
   for (int i=0; i<layers; i++)

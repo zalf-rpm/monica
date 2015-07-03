@@ -160,12 +160,14 @@ namespace Monica
 //    std::unique_ptr<zmq::socket_t> datastream;
 //    std::string inputDatastreamAddress;
     std::string inputDatastreamProtocol;
+//    std::string inputDatastreamHost;
     std::string inputDatastreamPort;
 
     //zeromq publish socket for outputs of MONICA
 //    std::unique_ptr<zmq::socket_t> outputstream;
 //    std::string outputDatastreamAddress;
     std::string outputDatastreamProtocol;
+//    std::string outputDatastreamHost;
     std::string outputDatastreamPort;
 
     zmq::context_t* zmqContext;
@@ -356,25 +358,25 @@ namespace Monica
     double sumNmin(double depth_m) const;
     double groundWaterRecharge() const;
     double nLeaching() const;
-    double sumSoilTemperature(int layers);
-    double sumNO3AtDay(double depth);
+    double sumSoilTemperature(int layers) const;
+    double sumNO3AtDay(double depth) const;
     double maxSnowDepth() const;
     double getAccumulatedSnowDepth() const;
     double getAccumulatedFrostDepth() const;
-    double avg30cmSoilTemperature();
-    double avgSoilMoisture(int start_layer, int end_layer);
-    double avgCapillaryRise(int start_layer, int end_layer);
-    double avgPercolationRate(int start_layer, int end_layer);
-    double sumSurfaceRunOff();
-    double surfaceRunoff();
-    double getEvapotranspiration();
-    double getTranspiration();
-    double getEvaporation();
-    double get_sum30cmSMB_CO2EvolutionRate();
-    double getNH3Volatilised();
-    double getSumNH3Volatilised();
-    double getsum30cmActDenitrificationRate();
-    double getETa();
+    double avg30cmSoilTemperature() const;
+    double avgSoilMoisture(int start_layer, int end_layer) const;
+    double avgCapillaryRise(int start_layer, int end_layer) const;
+    double avgPercolationRate(int start_layer, int end_layer) const;
+    double sumSurfaceRunOff() const;
+    double surfaceRunoff() const;
+    double getEvapotranspiration() const;
+    double getTranspiration() const;
+    double getEvaporation() const;
+    double get_sum30cmSMB_CO2EvolutionRate() const;
+    double getNH3Volatilised() const;
+    double getSumNH3Volatilised() const;
+    double getsum30cmActDenitrificationRate() const;
+    double getETa() const;
 
     double vw_AtmosphericCO2Concentration;
     double vs_GroundwaterDepth;
@@ -384,31 +386,31 @@ namespace Monica
      * @brief Returns soil temperature
      * @return temperature
      */
-		const SoilTemperature& soilTemperature() { return _soilTemperature; }
+    const SoilTemperature& soilTemperature() const { return _soilTemperature; }
 
     /**
      * @brief Returns soil moisture.
      * @return Moisture
      */
-		const SoilMoisture& soilMoisture() { return _soilMoisture; }
+    const SoilMoisture& soilMoisture() const { return _soilMoisture; }
 
     /**
      * @brief Returns soil organic mass.
      * @return soil organic
      */
-		const SoilOrganic& soilOrganic() { return _soilOrganic; }
+    const SoilOrganic& soilOrganic() const { return _soilOrganic; }
 
     /**
      * @brief Returns soil transport
      * @return soil transport
      */
-		const SoilTransport& soilTransport() { return _soilTransport; }
+    const SoilTransport& soilTransport() const { return _soilTransport; }
 
     /**
      * @brief Returns soil column
      * @return soil column
      */
-		const SoilColumn& soilColumn() { return _soilColumn; }
+    const SoilColumn& soilColumn() const { return _soilColumn; }
 
 		SoilColumn& soilColumnNC() { return _soilColumn; }
 

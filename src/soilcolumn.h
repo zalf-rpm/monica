@@ -164,47 +164,37 @@ namespace Monica
      * Returns soil ammonium content.
      * @return soil ammonium content [kg N m-3]
      */
-    double get_SoilNH4() const {
-      return vs_SoilNH4;
-    }
+    double get_SoilNH4() const { return vs_SoilNH4; }
 
     /**
      * Returns soil nitrite content.
      * @return soil nitrite content [kg N m-3]
      */
-    double get_SoilNO2() const {
-      return vs_SoilNO2;
-    }
+    double get_SoilNO2() const { return vs_SoilNO2; }
 
     /**
      * Returns soil nitrate content.
      * @return soil nitrate content [kg N m-3]
      */
-    double get_SoilNO3() const {
-      return vs_SoilNO3;
-    }
+    double get_SoilNO3() const { return vs_SoilNO3; }
 
 		/**
 		 * Returns soil carbamide content.
 		 * @return soil carbamide content [kg m-3]
 		 */
-		double get_SoilCarbamid() const {
-			return vs_SoilCarbamid;
-		}
+    double get_SoilCarbamid() const { return vs_SoilCarbamid; }
 
     /**
      * Returns soil mineral N content.
      * @return soil mineral N content [kg m-3]
      */
-    double get_SoilNmin() const {
-      return vs_SoilNO3 + vs_SoilNO2 + vs_SoilNH4;
-    }
+    double get_SoilNmin() const { return vs_SoilNO3 + vs_SoilNO2 + vs_SoilNH4; }
 
-    double get_Vs_SoilMoisture_m3() {
+    double get_Vs_SoilMoisture_m3() const
+    {
       // Sensitivity analysis case
-      if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture != UNDEFINED) {
+      if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture != UNDEFINED)
         return centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture;
-      }
       return vs_SoilMoisture_m3;
     }
 
@@ -220,7 +210,7 @@ namespace Monica
 
     }
 
-    double get_Vs_SoilTemperature()
+    double get_Vs_SoilTemperature() const
     {
       if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilTemperature != UNDEFINED) {
         return centralParameterProvider.sensitivityAnalysisParameters.vs_SoilTemperature;
@@ -409,7 +399,7 @@ namespace Monica
 
     void remove_Crop();
 
-    double sumSoilTemperature(int layers);
+    double sumSoilTemperature(int layers) const;
 
     std::vector<SoilLayer> vs_SoilLayers; /**< Vector of all layers in column. */
 
