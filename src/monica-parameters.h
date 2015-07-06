@@ -1011,7 +1011,6 @@ namespace Monica
 	class Harvest : public WorkStep
 	{
 	public:
-
     Harvest(const Tools::Date& at,
             CropPtr crop,
             PVResultPtr cropResult,
@@ -1069,9 +1068,9 @@ namespace Monica
 	private:
 		CropPtr _crop;
 		PVResultPtr _cropResult;
-		std::string _method;
-		double _percentage;
-		bool _exported;
+    std::string _method;
+    double _percentage{0};
+    bool _exported{true};
 	};
 
   //----------------------------------------------------------------------------

@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <mutex>
 #include <memory>
+#include <chrono>
+#include <thread>
 
 #include "zmq.hpp"
 #include "zhelpers.hpp"
@@ -1719,6 +1721,32 @@ namespace
   }
 }
 
+namespace
+{
+  struct Msg
+  {
+    string type() const { return json["type"].string_value(); }
+    string toString() const { return string("type: ") + type() + " msg: " + json.dump() + (err.empty() ? "" : " err: " + err); }
+    Json json;
+    string err;
+    bool valid;
+  };
+  Msg receiveMsg(zmq::socket_t& pullSocket, bool nonBlockingMode = false)
+  {
+    zmq::message_t message;
+    if(pullSocket.recv(&message, nonBlockingMode ? ZMQ_NOBLOCK : 0))
+    {
+      std::string strMsg(static_cast<char*>(message.data()), message.size());
+
+      //    string strMsg = s_recv(pullSocket);
+      string err;
+      const Json& jsonMsg = Json::parse(strMsg, err);
+      return Msg{jsonMsg, err, true};
+    }
+    return Msg{Json(), "", false};
+  }
+}
+
 void Monica::startZeroMQMonica(Env env)
 {
   Result res;
@@ -1730,107 +1758,139 @@ void Monica::startZeroMQMonica(Env env)
   publisher.bind((env.outputDatastreamProtocol + "://*:" + env.outputDatastreamPort).c_str());
 
   unique_ptr<MonicaModel> monica;
-  int customId = -1;
-
-  string initStr = s_recv(receiver);
-  cout << "received initStr: " << initStr << endl;
-  string err;
-  Json initMsg = Json::parse(initStr, err);
-
-  string msgType = initMsg["type"].string_value();
-  if(msgType == "finish")
-    return;
-  else if(msgType == "initMonica")
-  {
-    customId = initMsg["customId"].int_value();
-    GeneralParameters general(initMsg["general"]);
-    SiteParameters site(initMsg["site"]);
-    SoilPMsPtr soil(new SoilPMs());
-    for(auto sp : initMsg["soil"].array_items())
-      soil->push_back(sp);
-    CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
-    monica = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
-  }
+  set<string> subscriberIdsWaitingToConnect;
 
   //the possibly active crop
   CropPtr crop;
+  int customId = -1;
   while(true)
   {
-    string dailyStepStr = s_recv(receiver);
-    cout << "received dailyStepStr: " << dailyStepStr << endl;
-    string err;
-    Json dailyStepMsg = Json::parse(dailyStepStr, err);
+    bool waitForSubscribersToConnect = !subscriberIdsWaitingToConnect.empty();
+    if(waitForSubscribersToConnect)
+      s_send(publisher, "ping");
 
-    string msgType = dailyStepMsg["type"].string_value();
-    if(msgType == "finish")
-      break;
-    else if(msgType == "dailyStep")
+    auto msg = receiveMsg(receiver, waitForSubscribersToConnect);
+    if(!msg.valid)
     {
-      cout << "dailyStepStr: " << dailyStepStr << endl;
+      this_thread::sleep_for(chrono::milliseconds(100));
+      continue;
+    }
 
-      auto dsm = dailyStepMsg["climateData"].object_items();
+    string msgType = msg.type();
 
-      Date date = Date::fromIsoDateString(dailyStepMsg["date"].string_value());
-      map<int, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
-                                      {Climate::tavg, dsm["tavg"].number_value()},
-                                      {Climate::tmax, dsm["tmax"].number_value()},
-                                      {Climate::precip, dsm["precip"].number_value()},
-                                      {Climate::wind, dsm["wind"].number_value()},
-                                      {Climate::globrad, dsm["globrad"].number_value()},
-                                      {Climate::relhumid, dsm["relhumid"].number_value()}};
+    cout << "Received message " << msg.toString() << endl;
 
-      //apply worksteps
-      if(dailyStepMsg.has_shape({{"worksteps", Json::ARRAY}}, err))
+    //messages which can be received under all circumstances
+    if(msgType == "waitForSubscribersToConnect")
+      for(auto ss : msg.json["subscriberIds"].array_items())
+        subscriberIdsWaitingToConnect.insert(ss.string_value());
+    else if(msgType == "finish")
+      break;
+    else
+    {
+      //messages which can only be received, when no subscribers are waiting to connect
+      if(subscriberIdsWaitingToConnect.empty())
       {
-        for(auto ws : dailyStepMsg["worksteps"].array_items())
+        if(msgType == "initMonica")
         {
-          auto wsType = ws["type"].string_value();
-          if(wsType == "Seed")
-          {
-            Seed seed(ws);
-            seed.apply(monica.get());
-            crop = seed.crop();
-          }
-          else if(wsType == "Harvest")
-          {
-            Harvest h(ws, crop);
-            auto cr = h.cropResult();
-            cr->date = date;
+          if(monica)
+            monica.reset();
 
-            h.apply(monica.get());
-            crop.reset();
+          Json& initMsg = msg.json;
 
-            sendHarvestingResults(publisher, *cr.get(), *monica.get());
-            //to count the applied fertiliser for the next production process
-            monica->resetFertiliserCounter();
+          customId = initMsg["customId"].int_value();
+          GeneralParameters general(initMsg["general"]);
+          SiteParameters site(initMsg["site"]);
+          SoilPMsPtr soil(new SoilPMs());
+          for(auto sp : initMsg["soil"].array_items())
+            soil->push_back(sp);
+          CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
+          monica = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
+        }
+        else if(msgType == "dailyStep")
+        {
+          if(!monica)
+          {
+            cout << "Error: No initMonica message has been received yet, dropping message " << msg.toString() << endl;
+            continue;
           }
-          else if(wsType == "Cutting")
-            Cutting(ws, crop).apply(monica.get());
-          else if(wsType == "MineralFertiliserApplication")
-            MineralFertiliserApplication(ws).apply(monica.get());
-          else if(wsType == "OrganicFertiliserApplication")
-            OrganicFertiliserApplication(ws).apply(monica.get());
-          else if(wsType == "TillageApplication")
-            TillageApplication(ws).apply(monica.get());
-          else if(wsType == "IrrigationApplication")
-            IrrigationApplication(ws).apply(monica.get());
+
+          auto dsm = msg.json["climateData"].object_items();
+
+          Date date = Date::fromIsoDateString(msg.json["date"].string_value());
+          map<int, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
+                                          {Climate::tavg, dsm["tavg"].number_value()},
+                                          {Climate::tmax, dsm["tmax"].number_value()},
+                                          {Climate::precip, dsm["precip"].number_value()},
+                                          {Climate::wind, dsm["wind"].number_value()},
+                                          {Climate::globrad, dsm["globrad"].number_value()},
+                                          {Climate::relhumid, dsm["relhumid"].number_value()}};
+
+          //apply worksteps
+          string err;
+          if(msg.json.has_shape({{"worksteps", Json::ARRAY}}, err))
+          {
+            for(auto ws : msg.json["worksteps"].array_items())
+            {
+              auto wsType = ws["type"].string_value();
+              if(wsType == "Seed")
+              {
+                Seed seed(ws);
+                seed.apply(monica.get());
+                crop = seed.crop();
+              }
+              else if(wsType == "Harvest")
+              {
+                Harvest h(ws, crop);
+                auto cr = h.cropResult();
+                cr->date = date;
+
+                h.apply(monica.get());
+                crop.reset();
+
+                sendHarvestingResults(publisher, *cr.get(), *monica.get());
+                //to count the applied fertiliser for the next production process
+                monica->resetFertiliserCounter();
+              }
+              else if(wsType == "Cutting")
+                Cutting(ws, crop).apply(monica.get());
+              else if(wsType == "MineralFertiliserApplication")
+                MineralFertiliserApplication(ws).apply(monica.get());
+              else if(wsType == "OrganicFertiliserApplication")
+                OrganicFertiliserApplication(ws).apply(monica.get());
+              else if(wsType == "TillageApplication")
+                TillageApplication(ws).apply(monica.get());
+              else if(wsType == "IrrigationApplication")
+                IrrigationApplication(ws).apply(monica.get());
+            }
+          }
+
+          if(monica->isCropPlanted())
+            monica->cropStep(date, climateData);
+
+          monica->generalStep(date, climateData);
+
+          sendDailyResults(publisher, date, *monica.get());
+
+          if(date.day() == 31 && date.month() == 3)
+            sendMarch31stResults(publisher, date, *monica.get());
+
+    //      if(date.day() == date.daysInMonth())
+    //        sendMonthlyResults(publisher, *monica.get());
+
         }
       }
-
-      if(monica->isCropPlanted())
-        monica->cropStep(date, climateData);
-
-      monica->generalStep(date, climateData);
-
-      sendDailyResults(publisher, date, *monica.get());
-
-      if(date.day() == 31 && date.month() == 3)
-        sendMarch31stResults(publisher, date, *monica.get());
-
-//      if(date.day() == date.daysInMonth())
-//        sendMonthlyResults(publisher, *monica.get());
-
+      else
+      {
+        if(msgType == "subscriberConnected")
+          subscriberIdsWaitingToConnect.erase(msg.json["subscriberId"].string_value());
+        else
+          cout << "There are still subscribers waiting to connect. Dropping message " << msg.toString() << endl;
+      }
     }
+
+
+
   }
 
   cout << "exiting startZeroMQMonica" << endl;
