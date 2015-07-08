@@ -156,6 +156,10 @@ namespace Monica
     //input to the callback is the day of year (doy) and a vector of soil-moisture values
     std::function<NIAResult(int, std::vector<double>)> nextIrrigationApplication;
 
+    std::string berestRequestProtocol;
+    //    std::string berestRequestHost;
+    std::string berestRequestPort;
+
     //zeromq reply socket for datastream controlled MONICA run
 //    std::unique_ptr<zmq::socket_t> datastream;
 //    std::string inputDatastreamAddress;
