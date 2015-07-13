@@ -78,7 +78,7 @@ namespace Monica
 
     Env() {}
 
-    Env(const Env&);
+//    Env(const Env&);
 		    
     /**
      * @brief Constructor
@@ -90,7 +90,7 @@ namespace Monica
 
     //Interface method for python wrapping. Simply returns number
     //of possible simulation steps according to avaible climate data.
-    int numberOfPossibleSteps() const { return da.noOfStepsPossible(); }
+    std::size_t numberOfPossibleSteps() const { return da.noOfStepsPossible(); }
 
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 

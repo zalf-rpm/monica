@@ -42,6 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
+#include "tools/zmq-helper.h"
 
 #ifdef MONICA_GUI
 #include "../gui/workerconfiguration.h"
@@ -133,46 +134,49 @@ string Env::toString() const
  * @param env
  * @return
  */
-Env::Env(const Env& env)
-  : _soilParamsPtr(env._soilParamsPtr),
-    customId(env.customId)
-{
-  debug() << "Copy constructor: Env" << "\tsoil param size: " << env.soilParams->size() << endl;
-  soilParams = env.soilParams;
-  noOfLayers = env.noOfLayers;
-  layerThickness = env.layerThickness;
-  useNMinMineralFertilisingMethod = env.useNMinMineralFertilisingMethod;
-  useAutomaticIrrigation = env.useAutomaticIrrigation;
-  useSecondaryYields = env.useSecondaryYields;
+//Env::Env(const Env& env)
+//  : _soilParamsPtr(env._soilParamsPtr),
+//    customId(env.customId)
+//{
+//  debug() << "Copy constructor: Env" << "\tsoil param size: " << env.soilParams->size() << endl;
+//  soilParams = env.soilParams;
+//  noOfLayers = env.noOfLayers;
+//  layerThickness = env.layerThickness;
+//  useNMinMineralFertilisingMethod = env.useNMinMineralFertilisingMethod;
+//  useAutomaticIrrigation = env.useAutomaticIrrigation;
+//  useSecondaryYields = env.useSecondaryYields;
     
-  windSpeedHeight = env.windSpeedHeight;
-  atmosphericCO2 = env.atmosphericCO2;
-  albedo = env.albedo;
+//  windSpeedHeight = env.windSpeedHeight;
+//  atmosphericCO2 = env.atmosphericCO2;
+//  albedo = env.albedo;
   
-  da = env.da;
+//  da = env.da;
   
-  cropRotation = env.cropRotation;
+//  cropRotation = env.cropRotation;
   
-  site = env.site;
-  general = env.general;
-  organic = env.organic;
+//  site = env.site;
+//  general = env.general;
+//  organic = env.organic;
   
-  nMinFertiliserPartition = env.nMinFertiliserPartition;
-  nMinUserParams = env.nMinUserParams;
-  autoIrrigationParams = env.autoIrrigationParams;
-  groundwaterInformation = env.groundwaterInformation;
-  centralParameterProvider = env.centralParameterProvider;
+//  nMinFertiliserPartition = env.nMinFertiliserPartition;
+//  nMinUserParams = env.nMinUserParams;
+//  autoIrrigationParams = env.autoIrrigationParams;
+//  groundwaterInformation = env.groundwaterInformation;
+//  centralParameterProvider = env.centralParameterProvider;
   
-  pathToOutputDir = env.pathToOutputDir;
-  mode = env.mode;
-  debug() << "Return copy constructor env" << endl;
+//  pathToOutputDir = env.pathToOutputDir;
+//  mode = env.mode;
+//  debug() << "Return copy constructor env" << endl;
 
-  zmqContext = env.zmqContext;
-  inputDatastreamPort = env.inputDatastreamPort;
-  inputDatastreamProtocol = env.inputDatastreamProtocol;
-  outputDatastreamPort = env.outputDatastreamPort;
-  outputDatastreamProtocol = env.outputDatastreamProtocol;
-}
+//  zmqContext = env.zmqContext;
+//  berestRequestPort = env.berestRequestPort;
+//  berestRequestProtocol = env.berestRequestProtocol;
+//  inputDatastreamPort = env.inputDatastreamPort;
+//  inputDatastreamProtocol = env.inputDatastreamProtocol;
+//  outputDatastreamPort = env.outputDatastreamPort;
+//  outputDatastreamProtocol = env.outputDatastreamProtocol;
+
+//}
 
 /**
  * Interface method for python wrapping, so climate module
@@ -1654,7 +1658,7 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 
 namespace
 {
-  void sendHarvestingResults(zmq::socket_t& publisher, PVResult result, const MonicaModel& monica)
+  json11::Json createHarvestingMessage(PVResult result, const MonicaModel& monica)
   {
     result.pvResults[sumFertiliser] = monica.sumFertiliser();
     result.pvResults[daysWithCrop] = monica.daysWithCrop();
@@ -1663,11 +1667,24 @@ namespace
     result.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
     result.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
 
-    cout << "sending harvest msg: " << result.to_json().dump() << endl;
-    s_send(publisher, string("harvest") + result.to_json().dump());
+    cout << "created harvesting msg: " << result.to_json().dump() << endl;
+    return result.to_json();
   }
 
-  void sendDailyResults(zmq::socket_t& publisher, Date date, const MonicaModel& monica)
+//  void sendHarvestingResults(zmq::socket_t& publisher, PVResult result, const MonicaModel& monica)
+//  {
+//    result.pvResults[sumFertiliser] = monica.sumFertiliser();
+//    result.pvResults[daysWithCrop] = monica.daysWithCrop();
+//    result.pvResults[NStress] = monica.getAccumulatedNStress();
+//    result.pvResults[WaterStress] = monica.getAccumulatedWaterStress();
+//    result.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
+//    result.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
+
+//    cout << "sending harvest msg: " << result.to_json().dump() << endl;
+//    s_send(publisher, string("harvest") + result.to_json().dump());
+//  }
+
+  json11::Json createSoilResultsMessage(Date date, const MonicaModel& monica)
   {
 //    const SoilTemperature& mst = monica.soilTemperature();
     const SoilMoisture& msm = monica.soilMoisture();
@@ -1681,16 +1698,39 @@ namespace
       sms.push_back(msm.get_SoilMoisture(i_Layer));
 
     auto soilMsg = json11::Json::object {
-    {"date", date.toIsoDateString()},
     {"soilmoisture", sms},
     {to_string(avg30_60cmSoilMoisture), monica.avgSoilMoisture(3,6)},
     {to_string(leachingNAtBoundary), monica.nLeaching()}};
 
-    cout << "sending soilmoisture msg: " << Json(soilMsg).dump() << endl;
-    s_send(publisher, string("soilmoisture") + Json(soilMsg).dump());
+    cout << "created soilmoisture msg: " << Json(soilMsg).dump() << endl;
+    return soilMsg;
   }
 
-  void sendMarch31stResults(zmq::socket_t& publisher, Date date, const MonicaModel& monica)
+//  void sendDailyResults(zmq::socket_t& publisher, Date date, const MonicaModel& monica)
+//  {
+////    const SoilTemperature& mst = monica.soilTemperature();
+//    const SoilMoisture& msm = monica.soilMoisture();
+////    const SoilOrganic& mso = monica.soilOrganic();
+////    const SoilColumn& msc = monica.soilColumn();
+////    const SoilTransport& msq = monica.soilTransport();
+
+//    json11::Json::array sms;
+//    int outLayers = 20;
+//    for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
+//      sms.push_back(msm.get_SoilMoisture(i_Layer));
+
+//    auto soilMsg = json11::Json::object {
+//    {"date", date.toIsoDateString()},
+//    {"soilmoisture", sms},
+//    {to_string(avg30_60cmSoilMoisture), monica.avgSoilMoisture(3,6)},
+//    {to_string(leachingNAtBoundary), monica.nLeaching()}};
+
+//    cout << "sending soilmoisture msg: " << Json(soilMsg).dump() << endl;
+//    s_send(publisher, string("soilmoisture") + Json(soilMsg).dump());
+//  }
+
+
+  json11::Json createMarch31stResultsMessage(Date date, const MonicaModel& monica)
   {
     auto jsonMsg = json11::Json::object {
     {"date", date.toIsoDateString()},
@@ -1717,59 +1757,59 @@ namespace
     {to_string(sum30cmActDenitrificationRate), monica.getsum30cmActDenitrificationRate()},
     {to_string(leachingNAtBoundary), monica.nLeaching()}};
 
-    s_send(publisher, string("march31st") + Json(jsonMsg).dump());
+    return jsonMsg;
   }
-}
 
-namespace
-{
-  struct Msg
-  {
-    string type() const { return json["type"].string_value(); }
-    string toString() const { return string("type: ") + type() + " msg: " + json.dump() + (err.empty() ? "" : " err: " + err); }
-    Json json;
-    string err;
-    bool valid;
-  };
-  Msg receiveMsg(zmq::socket_t& pullSocket, bool nonBlockingMode = false)
-  {
-    zmq::message_t message;
-    if(pullSocket.recv(&message, nonBlockingMode ? ZMQ_NOBLOCK : 0))
-    {
-      std::string strMsg(static_cast<char*>(message.data()), message.size());
+//  void sendMarch31stResults(zmq::socket_t& publisher, Date date, const MonicaModel& monica)
+//  {
+//    auto jsonMsg = json11::Json::object {
+//    {"date", date.toIsoDateString()},
+//    {to_string(sum90cmYearlyNatDay), monica.sumNmin(0.9)},
+//    {to_string(sum30cmSoilTemperature), monica.sumSoilTemperature(3)},
+//    {to_string(sum90cmYearlyNO3AtDay), monica.sumNO3AtDay(0.9)},
+//    {to_string(avg30cmSoilTemperature), monica.avg30cmSoilTemperature()},
+//    {to_string(avg0_30cmSoilMoisture), monica.avgSoilMoisture(0,3)},
+//    {to_string(avg30_60cmSoilMoisture), monica.avgSoilMoisture(3,6)},
+//    {to_string(avg60_90cmSoilMoisture), monica.avgSoilMoisture(6,9)},
+//    {to_string(avg0_90cmSoilMoisture), monica.avgSoilMoisture(0,9)},
+//    {to_string(waterFluxAtLowerBoundary), monica.groundWaterRecharge()},
+//    {to_string(avg0_30cmCapillaryRise), monica.avgCapillaryRise(0,3)},
+//    {to_string(avg30_60cmCapillaryRise), monica.avgCapillaryRise(3,6)},
+//    {to_string(avg60_90cmCapillaryRise), monica.avgCapillaryRise(6,9)},
+//    {to_string(avg0_30cmPercolationRate), monica.avgPercolationRate(0,3)},
+//    {to_string(avg30_60cmPercolationRate), monica.avgPercolationRate(3,6)},
+//    {to_string(avg60_90cmPercolationRate), monica.avgPercolationRate(6,9)},
+//    {to_string(evapotranspiration), monica.getEvapotranspiration()},
+//    {to_string(transpiration), monica.getTranspiration()},
+//    {to_string(evaporation), monica.getEvaporation()},
+//    {to_string(sum30cmSMB_CO2EvolutionRate), monica.get_sum30cmSMB_CO2EvolutionRate()},
+//    {to_string(NH3Volatilised), monica.getNH3Volatilised()},
+//    {to_string(sum30cmActDenitrificationRate), monica.getsum30cmActDenitrificationRate()},
+//    {to_string(leachingNAtBoundary), monica.nLeaching()}};
 
-      //    string strMsg = s_recv(pullSocket);
-      string err;
-      const Json& jsonMsg = Json::parse(strMsg, err);
-      return Msg{jsonMsg, err, true};
-    }
-    return Msg{Json(), "", false};
-  }
+//    s_send(publisher, string("march31st") + Json(jsonMsg).dump());
+//  }
 }
 
 void Monica::startZeroMQMonica(Env env)
 {
   Result res;
 
-  zmq::socket_t receiver(*env.zmqContext, ZMQ_PULL);
-  receiver.connect((env.inputDatastreamProtocol + "://localhost:" + env.inputDatastreamPort).c_str());
+  zmq::socket_t input(*env.zmqContext, ZMQ_PULL);
+  input.connect((env.inputDatastreamProtocol + "://localhost:" + env.inputDatastreamPort).c_str());
 
-  zmq::socket_t publisher(*env.zmqContext, ZMQ_PUB);
-  publisher.bind((env.outputDatastreamProtocol + "://*:" + env.outputDatastreamPort).c_str());
+//  zmq::socket_t publisher(*env.zmqContext, ZMQ_PUB);
+  zmq::socket_t output(*env.zmqContext, ZMQ_PUSH);
+  output.bind((env.outputDatastreamProtocol + "://*:" + env.outputDatastreamPort).c_str());
 
   unique_ptr<MonicaModel> monica;
-  set<string> subscriberIdsWaitingToConnect;
 
   //the possibly active crop
   CropPtr crop;
   int customId = -1;
   while(true)
   {
-    bool waitForSubscribersToConnect = !subscriberIdsWaitingToConnect.empty();
-    if(waitForSubscribersToConnect)
-      s_send(publisher, "ping");
-
-    auto msg = receiveMsg(receiver, waitForSubscribersToConnect);
+    auto msg = receiveMsg(input);
     if(!msg.valid)
     {
       this_thread::sleep_for(chrono::milliseconds(100));
@@ -1780,112 +1820,104 @@ void Monica::startZeroMQMonica(Env env)
 
     cout << "Received message " << msg.toString() << endl;
 
-    //messages which can be received under all circumstances
-    if(msgType == "waitForSubscribersToConnect")
-      for(auto ss : msg.json["subscriberIds"].array_items())
-        subscriberIdsWaitingToConnect.insert(ss.string_value());
-    else if(msgType == "finish")
+    if(msgType == "finish")
       break;
     else
     {
-      //messages which can only be received, when no subscribers are waiting to connect
-      if(subscriberIdsWaitingToConnect.empty())
+      if(msgType == "initMonica")
       {
-        if(msgType == "initMonica")
-        {
-          if(monica)
-            monica.reset();
+        if(monica)
+          monica.reset();
 
-          Json& initMsg = msg.json;
+        Json& initMsg = msg.json;
 
-          customId = initMsg["customId"].int_value();
-          GeneralParameters general(initMsg["general"]);
-          SiteParameters site(initMsg["site"]);
-          SoilPMsPtr soil(new SoilPMs());
-          for(auto sp : initMsg["soil"].array_items())
-            soil->push_back(sp);
-          CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
-          monica = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
-        }
-        else if(msgType == "dailyStep")
-        {
-          if(!monica)
-          {
-            cout << "Error: No initMonica message has been received yet, dropping message " << msg.toString() << endl;
-            continue;
-          }
-
-          auto dsm = msg.json["climateData"].object_items();
-
-          Date date = Date::fromIsoDateString(msg.json["date"].string_value());
-          map<int, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
-                                          {Climate::tavg, dsm["tavg"].number_value()},
-                                          {Climate::tmax, dsm["tmax"].number_value()},
-                                          {Climate::precip, dsm["precip"].number_value()},
-                                          {Climate::wind, dsm["wind"].number_value()},
-                                          {Climate::globrad, dsm["globrad"].number_value()},
-                                          {Climate::relhumid, dsm["relhumid"].number_value()}};
-
-          //apply worksteps
-          string err;
-          if(msg.json.has_shape({{"worksteps", Json::ARRAY}}, err))
-          {
-            for(auto ws : msg.json["worksteps"].array_items())
-            {
-              auto wsType = ws["type"].string_value();
-              if(wsType == "Seed")
-              {
-                Seed seed(ws);
-                seed.apply(monica.get());
-                crop = seed.crop();
-              }
-              else if(wsType == "Harvest")
-              {
-                Harvest h(ws, crop);
-                auto cr = h.cropResult();
-                cr->date = date;
-
-                h.apply(monica.get());
-                crop.reset();
-
-                sendHarvestingResults(publisher, *cr.get(), *monica.get());
-                //to count the applied fertiliser for the next production process
-                monica->resetFertiliserCounter();
-              }
-              else if(wsType == "Cutting")
-                Cutting(ws, crop).apply(monica.get());
-              else if(wsType == "MineralFertiliserApplication")
-                MineralFertiliserApplication(ws).apply(monica.get());
-              else if(wsType == "OrganicFertiliserApplication")
-                OrganicFertiliserApplication(ws).apply(monica.get());
-              else if(wsType == "TillageApplication")
-                TillageApplication(ws).apply(monica.get());
-              else if(wsType == "IrrigationApplication")
-                IrrigationApplication(ws).apply(monica.get());
-            }
-          }
-
-          if(monica->isCropPlanted())
-            monica->cropStep(date, climateData);
-
-          monica->generalStep(date, climateData);
-
-          sendDailyResults(publisher, date, *monica.get());
-
-          if(date.day() == 31 && date.month() == 3)
-            sendMarch31stResults(publisher, date, *monica.get());
-
-    //      if(date.day() == date.daysInMonth())
-    //        sendMonthlyResults(publisher, *monica.get());
-
-        }
+        customId = initMsg["customId"].int_value();
+        GeneralParameters general(initMsg["general"]);
+        SiteParameters site(initMsg["site"]);
+        SoilPMsPtr soil(new SoilPMs());
+        for(auto sp : initMsg["soil"].array_items())
+          soil->push_back(sp);
+        CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
+        monica = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
       }
-      else
+      else if(msgType == "dailyStep")
       {
-        if(msgType == "subscriberConnected")
-          subscriberIdsWaitingToConnect.erase(msg.json["subscriberId"].string_value());
-        else
-          cout << "There are still subscribers waiting to connect. Dropping message " << msg.toString() << endl;
+        if(!monica)
+        {
+          cout << "Error: No initMonica message has been received yet, dropping message " << msg.toString() << endl;
+          continue;
+        }
+
+        auto dsm = msg.json["climateData"].object_items();
+
+        Date date = Date::fromIsoDateString(msg.json["date"].string_value());
+        map<int, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
+                                        {Climate::tavg, dsm["tavg"].number_value()},
+                                        {Climate::tmax, dsm["tmax"].number_value()},
+                                        {Climate::precip, dsm["precip"].number_value()},
+                                        {Climate::wind, dsm["wind"].number_value()},
+                                        {Climate::globrad, dsm["globrad"].number_value()},
+                                        {Climate::relhumid, dsm["relhumid"].number_value()}};
+
+        auto dailyStepResultMsg = json11::Json::object {{"date", date.toIsoDateString()}};
+
+        //apply worksteps
+        string err;
+        if(msg.json.has_shape({{"worksteps", Json::ARRAY}}, err))
+        {
+          for(auto ws : msg.json["worksteps"].array_items())
+          {
+            auto wsType = ws["type"].string_value();
+            if(wsType == "Seed")
+            {
+              Seed seed(ws);
+              seed.apply(monica.get());
+              crop = seed.crop();
+            }
+            else if(wsType == "Harvest")
+            {
+              Harvest h(ws, crop);
+              auto cr = h.cropResult();
+              cr->date = date;
+
+              h.apply(monica.get());
+              crop.reset();
+
+//              sendHarvestingResults(output, *cr.get(), *monica.get());
+              dailyStepResultMsg["harvesting"] = createHarvestingMessage(*cr.get(), *monica.get());
+              //to count the applied fertiliser for the next production process
+              monica->resetFertiliserCounter();
+            }
+            else if(wsType == "Cutting")
+              Cutting(ws, crop).apply(monica.get());
+            else if(wsType == "MineralFertiliserApplication")
+              MineralFertiliserApplication(ws).apply(monica.get());
+            else if(wsType == "OrganicFertiliserApplication")
+              OrganicFertiliserApplication(ws).apply(monica.get());
+            else if(wsType == "TillageApplication")
+              TillageApplication(ws).apply(monica.get());
+            else if(wsType == "IrrigationApplication")
+              IrrigationApplication(ws).apply(monica.get());
+          }
+        }
+
+        if(monica->isCropPlanted())
+          monica->cropStep(date, climateData);
+
+        monica->generalStep(date, climateData);
+
+//        sendDailyResults(output, date, *monica.get());
+        dailyStepResultMsg["soil"] = createSoilResultsMessage(date, *monica.get());
+
+        if(date.day() == 31 && date.month() == 3)
+          dailyStepResultMsg["march31st"] = createMarch31stResultsMessage(date, *monica.get());
+//          sendMarch31stResults(output, date, *monica.get());
+
+        s_send(output, Json(dailyStepResultMsg).dump());
+
+        //      if(date.day() == date.daysInMonth())
+        //        sendMonthlyResults(publisher, *monica.get());
+
       }
     }
 
