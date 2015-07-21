@@ -257,10 +257,10 @@ namespace Monica
     }
 
 
-    void generalStep(Tools::Date date, std::map<int, double> climateData);
+    void generalStep(Tools::Date date, std::map<Climate::ACD, double> climateData);
     void generalStep(unsigned int stepNo);
 
-    void cropStep(Tools::Date date, std::map<int, double> climateData);
+    void cropStep(Tools::Date date, std::map<Climate::ACD, double> climateData);
     void cropStep(unsigned int stepNo);
 
     double CO2ForDate(double year, double julianDay, bool isLeapYear);

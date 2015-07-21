@@ -553,22 +553,21 @@ void Harvest::apply(MonicaModel* model)
 			debug() << "harvesting crop: " << _crop->toString() << " at: " << date().toString() << endl;
 			if (model->currentCrop() == _crop)
 			{
-				if (model->cropGrowth()) {
-					_crop->setHarvestYields
-						(model->cropGrowth()->get_FreshPrimaryCropYield() /
-						100.0, model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
-					_crop->setHarvestYieldsTM
-						(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
-						model->cropGrowth()->get_SecondaryCropYield() / 100.0);
+        if (model->cropGrowth())
+        {
+          _crop->setHarvestYields(model->cropGrowth()->get_FreshPrimaryCropYield() /
+                                  100.0, model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
+          _crop->setHarvestYieldsTM(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
+                                    model->cropGrowth()->get_SecondaryCropYield() / 100.0);
 
-					_crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
-						model->cropGrowth()->get_SecondaryYieldNContent());
-					_crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
-					_crop->setCropHeight(model->cropGrowth()->get_CropHeight());
-					_crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
-					_crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
+          _crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
+                                  model->cropGrowth()->get_SecondaryYieldNContent());
+          _crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
+          _crop->setCropHeight(model->cropGrowth()->get_CropHeight());
+          _crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
+          _crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
 					_crop->setAnthesisDay(model->cropGrowth()->getAnthesisDay());
-					_crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
+          _crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
 				}
 
 				//store results for this crop
@@ -925,10 +924,9 @@ double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Dat
 ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop)
   : _name(name),
     _crop(crop),
-    _cropResult(new PVResult())
+    _cropResult(new PVResult(crop->id()))
 {
   debug() << "ProductionProcess: " << name.c_str() << endl;
-  _cropResult->id = _crop->id();
 
   if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0)))
     addApplication(Seed(crop->seedDate(), crop));

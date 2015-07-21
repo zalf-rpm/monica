@@ -317,22 +317,20 @@ namespace Monica
 	 */
 	struct PVResult
 	{
-		/*!
-		 * @brief default constructor initializing to sensible values
-		 * especially for use as value type
-		 */
-		PVResult() : id(-1), customId(-1) { }
+    PVResult() {}
+
+    PVResult(int id) : id(id) {}
 
     PVResult(json11::Json j);
 
     json11::Json to_json() const;
 
 		//! id of crop
-		CropId id;
+    CropId id{-1};
 
 		//custom id to enable mapping of monica results to user defined other entities
 		//e.g. a crop activity id from Carbiocial
-		int customId;
+    int customId{-1};
     Tools::Date date;
 
 		//! different results for a particular crop
@@ -1025,7 +1023,7 @@ namespace Monica
             CropPtr crop)
       : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
         _crop(crop),
-        _cropResult(new PVResult),
+        _cropResult(new PVResult(crop->id())),
         _method(j["method"].string_value()),
         _percentage(j["percentage"].number_value()),
         _exported(j["exported"].bool_value())

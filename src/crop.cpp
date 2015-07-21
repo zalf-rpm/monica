@@ -2832,8 +2832,10 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
       if (i_Layer > min(vc_RootingZone, vc_GroundwaterTable + 1)) {
         vc_Transpiration[i_Layer] = 0.0; //[mm]
       } else {
-        vc_Transpiration[i_Layer] = vc_PotentialTranspiration * ((vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer])
-						     / vc_TotalRootEffectivity) * vc_OxygenDeficit;
+        vc_Transpiration[i_Layer] = vc_TotalRootEffectivity > 0
+                                    ? vc_PotentialTranspiration * ((vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer])
+                                                                   / vc_TotalRootEffectivity) * vc_OxygenDeficit
+                                    : 0;
 
 				//std::cout << setprecision(11) << "vc_Transpiration[i_Layer]: " << i_Layer << ", " << vc_Transpiration[i_Layer] << std::endl;
 				//std::cout << setprecision(11) << "vc_RootEffectivity[i_Layer]: " << i_Layer << ", " << vc_RootEffectivity[i_Layer] << std::endl;
