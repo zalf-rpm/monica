@@ -365,8 +365,6 @@ namespace Monica
 	 */
 	struct CropParameters
 	{
-		CropParameters();
-
 		void resizeStageOrganVectors();
 		std::string toString() const;
 
@@ -374,81 +372,81 @@ namespace Monica
 
 		// members
 		std::string pc_CropName; /**< Name */
-		bool pc_Perennial;
-		int pc_NumberOfDevelopmentalStages; 
-		int pc_NumberOfOrgans; 
-		int pc_CarboxylationPathway; 
-		double pc_DefaultRadiationUseEfficiency;
-		double pc_PartBiologicalNFixation;
-		double pc_InitialKcFactor; 
-		double pc_LuxuryNCoeff; 
-		double pc_MaxAssimilationRate;
-		double pc_MaxCropDiameter;
-		double pc_MaxCropHeight;
-		double pc_CropHeightP1; 
-		double pc_CropHeightP2; 
-		double pc_StageAtMaxHeight;
-		double pc_StageAtMaxDiameter; 
-		double pc_MinimumNConcentration; 
-		double pc_MinimumTemperatureForAssimilation; 
-		double pc_NConcentrationAbovegroundBiomass; 
-		double pc_NConcentrationB0; 
-		double pc_NConcentrationPN; 
-		double pc_NConcentrationRoot; 
-		double pc_ResidueNRatio; 
-		int pc_DevelopmentAccelerationByNitrogenStress; 
-		double pc_FieldConditionModifier;
-		double pc_AssimilateReallocation;
-		double pc_LT50cultivar;
-		double pc_FrostHardening;
-		double pc_FrostDehardening;
-		double pc_LowTemperatureExposure;
-		double pc_RespiratoryStress;
-		int pc_LatestHarvestDoy;
+    bool pc_Perennial{false};
+    int pc_NumberOfDevelopmentalStages{0};
+    int pc_NumberOfOrgans{0};
+    int pc_CarboxylationPathway{0};
+    double pc_DefaultRadiationUseEfficiency{0.0};
+    double pc_PartBiologicalNFixation{0.0};
+    double pc_InitialKcFactor{0.0};
+    double pc_LuxuryNCoeff{0.0};
+    double pc_MaxAssimilationRate{0.0};
+    double pc_MaxCropDiameter{0.0};
+    double pc_MaxCropHeight{0.0};
+    double pc_CropHeightP1{0.0};
+    double pc_CropHeightP2{0.0};
+    double pc_StageAtMaxHeight{0.0};
+    double pc_StageAtMaxDiameter{0.0};
+    double pc_MinimumNConcentration{0.0};
+    double pc_MinimumTemperatureForAssimilation{0.0};
+    double pc_NConcentrationAbovegroundBiomass{0.0};
+    double pc_NConcentrationB0{0.0};
+    double pc_NConcentrationPN{0.0};
+    double pc_NConcentrationRoot{0.0};
+    double pc_ResidueNRatio{0.0};
+    int pc_DevelopmentAccelerationByNitrogenStress{0};
+    double pc_FieldConditionModifier{1.0};
+    double pc_AssimilateReallocation{0.0};
+    double pc_LT50cultivar{0.0};
+    double pc_FrostHardening{0.0};
+    double pc_FrostDehardening{0.0};
+    double pc_LowTemperatureExposure{0.0};
+    double pc_RespiratoryStress{0.0};
+    int pc_LatestHarvestDoy{-1};
 
-		std::vector<std::vector<double> > pc_AssimilatePartitioningCoeff; /**<  */
-		std::vector<std::vector<double> > pc_OrganSenescenceRate; /**<  */
+    std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff;
+    std::vector<std::vector<double>> pc_OrganSenescenceRate;
 
-		std::vector<double> pc_BaseDaylength; /**<  */
-		std::vector<double> pc_BaseTemperature; /**<  */
-		std::vector<double> pc_OptimumTemperature; /**<  */
-		std::vector<double> pc_DaylengthRequirement; /**<  */
-		std::vector<double> pc_DroughtStressThreshold; /**<  */
-		std::vector<double> pc_OrganMaintenanceRespiration; /**<  */
-		std::vector<double> pc_OrganGrowthRespiration; /**<  */
-		std::vector<double> pc_SpecificLeafArea; /**<  */
-		std::vector<double> pc_StageMaxRootNConcentration; /**<  */
-		std::vector<double> pc_StageKcFactor; /**<  */
-		std::vector<double> pc_StageTemperatureSum; /**<  */
-		std::vector<double> pc_VernalisationRequirement; /**<  */
-		std::vector<double> pc_InitialOrganBiomass; /**<  */
-		std::vector<double> pc_CriticalOxygenContent; /**<  */
+    std::vector<double> pc_BaseDaylength;
+    std::vector<double> pc_BaseTemperature;
+    std::vector<double> pc_OptimumTemperature;
+    std::vector<double> pc_DaylengthRequirement;
+    std::vector<double> pc_DroughtStressThreshold;
+    std::vector<double> pc_OrganMaintenanceRespiration;
+    std::vector<double> pc_OrganGrowthRespiration;
+    std::vector<double> pc_SpecificLeafArea;
+    std::vector<double> pc_StageMaxRootNConcentration;
+    std::vector<double> pc_StageKcFactor;
+    std::vector<double> pc_StageTemperatureSum;
+    std::vector<double> pc_VernalisationRequirement;
+    std::vector<double> pc_InitialOrganBiomass;
+    std::vector<double> pc_CriticalOxygenContent;
 
-		double pc_CropSpecificMaxRootingDepth; /**<  */
-		std::vector<int> pc_AbovegroundOrgan; /**<  */
-		std::vector<int> pc_StorageOrgan; /**<  */
+    double pc_CropSpecificMaxRootingDepth{0.0};
+    std::vector<int> pc_AbovegroundOrgan;
+    std::vector<int> pc_StorageOrgan;
 
-		double pc_SamplingDepth;
-		double pc_TargetNSamplingDepth;
-		double pc_TargetN30;
-		double pc_HeatSumIrrigationStart;
-		double pc_HeatSumIrrigationEnd;
-		double pc_MaxNUptakeParam;
-		double pc_RootDistributionParam;
-		double pc_PlantDensity;
-		double pc_RootGrowthLag;
-		double pc_MinimumTemperatureRootGrowth;
-		double pc_InitialRootingDepth;
-		double pc_RootPenetrationRate;
-		double pc_RootFormFactor;
-		double pc_SpecificRootLength;
-		int pc_StageAfterCut;
-		double pc_CriticalTemperatureHeatStress;
-		double pc_LimitingTemperatureHeatStress;
-		double pc_BeginSensitivePhaseHeatStress;
-		double pc_EndSensitivePhaseHeatStress;
-		int pc_CuttingDelayDays;
-		double pc_DroughtImpactOnFertilityFactor;
+    double pc_SamplingDepth{0.0};
+    double pc_TargetNSamplingDepth{0.0};
+    double pc_TargetN30{0.0};
+    double pc_HeatSumIrrigationStart{0.0};
+    double pc_HeatSumIrrigationEnd{0.0};
+    double pc_MaxNUptakeParam{0.0};
+    double pc_RootDistributionParam{0.0};
+    double pc_PlantDensity{0.0};
+    double pc_RootGrowthLag{0.0};
+    double pc_MinimumTemperatureRootGrowth{0.0};
+    double pc_InitialRootingDepth{0.0};
+    double pc_RootPenetrationRate{0.0};
+    double pc_RootFormFactor{0.0};
+    double pc_SpecificRootLength{0.0};
+    int pc_StageAfterCut{0};
+    double pc_CriticalTemperatureHeatStress{0.0};
+    double pc_LimitingTemperatureHeatStress{0.0};
+    double pc_BeginSensitivePhaseHeatStress{0.0};
+    double pc_EndSensitivePhaseHeatStress{0.0};
+    int pc_CuttingDelayDays{0};
+    double pc_DroughtImpactOnFertilityFactor{0.0};
 
 		std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
 		std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
@@ -788,12 +786,16 @@ namespace Monica
 	public:
     Crop(const std::string& name = "fallow");
 
-    Crop(CropId id, const std::string& name, const CropParameters* cps = nullptr,
-         const OrganicMatterParameters* rps = nullptr, double crossCropAdaptionFactor = 1);
+    Crop(CropId id, const std::string& name,
+         const CropParameters* cps = nullptr,
+         const OrganicMatterParameters* rps = nullptr,
+         double crossCropAdaptionFactor = 1);
 
     Crop(CropId id, const std::string& name,
-         const Tools::Date& seedDate, const Tools::Date& harvestDate,
-         const CropParameters* cps = nullptr, const OrganicMatterParameters* rps = nullptr,
+         const Tools::Date& seedDate,
+         const Tools::Date& harvestDate,
+         const CropParameters* cps = nullptr,
+         const OrganicMatterParameters* rps = nullptr,
          double crossCropAdaptionFactor = 1);
 
     Crop(json11::Json j);
@@ -1407,9 +1409,9 @@ namespace Monica
 	/**
 	 * @brief Parameters for organic fertiliser
 	 */
-	class OrganicMatterParameters
+  struct OrganicMatterParameters
 	{
-	public:
+//	public:
 		OrganicMatterParameters();
     OrganicMatterParameters(json11::Json);
 		OrganicMatterParameters(const OrganicMatterParameters&);
@@ -1473,27 +1475,27 @@ namespace Monica
 	 * Class that holds information of crop defined by user.
 	 * @author Xenia Specka
 	 */
-	class UserCropParameters
+  struct UserCropParameters
 	{
-	public:
-		UserCropParameters() {}
-		virtual ~UserCropParameters() {}
+//	public:
+//		UserCropParameters() {}
+//		virtual ~UserCropParameters() {}
 
-		double pc_CanopyReflectionCoefficient;
-		double pc_ReferenceMaxAssimilationRate;
-		double pc_ReferenceLeafAreaIndex;
-		double pc_MaintenanceRespirationParameter1;
-		double pc_MaintenanceRespirationParameter2;
-		double pc_MinimumNConcentrationRoot;
-		double pc_MinimumAvailableN;
-		double pc_ReferenceAlbedo;
-		double pc_StomataConductanceAlpha;
-		double pc_SaturationBeta;
-		double pc_GrowthRespirationRedux;
-		double pc_MaxCropNDemand;
-		double pc_GrowthRespirationParameter1;
-		double pc_GrowthRespirationParameter2;
-		double pc_Tortuosity;
+    double pc_CanopyReflectionCoefficient{0.0};
+    double pc_ReferenceMaxAssimilationRate{0.0};
+    double pc_ReferenceLeafAreaIndex{0.0};
+    double pc_MaintenanceRespirationParameter1{0.0};
+    double pc_MaintenanceRespirationParameter2{0.0};
+    double pc_MinimumNConcentrationRoot{0.0};
+    double pc_MinimumAvailableN{0.0};
+    double pc_ReferenceAlbedo{0.0};
+    double pc_StomataConductanceAlpha{0.0};
+    double pc_SaturationBeta{0.0};
+    double pc_GrowthRespirationRedux{0.0};
+    double pc_MaxCropNDemand{0.0};
+    double pc_GrowthRespirationParameter1{0.0};
+    double pc_GrowthRespirationParameter2{0.0};
+    double pc_Tortuosity{0.0};
 	};
 
 	//----------------------------------------------------------------------------
@@ -1502,50 +1504,50 @@ namespace Monica
 	 * Class that holds information about user defined environment parameters.
 	 * @author Xenia Specka
 	 */
-	class UserEnvironmentParameters
+  struct UserEnvironmentParameters
 	{
-	public:
-		UserEnvironmentParameters() :
-			p_MaxGroundwaterDepth(20),
-			p_MinGroundwaterDepth(20)
-		{}
+//	public:
+//		UserEnvironmentParameters() :
+//			p_MaxGroundwaterDepth(20),
+//			p_MinGroundwaterDepth(20)
+//		{}
 
-		virtual ~UserEnvironmentParameters() {}
+//		virtual ~UserEnvironmentParameters() {}
 
-		bool p_UseAutomaticIrrigation;
-		bool p_UseNMinMineralFertilisingMethod;
-		bool p_UseSecondaryYields;
-		bool p_UseAutomaticHarvestTrigger;
+    bool p_UseAutomaticIrrigation{false};
+    bool p_UseNMinMineralFertilisingMethod{false};
+    bool p_UseSecondaryYields{true};
+    bool p_UseAutomaticHarvestTrigger{false};
 
-		double p_LayerThickness;
-		double p_Albedo;
-		double p_AthmosphericCO2;
-		double p_WindSpeedHeight;
-		double p_LeachingDepth;
-		double p_timeStep;
-		double p_MaxGroundwaterDepth;
-		double p_MinGroundwaterDepth;
+    double p_LayerThickness{0.0};
+    double p_Albedo{0.0};
+    double p_AthmosphericCO2{0.0};
+    double p_WindSpeedHeight{0.0};
+    double p_LeachingDepth{0.0};
+    double p_timeStep{0.0};
+    double p_MaxGroundwaterDepth{20.0};
+    double p_MinGroundwaterDepth{20.0};
 
-		int p_NumberOfLayers;
-		int p_StartPVIndex;
-		int p_JulianDayAutomaticFertilising;
-		int p_MinGroundwaterDepthMonth;
+    int p_NumberOfLayers{0};
+    int p_StartPVIndex{0};
+    int p_JulianDayAutomaticFertilising{0};
+    int p_MinGroundwaterDepthMonth{0};
 	};
 
-	class UserInitialValues
+  struct UserInitialValues
 	{
-	public:
-		UserInitialValues() :
-			p_initPercentageFC(0.8),
-			p_initSoilNitrate(0.0001),
-			p_initSoilAmmonium(0.0001)
-		{}
+//	public:
+//		UserInitialValues() :
+//			p_initPercentageFC(0.8),
+//			p_initSoilNitrate(0.0001),
+//			p_initSoilAmmonium(0.0001)
+//		{}
 
-		virtual ~UserInitialValues() {}
+//		virtual ~UserInitialValues() {}
 
-		double p_initPercentageFC;    // Initial soil moisture content in percent field capacity
-		double p_initSoilNitrate;     // Initial soil nitrate content [kg NO3-N m-3]
-		double p_initSoilAmmonium;    // Initial soil ammonium content [kg NH4-N m-3]
+    double p_initPercentageFC{0.8};    // Initial soil moisture content in percent field capacity
+    double p_initSoilNitrate{0.0001};     // Initial soil nitrate content [kg NO3-N m-3]
+    double p_initSoilAmmonium{0.0001};    // Initial soil ammonium content [kg NH4-N m-3]
 	};
 
 	//----------------------------------------------------------------------------
@@ -1554,36 +1556,36 @@ namespace Monica
 	 * Class that holds information about user defined soil moisture parameters.
 	 * @author Xenia Specka
 	 */
-	class UserSoilMoistureParameters
+  struct UserSoilMoistureParameters
 	{
-	public:
-		UserSoilMoistureParameters() {}
-		virtual ~UserSoilMoistureParameters() {}
+//	public:
+//		UserSoilMoistureParameters() {}
+//		virtual ~UserSoilMoistureParameters() {}
 
-		double pm_CriticalMoistureDepth;
-		double pm_SaturatedHydraulicConductivity;
-		double pm_SurfaceRoughness;
-		double pm_GroundwaterDischarge;
-		double pm_HydraulicConductivityRedux;
-		double pm_SnowAccumulationTresholdTemperature;
-		double pm_KcFactor;
-		double pm_TemperatureLimitForLiquidWater;
-		double pm_CorrectionSnow;
-		double pm_CorrectionRain;
-		double pm_SnowMaxAdditionalDensity;
-		double pm_NewSnowDensityMin;
-		double pm_SnowRetentionCapacityMin;
-		double pm_RefreezeParameter1;
-		double pm_RefreezeParameter2;
-		double pm_RefreezeTemperature;
-		double pm_SnowMeltTemperature;
-		double pm_SnowPacking;
-		double pm_SnowRetentionCapacityMax;
-		double pm_EvaporationZeta;
-		double pm_XSACriticalSoilMoisture;
-		double pm_MaximumEvaporationImpactDepth;
-		double pm_MaxPercolationRate;
-		double pm_MoistureInitValue;
+    double pm_CriticalMoistureDepth{0.0};
+    double pm_SaturatedHydraulicConductivity{0.0};
+    double pm_SurfaceRoughness{0.0};
+    double pm_GroundwaterDischarge{0.0};
+    double pm_HydraulicConductivityRedux{0.0};
+    double pm_SnowAccumulationTresholdTemperature{0.0};
+    double pm_KcFactor{0.0};
+    double pm_TemperatureLimitForLiquidWater{0.0};
+    double pm_CorrectionSnow{0.0};
+    double pm_CorrectionRain{0.0};
+    double pm_SnowMaxAdditionalDensity{0.0};
+    double pm_NewSnowDensityMin{0.0};
+    double pm_SnowRetentionCapacityMin{0.0};
+    double pm_RefreezeParameter1{0.0};
+    double pm_RefreezeParameter2{0.0};
+    double pm_RefreezeTemperature{0.0};
+    double pm_SnowMeltTemperature{0.0};
+    double pm_SnowPacking{0.0};
+    double pm_SnowRetentionCapacityMax{0.0};
+    double pm_EvaporationZeta{0.0};
+    double pm_XSACriticalSoilMoisture{0.0};
+    double pm_MaximumEvaporationImpactDepth{0.0};
+    double pm_MaxPercolationRate{0.0};
+    double pm_MoistureInitValue{0.0};
 	};
 
 	//----------------------------------------------------------------------------
@@ -1592,25 +1594,25 @@ namespace Monica
 	 * Class that holds information about user defined soil temperature parameters.
 	 * @author Xenia Specka
 	 */
-	class UserSoilTemperatureParameters
+  struct UserSoilTemperatureParameters
 	{
-	public:
-		UserSoilTemperatureParameters() {pt_SoilMoisture = 0.25;}
-		virtual ~UserSoilTemperatureParameters() {}
+//	public:
+//		UserSoilTemperatureParameters() {pt_SoilMoisture = 0.25;}
+//		virtual ~UserSoilTemperatureParameters() {}
 
-		double pt_NTau;
-		double pt_InitialSurfaceTemperature;
-		double pt_BaseTemperature;
-		double pt_QuartzRawDensity;
-		double pt_DensityAir;
-		double pt_DensityWater;
-		double pt_DensityHumus;
-		double pt_SpecificHeatCapacityAir;
-		double pt_SpecificHeatCapacityQuartz;
-		double pt_SpecificHeatCapacityWater;
-		double pt_SpecificHeatCapacityHumus;
-		double pt_SoilAlbedo;
-		double pt_SoilMoisture;
+    double pt_NTau{0.0};
+    double pt_InitialSurfaceTemperature{0.0};
+    double pt_BaseTemperature{0.0};
+    double pt_QuartzRawDensity{0.0};
+    double pt_DensityAir{0.0};
+    double pt_DensityWater{0.0};
+    double pt_DensityHumus{0.0};
+    double pt_SpecificHeatCapacityAir{0.0};
+    double pt_SpecificHeatCapacityQuartz{0.0};
+    double pt_SpecificHeatCapacityWater{0.0};
+    double pt_SpecificHeatCapacityHumus{0.0};
+    double pt_SoilAlbedo{0.0};
+    double pt_SoilMoisture{0.25};
 	};
 
 	//----------------------------------------------------------------------------
@@ -1619,16 +1621,16 @@ namespace Monica
 	 * Class that holds information about user defined soil transport parameters.
 	 * @author Xenia Specka
 	 */
-	class UserSoilTransportParameters
+  struct UserSoilTransportParameters
 	{
-	public:
-		UserSoilTransportParameters() {}
-		~UserSoilTransportParameters() {}
+//	public:
+//		UserSoilTransportParameters() {}
+//		~UserSoilTransportParameters() {}
 
-		double pq_DispersionLength;
-		double pq_AD;
-		double pq_DiffusionCoefficientStandard;
-		double pq_NDeposition;
+    double pq_DispersionLength{0.0};
+    double pq_AD{0.0};
+    double pq_DiffusionCoefficientStandard{0.0};
+    double pq_NDeposition{0.0};
 
 	};
 
@@ -1638,50 +1640,47 @@ namespace Monica
 	 * Class that holds information about user-defined soil organic parameters.
 	 * @author Claas Nendel
 	 */
-	class UserSoilOrganicParameters
+  struct UserSoilOrganicParameters
 	{
-	public:
-		UserSoilOrganicParameters() {}
-		virtual ~UserSoilOrganicParameters() {}
+//	public:
+//		UserSoilOrganicParameters() {}
+//		virtual ~UserSoilOrganicParameters() {}
 
-
-		double po_SOM_SlowDecCoeffStandard; //4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
-		double po_SOM_FastDecCoeffStandard; //1.40e-4 [d-1], from DAISY manual 1.4e-4
-		double po_SMB_SlowMaintRateStandard; //1.00e-3 [d-1], from DAISY manual original 1.8e-3
-		double po_SMB_FastMaintRateStandard; //1.00e-2 [d-1], from DAISY manual
-		double po_SMB_SlowDeathRateStandard; //1.00e-3 [d-1], from DAISY manual
-		double po_SMB_FastDeathRateStandard; //1.00e-2 [d-1], from DAISY manual
-		double po_SMB_UtilizationEfficiency; //0.60 [], from DAISY manual 0.6
-		double po_SOM_SlowUtilizationEfficiency; //0.40 [], from DAISY manual 0.4
-		double po_SOM_FastUtilizationEfficiency; //0.50 [], from DAISY manual 0.5
-		double po_AOM_SlowUtilizationEfficiency; //0.40 [], from DAISY manual original 0.13
-		double po_AOM_FastUtilizationEfficiency; //0.10 [], from DAISY manual original 0.69
-		double po_AOM_FastMaxC_to_N; // 1000.0
-		double po_PartSOM_Fast_to_SOM_Slow; //0.30) [], Bruun et al. 2003
-		double po_PartSMB_Slow_to_SOM_Fast; //0.60) [], from DAISY manual
-		double po_PartSMB_Fast_to_SOM_Fast; //0.60 [], from DAISY manual
-		double po_PartSOM_to_SMB_Slow; //0.0150 [], optimised
-		double po_PartSOM_to_SMB_Fast; //0.0002 [], optimised
-		double po_CN_Ratio_SMB; //6.70 [], from DAISY manual
-		double po_LimitClayEffect; //0.25 [kg kg-1], from DAISY manual
-		double po_AmmoniaOxidationRateCoeffStandard; //1.0e-1[d-1], from DAISY manual
-		double po_NitriteOxidationRateCoeffStandard; //9.0e-1[d-1], fudged by Florian Stange
-		double po_TransportRateCoeff; //0.1 [d-1], from DAISY manual
-		double po_SpecAnaerobDenitrification; //0.1 //[g gas-N g CO2-C-1]
-		double po_ImmobilisationRateCoeffNO3; //0.5 //[d-1]
-		double po_ImmobilisationRateCoeffNH4; //0.5 //[d-1]
-		double po_Denit1; //0.2 Denitrification parameter
-		double po_Denit2; //0.8 Denitrification parameter
-		double po_Denit3; //0.9 Denitrification parameter
-		double po_HydrolysisKM; //0.00334 from Tabatabai 1973
-		double po_ActivationEnergy; //41000.0 from Gould et al. 1973
-		double po_HydrolysisP1; //4.259e-12 from Sadeghi et al. 1988
-		double po_HydrolysisP2; //1.408e-12 from Sadeghi et al. 1988
-		double po_AtmosphericResistance; //0.0025 [s m-1], from Sadeghi et al. 1988
-		double po_N2OProductionRate; //0.5 [d-1]
-		double po_Inhibitor_NH3; //1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
-
-
+    double po_SOM_SlowDecCoeffStandard{0.0}; //4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
+    double po_SOM_FastDecCoeffStandard{0.0}; //1.40e-4 [d-1], from DAISY manual 1.4e-4
+    double po_SMB_SlowMaintRateStandard{0.0}; //1.00e-3 [d-1], from DAISY manual original 1.8e-3
+    double po_SMB_FastMaintRateStandard{0.0}; //1.00e-2 [d-1], from DAISY manual
+    double po_SMB_SlowDeathRateStandard{0.0}; //1.00e-3 [d-1], from DAISY manual
+    double po_SMB_FastDeathRateStandard{0.0}; //1.00e-2 [d-1], from DAISY manual
+    double po_SMB_UtilizationEfficiency{0.0}; //0.60 [], from DAISY manual 0.6
+    double po_SOM_SlowUtilizationEfficiency{0.0}; //0.40 [], from DAISY manual 0.4
+    double po_SOM_FastUtilizationEfficiency{0.0}; //0.50 [], from DAISY manual 0.5
+    double po_AOM_SlowUtilizationEfficiency{0.0}; //0.40 [], from DAISY manual original 0.13
+    double po_AOM_FastUtilizationEfficiency{0.0}; //0.10 [], from DAISY manual original 0.69
+    double po_AOM_FastMaxC_to_N{0.0}; // 1000.0
+    double po_PartSOM_Fast_to_SOM_Slow{0.0}; //0.30) [], Bruun et al. 2003
+    double po_PartSMB_Slow_to_SOM_Fast{0.0}; //0.60) [], from DAISY manual
+    double po_PartSMB_Fast_to_SOM_Fast{0.0}; //0.60 [], from DAISY manual
+    double po_PartSOM_to_SMB_Slow{0.0}; //0.0150 [], optimised
+    double po_PartSOM_to_SMB_Fast{0.0}; //0.0002 [], optimised
+    double po_CN_Ratio_SMB{0.0}; //6.70 [], from DAISY manual
+    double po_LimitClayEffect{0.0}; //0.25 [kg kg-1], from DAISY manual
+    double po_AmmoniaOxidationRateCoeffStandard{0.0}; //1.0e-1[d-1], from DAISY manual
+    double po_NitriteOxidationRateCoeffStandard{0.0}; //9.0e-1[d-1], fudged by Florian Stange
+    double po_TransportRateCoeff{0.0}; //0.1 [d-1], from DAISY manual
+    double po_SpecAnaerobDenitrification{0.0}; //0.1 //[g gas-N g CO2-C-1]
+    double po_ImmobilisationRateCoeffNO3{0.0}; //0.5 //[d-1]
+    double po_ImmobilisationRateCoeffNH4{0.0}; //0.5 //[d-1]
+    double po_Denit1{0.0}; //0.2 Denitrification parameter
+    double po_Denit2{0.0}; //0.8 Denitrification parameter
+    double po_Denit3{0.0}; //0.9 Denitrification parameter
+    double po_HydrolysisKM{0.0}; //0.00334 from Tabatabai 1973
+    double po_ActivationEnergy{0.0}; //41000.0 from Gould et al. 1973
+    double po_HydrolysisP1{0.0}; //4.259e-12 from Sadeghi et al. 1988
+    double po_HydrolysisP2{0.0}; //1.408e-12 from Sadeghi et al. 1988
+    double po_AtmosphericResistance{0.0}; //0.0025 [s m-1], from Sadeghi et al. 1988
+    double po_N2OProductionRate{0.0}; //0.5 [d-1]
+    double po_Inhibitor_NH3{0.0}; //1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
 	};
 
 	//----------------------------------------------------------------------------
@@ -1738,30 +1737,30 @@ namespace Monica
 			organic_matter_parameters.vo_CN_Ratio_AOM_Fast = UNDEFINED;
 		}
 
-		~SensitivityAnalysisParameters() {}
+//		~SensitivityAnalysisParameters() {}
 
 		// soilmoisture module parameters
-		double p_MeanFieldCapacity;
-		double p_MeanBulkDensity;
-		double p_HeatConductivityFrozen;
-		double p_HeatConductivityUnfrozen;
-		double p_LatentHeatTransfer;
-		double p_ReducedHydraulicConductivity;
-		double vs_FieldCapacity;
-		double vs_Saturation;
-		double vs_PermanentWiltingPoint;
-		double vs_SoilMoisture;
-		double vs_SoilTemperature;
+    double p_MeanFieldCapacity{UNDEFINED};
+    double p_MeanBulkDensity{UNDEFINED};
+    double p_HeatConductivityFrozen{UNDEFINED};
+    double p_HeatConductivityUnfrozen{UNDEFINED};
+    double p_LatentHeatTransfer{UNDEFINED};
+    double p_ReducedHydraulicConductivity{UNDEFINED};
+    double vs_FieldCapacity{UNDEFINED};
+    double vs_Saturation{UNDEFINED};
+    double vs_PermanentWiltingPoint{UNDEFINED};
+    double vs_SoilMoisture{UNDEFINED};
+    double vs_SoilTemperature{UNDEFINED};
 
 
 		// crop parameters
-		double vc_SoilCoverage;
-		double vc_MaxRootingDepth;
-		double vc_RootDiameter;
+    double vc_SoilCoverage{UNDEFINED};
+    double vc_MaxRootingDepth{UNDEFINED};
+    double vc_RootDiameter{UNDEFINED};
 
 		CropParameters crop_parameters;
 		OrganicMatterParameters organic_matter_parameters;
-		int sa_crop_id;
+    int sa_crop_id{-1};
 	};
 
 	//----------------------------------------------------------------------------
@@ -1805,7 +1804,6 @@ namespace Monica
 	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
 
 	void testClimateData(Climate::DataAccessor &climateData);
-
 
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
 

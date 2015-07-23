@@ -540,8 +540,6 @@ string Seed::toString() const
   return s.str();
 }
 
-
-
 //------------------------------------------------------------------------------
 
 void Harvest::apply(MonicaModel* model)
@@ -1332,38 +1330,6 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 //----------------------------------------------------------------------------
 
 /**
- * @brief Constructor
- *
- * Parameter initiliazation
- */
-CropParameters::CropParameters() :
-    pc_NumberOfDevelopmentalStages(0),
-    pc_NumberOfOrgans(0),
-    pc_CarboxylationPathway(0),
-    pc_DefaultRadiationUseEfficiency(0),
-    pc_PartBiologicalNFixation(0),
-    pc_InitialKcFactor(0),
-    pc_LuxuryNCoeff(0),
-    pc_MaxAssimilationRate(0),
-    pc_MaxCropHeight(0),
-    pc_CropHeightP1(0),
-    pc_CropHeightP2(0),
-    pc_MinimumNConcentration(0),
-    pc_MinimumTemperatureForAssimilation(0),
-    pc_NConcentrationAbovegroundBiomass(0),
-    pc_NConcentrationB0(0),
-    pc_NConcentrationPN(0),
-    pc_NConcentrationRoot(0),
-    pc_ResidueNRatio(0),
-    pc_DevelopmentAccelerationByNitrogenStress(0),
-    pc_CuttingDelayDays(0),
-    pc_FieldConditionModifier(1.0),
-	pc_AssimilateReallocation(0.0),
-	pc_LT50cultivar(0.0),
-	pc_LatestHarvestDoy(-1)
-{}
-
-/**
  * @brief
  */
 void CropParameters::resizeStageOrganVectors()
@@ -1956,11 +1922,11 @@ SiteParameters::SiteParameters(json11::Json j)
   : vs_Latitude(j["Latitude"].number_value()),
     vs_Slope(j["Slope"].number_value()),
     vs_HeightNN(j["HeightNN"].number_value()),
-    vs_GroundwaterDepth(j["_GroundwaterDepth"].number_value()),
+    vs_GroundwaterDepth(j["GroundwaterDepth"].number_value()),
     vs_Soil_CN_Ratio(j["Soil_CN_Ratio"].number_value()),
-    vs_DrainageCoeff(j["vs_DrainageCoeff"].number_value()),
-    vq_NDeposition(j["vq_NDeposition"].number_value()),
-    vs_MaxEffectiveRootingDepth(j["vs_MaxEffectiveRootingDepth"].number_value())
+    vs_DrainageCoeff(j["DrainageCoeff"].number_value()),
+    vq_NDeposition(j["NDeposition"].number_value()),
+    vs_MaxEffectiveRootingDepth(j["MaxEffectiveRootingDepth"].number_value())
 {}
 
 json11::Json SiteParameters::to_json() const

@@ -79,7 +79,6 @@ namespace
 
 Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
   : soilParams(sps),
-    customId(-1),
     centralParameterProvider(cpp)
 {
   UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
@@ -97,7 +96,6 @@ Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
 Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp)
   : _soilParamsPtr(spsPtr),
     soilParams(spsPtr.get()),
-    customId(-1),
     centralParameterProvider(cpp)
 {
 	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
@@ -253,9 +251,8 @@ void MonicaModel::seedCrop(CropPtr crop)
     debug() << "seedDate: "<< _currentCrop->seedDate().toString()
             << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
-    if(_generalParams.useNMinMineralFertilisingMethod
-       && _currentCrop->seedDate().dayOfYear() <=
-       _currentCrop->harvestDate().dayOfYear())
+    if(_generalParams.useNMinMineralFertilisingMethod &&
+       _currentCrop->seedDate().dayOfYear() <= _currentCrop->harvestDate().dayOfYear())
     {
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = applyMineralFertiliserViaNMinMethod
@@ -1284,10 +1281,6 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 	double monthPrecip = 0.0;
 	double monthETa = 0.0;
 
-  //next irrigation application cycle days, tells when to check again for
-  //the next irrigation application
-  int niaCycleDays = 0;
-
 	//iterator through the production processes
 	vector<ProductionProcess>::const_iterator ppci = env.cropRotation.begin();
 	//direct handle to current process
@@ -1328,7 +1321,7 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 #else
 	WorkerConfiguration* wCfg = static_cast<WorkerConfiguration*>(cfg);
 #endif
-		
+
 	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
 	{
 		/* little progress bar */
@@ -1401,20 +1394,6 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 
         }
       }
-    }
-
-    //calculate the next irrigation application (simple prototype for coupling to BEREST webservice)
-    if(env.nextIrrigationApplication && --niaCycleDays > 0)
-    {
-      vector<double> sms;
-      //calculate current soil-moistures in mm*(m2)/dm*(m2)
-      for(auto sl : monica.soilColumn().vs_SoilLayers)
-        sms.push_back(sl.get_Vs_SoilMoisture_m3()*100.0);
-      auto res = env.nextIrrigationApplication(currentDate.dayOfYear(), sms);
-
-      niaCycleDays = res.cycleDays;
-      auto ia = make_unique<IrrigationApplication>(currentDate, res.donation);
-      ia->apply(&monica);
     }
 
     //there's something to at this day
@@ -1498,18 +1477,16 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
       fout << currentDate.toString("/");
       gout << currentDate.toString("/");
     }
+
     // run crop step
     if(monica.isCropPlanted())
-    {
       monica.cropStep(d);
-    }
+
     // writes crop results to output file
     if (write_output_files)
-    {
       writeCropResults(monica.cropGrowth(), fout, gout, monica.isCropPlanted());
-    }
-    monica.generalStep(d);
 
+    monica.generalStep(d);
 
     // write special outputs at 31.03.
     if(currentDate.day() == 31 && currentDate.month() == 3)
@@ -1799,20 +1776,21 @@ namespace
 
 }
 
-void Monica::startZeroMQMonica(Env env)
+void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAddress, string outputSocketAddress)
 {
-  zmq::socket_t input(*env.zmqContext, ZMQ_PULL);
-  input.connect((env.inputDatastreamProtocol + "://localhost:" + env.inputDatastreamPort).c_str());
+  zmq::socket_t input(*zmqContext, ZMQ_PULL);
+  input.connect(inputSocketAddress.c_str());
+  cout << "connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
 
-//  zmq::socket_t publisher(*env.zmqContext, ZMQ_PUB);
-  zmq::socket_t output(*env.zmqContext, ZMQ_PUSH);
-  string outputAddress(env.outputDatastreamProtocol + "://*:" + env.outputDatastreamPort);
-  output.bind(outputAddress.c_str());
-  cout << "binding monica output socket to address: " << outputAddress << endl;
+  zmq::socket_t output(*zmqContext, ZMQ_PUSH);
+  output.bind(outputSocketAddress.c_str());
+  cout << "binding monica zeromq output socket to address: " << outputSocketAddress << endl;
 
-  unique_ptr<MonicaModel> monica;
+  unique_ptr<MonicaModel> monicaUPtr;
 
   map<ResultId, double> aggregatedValues;
+
+  Tools::activateDebug = true;
 
   //the possibly active crop
   CropPtr crop;
@@ -1835,8 +1813,8 @@ void Monica::startZeroMQMonica(Env env)
     {
       if(msgType == "initMonica")
       {
-        if(monica)
-          monica.reset();
+        if(monicaUPtr)
+          monicaUPtr.reset();
 
         Json& initMsg = msg.json;
 
@@ -1847,17 +1825,26 @@ void Monica::startZeroMQMonica(Env env)
         for(auto sp : initMsg["soil"].array_items())
           soil->push_back(sp);
         CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
-        monica = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
+        monicaUPtr = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
 
         aggregatedValues.clear();
       }
       else if(msgType == "dailyStep")
       {
-        if(!monica)
+        if(!monicaUPtr)
         {
           cout << "Error: No initMonica message has been received yet, dropping message " << msg.toString() << endl;
           continue;
         }
+
+        MonicaModel& monica = *monicaUPtr.get();
+
+        monica.resetDailyCounter();
+
+        // test if monica's crop has been dying in previous step
+        // if yes, it will be incorporated into soil
+        if(monica.cropGrowth() && monica.cropGrowth()->isDying())
+          monica.incorporateCurrentCrop();
 
         auto dsm = msg.json["climateData"].object_items();
 
@@ -1869,6 +1856,8 @@ void Monica::startZeroMQMonica(Env env)
                                                  {Climate::wind, dsm["wind"].number_value()},
                                                  {Climate::globrad, dsm["globrad"].number_value()},
                                                  {Climate::relhumid, dsm["relhumid"].number_value()}};
+
+        debug() << "currentDate: " << date.toString() << endl;
 
         auto dailyStepResultMsg = json11::Json::object {{"date", date.toIsoDateString()}};
 
@@ -1882,7 +1871,7 @@ void Monica::startZeroMQMonica(Env env)
             if(wsType == "Seed")
             {
               Seed seed(ws);
-              seed.apply(monica.get());
+              seed.apply(&monica);
               crop = seed.crop();
               prevDevStage = 0;
             }
@@ -1892,47 +1881,46 @@ void Monica::startZeroMQMonica(Env env)
               auto cropResult = h.cropResult();
               cropResult->date = date;
 
-              h.apply(monica.get());
-              crop.reset();
-
-              dailyStepResultMsg["harvesting"] = createHarvestingMessage(*cropResult.get(), *monica.get());
+              h.apply(&monica);
+              dailyStepResultMsg["harvesting"] = createHarvestingMessage(*cropResult.get(), *monicaUPtr.get());
 
               //to count the applied fertiliser for the next production process
-              monica->resetFertiliserCounter();
+              monica.resetFertiliserCounter();
+              crop.reset();
               prevDevStage = 0;
             }
             else if(wsType == "Cutting")
-              Cutting(ws, crop).apply(monica.get());
+              Cutting(ws, crop).apply(&monica);
             else if(wsType == "MineralFertiliserApplication")
-              MineralFertiliserApplication(ws).apply(monica.get());
+              MineralFertiliserApplication(ws).apply(&monica);
             else if(wsType == "OrganicFertiliserApplication")
-              OrganicFertiliserApplication(ws).apply(monica.get());
+              OrganicFertiliserApplication(ws).apply(&monica);
             else if(wsType == "TillageApplication")
-              TillageApplication(ws).apply(monica.get());
+              TillageApplication(ws).apply(&monica);
             else if(wsType == "IrrigationApplication")
-              IrrigationApplication(ws).apply(monica.get());
+              IrrigationApplication(ws).apply(&monica);
           }
         }
 
-        if(monica->isCropPlanted())
-          monica->cropStep(date, climateData);
+        if(monica.isCropPlanted())
+          monica.cropStep(date, climateData);
 
-        monica->generalStep(date, climateData);
+        monica.generalStep(date, climateData);
 
-        aggregateValues(aggregatedValues, climateData, *monica.get());
+        aggregateValues(aggregatedValues, climateData, monica);
 
-        dailyStepResultMsg["soil"] = createSoilResultsMessage(*monica.get());
+        dailyStepResultMsg["soil"] = createSoilResultsMessage(monica);
 
         if(date.day() == 31 && date.month() == 3)
-          dailyStepResultMsg["march31st"] = createMarch31stResultsMessage(*monica.get());
+          dailyStepResultMsg["march31st"] = createMarch31stResultsMessage(monica);
 
         if(date.day() == date.daysInMonth())
-          dailyStepResultMsg["monthly"] = createMonthlyResultsMessage(date, aggregatedValues, *monica.get());
+          dailyStepResultMsg["monthly"] = createMonthlyResultsMessage(date, aggregatedValues, monica);
 
         if(date == Date(31,12,date.year()))
           dailyStepResultMsg["yearly"] = createYearlyResultsMessage(aggregatedValues);
 
-        int devStage = monica->cropGrowth() ? monica->cropGrowth()->get_DevelopmentalStage() + 1 : 0;
+        int devStage = monica.cropGrowth() ? monica.cropGrowth()->get_DevelopmentalStage() + 1 : 0;
         if(prevDevStage < devStage)
         {
           prevDevStage = devStage;

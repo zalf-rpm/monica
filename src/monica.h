@@ -493,7 +493,7 @@ namespace Monica
   Result runMonica(Env env, Configuration* cfg = NULL);
 #endif
 
-  void startZeroMQMonica(Env env);
+  void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress);
 
   void initializeFoutHeader(std::ofstream&);
   void initializeGoutHeader(std::ofstream&);
