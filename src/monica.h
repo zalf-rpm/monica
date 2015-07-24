@@ -145,17 +145,6 @@ namespace Monica
 
     void setCropRotation(std::vector<ProductionProcess> cr) { cropRotation = cr; }
 
-    struct NIAResult
-    {
-      NIAResult(){}
-      double donation{0};
-      int cycleDays{0};
-    };
-    //a callback which can be used to calculate todays (if any) irrigation application "donation"
-    //and after how many days (cycleDays) to check again
-    //input to the callback is the day of year (doy) and a vector of soil-moisture values
-    std::function<NIAResult(int, std::vector<double>)> nextIrrigationApplication;
-
     std::string berestRequestProtocol;
     //    std::string berestRequestHost;
     std::string berestRequestPort;
@@ -201,7 +190,7 @@ namespace Monica
 		std::vector<PVResult> pvrs;
 
     //! results not regarding a particular crop in a rotation
-    typedef std::map<ResultId, std::vector<double> > RId2Vector;
+    typedef std::map<ResultId, std::vector<double>> RId2Vector;
     RId2Vector generalResults;
 
     std::vector<double> getResultsById(int id);

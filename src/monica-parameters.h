@@ -1327,7 +1327,7 @@ namespace Monica
 		void addApplication(const Application& a)
 		{
 			_worksteps.insert(std::make_pair(a.date(), WSPtr(new Application(a))));
-		};
+    }
 
 		void addApplication(WSPtr a)
 		{
@@ -1365,10 +1365,14 @@ namespace Monica
 		void setCustomId(int cid) { _customId = cid; }
 		int customId() const { return _customId; }
 
+    void setIrrigateCrop(bool irr){ _irrigateCrop = irr; }
+    bool irrigateCrop() const { return _irrigateCrop; }
+
 	private:
-		int _customId;
+    int _customId{0};
 		std::string _name;
 		CropPtr _crop;
+    bool _irrigateCrop{false};
 
 		//!ordered list of worksteps to be done for this PV
 		std::multimap<Tools::Date, WSPtr> _worksteps;
