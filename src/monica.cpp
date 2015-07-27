@@ -1848,7 +1848,7 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
 
         auto dsm = msg.json["climateData"].object_items();
 
-        Date date = Date::fromIsoDateString(msg.json["date"].string_value());
+        Date date = Date::fromIsoDateString(msg.json["date"].string_value(), false);
         map<Climate::ACD, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
                                                  {Climate::tavg, dsm["tavg"].number_value()},
                                                  {Climate::tmax, dsm["tmax"].number_value()},
