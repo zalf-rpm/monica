@@ -145,9 +145,10 @@ namespace Monica
 
     void setCropRotation(std::vector<ProductionProcess> cr) { cropRotation = cr; }
 
-    std::string berestRequestProtocol;
+    std::string berestRequestAddress;
+//    std::string berestRequestProtocol;
     //    std::string berestRequestHost;
-    std::string berestRequestPort;
+//    std::string berestRequestPort;
 
     //zeromq reply socket for datastream controlled MONICA run
 //    std::unique_ptr<zmq::socket_t> datastream;
