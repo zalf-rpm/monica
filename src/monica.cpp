@@ -34,15 +34,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 #include <thread>
 
+#ifndef NO_ZMQ
 #include "zmq.hpp"
 #include "zhelpers.hpp"
+#endif
 #include "json11/json11.hpp"
 
 #include "tools/debug.h"
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
+#ifndef NO_ZMQ
 #include "tools/zmq-helper.h"
+#endif
 
 #ifdef MONICA_GUI
 #include "../gui/workerconfiguration.h"
@@ -1776,21 +1780,22 @@ namespace
 
 }
 
+#ifndef NO_ZMQ
 void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAddress, string outputSocketAddress)
 {
   zmq::socket_t input(*zmqContext, ZMQ_PULL);
   input.connect(inputSocketAddress.c_str());
-  cout << "connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
+//  cout << "connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
 
   zmq::socket_t output(*zmqContext, ZMQ_PUSH);
   output.bind(outputSocketAddress.c_str());
-  cout << "binding monica zeromq output socket to address: " << outputSocketAddress << endl;
+//  cout << "binding monica zeromq output socket to address: " << outputSocketAddress << endl;
 
   unique_ptr<MonicaModel> monicaUPtr;
 
   map<ResultId, double> aggregatedValues;
 
-  Tools::activateDebug = true;
+//  Tools::activateDebug = true;
 
   //the possibly active crop
   CropPtr crop;
@@ -1932,9 +1937,9 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
     }
   }
 
-  cout << "exiting startZeroMQMonica" << endl;
+//  cout << "exiting startZeroMQMonica" << endl;
 }
-
+#endif
 
 std::string Result::toString()
 {
