@@ -1781,15 +1781,23 @@ namespace
 }
 
 #ifndef NO_ZMQ
-void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAddress, string outputSocketAddress)
+void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAddress, string outputSocketAddress, bool isInProcess)
 {
-  zmq::socket_t input(*zmqContext, ZMQ_PULL);
+  zmq::socket_t input(*zmqContext, isInProcess ? ZMQ_PAIR : ZMQ_PULL);
+//  cout << "MONICA: connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
   input.connect(inputSocketAddress.c_str());
-//  cout << "connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
+//  cout << "MONICA: connected monica zeromq input socket to address: " << inputSocketAddress << endl;
 
-  zmq::socket_t output(*zmqContext, ZMQ_PUSH);
-  output.bind(outputSocketAddress.c_str());
-//  cout << "binding monica zeromq output socket to address: " << outputSocketAddress << endl;
+  zmq::socket_t output_(*zmqContext, ZMQ_PUSH);
+  zmq::socket_t& output = isInProcess ? input : output_;
+  if(isInProcess)
+    ;//cout << "MONICA: using monica zeromq pair input socket also as output socket at address: " << outputSocketAddress << endl;
+  else
+  {
+//    cout << "MONICA: binding monica zeromq output socket to address: " << outputSocketAddress << endl;
+    output.bind(outputSocketAddress.c_str());
+//    cout << "MONICA: bound monica zeromq output socket to address: " << outputSocketAddress << endl;
+  }
 
   unique_ptr<MonicaModel> monicaUPtr;
 

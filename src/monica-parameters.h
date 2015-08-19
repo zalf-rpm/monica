@@ -775,7 +775,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class OrganicMatterParameters;
+  struct OrganicMatterParameters;
 	class AutomaticHarvestParameters;
 	
 	class Crop;

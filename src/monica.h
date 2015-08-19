@@ -154,17 +154,19 @@ namespace Monica
 
     //zeromq reply socket for datastream controlled MONICA run
 //    std::unique_ptr<zmq::socket_t> datastream;
-//    std::string inputDatastreamAddress;
+    std::string inputDatastreamAddress;
     std::string inputDatastreamProtocol;
 //    std::string inputDatastreamHost;
     std::string inputDatastreamPort;
 
     //zeromq publish socket for outputs of MONICA
 //    std::unique_ptr<zmq::socket_t> outputstream;
-//    std::string outputDatastreamAddress;
+    std::string outputDatastreamAddress;
     std::string outputDatastreamProtocol;
 //    std::string outputDatastreamHost;
     std::string outputDatastreamPort;
+
+    bool isZmqInProcess{false};
 
 #ifndef NO_ZMQ
     zmq::context_t* zmqContext;
@@ -488,7 +490,7 @@ namespace Monica
 #endif
 
 #ifndef NO_ZMQ
-  void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress);
+  void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress, bool isInProcess = false);
 #endif
 
   void initializeFoutHeader(std::ofstream&);
