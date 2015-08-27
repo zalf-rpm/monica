@@ -1609,12 +1609,15 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 
 			res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage()+1);
 
-
 		}
 		else
 		{
 			res.generalResults[dev_stage].push_back(0.0);
 		}
+
+		res.generalResults[soilMoist0_90cm].push_back(monica.mean90cmWaterContent());
+		res.generalResults[corg0_30cm].push_back(monica.avgCorg(0.3));
+		res.generalResults[nmin0_90cm].push_back(monica.sumNmin(0.9));
 
 		res.dates.push_back(currentDate.toMysqlString());
 

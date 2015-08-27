@@ -283,7 +283,15 @@ namespace Monica
 		WaterStress,
 		HeatStress,
 		OxygenStress,
-		dev_stage
+		dev_stage,
+		//! soilmoisture content in 0-90cm soil
+		soilMoist0_90cm,
+
+		//! corg content in the first 30 cm soil 
+		corg0_30cm,
+
+		//! Nmin content in the first 90 cm soil
+		nmin0_90cm,
 	};
 
 	/*!

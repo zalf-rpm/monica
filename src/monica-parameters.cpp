@@ -496,6 +496,13 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "oxygenStress");
   case dev_stage:
     return ResultIdInfo("Liste mit täglichen Werten für das Entwicklungsstadium", "[]", "devStage");
+  case soilMoist0_90cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für den Wassergehalt in 0-90cm", "[%]", "soilMoist0_90");
+  case corg0_30cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für Corg in 0-30cm", "[]", "corg0_30");
+  case nmin0_90cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für Nmin in 0-90cm", "[kg N / ha]", "nmin0_90");
+
 	default: ;
 	}
 	return ResultIdInfo("", "");
