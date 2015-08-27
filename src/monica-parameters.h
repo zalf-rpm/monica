@@ -185,7 +185,7 @@ namespace Monica
 		corg0_30cmAtHarvest,
 
 		//! Nmin content in the first 90 cm soil at harvest
-		nmin0_90cmNminAtHarvest,
+		nmin0_90cmAtHarvest,
 
 		//! water flux at bottom layer of soil at special, hardcoded date
 		waterFluxAtLowerBoundary,
