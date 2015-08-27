@@ -178,6 +178,15 @@ namespace Monica
 		//! Average soilmoisture content in 0-90cm soil at special, hardcoded date
 		avg0_90cmSoilMoisture,
 
+		//! soilmoisture content in 0-90cm soil at special at harvest
+		soilMoist0_90cmAtHarvest,
+
+		//! corg content in the first 30 cm soil at harvest
+		corg0_30cmAtHarvest,
+
+		//! Nmin content in the first 90 cm soil at harvest
+		nmin0_90cmNminAtHarvest,
+
 		//! water flux at bottom layer of soil at special, hardcoded date
 		waterFluxAtLowerBoundary,
 

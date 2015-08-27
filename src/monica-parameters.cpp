@@ -178,7 +178,9 @@ Result::getResultsById(int id)
       id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
       id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass || 
-      id == anthesisDay || id == maturityDay || id == harvestDay )
+      id == anthesisDay || id == maturityDay || id == harvestDay || 
+	  id == soilMoist0_90cmAtHarvest || id == corg0_30cmAtHarvest || id == nmin0_90cmNminAtHarvest	  
+	  )
   {
     vector<double> result_vector;
     int size = pvrs.size();
@@ -432,6 +434,12 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Hauptertrag in TM", "dt TM/ha", "primYield");
   case secondaryYieldTM:
     return ResultIdInfo("Nebenertrag in TM", "dt TM/ha", "secYield");
+  case soilMoist0_90cmAtHarvest:
+	  return ResultIdInfo("Wassergehalt zur Ernte in 0-90cm", "%", "moist90Harvest");
+  case corg0_30cmAtHarvest:
+	  return ResultIdInfo("Corg-Gehalt zur Ernte in 0-30cm", "% kg C/kg Boden", "corg30Harvest");
+  case nmin0_90cmNminAtHarvest:
+	  return ResultIdInfo("Nmin zur Ernte in 0-90cm", "kg N/ha", "nmin90Harvest");
   case monthlySurfaceRunoff:
     return ResultIdInfo("Monatlich akkumulierte Oberflächenabfluss", "mm", "monthlySurfaceRunoff");
   case monthlyPrecip:
@@ -572,7 +580,11 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
 				_cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
                 _cropResult->pvResults[harvestDay] = date().julianDay();
+				_cropResult->pvResults[soilMoist0_90cmAtHarvest] = model->mean90cmWaterContent();
+				_cropResult->pvResults[corg0_30cmAtHarvest] = model->avgCorg(0.3);
+				_cropResult->pvResults[nmin0_90cmNminAtHarvest] = model->sumNmin(0.9);
 
+  
 				if (_method == "total"){
 					model->harvestCurrentCrop(_exported);
 				}
