@@ -1608,16 +1608,25 @@ double MonicaModel::getsum30cmActDenitrificationRate()
 			//cout << "monica.cropGrowth()->get_GrossPrimaryProduction()\t" << monica.cropGrowth()->get_GrossPrimaryProduction() << endl;
 
 			res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage()+1);
+			res.generalResults[dailyAGB].push_back(monica.cropGrowth()->get_AbovegroundBiomass());
+			res.generalResults[dailyAGB_N].push_back(monica.cropGrowth()->get_AbovegroundBiomassNContent());
 
 		}
 		else
 		{
 			res.generalResults[dev_stage].push_back(0.0);
+			res.generalResults[dailyAGB].push_back(0.0);
+			res.generalResults[dailyAGB_N].push_back(0.0);
+
+
+			//_cropResult->pvResults[aboveBiomassNContent] = _crop->;
+			//_cropResult->pvResults[aboveGroundBiomass] = _crop->;
 		}
 
 		res.generalResults[soilMoist0_90cm].push_back(monica.mean90cmWaterContent());
 		res.generalResults[corg0_30cm].push_back(monica.avgCorg(0.3));
 		res.generalResults[nmin0_90cm].push_back(monica.sumNmin(0.9));
+		res.generalResults[ETa].push_back(monica.getETa());
 
 		res.dates.push_back(currentDate.toMysqlString());
 

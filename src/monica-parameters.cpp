@@ -503,6 +503,17 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
   case nmin0_90cm:
 	  return ResultIdInfo("Liste mit täglichen Werten für Nmin in 0-90cm", "[kg N / ha]", "nmin0_90");
 
+  case ETa:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "mm", "ETa");
+  case dailyAGB:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "kg FM ha-1", "dailyAGB");
+  case dailyAGB_N:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "kg N ha-1", "dailyAGB_N");
+
+	  
+
+	  
+
 	default: ;
 	}
 	return ResultIdInfo("", "");

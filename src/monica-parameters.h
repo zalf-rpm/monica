@@ -284,6 +284,9 @@ namespace Monica
 		HeatStress,
 		OxygenStress,
 		dev_stage,
+
+		// Daily outputs used for time-dependant sensitivity analysis
+
 		//! soilmoisture content in 0-90cm soil
 		soilMoist0_90cm,
 
@@ -292,6 +295,14 @@ namespace Monica
 
 		//! Nmin content in the first 90 cm soil
 		nmin0_90cm,
+
+		// evapotranspiration
+		ETa,
+
+		dailyAGB,
+
+		dailyAGB_N
+					
 	};
 
 	/*!
