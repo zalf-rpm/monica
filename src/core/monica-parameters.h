@@ -603,6 +603,9 @@ namespace Monica
   {
     AutomaticIrrigationParameters() {}
 
+		AutomaticIrrigationParameters(double a, double t, double nc, double sc)
+			: IrrigationParameters(nc, sc), amount(a), treshold(t) {}
+
     AutomaticIrrigationParameters(json11::Json j)
       : IrrigationParameters(j["irrigationParameters"]),
         amount(j["amount"].number_value()),

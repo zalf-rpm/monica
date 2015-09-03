@@ -716,9 +716,9 @@ string NMinCropParameters::toString() const
 //------------------------------------------------------------------------------
 
 NMinUserParameters::NMinUserParameters(double min, double max, int delayInDays)
-  : min(min),
-    max(max),
-    delayInDays(delayInDays) { }
+	: min(min),
+	max(max),
+	delayInDays(delayInDays) { }
 
 NMinUserParameters::NMinUserParameters(json11::Json j)
   : min(j["min"].number_value()),

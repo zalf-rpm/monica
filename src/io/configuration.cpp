@@ -25,14 +25,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <sys/stat.h>
 
-#include "monica-parameters.h"
-#include "monica.h"
-#include "soilcolumn.h"
-#include "soiltemperature.h"
-#include "soilmoisture.h"
-#include "soilorganic.h"
-#include "soiltransport.h"
-#include "crop.h"
+#include "../core/monica-parameters.h"
+#include "../core/monica.h"
+#include "../core/soilcolumn.h"
+#include "../core/soiltemperature.h"
+#include "../core/soilmoisture.h"
+#include "../core/soilorganic.h"
+#include "../core/soiltransport.h"
+#include "../core/crop.h"
+#include "../run/run-monica.h"
 
 #include "soil/conversion.h"
 #include "climate/climate-common.h"
@@ -201,8 +202,8 @@ const Result Configuration::run()
   
   SiteParameters sp;
   CentralParameterProvider cpp = readUserParameterFromDatabase(Env::MODE_HERMES);
-  GeneralParameters gp(cpp.userEnvironmentParameters.p_LayerThickness,
-    cpp.userEnvironmentParameters.p_LayerThickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers));
+	GeneralParameters gp(cpp.userEnvironmentParameters.p_LayerThickness);
+	gp.ps_ProfileDepth = cpp.userEnvironmentParameters.p_LayerThickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
 
   /* fetch soil horizon array */
   cson_array* horizonsArr = cson_value_get_array(cson_object_get(siteObj, "horizons"));

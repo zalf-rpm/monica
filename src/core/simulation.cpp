@@ -26,8 +26,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "simulation.h"
 
+#ifdef RUN_EVA
 #include "eva_methods.h"
+#endif
+#ifdef RUN_GIS
 #include "cc_germany_methods.h"
+#endif
 
 #include "climate/climate-common.h"
 
@@ -39,6 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilorganic.h"
 #include "soiltransport.h"
 #include "crop.h"
+#include "../run/run-monica.h"
 #include "tools/debug.h"
 #include "monica-parameters.h"
 #include "tools/read-ini.h"
@@ -609,7 +614,13 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
   bool emergence_flooding_control_on = hermes_config->getEmergenceFloodingControlOn(); 
   bool emergence_moisture_control_on = hermes_config->getEmergenceMoistureControlOn(); 
-  GeneralParameters gps = GeneralParameters(layer_thickness, profile_depth, max_mineralisation_depth, nitrogen_response_on, water_deficit_response_on, emergence_flooding_control_on, emergence_moisture_control_on);
+	GeneralParameters gps(layer_thickness);
+	gps.ps_ProfileDepth = profile_depth;
+	gps.ps_MaxMineralisationDepth = max_mineralisation_depth;
+	gps.pc_NitrogenResponseOn = nitrogen_response_on;
+	gps.pc_WaterDeficitResponseOn = water_deficit_response_on;
+	gps.pc_EmergenceFloodingControlOn = emergence_flooding_control_on;
+	gps.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
 
   //soil data
   const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), 

@@ -37,10 +37,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <memory>
 
-#ifndef NO_ZMQ
-#include "zmq.hpp"
-#endif
-
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
 #include "soiltemperature.h"
@@ -166,11 +162,6 @@ namespace Monica
 //    std::string outputDatastreamHost;
     std::string outputDatastreamPort;
 
-    bool isZmqInProcess{false};
-
-#ifndef NO_ZMQ
-    zmq::context_t* zmqContext;
-#endif
   private:
     //! Variable for differentiate betweend execution modes of MONICA
     int mode{MODE_LC_DSS};
@@ -477,21 +468,6 @@ namespace Monica
   };
 
   //----------------------------------------------------------------------------
-
-  /*!
-   * main function for running monica under a given Env(ironment)
-   * @param env the environment completely defining what the model needs and gets
-   * @return a structure with all the Monica results
-   */
-#ifndef	MONICA_GUI
-  Result runMonica(Env env);
-#else
-  Result runMonica(Env env, Configuration* cfg = NULL);
-#endif
-
-#ifndef NO_ZMQ
-  void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress, bool isInProcess = false);
-#endif
 
   void initializeFoutHeader(std::ofstream&);
   void initializeGoutHeader(std::ofstream&);
