@@ -35,6 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
+#include "tools/json11-helper.h"
 #include "tools/algorithms.h"
 #include "monica-parameters.h"
 #include "monica.h"
@@ -510,8 +511,9 @@ json11::Json PVResult::to_json() const
   for(auto pvr : pvResults)
     pvrs[to_string(pvr.first)] = pvr.second;
   return json11::Json::object {
-    {"cropId", id},
-    {"customId", customId},
+		{"type", "PVResult"},
+		{"cropId", id},
+		{"customId", customId},
     {"date", date.toIsoDateString()},
     {"pvResults", pvrs}};
 }
@@ -1329,15 +1331,177 @@ DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
 
 //----------------------------------------------------------------------------
 
-/**
- * @brief
- */
-void CropParameters::resizeStageOrganVectors()
+CropParameters::CropParameters(json11::Json j)
+  : pc_CropName(j["CropName"].string_value()),
+    pc_Perennial(j["Perennial"].bool_value()),
+    pc_NumberOfDevelopmentalStages(j["NumberOfDevelopmentalStages"].int_value()),
+    pc_NumberOfOrgans(j["NumberOfOrgans"].int_value()),
+    pc_CarboxylationPathway(j["CarboxylationPathway"].int_value()),
+    pc_DefaultRadiationUseEfficiency(j["DefaultRadiationUseEfficiency"].number_value()),
+    pc_PartBiologicalNFixation(j["PartBiologicalNFixation"].number_value()),
+    pc_InitialKcFactor(j["InitialKcFactor"].number_value()),
+    pc_LuxuryNCoeff(j["LuxuryNCoeff"].number_value()),
+    pc_MaxAssimilationRate(j["MaxAssimilationRate"].number_value()),
+    pc_MaxCropDiameter(j["MaxCropDiameter"].number_value()),
+    pc_MaxCropHeight(j["MaxCropHeight"].number_value()),
+    pc_CropHeightP1(j["CropHeightP1"].number_value()),
+    pc_CropHeightP2(j["CropHeightP2"].number_value()),
+    pc_StageAtMaxHeight(j["StageAtMaxHeight"].number_value()),
+    pc_StageAtMaxDiameter(j["StageAtMaxDiameter"].number_value()),
+    pc_MinimumNConcentration(j["MinimumNConcentration"].number_value()),
+    pc_MinimumTemperatureForAssimilation(j["MinimumTemperatureForAssimilation"].number_value()),
+    pc_NConcentrationAbovegroundBiomass(j["NConcentrationAbovegroundBiomass"].number_value()),
+    pc_NConcentrationB0(j["NConcentrationB0"].number_value()),
+    pc_NConcentrationPN(j["NConcentrationPN"].number_value()),
+    pc_NConcentrationRoot(j["NConcentrationRoot"].number_value()),
+    pc_ResidueNRatio(j["ResidueNRatio"].number_value()),
+    pc_DevelopmentAccelerationByNitrogenStress(j["DevelopmentAccelerationByNitrogenStress"].int_value()),
+    pc_FieldConditionModifier(j["FieldConditionModifier"].number_value()),
+    pc_AssimilateReallocation(j["AssimilateReallocation"].number_value()),
+    pc_LT50cultivar(j["LT50cultivar"].number_value()),
+    pc_FrostHardening(j["FrostHardening"].number_value()),
+    pc_FrostDehardening(j["FrostDehardening"].number_value()),
+    pc_LowTemperatureExposure(j["LowTemperatureExposure"].number_value()),
+    pc_RespiratoryStress(j["RespiratoryStress"].number_value()),
+    pc_LatestHarvestDoy(j["LatestHarvestDoy"].int_value()),
+//    std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff,
+//    std::vector<std::vector<double>> pc_OrganSenescenceRate,
+    pc_BaseDaylength(toDoubleVector(j["BaseDaylength"])),
+    pc_BaseTemperature(toDoubleVector(j["BaseTemperature"])),
+    pc_OptimumTemperature(toDoubleVector(j["OptimumTemperature"])),
+    pc_DaylengthRequirement(toDoubleVector(j["DaylengthRequirement"])),
+    pc_DroughtStressThreshold(toDoubleVector(j["DroughtStressThreshold"])),
+    pc_OrganMaintenanceRespiration(toDoubleVector(j["OrganMaintenanceRespiration"])),
+    pc_OrganGrowthRespiration(toDoubleVector(j["OrganGrowthRespiration"])),
+    pc_SpecificLeafArea(toDoubleVector(j["SpecificLeafArea"])),
+    pc_StageMaxRootNConcentration(toDoubleVector(j["StageMaxRootNConcentration"])),
+    pc_StageKcFactor(toDoubleVector(j["StageKcFactor"])),
+    pc_StageTemperatureSum(toDoubleVector(j["StageTemperatureSum"])),
+    pc_VernalisationRequirement(toDoubleVector(j["VernalisationRequirement"])),
+    pc_InitialOrganBiomass(toDoubleVector(j["InitialOrganBiomass"])),
+    pc_CriticalOxygenContent(toDoubleVector(j["CriticalOxygenContent"])),
+    pc_CropSpecificMaxRootingDepth(j["CropSpecificMaxRootingDepth"].number_value()),
+    pc_AbovegroundOrgan(toIntVector(j["AbovegroundOrgan"])),
+    pc_StorageOrgan(toIntVector(j["StorageOrgan"])),
+    pc_SamplingDepth(j["SamplingDepth"].number_value()),
+    pc_TargetNSamplingDepth(j["TargetNSamplingDepth"].number_value()),
+    pc_TargetN30(j["TargetN30"].number_value()),
+    pc_HeatSumIrrigationStart(j["HeatSumIrrigationStart"].number_value()),
+    pc_HeatSumIrrigationEnd(j["HeatSumIrrigationEnd"].number_value()),
+    pc_MaxNUptakeParam(j["MaxNUptakeParam"].number_value()),
+    pc_RootDistributionParam(j["RootDistributionParam"].number_value()),
+    pc_PlantDensity(j["PlantDensity"].number_value()),
+    pc_RootGrowthLag(j["RootGrowthLag"].number_value()),
+    pc_MinimumTemperatureRootGrowth(j["MinimumTemperatureRootGrowth"].number_value()),
+    pc_InitialRootingDepth(j["InitialRootingDepth"].number_value()),
+    pc_RootPenetrationRate(j["RootPenetrationRate"].number_value()),
+    pc_RootFormFactor(j["RootFormFactor"].number_value()),
+    pc_SpecificRootLength(j["SpecificRootLength"].number_value()),
+    pc_StageAfterCut(j["StageAfterCut"].int_value()),
+    pc_CriticalTemperatureHeatStress(j["CriticalTemperatureHeatStress"].number_value()),
+    pc_LimitingTemperatureHeatStress(j["LimitingTemperatureHeatStress"].number_value()),
+    pc_BeginSensitivePhaseHeatStress(j["BeginSensitivePhaseHeatStress"].number_value()),
+    pc_EndSensitivePhaseHeatStress(j["EndSensitivePhaseHeatStress"].number_value()),
+    pc_CuttingDelayDays(j["CuttingDelayDays"].int_value()),
+    pc_DroughtImpactOnFertilityFactor(j["DroughtImpactOnFertilityFactor"].number_value()),
+    pc_OrganIdsForPrimaryYield(toVector<YieldComponent>(j["OrganIdsForPrimaryYield"])),
+    pc_OrganIdsForSecondaryYield(toVector<YieldComponent>(j["OrganIdsForSecondaryYield"])),
+    pc_OrganIdsForCutting(toVector<YieldComponent>(j["OrganIdsForCutting"]))
 {
-  pc_AssimilatePartitioningCoeff.resize(pc_NumberOfDevelopmentalStages,
-                                        std::vector<double>(pc_NumberOfOrgans));
-  pc_OrganSenescenceRate.resize(pc_NumberOfDevelopmentalStages,
-                              std::vector<double>(pc_NumberOfOrgans));
+  for(auto js : j["AssimilatePartitioningCoeff"].array_items())
+    pc_AssimilatePartitioningCoeff.push_back(toDoubleVector(js));
+
+  for(auto js : j["OrganSenescenceRate"].array_items())
+    pc_OrganSenescenceRate.push_back(toDoubleVector(js));
+}
+
+json11::Json CropParameters::to_json() const
+{
+  json11::Json::array apcs;
+  for(auto v : pc_AssimilatePartitioningCoeff)
+    apcs.push_back(toPrimJsonArray(v));
+
+  json11::Json::array osrs;
+  for(auto v : pc_OrganSenescenceRate)
+    osrs.push_back(toPrimJsonArray(v));
+
+  return json11::Json::object{
+    {"type", "CropParameters"},
+    {"CropName", pc_CropName},
+    {"Perennial", pc_Perennial},
+    {"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages},
+    {"NumberOfOrgans", pc_NumberOfOrgans},
+    {"CarboxylationPathway", pc_CarboxylationPathway},
+    {"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency},
+    {"PartBiologicalNFixation", pc_PartBiologicalNFixation},
+    {"InitialKcFactor", pc_InitialKcFactor},
+    {"LuxuryNCoeff", pc_LuxuryNCoeff},
+    {"MaxAssimilationRate", pc_MaxAssimilationRate},
+    {"MaxCropDiameter", pc_MaxCropDiameter},
+    {"MaxCropHeight", pc_MaxCropHeight},
+    {"CropHeightP1", pc_CropHeightP1},
+    {"CropHeightP2", pc_CropHeightP2},
+    {"StageAtMaxHeight", pc_StageAtMaxHeight},
+    {"StageAtMaxDiameter", pc_StageAtMaxDiameter},
+    {"MinimumNConcentration", pc_MinimumNConcentration},
+    {"MinimumTemperatureForAssimilation", pc_MinimumTemperatureForAssimilation},
+    {"NConcentrationAbovegroundBiomass", pc_NConcentrationAbovegroundBiomass},
+    {"NConcentrationB0", pc_NConcentrationB0},
+    {"NConcentrationPN", pc_NConcentrationPN},
+    {"NConcentrationRoot", pc_NConcentrationRoot},
+    {"ResidueNRatio", pc_ResidueNRatio},
+    {"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress},
+    {"FieldConditionModifier", pc_FieldConditionModifier},
+    {"AssimilateReallocation", pc_AssimilateReallocation},
+    {"LT50cultivar", pc_LT50cultivar},
+    {"FrostHardening", pc_FrostHardening},
+    {"FrostDehardening", pc_FrostDehardening},
+    {"LowTemperatureExposure", pc_LowTemperatureExposure},
+    {"RespiratoryStress", pc_RespiratoryStress},
+    {"LatestHarvestDoy", pc_LatestHarvestDoy},
+    {"AssimilatePartitioningCoeff", apcs},
+    {"OrganSenescenceRate", osrs},
+    {"BaseDaylength", toPrimJsonArray(pc_BaseDaylength)},
+    {"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)},
+    {"OptimumTemperature", toPrimJsonArray(pc_OptimumTemperature)},
+    {"DaylengthRequirement", toPrimJsonArray(pc_DaylengthRequirement)},
+    {"DroughtStressThreshold", toPrimJsonArray(pc_DroughtStressThreshold)},
+    {"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)},
+    {"OrganGrowthRespiration", toPrimJsonArray(pc_OrganGrowthRespiration)},
+    {"SpecificLeafArea", toPrimJsonArray(pc_SpecificLeafArea)},
+    {"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)},
+    {"StageKcFactor", toPrimJsonArray(pc_StageKcFactor)},
+    {"StageTemperatureSum", toPrimJsonArray(pc_StageTemperatureSum)},
+    {"VernalisationRequirement", toPrimJsonArray(pc_VernalisationRequirement)},
+    {"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)},
+    {"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)},
+    {"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth},
+    {"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)},
+    {"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)},
+    {"SamplingDepth", pc_SamplingDepth},
+    {"TargetNSamplingDepth", pc_TargetNSamplingDepth},
+    {"TargetN30", pc_TargetN30},
+    {"HeatSumIrrigationStart", pc_HeatSumIrrigationStart},
+    {"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd},
+    {"MaxNUptakeParam", pc_MaxNUptakeParam},
+    {"RootDistributionParam", pc_RootDistributionParam},
+    {"PlantDensity", pc_PlantDensity},
+    {"RootGrowthLag", pc_RootGrowthLag},
+    {"MinimumTemperatureRootGrowth", pc_MinimumTemperatureRootGrowth},
+    {"InitialRootingDepth", pc_InitialRootingDepth},
+    {"RootPenetrationRate", pc_RootPenetrationRate},
+    {"RootFormFactor", pc_RootFormFactor},
+    {"SpecificRootLength", pc_SpecificRootLength},
+    {"StageAfterCut", pc_StageAfterCut},
+    {"CriticalTemperatureHeatStress", pc_CriticalTemperatureHeatStress},
+    {"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress},
+    {"BeginSensitivePhaseHeatStress", pc_BeginSensitivePhaseHeatStress},
+    {"EndSensitivePhaseHeatStress", pc_EndSensitivePhaseHeatStress},
+    {"CuttingDelayDays", pc_CuttingDelayDays},
+    {"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor},
+    {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
+    {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
+    {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)}};
 }
 
 /**
@@ -1566,6 +1730,14 @@ string CropParameters::toString() const
   s << endl;
 
   return s.str();
+}
+
+void CropParameters::resizeStageOrganVectors()
+{
+  pc_AssimilatePartitioningCoeff.resize(pc_NumberOfDevelopmentalStages,
+                                        std::vector<double>(pc_NumberOfOrgans));
+  pc_OrganSenescenceRate.resize(pc_NumberOfDevelopmentalStages,
+                                std::vector<double>(pc_NumberOfOrgans));
 }
 
 //------------------------------------------------------------------------------
@@ -1837,7 +2009,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 
 //------------------------------------------------------------------------------
 
-/**
+                                                            /**
  * @brief Constructor
  * @param ps_LayerThickness
  * @param ps_ProfileDepth
@@ -1872,6 +2044,7 @@ GeneralParameters::GeneralParameters(json11::Json j)
     pc_WaterDeficitResponseOn(j["WaterDeficitResponseOn"].bool_value()),
     pc_EmergenceFloodingControlOn(j["EmergenceFloodingControlOn"].bool_value()),
     pc_EmergenceMoistureControlOn(j["EmergenceMoistureControlOn"].bool_value()),
+    ps_LayerThickness(toDoubleVector(j["LayerThickness"])),
     useNMinMineralFertilisingMethod(j["useNMinMineralFertilisingMethod"].bool_value()),
     nMinFertiliserPartition(j["nMinFertiliserPartition"]),
     nMinUserParams(j["nMinUserParams"]),
@@ -1884,16 +2057,17 @@ GeneralParameters::GeneralParameters(json11::Json j)
     groundwaterInformation(j["groundwaterInformation"]),
     pathToOutputDir(j["pathToOutputDir"].string_value())
 {
-  auto lts = j["LayerThickness"].array_items();
-  for(auto lt : lts)
-    ps_LayerThickness.push_back(lt.number_value());
+  //  auto lts = j["LayerThickness"].array_items();
+  //  for(auto lt : lts)
+  //    ps_LayerThickness.push_back(lt.number_value());
 }
 
 json11::Json GeneralParameters::to_json() const
 {
-  json11::Json::array lts;
-  for(auto lt : ps_LayerThickness)
-    lts.push_back(lt);
+//  json11::Json::array lts;
+//  for(auto lt : ps_LayerThickness)
+//    lts.push_back(lt);
+
   return json11::Json::object {
     {"type", "GeneralParameters"},
     {"ProfileDepth", ps_ProfileDepth},
@@ -1902,7 +2076,7 @@ json11::Json GeneralParameters::to_json() const
     {"WaterDeficitResponseOn", pc_WaterDeficitResponseOn},
     {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
     {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
-    {"LayerThickness", lts},
+    {"LayerThickness", toPrimJsonArray(ps_LayerThickness)},
     {"useNMinMineralFertilisingMethod", useNMinMineralFertilisingMethod},
     {"nMinFertiliserPartition", nMinFertiliserPartition},
     {"nMinUserParams", nMinUserParams},
@@ -2099,6 +2273,7 @@ MineralFertiliserParameters::MineralFertiliserParameters(const std::string& name
 json11::Json MineralFertiliserParameters::to_json() const
 {
   return json11::Json::object {
+		{ "type", "MineralFertiliserParameters" },
     {"name", name},
     {"Carbamid", vo_Carbamid},
     {"NH4", vo_NH4},

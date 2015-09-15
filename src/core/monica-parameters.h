@@ -351,11 +351,30 @@ namespace Monica
 		 * @param oid organ ID
 		 * @param yp Yield percentage
 		 */
-		YieldComponent(int oid, double yp, double ydm) : organId(oid), yieldPercentage(yp), yieldDryMatter(ydm) { }
+    YieldComponent(int oid, double yp, double ydm)
+      : organId(oid),
+        yieldPercentage(yp),
+        yieldDryMatter(ydm)
+    {}
 
-		int organId; /**<  */
-		double yieldPercentage; /**<  */
-		double yieldDryMatter;
+    YieldComponent(json11::Json j)
+      : organId(j["organId"].int_value()),
+        yieldPercentage(j["yieldPercentage"].number_value()),
+        yieldDryMatter(j["yieldDryMatter"].number_value())
+    {}
+
+		json11::Json to_json() const
+		{
+			return json11::Json::object{
+        {"type", "YieldComponent"},
+        {"organId", organId},
+        {"yieldPercentage", yieldPercentage},
+        {"yieldDryMatter", yieldDryMatter}};
+    }
+
+    int organId{-1};
+    double yieldPercentage{0.0};
+    double yieldDryMatter{0.0};
 	};
 
 	//----------------------------------------------------------------------------
@@ -365,13 +384,20 @@ namespace Monica
 	 */
 	struct CropParameters
 	{
-		void resizeStageOrganVectors();
+    CropParameters() {}
+
+    CropParameters(json11::Json j);
+
+		json11::Json to_json() const;
+		
 		std::string toString() const;
+
+    void resizeStageOrganVectors();
 
 		//		pc_DevelopmentAccelerationByNitrogenStress(0)
 
 		// members
-		std::string pc_CropName; /**< Name */
+    std::string pc_CropName;
     bool pc_Perennial{false};
     int pc_NumberOfDevelopmentalStages{0};
     int pc_NumberOfOrgans{0};
