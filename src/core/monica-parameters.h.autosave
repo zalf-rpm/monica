@@ -74,10 +74,10 @@ namespace Monica
 	const double UNDEFINED = -9999.9;
 	const int UNDEFINED_INT = -9999;
 
-	//enum Region
-	//{
-	//	weisseritz, uecker
-	//};
+	enum Region
+	{
+		weisseritz, uecker
+	};
 
 	enum { MONTH=12 };
 
@@ -310,22 +310,23 @@ namespace Monica
 	/*!
 	 * @return list of results from a single crop
 	 */
-	std::vector<ResultId> cropResultIds();
+	const std::vector<ResultId>& cropResultIds();
 
-  std::pair<std::string, std::string> nameAndUnitForResultId(ResultId rid);
+  std::pair<std::string, std::string>
+  nameAndUnitForResultId(ResultId rid);
 
-	std::vector<int> eva2CropResultIds();
-	std::vector<int> eva2MonthlyResultIds();
+	const std::vector<int>& eva2CropResultIds();
+	const std::vector<int>& eva2MonthlyResultIds();
 
 	/*!
 	 * @return list of the montly results
 	 */
-	std::vector<ResultId> monthlyResultIds();
+	const std::vector<ResultId>& monthlyResultIds();
 
 	/**
 	 * @return list if ids used for sensitivity analysis
 	 */
-	std::vector<int> CCGermanyResultIds();
+	const std::vector<int>& CCGermanyResultIds();
 
 	struct ResultIdInfo {
 		ResultIdInfo(const std::string& n, const std::string& u,
@@ -507,6 +508,15 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	/**
+	 * @brief Returns crop parameters for a special crop, specified by cropId.
+	 * @param cropID
+	 * @param @return CropParameters
+	 */
+	const CropParameters* getCropParametersFromMonicaDB(int cropId);
+
+	//----------------------------------------------------------------------------
+
   enum FertiliserType { mineral, organic, undefined };
 
   /**
@@ -527,6 +537,7 @@ namespace Monica
     json11::Json to_json() const;
 
     std::string toString() const;
+
 
     /**
      * @brief Returns name of fertiliser.
@@ -580,6 +591,8 @@ namespace Monica
      * @param vo_NO3
      */
     inline void setNO3(double vo_NO3) { this->vo_NO3 = vo_NO3; }
+
+
 
   private:
     std::string name;
@@ -812,6 +825,8 @@ namespace Monica
 
 		AutomaticHarvestTime _harvestTime;		/**< Harvest time parameter */
 		int _latestHarvestDOY;					/**< Fallback day for latest harvest of the crop */
+
+		
 	};
 
 	//----------------------------------------------------------------------------
@@ -973,8 +988,11 @@ namespace Monica
     bool _automaticHarvest{false};
 		AutomaticHarvestParameters _automaticHarvestParams;
 	};
+
 	
 	//----------------------------------------------------------------------------
+
+
 
 	class MonicaModel;
 
@@ -1175,6 +1193,8 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+
+
 	class MineralFertiliserApplication : public WorkStep
 	{
 	public:
@@ -1246,11 +1266,14 @@ namespace Monica
 
     virtual OrganicFertiliserApplication* clone() const {return new OrganicFertiliserApplication(*this); }
 
+
+
   private:
     std::shared_ptr<OrganicMatterParameters> _paramsPtr;
     const OrganicMatterParameters* _params{nullptr};
     double _amount{0.0};
     bool _incorporation{false};
+
 	};
 
 	//----------------------------------------------------------------------------
@@ -1287,6 +1310,10 @@ namespace Monica
 	};
 
 	//----------------------------------------------------------------------------
+
+
+
+
 
 	class IrrigationApplication : public WorkStep
 	{
@@ -1331,6 +1358,8 @@ namespace Monica
 	};
 
 	//----------------------------------------------------------------------------
+
+
 
 	/**
 	 * @class PV
@@ -1407,7 +1436,34 @@ namespace Monica
 		//store results of the productionprocess
 		PVResultPtr _cropResult;
 	};
-			
+
+	MineralFertiliserParameters
+	getMineralFertiliserParametersFromMonicaDB(int mineralFertiliserId);
+
+	void attachFertiliserApplicationsToCropRotation
+	(std::vector<ProductionProcess>& cropRotation,
+	 const std::string& pathToFertiliserFile);
+
+	std::vector<ProductionProcess>
+	attachFertiliserSA(std::vector<ProductionProcess> cropRotation,
+										 const std::string pathToFertiliserFile);
+
+	void attachIrrigationApplicationsToCropRotation
+	(std::vector<ProductionProcess>& cropRotation,
+	 const std::string& pathToIrrigationFile);
+
+	/*!
+	 * - create cropRotation from hermes file
+	 * - the returned production processes contain absolute dates
+	 */
+	std::vector<ProductionProcess>
+		cropRotationFromHermesFile(const std::string& pathToFile, bool useAutomaticHarvestTrigger = false, AutomaticHarvestParameters autoHarvestParameters=AutomaticHarvestParameters());
+
+	Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
+																									 int fromYear, int toYear,
+																									 const CentralParameterProvider& cpp,
+																									 bool useLeapYears = true, double latitude = 51.2);
+
 	//----------------------------------------------------------------------------
 
 	/**
@@ -1415,24 +1471,12 @@ namespace Monica
 	 */
   struct OrganicMatterParameters
 	{
-		OrganicMatterParameters() {}
+//	public:
+		OrganicMatterParameters();
+    OrganicMatterParameters(json11::Json);
+		OrganicMatterParameters(const OrganicMatterParameters&);
 
-		OrganicMatterParameters(json11::Json j)
-			: name(j["name"].string_value()),
-			vo_AOM_DryMatterContent(j["AOM_DryMatterContent"].number_value()),
-			vo_AOM_NH4Content(j["AOM_NH4Content"].number_value()),
-			vo_AOM_NO3Content(j["AOM_NO3Content"].number_value()),
-			vo_AOM_CarbamidContent(j["AOM_CarbamidContent"].number_value()),
-			vo_AOM_SlowDecCoeffStandard(j["AOM_SlowDecCoeffStandard"].number_value()),
-			vo_AOM_FastDecCoeffStandard(j["AOM_FastDecCoeffStandard"].number_value()),
-			vo_PartAOM_to_AOM_Slow(j["PartAOM_to_AOM_Slow"].number_value()),
-			vo_PartAOM_to_AOM_Fast(j["PartAOM_to_AOM_Fast"].number_value()),
-			vo_CN_Ratio_AOM_Slow(j["CN_Ratio_AOM_Slow"].number_value()),
-			vo_CN_Ratio_AOM_Fast(j["CN_Ratio_AOM_Fast"].number_value()),
-			vo_PartAOM_Slow_to_SMB_Slow(j["PartAOM_Slow_to_SMB_Slow"].number_value()),
-			vo_PartAOM_Slow_to_SMB_Fast(j["PartAOM_Slow_to_SMB_Fast"].number_value()),
-			vo_NConcentration(j["NConcentration"].number_value())
-		{}
+		~OrganicMatterParameters() { }
 
 		std::string toString() const;
 
@@ -1457,29 +1501,34 @@ namespace Monica
 
 		std::string name;
 
-		double vo_AOM_DryMatterContent{0.0};   //! Dry matter content of added organic matter [kg DM kg FM-1]
-		double vo_AOM_NH4Content{ 0.0 };         //! Ammonium content in added organic matter [kg N kg DM-1]
-		double vo_AOM_NO3Content{ 0.0 };         //! Nitrate content in added organic matter [kg N kg DM-1]
-		double vo_AOM_CarbamidContent{ 0.0 };    //! Carbamide content in added organic matter [kg N kg DM-1]
+		double vo_AOM_DryMatterContent;   //! Dry matter content of added organic matter [kg DM kg FM-1]
+		double vo_AOM_NH4Content;         //! Ammonium content in added organic matter [kg N kg DM-1]
+		double vo_AOM_NO3Content;         //! Nitrate content in added organic matter [kg N kg DM-1]
+		double vo_AOM_CarbamidContent;    //! Carbamide content in added organic matter [kg N kg DM-1]
 
-		double vo_AOM_SlowDecCoeffStandard{ 0.0 }; //! Decomposition rate coefficient of slow AOM at standard conditions [d-1]
-		double vo_AOM_FastDecCoeffStandard{ 0.0 }; //! Decomposition rate coefficient of fast AOM at standard conditions [d-1]
+		double vo_AOM_SlowDecCoeffStandard; //! Decomposition rate coefficient of slow AOM at standard conditions [d-1]
+		double vo_AOM_FastDecCoeffStandard; //! Decomposition rate coefficient of fast AOM at standard conditions [d-1]
 
-		double vo_PartAOM_to_AOM_Slow{ 0.0 };    //! Part of AOM that is assigned to the slowly decomposing pool [kg kg-1
-		double vo_PartAOM_to_AOM_Fast{ 0.0 };    //! Part of AOM that is assigned to the rapidly decomposing pool [kg kg-1]
+		double vo_PartAOM_to_AOM_Slow;    //! Part of AOM that is assigned to the slowly decomposing pool [kg kg-1
+		double vo_PartAOM_to_AOM_Fast;    //! Part of AOM that is assigned to the rapidly decomposing pool [kg kg-1]
 
-		double vo_CN_Ratio_AOM_Slow{ 0.0 };    //! C to N ratio of the slowly decomposing AOM pool []
-		double vo_CN_Ratio_AOM_Fast{ 0.0 };    //! C to N ratio of the rapidly decomposing AOM pool []
+		double vo_CN_Ratio_AOM_Slow;    //! C to N ratio of the slowly decomposing AOM pool []
+		double vo_CN_Ratio_AOM_Fast;    //! C to N ratio of the rapidly decomposing AOM pool []
 
-		double vo_PartAOM_Slow_to_SMB_Slow{ 0.0 };   //! Part of AOM slow consumed by slow soil microbial biomass [kg kg-1]
-		double vo_PartAOM_Slow_to_SMB_Fast{ 0.0 };   //! Part of AOM slow consumed by fast soil microbial biomass [kg kg-1]
+		double vo_PartAOM_Slow_to_SMB_Slow;   //! Part of AOM slow consumed by slow soil microbial biomass [kg kg-1]
+		double vo_PartAOM_Slow_to_SMB_Fast;   //! Part of AOM slow consumed by fast soil microbial biomass [kg kg-1]
 
-		double vo_NConcentration{ 0.0 };
+		double vo_NConcentration;
 	};
 
 	typedef OrganicMatterParameters OMP;
   typedef std::shared_ptr<OMP> OMPPtr;
-	
+
+	OrganicMatterParameters*
+	getOrganicFertiliserParametersFromMonicaDB(int organ_fert_id);
+
+	const OrganicMatterParameters* getResidueParametersFromMonicaDB(int crop_id);
+
 	//----------------------------------------------------------------------------
 
 	/**
@@ -2010,8 +2059,6 @@ namespace Monica
 			organic_matter_parameters.vo_CN_Ratio_AOM_Fast = UNDEFINED;
 		}
 
-//		~SensitivityAnalysisParameters() {}
-
 		// soilmoisture module parameters
     double p_MeanFieldCapacity{UNDEFINED};
     double p_MeanBulkDensity{UNDEFINED};
@@ -2048,7 +2095,9 @@ namespace Monica
 	class CentralParameterProvider
 	{
 	public:
-		CentralParameterProvider() : precipCorrectionValues(MONTH - 1, 1.0)  {}
+		CentralParameterProvider();
+		CentralParameterProvider(const CentralParameterProvider&);
+		virtual ~CentralParameterProvider() {}
 
 		UserCropParameters userCropParameters;
 		UserEnvironmentParameters userEnvironmentParameters;
@@ -2064,16 +2113,23 @@ namespace Monica
 		double getPrecipCorrectionValue(int month) const;
 		void setPrecipCorrectionValue(int month, double value);
 
-		bool writeOutputFiles{ false };
+		bool writeOutputFiles;
 
 	private:
-		std::vector<double> precipCorrectionValues;
+		double precipCorrectionValues[12];
 	};
 
 	//----------------------------------------------------------------------------
-	
+
+	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
+
 	void testClimateData(Climate::DataAccessor &climateData);
-  
+
+	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
+
+  //----------------------------------------------------------------------------
+
+  const std::map<int, std::string>& availableMonicaCrops();
 }
 
 #endif

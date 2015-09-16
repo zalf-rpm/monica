@@ -47,6 +47,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/debug.h"
 #include "monica-parameters.h"
 #include "tools/read-ini.h"
+#include "../io/hermes-file-io.h"
+#include "../io/database-io.h"
 
 #if defined RUN_CC_GERMANY || defined RUN_GIS
 #include "grid/grid.h"

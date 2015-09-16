@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../core/soiltransport.h"
 #include "../core/crop.h"
 #include "../run/run-monica.h"
+#include "../io/database-io.h"
 
 #include "soil/conversion.h"
 #include "climate/climate-common.h"
