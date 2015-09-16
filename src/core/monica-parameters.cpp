@@ -179,7 +179,9 @@ Result::getResultsById(int id)
       id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
       id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
       id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass || 
-      id == anthesisDay || id == maturityDay || id == harvestDay )
+      id == anthesisDay || id == maturityDay || id == harvestDay || 
+	  id == soilMoist0_90cmAtHarvest || id == corg0_30cmAtHarvest || id == nmin0_90cmAtHarvest	  
+	  )
   {
     vector<double> result_vector;
     int size = pvrs.size();
@@ -433,6 +435,12 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Hauptertrag in TM", "dt TM/ha", "primYield");
   case secondaryYieldTM:
     return ResultIdInfo("Nebenertrag in TM", "dt TM/ha", "secYield");
+  case soilMoist0_90cmAtHarvest:
+	  return ResultIdInfo("Wassergehalt zur Ernte in 0-90cm", "%", "moist90Harvest");
+  case corg0_30cmAtHarvest:
+	  return ResultIdInfo("Corg-Gehalt zur Ernte in 0-30cm", "% kg C/kg Boden", "corg30Harvest");
+  case nmin0_90cmAtHarvest:
+	  return ResultIdInfo("Nmin zur Ernte in 0-90cm", "kg N/ha", "nmin90Harvest");
   case monthlySurfaceRunoff:
     return ResultIdInfo("Monatlich akkumulierte Oberflächenabfluss", "mm", "monthlySurfaceRunoff");
   case monthlyPrecip:
@@ -489,6 +497,24 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
     return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "oxygenStress");
   case dev_stage:
     return ResultIdInfo("Liste mit täglichen Werten für das Entwicklungsstadium", "[]", "devStage");
+  case soilMoist0_90cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für den Wassergehalt in 0-90cm", "[%]", "soilMoist0_90");
+  case corg0_30cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für Corg in 0-30cm", "[]", "corg0_30");
+  case nmin0_90cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für Nmin in 0-90cm", "[kg N / ha]", "nmin0_90");
+
+  case ETa:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "mm", "ETa");
+  case dailyAGB:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "kg FM ha-1", "dailyAGB");
+  case dailyAGB_N:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "kg N ha-1", "dailyAGB_N");
+
+	  
+
+	  
+
 	default: ;
 	}
 	return ResultIdInfo("", "");
@@ -590,8 +616,9 @@ void Harvest::apply(MonicaModel* model)
 				_cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
 				_cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
 				_cropResult->pvResults[anthesisDay] = _crop->getAnthesisDay();
-        _cropResult->pvResults[maturityDay] = _crop->getMaturityDay();
-        _cropResult->pvResults[harvestDay] = date().julianDay();
+				_cropResult->pvResults[soilMoist0_90cmAtHarvest] = model->mean90cmWaterContent();
+				_cropResult->pvResults[corg0_30cmAtHarvest] = model->avgCorg(0.3);
+				_cropResult->pvResults[nmin0_90cmAtHarvest] = model->sumNmin(0.9);
 
         if (_method == "total")
           model->harvestCurrentCrop(_exported);
@@ -1814,7 +1841,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
           cps = cpsi->second;
 
         cps->pc_CropName = row[i++].c_str();
-        cps->pc_Perennial = satob(row[i++]);
+        cps->pc_Perennial = satoi(row[i++]) == 1;
         cps->pc_MaxAssimilationRate = satof(row[i++]);
         cps->pc_CarboxylationPathway = satoi(row[i++]);
         cps->pc_MinimumTemperatureForAssimilation = satof(row[i++]);

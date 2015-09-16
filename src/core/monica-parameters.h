@@ -181,6 +181,15 @@ namespace Monica
 		//! Average soilmoisture content in 0-90cm soil at special, hardcoded date
 		avg0_90cmSoilMoisture,
 
+		//! soilmoisture content in 0-90cm soil at special at harvest
+		soilMoist0_90cmAtHarvest,
+
+		//! corg content in the first 30 cm soil at harvest
+		corg0_30cmAtHarvest,
+
+		//! Nmin content in the first 90 cm soil at harvest
+		nmin0_90cmAtHarvest,
+
 		//! water flux at bottom layer of soil at special, hardcoded date
 		waterFluxAtLowerBoundary,
 
@@ -277,7 +286,26 @@ namespace Monica
 		WaterStress,
 		HeatStress,
 		OxygenStress,
-		dev_stage
+		dev_stage,
+
+		// Daily outputs used for time-dependant sensitivity analysis
+
+		//! soilmoisture content in 0-90cm soil
+		soilMoist0_90cm,
+
+		//! corg content in the first 30 cm soil 
+		corg0_30cm,
+
+		//! Nmin content in the first 90 cm soil
+		nmin0_90cm,
+
+		// evapotranspiration
+		ETa,
+
+		dailyAGB,
+
+		dailyAGB_N
+					
 	};
 
 	/*!

@@ -4,11 +4,11 @@
 ######################################
 
 #db_source = "monica_07122011.sqlite" 
-db_source = "monica.sqlite"
-original_crop_id = 9
+db_source = "monica-macsur-phase3.sqlite"
+original_crop_id = 7
 
-db_target = "monica_eva2.sqlite"
-new_crop_id = 50
+db_target = "monica-macsur-phase3-a.sqlite"
+new_crop_id = 61
 
 ######################################
 
@@ -60,7 +60,7 @@ def get_residue_id(cursor_target):
 
 def copy_crop_entry(table, id, cursor_src, cursor_target, conn_src, conn_target):
     
-    print "Copying data from table " + table
+    print ("Copying data from table " + table)
     
     column_names = test_column_names(table, cursor_src, cursor_target)
     
@@ -71,7 +71,7 @@ def copy_crop_entry(table, id, cursor_src, cursor_target, conn_src, conn_target)
     # get row of data
     query_string = """SELECT * FROM """ + table + """ WHERE """ + id + """ = """ + str(original_crop_id)
     
-    print query_string, "\n"
+    print (query_string, "\n")
     cursor_src.execute(query_string)
     
     
@@ -105,11 +105,11 @@ def copy_crop_entry(table, id, cursor_src, cursor_target, conn_src, conn_target)
         query_string2 = 'INSERT INTO ' + table + ' ' + column_header + ' VALUES ' + placeholder 
          
         #print query_string2, "\n"
-        print "Adding ", new_row
+        print ("Adding ", new_row)
         cursor_target.execute(query_string2, new_row)
         conn_target.commit()
     
-    print
+    print()
     
         
 ####################################################################
@@ -118,7 +118,7 @@ def copy_crop_entry(table, id, cursor_src, cursor_target, conn_src, conn_target)
 
 def test_column_names(table, c_src, c_target):
     
-    print "Testing column headers of table \"" +  table + "\""
+    print ("Testing column headers of table \"" +  table + "\"")
     
     c_src.execute('PRAGMA table_info(' + table + ')')
     names_src = []
@@ -135,9 +135,9 @@ def test_column_names(table, c_src, c_target):
     for i,n in enumerate(names_src):
         #print "Testing", n
         if (n not in names_target):
-            print "Did not find column " + n + " in target table. Adding new column ...\n"
+            print ("Did not find column " + n + " in target table. Adding new column ...\n")
             query_string = "ALTER table " + table + " ADD COLUMN "+ n + " " + types_src[i]
-            print query_string, n
+            print (query_string, n)
             c_target.execute(query_string)
             
             
