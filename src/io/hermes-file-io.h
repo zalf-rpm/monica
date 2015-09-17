@@ -51,8 +51,6 @@ namespace Monica
 	* - the returned production processes contain absolute dates
 	*/
 	std::vector<ProductionProcess> cropRotationFromHermesFile(const std::string& pathToFile, 
-		std::function<const CropParameters*(int)> getCropParameters,
-		std::function<const OrganicMatterParameters*(int)> getResidueParameters,
 		bool useAutomaticHarvestTrigger = false, AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
 
 	Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,

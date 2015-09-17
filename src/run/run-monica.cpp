@@ -209,13 +209,15 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
                     ? da.dataForTimestep(Climate::relhumid, stepNo)
                     : -1.0;
 
-  return make_pair(currentDate, {{Climate::tmin, tmin},
-                                 {Climate::tavg, tavg},
-                                 {Climate::tmax, tmax},
-                                 {Climate::precip, precip},
-                                 {Climate::wind, wind},
-                                 {Climate::globrad, globrad},
-                                 {Climate::relhumid, relhumid}});
+	map<Climate::ACD, double> m{ 
+		{ Climate::tmin, tmin },
+	{ Climate::tavg, tavg },
+	{ Climate::tmax, tmax },
+	{ Climate::precip, precip },
+	{ Climate::wind, wind },
+	{ Climate::globrad, globrad },
+	{ Climate::relhumid, relhumid } };
+  return make_pair(currentDate, m);
 }
 
 /**
@@ -299,7 +301,6 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 			return res;
 		}
 
-		MonicaModel monica(env, env.da);
 		// writes the header line to output files
 		initializeFoutHeader(fout);
 		initializeGoutHeader(gout);

@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/algorithms.h"
 #include "soil/soil.h"
 #include "../run/run-monica.h"
+#include "../io/database-io.h"
 
 #include "hermes-file-io.h"
 
@@ -302,8 +303,7 @@ pair<FertiliserType, int> Monica::hermesFertiliserName2monicaFertiliserId(const 
 //------------------------------------------------------------------------------------
 
 vector<ProductionProcess>
-Monica::cropRotationFromHermesFile(const string& pathToFile, function<const CropParameters*(int)> getCropParameters,
-	function<const OrganicMatterParameters*(int)> getResidueParameters, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
+Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
 {
 	vector<ProductionProcess> ff;
 
@@ -345,8 +345,8 @@ Monica::cropRotationFromHermesFile(const string& pathToFile, function<const Crop
 
 		//create crop
 		CropPtr crop = hermesCropId2Crop(crp);
-		crop->setCropParameters(getCropParameters(crop->id()));
-		crop->setResidueParameters(getResidueParameters(crop->id()));
+		crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
+		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
 
 		if (!useAutomaticHarvestTrigger) {
 			// Do not use automatic harvest trigger
