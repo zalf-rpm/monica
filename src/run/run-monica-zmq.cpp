@@ -42,6 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "run-monica-zmq.h"
 #include "tools/debug.h"
 #include "../core/monica.h"
+#include "../io/database-io.h"
 
 #ifndef NO_ZMQ
 #include "tools/zmq-helper.h"

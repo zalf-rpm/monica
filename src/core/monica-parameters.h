@@ -42,6 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
+#include "tools/json11-helper.h"
 #include "soil/soil.h"
 #include "monica-typedefs.h"
 
@@ -384,9 +385,9 @@ namespace Monica
     {}
 
     YieldComponent(json11::Json j)
-      : organId(j["organId"].int_value()),
-        yieldPercentage(j["yieldPercentage"].number_value()),
-        yieldDryMatter(j["yieldDryMatter"].number_value())
+      : organId(Tools::int_value(j, "organId")),
+        yieldPercentage(Tools::number_value(j, "yieldPercentage")),
+        yieldDryMatter(Tools::number_value(j, "yieldDryMatter"))
     {}
 
 		json11::Json to_json() const
@@ -676,7 +677,7 @@ namespace Monica
 //    ~MeasuredGroundwaterTableInformation() {}
 
     MeasuredGroundwaterTableInformation(json11::Json j)
-      : groundwaterInformationAvailable(j["groundwaterInformationAvailable"].bool_value())
+      : groundwaterInformationAvailable(Tools::bool_value(j, "groundwaterInformationAvailable"))
     {
       for(auto p : j["groundwaterInfo"].object_items())
         groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
@@ -749,9 +750,30 @@ namespace Monica
 	{
     SiteParameters(){}
 
-    SiteParameters(json11::Json j);
+    SiteParameters(json11::Json j)
+      : vs_Latitude(j["Latitude"].number_value()),
+        vs_Slope(j["Slope"].number_value()),
+        vs_HeightNN(j["HeightNN"].number_value()),
+        vs_GroundwaterDepth(j["GroundwaterDepth"].number_value()),
+        vs_Soil_CN_Ratio(j["Soil_CN_Ratio"].number_value()),
+        vs_DrainageCoeff(j["DrainageCoeff"].number_value()),
+        vq_NDeposition(j["NDeposition"].number_value()),
+        vs_MaxEffectiveRootingDepth(j["MaxEffectiveRootingDepth"].number_value())
+    {}
 
-    json11::Json to_json() const;
+    json11::Json to_json() const
+    {
+      return json11::Json::object {
+        {"type", "SiteParameters"},
+        {"Latitude", vs_Latitude},
+        {"Slope", vs_Slope},
+        {"HeightNN", vs_HeightNN},
+        {"GroundwaterDepth", vs_GroundwaterDepth},
+        {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
+        {"DrainageCoeff", vs_DrainageCoeff},
+        {"NDeposition", vq_NDeposition},
+        {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
+    }
 
     std::string toString() const;
 

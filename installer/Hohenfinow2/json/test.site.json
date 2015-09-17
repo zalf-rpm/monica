@@ -1,8 +1,8 @@
 {
   "latitude": 52.1,
   "slope": 0,
-  "heightNN": 38,
-  "atmosphericCO2": 385,
+  "heightNN": { "value": 38 , "unit": "m"},
+  "atmosphericCO2": [385, "ppm", "kommentar"],
   "windSpeedHeight": 2,
   "leachingDepth": 15,
   "NDeposition": 0,
