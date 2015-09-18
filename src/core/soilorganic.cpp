@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soilorganic.h"
 #include "soilcolumn.h"
 #include "monica.h"
-#include "crop.h"
+#include "crop-growth.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
 

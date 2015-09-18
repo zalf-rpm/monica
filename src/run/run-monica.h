@@ -28,9 +28,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RUN_MONICA_H_
 
 #include "../core/monica.h"
+#include "production-process.h"
 
 namespace Monica
 {
+  inline std::string pathSeparator()
+  {
+    return
+    #ifdef __unix__
+        "/";
+#else
+        "\\";
+#endif
+  }
+
   struct Env
   {
 		enum

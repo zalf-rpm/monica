@@ -55,7 +55,6 @@ using namespace Tools;
 using namespace Soil;
 using namespace json11;
 
-
 Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
 	: soilParams(sps),
 	centralParameterProvider(cpp)
@@ -425,7 +424,7 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
     if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
 
       // Test if crop should be harvested at maturity
-      if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestTime::maturity) {
+      if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestParameters::maturity) {
 
         if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
 

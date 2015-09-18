@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "json11/json11.hpp"
 
 #include "run-monica-zmq.h"
+#include "production-process.h"
 #include "tools/debug.h"
 #include "../core/monica.h"
 #include "../io/database-io.h"

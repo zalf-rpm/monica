@@ -221,7 +221,7 @@ public:
 	* @brief Setter for automatic yield parameters.
 	* 
 	*/
-	void setAutomaticHarvestParameters(Monica::AutomaticHarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
+	void setAutomaticHarvestParameters(Monica::AutomaticHarvestParameters::HarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
 
 
     void setNMinFertiliser(bool state) { this->NMinFertiliser = state;}

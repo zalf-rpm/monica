@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "soilmoisture.h"
 #include "soilcolumn.h"
-#include "crop.h"
+#include "crop-growth.h"
 #include "monica.h"
 #include "tools/debug.h"
 
