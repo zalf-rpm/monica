@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/date.h"
 #include "monica-parameters.h"
 #include "monica.h"
+#include "../run/run-monica.h"
 //#include "gis_simulation_methods.h"
 
 namespace Monica 
@@ -220,7 +221,7 @@ public:
 	* @brief Setter for automatic yield parameters.
 	* 
 	*/
-	void setAutomaticHarvestParameters(Monica::AutomaticHarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
+	void setAutomaticHarvestParameters(Monica::AutomaticHarvestParameters::HarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
 
 
     void setNMinFertiliser(bool state) { this->NMinFertiliser = state;}

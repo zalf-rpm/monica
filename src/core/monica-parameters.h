@@ -42,23 +42,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
+#include "tools/json11-helper.h"
 #include "soil/soil.h"
 #include "monica-typedefs.h"
 
 namespace Monica
 {
-#undef min
-#undef max
-
-	inline std::string pathSeparator()
-	{
-		return
-#ifdef __unix__
-			"/";
-#else
-			"\\";
-#endif
-	}
+//#undef min
+//#undef max
 
 	class CentralParameterProvider;
 
@@ -74,37 +65,17 @@ namespace Monica
 	const double UNDEFINED = -9999.9;
 	const int UNDEFINED_INT = -9999;
 
-	enum Region
-	{
-		weisseritz, uecker
-	};
-
 	enum { MONTH=12 };
 
 	//----------------------------------------------------------------------------
 
-	/**
-	* @brief Enumeration for defining automatic harvesting times
-	* Definition of different harvest time definition for the automatic
-	* yield trigger
-	*/
-	enum AutomaticHarvestTime
-	{
-		maturity,	/**< crop is harvested when maturity is reached */
-		unknown		/**< default error value */
-	};
-
-
-	//----------------------------------------------------------------------------
-
-	enum ResultId
+  enum ResultId
 	{
 		//! primary yield for the crop (e.g. the actual fruit)
 		primaryYield,
 
 		//! secondary yield for the crop (e.g. leafs and other stuff useable)
 		secondaryYield,
-
 
 		//! above ground biomass of the crop
 		aboveGroundBiomass,
@@ -299,41 +270,39 @@ namespace Monica
 		//! Nmin content in the first 90 cm soil
 		nmin0_90cm,
 
-		// evapotranspiration
+    //! evapotranspiration
 		ETa,
 
 		dailyAGB,
 
 		dailyAGB_N
-					
 	};
 
-	/*!
-	 * @return list of results from a single crop
-	 */
-	const std::vector<ResultId>& cropResultIds();
+  //! @return list of results from a single crop
+	std::vector<ResultId> cropResultIds();
 
-  std::pair<std::string, std::string>
-  nameAndUnitForResultId(ResultId rid);
+  std::pair<std::string, std::string> nameAndUnitForResultId(ResultId rid);
 
-	const std::vector<int>& eva2CropResultIds();
-	const std::vector<int>& eva2MonthlyResultIds();
+	std::vector<int> eva2CropResultIds();
+	std::vector<int> eva2MonthlyResultIds();
 
-	/*!
-	 * @return list of the montly results
-	 */
-	const std::vector<ResultId>& monthlyResultIds();
+  //! @return list of the montly results
+	std::vector<ResultId> monthlyResultIds();
 
-	/**
-	 * @return list if ids used for sensitivity analysis
-	 */
-	const std::vector<int>& CCGermanyResultIds();
+  //! @return list of ids used for sensitivity analysis
+	std::vector<int> CCGermanyResultIds();
 
-	struct ResultIdInfo {
-		ResultIdInfo(const std::string& n, const std::string& u,
-								 const std::string& sn = std::string())
-			: name(n), unit(u), shortName(sn) {}
-		std::string name;
+  struct ResultIdInfo
+  {
+    ResultIdInfo(const std::string& n,
+                 const std::string& u,
+                 const std::string& sn = std::string())
+      : name(n),
+        unit(u),
+        shortName(sn)
+    {}
+
+    std::string name;
 		std::string unit;
 		std::string shortName;
 	};
@@ -349,7 +318,7 @@ namespace Monica
 
     PVResult(int id) : id(id) {}
 
-    PVResult(json11::Json j);
+    PVResult(json11::Json object);
 
     json11::Json to_json() const;
 
@@ -374,31 +343,13 @@ namespace Monica
 	 */
 	struct YieldComponent
 	{
-		/**
-		 * @brief Constructor
-		 * @param oid organ ID
-		 * @param yp Yield percentage
-		 */
-    YieldComponent(int oid, double yp, double ydm)
-      : organId(oid),
-        yieldPercentage(yp),
-        yieldDryMatter(ydm)
-    {}
+    YieldComponent(int organId, double yieldPercentage, double yieldDryMatter);
 
-    YieldComponent(json11::Json j)
-      : organId(j["organId"].int_value()),
-        yieldPercentage(j["yieldPercentage"].number_value()),
-        yieldDryMatter(j["yieldDryMatter"].number_value())
-    {}
+    YieldComponent(json11::Json object);
 
-		json11::Json to_json() const
-		{
-			return json11::Json::object{
-        {"type", "YieldComponent"},
-        {"organId", organId},
-        {"yieldPercentage", yieldPercentage},
-        {"yieldDryMatter", yieldDryMatter}};
-    }
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     int organId{-1};
     double yieldPercentage{0.0};
@@ -414,7 +365,7 @@ namespace Monica
 	{
     CropParameters() {}
 
-    CropParameters(json11::Json j);
+    CropParameters(json11::Json object);
 
 		json11::Json to_json() const;
 		
@@ -509,15 +460,6 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	/**
-	 * @brief Returns crop parameters for a special crop, specified by cropId.
-	 * @param cropID
-	 * @param @return CropParameters
-	 */
-	const CropParameters* getCropParametersFromMonicaDB(int cropId);
-
-	//----------------------------------------------------------------------------
-
   enum FertiliserType { mineral, organic, undefined };
 
   /**
@@ -530,15 +472,14 @@ namespace Monica
   public:
     MineralFertiliserParameters() {}
 
-    MineralFertiliserParameters(json11::Json j);
+    MineralFertiliserParameters(json11::Json object);
 
     MineralFertiliserParameters(const std::string& name, double carbamid,
                                 double no3, double nh4);
 
     json11::Json to_json() const;
 
-    std::string toString() const;
-
+    std::string toString() const { return to_json().dump(); }
 
     /**
      * @brief Returns name of fertiliser.
@@ -576,24 +517,19 @@ namespace Monica
      * Sets carbamid part of fertilisers
      * @param vo_Carbamid percent
      */
-    inline void setCarbamid(double vo_Carbamid)
-    {
-      this->vo_Carbamid = vo_Carbamid;
-    }
+    inline void setCarbamid(double carbamid) { vo_Carbamid = carbamid; }
 
     /**
      * @brief Sets nitrat part of fertiliser.
      * @param vo_NH4
      */
-    inline void setNH4(double vo_NH4) { this->vo_NH4 = vo_NH4; }
+    inline void setNH4(double NH4) { vo_NH4 = NH4; }
 
     /**
      * @brief Sets nitrat part of fertiliser.
      * @param vo_NO3
      */
-    inline void setNO3(double vo_NO3) { this->vo_NO3 = vo_NO3; }
-
-
+    inline void setNO3(double NO3) { vo_NO3 = NO3; }
 
   private:
     std::string name;
@@ -610,13 +546,14 @@ namespace Monica
 
     NMinUserParameters(double min, double max, int delayInDays);
 
-    NMinUserParameters(json11::Json j);
+    NMinUserParameters(json11::Json object);
 
     json11::Json to_json() const;
 
-    std::string toString() const;
+    std::string toString() const { return to_json().dump(); }
 
-    double min{0.0}, max{0.0};
+    double min{0.0};
+    double max{0.0};
     int delayInDays{0};
   };
 
@@ -626,29 +563,16 @@ namespace Monica
   {
     IrrigationParameters() {}
 
-    IrrigationParameters(double nitrateConcentration,
-                         double sulfateConcentration)
-      : nitrateConcentration(nitrateConcentration),
-        sulfateConcentration(sulfateConcentration)
-    {}
+    IrrigationParameters(double nitrateConcentration, double sulfateConcentration);
 
-    IrrigationParameters(json11::Json j)
-      : nitrateConcentration(j["nitrateConcentration"].number_value()),
-        sulfateConcentration(j["sulfateConcentration"].number_value())
-    {}
+    IrrigationParameters(json11::Json object);
 
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "IrrigationParameters"},
-        {"nitrateConcentration", nitrateConcentration},
-        {"sulfateConcentration", sulfateConcentration}};
-    }
+    virtual json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     double nitrateConcentration{0.0};
     double sulfateConcentration{0.0};
-
-    std::string toString() const;
   };
 
   //----------------------------------------------------------------------------
@@ -657,28 +581,16 @@ namespace Monica
   {
     AutomaticIrrigationParameters() {}
 
-		AutomaticIrrigationParameters(double a, double t, double nc, double sc)
-			: IrrigationParameters(nc, sc), amount(a), treshold(t) {}
+    AutomaticIrrigationParameters(double a, double t, double nc, double sc);
 
-    AutomaticIrrigationParameters(json11::Json j)
-      : IrrigationParameters(j["irrigationParameters"]),
-        amount(j["amount"].number_value()),
-        treshold(j["treshold"].number_value())
-    {}
+    AutomaticIrrigationParameters(json11::Json object);
 
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "AutomaticIrrigationParameters"},
-        {"irrigationParameters", IrrigationParameters::to_json()},
-        {"amount", amount},
-        {"treshold", treshold}};
-    }
+    virtual json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     double amount{17.0};
     double treshold{0.35};
-
-    std::string toString() const;
   };
 
   //----------------------------------------------------------------------------
@@ -687,32 +599,18 @@ namespace Monica
   {
   public:
     MeasuredGroundwaterTableInformation() {}
-//    ~MeasuredGroundwaterTableInformation() {}
 
-    MeasuredGroundwaterTableInformation(json11::Json j)
-      : groundwaterInformationAvailable(j["groundwaterInformationAvailable"].bool_value())
-    {
-      for(auto p : j["groundwaterInfo"].object_items())
-        groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
-    }
+    MeasuredGroundwaterTableInformation(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     void readInGroundwaterInformation(std::string path);
 
     double getGroundwaterInformation(Tools::Date gwDate) const;
 
     bool isGroundwaterInformationAvailable() const { return groundwaterInformationAvailable; }
-
-    json11::Json to_json() const
-    {
-      json11::Json::object gi;
-      for(auto p : groundwaterInfo)
-        gi[p.first.toIsoDateString()] = p.second;
-
-      return json11::Json::object {
-        {"type", "MeasuredGroundwaterTableInformation"},
-        {"groundwaterInformationAvailable", groundwaterInformationAvailable},
-        {"groundwaterInfo", gi}};
-    }
 
   private:
       bool groundwaterInformationAvailable{false};
@@ -728,6 +626,8 @@ namespace Monica
     GeneralParameters(json11::Json j);
 
     json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     size_t ps_NumberOfLayers() const { return ps_LayerThickness.size(); }
 
@@ -763,11 +663,11 @@ namespace Monica
 	{
     SiteParameters(){}
 
-    SiteParameters(json11::Json j);
+    SiteParameters(json11::Json object);
 
     json11::Json to_json() const;
 
-    std::string toString() const;
+    std::string toString() const { return to_json().dump(); }
 
     double vs_Latitude{60.0};
     //! slope [m m-1]
@@ -789,374 +689,42 @@ namespace Monica
 	*/
 	class AutomaticHarvestParameters
 	{
+  public:
+    //! Enumeration for defining automatic harvesting times
+
+    //! Definition of different harvest time definition for the automatic
+    //! yield trigger
+    enum HarvestTime
+    {
+      maturity,	//!< crop is harvested when maturity is reached
+      unknown		//!< default error value
+    };
 		public:
-		/** @brief Constructor */
-		AutomaticHarvestParameters() : 
-			_harvestTime(AutomaticHarvestTime::unknown),
-			_latestHarvestDOY(-1) {}
+    AutomaticHarvestParameters() {}
 	
-		/** @brief Constructor */
-		AutomaticHarvestParameters(AutomaticHarvestTime yt) : 
-			_harvestTime(yt),
-			_latestHarvestDOY(-1) {}
+    AutomaticHarvestParameters(HarvestTime yt);
 
-		/**
-		 * @brief Setter for automatic harvest time
-		 */
-		void setHarvestTime(AutomaticHarvestTime time) { _harvestTime = time;  }
-
-		/**
-		 * @brief Getter for automatic harvest time
-		 */
-		AutomaticHarvestTime getHarvestTime() const { return _harvestTime;  }
-
-		/**
-		 * @brief Setter for fallback automatic harvest day
-		 */
-		void setLatestHarvestDOY(int doy) { _latestHarvestDOY = doy;  }
-
-		/**
-		* @brief Getter for fallback automatic harvest day
-		*/
-		int getLatestHarvestDOY() const { return _latestHarvestDOY; }
-		
-		std::string toString() const;
-
-		private:
-
-		AutomaticHarvestTime _harvestTime;		/**< Harvest time parameter */
-		int _latestHarvestDOY;					/**< Fallback day for latest harvest of the crop */
-
-		
-	};
-
-	//----------------------------------------------------------------------------
-
-  struct OrganicMatterParameters;
-	class AutomaticHarvestParameters;
-	
-	class Crop;
-  typedef std::shared_ptr<Crop> CropPtr;
-	
-	class Crop
-	{
-	public:
-    Crop(const std::string& name = "fallow");
-
-    Crop(CropId id, const std::string& name,
-         const CropParameters* cps = nullptr,
-         const OrganicMatterParameters* rps = nullptr,
-         double crossCropAdaptionFactor = 1);
-
-    Crop(CropId id, const std::string& name,
-         const Tools::Date& seedDate,
-         const Tools::Date& harvestDate,
-         const CropParameters* cps = nullptr,
-         const OrganicMatterParameters* rps = nullptr,
-         double crossCropAdaptionFactor = 1);
-
-    Crop(json11::Json j);
+    AutomaticHarvestParameters(json11::Json object);
 
     json11::Json to_json() const;
 
-    CropId id() const { return _id; }
+    std::string toString() const;
 
-    std::string name() const { return _name; }
+    //! Setter for automatic harvest time
+    void setHarvestTime(HarvestTime time) { _harvestTime = time; }
 
-    bool isValid() const { return _id > -1; }
+    //! Getter for automatic harvest time
+    HarvestTime getHarvestTime() const { return _harvestTime; }
 
-    const CropParameters* cropParameters() const { return _cropParams; }
+    //! Setter for fallback automatic harvest day
+    void setLatestHarvestDOY(int doy) { _latestHarvestDOY = doy; }
 
-    const CropParameters* perennialCropParameters() const { return _perennialCropParams; }
-
-    void setCropParameters(const CropParameters* cps) { _cropParams = cps; }
-
-    void setPerennialCropParameters(const CropParameters* cps) { _perennialCropParams = cps; }
-
-    const OrganicMatterParameters* residueParameters() const { return _residueParams; }
-
-    void setResidueParameters(const OrganicMatterParameters* rps) { _residueParams = rps; }
-
-		Tools::Date seedDate() const { return _seedDate; }
-
-		Tools::Date harvestDate() const { return _harvestDate; }
-
-		std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
-
-    void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd)
-		{
-      _seedDate = sd;
-      _harvestDate = hd;
-		}
-
-		void addCuttingDate(const Tools::Date cd) { _cuttingDates.push_back(cd); }
-
-		//void applyCutting();
-
-		std::string toString(bool detailed = false) const;
-
-		void setHarvestYields(double primaryYield, double secondaryYield)
-		{
-			_primaryYield += primaryYield;
-			_secondaryYield += secondaryYield;
-		}
-
-		void setHarvestYieldsTM(double primaryYieldTM, double secondaryYieldTM)
-		{
-			_primaryYieldTM += primaryYieldTM;
-			_secondaryYieldTM += secondaryYieldTM;
-		}
-
-		void setYieldNContent(double primaryYieldN, double secondaryYieldN)
-		{
-			_primaryYieldN += primaryYieldN;
-			_secondaryYieldN += secondaryYieldN;
-		}
-
-		void addAppliedIrrigationWater(double amount) { _appliedAmountIrrigation += amount; }
-		void setSumTotalNUptake(double sum) { _sumTotalNUptake = sum; }
-		void setCropHeight(double height) {_cropHeight = height; }
-		void setAccumulatedETa(double eta) { _accumulatedETa = eta; }
-		void setAccumulatedTranspiration(double transp) { _accumulatedTranspiration = transp;  }
-
-		double appliedIrrigationWater() const { return _appliedAmountIrrigation; }
-		double sumTotalNUptake() const {return _sumTotalNUptake; }
-		double primaryYield() const { return _primaryYield * _crossCropAdaptionFactor; }
-		double aboveGroundBiomass() const { return _primaryYield * _crossCropAdaptionFactor + _secondaryYield * _crossCropAdaptionFactor; }
-		double secondaryYield() const { return _secondaryYield * _crossCropAdaptionFactor; }
-		double primaryYieldTM() const {  return _primaryYieldTM * _crossCropAdaptionFactor; }
-		double secondaryYieldTM() const { return _secondaryYieldTM * _crossCropAdaptionFactor; }
-		double primaryYieldN() const { return _primaryYieldN; }
-		double aboveGroundBiomasseN() const { return _primaryYieldN + _secondaryYieldN; }
-		double secondaryYieldN() const { return _secondaryYieldN; }
-		double cropHeight() const { return _cropHeight; }
-
-		void reset()
-		{
-			_primaryYield = _secondaryYield = _appliedAmountIrrigation = 0;
-			_primaryYieldN = _secondaryYieldN = _accumulatedETa = _accumulatedTranspiration =  0.0;
-			_primaryYieldTM = _secondaryYield = 0.0;
-			_anthesisDay = _maturityDay = -1;
-		}
-
-		void setEva2TypeUsage(int type) { eva2_typeUsage = type; }
-		int getEva2TypeUsage() const { return eva2_typeUsage; }
-
-		double get_AccumulatedETa() const {return _accumulatedETa;}
-		double get_AccumulatedTranspiration() const { return _accumulatedTranspiration; }
-
-		void writeCropParameters(std::string path);
-
-		void setAnthesisDay(int day) { _anthesisDay = day; }
-		int getAnthesisDay() const { return _anthesisDay; }
-
-		void setMaturityDay(int day) { _maturityDay = day; }
-		int getMaturityDay() const { return _maturityDay; }
+    //! Getter for fallback automatic harvest day
+		int getLatestHarvestDOY() const { return _latestHarvestDOY; }
 		
-		// Automatic yiedl trigger parameters
-		bool useAutomaticHarvestTrigger() { return _automaticHarvest; }
-		void activateAutomaticHarvestTrigger(AutomaticHarvestParameters params) { _automaticHarvest = true; _automaticHarvestParams = params; }
-		AutomaticHarvestParameters getAutomaticHarvestParams() { return _automaticHarvestParams; }
-
-	private:
-    CropId _id{-1};
-		std::string _name;
-		Tools::Date _seedDate;
-		Tools::Date _harvestDate;
-		std::vector<Tools::Date> _cuttingDates;
-    const CropParameters* _cropParams{nullptr};
-    const CropParameters* _perennialCropParams{nullptr};
-    const OrganicMatterParameters* _residueParams{nullptr};
-    double _primaryYield{0.0};
-    double _secondaryYield{0.};
-    double _primaryYieldTM{0.0};
-    double _secondaryYieldTM{0.0};
-    double _appliedAmountIrrigation{0.0};
-    double _primaryYieldN{0.0};
-    double _secondaryYieldN{0.0};
-    double _sumTotalNUptake{0.0};
-
-    double _crossCropAdaptionFactor{1.0};
-    double _cropHeight{0.0};
-    double _accumulatedETa{0.0};
-    double _accumulatedTranspiration{0.0};
-
-    int eva2_typeUsage{NUTZUNG_UNDEFINED};
-
-    int _anthesisDay{-1};
-    int _maturityDay{-1};
-		
-    bool _automaticHarvest{false};
-		AutomaticHarvestParameters _automaticHarvestParams;
-	};
-
-	
-	//----------------------------------------------------------------------------
-
-
-
-	class MonicaModel;
-
-	class WorkStep
-	{
-	public:
-
-		WorkStep(const Tools::Date& d) : _date(d) { }
-
-		Tools::Date date() const { return _date; }
-		virtual void setDate(Tools::Date date) {_date = date; }
-
-		//! do whatever the workstep has to do
-		virtual void apply(MonicaModel* model) = 0;
-
-		virtual std::string toString() const;
-
-		virtual WorkStep* clone() const = 0;
-
-    virtual json11::Json to_json() const = 0;
-
-	protected:
-		Tools::Date _date;
-	};
-
-  typedef std::shared_ptr<WorkStep> WSPtr;
-
-	//----------------------------------------------------------------------------
-
-	class Seed : public WorkStep
-	{
-	public:
-
-		Seed(const Tools::Date& at, CropPtr crop)
-      : WorkStep(at),
-        _crop(crop)
-    {}
-
-    Seed(json11::Json j)
-      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-        _crop(std::make_shared<Crop>(j["crop"]))
-    {}
-
-		virtual void apply(MonicaModel* model);
-
-		void setDate(Tools::Date date)
-		{
-			this->_date = date;
-			_crop.get()->setSeedAndHarvestDate(date, _crop.get()->harvestDate());
-		}
-
-		virtual std::string toString() const;
-
-		virtual Seed* clone() const {return new Seed(*this); }
-
-    CropPtr crop() const { return _crop; }
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "Seed"},
-        {"date", date().toIsoDateString()},
-        {"crop", _crop->to_json()}};
-    }
-
-	private:
-		CropPtr _crop;
-	};
-
-	//----------------------------------------------------------------------------
-
-	class Harvest : public WorkStep
-	{
-	public:
-    Harvest(const Tools::Date& at,
-            CropPtr crop,
-            PVResultPtr cropResult,
-            std::string method = "total")
-      : WorkStep(at),
-        _crop(crop),
-        _cropResult(cropResult),
-        _method(method)
-    {}
-
-    Harvest(json11::Json j,
-            CropPtr crop)
-      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-        _crop(crop),
-        _cropResult(new PVResult(crop->id())),
-        _method(j["method"].string_value()),
-        _percentage(j["percentage"].number_value()),
-        _exported(j["exported"].bool_value())
-    {}
-
-		virtual void apply(MonicaModel* model);
-
-		void setDate(Tools::Date date)
-		{
-			this->_date = date;
-			_crop.get()->setSeedAndHarvestDate(_crop.get()->seedDate(), date);
-		}
-
-		void setPercentage(double percentage)
-		{
-			_percentage = percentage;
-		}
-
-		void setExported(bool exported)
-		{
-			_exported = exported;
-		}
-		
-		virtual std::string toString() const;
-
-		virtual Harvest* clone() const { return new Harvest(*this); }
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "Harvest"},
-        {"date", date().toIsoDateString()},
-        {"method", _method},
-        {"percentage", _percentage},
-        {"exported", _exported}};
-    }
-
-    PVResultPtr cropResult() const { return _cropResult; }
-
-	private:
-		CropPtr _crop;
-		PVResultPtr _cropResult;
-    std::string _method;
-    double _percentage{0};
-    bool _exported{true};
-	};
-
-  //----------------------------------------------------------------------------
-
-	class Cutting : public WorkStep
-	{
-	public:
-
-		Cutting(const Tools::Date& at, CropPtr crop) : WorkStep(at), _crop(crop) { }
-
-    Cutting(json11::Json j, CropPtr crop)
-      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-        _crop(crop) {}
-
-		virtual void apply(MonicaModel* model);
-
-		virtual std::string toString() const;
-
-		virtual Cutting* clone() const {return new Cutting(*this); }
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "Cutting"},
-        {"date", date().toIsoDateString()}};
-    }
-
-	private:
-		CropPtr _crop;
+  private:
+    HarvestTime _harvestTime{unknown}; //!< Harvest time parameter
+    int _latestHarvestDOY{-1}; //!< Fallback day for latest harvest of the crop
 	};
 
 	//----------------------------------------------------------------------------
@@ -1165,27 +733,13 @@ namespace Monica
 	{
     NMinCropParameters() {}
 
-		NMinCropParameters(double samplingDepth, double nTarget, double nTarget30)
-      : samplingDepth(samplingDepth),
-        nTarget(nTarget),
-        nTarget30(nTarget30) {}
+    NMinCropParameters(double samplingDepth, double nTarget, double nTarget30);
 
-    NMinCropParameters(json11::Json j)
-      : samplingDepth(j["samplingDepth"].number_value()),
-        nTarget(j["nTarget"].number_value()),
-        nTarget30(j["nTarget30"].number_value())
-    {}
+    NMinCropParameters(json11::Json object);
 
-    json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "NMinCropParameters"},
-        {"samplingDepth", samplingDepth},
-        {"nTarget", nTarget},
-        {"nTarget30", nTarget30}};
-    }
+    json11::Json to_json() const;
 
-		std::string toString() const;
+    std::string toString() const { return to_json().dump(); }
 
     double samplingDepth{0.0};
     double nTarget{0.0};
@@ -1194,343 +748,42 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-
-
-	class MineralFertiliserApplication : public WorkStep
-	{
-	public:
-		MineralFertiliserApplication(const Tools::Date& at,
-																 MineralFertiliserParameters partition,
-																 double amount)
-			: WorkStep(at), _partition(partition), _amount(amount) { }
-
-    MineralFertiliserApplication(json11::Json j)
-      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-        _partition(j["parameters"]),
-        _amount(j["amount"].number_value())
-    {}
-
-		virtual void apply(MonicaModel* model);
-
-		MineralFertiliserParameters partition() const
-		{
-			return _partition;
-		}
-
-		double amount() const { return _amount; }
-
-		virtual std::string toString() const;
-
-		virtual MineralFertiliserApplication* clone() const {return new MineralFertiliserApplication(*this); }
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "MineralFertiliserApplication"},
-        {"date", date().toIsoDateString()},
-        {"amount", _amount},
-        {"parameters", _partition}};
-    }
-
-	private:
-		MineralFertiliserParameters _partition;
-		double _amount;
-	};
-
-	//----------------------------------------------------------------------------
-
-	class OrganicFertiliserApplication : public WorkStep
-	{
-	public:
-		OrganicFertiliserApplication(const Tools::Date& at,
-																 const OrganicMatterParameters* params,
-																 double amount,
-                                 bool incorp = true);
-
-    OrganicFertiliserApplication(json11::Json j);
-
-    virtual json11::Json to_json() const;
-
-    virtual void apply(MonicaModel* model);
-
-    //! Returns parameter for organic fertilizer
-    const OrganicMatterParameters* parameters() const { return _params; }
-
-		//! Returns fertilization amount
-		double amount() const { return _amount; }
-
-		//! Returns TRUE, if fertilizer is applied with incorporation
-		bool incorporation() const { return _incorporation; }
-
-		//! Returns a string that contains all parameters. Used for debug outputs.
-		virtual std::string toString() const;
-
-    virtual OrganicFertiliserApplication* clone() const {return new OrganicFertiliserApplication(*this); }
-
-
-
-  private:
-    std::shared_ptr<OrganicMatterParameters> _paramsPtr;
-    const OrganicMatterParameters* _params{nullptr};
-    double _amount{0.0};
-    bool _incorporation{false};
-
-	};
-
-	//----------------------------------------------------------------------------
-
-	class TillageApplication : public WorkStep
-	{
-	public:
-		TillageApplication(const Tools::Date& at, double depth)
-			: WorkStep(at), _depth(depth) { }
-
-    TillageApplication(json11::Json j)
-      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-        _depth(j["depthparameters"].number_value())
-    {}
-
-		virtual void apply(MonicaModel* model);
-
-		double depth() const { return _depth; }
-
-		virtual std::string toString() const;
-
-		virtual TillageApplication* clone() const {return new TillageApplication(*this); }
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "TillageApplication"},
-        {"date", date().toIsoDateString()},
-        {"depth", _depth}};
-    }
-
-	private:
-    double _depth{0.0};
-	};
-
-	//----------------------------------------------------------------------------
-
-
-
-
-
-	class IrrigationApplication : public WorkStep
-	{
-	public:
-    IrrigationApplication(const Tools::Date& at, double amount,
-                          IrrigationParameters params = IrrigationParameters())
-      : WorkStep(at),
-        _amount(amount),
-        _params(params)
-    {}
-
-    IrrigationApplication(json11::Json j)
-      : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value())),
-        _amount(j["amount"].number_value()),
-        _params(j["parameters"])
-    {}
-
-		virtual void apply(MonicaModel* model);
-
-		double amount() const { return _amount; }
-
-		double nitrateConcentration() const { return _params.nitrateConcentration; }
-
-		double sulfateConcentration() const { return _params.sulfateConcentration; }
-
-		virtual std::string toString() const;
-
-		virtual IrrigationApplication* clone() const {return new IrrigationApplication(*this); }
-
-    virtual json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"type", "IrrigationApplication"},
-        {"date", date().toIsoDateString()},
-        {"amount", _amount},
-        {"parameters", _params}};
-    }
-
-	private:
-    double _amount{0};
-		IrrigationParameters _params;
-	};
-
-	//----------------------------------------------------------------------------
-
-
-
-	/**
-	 * @class PV
-	 * @param params
-	 * @param id
-	 * @param start Start date
-	 * @param end End date
-	 */
-	class ProductionProcess
-	{
-	public:
-		ProductionProcess() { }
-
-		ProductionProcess(const std::string& name, CropPtr crop = CropPtr());
-
-		//ProductionProcess(const ProductionProcess&);
-
-		ProductionProcess deepCloneAndClearWorksteps() const;
-
-		template<class Application>
-		void addApplication(const Application& a)
-		{
-			_worksteps.insert(std::make_pair(a.date(), WSPtr(new Application(a))));
-    }
-
-		void addApplication(WSPtr a)
-		{
-			_worksteps.insert(std::make_pair((a.get())->date(), a));
-		}
-
-		void apply(const Tools::Date& date, MonicaModel* model) const;
-
-		Tools::Date nextDate(const Tools::Date & date) const;
-
-		std::string name() const { return _name; }
-
-		CropPtr crop() const { return _crop; }
-
-		bool isFallow() const { return !_crop->isValid();  }
-
-		//! when does the PV start
-		Tools::Date start() const;
-
-		//! when does the whole PV end
-		Tools::Date end() const;
-
-    const std::multimap<Tools::Date, WSPtr>& getWorksteps() { return _worksteps; }
-
-		void clearWorksteps() { _worksteps.clear(); }
-
-		std::string toString() const;
-
-		PVResult cropResult() const { return *(_cropResult.get()); }
-		PVResultPtr cropResultPtr() const { return _cropResult; }
-
-		//the custom id is used to keep a potentially usage defined
-    //mapping to an entity from another domain,
-    //e.g. a Carbiocial CropActivity which the ProductionProcess was based on
-		void setCustomId(int cid) { _customId = cid; }
-		int customId() const { return _customId; }
-
-    void setIrrigateCrop(bool irr){ _irrigateCrop = irr; }
-    bool irrigateCrop() const { return _irrigateCrop; }
-
-	private:
-    int _customId{0};
-		std::string _name;
-		CropPtr _crop;
-    bool _irrigateCrop{false};
-
-		//!ordered list of worksteps to be done for this PV
-		std::multimap<Tools::Date, WSPtr> _worksteps;
-
-		//store results of the productionprocess
-		PVResultPtr _cropResult;
-	};
-
-	MineralFertiliserParameters
-	getMineralFertiliserParametersFromMonicaDB(int mineralFertiliserId);
-
-	void attachFertiliserApplicationsToCropRotation
-	(std::vector<ProductionProcess>& cropRotation,
-	 const std::string& pathToFertiliserFile);
-
-	std::vector<ProductionProcess>
-	attachFertiliserSA(std::vector<ProductionProcess> cropRotation,
-										 const std::string pathToFertiliserFile);
-
-	void attachIrrigationApplicationsToCropRotation
-	(std::vector<ProductionProcess>& cropRotation,
-	 const std::string& pathToIrrigationFile);
-
-	/*!
-	 * - create cropRotation from hermes file
-	 * - the returned production processes contain absolute dates
-	 */
-	std::vector<ProductionProcess>
-		cropRotationFromHermesFile(const std::string& pathToFile, bool useAutomaticHarvestTrigger = false, AutomaticHarvestParameters autoHarvestParameters=AutomaticHarvestParameters());
-
-	Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
-																									 int fromYear, int toYear,
-																									 const CentralParameterProvider& cpp,
-																									 bool useLeapYears = true, double latitude = 51.2);
-
-	//----------------------------------------------------------------------------
-
-	/**
-	 * @brief Parameters for organic fertiliser
-	 */
   struct OrganicMatterParameters
-	{
-//	public:
-		OrganicMatterParameters();
-    OrganicMatterParameters(json11::Json);
-		OrganicMatterParameters(const OrganicMatterParameters&);
+  {
+    OrganicMatterParameters() {}
 
-		~OrganicMatterParameters() { }
+    OrganicMatterParameters(json11::Json object);
 
-		std::string toString() const;
+    json11::Json to_json() const;
 
-    json11::Json to_json() const
-    {
-      return json11::Json::object {
-        {"name", name},
-        {"AOM_DryMatterContent", vo_AOM_DryMatterContent},
-        {"AOM_AOM_NH4Content", vo_AOM_NH4Content},
-        {"AOM_AOM_NO3Content", vo_AOM_NO3Content},
-        {"AOM_AOM_NO3Content", vo_AOM_NO3Content},
-        {"AOM_AOM_SlowDecCoeffStandard", vo_AOM_SlowDecCoeffStandard},
-        {"AOM_AOM_FastDecCoeffStandard", vo_AOM_FastDecCoeffStandard},
-        {"AOM_PartAOM_to_AOM_Slow", vo_PartAOM_to_AOM_Slow},
-        {"AOM_PartAOM_to_AOM_Fast", vo_PartAOM_to_AOM_Fast},
-        {"AOM_CN_Ratio_AOM_Slow", vo_CN_Ratio_AOM_Slow},
-        {"AOM_CN_Ratio_AOM_Fast", vo_CN_Ratio_AOM_Fast},
-        {"AOM_PartAOM_Slow_to_SMB_Slow", vo_PartAOM_Slow_to_SMB_Slow},
-        {"AOM_PartAOM_Slow_to_SMB_Fast", vo_PartAOM_Slow_to_SMB_Fast},
-        {"AOM_NConcentration", vo_NConcentration}};
-    }
+    std::string toString() const { return to_json().dump(); }
 
-		std::string name;
+    std::string name;
 
-		double vo_AOM_DryMatterContent;   //! Dry matter content of added organic matter [kg DM kg FM-1]
-		double vo_AOM_NH4Content;         //! Ammonium content in added organic matter [kg N kg DM-1]
-		double vo_AOM_NO3Content;         //! Nitrate content in added organic matter [kg N kg DM-1]
-		double vo_AOM_CarbamidContent;    //! Carbamide content in added organic matter [kg N kg DM-1]
+    double vo_AOM_DryMatterContent{0.0}; //! Dry matter content of added organic matter [kg DM kg FM-1]
+    double vo_AOM_NH4Content{0.0}; //! Ammonium content in added organic matter [kg N kg DM-1]
+    double vo_AOM_NO3Content{0.0}; //! Nitrate content in added organic matter [kg N kg DM-1]
+    double vo_AOM_CarbamidContent{0.0}; //! Carbamide content in added organic matter [kg N kg DM-1]
 
-		double vo_AOM_SlowDecCoeffStandard; //! Decomposition rate coefficient of slow AOM at standard conditions [d-1]
-		double vo_AOM_FastDecCoeffStandard; //! Decomposition rate coefficient of fast AOM at standard conditions [d-1]
+    double vo_AOM_SlowDecCoeffStandard{0.0}; //! Decomposition rate coefficient of slow AOM at standard conditions [d-1]
+    double vo_AOM_FastDecCoeffStandard{0.0}; //! Decomposition rate coefficient of fast AOM at standard conditions [d-1]
 
-		double vo_PartAOM_to_AOM_Slow;    //! Part of AOM that is assigned to the slowly decomposing pool [kg kg-1
-		double vo_PartAOM_to_AOM_Fast;    //! Part of AOM that is assigned to the rapidly decomposing pool [kg kg-1]
+    double vo_PartAOM_to_AOM_Slow{0.0}; //! Part of AOM that is assigned to the slowly decomposing pool [kg kg-1
+    double vo_PartAOM_to_AOM_Fast{0.0}; //! Part of AOM that is assigned to the rapidly decomposing pool [kg kg-1]
 
-		double vo_CN_Ratio_AOM_Slow;    //! C to N ratio of the slowly decomposing AOM pool []
-		double vo_CN_Ratio_AOM_Fast;    //! C to N ratio of the rapidly decomposing AOM pool []
+    double vo_CN_Ratio_AOM_Slow{0.0}; //! C to N ratio of the slowly decomposing AOM pool []
+    double vo_CN_Ratio_AOM_Fast{0.0}; //! C to N ratio of the rapidly decomposing AOM pool []
 
-		double vo_PartAOM_Slow_to_SMB_Slow;   //! Part of AOM slow consumed by slow soil microbial biomass [kg kg-1]
-		double vo_PartAOM_Slow_to_SMB_Fast;   //! Part of AOM slow consumed by fast soil microbial biomass [kg kg-1]
+    double vo_PartAOM_Slow_to_SMB_Slow{0.0}; //! Part of AOM slow consumed by slow soil microbial biomass [kg kg-1]
+    double vo_PartAOM_Slow_to_SMB_Fast{0.0}; //! Part of AOM slow consumed by fast soil microbial biomass [kg kg-1]
 
-		double vo_NConcentration;
-	};
+    double vo_NConcentration{0.0};
+  };
 
-	typedef OrganicMatterParameters OMP;
+  typedef OrganicMatterParameters OMP;
   typedef std::shared_ptr<OMP> OMPPtr;
 
-	OrganicMatterParameters*
-	getOrganicFertiliserParametersFromMonicaDB(int organ_fert_id);
-
-	const OrganicMatterParameters* getResidueParametersFromMonicaDB(int crop_id);
-
-	//----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
 
 	/**
 	 * Class that holds information of crop defined by user.
@@ -1538,9 +791,13 @@ namespace Monica
 	 */
   struct UserCropParameters
 	{
-//	public:
-//		UserCropParameters() {}
-//		virtual ~UserCropParameters() {}
+    UserCropParameters() {}
+
+    UserCropParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     double pc_CanopyReflectionCoefficient{0.0};
     double pc_ReferenceMaxAssimilationRate{0.0};
@@ -1567,13 +824,13 @@ namespace Monica
 	 */
   struct UserEnvironmentParameters
 	{
-//	public:
-//		UserEnvironmentParameters() :
-//			p_MaxGroundwaterDepth(20),
-//			p_MinGroundwaterDepth(20)
-//		{}
+    UserEnvironmentParameters(){}
 
-//		virtual ~UserEnvironmentParameters() {}
+    UserEnvironmentParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     bool p_UseAutomaticIrrigation{false};
     bool p_UseNMinMineralFertilisingMethod{false};
@@ -1595,20 +852,21 @@ namespace Monica
     int p_MinGroundwaterDepthMonth{0};
 	};
 
+  //----------------------------------------------------------------------------
+
   struct UserInitialValues
 	{
-//	public:
-//		UserInitialValues() :
-//			p_initPercentageFC(0.8),
-//			p_initSoilNitrate(0.0001),
-//			p_initSoilAmmonium(0.0001)
-//		{}
+    UserInitialValues(){}
 
-//		virtual ~UserInitialValues() {}
+    UserInitialValues(json11::Json object);
 
-    double p_initPercentageFC{0.8};    // Initial soil moisture content in percent field capacity
-    double p_initSoilNitrate{0.0001};     // Initial soil nitrate content [kg NO3-N m-3]
-    double p_initSoilAmmonium{0.0001};    // Initial soil ammonium content [kg NH4-N m-3]
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
+
+    double p_initPercentageFC{0.8}; // Initial soil moisture content in percent field capacity
+    double p_initSoilNitrate{0.0001}; // Initial soil nitrate content [kg NO3-N m-3]
+    double p_initSoilAmmonium{0.0001}; // Initial soil ammonium content [kg NH4-N m-3]
 	};
 
 	//----------------------------------------------------------------------------
@@ -1619,9 +877,13 @@ namespace Monica
 	 */
   struct UserSoilMoistureParameters
 	{
-//	public:
-//		UserSoilMoistureParameters() {}
-//		virtual ~UserSoilMoistureParameters() {}
+    UserSoilMoistureParameters(){}
+
+    UserSoilMoistureParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     double pm_CriticalMoistureDepth{0.0};
     double pm_SaturatedHydraulicConductivity{0.0};
@@ -1657,9 +919,13 @@ namespace Monica
 	 */
   struct UserSoilTemperatureParameters
 	{
-//	public:
-//		UserSoilTemperatureParameters() {pt_SoilMoisture = 0.25;}
-//		virtual ~UserSoilTemperatureParameters() {}
+    UserSoilTemperatureParameters(){}
+
+    UserSoilTemperatureParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     double pt_NTau{0.0};
     double pt_InitialSurfaceTemperature{0.0};
@@ -1684,15 +950,18 @@ namespace Monica
 	 */
   struct UserSoilTransportParameters
 	{
-//	public:
-//		UserSoilTransportParameters() {}
-//		~UserSoilTransportParameters() {}
+    UserSoilTransportParameters(){}
+
+    UserSoilTransportParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
 
     double pq_DispersionLength{0.0};
     double pq_AD{0.0};
     double pq_DiffusionCoefficientStandard{0.0};
     double pq_NDeposition{0.0};
-
 	};
 
 	//----------------------------------------------------------------------------
@@ -1703,102 +972,56 @@ namespace Monica
 	 */
   struct UserSoilOrganicParameters
 	{
-//	public:
-//		UserSoilOrganicParameters() {}
-//		virtual ~UserSoilOrganicParameters() {}
+    UserSoilOrganicParameters(){}
 
-    double po_SOM_SlowDecCoeffStandard{0.0}; //4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
-    double po_SOM_FastDecCoeffStandard{0.0}; //1.40e-4 [d-1], from DAISY manual 1.4e-4
-    double po_SMB_SlowMaintRateStandard{0.0}; //1.00e-3 [d-1], from DAISY manual original 1.8e-3
-    double po_SMB_FastMaintRateStandard{0.0}; //1.00e-2 [d-1], from DAISY manual
-    double po_SMB_SlowDeathRateStandard{0.0}; //1.00e-3 [d-1], from DAISY manual
-    double po_SMB_FastDeathRateStandard{0.0}; //1.00e-2 [d-1], from DAISY manual
-    double po_SMB_UtilizationEfficiency{0.0}; //0.60 [], from DAISY manual 0.6
-    double po_SOM_SlowUtilizationEfficiency{0.0}; //0.40 [], from DAISY manual 0.4
-    double po_SOM_FastUtilizationEfficiency{0.0}; //0.50 [], from DAISY manual 0.5
-    double po_AOM_SlowUtilizationEfficiency{0.0}; //0.40 [], from DAISY manual original 0.13
-    double po_AOM_FastUtilizationEfficiency{0.0}; //0.10 [], from DAISY manual original 0.69
-    double po_AOM_FastMaxC_to_N{0.0}; // 1000.0
-    double po_PartSOM_Fast_to_SOM_Slow{0.0}; //0.30) [], Bruun et al. 2003
-    double po_PartSMB_Slow_to_SOM_Fast{0.0}; //0.60) [], from DAISY manual
-    double po_PartSMB_Fast_to_SOM_Fast{0.0}; //0.60 [], from DAISY manual
-    double po_PartSOM_to_SMB_Slow{0.0}; //0.0150 [], optimised
-    double po_PartSOM_to_SMB_Fast{0.0}; //0.0002 [], optimised
-    double po_CN_Ratio_SMB{0.0}; //6.70 [], from DAISY manual
-    double po_LimitClayEffect{0.0}; //0.25 [kg kg-1], from DAISY manual
-    double po_AmmoniaOxidationRateCoeffStandard{0.0}; //1.0e-1[d-1], from DAISY manual
-    double po_NitriteOxidationRateCoeffStandard{0.0}; //9.0e-1[d-1], fudged by Florian Stange
-    double po_TransportRateCoeff{0.0}; //0.1 [d-1], from DAISY manual
-    double po_SpecAnaerobDenitrification{0.0}; //0.1 //[g gas-N g CO2-C-1]
-    double po_ImmobilisationRateCoeffNO3{0.0}; //0.5 //[d-1]
-    double po_ImmobilisationRateCoeffNH4{0.0}; //0.5 //[d-1]
-    double po_Denit1{0.0}; //0.2 Denitrification parameter
-    double po_Denit2{0.0}; //0.8 Denitrification parameter
-    double po_Denit3{0.0}; //0.9 Denitrification parameter
-    double po_HydrolysisKM{0.0}; //0.00334 from Tabatabai 1973
-    double po_ActivationEnergy{0.0}; //41000.0 from Gould et al. 1973
-    double po_HydrolysisP1{0.0}; //4.259e-12 from Sadeghi et al. 1988
-    double po_HydrolysisP2{0.0}; //1.408e-12 from Sadeghi et al. 1988
-    double po_AtmosphericResistance{0.0}; //0.0025 [s m-1], from Sadeghi et al. 1988
-    double po_N2OProductionRate{0.0}; //0.5 [d-1]
-    double po_Inhibitor_NH3{0.0}; //1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
+    UserSoilOrganicParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
+
+    double po_SOM_SlowDecCoeffStandard{4.30e-5}; // 4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
+    double po_SOM_FastDecCoeffStandard{1.40e-4}; // 1.40e-4 [d-1], from DAISY manual 1.4e-4
+    double po_SMB_SlowMaintRateStandard{1.00e-3}; // 1.00e-3 [d-1], from DAISY manual original 1.8e-3
+    double po_SMB_FastMaintRateStandard{1.00e-2}; // 1.00e-2 [d-1], from DAISY manual
+    double po_SMB_SlowDeathRateStandard{1.00e-3}; // 1.00e-3 [d-1], from DAISY manual
+    double po_SMB_FastDeathRateStandard{1.00e-2}; // 1.00e-2 [d-1], from DAISY manual
+    double po_SMB_UtilizationEfficiency{0.60}; // 0.60 [], from DAISY manual 0.6
+    double po_SOM_SlowUtilizationEfficiency{0.40}; // 0.40 [], from DAISY manual 0.4
+    double po_SOM_FastUtilizationEfficiency{0.50}; // 0.50 [], from DAISY manual 0.5
+    double po_AOM_SlowUtilizationEfficiency{0.40}; // 0.40 [], from DAISY manual original 0.13
+    double po_AOM_FastUtilizationEfficiency{0.10}; // 0.10 [], from DAISY manual original 0.69
+    double po_AOM_FastMaxC_to_N{1000.0}; // 1000.0
+    double po_PartSOM_Fast_to_SOM_Slow{0.30}; // 0.30 [], Bruun et al. 2003
+    double po_PartSMB_Slow_to_SOM_Fast{0.60}; // 0.60 [], from DAISY manual
+    double po_PartSMB_Fast_to_SOM_Fast{0.60}; // 0.60 [], from DAISY manual
+    double po_PartSOM_to_SMB_Slow{0.0150}; // 0.0150 [], optimised
+    double po_PartSOM_to_SMB_Fast{0.0002}; // 0.0002 [], optimised
+    double po_CN_Ratio_SMB{6.70}; // 6.70 [], from DAISY manual
+    double po_LimitClayEffect{0.25}; // 0.25 [kg kg-1], from DAISY manual
+    double po_AmmoniaOxidationRateCoeffStandard{1.0e-1}; // 1.0e-1 [d-1], from DAISY manual
+    double po_NitriteOxidationRateCoeffStandard{9.0e-1}; // 9.0e-1 [d-1], fudged by Florian Stange
+    double po_TransportRateCoeff{0.1}; // 0.1 [d-1], from DAISY manual
+    double po_SpecAnaerobDenitrification{0.1}; // 0.1 [g gas-N g CO2-C-1]
+    double po_ImmobilisationRateCoeffNO3{0.5}; // 0.5 [d-1]
+    double po_ImmobilisationRateCoeffNH4{0.5}; // 0.5 [d-1]
+    double po_Denit1{0.2}; // 0.2 Denitrification parameter
+    double po_Denit2{0.8}; // 0.8 Denitrification parameter
+    double po_Denit3{0.9}; // 0.9 Denitrification parameter
+    double po_HydrolysisKM{0.00334}; // 0.00334 from Tabatabai 1973
+    double po_ActivationEnergy{41000.0}; // 41000.0 from Gould et al. 1973
+    double po_HydrolysisP1{4.259e-12}; // 4.259e-12 from Sadeghi et al. 1988
+    double po_HydrolysisP2{1.408e-12}; // 1.408e-12 from Sadeghi et al. 1988
+    double po_AtmosphericResistance{0.0025}; // 0.0025 [s m-1], from Sadeghi et al. 1988
+    double po_N2OProductionRate{0.5}; // 0.5 [d-1]
+    double po_Inhibitor_NH3{1.0}; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
 	};
 
 	//----------------------------------------------------------------------------
 
-	class SensitivityAnalysisParameters
+  struct SensitivityAnalysisParameters
 	{
-	public:
-		SensitivityAnalysisParameters()
-			: p_MeanFieldCapacity(UNDEFINED),
-				p_MeanBulkDensity(UNDEFINED),
-				p_HeatConductivityFrozen(UNDEFINED),
-				p_HeatConductivityUnfrozen(UNDEFINED),
-				p_LatentHeatTransfer(UNDEFINED),
-				p_ReducedHydraulicConductivity(UNDEFINED),
-				vs_FieldCapacity(UNDEFINED),
-				vs_Saturation(UNDEFINED),
-				vs_PermanentWiltingPoint(UNDEFINED),
-				vs_SoilMoisture(UNDEFINED),
-				vs_SoilTemperature(UNDEFINED),
-				vc_SoilCoverage(UNDEFINED),
-				vc_MaxRootingDepth(UNDEFINED),
-				vc_RootDiameter(UNDEFINED),
-				sa_crop_id(-1)
-		{
-			crop_parameters.pc_InitialKcFactor = UNDEFINED;
-			crop_parameters.pc_StageAtMaxHeight = UNDEFINED;
-			crop_parameters.pc_CropHeightP1 = UNDEFINED;
-			crop_parameters.pc_CropHeightP2 = UNDEFINED;
-			crop_parameters.pc_LuxuryNCoeff = UNDEFINED;
-			crop_parameters.pc_ResidueNRatio = UNDEFINED;
-			crop_parameters.pc_CropSpecificMaxRootingDepth = UNDEFINED;
-			crop_parameters.pc_RootPenetrationRate = UNDEFINED;
-			crop_parameters.pc_RootGrowthLag = UNDEFINED;
-			crop_parameters.pc_InitialRootingDepth = UNDEFINED;
-			crop_parameters.pc_RootFormFactor = UNDEFINED;
-			crop_parameters.pc_MaxNUptakeParam = UNDEFINED;
-			crop_parameters.pc_CarboxylationPathway = UNDEFINED_INT;
-			crop_parameters.pc_MaxAssimilationRate = UNDEFINED;
-			crop_parameters.pc_MaxCropDiameter = UNDEFINED;
-			crop_parameters.pc_MinimumNConcentration = UNDEFINED;
-			crop_parameters.pc_NConcentrationB0 = UNDEFINED;
-			crop_parameters.pc_NConcentrationPN =  UNDEFINED;
-			crop_parameters.pc_NConcentrationRoot = UNDEFINED;
-			crop_parameters.pc_PlantDensity = UNDEFINED;
-			crop_parameters.pc_ResidueNRatio = UNDEFINED;
-
-			organic_matter_parameters.vo_AOM_DryMatterContent = UNDEFINED;
-			organic_matter_parameters.vo_AOM_NH4Content = UNDEFINED;
-			organic_matter_parameters.vo_AOM_NO3Content = UNDEFINED;
-			organic_matter_parameters.vo_AOM_CarbamidContent = UNDEFINED;
-			organic_matter_parameters.vo_PartAOM_to_AOM_Slow = UNDEFINED;
-			organic_matter_parameters.vo_PartAOM_to_AOM_Fast = UNDEFINED;
-			organic_matter_parameters.vo_CN_Ratio_AOM_Slow = UNDEFINED;
-			organic_matter_parameters.vo_CN_Ratio_AOM_Fast = UNDEFINED;
-		}
-
-//		~SensitivityAnalysisParameters() {}
+    SensitivityAnalysisParameters();
 
 		// soilmoisture module parameters
     double p_MeanFieldCapacity{UNDEFINED};
@@ -1812,7 +1035,6 @@ namespace Monica
     double vs_PermanentWiltingPoint{UNDEFINED};
     double vs_SoilMoisture{UNDEFINED};
     double vs_SoilTemperature{UNDEFINED};
-
 
 		// crop parameters
     double vc_SoilCoverage{UNDEFINED};
@@ -1836,9 +1058,7 @@ namespace Monica
 	class CentralParameterProvider
 	{
 	public:
-		CentralParameterProvider();
-		CentralParameterProvider(const CentralParameterProvider&);
-		virtual ~CentralParameterProvider() {}
+    CentralParameterProvider();
 
 		UserCropParameters userCropParameters;
 		UserEnvironmentParameters userEnvironmentParameters;
@@ -1854,23 +1074,11 @@ namespace Monica
 		double getPrecipCorrectionValue(int month) const;
 		void setPrecipCorrectionValue(int month, double value);
 
-		bool writeOutputFiles;
+		bool writeOutputFiles{ false };
 
 	private:
-		double precipCorrectionValues[12];
+		std::vector<double> precipCorrectionValues;
 	};
-
-	//----------------------------------------------------------------------------
-
-	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
-
-	void testClimateData(Climate::DataAccessor &climateData);
-
-	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
-
-  //----------------------------------------------------------------------------
-
-  const std::map<int, std::string>& availableMonicaCrops();
 }
 
 #endif

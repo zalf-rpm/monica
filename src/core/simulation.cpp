@@ -47,6 +47,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/debug.h"
 #include "monica-parameters.h"
 #include "tools/read-ini.h"
+#include "../io/hermes-file-io.h"
+#include "../io/database-io.h"
 
 #if defined RUN_CC_GERMANY || defined RUN_GIS
 #include "grid/grid.h"
@@ -453,7 +455,7 @@ Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::strin
 	  std::string harvest_time_string = ipm.valueAsString("harvest_trigger", "harvest_time", "");
 	  
 	  if (harvest_time_string == "maturity") {		  
-		  hermes_config->setAutomaticHarvestParameters(AutomaticHarvestTime::maturity);
+		  hermes_config->setAutomaticHarvestParameters(AutomaticHarvestParameters::maturity);
 	  }
 	  else {
 		  // Abort simulation if no harvest date is configured but automatic harvest trigger should be used.		  

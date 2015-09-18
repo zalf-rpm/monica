@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tools/debug.h"
 #include "../io/configuration.h"
+#include "../run/run-monica.h"
 
 #ifdef MONICA_GUI
 #include <QApplication>
