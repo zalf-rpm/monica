@@ -672,7 +672,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
           double nh4 = Tools::satof(row[3]);
           double carbamid = Tools::satof(row[4]);
 
-          MineralFertiliserParameters mfp(name, carbamid, no3, nh4);
+          MineralFertiliserParameters mfp(name, name, carbamid, no3, nh4);
           pp.addApplication(MineralFertiliserApplication(fDate, mfp, amount));
         }
         else {

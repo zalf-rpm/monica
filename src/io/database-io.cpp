@@ -304,15 +304,27 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 	return ci != cpss.end() ? ci->second.get() : &nothing;
 }
 
+void Monica::writeCropParameters(string path)
+{
+	for (auto p : availableMonicaCrops())
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + p.second + ".json");
+
+		if (ofs.good())
+		{
+			auto cp = getCropParametersFromMonicaDB(p.first);
+			auto s = cp->to_json().dump();
+			//cout << "id: " << p.first << " name: " << p.second << " ----> " << endl << s << endl;
+			ofs << s;
+			ofs.close();
+		}
+	}
+}
+
 //------------------------------------------------------------------------------
 
-
-/**
-* @brief Reads mineral fertiliser parameters from monica DB
-* @param id of the fertiliser
-* @return mineral fertiliser parameters value object with values from database
-*/
-MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(int id)
+const map<int, MineralFertiliserParameters>& Monica::getAllMineralFertiliserParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -324,18 +336,19 @@ MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(i
 
 		if (!initialized)
 		{
-			DB *con = newConnection("monica");
+      DB *con = newConnection("monica");
 			DBRow row;
-			con->select("select id, name, no3, nh4, carbamid from mineral_fertilisers");
+      con->select("select id, name, no3, nh4, carbamid, type from mineral_fertilisers");
 			while (!(row = con->getRow()).empty())
 			{
 				int id = satoi(row[0]);
+        string type = row[5];
 				string name = row[1];
 				double no3 = satof(row[2]);
 				double nh4 = satof(row[3]);
 				double carbamid = satof(row[4]);
 
-				m.insert(make_pair(id, MineralFertiliserParameters(name, carbamid, no3, nh4)));
+        m.insert(make_pair(id, MineralFertiliserParameters(type, name, carbamid, no3, nh4)));
 			}
 			delete con;
 
@@ -343,17 +356,43 @@ MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(i
 		}
 	}
 
-	map<int, MineralFertiliserParameters>::const_iterator ci = m.find(id);
-
-	return ci != m.end() ? ci->second : MineralFertiliserParameters();
+	return m;
 }
 
 /**
-* @brief Reads organic fertiliser parameters from monica DB
-* @param organ_fert_id ID of fertiliser
-* @return organic fertiliser parameters with values from database
+* @brief Reads mineral fertiliser parameters from monica DB
+* @param id of the fertiliser
+* @return mineral fertiliser parameters value object with values from database
 */
-OrganicMatterParameters* Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
+MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(int id)
+{
+	auto m = getAllMineralFertiliserParametersFromMonicaDB();
+	auto ci = m.find(id);
+	return ci != m.end() ? ci->second : MineralFertiliserParameters();
+}
+
+void Monica::writeMineralFertilisers(string path)
+{
+	for (auto p : getAllMineralFertiliserParametersFromMonicaDB())
+	{
+		auto mf = p.second;
+
+		ofstream ofs;
+		ofs.open(path + "/" + mf.getId() + ".json");
+
+		if (ofs.good())
+		{
+			auto s = mf.to_json().dump();
+			//cout << "id: " << mf.getId() << " name: " << mf.getName() << " ----> " << endl << s << endl;
+			ofs << s;
+			ofs.close();
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------
+
+const map<int, OMPPtr>& Monica::getAllOrganicFertiliserParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -369,11 +408,12 @@ OrganicMatterParameters* Monica::getOrganicFertiliserParametersFromMonicaDB(int 
 			DB *con = newConnection("monica");
 			DBRow row;
 			con->select("select om_Type, dm, nh4_n, no3_n, nh2_n, k_slow, k_fast, part_s, "
-				"part_f, cn_s, cn_f, smb_s, smb_f, id "
+				"part_f, cn_s, cn_f, smb_s, smb_f, id, type "
 				"from organic_fertiliser");
 			while (!(row = con->getRow()).empty())
 			{
 				auto omp = OMPPtr(new OMP);
+				omp->id = row[14];
 				omp->name = row[0];
 				omp->vo_AOM_DryMatterContent = satof(row[1]);
 				omp->vo_AOM_NH4Content = satof(row[2]);
@@ -397,18 +437,46 @@ OrganicMatterParameters* Monica::getOrganicFertiliserParametersFromMonicaDB(int 
 		}
 	}
 
-	static OrganicMatterParameters nothing;
-
-	Map::const_iterator ci = m.find(id);
-	return ci != m.end() ? ci->second.get() : &nothing;
+	return m;
 }
 
 /**
-* @brief Reads residue parameters from monica DB
-* @param crop_id ID of crop
-* @return Residues parameters with values from database
+* @brief Reads organic fertiliser parameters from monica DB
+* @param organ_fert_id ID of fertiliser
+* @return organic fertiliser parameters with values from database
 */
-const OrganicMatterParameters* Monica::getResidueParametersFromMonicaDB(int cropId)
+OrganicMatterParameters* Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
+{
+	static OrganicMatterParameters nothing;
+
+	auto m = getAllOrganicFertiliserParametersFromMonicaDB();
+	auto ci = m.find(id);
+	return ci != m.end() ? ci->second.get() : &nothing;
+}
+
+void Monica::writeOrganicFertilisers(string path)
+{
+	for (auto p : getAllOrganicFertiliserParametersFromMonicaDB())
+	{
+		auto of = p.second;
+
+		ofstream ofs;
+		ofs.open(path + "/" + of->id + ".json");
+
+		if (ofs.good())
+		{
+			auto s = of->to_json().dump();
+			//cout << "id: " << of->id << " name: " << of->name << " ----> " << endl << s << endl;
+			ofs << s;
+			ofs.close();
+		}
+	}
+}
+
+
+//--------------------------------------------------------------------------------------
+
+const map<int, OMPPtr>& Monica::getAllResidueParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -429,6 +497,7 @@ const OrganicMatterParameters* Monica::getResidueParametersFromMonicaDB(int crop
 			while (!(row = con->getRow()).empty())
 			{
 				auto omp = OMPPtr(new OMP);
+				omp->id = row[13];
 				omp->name = row[0];
 				omp->vo_AOM_DryMatterContent = satoi(row[1]);
 				omp->vo_AOM_NH4Content = satof(row[2]);
@@ -452,10 +521,40 @@ const OrganicMatterParameters* Monica::getResidueParametersFromMonicaDB(int crop
 		}
 	}
 
+	return m;
+}
+
+/**
+* @brief Reads residue parameters from monica DB
+* @param crop_id ID of crop
+* @return Residues parameters with values from database
+*/
+const OrganicMatterParameters* Monica::getResidueParametersFromMonicaDB(int cropId)
+{
 	static OrganicMatterParameters nothing;
 
-	Map::const_iterator ci = m.find(cropId);
+	auto m = getAllResidueParametersFromMonicaDB();
+	auto ci = m.find(cropId);
 	return ci != m.end() ? ci->second.get() : &nothing;
+}
+
+void Monica::writeResidues(string path)
+{
+	for (auto p : getAllResidueParametersFromMonicaDB())
+	{
+		auto r = p.second;
+
+		ofstream ofs;
+		ofs.open(path + "/" + r->name + ".json");
+
+		if (ofs.good())
+		{
+			auto s = r->to_json().dump();
+			//cout << "id: " << of->id << " name: " << of->name << " ----> " << endl << s << endl;
+			ofs << s;
+			ofs.close();
+		}
+	}
 }
 
 //------------------------------------------------------------------------------

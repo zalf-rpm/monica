@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
+#include "../io/file-io.h"
 
 using namespace Monica;
 using namespace std;
@@ -110,8 +111,8 @@ void MonicaModel::seedCrop(CropPtr crop)
       addDailySumFertiliser(fert_amount);
     }
 
-    if(this->writeOutputFiles())
-      _currentCrop->writeCropParameters(_generalParams.pathToOutputDir);
+    if(writeOutputFiles())
+      writeCropParameters(_generalParams.pathToOutputDir, *_currentCrop.get());
   }
 }
 

@@ -458,6 +458,8 @@ namespace Monica
 		std::vector<YieldComponent> pc_OrganIdsForCutting;
 	};
 
+  typedef std::shared_ptr<CropParameters> CropParametersPtr;
+
 	//----------------------------------------------------------------------------
 
   enum FertiliserType { mineral, organic, undefined };
@@ -474,24 +476,30 @@ namespace Monica
 
     MineralFertiliserParameters(json11::Json object);
 
-    MineralFertiliserParameters(const std::string& name, double carbamid,
-                                double no3, double nh4);
+    MineralFertiliserParameters(const std::string& id,
+                                const std::string& name,
+                                double carbamid,
+                                double no3,
+                                double nh4);
 
     json11::Json to_json() const;
 
     std::string toString() const { return to_json().dump(); }
 
-    /**
-     * @brief Returns name of fertiliser.
-     * @return Name
-     */
-    inline std::string getName() const { return name; }
+		std::string getId() const { return id; }
+		void setId(const std::string& id) { this->id = id; }
 
-    /**
-     * @brief Returns carbamid part in percentage of fertiliser.
-     * @return Carbamid in percent
-     */
+    inline std::string getName() const { return name; }
+    inline void setName(const std::string& name) { this->name = name; }
+
+    //! @brief Returns carbamid part in percentage of fertiliser.
+    //! @return Carbamid in percent
     inline double getCarbamid() const { return vo_Carbamid; }
+
+    //! Sets carbamid part of fertilisers
+    //! @param vo_Carbamid percent
+    inline void setCarbamid(double carbamid) { vo_Carbamid = carbamid; }
+
 
     /**
      * @brief Returns ammonium part of fertliser.
@@ -505,19 +513,7 @@ namespace Monica
      */
     inline double getNO3() const { return vo_NO3; }
 
-    // Setter ------------------------------------
 
-    /**
-     * @brief Sets name of fertiliser
-     * @param name
-     */
-    inline void setName(const std::string& name) { this->name = name; }
-
-    /**
-     * Sets carbamid part of fertilisers
-     * @param vo_Carbamid percent
-     */
-    inline void setCarbamid(double carbamid) { vo_Carbamid = carbamid; }
 
     /**
      * @brief Sets nitrat part of fertiliser.
@@ -532,6 +528,7 @@ namespace Monica
     inline void setNO3(double NO3) { vo_NO3 = NO3; }
 
   private:
+    std::string id;
     std::string name;
     double vo_Carbamid{0.0};
     double vo_NH4{0.0};
@@ -758,30 +755,32 @@ namespace Monica
 
     std::string toString() const { return to_json().dump(); }
 
+    std::string id;
     std::string name;
 
-    double vo_AOM_DryMatterContent{0.0}; //! Dry matter content of added organic matter [kg DM kg FM-1]
-    double vo_AOM_NH4Content{0.0}; //! Ammonium content in added organic matter [kg N kg DM-1]
-    double vo_AOM_NO3Content{0.0}; //! Nitrate content in added organic matter [kg N kg DM-1]
-    double vo_AOM_CarbamidContent{0.0}; //! Carbamide content in added organic matter [kg N kg DM-1]
+    double vo_AOM_DryMatterContent{0.0}; //!< Dry matter content of added organic matter [kg DM kg FM-1]
+    double vo_AOM_NH4Content{0.0}; //!< Ammonium content in added organic matter [kg N kg DM-1]
+    double vo_AOM_NO3Content{0.0}; //!< Nitrate content in added organic matter [kg N kg DM-1]
+    double vo_AOM_CarbamidContent{0.0}; //!< Carbamide content in added organic matter [kg N kg DM-1]
 
-    double vo_AOM_SlowDecCoeffStandard{0.0}; //! Decomposition rate coefficient of slow AOM at standard conditions [d-1]
-    double vo_AOM_FastDecCoeffStandard{0.0}; //! Decomposition rate coefficient of fast AOM at standard conditions [d-1]
+    double vo_AOM_SlowDecCoeffStandard{0.0}; //!< Decomposition rate coefficient of slow AOM at standard conditions [d-1]
+    double vo_AOM_FastDecCoeffStandard{0.0}; //!< Decomposition rate coefficient of fast AOM at standard conditions [d-1]
 
-    double vo_PartAOM_to_AOM_Slow{0.0}; //! Part of AOM that is assigned to the slowly decomposing pool [kg kg-1
-    double vo_PartAOM_to_AOM_Fast{0.0}; //! Part of AOM that is assigned to the rapidly decomposing pool [kg kg-1]
+    double vo_PartAOM_to_AOM_Slow{0.0}; //!< Part of AOM that is assigned to the slowly decomposing pool [kg kg-1
+    double vo_PartAOM_to_AOM_Fast{0.0}; //!< Part of AOM that is assigned to the rapidly decomposing pool [kg kg-1]
 
-    double vo_CN_Ratio_AOM_Slow{0.0}; //! C to N ratio of the slowly decomposing AOM pool []
-    double vo_CN_Ratio_AOM_Fast{0.0}; //! C to N ratio of the rapidly decomposing AOM pool []
+    double vo_CN_Ratio_AOM_Slow{0.0}; //!< C to N ratio of the slowly decomposing AOM pool []
+    double vo_CN_Ratio_AOM_Fast{0.0}; //!< C to N ratio of the rapidly decomposing AOM pool []
 
-    double vo_PartAOM_Slow_to_SMB_Slow{0.0}; //! Part of AOM slow consumed by slow soil microbial biomass [kg kg-1]
-    double vo_PartAOM_Slow_to_SMB_Fast{0.0}; //! Part of AOM slow consumed by fast soil microbial biomass [kg kg-1]
+    double vo_PartAOM_Slow_to_SMB_Slow{0.0}; //!< Part of AOM slow consumed by slow soil microbial biomass [kg kg-1]
+    double vo_PartAOM_Slow_to_SMB_Fast{0.0}; //!< Part of AOM slow consumed by fast soil microbial biomass [kg kg-1]
 
     double vo_NConcentration{0.0};
   };
 
   typedef OrganicMatterParameters OMP;
   typedef std::shared_ptr<OMP> OMPPtr;
+  typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
 
   //----------------------------------------------------------------------------
 

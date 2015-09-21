@@ -807,25 +807,31 @@ void CropParameters::resizeStageOrganVectors()
 
 //------------------------------------------------------------------------------
 
-MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
-  : name(j["name"].string_value()),
-    vo_Carbamid(j["Carbamid"].number_value()),
-    vo_NH4(j["NH4"].number_value()),
-    vo_NO3(j["NO3"].number_value())
-{}
-
-MineralFertiliserParameters::MineralFertiliserParameters(const std::string& name, double carbamid,
-                            double no3, double nh4)
-  : name(name),
+MineralFertiliserParameters::MineralFertiliserParameters(const string& id,
+                                                         const std::string& name,
+                                                         double carbamid,
+                                                         double no3,
+                                                         double nh4)
+  : id(id),
+    name(name),
     vo_Carbamid(carbamid),
     vo_NH4(nh4),
     vo_NO3(no3)
 {}
 
+MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
+  : id(string_value(j, "id")),
+    name(string_value(j, "name")),
+    vo_Carbamid(number_value(j, "Carbamid")),
+    vo_NH4(number_value(j, "NH4")),
+    vo_NO3(number_value(j, "NO3"))
+{}
+
 json11::Json MineralFertiliserParameters::to_json() const
 {
-  return json11::Json::object {
-    { "type", "MineralFertiliserParameters" },
+  return J11Object {
+    {"type", "MineralFertiliserParameters"},
+    {"id", id},
     {"name", name},
     {"Carbamid", vo_Carbamid},
     {"NH4", vo_NH4},
@@ -834,15 +840,17 @@ json11::Json MineralFertiliserParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-NMinUserParameters::NMinUserParameters(double min, double max, int delayInDays)
-	: min(min),
-	max(max),
-	delayInDays(delayInDays) { }
+NMinUserParameters::NMinUserParameters(double min,
+                                       double max,
+                                       int delayInDays)
+  : min(min),
+    max(max),
+    delayInDays(delayInDays) { }
 
 NMinUserParameters::NMinUserParameters(json11::Json j)
-  : min(j["min"].number_value()),
-    max(j["max"].number_value()),
-    delayInDays(j["delayInDays"].int_value())
+  : min(number_value(j, "min")),
+    max(number_value(j, "max")),
+    delayInDays(int_value(j, "delayInDays"))
 {}
 
 json11::Json NMinUserParameters::to_json() const
@@ -863,8 +871,8 @@ IrrigationParameters::IrrigationParameters(double nitrateConcentration,
 {}
 
 IrrigationParameters::IrrigationParameters(json11::Json j)
-  : nitrateConcentration(j["nitrateConcentration"].number_value()),
-    sulfateConcentration(j["sulfateConcentration"].number_value())
+  : nitrateConcentration(number_value(j, "nitrateConcentration")),
+    sulfateConcentration(number_value(j, "sulfateConcentration"))
 {}
 
 json11::Json IrrigationParameters::to_json() const
@@ -884,8 +892,8 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a, double t,
 
 AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
   : IrrigationParameters(j["irrigationParameters"]),
-    amount(j["amount"].number_value()),
-    treshold(j["treshold"].number_value())
+    amount(number_value(j, "amount")),
+    treshold(number_value(j, "treshold"))
 {}
 
 json11::Json AutomaticIrrigationParameters::to_json() const
@@ -1020,14 +1028,14 @@ json11::Json GeneralParameters::to_json() const
 //------------------------------------------------------------------------------
 
 SiteParameters::SiteParameters(json11::Json j)
-  : vs_Latitude(j["Latitude"].number_value()),
-    vs_Slope(j["Slope"].number_value()),
-    vs_HeightNN(j["HeightNN"].number_value()),
-    vs_GroundwaterDepth(j["GroundwaterDepth"].number_value()),
-    vs_Soil_CN_Ratio(j["Soil_CN_Ratio"].number_value()),
-    vs_DrainageCoeff(j["DrainageCoeff"].number_value()),
-    vq_NDeposition(j["NDeposition"].number_value()),
-    vs_MaxEffectiveRootingDepth(j["MaxEffectiveRootingDepth"].number_value())
+  : vs_Latitude(number_value(j, "Latitude")),
+    vs_Slope(number_value(j, "Slope")),
+    vs_HeightNN(number_value(j, "HeightNN")),
+    vs_GroundwaterDepth(number_value(j, "GroundwaterDepth")),
+    vs_Soil_CN_Ratio(number_value(j, "Soil_CN_Ratio")),
+    vs_DrainageCoeff(number_value(j, "DrainageCoeff")),
+    vq_NDeposition(number_value(j, "NDeposition")),
+    vs_MaxEffectiveRootingDepth(number_value(j, "MaxEffectiveRootingDepth"))
 {}
 
 json11::Json SiteParameters::to_json() const
@@ -1084,9 +1092,9 @@ NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, dou
     nTarget30(nTarget30) {}
 
 NMinCropParameters::NMinCropParameters(json11::Json j)
-  : samplingDepth(j["samplingDepth"].number_value()),
-    nTarget(j["nTarget"].number_value()),
-    nTarget30(j["nTarget30"].number_value())
+  : samplingDepth(number_value(j, "samplingDepth")),
+    nTarget(number_value(j, "nTarget")),
+    nTarget30(number_value(j, "nTarget30"))
 {}
 
 json11::Json NMinCropParameters::to_json() const
@@ -1101,25 +1109,27 @@ json11::Json NMinCropParameters::to_json() const
 //------------------------------------------------------------------------------
 
 OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
-  : name(j["name"].string_value()),
-  vo_AOM_DryMatterContent(j["AOM_DryMatterContent"].number_value()),
-  vo_AOM_NH4Content(j["AOM_NH4Content"].number_value()),
-  vo_AOM_NO3Content(j["AOM_NO3Content"].number_value()),
-  vo_AOM_CarbamidContent(j["AOM_CarbamidContent"].number_value()),
-  vo_AOM_SlowDecCoeffStandard(j["AOM_SlowDecCoeffStandard"].number_value()),
-  vo_AOM_FastDecCoeffStandard(j["AOM_FastDecCoeffStandard"].number_value()),
-  vo_PartAOM_to_AOM_Slow(j["PartAOM_to_AOM_Slow"].number_value()),
-  vo_PartAOM_to_AOM_Fast(j["PartAOM_to_AOM_Fast"].number_value()),
-  vo_CN_Ratio_AOM_Slow(j["CN_Ratio_AOM_Slow"].number_value()),
-  vo_CN_Ratio_AOM_Fast(j["CN_Ratio_AOM_Fast"].number_value()),
-  vo_PartAOM_Slow_to_SMB_Slow(j["PartAOM_Slow_to_SMB_Slow"].number_value()),
-  vo_PartAOM_Slow_to_SMB_Fast(j["PartAOM_Slow_to_SMB_Fast"].number_value()),
-  vo_NConcentration(j["NConcentration"].number_value())
+  : id(string_value(j, "id")),
+    name(string_value(j, "name")),
+	vo_AOM_DryMatterContent(number_value(j, "AOM_DryMatterContent")),
+  vo_AOM_NH4Content(number_value(j, "AOM_NH4Content")),
+  vo_AOM_NO3Content(number_value(j, "AOM_NO3Content")),
+  vo_AOM_CarbamidContent(number_value(j, "AOM_CarbamidContent")),
+  vo_AOM_SlowDecCoeffStandard(number_value(j, "AOM_SlowDecCoeffStandard")),
+  vo_AOM_FastDecCoeffStandard(number_value(j, "AOM_FastDecCoeffStandard")),
+  vo_PartAOM_to_AOM_Slow(number_value(j, "PartAOM_to_AOM_Slow")),
+  vo_PartAOM_to_AOM_Fast(number_value(j, "PartAOM_to_AOM_Fast")),
+  vo_CN_Ratio_AOM_Slow(number_value(j, "CN_Ratio_AOM_Slow")),
+  vo_CN_Ratio_AOM_Fast(number_value(j, "CN_Ratio_AOM_Fast")),
+  vo_PartAOM_Slow_to_SMB_Slow(number_value(j, "PartAOM_Slow_to_SMB_Slow")),
+  vo_PartAOM_Slow_to_SMB_Fast(number_value(j, "PartAOM_Slow_to_SMB_Fast")),
+  vo_NConcentration(number_value(j, "NConcentration"))
 {}
 
 json11::Json OrganicMatterParameters::to_json() const
 {
   return J11Object {
+    {"id", id},
     {"name", name},
     {"AOM_DryMatterContent", J11Array {vo_AOM_DryMatterContent, "kg DM kg FM-1", "Dry matter content of added organic matter"}},
     {"AOM_AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}},
@@ -1139,21 +1149,21 @@ json11::Json OrganicMatterParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserCropParameters::UserCropParameters(json11::Json j)
-  : pc_CanopyReflectionCoefficient(j["CanopyReflectionCoefficient"].number_value()),
-    pc_ReferenceMaxAssimilationRate(j["ReferenceMaxAssimilationRate"].number_value()),
-    pc_ReferenceLeafAreaIndex(j["ReferenceLeafAreaIndex"].number_value()),
-    pc_MaintenanceRespirationParameter1(j["MaintenanceRespirationParameter1"].number_value()),
-    pc_MaintenanceRespirationParameter2(j["MaintenanceRespirationParameter2"].number_value()),
-    pc_MinimumNConcentrationRoot(j["MinimumNConcentrationRoot"].number_value()),
-    pc_MinimumAvailableN(j["MinimumAvailableN"].number_value()),
-    pc_ReferenceAlbedo(j["ReferenceAlbedo"].number_value()),
-    pc_StomataConductanceAlpha(j["StomataConductanceAlpha"].number_value()),
-    pc_SaturationBeta(j["SaturationBeta"].number_value()),
-    pc_GrowthRespirationRedux(j["GrowthRespirationRedux"].number_value()),
-    pc_MaxCropNDemand(j["MaxCropNDemand"].number_value()),
-    pc_GrowthRespirationParameter1(j["GrowthRespirationParameter1"].number_value()),
-    pc_GrowthRespirationParameter2(j["GrowthRespirationParameter2"].number_value()),
-    pc_Tortuosity(j["Tortuosity"].number_value())
+  : pc_CanopyReflectionCoefficient(number_value(j, "CanopyReflectionCoefficient")),
+    pc_ReferenceMaxAssimilationRate(number_value(j, "ReferenceMaxAssimilationRate")),
+    pc_ReferenceLeafAreaIndex(number_value(j, "ReferenceLeafAreaIndex")),
+    pc_MaintenanceRespirationParameter1(number_value(j, "MaintenanceRespirationParameter1")),
+    pc_MaintenanceRespirationParameter2(number_value(j, "MaintenanceRespirationParameter2")),
+    pc_MinimumNConcentrationRoot(number_value(j, "MinimumNConcentrationRoot")),
+    pc_MinimumAvailableN(number_value(j, "MinimumAvailableN")),
+    pc_ReferenceAlbedo(number_value(j, "ReferenceAlbedo")),
+    pc_StomataConductanceAlpha(number_value(j, "StomataConductanceAlpha")),
+    pc_SaturationBeta(number_value(j, "SaturationBeta")),
+    pc_GrowthRespirationRedux(number_value(j, "GrowthRespirationRedux")),
+    pc_MaxCropNDemand(number_value(j, "MaxCropNDemand")),
+    pc_GrowthRespirationParameter1(number_value(j, "GrowthRespirationParameter1")),
+    pc_GrowthRespirationParameter2(number_value(j, "GrowthRespirationParameter2")),
+    pc_Tortuosity(number_value(j, "Tortuosity"))
 {}
 
 json11::Json UserCropParameters::to_json() const
@@ -1180,22 +1190,22 @@ json11::Json UserCropParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
-  : p_UseAutomaticIrrigation(j["UseAutomaticIrrigation"].bool_value()),
-    p_UseNMinMineralFertilisingMethod(j["UseNMinMineralFertilisingMethod"].bool_value()),
-    p_UseSecondaryYields(j["UseSecondaryYields"].bool_value()),
-    p_UseAutomaticHarvestTrigger(j["UseAutomaticHarvestTrigger"].bool_value()),
-    p_LayerThickness(j["LayerThickness"].number_value()),
-    p_Albedo(j["Albedo"].number_value()),
-    p_AthmosphericCO2(j["AthmosphericCO2"].number_value()),
-    p_WindSpeedHeight(j["WindSpeedHeight"].number_value()),
-    p_LeachingDepth(j["LeachingDepth"].number_value()),
-    p_timeStep(j["timeStep"].number_value()),
-    p_MaxGroundwaterDepth(j["MaxGroundwaterDepth"].number_value()),
-    p_MinGroundwaterDepth(j["MinGroundwaterDepth"].number_value()),
-    p_NumberOfLayers(j["NumberOfLayers"].int_value()),
-    p_StartPVIndex(j["StartPVIndex"].int_value()),
-    p_JulianDayAutomaticFertilising(j["JulianDayAutomaticFertilising"].int_value()),
-    p_MinGroundwaterDepthMonth(j["MinGroundwaterDepthMonth"].int_value())
+  : p_UseAutomaticIrrigation(bool_value(j, "UseAutomaticIrrigation")),
+    p_UseNMinMineralFertilisingMethod(bool_value(j, "UseNMinMineralFertilisingMethod")),
+    p_UseSecondaryYields(bool_value(j, "UseSecondaryYields")),
+    p_UseAutomaticHarvestTrigger(bool_value(j, "UseAutomaticHarvestTrigger")),
+    p_LayerThickness(number_value(j, "LayerThickness")),
+    p_Albedo(number_value(j, "Albedo")),
+    p_AthmosphericCO2(number_value(j, "AthmosphericCO2")),
+    p_WindSpeedHeight(number_value(j, "WindSpeedHeight")),
+    p_LeachingDepth(number_value(j, "LeachingDepth")),
+    p_timeStep(number_value(j, "timeStep")),
+    p_MaxGroundwaterDepth(number_value(j, "MaxGroundwaterDepth")),
+    p_MinGroundwaterDepth(number_value(j, "MinGroundwaterDepth")),
+    p_NumberOfLayers(int_value(j, "NumberOfLayers")),
+    p_StartPVIndex(int_value(j, "StartPVIndex")),
+    p_JulianDayAutomaticFertilising(int_value(j, "JulianDayAutomaticFertilising")),
+    p_MinGroundwaterDepthMonth(int_value(j, "MinGroundwaterDepthMonth"))
 {}
 
 json11::Json UserEnvironmentParameters::to_json() const
@@ -1223,9 +1233,9 @@ json11::Json UserEnvironmentParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserInitialValues::UserInitialValues(json11::Json j)
-  : p_initPercentageFC(j["initPercentageFC"].number_value()),
-    p_initSoilNitrate(j["initSoilNitrate"].number_value()),
-    p_initSoilAmmonium(j["initSoilAmmonium"].number_value())
+  : p_initPercentageFC(number_value(j, "initPercentageFC")),
+    p_initSoilNitrate(number_value(j, "initSoilNitrate")),
+    p_initSoilAmmonium(number_value(j, "initSoilAmmonium"))
 {}
 
 json11::Json UserInitialValues::to_json() const
@@ -1240,30 +1250,30 @@ json11::Json UserInitialValues::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
-  : pm_CriticalMoistureDepth(j["CriticalMoistureDepth"].number_value()),
-    pm_SaturatedHydraulicConductivity(j["SaturatedHydraulicConductivity"].number_value()),
-    pm_SurfaceRoughness(j["SurfaceRoughness"].number_value()),
-    pm_GroundwaterDischarge(j["GroundwaterDischarge"].number_value()),
-    pm_HydraulicConductivityRedux(j["HydraulicConductivityRedux"].number_value()),
-    pm_SnowAccumulationTresholdTemperature(j["SnowAccumulationTresholdTemperature"].number_value()),
-    pm_KcFactor(j["KcFactor"].number_value()),
-    pm_TemperatureLimitForLiquidWater(j["TemperatureLimitForLiquidWater"].number_value()),
-    pm_CorrectionSnow(j["CorrectionSnow"].number_value()),
-    pm_CorrectionRain(j["CorrectionRain"].number_value()),
-    pm_SnowMaxAdditionalDensity(j["SnowMaxAdditionalDensity"].number_value()),
-    pm_NewSnowDensityMin(j["NewSnowDensityMin"].number_value()),
-    pm_SnowRetentionCapacityMin(j["SnowRetentionCapacityMin"].number_value()),
-    pm_RefreezeParameter1(j["RefreezeParameter1"].number_value()),
-    pm_RefreezeParameter2(j["RefreezeParameter2"].number_value()),
-    pm_RefreezeTemperature(j["RefreezeTemperature"].number_value()),
-    pm_SnowMeltTemperature(j["SnowMeltTemperature"].number_value()),
-    pm_SnowPacking(j["SnowPacking"].number_value()),
-    pm_SnowRetentionCapacityMax(j["SnowRetentionCapacityMax"].number_value()),
-    pm_EvaporationZeta(j["EvaporationZeta"].number_value()),
-    pm_XSACriticalSoilMoisture(j["XSACriticalSoilMoisture"].number_value()),
-    pm_MaximumEvaporationImpactDepth(j["MaximumEvaporationImpactDepth"].number_value()),
-    pm_MaxPercolationRate(j["MaxPercolationRate"].number_value()),
-    pm_MoistureInitValue(j["MoistureInitValue"].number_value())
+  : pm_CriticalMoistureDepth(number_value(j, "CriticalMoistureDepth")),
+    pm_SaturatedHydraulicConductivity(number_value(j, "SaturatedHydraulicConductivity")),
+    pm_SurfaceRoughness(number_value(j, "SurfaceRoughness")),
+    pm_GroundwaterDischarge(number_value(j, "GroundwaterDischarge")),
+    pm_HydraulicConductivityRedux(number_value(j, "HydraulicConductivityRedux")),
+    pm_SnowAccumulationTresholdTemperature(number_value(j, "SnowAccumulationTresholdTemperature")),
+    pm_KcFactor(number_value(j, "KcFactor")),
+    pm_TemperatureLimitForLiquidWater(number_value(j, "TemperatureLimitForLiquidWater")),
+    pm_CorrectionSnow(number_value(j, "CorrectionSnow")),
+    pm_CorrectionRain(number_value(j, "CorrectionRain")),
+    pm_SnowMaxAdditionalDensity(number_value(j, "SnowMaxAdditionalDensity")),
+    pm_NewSnowDensityMin(number_value(j, "NewSnowDensityMin")),
+    pm_SnowRetentionCapacityMin(number_value(j, "SnowRetentionCapacityMin")),
+    pm_RefreezeParameter1(number_value(j, "RefreezeParameter1")),
+    pm_RefreezeParameter2(number_value(j, "RefreezeParameter2")),
+    pm_RefreezeTemperature(number_value(j, "RefreezeTemperature")),
+    pm_SnowMeltTemperature(number_value(j, "SnowMeltTemperature")),
+    pm_SnowPacking(number_value(j, "SnowPacking")),
+    pm_SnowRetentionCapacityMax(number_value(j, "SnowRetentionCapacityMax")),
+    pm_EvaporationZeta(number_value(j, "EvaporationZeta")),
+    pm_XSACriticalSoilMoisture(number_value(j, "XSACriticalSoilMoisture")),
+    pm_MaximumEvaporationImpactDepth(number_value(j, "MaximumEvaporationImpactDepth")),
+    pm_MaxPercolationRate(number_value(j, "MaxPercolationRate")),
+    pm_MoistureInitValue(number_value(j, "MoistureInitValue"))
 {}
 
 json11::Json UserSoilMoistureParameters::to_json() const
@@ -1299,19 +1309,19 @@ json11::Json UserSoilMoistureParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserSoilTemperatureParameters::UserSoilTemperatureParameters(json11::Json j)
-  : pt_NTau(j["NTau"].number_value()),
-    pt_InitialSurfaceTemperature(j["InitialSurfaceTemperature"].number_value()),
-    pt_BaseTemperature(j["BaseTemperature"].number_value()),
-    pt_QuartzRawDensity(j["QuartzRawDensity"].number_value()),
-    pt_DensityAir(j["DensityAir"].number_value()),
-    pt_DensityWater(j["DensityWater"].number_value()),
-    pt_DensityHumus(j["DensityHumus"].number_value()),
-    pt_SpecificHeatCapacityAir(j["SpecificHeatCapacityAir"].number_value()),
-    pt_SpecificHeatCapacityQuartz(j["SpecificHeatCapacityQuartz"].number_value()),
-    pt_SpecificHeatCapacityWater(j["SpecificHeatCapacityWater"].number_value()),
-    pt_SpecificHeatCapacityHumus(j["SpecificHeatCapacityHumus"].number_value()),
-    pt_SoilAlbedo(j["SoilAlbedo"].number_value()),
-    pt_SoilMoisture(j["SoilMoisture"].number_value())
+  : pt_NTau(number_value(j, "NTau")),
+    pt_InitialSurfaceTemperature(number_value(j, "InitialSurfaceTemperature")),
+    pt_BaseTemperature(number_value(j, "BaseTemperature")),
+    pt_QuartzRawDensity(number_value(j, "QuartzRawDensity")),
+    pt_DensityAir(number_value(j, "DensityAir")),
+    pt_DensityWater(number_value(j, "DensityWater")),
+    pt_DensityHumus(number_value(j, "DensityHumus")),
+    pt_SpecificHeatCapacityAir(number_value(j, "SpecificHeatCapacityAir")),
+    pt_SpecificHeatCapacityQuartz(number_value(j, "SpecificHeatCapacityQuartz")),
+    pt_SpecificHeatCapacityWater(number_value(j, "SpecificHeatCapacityWater")),
+    pt_SpecificHeatCapacityHumus(number_value(j, "SpecificHeatCapacityHumus")),
+    pt_SoilAlbedo(number_value(j, "SoilAlbedo")),
+    pt_SoilMoisture(number_value(j, "SoilMoisture"))
 {}
 
 json11::Json UserSoilTemperatureParameters::to_json() const
@@ -1336,10 +1346,10 @@ json11::Json UserSoilTemperatureParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserSoilTransportParameters::UserSoilTransportParameters(json11::Json j)
-  : pq_DispersionLength(j["DispersionLength"].number_value()),
-    pq_AD(j["AD"].number_value()),
-    pq_DiffusionCoefficientStandard(j["DiffusionCoefficientStandard"].number_value()),
-    pq_NDeposition(j["NDeposition"].number_value())
+  : pq_DispersionLength(number_value(j, "DispersionLength")),
+    pq_AD(number_value(j, "AD")),
+    pq_DiffusionCoefficientStandard(number_value(j, "DiffusionCoefficientStandard")),
+    pq_NDeposition(number_value(j, "NDeposition"))
 {}
 
 json11::Json UserSoilTransportParameters::to_json() const
@@ -1355,41 +1365,41 @@ json11::Json UserSoilTransportParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 UserSoilOrganicParameters::UserSoilOrganicParameters(json11::Json j)
-  : po_SOM_SlowDecCoeffStandard(j["SOM_SlowDecCoeffStandard"].number_value()),
-    po_SOM_FastDecCoeffStandard(j["SOM_FastDecCoeffStandard"].number_value()),
-    po_SMB_SlowMaintRateStandard(j["SMB_SlowMaintRateStandard"].number_value()),
-    po_SMB_FastMaintRateStandard(j["SMB_FastMaintRateStandard"].number_value()),
-    po_SMB_SlowDeathRateStandard(j["SMB_SlowDeathRateStandard"].number_value()),
-    po_SMB_FastDeathRateStandard(j["SMB_FastDeathRateStandard"].number_value()),
-    po_SMB_UtilizationEfficiency(j["SMB_UtilizationEfficiency"].number_value()),
-    po_SOM_SlowUtilizationEfficiency(j["SOM_SlowUtilizationEfficiency"].number_value()),
-    po_SOM_FastUtilizationEfficiency(j["SOM_FastUtilizationEfficiency"].number_value()),
-    po_AOM_SlowUtilizationEfficiency(j["AOM_SlowUtilizationEfficiency"].number_value()),
-    po_AOM_FastUtilizationEfficiency(j["AOM_FastUtilizationEfficiency"].number_value()),
-    po_AOM_FastMaxC_to_N(j["AOM_FastMaxC_to_N"].number_value()),
-    po_PartSOM_Fast_to_SOM_Slow(j["PartSOM_Fast_to_SOM_Slow"].number_value()),
-    po_PartSMB_Slow_to_SOM_Fast(j["PartSMB_Slow_to_SOM_Fast"].number_value()),
-    po_PartSMB_Fast_to_SOM_Fast(j["PartSMB_Fast_to_SOM_Fast"].number_value()),
-    po_PartSOM_to_SMB_Slow(j["PartSOM_to_SMB_Slow"].number_value()),
-    po_PartSOM_to_SMB_Fast(j["PartSOM_to_SMB_Fast"].number_value()),
-    po_CN_Ratio_SMB(j["CN_Ratio_SMB"].number_value()),
-    po_LimitClayEffect(j["LimitClayEffect"].number_value()),
-    po_AmmoniaOxidationRateCoeffStandard(j["AmmoniaOxidationRateCoeffStandard"].number_value()),
-    po_NitriteOxidationRateCoeffStandard(j["NitriteOxidationRateCoeffStandard"].number_value()),
-    po_TransportRateCoeff(j["TransportRateCoeff"].number_value()),
-    po_SpecAnaerobDenitrification(j["SpecAnaerobDenitrification"].number_value()),
-    po_ImmobilisationRateCoeffNO3(j["ImmobilisationRateCoeffNO3"].number_value()),
-    po_ImmobilisationRateCoeffNH4(j["ImmobilisationRateCoeffNH4"].number_value()),
-    po_Denit1(j["Denit1"].number_value()),
-    po_Denit2(j["Denit2"].number_value()),
-    po_Denit3(j["Denit3"].number_value()),
-    po_HydrolysisKM(j["HydrolysisKM"].number_value()),
-    po_ActivationEnergy(j["ActivationEnergy"].number_value()),
-    po_HydrolysisP1(j["HydrolysisP1"].number_value()),
-    po_HydrolysisP2(j["HydrolysisP2"].number_value()),
-    po_AtmosphericResistance(j["AtmosphericResistance"].number_value()),
-    po_N2OProductionRate(j["N2OProductionRate"].number_value()),
-    po_Inhibitor_NH3(j["Inhibitor_NH3"].number_value())
+  : po_SOM_SlowDecCoeffStandard(number_value(j, "SOM_SlowDecCoeffStandard")),
+    po_SOM_FastDecCoeffStandard(number_value(j, "SOM_FastDecCoeffStandard")),
+    po_SMB_SlowMaintRateStandard(number_value(j, "SMB_SlowMaintRateStandard")),
+    po_SMB_FastMaintRateStandard(number_value(j, "SMB_FastMaintRateStandard")),
+    po_SMB_SlowDeathRateStandard(number_value(j, "SMB_SlowDeathRateStandard")),
+    po_SMB_FastDeathRateStandard(number_value(j, "SMB_FastDeathRateStandard")),
+    po_SMB_UtilizationEfficiency(number_value(j, "SMB_UtilizationEfficiency")),
+    po_SOM_SlowUtilizationEfficiency(number_value(j, "SOM_SlowUtilizationEfficiency")),
+    po_SOM_FastUtilizationEfficiency(number_value(j, "SOM_FastUtilizationEfficiency")),
+    po_AOM_SlowUtilizationEfficiency(number_value(j, "AOM_SlowUtilizationEfficiency")),
+    po_AOM_FastUtilizationEfficiency(number_value(j, "AOM_FastUtilizationEfficiency")),
+    po_AOM_FastMaxC_to_N(number_value(j, "AOM_FastMaxC_to_N")),
+    po_PartSOM_Fast_to_SOM_Slow(number_value(j, "PartSOM_Fast_to_SOM_Slow")),
+    po_PartSMB_Slow_to_SOM_Fast(number_value(j, "PartSMB_Slow_to_SOM_Fast")),
+    po_PartSMB_Fast_to_SOM_Fast(number_value(j, "PartSMB_Fast_to_SOM_Fast")),
+    po_PartSOM_to_SMB_Slow(number_value(j, "PartSOM_to_SMB_Slow")),
+    po_PartSOM_to_SMB_Fast(number_value(j, "PartSOM_to_SMB_Fast")),
+    po_CN_Ratio_SMB(number_value(j, "CN_Ratio_SMB")),
+    po_LimitClayEffect(number_value(j, "LimitClayEffect")),
+    po_AmmoniaOxidationRateCoeffStandard(number_value(j, "AmmoniaOxidationRateCoeffStandard")),
+    po_NitriteOxidationRateCoeffStandard(number_value(j, "NitriteOxidationRateCoeffStandard")),
+    po_TransportRateCoeff(number_value(j, "TransportRateCoeff")),
+    po_SpecAnaerobDenitrification(number_value(j, "SpecAnaerobDenitrification")),
+    po_ImmobilisationRateCoeffNO3(number_value(j, "ImmobilisationRateCoeffNO3")),
+    po_ImmobilisationRateCoeffNH4(number_value(j, "ImmobilisationRateCoeffNH4")),
+    po_Denit1(number_value(j, "Denit1")),
+    po_Denit2(number_value(j, "Denit2")),
+    po_Denit3(number_value(j, "Denit3")),
+    po_HydrolysisKM(number_value(j, "HydrolysisKM")),
+    po_ActivationEnergy(number_value(j, "ActivationEnergy")),
+    po_HydrolysisP1(number_value(j, "HydrolysisP1")),
+    po_HydrolysisP2(number_value(j, "HydrolysisP2")),
+    po_AtmosphericResistance(number_value(j, "AtmosphericResistance")),
+    po_N2OProductionRate(number_value(j, "N2OProductionRate")),
+    po_Inhibitor_NH3(number_value(j, "Inhibitor_NH3"))
 {}
 
 json11::Json UserSoilOrganicParameters::to_json() const

@@ -33,13 +33,37 @@ namespace Monica
 {
 	const CropParameters* getCropParametersFromMonicaDB(int cropId);
 
+	void writeCropParameters(std::string path);
+
+	//-----------------------------------------------------------
+
+	const std::map<int, MineralFertiliserParameters>& getAllMineralFertiliserParametersFromMonicaDB();
+
 	MineralFertiliserParameters getMineralFertiliserParametersFromMonicaDB(int mineralFertiliserId);
+
+	void writeMineralFertilisers(std::string path);
+
+	//-----------------------------------------------------------
+
+	const std::map<int, OMPPtr>& getAllOrganicFertiliserParametersFromMonicaDB();
 
 	OrganicMatterParameters* getOrganicFertiliserParametersFromMonicaDB(int organ_fert_id);
 
+	void writeOrganicFertilisers(std::string path);
+
+	//-----------------------------------------------------------
+
+	const std::map<int, OMPPtr>& getAllResidueParametersFromMonicaDB();
+
 	const OrganicMatterParameters* getResidueParametersFromMonicaDB(int crop_id);
 
+	void writeResidues(std::string path);
+
+	//-----------------------------------------------------------
+
 	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
+
+	//-----------------------------------------------------------
 
 	const std::map<int, std::string>& availableMonicaCrops();
 }  

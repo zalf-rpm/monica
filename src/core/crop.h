@@ -61,7 +61,7 @@ namespace Monica
 
     Crop(json11::Json j);
 
-    json11::Json to_json() const;
+    json11::Json to_json(bool includeCropAndResidueParams = true) const;
 
     CropId id() const { return _id; }
 
@@ -69,15 +69,24 @@ namespace Monica
 
     bool isValid() const { return _id > -1; }
 
-    const CropParameters* cropParameters() const { return _cropParams; }
-
-    const CropParameters* perennialCropParameters() const { return _perennialCropParams; }
+    const CropParameters* cropParameters() const
+    {
+      return _cropParamsPtr ? _cropParamsPtr.get() : _cropParams;
+    }
 
     void setCropParameters(const CropParameters* cps) { _cropParams = cps; }
 
+    const CropParameters* perennialCropParameters() const
+    {
+      return _perennialCropParamsPtr ? _perennialCropParamsPtr.get() : _perennialCropParams;
+    }
+
     void setPerennialCropParameters(const CropParameters* cps) { _perennialCropParams = cps; }
 
-    const OrganicMatterParameters* residueParameters() const { return _residueParams; }
+    const OrganicMatterParameters* residueParameters() const
+    {
+      return _residueParamsPtr ? _residueParamsPtr.get() : _residueParams;
+    }
 
     void setResidueParameters(const OrganicMatterParameters* rps) { _residueParams = rps; }
 
@@ -147,8 +156,6 @@ namespace Monica
 		double get_AccumulatedETa() const {return _accumulatedETa;}
 		double get_AccumulatedTranspiration() const { return _accumulatedTranspiration; }
 
-		void writeCropParameters(std::string path);
-
 		void setAnthesisDay(int day) { _anthesisDay = day; }
 		int getAnthesisDay() const { return _anthesisDay; }
 
@@ -170,9 +177,13 @@ namespace Monica
 		Tools::Date _seedDate;
 		Tools::Date _harvestDate;
 		std::vector<Tools::Date> _cuttingDates;
+    CropParametersPtr _cropParamsPtr;
     const CropParameters* _cropParams{nullptr};
+    CropParametersPtr _perennialCropParamsPtr;
     const CropParameters* _perennialCropParams{nullptr};
+    OrganicMatterParametersPtr _residueParamsPtr;
     const OrganicMatterParameters* _residueParams{nullptr};
+
     double _primaryYield{0.0};
     double _secondaryYield{0.};
     double _primaryYieldTM{0.0};

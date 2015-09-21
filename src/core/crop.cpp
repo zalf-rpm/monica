@@ -85,31 +85,51 @@ Crop::Crop(json11::Json j)
     _seedDate(Tools::Date::fromIsoDateString(string_value(j, "seedDate"))),
     _harvestDate(Tools::Date::fromIsoDateString(string_value(j, "havestDate")))
 {
-  if(_id > -1)
-  {
-    _cropParams = getCropParametersFromMonicaDB(_id);
-    _residueParams = getResidueParametersFromMonicaDB(_id);
-  }
+  if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, string()))
+    _cropParamsPtr = make_shared<CropParameters>(j["cropParams"]);
+  if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, string()))
+    _perennialCropParamsPtr = make_shared<CropParameters>(j["perennialCropParams"]);
+  if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, string()))
+    _residueParamsPtr = make_shared<OrganicMatterParameters>(j["residueParams"]);
+
+//  if(_id > -1)
+//  {
+//    _cropParams = getCropParametersFromMonicaDB(_id);
+//    _residueParams = getResidueParametersFromMonicaDB(_id);
+//  }
 
   if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, string()))
     for(auto cd : j["cuttingDates"].array_items())
       _cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
 }
 
-json11::Json Crop::to_json() const
+json11::Json Crop::to_json(bool includeCropAndResidueParams) const
 {
-  json11::Json::array cds;
+  J11Array cds;
   for(auto cd : _cuttingDates)
     cds.push_back(cd.toIsoDateString());
-  return json11::Json::object {
+
+  J11Object o{
     {"type", "Crop"},
     {"id", _id},
     {"name", _name},
     {"seedDate", _seedDate.toIsoDateString()},
     {"harvestDate", _harvestDate.toIsoDateString()},
     {"cuttingDates", cds},
-    //        {"automaticHarvest", _automaticHarvest}
-  };
+    {"automaticHarvest", _automaticHarvest},
+    {"AutomaticHarvestParams", _automaticHarvestParams}};
+
+  if(includeCropAndResidueParams)
+  {
+    if(_cropParams)
+      o["cropParams"] = *cropParameters();
+    if(_perennialCropParams)
+      o["perennialCropParams"] = *perennialCropParameters();
+    if(_residueParams)
+      o["residueParams"] = *residueParameters();
+  }
+
+  return o;
 }
 
 string Crop::toString(bool detailed) const
@@ -123,21 +143,6 @@ string Crop::toString(bool detailed) const
         << residueParameters()->toString() << endl;
   }
   return s.str();
-}
-
-void Crop::writeCropParameters(std::string path)
-{
-    ofstream parameter_output_file;
-    parameter_output_file.open((path + "/crop_parameters-" + _name.c_str() + ".txt").c_str());
-    if (parameter_output_file.fail()){
-        debug() << "Could not write file\"" << (path + "crop_parameters-" + _name.c_str() + ".txt").c_str() << "\"" << endl;
-        return;
-  }
-
-  parameter_output_file << _cropParams->toString().c_str();
-
-  parameter_output_file.close();
-
 }
 
 //------------------------------------------------------------------------------

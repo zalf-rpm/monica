@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 
 #include <string>
 
@@ -31,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/debug.h"
 #include "../io/configuration.h"
 #include "../run/run-monica.h"
+#include "../io/database-io.h"
 
 #ifdef MONICA_GUI
 #include <QApplication>
@@ -41,6 +44,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 using namespace Monica;
+
+
+
+int main(int argc, char** argv)
+{
+//	writeCropParameters("crop-parameters");
+	//writeMineralFertilisers("mineral-fertilisers");
+	//writeOrganicFertilisers("organic-fertilisers");
+	writeResidues("residues");
+
+	return 0;
+}
+
+
+
+
+
+
+
+
 
 /* embedded meta.xxx.json.o */
 // extern char _binary_meta_sim_json_start;
@@ -140,6 +163,7 @@ static void showHelp()
 }
 #endif
 
+#if false
 /**
  * Main routine of stand alone model.
  * @param argc Number of program's arguments
@@ -360,3 +384,4 @@ int main(int argc, char** argv)
   return freeMetaCsonAndReturn(ret);
 #endif
 }
+#endif
