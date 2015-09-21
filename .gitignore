@@ -200,3 +200,7 @@ installer/Hohenfinow2/*.dat
 *.vcxproj
 *.filters
 HF2_automatic_yield
+/residues
+/organic-fertilisers
+/mineral-fertilisers
+/crop-parameters
