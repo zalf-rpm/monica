@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <iostream>
 #include <mutex>
+#include <memory>
 
 #include "tools/debug.h"
 #include "db/abstract-db-connections.h"
@@ -598,6 +599,12 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 				centralParameterProvider.userEnvironmentParameters;
 			UserSoilMoistureParameters& user_soil_moisture =
 				centralParameterProvider.userSoilMoistureParameters;
+
+      user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, int distance)
+      {
+        return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+      };
+
 			UserSoilTemperatureParameters& user_soil_temperature =
 				centralParameterProvider.userSoilTemperatureParameters;
 			UserSoilTransportParameters& user_soil_transport =

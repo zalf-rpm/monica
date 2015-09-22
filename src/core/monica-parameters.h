@@ -863,9 +863,9 @@ namespace Monica
 
     std::string toString() const { return to_json().dump(); }
 
-    double p_initPercentageFC{0.8}; // Initial soil moisture content in percent field capacity
-    double p_initSoilNitrate{0.0001}; // Initial soil nitrate content [kg NO3-N m-3]
-    double p_initSoilAmmonium{0.0001}; // Initial soil ammonium content [kg NH4-N m-3]
+    double p_initPercentageFC{0.8}; //!< Initial soil moisture content in percent field capacity
+    double p_initSoilNitrate{0.0001}; //!< Initial soil nitrate content [kg NO3-N m-3]
+    double p_initSoilAmmonium{0.0001}; //!< Initial soil ammonium content [kg NH4-N m-3]
 	};
 
 	//----------------------------------------------------------------------------
@@ -883,6 +883,8 @@ namespace Monica
     json11::Json to_json() const;
 
     std::string toString() const { return to_json().dump(); }
+
+    std::function<double(std::string, int)> getCapillaryRiseRate;
 
     double pm_CriticalMoistureDepth{0.0};
     double pm_SaturatedHydraulicConductivity{0.0};

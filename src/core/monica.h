@@ -87,7 +87,11 @@ namespace Monica
         _centralParameterProvider(cpp),
         _soilColumn(general, soil, cpp),
         _soilTemperature(_soilColumn, *this, cpp),
-        _soilMoisture(_soilColumn, site, *this, cpp),
+        _soilMoisture(_soilColumn, site, *this,
+                      cpp.userSoilMoistureParameters,
+                      cpp.userEnvironmentParameters,
+                      cpp.userCropParameters,
+                      cpp.sensitivityAnalysisParameters),
         _soilOrganic(_soilColumn, general, site, cpp),
         _soilTransport(_soilColumn, site, cpp)
     {}

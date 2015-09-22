@@ -429,6 +429,10 @@ namespace Monica
 
     const CentralParameterProvider& centralParameterProvider;
 
+    const UserSoilMoistureParameters smPs;
+    const UserEnvironmentParameters envPs;
+    const UserCropParameters cropPs;
+    const SensitivityAnalysisParameters saPs;
   }; // class soil column
 } /* namespace monica */
 

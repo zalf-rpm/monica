@@ -59,7 +59,7 @@ namespace Monica
   class SnowComponent
   {
     public:
-			SnowComponent(SoilColumn& sc, const CentralParameterProvider& cpp);
+      SnowComponent(SoilColumn& sc, const UserSoilMoistureParameters& smps);
       ~SnowComponent() {}
 
       void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
@@ -81,15 +81,13 @@ namespace Monica
 
 			SoilColumn& soilColumn;
 
-      double vm_SnowDensity; /**< Snow density [kg dm-3] */
-      double vm_SnowDepth; /**< Snow depth [mm] */
-      double vm_FrozenWaterInSnow; /** [mm] */
-      double vm_LiquidWaterInSnow; /** [mm] */
-      double vm_WaterToInfiltrate; /** [mm] */
-      double vm_maxSnowDepth;     //! [mm]
-      double vm_AccumulatedSnowDepth; //! [mm]
-
-      const CentralParameterProvider& centralParameterProvider;
+      double vm_SnowDensity; //!< Snow density [kg dm-3]
+      double vm_SnowDepth; //!< Snow depth [mm]
+      double vm_FrozenWaterInSnow; //!< [mm]
+      double vm_LiquidWaterInSnow; //!< [mm]
+      double vm_WaterToInfiltrate; //!< [mm]
+      double vm_maxSnowDepth;     //!< [mm]
+      double vm_AccumulatedSnowDepth; //!< [mm]
 
       // extern or user defined snow parameter
       double vm_SnowmeltTemperature;                  //!< Base temperature for snowmelt [°C]
@@ -117,18 +115,19 @@ namespace Monica
   class FrostComponent
   {
     public:
-      FrostComponent(SoilColumn& sc, const CentralParameterProvider& cpp);
-      ~FrostComponent() {}
+      FrostComponent(SoilColumn& sc,
+                     double pm_HydraulicConductivityRedux,
+                     double p_timeStep,
+                     const SensitivityAnalysisParameters& saPs);
 
       void calcSoilFrost(double mean_air_temperature, double snow_depth);
-      double getFrostDepth() const { return this->vm_FrostDepth; }
-      double getThawDepth() const { return this->vm_ThawDepth; }
-      double getLambdaRedux(int layer) { return this->vm_LambdaRedux[layer]; }
-      double getAccumulatedFrostDepth() { return this->vm_accumulatedFrostDepth; }
-			double getTemperatureUnderSnow() { return this->vm_TemperatureUnderSnow; }
+      double getFrostDepth() const { return vm_FrostDepth; }
+      double getThawDepth() const { return vm_ThawDepth; }
+      double getLambdaRedux(int layer) const { return vm_LambdaRedux[layer]; }
+      double getAccumulatedFrostDepth() const { return vm_accumulatedFrostDepth; }
+      double getTemperatureUnderSnow() const { return vm_TemperatureUnderSnow; }
 
     private:
-
       double getMeanBulkDensity();
       double getMeanFieldCapacity();
       double calcHeatConductivityFrozen(double mean_bulk_density, double sii);
@@ -139,23 +138,22 @@ namespace Monica
       double calcFrostDepth(double mean_field_capacity, double heat_conductivity_frozen, double temperature_under_snow);
       void updateLambdaRedux();
 
-
       SoilColumn& soilColumn;
-      const CentralParameterProvider& centralParameterProvider;
-      double vm_FrostDepth;
-      double vm_accumulatedFrostDepth;
-      double vm_NegativeDegreeDays; /** Counts negative degree-days under snow */
-      double vm_ThawDepth;
-      int vm_FrostDays;
-      std::vector<double> vm_LambdaRedux; /**< Reduction factor for Lambda [] */
-			double vm_TemperatureUnderSnow;
+      double vm_FrostDepth{0.0};
+      double vm_accumulatedFrostDepth{0.0};
+      double vm_NegativeDegreeDays{0.0}; //!< Counts negative degree-days under snow
+      double vm_ThawDepth{0.0};
+      int vm_FrostDays{0};
+      std::vector<double> vm_LambdaRedux; //!< Reduction factor for Lambda []
+      double vm_TemperatureUnderSnow{0.0};
 
 
       // user defined or data base parameter
-      double vm_HydraulicConductivityRedux;
-      double pt_TimeStep;
+      double vm_HydraulicConductivityRedux{0.0};
+      double pt_TimeStep{0.0};
 
-
+      const SensitivityAnalysisParameters saPs;
+      double pm_HydraulicConductivityRedux{0.0};
   };
 
   //#########################################################################
@@ -174,12 +172,16 @@ namespace Monica
    *
    * <img src="../images/boden_wasser_schema.png">
    */
-  class SoilMoisture {
+  class SoilMoisture
+  {
   public:
-    SoilMoisture(SoilColumn& soilColumn, const SiteParameters& siteParameters,
-                 MonicaModel& monica, const CentralParameterProvider& cpp);
-
-    ~SoilMoisture();
+    SoilMoisture(SoilColumn& soilColumn,
+                 const SiteParameters& siteParameters,
+                 MonicaModel& monica,
+                 const UserSoilMoistureParameters& smPs,
+                 const UserEnvironmentParameters& envPs,
+                 const UserCropParameters& cropPs,
+                 const SensitivityAnalysisParameters& saPs);
 
     void step(double vs_DepthGroundwaterTable,
               // Wetter Variablen
@@ -274,7 +276,7 @@ namespace Monica
      * @return Value for frost depth
      */
     double get_FrostDepth() const {
-      return frostComponent->getFrostDepth();
+      return frostComponent.getFrostDepth();
     }
 
     /**
@@ -282,7 +284,7 @@ namespace Monica
      * @return Value for thaw depth
      */
     double get_ThawDepth() const {
-      return frostComponent->getThawDepth();
+      return frostComponent.getThawDepth();
     }
 
     double get_CapillaryRise();
@@ -367,7 +369,10 @@ namespace Monica
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
     MonicaModel& monica;
-    const CentralParameterProvider& centralParameterProvider;
+    const UserSoilMoistureParameters smPs;
+    const UserEnvironmentParameters envPs;
+    const UserCropParameters cropPs;
+    const SensitivityAnalysisParameters saPs;
     const int vm_NumberOfLayers;
     const int vs_NumberOfLayers;
 
@@ -436,9 +441,9 @@ namespace Monica
     double vw_WindSpeedHeight; /**< [m] */
     double vm_XSACriticalSoilMoisture;
 
-    SnowComponent* snowComponent;
-    FrostComponent* frostComponent;
-    CropGrowth* crop;
+    SnowComponent snowComponent;
+    FrostComponent frostComponent;
+    CropGrowth* crop{nullptr};
 
   }; // SoilMoisture
 
