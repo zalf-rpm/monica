@@ -202,7 +202,7 @@ const Result Configuration::run()
   cson_object* cropObj = cson_value_get_object(_crop);
   
   SiteParameters sp;
-  CentralParameterProvider cpp = readUserParameterFromDatabase(Env::MODE_HERMES);
+  CentralParameterProvider cpp = readUserParameterFromDatabase(MODE_HERMES);
 	GeneralParameters gp(cpp.userEnvironmentParameters.p_LayerThickness);
 	gp.ps_ProfileDepth = cpp.userEnvironmentParameters.p_LayerThickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
 
@@ -288,7 +288,7 @@ const Result Configuration::run()
   env.general = gp;
   env.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
-  env.setMode(Env::MODE_HERMES);
+  env.setMode(MODE_HERMES);
   env.site = sp;
   env.da = da;
   env.cropRotation = pps;

@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soil/soil.h"
 #include "tools/algorithms.h"
 #include "../run/run-monica.h"
+#include "../core/monica-typedefs.h"
 
 #include "database-io.h"
 
@@ -579,13 +580,13 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			DBRow row;
 			switch (type)
 			{
-			case Env::MODE_HERMES:
+			case MODE_HERMES:
 				con->select("select name, value_hermes from user_parameter");
 				break;
-			case Env::MODE_EVA2:
+			case MODE_EVA2:
 				con->select("select name, value_eva2 from user_parameter");
 				break;
-			case Env::MODE_MACSUR_SCALING:
+			case MODE_MACSUR_SCALING:
 				con->select("select name, value_macsur_scaling from user_parameter");
 				break;
 			default:
@@ -835,6 +836,92 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 	}
 
 	return centralParameterProvider;
+}
+
+void Monica::writeUserParameters(int type, string path)
+{
+	string typeName = "hermes";
+	switch (type)
+	{
+	case MODE_EVA2: typeName = "eva2"; break;
+	case MODE_MACSUR_SCALING: typeName = "macsur"; break;
+	default:;
+	}
+	
+	auto ups = readUserParameterFromDatabase(type);
+
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-crop.json");
+		if (ofs.good())
+		{
+			ofs << ups.userCropParameters.to_json().dump();
+			ofs.close();
+		}
+	}
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-environment.json");
+		if (ofs.good())
+		{
+			ofs << ups.userEnvironmentParameters.to_json().dump();
+			ofs.close();
+		}
+	}
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-soil-moisture.json");
+		if (ofs.good())
+		{
+			ofs << ups.userSoilMoistureParameters.to_json().dump();
+			ofs.close();
+		}
+	}
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-soil-temperature.json");
+		if (ofs.good())
+		{
+			ofs << ups.userSoilTemperatureParameters.to_json().dump();
+			ofs.close();
+		}
+	}
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-soil-transport.json");
+		if (ofs.good())
+		{
+			ofs << ups.userSoilTransportParameters.to_json().dump();
+			ofs.close();
+		}
+	}
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-soil-organic.json");
+		if (ofs.good())
+		{
+			ofs << ups.userSoilOrganicParameters.to_json().dump();
+			ofs.close();
+		}
+	}
+//	{
+//		ofstream ofs;
+//		ofs.open(path + "/" + typeName + "-sensitivity-analysis.json");
+//		if (ofs.good())
+//		{
+//			ofs << ups.sensitivityAnalysisParameters.to_json().dump();
+//			ofs.close();
+//		}
+//	}
+	{
+		ofstream ofs;
+		ofs.open(path + "/" + typeName + "-init.json");
+		if (ofs.good())
+		{
+			ofs << ups.userInitValues.to_json().dump();
+			ofs.close();
+		}
+	}
 }
 
 //----------------------------------------------------------------------------------

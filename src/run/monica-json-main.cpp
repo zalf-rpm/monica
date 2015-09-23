@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../io/configuration.h"
 #include "../run/run-monica.h"
 #include "../io/database-io.h"
+#include "../core/monica-typedefs.h"
 
 #ifdef MONICA_GUI
 #include <QApplication>
@@ -52,7 +53,10 @@ int main(int argc, char** argv)
 //	writeCropParameters("crop-parameters");
 	//writeMineralFertilisers("mineral-fertilisers");
 	//writeOrganicFertilisers("organic-fertilisers");
-	writeResidues("residues");
+	//writeResidues("residues");
+	writeUserParameters(MODE_HERMES, "user-parameters");
+	writeUserParameters(MODE_EVA2, "user-parameters");
+	writeUserParameters(MODE_MACSUR_SCALING, "user-parameters");
 
 	return 0;
 }

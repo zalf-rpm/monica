@@ -63,6 +63,8 @@ namespace Monica
 
 	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
 
+	void writeUserParameters(int type, std::string path);
+
 	//-----------------------------------------------------------
 
 	const std::map<int, std::string>& availableMonicaCrops();

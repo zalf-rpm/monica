@@ -535,7 +535,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   debug() << "Running hermes with configuration object" << endl;
   std::string outputPath = hermes_config->getOutputPath();
-  CentralParameterProvider centralParameterProvider = readUserParameterFromDatabase(Env::MODE_HERMES);
+  CentralParameterProvider centralParameterProvider = readUserParameterFromDatabase(MODE_HERMES);
 
   SiteParameters siteParams;
   siteParams.vq_NDeposition = hermes_config->getNDeposition();
@@ -709,7 +709,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   Env env(sps, centralParameterProvider);
   env.general = gps;
   env.pathToOutputDir = outputPath;
-  env.setMode(Env::MODE_HERMES);
+  env.setMode(MODE_HERMES);
   env.groundwaterInformation = gw_infos;
 
 

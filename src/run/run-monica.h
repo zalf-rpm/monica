@@ -44,19 +44,6 @@ namespace Monica
 
   struct Env
   {
-		enum
-		{
-			MODE_LC_DSS = 0,
-			MODE_ACTIVATE_OUTPUT_FILES,
-			MODE_HERMES,
-			MODE_EVA2,
-			MODE_SENSITIVITY_ANALYSIS,
-			MODE_CC_GERMANY,
-			MODE_MACSUR_SCALING,
-			MODE_MACSUR_SCALING_CALIBRATION,
-			MODE_CARBIOCIAL_CLUSTER
-		};
-
     Env() {}
 
     /**

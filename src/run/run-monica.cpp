@@ -41,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/debug.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
+#include "../core/monica-typedefs.h"
 
 #ifdef MONICA_GUI
 #include "../gui/workerconfiguration.h"
@@ -248,18 +249,18 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
   bool write_output_files = false;
 
   // activate writing to output files only in special modes
-  if (env.getMode() == Env::MODE_HERMES ||
-      env.getMode() == Env::MODE_EVA2 ||
-      env.getMode() == Env::MODE_MACSUR_SCALING ||
-      env.getMode() == Env::MODE_ACTIVATE_OUTPUT_FILES)
+  if (env.getMode() == MODE_HERMES ||
+      env.getMode() == MODE_EVA2 ||
+      env.getMode() == MODE_MACSUR_SCALING ||
+      env.getMode() == MODE_ACTIVATE_OUTPUT_FILES)
   {
 
     write_output_files = true;
     debug() << "write_output_files: " << write_output_files << endl;
   }
 
-  if (env.getMode() == Env::MODE_SENSITIVITY_ANALYSIS ||
-      env.getMode() == Env::MODE_MACSUR_SCALING_CALIBRATION ) 
+  if (env.getMode() == MODE_SENSITIVITY_ANALYSIS ||
+      env.getMode() == MODE_MACSUR_SCALING_CALIBRATION ) 
   {
     write_output_files = false;
   }
