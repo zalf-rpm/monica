@@ -48,19 +48,31 @@ namespace Monica
   */
   class SoilTransport
   {
-
   public:
-    SoilTransport(SoilColumn& soilColumn, const SiteParameters& sps, const CentralParameterProvider& cpp);
-    ~SoilTransport();
+    SoilTransport(SoilColumn& soilColumn,
+                  const SiteParameters& sps,
+                  const UserSoilTransportParameters& stPs,
+                  double p_LeachingDepth,
+                  double p_timeStep,
+                  double pc_MinimumAvailableN);
 
     void step();
-    void fq_NDeposition(double vs_NDeposition);  // calculates daily N deposition
-    void fq_NUptake(); // puts crop N uptake into effect
-    void fq_NTransport (double vs_LeachingDepth, double vq_TimeStep);  // calcuates N transport in soil
+
+    //! calculates daily N deposition
+    void fq_NDeposition(double vs_NDeposition);
+
+    //! puts crop N uptake into effect
+    void fq_NUptake();
+
+    //! calcuates N transport in soil
+    void fq_NTransport (double vs_LeachingDepth, double vq_TimeStep);
+
     void put_Crop(CropGrowth* crop);
+
     void remove_Crop();
 
     double get_SoilNO3(int i_Layer) const;
+
     double get_NLeaching() const;
 
   private:
@@ -69,7 +81,7 @@ namespace Monica
 
     // members
     SoilColumn& soilColumn;
-    const CentralParameterProvider& centralParameterProvider;
+    const UserSoilTransportParameters& stPs;
     const int vs_NumberOfLayers;
     std::vector<double> vq_Convection;
     double vq_CropNUptake;
@@ -78,10 +90,10 @@ namespace Monica
     std::vector<double> vq_DispersionCoeff;
     std::vector<double> vq_FieldCapacity;
     std::vector<double> vq_LayerThickness;
-    double vs_LeachingDepth; 						/**< [m] */
+    double vs_LeachingDepth; //!< [m]
     double vq_LeachingAtBoundary;
-    double vs_NDeposition; 						/**< [kg N ha-1 y-1] */
-    std::vector<double> vc_NUptakeFromLayer;		/** Pflanzenaufnahme aus der Tiefe Z; C1 N-Konzentration [kg N ha-1] */
+    double vs_NDeposition; //!< [kg N ha-1 y-1]
+    std::vector<double> vc_NUptakeFromLayer;	//! Pflanzenaufnahme aus der Tiefe Z; C1 N-Konzentration [kg N ha-1]
     std::vector<double> vq_PoreWaterVelocity;
     std::vector<double> vs_SoilMineralNContent;
     std::vector<double> vq_SoilMoisture;
@@ -90,9 +102,11 @@ namespace Monica
     double vq_TimeStep;
     double vq_CurrentTimeStep;
     std::vector<double> vq_TotalDispersion;
-    std::vector<double> vq_PercolationRate;               /**< Soil water flux from above [mm d-1] */
+    std::vector<double> vq_PercolationRate; //!< Soil water flux from above [mm d-1]
 
-    CropGrowth* crop;
+    const double pc_MinimumAvailableN; //! kg m-2
+
+    CropGrowth* crop{nullptr};
   };
 
 } /* namespace Monica */

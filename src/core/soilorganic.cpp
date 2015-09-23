@@ -54,61 +54,42 @@ using namespace Soil;
 SoilOrganic::SoilOrganic(SoilColumn& sc,
                          const GeneralParameters& gps,
                          const SiteParameters& stps,
-                         const CentralParameterProvider& cpp)
+                         const UserSoilOrganicParameters& userParams,
+                         const SensitivityAnalysisParameters& saParams)
   : soilColumn(sc),
     generalParams(gps),
     siteParams(stps),
-    centralParameterProvider(cpp),
+    organicPs(userParams),
+    saPs(saParams),
     vs_NumberOfLayers(sc.vs_NumberOfLayers()),
     vs_NumberOfOrganicLayers(sc.vs_NumberOfOrganicLayers()),
-    addedOrganicMatter(false),
-    irrigationAmount(0),
-    vo_ActDenitrificationRate(sc.vs_NumberOfOrganicLayers()),  //[kg N m-3 d-1]
+    vo_ActDenitrificationRate(sc.vs_NumberOfOrganicLayers()),
     vo_AOM_FastDeltaSum(sc.vs_NumberOfOrganicLayers()),
-    vo_AOM_FastInput(0),
     vo_AOM_FastSum(sc.vs_NumberOfOrganicLayers()),
     vo_AOM_SlowDeltaSum(sc.vs_NumberOfOrganicLayers()),
-    vo_AOM_SlowInput(0),
     vo_AOM_SlowSum(sc.vs_NumberOfOrganicLayers()),
     vo_CBalance(sc.vs_NumberOfOrganicLayers()),
-    vo_DecomposerRespiration(0.0),
     vo_InertSoilOrganicC(sc.vs_NumberOfOrganicLayers()),
-    vo_N2O_Produced(0.0),
-    vo_NetEcosystemExchange(0.0),
-    vo_NetEcosystemProduction(0.0),
-    vo_NetNMineralisation(0.0),
     vo_NetNMineralisationRate(sc.vs_NumberOfOrganicLayers()),
-    vo_Total_NH3_Volatilised(0.0),
-    vo_NH3_Volatilised(0.0),
     vo_SMB_CO2EvolutionRate(sc.vs_NumberOfOrganicLayers()),
     vo_SMB_FastDelta(sc.vs_NumberOfOrganicLayers()),
     vo_SMB_SlowDelta(sc.vs_NumberOfOrganicLayers()),
     vo_SoilOrganicC(sc.vs_NumberOfOrganicLayers()),
     vo_SOM_FastDelta(sc.vs_NumberOfOrganicLayers()),
-    vo_SOM_FastInput(0),
-    vo_SOM_SlowDelta(sc.vs_NumberOfOrganicLayers()),
-    vo_SumDenitrification(0.0),
-    vo_SumNetNMineralisation(0.0),
-    vo_SumN2O_Produced(0.0),
-    vo_SumNH3_Volatilised(0.0),
-    vo_TotalDenitrification(0.0),
-    incorporation(false),
-    crop(NULL)
+    vo_SOM_SlowDelta(sc.vs_NumberOfOrganicLayers())
 {
-
-
   // Subroutine Pool initialisation
-  double po_SOM_SlowUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SOM_SlowUtilizationEfficiency;
-  double po_PartSOM_to_SMB_Slow = centralParameterProvider.userSoilOrganicParameters.po_PartSOM_to_SMB_Slow;
-  double po_SOM_FastUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SOM_FastUtilizationEfficiency;
-  double po_PartSOM_to_SMB_Fast = centralParameterProvider.userSoilOrganicParameters.po_PartSOM_to_SMB_Fast;
-  double po_SOM_SlowDecCoeffStandard = centralParameterProvider.userSoilOrganicParameters.po_SOM_SlowDecCoeffStandard;
-  double po_SOM_FastDecCoeffStandard = centralParameterProvider.userSoilOrganicParameters.po_SOM_FastDecCoeffStandard;
-  double po_PartSOM_Fast_to_SOM_Slow = centralParameterProvider.userSoilOrganicParameters.po_PartSOM_Fast_to_SOM_Slow;
+  double po_SOM_SlowUtilizationEfficiency = organicPs.po_SOM_SlowUtilizationEfficiency;
+  double po_PartSOM_to_SMB_Slow = organicPs.po_PartSOM_to_SMB_Slow;
+  double po_SOM_FastUtilizationEfficiency = organicPs.po_SOM_FastUtilizationEfficiency;
+  double po_PartSOM_to_SMB_Fast = organicPs.po_PartSOM_to_SMB_Fast;
+  double po_SOM_SlowDecCoeffStandard = organicPs.po_SOM_SlowDecCoeffStandard;
+  double po_SOM_FastDecCoeffStandard = organicPs.po_SOM_FastDecCoeffStandard;
+  double po_PartSOM_Fast_to_SOM_Slow = organicPs.po_PartSOM_Fast_to_SOM_Slow;
 
   //Conversion of soil organic carbon weight fraction to volume unit
-  for (size_t i_Layer = 0; i_Layer < vs_NumberOfOrganicLayers; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfOrganicLayers; i_Layer++)
+  {
     vo_SoilOrganicC[i_Layer] = soilColumn[i_Layer].vs_SoilOrganicCarbon() * soilColumn[i_Layer].vs_SoilBulkDensity(); //[kg C kg-1] * [kg m-3] --> [kg C m-3]
 
     // Falloon et al. (1998): Estimating the size of the inert organic matter pool
@@ -149,12 +130,6 @@ SoilOrganic::SoilOrganic(SoilColumn& sc,
 
     vo_ActDenitrificationRate.at(i_Layer) = 0.0;
   } // for
-}
-
-/**
- * @brief Destructor
- */
-SoilOrganic::~SoilOrganic() {
 }
 
 /**
@@ -218,13 +193,13 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters* params,
   double vo_CN_Ratio_AOM_Slow = params->vo_CN_Ratio_AOM_Slow;
   double vo_CN_Ratio_AOM_Fast = params->vo_CN_Ratio_AOM_Fast;
 
-	double po_AOM_FastMaxC_to_N = centralParameterProvider.userSoilOrganicParameters.po_AOM_FastMaxC_to_N;
+  double po_AOM_FastMaxC_to_N = organicPs.po_AOM_FastMaxC_to_N;
 
   // here follows some code that is only neccessary for sensitivity analysis
   // I (xenia) did not found another way for manipulating the organic matter
   // parameters than in overwriting them at this point; sorry for this hack!
   // pc_ResidueNRatio
-  OrganicMatterParameters sa_om_params = centralParameterProvider.sensitivityAnalysisParameters.organic_matter_parameters;
+  OrganicMatterParameters sa_om_params = saPs.organic_matter_parameters;
 
   if (sa_om_params.vo_AOM_DryMatterContent != UNDEFINED) {
     vo_AOM_DryMatterContent = sa_om_params.vo_AOM_DryMatterContent;
@@ -477,10 +452,10 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
   double vo_NH3gas = 0.0;
   double vo_NH3_Volatilising = 0.0;
 
-	double po_HydrolysisKM = centralParameterProvider.userSoilOrganicParameters.po_HydrolysisKM;
-	double po_HydrolysisP1 = centralParameterProvider.userSoilOrganicParameters.po_HydrolysisP1;
-	double po_HydrolysisP2 = centralParameterProvider.userSoilOrganicParameters.po_HydrolysisP2;
-	double po_ActivationEnergy = centralParameterProvider.userSoilOrganicParameters.po_ActivationEnergy;
+  double po_HydrolysisKM = organicPs.po_HydrolysisKM;
+  double po_HydrolysisP1 = organicPs.po_HydrolysisP1;
+  double po_HydrolysisP2 = organicPs.po_HydrolysisP2;
+  double po_ActivationEnergy = organicPs.po_ActivationEnergy;
 
 	vo_NH3_Volatilised = 0.0;
 
@@ -621,24 +596,24 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
 void SoilOrganic::fo_MIT() {
 
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
-	double po_SOM_SlowDecCoeffStandard = centralParameterProvider.userSoilOrganicParameters.po_SOM_SlowDecCoeffStandard;
-	double po_SOM_FastDecCoeffStandard = centralParameterProvider.userSoilOrganicParameters.po_SOM_FastDecCoeffStandard;
-	double po_SMB_SlowDeathRateStandard = centralParameterProvider.userSoilOrganicParameters.po_SMB_SlowDeathRateStandard;
-	double po_SMB_SlowMaintRateStandard = centralParameterProvider.userSoilOrganicParameters.po_SMB_SlowMaintRateStandard;
-	double po_SMB_FastDeathRateStandard = centralParameterProvider.userSoilOrganicParameters.po_SMB_FastDeathRateStandard;
-	double po_SMB_FastMaintRateStandard = centralParameterProvider.userSoilOrganicParameters.po_SMB_FastMaintRateStandard;
-	double po_LimitClayEffect = centralParameterProvider.userSoilOrganicParameters.po_LimitClayEffect;
-	double po_SOM_SlowUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SOM_SlowUtilizationEfficiency;
-	double po_SOM_FastUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SOM_FastUtilizationEfficiency;
-	double po_PartSOM_Fast_to_SOM_Slow = centralParameterProvider.userSoilOrganicParameters.po_PartSOM_Fast_to_SOM_Slow;
-	double po_PartSMB_Slow_to_SOM_Fast = centralParameterProvider.userSoilOrganicParameters.po_PartSMB_Slow_to_SOM_Fast;
-	double po_PartSMB_Fast_to_SOM_Fast = centralParameterProvider.userSoilOrganicParameters.po_PartSMB_Fast_to_SOM_Fast; 
-	double po_SMB_UtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_SMB_UtilizationEfficiency;
-	double po_CN_Ratio_SMB = centralParameterProvider.userSoilOrganicParameters.po_CN_Ratio_SMB;
-	double po_AOM_SlowUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_AOM_SlowUtilizationEfficiency;
-	double po_AOM_FastUtilizationEfficiency = centralParameterProvider.userSoilOrganicParameters.po_AOM_FastUtilizationEfficiency;
-	double po_ImmobilisationRateCoeffNH4 = centralParameterProvider.userSoilOrganicParameters.po_ImmobilisationRateCoeffNH4;
-	double po_ImmobilisationRateCoeffNO3 = centralParameterProvider.userSoilOrganicParameters.po_ImmobilisationRateCoeffNO3;
+  double po_SOM_SlowDecCoeffStandard = organicPs.po_SOM_SlowDecCoeffStandard;
+  double po_SOM_FastDecCoeffStandard = organicPs.po_SOM_FastDecCoeffStandard;
+  double po_SMB_SlowDeathRateStandard = organicPs.po_SMB_SlowDeathRateStandard;
+  double po_SMB_SlowMaintRateStandard = organicPs.po_SMB_SlowMaintRateStandard;
+  double po_SMB_FastDeathRateStandard = organicPs.po_SMB_FastDeathRateStandard;
+  double po_SMB_FastMaintRateStandard = organicPs.po_SMB_FastMaintRateStandard;
+  double po_LimitClayEffect = organicPs.po_LimitClayEffect;
+  double po_SOM_SlowUtilizationEfficiency = organicPs.po_SOM_SlowUtilizationEfficiency;
+  double po_SOM_FastUtilizationEfficiency = organicPs.po_SOM_FastUtilizationEfficiency;
+  double po_PartSOM_Fast_to_SOM_Slow = organicPs.po_PartSOM_Fast_to_SOM_Slow;
+  double po_PartSMB_Slow_to_SOM_Fast = organicPs.po_PartSMB_Slow_to_SOM_Fast;
+  double po_PartSMB_Fast_to_SOM_Fast = organicPs.po_PartSMB_Fast_to_SOM_Fast;
+  double po_SMB_UtilizationEfficiency = organicPs.po_SMB_UtilizationEfficiency;
+  double po_CN_Ratio_SMB = organicPs.po_CN_Ratio_SMB;
+  double po_AOM_SlowUtilizationEfficiency = organicPs.po_AOM_SlowUtilizationEfficiency;
+  double po_AOM_FastUtilizationEfficiency = organicPs.po_AOM_FastUtilizationEfficiency;
+  double po_ImmobilisationRateCoeffNH4 = organicPs.po_ImmobilisationRateCoeffNH4;
+  double po_ImmobilisationRateCoeffNO3 = organicPs.po_ImmobilisationRateCoeffNO3;
 
   // Sum of decomposition rates for fast added organic matter pools
   std::vector<double> vo_AOM_FastDecRateSum(nools, 0.0);
@@ -1136,8 +1111,8 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
  */
 void SoilOrganic::fo_Nitrification() {
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
-	double po_AmmoniaOxidationRateCoeffStandard = centralParameterProvider.userSoilOrganicParameters.po_AmmoniaOxidationRateCoeffStandard;
-	double po_NitriteOxidationRateCoeffStandard = centralParameterProvider.userSoilOrganicParameters.po_NitriteOxidationRateCoeffStandard;
+  double po_AmmoniaOxidationRateCoeffStandard = organicPs.po_AmmoniaOxidationRateCoeffStandard;
+  double po_NitriteOxidationRateCoeffStandard = organicPs.po_NitriteOxidationRateCoeffStandard;
 
   //! Nitrification rate coefficient [d-1]
   std::vector<double> vo_AmmoniaOxidationRateCoeff(nools, 0.0);
@@ -1203,8 +1178,8 @@ void SoilOrganic::fo_Nitrification() {
 void SoilOrganic::fo_Denitrification() {
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
   std::vector<double> vo_PotDenitrificationRate(nools, 0.0);
-	double po_SpecAnaerobDenitrification = centralParameterProvider.userSoilOrganicParameters.po_SpecAnaerobDenitrification;
-	double po_TransportRateCoeff = centralParameterProvider.userSoilOrganicParameters.po_TransportRateCoeff;
+  double po_SpecAnaerobDenitrification = organicPs.po_SpecAnaerobDenitrification;
+  double po_TransportRateCoeff = organicPs.po_TransportRateCoeff;
 	vo_TotalDenitrification = 0.0;
 
   for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
@@ -1249,7 +1224,7 @@ void SoilOrganic::fo_Denitrification() {
 void SoilOrganic::fo_N2OProduction() {
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
 	std::vector<double> vo_N2OProduction(nools, 0.0);
-	double po_N2OProductionRate = centralParameterProvider.userSoilOrganicParameters.po_N2OProductionRate;
+  double po_N2OProductionRate = organicPs.po_N2OProductionRate;
 	vo_N2O_Produced = 0.0;
 
   for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
@@ -1496,9 +1471,9 @@ double SoilOrganic::fo_MoistOnNitrification(double d_SoilMoisture_pF) {
  */
 double SoilOrganic::fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation) {
 
-	double po_Denit1 = centralParameterProvider.userSoilOrganicParameters.po_Denit1;
-	double po_Denit2 = centralParameterProvider.userSoilOrganicParameters.po_Denit2;
-	double po_Denit3 = centralParameterProvider.userSoilOrganicParameters.po_Denit3;
+  double po_Denit1 = organicPs.po_Denit1;
+  double po_Denit2 = organicPs.po_Denit2;
+  double po_Denit3 = organicPs.po_Denit3;
 	double fo_MoistOnDenitrification=0.0;
 
   if ((d_SoilMoisture_m3 / d_Saturation) <= 0.8) {
@@ -1531,7 +1506,7 @@ double SoilOrganic::fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d
  */
 double SoilOrganic::fo_NH3onNitriteOxidation(double d_SoilNH4, double d_SoilpH) {
 
-	double po_Inhibitor_NH3 = centralParameterProvider.userSoilOrganicParameters.po_Inhibitor_NH3;
+  double po_Inhibitor_NH3 = organicPs.po_Inhibitor_NH3;
 	double fo_NH3onNitriteOxidation=0.0;
 
 	fo_NH3onNitriteOxidation = po_Inhibitor_NH3 + d_SoilNH4	* (1.0 - 1.0 / (1.0

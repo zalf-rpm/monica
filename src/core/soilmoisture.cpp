@@ -711,73 +711,67 @@ FrostComponent::updateLambdaRedux()
  * @param stps Site parameters
  * @param mm Monica model
  */
-SoilMoisture::SoilMoisture(SoilColumn& sc,
-                           const SiteParameters& stps,
-                           MonicaModel& mm,
-                           const UserSoilMoistureParameters& smPs,
-                           const UserEnvironmentParameters& envPs,
-                           const UserCropParameters& cropPs,
-                           const SensitivityAnalysisParameters& saPs) :
-      soilColumn(sc),
-      siteParameters(stps),
-      monica(mm),
-      smPs(smPs),
-      envPs(envPs),
-      cropPs(cropPs),
-      saPs(saPs),
-      vm_NumberOfLayers(sc.vs_NumberOfLayers() + 1),
-      vs_NumberOfLayers(sc.vs_NumberOfLayers()), //extern
-      vm_ActualEvapotranspiration(0.0),
-      vm_AvailableWater(vm_NumberOfLayers, 0.0), // Soil available water in [mm]
-      vm_CapillaryRise(0),
-      pm_CapillaryRiseRate(vm_NumberOfLayers, 0.0),
-      vm_CapillaryWater(vm_NumberOfLayers, 0.0), // soil capillary water in [mm]
-      vm_CapillaryWater70(vm_NumberOfLayers, 0.0), // 70% of soil capillary water in [mm]
-      vm_Evaporation(vm_NumberOfLayers, 0.0), //intern
-      vm_Evapotranspiration(vm_NumberOfLayers, 0.0), //intern
-      vm_FieldCapacity(vm_NumberOfLayers, 0.0),
-      vm_FluxAtLowerBoundary(0.0),
-      vm_GravitationalWater(vm_NumberOfLayers, 0.0), // Gravitational water in [mm d-1] //intern
-      vm_GrossPrecipitation(0.0), //internal
-      vm_GroundwaterAdded(0),
-      //vm_GroundwaterDistance(vm_NumberOfLayers, 0), // map (joachim)
-      vm_GroundwaterTable(0),
-      vm_HeatConductivity(vm_NumberOfLayers, 0),
-      vm_Infiltration(0.0),
-      vm_Interception(0.0),
-      vc_KcFactor(0.6),
-      vm_Lambda(vm_NumberOfLayers, 0.0),
-      vm_LambdaReduced(0),
-      vs_Latitude(stps.vs_Latitude),
-      vm_LayerThickness(vm_NumberOfLayers, 0.01), 
-      vw_MaxAirTemperature(0),
-      vw_MeanAirTemperature(0),
-      vw_MinAirTemperature(0),
-      vc_NetPrecipitation(0.0),
-      vw_NetRadiation(0),
-      vm_PermanentWiltingPoint(vm_NumberOfLayers, 0.0),
-      vc_PercentageSoilCoverage(0.0),
-      vm_PercolationRate(vm_NumberOfLayers, 0.0), // Percolation rate in [mm d-1] //intern
-      vw_Precipitation(0),
-      vm_ReferenceEvapotranspiration(6.0), //internal
-      vw_RelativeHumidity(0),
-      vm_ResidualEvapotranspiration(vm_NumberOfLayers, 0.0),
-      vm_SoilMoisture(vm_NumberOfLayers, 0.20), //result
-      vm_SoilMoisture_crit(0), vm_SoilMoistureDeficit(0),
-      vm_SoilPoreVolume(vm_NumberOfLayers, 0.0),
-      vc_StomataResistance(0),
-      vm_SurfaceRunOff(0.0), //internal
-      vm_SumSurfaceRunOff(0.0), // intern accumulation variable
-      vm_SurfaceWaterStorage(0.0),
-      vm_TotalWaterRemoval(0),
-      vm_Transpiration(vm_NumberOfLayers, 0.0), //intern
-      vm_TranspirationDeficit(0),
-      vm_WaterFlux(vm_NumberOfLayers, 0.0),
-      vw_WindSpeed(0),
-      vw_WindSpeedHeight(0),
-      vm_XSACriticalSoilMoisture(0),
-      snowComponent(soilColumn, smPs),
-      frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep, saPs)
+SoilMoisture::SoilMoisture(MonicaModel& mm)
+  : soilColumn(mm.soilColumnNC()),
+    siteParameters(mm.siteParameters()),
+    monica(mm),
+    smPs(mm.soilmoistureParameters()),
+    envPs(mm.environmentParameters()),
+    cropPs(mm.cropParameters()),
+    saPs(mm.sensitivityAnalysisParameters()),
+    vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1),
+    vs_NumberOfLayers(soilColumn.vs_NumberOfLayers()), //extern
+    vm_ActualEvapotranspiration(0.0),
+    vm_AvailableWater(vm_NumberOfLayers, 0.0), // Soil available water in [mm]
+    vm_CapillaryRise(0),
+    pm_CapillaryRiseRate(vm_NumberOfLayers, 0.0),
+    vm_CapillaryWater(vm_NumberOfLayers, 0.0), // soil capillary water in [mm]
+    vm_CapillaryWater70(vm_NumberOfLayers, 0.0), // 70% of soil capillary water in [mm]
+    vm_Evaporation(vm_NumberOfLayers, 0.0), //intern
+    vm_Evapotranspiration(vm_NumberOfLayers, 0.0), //intern
+    vm_FieldCapacity(vm_NumberOfLayers, 0.0),
+    vm_FluxAtLowerBoundary(0.0),
+    vm_GravitationalWater(vm_NumberOfLayers, 0.0), // Gravitational water in [mm d-1] //intern
+    vm_GrossPrecipitation(0.0), //internal
+    vm_GroundwaterAdded(0),
+    //vm_GroundwaterDistance(vm_NumberOfLayers, 0), // map (joachim)
+    vm_GroundwaterTable(0),
+    vm_HeatConductivity(vm_NumberOfLayers, 0),
+    vm_Infiltration(0.0),
+    vm_Interception(0.0),
+    vc_KcFactor(0.6),
+    vm_Lambda(vm_NumberOfLayers, 0.0),
+    vm_LambdaReduced(0),
+    vs_Latitude(siteParameters.vs_Latitude),
+    vm_LayerThickness(vm_NumberOfLayers, 0.01),
+    vw_MaxAirTemperature(0),
+    vw_MeanAirTemperature(0),
+    vw_MinAirTemperature(0),
+    vc_NetPrecipitation(0.0),
+    vw_NetRadiation(0),
+    vm_PermanentWiltingPoint(vm_NumberOfLayers, 0.0),
+    vc_PercentageSoilCoverage(0.0),
+    vm_PercolationRate(vm_NumberOfLayers, 0.0), // Percolation rate in [mm d-1] //intern
+    vw_Precipitation(0),
+    vm_ReferenceEvapotranspiration(6.0), //internal
+    vw_RelativeHumidity(0),
+    vm_ResidualEvapotranspiration(vm_NumberOfLayers, 0.0),
+    vm_SoilMoisture(vm_NumberOfLayers, 0.20), //result
+    vm_SoilMoisture_crit(0), vm_SoilMoistureDeficit(0),
+    vm_SoilPoreVolume(vm_NumberOfLayers, 0.0),
+    vc_StomataResistance(0),
+    vm_SurfaceRunOff(0.0), //internal
+    vm_SumSurfaceRunOff(0.0), // intern accumulation variable
+    vm_SurfaceWaterStorage(0.0),
+    vm_TotalWaterRemoval(0),
+    vm_Transpiration(vm_NumberOfLayers, 0.0), //intern
+    vm_TranspirationDeficit(0),
+    vm_WaterFlux(vm_NumberOfLayers, 0.0),
+    vw_WindSpeed(0),
+    vw_WindSpeedHeight(0),
+    vm_XSACriticalSoilMoisture(0),
+    snowComponent(soilColumn, smPs),
+    frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep, saPs)
 {
   debug() << "Constructor: SoilMoisture" << endl;
 
@@ -788,7 +782,7 @@ SoilMoisture::SoilMoisture(SoilColumn& sc,
   pm_MaxPercolationRate = smPs.pm_MaxPercolationRate;
   pm_LeachingDepth = envPs.p_LeachingDepth;
   
-//  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
+  //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
   pm_LayerThickness = envPs.p_LayerThickness;
 
   pm_LeachingDepthLayer = int(floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
@@ -812,6 +806,11 @@ SoilMoisture::SoilMoisture(SoilColumn& sc,
 //  for (int i_Layer = vm_NumberOfLayers - 1; i_Layer >= vm_GroundwaterTable; i_Layer--) {
 //    soilColumn[i_Layer].set_Vs_SoilMoisture_m3(soilColumn[i_Layer].get_Saturation());
 //  }
+}
+
+MonicaModel::~MonicaModel()
+{
+  delete _currentCropGrowth;
 }
 
 /*!

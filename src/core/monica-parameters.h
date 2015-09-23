@@ -1070,7 +1070,7 @@ namespace Monica
 		SensitivityAnalysisParameters sensitivityAnalysisParameters;
 		UserInitialValues userInitValues;
 
-    Soil::CapillaryRiseRates capillaryRiseRates;
+//    Soil::CapillaryRiseRates capillaryRiseRates;
 
 		double getPrecipCorrectionValue(int month) const;
 		void setPrecipCorrectionValue(int month, double value);

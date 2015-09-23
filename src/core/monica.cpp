@@ -66,6 +66,42 @@ namespace
 
 //------------------------------------------------------------------------------
 
+MonicaModel::MonicaModel(const GeneralParameters& general,
+                         const SiteParameters& site,
+                         const Soil::SoilPMs& soil,
+                         const CentralParameterProvider& cpp)
+  : _generalParams(general),
+    _siteParams(site),
+    _smPs(cpp.userSoilMoistureParameters),
+    _envPs(cpp.userEnvironmentParameters),
+    _cropPs(cpp.userCropParameters),
+    _saPs(cpp.sensitivityAnalysisParameters),
+    _soilTempPs(cpp.userSoilTemperatureParameters),
+    _soilTransPs(cpp.userSoilTransportParameters),
+    _soilOrganicPs(cpp.userSoilOrganicParameters),
+    _initPs(cpp.userInitValues),
+    _writeOutputFiles(cpp.writeOutputFiles),
+    _soilColumn(_generalParams,
+                soil,
+                _smPs.pm_CriticalMoistureDepth,
+                _initPs,
+                _saPs),
+    _soilTemperature(*this),
+    _soilMoisture(*this),
+    _soilOrganic(_soilColumn,
+                 _generalParams,
+                 _siteParams,
+                 _soilOrganicPs,
+                 _saPs),
+    _soilTransport(_soilColumn,
+                   _siteParams,
+                   _soilTransPs,
+                   _envPs.p_LeachingDepth,
+                   _envPs.p_timeStep,
+                   _cropPs.pc_MinimumAvailableN)
+{}
+
+
 /**
  * @brief Simulation of crop seed.
  * @param crop to be planted
@@ -85,8 +121,13 @@ void MonicaModel::seedCrop(CropPtr crop)
   if(_currentCrop->isValid())
   {
     const CropParameters* cps = _currentCrop->cropParameters();
-    _currentCropGrowth = new CropGrowth(_soilColumn, _generalParams,
-                                        *cps, _siteParams, _centralParameterProvider, crop->getEva2TypeUsage());
+    _currentCropGrowth = new CropGrowth(_soilColumn,
+                                        _generalParams,
+                                        *cps,
+                                        _siteParams,
+                                        _cropPs,
+                                        _saPs,
+                                        crop->getEva2TypeUsage());
 
     if (_currentCrop->perennialCropParameters())
       _currentCropGrowth->setPerennialCropParameters(_currentCrop->perennialCropParameters());
@@ -482,9 +523,8 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 //  climate_file.close();
 
 
-  const UserEnvironmentParameters& user_env = _centralParameterProvider.userEnvironmentParameters;
   vw_AtmosphericCO2Concentration = _generalParams.atmosphericCO2 == -1
-                                   ? user_env.p_AthmosphericCO2
+                                   ? _envPs.p_AthmosphericCO2
                                    : _generalParams.atmosphericCO2;
 
 
@@ -492,10 +532,10 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
   double gw_value = getGroundwaterInformation(date);
 
   if (gw_value == -1) {
-//  cout << "vs_GroundwaterDepth:\t" << user_env.p_MinGroundwaterDepth << "\t" << user_env.p_MaxGroundwaterDepth << endl;
-  vs_GroundwaterDepth = GroundwaterDepthForDate(user_env.p_MaxGroundwaterDepth,
-				        user_env.p_MinGroundwaterDepth,
-				        user_env.p_MinGroundwaterDepthMonth,
+//  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
+  vs_GroundwaterDepth = GroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
+                _envPs.p_MinGroundwaterDepth,
+                _envPs.p_MinGroundwaterDepthMonth,
 				        julday,
 				        leapYear);
   } else {
@@ -509,7 +549,7 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 
   //31 + 28 + 15
   unsigned int pc_JulianDayAutomaticFertilising =
-      user_env.p_JulianDayAutomaticFertilising;
+      _envPs.p_JulianDayAutomaticFertilising;
 
   _soilColumn.deleteAOMPool();
 
@@ -594,7 +634,7 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
   double wind =  climateData[Climate::wind];
   double precip =  climateData[Climate::precip];
 
-  double vw_WindSpeedHeight = _centralParameterProvider.userEnvironmentParameters.p_WindSpeedHeight;
+  double vw_WindSpeedHeight = _envPs.p_WindSpeedHeight;
 
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, julday,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,

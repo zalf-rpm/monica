@@ -830,7 +830,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			initialized = false;
 #endif
 
-			centralParameterProvider.capillaryRiseRates = Soil::readCapillaryRiseRates();
+//			centralParameterProvider.capillaryRiseRates = Soil::readCapillaryRiseRates();
 		}
 	}
 

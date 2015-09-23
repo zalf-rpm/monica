@@ -64,11 +64,10 @@ namespace Monica
   public:
     SoilOrganic(SoilColumn& soilColumn,
                 const GeneralParameters& gps,
-                // const OrganicConstants& ocs,
                 const SiteParameters& sps,
-                const CentralParameterProvider& cpp);
+                const UserSoilOrganicParameters& userParams,
+                const SensitivityAnalysisParameters& saParams);
 
-    ~SoilOrganic();
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
     void addOrganicMatter(const OrganicMatterParameters* addedOrganicMatter,
@@ -130,46 +129,48 @@ namespace Monica
     double fo_MoistOnNitrification(double d_SoilMoisture_pF);
     double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
+
     SoilColumn & soilColumn;
     const GeneralParameters & generalParams;
     const SiteParameters & siteParams;
-    const CentralParameterProvider& centralParameterProvider;
+    const UserSoilOrganicParameters& organicPs;
+    const SensitivityAnalysisParameters& saPs;
 
-    std::size_t vs_NumberOfLayers;
-    std::size_t vs_NumberOfOrganicLayers;
-    bool addedOrganicMatter;
-    double irrigationAmount;
-    std::vector<double> vo_ActDenitrificationRate;
+    std::size_t vs_NumberOfLayers{0};
+    std::size_t vs_NumberOfOrganicLayers{0};
+    bool addedOrganicMatter{false};
+    double irrigationAmount{0.0};
+    std::vector<double> vo_ActDenitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_AOM_FastDeltaSum;
-    double vo_AOM_FastInput; //AOMfast pool change by direct input [kg C m-3]
+    double vo_AOM_FastInput; //!< AOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_AOM_FastSum;
     std::vector<double> vo_AOM_SlowDeltaSum;
-    double vo_AOM_SlowInput; //AOMslow pool change by direct input [kg C m-3]
+    double vo_AOM_SlowInput; //!< AOMslow pool change by direct input [kg C m-3]
     std::vector<double> vo_AOM_SlowSum;
     std::vector<double> vo_CBalance;
-    double vo_DecomposerRespiration;
+    double vo_DecomposerRespiration{0.0};
     std::string vo_ErrorMessage;
     std::vector<double> vo_InertSoilOrganicC;
-    double vo_N2O_Produced;
-    double vo_NetEcosystemExchange;
-    double vo_NetEcosystemProduction;
-    double vo_NetNMineralisation;
+    double vo_N2O_Produced{0.0};
+    double vo_NetEcosystemExchange{0.0};
+    double vo_NetEcosystemProduction{0.0};
+    double vo_NetNMineralisation{0.0};
     std::vector<double> vo_NetNMineralisationRate;
-    double vo_Total_NH3_Volatilised;
-    double vo_NH3_Volatilised;
+    double vo_Total_NH3_Volatilised{0.0};
+    double vo_NH3_Volatilised{0.0};
     std::vector<double> vo_SMB_CO2EvolutionRate;
     std::vector<double> vo_SMB_FastDelta;
     std::vector<double> vo_SMB_SlowDelta;
     std::vector<double> vs_SoilMineralNContent;
     std::vector<double> vo_SoilOrganicC;
     std::vector<double> vo_SOM_FastDelta;
-    double vo_SOM_FastInput;// SOMfast pool change by direct input [kg C m-3]
+    double vo_SOM_FastInput{0.0}; //!< SOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_SOM_SlowDelta;
-    double vo_SumDenitrification;
-    double vo_SumNetNMineralisation;
-    double vo_SumN2O_Produced;
-    double vo_SumNH3_Volatilised;
-    double vo_TotalDenitrification;
+    double vo_SumDenitrification{0.0};
+    double vo_SumNetNMineralisation{0.0};
+    double vo_SumN2O_Produced{0.0};
+    double vo_SumNH3_Volatilised{0.0};
+    double vo_TotalDenitrification{0.0};
 
     /*
     struct AddedOMParams {
@@ -188,8 +189,8 @@ namespace Monica
 
     //! True, if organic fertilizer has been added with a following incorporation.
     //! Parameter is automatically set to false, if carbamid amount is falling below 0.001.
-    bool incorporation;
-    CropGrowth* crop;
+    bool incorporation{false};
+    CropGrowth* crop{nullptr};
   };
 
 } // namespace Monica

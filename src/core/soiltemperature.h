@@ -52,56 +52,44 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <iomanip>
 
-
-//#include "climate/climate-common.h"
 #include "soilcolumn.h"
 
-namespace Monica {
-
-// forward declaration
-class SoilColumn;
-class MonicaModel;
-
-/**
- * @brief Calculation of soil temperature.
- *
- * The calculation of soil temperature is based on a model
- * developed by PIC.
- *
- * @author Michael Berg
- */
-class SoilTemperature
+namespace Monica
 {
+  // forward declaration
+  class SoilColumn;
+  class MonicaModel;
 
-public:
+  //! Calculation of soil temperature is based on a model developed by PIC
+  class SoilTemperature
+  {
+  public:
+    SoilTemperature(MonicaModel& monica);
 
-	SoilTemperature(SoilColumn& soilColumn, MonicaModel& monica, const CentralParameterProvider& cpp);
-	~SoilTemperature();
+    void step(double tmin, double tmax, double globrad);
 
-	void step(double tmin, double tmax, double globrad);
+    double f_SoilSurfaceTemperature(double tmin, double tmax, double globrad);
+    double get_SoilSurfaceTemperature() const;
+    double get_SoilTemperature(int layer) const;
+    double get_HeatConductivity(int layer) const;
+    double get_AvgTopSoilTemperature(double sumUpLayerThickness = 0.3) const;
 
-	double f_SoilSurfaceTemperature(double tmin, double tmax, double globrad);
-	double get_SoilSurfaceTemperature() const;
-	double get_SoilTemperature(int layer) const;
-	double get_HeatConductivity(int layer) const;
-	double get_AvgTopSoilTemperature(double sumUpLayerThickness = 0.3) const;
-
-	double getDampingFactor() const { return dampingFactor; }
-  void setDampingFactor(double factor) { this->dampingFactor = factor; }
+    double dampingFactor() const { return _dampingFactor; }
+    void setDampingFactor(double factor) { _dampingFactor = factor; }
 
     double vt_SoilSurfaceTemperature;
-private:
-    SoilColumn & _soilColumn;
-    MonicaModel & monica;
+
+  private:
+    SoilColumn& _soilColumn;
+    MonicaModel& monica;
     SoilLayer _soilColumn_vt_GroundLayer;
     SoilLayer _soilColumn_vt_BottomLayer;
-    const CentralParameterProvider& centralParameterProvider;
 
     struct SC
     {
-      SoilColumn & sc;
-      SoilLayer & gl;
-      SoilLayer & bl;
+      SoilColumn& sc;
+      SoilLayer& gl;
+      SoilLayer& bl;
       std::size_t vs_nols;
       SC(SoilColumn & sc, SoilLayer & gl, SoilLayer & bl, int vs_nols)
         :sc(sc), gl(gl), bl(bl), vs_nols(vs_nols)
@@ -117,7 +105,7 @@ private:
         return bl;
       }
 
-      const SoilLayer & at(std::size_t i) const { return (*this)[i]; }
+      const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
 
     } soilColumn;
 
@@ -135,12 +123,8 @@ private:
     std::vector<double> vt_HeatConductivity;
     std::vector<double> vt_HeatConductivityMean;
     std::vector<double> vt_HeatCapacity;
-    double dampingFactor;
-
-
-};
-
-} /* namespace Monica */
-
+    double _dampingFactor{0.8};
+  };
+}
 #endif
 

@@ -42,20 +42,13 @@ using namespace Climate;
 using namespace Monica;
 using namespace Tools;
 
-/**
- * @brief Constructor
- *
- * Create soil column giving a the number of layers it consists of
- *
- * @param sc Soil column
- */
-SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralParameterProvider& cpp)
-    : 	_soilColumn(sc),
+//! Create soil column giving a the number of layers it consists of
+SoilTemperature::SoilTemperature(MonicaModel& mm)
+  : _soilColumn(mm.soilColumnNC()),
     monica(mm),
-    centralParameterProvider(cpp),
-    soilColumn(sc, _soilColumn_vt_GroundLayer, _soilColumn_vt_BottomLayer, sc.vs_NumberOfLayers()),
-    vt_NumberOfLayers(sc.vs_NumberOfLayers()+2),
-    vs_NumberOfLayers(sc.vs_NumberOfLayers()), 	//extern
+    soilColumn(_soilColumn, _soilColumn_vt_GroundLayer, _soilColumn_vt_BottomLayer, _soilColumn.vs_NumberOfLayers()),
+    vt_NumberOfLayers(_soilColumn.vs_NumberOfLayers()+2),
+    vs_NumberOfLayers(_soilColumn.vs_NumberOfLayers()), 	//extern
     vs_SoilMoisture_const(vt_NumberOfLayers),   //intern
     vt_SoilTemperature(vt_NumberOfLayers),      //result = vs_soiltemperature
     vt_V(vt_NumberOfLayers), 					          //intern
@@ -66,17 +59,15 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
     vt_MatrixSecundaryDiagonal(vt_NumberOfLayers + 1), 	 //intern
     vt_HeatConductivity(vt_NumberOfLayers), 	           //intern
     vt_HeatConductivityMean(vt_NumberOfLayers),          //intern
-    vt_HeatCapacity(vt_NumberOfLayers), 			             //intern
-    dampingFactor(0.8)
+    vt_HeatCapacity(vt_NumberOfLayers) 			             //intern
 {
   debug() << "Constructor: SoilColumn" << endl;
 
-  const UserSoilTemperatureParameters& user_temp = centralParameterProvider.userSoilTemperatureParameters;
-
+  const UserSoilTemperatureParameters& user_temp = monica.soilTemperatureParameters();
   double pt_BaseTemperature           = user_temp.pt_BaseTemperature;  // temp für unterste Schicht (durch. Jahreslufttemp-)
   double pt_InitialSurfaceTemperature = user_temp.pt_InitialSurfaceTemperature; // Replace by Mean air temperature
   double pt_Ntau                      = user_temp.pt_NTau;
-  double pt_TimeStep                  = centralParameterProvider.userEnvironmentParameters.p_timeStep;  // schon in soil_moisture in DB extrahiert
+  double pt_TimeStep                  = monica.environmentParameters().p_timeStep;  // schon in soil_moisture in DB extrahiert
   double ps_QuartzRawDensity          = user_temp.pt_QuartzRawDensity;
   double pt_SpecificHeatCapacityWater = user_temp.pt_SpecificHeatCapacityWater;   // [J kg-1 K-1]
   double pt_SpecificHeatCapacityQuartz = user_temp.pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
@@ -233,23 +224,9 @@ SoilTemperature::SoilTemperature(SoilColumn& sc, MonicaModel& mm, const CentralP
   }
 }
 
-/**
- * @brief Destructor
- */
-SoilTemperature::~SoilTemperature()
-{
-}
-
-/**
- * @brief Single calculation step
- * @param tmin
- * @param tmax
- * @param globrad
- */
+//! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad)
 {
-
-
   int vt_GroundLayer = vt_NumberOfLayers - 2;
   int vt_BottomLayer = vt_NumberOfLayers - 1;
 
@@ -343,13 +320,13 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
  */
 double SoilTemperature::f_SoilSurfaceTemperature(double tmin, double tmax, double globrad)
 {
-  double shading_coefficient = dampingFactor;
+  double shading_coefficient = _dampingFactor;
 
   double soil_coverage = 0.0;
   if (monica.cropGrowth()) {
     soil_coverage = monica.cropGrowth()->get_SoilCoverage();
   }
-  shading_coefficient =  0.1 + ((soil_coverage * dampingFactor) + ((1-soil_coverage) * (1-dampingFactor)));
+  shading_coefficient =  0.1 + ((soil_coverage * _dampingFactor) + ((1-soil_coverage) * (1-_dampingFactor)));
 
 
 

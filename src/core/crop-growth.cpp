@@ -54,12 +54,13 @@ CropGrowth::CropGrowth(SoilColumn& sc,
                        const GeneralParameters& gps,
                        const CropParameters& cps,
                        const SiteParameters& stps,
-                       const CentralParameterProvider& cpp,
+                       const UserCropParameters& cropPs,
+                       const SensitivityAnalysisParameters& saPs,
                        int usage)
   : soilColumn(sc),
     generalParams(gps),
-    perennialCropParams(NULL),
-    centralParameterProvider(cpp),
+    cropPs(cropPs),
+    saPs(saPs),
     vs_NumberOfLayers(sc.vs_NumberOfLayers()),
     vs_Latitude(stps.vs_Latitude),
     vc_AbovegroundBiomass(0.0),
@@ -259,7 +260,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 
   // Initialising the crop
 
-  vs_Tortuosity = centralParameterProvider.userCropParameters.pc_Tortuosity;
+  vs_Tortuosity = cropPs.pc_Tortuosity;
   
 
   // Determining the total temperature sum of all developmental stages after
@@ -372,12 +373,6 @@ CropGrowth::CropGrowth(SoilColumn& sc,
       }
   }
 
-}
-
-/**
- * @brief Destructor
- */
-CropGrowth::~CropGrowth() {
 }
 
 /**
@@ -1222,8 +1217,8 @@ double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
 {
   // in case of sensitivity analysis, this parameter would not be undefined
   // so return fix value instead of calculating
-  if (centralParameterProvider.sensitivityAnalysisParameters.vc_SoilCoverage != UNDEFINED) {
-    vc_SoilCoverage = centralParameterProvider.sensitivityAnalysisParameters.vc_SoilCoverage;
+  if (saPs.vc_SoilCoverage != UNDEFINED) {
+    vc_SoilCoverage = saPs.vc_SoilCoverage;
     return vc_SoilCoverage;
   }
 
@@ -1337,7 +1332,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double vc_PhotoGrowthRespiration = 0.0;
   double vc_DarkGrowthRespiration = 0.0;
 
-  const UserCropParameters& user_crops = centralParameterProvider.userCropParameters;
+  const UserCropParameters& user_crops = cropPs;
   double pc_ReferenceLeafAreaIndex = user_crops.pc_ReferenceLeafAreaIndex;
   double pc_ReferenceMaxAssimilationRate = user_crops.pc_ReferenceMaxAssimilationRate;
   double pc_MaintenanceRespirationParameter_1 = user_crops.pc_MaintenanceRespirationParameter1;
@@ -2098,7 +2093,7 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
   //std::vector<double> vc_RootSurface(vs_NumberOfLayers, 0.0); // old FL
 
 
-  const UserCropParameters& user_crops = centralParameterProvider.userCropParameters;
+  const UserCropParameters& user_crops = cropPs;
   double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
 
   //double pc_GrowthRespirationRedux = user_crops->getPc_GrowthRespirationRedux();
@@ -2331,8 +2326,8 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
 
   // in case of sensitivity analysis, this parameter would not be undefined
   // so overwrite with fix value
-  if (centralParameterProvider.sensitivityAnalysisParameters.vc_MaxRootingDepth != UNDEFINED) {
-    vc_MaxRootingDepth = centralParameterProvider.sensitivityAnalysisParameters.vc_MaxRootingDepth;
+  if (saPs.vc_MaxRootingDepth != UNDEFINED) {
+    vc_MaxRootingDepth = saPs.vc_MaxRootingDepth;
   }
 
   if (vc_MaxRootingDepth > (double(vs_NumberOfLayers - 1) * vs_LayerThickness)) {
@@ -2462,11 +2457,9 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
 
     // in case of sensitivity analysis, this parameter would not be undefined
     // so return fix value instead of calculating mean bulk density
-    if (centralParameterProvider.sensitivityAnalysisParameters.vc_RootDiameter != UNDEFINED) {
-      vc_RootDiameter[i_Layer] = centralParameterProvider.sensitivityAnalysisParameters.vc_RootDiameter;
+    if (saPs.vc_RootDiameter != UNDEFINED) {
+      vc_RootDiameter[i_Layer] = saPs.vc_RootDiameter;
     }
-
-
 
     // Default root decay - 10 %
     vo_FreshSoilOrganicMatter[i_Layer] += vc_RootNIncrement * vc_RootDensity[i_Layer]
@@ -2613,7 +2606,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
   double vc_ReferenceEvapotranspiration; //[mm]
   double vw_NetRadiation; //[MJ m-2]
 
-  const UserCropParameters& user_crops = centralParameterProvider.userCropParameters;
+  const UserCropParameters& user_crops = cropPs;
   double pc_SaturationBeta = user_crops.pc_SaturationBeta; // Original: Yu et al. 2001; beta = 3.5
   double pc_StomataConductanceAlpha = user_crops.pc_StomataConductanceAlpha; // Original: Yu et al. 2001; alpha = 0.06
   double pc_ReferenceAlbedo = user_crops.pc_ReferenceAlbedo; // FAO Green gras reference albedo from Allen et al. (1998)
@@ -2947,7 +2940,7 @@ void CropGrowth::fc_CropNUptake(int vs_NumberOfLayers,
   std::vector<double> vc_DiffusiveNUptakeFromLayer(vs_NumberOfLayers, 0.0); // old DIFF
   double vc_ConvectiveNUptake_1 = 0.0; // old MASSUM
   double vc_DiffusiveNUptake_1 = 0.0; // old DIFFSUM
-  const UserCropParameters& user_crops = centralParameterProvider.userCropParameters;
+  const UserCropParameters& user_crops = cropPs;
   double pc_MinimumAvailableN = user_crops.pc_MinimumAvailableN; // kg m-3
   double pc_MinimumNConcentrationRoot = user_crops.pc_MinimumNConcentrationRoot;  // kg kg-1
   double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
@@ -3279,8 +3272,8 @@ int CropGrowth::get_RootingDepth() const {
 double CropGrowth::get_SoilCoverage() const {
   // in case of sensitivity analysis, this parameter would not be undefined
   // so return fix value instead of calculating
-  if (centralParameterProvider.sensitivityAnalysisParameters.vc_SoilCoverage != UNDEFINED) {
-    return centralParameterProvider.sensitivityAnalysisParameters.vc_SoilCoverage;
+  if (saPs.vc_SoilCoverage != UNDEFINED) {
+    return saPs.vc_SoilCoverage;
   }
   return vc_SoilCoverage;
 }

@@ -66,43 +66,10 @@ namespace Monica
 	class MonicaModel
 	{
   public:
-//    MonicaModel::MonicaModel(const Env& env, const Climate::DataAccessor& da)
-//      : //_env(env),
-//        _generalParams(env.general),
-//        _siteParams(env.site),
-//        _centralParameterProvider(env.centralParameterProvider),
-//        _soilColumn(env.general, *env.soilParams, env.centralParameterProvider),
-//        _soilTemperature(_soilColumn, *this, env.centralParameterProvider),
-//        _soilMoisture(_soilColumn, env.site, *this, env.centralParameterProvider),
-//        _soilOrganic(_soilColumn, env.general, env.site, env.centralParameterProvider),
-//        _soilTransport(_soilColumn, env.site, env.centralParameterProvider),
-//        _dataAccessor(da)
-//    {}
+    MonicaModel(const GeneralParameters& general, const SiteParameters& site,
+                const Soil::SoilPMs& soil, const CentralParameterProvider& cpp);
 
-    MonicaModel::MonicaModel(const GeneralParameters& general, const SiteParameters& site,
-                             const Soil::SoilPMs& soil, const CentralParameterProvider& cpp)
-      : //_env(env),
-        _generalParams(general),
-        _siteParams(site),
-        _centralParameterProvider(cpp),
-        _soilColumn(general, soil, cpp),
-        _soilTemperature(_soilColumn, *this, cpp),
-        _soilMoisture(_soilColumn, site, *this,
-                      cpp.userSoilMoistureParameters,
-                      cpp.userEnvironmentParameters,
-                      cpp.userCropParameters,
-                      cpp.sensitivityAnalysisParameters),
-        _soilOrganic(_soilColumn, general, site, cpp),
-        _soilTransport(_soilColumn, site, cpp)
-    {}
-
-    /**
-     * @brief Destructor
-     */
-		~MonicaModel()
-		{
-      delete _currentCropGrowth;
-    }
+    ~MonicaModel();
 
     void generalStep(Tools::Date date, std::map<Climate::ACD, double> climateData);
     void generalStep(unsigned int stepNo);
@@ -125,10 +92,7 @@ namespace Monica
     //! what crop is currently seeded ?
 		CropPtr currentCrop() const { return _currentCrop; }
 
-		bool isCropPlanted() const
-		{
-      return _currentCrop.get() && _currentCrop->isValid();
-    }
+    bool isCropPlanted() const { return _currentCrop.get() && _currentCrop->isValid(); }
 
     //! harvest the currently seeded crop
 		void harvestCurrentCrop(bool exported);
@@ -201,7 +165,7 @@ namespace Monica
 
 		double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
 
-    bool writeOutputFiles() {return _centralParameterProvider.writeOutputFiles; }
+    bool writeOutputFiles() {return _writeOutputFiles; }
 
     double avgCorg(double depth_m) const;
     double mean90cmWaterContent() const;
@@ -286,28 +250,36 @@ namespace Monica
 
     double getGroundwaterInformation(Tools::Date date) const {return _generalParams.groundwaterInformation.getGroundwaterInformation(date); }
 
+    const SiteParameters& siteParameters() const { return _siteParams; }
+
+    const UserSoilMoistureParameters& soilmoistureParameters() const { return _smPs; }
+    const UserEnvironmentParameters& environmentParameters() const { return _envPs; }
+    const UserCropParameters& cropParameters() const { return _cropPs; }
+    const SensitivityAnalysisParameters& sensitivityAnalysisParameters() const { return _saPs; }
+    const UserSoilTemperatureParameters& soilTemperatureParameters() const { return _soilTempPs; }
+    const UserSoilTransportParameters& soilTransportParameters() const { return _soilTransPs; }
+    const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
+
   private:
-		//! environment describing the conditions under which the model runs
-//    Env _env;
+    const GeneralParameters _generalParams;
+    const SiteParameters _siteParams;
+    const UserSoilMoistureParameters _smPs;
+    const UserEnvironmentParameters _envPs;
+    const UserCropParameters _cropPs;
+    const SensitivityAnalysisParameters _saPs;
+    const UserSoilTemperatureParameters& _soilTempPs;
+    const UserSoilTransportParameters& _soilTransPs;
+    const UserSoilOrganicParameters& _soilOrganicPs;
+    const UserInitialValues& _initPs;
+    bool _writeOutputFiles{false};
 
-    GeneralParameters _generalParams;
-    SiteParameters _siteParams;
-    CentralParameterProvider _centralParameterProvider;
-
-		//! main soil data structure
-    SoilColumn _soilColumn;
-		//! temperature code
-    SoilTemperature _soilTemperature;
-		//! moisture code
-    SoilMoisture _soilMoisture;
-		//! organic code
-    SoilOrganic _soilOrganic;
-		//! transport code
-    SoilTransport _soilTransport;
-		//! crop code for possibly planted crop
-    CropGrowth* _currentCropGrowth{nullptr};
-		//! currently possibly planted crop
-    CropPtr _currentCrop;
+    SoilColumn _soilColumn; //!< main soil data structure
+    SoilTemperature _soilTemperature; //!< temperature code
+    SoilMoisture _soilMoisture; //!< moisture code
+    SoilOrganic _soilOrganic; //!< organic code
+    SoilTransport _soilTransport; //!< transport code
+    CropPtr _currentCrop; //! currently possibly planted crop
+    CropGrowth* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
 
 		//! store applied fertiliser during one production process
     double _sumFertiliser{0.0};
@@ -330,3 +302,4 @@ namespace Monica
 }
 
 #endif
+

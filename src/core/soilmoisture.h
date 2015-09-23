@@ -175,13 +175,7 @@ namespace Monica
   class SoilMoisture
   {
   public:
-    SoilMoisture(SoilColumn& soilColumn,
-                 const SiteParameters& siteParameters,
-                 MonicaModel& monica,
-                 const UserSoilMoistureParameters& smPs,
-                 const UserEnvironmentParameters& envPs,
-                 const UserCropParameters& cropPs,
-                 const SensitivityAnalysisParameters& saPs);
+    SoilMoisture(MonicaModel& monica);
 
     void step(double vs_DepthGroundwaterTable,
               // Wetter Variablen
@@ -203,89 +197,35 @@ namespace Monica
     double get_CapillaryRise(int layer) const;
     double get_PercolationRate(int layer) const;
 
-    /*!
-     * @brief Returns infiltration value [mm]
-     * @return Moisture
-     */
-    double get_Infiltration() const {
-      return vm_Infiltration;
-    }
+    //! Returns infiltration value [mm]
+    double get_Infiltration() const { return vm_Infiltration; }
 
-    /*!
-     * @brief Returns surface water storage [mm]
-     * @return water content
-     */
-    double get_SurfaceWaterStorage() const {
-      return vm_SurfaceWaterStorage;
-    }
+    //! Returns surface water storage [mm]
+    double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; }
 
-    /*!
-     * @brief Returns surface overflow [mm]
-     * @return water amount
-     */
-    double get_SurfaceRunOff() const {
-      return vm_SurfaceRunOff;
-    }
+    //! Returns surface overflow [mm]
+    double get_SurfaceRunOff() const { return vm_SurfaceRunOff; }
 
-    /*!
-     * @brief Returns evapotranspiration value [mm]
-     * @return Evapotranspiration
-     */
-    double get_Evapotranspiration() const {
-      return vm_ActualEvapotranspiration;
-    }
+    //! Returns evapotranspiration value [mm]
+    double get_Evapotranspiration() const { return vm_ActualEvapotranspiration; }
 
-    /*!
-     * @brief Returns evaporation value [mm]
-     * @return Evaporation
-     */
-    double get_ActualEvaporation() const {
-      return vm_ActualEvaporation;
-    }
+    //! Returns evaporation value [mm]
+    double get_ActualEvaporation() const { return vm_ActualEvaporation; }
 
+    //! Returns reference evapotranspiration [mm]
+    double get_ET0() const { return vm_ReferenceEvapotranspiration; }
 
-    /*!
-     * @brief Returns reference evapotranspiration [mm]
-     * @return Value for reference evapotranspiration
-     */
-    double get_ET0() const {
-      return vm_ReferenceEvapotranspiration;
-    }
+    //! Returns percentage soil coverage.
+    double get_PercentageSoilCoverage() const { return vc_PercentageSoilCoverage; }
 
+    //! Returns stomata resistance [s-1]
+    double get_StomataResistance() const { return vc_StomataResistance; }
 
-     /*!
-     * @brief Returns percentage soil coverage.
-     * @return Value for percentage soil coverage
-     */
-    double get_PercentageSoilCoverage() const {
-      return vc_PercentageSoilCoverage;
-    }
+    //! Returns frost depth [m]
+    double get_FrostDepth() const { return frostComponent.getFrostDepth(); }
 
-
-    /**
-     * @brief Returns stomata resistance [s-1]
-     * @return Value for stomata resistance
-     */
-    double get_StomataResistance() const {
-      return vc_StomataResistance;
-    }
-
-
-    /**
-     * @brief Returns frost depth [m]
-     * @return Value for frost depth
-     */
-    double get_FrostDepth() const {
-      return frostComponent.getFrostDepth();
-    }
-
-    /**
-     * @brief Returns thaw depth [m]
-     * @return Value for thaw depth
-     */
-    double get_ThawDepth() const {
-      return frostComponent.getThawDepth();
-    }
+    //! Returns thaw depth [m]
+    double get_ThawDepth() const { return frostComponent.getThawDepth(); }
 
     double get_CapillaryRise();
 
@@ -298,8 +238,8 @@ namespace Monica
 		double getTemperatureUnderSnow() const;
 
     double get_EReducer_1(int i_Layer,
-		      double vm_PercentageSoilCoverage,
-		      double vm_PotentialEvapotranspiration);
+                          double vm_PercentageSoilCoverage,
+                          double vm_PotentialEvapotranspiration);
 
     void put_Crop(Monica::CropGrowth* crop);
     void remove_Crop();
@@ -326,15 +266,17 @@ namespace Monica
 
     void fm_Evapotranspiration(double vc_PercentageSoilCoverage,
                                double vc_KcFactor,
-                               double vs_HeightNN, double vw_MaxAirTemperature,
+                               double vs_HeightNN,
+                               double vw_MaxAirTemperature,
                                double vw_MinAirTemperature,
                                double vw_RelativeHumidity,
                                double vw_MeanAirTemperature,
-                               double vw_WindSpeed, double vw_WindSpeedHeight,
+                               double vw_WindSpeed,
+                               double vw_WindSpeedHeight,
                                double vw_NetRadiation,
-			 int vc_DevelopmentalStage,
-			 int vs_JulianDay,
-			 double vs_Latitude);
+                               int vc_DevelopmentalStage,
+                               int vs_JulianDay,
+                               double vs_Latitude);
 
     double ReferenceEvapotranspiration(double vs_HeightNN,
                                        double vw_MaxAirTemperature,
@@ -343,102 +285,95 @@ namespace Monica
                                        double vw_MeanAirTemperature,
                                        double vw_WindSpeed,
                                        double vw_WindSpeedHeight,
-			         double vw_NetRadiation,
-			         int vs_JulianDay,
-			         double vs_Latitude);
+                                       double vw_NetRadiation,
+                                       int vs_JulianDay,
+                                       double vs_Latitude);
 
     double meanWaterContent(double depth_m) const;
     double meanWaterContent(int layer, int number_of_layers) const;
 
-    /**
-     * Returns percolation rate.
-     * @return percolation rate
-     */
-    double get_GroundwaterRecharge() const {
-      return vm_FluxAtLowerBoundary;
-    }
+    //! Returns percolation rate.
+    double get_GroundwaterRecharge() const { return vm_FluxAtLowerBoundary; }
 
-    double get_SumSurfaceRunOff() const {
-      return vm_SumSurfaceRunOff;
-    }
+    double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
 
     double get_KcFactor() const;
     double get_TranspirationDeficit() const;
-  private:
 
+  private:
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
     MonicaModel& monica;
-    const UserSoilMoistureParameters smPs;
-    const UserEnvironmentParameters envPs;
-    const UserCropParameters cropPs;
-    const SensitivityAnalysisParameters saPs;
+    const UserSoilMoistureParameters& smPs;
+    const UserEnvironmentParameters& envPs;
+    const UserCropParameters& cropPs;
+    const SensitivityAnalysisParameters& saPs;
     const int vm_NumberOfLayers;
     const int vs_NumberOfLayers;
 
-    double vm_ActualEvaporation; /**< Sum of evaporation of all layers [mm] */
-    double vm_ActualEvapotranspiration; /**< Sum of evaporation and transpiration of all layers [mm] */
-    double vm_ActualTranspiration; /**< Sum of transpiration of all layers [mm] */
-    std::vector<double> vm_AvailableWater; /**< Soil available water in [mm] */
-    double vm_CapillaryRise; /**< Capillary rise [mm] */
-    std::vector<double> pm_CapillaryRiseRate; /** Capillary rise rate from database in dependence of groundwater distance and texture [m d-1] */
-    std::vector<double> vm_CapillaryWater; /**< soil capillary water in [mm] */
-    std::vector<double> vm_CapillaryWater70; /**< 70% of soil capillary water in [mm] */
-    std::vector<double> vm_Evaporation; /**< Evaporation of layer [mm] */
-    std::vector<double> vm_Evapotranspiration; /**< Evapotranspiration of layer [mm] */
-    std::vector<double> vm_FieldCapacity; /**< Soil water content at Field Capacity*/
-    double vm_FluxAtLowerBoundary; /** Water flux out of bottom layer [mm] */
+    double vm_ActualEvaporation; //!< Sum of evaporation of all layers [mm]
+    double vm_ActualEvapotranspiration; //!< Sum of evaporation and transpiration of all layers [mm]
+    double vm_ActualTranspiration; //!< Sum of transpiration of all layers [mm]
+    std::vector<double> vm_AvailableWater; //!< Soil available water in [mm]
+    double vm_CapillaryRise; //!< Capillary rise [mm]
+    std::vector<double> pm_CapillaryRiseRate; //!< Capillary rise rate from database in dependence of groundwater distance and texture [m d-1]
+    std::vector<double> vm_CapillaryWater; //!< soil capillary water in [mm]
+    std::vector<double> vm_CapillaryWater70; //!< 70% of soil capillary water in [mm]
+    std::vector<double> vm_Evaporation; //!< Evaporation of layer [mm]
+    std::vector<double> vm_Evapotranspiration; //!< Evapotranspiration of layer [mm]
+    std::vector<double> vm_FieldCapacity; //!< Soil water content at Field Capacity
+    double vm_FluxAtLowerBoundary; //! Water flux out of bottom layer [mm]
 
-    std::vector<double> vm_GravitationalWater; /**< Soil water content drained by gravitation only [mm] */
-    double vc_GrossPhotosynthesisRate; /**< Gross photosynthesis of crop to estimate reference evapotranspiration [mol m-2 s-1] */
-    double vm_GrossPrecipitation; /**< Precipitation amount that falls on soil and vegetation [mm] */
+    std::vector<double> vm_GravitationalWater; //!< Soil water content drained by gravitation only [mm]
+    double vc_GrossPhotosynthesisRate; //!< Gross photosynthesis of crop to estimate reference evapotranspiration [mol m-2 s-1]
+    double vm_GrossPrecipitation; //!< Precipitation amount that falls on soil and vegetation [mm]
     double vm_GroundwaterAdded;
     double vm_GroundwaterDischarge;
     //std::vector<int> vm_GroundwaterDistance; /**< Distance between groundwater table and eff. rooting depth [m] */
-    int vm_GroundwaterTable; /**< Layer of groundwater table [] */
-    std::vector<double> vm_HeatConductivity; /** Heat conductivity of layer [J m-1 d-1] */
-    double vm_HydraulicConductivityRedux; /**< Reduction factor for hydraulic conductivity [0.1 - 9.9] */
-    double vm_Infiltration; /**< Amount of water that infiltrates into top soil layer [mm] */
-    double vm_Interception; /**< [mm], water that is intercepted by the crop and evaporates from it's surface; not accountable for soil water budget*/
+    int vm_GroundwaterTable; //!< Layer of groundwater table []
+    std::vector<double> vm_HeatConductivity; //!< Heat conductivity of layer [J m-1 d-1]
+    double vm_HydraulicConductivityRedux; //!< Reduction factor for hydraulic conductivity [0.1 - 9.9]
+    double vm_Infiltration; //!< Amount of water that infiltrates into top soil layer [mm]
+    double vm_Interception; //!< [mm], water that is intercepted by the crop and evaporates from it's surface; not accountable for soil water budget
     double vc_KcFactor;
-    std::vector<double> vm_Lambda; /**< Empirical soil water conductivity parameter [] */
-    double vm_LambdaReduced; /**<  */
+    std::vector<double> vm_Lambda; //!< Empirical soil water conductivity parameter []
+    double vm_LambdaReduced;
     double vs_Latitude;
     std::vector<double> vm_LayerThickness;
     double pm_LayerThickness;
     double pm_LeachingDepth;
     int pm_LeachingDepthLayer;
-    double vw_MaxAirTemperature; /**< [°C] */
-    double pm_MaxPercolationRate; /**< [mm d-1] */
-    double vw_MeanAirTemperature; /**< [°C] */
-    double vw_MinAirTemperature; /**< [°C] */
-    double vc_NetPrecipitation; /**< Precipitation amount that is not intercepted by vegetation [mm] */
-    double vw_NetRadiation; /**< [MJ m-2] */
-    std::vector<double> vm_PermanentWiltingPoint; /** Soil water content at permanent wilting point [m3 m-3] */
-    double vc_PercentageSoilCoverage; /** [m2 m-2] */
-    std::vector<double> vm_PercolationRate; /**< Percolation rate per layer [mm d-1] */
-    double vw_Precipitation; /**< Precipition taken from weather data [mm] */
-    double vm_ReferenceEvapotranspiration; /**< Evapotranspiration of a 12mm cut grass crop at sufficient water supply [mm] */
-    double vw_RelativeHumidity; /**< [m3 m-3] */
-    std::vector<double> vm_ResidualEvapotranspiration; /**< Residual evapotranspiration in [mm] */
-    std::vector<double> vm_SaturatedHydraulicConductivity; /**< Saturated hydraulic conductivity [m s-1] */
+    double vw_MaxAirTemperature; //!< [°C]
+    double pm_MaxPercolationRate; //!< [mm d-1]
+    double vw_MeanAirTemperature; //!< [°C]
+    double vw_MinAirTemperature; //!< [°C]
+    double vc_NetPrecipitation; //!< Precipitation amount that is not intercepted by vegetation [mm]
+    double vw_NetRadiation; //!< [MJ m-2]
+    std::vector<double> vm_PermanentWiltingPoint; //!< Soil water content at permanent wilting point [m3 m-3]
+    double vc_PercentageSoilCoverage; //!< [m2 m-2]
+    std::vector<double> vm_PercolationRate; //!< Percolation rate per layer [mm d-1]
+    double vw_Precipitation; //!< Precipition taken from weather data [mm]
+    double vm_ReferenceEvapotranspiration; //!< Evapotranspiration of a 12mm cut grass crop at sufficient water supply [mm]
+    double vw_RelativeHumidity; //!< [m3 m-3]
+    std::vector<double> vm_ResidualEvapotranspiration; //!< Residual evapotranspiration in [mm]
+    std::vector<double> vm_SaturatedHydraulicConductivity; //!< Saturated hydraulic conductivity [m s-1]
 
-    std::vector<double> vm_SoilMoisture; /**< Result - Soil moisture of layer [m3 m-3] */
+    std::vector<double> vm_SoilMoisture; //!< Result - Soil moisture of layer [m3 m-3]
     double vm_SoilMoisture_crit;
-    double vm_SoilMoistureDeficit; /**< Soil moisture deficit [m3 m-3] */
-    std::vector<double> vm_SoilPoreVolume; /**< Total soil pore volume [m3]; same as vs_Saturation */
+    double vm_SoilMoistureDeficit; //!< Soil moisture deficit [m3 m-3]
+    std::vector<double> vm_SoilPoreVolume; //!< Total soil pore volume [m3]; same as vs_Saturation
     double vc_StomataResistance;
-    double vm_SurfaceRoughness; /**< Average amplitude of surface micro-elevations to hold back water in ponds [m] */
-    double vm_SurfaceRunOff; /**< Amount of water running off on soil surface [mm] */
+    double vm_SurfaceRoughness; //!< Average amplitude of surface micro-elevations to hold back water in ponds [m]
+    double vm_SurfaceRunOff; //!< Amount of water running off on soil surface [mm]
     double vm_SumSurfaceRunOff;
-    double vm_SurfaceWaterStorage; /**<  Simulates a virtual layer that contains the surface water [mm]*/
+    double vm_SurfaceWaterStorage; //!<  Simulates a virtual layer that contains the surface water [mm]
     double pt_TimeStep;
-    double vm_TotalWaterRemoval; /**< Total water removal of layer [m3] */
-    std::vector<double> vm_Transpiration; /**< Transpiration of layer [mm] */
+    double vm_TotalWaterRemoval; //!< Total water removal of layer [m3]
+    std::vector<double> vm_Transpiration; //!< Transpiration of layer [mm]
     double vm_TranspirationDeficit;
-    std::vector<double> vm_WaterFlux; /**< Soil water flux at the layer's upper boundary[mm d-1] */
-    double vw_WindSpeed; /**< [m s-1] */
-    double vw_WindSpeedHeight; /**< [m] */
+    std::vector<double> vm_WaterFlux; //!< Soil water flux at the layer's upper boundary[mm d-1]
+    double vw_WindSpeed; //!< [m s-1]
+    double vw_WindSpeedHeight; //!< [m]
     double vm_XSACriticalSoilMoisture;
 
     SnowComponent snowComponent;

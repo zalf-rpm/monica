@@ -47,38 +47,33 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const CentralParameterProvider& cpp) :
-      soilColumn(sc),
-      centralParameterProvider(cpp),
-      vs_NumberOfLayers(sc.vs_NumberOfLayers()), //extern
-      vq_Convection(vs_NumberOfLayers, 0.0),
-      vq_CropNUptake(0.0),
-      vq_DiffusionCoeff(vs_NumberOfLayers, 0.0),
-      vq_Dispersion(vs_NumberOfLayers, 0.0),
-      vq_DispersionCoeff(vs_NumberOfLayers, 1.0),
-      vq_FieldCapacity(vs_NumberOfLayers, 0.0),
-      vq_LayerThickness(vs_NumberOfLayers,0.1),
-      vq_LeachingAtBoundary(0.0),
-      vs_NDeposition(sps.vq_NDeposition),
-      vc_NUptakeFromLayer(vs_NumberOfLayers, 0.0),
-      vq_PoreWaterVelocity(vs_NumberOfLayers, 0.0),
-      vq_SoilMoisture(vs_NumberOfLayers, 0.2),
-      vq_SoilNO3(vs_NumberOfLayers, 0.0),
-      vq_SoilNO3_aq(vs_NumberOfLayers, 0.0),
-      vq_TimeStep(1.0),
-      vq_TotalDispersion(vs_NumberOfLayers, 0.0),
-      vq_PercolationRate(vs_NumberOfLayers, 0.0),
-      crop(NULL)
+SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const UserSoilTransportParameters& stPs,
+                             double p_LeachingDepth, double p_timeStep, double pc_MinimumAvailableN)
+  : soilColumn(sc),
+    stPs(stPs),
+    vs_NumberOfLayers(sc.vs_NumberOfLayers()), //extern
+    vq_Convection(vs_NumberOfLayers, 0.0),
+    vq_CropNUptake(0.0),
+    vq_DiffusionCoeff(vs_NumberOfLayers, 0.0),
+    vq_Dispersion(vs_NumberOfLayers, 0.0),
+    vq_DispersionCoeff(vs_NumberOfLayers, 1.0),
+    vq_FieldCapacity(vs_NumberOfLayers, 0.0),
+    vq_LayerThickness(vs_NumberOfLayers,0.1),
+    vq_LeachingAtBoundary(0.0),
+    vs_NDeposition(sps.vq_NDeposition),
+    vc_NUptakeFromLayer(vs_NumberOfLayers, 0.0),
+    vq_PoreWaterVelocity(vs_NumberOfLayers, 0.0),
+    vq_SoilMoisture(vs_NumberOfLayers, 0.2),
+    vq_SoilNO3(vs_NumberOfLayers, 0.0),
+    vq_SoilNO3_aq(vs_NumberOfLayers, 0.0),
+    vq_TimeStep(1.0),
+    vq_TotalDispersion(vs_NumberOfLayers, 0.0),
+    vq_PercolationRate(vs_NumberOfLayers, 0.0),
+    pc_MinimumAvailableN(pc_MinimumAvailableN)
 {
   debug() << "!!! N Deposition: " << vs_NDeposition << endl;
-  vs_LeachingDepth = centralParameterProvider.userEnvironmentParameters.p_LeachingDepth;
-  vq_TimeStep = centralParameterProvider.userEnvironmentParameters.p_timeStep;
-}
-
-/**
- * @brief Destructor
- */
-SoilTransport::~SoilTransport() {
+  vs_LeachingDepth = p_LeachingDepth;
+  vq_TimeStep = p_timeStep;
 }
 
 /**
@@ -171,10 +166,9 @@ void SoilTransport::fq_NDeposition(double vs_NDeposition) {
  */
 void SoilTransport::fq_NUptake() {
   double vq_CropNUptake = 0.0;
-  double pc_MinimumAvailableN = centralParameterProvider.userCropParameters.pc_MinimumAvailableN; // kg m-2
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  {
     // Lower boundary for N exploitation per layer
     if (vc_NUptakeFromLayer[i_Layer] > ((vq_SoilNO3[i_Layer] * vq_LayerThickness[i_Layer]) - pc_MinimumAvailableN)) {
 
@@ -213,10 +207,9 @@ void SoilTransport::fq_NUptake() {
  */
 void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFactor) {
 
-  const UserSoilTransportParameters& user_trans = centralParameterProvider.userSoilTransportParameters;
-  double vq_DiffusionCoeffStandard = user_trans.pq_DiffusionCoefficientStandard;// [m2 d-1]; old D0
-  double AD = user_trans.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
-  double vq_DispersionLength = user_trans.pq_DispersionLength; // [m]
+  double vq_DiffusionCoeffStandard = stPs.pq_DiffusionCoefficientStandard;// [m2 d-1]; old D0
+  double AD = stPs.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
+  double vq_DispersionLength = stPs.pq_DispersionLength; // [m]
   double vq_SoilProfile = 0.0;
   int vq_LeachingDepthLayerIndex = 0;
   vq_LeachingAtBoundary = 0.0;
@@ -231,11 +224,9 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
     }
   }
 
-
-
   // Caluclation of convection for different cases of flux direction
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  {
     const double wf0 = soilColumn[0].vs_SoilWaterFlux;
     const double lt = soilColumn[i_Layer].vs_LayerThickness;
     const double NO3 = vq_SoilNO3_aq[i_Layer];

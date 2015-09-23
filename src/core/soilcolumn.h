@@ -48,7 +48,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace Monica
 {
   // forward declarations
-  class FertilizerTriggerThunk;
   class SoilLayer;
   class SoilColumn;
   class CropGrowth;
@@ -68,36 +67,34 @@ namespace Monica
    */
   struct AOM_Properties
   {
-    AOM_Properties();
+    double vo_AOM_Slow{0.0}; //!< C content in slowly decomposing added organic matter pool [kgC m-3]
+    double vo_AOM_Fast{0.0}; //!< C content in rapidly decomposing added organic matter pool [kgC m-3]
 
-    double vo_AOM_Slow; /**< C content in slowly decomposing added organic matter pool [kgC m-3] */
-    double vo_AOM_Fast; /**< C content in rapidly decomposing added organic matter pool [kgC m-3] */
+    double vo_AOM_SlowDecRate_to_SMB_Slow{0.0}; //!< Rate for slow AOM consumed by SMB Slow is calculated.
+    double vo_AOM_SlowDecRate_to_SMB_Fast{0.0}; //!< Rate for slow AOM consumed by SMB Fast is calculated.
+    double vo_AOM_FastDecRate_to_SMB_Slow{0.0}; //!< Rate for fast AOM consumed by SMB Slow is calculated.
+    double vo_AOM_FastDecRate_to_SMB_Fast{0.0}; //!< Rate for fast AOM consumed by SMB Fast is calculated.
 
-		double vo_AOM_SlowDecRate_to_SMB_Slow; /**< Rate for slow AOM consumed by SMB Slow is calculated. */
-		double vo_AOM_SlowDecRate_to_SMB_Fast; /**< Rate for slow AOM consumed by SMB Fast is calculated. */
-		double vo_AOM_FastDecRate_to_SMB_Slow; /**< Rate for fast AOM consumed by SMB Slow is calculated. */
-		double vo_AOM_FastDecRate_to_SMB_Fast; /**< Rate for fast AOM consumed by SMB Fast is calculated. */
+    double vo_AOM_SlowDecCoeff{0.0}; //!< Is dependent on environment
+    double vo_AOM_FastDecCoeff{0.0}; //!< Is dependent on environment
 
-    double vo_AOM_SlowDecCoeff; /**< Is dependent on environment */
-    double vo_AOM_FastDecCoeff; /**< Is dependent on environment */
+    double vo_AOM_SlowDecCoeffStandard{1.0}; //!< Decomposition rate coefficient for slow AOM pool at standard conditions
+    double vo_AOM_FastDecCoeffStandard{1.0}; //!< Decomposition rate coefficient for fast AOM pool at standard conditions
 
-    double vo_AOM_SlowDecCoeffStandard; /**< Decomposition rate coefficient for slow AOM pool at standard conditions */
-    double vo_AOM_FastDecCoeffStandard; /**< Decomposition rate coefficient for fast AOM pool at standard conditions */
+    double vo_PartAOM_Slow_to_SMB_Slow{0.0}; //!< Partial transformation from AOM to SMB (soil microbiological biomass) for slow AOMs.
+    double vo_PartAOM_Slow_to_SMB_Fast{0.0}; //!< Partial transformation from AOM to SMB (soil microbiological biomass) for fast AOMs.
 
-    double vo_PartAOM_Slow_to_SMB_Slow; /**< Partial transformation from AOM to SMB (soil microbiological biomass) for slow AOMs. */
-    double vo_PartAOM_Slow_to_SMB_Fast; /**< Partial transformation from AOM to SMB (soil microbiological biomass) for fast AOMs.*/
+    double vo_CN_Ratio_AOM_Slow{1.0}; //!< Used for calculation N-value if only C-value is known. Usually a constant value.
+    double vo_CN_Ratio_AOM_Fast{1.0}; //!< C-N-Ratio is dependent on the nutritional condition of the plant.
 
-    double vo_CN_Ratio_AOM_Slow; /**< Used for calculation N-value if only C-value is known. Usually a constant value.*/
-    double vo_CN_Ratio_AOM_Fast; /**< C-N-Ratio is dependent on the nutritional condition of the plant. */
+    int vo_DaysAfterApplication{0}; //!< Fertilization parameter
+    double vo_AOM_DryMatterContent{0.0}; //!< Fertilization parameter
+    double vo_AOM_NH4Content{0.0}; //!< Fertilization parameter
 
-    int vo_DaysAfterApplication; /**< Fertilization parameter */
-    double vo_AOM_DryMatterContent; /**< Fertilization parameter */
-    double vo_AOM_NH4Content; /**< Fertilization parameter */
+    double vo_AOM_SlowDelta{0.0}; //!< Difference of AOM slow between to timesteps
+    double vo_AOM_FastDelta{0.0}; //!< Difference of AOM fast between to timesteps
 
-    double vo_AOM_SlowDelta; /**< Difference of AOM slow between to timesteps */
-    double vo_AOM_FastDelta; /**< Difference of AOM fast between to timesteps */
-
-    bool incorporation;  /**< True if organic fertilizer is added with a subsequent incorporation. */
+    bool incorporation{false};  //!< True if organic fertilizer is added with a subsequent incorporation.
   };
 
   //----------------------------------------------------------------------------
@@ -116,167 +113,114 @@ namespace Monica
   {
   public:
     SoilLayer();
-    SoilLayer(const SoilLayer&);
-    SoilLayer(const CentralParameterProvider& cpp);
-    SoilLayer(double vs_LayerThickness, const Soil::SoilParameters& soilParams, const CentralParameterProvider& cpp);
+
+    SoilLayer(const UserInitialValues* initParams,
+              const SensitivityAnalysisParameters* saParams);
+
+    SoilLayer(double vs_LayerThickness,
+              const Soil::SoilParameters& soilParams,
+              const UserInitialValues* initParams,
+              const SensitivityAnalysisParameters* saParams);
 
     void calc_vs_SoilMoisture_pF();
 
     // calculations with Van Genuchten parameters
     double get_Saturation();
+
     double get_FieldCapacity();
+
     double get_PermanentWiltingPoint();
 
-    /**
-     * Sets value of soil organic matter parameter.
-     * @param som New value for soil organic matter parameter
-     */
+    //! Sets value of soil organic matter parameter.
     void set_SoilOrganicMatter(double som) { _vs_SoilOrganicMatter = som; }
 
-    /**
-     * Sets value for soil organic carbon.
-     * @param soc New value for soil organic carbon.
-     */
+    //! Sets value for soil organic carbon.
     void set_SoilOrganicCarbon(double soc) { _vs_SoilOrganicCarbon = soc; }
 
-    /**
-     * Returns bulk density of soil layer [kg m-3]
-     * @return bulk density of soil layer [kg m-3]
-     */
+    //! Returns bulk density of soil layer [kg m-3]
     double vs_SoilBulkDensity() const { return _vs_SoilBulkDensity; }
 
-		/**
-		 * Returns pH value of soil layer
-		 * @return pH value of soil layer [ ]
-		 */
+    //! Returns pH value of soil layer
     double get_SoilpH() const { return vs_SoilpH; }
 
-    /**
-     * Returns soil water pressure head as common logarithm pF.
-     * @return soil water pressure head [pF]
-     */
-    double vs_SoilMoisture_pF()  {
+    //! Returns soil water pressure head as common logarithm pF.
+    double vs_SoilMoisture_pF()
+    {
       calc_vs_SoilMoisture_pF();
       return _vs_SoilMoisture_pF;
     }
 
-    /**
-     * Returns soil ammonium content.
-     * @return soil ammonium content [kg N m-3]
-     */
+    //! soil ammonium content [kg N m-3]
     double get_SoilNH4() const { return vs_SoilNH4; }
 
-    /**
-     * Returns soil nitrite content.
-     * @return soil nitrite content [kg N m-3]
-     */
+    //! soil nitrite content [kg N m-3]
     double get_SoilNO2() const { return vs_SoilNO2; }
 
-    /**
-     * Returns soil nitrate content.
-     * @return soil nitrate content [kg N m-3]
-     */
+    //! soil nitrate content [kg N m-3]
     double get_SoilNO3() const { return vs_SoilNO3; }
 
-		/**
-		 * Returns soil carbamide content.
-		 * @return soil carbamide content [kg m-3]
-		 */
+    //! soil carbamide content [kg m-3]
     double get_SoilCarbamid() const { return vs_SoilCarbamid; }
 
-    /**
-     * Returns soil mineral N content.
-     * @return soil mineral N content [kg m-3]
-     */
+    //! soil mineral N content [kg m-3]
     double get_SoilNmin() const { return vs_SoilNO3 + vs_SoilNO2 + vs_SoilNH4; }
 
-    double get_Vs_SoilMoisture_m3() const
-    {
-      // Sensitivity analysis case
-      if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture != UNDEFINED)
-        return centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture;
-      return vs_SoilMoisture_m3;
-    }
+    double get_Vs_SoilMoisture_m3() const;
 
-    void set_Vs_SoilMoisture_m3(double ms)
-    {
-      vs_SoilMoisture_m3 = ms;
+    void set_Vs_SoilMoisture_m3(double ms);
 
-      // Sensitivity analysis case
-      if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture != UNDEFINED) {
-        vs_SoilMoisture_m3 = centralParameterProvider.sensitivityAnalysisParameters.vs_SoilMoisture;
-        calc_vs_SoilMoisture_pF();
-      }
+    double get_Vs_SoilTemperature() const;
 
-    }
-
-    double get_Vs_SoilTemperature() const
-    {
-      if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilTemperature != UNDEFINED) {
-        return centralParameterProvider.sensitivityAnalysisParameters.vs_SoilTemperature;
-      }
-      return vs_SoilTemperature;
-
-    }
-
-    void set_Vs_SoilTemperature(double st)
-    {
-      vs_SoilTemperature = st;
-
-      // Sensitivity analysis case
-      if (centralParameterProvider.sensitivityAnalysisParameters.vs_SoilTemperature != UNDEFINED) {
-        vs_SoilTemperature = centralParameterProvider.sensitivityAnalysisParameters.vs_SoilTemperature;
-      }
-
-    }
+    void set_Vs_SoilTemperature(double st);
 
     // members ------------------------------------------------------------
 
-    double vs_LayerThickness; /**< Soil layer's vertical extension [m] */
-    double vs_SoilSandContent; /**< Soil layer's sand content [kg kg-1] */
-    double vs_SoilClayContent; /**< Soil layer's clay content [kg kg-1] (Ton) */
-    double vs_SoilStoneContent; /**< Soil layer's stone content in soil [kg kg-1] */
-    double vs_SoilSiltContent() const; /**< Soil layer's silt content [kg kg-1] (Schluff) */
+    double vs_LayerThickness; //!< Soil layer's vertical extension [m]
+    double vs_SoilSandContent{0.9}; //!< Soil layer's sand content [kg kg-1]
+    double vs_SoilClayContent{0.05}; //!< Soil layer's clay content [kg kg-1] (Ton)
+    double vs_SoilStoneContent{0.0}; //!< Soil layer's stone content in soil [kg kg-1]
+    double vs_SoilSiltContent() const; //!< Soil layer's silt content [kg kg-1] (Schluff)
     std::string vs_SoilTexture;
 
-    double vs_SoilpH; /**< Soil pH value [] */
-    double vs_SoilOrganicCarbon() const; /**< Soil layer's organic carbon content [kg C kg-1] */
-    double vs_SoilOrganicMatter() const; /**< Soil layer's organic matter content [kg OM kg-1] */
+    double vs_SoilpH{7.0}; //!< Soil pH value []
+    double vs_SoilOrganicCarbon() const; //!< Soil layer's organic carbon content [kg C kg-1]
+    double vs_SoilOrganicMatter() const; //!< Soil layer's organic matter content [kg OM kg-1]
 
-    double vs_SoilMoistureOld_m3; /**< Soil layer's moisture content of previous day [m3 m-3] */
-    double vs_SoilWaterFlux; /**< Water flux at the upper boundary of the soil layer [l m-2] */
-    double vs_Lambda; /**< Soil water conductivity coefficient [] */
-    double vs_FieldCapacity;
-    double vs_Saturation;
-    double vs_PermanentWiltingPoint;
+    double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
+    double vs_SoilWaterFlux{0.0}; //!< Water flux at the upper boundary of the soil layer [l m-2]
+    double vs_Lambda{0.5}; //!< Soil water conductivity coefficient []
+    double vs_FieldCapacity{0.21};
+    double vs_Saturation{0.43};
+    double vs_PermanentWiltingPoint{0.08};
 
-    std::vector<AOM_Properties> vo_AOM_Pool; /**< List of different added organic matter pools in soil layer */
+    std::vector<AOM_Properties> vo_AOM_Pool; //!< List of different added organic matter pools in soil layer
 
-    double vs_SOM_Slow; /**< C content of soil organic matter slow pool [kg C m-3] */
-    double vs_SOM_Fast; /**< C content of soil organic matter fast pool size [kg C m-3] */
-    double vs_SMB_Slow; /**< C content of soil microbial biomass slow pool size [kg C m-3] */
-    double vs_SMB_Fast; /**< C content of soil microbial biomass fast pool size [kg C m-3] */
+    double vs_SOM_Slow{0.0}; //!< C content of soil organic matter slow pool [kg C m-3]
+    double vs_SOM_Fast{0.0}; //!< C content of soil organic matter fast pool size [kg C m-3]
+    double vs_SMB_Slow{0.0}; //!< C content of soil microbial biomass slow pool size [kg C m-3]
+    double vs_SMB_Fast{0.0}; //!< C content of soil microbial biomass fast pool size [kg C m-3]
 
     // anorganische Stickstoff-Formen
-    double vs_SoilCarbamid; /**< Soil layer's carbamide-N content [kg Carbamide-N m-3] */
-    double vs_SoilNH4; /**< Soil layer's NH4-N content [kg NH4-N m-3] */
-    double vs_SoilNO2; /**< Soil layer's NO2-N content [kg NO2-N m-3] */
-    double vs_SoilNO3; /**< Soil layer's NO3-N content [kg NO3-N m-3] */
-    bool vs_SoilFrozen;
+    double vs_SoilCarbamid{0.0}; //!< Soil layer's carbamide-N content [kg Carbamide-N m-3]
+    double vs_SoilNH4{0.0001}; //!< Soil layer's NH4-N content [kg NH4-N m-3]
+    double vs_SoilNO2{0.001}; //!< Soil layer's NO2-N content [kg NO2-N m-3]
+    double vs_SoilNO3{0.0001}; //!< Soil layer's NO3-N content [kg NO3-N m-3]
+    bool vs_SoilFrozen{false};
 
-    CentralParameterProvider centralParameterProvider;
+    const UserInitialValues* initPs{nullptr};
+    const SensitivityAnalysisParameters* saPs{nullptr};
 
   private:
     //! only one of the two is being initialized and used for calculations
-    double _vs_SoilOrganicCarbon; /**< Soil organic carbon content [kg C kg-1] */
-    double _vs_SoilOrganicMatter; /**< Soil organic matter content [kg OM kg-1] */
+    double _vs_SoilOrganicCarbon{-1.0}; //!< Soil organic carbon content [kg C kg-1]
+    double _vs_SoilOrganicMatter{-1.0}; //!< Soil organic matter content [kg OM kg-1]
 
-    double _vs_SoilBulkDensity; /**< Bulk density of soil [kg m-3] */
-    double _vs_SoilMoisture_pF; /**< Soil water pressure head as common logarithm [pF]*/
+    double _vs_SoilBulkDensity{0.0}; //!< Bulk density of soil [kg m-3]
+    double _vs_SoilMoisture_pF{-1.0}; //!< Soil water pressure head as common logarithm [pF]
 
-    double vs_SoilMoisture_m3; /**< Soil layer's moisture content [m3 m-3] */
-    double vs_SoilTemperature; /**< Soil layer's temperature [°C] */
-  }; // class soil layer
+    double vs_SoilMoisture_m3{0.25}; //!< Soil layer's moisture content [m3 m-3]
+    double vs_SoilTemperature{0.0}; //!< Soil layer's temperature [°C]
+  };
 
   //----------------------------------------------------------------------------
 
@@ -296,7 +240,10 @@ namespace Monica
   {
   public:
     SoilColumn(const GeneralParameters& generalParams,
-               const Soil::SoilPMs& soilParams, const CentralParameterProvider& cpp);
+               const Soil::SoilPMs& soilParams,
+               double pm_CriticalMoistureDepth,
+               const UserInitialValues& initParams,
+               const SensitivityAnalysisParameters& saParams);
 
     void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
                                 double amount);
@@ -307,12 +254,13 @@ namespace Monica
     //! apply delayed fertiliser application again (yielding possible top dressing)
     double applyPossibleDelayedFerilizer();
 
-    double applyMineralFertiliserViaNMinMethod
-    (MineralFertiliserParameters fertiliserPartition,
-     double vf_SamplingDepth, double vf_CropNTargetValue,
-     double vf_CropNTargetValue30, double vf_FertiliserMaxApplication,
-     double vf_FertiliserMinApplication, int vf_TopDressingDelay
-     );
+    double applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fertiliserPartition,
+                                               double vf_SamplingDepth,
+                                               double vf_CropNTargetValue,
+                                               double vf_CropNTargetValue30,
+                                               double vf_FertiliserMaxApplication,
+                                               double vf_FertiliserMinApplication,
+                                               int vf_TopDressingDelay);
 
     bool applyIrrigationViaTrigger(double vi_IrrigationThreshold,
                                    double vi_IrrigationAmount,
@@ -353,45 +301,19 @@ namespace Monica
       return vs_SoilLayers.at(i_Layer);
     }
 
-    /**
-     * Returns a soil layer at given Index.
-     * @return Reference to a soil layer
-     */
-    SoilLayer& soilLayer(size_t i_Layer) {
-      return vs_SoilLayers[i_Layer];
-    }
+    //! Returns a soil layer at given Index.
+    SoilLayer& soilLayer(size_t i_Layer) { return vs_SoilLayers[i_Layer]; }
 
-    /**
-     * Returns a soil layer at given Index.
-     * @return Reference to a soil layer
-     */
-    const SoilLayer& soilLayer(size_t i_Layer) const {
-      return vs_SoilLayers.at(i_Layer);
-    }
+    //! Returns a soil layer at given Index.
+    const SoilLayer& soilLayer(size_t i_Layer) const { return vs_SoilLayers.at(i_Layer); }
 
-    /**
-     * Returns the thickness of a layer.
-     * Right now by definition all layers have the same size,
-     * therefor only the thickness of first layer is returned.
-     *
-     * @return Size of a layer
-     *
-     * @todo Need to be changed if different layer sizes are used.
-     */
-    double vs_LayerThickness() const {
-      return vs_SoilLayers[0].vs_LayerThickness;
-    }
+    //! Returns the thickness of a layer.
+    //! Right now by definition all layers have the same size,
+    //! therefor only the thickness of first layer is returned.
+    double vs_LayerThickness() const { return vs_SoilLayers[0].vs_LayerThickness; }
 
-
-    /**
-     * @brief Returns daily crop N uptake [kg N ha-1 d-1]
-     * @return Daily crop N uptake
-     */
-    double get_DailyCropNUptake() const {
-      return vq_CropNUptake * 10000.0;
-    }
-
-
+    //! Returns daily crop N uptake [kg N ha-1 d-1]
+    double get_DailyCropNUptake() const { return vq_CropNUptake * 10000.0; }
 
     std::size_t getLayerNumberForDepth(double depth);
 
@@ -401,24 +323,23 @@ namespace Monica
 
     double sumSoilTemperature(int layers) const;
 
-    std::vector<SoilLayer> vs_SoilLayers; /**< Vector of all layers in column. */
+    std::vector<SoilLayer> vs_SoilLayers; //!< Vector of all layers in column.
 
-    double vs_SurfaceWaterStorage{0.0}; /**< Content of above-ground water storage [mm] */
-    double vs_InterceptionStorage{0.0}; /**< Amount of intercepted water on crop surface [mm] */
-    int vm_GroundwaterTable{0}; /**< Layer of current groundwater table */
-    double vs_FluxAtLowerBoundary{0.0}; /** Water flux out of bottom layer */
-    double vq_CropNUptake{0.0}; /** Daily amount of N taken up by the crop [kg m-2] */
+    double vs_SurfaceWaterStorage{0.0}; //!< Content of above-ground water storage [mm]
+    double vs_InterceptionStorage{0.0}; //!< Amount of intercepted water on crop surface [mm]
+    int vm_GroundwaterTable{0}; //!< Layer of current groundwater table
+    double vs_FluxAtLowerBoundary{0.0}; //!< Water flux out of bottom layer
+    double vq_CropNUptake{0.0}; //!< Daily amount of N taken up by the crop [kg m-2]
     double vt_SoilSurfaceTemperature{0.0};
     double vm_SnowDepth{0.0};
 
   private:
-
     std::size_t calculateNumberOfOrganicLayers();
 
-    const GeneralParameters& generalParams; /**< */
-    const Soil::SoilPMs& soilParams; /**< Vector of soil parameter*/
+    const GeneralParameters& generalParams;
+    const Soil::SoilPMs& soilParams; //!< Vector of soil parameter
 
-    std::size_t _vs_NumberOfOrganicLayers{0}; /**< Number of organic layers. */
+    std::size_t _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
     double _vf_TopDressing{0.0};
     MineralFertiliserParameters _vf_TopDressingPartition;
     int _vf_TopDressingDelay{0};
@@ -427,13 +348,8 @@ namespace Monica
 
     std::list<std::function<double()>> _delayedNMinApplications;
 
-    const CentralParameterProvider& centralParameterProvider;
-
-    const UserSoilMoistureParameters smPs;
-    const UserEnvironmentParameters envPs;
-    const UserCropParameters cropPs;
-    const SensitivityAnalysisParameters saPs;
-  }; // class soil column
-} /* namespace monica */
+    double pm_CriticalMoistureDepth;
+  };
+}
 
 #endif
