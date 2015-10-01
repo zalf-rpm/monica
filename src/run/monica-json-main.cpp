@@ -50,13 +50,13 @@ using namespace Monica;
 
 int main(int argc, char** argv)
 {
-//	writeCropParameters("crop-parameters");
+	//writeCropParameters("crop-parameters");
 	//writeMineralFertilisers("mineral-fertilisers");
 	//writeOrganicFertilisers("organic-fertilisers");
 	//writeResidues("residues");
-	writeUserParameters(MODE_HERMES, "user-parameters");
-	writeUserParameters(MODE_EVA2, "user-parameters");
-	writeUserParameters(MODE_MACSUR_SCALING, "user-parameters");
+	//writeUserParameters(MODE_HERMES, "user-parameters");
+	//writeUserParameters(MODE_EVA2, "user-parameters");
+	//writeUserParameters(MODE_MACSUR_SCALING, "user-parameters");
 
 	return 0;
 }

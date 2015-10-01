@@ -372,12 +372,12 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
 		layer.vs_SoilSandContent = getDbl(horizonObj, "sand", layer.vs_SoilSandContent);
 		layer.vs_SoilClayContent = getDbl(horizonObj, "clay", layer.vs_SoilClayContent);
     layer.vs_SoilStoneContent = getDbl(horizonObj, "sceleton"); //TODO: / 100 ?
-    layer.vs_Lambda = Soil::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
+    layer.vs_Lambda = Soil::sandAndClay2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
     // TODO: Wo wird textureClass verwendet?
     layer.vs_SoilTexture = getStr(horizonObj, "textureClass");
 		layer.vs_SoilpH = getDbl(horizonObj, "pH", layer.vs_SoilpH);
     /* TODO: ? lambda = drainage_coeff ? */
-    layer.vs_Lambda = Soil::texture2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
+    layer.vs_Lambda = Soil::sandAndClay2lambda(layer.vs_SoilSandContent, layer.vs_SoilClayContent);
     layer.vs_FieldCapacity = getDbl(horizonObj, "fieldCapacity");
     /* TODO: name? */
     layer.vs_Saturation = getDbl(horizonObj, "poreVolume");
