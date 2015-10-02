@@ -174,6 +174,7 @@ namespace Monica
 	private:
     CropId _id{-1};
 		std::string _name;
+    std::string _cultivar;
 		Tools::Date _seedDate;
 		Tools::Date _harvestDate;
 		std::vector<Tools::Date> _cuttingDates;

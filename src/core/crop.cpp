@@ -81,8 +81,8 @@ Crop::Crop(CropId id,
 
 Crop::Crop(json11::Json j)
   : _id(int_value(j, "id")),
-    _name(string_value(j, "name")),
-    _variety(string_value(j, "variety")),
+    _name(string_value(j, "species")),
+    _cultivar(string_value(j, "cultivar")),
     _seedDate(Tools::Date::fromIsoDateString(string_value(j, "seedDate"))),
     _harvestDate(Tools::Date::fromIsoDateString(string_value(j, "havestDate")))
 {
@@ -113,8 +113,8 @@ json11::Json Crop::to_json(bool includeCropAndResidueParams) const
   J11Object o{
     {"type", "Crop"},
     {"id", _id},
-    {"name", _name},
-    {"variety", _variety},
+    {"species", _name},
+    {"cultivar", _cultivar},
     {"seedDate", _seedDate.toIsoDateString()},
     {"harvestDate", _harvestDate.toIsoDateString()},
     {"cuttingDates", cds},

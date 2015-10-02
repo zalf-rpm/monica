@@ -367,6 +367,8 @@ namespace Monica
 
     CropParameters(json11::Json object);
 
+    CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
+
 		json11::Json to_json() const;
 		
 		std::string toString() const;

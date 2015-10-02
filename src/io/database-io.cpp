@@ -112,7 +112,7 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 					cps = cpsi->second;
 
 				cps->pc_CropName = row[i++].c_str();
-				cps->pc_Perennial = satoi(row[i++]) == 1;
+        cps->pc_Perennial = satob(row[i++]);
 				cps->pc_MaxAssimilationRate = satof(row[i++]);
 				cps->pc_CarboxylationPathway = satoi(row[i++]);
 				cps->pc_MinimumTemperatureForAssimilation = satof(row[i++]);

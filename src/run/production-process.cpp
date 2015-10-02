@@ -306,7 +306,7 @@ MineralFertiliserApplication::MineralFertiliserApplication(const Tools::Date& at
 MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
   : WorkStep(j),
     _partition(j["parameters"]),
-    _amount(number_value(j, "amount"))
+    _amount(double_value(j, "amount"))
 {}
 
 json11::Json MineralFertiliserApplication::to_json() const
@@ -371,7 +371,7 @@ TillageApplication::TillageApplication(const Tools::Date& at,
 
 TillageApplication::TillageApplication(json11::Json j)
   : WorkStep(j),
-    _depth(number_value(j, "depth"))
+    _depth(double_value(j, "depth"))
 {}
 
 json11::Json TillageApplication::to_json() const
@@ -400,7 +400,7 @@ IrrigationApplication::IrrigationApplication(const Tools::Date& at,
 
 IrrigationApplication::IrrigationApplication(json11::Json j)
   : WorkStep(j),
-    _amount(number_value(j, "amount")),
+    _amount(double_value(j, "amount")),
     _params(j["parameters"])
 {}
 
