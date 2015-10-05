@@ -18,6 +18,7 @@ TARGET = monica
 OBJECTS_DIR = obj
 
 UTIL_DIR = ../util
+CARBIOCIAL_DIR = ../carbiocial-project/monica
 
 CONFIG -= qt
 CONFIG += console
@@ -32,95 +33,145 @@ unix {
 # defining stand alone version of MONICA
 DEFINES += STANDALONE
 
-HERMES:DEFINES += NO_MYSQL NO_GRIDS NO_MPMAS
-SWIG_CMD_MONICA_DEFS += -DNO_MYSQL -DNO_GRIDS -DNO_MPMAS
+HERMES:DEFINES += NO_ZMQ NO_MYSQL NO_GRIDS NO_MPMAS
+SWIG_CMD_MONICA_DEFS += -NO_ZMQ -DNO_MYSQL -DNO_GRIDS -DNO_MPMAS
 
 # monica code
-HEADERS += src/soilcolumn.h
-HEADERS += src/soiltransport.h
-HEADERS += src/soiltemperature.h
-HEADERS += src/soilmoisture.h
-HEADERS += src/soilorganic.h
-HEADERS += src/monica.h
-HEADERS += src/monica-parameters.h
-HEADERS += src/crop.h
-HEADERS += src/monica-eom.h
-HEADERS += src/simulation.h
+#-------------------------------------------
+HEADERS += src/core/soilcolumn.h
+SOURCES += src/core/soilcolumn.cpp
+
+HEADERS += src/core/soiltransport.h
+SOURCES += src/core/soiltransport.cpp
+
+HEADERS += src/core/soiltemperature.h
+SOURCES += src/core/soiltemperature.cpp
+
+HEADERS += src/core/soilmoisture.h
+SOURCES += src/core/soilmoisture.cpp
+
+HEADERS += src/core/soilorganic.h
+SOURCES += src/core/soilorganic.cpp
+
+HEADERS += src/core/monica.h
+SOURCES += src/core/monica.cpp
+
+HEADERS += src/core/monica-parameters.h
+SOURCES += src/core/monica-parameters.cpp
+
+HEADERS += src/core/crop.h
+SOURCES += src/core/crop.cpp
+
+HEADERS += src/core/crop-growth.h
+SOURCES += src/core/crop-growth.cpp
+
+HEADERS += src/core/simulation.h
+SOURCES += src/core/simulation.cpp
+
+HEADERS += src/run/production-process.h
+SOURCES += src/run/production-process.cpp
+
+HEADERS += src/run/run-monica.h
+SOURCES += src/run/run-monica.cpp
+
+HEADERS += src/run/run-monica-zmq.h
+SOURCES += src/run/run-monica-zmq.cpp
+
+SOURCES += src/run/monica-main.cpp
+
+HEADERS += src/io/database-io.h
+SOURCES += src/io/database-io.cpp
+
+HEADERS += src/io/file-io.h
+SOURCES += src/io/file-io.cpp
+
+HEADERS += src/io/hermes-file-io.h
+SOURCES += src/io/hermes-file-io.cpp
+
+HEADERS += $${CARBIOCIAL_DIR}/src/carbiocial.h
+SOURCES += $${CARBIOCIAL_DIR}/src/carbiocial.cpp
+
+#HEADERS += src/monica-eom.h
+#SOURCES += src/monica-eom.cpp
 
 #HEADERS += src/cc_germany_methods.h
 #HEADERS += src/gis_simulation_methods.h
 #HEADERS += src/eva_methods.h
-HEADERS += src/carbiocial.h
-
-SOURCES += src/monica-main.cpp
-SOURCES += src/soilcolumn.cpp
-SOURCES += src/soiltransport.cpp
-SOURCES += src/soiltemperature.cpp
-SOURCES += src/soilmoisture.cpp
-SOURCES += src/soilorganic.cpp
-SOURCES += src/monica.cpp
-SOURCES += src/monica-parameters.cpp
-SOURCES += src/crop.cpp
-SOURCES += src/monica-eom.cpp
-SOURCES += src/simulation.cpp
 
 #SOURCES += src/eva_methods.cpp
 #SOURCES += src/cc_germany_methods.cpp
 #SOURCES += src/gis_simulation_methods.cpp
-SOURCES += src/carbiocial.cpp
 
 # db library code
+#-------------------------------------------
 HEADERS += $${UTIL_DIR}/db/db.h
-HEADERS += $${UTIL_DIR}/db/abstract-db-connections.h
-HEADERS += $${UTIL_DIR}/db/sqlite3.h
-HEADERS += $${UTIL_DIR}/db/orm--.h
-
 SOURCES += $${UTIL_DIR}/db/db.cpp
+
+HEADERS += $${UTIL_DIR}/db/abstract-db-connections.h
 SOURCES += $${UTIL_DIR}/db/abstract-db-connections.cpp
+
+HEADERS += $${UTIL_DIR}/db/sqlite3.h
 SOURCES += $${UTIL_DIR}/db/sqlite3.c
-SOURCES += $${UTIL_DIR}/db/orm--.cpp
+
+#HEADERS += $${UTIL_DIR}/db/orm--.h
+#SOURCES += $${UTIL_DIR}/db/orm--.cpp
 
 # climate library code
+#-------------------------------------------
 HEADERS += $${UTIL_DIR}/climate/climate-common.h
-
 SOURCES += $${UTIL_DIR}/climate/climate-common.cpp
 
+# json11 library code
+#-------------------------------------------
+HEADERS += $${UTIL_DIR}/json11/json11.h
+SOURCES += $${UTIL_DIR}/json11/json11.cpp
+
 # tools library code
+#-------------------------------------------
 HEADERS += $${UTIL_DIR}/tools/algorithms.h
-HEADERS += $${UTIL_DIR}/tools/date.h
-HEADERS += $${UTIL_DIR}/tools/read-ini.h
-HEADERS += $${UTIL_DIR}/tools/datastructures.h
-HEADERS += $${UTIL_DIR}/tools/helper.h
-HEADERS += $${UTIL_DIR}/tools/debug.h
-
-DSS|CCG|GIS:HEADERS += $${UTIL_DIR}/tools/coord-trans.h
-
 SOURCES += $${UTIL_DIR}/tools/algorithms.cpp
+
+HEADERS += $${UTIL_DIR}/tools/date.h
 SOURCES += $${UTIL_DIR}/tools/date.cpp
+
+HEADERS += $${UTIL_DIR}/tools/read-ini.h
 SOURCES += $${UTIL_DIR}/tools/read-ini.cpp
+
+HEADERS += $${UTIL_DIR}/tools/datastructures.h
+
+HEADERS += $${UTIL_DIR}/tools/helper.h
+SOURCES += $${UTIL_DIR}/tools/helper.cpp
+
+HEADERS += $${UTIL_DIR}/tools/json11-helper.h
+
+HEADERS += $${UTIL_DIR}/tools/zmq-helper.h
+SOURCES += $${UTIL_DIR}/tools/zmq-helper.cpp
+
+HEADERS += $${UTIL_DIR}/tools/debug.h
 SOURCES += $${UTIL_DIR}/tools/debug.cpp
 
+DSS|CCG|GIS:HEADERS += $${UTIL_DIR}/tools/coord-trans.h
 DSS|CCG|GIS:SOURCES += $${UTIL_DIR}/tools/coord-trans.cpp
 
-
 # soil library code
+#-------------------------------------------
 HEADERS += $${UTIL_DIR}/soil/constants.h
-HEADERS += $${UTIL_DIR}/soil/conversion.h
-HEADERS += $${UTIL_DIR}/soil/soil.h
-
 SOURCES += $${UTIL_DIR}/soil/constants.cpp
+
+HEADERS += $${UTIL_DIR}/soil/conversion.h
 SOURCES += $${UTIL_DIR}/soil/conversion.cpp
+
+HEADERS += $${UTIL_DIR}/soil/soil.h
 SOURCES += $${UTIL_DIR}/soil/soil.cpp
 
 
 #includes
 #-------------------------------------------------------------
-
-INCLUDEPATH += ../util 
+INCLUDEPATH += $${UTIL_DIR} 
+INCLUDEPATH += $${CARBIOCIAL_DIR}/src 
 
 #libs
 #------------------------------------------------------------
-
 #win32:LIBS += -L"C:/Program Files (x86)/Microsoft Visual Studio 11.0/VC/lib"
 
 #CONFIG(debug, debug|release):LIBS += \
