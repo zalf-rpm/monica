@@ -923,7 +923,8 @@ json11::Json AutomaticIrrigationParameters::to_json() const
 MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j)
   : groundwaterInformationAvailable(Tools::bool_value(j, "groundwaterInformationAvailable"))
 {
-  if(j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, std::string()))
+	string err;
+  if(j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
     for(auto p : j["groundwaterInfo"].object_items())
       groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
 }

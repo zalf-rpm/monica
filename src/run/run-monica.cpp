@@ -265,6 +265,9 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
     write_output_files = false;
   }
 
+	if(env.getMode() == MODE_CARBIOCIAL_CLUSTER)
+		write_output_files = env.writeOutputFiles;
+	
 	env.centralParameterProvider.writeOutputFiles = write_output_files;
 
 	debug() << "-----" << endl;
@@ -433,7 +436,8 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
           debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
           debug() << "####################################################" << endl;
 
-          auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+          auto harvestApplication = unique_ptr<Harvest>(new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr()));
           harvestApplication->apply(&monica);
 
         }

@@ -70,7 +70,7 @@ eva2 = eva2
 filename = sqlite-db/monica.sqlite
 
 [db.carbiocial.sqlite]
-filename = sqlite-db/carbiocial.sqlite
+filename = ../carbiocial-project/monica/carbiocial.sqlite
 
 [db.monica-jv.sqlite]
 filename = sqlite-db/monica-jv.sqlite

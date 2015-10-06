@@ -86,11 +86,12 @@ Crop::Crop(json11::Json j)
     _seedDate(Tools::Date::fromIsoDateString(string_value(j, "seedDate"))),
     _harvestDate(Tools::Date::fromIsoDateString(string_value(j, "havestDate")))
 {
-  if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, string()))
+	string err;
+  if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
     _cropParamsPtr = make_shared<CropParameters>(j["cropParams"]);
-  if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, string()))
+  if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
     _perennialCropParamsPtr = make_shared<CropParameters>(j["perennialCropParams"]);
-  if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, string()))
+  if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
     _residueParamsPtr = make_shared<OrganicMatterParameters>(j["residueParams"]);
 
 //  if(_id > -1)
@@ -99,7 +100,7 @@ Crop::Crop(json11::Json j)
 //    _residueParams = getResidueParametersFromMonicaDB(_id);
 //  }
 
-  if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, string()))
+  if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
     for(auto cd : j["cuttingDates"].array_items())
       _cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
 }
