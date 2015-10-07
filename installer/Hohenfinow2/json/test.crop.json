@@ -1,4 +1,22 @@
 {
+	"options" : {
+		"loadFrom" : "filesystem",
+		"fileSuffix" : "json"
+	},
+	"relativeDates" : false,
+	"cropRotation" : [
+		{
+			"name" : "winter-wheat",
+			"variety" : "ww-variety-1",
+			"perennialVariety" : "ww-perennial-variety-1",
+			"seedDate" : "1991-10-13",
+			"harvestDate" : "1992-08-08"
+		
+		}
+	
+	],
+
+
   "crops": [
     {
       "name": {
