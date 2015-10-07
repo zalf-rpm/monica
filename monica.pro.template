@@ -17,8 +17,9 @@ DESTDIR = .
 TARGET = monica
 OBJECTS_DIR = obj
 
+MONICA_DIR = src
 UTIL_DIR = ../util
-CARBIOCIAL_DIR = ../carbiocial-project/monica
+CARBIOCIAL_DIR = ../carbiocial-project/monica/src
 
 CONFIG -= qt
 CONFIG += console
@@ -38,69 +39,71 @@ SWIG_CMD_MONICA_DEFS += -NO_ZMQ -DNO_MYSQL -DNO_GRIDS -DNO_MPMAS
 
 # monica code
 #-------------------------------------------
-HEADERS += src/core/soilcolumn.h
-SOURCES += src/core/soilcolumn.cpp
+HEADERS += $${MONICA_DIR}/core/soilcolumn.h
+SOURCES += $${MONICA_DIR}/core/soilcolumn.cpp
 
-HEADERS += src/core/soiltransport.h
-SOURCES += src/core/soiltransport.cpp
+HEADERS += $${MONICA_DIR}/core/soiltransport.h
+SOURCES += $${MONICA_DIR}/core/soiltransport.cpp
 
-HEADERS += src/core/soiltemperature.h
-SOURCES += src/core/soiltemperature.cpp
+HEADERS += $${MONICA_DIR}/core/soiltemperature.h
+SOURCES += $${MONICA_DIR}/core/soiltemperature.cpp
 
-HEADERS += src/core/soilmoisture.h
-SOURCES += src/core/soilmoisture.cpp
+HEADERS += $${MONICA_DIR}/core/soilmoisture.h
+SOURCES += $${MONICA_DIR}/core/soilmoisture.cpp
 
-HEADERS += src/core/soilorganic.h
-SOURCES += src/core/soilorganic.cpp
+HEADERS += $${MONICA_DIR}/core/soilorganic.h
+SOURCES += $${MONICA_DIR}/core/soilorganic.cpp
 
-HEADERS += src/core/monica.h
-SOURCES += src/core/monica.cpp
+HEADERS += $${MONICA_DIR}/core/monica.h
+SOURCES += $${MONICA_DIR}/core/monica.cpp
 
-HEADERS += src/core/monica-parameters.h
-SOURCES += src/core/monica-parameters.cpp
+HEADERS += $${MONICA_DIR}/core/monica-parameters.h
+SOURCES += $${MONICA_DIR}/core/monica-parameters.cpp
 
-HEADERS += src/core/crop.h
-SOURCES += src/core/crop.cpp
+HEADERS += $${MONICA_DIR}/core/crop.h
+SOURCES += $${MONICA_DIR}/core/crop.cpp
 
-HEADERS += src/core/crop-growth.h
-SOURCES += src/core/crop-growth.cpp
+HEADERS += $${MONICA_DIR}/core/crop-growth.h
+SOURCES += $${MONICA_DIR}/core/crop-growth.cpp
 
-HEADERS += src/core/simulation.h
-SOURCES += src/core/simulation.cpp
+HEADERS += $${MONICA_DIR}/core/simulation.h
+SOURCES += $${MONICA_DIR}/core/simulation.cpp
 
-HEADERS += src/run/production-process.h
-SOURCES += src/run/production-process.cpp
+HEADERS += $${MONICA_DIR}/run/production-process.h
+SOURCES += $${MONICA_DIR}/run/production-process.cpp
 
-HEADERS += src/run/run-monica.h
-SOURCES += src/run/run-monica.cpp
+HEADERS += $${MONICA_DIR}/run/run-monica.h
+SOURCES += $${MONICA_DIR}/run/run-monica.cpp
 
-HEADERS += src/run/run-monica-zmq.h
+HEADERS += $${MONICA_DIR}/run/run-monica-zmq.h
 SOURCES += src/run/run-monica-zmq.cpp
 
-SOURCES += src/run/monica-main.cpp
+#SOURCES += $${MONICA_DIR}/run/monica-main.cpp
 
-HEADERS += src/io/database-io.h
-SOURCES += src/io/database-io.cpp
+HEADERS += $${MONICA_DIR}/io/database-io.h
+SOURCES += $${MONICA_DIR}/io/database-io.cpp
 
-HEADERS += src/io/file-io.h
-SOURCES += src/io/file-io.cpp
+HEADERS += $${MONICA_DIR}/io/file-io.h
+SOURCES += $${MONICA_DIR}/io/file-io.cpp
 
-HEADERS += src/io/hermes-file-io.h
-SOURCES += src/io/hermes-file-io.cpp
+HEADERS += $${MONICA_DIR}/io/hermes-file-io.h
+SOURCES += $${MONICA_DIR}/io/hermes-file-io.cpp
 
-HEADERS += $${CARBIOCIAL_DIR}/src/carbiocial.h
-SOURCES += $${CARBIOCIAL_DIR}/src/carbiocial.cpp
+#HEADERS += $${MONICA_DIR}/monica-eom.h
+#SOURCES += $${MONICA_DIR}/monica-eom.cpp
 
-#HEADERS += src/monica-eom.h
-#SOURCES += src/monica-eom.cpp
+#HEADERS += $${MONICA_DIR}/cc_germany_methods.h
+#HEADERS += $${MONICA_DIR}/gis_simulation_methods.h
+#HEADERS += $${MONICA_DIR}/eva_methods.h
 
-#HEADERS += src/cc_germany_methods.h
-#HEADERS += src/gis_simulation_methods.h
-#HEADERS += src/eva_methods.h
+#SOURCES += $${MONICA_DIR}/eva_methods.cpp
+#SOURCES += $${MONICA_DIR}/cc_germany_methods.cpp
+#SOURCES += $${MONICA_DIR}/gis_simulation_methods.cpp
 
-#SOURCES += src/eva_methods.cpp
-#SOURCES += src/cc_germany_methods.cpp
-#SOURCES += src/gis_simulation_methods.cpp
+# carbiocial code
+#--------------------------------------------
+HEADERS += $${CARBIOCIAL_DIR}/carbiocial.h
+SOURCES += $${CARBIOCIAL_DIR}/carbiocial.cpp
 
 # db library code
 #-------------------------------------------
@@ -143,6 +146,7 @@ HEADERS += $${UTIL_DIR}/tools/helper.h
 SOURCES += $${UTIL_DIR}/tools/helper.cpp
 
 HEADERS += $${UTIL_DIR}/tools/json11-helper.h
+SOURCES += $${UTIL_DIR}/tools/json11-helper.cpp
 
 HEADERS += $${UTIL_DIR}/tools/zmq-helper.h
 SOURCES += $${UTIL_DIR}/tools/zmq-helper.cpp
@@ -167,8 +171,9 @@ SOURCES += $${UTIL_DIR}/soil/soil.cpp
 
 #includes
 #-------------------------------------------------------------
+INCLUDEPATH += $${MONICA_DIR}
 INCLUDEPATH += $${UTIL_DIR} 
-INCLUDEPATH += $${CARBIOCIAL_DIR}/src 
+INCLUDEPATH += $${CARBIOCIAL_DIR} 
 
 #libs
 #------------------------------------------------------------
