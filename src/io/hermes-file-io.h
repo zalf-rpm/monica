@@ -50,13 +50,16 @@ namespace Monica
 	* - create cropRotation from hermes file
 	* - the returned production processes contain absolute dates
 	*/
-	std::vector<ProductionProcess> cropRotationFromHermesFile(const std::string& pathToFile, 
-		bool useAutomaticHarvestTrigger = false, AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
+	std::vector<ProductionProcess> cropRotationFromHermesFile(const std::string& pathToFile,
+																														bool useAutomaticHarvestTrigger = false,
+																														AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
 
 	Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
-		int fromYear, int toYear,
-		const CentralParameterProvider& cpp,
-		bool useLeapYears = true, double latitude = 51.2);
+																									 int fromYear,
+																									 int toYear,
+																									 const CentralParameterProvider& cpp,
+																									 bool useLeapYears = true,
+																									 double latitude = 51.2);
 
 }  
 

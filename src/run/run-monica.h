@@ -69,9 +69,9 @@ namespace Monica
     size_t noOfLayers{0};
     double layerThickness{0.0};
 
-    bool useNMinMineralFertilisingMethod{false};
-    MineralFertiliserParameters nMinFertiliserPartition;
-    NMinUserParameters nMinUserParams;
+//    bool useNMinMineralFertilisingMethod{false};
+//    MineralFertiliserParameters nMinFertiliserPartition;
+//    NMinUserParameters nMinUserParams;
 
     bool useAutomaticIrrigation{false};
     AutomaticIrrigationParameters autoIrrigationParams;
@@ -81,9 +81,9 @@ namespace Monica
     bool useSecondaryYields{true};
 
     //static const int depthGroundwaterTable;   /**<  */
-    double windSpeedHeight{0}; /**<  */
-    double atmosphericCO2{-1}; /**< [ppm] */
-    double albedo{0}; /**< Albedo [] */
+//    double windSpeedHeight{0}; /**<  */
+//    double atmosphericCO2{-1}; /**< [ppm] */
+//    double albedo{0}; /**< Albedo [] */
 
     //! object holding the climate data
     Climate::DataAccessor da;

@@ -48,9 +48,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Monica
 {
-//#undef min
-//#undef max
-
 	class CentralParameterProvider;
 
 	enum Eva2_Nutzung
@@ -275,7 +272,9 @@ namespace Monica
 
 		dailyAGB,
 
-		dailyAGB_N
+    dailyAGB_N,
+
+    rootingDepth
 	};
 
   //! @return list of results from a single crop
@@ -642,12 +641,12 @@ namespace Monica
     bool useNMinMineralFertilisingMethod{false};
     MineralFertiliserParameters nMinFertiliserPartition;
     NMinUserParameters nMinUserParams;
-    double atmosphericCO2{-1.0};
+//    double atmosphericCO2{-1.0};
     bool useAutomaticIrrigation{false};
     AutomaticIrrigationParameters autoIrrigationParams;
     bool useSecondaryYields{true};
-    double windSpeedHeight{0};
-    double albedo{0};
+//    double windSpeedHeight{0};
+//    double albedo{0};
     MeasuredGroundwaterTableInformation groundwaterInformation;
 
     std::string pathToOutputDir;
@@ -834,13 +833,18 @@ namespace Monica
     std::string toString() const { return to_json().dump(); }
 
     bool p_UseAutomaticIrrigation{false};
+    AutomaticIrrigationParameters autoIrrigationParams;
+
     bool p_UseNMinMineralFertilisingMethod{false};
+    MineralFertiliserParameters p_NMinFertiliserPartition;
+    NMinUserParameters p_NMinUserParams;
+
     bool p_UseSecondaryYields{true};
     bool p_UseAutomaticHarvestTrigger{false};
 
     double p_LayerThickness{0.0};
     double p_Albedo{0.0};
-    double p_AthmosphericCO2{0.0};
+    double p_AtmosphericCO2{0.0};
     double p_WindSpeedHeight{0.0};
     double p_LeachingDepth{0.0};
     double p_timeStep{0.0};

@@ -112,43 +112,28 @@ namespace Monica
   class SoilLayer
   {
   public:
-    SoilLayer();
+    SoilLayer(){}
 
-    SoilLayer(const UserInitialValues* initParams,
-              const SensitivityAnalysisParameters* saParams);
+//    SoilLayer(const UserInitialValues* initParams);
 
     SoilLayer(double vs_LayerThickness,
               const Soil::SoilParameters& soilParams,
-              const UserInitialValues* initParams,
-              const SensitivityAnalysisParameters* saParams);
-
-    void calc_vs_SoilMoisture_pF();
-
-    // calculations with Van Genuchten parameters
-    double get_Saturation();
-
-    double get_FieldCapacity();
-
-    double get_PermanentWiltingPoint();
+              const UserInitialValues* initParams);
 
     //! Sets value of soil organic matter parameter.
-    void set_SoilOrganicMatter(double som) { _vs_SoilOrganicMatter = som; }
+    void set_SoilOrganicMatter(double som) { _sps.set_vs_SoilOrganicMatter(som); }
 
     //! Sets value for soil organic carbon.
-    void set_SoilOrganicCarbon(double soc) { _vs_SoilOrganicCarbon = soc; }
+    void set_SoilOrganicCarbon(double soc) { _sps.set_vs_SoilOrganicCarbon(soc); }
 
     //! Returns bulk density of soil layer [kg m-3]
-    double vs_SoilBulkDensity() const { return _vs_SoilBulkDensity; }
+    double vs_SoilBulkDensity() const { return _sps.vs_SoilBulkDensity(); }
 
     //! Returns pH value of soil layer
-    double get_SoilpH() const { return vs_SoilpH; }
+    double get_SoilpH() const { return _sps.vs_SoilpH; }
 
     //! Returns soil water pressure head as common logarithm pF.
-    double vs_SoilMoisture_pF()
-    {
-      calc_vs_SoilMoisture_pF();
-      return _vs_SoilMoisture_pF;
-    }
+    double vs_SoilMoisture_pF();
 
     //! soil ammonium content [kg N m-3]
     double get_SoilNH4() const { return vs_SoilNH4; }
@@ -165,33 +150,35 @@ namespace Monica
     //! soil mineral N content [kg m-3]
     double get_SoilNmin() const { return vs_SoilNO3 + vs_SoilNO2 + vs_SoilNH4; }
 
-    double get_Vs_SoilMoisture_m3() const;
+    double get_Vs_SoilMoisture_m3() const { return vs_SoilMoisture_m3; }
+    void set_Vs_SoilMoisture_m3(double ms){ vs_SoilMoisture_m3 = ms; }
 
-    void set_Vs_SoilMoisture_m3(double ms);
+    double get_Vs_SoilTemperature() const { return vs_SoilTemperature; }
+    void set_Vs_SoilTemperature(double st){ vs_SoilTemperature = st; }
 
-    double get_Vs_SoilTemperature() const;
+    double vs_SoilSandContent() const { return _sps.vs_SoilSandContent; } //!< Soil layer's sand content [kg kg-1]
+    double vs_SoilClayContent() const { return _sps.vs_SoilClayContent; } //!< Soil layer's clay content [kg kg-1] (Ton)
+    double vs_SoilStoneContent() const { return _sps.vs_SoilStoneContent; } //!< Soil layer's stone content in soil [kg kg-1]
+    double vs_SoilSiltContent() const { return _sps.vs_SoilSiltContent(); } //!< Soil layer's silt content [kg kg-1] (Schluff)
+    std::string vs_SoilTexture() const { return _sps.vs_SoilTexture; }
 
-    void set_Vs_SoilTemperature(double st);
+    double vs_SoilpH() const { return _sps.vs_SoilpH; } //!< Soil pH value []
+    double vs_SoilOrganicCarbon() const { return _sps.vs_SoilOrganicCarbon(); } //!< Soil layer's organic carbon content [kg C kg-1]
+    double vs_SoilOrganicMatter() const { return _sps.vs_SoilOrganicMatter(); } //!< Soil layer's organic matter content [kg OM kg-1]
+
+    double vs_Lambda() const { return _sps.vs_Lambda; }  //!< Soil water conductivity coefficient []
+    double vs_FieldCapacity() const { return _sps.vs_FieldCapacity; }
+    double vs_Saturation() const { return _sps.vs_Saturation; }
+    double vs_PermanentWiltingPoint() const { return _sps.vs_PermanentWiltingPoint; }
+
+    double vs_Soil_CN_Ratio() const { return _sps.vs_Soil_CN_Ratio; }
+
 
     // members ------------------------------------------------------------
 
     double vs_LayerThickness; //!< Soil layer's vertical extension [m]
-    double vs_SoilSandContent{0.9}; //!< Soil layer's sand content [kg kg-1]
-    double vs_SoilClayContent{0.05}; //!< Soil layer's clay content [kg kg-1] (Ton)
-    double vs_SoilStoneContent{0.0}; //!< Soil layer's stone content in soil [kg kg-1]
-    double vs_SoilSiltContent() const; //!< Soil layer's silt content [kg kg-1] (Schluff)
-    std::string vs_SoilTexture;
-
-    double vs_SoilpH{7.0}; //!< Soil pH value []
-    double vs_SoilOrganicCarbon() const; //!< Soil layer's organic carbon content [kg C kg-1]
-    double vs_SoilOrganicMatter() const; //!< Soil layer's organic matter content [kg OM kg-1]
-
     double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
     double vs_SoilWaterFlux{0.0}; //!< Water flux at the upper boundary of the soil layer [l m-2]
-    double vs_Lambda{0.5}; //!< Soil water conductivity coefficient []
-    double vs_FieldCapacity{0.21};
-    double vs_Saturation{0.43};
-    double vs_PermanentWiltingPoint{0.08};
 
     std::vector<AOM_Properties> vo_AOM_Pool; //!< List of different added organic matter pools in soil layer
 
@@ -208,15 +195,9 @@ namespace Monica
     bool vs_SoilFrozen{false};
 
     const UserInitialValues* initPs{nullptr};
-    const SensitivityAnalysisParameters* saPs{nullptr};
 
   private:
-    //! only one of the two is being initialized and used for calculations
-    double _vs_SoilOrganicCarbon{-1.0}; //!< Soil organic carbon content [kg C kg-1]
-    double _vs_SoilOrganicMatter{-1.0}; //!< Soil organic matter content [kg OM kg-1]
-
-    double _vs_SoilBulkDensity{0.0}; //!< Bulk density of soil [kg m-3]
-    double _vs_SoilMoisture_pF{-1.0}; //!< Soil water pressure head as common logarithm [pF]
+    Soil::SoilParameters _sps;
 
     double vs_SoilMoisture_m3{0.25}; //!< Soil layer's moisture content [m3 m-3]
     double vs_SoilTemperature{0.0}; //!< Soil layer's temperature [°C]
@@ -242,8 +223,7 @@ namespace Monica
     SoilColumn(const GeneralParameters& generalParams,
                const Soil::SoilPMs& soilParams,
                double pm_CriticalMoistureDepth,
-               const UserInitialValues& initParams,
-               const SensitivityAnalysisParameters& saParams);
+               const UserInitialValues& initParams);
 
     void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
                                 double amount);
@@ -289,17 +269,13 @@ namespace Monica
      * Overloaded operator for a fortran-similar access to a C-array.
      * @return SoilLayer at given Index.
      */
-    SoilLayer& operator[](size_t i_Layer) {
-      return vs_SoilLayers[i_Layer];
-    }
+    SoilLayer& operator[](size_t i_Layer) { return vs_SoilLayers[i_Layer]; }
 
     /**
      * Overloaded operator for a fortran-similar access to a C-array.
      * @return SoilLayer at given Index.
      */
-    const SoilLayer & operator[](size_t i_Layer) const {
-      return vs_SoilLayers.at(i_Layer);
-    }
+    const SoilLayer & operator[](size_t i_Layer) const { return vs_SoilLayers.at(i_Layer); }
 
     //! Returns a soil layer at given Index.
     SoilLayer& soilLayer(size_t i_Layer) { return vs_SoilLayers[i_Layer]; }

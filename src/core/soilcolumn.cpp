@@ -50,33 +50,6 @@ using namespace Soil;
 using namespace Tools;
 
 
-//------------------------------------------------------------------------------
-
-SoilLayer::SoilLayer()
-  : vs_SoilTexture("Ss")
-{}
-
-//! Default constructor with parameter initialization.
-SoilLayer::SoilLayer(const UserInitialValues* initParams,
-                     const SensitivityAnalysisParameters* saParams)
-  : vs_SoilTexture("Ss"),
-    initPs(initParams),
-    saPs(saParams)
-{
-  if(initPs)
-  {
-    vs_SoilMoisture_m3 = vs_FieldCapacity * initPs->p_initPercentageFC;
-    vs_SoilMoistureOld_m3 = vs_FieldCapacity * initPs->p_initPercentageFC;
-    vs_SoilNO3 = initPs->p_initSoilNitrate;
-    vs_SoilNH4 = initPs->p_initSoilAmmonium;
-  }
-
-  //  cout  << "Constructor 2" << endl;
-  //  cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << centralParameterProvider.p_initPercentageFC << endl;
-  //  cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
-  //  cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
-}
-
 /**
  * Constructor
  * @param vs_LayerThickness Vertical expansion
@@ -84,105 +57,35 @@ SoilLayer::SoilLayer(const UserInitialValues* initParams,
  */
 SoilLayer::SoilLayer(double vs_LayerThickness,
                      const SoilParameters& sps,
-                     const UserInitialValues* initParams,
-                     const SensitivityAnalysisParameters* saParams)
+                     const UserInitialValues* initParams)
   : vs_LayerThickness(vs_LayerThickness),
-    vs_SoilSandContent(sps.vs_SoilSandContent),
-    vs_SoilClayContent(sps.vs_SoilClayContent),
-    vs_SoilStoneContent(sps.vs_SoilStoneContent),
-    vs_SoilTexture(sps.vs_SoilTexture),
-    vs_SoilpH(sps.vs_SoilpH),
-    vs_Lambda(sps.vs_Lambda),
-    vs_FieldCapacity(sps.vs_FieldCapacity),
-    vs_Saturation(sps.vs_Saturation),
-    vs_PermanentWiltingPoint(sps.vs_PermanentWiltingPoint),
     vs_SoilNO3(0.005), // TODO: why here with 0.005 instead of 0.0001 as in default initialization
     initPs(initParams),
-    saPs(saParams),
-    _vs_SoilOrganicCarbon(sps.vs_SoilOrganicCarbon()),
-    _vs_SoilOrganicMatter(sps.vs_SoilOrganicMatter()),
-    _vs_SoilBulkDensity(sps.vs_SoilBulkDensity()),
-    _vs_SoilMoisture_pF(0), // TODO: why here with 0 instead of -1 as in default initialization
+    _sps(sps),
     vs_SoilMoisture_m3(0.25) // TODO: QUESTION - Warum wird hier mit 0.25 initialisiert?
 {
-  assert((_vs_SoilOrganicCarbon - (_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C)) < 0.00001);
+  assert((_sps.vs_SoilOrganicCarbon() - (_sps.vs_SoilOrganicMatter() * OrganicConstants::po_SOM_to_C)) < 0.00001);
 
   if(initPs)
   {
-    vs_SoilMoisture_m3 = vs_FieldCapacity * initPs->p_initPercentageFC;
-    vs_SoilMoistureOld_m3 = vs_FieldCapacity * initPs->p_initPercentageFC;
+    vs_SoilMoisture_m3 = vs_FieldCapacity() * initPs->p_initPercentageFC;
+    vs_SoilMoistureOld_m3 = vs_FieldCapacity() * initPs->p_initPercentageFC;
   }
 
-  if (initPs && sps.vs_SoilAmmonium < 0.0)
+  if (initPs && _sps.vs_SoilAmmonium < 0.0)
     vs_SoilNH4 = initPs->p_initSoilAmmonium;
   else
-    vs_SoilNH4 = sps.vs_SoilAmmonium; // kg m-3
+    vs_SoilNH4 = _sps.vs_SoilAmmonium; // kg m-3
 
-  if (initPs && sps.vs_SoilNitrate < 0.0)
+  if (initPs && _sps.vs_SoilNitrate < 0.0)
     vs_SoilNO3 = initPs->p_initSoilNitrate;
   else
-    vs_SoilNO3 = sps.vs_SoilNitrate;  // kg m-3
+    vs_SoilNO3 = _sps.vs_SoilNitrate;  // kg m-3
 
   //cout  << "Constructor 3" << endl;
   //cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.p_initPercentageFC << endl;
   //cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
   //cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
-}
-
-/**
- * @brief Returns value for soil organic carbon.
- *
- * If value for soil organic matter is not defined, because DB does not
- * contain the according value, than the store value for organic carbon
- * is returned. If the soil organic matter parameter is defined,
- * than the value for soil organic carbon is calculated depending on
- * the soil organic matter.
- *
- * @return Value for soil organic carbon
- */
-double SoilLayer::vs_SoilOrganicCarbon() const {
-  // if soil organic carbon is not defined, than calculate from soil organic
-  // matter value [kg C kg-1]
-  if(_vs_SoilOrganicCarbon >= 0.0) {
-    return _vs_SoilOrganicCarbon;
-  }
-
-
-  // calculate soil organic carbon with soil organic matter parameter
-  return _vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C;
-}
-
-/**
- * @brief Returns value for soil organic matter.
- *
- * If the value for soil organic carbon is not defined, because the DB does
- * not contain any value, than the stored value for organic matter
- * is returned. If the soil organic carbon parameter is defined,
- * than the value for soil organic matter is calculated depending on
- * the soil organic carbon.
- *
- * @return Value for soil organic matter
- * */
-double SoilLayer::vs_SoilOrganicMatter() const {
-  // if soil organic matter is not defined, calculate from soil organic C
-  if(_vs_SoilOrganicMatter >= 0.0) {
-    return _vs_SoilOrganicMatter;
-  }
-
-  // ansonsten berechne den Wert aus dem C-Gehalt
-  return (_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C); //[kg C kg-1]
-}
-
-/**
- * @brief Returns fraction of silt content of the layer.
- *
- * Calculates the silt particle size fraction in the layer in dependence
- * of its sand and clay content.
- *
- * @return Fraction of silt in the layer.
- */
-double SoilLayer::vs_SoilSiltContent() const {
-  return (1 - vs_SoilSandContent - vs_SoilClayContent);
 }
 
 /**
@@ -192,62 +95,32 @@ double SoilLayer::vs_SoilSiltContent() const {
  *
  * @todo Einheiten prüfen
  */
-void SoilLayer::calc_vs_SoilMoisture_pF() {
-  /** Derivation of Van Genuchten parameters (Vereecken at al. 1989) */
+double SoilLayer::vs_SoilMoisture_pF()
+{
+  // Derivation of Van Genuchten parameters (Vereecken at al. 1989)
   //TODO Einheiten prüfen
-  double vs_ThetaR;
-  double vs_ThetaS;
+  double vs_ThetaR = vs_PermanentWiltingPoint();
+  double vs_ThetaS = vs_Saturation();
 
-  if (vs_PermanentWiltingPoint > 0.0){
-    vs_ThetaR = vs_PermanentWiltingPoint;
-  } else {
-    vs_ThetaR = get_PermanentWiltingPoint();
-  }
-
-  if (vs_Saturation > 0.0){
-    vs_ThetaS = vs_Saturation;
-  } else {
-    vs_ThetaS = get_Saturation();
-  }
-
-  double vs_VanGenuchtenAlpha = exp(-2.486 + (2.5 * vs_SoilSandContent)
+  double vs_VanGenuchtenAlpha = exp(-2.486 + (2.5 * vs_SoilSandContent())
                                     - (35.1 * vs_SoilOrganicCarbon())
                                     - (2.617 * (vs_SoilBulkDensity() / 1000.0))
-                                    - (2.3 * vs_SoilClayContent));
+                                    - (2.3 * vs_SoilClayContent()));
 
   double vs_VanGenuchtenM = 1.0;
 
   double vs_VanGenuchtenN = exp(0.053
-                                - (0.9 * vs_SoilSandContent)
-                                - (1.3 * vs_SoilClayContent)
-                                + (1.5 * (pow(vs_SoilSandContent, 2.0))));
+                                - (0.9 * vs_SoilSandContent())
+                                - (1.3 * vs_SoilClayContent())
+                                + (1.5 * (pow(vs_SoilSandContent(), 2.0))));
 
-  /** Van Genuchten retention curve */
-  double vs_MatricHead;
-
-  if(get_Vs_SoilMoisture_m3() <= vs_ThetaR) {
-    vs_MatricHead = 5.0E+7;
-    //else  d_MatricHead = (1.0 / vo_VanGenuchtenAlpha) * (pow(((1 / (pow(((d_SoilMoisture_m3 - d_ThetaR) /
-    //                     (d_ThetaS - d_ThetaR)), (1 / vo_VanGenuchtenM)))) - 1), (1 / vo_VanGenuchtenN)));
-  }   else {
-    vs_MatricHead = (1.0 / vs_VanGenuchtenAlpha)
-                    * (pow(
-                         (
-                           (pow(
-                              (
-                                (vs_ThetaS - vs_ThetaR) / (get_Vs_SoilMoisture_m3() - vs_ThetaR)
-                                ),
-                              (
-                                1 / vs_VanGenuchtenM
-                                )
-                              )
-                            )
-                           - 1
-                           ),
-                         (1 / vs_VanGenuchtenN)
-                         )
-                       );
-  }
+  //Van Genuchten retention curve
+  double vs_MatricHead = get_Vs_SoilMoisture_m3() <= vs_ThetaR
+                         ? 5.0E+7
+                         : vs_MatricHead = (1.0/vs_VanGenuchtenAlpha)*
+                                           (pow(pow((vs_ThetaS - vs_ThetaR)/(get_Vs_SoilMoisture_m3() - vs_ThetaR),
+                                                    1/vs_VanGenuchtenM) - 1,
+                                                1/vs_VanGenuchtenN));
 
   //  debug() << "get_Vs_SoilMoisture_m3: " << get_Vs_SoilMoisture_m3() << std::endl;
   //  debug() << "vs_SoilSandContent: " << vs_SoilSandContent << std::endl;
@@ -261,187 +134,11 @@ void SoilLayer::calc_vs_SoilMoisture_pF() {
   //  debug() << "vs_VanGenuchtenN: " << vs_VanGenuchtenN << std::endl;
   //  debug() << "vs_MatricHead: " << vs_MatricHead << std::endl;
 
-  _vs_SoilMoisture_pF = log10(vs_MatricHead);
+  double soilMoisture_pF = log10(vs_MatricHead);
 
   /* JV! set _vs_SoilMoisture_pF to "small" number in case of vs_Theta "close" to vs_ThetaS (vs_Psi < 1 -> log(vs_Psi) < 0) */
-  _vs_SoilMoisture_pF = (_vs_SoilMoisture_pF < 0.0) ? 5.0E-7 : _vs_SoilMoisture_pF;
-  //  debug() << "_vs_SoilMoisture_pF: " << _vs_SoilMoisture_pF << std::endl;
-}
-
-/**
- * Soil layer's water content at field capacity (1.8 < pF < 2.1) [m3 m-3]
- *
- * This method applies only in the case when soil charcteristics have not
- * been set before.
- *
- * In german: "Maximaler Wassergehalt, der gegen die Wirkung der
- * Schwerkraft zurückgehalten wird"
- *
- * @todo Einheiten prüfen
- */
-double SoilLayer::get_FieldCapacity()
-{
-  // Sensitivity analysis case
-  if (saPs && saPs->vs_FieldCapacity != UNDEFINED) {
-    return saPs->vs_FieldCapacity;
-  }
-
-  //***** Derivation of Van Genuchten parameters (Vereecken at al. 1989) *****
-  if (vs_SoilTexture == "") {
-    //    cout << "Field capacity is calculated from van Genuchten parameters" << endl;
-    double vs_ThetaR;
-    double vs_ThetaS;
-
-    if (vs_PermanentWiltingPoint > 0.0){
-      vs_ThetaR = vs_PermanentWiltingPoint;
-    } else {
-      vs_ThetaR = get_PermanentWiltingPoint();
-    }
-
-    if (vs_Saturation > 0.0){
-      vs_ThetaS = vs_Saturation;
-    } else {
-      vs_ThetaS = get_Saturation();
-    }
-
-    double vs_VanGenuchtenAlpha = exp(-2.486
-                                      + 2.5 * vs_SoilSandContent
-                                      - 35.1 * vs_SoilOrganicCarbon()
-                                      - 2.617 * (vs_SoilBulkDensity() / 1000.0)
-                                      - 2.3 * vs_SoilClayContent);
-
-    double vs_VanGenuchtenM = 1.0;
-
-    double vs_VanGenuchtenN = exp(0.053
-                                  - 0.9 * vs_SoilSandContent
-                                  - 1.3 * vs_SoilClayContent
-                                  + 1.5 * (pow(vs_SoilSandContent, 2.0)));
-
-    //***** Van Genuchten retention curve to calculate volumetric water content at
-    //***** moisture equivalent (Field capacity definition KA5)
-
-    double vs_FieldCapacity_pF = 2.1;
-    if ((vs_SoilSandContent > 0.48) && (vs_SoilSandContent <= 0.9) && (vs_SoilClayContent <= 0.12))
-      vs_FieldCapacity_pF = 2.1 - (0.476 * (vs_SoilSandContent - 0.48));
-    else if ((vs_SoilSandContent > 0.9) && (vs_SoilClayContent <= 0.05))
-      vs_FieldCapacity_pF = 1.9;
-    else if (vs_SoilClayContent > 0.45)
-      vs_FieldCapacity_pF = 2.5;
-    else if ((vs_SoilClayContent > 0.30) && (vs_SoilSandContent < 0.2))
-      vs_FieldCapacity_pF = 2.4;
-    else if (vs_SoilClayContent > 0.35)
-      vs_FieldCapacity_pF = 2.3;
-    else if ((vs_SoilClayContent > 0.25) && (vs_SoilSandContent < 0.1))
-      vs_FieldCapacity_pF = 2.3;
-    else if ((vs_SoilClayContent > 0.17) && (vs_SoilSandContent > 0.68))
-      vs_FieldCapacity_pF = 2.2;
-    else if ((vs_SoilClayContent > 0.17) && (vs_SoilSandContent < 0.33))
-      vs_FieldCapacity_pF = 2.2;
-    else if ((vs_SoilClayContent > 0.08) && (vs_SoilSandContent < 0.27))
-      vs_FieldCapacity_pF = 2.2;
-    else if ((vs_SoilClayContent > 0.25) && (vs_SoilSandContent < 0.25))
-      vs_FieldCapacity_pF = 2.2;
-
-    double vs_MatricHead = pow(10, vs_FieldCapacity_pF);
-
-    vs_FieldCapacity = vs_ThetaR + ((vs_ThetaS - vs_ThetaR) /
-                                    (pow((1.0 + pow((vs_VanGenuchtenAlpha * vs_MatricHead),
-                                                    vs_VanGenuchtenN)), vs_VanGenuchtenM)));
-
-    vs_FieldCapacity *= (1.0 - vs_SoilStoneContent);
-  }
-
-  return vs_FieldCapacity;
-
-}
-
-/**
- * Soil layer's water content at full saturation (pF=0.0) [m3 m-3].
- * Uses empiric calculation of Van Genuchten. *
- *
- * In german:  Wassergehalt bei maximaler Füllung des Poren-Raums
- *
- * @return Water content at full saturation
- */
-double SoilLayer::get_Saturation()
-{
-  // Sensitivity analysis case
-  if (saPs && saPs->vs_Saturation != UNDEFINED) {
-    return saPs->vs_Saturation;
-  }
-
-  if (vs_SoilTexture == "") {
-    //    cout << "Pore Volume is calculated from van Genuchten parameters" << endl;
-    vs_Saturation = 0.81 - 0.283 * (vs_SoilBulkDensity() / 1000.0) + 0.1 * vs_SoilClayContent;
-
-    vs_Saturation *= (1.0 - vs_SoilStoneContent);
-  }
-  return vs_Saturation;
-}
-
-/**
- * Soil layer's water content at permanent wilting point (pF=4.2) [m3 m-3].
- * Uses empiric calculation of Van Genuchten.
- *
- * In german: Wassergehalt des Bodens am permanenten Welkepunkt.
- *
- * @return Water content at permanent wilting point
- */
-double SoilLayer::get_PermanentWiltingPoint()
-{
-  // Sensitivity analysis case
-  if (saPs && saPs->vs_PermanentWiltingPoint != UNDEFINED) {
-    return saPs->vs_PermanentWiltingPoint;
-  }
-
-  if (vs_SoilTexture == "") {
-    //    cout << "Permanent Wilting Point is calculated from van Genuchten parameters" << endl;
-    vs_PermanentWiltingPoint = 0.015 + 0.5 * vs_SoilClayContent + 1.4 * vs_SoilOrganicCarbon();
-
-    vs_PermanentWiltingPoint *= (1.0 - vs_SoilStoneContent);
-  }
-
-  return vs_PermanentWiltingPoint;
-}
-
-double SoilLayer::get_Vs_SoilMoisture_m3() const
-{
-  // Sensitivity analysis case
-  if (saPs && saPs->vs_SoilMoisture != UNDEFINED)
-    return saPs->vs_SoilMoisture;
-  return vs_SoilMoisture_m3;
-}
-
-void SoilLayer::set_Vs_SoilMoisture_m3(double ms)
-{
-  vs_SoilMoisture_m3 = ms;
-
-  // Sensitivity analysis case
-  if (saPs && saPs->vs_SoilMoisture != UNDEFINED) {
-    vs_SoilMoisture_m3 = saPs->vs_SoilMoisture;
-    calc_vs_SoilMoisture_pF();
-  }
-
-}
-
-double SoilLayer::get_Vs_SoilTemperature() const
-{
-  if (saPs && saPs->vs_SoilTemperature != UNDEFINED) {
-    return saPs->vs_SoilTemperature;
-  }
-  return vs_SoilTemperature;
-
-}
-
-void SoilLayer::set_Vs_SoilTemperature(double st)
-{
-  vs_SoilTemperature = st;
-
-  // Sensitivity analysis case
-  if (saPs && saPs->vs_SoilTemperature != UNDEFINED) {
-    vs_SoilTemperature = saPs->vs_SoilTemperature;
-  }
-
+  return soilMoisture_pF < 0.0 ? 5.0E-7 : soilMoisture_pF;
+  //  debug() << "vs_SoilMoisture_pF: " << soilMoisture_pF << std::endl;
 }
 
 
@@ -457,16 +154,16 @@ void SoilLayer::set_Vs_SoilTemperature(double st)
  * @param soilParams Soil Parameter
  */
 SoilColumn::SoilColumn(const GeneralParameters& gps,
-                       const SoilPMs& soilParams, double pm_CriticalMoistureDepth,
-                       const UserInitialValues& initParams,
-                       const SensitivityAnalysisParameters& saParams)
+                       const SoilPMs& soilParams,
+                       double pm_CriticalMoistureDepth,
+                       const UserInitialValues& initParams)
   : generalParams(gps),
     soilParams(soilParams),
     pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
 {
   debug() << "Constructor: SoilColumn "  << soilParams.size() << endl;
   for(auto sp : soilParams)
-    vs_SoilLayers.push_back(SoilLayer(gps.ps_LayerThickness.front(), sp, &initParams, &saParams));
+    vs_SoilLayers.push_back(SoilLayer(gps.ps_LayerThickness.front(), sp, &initParams));
 
   _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
@@ -521,7 +218,7 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
                                     int vf_TopDressingDelay ) {
 
   // Wassergehalt > Feldkapazität
-  if(soilLayer(0).get_Vs_SoilMoisture_m3() > soilLayer(0).get_FieldCapacity())
+  if(soilLayer(0).get_Vs_SoilMoisture_m3() > soilLayer(0).vs_FieldCapacity())
   {
     _delayedNMinApplications.push_back
         ([=](){ return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
@@ -741,10 +438,10 @@ applyIrrigationViaTrigger(double vi_IrrigationThreshold,
                                           soilLayer(0).vs_LayerThickness));
   for (int i_Layer = 0; i_Layer < vi_CriticalMoistureLayer; i_Layer++){
     vi_ActualPlantAvailableWater += (soilLayer(i_Layer).get_Vs_SoilMoisture_m3()
-                                     - soilLayer(i_Layer).get_PermanentWiltingPoint())
+                                     - soilLayer(i_Layer).vs_PermanentWiltingPoint())
                                     * vs_LayerThickness() * 1000.0; // [mm]
-    vi_MaxPlantAvailableWater += (soilLayer(i_Layer).get_FieldCapacity()
-                                  - soilLayer(i_Layer).get_PermanentWiltingPoint())
+    vi_MaxPlantAvailableWater += (soilLayer(i_Layer).vs_FieldCapacity()
+                                  - soilLayer(i_Layer).vs_PermanentWiltingPoint())
                                  * vs_LayerThickness() * 1000.0; // [mm]
     vi_PlantAvailableWaterFraction = vi_ActualPlantAvailableWater
                                      / vi_MaxPlantAvailableWater; // []

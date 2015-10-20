@@ -65,8 +65,7 @@ namespace Monica
     SoilOrganic(SoilColumn& soilColumn,
                 const GeneralParameters& gps,
                 const SiteParameters& sps,
-                const UserSoilOrganicParameters& userParams,
-                const SensitivityAnalysisParameters& saParams);
+                const UserSoilOrganicParameters& userParams);
 
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
@@ -134,7 +133,6 @@ namespace Monica
     const GeneralParameters & generalParams;
     const SiteParameters & siteParams;
     const UserSoilOrganicParameters& organicPs;
-    const SensitivityAnalysisParameters& saPs;
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};

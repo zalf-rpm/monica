@@ -160,7 +160,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm)
     const double dq = ps_QuartzRawDensity;
     const double da = pt_DensityAir;
     const double dh = pt_DensityHumus;
-    const double spv = soilColumn[i_Layer].get_Saturation();
+    const double spv = soilColumn[i_Layer].vs_Saturation();
     const double som = soilColumn.at(i_Layer).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
 
     vt_HeatCapacity[i_Layer] = (smi * dw * cw)

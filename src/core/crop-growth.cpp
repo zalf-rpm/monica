@@ -55,12 +55,10 @@ CropGrowth::CropGrowth(SoilColumn& sc,
                        const CropParameters& cps,
                        const SiteParameters& stps,
                        const UserCropParameters& cropPs,
-                       const SensitivityAnalysisParameters& saPs,
                        int usage)
   : soilColumn(sc),
     generalParams(gps),
     cropPs(cropPs),
-    saPs(saPs),
     vs_NumberOfLayers(sc.vs_NumberOfLayers()),
     vs_Latitude(stps.vs_Latitude),
     vc_AbovegroundBiomass(0.0),
@@ -318,7 +316,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	vc_NConcentrationRoot = pc_NConcentrationRoot;
 
 	// Initialising the initial maximum rooting depth
-	double vc_SandContent = soilColumn[0].vs_SoilSandContent; // [kg kg-1]
+  double vc_SandContent = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
 	double vc_BulkDensity = soilColumn[0].vs_SoilBulkDensity(); // [kg m-3]
 	if (vc_SandContent < 0.55) vc_SandContent = 0.55;
 	if (vs_SoilSpecificMaxRootingDepth > 0.0) {
@@ -456,8 +454,8 @@ void CropGrowth::calculateCropGrowthStep(double vw_MeanAirTemperature,
 						vc_GrowthCycleEnded,
 		        vc_TimeStep,
 		        soilColumn[0].get_Vs_SoilMoisture_m3(),
-		        soilColumn[0].get_FieldCapacity(),
-		        soilColumn[0].get_PermanentWiltingPoint(),
+            soilColumn[0].vs_FieldCapacity(),
+            soilColumn[0].vs_PermanentWiltingPoint(),
 		        pc_NumberOfDevelopmentalStages,
 		        vc_VernalisationFactor,
 		        vc_DaylengthFactor,
@@ -804,8 +802,8 @@ double CropGrowth::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   double vc_MaxOxygenDeficit = 0.0;
 
 	// Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
-  vc_AirFilledPoreVolume = ((soilColumn[0].get_Saturation() + soilColumn[1].get_Saturation()
-      + soilColumn[2].get_Saturation()) - (soilColumn[0].get_Vs_SoilMoisture_m3() + soilColumn[1].get_Vs_SoilMoisture_m3()
+  vc_AirFilledPoreVolume = ((soilColumn[0].vs_Saturation() + soilColumn[1].vs_Saturation()
+      + soilColumn[2].vs_Saturation()) - (soilColumn[0].get_Vs_SoilMoisture_m3() + soilColumn[1].get_Vs_SoilMoisture_m3()
       + soilColumn[2].get_Vs_SoilMoisture_m3())) / 3.0;
   if (vc_AirFilledPoreVolume < d_CriticalOxygenContent) {
     vc_TimeUnderAnoxia += int(vc_TimeStep);
@@ -1215,13 +1213,6 @@ void CropGrowth::fc_CropGreenArea(double d_LeafBiomassIncrement,
  */
 double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
 {
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating
-  if (saPs.vc_SoilCoverage != UNDEFINED) {
-    vc_SoilCoverage = saPs.vc_SoilCoverage;
-    return vc_SoilCoverage;
-  }
-
   vc_SoilCoverage = 1.0 - (exp(-0.5 * vc_LeafAreaIndex));
 
   return vc_SoilCoverage;
@@ -2313,22 +2304,12 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
     vc_RootNIncrement = 0;
   }
 
-
-
 	// In case of drought stress the root will grow deeper
 	if ((vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage])) &&
 			(vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth) &&
 			(vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1))){
 		vc_MaxRootingDepth += 0.005;
 	}
-
-
-
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so overwrite with fix value
-  if (saPs.vc_MaxRootingDepth != UNDEFINED) {
-    vc_MaxRootingDepth = saPs.vc_MaxRootingDepth;
-  }
 
   if (vc_MaxRootingDepth > (double(vs_NumberOfLayers - 1) * vs_LayerThickness)) {
     vc_MaxRootingDepth = double(vs_NumberOfLayers - 1) * vs_LayerThickness;
@@ -2355,10 +2336,10 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
 
   // Determining root penetration rate according to soil clay content [m °C-1 d-1]
   double vc_RootPenetrationRate = 0.0; // [m °C-1 d-1]
-  if (soilColumn[vc_RootingDepth].vs_SoilClayContent <= 0.02 ){
+  if (soilColumn[vc_RootingDepth].vs_SoilClayContent() <= 0.02 ){
     vc_RootPenetrationRate = 0.5 * pc_RootPenetrationRate;
-  } else if (soilColumn[vc_RootingDepth].vs_SoilClayContent <= 0.08 ){
-    vc_RootPenetrationRate = ((1.0 / 3.0) + (0.5 / 0.06 * soilColumn[vc_RootingDepth].vs_SoilClayContent))
+  } else if (soilColumn[vc_RootingDepth].vs_SoilClayContent() <= 0.08 ){
+    vc_RootPenetrationRate = ((1.0 / 3.0) + (0.5 / 0.06 * soilColumn[vc_RootingDepth].vs_SoilClayContent()))
 		         * pc_RootPenetrationRate; // [m °C-1 d-1]
   } else {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
@@ -2453,12 +2434,6 @@ void CropGrowth::fc_CropDryMatter(int vs_NumberOfLayers,
       vc_RootDiameter[i_Layer] = 0.0001; //[m]
     } else {
       vc_RootDiameter[i_Layer] = 0.0002 - ((i_Layer + 1) * 0.00001); // [m]
-    }
-
-    // in case of sensitivity analysis, this parameter would not be undefined
-    // so return fix value instead of calculating mean bulk density
-    if (saPs.vc_RootDiameter != UNDEFINED) {
-      vc_RootDiameter[i_Layer] = saPs.vc_RootDiameter;
     }
 
     // Default root decay - 10 %
@@ -2796,9 +2771,9 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
     vc_PotentialTranspiration = vc_RemainingEvapotranspiration * vc_SoilCoverage; // [mm]
 
     for (int i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
-      double vc_AvailableWater = soilColumn[i_Layer].get_FieldCapacity() - soilColumn[i_Layer].get_PermanentWiltingPoint();
+      double vc_AvailableWater = soilColumn[i_Layer].vs_FieldCapacity() - soilColumn[i_Layer].vs_PermanentWiltingPoint();
       double vc_AvailableWaterPercentage = (soilColumn[i_Layer].get_Vs_SoilMoisture_m3()
-				    - soilColumn[i_Layer].get_PermanentWiltingPoint()) / vc_AvailableWater;
+            - soilColumn[i_Layer].vs_PermanentWiltingPoint()) / vc_AvailableWater;
       if (vc_AvailableWaterPercentage < 0.0) vc_AvailableWaterPercentage = 0.0;
 
       if (vc_AvailableWaterPercentage < 0.15) {
@@ -2863,9 +2838,9 @@ void CropGrowth::fc_CropWaterUptake(int vs_NumberOfLayers,
         if (vc_RemainingTotalRootEffectivity <= 0.0)
           vc_RemainingTotalRootEffectivity = 0.00001;
         if (((vc_Transpiration[i_Layer] / 1000.0) / vs_LayerThickness) > ((soilColumn[i_Layer].get_Vs_SoilMoisture_m3()
-            - soilColumn[i_Layer].get_PermanentWiltingPoint()))) {
+            - soilColumn[i_Layer].vs_PermanentWiltingPoint()))) {
             vc_PotentialTranspirationDeficit = (((vc_Transpiration[i_Layer] / 1000.0) / vs_LayerThickness)
-                - (soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].get_PermanentWiltingPoint()))
+                - (soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].vs_PermanentWiltingPoint()))
                 * vs_LayerThickness * 1000.0; // [mm]
             if (vc_PotentialTranspirationDeficit < 0.0) {
                 vc_PotentialTranspirationDeficit = 0.0;
@@ -3270,11 +3245,6 @@ int CropGrowth::get_RootingDepth() const {
  * @return soil coverage
  */
 double CropGrowth::get_SoilCoverage() const {
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating
-  if (saPs.vc_SoilCoverage != UNDEFINED) {
-    return saPs.vc_SoilCoverage;
-  }
   return vc_SoilCoverage;
 }
 

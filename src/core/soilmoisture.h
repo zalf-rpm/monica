@@ -117,8 +117,7 @@ namespace Monica
     public:
       FrostComponent(SoilColumn& sc,
                      double pm_HydraulicConductivityRedux,
-                     double p_timeStep,
-                     const SensitivityAnalysisParameters& saPs);
+                     double p_timeStep);
 
       void calcSoilFrost(double mean_air_temperature, double snow_depth);
       double getFrostDepth() const { return vm_FrostDepth; }
@@ -152,7 +151,6 @@ namespace Monica
       double vm_HydraulicConductivityRedux{0.0};
       double pt_TimeStep{0.0};
 
-      const SensitivityAnalysisParameters saPs;
       double pm_HydraulicConductivityRedux{0.0};
   };
 
@@ -307,7 +305,6 @@ namespace Monica
     const UserSoilMoistureParameters& smPs;
     const UserEnvironmentParameters& envPs;
     const UserCropParameters& cropPs;
-    const SensitivityAnalysisParameters& saPs;
     const int vm_NumberOfLayers;
     const int vs_NumberOfLayers;
 

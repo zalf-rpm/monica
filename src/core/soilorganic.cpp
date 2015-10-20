@@ -54,13 +54,11 @@ using namespace Soil;
 SoilOrganic::SoilOrganic(SoilColumn& sc,
                          const GeneralParameters& gps,
                          const SiteParameters& stps,
-                         const UserSoilOrganicParameters& userParams,
-                         const SensitivityAnalysisParameters& saParams)
+                         const UserSoilOrganicParameters& userParams)
   : soilColumn(sc),
     generalParams(gps),
     siteParams(stps),
     organicPs(userParams),
-    saPs(saParams),
     vs_NumberOfLayers(sc.vs_NumberOfLayers()),
     vs_NumberOfOrganicLayers(sc.vs_NumberOfOrganicLayers()),
     vo_ActDenitrificationRate(sc.vs_NumberOfOrganicLayers()),
@@ -194,47 +192,6 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters* params,
   double vo_CN_Ratio_AOM_Fast = params->vo_CN_Ratio_AOM_Fast;
 
   double po_AOM_FastMaxC_to_N = organicPs.po_AOM_FastMaxC_to_N;
-
-  // here follows some code that is only neccessary for sensitivity analysis
-  // I (xenia) did not found another way for manipulating the organic matter
-  // parameters than in overwriting them at this point; sorry for this hack!
-  // pc_ResidueNRatio
-  OrganicMatterParameters sa_om_params = saPs.organic_matter_parameters;
-
-  if (sa_om_params.vo_AOM_DryMatterContent != UNDEFINED) {
-    vo_AOM_DryMatterContent = sa_om_params.vo_AOM_DryMatterContent;
-  }
-
-  if (sa_om_params.vo_AOM_NH4Content != UNDEFINED) {
-    vo_AOM_NH4Content = sa_om_params.vo_AOM_NH4Content;
-  }
-
-  if (sa_om_params.vo_AOM_NO3Content != UNDEFINED) {
-    vo_AOM_NO3Content = sa_om_params.vo_AOM_NO3Content;
-  }
-
-  if (sa_om_params.vo_AOM_CarbamidContent != UNDEFINED) {
-    vo_AOM_CarbamidContent = sa_om_params.vo_AOM_CarbamidContent;
-  }
-
-  if (sa_om_params.vo_PartAOM_to_AOM_Slow != UNDEFINED) {
-    vo_PartAOM_to_AOM_Slow = sa_om_params.vo_PartAOM_to_AOM_Slow;
-  }
-
-  if (sa_om_params.vo_PartAOM_to_AOM_Fast != UNDEFINED) {
-    vo_PartAOM_to_AOM_Fast = sa_om_params.vo_PartAOM_to_AOM_Fast;
-  }
-
-  if (sa_om_params.vo_CN_Ratio_AOM_Slow != UNDEFINED) {
-    vo_CN_Ratio_AOM_Slow = sa_om_params.vo_CN_Ratio_AOM_Slow;
-  }
-
-  if (sa_om_params.vo_CN_Ratio_AOM_Fast != UNDEFINED) {
-    vo_CN_Ratio_AOM_Fast = sa_om_params.vo_CN_Ratio_AOM_Fast;
-  }
-  // end of sensitivity analysis code
-
-
 
   //urea
   if(soilColumn.vs_NumberOfOrganicLayers() > 0) {
@@ -501,8 +458,8 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
                                    (8.314 * (soilColumn[i_Layer].get_Vs_SoilTemperature() + 273.15)));
 
     vo_Hydrolysis_pH_Effect[i_Layer] = exp(-0.064 *
-                                       ((soilColumn[i_Layer].vs_SoilpH - 6.5) *
-                                       (soilColumn[i_Layer].vs_SoilpH - 6.5)));
+                                       ((soilColumn[i_Layer].vs_SoilpH() - 6.5) *
+                                       (soilColumn[i_Layer].vs_SoilpH() - 6.5)));
 
     // kmol urea kg soil-1 s-1
     vo_HydrolysisRate[i_Layer] = vo_HydrolysisRateMax[i_Layer] *
@@ -536,7 +493,7 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
 
     if (i_Layer == 0) {
 
-      vo_H3OIonConcentration = pow(10.0, (-soilColumn[0].vs_SoilpH)); // kmol m-3
+      vo_H3OIonConcentration = pow(10.0, (-soilColumn[0].vs_SoilpH())); // kmol m-3
       vo_NH3aq_EquilibriumConst = pow(10.0, ((-2728.3 /
                                   (soilColumn[0].get_Vs_SoilTemperature() + 273.15)) - 0.094219)); // K2 in Sadeghi's program
 
@@ -716,8 +673,8 @@ void SoilOrganic::fo_MIT() {
 
   // Calculation of decay rate coefficients
 
-  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+  {
     double tod = fo_TempOnDecompostion(soilColumn[i_Layer].get_Vs_SoilTemperature());
     double mod = fo_MoistOnDecompostion(soilColumn[i_Layer].vs_SoilMoisture_pF());
 
@@ -727,7 +684,7 @@ void SoilOrganic::fo_MIT() {
 		vo_SOM_FastDecRate[i_Layer] = vo_SOM_FastDecCoeff[i_Layer] * soilColumn[i_Layer].vs_SOM_Fast;
 
 		vo_SMB_SlowMaintRateCoeff[i_Layer] = po_SMB_SlowMaintRateStandard
-			* fo_ClayOnDecompostion(soilColumn[i_Layer].vs_SoilClayContent,
+      * fo_ClayOnDecompostion(soilColumn[i_Layer].vs_SoilClayContent(),
 			po_LimitClayEffect) * tod * mod;
 
 		vo_SMB_FastMaintRateCoeff[i_Layer] = po_SMB_FastMaintRateStandard * tod * mod;
@@ -742,34 +699,35 @@ void SoilOrganic::fo_MIT() {
 		vo_SMB_SlowDecRate[i_Layer] = vo_SMB_SlowDeathRate[i_Layer] + vo_SMB_SlowMaintRate[i_Layer];
 		vo_SMB_FastDecRate[i_Layer] = vo_SMB_FastDeathRate[i_Layer] + vo_SMB_FastMaintRate[i_Layer];
 
-    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool)
+    {
       AOM_Pool.vo_AOM_SlowDecCoeff = AOM_Pool.vo_AOM_SlowDecCoeffStandard * tod * mod;
       AOM_Pool.vo_AOM_FastDecCoeff = AOM_Pool.vo_AOM_FastDecCoeffStandard * tod * mod;
     }
   } // for
 
   // Calculation of pool changes by decomposition
-  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
-
-    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+  {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool)
+    {
       // Eq.6-5 and 6-6 in the DAISY manual
       AOM_Pool.vo_AOM_SlowDelta = -(AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow);
 
-      if(-AOM_Pool.vo_AOM_SlowDelta > AOM_Pool.vo_AOM_Slow) {
+      if(-AOM_Pool.vo_AOM_SlowDelta > AOM_Pool.vo_AOM_Slow)
         AOM_Pool.vo_AOM_SlowDelta = (-AOM_Pool.vo_AOM_Slow);
-      }
 
       AOM_Pool.vo_AOM_FastDelta = -(AOM_Pool.vo_AOM_FastDecCoeff * AOM_Pool.vo_AOM_Fast);
 
-      if(-AOM_Pool.vo_AOM_FastDelta > AOM_Pool.vo_AOM_Fast) {
+      if(-AOM_Pool.vo_AOM_FastDelta > AOM_Pool.vo_AOM_Fast)
         AOM_Pool.vo_AOM_FastDelta = (-AOM_Pool.vo_AOM_Fast);
-      }
     }
 
     // Eq.6-7 in the DAISY manual
     vo_AOM_SlowDecRateSum[i_Layer] = 0.0;
 
-    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool)
+    {
       AOM_Pool.vo_AOM_SlowDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow 
 				   * AOM_Pool.vo_AOM_SlowDecCoeff * AOM_Pool.vo_AOM_Slow;
 
@@ -788,8 +746,9 @@ void SoilOrganic::fo_MIT() {
   // Eq.6-8 in the DAISY manual
     vo_AOM_FastDecRateSum[i_Layer] = 0.0;
 
-    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool) {
-			AOM_Pool.vo_AOM_FastDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow
+    for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool)
+    {
+      AOM_Pool.vo_AOM_FastDecRate_to_SMB_Slow = AOM_Pool.vo_PartAOM_Slow_to_SMB_Slow
 				    * AOM_Pool.vo_AOM_FastDecCoeff * AOM_Pool.vo_AOM_Fast;
 			
 			AOM_Pool.vo_AOM_FastDecRate_to_SMB_Fast = AOM_Pool.vo_PartAOM_Slow_to_SMB_Fast
@@ -832,14 +791,14 @@ void SoilOrganic::fo_MIT() {
   vo_DecomposerRespiration = 0.0;
 
   // Calculation of CO2 evolution
-  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+  {
 		vo_SMB_SlowCO2EvolutionRate[i_Layer] = ((1.0 - po_SOM_SlowUtilizationEfficiency)
 			   * vo_SOM_SlowDecRate[i_Layer])
 			   + ((1.0 - po_SOM_FastUtilizationEfficiency) * (1.0 - po_PartSOM_Fast_to_SOM_Slow)
 			   * vo_SOM_FastDecRate[i_Layer])
 			   + ((1.0 - po_AOM_SlowUtilizationEfficiency) * vo_AOM_SlowDecRateSum[i_Layer]) 
 			   + vo_SMB_SlowMaintRate[i_Layer];
-						
 
 		vo_SMB_FastCO2EvolutionRate[i_Layer] = (1.0 - po_SMB_UtilizationEfficiency)
 			   * (((1.0 - po_PartSMB_Slow_to_SOM_Fast) * vo_SMB_SlowDeathRate[i_Layer]) 
@@ -1057,13 +1016,22 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
 
       vo_AOM_TAN_Content = it_AOM_Pool->vo_AOM_NH4Content * 1000.0 * it_AOM_Pool->vo_AOM_DryMatterContent;
 
-      vo_MaxVolatilisation = 0.0495 * pow(1.1020, vo_SoilWet) * pow(1.0223, vw_MeanAirTemperature) * pow(1.0417,
-										     vw_WindSpeed) * pow(1.1080, it_AOM_Pool->vo_AOM_DryMatterContent) * pow(0.8280, vo_AOM_TAN_Content) * pow(
-										         11.300, double(it_AOM_Pool->incorporation));
+      vo_MaxVolatilisation = 0.0495*
+                             pow(1.1020, vo_SoilWet)*
+                             pow(1.0223, vw_MeanAirTemperature)*
+                             pow(1.0417, vw_WindSpeed)*
+                             pow(1.1080, it_AOM_Pool->vo_AOM_DryMatterContent)*
+                             pow(0.8280, vo_AOM_TAN_Content)*
+                             pow(11.300, double(it_AOM_Pool->incorporation));
 
-      vo_VolatilisationHalfLife = 1.0380 * pow(1.1020, vo_SoilWet) * pow(0.9600, vw_MeanAirTemperature) * pow(0.9500,
-											vw_WindSpeed) * pow(1.1750, it_AOM_Pool->vo_AOM_DryMatterContent) * pow(1.1060, vo_AOM_TAN_Content) * pow(
-                                                1.0000, double(it_AOM_Pool->incorporation)) * (18869.3 * exp(-soilColumn[0].vs_SoilpH / 0.63321) + 0.70165);
+      vo_VolatilisationHalfLife = 1.0380*
+                                  pow(1.1020, vo_SoilWet)*
+                                  pow(0.9600, vw_MeanAirTemperature)*
+                                  pow(0.9500, vw_WindSpeed)*
+                                  pow(1.1750, it_AOM_Pool->vo_AOM_DryMatterContent)*
+                                  pow(1.1060, vo_AOM_TAN_Content)*
+                                  pow(1.0000, double(it_AOM_Pool->incorporation))*
+                                  (18869.3*exp(-soilColumn[0].vs_SoilpH()/0.63321) + 0.70165);
 
       // ******************************************************************************************
       // *** Based on He et al. (1999): Soil Sci. 164 (10), 750-758. The curves on p. 755 were  ***
@@ -1132,9 +1100,9 @@ void SoilOrganic::fo_Nitrification() {
     vo_AmmoniaOxidationRate[i_Layer] = vo_AmmoniaOxidationRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SoilNH4;
 
     vo_NitriteOxidationRateCoeff[i_Layer] = po_NitriteOxidationRateCoeffStandard
-        * fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
-        * fo_MoistOnNitrification(soilColumn[i_Layer].vs_SoilMoisture_pF())
-        * fo_NH3onNitriteOxidation(soilColumn[i_Layer].vs_SoilNH4,soilColumn[i_Layer].vs_SoilpH);
+                                            *fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
+                                            *fo_MoistOnNitrification(soilColumn[i_Layer].vs_SoilMoisture_pF())
+                                            *fo_NH3onNitriteOxidation(soilColumn[i_Layer].vs_SoilNH4,soilColumn[i_Layer].vs_SoilpH());
 
     vo_NitriteOxidationRate[i_Layer] = vo_NitriteOxidationRateCoeff[i_Layer] * soilColumn[i_Layer].vs_SoilNO2;
 
@@ -1191,7 +1159,7 @@ void SoilOrganic::fo_Denitrification() {
 
 		vo_ActDenitrificationRate[i_Layer] = min(vo_PotDenitrificationRate[i_Layer]
 				 * fo_MoistOnDenitrification(soilColumn[i_Layer].get_Vs_SoilMoisture_m3(),
-				 soilColumn[i_Layer].get_Saturation()), po_TransportRateCoeff
+         soilColumn[i_Layer].vs_Saturation()), po_TransportRateCoeff
 				 * soilColumn[i_Layer].vs_SoilNO3);
   }
 
@@ -1231,9 +1199,9 @@ void SoilOrganic::fo_N2OProduction() {
 
 	  // pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being available at higer pH values
 			vo_N2OProduction[i_Layer] = soilColumn[i_Layer].vs_SoilNO2
-					 * fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
-					 * po_N2OProductionRate * (1.0 / (1.0 +
-					 (pow(2.0,soilColumn[i_Layer].vs_SoilpH) - OrganicConstants::po_pKaHNO2)));
+                                  * fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
+                                  * po_N2OProductionRate
+                                  * (1.0 / (1.0 + (pow(2.0,soilColumn[i_Layer].vs_SoilpH()) - OrganicConstants::po_pKaHNO2)));
 
 			vo_N2O_Produced += vo_N2OProduction[i_Layer];
   }

@@ -70,7 +70,6 @@ namespace Monica
                const CropParameters& cropParams,
                const SiteParameters& siteParams,
                const UserCropParameters& cropPs,
-               const SensitivityAnalysisParameters& saPs,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
     void applyCutting();
@@ -384,14 +383,12 @@ namespace Monica
     bool isAnthesisDay(int old_dev_stage, int new_dev_stage);
     bool isMaturityDay(int old_dev_stage, int new_dev_stage);
 
-
     // members
     SoilColumn& soilColumn;
     GeneralParameters generalParams;
     //const CropParameters& cropParams;
     const CropParameters* perennialCropParams{nullptr};
     const UserCropParameters& cropPs;
-    const SensitivityAnalysisParameters& saPs;
 
     //! old N
     int vs_NumberOfLayers;

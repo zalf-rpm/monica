@@ -66,8 +66,10 @@ namespace Monica
 	class MonicaModel
 	{
   public:
-    MonicaModel(const GeneralParameters& general, const SiteParameters& site,
-                const Soil::SoilPMs& soil, const CentralParameterProvider& cpp);
+    MonicaModel(const GeneralParameters& general,
+                const SiteParameters& site,
+                const Soil::SoilPMs& soil,
+                const CentralParameterProvider& cpp);
 
     ~MonicaModel();
 
@@ -240,7 +242,7 @@ namespace Monica
      * @param globrad
      * @return radiation
      */
-    double netRadiation(double globrad) { return globrad * (1 - _generalParams.albedo); }
+    double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
 
     int daysWithCrop() const {return p_daysWithCrop; }
     double getAccumulatedNStress() const { return p_accuNStress; }
@@ -255,7 +257,6 @@ namespace Monica
     const UserSoilMoistureParameters& soilmoistureParameters() const { return _smPs; }
     const UserEnvironmentParameters& environmentParameters() const { return _envPs; }
     const UserCropParameters& cropParameters() const { return _cropPs; }
-    const SensitivityAnalysisParameters& sensitivityAnalysisParameters() const { return _saPs; }
     const UserSoilTemperatureParameters& soilTemperatureParameters() const { return _soilTempPs; }
     const UserSoilTransportParameters& soilTransportParameters() const { return _soilTransPs; }
     const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
@@ -266,7 +267,6 @@ namespace Monica
     const UserSoilMoistureParameters _smPs;
     const UserEnvironmentParameters _envPs;
     const UserCropParameters _cropPs;
-    const SensitivityAnalysisParameters _saPs;
     const UserSoilTemperatureParameters& _soilTempPs;
     const UserSoilTransportParameters& _soilTransPs;
     const UserSoilOrganicParameters& _soilOrganicPs;

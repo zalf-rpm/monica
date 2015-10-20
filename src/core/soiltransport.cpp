@@ -91,7 +91,7 @@ void SoilTransport::calculateSoilTransportStep() {
   double vq_TimeStepFactor = 1.0; // [t t-1]
 
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-    vq_FieldCapacity[i_Layer] = soilColumn[i_Layer].get_FieldCapacity();
+    vq_FieldCapacity[i_Layer] = soilColumn[i_Layer].vs_FieldCapacity();
     vq_SoilMoisture[i_Layer] = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
     vq_SoilNO3[i_Layer] = soilColumn[i_Layer].vs_SoilNO3;
 

@@ -72,6 +72,7 @@ json11::Json createSoilResultsMessage(const MonicaModel& monica)
 {
 	//    const SoilTemperature& mst = monica.soilTemperature();
 	const SoilMoisture& msm = monica.soilMoisture();
+  auto mcg = ((MonicaModel&)monica).cropGrowth();
 	//    const SoilOrganic& mso = monica.soilOrganic();
 	//    const SoilColumn& msc = monica.soilColumn();
 	//    const SoilTransport& msq = monica.soilTransport();
@@ -84,7 +85,8 @@ json11::Json createSoilResultsMessage(const MonicaModel& monica)
 	auto soilMsg = json11::Json::object{
 	{"soilmoistures", sms},
 	{to_string(avg30_60cmSoilMoisture), monica.avgSoilMoisture(3,6)},
-	{to_string(leachingNAtBoundary), monica.nLeaching()} };
+  {to_string(leachingNAtBoundary), monica.nLeaching()},
+  {"rootingDepth", mcg ? mcg->get_RootingDepth() : -1}};
 
 	//    cout << "created soilmoisture msg: " << Json(soilMsg).dump() << endl;
 	return soilMsg;

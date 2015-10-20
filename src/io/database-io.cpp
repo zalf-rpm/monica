@@ -661,7 +661,7 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 				else if (name == "albedo")
 					user_env.p_Albedo = stof(row[1]);
 				else if (name == "athmospheric_co2")
-					user_env.p_AthmosphericCO2 = stof(row[1]);
+					user_env.p_AtmosphericCO2 = stof(row[1]);
 				else if (name == "wind_speed_height")
 					user_env.p_WindSpeedHeight = stof(row[1]);
 				else if (name == "use_secondary_yields")

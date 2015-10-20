@@ -75,7 +75,6 @@ MonicaModel::MonicaModel(const GeneralParameters& general,
     _smPs(cpp.userSoilMoistureParameters),
     _envPs(cpp.userEnvironmentParameters),
     _cropPs(cpp.userCropParameters),
-    _saPs(cpp.sensitivityAnalysisParameters),
     _soilTempPs(cpp.userSoilTemperatureParameters),
     _soilTransPs(cpp.userSoilTransportParameters),
     _soilOrganicPs(cpp.userSoilOrganicParameters),
@@ -84,15 +83,13 @@ MonicaModel::MonicaModel(const GeneralParameters& general,
     _soilColumn(_generalParams,
                 soil,
                 _smPs.pm_CriticalMoistureDepth,
-                _initPs,
-                _saPs),
+                _initPs),
     _soilTemperature(*this),
     _soilMoisture(*this),
     _soilOrganic(_soilColumn,
                  _generalParams,
                  _siteParams,
-                 _soilOrganicPs,
-                 _saPs),
+                 _soilOrganicPs),
     _soilTransport(_soilColumn,
                    _siteParams,
                    _soilTransPs,
@@ -126,7 +123,6 @@ void MonicaModel::seedCrop(CropPtr crop)
                                         *cps,
                                         _siteParams,
                                         _cropPs,
-                                        _saPs,
                                         crop->getEva2TypeUsage());
 
     if (_currentCrop->perennialCropParameters())
@@ -440,19 +436,21 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParameters* params,
   addDailySumFertiliser(amount * params->vo_NConcentration);
 }
 
-double MonicaModel::
-    applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters partition,
-        NMinCropParameters cps)
+double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters partition,
+NMinCropParameters cps)
 {
   //AddFertiliserAmountsCallback x(_sumFertiliser, _dailySumFertiliser);
 
-  const NMinUserParameters& ups = _generalParams.nMinUserParams;
+  const NMinUserParameters& ups = _envPs.p_NMinUserParams;
 
-  double fert_amount = _soilColumn.applyMineralFertiliserViaNMinMethod
-      (partition, cps.samplingDepth, cps.nTarget, cps.nTarget30,
-       ups.min, ups.max, ups.delayInDays);
+  double fert_amount = _soilColumn.applyMineralFertiliserViaNMinMethod(partition,
+                                                                       cps.samplingDepth,
+                                                                       cps.nTarget,
+                                                                       cps.nTarget30,
+                                                                       ups.min,
+                                                                       ups.max,
+                                                                       ups.delayInDays);
   return fert_amount;
-
   //ref(_sumFertiliser) += _1);
 }
 
@@ -460,7 +458,7 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/)
 {
   //if the production process has still some defined manual irrigation dates
-  if(!_generalParams.useAutomaticIrrigation)
+  if(!_envPs.p_UseAutomaticIrrigation)
   {
     _soilOrganic.addIrrigationWater(amount);
     _soilColumn.applyIrrigation(amount, nitrateConcentration);
@@ -523,10 +521,7 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 //  climate_file.close();
 
 
-  vw_AtmosphericCO2Concentration = _generalParams.atmosphericCO2 == -1
-                                   ? _envPs.p_AthmosphericCO2
-                                   : _generalParams.atmosphericCO2;
-
+  vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
 
   // test if simulated gw or measured values should be used
   double gw_value = getGroundwaterInformation(date);
@@ -577,7 +572,7 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
   _soilMoisture.step(vs_GroundwaterDepth,
                      precip, tmax, tmin,
                      (relhumid / 100.0), tavg, wind,
-                     _generalParams.windSpeedHeight,
+                     _envPs.p_WindSpeedHeight,
 		 globrad, julday);
 
   _soilOrganic.step(tavg, precip, wind);

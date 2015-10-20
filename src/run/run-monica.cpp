@@ -61,13 +61,13 @@ Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
 	centralParameterProvider(cpp)
 {
 	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-	windSpeedHeight = user_env.p_WindSpeedHeight;
-	atmosphericCO2 = user_env.p_AthmosphericCO2;
-	albedo = user_env.p_Albedo;
+//	windSpeedHeight = user_env.p_WindSpeedHeight;
+//	atmosphericCO2 = user_env.p_AthmosphericCO2;
+//	albedo = user_env.p_Albedo;
 
 	noOfLayers = user_env.p_NumberOfLayers;
 	layerThickness = user_env.p_LayerThickness;
-	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
+//	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
 	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
 	useSecondaryYields = user_env.p_UseSecondaryYields;
 }
@@ -78,13 +78,13 @@ Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp)
 	centralParameterProvider(cpp)
 {
 	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-	windSpeedHeight = user_env.p_WindSpeedHeight;
-	atmosphericCO2 = user_env.p_AthmosphericCO2;
-	albedo = user_env.p_Albedo;
+//	windSpeedHeight = user_env.p_WindSpeedHeight;
+//	atmosphericCO2 = user_env.p_AthmosphericCO2;
+//	albedo = user_env.p_Albedo;
 
 	noOfLayers = user_env.p_NumberOfLayers;
 	layerThickness = user_env.p_LayerThickness;
-	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
+//	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
 	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
 	useSecondaryYields = user_env.p_UseSecondaryYields;
 }
@@ -224,13 +224,8 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
  * @brief Static method for starting calculation
  * @param env
  */
-#ifndef	MONICA_GUI
 Result Monica::runMonica(Env env)
-#else
-Result Monica::runMonica(Env env, Monica::Configuration* cfg)
-#endif
 {
-  
   Result res;
 	res.customId = env.customId;
 //  res.gp = env.gridPoint;
@@ -272,7 +267,10 @@ Result Monica::runMonica(Env env, Monica::Configuration* cfg)
 
 	debug() << "-----" << endl;
 
-  MonicaModel monica(env.general, env.site, *env.soilParams, env.centralParameterProvider);
+  MonicaModel monica(env.general,
+                     env.site,
+                     *env.soilParams,
+                     env.centralParameterProvider);
 
 	if (write_output_files)
 	{
@@ -1430,7 +1428,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 	fout << fixed << setprecision(1) << "\t" << msm.get_FrostDepth();
 	fout << fixed << setprecision(1) << "\t" << msm.get_ThawDepth();
 	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
-		fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint();
+    fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer) - msa[i_Layer].vs_PermanentWiltingPoint();
 	}
 	fout << fixed << setprecision(1) << "\t" << mst.get_SoilSurfaceTemperature();
 
@@ -1557,19 +1555,19 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 
 	double PAW0_200 = 0.0;
 	for (int i_Layer = 0; i_Layer < 20; i_Layer++) {
-		PAW0_200 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint());
+    PAW0_200 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].vs_PermanentWiltingPoint());
 	}
 	gout << fixed << setprecision(1) << "\t" << (PAW0_200 * 0.1 * 1000.0); // [mm]
 
 	double PAW0_130 = 0.0;
 	for (int i_Layer = 0; i_Layer < 13; i_Layer++) {
-		PAW0_130 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint());
+    PAW0_130 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].vs_PermanentWiltingPoint());
 	}
 	gout << fixed << setprecision(1) << "\t" << (PAW0_130 * 0.1 * 1000.0); // [mm]
 
 	double PAW0_150 = 0.0;
 	for (int i_Layer = 0; i_Layer < 15; i_Layer++) {
-		PAW0_150 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].get_PermanentWiltingPoint());
+    PAW0_150 += (msm.get_SoilMoisture(i_Layer) - msa[i_Layer].vs_PermanentWiltingPoint());
 	}
 	gout << fixed << setprecision(1) << "\t" << (PAW0_150 * 0.1 * 1000.0); // [mm]
 

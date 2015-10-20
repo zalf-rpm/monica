@@ -372,13 +372,11 @@ SnowComponent::calcSnowDepth(double snow_water_equivalent)
 
 FrostComponent::FrostComponent(SoilColumn& sc,
                                double pm_HydraulicConductivityRedux,
-                               double p_timeStep,
-                               const SensitivityAnalysisParameters& saPs)
+                               double p_timeStep)
   : soilColumn(sc),
     vm_LambdaRedux(sc.vs_NumberOfLayers() + 1, 1.0),
     vm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux),
     pt_TimeStep(p_timeStep),
-    saPs(saPs),
     pm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux)
 {}
 
@@ -423,12 +421,6 @@ void FrostComponent::calcSoilFrost(double mean_air_temperature, double snow_dept
 double
 FrostComponent::getMeanBulkDensity()
 {
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating mean bulk density
-  if (saPs.p_MeanBulkDensity != UNDEFINED) {
-    return saPs.p_MeanBulkDensity;
-  }
-
   auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double bulk_density_accu = 0.0;
   for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
@@ -444,16 +436,10 @@ FrostComponent::getMeanBulkDensity()
 double
 FrostComponent::getMeanFieldCapacity()
 {
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating mean bulk density
-  if (saPs.p_MeanFieldCapacity != UNDEFINED) {
-    return saPs.p_MeanFieldCapacity;
-  }
-
   auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double mean_field_capacity_accu = 0.0;
   for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    mean_field_capacity_accu += soilColumn[i_Layer].get_FieldCapacity();
+    mean_field_capacity_accu += soilColumn[i_Layer].vs_FieldCapacity();
   }
   return (mean_field_capacity_accu / double(vs_number_of_layers));
 }
@@ -487,12 +473,6 @@ double FrostComponent::calcSii(double mean_field_capacity)
 double
 FrostComponent::calcHeatConductivityFrozen(double mean_bulk_density, double sii)
 {
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating heat conductivity
-  if (saPs.p_HeatConductivityFrozen != UNDEFINED) {
-    return saPs.p_HeatConductivityFrozen;
-  }
-
   double cond_frozen = ((3.0 * mean_bulk_density - 1.7) * 0.001) / (1.0
       + (11.5 - 5.0 * mean_bulk_density) * exp((-50.0) * pow((sii / mean_bulk_density), 1.5))) * // [cal cm-1 K-1 s-1]
       86400.0 * double(pt_TimeStep) * // [cal cm-1 K-1 d-1]
@@ -513,12 +493,6 @@ FrostComponent::calcHeatConductivityFrozen(double mean_bulk_density, double sii)
 double
 FrostComponent::calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity)
 {
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating heat conductivity
-  if (saPs.p_HeatConductivityUnfrozen != UNDEFINED) {
-    return saPs.p_HeatConductivityUnfrozen;
-  }
-
   double cond_unfrozen = ((3.0 * mean_bulk_density - 1.7) * 0.001) / (1.0 + (11.5 - 5.0
         * mean_bulk_density) * exp((-50.0) * pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5)))
         * double(pt_TimeStep) * // [cal cm-1 K-1 s-1]
@@ -597,14 +571,6 @@ FrostComponent::calcFrostDepth(double mean_field_capacity, double heat_conductiv
 
   // Ratio of energy sum from subsoil to vm_LatentHeat
   double latent_heat_transfer = 0.3 * vm_FrostDays / latent_heat;
-
-  // in case of sensitivity analysis, this parameter would not be undefined
-  // so return fix value instead of calculating heat conductivity
-  if (saPs.p_LatentHeatTransfer != UNDEFINED) {
-    latent_heat_transfer = saPs.p_LatentHeatTransfer;
-  }
-
-
 
   // Calculate temperature under snowpack
   /** @todo Claas: At a later stage temperature under snow to pass on to soil
@@ -718,7 +684,6 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
     smPs(mm.soilmoistureParameters()),
     envPs(mm.environmentParameters()),
     cropPs(mm.cropParameters()),
-    saPs(mm.sensitivityAnalysisParameters()),
     vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1),
     vs_NumberOfLayers(soilColumn.vs_NumberOfLayers()), //extern
     vm_ActualEvapotranspiration(0.0),
@@ -771,7 +736,7 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
     vw_WindSpeedHeight(0),
     vm_XSACriticalSoilMoisture(0),
     snowComponent(soilColumn, smPs),
-    frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep, saPs)
+    frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)
 {
   debug() << "Constructor: SoilMoisture" << endl;
 
@@ -826,27 +791,28 @@ MonicaModel::~MonicaModel()
  */
 void SoilMoisture::step(double vs_GroundwaterDepth, double vw_Precipitation, double vw_MaxAirTemperature,
     double vw_MinAirTemperature, double vw_RelativeHumidity, double vw_MeanAirTemperature, double vw_WindSpeed,
-    double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay) {
+    double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay)
+{
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  {
     // initialization with moisture values stored in the layer
     vm_SoilMoisture[i_Layer] = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
     vm_WaterFlux[i_Layer] = 0.0;
-    vm_FieldCapacity[i_Layer] = soilColumn[i_Layer].get_FieldCapacity();
-    vm_SoilPoreVolume[i_Layer] = soilColumn[i_Layer].get_Saturation();
-    vm_PermanentWiltingPoint[i_Layer] = soilColumn[i_Layer].get_PermanentWiltingPoint();
+    vm_FieldCapacity[i_Layer] = soilColumn[i_Layer].vs_FieldCapacity();
+    vm_SoilPoreVolume[i_Layer] = soilColumn[i_Layer].vs_Saturation();
+    vm_PermanentWiltingPoint[i_Layer] = soilColumn[i_Layer].vs_PermanentWiltingPoint();
     vm_LayerThickness[i_Layer] = soilColumn[i_Layer].vs_LayerThickness;
-    vm_Lambda[i_Layer] = soilColumn[i_Layer].vs_Lambda;
+    vm_Lambda[i_Layer] = soilColumn[i_Layer].vs_Lambda();
   }
 
 
   vm_SoilMoisture[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].get_Vs_SoilMoisture_m3();
   vm_WaterFlux[vm_NumberOfLayers - 1] = 0.0;
-  vm_FieldCapacity[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].get_FieldCapacity();
-  vm_SoilPoreVolume[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].get_Saturation();
+  vm_FieldCapacity[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].vs_FieldCapacity();
+  vm_SoilPoreVolume[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].vs_Saturation();
   vm_LayerThickness[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].vs_LayerThickness;
-  vm_Lambda[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].vs_Lambda;
+  vm_Lambda[vm_NumberOfLayers - 1] = soilColumn[vm_NumberOfLayers - 2].vs_Lambda();
 
   vm_SurfaceWaterStorage = soilColumn.vs_SurfaceWaterStorage;
 
@@ -923,19 +889,16 @@ void SoilMoisture::step(double vs_GroundwaterDepth, double vw_Precipitation, dou
 
   fm_CapillaryRise();
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  {
     soilColumn[i_Layer].set_Vs_SoilMoisture_m3(vm_SoilMoisture[i_Layer]);
     soilColumn[i_Layer].vs_SoilWaterFlux = vm_WaterFlux[i_Layer];
-    soilColumn[i_Layer].calc_vs_SoilMoisture_pF();
+    //commented out because old calc_vs_SoilMoisture_pF algorithm is calcualted every time vs_SoilMoisture_pF is accessed
+//    soilColumn[i_Layer].calc_vs_SoilMoisture_pF();
   }
   soilColumn.vs_SurfaceWaterStorage = vm_SurfaceWaterStorage;
   soilColumn.vs_FluxAtLowerBoundary = vm_FluxAtLowerBoundary;
-
 }
-
-
-
-
 
 /*!
  * @brief Calculation of infiltration
@@ -975,12 +938,6 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate, double vc_Percen
   // Calculating potential infiltration in [mm d-1]
   vm_SoilMoistureDeficit = (vm_SoilPoreVolume[0] - vm_SoilMoisture[0]) / vm_SoilPoreVolume[0];
   vm_ReducedHydraulicConductivity = vm_SaturatedHydraulicConductivity[0] * vm_HydraulicConductivityRedux;
-
-  // in case of sensitivity analysis, this parameter would not be undefined
-  if (saPs.p_ReducedHydraulicConductivity != UNDEFINED) {
-    vm_ReducedHydraulicConductivity = saPs.p_ReducedHydraulicConductivity;
-    //cout << "p_ReducedHydraulicConductivity:\t" << vm_ReducedHydraulicConductivity << endl;
-  }
 
   if (vm_ReducedHydraulicConductivity > 0.0) {
 
@@ -1190,7 +1147,7 @@ void SoilMoisture::fm_CapillaryRise() {
     int vm_StartLayer = min(vm_GroundwaterTable,(vs_NumberOfLayers - 1));
     for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--) {
 
-      std::string vs_SoilTexture = soilColumn[i_Layer].vs_SoilTexture;
+      std::string vs_SoilTexture = soilColumn[i_Layer].vs_SoilTexture();
       pm_CapillaryRiseRate = smPs.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
       if(pm_CapillaryRiseRate < vm_CapillaryRiseRate){
@@ -1824,8 +1781,8 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
   double vm_EReductionFactor;
   int vm_EvaporationReductionMethod = 1;
   double vm_SoilMoisture_m3 = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
-  double vm_PWP = soilColumn[i_Layer].get_PermanentWiltingPoint();
-  double vm_FK = soilColumn[i_Layer].get_FieldCapacity();
+  double vm_PWP = soilColumn[i_Layer].vs_PermanentWiltingPoint();
+  double vm_FK = soilColumn[i_Layer].vs_FieldCapacity();
   double vm_RelativeEvaporableWater;
   double vm_CriticalSoilMoisture;
   double vm_XSA;
@@ -1849,7 +1806,7 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
       } else {
         vm_Reducer = vm_XSACriticalSoilMoisture / 2.5 * vm_ReferenceEvapotranspiration;
       }
-      vm_CriticalSoilMoisture = soilColumn[i_Layer].get_FieldCapacity() * vm_Reducer;
+      vm_CriticalSoilMoisture = soilColumn[i_Layer].vs_FieldCapacity() * vm_Reducer;
     }
 
     // Calculation of an evaporation-reducing factor in relation to soil water content
@@ -1941,8 +1898,8 @@ double SoilMoisture::meanWaterContent(double depth_m) const
   {
     count++;
     double smm3 = soilColumn[i].get_Vs_SoilMoisture_m3();
-    double fc = soilColumn[i].get_FieldCapacity();
-    double pwp = soilColumn[i].get_PermanentWiltingPoint();
+    double fc = soilColumn[i].vs_FieldCapacity();
+    double pwp = soilColumn[i].vs_PermanentWiltingPoint();
     sum += smm3 / (fc - pwp); //[%nFK]
     lsum += soilColumn[i].vs_LayerThickness;
     if (lsum >= depth_m)
@@ -1966,8 +1923,8 @@ double SoilMoisture::meanWaterContent(int layer, int number_of_layers) const
   {
     count++;
     double smm3 = soilColumn[i].get_Vs_SoilMoisture_m3();
-    double fc = soilColumn[i].get_FieldCapacity();
-    double pwp = soilColumn[i].get_PermanentWiltingPoint();
+    double fc = soilColumn[i].vs_FieldCapacity();
+    double pwp = soilColumn[i].vs_PermanentWiltingPoint();
     sum += smm3 / (fc - pwp); //[%nFK]
   }
 
