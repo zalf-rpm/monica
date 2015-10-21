@@ -66,9 +66,7 @@ namespace Monica
 	class MonicaModel
 	{
   public:
-    MonicaModel(const GeneralParameters& general,
-                const SiteParameters& site,
-                const Soil::SoilPMs& soil,
+    MonicaModel(const Soil::SoilPMs& soil,
                 const CentralParameterProvider& cpp);
 
     ~MonicaModel();
@@ -124,7 +122,7 @@ namespace Monica
 
 		bool useNMinMineralFertilisingMethod() const
 		{
-      return _generalParams.useNMinMineralFertilisingMethod;
+      return _envPs.p_UseNMinMineralFertilisingMethod;
     }
 
     double applyMineralFertiliserViaNMinMethod

@@ -254,7 +254,9 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
         for(auto sp : initMsg["soil"].array_items())
           soil->push_back(sp);
         CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
-        monicaUPtr = make_unique<MonicaModel>(general, site, *soil.get(), cpp);
+        cpp.general = general;
+        cpp.site = site;
+        monicaUPtr = make_unique<MonicaModel>(*soil.get(), cpp);
 
         aggregatedValues.clear();
       }

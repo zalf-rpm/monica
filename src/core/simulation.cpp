@@ -546,7 +546,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   }
 
   if (hermes_config->getAtmosphericCO2()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = hermes_config->getAtmosphericCO2();
+      centralParameterProvider.userEnvironmentParameters.p_AtmosphericCO2 = hermes_config->getAtmosphericCO2();
   }
   if (hermes_config->getLatitude()!=-1.0){
       siteParams.vs_Latitude = hermes_config->getLatitude();
@@ -581,7 +581,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   }
 
   if (hermes_config->getAtmosphericCO2()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_AthmosphericCO2 = hermes_config->getAtmosphericCO2();
+      centralParameterProvider.userEnvironmentParameters.p_AtmosphericCO2 = hermes_config->getAtmosphericCO2();
   }
 
   if (hermes_config->getWindSpeedHeight()!=-1.0){
@@ -707,13 +707,13 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   //build up the monica environment
   Env env(sps, centralParameterProvider);
-  env.general = gps;
+  env.params.general = gps;
   env.pathToOutputDir = outputPath;
   env.setMode(MODE_HERMES);
   env.groundwaterInformation = gw_infos;
 
 
-  env.site = siteParams;
+  env.params.site = siteParams;
 
   env.da = climateData;
   env.cropRotation = ff;
@@ -721,14 +721,14 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
 
   if (hermes_config->useAutomaticIrrigation()) {
-    env.useAutomaticIrrigation = true;
-    env.autoIrrigationParams = hermes_config->getAutomaticIrrigationParameters();
+    env.params.userEnvironmentParameters.p_UseAutomaticIrrigation = true;
+    env.params.userEnvironmentParameters.p_AutoIrrigationParams = hermes_config->getAutomaticIrrigationParameters();
   }
 
   if (hermes_config->useNMinFertiliser()) {
-    env.useNMinMineralFertilisingMethod = true;
-    env.nMinUserParams = hermes_config->getNMinUserParameters();
-    env.nMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
+    env.params.userEnvironmentParameters.p_UseNMinMineralFertilisingMethod = true;
+    env.params.userEnvironmentParameters.p_NMinUserParams = hermes_config->getNMinUserParameters();
+    env.params.userEnvironmentParameters.p_NMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
   }
 
 

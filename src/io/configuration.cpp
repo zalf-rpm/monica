@@ -236,7 +236,7 @@ const Result Configuration::run()
   sp.vs_Soil_CN_Ratio = 10; //TODO: per layer!
   sp.vs_DrainageCoeff = -1; //TODO: per layer!
 
-  cpp.userEnvironmentParameters.p_AthmosphericCO2 = getDbl(siteObj, "atmosphericCO2");
+  cpp.userEnvironmentParameters.p_AtmosphericCO2 = getDbl(siteObj, "atmosphericCO2");
 
 	cpp.userEnvironmentParameters.p_MinGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMin", cpp.userEnvironmentParameters.p_MinGroundwaterDepth);
 	cpp.userEnvironmentParameters.p_MaxGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMax", cpp.userEnvironmentParameters.p_MaxGroundwaterDepth);
@@ -285,11 +285,11 @@ const Result Configuration::run()
   std::cout << "fetched crop data"  << std::endl;
 
 	Env env(layers, cpp);
-  env.general = gp;
+  env.params.general = gp;
   env.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
   env.setMode(MODE_HERMES);
-  env.site = sp;
+  env.params.site = sp;
   env.da = da;
   env.cropRotation = pps;
  

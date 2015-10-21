@@ -43,11 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "db/abstract-db-connections.h"
 #include "../core/monica-typedefs.h"
 
-#ifdef MONICA_GUI
-#include "../gui/workerconfiguration.h"
-#else
 #include "../io/configuration.h"
-#endif
 
 using namespace Monica;
 using namespace std;
@@ -57,37 +53,15 @@ using namespace Soil;
 using namespace json11;
 
 Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
-	: soilParams(sps),
-	centralParameterProvider(cpp)
-{
-	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-//	windSpeedHeight = user_env.p_WindSpeedHeight;
-//	atmosphericCO2 = user_env.p_AthmosphericCO2;
-//	albedo = user_env.p_Albedo;
-
-	noOfLayers = user_env.p_NumberOfLayers;
-	layerThickness = user_env.p_LayerThickness;
-//	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
-	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
-	useSecondaryYields = user_env.p_UseSecondaryYields;
-}
+  : soilParams(sps),
+    params(cpp)
+{}
 
 Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp)
-	: _soilParamsPtr(spsPtr),
-	soilParams(spsPtr.get()),
-	centralParameterProvider(cpp)
-{
-	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-//	windSpeedHeight = user_env.p_WindSpeedHeight;
-//	atmosphericCO2 = user_env.p_AthmosphericCO2;
-//	albedo = user_env.p_Albedo;
-
-	noOfLayers = user_env.p_NumberOfLayers;
-	layerThickness = user_env.p_LayerThickness;
-//	useNMinMineralFertilisingMethod = user_env.p_UseNMinMineralFertilisingMethod;
-	useAutomaticIrrigation = user_env.p_UseAutomaticIrrigation;
-	useSecondaryYields = user_env.p_UseSecondaryYields;
-}
+  : _soilParamsPtr(spsPtr),
+    soilParams(spsPtr.get()),
+    params(cpp)
+{}
 
 string Env::toString() const
 {
@@ -95,7 +69,8 @@ string Env::toString() const
 	s << "soilParams: " << endl;
 	for (const Soil::SoilParameters& sps : *soilParams)
 		s << sps.toString() << endl;
-	s << " noOfLayers: " << noOfLayers << " layerThickness: " << layerThickness
+  s << " noOfLayers: " << params.userEnvironmentParameters.p_NumberOfLayers
+    << " layerThickness: " << params.userEnvironmentParameters.p_LayerThickness
 		<< endl;
 	s << "ClimateData: from: " << da.startDate().toString()
 		<< " to: " << da.endDate().toString() << endl;
@@ -261,16 +236,14 @@ Result Monica::runMonica(Env env)
   }
 
 	if(env.getMode() == MODE_CARBIOCIAL_CLUSTER)
-		write_output_files = env.writeOutputFiles;
+    write_output_files = env.params.writeOutputFiles;
 	
-	env.centralParameterProvider.writeOutputFiles = write_output_files;
+  env.params.writeOutputFiles = write_output_files;
 
 	debug() << "-----" << endl;
 
-  MonicaModel monica(env.general,
-                     env.site,
-                     *env.soilParams,
-                     env.centralParameterProvider);
+  MonicaModel monica(*env.soilParams,
+                     env.params);
 
 	if (write_output_files)
 	{
@@ -306,7 +279,7 @@ Result Monica::runMonica(Env env)
 		initializeFoutHeader(fout);
 		initializeGoutHeader(gout);
 
-		dumpMonicaParametersIntoFile(env.pathToOutputDir, env.centralParameterProvider);
+    dumpMonicaParametersIntoFile(env.pathToOutputDir, env.params);
 	}
 
 	//debug() << "MonicaModel" << endl;
@@ -475,7 +448,7 @@ Result Monica::runMonica(Env env)
 				r.customId = currentPP.customId();
         r.date = currentDate;
 
-        if(!env.useSecondaryYields)
+        if(!env.params.userEnvironmentParameters.p_UseSecondaryYields)
           r.pvResults[secondaryYield] = 0;
         r.pvResults[sumFertiliser] = monica.sumFertiliser();
         r.pvResults[daysWithCrop] = monica.daysWithCrop();

@@ -1,6 +1,7 @@
 /**
 Authors: 
 Jan Vaillant <jan.vaillant@zalf.de>
+Michael Berg <michael.berg@zalf.de>
 
 Maintainers: 
 Currently maintained by the authors.
@@ -35,21 +36,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../run/run-monica.h"
 #include "../io/database-io.h"
 #include "../core/monica-typedefs.h"
-
-#ifdef MONICA_GUI
-#include <QApplication>
-#include "mainwindow.h"
-#else
 #include "../core/monica.h"
-#endif
 
 using namespace std;
 using namespace Monica;
 
 
-
+#include "soil/soil.h"
 int main(int argc, char** argv)
 {
+	auto res = Soil::fcSatPwpFromKA5textureClass("fS",
+																							 0,
+																							 1.5*1000.0,
+																							 0.8/100.0);
+
+
+
 	//writeCropParameters("crop-parameters");
 	//writeMineralFertilisers("mineral-fertilisers");
 	//writeOrganicFertilisers("organic-fertilisers");

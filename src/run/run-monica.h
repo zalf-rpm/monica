@@ -46,10 +46,6 @@ namespace Monica
   {
     Env() {}
 
-    /**
-     * @brief Constructor
-     * @param sps Soil parameters
-     */
     Env(const Soil::SoilPMs* sps, CentralParameterProvider cpp);
 
     Env(Soil::SoilPMsPtr sps, CentralParameterProvider cpp);
@@ -66,24 +62,9 @@ namespace Monica
     //! a vector of soil parameter objects = layers of soil
     const Soil::SoilPMs* soilParams{nullptr};
 
-    size_t noOfLayers{0};
-    double layerThickness{0.0};
-
-//    bool useNMinMineralFertilisingMethod{false};
-//    MineralFertiliserParameters nMinFertiliserPartition;
-//    NMinUserParameters nMinUserParams;
-
-    bool useAutomaticIrrigation{false};
-    AutomaticIrrigationParameters autoIrrigationParams;
     MeasuredGroundwaterTableInformation groundwaterInformation;
 
-    //! tell if farmer uses the secondary yield products
-    bool useSecondaryYields{true};
-
     //static const int depthGroundwaterTable;   /**<  */
-//    double windSpeedHeight{0}; /**<  */
-//    double atmosphericCO2{-1}; /**< [ppm] */
-//    double albedo{0}; /**< Albedo [] */
 
     //! object holding the climate data
     Climate::DataAccessor da;
@@ -91,14 +72,9 @@ namespace Monica
     //! vector of elements holding the data of the single crops in the rotation
     std::vector<ProductionProcess> cropRotation;
 
-//    Tools::GridPoint gridPoint;        //! the gridpoint the model runs, just a convenience for the dss use
     int customId{-1};
 
-    SiteParameters site;        //! site specific parameters
-    GeneralParameters general;  //! general parameters to the model
-    Soil::OrganicConstants organic;  //! constant organic parameters to the model
-
-    CentralParameterProvider centralParameterProvider;
+    CentralParameterProvider params;
 
     std::string toString() const;
     std::string pathToOutputDir;
@@ -130,7 +106,7 @@ namespace Monica
 //    std::string outputDatastreamHost;
     std::string outputDatastreamPort;
 
-		bool writeOutputFiles{false};
+//		bool writeOutputFiles{false};
   private:
     //! Variable for differentiate betweend execution modes of MONICA
     int mode{MODE_LC_DSS};

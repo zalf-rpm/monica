@@ -56,11 +56,10 @@
 	"EnvironmentParameters": {
 		"LeachingDepth": 15,
 		"WindSpeedHeight": 2,
-		"AtmosphericCO2": [385, "ppm", "parts per million"]
-	},
-  
-  "groundwaterDepthMin": -1,
-  "groundwaterDepthMax": -1,
-  "groundwaterDepthMinMonth": -1,
+		"AtmosphericCO2": [385, "ppm", "parts per million"],
+		"MinGroundwaterDepth": -1,
+		"MaxGroundwaterDepth": -1,
+		"MinGroundwaterDepthMonth": -1
+	}
   
 }

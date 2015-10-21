@@ -789,9 +789,16 @@ MonicaModel::~MonicaModel()
  * @param vw_WindSpeedHeight Height for the measurement of the wind speed
  * @param vw_GlobalRadiation Global radiation
  */
-void SoilMoisture::step(double vs_GroundwaterDepth, double vw_Precipitation, double vw_MaxAirTemperature,
-    double vw_MinAirTemperature, double vw_RelativeHumidity, double vw_MeanAirTemperature, double vw_WindSpeed,
-    double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay)
+void SoilMoisture::step(double vs_GroundwaterDepth,
+                        double vw_Precipitation,
+                        double vw_MaxAirTemperature,
+                        double vw_MinAirTemperature,
+                        double vw_RelativeHumidity,
+                        double vw_MeanAirTemperature,
+                        double vw_WindSpeed,
+                        double vw_WindSpeedHeight,
+                        double vw_GlobalRadiation,
+                        int vs_JulianDay)
 {
 
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)

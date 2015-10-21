@@ -44,6 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/date.h"
 #include "tools/json11-helper.h"
 #include "soil/soil.h"
+#include "soil/constants.h"
 #include "monica-typedefs.h"
 
 namespace Monica
@@ -638,15 +639,7 @@ namespace Monica
 
     std::vector<double> ps_LayerThickness;
 
-    bool useNMinMineralFertilisingMethod{false};
-    MineralFertiliserParameters nMinFertiliserPartition;
-    NMinUserParameters nMinUserParams;
-//    double atmosphericCO2{-1.0};
-    bool useAutomaticIrrigation{false};
-    AutomaticIrrigationParameters autoIrrigationParams;
-    bool useSecondaryYields{true};
-//    double windSpeedHeight{0};
-//    double albedo{0};
+//    bool useSecondaryYields{true};
     MeasuredGroundwaterTableInformation groundwaterInformation;
 
     std::string pathToOutputDir;
@@ -833,7 +826,7 @@ namespace Monica
     std::string toString() const { return to_json().dump(); }
 
     bool p_UseAutomaticIrrigation{false};
-    AutomaticIrrigationParameters autoIrrigationParams;
+    AutomaticIrrigationParameters p_AutoIrrigationParams;
 
     bool p_UseNMinMineralFertilisingMethod{false};
     MineralFertiliserParameters p_NMinFertiliserPartition;
@@ -1075,6 +1068,10 @@ namespace Monica
 		UserSoilOrganicParameters userSoilOrganicParameters;
 		SensitivityAnalysisParameters sensitivityAnalysisParameters;
 		UserInitialValues userInitValues;
+
+    SiteParameters site;        //! site specific parameters
+    GeneralParameters general;  //! general parameters to the model
+    Soil::OrganicConstants organic;  //! constant organic parameters to the model
 
 //    Soil::CapillaryRiseRates capillaryRiseRates;
 

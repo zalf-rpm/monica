@@ -1001,15 +1001,7 @@ GeneralParameters::GeneralParameters(json11::Json j)
     pc_EmergenceFloodingControlOn(bool_value(j, "EmergenceFloodingControlOn")),
     pc_EmergenceMoistureControlOn(bool_value(j, "EmergenceMoistureControlOn")),
     ps_LayerThickness(double_vector(j, "LayerThickness")),
-    useNMinMineralFertilisingMethod(bool_value(j, "useNMinMineralFertilisingMethod")),
-    nMinFertiliserPartition(j["nMinFertiliserPartition"]),
-    nMinUserParams(j["nMinUserParams"]),
-//    atmosphericCO2(double_value(j, "atmosphericCO2")),
-    useAutomaticIrrigation(bool_value(j, "useAutomaticIrrigation")),
-    autoIrrigationParams(j["autoIrrigationParams"]),
-    useSecondaryYields(bool_value(j, "useSecondaryYields")),
-//    windSpeedHeight(double_value(j, "windSpeedHeight")),
-//    albedo(double_value(j, "albedo")),
+//    useSecondaryYields(bool_value(j, "useSecondaryYields")),
     groundwaterInformation(j["groundwaterInformation"]),
     pathToOutputDir(string_value(j, "pathToOutputDir"))
 {
@@ -1026,15 +1018,7 @@ json11::Json GeneralParameters::to_json() const
     {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
     {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
     {"LayerThickness", toPrimJsonArray(ps_LayerThickness)},
-    {"useNMinMineralFertilisingMethod", useNMinMineralFertilisingMethod},
-    {"nMinFertiliserPartition", nMinFertiliserPartition},
-    {"nMinUserParams", nMinUserParams},
-//    {"atmosphericCO2", atmosphericCO2},
-    {"useAutomaticIrrigation", useAutomaticIrrigation},
-    {"autoIrrigationParams", autoIrrigationParams},
-    {"useSecondaryYields", useSecondaryYields},
-//    {"windSpeedHeight", windSpeedHeight},
-//    {"albedo", albedo},
+//    {"useSecondaryYields", useSecondaryYields},
     {"groundwaterInformation", groundwaterInformation},
     {"pathToOutputDir", pathToOutputDir}};
 }
@@ -1205,7 +1189,10 @@ json11::Json UserCropParameters::to_json() const
 
 UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
   : p_UseAutomaticIrrigation(bool_value(j, "UseAutomaticIrrigation")),
+    p_AutoIrrigationParams(j["AutoIrrigationParams"]),
     p_UseNMinMineralFertilisingMethod(bool_value(j, "UseNMinMineralFertilisingMethod")),
+    p_NMinFertiliserPartition(j["NMinFertiliserPartition"]),
+    p_NMinUserParams(j["NMinUserParams"]),
     p_UseSecondaryYields(bool_value(j, "UseSecondaryYields")),
     p_UseAutomaticHarvestTrigger(bool_value(j, "UseAutomaticHarvestTrigger")),
     p_LayerThickness(double_value(j, "LayerThickness")),
@@ -1227,7 +1214,10 @@ json11::Json UserEnvironmentParameters::to_json() const
   return json11::Json::object {
     {"type", "UserEnvironmentParameters"},
     {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
+    {"AutoIrrigationParams", p_AutoIrrigationParams},
     {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
+    {"NMinFertiliserPartition", p_NMinFertiliserPartition},
+    {"NMinUserParams", p_NMinUserParams},
     {"UseSecondaryYields", p_UseSecondaryYields},
     {"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger},
     {"LayerThickness", p_LayerThickness},
