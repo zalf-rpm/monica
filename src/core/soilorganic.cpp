@@ -52,11 +52,9 @@ using namespace Soil;
  * @param org_fert Parameter for organic fertiliser
  */
 SoilOrganic::SoilOrganic(SoilColumn& sc,
-                         const GeneralParameters& gps,
                          const SiteParameters& stps,
                          const UserSoilOrganicParameters& userParams)
   : soilColumn(sc),
-    generalParams(gps),
     siteParams(stps),
     organicPs(userParams),
     vs_NumberOfLayers(sc.vs_NumberOfLayers()),

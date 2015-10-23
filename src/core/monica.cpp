@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <chrono>
 #include <thread>
+#include <numeric>
 
 #include "tools/debug.h"
 #include "monica.h"
@@ -68,32 +69,34 @@ namespace
 
 MonicaModel::MonicaModel(const Soil::SoilPMs& soil,
                          const CentralParameterProvider& cpp)
-  : _generalParams(cpp.general),
-    _siteParams(cpp.site),
-    _smPs(cpp.userSoilMoistureParameters),
-    _envPs(cpp.userEnvironmentParameters),
-    _cropPs(cpp.userCropParameters),
-    _soilTempPs(cpp.userSoilTemperatureParameters),
-    _soilTransPs(cpp.userSoilTransportParameters),
-    _soilOrganicPs(cpp.userSoilOrganicParameters),
-    _initPs(cpp.userInitValues),
-    _writeOutputFiles(cpp.writeOutputFiles),
-    _soilColumn(_generalParams,
+  : _siteParams(cpp.site)
+  , _smPs(cpp.userSoilMoistureParameters)
+  , _envPs(cpp.userEnvironmentParameters)
+  , _cropPs(cpp.userCropParameters)
+  , _soilTempPs(cpp.userSoilTemperatureParameters)
+  , _soilTransPs(cpp.userSoilTransportParameters)
+  , _soilOrganicPs(cpp.userSoilOrganicParameters)
+  , _initPs(cpp.userInitValues)
+  , _writeOutputFiles(cpp.writeOutputFiles)
+  , _pathToOutputDir(cpp.pathToOutputDir)
+  , _groundwaterInformation(cpp.groundwaterInformation)
+  , _soilColumn(_envPs.p_LayerThickness,
+                _soilOrganicPs.ps_MaxMineralisationDepth,
                 soil,
                 _smPs.pm_CriticalMoistureDepth,
-                _initPs),
-    _soilTemperature(*this),
-    _soilMoisture(*this),
-    _soilOrganic(_soilColumn,
-                 _generalParams,
+                _initPs)
+  , _soilTemperature(*this)
+  , _soilMoisture(*this)
+  , _soilOrganic(_soilColumn,
                  _siteParams,
-                 _soilOrganicPs),
-    _soilTransport(_soilColumn,
+                 _soilOrganicPs)
+  , _soilTransport(_soilColumn,
                    _siteParams,
                    _soilTransPs,
                    _envPs.p_LeachingDepth,
                    _envPs.p_timeStep,
                    _cropPs.pc_MinimumAvailableN)
+  , vw_AtmosphericCO2Concentration(_envPs.p_AtmosphericCO2)
 {}
 
 
@@ -117,7 +120,6 @@ void MonicaModel::seedCrop(CropPtr crop)
   {
     const CropParameters* cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,
-                                        _generalParams,
                                         *cps,
                                         _siteParams,
                                         _cropPs,
@@ -147,7 +149,7 @@ void MonicaModel::seedCrop(CropPtr crop)
     }
 
     if(writeOutputFiles())
-      writeCropParameters(_generalParams.pathToOutputDir, *_currentCrop.get());
+      writeCropParameters(_pathToOutputDir, *_currentCrop.get());
   }
 }
 
@@ -518,22 +520,16 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 //      << 0.0 <<"\t" << wind <<"\t" << sunhours <<"\t" << globrad <<"\t" << precip <<"\t" << stepNo <<"\t" << relhumid << endl;
 //  climate_file.close();
 
-
-  vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
-
   // test if simulated gw or measured values should be used
-  double gw_value = getGroundwaterInformation(date);
-
-  if (gw_value == -1) {
-    //  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
-    vs_GroundwaterDepth = GroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
-                                                _envPs.p_MinGroundwaterDepth,
-                                                _envPs.p_MinGroundwaterDepthMonth,
-                                                julday,
-                                                leapYear);
-  } else {
-      vs_GroundwaterDepth = gw_value / 100.0; // [cm] --> [m]
-  }
+  double gw_value = _groundwaterInformation.getGroundwaterInformation(date);
+  //  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
+  vs_GroundwaterDepth = gw_value < 0
+                        ? GroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
+                                                  _envPs.p_MinGroundwaterDepth,
+                                                  _envPs.p_MinGroundwaterDepthMonth,
+                                                  julday,
+                                                  leapYear)
+                        : gw_value / 100.0; // [cm] --> [m]
 
   if (int(vw_AtmosphericCO2Concentration) == 0)
     vw_AtmosphericCO2Concentration = CO2ForDate(date);
@@ -752,7 +748,7 @@ double MonicaModel::avgCorg(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _generalParams.ps_NumberOfLayers(); i < nols; i++)
+  for(int i = 0, nols = _envPs.p_NumberOfLayers; i < nols; i++)
   {
     count++;
     sum +=_soilColumn[i].vs_SoilOrganicCarbon(); //[kg C / kg Boden]
@@ -793,7 +789,7 @@ double MonicaModel::sumNmin(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _generalParams.ps_NumberOfLayers(); i < nols; i++)
+  for(int i = 0, nols = _envPs.p_NumberOfLayers; i < nols; i++)
   {
     count++;
     sum += _soilColumn[i].get_SoilNmin(); //[kg N m-3]
@@ -816,7 +812,7 @@ MonicaModel::sumNO3AtDay(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _generalParams.ps_NumberOfLayers(); i < nols; i++)
+  for(int i = 0, nols = _envPs.p_NumberOfLayers; i < nols; i++)
   {
     count++;
     sum += _soilColumn[i].get_SoilNO3(); //[kg m-3]
@@ -884,11 +880,11 @@ double MonicaModel::getAccumulatedFrostDepth() const
 double MonicaModel::avg30cmSoilTemperature() const
 {
   double nols = 3;
-  double accu_temp = 0.0;
-  for (int layer=0; layer<nols; layer++)
-    accu_temp+=_soilColumn.soilLayer(layer).get_Vs_SoilTemperature();
+  double acc = 0.0;
+  for (int l = 0; l < nols; l++)
+    acc += _soilColumn.at(l).get_Vs_SoilTemperature();
 
-  return accu_temp / nols;
+  return acc / nols;
 }
 
 /**
@@ -905,7 +901,7 @@ double MonicaModel::avgSoilMoisture(int start_layer, int end_layer) const
   double accu = 0.0;
   for (int i=start_layer; i<end_layer; i++)
   {
-    accu+=_soilColumn.soilLayer(i).get_Vs_SoilMoisture_m3();
+    accu+=_soilColumn.at(i).get_Vs_SoilMoisture_m3();
     num++;
   }
   return accu/num;

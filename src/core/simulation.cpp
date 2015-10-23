@@ -535,121 +535,102 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   debug() << "Running hermes with configuration object" << endl;
   std::string outputPath = hermes_config->getOutputPath();
-  CentralParameterProvider centralParameterProvider = readUserParameterFromDatabase(MODE_HERMES);
+  CentralParameterProvider cpp = readUserParameterFromDatabase(MODE_HERMES);
 
   SiteParameters siteParams;
   siteParams.vq_NDeposition = hermes_config->getNDeposition();
 
-
-  if (hermes_config->getMaxEffectiveRootingDepth()!=-1.0){
+  if (hermes_config->getMaxEffectiveRootingDepth()!=-1.0)
       siteParams.vs_MaxEffectiveRootingDepth = hermes_config->getMaxEffectiveRootingDepth();
-  }
 
-  if (hermes_config->getAtmosphericCO2()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_AtmosphericCO2 = hermes_config->getAtmosphericCO2();
-  }
-  if (hermes_config->getLatitude()!=-1.0){
+  if (hermes_config->getAtmosphericCO2()!=-1.0)
+      cpp.userEnvironmentParameters.p_AtmosphericCO2 = hermes_config->getAtmosphericCO2();
+
+  if (hermes_config->getLatitude()!=-1.0)
       siteParams.vs_Latitude = hermes_config->getLatitude();
-  }
 
-  if (hermes_config->getSlope()!=-1.0){
+  if (hermes_config->getSlope()!=-1.0)
       siteParams.vs_Slope = hermes_config->getSlope();
-  }
 
-  if (hermes_config->getHeightNN()!=-1.0){
+  if (hermes_config->getHeightNN()!=-1.0)
       siteParams.vs_HeightNN = hermes_config->getHeightNN();
-  }
 
-  if (hermes_config->getSoilCNRatio()!=-1.0){
+  if (hermes_config->getSoilCNRatio()!=-1.0)
       siteParams.vs_Soil_CN_Ratio = hermes_config->getSoilCNRatio();
-  }
   
-  if (hermes_config->getDrainageCoeff()!=-1.0){
+  if (hermes_config->getDrainageCoeff()!=-1.0)
       siteParams.vs_DrainageCoeff = hermes_config->getDrainageCoeff();
-  }
 
-  if (hermes_config->getMinGWDepth()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_MinGroundwaterDepth = hermes_config->getMinGWDepth();
-  }
+  if (hermes_config->getMinGWDepth()!=-1.0)
+      cpp.userEnvironmentParameters.p_MinGroundwaterDepth = hermes_config->getMinGWDepth();
 
-  if (hermes_config->getMaxGWDepth()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_MaxGroundwaterDepth = hermes_config->getMaxGWDepth();
-  }
+  if (hermes_config->getMaxGWDepth()!=-1.0)
+      cpp.userEnvironmentParameters.p_MaxGroundwaterDepth = hermes_config->getMaxGWDepth();
 
-  if (hermes_config->getMinGWDepthMonth()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_MinGroundwaterDepthMonth = hermes_config->getMinGWDepthMonth();
-  }
+  if (hermes_config->getMinGWDepthMonth()!=-1.0)
+      cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth = hermes_config->getMinGWDepthMonth();
 
-  if (hermes_config->getAtmosphericCO2()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_AtmosphericCO2 = hermes_config->getAtmosphericCO2();
-  }
+  if (hermes_config->getAtmosphericCO2()!=-1.0)
+      cpp.userEnvironmentParameters.p_AtmosphericCO2 = hermes_config->getAtmosphericCO2();
 
-  if (hermes_config->getWindSpeedHeight()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_WindSpeedHeight = hermes_config->getWindSpeedHeight();
-  }
+  if (hermes_config->getWindSpeedHeight()!=-1.0)
+      cpp.userEnvironmentParameters.p_WindSpeedHeight = hermes_config->getWindSpeedHeight();
 
-  if (hermes_config->getLeachingDepth()!=-1.0){
-      centralParameterProvider.userEnvironmentParameters.p_LeachingDepth = hermes_config->getLeachingDepth();
-  }
+  if (hermes_config->getLeachingDepth()!=-1.0)
+      cpp.userEnvironmentParameters.p_LeachingDepth = hermes_config->getLeachingDepth();
 
-  if (hermes_config->getNDeposition() != -1.0) {
+  if (hermes_config->getNDeposition() != -1.0) 
       siteParams.vq_NDeposition = hermes_config->getNDeposition();
-  }
 
-  if (hermes_config->getInitPercentageFC() != -1.0) {
-      centralParameterProvider.userInitValues.p_initPercentageFC = hermes_config->getInitPercentageFC();
-  }
+  if (hermes_config->getInitPercentageFC() != -1.0) 
+      cpp.userInitValues.p_initPercentageFC = hermes_config->getInitPercentageFC();
 
-  if (hermes_config->getInitSoilNitrate() != -1.0) {
-      centralParameterProvider.userInitValues.p_initSoilNitrate = hermes_config->getInitSoilNitrate();
-  }
+  if (hermes_config->getInitSoilNitrate() != -1.0) 
+      cpp.userInitValues.p_initSoilNitrate = hermes_config->getInitSoilNitrate();
 
-  if (hermes_config->getInitSoilAmmonium() != -1.0) {
-      centralParameterProvider.userInitValues.p_initSoilAmmonium = hermes_config->getInitSoilAmmonium();
-  }
+  if (hermes_config->getInitSoilAmmonium() != -1.0) 
+      cpp.userInitValues.p_initSoilAmmonium = hermes_config->getInitSoilAmmonium();
 
-
-  double layer_thickness = centralParameterProvider.userEnvironmentParameters.p_LayerThickness;
-  double profile_depth = layer_thickness * double(centralParameterProvider.userEnvironmentParameters.p_NumberOfLayers);
+  double layer_thickness = cpp.userEnvironmentParameters.p_LayerThickness;
+  double profile_depth = layer_thickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
   double max_mineralisation_depth = 0.4;
   bool nitrogen_response_on = hermes_config->getNitrogenResponseOn();
   bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
   bool emergence_flooding_control_on = hermes_config->getEmergenceFloodingControlOn(); 
   bool emergence_moisture_control_on = hermes_config->getEmergenceMoistureControlOn(); 
-	GeneralParameters gps(layer_thickness);
-	gps.ps_ProfileDepth = profile_depth;
-	gps.ps_MaxMineralisationDepth = max_mineralisation_depth;
-	gps.pc_NitrogenResponseOn = nitrogen_response_on;
-	gps.pc_WaterDeficitResponseOn = water_deficit_response_on;
-	gps.pc_EmergenceFloodingControlOn = emergence_flooding_control_on;
-	gps.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
+	cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth = max_mineralisation_depth;
+	cpp.userCropParameters.pc_NitrogenResponseOn = nitrogen_response_on;
+	cpp.userCropParameters.pc_WaterDeficitResponseOn = water_deficit_response_on;
+	cpp.userCropParameters.pc_EmergenceFloodingControlOn = emergence_flooding_control_on;
+	cpp.userCropParameters.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
 
   //soil data
-  const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(), 
-		int(layer_thickness*100.0), 
-		int(profile_depth*100.0),
-		hermes_config->getPH());
+	const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(),
+																										int(layer_thickness*100.0),
+																										int(cpp.userEnvironmentParameters.p_LayerThickness * cpp.userEnvironmentParameters.p_NumberOfLayers * 100.0),
+																										hermes_config->getPH());
 
   //climate data
   std::string file = outputPath+hermes_config->getWeatherFile();
   Climate::DataAccessor climateData =
-      climateDataFromHermesFiles(file, hermes_config->getStartYear(), hermes_config->getEndYear(), centralParameterProvider, true);
-
+      climateDataFromHermesFiles(file, hermes_config->getStartYear(), hermes_config->getEndYear(), cpp, true);
 
   MeasuredGroundwaterTableInformation gw_infos;
-  if (hermes_config->getGroundwaterFile() != "") {
-    std::string gw_file = outputPath + hermes_config->getGroundwaterFile();
+  if (hermes_config->getGroundwaterFile() != "") 
+	{
+		std::string gw_file = outputPath + hermes_config->getGroundwaterFile();
     gw_infos.readInGroundwaterInformation(gw_file);
   }
-
 
   // test if precipitation values should be manipulated; used for carboZALF simulation
   double precip_manipulation_value = hermes_config->precipManipulationValue();
   debug() << "precip_manipulation_value: " << precip_manipulation_value << endl;
-  if (precip_manipulation_value!=1.0) {
-    vector<double> _precip = climateData.dataAsVector(Climate::precip);
-    vector<double> new_precip;
-    for (vector<double>::iterator it= _precip.begin(); it!=_precip.end(); it++) {
+  if (precip_manipulation_value!=1.0) 
+	{
+		vector<double> _precip = climateData.dataAsVector(Climate::precip);
+		vector<double> new_precip;
+    for (vector<double>::iterator it= _precip.begin(); it!=_precip.end(); it++) 
+		{
 //        cout << "Precip Manip: " << (*it) << "\t" << (*it)*precip_manipulation_value << endl;
         new_precip.push_back((*it)*precip_manipulation_value);
     }
@@ -663,8 +644,6 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   // testClimateData(climateData);
 
   debug() << "--------------------------" << endl;
-
-
 
   //fruchtfolge
   file = outputPath+hermes_config->getRotationFile();
@@ -689,9 +668,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   // irrigation
   file = outputPath+hermes_config->getIrrigationFile();
-  if (file != "") {
+  if (file != "") 
     attachIrrigationApplicationsToCropRotation(ff, file);
-  }
 
   debug() << "------------------------------------" << endl;
 
@@ -706,32 +684,29 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   //  const OrganicMatterParameters* organic_fert_params = getOrganicFertiliserParametersFromMonicaDB(organ_fert_id);
 
   //build up the monica environment
-  Env env(sps, centralParameterProvider);
-  env.params.general = gps;
+  Env env(sps, cpp);
   env.pathToOutputDir = outputPath;
   env.setMode(MODE_HERMES);
   env.groundwaterInformation = gw_infos;
-
 
   env.params.site = siteParams;
 
   env.da = climateData;
   env.cropRotation = ff;
-
-
-
-  if (hermes_config->useAutomaticIrrigation()) {
+	
+  if (hermes_config->useAutomaticIrrigation())
+	{
     env.params.userEnvironmentParameters.p_UseAutomaticIrrigation = true;
     env.params.userEnvironmentParameters.p_AutoIrrigationParams = hermes_config->getAutomaticIrrigationParameters();
   }
 
-  if (hermes_config->useNMinFertiliser()) {
+  if (hermes_config->useNMinFertiliser()) 
+	{
     env.params.userEnvironmentParameters.p_UseNMinMineralFertilisingMethod = true;
     env.params.userEnvironmentParameters.p_NMinUserParams = hermes_config->getNMinUserParameters();
     env.params.userEnvironmentParameters.p_NMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
   }
-
-
+	
   return env;
 }
 

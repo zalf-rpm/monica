@@ -63,7 +63,6 @@ namespace Monica
   {
   public:
     SoilOrganic(SoilColumn& soilColumn,
-                const GeneralParameters& gps,
                 const SiteParameters& sps,
                 const UserSoilOrganicParameters& userParams);
 
@@ -129,9 +128,8 @@ namespace Monica
     double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
 
-    SoilColumn & soilColumn;
-    const GeneralParameters & generalParams;
-    const SiteParameters & siteParams;
+    SoilColumn& soilColumn;
+    const SiteParameters& siteParams;
     const UserSoilOrganicParameters& organicPs;
 
     std::size_t vs_NumberOfLayers{0};

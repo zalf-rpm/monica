@@ -618,35 +618,6 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	struct GeneralParameters
-	{
-    GeneralParameters(double layerThickness = 0.1);
-
-    GeneralParameters(json11::Json j);
-
-    json11::Json to_json() const;
-
-    std::string toString() const { return to_json().dump(); }
-
-    size_t ps_NumberOfLayers() const { return ps_LayerThickness.size(); }
-
-    double ps_ProfileDepth{2.0};
-    double ps_MaxMineralisationDepth{0.4};
-    bool pc_NitrogenResponseOn{true};
-    bool pc_WaterDeficitResponseOn{true};
-    bool pc_EmergenceFloodingControlOn{true};
-    bool pc_EmergenceMoistureControlOn{true};
-
-    std::vector<double> ps_LayerThickness;
-
-//    bool useSecondaryYields{true};
-    MeasuredGroundwaterTableInformation groundwaterInformation;
-
-    std::string pathToOutputDir;
-	};
-
-	//----------------------------------------------------------------------------
-
 	/**
 	 * @author Claas Nendel, Michael Berg
 	 */
@@ -807,6 +778,12 @@ namespace Monica
     double pc_GrowthRespirationParameter1{0.0};
     double pc_GrowthRespirationParameter2{0.0};
     double pc_Tortuosity{0.0};
+
+    bool pc_NitrogenResponseOn{true};
+    bool pc_WaterDeficitResponseOn{true};
+    bool pc_EmergenceFloodingControlOn{true};
+    bool pc_EmergenceMoistureControlOn{true};
+
 	};
 
 	//----------------------------------------------------------------------------
@@ -835,19 +812,22 @@ namespace Monica
     bool p_UseSecondaryYields{true};
     bool p_UseAutomaticHarvestTrigger{false};
 
-    double p_LayerThickness{0.0};
+    int p_NumberOfLayers{0};
+    double p_LayerThickness{0.1};
+
     double p_Albedo{0.0};
     double p_AtmosphericCO2{0.0};
     double p_WindSpeedHeight{0.0};
     double p_LeachingDepth{0.0};
     double p_timeStep{0.0};
+
     double p_MaxGroundwaterDepth{20.0};
     double p_MinGroundwaterDepth{20.0};
+    int p_MinGroundwaterDepthMonth{0};
 
-    int p_NumberOfLayers{0};
     int p_StartPVIndex{0};
     int p_JulianDayAutomaticFertilising{0};
-    int p_MinGroundwaterDepthMonth{0};
+
 	};
 
   //----------------------------------------------------------------------------
@@ -1015,35 +995,8 @@ namespace Monica
     double po_AtmosphericResistance{0.0025}; // 0.0025 [s m-1], from Sadeghi et al. 1988
     double po_N2OProductionRate{0.5}; // 0.5 [d-1]
     double po_Inhibitor_NH3{1.0}; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
-	};
 
-	//----------------------------------------------------------------------------
-
-  struct SensitivityAnalysisParameters
-	{
-    SensitivityAnalysisParameters();
-
-		// soilmoisture module parameters
-    double p_MeanFieldCapacity{UNDEFINED};
-    double p_MeanBulkDensity{UNDEFINED};
-    double p_HeatConductivityFrozen{UNDEFINED};
-    double p_HeatConductivityUnfrozen{UNDEFINED};
-    double p_LatentHeatTransfer{UNDEFINED};
-    double p_ReducedHydraulicConductivity{UNDEFINED};
-    double vs_FieldCapacity{UNDEFINED};
-    double vs_Saturation{UNDEFINED};
-    double vs_PermanentWiltingPoint{UNDEFINED};
-    double vs_SoilMoisture{UNDEFINED};
-    double vs_SoilTemperature{UNDEFINED};
-
-		// crop parameters
-    double vc_SoilCoverage{UNDEFINED};
-    double vc_MaxRootingDepth{UNDEFINED};
-    double vc_RootDiameter{UNDEFINED};
-
-		CropParameters crop_parameters;
-		OrganicMatterParameters organic_matter_parameters;
-    int sa_crop_id{-1};
+    double ps_MaxMineralisationDepth{0.4};
 	};
 
 	//----------------------------------------------------------------------------
@@ -1066,19 +1019,18 @@ namespace Monica
 		UserSoilTemperatureParameters userSoilTemperatureParameters;
 		UserSoilTransportParameters userSoilTransportParameters;
 		UserSoilOrganicParameters userSoilOrganicParameters;
-		SensitivityAnalysisParameters sensitivityAnalysisParameters;
 		UserInitialValues userInitValues;
 
     SiteParameters site;        //! site specific parameters
-    GeneralParameters general;  //! general parameters to the model
     Soil::OrganicConstants organic;  //! constant organic parameters to the model
 
-//    Soil::CapillaryRiseRates capillaryRiseRates;
+    MeasuredGroundwaterTableInformation groundwaterInformation;
 
 		double getPrecipCorrectionValue(int month) const;
 		void setPrecipCorrectionValue(int month, double value);
 
-		bool writeOutputFiles{ false };
+    bool writeOutputFiles{false};
+    std::string pathToOutputDir;
 
 	private:
 		std::vector<double> precipCorrectionValues;

@@ -193,9 +193,6 @@ namespace Monica
     double getsum30cmActDenitrificationRate() const;
     double getETa() const;
 
-    double vw_AtmosphericCO2Concentration;
-    double vs_GroundwaterDepth;
-
 
     /**
      * @brief Returns soil temperature
@@ -248,8 +245,6 @@ namespace Monica
     double getAccumulatedHeatStress() const { return p_accuHeatStress; }
     double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
-    double getGroundwaterInformation(Tools::Date date) const {return _generalParams.groundwaterInformation.getGroundwaterInformation(date); }
-
     const SiteParameters& siteParameters() const { return _siteParams; }
 
     const UserSoilMoistureParameters& soilmoistureParameters() const { return _smPs; }
@@ -260,7 +255,6 @@ namespace Monica
     const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
 
   private:
-    const GeneralParameters _generalParams;
     const SiteParameters _siteParams;
     const UserSoilMoistureParameters _smPs;
     const UserEnvironmentParameters _envPs;
@@ -270,6 +264,8 @@ namespace Monica
     const UserSoilOrganicParameters& _soilOrganicPs;
     const UserInitialValues& _initPs;
     bool _writeOutputFiles{false};
+    std::string _pathToOutputDir;
+    MeasuredGroundwaterTableInformation _groundwaterInformation;
 
     SoilColumn _soilColumn; //!< main soil data structure
     SoilTemperature _soilTemperature; //!< temperature code
@@ -295,6 +291,9 @@ namespace Monica
     double p_accuWaterStress{0.0};
     double p_accuHeatStress{0.0};
     double p_accuOxygenStress{0.0};
+
+    double vw_AtmosphericCO2Concentration;
+    double vs_GroundwaterDepth{0.0};
   };
   
 }

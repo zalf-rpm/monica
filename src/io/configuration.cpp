@@ -189,13 +189,12 @@ bool Configuration::setJSON(cson_value* sim, cson_value* site, cson_value* crop)
 
 const Result Configuration::run()
 {
-
-  if (!_sim || !_site || !_crop) {
+  if (!_sim || !_site || !_crop) 
+	{
     std::cerr << "Configuration is empty" << std::endl;
     return Result();
   }
-
-  
+	  
   /* fetch root objects */
   cson_object* simObj = cson_value_get_object(_sim);
   cson_object* siteObj = cson_value_get_object(_site);
@@ -203,8 +202,6 @@ const Result Configuration::run()
   
   SiteParameters sp;
   CentralParameterProvider cpp = readUserParameterFromDatabase(MODE_HERMES);
-	GeneralParameters gp(cpp.userEnvironmentParameters.p_LayerThickness);
-	gp.ps_ProfileDepth = cpp.userEnvironmentParameters.p_LayerThickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
 
   /* fetch soil horizon array */
   cson_array* horizonsArr = cson_value_get_array(cson_object_get(siteObj, "horizons"));
@@ -217,10 +214,10 @@ const Result Configuration::run()
 
 	cpp.userEnvironmentParameters.p_UseSecondaryYields = 
 		getBool(simObj, "switch.useSecondaryYieldOn", cpp.userEnvironmentParameters.p_UseSecondaryYields);
-	gp.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn", gp.pc_NitrogenResponseOn);
-	gp.pc_WaterDeficitResponseOn = getBool(simObj, "switch.waterDeficitResponseOn", gp.pc_WaterDeficitResponseOn);
-	gp.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn", gp.pc_EmergenceMoistureControlOn);
-	gp.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn", gp.pc_EmergenceFloodingControlOn);
+	cpp.userCropParameters.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn", cpp.userCropParameters.pc_NitrogenResponseOn);
+	cpp.userCropParameters.pc_WaterDeficitResponseOn = getBool(simObj, "switch.waterDeficitResponseOn", cpp.userCropParameters.pc_WaterDeficitResponseOn);
+	cpp.userCropParameters.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn", cpp.userCropParameters.pc_EmergenceMoistureControlOn);
+	cpp.userCropParameters.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn", cpp.userCropParameters.pc_EmergenceFloodingControlOn);
 
 	cpp.userInitValues.p_initPercentageFC = getDbl(simObj, "init.percentageFC", cpp.userInitValues.p_initPercentageFC);
 	cpp.userInitValues.p_initSoilNitrate = getDbl(simObj, "init.soilNitrate", cpp.userInitValues.p_initSoilNitrate);
@@ -247,7 +244,7 @@ const Result Configuration::run()
 //  cpp.userEnvironmentParameters.p_NumberOfLayers = getInt(siteObj, "numberOfLayers"); ; // JV! currently not present in json
 
   // TODO: maxMineralisationDepth? (Fehler in gp ps_MaxMineralisationDepth und ps_MaximumMineralisationDepth?)
-  gp.ps_MaxMineralisationDepth = 0.4;
+	cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth = 0.4;
 
   std::cout << "fetched site data"  << std::endl;
 
@@ -268,7 +265,8 @@ const Result Configuration::run()
 
   /* weather */
   Climate::DataAccessor da(Tools::Date(1, 1, startYear, true), Tools::Date(31, 12, endYear, true));
-  if (!createClimate(da, cpp, sp.vs_Latitude)) {
+  if (!createClimate(da, cpp, sp.vs_Latitude)) 
+	{
     std::cerr << "Error fetching climate data"  << std::endl;
     return Result();
   }
@@ -277,7 +275,8 @@ const Result Configuration::run()
 
   /* crops */
   std::vector<ProductionProcess> pps;
-  if (!createProcesses(pps, cropsArr)) {
+  if (!createProcesses(pps, cropsArr)) 
+	{
     std::cerr << "Error fetching crop data"  << std::endl;
     return Result();
   }
@@ -285,7 +284,6 @@ const Result Configuration::run()
   std::cout << "fetched crop data"  << std::endl;
 
 	Env env(layers, cpp);
-  env.params.general = gp;
   env.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
   env.setMode(MODE_HERMES);
@@ -319,24 +317,29 @@ void Configuration::setProgress(double progress)
   std::cout << progress;
 }
 
-bool Configuration::isValidated() {
+bool Configuration::isValidated() 
+{
 
-  if (!metaSim || !metaSite || !metaCrop) {
+  if (!metaSim || !metaSite || !metaCrop) 
+	{
     std::cerr << "Meta configuration is empty" << std::endl;
     return false;
   }
 
-  if (!isValid(_sim, metaSim, "sim")) {
+  if (!isValid(_sim, metaSim, "sim")) 
+	{
     std::cerr << "sim.json not valid" << std::endl;
     return false;
   }
   
-  if (!isValid(_site, metaSite, "site")) {
+  if (!isValid(_site, metaSite, "site")) 
+	{
     std::cerr << "site.json not valid" << std::endl;
     return false;
   }
   
-  if (!isValid(_crop, metaCrop, "crop")) {
+  if (!isValid(_crop, metaCrop, "crop")) 
+	{
     std::cerr << "crop.json not valid" << std::endl;
     return false;
   }
@@ -384,13 +387,14 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
     layer.vs_PermanentWiltingPoint = getDbl(horizonObj, "permanentWiltingPoint");
 
     /* TODO: hinter readJSON verschieben */ 
-    if (!layer.isValid()) {
+    if (!layer.isValid()) 
+		{
       ok = false;
       std::cerr << "Error in soil parameters." << std::endl;
     }
 
-    for (int l = 0; l < lInHCount; l++) {
-      
+    for (int l = 0; l < lInHCount; l++) 
+		{
       /* stop if we reach max. depth */
       if (depth >= maxNoOfLayers * lThicknessCm) {
         std::cout << "Maximum soil layer depth (" << (maxNoOfLayers * lThicknessCm) 

@@ -1427,27 +1427,27 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 
 
 	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
-		fout << fixed << setprecision(3) << "\t" << msc.soilLayer(i_Layer).get_SoilNO3();// [kg N m-3]
+    fout << fixed << setprecision(3) << "\t" << msc.at(i_Layer).get_SoilNO3();// [kg N m-3]
 																																										 //    cout << "msc.soilLayer(i_Layer).get_SoilNO3():\t" << msc.soilLayer(i_Layer).get_SoilNO3() << endl;
 	}
 
-	fout << fixed << setprecision(4) << "\t" << msc.soilLayer(0).get_SoilCarbamid();
+  fout << fixed << setprecision(4) << "\t" << msc.at(0).get_SoilCarbamid();
 
 	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
-		fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).get_SoilNH4();
+    fout << fixed << setprecision(4) << "\t" << msc.at(i_Layer).get_SoilNH4();
 	}
 	for (int i_Layer = 0; i_Layer < 4; i_Layer++) {
-		fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).get_SoilNO2();
+    fout << fixed << setprecision(4) << "\t" << msc.at(i_Layer).get_SoilNO2();
 	}
 	for (int i_Layer = 0; i_Layer < 6; i_Layer++) {
-		fout << fixed << setprecision(4) << "\t" << msc.soilLayer(i_Layer).vs_SoilOrganicCarbon(); // [kg C kg-1]
+    fout << fixed << setprecision(4) << "\t" << msc.at(i_Layer).vs_SoilOrganicCarbon(); // [kg C kg-1]
 	}
 
 	// SOC-0-30 [g C m-2]
 	double soc_30_accumulator = 0.0;
 	for (int i_Layer = 0; i_Layer < 3; i_Layer++) {
 		// kg C / kg --> g C / m2
-		soc_30_accumulator += msc.soilLayer(i_Layer).vs_SoilOrganicCarbon() * msc.soilLayer(i_Layer).vs_SoilBulkDensity() * msc.soilLayer(i_Layer).vs_LayerThickness * 1000;
+    soc_30_accumulator += msc.at(i_Layer).vs_SoilOrganicCarbon() * msc.at(i_Layer).vs_SoilBulkDensity() * msc.at(i_Layer).vs_LayerThickness * 1000;
 	}
 	fout << fixed << setprecision(4) << "\t" << soc_30_accumulator;
 
@@ -1456,7 +1456,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 	double soc_200_accumulator = 0.0;
 	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
 		// kg C / kg --> g C / m2
-		soc_200_accumulator += msc.soilLayer(i_Layer).vs_SoilOrganicCarbon() * msc.soilLayer(i_Layer).vs_SoilBulkDensity() * msc.soilLayer(i_Layer).vs_LayerThickness * 1000;
+    soc_200_accumulator += msc.at(i_Layer).vs_SoilOrganicCarbon() * msc.at(i_Layer).vs_SoilBulkDensity() * msc.at(i_Layer).vs_LayerThickness * 1000;
 	}
 	fout << fixed << setprecision(4) << "\t" << soc_200_accumulator;
 
@@ -1488,7 +1488,7 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 	fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N ha-1]
 	fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N ha-1]
 	fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N ha-1]
-	fout << fixed << setprecision(1) << "\t" << msc.soilLayer(0).get_SoilpH(); // [ ]
+  fout << fixed << setprecision(1) << "\t" << msc.at(0).get_SoilpH(); // [ ]
 	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C ha-1]
 	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C ha-1]
 	fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
@@ -1544,44 +1544,44 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 	}
 	gout << fixed << setprecision(1) << "\t" << (PAW0_150 * 0.1 * 1000.0); // [mm]
 
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(0).get_SoilNmin() + msc.soilLayer(1).get_SoilNmin() + msc.soilLayer(2).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(3).get_SoilNmin() + msc.soilLayer(4).get_SoilNmin() + msc.soilLayer(5).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(6).get_SoilNmin() + msc.soilLayer(7).get_SoilNmin() + msc.soilLayer(8).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(9).get_SoilNmin() + msc.soilLayer(10).get_SoilNmin() + msc.soilLayer(11).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(0).get_SoilNmin() + msc.at(1).get_SoilNmin() + msc.at(2).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(3).get_SoilNmin() + msc.at(4).get_SoilNmin() + msc.at(5).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(6).get_SoilNmin() + msc.at(7).get_SoilNmin() + msc.at(8).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(9).get_SoilNmin() + msc.at(10).get_SoilNmin() + msc.at(11).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
 
 	double N0_60 = 0.0;
 	for (int i_Layer = 0; i_Layer < 6; i_Layer++) {
-		N0_60 += msc.soilLayer(i_Layer).get_SoilNmin();
+    N0_60 += msc.at(i_Layer).get_SoilNmin();
 	}
 	gout << fixed << setprecision(2) << "\t" << (N0_60 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
 	double N0_90 = 0.0;
 	for (int i_Layer = 0; i_Layer < 9; i_Layer++) {
-		N0_90 += msc.soilLayer(i_Layer).get_SoilNmin();
+    N0_90 += msc.at(i_Layer).get_SoilNmin();
 	}
 	gout << fixed << setprecision(2) << "\t" << (N0_90 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
 	double N0_200 = 0.0;
 	for (int i_Layer = 0; i_Layer < 20; i_Layer++) {
-		N0_200 += msc.soilLayer(i_Layer).get_SoilNmin();
+    N0_200 += msc.at(i_Layer).get_SoilNmin();
 	}
 	gout << fixed << setprecision(2) << "\t" << (N0_200 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
 	double N0_130 = 0.0;
 	for (int i_Layer = 0; i_Layer < 13; i_Layer++) {
-		N0_130 += msc.soilLayer(i_Layer).get_SoilNmin();
+    N0_130 += msc.at(i_Layer).get_SoilNmin();
 	}
 	gout << fixed << setprecision(2) << "\t" << (N0_130 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
 	double N0_150 = 0.0;
 	for (int i_Layer = 0; i_Layer < 15; i_Layer++) {
-		N0_150 += msc.soilLayer(i_Layer).get_SoilNmin();
+    N0_150 += msc.at(i_Layer).get_SoilNmin();
 	}
 	gout << fixed << setprecision(2) << "\t" << (N0_150 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
 
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(0).get_SoilNH4() + msc.soilLayer(1).get_SoilNH4() + msc.soilLayer(2).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(3).get_SoilNH4() + msc.soilLayer(4).get_SoilNH4() + msc.soilLayer(5).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.soilLayer(6).get_SoilNH4() + msc.soilLayer(7).get_SoilNH4() + msc.soilLayer(8).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(0).get_SoilNH4() + msc.at(1).get_SoilNH4() + msc.at(2).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(3).get_SoilNH4() + msc.at(4).get_SoilNH4() + msc.at(5).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
+  gout << fixed << setprecision(2) << "\t" << (msc.at(6).get_SoilNH4() + msc.at(7).get_SoilNH4() + msc.at(8).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
 	gout << fixed << setprecision(2) << "\t" << mso.get_SoilOrganicC(0) * 0.1 * 10000;// [kg m-3] -> [kg ha-1]
 	gout << fixed << setprecision(2) << "\t" << ((mso.get_SoilOrganicC(0) + mso.get_SoilOrganicC(1) + mso.get_SoilOrganicC(2)) / 3.0 * 0.3 * 10000); // [kg m-3] -> [kg ha-1]
 	gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(0);
