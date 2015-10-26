@@ -249,12 +249,12 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
 
         customId = initMsg["customId"].int_value();
         SiteParameters site(initMsg["site"]);
-        SoilPMsPtr soil(new SoilPMs());
-        for(auto sp : initMsg["soil"].array_items())
-          soil->push_back(sp);
+//        SoilPMsPtr soil(new SoilPMs());
+//        for(auto sp : initMsg["soil"].array_items())
+//          soil->push_back(sp);
         CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
         cpp.site = site;
-        monicaUPtr = make_unique<MonicaModel>(*soil.get(), cpp);
+        monicaUPtr = make_unique<MonicaModel>(cpp);
 
         aggregatedValues.clear();
       }

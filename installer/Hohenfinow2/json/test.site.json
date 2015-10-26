@@ -49,10 +49,6 @@
 			}
 		]
 	},
-	"GeneralParameters": {
-		
-		
-	},
 	"EnvironmentParameters": {
 		"LeachingDepth": 15,
 		"WindSpeedHeight": 2,

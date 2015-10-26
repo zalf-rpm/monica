@@ -155,16 +155,16 @@ double SoilLayer::vs_SoilMoisture_pF()
  */
 SoilColumn::SoilColumn(double ps_LayerThickness,
                        double ps_MaxMineralisationDepth,
-                       const SoilPMs& soilParams,
+                       const SoilPMsPtr soilParams,
                        double pm_CriticalMoistureDepth,
                        const UserInitialValues& initParams)
   : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth)
   , pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
 {
-  debug() << "Constructor: SoilColumn "  << soilParams.size() << endl;
+  debug() << "Constructor: SoilColumn "  << soilParams->size() << endl;
 //  for(auto sp : *this)//soilParams)
 //    vs_SoilLayers.push_back(SoilLayer(ps_LayerThickness, sp, &initParams));
-  for(auto sp : soilParams)
+  for(auto sp : *soilParams)
     push_back(SoilLayer(ps_LayerThickness, sp, &initParams));
 
   _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();

@@ -642,6 +642,8 @@ namespace Monica
     double vs_DrainageCoeff{1.0};
     double vq_NDeposition{30.0};
     double vs_MaxEffectiveRootingDepth{2.0};
+
+    Soil::SoilPMsPtr vs_SoilParameters;
 	};
 
 	//----------------------------------------------------------------------------
@@ -783,7 +785,6 @@ namespace Monica
     bool pc_WaterDeficitResponseOn{true};
     bool pc_EmergenceFloodingControlOn{true};
     bool pc_EmergenceMoistureControlOn{true};
-
 	};
 
 	//----------------------------------------------------------------------------
@@ -1032,7 +1033,7 @@ namespace Monica
     bool writeOutputFiles{false};
     std::string pathToOutputDir;
 
-	private:
+  private:
 		std::vector<double> precipCorrectionValues;
 	};
 }

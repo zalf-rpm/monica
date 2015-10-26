@@ -260,7 +260,8 @@ const Result Configuration::run()
     std::cerr << "Error fetching soil data"  << std::endl;
     return Result();
   }
-  
+	sp.vs_SoilParameters = layers;
+
   std::cout << "fetched soil data"  << std::endl;
 
   /* weather */
@@ -283,12 +284,12 @@ const Result Configuration::run()
   
   std::cout << "fetched crop data"  << std::endl;
 
-	Env env(layers, cpp);
+	Env env(cpp);
   env.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
   env.setMode(MODE_HERMES);
   env.params.site = sp;
-  env.da = da;
+	env.da = da;
   env.cropRotation = pps;
  
   // TODO:

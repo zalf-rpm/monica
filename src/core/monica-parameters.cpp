@@ -998,20 +998,33 @@ SiteParameters::SiteParameters(json11::Json j)
     vs_DrainageCoeff(double_value(j, "DrainageCoeff")),
     vq_NDeposition(double_value(j, "NDeposition")),
     vs_MaxEffectiveRootingDepth(double_value(j, "MaxEffectiveRootingDepth"))
-{}
+{
+  string err;
+  if(j.has_shape({{"SoilParameters", json11::Json::ARRAY}}, err))
+  {
+    vs_SoilParameters = make_shared<SoilPMs>();
+    for(auto sp : j["SoilParameters"].array_items())
+      vs_SoilParameters->push_back(sp);
+  }
+}
 
 json11::Json SiteParameters::to_json() const
 {
-  return J11Object {
-    {"type", "SiteParameters"},
-    {"Latitude", J11Array {vs_Latitude, "", "latitude in decimal degrees"}},
-    {"Slope", J11Array {vs_Slope, "m m-1"}},
-    {"HeightNN", J11Array {vs_HeightNN, "m", "height above sea level"}},
-    {"GroundwaterDepth", J11Array {vs_GroundwaterDepth, "m"}},
-    {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
-    {"DrainageCoeff", vs_DrainageCoeff},
-    {"NDeposition", vq_NDeposition},
-    {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
+  auto sps = J11Object {
+  {"type", "SiteParameters"},
+  {"Latitude", J11Array {vs_Latitude, "", "latitude in decimal degrees"}},
+  {"Slope", J11Array {vs_Slope, "m m-1"}},
+  {"HeightNN", J11Array {vs_HeightNN, "m", "height above sea level"}},
+  {"GroundwaterDepth", J11Array {vs_GroundwaterDepth, "m"}},
+  {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
+  {"DrainageCoeff", vs_DrainageCoeff},
+  {"NDeposition", vq_NDeposition},
+  {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
+
+  if(soilParameters)
+    sps["SoilParameters"] = toJsonArray(*vs_SoilParameters);
+
+  return sps;
 }
 
 //------------------------------------------------------------------------------

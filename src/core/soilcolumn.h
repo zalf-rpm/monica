@@ -222,7 +222,7 @@ namespace Monica
   public:
     SoilColumn(double ps_LayerThickness,
                double ps_MaxMineralisationDepth,
-               const Soil::SoilPMs& soilParams,
+               const Soil::SoilPMsPtr soilParams,
                double pm_CriticalMoistureDepth,
                const UserInitialValues& initParams);
 

@@ -605,10 +605,11 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 	cpp.userCropParameters.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
 
   //soil data
-	const SoilPMs* sps = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(),
-																										int(layer_thickness*100.0),
-																										int(cpp.userEnvironmentParameters.p_LayerThickness * cpp.userEnvironmentParameters.p_NumberOfLayers * 100.0),
-																										hermes_config->getPH());
+	siteParams.vs_SoilParameters = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(),
+																															int(layer_thickness*100.0),
+																															int(cpp.userEnvironmentParameters.p_LayerThickness * cpp.userEnvironmentParameters.p_NumberOfLayers * 100.0),
+																															hermes_config->getPH());
+
 
   //climate data
   std::string file = outputPath+hermes_config->getWeatherFile();
@@ -684,7 +685,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   //  const OrganicMatterParameters* organic_fert_params = getOrganicFertiliserParametersFromMonicaDB(organ_fert_id);
 
   //build up the monica environment
-  Env env(sps, cpp);
+  Env env(cpp);
   env.pathToOutputDir = outputPath;
   env.setMode(MODE_HERMES);
   env.groundwaterInformation = gw_infos;

@@ -52,23 +52,13 @@ using namespace Tools;
 using namespace Soil;
 using namespace json11;
 
-Env::Env(const SoilPMs* sps, CentralParameterProvider cpp)
-  : soilParams(sps),
-    params(cpp)
-{}
-
-Env::Env(SoilPMsPtr spsPtr, CentralParameterProvider cpp)
-  : _soilParamsPtr(spsPtr),
-    soilParams(spsPtr.get()),
-    params(cpp)
+Env::Env(CentralParameterProvider cpp)
+  : params(cpp)
 {}
 
 string Env::toString() const
 {
 	ostringstream s;
-	s << "soilParams: " << endl;
-	for (const Soil::SoilParameters& sps : *soilParams)
-		s << sps.toString() << endl;
   s << " noOfLayers: " << params.userEnvironmentParameters.p_NumberOfLayers
     << " layerThickness: " << params.userEnvironmentParameters.p_LayerThickness
 		<< endl;
@@ -242,8 +232,7 @@ Result Monica::runMonica(Env env)
 
 	debug() << "-----" << endl;
 
-  MonicaModel monica(*env.soilParams,
-                     env.params);
+  MonicaModel monica(env.params);
 
 	if (write_output_files)
 	{

@@ -121,11 +121,11 @@ namespace Monica
 
 		virtual void apply(MonicaModel* model);
 
-		void setDate(Tools::Date date)
-		{
-			this->_date = date;
-			_crop.get()->setSeedAndHarvestDate(_crop.get()->seedDate(), date);
-		}
+//		void setDate(Tools::Date date)
+//		{
+//			this->_date = date;
+//			_crop.get()->setSeedAndHarvestDate(_crop.get()->seedDate(), date);
+//		}
 
     void setPercentage(double percentage) { _percentage = percentage; }
 
@@ -271,6 +271,8 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+  WSPtr makeWorkstep(json11::Json object);
+
 	class ProductionProcess
 	{
 	public:
@@ -278,7 +280,11 @@ namespace Monica
 
 		ProductionProcess(const std::string& name, CropPtr crop = CropPtr());
 
+    ProductionProcess(json11::Json object);
+
 		ProductionProcess deepCloneAndClearWorksteps() const;
+
+    json11::Json to_json() const;
 
 		template<class Application>
 		void addApplication(const Application& a)

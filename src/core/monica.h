@@ -66,8 +66,7 @@ namespace Monica
 	class MonicaModel
 	{
   public:
-    MonicaModel(const Soil::SoilPMs& soil,
-                const CentralParameterProvider& cpp);
+    MonicaModel(const CentralParameterProvider& cpp);
 
     ~MonicaModel();
 
@@ -245,7 +244,7 @@ namespace Monica
     double getAccumulatedHeatStress() const { return p_accuHeatStress; }
     double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
-    const SiteParameters& siteParameters() const { return _siteParams; }
+    const SiteParameters& siteParameters() const { return _sitePs; }
 
     const UserSoilMoistureParameters& soilmoistureParameters() const { return _smPs; }
     const UserEnvironmentParameters& environmentParameters() const { return _envPs; }
@@ -255,7 +254,7 @@ namespace Monica
     const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
 
   private:
-    const SiteParameters _siteParams;
+    const SiteParameters _sitePs;
     const UserSoilMoistureParameters _smPs;
     const UserEnvironmentParameters _envPs;
     const UserCropParameters _cropPs;

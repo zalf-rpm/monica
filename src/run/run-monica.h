@@ -46,21 +46,13 @@ namespace Monica
   {
     Env() {}
 
-    Env(const Soil::SoilPMs* sps, CentralParameterProvider cpp);
-
-    Env(Soil::SoilPMsPtr sps, CentralParameterProvider cpp);
+    Env(CentralParameterProvider cpp);
 
     //Interface method for python wrapping. Simply returns number
     //of possible simulation steps according to avaible climate data.
     std::size_t numberOfPossibleSteps() const { return da.noOfStepsPossible(); }
 
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
-
-  private:
-    Soil::SoilPMsPtr _soilParamsPtr;
-  public:
-    //! a vector of soil parameter objects = layers of soil
-    const Soil::SoilPMs* soilParams{nullptr};
 
     MeasuredGroundwaterTableInformation groundwaterInformation;
 

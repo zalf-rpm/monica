@@ -201,3 +201,4 @@ installer/Hohenfinow2/*.dat
 *.filters
 HF2_automatic_yield
 /parameters
+src/run/production-process.h.autosave

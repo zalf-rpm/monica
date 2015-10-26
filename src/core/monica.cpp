@@ -67,9 +67,8 @@ namespace
 
 //------------------------------------------------------------------------------
 
-MonicaModel::MonicaModel(const Soil::SoilPMs& soil,
-                         const CentralParameterProvider& cpp)
-  : _siteParams(cpp.site)
+MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
+  : _sitePs(cpp.site)
   , _smPs(cpp.userSoilMoistureParameters)
   , _envPs(cpp.userEnvironmentParameters)
   , _cropPs(cpp.userCropParameters)
@@ -82,16 +81,16 @@ MonicaModel::MonicaModel(const Soil::SoilPMs& soil,
   , _groundwaterInformation(cpp.groundwaterInformation)
   , _soilColumn(_envPs.p_LayerThickness,
                 _soilOrganicPs.ps_MaxMineralisationDepth,
-                soil,
+                _sitePs.vs_SoilParameters,
                 _smPs.pm_CriticalMoistureDepth,
                 _initPs)
   , _soilTemperature(*this)
   , _soilMoisture(*this)
   , _soilOrganic(_soilColumn,
-                 _siteParams,
+                 _sitePs,
                  _soilOrganicPs)
   , _soilTransport(_soilColumn,
-                   _siteParams,
+                   _sitePs,
                    _soilTransPs,
                    _envPs.p_LeachingDepth,
                    _envPs.p_timeStep,
@@ -121,7 +120,7 @@ void MonicaModel::seedCrop(CropPtr crop)
     const CropParameters* cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,
                                         *cps,
-                                        _siteParams,
+                                        _sitePs,
                                         _cropPs,
                                         crop->getEva2TypeUsage());
 
