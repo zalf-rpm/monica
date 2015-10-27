@@ -3619,10 +3619,8 @@ int CropGrowth::get_StageAfterCut() const
 	return pc_StageAfterCut - 1;
 }
 
-void
-CropGrowth::applyCutting()
+void CropGrowth::applyCutting()
 {
-
   double old_above_biomass = vc_AbovegroundBiomass;
   double removing_biomass = 0.0;
 

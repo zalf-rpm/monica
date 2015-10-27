@@ -82,12 +82,12 @@ Seed::Seed(json11::Json j)
   , _crop(std::make_shared<Crop>(j["crop"]))
 {}
 
-json11::Json Seed::to_json() const
+json11::Json Seed::to_json(bool includeFullCropParameters) const
 {
   return json11::Json::object {
     {"type", "Seed"},
     {"date", date().toIsoDateString()},
-    {"crop", *_crop}};
+    {"crop", _crop->to_json(includeFullCropParameters)}};
 }
 
 void Seed::apply(MonicaModel* model)
@@ -110,17 +110,19 @@ Harvest::Harvest(const Tools::Date& at,
 
 Harvest::Harvest(json11::Json j)
   : WorkStep(j)
-  , _cropResult(new PVResult(crop->id()))
+  , _crop(std::make_shared<Crop>(j["crop"]))
+  , _cropResult(new PVResult(_crop->id()))
   , _method(j["method"].string_value())
   , _percentage(j["percentage"].number_value())
   , _exported(j["exported"].bool_value())
 {}
 
-json11::Json Harvest::to_json() const
+json11::Json Harvest::to_json(bool includeFullCropParameters) const
 {
   return json11::Json::object {
     {"type", "Harvest"},
     {"date", date().toIsoDateString()},
+    {"crop", _crop->to_json(includeFullCropParameters)},
     {"method", _method},
     {"percentage", _percentage},
     {"exported", _exported}};
@@ -131,6 +133,7 @@ void Harvest::apply(MonicaModel* model)
   if(model->cropGrowth())
   {
     auto crop = model->currentCrop();
+    _cropResult->id = crop->id();
 
     if ((_method == "total") || (_method == "fruitHarvest") || (_method == "cutting"))
     {
@@ -195,7 +198,9 @@ void Harvest::apply(MonicaModel* model)
       debug() << "pruning shoots of: " << crop->toString() << " at: " << date().toString() << endl;
       model->shootPruningCurrentCrop(_percentage, _exported);
     }
-  } else {
+  }
+  else
+  {
     debug() << "Cannot harvest crop because there is not one anymore" << endl;
     debug() << "Maybe automatic harvest trigger was already activated so that the ";
     debug() << "crop was already harvested. This must be the fallback harvest application ";
@@ -205,16 +210,12 @@ void Harvest::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-Cutting::Cutting(const Tools::Date& at,
-                 CropPtr crop)
+Cutting::Cutting(const Tools::Date& at)
   : WorkStep(at)
-  , _crop(crop)
 {}
 
-Cutting::Cutting(json11::Json j,
-                 CropPtr crop)
+Cutting::Cutting(json11::Json j)
   : WorkStep(j)
-  , _crop(crop)
 {}
 
 json11::Json Cutting::to_json() const
@@ -226,31 +227,26 @@ json11::Json Cutting::to_json() const
 
 void Cutting::apply(MonicaModel* model)
 {
-  debug() << "Cutting crop: " << _crop->toString() << " at: " << date().toString() << endl;
 
-  if (model->currentCrop() == _crop)
-  {
-    if (model->cropGrowth()) {
-      _crop->setHarvestYields
-          (model->cropGrowth()->get_FreshPrimaryCropYield() /
-           100.0, model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
+  assert(model->currentCrop() && model->cropGrowth());
 
-      _crop->setHarvestYieldsTM
-          (model->cropGrowth()->get_PrimaryCropYield() / 100.0,
-           model->cropGrowth()->get_SecondaryCropYield() / 100.0);
-    }
+  auto crop = model->currentCrop();
 
-    _crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
-                            model->cropGrowth()->get_SecondaryYieldNContent());
+  debug() << "Cutting crop: " << crop->toString() << " at: " << date().toString() << endl;
 
-    _crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
-    _crop->setCropHeight(model->cropGrowth()->get_CropHeight());
+  crop->setHarvestYields(model->cropGrowth()->get_FreshPrimaryCropYield() / 100.0,
+                         model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
 
+  crop->setHarvestYieldsTM(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
+                           model->cropGrowth()->get_SecondaryCropYield() / 100.0);
 
-    if (model->cropGrowth()) {
-      model->cropGrowth()->applyCutting();
-    }
-  }
+  crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
+                         model->cropGrowth()->get_SecondaryYieldNContent());
+
+  crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
+  crop->setCropHeight(model->cropGrowth()->get_CropHeight());
+
+  model->cropGrowth()->applyCutting();
 }
 
 //------------------------------------------------------------------------------
@@ -287,9 +283,9 @@ void MineralFertiliserApplication::apply(MonicaModel* model)
 //------------------------------------------------------------------------------
 
 OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at,
-                             const OrganicMatterParameters* params,
-                             double amount,
-                             bool incorp)
+                                                           const OrganicMatterParameters* params,
+                                                           double amount,
+                                                           bool incorp)
   : WorkStep(at)
   , _params(params)
   , _amount(amount)
@@ -407,30 +403,30 @@ ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop)
 {
   debug() << "ProductionProcess: " << name.c_str() << endl;
 
-  if ((crop->seedDate() != Date(1, 1, 1951)) && (crop->seedDate() != Date(0, 0, 0)))
-    addApplication(Seed(crop->seedDate(), crop));
+  if(crop->seedDate().isValid())
+    addApplication(Seed(crop->seedDate(), _crop));
 	
-  if ((crop->harvestDate() != Date(1,1,1951)) && (crop->harvestDate() != Date(0,0,0)) )
+  if(crop->harvestDate().isValid())
   {
     debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
-    addApplication(Harvest(crop->harvestDate(), crop, _cropResult));
+    addApplication(Harvest(crop->harvestDate(), _crop, _cropResult));
   }
 
   for(Date cd : crop->getCuttingDates())
 	{
     debug() << "Add cutting date: " << cd.toString() << endl;
-    addApplication(Cutting(cd, crop));
+    addApplication(Cutting(cd));
 	}
 }
 
 ProductionProcess::ProductionProcess(json11::Json j)
   : _customId(int_value(j, "customId"))
   , _name(string_value(j, "name"))
-  , _crop(j["crop"])
+  , _crop(new Crop(j["crop"]))
   , _irrigateCrop(bool_value(j, "irrigateCrop"))
 {
   for(auto ws : j["worksteps"].arrayItems())
-    _worksteps[Date::fromIsoDateString(string_value(ws.at(0)))] = make_shared<
+    _worksteps[Date::fromIsoDateString(string_value(ws.at(0)))] = makeWorkstep(ws.at(1));
 }
 
 ProductionProcess ProductionProcess::deepCloneAndClearWorksteps() const

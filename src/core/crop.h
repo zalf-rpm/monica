@@ -43,16 +43,16 @@ namespace Monica
   class Crop
   {
 	public:
-    Crop(const std::string& name = "fallow");
+    Crop(const std::string& species = "fallow");
 
     Crop(CropId id,
-         const std::string& name,
+         const std::string& species,
          const CropParameters* cps = nullptr,
          const OrganicMatterParameters* rps = nullptr,
          double crossCropAdaptionFactor = 1);
 
     Crop(CropId id,
-         const std::string& name,
+         const std::string& species,
          const Tools::Date& seedDate,
          const Tools::Date& harvestDate,
          const CropParameters* cps = nullptr,
@@ -61,11 +61,11 @@ namespace Monica
 
     Crop(json11::Json j);
 
-    json11::Json to_json(bool includeCropAndResidueParams = true) const;
+    json11::Json to_json(bool includeFullCropParameters = true) const;
 
     CropId id() const { return _id; }
 
-    std::string name() const { return _name; }
+    std::string species() const { return _species; }
 
     bool isValid() const { return _id > -1; }
 
@@ -173,7 +173,7 @@ namespace Monica
 
 	private:
     CropId _id{-1};
-		std::string _name;
+    std::string _species;
     std::string _cultivar;
 		Tools::Date _seedDate;
 		Tools::Date _harvestDate;

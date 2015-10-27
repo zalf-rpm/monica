@@ -211,22 +211,23 @@ size_t SoilColumn::calculateNumberOfOrganicLayers()
  * @param vf_FertiliserMinApplication Threshold value for economically reasonable fertilizer application
  * @param vf_TopDressingDelay Number of days for which the application of surplus fertilizer is delayed
  */
-double SoilColumn::
-applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
-                                    double vf_SamplingDepth,
-                                    double vf_CropNTarget,
-                                    double vf_CropNTarget30,
-                                    double vf_FertiliserMinApplication,
-                                    double vf_FertiliserMaxApplication,
-                                    int vf_TopDressingDelay ) {
-
+double SoilColumn::applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
+                                                       double vf_SamplingDepth,
+                                                       double vf_CropNTarget,
+                                                       double vf_CropNTarget30,
+                                                       double vf_FertiliserMinApplication,
+                                                       double vf_FertiliserMaxApplication,
+                                                       int vf_TopDressingDelay )
+{
   // Wassergehalt > Feldkapazität
   if(at(0).get_Vs_SoilMoisture_m3() > at(0).vs_FieldCapacity())
   {
-    _delayedNMinApplications.push_back
-        ([=](){ return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
-                                                                 vf_CropNTarget30, vf_FertiliserMinApplication,
-                                                                 vf_FertiliserMaxApplication, vf_TopDressingDelay); });
+    _delayedNMinApplications.push_back([=]()
+    {
+      return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
+                                                       vf_CropNTarget30, vf_FertiliserMinApplication,
+                                                       vf_FertiliserMaxApplication, vf_TopDressingDelay);
+    });
 
     //cerr << "Soil too wet for fertilisation. "
     //  "Fertiliser event adjourned to next day." << endl;
@@ -239,9 +240,8 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
   double vf_SoilNH4Sum30 = 0.0;
   int vf_Layer30cm = getLayerNumberForDepth(0.3);
 
-  for(int i_Layer = 0;
-      i_Layer < (ceil(vf_SamplingDepth / at(i_Layer).vs_LayerThickness));
-      i_Layer++) {
+  for(int i_Layer = 0; i_Layer < (ceil(vf_SamplingDepth / at(i_Layer).vs_LayerThickness)); i_Layer++)
+  {
     //vf_TargetLayer is in cm. We want number of layers
     vf_SoilNO3Sum += at(i_Layer).vs_SoilNO3; //! [kg N m-3]
     vf_SoilNH4Sum += at(i_Layer).vs_SoilNH4; //! [kg N m-3]
@@ -249,7 +249,8 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 
   // Same calculation for a depth of 30 cm
   /** @todo Must be adapted when using variable layer depth. */
-  for(int i_Layer = 0; i_Layer < vf_Layer30cm; i_Layer++) {
+  for(int i_Layer = 0; i_Layer < vf_Layer30cm; i_Layer++)
+  {
     vf_SoilNO3Sum30 += at(i_Layer).vs_SoilNO3; //! [kg N m-3]
     vf_SoilNH4Sum30 += at(i_Layer).vs_SoilNH4; //! [kg N m-3]
   }
@@ -271,16 +272,16 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 
   double vf_FertiliserRecommendation = max(vf_FertiliserDemand, vf_FertiliserDemand30);
 
-  if(vf_FertiliserRecommendation < vf_FertiliserMinApplication) {
-
+  if(vf_FertiliserRecommendation < vf_FertiliserMinApplication)
+  {
     // If the N demand of the crop is smaller than the user defined
     // minimum fertilisation then no need to fertilise
     vf_FertiliserRecommendation = 0.0;
     //cerr << "Fertiliser demand below minimum application value. No fertiliser applied." << endl;
   }
 
-  if(vf_FertiliserRecommendation > vf_FertiliserMaxApplication) {
-
+  if(vf_FertiliserRecommendation > vf_FertiliserMaxApplication)
+  {
     // If the N demand of the crop is greater than the user defined
     // maximum fertilisation then need to split so surplus fertilizer can
     // be applied after a delay time

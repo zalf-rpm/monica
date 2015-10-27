@@ -306,7 +306,7 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
             }
             else if(wsType == "Harvest")
             {
-              Harvest h(ws, crop);
+              Harvest h(ws);
               auto cropResult = h.cropResult();
               cropResult->date = date;
 
@@ -319,7 +319,7 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
               prevDevStage = 0;
             }
             else if(wsType == "Cutting")
-              Cutting(ws, crop).apply(&monica);
+              Cutting(ws).apply(&monica);
             else if(wsType == "MineralFertiliserApplication")
               MineralFertiliserApplication(ws).apply(&monica);
             else if(wsType == "OrganicFertiliserApplication")

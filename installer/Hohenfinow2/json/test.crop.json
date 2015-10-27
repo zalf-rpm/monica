@@ -1,241 +1,85 @@
 {
-	"options" : {
-		"loadFrom" : "filesystem",
-		"fileSuffix" : "json"
-	},
+	"crops": {
+		"ww": {
+			"species": "include(../../../parameters/crop-parameters/winter-wheat/winter-wheat.json)", 
+			"cultivar": "include(../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json)"
+		},
+		"ww2": { 
+			"species": { "....": "...." },
+			"cultivar": { "....": "...." }
+		}
+	}
+
 	"relativeDates" : false,
-	"cropRotation" : [
+	
+	"cropRotation": [
+		{
+			//"rowWidth": 5.0,
+			//"plantSpace": 5.0,
+			//"plantDryWeight": 225.00,
+			//"percNTransplant": 0.0,
+			//"finalHarvestDate": "1992-08-08",
+			//"residuesRemoval": 85.0,
+			"worksteps": [
+				{ "date": "1991-10-13", "type": "Seed", "crop": { "species": "winter-wheat", "cultivar": "ww-variety-1" },
+				{ "date": "1992-08-08", "type": "Harvest", "crop": "ww2" },
+				{
+					"type": "TillageApplication",
+					"date": "1991-10-08",
+					"method": "Plough",
+					"depth": [0.3, "m"]
+				},
+				{
+					"type": "IrrigationApplication",
+					"date": "1992-06-08",
+					"amount", [11.0, "mm"]
+					"parameters": {
+						"nitrateConcentration": 0.0,
+						"sulfateConcentration": 0.0
+					}
+				},
+				{
+					"type": "MineralFertiliserApplication",
+					"date": "1991-10-15",
+					"amount": [90.0, "kg N"],
+					"parameters": {
+						"id": "AN",
+						"name": "... optional",
+						"Carbamid": [50, "%"]
+						"NH4": [20, "%"],
+						"NO3": [30, "%"]
+					}
+					
+				}
+			],
+			"autoWorksteps": [
+				{
+					"type": "AutomaticIrrigation",
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          //"NConc": 0.0,
+          //"date": "1992-06-08",
+					"parameters": {
+						"nitrateConcentration": 0.0,
+						"sulfateConcentration": 0.0
+					}
+        }
+			]
+		},
 		{
 			"name" : "winter-wheat",
 			"variety" : "ww-variety-1",
 			"perennialVariety" : "ww-perennial-variety-1",
-			"seedDate" : "1991-10-13",
-			"harvestDate" : "1992-08-08"
-		
+			"worksteps": [
+				{ "date": "1991-10-13", "type": "Seed", "crop": "ww2" },
+				{	"date": "1991-10-08", "type": "TillageApplication", "depth": [0.3, "m"] },
+				{ "date": "1992-06-08", "type": "IrrigationApplication", "amount", [11.0, "mm"] },
+				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg"], "fertiliserId": "AN" },
+				{ "date": "1992-08-08", "type": "Harvest", "crop": "ww2" }
+			]
 		}
-	
-	],
-
-
-  "crops": [
-    {
-      "name": {
-				"id": 3,
-				"name": "winter rye",
-				"genType": ""
-				},
-      "spec": "",
-      "sowingDate": "1991-10-13",
-      "rowWidth": 5.0,
-      "plantSpace": 5.0,
-      "plantDryWeight": 225.00,
-      "percNTransplant": 0.0,
-      "finalHarvestDate": "1992-08-08",
-      "residuesRemoval": 85.0,
-      "tillageOps": [
-        {
-          "date": "1991-10-08",
-          "method": "Plough",
-          "depth": 30.0
-        }
-      ],
-      "irrigations": [
-        {
-          "method": "Sprinkler",
-          "eventType": "Fixed",
-          "threshold": 30.0,
-          "area": 1.0,
-          "amount": 11.0,
-          "NConc": 0.0,
-          "date": "1992-06-08"
-        }
-      ],
-      "mineralFertilisers": [
-        {
-          "date": "1991-10-15",
-          "method": "Fixed",
-          "type": {
-					"id": 1,
-					"name": "AN"
-					},
-          "amount": 90.0
-        }
-      ]
-    },
-    {
-      "name": {
-				"id": 1,
-				"name": "winter wheat",
-				"genType": ""
-				},
-      "sowingDate": "1992-10-13",
-      "rowWidth": 5.0,
-      "plantSpace": 5.0,
-      "plantDryWeight": 225.00,
-      "percNTransplant": 0.0,
-      "finalHarvestDate": "1993-08-08",
-      "residuesRemoval": 85.0,
-      "tillageOps": [
-        {
-          "date": "1992-10-08",
-          "method": "Plough",
-          "depth": 30.0
-        }
-      ],
-      "irrigations": [
-        {
-          "method": "Sprinkler",
-          "eventType": "Fixed",
-          "threshold": 30.0,
-          "area": 1.0,
-          "amount": 11.0,
-          "NConc": 0.0,
-          "date": "1993-06-08"
-        }
-      ],
-      "mineralFertilisers": [
-        {
-          "date": "1993-03-15",
-          "method": "Fixed",
-          "type": {
-					"id": 1,
-					"name": "AN"
-					},
-          "amount": 90.0
-        }
-      ]
-    },
-    {
-      "name": {
-				"id": 3,
-				"name": "winter rye",
-				"genType": ""
-				},
-      "spec": "",
-      "sowingDate": "1993-10-13",
-      "rowWidth": 5.0,
-      "plantSpace": 5.0,
-      "plantDryWeight": 225.00,
-      "percNTransplant": 0.0,
-      "finalHarvestDate": "1994-08-08",
-      "residuesRemoval": 85.0,
-      "tillageOps": [
-        {
-          "date": "1993-10-08",
-          "method": "Plough",
-          "depth": 30.0
-        }
-      ],
-      "irrigations": [
-        {
-          "method": "Sprinkler",
-          "eventType": "Fixed",
-          "threshold": 30.0,
-          "area": 1.0,
-          "amount": 11.0,
-          "NConc": 0.0,
-          "date": "1994-06-08"
-        }
-      ],
-      "mineralFertilisers": [
-        {
-          "date": "1994-10-15",
-          "method": "Fixed",
-          "type": {
-					"id": 1,
-					"name": "AN"
-					},
-          "amount": 90.0
-        }
-      ]
-    },
-    {
-      "name": {
-				"id": 1,
-				"name": "winter wheat",
-				"genType": ""
-				},
-      "spec": "",
-      "sowingDate": "1995-10-13",
-      "rowWidth": 5.0,
-      "plantSpace": 5.0,
-      "plantDryWeight": 225.00,
-      "percNTransplant": 0.0,
-      "finalHarvestDate": "1996-08-08",
-      "residuesRemoval": 85.0,
-      "tillageOps": [
-        {
-          "date": "1995-10-08",
-          "method": "Plough",
-          "depth": 30.0
-        }
-      ],
-      "irrigations": [
-        {
-          "method": "Sprinkler",
-          "eventType": "Fixed",
-          "threshold": 30.0,
-          "area": 1.0,
-          "amount": 11.0,
-          "NConc": 0.0,
-          "date": "1996-06-08"
-        }
-      ],
-      "mineralFertilisers": [
-        {
-          "date": "1996-03-15",
-          "method": "Fixed",
-          "type": {
-					"id": 1,
-					"name": "AN"
-					},
-          "amount": 90.0
-        }
-      ]
-    },
-    {
-      "name": {
-				"id": 3,
-				"name": "winter rye",
-				"genType": ""
-				},
-      "spec": "",
-      "sowingDate": "1996-10-13",
-      "rowWidth": 5.0,
-      "plantSpace": 5.0,
-      "plantDryWeight": 225.00,
-      "percNTransplant": 0.0,
-      "finalHarvestDate": "1997-08-08",
-      "residuesRemoval": 85.0,
-      "tillageOps": [
-        {
-          "date": "1996-10-08",
-          "method": "Plough",
-          "depth": 30.0
-        }
-      ],
-      "irrigations": [
-        {
-          "method": "Sprinkler",
-          "eventType": "Fixed",
-          "threshold": 30.0,
-          "area": 1.0,
-          "amount": 11.0,
-          "NConc": 0.0,
-          "date": "1997-06-08"
-        }
-      ],
-      "mineralFertilisers": [
-        {
-          "date": "1996-10-15",
-          "method": "Fixed",
-          "type": {
-					"id": 1,
-					"name": "AN"
-					},
-          "amount": 90.0
-        }
-      ]
-    }
-  ]
+	]
 }

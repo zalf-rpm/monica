@@ -436,21 +436,16 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParameters* params,
 }
 
 double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters partition,
-NMinCropParameters cps)
+                                                        NMinCropParameters cps)
 {
-  //AddFertiliserAmountsCallback x(_sumFertiliser, _dailySumFertiliser);
-
   const NMinUserParameters& ups = _envPs.p_NMinUserParams;
-
-  double fert_amount = _soilColumn.applyMineralFertiliserViaNMinMethod(partition,
-                                                                       cps.samplingDepth,
-                                                                       cps.nTarget,
-                                                                       cps.nTarget30,
-                                                                       ups.min,
-                                                                       ups.max,
-                                                                       ups.delayInDays);
-  return fert_amount;
-  //ref(_sumFertiliser) += _1);
+  return _soilColumn.applyMineralFertiliserViaNMinMethod(partition,
+                                                         cps.samplingDepth,
+                                                         cps.nTarget,
+                                                         cps.nTarget30,
+                                                         ups.min,
+                                                         ups.max,
+                                                         ups.delayInDays);
 }
 
 void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
@@ -535,10 +530,6 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;
 
-  //31 + 28 + 15
-  unsigned int pc_JulianDayAutomaticFertilising =
-      _envPs.p_JulianDayAutomaticFertilising;
-
   _soilColumn.deleteAOMPool();
 
   _soilColumn.applyPossibleDelayedFerilizer();
@@ -549,7 +540,7 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
      _currentCrop->isValid() &&
      _envPs.p_UseNMinMineralFertilisingMethod &&
      _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() &&
-     julday == pc_JulianDayAutomaticFertilising)
+     julday == _envPs.p_JulianDayAutomaticFertilising)
   {
     debug() << "nMin fertilising winter crop" << endl;
 		const CropParameters* cps = _currentCrop->cropParameters();

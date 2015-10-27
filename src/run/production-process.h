@@ -86,20 +86,20 @@ namespace Monica
 
     virtual Seed* clone() const {return new Seed(*this); }
 
-    virtual json11::Json to_json() const;
+    virtual json11::Json to_json(bool includeFullCropParameters = true) const;
 
-		virtual void apply(MonicaModel* model);
+    virtual void apply(MonicaModel* model);
 
-		void setDate(Tools::Date date)
-		{
-			this->_date = date;
-			_crop.get()->setSeedAndHarvestDate(date, _crop.get()->harvestDate());
-		}
+    void setDate(Tools::Date date)
+    {
+      this->_date = date;
+      _crop->setSeedAndHarvestDate(date, _crop->harvestDate());
+    }
 
     CropPtr crop() const { return _crop; }
 
-	private:
-		CropPtr _crop;
+  private:
+    CropPtr _crop;
 	};
 
 	//----------------------------------------------------------------------------
@@ -112,20 +112,19 @@ namespace Monica
             PVResultPtr cropResult,
             std::string method = "total");
 
-    Harvest(json11::Json j,
-            CropPtr crop);
+    Harvest(json11::Json j);
 
     virtual Harvest* clone() const { return new Harvest(*this); }
 
-    virtual json11::Json to_json() const;
+    virtual json11::Json to_json(bool includeFullCropParameters = true) const;
 
-		virtual void apply(MonicaModel* model);
+    virtual void apply(MonicaModel* model);
 
-//		void setDate(Tools::Date date)
-//		{
-//			this->_date = date;
-//			_crop.get()->setSeedAndHarvestDate(_crop.get()->seedDate(), date);
-//		}
+    void setDate(Tools::Date date)
+    {
+      this->_date = date;
+      _crop->setSeedAndHarvestDate(_crop->seedDate(), date);
+    }
 
     void setPercentage(double percentage) { _percentage = percentage; }
 
@@ -133,9 +132,9 @@ namespace Monica
 
     PVResultPtr cropResult() const { return _cropResult; }
 
-	private:
-		CropPtr _crop;
-		PVResultPtr _cropResult;
+  private:
+    CropPtr _crop;
+    PVResultPtr _cropResult;
     std::string _method;
     double _percentage{0};
     bool _exported{true};
@@ -146,20 +145,16 @@ namespace Monica
 	class Cutting : public WorkStep
 	{
 	public:
+    Cutting(const Tools::Date& at);
 
-    Cutting(const Tools::Date& at, CropPtr crop);
-
-    Cutting(json11::Json object, CropPtr crop);
+    Cutting(json11::Json object);
 
     virtual Cutting* clone() const {return new Cutting(*this); }
 
     virtual json11::Json to_json() const;
 
 		virtual void apply(MonicaModel* model);
-
-	private:
-		CropPtr _crop;
-	};
+  };
 
 	//----------------------------------------------------------------------------
 
@@ -276,9 +271,10 @@ namespace Monica
 	class ProductionProcess
 	{
 	public:
-		ProductionProcess() { }
+    ProductionProcess() {}
 
-		ProductionProcess(const std::string& name, CropPtr crop = CropPtr());
+    //! is semantically the equivalent to creating an empty PP and adding Seed, Harvest and Cutting applications
+    ProductionProcess(const std::string& name, CropPtr crop);
 
     ProductionProcess(json11::Json object);
 
@@ -290,6 +286,13 @@ namespace Monica
 		void addApplication(const Application& a)
 		{
 			_worksteps.insert(std::make_pair(a.date(), WSPtr(new Application(a))));
+    }
+
+    template<>
+    void addApplication<Seed>(const Seed& s)
+    {
+      _worksteps.insert(std::make_pair(s.date(), WSPtr(new Seed(s))));
+      _crop = s.crop();
     }
 
 		void addApplication(WSPtr a)

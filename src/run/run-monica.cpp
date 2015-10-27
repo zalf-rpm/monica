@@ -397,7 +397,7 @@ Result Monica::runMonica(Env env)
           debug() << "####################################################" << endl;
 
 					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
-          auto harvestApplication = unique_ptr<Harvest>(new Harvest(currentDate, currentPP.crop(), currentPP.cropResultPtr()));
+          auto harvestApplication = unique_ptr<Harvest>(new Harvest(currentDate, currentPP.cropResultPtr()));
           harvestApplication->apply(&monica);
 
         }

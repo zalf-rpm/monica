@@ -47,31 +47,31 @@ using namespace Tools;
 
 //----------------------------------------------------------------------------
 
-Crop::Crop(const std::string& name)
-  : _name(name)
+Crop::Crop(const std::string& species)
+  : _species(species)
 {}
 
 Crop::Crop(CropId id,
-           const std::string& name,
+           const std::string& species,
            const CropParameters* cps,
            const OrganicMatterParameters* rps,
            double crossCropAdaptionFactor)
   : _id(id),
-    _name(name),
+    _species(species),
     _cropParams(cps),
     _residueParams(rps),
     _crossCropAdaptionFactor(crossCropAdaptionFactor)
 {}
 
 Crop::Crop(CropId id,
-           const std::string& name,
+           const std::string& species,
            const Tools::Date& seedDate,
            const Tools::Date& harvestDate,
            const CropParameters* cps,
            const OrganicMatterParameters* rps,
            double crossCropAdaptionFactor)
   : _id(id),
-    _name(name),
+    _species(species),
     _seedDate(seedDate),
     _harvestDate(harvestDate),
     _cropParams(cps),
@@ -80,32 +80,51 @@ Crop::Crop(CropId id,
 {}
 
 Crop::Crop(json11::Json j)
-  : _id(int_value(j, "id")),
-    _name(string_value(j, "species")),
-    _cultivar(string_value(j, "cultivar")),
-    _seedDate(Tools::Date::fromIsoDateString(string_value(j, "seedDate"))),
-    _harvestDate(Tools::Date::fromIsoDateString(string_value(j, "havestDate")))
+  : _seedDate(Tools::Date::fromIsoDateString(string_value(j, "seedDate")))
+  , _harvestDate(Tools::Date::fromIsoDateString(string_value(j, "havestDate")))
 {
+  set_int_value(_id, j, "id");
+  set_string_value(_species, j, "species");
+  set_string_value(_cultivar, j, "cultivar");
+
 	string err;
   if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
-    _cropParamsPtr = make_shared<CropParameters>(j["cropParams"]);
+  {
+    auto jcps = j["cropParams"];
+    //load all crop data from json object
+    if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
+       jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
+      _cropParamsPtr = make_shared<CropParameters>(j["cropParams"]);
+    //load data from database
+    else
+      _cropParams = getCropParametersFromMonicaDB(_id);
+  }
+
   if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
-    _perennialCropParamsPtr = make_shared<CropParameters>(j["perennialCropParams"]);
+  {
+    auto jcps = j["perennialCropParams"];
+    //load all crop data from json object
+    if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
+       jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
+      _perennialCropParamsPtr = make_shared<CropParameters>(j["cropParams"]);
+    //load data from database
+    else
+      _perennialCropParams = getCropParametersFromMonicaDB(_id);
+  }
+
+  //load all crop data from json object
   if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
     _residueParamsPtr = make_shared<OrganicMatterParameters>(j["residueParams"]);
-
-//  if(_id > -1)
-//  {
-//    _cropParams = getCropParametersFromMonicaDB(_id);
-//    _residueParams = getResidueParametersFromMonicaDB(_id);
-//  }
+  //load data from database
+  else
+    _residueParams = getResidueParametersFromMonicaDB(_id);
 
   if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
     for(auto cd : j["cuttingDates"].array_items())
       _cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
 }
 
-json11::Json Crop::to_json(bool includeCropAndResidueParams) const
+json11::Json Crop::to_json(bool includeFullCropParameters) const
 {
   J11Array cds;
   for(auto cd : _cuttingDates)
@@ -114,7 +133,7 @@ json11::Json Crop::to_json(bool includeCropAndResidueParams) const
   J11Object o{
     {"type", "Crop"},
     {"id", _id},
-    {"species", _name},
+    {"species", _species},
     {"cultivar", _cultivar},
     {"seedDate", _seedDate.toIsoDateString()},
     {"harvestDate", _harvestDate.toIsoDateString()},
@@ -122,7 +141,7 @@ json11::Json Crop::to_json(bool includeCropAndResidueParams) const
     {"automaticHarvest", _automaticHarvest},
     {"AutomaticHarvestParams", _automaticHarvestParams}};
 
-  if(includeCropAndResidueParams)
+  if(includeFullCropParameters)
   {
     if(_cropParams)
       o["cropParams"] = *cropParameters();
@@ -138,7 +157,7 @@ json11::Json Crop::to_json(bool includeCropAndResidueParams) const
 string Crop::toString(bool detailed) const
 {
   ostringstream s;
-  s << "id: " << id() << " name: " << name() << " seedDate: " << seedDate().toString() << " harvestDate: "
+  s << "id: " << id() << " name: " << species() << " seedDate: " << seedDate().toString() << " harvestDate: "
       << harvestDate().toString();
   if (detailed)
   {
