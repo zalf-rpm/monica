@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace Monica
 {
 class Result;
-class ProductionProcess;
+class CultivationMethod;
 class CentralParameterProvider;
 
 /**
@@ -103,11 +103,11 @@ class Configuration
     bool createLayers(std::vector<Soil::SoilParameters> &layers, cson_array* horizonsArr, double layerThicknessCm, int maxNoOfLayers);
 
     /* create production processes */
-    bool createProcesses(std::vector<ProductionProcess> &pps, cson_array* cropsArr);
-		bool addHarvestOps(ProductionProcess &pp, cson_array* harvArr);
-		bool addTillageOps(ProductionProcess &pp, cson_array* tillArr);
-    bool addFertilizers(ProductionProcess &pp, cson_array* fertArr, bool isOrganic = false);
-    bool addIrrigations(ProductionProcess &pp, cson_array* irriArr);
+    bool createProcesses(std::vector<CultivationMethod> &pps, cson_array* cropsArr);
+		bool addHarvestOps(CultivationMethod &pp, cson_array* harvArr);
+		bool addTillageOps(CultivationMethod &pp, cson_array* tillArr);
+    bool addFertilizers(CultivationMethod &pp, cson_array* fertArr, bool isOrganic = false);
+    bool addIrrigations(CultivationMethod &pp, cson_array* irriArr);
 
     /* create climate data */
     bool createClimate(Climate::DataAccessor &da, CentralParameterProvider &cpp, double latitude, bool useLeapYears = true);

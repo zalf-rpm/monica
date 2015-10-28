@@ -1,14 +1,20 @@
 {
 	"crops": {
 		"ww": {
-			"species": "include(../../../parameters/crop-parameters/winter-wheat/winter-wheat.json)", 
-			"cultivar": "include(../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json)"
+			"seedDate": "1991-10-13",
+			"harvestDate": "1992-08-08",
+			"cuttingDates": ["1991-11-1", "1991-12-1"],
+			"cropParams": {
+				"species": [[["include-file" "../../../parameters/crop-parameters/winter-wheat/winter-wheat.json"]]], 
+				"cultivar": [[["include-file" "../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json"]]]
+			},
+			"residueParams": "include(../../../parameters/residues/wheat.json)"
 		},
 		"ww2": { 
 			"species": { "....": "...." },
 			"cultivar": { "....": "...." }
 		}
-	}
+	},
 
 	"relativeDates" : false,
 	
@@ -42,7 +48,7 @@
 					"type": "MineralFertiliserApplication",
 					"date": "1991-10-15",
 					"amount": [90.0, "kg N"],
-					"parameters": {
+					"partition": {
 						"id": "AN",
 						"name": "... optional",
 						"Carbamid": [50, "%"]
@@ -77,7 +83,8 @@
 				{ "date": "1991-10-13", "type": "Seed", "crop": "ww2" },
 				{	"date": "1991-10-08", "type": "TillageApplication", "depth": [0.3, "m"] },
 				{ "date": "1992-06-08", "type": "IrrigationApplication", "amount", [11.0, "mm"] },
-				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg"], "fertiliserId": "AN" },
+				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": { "id": "AN" }, "fertiliserId": "AN" },
+				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": [[["include-db" "fertiliser" "AN"]]], "fertiliserId": "AN" },
 				{ "date": "1992-08-08", "type": "Harvest", "crop": "ww2" }
 			]
 		}

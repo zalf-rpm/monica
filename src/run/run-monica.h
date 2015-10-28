@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RUN_MONICA_H_
 
 #include "../core/monica.h"
-#include "production-process.h"
+#include "cultivation-method.h"
 
 namespace Monica
 {
@@ -62,7 +62,7 @@ namespace Monica
     Climate::DataAccessor da;
 
     //! vector of elements holding the data of the single crops in the rotation
-    std::vector<ProductionProcess> cropRotation;
+    std::vector<CultivationMethod> cropRotation;
 
     int customId{-1};
 
@@ -77,7 +77,7 @@ namespace Monica
 
     int getMode() const { return mode; }
 
-    void setCropRotation(std::vector<ProductionProcess> cr) { cropRotation = cr; }
+    void setCropRotation(std::vector<CultivationMethod> cr) { cropRotation = cr; }
 
     std::string berestRequestAddress;
 //    std::string berestRequestProtocol;

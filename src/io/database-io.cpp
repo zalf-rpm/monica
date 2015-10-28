@@ -51,13 +51,12 @@ using namespace std;
 *
 * @return Reference to crop parameters
 */
-const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
+const CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
 {
 	static mutex lockable;
 
 	static bool initialized = false;
-	typedef std::shared_ptr<CropParameters> CPPtr;
-	typedef map<int, CPPtr> CPS;
+  typedef map<int, CropParametersPtr> CPS;
 
 	static CPS cpss;
 
@@ -71,239 +70,274 @@ const CropParameters* Monica::getCropParametersFromMonicaDB(int cropId)
 		if (!initialized)
 		{
 
-			DB *con = newConnection("monica");
+      DBPtr con(newConnection("monica"));
 			DBRow row;
-			std::string text_request = "select id, name, perennial, max_assimilation_rate, "
-				"carboxylation_pathway, minimum_temperature_for_assimilation, "
-				"crop_specific_max_rooting_depth, min_n_content, "
-				"n_content_pn, n_content_b0, "
-				"n_content_above_ground_biomass, n_content_root, initial_kc_factor, "
-				"development_acceleration_by_nitrogen_stress, fixing_n, "
-				"luxury_n_coeff, max_crop_height, residue_n_ratio, "
-				"sampling_depth, target_n_sampling_depth, target_n30, "
-				"default_radiation_use_efficiency, crop_height_P1, crop_height_P2, "
-				"stage_at_max_height, max_stem_diameter, stage_at_max_diameter, "
-				"heat_sum_irrigation_start, heat_sum_irrigation_end, "
-				"max_N_uptake_p, root_distribution_p, plant_density, "
-				"root_growth_lag, min_temperature_root_growth, initial_rooting_depth, "
-				"root_penetration_rate, root_form_factor, specific_root_length, "
-				"stage_after_cut, crit_temperature_heat_stress, "
-				"lim_temperature_heat_stress, begin_sensitive_phase_heat_stress, "
-				"end_sensitive_phase_heat_stress, drought_impact_on_fertility_factor, "
-				"cutting_delay_days, field_condition_modifier, assimilate_reallocation, "
-				"LT50cultivar, frost_hardening, frost_dehardening, "
-				"low_temperature_exposure, respiratory_stress, latest_harvest_doy from crop";
-			con->select(text_request.c_str());
+      std::string text_request =
+          "select "
+          "id, "
+          "species, "
+          "cultivar, "
+          "perennial, "
+          "max_assimilation_rate, "
+          "carboxylation_pathway, "
+          "minimum_temperature_for_assimilation, "
+          "crop_specific_max_rooting_depth, "
+          "min_n_content, "
+          "n_content_pn, "
+          "n_content_b0, "
+          "n_content_above_ground_biomass, "
+          "n_content_root, "
+          "initial_kc_factor, "
+          "development_acceleration_by_nitrogen_stress, "
+          "fixing_n, "
+          "luxury_n_coeff, "
+          "max_crop_height, "
+          "residue_n_ratio, "
+          "sampling_depth, "
+          "target_n_sampling_depth, "
+          "target_n30, "
+          "default_radiation_use_efficiency, "
+          "crop_height_P1, "
+          "crop_height_P2, "
+          "stage_at_max_height, "
+          "max_stem_diameter, "
+          "stage_at_max_diameter, "
+          "heat_sum_irrigation_start, "
+          "heat_sum_irrigation_end, "
+          "max_N_uptake_p, "
+          "root_distribution_p, "
+          "plant_density, "
+          "root_growth_lag, "
+          "min_temperature_root_growth, "
+          "initial_rooting_depth, "
+          "root_penetration_rate, "
+          "root_form_factor, "
+          "specific_root_length, "
+          "stage_after_cut, "
+          "crit_temperature_heat_stress, "
+          "lim_temperature_heat_stress, "
+          "begin_sensitive_phase_heat_stress, "
+          "end_sensitive_phase_heat_stress, "
+          "drought_impact_on_fertility_factor, "
+          "cutting_delay_days, "
+          "field_condition_modifier, "
+          "assimilate_reallocation, "
+          "LT50cultivar, "
+          "frost_hardening, "
+          "frost_dehardening, "
+          "low_temperature_exposure, "
+          "respiratory_stress, "
+          "latest_harvest_doy "
+          "from crop";
+      con->select(text_request);
+      debug() << text_request << endl;
 
-			debug() << text_request.c_str() << endl;
-			while (!(row = con->getRow()).empty())
+      while (!(row = con->getRow()).empty())
 			{
-
 				int i = 0;
-				int id = satoi(row[i++]);
+        int id = stoi(row[i++]);
 
-				debug() << "Reading in crop Parameters for: " << id << endl;
-				CPS::iterator cpsi = cpss.find(id);
-				CPPtr cps;
+        CropParametersPtr cps;
 
-				if (cpsi == cpss.end())
-					cpss.insert(make_pair(id, cps = std::shared_ptr<CropParameters>(new CropParameters)));
-				else
-					cps = cpsi->second;
+        debug() << "Reading in crop Parameters for: " << id << endl;
+        auto cpsi = cpss.find(id);
+        if(cpsi == cpss.end())
+          cpss[id] = cps = make_shared<CropParameters>();
+        else
+          cps = cpsi->second;
 
-				cps->pc_CropName = row[i++].c_str();
-        cps->pc_Perennial = satob(row[i++]);
-				cps->pc_MaxAssimilationRate = satof(row[i++]);
-				cps->pc_CarboxylationPathway = satoi(row[i++]);
-				cps->pc_MinimumTemperatureForAssimilation = satof(row[i++]);
-				cps->pc_CropSpecificMaxRootingDepth = satof(row[i++]);
-				cps->pc_MinimumNConcentration = satof(row[i++]);
-				cps->pc_NConcentrationPN = satof(row[i++]);
-				cps->pc_NConcentrationB0 = satof(row[i++]);
-				cps->pc_NConcentrationAbovegroundBiomass = satof(row[i++]);
-				cps->pc_NConcentrationRoot = satof(row[i++]);
-				cps->pc_InitialKcFactor = satof(row[i++]);
-				cps->pc_DevelopmentAccelerationByNitrogenStress = satoi(row[i++]);
-				cps->pc_PartBiologicalNFixation = satof(row[i++]);
-				cps->pc_LuxuryNCoeff = satof(row[i++]);
-				cps->pc_MaxCropHeight = satof(row[i++]);
-				cps->pc_ResidueNRatio = satof(row[i++]);
-				cps->pc_SamplingDepth = satof(row[i++]);
-				cps->pc_TargetNSamplingDepth = satof(row[i++]);
-				cps->pc_TargetN30 = satof(row[i++]);
-				cps->pc_DefaultRadiationUseEfficiency = satof(row[i++]);
-				cps->pc_CropHeightP1 = satof(row[i++]);
-				cps->pc_CropHeightP2 = satof(row[i++]);
-				cps->pc_StageAtMaxHeight = satof(row[i++]);
-				cps->pc_MaxCropDiameter = satof(row[i++]);
-				cps->pc_StageAtMaxDiameter = satof(row[i++]);
-				cps->pc_HeatSumIrrigationStart = satof(row[i++]);
-				cps->pc_HeatSumIrrigationEnd = satof(row[i++]);
-				cps->pc_MaxNUptakeParam = satof(row[i++]);
-				cps->pc_RootDistributionParam = satof(row[i++]);
-				cps->pc_PlantDensity = satof(row[i++]);
-				cps->pc_RootGrowthLag = satof(row[i++]);
-				cps->pc_MinimumTemperatureRootGrowth = satof(row[i++]);
-				cps->pc_InitialRootingDepth = satof(row[i++]);
-				cps->pc_RootPenetrationRate = satof(row[i++]);
-				cps->pc_RootFormFactor = satof(row[i++]);
-				cps->pc_SpecificRootLength = satof(row[i++]);
-				cps->pc_StageAfterCut = satoi(row[i++]);
-				cps->pc_CriticalTemperatureHeatStress = satof(row[i++]);
-				cps->pc_LimitingTemperatureHeatStress = satof(row[i++]);
-				cps->pc_BeginSensitivePhaseHeatStress = satof(row[i++]);
-				cps->pc_EndSensitivePhaseHeatStress = satof(row[i++]);
-				cps->pc_DroughtImpactOnFertilityFactor = satof(row[i++]);
-				cps->pc_CuttingDelayDays = satoi(row[i++]);
-				cps->pc_FieldConditionModifier = satof(row[i++]);
-				cps->pc_AssimilateReallocation = satof(row[i++]);
-				cps->pc_LT50cultivar = satof(row[i++]);
-				cps->pc_FrostHardening = satof(row[i++]);
-				cps->pc_FrostDehardening = satof(row[i++]);
-				cps->pc_LowTemperatureExposure = satof(row[i++]);
-				cps->pc_RespiratoryStress = satof(row[i++]);
-				cps->pc_LatestHarvestDoy = satoi(row[i++]);
-
-			}
-			std::string req2 = "select o.crop_id, o.id, o.initial_organ_biomass, "
-				"o.organ_maintainance_respiration, o.is_above_ground, "
-				"o.organ_growth_respiration, o.is_storage_organ "
-				"from organ as o inner join crop as c on c.id = o.crop_id "
-				"order by o.crop_id, c.id";
-			con->select(req2.c_str());
-
-			debug() << req2.c_str() << endl;
-
-			while (!(row = con->getRow()).empty())
-			{
-
-				int cropId = satoi(row[0]);
-				//        debug() << "Organ for crop: " << cropId << endl;
-				auto cps = cpss[cropId];
-
-				cps->pc_NumberOfOrgans++;
-				cps->pc_InitialOrganBiomass.push_back(satof(row[2]));
-				cps->pc_OrganMaintenanceRespiration.push_back(satof(row[3]));
-				cps->pc_AbovegroundOrgan.push_back(satoi(row[4]) == 1);
-				cps->pc_OrganGrowthRespiration.push_back(satof(row[5]));
-				cps->pc_StorageOrgan.push_back(satoi(row[6]));
+        cps->speciesParams.pc_SpeciesName = row[i++];
+        cps->cultivarParams.pc_CultivarName = row[i++];
+        cps->speciesParams.pc_Perennial = stob(row[i++]);
+        cps->speciesParams.pc_MaxAssimilationRate = stof(row[i++]);
+        cps->speciesParams.pc_CarboxylationPathway = stoi(row[i++]);
+        cps->speciesParams.pc_MinimumTemperatureForAssimilation = stof(row[i++]);
+        cps->speciesParams.pc_CropSpecificMaxRootingDepth = stof(row[i++]);
+        cps->speciesParams.pc_MinimumNConcentration = stof(row[i++]);
+        cps->speciesParams.pc_NConcentrationPN = stof(row[i++]);
+        cps->speciesParams.pc_NConcentrationB0 = stof(row[i++]);
+        cps->speciesParams.pc_NConcentrationAbovegroundBiomass = stof(row[i++]);
+        cps->speciesParams.pc_NConcentrationRoot = stof(row[i++]);
+        cps->speciesParams.pc_InitialKcFactor = stof(row[i++]);
+        cps->speciesParams.pc_DevelopmentAccelerationByNitrogenStress = stoi(row[i++]);
+        cps->speciesParams.pc_PartBiologicalNFixation = stof(row[i++]);
+        cps->speciesParams.pc_LuxuryNCoeff = stof(row[i++]);
+        cps->cultivarParams.pc_MaxCropHeight = stof(row[i++]);
+        cps->cultivarParams.pc_ResidueNRatio = stof(row[i++]);
+        cps->speciesParams.pc_SamplingDepth = stof(row[i++]);
+        cps->speciesParams.pc_TargetNSamplingDepth = stof(row[i++]);
+        cps->speciesParams.pc_TargetN30 = stof(row[i++]);
+        cps->speciesParams.pc_DefaultRadiationUseEfficiency = stof(row[i++]);
+        cps->speciesParams.pc_CropHeightP1 = stof(row[i++]);
+        cps->speciesParams.pc_CropHeightP2 = stof(row[i++]);
+        cps->speciesParams.pc_StageAtMaxHeight = stof(row[i++]);
+        cps->speciesParams.pc_MaxCropDiameter = stof(row[i++]);
+        cps->speciesParams.pc_StageAtMaxDiameter = stof(row[i++]);
+        cps->speciesParams.pc_HeatSumIrrigationStart = stof(row[i++]);
+        cps->speciesParams.pc_HeatSumIrrigationEnd = stof(row[i++]);
+        cps->speciesParams.pc_MaxNUptakeParam = stof(row[i++]);
+        cps->speciesParams.pc_RootDistributionParam = stof(row[i++]);
+        cps->speciesParams.pc_PlantDensity = stof(row[i++]);
+        cps->speciesParams.pc_RootGrowthLag = stof(row[i++]);
+        cps->speciesParams.pc_MinimumTemperatureRootGrowth = stof(row[i++]);
+        cps->speciesParams.pc_InitialRootingDepth = stof(row[i++]);
+        cps->speciesParams.pc_RootPenetrationRate = stof(row[i++]);
+        cps->speciesParams.pc_RootFormFactor = stof(row[i++]);
+        cps->speciesParams.pc_SpecificRootLength = stof(row[i++]);
+        cps->speciesParams.pc_StageAfterCut = stoi(row[i++]);
+        cps->cultivarParams.pc_CriticalTemperatureHeatStress = stof(row[i++]);
+        cps->speciesParams.pc_LimitingTemperatureHeatStress = stof(row[i++]);
+        cps->cultivarParams.pc_BeginSensitivePhaseHeatStress = stof(row[i++]);
+        cps->cultivarParams.pc_EndSensitivePhaseHeatStress = stof(row[i++]);
+        cps->speciesParams.pc_DroughtImpactOnFertilityFactor = stof(row[i++]);
+        cps->speciesParams.pc_CuttingDelayDays = stoi(row[i++]);
+        cps->speciesParams.pc_FieldConditionModifier = stof(row[i++]);
+        cps->speciesParams.pc_AssimilateReallocation = stof(row[i++]);
+        cps->cultivarParams.pc_LT50cultivar = stof(row[i++]);
+        cps->speciesParams.pc_FrostHardening = stof(row[i++]);
+        cps->speciesParams.pc_FrostDehardening = stof(row[i++]);
+        cps->speciesParams.pc_LowTemperatureExposure = stof(row[i++]);
+        cps->speciesParams.pc_RespiratoryStress = stof(row[i++]);
+        cps->speciesParams.pc_LatestHarvestDoy = stoi(row[i++]);
 			}
 
-			std::string req4 = "select crop_id, id, stage_temperature_sum, "
-				"base_temperature, opt_temperature, vernalisation_requirement, "
-				"day_length_requirement, base_day_length, "
-				"drought_stress_threshold, critical_oxygen_content, "
-				"specific_leaf_area, stage_max_root_n_content, "
-				"stage_kc_factor "
-				"from dev_stage "
-				"order by crop_id, id";
+      std::string req2 =
+          "select "
+          "o.crop_id, "
+          "o.id, "
+          "o.initial_organ_biomass, "
+          "o.organ_maintainance_respiration, "
+          "o.is_above_ground, "
+          "o.organ_growth_respiration, "
+          "o.is_storage_organ "
+          "from organ as o inner join crop as c on c.id = o.crop_id "
+          "order by o.crop_id, c.id";
+      con->select(req2);
+      debug() << req2 << endl;
 
-			con->select(req4.c_str());
-			debug() << req4.c_str() << endl;
 			while (!(row = con->getRow()).empty())
 			{
 				int cropId = satoi(row[0]);
-				auto cps = cpss[cropId];
-				cps->pc_NumberOfDevelopmentalStages++;
-				cps->pc_StageTemperatureSum.push_back(satof(row[2]));
-				cps->pc_BaseTemperature.push_back(satof(row[3]));
-				cps->pc_OptimumTemperature.push_back(satof(row[4]));
-				cps->pc_VernalisationRequirement.push_back(satof(row[5]));
-				cps->pc_DaylengthRequirement.push_back(satof(row[6]));
-				cps->pc_BaseDaylength.push_back(satof(row[7]));
-				cps->pc_DroughtStressThreshold.push_back(satof(row[8]));
-				cps->pc_CriticalOxygenContent.push_back(satof(row[9]));
-				cps->pc_SpecificLeafArea.push_back(satof(row[10]));
-				cps->pc_StageMaxRootNConcentration.push_back(satof(row[11]));
-				cps->pc_StageKcFactor.push_back(satof(row[12]));
+        CropParametersPtr cps = cpss[cropId];
+
+        cps->speciesParams.pc_NumberOfOrgans++;
+        cps->speciesParams.pc_InitialOrganBiomass.push_back(stof(row[2]));
+        cps->speciesParams.pc_OrganMaintenanceRespiration.push_back(stof(row[3]));
+        cps->speciesParams.pc_AbovegroundOrgan.push_back(stoi(row[4]) == 1);
+        cps->speciesParams.pc_OrganGrowthRespiration.push_back(stof(row[5]));
+        cps->speciesParams.pc_StorageOrgan.push_back(stoi(row[6]));
 			}
 
-			for (CPS::value_type vt : cpss)
+      std::string req4 =
+          "select "
+          "crop_id, "
+          "id, "
+          "stage_temperature_sum, "
+          "base_temperature, "
+          "opt_temperature, "
+          "vernalisation_requirement, "
+          "day_length_requirement, "
+          "base_day_length, "
+          "drought_stress_threshold, "
+          "critical_oxygen_content, "
+          "specific_leaf_area, "
+          "stage_max_root_n_content, "
+          "stage_kc_factor "
+          "from dev_stage "
+          "order by crop_id, id";
+      con->select(req4);
+      debug() << req4 << endl;
+
+      while (!(row = con->getRow()).empty())
 			{
-				vt.second->resizeStageOrganVectors();
-			}
-			//for (CPS::iterator it = cpss.begin(); it != cpss.end(); it++)
-			//  it->second->resizeStageOrganVectors();
+				int cropId = satoi(row[0]);
+        CropParametersPtr cps = cpss[cropId];
 
-			std::string req3 = "select crop_id, organ_id, dev_stage_id, "
-				"ods_dependent_param_id, value "
-				"from crop2ods_dependent_param "
-				"order by crop_id, ods_dependent_param_id, dev_stage_id, organ_id";
-			con->select(req3.c_str());
-			debug() << req3.c_str() << endl;
+        cps->speciesParams.pc_NumberOfDevelopmentalStages++;
+        cps->cultivarParams.pc_StageTemperatureSum.push_back(stof(row[2]));
+        cps->speciesParams.pc_BaseTemperature.push_back(stof(row[3]));
+        cps->cultivarParams.pc_OptimumTemperature.push_back(stof(row[4]));
+        cps->cultivarParams.pc_VernalisationRequirement.push_back(stof(row[5]));
+        cps->cultivarParams.pc_DaylengthRequirement.push_back(stof(row[6]));
+        cps->cultivarParams.pc_BaseDaylength.push_back(stof(row[7]));
+        cps->cultivarParams.pc_DroughtStressThreshold.push_back(stof(row[8]));
+        cps->speciesParams.pc_CriticalOxygenContent.push_back(stof(row[9]));
+        cps->cultivarParams.pc_SpecificLeafArea.push_back(stof(row[10]));
+        cps->speciesParams.pc_StageMaxRootNConcentration.push_back(stof(row[11]));
+        cps->cultivarParams.pc_StageKcFactor.push_back(stof(row[12]));
+			}
+
+      for (auto p : cpss)
+        p.second->resizeStageOrganVectors();
+
+      std::string req3 =
+          "select "
+          "crop_id, "
+          "organ_id, "
+          "dev_stage_id, "
+          "ods_dependent_param_id, "
+          "value "
+          "from crop2ods_dependent_param "
+          "order by crop_id, ods_dependent_param_id, dev_stage_id, organ_id";
+      con->select(req3);
+      debug() << req3 << endl;
 
 			while (!(row = con->getRow()).empty())
 			{
-
 				int cropId = satoi(row[0]);
 				//        debug() << "ods_dependent_param " << cropId << "\t" << satoi(row[3]) <<"\t" << satoi(row[2]) <<"\t" << satoi(row[1])<< endl;
-				auto cps = cpss[cropId];
-				vector<vector<double> >& sov = satoi(row[3]) == 1
-					? cps->pc_AssimilatePartitioningCoeff
-					: cps->pc_OrganSenescenceRate;
-				sov[satoi(row[2]) - 1][satoi(row[1]) - 1] = satof(row[4]);
+        CropParametersPtr cps = cpss[cropId];
+
+        auto& sov = stoi(row[3]) == 1 ? cps->cultivarParams.pc_AssimilatePartitioningCoeff
+                                      : cps->speciesParams.pc_OrganSenescenceRate;
+        sov[stoi(row[2]) - 1][stoi(row[1]) - 1] = stof(row[4]);
 			}
 
 			con->select("SELECT crop_id, organ_id, is_primary, percentage, dry_matter FROM yield_parts");
 			debug() << "SELECT crop_id, organ_id, is_primary, percentage, dry_matter FROM yield_parts" << endl;
 			while (!(row = con->getRow()).empty())
 			{
-				int cropId = satoi(row[0]);
-				int organId = satoi(row[1]);
-				bool isPrimary = satoi(row[2]) == 1;
-				double percentage = satof(row[3]) / 100.0;
-				double yieldDryMatter = satof(row[4]);
+        int cropId = stoi(row[0]);
+        bool isPrimary = stob(row[2]);
 
-				auto cps = cpss[cropId];
+        YieldComponent yc;
+        yc.organId = stoi(row[1]);
+        yc.yieldPercentage = stof(row[3]) / 100.0;
+        yc.yieldDryMatter = stof(row[4]);
+
+        CropParametersPtr cps = cpss[cropId];
 
 				// normal case, uses yield partitioning from crop database
-				if (isPrimary) {
-					//            cout << cropId<< " Add primary organ: " << organId << endl;
-					cps->pc_OrganIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
-
-				}
-				else {
-					//            cout << cropId << " Add secondary organ: " << organId << endl;
-					cps->pc_OrganIdsForSecondaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
-				}
-
+        if (isPrimary)
+          cps->speciesParams.pc_OrganIdsForPrimaryYield.push_back(yc);
+        else
+          cps->speciesParams.pc_OrganIdsForSecondaryYield.push_back(yc);
 			}
 
 			// get cutting parts if there are some data available
 			con->select("SELECT crop_id, organ_id, is_primary, percentage, dry_matter FROM cutting_parts");
 			while (!(row = con->getRow()).empty())
 			{
-				int cropId = satoi(row[0]);
-				int organId = satoi(row[1]);
-				//bool isPrimary = satoi(row[2]) == 1;
-				double percentage = satof(row[3]) / 100.0;
-				double yieldDryMatter = satof(row[4]);
+        int cropId = stoi(row[0]);
 
-				auto cps = cpss[cropId];
-				cps->pc_OrganIdsForCutting.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
-				//if (cropId!=18) {
-				//    // do not add cutting part organ id for sudan gras because they are already added
-				//    cps->pc_OrganIdsForPrimaryYield.push_back(Monica::YieldComponent(organId, percentage, yieldDryMatter));
-				//}
+        YieldComponent yc;
+        yc.organId = stoi(row[1]);
+        //bool isPrimary = stoi(row[2]) == 1;
+        yc.yieldPercentage = stof(row[3]) / 100.0;
+        yc.yieldDryMatter = stof(row[4]);
+
+        cpss[cropId]->speciesParams.pc_OrganIdsForCutting.push_back(yc);
 			}
 
-
-			delete con;
 			initialized = true;
-
-			/*
-			for(CPS::const_iterator it = cpss.begin(); it != cpss.end(); it++)
-			cout << it->second->toString();
-			//*/
 		}
 	}
 
-	static CropParameters nothing;
+  static CropParametersPtr nothing = make_shared<CropParameters>();
 
-	CPS::const_iterator ci = cpss.find(cropId);
-
+  auto ci = cpss.find(cropId);
 	debug() << "Find crop parameter: " << cropId << endl;
-	return ci != cpss.end() ? ci->second.get() : &nothing;
+  return ci != cpss.end() ? ci->second : nothing;
 }
 
 void Monica::writeCropParameters(string path)
@@ -326,7 +360,7 @@ void Monica::writeCropParameters(string path)
 
 //------------------------------------------------------------------------------
 
-const map<int, MineralFertiliserParameters>& Monica::getAllMineralFertiliserParametersFromMonicaDB()
+const map<int, MineralFertiliserParameters>& getAllMineralFertiliserParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -350,7 +384,7 @@ const map<int, MineralFertiliserParameters>& Monica::getAllMineralFertiliserPara
 				double nh4 = satof(row[3]);
 				double carbamid = satof(row[4]);
 
-        m.insert(make_pair(id, MineralFertiliserParameters(type, name, carbamid, no3, nh4)));
+        m[id] = MineralFertiliserParameters(type, name, carbamid, no3, nh4);
 			}
 			delete con;
 
@@ -394,7 +428,7 @@ void Monica::writeMineralFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-const map<int, OMPPtr>& Monica::getAllOrganicFertiliserParametersFromMonicaDB()
+const map<int, OrganicMatterParametersPtr>& getAllOrganicFertiliserParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -414,7 +448,8 @@ const map<int, OMPPtr>& Monica::getAllOrganicFertiliserParametersFromMonicaDB()
 				"from organic_fertiliser");
 			while (!(row = con->getRow()).empty())
 			{
-				auto omp = OMPPtr(new OMP);
+        OrganicMatterParametersPtr omp = make_shared<OrganicMatterParameters>();
+
 				omp->id = row[14];
 				omp->name = row[0];
 				omp->vo_AOM_DryMatterContent = satof(row[1]);
@@ -447,13 +482,13 @@ const map<int, OMPPtr>& Monica::getAllOrganicFertiliserParametersFromMonicaDB()
 * @param organ_fert_id ID of fertiliser
 * @return organic fertiliser parameters with values from database
 */
-OrganicMatterParameters* Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
+OrganicMatterParametersPtr Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
 {
-	static OrganicMatterParameters nothing;
+  static OrganicMatterParametersPtr nothing = make_shared<OrganicMatterParameters>();
 
 	auto m = getAllOrganicFertiliserParametersFromMonicaDB();
 	auto ci = m.find(id);
-	return ci != m.end() ? ci->second.get() : &nothing;
+  return ci != m.end() ? ci->second : nothing;
 }
 
 void Monica::writeOrganicFertilisers(string path)
@@ -478,11 +513,11 @@ void Monica::writeOrganicFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-const map<int, OMPPtr>& Monica::getAllResidueParametersFromMonicaDB()
+const map<int, OrganicMatterParametersPtr>& getAllResidueParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
-	typedef map<int, OMPPtr> Map;
+  typedef map<int, OrganicMatterParametersPtr> Map;
 	static Map m;
 
 	if (!initialized)
@@ -498,7 +533,8 @@ const map<int, OMPPtr>& Monica::getAllResidueParametersFromMonicaDB()
 				"from residue_table");
 			while (!(row = con->getRow()).empty())
 			{
-				auto omp = OMPPtr(new OMP);
+        OrganicMatterParametersPtr omp = make_shared<OrganicMatterParameters>();
+
 				omp->id = row[13];
 				omp->name = row[0];
 				omp->vo_AOM_DryMatterContent = satoi(row[1]);
@@ -531,13 +567,13 @@ const map<int, OMPPtr>& Monica::getAllResidueParametersFromMonicaDB()
 * @param crop_id ID of crop
 * @return Residues parameters with values from database
 */
-const OrganicMatterParameters* Monica::getResidueParametersFromMonicaDB(int cropId)
+const OrganicMatterParametersPtr Monica::getResidueParametersFromMonicaDB(int cropId)
 {
-	static OrganicMatterParameters nothing;
+  static OrganicMatterParametersPtr nothing = make_shared<OrganicMatterParameters>();
 
 	auto m = getAllResidueParametersFromMonicaDB();
 	auto ci = m.find(cropId);
-	return ci != m.end() ? ci->second.get() : &nothing;
+  return ci != m.end() ? ci->second : nothing;
 }
 
 void Monica::writeResidues(string path)

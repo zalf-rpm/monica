@@ -43,20 +43,20 @@ namespace Monica
   class Crop
   {
 	public:
-    Crop(const std::string& species = "fallow");
+    Crop(const std::string& speciesName = "fallow");
 
     Crop(CropId id,
-         const std::string& species,
-         const CropParameters* cps = nullptr,
-         const OrganicMatterParameters* rps = nullptr,
+         const std::string& speciesName,
+         const CropParametersPtr cps = CropParametersPtr(),
+         const OrganicMatterParametersPtr rps = OrganicMatterParametersPtr(),
          double crossCropAdaptionFactor = 1);
 
     Crop(CropId id,
-         const std::string& species,
+         const std::string& speciesName,
          const Tools::Date& seedDate,
          const Tools::Date& harvestDate,
-         const CropParameters* cps = nullptr,
-         const OrganicMatterParameters* rps = nullptr,
+         const CropParametersPtr cps = CropParametersPtr(),
+         const OrganicMatterParametersPtr rps = OrganicMatterParametersPtr(),
          double crossCropAdaptionFactor = 1);
 
     Crop(json11::Json j);
@@ -65,30 +65,23 @@ namespace Monica
 
     CropId id() const { return _id; }
 
-    std::string species() const { return _species; }
+    std::string speciesName() const { return _speciesName; }
+
+    std::string cultivarName() const { return _cultivarName; }
 
     bool isValid() const { return _id > -1; }
 
-    const CropParameters* cropParameters() const
-    {
-      return _cropParamsPtr ? _cropParamsPtr.get() : _cropParams;
-    }
+    const CropParametersPtr cropParameters() const { return _cropParams; }
 
-    void setCropParameters(const CropParameters* cps) { _cropParams = cps; }
+    void setCropParameters(CropParametersPtr cps) { _cropParams = cps; }
 
-    const CropParameters* perennialCropParameters() const
-    {
-      return _perennialCropParamsPtr ? _perennialCropParamsPtr.get() : _perennialCropParams;
-    }
+    CropParametersPtr perennialCropParameters() const { return _perennialCropParams; }
 
-    void setPerennialCropParameters(const CropParameters* cps) { _perennialCropParams = cps; }
+    void setPerennialCropParameters(CropParametersPtr cps) { _perennialCropParams = cps; }
 
-    const OrganicMatterParameters* residueParameters() const
-    {
-      return _residueParamsPtr ? _residueParamsPtr.get() : _residueParams;
-    }
+    OrganicMatterParametersPtr residueParameters() const { return _residueParams; }
 
-    void setResidueParameters(const OrganicMatterParameters* rps) { _residueParams = rps; }
+    void setResidueParameters(OrganicMatterParametersPtr rps) { _residueParams = rps; }
 
 		Tools::Date seedDate() const { return _seedDate; }
 
@@ -173,17 +166,14 @@ namespace Monica
 
 	private:
     CropId _id{-1};
-    std::string _species;
-    std::string _cultivar;
+    std::string _speciesName;
+    std::string _cultivarName;
 		Tools::Date _seedDate;
 		Tools::Date _harvestDate;
 		std::vector<Tools::Date> _cuttingDates;
-    CropParametersPtr _cropParamsPtr;
-    const CropParameters* _cropParams{nullptr};
-    CropParametersPtr _perennialCropParamsPtr;
-    const CropParameters* _perennialCropParams{nullptr};
-    OrganicMatterParametersPtr _residueParamsPtr;
-    const OrganicMatterParameters* _residueParams{nullptr};
+    CropParametersPtr _cropParams;
+    CropParametersPtr _perennialCropParams;
+    OrganicMatterParametersPtr _residueParams;
 
     double _primaryYield{0.0};
     double _secondaryYield{0.};

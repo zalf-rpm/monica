@@ -116,8 +116,9 @@ namespace Monica
     void applyMineralFertiliser(MineralFertiliserParameters partition,
                                 double amount);
 
-    void applyOrganicFertiliser(const OrganicMatterParameters*, double amount,
-																bool incorporation);
+    void applyOrganicFertiliser(const OrganicMatterParametersPtr,
+                                double amount,
+                                bool incorporation);
 
 		bool useNMinMineralFertilisingMethod() const
 		{

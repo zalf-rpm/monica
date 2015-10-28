@@ -661,7 +661,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
    * harvest date via json parameters too, that is now specified in the sqlite database globally
    * for each crop.
    */
-  vector<ProductionProcess> ff = cropRotationFromHermesFile(file, hermes_config->useAutomaticHarvest(), hermes_config->getAutomaticHarvestParameters());
+  vector<CultivationMethod> ff = cropRotationFromHermesFile(file, hermes_config->useAutomaticHarvest(), hermes_config->getAutomaticHarvestParameters());
 
   // fertilisation
   file = outputPath+hermes_config->getFertiliserFile();
@@ -674,7 +674,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
   debug() << "------------------------------------" << endl;
 
-  for(const ProductionProcess& pv : ff)
+  for(const CultivationMethod& pv : ff)
     debug() << "pv: " << pv.toString() << endl;
 
   // fertilisation parameter

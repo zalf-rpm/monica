@@ -343,6 +343,8 @@ namespace Monica
 	 */
 	struct YieldComponent
 	{
+    YieldComponent(){}
+
     YieldComponent(int organId, double yieldPercentage, double yieldDryMatter);
 
     YieldComponent(json11::Json object);
@@ -358,27 +360,18 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	/**
-	 * @brief Parameter for crops
-	 */
-	struct CropParameters
-	{
-    CropParameters() {}
+  struct SpeciesParameters
+  {
+    SpeciesParameters() {}
 
-    CropParameters(json11::Json object);
+    SpeciesParameters(json11::Json j);
 
-    CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
+    json11::Json to_json() const;
 
-		json11::Json to_json() const;
-		
-		std::string toString() const;
+    std::string toString() const { return to_json().dump(); }
 
-    void resizeStageOrganVectors();
-
-		//		pc_DevelopmentAccelerationByNitrogenStress(0)
-
-		// members
-    std::string pc_CropName;
+    // members
+    std::string pc_SpeciesName;
     bool pc_Perennial{false};
     int pc_NumberOfDevelopmentalStages{0};
     int pc_NumberOfOrgans{0};
@@ -389,7 +382,6 @@ namespace Monica
     double pc_LuxuryNCoeff{0.0};
     double pc_MaxAssimilationRate{0.0};
     double pc_MaxCropDiameter{0.0};
-    double pc_MaxCropHeight{0.0};
     double pc_CropHeightP1{0.0};
     double pc_CropHeightP2{0.0};
     double pc_StageAtMaxHeight{0.0};
@@ -400,32 +392,21 @@ namespace Monica
     double pc_NConcentrationB0{0.0};
     double pc_NConcentrationPN{0.0};
     double pc_NConcentrationRoot{0.0};
-    double pc_ResidueNRatio{0.0};
     int pc_DevelopmentAccelerationByNitrogenStress{0};
     double pc_FieldConditionModifier{1.0};
     double pc_AssimilateReallocation{0.0};
-    double pc_LT50cultivar{0.0};
     double pc_FrostHardening{0.0};
     double pc_FrostDehardening{0.0};
     double pc_LowTemperatureExposure{0.0};
     double pc_RespiratoryStress{0.0};
     int pc_LatestHarvestDoy{-1};
 
-    std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff;
     std::vector<std::vector<double>> pc_OrganSenescenceRate;
 
-    std::vector<double> pc_BaseDaylength;
     std::vector<double> pc_BaseTemperature;
-    std::vector<double> pc_OptimumTemperature;
-    std::vector<double> pc_DaylengthRequirement;
-    std::vector<double> pc_DroughtStressThreshold;
     std::vector<double> pc_OrganMaintenanceRespiration;
     std::vector<double> pc_OrganGrowthRespiration;
-    std::vector<double> pc_SpecificLeafArea;
     std::vector<double> pc_StageMaxRootNConcentration;
-    std::vector<double> pc_StageKcFactor;
-    std::vector<double> pc_StageTemperatureSum;
-    std::vector<double> pc_VernalisationRequirement;
     std::vector<double> pc_InitialOrganBiomass;
     std::vector<double> pc_CriticalOxygenContent;
 
@@ -448,21 +429,77 @@ namespace Monica
     double pc_RootFormFactor{0.0};
     double pc_SpecificRootLength{0.0};
     int pc_StageAfterCut{0};
-    double pc_CriticalTemperatureHeatStress{0.0};
     double pc_LimitingTemperatureHeatStress{0.0};
-    double pc_BeginSensitivePhaseHeatStress{0.0};
-    double pc_EndSensitivePhaseHeatStress{0.0};
     int pc_CuttingDelayDays{0};
     double pc_DroughtImpactOnFertilityFactor{0.0};
 
-		std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
-		std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
-		std::vector<YieldComponent> pc_OrganIdsForCutting;
-	};
+    std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
+    std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
+    std::vector<YieldComponent> pc_OrganIdsForCutting;
+  };
+
+  typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
+
+  //----------------------------------------------------------------------------
+
+  struct CultivarParameters
+  {
+    CultivarParameters() {}
+
+    CultivarParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
+
+    std::string pc_CultivarName;
+    double pc_MaxCropHeight{0.0};
+    double pc_ResidueNRatio{0.0};
+    double pc_LT50cultivar{0.0};
+
+    std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff;
+
+    std::vector<double> pc_BaseDaylength;
+    std::vector<double> pc_OptimumTemperature;
+    std::vector<double> pc_DaylengthRequirement;
+    std::vector<double> pc_DroughtStressThreshold;
+    std::vector<double> pc_SpecificLeafArea;
+    std::vector<double> pc_StageKcFactor;
+    std::vector<double> pc_StageTemperatureSum;
+    std::vector<double> pc_VernalisationRequirement;
+
+    double pc_CriticalTemperatureHeatStress{0.0};
+    double pc_BeginSensitivePhaseHeatStress{0.0};
+    double pc_EndSensitivePhaseHeatStress{0.0};
+  };
+
+  typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
+
+	//----------------------------------------------------------------------------
+
+  struct CropParameters
+  {
+    CropParameters() {}
+
+    CropParameters(json11::Json object);
+
+    CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
+
+    void resizeStageOrganVectors();
+
+    std::string pc_CropName() const { return speciesParams.pc_SpeciesName + "/" + cultivarParams.pc_CultivarName; }
+
+    SpeciesParameters speciesParams;
+    CultivarParameters cultivarParams;
+  };
 
   typedef std::shared_ptr<CropParameters> CropParametersPtr;
 
-	//----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
 
   enum FertiliserType { mineral, organic, undefined };
 
@@ -502,39 +539,28 @@ namespace Monica
     //! @param vo_Carbamid percent
     inline void setCarbamid(double carbamid) { vo_Carbamid = carbamid; }
 
-
-    /**
-     * @brief Returns ammonium part of fertliser.
-     * @return Ammonium in percent
-     */
+    //! Returns ammonium part of fertiliser.
+    //! @return Ammonium in percent
     inline double getNH4() const { return vo_NH4; }
 
-    /**
-     * @brief Returns nitrat part of fertiliser
-     * @return Nitrat in percent
-     */
-    inline double getNO3() const { return vo_NO3; }
-
-
-
-    /**
-     * @brief Sets nitrat part of fertiliser.
-     * @param vo_NH4
-     */
+    //! Sets nitrat part of fertiliser.
+    //! @param vo_NH4
     inline void setNH4(double NH4) { vo_NH4 = NH4; }
 
-    /**
-     * @brief Sets nitrat part of fertiliser.
-     * @param vo_NO3
-     */
+    //! Returns nitrat part of fertiliser
+    //! @return Nitrat in percent
+    inline double getNO3() const { return vo_NO3; }
+
+    //! Sets nitrat part of fertiliser.
+    //! @param vo_NO3
     inline void setNO3(double NO3) { vo_NO3 = NO3; }
 
   private:
     std::string id;
     std::string name;
-    double vo_Carbamid{0.0};
-    double vo_NH4{0.0};
-    double vo_NO3{0.0};
+    double vo_Carbamid{0.0}; //!< [%]
+    double vo_NH4{0.0}; //!< [%]
+    double vo_NO3{0.0}; //!< [%]
   };
 
   //----------------------------------------------------------------------------

@@ -24,8 +24,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PRODUCTION_PROCESS_H_
-#define PRODUCTION_PROCESS_H_
+#ifndef CULTIVATION_METHOD_H_
+#define CULTIVATION_METHOD_H_
 
 #include <map>
 #include <string>
@@ -188,7 +188,7 @@ namespace Monica
 	{
 	public:
 		OrganicFertiliserApplication(const Tools::Date& at,
-																 const OrganicMatterParameters* params,
+                                 const OrganicMatterParametersPtr params,
 																 double amount,
                                  bool incorp = true);
 
@@ -201,7 +201,7 @@ namespace Monica
     virtual void apply(MonicaModel* model);
 
     //! Returns parameter for organic fertilizer
-    const OrganicMatterParameters* parameters() const { return _params; }
+    OrganicMatterParametersPtr parameters() const { return _params; }
 
 		//! Returns fertilization amount
 		double amount() const { return _amount; }
@@ -210,8 +210,7 @@ namespace Monica
 		bool incorporation() const { return _incorporation; }
 
   private:
-    std::shared_ptr<OrganicMatterParameters> _paramsPtr;
-    const OrganicMatterParameters* _params{nullptr};
+    const OrganicMatterParametersPtr _params;
     double _amount{0.0};
     bool _incorporation{false};
 	};
@@ -268,37 +267,32 @@ namespace Monica
 
   WSPtr makeWorkstep(json11::Json object);
 
-	class ProductionProcess
+  class CultivationMethod : public std::multimap<Tools::Date, WSPtr>
 	{
 	public:
-    ProductionProcess() {}
+    CultivationMethod(const std::string& name = std::string("Fallow"));
 
-    //! is semantically the equivalent to creating an empty PP and adding Seed, Harvest and Cutting applications
-    ProductionProcess(const std::string& name, CropPtr crop);
+    //! is semantically the equivalent to creating an empty CM and adding Seed, Harvest and Cutting applications
+    CultivationMethod(CropPtr crop, const std::string& name = std::string());
 
-    ProductionProcess(json11::Json object);
-
-		ProductionProcess deepCloneAndClearWorksteps() const;
+    CultivationMethod(json11::Json object);
 
     json11::Json to_json() const;
 
 		template<class Application>
 		void addApplication(const Application& a)
 		{
-			_worksteps.insert(std::make_pair(a.date(), WSPtr(new Application(a))));
+      insert(std::make_pair(a.date(), WSPtr(new Application(a))));
     }
 
     template<>
     void addApplication<Seed>(const Seed& s)
     {
-      _worksteps.insert(std::make_pair(s.date(), WSPtr(new Seed(s))));
+      insert(std::make_pair(s.date(), WSPtr(new Seed(s))));
       _crop = s.crop();
     }
 
-		void addApplication(WSPtr a)
-		{
-			_worksteps.insert(std::make_pair((a.get())->date(), a));
-		}
+    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
 
 		void apply(const Tools::Date& date, MonicaModel* model) const;
 
@@ -311,14 +305,14 @@ namespace Monica
 		bool isFallow() const { return !_crop->isValid();  }
 
 		//! when does the PV start
-		Tools::Date start() const;
+    Tools::Date startDate() const;
 
 		//! when does the whole PV end
-		Tools::Date end() const;
+    Tools::Date endDate() const;
 
-    const std::multimap<Tools::Date, WSPtr>& getWorksteps() { return _worksteps; }
+    const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return *this; }
 
-		void clearWorksteps() { _worksteps.clear(); }
+    void clearWorksteps() { clear(); }
 
 		std::string toString() const;
 
@@ -327,7 +321,7 @@ namespace Monica
 
 		//the custom id is used to keep a potentially usage defined
     //mapping to an entity from another domain,
-    //e.g. a Carbiocial CropActivity which the ProductionProcess was based on
+    //e.g. a Carbiocial CropActivity which the CultivationMethod was based on
 		void setCustomId(int cid) { _customId = cid; }
 		int customId() const { return _customId; }
 
@@ -340,10 +334,7 @@ namespace Monica
 		CropPtr _crop;
     bool _irrigateCrop{false};
 
-		//!ordered list of worksteps to be done for this PV
-		std::multimap<Tools::Date, WSPtr> _worksteps;
-
-		//store results of the productionprocess
+    //store results of the cultivation method
 		PVResultPtr _cropResult;
 	};
 }

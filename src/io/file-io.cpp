@@ -34,10 +34,10 @@ using namespace std;
 void Monica::writeCropParameters(std::string path, const Crop& crop)
 {
   ofstream parameterOutputFile;
-  parameterOutputFile.open(path + "/crop_parameters-" + crop.name() + ".txt");
+  parameterOutputFile.open(path + "/crop_parameters-" + crop.speciesName() + ".txt");
   if(parameterOutputFile.fail())
   {
-    debug() << "Could not write file\"" << path << "crop_parameters-" << crop.name() << ".txt" << "\"" << endl;
+    debug() << "Could not write file\"" << path << "crop_parameters-" << crop.speciesName() << ".txt" << "\"" << endl;
     return;
   }
 

@@ -361,7 +361,7 @@ namespace Monica
       vc_AccumulatedPrimaryCropYield += primaryCropYield;
     }
 
-    void setPerennialCropParameters(const CropParameters* cps) { perennialCropParams = cps; }
+    void setPerennialCropParameters(CropParametersPtr cps) { perennialCropParams = cps; }
 
     void fc_UpdateCropParametersForPerennial();
 
@@ -385,7 +385,7 @@ namespace Monica
 
     // members
     SoilColumn& soilColumn;
-    const CropParameters* perennialCropParams{nullptr};
+    CropParametersPtr perennialCropParams;
     const UserCropParameters& cropPs;
 
     //! old N

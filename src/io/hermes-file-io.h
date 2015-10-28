@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "climate/climate-common.h"
 
 #include "../core/monica-parameters.h"
+#include "../run/cultivation-method.h"
 
 namespace Monica
 {
@@ -37,20 +38,20 @@ namespace Monica
 
 	std::pair<FertiliserType, int> hermesFertiliserName2monicaFertiliserId(const std::string& name);
 
-	void attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess>& cropRotation,
+	void attachFertiliserApplicationsToCropRotation(std::vector<CultivationMethod>& cropRotation,
 		const std::string& pathToFertiliserFile);
 
-	std::vector<ProductionProcess> attachFertiliserSA(std::vector<ProductionProcess> cropRotation,
+	std::vector<CultivationMethod> attachFertiliserSA(std::vector<CultivationMethod> cropRotation,
 		const std::string pathToFertiliserFile);
 
-	void attachIrrigationApplicationsToCropRotation(std::vector<ProductionProcess>& cropRotation,
+	void attachIrrigationApplicationsToCropRotation(std::vector<CultivationMethod>& cropRotation,
 		const std::string& pathToIrrigationFile);
 
 	/*!
 	* - create cropRotation from hermes file
-	* - the returned production processes contain absolute dates
+	* - the returned cultivation method contain absolute dates
 	*/
-	std::vector<ProductionProcess> cropRotationFromHermesFile(const std::string& pathToFile,
+	std::vector<CultivationMethod> cropRotationFromHermesFile(const std::string& pathToFile,
 																														bool useAutomaticHarvestTrigger = false,
 																														AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
 

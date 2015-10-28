@@ -59,7 +59,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm)
     vt_MatrixSecundaryDiagonal(vt_NumberOfLayers + 1), 	 //intern
     vt_HeatConductivity(vt_NumberOfLayers), 	           //intern
     vt_HeatConductivityMean(vt_NumberOfLayers),          //intern
-    vt_HeatCapacity(vt_NumberOfLayers) 			             //intern
+    vt_HeatCapacity(int(vt_NumberOfLayers)) 			             //intern
 {
   debug() << "Constructor: SoilColumn" << endl;
 
@@ -227,8 +227,8 @@ SoilTemperature::SoilTemperature(MonicaModel& mm)
 //! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad)
 {
-  int vt_GroundLayer = vt_NumberOfLayers - 2;
-  int vt_BottomLayer = vt_NumberOfLayers - 1;
+  size_t vt_GroundLayer = vt_NumberOfLayers - 2;
+  size_t vt_BottomLayer = vt_NumberOfLayers - 1;
 
   vector<double> vt_Solution(vt_NumberOfLayers);//                = new double [vt_NumberOfLayers];
   vector<double> vt_MatrixDiagonal(vt_NumberOfLayers);//          = new double [vt_NumberOfLayers];

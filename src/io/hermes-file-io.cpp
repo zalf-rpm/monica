@@ -302,10 +302,10 @@ pair<FertiliserType, int> Monica::hermesFertiliserName2monicaFertiliserId(const 
 
 //------------------------------------------------------------------------------------
 
-vector<ProductionProcess>
+vector<CultivationMethod>
 Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
 {
-	vector<ProductionProcess> ff;
+	vector<CultivationMethod> ff;
 
 	ifstream ifs(pathToFile.c_str(), ios::binary);
 	if (!ifs.good()) {
@@ -366,7 +366,7 @@ Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHa
 
 			// use harvest trigger
 			// change latest harvest date to crop specific fallback harvest doy        
-			autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->pc_LatestHarvestDoy);
+			autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->speciesParams.pc_LatestHarvestDoy);
 			crop->activateAutomaticHarvestTrigger(autoHarvestParams);
 
 			int harvest_year = sd.year();
@@ -400,7 +400,7 @@ Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHa
 			// ###################################################################
 
 			// set harvest date to latest crop specific fallback harvest date
-			hd = Date::julianDate(crop->cropParameters()->pc_LatestHarvestDoy, harvest_year, true);
+			hd = Date::julianDate(crop->cropParameters()->speciesParams.pc_LatestHarvestDoy, harvest_year, true);
 
 		}
 
@@ -409,7 +409,7 @@ Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHa
 
 
 
-		ProductionProcess pp(crp, crop);
+		CultivationMethod pp(crop);
 		pp.addApplication(TillageApplication(td, (tillage_depth / 100.0)));
 		//cout << "production-process: " << pp.toString() << endl;
 
@@ -560,28 +560,28 @@ Climate::DataAccessor Monica::climateDataFromHermesFiles(const std::string& path
 
 //----------------------------------------------------------------------------
 
-std::vector<ProductionProcess>
-Monica::attachFertiliserSA(std::vector<ProductionProcess> cropRotation, const std::string pathToFertiliserFile)
+std::vector<CultivationMethod>
+Monica::attachFertiliserSA(std::vector<CultivationMethod> cropRotation, const std::string pathToFertiliserFile)
 {
 	attachFertiliserApplicationsToCropRotation(cropRotation, pathToFertiliserFile);
 	return cropRotation;
 }
 
 void
-Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess>& cr,
+Monica::attachFertiliserApplicationsToCropRotation(std::vector<CultivationMethod>& cr,
 	const std::string& pathToFile)
 {
 	ifstream ifs(pathToFile.c_str(), ios::binary);
 	string s;
 
-	std::vector<ProductionProcess>::iterator it = cr.begin();
+	std::vector<CultivationMethod>::iterator it = cr.begin();
 	if (it == cr.end())
 		return;
 
 	//skip first line
 	getline(ifs, s);
 
-	Date currentEnd = it->end();
+	Date currentEnd = it->endDate();
 	while (getline(ifs, s))
 	{
 		if (trim(s) == "end")
@@ -622,7 +622,7 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
 			if (it == cr.end())
 				break;
 
-			currentEnd = it->end();
+			currentEnd = it->endDate();
 
 			//cout << "new PP start: " << it->start().toString()
 			//<< " new PP end: " << it->end().toString() << endl;
@@ -645,7 +645,7 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
 		case organic:
 		{
 			//create organic fertiliser application
-			OrganicMatterParameters* omp = getOrganicFertiliserParametersFromMonicaDB(fertTypeAndId.second);
+			auto omp = getOrganicFertiliserParametersFromMonicaDB(fertTypeAndId.second);
 			//omp->vo_NConcentration = 100.0;
 			it->addApplication(OrganicFertiliserApplication(fdate, omp, n, incorp));
 			break;
@@ -664,7 +664,7 @@ Monica::attachFertiliserApplicationsToCropRotation(std::vector<ProductionProcess
 //------------------------------------------------------------------------------
 
 void
-Monica::attachIrrigationApplicationsToCropRotation(std::vector<ProductionProcess>& cr,
+Monica::attachIrrigationApplicationsToCropRotation(std::vector<CultivationMethod>& cr,
 	const std::string& pathToFile)
 {
 	ifstream ifs(pathToFile.c_str(), ios::in);
@@ -673,14 +673,14 @@ Monica::attachIrrigationApplicationsToCropRotation(std::vector<ProductionProcess
 	}
 	string s;
 
-	std::vector<ProductionProcess>::iterator it = cr.begin();
+	std::vector<CultivationMethod>::iterator it = cr.begin();
 	if (it == cr.end())
 		return;
 
 	//skip first line
 	getline(ifs, s);
 
-	Date currentEnd = it->end();
+	Date currentEnd = it->endDate();
 	while (getline(ifs, s))
 	{
 		if (trim(s) == "end")
@@ -720,7 +720,7 @@ Monica::attachIrrigationApplicationsToCropRotation(std::vector<ProductionProcess
 			if (it == cr.end())
 				break;
 
-			currentEnd = it->end();
+			currentEnd = it->endDate();
 
 			//cout << "new PP start: " << it->start().toString()
 			//<< " new PP end: " << it->end().toString() << endl;

@@ -65,8 +65,8 @@ string Env::toString() const
 	s << "ClimateData: from: " << da.startDate().toString()
 		<< " to: " << da.endDate().toString() << endl;
 	s << "Fruchtfolge: " << endl;
-	for (const ProductionProcess& pv : cropRotation)
-		s << pv.toString() << endl;
+  for (const CultivationMethod& cm : cropRotation)
+    s << cm.toString() << endl;
 	s << "customId: " << customId;
 	return s.str();
 }
@@ -276,7 +276,7 @@ Result Monica::runMonica(Env env)
 	
 	debug() << "currentDate" << endl;
 	Date currentDate = env.da.startDate();
-	unsigned int nods = env.da.noOfStepsPossible();
+  size_t nods = env.da.noOfStepsPossible();
 	debug() << "nods: " << nods << endl;
 
 	unsigned int currentMonth = currentDate.month();
@@ -289,28 +289,28 @@ Result Monica::runMonica(Env env)
 	double monthETa = 0.0;
 
 	//iterator through the production processes
-	vector<ProductionProcess>::const_iterator ppci = env.cropRotation.begin();
+  vector<CultivationMethod>::const_iterator cmci = env.cropRotation.begin();
 	//direct handle to current process
-	ProductionProcess currentPP = *ppci;
+  CultivationMethod currentCM = *cmci;
 	//are the dates in the production process relative dates
 	//or are they absolute as produced by the hermes inputs
-	bool useRelativeDates =  currentPP.start().isRelativeDate();
+  bool useRelativeDates =  currentCM.startDate().isRelativeDate();
 	//the next application date, either a relative or an absolute date
 	//to get the correct applications out of the production processes
-	Date nextPPApplicationDate = currentPP.start();
+  Date nextCMApplicationDate = currentCM.startDate();
 	//a definitely absolute next application date to keep track where
 	//we are in the list of climate data
-	Date nextAbsolutePPApplicationDate =
-			useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-												 (currentDate.year() + 1) : nextPPApplicationDate;
-	debug() << "next app-date: " << nextPPApplicationDate.toString()
-					<< " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
+  Date nextAbsoluteCMApplicationDate =
+      useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
+                         (currentDate.year() + 1) : nextCMApplicationDate;
+  debug() << "next app-date: " << nextCMApplicationDate.toString()
+          << " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 
 	//if for some reason there are no applications (no nothing) in the
 	//production process: quit
-	if(!nextAbsolutePPApplicationDate.isValid())
+  if(!nextAbsoluteCMApplicationDate.isValid())
 	{
-		debug() << "start of production-process: " << currentPP.toString()
+    debug() << "start of production-process: " << currentCM.toString()
 						<< " is not valid" << endl;
 		return res;
 	}
@@ -322,39 +322,10 @@ Result Monica::runMonica(Env env)
 	//thus for absolute dates the crop rotation has to be as long as there
 	//are climate data !!!!!
 
-	/* post progress of calculation */
-#ifndef	MONICA_GUI
 	float progress = 0.0;
-#else
-	WorkerConfiguration* wCfg = static_cast<WorkerConfiguration*>(cfg);
-#endif
 
 	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
 	{
-		/* little progress bar */
-#ifndef MONICA_GUI
-		//    if (d % int(nods / 100) == 0 && !activateDebug) {
-		//      int barWidth = 70;
-		//      std::cout << "[";
-		//      int pos = barWidth * progress;
-		//      for (int i = 0; i < barWidth; ++i) {
-		//        if (i < pos) std::cout << "=";
-		//        else if (i == pos) std::cout << ">";
-		//        else std::cout << " ";
-		//      }
-		//      if (progress >= 1.0) /* some days missing due to rounding */
-		//        std::cout << "] " << 100 << "% (" << nods << " of " << nods << " days)\r";
-		//      else
-		//        std::cout << "] " << int(progress * 100) << "% (" << d << " of " << nods << " days)\r";
-		//      std::cout.flush();
-		//      progress += 0.01;
-		//    }
-		//    else if (d == nods - 1)
-		//      std::cout << std::endl;
-#else
-		wCfg->setProgress(double(d) / double(nods));
-#endif
-		
     debug() << "currentDate: " << currentDate.toString() << endl;
     monica.resetDailyCounter();
 
@@ -363,9 +334,8 @@ Result Monica::runMonica(Env env)
 //    }
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica.cropGrowth() && monica.cropGrowth()->isDying()) {
+    if (monica.cropGrowth() && monica.cropGrowth()->isDying())
         monica.incorporateCurrentCrop();
-    }
 
     /////////////////////////////////////////////////////////////////
     // AUTOMATIC HARVEST TRIGGER
@@ -385,19 +355,19 @@ Result Monica::runMonica(Env env)
   */
 
     // Test if automatic harvest trigger is used
-    if (monica.cropGrowth() && currentPP.crop()->useAutomaticHarvestTrigger()) {
+    if (monica.cropGrowth() && currentCM.crop()->useAutomaticHarvestTrigger()) {
 
       // Test if crop should be harvested at maturity
-      if (currentPP.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestParameters::maturity) {
+      if (currentCM.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestParameters::maturity) {
 
-        if (monica.cropGrowth()->maturityReached() || currentPP.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
+        if (monica.cropGrowth()->maturityReached() || currentCM.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
 
           debug() << "####################################################" << endl;
           debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
           debug() << "####################################################" << endl;
 
 					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
-          auto harvestApplication = unique_ptr<Harvest>(new Harvest(currentDate, currentPP.cropResultPtr()));
+          auto harvestApplication = unique_ptr<Harvest>(new Harvest(currentDate, currentCM.crop(), currentCM.cropResultPtr()));
           harvestApplication->apply(&monica);
 
         }
@@ -405,36 +375,36 @@ Result Monica::runMonica(Env env)
     }
 
     //there's something to at this day
-    if(nextAbsolutePPApplicationDate == currentDate)
+    if(nextAbsoluteCMApplicationDate == currentDate)
     {
-      debug() << "applying at: " << nextPPApplicationDate.toString()
-              << " absolute-at: " << nextAbsolutePPApplicationDate.toString() << endl;
+      debug() << "applying at: " << nextCMApplicationDate.toString()
+              << " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
       //apply everything to do at current day
       //cout << currentPP.toString().c_str() << endl;
-      currentPP.apply(nextPPApplicationDate, &monica);
+      currentCM.apply(nextCMApplicationDate, &monica);
 
       //get the next application date to wait for (either absolute or relative)
-      Date prevPPApplicationDate = nextPPApplicationDate;
+      Date prevPPApplicationDate = nextCMApplicationDate;
 
-      nextPPApplicationDate =  currentPP.nextDate(nextPPApplicationDate);
+      nextCMApplicationDate =  currentCM.nextDate(nextCMApplicationDate);
 
-      nextAbsolutePPApplicationDate =  useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-          (currentDate.year() + (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-           true) : nextPPApplicationDate;
+      nextAbsoluteCMApplicationDate =  useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
+          (currentDate.year() + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
+           true) : nextCMApplicationDate;
 
 
-      debug() << "next app-date: " << nextPPApplicationDate.toString()
-          << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
+      debug() << "next app-date: " << nextCMApplicationDate.toString()
+          << " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
       //if application date was not valid, we're (probably) at the end
       //of the application list of this production process
       //-> go to the next one in the crop rotation
 
 
-      if(!nextAbsolutePPApplicationDate.isValid())
+      if(!nextAbsoluteCMApplicationDate.isValid())
       {
         //get yieldresults for crop
-        PVResult r = currentPP.cropResult();
-				r.customId = currentPP.customId();
+        PVResult r = currentCM.cropResult();
+        r.customId = currentCM.customId();
         r.date = currentDate;
 
         if(!env.params.userEnvironmentParameters.p_UseSecondaryYields)
@@ -457,27 +427,27 @@ Result Monica::runMonica(Env env)
 				monica.resetFertiliserCounter();
 
         //resets crop values for use in next year
-        currentPP.crop()->reset();
+        currentCM.crop()->reset();
 
-        ppci++;
+        cmci++;
         //start anew if we reached the end of the crop rotation
-				if(ppci == env.cropRotation.end())
-					ppci = env.cropRotation.begin();
+        if(cmci == env.cropRotation.end())
+          cmci = env.cropRotation.begin();
 
-        currentPP = *ppci;
-        nextPPApplicationDate = currentPP.start();
-        nextAbsolutePPApplicationDate =
-            useRelativeDates ? nextPPApplicationDate.toAbsoluteDate
-            (currentDate.year() + (nextPPApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-             true) : nextPPApplicationDate;
-        debug() << "new valid next app-date: " << nextPPApplicationDate.toString()
-            << " next abs app-date: " << nextAbsolutePPApplicationDate.toString() << endl;
+        currentCM = *cmci;
+        nextCMApplicationDate = currentCM.startDate();
+        nextAbsoluteCMApplicationDate =
+            useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
+            (currentDate.year() + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
+             true) : nextCMApplicationDate;
+        debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
+            << " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
       }
       //if we got our next date relative it might be possible that
       //the actual relative date belongs into the next year
       //this is the case if we're already (dayOfYear) past the next dayOfYear
-      if(useRelativeDates && currentDate > nextAbsolutePPApplicationDate)
-        nextAbsolutePPApplicationDate.addYears(1);
+      if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
+        nextAbsoluteCMApplicationDate.addYears(1);
     }
     // write simulation date to file
     if (write_output_files)
@@ -724,10 +694,10 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\tRaStruct";
 	fout << "\tRaSugar";
 
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\tMois" << i_Layer;
-	}
-	fout << "\tPrecip";
+
+  fout << "\tPrecip";
 	fout << "\tIrrig";
 	fout << "\tInfilt";
 	fout << "\tSurface";
@@ -735,9 +705,10 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\tSnowD";
 	fout << "\tFrostD";
 	fout << "\tThawD";
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\tPASW-" << i_Layer;
-	}
+
 	fout << "\tSurfTemp";
 	fout << "\tSTemp0";
 	fout << "\tSTemp1";
@@ -753,47 +724,45 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\tRecharge";
 	fout << "\tNLeach";
 
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\tNO3-" << i_Layer;
-	}
+
 	fout << "\tCarb";
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\tNH4-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 4; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 4; i_Layer++)
 		fout << "\tNO2-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 6; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 6; i_Layer++)
 		fout << "\tSOC-" << i_Layer;
-	}
 
 	fout << "\tSOC-0-30";
 	fout << "\tSOC-0-200";
 
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tAOMf-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tAOMs-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tSMBf-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tSMBs-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tSOMf-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tSOMs-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\tCBal-" << i_Layer;
-	}
-	for (int i_Layer = 0; i_Layer < 3; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < 3; i_Layer++)
 		fout << "\tNmin-" << i_Layer;
-	}
 
 	fout << "\tNetNmin";
 	fout << "\tDenit";
@@ -835,9 +804,8 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\t[°C]";     // LT50
 	fout << "\t[kg/ha]";  // AbovegroundBiomass
 
-	for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 6; i++)
 		fout << "\t[kgDM/ha]"; // get_OrganBiomass(i)
-	}
 
 	fout << "\t[kgDM/ha]";    // get_PrimaryCropYield(3)
 	fout << "\t[kgDM/ha]";    // get_AccumulatedPrimaryCropYield(3)
@@ -881,9 +849,9 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\t[kg C ha-1]";   // Ra struct
 	fout << "\t[kg C ha-1]";   // Ra sugar
 
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\t[m3/m3]"; // Soil moisture content
-	}
+
 	fout << "\t[mm]"; // Precipitation
 	fout << "\t[mm]"; // Irrigation
 	fout << "\t[mm]"; // Infiltration
@@ -892,9 +860,9 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\t[mm]"; // Snow depth
 	fout << "\t[m]"; // Frost front depth in soil
 	fout << "\t[m]"; // Thaw front depth in soil
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\t[m3/m3]"; //PASW
-	}
 
 	fout << "\t[°C]"; //
 	fout << "\t[°C]";
@@ -912,66 +880,55 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\t[kgN/ha]";
 
 	// NO3
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\t[kgN/m3]";
-	}
 
 	fout << "\t[kgN/m3]";  // Soil Carbamid
-
 												 // NH4
-	for (int i_Layer = 0; i_Layer < outLayers; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 		fout << "\t[kgN/m3]";
-	}
 
 	// NO2
-	for (int i_Layer = 0; i_Layer < 4; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 4; i_Layer++)
 		fout << "\t[kgN/m3]";
-	}
 
 	// get_SoilOrganicC
-	for (int i_Layer = 0; i_Layer < 6; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 6; i_Layer++)
 		fout << "\t[kgC/kg]";
-	}
 
 	fout << "\t[gC m-2]";   // SOC-0-30
 	fout << "\t[gC m-2]";   // SOC-0-200
-
 													// get_AOM_FastSum
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
+
 	// get_AOM_SlowSum
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
 
 	// get_SMB_Fast
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
+
 	// get_SMB_Slow
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
 
 	// get_SOM_Fast
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
+
 	// get_SOM_Slow
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
 
 	// get_CBalance
-	for (int i_Layer = 0; i_Layer < 1; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 1; i_Layer++)
 		fout << "\t[kgC/m3]";
-	}
 
 	// NetNMineralisationRate
-	for (int i_Layer = 0; i_Layer < 3; i_Layer++) {
+  for (int i_Layer = 0; i_Layer < 3; i_Layer++)
 		fout << "\t[kgN/ha]";
-	}
 
 	fout << "\t[kgN/ha]";  // NetNmin
 	fout << "\t[kgN/ha]";  // Denit
@@ -989,7 +946,6 @@ void Monica::initializeFoutHeader(ofstream &fout)
 	fout << "\t[m3/m3]";  // relhumid
 	fout << "\t[h]";      // sunhours
 	fout << endl;
-
 }
 
 //------------------------------------------------------------------------------
@@ -998,8 +954,7 @@ void Monica::initializeFoutHeader(ofstream &fout)
 * Writes header line to gout-Outputfile
 * @param gout File pointer to smout.dat
 */
-void
-Monica::initializeGoutHeader(ofstream &gout)
+void Monica::initializeGoutHeader(ofstream &gout)
 {
 	gout << "Datum     ";
 	gout << "\tCrop";
@@ -1025,7 +980,6 @@ Monica::initializeGoutHeader(ofstream &gout)
 	gout << "\tTotNup";
 	gout << "\tNGrain";
 	gout << "\tProtein";
-
 
 	gout << "\tBedGrad";
 	gout << "\tM0-10";
@@ -1139,7 +1093,6 @@ Monica::initializeGoutHeader(ofstream &gout)
 	gout << "\t[kgN/ha]";
 	gout << "\t[mm]";
 	gout << endl;
-
 }
 
 //------------------------------------------------------------------------------
@@ -1150,8 +1103,10 @@ Monica::initializeGoutHeader(ofstream &gout)
 * @param fout File pointer to rmout.dat
 * @param gout File pointer to smout.dat
 */
-void
-Monica::writeCropResults(const CropGrowth *mcg, ofstream &fout, ofstream &gout, bool crop_is_planted)
+void Monica::writeCropResults(const CropGrowth *mcg,
+                              ofstream &fout,
+                              ofstream &gout,
+                              bool crop_is_planted)
 {
 	if (crop_is_planted) {
 		fout << "\t" << mcg->get_CropName();

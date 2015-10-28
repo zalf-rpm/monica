@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+#include <memory>
 
 #include "../core/monica-parameters.h"
 #include "../core/monica.h"
@@ -47,6 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace Monica;
 using namespace Tools;
 using namespace Soil;
+using namespace std;
 
 #ifdef __unix__
   #include <sys/io.h>
@@ -275,7 +277,7 @@ const Result Configuration::run()
   std::cout << "fetched climate data"  << std::endl;
 
   /* crops */
-  std::vector<ProductionProcess> pps;
+  std::vector<CultivationMethod> pps;
   if (!createProcesses(pps, cropsArr)) 
 	{
     std::cerr << "Error fetching crop data"  << std::endl;
@@ -415,7 +417,7 @@ bool Configuration::createLayers(std::vector<SoilParameters> &layers, cson_array
   return ok;
 }
 
-bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_array* cropsArr)
+bool Configuration::createProcesses(std::vector<CultivationMethod> &pps, cson_array* cropsArr)
 {
   bool ok = true;
   unsigned int cs = cson_array_length_get(cropsArr);
@@ -471,7 +473,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 			crop->setPerennialCropParameters(getCropParametersFromMonicaDB(permCropId));
 		}
 
-    ProductionProcess pp(name, crop);
+		CultivationMethod pp(crop);
 
 		/* harvest */
 		cson_array* harvArr = cson_value_get_array(cson_object_get(cropObj, "harvestOperations"));
@@ -527,7 +529,7 @@ bool Configuration::createProcesses(std::vector<ProductionProcess> &pps, cson_ar
 }
 
 
-bool Configuration::addHarvestOps(ProductionProcess &pp, cson_array* harvArr)
+bool Configuration::addHarvestOps(CultivationMethod &pp, cson_array* harvArr)
 {
 	bool ok = true;
 
@@ -557,7 +559,7 @@ bool Configuration::addHarvestOps(ProductionProcess &pp, cson_array* harvArr)
 }
 
 
-bool Configuration::addTillageOps(ProductionProcess &pp, cson_array* tillArr)
+bool Configuration::addTillageOps(CultivationMethod &pp, cson_array* tillArr)
 {
   bool ok = true;
 
@@ -581,7 +583,7 @@ bool Configuration::addTillageOps(ProductionProcess &pp, cson_array* tillArr)
   return ok;
 }
 
-bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, bool isOrganic)
+bool Configuration::addFertilizers(CultivationMethod &pp, cson_array* fertArr, bool isOrganic)
 {
   // TODO: 
   /*
@@ -639,23 +641,23 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
       )) {
         Db::DBRow row = con->getRow();
         if (!(row).empty()) {
-          OrganicMatterParameters omp;
+          auto omp = make_shared<OrganicMatterParameters>();
 
-          omp.name = row[0];
-          omp.vo_AOM_DryMatterContent = Tools::satof(row[1]);
-          omp.vo_AOM_NH4Content = Tools::satof(row[2]);
-          omp.vo_AOM_NO3Content = Tools::satof(row[3]);
-          omp.vo_AOM_CarbamidContent = Tools::satof(row[4]);
-          omp.vo_AOM_SlowDecCoeffStandard = Tools::satof(row[5]);
-          omp.vo_AOM_FastDecCoeffStandard = Tools::satof(row[6]);
-          omp.vo_PartAOM_to_AOM_Slow = Tools::satof(row[7]);
-          omp.vo_PartAOM_to_AOM_Fast = Tools::satof(row[8]);
-          omp.vo_CN_Ratio_AOM_Slow = Tools::satof(row[9]);
-          omp.vo_CN_Ratio_AOM_Fast = Tools::satof(row[10]);
-          omp.vo_PartAOM_Slow_to_SMB_Slow = Tools::satof(row[11]);
-          omp.vo_PartAOM_Slow_to_SMB_Fast = Tools::satof(row[12]);
+          omp->name = row[0];
+          omp->vo_AOM_DryMatterContent = Tools::satof(row[1]);
+          omp->vo_AOM_NH4Content = Tools::satof(row[2]);
+          omp->vo_AOM_NO3Content = Tools::satof(row[3]);
+          omp->vo_AOM_CarbamidContent = Tools::satof(row[4]);
+          omp->vo_AOM_SlowDecCoeffStandard = Tools::satof(row[5]);
+          omp->vo_AOM_FastDecCoeffStandard = Tools::satof(row[6]);
+          omp->vo_PartAOM_to_AOM_Slow = Tools::satof(row[7]);
+          omp->vo_PartAOM_to_AOM_Fast = Tools::satof(row[8]);
+          omp->vo_CN_Ratio_AOM_Slow = Tools::satof(row[9]);
+          omp->vo_CN_Ratio_AOM_Fast = Tools::satof(row[10]);
+          omp->vo_PartAOM_Slow_to_SMB_Slow = Tools::satof(row[11]);
+          omp->vo_PartAOM_Slow_to_SMB_Fast = Tools::satof(row[12]);
 
-          pp.addApplication(OrganicFertiliserApplication(fDate, new OrganicMatterParameters(omp), amount, true));
+          pp.addApplication(OrganicFertiliserApplication(fDate, omp, amount, true));
         }
         else {
           ok = false;
@@ -691,7 +693,7 @@ bool Configuration::addFertilizers(ProductionProcess &pp, cson_array* fertArr, b
   return ok;
 }
 
-bool Configuration::addIrrigations(ProductionProcess &pp, cson_array* irriArr)
+bool Configuration::addIrrigations(CultivationMethod &pp, cson_array* irriArr)
 {
   bool ok = true;
 

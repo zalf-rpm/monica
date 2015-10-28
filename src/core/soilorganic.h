@@ -68,7 +68,7 @@ namespace Monica
 
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
-    void addOrganicMatter(const OrganicMatterParameters* addedOrganicMatter,
+    void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
                           double amount, double nConcentration = 0);
 
     void addIrrigationWater(double amount);

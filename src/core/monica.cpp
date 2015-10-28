@@ -117,7 +117,7 @@ void MonicaModel::seedCrop(CropPtr crop)
   _currentCrop = crop;
   if(_currentCrop->isValid())
   {
-    const CropParameters* cps = _currentCrop->cropParameters();
+    auto cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,
                                         *cps,
                                         _sitePs,
@@ -141,9 +141,9 @@ void MonicaModel::seedCrop(CropPtr crop)
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = applyMineralFertiliserViaNMinMethod
                            (_envPs.p_NMinFertiliserPartition,
-                            NMinCropParameters(cps->pc_SamplingDepth,
-                                               cps->pc_TargetNSamplingDepth,
-                                               cps->pc_TargetN30));
+                            NMinCropParameters(cps->speciesParams.pc_SamplingDepth,
+                                               cps->speciesParams.pc_TargetNSamplingDepth,
+                                               cps->speciesParams.pc_TargetN30));
       addDailySumFertiliser(fert_amount);
     }
 
@@ -176,10 +176,12 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 			debug() << "root biomass: " << rootBiomass
 				<< " Root N concentration: " << rootNConcentration << endl;
 			
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				abovegroundBiomass, abovegroundBiomassNConcentration);
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				rootBiomass, rootNConcentration);
+      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+                                    abovegroundBiomass,
+                                    abovegroundBiomassNConcentration);
+      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+                                    rootBiomass,
+                                    rootNConcentration);
 		}
 		else 
 		{
@@ -190,11 +192,12 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 			debug() << "root biomass: " << rootBiomass
 				<< " Root N concentration: " << rootNConcentration << endl;
 
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				rootBiomass, rootNConcentration); 
-			
-			double residueBiomass =
-        _currentCropGrowth->get_ResidueBiomass(_envPs.p_UseSecondaryYields);
+      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+                                    rootBiomass,
+                                    rootNConcentration);
+
+      double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_envPs.p_UseSecondaryYields);
+
 			//!@todo Claas: das hier noch berechnen
 			double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
 			debug() << "adding organic matter from residues to soilOrganic" << endl;
@@ -209,7 +212,8 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 				<< " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
 
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				residueBiomass, residueNConcentration);
+                                    residueBiomass,
+                                    residueNConcentration);
 		}
 	}
 
@@ -426,8 +430,9 @@ void MonicaModel::applyMineralFertiliser(MineralFertiliserParameters partition,
 	}
 }
 
-void MonicaModel::applyOrganicFertiliser(const OrganicMatterParameters* params,
-																				 double amount, bool incorporation)
+void MonicaModel::applyOrganicFertiliser(const OrganicMatterParametersPtr params,
+                                         double amount,
+                                         bool incorporation)
 {
   debug() << "MONICA model: applyOrganicFertiliser:\t" << amount << "\t" << params->vo_NConcentration << endl;
   _soilOrganic.setIncorporation(incorporation);
@@ -543,12 +548,12 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
      julday == _envPs.p_JulianDayAutomaticFertilising)
   {
     debug() << "nMin fertilising winter crop" << endl;
-		const CropParameters* cps = _currentCrop->cropParameters();
+    auto cps = _currentCrop->cropParameters();
     double fert_amount = applyMineralFertiliserViaNMinMethod
                          (_envPs.p_NMinFertiliserPartition,
-                          NMinCropParameters(cps->pc_SamplingDepth,
-                                             cps->pc_TargetNSamplingDepth,
-                                             cps->pc_TargetN30));
+                          NMinCropParameters(cps->speciesParams.pc_SamplingDepth,
+                                             cps->speciesParams.pc_TargetNSamplingDepth,
+                                             cps->speciesParams.pc_TargetN30));
     addDailySumFertiliser(fert_amount);
 	}
 

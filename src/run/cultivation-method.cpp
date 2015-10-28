@@ -44,7 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "soil/soil.h"
 #include "../io/database-io.h"
 
-#include "production-process.h"
+#include "cultivation-method.h"
 
 using namespace Db;
 using namespace std;
@@ -261,7 +261,7 @@ MineralFertiliserApplication::MineralFertiliserApplication(const Tools::Date& at
 
 MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
   : WorkStep(j)
-  , _partition(j["parameters"])
+  , _partition(j["partition"])
   , _amount(double_value(j, "amount"))
 {}
 
@@ -271,7 +271,7 @@ json11::Json MineralFertiliserApplication::to_json() const
     {"type", "MineralFertiliserApplication"},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
-    {"parameters", _partition}};
+    {"partition", _partition}};
 }
 
 void MineralFertiliserApplication::apply(MonicaModel* model)
@@ -283,7 +283,7 @@ void MineralFertiliserApplication::apply(MonicaModel* model)
 //------------------------------------------------------------------------------
 
 OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at,
-                                                           const OrganicMatterParameters* params,
+                                                           OrganicMatterParametersPtr params,
                                                            double amount,
                                                            bool incorp)
   : WorkStep(at)
@@ -294,20 +294,18 @@ OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at
 
 OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
   : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value()))
-  , _paramsPtr(std::make_shared<OrganicMatterParameters>(j["parameters"]))
-  , _params(_paramsPtr.get())
+  , _params(make_shared<OrganicMatterParameters>(j["parameters"]))
   , _amount(j["amount"].number_value())
   , _incorporation(j["incorporation"].bool_value())
 {}
 
 json11::Json OrganicFertiliserApplication::to_json() const
 {
-  auto p = _params ? _params->to_json() : json11::Json();
   return json11::Json::object {
     {"type", "OrganicFertiliserApplication"},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
-    {"parameters", p},
+    {"parameters", _params->to_json()},
     {"incorporation", _incorporation}};
 }
 
@@ -396,8 +394,12 @@ WSPtr Monica::makeWorkstep(json11::Json j)
     return make_shared<IrrigationApplication>(j);
 }
 
-ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop)
-  : _name(name),
+CultivationMethod::CultivationMethod(const string& name)
+  : _name(name)
+{}
+
+CultivationMethod::CultivationMethod(CropPtr crop, const std::string& name)
+  : _name(name.empty() ? crop->speciesName() + "/" + crop->cultivarName() : name),
     _crop(crop),
     _cropResult(new PVResult(crop->id()))
 {
@@ -419,27 +421,20 @@ ProductionProcess::ProductionProcess(const std::string& name, CropPtr crop)
 	}
 }
 
-ProductionProcess::ProductionProcess(json11::Json j)
+CultivationMethod::CultivationMethod(json11::Json j)
   : _customId(int_value(j, "customId"))
   , _name(string_value(j, "name"))
   , _crop(new Crop(j["crop"]))
   , _irrigateCrop(bool_value(j, "irrigateCrop"))
 {
-  for(auto ws : j["worksteps"].arrayItems())
-    _worksteps[Date::fromIsoDateString(string_value(ws.at(0)))] = makeWorkstep(ws.at(1));
+  for(auto ws : j["worksteps"].array_items())
+    insert(make_pair(Date::fromIsoDateString(string_value(ws[0])), makeWorkstep(ws[1])));
 }
 
-ProductionProcess ProductionProcess::deepCloneAndClearWorksteps() const
-{
-  ProductionProcess clone(name(), CropPtr(new Crop(*(crop().get()))));
-  clone._cropResult = PVResultPtr(new PVResult(*(_cropResult.get())));
-  return clone;
-}
-
-json11::Json ProductionProcess::to_json() const
+json11::Json CultivationMethod::to_json() const
 {
   auto wss = J11Array();
-  for(auto d2ws : _worksteps)
+  for(auto d2ws : *this)
     wss.push_back(J11Array {d2ws.first.toIsoDateString(), d2ws.second->to_json()});
 
   return J11Object {
@@ -451,9 +446,9 @@ json11::Json ProductionProcess::to_json() const
     {"worksteps", wss}};
 }
 
-void ProductionProcess::apply(const Date& date, MonicaModel* model) const
+void CultivationMethod::apply(const Date& date, MonicaModel* model) const
 {
-  auto p = _worksteps.equal_range(date);
+  auto p = equal_range(date);
   while (p.first != p.second)
   {
     p.first->second->apply(model);
@@ -461,43 +456,37 @@ void ProductionProcess::apply(const Date& date, MonicaModel* model) const
   }
 }
 
-Date ProductionProcess::nextDate(const Date& date) const
+Date CultivationMethod::nextDate(const Date& date) const
 {
-  auto ci = _worksteps.upper_bound(date);
-  return ci != _worksteps.end() ? ci->first : Date();
+  auto ci = upper_bound(date);
+  return ci != end() ? ci->first : Date();
 }
 
-Date ProductionProcess::start() const
+Date CultivationMethod::startDate() const
 {
-  if (_worksteps.empty())
+  if(empty())
     return Date();
-  return _worksteps.begin()->first;
+  return begin()->first;
 }
 
-Date ProductionProcess::end() const
+Date CultivationMethod::endDate() const
 {
-  if (_worksteps.empty())
+  if(empty())
     return Date();
-  return _worksteps.rbegin()->first;
+  return rbegin()->first;
 }
 
-std::string ProductionProcess::toString() const
+std::string CultivationMethod::toString() const
 {
   ostringstream s;
-
-	s << "name: " << name() << " start: " << start().toString()
-      << " end: " << end().toString() << endl;
+  s << "name: " << name()
+    << " start: " << startDate().toString()
+    << " end: " << endDate().toString() << endl;
   s << "worksteps:" << endl;
-  typedef multimap<Date, WSPtr>::const_iterator CI;
-  for (CI ci = _worksteps.begin(); ci != _worksteps.end(); ci++)
-  {
-    s << "at: " << ci->first.toString()
-        << " what: " << ci->second->toString() << endl;
-  }
+  for(auto p : *this)
+    s << "at: " << p.first.toString()
+      << " what: " << p.second->toString() << endl;
   return s.str();
 }
 
 //----------------------------------------------------------------------------
-
-
-
