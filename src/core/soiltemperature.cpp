@@ -282,30 +282,28 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
   // Solution of L'X=D(-1)Y
   vt_Solution[vt_BottomLayer] = vt_Solution[vt_BottomLayer] / vt_MatrixDiagonal[vt_BottomLayer];
 
-  for (int i_Layer = 0; i_Layer < vt_BottomLayer; i_Layer++) {
-
-    int j_Layer = (vt_BottomLayer - 1) - i_Layer;
-    int j_Layer1 = j_Layer + 1;
-    vt_Solution[j_Layer] =   (vt_Solution[j_Layer] / vt_MatrixDiagonal[j_Layer])
-		         - (vt_MatrixLowerTriangle[j_Layer1] * vt_Solution[j_Layer1]);
-  }
+  for (size_t i_Layer = 0; i_Layer < vt_BottomLayer; i_Layer++) 
+	{
+		auto j_Layer = (vt_BottomLayer - 1) - i_Layer;
+		auto j_Layer1 = j_Layer + 1;
+		vt_Solution[j_Layer] = (vt_Solution[j_Layer] / vt_MatrixDiagonal[j_Layer])
+			- (vt_MatrixLowerTriangle[j_Layer1] * vt_Solution[j_Layer1]);
+	}
 
   // end subroutine CholeskyMethod
 
   // Internal Subroutine Rearrangement
-  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) {
+  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) 
     vt_SoilTemperature[i_Layer] = vt_Solution[i_Layer];
-  }
 
-  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
+  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) 
+	{
     vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
     soilColumn[i_Layer].set_Vs_SoilTemperature(vt_SoilTemperature[i_Layer]);
   }
 
   vt_VolumeMatrixOld[vt_GroundLayer] = vt_VolumeMatrix[vt_GroundLayer];
   vt_VolumeMatrixOld[vt_BottomLayer] = vt_VolumeMatrix[vt_BottomLayer];
-
 }
 
 

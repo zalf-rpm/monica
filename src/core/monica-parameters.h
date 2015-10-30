@@ -748,9 +748,6 @@ namespace Monica
 
     std::string toString() const { return to_json().dump(); }
 
-    std::string id;
-    std::string name;
-
     double vo_AOM_DryMatterContent{0.0}; //!< Dry matter content of added organic matter [kg DM kg FM-1]
     double vo_AOM_NH4Content{0.0}; //!< Ammonium content in added organic matter [kg N kg DM-1]
     double vo_AOM_NO3Content{0.0}; //!< Nitrate content in added organic matter [kg N kg DM-1]
@@ -771,9 +768,43 @@ namespace Monica
     double vo_NConcentration{0.0};
   };
 
-  typedef OrganicMatterParameters OMP;
-  typedef std::shared_ptr<OMP> OMPPtr;
   typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
+
+  //-------------------------------------------
+
+  struct OrganicFertiliserParameters : public OrganicMatterParameters
+  {
+    OrganicFertiliserParameters() {}
+
+    OrganicFertiliserParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
+
+    std::string id;
+    std::string name;
+  };
+
+  typedef std::shared_ptr<OrganicFertiliserParameters> OrganicFertiliserParametersPtr;
+
+  //-------------------------------------------
+
+  struct CropResidueParameters : public OrganicMatterParameters
+  {
+    CropResidueParameters() {}
+
+    CropResidueParameters(json11::Json object);
+
+    json11::Json to_json() const;
+
+    std::string toString() const { return to_json().dump(); }
+
+    std::string species;
+    std::string cultivar;
+  };
+
+  typedef std::shared_ptr<CropResidueParameters> CropResidueParametersPtr;
 
   //----------------------------------------------------------------------------
 

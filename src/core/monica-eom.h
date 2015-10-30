@@ -23,8 +23,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MONICAEOM_H
-#define MONICAEOM_H
+#ifndef MONICA_EOM_H
+#define MONICA_EOM_H
 
 #include "monica-typedefs.h"
 #include "eom/src/eom-typedefs.h"
@@ -46,7 +46,7 @@ namespace Monica
 
   EomPVPInfo eomPVPId2cropId(Eom::PVPId pvpId);
 
-  int eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
+  std::string eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
 }
 
-#endif // MONICAEOM_H
+#endif

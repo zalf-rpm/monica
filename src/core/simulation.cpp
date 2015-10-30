@@ -426,9 +426,10 @@ Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::strin
   hermes_config->setEndYear(ipm.valueAsInt("simulation_time", "endyear"));
 
   bool use_nmin_fertiliser = ipm.valueAsInt("nmin_fertiliser", "activated") == 1;
-  if (use_nmin_fertiliser) {
-      hermes_config->setOrganicFertiliserID(ipm.valueAsInt("nmin_fertiliser", "organic_fert_id"));
-      hermes_config->setMineralFertiliserID(ipm.valueAsInt("nmin_fertiliser", "mineral_fert_id"));
+  if (use_nmin_fertiliser) 
+	{
+      hermes_config->setOrganicFertiliserID(ipm.value("nmin_fertiliser", "organic_fert_id"));
+      hermes_config->setMineralFertiliserID(ipm.value("nmin_fertiliser", "mineral_fert_id"));
       double min = ipm.valueAsDouble("nmin_fertiliser", "min", 10.0);
       double max = ipm.valueAsDouble("nmin_fertiliser", "max",100.0);
       int delay = ipm.valueAsInt("nmin_fertiliser", "delay_in_days",30);

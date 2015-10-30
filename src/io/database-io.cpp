@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tools/algorithms.h"
 #include "../run/run-monica.h"
 #include "../core/monica-typedefs.h"
+#include "tools/helper.h"
 
 #include "database-io.h"
 
@@ -51,7 +52,7 @@ using namespace std;
 *
 * @return Reference to crop parameters
 */
-const CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
+CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
 {
 	static mutex lockable;
 
@@ -349,7 +350,7 @@ void Monica::writeCropParameters(string path)
 
 		if (ofs.good())
 		{
-			auto cp = getCropParametersFromMonicaDB(p.first);
+      CropParametersPtr cp = getCropParametersFromMonicaDB(p.first);
 			auto s = cp->to_json().dump();
 			//cout << "id: " << p.first << " name: " << p.second << " ----> " << endl << s << endl;
 			ofs << s;
@@ -360,11 +361,11 @@ void Monica::writeCropParameters(string path)
 
 //------------------------------------------------------------------------------
 
-const map<int, MineralFertiliserParameters>& getAllMineralFertiliserParametersFromMonicaDB()
+const map<string, MineralFertiliserParameters>& getAllMineralFertiliserParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
-	static map<int, MineralFertiliserParameters> m;
+  static map<string, MineralFertiliserParameters> m;
 
 	if (!initialized)
 	{
@@ -374,17 +375,16 @@ const map<int, MineralFertiliserParameters>& getAllMineralFertiliserParametersFr
 		{
       DB *con = newConnection("monica");
 			DBRow row;
-      con->select("select id, name, no3, nh4, carbamid, type from mineral_fertilisers");
+      con->select("select id, name, no3, nh4, carbamid from mineral_fertiliser");
 			while (!(row = con->getRow()).empty())
 			{
-				int id = satoi(row[0]);
-        string type = row[5];
+        string id = row[0];
 				string name = row[1];
 				double no3 = satof(row[2]);
 				double nh4 = satof(row[3]);
 				double carbamid = satof(row[4]);
 
-        m[id] = MineralFertiliserParameters(type, name, carbamid, no3, nh4);
+        m[id] = MineralFertiliserParameters(id, name, carbamid, no3, nh4);
 			}
 			delete con;
 
@@ -400,9 +400,9 @@ const map<int, MineralFertiliserParameters>& getAllMineralFertiliserParametersFr
 * @param id of the fertiliser
 * @return mineral fertiliser parameters value object with values from database
 */
-MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(int id)
+MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(const std::string& id)
 {
-	auto m = getAllMineralFertiliserParametersFromMonicaDB();
+  auto m = getAllMineralFertiliserParametersFromMonicaDB();
 	auto ci = m.find(id);
 	return ci != m.end() ? ci->second : MineralFertiliserParameters();
 }
@@ -416,11 +416,11 @@ void Monica::writeMineralFertilisers(string path)
 		ofstream ofs;
 		ofs.open(path + "/" + mf.getId() + ".json");
 
-		if (ofs.good())
+    if(ofs.good())
 		{
-			auto s = mf.to_json().dump();
-			//cout << "id: " << mf.getId() << " name: " << mf.getName() << " ----> " << endl << s << endl;
-			ofs << s;
+      auto s = mf.to_json().dump();
+      //cout << "id: " << mf.getId() << " name: " << mf.getName() << " ----> " << endl << s << endl;
+      ofs << s;
 			ofs.close();
 		}
 	}
@@ -428,11 +428,11 @@ void Monica::writeMineralFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-const map<int, OrganicMatterParametersPtr>& getAllOrganicFertiliserParametersFromMonicaDB()
+const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParametersFromMonicaDB()
 {
 	static mutex lockable;
 	static bool initialized = false;
-	typedef map<int, OMPPtr> Map;
+  typedef map<string, OrganicFertiliserParametersPtr> Map;
 	static Map m;
 
 	if (!initialized)
@@ -443,30 +443,45 @@ const map<int, OrganicMatterParametersPtr>& getAllOrganicFertiliserParametersFro
 		{
 			DB *con = newConnection("monica");
 			DBRow row;
-			con->select("select om_Type, dm, nh4_n, no3_n, nh2_n, k_slow, k_fast, part_s, "
-				"part_f, cn_s, cn_f, smb_s, smb_f, id, type "
-				"from organic_fertiliser");
+      con->select(
+            "select "
+            "id, "
+            "name, "
+            "dm, "
+            "nh4_n, "
+            "no3_n, "
+            "nh2_n, "
+            "k_slow, "
+            "k_fast, "
+            "part_s, "
+            "part_f, "
+            "cn_s, "
+            "cn_f, "
+            "smb_s, "
+            "smb_f "
+            "from organic_fertiliser");
 			while (!(row = con->getRow()).empty())
 			{
-        OrganicMatterParametersPtr omp = make_shared<OrganicMatterParameters>();
+        OrganicFertiliserParametersPtr omp = make_shared<OrganicFertiliserParameters>();
 
-				omp->id = row[14];
-				omp->name = row[0];
-				omp->vo_AOM_DryMatterContent = satof(row[1]);
-				omp->vo_AOM_NH4Content = satof(row[2]);
-				omp->vo_AOM_NO3Content = satof(row[3]);
-				omp->vo_AOM_CarbamidContent = satof(row[4]);
-				omp->vo_AOM_SlowDecCoeffStandard = satof(row[5]);
-				omp->vo_AOM_FastDecCoeffStandard = satof(row[6]);
-				omp->vo_PartAOM_to_AOM_Slow = satof(row[7]);
-				omp->vo_PartAOM_to_AOM_Fast = satof(row[8]);
-				omp->vo_CN_Ratio_AOM_Slow = satof(row[9]);
-				omp->vo_CN_Ratio_AOM_Fast = satof(row[10]);
-				omp->vo_PartAOM_Slow_to_SMB_Slow = satof(row[11]);
-				omp->vo_PartAOM_Slow_to_SMB_Fast = satof(row[12]);
-				int id = satoi(row[13]);
+        int i = 0;
 
-				m.insert(make_pair(id, omp));
+        omp->id = stoi(row[i++]);
+        omp->name = row[i++];
+        omp->vo_AOM_DryMatterContent = stof(row[i++]);
+        omp->vo_AOM_NH4Content = stof(row[i++]);
+        omp->vo_AOM_NO3Content = stof(row[i++]);
+        omp->vo_AOM_CarbamidContent = stof(row[i++]);
+        omp->vo_AOM_SlowDecCoeffStandard = stof(row[i++]);
+        omp->vo_AOM_FastDecCoeffStandard = stof(row[i++]);
+        omp->vo_PartAOM_to_AOM_Slow = stof(row[i++]);
+        omp->vo_PartAOM_to_AOM_Fast = stof(row[i++]);
+        omp->vo_CN_Ratio_AOM_Slow = stof(row[i++]);
+        omp->vo_CN_Ratio_AOM_Fast = stof(row[i++]);
+        omp->vo_PartAOM_Slow_to_SMB_Slow = stof(row[i++]);
+        omp->vo_PartAOM_Slow_to_SMB_Fast = stof(row[i++]);
+
+        m[omp->id] = omp;
 			}
 			delete con;
 
@@ -482,9 +497,9 @@ const map<int, OrganicMatterParametersPtr>& getAllOrganicFertiliserParametersFro
 * @param organ_fert_id ID of fertiliser
 * @return organic fertiliser parameters with values from database
 */
-OrganicMatterParametersPtr Monica::getOrganicFertiliserParametersFromMonicaDB(int id)
+OrganicFertiliserParametersPtr Monica::getOrganicFertiliserParametersFromMonicaDB(const std::string& id)
 {
-  static OrganicMatterParametersPtr nothing = make_shared<OrganicMatterParameters>();
+  static OrganicFertiliserParametersPtr nothing = make_shared<OrganicFertiliserParameters>();
 
 	auto m = getAllOrganicFertiliserParametersFromMonicaDB();
 	auto ci = m.find(id);
@@ -495,7 +510,7 @@ void Monica::writeOrganicFertilisers(string path)
 {
 	for (auto p : getAllOrganicFertiliserParametersFromMonicaDB())
 	{
-		auto of = p.second;
+    OrganicFertiliserParametersPtr of = p.second;
 
 		ofstream ofs;
 		ofs.open(path + "/" + of->id + ".json");
@@ -513,12 +528,18 @@ void Monica::writeOrganicFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-const map<int, OrganicMatterParametersPtr>& getAllResidueParametersFromMonicaDB()
+pair<
+const map<string, map<string, CropResidueParametersPtr>>&,
+const map<int, CropResidueParametersPtr>&
+>
+getAllResidueParametersFromMonicaDB()
 {
-	static mutex lockable;
+  static mutex lockable;
 	static bool initialized = false;
-  typedef map<int, OrganicMatterParametersPtr> Map;
+  typedef map<string, map<string, CropResidueParametersPtr>> Map;
+  typedef map<int, CropResidueParametersPtr> Map2;
 	static Map m;
+  static Map2 m2;
 
 	if (!initialized)
 	{
@@ -526,68 +547,111 @@ const map<int, OrganicMatterParametersPtr>& getAllResidueParametersFromMonicaDB(
 
 		if (!initialized)
 		{
-			DB *con = newConnection("monica");
+      DBPtr con(newConnection("monica"));
 			DBRow row;
-			con->select("select residue_type, dm, nh4, no3, nh2, k_slow, k_fast, part_s, "
-				"part_f, cn_s, cn_f, smb_s, smb_f, crop_id "
-				"from residue_table");
+      con->select(
+            "select "
+            "id, "
+            "species, "
+            "cultivar, "
+            "dm, "
+            "nh4, "
+            "no3, "
+            "nh2, "
+            "k_slow, "
+            "k_fast, "
+            "part_s, "
+            "part_f, "
+            "cn_s, "
+            "cn_f, "
+            "smb_s, "
+            "smb_f, "
+            "crop_id "
+            "from crop_residue");
 			while (!(row = con->getRow()).empty())
 			{
-        OrganicMatterParametersPtr omp = make_shared<OrganicMatterParameters>();
+        CropResidueParametersPtr omp = make_shared<CropResidueParameters>();
 
-				omp->id = row[13];
-				omp->name = row[0];
-				omp->vo_AOM_DryMatterContent = satoi(row[1]);
-				omp->vo_AOM_NH4Content = satof(row[2]);
-				omp->vo_AOM_NO3Content = satof(row[3]);
-				omp->vo_AOM_CarbamidContent = satof(row[4]);
-				omp->vo_AOM_SlowDecCoeffStandard = satof(row[5]);
-				omp->vo_AOM_FastDecCoeffStandard = satof(row[6]);
-				omp->vo_PartAOM_to_AOM_Slow = satof(row[7]);
-				omp->vo_PartAOM_to_AOM_Fast = satof(row[8]);
-				omp->vo_CN_Ratio_AOM_Slow = satof(row[9]);
-				omp->vo_CN_Ratio_AOM_Fast = satof(row[10]);
-				omp->vo_PartAOM_Slow_to_SMB_Slow = satof(row[11]);
-				omp->vo_PartAOM_Slow_to_SMB_Fast = satof(row[12]);
-				int id = satoi(row[13]);
+        int i = 0;
 
-				m.insert(make_pair(id, omp));
+        int id = stoi(row[i++]);
+        omp->species = row[i++];
+        omp->cultivar = row[i++];
+        omp->vo_AOM_DryMatterContent = stoi(row[i++]);
+        omp->vo_AOM_NH4Content = stof(row[i++]);
+        omp->vo_AOM_NO3Content = stof(row[i++]);
+        omp->vo_AOM_CarbamidContent = stof(row[i++]);
+        omp->vo_AOM_SlowDecCoeffStandard = stof(row[i++]);
+        omp->vo_AOM_FastDecCoeffStandard = stof(row[i++]);
+        omp->vo_PartAOM_to_AOM_Slow = stof(row[i++]);
+        omp->vo_PartAOM_to_AOM_Fast = stof(row[i++]);
+        omp->vo_CN_Ratio_AOM_Slow = stof(row[i++]);
+        omp->vo_CN_Ratio_AOM_Fast = stof(row[i++]);
+        omp->vo_PartAOM_Slow_to_SMB_Slow = stof(row[i++]);
+        omp->vo_PartAOM_Slow_to_SMB_Fast = stof(row[i++]);
+
+        m[omp->species][omp->cultivar] = omp;
+        m2[id] = omp;
 			}
-			delete con;
 
 			initialized = true;
 		}
 	}
 
-	return m;
+  return make_pair(m, m2);
 }
 
-/**
-* @brief Reads residue parameters from monica DB
-* @param crop_id ID of crop
-* @return Residues parameters with values from database
-*/
-const OrganicMatterParametersPtr Monica::getResidueParametersFromMonicaDB(int cropId)
+CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(const string& species,
+                                                                  const string& cultivar)
 {
-  static OrganicMatterParametersPtr nothing = make_shared<OrganicMatterParameters>();
+  static CropResidueParametersPtr nothing = make_shared<CropResidueParameters>();
 
-	auto m = getAllResidueParametersFromMonicaDB();
-	auto ci = m.find(cropId);
+  auto m = getAllResidueParametersFromMonicaDB().first;
+  auto ci = m.find(species);
+  //found species
+  if(ci != m.end())
+  {
+    auto m2 = ci->second;
+    auto ci2 = m2.find(cultivar);
+    //found also cultivar
+    if(ci2 != m2.end())
+      return ci2->second;
+    //possibly take first cultivar, if given cultivar didn't match
+    else if(!m2.empty())
+      return m2.begin()->second;
+  }
+
+  return nothing;
+}
+
+CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(int cropId)
+{
+  static CropResidueParametersPtr nothing = make_shared<CropResidueParameters>();
+
+  auto m = getAllResidueParametersFromMonicaDB().second;
+  auto ci = m.find(cropId);
   return ci != m.end() ? ci->second : nothing;
 }
 
-void Monica::writeResidues(string path)
+void Monica::writeCropResidues(string path)
 {
-	for (auto p : getAllResidueParametersFromMonicaDB())
+  for (auto p : getAllResidueParametersFromMonicaDB().second)
 	{
-		auto r = p.second;
+    CropResidueParametersPtr r = p.second;
+
+    string speciesPath = path + "/" + r->species;
+    bool noCultivar = r->cultivar.empty();
+    string cultivarPath = (noCultivar ? speciesPath : speciesPath + "/" + r->cultivar) + ".json";
+
+    if(noCultivar)
+      ensureDirExists(speciesPath);
 
 		ofstream ofs;
-		ofs.open(path + "/" + r->name + ".json");
+    ofs.open(cultivarPath);
 
 		if (ofs.good())
 		{
-			auto s = r->to_json().dump();
+      auto s = r->to_json().dump();
 			//cout << "id: " << of->id << " name: " << of->name << " ----> " << endl << s << endl;
 			ofs << s;
 			ofs.close();

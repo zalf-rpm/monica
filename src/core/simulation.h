@@ -125,8 +125,6 @@ public:
 	HermesSimulationConfiguration()
 		: startYear(0),
 			endYear(0),
-			organicFertiliserID(0),
-			mineralFertiliserID(0),
 			precipManipulator(1.0),
 			NDeposition(20),
 			minGWDepth(-1.0),
@@ -197,8 +195,8 @@ public:
 
     void setStartYear(int year) { this->startYear = year; }
     void setEndYear(int year) { this->endYear = year; }
-    void setOrganicFertiliserID(int organicFertiliserID) { this->organicFertiliserID = organicFertiliserID; }
-    void setMineralFertiliserID(int mineralFertiliserID) { this->mineralFertiliserID = mineralFertiliserID; }
+    void setOrganicFertiliserID(std::string organicFertiliserID) { this->organicFertiliserID = organicFertiliserID; }
+    void setMineralFertiliserID(std::string mineralFertiliserID) { this->mineralFertiliserID = mineralFertiliserID; }
 
     void setNMinUserParameters(double min, double max, int delayInDays) { this->nMinUserParameters = NMinUserParameters(min,max,delayInDays); }
 
@@ -244,8 +242,8 @@ public:
 
     int getStartYear() const { return startYear; }
     int getEndYear() const { return endYear; }
-    int getOrganicFertiliserID() const { return organicFertiliserID; }
-    int getMineralFertiliserID() const { return mineralFertiliserID; }
+    std::string getOrganicFertiliserID() const { return organicFertiliserID; }
+    std::string getMineralFertiliserID() const { return mineralFertiliserID; }
 
     double precipManipulationValue() const {return precipManipulator; }
 
@@ -304,8 +302,8 @@ public:
 
     int startYear;
     int endYear;
-    int organicFertiliserID;
-    int mineralFertiliserID;
+    std::string organicFertiliserID;
+    std::string mineralFertiliserID;
 
     double precipManipulator;
     double NDeposition;

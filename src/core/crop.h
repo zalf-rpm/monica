@@ -165,7 +165,7 @@ namespace Monica
 		AutomaticHarvestParameters getAutomaticHarvestParams() { return _automaticHarvestParams; }
 
 	private:
-    CropId _id{-1};
+    int _id{-1};
     std::string _speciesName;
     std::string _cultivarName;
 		Tools::Date _seedDate;

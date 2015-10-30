@@ -86,8 +86,8 @@ namespace Monica
               double vw_AtmosphericCO2Concentration,
               double vw_GrossPrecipitation);
 
-    void get_CropIdentity();
-    void get_CropParameters();
+    //void get_CropIdentity();
+    //void get_CropParameters();
 
     void fc_Radiation(double vs_JulianDay,
                       double vs_Latitude,
@@ -196,8 +196,8 @@ namespace Monica
                                           double vc_GrossPhotosynthesisReference_mol);
 
     void fc_CropWaterUptake(double vc_SoilCoverage,
-                            int vc_RootingDepth,
-                            int vm_GroundwaterTable,
+                            size_t vc_RootingDepth,
+                            size_t vm_GroundwaterTable,
                             double vc_ReferenceEvapotranspiration,
                             double vw_GrossPrecipitation,
                             double vc_CurrentTotalTemperatureSum,
@@ -535,9 +535,9 @@ namespace Monica
     std::vector<double> vc_RootEffectivity; //! old WUEFF
     double pc_RootFormFactor;
     double pc_RootGrowthLag;
-    int vc_RootingDepth{0};                                            //! old WURZ
+    unsigned int vc_RootingDepth{0};                                            //! old WURZ
     double vc_RootingDepth_m{0.0};
-    int vc_RootingZone{0};
+    unsigned int vc_RootingZone{0};
     double pc_RootPenetrationRate;
     double vm_SaturationDeficit{0.0};
     double vc_SoilCoverage{0.0};

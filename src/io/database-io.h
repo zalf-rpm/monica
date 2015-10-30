@@ -31,33 +31,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Monica
 {
-  const CropParametersPtr getCropParametersFromMonicaDB(int cropId);
+  CropParametersPtr getCropParametersFromMonicaDB(int cropId);
 
 	void writeCropParameters(std::string path);
 
 	//-----------------------------------------------------------
 
-//	const std::map<int, MineralFertiliserParameters>& getAllMineralFertiliserParametersFromMonicaDB();
-
-	MineralFertiliserParameters getMineralFertiliserParametersFromMonicaDB(int mineralFertiliserId);
+  MineralFertiliserParameters getMineralFertiliserParametersFromMonicaDB(const std::string& mineralFertiliserId);
 
 	void writeMineralFertilisers(std::string path);
 
 	//-----------------------------------------------------------
 
-//	const map<int, OrganicMatterParametersPtr>& getAllOrganicFertiliserParametersFromMonicaDB();
-
-  OrganicMatterParametersPtr getOrganicFertiliserParametersFromMonicaDB(int organ_fert_id);
+  OrganicFertiliserParametersPtr getOrganicFertiliserParametersFromMonicaDB(const std::string& id);
 
 	void writeOrganicFertilisers(std::string path);
 
 	//-----------------------------------------------------------
 
-//  const map<int, OrganicMatterParametersPtr>& getAllResidueParametersFromMonicaDB();
+  CropResidueParametersPtr getResidueParametersFromMonicaDB(const std::string& species, const std::string& cultivar);
 
-  const OrganicMatterParametersPtr getResidueParametersFromMonicaDB(int crop_id);
+  CropResidueParametersPtr getResidueParametersFromMonicaDB(int cropId);
 
-	void writeResidues(std::string path);
+  void writeCropResidues(std::string path);
 
 	//-----------------------------------------------------------
 

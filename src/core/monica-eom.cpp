@@ -99,12 +99,12 @@ EomPVPInfo Monica::eomPVPId2cropId(PVPId pvpId)
 	return ci != eomPVPId2cropIdMap().end() ? ci->second : EomPVPInfo();
 }
 
-int Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
+string Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
 {
   static mutex lockable;
 
   static bool initialized = false;
-  typedef map<int, int> M;
+  typedef map<int, string> M;
   M m;
 
   if(!initialized)
@@ -116,16 +116,18 @@ int Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
 			DBPtr con(newConnection("landcare-dss"));
       DBRow row;
 
-      con->select("select eom_id, monica_id "
+      con->select("select "
+                  "eom_id, "
+                  "monica_id "
                   "from eom_2_monica_organic_fertilizer_id");
 
       while(!(row = con->getRow()).empty())
-        m[satoi(row[0])] = satoi(row[1]);
+        m[satoi(row[0])] = row[1];
     }
   }
 
-  M::const_iterator ci = m.find(eomId);
-  return ci != m.end() ? ci->second : -1;
+  auto ci = m.find(eomId);
+  return ci != m.end() ? ci->second : "";
 }
 
-#endif /*#ifdef RUN_LANDCARE_DSS*/
+#endif

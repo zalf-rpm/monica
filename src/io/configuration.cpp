@@ -239,7 +239,7 @@ const Result Configuration::run()
 
 	cpp.userEnvironmentParameters.p_MinGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMin", cpp.userEnvironmentParameters.p_MinGroundwaterDepth);
 	cpp.userEnvironmentParameters.p_MaxGroundwaterDepth = getDbl(siteObj, "groundwaterDepthMax", cpp.userEnvironmentParameters.p_MaxGroundwaterDepth);
-	cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth = getDbl(siteObj, "groundwaterDepthMinMonth", cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth);
+	cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth = getInt(siteObj, "groundwaterDepthMinMonth", cpp.userEnvironmentParameters.p_MinGroundwaterDepthMonth);
 
 	cpp.userEnvironmentParameters.p_WindSpeedHeight = getDbl(siteObj, "windSpeedHeight", cpp.userEnvironmentParameters.p_WindSpeedHeight);
 	cpp.userEnvironmentParameters.p_LeachingDepth = getDbl(siteObj, "leachingDepth", cpp.userEnvironmentParameters.p_LeachingDepth);
@@ -540,7 +540,7 @@ bool Configuration::addHarvestOps(CultivationMethod &pp, cson_array* harvArr)
 		cson_object* harvObj = cson_value_get_object(cson_array_get(harvArr, h));
 		Tools::Date hDate = getIsoDate(harvObj, "date");
 		double percentage = getDbl(harvObj, "percentage") / 100; // [%] -> [kg/kg]
-		bool exported = getDbl(harvObj, "exported");
+		bool exported = getBool(harvObj, "exported");
 		std::string method = getStr(harvObj, "method");
 
 		if (!hDate.isValid()) {
@@ -635,27 +635,30 @@ bool Configuration::addFertilizers(CultivationMethod &pp, cson_array* fertArr, b
 
     if (isOrganic)  {
       if (con && con->select(
-        "SELECT om_Type, dm, nh4_n, no3_n, nh2_n, k_slow, k_fast, part_s, part_f, cn_s, cn_f, smb_s, smb_f, id "
+        "SELECT id, name, dm, nh4_n, no3_n, nh2_n, k_slow, k_fast, part_s, part_f, cn_s, cn_f, smb_s, smb_f, id "
         "FROM organic_fertiliser "
         "WHERE id=" + std::to_string(static_cast<long long>(fertId))
       )) {
         Db::DBRow row = con->getRow();
         if (!(row).empty()) {
-          auto omp = make_shared<OrganicMatterParameters>();
+          auto omp = make_shared<OrganicFertiliserParameters>();
 
-          omp->name = row[0];
-          omp->vo_AOM_DryMatterContent = Tools::satof(row[1]);
-          omp->vo_AOM_NH4Content = Tools::satof(row[2]);
-          omp->vo_AOM_NO3Content = Tools::satof(row[3]);
-          omp->vo_AOM_CarbamidContent = Tools::satof(row[4]);
-          omp->vo_AOM_SlowDecCoeffStandard = Tools::satof(row[5]);
-          omp->vo_AOM_FastDecCoeffStandard = Tools::satof(row[6]);
-          omp->vo_PartAOM_to_AOM_Slow = Tools::satof(row[7]);
-          omp->vo_PartAOM_to_AOM_Fast = Tools::satof(row[8]);
-          omp->vo_CN_Ratio_AOM_Slow = Tools::satof(row[9]);
-          omp->vo_CN_Ratio_AOM_Fast = Tools::satof(row[10]);
-          omp->vo_PartAOM_Slow_to_SMB_Slow = Tools::satof(row[11]);
-          omp->vo_PartAOM_Slow_to_SMB_Fast = Tools::satof(row[12]);
+					int i = 0;
+
+					omp->id = row[i++];
+          omp->name = row[i++];
+          omp->vo_AOM_DryMatterContent = Tools::satof(row[i++]);
+          omp->vo_AOM_NH4Content = Tools::satof(row[i++]);
+          omp->vo_AOM_NO3Content = Tools::satof(row[i++]);
+          omp->vo_AOM_CarbamidContent = Tools::satof(row[i++]);
+          omp->vo_AOM_SlowDecCoeffStandard = Tools::satof(row[i++]);
+          omp->vo_AOM_FastDecCoeffStandard = Tools::satof(row[i++]);
+          omp->vo_PartAOM_to_AOM_Slow = Tools::satof(row[i++]);
+          omp->vo_PartAOM_to_AOM_Fast = Tools::satof(row[i++]);
+          omp->vo_CN_Ratio_AOM_Slow = Tools::satof(row[i++]);
+          omp->vo_CN_Ratio_AOM_Fast = Tools::satof(row[i++]);
+          omp->vo_PartAOM_Slow_to_SMB_Slow = Tools::satof(row[i++]);
+          omp->vo_PartAOM_Slow_to_SMB_Fast = Tools::satof(row[i++]);
 
           pp.addApplication(OrganicFertiliserApplication(fDate, omp, amount, true));
         }
@@ -771,7 +774,7 @@ bool Configuration::createClimate(Climate::DataAccessor &da, CentralParameterPro
 
   Tools::Date date = Tools::Date(1, 1, da.startDate().year(), useLeapYears);
 
-  for (int y = da.startDate().year(); y <= da.endDate().year(); y++) {
+  for (size_t y = da.startDate().year(); y <= da.endDate().year(); y++) {
     std::ostringstream yss;
     yss << y;
     std::string ys = yss.str();
@@ -1007,7 +1010,7 @@ bool Configuration::isValid(const cson_value* val, const cson_value* meta, const
     else if (cson_array_length_get(metaArr) > 0) {
       cson_value* metaVal = cson_array_get(metaArr, 0);
       /* check objects in array */
-      for (int i = 0; i < len; i++) {
+      for (size_t i = 0; i < len; i++) {
         ok = isValid(cson_array_get(valArr, i), metaVal, path + '[' + std::to_string(static_cast<long long>(i) ) + ']');
         if (!ok) {
           break;

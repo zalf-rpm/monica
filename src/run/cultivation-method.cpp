@@ -392,6 +392,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
     return make_shared<TillageApplication>(j);
   else if(type == "IrrigationApplication")
     return make_shared<IrrigationApplication>(j);
+
+	return WSPtr();
 }
 
 CultivationMethod::CultivationMethod(const string& name)

@@ -815,7 +815,7 @@ json11::Json SiteParameters::to_json() const
   {"NDeposition", vq_NDeposition},
   {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
 
-  if(soilParameters)
+  if(vs_SoilParameters)
     sps["SoilParameters"] = toJsonArray(*vs_SoilParameters);
 
   return sps;
@@ -878,28 +878,25 @@ json11::Json NMinCropParameters::to_json() const
 //------------------------------------------------------------------------------
 
 OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
-  : id(string_value(j, "id")),
-    name(string_value(j, "name")),
-  vo_AOM_DryMatterContent(double_value(j, "AOM_DryMatterContent")),
-  vo_AOM_NH4Content(double_value(j, "AOM_NH4Content")),
-  vo_AOM_NO3Content(double_value(j, "AOM_NO3Content")),
-  vo_AOM_CarbamidContent(double_value(j, "AOM_CarbamidContent")),
-  vo_AOM_SlowDecCoeffStandard(double_value(j, "AOM_SlowDecCoeffStandard")),
-  vo_AOM_FastDecCoeffStandard(double_value(j, "AOM_FastDecCoeffStandard")),
-  vo_PartAOM_to_AOM_Slow(double_value(j, "PartAOM_to_AOM_Slow")),
-  vo_PartAOM_to_AOM_Fast(double_value(j, "PartAOM_to_AOM_Fast")),
-  vo_CN_Ratio_AOM_Slow(double_value(j, "CN_Ratio_AOM_Slow")),
-  vo_CN_Ratio_AOM_Fast(double_value(j, "CN_Ratio_AOM_Fast")),
-  vo_PartAOM_Slow_to_SMB_Slow(double_value(j, "PartAOM_Slow_to_SMB_Slow")),
-  vo_PartAOM_Slow_to_SMB_Fast(double_value(j, "PartAOM_Slow_to_SMB_Fast")),
-  vo_NConcentration(double_value(j, "NConcentration"))
+  : vo_AOM_DryMatterContent(double_value(j, "AOM_DryMatterContent"))
+  , vo_AOM_NH4Content(double_value(j, "AOM_NH4Content"))
+  , vo_AOM_NO3Content(double_value(j, "AOM_NO3Content"))
+  , vo_AOM_CarbamidContent(double_value(j, "AOM_CarbamidContent"))
+  , vo_AOM_SlowDecCoeffStandard(double_value(j, "AOM_SlowDecCoeffStandard"))
+  , vo_AOM_FastDecCoeffStandard(double_value(j, "AOM_FastDecCoeffStandard"))
+  , vo_PartAOM_to_AOM_Slow(double_value(j, "PartAOM_to_AOM_Slow"))
+  , vo_PartAOM_to_AOM_Fast(double_value(j, "PartAOM_to_AOM_Fast"))
+  , vo_CN_Ratio_AOM_Slow(double_value(j, "CN_Ratio_AOM_Slow"))
+  , vo_CN_Ratio_AOM_Fast(double_value(j, "CN_Ratio_AOM_Fast"))
+  , vo_PartAOM_Slow_to_SMB_Slow(double_value(j, "PartAOM_Slow_to_SMB_Slow"))
+  , vo_PartAOM_Slow_to_SMB_Fast(double_value(j, "PartAOM_Slow_to_SMB_Fast"))
+  , vo_NConcentration(double_value(j, "NConcentration"))
 {}
 
 json11::Json OrganicMatterParameters::to_json() const
 {
   return J11Object {
-    {"id", id},
-    {"name", name},
+    {"type", "OrganicMatterParameters"},
     {"AOM_DryMatterContent", J11Array {vo_AOM_DryMatterContent, "kg DM kg FM-1", "Dry matter content of added organic matter"}},
     {"AOM_AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}},
     {"AOM_AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter"}},
@@ -913,6 +910,40 @@ json11::Json OrganicMatterParameters::to_json() const
     {"AOM_PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}},
     {"AOM_PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}},
     {"AOM_NConcentration", vo_NConcentration}};
+}
+
+//-----------------------------------------------------------------------------------------
+
+OrganicFertiliserParameters::OrganicFertiliserParameters(json11::Json j)
+  : OrganicMatterParameters(j)
+  , id(string_value(j, "id"))
+  , name(string_value(j, "name"))
+{}
+
+json11::Json OrganicFertiliserParameters::to_json() const
+{
+  auto omp = OrganicMatterParameters::to_json().object_items();
+  omp["type"] = "OrganicFertiliserParameters";
+  omp["id"] = id;
+  omp["name"] = name;
+  return omp;
+}
+
+//-----------------------------------------------------------------------------------------
+
+CropResidueParameters::CropResidueParameters(json11::Json j)
+  : OrganicMatterParameters(j)
+  , species(string_value(j, "species"))
+  , cultivar(string_value(j, "cultivar"))
+{}
+
+json11::Json CropResidueParameters::to_json() const
+{
+  auto omp = OrganicMatterParameters::to_json().object_items();
+  omp["type"] = "CropResidueParameters";
+  omp["species"] = species;
+  omp["cultivar"] = cultivar;
+  return omp;
 }
 
 //-----------------------------------------------------------------------------------------

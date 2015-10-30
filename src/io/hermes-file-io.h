@@ -36,7 +36,7 @@ namespace Monica
 {
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
 
-	std::pair<FertiliserType, int> hermesFertiliserName2monicaFertiliserId(const std::string& name);
+	std::pair<FertiliserType, std::string> hermesFertiliserName2monicaFertiliserId(const std::string& name);
 
 	void attachFertiliserApplicationsToCropRotation(std::vector<CultivationMethod>& cropRotation,
 		const std::string& pathToFertiliserFile);

@@ -5,10 +5,11 @@
 			"harvestDate": "1992-08-08",
 			"cuttingDates": ["1991-11-1", "1991-12-1"],
 			"cropParams": {
-				"species": [[["include-file" "../../../parameters/crop-parameters/winter-wheat/winter-wheat.json"]]], 
-				"cultivar": [[["include-file" "../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json"]]]
+				"species": ["include-file", "../../../parameters/crop-parameters/winter-wheat/winter-wheat.json"], 
+				"cultivar": ["include-file", "../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json"],
+				"cultivar": [[{"include-from": "file", "path": "../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json"}]]
 			},
-			"residueParams": "include(../../../parameters/residues/wheat.json)"
+			"residueParams": {"include-from": "file", "path": "../../../parameters/residues/wheat.json"}
 		},
 		"ww2": { 
 			"species": { "....": "...." },
@@ -20,14 +21,8 @@
 	
 	"cropRotation": [
 		{
-			//"rowWidth": 5.0,
-			//"plantSpace": 5.0,
-			//"plantDryWeight": 225.00,
-			//"percNTransplant": 0.0,
-			//"finalHarvestDate": "1992-08-08",
-			//"residuesRemoval": 85.0,
 			"worksteps": [
-				{ "date": "1991-10-13", "type": "Seed", "crop": { "species": "winter-wheat", "cultivar": "ww-variety-1" },
+				{ "date": "1991-10-13", "type": "Seed", "crop": { "species": "winter-wheat", "cultivar": "ww-variety-1" }},
 				{ "date": "1992-08-08", "type": "Harvest", "crop": "ww2" },
 				{
 					"type": "TillageApplication",
@@ -38,7 +33,7 @@
 				{
 					"type": "IrrigationApplication",
 					"date": "1992-06-08",
-					"amount", [11.0, "mm"]
+					"amount": [11.0, "mm"],
 					"parameters": {
 						"nitrateConcentration": 0.0,
 						"sulfateConcentration": 0.0
@@ -51,7 +46,7 @@
 					"partition": {
 						"id": "AN",
 						"name": "... optional",
-						"Carbamid": [50, "%"]
+						"Carbamid": [50, "%"],
 						"NH4": [20, "%"],
 						"NO3": [30, "%"]
 					}
@@ -66,9 +61,7 @@
           "threshold": 30.0,
           "area": 1.0,
           "amount": 11.0,
-          //"NConc": 0.0,
-          //"date": "1992-06-08",
-					"parameters": {
+          "parameters": {
 						"nitrateConcentration": 0.0,
 						"sulfateConcentration": 0.0
 					}
@@ -82,9 +75,10 @@
 			"worksteps": [
 				{ "date": "1991-10-13", "type": "Seed", "crop": "ww2" },
 				{	"date": "1991-10-08", "type": "TillageApplication", "depth": [0.3, "m"] },
-				{ "date": "1992-06-08", "type": "IrrigationApplication", "amount", [11.0, "mm"] },
+				{ "date": "1992-06-08", "type": "IrrigationApplication", "amount": [11.0, "mm"] },
 				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": { "id": "AN" }, "fertiliserId": "AN" },
-				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": [[["include-db" "fertiliser" "AN"]]], "fertiliserId": "AN" },
+				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": [[["include-db", "mineral_fertiliser", "AN"]]], "fertiliserId": "AN" },
+				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": [[{"include-from": "db", "table": "mineral_fertiliser", "id": "AN"}]]},
 				{ "date": "1992-08-08", "type": "Harvest", "crop": "ww2" }
 			]
 		}
