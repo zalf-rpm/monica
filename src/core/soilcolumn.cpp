@@ -56,37 +56,14 @@ using namespace Tools;
  * @param sps Soil parameters
  */
 SoilLayer::SoilLayer(double vs_LayerThickness,
-                     const SoilParameters& sps,
-                     const UserInitialValues* initParams)
-  : vs_LayerThickness(vs_LayerThickness),
-    vs_SoilNO3(0.005), // TODO: why here with 0.005 instead of 0.0001 as in default initialization
-    initPs(initParams),
-    _sps(sps),
-    vs_SoilMoisture_m3(0.25) // TODO: QUESTION - Warum wird hier mit 0.25 initialisiert?
-{
-  assert((_sps.vs_SoilOrganicCarbon() - (_sps.vs_SoilOrganicMatter() * OrganicConstants::po_SOM_to_C)) < 0.00001);
-
-  if(initPs)
-  {
-    vs_SoilMoisture_m3 = vs_FieldCapacity() * initPs->p_initPercentageFC;
-    vs_SoilMoistureOld_m3 = vs_FieldCapacity() * initPs->p_initPercentageFC;
-  }
-
-  if (initPs && _sps.vs_SoilAmmonium < 0.0)
-    vs_SoilNH4 = initPs->p_initSoilAmmonium;
-  else
-    vs_SoilNH4 = _sps.vs_SoilAmmonium; // kg m-3
-
-  if (initPs && _sps.vs_SoilNitrate < 0.0)
-    vs_SoilNO3 = initPs->p_initSoilNitrate;
-  else
-    vs_SoilNO3 = _sps.vs_SoilNitrate;  // kg m-3
-
-  //cout  << "Constructor 3" << endl;
-  //cout << "vs_SoilMoisture_m3\t" << vs_SoilMoisture_m3  << "\t" << cpp.p_initPercentageFC << endl;
-  //cout << "vs_SoilNO3\t" << vs_SoilNO3 << endl;
-  //cout << "vs_SoilNH4\t" << vs_SoilNH4 << endl;
-}
+                     const SoilParameters& sps)
+  : vs_LayerThickness(vs_LayerThickness)
+  , vs_SoilNH4(sps.vs_SoilAmmonium)
+  , vs_SoilNO3(sps.vs_SoilNitrate)
+  , _sps(sps)
+  , vs_SoilMoisture_m3(vs_FieldCapacity() * sps.vs_SoilMoisturePercentFC)
+  , vs_SoilMoistureOld_m3(vs_SoilMoisture_m3)
+{}
 
 /**
  * Soil layer's moisture content, expressed as logarithm of
@@ -156,8 +133,7 @@ double SoilLayer::vs_SoilMoisture_pF()
 SoilColumn::SoilColumn(double ps_LayerThickness,
                        double ps_MaxMineralisationDepth,
                        const SoilPMsPtr soilParams,
-                       double pm_CriticalMoistureDepth,
-                       const UserInitialValues& initParams)
+                       double pm_CriticalMoistureDepth)
   : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth)
   , pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
 {
@@ -165,7 +141,7 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
 //  for(auto sp : *this)//soilParams)
 //    vs_SoilLayers.push_back(SoilLayer(ps_LayerThickness, sp, &initParams));
   for(auto sp : *soilParams)
-    push_back(SoilLayer(ps_LayerThickness, sp, &initParams));
+    push_back(SoilLayer(ps_LayerThickness, sp));
 
   _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }

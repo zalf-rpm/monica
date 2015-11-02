@@ -75,15 +75,13 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   , _soilTempPs(cpp.userSoilTemperatureParameters)
   , _soilTransPs(cpp.userSoilTransportParameters)
   , _soilOrganicPs(cpp.userSoilOrganicParameters)
-  , _initPs(cpp.userInitValues)
   , _writeOutputFiles(cpp.writeOutputFiles)
   , _pathToOutputDir(cpp.pathToOutputDir)
   , _groundwaterInformation(cpp.groundwaterInformation)
   , _soilColumn(_envPs.p_LayerThickness,
                 _soilOrganicPs.ps_MaxMineralisationDepth,
                 _sitePs.vs_SoilParameters,
-                _smPs.pm_CriticalMoistureDepth,
-                _initPs)
+                _smPs.pm_CriticalMoistureDepth)
   , _soilTemperature(*this)
   , _soilMoisture(*this)
   , _soilOrganic(_soilColumn,

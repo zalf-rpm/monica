@@ -1049,24 +1049,6 @@ json11::Json UserEnvironmentParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-UserInitialValues::UserInitialValues(json11::Json j)
-  : p_initPercentageFC(double_value(j, "initPercentageFC")),
-    p_initSoilNitrate(double_value(j, "initSoilNitrate")),
-    p_initSoilAmmonium(double_value(j, "initSoilAmmonium"))
-{}
-
-json11::Json UserInitialValues::to_json() const
-{
-  return json11::Json::object {
-    {"type", "UserInitialValues"},
-    {"initPercentageFC", J11Array {p_initPercentageFC, "", "Initial soil moisture content in percent field capacity"}},
-    {"initSoilNitrate", J11Array {p_initSoilNitrate, "kg NO3-N m-3", "Initial soil nitrate content"}},
-    {"initSoilAmmonium", J11Array {p_initSoilAmmonium, "kg NH4-N m-3", "Initial soil ammonium content"}}
-  };
-}
-
-//-----------------------------------------------------------------------------------------
-
 UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
   : pm_CriticalMoistureDepth(double_value(j, "CriticalMoistureDepth")),
     pm_SaturatedHydraulicConductivity(double_value(j, "SaturatedHydraulicConductivity")),

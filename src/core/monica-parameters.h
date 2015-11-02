@@ -890,23 +890,6 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct UserInitialValues
-	{
-    UserInitialValues(){}
-
-    UserInitialValues(json11::Json object);
-
-    json11::Json to_json() const;
-
-    std::string toString() const { return to_json().dump(); }
-
-    double p_initPercentageFC{0.8}; //!< Initial soil moisture content in percent field capacity
-    double p_initSoilNitrate{0.0001}; //!< Initial soil nitrate content [kg NO3-N m-3]
-    double p_initSoilAmmonium{0.0001}; //!< Initial soil ammonium content [kg NH4-N m-3]
-	};
-
-	//----------------------------------------------------------------------------
-
 	/**
 	 * Class that holds information about user defined soil moisture parameters.
 	 * @author Xenia Specka
@@ -1077,7 +1060,6 @@ namespace Monica
 		UserSoilTemperatureParameters userSoilTemperatureParameters;
 		UserSoilTransportParameters userSoilTransportParameters;
 		UserSoilOrganicParameters userSoilOrganicParameters;
-		UserInitialValues userInitValues;
 
     SiteParameters site;        //! site specific parameters
     Soil::OrganicConstants organic;  //! constant organic parameters to the model

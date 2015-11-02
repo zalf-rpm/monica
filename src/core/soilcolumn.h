@@ -117,8 +117,7 @@ namespace Monica
 //    SoilLayer(const UserInitialValues* initParams);
 
     SoilLayer(double vs_LayerThickness,
-              const Soil::SoilParameters& soilParams,
-              const UserInitialValues* initParams);
+              const Soil::SoilParameters& soilParams);
 
     //! Sets value of soil organic matter parameter.
     void set_SoilOrganicMatter(double som) { _sps.set_vs_SoilOrganicMatter(som); }
@@ -194,8 +193,6 @@ namespace Monica
     double vs_SoilNO3{0.0001}; //!< Soil layer's NO3-N content [kg NO3-N m-3]
     bool vs_SoilFrozen{false};
 
-    const UserInitialValues* initPs{nullptr};
-
   private:
     Soil::SoilParameters _sps;
 
@@ -223,8 +220,7 @@ namespace Monica
     SoilColumn(double ps_LayerThickness,
                double ps_MaxMineralisationDepth,
                const Soil::SoilPMsPtr soilParams,
-               double pm_CriticalMoistureDepth,
-               const UserInitialValues& initParams);
+               double pm_CriticalMoistureDepth);
 
     void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
                                 double amount);

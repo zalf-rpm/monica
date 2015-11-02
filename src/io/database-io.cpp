@@ -694,26 +694,18 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 				break;
 			}
 
-			UserCropParameters& user_crops =
-				centralParameterProvider.userCropParameters;
-			UserEnvironmentParameters& user_env =
-				centralParameterProvider.userEnvironmentParameters;
-			UserSoilMoistureParameters& user_soil_moisture =
-				centralParameterProvider.userSoilMoistureParameters;
+      UserCropParameters& user_crops = centralParameterProvider.userCropParameters;
+      UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
+      UserSoilMoistureParameters& user_soil_moisture = centralParameterProvider.userSoilMoistureParameters;
 
       user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, int distance)
       {
         return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
       };
 
-			UserSoilTemperatureParameters& user_soil_temperature =
-				centralParameterProvider.userSoilTemperatureParameters;
-			UserSoilTransportParameters& user_soil_transport =
-				centralParameterProvider.userSoilTransportParameters;
-			UserSoilOrganicParameters& user_soil_organic =
-				centralParameterProvider.userSoilOrganicParameters;
-			UserInitialValues& user_init_values =
-				centralParameterProvider.userInitValues;
+      UserSoilTemperatureParameters& user_soil_temperature = centralParameterProvider.userSoilTemperatureParameters;
+      UserSoilTransportParameters& user_soil_transport = centralParameterProvider.userSoilTransportParameters;
+      UserSoilOrganicParameters& user_soil_organic = centralParameterProvider.userSoilOrganicParameters;
 
 			while (!(row = con->getRow()).empty())
 			{
@@ -1001,24 +993,6 @@ void Monica::writeUserParameters(int type, string path)
 		if (ofs.good())
 		{
 			ofs << ups.userSoilOrganicParameters.to_json().dump();
-			ofs.close();
-		}
-	}
-//	{
-//		ofstream ofs;
-//		ofs.open(path + "/" + typeName + "-sensitivity-analysis.json");
-//		if (ofs.good())
-//		{
-//			ofs << ups.sensitivityAnalysisParameters.to_json().dump();
-//			ofs.close();
-//		}
-//	}
-	{
-		ofstream ofs;
-		ofs.open(path + "/" + typeName + "-init.json");
-		if (ofs.good())
-		{
-			ofs << ups.userInitValues.to_json().dump();
 			ofs.close();
 		}
 	}

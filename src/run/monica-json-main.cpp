@@ -37,9 +37,146 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../io/database-io.h"
 #include "../core/monica-typedefs.h"
 #include "../core/monica.h"
+#include "tools/json11-helper.h"
 
 using namespace std;
 using namespace Monica;
+using namespace json11;
+using namespace Tools;
+
+
+Json readAndParseFile(string path)
+{
+	Json j;
+
+	ifstream ifs;
+	ifs.open(path);
+	if(ifs.good())
+	{
+		string sj;
+		for(string line; getline(ifs, line);)
+			sj += line;
+
+		string err;
+		j = Json::parse(sj, err);
+	}
+	ifs.close();
+
+	return j;
+}
+
+const map<string, function<Json(const Json&, Json)>>& supportedPatterns()
+{
+	auto ref = [](const Json& root, Json j)
+	{ 
+		if(j.array_items().size() == 3 
+			 && j[1].is_string() 
+			 && j[2].is_string())
+			return root[j[1].string_value()][j[2].string_value()];
+		return j; 
+	};
+
+	auto fromDb = [](const Json&, Json j)
+	{
+		if(j.array_items().size() >= 3 
+			 && j[1].is_string()
+			 && j[2].is_string())
+		{
+			auto type = j[1].string_value();
+			if(type == "mineral_fertiliser")
+				getMineralFertiliserParametersFromMonicaDB(j[2].string_value());
+			else if(type == "organic_fertiliser")
+				getOrganicFertiliserParametersFromMonicaDB(j[2].string_value());
+			else if(type == "crop_residue"
+							&& j.array_items().size() == 4
+							&& j[3].is_string())
+				getResidueParametersFromMonicaDB(j[2].string_value(), j[3].string_value());
+			else if(type == "species")
+				getCropParametersFromMonicaDB(0);
+		}
+
+		return j; 
+	};
+
+	auto fromFile = [](const Json&, Json j)
+	{ 
+		if(j.array_items().size() == 2 
+			 && j[1].is_string())
+			return readAndParseFile(j[1].string_value());
+		return j; 
+	};
+		
+	static map<string, function<Json(const Json&,Json)>> m{
+	{"include-from-db", fromDb},
+	{"include-from-file", fromFile},
+	{"ref", ref}};
+	return m;
+}
+
+
+void findAndReplaceReferences(const Json& root, Json& j)
+{
+	auto sp = supportedPatterns();
+	if(j.is_array())
+	{
+		if(j[0].is_string())
+		{
+			auto p = sp.find(j[0].string_value());
+			if(p != sp.end())
+				j = (p->second)(root, j);
+		}
+		else
+			for(auto jv : j.array_items())
+				findAndReplaceReferences(root, jv);
+	}
+	else if(j.is_object())
+		for(auto p : j.object_items())
+			findAndReplaceReferences(root, p.second);
+}
+
+void parseAndRunMonica(const string& pathToInputFiles)
+{
+	CentralParameterProvider cpp = readUserParameterFromDatabase(MODE_HERMES);
+
+	auto parse = [](string path)
+	{
+		Json j;
+
+		ifstream ifs;
+		ifs.open(path);
+		if(ifs.good())
+		{
+			string sj;
+			for(string line; getline(ifs, line);)
+				sj += line;
+
+			string err;
+			j = Json::parse(sj, err);
+		}
+		ifs.close();
+
+		return j;
+	};
+
+	vector<Json> cropSiteSim;
+	for(auto p : {"crop.json", "site.json", "sim.json"})
+		cropSiteSim.push_back(parse(pathToInputFiles + "/" + p));
+
+
+
+
+
+
+	Env env;
+
+
+
+
+
+
+	Result r = runMonica(env);
+
+}
 
 
 #include "soil/soil.h"
@@ -52,10 +189,11 @@ int main(int argc, char** argv)
 
 
 
+
 	//writeCropParameters("crop-parameters");
 	//writeMineralFertilisers("mineral-fertilisers");
 	//writeOrganicFertilisers("organic-fertilisers");
-	//writeResidues("residues");
+	writeCropResidues("residues");
 	//writeUserParameters(MODE_HERMES, "user-parameters");
 	//writeUserParameters(MODE_EVA2, "user-parameters");
 	//writeUserParameters(MODE_MACSUR_SCALING, "user-parameters");

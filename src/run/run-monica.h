@@ -54,10 +54,6 @@ namespace Monica
 
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 
-    MeasuredGroundwaterTableInformation groundwaterInformation;
-
-    //static const int depthGroundwaterTable;   /**<  */
-
     //! object holding the climate data
     Climate::DataAccessor da;
 
@@ -76,8 +72,6 @@ namespace Monica
     void setMode(int m){ mode = m; }
 
     int getMode() const { return mode; }
-
-    void setCropRotation(std::vector<CultivationMethod> cr) { cropRotation = cr; }
 
     std::string berestRequestAddress;
 //    std::string berestRequestProtocol;

@@ -221,10 +221,6 @@ const Result Configuration::run()
 	cpp.userCropParameters.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn", cpp.userCropParameters.pc_EmergenceMoistureControlOn);
 	cpp.userCropParameters.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn", cpp.userCropParameters.pc_EmergenceFloodingControlOn);
 
-	cpp.userInitValues.p_initPercentageFC = getDbl(simObj, "init.percentageFC", cpp.userInitValues.p_initPercentageFC);
-	cpp.userInitValues.p_initSoilNitrate = getDbl(simObj, "init.soilNitrate", cpp.userInitValues.p_initSoilNitrate);
-	cpp.userInitValues.p_initSoilAmmonium = getDbl(simObj, "init.soilAmmonium", cpp.userInitValues.p_initSoilAmmonium);
-
   std::cout << "fetched sim data"  << std::endl;
   
   /* site */

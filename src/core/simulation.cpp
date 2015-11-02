@@ -583,15 +583,6 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   if (hermes_config->getNDeposition() != -1.0) 
       siteParams.vq_NDeposition = hermes_config->getNDeposition();
 
-  if (hermes_config->getInitPercentageFC() != -1.0) 
-      cpp.userInitValues.p_initPercentageFC = hermes_config->getInitPercentageFC();
-
-  if (hermes_config->getInitSoilNitrate() != -1.0) 
-      cpp.userInitValues.p_initSoilNitrate = hermes_config->getInitSoilNitrate();
-
-  if (hermes_config->getInitSoilAmmonium() != -1.0) 
-      cpp.userInitValues.p_initSoilAmmonium = hermes_config->getInitSoilAmmonium();
-
   double layer_thickness = cpp.userEnvironmentParameters.p_LayerThickness;
   double profile_depth = layer_thickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
   double max_mineralisation_depth = 0.4;
@@ -689,7 +680,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
   Env env(cpp);
   env.pathToOutputDir = outputPath;
   env.setMode(MODE_HERMES);
-  env.groundwaterInformation = gw_infos;
+  env.params.groundwaterInformation = gw_infos;
 
   env.params.site = siteParams;
 

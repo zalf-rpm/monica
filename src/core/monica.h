@@ -262,7 +262,6 @@ namespace Monica
     const UserSoilTemperatureParameters& _soilTempPs;
     const UserSoilTransportParameters& _soilTransPs;
     const UserSoilOrganicParameters& _soilOrganicPs;
-    const UserInitialValues& _initPs;
     bool _writeOutputFiles{false};
     std::string _pathToOutputDir;
     MeasuredGroundwaterTableInformation _groundwaterInformation;
