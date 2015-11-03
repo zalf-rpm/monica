@@ -425,7 +425,7 @@ void CropParameters::resizeStageOrganVectors()
 
 SpeciesParameters::SpeciesParameters(json11::Json j)
   : pc_SpeciesName(string_value(j, "SpeciesName"))
-  , pc_Perennial(bool_value(j, "Perennial"))
+
   , pc_NumberOfDevelopmentalStages(int_value(j, "NumberOfDevelopmentalStages"))
   , pc_NumberOfOrgans(int_value(j, "NumberOfOrgans"))
   , pc_CarboxylationPathway(int_value(j, "CarboxylationPathway"))
@@ -433,10 +433,7 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   , pc_PartBiologicalNFixation(double_value(j, "PartBiologicalNFixation"))
   , pc_InitialKcFactor(double_value(j, "InitialKcFactor"))
   , pc_LuxuryNCoeff(double_value(j, "LuxuryNCoeff"))
-  , pc_MaxAssimilationRate(double_value(j, "MaxAssimilationRate"))
   , pc_MaxCropDiameter(double_value(j, "MaxCropDiameter"))
-  , pc_CropHeightP1(double_value(j, "CropHeightP1"))
-  , pc_CropHeightP2(double_value(j, "CropHeightP2"))
   , pc_StageAtMaxHeight(double_value(j, "StageAtMaxHeight"))
   , pc_StageAtMaxDiameter(double_value(j, "StageAtMaxDiameter"))
   , pc_MinimumNConcentration(double_value(j, "MinimumNConcentration"))
@@ -448,11 +445,6 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   , pc_DevelopmentAccelerationByNitrogenStress(int_value(j, "DevelopmentAccelerationByNitrogenStress"))
   , pc_FieldConditionModifier(double_value(j, "FieldConditionModifier"))
   , pc_AssimilateReallocation(double_value(j, "AssimilateReallocation"))
-  , pc_FrostHardening(double_value(j, "FrostHardening"))
-  , pc_FrostDehardening(double_value(j, "FrostDehardening"))
-  , pc_LowTemperatureExposure(double_value(j, "LowTemperatureExposure"))
-  , pc_RespiratoryStress(double_value(j, "RespiratoryStress"))
-  , pc_LatestHarvestDoy(int_value(j, "LatestHarvestDoy"))
 //  , std::vector<std::vector<double>> pc_OrganSenescenceRate,
   , pc_BaseTemperature(double_vector(j, "BaseTemperature"))
   , pc_OrganMaintenanceRespiration(double_vector(j, "OrganMaintenanceRespiration"))
@@ -460,14 +452,11 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   , pc_StageMaxRootNConcentration(double_vector(j, "StageMaxRootNConcentration"))
   , pc_InitialOrganBiomass(double_vector(j, "InitialOrganBiomass"))
   , pc_CriticalOxygenContent(double_vector(j, "CriticalOxygenContent"))
-  , pc_CropSpecificMaxRootingDepth(double_value(j, "CropSpecificMaxRootingDepth"))
   , pc_AbovegroundOrgan(int_vector(j, "AbovegroundOrgan"))
   , pc_StorageOrgan(int_vector(j, "StorageOrgan"))
   , pc_SamplingDepth(double_value(j, "SamplingDepth"))
   , pc_TargetNSamplingDepth(double_value(j, "TargetNSamplingDepth"))
   , pc_TargetN30(double_value(j, "TargetN30"))
-  , pc_HeatSumIrrigationStart(double_value(j, "HeatSumIrrigationStart"))
-  , pc_HeatSumIrrigationEnd(double_value(j, "HeatSumIrrigationEnd"))
   , pc_MaxNUptakeParam(double_value(j, "MaxNUptakeParam"))
   , pc_RootDistributionParam(double_value(j, "RootDistributionParam"))
   , pc_PlantDensity(double_value(j, "PlantDensity"))
@@ -498,7 +487,7 @@ json11::Json SpeciesParameters::to_json() const
   auto species = J11Object {
   {"type", "SpeciesParameters"},
   {"SpeciesName", pc_SpeciesName},
-  {"Perennial", pc_Perennial},
+
   {"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages},
   {"NumberOfOrgans", pc_NumberOfOrgans},
   {"CarboxylationPathway", pc_CarboxylationPathway},
@@ -506,10 +495,7 @@ json11::Json SpeciesParameters::to_json() const
   {"PartBiologicalNFixation", pc_PartBiologicalNFixation},
   {"InitialKcFactor", pc_InitialKcFactor},
   {"LuxuryNCoeff", pc_LuxuryNCoeff},
-  {"MaxAssimilationRate", pc_MaxAssimilationRate},
   {"MaxCropDiameter", pc_MaxCropDiameter},
-  {"CropHeightP1", pc_CropHeightP1},
-  {"CropHeightP2", pc_CropHeightP2},
   {"StageAtMaxHeight", pc_StageAtMaxHeight},
   {"StageAtMaxDiameter", pc_StageAtMaxDiameter},
   {"MinimumNConcentration", pc_MinimumNConcentration},
@@ -521,11 +507,6 @@ json11::Json SpeciesParameters::to_json() const
   {"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress},
   {"FieldConditionModifier", pc_FieldConditionModifier},
   {"AssimilateReallocation", pc_AssimilateReallocation},
-  {"FrostHardening", pc_FrostHardening},
-  {"FrostDehardening", pc_FrostDehardening},
-  {"LowTemperatureExposure", pc_LowTemperatureExposure},
-  {"RespiratoryStress", pc_RespiratoryStress},
-  {"LatestHarvestDoy", pc_LatestHarvestDoy},
   {"OrganSenescenceRate", osrs},
   {"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)},
   {"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)},
@@ -533,14 +514,11 @@ json11::Json SpeciesParameters::to_json() const
   {"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)},
   {"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)},
   {"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)},
-  {"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth},
   {"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)},
   {"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)},
   {"SamplingDepth", pc_SamplingDepth},
   {"TargetNSamplingDepth", pc_TargetNSamplingDepth},
   {"TargetN30", pc_TargetN30},
-  {"HeatSumIrrigationStart", pc_HeatSumIrrigationStart},
-  {"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd},
   {"MaxNUptakeParam", pc_MaxNUptakeParam},
   {"RootDistributionParam", pc_RootDistributionParam},
   {"PlantDensity", pc_PlantDensity},
@@ -565,9 +543,15 @@ json11::Json SpeciesParameters::to_json() const
 
 CultivarParameters::CultivarParameters(json11::Json j)
   : pc_CultivarName(string_value(j, "CultivarName"))
+  , pc_Description(string_value(j, "Description"))
+  , pc_Perennial(bool_value(j, "Perennial"))
+  , pc_MaxAssimilationRate(double_value(j, "MaxAssimilationRate"))
   , pc_MaxCropHeight(double_value(j, "MaxCropHeight"))
   , pc_ResidueNRatio(double_value(j, "ResidueNRatio"))
   , pc_LT50cultivar(double_value(j, "LT50cultivar"))
+  , pc_CropHeightP1(double_value(j, "CropHeightP1"))
+  , pc_CropHeightP2(double_value(j, "CropHeightP2"))
+  , pc_CropSpecificMaxRootingDepth(double_value(j, "CropSpecificMaxRootingDepth"))
 //  , std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff,
   , pc_BaseDaylength(double_vector(j, "BaseDaylength"))
   , pc_OptimumTemperature(double_vector(j, "OptimumTemperature"))
@@ -577,9 +561,16 @@ CultivarParameters::CultivarParameters(json11::Json j)
   , pc_StageKcFactor(double_vector(j, "StageKcFactor"))
   , pc_StageTemperatureSum(double_vector(j, "StageTemperatureSum"))
   , pc_VernalisationRequirement(double_vector(j, "VernalisationRequirement"))
+  , pc_HeatSumIrrigationStart(double_value(j, "HeatSumIrrigationStart"))
+  , pc_HeatSumIrrigationEnd(double_value(j, "HeatSumIrrigationEnd"))
   , pc_CriticalTemperatureHeatStress(double_value(j, "CriticalTemperatureHeatStress"))
   , pc_BeginSensitivePhaseHeatStress(double_value(j, "BeginSensitivePhaseHeatStress"))
   , pc_EndSensitivePhaseHeatStress(double_value(j, "EndSensitivePhaseHeatStress"))
+  , pc_FrostHardening(double_value(j, "FrostHardening"))
+  , pc_FrostDehardening(double_value(j, "FrostDehardening"))
+  , pc_LowTemperatureExposure(double_value(j, "LowTemperatureExposure"))
+  , pc_RespiratoryStress(double_value(j, "RespiratoryStress"))
+  , pc_LatestHarvestDoy(int_value(j, "LatestHarvestDoy"))
 {
   for(auto js : j["AssimilatePartitioningCoeff"].array_items())
     pc_AssimilatePartitioningCoeff.push_back(double_vector(js));
@@ -593,9 +584,15 @@ json11::Json CultivarParameters::to_json() const
   auto cultivar = J11Object {
   {"type", "CultivarParameters"},
   {"CultivarName", pc_CultivarName},
+  {"Description", pc_Description},
+  {"Perennial", pc_Perennial},
+  {"MaxAssimilationRate", pc_MaxAssimilationRate},
   {"MaxCropHeight", J11Array {pc_MaxCropHeight, "m"}},
   {"ResidueNRatio", pc_ResidueNRatio},
   {"LT50cultivar", pc_LT50cultivar},
+  {"CropHeightP1", pc_CropHeightP1},
+  {"CropHeightP2", pc_CropHeightP2},
+  {"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth},
   {"AssimilatePartitioningCoeff", apcs},
   {"BaseDaylength", J11Array {toPrimJsonArray(pc_BaseDaylength), "h"}},
   {"OptimumTemperature", J11Array {toPrimJsonArray(pc_OptimumTemperature), "°C"}},
@@ -605,9 +602,16 @@ json11::Json CultivarParameters::to_json() const
   {"StageKcFactor", J11Array {toPrimJsonArray(pc_StageKcFactor), "1;0"}},
   {"StageTemperatureSum", J11Array {toPrimJsonArray(pc_StageTemperatureSum), "°C d"}},
   {"VernalisationRequirement", toPrimJsonArray(pc_VernalisationRequirement)},
+  {"HeatSumIrrigationStart", pc_HeatSumIrrigationStart},
+  {"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd},
   {"CriticalTemperatureHeatStress", J11Array {pc_CriticalTemperatureHeatStress, "°C"}},
   {"BeginSensitivePhaseHeatStress", J11Array {pc_BeginSensitivePhaseHeatStress, "°C d"}},
-  {"EndSensitivePhaseHeatStress", J11Array {pc_EndSensitivePhaseHeatStress, "°C d"}}};
+  {"EndSensitivePhaseHeatStress", J11Array {pc_EndSensitivePhaseHeatStress, "°C d"}},
+  {"FrostHardening", pc_FrostHardening},
+  {"FrostDehardening", pc_FrostDehardening},
+  {"LowTemperatureExposure", pc_LowTemperatureExposure},
+  {"RespiratoryStress", pc_RespiratoryStress},
+  {"LatestHarvestDoy", pc_LatestHarvestDoy}};
 
   return cultivar;
 }

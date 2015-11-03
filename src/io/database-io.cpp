@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <mutex>
 #include <memory>
+#include <tuple>
 
 #include "tools/debug.h"
 #include "db/abstract-db-connections.h"
@@ -40,120 +41,173 @@ using namespace Tools;
 using namespace Db;
 using namespace std;
 
-
-/**
-* @brief Returns data structure for crop parameters with values from DB
-*
-* A datastructure for crop parameters is created, initialized with
-* database values and returned. This structure will be initialized only
-* once. Similar to a singleton pattern.
-*
-* @param cropId
-*
-* @return Reference to crop parameters
-*/
-CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
+namespace
 {
-	static mutex lockable;
+  string cropSelect =
+      "select "
+      "id, "
+      "species, "
+      "cultivar, "
+      "perennial, "
+      "max_assimilation_rate, "
+      "carboxylation_pathway, "
+      "minimum_temperature_for_assimilation, "
+      "crop_specific_max_rooting_depth, "
+      "min_n_content, "
+      "n_content_pn, "
+      "n_content_b0, "
+      "n_content_above_ground_biomass, "
+      "n_content_root, "
+      "initial_kc_factor, "
+      "development_acceleration_by_nitrogen_stress, "
+      "fixing_n, "
+      "luxury_n_coeff, "
+      "max_crop_height, "
+      "residue_n_ratio, "
+      "sampling_depth, "
+      "target_n_sampling_depth, "
+      "target_n30, "
+      "default_radiation_use_efficiency, "
+      "crop_height_P1, "
+      "crop_height_P2, "
+      "stage_at_max_height, "
+      "max_stem_diameter, "
+      "stage_at_max_diameter, "
+      "heat_sum_irrigation_start, "
+      "heat_sum_irrigation_end, "
+      "max_N_uptake_p, "
+      "root_distribution_p, "
+      "plant_density, "
+      "root_growth_lag, "
+      "min_temperature_root_growth, "
+      "initial_rooting_depth, "
+      "root_penetration_rate, "
+      "root_form_factor, "
+      "specific_root_length, "
+      "stage_after_cut, "
+      "crit_temperature_heat_stress, "
+      "lim_temperature_heat_stress, "
+      "begin_sensitive_phase_heat_stress, "
+      "end_sensitive_phase_heat_stress, "
+      "drought_impact_on_fertility_factor, "
+      "cutting_delay_days, "
+      "field_condition_modifier, "
+      "assimilate_reallocation, "
+      "LT50cultivar, "
+      "frost_hardening, "
+      "frost_dehardening, "
+      "low_temperature_exposure, "
+      "respiratory_stress, "
+      "latest_harvest_doy "
+      "from crop";
 
-	static bool initialized = false;
+  string organSelect =
+      "select "
+      "o.crop_id, "
+      "o.id, "
+      "o.initial_organ_biomass, "
+      "o.organ_maintainance_respiration, "
+      "o.is_above_ground, "
+      "o.organ_growth_respiration, "
+      "o.is_storage_organ "
+      "from organ as o inner join crop as c on c.id = o.crop_id "
+      "order by o.crop_id, c.id";
+
+  std::string devStageSelect =
+      "select "
+      "crop_id, "
+      "id, "
+      "stage_temperature_sum, "
+      "base_temperature, "
+      "opt_temperature, "
+      "vernalisation_requirement, "
+      "day_length_requirement, "
+      "base_day_length, "
+      "drought_stress_threshold, "
+      "critical_oxygen_content, "
+      "specific_leaf_area, "
+      "stage_max_root_n_content, "
+      "stage_kc_factor "
+      "from dev_stage "
+      "order by crop_id, id";
+
+  string odsDepParamsSelect =
+      "select "
+      "crop_id, "
+      "organ_id, "
+      "dev_stage_id, "
+      "ods_dependent_param_id, "
+      "value "
+      "from crop2ods_dependent_param "
+      "order by crop_id, ods_dependent_param_id, dev_stage_id, organ_id";
+
+  string yieldPartsSelect =
+      "SELECT "
+      "crop_id, "
+      "organ_id, "
+      "is_primary, "
+      "percentage, "
+      "dry_matter "
+      "FROM yield_parts";
+
+  string cuttingPartsSelect =
+      "SELECT "
+      "crop_id, "
+      "organ_id, "
+      "is_primary, "
+      "percentage, "
+      "dry_matter "
+      "FROM cutting_parts";
+}
+
+
+
+tuple<
+const map<string, map<string, CropParametersPtr>>&,
+const map<int, CropParametersPtr>&,
+const map<string, SpeciesParametersPtr>&,
+>
+getAllCropParametersFromMonicaDB()
+{
+  static mutex lockable;
+
+  static bool initialized = false;
   typedef map<int, CropParametersPtr> CPS;
+  typedef map<string, map<string, CropParametersPtr>> CPS2;
+  typedef map<string, CropParametersPtr> SPS;
 
-	static CPS cpss;
+  static CPS cpss;
+  static CPS2 cpss2;
+  static SPS spss;
 
-	// only initialize once
-	if (!initialized)
-	{
-		lock_guard<mutex> lock(lockable);
+  // only initialize once
+  if (!initialized)
+  {
+    lock_guard<mutex> lock(lockable);
 
-		//test if after waiting for the lock the other thread
-		//already initialized the whole thing
-		if (!initialized)
-		{
-
+    //test if after waiting for the lock the other thread
+    //already initialized the whole thing
+    if (!initialized)
+    {
       DBPtr con(newConnection("monica"));
-			DBRow row;
-      std::string text_request =
-          "select "
-          "id, "
-          "species, "
-          "cultivar, "
-          "perennial, "
-          "max_assimilation_rate, "
-          "carboxylation_pathway, "
-          "minimum_temperature_for_assimilation, "
-          "crop_specific_max_rooting_depth, "
-          "min_n_content, "
-          "n_content_pn, "
-          "n_content_b0, "
-          "n_content_above_ground_biomass, "
-          "n_content_root, "
-          "initial_kc_factor, "
-          "development_acceleration_by_nitrogen_stress, "
-          "fixing_n, "
-          "luxury_n_coeff, "
-          "max_crop_height, "
-          "residue_n_ratio, "
-          "sampling_depth, "
-          "target_n_sampling_depth, "
-          "target_n30, "
-          "default_radiation_use_efficiency, "
-          "crop_height_P1, "
-          "crop_height_P2, "
-          "stage_at_max_height, "
-          "max_stem_diameter, "
-          "stage_at_max_diameter, "
-          "heat_sum_irrigation_start, "
-          "heat_sum_irrigation_end, "
-          "max_N_uptake_p, "
-          "root_distribution_p, "
-          "plant_density, "
-          "root_growth_lag, "
-          "min_temperature_root_growth, "
-          "initial_rooting_depth, "
-          "root_penetration_rate, "
-          "root_form_factor, "
-          "specific_root_length, "
-          "stage_after_cut, "
-          "crit_temperature_heat_stress, "
-          "lim_temperature_heat_stress, "
-          "begin_sensitive_phase_heat_stress, "
-          "end_sensitive_phase_heat_stress, "
-          "drought_impact_on_fertility_factor, "
-          "cutting_delay_days, "
-          "field_condition_modifier, "
-          "assimilate_reallocation, "
-          "LT50cultivar, "
-          "frost_hardening, "
-          "frost_dehardening, "
-          "low_temperature_exposure, "
-          "respiratory_stress, "
-          "latest_harvest_doy "
-          "from crop";
-      con->select(text_request);
-      debug() << text_request << endl;
+      DBRow row;
+      con->select(cropSelect);
+      debug() << cropSelect << endl;
 
       while (!(row = con->getRow()).empty())
-			{
-				int i = 0;
+      {
+        int i = 0;
         int id = stoi(row[i++]);
 
-        CropParametersPtr cps;
-
-        debug() << "Reading in crop Parameters for: " << id << endl;
-        auto cpsi = cpss.find(id);
-        if(cpsi == cpss.end())
-          cpss[id] = cps = make_shared<CropParameters>();
-        else
-          cps = cpsi->second;
+        CropParametersPtr cps = make_shared<CropParameters>();
 
         cps->speciesParams.pc_SpeciesName = row[i++];
         cps->cultivarParams.pc_CultivarName = row[i++];
-        cps->speciesParams.pc_Perennial = stob(row[i++]);
-        cps->speciesParams.pc_MaxAssimilationRate = stof(row[i++]);
+        cps->cultivarParams.pc_Perennial = stob(row[i++]);
+        cps->cultivarParams.pc_MaxAssimilationRate = stof(row[i++]);
         cps->speciesParams.pc_CarboxylationPathway = stoi(row[i++]);
         cps->speciesParams.pc_MinimumTemperatureForAssimilation = stof(row[i++]);
-        cps->speciesParams.pc_CropSpecificMaxRootingDepth = stof(row[i++]);
+        cps->cultivarParams.pc_CropSpecificMaxRootingDepth = stof(row[i++]);
         cps->speciesParams.pc_MinimumNConcentration = stof(row[i++]);
         cps->speciesParams.pc_NConcentrationPN = stof(row[i++]);
         cps->speciesParams.pc_NConcentrationB0 = stof(row[i++]);
@@ -169,13 +223,13 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
         cps->speciesParams.pc_TargetNSamplingDepth = stof(row[i++]);
         cps->speciesParams.pc_TargetN30 = stof(row[i++]);
         cps->speciesParams.pc_DefaultRadiationUseEfficiency = stof(row[i++]);
-        cps->speciesParams.pc_CropHeightP1 = stof(row[i++]);
-        cps->speciesParams.pc_CropHeightP2 = stof(row[i++]);
+        cps->cultivarParams.pc_CropHeightP1 = stof(row[i++]);
+        cps->cultivarParams.pc_CropHeightP2 = stof(row[i++]);
         cps->speciesParams.pc_StageAtMaxHeight = stof(row[i++]);
         cps->speciesParams.pc_MaxCropDiameter = stof(row[i++]);
         cps->speciesParams.pc_StageAtMaxDiameter = stof(row[i++]);
-        cps->speciesParams.pc_HeatSumIrrigationStart = stof(row[i++]);
-        cps->speciesParams.pc_HeatSumIrrigationEnd = stof(row[i++]);
+        cps->cultivarParams.pc_HeatSumIrrigationStart = stof(row[i++]);
+        cps->cultivarParams.pc_HeatSumIrrigationEnd = stof(row[i++]);
         cps->speciesParams.pc_MaxNUptakeParam = stof(row[i++]);
         cps->speciesParams.pc_RootDistributionParam = stof(row[i++]);
         cps->speciesParams.pc_PlantDensity = stof(row[i++]);
@@ -195,30 +249,21 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
         cps->speciesParams.pc_FieldConditionModifier = stof(row[i++]);
         cps->speciesParams.pc_AssimilateReallocation = stof(row[i++]);
         cps->cultivarParams.pc_LT50cultivar = stof(row[i++]);
-        cps->speciesParams.pc_FrostHardening = stof(row[i++]);
-        cps->speciesParams.pc_FrostDehardening = stof(row[i++]);
-        cps->speciesParams.pc_LowTemperatureExposure = stof(row[i++]);
-        cps->speciesParams.pc_RespiratoryStress = stof(row[i++]);
-        cps->speciesParams.pc_LatestHarvestDoy = stoi(row[i++]);
-			}
+        cps->cultivarParams.pc_FrostHardening = stof(row[i++]);
+        cps->cultivarParams.pc_FrostDehardening = stof(row[i++]);
+        cps->cultivarParams.pc_LowTemperatureExposure = stof(row[i++]);
+        cps->cultivarParams.pc_RespiratoryStress = stof(row[i++]);
+        cps->cultivarParams.pc_LatestHarvestDoy = stoi(row[i++]);
 
-      std::string req2 =
-          "select "
-          "o.crop_id, "
-          "o.id, "
-          "o.initial_organ_biomass, "
-          "o.organ_maintainance_respiration, "
-          "o.is_above_ground, "
-          "o.organ_growth_respiration, "
-          "o.is_storage_organ "
-          "from organ as o inner join crop as c on c.id = o.crop_id "
-          "order by o.crop_id, c.id";
-      con->select(req2);
-      debug() << req2 << endl;
+        cpss[id] = cps;
+      }
 
-			while (!(row = con->getRow()).empty())
-			{
-				int cropId = satoi(row[0]);
+      con->select(organSelect);
+      debug() << organSelect << endl;
+
+      while (!(row = con->getRow()).empty())
+      {
+        int cropId = satoi(row[0]);
         CropParametersPtr cps = cpss[cropId];
 
         cps->speciesParams.pc_NumberOfOrgans++;
@@ -227,31 +272,14 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
         cps->speciesParams.pc_AbovegroundOrgan.push_back(stoi(row[4]) == 1);
         cps->speciesParams.pc_OrganGrowthRespiration.push_back(stof(row[5]));
         cps->speciesParams.pc_StorageOrgan.push_back(stoi(row[6]));
-			}
+      }
 
-      std::string req4 =
-          "select "
-          "crop_id, "
-          "id, "
-          "stage_temperature_sum, "
-          "base_temperature, "
-          "opt_temperature, "
-          "vernalisation_requirement, "
-          "day_length_requirement, "
-          "base_day_length, "
-          "drought_stress_threshold, "
-          "critical_oxygen_content, "
-          "specific_leaf_area, "
-          "stage_max_root_n_content, "
-          "stage_kc_factor "
-          "from dev_stage "
-          "order by crop_id, id";
-      con->select(req4);
-      debug() << req4 << endl;
+      con->select(devStageSelect);
+      debug() << devStageSelect << endl;
 
       while (!(row = con->getRow()).empty())
-			{
-				int cropId = satoi(row[0]);
+      {
+        int cropId = satoi(row[0]);
         CropParametersPtr cps = cpss[cropId];
 
         cps->speciesParams.pc_NumberOfDevelopmentalStages++;
@@ -266,38 +294,29 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
         cps->cultivarParams.pc_SpecificLeafArea.push_back(stof(row[10]));
         cps->speciesParams.pc_StageMaxRootNConcentration.push_back(stof(row[11]));
         cps->cultivarParams.pc_StageKcFactor.push_back(stof(row[12]));
-			}
+      }
 
       for (auto p : cpss)
         p.second->resizeStageOrganVectors();
 
-      std::string req3 =
-          "select "
-          "crop_id, "
-          "organ_id, "
-          "dev_stage_id, "
-          "ods_dependent_param_id, "
-          "value "
-          "from crop2ods_dependent_param "
-          "order by crop_id, ods_dependent_param_id, dev_stage_id, organ_id";
-      con->select(req3);
-      debug() << req3 << endl;
+      con->select(odsDepParamsSelect);
+      debug() << odsDepParamsSelect << endl;
 
-			while (!(row = con->getRow()).empty())
-			{
-				int cropId = satoi(row[0]);
-				//        debug() << "ods_dependent_param " << cropId << "\t" << satoi(row[3]) <<"\t" << satoi(row[2]) <<"\t" << satoi(row[1])<< endl;
+      while (!(row = con->getRow()).empty())
+      {
+        int cropId = satoi(row[0]);
+        //        debug() << "ods_dependent_param " << cropId << "\t" << satoi(row[3]) <<"\t" << satoi(row[2]) <<"\t" << satoi(row[1])<< endl;
         CropParametersPtr cps = cpss[cropId];
 
         auto& sov = stoi(row[3]) == 1 ? cps->cultivarParams.pc_AssimilatePartitioningCoeff
                                       : cps->speciesParams.pc_OrganSenescenceRate;
         sov[stoi(row[2]) - 1][stoi(row[1]) - 1] = stof(row[4]);
-			}
+      }
 
-			con->select("SELECT crop_id, organ_id, is_primary, percentage, dry_matter FROM yield_parts");
-			debug() << "SELECT crop_id, organ_id, is_primary, percentage, dry_matter FROM yield_parts" << endl;
-			while (!(row = con->getRow()).empty())
-			{
+      con->select(yieldPartsSelect);
+      debug() << yieldPartsSelect << endl;
+      while (!(row = con->getRow()).empty())
+      {
         int cropId = stoi(row[0]);
         bool isPrimary = stob(row[2]);
 
@@ -308,17 +327,17 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
 
         CropParametersPtr cps = cpss[cropId];
 
-				// normal case, uses yield partitioning from crop database
+        // normal case, uses yield partitioning from crop database
         if (isPrimary)
           cps->speciesParams.pc_OrganIdsForPrimaryYield.push_back(yc);
         else
           cps->speciesParams.pc_OrganIdsForSecondaryYield.push_back(yc);
-			}
+      }
 
-			// get cutting parts if there are some data available
-			con->select("SELECT crop_id, organ_id, is_primary, percentage, dry_matter FROM cutting_parts");
-			while (!(row = con->getRow()).empty())
-			{
+      // get cutting parts if there are some data available
+      con->select(cuttingPartsSelect);
+      while (!(row = con->getRow()).empty())
+      {
         int cropId = stoi(row[0]);
 
         YieldComponent yc;
@@ -328,17 +347,62 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
         yc.yieldDryMatter = stof(row[4]);
 
         cpss[cropId]->speciesParams.pc_OrganIdsForCutting.push_back(yc);
-			}
+      }
 
-			initialized = true;
-		}
-	}
+      //store everything using species/cultivar as primary key
+      for(const auto& p : cpss)
+      {
+        cpss2[p->second.speciesParams.pc_SpeciesName][p->second.cultivarParams.pc_CultivarName] = p->second;
+        spss[p->second.speciesParams.pc_SpeciesName] = make_shared<SpeciesParameters>(p->second.speciesParams);
+      }
 
+      initialized = true;
+    }
+  }
+
+  return make_tuple(cpss2, cpss, spss);
+}
+
+CropParametersPtr Monica::getCropParametersFromMonicaDB(const string& species,
+                                                        const string& cultivar)
+{
   static CropParametersPtr nothing = make_shared<CropParameters>();
 
-  auto ci = cpss.find(cropId);
-	debug() << "Find crop parameter: " << cropId << endl;
-  return ci != cpss.end() ? ci->second : nothing;
+  auto m = get<0>(getAllCropParametersFromMonicaDB());
+  auto ci = m.find(species);
+  //found species
+  if(ci != m.end())
+  {
+    auto m2 = ci->second;
+    auto ci2 = m2.find(cultivar);
+    //found also cultivar
+    if(ci2 != m2.end())
+      return ci2->second;
+    //possibly take first cultivar, if given cultivar didn't match
+    else if(!m2.empty())
+      return m2.begin()->second;
+  }
+
+  return nothing;
+}
+
+SpeciesParametersPtr Monica::getSpeciesParametersFromMonicaDB(const string& species)
+{
+  static SpeciesParametersPtr nothing = make_shared<SpeciesParameters>();
+
+  auto m = get<0>(getAllCropParametersFromMonicaDB());
+  auto ci = m.find(species);
+  return ci != m.end() ? ci->second : nothing;
+}
+
+
+CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
+{
+  static CropParametersPtr nothing = make_shared<CropParameters>();
+
+  auto m = get<1>(getAllCropParametersFromMonicaDB());
+  auto ci = m.find(cropId);
+  return ci != m.end() ? ci->second : nothing;
 }
 
 void Monica::writeCropParameters(string path)

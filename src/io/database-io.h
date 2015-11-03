@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Monica
 {
+  CropParametersPtr getCropParametersFromMonicaDB(const string& species, const string& cultivar);
+
   CropParametersPtr getCropParametersFromMonicaDB(int cropId);
 
 	void writeCropParameters(std::string path);

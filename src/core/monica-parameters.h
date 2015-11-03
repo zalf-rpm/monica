@@ -372,7 +372,6 @@ namespace Monica
 
     // members
     std::string pc_SpeciesName;
-    bool pc_Perennial{false};
     int pc_NumberOfDevelopmentalStages{0};
     int pc_NumberOfOrgans{0};
     int pc_CarboxylationPathway{0};
@@ -380,10 +379,7 @@ namespace Monica
     double pc_PartBiologicalNFixation{0.0};
     double pc_InitialKcFactor{0.0};
     double pc_LuxuryNCoeff{0.0};
-    double pc_MaxAssimilationRate{0.0};
     double pc_MaxCropDiameter{0.0};
-    double pc_CropHeightP1{0.0};
-    double pc_CropHeightP2{0.0};
     double pc_StageAtMaxHeight{0.0};
     double pc_StageAtMaxDiameter{0.0};
     double pc_MinimumNConcentration{0.0};
@@ -395,11 +391,6 @@ namespace Monica
     int pc_DevelopmentAccelerationByNitrogenStress{0};
     double pc_FieldConditionModifier{1.0};
     double pc_AssimilateReallocation{0.0};
-    double pc_FrostHardening{0.0};
-    double pc_FrostDehardening{0.0};
-    double pc_LowTemperatureExposure{0.0};
-    double pc_RespiratoryStress{0.0};
-    int pc_LatestHarvestDoy{-1};
 
     std::vector<std::vector<double>> pc_OrganSenescenceRate;
 
@@ -410,15 +401,12 @@ namespace Monica
     std::vector<double> pc_InitialOrganBiomass;
     std::vector<double> pc_CriticalOxygenContent;
 
-    double pc_CropSpecificMaxRootingDepth{0.0};
     std::vector<int> pc_AbovegroundOrgan;
     std::vector<int> pc_StorageOrgan;
 
     double pc_SamplingDepth{0.0};
     double pc_TargetNSamplingDepth{0.0};
     double pc_TargetN30{0.0};
-    double pc_HeatSumIrrigationStart{0.0};
-    double pc_HeatSumIrrigationEnd{0.0};
     double pc_MaxNUptakeParam{0.0};
     double pc_RootDistributionParam{0.0};
     double pc_PlantDensity{0.0};
@@ -453,9 +441,16 @@ namespace Monica
     std::string toString() const { return to_json().dump(); }
 
     std::string pc_CultivarName;
+    std::string pc_Description;
+    bool pc_Perennial{false};
+    double pc_MaxAssimilationRate{0.0};
     double pc_MaxCropHeight{0.0};
     double pc_ResidueNRatio{0.0};
     double pc_LT50cultivar{0.0};
+
+    double pc_CropHeightP1{0.0};
+    double pc_CropHeightP2{0.0};
+    double pc_CropSpecificMaxRootingDepth{0.0};
 
     std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff;
 
@@ -468,9 +463,18 @@ namespace Monica
     std::vector<double> pc_StageTemperatureSum;
     std::vector<double> pc_VernalisationRequirement;
 
+    double pc_HeatSumIrrigationStart{0.0};
+    double pc_HeatSumIrrigationEnd{0.0};
+
     double pc_CriticalTemperatureHeatStress{0.0};
     double pc_BeginSensitivePhaseHeatStress{0.0};
     double pc_EndSensitivePhaseHeatStress{0.0};
+
+    double pc_FrostHardening{0.0};
+    double pc_FrostDehardening{0.0};
+    double pc_LowTemperatureExposure{0.0};
+    double pc_RespiratoryStress{0.0};
+    int pc_LatestHarvestDoy{-1};
   };
 
   typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
