@@ -11,8 +11,14 @@
 			"residueParams": ["include-from-file", "../../../parameters/residues/wheat.json"]
 		},
 		"ww2": { 
-			"species": ["include-from-db", "species", "wheat"],
-			"cultivar": ["include-from-db", "cultivar", "winter wheat"],
+			"cropParams": {
+				"species": ["include-from-db", "species", "wheat"],
+				"cultivar": ["include-from-db", "cultivar", "wheat", "winter wheat"]
+			},
+			"residueParams": ["include-from-db", "crop_residue", "wheat", "winter wheat"]
+		},
+		"ww3": { 
+			"cropParams": ["include-from-db", "crop", "wheat", "winter wheat"],
 			"residueParams": ["include-from-db", "crop_residue", "wheat", "winter wheat"]
 		}
 	},

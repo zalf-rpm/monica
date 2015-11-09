@@ -366,7 +366,7 @@ Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHa
 
 			// use harvest trigger
 			// change latest harvest date to crop specific fallback harvest doy        
-			autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->speciesParams.pc_LatestHarvestDoy);
+			autoHarvestParams.setLatestHarvestDOY(crop->cropParameters()->cultivarParams.pc_LatestHarvestDoy);
 			crop->activateAutomaticHarvestTrigger(autoHarvestParams);
 
 			int harvest_year = sd.year();
@@ -400,7 +400,7 @@ Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHa
 			// ###################################################################
 
 			// set harvest date to latest crop specific fallback harvest date
-			hd = Date::julianDate(crop->cropParameters()->speciesParams.pc_LatestHarvestDoy, harvest_year, true);
+			hd = Date::julianDate(crop->cropParameters()->cultivarParams.pc_LatestHarvestDoy, harvest_year, true);
 
 		}
 

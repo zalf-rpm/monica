@@ -393,7 +393,7 @@ namespace Monica
     double vs_Latitude;
     double vc_AbovegroundBiomass{0.0};//! old OBMAS
     double vc_AbovegroundBiomassOld{0.0}; //! old OBALT
-    std::vector<int> pc_AbovegroundOrgan;	//! old KOMP
+    std::vector<bool> pc_AbovegroundOrgan;	//! old KOMP
     double vc_ActualTranspiration{0.0};
     std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff; //! old PRO
     double pc_AssimilateReallocation;
@@ -553,7 +553,7 @@ namespace Monica
     std::vector<double> pc_StageKcFactor;		//! old Kc
     std::vector<double> pc_StageTemperatureSum;	//! old TSUM
     double vc_StomataResistance{0.0};					//! old RSTOM
-    std::vector<int> pc_StorageOrgan;
+    std::vector<bool> pc_StorageOrgan;
     int vc_StorageOrgan{4};
     double vc_TargetNConcentration{0.0}; //! old GEHMAX
     double vc_TimeStep{1.0}; //! old dt

@@ -396,38 +396,10 @@ json11::Json YieldComponent::to_json() const
 
 //------------------------------------------------------------------------------
 
-CropParameters::CropParameters(json11::Json j)
-  : CropParameters(j["species"], j["cultivar"])
-{}
-
-CropParameters::CropParameters(json11::Json sj, json11::Json cj)
-  : speciesParams(sj)
-  , cultivarParams(cj)
-{}
-
-json11::Json CropParameters::to_json() const
-{
-  return J11Object {
-    {"type", "CropParameters"},
-    {"species", speciesParams.to_json()},
-    {"cultivar", cultivarParams.to_json()}};
-}
-
-void CropParameters::resizeStageOrganVectors()
-{
-  cultivarParams.pc_AssimilatePartitioningCoeff.resize(speciesParams.pc_NumberOfDevelopmentalStages,
-                                                       std::vector<double>(speciesParams.pc_NumberOfOrgans));
-  speciesParams.pc_OrganSenescenceRate.resize(speciesParams.pc_NumberOfDevelopmentalStages,
-                                              std::vector<double>(speciesParams.pc_NumberOfOrgans));
-}
-
-//------------------------------------------------------------------------------
-
 SpeciesParameters::SpeciesParameters(json11::Json j)
-  : pc_SpeciesName(string_value(j, "SpeciesName"))
-
-  , pc_NumberOfDevelopmentalStages(int_value(j, "NumberOfDevelopmentalStages"))
-  , pc_NumberOfOrgans(int_value(j, "NumberOfOrgans"))
+  : pc_SpeciesId(string_value(j, "SpeciesName"))
+//  , pc_NumberOfDevelopmentalStages(int_value(j, "NumberOfDevelopmentalStages"))
+//  , pc_NumberOfOrgans(int_value(j, "NumberOfOrgans"))
   , pc_CarboxylationPathway(int_value(j, "CarboxylationPathway"))
   , pc_DefaultRadiationUseEfficiency(double_value(j, "DefaultRadiationUseEfficiency"))
   , pc_PartBiologicalNFixation(double_value(j, "PartBiologicalNFixation"))
@@ -445,15 +417,14 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   , pc_DevelopmentAccelerationByNitrogenStress(int_value(j, "DevelopmentAccelerationByNitrogenStress"))
   , pc_FieldConditionModifier(double_value(j, "FieldConditionModifier"))
   , pc_AssimilateReallocation(double_value(j, "AssimilateReallocation"))
-//  , std::vector<std::vector<double>> pc_OrganSenescenceRate,
   , pc_BaseTemperature(double_vector(j, "BaseTemperature"))
   , pc_OrganMaintenanceRespiration(double_vector(j, "OrganMaintenanceRespiration"))
   , pc_OrganGrowthRespiration(double_vector(j, "OrganGrowthRespiration"))
   , pc_StageMaxRootNConcentration(double_vector(j, "StageMaxRootNConcentration"))
   , pc_InitialOrganBiomass(double_vector(j, "InitialOrganBiomass"))
   , pc_CriticalOxygenContent(double_vector(j, "CriticalOxygenContent"))
-  , pc_AbovegroundOrgan(int_vector(j, "AbovegroundOrgan"))
-  , pc_StorageOrgan(int_vector(j, "StorageOrgan"))
+  , pc_AbovegroundOrgan(bool_vector(j, "AbovegroundOrgan"))
+  , pc_StorageOrgan(bool_vector(j, "StorageOrgan"))
   , pc_SamplingDepth(double_value(j, "SamplingDepth"))
   , pc_TargetNSamplingDepth(double_value(j, "TargetNSamplingDepth"))
   , pc_TargetN30(double_value(j, "TargetN30"))
@@ -470,26 +441,16 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   , pc_LimitingTemperatureHeatStress(double_value(j, "LimitingTemperatureHeatStress"))
   , pc_CuttingDelayDays(int_value(j, "CuttingDelayDays"))
   , pc_DroughtImpactOnFertilityFactor(double_value(j, "DroughtImpactOnFertilityFactor"))
-  , pc_OrganIdsForPrimaryYield(toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]))
-  , pc_OrganIdsForSecondaryYield(toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]))
-  , pc_OrganIdsForCutting(toVector<YieldComponent>(j["OrganIdsForCutting"]))
 {
-  for(auto js : j["OrganSenescenceRate"].array_items())
-    pc_OrganSenescenceRate.push_back(double_vector(js));
 }
 
 json11::Json SpeciesParameters::to_json() const
 {
-  J11Array osrs;
-  for(auto v : pc_OrganSenescenceRate)
-    osrs.push_back(toPrimJsonArray(v));
-
   auto species = J11Object {
   {"type", "SpeciesParameters"},
-  {"SpeciesName", pc_SpeciesName},
-
-  {"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages},
-  {"NumberOfOrgans", pc_NumberOfOrgans},
+  {"SpeciesName", pc_SpeciesId},
+//  {"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages},
+//  {"NumberOfOrgans", pc_NumberOfOrgans},
   {"CarboxylationPathway", pc_CarboxylationPathway},
   {"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency},
   {"PartBiologicalNFixation", pc_PartBiologicalNFixation},
@@ -507,7 +468,6 @@ json11::Json SpeciesParameters::to_json() const
   {"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress},
   {"FieldConditionModifier", pc_FieldConditionModifier},
   {"AssimilateReallocation", pc_AssimilateReallocation},
-  {"OrganSenescenceRate", osrs},
   {"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)},
   {"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)},
   {"OrganGrowthRespiration", toPrimJsonArray(pc_OrganGrowthRespiration)},
@@ -531,10 +491,7 @@ json11::Json SpeciesParameters::to_json() const
   {"StageAfterCut", pc_StageAfterCut},
   {"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress},
   {"CuttingDelayDays", pc_CuttingDelayDays},
-  {"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor},
-  {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
-  {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
-  {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)}};
+  {"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor}};
 
   return species;
 }
@@ -542,7 +499,7 @@ json11::Json SpeciesParameters::to_json() const
 //------------------------------------------------------------------------------
 
 CultivarParameters::CultivarParameters(json11::Json j)
-  : pc_CultivarName(string_value(j, "CultivarName"))
+  : pc_CultivarId(string_value(j, "CultivarName"))
   , pc_Description(string_value(j, "Description"))
   , pc_Perennial(bool_value(j, "Perennial"))
   , pc_MaxAssimilationRate(double_value(j, "MaxAssimilationRate"))
@@ -571,9 +528,14 @@ CultivarParameters::CultivarParameters(json11::Json j)
   , pc_LowTemperatureExposure(double_value(j, "LowTemperatureExposure"))
   , pc_RespiratoryStress(double_value(j, "RespiratoryStress"))
   , pc_LatestHarvestDoy(int_value(j, "LatestHarvestDoy"))
+  , pc_OrganIdsForPrimaryYield(toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]))
+  , pc_OrganIdsForSecondaryYield(toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]))
+  , pc_OrganIdsForCutting(toVector<YieldComponent>(j["OrganIdsForCutting"]))
 {
   for(auto js : j["AssimilatePartitioningCoeff"].array_items())
     pc_AssimilatePartitioningCoeff.push_back(double_vector(js));
+  for(auto js : j["OrganSenescenceRate"].array_items())
+    pc_OrganSenescenceRate.push_back(double_vector(js));
 }
 json11::Json CultivarParameters::to_json() const
 {
@@ -581,9 +543,13 @@ json11::Json CultivarParameters::to_json() const
   for(auto v : pc_AssimilatePartitioningCoeff)
     apcs.push_back(toPrimJsonArray(v));
 
+  J11Array osrs;
+  for(auto v : pc_OrganSenescenceRate)
+    osrs.push_back(toPrimJsonArray(v));
+
   auto cultivar = J11Object {
   {"type", "CultivarParameters"},
-  {"CultivarName", pc_CultivarName},
+  {"CultivarName", pc_CultivarId},
   {"Description", pc_Description},
   {"Perennial", pc_Perennial},
   {"MaxAssimilationRate", pc_MaxAssimilationRate},
@@ -594,6 +560,7 @@ json11::Json CultivarParameters::to_json() const
   {"CropHeightP2", pc_CropHeightP2},
   {"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth},
   {"AssimilatePartitioningCoeff", apcs},
+  {"OrganSenescenceRate", osrs},
   {"BaseDaylength", J11Array {toPrimJsonArray(pc_BaseDaylength), "h"}},
   {"OptimumTemperature", J11Array {toPrimJsonArray(pc_OptimumTemperature), "°C"}},
   {"DaylengthRequirement", J11Array {toPrimJsonArray(pc_DaylengthRequirement), "h"}},
@@ -611,10 +578,33 @@ json11::Json CultivarParameters::to_json() const
   {"FrostDehardening", pc_FrostDehardening},
   {"LowTemperatureExposure", pc_LowTemperatureExposure},
   {"RespiratoryStress", pc_RespiratoryStress},
-  {"LatestHarvestDoy", pc_LatestHarvestDoy}};
+  {"LatestHarvestDoy", pc_LatestHarvestDoy},
+  {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
+  {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
+  {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)}};
 
   return cultivar;
 }
+
+//------------------------------------------------------------------------------
+
+CropParameters::CropParameters(json11::Json j)
+  : CropParameters(j["species"], j["cultivar"])
+{}
+
+CropParameters::CropParameters(json11::Json sj, json11::Json cj)
+  : speciesParams(sj)
+  , cultivarParams(cj)
+{}
+
+json11::Json CropParameters::to_json() const
+{
+  return J11Object {
+    {"type", "CropParameters"},
+    {"species", speciesParams.to_json()},
+    {"cultivar", cultivarParams.to_json()}};
+}
+
 
 //------------------------------------------------------------------------------
 

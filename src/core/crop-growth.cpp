@@ -68,11 +68,11 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	//  , pc_CO2Method(cps.pc_CO2Method)
 	, pc_CriticalOxygenContent(cps.speciesParams.pc_CriticalOxygenContent)
 	, pc_CriticalTemperatureHeatStress(cps.cultivarParams.pc_CriticalTemperatureHeatStress)
-	, pc_CropHeightP1(cps.speciesParams.pc_CropHeightP1)
-	, pc_CropHeightP2(cps.speciesParams.pc_CropHeightP2)
+  , pc_CropHeightP1(cps.cultivarParams.pc_CropHeightP1)
+  , pc_CropHeightP2(cps.cultivarParams.pc_CropHeightP2)
 	, pc_CropName(cps.pc_CropName())
-	, pc_CropSpecificMaxRootingDepth(cps.speciesParams.pc_CropSpecificMaxRootingDepth)
-	, vc_CurrentTemperatureSum(cps.speciesParams.pc_NumberOfDevelopmentalStages, 0.0)
+  , pc_CropSpecificMaxRootingDepth(cps.cultivarParams.pc_CropSpecificMaxRootingDepth)
+  , vc_CurrentTemperatureSum(cps.speciesParams.pc_NumberOfDevelopmentalStages(), 0.0)
 	, pc_CuttingDelayDays(cps.speciesParams.pc_CuttingDelayDays)
 	, pc_DaylengthRequirement(cps.cultivarParams.pc_DaylengthRequirement)
 	, pc_DefaultRadiationUseEfficiency(cps.speciesParams.pc_DefaultRadiationUseEfficiency)
@@ -84,19 +84,19 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_EndSensitivePhaseHeatStress(cps.cultivarParams.pc_EndSensitivePhaseHeatStress)
 	, pc_FieldConditionModifier(cps.speciesParams.pc_FieldConditionModifier)
 	, vo_FreshSoilOrganicMatter(soilColumn.vs_NumberOfLayers(), 0.0)
-	, pc_FrostDehardening(cps.speciesParams.pc_FrostDehardening)
-	, pc_FrostHardening(cps.speciesParams.pc_FrostHardening)
-	, pc_HeatSumIrrigationStart(cps.speciesParams.pc_HeatSumIrrigationStart)
-	, pc_HeatSumIrrigationEnd(cps.speciesParams.pc_HeatSumIrrigationEnd)
+  , pc_FrostDehardening(cps.cultivarParams.pc_FrostDehardening)
+  , pc_FrostHardening(cps.cultivarParams.pc_FrostHardening)
+  , pc_HeatSumIrrigationStart(cps.cultivarParams.pc_HeatSumIrrigationStart)
+  , pc_HeatSumIrrigationEnd(cps.cultivarParams.pc_HeatSumIrrigationEnd)
 	, vs_HeightNN(stps.vs_HeightNN)
 	, pc_InitialKcFactor(cps.speciesParams.pc_InitialKcFactor)
 	, pc_InitialOrganBiomass(cps.speciesParams.pc_InitialOrganBiomass)
 	, pc_InitialRootingDepth(cps.speciesParams.pc_InitialRootingDepth)
-	, pc_LowTemperatureExposure(cps.speciesParams.pc_LowTemperatureExposure)
+  , pc_LowTemperatureExposure(cps.cultivarParams.pc_LowTemperatureExposure)
 	, pc_LimitingTemperatureHeatStress(cps.speciesParams.pc_LimitingTemperatureHeatStress)
 	, pc_LT50cultivar(cps.cultivarParams.pc_LT50cultivar)
 	, pc_LuxuryNCoeff(cps.speciesParams.pc_LuxuryNCoeff)
-	, pc_MaxAssimilationRate(cps.speciesParams.pc_MaxAssimilationRate)
+  , pc_MaxAssimilationRate(cps.cultivarParams.pc_MaxAssimilationRate)
 	, pc_MaxCropDiameter(cps.speciesParams.pc_MaxCropDiameter)
 	, pc_MaxCropHeight(cps.cultivarParams.pc_MaxCropHeight)
 	, pc_MaxNUptakeParam(cps.speciesParams.pc_MaxNUptakeParam)
@@ -108,26 +108,26 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_NConcentrationPN(cps.speciesParams.pc_NConcentrationPN)
 	, pc_NConcentrationRoot(cps.speciesParams.pc_NConcentrationRoot)
 	, pc_NitrogenResponseOn(cropPs.pc_NitrogenResponseOn)
-	, pc_NumberOfDevelopmentalStages(cps.speciesParams.pc_NumberOfDevelopmentalStages)
-	, pc_NumberOfOrgans(cps.speciesParams.pc_NumberOfOrgans)
+  , pc_NumberOfDevelopmentalStages(cps.speciesParams.pc_NumberOfDevelopmentalStages())
+  , pc_NumberOfOrgans(cps.speciesParams.pc_NumberOfOrgans())
 	, vc_NUptakeFromLayer(soilColumn.vs_NumberOfLayers(), 0.0)
 	, pc_OptimumTemperature(cps.cultivarParams.pc_OptimumTemperature)
 	, vc_OrganBiomass(pc_NumberOfOrgans, 0.0)
-	, vc_OrganDeadBiomass(cps.speciesParams.pc_NumberOfOrgans, 0.0)
-	, vc_OrganGreenBiomass(cps.speciesParams.pc_NumberOfOrgans, 0.0)
+  , vc_OrganDeadBiomass(cps.speciesParams.pc_NumberOfOrgans(), 0.0)
+  , vc_OrganGreenBiomass(cps.speciesParams.pc_NumberOfOrgans(), 0.0)
 	, vc_OrganGrowthIncrement(pc_NumberOfOrgans, 0.0)
 	, pc_OrganGrowthRespiration(cps.speciesParams.pc_OrganGrowthRespiration)
-	, pc_OrganIdsForPrimaryYield(cps.speciesParams.pc_OrganIdsForPrimaryYield)
-	, pc_OrganIdsForSecondaryYield(cps.speciesParams.pc_OrganIdsForSecondaryYield)
-	, pc_OrganIdsForCutting(cps.speciesParams.pc_OrganIdsForCutting)
+  , pc_OrganIdsForPrimaryYield(cps.cultivarParams.pc_OrganIdsForPrimaryYield)
+  , pc_OrganIdsForSecondaryYield(cps.cultivarParams.pc_OrganIdsForSecondaryYield)
+  , pc_OrganIdsForCutting(cps.cultivarParams.pc_OrganIdsForCutting)
 	, pc_OrganMaintenanceRespiration(cps.speciesParams.pc_OrganMaintenanceRespiration)
 	, vc_OrganSenescenceIncrement(pc_NumberOfOrgans, 0.0)
-	, pc_OrganSenescenceRate(cps.speciesParams.pc_OrganSenescenceRate)
+  , pc_OrganSenescenceRate(cps.cultivarParams.pc_OrganSenescenceRate)
 	, pc_PartBiologicalNFixation(cps.speciesParams.pc_PartBiologicalNFixation)
-	, pc_Perennial(cps.speciesParams.pc_Perennial)
+  , pc_Perennial(cps.cultivarParams.pc_Perennial)
 	, pc_PlantDensity(cps.speciesParams.pc_PlantDensity)
 	, pc_ResidueNRatio(cps.cultivarParams.pc_ResidueNRatio)
-	, pc_RespiratoryStress(cps.speciesParams.pc_RespiratoryStress)
+  , pc_RespiratoryStress(cps.cultivarParams.pc_RespiratoryStress)
 	, vc_RootDensity(soilColumn.vs_NumberOfLayers(), 0.0)
 	, vc_RootDiameter(soilColumn.vs_NumberOfLayers(), 0.0)
 	, pc_RootDistributionParam(cps.speciesParams.pc_RootDistributionParam)
@@ -161,21 +161,17 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	vc_FinalDevelopmentalStage = pc_NumberOfDevelopmentalStages - 1;
 
 	// Determining the initial crop organ's biomass
-	for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
+  for(int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
 	{
 		vc_OrganBiomass[i_Organ] = pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
 
-		if (pc_AbovegroundOrgan[i_Organ] == 1)
+    if(pc_AbovegroundOrgan[i_Organ])
 			vc_AbovegroundBiomass += pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
 
 		vc_TotalBiomass += pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
 
 		// Define storage organ
-		if (pc_StorageOrgan[i_Organ] == 1)
-			vc_StorageOrgan = i_Organ;
-
-		// Define storage organ
-		if (pc_StorageOrgan[i_Organ] == 1)
+    if(pc_StorageOrgan[i_Organ])
 			vc_StorageOrgan = i_Organ;
 	}
 
@@ -2182,7 +2178,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		vc_AssimilatePartitioningCoeff = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ];
 
 		//Identify storage organ and reduce assimilate flux in case of heat stress
-		if (pc_StorageOrgan[i_Organ] == 1)
+    if(pc_StorageOrgan[i_Organ])
 		{
 			vc_AssimilatePartitioningCoeffOld = vc_AssimilatePartitioningCoeffOld * vc_CropHeatRedux * vc_DroughtImpactOnFertility;
 			vc_AssimilatePartitioningCoeff = vc_AssimilatePartitioningCoeff * vc_CropHeatRedux * vc_DroughtImpactOnFertility;
@@ -2331,23 +2327,14 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 
 		if ((vc_OrganGreenBiomass[i_Organ]) < 0.0)
 		{
-
 			vc_OrganDeadBiomass[i_Organ] = vc_OrganBiomass[i_Organ];
 			vc_OrganGreenBiomass[i_Organ] = 0.0;
 		}
 
-		if (pc_AbovegroundOrgan[i_Organ] == 1)
-		{
-
+    if(pc_AbovegroundOrgan[i_Organ])
 			vc_AbovegroundBiomass += vc_OrganBiomass[i_Organ]; // [kg CH2O ha-1]
-
-		}
-		else if ((pc_AbovegroundOrgan[i_Organ] == 0) && (i_Organ > 0))
-		{
-
+    else if(!pc_AbovegroundOrgan[i_Organ] && i_Organ > 0)
 			vc_BelowgroundBiomass += vc_OrganBiomass[i_Organ]; // [kg CH2O ha-1]
-
-		}
 
 		vc_TotalBiomass += vc_OrganBiomass[i_Organ]; // [kg CH2O ha-1]
 
@@ -2548,18 +2535,16 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
 	{
 		// Root diameter [m]
-		if (pc_AbovegroundOrgan[3] == 0)
-		{
+    if(!pc_AbovegroundOrgan[3])
 			vc_RootDiameter[i_Layer] = 0.0001; //[m]
-		}
 		else
-		{
 			vc_RootDiameter[i_Layer] = 0.0002 - ((i_Layer + 1) * 0.00001); // [m]
-		}
 
 		// Default root decay - 10 %
-		vo_FreshSoilOrganicMatter[i_Layer] += vc_RootNIncrement * vc_RootDensity[i_Layer]
-			* 10.0 / vc_TotalRootLength;
+    vo_FreshSoilOrganicMatter[i_Layer] += vc_RootNIncrement
+                                          * vc_RootDensity[i_Layer]
+                                          * 10.0
+                                          / vc_TotalRootLength;
 
 	}
 	// *****************************************************************************
@@ -4167,10 +4152,10 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 	pc_CarboxylationPathway = perennialCropParams->speciesParams.pc_CarboxylationPathway;
 	pc_CriticalOxygenContent = perennialCropParams->speciesParams.pc_CriticalOxygenContent;
 	pc_CriticalTemperatureHeatStress = perennialCropParams->cultivarParams.pc_CriticalTemperatureHeatStress;
-	pc_CropHeightP1 = perennialCropParams->speciesParams.pc_CropHeightP1;
-	pc_CropHeightP2 = perennialCropParams->speciesParams.pc_CropHeightP2;
+  pc_CropHeightP1 = perennialCropParams->cultivarParams.pc_CropHeightP1;
+  pc_CropHeightP2 = perennialCropParams->cultivarParams.pc_CropHeightP2;
 	pc_CropName = perennialCropParams->pc_CropName();
-	pc_CropSpecificMaxRootingDepth = perennialCropParams->speciesParams.pc_CropSpecificMaxRootingDepth;
+  pc_CropSpecificMaxRootingDepth = perennialCropParams->cultivarParams.pc_CropSpecificMaxRootingDepth;
 	pc_DaylengthRequirement = perennialCropParams->cultivarParams.pc_DaylengthRequirement;
 	pc_DefaultRadiationUseEfficiency = perennialCropParams->speciesParams.pc_DefaultRadiationUseEfficiency;
 	pc_DevelopmentAccelerationByNitrogenStress = perennialCropParams->speciesParams.pc_DevelopmentAccelerationByNitrogenStress;
@@ -4183,7 +4168,7 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 	pc_InitialRootingDepth = perennialCropParams->speciesParams.pc_InitialRootingDepth;
 	pc_LimitingTemperatureHeatStress = perennialCropParams->speciesParams.pc_LimitingTemperatureHeatStress;
 	pc_LuxuryNCoeff = perennialCropParams->speciesParams.pc_LuxuryNCoeff;
-	pc_MaxAssimilationRate = perennialCropParams->speciesParams.pc_MaxAssimilationRate;
+  pc_MaxAssimilationRate = perennialCropParams->cultivarParams.pc_MaxAssimilationRate;
 	pc_MaxCropDiameter = perennialCropParams->speciesParams.pc_MaxCropDiameter;
 	pc_MaxCropHeight = perennialCropParams->cultivarParams.pc_MaxCropHeight;
 	pc_MaxNUptakeParam = perennialCropParams->speciesParams.pc_MaxNUptakeParam;
@@ -4194,13 +4179,13 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 	pc_NConcentrationB0 = perennialCropParams->speciesParams.pc_NConcentrationB0;
 	pc_NConcentrationPN = perennialCropParams->speciesParams.pc_NConcentrationPN;
 	pc_NConcentrationRoot = perennialCropParams->speciesParams.pc_NConcentrationRoot;
-	pc_NumberOfDevelopmentalStages = perennialCropParams->speciesParams.pc_NumberOfDevelopmentalStages;
-	pc_NumberOfOrgans = perennialCropParams->speciesParams.pc_NumberOfOrgans;
+  pc_NumberOfDevelopmentalStages = perennialCropParams->speciesParams.pc_NumberOfDevelopmentalStages();
+  pc_NumberOfOrgans = perennialCropParams->speciesParams.pc_NumberOfOrgans();
 	pc_OptimumTemperature = perennialCropParams->cultivarParams.pc_OptimumTemperature;
 	pc_OrganGrowthRespiration = perennialCropParams->speciesParams.pc_OrganGrowthRespiration;
 	pc_OrganMaintenanceRespiration = perennialCropParams->speciesParams.pc_OrganMaintenanceRespiration;
-	pc_OrganSenescenceRate = perennialCropParams->speciesParams.pc_OrganSenescenceRate;
-	pc_Perennial = perennialCropParams->speciesParams.pc_Perennial;
+  pc_OrganSenescenceRate = perennialCropParams->cultivarParams.pc_OrganSenescenceRate;
+  pc_Perennial = perennialCropParams->cultivarParams.pc_Perennial;
 	pc_PlantDensity = perennialCropParams->speciesParams.pc_PlantDensity;
 	pc_ResidueNRatio = perennialCropParams->cultivarParams.pc_ResidueNRatio;
 	pc_RootDistributionParam = perennialCropParams->speciesParams.pc_RootDistributionParam;

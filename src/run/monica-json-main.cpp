@@ -65,18 +65,18 @@ Json readAndParseFile(string path)
 	return j;
 }
 
-const map<string, function<Json(const Json&, Json)>>& supportedPatterns()
+const map<string, function<pair<Json, bool>(const Json&, Json)>>& supportedPatterns()
 {
-	auto ref = [](const Json& root, Json j)
+	auto ref = [](const Json& root, Json j) -> pair<Json, bool>
 	{ 
 		if(j.array_items().size() == 3 
 			 && j[1].is_string() 
 			 && j[2].is_string())
-			return root[j[1].string_value()][j[2].string_value()];
-		return j; 
+			return make_pair(root[j[1].string_value()][j[2].string_value()], true);
+		return make_pair(j, false);
 	};
 
-	auto fromDb = [](const Json&, Json j)
+	auto fromDb = [](const Json&, Json j) -> pair<Json, bool>
 	{
 		if(j.array_items().size() >= 3 
 			 && j[1].is_string()
@@ -84,29 +84,33 @@ const map<string, function<Json(const Json&, Json)>>& supportedPatterns()
 		{
 			auto type = j[1].string_value();
 			if(type == "mineral_fertiliser")
-				getMineralFertiliserParametersFromMonicaDB(j[2].string_value());
+				make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()), true);
 			else if(type == "organic_fertiliser")
-				getOrganicFertiliserParametersFromMonicaDB(j[2].string_value());
+				make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value()), true);
 			else if(type == "crop_residue"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				getResidueParametersFromMonicaDB(j[2].string_value(), j[3].string_value());
+				make_pair(getResidueParametersFromMonicaDB(j[2].string_value(), j[3].string_value()), true);
 			else if(type == "species")
-				getCropParametersFromMonicaDB(0);
+				make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value()), true);
+			else if(type == "cultivar")
+				make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(), j[3].string_value()), true);
+			else if(type == "crop")
+				make_pair(getCropParametersFromMonicaDB(j[2].string_value(), j[3].string_value()), true);
 		}
 
-		return j; 
+		return make_pair(j, false);
 	};
 
-	auto fromFile = [](const Json&, Json j)
+	auto fromFile = [](const Json&, Json j) -> pair<Json, bool>
 	{ 
 		if(j.array_items().size() == 2 
 			 && j[1].is_string())
-			return readAndParseFile(j[1].string_value());
-		return j; 
+			return make_pair(readAndParseFile(j[1].string_value()), true);
+		return make_pair(j, false); 
 	};
 		
-	static map<string, function<Json(const Json&,Json)>> m{
+	static map<string, function<pair<Json, bool>(const Json&,Json)>> m{
 	{"include-from-db", fromDb},
 	{"include-from-file", fromFile},
 	{"ref", ref}};
@@ -117,51 +121,49 @@ const map<string, function<Json(const Json&, Json)>>& supportedPatterns()
 void findAndReplaceReferences(const Json& root, Json& j)
 {
 	auto sp = supportedPatterns();
-	if(j.is_array())
+	//repeat is used to try the same Json value again, if it might have 
+	//been replaced by a referenced object, which in turn might
+	//contain referenced elements to be replaced
+	size_t repeat = 1;
+	while(repeat > 0)
 	{
-		if(j[0].is_string())
+		repeat--;
+
+		if(j.is_array())
 		{
-			auto p = sp.find(j[0].string_value());
-			if(p != sp.end())
-				j = (p->second)(root, j);
+			if(j[0].is_string())
+			{
+				auto p = sp.find(j[0].string_value());
+				if(p != sp.end())
+				{
+					auto jAndSuccess = (p->second)(root, j);
+					j = jAndSuccess.first;
+					//increase repeat to try with new element again
+					//if we actually replaced something
+					if(jAndSuccess.second)
+						repeat++;
+				}
+			}
+			else
+				for(auto jv : j.array_items())
+					findAndReplaceReferences(root, jv);
 		}
-		else
-			for(auto jv : j.array_items())
-				findAndReplaceReferences(root, jv);
+		else if(j.is_object())
+			for(auto p : j.object_items())
+				findAndReplaceReferences(root, p.second);
 	}
-	else if(j.is_object())
-		for(auto p : j.object_items())
-			findAndReplaceReferences(root, p.second);
 }
 
 void parseAndRunMonica(const string& pathToInputFiles)
 {
 	CentralParameterProvider cpp = readUserParameterFromDatabase(MODE_HERMES);
-
-	auto parse = [](string path)
-	{
-		Json j;
-
-		ifstream ifs;
-		ifs.open(path);
-		if(ifs.good())
-		{
-			string sj;
-			for(string line; getline(ifs, line);)
-				sj += line;
-
-			string err;
-			j = Json::parse(sj, err);
-		}
-		ifs.close();
-
-		return j;
-	};
-
+	
 	vector<Json> cropSiteSim;
 	for(auto p : {"crop.json", "site.json", "sim.json"})
-		cropSiteSim.push_back(parse(pathToInputFiles + "/" + p));
+		cropSiteSim.push_back(readAndParseFile(pathToInputFiles + "/" + p));
 
+	for(auto& j : cropSiteSim)
+		findAndReplaceReferences(j, j);
 
 
 
@@ -182,18 +184,19 @@ void parseAndRunMonica(const string& pathToInputFiles)
 #include "soil/soil.h"
 int main(int argc, char** argv)
 {
-	auto res = Soil::fcSatPwpFromKA5textureClass("fS",
-																							 0,
-																							 1.5*1000.0,
-																							 0.8/100.0);
+	//Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
+	//findAndReplaceReferences(j, j);
 
 
-
-
-	//writeCropParameters("crop-parameters");
+	//auto res = Soil::fcSatPwpFromKA5textureClass("fS",
+	//																						 0,
+	//																						 1.5*1000.0,
+	//																						 0.8/100.0);
+	
+	writeCropParameters("crop-parameters");
 	//writeMineralFertilisers("mineral-fertilisers");
 	//writeOrganicFertilisers("organic-fertilisers");
-	writeCropResidues("residues");
+	//writeCropResidues("residues");
 	//writeUserParameters(MODE_HERMES, "user-parameters");
 	//writeUserParameters(MODE_EVA2, "user-parameters");
 	//writeUserParameters(MODE_MACSUR_SCALING, "user-parameters");

@@ -370,10 +370,13 @@ namespace Monica
 
     std::string toString() const { return to_json().dump(); }
 
+    size_t pc_NumberOfDevelopmentalStages() const { return pc_BaseTemperature.size(); }
+    size_t pc_NumberOfOrgans() const { return pc_OrganGrowthRespiration.size(); }
+
     // members
-    std::string pc_SpeciesName;
-    int pc_NumberOfDevelopmentalStages{0};
-    int pc_NumberOfOrgans{0};
+    std::string pc_SpeciesId;
+//    int pc_NumberOfDevelopmentalStages{0};
+//    int pc_NumberOfOrgans{0};
     int pc_CarboxylationPathway{0};
     double pc_DefaultRadiationUseEfficiency{0.0};
     double pc_PartBiologicalNFixation{0.0};
@@ -392,8 +395,6 @@ namespace Monica
     double pc_FieldConditionModifier{1.0};
     double pc_AssimilateReallocation{0.0};
 
-    std::vector<std::vector<double>> pc_OrganSenescenceRate;
-
     std::vector<double> pc_BaseTemperature;
     std::vector<double> pc_OrganMaintenanceRespiration;
     std::vector<double> pc_OrganGrowthRespiration;
@@ -401,8 +402,8 @@ namespace Monica
     std::vector<double> pc_InitialOrganBiomass;
     std::vector<double> pc_CriticalOxygenContent;
 
-    std::vector<int> pc_AbovegroundOrgan;
-    std::vector<int> pc_StorageOrgan;
+    std::vector<bool> pc_AbovegroundOrgan;
+    std::vector<bool> pc_StorageOrgan;
 
     double pc_SamplingDepth{0.0};
     double pc_TargetNSamplingDepth{0.0};
@@ -420,10 +421,6 @@ namespace Monica
     double pc_LimitingTemperatureHeatStress{0.0};
     int pc_CuttingDelayDays{0};
     double pc_DroughtImpactOnFertilityFactor{0.0};
-
-    std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
-    std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
-    std::vector<YieldComponent> pc_OrganIdsForCutting;
   };
 
   typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
@@ -440,9 +437,12 @@ namespace Monica
 
     std::string toString() const { return to_json().dump(); }
 
-    std::string pc_CultivarName;
+    size_t pc_NumberOfDevelopmentalStages() const { return pc_BaseDaylength.size(); }
+
+    std::string pc_CultivarId;
     std::string pc_Description;
     bool pc_Perennial{false};
+    std::string pc_PermanentCultivarId;
     double pc_MaxAssimilationRate{0.0};
     double pc_MaxCropHeight{0.0};
     double pc_ResidueNRatio{0.0};
@@ -453,6 +453,7 @@ namespace Monica
     double pc_CropSpecificMaxRootingDepth{0.0};
 
     std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff;
+    std::vector<std::vector<double>> pc_OrganSenescenceRate;
 
     std::vector<double> pc_BaseDaylength;
     std::vector<double> pc_OptimumTemperature;
@@ -475,6 +476,10 @@ namespace Monica
     double pc_LowTemperatureExposure{0.0};
     double pc_RespiratoryStress{0.0};
     int pc_LatestHarvestDoy{-1};
+
+    std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
+    std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
+    std::vector<YieldComponent> pc_OrganIdsForCutting;
   };
 
   typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
@@ -493,9 +498,7 @@ namespace Monica
 
     std::string toString() const { return to_json().dump(); }
 
-    void resizeStageOrganVectors();
-
-    std::string pc_CropName() const { return speciesParams.pc_SpeciesName + "/" + cultivarParams.pc_CultivarName; }
+    std::string pc_CropName() const { return speciesParams.pc_SpeciesId + "/" + cultivarParams.pc_CultivarId; }
 
     SpeciesParameters speciesParams;
     CultivarParameters cultivarParams;
