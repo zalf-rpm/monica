@@ -5,21 +5,21 @@
 			"harvestDate": "1992-08-08",
 			"cuttingDates": ["1991-11-1", "1991-12-1"],
 			"cropParams": {
-				"species": ["include-from-file", "../../../parameters/crop-parameters/winter-wheat/winter-wheat.json"], 
-				"cultivar": ["include-from-file", "../../../parameters/crop-parameters/winter-wheat/ww-variety-1.json"]
+				"species": ["include-from-file", "parameters/crops/wheat.json"], 
+				"cultivar": ["include-from-file", "parameters/crops/wheat/winter wheat.json"]
 			},
-			"residueParams": ["include-from-file", "../../../parameters/residues/wheat.json"]
+			"residueParams": ["include-from-file", "parameters/crop-residues/wheat.json"]
 		},
 		"ww2": { 
 			"cropParams": {
 				"species": ["include-from-db", "species", "wheat"],
 				"cultivar": ["include-from-db", "cultivar", "wheat", "winter wheat"]
 			},
-			"residueParams": ["include-from-db", "crop_residue", "wheat", "winter wheat"]
+			"residueParams": ["include-from-db", "crop_residue", "wheat", ""]
 		},
 		"ww3": { 
 			"cropParams": ["include-from-db", "crop", "wheat", "winter wheat"],
-			"residueParams": ["include-from-db", "crop_residue", "wheat", "winter wheat"]
+			"residueParams": ["include-from-db", "crop_residue", "wheat", ""]
 		}
 	},
 
@@ -28,7 +28,7 @@
 	"cropRotation": [
 		{
 			"worksteps": [
-				{ "date": "1991-10-13", "type": "Seed", "crop": { "species": "winter-wheat", "cultivar": "ww-variety-1" }},
+				{ "date": "1991-10-13", "type": "Seed", "crop": ["ref", "crops", "ww2"] },
 				{ "date": "1992-08-08", "type": "Harvest", "crop": ["ref", "crops", "ww2"] },
 				{
 					"type": "TillageApplication",
@@ -75,17 +75,12 @@
 			]
 		},
 		{
-			"name" : "winter-wheat",
-			"variety" : "ww-variety-1",
-			"perennialVariety" : "ww-perennial-variety-1",
 			"worksteps": [
-				{ "date": "1991-10-13", "type": "Seed", "crop": ["ref", "crops", "ww2"] },
+				{ "date": "1991-10-13", "type": "Seed", "crop": ["ref", "crops", "ww"] },
 				{	"date": "1991-10-08", "type": "TillageApplication", "depth": [0.3, "m"] },
 				{ "date": "1992-06-08", "type": "IrrigationApplication", "amount": [11.0, "mm"] },
-				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": { "id": "AN" }, "fertiliserId": "AN" },
 				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": ["include-from-db", "mineral_fertiliser", "AN"]},
-				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": [[{"include-from": "db", "table": "mineral_fertiliser", "id": "AN"}]]},
-				{ "date": "1992-08-08", "type": "Harvest", "crop": ["ref", "crops", "ww2"] }
+				{ "date": "1992-08-08", "type": "Harvest", "crop": ["ref", "crops", "ww"] }
 			]
 		}
 	]

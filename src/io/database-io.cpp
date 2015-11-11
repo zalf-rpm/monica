@@ -459,15 +459,13 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
 
 void Monica::writeCropParameters(string path)
 {
-	auto enclose = [](string with, string str){ return with + str + with;  };
-
-	for (auto p : availableMonicaCrops())
+	for(auto p : availableMonicaCrops())
 	{
     CropParametersPtr cp = getCropParametersFromMonicaDB(p.first);
 
 		ofstream ofs;
     string speciesDir = path + "/" + cp->speciesParams.pc_SpeciesId;
-    ensureDirExists(enclose("\"", speciesDir));
+    ensureDirExists(surround("\"", speciesDir));
 
 		auto s = fixSystemSeparator(path + "/" + cp->speciesParams.pc_SpeciesId + ".json");
     ofs.open(s);
@@ -502,7 +500,7 @@ const map<string, MineralFertiliserParameters>& getAllMineralFertiliserParameter
 
 		if (!initialized)
 		{
-      DB *con = newConnection("monica");
+      DBPtr con(newConnection("monica"));
 			DBRow row;
       con->select("select id, name, no3, nh4, carbamid from mineral_fertiliser");
 			while (!(row = con->getRow()).empty())
@@ -515,7 +513,6 @@ const map<string, MineralFertiliserParameters>& getAllMineralFertiliserParameter
 
         m[id] = MineralFertiliserParameters(id, name, carbamid, no3, nh4);
 			}
-			delete con;
 
 			initialized = true;
 		}
@@ -541,6 +538,8 @@ void Monica::writeMineralFertilisers(string path)
 	for (auto p : getAllMineralFertiliserParametersFromMonicaDB())
 	{
 		auto mf = p.second;
+
+		ensureDirExists(surround("\"", path));
 
 		ofstream ofs;
 		ofs.open(path + "/" + mf.getId() + ".json");
@@ -570,7 +569,7 @@ const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParame
 
 		if (!initialized)
 		{
-			DB *con = newConnection("monica");
+			DBPtr con(newConnection("monica"));
 			DBRow row;
       con->select(
             "select "
@@ -612,7 +611,6 @@ const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParame
 
         m[omp->id] = omp;
 			}
-			delete con;
 
 			initialized = true;
 		}
@@ -641,6 +639,8 @@ void Monica::writeOrganicFertilisers(string path)
 	{
     OrganicFertiliserParametersPtr of = p.second;
 
+		ensureDirExists(surround("\"", path));
+
 		ofstream ofs;
 		ofs.open(path + "/" + of->id + ".json");
 
@@ -657,127 +657,93 @@ void Monica::writeOrganicFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-pair<
-const map<string, map<string, CropResidueParametersPtr>>&,
-const map<int, CropResidueParametersPtr>&
->
-getAllResidueParametersFromMonicaDB()
+CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(const string& species,
+																																	const string& cultivar,
+																																	int cropId)
 {
-  static mutex lockable;
-	static bool initialized = false;
-  typedef map<string, map<string, CropResidueParametersPtr>> Map;
-  typedef map<int, CropResidueParametersPtr> Map2;
-	static Map m;
-  static Map2 m2;
-
-	if (!initialized)
+	DBPtr con(newConnection("monica"));
+	DBRow row;
+	string query = string() +
+		"select "
+		"species_id, "
+		"cultivar_id, "
+		"dm, "
+		"nh4, "
+		"no3, "
+		"nh2, "
+		"k_slow, "
+		"k_fast, "
+		"part_s, "
+		"part_f, "
+		"cn_s, "
+		"cn_f, "
+		"smb_s, "
+		"smb_f, "
+		"crop_id "
+		"from crop_residue "
+		"where " + (cropId == -1
+								? "species_id = '" + species + "' and " + (cultivar.empty()
+																													 ? string("(cultivar_id = '") + cultivar + "' or cultivar_id is null)"
+																													 : string("cultivar_id = '") + cultivar + "' ")
+								: "crop_id = " + to_string(cropId));
+	//cout << "query: " << query << endl;
+	con->select(query);
+	if(!(row = con->getRow()).empty())
 	{
-		lock_guard<mutex> lock(lockable);
+		CropResidueParametersPtr omp = make_shared<CropResidueParameters>();
 
-		if (!initialized)
-		{
-      DBPtr con(newConnection("monica"));
-			DBRow row;
-      con->select(
-            "select "
-            "id, "
-            "species, "
-            "cultivar, "
-            "dm, "
-            "nh4, "
-            "no3, "
-            "nh2, "
-            "k_slow, "
-            "k_fast, "
-            "part_s, "
-            "part_f, "
-            "cn_s, "
-            "cn_f, "
-            "smb_s, "
-            "smb_f, "
-            "crop_id "
-            "from crop_residue");
-			while (!(row = con->getRow()).empty())
-			{
-        CropResidueParametersPtr omp = make_shared<CropResidueParameters>();
+		int i = 0;
 
-        int i = 0;
+		omp->species = row[i++];
+		omp->cultivar = row[i++];
+		omp->vo_AOM_DryMatterContent = stoi(row[i++]);
+		omp->vo_AOM_NH4Content = stof(row[i++]);
+		omp->vo_AOM_NO3Content = stof(row[i++]);
+		omp->vo_AOM_CarbamidContent = stof(row[i++]);
+		omp->vo_AOM_SlowDecCoeffStandard = stof(row[i++]);
+		omp->vo_AOM_FastDecCoeffStandard = stof(row[i++]);
+		omp->vo_PartAOM_to_AOM_Slow = stof(row[i++]);
+		omp->vo_PartAOM_to_AOM_Fast = stof(row[i++]);
+		omp->vo_CN_Ratio_AOM_Slow = stof(row[i++]);
+		omp->vo_CN_Ratio_AOM_Fast = stof(row[i++]);
+		omp->vo_PartAOM_Slow_to_SMB_Slow = stof(row[i++]);
+		omp->vo_PartAOM_Slow_to_SMB_Fast = stof(row[i++]);
 
-        int id = stoi(row[i++]);
-        omp->species = row[i++];
-        omp->cultivar = row[i++];
-        omp->vo_AOM_DryMatterContent = stoi(row[i++]);
-        omp->vo_AOM_NH4Content = stof(row[i++]);
-        omp->vo_AOM_NO3Content = stof(row[i++]);
-        omp->vo_AOM_CarbamidContent = stof(row[i++]);
-        omp->vo_AOM_SlowDecCoeffStandard = stof(row[i++]);
-        omp->vo_AOM_FastDecCoeffStandard = stof(row[i++]);
-        omp->vo_PartAOM_to_AOM_Slow = stof(row[i++]);
-        omp->vo_PartAOM_to_AOM_Fast = stof(row[i++]);
-        omp->vo_CN_Ratio_AOM_Slow = stof(row[i++]);
-        omp->vo_CN_Ratio_AOM_Fast = stof(row[i++]);
-        omp->vo_PartAOM_Slow_to_SMB_Slow = stof(row[i++]);
-        omp->vo_PartAOM_Slow_to_SMB_Fast = stof(row[i++]);
-
-        m[omp->species][omp->cultivar] = omp;
-        m2[id] = omp;
-			}
-
-			initialized = true;
-		}
+		return omp;
 	}
 
-  return make_pair(m, m2);
+	static CropResidueParametersPtr nothing = make_shared<CropResidueParameters>();
+	return nothing;
 }
 
-CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(const string& species,
-                                                                  const string& cultivar)
+vector<CropResidueParametersPtr> getAllCropResidueParametersFromMonicaDB()
 {
-  static CropResidueParametersPtr nothing = make_shared<CropResidueParameters>();
+	vector<CropResidueParametersPtr> acrps;
 
-  auto m = getAllResidueParametersFromMonicaDB().first;
-  auto ci = m.find(species);
-  //found species
-  if(ci != m.end())
-  {
-    auto m2 = ci->second;
-    auto ci2 = m2.find(cultivar);
-    //found also cultivar
-    if(ci2 != m2.end())
-      return ci2->second;
-    //possibly take first cultivar, if given cultivar didn't match
-    else if(!m2.empty())
-      return m2.begin()->second;
-  }
+	DBPtr con(newConnection("monica"));
+	DBRow row;
+	con->select("select species_id, cultivar_id from crop_residue order by species_id, cultivar_id");
+	while(!(row = con->getRow()).empty())
+		acrps.push_back(getResidueParametersFromMonicaDB(row[0], row[1]));
 
-  return nothing;
-}
-
-CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(int cropId)
-{
-  static CropResidueParametersPtr nothing = make_shared<CropResidueParameters>();
-
-  auto m = getAllResidueParametersFromMonicaDB().second;
-  auto ci = m.find(cropId);
-  return ci != m.end() ? ci->second : nothing;
+	return acrps;
 }
 
 void Monica::writeCropResidues(string path)
 {
-  for (auto p : getAllResidueParametersFromMonicaDB().second)
+  for (auto r : getAllCropResidueParametersFromMonicaDB())
 	{
-    CropResidueParametersPtr r = p.second;
-
     string speciesPath = path + "/" + r->species;
-    bool noCultivar = r->cultivar.empty();
+		bool noCultivar = r->cultivar.empty();
     string cultivarPath = (noCultivar ? speciesPath : speciesPath + "/" + r->cultivar) + ".json";
-
-    if(noCultivar)
-      ensureDirExists(speciesPath);
-
+		
+		if(noCultivar)
+			ensureDirExists(surround("\"", path));
+		else
+			ensureDirExists(surround("\"", speciesPath));
+			
 		ofstream ofs;
     ofs.open(cultivarPath);
-
 		if (ofs.good())
 		{
       auto s = r->to_json().dump();
@@ -1070,6 +1036,8 @@ void Monica::writeUserParameters(int type, string path)
 	}
 	
 	auto ups = readUserParameterFromDatabase(type);
+
+	ensureDirExists(surround("\"", path));
 
 	{
 		ofstream ofs;

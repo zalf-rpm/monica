@@ -55,9 +55,9 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
-  CropResidueParametersPtr getResidueParametersFromMonicaDB(const std::string& species, const std::string& cultivar);
+  CropResidueParametersPtr getResidueParametersFromMonicaDB(const std::string& species, const std::string& cultivar, int cropId = -1);
 
-  CropResidueParametersPtr getResidueParametersFromMonicaDB(int cropId);
+	inline CropResidueParametersPtr getResidueParametersFromMonicaDB(int cropId) { return getResidueParametersFromMonicaDB("", "", cropId); }
 
   void writeCropResidues(std::string path);
 

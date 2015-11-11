@@ -48,6 +48,7 @@ using namespace Tools;
 Json readAndParseFile(string path)
 {
 	Json j;
+	path = fixSystemSeparator(path);
 
 	ifstream ifs;
 	ifs.open(path);
@@ -65,18 +66,63 @@ Json readAndParseFile(string path)
 	return j;
 }
 
-const map<string, function<pair<Json, bool>(const Json&, Json)>>& supportedPatterns()
+const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& supportedPatterns();
+
+Json findAndReplaceReferences(const Json& root, const Json& j)
 {
-	auto ref = [](const Json& root, Json j) -> pair<Json, bool>
+	auto sp = supportedPatterns();
+	
+	auto jstr = j.dump();
+
+	if(j.is_array())
+	{
+		Json::array arr;
+
+		bool arrayIsReferenceFunction = false;
+		if(j[0].is_string())
+		{
+			auto p = sp.find(j[0].string_value());
+			if(p != sp.end())
+			{
+				arrayIsReferenceFunction = true;
+
+				auto jAndSuccess = (p->second)(root, j);
+				if(jAndSuccess.second)
+					return findAndReplaceReferences(root, jAndSuccess.first);
+			}
+		}
+
+		if(!arrayIsReferenceFunction)
+			for(auto jv : j.array_items())
+				arr.push_back(findAndReplaceReferences(root, jv));
+
+		return arr;
+	}
+	else if(j.is_object())
+	{
+		Json::object obj;
+
+		for(auto p : j.object_items())
+			obj[p.first] = findAndReplaceReferences(root, p.second);
+
+		return obj;
+	}
+
+	return j;
+}
+
+const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& supportedPatterns()
+{
+	auto ref = [](const Json& root, const Json& j) -> pair<Json, bool>
 	{ 
-		if(j.array_items().size() == 3 
-			 && j[1].is_string() 
+		if(j.array_items().size() == 3
+			 && j[1].is_string()
 			 && j[2].is_string())
 			return make_pair(root[j[1].string_value()][j[2].string_value()], true);
 		return make_pair(j, false);
 	};
 
-	auto fromDb = [](const Json&, Json j) -> pair<Json, bool>
+	auto fromDb = [](const Json&, const Json& j) -> pair<Json, bool>
 	{
 		if(j.array_items().size() >= 3 
 			 && j[1].is_string()
@@ -84,25 +130,29 @@ const map<string, function<pair<Json, bool>(const Json&, Json)>>& supportedPatte
 		{
 			auto type = j[1].string_value();
 			if(type == "mineral_fertiliser")
-				make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()), true);
+				return make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()).to_json(), true);
 			else if(type == "organic_fertiliser")
-				make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value()), true);
+				return make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value())->to_json(), true);
 			else if(type == "crop_residue"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				make_pair(getResidueParametersFromMonicaDB(j[2].string_value(), j[3].string_value()), true);
+				return make_pair(getResidueParametersFromMonicaDB(j[2].string_value(), j[3].string_value())->to_json(), true);
 			else if(type == "species")
-				make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value()), true);
-			else if(type == "cultivar")
-				make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(), j[3].string_value()), true);
-			else if(type == "crop")
-				make_pair(getCropParametersFromMonicaDB(j[2].string_value(), j[3].string_value()), true);
+				return make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value())->to_json(), true);
+			else if(type == "cultivar"
+							&& j.array_items().size() == 4
+							&& j[3].is_string())
+				return make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(), j[3].string_value())->to_json(), true);
+			else if(type == "crop"
+							&& j.array_items().size() == 4
+							&& j[3].is_string())
+				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(), j[3].string_value())->to_json(), true);
 		}
 
 		return make_pair(j, false);
 	};
 
-	auto fromFile = [](const Json&, Json j) -> pair<Json, bool>
+	auto fromFile = [](const Json&, const Json& j) -> pair<Json, bool>
 	{ 
 		if(j.array_items().size() == 2 
 			 && j[1].is_string())
@@ -110,48 +160,11 @@ const map<string, function<pair<Json, bool>(const Json&, Json)>>& supportedPatte
 		return make_pair(j, false); 
 	};
 		
-	static map<string, function<pair<Json, bool>(const Json&,Json)>> m{
+	static map<string, function<pair<Json, bool>(const Json&,const Json&)>> m{
 	{"include-from-db", fromDb},
 	{"include-from-file", fromFile},
 	{"ref", ref}};
 	return m;
-}
-
-
-void findAndReplaceReferences(const Json& root, Json& j)
-{
-	auto sp = supportedPatterns();
-	//repeat is used to try the same Json value again, if it might have 
-	//been replaced by a referenced object, which in turn might
-	//contain referenced elements to be replaced
-	size_t repeat = 1;
-	while(repeat > 0)
-	{
-		repeat--;
-
-		if(j.is_array())
-		{
-			if(j[0].is_string())
-			{
-				auto p = sp.find(j[0].string_value());
-				if(p != sp.end())
-				{
-					auto jAndSuccess = (p->second)(root, j);
-					j = jAndSuccess.first;
-					//increase repeat to try with new element again
-					//if we actually replaced something
-					if(jAndSuccess.second)
-						repeat++;
-				}
-			}
-			else
-				for(auto jv : j.array_items())
-					findAndReplaceReferences(root, jv);
-		}
-		else if(j.is_object())
-			for(auto p : j.object_items())
-				findAndReplaceReferences(root, p.second);
-	}
 }
 
 void parseAndRunMonica(const string& pathToInputFiles)
@@ -162,9 +175,12 @@ void parseAndRunMonica(const string& pathToInputFiles)
 	for(auto p : {"crop.json", "site.json", "sim.json"})
 		cropSiteSim.push_back(readAndParseFile(pathToInputFiles + "/" + p));
 
+	vector<Json> cropSiteSim2;
 	for(auto& j : cropSiteSim)
-		findAndReplaceReferences(j, j);
+		cropSiteSim2.push_back(findAndReplaceReferences(j, j));
 
+	auto str = cropSiteSim2[0].dump();
+	cout << str << endl;
 
 
 
@@ -184,22 +200,22 @@ void parseAndRunMonica(const string& pathToInputFiles)
 #include "soil/soil.h"
 int main(int argc, char** argv)
 {
-	//Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
-	//findAndReplaceReferences(j, j);
-
-
+	Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
+	auto j2 = findAndReplaceReferences(j, j);
+	auto str = j2.dump();
+	
 	//auto res = Soil::fcSatPwpFromKA5textureClass("fS",
 	//																						 0,
 	//																						 1.5*1000.0,
 	//																						 0.8/100.0);
 	
-	writeCropParameters("crop-parameters");
-	//writeMineralFertilisers("mineral-fertilisers");
-	//writeOrganicFertilisers("organic-fertilisers");
-	//writeCropResidues("residues");
-	//writeUserParameters(MODE_HERMES, "user-parameters");
-	//writeUserParameters(MODE_EVA2, "user-parameters");
-	//writeUserParameters(MODE_MACSUR_SCALING, "user-parameters");
+	//writeCropParameters("parameters/crops");
+	//writeMineralFertilisers("parameters/mineral-fertilisers");
+	//writeOrganicFertilisers("parameters/organic-fertilisers");
+	//writeCropResidues("parameters/crop-residues");
+	//writeUserParameters(MODE_HERMES, "parameters/user-parameters");
+	//writeUserParameters(MODE_EVA2, "parameters/user-parameters");
+	//writeUserParameters(MODE_MACSUR_SCALING, "parameters/user-parameters");
 
 	return 0;
 }
