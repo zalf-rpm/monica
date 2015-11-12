@@ -48,18 +48,20 @@ namespace Monica
 {
   class MonicaModel;
 
-	class WorkStep
+  class WorkStep : public Tools::Json11Serializable
 	{
 	public:
+    WorkStep(){}
+
     WorkStep(const Tools::Date& d);
 
     WorkStep(json11::Json object);
 
     virtual WorkStep* clone() const = 0;
 
-    virtual json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    virtual std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
 		Tools::Date date() const { return _date; }
 
@@ -79,12 +81,15 @@ namespace Monica
 	class Seed : public WorkStep
 	{
 	public:
+    Seed(){}
 
     Seed(const Tools::Date& at, CropPtr crop);
 
     Seed(json11::Json object);
 
     virtual Seed* clone() const {return new Seed(*this); }
+
+    virtual void merge(json11::Json j);
 
     virtual json11::Json to_json(bool includeFullCropParameters = true) const;
 
@@ -107,6 +112,8 @@ namespace Monica
 	class Harvest : public WorkStep
 	{
 	public:
+    Harvest() {}
+
     Harvest(const Tools::Date& at,
             CropPtr crop,
             PVResultPtr cropResult,
@@ -115,6 +122,8 @@ namespace Monica
     Harvest(json11::Json j);
 
     virtual Harvest* clone() const { return new Harvest(*this); }
+
+    virtual void merge(json11::Json j);
 
     virtual json11::Json to_json(bool includeFullCropParameters = true) const;
 
@@ -151,6 +160,8 @@ namespace Monica
 
     virtual Cutting* clone() const {return new Cutting(*this); }
 
+    virtual void merge(json11::Json j);
+
     virtual json11::Json to_json() const;
 
 		virtual void apply(MonicaModel* model);
@@ -168,6 +179,8 @@ namespace Monica
     MineralFertiliserApplication(json11::Json object);
 
     virtual MineralFertiliserApplication* clone() const {return new MineralFertiliserApplication(*this); }
+
+    virtual void merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -196,6 +209,8 @@ namespace Monica
 
     virtual OrganicFertiliserApplication* clone() const {return new OrganicFertiliserApplication(*this); }
 
+    virtual void merge(json11::Json j);
+
     virtual json11::Json to_json() const;
 
     virtual void apply(MonicaModel* model);
@@ -210,7 +225,7 @@ namespace Monica
 		bool incorporation() const { return _incorporation; }
 
   private:
-    const OrganicMatterParametersPtr _params;
+    OrganicMatterParametersPtr _params;
     double _amount{0.0};
     bool _incorporation{false};
 	};
@@ -225,6 +240,8 @@ namespace Monica
     TillageApplication(json11::Json object);
 
     virtual TillageApplication* clone() const {return new TillageApplication(*this); }
+
+    virtual void merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -248,6 +265,8 @@ namespace Monica
 
     virtual IrrigationApplication* clone() const {return new IrrigationApplication(*this); }
 
+    virtual void merge(json11::Json j);
+
     virtual json11::Json to_json() const;
 
 		virtual void apply(MonicaModel* model);
@@ -267,7 +286,9 @@ namespace Monica
 
   WSPtr makeWorkstep(json11::Json object);
 
-  class CultivationMethod : public std::multimap<Tools::Date, WSPtr>
+  class CultivationMethod
+      : public Tools::Json11Serializable
+      , public std::multimap<Tools::Date, WSPtr>
 	{
 	public:
     CultivationMethod(const std::string& name = std::string("Fallow"));
@@ -277,7 +298,9 @@ namespace Monica
 
     CultivationMethod(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
+
+    virtual json11::Json to_json() const;
 
 		template<class Application>
 		void addApplication(const Application& a)

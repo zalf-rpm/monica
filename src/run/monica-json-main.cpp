@@ -130,23 +130,32 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 		{
 			auto type = j[1].string_value();
 			if(type == "mineral_fertiliser")
-				return make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()).to_json(), true);
+				return make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()).to_json(), 
+												 true);
 			else if(type == "organic_fertiliser")
-				return make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value())->to_json(), true);
+				return make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value())->to_json(), 
+												 true);
 			else if(type == "crop_residue"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				return make_pair(getResidueParametersFromMonicaDB(j[2].string_value(), j[3].string_value())->to_json(), true);
+				return make_pair(getResidueParametersFromMonicaDB(j[2].string_value(), 
+																													j[3].string_value())->to_json(), 
+												 true);
 			else if(type == "species")
-				return make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value())->to_json(), true);
+				return make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value())->to_json(), 
+												 true);
 			else if(type == "cultivar"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				return make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(), j[3].string_value())->to_json(), true);
+				return make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(), 
+																													 j[3].string_value())->to_json(), 
+												 true);
 			else if(type == "crop"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(), j[3].string_value())->to_json(), true);
+				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(), 
+																											 j[3].string_value())->to_json(), 
+												 true);
 		}
 
 		return make_pair(j, false);
@@ -167,26 +176,42 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 	return m;
 }
 
-void parseAndRunMonica(const string& pathToInputFiles)
+void parseAndRunMonica(const string& pathToInputFiles, 
+											 const string& projectName)
 {
-	CentralParameterProvider cpp = readUserParameterFromDatabase(MODE_HERMES);
-	
 	vector<Json> cropSiteSim;
 	for(auto p : {"crop.json", "site.json", "sim.json"})
-		cropSiteSim.push_back(readAndParseFile(pathToInputFiles + "/" + p));
+		cropSiteSim.push_back(readAndParseFile(pathToInputFiles + "/" 
+																					 + projectName + "." + p));
 
 	vector<Json> cropSiteSim2;
 	for(auto& j : cropSiteSim)
 		cropSiteSim2.push_back(findAndReplaceReferences(j, j));
 
-	auto str = cropSiteSim2[0].dump();
-	cout << str << endl;
-
-
-
+	for(auto j : cropSiteSim2)
+	{
+		auto str = j.dump(); 
+		str;
+	}
+	
+	auto cropj = cropSiteSim2.at(0);
+	auto sitej = cropSiteSim2.at(1);
+	auto simj = cropSiteSim2.at(2);
 
 	Env env;
+	env.params = readUserParameterFromDatabase(MODE_HERMES);
 
+	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
+	env.params.site.merge(sitej["SiteParameters"]);
+
+	for(Json cmj : cropj["cropRotation"].array_items())
+		env.cropRotation.push_back(cmj);
+	
+
+
+
+
+	
 
 
 
@@ -200,9 +225,13 @@ void parseAndRunMonica(const string& pathToInputFiles)
 #include "soil/soil.h"
 int main(int argc, char** argv)
 {
-	Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
-	auto j2 = findAndReplaceReferences(j, j);
-	auto str = j2.dump();
+	parseAndRunMonica("installer/Hohenfinow2/json", "test");
+
+
+
+	//Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
+	//auto j2 = findAndReplaceReferences(j, j);
+	//auto str = j2.dump();
 	
 	//auto res = Soil::fcSatPwpFromKA5textureClass("fS",
 	//																						 0,

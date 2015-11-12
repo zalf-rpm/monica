@@ -79,20 +79,17 @@ namespace Monica
 //    std::string berestRequestPort;
 
     //zeromq reply socket for datastream controlled MONICA run
-//    std::unique_ptr<zmq::socket_t> datastream;
     std::string inputDatastreamAddress;
     std::string inputDatastreamProtocol;
 //    std::string inputDatastreamHost;
     std::string inputDatastreamPort;
 
     //zeromq publish socket for outputs of MONICA
-//    std::unique_ptr<zmq::socket_t> outputstream;
     std::string outputDatastreamAddress;
     std::string outputDatastreamProtocol;
 //    std::string outputDatastreamHost;
     std::string outputDatastreamPort;
 
-//		bool writeOutputFiles{false};
   private:
     //! Variable for differentiate betweend execution modes of MONICA
     int mode{MODE_LC_DSS};

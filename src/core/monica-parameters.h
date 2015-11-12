@@ -312,7 +312,7 @@ namespace Monica
 	/**
 	 * @brief structure holding the results for a particular crop (in one year usually)
 	 */
-	struct PVResult
+  struct PVResult : public Tools::Json11Serializable
 	{
     PVResult() {}
 
@@ -320,7 +320,9 @@ namespace Monica
 
     PVResult(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
+
+    virtual json11::Json to_json() const;
 
 		//! id of crop
     CropId id{-1};
@@ -341,7 +343,7 @@ namespace Monica
 	/**
 	 * @brief
 	 */
-	struct YieldComponent
+  struct YieldComponent : public Tools::Json11Serializable
 	{
     YieldComponent(){}
 
@@ -349,9 +351,9 @@ namespace Monica
 
     YieldComponent(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     int organId{-1};
     double yieldPercentage{0.0};
@@ -360,15 +362,15 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct SpeciesParameters
+  struct SpeciesParameters : public Tools::Json11Serializable
   {
     SpeciesParameters() {}
 
     SpeciesParameters(json11::Json j);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     size_t pc_NumberOfDevelopmentalStages() const { return pc_BaseTemperature.size(); }
     size_t pc_NumberOfOrgans() const { return pc_OrganGrowthRespiration.size(); }
@@ -427,15 +429,15 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct CultivarParameters
+  struct CultivarParameters : public Tools::Json11Serializable
   {
     CultivarParameters() {}
 
     CultivarParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     size_t pc_NumberOfDevelopmentalStages() const { return pc_BaseDaylength.size(); }
 
@@ -486,7 +488,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct CropParameters
+  struct CropParameters : public Tools::Json11Serializable
   {
     CropParameters() {}
 
@@ -494,9 +496,11 @@ namespace Monica
 
     CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    void merge(json11::Json sj, json11::Json cj);
+
+    virtual json11::Json to_json() const;
 
     std::string pc_CropName() const { return speciesParams.pc_SpeciesId + "/" + cultivarParams.pc_CultivarId; }
 
@@ -515,7 +519,7 @@ namespace Monica
    * Simple data structure that holds information about mineral fertiliser.
    * @author Xenia Holtmann, Dr. Claas Nendel
    */
-  class MineralFertiliserParameters
+  class MineralFertiliserParameters : public Tools::Json11Serializable
   {
   public:
     MineralFertiliserParameters() {}
@@ -528,9 +532,9 @@ namespace Monica
                                 double no3,
                                 double nh4);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
 		std::string getId() const { return id; }
 		void setId(const std::string& id) { this->id = id; }
@@ -572,7 +576,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct NMinUserParameters
+  struct NMinUserParameters : public Tools::Json11Serializable
   {
     NMinUserParameters() {}
 
@@ -580,9 +584,9 @@ namespace Monica
 
     NMinUserParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double min{0.0};
     double max{0.0};
@@ -591,7 +595,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct IrrigationParameters
+  struct IrrigationParameters : public Tools::Json11Serializable
   {
     IrrigationParameters() {}
 
@@ -599,9 +603,9 @@ namespace Monica
 
     IrrigationParameters(json11::Json object);
 
-    virtual json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double nitrateConcentration{0.0};
     double sulfateConcentration{0.0};
@@ -617,9 +621,9 @@ namespace Monica
 
     AutomaticIrrigationParameters(json11::Json object);
 
-    virtual json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double amount{17.0};
     double treshold{0.35};
@@ -627,16 +631,16 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  class MeasuredGroundwaterTableInformation
+  class MeasuredGroundwaterTableInformation : public Tools::Json11Serializable
   {
   public:
     MeasuredGroundwaterTableInformation() {}
 
     MeasuredGroundwaterTableInformation(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     void readInGroundwaterInformation(std::string path);
 
@@ -654,15 +658,15 @@ namespace Monica
 	/**
 	 * @author Claas Nendel, Michael Berg
 	 */
-	struct SiteParameters
+  struct SiteParameters : public Tools::Json11Serializable
 	{
     SiteParameters(){}
 
     SiteParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double vs_Latitude{60.0};
     //! slope [m m-1]
@@ -684,7 +688,7 @@ namespace Monica
 	/**
 	* @brief Data structure that containts all relevant parameters for the automatic yield trigger.
 	*/
-	class AutomaticHarvestParameters
+  class AutomaticHarvestParameters : public Tools::Json11Serializable
 	{
   public:
     //! Enumeration for defining automatic harvesting times
@@ -703,9 +707,9 @@ namespace Monica
 
     AutomaticHarvestParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const;
+    virtual json11::Json to_json() const;
 
     //! Setter for automatic harvest time
     void setHarvestTime(HarvestTime time) { _harvestTime = time; }
@@ -726,7 +730,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct NMinCropParameters
+  struct NMinCropParameters : public Tools::Json11Serializable
 	{
     NMinCropParameters() {}
 
@@ -734,9 +738,9 @@ namespace Monica
 
     NMinCropParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double samplingDepth{0.0};
     double nTarget{0.0};
@@ -745,15 +749,15 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct OrganicMatterParameters
+  struct OrganicMatterParameters : public Tools::Json11Serializable
   {
     OrganicMatterParameters() {}
 
     OrganicMatterParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double vo_AOM_DryMatterContent{0.0}; //!< Dry matter content of added organic matter [kg DM kg FM-1]
     double vo_AOM_NH4Content{0.0}; //!< Ammonium content in added organic matter [kg N kg DM-1]
@@ -785,9 +789,9 @@ namespace Monica
 
     OrganicFertiliserParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     std::string id;
     std::string name;
@@ -803,9 +807,9 @@ namespace Monica
 
     CropResidueParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     std::string species;
     std::string cultivar;
@@ -819,15 +823,15 @@ namespace Monica
 	 * Class that holds information of crop defined by user.
 	 * @author Xenia Specka
 	 */
-  struct UserCropParameters
+  struct UserCropParameters : public Tools::Json11Serializable
 	{
     UserCropParameters() {}
 
     UserCropParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double pc_CanopyReflectionCoefficient{0.0};
     double pc_ReferenceMaxAssimilationRate{0.0};
@@ -857,15 +861,15 @@ namespace Monica
 	 * Class that holds information about user defined environment parameters.
 	 * @author Xenia Specka
 	 */
-  struct UserEnvironmentParameters
+  struct UserEnvironmentParameters : public Tools::Json11Serializable
 	{
     UserEnvironmentParameters(){}
 
     UserEnvironmentParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     bool p_UseAutomaticIrrigation{false};
     AutomaticIrrigationParameters p_AutoIrrigationParams;
@@ -892,7 +896,6 @@ namespace Monica
 
     int p_StartPVIndex{0};
     int p_JulianDayAutomaticFertilising{0};
-
 	};
 
   //----------------------------------------------------------------------------
@@ -901,15 +904,15 @@ namespace Monica
 	 * Class that holds information about user defined soil moisture parameters.
 	 * @author Xenia Specka
 	 */
-  struct UserSoilMoistureParameters
+  struct UserSoilMoistureParameters : public Tools::Json11Serializable
 	{
     UserSoilMoistureParameters(){}
 
     UserSoilMoistureParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     std::function<double(std::string, int)> getCapillaryRiseRate;
 
@@ -945,15 +948,15 @@ namespace Monica
 	 * Class that holds information about user defined soil temperature parameters.
 	 * @author Xenia Specka
 	 */
-  struct UserSoilTemperatureParameters
+  struct UserSoilTemperatureParameters : public Tools::Json11Serializable
 	{
     UserSoilTemperatureParameters(){}
 
     UserSoilTemperatureParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double pt_NTau{0.0};
     double pt_InitialSurfaceTemperature{0.0};
@@ -976,15 +979,15 @@ namespace Monica
 	 * Class that holds information about user defined soil transport parameters.
 	 * @author Xenia Specka
 	 */
-  struct UserSoilTransportParameters
+  struct UserSoilTransportParameters : public Tools::Json11Serializable
 	{
     UserSoilTransportParameters(){}
 
     UserSoilTransportParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double pq_DispersionLength{0.0};
     double pq_AD{0.0};
@@ -998,15 +1001,15 @@ namespace Monica
 	 * Class that holds information about user-defined soil organic parameters.
 	 * @author Claas Nendel
 	 */
-  struct UserSoilOrganicParameters
+  struct UserSoilOrganicParameters : public Tools::Json11Serializable
 	{
     UserSoilOrganicParameters(){}
 
     UserSoilOrganicParameters(json11::Json object);
 
-    json11::Json to_json() const;
+    virtual void merge(json11::Json j);
 
-    std::string toString() const { return to_json().dump(); }
+    virtual json11::Json to_json() const;
 
     double po_SOM_SlowDecCoeffStandard{4.30e-5}; // 4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
     double po_SOM_FastDecCoeffStandard{1.40e-4}; // 1.40e-4 [d-1], from DAISY manual 1.4e-4

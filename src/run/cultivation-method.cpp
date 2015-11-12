@@ -60,8 +60,14 @@ WorkStep::WorkStep(const Tools::Date& d)
 {}
 
 WorkStep::WorkStep(json11::Json j)
-  : _date(Date::fromIsoDateString(string_value(j, "date")))
-{}
+{
+  merge(j);
+}
+
+void WorkStep::merge(json11::Json j)
+{
+  set_iso_date_value(_date, j, "date");
+}
 
 json11::Json WorkStep::to_json() const
 {
@@ -78,9 +84,15 @@ Seed::Seed(const Tools::Date& at, CropPtr crop)
 {}
 
 Seed::Seed(json11::Json j)
-  : WorkStep(j)
-  , _crop(std::make_shared<Crop>(j["crop"]))
-{}
+{
+  merge(j);
+}
+
+void Seed::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+  set_shared_ptr_value(_crop, j, "crop");
+}
 
 json11::Json Seed::to_json(bool includeFullCropParameters) const
 {
@@ -109,13 +121,19 @@ Harvest::Harvest(const Tools::Date& at,
 {}
 
 Harvest::Harvest(json11::Json j)
-  : WorkStep(j)
-  , _crop(std::make_shared<Crop>(j["crop"]))
-  , _cropResult(new PVResult(_crop->id()))
-  , _method(j["method"].string_value())
-  , _percentage(j["percentage"].number_value())
-  , _exported(j["exported"].bool_value())
-{}
+{
+  merge(j);
+}
+
+void Harvest::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+  set_shared_ptr_value(_crop, j, "crop");
+  _cropResult = make_shared<PVResult>(_crop->id());
+  set_string_value(_method, j, "method");
+  set_double_value(_percentage, j, "percentage");
+  set_bool_value(_exported, j, "exported");
+}
 
 json11::Json Harvest::to_json(bool includeFullCropParameters) const
 {
@@ -216,7 +234,14 @@ Cutting::Cutting(const Tools::Date& at)
 
 Cutting::Cutting(json11::Json j)
   : WorkStep(j)
-{}
+{
+  merge(j);
+}
+
+void Cutting::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+}
 
 json11::Json Cutting::to_json() const
 {
@@ -251,19 +276,26 @@ void Cutting::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-MineralFertiliserApplication::MineralFertiliserApplication(const Tools::Date& at,
-                                                           MineralFertiliserParameters partition,
-                                                           double amount)
+MineralFertiliserApplication::
+MineralFertiliserApplication(const Tools::Date& at,
+                             MineralFertiliserParameters partition,
+                             double amount)
   : WorkStep(at)
   , _partition(partition)
   , _amount(amount)
 {}
 
 MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
-  : WorkStep(j)
-  , _partition(j["partition"])
-  , _amount(double_value(j, "amount"))
-{}
+{
+  merge(j);
+}
+
+void MineralFertiliserApplication::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+  set_value_obj_value(_partition, j, "partition");
+  set_double_value(_amount, j, "amount");
+}
 
 json11::Json MineralFertiliserApplication::to_json() const
 {
@@ -282,10 +314,11 @@ void MineralFertiliserApplication::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at,
-                                                           OrganicMatterParametersPtr params,
-                                                           double amount,
-                                                           bool incorp)
+OrganicFertiliserApplication::
+OrganicFertiliserApplication(const Tools::Date& at,
+                             OrganicMatterParametersPtr params,
+                             double amount,
+                             bool incorp)
   : WorkStep(at)
   , _params(params)
   , _amount(amount)
@@ -293,11 +326,17 @@ OrganicFertiliserApplication::OrganicFertiliserApplication(const Tools::Date& at
 {}
 
 OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
-  : WorkStep(Tools::Date::fromIsoDateString(j["date"].string_value()))
-  , _params(make_shared<OrganicMatterParameters>(j["parameters"]))
-  , _amount(j["amount"].number_value())
-  , _incorporation(j["incorporation"].bool_value())
-{}
+{
+  merge(j);
+}
+
+void OrganicFertiliserApplication::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+  set_shared_ptr_value(_params, j, "parameters");
+  set_double_value(_amount, j, "amount");
+  set_bool_value(_incorporation, j, "incorporation");
+}
 
 json11::Json OrganicFertiliserApplication::to_json() const
 {
@@ -319,14 +358,20 @@ void OrganicFertiliserApplication::apply(MonicaModel* model)
 
 TillageApplication::TillageApplication(const Tools::Date& at,
                                        double depth)
-  : WorkStep(at),
-    _depth(depth)
+  : WorkStep(at)
+  , _depth(depth)
 {}
 
 TillageApplication::TillageApplication(json11::Json j)
-  : WorkStep(j),
-    _depth(double_value(j, "depth"))
-{}
+{
+  merge(j);
+}
+
+void TillageApplication::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+  set_double_value(_depth, j, "depth");
+}
 
 json11::Json TillageApplication::to_json() const
 {
@@ -347,16 +392,22 @@ void TillageApplication::apply(MonicaModel* model)
 IrrigationApplication::IrrigationApplication(const Tools::Date& at,
                       double amount,
                       IrrigationParameters params)
-  : WorkStep(at),
-    _amount(amount),
-    _params(params)
+  : WorkStep(at)
+  , _amount(amount)
+  , _params(params)
 {}
 
 IrrigationApplication::IrrigationApplication(json11::Json j)
-  : WorkStep(j),
-    _amount(double_value(j, "amount")),
-    _params(j["parameters"])
-{}
+{
+  merge(j);
+}
+
+void IrrigationApplication::merge(json11::Json j)
+{
+  WorkStep::merge(j);
+  set_double_value(_amount, j, "amount");
+  set_value_obj_value(_params, j, "parameters");
+}
 
 json11::Json IrrigationApplication::to_json() const
 {
@@ -401,9 +452,9 @@ CultivationMethod::CultivationMethod(const string& name)
 {}
 
 CultivationMethod::CultivationMethod(CropPtr crop, const std::string& name)
-  : _name(name.empty() ? crop->speciesName() + "/" + crop->cultivarName() : name),
-    _crop(crop),
-    _cropResult(new PVResult(crop->id()))
+  : _name(name.empty() ? crop->speciesName() + "/" + crop->cultivarName() : name)
+  , _crop(crop)
+  , _cropResult(new PVResult(crop->id()))
 {
   debug() << "ProductionProcess: " << name.c_str() << endl;
 
@@ -424,13 +475,21 @@ CultivationMethod::CultivationMethod(CropPtr crop, const std::string& name)
 }
 
 CultivationMethod::CultivationMethod(json11::Json j)
-  : _customId(int_value(j, "customId"))
-  , _name(string_value(j, "name"))
-  , _crop(new Crop(j["crop"]))
-  , _irrigateCrop(bool_value(j, "irrigateCrop"))
+
 {
+  merge(j);
+}
+
+void CultivationMethod::merge(json11::Json j)
+{
+  set_int_value(_customId, j, "customId");
+  set_string_value(_name, j, "name");
+  set_shared_ptr_value(_crop, j, "crop");
+  set_bool_value(_irrigateCrop, j, "irrigateCrop");
+
   for(auto ws : j["worksteps"].array_items())
-    insert(make_pair(Date::fromIsoDateString(string_value(ws[0])), makeWorkstep(ws[1])));
+    insert(make_pair(Date::fromIsoDateString(string_value(ws[0])),
+           makeWorkstep(ws[1])));
 }
 
 json11::Json CultivationMethod::to_json() const
@@ -440,7 +499,7 @@ json11::Json CultivationMethod::to_json() const
     wss.push_back(J11Array {d2ws.first.toIsoDateString(), d2ws.second->to_json()});
 
   return J11Object {
-    {"type", "ProductionProcess"},
+    {"type", "CultivationMethod"},
     {"customId", _customId},
     {"name", _name},
     {"crop", _crop->to_json()},
