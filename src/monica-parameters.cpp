@@ -641,6 +641,7 @@ void Harvest::apply(MonicaModel* model)
 		debug() << "crop was already harvested. This must be the fallback harvest application ";
 		debug() << "that is not necessary anymore and should be ignored" << endl;
 	}
+    
 }
 
 string Harvest::toString() const

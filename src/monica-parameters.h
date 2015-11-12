@@ -1081,7 +1081,7 @@ namespace Monica
 	public:
 
 		Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, std::string method = "total")
-			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method) { }
+			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method), _exported(true) { }
 
 		virtual void apply(MonicaModel* model);
 

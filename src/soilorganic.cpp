@@ -880,7 +880,6 @@ void SoilOrganic::fo_MIT() {
   // Calculation of N balance
   vo_CN_Ratio_SOM_Slow = siteParams.vs_Soil_CN_Ratio;
   vo_CN_Ratio_SOM_Fast = siteParams.vs_Soil_CN_Ratio;
-
   for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
 
 		vo_NBalance[i_Layer] = -(vo_SMB_SlowDelta[i_Layer] / po_CN_Ratio_SMB)

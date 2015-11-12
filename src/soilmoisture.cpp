@@ -1327,8 +1327,23 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
 
   } // for
 
-  vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
+  // added implementation to test if groundwater table is lower than leaching depth
+  // to avoid high recharge rates in those cases
 
+  if (pm_LeachingDepthLayer>vm_GroundwaterTable-1) {
+
+     // groundwater is lower than currently defined leaching depth
+     // so user water flux of layer directly above groundwater to calculate
+     // the recharge values
+     vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-1];
+
+  } else {
+
+       // leaching depth is not affected by groundwater so use water flux
+       // at leaching depth layer
+       vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
+
+  }
 }
 
 /**
