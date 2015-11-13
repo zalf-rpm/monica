@@ -1,6 +1,10 @@
-/**
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/*
 Authors: 
-Dr. Claas Nendel <claas.nendel@zalf.de>
+Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
@@ -8,20 +12,7 @@ Maintainers:
 Currently maintained by the authors.
 
 This file is part of the MONICA model. 
-Copyright (C) 2007-2013, Leibniz Centre for Agricultural Landscape Research (ZALF)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #ifndef CROP_GROWTH_H_
@@ -49,7 +40,7 @@ namespace Monica
     SHOOT=2,
     STORAGE_ORGAN=3
   };
-  /**
+  /*
  * @brief  Crop part of model
  *
  * The crop is divided into several organs e.g. root, shoot, leaf, storage organ
@@ -297,18 +288,18 @@ namespace Monica
     inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
 
 
-    /**
+    /*
    * @brief Getter for total biomass.
    * @return total biomass
    */
     inline double totalBiomass() const { return vc_TotalBiomass; }
 
-    /**
+    /*
      * Returns state of plant
      */
     inline bool isDying() const { return this->dyingOut; }
 
-    /**
+    /*
     * @brief Setter for organ biomass.
     * @sets organ biomass
     */
@@ -317,7 +308,7 @@ namespace Monica
       vc_OrganBiomass[organ] = organBiomass;
     }
 
-    /**
+    /*
     * @brief Setter for developmental stage.
     * @sets Developmental stage of crop.
     */
@@ -335,7 +326,7 @@ namespace Monica
       vc_CuttingDelayDays = pc_CuttingDelayDays;
     }
 
-    /**
+    /*
     * @brief Setter for maximum assimilation rate.
     * @modifies maximum assimilation rate
     */
@@ -344,7 +335,7 @@ namespace Monica
       pc_MaxAssimilationRate = modifier * pc_MaxAssimilationRate;
     }
 
-    /**
+    /*
     * @brief Setter for organ biomass.
     * @sets organ biomass
     */
@@ -352,7 +343,7 @@ namespace Monica
     {
       vc_TotalBiomassNContent = BiomassNContent;
     }
-    /**
+    /*
     * @brief Setter for primary crop yield.
     * @sets primary crop yield
     */
