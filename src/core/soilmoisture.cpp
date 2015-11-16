@@ -1280,50 +1280,71 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
  * @brief Calculation of groundwater replenishment
  *
  */
-void SoilMoisture::fm_GroundwaterReplenishment() {
-  int vm_StartLayer;
-
+void SoilMoisture::fm_GroundwaterReplenishment()
+{
   // do nothing if groundwater is not within profile
-  if (vm_GroundwaterTable > vs_NumberOfLayers) {
+  if (vm_GroundwaterTable > vs_NumberOfLayers)
     return;
-  }
 
   // Auffuellschleife von GW-Oberflaeche in Richtung Oberflaeche
-  vm_StartLayer = vm_GroundwaterTable;
+  int vm_StartLayer = vm_GroundwaterTable;
 
-  if (vm_StartLayer > vm_NumberOfLayers - 2) {
+  if (vm_StartLayer > vm_NumberOfLayers - 2)
     vm_StartLayer = vm_NumberOfLayers - 2;
-  }
 
-  for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--) {
+  for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--)
+  {
+    vm_SoilMoisture[i_Layer] += vm_GroundwaterAdded
+                                / 1000.0
+                                / vm_LayerThickness[i_Layer + 1];
 
-    vm_SoilMoisture[i_Layer] += vm_GroundwaterAdded / 1000.0 / vm_LayerThickness[i_Layer + 1];
-
-    if (i_Layer == vm_StartLayer){
+    if (i_Layer == vm_StartLayer)
+    {
       vm_PercolationRate[i_Layer] = vm_GroundwaterDischarge;
-    } else {
+    }
+    else
+    {
       vm_PercolationRate[i_Layer] -= vm_GroundwaterAdded; // Fluss_u durch Grundwasser
       vm_WaterFlux[i_Layer + 1] = vm_PercolationRate[i_Layer]; // Fluss_u durch Grundwasser
     }
 
-    if (vm_SoilMoisture[i_Layer] > vm_SoilPoreVolume[i_Layer]) {
-
-      vm_GroundwaterAdded = (vm_SoilMoisture[i_Layer] - vm_SoilPoreVolume[i_Layer]) * 1000.0
-	* vm_LayerThickness[i_Layer + 1];
+    if (vm_SoilMoisture[i_Layer] > vm_SoilPoreVolume[i_Layer])
+    {
+      vm_GroundwaterAdded = (vm_SoilMoisture[i_Layer] - vm_SoilPoreVolume[i_Layer])
+                            * 1000.0
+                            * vm_LayerThickness[i_Layer + 1];
       vm_SoilMoisture[i_Layer] = vm_SoilPoreVolume[i_Layer];
       vm_GroundwaterTable--; // Groundwater table rises
 
-      if (i_Layer == 0 && vm_GroundwaterTable == 0) {
-
+      if (i_Layer == 0 && vm_GroundwaterTable == 0)
+      {
         // if groundwater reaches surface
         vm_SurfaceWaterStorage += vm_GroundwaterAdded;
         vm_GroundwaterAdded = 0.0;
       }
-    } else {
+    }
+    else
+    {
       vm_GroundwaterAdded = 0.0;
     }
 
   } // for
+
+  // added implementation to test if groundwater table is lower than leaching depth
+  // to avoid high recharge rates in those cases
+  if(pm_LeachingDepthLayer > vm_GroundwaterTable - 1)
+  {
+    // groundwater is lower than currently defined leaching depth
+    // so user water flux of layer directly above groundwater to calculate
+    // the recharge values
+    vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable - 1];
+  }
+  else
+  {
+    // leaching depth is not affected by groundwater so use water flux
+    // at leaching depth layer
+    vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
+  }
 }
 
 /**

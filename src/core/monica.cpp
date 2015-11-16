@@ -151,7 +151,8 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 	//could be just a fallow, so there might be no CropGrowth object
 	if (_currentCrop.get() && _currentCrop->isValid())
   {
-		if (!exported){
+    if(!exported)
+    {
 			//prepare to add the total plant to soilorganic (AOMs)
 			double abovegroundBiomass = _currentCropGrowth->get_AbovegroundBiomass();
 			double abovegroundBiomassNConcentration = 
@@ -233,9 +234,7 @@ void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 		_currentCropGrowth->set_OrganBiomass(3, fruitToRemain);
 		_currentCropGrowth->set_TotalBiomassNContent(totalBiomassNToRemain);
 
-		if (!exported){
-		}
-		else 
+    if(exported)
 		{
 			//no crop residues are added to soilorganic (AOMs)
 			debug() << "adding no organic matter from fruit residues to soilOrganic" << endl;
@@ -243,11 +242,10 @@ void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 	}
 }
 
-
 void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropGrowth object
-	if (_currentCrop.get() && _currentCrop->isValid())
+  if(_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove leaves
 		double currentLeafBiomass = _currentCropGrowth->get_OrganBiomass(1);
@@ -255,7 +253,8 @@ void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
 		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
 
-		if (!exported){
+    if(!exported)
+    {
 			//prepare to add crop residues to soilorganic (AOMs)
 			double leafResidueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
 			debug() << "adding organic matter from leaf residues to soilOrganic" << endl;
@@ -263,17 +262,16 @@ void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 				<< " Leaf residue N concentration: " << leafResidueNConcentration << endl;
 			
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				leavesToRemove, leafResidueNConcentration);
-
+                                    leavesToRemove,
+                                    leafResidueNConcentration);
 		}
-		
 	}
 }
 
 void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropGrowth object
-	if (_currentCrop.get() && _currentCrop->isValid())
+  if(_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove tips
 		double currentLeafBiomass = _currentCropGrowth->get_OrganBiomass(1);
@@ -285,7 +283,8 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
 		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
 
-		if (!exported){
+    if(!exported)
+    {
 			//prepare to add crop residues to soilorganic (AOMs)
 			double tipResidues = leavesToRemove + shootsToRemove;
 			double tipResidueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
@@ -294,7 +293,8 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 				<< " Tip residue N concentration: " << tipResidueNConcentration << endl;
 
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				tipResidues, tipResidueNConcentration);
+                                    tipResidues,
+                                    tipResidueNConcentration);
 		}
 	}
 }
@@ -314,16 +314,18 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 		_currentCropGrowth->set_OrganBiomass(1, leavesToRemain);
 		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
 
-		if (!exported){
+    if (!exported)
+    {
 			//prepare to add crop residues to soilorganic (AOMs)
 			double tipResidues = leavesToRemove + shootsToRemove;
 			double tipResidueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
-			debug() << "adding organic matter from shoot and leaf residues to soilOrganic" << endl;
-			debug() << "Shoot and leaf residue biomass: " << tipResidues
+      debug() << "adding organic matter from shoot and leaf residues to soilOrganic" << endl;
+      debug() << "Shoot and leaf residue biomass: " << tipResidues
 				<< " Tip residue N concentration: " << tipResidueNConcentration << endl;
 
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				tipResidues, tipResidueNConcentration);
+      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+                                    tipResidues,
+                                    tipResidueNConcentration);
 		}
 	}
 }
@@ -346,7 +348,8 @@ void MonicaModel::incorporateCurrentCrop()
         << " Total N concentration: " << totalNConcentration << endl;
 
     _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                  total_biomass, totalNConcentration);
+                                  total_biomass,
+                                  totalNConcentration);
   }
 
   delete _currentCropGrowth;
@@ -356,8 +359,6 @@ void MonicaModel::incorporateCurrentCrop()
   _soilColumn.remove_Crop();
   _soilMoisture.remove_Crop();
 }
-
-
 
 /**
  * @brief Simulating cutting of crop.
@@ -389,7 +390,8 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 		_currentCropGrowth->set_CuttingDelayDays(); // sets delay after cutting according to crop database
 		_currentCropGrowth->set_MaxAssimilationRate(0.9); // Reduces maximum assimilation rate by 10%
 
-		if (!exported){
+    if (!exported)
+    {
 			//prepare to add crop residues to soilorganic (AOMs)
 			double residues = leavesToRemove + shootsToRemove + fruitsToRemove;
 			double residueNConcentration = _currentCropGrowth->get_AbovegroundBiomassNConcentration();
@@ -398,11 +400,11 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 				<< " Residue N concentration: " << residueNConcentration << endl;
 
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				residues, residueNConcentration);
+                                    residues,
+                                    residueNConcentration);
 		}
 	}
 }
-
 
 /**
  * @brief Applying of fertilizer.
