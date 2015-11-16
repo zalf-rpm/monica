@@ -837,7 +837,7 @@ SoilMoisture::~SoilMoisture()
 void SoilMoisture::step(double vs_GroundwaterDepth, double vw_Precipitation, double vw_MaxAirTemperature,
     double vw_MinAirTemperature, double vw_RelativeHumidity, double vw_MeanAirTemperature, double vw_WindSpeed,
     double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay) {
-
+  
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
 
     // initialization with moisture values stored in the layer
@@ -1234,7 +1234,6 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
   for (int i_Layer = 0; i_Layer < vm_NumberOfLayers - 1; i_Layer++) {
 
     if (i_Layer < vm_GroundwaterTable - 1) {
-
       // well above groundwater table
       vm_SoilMoisture[i_Layer + 1] += vm_PercolationRate[i_Layer] / 1000.0 / vm_LayerThickness[i_Layer];
       vm_WaterFlux[i_Layer + 1] = vm_PercolationRate[i_Layer];
@@ -1245,7 +1244,6 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
         vm_GravitationalWater[i_Layer + 1]
 	  = (vm_SoilMoisture[i_Layer + 1] - vm_FieldCapacity[i_Layer + 1]) * 1000.0 * vm_LayerThickness[i_Layer
 	      + 1];
-
         vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent->getLambdaRedux(i_Layer + 1);
         vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[i_Layer + 1];
         vm_PercolationRate[i_Layer + 1] = ((vm_GravitationalWater[i_Layer + 1] * vm_GravitationalWater[i_Layer + 1]
@@ -1278,7 +1276,6 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
     // when the layer directly above ground water table is reached
     if (i_Layer == vm_GroundwaterTable - 1) {
 
-
       // groundwater table shall not undermatch the oscillating groundwater depth
       // which is generated within the outer framework
       if (vm_GroundwaterTable >= int(vs_GroundwaterDepth / vm_LayerThickness[i_Layer])) {
@@ -1292,7 +1289,7 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
         vm_PercolationRate[i_Layer + 1] = vm_GroundwaterDischarge;
         vm_WaterFlux[i_Layer + 1] = vm_GroundwaterDischarge;
       }
-
+      
       if (vm_SoilMoisture[i_Layer + 1] >= vm_SoilPoreVolume[i_Layer + 1]) {
 
         //vm_GroundwaterTable--; // Rising groundwater table if vm_SoilMoisture > soil pore volume
@@ -1311,9 +1308,9 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
 
     } // if (i_Layer == vm_GroundwaterTable - 1)
 
+
     // when the groundwater table is reached
     if (i_Layer > vm_GroundwaterTable - 1) {
-
       vm_SoilMoisture[i_Layer + 1] = vm_SoilPoreVolume[i_Layer + 1];
 
       if (vm_GroundwaterTable >= int(vs_GroundwaterDepth / vm_LayerThickness[i_Layer])) {
@@ -1327,23 +1324,6 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
 
   } // for
 
-  // added implementation to test if groundwater table is lower than leaching depth
-  // to avoid high recharge rates in those cases
-
-  if (pm_LeachingDepthLayer>vm_GroundwaterTable-1) {
-
-     // groundwater is lower than currently defined leaching depth
-     // so user water flux of layer directly above groundwater to calculate
-     // the recharge values
-     vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-1];
-
-  } else {
-
-       // leaching depth is not affected by groundwater so use water flux
-       // at leaching depth layer
-       vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
-
-  }
 }
 
 /**
@@ -1394,6 +1374,13 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
     }
 
   } // for
+  
+  if (pm_LeachingDepthLayer>vm_GroundwaterTable-1) {
+    vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-2];
+  } else {
+    vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
+  }
+ 
 }
 
 /**
@@ -1494,6 +1481,7 @@ void SoilMoisture::fm_BackwaterReplenishment() {
       vm_BackwaterAdded = 0.0;
     }
   } // for
+ 
 }
 
 /**
