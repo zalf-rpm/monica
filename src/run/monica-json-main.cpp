@@ -29,12 +29,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica-typedefs.h"
 #include "../core/monica.h"
 #include "tools/json11-helper.h"
+#include "climate/climate-file-io.h"
 
 using namespace std;
 using namespace Monica;
 using namespace json11;
 using namespace Tools;
-
+using namespace Climate;
 
 Json readAndParseFile(string path)
 {
@@ -170,6 +171,8 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 void parseAndRunMonica(const string& pathToInputFiles, 
 											 const string& projectName)
 {
+	cout << "entering parseAndRunMonica" << endl;
+
 	vector<Json> cropSiteSim;
 	for(auto p : {"crop.json", "site.json", "sim.json"})
 		cropSiteSim.push_back(readAndParseFile(pathToInputFiles + "/" 
@@ -198,18 +201,26 @@ void parseAndRunMonica(const string& pathToInputFiles,
 	for(Json cmj : cropj["cropRotation"].array_items())
 		env.cropRotation.push_back(cmj);
 	
-
-
-
-
+	env.da = readClimateDataFromCSVFile(pathToInputFiles + "/climate.csv",
+																			",",
+																			{day, month, year, none, 
+																			tmin, tavg, tmax, precip, 
+																			globrad, relhumid, wind}//,
+																			//Date(1,1,2015),
+																			//Date(31,12,2017)
+																			);
+	if(!env.da.isValid())
+		return;
 	
 
 
-
+	//activateDebug = true;
 
 
 	Result r = runMonica(env);
 
+	r;
+	cout << "leaving parseAndRunMonica" << endl;
 }
 
 

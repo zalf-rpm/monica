@@ -4,7 +4,7 @@
 		"Slope": 0,
 		"HeightNN": [38 , "m"],
 		"NDeposition": 0,
-		"SoilProfile": [
+		"SoilParameters": [
 			{
 				"Thickness": 0.3,
 				"SoilOrganicCarbon": 0.34,
@@ -40,7 +40,7 @@
 				"SoilMoisturePercentFC": [100.0, "%"]
 			},
 			{
-				"Thickness": 1.3,
+				"Thickness": 1.1,
 				"SoilOrganicCarbon": 0.34,
 				"KA5TextureClass": "Ls2",
 				"Sand": 0.15,

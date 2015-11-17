@@ -478,16 +478,16 @@ void CultivationMethod::merge(json11::Json j)
   set_shared_ptr_value(_crop, j, "crop");
   set_bool_value(_irrigateCrop, j, "irrigateCrop");
 
-  for(auto ws : j["worksteps"].array_items())
-    insert(make_pair(Date::fromIsoDateString(string_value(ws[0])),
-           makeWorkstep(ws[1])));
+	for(auto ws : j["worksteps"].array_items())
+		insert(make_pair(Date::fromIsoDateString(string_value(ws, "date")),
+										 makeWorkstep(ws)));
 }
 
 json11::Json CultivationMethod::to_json() const
 {
   auto wss = J11Array();
   for(auto d2ws : *this)
-    wss.push_back(J11Array {d2ws.first.toIsoDateString(), d2ws.second->to_json()});
+    wss.push_back(d2ws.second->to_json());
 
   return J11Object {
     {"type", "CultivationMethod"},
