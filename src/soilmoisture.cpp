@@ -1376,11 +1376,15 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
   } // for
   
   if (pm_LeachingDepthLayer>vm_GroundwaterTable-1) {
-    vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-2];
+    if (vm_GroundwaterTable-1 < 0){
+        vm_FluxAtLowerBoundary = 0.0;
+    } else {
+        vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-1];
+    }
   } else {
     vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   }
- 
+  //cout << "GWN: " << vm_FluxAtLowerBoundary << endl;
 }
 
 /**
