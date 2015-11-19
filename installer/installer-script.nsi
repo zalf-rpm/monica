@@ -99,6 +99,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   ;ADD YOUR OWN FILES HERE...
   File /oname=monica.exe "..\release\monica-${MonicaVersion}.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
+	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
 	File /oname=db-connections.ini "..\db-connections-install.ini"
 	File "license.txt"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
