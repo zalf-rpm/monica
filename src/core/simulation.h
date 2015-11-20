@@ -464,7 +464,9 @@ const Monica::Result runGISSimulation(const GISSimulationConfiguration *simulati
 
 #ifdef RUN_HERMES
 const Monica::Result runWithHermesData( HermesSimulationConfiguration *hermes_config=0);
-const Monica::Result runWithHermesData(const std::string);
+
+Monica::Result runWithHermesData(const std::string& output_path);
+
 HermesSimulationConfiguration * getHermesConfigFromIni(std::string output_path);
 Monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
 #endif

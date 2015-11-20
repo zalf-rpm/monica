@@ -54,7 +54,7 @@ namespace Monica
 	const double UNDEFINED = -9999.9;
 	const int UNDEFINED_INT = -9999;
 
-	enum { MONTH=12 };
+	//enum { MONTH=12 };
 
 	//----------------------------------------------------------------------------
 

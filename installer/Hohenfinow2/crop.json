@@ -1,0 +1,87 @@
+{
+	"crops": {
+		"ww": {
+			"seedDate": "1991-10-13",
+			"harvestDate": "1992-08-08",
+			"cuttingDates": ["1991-11-1", "1991-12-1"],
+			"cropParams": {
+				"species": ["include-from-file", "parameters/crops/wheat.json"], 
+				"cultivar": ["include-from-file", "parameters/crops/wheat/winter wheat.json"]
+			},
+			"residueParams": ["include-from-file", "parameters/crop-residues/wheat.json"]
+		},
+		"ww2": { 
+			"cropParams": {
+				"species": ["include-from-db", "species", "wheat"],
+				"cultivar": ["include-from-db", "cultivar", "wheat", "winter wheat"]
+			},
+			"residueParams": ["include-from-db", "crop_residue", "wheat", ""]
+		},
+		"ww3": { 
+			"cropParams": ["include-from-db", "crop", "wheat", "winter wheat"],
+			"residueParams": ["include-from-db", "crop_residue", "wheat", ""]
+		}
+	},
+
+	"relativeDates" : false,
+	
+	"cropRotation": [
+		{
+			"worksteps": [
+				{ "date": "1991-10-13", "type": "Seed", "crop": ["ref", "crops", "ww2"] },
+				{ "date": "1992-08-08", "type": "Harvest", "crop": ["ref", "crops", "ww2"] },
+				{
+					"type": "TillageApplication",
+					"date": "1991-10-08",
+					"method": "Plough",
+					"depth": [0.3, "m"]
+				},
+				{
+					"type": "IrrigationApplication",
+					"date": "1992-06-08",
+					"amount": [11.0, "mm"],
+					"parameters": {
+						"nitrateConcentration": 0.0,
+						"sulfateConcentration": 0.0
+					}
+				},
+				{
+					"type": "MineralFertiliserApplication",
+					"date": "1991-10-15",
+					"amount": [90.0, "kg N"],
+					"partition": {
+						"id": "AN",
+						"name": "... optional",
+						"Carbamid": [50, "%"],
+						"NH4": [20, "%"],
+						"NO3": [30, "%"]
+					}
+					
+				}
+			],
+			"autoWorksteps": [
+				{
+					"type": "AutomaticIrrigation",
+          "method": "Sprinkler",
+          "eventType": "Fixed",
+          "threshold": 30.0,
+          "area": 1.0,
+          "amount": 11.0,
+          "parameters": {
+						"nitrateConcentration": 0.0,
+						"sulfateConcentration": 0.0
+					}
+        }
+			]
+		},
+		{
+			"worksteps": [
+				{ "date": "1991-10-13", "type": "Seed", "crop": ["ref", "crops", "ww"] },
+				{	"date": "1991-10-08", "type": "TillageApplication", "depth": [0.3, "m"] },
+				{ "date": "1992-06-08", "type": "IrrigationApplication", "amount": [11.0, "mm"] },
+				{ "date": "1991-10-15", "type": "MineralFertiliserApplication", "amount": [90.0, "kg N"], "partition": ["include-from-db", "mineral_fertiliser", "AN"]},
+				{ "date": "1992-08-08", "type": "Harvest", "crop": ["ref", "crops", "ww"] }
+			]
+		}
+	]
+}

@@ -588,7 +588,7 @@ const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParame
 
         int i = 0;
 
-        omp->id = stoi(row[i++]);
+        omp->id = row[i++];
         omp->name = row[i++];
         omp->vo_AOM_DryMatterContent = stof(row[i++]);
         omp->vo_AOM_NH4Content = stof(row[i++]);

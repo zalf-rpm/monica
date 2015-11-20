@@ -297,7 +297,9 @@ pair<FertiliserType, string> Monica::hermesFertiliserName2monicaFertiliserId(con
 //------------------------------------------------------------------------------------
 
 vector<CultivationMethod>
-Monica::cropRotationFromHermesFile(const string& pathToFile, bool useAutomaticHarvestTrigger, AutomaticHarvestParameters autoHarvestParams)
+Monica::cropRotationFromHermesFile(const string& pathToFile, 
+																	 bool useAutomaticHarvestTrigger, 
+																	 AutomaticHarvestParameters autoHarvestParams)
 {
 	vector<CultivationMethod> ff;
 
@@ -467,7 +469,8 @@ Climate::DataAccessor Monica::climateDataFromHermesFiles(const std::string& path
 		//<< "sunhours\t" << "globrad\t" << "precip\t" << "ti\t" << "relhumid\n";
 		while (getline(ifs, s))
 		{
-			//if(trim(s) == "end") break;
+			if(trim(s) == "")
+				continue;
 
 			//Tp_av Tpmin Tpmax T_s10 T_s20 vappd wind sundu radia prec jday RF
 			double td;

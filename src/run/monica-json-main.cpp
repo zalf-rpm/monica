@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica.h"
 #include "tools/json11-helper.h"
 #include "climate/climate-file-io.h"
+#include "../core/simulation.h"
 
 using namespace std;
 using namespace Monica;
@@ -168,15 +169,22 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 	return m;
 }
 
-void parseAndRunMonica(const string& pathToInputFiles, 
-											 const string& projectName)
+struct PARMParams
+{
+	string pathToProjectInputFiles;
+	string projectName;
+	Date startDate, endDate;
+};
+void parseAndRunMonica(PARMParams ps)
 {
 	cout << "entering parseAndRunMonica" << endl;
+	if(!ps.projectName.empty())
+		ps.projectName += ".";
 
 	vector<Json> cropSiteSim;
 	for(auto p : {"crop.json", "site.json", "sim.json"})
-		cropSiteSim.push_back(readAndParseFile(pathToInputFiles + "/" 
-																					 + projectName + "." + p));
+		cropSiteSim.push_back(readAndParseFile(ps.pathToProjectInputFiles + "/"
+																					 + ps.projectName + p));
 
 	vector<Json> cropSiteSim2;
 	for(auto& j : cropSiteSim)
@@ -201,14 +209,12 @@ void parseAndRunMonica(const string& pathToInputFiles,
 	for(Json cmj : cropj["cropRotation"].array_items())
 		env.cropRotation.push_back(cmj);
 	
-	env.da = readClimateDataFromCSVFile(pathToInputFiles + "/climate.csv",
-																			",",
-																			{day, month, year, none, 
-																			tmin, tavg, tmax, precip, 
-																			globrad, relhumid, wind}//,
-																			//Date(1,1,2015),
-																			//Date(31,12,2017)
-																			);
+	env.da = readClimateDataFromCSVFileViaHeaders(ps.pathToProjectInputFiles
+																								+ "/" + ps.projectName + "climate.csv",
+																								",",
+																								ps.startDate, 
+																								ps.endDate);
+
 	if(!env.da.isValid())
 		return;
 	
@@ -223,30 +229,61 @@ void parseAndRunMonica(const string& pathToInputFiles,
 	cout << "leaving parseAndRunMonica" << endl;
 }
 
-
 #include "soil/soil.h"
-int main(int argc, char** argv)
+void test()
 {
-	parseAndRunMonica("installer/Hohenfinow2/json", "test");
-
-
+	auto res = Soil::fcSatPwpFromKA5textureClass("fS",
+																							 0,
+																							 1.5*1000.0,
+																							 0.8/100.0);
 
 	//Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
 	//auto j2 = findAndReplaceReferences(j, j);
 	//auto str = j2.dump();
+}
+
+void writeDbParams()
+{
+	writeCropParameters("parameters/crops");
+	writeMineralFertilisers("parameters/mineral-fertilisers");
+	writeOrganicFertilisers("parameters/organic-fertilisers");
+	writeCropResidues("parameters/crop-residues");
+	writeUserParameters(MODE_HERMES, "parameters/user-parameters");
+	writeUserParameters(MODE_EVA2, "parameters/user-parameters");
+	writeUserParameters(MODE_MACSUR_SCALING, "parameters/user-parameters");
+}
+
+int main(int argc, char** argv)
+{
+	setlocale(LC_ALL, "");
+	setlocale(LC_NUMERIC, "C");
+
+	//use a possibly non-default db-connections.ini
+	//Db::dbConnectionParameters("db-connections.ini");
+
+	if(argc == 2 && argv[1] == "hermes")
+		Monica::runWithHermesData(fixSystemSeparator(argv[1]));
+	else if(argc > 1)
+	{
+		map<string, string> params;
+		PARMParams ps;
+		if((argc - 1) % 2 == 0)
+		{
+			for(size_t i = 1; i < argc; i += 2)
+				params[toLower(argv[i])] = argv[i + 1];
+
+			ps.pathToProjectInputFiles = params["path:"];
+			ps.projectName = params["project:"];
+			ps.startDate = params["start-date:"];
+			ps.endDate = params["end-date:"];
+		}
+
+		parseAndRunMonica(ps);
+	}
 	
-	//auto res = Soil::fcSatPwpFromKA5textureClass("fS",
-	//																						 0,
-	//																						 1.5*1000.0,
-	//																						 0.8/100.0);
+	//test();
 	
-	//writeCropParameters("parameters/crops");
-	//writeMineralFertilisers("parameters/mineral-fertilisers");
-	//writeOrganicFertilisers("parameters/organic-fertilisers");
-	//writeCropResidues("parameters/crop-residues");
-	//writeUserParameters(MODE_HERMES, "parameters/user-parameters");
-	//writeUserParameters(MODE_EVA2, "parameters/user-parameters");
-	//writeUserParameters(MODE_MACSUR_SCALING, "parameters/user-parameters");
+	//writeDbParams();
 
 	return 0;
 }

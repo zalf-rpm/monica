@@ -378,7 +378,7 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
  *
  * @param output_path Path to input and output files
  */
-const Monica::Result Monica::runWithHermesData(const std::string output_path)
+Monica::Result Monica::runWithHermesData(const std::string& output_path)
 {
   Tools::activateDebug = true;
 
@@ -588,11 +588,14 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 	cpp.userCropParameters.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
 
   //soil data
-	siteParams.vs_SoilParameters = soilParametersFromHermesFile(1, outputPath + hermes_config->getSoilParametersFile(),
-																															int(layer_thickness*100.0),
-																															int(cpp.userEnvironmentParameters.p_LayerThickness * cpp.userEnvironmentParameters.p_NumberOfLayers * 100.0),
-																															hermes_config->getPH());
-
+	siteParams.vs_SoilParameters =
+		soilParametersFromHermesFile(1, 
+																 outputPath + hermes_config->getSoilParametersFile(),
+																 int(layer_thickness*100.0),
+																 int(cpp.userEnvironmentParameters.p_LayerThickness 
+																		 * cpp.userEnvironmentParameters.p_NumberOfLayers 
+																		 * 100.0),
+																 hermes_config->getPH());
 
   //climate data
   std::string file = outputPath+hermes_config->getWeatherFile();

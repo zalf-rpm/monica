@@ -1383,7 +1383,7 @@ json11::Json UserSoilOrganicParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 CentralParameterProvider::CentralParameterProvider()
-  : precipCorrectionValues(MONTH - 1, 1.0)
+  : precipCorrectionValues(12, 1.0)
 {
 
 }
