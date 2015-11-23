@@ -27,7 +27,8 @@ namespace Monica
 {
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
 
-	std::pair<FertiliserType, std::string> hermesFertiliserName2monicaFertiliserId(const std::string& name);
+	std::pair<FertiliserType, std::string> 
+		hermesFertiliserName2monicaFertiliserId(const std::string& name);
 
 	void attachFertiliserApplicationsToCropRotation(std::vector<CultivationMethod>& cropRotation,
 		const std::string& pathToFertiliserFile);
@@ -42,9 +43,10 @@ namespace Monica
 	* - create cropRotation from hermes file
 	* - the returned cultivation method contain absolute dates
 	*/
-	std::vector<CultivationMethod> cropRotationFromHermesFile(const std::string& pathToFile,
-																														bool useAutomaticHarvestTrigger = false,
-																														AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
+	std::vector<CultivationMethod> 
+		cropRotationFromHermesFile(const std::string& pathToFile,
+															 bool useAutomaticHarvestTrigger = false,
+															 AutomaticHarvestParameters autoHarvestParameters = AutomaticHarvestParameters());
 
 	Climate::DataAccessor climateDataFromHermesFiles(const std::string& pathToFile,
 																									 int fromYear,

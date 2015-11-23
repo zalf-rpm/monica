@@ -451,7 +451,7 @@ bool Configuration::createProcesses(std::vector<CultivationMethod> &pps, cson_ar
       std::cerr << "Invalid date" << std::endl;
     }
 
-    CropPtr crop = CropPtr(new Crop(cropId, name));
+    CropPtr crop = CropPtr(new Crop(name, name));
     crop->setSeedAndHarvestDate(sd, hd);
     crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
     crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));

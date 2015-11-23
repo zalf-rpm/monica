@@ -313,8 +313,6 @@ Result Monica::runMonica(Env env)
 	//thus for absolute dates the crop rotation has to be as long as there
 	//are climate data !!!!!
 
-	float progress = 0.0;
-
 	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
 	{
     debug() << "currentDate: " << currentDate.toString() << endl;
@@ -346,21 +344,24 @@ Result Monica::runMonica(Env env)
   */
 
     // Test if automatic harvest trigger is used
-    if (monica.cropGrowth() && currentCM.crop()->useAutomaticHarvestTrigger()) {
-
+    if (monica.cropGrowth() && currentCM.crop()->useAutomaticHarvestTrigger())
+    {
       // Test if crop should be harvested at maturity
       if (currentCM.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestParameters::maturity) {
 
-        if (monica.cropGrowth()->maturityReached() || currentCM.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay()) {
-
+        if (monica.cropGrowth()->maturityReached()
+            || currentCM.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay())
+        {
           debug() << "####################################################" << endl;
           debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
           debug() << "####################################################" << endl;
 
 					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
-          auto harvestApplication = unique_ptr<Harvest>(new Harvest(currentDate, currentCM.crop(), currentCM.cropResultPtr()));
+          auto harvestApplication =
+              unique_ptr<Harvest>(new Harvest(currentDate,
+                                              currentCM.crop(),
+                                              currentCM.cropResultPtr()));
           harvestApplication->apply(&monica);
-
         }
       }
     }

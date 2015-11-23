@@ -26,9 +26,11 @@ namespace Monica
 {
   SpeciesParametersPtr getSpeciesParametersFromMonicaDB(const std::string& species);
 
-  CultivarParametersPtr getCultivarParametersFromMonicaDB(const std::string& species, const std::string& cultivar);
+  CultivarParametersPtr getCultivarParametersFromMonicaDB(const std::string& species, 
+																													const std::string& cultivar);
 
-  CropParametersPtr getCropParametersFromMonicaDB(const std::string& species, const std::string& cultivar);
+  CropParametersPtr getCropParametersFromMonicaDB(const std::string& species, 
+																									const std::string& cultivar);
 
   CropParametersPtr getCropParametersFromMonicaDB(int cropId);
 
@@ -36,21 +38,29 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
-  MineralFertiliserParameters getMineralFertiliserParametersFromMonicaDB(const std::string& mineralFertiliserId);
+  MineralFertiliserParameters 
+		getMineralFertiliserParametersFromMonicaDB(const std::string& mineralFertiliserId);
 
 	void writeMineralFertilisers(std::string path);
 
 	//-----------------------------------------------------------
 
-  OrganicFertiliserParametersPtr getOrganicFertiliserParametersFromMonicaDB(const std::string& id);
+  OrganicFertiliserParametersPtr 
+		getOrganicFertiliserParametersFromMonicaDB(const std::string& id);
 
 	void writeOrganicFertilisers(std::string path);
 
 	//-----------------------------------------------------------
 
-  CropResidueParametersPtr getResidueParametersFromMonicaDB(const std::string& species, const std::string& cultivar, int cropId = -1);
+  CropResidueParametersPtr 
+		getResidueParametersFromMonicaDB(const std::string& species, 
+																		 const std::string& cultivar, 
+																		 int cropId = -1);
 
-	inline CropResidueParametersPtr getResidueParametersFromMonicaDB(int cropId) { return getResidueParametersFromMonicaDB("", "", cropId); }
+	inline CropResidueParametersPtr getResidueParametersFromMonicaDB(int cropId) 
+	{ 
+		return getResidueParametersFromMonicaDB("", "", cropId); 
+	}
 
   void writeCropResidues(std::string path);
 

@@ -302,7 +302,8 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
               cropResult->date = date;
 
               h.apply(&monica);
-              dailyStepResultMsg["harvesting"] = createHarvestingMessage(*cropResult.get(), *monicaUPtr.get());
+              dailyStepResultMsg["harvesting"] =
+                  createHarvestingMessage(*cropResult.get(), *monicaUPtr.get());
 
               //to count the applied fertiliser for the next production process
               monica.resetFertiliserCounter();

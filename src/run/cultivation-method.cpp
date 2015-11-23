@@ -63,7 +63,7 @@ void WorkStep::merge(json11::Json j)
 json11::Json WorkStep::to_json() const
 {
   return json11::Json::object {
-    {"type", "WorkStep"},
+    {"type", type()},
     {"date", date().toIsoDateString()},};
 }
 
@@ -88,7 +88,7 @@ void Seed::merge(json11::Json j)
 json11::Json Seed::to_json(bool includeFullCropParameters) const
 {
   return json11::Json::object {
-    {"type", "Seed"},
+    {"type", type()},
     {"date", date().toIsoDateString()},
     {"crop", _crop->to_json(includeFullCropParameters)}};
 }
@@ -106,7 +106,7 @@ Harvest::Harvest(const Tools::Date& at,
                  PVResultPtr cropResult,
                  std::string method)
   : WorkStep(at)
-  ,  _crop(crop)
+  , _crop(crop)
   , _cropResult(cropResult)
   , _method(method)
 {}
@@ -129,7 +129,7 @@ void Harvest::merge(json11::Json j)
 json11::Json Harvest::to_json(bool includeFullCropParameters) const
 {
   return json11::Json::object {
-    {"type", "Harvest"},
+    {"type", type()},
     {"date", date().toIsoDateString()},
     {"crop", _crop->to_json(includeFullCropParameters)},
     {"method", _method},
@@ -237,7 +237,7 @@ void Cutting::merge(json11::Json j)
 json11::Json Cutting::to_json() const
 {
   return json11::Json::object {
-    {"type", "Cutting"},
+    {"type", type()},
     {"date", date().toIsoDateString()}};
 }
 
@@ -291,7 +291,7 @@ void MineralFertiliserApplication::merge(json11::Json j)
 json11::Json MineralFertiliserApplication::to_json() const
 {
   return json11::Json::object {
-    {"type", "MineralFertiliserApplication"},
+    {"type", type()},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
     {"partition", _partition}};
@@ -332,7 +332,7 @@ void OrganicFertiliserApplication::merge(json11::Json j)
 json11::Json OrganicFertiliserApplication::to_json() const
 {
   return json11::Json::object {
-    {"type", "OrganicFertiliserApplication"},
+    {"type", type()},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
     {"parameters", _params->to_json()},
@@ -367,7 +367,7 @@ void TillageApplication::merge(json11::Json j)
 json11::Json TillageApplication::to_json() const
 {
   return json11::Json::object {
-    {"type", "TillageApplication"},
+    {"type", type()},
     {"date", date().toIsoDateString()},
     {"depth", _depth}};
 }
@@ -403,7 +403,7 @@ void IrrigationApplication::merge(json11::Json j)
 json11::Json IrrigationApplication::to_json() const
 {
   return json11::Json::object {
-    {"type", "IrrigationApplication"},
+    {"type", type()},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
     {"parameters", _params}};
@@ -442,7 +442,8 @@ CultivationMethod::CultivationMethod(const string& name)
   : _name(name)
 {}
 
-CultivationMethod::CultivationMethod(CropPtr crop, const std::string& name)
+CultivationMethod::CultivationMethod(CropPtr crop,
+                                     const std::string& name)
   : _name(name.empty() ? crop->speciesName() + "/" + crop->cultivarName() : name)
   , _crop(crop)
   , _cropResult(new PVResult(crop->id()))
@@ -466,7 +467,6 @@ CultivationMethod::CultivationMethod(CropPtr crop, const std::string& name)
 }
 
 CultivationMethod::CultivationMethod(json11::Json j)
-
 {
   merge(j);
 }
@@ -475,12 +475,25 @@ void CultivationMethod::merge(json11::Json j)
 {
   set_int_value(_customId, j, "customId");
   set_string_value(_name, j, "name");
-  set_shared_ptr_value(_crop, j, "crop");
+  //set_shared_ptr_value(_crop, j, "crop");
   set_bool_value(_irrigateCrop, j, "irrigateCrop");
 
-	for(auto ws : j["worksteps"].array_items())
-		insert(make_pair(Date::fromIsoDateString(string_value(ws, "date")),
-										 makeWorkstep(ws)));
+  for(auto wsj : j["worksteps"].array_items())
+  {
+    auto ws = makeWorkstep(wsj);
+    insert(make_pair(iso_date_value(wsj, "date"), ws));
+    string wsType = ws->type();
+    if(wsType == "Seed")
+    {
+      if(Seed* seed = dynamic_cast<Seed*>(ws.get()))
+        _crop = seed->crop();
+    }
+    else if(wsType == "Harvest")
+    {
+      if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
+        _cropResult = harvest->cropResult();
+    }
+  }
 }
 
 json11::Json CultivationMethod::to_json() const
@@ -493,7 +506,7 @@ json11::Json CultivationMethod::to_json() const
     {"type", "CultivationMethod"},
     {"customId", _customId},
     {"name", _name},
-    {"crop", _crop->to_json()},
+//    {"crop", _crop->to_json()},
     {"irrigateCrop", _irrigateCrop},
     {"worksteps", wss}};
 }
@@ -501,7 +514,7 @@ json11::Json CultivationMethod::to_json() const
 void CultivationMethod::apply(const Date& date, MonicaModel* model) const
 {
   auto p = equal_range(date);
-  while (p.first != p.second)
+  while(p.first != p.second)
   {
     p.first->second->apply(model);
     p.first++;

@@ -42,32 +42,32 @@ Crop::Crop(const std::string& speciesName)
   : _speciesName(speciesName)
 {}
 
-Crop::Crop(CropId id,
-           const std::string& species,
+Crop::Crop(const std::string& species,
+           const string& cultivarName,
            const CropParametersPtr cps,
            const OrganicMatterParametersPtr rps,
            double crossCropAdaptionFactor)
-  : _id(id),
-    _speciesName(species),
-    _cropParams(cps),
-    _residueParams(rps),
-    _crossCropAdaptionFactor(crossCropAdaptionFactor)
+  : _speciesName(species)
+  , _cultivarName(cultivarName)
+  , _cropParams(cps)
+  , _residueParams(rps)
+  , _crossCropAdaptionFactor(crossCropAdaptionFactor)
 {}
 
-Crop::Crop(CropId id,
-           const std::string& species,
+Crop::Crop(const std::string& speciesName,
+           const string& cultivarName,
            const Tools::Date& seedDate,
            const Tools::Date& harvestDate,
            const CropParametersPtr cps,
            const OrganicMatterParametersPtr rps,
            double crossCropAdaptionFactor)
-  : _id(id),
-    _speciesName(species),
-    _seedDate(seedDate),
-    _harvestDate(harvestDate),
-    _cropParams(cps),
-    _residueParams(rps),
-    _crossCropAdaptionFactor(crossCropAdaptionFactor)
+  : _speciesName(speciesName)
+  , _cultivarName(cultivarName)
+  , _seedDate(seedDate)
+  , _harvestDate(harvestDate)
+  , _cropParams(cps)
+  , _residueParams(rps)
+  , _crossCropAdaptionFactor(crossCropAdaptionFactor)
 {}
 
 Crop::Crop(json11::Json j)

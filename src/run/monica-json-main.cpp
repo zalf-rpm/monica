@@ -31,6 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "climate/climate-file-io.h"
 #include "../core/simulation.h"
+#include "soil/conversion.h"
 
 using namespace std;
 using namespace Monica;
@@ -79,7 +80,15 @@ Json findAndReplaceReferences(const Json& root, const Json& j)
 			{
 				arrayIsReferenceFunction = true;
 
-				auto jAndSuccess = (p->second)(root, j);
+				//check for nested function invocations in the arguments
+				Json::array funcArr;
+				for(auto i : j.array_items())
+					funcArr.push_back(findAndReplaceReferences(root, i));
+
+				//invoke function
+				auto jAndSuccess = (p->second)(root, funcArr);
+
+				//if successful try to recurse into result for functions in result
 				if(jAndSuccess.second)
 					return findAndReplaceReferences(root, jAndSuccess.first);
 			}
@@ -162,10 +171,69 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 		return make_pair(j, false); 
 	};
 		
+	auto humus2corg = [](const Json&, const Json& j) -> pair<Json, bool>
+	{
+		if(j.array_items().size() == 2
+			 && j[1].is_number())
+			return make_pair(Soil::humus_st2corg(j[1].int_value()), true);
+		return make_pair(j, false);
+	};
+
+	auto ld2trd = [](const Json&, const Json& j) -> pair<Json, bool>
+	{
+		if(j.array_items().size() == 3
+			 && j[1].is_number()
+			 && j[2].is_number())
+			return make_pair(Soil::ld_eff2trd(j[1].number_value(), j[2].number_value()),
+											 true);
+		return make_pair(j, false);
+	};
+
+	auto KA52clay = [](const Json&, const Json& j) -> pair<Json, bool>
+	{
+		if(j.array_items().size() == 2
+			 && j[1].is_string())
+			return make_pair(Soil::KA5texture2clay(j[1].string_value()), true);
+		return make_pair(j, false);
+	};
+
+	auto KA52sand = [](const Json&, const Json& j) -> pair<Json, bool>
+	{
+		if(j.array_items().size() == 2
+			 && j[1].is_string())
+			return make_pair(Soil::KA5texture2sand(j[1].string_value()), true);
+		return make_pair(j, false);
+	};
+
+	auto sandClay2lambda = [](const Json&, const Json& j) -> pair<Json, bool>
+	{
+		if(j.array_items().size() == 3
+			 && j[1].is_number()
+			 && j[2].is_number())
+			return make_pair(Soil::sandAndClay2lambda(j[1].number_value(),
+																								j[2].number_value()),
+											 true);
+		return make_pair(j, false);
+	};
+
+	auto percent = [](const Json&, const Json& j) -> pair<Json, bool>
+	{
+		if(j.array_items().size() == 2
+			 && j[1].is_number())
+			return make_pair(j[1].number_value() / 100.0, true);
+		return make_pair(j, false);
+	};
+
 	static map<string, function<pair<Json, bool>(const Json&,const Json&)>> m{
 	{"include-from-db", fromDb},
 	{"include-from-file", fromFile},
-	{"ref", ref}};
+	{"ref", ref},
+	{"humus_st2corg", humus2corg},
+	{"ld_eff2trd", ld2trd},
+	{"KA5TextureClass2clay", KA52clay},
+	{"KA5TextureClass2sand", KA52sand},
+	{"sandAndClay2lambda", sandClay2lambda},
+	{"%", percent}};
 	return m;
 }
 
@@ -218,11 +286,6 @@ void parseAndRunMonica(PARMParams ps)
 	if(!env.da.isValid())
 		return;
 	
-
-
-	//activateDebug = true;
-
-
 	Result r = runMonica(env);
 
 	r;
@@ -261,24 +324,29 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
-	if(argc == 2 && argv[1] == "hermes")
-		Monica::runWithHermesData(fixSystemSeparator(argv[1]));
-	else if(argc > 1)
+	if(argc > 1)
 	{
 		map<string, string> params;
-		PARMParams ps;
 		if((argc - 1) % 2 == 0)
-		{
 			for(size_t i = 1; i < argc; i += 2)
 				params[toLower(argv[i])] = argv[i + 1];
+		else
+			return 1;
 
+		activateDebug = stob(params["debug?:"], false);
+
+		if(params["mode:"] == "hermes")
+			Monica::runWithHermesData(fixSystemSeparator(params["path:"]));
+		else
+		{
+			PARMParams ps;
 			ps.pathToProjectInputFiles = params["path:"];
 			ps.projectName = params["project:"];
 			ps.startDate = params["start-date:"];
 			ps.endDate = params["end-date:"];
-		}
 
-		parseAndRunMonica(ps);
+			parseAndRunMonica(ps);
+		}
 	}
 	
 	//test();

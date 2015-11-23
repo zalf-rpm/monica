@@ -84,111 +84,111 @@ namespace
 Monica::CropPtr Monica::hermesCropId2Crop(const string& hermesCropId)
 {
 	if (hermesCropId == "WW")
-		return CropPtr(new Crop(1, hermesCropId)); // Winter wheat
+		return CropPtr(new Crop("wheat", "winter wheat"));
 	if (hermesCropId == "SW")
-		return CropPtr(new Crop(25, hermesCropId)); // Spring wheat
+		return CropPtr(new Crop("wheat", "spring wheat"));
 	if (hermesCropId == "WG")
-		return CropPtr(new Crop(2, hermesCropId)); // Winter barley
+		return CropPtr(new Crop("barley", "winter barley"));
 	if (hermesCropId == "SG")
-		return CropPtr(new Crop(4, hermesCropId)); // Spring barley
+		return CropPtr(new Crop("barley", "spring barley"));
 	if (hermesCropId == "WR")
-		return CropPtr(new Crop(3, hermesCropId)); // Winter rye
+		return CropPtr(new Crop("rye", "winter rye"));
 	if (hermesCropId == "WR_GD")
-		return CropPtr(new Crop(51, hermesCropId)); // Silage winter rye
+		return CropPtr(new Crop("rye", "silage winter rye"));
 	if (hermesCropId == "SR")
-		return CropPtr(new Crop(20, hermesCropId)); // Spring rye
+		return CropPtr(new Crop("rye", "spring rye")); 
 	if (hermesCropId == "OAT")
-		return CropPtr(new Crop(22, hermesCropId)); // Oats
+		return CropPtr(new Crop("oat compound", "")); 
 	if (hermesCropId == "ZR")
-		return CropPtr(new Crop(10, hermesCropId)); // Sugar beet
+		return CropPtr(new Crop("sugar beet", ""));
 	if (hermesCropId == "SM")
-		return CropPtr(new Crop(7, hermesCropId)); // Silage maize
+		return CropPtr(new Crop("maize", "silage maize")); 
 	if (hermesCropId == "GM")
-		return CropPtr(new Crop(5, hermesCropId)); // Grain maize
+		return CropPtr(new Crop("maize", "grain maize")); 
 	if (hermesCropId == "GMB")
-		return CropPtr(new Crop(6, hermesCropId)); // Grain maize Brazil (Pioneer)
+		return CropPtr(new Crop("maize", "grain maize Pioneer 30K75")); 
 	if (hermesCropId == "MEP")
-		return CropPtr(new Crop(8, hermesCropId)); // Early potato
+		return CropPtr(new Crop("potato", "moderately early potato"));
 	if (hermesCropId == "MLP")
-		return CropPtr(new Crop(8, hermesCropId)); // Late potato
+		return CropPtr(new Crop("potato", "moderately early potato")); // Late potato
 	if (hermesCropId == "WC")
-		return CropPtr(new Crop(9, hermesCropId)); // Winter canola
+		return CropPtr(new Crop("rape", "winter rape")); // Winter canola
 	if (hermesCropId == "SC")
-		return CropPtr(new Crop(9, hermesCropId)); // Spring canola
+		return CropPtr(new Crop("rape", "winter rape")); // Spring canola
 	if (hermesCropId == "MU")
-		return CropPtr(new Crop(11, hermesCropId)); // Mustard
+		return CropPtr(new Crop("mustard", "")); 
 	if (hermesCropId == "PH")
-		return CropPtr(new Crop(12, hermesCropId)); // Phacelia
+		return CropPtr(new Crop("phacelia", "")); 
 	if (hermesCropId == "CLV")
-		return CropPtr(new Crop(13, hermesCropId)); // Kleegras
+		return CropPtr(new Crop("clover grass ley", "")); // Kleegras
 	if (hermesCropId == "LZG")
-		return CropPtr(new Crop(14, hermesCropId)); // Luzerne-Gras
+		return CropPtr(new Crop("alfalfa", "")); // Luzerne-Gras
 	if (hermesCropId == "WDG")
-		return CropPtr(new Crop(16, hermesCropId)); // Weidelgras
+		return CropPtr(new Crop("rye grass", "")); // Weidelgras
 	if (hermesCropId == "FP")
-		return CropPtr(new Crop(24, hermesCropId)); // Field pea
+		return CropPtr(new Crop("field pea", "24")); // Field pea
 	if (hermesCropId == "OR")
-		return CropPtr(new Crop(17, hermesCropId)); // Oil raddish
+		return CropPtr(new Crop("oil radish", "")); // Oil raddish
 	if (hermesCropId == "SDG")
-		return CropPtr(new Crop(18, hermesCropId)); // Sudan grass
+		return CropPtr(new Crop("sudan grass", ""));
 	if (hermesCropId == "WTR")
-		return CropPtr(new Crop(19, hermesCropId)); // Winter triticale
+		return CropPtr(new Crop("triticale", "winter triticale")); 
 	if (hermesCropId == "STR")
-		return CropPtr(new Crop(23, hermesCropId)); // Spring triticale
+		return CropPtr(new Crop("triticale", "spring triticale")); 
 	if (hermesCropId == "SOR")
-		return CropPtr(new Crop(21, hermesCropId)); // Sorghum
+		return CropPtr(new Crop("sorghum", "")); 
 	if (hermesCropId == "SX0")
-		return CropPtr(new Crop(28, hermesCropId)); // Soy bean maturity group 000
+		return CropPtr(new Crop("soybean", "000")); // Soy bean maturity group 000
 	if (hermesCropId == "S00")
-		return CropPtr(new Crop(29, hermesCropId)); // Soy bean maturity group 00
+		return CropPtr(new Crop("soybean", "00")); // Soy bean maturity group 00
 	if (hermesCropId == "S0X")
-		return CropPtr(new Crop(30, hermesCropId)); // Soy bean maturity group 0
+		return CropPtr(new Crop("soybean", "0")); // Soy bean maturity group 0
 	if (hermesCropId == "S01")
-		return CropPtr(new Crop(31, hermesCropId)); // Soy bean maturity group I
+		return CropPtr(new Crop("soybean", "I")); // Soy bean maturity group I
 	if (hermesCropId == "S02")
-		return CropPtr(new Crop(32, hermesCropId)); // Soy bean maturity group II
+		return CropPtr(new Crop("soybean", "II")); // Soy bean maturity group II
 	if (hermesCropId == "S03")
-		return CropPtr(new Crop(33, hermesCropId)); // Soy bean maturity group III
+		return CropPtr(new Crop("soybean", "III")); // Soy bean maturity group III
 	if (hermesCropId == "S04")
-		return CropPtr(new Crop(34, hermesCropId)); // Soy bean maturity group IV
+		return CropPtr(new Crop("soybean", "IV")); // Soy bean maturity group IV
 	if (hermesCropId == "S05")
-		return CropPtr(new Crop(35, hermesCropId)); // Soy bean maturity group V
+		return CropPtr(new Crop("soybean", "V")); // Soy bean maturity group V
 	if (hermesCropId == "S06")
-		return CropPtr(new Crop(36, hermesCropId)); // Soy bean maturity group VI
+		return CropPtr(new Crop("soybean", "VI")); // Soy bean maturity group VI
 	if (hermesCropId == "S07")
-		return CropPtr(new Crop(37, hermesCropId)); // Soy bean maturity group VII
+		return CropPtr(new Crop("soybean", "VII")); // Soy bean maturity group VII
 	if (hermesCropId == "S08")
-		return CropPtr(new Crop(38, hermesCropId)); // Soy bean maturity group VIII
+		return CropPtr(new Crop("soybean", "VIII")); // Soy bean maturity group VIII
 	if (hermesCropId == "S09")
-		return CropPtr(new Crop(39, hermesCropId)); // Soy bean maturity group IX
+		return CropPtr(new Crop("soybean", "IX")); // Soy bean maturity group IX
 	if (hermesCropId == "S10")
-		return CropPtr(new Crop(40, hermesCropId)); // Soy bean maturity group X
+		return CropPtr(new Crop("soybean", "X")); // Soy bean maturity group X
 	if (hermesCropId == "S11")
-		return CropPtr(new Crop(41, hermesCropId)); // Soy bean maturity group XI
+		return CropPtr(new Crop("soybean", "XI")); // Soy bean maturity group XI
 	if (hermesCropId == "S12")
-		return CropPtr(new Crop(42, hermesCropId)); // Soy bean maturity group XII
+		return CropPtr(new Crop("soybean", "XII")); // Soy bean maturity group XII
 	if (hermesCropId == "COS")
-		return CropPtr(new Crop(43, hermesCropId)); // Cotton short
+		return CropPtr(new Crop("cotton", "short")); 
 	if (hermesCropId == "COM")
-		return CropPtr(new Crop(44, hermesCropId)); // Cotton medium
+		return CropPtr(new Crop("cotton", "mid")); // Cotton medium
 	if (hermesCropId == "COL")
-		return CropPtr(new Crop(45, hermesCropId)); // Cotton long
+		return CropPtr(new Crop("cotton", "long")); // Cotton long
 	if (hermesCropId == "EMM")
-		return CropPtr(new Crop(47, hermesCropId)); // Emmer 3000 b.c.
+		return CropPtr(new Crop("emmer", "")); // Emmer 3000 b.c.
 	if (hermesCropId == "EIN")
-		return CropPtr(new Crop(48, hermesCropId)); // Einkorn 3000 b.c.
+		return CropPtr(new Crop("einkorn", "")); // Einkorn 3000 b.c.
 	if (hermesCropId == "COB")
-		return CropPtr(new Crop(46, hermesCropId)); // Cotton medium Brazil
+		return CropPtr(new Crop("cotton", "br mid")); // Cotton medium Brazil
 	if (hermesCropId == "SC")
-		return CropPtr(new Crop(49, hermesCropId)); // Sugar cane transplant	
+		return CropPtr(new Crop("sugar cane", "transplant")); 	
 	if (hermesCropId == "SCT")
-		return CropPtr(new Crop(50, hermesCropId)); // Sugar cane ratoon
+		return CropPtr(new Crop("sugar cane", "ratoon")); 
 	if (hermesCropId == "DUW")
-		return CropPtr(new Crop(52, hermesCropId)); // Durum wheat
+		return CropPtr(new Crop("wheat", "durum wheat")); 
 	if (hermesCropId == "FTO")
-		return CropPtr(new Crop(53, hermesCropId)); // Field tomato
+		return CropPtr(new Crop("tomato", "field tomato")); 
 	if (hermesCropId == "BR")
-		return CropPtr(new Crop(hermesCropId));
+		return CropPtr(new Crop()); //fallow
 
 
 	return CropPtr();
@@ -303,8 +303,9 @@ Monica::cropRotationFromHermesFile(const string& pathToFile,
 {
 	vector<CultivationMethod> ff;
 
-	ifstream ifs(pathToFile.c_str(), ios::binary);
-	if (!ifs.good()) {
+	ifstream ifs(pathToFile);
+	if (!ifs.good()) 
+	{
 		cerr << "Could not open file " << pathToFile.c_str() << " . Aborting now!" << endl;
 		exit(1);
 	}
@@ -341,7 +342,9 @@ Monica::cropRotationFromHermesFile(const string& pathToFile,
 
 		//create crop
 		CropPtr crop = hermesCropId2Crop(crp);
-		crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
+		crop->setCropParameters(getCropParametersFromMonicaDB(crop->speciesName(),
+																													crop->cultivarName()));
+		//crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
 		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
 
 		if (!useAutomaticHarvestTrigger) {
@@ -420,11 +423,13 @@ Monica::cropRotationFromHermesFile(const string& pathToFile,
 /**
 * @todo Micha/Xenia: Überprüfen, ob YearIndex rauskommen kann.
 */
-Climate::DataAccessor Monica::climateDataFromHermesFiles(const std::string& pathToFile,
-	int fromYear, int toYear,
-	const CentralParameterProvider& cpp,
-	bool useLeapYears,
-	double latitude)
+Climate::DataAccessor 
+Monica::climateDataFromHermesFiles(const std::string& pathToFiles,
+																	 int fromYear, 
+																	 int toYear,
+																	 const CentralParameterProvider& cpp,
+																	 bool useLeapYears,
+																	 double latitude)
 {
 	using namespace Climate;
 
@@ -443,16 +448,12 @@ Climate::DataAccessor Monica::climateDataFromHermesFiles(const std::string& path
 
 	for (int y = fromYear; y <= toYear; y++)
 	{
-
-		ostringstream yss;
-		yss << y;
-		string ys = yss.str();
-		ostringstream oss;
-		oss << pathToFile << ys.substr(1, 3);
-		debug() << "File: " << oss.str().c_str() << endl;
-		ifstream ifs(oss.str().c_str(), ios::binary);
-		if (!ifs.good()) {
-			cerr << "Could not open file " << oss.str().c_str() << " . Aborting now!" << endl;
+		string pathToFile = fixSystemSeparator(pathToFiles + to_string(y).substr(1, 3));
+		debug() << "File: " << pathToFile << endl;
+		ifstream ifs(pathToFile);
+		if (!ifs.good()) 
+		{
+			cerr << "Could not open file " << pathToFile << ". Aborting now!" << endl;
 			exit(1);
 		}
 		string s;
@@ -529,7 +530,9 @@ Climate::DataAccessor Monica::climateDataFromHermesFiles(const std::string& path
 
 		if (daysCount != allowedDays)
 		{
-			debug() << "Wrong number of days in " << oss.str().c_str() << " ." << " Found " << daysCount << " days but should have been "
+			debug() 
+				<< "Wrong number of days in " << pathToFile << "." 
+				<< " Found " << daysCount << " days but should have been "
 				<< allowedDays << " days. Aborting." << endl;
 			exit(1);
 		}

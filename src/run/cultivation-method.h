@@ -54,6 +54,8 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
+    virtual std::string type() const { return "WorkStep"; }
+
 		Tools::Date date() const { return _date; }
 
     virtual void setDate(Tools::Date date) {_date = date; }
@@ -83,6 +85,8 @@ namespace Monica
     virtual void merge(json11::Json j);
 
     virtual json11::Json to_json(bool includeFullCropParameters = true) const;
+
+    virtual std::string type() const { return "Seed"; }
 
     virtual void apply(MonicaModel* model);
 
@@ -117,6 +121,8 @@ namespace Monica
     virtual void merge(json11::Json j);
 
     virtual json11::Json to_json(bool includeFullCropParameters = true) const;
+
+    virtual std::string type() const { return "Harvest"; }
 
     virtual void apply(MonicaModel* model);
 
@@ -155,6 +161,8 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
+    virtual std::string type() const { return "Cutting"; }
+
 		virtual void apply(MonicaModel* model);
   };
 
@@ -174,6 +182,8 @@ namespace Monica
     virtual void merge(json11::Json j);
 
     virtual json11::Json to_json() const;
+
+    virtual std::string type() const { return "MineralFertiliserApplication"; }
 
     virtual void apply(MonicaModel* model);
 
@@ -203,6 +213,8 @@ namespace Monica
     virtual void merge(json11::Json j);
 
     virtual json11::Json to_json() const;
+
+    virtual std::string type() const { return "OrganicFertiliserApplication"; }
 
     virtual void apply(MonicaModel* model);
 
@@ -236,6 +248,8 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
+    virtual std::string type() const { return "TillageApplication"; }
+
     virtual void apply(MonicaModel* model);
 
 		double depth() const { return _depth; }
@@ -259,6 +273,8 @@ namespace Monica
     virtual void merge(json11::Json j);
 
     virtual json11::Json to_json() const;
+
+    virtual std::string type() const { return "IrrigationApplication"; }
 
 		virtual void apply(MonicaModel* model);
 
@@ -296,19 +312,20 @@ namespace Monica
 		template<class Application>
 		void addApplication(const Application& a)
 		{
-      insert(std::make_pair(a.date(), WSPtr(new Application(a))));
+      insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
     }
 
     template<>
     void addApplication<Seed>(const Seed& s)
     {
-      insert(std::make_pair(s.date(), WSPtr(new Seed(s))));
+      insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
       _crop = s.crop();
+      _cropResult->id = _crop->id();
     }
 
-    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
+//    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
 
-		void apply(const Tools::Date& date, MonicaModel* model) const;
+    void apply(const Tools::Date& date, MonicaModel* model) const;
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 
@@ -316,7 +333,7 @@ namespace Monica
 
 		CropPtr crop() const { return _crop; }
 
-		bool isFallow() const { return !_crop->isValid();  }
+    bool isFallow() const { return !_crop || !_crop->isValid();  }
 
 		//! when does the PV start
     Tools::Date startDate() const;
