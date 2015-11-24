@@ -111,7 +111,7 @@ namespace Monica
 
     Harvest(const Tools::Date& at,
             CropPtr crop,
-            PVResultPtr cropResult,
+            CMResultPtr cropResult,
             std::string method = "total");
 
     Harvest(json11::Json j);
@@ -136,11 +136,11 @@ namespace Monica
 
     void setExported(bool exported)	{ _exported = exported; }
 
-    PVResultPtr cropResult() const { return _cropResult; }
+    CMResultPtr cropResult() const { return _cropResult; }
 
   private:
     CropPtr _crop;
-    PVResultPtr _cropResult;
+    CMResultPtr _cropResult;
     std::string _method;
     double _percentage{0};
     bool _exported{true};
@@ -255,7 +255,7 @@ namespace Monica
 		double depth() const { return _depth; }
 
 	private:
-    double _depth{0.0};
+    double _depth{0.3};
 	};
 
 	//----------------------------------------------------------------------------
@@ -320,7 +320,13 @@ namespace Monica
     {
       insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
       _crop = s.crop();
-      _cropResult->id = _crop->id();
+    }
+
+    template<>
+    void addApplication<Harvest>(const Harvest& h)
+    {
+      insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
+      _cropResult = h.cropResult();
     }
 
 //    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
@@ -347,8 +353,8 @@ namespace Monica
 
 		std::string toString() const;
 
-		PVResult cropResult() const { return *(_cropResult.get()); }
-		PVResultPtr cropResultPtr() const { return _cropResult; }
+    CMResult cropResult() const { return *(_cropResult.get()); }
+    CMResultPtr cropResultPtr() const { return _cropResult; }
 
 		//the custom id is used to keep a potentially usage defined
     //mapping to an entity from another domain,
@@ -366,7 +372,7 @@ namespace Monica
     bool _irrigateCrop{false};
 
     //store results of the cultivation method
-		PVResultPtr _cropResult;
+    CMResultPtr _cropResult;
 	};
 }
 

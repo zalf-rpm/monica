@@ -46,14 +46,14 @@ using namespace Tools;
 using namespace json11;
 using namespace Soil;
 
-json11::Json createHarvestingMessage(PVResult result, const MonicaModel& monica)
+json11::Json createHarvestingMessage(CMResult result, const MonicaModel& monica)
 {
-	result.pvResults[sumFertiliser] = monica.sumFertiliser();
-	result.pvResults[daysWithCrop] = monica.daysWithCrop();
-	result.pvResults[NStress] = monica.getAccumulatedNStress();
-	result.pvResults[WaterStress] = monica.getAccumulatedWaterStress();
-	result.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
-	result.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
+  result.results[sumFertiliser] = monica.sumFertiliser();
+  result.results[daysWithCrop] = monica.daysWithCrop();
+  result.results[NStress] = monica.getAccumulatedNStress();
+  result.results[WaterStress] = monica.getAccumulatedWaterStress();
+  result.results[HeatStress] = monica.getAccumulatedHeatStress();
+  result.results[OxygenStress] = monica.getAccumulatedOxygenStress();
 
 	//    cout << "created harvesting msg: " << result.to_json().dump() << endl;
 	return result.to_json();

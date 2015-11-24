@@ -60,6 +60,7 @@ namespace Monica
                const CropParameters& cropParams,
                const SiteParameters& siteParams,
                const UserCropParameters& cropPs,
+               const SimulationParameters& simPs,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
     void applyCutting();

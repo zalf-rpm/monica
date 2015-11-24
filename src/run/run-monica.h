@@ -56,7 +56,6 @@ namespace Monica
     CentralParameterProvider params;
 
     std::string toString() const;
-    std::string pathToOutputDir;
 
     //Set execution mode of Monica.
     //Disables debug outputs for some modes.
@@ -104,7 +103,7 @@ namespace Monica
 		int customId;
 
 		//! vector of the result of one crop per year
-		std::vector<PVResult> pvrs;
+    std::vector<CMResult> pvrs;
 
 		//! results not regarding a particular crop in a rotation
 		typedef std::map<ResultId, std::vector<double>> RId2Vector;

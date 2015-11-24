@@ -45,6 +45,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 const CropParameters& cps,
 											 const SiteParameters& stps,
 											 const UserCropParameters& cropPs,
+                       const SimulationParameters& simPs,
 											 int usage)
 	: soilColumn(sc)
 	, cropPs(cropPs)
@@ -70,8 +71,8 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_DevelopmentAccelerationByNitrogenStress(cps.speciesParams.pc_DevelopmentAccelerationByNitrogenStress)
 	, pc_DroughtStressThreshold(cps.cultivarParams.pc_DroughtStressThreshold)
 	, pc_DroughtImpactOnFertilityFactor(cps.speciesParams.pc_DroughtImpactOnFertilityFactor)
-	, pc_EmergenceFloodingControlOn(cropPs.pc_EmergenceFloodingControlOn)
-	, pc_EmergenceMoistureControlOn(cropPs.pc_EmergenceMoistureControlOn)
+  , pc_EmergenceFloodingControlOn(simPs.pc_EmergenceFloodingControlOn)
+  , pc_EmergenceMoistureControlOn(simPs.pc_EmergenceMoistureControlOn)
 	, pc_EndSensitivePhaseHeatStress(cps.cultivarParams.pc_EndSensitivePhaseHeatStress)
 	, pc_FieldConditionModifier(cps.speciesParams.pc_FieldConditionModifier)
 	, vo_FreshSoilOrganicMatter(soilColumn.vs_NumberOfLayers(), 0.0)
@@ -98,7 +99,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_NConcentrationB0(cps.speciesParams.pc_NConcentrationB0)
 	, pc_NConcentrationPN(cps.speciesParams.pc_NConcentrationPN)
 	, pc_NConcentrationRoot(cps.speciesParams.pc_NConcentrationRoot)
-	, pc_NitrogenResponseOn(cropPs.pc_NitrogenResponseOn)
+  , pc_NitrogenResponseOn(simPs.pc_NitrogenResponseOn)
   , pc_NumberOfDevelopmentalStages(cps.speciesParams.pc_NumberOfDevelopmentalStages())
   , pc_NumberOfOrgans(cps.speciesParams.pc_NumberOfOrgans())
 	, vc_NUptakeFromLayer(soilColumn.vs_NumberOfLayers(), 0.0)
@@ -140,7 +141,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, vc_Transpiration(soilColumn.vs_NumberOfLayers(), 0.0)
 	, vc_TranspirationRedux(soilColumn.vs_NumberOfLayers(), 1.0)
 	, pc_VernalisationRequirement(cps.cultivarParams.pc_VernalisationRequirement)
-	, pc_WaterDeficitResponseOn(cropPs.pc_WaterDeficitResponseOn)
+  , pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
 	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
 {

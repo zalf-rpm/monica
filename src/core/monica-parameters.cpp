@@ -335,32 +335,32 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
 
 //------------------------------------------------------------------------------
 
-PVResult::PVResult(json11::Json j)
+CMResult::CMResult(json11::Json j)
 {
   merge(j);
 }
 
-void PVResult::merge(json11::Json j)
+void CMResult::merge(json11::Json j)
 {
-  set_int_value(id, j, "cropId");
+  set_string_value(id, j, "cropId");
   set_int_value(customId, j, "customId");
   set_iso_date_value(date, j, "date");
 
-  for(auto jpvr : j["pvResults"].object_items())
-    pvResults[ResultId(stoi(jpvr.first))] = jpvr.second.number_value();
+  for(auto jpvr : j["cmResults"].object_items())
+    results[ResultId(stoi(jpvr.first))] = jpvr.second.number_value();
 }
 
-json11::Json PVResult::to_json() const
+json11::Json CMResult::to_json() const
 {
   json11::Json::object pvrs;
-  for(auto pvr : pvResults)
+  for(auto pvr : results)
     pvrs[to_string(pvr.first)] = pvr.second;
   return json11::Json::object {
-		{"type", "PVResult"},
-		{"cropId", id},
+    {"type", "CMResult"},
+    {"cropId", id},
 		{"customId", customId},
     {"date", date.toIsoDateString()},
-    {"pvResults", pvrs}};
+    {"cmResults", pvrs}};
 }
 
 //------------------------------------------------------------------------------
@@ -679,9 +679,9 @@ json11::Json MineralFertiliserParameters::to_json() const
 NMinUserParameters::NMinUserParameters(double min,
                                        double max,
                                        int delayInDays)
-  : min(min),
-    max(max),
-    delayInDays(delayInDays) { }
+  : min(min)
+  , max(max)
+  , delayInDays(delayInDays) { }
 
 NMinUserParameters::NMinUserParameters(json11::Json j)
 {
@@ -727,16 +727,20 @@ json11::Json IrrigationParameters::to_json() const
 {
   return json11::Json::object {
     {"type", "IrrigationParameters"},
-    {"nitrateConcentration", nitrateConcentration},
-    {"sulfateConcentration", sulfateConcentration}};
+		{"nitrateConcentration", J11Array {nitrateConcentration, "mg dm-3"}},
+		{"sulfateConcentration", J11Array {sulfateConcentration, "mg dm-3"}}};
 }
 
 //------------------------------------------------------------------------------
 
-AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a, double t, double nc, double sc)
-  : IrrigationParameters(nc, sc),
-    amount(a),
-    treshold(t) {}
+AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a, 
+																														 double t, 
+																														 double nc, 
+																														 double sc)
+  : IrrigationParameters(nc, sc)
+  , amount(a)
+  , treshold(t) 
+{}
 
 AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
 {
@@ -755,7 +759,7 @@ json11::Json AutomaticIrrigationParameters::to_json() const
   return json11::Json::object {
     {"type", "AutomaticIrrigationParameters"},
     {"irrigationParameters", IrrigationParameters::to_json()},
-    {"amount", json11::Json::array {amount, "mm"}},
+    {"amount", J11Array {amount, "mm"}},
     {"treshold", treshold}};
 }
 
@@ -984,18 +988,18 @@ json11::Json OrganicMatterParameters::to_json() const
   return J11Object {
     {"type", "OrganicMatterParameters"},
     {"AOM_DryMatterContent", J11Array {vo_AOM_DryMatterContent, "kg DM kg FM-1", "Dry matter content of added organic matter"}},
-    {"AOM_AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}},
-    {"AOM_AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter"}},
-    {"AOM_AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Carbamide content in added organic matter"}},
-    {"AOM_AOM_SlowDecCoeffStandard", J11Array {vo_AOM_SlowDecCoeffStandard, "d-1", "Decomposition rate coefficient of slow AOM at standard conditions"}},
-    {"AOM_AOM_FastDecCoeffStandard", J11Array {vo_AOM_FastDecCoeffStandard, "d-1", "Decomposition rate coefficient of fast AOM at standard conditions"}},
-    {"AOM_PartAOM_to_AOM_Slow", J11Array {vo_PartAOM_to_AOM_Slow, "kg kg-1", "Part of AOM that is assigned to the slowly decomposing pool"}},
-    {"AOM_PartAOM_to_AOM_Fast", J11Array {vo_PartAOM_to_AOM_Fast, "kg kg-1", "Part of AOM that is assigned to the rapidly decomposing pool"}},
-    {"AOM_CN_Ratio_AOM_Slow", J11Array {vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool"}},
-    {"AOM_CN_Ratio_AOM_Fast", J11Array {vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool"}},
-    {"AOM_PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}},
-    {"AOM_PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}},
-    {"AOM_NConcentration", vo_NConcentration}};
+    {"AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}},
+    {"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter"}},
+    {"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Carbamide content in added organic matter"}},
+    {"AOM_SlowDecCoeffStandard", J11Array {vo_AOM_SlowDecCoeffStandard, "d-1", "Decomposition rate coefficient of slow AOM at standard conditions"}},
+    {"AOM_FastDecCoeffStandard", J11Array {vo_AOM_FastDecCoeffStandard, "d-1", "Decomposition rate coefficient of fast AOM at standard conditions"}},
+    {"PartAOM_to_AOM_Slow", J11Array {vo_PartAOM_to_AOM_Slow, "kg kg-1", "Part of AOM that is assigned to the slowly decomposing pool"}},
+    {"PartAOM_to_AOM_Fast", J11Array {vo_PartAOM_to_AOM_Fast, "kg kg-1", "Part of AOM that is assigned to the rapidly decomposing pool"}},
+    {"CN_Ratio_AOM_Slow", J11Array {vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool"}},
+    {"CN_Ratio_AOM_Fast", J11Array {vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool"}},
+    {"PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}},
+    {"PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}},
+    {"NConcentration", vo_NConcentration}};
 }
 
 //-----------------------------------------------------------------------------------------
@@ -1046,6 +1050,63 @@ json11::Json CropResidueParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+SimulationParameters::SimulationParameters(json11::Json j)
+{
+  merge(j);
+}
+
+void SimulationParameters::merge(json11::Json j)
+{
+  set_iso_date_value(startDate, j, "startDate");
+  set_iso_date_value(endDate, j, "endDate");
+
+  set_bool_value(pc_NitrogenResponseOn, j, "NitrogenResponseOn");
+  set_bool_value(pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn");
+  set_bool_value(pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn");
+  set_bool_value(pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn");
+
+  set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
+  p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
+
+  set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
+  p_NMinFertiliserPartition.merge(j["NMinFertiliserPartition"]);
+  p_NMinUserParams.merge(j["NMinUserParams"]);
+
+  set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
+  set_bool_value(p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
+  set_int_value(p_NumberOfLayers, j, "NumberOfLayers");
+  set_double_value(p_LayerThickness, j, "LayerThickness");
+
+  set_int_value(p_StartPVIndex, j, "StartPVIndex");
+  set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
+}
+
+json11::Json SimulationParameters::to_json() const
+{
+  return json11::Json::object {
+    {"type", "SimulationParameters"},
+    {"startDate", startDate.toIsoDateString()},
+    {"endDate", endDate.toIsoDateString()},
+    {"NitrogenResponseOn", pc_NitrogenResponseOn},
+    {"WaterDeficitResponseOn", pc_WaterDeficitResponseOn},
+    {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
+    {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
+    {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
+    {"AutoIrrigationParams", p_AutoIrrigationParams},
+    {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
+    {"NMinFertiliserPartition", p_NMinFertiliserPartition},
+    {"NMinUserParams", p_NMinUserParams},
+    {"UseSecondaryYields", p_UseSecondaryYields},
+    {"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger},
+    {"NumberOfLayers", p_NumberOfLayers},
+    {"LayerThickness", p_LayerThickness},
+    {"StartPVIndex", p_StartPVIndex},
+    {"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising}
+  };
+}
+
+//-----------------------------------------------------------------------------------------
+
 UserCropParameters::UserCropParameters(json11::Json j)
 {
   merge(j);
@@ -1068,10 +1129,6 @@ void UserCropParameters::merge(json11::Json j)
   set_double_value(pc_GrowthRespirationParameter1, j, "GrowthRespirationParameter1");
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
-  set_bool_value(pc_NitrogenResponseOn, j, "NitrogenResponseOn");
-  set_bool_value(pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn");
-  set_bool_value(pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn");
-  set_bool_value(pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn");
 }
 
 json11::Json UserCropParameters::to_json() const
@@ -1092,11 +1149,7 @@ json11::Json UserCropParameters::to_json() const
     {"MaxCropNDemand", pc_MaxCropNDemand},
     {"GrowthRespirationParameter1", pc_GrowthRespirationParameter1},
     {"GrowthRespirationParameter2", pc_GrowthRespirationParameter2},
-    {"Tortuosity", pc_Tortuosity},
-    {"NitrogenResponseOn", pc_NitrogenResponseOn},
-    {"WaterDeficitResponseOn", pc_WaterDeficitResponseOn},
-    {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
-    {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
+    {"Tortuosity", pc_Tortuosity}
   };
 }
 
@@ -1109,16 +1162,6 @@ UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
 
 void UserEnvironmentParameters::merge(json11::Json j)
 {
-  p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
-  p_NMinFertiliserPartition.merge(j["NMinFertiliserPartition"]);
-  p_NMinUserParams.merge(j["NMinUserParams"]);
-
-  set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
-  set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
-  set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
-  set_bool_value(p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
-  set_int_value(p_NumberOfLayers, j, "NumberOfLayers");
-  set_double_value(p_LayerThickness, j, "LayerThickness");
   set_double_value(p_Albedo, j, "Albedo");
   set_double_value(p_AtmosphericCO2, j, "AthmosphericCO2");
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
@@ -1127,23 +1170,12 @@ void UserEnvironmentParameters::merge(json11::Json j)
   set_double_value(p_MaxGroundwaterDepth, j, "MaxGroundwaterDepth");
   set_double_value(p_MinGroundwaterDepth, j, "MinGroundwaterDepth");
   set_int_value(p_MinGroundwaterDepthMonth, j, "MinGroundwaterDepthMonth");
-  set_int_value(p_StartPVIndex, j, "StartPVIndex");
-  set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 }
 
 json11::Json UserEnvironmentParameters::to_json() const
 {
   return json11::Json::object {
     {"type", "UserEnvironmentParameters"},
-    {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
-    {"AutoIrrigationParams", p_AutoIrrigationParams},
-    {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
-    {"NMinFertiliserPartition", p_NMinFertiliserPartition},
-    {"NMinUserParams", p_NMinUserParams},
-    {"UseSecondaryYields", p_UseSecondaryYields},
-    {"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger},
-    {"NumberOfLayers", p_NumberOfLayers},
-    {"LayerThickness", p_LayerThickness},
     {"Albedo", p_Albedo},
     {"AthmosphericCO2", p_AtmosphericCO2},
     {"WindSpeedHeight", p_WindSpeedHeight},
@@ -1151,9 +1183,7 @@ json11::Json UserEnvironmentParameters::to_json() const
     {"timeStep", p_timeStep},
     {"MaxGroundwaterDepth", p_MaxGroundwaterDepth},
     {"MinGroundwaterDepth", p_MinGroundwaterDepth},
-    {"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth},
-    {"StartPVIndex", p_StartPVIndex},
-    {"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising}
+    {"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
   };
 }
 

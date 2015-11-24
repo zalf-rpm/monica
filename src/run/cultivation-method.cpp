@@ -72,7 +72,10 @@ json11::Json WorkStep::to_json() const
 Seed::Seed(const Tools::Date& at, CropPtr crop)
   : WorkStep(at)
   , _crop(crop)
-{}
+{
+  if(_crop)
+    _crop->setSeedDate(at);
+}
 
 Seed::Seed(json11::Json j)
 {
@@ -83,6 +86,8 @@ void Seed::merge(json11::Json j)
 {
   WorkStep::merge(j);
   set_shared_ptr_value(_crop, j, "crop");
+  if(_crop)
+    _crop->setSeedDate(date());
 }
 
 json11::Json Seed::to_json(bool includeFullCropParameters) const
@@ -103,13 +108,16 @@ void Seed::apply(MonicaModel* model)
 
 Harvest::Harvest(const Tools::Date& at,
                  CropPtr crop,
-                 PVResultPtr cropResult,
+                 CMResultPtr cropResult,
                  std::string method)
   : WorkStep(at)
   , _crop(crop)
   , _cropResult(cropResult)
   , _method(method)
-{}
+{
+  if(_crop)
+    _crop->setHarvestDate(at);
+}
 
 Harvest::Harvest(json11::Json j)
 {
@@ -120,7 +128,12 @@ void Harvest::merge(json11::Json j)
 {
   WorkStep::merge(j);
   set_shared_ptr_value(_crop, j, "crop");
-  _cropResult = make_shared<PVResult>(_crop->id());
+  //this is dangerous as this is actually a value object,
+  //but one could think later on it should actually refer to
+  //the shared crop (between CultivationMethod, MonicaModel, Seed, Harvest etc.)
+  if(_crop)
+    _crop->setHarvestDate(date());
+  _cropResult = make_shared<CMResult>(_crop ? _crop->id() : "");
   set_string_value(_method, j, "method");
   set_double_value(_percentage, j, "percentage");
   set_bool_value(_exported, j, "exported");
@@ -147,8 +160,8 @@ void Harvest::apply(MonicaModel* model)
     if ((_method == "total") || (_method == "fruitHarvest") || (_method == "cutting"))
     {
       debug() << "harvesting crop: " << crop->toString() << " at: " << date().toString() << endl;
-      crop->setHarvestYields(model->cropGrowth()->get_FreshPrimaryCropYield() /
-                             100.0, model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
+      crop->setHarvestYields(model->cropGrowth()->get_FreshPrimaryCropYield() / 100.0,
+                             model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
       crop->setHarvestYieldsTM(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
                                model->cropGrowth()->get_SecondaryCropYield() / 100.0);
 
@@ -162,28 +175,28 @@ void Harvest::apply(MonicaModel* model)
       crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
 
       //store results for this crop
-      _cropResult->pvResults[primaryYield] = crop->primaryYield();
-      _cropResult->pvResults[secondaryYield] = crop->secondaryYield();
-      _cropResult->pvResults[primaryYieldTM] = crop->primaryYieldTM();
-      _cropResult->pvResults[secondaryYieldTM] = crop->secondaryYieldTM();
-      _cropResult->pvResults[sumIrrigation] = crop->appliedIrrigationWater();
-      _cropResult->pvResults[biomassNContent] = crop->primaryYieldN();
-      _cropResult->pvResults[aboveBiomassNContent] = crop->aboveGroundBiomasseN();
-      _cropResult->pvResults[aboveGroundBiomass] = crop->aboveGroundBiomass();
-      _cropResult->pvResults[daysWithCrop] = model->daysWithCrop();
-      _cropResult->pvResults[sumTotalNUptake] = crop->sumTotalNUptake();
-      _cropResult->pvResults[cropHeight] = crop->cropHeight();
-      _cropResult->pvResults[sumETaPerCrop] = crop->get_AccumulatedETa();
-      _cropResult->pvResults[sumTraPerCrop] = crop->get_AccumulatedTranspiration();
-      _cropResult->pvResults[cropname] = crop->id();
-      _cropResult->pvResults[NStress] = model->getAccumulatedNStress();
-      _cropResult->pvResults[WaterStress] = model->getAccumulatedWaterStress();
-      _cropResult->pvResults[HeatStress] = model->getAccumulatedHeatStress();
-      _cropResult->pvResults[OxygenStress] = model->getAccumulatedOxygenStress();
-      _cropResult->pvResults[anthesisDay] = crop->getAnthesisDay();
-      _cropResult->pvResults[soilMoist0_90cmAtHarvest] = model->mean90cmWaterContent();
-      _cropResult->pvResults[corg0_30cmAtHarvest] = model->avgCorg(0.3);
-      _cropResult->pvResults[nmin0_90cmAtHarvest] = model->sumNmin(0.9);
+      _cropResult->results[primaryYield] = crop->primaryYield();
+      _cropResult->results[secondaryYield] = crop->secondaryYield();
+      _cropResult->results[primaryYieldTM] = crop->primaryYieldTM();
+      _cropResult->results[secondaryYieldTM] = crop->secondaryYieldTM();
+      _cropResult->results[sumIrrigation] = crop->appliedIrrigationWater();
+      _cropResult->results[biomassNContent] = crop->primaryYieldN();
+      _cropResult->results[aboveBiomassNContent] = crop->aboveGroundBiomasseN();
+      _cropResult->results[aboveGroundBiomass] = crop->aboveGroundBiomass();
+      _cropResult->results[daysWithCrop] = model->daysWithCrop();
+      _cropResult->results[sumTotalNUptake] = crop->sumTotalNUptake();
+      _cropResult->results[cropHeight] = crop->cropHeight();
+      _cropResult->results[sumETaPerCrop] = crop->get_AccumulatedETa();
+      _cropResult->results[sumTraPerCrop] = crop->get_AccumulatedTranspiration();
+      _cropResult->results[cropname] = crop->dbId();
+      _cropResult->results[NStress] = model->getAccumulatedNStress();
+      _cropResult->results[WaterStress] = model->getAccumulatedWaterStress();
+      _cropResult->results[HeatStress] = model->getAccumulatedHeatStress();
+      _cropResult->results[OxygenStress] = model->getAccumulatedOxygenStress();
+      _cropResult->results[anthesisDay] = crop->getAnthesisDay();
+      _cropResult->results[soilMoist0_90cmAtHarvest] = model->mean90cmWaterContent();
+      _cropResult->results[corg0_30cmAtHarvest] = model->avgCorg(0.3);
+      _cropResult->results[nmin0_90cmAtHarvest] = model->sumNmin(0.9);
 
       if (_method == "total")
         model->harvestCurrentCrop(_exported);
@@ -444,9 +457,9 @@ CultivationMethod::CultivationMethod(const string& name)
 
 CultivationMethod::CultivationMethod(CropPtr crop,
                                      const std::string& name)
-  : _name(name.empty() ? crop->speciesName() + "/" + crop->cultivarName() : name)
+  : _name(name.empty() ? crop->id() : name)
   , _crop(crop)
-  , _cropResult(new PVResult(crop->id()))
+  , _cropResult(new CMResult(crop->id()))
 {
   debug() << "ProductionProcess: " << name.c_str() << endl;
 
@@ -460,10 +473,10 @@ CultivationMethod::CultivationMethod(CropPtr crop,
   }
 
   for(Date cd : crop->getCuttingDates())
-	{
+  {
     debug() << "Add cutting date: " << cd.toString() << endl;
     addApplication(Cutting(cd));
-	}
+  }
 }
 
 CultivationMethod::CultivationMethod(json11::Json j)

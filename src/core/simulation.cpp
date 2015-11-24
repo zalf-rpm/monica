@@ -592,26 +592,26 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 	if(hermes_config->getNDeposition() != -1.0)
 		siteParams.vq_NDeposition = hermes_config->getNDeposition();
 
-	double layer_thickness = cpp.userEnvironmentParameters.p_LayerThickness;
-	double profile_depth = layer_thickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
+	double layer_thickness = cpp.simulationParameters.p_LayerThickness;
+	double profile_depth = layer_thickness * double(cpp.simulationParameters.p_NumberOfLayers);
 	double max_mineralisation_depth = 0.4;
 	bool nitrogen_response_on = hermes_config->getNitrogenResponseOn();
 	bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
 	bool emergence_flooding_control_on = hermes_config->getEmergenceFloodingControlOn();
 	bool emergence_moisture_control_on = hermes_config->getEmergenceMoistureControlOn();
 	cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth = max_mineralisation_depth;
-	cpp.userCropParameters.pc_NitrogenResponseOn = nitrogen_response_on;
-	cpp.userCropParameters.pc_WaterDeficitResponseOn = water_deficit_response_on;
-	cpp.userCropParameters.pc_EmergenceFloodingControlOn = emergence_flooding_control_on;
-	cpp.userCropParameters.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
+	cpp.simulationParameters.pc_NitrogenResponseOn = nitrogen_response_on;
+	cpp.simulationParameters.pc_WaterDeficitResponseOn = water_deficit_response_on;
+	cpp.simulationParameters.pc_EmergenceFloodingControlOn = emergence_flooding_control_on;
+	cpp.simulationParameters.pc_EmergenceMoistureControlOn = emergence_moisture_control_on;
 
 	//soil data
 	siteParams.vs_SoilParameters = soilParametersFromHermesFile
 		(1,
 		 outputPath + hermes_config->getSoilParametersFile(),
 		 int(layer_thickness*100.0),
-		 int(cpp.userEnvironmentParameters.p_LayerThickness
-				 * cpp.userEnvironmentParameters.p_NumberOfLayers
+		 int(cpp.simulationParameters.p_LayerThickness
+				 * cpp.simulationParameters.p_NumberOfLayers
 				 * 100.0),
 		 hermes_config->getPH());
 
@@ -697,7 +697,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
 	//build up the monica environment
 	Env env(cpp);
-	env.pathToOutputDir = outputPath;
+	env.params.writeOutputFiles = true;
+	env.params.pathToOutputDir = outputPath;
 	env.setMode(MODE_HERMES);
 	env.params.groundwaterInformation = gw_infos;
 
@@ -708,15 +709,15 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
 	if(hermes_config->useAutomaticIrrigation())
 	{
-		env.params.userEnvironmentParameters.p_UseAutomaticIrrigation = true;
-		env.params.userEnvironmentParameters.p_AutoIrrigationParams = hermes_config->getAutomaticIrrigationParameters();
+		env.params.simulationParameters.p_UseAutomaticIrrigation = true;
+		env.params.simulationParameters.p_AutoIrrigationParams = hermes_config->getAutomaticIrrigationParameters();
 	}
 
 	if(hermes_config->useNMinFertiliser())
 	{
-		env.params.userEnvironmentParameters.p_UseNMinMineralFertilisingMethod = true;
-		env.params.userEnvironmentParameters.p_NMinUserParams = hermes_config->getNMinUserParameters();
-		env.params.userEnvironmentParameters.p_NMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
+		env.params.simulationParameters.p_UseNMinMineralFertilisingMethod = true;
+		env.params.simulationParameters.p_NMinUserParams = hermes_config->getNMinUserParameters();
+		env.params.simulationParameters.p_NMinFertiliserPartition = getMineralFertiliserParametersFromMonicaDB(hermes_config->getMineralFertiliserID());
 	}
 
 	return env;

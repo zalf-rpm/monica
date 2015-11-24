@@ -268,11 +268,17 @@ void parseAndRunMonica(PARMParams ps)
 	auto sitej = cropSiteSim2.at(1);
 	auto simj = cropSiteSim2.at(2);
 
+	if(!ps.startDate.isValid())
+		set_iso_date_value(ps.startDate, simj, "startDate");
+	if(!ps.endDate.isValid())
+		set_iso_date_value(ps.endDate, simj, "endDate");
+
 	Env env;
 	env.params = readUserParameterFromDatabase(MODE_HERMES);
 
 	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
 	env.params.site.merge(sitej["SiteParameters"]);
+	env.params.simulationParameters.merge(simj);
 
 	for(Json cmj : cropj["cropRotation"].array_items())
 		env.cropRotation.push_back(cmj);
@@ -286,6 +292,9 @@ void parseAndRunMonica(PARMParams ps)
 	if(!env.da.isValid())
 		return;
 	
+	env.params.writeOutputFiles = true;
+	env.params.pathToOutputDir = ps.pathToProjectInputFiles;
+
 	Result r = runMonica(env);
 
 	r;

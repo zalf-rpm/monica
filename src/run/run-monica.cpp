@@ -50,8 +50,8 @@ Env::Env(CentralParameterProvider cpp)
 string Env::toString() const
 {
 	ostringstream s;
-  s << " noOfLayers: " << params.userEnvironmentParameters.p_NumberOfLayers
-    << " layerThickness: " << params.userEnvironmentParameters.p_LayerThickness
+  s << " noOfLayers: " << params.simulationParameters.p_NumberOfLayers
+    << " layerThickness: " << params.simulationParameters.p_LayerThickness
 		<< endl;
 	s << "ClimateData: from: " << da.startDate().toString()
 		<< " to: " << da.endDate().toString() << endl;
@@ -123,8 +123,8 @@ std::vector<double> Result::getResultsById(int id)
 		int size = pvrs.size();
 		for (int i = 0; i<size; i++)
 		{
-			PVResult crop_result = pvrs.at(i);
-			result_vector.push_back(crop_result.pvResults[(ResultId)id]);
+      CMResult crop_result = pvrs.at(i);
+      result_vector.push_back(crop_result.results[(ResultId)id]);
 		}
 		return result_vector;
 	}
@@ -165,30 +165,25 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
                     ? da.dataForTimestep(Climate::relhumid, stepNo)
                     : -1.0;
 
-	map<Climate::ACD, double> m{ 
+	map<Climate::ACD, double> m{
 		{ Climate::tmin, tmin },
 	{ Climate::tavg, tavg },
 	{ Climate::tmax, tmax },
 	{ Climate::precip, precip },
 	{ Climate::wind, wind },
 	{ Climate::globrad, globrad },
-	{ Climate::relhumid, relhumid } };
+	{ Climate::relhumid, relhumid }};
   return make_pair(currentDate, m);
 }
 
-/**
- * @brief Static method for starting calculation
- * @param env
- */
 Result Monica::runMonica(Env env)
 {
   Result res;
 	res.customId = env.customId;
-//  res.gp = env.gridPoint;
 
-  if(env.cropRotation.begin() == env.cropRotation.end())
+  if(env.cropRotation.empty())
   {
-    debug() << "Error: Fruchtfolge is empty" << endl;
+    debug() << "Error: Crop rotation is empty!" << endl;
     return res;
   }
 
@@ -197,61 +192,26 @@ Result Monica::runMonica(Env env)
   ofstream fout;
   ofstream gout;
 
-  bool write_output_files = false;
-
-  // activate writing to output files only in special modes
-  if (env.getMode() == MODE_HERMES ||
-      env.getMode() == MODE_EVA2 ||
-      env.getMode() == MODE_MACSUR_SCALING ||
-      env.getMode() == MODE_ACTIVATE_OUTPUT_FILES)
-  {
-
-    write_output_files = true;
-    debug() << "write_output_files: " << write_output_files << endl;
-  }
-
-  if (env.getMode() == MODE_SENSITIVITY_ANALYSIS ||
-      env.getMode() == MODE_MACSUR_SCALING_CALIBRATION ) 
-  {
-    write_output_files = false;
-  }
-
-	if(env.getMode() == MODE_CARBIOCIAL_CLUSTER)
-    write_output_files = env.params.writeOutputFiles;
-	
-  env.params.writeOutputFiles = write_output_files;
-
 	debug() << "-----" << endl;
 
   MonicaModel monica(env.params);
 
-	if (write_output_files)
+	if (env.params.writeOutputFiles)
 	{
-		//    static int ___c = 1;
-		//    ofstream fout("/home/nendel/devel/lsa/models/monica/rmout.dat");
-		//    ostringstream fs;
-		//    fs << "/home/michael/development/lsa/landcare-dss/rmout-" << ___c << ".dat";
-		//    ostringstream gs;
-		//    gs << "/home/michael/development/lsa/landcare-dss/smout-" << ___c << ".dat";
-		//    env.pathToOutputDir = "/home/nendel/devel/git/models/monica/";
-		//    ofstream fout(fs.str().c_str());//env.pathToOutputDir+"rmout.dat").c_str());
-		//    ofstream gout(gs.str().c_str());//env.pathToOutputDir+"smout.dat").c_str());
-		//    ___c++;
-
 		// open rmout.dat
-		debug() << "Outputpath: " << (env.pathToOutputDir+pathSeparator()+"rmout.dat").c_str() << endl;
-		fout.open((env.pathToOutputDir + pathSeparator()+ "rmout.dat").c_str());
+    debug() << "Outputpath: " << (env.params.pathToOutputDir+pathSeparator()+"rmout.csv").c_str() << endl;
+    fout.open((env.params.pathToOutputDir + pathSeparator()+ "rmout.csv").c_str());
 		if (fout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator() + "rmout.dat").c_str() << "\"" << endl;
+      debug() << "Error while opening output file \"" << (env.params.pathToOutputDir + pathSeparator() + "rmout.csv").c_str() << "\"" << endl;
 			return res;
 		}
 
 		// open smout.dat
-		gout.open((env.pathToOutputDir + pathSeparator() + "smout.dat").c_str());
+    gout.open((env.params.pathToOutputDir + pathSeparator() + "smout.csv").c_str());
 		if (gout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.pathToOutputDir + pathSeparator() + "smout.dat").c_str() << "\"" << endl;
+      debug() << "Error while opening output file \"" << (env.params.pathToOutputDir + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
 			return res;
 		}
 
@@ -259,12 +219,9 @@ Result Monica::runMonica(Env env)
 		initializeFoutHeader(fout);
 		initializeGoutHeader(gout);
 
-    dumpMonicaParametersIntoFile(env.pathToOutputDir, env.params);
+    dumpMonicaParametersIntoFile(env.params.pathToOutputDir, env.params);
 	}
 
-	//debug() << "MonicaModel" << endl;
-	//debug() << env.toString().c_str();
-	
 	debug() << "currentDate" << endl;
 	Date currentDate = env.da.startDate();
   size_t nods = env.da.noOfStepsPossible();
@@ -380,11 +337,15 @@ Result Monica::runMonica(Env env)
 
       nextCMApplicationDate =  currentCM.nextDate(nextCMApplicationDate);
 
-      nextAbsoluteCMApplicationDate =  useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
-          (currentDate.year() + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-           true) : nextCMApplicationDate;
-
-
+      nextAbsoluteCMApplicationDate = useRelativeDates 
+				? nextCMApplicationDate.toAbsoluteDate
+				(currentDate.year() 
+				 + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() 
+						? 0
+						: 1),
+				 true)
+				: nextCMApplicationDate;
+			
       debug() << "next app-date: " << nextCMApplicationDate.toString()
           << " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
       //if application date was not valid, we're (probably) at the end
@@ -395,18 +356,18 @@ Result Monica::runMonica(Env env)
       if(!nextAbsoluteCMApplicationDate.isValid())
       {
         //get yieldresults for crop
-        PVResult r = currentCM.cropResult();
+        CMResult r = currentCM.cropResult();
         r.customId = currentCM.customId();
         r.date = currentDate;
 
-        if(!env.params.userEnvironmentParameters.p_UseSecondaryYields)
-          r.pvResults[secondaryYield] = 0;
-        r.pvResults[sumFertiliser] = monica.sumFertiliser();
-        r.pvResults[daysWithCrop] = monica.daysWithCrop();
-        r.pvResults[NStress] = monica.getAccumulatedNStress();
-        r.pvResults[WaterStress] = monica.getAccumulatedWaterStress();
-        r.pvResults[HeatStress] = monica.getAccumulatedHeatStress();
-        r.pvResults[OxygenStress] = monica.getAccumulatedOxygenStress();
+        if(!env.params.simulationParameters.p_UseSecondaryYields)
+          r.results[secondaryYield] = 0;
+        r.results[sumFertiliser] = monica.sumFertiliser();
+        r.results[daysWithCrop] = monica.daysWithCrop();
+        r.results[NStress] = monica.getAccumulatedNStress();
+        r.results[WaterStress] = monica.getAccumulatedWaterStress();
+        r.results[HeatStress] = monica.getAccumulatedHeatStress();
+        r.results[OxygenStress] = monica.getAccumulatedOxygenStress();
 
 				res.pvrs.push_back(r);
 				//        debug() << "py: " << r.pvResults[primaryYield] << endl;
@@ -442,7 +403,7 @@ Result Monica::runMonica(Env env)
         nextAbsoluteCMApplicationDate.addYears(1);
     }
     // write simulation date to file
-    if (write_output_files)
+    if (env.params.writeOutputFiles)
     {
       fout << currentDate.toString("/");
       gout << currentDate.toString("/");
@@ -456,7 +417,7 @@ Result Monica::runMonica(Env env)
       monica.cropStep(currentDate, dateAndClimateDataP.second);
 
     // writes crop results to output file
-    if (write_output_files)
+    if (env.params.writeOutputFiles)
       writeCropResults(monica.cropGrowth(), fout, gout, monica.isCropPlanted());
 
     monica.generalStep(currentDate, dateAndClimateDataP.second);
@@ -588,12 +549,12 @@ Result Monica::runMonica(Env env)
 
 		res.dates.push_back(currentDate.toMysqlString());
 
-		if (write_output_files)
+		if (env.params.writeOutputFiles)
 		{
 			writeGeneralResults(fout, gout, env, monica, d);
 		}
 	}
-	if (write_output_files)
+	if (env.params.writeOutputFiles)
   {
     fout.close();
     gout.close();

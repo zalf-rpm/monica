@@ -113,7 +113,7 @@ namespace Monica
 
 		bool useNMinMineralFertilisingMethod() const
 		{
-      return _envPs.p_UseNMinMineralFertilisingMethod;
+      return _simPs.p_UseNMinMineralFertilisingMethod;
     }
 
     double applyMineralFertiliserViaNMinMethod
@@ -244,15 +244,17 @@ namespace Monica
     const UserSoilTemperatureParameters& soilTemperatureParameters() const { return _soilTempPs; }
     const UserSoilTransportParameters& soilTransportParameters() const { return _soilTransPs; }
     const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
+    const SimulationParameters& simulationParameters() const { return _simPs; }
 
   private:
     const SiteParameters _sitePs;
     const UserSoilMoistureParameters _smPs;
     const UserEnvironmentParameters _envPs;
     const UserCropParameters _cropPs;
-    const UserSoilTemperatureParameters& _soilTempPs;
-    const UserSoilTransportParameters& _soilTransPs;
-    const UserSoilOrganicParameters& _soilOrganicPs;
+    const UserSoilTemperatureParameters _soilTempPs;
+    const UserSoilTransportParameters _soilTransPs;
+    const UserSoilOrganicParameters _soilOrganicPs;
+    const SimulationParameters _simPs;
     bool _writeOutputFiles{false};
     std::string _pathToOutputDir;
     MeasuredGroundwaterTableInformation _groundwaterInformation;

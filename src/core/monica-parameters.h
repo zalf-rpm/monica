@@ -303,20 +303,20 @@ namespace Monica
 	/**
 	 * @brief structure holding the results for a particular crop (in one year usually)
 	 */
-  struct PVResult : public Tools::Json11Serializable
+  struct CMResult : public Tools::Json11Serializable
 	{
-    PVResult() {}
+    CMResult() {}
 
-    PVResult(int id) : id(id) {}
+    CMResult(std::string id) : id(id) {}
 
-    PVResult(json11::Json object);
+    CMResult(json11::Json object);
 
     virtual void merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
 		//! id of crop
-    CropId id{-1};
+    std::string id;
 
 		//custom id to enable mapping of monica results to user defined other entities
 		//e.g. a crop activity id from Carbiocial
@@ -324,10 +324,10 @@ namespace Monica
     Tools::Date date;
 
 		//! different results for a particular crop
-		std::map<ResultId, double> pvResults;
+    std::map<ResultId, double> results;
 	};
 
-  typedef std::shared_ptr<PVResult> PVResultPtr;
+  typedef std::shared_ptr<CMResult> CMResultPtr;
 
 	//----------------------------------------------------------------------------
 
@@ -598,8 +598,8 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
-    double nitrateConcentration{0.0};
-    double sulfateConcentration{0.0};
+    double nitrateConcentration{0.0}; //!< sulfate concentration [mg dm-3]
+    double sulfateConcentration{0.0}; //!< nitrate concentration [mg dm-3]
   };
 
   //----------------------------------------------------------------------------
@@ -810,6 +810,43 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
+  struct SimulationParameters : public Tools::Json11Serializable
+  {
+    SimulationParameters() {}
+
+    SimulationParameters(json11::Json object);
+
+    virtual void merge(json11::Json j);
+
+    virtual json11::Json to_json() const;
+
+    Tools::Date startDate;
+    Tools::Date endDate;
+
+    bool pc_NitrogenResponseOn{true};
+    bool pc_WaterDeficitResponseOn{true};
+    bool pc_EmergenceFloodingControlOn{true};
+    bool pc_EmergenceMoistureControlOn{true};
+
+    bool p_UseAutomaticIrrigation{false};
+    AutomaticIrrigationParameters p_AutoIrrigationParams;
+
+    bool p_UseNMinMineralFertilisingMethod{false};
+    MineralFertiliserParameters p_NMinFertiliserPartition;
+    NMinUserParameters p_NMinUserParams;
+
+    bool p_UseSecondaryYields{true};
+    bool p_UseAutomaticHarvestTrigger{false};
+
+    int p_NumberOfLayers{0};
+    double p_LayerThickness{0.1};
+
+    int p_StartPVIndex{0};
+    int p_JulianDayAutomaticFertilising{0};
+  };
+
+  //----------------------------------------------------------------------------
+
 	/**
 	 * Class that holds information of crop defined by user.
 	 * @author Xenia Specka
@@ -839,11 +876,6 @@ namespace Monica
     double pc_GrowthRespirationParameter1{0.0};
     double pc_GrowthRespirationParameter2{0.0};
     double pc_Tortuosity{0.0};
-
-    bool pc_NitrogenResponseOn{true};
-    bool pc_WaterDeficitResponseOn{true};
-    bool pc_EmergenceFloodingControlOn{true};
-    bool pc_EmergenceMoistureControlOn{true};
 	};
 
 	//----------------------------------------------------------------------------
@@ -862,19 +894,6 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
-    bool p_UseAutomaticIrrigation{false};
-    AutomaticIrrigationParameters p_AutoIrrigationParams;
-
-    bool p_UseNMinMineralFertilisingMethod{false};
-    MineralFertiliserParameters p_NMinFertiliserPartition;
-    NMinUserParameters p_NMinUserParams;
-
-    bool p_UseSecondaryYields{true};
-    bool p_UseAutomaticHarvestTrigger{false};
-
-    int p_NumberOfLayers{0};
-    double p_LayerThickness{0.1};
-
     double p_Albedo{0.0};
     double p_AtmosphericCO2{0.0};
     double p_WindSpeedHeight{0.0};
@@ -885,8 +904,6 @@ namespace Monica
     double p_MinGroundwaterDepth{20.0};
     int p_MinGroundwaterDepthMonth{0};
 
-    int p_StartPVIndex{0};
-    int p_JulianDayAutomaticFertilising{0};
 	};
 
   //----------------------------------------------------------------------------
@@ -1061,6 +1078,7 @@ namespace Monica
 		UserSoilTemperatureParameters userSoilTemperatureParameters;
 		UserSoilTransportParameters userSoilTransportParameters;
 		UserSoilOrganicParameters userSoilOrganicParameters;
+    SimulationParameters simulationParameters;
 
     SiteParameters site;        //! site specific parameters
     Soil::OrganicConstants organic;  //! constant organic parameters to the model

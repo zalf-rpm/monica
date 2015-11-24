@@ -796,6 +796,8 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
       UserSoilTransportParameters& user_soil_transport = centralParameterProvider.userSoilTransportParameters;
       UserSoilOrganicParameters& user_soil_organic = centralParameterProvider.userSoilOrganicParameters;
 
+      SimulationParameters& sim = centralParameterProvider.simulationParameters;
+
 			while (!(row = con->getRow()).empty())
 			{
 				std::string name = row[0];
@@ -830,15 +832,15 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 				else if (name == "growth_respiration_parameter_1")
 					user_crops.pc_GrowthRespirationParameter1 = stof(row[1]);
 				else if (name == "use_automatic_irrigation")
-					user_env.p_UseAutomaticIrrigation = stoi(row[1]) == 1;
+          sim.p_UseAutomaticIrrigation = stob(row[1]);
 				else if (name == "use_nmin_mineral_fertilising_method")
-					user_env.p_UseNMinMineralFertilisingMethod = stoi(row[1]) == 1;
+          sim.p_UseNMinMineralFertilisingMethod = stob(row[1]);
 				else if (name == "layer_thickness")
-					user_env.p_LayerThickness = stof(row[1]);
+          sim.p_LayerThickness = stod(row[1]);
 				else if (name == "number_of_layers")
-					user_env.p_NumberOfLayers = stoi(row[1]);
+          sim.p_NumberOfLayers = stoi(row[1]);
 				else if (name == "start_pv_index")
-					user_env.p_StartPVIndex = stoi(row[1]);
+          sim.p_StartPVIndex = stoi(row[1]);
 				else if (name == "albedo")
 					user_env.p_Albedo = stof(row[1]);
 				else if (name == "athmospheric_co2")
@@ -846,9 +848,9 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 				else if (name == "wind_speed_height")
 					user_env.p_WindSpeedHeight = stof(row[1]);
 				else if (name == "use_secondary_yields")
-					user_env.p_UseSecondaryYields = stoi(row[1]) == 1;
+          sim.p_UseSecondaryYields = stob(row[1]);
 				else if (name == "julian_day_automatic_fertilising")
-					user_env.p_JulianDayAutomaticFertilising = stoi(row[1]);
+          sim.p_JulianDayAutomaticFertilising = stoi(row[1]);
 				else if (name == "critical_moisture_depth")
 					user_soil_moisture.pm_CriticalMoistureDepth = stof(row[1]);
 				else if (name == "saturated_hydraulic_conductivity")

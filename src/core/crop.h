@@ -54,15 +54,17 @@ namespace Monica
 
     json11::Json to_json(bool includeFullCropParameters = true) const;
 
-    CropId id() const { return _id; }
+    int dbId() const { return _dbId; }
 
-    void setId(int id){ _id = id; }
+    void setDbId(int dbId){ _dbId = dbId; }
+
+    std::string id() const { return speciesName() + "/" + cultivarName(); }
 
     std::string speciesName() const { return _speciesName; }
 
     std::string cultivarName() const { return _cultivarName; }
 
-    bool isValid() const { return _id > -1; }
+    bool isValid() const { return cropParameters() && residueParameters(); }
 
     const CropParametersPtr cropParameters() const { return _cropParams; }
 
@@ -78,14 +80,18 @@ namespace Monica
 
 		Tools::Date seedDate() const { return _seedDate; }
 
+    void setSeedDate(Tools::Date sd){ _seedDate = sd; }
+
 		Tools::Date harvestDate() const { return _harvestDate; }
+
+    void setHarvestDate(Tools::Date hd){ _harvestDate = hd; }
 
 		std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
 
     void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd)
 		{
-      _seedDate = sd;
-      _harvestDate = hd;
+      setSeedDate(sd);
+      setHarvestDate(hd);
 		}
 
 		void addCuttingDate(const Tools::Date cd) { _cuttingDates.push_back(cd); }
@@ -128,13 +134,7 @@ namespace Monica
 		double secondaryYieldN() const { return _secondaryYieldN; }
 		double cropHeight() const { return _cropHeight; }
 
-		void reset()
-		{
-			_primaryYield = _secondaryYield = _appliedAmountIrrigation = 0;
-			_primaryYieldN = _secondaryYieldN = _accumulatedETa = _accumulatedTranspiration =  0.0;
-			_primaryYieldTM = _secondaryYield = 0.0;
-			_anthesisDay = _maturityDay = -1;
-		}
+		void reset();
 
 		void setEva2TypeUsage(int type) { eva2_typeUsage = type; }
 		int getEva2TypeUsage() const { return eva2_typeUsage; }
@@ -158,7 +158,7 @@ namespace Monica
 		AutomaticHarvestParameters getAutomaticHarvestParams() { return _automaticHarvestParams; }
 
 	private:
-    int _id{-1};
+    int _dbId{-1};
     std::string _speciesName;
     std::string _cultivarName;
 		Tools::Date _seedDate;

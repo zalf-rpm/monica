@@ -344,8 +344,8 @@ Monica::cropRotationFromHermesFile(const string& pathToFile,
 		CropPtr crop = hermesCropId2Crop(crp);
 		crop->setCropParameters(getCropParametersFromMonicaDB(crop->speciesName(),
 																													crop->cultivarName()));
-		//crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
-		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
+		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->speciesName(),
+																																crop->cultivarName()));
 
 		if (!useAutomaticHarvestTrigger) {
 			// Do not use automatic harvest trigger
@@ -561,7 +561,8 @@ Monica::climateDataFromHermesFiles(const std::string& pathToFiles,
 //----------------------------------------------------------------------------
 
 std::vector<CultivationMethod>
-Monica::attachFertiliserSA(std::vector<CultivationMethod> cropRotation, const std::string pathToFertiliserFile)
+Monica::attachFertiliserSA(std::vector<CultivationMethod> cropRotation, 
+													 const std::string pathToFertiliserFile)
 {
 	attachFertiliserApplicationsToCropRotation(cropRotation, pathToFertiliserFile);
 	return cropRotation;

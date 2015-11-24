@@ -54,7 +54,7 @@ Crop::Crop(const std::string& species,
   , _crossCropAdaptionFactor(crossCropAdaptionFactor)
 {}
 
-Crop::Crop(const std::string& speciesName,
+Crop::Crop(const string& speciesName,
            const string& cultivarName,
            const Tools::Date& seedDate,
            const Tools::Date& harvestDate,
@@ -71,10 +71,10 @@ Crop::Crop(const std::string& speciesName,
 {}
 
 Crop::Crop(json11::Json j)
-  : _seedDate(Tools::Date::fromIsoDateString(string_value(j, "seedDate")))
-  , _harvestDate(Tools::Date::fromIsoDateString(string_value(j, "havestDate")))
 {
-  set_int_value(_id, j, "id");
+  set_iso_date_value(_seedDate, j, "seedDate");
+  set_iso_date_value(_harvestDate, j, "havestDate");
+  set_int_value(_dbId, j, "id");
   set_string_value(_speciesName, j, "species");
   set_string_value(_cultivarName, j, "cultivar");
 
@@ -82,33 +82,26 @@ Crop::Crop(json11::Json j)
   if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
   {
     auto jcps = j["cropParams"];
-    //load all crop data from json object
-    if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
-       jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
+    if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err) 
+			 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
       _cropParams = make_shared<CropParameters>(j["cropParams"]);
-    //load data from database
-    else
-      _cropParams = getCropParametersFromMonicaDB(_id);
+
+    if(_speciesName.empty() && _cropParams)
+      _speciesName = _cropParams->speciesParams.pc_SpeciesId;
+    if(_cultivarName.empty() && _cropParams)
+      _cultivarName = _cropParams->cultivarParams.pc_CultivarId;
   }
 
   if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
   {
     auto jcps = j["perennialCropParams"];
-    //load all crop data from json object
-    if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
-       jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
-      _perennialCropParams = make_shared<CropParameters>(j["cropParams"]);
-    //load data from database
-    else
-      _perennialCropParams = getCropParametersFromMonicaDB(_id);
+		if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err)
+			 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
+			_perennialCropParams = make_shared<CropParameters>(j["cropParams"]);
   }
 
-  //load all crop data from json object
   if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
     _residueParams = make_shared<OrganicMatterParameters>(j["residueParams"]);
-  //load data from database
-  else
-    _residueParams = getResidueParametersFromMonicaDB(_id);
 
   if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
     for(auto cd : j["cuttingDates"].array_items())
@@ -123,7 +116,7 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const
 
   J11Object o{
     {"type", "Crop"},
-    {"id", _id},
+    {"id", _dbId},
     {"species", _speciesName},
     {"cultivar", _cultivarName},
     {"seedDate", _seedDate.toIsoDateString()},
@@ -148,14 +141,23 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const
 string Crop::toString(bool detailed) const
 {
   ostringstream s;
-  s << "id: " << id() << " name: " << speciesName() << " seedDate: " << seedDate().toString() << " harvestDate: "
-      << harvestDate().toString();
-  if (detailed)
-  {
-    s << endl << "CropParameters: " << endl << cropParameters()->toString() << endl << "ResidueParameters: " << endl
-        << residueParameters()->toString() << endl;
-  }
+  s << "id: " << dbId()
+		<< " species/cultivar: " << speciesName() << "/" << cultivarName() 
+		<< " seedDate: " << seedDate().toString() 
+		<< " harvestDate: "	<< harvestDate().toString();
+	if(detailed)
+    s << endl << "CropParameters: " << endl << cropParameters()->toString()
+      << endl << "ResidueParameters: " << endl << residueParameters()->toString() << endl;
+  
   return s.str();
+}
+
+void Crop::reset()
+{
+	_primaryYield = _secondaryYield = _appliedAmountIrrigation = 0;
+	_primaryYieldN = _secondaryYieldN = _accumulatedETa = _accumulatedTranspiration = 0.0;
+	_primaryYieldTM = _secondaryYield = 0.0;
+	_anthesisDay = _maturityDay = -1;
 }
 
 //------------------------------------------------------------------------------

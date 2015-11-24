@@ -206,12 +206,12 @@ const Result Configuration::run()
 	int startYear = getIsoDate(simObj, "time.startDate").year();
   int endYear = getIsoDate(simObj, "time.endDate").year();
 
-	cpp.userEnvironmentParameters.p_UseSecondaryYields = 
-		getBool(simObj, "switch.useSecondaryYieldOn", cpp.userEnvironmentParameters.p_UseSecondaryYields);
-	cpp.userCropParameters.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn", cpp.userCropParameters.pc_NitrogenResponseOn);
-	cpp.userCropParameters.pc_WaterDeficitResponseOn = getBool(simObj, "switch.waterDeficitResponseOn", cpp.userCropParameters.pc_WaterDeficitResponseOn);
-	cpp.userCropParameters.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn", cpp.userCropParameters.pc_EmergenceMoistureControlOn);
-	cpp.userCropParameters.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn", cpp.userCropParameters.pc_EmergenceFloodingControlOn);
+	cpp.simulationParameters.p_UseSecondaryYields =
+		getBool(simObj, "switch.useSecondaryYieldOn", cpp.simulationParameters.p_UseSecondaryYields);
+	cpp.simulationParameters.pc_NitrogenResponseOn = getBool(simObj, "switch.nitrogenResponseOn", cpp.simulationParameters.pc_NitrogenResponseOn);
+	cpp.simulationParameters.pc_WaterDeficitResponseOn = getBool(simObj, "switch.waterDeficitResponseOn", cpp.simulationParameters.pc_WaterDeficitResponseOn);
+	cpp.simulationParameters.pc_EmergenceMoistureControlOn = getBool(simObj, "switch.emergenceMoistureControlOn", cpp.simulationParameters.pc_EmergenceMoistureControlOn);
+	cpp.simulationParameters.pc_EmergenceFloodingControlOn = getBool(simObj, "switch.emergenceFloodingControlOn", cpp.simulationParameters.pc_EmergenceFloodingControlOn);
 
   std::cout << "fetched sim data"  << std::endl;
   
@@ -239,7 +239,7 @@ const Result Configuration::run()
   std::cout << "fetched site data"  << std::endl;
 
   /* soil */
-  double lThicknessCm = 100.0 * cpp.userEnvironmentParameters.p_LayerThickness;
+  double lThicknessCm = 100.0 * cpp.simulationParameters.p_LayerThickness;
   // TODO: Bedeutung unklar. Weder die max. Layer Dicke (die ist ja 10 cm oder?) noch Boden Dicke. p_NumberOfLayers = 3
   double maxDepthCm =  200.0; // 100.0 * cpp.userEnvironmentParameters.p_LayerThickness * double(cpp.userEnvironmentParameters.p_NumberOfLayers);
   // TODO: Bedeutung unklar. Scheint weder die max. Anzahl je Horizont noch je Boden zu sein
@@ -275,7 +275,7 @@ const Result Configuration::run()
   std::cout << "fetched crop data"  << std::endl;
 
 	Env env(cpp);
-  env.pathToOutputDir = _outPath;
+  env.params.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
   env.setMode(MODE_HERMES);
   env.params.site = sp;
@@ -453,13 +453,13 @@ bool Configuration::createProcesses(std::vector<CultivationMethod> &pps, cson_ar
 
     CropPtr crop = CropPtr(new Crop(name, name));
     crop->setSeedAndHarvestDate(sd, hd);
-    crop->setCropParameters(getCropParametersFromMonicaDB(crop->id()));
-    crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->id()));
+    crop->setCropParameters(getCropParametersFromMonicaDB(crop->speciesName(),
+																													crop->cultivarName()));
+    crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->speciesName(),
+																																crop->cultivarName()));
 
 		if (permCropId > -1)
-		{
 			crop->setPerennialCropParameters(getCropParametersFromMonicaDB(permCropId));
-		}
 
 		CultivationMethod pp(crop);
 

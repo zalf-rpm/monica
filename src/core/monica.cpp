@@ -66,10 +66,11 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   , _soilTempPs(cpp.userSoilTemperatureParameters)
   , _soilTransPs(cpp.userSoilTransportParameters)
   , _soilOrganicPs(cpp.userSoilOrganicParameters)
+  , _simPs(cpp.simulationParameters)
   , _writeOutputFiles(cpp.writeOutputFiles)
   , _pathToOutputDir(cpp.pathToOutputDir)
   , _groundwaterInformation(cpp.groundwaterInformation)
-  , _soilColumn(_envPs.p_LayerThickness,
+  , _soilColumn(_simPs.p_LayerThickness,
                 _soilOrganicPs.ps_MaxMineralisationDepth,
                 _sitePs.vs_SoilParameters,
                 _smPs.pm_CriticalMoistureDepth)
@@ -111,6 +112,7 @@ void MonicaModel::seedCrop(CropPtr crop)
                                         *cps,
                                         _sitePs,
                                         _cropPs,
+                                        _simPs,
                                         crop->getEva2TypeUsage());
 
     if (_currentCrop->perennialCropParameters())
@@ -121,15 +123,15 @@ void MonicaModel::seedCrop(CropPtr crop)
     _soilMoisture.put_Crop(_currentCropGrowth);
     _soilOrganic.put_Crop(_currentCropGrowth);
 
-    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
-            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
+//    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
+//            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
-    if(_envPs.p_UseNMinMineralFertilisingMethod &&
+    if(_simPs.p_UseNMinMineralFertilisingMethod &&
        _currentCrop->seedDate().dayOfYear() <= _currentCrop->harvestDate().dayOfYear())
     {
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = applyMineralFertiliserViaNMinMethod
-                           (_envPs.p_NMinFertiliserPartition,
+                           (_simPs.p_NMinFertiliserPartition,
                             NMinCropParameters(cps->speciesParams.pc_SamplingDepth,
                                                cps->speciesParams.pc_TargetNSamplingDepth,
                                                cps->speciesParams.pc_TargetN30));
@@ -186,7 +188,7 @@ void MonicaModel::harvestCurrentCrop(bool exported)
                                     rootBiomass,
                                     rootNConcentration);
 
-      double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_envPs.p_UseSecondaryYields);
+      double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
 
 			//!@todo Claas: das hier noch berechnen
 			double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
@@ -414,7 +416,7 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 void MonicaModel::applyMineralFertiliser(MineralFertiliserParameters partition,
                                          double amount)
 {
-  if(!_envPs.p_UseNMinMineralFertilisingMethod)
+  if(!_simPs.p_UseNMinMineralFertilisingMethod)
   {
 		_soilColumn.applyMineralFertiliser(partition, amount);
 		addDailySumFertiliser(amount);
@@ -434,7 +436,7 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParametersPtr params
 double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters partition,
                                                         NMinCropParameters cps)
 {
-  const NMinUserParameters& ups = _envPs.p_NMinUserParams;
+  const NMinUserParameters& ups = _simPs.p_NMinUserParams;
   return _soilColumn.applyMineralFertiliserViaNMinMethod(partition,
                                                          cps.samplingDepth,
                                                          cps.nTarget,
@@ -448,7 +450,7 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/)
 {
   //if the production process has still some defined manual irrigation dates
-  if(!_envPs.p_UseAutomaticIrrigation)
+  if(!_simPs.p_UseAutomaticIrrigation)
   {
     _soilOrganic.addIrrigationWater(amount);
     _soilColumn.applyIrrigation(amount, nitrateConcentration);
@@ -534,14 +536,14 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 
   if(_currentCrop &&
      _currentCrop->isValid() &&
-     _envPs.p_UseNMinMineralFertilisingMethod &&
+     _simPs.p_UseNMinMineralFertilisingMethod &&
      _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() &&
-     julday == _envPs.p_JulianDayAutomaticFertilising)
+     julday == _simPs.p_JulianDayAutomaticFertilising)
   {
     debug() << "nMin fertilising winter crop" << endl;
     auto cps = _currentCrop->cropParameters();
     double fert_amount = applyMineralFertiliserViaNMinMethod
-                         (_envPs.p_NMinFertiliserPartition,
+                         (_simPs.p_NMinFertiliserPartition,
                           NMinCropParameters(cps->speciesParams.pc_SamplingDepth,
                                              cps->speciesParams.pc_TargetNSamplingDepth,
                                              cps->speciesParams.pc_TargetN30));
@@ -614,9 +616,9 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, julday,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
                            vw_AtmosphericCO2Concentration, precip);
-  if(_envPs.p_UseAutomaticIrrigation)
+  if(_simPs.p_UseAutomaticIrrigation)
   {
-    const AutomaticIrrigationParameters& aips = _envPs.p_AutoIrrigationParams;
+    const AutomaticIrrigationParameters& aips = _simPs.p_AutoIrrigationParams;
     if(_soilColumn.applyIrrigationViaTrigger(aips.treshold, aips.amount,
                                              aips.nitrateConcentration))
     {
@@ -734,7 +736,7 @@ double MonicaModel::avgCorg(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _envPs.p_NumberOfLayers; i < nols; i++)
+  for(int i = 0, nols = _simPs.p_NumberOfLayers; i < nols; i++)
   {
     count++;
     sum +=_soilColumn[i].vs_SoilOrganicCarbon(); //[kg C / kg Boden]
@@ -775,7 +777,7 @@ double MonicaModel::sumNmin(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _envPs.p_NumberOfLayers; i < nols; i++)
+  for(int i = 0, nols = _simPs.p_NumberOfLayers; i < nols; i++)
   {
     count++;
     sum += _soilColumn[i].get_SoilNmin(); //[kg N m-3]
@@ -798,7 +800,7 @@ MonicaModel::sumNO3AtDay(double depth_m) const
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for(int i = 0, nols = _envPs.p_NumberOfLayers; i < nols; i++)
+  for(int i = 0, nols = _simPs.p_NumberOfLayers; i < nols; i++)
   {
     count++;
     sum += _soilColumn[i].get_SoilNO3(); //[kg m-3]
