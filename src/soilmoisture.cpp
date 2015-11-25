@@ -920,6 +920,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth, double vw_Precipitation, dou
     fm_PercolationWithGroundwater(vs_GroundwaterDepth);
     fm_GroundwaterReplenishment();
 
+
   } else {
 
     fm_PercolationWithoutGroundwater();
@@ -1333,11 +1334,6 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
 void SoilMoisture::fm_GroundwaterReplenishment() {
   int vm_StartLayer;
 
-  // do nothing if groundwater is not within profile
-  if (vm_GroundwaterTable > vs_NumberOfLayers) {
-    return;
-  }
-
   // Auffuellschleife von GW-Oberflaeche in Richtung Oberflaeche
   vm_StartLayer = vm_GroundwaterTable;
 
@@ -1374,17 +1370,18 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
     }
 
   } // for
-  
+
   if (pm_LeachingDepthLayer>vm_GroundwaterTable-1) {
-    if (vm_GroundwaterTable-1 < 0){
-        vm_FluxAtLowerBoundary = 0.0;
-    } else {
-        vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-1];
-    }
+      if (vm_GroundwaterTable-1 < 0){
+          vm_FluxAtLowerBoundary = 0.0;
+      } else {
+          vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-1];
+      }
   } else {
-    vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
+      vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   }
   //cout << "GWN: " << vm_FluxAtLowerBoundary << endl;
+  
 }
 
 /**
@@ -1485,6 +1482,12 @@ void SoilMoisture::fm_BackwaterReplenishment() {
       vm_BackwaterAdded = 0.0;
     }
   } // for
+  
+  if ((pm_LeachingDepthLayer > 0) && (pm_LeachingDepthLayer < (vm_NumberOfLayers - 1))) {
+    vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
+  } else {
+    vm_FluxAtLowerBoundary = vm_WaterFlux[vm_NumberOfLayers - 2];
+  }
  
 }
 
