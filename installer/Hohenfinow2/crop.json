@@ -6,11 +6,11 @@
 		},
 		"SM": { 
 			"cropParams": ["include-from-db", "crop", "maize", "silage maize"],
-			"residueParams": ["include-from-db", "crop_residue", "maize", "silage"]
+			"residueParams": ["include-from-db", "crop_residue", "maize", ""]
 		},
 		"MEP": { 
 			"cropParams": ["include-from-db", "crop", "potato", "moderately early potato"],
-			"residueParams": ["include-from-db", "crop_residue", "potato", "late"]
+			"residueParams": ["include-from-db", "crop_residue", "potato", ""]
 		},
 		"WW": { 
 			"cropParams": ["include-from-db", "crop", "wheat", "winter wheat"],
@@ -26,7 +26,7 @@
 		},
 		"SC": { 
 			"cropParams": ["include-from-db", "crop", "rape", "winter rape"],
-			"residueParams": ["include-from-db", "crop_residue", "oil seed rape", ""]
+			"residueParams": ["include-from-db", "crop_residue", "rape", ""]
 		}
 	},
 	

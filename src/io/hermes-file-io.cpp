@@ -344,8 +344,7 @@ Monica::cropRotationFromHermesFile(const string& pathToFile,
 		CropPtr crop = hermesCropId2Crop(crp);
 		crop->setCropParameters(getCropParametersFromMonicaDB(crop->speciesName(),
 																													crop->cultivarName()));
-		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->speciesName(),
-																																crop->cultivarName()));
+		crop->setResidueParameters(getResidueParametersFromMonicaDB(crop->speciesName()));
 
 		if (!useAutomaticHarvestTrigger) {
 			// Do not use automatic harvest trigger

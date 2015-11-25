@@ -650,7 +650,8 @@ FrostComponent::updateLambdaRedux()
       vm_FrostDays = 0;
 
       vm_HydraulicConductivityRedux = pm_HydraulicConductivityRedux;
-      for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
+      for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++)
+      {
         soilColumn[i_Layer].vs_SoilFrozen = false;
         vm_LambdaRedux[i_Layer] = 1.0;
       }
@@ -1067,7 +1068,8 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate, double vc_Percen
  *
  * @param layer Index of layer
  */
-double SoilMoisture::get_SoilMoisture(int layer) const {
+double SoilMoisture::get_SoilMoisture(int layer) const
+{
   return soilColumn[layer].get_Vs_SoilMoisture_m3();
 }
 
@@ -1118,7 +1120,10 @@ void SoilMoisture::fm_CapillaryRise() {
 
   vm_GroundwaterDistance = vm_GroundwaterTable - vc_RootingDepth;// []
 
-  if (vm_GroundwaterDistance < 1) vm_GroundwaterDistance = 1;
+  if (vm_GroundwaterDistance < 1)
+  {
+    vm_GroundwaterDistance = 1;
+  }
 
   if ((double (vm_GroundwaterDistance) * vm_LayerThickness[0]) <= 2.70) { // [m]
   // Capillary rise rates in table defined only until 2.70 m
@@ -1143,17 +1148,18 @@ void SoilMoisture::fm_CapillaryRise() {
     double pm_CapillaryRiseRate = 0.01; //[m d-1]
     // Find first layer above groundwater with 70% available water
     int vm_StartLayer = min(vm_GroundwaterTable,(vs_NumberOfLayers - 1));
-    for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--) {
-
+    for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--)
+    {
       std::string vs_SoilTexture = soilColumn[i_Layer].vs_SoilTexture();
       pm_CapillaryRiseRate = smPs.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
-      if(pm_CapillaryRiseRate < vm_CapillaryRiseRate){
+      if(pm_CapillaryRiseRate < vm_CapillaryRiseRate)
+      {
         vm_CapillaryRiseRate = pm_CapillaryRiseRate;
       }
 
-      if (vm_AvailableWater[i_Layer] < vm_CapillaryWater70[i_Layer]) {
-
+      if (vm_AvailableWater[i_Layer] < vm_CapillaryWater70[i_Layer])
+      {
         vm_WaterAddedFromCapillaryRise = vm_CapillaryRiseRate; //[m3 m-2 d-1]
 
         vm_SoilMoisture[i_Layer] += vm_WaterAddedFromCapillaryRise;
@@ -1282,15 +1288,13 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
  */
 void SoilMoisture::fm_GroundwaterReplenishment()
 {
-  // do nothing if groundwater is not within profile
-  if (vm_GroundwaterTable > vs_NumberOfLayers)
-    return;
-
   // Auffuellschleife von GW-Oberflaeche in Richtung Oberflaeche
   int vm_StartLayer = vm_GroundwaterTable;
 
   if (vm_StartLayer > vm_NumberOfLayers - 2)
+  {
     vm_StartLayer = vm_NumberOfLayers - 2;
+  }
 
   for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--)
   {

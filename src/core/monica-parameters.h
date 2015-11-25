@@ -803,7 +803,7 @@ namespace Monica
     virtual json11::Json to_json() const;
 
     std::string species;
-    std::string cultivar;
+    std::string residueType;
   };
 
   typedef std::shared_ptr<CropResidueParameters> CropResidueParametersPtr;
@@ -896,13 +896,13 @@ namespace Monica
 
     double p_Albedo{0.0};
     double p_AtmosphericCO2{0.0};
-    double p_WindSpeedHeight{0.0};
+    double p_WindSpeedHeight{2.5};
     double p_LeachingDepth{0.0};
     double p_timeStep{0.0};
 
     double p_MaxGroundwaterDepth{20.0};
     double p_MinGroundwaterDepth{20.0};
-    int p_MinGroundwaterDepthMonth{0};
+    int p_MinGroundwaterDepthMonth{3};
 
 	};
 
@@ -1080,8 +1080,8 @@ namespace Monica
 		UserSoilOrganicParameters userSoilOrganicParameters;
     SimulationParameters simulationParameters;
 
-    SiteParameters site;        //! site specific parameters
-    Soil::OrganicConstants organic;  //! constant organic parameters to the model
+    SiteParameters siteParameters; //! site specific parameters
+    Soil::OrganicConstants organic; //! constant organic parameters to the model
 
     MeasuredGroundwaterTableInformation groundwaterInformation;
 

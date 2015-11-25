@@ -4,14 +4,12 @@
   
 	"NumberOfLayers": 20,
 	"LayerThickness": [0.1, "m"],
-	"StartPVIndex": 0,
-	"JulianDayAutomaticFertilising": 0,
 	
 	"UseSecondaryYields": true,
   "NitrogenResponseOn": true,
   "WaterDeficitResponseOn": true,
-  "EmergenceMoistureControlOn": false,
-  "EmergenceFloodingControlOn": false,
+  "EmergenceMoistureControlOn": true,
+  "EmergenceFloodingControlOn": true,
     
 	"UseAutomaticIrrigation": false,	
 	"AutoIrrigationParams": {

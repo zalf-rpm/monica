@@ -702,7 +702,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 	env.setMode(MODE_HERMES);
 	env.params.groundwaterInformation = gw_infos;
 
-	env.params.site = siteParams;
+	env.params.siteParameters = siteParams;
 
 	env.da = climateData;
 	env.cropRotation = ff;

@@ -278,7 +278,7 @@ const Result Configuration::run()
   env.params.pathToOutputDir = _outPath;
   /* TODO: kein output, wenn nicht gesetzt */
   env.setMode(MODE_HERMES);
-  env.params.site = sp;
+  env.params.siteParameters = sp;
 	env.da = da;
   env.cropRotation = pps;
  

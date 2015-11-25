@@ -52,16 +52,10 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
-  CropResidueParametersPtr 
-		getResidueParametersFromMonicaDB(const std::string& species, 
-																		 const std::string& cultivar, 
-																		 int cropId = -1);
-
-	inline CropResidueParametersPtr getResidueParametersFromMonicaDB(int cropId) 
-	{ 
-		return getResidueParametersFromMonicaDB("", "", cropId); 
-	}
-
+	CropResidueParametersPtr
+		getResidueParametersFromMonicaDB(const std::string& species,
+																		 const std::string& residueType = "");
+		
   void writeCropResidues(std::string path);
 
 	//-----------------------------------------------------------
@@ -72,7 +66,11 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
-	const std::map<int, std::string>& availableMonicaCrops();
+  struct AMCRes
+  {
+    std::string speciesId, cultivarId, name;
+  };
+  const std::map<int, AMCRes>& availableMonicaCrops();
 }  
 
 #endif 

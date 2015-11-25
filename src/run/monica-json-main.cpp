@@ -277,7 +277,7 @@ void parseAndRunMonica(PARMParams ps)
 	env.params = readUserParameterFromDatabase(MODE_HERMES);
 
 	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
-	env.params.site.merge(sitej["SiteParameters"]);
+	env.params.siteParameters.merge(sitej["SiteParameters"]);
 	env.params.simulationParameters.merge(simj);
 
 	for(Json cmj : cropj["cropRotation"].array_items())

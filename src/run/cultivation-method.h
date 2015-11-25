@@ -84,7 +84,9 @@ namespace Monica
 
     virtual void merge(json11::Json j);
 
-    virtual json11::Json to_json(bool includeFullCropParameters = true) const;
+		virtual json11::Json to_json() const { return to_json(true); }
+
+    json11::Json to_json(bool includeFullCropParameters) const;
 
     virtual std::string type() const { return "Seed"; }
 
@@ -107,7 +109,7 @@ namespace Monica
 	class Harvest : public WorkStep
 	{
 	public:
-    Harvest() {}
+		Harvest();
 
     Harvest(const Tools::Date& at,
             CropPtr crop,
@@ -120,7 +122,9 @@ namespace Monica
 
     virtual void merge(json11::Json j);
 
-    virtual json11::Json to_json(bool includeFullCropParameters = true) const;
+		virtual json11::Json to_json() const { return to_json(true); }
+
+    json11::Json to_json(bool includeFullCropParameters) const;
 
     virtual std::string type() const { return "Harvest"; }
 

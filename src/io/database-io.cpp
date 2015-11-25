@@ -651,45 +651,50 @@ void Monica::writeOrganicFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(const string& species,
-																																	const string& cultivar,
-																																	int cropId)
+CropResidueParametersPtr
+Monica::getResidueParametersFromMonicaDB(const string& species,
+                                         const string& residueType)
 {
 	DBPtr con(newConnection("monica"));
 	DBRow row;
 	string query = string() +
-		"select "
-		"species_id, "
-		"cultivar_id, "
-		"dm, "
-		"nh4, "
-		"no3, "
-		"nh2, "
-		"k_slow, "
-		"k_fast, "
-		"part_s, "
-		"part_f, "
-		"cn_s, "
-		"cn_f, "
-		"smb_s, "
-		"smb_f, "
-		"crop_id "
-		"from crop_residue "
-		"where " + (cropId == -1
-								? "species_id = '" + species + "' and " + (cultivar.empty()
-																													 ? string("(cultivar_id = '") + cultivar + "' or cultivar_id is null)"
-																													 : string("cultivar_id = '") + cultivar + "' ")
-								: "crop_id = " + to_string(cropId));
+                 "select "
+                 "species_id, "
+                 "residue_type, "
+                 "dm, "
+                 "nh4, "
+                 "no3, "
+                 "nh2, "
+                 "k_slow, "
+                 "k_fast, "
+                 "part_s, "
+                 "part_f, "
+                 "cn_s, "
+                 "cn_f, "
+                 "smb_s, "
+                 "smb_f "
+                 "from crop_residue "
+                 "where species_id = '"
+                 + species +
+                 "' "
+                 "and (residue_type = '"
+                 + residueType +
+                 "' or residue_type is null) "
+                 "order by species_id, residue_type desc";
+
 	//cout << "query: " << query << endl;
 	con->select(query);
-	if(!(row = con->getRow()).empty())
+  //take the first (best matching) element
+  //at least there should always be the "default" residue parameters with
+  //type = NULL be available
+  if(!(row = con->getRow()).empty())
 	{
 		CropResidueParametersPtr omp = make_shared<CropResidueParameters>();
 
 		int i = 0;
 
 		omp->species = row[i++];
-		omp->cultivar = row[i++];
+    omp->residueType = row[i++];
 		omp->vo_AOM_DryMatterContent = stoi(row[i++]);
 		omp->vo_AOM_NH4Content = stof(row[i++]);
 		omp->vo_AOM_NO3Content = stof(row[i++]);
@@ -702,7 +707,7 @@ CropResidueParametersPtr Monica::getResidueParametersFromMonicaDB(const string& 
 		omp->vo_CN_Ratio_AOM_Fast = stof(row[i++]);
 		omp->vo_PartAOM_Slow_to_SMB_Slow = stof(row[i++]);
 		omp->vo_PartAOM_Slow_to_SMB_Fast = stof(row[i++]);
-
+				
 		return omp;
 	}
 
@@ -716,9 +721,15 @@ vector<CropResidueParametersPtr> getAllCropResidueParametersFromMonicaDB()
 
 	DBPtr con(newConnection("monica"));
 	DBRow row;
-	con->select("select species_id, cultivar_id from crop_residue order by species_id, cultivar_id");
+	con->select("select "
+							"species_id, "
+							"cultivar_id "
+							"from crop_residue "
+							"order by species_id, cultivar_id");
 	while(!(row = con->getRow()).empty())
+	{
 		acrps.push_back(getResidueParametersFromMonicaDB(row[0], row[1]));
+	}
 
 	return acrps;
 }
@@ -728,16 +739,18 @@ void Monica::writeCropResidues(string path)
   for (auto r : getAllCropResidueParametersFromMonicaDB())
 	{
     string speciesPath = path + "/" + r->species;
-		bool noCultivar = r->cultivar.empty();
-    string cultivarPath = (noCultivar ? speciesPath : speciesPath + "/" + r->cultivar) + ".json";
-		
-		if(noCultivar)
+    bool noResidueType = r->residueType.empty();
+    string residueTypePath =
+        (noResidueType ? speciesPath
+                       : speciesPath + "/" + r->residueType) + ".json";
+
+    if(noResidueType)
 			ensureDirExists(surround("\"", path));
 		else
 			ensureDirExists(surround("\"", speciesPath));
 			
 		ofstream ofs;
-    ofs.open(cultivarPath);
+    ofs.open(residueTypePath);
 		if (ofs.good())
 		{
       auto s = r->to_json().dump();
@@ -1093,18 +1106,18 @@ void Monica::writeUserParameters(int type, string path)
 
 //----------------------------------------------------------------------------------
 
-const map<int, string>& Monica::availableMonicaCrops()
+const map<int, AMCRes>& Monica::availableMonicaCrops()
 {
 	static mutex lockable;
-	static map<int, string> m;
+  static map<int, AMCRes> m;
 	static bool initialized = false;
-	if (!initialized)
+  if (!initialized)
 	{
-		lock_guard<mutex> lock(lockable);
+    lock_guard<mutex> lock(lockable);
 
-		if (!initialized)
-		{
-			DBPtr con(newConnection("monica"));
+    if (!initialized)
+    {
+      DBPtr con(newConnection("monica"));
 
       string query(
             "select "
@@ -1115,9 +1128,15 @@ const map<int, string>& Monica::availableMonicaCrops()
             "order by id");
       con->select(query.c_str());
 
-			DBRow row;
-			while (!(row = con->getRow()).empty())
-        m[stoi(row[0])] = capitalize(row[1]) + "/" + capitalize(row[2]);
+      DBRow row;
+      while (!(row = con->getRow()).empty())
+      {
+        AMCRes res;
+        res.speciesId = row[1];
+        res.cultivarId = row[2];
+        res.name = capitalize(row[1]) + "/" + capitalize(row[2]);
+        m[stoi(row[0])] = res;
+      }
 
 			initialized = true;
 		}

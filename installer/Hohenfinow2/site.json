@@ -1,9 +1,9 @@
 {
 	"SiteParameters": {
-		"Latitude": 52.1,
+		"Latitude": 52.80939865112305,
 		"Slope": 0,
-		"HeightNN": [38 , "m"],
-		"NDeposition": 0,
+		"HeightNN": [0 , "m"],
+		"NDeposition": 30,
 		"SoilParameters": [
 			{
 				"Thickness": 0.3,
@@ -27,12 +27,10 @@
 		]
 	},
 	"EnvironmentParameters": {
-		"LeachingDepth": 15,
-		"WindSpeedHeight": 2,
-		"AtmosphericCO2": [385, "ppm", "parts per million"],
-		"MinGroundwaterDepth": -1,
-		"MaxGroundwaterDepth": -1,
-		"MinGroundwaterDepthMonth": -1
+		"LeachingDepth": 2,
+		"WindSpeedHeight": 2.5,
+		"MinGroundwaterDepth": 20,
+		"MaxGroundwaterDepth": 18,
+		"MinGroundwaterDepthMonth": 3
 	}
-  
 }

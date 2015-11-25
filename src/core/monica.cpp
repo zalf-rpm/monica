@@ -59,7 +59,7 @@ namespace
 //------------------------------------------------------------------------------
 
 MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
-  : _sitePs(cpp.site)
+  : _sitePs(cpp.siteParameters)
   , _smPs(cpp.userSoilMoistureParameters)
   , _envPs(cpp.userEnvironmentParameters)
   , _cropPs(cpp.userCropParameters)
@@ -151,7 +151,7 @@ void MonicaModel::seedCrop(CropPtr crop)
 void MonicaModel::harvestCurrentCrop(bool exported)
 {
 	//could be just a fallow, so there might be no CropGrowth object
-	if (_currentCrop.get() && _currentCrop->isValid())
+	if (_currentCrop && _currentCrop->isValid())
   {
     if(!exported)
     {
@@ -210,8 +210,8 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 	}
 
   delete _currentCropGrowth;
-  _currentCropGrowth = NULL;
-  _currentCrop = CropPtr();
+  _currentCropGrowth = nullptr;
+  _currentCrop.reset();
   _soilTransport.remove_Crop();
   _soilColumn.remove_Crop();
   _soilMoisture.remove_Crop();

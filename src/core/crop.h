@@ -39,7 +39,7 @@ namespace Monica
     Crop(const std::string& speciesName,
          const std::string& cultivarName,
          const CropParametersPtr cps = CropParametersPtr(),
-         const OrganicMatterParametersPtr rps = OrganicMatterParametersPtr(),
+         const CropResidueParametersPtr rps = CropResidueParametersPtr(),
          double crossCropAdaptionFactor = 1);
 
     Crop(const std::string& speciesName,
@@ -47,7 +47,7 @@ namespace Monica
          const Tools::Date& seedDate,
          const Tools::Date& harvestDate,
          const CropParametersPtr cps = CropParametersPtr(),
-         const OrganicMatterParametersPtr rps = OrganicMatterParametersPtr(),
+         const CropResidueParametersPtr rps = CropResidueParametersPtr(),
          double crossCropAdaptionFactor = 1);
 
     Crop(json11::Json j);
@@ -74,9 +74,9 @@ namespace Monica
 
     void setPerennialCropParameters(CropParametersPtr cps) { _perennialCropParams = cps; }
 
-    OrganicMatterParametersPtr residueParameters() const { return _residueParams; }
+		CropResidueParametersPtr residueParameters() const { return _residueParams; }
 
-    void setResidueParameters(OrganicMatterParametersPtr rps) { _residueParams = rps; }
+    void setResidueParameters(CropResidueParametersPtr rps) { _residueParams = rps; }
 
 		Tools::Date seedDate() const { return _seedDate; }
 
@@ -166,7 +166,7 @@ namespace Monica
 		std::vector<Tools::Date> _cuttingDates;
     CropParametersPtr _cropParams;
     CropParametersPtr _perennialCropParams;
-    OrganicMatterParametersPtr _residueParams;
+    CropResidueParametersPtr _residueParams;
 
     double _primaryYield{0.0};
     double _secondaryYield{0.};

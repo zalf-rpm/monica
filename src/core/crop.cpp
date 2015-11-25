@@ -45,7 +45,7 @@ Crop::Crop(const std::string& speciesName)
 Crop::Crop(const std::string& species,
            const string& cultivarName,
            const CropParametersPtr cps,
-           const OrganicMatterParametersPtr rps,
+           const CropResidueParametersPtr rps,
            double crossCropAdaptionFactor)
   : _speciesName(species)
   , _cultivarName(cultivarName)
@@ -59,7 +59,7 @@ Crop::Crop(const string& speciesName,
            const Tools::Date& seedDate,
            const Tools::Date& harvestDate,
            const CropParametersPtr cps,
-           const OrganicMatterParametersPtr rps,
+           const CropResidueParametersPtr rps,
            double crossCropAdaptionFactor)
   : _speciesName(speciesName)
   , _cultivarName(cultivarName)
@@ -101,7 +101,7 @@ Crop::Crop(json11::Json j)
   }
 
   if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
-    _residueParams = make_shared<OrganicMatterParameters>(j["residueParams"]);
+    _residueParams = make_shared<CropResidueParameters>(j["residueParams"]);
 
   if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
     for(auto cd : j["cuttingDates"].array_items())

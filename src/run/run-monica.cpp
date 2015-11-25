@@ -178,6 +178,35 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 
 Result Monica::runMonica(Env env)
 {
+	ofstream pout;
+	pout.open(env.params.pathToOutputDir + pathSeparator() + "parameters.json");
+	if(pout.fail())
+		exit(1);
+	pout << "{" << endl;
+	auto cropPs = env.params.userCropParameters.to_json().dump();
+	pout << "\"userCropParameters\":" << endl << cropPs << "," << endl;
+	auto simPs = env.params.simulationParameters.to_json().dump();
+	pout << "\"simulationParameters\":" << endl << simPs << "," << endl;
+	auto envPs = env.params.userEnvironmentParameters.to_json().dump();
+	pout << "\"userEnvironmentParameters\":" << endl << envPs << "," << endl;
+	auto smPs = env.params.userSoilMoistureParameters.to_json().dump();
+	pout << "\"userSoilMoistureParameters\":" << endl << smPs << "," << endl;
+	auto soPs = env.params.userSoilOrganicParameters.to_json().dump();
+	pout << "\"userSoilOrganicParameters\":" << endl << soPs << "," << endl;
+	auto stempPs = env.params.userSoilTemperatureParameters.to_json().dump();
+	pout << "\"userSoilTemperatureParameters\":" << endl << stempPs << "," << endl;
+	auto stransPs = env.params.userSoilTransportParameters.to_json().dump();
+	pout << "\"userSoilTransportParameters\":" << endl << stransPs << "," << endl;
+	auto sitePs = env.params.siteParameters.to_json().dump();
+	pout << "\"siteParameters\":" << endl << sitePs << "," << endl;
+	pout << "\"crop-rotation\": {" << endl;
+	for(auto cm : env.cropRotation)
+		pout << "\"" << cm.crop()->id() << "\":" << cm.to_json().dump() << "," << endl;
+	pout << "}" << endl;
+	pout << "}" << endl;
+	pout.flush();
+	pout.close();
+
   Result res;
 	res.customId = env.customId;
 

@@ -1036,7 +1036,7 @@ void CropResidueParameters::merge(json11::Json j)
 {
   OrganicMatterParameters::merge(j);
   set_string_value(species, j, "species");
-  set_string_value(cultivar, j, "cultivar");
+  set_string_value(residueType, j, "residueType");
 }
 
 json11::Json CropResidueParameters::to_json() const
@@ -1044,7 +1044,7 @@ json11::Json CropResidueParameters::to_json() const
   auto omp = OrganicMatterParameters::to_json().object_items();
   omp["type"] = "CropResidueParameters";
   omp["species"] = species;
-  omp["cultivar"] = cultivar;
+  omp["residueType"] = residueType;
   return omp;
 }
 
@@ -1163,7 +1163,7 @@ UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
 void UserEnvironmentParameters::merge(json11::Json j)
 {
   set_double_value(p_Albedo, j, "Albedo");
-  set_double_value(p_AtmosphericCO2, j, "AthmosphericCO2");
+  set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
   set_double_value(p_LeachingDepth, j, "LeachingDepth");
   set_double_value(p_timeStep, j, "timeStep");
@@ -1177,7 +1177,7 @@ json11::Json UserEnvironmentParameters::to_json() const
   return json11::Json::object {
     {"type", "UserEnvironmentParameters"},
     {"Albedo", p_Albedo},
-    {"AthmosphericCO2", p_AtmosphericCO2},
+    {"AtmosphericCO2", p_AtmosphericCO2},
     {"WindSpeedHeight", p_WindSpeedHeight},
     {"LeachingDepth", p_LeachingDepth},
     {"timeStep", p_timeStep},
