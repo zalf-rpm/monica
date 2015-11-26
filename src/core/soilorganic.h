@@ -129,10 +129,10 @@ namespace Monica
     double irrigationAmount{0.0};
     std::vector<double> vo_ActDenitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_AOM_FastDeltaSum;
-    double vo_AOM_FastInput; //!< AOMfast pool change by direct input [kg C m-3]
+		double vo_AOM_FastInput{0.0}; //!< AOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_AOM_FastSum;
     std::vector<double> vo_AOM_SlowDeltaSum;
-    double vo_AOM_SlowInput; //!< AOMslow pool change by direct input [kg C m-3]
+    double vo_AOM_SlowInput{0.0}; //!< AOMslow pool change by direct input [kg C m-3]
     std::vector<double> vo_AOM_SlowSum;
     std::vector<double> vo_CBalance;
     double vo_DecomposerRespiration{0.0};

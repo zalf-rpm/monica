@@ -1,70 +1,36 @@
 {
 	"SiteParameters": {
-		"Latitude": 52.1,
+		"Latitude": 52.80939865112305,
 		"Slope": 0,
-		"HeightNN": [38 , "m"],
-		"NDeposition": 0,
+		"HeightNN": [0 , "m"],
+		"NDeposition": 30,
 		"SoilParameters": [
 			{
 				"Thickness": 0.3,
-				"SoilOrganicCarbon": 0.34,
-				"KA5TextureClass": "Ls2",
-				"Sand": 0.15,
-				"Clay": 0.24,
-				"Sceleton": 0.02,
-				"PoreVolume": 0.45,
-				"FieldCapacity": 0.33,
-				"PermanentWiltingPoint": 0.20,
-				"pH": 7.2,
-				"CN": 12.0,
-				"SoilBulkDensity": 1400,
-				"SoilNitrate": 0.01,
-				"SoilAmmonium": 0.0001,
-				"SoilMoisturePercentFC": [100.0, "%"]
+				"SoilOrganicCarbon": [0.8, "%"],
+				"KA5TextureClass": "Sl2",
+				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]],
+				"Lambda": ["sandAndClay2lambda", ["KA5TextureClass2sand", "Sl2"], ["KA5TextureClass2clay", "Sl2"]]
 			},
 			{
-				"Thickness": 0.4,
-				"SoilOrganicCarbon": 0.34,
-				"KA5TextureClass": "Ls2",
-				"Sand": 0.15,
-				"Clay": 0.24,
-				"Sceleton": 0.02,
-				"PoreVolume": 0.45,
-				"FieldCapacity": 0.33,
-				"PermanentWiltingPoint": 0.20,
-				"pH": 7.2,
-				"CN": 12.0,
-				"SoilBulkDensity": 1400,
-				"SoilNitrate": 0.01,
-				"SoilAmmonium": 0.0001,
-				"SoilMoisturePercentFC": [100.0, "%"]
+				"Thickness": 0.1,
+				"SoilOrganicCarbon": [0.15, "%"],
+				"KA5TextureClass": "Sl2",
+				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
 			},
 			{
-				"Thickness": 1.1,
-				"SoilOrganicCarbon": 0.34,
-				"KA5TextureClass": "Ls2",
-				"Sand": 0.15,
-				"Clay": 0.24,
-				"Sceleton": 0.02,
-				"PoreVolume": 0.45,
-				"FieldCapacity": 0.33,
-				"PermanentWiltingPoint": 0.20,
-				"pH": 7.2,
-				"CN": 12.0,
-				"SoilBulkDensity": 1400,
-				"SoilNitrate": 0.01,
-				"SoilAmmonium": 0.0001,
-				"SoilMoisturePercentFC": [100.0, "%"]
+				"Thickness": 1.6,
+				"SoilOrganicCarbon": [0.05, "%"],
+				"KA5TextureClass": "Sl2",
+				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
 			}
 		]
 	},
 	"EnvironmentParameters": {
-		"LeachingDepth": 15,
-		"WindSpeedHeight": 2,
-		"AtmosphericCO2": [385, "ppm", "parts per million"],
-		"MinGroundwaterDepth": -1,
-		"MaxGroundwaterDepth": -1,
-		"MinGroundwaterDepthMonth": -1
+		"LeachingDepth": 2,
+		"WindSpeedHeight": 2.5,
+		"MinGroundwaterDepth": 20,
+		"MaxGroundwaterDepth": 18,
+		"MinGroundwaterDepthMonth": 3
 	}
-  
 }

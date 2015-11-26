@@ -82,13 +82,19 @@ namespace Monica
       SoilLayer& gl;
       SoilLayer& bl;
       std::size_t vs_nols;
-      SC(SoilColumn & sc, SoilLayer & gl, SoilLayer & bl, int vs_nols)
-        :sc(sc), gl(gl), bl(bl), vs_nols(vs_nols)
-      {}
+      SC(SoilColumn& sc, 
+				 SoilLayer& gl, 
+				 SoilLayer& bl, 
+				 int vs_nols)
+				: sc(sc)
+				, gl(gl)
+				, bl(bl)
+				, vs_nols(vs_nols)
+			{}
 
-      SoilLayer & operator [](std::size_t i) const
-      {
-        if(i < vs_nols)
+			SoilLayer& operator[](std::size_t i) const
+			{
+				if(i < vs_nols)
           return sc[i];
         else if(i < vs_nols + 1)
           return gl;
@@ -97,7 +103,6 @@ namespace Monica
       }
 
       const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
-
     } soilColumn;
 
     const std::size_t vt_NumberOfLayers;

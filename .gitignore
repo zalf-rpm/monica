@@ -202,3 +202,6 @@ installer/Hohenfinow2/*.dat
 HF2_automatic_yield
 /parameters
 src/run/production-process.h.autosave
+/installer/Hohenfinow2/smout.csv
+/installer/Hohenfinow2/rmout.csv
+/installer/Hohenfinow2/inputs.json

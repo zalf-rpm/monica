@@ -184,7 +184,7 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 		if(j.array_items().size() == 3
 			 && j[1].is_number()
 			 && j[2].is_number())
-			return make_pair(Soil::ld_eff2trd(j[1].number_value(), j[2].number_value()),
+			return make_pair(Soil::ld_eff2trd(j[1].int_value(), j[2].number_value()),
 											 true);
 		return make_pair(j, false);
 	};
@@ -337,7 +337,7 @@ int main(int argc, char** argv)
 	{
 		map<string, string> params;
 		if((argc - 1) % 2 == 0)
-			for(size_t i = 1; i < argc; i += 2)
+			for(int i = 1; i < argc; i += 2)
 				params[toLower(argv[i])] = argv[i + 1];
 		else
 			return 1;

@@ -2,12 +2,33 @@
   "startDate": "1991-01-01",
 	"endDate": "1997-12-31",
   
-	"CropSwitches": {
-    "useSecondaryYieldOn": true,
-    "nitrogenResponseOn": false,
-    "waterDeficitResponseOn": true,
-    "emergenceMoistureControlOn": false,
-    "emergenceFloodingControlOn": false
-  }
-  
+	"NumberOfLayers": 20,
+	"LayerThickness": [0.1, "m"],
+	
+	"UseSecondaryYields": true,
+  "NitrogenResponseOn": true,
+  "WaterDeficitResponseOn": true,
+  "EmergenceMoistureControlOn": true,
+  "EmergenceFloodingControlOn": true,
+    
+	"UseAutomaticIrrigation": false,	
+	"AutoIrrigationParams": {
+		"irrigationParameters": {
+			"nitrateConcentration": [0, "mg dm-3"],
+			"sulfateConcentration": [0, "mg dm-3"]
+		},
+		"amount": [17, "mm"],
+		"treshold": 0.35
+	},	
+	
+	"UseNMinMineralFertilisingMethod": false,
+	"NMinUserParams": { "min": 0, "max": 0, "delayInDays": 0 },
+	"NMinFertiliserPartition": {
+		"id": "my AN",
+		"name": "my very own ammonium nitrate variant",
+		"Carbamid": 0,
+		"NH4": 0,
+		"NO3": 0
+	}
+	
 }

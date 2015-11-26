@@ -52,9 +52,10 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
   , vs_SoilNH4(sps.vs_SoilAmmonium)
   , vs_SoilNO3(sps.vs_SoilNitrate)
   , _sps(sps)
-  , vs_SoilMoisture_m3(vs_FieldCapacity() * sps.vs_SoilMoisturePercentFC)
-  , vs_SoilMoistureOld_m3(vs_SoilMoisture_m3)
-{}
+  , vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC)
+  , vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC)
+{
+}
 
 /**
  * Soil layer's moisture content, expressed as logarithm of
@@ -481,7 +482,7 @@ void SoilColumn::applyTillage(double depth)
   for (size_t i = 0; i<layer_index; i++)
   {
     soil_organic_carbon += at(i).vs_SoilOrganicCarbon();
-    soil_organic_matter += at(i).vs_SoilOrganicMatter();
+    //soil_organic_matter += at(i).vs_SoilOrganicMatter();
     soil_temperature += at(i).get_Vs_SoilTemperature();
     soil_moisture += at(i).get_Vs_SoilMoisture_m3();
     soil_moistureOld += at(i).vs_SoilMoistureOld_m3;
@@ -497,7 +498,7 @@ void SoilColumn::applyTillage(double depth)
 
   // calculate mean value of accumulated soil paramters
   soil_organic_carbon /= layer_index;
-  soil_organic_matter /= layer_index;
+  //soil_organic_matter /= layer_index;
   soil_temperature /= layer_index;
   soil_moisture /= layer_index;
   soil_moistureOld /= layer_index;
@@ -515,7 +516,7 @@ void SoilColumn::applyTillage(double depth)
   {
     //assert((soil_organic_carbon - (soil_organic_matter * OrganicConstants::po_SOM_to_C)) < 0.00001);
     at(i).set_SoilOrganicCarbon(soil_organic_carbon);
-    at(i).set_SoilOrganicMatter(soil_organic_matter);
+    //at(i).set_SoilOrganicMatter(soil_organic_matter);
     at(i).set_Vs_SoilTemperature(soil_temperature);
     at(i).set_Vs_SoilMoisture_m3(soil_moisture);
     at(i).vs_SoilMoistureOld_m3 = soil_moistureOld;

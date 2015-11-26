@@ -110,8 +110,14 @@ namespace Monica
     SoilLayer(double vs_LayerThickness,
               const Soil::SoilParameters& soilParams);
 
+		//!< Soil layer's organic matter content [kg OM kg-1]
+		double vs_SoilOrganicMatter() const { return _sps.vs_SoilOrganicMatter(); } 
+
     //! Sets value of soil organic matter parameter.
-    void set_SoilOrganicMatter(double som) { _sps.set_vs_SoilOrganicMatter(som); }
+    //void set_SoilOrganicMatter(double som) { _sps.set_vs_SoilOrganicMatter(som); }
+
+		//!< Soil layer's organic carbon content [kg C kg-1]
+		double vs_SoilOrganicCarbon() const { return _sps.vs_SoilOrganicCarbon(); } 
 
     //! Sets value for soil organic carbon.
     void set_SoilOrganicCarbon(double soc) { _sps.set_vs_SoilOrganicCarbon(soc); }
@@ -153,16 +159,13 @@ namespace Monica
     std::string vs_SoilTexture() const { return _sps.vs_SoilTexture; }
 
     double vs_SoilpH() const { return _sps.vs_SoilpH; } //!< Soil pH value []
-    double vs_SoilOrganicCarbon() const { return _sps.vs_SoilOrganicCarbon(); } //!< Soil layer's organic carbon content [kg C kg-1]
-    double vs_SoilOrganicMatter() const { return _sps.vs_SoilOrganicMatter(); } //!< Soil layer's organic matter content [kg OM kg-1]
-
+    
     double vs_Lambda() const { return _sps.vs_Lambda; }  //!< Soil water conductivity coefficient []
     double vs_FieldCapacity() const { return _sps.vs_FieldCapacity; }
     double vs_Saturation() const { return _sps.vs_Saturation; }
     double vs_PermanentWiltingPoint() const { return _sps.vs_PermanentWiltingPoint; }
 
     double vs_Soil_CN_Ratio() const { return _sps.vs_Soil_CN_Ratio; }
-
 
     // members ------------------------------------------------------------
 

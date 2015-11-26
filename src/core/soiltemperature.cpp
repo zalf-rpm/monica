@@ -3,15 +3,15 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -35,245 +35,268 @@ using namespace Tools;
 
 //! Create soil column giving a the number of layers it consists of
 SoilTemperature::SoilTemperature(MonicaModel& mm)
-  : _soilColumn(mm.soilColumnNC()),
-    monica(mm),
-    soilColumn(_soilColumn, _soilColumn_vt_GroundLayer, _soilColumn_vt_BottomLayer, _soilColumn.vs_NumberOfLayers()),
-    vt_NumberOfLayers(_soilColumn.vs_NumberOfLayers()+2),
-    vs_NumberOfLayers(_soilColumn.vs_NumberOfLayers()), 	//extern
-    vs_SoilMoisture_const(vt_NumberOfLayers),   //intern
-    vt_SoilTemperature(vt_NumberOfLayers),      //result = vs_soiltemperature
-    vt_V(vt_NumberOfLayers), 					          //intern
-    vt_VolumeMatrix(vt_NumberOfLayers), 		    //intern
-    vt_VolumeMatrixOld(vt_NumberOfLayers),	 	  //intern
-    vt_B(vt_NumberOfLayers), 					          //intern
-    vt_MatrixPrimaryDiagonal(vt_NumberOfLayers),//intern
-    vt_MatrixSecundaryDiagonal(vt_NumberOfLayers + 1), 	 //intern
-    vt_HeatConductivity(vt_NumberOfLayers), 	           //intern
-    vt_HeatConductivityMean(vt_NumberOfLayers),          //intern
-    vt_HeatCapacity(int(vt_NumberOfLayers)) 			             //intern
+	: _soilColumn(mm.soilColumnNC())
+	, monica(mm)
+	, soilColumn(_soilColumn,
+							 _soilColumn_vt_GroundLayer,
+							 _soilColumn_vt_BottomLayer,
+							 _soilColumn.vs_NumberOfLayers())
+	, vt_NumberOfLayers(_soilColumn.vs_NumberOfLayers() + 2)
+	, vs_NumberOfLayers(_soilColumn.vs_NumberOfLayers())
+	, vs_SoilMoisture_const(vt_NumberOfLayers)
+	, vt_SoilTemperature(vt_NumberOfLayers)
+	, vt_V(vt_NumberOfLayers)
+	, vt_VolumeMatrix(vt_NumberOfLayers)
+	, vt_VolumeMatrixOld(vt_NumberOfLayers)
+	, vt_B(vt_NumberOfLayers)
+	, vt_MatrixPrimaryDiagonal(vt_NumberOfLayers)
+	, vt_MatrixSecundaryDiagonal(vt_NumberOfLayers + 1)
+	, vt_HeatConductivity(vt_NumberOfLayers)
+	, vt_HeatConductivityMean(vt_NumberOfLayers)
+	, vt_HeatCapacity(int(vt_NumberOfLayers))
 {
-  debug() << "Constructor: SoilColumn" << endl;
+	debug() << "Constructor: SoilColumn" << endl;
 
-  const UserSoilTemperatureParameters& user_temp = monica.soilTemperatureParameters();
-  double pt_BaseTemperature           = user_temp.pt_BaseTemperature;  // temp für unterste Schicht (durch. Jahreslufttemp-)
-  double pt_InitialSurfaceTemperature = user_temp.pt_InitialSurfaceTemperature; // Replace by Mean air temperature
-  double pt_Ntau                      = user_temp.pt_NTau;
-  double pt_TimeStep                  = monica.environmentParameters().p_timeStep;  // schon in soil_moisture in DB extrahiert
-  double ps_QuartzRawDensity          = user_temp.pt_QuartzRawDensity;
-  double pt_SpecificHeatCapacityWater = user_temp.pt_SpecificHeatCapacityWater;   // [J kg-1 K-1]
-  double pt_SpecificHeatCapacityQuartz = user_temp.pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
-  double pt_SpecificHeatCapacityAir = user_temp.pt_SpecificHeatCapacityAir;       // [J kg-1 K-1]
-  double pt_SpecificHeatCapacityHumus = user_temp.pt_SpecificHeatCapacityHumus;   // [J kg-1 K-1]
-  double pt_DensityWater = user_temp.pt_DensityWater;   // [kg m-3]
-  double pt_DensityAir = user_temp.pt_DensityAir;       // [kg m-3]
-  double pt_DensityHumus = user_temp.pt_DensityHumus;   // [kg m-3]
+	//initialize the two additional layers to the same values 
+	//as the bottom most standard soil layer
+	//even though this hadn't been done before it was ok, 
+	//as these two layers seam to be used only for 
+	//calculating heat capacity and conductivity, the layer sizes are set
+	//manually below, nevertheless initializing them to some sensible values
+	//shouldn't hurt
+	if(!_soilColumn.empty())
+	{
+		_soilColumn_vt_GroundLayer = _soilColumn_vt_BottomLayer = _soilColumn.back();
+	}
 
-
-  // according to sensitivity tests, soil moisture has minor
-  // influence to the temperature and thus can be set as constant
-  // by xenia
-  double ps_SoilMoisture_const = user_temp.pt_SoilMoisture;
-
-
-  // Initialising the soil properties until a database feed is realised
-  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
-  {
-    // Initialising the soil temperature
-    vt_SoilTemperature[i_Layer] =  (  (1.0 - (double(i_Layer) / vs_NumberOfLayers))
-			        * pt_InitialSurfaceTemperature)
-			     +( (double(i_Layer) / vs_NumberOfLayers) * pt_BaseTemperature);
-
-    // Initialising the soil moisture content
-    // Soil moisture content is held constant for numeric stability.
-    // If dynamic soil moisture should be used, the energy balance
-    // must be extended by latent heat flow.
-    vs_SoilMoisture_const[i_Layer] = ps_SoilMoisture_const;
-  }
-
-  // Determination of the geometry parameters for soil temperature calculation
-  // with Cholesky-Verfahren
-
-  vt_V[0] = soilColumn[0].vs_LayerThickness;
-  vt_B[0] = 2.0 / soilColumn[0].vs_LayerThickness;
-
-  auto vt_GroundLayer = vt_NumberOfLayers - 2;
-  auto vt_BottomLayer = vt_NumberOfLayers - 1;
-
-  soilColumn[vt_GroundLayer].vs_LayerThickness = 2.0 * soilColumn[vt_GroundLayer - 1].vs_LayerThickness;
-  soilColumn[vt_BottomLayer].vs_LayerThickness = 1.0;
-  vt_SoilTemperature[vt_GroundLayer] = (vt_SoilTemperature[vt_GroundLayer - 1] + pt_BaseTemperature) * 0.5;
-  vt_SoilTemperature[vt_BottomLayer] = pt_BaseTemperature;
-
-  double vt_h0 = soilColumn[0].vs_LayerThickness;
-
-  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
-  {
-    double vt_h1 = soilColumn[i_Layer].vs_LayerThickness; // [m]
-    vt_B[i_Layer] = 2.0 / (vt_h1 + vt_h0); // [m]
-    vt_V[i_Layer] = vt_h1 * pt_Ntau; // [m3]
-    vt_h0 = vt_h1;
-  }
-
-  // End determination of the geometry parameters for soil temperature calculation
-
-  // initialising heat state variables
-  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
-  {
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Calculate heat conductivity following Neusypina 1979
-    // Neusypina, T.A. (1979): Rascet teplovo rezima pocvi v modeli formirovanija urozaja.
-    // Teoreticeskij osnovy i kolicestvennye metody programmirovanija urozaev. Leningrad,
-    // 53 -62.
-    // Note: in this original publication lambda is calculated in cal cm-1 s-1 K-1!
-    ///////////////////////////////////////////////////////////////////////////////////////
-    const double sbdi = soilColumn.at(i_Layer).vs_SoilBulkDensity();
-    const double smi = vs_SoilMoisture_const.at(i_Layer);
-
-    vt_HeatConductivity[i_Layer] = ((3.0 * (sbdi / 1000.0) - 1.7) * 0.001) /
-			     (1.0 + (11.5 - 5.0 * (sbdi / 1000.0)) *
-			      exp((-50.0) * pow((smi / (sbdi / 1000.0)), 1.5))) *
-			     86400.0 * double(pt_TimeStep) * //  gives result in [days]
-			     100.0  //  gives result in [m]
-			     * 4.184; // gives result in [J]
-			     // --> [J m-1 d-1 K-1]
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Calculate specific heat capacity following DAISY
-    // Abrahamsen, P, and S. Hansen (2000): DAISY - An open soil-crop-atmosphere model
-    // system. Environmental Modelling and Software 15, 313-330
-    ///////////////////////////////////////////////////////////////////////////////////////
-
-    const double cw = pt_SpecificHeatCapacityWater;
-    const double cq = pt_SpecificHeatCapacityQuartz;
-    const double ca = pt_SpecificHeatCapacityAir;
-    const double ch = pt_SpecificHeatCapacityHumus;
-    const double dw = pt_DensityWater;
-    const double dq = ps_QuartzRawDensity;
-    const double da = pt_DensityAir;
-    const double dh = pt_DensityHumus;
-    const double spv = soilColumn[i_Layer].vs_Saturation();
-    const double som = soilColumn.at(i_Layer).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
-
-    vt_HeatCapacity[i_Layer] = (smi * dw * cw)
-			 +((spv-smi) * da * ca)
-			 + (som * dh * ch)
-			 + ( (1.0 - spv - som) * dq * cq);
-			 // --> [J m-3 K-1]
-  } // for
+	const UserSoilTemperatureParameters& user_temp = monica.soilTemperatureParameters();
+	double pt_BaseTemperature = user_temp.pt_BaseTemperature;  // temp für unterste Schicht (durch. Jahreslufttemp-)
+	double pt_InitialSurfaceTemperature = user_temp.pt_InitialSurfaceTemperature; // Replace by Mean air temperature
+	double pt_Ntau = user_temp.pt_NTau;
+	double pt_TimeStep = monica.environmentParameters().p_timeStep;  // schon in soil_moisture in DB extrahiert
+	double ps_QuartzRawDensity = user_temp.pt_QuartzRawDensity;
+	double pt_SpecificHeatCapacityWater = user_temp.pt_SpecificHeatCapacityWater;   // [J kg-1 K-1]
+	double pt_SpecificHeatCapacityQuartz = user_temp.pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
+	double pt_SpecificHeatCapacityAir = user_temp.pt_SpecificHeatCapacityAir;       // [J kg-1 K-1]
+	double pt_SpecificHeatCapacityHumus = user_temp.pt_SpecificHeatCapacityHumus;   // [J kg-1 K-1]
+	double pt_DensityWater = user_temp.pt_DensityWater;   // [kg m-3]
+	double pt_DensityAir = user_temp.pt_DensityAir;       // [kg m-3]
+	double pt_DensityHumus = user_temp.pt_DensityHumus;   // [kg m-3]
 
 
-  vt_HeatCapacity[vt_GroundLayer] = vt_HeatCapacity[vt_GroundLayer - 1];
-  vt_HeatCapacity[vt_BottomLayer] = vt_HeatCapacity[vt_GroundLayer];
-  vt_HeatConductivity[vt_GroundLayer] = vt_HeatConductivity[vt_GroundLayer - 1];
-  vt_HeatConductivity[vt_BottomLayer] = vt_HeatConductivity[vt_GroundLayer];
-
-  // Initialisation soil surface temperature
-  vt_SoilSurfaceTemperature = pt_InitialSurfaceTemperature;
+	// according to sensitivity tests, soil moisture has minor
+	// influence to the temperature and thus can be set as constant
+	// by xenia
+	double ps_SoilMoisture_const = user_temp.pt_SoilMoisture;
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////
-  // Initialising Numerical Solution
-  // Suckow,F. (1985): A model serving the calculation of soil
-  // temperatures. Zeitschrift für Meteorologie 35 (1), 66 -70.
-  ///////////////////////////////////////////////////////////////////////////////////////
+	// Initialising the soil properties until a database feed is realised
+	for(size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+	{
+		// Initialising the soil temperature
+		vt_SoilTemperature[i_Layer] = ((1.0 - (double(i_Layer) / vs_NumberOfLayers))
+																	 * pt_InitialSurfaceTemperature)
+			+ ((double(i_Layer) / vs_NumberOfLayers) * pt_BaseTemperature);
 
-  // Calculation of the mean heat conductivity per layer
-  vt_HeatConductivityMean[0] = vt_HeatConductivity[0];
+		// Initialising the soil moisture content
+		// Soil moisture content is held constant for numeric stability.
+		// If dynamic soil moisture should be used, the energy balance
+		// must be extended by latent heat flow.
+		vs_SoilMoisture_const[i_Layer] = ps_SoilMoisture_const;
+	}
 
-  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+	// Determination of the geometry parameters for soil temperature calculation
+	// with Cholesky-Method
+	vt_V[0] = soilColumn[0].vs_LayerThickness;
+	vt_B[0] = 2.0 / soilColumn[0].vs_LayerThickness;
 
-    const double lti_1 = soilColumn.at(i_Layer-1).vs_LayerThickness;
-    const double lti = soilColumn.at(i_Layer).vs_LayerThickness;
-    const double hci_1 = vt_HeatConductivity.at(i_Layer-1);
-    const double hci = vt_HeatConductivity.at(i_Layer);
+	auto vt_GroundLayer = vt_NumberOfLayers - 2;
+	auto vt_BottomLayer = vt_NumberOfLayers - 1;
 
-    // @todo <b>Claas: </b>Formel nochmal durchgehen
-    vt_HeatConductivityMean[i_Layer] = ((lti_1 * hci_1) + (lti * hci)) / (lti + lti_1);
+	soilColumn[vt_GroundLayer].vs_LayerThickness = 2.0 * soilColumn[vt_GroundLayer - 1].vs_LayerThickness;
+	soilColumn[vt_BottomLayer].vs_LayerThickness = 1.0;
+	vt_SoilTemperature[vt_GroundLayer] = (vt_SoilTemperature[vt_GroundLayer - 1] + pt_BaseTemperature) * 0.5;
+	vt_SoilTemperature[vt_BottomLayer] = pt_BaseTemperature;
 
-  } // for
+	double vt_h0 = soilColumn[0].vs_LayerThickness;
 
-  // Determination of the volume matrix
-  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
-  {
-    vt_VolumeMatrix[i_Layer] = vt_V[i_Layer] * vt_HeatCapacity[i_Layer]; // [J K-1]
+	for(size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		double vt_h1 = soilColumn.at(i_Layer).vs_LayerThickness; // [m]
+		vt_B[i_Layer] = 2.0 / (vt_h1 + vt_h0); // [m]
+		vt_V[i_Layer] = vt_h1 * pt_Ntau; // [m3]
+		vt_h0 = vt_h1;
+	}
+	// End determination of the geometry parameters for soil temperature calculation
 
-    // If initial entry, rearrengement of volume matrix
-    vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
+	// initialising heat state variables
+	//iterates only over the standard soil number of layers, the other two layers
+	//will be assigned below that loop
+	for(size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+	{
+		///////////////////////////////////////////////////////////////////////////////////////
+		// Calculate heat conductivity following Neusypina 1979
+		// Neusypina, T.A. (1979): Rascet teplovo rezima pocvi v modeli formirovanija urozaja.
+		// Teoreticeskij osnovy i kolicestvennye metody programmirovanija urozaev. Leningrad,
+		// 53 -62.
+		// Note: in this original publication lambda is calculated in cal cm-1 s-1 K-1!
+		///////////////////////////////////////////////////////////////////////////////////////
+		const double sbdi = soilColumn.at(i_Layer).vs_SoilBulkDensity();
+		const double smi = vs_SoilMoisture_const.at(i_Layer);
 
-    // Determination of the matrix secundary diagonal
-    vt_MatrixSecundaryDiagonal[i_Layer] = -vt_B[i_Layer] * vt_HeatConductivityMean[i_Layer]; //[J K-1]
-  }
+		vt_HeatConductivity[i_Layer] =
+			((3.0 * (sbdi / 1000.0) - 1.7) * 0.001)
+			/ (1.0 + (11.5 - 5.0 * (sbdi / 1000.0))
+				 * exp((-50.0) * pow((smi / (sbdi / 1000.0)), 1.5)))
+			* 86400.0
+			* double(pt_TimeStep)  //  gives result in [days]
+			* 100.0  //  gives result in [m]
+			* 4.184; // gives result in [J]
+					 // --> [J m-1 d-1 K-1]
 
-  vt_MatrixSecundaryDiagonal[vt_BottomLayer + 1] = 0.0;
+		///////////////////////////////////////////////////////////////////////////////////////
+		// Calculate specific heat capacity following DAISY
+		// Abrahamsen, P, and S. Hansen (2000): DAISY - An open soil-crop-atmosphere model
+		// system. Environmental Modelling and Software 15, 313-330
+		///////////////////////////////////////////////////////////////////////////////////////
 
-  // Determination of the matrix primary diagonal
-  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
-  {
-    vt_MatrixPrimaryDiagonal[i_Layer] =   vt_VolumeMatrix[i_Layer]
-				  - vt_MatrixSecundaryDiagonal[i_Layer]
-				  - vt_MatrixSecundaryDiagonal[i_Layer + 1]; //[J K-1]
-  }
+		const double cw = pt_SpecificHeatCapacityWater;
+		const double cq = pt_SpecificHeatCapacityQuartz;
+		const double ca = pt_SpecificHeatCapacityAir;
+		const double ch = pt_SpecificHeatCapacityHumus;
+		const double dw = pt_DensityWater;
+		const double dq = ps_QuartzRawDensity;
+		const double da = pt_DensityAir;
+		const double dh = pt_DensityHumus;
+		const double spv = soilColumn.at(i_Layer).vs_Saturation();
+		const double som = soilColumn.at(i_Layer).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
+
+		vt_HeatCapacity[i_Layer] =
+			(smi * dw * cw)
+			+ ((spv - smi) * da * ca)
+			+ (som * dh * ch)
+			+ ((1.0 - spv - som) * dq * cq);
+		// --> [J m-3 K-1]
+	}
+
+	vt_HeatCapacity[vt_GroundLayer] = vt_HeatCapacity[vt_GroundLayer - 1];
+	vt_HeatCapacity[vt_BottomLayer] = vt_HeatCapacity[vt_GroundLayer];
+	vt_HeatConductivity[vt_GroundLayer] = vt_HeatConductivity[vt_GroundLayer - 1];
+	vt_HeatConductivity[vt_BottomLayer] = vt_HeatConductivity[vt_GroundLayer];
+
+	// Initialisation soil surface temperature
+	vt_SoilSurfaceTemperature = pt_InitialSurfaceTemperature;
+
+	///////////////////////////////////////////////////////////////////////////////////////
+	// Initialising Numerical Solution
+	// Suckow,F. (1985): A model serving the calculation of soil
+	// temperatures. Zeitschrift für Meteorologie 35 (1), 66 -70.
+	///////////////////////////////////////////////////////////////////////////////////////
+
+	// Calculation of the mean heat conductivity per layer
+	vt_HeatConductivityMean[0] = vt_HeatConductivity[0];
+
+	for(size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		const double lti_1 = soilColumn.at(i_Layer - 1).vs_LayerThickness;
+		const double lti = soilColumn.at(i_Layer).vs_LayerThickness;
+		const double hci_1 = vt_HeatConductivity.at(i_Layer - 1);
+		const double hci = vt_HeatConductivity.at(i_Layer);
+
+		// @todo <b>Claas: </b>Formel nochmal durchgehen
+		vt_HeatConductivityMean[i_Layer] = ((lti_1 * hci_1) + (lti * hci)) / (lti + lti_1);
+	}
+
+	// Determination of the volume matrix
+	for(size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		vt_VolumeMatrix[i_Layer] = vt_V[i_Layer] * vt_HeatCapacity[i_Layer]; // [J K-1]
+
+		// If initial entry, rearrengement of volume matrix
+		vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
+
+		// Determination of the matrix secundary diagonal
+		vt_MatrixSecundaryDiagonal[i_Layer] = -vt_B[i_Layer] * vt_HeatConductivityMean[i_Layer]; //[J K-1]
+	}
+
+	vt_MatrixSecundaryDiagonal[vt_BottomLayer + 1] = 0.0;
+
+	// Determination of the matrix primary diagonal
+	for(size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		vt_MatrixPrimaryDiagonal[i_Layer] =
+			vt_VolumeMatrix[i_Layer]
+			- vt_MatrixSecundaryDiagonal[i_Layer]
+			- vt_MatrixSecundaryDiagonal[i_Layer + 1]; //[J K-1]
+	}
 }
 
 //! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad)
 {
-  size_t vt_GroundLayer = vt_NumberOfLayers - 2;
-  size_t vt_BottomLayer = vt_NumberOfLayers - 1;
+	size_t vt_GroundLayer = vt_NumberOfLayers - 2;
+	size_t vt_BottomLayer = vt_NumberOfLayers - 1;
 
-  vector<double> vt_Solution(vt_NumberOfLayers);//                = new double [vt_NumberOfLayers];
-  vector<double> vt_MatrixDiagonal(vt_NumberOfLayers);//          = new double [vt_NumberOfLayers];
-  vector<double> vt_MatrixLowerTriangle(vt_NumberOfLayers);//     = new double [vt_NumberOfLayers];
+	vector<double> vt_Solution(vt_NumberOfLayers);//                = new double [vt_NumberOfLayers];
+	vector<double> vt_MatrixDiagonal(vt_NumberOfLayers);//          = new double [vt_NumberOfLayers];
+	vector<double> vt_MatrixLowerTriangle(vt_NumberOfLayers);//     = new double [vt_NumberOfLayers];
 
-  /////////////////////////////////////////////////////////////
-  // Internal Subroutine Numerical Solution - Suckow,F. (1986)
-  /////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////
+	// Internal Subroutine Numerical Solution - Suckow,F. (1986)
+	/////////////////////////////////////////////////////////////
 
-  vt_HeatFlow = f_SoilSurfaceTemperature(tmin, tmax, globrad) * vt_B[0] * vt_HeatConductivityMean[0]; //[J]
+	vt_HeatFlow = f_SoilSurfaceTemperature(tmin, tmax, globrad)
+		* vt_B[0]
+		* vt_HeatConductivityMean[0]; //[J]
 
-  // Determination of the equation's right side
-  vt_Solution[0] =  (vt_VolumeMatrixOld[0]
-		 + (vt_VolumeMatrix[0] - vt_VolumeMatrixOld[0]) / soilColumn[0].vs_LayerThickness)
-      * vt_SoilTemperature[0] + vt_HeatFlow;
+	// Determination of the equation's right side
+	vt_Solution[0] = 
+		(vt_VolumeMatrixOld[0] 
+		 + (vt_VolumeMatrix[0] - vt_VolumeMatrixOld[0])
+		 / soilColumn[0].vs_LayerThickness)
+		* vt_SoilTemperature[0] + vt_HeatFlow;
 
-  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+	for(size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		vt_Solution[i_Layer] = 
+			(vt_VolumeMatrixOld[i_Layer]
+			 + (vt_VolumeMatrix[i_Layer] - vt_VolumeMatrixOld[i_Layer])
+			 / soilColumn[i_Layer].vs_LayerThickness)
+			* vt_SoilTemperature[i_Layer];
+	}
+	// end subroutine NumericalSolution
 
-    vt_Solution[i_Layer] =   (vt_VolumeMatrixOld[i_Layer]
-			+ (vt_VolumeMatrix[i_Layer] - vt_VolumeMatrixOld[i_Layer])
-			/ soilColumn[i_Layer].vs_LayerThickness)
-        * vt_SoilTemperature[i_Layer];
-  } // for
+	/////////////////////////////////////////////////////////////
+	// Internal Subroutine Cholesky Solution Method
+	//
+	// Solution of EX=Z with E tridiagonal and symmetric
+	// according to CHOLESKY (E=LDL')
+	/////////////////////////////////////////////////////////////
 
-  // end subroutine NumericalSolution
+	// Determination of the lower matrix triangle L and the diagonal matrix D
+	vt_MatrixDiagonal[0] = vt_MatrixPrimaryDiagonal[0];
 
-  /////////////////////////////////////////////////////////////
-  // Internal Subroutine Cholesky Solution Method
-  //
-  // Solution of EX=Z with E tridiagonal and symmetric
-  // according to CHOLESKY (E=LDL')
-  /////////////////////////////////////////////////////////////
+	for(size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		vt_MatrixLowerTriangle[i_Layer] = vt_MatrixSecundaryDiagonal[i_Layer]
+			/ vt_MatrixDiagonal[i_Layer - 1];
+		vt_MatrixDiagonal[i_Layer] = vt_MatrixPrimaryDiagonal[i_Layer]
+			- (vt_MatrixLowerTriangle[i_Layer] * vt_MatrixSecundaryDiagonal[i_Layer]);
+	}
 
-  // Determination of the lower matrix triangle L and the diagonal matrix D
-  vt_MatrixDiagonal[0] = vt_MatrixPrimaryDiagonal[0];
+	// Solution of LY=Z
+	for(size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++)
+	{
+		vt_Solution[i_Layer] = 
+			vt_Solution[i_Layer]
+			- (vt_MatrixLowerTriangle[i_Layer] * vt_Solution[i_Layer - 1]);
+	}
 
-  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
+	// Solution of L'X=D(-1)Y
+	vt_Solution[vt_BottomLayer] = 
+		vt_Solution[vt_BottomLayer] / vt_MatrixDiagonal[vt_BottomLayer];
 
-    vt_MatrixLowerTriangle[i_Layer] = vt_MatrixSecundaryDiagonal[i_Layer] / vt_MatrixDiagonal[i_Layer - 1];
-    vt_MatrixDiagonal[i_Layer] =   vt_MatrixPrimaryDiagonal[i_Layer]
-			     - (vt_MatrixLowerTriangle[i_Layer] * vt_MatrixSecundaryDiagonal[i_Layer]);
-  }
-
-  // Solution of LY=Z
-  for (size_t i_Layer = 1; i_Layer < vt_NumberOfLayers; i_Layer++) {
-
-    vt_Solution[i_Layer] =   vt_Solution[i_Layer]
-		         - (vt_MatrixLowerTriangle[i_Layer] * vt_Solution[i_Layer - 1]);
-  }
-
-  // Solution of L'X=D(-1)Y
-  vt_Solution[vt_BottomLayer] = vt_Solution[vt_BottomLayer] / vt_MatrixDiagonal[vt_BottomLayer];
-
-  for (size_t i_Layer = 0; i_Layer < vt_BottomLayer; i_Layer++) 
+	for(size_t i_Layer = 0; i_Layer < vt_BottomLayer; i_Layer++)
 	{
 		auto j_Layer = (vt_BottomLayer - 1) - i_Layer;
 		auto j_Layer1 = j_Layer + 1;
@@ -281,20 +304,20 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 			- (vt_MatrixLowerTriangle[j_Layer1] * vt_Solution[j_Layer1]);
 	}
 
-  // end subroutine CholeskyMethod
+	// end subroutine CholeskyMethod
 
-  // Internal Subroutine Rearrangement
-  for (size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++) 
-    vt_SoilTemperature[i_Layer] = vt_Solution[i_Layer];
+	// Internal Subroutine Rearrangement
+	for(size_t i_Layer = 0; i_Layer < vt_NumberOfLayers; i_Layer++)
+		vt_SoilTemperature[i_Layer] = vt_Solution[i_Layer];
 
-  for (size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) 
+	for(size_t i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
 	{
-    vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
-    soilColumn[i_Layer].set_Vs_SoilTemperature(vt_SoilTemperature[i_Layer]);
-  }
+		vt_VolumeMatrixOld[i_Layer] = vt_VolumeMatrix[i_Layer];
+		soilColumn[i_Layer].set_Vs_SoilTemperature(vt_SoilTemperature[i_Layer]);
+	}
 
-  vt_VolumeMatrixOld[vt_GroundLayer] = vt_VolumeMatrix[vt_GroundLayer];
-  vt_VolumeMatrixOld[vt_BottomLayer] = vt_VolumeMatrix[vt_BottomLayer];
+	vt_VolumeMatrixOld[vt_GroundLayer] = vt_VolumeMatrix[vt_GroundLayer];
+	vt_VolumeMatrixOld[vt_BottomLayer] = vt_VolumeMatrix[vt_BottomLayer];
 }
 
 
@@ -309,32 +332,35 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
  */
 double SoilTemperature::f_SoilSurfaceTemperature(double tmin, double tmax, double globrad)
 {
-  double shading_coefficient = _dampingFactor;
+	double shading_coefficient = _dampingFactor;
 
-  double soil_coverage = 0.0;
-  if (monica.cropGrowth()) {
-    soil_coverage = monica.cropGrowth()->get_SoilCoverage();
-  }
-  shading_coefficient =  0.1 + ((soil_coverage * _dampingFactor) + ((1-soil_coverage) * (1-_dampingFactor)));
+	double soil_coverage = 0.0;
+	if(monica.cropGrowth())
+	{
+		soil_coverage = monica.cropGrowth()->get_SoilCoverage();
+	}
+	shading_coefficient = 0.1 + ((soil_coverage * _dampingFactor)
+															 + ((1 - soil_coverage) * (1 - _dampingFactor)));
 
+	// Soil surface temperature caluclation following Williams 1984
+	double vt_SoilSurfaceTemperatureOld = vt_SoilSurfaceTemperature;
 
+	// corrected for very low radiation in winter
+	if(globrad < 8.33)
+	{
+		globrad = 8.33;
+	}
 
-  // Soil surface temperature caluclation following Williams 1984
-  double vt_SoilSurfaceTemperatureOld = vt_SoilSurfaceTemperature;
+	vt_SoilSurfaceTemperature = 
+		(1.0 - shading_coefficient)
+		* (tmin + ((tmax - tmin) * pow((0.03 * globrad), 0.5)))
+		+ shading_coefficient * vt_SoilSurfaceTemperatureOld;
 
-  // corrected for very low radiation in winter
-  if (globrad < 8.33) {
-    globrad = 8.33;
-  }
-
-  vt_SoilSurfaceTemperature =   (1.0 - shading_coefficient)
-        * (tmin + ((tmax - tmin) * pow((0.03 * globrad),0.5)))
-        + shading_coefficient * vt_SoilSurfaceTemperatureOld;
-
-  // damping negative temperatures due to heat loss for freezing water
-  if (vt_SoilSurfaceTemperature < 0.0){
-    vt_SoilSurfaceTemperature = vt_SoilSurfaceTemperature * 0.5;
-  }
+	// damping negative temperatures due to heat loss for freezing water
+	if(vt_SoilSurfaceTemperature < 0.0)
+	{
+		vt_SoilSurfaceTemperature = vt_SoilSurfaceTemperature * 0.5;
+	}
 
 	double vt_SnowDepth = 0.0;
 	vt_SnowDepth = monica.soilMoisture().get_SnowDepth();
@@ -342,13 +368,14 @@ double SoilTemperature::f_SoilSurfaceTemperature(double tmin, double tmax, doubl
 	double vt_TemperatureUnderSnow = 0.0;
 	vt_TemperatureUnderSnow = monica.soilMoisture().getTemperatureUnderSnow();
 
-	if (vt_SnowDepth > 0.0){
+	if(vt_SnowDepth > 0.0)
+	{
 		vt_SoilSurfaceTemperature = vt_TemperatureUnderSnow;
 	}
 
 	soilColumn.sc.vt_SoilSurfaceTemperature = vt_SoilSurfaceTemperature;
 
-  return vt_SoilSurfaceTemperature;
+	return vt_SoilSurfaceTemperature;
 }
 
 /**
@@ -358,7 +385,7 @@ double SoilTemperature::f_SoilSurfaceTemperature(double tmin, double tmax, doubl
  */
 double SoilTemperature::get_SoilSurfaceTemperature() const
 {
-  return vt_SoilSurfaceTemperature;
+	return vt_SoilSurfaceTemperature;
 }
 
 /**
@@ -368,7 +395,7 @@ double SoilTemperature::get_SoilSurfaceTemperature() const
  */
 double SoilTemperature::get_SoilTemperature(int layer) const
 {
-  return soilColumn[layer].get_Vs_SoilTemperature();
+	return soilColumn.at(layer).get_Vs_SoilTemperature();
 }
 
 /**
@@ -378,7 +405,7 @@ double SoilTemperature::get_SoilTemperature(int layer) const
  */
 double SoilTemperature::get_HeatConductivity(int layer) const
 {
-  return vt_HeatConductivity[layer];
+	return vt_HeatConductivity[layer];
 }
 
 /**
@@ -386,21 +413,22 @@ double SoilTemperature::get_HeatConductivity(int layer) const
  * @param sumLT
  * @return Temperature
  */
-double
-SoilTemperature::get_AvgTopSoilTemperature(double sumLT) const
+double SoilTemperature::get_AvgTopSoilTemperature(double sumLT) const
 {
-  double lsum = 0;
-  double tempSum = 0;
-  int count = 0;
+	double lsum = 0;
+	double tempSum = 0;
+	int count = 0;
 
-  for (size_t i = 0; i < vs_NumberOfLayers; i++) {
-    count++;
-    tempSum += soilColumn[i].get_Vs_SoilTemperature();
-    lsum += soilColumn[i].vs_LayerThickness;
-    if(lsum >= sumLT) {
-      break;
-    }
-  }
+	for(size_t i = 0; i < vs_NumberOfLayers; i++)
+	{
+		count++;
+		tempSum += soilColumn.at(i).get_Vs_SoilTemperature();
+		lsum += soilColumn.at(i).vs_LayerThickness;
+		if(lsum >= sumLT)
+		{
+			break;
+		}
+	}
 
-  return count < 1 ? 0 : tempSum / double(count);
+	return count < 1 ? 0 : tempSum / double(count);
 }
