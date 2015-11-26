@@ -176,10 +176,10 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
   return make_pair(currentDate, m);
 }
 
-Result Monica::runMonica(Env env)
+void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	pout.open(env.params.pathToOutputDir + pathSeparator() + "parameters.json");
+	pout.open(fixSystemSeparator(env.params.pathToOutputDir + "/" + fileName));
 	if(pout.fail())
 		exit(1);
 	pout << "{" << endl;
@@ -200,12 +200,40 @@ Result Monica::runMonica(Env env)
 	auto sitePs = env.params.siteParameters.to_json().dump();
 	pout << "\"siteParameters\":" << endl << sitePs << "," << endl;
 	pout << "\"crop-rotation\": {" << endl;
+	bool isFirstItem = true;
 	for(auto cm : env.cropRotation)
-		pout << "\"" << cm.crop()->id() << "\":" << cm.to_json().dump() << "," << endl;
-	pout << "}" << endl;
+	{
+		pout
+			<< (isFirstItem ? "  " : ", ")
+			<< "\"" << cm.crop()->id() << "\":" << cm.to_json().dump() << endl;
+		isFirstItem = !isFirstItem && isFirstItem;
+	}
+	pout << "}," << endl;
+	pout << "\"climate-data\": [" << endl;
+	isFirstItem = true;
+	for(size_t i = 0, nosp = env.da.noOfStepsPossible(); i < nosp; i++)
+	{
+		pout 
+			<< (isFirstItem ? "  " : ", ")
+			<< "[\"" << env.da.dateForStep(i).toIsoDateString()
+			<< "\", " << env.da.dataForTimestep(tavg, i)
+			<< ", " << env.da.dataForTimestep(precip, i)
+			<< ", " << env.da.dataForTimestep(globrad, i)
+			<< "]" << endl;
+		isFirstItem = !isFirstItem && isFirstItem;
+	}
+	pout << "]" << endl;
 	pout << "}" << endl;
 	pout.flush();
 	pout.close();
+}
+
+Result Monica::runMonica(Env env)
+{
+	if(activateDebug)
+	{
+		writeDebugInputs(env, "inputs.json");
+	}
 
   Result res;
 	res.customId = env.customId;
