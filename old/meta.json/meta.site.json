@@ -1,0 +1,176 @@
+{
+  "latitude": {
+    "desc": "A geographic coordinate that specifies the north-south position of a point on the Earth's surface",
+    "unit": "°,'",
+    "min": 0.0,
+    "max": 90.0,
+    "default": 52.0
+  },
+  "slope": {
+    "desc": "The inclination of a surface to the horizontal",
+    "unit": "°",
+    "min": 0.0,
+    "max": 45.0,
+    "default": 0.0
+  },
+  "heightNN": {
+    "desc": "Height (altitude, elevation) is the vertical distance between the land surface and mean sea level",
+    "unit": "m",
+    "min": -20.0,
+    "max": 6000.0,
+    "default": 0.0
+  },
+  "atmosphericCO2": {
+    "desc": "CO2 concentration in the atmosphere",
+    "unit": "ppm",
+    "min": 0.0,
+    "max": 2000.0,
+    "default": 385.0
+  },
+  "windSpeedHeight": {
+    "desc": "Height above ground surface at which wind speed is measured",
+    "unit": "m",
+    "min": 0.0,
+    "max": 20.0,
+    "default": 2.0
+  },
+  "leachingDepth": {
+    "desc": "Depth below ground surface at which water and nutrients outflow is determined",
+    "unit": "m",
+    "min": 0.1,
+    "max": 2.0,
+    "default": 2.0
+  },
+  "NDeposition": {
+    "desc": "Annual deposition of nitrogen compounds with rainfall or dust",
+    "unit": "kg (N) ha-1",
+    "min": 0.0,
+    "max": 100.0,
+    "default": 20.0
+  },
+  "groundwaterDepthMin": {
+    "desc": "Minimum distance of the groundwater table to the ground surface during the year",
+    "unit": "m",
+    "min": 0.0,
+    "max": 5.0,
+    "default": 5.0
+  },
+  "groundwaterDepthMax": {
+    "desc": "Maximum distance of the groundwater table to the ground surface during the year",
+    "unit": "m",
+    "min": 0.0,
+    "max": 20.0,
+    "default": 5.0
+  },
+  "groundwaterDepthMinMonth": {
+    "desc": "Month in which the minimum distance of the groundwater table to the ground surface is commonly observed",
+    "unit": "month",
+    "enum": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "default": "April"
+  },
+  "horizons": [
+    {
+      "thickness": {
+        "desc": "Thickness of soil horizon",
+        "unit": "m",
+        "min": 0.1,
+        "max": 2.0,
+        "default": 0.1
+      },
+      "Corg": {
+        "desc": "Organic carbon concentration in the soild phase of the soil horizon",
+        "unit": "kg kg-1",
+        "min": 0.0,
+        "max": 0.5,
+        "default": 0.1
+      },
+      "textureClass": {
+        "desc": "Texture class according to the German Soil Survey Manual 5th ed.",
+        "unit": "-",
+        "db": {
+          "table": "view_texture_class",
+          "columns": [
+            "soil_type"
+          ]
+        },
+        "default": "Ls4"
+      },
+      "sand": {
+        "desc": "Volume fraction of fine soil (< 2.0 mm particle diameter) occupied by sand (0.063 mm to 2.0 mm)",
+        "unit": "m3 m-3",
+        "min": 0.0,
+        "max": 1.0,
+        "default": null
+      },
+      "clay": {
+        "desc": "Volume fraction of fine soil (< 2.0 mm particle diameter) occupied by clay (< 2.0 μm particle diameter)",
+        "unit": "m3 m-3",
+        "min": 0.0,
+        "max": 1.0,
+        "default": null
+      },
+      "sceleton": {
+        "desc": "Volume fraction of total soil matrix occupied by stones (> 2.0 mm particle diameter)",
+        "unit": "m3 m-3",
+        "min": 0.0,
+        "max": 0.65,
+        "default": 0.02
+      },
+      "poreVolume": {
+        "desc": "Volume fraction of soil pores",
+        "unit": "m3 m-3",
+        "min": 0.0,
+        "max": 0.60,
+        "default": 0.45
+      },
+      "fieldCapacity": {
+        "desc": "Maximum water content being held back against gravity",
+        "unit": "m3 m-3",
+        "min": 0.0,
+        "max": 0.40,
+        "default": 0.33
+      },
+      "permanentWiltingPoint": {
+        "desc": "Water content below which crops start to wilt",
+        "unit": "m3 m-3",
+        "min": 0.0,
+        "max": 0.40,
+        "default": 0.20
+      },
+      "pH": {
+        "desc": "pH value of the soil solution (CaCl2)",
+        "unit": "-",
+        "min": 0.0,
+        "max": 14.0,
+        "default": 6.5
+      },
+      "CN": {
+        "desc": "Carbon to nitrogen ratio of the soil organic matter",
+        "unit": "-",
+        "min": 1.0,
+        "max": 200.0,
+        "default": 12.0
+      },
+      "bulkDensity": {
+        "desc": "Bulk density of the soil volume",
+        "unit": "kg m-3",
+        "min": 800.0,
+        "max": 2650.0,
+        "default": 1400.0
+      }
+    }
+  ]
+}

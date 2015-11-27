@@ -34,8 +34,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "db/abstract-db-connections.h"
 #include "../core/monica-typedefs.h"
 
-#include "../io/configuration.h"
-
 using namespace Monica;
 using namespace std;
 using namespace Climate;

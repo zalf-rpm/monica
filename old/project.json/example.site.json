@@ -1,0 +1,56 @@
+{
+  "latitude": 52.2,
+  "slope": 0,
+  "heightNN": 38,
+  "atmosphericCO2": 380,
+  "windSpeedHeight": 2.5,
+  "leachingDepth": 1.5,
+  "NDeposition": 20,
+  "groundwaterDepthMin": 5,
+  "groundwaterDepthMax": 5,
+  "groundwaterDepthMinMonth": "April",
+  "horizons": [
+    {
+      "thickness": 0.2,
+      "Corg": 0.05,
+      "textureClass": "Ls2",
+      "sand": 0.15,
+      "clay": 0.24,
+      "sceleton": 0.02,
+      "poreVolume": 0.45,
+      "fieldCapacity": 0.33,
+      "permanentWiltingPoint": 0.2,
+      "pH": 6.9,
+      "CN": 10,
+      "bulkDensity": 1400
+    },
+    {
+      "thickness": 0.5,
+      "Corg": 0.05,
+      "textureClass": "Ls2",
+      "sand": 0.15,
+      "clay": 0.24,
+      "sceleton": 0.02,
+      "poreVolume": 0.45,
+      "fieldCapacity": 0.33,
+      "permanentWiltingPoint": 0.2,
+      "pH": 6.9,
+      "CN": 10,
+      "bulkDensity": 1400
+    },
+    {
+      "thickness": 2.0,
+      "Corg": 0.05,
+      "textureClass": "Ls2",
+      "sand": 0.15,
+      "clay": 0.24,
+      "sceleton": 0.02,
+      "poreVolume": 0.45,
+      "fieldCapacity": 0.33,
+      "permanentWiltingPoint": 0.2,
+      "pH": 6.9,
+      "CN": 10,
+      "bulkDensity": 1400
+    }
+  ]
+}

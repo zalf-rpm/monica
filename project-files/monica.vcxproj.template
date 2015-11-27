@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A5570924-90D5-458B-B16B-08E03AC4C1CD}</ProjectGuid>
+    <RootNamespace>monicahermes</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>NO_ZMQ;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\util;..\..\sys-libs\includes\zeromq-3.2.5</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\util;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>NO_ZMQ;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\util;..\..\sys-libs\includes\zeromq-3.2.5</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\util</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\util\climate\climate-common.h" />
+    <ClInclude Include="..\..\util\climate\climate-file-io.h" />
+    <ClInclude Include="..\..\util\db\abstract-db-connections.h" />
+    <ClInclude Include="..\..\util\db\db.h" />
+    <ClInclude Include="..\..\util\db\sqlite3.h" />
+    <ClInclude Include="..\..\util\json11\json11.hpp" />
+    <ClInclude Include="..\..\util\soil\constants.h" />
+    <ClInclude Include="..\..\util\soil\conversion.h" />
+    <ClInclude Include="..\..\util\soil\soil.h" />
+    <ClInclude Include="..\..\util\tools\algorithms.h" />
+    <ClInclude Include="..\..\util\tools\datastructures.h" />
+    <ClInclude Include="..\..\util\tools\date.h" />
+    <ClInclude Include="..\..\util\tools\debug.h" />
+    <ClInclude Include="..\..\util\tools\helper.h" />
+    <ClInclude Include="..\..\util\tools\json11-helper.h" />
+    <ClInclude Include="..\..\util\tools\read-ini.h" />
+    <ClInclude Include="..\..\util\tools\zmq-helper.h" />
+    <ClInclude Include="..\src\core\crop-growth.h" />
+    <ClInclude Include="..\src\core\crop.h" />
+    <ClInclude Include="..\src\core\monica-parameters.h" />
+    <ClInclude Include="..\src\core\monica.h" />
+    <ClInclude Include="..\src\core\simulation.h" />
+    <ClInclude Include="..\src\core\soilcolumn.h" />
+    <ClInclude Include="..\src\core\soilmoisture.h" />
+    <ClInclude Include="..\src\core\soilorganic.h" />
+    <ClInclude Include="..\src\core\soiltemperature.h" />
+    <ClInclude Include="..\src\core\soiltransport.h" />
+    <ClInclude Include="..\src\core\monica-typedefs.h" />
+    <ClInclude Include="..\src\io\database-io.h" />
+    <ClInclude Include="..\src\io\file-io.h" />
+    <ClInclude Include="..\src\io\hermes-file-io.h" />
+    <ClInclude Include="..\src\run\cultivation-method.h" />
+    <ClInclude Include="..\src\run\run-monica-zmq.h" />
+    <ClInclude Include="..\src\run\run-monica.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\util\climate\climate-common.cpp" />
+    <ClCompile Include="..\..\util\climate\climate-file-io.cpp" />
+    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp" />
+    <ClCompile Include="..\..\util\db\db.cpp" />
+    <ClCompile Include="..\..\util\db\sqlite3.c" />
+    <ClCompile Include="..\..\util\json11\json11.cpp" />
+    <ClCompile Include="..\..\util\soil\constants.cpp" />
+    <ClCompile Include="..\..\util\soil\conversion.cpp" />
+    <ClCompile Include="..\..\util\soil\soil.cpp" />
+    <ClCompile Include="..\..\util\tools\algorithms.cpp" />
+    <ClCompile Include="..\..\util\tools\date.cpp" />
+    <ClCompile Include="..\..\util\tools\debug.cpp" />
+    <ClCompile Include="..\..\util\tools\helper.cpp" />
+    <ClCompile Include="..\..\util\tools\json11-helper.cpp" />
+    <ClCompile Include="..\..\util\tools\read-ini.cpp" />
+    <ClCompile Include="..\..\util\tools\zmq-helper.cpp" />
+    <ClCompile Include="..\src\core\crop-growth.cpp" />
+    <ClCompile Include="..\src\core\crop.cpp" />
+    <ClCompile Include="..\src\io\database-io.cpp" />
+    <ClCompile Include="..\src\io\file-io.cpp" />
+    <ClCompile Include="..\src\io\hermes-file-io.cpp" />
+    <ClCompile Include="..\src\run\monica-main.cpp" />
+    <ClCompile Include="..\src\core\monica-parameters.cpp" />
+    <ClCompile Include="..\src\core\monica.cpp" />
+    <ClCompile Include="..\src\run\cultivation-method.cpp" />
+    <ClCompile Include="..\src\run\run-monica-zmq.cpp" />
+    <ClCompile Include="..\src\run\run-monica.cpp" />
+    <ClCompile Include="..\src\core\simulation.cpp" />
+    <ClCompile Include="..\src\core\soilcolumn.cpp" />
+    <ClCompile Include="..\src\core\soilmoisture.cpp" />
+    <ClCompile Include="..\src\core\soilorganic.cpp" />
+    <ClCompile Include="..\src\core\soiltemperature.cpp" />
+    <ClCompile Include="..\src\core\soiltransport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\monica.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

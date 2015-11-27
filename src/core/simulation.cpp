@@ -384,8 +384,6 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
 //------------------------------------------------------------------
 
-#ifdef RUN_HERMES
-
 /**
  * Method for compatibility issues. Hermes configuration is hard coded
  * and only output path can be configured outside.
@@ -513,11 +511,7 @@ Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::strin
 	return hermes_config;
 }
 
-#endif /*#ifdef RUN_HERMES*/
-
 //------------------------------------------------------------------
-
-#ifdef RUN_HERMES
 
 /**
  *
@@ -723,7 +717,6 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 	return env;
 }
 
-#endif /*#ifdef RUN_HERMES*/
 //------------------------------------------------------------------
 
 /**
