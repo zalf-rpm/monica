@@ -318,21 +318,7 @@ namespace Monica
 		{
       insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
     }
-
-    template<>
-    void addApplication<Seed>(const Seed& s)
-    {
-      insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
-      _crop = s.crop();
-    }
-
-    template<>
-    void addApplication<Harvest>(const Harvest& h)
-    {
-      insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
-      _cropResult = h.cropResult();
-    }
-
+    
 //    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
 
     void apply(const Tools::Date& date, MonicaModel* model) const;
@@ -378,6 +364,21 @@ namespace Monica
     //store results of the cultivation method
     CMResultPtr _cropResult;
 	};
+	
+	template<>
+  inline void CultivationMethod::addApplication<Seed>(const Seed& s)
+  {
+    insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
+    _crop = s.crop();
+  }
+
+  template<>
+  inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
+  {
+    insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
+    _cropResult = h.cropResult();
+  }
+
 }
 
 #endif
