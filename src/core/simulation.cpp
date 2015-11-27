@@ -587,7 +587,7 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 		siteParams.vq_NDeposition = hermes_config->getNDeposition();
 
 	double layer_thickness = cpp.simulationParameters.p_LayerThickness;
-	double profile_depth = layer_thickness * double(cpp.simulationParameters.p_NumberOfLayers);
+	//double profile_depth = layer_thickness * double(cpp.simulationParameters.p_NumberOfLayers);
 	double max_mineralisation_depth = 0.4;
 	bool nitrogen_response_on = hermes_config->getNitrogenResponseOn();
 	bool water_deficit_response_on = hermes_config->getWaterDeficitResponseOn();
