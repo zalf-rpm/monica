@@ -128,17 +128,19 @@ namespace Monica
    * @param env the environment completely defining what the model needs and gets
    * @return a structure with all the Monica results
    */
-#ifndef	MONICA_GUI
   Result runMonica(Env env);
-#else
-  Result runMonica(Env env, Configuration* cfg = NULL);
-#endif
 
 	void initializeFoutHeader(std::ofstream&);
 	void initializeGoutHeader(std::ofstream&);
-	void writeCropResults(const CropGrowth*, std::ofstream&, std::ofstream&, bool);
-	void writeGeneralResults(std::ofstream &fout, std::ofstream &gout, Env &env,
-		MonicaModel &monica, int d);
+	void writeCropResults(const CropGrowth*, 
+												std::ofstream&, 
+												std::ofstream&, 
+												bool);
+	void writeGeneralResults(std::ofstream& fout, 
+													 std::ofstream& gout, 
+													 Env& env,
+													 MonicaModel& monica, 
+													 int d);
 	void dumpMonicaParametersIntoFile(std::string, CentralParameterProvider &cpp);
 
 }

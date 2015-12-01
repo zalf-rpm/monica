@@ -1113,9 +1113,9 @@ void Monica::initializeGoutHeader(ofstream &gout)
 * @param fout File pointer to rmout.dat
 * @param gout File pointer to smout.dat
 */
-void Monica::writeCropResults(const CropGrowth *mcg,
-															ofstream &fout,
-															ofstream &gout,
+void Monica::writeCropResults(const CropGrowth* mcg,
+															ofstream& fout,
+															ofstream& gout,
 															bool crop_is_planted)
 {
 	if(crop_is_planted)

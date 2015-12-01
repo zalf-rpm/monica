@@ -6,6 +6,7 @@
 ;Include Modern UI
 
   !include "MUI2.nsh"
+	!include "EnvVarUpdate.nsh"
 
 	!ifdef X86
 		!define Arch "x86"
@@ -147,25 +148,27 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   SetOutPath "$INSTDIR"
   
   ;Store installation folder
-  WriteRegStr HKCU "Software\MONICA" "" $INSTDIR
-  
+  WriteRegStr "HKCU" "Software\MONICA" "" $INSTDIR
+  	  
+	${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR"
+	
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
     
 	;Create shortcuts
-  SetOutPath "$PROFILE\MONICA"
+	CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
+	SetOutPath "$PROFILE\MONICA"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true path: Examples\Hohenfinow2"
 	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true path: Examples\Hohenfinow2"
 	
 	SetOutPath "$INSTDIR"
-	CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
-	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"	
+	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk" "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk" "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	;CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"		
-		
+	;CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Modellbeschreibung MONICA for Windows.lnk" "$INSTDIR\Modellbeschreibung_MONICA_Version_1-1-1.pdf"
+				
   !insertmacro MUI_STARTMENU_WRITE_END
 
 SectionEnd
@@ -256,4 +259,6 @@ Section "Uninstall"
   
   DeleteRegKey /ifempty HKCU "Software\MONICA"
 
+	${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR"
+	
 SectionEnd
