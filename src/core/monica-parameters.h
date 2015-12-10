@@ -617,7 +617,7 @@ namespace Monica
     virtual json11::Json to_json() const;
 
     double amount{17.0};
-    double treshold{0.35};
+    double threshold{0.35};
   };
 
   //----------------------------------------------------------------------------

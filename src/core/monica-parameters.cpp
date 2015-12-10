@@ -739,7 +739,7 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
 																														 double sc)
   : IrrigationParameters(nc, sc)
   , amount(a)
-  , treshold(t) 
+  , threshold(t)
 {}
 
 AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
@@ -751,7 +751,7 @@ void AutomaticIrrigationParameters::merge(json11::Json j)
 {
   IrrigationParameters::merge(j["irrigationParameters"]);
   set_double_value(amount, j, "amount");
-  set_double_value(treshold, j, "treshold");
+  set_double_value(threshold, j, "threshold");
 }
 
 json11::Json AutomaticIrrigationParameters::to_json() const
@@ -760,7 +760,7 @@ json11::Json AutomaticIrrigationParameters::to_json() const
     {"type", "AutomaticIrrigationParameters"},
     {"irrigationParameters", IrrigationParameters::to_json()},
     {"amount", J11Array {amount, "mm"}},
-    {"treshold", treshold}};
+    {"threshold", threshold}};
 }
 
 //------------------------------------------------------------------------------

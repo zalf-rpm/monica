@@ -619,7 +619,7 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
   if(_simPs.p_UseAutomaticIrrigation)
   {
     const AutomaticIrrigationParameters& aips = _simPs.p_AutoIrrigationParams;
-    if(_soilColumn.applyIrrigationViaTrigger(aips.treshold, aips.amount,
+    if(_soilColumn.applyIrrigationViaTrigger(aips.threshold, aips.amount,
                                              aips.nitrateConcentration))
     {
       _soilOrganic.addIrrigationWater(aips.amount);

@@ -179,13 +179,14 @@ size_t SoilColumn::calculateNumberOfOrganicLayers()
  * @param vf_FertiliserMinApplication Threshold value for economically reasonable fertilizer application
  * @param vf_TopDressingDelay Number of days for which the application of surplus fertilizer is delayed
  */
-double SoilColumn::applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
-                                                       double vf_SamplingDepth,
-                                                       double vf_CropNTarget,
-                                                       double vf_CropNTarget30,
-                                                       double vf_FertiliserMinApplication,
-                                                       double vf_FertiliserMaxApplication,
-                                                       int vf_TopDressingDelay )
+double SoilColumn::
+applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
+																		double vf_SamplingDepth,
+																		double vf_CropNTarget,
+																		double vf_CropNTarget30,
+																		double vf_FertiliserMinApplication,
+																		double vf_FertiliserMaxApplication,
+																		int vf_TopDressingDelay)
 {
   // Wassergehalt > Feldkapazität
   if(at(0).get_Vs_SoilMoisture_m3() > at(0).vs_FieldCapacity())
@@ -383,10 +384,9 @@ void SoilColumn::deleteAOMPool() {
  * @param vi_IrrigationThreshold
  * @return could irrigation be applied
  */
-bool SoilColumn::
-applyIrrigationViaTrigger(double vi_IrrigationThreshold,
-                          double vi_IrrigationAmount,
-                          double vi_IrrigationNConcentration)
+bool SoilColumn::applyIrrigationViaTrigger(double vi_IrrigationThreshold,
+																					 double vi_IrrigationAmount,
+																					 double vi_IrrigationNConcentration)
 {
   //is actually only called from cropStep and thus there should always
   //be a crop
@@ -408,20 +408,23 @@ applyIrrigationViaTrigger(double vi_IrrigationThreshold,
 
   int vi_CriticalMoistureLayer = int(ceil(vi_CriticalMoistureDepth /
                                           at(0).vs_LayerThickness));
-  for (int i_Layer = 0; i_Layer < vi_CriticalMoistureLayer; i_Layer++){
-    vi_ActualPlantAvailableWater += (at(i_Layer).get_Vs_SoilMoisture_m3()
-                                     - at(i_Layer).vs_PermanentWiltingPoint())
-                                    * vs_LayerThickness() * 1000.0; // [mm]
+  for (int i_Layer = 0; i_Layer < vi_CriticalMoistureLayer; i_Layer++)
+	{
+		vi_ActualPlantAvailableWater += 
+			(at(i_Layer).get_Vs_SoilMoisture_m3() - at(i_Layer).vs_PermanentWiltingPoint())
+			* vs_LayerThickness()
+			* 1000.0; // [mm]
     vi_MaxPlantAvailableWater += (at(i_Layer).vs_FieldCapacity()
                                   - at(i_Layer).vs_PermanentWiltingPoint())
                                  * vs_LayerThickness() * 1000.0; // [mm]
     vi_PlantAvailableWaterFraction = vi_ActualPlantAvailableWater
                                      / vi_MaxPlantAvailableWater; // []
   }
-  if (vi_PlantAvailableWaterFraction <= vi_IrrigationThreshold){
-    applyIrrigation(vi_IrrigationAmount, vi_IrrigationNConcentration);
+  if (vi_PlantAvailableWaterFraction <= vi_IrrigationThreshold)
+	{
+		applyIrrigation(vi_IrrigationAmount, vi_IrrigationNConcentration);
 
-    debug() << "applying automatic irrigation treshold: " << vi_IrrigationThreshold
+		debug() << "applying automatic irrigation treshold: " << vi_IrrigationThreshold
             << " amount: " << vi_IrrigationAmount
             << " N concentration: " << vi_IrrigationNConcentration << endl;
 

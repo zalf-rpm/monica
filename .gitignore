@@ -205,3 +205,4 @@ src/run/production-process.h.autosave
 /installer/Hohenfinow2/smout.csv
 /installer/Hohenfinow2/rmout.csv
 /installer/Hohenfinow2/inputs.json
+*.autosave
