@@ -514,10 +514,20 @@ void CultivarParameters::merge(json11::Json j)
   string err;
   if(j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForPrimaryYield = toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]);
-  if(j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
+	//if(!err.empty())
+	//	cerr << "Error @ CultivarParameters::merge: " << err << endl;
+  
+	err = "";
+	if(j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForSecondaryYield = toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]);
+	//if(!err.empty())
+	//	cerr << "Error @ CultivarParameters::merge: " << err << endl;
+
+	err = "";
   if(j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
     pc_OrganIdsForCutting = toVector<YieldComponent>(j["OrganIdsForCutting"]);
+	//if(!err.empty())
+	//	cerr << "Error @ CultivarParameters::merge: " << err << endl;
 
   set_string_value(pc_CultivarId, j, "CultivarName");
   set_string_value(pc_Description, j, "Description");
@@ -857,9 +867,9 @@ void SiteParameters::merge(json11::Json j)
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
 
   string err;
-  if(j.has_shape({{"SoilParameters", json11::Json::ARRAY}}, err))
+  if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
   {
-    const auto& sps = j["SoilParameters"].array_items();
+    const auto& sps = j["SoilProfileParameters"].array_items();
     vs_SoilParameters = make_shared<SoilPMs>();
     size_t layerCount = 0;
     for(size_t spi = 0, spsCount = sps.size(); spi < spsCount; spi++)
@@ -883,6 +893,8 @@ void SiteParameters::merge(json11::Json j)
       layerCount += repeatLayer;
     }
   }
+	if(!err.empty())
+		cerr << "Error @ SiteParameters::merge: " << err << endl;
 }
 
 json11::Json SiteParameters::to_json() const
@@ -1114,6 +1126,12 @@ UserCropParameters::UserCropParameters(json11::Json j)
 
 void UserCropParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient");
   set_double_value(pc_ReferenceMaxAssimilationRate, j, "ReferenceMaxAssimilationRate");
   set_double_value(pc_ReferenceLeafAreaIndex, j, "ReferenceLeafAreaIndex");
@@ -1162,6 +1180,12 @@ UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
 
 void UserEnvironmentParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(p_Albedo, j, "Albedo");
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
@@ -1196,6 +1220,12 @@ UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
 
 void UserSoilMoistureParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
   set_double_value(pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity");
   set_double_value(pm_SurfaceRoughness, j, "SurfaceRoughness");
@@ -1261,6 +1291,12 @@ UserSoilTemperatureParameters::UserSoilTemperatureParameters(json11::Json j)
 
 void UserSoilTemperatureParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(pt_NTau, j, "NTau");
   set_double_value(pt_InitialSurfaceTemperature, j, "InitialSurfaceTemperature");
   set_double_value(pt_BaseTemperature, j, "BaseTemperature");
@@ -1304,6 +1340,12 @@ UserSoilTransportParameters::UserSoilTransportParameters(json11::Json j)
 
 void UserSoilTransportParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(pq_DispersionLength, j, "DispersionLength");
   set_double_value(pq_AD, j, "AD");
   set_double_value(pq_DiffusionCoefficientStandard, j, "DiffusionCoefficientStandard");
@@ -1329,6 +1371,12 @@ UserSoilOrganicParameters::UserSoilOrganicParameters(json11::Json j)
 
 void UserSoilOrganicParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard");
   set_double_value(po_SOM_FastDecCoeffStandard, j, "SOM_FastDecCoeffStandard");
   set_double_value(po_SMB_SlowMaintRateStandard, j, "SMB_SlowMaintRateStandard");
