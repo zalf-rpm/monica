@@ -533,10 +533,10 @@ json11::Json CultivationMethod::to_json() const
 	return J11Object{
 		{"type", "CultivationMethod"},
 		{"customId", _customId},
-		{"name", _name},
+    {"name", _name},
 		//    {"crop", _crop->to_json()},
-				{"irrigateCrop", _irrigateCrop},
-				{"worksteps", wss}};
+    {"irrigateCrop", _irrigateCrop},
+    {"worksteps", wss}};
 }
 
 void CultivationMethod::apply(const Date& date, MonicaModel* model) const

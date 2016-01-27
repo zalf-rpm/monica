@@ -1334,21 +1334,22 @@ void SoilMoisture::fm_GroundwaterReplenishment()
 
   } // for
 
-  // added implementation to test if groundwater table is lower than leaching depth
-  // to avoid high recharge rates in those cases
-  if(pm_LeachingDepthLayer > vm_GroundwaterTable - 1)
+  if (pm_LeachingDepthLayer>vm_GroundwaterTable-1)
   {
-    // groundwater is lower than currently defined leaching depth
-    // so user water flux of layer directly above groundwater to calculate
-    // the recharge values
-    vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable - 1];
+    if (vm_GroundwaterTable-1 < 0)
+    {
+      vm_FluxAtLowerBoundary = 0.0;
+    }
+    else
+    {
+      vm_FluxAtLowerBoundary = vm_WaterFlux[vm_GroundwaterTable-1];
+    }
   }
   else
   {
-    // leaching depth is not affected by groundwater so use water flux
-    // at leaching depth layer
     vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   }
+  //cout << "GWN: " << vm_FluxAtLowerBoundary << endl;
 }
 
 /**
