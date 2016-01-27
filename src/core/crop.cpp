@@ -91,7 +91,10 @@ Crop::Crop(json11::Json j)
     if(_cultivarName.empty() && _cropParams)
       _cultivarName = _cropParams->cultivarParams.pc_CultivarId;
   }
+	if(!err.empty())
+		cerr << "Error @ Crop::ctor: " << err << endl;
 
+	err = "";
   if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
   {
     auto jcps = j["perennialCropParams"];
@@ -100,9 +103,13 @@ Crop::Crop(json11::Json j)
 			_perennialCropParams = make_shared<CropParameters>(j["cropParams"]);
   }
 
+	err = "";
   if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
     _residueParams = make_shared<CropResidueParameters>(j["residueParams"]);
+	if(!err.empty())
+		cerr << "Error @ Crop::ctor: " << err << endl;
 
+	err = "";
   if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
     for(auto cd : j["cuttingDates"].array_items())
       _cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));

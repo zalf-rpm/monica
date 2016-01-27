@@ -453,15 +453,16 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
 
 void Monica::writeCropParameters(string path)
 {
-	for(auto p : availableMonicaCrops())
+	for(auto amc : availableMonicaCrops())
 	{
-		CropParametersPtr cp = getCropParametersFromMonicaDB(p.first);
+		CropParametersPtr cp = getCropParametersFromMonicaDB(amc.speciesId,
+																												 amc.cultivarId);
 
 		ofstream ofs;
-		string speciesDir = path + "/" + cp->speciesParams.pc_SpeciesId;
+		string speciesDir = path + "/" + amc.speciesId;
 		ensureDirExists(surround("\"", speciesDir));
 
-		auto s = fixSystemSeparator(path + "/" + cp->speciesParams.pc_SpeciesId + ".json");
+		auto s = fixSystemSeparator(path + "/" + amc.speciesId + ".json");
 		ofs.open(s);
 		if(ofs.good())
 		{
@@ -469,7 +470,7 @@ void Monica::writeCropParameters(string path)
 			ofs << s;
 			ofs.close();
 		}
-		auto c = fixSystemSeparator(speciesDir + "/" + cp->cultivarParams.pc_CultivarId + ".json");
+		auto c = fixSystemSeparator(speciesDir + "/" + amc.cultivarId + ".json");
 		ofs.open(c);
 		if(ofs.good())
 		{
@@ -723,9 +724,9 @@ vector<CropResidueParametersPtr> getAllCropResidueParametersFromMonicaDB()
 	DBRow row;
 	con->select("select "
 							"species_id, "
-							"cultivar_id "
+							"residue_type "
 							"from crop_residue "
-							"order by species_id, cultivar_id");
+							"order by species_id, residue_type");
 	while(!(row = con->getRow()).empty())
 	{
 		acrps.push_back(getResidueParametersFromMonicaDB(row[0], row[1]));
@@ -763,47 +764,30 @@ void Monica::writeCropResidues(string path)
 
 //------------------------------------------------------------------------------
 
-CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
+DBPtr userParamsSelect(string type, string module)
 {
-	CentralParameterProvider centralParameterProvider;
-
-	debug() << "DB Conncection user parameters" << endl;
 	DBPtr con(newConnection("monica"));
-	if(!con)
-		return centralParameterProvider;
 
-	DBRow row;
-	switch(type)
-	{
-	case MODE_HERMES:
-		con->select("select name, value_hermes from user_parameter");
-		break;
-	case MODE_EVA2:
-		con->select("select name, value_eva2 from user_parameter");
-		break;
-	case MODE_MACSUR_SCALING:
-		con->select("select name, value_macsur_scaling from user_parameter");
-		break;
-	default:
-		con->select("select name, value_hermes from user_parameter");
-		break;
-	}
-
-	UserCropParameters& user_crops = centralParameterProvider.userCropParameters;
-	UserEnvironmentParameters& user_env = centralParameterProvider.userEnvironmentParameters;
-	UserSoilMoistureParameters& user_soil_moisture = centralParameterProvider.userSoilMoistureParameters;
-
-	user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, int distance)
-	{
-		return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+	map<string, string> type2colName = {
+		{"hermes", "value_hermes"},
+		{"eva2", "value_eva2"},
+		{"macsur", "value_macsur_scaling"}
 	};
 
-	UserSoilTemperatureParameters& user_soil_temperature = centralParameterProvider.userSoilTemperatureParameters;
-	UserSoilTransportParameters& user_soil_transport = centralParameterProvider.userSoilTransportParameters;
-	UserSoilOrganicParameters& user_soil_organic = centralParameterProvider.userSoilOrganicParameters;
+	con->select(string("select name, ") + type2colName[type] + " "
+							"from user_parameter " +
+							"where modul = '" + module + "'");
 
-	SimulationParameters& sim = centralParameterProvider.simulationParameters;
+	return con;
+}
 
+UserCropParameters Monica::readUserCropParametersFromDatabase(string type)
+{
+	UserCropParameters user_crops;
+	
+	DBPtr con = userParamsSelect(type, "crop");
+
+	DBRow row;
 	while(!(row = con->getRow()).empty())
 	{
 		std::string name = row[0];
@@ -837,7 +821,22 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			user_crops.pc_GrowthRespirationParameter2 = stof(row[1]);
 		else if(name == "growth_respiration_parameter_1")
 			user_crops.pc_GrowthRespirationParameter1 = stof(row[1]);
-		else if(name == "use_automatic_irrigation")
+	}
+
+	return user_crops;
+}
+
+SimulationParameters Monica::readUserSimParametersFromDatabase(string type)
+{
+	SimulationParameters sim;
+
+	DBPtr con = userParamsSelect(type, "sim");
+
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		std::string name = row[0];
+		if(name == "use_automatic_irrigation")
 			sim.p_UseAutomaticIrrigation = stob(row[1]);
 		else if(name == "use_nmin_mineral_fertilising_method")
 			sim.p_UseNMinMineralFertilisingMethod = stob(row[1]);
@@ -847,17 +846,61 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			sim.p_NumberOfLayers = stoi(row[1]);
 		else if(name == "start_pv_index")
 			sim.p_StartPVIndex = stoi(row[1]);
-		else if(name == "albedo")
+		else if(name == "use_secondary_yields")
+			sim.p_UseSecondaryYields = stob(row[1]);
+		else if(name == "julian_day_automatic_fertilising")
+			sim.p_JulianDayAutomaticFertilising = stoi(row[1]);
+	}
+
+	return sim;
+}
+
+UserEnvironmentParameters Monica::readUserEnvironmentParametersFromDatabase(string type)
+{
+	UserEnvironmentParameters user_env;
+
+	DBPtr con = userParamsSelect(type, "environment");
+
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		std::string name = row[0];
+		if(name == "albedo")
 			user_env.p_Albedo = stof(row[1]);
 		else if(name == "athmospheric_co2")
 			user_env.p_AtmosphericCO2 = stof(row[1]);
 		else if(name == "wind_speed_height")
 			user_env.p_WindSpeedHeight = stof(row[1]);
-		else if(name == "use_secondary_yields")
-			sim.p_UseSecondaryYields = stob(row[1]);
-		else if(name == "julian_day_automatic_fertilising")
-			sim.p_JulianDayAutomaticFertilising = stoi(row[1]);
-		else if(name == "critical_moisture_depth")
+		else if(name == "time_step")
+			user_env.p_timeStep = stof(row[1]);
+		else if(name == "leaching_depth")
+			user_env.p_LeachingDepth = stof(row[1]);
+		else if(name == "max_groundwater_depth")
+			user_env.p_MaxGroundwaterDepth = stof(row[1]);
+		else if(name == "min_groundwater_depth")
+			user_env.p_MinGroundwaterDepth = stof(row[1]);
+		else if(name == "min_groundwater_depth_month")
+			user_env.p_MinGroundwaterDepthMonth = stoi(row[1]);
+	}
+
+	return user_env;
+}
+
+UserSoilMoistureParameters Monica::readUserSoilMoistureParametersFromDatabase(string type)
+{
+	UserSoilMoistureParameters user_soil_moisture;
+	user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, int distance)
+	{
+		return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+	};
+
+	DBPtr con = userParamsSelect(type, "soil_moisture");
+
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		std::string name = row[0];
+		if(name == "critical_moisture_depth")
 			user_soil_moisture.pm_CriticalMoistureDepth = stof(row[1]);
 		else if(name == "saturated_hydraulic_conductivity")
 			user_soil_moisture.pm_SaturatedHydraulicConductivity = stof(row[1]);
@@ -869,8 +912,6 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			user_soil_moisture.pm_SnowAccumulationTresholdTemperature = stof(row[1]);
 		else if(name == "kc_factor")
 			user_soil_moisture.pm_KcFactor = stof(row[1]);
-		else if(name == "time_step")
-			user_env.p_timeStep = stof(row[1]);
 		else if(name == "temperature_limit_for_liquid_water")
 			user_soil_moisture.pm_TemperatureLimitForLiquidWater = stof(row[1]);
 		else if(name == "correction_snow")
@@ -901,7 +942,26 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			user_soil_moisture.pm_XSACriticalSoilMoisture = stof(row[1]);
 		else if(name == "maximum_evaporation_impact_depth")
 			user_soil_moisture.pm_MaximumEvaporationImpactDepth = stof(row[1]);
-		else if(name == "ntau")
+		else if(name == "groundwater_discharge")
+			user_soil_moisture.pm_GroundwaterDischarge = stof(row[1]);
+		else if(name == "max_percolation_rate")
+			user_soil_moisture.pm_MaxPercolationRate = stof(row[1]);
+	}
+
+	return user_soil_moisture;
+}
+
+UserSoilTemperatureParameters Monica::readUserSoilTemperatureParametersFromDatabase(string type)
+{
+	UserSoilTemperatureParameters user_soil_temperature;
+
+	DBPtr con = userParamsSelect(type, "soil_temperature");
+
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		std::string name = row[0];
+		if(name == "ntau")
 			user_soil_temperature.pt_NTau = stof(row[1]);
 		else if(name == "initial_surface_temperature")
 			user_soil_temperature.pt_InitialSurfaceTemperature = stof(row[1]);
@@ -921,29 +981,47 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 			user_soil_temperature.pt_SpecificHeatCapacityWater = stof(row[1]);
 		else if(name == "soil_albedo")
 			user_soil_temperature.pt_SoilAlbedo = stof(row[1]);
-		else if(name == "dispersion_length")
+		else if(name == "density_humus")
+			user_soil_temperature.pt_DensityHumus = stof(row[1]);
+		else if(name == "specific_heat_capacity_humus")
+			user_soil_temperature.pt_SpecificHeatCapacityHumus = stof(row[1]);
+	}
+
+	return user_soil_temperature;
+}
+
+UserSoilTransportParameters Monica::readUserSoilTransportParametersFromDatabase(string type)
+{
+	UserSoilTransportParameters user_soil_transport;
+
+	DBPtr con = userParamsSelect(type, "soil_transport");
+
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		std::string name = row[0];
+		if(name == "dispersion_length")
 			user_soil_transport.pq_DispersionLength = stof(row[1]);
 		else if(name == "AD")
 			user_soil_transport.pq_AD = stof(row[1]);
 		else if(name == "diffusion_coefficient_standard")
 			user_soil_transport.pq_DiffusionCoefficientStandard = stof(row[1]);
-		else if(name == "leaching_depth")
-			user_env.p_LeachingDepth = stof(row[1]);
-		else if(name == "groundwater_discharge")
-			user_soil_moisture.pm_GroundwaterDischarge = stof(row[1]);
-		else if(name == "density_humus")
-			user_soil_temperature.pt_DensityHumus = stof(row[1]);
-		else if(name == "specific_heat_capacity_humus")
-			user_soil_temperature.pt_SpecificHeatCapacityHumus = stof(row[1]);
-		else if(name == "max_percolation_rate")
-			user_soil_moisture.pm_MaxPercolationRate = stof(row[1]);
-		else if(name == "max_groundwater_depth")
-			user_env.p_MaxGroundwaterDepth = stof(row[1]);
-		else if(name == "min_groundwater_depth")
-			user_env.p_MinGroundwaterDepth = stof(row[1]);
-		else if(name == "min_groundwater_depth_month")
-			user_env.p_MinGroundwaterDepthMonth = stoi(row[1]);
-		else if(name == "SOM_SlowDecCoeffStandard")
+	}
+
+	return user_soil_transport;
+}
+
+UserSoilOrganicParameters Monica::readUserSoilOrganicParametersFromDatabase(string type)
+{
+	UserSoilOrganicParameters user_soil_organic;
+
+	DBPtr con = userParamsSelect(type, "soil_organic");
+
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		std::string name = row[0];
+		if(name == "SOM_SlowDecCoeffStandard")
 			user_soil_organic.po_SOM_SlowDecCoeffStandard = stof(row[1]);
 		else if(name == "SOM_FastDecCoeffStandard")
 			user_soil_organic.po_SOM_FastDecCoeffStandard = stof(row[1]);
@@ -1014,6 +1092,28 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int type)
 		else if(name == "Inhibitor_NH3")
 			user_soil_organic.po_Inhibitor_NH3 = stof(row[1]);
 	}
+
+	return user_soil_organic;
+}
+
+CentralParameterProvider Monica::readUserParameterFromDatabase(int iType)
+{
+	string type = "hermes";
+	switch(iType)
+	{
+	case MODE_EVA2: type = "eva2"; break;
+	case MODE_MACSUR_SCALING: type = "macsur"; break;
+	default:;
+	}
+
+	CentralParameterProvider centralParameterProvider;
+	centralParameterProvider.userCropParameters = readUserCropParametersFromDatabase(type);
+	centralParameterProvider.userEnvironmentParameters = readUserEnvironmentParametersFromDatabase(type);
+	centralParameterProvider.userSoilMoistureParameters = readUserSoilMoistureParametersFromDatabase(type);
+	centralParameterProvider.userSoilOrganicParameters = readUserSoilOrganicParametersFromDatabase(type);
+	centralParameterProvider.userSoilTemperatureParameters = readUserSoilTemperatureParametersFromDatabase(type);
+	centralParameterProvider.userSoilTransportParameters = readUserSoilTransportParametersFromDatabase(type);
+	centralParameterProvider.simulationParameters = readUserSimParametersFromDatabase(type);
 
 	return centralParameterProvider;
 }
@@ -1090,7 +1190,31 @@ void Monica::writeUserParameters(int type, string path)
 
 //----------------------------------------------------------------------------------
 
-const map<int, AMCRes>& Monica::availableMonicaCrops()
+vector<AMCRes> Monica::availableMonicaCrops()
+{
+	DBPtr con(newConnection("monica"));
+	
+	con->select("select "
+							"species_id, "
+							"id "
+							"from cultivar "
+							"order by species_id, id");
+
+	vector<AMCRes> amcs;
+	DBRow row;
+	while(!(row = con->getRow()).empty())
+	{
+		AMCRes res;
+		res.speciesId = row[0];
+		res.cultivarId = row[1];
+		res.name = capitalize(row[0]) + (row[1].empty() ? "" : "/") + capitalize(row[1]);
+		amcs.push_back(res);
+	}
+
+	return amcs;
+}
+
+const map<int, AMCRes>& Monica::availableMonicaCropsM()
 {
 	static mutex lockable;
 	static map<int, AMCRes> m;
@@ -1119,7 +1243,8 @@ const map<int, AMCRes>& Monica::availableMonicaCrops()
 				res.speciesId = row[1];
 				res.cultivarId = row[2];
 				res.name = capitalize(row[1]) + "/" + capitalize(row[2]);
-				m[stoi(row[0])] = res;
+				if(!row[0].empty()) 
+					m[stoi(row[0])] = res;
 			}
 
 			initialized = true;

@@ -52,6 +52,9 @@ Json readAndParseFile(string path)
 
 		string err;
 		j = Json::parse(sj, err);
+		if(!err.empty())
+			cerr << "Error parsing json file: " << path << endl
+			<< "error: " << err << endl;
 	}
 	ifs.close();
 
@@ -130,32 +133,82 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 		{
 			auto type = j[1].string_value();
 			if(type == "mineral_fertiliser")
-				return make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()).to_json(), 
+			{
+				return make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()).to_json(),
 												 true);
+			}
 			else if(type == "organic_fertiliser")
-				return make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value())->to_json(), 
+			{
+				return make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value())->to_json(),
 												 true);
+			}
 			else if(type == "crop_residue"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				return make_pair(getResidueParametersFromMonicaDB(j[2].string_value(), 
-																													j[3].string_value())->to_json(), 
+			{
+				return make_pair(getResidueParametersFromMonicaDB(j[2].string_value(),
+																													j[3].string_value())->to_json(),
 												 true);
+			}
 			else if(type == "species")
-				return make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value())->to_json(), 
+			{
+				return make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value())->to_json(),
 												 true);
+			}
 			else if(type == "cultivar"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				return make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(), 
-																													 j[3].string_value())->to_json(), 
+			{
+				return make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(),
+																													 j[3].string_value())->to_json(),
 												 true);
+			}
 			else if(type == "crop"
 							&& j.array_items().size() == 4
 							&& j[3].is_string())
-				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(), 
-																											 j[3].string_value())->to_json(), 
+			{
+				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(),
+																											 j[3].string_value())->to_json(),
 												 true);
+			}
+			else if(type == "crop"
+							&& j.array_items().size() == 4
+							&& j[3].is_string())
+			{
+				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(),
+																											 j[3].string_value())->to_json(),
+												 true);
+			}
+			else if(type == "soil-temperature-params")
+			{
+				return make_pair(readUserSoilTemperatureParametersFromDatabase(j[2].string_value()).to_json(),
+												 true);
+			}
+			else if(type == "environment-params")
+			{
+				return make_pair(readUserEnvironmentParametersFromDatabase(j[2].string_value()).to_json(),
+												 true);
+			}
+			else if(type == "soil-organic-params")
+			{
+				return make_pair(readUserSoilOrganicParametersFromDatabase(j[2].string_value()).to_json(),
+												 true);
+			}
+			else if(type == "soil-transport-params")
+			{
+				return make_pair(readUserSoilTransportParametersFromDatabase(j[2].string_value()).to_json(),
+												 true);
+			}
+			else if(type == "soil-moisture-params")
+			{
+				return make_pair(readUserSoilTemperatureParametersFromDatabase(j[2].string_value()).to_json(),
+												 true);
+			}
+			else if(type == "crop-params")
+			{
+				return make_pair(readUserCropParametersFromDatabase(j[2].string_value()).to_json(),
+												 true);
+			}
 		}
 
 		return make_pair(j, false);
@@ -271,9 +324,19 @@ void parseAndRunMonica(PARMParams ps)
 		set_iso_date_value(ps.endDate, simj, "endDate");
 
 	Env env;
-	env.params = readUserParameterFromDatabase(MODE_HERMES);
+	//env.params = readUserParameterFromDatabase(MODE_HERMES);
 
 	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
+	env.params.userCropParameters.merge(cropj["CropParameters"]);
+	env.params.userSoilTemperatureParameters.merge(sitej["SoilTemperatureParameters"]);
+	env.params.userSoilTransportParameters.merge(sitej["SoilTransportParameters"]);
+	env.params.userSoilOrganicParameters.merge(sitej["SoilOrganicParameters"]);
+	env.params.userSoilMoistureParameters.merge(sitej["SoilMoistureParameters"]);
+	env.params.userSoilMoistureParameters.getCapillaryRiseRate = 
+		[](string soilTexture, int distance)
+	{
+		return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+	};
 	env.params.siteParameters.merge(sitej["SiteParameters"]);
 	env.params.simulationParameters.merge(simj);
 
@@ -311,13 +374,13 @@ void test()
 
 void writeDbParams()
 {
-	writeCropParameters("parameters/crops");
-	writeMineralFertilisers("parameters/mineral-fertilisers");
-	writeOrganicFertilisers("parameters/organic-fertilisers");
-	writeCropResidues("parameters/crop-residues");
-	writeUserParameters(MODE_HERMES, "parameters/user-parameters");
-	writeUserParameters(MODE_EVA2, "parameters/user-parameters");
-	writeUserParameters(MODE_MACSUR_SCALING, "parameters/user-parameters");
+	//writeCropParameters("parameters/crops");
+	//writeMineralFertilisers("parameters/mineral-fertilisers");
+	//writeOrganicFertilisers("parameters/organic-fertilisers");
+	//writeCropResidues("parameters/crop-residues");
+	//writeUserParameters(MODE_HERMES, "parameters/user-parameters");
+	//writeUserParameters(MODE_EVA2, "parameters/user-parameters");
+	//writeUserParameters(MODE_MACSUR_SCALING, "parameters/user-parameters");
 }
 
 int main(int argc, char** argv)
@@ -328,7 +391,7 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
-	if(argc > 1)
+	if(argc > 1)// && false)
 	{
 		map<string, string> params;
 		if((argc - 1) % 2 == 0)

@@ -60,6 +60,14 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
+	UserCropParameters readUserCropParametersFromDatabase(std::string type);
+	UserEnvironmentParameters readUserEnvironmentParametersFromDatabase(std::string type);
+	UserSoilMoistureParameters readUserSoilMoistureParametersFromDatabase(std::string type);
+	UserSoilOrganicParameters readUserSoilOrganicParametersFromDatabase(std::string type);
+	UserSoilTemperatureParameters readUserSoilTemperatureParametersFromDatabase(std::string type);
+	UserSoilTransportParameters readUserSoilTransportParametersFromDatabase(std::string type);
+	SimulationParameters readUserSimParametersFromDatabase(std::string type);
+
 	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
 
 	void writeUserParameters(int type, std::string path);
@@ -70,7 +78,8 @@ namespace Monica
   {
     std::string speciesId, cultivarId, name;
   };
-  const std::map<int, AMCRes>& availableMonicaCrops();
+  const std::map<int, AMCRes>& availableMonicaCropsM();
+	std::vector<AMCRes> availableMonicaCrops();
 }  
 
 #endif 
