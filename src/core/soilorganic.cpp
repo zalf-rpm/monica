@@ -616,11 +616,6 @@ void SoilOrganic::fo_MIT()
 	// [kg m-3]
 	fill(vo_CBalance.begin(), vo_CBalance.end(), 0.0);
 
-	// C to N ratio of slowly decomposing soil organic matter []
-	double vo_CN_Ratio_SOM_Slow;
-
-	// C to N ratio of rapidly decomposing soil organic matter []
-	double vo_CN_Ratio_SOM_Fast;
 
 	// N balance of each layer [kg N m-3]
 	std::vector<double> vo_NBalance(nools, 0.0);
@@ -834,11 +829,13 @@ void SoilOrganic::fo_MIT()
 	} // for i_Layer
 
 	// Calculation of N balance
-	vo_CN_Ratio_SOM_Slow = siteParams.vs_Soil_CN_Ratio;
-	vo_CN_Ratio_SOM_Fast = siteParams.vs_Soil_CN_Ratio;
+  //vo_CN_Ratio_SOM_Slow = siteParams.vs_Soil_CN_Ratio;
+  //vo_CN_Ratio_SOM_Fast = siteParams.vs_Soil_CN_Ratio;
 
 	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
+    double vo_CN_Ratio_SOM_Slow = soilColumn.at(i_Layer).vs_Soil_CN_Ratio();
+    double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
 
 		vo_NBalance[i_Layer] = -(vo_SMB_SlowDelta[i_Layer] / po_CN_Ratio_SMB)
 			- (vo_SMB_FastDelta[i_Layer] / po_CN_Ratio_SMB)
@@ -868,6 +865,8 @@ void SoilOrganic::fo_MIT()
 
 	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
+    double vo_CN_Ratio_SOM_Slow = soilColumn.at(i_Layer).vs_Soil_CN_Ratio();
+    double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
 
 		if(vo_NBalance[i_Layer] < 0.0)
 		{
