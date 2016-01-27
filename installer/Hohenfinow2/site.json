@@ -4,7 +4,7 @@
 		"Slope": 0,
 		"HeightNN": [0 , "m"],
 		"NDeposition": 30,
-		"SoilParameters": [
+		"SoilProfileParameters": [
 			{
 				"Thickness": 0.3,
 				"SoilOrganicCarbon": [0.8, "%"],
@@ -26,11 +26,13 @@
 			}
 		]
 	},
-	"EnvironmentParameters": {
-		"LeachingDepth": 2,
-		"WindSpeedHeight": 2.5,
-		"MinGroundwaterDepth": 20,
-		"MaxGroundwaterDepth": 18,
-		"MinGroundwaterDepthMonth": 3
-	}
+	"SoilTemperatureParameters": ["include-from-file", "parameters/user-parameters/hermes-soil-temperature.json"],
+  "EnvironmentParameters": {
+		"DEFAULT": ["include-from-file", "parameters/user-parameters/hermes-environment.json"],
+    "LeachingDepth": 2.0,
+    "WindSpeedHeight": 2.5
+	},
+	"SoilOrganicParameters": ["include-from-file", "parameters/user-parameters/hermes-soil-organic.json"],
+	"SoilTransportParameters": ["include-from-file", "parameters/user-parameters/hermes-soil-transport.json"],
+	"SoilMoistureParameters": ["include-from-file", "parameters/user-parameters/hermes-soil-moisture.json"]
 }
