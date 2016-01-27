@@ -615,8 +615,7 @@ void SoilOrganic::fo_MIT()
 
 	// [kg m-3]
 	fill(vo_CBalance.begin(), vo_CBalance.end(), 0.0);
-
-
+	
 	// N balance of each layer [kg N m-3]
 	std::vector<double> vo_NBalance(nools, 0.0);
 

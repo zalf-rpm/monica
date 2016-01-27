@@ -374,13 +374,13 @@ void test()
 
 void writeDbParams()
 {
-	//writeCropParameters("parameters/crops");
-	//writeMineralFertilisers("parameters/mineral-fertilisers");
-	//writeOrganicFertilisers("parameters/organic-fertilisers");
-	//writeCropResidues("parameters/crop-residues");
-	//writeUserParameters(MODE_HERMES, "parameters/user-parameters");
-	//writeUserParameters(MODE_EVA2, "parameters/user-parameters");
-	//writeUserParameters(MODE_MACSUR_SCALING, "parameters/user-parameters");
+	//writeCropParameters("../monica-parameters/crops");
+	//writeMineralFertilisers("../monica-parameters/mineral-fertilisers");
+	//writeOrganicFertilisers("../monica-parameters/organic-fertilisers");
+	//writeCropResidues("../monica-parameters/crop-residues");
+	//writeUserParameters(MODE_HERMES, "../monica-parameters/user-parameters");
+	//writeUserParameters(MODE_EVA2, "../monica-parameters/user-parameters");
+	//writeUserParameters(MODE_MACSUR_SCALING, "../monica-parameters/user-parameters");
 }
 
 int main(int argc, char** argv)
