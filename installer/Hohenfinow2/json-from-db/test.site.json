@@ -4,7 +4,7 @@
 		"Slope": 0,
 		"HeightNN": [0 , "m"],
 		"NDeposition": 30,
-		"SoilParameters": [
+		"SoilProfileParameters": [
 			{
 				"Thickness": 0.3,
 				"SoilOrganicCarbon": [0.8, "%"],
@@ -26,11 +26,13 @@
 			}
 		]
 	},
+	"SoilTemperatureParameters": ["include-from-db", "soil-temperature-params", "hermes"],
 	"EnvironmentParameters": {
-		"LeachingDepth": 2,
-		"WindSpeedHeight": 2.5,
-		"MinGroundwaterDepth": 20,
-		"MaxGroundwaterDepth": 18,
-		"MinGroundwaterDepthMonth": 3
-	}
+		"DEFAULT": ["include-from-db", "environment-params", "hermes"],
+    "LeachingDepth": 2.0,
+    "WindSpeedHeight": 2.5
+	},
+	"SoilOrganicParameters": ["include-from-db", "soil-organic-params", "hermes"],
+	"SoilTransportParameters": ["include-from-db", "soil-transport-params", "hermes"],
+	"SoilMoistureParameters": ["include-from-db", "soil-moisture-params", "hermes"]
 }

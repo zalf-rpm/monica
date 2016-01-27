@@ -156,5 +156,7 @@
 				{ "date": "1997-07-09", "type": "TillageApplication", "depth": [0.10, "m"] }
 			]
 		}
-	]
+	],
+	
+	"CropParameters": ["include-from-db", "crop-params", "hermes"]
 }
