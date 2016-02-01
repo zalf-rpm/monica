@@ -171,14 +171,6 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 																											 j[3].string_value())->to_json(),
 												 true);
 			}
-			else if(type == "crop"
-							&& j.array_items().size() == 4
-							&& j[3].is_string())
-			{
-				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(),
-																											 j[3].string_value())->to_json(),
-												 true);
-			}
 			else if(type == "soil-temperature-params")
 			{
 				return make_pair(readUserSoilTemperatureParametersFromDatabase(j[2].string_value()).to_json(),
