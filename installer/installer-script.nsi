@@ -123,12 +123,12 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "Hohenfinow2\climate.ods"
 
 	;the json version files with project name prepended
-  CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2\json
-  SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\json
-  File "Hohenfinow2\json\test.crop.json"
-  File "Hohenfinow2\json\test.sim.json"
-  File "Hohenfinow2\json\test.site.json"
-	File "Hohenfinow2\json\test.climate.csv"
+  CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
+  SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
+  File "Hohenfinow2\json-from-db\test.crop.json"
+  File "Hohenfinow2\json-from-db\test.sim.json"
+  File "Hohenfinow2\json-from-db\test.site.json"
+	File "Hohenfinow2\json-from-db\test.climate.csv"
   
 	;the old hermes files
   SetOutPath "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
@@ -160,7 +160,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	;Create shortcuts
 	CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
 	SetOutPath "$PROFILE\MONICA"
-	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true path: Examples\Hohenfinow2"
+	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true project: test path: Examples\Hohenfinow2\json-from-db"
 	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true path: Examples\Hohenfinow2"
 	
 	SetOutPath "$INSTDIR"
@@ -227,11 +227,11 @@ Section "Uninstall"
   Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SOIL.txt
 	RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
 	
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json\test.climate.csv"
-  Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json\test.sim.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json\test.crop.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json\test.site.json"
-	RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\json"
+	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.climate.csv"
+  Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.sim.json"
+	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.crop.json"
+	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.site.json"
+	RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db"
 	
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.ods"
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.csv"
