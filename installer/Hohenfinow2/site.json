@@ -1,38 +1,38 @@
 {
-	"SiteParameters": {
-		"Latitude": 52.80939865112305,
-		"Slope": 0,
-		"HeightNN": [0 , "m"],
-		"NDeposition": 30,
-		"SoilProfileParameters": [
-			{
-				"Thickness": 0.3,
-				"SoilOrganicCarbon": [0.8, "%"],
-				"KA5TextureClass": "Sl2",
-				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]],
-				"Lambda": ["sandAndClay2lambda", ["KA5TextureClass2sand", "Sl2"], ["KA5TextureClass2clay", "Sl2"]]
-			},
-			{
-				"Thickness": 0.1,
-				"SoilOrganicCarbon": [0.15, "%"],
-				"KA5TextureClass": "Sl2",
-				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
-			},
-			{
-				"Thickness": 1.6,
-				"SoilOrganicCarbon": [0.05, "%"],
-				"KA5TextureClass": "Sl2",
-				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
-			}
-		]
-	},
-	"SoilTemperatureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-temperature.json"],
+  "SiteParameters": {
+    "Latitude": 52.80939865112305,
+    "Slope": 0,
+    "HeightNN": [0 , "m"],
+    "NDeposition": 30,
+    "SoilProfileParameters": [
+      {
+        "Thickness": 0.3,
+        "SoilOrganicCarbon": [0.8, "%"],
+        "KA5TextureClass": "Sl2",
+        "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]],
+        "Lambda": ["sandAndClay2lambda", ["KA5TextureClass2sand", "Sl2"], ["KA5TextureClass2clay", "Sl2"]]
+      },
+      {
+        "Thickness": 0.1,
+        "SoilOrganicCarbon": [0.15, "%"],
+        "KA5TextureClass": "Sl2",
+        "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
+      },
+      {
+        "Thickness": 1.6,
+        "SoilOrganicCarbon": [0.05, "%"],
+        "KA5TextureClass": "Sl2",
+        "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
+      }
+    ]
+  },
+  "SoilTemperatureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-temperature.json"],
   "EnvironmentParameters": {
-		"DEFAULT": ["include-from-file", "../monica-parameters/user-parameters/hermes-environment.json"],
+    "DEFAULT": ["include-from-file", "../monica-parameters/user-parameters/hermes-environment.json"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
-	},
-	"SoilOrganicParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-organic.json"],
-	"SoilTransportParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-transport.json"],
-	"SoilMoistureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-moisture.json"]
+  },
+  "SoilOrganicParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-organic.json"],
+  "SoilTransportParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-transport.json"],
+  "SoilMoistureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-moisture.json"]
 }

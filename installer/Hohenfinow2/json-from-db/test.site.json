@@ -1,38 +1,38 @@
 {
-	"SiteParameters": {
-		"Latitude": 52.80939865112305,
-		"Slope": 0,
-		"HeightNN": [0 , "m"],
-		"NDeposition": 30,
-		"SoilProfileParameters": [
-			{
-				"Thickness": 0.3,
-				"SoilOrganicCarbon": [0.8, "%"],
-				"KA5TextureClass": "Sl2",
-				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]],
-				"Lambda": ["sandAndClay2lambda", ["KA5TextureClass2sand", "Sl2"], ["KA5TextureClass2clay", "Sl2"]]
-			},
-			{
-				"Thickness": 0.1,
-				"SoilOrganicCarbon": [0.15, "%"],
-				"KA5TextureClass": "Sl2",
-				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
-			},
-			{
-				"Thickness": 1.6,
-				"SoilOrganicCarbon": [0.05, "%"],
-				"KA5TextureClass": "Sl2",
-				"SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
-			}
-		]
-	},
-	"SoilTemperatureParameters": ["include-from-db", "soil-temperature-params", "hermes"],
-	"EnvironmentParameters": {
-		"DEFAULT": ["include-from-db", "environment-params", "hermes"],
+  "SiteParameters": {
+    "Latitude": 52.80939865112305,
+    "Slope": 0,
+    "HeightNN": [0 , "m"],
+    "NDeposition": 30,
+    "SoilProfileParameters": [
+      {
+        "Thickness": 0.3,
+        "SoilOrganicCarbon": [0.8, "%"],
+        "KA5TextureClass": "Sl2",
+        "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]],
+        "Lambda": ["sandAndClay2lambda", ["KA5TextureClass2sand", "Sl2"], ["KA5TextureClass2clay", "Sl2"]]
+      },
+      {
+        "Thickness": 0.1,
+        "SoilOrganicCarbon": [0.15, "%"],
+        "KA5TextureClass": "Sl2",
+        "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
+      },
+      {
+        "Thickness": 1.6,
+        "SoilOrganicCarbon": [0.05, "%"],
+        "KA5TextureClass": "Sl2",
+        "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]]
+      }
+    ]
+  },
+  "SoilTemperatureParameters": ["include-from-db", "soil-temperature-params", "hermes"],
+  "EnvironmentParameters": {
+    "DEFAULT": ["include-from-db", "environment-params", "hermes"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
-	},
-	"SoilOrganicParameters": ["include-from-db", "soil-organic-params", "hermes"],
-	"SoilTransportParameters": ["include-from-db", "soil-transport-params", "hermes"],
-	"SoilMoistureParameters": ["include-from-db", "soil-moisture-params", "hermes"]
+  },
+  "SoilOrganicParameters": ["include-from-db", "soil-organic-params", "hermes"],
+  "SoilTransportParameters": ["include-from-db", "soil-transport-params", "hermes"],
+  "SoilMoistureParameters": ["include-from-db", "soil-moisture-params", "hermes"]
 }
