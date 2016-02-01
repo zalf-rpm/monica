@@ -283,7 +283,7 @@ Result Monica::runMonica(Env env)
 	size_t nods = env.da.noOfStepsPossible();
 	debug() << "nods: " << nods << endl;
 
-	unsigned int currentMonth = currentDate.month();
+	size_t currentMonth = currentDate.month();
 	unsigned int dim = 0; //day in current month
 
 	double avg10corg = 0, avg30corg = 0, watercontent = 0,

@@ -126,7 +126,7 @@ SOURCES += $${UTIL_DIR}/climate/climate-common.cpp
 
 # json11 library code
 #-------------------------------------------
-HEADERS += $${UTIL_DIR}/json11/json11.h
+HEADERS += $${UTIL_DIR}/json11/json11.hpp
 SOURCES += $${UTIL_DIR}/json11/json11.cpp
 
 # tools library code
