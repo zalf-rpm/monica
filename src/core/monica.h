@@ -287,7 +287,12 @@ namespace Monica
     double vw_AtmosphericCO2Concentration;
     double vs_GroundwaterDepth{0.0};
   };
-  
+
+	inline char const* greet( )
+	{
+		return "Hello world";
+	}
+
 }
 
 #endif

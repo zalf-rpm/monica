@@ -8,11 +8,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(UTIL_DIR "../util")
 set(SYS_LIBS_DIR "../sys-libs")
+set(CARBIOCIAL_DIR "../carbiocial-project")
 
+include_directories("src")
 include_directories(${UTIL_DIR})
 include_directories("${SYS_LIBS_DIR}/includes/zeromq-3.2.5")
+#include_directories(${CARBIOCIAL_DIR/monica/project-files})
+include_directories(${CARBIOCIAL_DIR/monica/src})
 
-set(SOURCE_FILES
+set(MONICA_SOURCE
 
     src/core/crop-growth.cpp
     src/core/crop-growth.h
@@ -47,7 +51,7 @@ set(SOURCE_FILES
     src/run/cultivation-method.h
     #src/run/monica-hermes-main.cpp
     #src/run/monica-landcare-dss-main.cpp
-    src/run/monica-main.cpp
+    #src/run/monica-main.cpp
     #src/run/monica-zmq-main.cpp
     src/run/run-monica-zmq.cpp
     src/run/run-monica-zmq.h
@@ -118,15 +122,53 @@ set(SOURCE_FILES
 
     ${UTIL_DIR}/soil/soil.h
     ${UTIL_DIR}/soil/soil.cpp
-    )
+
+    ${CARBIOCIAL_DIR}/monica/src/carbiocial.h
+    ${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp
+    ${CARBIOCIAL_DIR}/monica/project-files/monica.i)
+
+set(PYTHON_WRAPPER_SOURCE
+    src/python/monica_py.cpp)
 
 find_package(Threads REQUIRED)
 
-add_executable(monica ${SOURCE_FILES})
+#add_executable(monica ${SOURCE_FILES})
+#set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY "~/development/github/zalf-lsa/monica")
+
+add_library(monica SHARED ${MONICA_SOURCE})
 
 target_link_libraries(monica
                       ${CMAKE_THREAD_LIBS_INIT}
                       dl)
 
-#set_target_properties(monica PROPERTIES
-#                      RUNTIME_OUTPUT_DIRECTORY "~/development/github/zalf-lsa/monica")
+set_target_properties(monica PROPERTIES LIBRARY_OUTPUT_DIRECTORY "~/development/github/zalf-lsa/monica")
+
+
+#find_package(SWIG REQUIRED)
+#include(${SWIG_USE_FILE})
+
+find_package(PythonLibs)
+include_directories(${PYTHON_INCLUDE_DIRS})
+
+find_package(Boost COMPONENTS python REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
+# Build our library
+#add_library(monica SHARED greet.cpp)
+
+# Define the wrapper library that wraps our library
+add_library(monica_py SHARED ${PYTHON_WRAPPER_SOURCE})
+target_link_libraries(monica_py ${Boost_LIBRARIES} monica)
+# don't prepend wrapper library name with lib
+set_target_properties(monica_py PROPERTIES PREFIX "")
+
+set_target_properties(monica_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY "~/development/github/zalf-lsa/monica")
+
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+#set(CMAKE_SWIG_FLAGS "")
+
+#set_source_files_properties(monica.i PROPERTIES CPLUSPLUS ON)
+#set_source_files_properties(monica.i PROPERTIES SWIG_FLAGS "-includeall")
+#swig_add_module(monica python monica.i)
+#swig_link_libraries(monica ${PYTHON_LIBRARIES})
