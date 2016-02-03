@@ -123,7 +123,7 @@ set(MONICA_SOURCE
     ${UTIL_DIR}/soil/soil.cpp
 
     ${CARBIOCIAL_DIR}/monica/src/carbiocial.h
-    ${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp)
+    ${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp src/run/env-from-json-files.h src/run/env-from-json-files.cpp)
 
 
 find_package(Threads REQUIRED)

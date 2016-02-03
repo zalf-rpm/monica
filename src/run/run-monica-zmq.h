@@ -5,8 +5,6 @@
 /*
 Authors: 
 Michael Berg <michael.berg@zalf.de>
-Claas Nendel <claas.nendel@zalf.de>
-Xenia Specka <xenia.specka@zalf.de>
 
 Maintainers: 
 Currently maintained by the authors.
