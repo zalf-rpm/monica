@@ -87,28 +87,26 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			PARMParams ps;
-			ps.startDate = params["start-date:"];
-			ps.endDate = params["end-date:"];
-			ps.name2path["output"] = params["output:"];
+			map<string, string> ps;
+			ps["start-date"] = params["start-date:"];
+			ps["end-date"] = params["end-date:"];
+			ps["path-to-output"] = params["output:"];
 
 			auto path = params["path:"];
 			auto projectName = params["project:"];
-			if(projectName.empty())
+			if(!projectName.empty())
 				projectName += ".";
 
-			auto names2suffixes = {{"climate", "csv"},
-			                       {"crop", "json"},
-			                       {"site", "json"},
-			                       {"sim", "json"}};
-			for(auto n2s : names2suffixes)
+			auto names2suffixes = {"crop", "site", "sim"};
+			for(auto name : names2suffixes)
 			{
-				auto name = n2s.first;
-				auto suffix = n2s.second;
 				auto p = params[name + ":"];
-				ps.name2path[name] = p.empty() ? path + "/" + projectName + name + "." +
-				                                 suffix : p;
+				auto path = p.empty() ? path + "/" + projectName + name + ".json" : p;
+				ps[name + "-json-str"] = readFile(path);
 			}
+
+			auto p = params["climate:"];
+			ps["path-to-climate-csv"] = p.empty() ? path + "/" + projectName + "climate.csv" : p;
 
 			cout << "starting MONICA with JSON input files: " << endl;
 			cout << "\tstartDate: " << (ps.startDate.isValid() ? ps.startDate.toIsoDateString() : "all") << endl;

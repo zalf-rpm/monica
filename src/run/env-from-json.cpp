@@ -17,16 +17,18 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <fstream>
 #include <string>
 
-#include "env-from-json-files.h"
+#include "env-from-json.h"
 #include "tools/debug.h"
 #include "../run/run-monica.h"
 #include "../io/database-io.h"
 #include "../core/monica-typedefs.h"
 #include "../core/monica.h"
 #include "tools/json11-helper.h"
+#include "tools/helper.h"
 #include "climate/climate-file-io.h"
 #include "../core/simulation.h"
 #include "soil/conversion.h"
+#include "soil/soil-from-db.h"
 
 using namespace std;
 using namespace Monica;
@@ -34,26 +36,18 @@ using namespace json11;
 using namespace Tools;
 using namespace Climate;
 
-Json readAndParseFile(string path)
+Json Monica::readAndParseJsonFile(string path)
 {
-	Json j;
-	path = fixSystemSeparator(path);
+	return parseJsonString(readFile(path));
+}
 
-	ifstream ifs;
-	ifs.open(path);
-	if(ifs.good())
-	{
-		string sj;
-		for(string line; getline(ifs, line);)
-			sj += line;
-
-		string err;
-		j = Json::parse(sj, err);
-		if(!err.empty())
-			cerr << "Error parsing json file: " << path << endl
-			<< "error: " << err << endl;
-	}
-	ifs.close();
+Json Monica::parseJsonString(string jsonString)
+{
+	string err;
+	Json j = Json::parse(jsonString, err);
+	if(!err.empty())
+		cerr << "Error parsing json object string: " << jsonString << endl
+		<< "error: " << err << endl;
 
 	return j;
 }
@@ -198,6 +192,27 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				return make_pair(readUserCropParametersFromDatabase(j[2].string_value()).to_json(),
 				                 true);
 			}
+			else if(type == "soil-profile"
+			        && j[2].is_number())
+			{
+				vector<Json> spjs;
+				for(auto sp : *Soil::soilParameters("soil", j[2].int_value()))
+					spjs.push_back(sp.to_json());
+
+				return make_pair(spjs, true);
+			}
+			else if(type == "soil-layer"
+			        && j.array_items().size() == 4
+			        && j[2].is_number()
+			        && j[3].is_number())
+			{
+				auto sps = Soil::soilParameters("soil", j[2].int_value());
+				size_t layerNo = size_t(j[3].int_value());
+				if(0 < layerNo && layerNo <= sps->size())
+					return make_pair(sps->at(layerNo - 1).to_json(), true);
+
+				return make_pair(j, false);
+			}
 		}
 
 		return make_pair(j, false);
@@ -207,7 +222,7 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
-			return make_pair(readAndParseFile(j[1].string_value()), true);
+			return make_pair(readAndParseJsonFile(j[1].string_value()), true);
 		return make_pair(j, false);
 	};
 
@@ -277,11 +292,12 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 	return m;
 }
 
-Env Monica::createEnvFromJsonConfigFiles(PARMParams ps)
+Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
+
 	vector<Json> cropSiteSim;
-	for(auto name : {"crop", "site", "sim"})
-		cropSiteSim.push_back(readAndParseFile(ps.name2path[name]));
+	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
+		cropSiteSim.push_back(parseJsonString(params[name]));
 
 	vector<Json> cropSiteSim2;
 	for(auto& j : cropSiteSim)
@@ -297,10 +313,12 @@ Env Monica::createEnvFromJsonConfigFiles(PARMParams ps)
 	auto sitej = cropSiteSim2.at(1);
 	auto simj = cropSiteSim2.at(2);
 
-	if(!ps.startDate.isValid())
-		set_iso_date_value(ps.startDate, simj, "startDate");
-	if(!ps.endDate.isValid())
-		set_iso_date_value(ps.endDate, simj, "endDate");
+	Tools::Date startDate(params["start-date"]);
+	Tools::Date endDate(params["end-date"]);
+	if(!startDate.isValid())
+		set_iso_date_value(startDate, simj, "startDate");
+	if(!endDate.isValid())
+		set_iso_date_value(endDate, simj, "endDate");
 
 	Env env;
 	//env.params = readUserParameterFromDatabase(MODE_HERMES);
@@ -322,16 +340,16 @@ Env Monica::createEnvFromJsonConfigFiles(PARMParams ps)
 	for(Json cmj : cropj["cropRotation"].array_items())
 		env.cropRotation.push_back(cmj);
 
-	env.da = readClimateDataFromCSVFileViaHeaders(ps.name2path["climate"],
+	env.da = readClimateDataFromCSVFileViaHeaders(params["path-to-climate-csv"],
 	                                              ",",
-	                                              ps.startDate,
-	                                              ps.endDate);
+	                                              startDate,
+	                                              endDate);
 
 	if(!env.da.isValid())
 		return Env();
 
 	env.params.writeOutputFiles = true;
-	env.params.pathToOutputDir = ps.name2path["output"];
+	env.params.pathToOutputDir = params["path-to-output"];
 
 	return env;
 }

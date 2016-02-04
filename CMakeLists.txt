@@ -19,43 +19,64 @@ set(MONICA_SOURCE
 
     src/core/crop-growth.cpp
     src/core/crop-growth.h
+
     src/core/crop.cpp
     src/core/crop.h
+
     src/core/monica-eom.cpp
     src/core/monica-eom.h
+
     src/core/monica-parameters.cpp
     src/core/monica-parameters.h
+
     src/core/monica-typedefs.h
+
     src/core/monica.cpp
     src/core/monica.h
+
     src/core/simulation.cpp
     src/core/simulation.h
+
     src/core/soilcolumn.cpp
     src/core/soilcolumn.h
+
     src/core/soilmoisture.cpp
     src/core/soilmoisture.h
+
     src/core/soilorganic.cpp
     src/core/soilorganic.h
+
     src/core/soiltemperature.cpp
     src/core/soiltemperature.h
+
     src/core/soiltransport.cpp
     src/core/soiltransport.h
+
     src/io/database-io.cpp
     src/io/database-io.h
+
     src/io/file-io.cpp
     src/io/file-io.h
+
     src/io/hermes-file-io.cpp
     src/io/hermes-file-io.h
+
     src/run/cultivation-method.cpp
     src/run/cultivation-method.h
+
     #src/run/monica-hermes-main.cpp
     #src/run/monica-landcare-dss-main.cpp
     #src/run/monica-main.cpp
     #src/run/monica-zmq-main.cpp
+
     src/run/run-monica-zmq.cpp
     src/run/run-monica-zmq.h
+
     src/run/run-monica.cpp
     src/run/run-monica.h
+
+    src/run/env-from-json.h
+    src/run/env-from-json.cpp
 
     # db library code
     #-------------------------------------------
@@ -122,8 +143,13 @@ set(MONICA_SOURCE
     ${UTIL_DIR}/soil/soil.h
     ${UTIL_DIR}/soil/soil.cpp
 
+    ${UTIL_DIR}/soil/soil-from-db.h
+    ${UTIL_DIR}/soil/soil-from-db.cpp
+
+
     ${CARBIOCIAL_DIR}/monica/src/carbiocial.h
-    ${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp src/run/env-from-json-files.h src/run/env-from-json-files.cpp)
+    ${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp
+    )
 
 
 find_package(Threads REQUIRED)
@@ -142,7 +168,7 @@ set_target_properties(monica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DI
 
 #boost.python wrapper
 
-set(PYTHON_WRAPPER_SOURCE
+set(CARBIOCIAL_PYTHON_WRAPPER_SOURCE
     #src/python/monica_py.cpp
     ../carbiocial-project/monica/src/carbiocial_py.cpp)
 
@@ -152,8 +178,9 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
+
 # Define the wrapper library that wraps our library
-add_library(carbiocial_py SHARED ${PYTHON_WRAPPER_SOURCE})
+add_library(carbiocial_py SHARED ${CARBIOCIAL_PYTHON_WRAPPER_SOURCE})
 target_link_libraries(carbiocial_py ${Boost_LIBRARIES} monica)
 
 # don't prepend wrapper library name with lib
@@ -161,6 +188,21 @@ set_target_properties(carbiocial_py PROPERTIES PREFIX "")
 
 set_target_properties(carbiocial_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
+
+set(MONICA_PYTHON_WRAPPER_SOURCE
+    src/python/monica_py.cpp)
+
+# Define the wrapper library that wraps our library
+add_library(monica_py SHARED ${MONICA_PYTHON_WRAPPER_SOURCE})
+target_link_libraries(monica_py ${Boost_LIBRARIES} monica)
+
+# don't prepend wrapper library name with lib
+set_target_properties(monica_py PROPERTIES PREFIX "")
+
+set_target_properties(monica_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+
+
+#-------------------------------------------------------------------------------
 
 #swig wrapper !!!! doesn't work
 

@@ -4,7 +4,8 @@
     "Slope": 0,
     "HeightNN": [0 , "m"],
     "NDeposition": 30,
-    "SoilProfileParameters": [
+    "SoilProfileParameters": ["include-from-db", "soil-profile", 1234]
+[
       {
         "Thickness": 0.3,
         "SoilOrganicCarbon": [0.8, "%"],

@@ -13,23 +13,22 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef MONICA_ENV_FROM_JSON_FILES_H
-#define MONICA_ENV_FROM_JSON_FILES_H
+#ifndef MONICA_ENV_FROM_JSON_H
+#define MONICA_ENV_FROM_JSON_H
 
 #include <string>
 
 #include "tools/date.h"
 #include "run-monica.h"
+#include "json11/json11.hpp"
 
 namespace Monica
 {
-	struct PARMParams
-	{
-		std::map<std::string, std::string> name2path;
-		Tools::Date startDate, endDate;
-	};
-	Env createEnvFromJsonConfigFiles(PARMParams ps);
+	json11::Json readAndParseJsonFile(std::string path);
 
+	json11::Json parseJsonString(std::string jsonString);
+
+	Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 }
 
-#endif //MONICA_ENV_FROM_JSON_FILES_H
+#endif //MONICA_ENV_FROM_JSON_H
