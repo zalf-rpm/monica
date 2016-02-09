@@ -691,8 +691,8 @@ Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_conf
 
 	//build up the monica environment
 	Env env(cpp);
-	env.params.writeOutputFiles = true;
-	env.params.pathToOutputDir = outputPath;
+	env.params.setWriteOutputFiles(true);
+	env.params.setPathToOutputDir(outputPath);
 	env.setMode(MODE_HERMES);
 	env.params.groundwaterInformation = gw_infos;
 

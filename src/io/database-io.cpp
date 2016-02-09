@@ -202,11 +202,12 @@ namespace
 	}
 }
 
-SpeciesParametersPtr Monica::getSpeciesParametersFromMonicaDB(const string& species)
+SpeciesParametersPtr Monica::getSpeciesParametersFromMonicaDB(const string& species,
+                                                              std::string abstractDbSchema)
 {
 	SpeciesParametersPtr sps = make_shared<SpeciesParameters>();
 
-	DBPtr con(newConnection("monica"));
+	DBPtr con(newConnection(abstractDbSchema));
 	DBRow row;
 	con->select(speciesSelect(species));
 	debug() << speciesSelect(species) << endl;
@@ -274,13 +275,15 @@ SpeciesParametersPtr Monica::getSpeciesParametersFromMonicaDB(const string& spec
 	return sps;
 }
 
-CultivarParametersPtr Monica::getCultivarParametersFromMonicaDB(const string& species, const string& cultivar)
+CultivarParametersPtr Monica::getCultivarParametersFromMonicaDB(const string& species,
+                                                                const string& cultivar,
+                                                                std::string abstractDbSchema)
 {
 	CultivarParametersPtr cps = make_shared<CultivarParameters>();
 
 	int cropId = -1;
 
-	DBPtr con(newConnection("monica"));
+	DBPtr con(newConnection(abstractDbSchema));
 	DBRow row;
 	con->select(cultivarSelect(species, cultivar));
 	debug() << cultivarSelect(species, cultivar) << endl;
@@ -386,16 +389,17 @@ CultivarParametersPtr Monica::getCultivarParametersFromMonicaDB(const string& sp
 }
 
 CropParametersPtr Monica::getCropParametersFromMonicaDB(const string& species,
-																												const string& cultivar)
+																												const string& cultivar,
+																												std::string abstractDbSchema)
 {
 	CropParametersPtr cps = make_shared<CropParameters>();
-	cps->speciesParams = *getSpeciesParametersFromMonicaDB(species);
-	cps->cultivarParams = *getCultivarParametersFromMonicaDB(species, cultivar);
+	cps->speciesParams = *getSpeciesParametersFromMonicaDB(species, abstractDbSchema);
+	cps->cultivarParams = *getCultivarParametersFromMonicaDB(species, cultivar, abstractDbSchema);
 	return cps;
 }
 
 const map<int, pair<SpeciesParametersPtr, CultivarParametersPtr>>&
-getAllCropParametersFromMonicaDB()
+getAllCropParametersFromMonicaDB(std::string abstractDbSchema = "monica")
 {
 	static mutex lockable;
 
@@ -413,7 +417,7 @@ getAllCropParametersFromMonicaDB()
 		//already initialized the whole thing
 		if(!initialized)
 		{
-			DBPtr con(newConnection("monica"));
+			DBPtr con(newConnection(abstractDbSchema));
 			DBRow row;
 			con->select("select crop_id, species_id, id from cultivar order by crop_id");
 			while(!(row = con->getRow()).empty())
@@ -433,11 +437,12 @@ getAllCropParametersFromMonicaDB()
 	return cpss;
 }
 
-CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
+CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId,
+                                                        std::string abstractDbSchema)
 {
 	static CropParametersPtr nothing = make_shared<CropParameters>();
 
-	auto m = getAllCropParametersFromMonicaDB();
+	auto m = getAllCropParametersFromMonicaDB(abstractDbSchema);
 	auto ci = m.find(cropId);
 	if(ci != m.end())
 	{
@@ -451,12 +456,13 @@ CropParametersPtr Monica::getCropParametersFromMonicaDB(int cropId)
 	return nothing;
 }
 
-void Monica::writeCropParameters(string path)
+void Monica::writeCropParameters(string path, std::string abstractDbSchema)
 {
 	for(auto amc : availableMonicaCrops())
 	{
 		CropParametersPtr cp = getCropParametersFromMonicaDB(amc.speciesId,
-																												 amc.cultivarId);
+																												 amc.cultivarId,
+																												 abstractDbSchema);
 
 		ofstream ofs;
 		string speciesDir = path + "/" + amc.speciesId;
@@ -483,7 +489,8 @@ void Monica::writeCropParameters(string path)
 
 //------------------------------------------------------------------------------
 
-const map<string, MineralFertiliserParameters>& getAllMineralFertiliserParametersFromMonicaDB()
+const map<string, MineralFertiliserParameters>&
+getAllMineralFertiliserParametersFromMonicaDB(string abstractDbSchema = "monica")
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -495,7 +502,7 @@ const map<string, MineralFertiliserParameters>& getAllMineralFertiliserParameter
 
 		if(!initialized)
 		{
-			DBPtr con(newConnection("monica"));
+			DBPtr con(newConnection(abstractDbSchema));
 			DBRow row;
 			con->select("select id, name, no3, nh4, carbamid from mineral_fertiliser");
 			while(!(row = con->getRow()).empty())
@@ -521,16 +528,19 @@ const map<string, MineralFertiliserParameters>& getAllMineralFertiliserParameter
 * @param id of the fertiliser
 * @return mineral fertiliser parameters value object with values from database
 */
-MineralFertiliserParameters Monica::getMineralFertiliserParametersFromMonicaDB(const std::string& id)
+MineralFertiliserParameters
+Monica::getMineralFertiliserParametersFromMonicaDB(const std::string& id,
+                                                   string abstractDbSchema)
 {
-	auto m = getAllMineralFertiliserParametersFromMonicaDB();
+	auto m = getAllMineralFertiliserParametersFromMonicaDB(abstractDbSchema);
 	auto ci = m.find(id);
 	return ci != m.end() ? ci->second : MineralFertiliserParameters();
 }
 
-void Monica::writeMineralFertilisers(string path)
+void Monica::writeMineralFertilisers(string path,
+                                     std::string abstractDbSchema)
 {
-	for(auto p : getAllMineralFertiliserParametersFromMonicaDB())
+	for(auto p : getAllMineralFertiliserParametersFromMonicaDB(abstractDbSchema))
 	{
 		auto mf = p.second;
 
@@ -551,7 +561,8 @@ void Monica::writeMineralFertilisers(string path)
 
 //--------------------------------------------------------------------------------------
 
-const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParametersFromMonicaDB()
+const map<string, OrganicFertiliserParametersPtr>&
+getAllOrganicFertiliserParametersFromMonicaDB(std::string abstractDbSchema = "monica")
 {
 	static mutex lockable;
 	static bool initialized = false;
@@ -564,7 +575,7 @@ const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParame
 
 		if(!initialized)
 		{
-			DBPtr con(newConnection("monica"));
+			DBPtr con(newConnection(abstractDbSchema));
 			DBRow row;
 			con->select(
 				"select "
@@ -619,18 +630,20 @@ const map<string, OrganicFertiliserParametersPtr>& getAllOrganicFertiliserParame
 * @param organ_fert_id ID of fertiliser
 * @return organic fertiliser parameters with values from database
 */
-OrganicFertiliserParametersPtr Monica::getOrganicFertiliserParametersFromMonicaDB(const std::string& id)
+OrganicFertiliserParametersPtr
+Monica::getOrganicFertiliserParametersFromMonicaDB(const std::string& id,
+                                                   std::string abstractDbSchema)
 {
 	static OrganicFertiliserParametersPtr nothing = make_shared<OrganicFertiliserParameters>();
 
-	auto m = getAllOrganicFertiliserParametersFromMonicaDB();
+	auto m = getAllOrganicFertiliserParametersFromMonicaDB(abstractDbSchema);
 	auto ci = m.find(id);
 	return ci != m.end() ? ci->second : nothing;
 }
 
-void Monica::writeOrganicFertilisers(string path)
+void Monica::writeOrganicFertilisers(string path, std::string abstractDbSchema)
 {
-	for(auto p : getAllOrganicFertiliserParametersFromMonicaDB())
+	for(auto p : getAllOrganicFertiliserParametersFromMonicaDB(abstractDbSchema))
 	{
 		OrganicFertiliserParametersPtr of = p.second;
 
@@ -654,9 +667,10 @@ void Monica::writeOrganicFertilisers(string path)
 
 CropResidueParametersPtr
 Monica::getResidueParametersFromMonicaDB(const string& species,
-																				 const string& residueType)
+																				 const string& residueType,
+																				 std::string abstractDbSchema)
 {
-	DBPtr con(newConnection("monica"));
+	DBPtr con(newConnection(abstractDbSchema));
 	DBRow row;
 	string query = string() +
 		"select "
@@ -716,11 +730,12 @@ Monica::getResidueParametersFromMonicaDB(const string& species,
 	return nothing;
 }
 
-vector<CropResidueParametersPtr> getAllCropResidueParametersFromMonicaDB()
+vector<CropResidueParametersPtr>
+getAllCropResidueParametersFromMonicaDB(std::string abstractDbSchema = "monica")
 {
 	vector<CropResidueParametersPtr> acrps;
 
-	DBPtr con(newConnection("monica"));
+	DBPtr con(newConnection(abstractDbSchema));
 	DBRow row;
 	con->select("select "
 							"species_id, "
@@ -735,9 +750,9 @@ vector<CropResidueParametersPtr> getAllCropResidueParametersFromMonicaDB()
 	return acrps;
 }
 
-void Monica::writeCropResidues(string path)
+void Monica::writeCropResidues(string path, std::string abstractDbSchema)
 {
-	for(auto r : getAllCropResidueParametersFromMonicaDB())
+	for(auto r : getAllCropResidueParametersFromMonicaDB(abstractDbSchema))
 	{
 		string speciesPath = path + "/" + r->species;
 		bool noResidueType = r->residueType.empty();
@@ -764,9 +779,9 @@ void Monica::writeCropResidues(string path)
 
 //------------------------------------------------------------------------------
 
-DBPtr userParamsSelect(string type, string module)
+DBPtr userParamsSelect(string type, string module, std::string abstractDbSchema = "monica")
 {
-	DBPtr con(newConnection("monica"));
+	DBPtr con(newConnection(abstractDbSchema));
 
 	map<string, string> type2colName = {
 		{"hermes", "value_hermes"},
@@ -781,11 +796,13 @@ DBPtr userParamsSelect(string type, string module)
 	return con;
 }
 
-UserCropParameters Monica::readUserCropParametersFromDatabase(string type)
+UserCropParameters
+Monica::readUserCropParametersFromDatabase(string type,
+                                           std::string abstractDbSchema)
 {
 	UserCropParameters user_crops;
 	
-	DBPtr con = userParamsSelect(type, "crop");
+	DBPtr con = userParamsSelect(type, "crop", abstractDbSchema);
 
 	DBRow row;
 	while(!(row = con->getRow()).empty())
@@ -826,11 +843,13 @@ UserCropParameters Monica::readUserCropParametersFromDatabase(string type)
 	return user_crops;
 }
 
-SimulationParameters Monica::readUserSimParametersFromDatabase(string type)
+SimulationParameters
+Monica::readUserSimParametersFromDatabase(string type,
+                                          std::string abstractDbSchema)
 {
 	SimulationParameters sim;
 
-	DBPtr con = userParamsSelect(type, "sim");
+	DBPtr con = userParamsSelect(type, "sim", abstractDbSchema);
 
 	DBRow row;
 	while(!(row = con->getRow()).empty())
@@ -855,7 +874,9 @@ SimulationParameters Monica::readUserSimParametersFromDatabase(string type)
 	return sim;
 }
 
-UserEnvironmentParameters Monica::readUserEnvironmentParametersFromDatabase(string type)
+UserEnvironmentParameters
+Monica::readUserEnvironmentParametersFromDatabase(string type,
+                                                  std::string abstractDbSchema)
 {
 	UserEnvironmentParameters user_env;
 
@@ -886,7 +907,9 @@ UserEnvironmentParameters Monica::readUserEnvironmentParametersFromDatabase(stri
 	return user_env;
 }
 
-UserSoilMoistureParameters Monica::readUserSoilMoistureParametersFromDatabase(string type)
+UserSoilMoistureParameters
+Monica::readUserSoilMoistureParametersFromDatabase(string type,
+                                                   std::string abstractDbSchema)
 {
 	UserSoilMoistureParameters user_soil_moisture;
 	user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, int distance)
@@ -894,7 +917,7 @@ UserSoilMoistureParameters Monica::readUserSoilMoistureParametersFromDatabase(st
 		return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 	};
 
-	DBPtr con = userParamsSelect(type, "soil_moisture");
+	DBPtr con = userParamsSelect(type, "soil_moisture", abstractDbSchema);
 
 	DBRow row;
 	while(!(row = con->getRow()).empty())
@@ -951,11 +974,13 @@ UserSoilMoistureParameters Monica::readUserSoilMoistureParametersFromDatabase(st
 	return user_soil_moisture;
 }
 
-UserSoilTemperatureParameters Monica::readUserSoilTemperatureParametersFromDatabase(string type)
+UserSoilTemperatureParameters
+Monica::readUserSoilTemperatureParametersFromDatabase(string type,
+                                                      std::string abstractDbSchema)
 {
 	UserSoilTemperatureParameters user_soil_temperature;
 
-	DBPtr con = userParamsSelect(type, "soil_temperature");
+	DBPtr con = userParamsSelect(type, "soil_temperature", abstractDbSchema);
 
 	DBRow row;
 	while(!(row = con->getRow()).empty())
@@ -990,11 +1015,13 @@ UserSoilTemperatureParameters Monica::readUserSoilTemperatureParametersFromDatab
 	return user_soil_temperature;
 }
 
-UserSoilTransportParameters Monica::readUserSoilTransportParametersFromDatabase(string type)
+UserSoilTransportParameters
+Monica::readUserSoilTransportParametersFromDatabase(string type,
+                                                    std::string abstractDbSchema)
 {
 	UserSoilTransportParameters user_soil_transport;
 
-	DBPtr con = userParamsSelect(type, "soil_transport");
+	DBPtr con = userParamsSelect(type, "soil_transport", abstractDbSchema);
 
 	DBRow row;
 	while(!(row = con->getRow()).empty())
@@ -1011,11 +1038,13 @@ UserSoilTransportParameters Monica::readUserSoilTransportParametersFromDatabase(
 	return user_soil_transport;
 }
 
-UserSoilOrganicParameters Monica::readUserSoilOrganicParametersFromDatabase(string type)
+UserSoilOrganicParameters
+Monica::readUserSoilOrganicParametersFromDatabase(string type,
+                                                  std::string abstractDbSchema)
 {
 	UserSoilOrganicParameters user_soil_organic;
 
-	DBPtr con = userParamsSelect(type, "soil_organic");
+	DBPtr con = userParamsSelect(type, "soil_organic", abstractDbSchema);
 
 	DBRow row;
 	while(!(row = con->getRow()).empty())
@@ -1096,7 +1125,9 @@ UserSoilOrganicParameters Monica::readUserSoilOrganicParametersFromDatabase(stri
 	return user_soil_organic;
 }
 
-CentralParameterProvider Monica::readUserParameterFromDatabase(int iType)
+CentralParameterProvider
+Monica::readUserParameterFromDatabase(int iType,
+                                      std::string abstractDbSchema)
 {
 	string type = "hermes";
 	switch(iType)
@@ -1106,19 +1137,19 @@ CentralParameterProvider Monica::readUserParameterFromDatabase(int iType)
 	default:;
 	}
 
-	CentralParameterProvider centralParameterProvider;
-	centralParameterProvider.userCropParameters = readUserCropParametersFromDatabase(type);
-	centralParameterProvider.userEnvironmentParameters = readUserEnvironmentParametersFromDatabase(type);
-	centralParameterProvider.userSoilMoistureParameters = readUserSoilMoistureParametersFromDatabase(type);
-	centralParameterProvider.userSoilOrganicParameters = readUserSoilOrganicParametersFromDatabase(type);
-	centralParameterProvider.userSoilTemperatureParameters = readUserSoilTemperatureParametersFromDatabase(type);
-	centralParameterProvider.userSoilTransportParameters = readUserSoilTransportParametersFromDatabase(type);
-	centralParameterProvider.simulationParameters = readUserSimParametersFromDatabase(type);
+	CentralParameterProvider cpp;
+	cpp.userCropParameters = readUserCropParametersFromDatabase(type, abstractDbSchema);
+	cpp.userEnvironmentParameters = readUserEnvironmentParametersFromDatabase(type, abstractDbSchema);
+	cpp.userSoilMoistureParameters = readUserSoilMoistureParametersFromDatabase(type, abstractDbSchema);
+	cpp.userSoilOrganicParameters = readUserSoilOrganicParametersFromDatabase(type, abstractDbSchema);
+	cpp.userSoilTemperatureParameters = readUserSoilTemperatureParametersFromDatabase(type, abstractDbSchema);
+	cpp.userSoilTransportParameters = readUserSoilTransportParametersFromDatabase(type, abstractDbSchema);
+	cpp.simulationParameters = readUserSimParametersFromDatabase(type, abstractDbSchema);
 
-	return centralParameterProvider;
+	return cpp;
 }
 
-void Monica::writeUserParameters(int type, string path)
+void Monica::writeUserParameters(int type, string path, std::string abstractDbSchema)
 {
 	string typeName = "hermes";
 	switch(type)
@@ -1128,7 +1159,7 @@ void Monica::writeUserParameters(int type, string path)
 	default:;
 	}
 
-	auto ups = readUserParameterFromDatabase(type);
+	auto ups = readUserParameterFromDatabase(type, abstractDbSchema);
 
 	ensureDirExists(surround("\"", path));
 

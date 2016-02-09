@@ -1461,7 +1461,8 @@ json11::Json UserSoilOrganicParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 CentralParameterProvider::CentralParameterProvider()
-  : precipCorrectionValues(12, 1.0)
+  : _pathToOutputDir(".")
+  , precipCorrectionValues(12, 1.0)
 {
 
 }

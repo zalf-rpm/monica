@@ -1,8 +1,8 @@
 {
   "crops": {
     "WR": { 
-      "cropParams": ["include-from-db", "crop", "rye", "winter rye"],
-      "residueParams": ["include-from-db", "crop_residue", "rye", ""]
+      "cropParams": ["include-from-db", {"db": "monica", "type": "crop", "species": "rye", "cultivar": "winter rye"}],
+      "residueParams": ["include-from-db", {"db": "monica", "type": "crop_residue", "species": "rye", "residue-type": ""}]
     },
     "SM": { 
       "cropParams": ["include-from-db", "crop", "maize", "silage maize"],
@@ -47,7 +47,7 @@
           "date": "1992-04-03", 
           "type": "MineralFertiliserApplication", 
           "amount": [40.0, "kg N"], 
-          "partition": ["include-from-db", "mineral_fertiliser", "AN"]
+          "partition": ["include-from-db", {"db": "monica", "type": "mineral_fertiliser", "name": "AN"}]
         },
         { 
           "date": "1992-05-07", 
@@ -158,5 +158,5 @@
     }
   ],
   
-  "CropParameters": ["include-from-db", "crop-params", "hermes"]
+  "CropParameters": ["include-from-db", {"type": "crop-params", "name": "hermes"}]
 }

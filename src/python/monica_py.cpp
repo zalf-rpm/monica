@@ -21,6 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run/env-from-json.h"
 #include "tools/date.h"
 #include "tools/algorithms.h"
+#include "tools/debug.h"
 
 using namespace boost::python;
 
@@ -28,24 +29,7 @@ using namespace std;
 using namespace Monica;
 using namespace Tools;
 
-dict rm(map<string, string> params)
-{
-	auto env = Monica::createEnvFromJsonConfigFiles(params);
-
-  auto res = Monica::runMonica(env);
-	size_t ey = env.da.endDate().year();
-	dict d;
-	for (size_t i = 0, size = res.pvrs.size(); i < size; i++)
-	{
-		size_t year = ey - size + 1 + i;
-		double yield = res.pvrs[i].results[primaryYieldTM] / 10.0;
-		cout << "year: " << year << " yield: " << yield << " tTM" << endl;
-		d[year] = Tools::round(yield, 3);
-	}
-  return d;
-}
-
-dict rm2(dict params)
+dict rm(dict params)
 {
 	stl_input_iterator<string> begin(params.keys()), end;
 	map<string, string> n2jos;
@@ -53,15 +37,21 @@ dict rm2(dict params)
 	         [&](string key){ n2jos[key] = extract<string>(params[key]); });
 
 	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
+	env.params.setWriteOutputFiles(false);
+	activateDebug = true;
+
+	cout << "site.json: " << env.params.userEnvironmentParameters.toString() << endl;
 
 	auto res = Monica::runMonica(env);
+
+	cout << "after" << endl;
 	size_t ey = env.da.endDate().year();
 	dict d;
 	for (size_t i = 0, size = res.pvrs.size(); i < size; i++)
 	{
 		size_t year = ey - size + 1 + i;
 		double yield = res.pvrs[i].results[primaryYieldTM] / 10.0;
-		cout << "year: " << year << " yield: " << yield << " tTM" << endl;
+		//cout << "year: " << year << " yield: " << yield << " tTM" << endl;
 		d[year] = Tools::round(yield, 3);
 	}
 	return d;
@@ -90,5 +80,4 @@ BOOST_PYTHON_MODULE(monica_py)
       */
 
   def("runMonica", rm);
-	def("runMonica2", rm2);
 }

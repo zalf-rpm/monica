@@ -157,20 +157,13 @@ find_package(Threads REQUIRED)
 #add_executable(monica ${SOURCE_FILES})
 #set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
+# create monica as shared library
 add_library(monica SHARED ${MONICA_SOURCE})
-
 target_link_libraries(monica
                       ${CMAKE_THREAD_LIBS_INIT}
                       dl)
-
 set_target_properties(monica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
-
-#boost.python wrapper
-
-set(CARBIOCIAL_PYTHON_WRAPPER_SOURCE
-    #src/python/monica_py.cpp
-    ../carbiocial-project/monica/src/carbiocial_py.cpp)
 
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -178,27 +171,20 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
-
-# Define the wrapper library that wraps our library
+# create carbiocial monica wrapper library using monica lib
+set(CARBIOCIAL_PYTHON_WRAPPER_SOURCE
+    ../carbiocial-project/monica/src/carbiocial_py.cpp)
 add_library(carbiocial_py SHARED ${CARBIOCIAL_PYTHON_WRAPPER_SOURCE})
 target_link_libraries(carbiocial_py ${Boost_LIBRARIES} monica)
-
-# don't prepend wrapper library name with lib
 set_target_properties(carbiocial_py PROPERTIES PREFIX "")
-
 set_target_properties(carbiocial_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
-
+# create monica python wrapper lib
 set(MONICA_PYTHON_WRAPPER_SOURCE
     src/python/monica_py.cpp)
-
-# Define the wrapper library that wraps our library
 add_library(monica_py SHARED ${MONICA_PYTHON_WRAPPER_SOURCE})
 target_link_libraries(monica_py ${Boost_LIBRARIES} monica)
-
-# don't prepend wrapper library name with lib
 set_target_properties(monica_py PROPERTIES PREFIX "")
-
 set_target_properties(monica_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 

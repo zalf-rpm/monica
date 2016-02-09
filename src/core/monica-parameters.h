@@ -1085,10 +1085,19 @@ namespace Monica
 		double getPrecipCorrectionValue(int month) const;
 		void setPrecipCorrectionValue(int month, double value);
 
-    bool writeOutputFiles{false};
-    std::string pathToOutputDir;
+		bool writeOutputFiles() const { return _writeOutputFiles; }
+		void setWriteOutputFiles(bool write) { _writeOutputFiles = write; }
 
-  private:
+		std::string pathToOutputDir() const
+		{
+			return _pathToOutputDir.empty() ? "." : _pathToOutputDir;
+		}
+		void setPathToOutputDir(std::string path) { _pathToOutputDir = path; }
+
+	private:
+		bool _writeOutputFiles{false};
+		std::string _pathToOutputDir;
+
 		std::vector<double> precipCorrectionValues;
 	};
 }

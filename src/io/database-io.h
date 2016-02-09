@@ -24,53 +24,68 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-  SpeciesParametersPtr getSpeciesParametersFromMonicaDB(const std::string& species);
+  SpeciesParametersPtr getSpeciesParametersFromMonicaDB(const std::string& species,
+                                                        std::string abstractDbSchema = "monica");
 
   CultivarParametersPtr getCultivarParametersFromMonicaDB(const std::string& species, 
-																													const std::string& cultivar);
+																													const std::string& cultivar,
+																													std::string abstractDbSchema = "monica");
 
   CropParametersPtr getCropParametersFromMonicaDB(const std::string& species, 
-																									const std::string& cultivar);
+																									const std::string& cultivar,
+																									std::string abstractDbSchema = "monica");
 
-  CropParametersPtr getCropParametersFromMonicaDB(int cropId);
+  CropParametersPtr getCropParametersFromMonicaDB(int cropId,
+                                                  std::string abstractDbSchema = "monica");
 
-	void writeCropParameters(std::string path);
+	void writeCropParameters(std::string path, std::string abstractDbSchema = "monica");
 
 	//-----------------------------------------------------------
 
   MineralFertiliserParameters 
-		getMineralFertiliserParametersFromMonicaDB(const std::string& mineralFertiliserId);
+		getMineralFertiliserParametersFromMonicaDB(const std::string& mineralFertiliserId,
+		                                           std::string abstractDbSchema = "monica");
 
-	void writeMineralFertilisers(std::string path);
+	void writeMineralFertilisers(std::string path, std::string abstractDbSchema = "monica");
 
 	//-----------------------------------------------------------
 
   OrganicFertiliserParametersPtr 
-		getOrganicFertiliserParametersFromMonicaDB(const std::string& id);
+		getOrganicFertiliserParametersFromMonicaDB(const std::string& id,
+		                                           std::string abstractDbSchema = "monica");
 
-	void writeOrganicFertilisers(std::string path);
+	void writeOrganicFertilisers(std::string path, std::string abstractDbSchema = "monica");
 
 	//-----------------------------------------------------------
 
 	CropResidueParametersPtr
 		getResidueParametersFromMonicaDB(const std::string& species,
-																		 const std::string& residueType = "");
+																		 const std::string& residueType = "",
+																		 std::string abstractDbSchema = "monica");
 		
-  void writeCropResidues(std::string path);
+  void writeCropResidues(std::string path, std::string abstractDbSchema = "monica");
 
 	//-----------------------------------------------------------
 
-	UserCropParameters readUserCropParametersFromDatabase(std::string type);
-	UserEnvironmentParameters readUserEnvironmentParametersFromDatabase(std::string type);
-	UserSoilMoistureParameters readUserSoilMoistureParametersFromDatabase(std::string type);
-	UserSoilOrganicParameters readUserSoilOrganicParametersFromDatabase(std::string type);
-	UserSoilTemperatureParameters readUserSoilTemperatureParametersFromDatabase(std::string type);
-	UserSoilTransportParameters readUserSoilTransportParametersFromDatabase(std::string type);
-	SimulationParameters readUserSimParametersFromDatabase(std::string type);
+	UserCropParameters readUserCropParametersFromDatabase(std::string type,
+	                                                      std::string abstractDbSchema = "monica");
+	UserEnvironmentParameters readUserEnvironmentParametersFromDatabase(std::string type,
+	                                                                    std::string abstractDbSchema = "monica");
+	UserSoilMoistureParameters readUserSoilMoistureParametersFromDatabase(std::string type,
+	                                                                      std::string abstractDbSchema = "monica");
+	UserSoilOrganicParameters readUserSoilOrganicParametersFromDatabase(std::string type,
+	                                                                    std::string abstractDbSchema = "monica");
+	UserSoilTemperatureParameters readUserSoilTemperatureParametersFromDatabase(std::string type,
+	                                                                            std::string abstractDbSchema = "monica");
+	UserSoilTransportParameters readUserSoilTransportParametersFromDatabase(std::string type,
+	                                                                        std::string abstractDbSchema = "monica");
+	SimulationParameters readUserSimParametersFromDatabase(std::string type,
+	                                                       std::string abstractDbSchema = "monica");
 
-	CentralParameterProvider readUserParameterFromDatabase(int type = 0);
+	CentralParameterProvider readUserParameterFromDatabase(int type = 0,
+	                                                       std::string abstractDbSchema = "monica");
 
-	void writeUserParameters(int type, std::string path);
+	void writeUserParameters(int type, std::string path, std::string abstractDbSchema = "monica");
 
 	//-----------------------------------------------------------
 

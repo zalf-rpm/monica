@@ -67,8 +67,8 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   , _soilTransPs(cpp.userSoilTransportParameters)
   , _soilOrganicPs(cpp.userSoilOrganicParameters)
   , _simPs(cpp.simulationParameters)
-  , _writeOutputFiles(cpp.writeOutputFiles)
-  , _pathToOutputDir(cpp.pathToOutputDir)
+  , _writeOutputFiles(cpp.writeOutputFiles())
+  , _pathToOutputDir(cpp.pathToOutputDir())
   , _groundwaterInformation(cpp.groundwaterInformation)
   , _soilColumn(_simPs.p_LayerThickness,
                 _soilOrganicPs.ps_MaxMineralisationDepth,

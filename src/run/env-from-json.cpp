@@ -118,96 +118,155 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 
 	auto fromDb = [](const Json&, const Json& j) -> pair<Json, bool>
 	{
-		if(j.array_items().size() >= 3
-		   && j[1].is_string()
-		   && j[2].is_string())
+		if((j.array_items().size() >= 3 && j[1].is_string())
+		   || (j.array_items().size() == 2 && j[1].is_object()))
 		{
-			auto type = j[1].string_value();
+			bool isParamMap = j[1].is_object();
+
+			auto type = isParamMap ? j[1]["type"].string_value() :j[1].string_value();
+			string err;
+			string db = isParamMap && j[1].has_shape({{"db", Json::STRING}}, err)
+			            ? j[1]["db"].string_value()
+			            : "";
 			if(type == "mineral_fertiliser")
 			{
-				return make_pair(getMineralFertiliserParametersFromMonicaDB(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto name = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(getMineralFertiliserParametersFromMonicaDB(name, db).to_json(),
 				                 true);
 			}
 			else if(type == "organic_fertiliser")
 			{
-				return make_pair(getOrganicFertiliserParametersFromMonicaDB(j[2].string_value())->to_json(),
+				if(db.empty())
+					db = "monica";
+				auto name = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(getOrganicFertiliserParametersFromMonicaDB(name, db)->to_json(),
 				                 true);
 			}
 			else if(type == "crop_residue"
-			        && j.array_items().size() == 4
-			        && j[3].is_string())
+			        && j.array_items().size() >= 3)
 			{
-				return make_pair(getResidueParametersFromMonicaDB(j[2].string_value(),
-				                                                  j[3].string_value())->to_json(),
+				if(db.empty())
+					db = "monica";
+				auto species = isParamMap ? j[1]["species"].string_value() : j[2].string_value();
+				auto residueType = isParamMap ? j[1]["residue-type"].string_value()
+				                              : j.array_items().size() == 4 ? j[3].string_value()
+				                                                            : "";
+				return make_pair(getResidueParametersFromMonicaDB(species,
+				                                                  residueType,
+				                                                  db)->to_json(),
 				                 true);
 			}
 			else if(type == "species")
 			{
-				return make_pair(getSpeciesParametersFromMonicaDB(j[2].string_value())->to_json(),
+				if(db.empty())
+					db = "monica";
+				auto species = isParamMap ? j[1]["species"].string_value() : j[2].string_value();
+				return make_pair(getSpeciesParametersFromMonicaDB(species, db)->to_json(),
 				                 true);
 			}
 			else if(type == "cultivar"
-			        && j.array_items().size() == 4
-			        && j[3].is_string())
+			        && j.array_items().size() >= 3)
 			{
-				return make_pair(getCultivarParametersFromMonicaDB(j[2].string_value(),
-				                                                   j[3].string_value())->to_json(),
+				if(db.empty())
+					db = "monica";
+				auto species = isParamMap ? j[1]["species"].string_value() : j[2].string_value();
+				auto cultivar = isParamMap ? j[1]["cultivar"].string_value()
+				                           : j.array_items().size() == 4 ? j[3].string_value()
+				                                                         : "";
+				return make_pair(getCultivarParametersFromMonicaDB(species,
+				                                                   cultivar,
+				                                                   db)->to_json(),
 				                 true);
 			}
 			else if(type == "crop"
-			        && j.array_items().size() == 4
-			        && j[3].is_string())
+			        && j.array_items().size() >= 3)
 			{
-				return make_pair(getCropParametersFromMonicaDB(j[2].string_value(),
-				                                               j[3].string_value())->to_json(),
+				if(db.empty())
+					db = "monica";
+				auto species = isParamMap ? j[1]["species"].string_value() : j[2].string_value();
+				auto cultivar = isParamMap ? j[1]["cultivar"].string_value()
+				                           : j.array_items().size() == 4 ? j[3].string_value()
+				                                                         : "";
+				return make_pair(getCropParametersFromMonicaDB(species,
+				                                               cultivar,
+				                                               db)->to_json(),
 				                 true);
 			}
 			else if(type == "soil-temperature-params")
 			{
-				return make_pair(readUserSoilTemperatureParametersFromDatabase(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(readUserSoilTemperatureParametersFromDatabase(module, db).to_json(),
 				                 true);
 			}
 			else if(type == "environment-params")
 			{
-				return make_pair(readUserEnvironmentParametersFromDatabase(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(readUserEnvironmentParametersFromDatabase(module, db).to_json(),
 				                 true);
 			}
 			else if(type == "soil-organic-params")
 			{
-				return make_pair(readUserSoilOrganicParametersFromDatabase(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(readUserSoilOrganicParametersFromDatabase(module, db).to_json(),
 				                 true);
 			}
 			else if(type == "soil-transport-params")
 			{
-				return make_pair(readUserSoilTransportParametersFromDatabase(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(readUserSoilTransportParametersFromDatabase(module, db).to_json(),
 				                 true);
 			}
 			else if(type == "soil-moisture-params")
 			{
-				return make_pair(readUserSoilTemperatureParametersFromDatabase(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(readUserSoilTemperatureParametersFromDatabase(module, db).to_json(),
 				                 true);
 			}
 			else if(type == "crop-params")
 			{
-				return make_pair(readUserCropParametersFromDatabase(j[2].string_value()).to_json(),
+				if(db.empty())
+					db = "monica";
+				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
+				return make_pair(readUserCropParametersFromDatabase(module, db).to_json(),
 				                 true);
 			}
 			else if(type == "soil-profile"
-			        && j[2].is_number())
+			        && (isParamMap
+			            || (!isParamMap && j[2].is_number())))
 			{
+				if(db.empty())
+					db = "soil";
 				vector<Json> spjs;
-				for(auto sp : *Soil::soilParameters("soil", j[2].int_value()))
+				int profileId = isParamMap ? j[1]["id"].int_value() : j[2].int_value();
+				auto sps = Soil::soilParameters(db, profileId);
+				for(auto sp : *sps)
 					spjs.push_back(sp.to_json());
 
 				return make_pair(spjs, true);
 			}
 			else if(type == "soil-layer"
-			        && j.array_items().size() == 4
-			        && j[2].is_number()
-			        && j[3].is_number())
+			        && (isParamMap
+			            || (j.array_items().size() == 4
+			                && j[2].is_number()
+			                && j[3].is_number())))
 			{
-				auto sps = Soil::soilParameters("soil", j[2].int_value());
-				size_t layerNo = size_t(j[3].int_value());
+				if(db.empty())
+					db = "soil";
+				int profileId = isParamMap ? j[1]["id"].int_value() : j[2].int_value();
+				size_t layerNo = size_t(isParamMap ? j[1]["no"].int_value() : j[3].int_value());
+				auto sps = Soil::soilParameters(db, profileId);
 				if(0 < layerNo && layerNo <= sps->size())
 					return make_pair(sps->at(layerNo - 1).to_json(), true);
 
@@ -222,7 +281,12 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
-			return make_pair(readAndParseJsonFile(j[1].string_value()), true);
+		{
+			auto jo = readAndParseJsonFile(j[1].string_value());
+			if(!jo.is_null())
+				return make_pair(jo, true);
+		}
+
 		return make_pair(j, false);
 	};
 
@@ -306,8 +370,10 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(auto j : cropSiteSim2)
 	{
 		auto str = j.dump();
-		str;
+		//cout << str << endl;
 	}
+
+	//cout << cropSiteSim2[1].dump() << endl;
 
 	auto cropj = cropSiteSim2.at(0);
 	auto sitej = cropSiteSim2.at(1);
@@ -348,8 +414,8 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	if(!env.da.isValid())
 		return Env();
 
-	env.params.writeOutputFiles = true;
-	env.params.pathToOutputDir = params["path-to-output"];
+	env.params.setWriteOutputFiles(true);
+	env.params.setPathToOutputDir(params["path-to-output"]);
 
 	return env;
 }

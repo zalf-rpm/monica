@@ -178,7 +178,7 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	pout.open(fixSystemSeparator(env.params.pathToOutputDir + "/" + fileName));
+	pout.open(fixSystemSeparator(env.params.pathToOutputDir() + "/" + fileName));
 	if(pout.fail())
 		exit(1);
 	pout << "{" << endl;
@@ -252,22 +252,22 @@ Result Monica::runMonica(Env env)
 
 	MonicaModel monica(env.params);
 
-	if(env.params.writeOutputFiles)
+	if(env.params.writeOutputFiles())
 	{
 		// open rmout.dat
-		debug() << "Outputpath: " << (env.params.pathToOutputDir + pathSeparator() + "rmout.csv").c_str() << endl;
-		fout.open((env.params.pathToOutputDir + pathSeparator() + "rmout.csv").c_str());
+		debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv").c_str() << endl;
+		fout.open((env.params.pathToOutputDir() + pathSeparator() + "rmout.csv").c_str());
 		if(fout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.params.pathToOutputDir + pathSeparator() + "rmout.csv").c_str() << "\"" << endl;
+			debug() << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv").c_str() << "\"" << endl;
 			return res;
 		}
 
 		// open smout.dat
-		gout.open((env.params.pathToOutputDir + pathSeparator() + "smout.csv").c_str());
+		gout.open((env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str());
 		if(gout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.params.pathToOutputDir + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
+			debug() << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
 			return res;
 		}
 
@@ -275,7 +275,7 @@ Result Monica::runMonica(Env env)
 		initializeFoutHeader(fout);
 		initializeGoutHeader(gout);
 
-		dumpMonicaParametersIntoFile(env.params.pathToOutputDir, env.params);
+		dumpMonicaParametersIntoFile(env.params.pathToOutputDir(), env.params);
 	}
 
 	debug() << "currentDate" << endl;
@@ -460,7 +460,7 @@ Result Monica::runMonica(Env env)
 				nextAbsoluteCMApplicationDate.addYears(1);
 		}
 		// write simulation date to file
-		if(env.params.writeOutputFiles)
+		if(env.params.writeOutputFiles())
 		{
 			fout << currentDate.toString("/");
 			gout << currentDate.toString("/");
@@ -474,7 +474,7 @@ Result Monica::runMonica(Env env)
 			monica.cropStep(currentDate, dateAndClimateDataP.second);
 
 		// writes crop results to output file
-		if(env.params.writeOutputFiles)
+		if(env.params.writeOutputFiles())
 			writeCropResults(monica.cropGrowth(), fout, gout, monica.isCropPlanted());
 
 		monica.generalStep(currentDate, dateAndClimateDataP.second);
@@ -606,12 +606,12 @@ Result Monica::runMonica(Env env)
 
 		res.dates.push_back(currentDate.toMysqlString());
 
-		if(env.params.writeOutputFiles)
+		if(env.params.writeOutputFiles())
 		{
 			writeGeneralResults(fout, gout, env, monica, d);
 		}
 	}
-	if(env.params.writeOutputFiles)
+	if(env.params.writeOutputFiles())
 	{
 		fout.close();
 		gout.close();

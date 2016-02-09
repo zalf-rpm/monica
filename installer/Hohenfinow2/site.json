@@ -4,8 +4,7 @@
     "Slope": 0,
     "HeightNN": [0 , "m"],
     "NDeposition": 30,
-    "SoilProfileParameters": ["include-from-db", "soil-profile", 1234]
-[
+    "SoilProfileParameters": [
       {
         "Thickness": 0.3,
         "SoilOrganicCarbon": [0.8, "%"],
@@ -37,3 +36,4 @@
   "SoilTransportParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-transport.json"],
   "SoilMoistureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-moisture.json"]
 }
+
