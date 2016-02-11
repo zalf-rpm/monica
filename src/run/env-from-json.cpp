@@ -358,7 +358,6 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 
 Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
-
 	vector<Json> cropSiteSim;
 	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
 		cropSiteSim.push_back(parseJsonString(params[name]));
@@ -367,11 +366,11 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(auto& j : cropSiteSim)
 		cropSiteSim2.push_back(findAndReplaceReferences(j, j));
 
-	for(auto j : cropSiteSim2)
-	{
-		auto str = j.dump();
+	//for(auto j : cropSiteSim2)
+	//{
+	//	auto str = j.dump();
 		//cout << str << endl;
-	}
+	//}
 
 	//cout << cropSiteSim2[1].dump() << endl;
 
@@ -379,15 +378,11 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	auto sitej = cropSiteSim2.at(1);
 	auto simj = cropSiteSim2.at(2);
 
-	Tools::Date startDate(params["start-date"]);
-	Tools::Date endDate(params["end-date"]);
-	if(!startDate.isValid())
-		set_iso_date_value(startDate, simj, "startDate");
-	if(!endDate.isValid())
-		set_iso_date_value(endDate, simj, "endDate");
-
 	Env env;
-	//env.params = readUserParameterFromDatabase(MODE_HERMES);
+
+	//store debug mode in env, take from sim.json, but prefer params map
+	env.debugMode = simj["run-settings"]["debug?"].bool_value();
+	env.debugMode = stob(params["debug?"], env.debugMode);
 
 	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
 	env.params.userCropParameters.merge(cropj["CropParameters"]);
@@ -406,16 +401,42 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(Json cmj : cropj["cropRotation"].array_items())
 		env.cropRotation.push_back(cmj);
 
-	env.da = readClimateDataFromCSVFileViaHeaders(params["path-to-climate-csv"],
-	                                              ",",
-	                                              startDate,
-	                                              endDate);
+	//get no of climate file header lines from sim.json, but prefer from params map
+	auto climateDataSettings = simj["run-settings"]["climate-data"];
+	map<string, string> headerNames;
+	for(auto p : climateDataSettings["header-to-acd-names"].object_items())
+		headerNames[p.first] = p.second.string_value();
+
+	CSVViaHeaderOptions options;
+	options.separator = string_valueD(climateDataSettings, "csv-separator", ",");
+	options.noOfHeaderLines = size_t(int_valueD(climateDataSettings, "no-of-climate-file-header-lines", 2));
+	options.headerName2ACDName = headerNames;
+
+	//add start/end date to sim json object
+	options.startDate = Date(params["start-date"]);
+	options.endDate = Date(params["end-date"]);
+	if(!options.startDate.isValid())
+		set_iso_date_value(options.startDate, simj, "start-date");
+	if(!options.endDate.isValid())
+		set_iso_date_value(options.endDate, simj, "end-date");
+	cout << "startDate: " << options.startDate.toIsoDateString()
+	<< " endDate: " << options.endDate.toIsoDateString()
+	<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
+	<< endl;
+
+	env.da = readClimateDataFromCSVFileViaHeaders(params["path-to-climate-csv"], options);
 
 	if(!env.da.isValid())
 		return Env();
 
-	env.params.setWriteOutputFiles(true);
-	env.params.setPathToOutputDir(params["path-to-output"]);
+	bool writeOutputFiles = simj["run-settings"]["write-output-files?"].bool_value();
+	writeOutputFiles = stob(params["write-output-files?"], writeOutputFiles);
+	env.params.setWriteOutputFiles(writeOutputFiles);
+
+	string pathToOutputDir = simj["run-settings"]["path-to-output"].string_value();
+	if(!params["path-to-output"].empty())
+		pathToOutputDir = params["path-to-output"];
+	env.params.setPathToOutputDir(pathToOutputDir);
 
 	return env;
 }

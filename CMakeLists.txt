@@ -66,7 +66,7 @@ set(MONICA_SOURCE
 
     #src/run/monica-hermes-main.cpp
     #src/run/monica-landcare-dss-main.cpp
-    #src/run/monica-main.cpp
+    src/run/monica-main.cpp
     #src/run/monica-zmq-main.cpp
 
     src/run/run-monica-zmq.cpp
@@ -147,23 +147,25 @@ set(MONICA_SOURCE
     ${UTIL_DIR}/soil/soil-from-db.cpp
 
 
-    ${CARBIOCIAL_DIR}/monica/src/carbiocial.h
-    ${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp
+    #${CARBIOCIAL_DIR}/monica/src/carbiocial.h
+    #${CARBIOCIAL_DIR}/monica/src/carbiocial.cpp
     )
-
 
 find_package(Threads REQUIRED)
 
-#add_executable(monica ${SOURCE_FILES})
-#set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
-
-# create monica as shared library
-add_library(monica SHARED ${MONICA_SOURCE})
+add_executable(monica ${MONICA_SOURCE})
 target_link_libraries(monica
                       ${CMAKE_THREAD_LIBS_INIT}
                       dl)
-set_target_properties(monica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
+# create monica as shared library
+add_library(libmonica SHARED ${MONICA_SOURCE})
+target_link_libraries(libmonica
+                      ${CMAKE_THREAD_LIBS_INIT}
+                      dl)
+set_target_properties(libmonica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+set_target_properties(libmonica PROPERTIES PREFIX "")
 
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -172,18 +174,18 @@ find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 # create carbiocial monica wrapper library using monica lib
-set(CARBIOCIAL_PYTHON_WRAPPER_SOURCE
-    ../carbiocial-project/monica/src/carbiocial_py.cpp)
-add_library(carbiocial_py SHARED ${CARBIOCIAL_PYTHON_WRAPPER_SOURCE})
-target_link_libraries(carbiocial_py ${Boost_LIBRARIES} monica)
-set_target_properties(carbiocial_py PROPERTIES PREFIX "")
-set_target_properties(carbiocial_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+#set(CARBIOCIAL_PYTHON_WRAPPER_SOURCE
+#    ../carbiocial-project/monica/src/carbiocial_py.cpp)
+#add_library(carbiocial_py SHARED ${CARBIOCIAL_PYTHON_WRAPPER_SOURCE})
+#target_link_libraries(carbiocial_py ${Boost_LIBRARIES} monica)
+#set_target_properties(carbiocial_py PROPERTIES PREFIX "")
+#set_target_properties(carbiocial_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 # create monica python wrapper lib
 set(MONICA_PYTHON_WRAPPER_SOURCE
     src/python/monica_py.cpp)
 add_library(monica_py SHARED ${MONICA_PYTHON_WRAPPER_SOURCE})
-target_link_libraries(monica_py ${Boost_LIBRARIES} monica)
+target_link_libraries(monica_py ${Boost_LIBRARIES} libmonica)
 set_target_properties(monica_py PROPERTIES PREFIX "")
 set_target_properties(monica_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 

@@ -37,14 +37,10 @@ dict rm(dict params)
 	         [&](string key){ n2jos[key] = extract<string>(params[key]); });
 
 	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
-	env.params.setWriteOutputFiles(false);
-	activateDebug = true;
-
-	cout << "site.json: " << env.params.userEnvironmentParameters.toString() << endl;
+	activateDebug = env.debugMode;
 
 	auto res = Monica::runMonica(env);
 
-	cout << "after" << endl;
 	size_t ey = env.da.endDate().year();
 	dict d;
 	for (size_t i = 0, size = res.pvrs.size(); i < size; i++)

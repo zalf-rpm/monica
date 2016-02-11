@@ -80,6 +80,7 @@ namespace Monica
 //    std::string outputDatastreamHost;
     std::string outputDatastreamPort;
 
+		bool debugMode{false};
   private:
     //! Variable for differentiate betweend execution modes of MONICA
     int mode{MODE_LC_DSS};

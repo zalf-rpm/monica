@@ -178,9 +178,12 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	pout.open(fixSystemSeparator(env.params.pathToOutputDir() + "/" + fileName));
+	pout.open(ensureDirExists(env.params.pathToOutputDir()) + fileName);
 	if(pout.fail())
-		exit(1);
+	{
+		cerr << "Error couldn't open file: '" << env.params.pathToOutputDir() + "/" + fileName << "'." << endl;
+		return;
+	}
 	pout << "{" << endl;
 	auto cropPs = env.params.userCropParameters.to_json().dump();
 	pout << "\"userCropParameters\":" << endl << cropPs << "," << endl;
@@ -255,19 +258,19 @@ Result Monica::runMonica(Env env)
 	if(env.params.writeOutputFiles())
 	{
 		// open rmout.dat
-		debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv").c_str() << endl;
-		fout.open((env.params.pathToOutputDir() + pathSeparator() + "rmout.csv").c_str());
+		debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << endl;
+		fout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
 		if(fout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv").c_str() << "\"" << endl;
+			cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
 			return res;
 		}
 
 		// open smout.dat
-		gout.open((env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str());
+		gout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
 		if(gout.fail())
 		{
-			debug() << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
+			cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
 			return res;
 		}
 
@@ -1597,10 +1600,10 @@ Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaMode
 void Monica::dumpMonicaParametersIntoFile(std::string path, CentralParameterProvider &cpp)
 {
 	ofstream parameter_output_file;
-	parameter_output_file.open((path + "/monica_parameters.txt").c_str());
+	parameter_output_file.open(ensureDirExists(path) + "/monica_parameters.txt");
 	if(parameter_output_file.fail())
 	{
-		debug() << "Could not write file\"" << (path + "/monica_parameters.txt").c_str() << "\"" << endl;
+		cerr << "Could not write file\"" << (path + "/monica_parameters.txt") << "\"" << endl;
 		return;
 	}
 	//double po_AtmosphericResistance; //0.0025 [s m-1], from Sadeghi et al. 1988

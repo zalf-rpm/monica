@@ -30,7 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-file-io.h"
 #include "../core/simulation.h"
 #include "soil/conversion.h"
-#include "env-from-json-files.h"
+#include "env-from-json.h"
 
 using namespace std;
 using namespace Monica;
@@ -68,16 +68,19 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
-	if(argc > 1)// && false)
+	if(argc >= 1)// && false)
 	{
-		map<string, string> params;
-		if((argc - 1) % 2 == 0)
-			for(int i = 1; i < argc; i += 2)
-				params[toLower(argv[i])] = argv[i + 1];
-		else
-			return 1;
+		string pathToSimJson = "./sim.json";
+		if(argc >= 2)
+			pathToSimJson = argv[1];
 
-		activateDebug = stob(params["debug?:"], false);
+		map<string, string> params;
+		if(argc > 2)
+		{
+			int rem = (argc - 2) % 2;
+			for (int i = 2; i < (argc - rem); i += 2)
+				params[toLower(argv[i])] = argv[i + 1];
+		}
 
 		if(params["mode:"] == "hermes")
 		{
@@ -87,38 +90,45 @@ int main(int argc, char** argv)
 		}
 		else
 		{
+			auto simj = parseJsonString(readFile(pathToSimJson));
+			auto simm = simj.object_items();
+
+			if(!params["start-date:"].empty())
+				simm["start-date"] = params["start-date:"];
+
+			if(!params["end-date:"].empty())
+				simm["end-date"] = params["end-date:"];
+
+			if(!params["debug?:"].empty())
+				simm["debug?"] = params["debug?:"];
+
+			if(!params["write-output-files?:"].empty())
+				simm["write-output-files?"] = params["write-output-files?:"];
+
+			if(!params["path-to-output:"].empty())
+				simm["path-to-output"] = params["path-to-output:"];
+
+			simm["sim.json"] = pathToSimJson;
+
+			if(!params["crop:"].empty())
+				simm["crop.json"] = params["crop:"];
+
+			if(!params["site:"].empty())
+				simm["site.json"] = params["site:"];
+
+			if(!params["climate:"].empty())
+				simm["climate.csv"] = params["climate:"];
+
 			map<string, string> ps;
-			ps["start-date"] = params["start-date:"];
-			ps["end-date"] = params["end-date:"];
-			ps["path-to-output"] = params["output:"];
-
-			auto path = params["path:"];
-			auto projectName = params["project:"];
-			if(!projectName.empty())
-				projectName += ".";
-
-			auto names2suffixes = {"crop", "site", "sim"};
-			for(auto name : names2suffixes)
-			{
-				auto p = params[name + ":"];
-				auto path = p.empty() ? path + "/" + projectName + name + ".json" : p;
-				ps[name + "-json-str"] = readFile(path);
-			}
-
-			auto p = params["climate:"];
-			ps["path-to-climate-csv"] = p.empty() ? path + "/" + projectName + "climate.csv" : p;
-
-			cout << "starting MONICA with JSON input files: " << endl;
-			cout << "\tstartDate: " << (ps.startDate.isValid() ? ps.startDate.toIsoDateString() : "all") << endl;
-			cout << "\tendDate: " << (ps.endDate.isValid() ? ps.endDate.toIsoDateString() : "all") << endl;
-			for(auto n2s : names2suffixes)
-			{
-				auto name = n2s.first;
-				cout << "\t" << name << "." << n2s.second << ": " << ps.name2path[name] << endl;
-			}
-			cout << endl;
+			ps["sim-json-str"] = json11::Json(simm).dump();
+			ps["crop-json-str"] = readFile(simm["crop.json"].string_value());
+			ps["site-json-str"] = readFile(simm["site.json"].string_value());
+			ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
 			auto env = createEnvFromJsonConfigFiles(ps);
+			activateDebug = env.debugMode;
+
+			cout << "starting MONICA with JSON input files" << endl;
 			auto res = runMonica(env);
 			cout << "finished MONICA" << endl;
 		}
