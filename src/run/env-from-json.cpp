@@ -381,8 +381,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	Env env;
 
 	//store debug mode in env, take from sim.json, but prefer params map
-	env.debugMode = simj["run-settings"]["debug?"].bool_value();
-	env.debugMode = stob(params["debug?"], env.debugMode);
+	env.debugMode = simj["debug?"].bool_value();
 
 	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
 	env.params.userCropParameters.merge(cropj["CropParameters"]);
@@ -402,7 +401,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 		env.cropRotation.push_back(cmj);
 
 	//get no of climate file header lines from sim.json, but prefer from params map
-	auto climateDataSettings = simj["run-settings"]["climate-data"];
+	auto climateDataSettings = simj["climate.csv-options"];
 	map<string, string> headerNames;
 	for(auto p : climateDataSettings["header-to-acd-names"].object_items())
 		headerNames[p.first] = p.second.string_value();
@@ -413,30 +412,21 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	options.headerName2ACDName = headerNames;
 
 	//add start/end date to sim json object
-	options.startDate = Date(params["start-date"]);
-	options.endDate = Date(params["end-date"]);
-	if(!options.startDate.isValid())
-		set_iso_date_value(options.startDate, simj, "start-date");
-	if(!options.endDate.isValid())
-		set_iso_date_value(options.endDate, simj, "end-date");
+	set_iso_date_value(options.startDate, simj, "start-date");
+	set_iso_date_value(options.endDate, simj, "end-date");
 	cout << "startDate: " << options.startDate.toIsoDateString()
 	<< " endDate: " << options.endDate.toIsoDateString()
 	<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
 	<< endl;
 
-	env.da = readClimateDataFromCSVFileViaHeaders(params["path-to-climate-csv"], options);
+	env.da = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+	                                              options);
 
 	if(!env.da.isValid())
 		return Env();
 
-	bool writeOutputFiles = simj["run-settings"]["write-output-files?"].bool_value();
-	writeOutputFiles = stob(params["write-output-files?"], writeOutputFiles);
-	env.params.setWriteOutputFiles(writeOutputFiles);
-
-	string pathToOutputDir = simj["run-settings"]["path-to-output"].string_value();
-	if(!params["path-to-output"].empty())
-		pathToOutputDir = params["path-to-output"];
-	env.params.setPathToOutputDir(pathToOutputDir);
+	env.params.setWriteOutputFiles(simj["write-output-files?"].bool_value());
+	env.params.setPathToOutputDir(simj["path-to-output"].string_value());
 
 	return env;
 }

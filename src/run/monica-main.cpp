@@ -90,6 +90,9 @@ int main(int argc, char** argv)
 		}
 		else
 		{
+			auto pathAndFile = splitPathToFile(pathToSimJson);
+			auto pathOfSimJson = pathAndFile.first;
+
 			auto simj = parseJsonString(readFile(pathToSimJson));
 			auto simm = simj.object_items();
 
@@ -100,10 +103,11 @@ int main(int argc, char** argv)
 				simm["end-date"] = params["end-date:"];
 
 			if(!params["debug?:"].empty())
-				simm["debug?"] = params["debug?:"];
+				simm["debug?"] = stob(params["debug?:"], simm["debug?"].bool_value());
 
 			if(!params["write-output-files?:"].empty())
-				simm["write-output-files?"] = params["write-output-files?:"];
+				simm["write-output-files?"] = stob(params["write-output-files?:"],
+				                                   simm["write-output-files?"].bool_value());
 
 			if(!params["path-to-output:"].empty())
 				simm["path-to-output"] = params["path-to-output:"];
@@ -112,12 +116,21 @@ int main(int argc, char** argv)
 
 			if(!params["crop:"].empty())
 				simm["crop.json"] = params["crop:"];
+			auto pathToCropJson = simm["crop.json"].string_value();
+			if(!isAbsolutePath(pathToCropJson))
+				simm["crop.json"] = pathOfSimJson + pathToCropJson;
 
 			if(!params["site:"].empty())
 				simm["site.json"] = params["site:"];
+			auto pathToSiteJson = simm["site.json"].string_value();
+			if(!isAbsolutePath(pathToSiteJson))
+				simm["site.json"] = pathOfSimJson + pathToSiteJson;
 
 			if(!params["climate:"].empty())
 				simm["climate.csv"] = params["climate:"];
+			auto pathToClimateCSV = simm["climate.csv"].string_value();
+			if(!isAbsolutePath(pathToClimateCSV))
+				simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
 
 			map<string, string> ps;
 			ps["sim-json-str"] = json11::Json(simm).dump();
