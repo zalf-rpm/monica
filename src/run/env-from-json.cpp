@@ -46,8 +46,7 @@ Json Monica::parseJsonString(string jsonString)
 	string err;
 	Json j = Json::parse(jsonString, err);
 	if(!err.empty())
-		cerr << "Error parsing json object string: " << jsonString << endl
-		<< "error: " << err << endl;
+		cerr << "Error parsing json object string: " << jsonString << err << endl;
 
 	return j;
 }
@@ -277,12 +276,17 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 		return make_pair(j, false);
 	};
 
-	auto fromFile = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto fromFile = [](const Json& root, const Json& j) -> pair<Json, bool>
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
 		{
-			auto jo = readAndParseJsonFile(j[1].string_value());
+			string basePath = string_valueD(root, "base-path", ".");
+			string pathToFile = j[1].string_value();
+			pathToFile = isAbsolutePath(pathToFile)
+			             ? pathToFile
+			             : basePath + "/" + pathToFile;
+			auto jo = readAndParseJsonFile(pathToFile);
 			if(!jo.is_null())
 				return make_pair(jo, true);
 		}

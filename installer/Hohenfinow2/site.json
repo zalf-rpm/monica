@@ -1,4 +1,5 @@
 {
+  "base-path": "/home/mib/development/github/zalf-lsa/",
   "SiteParameters": {
     "Latitude": 52.80939865112305,
     "Slope": 0,
@@ -26,13 +27,13 @@
       }
     ]
   },
-  "SoilTemperatureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-temperature.json"],
+  "SoilTemperatureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-temperature.json"],
   "EnvironmentParameters": {
-    "DEFAULT": ["include-from-file", "../monica-parameters/user-parameters/hermes-environment.json"],
+    "DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-environment.json"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
   },
-  "SoilOrganicParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-organic.json"],
-  "SoilTransportParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-transport.json"],
-  "SoilMoistureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-moisture.json"]
+  "SoilOrganicParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-organic.json"],
+  "SoilTransportParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-transport.json"],
+  "SoilMoistureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-moisture.json"]
 }
