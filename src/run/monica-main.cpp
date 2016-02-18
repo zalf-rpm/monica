@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 			ps["sim-json-str"] = json11::Json(simm).dump();
 			ps["crop-json-str"] = readFile(simm["crop.json"].string_value());
 			ps["site-json-str"] = readFile(simm["site.json"].string_value());
-			ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
+			//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
 			auto env = createEnvFromJsonConfigFiles(ps);
 			activateDebug = env.debugMode;

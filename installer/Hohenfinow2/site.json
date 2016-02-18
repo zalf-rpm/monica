@@ -6,7 +6,7 @@
     "NDeposition": 30,
     "SoilProfileParameters": [
       {
-        "Thickness": 0.3,
+        "Thickness": [0.3, "m"],
         "SoilOrganicCarbon": [0.8, "%"],
         "KA5TextureClass": "Sl2",
         "SoilRawDensity": ["ld_eff2trd", 2, ["KA5TextureClass2clay", "Sl2"]],
@@ -36,4 +36,3 @@
   "SoilTransportParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-transport.json"],
   "SoilMoistureParameters": ["include-from-file", "../monica-parameters/user-parameters/hermes-soil-moisture.json"]
 }
-
