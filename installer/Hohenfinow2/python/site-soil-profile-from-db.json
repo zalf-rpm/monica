@@ -1,0 +1,19 @@
+{
+	"base-path": "/home/mib/development/github/zalf-lsa/",
+	"SiteParameters": {
+		"Latitude": 52.80939865112305,
+		"Slope": 0,
+		"HeightNN": [0 , "m"],
+		"NDeposition": 30,
+		"SoilProfileParameters": ["include-from-db", {"db": "carbiocial", "type": "soil-profile", "id": 1234}]
+	},
+	"SoilTemperatureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-temperature.json"],
+	"EnvironmentParameters": {
+		"DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-environment.json"],
+		"LeachingDepth": [2.0, "m"],
+		"WindSpeedHeight": [2.5, "m"]
+	},
+	"SoilOrganicParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-organic.json"],
+	"SoilTransportParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-transport.json"],
+	"SoilMoistureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-moisture.json"]
+}
