@@ -390,18 +390,30 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
  *
  * @param output_path Path to input and output files
  */
-Monica::Result Monica::runWithHermesData(const std::string& output_path)
+Monica::Result Monica::runWithHermesData(const std::string& output_path, bool debug_)
 {
-	Tools::activateDebug = true;
+	Tools::activateDebug = debug_;
 
 	debug() << "Running hermes with configuration information from \"" << output_path.c_str() << "\"" << endl;
 
-	HermesSimulationConfiguration *hermes_config = getHermesConfigFromIni(output_path);
+	HermesSimulationConfiguration* hermes_config = getHermesConfigFromIni(output_path);
 
-	const Monica::Result result = runWithHermesData(hermes_config);
+	auto res = runWithHermesData(hermes_config, debug_);
 
 	delete hermes_config;
-	return result;
+
+	if(activateDebug)
+	{
+		size_t ey = res.pvrs.size();
+		for (size_t i = 0, size = res.pvrs.size(); i < size; i++)
+		{
+			size_t year = ey - size + 1 + i;
+			double yield = res.pvrs[i].results[primaryYieldTM] / 10.0;
+			cout << "year: " << year << " yield: " << yield << " tTM" << endl;
+		}
+	}
+
+	return res;
 }
 
 
@@ -518,9 +530,9 @@ Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::strin
  * @param hermes_config
  */
 const Monica::Result
-Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config)
+Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config, bool debug_)
 {
-	Tools::activateDebug = true;
+	Tools::activateDebug = debug_;
 
 	Env env = getHermesEnvFromConfiguration(hermes_config);
 

@@ -84,9 +84,14 @@ int main(int argc, char** argv)
 
 		if(params["mode:"] == "hermes")
 		{
-			cout << "starting MONICA with old HERMES input files" << endl;
-			Monica::runWithHermesData(fixSystemSeparator(params["path:"]));
-			cout << "finished MONICA" << endl;
+			bool debug = stob(params["debug?:"], false);
+			if(debug)
+				cout << "starting MONICA with old HERMES input files" << endl;
+
+			Monica::runWithHermesData(fixSystemSeparator(pathToSimJson), debug);
+
+			if(debug)
+				cout << "finished MONICA" << endl;
 		}
 		else
 		{
@@ -141,9 +146,13 @@ int main(int argc, char** argv)
 			auto env = createEnvFromJsonConfigFiles(ps);
 			activateDebug = env.debugMode;
 
-			cout << "starting MONICA with JSON input files" << endl;
+			if(activateDebug)
+				cout << "starting MONICA with JSON input files" << endl;
+
 			auto res = runMonica(env);
-			cout << "finished MONICA" << endl;
+
+			if(activateDebug)
+				cout << "finished MONICA" << endl;
 		}
 	}
 	

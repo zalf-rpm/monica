@@ -22,6 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/date.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
+#include "core/simulation.h"
 
 using namespace boost::python;
 
@@ -53,6 +54,24 @@ dict rm(dict params)
 	return d;
 }
 
+dict rhm(string path, bool debug)
+{
+	auto res = runWithHermesData(path, debug);
+
+	size_t ey = res.pvrs.size();
+	dict d;
+	for (size_t i = 0, size = res.pvrs.size(); i < size; i++)
+	{
+		size_t year = ey - size + 1 + i;
+		double yield = res.pvrs[i].results[primaryYieldTM] / 10.0;
+		//cout << "year: " << year << " yield: " << yield << " tTM" << endl;
+		d[year] = Tools::round(yield, 3);
+	}
+	return d;
+}
+
+dict rhmnd(string path){ return rhm(path, false); }
+dict rhmd(string path){ return rhm(path, true); }
 
 BOOST_PYTHON_MODULE(monica_py)
 {
@@ -76,4 +95,6 @@ BOOST_PYTHON_MODULE(monica_py)
       */
 
   def("runMonica", rm);
+	def("runHermesMonica", rhmnd);
+  def("runHermesMonicaD", rhmd);
 }

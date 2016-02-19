@@ -448,9 +448,9 @@ namespace Monica
 	const Monica::Result runGISSimulation(const GISSimulationConfiguration *simulation_config = 0);
 #endif
 
-	const Monica::Result runWithHermesData(HermesSimulationConfiguration *hermes_config = 0);
+	const Monica::Result runWithHermesData(HermesSimulationConfiguration *hermes_config = 0, bool debug = true);
 
-	Monica::Result runWithHermesData(const std::string& output_path);
+	Monica::Result runWithHermesData(const std::string& output_path, bool debug = true);
 
 	HermesSimulationConfiguration * getHermesConfigFromIni(std::string output_path);
 	Monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
