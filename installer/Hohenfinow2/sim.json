@@ -1,17 +1,13 @@
 {
 	"crop.json": "crop.json",
 	"site.json": "site.json",
-	"climate.csv": "/home/mib/archiv-berg/carbiocial/climate-data-years-1981-2012-rows-0-2544/row-0/col-0.asc",
+	"climate.csv": "climate.csv",
 
 	"climate.csv-options": {
 		"no-of-climate-file-header-lines": 1,
 		"csv-separator": ",",
 		"header-to-acd-names": {
-			"day": "skip",
-			"month": "skip",
-			"year": "skip",
-			"date": "de-date",
-			"windspeed": "wind"
+			"DE-date": "de-date"
 		}
 	},
 
