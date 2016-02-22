@@ -62,6 +62,8 @@ void writeDbParams()
 
 int main(int argc, char** argv)
 {
+	string monicaVersion = "2.1";
+
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 
@@ -70,21 +72,63 @@ int main(int argc, char** argv)
 
 	if(argc >= 1)// && false)
 	{
-		string pathToSimJson = "./sim.json";
-		if(argc >= 2)
-			pathToSimJson = argv[1];
+		bool debug = false, debugSet = false;
+		string startDate, endDate;
+		bool writeOutputFiles = false, writeOutputFilesSet = false;
+		string pathToOutput;
+		bool hermesMode = false;
+		string pathToSimJson = "./sim.json",crop, site, climate;
 
-		map<string, string> params;
-		if(argc > 2)
+		for(auto i = 1; i < argc; i++)
 		{
-			int rem = (argc - 2) % 2;
-			for (int i = 2; i < (argc - rem); i += 2)
-				params[toLower(argv[i])] = argv[i + 1];
+			string arg = argv[i];
+			if(arg == "-d" || arg == "--debug")
+				debug = debugSet = true;
+			else if(arg == "--hermes")
+				hermesMode = true;
+			else if((arg == "-s" || arg == "--start-date")
+			        && i+1 < argc)
+				startDate = argv[++i];
+			else if((arg == "-e" || arg == "--end-date")
+			        && i+1 < argc)
+				startDate = argv[++i];
+			else if(arg == "-w" || arg == "--write-output-files")
+				writeOutputFiles = writeOutputFilesSet = true;
+			else if((arg == "-o" || arg == "--path-to-output")
+			        && i+1 < argc)
+				pathToOutput = argv[++i];
+			else if((arg == "-c" || arg == "--path-to-crop")
+			        && i+1 < argc)
+				crop = argv[++i];
+			else if((arg == "-s" || arg == "--path-to-site")
+			        && i+1 < argc)
+				site = argv[++i];
+			else if((arg == "-cl" || arg == "--path-to-climate")
+			        && i+1 < argc)
+				climate = argv[++i];
+			else if(arg == "-h" || arg == "--help")
+			{
+				cout << "./monica [-d | --debug]\t\t\t ... show debug outputs" << endl
+				<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
+				<< "\t [-s | --start-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+				<< "\t [-e | --end-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+				<< "\t [-w | --write-output-files]\t ... write MONICA output files (rmout, smout)" << endl
+				<< "\t [-o | --path-to-output]\t ... path to output directory" << endl
+				<< "\t [-c | --path-to-crop]\t\t ... path to crop.json file" << endl
+				<< "\t [-s | --path-to-site]\t\t ... path to site.json file" << endl
+				<< "\t [-w | --path-to-climate]\t ... path to climate.csv" << endl
+				<< "\t [-h | --help]\t\t\t ... this help output" << endl
+				<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl;
+			  exit(0);
+			}
+			else if(arg == "-v" || arg == "--version")
+				cout << "MONICA version " << monicaVersion << endl, exit(0);
+			else
+				pathToSimJson = argv[i];
 		}
 
-		if(params["mode:"] == "hermes")
+		if(hermesMode)
 		{
-			bool debug = stob(params["debug?:"], false);
 			if(debug)
 				cout << "starting MONICA with old HERMES input files" << endl;
 
@@ -101,38 +145,37 @@ int main(int argc, char** argv)
 			auto simj = parseJsonString(readFile(pathToSimJson));
 			auto simm = simj.object_items();
 
-			if(!params["start-date:"].empty())
-				simm["start-date"] = params["start-date:"];
+			if(!startDate.empty())
+				simm["start-date"] = startDate;
 
-			if(!params["end-date:"].empty())
-				simm["end-date"] = params["end-date:"];
+			if(!endDate.empty())
+				simm["end-date"] = endDate;
 
-			if(!params["debug?:"].empty())
-				simm["debug?"] = stob(params["debug?:"], simm["debug?"].bool_value());
+			if(debugSet)
+				simm["debug?"] = debug;
 
-			if(!params["write-output-files?:"].empty())
-				simm["write-output-files?"] = stob(params["write-output-files?:"],
-				                                   simm["write-output-files?"].bool_value());
+			if(writeOutputFilesSet)
+				simm["write-output-files?"] = writeOutputFiles;
 
-			if(!params["path-to-output:"].empty())
-				simm["path-to-output"] = params["path-to-output:"];
+			if(!pathToOutput.empty())
+				simm["path-to-output"] = pathToOutput;
 
 			simm["sim.json"] = pathToSimJson;
 
-			if(!params["crop:"].empty())
-				simm["crop.json"] = params["crop:"];
+			if(!crop.empty())
+				simm["crop.json"] = crop;
 			auto pathToCropJson = simm["crop.json"].string_value();
 			if(!isAbsolutePath(pathToCropJson))
 				simm["crop.json"] = pathOfSimJson + pathToCropJson;
 
-			if(!params["site:"].empty())
-				simm["site.json"] = params["site:"];
+			if(!site.empty())
+				simm["site.json"] = site;
 			auto pathToSiteJson = simm["site.json"].string_value();
 			if(!isAbsolutePath(pathToSiteJson))
 				simm["site.json"] = pathOfSimJson + pathToSiteJson;
 
-			if(!params["climate:"].empty())
-				simm["climate.csv"] = params["climate:"];
+			if(!climate.empty())
+				simm["climate.csv"] = climate;
 			auto pathToClimateCSV = simm["climate.csv"].string_value();
 			if(!isAbsolutePath(pathToClimateCSV))
 				simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
