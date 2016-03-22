@@ -1,5 +1,5 @@
 {
-	"base-path": "/home/mib/development/github/zalf-lsa/",
+	"_base-path": "../",
 	"crops": {
 		"WR": {
 			"cropParams": {

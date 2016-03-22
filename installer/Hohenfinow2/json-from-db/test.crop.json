@@ -1,4 +1,5 @@
 {
+	"_base-path": "../",
   "crops": {
     "WR": { 
       "cropParams": ["include-from-db", {"db": "monica", "type": "crop", "species": "rye", "cultivar": "winter rye"}],

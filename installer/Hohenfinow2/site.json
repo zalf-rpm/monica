@@ -1,5 +1,5 @@
 {
-  "base-path": "/home/mib/development/github/zalf-lsa/",
+  "_base-path": "../",
   "SiteParameters": {
     "Latitude": 52.80939865112305,
     "Slope": 0,
