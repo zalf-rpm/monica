@@ -160,8 +160,8 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	;Create shortcuts
 	CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
 	SetOutPath "$PROFILE\MONICA"
-	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true project: test path: Examples\Hohenfinow2\json-from-db"
-	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "debug?: true path: Examples\Hohenfinow2"
+	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk" "$INSTDIR\monica.exe" "--debug Examples\Hohenfinow2\sim.json"
+	CreateShortCut "$DESKTOP\MONICA.lnk" "$INSTDIR\monica.exe" "--debug Examples\Hohenfinow2\sim.json"
 	
 	SetOutPath "$INSTDIR"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
