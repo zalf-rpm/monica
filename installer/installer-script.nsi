@@ -18,6 +18,8 @@
 
 	!define VCversion "14"
 
+	!define ParamsRepoDir "..\..\monica-parameters"
+	
 ;--------------------------------
 ;General
 
@@ -111,7 +113,17 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   SetOutPath "$PROFILE\MONICA\sqlite-db"
   File "..\sqlite-db\monica.sqlite"
 	File "..\sqlite-db\ka5-soil-data.sqlite"
-  	
+
+	;create parameter directories
+  CreateDirectory "$PROFILE\MONICA\monica-parameters"
+	;the json version files with name name convention
+	SetOutPath "$PROFILE\MONICA\monica-parameters"
+	File /r "${ParamsRepoDir}\crop-residues"
+	File /r "${ParamsRepoDir}\crops"
+	File /r "${ParamsRepoDir}\mineral-fertilisers"
+	File /r "${ParamsRepoDir}\organic-fertilisers"
+	File /r "${ParamsRepoDir}\user-parameters"
+		
 	;the example directory
   CreateDirectory "$PROFILE\MONICA\Examples\Hohenfinow2"
 	;the json version files with name name convention
