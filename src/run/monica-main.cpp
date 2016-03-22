@@ -118,7 +118,8 @@ int main(int argc, char** argv)
 				<< "\t [-s | --path-to-site]\t\t ... path to site.json file" << endl
 				<< "\t [-w | --path-to-climate]\t ... path to climate.csv" << endl
 				<< "\t [-h | --help]\t\t\t ... this help output" << endl
-				<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl;
+				<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl
+					<< "\t path-to-sim-json ... path to sim.json file" << endl;
 			  exit(0);
 			}
 			else if(arg == "-v" || arg == "--version")
