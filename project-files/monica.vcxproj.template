@@ -139,6 +139,7 @@
     <ClInclude Include="..\..\util\json11\json11.hpp" />
     <ClInclude Include="..\..\util\soil\constants.h" />
     <ClInclude Include="..\..\util\soil\conversion.h" />
+    <ClInclude Include="..\..\util\soil\soil-from-db.h" />
     <ClInclude Include="..\..\util\soil\soil.h" />
     <ClInclude Include="..\..\util\tools\algorithms.h" />
     <ClInclude Include="..\..\util\tools\datastructures.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="..\src\io\file-io.h" />
     <ClInclude Include="..\src\io\hermes-file-io.h" />
     <ClInclude Include="..\src\run\cultivation-method.h" />
+    <ClInclude Include="..\src\run\env-from-json.h" />
     <ClInclude Include="..\src\run\run-monica-zmq.h" />
     <ClInclude Include="..\src\run\run-monica.h" />
   </ItemGroup>
@@ -175,6 +177,7 @@
     <ClCompile Include="..\..\util\json11\json11.cpp" />
     <ClCompile Include="..\..\util\soil\constants.cpp" />
     <ClCompile Include="..\..\util\soil\conversion.cpp" />
+    <ClCompile Include="..\..\util\soil\soil-from-db.cpp" />
     <ClCompile Include="..\..\util\soil\soil.cpp" />
     <ClCompile Include="..\..\util\tools\algorithms.cpp" />
     <ClCompile Include="..\..\util\tools\date.cpp" />
@@ -188,6 +191,7 @@
     <ClCompile Include="..\src\io\database-io.cpp" />
     <ClCompile Include="..\src\io\file-io.cpp" />
     <ClCompile Include="..\src\io\hermes-file-io.cpp" />
+    <ClCompile Include="..\src\run\env-from-json.cpp" />
     <ClCompile Include="..\src\run\monica-main.cpp" />
     <ClCompile Include="..\src\core\monica-parameters.cpp" />
     <ClCompile Include="..\src\core\monica.cpp" />

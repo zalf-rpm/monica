@@ -171,6 +171,12 @@
     <ClInclude Include="..\..\util\climate\climate-file-io.h">
       <Filter>Headerdateien\climate</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\util\soil\soil-from-db.h">
+      <Filter>Headerdateien\soil</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\run\env-from-json.h">
+      <Filter>Headerdateien\monica\run</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\util\db\sqlite3.c">
@@ -270,6 +276,12 @@
       <Filter>Quelldateien\climate</Filter>
     </ClCompile>
     <ClCompile Include="..\src\run\monica-main.cpp">
+      <Filter>Quelldateien\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util\soil\soil-from-db.cpp">
+      <Filter>Quelldateien\soil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\run\env-from-json.cpp">
       <Filter>Quelldateien\monica\run</Filter>
     </ClCompile>
   </ItemGroup>
