@@ -127,13 +127,8 @@ namespace Voc
 		int id{0};
 
 		//common
-		//<par name="EF_MONOS" value="0.0" comments="no monoterpene emitter"/>
 		double EF_MONOS{0.0};
-
-		//<par name="EF_MONO" value="0.0" comments="no monoterpene emitter"/>
 		double EF_MONO{0.0};
-
-
 		double EF_ISO{0.0};
 
 		//double SCALE_I{1.0};
@@ -141,18 +136,18 @@ namespace Voc
 
 		// species and canopy layer specific foliage biomass(dry weight).
 		// physiology  mFol_vtfl  mFol_vtfl  double  V : F  0.0  kg : m^-2
-		std::map<std::size_t, double> phys_mFol_vtfl; //!< foliage mass
+		double mFol; //!< foliage mass
 
 		//std::map<std::size_t, double> phys_isoAct_vtfl; 
 		//std::map<std::size_t, double> phys_monoAct_vtfl;
 		
 		// species specific leaf area index.
 		//physiology  lai_vtfl  lai_vtfl  double  V : F  0.0  m ^ 2 : m^-2
-		std::map<std::size_t, double> phys_lai_vtfl; //!< LAI
+		double lai; //!< LAI
 
 		// specific foliage area (m2 kgDW-1).
 		//vegstructure  specific_foliage_area sla_vtfl  double  V : F  0.0  m ^ 2 : g : 10 ^ -3
-		std::map<std::size_t, double> vs_sla_vtfl; //!< specific leaf area (pc_SpecificLeafArea / cps.cultivarParams.pc_SpecificLeafArea)
+		double sla; //!< specific leaf area (pc_SpecificLeafArea / cps.cultivarParams.pc_SpecificLeafArea)
 
 		//jjv
 		double THETA{0.0};
@@ -168,31 +163,31 @@ namespace Voc
 
 		// leaf internal O2 concentration per canopy layer(umol m - 2)
 		//	physiology  oi_vtfl  oi_vtfl  double  V : F  210.0  mol : 10 ^ -6 : m^-2
-		std::map<std::size_t, double> phys_oi_vtfl; //!< leaf internal O2 concentration
+		double internalO2concentration; //!< leaf internal O2 concentration
 		
 		// Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		// physiology  ko_vtfl  ko_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
-		std::map<std::size_t, double>	phys_ko_vtfl; //!< michaelis-menten constant for O2 reactions
+		double ko; 
 
 		// actual electron transport capacity per canopy layer(umol m - 2 s - 1)
 		// physiology  jMax_vtfl  jMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
-		std::map<std::size_t, double>	phys_jMax_vtfl; //!< rate of electron transport when light saturated (stomata
+		double jMax; 
 
 		// species and layer specific intercellular concentration of CO2 (umol mol-1)
     // physiology  ci_vtfl  ci_vtfl  double  V : F  350.0  mol : 10 ^ -6 : m^-2
-		std::map<std::size_t, double>	phys_ci_vtfl; //!< 
+		double intercellularCO2concentration; //!< 
 		
 		// actual activity state of rubisco  per canopy layer (umol m-2 s-1)
 		// physiology  vcMax_vtfl  vcMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
-		std::map<std::size_t, double>	phys_vcMax_vtfl;
+		double vcMax;
 		
 		// CO2 compensation point at 25oC per canopy layer (umol m-2)
 		// physiology  comp_vtfl  comp_vtfl  double  V : F  30.0  mol : 10 ^ -6 : m^-2
-		std::map<std::size_t, double> phys_comp_vtfl;
+		double CO2compensationPointAt25DegC;
 		
 		// Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		// physiology  kc_vtfl  kc_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
-		std::map<std::size_t, double> phys_kc_vtfl;
+		double kc;
 	};
 
 	//----------------------------------------------------------------------------
@@ -200,28 +195,28 @@ namespace Voc
 	struct MicroClimateData
 	{
 		//common
-		std::map<std::size_t, double> rad_fl; //!< radiation 
-		std::map<std::size_t, double> rad24_fl; //!< radiation last 24 hours
-		std::map<std::size_t, double> rad240_fl; //!< radiation last 240 hours
-		std::map<std::size_t, double> tFol_fl; //!< foliage temperature 
-		std::map<std::size_t, double> tFol24_fl; //!< foliage temperature last 24 hours
-		std::map<std::size_t, double> tFol240_fl; //!< foliage temperature last 240 hours
+		double rad; //!< radiation 
+		double rad24; //!< radiation last 24 hours
+		double rad240; //!< radiation last 240 hours
+		double tFol; //!< foliage temperature 
+		double tFol24; //!< foliage temperature last 24 hours
+		double tFol240; //!< foliage temperature last 240 hours
 
 		//jjv
 		// fraction of sunlit foliage over the past 24 hours per canopy layer
 		// microclimate  sunlitfoliagefraction24_fl  sunlitfoliagefraction24_fl  double  F  0.0 ?
-		std::map<std::size_t, double> sunlitfoliagefraction24_fl; 
+		double sunlitfoliagefraction24;
 	};
 
 	//----------------------------------------------------------------------------
 
 	struct Emissions
 	{
-		std::map<int, std::map<std::size_t, double>> speciesId2phys_ts_isoprene_emission_vtfl;
-		std::map<int, std::map<std::size_t, double>> speciesId2phys_ts_monoterpene_emission_vtfl;
+		std::map<int, double> speciesId_2_isoprene_emission;
+		std::map<int, double> speciesId_2_monoterpene_emission;
 
-		double phys_ts_isoprene_emission{0.0}; //!< isoprene emissions per timestep
-		double phys_ts_monoterpene_emission{0.0}; //!< monoterpene emissions per timestep
+		double isoprene_emission{0.0}; //!< isoprene emissions per timestep
+		double monoterpene_emission{0.0}; //!< monoterpene emissions per timestep
 	};
 
 	//----------------------------------------------------------------------------
