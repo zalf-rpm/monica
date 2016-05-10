@@ -32,8 +32,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  *    felix wiß (fw)
  */
 
-#ifndef  LDNDC_MOD_PHYSIOLOGY_VOCJJV_H_
-#define  LDNDC_MOD_PHYSIOLOGY_VOCJJV_H_
+#ifndef  VOC_JJV_H_
+#define  VOC_JJV_H_
 
 #include <vector>
 
@@ -41,9 +41,18 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Voc
 {
-	Emissions calculateJJVVOCEmissions(std::vector<SpeciesData> sds,
-																		 const MicroClimateData& mcd,
-																		 double day_fraction);
+	Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+																										const MicroClimateData& mcd,
+																										double dayFraction = 1.0,
+																										bool calculateParTempTerm = false);
+
+	inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
+																						const MicroClimateData& mcd,
+																						double dayFraction = 1.0,
+																						bool calculateParTempTerm = false)
+	{
+		return calculateJJVVOCEmissionsMultipleSpecies({sd}, mcd, dayFraction, calculateParTempTerm);
+	}
 
 	//this->get_option< bool >( "CalcParTempDependence", false);
 	LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
@@ -53,7 +62,8 @@ namespace Voc
 																 bool calculateParTempTerm = false);
 
 	double gamma_PH(const leaf_emission_t& lemi,
-									const SpeciesData& sd);
+									SpeciesData sd,
+									const MicroClimateData& mcd);
 
 	struct GammaEnRes
 	{

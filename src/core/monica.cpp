@@ -31,6 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
 #include "../io/file-io.h"
+#include "voc-common.h"
 
 using namespace Monica;
 using namespace std;
@@ -85,6 +86,10 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
                    _envPs.p_LeachingDepth,
                    _envPs.p_timeStep,
                    _cropPs.pc_MinimumAvailableN)
+	, _rad24(_stepSize24)
+	, _rad240(_stepSize240)
+	, _tfol24(_stepSize24)
+	, _tfol240(_stepSize240)
   , vw_AtmosphericCO2Concentration(_envPs.p_AtmosphericCO2)
 {}
 
@@ -632,6 +637,33 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
   p_accuWaterStress += _currentCropGrowth->get_TranspirationDeficit();
   p_accuHeatStress += _currentCropGrowth->get_HeatStressRedux();
   p_accuOxygenStress += _currentCropGrowth->get_OxygenDeficit();
+
+	//prepare VOC calculations
+	//TODO: right now assumes that we have daily values and thus xxx24 is the same as xxx
+	double globradWm2 = globrad * 1000000.0 / 86400.0; //MJ/m2/d (a sum) -> W/m2
+	if(_index240 < _stepSize240 - 1)
+	{
+		_index240++;
+	}
+	else
+	{
+		_index240 = 0;
+		_full240 = true;
+	}
+	_rad240[_index240] = globradWm2;
+	_tfol240[_index240] = tavg;
+	
+	Voc::MicroClimateData mcd;
+	//hourly or time step average global radiation (in case of monica usually 24h)
+	mcd.rad = globradWm2;
+	mcd.rad24 = mcd.rad; //just daily values, thus average over 24h is the same
+	mcd.rad240 = accumulate(_rad240.begin(), _rad240.end(), 0.0) / (_full240 ? _rad240.size() : _index240 + 1);
+	mcd.tFol = tavg;
+	mcd.tFol24 = mcd.tFol;
+	mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
+
+	cout << "calculating voc emissions at " << date.toIsoDateString() << endl;
+	_currentCropGrowth->calculateVOCEmissions(mcd);
 }
 
 

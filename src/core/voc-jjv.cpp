@@ -40,13 +40,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace Voc;
 
-Voc::Emissions Voc::calculateJJVVOCEmissions(std::vector<SpeciesData> sds,
-																						 const MicroClimateData& mcd,
-																						 double day_fraction)
+Voc::Emissions Voc::calculateJJVVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+																														const MicroClimateData& mcd,
+																														double dayFraction,
+																														bool calculateParTempTerm)
 {
 	Emissions ems;
 
-	double const tslength = SEC_IN_DAY * day_fraction;
+	double const tslength = SEC_IN_DAY * dayFraction;
 
 	for(const SpeciesData& species : sds)
 	{
@@ -125,10 +126,10 @@ LeafEmissions Voc::calcLeafEmission(const leaf_emission_t& lemi,
 
 	// Emission potential from photosynthesis (energy supply); same for isoprene and monoterpene; actual and normalized 
 	// activity factor for photosynthesis (energy supply)
-	double gamma_ph = gamma_PH(lemi, species);
+	double gamma_ph = gamma_PH(lemi, species, mcd);
 
 	//!< normalized activity factor for photosynthesis (energy supply)
-	double gamma_phnorm = gamma_PH(leminorm, species);
+	double gamma_phnorm = gamma_PH(leminorm, species, mcd);
 
 	double gamma_phrel = gamma_phnorm > 0.0 ? gamma_ph / gamma_phnorm : 0.0;
 
@@ -177,7 +178,8 @@ LeafEmissions Voc::calcLeafEmission(const leaf_emission_t& lemi,
 }
 
 double Voc::gamma_PH(const leaf_emission_t& lemi,
-										 const SpeciesData& species)
+										 SpeciesData species,
+										 const MicroClimateData& mcd)
 {
 	// Emission calculation as described in Grote et al. (2014);
 	//
@@ -192,17 +194,40 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 	const size_t fl = lemi.foliage_layer;
 	const double parabs = lemi.pho.par * ABSO; // fw: TODO: implement absorbed radiation (parshd_fl, parsun_fl) together with fraction of sunlit foliage (ts_sunlitfoliagefraction_fl, 1 - ts_sunlitfoliagefraction_fl)
 
-	// For testing: photosynthesis variables without spatial or seasonal differentiation (according Collatz et al. 1991) 
+	if(true)
+	{
+		// For testing: photosynthesis variables without spatial or seasonal differentiation (according Collatz et al. 1991) 
+	// temperature modification term; efficiency reduction due to temperature
+		double const  ft_term = 1.0 / (1.0 + exp((-species.HDJ + species.SDJ * lemi.fol.tempK) / (RGAS * lemi.fol.tempK)));
+		// fw: "KC25": Michaelis-Menten constant for CO2 at 25 °C (umol mol-1 / ubar)
+		species.kc = species.KC25 * pow(2.1, (lemi.fol.tempK - TEMP0) * 0.1);
+		// fw: "KO25": Michaelis-Menten constant for O2 at 25oC (mmol mol-1 / mbar)
+		species.ko = species.KO25 * pow(1.2, (lemi.fol.tempK - TEMP0) * 0.1);
+		//"oi_vtfl": leaf internal O2 concentration per canopy layer(umol m - 2)
+		species.CO2compensationPointAt25DegC = 0.5 * species.kc * species.internalO2concentration * 0.21 / species.ko; // 
+		species.intercellularCO2concentration = 0.7 * 370.0;
+		//fw: "VCMAX25": maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
+		species.vcMax = species.VCMAX25 * ft_term * pow(2.4, (lemi.fol.tempK - TEMP0) * 0.1);
+		// fw: "AEJM": activation energy for electron transport (J mol-1); "QJVC": relation between maximum electron transport rate and RubP saturated rate of carboxylation (--)
+		species.jMax = species.VCMAX25 * species.QJVC * ft_term * exp(species.AEJM * (lemi.fol.tempK - TEMP0) / (RGAS * TEMP0 * lemi.fol.tempK));
 
-	// temperature modification term; efficiency reduction due to temperature */
-	//    double const  ft_term = 1.0 / ( 1.0 + exp(( -_species->HDJ() + _species->SDJ() * _lemi->fol.tempK) / ( lconst::RGAS * _lemi->fol.tempK)));
-	//
-	//    this->phys->kc_vtfl[vt][fl]   = _species->KC25() * pow( 2.1, ( _lemi->fol.tempK - TEMP0) * 0.1); // fw: "KC25": Michaelis-Menten constant for CO2 at 25 °C (umol mol-1 / ubar)
-	//    this->phys->ko_vtfl[vt][fl]   = _species->KO25() * pow( 1.2, ( _lemi->fol.tempK - TEMP0) * 0.1); // fw: "KO25": Michaelis-Menten constant for O2 at 25oC (mmol mol-1 / mbar)
-	//    this->phys->comp_vtfl[vt][fl] = 0.5 * this->phys->kc_vtfl[vt][fl] * this->phys->oi_vtfl[vt][fl] * 0.21 / this->phys->ko_vtfl[vt][fl]; // "oi_vtfl": leaf internal O2 concentration per canopy layer (umol m-2)
-	//    this->phys->ci_vtfl[vt][fl] = 0.7 * 370.0;
-	//    this->phys->vcMax_vtfl[vt][fl] = _species->VCMAX25() * ft_term * pow( 2.4, ( _lemi.fol.tempK - TEMP0) * 0.1); //fw: "VCMAX25": maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
-	//    this->phys->jMax_vtfl[vt][fl] =  _species->VCMAX25() *  _species->QJVC() * ft_term * exp( _species-->AEJM() * ( _lemi.fol.tempK - TEMP0) / ( lconst::RGAS * TEMP0 * _lemi.fol.tempK)); // fw: "AEJM": activation energy for electron transport (J mol-1); "QJVC": relation between maximum electron transport rate and RubP saturated rate of carboxylation (--)
+		double frad = 1.0;
+		//if((mc_.parsun_fl[fl] + mc_.parshd_fl[fl]) > 0.0)
+		//{
+			// shade and sun cycle
+		frad = mcd.sunlitfoliagefraction;
+		//}
+
+		double oi = PO2 * MMOL_IN_MOL;
+		if(mcd.tFol > 25.0)
+		{
+			//ci *= ((1.674 - 0.061294 * mc_.tFol_fl[fl] + 0.0011688
+			//				* sqr(mc_.tFol_fl[fl]) - 0.0000088741 * pow(mc_.tFol_fl[fl], 3.0)) / 0.73547);
+
+			oi *= (0.047 - 0.001308 * mcd.tFol + 0.000025603	* sqr(mcd.tFol) - 0.00000021441 * pow(mcd.tFol, 3.0)) / 0.026934;
+		}
+		species.internalO2concentration = frad * oi;
+	}
 
 	// electron transport rate and electron usage 
 	// fw: "km": michaelis-menten coefficient for electron transport capacity

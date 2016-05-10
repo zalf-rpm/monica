@@ -27,6 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iostream>
 #include <map>
 #include <memory>
+#include <queue>
 
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
@@ -266,6 +267,12 @@ namespace Monica
 		SoilTransport _soilTransport; //!< transport code
 		CropPtr _currentCrop; //! currently possibly planted crop
 		CropGrowth* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
+
+		//VOC members
+		const int _stepSize24{0}, _stepSize240{10};
+		std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
+		int _index24{0}, _index240{0};
+		bool _full24{false}, _full240{false};
 
 		//! store applied fertiliser during one production process
 		double _sumFertiliser{0.0};

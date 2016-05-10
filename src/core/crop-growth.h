@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "monica-parameters.h"
 #include "soilcolumn.h"
+#include "voc-common.h"
 
 namespace Monica
 {
@@ -205,6 +206,8 @@ namespace Monica
     double fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
                                    double vc_TotalRespired);
 
+		Voc::Emissions calculateVOCEmissions(const Voc::MicroClimateData& mcd);
+
     double get_ReferenceEvapotranspiration() const;
     double get_RemainingEvapotranspiration() const;
     double get_EvaporatedFromIntercept() const;
@@ -358,18 +361,6 @@ namespace Monica
     void fc_UpdateCropParametersForPerennial();
 
   private:
-    //methods
-    void calculateCropGrowthStep(double vw_MeanAirTemperature,
-                                 double vw_MaxAirTemperature,
-                                 double vw_MinAirTemperature,
-                                 double vw_GlobalRadiation,
-                                 double vw_SunshineHours, int vs_JulianDay,
-                                 double vw_RelativeHumidity,
-                                 double vw_WindSpeed,
-                                 double vw_WindSpeedHeight,
-                                 double vw_AtmosphericCO2Concentration,
-                                 double vw_GrossPrecipitation);
-
     int pc_NumberOfAbovegroundOrgans() const;
 
     bool isAnthesisDay(int old_dev_stage, int new_dev_stage);

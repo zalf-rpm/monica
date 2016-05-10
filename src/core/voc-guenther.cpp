@@ -32,13 +32,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace Voc;
 
 Voc::Emissions
-Voc::calculateGuentherVOCEmissions(std::vector<SpeciesData> sds,
-																	 const MicroClimateData& mcd,
-																	 double day_fraction)
+Voc::calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+																									const MicroClimateData& mcd,
+																									double dayFraction)
 {
 	Emissions ems;
 
-	double const tslength = SEC_IN_DAY * day_fraction;
+	double const tslength = SEC_IN_DAY * dayFraction;
 
 	for(const SpeciesData& species : sds)
 	{

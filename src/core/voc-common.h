@@ -58,10 +58,13 @@ namespace Voc
 	//----------------------------------------------------------------------------
 	
 #define KILO 1.0e+03
+#define MILLI 1.0e-03
 
 	// conv constants
 	static const double NMOL_IN_UMOL = KILO; //!< nmol to umol
 	static const double UMOL_IN_NMOL = 1.0 / NMOL_IN_UMOL; //!< umol to nmol
+	static const double MOL_IN_MMOL = MILLI;
+	static const double MMOL_IN_MOL = 1.0 / MOL_IN_MMOL;
 	static const double FPAR = 0.45; //!< conversion factor for global into PAR (Monteith 1965, Meek et al. 1984)
 	static const double D_IN_K = 273.15; //!< kelvin at zero degree celsius
 	static const double G_IN_KG = 1.0e+03; //!< 0.001 kg per g
@@ -86,6 +89,9 @@ namespace Voc
 	static const unsigned int SEC_IN_HR = (SEC_IN_MIN * MIN_IN_HR); //!< hour to seconds
 	static const unsigned int MIN_IN_DAY = (MIN_IN_HR * HR_IN_DAY); //!< day to minutes
 	static const unsigned int SEC_IN_DAY = (SEC_IN_HR * HR_IN_DAY); //!< day to seconds
+
+	// meteo constants
+	static const double PO2 = 0.208; //!< volumentric percentage of oxygen in the canopy air
 
 	// voc module specific constants
 
@@ -131,27 +137,9 @@ namespace Voc
 		double EF_MONO{0.0};
 		double EF_ISO{0.0};
 
-		//double SCALE_I{1.0};
-		//double SCALE_M{1.0};
-
-		// species and canopy layer specific foliage biomass(dry weight).
-		// physiology  mFol_vtfl  mFol_vtfl  double  V : F  0.0  kg : m^-2
-		double mFol; //!< foliage mass
-
-		//std::map<std::size_t, double> phys_isoAct_vtfl; 
-		//std::map<std::size_t, double> phys_monoAct_vtfl;
-		
-		// species specific leaf area index.
-		//physiology  lai_vtfl  lai_vtfl  double  V : F  0.0  m ^ 2 : m^-2
-		double lai; //!< LAI
-
-		// specific foliage area (m2 kgDW-1).
-		//vegstructure  specific_foliage_area sla_vtfl  double  V : F  0.0  m ^ 2 : g : 10 ^ -3
-		double sla; //!< specific leaf area (pc_SpecificLeafArea / cps.cultivarParams.pc_SpecificLeafArea)
-
 		//jjv
-		double THETA{0.0};
-		double FAGE{0.0};
+		double THETA{0.9};
+		double FAGE{1.0};
 		double CT_IS{0.0};
 		double CT_MT{0.0};
 		double HA_IS{0.0};
@@ -159,11 +147,41 @@ namespace Voc
 		double DS_IS{0.0};
 		double DS_MT{0.0};
 		double HD_IS{0.0};
-		double HD_MT{0.0};
+		double HD_MT{284600.0};
 
+		//for temp replacement code
+		double HDJ{220000.0};
+		double SDJ{703.0};
+		double KC25{260.0};
+		double KO25{179.0};
+		double VCMAX25{80.0};
+		double QJVC{2.0};
+		double AEJM{37000.0};
+
+		//double SCALE_I{1.0};
+		//double SCALE_M{1.0};
+
+		// species and canopy layer specific foliage biomass(dry weight).
+		// physiology  mFol_vtfl  mFol_vtfl  double  V : F  0.0  kg : m^-2
+		// vc_OrganBiomass[LEAF]
+		double mFol; 
+
+		//std::map<std::size_t, double> phys_isoAct_vtfl; 
+		//std::map<std::size_t, double> phys_monoAct_vtfl;
+		
+		// species specific leaf area index.
+		// physiology  lai_vtfl  lai_vtfl  double  V : F  0.0  m ^ 2 : m^-2
+		// CropGrowth::get_LeafAreaIndex()
+		double lai; 
+
+		// specific foliage area (m2 kgDW-1).
+		// vegstructure  specific_foliage_area sla_vtfl  double  V : F  0.0  m ^ 2 : g : 10 ^ -3
+		// specific leaf area (pc_SpecificLeafArea / cps.cultivarParams.pc_SpecificLeafArea) pc_SpecificLeafArea[vc_DevelopmentalStage]
+		double sla; 
+		
 		// leaf internal O2 concentration per canopy layer(umol m - 2)
 		//	physiology  oi_vtfl  oi_vtfl  double  V : F  210.0  mol : 10 ^ -6 : m^-2
-		double internalO2concentration; //!< leaf internal O2 concentration
+		double internalO2concentration; 
 		
 		// Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		// physiology  ko_vtfl  ko_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
@@ -175,7 +193,7 @@ namespace Voc
 
 		// species and layer specific intercellular concentration of CO2 (umol mol-1)
     // physiology  ci_vtfl  ci_vtfl  double  V : F  350.0  mol : 10 ^ -6 : m^-2
-		double intercellularCO2concentration; //!< 
+		double intercellularCO2concentration;  
 		
 		// actual activity state of rubisco  per canopy layer (umol m-2 s-1)
 		// physiology  vcMax_vtfl  vcMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
@@ -195,14 +213,29 @@ namespace Voc
 	struct MicroClimateData
 	{
 		//common
-		double rad; //!< radiation 
-		double rad24; //!< radiation last 24 hours
-		double rad240; //!< radiation last 240 hours
-		double tFol; //!< foliage temperature 
-		double tFol24; //!< foliage temperature last 24 hours
-		double tFol240; //!< foliage temperature last 240 hours
+		// radiation per canopy layer(W m - 2)
+		// microclimate  rad_fl rad_fl  double  F  0.0  W:m^-2
+		double rad;  
+		// radiation regime over the last 24hours(W m - 2)
+		// microclimate  rad24_fl rad24_fl  double  F  0.0  W:m^-2
+		double rad24; 
+		// radiation regime over the last 10days (W m-2)
+		// microclimate  rad240_fl rad240_fl  double  F  0.0  W:m^-2
+		double rad240; 
+		// foliage temperature per canopy layer(oC)
+		// microclimate  tFol_fl tFol_fl  double  F  0.0  oC
+		double tFol;  
+		// temperature regime over the last 24hours
+		// microclimate  tFol24_fl tFol24_fl  double  F  0.0  oC
+		double tFol24; 
+		// temperature regime over the last 10days
+		// microclimate  tFol240_fl tFol240_fl  double  F  0.0  oC
+		double tFol240;
 
 		//jjv
+		// fraction of sunlit foliage per canopy layer
+		// microclimate  ts_sunlitfoliagefraction_fl ts_sunlitfoliagefraction_fl  double  F  0.0 ?
+		double sunlitfoliagefraction;
 		// fraction of sunlit foliage over the past 24 hours per canopy layer
 		// microclimate  sunlitfoliagefraction24_fl  sunlitfoliagefraction24_fl  double  F  0.0 ?
 		double sunlitfoliagefraction24;

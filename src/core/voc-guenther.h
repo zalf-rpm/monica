@@ -26,8 +26,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  *    ruediger grote
  */
 
-#ifndef  LDNDC_MOD_PHYSIOLOGY_VOCGUENTHER_H_
-#define  LDNDC_MOD_PHYSIOLOGY_VOCGUENTHER_H_
+#ifndef  VOC_GUENTHER_H_
+#define  VOC_GUENTHER_H_
 
 #include <map>
 #include <vector>
@@ -37,9 +37,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Voc
 {
-	Emissions calculateGuentherVOCEmissions(std::vector<SpeciesData> sds,
-																					const MicroClimateData& mc,
-																					double day_fraction);
+	Emissions calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+																												 const MicroClimateData& mc,
+																												 double dayFraction = 1.0);
+
+	inline Emissions calculateGuentherVOCEmissions(const SpeciesData& species,
+																								 const MicroClimateData& mc,
+																								 double dayFraction = 1.0)
+	{
+		return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
+	}
 	
 	LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
 																 double _species_EF_MONOS);
