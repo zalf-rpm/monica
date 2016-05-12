@@ -307,9 +307,9 @@ Result Monica::runMonica(Env env)
 	Date nextCMApplicationDate = currentCM.startDate();
 	//a definitely absolute next application date to keep track where
 	//we are in the list of climate data
-	Date nextAbsoluteCMApplicationDate =
-		useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
-		(currentDate.year() + 1) : nextCMApplicationDate;
+	Date nextAbsoluteCMApplicationDate = useRelativeDates
+		? nextCMApplicationDate.toAbsoluteDate(currentDate.year())// + 1) // + 1 probably due to use in DSS and have one year to init monica 
+		: nextCMApplicationDate;
 	debug() << "next app-date: " << nextCMApplicationDate.toString()
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 
