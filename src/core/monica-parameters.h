@@ -1064,10 +1064,16 @@ namespace Monica
 	 *
 	 * @author Xenia Specka
 	 */
-	class CentralParameterProvider
+	class CentralParameterProvider : public Tools::Json11Serializable
 	{
 	public:
     CentralParameterProvider();
+
+		CentralParameterProvider(json11::Json object);
+
+		virtual void merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
 
 		UserCropParameters userCropParameters;
 		UserEnvironmentParameters userEnvironmentParameters;

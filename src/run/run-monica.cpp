@@ -26,13 +26,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <thread>
 #include <tuple>
 
-#include "json11/json11.hpp"
-
 #include "run-monica.h"
 #include "tools/debug.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
 #include "../core/monica-typedefs.h"
+#include "tools/json11-helper.h"
 
 using namespace Monica;
 using namespace std;
@@ -44,6 +43,37 @@ using namespace json11;
 Env::Env(CentralParameterProvider cpp)
 	: params(cpp)
 {}
+
+Env::Env(json11::Json j)
+{
+	merge(j);
+}
+
+void Env::merge(json11::Json j)
+{
+	params.merge(j["params"]);
+
+	cropRotation.clear();
+	for(Json cmj : j["cropRotation"].array_items())
+		cropRotation.push_back(cmj);
+
+	set_bool_value(debugMode, j, "debugMode");
+}
+
+json11::Json Env::to_json() const
+{
+	J11Array cr;
+	for(const auto& c : cropRotation)
+		cr.push_back(c.to_json());
+
+	return json11::Json::object{
+		{"type", "Env"},
+		{"params", params.to_json()},
+		{"cropRotation", cr},
+		{"da", da.to_json()},
+		{"debugMode", debugMode}
+	};
+}
 
 string Env::toString() const
 {
@@ -248,8 +278,8 @@ Result Monica::runMonica(Env env)
 
 	debug() << "starting Monica" << endl;
 
-	ofstream fout;
-	ofstream gout;
+	ostream& fout = *env.fout;
+	ostream& gout = *env.gout;
 
 	debug() << "-----" << endl;
 
@@ -258,21 +288,21 @@ Result Monica::runMonica(Env env)
 	if(env.params.writeOutputFiles())
 	{
 		// open rmout.dat
-		debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << endl;
-		fout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
-		if(fout.fail())
-		{
-			cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
-			return res;
-		}
+		//debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << endl;
+		//fout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
+		//if(fout.fail())
+		//{
+		//	cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
+		//	return res;
+		//}
 
 		// open smout.dat
-		gout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
-		if(gout.fail())
-		{
-			cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
-			return res;
-		}
+		//gout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
+		//if(gout.fail())
+		//{
+		//	cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
+		//	return res;
+		//}
 
 		// writes the header line to output files
 		initializeFoutHeader(fout);
@@ -616,8 +646,8 @@ Result Monica::runMonica(Env env)
 	}
 	if(env.params.writeOutputFiles())
 	{
-		fout.close();
-		gout.close();
+		//fout.close();
+		//gout.close();
 	}
 
 	//cout << res.dates.size() << endl;
@@ -631,7 +661,7 @@ Result Monica::runMonica(Env env)
 * Write header line to fout Output file
 * @param fout File pointer to rmout.dat
 */
-void Monica::initializeFoutHeader(ofstream &fout)
+void Monica::initializeFoutHeader(ostream &fout)
 {
 	int outLayers = 20;
 	int numberOfOrgans = 5;
@@ -967,7 +997,7 @@ void Monica::initializeFoutHeader(ofstream &fout)
 * Writes header line to gout-Outputfile
 * @param gout File pointer to smout.dat
 */
-void Monica::initializeGoutHeader(ofstream &gout)
+void Monica::initializeGoutHeader(ostream &gout)
 {
 	gout << "Datum     ";
 	gout << "\tCrop";
@@ -1117,8 +1147,8 @@ void Monica::initializeGoutHeader(ofstream &gout)
 * @param gout File pointer to smout.dat
 */
 void Monica::writeCropResults(const CropGrowth* mcg,
-															ofstream& fout,
-															ofstream& gout,
+															ostream& fout,
+															ostream& gout,
 															bool crop_is_planted)
 {
 	if(crop_is_planted)
@@ -1341,8 +1371,11 @@ void Monica::writeCropResults(const CropGrowth* mcg,
 * @param monica MONICA model that contains pointer to all submodels
 * @param d Day of simulation
 */
-void
-Monica::writeGeneralResults(ofstream &fout, ofstream &gout, Env &env, MonicaModel &monica, int d)
+void Monica::writeGeneralResults(ostream& fout,
+																 ostream& gout,
+																 Env& env,
+																 MonicaModel& monica,
+																 int d)
 {
 	const SoilTemperature& mst = monica.soilTemperature();
 	const SoilMoisture& msm = monica.soilMoisture();

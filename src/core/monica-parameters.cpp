@@ -26,7 +26,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
-#include "tools/json11-helper.h"
 #include "tools/algorithms.h"
 #include "monica-parameters.h"
 #include "monica.h"
@@ -1465,6 +1464,40 @@ CentralParameterProvider::CentralParameterProvider()
   , precipCorrectionValues(12, 1.0)
 {
 
+}
+
+CentralParameterProvider::CentralParameterProvider(json11::Json j)
+{
+	merge(j);
+}
+
+void CentralParameterProvider::merge(json11::Json j)
+{
+	userCropParameters.merge(j["userCropParameters"]);
+	userEnvironmentParameters.merge(j["userEnvironmentParameters"]);
+	userSoilMoistureParameters.merge(j["userSoilMoistureParameters"]);
+	userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]);
+	userSoilTransportParameters.merge(j["userSoilTransportParameters"]);
+	userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]);
+	simulationParameters.merge(j["simulationParameters"]);
+	siteParameters.merge(j["siteParameters"]);
+	//groundwaterInformation.merge(j["groundwaterInformation"]);
+}
+
+json11::Json CentralParameterProvider::to_json() const
+{
+	return json11::Json::object{
+		{"type", "CentralParameterProvider"},
+		{"userCropParameters", userCropParameters.to_json()},
+		{"userEnvironmentParameters", userEnvironmentParameters.to_json()},
+		{"userSoilMoistureParameters", userSoilMoistureParameters.to_json()},
+		{"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()},
+		{"userSoilTransportParameters", userSoilTransportParameters.to_json()},
+		{"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
+		{"simulationParameters", simulationParameters.to_json()},
+		{"siteParameters", siteParameters.to_json()}
+		//{"groundwaterInformation", groundwaterInformation.to_json()}
+	};
 }
 
 /**

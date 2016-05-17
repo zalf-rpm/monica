@@ -133,17 +133,27 @@ namespace Voc
 		int id{0};
 
 		//common
+		//! emission factor monoterpene
 		double EF_MONOS{0.0};
+		//! emission factor monoterpene
 		double EF_MONO{0.0};
+		//! emission factor isoprene 
 		double EF_ISO{0.0};
 
 		//jjv
 		double THETA{0.9};
+		//! decrease of emission activity with age
 		double FAGE{1.0};
+		//! isoprene emission with SIM module
 		double CT_IS{0.0};
+		//! monoterpene emission with SIM module
 		double CT_MT{0.0};
+
+		//! isoprene emitter
 		double HA_IS{0.0};
+		//! monoterpene emitter
 		double HA_MT{0.0};
+
 		double DS_IS{0.0};
 		double DS_MT{0.0};
 		double HD_IS{0.0};

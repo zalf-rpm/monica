@@ -189,11 +189,37 @@ int main(int argc, char** argv)
 
 			auto env = createEnvFromJsonConfigFiles(ps);
 			activateDebug = env.debugMode;
+			
+			// open rmout.dat
+			//debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << endl;
+			auto fout = make_shared<ofstream>();
+			env.fout = fout;
+			fout->open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
+			if(fout->fail())
+			{
+				cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
+				//return res;
+			}
+
+			// open smout.dat
+			auto gout = make_shared<ofstream>();
+			env.gout = gout;
+			gout->open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
+			if(gout->fail())
+			{
+				cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
+				//return res;
+			}
 
 			if(activateDebug)
 				cout << "starting MONICA with JSON input files" << endl;
 
 			auto res = runMonica(env);
+
+			if(gout)
+				gout->close();
+			if(fout)
+				fout->close();
 
 			if(activateDebug)
 				cout << "finished MONICA" << endl;

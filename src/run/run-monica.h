@@ -18,6 +18,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #ifndef RUN_MONICA_H_
 #define RUN_MONICA_H_
 
+#include <ostream>
+
+#include "json11/json11.hpp"
+
 #include "../core/monica.h"
 #include "cultivation-method.h"
 
@@ -33,11 +37,17 @@ namespace Monica
 #endif
   }
 
-  struct Env
+  struct Env : public Tools::Json11Serializable
   {
     Env() {}
 
     Env(CentralParameterProvider cpp);
+
+		Env(json11::Json object);
+
+		virtual void merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
 
     //Interface method for python wrapping. Simply returns number
     //of possible simulation steps according to avaible climate data.
@@ -81,6 +91,10 @@ namespace Monica
     std::string outputDatastreamPort;
 
 		bool debugMode{false};
+
+		std::shared_ptr<std::ostream> fout;
+		std::shared_ptr<std::ostream> gout;
+
   private:
     //! Variable for differentiate betweend execution modes of MONICA
     int mode{MODE_LC_DSS};
@@ -131,14 +145,14 @@ namespace Monica
    */
   Result runMonica(Env env);
 
-	void initializeFoutHeader(std::ofstream&);
-	void initializeGoutHeader(std::ofstream&);
+	void initializeFoutHeader(std::ostream&);
+	void initializeGoutHeader(std::ostream&);
 	void writeCropResults(const CropGrowth*, 
-												std::ofstream&, 
-												std::ofstream&, 
+												std::ostream&, 
+												std::ostream&, 
 												bool);
-	void writeGeneralResults(std::ofstream& fout, 
-													 std::ofstream& gout, 
+	void writeGeneralResults(std::ostream& fout, 
+													 std::ostream& gout, 
 													 Env& env,
 													 MonicaModel& monica, 
 													 int d);

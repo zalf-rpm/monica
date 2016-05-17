@@ -35,6 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "../core/monica.h"
 #include "../io/database-io.h"
+#include "run-monica.h"
 
 #ifndef NO_ZMQ
 #include "tools/zmq-helper.h"
@@ -355,4 +356,52 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
 
 //  cout << "exiting startZeroMQMonica" << endl;
 }
+
+void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocketAddress)
+{
+	zmq::socket_t socket(*zmqContext, ZMQ_REP);
+	cout << "MONICA: connecting monica zeromq reply socket to address: " << replySocketAddress << endl;
+	socket.bind(replySocketAddress.c_str());
+	cout << "MONICA: bound monica zeromq reply socket to address: " << replySocketAddress << endl;
+
+	//the possibly active crop
+	while(true)
+	{
+		auto msg = receiveMsg(socket);
+		//    cout << "Received message " << msg.toString() << endl;
+		//    if(!msg.valid)
+		//    {
+		//      this_thread::sleep_for(chrono::milliseconds(100));
+		//      continue;
+		//    }
+
+		string msgType = msg.type();
+		if(msgType == "finish")
+			break;
+		else if(msgType == "fullMonica")
+		{
+			Json& fullMsg = msg.json;
+
+			Env env(msg.json);
+			auto fout = make_shared<ostringstream>();
+			env.fout = fout;
+			auto gout = make_shared<ostringstream>();
+			env.gout = gout;
+
+			activateDebug = env.debugMode;
+
+			runMonica(env);
+
+			J11Object resultMsg;
+			resultMsg["fout"] = fout->str();
+			resultMsg["gout"] = gout->str();
+
+			s_send(socket, Json(resultMsg).dump());
+		}
+		
+	}
+
+	cout << "exiting startZeroMQMonicaFull" << endl;
+}
 #endif
+
