@@ -910,7 +910,7 @@ json11::Json SiteParameters::to_json() const
   {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
 
   if(vs_SoilParameters)
-    sps["SoilParameters"] = toJsonArray(*vs_SoilParameters);
+    sps["SoilProfileParameters"] = toJsonArray(*vs_SoilParameters);
 
   return sps;
 }

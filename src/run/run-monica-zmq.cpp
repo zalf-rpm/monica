@@ -361,7 +361,14 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 {
 	zmq::socket_t socket(*zmqContext, ZMQ_REP);
 	cout << "MONICA: connecting monica zeromq reply socket to address: " << replySocketAddress << endl;
-	socket.bind(replySocketAddress.c_str());
+	try
+	{
+		socket.bind(replySocketAddress);
+	}
+	catch(zmq::error_t e)
+	{
+		cerr << "Coulnd't bind socket to address: " << replySocketAddress << "! Error: " << e.what() << endl;
+	}
 	cout << "MONICA: bound monica zeromq reply socket to address: " << replySocketAddress << endl;
 
 	//the possibly active crop
@@ -378,7 +385,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 		string msgType = msg.type();
 		if(msgType == "finish")
 			break;
-		else if(msgType == "fullMonica")
+		else if(msgType == "Env")
 		{
 			Json& fullMsg = msg.json;
 
@@ -393,6 +400,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 			runMonica(env);
 
 			J11Object resultMsg;
+			resultMsg["type"] = "result";
 			resultMsg["fout"] = fout->str();
 			resultMsg["gout"] = gout->str();
 
@@ -402,6 +410,33 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 	}
 
 	cout << "exiting startZeroMQMonicaFull" << endl;
+}
+
+void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, Env env)
+{
+	zmq::socket_t socket(*zmqContext, ZMQ_REQ);
+	cout << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
+	try
+	{
+		socket.connect(socketAddress);
+	}
+	catch(zmq::error_t e)
+	{
+		cerr << "Coulnd't connect socket to address: " << socketAddress << "! Error: " << e.what() << endl;
+	}
+	cout << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
+
+	if(s_send(socket, env.to_json().dump()))
+	{
+		auto msg = receiveMsg(socket);
+		if(msg.type() == "result")
+		{
+			*env.fout << msg.json["fout"].string_value();
+			*env.gout << msg.json["gout"].string_value();
+		}
+	}
+
+	cout << "exiting runZeroMQMonicaFull" << endl;
 }
 #endif
 

@@ -19,10 +19,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <string>
 
+#include "zhelpers.hpp"
+
 #include "db/abstract-db-connections.h"
 
 #include "tools/debug.h"
 #include "../run/run-monica.h"
+#include "../run/run-monica-zmq.h"
 #include "../io/database-io.h"
 #include "../core/monica-typedefs.h"
 #include "../core/monica.h"
@@ -70,13 +73,20 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
+	enum Mode { monica, hermes, zmqClient, zmqServer };
+
 	if(argc >= 1)// && false)
 	{
 		bool debug = false, debugSet = false;
 		string startDate, endDate;
 		bool writeOutputFiles = false, writeOutputFilesSet = false;
 		string pathToOutput;
-		bool hermesMode = false;
+		Mode mode = monica;
+
+#ifndef NO_ZMQ
+		zmq::context_t context(1);
+#endif
+
 		string pathToSimJson = "./sim.json",crop, site, climate;
 
 		for(auto i = 1; i < argc; i++)
@@ -85,7 +95,11 @@ int main(int argc, char** argv)
 			if(arg == "-d" || arg == "--debug")
 				debug = debugSet = true;
 			else if(arg == "--hermes")
-				hermesMode = true;
+				mode = hermes;
+			else if(arg == "--zmq-client")
+				mode = zmqClient;
+			else if(arg == "--zmq-server")
+				mode = zmqServer;
 			else if((arg == "-s" || arg == "--start-date")
 			        && i+1 < argc)
 				startDate = argv[++i];
@@ -108,17 +122,20 @@ int main(int argc, char** argv)
 				climate = argv[++i];
 			else if(arg == "-h" || arg == "--help")
 			{
-				cout << "./monica [-d | --debug]\t\t\t ... show debug outputs" << endl
-				<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
-				<< "\t [-s | --start-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
-				<< "\t [-e | --end-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
-				<< "\t [-w | --write-output-files]\t ... write MONICA output files (rmout, smout)" << endl
-				<< "\t [-o | --path-to-output]\t ... path to output directory" << endl
-				<< "\t [-c | --path-to-crop]\t\t ... path to crop.json file" << endl
-				<< "\t [-s | --path-to-site]\t\t ... path to site.json file" << endl
-				<< "\t [-w | --path-to-climate]\t ... path to climate.csv" << endl
-				<< "\t [-h | --help]\t\t\t ... this help output" << endl
-				<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl
+				cout 
+					<< "./monica [-d | --debug]\t\t\t ... show debug outputs" << endl
+					<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
+					<< "\t [--zmq-client]\t\t\t ... run in client mode communicating to a MONICA ZeroMQ server" << endl
+					<< "\t [--zmq-server]\t\t\t ... run in server mode communicating with MONICA ZeroMQ clients" << endl
+					<< "\t [-s | --start-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [-e | --end-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [-w | --write-output-files]\t ... write MONICA output files (rmout, smout)" << endl
+					<< "\t [-o | --path-to-output]\t ... path to output directory" << endl
+					<< "\t [-c | --path-to-crop]\t\t ... path to crop.json file" << endl
+					<< "\t [-s | --path-to-site]\t\t ... path to site.json file" << endl
+					<< "\t [-w | --path-to-climate]\t ... path to climate.csv" << endl
+					<< "\t [-h | --help]\t\t\t ... this help output" << endl
+					<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl
 					<< "\t path-to-sim-json ... path to sim.json file" << endl;
 			  exit(0);
 			}
@@ -128,7 +145,7 @@ int main(int argc, char** argv)
 				pathToSimJson = argv[i];
 		}
 
-		if(hermesMode)
+		if(mode == hermes)
 		{
 			if(debug)
 				cout << "starting MONICA with old HERMES input files" << endl;
@@ -137,6 +154,10 @@ int main(int argc, char** argv)
 
 			if(debug)
 				cout << "finished MONICA" << endl;
+		}
+		else if(mode == zmqServer)
+		{
+			startZeroMQMonicaFull(&context, "tcp://*:5560");
 		}
 		else
 		{
@@ -214,7 +235,14 @@ int main(int argc, char** argv)
 			if(activateDebug)
 				cout << "starting MONICA with JSON input files" << endl;
 
-			auto res = runMonica(env);
+			if(mode == monica)
+			{
+				auto res = runMonica(env);
+			}
+			else
+			{
+				runZeroMQMonicaFull(&context, "tcp://localhost:5560", env);
+			}
 
 			if(gout)
 				gout->close();

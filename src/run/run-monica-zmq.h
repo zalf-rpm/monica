@@ -30,12 +30,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "zmq.hpp"
 #endif
 
+#include "run-monica.h"
+
 namespace Monica
 {
 #ifndef NO_ZMQ
   void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress, bool isInProcess = false);
 
 	void startZeroMQMonicaFull(zmq::context_t* zmqContext, std::string replySocketAddress);
+
+	void runZeroMQMonicaFull(zmq::context_t* zmqContext, std::string socketAddress, Env env);
 #endif
 }
 
