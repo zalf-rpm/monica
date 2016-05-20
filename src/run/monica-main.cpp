@@ -75,6 +75,10 @@ int main(int argc, char** argv)
 
 	enum Mode { monica, hermes, zmqClient, zmqServer };
 
+#ifndef NO_ZMQ
+	zmq::context_t context(1);
+#endif
+
 	if(argc >= 1)// && false)
 	{
 		bool debug = false, debugSet = false;
@@ -82,12 +86,9 @@ int main(int argc, char** argv)
 		bool writeOutputFiles = false, writeOutputFilesSet = false;
 		string pathToOutput;
 		Mode mode = monica;
-
-#ifndef NO_ZMQ
-		zmq::context_t context(1);
-#endif
-
-		string pathToSimJson = "./sim.json",crop, site, climate;
+		int port = 5560;
+		string ipAddress = "localhost";
+		string pathToSimJson = "./sim.json", crop, site, climate;
 
 		for(auto i = 1; i < argc; i++)
 		{
@@ -100,6 +101,12 @@ int main(int argc, char** argv)
 				mode = zmqClient;
 			else if(arg == "--zmq-server")
 				mode = zmqServer;
+			else if((arg == "-a" || arg == "--address")
+							&& i + 1 < argc)
+				ipAddress = argv[++i];
+			else if((arg == "-p" || arg == "--port")
+							&& i + 1 < argc)
+				port = stoi(argv[++i]);
 			else if((arg == "-s" || arg == "--start-date")
 			        && i+1 < argc)
 				startDate = argv[++i];
@@ -123,17 +130,20 @@ int main(int argc, char** argv)
 			else if(arg == "-h" || arg == "--help")
 			{
 				cout 
-					<< "./monica [-d | --debug]\t\t\t ... show debug outputs" << endl
+					<< "./monica " << endl
+					<< "\t [-d | --debug]\t\t\t ... show debug outputs" << endl
 					<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
 					<< "\t [--zmq-client]\t\t\t ... run in client mode communicating to a MONICA ZeroMQ server" << endl
 					<< "\t [--zmq-server]\t\t\t ... run in server mode communicating with MONICA ZeroMQ clients" << endl
-					<< "\t [-s | --start-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [-e | --end-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [[-a | --address] IPADDRESS]\t ... connect client to give IP address" << endl
+					<< "\t [[-p | --port] PORT (default: 5560)]\t ... run server/connect client on/to given port" << endl
+					<< "\t [[-s | --start-date] ISO-DATE (default: start of given climate data)]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [[-e | --end-date] ISO-DATE (default: end of given climate data)]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
 					<< "\t [-w | --write-output-files]\t ... write MONICA output files (rmout, smout)" << endl
-					<< "\t [-o | --path-to-output]\t ... path to output directory" << endl
-					<< "\t [-c | --path-to-crop]\t\t ... path to crop.json file" << endl
-					<< "\t [-s | --path-to-site]\t\t ... path to site.json file" << endl
-					<< "\t [-w | --path-to-climate]\t ... path to climate.csv" << endl
+					<< "\t [[-o | --path-to-output] DIRECTORY (default: .)]\t ... path to output directory" << endl
+					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)]\t\t ... path to crop.json file" << endl
+					<< "\t [[-s | --path-to-site] FILE (default: ./site.json)]\t\t ... path to site.json file" << endl
+					<< "\t [[-w | --path-to-climate] FILE (default: ./climate.csv)]\t ... path to climate.csv" << endl
 					<< "\t [-h | --help]\t\t\t ... this help output" << endl
 					<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl
 					<< "\t path-to-sim-json ... path to sim.json file" << endl;
@@ -157,7 +167,13 @@ int main(int argc, char** argv)
 		}
 		else if(mode == zmqServer)
 		{
-			startZeroMQMonicaFull(&context, "tcp://*:5560");
+			if(debug)
+				cout << "starting ZeroMQ MONICA server" << endl;
+
+			startZeroMQMonicaFull(&context, string("tcp://*:") + to_string(port), debug);
+
+			if(debug)
+				cout << "stopped ZeroMQ MONICA server" << endl;
 		}
 		else
 		{
@@ -241,7 +257,7 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-				runZeroMQMonicaFull(&context, "tcp://localhost:5560", env);
+				runZeroMQMonicaFull(&context, string("tcp://") + ipAddress + ":" + to_string(port), env);
 			}
 
 			if(gout)
