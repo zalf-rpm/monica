@@ -1,4 +1,4 @@
-{
+  {
 	"_base-path": "../",
 	"crops": {
 		"WR": {
@@ -52,7 +52,37 @@
 		}
 	},
 
-	"cropRotation": [
+	"_cropRotation": [
+		{
+			"worksteps": [
+				{ "date": "0000-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
+				{
+					"date": "0001-05-05",
+					"type": "IrrigationApplication",
+					"amount": [1.0, "mm"],
+					"parameters": {
+						"nitrateConcentration": [0.0, "mg dm-3"],
+						"sulfateConcentration": [334, "mg dm-3"]
+					}
+				},
+				{
+					"date": "0001-04-03",
+					"type": "MineralFertiliserApplication",
+					"amount": [40.0, "kg N"],
+					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+				},
+				{
+					"date": "0001-05-07",
+					"type": "MineralFertiliserApplication",
+					"amount": [40.0, "kg N"],
+					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+				},
+				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
+			]
+		}
+	],
+
+    "cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "1991-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
@@ -179,6 +209,7 @@
 			]
 		}
 	],
+
 
 	"CropParameters": {
 		"DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
