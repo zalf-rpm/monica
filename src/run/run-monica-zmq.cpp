@@ -357,10 +357,10 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
 //  cout << "exiting startZeroMQMonica" << endl;
 }
 
-void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocketAddress)
+void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocketAddress, bool debugMode)
 {
 	zmq::socket_t socket(*zmqContext, ZMQ_REP);
-	cout << "MONICA: connecting monica zeromq reply socket to address: " << replySocketAddress << endl;
+	debug() << "MONICA: connecting monica zeromq reply socket to address: " << replySocketAddress << endl;
 	try
 	{
 		socket.bind(replySocketAddress);
@@ -369,7 +369,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 	{
 		cerr << "Coulnd't bind socket to address: " << replySocketAddress << "! Error: " << e.what() << endl;
 	}
-	cout << "MONICA: bound monica zeromq reply socket to address: " << replySocketAddress << endl;
+	debug() << "MONICA: bound monica zeromq reply socket to address: " << replySocketAddress << endl;
 
 	//the possibly active crop
 	while(true)
@@ -395,7 +395,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 			auto gout = make_shared<ostringstream>();
 			env.gout = gout;
 
-			activateDebug = env.debugMode;
+			activateDebug = debugMode;
 
 			env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 				[](string soilTexture, int distance)
@@ -415,13 +415,13 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 		
 	}
 
-	cout << "exiting startZeroMQMonicaFull" << endl;
+	debug() << "exiting startZeroMQMonicaFull" << endl;
 }
 
 void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, Env env)
 {
 	zmq::socket_t socket(*zmqContext, ZMQ_REQ);
-	cout << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
+	debug() << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
 	try
 	{
 		socket.connect(socketAddress);
@@ -430,7 +430,7 @@ void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 	{
 		cerr << "Coulnd't connect socket to address: " << socketAddress << "! Error: " << e.what() << endl;
 	}
-	cout << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
+	debug() << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
 
 	string s = env.to_json().dump();
 
@@ -444,7 +444,7 @@ void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 		}
 	}
 
-	cout << "exiting runZeroMQMonicaFull" << endl;
+	debug() << "exiting runZeroMQMonicaFull" << endl;
 }
 #endif
 

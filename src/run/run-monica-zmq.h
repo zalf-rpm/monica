@@ -37,7 +37,7 @@ namespace Monica
 #ifndef NO_ZMQ
   void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress, bool isInProcess = false);
 
-	void startZeroMQMonicaFull(zmq::context_t* zmqContext, std::string replySocketAddress);
+	void startZeroMQMonicaFull(zmq::context_t* zmqContext, std::string replySocketAddress, bool debugMode = false);
 
 	void runZeroMQMonicaFull(zmq::context_t* zmqContext, std::string socketAddress, Env env);
 #endif
