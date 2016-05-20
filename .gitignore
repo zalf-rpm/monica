@@ -206,3 +206,4 @@ src/run/production-process.h.autosave
 /installer/Hohenfinow2/inputs.json
 *.autosave
 *.opendb
+project-files/monica.VC.db
