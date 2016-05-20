@@ -156,8 +156,7 @@ namespace Monica
 													 Env& env,
 													 MonicaModel& monica, 
 													 int d);
-	void dumpMonicaParametersIntoFile(std::string, CentralParameterProvider &cpp);
-
+	void dumpMonicaParametersIntoFile(std::string, CentralParameterProvider& cpp);
 }
 
 #endif

@@ -536,9 +536,33 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config, bool deb
 
 	Env env = getHermesEnvFromConfiguration(hermes_config);
 
+	auto fout = make_shared<ofstream>();
+	env.fout = fout;
+	fout->open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
+	if(fout->fail())
+	{
+		cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
+		//return res;
+	}
+
+	// open smout.dat
+	auto gout = make_shared<ofstream>();
+	env.gout = gout;
+	gout->open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
+	if(gout->fail())
+	{
+		cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
+		//return res;
+	}
+
 	/** @todo Do something useful with the result */
 	// start calucation of model
 	const Monica::Result& res = runMonica(env);
+
+	if(gout)
+		gout->close();
+	if(fout)
+		fout->close();
 
 	debug() << "Monica with data from Hermes executed" << endl;
 

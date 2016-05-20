@@ -397,6 +397,12 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 
 			activateDebug = env.debugMode;
 
+			env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+				[](string soilTexture, int distance)
+			{
+				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+			};
+			
 			runMonica(env);
 
 			J11Object resultMsg;
@@ -425,6 +431,8 @@ void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 		cerr << "Coulnd't connect socket to address: " << socketAddress << "! Error: " << e.what() << endl;
 	}
 	cout << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
+
+	string s = env.to_json().dump();
 
 	if(s_send(socket, env.to_json().dump()))
 	{

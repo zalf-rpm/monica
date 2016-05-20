@@ -53,6 +53,8 @@ void Env::merge(json11::Json j)
 {
 	params.merge(j["params"]);
 
+	da.merge(j["da"]);
+
 	cropRotation.clear();
 	for(Json cmj : j["cropRotation"].array_items())
 		cropRotation.push_back(cmj);
@@ -661,7 +663,7 @@ Result Monica::runMonica(Env env)
 * Write header line to fout Output file
 * @param fout File pointer to rmout.dat
 */
-void Monica::initializeFoutHeader(ostream &fout)
+void Monica::initializeFoutHeader(ostream& fout)
 {
 	int outLayers = 20;
 	int numberOfOrgans = 5;
@@ -997,7 +999,7 @@ void Monica::initializeFoutHeader(ostream &fout)
 * Writes header line to gout-Outputfile
 * @param gout File pointer to smout.dat
 */
-void Monica::initializeGoutHeader(ostream &gout)
+void Monica::initializeGoutHeader(ostream& gout)
 {
 	gout << "Datum     ";
 	gout << "\tCrop";

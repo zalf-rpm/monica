@@ -911,7 +911,7 @@ namespace Monica
 	 */
   struct UserSoilMoistureParameters : public Tools::Json11Serializable
 	{
-    UserSoilMoistureParameters(){}
+		UserSoilMoistureParameters();
 
     UserSoilMoistureParameters(json11::Json object);
 

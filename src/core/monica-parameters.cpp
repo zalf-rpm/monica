@@ -1212,7 +1212,14 @@ json11::Json UserEnvironmentParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+UserSoilMoistureParameters::UserSoilMoistureParameters()
+{
+	getCapillaryRiseRate = [](string soilTexture, int distance) { return 0; };
+}
+
+
 UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
+	: UserSoilMoistureParameters()
 {
   merge(j);
 }
@@ -1482,21 +1489,24 @@ void CentralParameterProvider::merge(json11::Json j)
 	simulationParameters.merge(j["simulationParameters"]);
 	siteParameters.merge(j["siteParameters"]);
 	//groundwaterInformation.merge(j["groundwaterInformation"]);
+
+	set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
 }
 
 json11::Json CentralParameterProvider::to_json() const
 {
 	return json11::Json::object{
-		{"type", "CentralParameterProvider"},
-		{"userCropParameters", userCropParameters.to_json()},
-		{"userEnvironmentParameters", userEnvironmentParameters.to_json()},
-		{"userSoilMoistureParameters", userSoilMoistureParameters.to_json()},
-		{"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()},
-		{"userSoilTransportParameters", userSoilTransportParameters.to_json()},
-		{"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
-		{"simulationParameters", simulationParameters.to_json()},
-		{"siteParameters", siteParameters.to_json()}
-		//{"groundwaterInformation", groundwaterInformation.to_json()}
+			{"type", "CentralParameterProvider"}
+		, {"userCropParameters", userCropParameters.to_json()}
+		, {"userEnvironmentParameters", userEnvironmentParameters.to_json()}
+		, {"userSoilMoistureParameters", userSoilMoistureParameters.to_json()}
+		, {"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()}
+		, {"userSoilTransportParameters", userSoilTransportParameters.to_json()}
+		, {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()}
+		, {"simulationParameters", simulationParameters.to_json()}
+		, {"siteParameters", siteParameters.to_json()}
+		//, {"groundwaterInformation", groundwaterInformation.to_json()}
+		, {"writeOutputFiles", writeOutputFiles()}
 	};
 }
 
