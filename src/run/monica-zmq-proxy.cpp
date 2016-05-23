@@ -1,0 +1,212 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/*
+Authors: 
+Michael Berg <michael.berg@zalf.de>
+
+Maintainers: 
+Currently maintained by the authors.
+
+This file is part of the MONICA model. 
+Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
+*/
+
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+
+#include <string>
+
+/*
+#include "db/abstract-db-connections.h"
+
+#include "tools/debug.h"
+#include "../run/run-monica.h"
+#include "../io/database-io.h"
+#include "../core/monica-typedefs.h"
+#include "../core/monica.h"
+#include "tools/json11-helper.h"
+#include "climate/climate-file-io.h"
+#include "../core/simulation.h"
+#include "soil/conversion.h"
+#include "env-from-json.h"
+*/
+
+using namespace std;
+//using namespace Monica;
+//using namespace Tools;
+
+#include "zhelpers.hpp"
+
+
+int main (int argc, char** argv)
+{
+	zmq::context_t context(1);
+
+	//  Socket facing clients
+	zmq::socket_t frontend (context, ZMQ_ROUTER);
+	frontend.bind("tcp://*:5559");
+
+	//  Socket facing services
+	zmq::socket_t backend (context, ZMQ_DEALER);
+	backend.bind("tcp://*:5560");
+
+	//  Start the proxy
+	zmq::proxy(&frontend, &backend, nullptr);
+	return 0;
+}
+
+
+
+
+
+
+/*
+int main(int argc, char** argv)
+{
+	string monicaVersion = "2.1";
+
+	setlocale(LC_ALL, "");
+	setlocale(LC_NUMERIC, "C");
+
+	//use a possibly non-default db-connections.ini
+	//Db::dbConnectionParameters("db-connections.ini");
+
+	if(argc >= 1)// && false)
+	{
+		bool debug = false, debugSet = false;
+		string startDate, endDate;
+		bool writeOutputFiles = false, writeOutputFilesSet = false;
+		string pathToOutput;
+		bool hermesMode = false;
+		string pathToSimJson = "./sim.json",crop, site, climate;
+
+		for(auto i = 1; i < argc; i++)
+		{
+			string arg = argv[i];
+			if(arg == "-d" || arg == "--debug")
+				debug = debugSet = true;
+			else if(arg == "--hermes")
+				hermesMode = true;
+			else if((arg == "-s" || arg == "--start-date")
+			        && i+1 < argc)
+				startDate = argv[++i];
+			else if((arg == "-e" || arg == "--end-date")
+			        && i+1 < argc)
+				startDate = argv[++i];
+			else if(arg == "-w" || arg == "--write-output-files")
+				writeOutputFiles = writeOutputFilesSet = true;
+			else if((arg == "-o" || arg == "--path-to-output")
+			        && i+1 < argc)
+				pathToOutput = argv[++i];
+			else if((arg == "-c" || arg == "--path-to-crop")
+			        && i+1 < argc)
+				crop = argv[++i];
+			else if((arg == "-s" || arg == "--path-to-site")
+			        && i+1 < argc)
+				site = argv[++i];
+			else if((arg == "-cl" || arg == "--path-to-climate")
+			        && i+1 < argc)
+				climate = argv[++i];
+			else if(arg == "-h" || arg == "--help")
+			{
+				cout << "./monica [-d | --debug]\t\t\t ... show debug outputs" << endl
+				<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
+				<< "\t [-s | --start-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+				<< "\t [-e | --end-date]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
+				<< "\t [-w | --write-output-files]\t ... write MONICA output files (rmout, smout)" << endl
+				<< "\t [-o | --path-to-output]\t ... path to output directory" << endl
+				<< "\t [-c | --path-to-crop]\t\t ... path to crop.json file" << endl
+				<< "\t [-s | --path-to-site]\t\t ... path to site.json file" << endl
+				<< "\t [-w | --path-to-climate]\t ... path to climate.csv" << endl
+				<< "\t [-h | --help]\t\t\t ... this help output" << endl
+				<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl;
+			  exit(0);
+			}
+			else if(arg == "-v" || arg == "--version")
+				cout << "MONICA version " << monicaVersion << endl, exit(0);
+			else
+				pathToSimJson = argv[i];
+		}
+
+		if(hermesMode)
+		{
+			if(debug)
+				cout << "starting MONICA with old HERMES input files" << endl;
+
+			Monica::runWithHermesData(fixSystemSeparator(pathToSimJson), debug);
+
+			if(debug)
+				cout << "finished MONICA" << endl;
+		}
+		else
+		{
+			auto pathAndFile = splitPathToFile(pathToSimJson);
+			auto pathOfSimJson = pathAndFile.first;
+
+			auto simj = parseJsonString(readFile(pathToSimJson));
+			auto simm = simj.object_items();
+
+			if(!startDate.empty())
+				simm["start-date"] = startDate;
+
+			if(!endDate.empty())
+				simm["end-date"] = endDate;
+
+			if(debugSet)
+				simm["debug?"] = debug;
+
+			if(writeOutputFilesSet)
+				simm["write-output-files?"] = writeOutputFiles;
+
+			if(!pathToOutput.empty())
+				simm["path-to-output"] = pathToOutput;
+
+			simm["sim.json"] = pathToSimJson;
+
+			if(!crop.empty())
+				simm["crop.json"] = crop;
+			auto pathToCropJson = simm["crop.json"].string_value();
+			if(!isAbsolutePath(pathToCropJson))
+				simm["crop.json"] = pathOfSimJson + pathToCropJson;
+
+			if(!site.empty())
+				simm["site.json"] = site;
+			auto pathToSiteJson = simm["site.json"].string_value();
+			if(!isAbsolutePath(pathToSiteJson))
+				simm["site.json"] = pathOfSimJson + pathToSiteJson;
+
+			if(!climate.empty())
+				simm["climate.csv"] = climate;
+			auto pathToClimateCSV = simm["climate.csv"].string_value();
+			if(!isAbsolutePath(pathToClimateCSV))
+				simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
+
+			map<string, string> ps;
+			ps["sim-json-str"] = json11::Json(simm).dump();
+			ps["crop-json-str"] = readFile(simm["crop.json"].string_value());
+			ps["site-json-str"] = readFile(simm["site.json"].string_value());
+			//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
+
+			auto env = createEnvFromJsonConfigFiles(ps);
+			activateDebug = env.debugMode;
+
+			if(activateDebug)
+				cout << "starting MONICA with JSON input files" << endl;
+
+			auto res = runMonica(env);
+
+			if(activateDebug)
+				cout << "finished MONICA" << endl;
+		}
+	}
+	
+	//test();
+	
+	//writeDbParams();
+
+	return 0;
+}
+*/
