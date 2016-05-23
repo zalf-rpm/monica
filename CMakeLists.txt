@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.2.2)
 project(monica)
 
-add_definitions(-DNO_ZMQ
+add_definitions(#-DNO_ZMQ
                 -DNO_MYSQL)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 set(UTIL_DIR "../util")
 set(SYS_LIBS_DIR "../sys-libs")
@@ -12,7 +12,7 @@ set(CARBIOCIAL_DIR "../carbiocial-project")
 
 include_directories("src")
 include_directories(${UTIL_DIR})
-include_directories("${SYS_LIBS_DIR}/includes/zeromq-3.2.5")
+include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
 include_directories(${CARBIOCIAL_DIR/monica/src})
 
 set(MONICA_SOURCE
@@ -51,6 +51,12 @@ set(MONICA_SOURCE
 
     src/core/soiltransport.cpp
     src/core/soiltransport.h
+
+	src/core/voc-common.h
+	src/core/voc-guenther.h
+	src/core/voc-guenther.cpp
+	src/core/voc-jjv.h
+	src/core/voc-jjv.cpp
 
     src/io/database-io.cpp
     src/io/database-io.h
@@ -156,14 +162,16 @@ find_package(Threads REQUIRED)
 add_executable(monica ${MONICA_SOURCE})
 target_link_libraries(monica
                       ${CMAKE_THREAD_LIBS_INIT}
-                      dl)
+					  dl
+					  zmq)
 set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 # create monica as shared library
 add_library(libmonica SHARED ${MONICA_SOURCE})
 target_link_libraries(libmonica
                       ${CMAKE_THREAD_LIBS_INIT}
-                      dl)
+					  dl
+					  zmq)
 set_target_properties(libmonica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 set_target_properties(libmonica PROPERTIES PREFIX "")
 
@@ -183,11 +191,22 @@ include_directories(${Boost_INCLUDE_DIR})
 
 # create monica python wrapper lib
 set(MONICA_PYTHON_WRAPPER_SOURCE
-    src/python/monica_py.cpp)
+	src/python/monica_py.cpp)
 add_library(monica_py SHARED ${MONICA_PYTHON_WRAPPER_SOURCE})
 target_link_libraries(monica_py ${Boost_LIBRARIES} libmonica)
 set_target_properties(monica_py PROPERTIES PREFIX "")
 set_target_properties(monica_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+
+# create monica python wrapper lib
+set(MONICA_ZMQ_PROXY_SOURCE
+	src/run/monica-zmq-proxy.cpp)
+add_executable(monica-zmq-proxy ${MONICA_ZMQ_PROXY_SOURCE})
+target_link_libraries(monica-zmq-proxy
+					  ${CMAKE_THREAD_LIBS_INIT}
+					  dl
+					  zmq)
+set_target_properties(monica-zmq-proxy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+
 
 
 #-------------------------------------------------------------------------------

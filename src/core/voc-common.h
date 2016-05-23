@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 #include <vector>
 #include <cmath>
+#include <limits>
 
 namespace Voc
 {
