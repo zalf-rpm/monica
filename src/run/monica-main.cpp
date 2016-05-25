@@ -89,12 +89,15 @@ int main(int argc, char** argv)
 		int port = 5560;
 		string ipAddress = "localhost";
 		string pathToSimJson = "./sim.json", crop, site, climate;
+		bool useZmqProxy = false;
 
 		for(auto i = 1; i < argc; i++)
 		{
 			string arg = argv[i];
 			if(arg == "-d" || arg == "--debug")
 				debug = debugSet = true;
+			else if(arg == "--use-zmq-proxy")
+				useZmqProxy = true;
 			else if(arg == "--hermes")
 				mode = hermes;
 			else if(arg == "--zmq-client")
@@ -132,10 +135,11 @@ int main(int argc, char** argv)
 				cout 
 					<< "./monica " << endl
 					<< "\t [-d | --debug]\t\t\t ... show debug outputs" << endl
+					<< "\t [--use-zmq-proxy]\t\t\t ... connect MONICA process to a ZeroMQ proxy" << endl
 					<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
 					<< "\t [--zmq-client]\t\t\t ... run in client mode communicating to a MONICA ZeroMQ server" << endl
 					<< "\t [--zmq-server]\t\t\t ... run in server mode communicating with MONICA ZeroMQ clients" << endl
-					<< "\t [[-a | --address] IPADDRESS]\t ... connect client to give IP address" << endl
+					<< "\t [[-a | --address] IP-ADDRESS (default: " << ipAddress << ")]\t ... connect client to give IP address" << endl
 					<< "\t [[-p | --port] PORT (default: 5560)]\t ... run server/connect client on/to given port" << endl
 					<< "\t [[-s | --start-date] ISO-DATE (default: start of given climate data)]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
 					<< "\t [[-e | --end-date] ISO-DATE (default: end of given climate data)]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
@@ -170,7 +174,7 @@ int main(int argc, char** argv)
 			if(debug)
 				cout << "starting ZeroMQ MONICA server" << endl;
 
-			startZeroMQMonicaFull(&context, string("tcp://*:") + to_string(port), debug);
+			startZeroMQMonicaFull(&context, string("tcp://*:") + to_string(port), useZmqProxy);
 
 			if(debug)
 				cout << "stopped ZeroMQ MONICA server" << endl;

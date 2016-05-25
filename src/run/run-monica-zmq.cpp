@@ -357,19 +357,22 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
 //  cout << "exiting startZeroMQMonica" << endl;
 }
 
-void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocketAddress, bool debugMode)
+void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, bool useZmqProxy)
 {
 	zmq::socket_t socket(*zmqContext, ZMQ_REP);
-	debug() << "MONICA: connecting monica zeromq reply socket to address: " << replySocketAddress << endl;
+	debug() << "MONICA: connecting monica zeromq reply socket to address: " << socketAddress << endl;
 	try
 	{
-		socket.bind(replySocketAddress);
+		if(useZmqProxy)
+			socket.connect(socketAddress);
+		else
+			socket.bind(socketAddress);
 	}
 	catch(zmq::error_t e)
 	{
-		cerr << "Coulnd't bind socket to address: " << replySocketAddress << "! Error: " << e.what() << endl;
+		cerr << "Coulnd't bind socket to address: " << socketAddress << "! Error: " << e.what() << endl;
 	}
-	debug() << "MONICA: bound monica zeromq reply socket to address: " << replySocketAddress << endl;
+	debug() << "MONICA: bound monica zeromq reply socket to address: " << socketAddress << endl;
 
 	//the possibly active crop
 	while(true)
@@ -384,7 +387,12 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 
 		string msgType = msg.type();
 		if(msgType == "finish")
+		{
+			J11Object resultMsg;
+			resultMsg["type"] = "ack";
+			s_send(socket, Json(resultMsg).dump());
 			break;
+		}
 		else if(msgType == "Env")
 		{
 			Json& fullMsg = msg.json;
@@ -395,7 +403,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string replySocke
 			auto gout = make_shared<ostringstream>();
 			env.gout = gout;
 
-			activateDebug = debugMode;
+			activateDebug = env.debugMode;
 
 			env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 				[](string soilTexture, int distance)
