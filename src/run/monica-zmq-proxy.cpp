@@ -62,6 +62,7 @@ int main (int argc,
 	catch(zmq::error_t e)
 	{
 		cerr << "Couldn't bind frontend socket to address: " << feAddress << "! Error: [" << e.what() << "]" << endl;
+		exit(1);
 	}
 	cout << "Bound " << appName << " zeromq router socket to frontend address: " << feAddress << "!" << endl;
 
@@ -75,17 +76,19 @@ int main (int argc,
 	catch(zmq::error_t e)
 	{
 		cerr << "Couldn't bind backend socket to address: " << beAddress << "! Error: [" << e.what() << "]" << endl;
+		exit(1);
 	}
 	cout << "Bound " << appName << " zeromq dealer socket to backend address: " << beAddress << "!" << endl;
 
 	// start the proxy
 	try
 	{
-		zmq::proxy(&frontend, &backend, nullptr);
+		zmq::proxy((void*)frontend, (void*)backend, nullptr);
 	}
 	catch(zmq::error_t e)
 	{
 		cerr << "Couldn't start proxy! Error: [" << e.what() << "]" << endl;
+		exit(1);
 	}
 
 	return 0;

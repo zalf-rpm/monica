@@ -293,7 +293,7 @@ namespace Voc
 
 	struct  leaf_emission_t
 	{
-		size_t foliage_layer{0};
+		std::size_t foliage_layer{0};
 
 		photosynth_t pho;
 		foliage_t fol;

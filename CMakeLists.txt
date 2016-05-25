@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2.2)
+cmake_minimum_required(VERSION 2.8) #3.2.2)
 project(monica)
 
 add_definitions(#-DNO_ZMQ
@@ -197,7 +197,7 @@ target_link_libraries(monica_py ${Boost_LIBRARIES} libmonica)
 set_target_properties(monica_py PROPERTIES PREFIX "")
 set_target_properties(monica_py PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
-# create monica python wrapper lib
+# create monica zmq proxy executable
 set(MONICA_ZMQ_PROXY_SOURCE
 	src/run/monica-zmq-proxy.cpp)
 add_executable(monica-zmq-proxy ${MONICA_ZMQ_PROXY_SOURCE})
@@ -207,6 +207,41 @@ target_link_libraries(monica-zmq-proxy
 					  zmq)
 set_target_properties(monica-zmq-proxy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
+# create monica zmq control executable
+set(MONICA_ZMQ_CONTROL_SOURCE
+	src/run/monica-zmq-control.cpp
+
+	# json11 library code
+	#-------------------------------------------
+	${UTIL_DIR}/json11/json11.hpp
+	${UTIL_DIR}/json11/json11.cpp
+
+	# tools library code
+	#-------------------------------------------
+	${UTIL_DIR}/tools/algorithms.h
+	${UTIL_DIR}/tools/algorithms.cpp
+
+	${UTIL_DIR}/tools/date.h
+	${UTIL_DIR}/tools/date.cpp
+
+	${UTIL_DIR}/tools/helper.h
+	${UTIL_DIR}/tools/helper.cpp
+
+	${UTIL_DIR}/tools/json11-helper.h
+	${UTIL_DIR}/tools/json11-helper.cpp
+
+	${UTIL_DIR}/tools/zmq-helper.h
+	${UTIL_DIR}/tools/zmq-helper.cpp
+
+	${UTIL_DIR}/tools/debug.h
+	${UTIL_DIR}/tools/debug.cpp
+)
+add_executable(monica-zmq-control ${MONICA_ZMQ_CONTROL_SOURCE})
+target_link_libraries(monica-zmq-control
+					  ${CMAKE_THREAD_LIBS_INIT}
+					  dl
+					  zmq)
+set_target_properties(monica-zmq-control PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 
 #-------------------------------------------------------------------------------
