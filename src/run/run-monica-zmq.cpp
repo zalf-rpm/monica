@@ -370,7 +370,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 	}
 	catch(zmq::error_t e)
 	{
-		cerr << "Coulnd't bind socket to address: " << socketAddress << "! Error: " << e.what() << endl;
+		cerr << "Coulnd't " << (useZmqProxy ? "connect" : "bind") << " socket to address: " << socketAddress << "! Error: " << e.what() << endl;
 	}
 	debug() << "MONICA: bound monica zeromq reply socket to address: " << socketAddress << endl;
 

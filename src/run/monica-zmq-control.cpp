@@ -41,7 +41,7 @@ void stopMonicaProcesses(zmq::context_t& context,
 	// setup a reply socket for managing (e.g. starting/stopping) MONICA processes
 	zmq::socket_t socket(context, ZMQ_REP);
 
-	string address = string("tcp://") + proxyAddress + "*:" + to_string(backendProxyPort);
+	string address = string("tcp://") + proxyAddress + ":" + to_string(backendProxyPort);
 	try
 	{
 		socket.connect(address);
@@ -126,7 +126,7 @@ int main (int argc,
 	while(true)
 	{
 		auto msg = receiveMsg(socket);
-		//    cout << "Received message " << msg.toString() << endl;
+		cout << "Received message: " << msg.toString() << endl;
 		//    if(!msg.valid)
 		//    {
 		//      this_thread::sleep_for(chrono::milliseconds(100));
@@ -146,8 +146,8 @@ int main (int argc,
 			Json& fmsg = msg.json;
 
 			int count = fmsg["count"].int_value();
-
-			string cmd = string("./monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+			
+			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
 			string fullCmd = fixSystemSeparator(cmd);
 
 			int successfullyStarted = 0;
@@ -171,7 +171,7 @@ int main (int argc,
 			int count = fmsg["count"].int_value();
 			int stop = max(0, started - count);
 
-			string cmd = string("./monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
 			string fullCmd = fixSystemSeparator(cmd);
 
 			int additionallyStarted = 0;

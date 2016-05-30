@@ -21,8 +21,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "zhelpers.hpp"
 
-#include "db/abstract-db-connections.h"
+#include "json11/json11.hpp"
 
+#include "tools/zmq-helper.h"
+#include "tools/helper.h"
+
+#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "../run/run-monica.h"
 #include "../run/run-monica-zmq.h"
@@ -38,6 +42,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace std;
 using namespace Monica;
 using namespace Tools;
+using namespace json11;
 
 #include "soil/soil.h"
 void test()
@@ -63,6 +68,35 @@ void writeDbParams()
 	//writeUserParameters(MODE_MACSUR_SCALING, "../monica-parameters/user-parameters");
 }
 
+void sendControlMessage(zmq::context_t& context,
+												string proxyAddress,
+												int frontendProxyPort,
+												string messageType,
+												int count)
+{
+	zmq::socket_t socket(context, ZMQ_REQ);
+
+	string address = string("tcp://") + proxyAddress + ":" + to_string(frontendProxyPort);
+	try
+	{
+		socket.connect(address);
+	}
+	catch(zmq::error_t e)
+	{
+		cerr << "Coulnd't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
+	}
+	//cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
+
+	J11Object resultMsg;
+	resultMsg["type"] = messageType;
+	resultMsg["count"] = count;
+	s_send(socket, Json(resultMsg).dump());
+
+	auto msg = receiveMsg(socket);
+	cout << "Received ack: " << msg.type() << endl;
+}
+
+
 int main(int argc, char** argv)
 {
 	string monicaVersion = "2.1";
@@ -87,9 +121,13 @@ int main(int argc, char** argv)
 		string pathToOutput;
 		Mode mode = monica;
 		int port = 5560;
-		string ipAddress = "localhost";
+		string address = "localhost";
 		string pathToSimJson = "./sim.json", crop, site, climate;
 		bool useZmqProxy = false;
+		string controlAddress = "localhost";
+		int controlPort = 6666;
+		string command = "";
+		int count = 1;
 
 		for(auto i = 1; i < argc; i++)
 		{
@@ -104,9 +142,21 @@ int main(int argc, char** argv)
 				mode = zmqClient;
 			else if(arg == "--zmq-server")
 				mode = zmqServer;
+			else if((arg == "-ca" || arg == "--control-address")
+							&& i + 1 < argc)
+				controlAddress = argv[++i];
+			else if((arg == "-cp" || arg == "--control-port")
+							&& i + 1 < argc)
+				controlPort = stoi(argv[++i]);
+			else if(arg == "--send"
+							&& i + 1 < argc)
+				command = argv[++i];
+			else if(arg == "--count"
+							&& i + 1 < argc)
+				count = atoi(argv[++i]);
 			else if((arg == "-a" || arg == "--address")
 							&& i + 1 < argc)
-				ipAddress = argv[++i];
+				address = argv[++i];
 			else if((arg == "-p" || arg == "--port")
 							&& i + 1 < argc)
 				port = stoi(argv[++i]);
@@ -127,29 +177,33 @@ int main(int argc, char** argv)
 			else if((arg == "-s" || arg == "--path-to-site")
 			        && i+1 < argc)
 				site = argv[++i];
-			else if((arg == "-cl" || arg == "--path-to-climate")
+			else if((arg == "-w" || arg == "--path-to-climate")
 			        && i+1 < argc)
 				climate = argv[++i];
 			else if(arg == "-h" || arg == "--help")
 			{
 				cout 
 					<< "./monica " << endl
-					<< "\t [-d | --debug]\t\t\t ... show debug outputs" << endl
-					<< "\t [--use-zmq-proxy]\t\t\t ... connect MONICA process to a ZeroMQ proxy" << endl
-					<< "\t [--hermes]\t\t\t ... use old hermes format files" << endl
-					<< "\t [--zmq-client]\t\t\t ... run in client mode communicating to a MONICA ZeroMQ server" << endl
-					<< "\t [--zmq-server]\t\t\t ... run in server mode communicating with MONICA ZeroMQ clients" << endl
-					<< "\t [[-a | --address] IP-ADDRESS (default: " << ipAddress << ")]\t ... connect client to give IP address" << endl
-					<< "\t [[-p | --port] PORT (default: 5560)]\t ... run server/connect client on/to given port" << endl
-					<< "\t [[-s | --start-date] ISO-DATE (default: start of given climate data)]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [[-e | --end-date] ISO-DATE (default: end of given climate data)]\t\t ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [-w | --write-output-files]\t ... write MONICA output files (rmout, smout)" << endl
-					<< "\t [[-o | --path-to-output] DIRECTORY (default: .)]\t ... path to output directory" << endl
-					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)]\t\t ... path to crop.json file" << endl
-					<< "\t [[-s | --path-to-site] FILE (default: ./site.json)]\t\t ... path to site.json file" << endl
-					<< "\t [[-w | --path-to-climate] FILE (default: ./climate.csv)]\t ... path to climate.csv" << endl
-					<< "\t [-h | --help]\t\t\t ... this help output" << endl
-					<< "\t [-v | --version]\t\t ... outputs MONICA version" << endl
+					<< "\t [-d | --debug] ... show debug outputs" << endl
+					<< "\t [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
+					<< "\t [--hermes] ... use old hermes format files" << endl
+					<< "\t [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
+					<< "\t [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
+					<< "\t [[-ca | --control-address] CONTROL-ADDRESS (default: " << controlAddress << ")] ... address of control node" << endl
+					<< "\t [[-cp | --control-port] CONTROL-PORT (default: " << controlPort << ")] ... port of control node" << endl
+					<< "\t [--send] COMMAND (start-new | start-max | stop)] ... send message to zmq control node" << endl
+					<< "\t [--count] COUNT (default: " << count << ")] ... tell in control message how many MONICA processes to start/stop" << endl
+					<< "\t [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
+					<< "\t [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
+					<< "\t [[-s | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [[-e | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
+					<< "\t [[-o | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
+					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
+					<< "\t [[-s | --path-to-site] FILE (default: ./site.json)] ... path to site.json file" << endl
+					<< "\t [[-w | --path-to-climate] FILE (default: ./climate.csv)] ... path to climate.csv" << endl
+					<< "\t [-h | --help] ... this help output" << endl
+					<< "\t [-v | --version] ... outputs MONICA version" << endl
 					<< "\t path-to-sim-json ... path to sim.json file" << endl;
 			  exit(0);
 			}
@@ -159,7 +213,16 @@ int main(int argc, char** argv)
 				pathToSimJson = argv[i];
 		}
 
-		if(mode == hermes)
+		if(!command.empty())
+		{
+			if(command == "start-new"
+				 || command == "start-max"
+				 || command == "stop")
+				sendControlMessage(context, controlAddress, controlPort, command, count);
+			else if(debug)
+				cout << "Control command: " << command << " unknown, should be one of [start-new, start-max or stop]!" << endl;
+		}
+		else if(mode == hermes)
 		{
 			if(debug)
 				cout << "starting MONICA with old HERMES input files" << endl;
@@ -174,7 +237,7 @@ int main(int argc, char** argv)
 			if(debug)
 				cout << "starting ZeroMQ MONICA server" << endl;
 
-			startZeroMQMonicaFull(&context, string("tcp://*:") + to_string(port), useZmqProxy);
+			startZeroMQMonicaFull(&context, string("tcp://") + (useZmqProxy ? address : "*") + ":" + to_string(port), useZmqProxy);
 
 			if(debug)
 				cout << "stopped ZeroMQ MONICA server" << endl;
@@ -261,7 +324,7 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-				runZeroMQMonicaFull(&context, string("tcp://") + ipAddress + ":" + to_string(port), env);
+				runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
 			}
 
 			if(gout)
