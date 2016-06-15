@@ -52,8 +52,8 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
   , vs_SoilNH4(sps.vs_SoilAmmonium)
   , vs_SoilNO3(sps.vs_SoilNitrate)
   , _sps(sps)
-  , vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC)
-  , vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC)
+  , vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
+  , vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
 {
 }
 
