@@ -96,11 +96,11 @@ void sendControlMessage(zmq::context_t& context,
 	cout << "Received ack: " << msg.type() << endl;
 }
 
+string appName = "monica";
+string version = "2.0.0-beta";
 
 int main(int argc, char** argv)
 {
-	string monicaVersion = "2.1";
-
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 
@@ -160,12 +160,12 @@ int main(int argc, char** argv)
 			else if((arg == "-p" || arg == "--port")
 							&& i + 1 < argc)
 				port = stoi(argv[++i]);
-			else if((arg == "-s" || arg == "--start-date")
+			else if((arg == "-sd" || arg == "--start-date")
 			        && i+1 < argc)
 				startDate = argv[++i];
-			else if((arg == "-e" || arg == "--end-date")
+			else if((arg == "-ed" || arg == "--end-date")
 			        && i+1 < argc)
-				startDate = argv[++i];
+				endDate = argv[++i];
 			else if(arg == "-w" || arg == "--write-output-files")
 				writeOutputFiles = writeOutputFilesSet = true;
 			else if((arg == "-o" || arg == "--path-to-output")
@@ -183,7 +183,7 @@ int main(int argc, char** argv)
 			else if(arg == "-h" || arg == "--help")
 			{
 				cout 
-					<< "./monica " << endl
+					<< "./" << appName << endl
 					<< "\t [-d | --debug] ... show debug outputs" << endl
 					<< "\t [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
 					<< "\t [--hermes] ... use old hermes format files" << endl
@@ -195,8 +195,8 @@ int main(int argc, char** argv)
 					<< "\t [--count] COUNT (default: " << count << ")] ... tell in control message how many MONICA processes to start/stop" << endl
 					<< "\t [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
 					<< "\t [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
-					<< "\t [[-s | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [[-e | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+					<< "\t [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
 					<< "\t [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
 					<< "\t [[-o | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
 					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
@@ -208,7 +208,7 @@ int main(int argc, char** argv)
 			  exit(0);
 			}
 			else if(arg == "-v" || arg == "--version")
-				cout << "MONICA version " << monicaVersion << endl, exit(0);
+				cout << "MONICA version " << version << endl, exit(0);
 			else
 				pathToSimJson = argv[i];
 		}

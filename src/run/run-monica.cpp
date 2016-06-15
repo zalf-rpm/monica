@@ -210,7 +210,7 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	pout.open(ensureDirExists(env.params.pathToOutputDir()) + fileName);
+	pout.open(ensureDirExists(env.params.pathToOutputDir()) + "/" + fileName);
 	if(pout.fail())
 	{
 		cerr << "Error couldn't open file: '" << env.params.pathToOutputDir() + "/" + fileName << "'." << endl;
@@ -289,28 +289,10 @@ Result Monica::runMonica(Env env)
 
 	if(env.params.writeOutputFiles())
 	{
-		// open rmout.dat
-		//debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << endl;
-		//fout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
-		//if(fout.fail())
-		//{
-		//	cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
-		//	return res;
-		//}
-
-		// open smout.dat
-		//gout.open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
-		//if(gout.fail())
-		//{
-		//	cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
-		//	return res;
-		//}
-
 		// writes the header line to output files
 		initializeFoutHeader(fout);
 		initializeGoutHeader(gout);
-
-		dumpMonicaParametersIntoFile(env.params.pathToOutputDir(), env.params);
+		//dumpMonicaParametersIntoFile(env.params.pathToOutputDir(), env.params);
 	}
 
 	debug() << "currentDate" << endl;
@@ -1634,6 +1616,9 @@ void Monica::writeGeneralResults(ostream& fout,
 
 void Monica::dumpMonicaParametersIntoFile(std::string path, CentralParameterProvider &cpp)
 {
+	if(!activateDebug)
+		return;
+
 	ofstream parameter_output_file;
 	parameter_output_file.open(ensureDirExists(path) + "/monica_parameters.txt");
 	if(parameter_output_file.fail())

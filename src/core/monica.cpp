@@ -143,8 +143,8 @@ void MonicaModel::seedCrop(CropPtr crop)
       addDailySumFertiliser(fert_amount);
     }
 
-    if(writeOutputFiles())
-      writeCropParameters(_pathToOutputDir, *_currentCrop.get());
+    //if(writeOutputFiles())
+    //  writeCropParameters(_pathToOutputDir, *_currentCrop.get());
   }
 }
 
@@ -662,7 +662,7 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
 	mcd.tFol24 = mcd.tFol;
 	mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
 
-	cout << "calculating voc emissions at " << date.toIsoDateString() << endl;
+	//debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
 	_currentCropGrowth->calculateVOCEmissions(mcd);
 }
 
