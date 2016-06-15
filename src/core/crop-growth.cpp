@@ -3353,10 +3353,10 @@ Voc::Emissions CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mc
 	species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
 
 	auto gems = Voc::calculateGuentherVOCEmissions(species, mcd);
-	debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
+	//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
 	auto jjvems = Voc::calculateJJVVOCEmissions(species, mcd);
-	debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
+	//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
 
 	return gems;
 }
