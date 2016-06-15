@@ -19,13 +19,14 @@
 	!define VCversion "14"
 
 	!define ParamsRepoDir "..\..\monica-parameters"
-	
+	!define SysLibsDir "..\..\sys-libs"
+
 ;--------------------------------
 ;General
 
   ;Name and file
   Name "MONICA"
-  OutFile "MONICA-Setup-2.1-${Arch}-${ArchBit}.exe"
+  OutFile "MONICA-Setup-2.0.0-beta-${Arch}-${ArchBit}.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\MONICA"
@@ -91,8 +92,12 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   
   ;ADD YOUR OWN FILES HERE...
   File /oname=monica.exe "..\project-files\release\monica.exe"  
+  File /oname=monica-zmq-control.exe "..\project-files\release\monica-zmq-control.exe"  
+  File /oname=monica-zmq-proxy.exe "..\project-files\release\monica-zmq-proxy.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
 	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
+  File "${SysLibsDir}\binaries\windows\vc14\${Arch}\libsodium-1.0.10\libsodium.dll"
+  File "${SysLibsDir}\binaries\windows\vc14\${Arch}\zeromq-dev-master\libzmq.dll"
 	File "..\LICENSE"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
@@ -202,6 +207,8 @@ SectionEnd
 Section "Uninstall"
 
   Delete "$INSTDIR\monica.exe"
+  Delete "$INSTDIR\monica-zmq-control.exe"
+  Delete "$INSTDIR\monica-zmq-proxy.exe"
   Delete "$INSTDIR\*.dll"
   ;Delete "$INSTDIR\climate.dll"
   ;Delete "$INSTDIR\tools.dll"
