@@ -405,6 +405,12 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
 
 void SpeciesParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_string_value(pc_SpeciesId, j, "SpeciesName");
   set_int_value(pc_CarboxylationPathway, j, "CarboxylationPathway");
   set_double_value(pc_DefaultRadiationUseEfficiency, j, "DefaultRadiationUseEfficiency");
@@ -510,23 +516,20 @@ CultivarParameters::CultivarParameters(json11::Json j)
 
 void CultivarParameters::merge(json11::Json j)
 {
-  string err;
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+	
   if(j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForPrimaryYield = toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]);
-	//if(!err.empty())
-	//	cerr << "Error @ CultivarParameters::merge: " << err << endl;
   
-	err = "";
 	if(j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForSecondaryYield = toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]);
-	//if(!err.empty())
-	//	cerr << "Error @ CultivarParameters::merge: " << err << endl;
 
-	err = "";
   if(j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
     pc_OrganIdsForCutting = toVector<YieldComponent>(j["OrganIdsForCutting"]);
-	//if(!err.empty())
-	//	cerr << "Error @ CultivarParameters::merge: " << err << endl;
 
   set_string_value(pc_CultivarId, j, "CultivarName");
   set_string_value(pc_Description, j, "Description");
@@ -665,6 +668,12 @@ MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
 
 void MineralFertiliserParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
   set_double_value(vo_Carbamid, j, "Carbamid");
@@ -699,6 +708,12 @@ NMinUserParameters::NMinUserParameters(json11::Json j)
 
 void NMinUserParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(min, j, "min");
   set_double_value(max, j, "max");
   set_int_value(delayInDays, j, "delayInDays");
@@ -728,6 +743,12 @@ IrrigationParameters::IrrigationParameters(json11::Json j)
 
 void IrrigationParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(nitrateConcentration, j, "nitrateConcentration");
   set_double_value(sulfateConcentration, j, "sulfateConcentration");
 }
@@ -758,6 +779,12 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
 
 void AutomaticIrrigationParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   IrrigationParameters::merge(j["irrigationParameters"]);
   set_double_value(amount, j, "amount");
   set_double_value(threshold, j, "threshold");
@@ -856,6 +883,13 @@ SiteParameters::SiteParameters(json11::Json j)
 
 void SiteParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
+	err = "";
   set_double_value(vs_Latitude, j, "Latitude");
   set_double_value(vs_Slope, j, "Slope");
   set_double_value(vs_HeightNN, j, "HeightNN");
@@ -865,7 +899,6 @@ void SiteParameters::merge(json11::Json j)
   set_double_value(vq_NDeposition, j, "NDeposition");
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
 
-  string err;
   if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
   {
     const auto& sps = j["SoilProfileParameters"].array_items();
@@ -928,6 +961,12 @@ AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j)
 
 void AutomaticHarvestParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   int ht = -1;
   set_int_value(ht, j, "harvestTime");
   if(ht > -1)
@@ -956,6 +995,12 @@ NMinCropParameters::NMinCropParameters(json11::Json j)
 
 void NMinCropParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(samplingDepth, j, "samplingDepth");
   set_double_value(nTarget, j, "nTarget");
   set_double_value(nTarget30, j, "nTarget30");
@@ -979,6 +1024,12 @@ OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
 
 void OrganicMatterParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_double_value(vo_AOM_DryMatterContent, j, "AOM_DryMatterContent");
   set_double_value(vo_AOM_NH4Content, j, "AOM_NH4Content");
   set_double_value(vo_AOM_NO3Content, j, "AOM_NO3Content");
@@ -1022,6 +1073,12 @@ OrganicFertiliserParameters::OrganicFertiliserParameters(json11::Json j)
 
 void OrganicFertiliserParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   OrganicMatterParameters::merge(j);
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
@@ -1045,6 +1102,12 @@ CropResidueParameters::CropResidueParameters(json11::Json j)
 
 void CropResidueParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   OrganicMatterParameters::merge(j);
   set_string_value(species, j, "species");
   set_string_value(residueType, j, "residueType");
@@ -1068,6 +1131,12 @@ SimulationParameters::SimulationParameters(json11::Json j)
 
 void SimulationParameters::merge(json11::Json j)
 {
+	string err;
+	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
+	{
+		merge(j["DEFAULT"]);
+	}
+
   set_iso_date_value(startDate, j, "startDate");
   set_iso_date_value(endDate, j, "endDate");
 
