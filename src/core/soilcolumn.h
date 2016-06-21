@@ -131,16 +131,16 @@ namespace Monica
     //! Returns soil water pressure head as common logarithm pF.
     double vs_SoilMoisture_pF();
 
-    //! soil ammonium content [kg N m-3]
+    //! soil ammonium content [kgN m-3]
     double get_SoilNH4() const { return vs_SoilNH4; }
 
-    //! soil nitrite content [kg N m-3]
+    //! soil nitrite content [kgN m-3]
     double get_SoilNO2() const { return vs_SoilNO2; }
 
-    //! soil nitrate content [kg N m-3]
+    //! soil nitrate content [kgN m-3]
     double get_SoilNO3() const { return vs_SoilNO3; }
 
-    //! soil carbamide content [kg m-3]
+    //! soil carbamide content [kgN m-3]
     double get_SoilCarbamid() const { return vs_SoilCarbamid; }
 
     //! soil mineral N content [kg m-3]

@@ -29,6 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/simulation.h"
 #include "soil/conversion.h"
 #include "soil/soil-from-db.h"
+#include "../core/monica-parameters.h"
 
 using namespace std;
 using namespace Monica;
@@ -366,24 +367,32 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
 		cropSiteSim.push_back(parseJsonString(params[name]));
 
+	string pathToParameters = cropSiteSim.at(2)["path-to-parameter-files"].string_value();
+
+	auto addBasePath = [&](Json& j, string basePath)
+	{
+		string err;
+		if(!j.has_shape({{"base-path", Json::STRING}}, err))
+		{
+			auto m = j.object_items();
+			m["base-path"] = pathToParameters;
+			j = m;
+		}
+	};
+
 	vector<Json> cropSiteSim2;
 	for(auto& j : cropSiteSim)
+	{
+		addBasePath(j, pathToParameters);
 		cropSiteSim2.push_back(findAndReplaceReferences(j, j));
-
-	//for(auto j : cropSiteSim2)
-	//{
-	//	auto str = j.dump();
-		//cout << str << endl;
-	//}
-
-	//cout << cropSiteSim2[1].dump() << endl;
+	}
 
 	auto cropj = cropSiteSim2.at(0);
 	auto sitej = cropSiteSim2.at(1);
 	auto simj = cropSiteSim2.at(2);
 
 	Env env;
-
+	
 	//store debug mode in env, take from sim.json, but prefer params map
 	env.debugMode = simj["debug?"].bool_value();
 
@@ -404,6 +413,46 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(Json cmj : cropj["cropRotation"].array_items())
 		env.cropRotation.push_back(cmj);
 
+	for(Json idj : simj["output"]["daily"].array_items())
+	{
+		if(idj.is_string())
+		{
+			string name = idj.string_value();
+			auto it = result3().find(name);
+			if(it != result3().end())
+				env.outputIds.push_back(OId(it->second.id));
+		}
+		else if(idj.is_array())
+		{
+			auto arr = idj.array_items();
+			if(arr.size() >= 1)
+			{
+				OId oid;
+				if(arr.size() >= 3 && arr[1].is_number() && arr[2].is_number())
+				{
+					oid.from = arr[1].int_value() - 1;
+					oid.to = arr[2].int_value() - 1;
+				}
+				if(arr.size() >= 4 && arr[3].is_string())
+				{
+					string ops = arr[3].string_value();
+					if(toUpper(ops) == "SUM")
+						oid.op = OId::SUM;
+					else if(toUpper(ops) == "AVG")
+						oid.op = OId::AVG;
+				}
+
+				string name = arr[0].string_value();
+				auto it = result3().find(name);
+				if(it != result3().end())
+				{
+					oid.id = it->second.id;
+					env.outputIds.push_back(oid);
+				}
+			}
+		}
+	}
+	
 	//get no of climate file header lines from sim.json, but prefer from params map
 	auto climateDataSettings = simj["climate.csv-options"];
 	map<string, string> headerNames;

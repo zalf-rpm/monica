@@ -58,6 +58,17 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	struct Result2
+	{
+		int id; 
+		std::string name;
+		std::string unit;
+		std::string description;
+	};
+
+	const std::vector<Result2>& result2();
+	const std::map<std::string, Result2>& result3();
+
   enum ResultId
 	{
 		//! primary yield for the crop (e.g. the actual fruit)

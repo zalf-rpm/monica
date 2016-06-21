@@ -1681,7 +1681,7 @@ double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, doubl
 
 
 /**
- * @brief Returns soil organic C [kg C kg-1]
+ * @brief Returns soil organic C [kgC kg-1]
  * @return Soil organic C
  */
 double SoilOrganic::get_SoilOrganicC(int i_Layer) const
@@ -1821,7 +1821,7 @@ double SoilOrganic::get_Denitrification() const
 
 /**
  * Returns NH3 volatilisation
- * @return NH3 volatilisation [kg N ha-1]
+ * @return NH3 volatilisation [kgN ha-1]
  */
 double SoilOrganic::get_NH3_Volatilised() const
 {

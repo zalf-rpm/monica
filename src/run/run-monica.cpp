@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "db/abstract-db-connections.h"
 #include "../core/monica-typedefs.h"
 #include "tools/json11-helper.h"
+#include "tools/algorithms.h"
 
 using namespace Monica;
 using namespace std;
@@ -39,6 +40,34 @@ using namespace Climate;
 using namespace Tools;
 using namespace Soil;
 using namespace json11;
+
+
+OId::OId(json11::Json j)
+{
+	merge(j);
+}
+
+void OId::merge(json11::Json j)
+{
+	set_int_value(id, j, "id");
+	set_int_value(from, j, "from");
+	set_int_value(to, j, "to");
+
+	op = OP(int_valueD(j, "op", NONE));
+}
+
+json11::Json OId::to_json() const
+{
+	return json11::Json::object {
+		{"type", "OId"},
+		{"id", id},
+		{"op", int(op)},
+		{"from", from},
+		{"to", to}
+	};
+}
+
+//-----------------------------------------------------------------------------
 
 Env::Env(CentralParameterProvider cpp)
 	: params(cpp)
@@ -58,6 +87,10 @@ void Env::merge(json11::Json j)
 	cropRotation.clear();
 	for(Json cmj : j["cropRotation"].array_items())
 		cropRotation.push_back(cmj);
+
+	outputIds.clear();
+	for(Json oidj : j["outputIds"].array_items())
+		outputIds.push_back(oidj);
 
 	set_bool_value(debugMode, j, "debugMode");
 }
@@ -640,6 +673,362 @@ Result Monica::runMonica(Env env)
 
 	return res;
 }
+
+Result Monica::runMonica_(Env env)
+{
+	if(activateDebug)
+	{
+		writeDebugInputs(env, "inputs.json");
+	}
+
+	Result res;
+	res.customId = env.customId;
+
+	if(env.cropRotation.empty())
+	{
+		debug() << "Error: Crop rotation is empty!" << endl;
+		return res;
+	}
+
+	debug() << "starting Monica" << endl;
+	debug() << "-----" << endl;
+
+	MonicaModel monica(env.params);
+
+	debug() << "currentDate" << endl;
+	Date currentDate = env.da.startDate();
+	size_t nods = env.da.noOfStepsPossible();
+	debug() << "nods: " << nods << endl;
+
+	size_t currentMonth = currentDate.month();
+	unsigned int dim = 0; //day in current month
+
+	double avg10corg = 0, avg30corg = 0, watercontent = 0,
+		groundwater = 0, nLeaching = 0, yearly_groundwater = 0,
+		yearly_nleaching = 0, monthSurfaceRunoff = 0.0;
+	double monthPrecip = 0.0;
+	double monthETa = 0.0;
+
+	//iterator through the production processes
+	vector<CultivationMethod>::const_iterator cmci = env.cropRotation.begin();
+	//direct handle to current process
+	CultivationMethod currentCM = *cmci;
+	//are the dates in the production process relative dates
+	//or are they absolute as produced by the hermes inputs
+	bool useRelativeDates = currentCM.startDate().isRelativeDate();
+	//the next application date, either a relative or an absolute date
+	//to get the correct applications out of the production processes
+	Date nextCMApplicationDate = currentCM.startDate();
+	//a definitely absolute next application date to keep track where
+	//we are in the list of climate data
+	Date nextAbsoluteCMApplicationDate = useRelativeDates
+		? nextCMApplicationDate.toAbsoluteDate(currentDate.year())// + 1) // + 1 probably due to use in DSS and have one year to init monica 
+		: nextCMApplicationDate;
+	debug() << "next app-date: " << nextCMApplicationDate.toString()
+		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+
+	//if for some reason there are no applications (no nothing) in the
+	//production process: quit
+	if(!nextAbsoluteCMApplicationDate.isValid())
+	{
+		debug() << "start of production-process: " << currentCM.toString()
+			<< " is not valid" << endl;
+		return res;
+	}
+
+	//beware: !!!! if there are absolute days used, then there is basically
+	//no rotation if the last crop in the crop rotation has changed
+	//the loop starts anew but the first crops date has already passed
+	//so the crop won't be seeded again or any work applied
+	//thus for absolute dates the crop rotation has to be as long as there
+	//are climate data !!!!!
+
+	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
+	{
+		debug() << "currentDate: " << currentDate.toString() << endl;
+		monica.resetDailyCounter();
+
+		//    if (currentDate.year() == 2012) {
+		//        cout << "Reaching problem year :-)" << endl;
+		//    }
+		// test if monica's crop has been dying in previous step
+		// if yes, it will be incorporated into soil
+		if(monica.cropGrowth() && monica.cropGrowth()->isDying())
+			monica.incorporateCurrentCrop();
+
+		/////////////////////////////////////////////////////////////////
+		// AUTOMATIC HARVEST TRIGGER
+		/////////////////////////////////////////////////////////////////
+
+		/**
+		* @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
+		* The automatic harvest trigger is passed globally to the method that reads in crop rotation
+		* via hermes files because it cannot be configured crop specific with the HERMES format.
+		* The harvest trigger prevents the adding of a harvest application as done in the normal case
+		* that uses hard coded harvest data configured via the rotation file.
+		*
+		* When using the Json format, for each crop individual settings can be specified. The automatic
+		* harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
+		* harvest date via json parameters too, that is now specified in the sqlite database globally
+		* for each crop.
+		*/
+
+		// Test if automatic harvest trigger is used
+		if(monica.cropGrowth() && currentCM.crop()->useAutomaticHarvestTrigger())
+		{
+			// Test if crop should be harvested at maturity
+			if(currentCM.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestParameters::maturity)
+			{
+
+				if(monica.cropGrowth()->maturityReached()
+					 || currentCM.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay())
+				{
+					debug() << "####################################################" << endl;
+					debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
+					debug() << "####################################################" << endl;
+
+					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
+					auto harvestApplication =
+						unique_ptr<Harvest>(new Harvest(currentDate,
+																						currentCM.crop(),
+																						currentCM.cropResultPtr()));
+					harvestApplication->apply(&monica);
+				}
+			}
+		}
+
+		//there's something to at this day
+		if(nextAbsoluteCMApplicationDate == currentDate)
+		{
+			debug() << "applying at: " << nextCMApplicationDate.toString()
+				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			//apply everything to do at current day
+			//cout << currentPP.toString().c_str() << endl;
+			currentCM.apply(nextCMApplicationDate, &monica);
+
+			//get the next application date to wait for (either absolute or relative)
+			Date prevPPApplicationDate = nextCMApplicationDate;
+
+			nextCMApplicationDate = currentCM.nextDate(nextCMApplicationDate);
+
+			nextAbsoluteCMApplicationDate = useRelativeDates
+				? nextCMApplicationDate.toAbsoluteDate
+				(currentDate.year()
+				 + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear()
+						? 0
+						: 1),
+				 true)
+				: nextCMApplicationDate;
+
+			debug() << "next app-date: " << nextCMApplicationDate.toString()
+				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			//if application date was not valid, we're (probably) at the end
+			//of the application list of this production process
+			//-> go to the next one in the crop rotation
+
+
+			if(!nextAbsoluteCMApplicationDate.isValid())
+			{
+				//get yieldresults for crop
+				CMResult r = currentCM.cropResult();
+				r.customId = currentCM.customId();
+				r.date = currentDate;
+
+				if(!env.params.simulationParameters.p_UseSecondaryYields)
+					r.results[secondaryYield] = 0;
+				r.results[sumFertiliser] = monica.sumFertiliser();
+				r.results[daysWithCrop] = monica.daysWithCrop();
+				r.results[NStress] = monica.getAccumulatedNStress();
+				r.results[WaterStress] = monica.getAccumulatedWaterStress();
+				r.results[HeatStress] = monica.getAccumulatedHeatStress();
+				r.results[OxygenStress] = monica.getAccumulatedOxygenStress();
+
+				res.pvrs.push_back(r);
+				//        debug() << "py: " << r.pvResults[primaryYield] << endl;
+				//            << " sy: " << r.pvResults[secondaryYield]
+				//            << " iw: " << r.pvResults[sumIrrigation]
+				//            << " sf: " << monica.sumFertiliser()
+				//            << endl;
+
+				//to count the applied fertiliser for the next production process
+				monica.resetFertiliserCounter();
+
+				//resets crop values for use in next year
+				currentCM.crop()->reset();
+
+				cmci++;
+				//start anew if we reached the end of the crop rotation
+				if(cmci == env.cropRotation.end())
+					cmci = env.cropRotation.begin();
+
+				currentCM = *cmci;
+				nextCMApplicationDate = currentCM.startDate();
+				nextAbsoluteCMApplicationDate =
+					useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
+					(currentDate.year() + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
+					 true) : nextCMApplicationDate;
+				debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
+					<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			}
+			//if we got our next date relative it might be possible that
+			//the actual relative date belongs into the next year
+			//this is the case if we're already (dayOfYear) past the next dayOfYear
+			if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
+				nextAbsoluteCMApplicationDate.addYears(1);
+		}
+
+		const auto& dateAndClimateDataP = climateDataForStep(env.da, d);
+
+		// run crop step
+		if(monica.isCropPlanted())
+			monica.cropStep(currentDate, dateAndClimateDataP.second);
+
+		// writes crop results to output file
+		if(env.params.writeOutputFiles())
+			storeCropResults(env.outputIds, res.out, monica.cropGrowth(), monica.isCropPlanted());
+
+		monica.generalStep(currentDate, dateAndClimateDataP.second);
+		
+		if(env.params.writeOutputFiles())
+			storeGeneralResults(env.outputIds, res.out, env, monica, d);
+
+		// write special outputs at 31.03.
+		if(currentDate.day() == 31 && currentDate.month() == 3)
+		{
+			res.generalResults[sum90cmYearlyNatDay].push_back(monica.sumNmin(0.9));
+			//      debug << "N at: " << monica.sumNmin(0.9) << endl;
+			res.generalResults[sum30cmSoilTemperature].push_back(monica.sumSoilTemperature(3));
+			res.generalResults[sum90cmYearlyNO3AtDay].push_back(monica.sumNO3AtDay(0.9));
+			res.generalResults[avg30cmSoilTemperature].push_back(monica.avg30cmSoilTemperature());
+			//cout << "MONICA_TEMP:\t" << monica.avg30cmSoilTemperature() << endl;
+			res.generalResults[avg0_30cmSoilMoisture].push_back(monica.avgSoilMoisture(0, 3));
+			res.generalResults[avg30_60cmSoilMoisture].push_back(monica.avgSoilMoisture(3, 6));
+			res.generalResults[avg60_90cmSoilMoisture].push_back(monica.avgSoilMoisture(6, 9));
+			res.generalResults[avg0_90cmSoilMoisture].push_back(monica.avgSoilMoisture(0, 9));
+			res.generalResults[waterFluxAtLowerBoundary].push_back(monica.groundWaterRecharge());
+			res.generalResults[avg0_30cmCapillaryRise].push_back(monica.avgCapillaryRise(0, 3));
+			res.generalResults[avg30_60cmCapillaryRise].push_back(monica.avgCapillaryRise(3, 6));
+			res.generalResults[avg60_90cmCapillaryRise].push_back(monica.avgCapillaryRise(6, 9));
+			res.generalResults[avg0_30cmPercolationRate].push_back(monica.avgPercolationRate(0, 3));
+			res.generalResults[avg30_60cmPercolationRate].push_back(monica.avgPercolationRate(3, 6));
+			res.generalResults[avg60_90cmPercolationRate].push_back(monica.avgPercolationRate(6, 9));
+			res.generalResults[evapotranspiration].push_back(monica.getEvapotranspiration());
+			res.generalResults[transpiration].push_back(monica.getTranspiration());
+			res.generalResults[evaporation].push_back(monica.getEvaporation());
+			res.generalResults[sum30cmSMB_CO2EvolutionRate].push_back(monica.get_sum30cmSMB_CO2EvolutionRate());
+			res.generalResults[NH3Volatilised].push_back(monica.getNH3Volatilised());
+			res.generalResults[sum30cmActDenitrificationRate].push_back(monica.getsum30cmActDenitrificationRate());
+			res.generalResults[leachingNAtBoundary].push_back(monica.nLeaching());
+		}
+
+		if((currentDate.month() != currentMonth) || d == nods - 1)
+		{
+			currentMonth = currentDate.month();
+
+			res.generalResults[avg10cmMonthlyAvgCorg].push_back(avg10corg / double(dim));
+			res.generalResults[avg30cmMonthlyAvgCorg].push_back(avg30corg / double(dim));
+			res.generalResults[mean90cmMonthlyAvgWaterContent].push_back(monica.mean90cmWaterContent());
+			res.generalResults[monthlySumGroundWaterRecharge].push_back(groundwater);
+			res.generalResults[monthlySumNLeaching].push_back(nLeaching);
+			res.generalResults[maxSnowDepth].push_back(monica.maxSnowDepth());
+			res.generalResults[sumSnowDepth].push_back(monica.getAccumulatedSnowDepth());
+			res.generalResults[sumFrostDepth].push_back(monica.getAccumulatedFrostDepth());
+			res.generalResults[sumSurfaceRunOff].push_back(monica.sumSurfaceRunOff());
+			res.generalResults[sumNH3Volatilised].push_back(monica.getSumNH3Volatilised());
+			res.generalResults[monthlySurfaceRunoff].push_back(monthSurfaceRunoff);
+			res.generalResults[monthlyPrecip].push_back(monthPrecip);
+			res.generalResults[monthlyETa].push_back(monthETa);
+			res.generalResults[monthlySoilMoistureL0].push_back(monica.avgSoilMoisture(0, 1) * 100.0);
+			res.generalResults[monthlySoilMoistureL1].push_back(monica.avgSoilMoisture(1, 2) * 100.0);
+			res.generalResults[monthlySoilMoistureL2].push_back(monica.avgSoilMoisture(2, 3) * 100.0);
+			res.generalResults[monthlySoilMoistureL3].push_back(monica.avgSoilMoisture(3, 4) * 100.0);
+			res.generalResults[monthlySoilMoistureL4].push_back(monica.avgSoilMoisture(4, 5) * 100.0);
+			res.generalResults[monthlySoilMoistureL5].push_back(monica.avgSoilMoisture(5, 6) * 100.0);
+			res.generalResults[monthlySoilMoistureL6].push_back(monica.avgSoilMoisture(6, 7) * 100.0);
+			res.generalResults[monthlySoilMoistureL7].push_back(monica.avgSoilMoisture(7, 8) * 100.0);
+			res.generalResults[monthlySoilMoistureL8].push_back(monica.avgSoilMoisture(8, 9) * 100.0);
+			res.generalResults[monthlySoilMoistureL9].push_back(monica.avgSoilMoisture(9, 10) * 100.0);
+			res.generalResults[monthlySoilMoistureL10].push_back(monica.avgSoilMoisture(10, 11) * 100.0);
+			res.generalResults[monthlySoilMoistureL11].push_back(monica.avgSoilMoisture(11, 12) * 100.0);
+			res.generalResults[monthlySoilMoistureL12].push_back(monica.avgSoilMoisture(12, 13) * 100.0);
+			res.generalResults[monthlySoilMoistureL13].push_back(monica.avgSoilMoisture(13, 14) * 100.0);
+			res.generalResults[monthlySoilMoistureL14].push_back(monica.avgSoilMoisture(14, 15) * 100.0);
+			res.generalResults[monthlySoilMoistureL15].push_back(monica.avgSoilMoisture(15, 16) * 100.0);
+			res.generalResults[monthlySoilMoistureL16].push_back(monica.avgSoilMoisture(16, 17) * 100.0);
+			res.generalResults[monthlySoilMoistureL17].push_back(monica.avgSoilMoisture(17, 18) * 100.0);
+			res.generalResults[monthlySoilMoistureL18].push_back(monica.avgSoilMoisture(18, 19) * 100.0);
+
+
+			//      cout << "c10: " << (avg10corg / double(dim))
+			//          << " c30: " << (avg30corg / double(dim))
+			//          << " wc: " << (watercontent / double(dim))
+			//          << " gwrc: " << groundwater
+			//          << " nl: " << nLeaching
+			//          << endl;
+
+			avg10corg = avg30corg = watercontent = groundwater = nLeaching = monthSurfaceRunoff = 0.0;
+			monthPrecip = 0.0;
+			monthETa = 0.0;
+
+			dim = 0;
+			//cout << "stored monthly values for month: " << currentMonth  << endl;
+		}
+		else
+		{
+			avg10corg += monica.avgCorg(0.1);
+			avg30corg += monica.avgCorg(0.3);
+			watercontent += monica.mean90cmWaterContent();
+			groundwater += monica.groundWaterRecharge();
+
+			//cout << "groundwater-recharge at: " << currentDate.toString() << " value: " << monica.groundWaterRecharge() << " monthlySum: " << groundwater << endl;
+			nLeaching += monica.nLeaching();
+			monthSurfaceRunoff += monica.surfaceRunoff();
+			monthPrecip += env.da.dataForTimestep(Climate::precip, d);
+			monthETa += monica.getETa();
+		}
+
+		// Yearly accumulated values
+		if((currentDate.year() != (currentDate - 1).year()) && (currentDate.year() != env.da.startDate().year()))
+		{
+			res.generalResults[yearlySumGroundWaterRecharge].push_back(yearly_groundwater);
+			//        cout << "#######################################################" << endl;
+			//        cout << "Push back yearly_nleaching: " << currentDate.year()  << "\t" << yearly_nleaching << endl;
+			//        cout << "#######################################################" << endl;
+			res.generalResults[yearlySumNLeaching].push_back(yearly_nleaching);
+			yearly_groundwater = 0.0;
+			yearly_nleaching = 0.0;
+		}
+		else
+		{
+			yearly_groundwater += monica.groundWaterRecharge();
+			yearly_nleaching += monica.nLeaching();
+		}
+
+		if(monica.isCropPlanted())
+		{
+			//cout << "monica.cropGrowth()->get_GrossPrimaryProduction()\t" << monica.cropGrowth()->get_GrossPrimaryProduction() << endl;
+
+			res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage() + 1);
+
+
+		}
+		else
+		{
+			res.generalResults[dev_stage].push_back(0.0);
+		}
+
+		res.dates.push_back(currentDate.toMysqlString());
+
+		
+	}
+
+	//cout << res.dates.size() << endl;
+	//  cout << res.toString().c_str();
+	debug() << "returning from runMonica" << endl;
+
+	return res;
+}
+
 
 /**
 * Write header line to fout Output file
@@ -1345,6 +1734,238 @@ void Monica::writeCropResults(const CropGrowth* mcg,
 	}
 }
 
+template<typename T>
+void store(OId oid, Output& res, map<int, vector<T>>& into, function<T(int)> getValue, int roundToDigits = 0)
+{
+	int id = oid.id;
+	if(res.ranges.find(id) == res.ranges.end())
+		res.ranges[id] = make_pair(oid.from, oid.to);
+	T acc = 0;
+	int count = 0;
+	for(int i = oid.from; i < oid.to; i++)
+	{
+		T v = getValue(i);
+		if(oid.op == OId::NONE)
+		{
+			into[id].push_back(Tools::round(v, roundToDigits));
+		}
+		else
+			acc += v;
+		count++;
+	}
+	switch(oid.op)
+	{
+	case OId::SUM: into[id].push_back(acc); break;
+	case OId::AVG: into[id].push_back(T(double(acc) / count)); break;
+	default:;
+	}
+}
+
+void Monica::storeCropResults(const vector<OId>& outputIds,
+															Output& res,
+															const CropGrowth* mcg,
+															bool cropPlanted)
+{
+	for(auto oid : outputIds)
+	{
+		int id = oid.id;
+		switch(id)
+		{
+		case 1: res.strings[id].push_back(cropPlanted ? mcg->get_CropName() : ""); break;
+		case 2: res.doubles[id].push_back(cropPlanted ? round(mcg->get_TranspirationDeficit(), 2) : 0.0); break;
+		case 3: res.doubles[id].push_back(cropPlanted ? round(mcg->get_ActualTranspiration(), 2) : 0.0); break;
+		case 4: res.doubles[id].push_back(cropPlanted ? round(mcg->get_CropNRedux(), 2) : 0.0); break;
+		case 5: res.doubles[id].push_back(cropPlanted ? round(mcg->get_HeatStressRedux(), 2) : 0.0); break;
+		case 6: res.doubles[id].push_back(cropPlanted ? round(mcg->get_FrostStressRedux(), 2) : 0.0); break;
+		case 7: res.doubles[id].push_back(cropPlanted ? round(mcg->get_OxygenDeficit(), 2) : 0.0); break;
+
+		case 8: res.ints[id].push_back(cropPlanted ? mcg->get_DevelopmentalStage() + 1 : 0); break;
+		case 9: res.doubles[id].push_back(cropPlanted ? round(mcg->get_CurrentTemperatureSum(), 1) : 0.0); break;
+
+		case 10: res.doubles[id].push_back(cropPlanted ? round(mcg->get_VernalisationFactor(), 2) : 0.0); break;
+		case 11: res.doubles[id].push_back(cropPlanted ? round(mcg->get_DaylengthFactor(), 2) : 0.0); break;
+		case 12: res.doubles[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(0), 2) : 0.0); break;
+		case 13: res.doubles[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(1), 2) : 0.0); break;
+		case 14: res.doubles[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(2), 2) : 0.0); break;
+		case 15: res.doubles[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(3), 2) : 0.0); break;
+
+		case 16: res.doubles[id].push_back(cropPlanted ? round(mcg->get_RelativeTotalDevelopment(), 2) : 0.0); break;
+		case 17: res.doubles[id].push_back(cropPlanted ? round(mcg->get_LT50(), 1) : 0.0); break;
+		case 18: res.doubles[id].push_back(cropPlanted ? round(mcg->get_AbovegroundBiomass(), 1) : 0.0); break;
+
+		case 19: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 1 
+																			 ? round(mcg->get_OrganBiomass(0), 1) : 0.0); break;
+		case 20: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 2 
+																			 ? round(mcg->get_OrganBiomass(1), 1) : 0.0); break;
+		case 21: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 3 
+																			 ? round(mcg->get_OrganBiomass(2), 1) : 0.0); break;
+		case 22: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 4 
+																			 ? round(mcg->get_OrganBiomass(3), 1) : 0.0); break;
+		case 23: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 5 
+																			 ? round(mcg->get_OrganBiomass(4), 1) : 0.0); break;
+		case 24: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 6 
+																			 ? round(mcg->get_OrganBiomass(5), 1) : 0.0); break;
+
+		case 25: res.doubles[id].push_back(cropPlanted ? round(mcg->get_PrimaryCropYield(), 1) : 0.0); break;
+		case 26: res.doubles[id].push_back(cropPlanted ? round(mcg->get_AccumulatedPrimaryCropYield(), 1) : 0.0); break;
+
+		case 27: res.doubles[id].push_back(cropPlanted ? round(mcg->get_GrossPhotosynthesisHaRate(), 4) : 0.0); break;
+		case 28: res.doubles[id].push_back(cropPlanted ? round(mcg->get_NetPhotosynthesis(), 2) : 0.0); break;
+		case 29: res.doubles[id].push_back(cropPlanted ? round(mcg->get_MaintenanceRespirationAS(), 4) : 0.0); break;
+		case 30: res.doubles[id].push_back(cropPlanted ? round(mcg->get_GrowthRespirationAS(), 4) : 0.0); break;
+
+		case 31: res.doubles[id].push_back(cropPlanted ? round(mcg->get_StomataResistance(), 2) : 0.0); break;
+
+		case 32: res.doubles[id].push_back(cropPlanted ? round(mcg->get_CropHeight(), 2) : 0.0); break;
+		case 33: res.doubles[id].push_back(cropPlanted ? round(mcg->get_LeafAreaIndex(), 4) : 0.0); break;
+		case 34: res.ints[id].push_back(cropPlanted ? mcg->get_RootingDepth() : 0); break;
+		case 35: res.doubles[id].push_back(cropPlanted ? round(mcg->getEffectiveRootingDepth(), 2) : 0.0); break;
+
+		case 36: res.doubles[id].push_back(cropPlanted ? round(mcg->get_TotalBiomassNContent(), 1) : 0.0); break;
+		case 37: res.doubles[id].push_back(cropPlanted ? round(mcg->get_AbovegroundBiomassNContent(), 1) : 0.0); break;
+		case 38: res.doubles[id].push_back(cropPlanted ? round(mcg->get_SumTotalNUptake(), 2) : 0.0); break;
+		case 39: res.doubles[id].push_back(cropPlanted ? round(mcg->get_ActNUptake(), 2) : 0.0); break;
+		case 40: res.doubles[id].push_back(cropPlanted ? round(mcg->get_PotNUptake(), 2) : 0.0); break;
+		case 41: res.doubles[id].push_back(cropPlanted ? round(mcg->get_BiologicalNFixation(), 2) : 0.0); break;
+		case 42: res.doubles[id].push_back(cropPlanted ? round(mcg->get_TargetNConcentration(), 3) : 0.0); break;
+
+		case 43: res.doubles[id].push_back(cropPlanted ? round(mcg->get_CriticalNConcentration(), 3) : 0.0); break;
+		case 44: res.doubles[id].push_back(cropPlanted ? round(mcg->get_AbovegroundBiomassNConcentration(), 3) : 0.0); break;
+		case 45: res.doubles[id].push_back(cropPlanted ? round(mcg->get_PrimaryYieldNConcentration(), 3) : 0.0); break;
+		case 46: res.doubles[id].push_back(cropPlanted ? round(mcg->get_RawProteinConcentration(), 3) : 0.0); break;
+		case 47: res.doubles[id].push_back(cropPlanted ? round(mcg->get_NetPrimaryProduction(), 5) : 0.0); break;
+
+		case 48: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 1
+																			 ? round(mcg->get_OrganSpecificNPP(0), 4) : 0.0); break;
+		case 49: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 2
+																			 ? round(mcg->get_OrganSpecificNPP(1), 4) : 0.0); break;
+		case 50: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 3
+																			 ? round(mcg->get_OrganSpecificNPP(2), 4) : 0.0); break;
+		case 51: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 4
+																			 ? round(mcg->get_OrganSpecificNPP(3), 4) : 0.0); break;
+		case 52: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 5
+																			 ? round(mcg->get_OrganSpecificNPP(4), 4) : 0.0); break;
+		case 53: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 6
+																			 ? round(mcg->get_OrganSpecificNPP(5), 4) : 0.0); break;
+
+		case 54: res.doubles[id].push_back(cropPlanted ? round(mcg->get_GrossPrimaryProduction(), 5) : 0.0); break;
+
+		case 55: res.doubles[id].push_back(cropPlanted ? round(mcg->get_AutotrophicRespiration(), 5) : 0.0); break;
+		case 56: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 1
+																			 ? round(mcg->get_OrganSpecificTotalRespired(0), 4) : 0.0); break;
+		case 57: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 2
+																			 ? round(mcg->get_OrganSpecificTotalRespired(1), 4) : 0.0); break;
+		case 58: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 3
+																			 ? round(mcg->get_OrganSpecificTotalRespired(2), 4) : 0.0); break;
+		case 59: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 4
+																			 ? round(mcg->get_OrganSpecificTotalRespired(3), 4) : 0.0); break;
+		case 60: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 5
+																			 ? round(mcg->get_OrganSpecificTotalRespired(4), 4) : 0.0); break;
+		case 61: res.doubles[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 6
+																			 ? round(mcg->get_OrganSpecificTotalRespired(5), 4) : 0.0); break;
+		default:;
+		}
+	}
+}
+
+void Monica::storeGeneralResults(const vector<OId>& outputIds,
+																 Output& res,
+																 Env& env,
+																 MonicaModel& monica,
+																 int d)
+{
+	const SoilTemperature& temp = monica.soilTemperature();
+	const SoilMoisture& moist = monica.soilMoisture();
+	const SoilOrganic& org = monica.soilOrganic();
+	const SoilColumn& soilc = monica.soilColumn();
+	const SoilTransport& trans = monica.soilTransport();
+
+	for(auto oid : outputIds)
+	{
+		int id = oid.id;
+		switch(id)
+		{
+		case 0: res.strings[id].push_back((env.da.startDate() + d).toString("/")); break;
+		case 62: store<double>(oid, res, res.doubles, [&](int i){ return moist.get_SoilMoisture(i); }, 3); break;
+		case 63: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::precip, d), 2)); break;
+		case 64: res.doubles[id].push_back(round(monica.dailySumIrrigationWater(), 1)); break;
+
+		case 65: res.doubles[id].push_back(round(moist.get_Infiltration(), 1)); break;
+		case 66: res.doubles[id].push_back(round(moist.get_SurfaceWaterStorage(), 1)); break;
+		case 67: res.doubles[id].push_back(round(moist.get_SurfaceRunOff(), 1)); break;
+		case 68: res.doubles[id].push_back(round(moist.get_SnowDepth(), 1)); break;
+		case 69: res.doubles[id].push_back(round(moist.get_FrostDepth(), 1)); break;
+		case 70: res.doubles[id].push_back(round(moist.get_ThawDepth(), 1)); break;
+
+		case 71: store<double>(oid, res, res.doubles,
+													 [&](int i){ return moist.get_SoilMoisture(i) - soilc.at(i).vs_PermanentWiltingPoint(); },
+													 3); break;
+
+		case 72: res.doubles[id].push_back(round(temp.get_SoilSurfaceTemperature(), 1)); break;
+		case 73: store<double>(oid, res, res.doubles, [&](int i){ return temp.get_SoilTemperature(i); }, 1); break;
+
+		case 78: res.doubles[id].push_back(round(moist.get_ActualEvaporation(), 1)); break;
+		case 79: res.doubles[id].push_back(round(moist.get_Evapotranspiration(), 1)); break;
+		case 80: res.doubles[id].push_back(round(moist.get_ET0(), 1)); break;
+		case 81: res.doubles[id].push_back(round(moist.get_KcFactor(), 1)); break;
+		case 82: res.doubles[id].push_back(round(monica.get_AtmosphericCO2Concentration(), 0)); break;
+		case 83: res.doubles[id].push_back(round(monica.get_GroundwaterDepth(), 2)); break;
+		case 84: res.doubles[id].push_back(round(moist.get_GroundwaterRecharge(), 3)); break;
+		case 85: res.doubles[id].push_back(round(trans.get_NLeaching(), 3)); break;
+
+		case 86: store<double>(oid, res, res.doubles, [&](int i){ return soilc.at(i).get_SoilNO3(); }, 3); break;
+		case 87: res.doubles[id].push_back(round(soilc.at(0).get_SoilCarbamid(), 4)); break;
+
+		case 88: store<double>(oid, res, res.doubles, [&](int i){ return soilc.at(i).get_SoilNH4(); }, 4); break;
+		case 89: store<double>(oid, res, res.doubles, [&](int i){ return soilc.at(i).get_SoilNO2(); }, 4); break;
+		case 90: store<double>(oid, res, res.doubles, [&](int i){ return soilc.at(i).vs_SoilOrganicCarbon(); }, 4); break;
+		case 91: store<double>(oid, res, res.doubles, 
+													 [&](int i){ return soilc.at(i).vs_SoilOrganicCarbon()
+													 * soilc.at(i).vs_SoilBulkDensity()
+													 * soilc.at(i).vs_LayerThickness
+													 * 1000; }, 
+													 4); break;
+
+		case 93: store<double>(oid, res, res.doubles, [&](int i){ return org.get_AOM_FastSum(i); }, 4); break;
+		case 94: store<double>(oid, res, res.doubles, [&](int i){ return org.get_AOM_SlowSum(i); }, 4); break;
+		case 95: store<double>(oid, res, res.doubles, [&](int i){ return org.get_SMB_Fast(i); }, 4); break;
+		case 96: store<double>(oid, res, res.doubles, [&](int i){ return org.get_SMB_Slow(i); }, 4); break;
+		case 97: store<double>(oid, res, res.doubles, [&](int i){ return org.get_SOM_Fast(i); }, 4); break;
+		case 98: store<double>(oid, res, res.doubles, [&](int i){ return org.get_SOM_Slow(i); }, 4); break;
+		case 99: store<double>(oid, res, res.doubles, [&](int i){ return org.get_CBalance(i); }, 4); break;
+
+		case 100: store<double>(oid, res, res.doubles, [&](int i){ return org.get_NetNMineralisationRate(i); }, 6); break;
+		case 101: res.doubles[id].push_back(round(org.get_NetNMineralisation(), 5)); break;
+		case 102: res.doubles[id].push_back(round(org.get_Denitrification(), 5)); break;
+		case 103: res.doubles[id].push_back(round(org.get_N2O_Produced(), 5)); break;
+		case 104: res.doubles[id].push_back(round(soilc.at(0).get_SoilpH(), 1)); break;
+		case 105: res.doubles[id].push_back(round(org.get_NetEcosystemProduction(), 5)); break;
+		case 106: res.doubles[id].push_back(round(org.get_NetEcosystemExchange(), 5)); break;
+		case 107: res.doubles[id].push_back(round(org.get_DecomposerRespiration(), 5)); break;
+
+		case 108: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::tmin, d), 4)); break;
+		case 109: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::tavg, d), 4)); break;
+		case 110: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::tmax, d), 4)); break;
+		case 111: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::wind, d), 4)); break;
+		case 112: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::globrad, d), 4)); break;
+		case 113: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::relhumid, d), 4)); break;
+		case 114: res.doubles[id].push_back(round(env.da.dataForTimestep(Climate::sunhours, d), 4)); break;
+
+		case 115: res.doubles[id].push_back(round(moist.get_PercentageSoilCoverage(), 3)); break;
+
+		case 116: res.doubles[id].push_back(round(moist.get_SoilMoisture(0), 3)); break;
+
+		case 133: store<double>(oid, res, res.doubles, [&](int i){ return soilc.at(i).get_SoilNmin(); }, 3); break;
+
+		case 145: store<double>(oid, res, res.doubles, [&](int i){ return org.get_SoilOrganicC(i); }, 2); break;
+
+		case 151: res.doubles[id].push_back(round(org.get_NH3_Volatilised(), 3)); break;
+		case 152: res.doubles[id].push_back(round(monica.dailySumFertiliser(), 1)); break;
+		default:;
+		}
+	}
+}
+
 //------------------------------------------------------------------------------
 
 /**
@@ -1371,6 +1992,7 @@ void Monica::writeGeneralResults(ostream& fout,
 	const SoilTransport& msq = monica.soilTransport();
 
 	int outLayers = 20;
+
 	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
 	{
 		fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer);

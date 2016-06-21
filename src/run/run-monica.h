@@ -37,6 +37,31 @@ namespace Monica
 #endif
   }
 
+	struct OId : public Tools::Json11Serializable
+	{
+		enum OP { AVG, SUM, NONE };
+		
+		OId() {}
+
+		OId(int id) : id(id) {}
+		
+		OId(int id, OP op) : id(id), op(op), from(0), to(20) {}
+		
+		OId(int id, OP op, int from, int to) : id(id), op(op), from(from), to(to) {}
+
+		OId(json11::Json object);
+
+		virtual void merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+		
+		int id{-1};
+		OP op{NONE};
+		int from{-2}, to{-1};
+	};
+		
+	//---------------------------------------------------------------------------
+
   struct Env : public Tools::Json11Serializable
   {
     Env() {}
@@ -60,6 +85,8 @@ namespace Monica
 
     //! vector of elements holding the data of the single crops in the rotation
     std::vector<CultivationMethod> cropRotation;
+
+		std::vector<OId> outputIds;
 
     int customId{-1};
 
@@ -102,9 +129,15 @@ namespace Monica
 
   //------------------------------------------------------------------------------------------
 
-	/*!
-	* @brief structure holding all results of one monica run
-	*/
+	struct Output
+	{
+		std::map<int, std::vector<std::string>> strings;
+		std::map<int, std::vector<double>> doubles;
+		std::map<int, std::vector<int>> ints;
+		std::map<int, std::pair<int, int>> ranges;
+	};
+
+	//! structure holding all results of one monica run
 	class Result
 	{
 	public:
@@ -130,6 +163,8 @@ namespace Monica
 
 		std::vector<std::string> dates;
 
+		Output out;
+
 		std::string toString();
 	};
 
@@ -138,23 +173,50 @@ namespace Monica
   std::pair<Tools::Date, std::map<Climate::ACD, double>>
   climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);
 
-  /*!
-   * main function for running monica under a given Env(ironment)
-   * @param env the environment completely defining what the model needs and gets
-   * @return a structure with all the Monica results
-   */
+  //! main function for running monica under a given Env(ironment)
+	//! @param env the environment completely defining what the model needs and gets
+	//! @return a structure with all the Monica results
   Result runMonica(Env env);
 
+	Result runMonica_(Env env);
+
+	/*
+	struct OV
+	{
+		enum { INT, DOUBLE, STRING, DOUBLE_RANGE } tag;
+		union
+		{
+			int i;
+			double d;
+			std::string s;
+			std::tuple<double, int, int> dr;
+		};
+	};
+
+	typedef std::map<int, std::vector<OV>> Output;
+	//*/
+
+	
 	void initializeFoutHeader(std::ostream&);
 	void initializeGoutHeader(std::ostream&);
 	void writeCropResults(const CropGrowth*, 
 												std::ostream&, 
 												std::ostream&, 
 												bool);
+	void storeCropResults(const std::vector<OId>& outputIds,
+												Output& res,
+												const CropGrowth* mcg,
+												bool cropPlanted);
+
 	void writeGeneralResults(std::ostream& fout, 
 													 std::ostream& gout, 
 													 Env& env,
 													 MonicaModel& monica, 
+													 int d);
+	void storeGeneralResults(const std::vector<OId>& outputIds,
+													 Output& res,
+													 Env& env,
+													 MonicaModel& monica,
 													 int d);
 	void dumpMonicaParametersIntoFile(std::string, CentralParameterProvider& cpp);
 }
