@@ -55,6 +55,8 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 		
+		bool isRange() const { return from >= 0 && to >= 0; }
+
 		int id{-1};
 		OP op{NONE};
 		int from{-2}, to{-1};
@@ -87,6 +89,8 @@ namespace Monica
     std::vector<CultivationMethod> cropRotation;
 
 		std::vector<OId> outputIds;
+		//! is not being serialized to Json
+		std::map<int, std::pair<std::string, std::string>> outputId2nameAndUnit;
 
     int customId{-1};
 
@@ -131,12 +135,9 @@ namespace Monica
 
 	struct Output
 	{
-		std::map<int, std::vector<std::string>> strings;
-		std::map<int, std::vector<double>> doubles;
-		std::map<int, std::vector<int>> ints;
-		std::map<int, std::pair<int, int>> ranges;
+		std::map<int, Tools::J11Array> daily;
 	};
-
+	
 	//! structure holding all results of one monica run
 	class Result
 	{
@@ -178,25 +179,6 @@ namespace Monica
 	//! @return a structure with all the Monica results
   Result runMonica(Env env);
 
-	Result runMonica_(Env env);
-
-	/*
-	struct OV
-	{
-		enum { INT, DOUBLE, STRING, DOUBLE_RANGE } tag;
-		union
-		{
-			int i;
-			double d;
-			std::string s;
-			std::tuple<double, int, int> dr;
-		};
-	};
-
-	typedef std::map<int, std::vector<OV>> Output;
-	//*/
-
-	
 	void initializeFoutHeader(std::ostream&);
 	void initializeGoutHeader(std::ostream&);
 	void writeCropResults(const CropGrowth*, 

@@ -1,5 +1,5 @@
   {
-	"_base-path": "../",
+	"_include-file-base-path": "../",
 	"crops": {
 		"WR": {
 			"cropParams": {

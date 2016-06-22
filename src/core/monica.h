@@ -157,7 +157,7 @@ namespace Monica
 
 		double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
 
-		bool writeOutputFiles() {return _writeOutputFiles; }
+		//bool writeOutputFiles() {return _writeOutputFiles; }
 
 		double avgCorg(double depth_m) const;
 		double mean90cmWaterContent() const;
@@ -256,7 +256,7 @@ namespace Monica
 		const UserSoilTransportParameters _soilTransPs;
 		const UserSoilOrganicParameters _soilOrganicPs;
 		const SimulationParameters _simPs;
-		bool _writeOutputFiles{false};
+		//bool _writeOutputFiles{false};
 		std::string _pathToOutputDir;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;
 

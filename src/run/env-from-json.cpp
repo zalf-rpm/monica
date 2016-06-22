@@ -282,7 +282,7 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
 		{
-			string basePath = string_valueD(root, "base-path", ".");
+			string basePath = string_valueD(root, "include-file-base-path", ".");
 			string pathToFile = j[1].string_value();
 			pathToFile = isAbsolutePath(pathToFile)
 			             ? pathToFile
@@ -367,15 +367,15 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
 		cropSiteSim.push_back(parseJsonString(params[name]));
 
-	string pathToParameters = cropSiteSim.at(2)["path-to-parameter-files"].string_value();
+	string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
 
 	auto addBasePath = [&](Json& j, string basePath)
 	{
 		string err;
-		if(!j.has_shape({{"base-path", Json::STRING}}, err))
+		if(!j.has_shape({{"include-file-base-path", Json::STRING}}, err))
 		{
 			auto m = j.object_items();
-			m["base-path"] = pathToParameters;
+			m["include-file-base-path"] = pathToParameters;
 			j = m;
 		}
 	};
@@ -420,7 +420,11 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 			string name = idj.string_value();
 			auto it = result3().find(name);
 			if(it != result3().end())
-				env.outputIds.push_back(OId(it->second.id));
+			{
+				auto data = it->second;
+				env.outputIds.push_back(OId(data.id));
+				env.outputId2nameAndUnit[data.id] = make_pair(data.name, data.unit);
+			}
 		}
 		else if(idj.is_array())
 		{
@@ -446,8 +450,10 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 				auto it = result3().find(name);
 				if(it != result3().end())
 				{
-					oid.id = it->second.id;
+					auto data = it->second;
+					oid.id = data.id;
 					env.outputIds.push_back(oid);
+					env.outputId2nameAndUnit[data.id] = make_pair(data.name, data.unit);
 				}
 			}
 		}
@@ -467,10 +473,10 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	//add start/end date to sim json object
 	set_iso_date_value(options.startDate, simj, "start-date");
 	set_iso_date_value(options.endDate, simj, "end-date");
-	cout << "startDate: " << options.startDate.toIsoDateString()
-	<< " endDate: " << options.endDate.toIsoDateString()
-	<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
-	<< endl;
+	debug() << "startDate: " << options.startDate.toIsoDateString()
+		<< " endDate: " << options.endDate.toIsoDateString()
+		<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
+		<< endl;
 
 	env.da = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
 	                                              options);
@@ -478,7 +484,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	if(!env.da.isValid())
 		return Env();
 
-	env.params.setWriteOutputFiles(simj["write-output-files?"].bool_value());
+	//env.params.setWriteOutputFiles(simj["output"]["write-file?"].bool_value());
 	env.params.setPathToOutputDir(simj["path-to-output"].string_value());
 
 	return env;

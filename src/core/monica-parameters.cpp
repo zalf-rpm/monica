@@ -1937,7 +1937,7 @@ void CentralParameterProvider::merge(json11::Json j)
 	siteParameters.merge(j["siteParameters"]);
 	//groundwaterInformation.merge(j["groundwaterInformation"]);
 
-	set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
+	//set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
 }
 
 json11::Json CentralParameterProvider::to_json() const
@@ -1953,7 +1953,7 @@ json11::Json CentralParameterProvider::to_json() const
 		, {"simulationParameters", simulationParameters.to_json()}
 		, {"siteParameters", siteParameters.to_json()}
 		//, {"groundwaterInformation", groundwaterInformation.to_json()}
-		, {"writeOutputFiles", writeOutputFiles()}
+		//, {"writeOutputFiles", writeOutputFiles()}
 	};
 }
 
