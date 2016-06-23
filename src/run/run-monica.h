@@ -67,7 +67,7 @@ namespace Monica
   struct Env : public Tools::Json11Serializable
   {
     Env() {}
-
+		
     Env(CentralParameterProvider cpp);
 
 		Env(json11::Json object);
@@ -122,9 +122,6 @@ namespace Monica
     std::string outputDatastreamPort;
 
 		bool debugMode{false};
-
-		std::shared_ptr<std::ostream> fout;
-		std::shared_ptr<std::ostream> gout;
 
   private:
     //! Variable for differentiate betweend execution modes of MONICA

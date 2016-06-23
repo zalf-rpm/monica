@@ -398,10 +398,6 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 			Json& fullMsg = msg.json;
 
 			Env env(msg.json);
-			auto fout = make_shared<ostringstream>();
-			env.fout = fout;
-			auto gout = make_shared<ostringstream>();
-			env.gout = gout;
 
 			activateDebug = env.debugMode;
 
@@ -411,12 +407,16 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 			};
 			
-			runMonica(env);
+			auto res = runMonica(env);
 
 			J11Object resultMsg;
 			resultMsg["type"] = "result";
-			resultMsg["fout"] = fout->str();
-			resultMsg["gout"] = gout->str();
+
+			J11Object daily;
+			for(auto& p : res.out.daily)
+				daily[to_string(p.first)] = p.second;
+
+			resultMsg["daily"] = daily;
 
 			s_send(socket, Json(resultMsg).dump());
 		}
@@ -426,7 +426,7 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 	debug() << "exiting startZeroMQMonicaFull" << endl;
 }
 
-void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, Env env)
+Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, Env env)
 {
 	zmq::socket_t socket(*zmqContext, ZMQ_REQ);
 	debug() << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
@@ -445,13 +445,10 @@ void Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 	if(s_send(socket, env.to_json().dump()))
 	{
 		auto msg = receiveMsg(socket);
-		if(msg.type() == "result")
-		{
-			*env.fout << msg.json["fout"].string_value();
-			*env.gout << msg.json["gout"].string_value();
-		}
+		return msg.json;
 	}
 
+	return Json();
 	debug() << "exiting runZeroMQMonicaFull" << endl;
 }
 #endif

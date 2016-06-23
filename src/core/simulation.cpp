@@ -384,12 +384,11 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
 
 //------------------------------------------------------------------
 
-/**
- * Method for compatibility issues. Hermes configuration is hard coded
- * and only output path can be configured outside.
- *
- * @param output_path Path to input and output files
- */
+
+/*
+//! Method for compatibility issues.Hermes configuration is hard coded
+//! and only output path can be configured outside.
+//! @param output_path Path to input and output files
 Monica::Result Monica::runWithHermesData(const std::string& output_path, bool debug_)
 {
 	Tools::activateDebug = debug_;
@@ -415,6 +414,7 @@ Monica::Result Monica::runWithHermesData(const std::string& output_path, bool de
 
 	return res;
 }
+*/
 
 
 Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::string output_path)
@@ -525,12 +525,9 @@ Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::strin
 
 //------------------------------------------------------------------
 
-/**
- *
- * @param hermes_config
- */
-const Monica::Result
-Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config, bool debug_)
+/*
+//! hermes_config
+const Monica::Result Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config, bool debug_)
 {
 	Tools::activateDebug = debug_;
 
@@ -555,7 +552,6 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config, bool deb
 		//return res;
 	}
 
-	/** @todo Do something useful with the result */
 	// start calucation of model
 	const Monica::Result& res = runMonica(env);
 
@@ -568,6 +564,7 @@ Monica::runWithHermesData(HermesSimulationConfiguration *hermes_config, bool deb
 
 	return res;
 }
+*/
 
 Monica::Env
 Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_config)

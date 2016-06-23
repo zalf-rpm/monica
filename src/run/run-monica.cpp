@@ -243,10 +243,11 @@ Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	pout.open(ensureDirExists(env.params.pathToOutputDir()) + "/" + fileName);
+	string pathToFile = fixSystemSeparator(ensureDirExists(env.params.pathToOutputDir()) + "/" + fileName);
+	pout.open(pathToFile);
 	if(pout.fail())
 	{
-		cerr << "Error couldn't open file: '" << env.params.pathToOutputDir() + "/" + fileName << "'." << endl;
+		cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
 		return;
 	}
 	pout << "{" << endl;

@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
-	enum Mode { monica, hermes, zmqClient, zmqServer };
+	enum Mode { monica, /*hermes,*/ zmqClient, zmqServer };
 
 #ifndef NO_ZMQ
 	zmq::context_t context(1);
@@ -137,8 +137,8 @@ int main(int argc, char** argv)
 				debug = debugSet = true;
 			else if(arg == "--use-zmq-proxy")
 				useZmqProxy = true;
-			else if(arg == "--hermes")
-				mode = hermes;
+			//else if(arg == "--hermes")
+			//	mode = hermes;
 			else if(arg == "--zmq-client")
 				mode = zmqClient;
 			else if(arg == "--zmq-server")
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 					<< "./" << appName << endl
 					<< "\t [-d | --debug] ... show debug outputs" << endl
 					<< "\t [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
-					<< "\t [--hermes] ... use old hermes format files" << endl
+					//<< "\t [--hermes] ... use old hermes format files" << endl
 					<< "\t [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
 					<< "\t [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
 					<< "\t [[-ca | --control-address] CONTROL-ADDRESS (default: " << controlAddress << ")] ... address of control node" << endl
@@ -225,16 +225,15 @@ int main(int argc, char** argv)
 			else if(debug)
 				cout << "Control command: " << command << " unknown, should be one of [start-new, start-max or stop]!" << endl;
 		}
-		else if(mode == hermes)
-		{
-			if(debug)
-				cout << "starting MONICA with old HERMES input files" << endl;
-
-			Monica::runWithHermesData(fixSystemSeparator(pathToSimJson), debug);
-
-			if(debug)
-				cout << "finished MONICA" << endl;
-		}
+		//else if(mode == hermes)
+		//{
+		//	if(debug)
+		//		cout << "starting MONICA with old HERMES input files" << endl;
+		//Monica::runWithHermesData(fixSystemSeparator(pathToSimJson), debug);
+		//
+		//	if(debug)
+		//		cout << "finished MONICA" << endl;
+		//}
 		else if(mode == zmqServer)
 		{
 			if(debug)
@@ -300,18 +299,19 @@ int main(int argc, char** argv)
 			if(activateDebug)
 				cout << "starting MONICA with JSON input files" << endl;
 
-			Result res;
+			map<int, J11Array> dailyOut;
 
 			if(mode == monica)
 			{
-				res = runMonica(env);
+				dailyOut = runMonica(env).out.daily;
 			}
 			else
 			{
-				runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
+				Json res = runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
+				for(auto& p : res["daily"].object_items())
+					dailyOut[stoi(p.first)] = p.second.array_items();
 			}
 			
-
 			if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
 				pathToOutputFile = fixSystemSeparator(simm["path-to-output"].string_value() + "/" 
 																							+ simm["output"]["file-name"].string_value());
@@ -356,13 +356,13 @@ int main(int argc, char** argv)
 			if(includeUnitsRow)
 				out << oss2.str() << endl;
 
-			if(!res.out.daily.empty())
+			if(!dailyOut.empty())
 			{
-				for(size_t i = 0, size = res.out.daily.begin()->second.size(); i < size; i++)
+				for(size_t i = 0, size = dailyOut.begin()->second.size(); i < size; i++)
 				{
 					for(auto oid : env.outputIds)
 					{
-						Json j = res.out.daily[oid.id].at(i);
+						Json j = dailyOut[oid.id].at(i);
 						switch(j.type())
 						{
 						case Json::NUMBER: out << j.number_value() << csvSep; break;

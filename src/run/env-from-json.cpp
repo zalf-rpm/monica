@@ -47,7 +47,10 @@ Json Monica::parseJsonString(string jsonString)
 	string err;
 	Json j = Json::parse(jsonString, err);
 	if(!err.empty())
+	{
 		cerr << "Error parsing json object string: " << jsonString << err << endl;
+		return Json();
+	}
 
 	return j;
 }
@@ -366,6 +369,10 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	vector<Json> cropSiteSim;
 	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
 		cropSiteSim.push_back(parseJsonString(params[name]));
+
+	for(auto& j : cropSiteSim)
+		if(j.is_null())
+			return Env();
 
 	string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
 

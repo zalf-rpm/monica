@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "zmq.hpp"
 #endif
 
+#include "json11/json11.hpp"
 #include "run-monica.h"
 
 namespace Monica
@@ -39,7 +40,7 @@ namespace Monica
 
 	void startZeroMQMonicaFull(zmq::context_t* zmqContext, std::string socketAddress, bool useZmqProxy);
 
-	void runZeroMQMonicaFull(zmq::context_t* zmqContext, std::string socketAddress, Env env);
+	json11::Json runZeroMQMonicaFull(zmq::context_t* zmqContext, std::string socketAddress, Env env);
 #endif
 }
 
