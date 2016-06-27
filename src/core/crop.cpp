@@ -79,20 +79,26 @@ Crop::Crop(json11::Json j)
   set_string_value(_cultivarName, j, "cultivar");
 
 	string err;
-  if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
-  {
-    auto jcps = j["cropParams"];
-    if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err) 
+	if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
+	{
+		auto jcps = j["cropParams"];
+		if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err)
 			 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
-      _cropParams = make_shared<CropParameters>(j["cropParams"]);
+			_cropParams = make_shared<CropParameters>(j["cropParams"]);
+		else
+			cerr 
+			<< "Error: Couldn't find 'species' or 'cultivar' key in JSON object 'cropParams':" << endl
+			<< jcps.dump() << endl;
 
-    if(_speciesName.empty() && _cropParams)
-      _speciesName = _cropParams->speciesParams.pc_SpeciesId;
-    if(_cultivarName.empty() && _cropParams)
-      _cultivarName = _cropParams->cultivarParams.pc_CultivarId;
-  }
-	if(!err.empty())
-		cerr << "Error @ Crop::ctor: " << err << endl;
+		if(_speciesName.empty() && _cropParams)
+			_speciesName = _cropParams->speciesParams.pc_SpeciesId;
+		if(_cultivarName.empty() && _cropParams)
+			_cultivarName = _cropParams->cultivarParams.pc_CultivarId;
+	}
+	else
+		cerr 
+		<< "Error: Couldn't find 'cropParams' key in JSON object:"  << endl
+		<< j.dump() << endl;
 
 	err = "";
   if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
@@ -104,10 +110,12 @@ Crop::Crop(json11::Json j)
   }
 
 	err = "";
-  if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
-    _residueParams = make_shared<CropResidueParameters>(j["residueParams"]);
-	if(!err.empty())
-		cerr << "Error @ Crop::ctor: " << err << endl;
+	if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
+		_residueParams = make_shared<CropResidueParameters>(j["residueParams"]);
+	else
+		cerr
+		<< "Error: Couldn't find 'residueParams' key in JSON object:" << endl
+		<< j.dump() << endl;
 
 	err = "";
   if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))

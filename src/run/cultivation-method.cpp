@@ -55,9 +55,10 @@ WorkStep::WorkStep(json11::Json j)
 	merge(j);
 }
 
-void WorkStep::merge(json11::Json j)
+SE WorkStep::merge(json11::Json j)
 {
 	set_iso_date_value(_date, j, "date");
+	return{};
 }
 
 json11::Json WorkStep::to_json() const
@@ -82,12 +83,14 @@ Seed::Seed(json11::Json j)
 	merge(j);
 }
 
-void Seed::merge(json11::Json j)
+SE Seed::merge(json11::Json j)
 {
 	WorkStep::merge(j);
 	set_shared_ptr_value(_crop, j, "crop");
 	if(_crop)
 		_crop->setSeedDate(date());
+
+	return{};
 }
 
 json11::Json Seed::to_json(bool includeFullCropParameters) const
@@ -129,7 +132,7 @@ Harvest::Harvest(json11::Json j)
 	merge(j);
 }
 
-void Harvest::merge(json11::Json j)
+SE Harvest::merge(json11::Json j)
 {
 	WorkStep::merge(j);
 	set_shared_ptr_value(_crop, j, "crop");
@@ -142,6 +145,8 @@ void Harvest::merge(json11::Json j)
 	set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
 	set_bool_value(_exported, j, "exported");
+
+	return{};
 }
 
 json11::Json Harvest::to_json(bool includeFullCropParameters) const
@@ -249,9 +254,10 @@ Cutting::Cutting(json11::Json j)
 	merge(j);
 }
 
-void Cutting::merge(json11::Json j)
+SE Cutting::merge(json11::Json j)
 {
 	WorkStep::merge(j);
+	return{};
 }
 
 json11::Json Cutting::to_json() const
@@ -301,11 +307,12 @@ MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
 	merge(j);
 }
 
-void MineralFertiliserApplication::merge(json11::Json j)
+SE MineralFertiliserApplication::merge(json11::Json j)
 {
 	WorkStep::merge(j);
 	set_value_obj_value(_partition, j, "partition");
 	set_double_value(_amount, j, "amount");
+	return{};
 }
 
 json11::Json MineralFertiliserApplication::to_json() const
@@ -341,12 +348,13 @@ OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
 	merge(j);
 }
 
-void OrganicFertiliserApplication::merge(json11::Json j)
+SE OrganicFertiliserApplication::merge(json11::Json j)
 {
 	WorkStep::merge(j);
 	set_shared_ptr_value(_params, j, "parameters");
 	set_double_value(_amount, j, "amount");
 	set_bool_value(_incorporation, j, "incorporation");
+	return{};
 }
 
 json11::Json OrganicFertiliserApplication::to_json() const
@@ -355,7 +363,7 @@ json11::Json OrganicFertiliserApplication::to_json() const
 		{"type", type()},
 		{"date", date().toIsoDateString()},
 		{"amount", _amount},
-		{"parameters", _params->to_json()},
+		{"parameters", _params ? _params->to_json() : ""},
 		{"incorporation", _incorporation}};
 }
 
@@ -378,10 +386,11 @@ TillageApplication::TillageApplication(json11::Json j)
 	merge(j);
 }
 
-void TillageApplication::merge(json11::Json j)
+SE TillageApplication::merge(json11::Json j)
 {
 	WorkStep::merge(j);
 	set_double_value(_depth, j, "depth");
+	return{};
 }
 
 json11::Json TillageApplication::to_json() const
@@ -413,11 +422,12 @@ IrrigationApplication::IrrigationApplication(json11::Json j)
 	merge(j);
 }
 
-void IrrigationApplication::merge(json11::Json j)
+SE IrrigationApplication::merge(json11::Json j)
 {
 	WorkStep::merge(j);
 	set_double_value(_amount, j, "amount");
 	set_value_obj_value(_params, j, "parameters");
+	return{};
 }
 
 json11::Json IrrigationApplication::to_json() const
@@ -491,7 +501,7 @@ CultivationMethod::CultivationMethod(json11::Json j)
 	merge(j);
 }
 
-void CultivationMethod::merge(json11::Json j)
+SE CultivationMethod::merge(json11::Json j)
 {
 	set_int_value(_customId, j, "customId");
 	set_string_value(_name, j, "name");
@@ -522,6 +532,7 @@ void CultivationMethod::merge(json11::Json j)
 			}
 		}
 	}
+	return{};
 }
 
 json11::Json CultivationMethod::to_json() const

@@ -47,13 +47,15 @@ OId::OId(json11::Json j)
 	merge(j);
 }
 
-void OId::merge(json11::Json j)
+SE OId::merge(json11::Json j)
 {
 	set_int_value(id, j, "id");
 	set_int_value(from, j, "from");
 	set_int_value(to, j, "to");
 
 	op = OP(int_valueD(j, "op", NONE));
+
+	return{};
 }
 
 json11::Json OId::to_json() const
@@ -78,7 +80,7 @@ Env::Env(json11::Json j)
 	merge(j);
 }
 
-void Env::merge(json11::Json j)
+SE Env::merge(json11::Json j)
 {
 	params.merge(j["params"]);
 
@@ -93,6 +95,8 @@ void Env::merge(json11::Json j)
 		outputIds.push_back(oidj);
 
 	set_bool_value(debugMode, j, "debugMode");
+
+	return{};
 }
 
 json11::Json Env::to_json() const
@@ -273,7 +277,7 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 	{
 		pout
 			<< (isFirstItem ? "  " : ", ")
-			<< "\"" << cm.crop()->id() << "\":" << cm.to_json().dump() << endl;
+			<< "\"" << (cm.crop() ? cm.crop()->id() : "NULL crop") << "\":" << cm.to_json().dump() << endl;
 		isFirstItem = !isFirstItem && isFirstItem;
 	}
 	pout << "}," << endl;

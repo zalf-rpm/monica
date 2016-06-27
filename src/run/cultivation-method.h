@@ -50,7 +50,7 @@ namespace Monica
 
     virtual WorkStep* clone() const = 0;
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -82,7 +82,7 @@ namespace Monica
 
     virtual Seed* clone() const {return new Seed(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
 		virtual json11::Json to_json() const { return to_json(true); }
 
@@ -120,7 +120,7 @@ namespace Monica
 
     virtual Harvest* clone() const { return new Harvest(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
 		virtual json11::Json to_json() const { return to_json(true); }
 
@@ -161,7 +161,7 @@ namespace Monica
 
     virtual Cutting* clone() const {return new Cutting(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -183,7 +183,7 @@ namespace Monica
 
     virtual MineralFertiliserApplication* clone() const {return new MineralFertiliserApplication(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -214,7 +214,7 @@ namespace Monica
 
     virtual OrganicFertiliserApplication* clone() const {return new OrganicFertiliserApplication(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -248,7 +248,7 @@ namespace Monica
 
     virtual TillageApplication* clone() const {return new TillageApplication(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -274,7 +274,7 @@ namespace Monica
 
     virtual IrrigationApplication* clone() const {return new IrrigationApplication(*this); }
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -309,7 +309,7 @@ namespace Monica
 
     CultivationMethod(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 

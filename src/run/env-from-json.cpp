@@ -46,26 +46,39 @@ Json Monica::parseJsonString(string jsonString)
 {
 	string err;
 	Json j = Json::parse(jsonString, err);
-	if(!err.empty())
-	{
-		cerr << "Error parsing json object string: " << jsonString << err << endl;
-		return Json();
-	}
+	//if(!err.empty())
+	//{
+		//cerr << "Error: parsing JSON object string: '" << jsonString << "' Error: " << err << endl;
+	//	return Json();
+	//}
 
 	return j;
 }
 
-const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& supportedPatterns();
+struct JSE 
+{
+	JSE(Json j) : json(j), success(true) {}
+	JSE(Json j, bool s, string e) : json(j), success(s) { errors.push_back(e); }
+	JSE(Json j, bool s, vector<string> es) : json(j), success(s), errors(es) {}
+	Json json;
+	bool success;
+	vector<string> errors;
+};
 
-Json findAndReplaceReferences(const Json& root, const Json& j)
+const map<string, function<JSE(const Json&, const Json&)>>& supportedPatterns();
+
+//! returns pair<Json, success?>
+JSE findAndReplaceReferences(const Json& root, const Json& j)
 {
 	auto sp = supportedPatterns();
 
 	//auto jstr = j.dump();
+	bool success = true;
+	vector<string> errors;
 
 	if(j.is_array())
 	{
-		Json::array arr;
+		J11Array arr;
 
 		bool arrayIsReferenceFunction = false;
 		if(j[0].is_string())
@@ -76,50 +89,85 @@ Json findAndReplaceReferences(const Json& root, const Json& j)
 				arrayIsReferenceFunction = true;
 
 				//check for nested function invocations in the arguments
-				Json::array funcArr;
+				J11Array funcArr;
 				for(auto i : j.array_items())
-					funcArr.push_back(findAndReplaceReferences(root, i));
+				{
+					auto r = findAndReplaceReferences(root, i);
+					success = success && r.success;
+					if(!r.success)
+						for(auto e : r.errors)
+							errors.push_back(e);
+					funcArr.push_back(r.json);
+				}
 
 				//invoke function
-				auto jAndSuccess = (p->second)(root, funcArr);
+				auto jse = (p->second)(root, funcArr);
+
+				success = success && jse.success;
+				if(!jse.success)
+					for(auto e : jse.errors)
+						errors.push_back(e);
 
 				//if successful try to recurse into result for functions in result
-				if(jAndSuccess.second)
-					return findAndReplaceReferences(root, jAndSuccess.first);
+				if(jse.success)
+				{
+					auto r = findAndReplaceReferences(root, jse.json);
+					success = success && r.success;
+					if(!r.success)
+						for(auto e : r.errors)
+							errors.push_back(e);
+					return{r.json, success, errors};
+				}
+				else
+					return{J11Object(), success, errors};
 			}
 		}
 
 		if(!arrayIsReferenceFunction)
 			for(auto jv : j.array_items())
-				arr.push_back(findAndReplaceReferences(root, jv));
+			{
+				auto r = findAndReplaceReferences(root, jv);
+				success = success && r.success;
+				if(!r.success)
+					for(auto e : r.errors)
+						errors.push_back(e);
+				arr.push_back(r.json);
+			}
 
-		return arr;
+		return{arr, success, errors};
 	}
 	else if(j.is_object())
 	{
-		Json::object obj;
+		J11Object obj;
 
 		for(auto p : j.object_items())
-			obj[p.first] = findAndReplaceReferences(root, p.second);
+		{
+			auto r = findAndReplaceReferences(root, p.second);
+			success = success && r.success;
+			if(!r.success)
+				for(auto e : r.errors)
+					errors.push_back(e);
+			obj[p.first] = r.json;
+		}
 
-		return obj;
+		return{obj, success, errors};
 	}
 
-	return j;
+	return{j, success, errors};
 }
 
-const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& supportedPatterns()
+const map<string, function<JSE(const Json&, const Json&)>>& supportedPatterns()
 {
-	auto ref = [](const Json& root, const Json& j) -> pair<Json, bool>
+	auto ref = [](const Json& root, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_string()
 		   && j[2].is_string())
-			return make_pair(root[j[1].string_value()][j[2].string_value()], true);
-		return make_pair(j, false);
+			return{root[j[1].string_value()][j[2].string_value()]};
+		return{j, false, string("Couldn't resolve reference: ") + j.dump() + "!"};
 	};
 
-	auto fromDb = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto fromDb = [](const Json&, const Json& j) -> JSE
 	{
 		if((j.array_items().size() >= 3 && j[1].is_string())
 		   || (j.array_items().size() == 2 && j[1].is_object()))
@@ -136,16 +184,14 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				if(db.empty())
 					db = "monica";
 				auto name = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(getMineralFertiliserParametersFromMonicaDB(name, db).to_json(),
-				                 true);
+				return{getMineralFertiliserParametersFromMonicaDB(name, db).to_json()};
 			}
 			else if(type == "organic_fertiliser")
 			{
 				if(db.empty())
 					db = "monica";
 				auto name = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(getOrganicFertiliserParametersFromMonicaDB(name, db)->to_json(),
-				                 true);
+				return{getOrganicFertiliserParametersFromMonicaDB(name, db)->to_json()};
 			}
 			else if(type == "crop_residue"
 			        && j.array_items().size() >= 3)
@@ -156,18 +202,14 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				auto residueType = isParamMap ? j[1]["residue-type"].string_value()
 				                              : j.array_items().size() == 4 ? j[3].string_value()
 				                                                            : "";
-				return make_pair(getResidueParametersFromMonicaDB(species,
-				                                                  residueType,
-				                                                  db)->to_json(),
-				                 true);
+				return{getResidueParametersFromMonicaDB(species, residueType, db)->to_json()};
 			}
 			else if(type == "species")
 			{
 				if(db.empty())
 					db = "monica";
 				auto species = isParamMap ? j[1]["species"].string_value() : j[2].string_value();
-				return make_pair(getSpeciesParametersFromMonicaDB(species, db)->to_json(),
-				                 true);
+				return{getSpeciesParametersFromMonicaDB(species, db)->to_json()};
 			}
 			else if(type == "cultivar"
 			        && j.array_items().size() >= 3)
@@ -178,10 +220,7 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				auto cultivar = isParamMap ? j[1]["cultivar"].string_value()
 				                           : j.array_items().size() == 4 ? j[3].string_value()
 				                                                         : "";
-				return make_pair(getCultivarParametersFromMonicaDB(species,
-				                                                   cultivar,
-				                                                   db)->to_json(),
-				                 true);
+				return{getCultivarParametersFromMonicaDB(species, cultivar, db)->to_json()};
 			}
 			else if(type == "crop"
 			        && j.array_items().size() >= 3)
@@ -192,58 +231,49 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				auto cultivar = isParamMap ? j[1]["cultivar"].string_value()
 				                           : j.array_items().size() == 4 ? j[3].string_value()
 				                                                         : "";
-				return make_pair(getCropParametersFromMonicaDB(species,
-				                                               cultivar,
-				                                               db)->to_json(),
-				                 true);
+				return{getCropParametersFromMonicaDB(species, cultivar, db)->to_json()};
 			}
 			else if(type == "soil-temperature-params")
 			{
 				if(db.empty())
 					db = "monica";
 				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(readUserSoilTemperatureParametersFromDatabase(module, db).to_json(),
-				                 true);
+				return{readUserSoilTemperatureParametersFromDatabase(module, db).to_json()};
 			}
 			else if(type == "environment-params")
 			{
 				if(db.empty())
 					db = "monica";
 				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(readUserEnvironmentParametersFromDatabase(module, db).to_json(),
-				                 true);
+				return{readUserEnvironmentParametersFromDatabase(module, db).to_json()};
 			}
 			else if(type == "soil-organic-params")
 			{
 				if(db.empty())
 					db = "monica";
 				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(readUserSoilOrganicParametersFromDatabase(module, db).to_json(),
-				                 true);
+				return{readUserSoilOrganicParametersFromDatabase(module, db).to_json()};
 			}
 			else if(type == "soil-transport-params")
 			{
 				if(db.empty())
 					db = "monica";
 				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(readUserSoilTransportParametersFromDatabase(module, db).to_json(),
-				                 true);
+				return{readUserSoilTransportParametersFromDatabase(module, db).to_json()};
 			}
 			else if(type == "soil-moisture-params")
 			{
 				if(db.empty())
 					db = "monica";
 				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(readUserSoilTemperatureParametersFromDatabase(module, db).to_json(),
-				                 true);
+				return{readUserSoilTemperatureParametersFromDatabase(module, db).to_json()};
 			}
 			else if(type == "crop-params")
 			{
 				if(db.empty())
 					db = "monica";
 				auto module = isParamMap ? j[1]["name"].string_value() : j[2].string_value();
-				return make_pair(readUserCropParametersFromDatabase(module, db).to_json(),
-				                 true);
+				return{readUserCropParametersFromDatabase(module, db).to_json()};
 			}
 			else if(type == "soil-profile"
 			        && (isParamMap
@@ -257,7 +287,7 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				for(auto sp : *sps)
 					spjs.push_back(sp.to_json());
 
-				return make_pair(spjs, true);
+				return{spjs};
 			}
 			else if(type == "soil-layer"
 			        && (isParamMap
@@ -271,87 +301,88 @@ const map<string, function<pair<Json, bool>(const Json&, const Json&)>>& support
 				size_t layerNo = size_t(isParamMap ? j[1]["no"].int_value() : j[3].int_value());
 				auto sps = Soil::soilParameters(db, profileId);
 				if(0 < layerNo && layerNo <= sps->size())
-					return make_pair(sps->at(layerNo - 1).to_json(), true);
+					return{sps->at(layerNo - 1).to_json()};
 
-				return make_pair(j, false);
+				return{j, false, string("Couldn't load soil-layer from database: ") + j.dump() + "!"};
 			}
 		}
 
-		return make_pair(j, false);
+		return{j, false, string("Couldn't load data from DB: ") + j.dump() + "!"};
 	};
 
-	auto fromFile = [](const Json& root, const Json& j) -> pair<Json, bool>
+	auto fromFile = [](const Json& root, const Json& j) -> JSE
 	{
+		string error;
+
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
 		{
 			string basePath = string_valueD(root, "include-file-base-path", ".");
 			string pathToFile = j[1].string_value();
-			pathToFile = isAbsolutePath(pathToFile)
-			             ? pathToFile
-			             : basePath + "/" + pathToFile;
+			pathToFile = fixSystemSeparator(isAbsolutePath(pathToFile)
+																			? pathToFile
+																			: basePath + "/" + pathToFile);
 			auto jo = readAndParseJsonFile(pathToFile);
 			if(!jo.is_null())
-				return make_pair(jo, true);
+				return{jo};
+			else
+				error = string("Couldn't include file with path: '") + pathToFile + "'!";
 		}
 
-		return make_pair(j, false);
+		return{j, false, error.empty() ? string("Couldn't include file with function: ") + j.dump() + "!" : error};
 	};
 
-	auto humus2corg = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto humus2corg = [](const Json&, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_number())
-			return make_pair(Soil::humus_st2corg(j[1].int_value()), true);
-		return make_pair(j, false);
+			return{Soil::humus_st2corg(j[1].int_value())};
+		return{j, false, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
 	};
 
-	auto ld2trd = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto ld2trd = [](const Json&, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_number()
 		   && j[2].is_number())
-			return make_pair(Soil::ld_eff2trd(j[1].int_value(), j[2].number_value()),
-			                 true);
-		return make_pair(j, false);
+			return{Soil::ld_eff2trd(j[1].int_value(), j[2].number_value())};
+		return{j, false, string("Couldn't convert bulk density class to raw density using function: ") + j.dump() + "!"};
 	};
 
-	auto KA52clay = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto KA52clay = [](const Json&, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
-			return make_pair(Soil::KA5texture2clay(j[1].string_value()), true);
-		return make_pair(j, false);
+			return{Soil::KA5texture2clay(j[1].string_value())};
+		return{j, false, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
 	};
 
-	auto KA52sand = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto KA52sand = [](const Json&, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
-			return make_pair(Soil::KA5texture2sand(j[1].string_value()), true);
-		return make_pair(j, false);
+			return{Soil::KA5texture2sand(j[1].string_value())};
+		return{j, false, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};;
 	};
 
-	auto sandClay2lambda = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto sandClay2lambda = [](const Json&, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_number()
 		   && j[2].is_number())
-			return make_pair(Soil::sandAndClay2lambda(j[1].number_value(),
-			                                          j[2].number_value()),
-			                 true);
-		return make_pair(j, false);
+			return{Soil::sandAndClay2lambda(j[1].number_value(), j[2].number_value())};
+		return{j, false, string("Couldn't get lambda value from soil sand and clay content: ") + j.dump() + "!"};
 	};
 
-	auto percent = [](const Json&, const Json& j) -> pair<Json, bool>
+	auto percent = [](const Json&, const Json& j) -> JSE
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_number())
-			return make_pair(j[1].number_value() / 100.0, true);
-		return make_pair(j, false);
+			return{j[1].number_value() / 100.0};
+		return{j, false, string("Couldn't convert percent to decimal percent value: ") + j.dump() + "!"};
 	};
 
-	static map<string, function<pair<Json, bool>(const Json&,const Json&)>> m{
+	static map<string, function<JSE(const Json&,const Json&)>> m{
 			{"include-from-db", fromDb},
 			{"include-from-file", fromFile},
 			{"ref", ref},
@@ -391,7 +422,16 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	for(auto& j : cropSiteSim)
 	{
 		addBasePath(j, pathToParameters);
-		cropSiteSim2.push_back(findAndReplaceReferences(j, j));
+		auto r = findAndReplaceReferences(j, j);
+		if(r.success)
+			cropSiteSim2.push_back(r.json);
+		else
+		{
+			cerr << "Error(s): " << endl;
+			for(auto e : r.errors)
+				cerr << e << endl;
+			return Env();
+		}
 	}
 
 	auto cropj = cropSiteSim2.at(0);

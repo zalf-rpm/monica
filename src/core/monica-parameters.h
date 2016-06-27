@@ -322,7 +322,7 @@ namespace Monica
 
     CMResult(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -353,7 +353,7 @@ namespace Monica
 
     YieldComponent(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -370,7 +370,7 @@ namespace Monica
 
     SpeciesParameters(json11::Json j);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -437,7 +437,7 @@ namespace Monica
 
     CultivarParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -498,9 +498,9 @@ namespace Monica
 
     CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
-    void merge(json11::Json sj, json11::Json cj);
+    Tools::SE merge(json11::Json sj, json11::Json cj);
 
     virtual json11::Json to_json() const;
 
@@ -534,7 +534,7 @@ namespace Monica
                                 double no3,
                                 double nh4);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -586,7 +586,7 @@ namespace Monica
 
     NMinUserParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -605,7 +605,7 @@ namespace Monica
 
     IrrigationParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -623,7 +623,7 @@ namespace Monica
 
     AutomaticIrrigationParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -640,7 +640,7 @@ namespace Monica
 
     MeasuredGroundwaterTableInformation(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -666,7 +666,7 @@ namespace Monica
 
     SiteParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -706,7 +706,7 @@ namespace Monica
 
     AutomaticHarvestParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -737,7 +737,7 @@ namespace Monica
 
     NMinCropParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -754,7 +754,7 @@ namespace Monica
 
     OrganicMatterParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -788,7 +788,7 @@ namespace Monica
 
     OrganicFertiliserParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -806,7 +806,7 @@ namespace Monica
 
     CropResidueParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -824,7 +824,7 @@ namespace Monica
 
     SimulationParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -865,7 +865,7 @@ namespace Monica
 
     UserCropParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -898,7 +898,7 @@ namespace Monica
 
     UserEnvironmentParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -926,7 +926,7 @@ namespace Monica
 
     UserSoilMoistureParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -970,7 +970,7 @@ namespace Monica
 
     UserSoilTemperatureParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -1001,7 +1001,7 @@ namespace Monica
 
     UserSoilTransportParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -1023,7 +1023,7 @@ namespace Monica
 
     UserSoilOrganicParameters(json11::Json object);
 
-    virtual void merge(json11::Json j);
+    virtual Tools::SE merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
@@ -1082,7 +1082,7 @@ namespace Monica
 
 		CentralParameterProvider(json11::Json object);
 
-		virtual void merge(json11::Json j);
+		virtual Tools::SE merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
 

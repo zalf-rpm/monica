@@ -207,3 +207,4 @@ src/run/production-process.h.autosave
 *.autosave
 *.opendb
 project-files/monica.VC.db
+/inputs.json
