@@ -40,6 +40,7 @@ using namespace Monica;
 using namespace Soil;
 using namespace Tools;
 using namespace Climate;
+using namespace json11;
 
 
 const vector<Result2>& Monica::result2()
@@ -717,7 +718,7 @@ CMResult::CMResult(json11::Json j)
   merge(j);
 }
 
-SE CMResult::merge(json11::Json j)
+Errors CMResult::merge(json11::Json j)
 {
   set_string_value(id, j, "cropId");
   set_int_value(customId, j, "customId");
@@ -760,7 +761,7 @@ YieldComponent::YieldComponent(json11::Json j)
   merge(j);
 }
 
-SE YieldComponent::merge(json11::Json j)
+Errors YieldComponent::merge(json11::Json j)
 {
   set_int_value(organId, j, "organId");
   set_double_value(yieldPercentage, j, "yieldPercentage");
@@ -785,12 +786,14 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   merge(j);
 }
 
-SE SpeciesParameters::merge(json11::Json j)
+Errors SpeciesParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_string_value(pc_SpeciesId, j, "SpeciesName");
@@ -836,7 +839,7 @@ SE SpeciesParameters::merge(json11::Json j)
   set_int_value(pc_CuttingDelayDays, j, "CuttingDelayDays");
   set_double_value(pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor");
 
-	return{};
+	return res;
 }
 
 json11::Json SpeciesParameters::to_json() const
@@ -898,22 +901,30 @@ CultivarParameters::CultivarParameters(json11::Json j)
   merge(j);
 }
 
-SE CultivarParameters::merge(json11::Json j)
+Errors CultivarParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 	
   if(j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForPrimaryYield = toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]);
+	else
+		res.errors.push_back(string("Couldn't read 'OrganIdsForPrimaryYield' key from JSON object:\n") + j.dump());
   
 	if(j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForSecondaryYield = toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]);
+	else
+		res.errors.push_back(string("Couldn't read 'OrganIdsForSecondaryYield' key from JSON object:\n") + j.dump());
 
   if(j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
     pc_OrganIdsForCutting = toVector<YieldComponent>(j["OrganIdsForCutting"]);
+	else
+		res.warnings.push_back(string("Couldn't read 'OrganIdsForCutting' key from JSON object:\n") + j.dump());
 
   set_string_value(pc_CultivarId, j, "CultivarName");
   set_string_value(pc_Description, j, "Description");
@@ -949,7 +960,7 @@ SE CultivarParameters::merge(json11::Json j)
   for(auto js : j["OrganSenescenceRate"].array_items())
     pc_OrganSenescenceRate.push_back(double_vector(js));
 
-	return{};
+	return res;
 }
 
 json11::Json CultivarParameters::to_json() const
@@ -1013,17 +1024,17 @@ CropParameters::CropParameters(json11::Json sj, json11::Json cj)
   merge(sj, cj);
 }
 
-SE CropParameters::merge(json11::Json j)
+Errors CropParameters::merge(json11::Json j)
 {
-  merge(j["species"], j["cultivar"]);
-	return{};
+  return merge(j["species"], j["cultivar"]);
 }
 
-SE CropParameters::merge(json11::Json sj, json11::Json cj)
+Errors CropParameters::merge(json11::Json sj, json11::Json cj)
 {
-  speciesParams.merge(sj);
-  cultivarParams.merge(cj);
-	return{};
+	Errors res;
+	res.append(speciesParams.merge(sj));
+  res.append(cultivarParams.merge(cj));
+	return res;
 }
 
 json11::Json CropParameters::to_json() const
@@ -1054,12 +1065,14 @@ MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
   merge(j);
 }
 
-SE MineralFertiliserParameters::merge(json11::Json j)
+Errors MineralFertiliserParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_string_value(id, j, "id");
@@ -1068,7 +1081,7 @@ SE MineralFertiliserParameters::merge(json11::Json j)
   set_double_value(vo_NH4, j, "NH4");
   set_double_value(vo_NO3, j, "NO3");
 
-	return{};
+	return res;
 }
 
 json11::Json MineralFertiliserParameters::to_json() const
@@ -1096,19 +1109,21 @@ NMinUserParameters::NMinUserParameters(json11::Json j)
   merge(j);
 }
 
-SE NMinUserParameters::merge(json11::Json j)
+Errors NMinUserParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(min, j, "min");
   set_double_value(max, j, "max");
   set_int_value(delayInDays, j, "delayInDays");
 
-	return{};
+	return res;
 }
 
 json11::Json NMinUserParameters::to_json() const
@@ -1133,18 +1148,20 @@ IrrigationParameters::IrrigationParameters(json11::Json j)
   merge(j);
 }
 
-SE IrrigationParameters::merge(json11::Json j)
+Errors IrrigationParameters::merge(json11::Json j)
 {
+	Errors res; 
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(nitrateConcentration, j, "nitrateConcentration");
   set_double_value(sulfateConcentration, j, "sulfateConcentration");
 
-	return{};
+	return res;
 }
 
 json11::Json IrrigationParameters::to_json() const
@@ -1171,19 +1188,21 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
   merge(j);
 }
 
-SE AutomaticIrrigationParameters::merge(json11::Json j)
+Errors AutomaticIrrigationParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
-  IrrigationParameters::merge(j["irrigationParameters"]);
+  res.append(IrrigationParameters::merge(j["irrigationParameters"]));
   set_double_value(amount, j, "amount");
   set_double_value(threshold, j, "threshold");
 
-	return{};
+	return res;
 }
 
 json11::Json AutomaticIrrigationParameters::to_json() const
@@ -1202,16 +1221,20 @@ MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11:
   merge(j);
 }
 
-SE MeasuredGroundwaterTableInformation::merge(json11::Json j)
+Errors MeasuredGroundwaterTableInformation::merge(json11::Json j)
 {
+	Errors res;
+
   set_bool_value(groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
 
   string err;
-  if(j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
-    for(auto p : j["groundwaterInfo"].object_items())
-      groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
+	if(j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
+		for(auto p : j["groundwaterInfo"].object_items())
+			groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
+	else
+		res.errors.push_back(string("Couldn't read 'groundwaterInfo' key from JSON object:\n") + j.dump());
 
-	return{};
+	return res;
 }
 
 json11::Json MeasuredGroundwaterTableInformation::to_json() const
@@ -1279,12 +1302,14 @@ SiteParameters::SiteParameters(json11::Json j)
   merge(j);
 }
 
-SE SiteParameters::merge(json11::Json j)
+Errors SiteParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
 	err = "";
@@ -1297,38 +1322,39 @@ SE SiteParameters::merge(json11::Json j)
   set_double_value(vq_NDeposition, j, "NDeposition");
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
 
-  if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
-  {
-    const auto& sps = j["SoilProfileParameters"].array_items();
-    vs_SoilParameters = make_shared<SoilPMs>();
-    size_t layerCount = 0;
-    for(size_t spi = 0, spsCount = sps.size(); spi < spsCount; spi++)
-    {
-      json11::Json sp = sps.at(spi);
+	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
+	{
+		const auto& sps = j["SoilProfileParameters"].array_items();
+		vs_SoilParameters = make_shared<SoilPMs>();
+		size_t layerCount = 0;
+		for(size_t spi = 0, spsCount = sps.size(); spi < spsCount; spi++)
+		{
+			Json sp = sps.at(spi);
 
-      //repeat layers if there is an associated Thickness parameter
-      string err;
-      int repeatLayer = 1;
-      if(sp.has_shape({{"Thickness", json11::Json::NUMBER}}, err))
-        repeatLayer = max(1, Tools::roundRT<int>
-                          (double_valueD(sp, "Thickness", 0.1)*10.0, 0));
+			//repeat layers if there is an associated Thickness parameter
+			string err;
+			int repeatLayer = 1;
+			if(sp.has_shape({{"Thickness", Json::NUMBER}}, err)
+				 || sp.has_shape({{"Thickness", Json::ARRAY}}, err))
+				repeatLayer = max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0));
+			else
+				res.errors.push_back(string("Couldn't read 'Thickness' key from JSON object ('SoilProfileParameters' JSON array index: ") +
+														 to_string(spi) + "):\n" + sp.dump());
 
-      //simply repeat the last layer as often as necessary to fill the 20 layers
-      if(spi+1 == spsCount)
-        repeatLayer = 20 - layerCount;
+			//simply repeat the last layer as often as necessary to fill the 20 layers
+			if(spi + 1 == spsCount)
+				repeatLayer = 20 - layerCount;
 
-      for(int i = 1; i <= repeatLayer; i++)
-        vs_SoilParameters->push_back(sp);
+			for(int i = 1; i <= repeatLayer; i++)
+				vs_SoilParameters->push_back(sp);
 
-      layerCount += repeatLayer;
-    }
-  } 
+			layerCount += repeatLayer;
+		}
+	}
 	else
-		cerr 
-		<< "Error: Couldn't read 'SoilProfileParameters' JSON array from JSON object: " << endl 
-		<< j.dump() << endl;
+		res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
 
-	return{};
+	return res;
 }
 
 json11::Json SiteParameters::to_json() const
@@ -1361,12 +1387,14 @@ AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j)
   merge(j);
 }
 
-SE AutomaticHarvestParameters::merge(json11::Json j)
+Errors AutomaticHarvestParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   int ht = -1;
@@ -1375,7 +1403,7 @@ SE AutomaticHarvestParameters::merge(json11::Json j)
     _harvestTime = HarvestTime(ht);
   set_int_value(_latestHarvestDOY, j, "latestHarvestDOY");
 
-	return{};
+	return res;
 }
 
 json11::Json AutomaticHarvestParameters::to_json() const
@@ -1397,19 +1425,21 @@ NMinCropParameters::NMinCropParameters(json11::Json j)
   merge(j);
 }
 
-SE NMinCropParameters::merge(json11::Json j)
+Errors NMinCropParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(samplingDepth, j, "samplingDepth");
   set_double_value(nTarget, j, "nTarget");
   set_double_value(nTarget30, j, "nTarget30");
 
-	return{};
+	return res;
 }
 
 json11::Json NMinCropParameters::to_json() const
@@ -1428,12 +1458,14 @@ OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
   merge(j);
 }
 
-SE OrganicMatterParameters::merge(json11::Json j)
+Errors OrganicMatterParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(vo_AOM_DryMatterContent, j, "AOM_DryMatterContent");
@@ -1450,7 +1482,7 @@ SE OrganicMatterParameters::merge(json11::Json j)
   set_double_value(vo_PartAOM_Slow_to_SMB_Fast, j, "PartAOM_Slow_to_SMB_Fast");
   set_double_value(vo_NConcentration, j, "NConcentration");
 
-	return{};
+	return res;
 }
 
 json11::Json OrganicMatterParameters::to_json() const
@@ -1479,19 +1511,22 @@ OrganicFertiliserParameters::OrganicFertiliserParameters(json11::Json j)
   merge(j);
 }
 
-SE OrganicFertiliserParameters::merge(json11::Json j)
+Errors OrganicFertiliserParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
-  OrganicMatterParameters::merge(j);
+  res.append(OrganicMatterParameters::merge(j));
+
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
 
-	return{};
+	return res;
 }
 
 json11::Json OrganicFertiliserParameters::to_json() const
@@ -1510,19 +1545,21 @@ CropResidueParameters::CropResidueParameters(json11::Json j)
   merge(j);
 }
 
-SE CropResidueParameters::merge(json11::Json j)
+Errors CropResidueParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
-  OrganicMatterParameters::merge(j);
+  res.append(OrganicMatterParameters::merge(j));
   set_string_value(species, j, "species");
   set_string_value(residueType, j, "residueType");
 
-	return{};
+	return res;
 }
 
 json11::Json CropResidueParameters::to_json() const
@@ -1541,12 +1578,14 @@ SimulationParameters::SimulationParameters(json11::Json j)
   merge(j);
 }
 
-SE SimulationParameters::merge(json11::Json j)
+Errors SimulationParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_iso_date_value(startDate, j, "startDate");
@@ -1572,7 +1611,7 @@ SE SimulationParameters::merge(json11::Json j)
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
   set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 
-	return{};
+	return res;
 }
 
 json11::Json SimulationParameters::to_json() const
@@ -1606,12 +1645,14 @@ UserCropParameters::UserCropParameters(json11::Json j)
   merge(j);
 }
 
-SE UserCropParameters::merge(json11::Json j)
+Errors UserCropParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient");
@@ -1630,7 +1671,7 @@ SE UserCropParameters::merge(json11::Json j)
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
 
-	return{};
+	return res;
 }
 
 json11::Json UserCropParameters::to_json() const
@@ -1662,12 +1703,14 @@ UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
   merge(j);
 }
 
-SE UserEnvironmentParameters::merge(json11::Json j)
+Errors UserEnvironmentParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(p_Albedo, j, "Albedo");
@@ -1679,7 +1722,7 @@ SE UserEnvironmentParameters::merge(json11::Json j)
   set_double_value(p_MinGroundwaterDepth, j, "MinGroundwaterDepth");
   set_int_value(p_MinGroundwaterDepthMonth, j, "MinGroundwaterDepthMonth");
 
-	return{};
+	return res;
 }
 
 json11::Json UserEnvironmentParameters::to_json() const
@@ -1711,12 +1754,14 @@ UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
   merge(j);
 }
 
-SE UserSoilMoistureParameters::merge(json11::Json j)
+Errors UserSoilMoistureParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
@@ -1744,7 +1789,7 @@ SE UserSoilMoistureParameters::merge(json11::Json j)
   set_double_value(pm_MaxPercolationRate, j, "MaxPercolationRate");
   set_double_value(pm_MoistureInitValue, j, "MoistureInitValue");
 
-	return{};
+	return res;
 }
 
 json11::Json UserSoilMoistureParameters::to_json() const
@@ -1784,12 +1829,14 @@ UserSoilTemperatureParameters::UserSoilTemperatureParameters(json11::Json j)
   merge(j);
 }
 
-SE UserSoilTemperatureParameters::merge(json11::Json j)
+Errors UserSoilTemperatureParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(pt_NTau, j, "NTau");
@@ -1806,7 +1853,7 @@ SE UserSoilTemperatureParameters::merge(json11::Json j)
   set_double_value(pt_SoilAlbedo, j, "SoilAlbedo");
   set_double_value(pt_SoilMoisture, j, "SoilMoisture");
 
-	return{};
+	return res;
 }
 
 json11::Json UserSoilTemperatureParameters::to_json() const
@@ -1835,12 +1882,14 @@ UserSoilTransportParameters::UserSoilTransportParameters(json11::Json j)
   merge(j);
 }
 
-SE UserSoilTransportParameters::merge(json11::Json j)
+Errors UserSoilTransportParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(pq_DispersionLength, j, "DispersionLength");
@@ -1848,7 +1897,7 @@ SE UserSoilTransportParameters::merge(json11::Json j)
   set_double_value(pq_DiffusionCoefficientStandard, j, "DiffusionCoefficientStandard");
   set_double_value(pq_NDeposition, j, "NDeposition");
 
-	return{};
+	return res;
 }
 
 json11::Json UserSoilTransportParameters::to_json() const
@@ -1868,12 +1917,14 @@ UserSoilOrganicParameters::UserSoilOrganicParameters(json11::Json j)
   merge(j);
 }
 
-SE UserSoilOrganicParameters::merge(json11::Json j)
+Errors UserSoilOrganicParameters::merge(json11::Json j)
 {
+	Errors res;
+
 	string err;
 	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
 	{
-		merge(j["DEFAULT"]);
+		res = merge(j["DEFAULT"]);
 	}
 
   set_double_value(po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard");
@@ -1913,7 +1964,7 @@ SE UserSoilOrganicParameters::merge(json11::Json j)
   set_double_value(po_Inhibitor_NH3, j, "Inhibitor_NH3");
   set_double_value(ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
 
-	return{};
+	return res;
 }
 
 json11::Json UserSoilOrganicParameters::to_json() const
@@ -1973,21 +2024,23 @@ CentralParameterProvider::CentralParameterProvider(json11::Json j)
 	merge(j);
 }
 
-SE CentralParameterProvider::merge(json11::Json j)
+Errors CentralParameterProvider::merge(json11::Json j)
 {
-	userCropParameters.merge(j["userCropParameters"]);
-	userEnvironmentParameters.merge(j["userEnvironmentParameters"]);
-	userSoilMoistureParameters.merge(j["userSoilMoistureParameters"]);
-	userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]);
-	userSoilTransportParameters.merge(j["userSoilTransportParameters"]);
-	userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]);
-	simulationParameters.merge(j["simulationParameters"]);
-	siteParameters.merge(j["siteParameters"]);
+	Errors res;
+
+	res.append(userCropParameters.merge(j["userCropParameters"]));
+	res.append(userEnvironmentParameters.merge(j["userEnvironmentParameters"]));
+	res.append(userSoilMoistureParameters.merge(j["userSoilMoistureParameters"]));
+	res.append(userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]));
+	res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
+	res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
+	res.append(simulationParameters.merge(j["simulationParameters"]));
+	res.append(siteParameters.merge(j["siteParameters"]));
 	//groundwaterInformation.merge(j["groundwaterInformation"]);
 
 	//set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
 
-	return{};
+	return res;
 }
 
 json11::Json CentralParameterProvider::to_json() const

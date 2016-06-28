@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-  class Crop
+  class Crop : public Tools::Json11Serializable
   {
 	public:
     Crop(const std::string& speciesName = "fallow");
@@ -50,9 +50,13 @@ namespace Monica
          const CropResidueParametersPtr rps = CropResidueParametersPtr(),
          double crossCropAdaptionFactor = 1);
 
-    Crop(json11::Json j);
+    Crop(json11::Json object);
 
-    json11::Json to_json(bool includeFullCropParameters = true) const;
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const { return to_json(true); }
+
+    json11::Json to_json(bool includeFullCropParameters) const;
 
     int dbId() const { return _dbId; }
 

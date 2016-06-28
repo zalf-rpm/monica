@@ -1,8 +1,13 @@
 {
+	"__UNDERSCORES IN FRONT MEANS IGNORE THE KEY, this is just to keep a valid JSON file": "",
+	"__!!! check and beautify JSON files with http://codebeautify.org/jsonviewer !!!": "",
+	
+	"__define paths to crop.json, site.json and climate.csv, no path means read from directory where sim.json (THIS file) has been found; files names are abitrary": "",
 	"crop.json": "crop.json",
 	"site.json": "site.json",
 	"climate.csv": "climate.csv",
 
+	"__options for reading the climate csv file, how many header lines to read, which separator to use and optional conversion of headers to internally known names": "",
 	"climate.csv-options": {
 		"no-of-climate-file-header-lines": 1,
 		"csv-separator": ",",
@@ -11,20 +16,28 @@
 		}
 	},
 	
+	"__set to 'true' to enable debug outputs and also write 'inputs.json' file into output directory": "",
 	"debug?": false,
-	"path-to-output": "./",
-	"include-file-base-path": "./",
 	
+	"__path to the directory file output is written to, when enabled (either via debug?: true or write-file?:true)": "",
+	"path-to-output": "./",
+	
+	"__the include file base path to be used if no other value is in crop/site.json specified": "",
+	"include-file-base-path": "../",
+	
+	"__configuration options for the monica outputs": "",
 	"output": { 
 	  "write-file?": false,
 		"file-name": "out.csv",
 	
+		"__how to write and what to include in monica CSV output": "",
 		"csv-options": {
 			"include-header-row": true,
 			"include-units-row": true,
 			"csv-separator": "\t"
 		},
 		
+		"__what data to include in the daily monica output": "",
 		"_daily": [
 			"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",
 			"Stage", "TempSum", "VernF", "DaylF", 
@@ -50,18 +63,22 @@
 		]
 	},
 	
+	"__given the start and end date, monica will run just this time range, else the full time range given by supplied climate data": "",
 	"start-date": "1991-01-01",
 	"end-date": "1997-12-31",
 
+	"__SHOULDN'T BE CHANGED CURRENTLY, as monica assumes partly 20 layers and 10cm layer thickness": "",
 	"NumberOfLayers": 20,
 	"LayerThickness": [0.1, "m"],
 
+	"__turn on/off some model switches": "",
 	"UseSecondaryYields": true,
 	"NitrogenResponseOn": true,
 	"WaterDeficitResponseOn": true,
 	"EmergenceMoistureControlOn": true,
 	"EmergenceFloodingControlOn": true,
 
+	"__if monica internal automatic irrigation is to be used, configure donations here": "",
 	"UseAutomaticIrrigation": false,
 	"AutoIrrigationParams": {
 		"irrigationParameters": {
@@ -72,6 +89,7 @@
 		"threshold": 0.35
 	},
 
+	"__if monica internal automatic fertilizing via NMin method is to be used, configure here": "",
 	"UseNMinMineralFertilisingMethod": false,
 	"NMinUserParams": { "min": 0, "max": 0, "delayInDays": 0 },
 	"NMinFertiliserPartition": {
@@ -81,5 +99,4 @@
 		"NH4": 0,
 		"NO3": 0
 	}
-
 }

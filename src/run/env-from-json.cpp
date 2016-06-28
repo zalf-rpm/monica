@@ -37,38 +37,45 @@ using namespace json11;
 using namespace Tools;
 using namespace Climate;
 
-Json Monica::readAndParseJsonFile(string path)
+EResult<Json> Monica::readAndParseJsonFile(string path)
 {
-	return parseJsonString(readFile(path));
+	auto r = readFile(path);
+	if(r.success())
+		return parseJsonString(r.result);
+	return{Json(), r.errors};
 }
 
-Json Monica::parseJsonString(string jsonString)
+EResult<Json> Monica::parseJsonString(string jsonString)
 {
 	string err;
 	Json j = Json::parse(jsonString, err);
-	//if(!err.empty())
-	//{
-		//cerr << "Error: parsing JSON object string: '" << jsonString << "' Error: " << err << endl;
-	//	return Json();
-	//}
-
-	return j;
+	if(!err.empty())
+		return{j, string("Error parsing JSON object: '") + jsonString + "' "};
+	return{j};
 }
 
-struct JSE 
+/*
+struct JsonAndErrors 
 {
-	JSE(Json j) : json(j), success(true) {}
-	JSE(Json j, bool s, string e) : json(j), success(s) { errors.push_back(e); }
-	JSE(Json j, bool s, vector<string> es) : json(j), success(s), errors(es) {}
+	JsonAndErrors(Json j) : json(j) {}
+	JsonAndErrors(string e) { errors.push_back(e); }
+	JsonAndErrors(vector<string> es) : errors(es) {}
+	JsonAndErrors(Json j, string e) : json(j) { errors.push_back(e); }
+	JsonAndErrors(Json j, vector<string> es) : json(j), errors(es) {}
+
+	bool success() const { return errors.empty(); }
+
 	Json json;
-	bool success;
 	vector<string> errors;
 };
+*/
 
-const map<string, function<JSE(const Json&, const Json&)>>& supportedPatterns();
+typedef EResult<Json> JsonAndErrors;
+
+const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedPatterns();
 
 //! returns pair<Json, success?>
-JSE findAndReplaceReferences(const Json& root, const Json& j)
+JsonAndErrors findAndReplaceReferences(const Json& root, const Json& j)
 {
 	auto sp = supportedPatterns();
 
@@ -93,33 +100,33 @@ JSE findAndReplaceReferences(const Json& root, const Json& j)
 				for(auto i : j.array_items())
 				{
 					auto r = findAndReplaceReferences(root, i);
-					success = success && r.success;
-					if(!r.success)
+					success = success && r.success();
+					if(!r.success())
 						for(auto e : r.errors)
 							errors.push_back(e);
-					funcArr.push_back(r.json);
+					funcArr.push_back(r.result);
 				}
 
 				//invoke function
-				auto jse = (p->second)(root, funcArr);
+				auto jaes = (p->second)(root, funcArr);
 
-				success = success && jse.success;
-				if(!jse.success)
-					for(auto e : jse.errors)
+				success = success && jaes.success();
+				if(!jaes.success())
+					for(auto e : jaes.errors)
 						errors.push_back(e);
 
 				//if successful try to recurse into result for functions in result
-				if(jse.success)
+				if(jaes.success())
 				{
-					auto r = findAndReplaceReferences(root, jse.json);
-					success = success && r.success;
-					if(!r.success)
+					auto r = findAndReplaceReferences(root, jaes.result);
+					success = success && r.success();
+					if(!r.success())
 						for(auto e : r.errors)
 							errors.push_back(e);
-					return{r.json, success, errors};
+					return{r.result, errors};
 				}
 				else
-					return{J11Object(), success, errors};
+					return{J11Object(), errors};
 			}
 		}
 
@@ -127,14 +134,14 @@ JSE findAndReplaceReferences(const Json& root, const Json& j)
 			for(auto jv : j.array_items())
 			{
 				auto r = findAndReplaceReferences(root, jv);
-				success = success && r.success;
-				if(!r.success)
+				success = success && r.success();
+				if(!r.success())
 					for(auto e : r.errors)
 						errors.push_back(e);
-				arr.push_back(r.json);
+				arr.push_back(r.result);
 			}
 
-		return{arr, success, errors};
+		return{arr, errors};
 	}
 	else if(j.is_object())
 	{
@@ -143,31 +150,31 @@ JSE findAndReplaceReferences(const Json& root, const Json& j)
 		for(auto p : j.object_items())
 		{
 			auto r = findAndReplaceReferences(root, p.second);
-			success = success && r.success;
-			if(!r.success)
+			success = success && r.success();
+			if(!r.success())
 				for(auto e : r.errors)
 					errors.push_back(e);
-			obj[p.first] = r.json;
+			obj[p.first] = r.result;
 		}
 
-		return{obj, success, errors};
+		return{obj, errors};
 	}
 
-	return{j, success, errors};
+	return{j, errors};
 }
 
-const map<string, function<JSE(const Json&, const Json&)>>& supportedPatterns()
+const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedPatterns()
 {
-	auto ref = [](const Json& root, const Json& j) -> JSE
+	auto ref = [](const Json& root, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_string()
 		   && j[2].is_string())
 			return{root[j[1].string_value()][j[2].string_value()]};
-		return{j, false, string("Couldn't resolve reference: ") + j.dump() + "!"};
+		return{j, string("Couldn't resolve reference: ") + j.dump() + "!"};
 	};
 
-	auto fromDb = [](const Json&, const Json& j) -> JSE
+	auto fromDb = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if((j.array_items().size() >= 3 && j[1].is_string())
 		   || (j.array_items().size() == 2 && j[1].is_object()))
@@ -303,14 +310,14 @@ const map<string, function<JSE(const Json&, const Json&)>>& supportedPatterns()
 				if(0 < layerNo && layerNo <= sps->size())
 					return{sps->at(layerNo - 1).to_json()};
 
-				return{j, false, string("Couldn't load soil-layer from database: ") + j.dump() + "!"};
+				return{j, string("Couldn't load soil-layer from database: ") + j.dump() + "!"};
 			}
 		}
 
-		return{j, false, string("Couldn't load data from DB: ") + j.dump() + "!"};
+		return{j, string("Couldn't load data from DB: ") + j.dump() + "!"};
 	};
 
-	auto fromFile = [](const Json& root, const Json& j) -> JSE
+	auto fromFile = [](const Json& root, const Json& j) -> JsonAndErrors
 	{
 		string error;
 
@@ -323,66 +330,66 @@ const map<string, function<JSE(const Json&, const Json&)>>& supportedPatterns()
 																			? pathToFile
 																			: basePath + "/" + pathToFile);
 			auto jo = readAndParseJsonFile(pathToFile);
-			if(!jo.is_null())
-				return{jo};
-			else
-				error = string("Couldn't include file with path: '") + pathToFile + "'!";
+			if(jo.success() && !jo.result.is_null())
+				return{jo.result};
+			
+			return{j, string("Couldn't include file with path: '") + pathToFile + "'!"};
 		}
 
-		return{j, false, error.empty() ? string("Couldn't include file with function: ") + j.dump() + "!" : error};
+		return{j, string("Couldn't include file with function: ") + j.dump() + "!"};
 	};
 
-	auto humus2corg = [](const Json&, const Json& j) -> JSE
+	auto humus2corg = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_number())
 			return{Soil::humus_st2corg(j[1].int_value())};
-		return{j, false, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
+		return{j, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
 	};
 
-	auto ld2trd = [](const Json&, const Json& j) -> JSE
+	auto ld2trd = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_number()
 		   && j[2].is_number())
 			return{Soil::ld_eff2trd(j[1].int_value(), j[2].number_value())};
-		return{j, false, string("Couldn't convert bulk density class to raw density using function: ") + j.dump() + "!"};
+		return{j, string("Couldn't convert bulk density class to raw density using function: ") + j.dump() + "!"};
 	};
 
-	auto KA52clay = [](const Json&, const Json& j) -> JSE
+	auto KA52clay = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
 			return{Soil::KA5texture2clay(j[1].string_value())};
-		return{j, false, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
+		return{j, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
 	};
 
-	auto KA52sand = [](const Json&, const Json& j) -> JSE
+	auto KA52sand = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
 			return{Soil::KA5texture2sand(j[1].string_value())};
-		return{j, false, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};;
+		return{j, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};;
 	};
 
-	auto sandClay2lambda = [](const Json&, const Json& j) -> JSE
+	auto sandClay2lambda = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_number()
 		   && j[2].is_number())
 			return{Soil::sandAndClay2lambda(j[1].number_value(), j[2].number_value())};
-		return{j, false, string("Couldn't get lambda value from soil sand and clay content: ") + j.dump() + "!"};
+		return{j, string("Couldn't get lambda value from soil sand and clay content: ") + j.dump() + "!"};
 	};
 
-	auto percent = [](const Json&, const Json& j) -> JSE
+	auto percent = [](const Json&, const Json& j) -> JsonAndErrors
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_number())
 			return{j[1].number_value() / 100.0};
-		return{j, false, string("Couldn't convert percent to decimal percent value: ") + j.dump() + "!"};
+		return{j, string("Couldn't convert percent to decimal percent value: ") + j.dump() + "!"};
 	};
 
-	static map<string, function<JSE(const Json&,const Json&)>> m{
+	static map<string, function<JsonAndErrors(const Json&,const Json&)>> m{
 			{"include-from-db", fromDb},
 			{"include-from-file", fromFile},
 			{"ref", ref},
@@ -399,7 +406,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 {
 	vector<Json> cropSiteSim;
 	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
-		cropSiteSim.push_back(parseJsonString(params[name]));
+		cropSiteSim.push_back(printPossibleErrors(parseJsonString(params[name])));
 
 	for(auto& j : cropSiteSim)
 		if(j.is_null())
@@ -423,11 +430,10 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	{
 		addBasePath(j, pathToParameters);
 		auto r = findAndReplaceReferences(j, j);
-		if(r.success)
-			cropSiteSim2.push_back(r.json);
+		if(r.success())
+			cropSiteSim2.push_back(r.result);
 		else
 		{
-			cerr << "Error(s): " << endl;
 			for(auto e : r.errors)
 				cerr << e << endl;
 			return Env();
@@ -443,22 +449,30 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	//store debug mode in env, take from sim.json, but prefer params map
 	env.debugMode = simj["debug?"].bool_value();
 
-	env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]);
-	env.params.userCropParameters.merge(cropj["CropParameters"]);
-	env.params.userSoilTemperatureParameters.merge(sitej["SoilTemperatureParameters"]);
-	env.params.userSoilTransportParameters.merge(sitej["SoilTransportParameters"]);
-	env.params.userSoilOrganicParameters.merge(sitej["SoilOrganicParameters"]);
-	env.params.userSoilMoistureParameters.merge(sitej["SoilMoistureParameters"]);
+	bool success = true;
+	success = success && printPossibleErrors(env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]), activateDebug);
+	success = success && printPossibleErrors(env.params.userCropParameters.merge(cropj["CropParameters"]), activateDebug);
+	success = success && printPossibleErrors(env.params.userSoilTemperatureParameters.merge(sitej["SoilTemperatureParameters"]), activateDebug);
+	success = success && printPossibleErrors(env.params.userSoilTransportParameters.merge(sitej["SoilTransportParameters"]), activateDebug);
+	success = success && printPossibleErrors(env.params.userSoilOrganicParameters.merge(sitej["SoilOrganicParameters"]), activateDebug);
+	success = success && printPossibleErrors(env.params.userSoilMoistureParameters.merge(sitej["SoilMoistureParameters"]), activateDebug);
 	env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 			[](string soilTexture, int distance)
 			{
 				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 			};
-	env.params.siteParameters.merge(sitej["SiteParameters"]);
-	env.params.simulationParameters.merge(simj);
+	success = success && printPossibleErrors(env.params.siteParameters.merge(sitej["SiteParameters"]), activateDebug);
+	success = success && printPossibleErrors(env.params.simulationParameters.merge(simj), activateDebug);
 
 	for(Json cmj : cropj["cropRotation"].array_items())
-		env.cropRotation.push_back(cmj);
+	{
+		CultivationMethod cm;
+		success = success && printPossibleErrors(cm.merge(cmj), activateDebug);
+		env.cropRotation.push_back(cm);
+	}
+
+	if(!success)
+		return Env();
 
 	for(Json idj : simj["output"]["daily"].array_items())
 	{

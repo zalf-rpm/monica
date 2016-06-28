@@ -21,12 +21,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/date.h"
 #include "run-monica.h"
 #include "json11/json11.hpp"
+#include "tools/json11-helper.h"
 
 namespace Monica
 {
-	json11::Json readAndParseJsonFile(std::string path);
+	Tools::EResult<json11::Json> readAndParseJsonFile(std::string path);
 
-	json11::Json parseJsonString(std::string jsonString);
+	Tools::EResult<json11::Json> parseJsonString(std::string jsonString);
 
 	Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 }

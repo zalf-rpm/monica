@@ -1,57 +1,86 @@
   {
+	"__UNDERSCORES IN FRONT MEANS IGNORE THE KEY, this is just to keep a valid JSON file": "",
+	"__!!! check and beautify JSON files with http://codebeautify.org/jsonviewer !!!": "",
+	
+	"__this is the path which is prepended to 'include-from-file' paths, if they are relative paths": "",
 	"_include-file-base-path": "../",
+	
+	"__user defined crops section to be used via references": "",
 	"crops": {
 		"WR": {
+			"_db_cropParams": ["_include-from-db", {"db": "monica", "type": "crop", "species": "rye", "cultivar": "winter rye"}],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rye.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/rye/winter rye.json"]
 			},
+			"_db_residueParams": ["_include-from-db", {"db": "monica", "type": "crop_residue", "species": "rye", "residue-type": ""}],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rye.json"]
 		},
 		"SM": {
+			"_db_cropParams": ["_include-from-db", "crop", "maize", "silage maize"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/maize.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage maize.json"]
 			},
+			"_db_residueParams": ["_include-from-db", "crop_residue", "maize", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/maize.json"]
 		},
 		"MEP": {
+			"_db_cropParams": ["_include-from-db", "crop", "potato", "moderately early potato"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/potato.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/potato/moderately early potato.json"]
 			},
+			"_db_residueParams": ["_include-from-db", "crop_residue", "potato", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/potato.json"]
 		},
 		"WW": {
+			"_db_cropParams": ["_include-from-db", "crop", "wheat", "winter wheat"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/wheat.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter wheat.json"]
 			},
+			"_db_residueParams": ["_include-from-db", "crop_residue", "wheat", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
 		},
 		"WG": {
+			"_db_cropParams": ["_include-from-db", "crop", "barley", "winter barley"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/barley/winter barley.json"]
 			},
+			"_db_residueParams": ["_include-from-db", "crop_residue", "barley", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
 		},
 		"SG": {
+			"_db_cropParams": ["_include-from-db", "crop", "barley", "spring barley"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/barley/spring barley.json"]
 			},
+			"_db_residueParams": ["_include-from-db", "crop_residue", "barley", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
 		},
 		"SC": {
+			"_db_cropParams": ["_include-from-db", "crop", "rape", "winter rape"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rape.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/rape/winter rape.json"]
 			},
+			"_db_residueParams": ["_include-from-db", "crop_residue", "rape", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rape.json"]
 		}
 	},
+	
+	"__user defined fertilizer parameteres section to be used via references": "",
+	"fert-params": {
+		"_db_AN": ["_include-from-db", {"db": "monica", "type": "mineral_fertiliser", "name": "AN"}],
+		"AN": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"],
+		"_db_CADLM": ["_include-from-db", "organic_fertiliser", "CADLM"],
+		"CADLM": ["include-from-file", "monica-parameters/organic-fertilisers/CADLM.json"]
+	}, 
 
+	"__relative date crop rotation example": "",
 	"_cropRotation": [
 		{
 			"worksteps": [
@@ -69,20 +98,22 @@
 					"date": "0001-04-03",
 					"type": "MineralFertiliserApplication",
 					"amount": [40.0, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "0001-05-07",
 					"type": "MineralFertiliserApplication",
 					"amount": [40.0, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"_db_partition": ["include-from-db", "mineral_fertiliser", "AN"],
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
 			]
 		}
 	],
 
-    "cropRotation": [
+	"__absolute date crop rotation example": "",
+  "cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "1991-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
@@ -99,13 +130,13 @@
 					"date": "1992-04-03",
 					"type": "MineralFertiliserApplication",
 					"amount": [40.0, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "1992-05-07",
 					"type": "MineralFertiliserApplication",
 					"amount": [40.0, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1992-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
 			]
@@ -116,7 +147,7 @@
 					"date": "1993-04-23",
 					"type": "MineralFertiliserApplication",
 					"amount": [125, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1993-04-27", "type": "TillageApplication", "depth": [0.15, "m"] },
 				{ "date": "1993-05-04", "type": "Seed", "crop": ["ref", "crops", "SM"] },
@@ -124,14 +155,14 @@
 					"date": "1993-05-10",
 					"type": "MineralFertiliserApplication",
 					"amount": [60, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1993-09-23", "type": "Harvest", "crop": ["ref", "crops", "SM"] },
 				{
 					"date": "1993-12-16",
 					"type": "OrganicFertiliserApplication",
 					"amount": [30000, "kg N"],
-					"parameters": ["include-from-file", "monica-parameters/organic-fertilisers/CADLM.json"],
+					"parameters": ["ref", "fert-params", "CADLM"],
 					"incorporation": true
 				},
 				{ "date": "1993-12-22", "type": "TillageApplication", "depth": [0.1, "m"] }
@@ -144,7 +175,7 @@
 					"date": "1994-05-04",
 					"type": "MineralFertiliserApplication",
 					"amount": [90, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1994-09-06", "type": "Harvest", "crop": ["ref", "crops", "MEP"] },
 				{ "date": "1994-09-29", "type": "TillageApplication", "depth": [0.15, "m"] }
@@ -157,19 +188,19 @@
 					"date": "1995-03-24",
 					"type": "MineralFertiliserApplication",
 					"amount": [60, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "1995-04-27",
 					"type": "MineralFertiliserApplication",
 					"amount": [40, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "1995-05-12",
 					"type": "MineralFertiliserApplication",
 					"amount": [60, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1995-08-02", "type": "Harvest", "crop": ["ref", "crops", "WW"] },
 				{ "date": "1995-08-03", "type": "TillageApplication", "depth": [0.15, "m"] }
@@ -182,7 +213,7 @@
 					"date": "1996-03-21",
 					"type": "MineralFertiliserApplication",
 					"amount": [60, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1996-04-13", "type": "Harvest", "crop": ["ref", "crops", "WG"] },
 				{ "date": "1996-04-14", "type": "TillageApplication", "depth": [0.10, "m"] }
@@ -202,7 +233,7 @@
 					"date": "1997-04-10",
 					"type": "MineralFertiliserApplication",
 					"amount": [80, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"]
+					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1997-07-08", "type": "Harvest", "crop": ["ref", "crops", "SC"] },
 				{ "date": "1997-07-09", "type": "TillageApplication", "depth": [0.10, "m"] }
@@ -210,7 +241,8 @@
 		}
 	],
 
-
+	"__general crop parameters for the monica model": "",
+	"_db_CropParameters": ["_include-from-db", {"type": "crop-params", "name": "hermes"}],
 	"CropParameters": {
 		"DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
 	}

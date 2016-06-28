@@ -249,9 +249,12 @@ int main(int argc, char** argv)
 			string pathOfSimJson, simFileName;
 			tie(pathOfSimJson, simFileName) = splitPathToFile(pathToSimJson);
 
-			auto simj = parseJsonString(readFile(pathToSimJson));
-			auto simm = simj.object_items();
-
+			auto simj = readAndParseJsonFile(pathToSimJson);
+			if(simj.failure())
+				for(auto e : simj.errors)
+					cerr << e << endl;
+			auto simm = simj.result.object_items();
+			
 			if(!startDate.empty())
 				simm["start-date"] = startDate;
 
@@ -289,8 +292,9 @@ int main(int argc, char** argv)
 
 			map<string, string> ps;
 			ps["sim-json-str"] = json11::Json(simm).dump();
-			ps["crop-json-str"] = readFile(simm["crop.json"].string_value());
-			ps["site-json-str"] = readFile(simm["site.json"].string_value());
+			
+			ps["crop-json-str"] = printPossibleErrors(readFile(simm["crop.json"].string_value()), activateDebug);
+			ps["site-json-str"] = printPossibleErrors(readFile(simm["site.json"].string_value()), activateDebug);
 			//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
 			auto env = createEnvFromJsonConfigFiles(ps);

@@ -72,11 +72,18 @@ Crop::Crop(const string& speciesName,
 
 Crop::Crop(json11::Json j)
 {
-  set_iso_date_value(_seedDate, j, "seedDate");
-  set_iso_date_value(_harvestDate, j, "havestDate");
-  set_int_value(_dbId, j, "id");
-  set_string_value(_speciesName, j, "species");
-  set_string_value(_cultivarName, j, "cultivar");
+	merge(j);
+}
+
+Errors Crop::merge(json11::Json j)
+{
+	Errors res;
+
+	set_iso_date_value(_seedDate, j, "seedDate");
+	set_iso_date_value(_harvestDate, j, "havestDate");
+	set_int_value(_dbId, j, "id");
+	set_string_value(_speciesName, j, "species");
+	set_string_value(_cultivarName, j, "cultivar");
 
 	string err;
 	if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
@@ -86,9 +93,7 @@ Crop::Crop(json11::Json j)
 			 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
 			_cropParams = make_shared<CropParameters>(j["cropParams"]);
 		else
-			cerr 
-			<< "Error: Couldn't find 'species' or 'cultivar' key in JSON object 'cropParams':" << endl
-			<< jcps.dump() << endl;
+			res.errors.push_back(string("Couldn't find 'species' or 'cultivar' key in JSON object 'cropParams':\n") + j.dump());
 
 		if(_speciesName.empty() && _cropParams)
 			_speciesName = _cropParams->speciesParams.pc_SpeciesId;
@@ -96,32 +101,31 @@ Crop::Crop(json11::Json j)
 			_cultivarName = _cropParams->cultivarParams.pc_CultivarId;
 	}
 	else
-		cerr 
-		<< "Error: Couldn't find 'cropParams' key in JSON object:"  << endl
-		<< j.dump() << endl;
+		res.errors.push_back(string("Couldn't find 'cropParams' key in JSON object:\n") + j.dump());
 
 	err = "";
-  if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
-  {
-    auto jcps = j["perennialCropParams"];
+	if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
+	{
+		auto jcps = j["perennialCropParams"];
 		if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err)
 			 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
 			_perennialCropParams = make_shared<CropParameters>(j["cropParams"]);
-  }
+	}
 
 	err = "";
 	if(j.has_shape({{"residueParams", json11::Json::OBJECT}}, err))
 		_residueParams = make_shared<CropResidueParameters>(j["residueParams"]);
 	else
-		cerr
-		<< "Error: Couldn't find 'residueParams' key in JSON object:" << endl
-		<< j.dump() << endl;
+		res.errors.push_back(string("Couldn't find 'residueParams' key in JSON object:\n") + j.dump());
 
 	err = "";
-  if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
-    for(auto cd : j["cuttingDates"].array_items())
-      _cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
+	if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
+		for(auto cd : j["cuttingDates"].array_items())
+			_cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
+
+	return res;
 }
+
 
 json11::Json Crop::to_json(bool includeFullCropParameters) const
 {

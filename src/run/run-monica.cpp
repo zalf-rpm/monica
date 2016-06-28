@@ -47,7 +47,7 @@ OId::OId(json11::Json j)
 	merge(j);
 }
 
-SE OId::merge(json11::Json j)
+Errors OId::merge(json11::Json j)
 {
 	set_int_value(id, j, "id");
 	set_int_value(from, j, "from");
@@ -80,7 +80,7 @@ Env::Env(json11::Json j)
 	merge(j);
 }
 
-SE Env::merge(json11::Json j)
+Errors Env::merge(json11::Json j)
 {
 	params.merge(j["params"]);
 

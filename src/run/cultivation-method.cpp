@@ -55,7 +55,7 @@ WorkStep::WorkStep(json11::Json j)
 	merge(j);
 }
 
-SE WorkStep::merge(json11::Json j)
+Errors WorkStep::merge(json11::Json j)
 {
 	set_iso_date_value(_date, j, "date");
 	return{};
@@ -83,14 +83,14 @@ Seed::Seed(json11::Json j)
 	merge(j);
 }
 
-SE Seed::merge(json11::Json j)
+Errors Seed::merge(json11::Json j)
 {
-	WorkStep::merge(j);
+	Errors res = WorkStep::merge(j);
 	set_shared_ptr_value(_crop, j, "crop");
 	if(_crop)
 		_crop->setSeedDate(date());
 
-	return{};
+	return res;
 }
 
 json11::Json Seed::to_json(bool includeFullCropParameters) const
@@ -132,12 +132,12 @@ Harvest::Harvest(json11::Json j)
 	merge(j);
 }
 
-SE Harvest::merge(json11::Json j)
+Errors Harvest::merge(json11::Json j)
 {
-	WorkStep::merge(j);
+	Errors res = WorkStep::merge(j);
 	set_shared_ptr_value(_crop, j, "crop");
 	//this is dangerous as this is actually a value object,
-	//but one could think later on it should actually refer to
+	//but one could think later, that it should actually refer to
 	//the shared crop (between CultivationMethod, MonicaModel, Seed, Harvest etc.)
 	if(_crop)
 		_crop->setHarvestDate(date());
@@ -146,7 +146,7 @@ SE Harvest::merge(json11::Json j)
 	set_double_value(_percentage, j, "percentage");
 	set_bool_value(_exported, j, "exported");
 
-	return{};
+	return res;
 }
 
 json11::Json Harvest::to_json(bool includeFullCropParameters) const
@@ -254,10 +254,9 @@ Cutting::Cutting(json11::Json j)
 	merge(j);
 }
 
-SE Cutting::merge(json11::Json j)
+Errors Cutting::merge(json11::Json j)
 {
-	WorkStep::merge(j);
-	return{};
+	return WorkStep::merge(j);
 }
 
 json11::Json Cutting::to_json() const
@@ -307,12 +306,12 @@ MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
 	merge(j);
 }
 
-SE MineralFertiliserApplication::merge(json11::Json j)
+Errors MineralFertiliserApplication::merge(json11::Json j)
 {
-	WorkStep::merge(j);
+	Errors res = WorkStep::merge(j);
 	set_value_obj_value(_partition, j, "partition");
 	set_double_value(_amount, j, "amount");
-	return{};
+	return res;
 }
 
 json11::Json MineralFertiliserApplication::to_json() const
@@ -348,13 +347,13 @@ OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
 	merge(j);
 }
 
-SE OrganicFertiliserApplication::merge(json11::Json j)
+Errors OrganicFertiliserApplication::merge(json11::Json j)
 {
-	WorkStep::merge(j);
+	Errors res = WorkStep::merge(j);
 	set_shared_ptr_value(_params, j, "parameters");
 	set_double_value(_amount, j, "amount");
 	set_bool_value(_incorporation, j, "incorporation");
-	return{};
+	return res;
 }
 
 json11::Json OrganicFertiliserApplication::to_json() const
@@ -386,11 +385,11 @@ TillageApplication::TillageApplication(json11::Json j)
 	merge(j);
 }
 
-SE TillageApplication::merge(json11::Json j)
+Errors TillageApplication::merge(json11::Json j)
 {
-	WorkStep::merge(j);
+	Errors res = WorkStep::merge(j);
 	set_double_value(_depth, j, "depth");
-	return{};
+	return res;
 }
 
 json11::Json TillageApplication::to_json() const
@@ -422,12 +421,12 @@ IrrigationApplication::IrrigationApplication(json11::Json j)
 	merge(j);
 }
 
-SE IrrigationApplication::merge(json11::Json j)
+Errors IrrigationApplication::merge(json11::Json j)
 {
-	WorkStep::merge(j);
+	Errors res = WorkStep::merge(j);
 	set_double_value(_amount, j, "amount");
 	set_value_obj_value(_params, j, "parameters");
-	return{};
+	return res;
 }
 
 json11::Json IrrigationApplication::to_json() const
@@ -501,8 +500,10 @@ CultivationMethod::CultivationMethod(json11::Json j)
 	merge(j);
 }
 
-SE CultivationMethod::merge(json11::Json j)
+Errors CultivationMethod::merge(json11::Json j)
 {
+	Errors res;
+
 	set_int_value(_customId, j, "customId");
 	set_string_value(_name, j, "name");
 	//set_shared_ptr_value(_crop, j, "crop");
@@ -532,7 +533,8 @@ SE CultivationMethod::merge(json11::Json j)
 			}
 		}
 	}
-	return{};
+
+	return res;
 }
 
 json11::Json CultivationMethod::to_json() const
@@ -593,4 +595,3 @@ std::string CultivationMethod::toString() const
 	return s.str();
 }
 
-//----------------------------------------------------------------------------
