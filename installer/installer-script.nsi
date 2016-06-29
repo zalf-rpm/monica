@@ -140,27 +140,27 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "Hohenfinow2\climate.ods"
 
 	;the json version files with project name prepended
-  CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
-  SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
-  File "Hohenfinow2\json-from-db\test.crop.json"
-  File "Hohenfinow2\json-from-db\test.sim.json"
-  File "Hohenfinow2\json-from-db\test.site.json"
-	File "Hohenfinow2\json-from-db\test.climate.csv"
+  ;CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
+  ;SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
+  ;File "Hohenfinow2\json-from-db\test.crop.json"
+  ;File "Hohenfinow2\json-from-db\test.sim.json"
+  ;File "Hohenfinow2\json-from-db\test.site.json"
+	;File "Hohenfinow2\json-from-db\test.climate.csv"
   
 	;the old hermes files
-  SetOutPath "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
-	File "Hohenfinow2\old-hermes-format-files\monica.ini"
-  File "Hohenfinow2\old-hermes-format-files\Irrig.TXT"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.991"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.992"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.993"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.994"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.995"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.996"
-  File "Hohenfinow2\old-hermes-format-files\MET_HF.997"
-  File "Hohenfinow2\old-hermes-format-files\ROTATION.txt"
-  File "Hohenfinow2\old-hermes-format-files\SLAGDUNG.txt"
-  File "Hohenfinow2\old-hermes-format-files\SOIL.txt"
+  ;SetOutPath "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
+	;File "Hohenfinow2\old-hermes-format-files\monica.ini"
+  ;File "Hohenfinow2\old-hermes-format-files\Irrig.TXT"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.991"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.992"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.993"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.994"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.995"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.996"
+  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.997"
+  ;File "Hohenfinow2\old-hermes-format-files\ROTATION.txt"
+  ;File "Hohenfinow2\old-hermes-format-files\SLAGDUNG.txt"
+  ;File "Hohenfinow2\old-hermes-format-files\SOIL.txt"
 		
   SetOutPath "$INSTDIR"
   
@@ -230,27 +230,27 @@ Section "Uninstall"
 	Delete "$PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite"
   RMDir "$PROFILE\MONICA\sqlite-db"
   
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\monica.ini
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\Irrig.TXT
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.991
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.992
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.993
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.994
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.995
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.996
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.997  
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\ROTATION.txt
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\monica.ini
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\Irrig.TXT
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.991
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.992
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.993
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.994
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.995
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.996
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.997  
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\ROTATION.txt
   ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\rmout.csv
   ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\smout.csv
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SLAGDUNG.txt
-  Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SOIL.txt
-	RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SLAGDUNG.txt
+  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SOIL.txt
+	;RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
 	
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.climate.csv"
-  Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.sim.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.crop.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.site.json"
-	RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db"
+	;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.climate.csv"
+  ;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.sim.json"
+	;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.crop.json"
+	;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.site.json"
+	;RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db"
 	
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.ods"
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.csv"
