@@ -21,12 +21,14 @@
 	!define ParamsRepoDir "..\..\monica-parameters"
 	!define SysLibsDir "..\..\sys-libs"
 
+  !include "..\build-number.nsh"
+
 ;--------------------------------
 ;General
 
   ;Name and file
   Name "MONICA"
-  OutFile "MONICA-Setup-2.0.0-beta-${Arch}-${ArchBit}.exe"
+  OutFile "MONICA-Setup-2.0.0-beta-${Arch}-${ArchBit}-build${BuildNumber}.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\MONICA"

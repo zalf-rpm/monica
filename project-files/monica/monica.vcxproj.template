@@ -74,13 +74,18 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>NO_ZMQ;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\util;..\..\sys-libs\includes\zeromq-3.2.5</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -89,12 +94,17 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\util;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -103,15 +113,20 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>NO_ZMQ;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\util;..\..\sys-libs\includes\zeromq-3.2.5</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -121,92 +136,100 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\util</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\util\climate\climate-common.h" />
-    <ClInclude Include="..\..\util\climate\climate-file-io.h" />
-    <ClInclude Include="..\..\util\db\abstract-db-connections.h" />
-    <ClInclude Include="..\..\util\db\db.h" />
-    <ClInclude Include="..\..\util\db\sqlite3.h" />
-    <ClInclude Include="..\..\util\json11\json11.hpp" />
-    <ClInclude Include="..\..\util\soil\constants.h" />
-    <ClInclude Include="..\..\util\soil\conversion.h" />
-    <ClInclude Include="..\..\util\soil\soil-from-db.h" />
-    <ClInclude Include="..\..\util\soil\soil.h" />
-    <ClInclude Include="..\..\util\tools\algorithms.h" />
-    <ClInclude Include="..\..\util\tools\datastructures.h" />
-    <ClInclude Include="..\..\util\tools\date.h" />
-    <ClInclude Include="..\..\util\tools\debug.h" />
-    <ClInclude Include="..\..\util\tools\helper.h" />
-    <ClInclude Include="..\..\util\tools\json11-helper.h" />
-    <ClInclude Include="..\..\util\tools\read-ini.h" />
-    <ClInclude Include="..\..\util\tools\zmq-helper.h" />
-    <ClInclude Include="..\src\core\crop-growth.h" />
-    <ClInclude Include="..\src\core\crop.h" />
-    <ClInclude Include="..\src\core\monica-parameters.h" />
-    <ClInclude Include="..\src\core\monica.h" />
-    <ClInclude Include="..\src\core\simulation.h" />
-    <ClInclude Include="..\src\core\soilcolumn.h" />
-    <ClInclude Include="..\src\core\soilmoisture.h" />
-    <ClInclude Include="..\src\core\soilorganic.h" />
-    <ClInclude Include="..\src\core\soiltemperature.h" />
-    <ClInclude Include="..\src\core\soiltransport.h" />
-    <ClInclude Include="..\src\core\monica-typedefs.h" />
-    <ClInclude Include="..\src\io\database-io.h" />
-    <ClInclude Include="..\src\io\file-io.h" />
-    <ClInclude Include="..\src\io\hermes-file-io.h" />
-    <ClInclude Include="..\src\run\cultivation-method.h" />
-    <ClInclude Include="..\src\run\env-from-json.h" />
-    <ClInclude Include="..\src\run\run-monica-zmq.h" />
-    <ClInclude Include="..\src\run\run-monica.h" />
+    <ClInclude Include="..\..\..\util\climate\climate-common.h" />
+    <ClInclude Include="..\..\..\util\climate\climate-file-io.h" />
+    <ClInclude Include="..\..\..\util\db\abstract-db-connections.h" />
+    <ClInclude Include="..\..\..\util\db\db.h" />
+    <ClInclude Include="..\..\..\util\db\sqlite3.h" />
+    <ClInclude Include="..\..\..\util\json11\json11.hpp" />
+    <ClInclude Include="..\..\..\util\soil\constants.h" />
+    <ClInclude Include="..\..\..\util\soil\conversion.h" />
+    <ClInclude Include="..\..\..\util\soil\soil-from-db.h" />
+    <ClInclude Include="..\..\..\util\soil\soil.h" />
+    <ClInclude Include="..\..\..\util\tools\algorithms.h" />
+    <ClInclude Include="..\..\..\util\tools\datastructures.h" />
+    <ClInclude Include="..\..\..\util\tools\date.h" />
+    <ClInclude Include="..\..\..\util\tools\debug.h" />
+    <ClInclude Include="..\..\..\util\tools\helper.h" />
+    <ClInclude Include="..\..\..\util\tools\json11-helper.h" />
+    <ClInclude Include="..\..\..\util\tools\read-ini.h" />
+    <ClInclude Include="..\..\..\util\tools\zmq-helper.h" />
+    <ClInclude Include="..\..\src\core\crop-growth.h" />
+    <ClInclude Include="..\..\src\core\crop.h" />
+    <ClInclude Include="..\..\src\core\monica-parameters.h" />
+    <ClInclude Include="..\..\src\core\monica.h" />
+    <ClInclude Include="..\..\src\core\soilcolumn.h" />
+    <ClInclude Include="..\..\src\core\soilmoisture.h" />
+    <ClInclude Include="..\..\src\core\soilorganic.h" />
+    <ClInclude Include="..\..\src\core\soiltemperature.h" />
+    <ClInclude Include="..\..\src\core\soiltransport.h" />
+    <ClInclude Include="..\..\src\core\monica-typedefs.h" />
+    <ClInclude Include="..\..\src\core\voc-common.h" />
+    <ClInclude Include="..\..\src\core\voc-guenther.h" />
+    <ClInclude Include="..\..\src\core\voc-jjv.h" />
+    <ClInclude Include="..\..\src\io\database-io.h" />
+    <ClInclude Include="..\..\src\io\file-io.h" />
+    <ClInclude Include="..\..\src\io\hermes-file-io.h" />
+    <ClInclude Include="..\..\src\run\cultivation-method.h" />
+    <ClInclude Include="..\..\src\run\env-from-json.h" />
+    <ClInclude Include="..\..\src\run\run-monica-zmq.h" />
+    <ClInclude Include="..\..\src\run\run-monica.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\util\climate\climate-common.cpp" />
-    <ClCompile Include="..\..\util\climate\climate-file-io.cpp" />
-    <ClCompile Include="..\..\util\db\abstract-db-connections.cpp" />
-    <ClCompile Include="..\..\util\db\db.cpp" />
-    <ClCompile Include="..\..\util\db\sqlite3.c" />
-    <ClCompile Include="..\..\util\json11\json11.cpp" />
-    <ClCompile Include="..\..\util\soil\constants.cpp" />
-    <ClCompile Include="..\..\util\soil\conversion.cpp" />
-    <ClCompile Include="..\..\util\soil\soil-from-db.cpp" />
-    <ClCompile Include="..\..\util\soil\soil.cpp" />
-    <ClCompile Include="..\..\util\tools\algorithms.cpp" />
-    <ClCompile Include="..\..\util\tools\date.cpp" />
-    <ClCompile Include="..\..\util\tools\debug.cpp" />
-    <ClCompile Include="..\..\util\tools\helper.cpp" />
-    <ClCompile Include="..\..\util\tools\json11-helper.cpp" />
-    <ClCompile Include="..\..\util\tools\read-ini.cpp" />
-    <ClCompile Include="..\..\util\tools\zmq-helper.cpp" />
-    <ClCompile Include="..\src\core\crop-growth.cpp" />
-    <ClCompile Include="..\src\core\crop.cpp" />
-    <ClCompile Include="..\src\io\database-io.cpp" />
-    <ClCompile Include="..\src\io\file-io.cpp" />
-    <ClCompile Include="..\src\io\hermes-file-io.cpp" />
-    <ClCompile Include="..\src\run\env-from-json.cpp" />
-    <ClCompile Include="..\src\run\monica-main.cpp" />
-    <ClCompile Include="..\src\core\monica-parameters.cpp" />
-    <ClCompile Include="..\src\core\monica.cpp" />
-    <ClCompile Include="..\src\run\cultivation-method.cpp" />
-    <ClCompile Include="..\src\run\run-monica-zmq.cpp" />
-    <ClCompile Include="..\src\run\run-monica.cpp" />
-    <ClCompile Include="..\src\core\simulation.cpp" />
-    <ClCompile Include="..\src\core\soilcolumn.cpp" />
-    <ClCompile Include="..\src\core\soilmoisture.cpp" />
-    <ClCompile Include="..\src\core\soilorganic.cpp" />
-    <ClCompile Include="..\src\core\soiltemperature.cpp" />
-    <ClCompile Include="..\src\core\soiltransport.cpp" />
+    <ClCompile Include="..\..\..\util\climate\climate-common.cpp" />
+    <ClCompile Include="..\..\..\util\climate\climate-file-io.cpp" />
+    <ClCompile Include="..\..\..\util\db\abstract-db-connections.cpp" />
+    <ClCompile Include="..\..\..\util\db\db.cpp" />
+    <ClCompile Include="..\..\..\util\db\sqlite3.c" />
+    <ClCompile Include="..\..\..\util\json11\json11.cpp" />
+    <ClCompile Include="..\..\..\util\soil\constants.cpp" />
+    <ClCompile Include="..\..\..\util\soil\conversion.cpp" />
+    <ClCompile Include="..\..\..\util\soil\soil-from-db.cpp" />
+    <ClCompile Include="..\..\..\util\soil\soil.cpp" />
+    <ClCompile Include="..\..\..\util\tools\algorithms.cpp" />
+    <ClCompile Include="..\..\..\util\tools\date.cpp" />
+    <ClCompile Include="..\..\..\util\tools\debug.cpp" />
+    <ClCompile Include="..\..\..\util\tools\helper.cpp" />
+    <ClCompile Include="..\..\..\util\tools\json11-helper.cpp" />
+    <ClCompile Include="..\..\..\util\tools\read-ini.cpp" />
+    <ClCompile Include="..\..\..\util\tools\zmq-helper.cpp" />
+    <ClCompile Include="..\..\src\core\crop-growth.cpp" />
+    <ClCompile Include="..\..\src\core\crop.cpp" />
+    <ClCompile Include="..\..\src\core\voc-guenther.cpp" />
+    <ClCompile Include="..\..\src\core\voc-jjv.cpp" />
+    <ClCompile Include="..\..\src\io\database-io.cpp" />
+    <ClCompile Include="..\..\src\io\file-io.cpp" />
+    <ClCompile Include="..\..\src\io\hermes-file-io.cpp" />
+    <ClCompile Include="..\..\src\run\env-from-json.cpp" />
+    <ClCompile Include="..\..\src\run\monica-main.cpp" />
+    <ClCompile Include="..\..\src\core\monica-parameters.cpp" />
+    <ClCompile Include="..\..\src\core\monica.cpp" />
+    <ClCompile Include="..\..\src\run\cultivation-method.cpp" />
+    <ClCompile Include="..\..\src\run\run-monica-zmq.cpp" />
+    <ClCompile Include="..\..\src\run\run-monica.cpp" />
+    <ClCompile Include="..\..\src\core\soilcolumn.cpp" />
+    <ClCompile Include="..\..\src\core\soilmoisture.cpp" />
+    <ClCompile Include="..\..\src\core\soilorganic.cpp" />
+    <ClCompile Include="..\..\src\core\soiltemperature.cpp" />
+    <ClCompile Include="..\..\src\core\soiltransport.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\monica.rc" />
+    <ResourceCompile Include="..\..\monica.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
