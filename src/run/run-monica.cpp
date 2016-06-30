@@ -1361,7 +1361,7 @@ void store(OId oid, Output& res, map<int, J11Array>& into, function<T(int)> getV
 	T acc = 0;
 	int count = 0;
 	J11Array multipleValues;
-	for(int i = oid.from; i < oid.to; i++)
+	for(int i = oid.from; i <= oid.to; i++)
 	{
 		T v = getValue(i);
 		if(oid.op == OId::NONE)

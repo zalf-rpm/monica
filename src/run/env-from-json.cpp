@@ -16,6 +16,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <set>
 
 #include "env-from-json.h"
 #include "tools/debug.h"
@@ -167,10 +168,22 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 {
 	auto ref = [](const Json& root, const Json& j) -> JsonAndErrors
 	{
+		static map<pair<string, string>, JsonAndErrors> cache;
 		if(j.array_items().size() == 3
-		   && j[1].is_string()
-		   && j[2].is_string())
-			return{root[j[1].string_value()][j[2].string_value()]};
+			 && j[1].is_string()
+			 && j[2].is_string())
+		{
+			string key1 = j[1].string_value();
+			string key2 = j[2].string_value();
+
+			auto it = cache.find(make_pair(key1, key2));
+			if(it != cache.end())
+				return it->second;
+			
+			auto res = findAndReplaceReferences(root, root[key1][key2]);
+			cache[make_pair(key1, key2)] = res;
+			return res;
+		}
 		return{j, string("Couldn't resolve reference: ") + j.dump() + "!"};
 	};
 
@@ -426,6 +439,8 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	};
 
 	vector<Json> cropSiteSim2;
+	//collect all errors in all files and don't stop as early as possible
+	set<string> errors;
 	for(auto& j : cropSiteSim)
 	{
 		addBasePath(j, pathToParameters);
@@ -433,11 +448,14 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 		if(r.success())
 			cropSiteSim2.push_back(r.result);
 		else
-		{
-			for(auto e : r.errors)
-				cerr << e << endl;
-			return Env();
-		}
+			errors.insert(r.errors.begin(), r.errors.end());
+	}
+
+	if(!errors.empty())
+	{
+		for(auto e : errors)
+			cerr << e << endl;
+		return Env();
 	}
 
 	auto cropj = cropSiteSim2.at(0);

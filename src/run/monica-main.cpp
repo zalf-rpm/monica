@@ -38,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/simulation.h"
 #include "soil/conversion.h"
 #include "env-from-json.h"
+#include "tools/algorithms.h"
 
 using namespace std;
 using namespace Monica;
@@ -129,6 +130,7 @@ int main(int argc, char** argv)
 		int controlPort = 6666;
 		string command = "";
 		int count = 1;
+		string dailyOutputs;
 
 		for(auto i = 1; i < argc; i++)
 		{
@@ -173,6 +175,9 @@ int main(int argc, char** argv)
 			else if((arg == "-o" || arg == "--path-to-output-file")
 							&& i + 1 < argc)
 				pathToOutputFile = argv[++i];
+			else if((arg == "-do" || arg == "--daily-outputs")
+							&& i + 1 < argc)
+				dailyOutputs = argv[++i];
 			else if((arg == "-c" || arg == "--path-to-crop")
 			        && i+1 < argc)
 				crop = argv[++i];
@@ -202,6 +207,7 @@ int main(int argc, char** argv)
 					<< "\t [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
 					<< "\t [[-op | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
 					<< "\t [[-o | --path-to-output-file] FILE (default: ./rmout.csv)] ... path to output file" << endl
+					<< "\t [[-do | --daily-outputs] [LIST] (default: value of key 'sim.json:output.daily')] ... list of daily output elements" << endl
 					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
 					<< "\t [[-s | --path-to-site] FILE (default: ./site.json)] ... path to site.json file" << endl
 					<< "\t [[-w | --path-to-climate] FILE (default: ./climate.csv)] ... path to climate.csv" << endl
@@ -289,6 +295,39 @@ int main(int argc, char** argv)
 			auto pathToClimateCSV = simm["climate.csv"].string_value();
 			if(!isAbsolutePath(pathToClimateCSV))
 				simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
+
+			if(!dailyOutputs.empty())
+			{
+				auto outm = simm["output"].object_items();
+				string err;
+				J11Array daily;
+
+				string trimmedDailyOutputs = trim(dailyOutputs);
+				if(trimmedDailyOutputs.front() == '[')
+					trimmedDailyOutputs.erase(0, 1);
+				if(trimmedDailyOutputs.back() == ']')
+					trimmedDailyOutputs.pop_back();
+				
+				for(auto el : splitString(trimmedDailyOutputs, ",", make_pair("[", "]")))
+				{
+					if(trim(el).at(0) == '[')
+					{
+						J11Array a;
+						auto es = splitString(trim(el, "[]"), ",");
+						if(es.size() >= 1)
+							a.push_back(es.at(0));
+						if(es.size() >= 3)
+							a.push_back(stoi(es.at(1))), a.push_back(stoi(es.at(2)));
+						if(es.size() >= 4)
+							a.push_back(es.at(3));
+						daily.push_back(a);
+					}
+					else
+						daily.push_back(el);
+				}
+				outm["daily"] = daily;
+				simm["output"] = outm;
+			}
 
 			map<string, string> ps;
 			ps["sim-json-str"] = json11::Json(simm).dump();
