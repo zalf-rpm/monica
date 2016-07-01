@@ -4,7 +4,7 @@ project(monica)
 add_definitions(#-DNO_ZMQ
                 -DNO_MYSQL)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(UTIL_DIR "../util")
 set(SYS_LIBS_DIR "../sys-libs")
@@ -14,6 +14,8 @@ include_directories("src")
 include_directories(${UTIL_DIR})
 include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
 include_directories(${CARBIOCIAL_DIR/monica/src})
+
+link_directories($ENV{HOME}/lib)
 
 set(MONICA_SOURCE
 
