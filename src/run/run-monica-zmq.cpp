@@ -442,14 +442,15 @@ Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 
 	string s = env.to_json().dump();
 
+	Json res;
 	if(s_send(socket, env.to_json().dump()))
 	{
 		auto msg = receiveMsg(socket);
-		return msg.json;
+		res = msg.json;
 	}
 
-	return Json();
 	debug() << "exiting runZeroMQMonicaFull" << endl;
+	return res;
 }
 #endif
 

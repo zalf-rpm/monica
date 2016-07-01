@@ -147,16 +147,19 @@ int main (int argc,
 
 			int count = fmsg["count"].int_value();
 			
+#ifdef WIN32
 			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+#else
+			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort) + " &";
+#endif
 			string fullCmd = fixSystemSeparator(cmd);
 
 			int successfullyStarted = 0;
 			for(int i = 0; i < count; i++)
 			{
 				int res = system(fullCmd.c_str());
-				cout << "res: " << res << endl;
-				if(res)
-					started++, successfullyStarted++;
+				cout << "result of running '" << cmd << "': " << res << endl;
+				started++, successfullyStarted++;
 			}
 					
 			J11Object resultMsg;

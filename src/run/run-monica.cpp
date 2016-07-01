@@ -109,6 +109,7 @@ json11::Json Env::to_json() const
 		{"type", "Env"},
 		{"params", params.to_json()},
 		{"cropRotation", cr},
+		{"outputIds", outputIds},
 		{"da", da.to_json()},
 		{"debugMode", debugMode}
 	};
