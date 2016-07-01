@@ -54,6 +54,7 @@ dict rm(dict params)
 	return d;
 }
 
+/*
 dict rhm(string path, bool debug)
 {
 	auto res = runWithHermesData(path, debug);
@@ -69,9 +70,10 @@ dict rhm(string path, bool debug)
 	}
 	return d;
 }
+*/
 
-dict rhmnd(string path){ return rhm(path, false); }
-dict rhmd(string path){ return rhm(path, true); }
+//dict rhmnd(string path){ return rhm(path, false); }
+//dict rhmd(string path){ return rhm(path, true); }
 
 BOOST_PYTHON_MODULE(monica_py)
 {
@@ -95,6 +97,6 @@ BOOST_PYTHON_MODULE(monica_py)
       */
 
   def("runMonica", rm);
-	def("runHermesMonica", rhmnd);
-  def("runHermesMonicaD", rhmd);
+//def("runHermesMonica", rhmnd);
+//def("runHermesMonicaD", rhmd);
 }
