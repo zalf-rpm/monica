@@ -25,6 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <chrono>
 #include <thread>
 #include <tuple>
+#include <limits>
 
 #include "run-monica.h"
 #include "tools/debug.h"
@@ -54,6 +55,7 @@ Errors OId::merge(json11::Json j)
 	set_int_value(to, j, "to");
 
 	op = OP(int_valueD(j, "op", NONE));
+	op2 = OP(int_valueD(j, "op2", AVG));
 
 	return{};
 }
@@ -64,6 +66,7 @@ json11::Json OId::to_json() const
 		{"type", "OId"},
 		{"id", id},
 		{"op", int(op)},
+		{"op2", int(op2)},
 		{"from", from},
 		{"to", to}
 	};
@@ -90,9 +93,13 @@ Errors Env::merge(json11::Json j)
 	for(Json cmj : j["cropRotation"].array_items())
 		cropRotation.push_back(cmj);
 
-	outputIds.clear();
-	for(Json oidj : j["outputIds"].array_items())
-		outputIds.push_back(oidj);
+	dailyOutputIds.clear();
+	for(Json oidj : j["dailyOutputIds"].array_items())
+		dailyOutputIds.push_back(oidj);
+
+	monthlyOutputIds.clear();
+	for(Json oidj : j["monthlyOutputIds"].array_items())
+		monthlyOutputIds.push_back(oidj);
 
 	set_bool_value(debugMode, j, "debugMode");
 
@@ -109,7 +116,8 @@ json11::Json Env::to_json() const
 		{"type", "Env"},
 		{"params", params.to_json()},
 		{"cropRotation", cr},
-		{"outputIds", outputIds},
+		{"dailyOutputIds", dailyOutputIds},
+		{"monthlyOutputIds", dailyOutputIds},
 		{"da", da.to_json()},
 		{"debugMode", debugMode}
 	};
@@ -301,6 +309,725 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 	pout.close();
 }
 
+double applyOIdOP(OId::OP op, const vector<double>& vs)
+{
+	double v = vs.back();
+
+	switch(op)
+	{
+	case OId::AVG:
+		v = accumulate(vs.begin(), vs.end(), 0.0) / vs.size();
+		break;
+	case OId::MEDIAN:
+		v = median(vs);
+		break;
+	case OId::SUM:
+		v = accumulate(vs.begin(), vs.end(), 0.0);
+		break;
+	case OId::MIN:
+		v = minMax(vs).first;
+		break;
+	case OId::MAX:
+		v = minMax(vs).second;
+		break;
+	case OId::FIRST:
+		v = vs.front();
+		break;
+	case OId::LAST:
+	case OId::NONE:
+	default:;
+	}
+
+	return v;
+}
+
+Json applyOIdOP(OId::OP op, const vector<Json>& js)
+{
+	vector<double> ds;
+	for(auto j : js)
+		ds.push_back(j.number_value());
+	return applyOIdOP(op, ds);
+}
+
+template<typename T, typename Vector>
+void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits = 0)
+{
+	Vector multipleValues;
+	vector<double> vs;
+	for(int i = oid.from; i <= oid.to; i++)
+	{
+		T v = getValue(i);
+		if(oid.op == OId::NONE)
+			multipleValues.push_back(Tools::round(v, roundToDigits));
+		else
+			vs.push_back(v);
+	}
+
+	if(oid.op == OId::NONE)
+		into.push_back(multipleValues);
+	else
+		into.push_back(applyOIdOP(oid.op, vs));
+}
+
+BOTRes& Monica::buildOutputTable()
+{
+	static mutex lockable;
+
+	//map of output ids to outputfunction
+	static BOTRes m;
+	static bool tableBuild = false;
+
+	auto build = [&](Result2 r, decltype(m.ofs)::mapped_type of)
+	{
+		m.ofs[r.id] = of;
+		m.name2result[r.name] = r;
+	};
+	
+	// only initialize once
+	if(!tableBuild)
+	{
+		lock_guard<mutex> lock(lockable);
+
+		//test if after waiting for the lock the other thread
+		//already initialized the whole thing
+		if(!tableBuild)
+		{
+			int id = 0;
+
+			build({id++, "Date", "", "output current date"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.currentDate.toIsoDateString());
+			});
+			build({id++, "Crop", "", "crop name"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? m.mcg->get_CropName() : "");
+			});
+
+			build({id++, "TraDef", "0;1", "TranspirationDeficit"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_TranspirationDeficit(), 2) : 0.0);
+			});
+
+			build({id++, "Tra", "mm", "ActualTranspiration"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_ActualTranspiration(), 2) : 0.0);
+			});
+
+			build({id++, "NDef", "0;1", "CropNRedux"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_CropNRedux(), 2) : 0.0);
+			});
+			build({id++, "HeatRed", "0;1", " HeatStressRedux"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_HeatStressRedux(), 2) : 0.0);
+			});
+			build({id++, "FrostRed", "0;1", "FrostStressRedux"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_FrostStressRedux(), 2) : 0.0);
+			});
+			build({id++, "OxRed", "0;1", "OxygenDeficit"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_OxygenDeficit(), 2) : 0.0);
+			});
+
+			build({id++, "Stage", "", "DevelopmentalStage"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? m.mcg->get_DevelopmentalStage() + 1 : 0);
+			});
+			build({id++, "TempSum", "°Cd", "CurrentTemperatureSum"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_CurrentTemperatureSum(), 1) : 0.0);
+			});
+			build({id++, "VernF", "0;1", "VernalisationFactor"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_VernalisationFactor(), 2) : 0.0);
+			});
+			build({id++, "DaylF", "0;1", "DaylengthFactor"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_DaylengthFactor(), 2) : 0.0);
+			});
+			build({id++, "IncRoot", "kg ha-1", "OrganGrowthIncrement root"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_OrganGrowthIncrement(0), 2) : 0.0);
+			});
+			build({id++, "IncLeaf", "kg ha-1", "OrganGrowthIncrement leaf"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_OrganGrowthIncrement(1), 2) : 0.0);
+			});
+			build({id++, "IncShoot", "kg ha-1", "OrganGrowthIncrement shoot"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_OrganGrowthIncrement(2), 2) : 0.0);
+			});
+			build({id++, "IncFruit", "kg ha-1", "OrganGrowthIncrement fruit"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_OrganGrowthIncrement(3), 2) : 0.0);
+			});
+			build({id++, "RelDev", "0;1", "RelativeTotalDevelopment"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_RelativeTotalDevelopment(), 2) : 0.0);
+			});
+			build({id++, "LT50", "°C", "LT50"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_LT50(), 1) : 0.0);
+			});
+			build({id++, "AbBiom", "kg ha-1", "AbovegroundBiomass"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_AbovegroundBiomass(), 1) : 0.0);
+			});
+			build({id++, "Root", "kgDM ha-1", "get_OrganBiomass(i)"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 1
+													? round(m.mcg->get_OrganBiomass(0), 1) : 0.0);
+			});
+			build({id++, "Leaf", "kgDM ha-1", "get_OrganBiomass(i)"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 2
+													? round(m.mcg->get_OrganBiomass(1), 1) : 0.0);
+			});
+			build({id++, "Shoot", "kgDM ha-1", "get_OrganBiomass(i)"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 3
+													? round(m.mcg->get_OrganBiomass(2), 1) : 0.0);
+			});
+			build({id++, "Fruit", "kgDM ha-1", "get_OrganBiomass(i)"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 4
+													? round(m.mcg->get_OrganBiomass(3), 1) : 0.0);
+			});
+			build({id++, "Struct", "kgDM ha-1", "get_OrganBiomass(i)"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 5
+															? round(m.mcg->get_OrganBiomass(4), 1) : 0.0);
+			});
+			build({id++, "Sugar", "kgDM ha-1", "get_OrganBiomass(i)"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 6
+													? round(m.mcg->get_OrganBiomass(5), 1) : 0.0);
+			});
+			build({id++, "Yield", "kgDM ha-1", "get_PrimaryCropYield"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_PrimaryCropYield(), 1) : 0.0);
+			});
+			build({id++, "SumYield", "kgDM ha-1", "get_AccumulatedPrimaryCropYield"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_AccumulatedPrimaryCropYield(), 1) : 0.0);
+			});
+			build({id++, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_GrossPhotosynthesisHaRate(), 4) : 0.0);
+			});
+			build({id++, "NetPhot", "kgCH2O ha-1", "NetPhotosynthesis"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_NetPhotosynthesis(), 2) : 0.0);
+			});
+			build({id++, "MaintR", "kgCH2O ha-1", "MaintenanceRespirationAS"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_MaintenanceRespirationAS(), 4) : 0.0);
+			});
+			build({id++, "GrowthR", "kgCH2O ha-1", "GrowthRespirationAS"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_GrowthRespirationAS(), 4) : 0.0);
+			});
+			build({id++, "StomRes", "s m-1", "StomataResistance"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_StomataResistance(), 2) : 0.0);
+			});
+			build({id++, "Height", "m", "CropHeight"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_CropHeight(), 2) : 0.0);
+			});
+			build({id++, "LAI", "m2 m-2", "LeafAreaIndex"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_LeafAreaIndex(), 4) : 0.0);
+			});
+			build({id++, "RootDep", "layer#", "RootingDepth"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? m.mcg->get_RootingDepth() : 0);
+			});
+			build({id++, "EffRootDep", "m", "Effective RootingDepth"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->getEffectiveRootingDepth(), 2) : 0.0);
+			});
+
+			build({id++, "TotBiomN", "kgN ha-1", "TotalBiomassNContent"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_TotalBiomassNContent(), 1) : 0.0);
+			});
+			build({id++, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_AbovegroundBiomassNContent(), 1) : 0.0);
+			});
+			build({id++, "SumNUp", "kgN ha-1", "SumTotalNUptake"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_SumTotalNUptake(), 2) : 0.0);
+			});
+			build({id++, "ActNup", "kgN ha-1", "ActNUptake"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_ActNUptake(), 2) : 0.0);
+			});
+			build({id++, "PotNup", "kgN ha-1", "PotNUptake"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_PotNUptake(), 2) : 0.0);
+			});
+			build({id++, "NFixed", "kgN ha-1", "NFixed"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_BiologicalNFixation(), 2) : 0.0);
+			});
+			build({id++, "Target", "kgN ha-1", "TargetNConcentration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_TargetNConcentration(), 3) : 0.0);
+			});
+			build({id++, "CritN", "kgN ha-1", "CriticalNConcentration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_CriticalNConcentration(), 3) : 0.0);
+			});
+			build({id++, "AbBiomNc", "kgN ha-1", "AbovegroundBiomassNConcentration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_AbovegroundBiomassNConcentration(), 3) : 0.0);
+			});
+			build({id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_PrimaryYieldNConcentration(), 3) : 0.0);
+			});
+
+			build({id++, "Protein", "kg kg-1", "RawProteinConcentration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_RawProteinConcentration(), 3) : 0.0);
+			});
+
+			build({id++, "NPP", "kgC ha-1", "NPP"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_NetPrimaryProduction(), 5) : 0.0);
+			});
+			build({id++, "NPP-Organs", "kgC ha-1", "organ specific NPP"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i)
+				{
+					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
+						? round(m.mcg->get_OrganSpecificNPP(i), 4) : 0.0;
+				}, 3);
+			});
+
+			build({id++, "GPP", "kgC ha-1", "GPP"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_GrossPrimaryProduction(), 5) : 0.0);
+			});
+
+			build({id++, "Ra", "kgC ha-1", "autotrophic respiration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(m.cropPlanted ? round(m.mcg->get_AutotrophicRespiration(), 5) : 0.0);
+			});
+			build({id++, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i)
+				{
+					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
+						? round(m.mcg->get_OrganSpecificTotalRespired(i), 4) : 0.0;
+				}, 3);
+			});
+
+			build({id++, "Mois", "m3 m-3", "Soil moisture content"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.moist.get_SoilMoisture(i); }, 3);
+			});
+
+			build({id++, "Precip", "mm", "Precipitation"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::precip, m.timestep), 2));
+			});
+			build({id++, "Irrig", "mm", "Irrigation"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.dailySumIrrigationWater(), 1));
+			});
+			build({id++, "Infilt", "mm", "Infiltration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_Infiltration(), 1));
+			});
+			build({id++, "Surface", "mm", "Surface water storage"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_SurfaceWaterStorage(), 1));
+			});
+			build({id++, "RunOff", "mm", "Surface water runoff"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_SurfaceRunOff(), 1));
+			});
+			build({id++, "SnowD", "mm", "Snow depth"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_SnowDepth(), 1));
+			});
+			build({id++, "FrostD", "m", "Frost front depth in soil"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_FrostDepth(), 1));
+			});
+			build({id++, "ThawD", "m", "Thaw front depth in soil"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_ThawDepth(), 1));
+			});
+
+			build({id++, "PASW", "m3 m-3", "PASW"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results,
+											[&](int i){ return m.moist.get_SoilMoisture(i) - m.soilc.at(i).vs_PermanentWiltingPoint(); },
+											3);
+			});
+
+			build({id++, "SurfTemp", "°C", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.temp.get_SoilSurfaceTemperature(), 1));
+			});
+			build({id++, "STemp", "°C", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.temp.get_SoilTemperature(i); }, 1);
+			});
+			build({id++, "Act_Ev", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_ActualEvaporation(), 1));
+			});
+			build({id++, "Act_ET", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_Evapotranspiration(), 1));
+			});
+			build({id++, "ET0", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_ET0(), 1));
+			});
+			build({id++, "Kc", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_KcFactor(), 1));
+			});
+			build({id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.get_AtmosphericCO2Concentration(), 0));
+			});
+			build({id++, "Groundw", "m", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.get_GroundwaterDepth(), 2));
+			});
+			build({id++, "Recharge", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_GroundwaterRecharge(), 3));
+			});
+			build({id++, "NLeach", "kgN ha-1", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.trans.get_NLeaching(), 3));
+			});
+			build({id++, "NO3", "kgN m-3", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.soilc.at(i).get_SoilNO3(); }, 3);
+			});
+			build({id++, "Carb", "kgN m-3", "Soil Carbamid"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.soilc.at(0).get_SoilCarbamid(), 4));
+			});
+			build({id++, "NH4", "kgN m-3", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.soilc.at(i).get_SoilNH4(); }, 4);
+			});
+			build({id++, "NO2", "kgN m-3", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.soilc.at(i).get_SoilNO2(); }, 4);
+			});
+			build({id++, "SOC", "kgC kg-1", "get_SoilOrganicC"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.soilc.at(i).vs_SoilOrganicCarbon(); }, 4);
+			});
+			build({id++, "SOC-X-Y", "gC m-2", "SOC-X-Y"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i)
+				{
+					return m.soilc.at(i).vs_SoilOrganicCarbon()
+						* m.soilc.at(i).vs_SoilBulkDensity()
+						* m.soilc.at(i).vs_LayerThickness
+						* 1000;
+				}, 4);
+			});
+
+			build({id++, "AOMf", "kgC m-3", "get_AOM_FastSum"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_AOM_FastSum(i); }, 4);
+			});
+			build({id++, "AOMs", "kgC m-3", "get_AOM_SlowSum"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_AOM_SlowSum(i); }, 4);
+			});
+			build({id++, "SMBf", "kgC m-3", "get_SMB_Fast"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_SMB_Fast(i); }, 4);
+			});
+			build({id++, "SMBs", "kgC m-3", "get_SMB_Slow"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_SMB_Slow(i); }, 4);
+			});
+			build({id++, "SOMf", "kgC m-3", "get_SOM_Fast"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_SOM_Fast(i); }, 4);
+			});
+			build({id++, "SOMs", "kgC m-3", "get_SOM_Slow"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_SOM_Slow(i); }, 4);
+			});
+			build({id++, "CBal", "kgC m-3", "get_CBalance"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_CBalance(i); }, 4);
+			});
+
+			build({id++, "Nmin", "kgN ha-1", "NetNMineralisationRate"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_NetNMineralisationRate(i); }, 6);
+			});
+			build({id++, "NetNmin", "kgN ha-1", "NetNmin"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_NetNMineralisation(), 5));
+			});
+			build({id++, "Denit", "kgN ha-1", "Denit"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_Denitrification(), 5));
+			});
+			build({id++, "N2O", "kgN ha-1", "N2O"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_N2O_Produced(), 5));
+			});
+			build({id++, "SoilpH", "", "SoilpH"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.soilc.at(0).get_SoilpH(), 1));
+			});
+			build({id++, "NEP", "kgC ha-1", "NEP"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_NetEcosystemProduction(), 5));
+			});
+			build({id++, "NEE", "kgC ha-", "NEE"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_NetEcosystemExchange(), 5));
+			});
+			build({id++, "Rh", "kgC ha-", "Rh"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_DecomposerRespiration(), 5));
+			});
+
+			build({id++, "Tmin", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::tmin, m.timestep), 4));
+			});
+			build({id++, "Tavg", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::tavg, m.timestep), 4));
+			});
+			build({id++, "Tmax", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::tmax, m.timestep), 4));
+			});
+			build({id++, "Wind", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::wind, m.timestep), 4));
+			});
+			build({id++, "Globrad", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::globrad, m.timestep), 4));
+			});
+			build({id++, "Relhumid", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::relhumid, m.timestep), 4));
+			});
+			build({id++, "Sunhours", "", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::sunhours, m.timestep), 4));
+			});
+
+			build({id++, "BedGrad", "0;1", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.moist.get_PercentageSoilCoverage(), 3));
+			});
+			build({id++, "N", "kgN m-3", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.soilc.at(i).get_SoilNmin(); }, 3);
+			});
+			build({id++, "Co", "kgC m-3", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_SoilOrganicC(i); }, 2);
+			});
+			build({id++, "NH3", "kgN ha-1", "NH3_Volatilised"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.org.get_NH3_Volatilised(), 3));
+			});
+			build({id++, "NFert", "kgN ha-1", "dailySumFertiliser"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.dailySumFertiliser(), 1));
+			});
+			build({id++, "WaterContent", "%nFC", "soil water content"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i)
+				{
+					double smm3 = m.moist.get_SoilMoisture(i); // soilc.at(i).get_Vs_SoilMoisture_m3();
+					double fc = m.soilc.at(i).vs_FieldCapacity();
+					double pwp = m.soilc.at(i).vs_PermanentWiltingPoint();
+					return smm3 / (fc - pwp); //[%nFK]
+				}, 4);
+			});
+			build({id++, "CapillaryRise", "mm", "capillary rise"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.moist.get_CapillaryRise(i); }, 3);
+			});
+			build({id++, "PercolationRate", "mm", "percolation rate"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.moist.get_PercolationRate(i); }, 3);
+			});
+			build({id++, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate"}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				store<double>(oid, results, [&](int i){ return m.org.get_SMB_CO2EvolutionRate(i); }, 1);
+			});
+			build({id++, "Evapotranspiration", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.getEvapotranspiration(), 1));
+			});
+			build({id++, "Evaporation", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.getEvaporation(), 1));
+			});
+			build({id++, "Transpiration", "mm", ""}, 
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.monica.getTranspiration(), 1));
+			});
+
+			tableBuild = true;
+		}
+	}
+
+	return m;
+}
+
+void storeResults(const vector<OId>& outputIds,
+									vector<BOTRes::ResultVector>& results,
+									MonicaRefs& mr,
+									int timestep,
+									Date currentDate)
+{
+	const auto& ofs = buildOutputTable().ofs;
+	
+	size_t i = 0;
+	results.resize(outputIds.size());
+	for(auto oid : outputIds)
+	{
+		auto ofi = ofs.find(oid.id);
+		if(ofi != ofs.end())
+			ofi->second(mr.refresh(timestep, currentDate), results[i], oid);
+		//for(auto r : results[i])
+		//	cout << oid.name << ": " << (r.is_number() ? to_string(r.number_value()) : r.string_value()) << endl;
+		++i;
+	}
+};
+
 Result Monica::runMonica(Env env)
 {
 	if(activateDebug)
@@ -330,12 +1057,6 @@ Result Monica::runMonica(Env env)
 	size_t currentMonth = currentDate.month();
 	unsigned int dim = 0; //day in current month
 
-	double avg10corg = 0, avg30corg = 0, watercontent = 0,
-		groundwater = 0, nLeaching = 0, yearly_groundwater = 0,
-		yearly_nleaching = 0, monthSurfaceRunoff = 0.0;
-	double monthPrecip = 0.0;
-	double monthETa = 0.0;
-
 	//iterator through the production processes
 	vector<CultivationMethod>::const_iterator cmci = env.cropRotation.begin();
 	//direct handle to current process
@@ -353,6 +1074,18 @@ Result Monica::runMonica(Env env)
 		: nextCMApplicationDate;
 	debug() << "next app-date: " << nextCMApplicationDate.toString()
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+
+	vector<BOTRes::ResultVector> intermediateMonthlyResults;
+	vector<BOTRes::ResultVector> intermediateYearlyResults;
+	vector<BOTRes::ResultVector> intermediateRunResults;
+	map<string, vector<BOTRes::ResultVector>> intermediateCropResults;
+	map<Date, vector<BOTRes::ResultVector>> intermediateAtResults;
+	
+	MonicaRefs monicaRefs
+	{
+		monica, monica.soilTemperature(), monica.soilMoisture(), monica.soilOrganic(), monica.soilColumn(),
+		monica.soilTransport(), monica.cropGrowth(), monica.isCropPlanted(), env.da, 0, currentDate
+	};
 
 	//if for some reason there are no applications (no nothing) in the
 	//production process: quit
@@ -508,1417 +1241,85 @@ Result Monica::runMonica(Env env)
 
 		// run crop step
 		if(monica.isCropPlanted())
+		{
 			monica.cropStep(currentDate, dateAndClimateDataP.second);
-		storeCropResults(env.outputIds, res.out, monica.cropGrowth(), monica.isCropPlanted());
-
-		monica.generalStep(currentDate, dateAndClimateDataP.second);
-		storeGeneralResults(env.outputIds, res.out, env, monica, d);
-
-		// write special outputs at 31.03.
-		if(currentDate.day() == 31 && currentDate.month() == 3)
-		{
-			res.generalResults[sum90cmYearlyNatDay].push_back(monica.sumNmin(0.9));
-			//      debug << "N at: " << monica.sumNmin(0.9) << endl;
-			res.generalResults[sum30cmSoilTemperature].push_back(monica.sumSoilTemperature(3));
-			res.generalResults[sum90cmYearlyNO3AtDay].push_back(monica.sumNO3AtDay(0.9));
-			res.generalResults[avg30cmSoilTemperature].push_back(monica.avg30cmSoilTemperature());
-			//cout << "MONICA_TEMP:\t" << monica.avg30cmSoilTemperature() << endl;
-			res.generalResults[avg0_30cmSoilMoisture].push_back(monica.avgSoilMoisture(0, 3));
-			res.generalResults[avg30_60cmSoilMoisture].push_back(monica.avgSoilMoisture(3, 6));
-			res.generalResults[avg60_90cmSoilMoisture].push_back(monica.avgSoilMoisture(6, 9));
-			res.generalResults[avg0_90cmSoilMoisture].push_back(monica.avgSoilMoisture(0, 9));
-			res.generalResults[waterFluxAtLowerBoundary].push_back(monica.groundWaterRecharge());
-			res.generalResults[avg0_30cmCapillaryRise].push_back(monica.avgCapillaryRise(0, 3));
-			res.generalResults[avg30_60cmCapillaryRise].push_back(monica.avgCapillaryRise(3, 6));
-			res.generalResults[avg60_90cmCapillaryRise].push_back(monica.avgCapillaryRise(6, 9));
-			res.generalResults[avg0_30cmPercolationRate].push_back(monica.avgPercolationRate(0, 3));
-			res.generalResults[avg30_60cmPercolationRate].push_back(monica.avgPercolationRate(3, 6));
-			res.generalResults[avg60_90cmPercolationRate].push_back(monica.avgPercolationRate(6, 9));
-			res.generalResults[evapotranspiration].push_back(monica.getEvapotranspiration());
-			res.generalResults[transpiration].push_back(monica.getTranspiration());
-			res.generalResults[evaporation].push_back(monica.getEvaporation());
-			res.generalResults[sum30cmSMB_CO2EvolutionRate].push_back(monica.get_sum30cmSMB_CO2EvolutionRate());
-			res.generalResults[NH3Volatilised].push_back(monica.getNH3Volatilised());
-			res.generalResults[sum30cmActDenitrificationRate].push_back(monica.getsum30cmActDenitrificationRate());
-			res.generalResults[leachingNAtBoundary].push_back(monica.nLeaching());
+			storeResults(env.cropOutputIds, 
+									 intermediateCropResults[monica.currentCrop()->id()],
+									 monicaRefs, 
+									 d, currentDate);
 		}
+		
+		monica.generalStep(currentDate, dateAndClimateDataP.second);
+		storeResults(env.dailyOutputIds, res.out.daily, monicaRefs, d, currentDate);
 
-		if((currentDate.month() != currentMonth) || d == nods - 1)
+		//try to find exact date
+		auto ati = env.atOutputIds.find(currentDate);
+		//is not exact date, try to find relative one
+		if(ati == env.atOutputIds.end())
+			ati = env.atOutputIds.find(currentDate.toRelativeDate());
+		if(ati != env.atOutputIds.end())
+			storeResults(ati->second, res.out.at[ati->first], monicaRefs, d, currentDate);
+
+		if(currentDate.month() != currentMonth 
+			 || d == nods - 1)
 		{
+			size_t i = 0;
+			res.out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
+			for(auto oid : env.monthlyOutputIds)
+			{
+				res.out.monthly[currentMonth][i].push_back(applyOIdOP(oid.op, intermediateMonthlyResults.at(i)));
+				intermediateMonthlyResults[i].clear();
+				++i;
+			}
+
 			currentMonth = currentDate.month();
-
-			res.generalResults[avg10cmMonthlyAvgCorg].push_back(avg10corg / double(dim));
-			res.generalResults[avg30cmMonthlyAvgCorg].push_back(avg30corg / double(dim));
-			res.generalResults[mean90cmMonthlyAvgWaterContent].push_back(monica.mean90cmWaterContent());
-			res.generalResults[monthlySumGroundWaterRecharge].push_back(groundwater);
-			res.generalResults[monthlySumNLeaching].push_back(nLeaching);
-			res.generalResults[maxSnowDepth].push_back(monica.maxSnowDepth());
-			res.generalResults[sumSnowDepth].push_back(monica.getAccumulatedSnowDepth());
-			res.generalResults[sumFrostDepth].push_back(monica.getAccumulatedFrostDepth());
-			res.generalResults[sumSurfaceRunOff].push_back(monica.sumSurfaceRunOff());
-			res.generalResults[sumNH3Volatilised].push_back(monica.getSumNH3Volatilised());
-			res.generalResults[monthlySurfaceRunoff].push_back(monthSurfaceRunoff);
-			res.generalResults[monthlyPrecip].push_back(monthPrecip);
-			res.generalResults[monthlyETa].push_back(monthETa);
-			res.generalResults[monthlySoilMoistureL0].push_back(monica.avgSoilMoisture(0, 1) * 100.0);
-			res.generalResults[monthlySoilMoistureL1].push_back(monica.avgSoilMoisture(1, 2) * 100.0);
-			res.generalResults[monthlySoilMoistureL2].push_back(monica.avgSoilMoisture(2, 3) * 100.0);
-			res.generalResults[monthlySoilMoistureL3].push_back(monica.avgSoilMoisture(3, 4) * 100.0);
-			res.generalResults[monthlySoilMoistureL4].push_back(monica.avgSoilMoisture(4, 5) * 100.0);
-			res.generalResults[monthlySoilMoistureL5].push_back(monica.avgSoilMoisture(5, 6) * 100.0);
-			res.generalResults[monthlySoilMoistureL6].push_back(monica.avgSoilMoisture(6, 7) * 100.0);
-			res.generalResults[monthlySoilMoistureL7].push_back(monica.avgSoilMoisture(7, 8) * 100.0);
-			res.generalResults[monthlySoilMoistureL8].push_back(monica.avgSoilMoisture(8, 9) * 100.0);
-			res.generalResults[monthlySoilMoistureL9].push_back(monica.avgSoilMoisture(9, 10) * 100.0);
-			res.generalResults[monthlySoilMoistureL10].push_back(monica.avgSoilMoisture(10, 11) * 100.0);
-			res.generalResults[monthlySoilMoistureL11].push_back(monica.avgSoilMoisture(11, 12) * 100.0);
-			res.generalResults[monthlySoilMoistureL12].push_back(monica.avgSoilMoisture(12, 13) * 100.0);
-			res.generalResults[monthlySoilMoistureL13].push_back(monica.avgSoilMoisture(13, 14) * 100.0);
-			res.generalResults[monthlySoilMoistureL14].push_back(monica.avgSoilMoisture(14, 15) * 100.0);
-			res.generalResults[monthlySoilMoistureL15].push_back(monica.avgSoilMoisture(15, 16) * 100.0);
-			res.generalResults[monthlySoilMoistureL16].push_back(monica.avgSoilMoisture(16, 17) * 100.0);
-			res.generalResults[monthlySoilMoistureL17].push_back(monica.avgSoilMoisture(17, 18) * 100.0);
-			res.generalResults[monthlySoilMoistureL18].push_back(monica.avgSoilMoisture(18, 19) * 100.0);
-
-
-			//      cout << "c10: " << (avg10corg / double(dim))
-			//          << " c30: " << (avg30corg / double(dim))
-			//          << " wc: " << (watercontent / double(dim))
-			//          << " gwrc: " << groundwater
-			//          << " nl: " << nLeaching
-			//          << endl;
-
-			avg10corg = avg30corg = watercontent = groundwater = nLeaching = monthSurfaceRunoff = 0.0;
-			monthPrecip = 0.0;
-			monthETa = 0.0;
-
-			dim = 0;
-			//cout << "stored monthly values for month: " << currentMonth  << endl;
 		}
 		else
-		{
-			avg10corg += monica.avgCorg(0.1);
-			avg30corg += monica.avgCorg(0.3);
-			watercontent += monica.mean90cmWaterContent();
-			groundwater += monica.groundWaterRecharge();
-
-			//cout << "groundwater-recharge at: " << currentDate.toString() << " value: " << monica.groundWaterRecharge() << " monthlySum: " << groundwater << endl;
-			nLeaching += monica.nLeaching();
-			monthSurfaceRunoff += monica.surfaceRunoff();
-			monthPrecip += env.da.dataForTimestep(Climate::precip, d);
-			monthETa += monica.getETa();
-		}
+			storeResults(env.monthlyOutputIds, intermediateMonthlyResults, monicaRefs, d, currentDate);
 
 		// Yearly accumulated values
-		if((currentDate.year() != (currentDate - 1).year()) && (currentDate.year() != env.da.startDate().year()))
+		if(currentDate.year() != (currentDate - 1).year() 
+			 && d > 0)
 		{
-			res.generalResults[yearlySumGroundWaterRecharge].push_back(yearly_groundwater);
-			//        cout << "#######################################################" << endl;
-			//        cout << "Push back yearly_nleaching: " << currentDate.year()  << "\t" << yearly_nleaching << endl;
-			//        cout << "#######################################################" << endl;
-			res.generalResults[yearlySumNLeaching].push_back(yearly_nleaching);
-			yearly_groundwater = 0.0;
-			yearly_nleaching = 0.0;
+			size_t i = 0;
+			res.out.yearly.resize(intermediateYearlyResults.size());
+			for(auto oid : env.yearlyOutputIds)
+			{
+				res.out.yearly[i].push_back(applyOIdOP(oid.op, intermediateYearlyResults.at(i)));
+				intermediateYearlyResults[i].clear();
+				++i;
+			}
 		}
 		else
-		{
-			yearly_groundwater += monica.groundWaterRecharge();
-			yearly_nleaching += monica.nLeaching();
-		}
-
-		if(monica.isCropPlanted())
-		{
-			//cout << "monica.cropGrowth()->get_GrossPrimaryProduction()\t" << monica.cropGrowth()->get_GrossPrimaryProduction() << endl;
-
-			res.generalResults[dev_stage].push_back(monica.cropGrowth()->get_DevelopmentalStage() + 1);
-
-
-		}
-		else
-		{
-			res.generalResults[dev_stage].push_back(0.0);
-		}
-
-		res.dates.push_back(currentDate.toMysqlString());
-
-		
+			storeResults(env.yearlyOutputIds, intermediateYearlyResults, monicaRefs, d, currentDate);
 	}
 
-	//cout << res.dates.size() << endl;
-	//  cout << res.toString().c_str();
-	debug() << "returning from runMonica" << endl;
+	//store results for a single run
+	size_t i = 0;
+	res.out.run.resize(env.runOutputIds.size());
+	for(auto oid : env.runOutputIds)
+	{
+		res.out.run[i] = applyOIdOP(oid.op, intermediateRunResults.at(oid.id));
+		++i;
+	}
 
+	//store results for a single crop
+	for(auto& p : intermediateCropResults)
+	{
+		auto& vs = res.out.crop[p.first];
+		i = 0;
+		vs.resize(env.cropOutputIds.size());
+		for(auto oid : env.cropOutputIds)
+		{
+			vs[i].push_back(applyOIdOP(oid.op, p.second.at(oid.id)));
+			++i;
+		}
+	}
+	
+	debug() << "returning from runMonica" << endl;
 	return res;
 }
 
-
-/**
-* Write header line to fout Output file
-* @param fout File pointer to rmout.dat
-*/
-void Monica::initializeFoutHeader(ostream& fout)
-{
-	int outLayers = 20;
-	int numberOfOrgans = 5;
-	fout << "Datum     ";
-	fout << "\tCrop";
-	fout << "\tTraDef";
-	fout << "\tTra";
-	fout << "\tNDef";
-	fout << "\tHeatRed";
-	fout << "\tFrostRed";
-	fout << "\tOxRed";
-
-	fout << "\tStage";
-	fout << "\tTempSum";
-	fout << "\tVernF";
-	fout << "\tDaylF";
-	fout << "\tIncRoot";
-	fout << "\tIncLeaf";
-	fout << "\tIncShoot";
-	fout << "\tIncFruit";
-
-	fout << "\tRelDev";
-	fout << "\tLT50";
-	fout << "\tAbBiom";
-
-	fout << "\tRoot";
-	fout << "\tLeaf";
-	fout << "\tShoot";
-	fout << "\tFruit";
-	fout << "\tStruct";
-	fout << "\tSugar";
-
-	fout << "\tYield";
-	fout << "\tSumYield";
-
-	fout << "\tGroPhot";
-	fout << "\tNetPhot";
-	fout << "\tMaintR";
-	fout << "\tGrowthR";
-	fout << "\tStomRes";
-	fout << "\tHeight";
-	fout << "\tLAI";
-	fout << "\tRootDep";
-	fout << "\tEffRootDep";
-
-	fout << "\tTotBiomN";
-	fout << "\tAbBiomN";
-	fout << "\tSumNUp";
-	fout << "\tActNup";
-	fout << "\tPotNup";
-	fout << "\tNFixed";
-	fout << "\tTarget";
-
-	fout << "\tCritN";
-	fout << "\tAbBiomNc";
-	fout << "\tYieldNc";
-	fout << "\tProtein";
-
-	fout << "\tNPP";
-	fout << "\tNPPRoot";
-	fout << "\tNPPLeaf";
-	fout << "\tNPPShoot";
-	fout << "\tNPPFruit";
-	fout << "\tNPPStruct";
-	fout << "\tNPPSugar";
-
-	fout << "\tGPP";
-	fout << "\tRa";
-	fout << "\tRaRoot";
-	fout << "\tRaLeaf";
-	fout << "\tRaShoot";
-	fout << "\tRaFruit";
-	fout << "\tRaStruct";
-	fout << "\tRaSugar";
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\tMois" << i_Layer;
-
-	fout << "\tPrecip";
-	fout << "\tIrrig";
-	fout << "\tInfilt";
-	fout << "\tSurface";
-	fout << "\tRunOff";
-	fout << "\tSnowD";
-	fout << "\tFrostD";
-	fout << "\tThawD";
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\tPASW-" << i_Layer;
-
-	fout << "\tSurfTemp";
-	fout << "\tSTemp0";
-	fout << "\tSTemp1";
-	fout << "\tSTemp2";
-	fout << "\tSTemp3";
-	fout << "\tSTemp4";
-	fout << "\tact_Ev";
-	fout << "\tact_ET";
-	fout << "\tET0";
-	fout << "\tKc";
-	fout << "\tatmCO2";
-	fout << "\tGroundw";
-	fout << "\tRecharge";
-	fout << "\tNLeach";
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\tNO3-" << i_Layer;
-
-	fout << "\tCarb";
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\tNH4-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 4; i_Layer++)
-		fout << "\tNO2-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 6; i_Layer++)
-		fout << "\tSOC-" << i_Layer;
-
-	fout << "\tSOC-0-30";
-	fout << "\tSOC-0-200";
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tAOMf-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tAOMs-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tSMBf-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tSMBs-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tSOMf-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tSOMs-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\tCBal-" << i_Layer;
-
-	for(int i_Layer = 0; i_Layer < 3; i_Layer++)
-		fout << "\tNmin-" << i_Layer;
-
-	fout << "\tNetNmin";
-	fout << "\tDenit";
-	fout << "\tN2O";
-	fout << "\tSoilpH";
-	fout << "\tNEP";
-	fout << "\tNEE";
-	fout << "\tRh";
-
-	fout << "\ttmin";
-	fout << "\ttavg";
-	fout << "\ttmax";
-	fout << "\twind";
-	fout << "\tglobrad";
-	fout << "\trelhumid";
-	fout << "\tsunhours";
-	fout << endl;
-
-	//**** Second header line ***
-	fout << "TTMMYYY";	// Date
-	fout << "\t[ ]";		// Crop name
-	fout << "\t[0;1]";    // TranspirationDeficit
-	fout << "\t[mm]";     // ActualTranspiration
-	fout << "\t[0;1]";    // CropNRedux
-	fout << "\t[0;1]";    // HeatStressRedux
-	fout << "\t[0;1]";    // FrostStressRedux
-	fout << "\t[0;1]";    // OxygenDeficit
-
-	fout << "\t[ ]";      // DevelopmentalStage
-	fout << "\t[°Cd]";    // CurrentTemperatureSum
-	fout << "\t[0;1]";    // VernalisationFactor
-	fout << "\t[0;1]";    // DaylengthFactor
-	fout << "\t[kg/ha]";  // OrganGrowthIncrement root
-	fout << "\t[kg/ha]";  // OrganGrowthIncrement leaf
-	fout << "\t[kg/ha]";  // OrganGrowthIncrement shoot
-	fout << "\t[kg/ha]";  // OrganGrowthIncrement fruit
-
-	fout << "\t[0;1]";    // RelativeTotalDevelopment
-	fout << "\t[°C]";     // LT50
-	fout << "\t[kg/ha]";  // AbovegroundBiomass
-
-	for(int i = 0; i < 6; i++)
-		fout << "\t[kgDM/ha]"; // get_OrganBiomass(i)
-
-	fout << "\t[kgDM/ha]";    // get_PrimaryCropYield(3)
-	fout << "\t[kgDM/ha]";    // get_AccumulatedPrimaryCropYield(3)
-
-	fout << "\t[kgCH2O/ha]";  // GrossPhotosynthesisHaRate
-	fout << "\t[kgCH2O/ha]";  // NetPhotosynthesis
-	fout << "\t[kgCH2O/ha]";  // MaintenanceRespirationAS
-	fout << "\t[kgCH2O/ha]";  // GrowthRespirationAS
-	fout << "\t[s/m]";        // StomataResistance
-	fout << "\t[m]";          // CropHeight
-	fout << "\t[m2/m2]";      // LeafAreaIndex
-	fout << "\t[layer]";      // RootingDepth
-	fout << "\t[m]";          // Effective RootingDepth
-
-	fout << "\t[kgN/ha]";     // TotalBiomassNContent
-	fout << "\t[kgN/ha]";     // AbovegroundBiomassNContent
-	fout << "\t[kgN/ha]";     // SumTotalNUptake
-	fout << "\t[kgN/ha]";     // ActNUptake
-	fout << "\t[kgN/ha]";     // PotNUptake
-	fout << "\t[kgN/ha]";     // NFixed
-	fout << "\t[kgN/kg]";     // TargetNConcentration
-	fout << "\t[kgN/kg]";     // CriticalNConcentration
-	fout << "\t[kgN/kg]";     // AbovegroundBiomassNConcentration
-	fout << "\t[kgN/kg]";     // PrimaryYieldNConcentration
-	fout << "\t[kg/kg]";      // RawProteinConcentration
-
-	fout << "\t[kg C ha-1]";   // NPP
-	fout << "\t[kg C ha-1]";   // NPP root
-	fout << "\t[kg C ha-1]";   // NPP leaf
-	fout << "\t[kg C ha-1]";   // NPP shoot
-	fout << "\t[kg C ha-1]";   // NPP fruit
-	fout << "\t[kg C ha-1]";   // NPP struct
-	fout << "\t[kg C ha-1]";   // NPP sugar
-
-	fout << "\t[kg C ha-1]";   // GPP
-	fout << "\t[kg C ha-1]";   // Ra
-	fout << "\t[kg C ha-1]";   // Ra root
-	fout << "\t[kg C ha-1]";   // Ra leaf
-	fout << "\t[kg C ha-1]";   // Ra shoot
-	fout << "\t[kg C ha-1]";   // Ra fruit
-	fout << "\t[kg C ha-1]";   // Ra struct
-	fout << "\t[kg C ha-1]";   // Ra sugar
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\t[m3/m3]"; // Soil moisture content
-
-	fout << "\t[mm]"; // Precipitation
-	fout << "\t[mm]"; // Irrigation
-	fout << "\t[mm]"; // Infiltration
-	fout << "\t[mm]"; // Surface water storage
-	fout << "\t[mm]"; // Surface water runoff
-	fout << "\t[mm]"; // Snow depth
-	fout << "\t[m]"; // Frost front depth in soil
-	fout << "\t[m]"; // Thaw front depth in soil
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\t[m3/m3]"; //PASW
-
-	fout << "\t[°C]"; //
-	fout << "\t[°C]";
-	fout << "\t[°C]";
-	fout << "\t[°C]";
-	fout << "\t[°C]";
-	fout << "\t[°C]";
-	fout << "\t[mm]";
-	fout << "\t[mm]";
-	fout << "\t[mm]";
-	fout << "\t[ ]";
-	fout << "\t[ppm]";
-	fout << "\t[m]";
-	fout << "\t[mm]";
-	fout << "\t[kgN/ha]";
-
-	// NO3
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\t[kgN/m3]";
-
-	fout << "\t[kgN/m3]";  // Soil Carbamid
-												 // NH4
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-		fout << "\t[kgN/m3]";
-
-	// NO2
-	for(int i_Layer = 0; i_Layer < 4; i_Layer++)
-		fout << "\t[kgN/m3]";
-
-	// get_SoilOrganicC
-	for(int i_Layer = 0; i_Layer < 6; i_Layer++)
-		fout << "\t[kgC/kg]";
-
-	fout << "\t[gC m-2]";   // SOC-0-30
-	fout << "\t[gC m-2]";   // SOC-0-200
-													// get_AOM_FastSum
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// get_AOM_SlowSum
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// get_SMB_Fast
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// get_SMB_Slow
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// get_SOM_Fast
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// get_SOM_Slow
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// get_CBalance
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-		fout << "\t[kgC/m3]";
-
-	// NetNMineralisationRate
-	for(int i_Layer = 0; i_Layer < 3; i_Layer++)
-		fout << "\t[kgN/ha]";
-
-	fout << "\t[kgN/ha]";  // NetNmin
-	fout << "\t[kgN/ha]";  // Denit
-	fout << "\t[kgN/ha]";  // N2O
-	fout << "\t[ ]";       // SoilpH
-	fout << "\t[kgC/ha]";  // NEP
-	fout << "\t[kgC/ha]";  // NEE
-	fout << "\t[kgC/ha]";  // Rh
-
-	fout << "\t[°C]";     // tmin
-	fout << "\t[°C]";     // tavg
-	fout << "\t[°C]";     // tmax
-	fout << "\t[m/s]";    // wind
-	fout << "\tglobrad";  // globrad
-	fout << "\t[m3/m3]";  // relhumid
-	fout << "\t[h]";      // sunhours
-	fout << endl;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-* Writes header line to gout-Outputfile
-* @param gout File pointer to smout.dat
-*/
-void Monica::initializeGoutHeader(ostream& gout)
-{
-	gout << "Datum     ";
-	gout << "\tCrop";
-	gout << "\tStage";
-	gout << "\tHeight";
-	gout << "\tRoot";
-	gout << "\tRoot10";
-	gout << "\tLeaf";
-	gout << "\tShoot";
-	gout << "\tFruit";
-	gout << "\tAbBiom";
-	gout << "\tAbGBiom";
-	gout << "\tYield";
-	gout << "\tEarNo";
-	gout << "\tGrainNo";
-
-	gout << "\tLAI";
-	gout << "\tAbBiomNc";
-	gout << "\tYieldNc";
-	gout << "\tAbBiomN";
-	gout << "\tYieldN";
-
-	gout << "\tTotNup";
-	gout << "\tNGrain";
-	gout << "\tProtein";
-
-	gout << "\tBedGrad";
-	gout << "\tM0-10";
-	gout << "\tM10-20";
-	gout << "\tM20-30";
-	gout << "\tM30-40";
-	gout << "\tM40-50";
-	gout << "\tM50-60";
-	gout << "\tM60-70";
-	gout << "\tM70-80";
-	gout << "\tM80-90";
-	gout << "\tM0-30";
-	gout << "\tM30-60";
-	gout << "\tM60-90";
-	gout << "\tM0-60";
-	gout << "\tM0-90";
-	gout << "\tPAW0-200";
-	gout << "\tPAW0-130";
-	gout << "\tPAW0-150";
-	gout << "\tN0-30";
-	gout << "\tN30-60";
-	gout << "\tN60-90";
-	gout << "\tN90-120";
-	gout << "\tN0-60";
-	gout << "\tN0-90";
-	gout << "\tN0-200";
-	gout << "\tN0-130";
-	gout << "\tN0-150";
-	gout << "\tNH430";
-	gout << "\tNH460";
-	gout << "\tNH490";
-	gout << "\tCo0-10";
-	gout << "\tCo0-30";
-	gout << "\tT0-10";
-	gout << "\tT20-30";
-	gout << "\tT50-60";
-	gout << "\tCO2";
-	gout << "\tNH3";
-	gout << "\tN2O";
-	gout << "\tN2";
-	gout << "\tNgas";
-	gout << "\tNFert";
-	gout << "\tIrrig";
-	gout << endl;
-
-	// **** Second header line ****
-
-	gout << "TTMMYYYY";
-	gout << "\t[ ]";
-	gout << "\t[ ]";
-	gout << "\t[m]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[kgDM/ha]";
-	gout << "\t[ ]";
-	gout << "\t[ ]";
-	gout << "\t[m2/m2]";
-	gout << "\t[kgN/kgDM";
-	gout << "\t[kgN/kgDM]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[-]";
-	gout << "\t[kg/kgDM]";
-
-	gout << "\t[0;1]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[m3/m3]";
-	gout << "\t[mm]";
-	gout << "\t[mm]";
-	gout << "\t[mm]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[kgC/ha]";
-	gout << "\t[kgC/ha]";
-	gout << "\t[°C]";
-	gout << "\t[°C]";
-	gout << "\t[°C]";
-	gout << "\t[kgC/ha]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[-]";
-	gout << "\t[-]";
-	gout << "\t[-]";
-	gout << "\t[kgN/ha]";
-	gout << "\t[mm]";
-	gout << endl;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-* Write crop results to file; if no crop is planted, fields are filled out with zeros;
-* @param mcg CropGrowth modul that contains information about crop
-* @param fout File pointer to rmout.dat
-* @param gout File pointer to smout.dat
-*/
-void Monica::writeCropResults(const CropGrowth* mcg,
-															ostream& fout,
-															ostream& gout,
-															bool crop_is_planted)
-{
-	if(crop_is_planted)
-	{
-		fout << "\t" << mcg->get_CropName();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_TranspirationDeficit();// [0;1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_ActualTranspiration();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_CropNRedux();// [0;1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_HeatStressRedux();// [0;1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_FrostStressRedux();// [0;1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_OxygenDeficit();// [0;1]
-
-		fout << fixed << setprecision(0) << "\t" << mcg->get_DevelopmentalStage() + 1;
-		fout << fixed << setprecision(1) << "\t" << mcg->get_CurrentTemperatureSum();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_VernalisationFactor();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_DaylengthFactor();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(0);
-		fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(1);
-		fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(2);
-		fout << fixed << setprecision(2) << "\t" << mcg->get_OrganGrowthIncrement(3);
-
-		fout << fixed << setprecision(2) << "\t" << mcg->get_RelativeTotalDevelopment();
-		fout << fixed << setprecision(1) << "\t" << mcg->get_LT50(); //  [°C] 
-		fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //[kg ha-1]
-		for(int i = 0; i < mcg->get_NumberOfOrgans(); i++)
-		{
-			fout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(i); // biomass organs, [kg C ha-1]
-		}
-
-		for(int i = 0; i < (6 - mcg->get_NumberOfOrgans()); i++)
-		{
-			fout << fixed << setprecision(1) << "\t" << 0.0; // adding zero fill if biomass organs < 6,
-		}
-
-		fout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
-		fout << fixed << setprecision(1) << "\t" << mcg->get_AccumulatedPrimaryCropYield();
-
-		fout << fixed << setprecision(4) << "\t" << mcg->get_GrossPhotosynthesisHaRate(); // [kg CH2O ha-1 d-1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_NetPhotosynthesis();  // [kg CH2O ha-1 d-1]
-		fout << fixed << setprecision(4) << "\t" << mcg->get_MaintenanceRespirationAS();// [kg CH2O ha-1]
-		fout << fixed << setprecision(4) << "\t" << mcg->get_GrowthRespirationAS();// [kg CH2O ha-1]
-
-		fout << fixed << setprecision(2) << "\t" << mcg->get_StomataResistance();// [s m-1]
-
-		fout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();// [m]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_LeafAreaIndex(); //[m2 m-2]
-		fout << fixed << setprecision(0) << "\t" << mcg->get_RootingDepth(); //[layer]
-		fout << fixed << setprecision(2) << "\t" << mcg->getEffectiveRootingDepth(); //[m]
-
-		fout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
-		fout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomassNContent();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_SumTotalNUptake();
-		fout << fixed << setprecision(2) << "\t" << mcg->get_ActNUptake(); // [kg N ha-1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_PotNUptake(); // [kg N ha-1]
-		fout << fixed << setprecision(2) << "\t" << mcg->get_BiologicalNFixation(); // [kg N ha-1]
-		fout << fixed << setprecision(3) << "\t" << mcg->get_TargetNConcentration();//[kg N kg-1]
-
-		fout << fixed << setprecision(3) << "\t" << mcg->get_CriticalNConcentration();//[kg N kg-1]
-		fout << fixed << setprecision(3) << "\t" << mcg->get_AbovegroundBiomassNConcentration();//[kg N kg-1]
-		fout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();//[kg N kg-1]
-		fout << fixed << setprecision(3) << "\t" << mcg->get_RawProteinConcentration();//[kg kg-1]
-		fout << fixed << setprecision(5) << "\t" << mcg->get_NetPrimaryProduction(); // NPP, [kg C ha-1]
-		for(int i = 0; i < mcg->get_NumberOfOrgans(); i++)
-		{
-			fout << fixed << setprecision(4) << "\t" << mcg->get_OrganSpecificNPP(i); // NPP organs, [kg C ha-1]
-		}
-		// if there less than 6 organs we have to fill the column that
-		// was added in the output header of rmout; in this header there
-		// are statically 6 columns initialised for the organ NPP
-		for(int i = mcg->get_NumberOfOrgans(); i < 6; i++)
-		{
-			fout << fixed << setprecision(2) << "\t0.0"; // NPP organs, [kg C ha-1]
-		}
-
-		fout << fixed << setprecision(5) << "\t" << mcg->get_GrossPrimaryProduction(); // GPP, [kg C ha-1]
-
-		fout << fixed << setprecision(5) << "\t" << mcg->get_AutotrophicRespiration(); // Ra, [kg C ha-1]
-		for(int i = 0; i < mcg->get_NumberOfOrgans(); i++)
-		{
-			fout << fixed << setprecision(4) << "\t" << mcg->get_OrganSpecificTotalRespired(i); // Ra organs, [kg C ha-1]
-		}
-		// if there less than 6 organs we have to fill the column that
-		// was added in the output header of rmout; in this header there
-		// are statically 6 columns initialised for the organ RA
-		for(int i = mcg->get_NumberOfOrgans(); i < 6; i++)
-		{
-			fout << fixed << setprecision(2) << "\t0.0";
-		}
-
-		gout << "\t" << mcg->get_CropName();
-		gout << fixed << setprecision(0) << "\t" << mcg->get_DevelopmentalStage() + 1;
-		gout << fixed << setprecision(2) << "\t" << mcg->get_CropHeight();
-		gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0);
-		gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(0); //! @todo
-		gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(1);
-		gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(2);
-		gout << fixed << setprecision(1) << "\t" << mcg->get_OrganBiomass(3);
-		gout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass();
-		gout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomass(); //! @todo
-		gout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryCropYield();
-		gout << "\t0"; //! @todo
-		gout << "\t0"; //! @todo
-		gout << fixed << setprecision(2) << "\t" << mcg->get_LeafAreaIndex();
-		gout << fixed << setprecision(4) << "\t" << mcg->get_AbovegroundBiomassNConcentration();
-		gout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();
-		gout << fixed << setprecision(1) << "\t" << mcg->get_AbovegroundBiomassNContent();
-		gout << fixed << setprecision(1) << "\t" << mcg->get_PrimaryYieldNContent();
-		gout << fixed << setprecision(1) << "\t" << mcg->get_TotalBiomassNContent();
-		gout << fixed << setprecision(3) << "\t" << mcg->get_PrimaryYieldNConcentration();
-		gout << fixed << setprecision(3) << "\t" << mcg->get_RawProteinConcentration();
-
-	}
-	else
-	{ // crop is not planted
-
-		fout << "\t"; // Crop Name
-		fout << "\t1.00"; // TranspirationDeficit
-		fout << "\t0.00"; // ActualTranspiration
-		fout << "\t1.00"; // CropNRedux
-		fout << "\t1.00"; // HeatStressRedux
-		fout << "\t1.00"; // FrostStressRedux
-		fout << "\t1.00"; // OxygenDeficit
-
-		fout << "\t0";      // DevelopmentalStage
-		fout << "\t0.0";    // CurrentTemperatureSum
-		fout << "\t0.00";   // VernalisationFactor
-		fout << "\t0.00";   // DaylengthFactor
-
-		fout << "\t0.00";   // OrganGrowthIncrement root
-		fout << "\t0.00";   // OrganGrowthIncrement leaf
-		fout << "\t0.00";   // OrganGrowthIncrement shoot
-		fout << "\t0.00";   // OrganGrowthIncrement fruit
-		fout << "\t0.00";   // RelativeTotalDevelopment
-		fout << "\t0.0";   // LT50
-
-		fout << "\t0.0";    // AbovegroundBiomass
-		fout << "\t0.0";    // get_OrganBiomass(0)
-		fout << "\t0.0";    // get_OrganBiomass(1)
-		fout << "\t0.0";    // get_OrganBiomass(2)
-		fout << "\t0.0";    // get_OrganBiomass(3)
-		fout << "\t0.0";    // get_OrganBiomass(4)
-		fout << "\t0.0";    // get_OrganBiomass(5)
-		fout << "\t0.0";    // get_PrimaryCropYield(3)
-		fout << "\t0.0";    // get_AccumulatedPrimaryCropYield(3)
-
-		fout << "\t0.000";  // GrossPhotosynthesisHaRate
-		fout << "\t0.00";   // NetPhotosynthesis
-		fout << "\t0.000";  // MaintenanceRespirationAS
-		fout << "\t0.000";  // GrowthRespirationAS
-		fout << "\t0.00";   // StomataResistance
-		fout << "\t0.00";   // CropHeight
-		fout << "\t0.00";   // LeafAreaIndex
-		fout << "\t0";      // RootingDepth
-		fout << "\t0.0";    // EffectiveRootingDepth
-
-		fout << "\t0.0";    // TotalBiomassNContent
-		fout << "\t0.0";    // AbovegroundBiomassNContent
-		fout << "\t0.00";   // SumTotalNUptake
-		fout << "\t0.00";   // ActNUptake
-		fout << "\t0.00";   // PotNUptake
-		fout << "\t0.00";   // NFixed
-		fout << "\t0.000";  // TargetNConcentration
-		fout << "\t0.000";  // CriticalNConcentration
-		fout << "\t0.000";  // AbovegroundBiomassNConcentration
-		fout << "\t0.000";  // PrimaryYieldNConcentration
-		fout << "\t0.000";  // CrudeProteinConcentration
-
-		fout << "\t0.0";    // NetPrimaryProduction
-		fout << "\t0.0"; // NPP root
-		fout << "\t0.0"; // NPP leaf
-		fout << "\t0.0"; // NPP shoot
-		fout << "\t0.0"; // NPP fruit
-		fout << "\t0.0"; // NPP struct
-		fout << "\t0.0"; // NPP sugar
-
-		fout << "\t0.0"; // GrossPrimaryProduction
-		fout << "\t0.0"; // Ra - VcRespiration
-		fout << "\t0.0"; // Ra root - OrganSpecificTotalRespired
-		fout << "\t0.0"; // Ra leaf - OrganSpecificTotalRespired
-		fout << "\t0.0"; // Ra shoot - OrganSpecificTotalRespired
-		fout << "\t0.0"; // Ra fruit - OrganSpecificTotalRespired
-		fout << "\t0.0"; // Ra struct - OrganSpecificTotalRespired
-		fout << "\t0.0"; // Ra sugar - OrganSpecificTotalRespired
-
-		gout << "\t";       // Crop Name
-		gout << "\t0";      // DevelopmentalStage
-		gout << "\t0.00";   // CropHeight
-		gout << "\t0.0";    // OrganBiomass(0)
-		gout << "\t0.0";    // OrganBiomass(0)
-		gout << "\t0.0";    // OrganBiomass(1)
-
-		gout << "\t0.0";    // OrganBiomass(2)
-		gout << "\t0.0";    // OrganBiomass(3)
-		gout << "\t0.0";    // AbovegroundBiomass
-		gout << "\t0.0";    // AbovegroundBiomass
-		gout << "\t0.0";    // PrimaryCropYield
-
-		gout << "\t0";
-		gout << "\t0";
-
-		gout << "\t0.00";   // LeafAreaIndex
-		gout << "\t0.000";  // AbovegroundBiomassNConcentration
-		gout << "\t0.0";    // PrimaryYieldNConcentration
-		gout << "\t0.00";   // AbovegroundBiomassNContent
-		gout << "\t0.0";    // PrimaryYieldNContent
-
-		gout << "\t0.0";    // TotalBiomassNContent
-		gout << "\t0";
-		gout << "\t0.00";   // RawProteinConcentration
-	}
-}
-
-template<typename T>
-void store(OId oid, Output& res, map<int, J11Array>& into, function<T(int)> getValue, int roundToDigits = 0)
-{
-	T acc = 0;
-	int count = 0;
-	J11Array multipleValues;
-	for(int i = oid.from; i <= oid.to; i++)
-	{
-		T v = getValue(i);
-		if(oid.op == OId::NONE)
-		{
-			multipleValues.push_back(Tools::round(v, roundToDigits));
-		}
-		else
-			acc += v;
-		count++;
-	}
-	switch(oid.op)
-	{
-	case OId::SUM: into[oid.id].push_back(acc); break;
-	case OId::AVG: into[oid.id].push_back(T(double(acc) / count)); break;
-	case OId::NONE: into[oid.id].push_back(multipleValues); break;
-	default:;
-	}
-}
-
-void Monica::storeCropResults(const vector<OId>& outputIds,
-															Output& res,
-															const CropGrowth* mcg,
-															bool cropPlanted)
-{
-	for(auto oid : outputIds)
-	{
-		int id = oid.id;
-		switch(id)
-		{
-		case 1: res.daily[id].push_back(cropPlanted ? mcg->get_CropName() : ""); break;
-		case 2: res.daily[id].push_back(cropPlanted ? round(mcg->get_TranspirationDeficit(), 2) : 0.0); break;
-		case 3: res.daily[id].push_back(cropPlanted ? round(mcg->get_ActualTranspiration(), 2) : 0.0); break;
-		case 4: res.daily[id].push_back(cropPlanted ? round(mcg->get_CropNRedux(), 2) : 0.0); break;
-		case 5: res.daily[id].push_back(cropPlanted ? round(mcg->get_HeatStressRedux(), 2) : 0.0); break;
-		case 6: res.daily[id].push_back(cropPlanted ? round(mcg->get_FrostStressRedux(), 2) : 0.0); break;
-		case 7: res.daily[id].push_back(cropPlanted ? round(mcg->get_OxygenDeficit(), 2) : 0.0); break;
-
-		case 8: res.daily[id].push_back(cropPlanted ? mcg->get_DevelopmentalStage() + 1 : 0); break;
-		case 9: res.daily[id].push_back(cropPlanted ? round(mcg->get_CurrentTemperatureSum(), 1) : 0.0); break;
-
-		case 10: res.daily[id].push_back(cropPlanted ? round(mcg->get_VernalisationFactor(), 2) : 0.0); break;
-		case 11: res.daily[id].push_back(cropPlanted ? round(mcg->get_DaylengthFactor(), 2) : 0.0); break;
-		case 12: res.daily[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(0), 2) : 0.0); break;
-		case 13: res.daily[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(1), 2) : 0.0); break;
-		case 14: res.daily[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(2), 2) : 0.0); break;
-		case 15: res.daily[id].push_back(cropPlanted ? round(mcg->get_OrganGrowthIncrement(3), 2) : 0.0); break;
-
-		case 16: res.daily[id].push_back(cropPlanted ? round(mcg->get_RelativeTotalDevelopment(), 2) : 0.0); break;
-		case 17: res.daily[id].push_back(cropPlanted ? round(mcg->get_LT50(), 1) : 0.0); break;
-		case 18: res.daily[id].push_back(cropPlanted ? round(mcg->get_AbovegroundBiomass(), 1) : 0.0); break;
-
-		case 19: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 1 
-																			 ? round(mcg->get_OrganBiomass(0), 1) : 0.0); break;
-		case 20: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 2 
-																			 ? round(mcg->get_OrganBiomass(1), 1) : 0.0); break;
-		case 21: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 3 
-																			 ? round(mcg->get_OrganBiomass(2), 1) : 0.0); break;
-		case 22: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 4 
-																			 ? round(mcg->get_OrganBiomass(3), 1) : 0.0); break;
-		case 23: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 5 
-																			 ? round(mcg->get_OrganBiomass(4), 1) : 0.0); break;
-		case 24: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 6 
-																			 ? round(mcg->get_OrganBiomass(5), 1) : 0.0); break;
-
-		case 25: res.daily[id].push_back(cropPlanted ? round(mcg->get_PrimaryCropYield(), 1) : 0.0); break;
-		case 26: res.daily[id].push_back(cropPlanted ? round(mcg->get_AccumulatedPrimaryCropYield(), 1) : 0.0); break;
-
-		case 27: res.daily[id].push_back(cropPlanted ? round(mcg->get_GrossPhotosynthesisHaRate(), 4) : 0.0); break;
-		case 28: res.daily[id].push_back(cropPlanted ? round(mcg->get_NetPhotosynthesis(), 2) : 0.0); break;
-		case 29: res.daily[id].push_back(cropPlanted ? round(mcg->get_MaintenanceRespirationAS(), 4) : 0.0); break;
-		case 30: res.daily[id].push_back(cropPlanted ? round(mcg->get_GrowthRespirationAS(), 4) : 0.0); break;
-
-		case 31: res.daily[id].push_back(cropPlanted ? round(mcg->get_StomataResistance(), 2) : 0.0); break;
-
-		case 32: res.daily[id].push_back(cropPlanted ? round(mcg->get_CropHeight(), 2) : 0.0); break;
-		case 33: res.daily[id].push_back(cropPlanted ? round(mcg->get_LeafAreaIndex(), 4) : 0.0); break;
-		case 34: res.daily[id].push_back(cropPlanted ? mcg->get_RootingDepth() : 0); break;
-		case 35: res.daily[id].push_back(cropPlanted ? round(mcg->getEffectiveRootingDepth(), 2) : 0.0); break;
-
-		case 36: res.daily[id].push_back(cropPlanted ? round(mcg->get_TotalBiomassNContent(), 1) : 0.0); break;
-		case 37: res.daily[id].push_back(cropPlanted ? round(mcg->get_AbovegroundBiomassNContent(), 1) : 0.0); break;
-		case 38: res.daily[id].push_back(cropPlanted ? round(mcg->get_SumTotalNUptake(), 2) : 0.0); break;
-		case 39: res.daily[id].push_back(cropPlanted ? round(mcg->get_ActNUptake(), 2) : 0.0); break;
-		case 40: res.daily[id].push_back(cropPlanted ? round(mcg->get_PotNUptake(), 2) : 0.0); break;
-		case 41: res.daily[id].push_back(cropPlanted ? round(mcg->get_BiologicalNFixation(), 2) : 0.0); break;
-		case 42: res.daily[id].push_back(cropPlanted ? round(mcg->get_TargetNConcentration(), 3) : 0.0); break;
-
-		case 43: res.daily[id].push_back(cropPlanted ? round(mcg->get_CriticalNConcentration(), 3) : 0.0); break;
-		case 44: res.daily[id].push_back(cropPlanted ? round(mcg->get_AbovegroundBiomassNConcentration(), 3) : 0.0); break;
-		case 45: res.daily[id].push_back(cropPlanted ? round(mcg->get_PrimaryYieldNConcentration(), 3) : 0.0); break;
-		case 46: res.daily[id].push_back(cropPlanted ? round(mcg->get_RawProteinConcentration(), 3) : 0.0); break;
-		case 47: res.daily[id].push_back(cropPlanted ? round(mcg->get_NetPrimaryProduction(), 5) : 0.0); break;
-
-		case 48: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 1
-																			 ? round(mcg->get_OrganSpecificNPP(0), 4) : 0.0); break;
-		case 49: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 2
-																			 ? round(mcg->get_OrganSpecificNPP(1), 4) : 0.0); break;
-		case 50: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 3
-																			 ? round(mcg->get_OrganSpecificNPP(2), 4) : 0.0); break;
-		case 51: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 4
-																			 ? round(mcg->get_OrganSpecificNPP(3), 4) : 0.0); break;
-		case 52: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 5
-																			 ? round(mcg->get_OrganSpecificNPP(4), 4) : 0.0); break;
-		case 53: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 6
-																			 ? round(mcg->get_OrganSpecificNPP(5), 4) : 0.0); break;
-
-		case 54: res.daily[id].push_back(cropPlanted ? round(mcg->get_GrossPrimaryProduction(), 5) : 0.0); break;
-
-		case 55: res.daily[id].push_back(cropPlanted ? round(mcg->get_AutotrophicRespiration(), 5) : 0.0); break;
-		case 56: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 1
-																			 ? round(mcg->get_OrganSpecificTotalRespired(0), 4) : 0.0); break;
-		case 57: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 2
-																			 ? round(mcg->get_OrganSpecificTotalRespired(1), 4) : 0.0); break;
-		case 58: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 3
-																			 ? round(mcg->get_OrganSpecificTotalRespired(2), 4) : 0.0); break;
-		case 59: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 4
-																			 ? round(mcg->get_OrganSpecificTotalRespired(3), 4) : 0.0); break;
-		case 60: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 5
-																			 ? round(mcg->get_OrganSpecificTotalRespired(4), 4) : 0.0); break;
-		case 61: res.daily[id].push_back(cropPlanted && mcg->get_NumberOfOrgans() >= 6
-																			 ? round(mcg->get_OrganSpecificTotalRespired(5), 4) : 0.0); break;
-		default:;
-		}
-	}
-}
-
-void Monica::storeGeneralResults(const vector<OId>& outputIds,
-																 Output& res,
-																 Env& env,
-																 MonicaModel& monica,
-																 int d)
-{
-	const SoilTemperature& temp = monica.soilTemperature();
-	const SoilMoisture& moist = monica.soilMoisture();
-	const SoilOrganic& org = monica.soilOrganic();
-	const SoilColumn& soilc = monica.soilColumn();
-	const SoilTransport& trans = monica.soilTransport();
-
-	for(auto oid : outputIds)
-	{
-		int id = oid.id;
-		switch(id)
-		{
-		case 0: res.daily[id].push_back((env.da.startDate() + d).toIsoDateString()); break;
-		case 62: store<double>(oid, res, res.daily, [&](int i){ return moist.get_SoilMoisture(i); }, 3); break;
-		case 63: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::precip, d), 2)); break;
-		case 64: res.daily[id].push_back(round(monica.dailySumIrrigationWater(), 1)); break;
-
-		case 65: res.daily[id].push_back(round(moist.get_Infiltration(), 1)); break;
-		case 66: res.daily[id].push_back(round(moist.get_SurfaceWaterStorage(), 1)); break;
-		case 67: res.daily[id].push_back(round(moist.get_SurfaceRunOff(), 1)); break;
-		case 68: res.daily[id].push_back(round(moist.get_SnowDepth(), 1)); break;
-		case 69: res.daily[id].push_back(round(moist.get_FrostDepth(), 1)); break;
-		case 70: res.daily[id].push_back(round(moist.get_ThawDepth(), 1)); break;
-
-		case 71: store<double>(oid, res, res.daily,
-													 [&](int i){ return moist.get_SoilMoisture(i) - soilc.at(i).vs_PermanentWiltingPoint(); },
-													 3); break;
-
-		case 72: res.daily[id].push_back(round(temp.get_SoilSurfaceTemperature(), 1)); break;
-		case 73: store<double>(oid, res, res.daily, [&](int i){ return temp.get_SoilTemperature(i); }, 1); break;
-
-		case 78: res.daily[id].push_back(round(moist.get_ActualEvaporation(), 1)); break;
-		case 79: res.daily[id].push_back(round(moist.get_Evapotranspiration(), 1)); break;
-		case 80: res.daily[id].push_back(round(moist.get_ET0(), 1)); break;
-		case 81: res.daily[id].push_back(round(moist.get_KcFactor(), 1)); break;
-		case 82: res.daily[id].push_back(round(monica.get_AtmosphericCO2Concentration(), 0)); break;
-		case 83: res.daily[id].push_back(round(monica.get_GroundwaterDepth(), 2)); break;
-		case 84: res.daily[id].push_back(round(moist.get_GroundwaterRecharge(), 3)); break;
-		case 85: res.daily[id].push_back(round(trans.get_NLeaching(), 3)); break;
-
-		case 86: store<double>(oid, res, res.daily, [&](int i){ return soilc.at(i).get_SoilNO3(); }, 3); break;
-		case 87: res.daily[id].push_back(round(soilc.at(0).get_SoilCarbamid(), 4)); break;
-
-		case 88: store<double>(oid, res, res.daily, [&](int i){ return soilc.at(i).get_SoilNH4(); }, 4); break;
-		case 89: store<double>(oid, res, res.daily, [&](int i){ return soilc.at(i).get_SoilNO2(); }, 4); break;
-		case 90: store<double>(oid, res, res.daily, [&](int i){ return soilc.at(i).vs_SoilOrganicCarbon(); }, 4); break;
-		case 91: store<double>(oid, res, res.daily, 
-													 [&](int i){ return soilc.at(i).vs_SoilOrganicCarbon()
-													 * soilc.at(i).vs_SoilBulkDensity()
-													 * soilc.at(i).vs_LayerThickness
-													 * 1000; }, 
-													 4); break;
-
-		case 93: store<double>(oid, res, res.daily, [&](int i){ return org.get_AOM_FastSum(i); }, 4); break;
-		case 94: store<double>(oid, res, res.daily, [&](int i){ return org.get_AOM_SlowSum(i); }, 4); break;
-		case 95: store<double>(oid, res, res.daily, [&](int i){ return org.get_SMB_Fast(i); }, 4); break;
-		case 96: store<double>(oid, res, res.daily, [&](int i){ return org.get_SMB_Slow(i); }, 4); break;
-		case 97: store<double>(oid, res, res.daily, [&](int i){ return org.get_SOM_Fast(i); }, 4); break;
-		case 98: store<double>(oid, res, res.daily, [&](int i){ return org.get_SOM_Slow(i); }, 4); break;
-		case 99: store<double>(oid, res, res.daily, [&](int i){ return org.get_CBalance(i); }, 4); break;
-
-		case 100: store<double>(oid, res, res.daily, [&](int i){ return org.get_NetNMineralisationRate(i); }, 6); break;
-		case 101: res.daily[id].push_back(round(org.get_NetNMineralisation(), 5)); break;
-		case 102: res.daily[id].push_back(round(org.get_Denitrification(), 5)); break;
-		case 103: res.daily[id].push_back(round(org.get_N2O_Produced(), 5)); break;
-		case 104: res.daily[id].push_back(round(soilc.at(0).get_SoilpH(), 1)); break;
-		case 105: res.daily[id].push_back(round(org.get_NetEcosystemProduction(), 5)); break;
-		case 106: res.daily[id].push_back(round(org.get_NetEcosystemExchange(), 5)); break;
-		case 107: res.daily[id].push_back(round(org.get_DecomposerRespiration(), 5)); break;
-
-		case 108: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::tmin, d), 4)); break;
-		case 109: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::tavg, d), 4)); break;
-		case 110: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::tmax, d), 4)); break;
-		case 111: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::wind, d), 4)); break;
-		case 112: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::globrad, d), 4)); break;
-		case 113: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::relhumid, d), 4)); break;
-		case 114: res.daily[id].push_back(round(env.da.dataForTimestep(Climate::sunhours, d), 4)); break;
-
-		case 115: res.daily[id].push_back(round(moist.get_PercentageSoilCoverage(), 3)); break;
-
-		case 116: res.daily[id].push_back(round(moist.get_SoilMoisture(0), 3)); break;
-
-		case 133: store<double>(oid, res, res.daily, [&](int i){ return soilc.at(i).get_SoilNmin(); }, 3); break;
-
-		case 145: store<double>(oid, res, res.daily, [&](int i){ return org.get_SoilOrganicC(i); }, 2); break;
-
-		case 151: res.daily[id].push_back(round(org.get_NH3_Volatilised(), 3)); break;
-		case 152: res.daily[id].push_back(round(monica.dailySumFertiliser(), 1)); break;
-		default:;
-		}
-	}
-}
-
-//------------------------------------------------------------------------------
-
-/**
-* Writing general results from MONICA simulation to output files
-* @param fout File pointer to rmout.dat
-* @param gout File pointer to smout.dat
-* @param env Environment object
-* @param monica MONICA model that contains pointer to all submodels
-* @param d Day of simulation
-*/
-void Monica::writeGeneralResults(ostream& fout,
-																 ostream& gout,
-																 Env& env,
-																 MonicaModel& monica,
-																 int d)
-{
-	const SoilTemperature& mst = monica.soilTemperature();
-	const SoilMoisture& msm = monica.soilMoisture();
-	const SoilOrganic& mso = monica.soilOrganic();
-	const SoilColumn& msc = monica.soilColumn();
-
-	//! TODO: schmutziger work-around. Hier muss was eleganteres hin!
-	SoilColumn& msa = monica.soilColumnNC();
-	const SoilTransport& msq = monica.soilTransport();
-
-	int outLayers = 20;
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-	{
-		fout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer);
-	}
-	fout << fixed << setprecision(2) << "\t" << env.da.dataForTimestep(Climate::precip, d);
-	fout << fixed << setprecision(1) << "\t" << monica.dailySumIrrigationWater();
-	fout << fixed << setprecision(1) << "\t" << msm.get_Infiltration(); // {mm]
-	fout << fixed << setprecision(1) << "\t" << msm.get_SurfaceWaterStorage();// {mm]
-	fout << fixed << setprecision(1) << "\t" << msm.get_SurfaceRunOff();// {mm]
-	fout << fixed << setprecision(1) << "\t" << msm.get_SnowDepth(); // [mm]
-	fout << fixed << setprecision(1) << "\t" << msm.get_FrostDepth();
-	fout << fixed << setprecision(1) << "\t" << msm.get_ThawDepth();
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-	{
-		fout << fixed << setprecision(3) << "\t"
-			<< msm.get_SoilMoisture(i_Layer) - msa.at(i_Layer).vs_PermanentWiltingPoint();
-	}
-	fout << fixed << setprecision(1) << "\t" << mst.get_SoilSurfaceTemperature();
-
-
-	for(int i_Layer = 0; i_Layer < 5; i_Layer++)
-	{
-		fout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(i_Layer);// [°C]
-	}
-	//  for(int i_Layer = 0; i_Layer < 20; i_Layer++) {
-	//    cout << mst.get_SoilTemperature(i_Layer) << "\t";
-	//  }
-	//  cout << endl;
-
-	fout << "\t" << msm.get_ActualEvaporation();// [mm]
-	fout << "\t" << msm.get_Evapotranspiration();// [mm]
-	fout << "\t" << msm.get_ET0();// [mm]
-	fout << "\t" << msm.get_KcFactor();
-	fout << "\t" << monica.get_AtmosphericCO2Concentration();// [ppm]
-	fout << fixed << setprecision(2) << "\t" << monica.get_GroundwaterDepth();// [m]
-	fout << fixed << setprecision(3) << "\t" << msm.get_GroundwaterRecharge();// [mm]
-	fout << fixed << setprecision(3) << "\t" << msq.get_NLeaching(); // [kg N ha-1]
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-	{
-		fout << fixed << setprecision(3) << "\t" << msc.at(i_Layer).get_SoilNO3();// [kg N m-3]
-	 // cout << "msc.soilLayer(i_Layer).get_SoilNO3():\t" << msc.soilLayer(i_Layer).get_SoilNO3() << endl;
-	}
-
-	fout << fixed << setprecision(4) << "\t" << msc.at(0).get_SoilCarbamid();
-
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << msc.at(i_Layer).get_SoilNH4();
-	}
-	for(int i_Layer = 0; i_Layer < 4; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << msc.at(i_Layer).get_SoilNO2();
-	}
-	for(int i_Layer = 0; i_Layer < 6; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << msc.at(i_Layer).vs_SoilOrganicCarbon(); // [kg C kg-1]
-	}
-
-	// SOC-0-30 [g C m-2]
-	double soc_30_accumulator = 0.0;
-	for(int i_Layer = 0; i_Layer < 3; i_Layer++)
-	{
-		// kg C / kg --> g C / m2
-		soc_30_accumulator +=
-			msc.at(i_Layer).vs_SoilOrganicCarbon()
-			* msc.at(i_Layer).vs_SoilBulkDensity()
-			* msc.at(i_Layer).vs_LayerThickness
-			* 1000;
-	}
-	fout << fixed << setprecision(4) << "\t" << soc_30_accumulator;
-
-	// SOC-0-200   [g C m-2]
-	double soc_200_accumulator = 0.0;
-	for(int i_Layer = 0; i_Layer < outLayers; i_Layer++)
-	{
-		// kg C / kg --> g C / m2
-		soc_200_accumulator +=
-			msc.at(i_Layer).vs_SoilOrganicCarbon()
-			* msc.at(i_Layer).vs_SoilBulkDensity()
-			* msc.at(i_Layer).vs_LayerThickness
-			* 1000;
-	}
-	fout << fixed << setprecision(4) << "\t" << soc_200_accumulator;
-
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_AOM_FastSum(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_AOM_SlowSum(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_SMB_Fast(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_SMB_Slow(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_SOM_Fast(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_SOM_Slow(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 1; i_Layer++)
-	{
-		fout << fixed << setprecision(4) << "\t" << mso.get_CBalance(i_Layer);
-	}
-	for(int i_Layer = 0; i_Layer < 3; i_Layer++)
-	{
-		fout << fixed << setprecision(6) << "\t" << mso.get_NetNMineralisationRate(i_Layer); // [kg N ha-1]
-	}
-
-	fout << fixed << setprecision(5) << "\t" << mso.get_NetNMineralisation(); // [kg N ha-1]
-	fout << fixed << setprecision(5) << "\t" << mso.get_Denitrification(); // [kg N ha-1]
-	fout << fixed << setprecision(5) << "\t" << mso.get_N2O_Produced(); // [kg N ha-1]
-	fout << fixed << setprecision(1) << "\t" << msc.at(0).get_SoilpH(); // [ ]
-	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemProduction(); // [kg C ha-1]
-	fout << fixed << setprecision(5) << "\t" << mso.get_NetEcosystemExchange(); // [kg C ha-1]
-	fout << fixed << setprecision(5) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
-
-
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::tmin, d);
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::tavg, d);
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::tmax, d);
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::wind, d);
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::globrad, d);
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::relhumid, d);
-	fout << fixed << setprecision(4) << "\t" << env.da.dataForTimestep(Climate::sunhours, d);
-	fout << endl;
-
-	// smout
-	gout << fixed << setprecision(3) << "\t" << msm.get_PercentageSoilCoverage();
-
-	for(int i_Layer = 0; i_Layer < 9; i_Layer++)
-	{
-		gout << fixed << setprecision(3) << "\t" << msm.get_SoilMoisture(i_Layer); // [m3 m-3]
-	}
-
-	gout << fixed << setprecision(2) << "\t" << (msm.get_SoilMoisture(0) + msm.get_SoilMoisture(1) + msm.get_SoilMoisture(2)) / 3.0; //[m3 m-3]
-	gout << fixed << setprecision(2) << "\t" << (msm.get_SoilMoisture(3) + msm.get_SoilMoisture(4) + msm.get_SoilMoisture(5)) / 3.0; //[m3 m-3]
-	gout << fixed << setprecision(3) << "\t" << (msm.get_SoilMoisture(6) + msm.get_SoilMoisture(7) + msm.get_SoilMoisture(8)) / 3.0; //[m3 m-3]
-
-	double M0_60 = 0.0;
-	for(int i_Layer = 0; i_Layer < 6; i_Layer++)
-	{
-		M0_60 += msm.get_SoilMoisture(i_Layer);
-	}
-	gout << fixed << setprecision(3) << "\t" << (M0_60 / 6.0); // [m3 m-3]
-
-	double M0_90 = 0.0;
-	for(int i_Layer = 0; i_Layer < 9; i_Layer++)
-	{
-		M0_90 += msm.get_SoilMoisture(i_Layer);
-	}
-	gout << fixed << setprecision(3) << "\t" << (M0_90 / 9.0); // [m3 m-3]
-
-	double PAW0_200 = 0.0;
-	for(int i_Layer = 0; i_Layer < 20; i_Layer++)
-	{
-		PAW0_200 += (msm.get_SoilMoisture(i_Layer) - msa.at(i_Layer).vs_PermanentWiltingPoint());
-	}
-	gout << fixed << setprecision(1) << "\t" << (PAW0_200 * 0.1 * 1000.0); // [mm]
-
-	double PAW0_130 = 0.0;
-	for(int i_Layer = 0; i_Layer < 13; i_Layer++)
-	{
-		PAW0_130 += (msm.get_SoilMoisture(i_Layer) - msa.at(i_Layer).vs_PermanentWiltingPoint());
-	}
-	gout << fixed << setprecision(1) << "\t" << (PAW0_130 * 0.1 * 1000.0); // [mm]
-
-	double PAW0_150 = 0.0;
-	for(int i_Layer = 0; i_Layer < 15; i_Layer++)
-	{
-		PAW0_150 += (msm.get_SoilMoisture(i_Layer) - msa.at(i_Layer).vs_PermanentWiltingPoint());
-	}
-	gout << fixed << setprecision(1) << "\t" << (PAW0_150 * 0.1 * 1000.0); // [mm]
-
-	gout << fixed << setprecision(2) << "\t" << (msc.at(0).get_SoilNmin() + msc.at(1).get_SoilNmin() + msc.at(2).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.at(3).get_SoilNmin() + msc.at(4).get_SoilNmin() + msc.at(5).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.at(6).get_SoilNmin() + msc.at(7).get_SoilNmin() + msc.at(8).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.at(9).get_SoilNmin() + msc.at(10).get_SoilNmin() + msc.at(11).get_SoilNmin()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-
-	double N0_60 = 0.0;
-	for(int i_Layer = 0; i_Layer < 6; i_Layer++)
-	{
-		N0_60 += msc.at(i_Layer).get_SoilNmin();
-	}
-	gout << fixed << setprecision(2) << "\t" << (N0_60 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
-
-	double N0_90 = 0.0;
-	for(int i_Layer = 0; i_Layer < 9; i_Layer++)
-	{
-		N0_90 += msc.at(i_Layer).get_SoilNmin();
-	}
-	gout << fixed << setprecision(2) << "\t" << (N0_90 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
-
-	double N0_200 = 0.0;
-	for(int i_Layer = 0; i_Layer < 20; i_Layer++)
-	{
-		N0_200 += msc.at(i_Layer).get_SoilNmin();
-	}
-	gout << fixed << setprecision(2) << "\t" << (N0_200 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
-
-	double N0_130 = 0.0;
-	for(int i_Layer = 0; i_Layer < 13; i_Layer++)
-	{
-		N0_130 += msc.at(i_Layer).get_SoilNmin();
-	}
-	gout << fixed << setprecision(2) << "\t" << (N0_130 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
-
-	double N0_150 = 0.0;
-	for(int i_Layer = 0; i_Layer < 15; i_Layer++)
-	{
-		N0_150 += msc.at(i_Layer).get_SoilNmin();
-	}
-	gout << fixed << setprecision(2) << "\t" << (N0_150 * 0.1 * 10000);  // [kg m-3] -> [kg ha-1]
-
-	gout << fixed << setprecision(2) << "\t" << (msc.at(0).get_SoilNH4() + msc.at(1).get_SoilNH4() + msc.at(2).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.at(3).get_SoilNH4() + msc.at(4).get_SoilNH4() + msc.at(5).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << (msc.at(6).get_SoilNH4() + msc.at(7).get_SoilNH4() + msc.at(8).get_SoilNH4()) / 3.0 * 0.3 * 10000; // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << mso.get_SoilOrganicC(0) * 0.1 * 10000;// [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(2) << "\t" << ((mso.get_SoilOrganicC(0) + mso.get_SoilOrganicC(1) + mso.get_SoilOrganicC(2)) / 3.0 * 0.3 * 10000); // [kg m-3] -> [kg ha-1]
-	gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(0);
-	gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(2);
-	gout << fixed << setprecision(1) << "\t" << mst.get_SoilTemperature(5);
-	gout << fixed << setprecision(2) << "\t" << mso.get_DecomposerRespiration(); // Rh, [kg C ha-1 d-1]
-
-	gout << fixed << setprecision(3) << "\t" << mso.get_NH3_Volatilised(); // [kg N ha-1]
-	gout << "\t0"; //! @todo
-	gout << "\t0"; //! @todo
-	gout << "\t0"; //! @todo
-	gout << fixed << setprecision(1) << "\t" << monica.dailySumFertiliser();
-	gout << fixed << setprecision(1) << "\t" << monica.dailySumIrrigationWater();
-	gout << endl;
-
-}
-
-void Monica::dumpMonicaParametersIntoFile(std::string path, CentralParameterProvider &cpp)
-{
-	if(!activateDebug)
-		return;
-
-	ofstream parameter_output_file;
-	parameter_output_file.open(ensureDirExists(path) + "/monica_parameters.txt");
-	if(parameter_output_file.fail())
-	{
-		cerr << "Could not write file\"" << (path + "/monica_parameters.txt") << "\"" << endl;
-		return;
-	}
-	//double po_AtmosphericResistance; //0.0025 [s m-1], from Sadeghi et al. 1988
-
-	// userSoilOrganicParameters
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SOM_SlowDecCoeffStandard" << "\t" << cpp.userSoilOrganicParameters.po_SOM_SlowDecCoeffStandard << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SOM_FastDecCoeffStandard" << "\t" << cpp.userSoilOrganicParameters.po_SOM_FastDecCoeffStandard << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SMB_SlowMaintRateStandard" << "\t" << cpp.userSoilOrganicParameters.po_SMB_SlowMaintRateStandard << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SMB_FastMaintRateStandard" << "\t" << cpp.userSoilOrganicParameters.po_SMB_FastMaintRateStandard << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SMB_SlowDeathRateStandard" << "\t" << cpp.userSoilOrganicParameters.po_SMB_SlowDeathRateStandard << endl;
-
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SMB_FastDeathRateStandard" << "\t" << cpp.userSoilOrganicParameters.po_SMB_FastDeathRateStandard << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SMB_UtilizationEfficiency" << "\t" << cpp.userSoilOrganicParameters.po_SMB_UtilizationEfficiency << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SOM_SlowUtilizationEfficiency" << "\t" << cpp.userSoilOrganicParameters.po_SOM_SlowUtilizationEfficiency << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SOM_FastUtilizationEfficiency" << "\t" << cpp.userSoilOrganicParameters.po_SOM_FastUtilizationEfficiency << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_AOM_SlowUtilizationEfficiency" << "\t" << cpp.userSoilOrganicParameters.po_AOM_SlowUtilizationEfficiency << endl;
-
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_AOM_FastUtilizationEfficiency" << "\t" << cpp.userSoilOrganicParameters.po_AOM_FastUtilizationEfficiency << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_AOM_FastMaxC_to_N" << "\t" << cpp.userSoilOrganicParameters.po_AOM_FastMaxC_to_N << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_PartSOM_Fast_to_SOM_Slow" << "\t" << cpp.userSoilOrganicParameters.po_PartSOM_Fast_to_SOM_Slow << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_PartSMB_Slow_to_SOM_Fast" << "\t" << cpp.userSoilOrganicParameters.po_PartSMB_Slow_to_SOM_Fast << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_PartSMB_Fast_to_SOM_Fast" << "\t" << cpp.userSoilOrganicParameters.po_PartSMB_Fast_to_SOM_Fast << endl;
-
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_PartSOM_to_SMB_Slow" << "\t" << cpp.userSoilOrganicParameters.po_PartSOM_to_SMB_Slow << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_PartSOM_to_SMB_Fast" << "\t" << cpp.userSoilOrganicParameters.po_PartSOM_to_SMB_Fast << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_CN_Ratio_SMB" << "\t" << cpp.userSoilOrganicParameters.po_CN_Ratio_SMB << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_LimitClayEffect" << "\t" << cpp.userSoilOrganicParameters.po_LimitClayEffect << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_AmmoniaOxidationRateCoeffStandard" << "\t" << cpp.userSoilOrganicParameters.po_AmmoniaOxidationRateCoeffStandard << endl;
-
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_NitriteOxidationRateCoeffStandard" << "\t" << cpp.userSoilOrganicParameters.po_NitriteOxidationRateCoeffStandard << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_TransportRateCoeff" << "\t" << cpp.userSoilOrganicParameters.po_TransportRateCoeff << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_SpecAnaerobDenitrification" << "\t" << cpp.userSoilOrganicParameters.po_SpecAnaerobDenitrification << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_ImmobilisationRateCoeffNO3" << "\t" << cpp.userSoilOrganicParameters.po_ImmobilisationRateCoeffNO3 << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_ImmobilisationRateCoeffNH4" << "\t" << cpp.userSoilOrganicParameters.po_ImmobilisationRateCoeffNH4 << endl;
-
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_Denit1" << "\t" << cpp.userSoilOrganicParameters.po_Denit1 << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_Denit2" << "\t" << cpp.userSoilOrganicParameters.po_Denit2 << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_Denit3" << "\t" << cpp.userSoilOrganicParameters.po_Denit3 << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_HydrolysisKM" << "\t" << cpp.userSoilOrganicParameters.po_HydrolysisKM << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_ActivationEnergy" << "\t" << cpp.userSoilOrganicParameters.po_ActivationEnergy << endl;
-
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_HydrolysisP1" << "\t" << cpp.userSoilOrganicParameters.po_HydrolysisP1 << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_HydrolysisP2" << "\t" << cpp.userSoilOrganicParameters.po_HydrolysisP2 << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_AtmosphericResistance" << "\t" << cpp.userSoilOrganicParameters.po_AtmosphericResistance << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_N2OProductionRate" << "\t" << cpp.userSoilOrganicParameters.po_N2OProductionRate << endl;
-	parameter_output_file << "userSoilOrganicParameters" << "\t" << "po_Inhibitor_NH3" << "\t" << cpp.userSoilOrganicParameters.po_Inhibitor_NH3 << endl;
-
-	parameter_output_file << endl;
-
-
-	parameter_output_file.close();
-}
 
 
 

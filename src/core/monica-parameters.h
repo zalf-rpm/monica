@@ -66,8 +66,7 @@ namespace Monica
 		std::string description;
 	};
 
-	const std::vector<Result2>& result2();
-	const std::map<std::string, Result2>& result3();
+	//const std::map<std::string, Result2>& result2();
 
   enum ResultId
 	{

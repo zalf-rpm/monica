@@ -412,9 +412,9 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 			J11Object resultMsg;
 			resultMsg["type"] = "result";
 
-			J11Object daily;
-			for(auto& p : res.out.daily)
-				daily[to_string(p.first)] = p.second;
+			J11Array daily;
+			for(auto& vs : res.out.daily)
+				daily.push_back(vs);
 
 			resultMsg["daily"] = daily;
 

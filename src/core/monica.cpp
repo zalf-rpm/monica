@@ -989,7 +989,7 @@ double MonicaModel::surfaceRunoff() const
  */
 double MonicaModel::getEvapotranspiration() const
 {
-  if (_currentCropGrowth!=0)
+  if (_currentCropGrowth)
     return _currentCropGrowth->get_RemainingEvapotranspiration();
 
   return 0.0;
@@ -1001,8 +1001,8 @@ double MonicaModel::getEvapotranspiration() const
  */
 double MonicaModel::getTranspiration() const
 {
-  if (_currentCropGrowth!=0)
-    return _currentCropGrowth->get_ActualTranspiration();
+	if(_currentCropGrowth)
+		return _currentCropGrowth->get_ActualTranspiration();
 
   return 0.0;
 }
@@ -1013,7 +1013,7 @@ double MonicaModel::getTranspiration() const
  */
 double MonicaModel::getEvaporation() const
 {
-  if (_currentCropGrowth!=0)
+  if (_currentCropGrowth)
     return _currentCropGrowth->get_EvaporatedFromIntercept();
 
   return 0.0;

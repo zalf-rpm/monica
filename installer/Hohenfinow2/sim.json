@@ -23,7 +23,7 @@
 	"path-to-output": "./",
 	
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
-	"include-file-base-path": "./",
+	"include-file-base-path": "../",
 	
 	"__configuration options for the monica outputs": "",
 	"output": { 
@@ -47,8 +47,13 @@
 			"Yield", "SumYield", "GroPhot", "NetPhot", "MaintR", "GrowthR",	"StomRes",
 			"Height", "LAI", "RootDep", "EffRootDep", "TotBiomN", "AbBiomN", "SumNUp",
 			"ActNup", "PotNup", "NFixed", "Target", "CritN", "AbBiomNc", "YieldNc", 
-			"Protein", "NPP", "NPPRoot", "NPPLeaf", "NPPShoot", "NPPFruit", "NPPStruct", "NPPSugar",
-			"GPP", "Ra", "RaRoot", "RaLeaf", "RaShoot", "RaFruit", "RaStruct", "RaSugar",
+			"Protein", 
+			"NPP", ["NPP", "Root"], ["NPP", "Leaf"], ["NPP", "Shoot"], 
+			["NPP", "Fruit"], ["NPP", "Struct"], ["NPP", "Sugar"],
+			"GPP", 
+			"Ra", 
+			["Ra", "Root"], ["Ra", "Leaf"], ["Ra", "Shoot"], ["Ra", "Fruit"], 
+			["Ra", "Struct"], ["Ra", "Sugar"],
 			["Mois", 1, 20], "Precip", "Irrig", "Infilt", "Surface", "RunOff", "SnowD", "FrostD",
 			"ThawD", ["PASW", 1, 20], "SurfTemp", ["STemp", 1, 5], 
 			"Act_Ev", "Act_ET", "ET0", "Kc", "AtmCO2", "Groundw", "Recharge", "NLeach",
@@ -60,7 +65,37 @@
 		],
 		"daily": [
 			"Date", "Crop", "Yield", "SumYield", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
-		]
+		],
+		"monthly": [
+			["SOC", 1, 1, "AVG"], ["SOC", 1, 3, "AVG"],
+			["WaterContent", 1, 9, "AVG"], "Recharge", "NLeach", 
+			["SnowD", "MAX"], ["SnowD", "SUM"], ["FrostD", "SUM"],
+			["RunOff", "SUM"], ["NH3", "SUM"], ["Precip", "SUM"], "Act_ET"
+		],
+		"yearly": [["RunOff", "SUM"], ["NLeach", "SUM"], ["Recharge", "SUM"]],
+		"run": [],
+		"crop": [],
+		"at": {
+			"0000-03-31": [
+				["N", 1, 9, "SUM"],
+				["STemp", 1, 3, "SUM"],
+				["STemp", 1, 3, "AVG"],
+				["NO3", 1, 9, "SUM"],
+				["Mois", 1, 3, "AVG"],
+				["Mois", 4, 6, "AVG"],
+				["Mois", 7, 9, "AVG"],
+				["Mois", 1, 9, "AVG"],
+				"Recharge",
+				["CapillaryRise", 1, 3, "AVG"], 
+				["CapillaryRise", 4, 6, "AVG"],
+				["CapillaryRise", 7, 9, "AVG"],
+				["PercolationRate", 1, 3, "AVG"],
+				["PercolationRate", 4, 6, "AVG"],
+				["PercolationRate", 7, 9, "AVG"],
+				"Act_ET", "Act_Ev", "NH3",
+				"Evapotranspiration", "Evaporation", "Transpiration"
+			]
+		}
 	},
 	
 	"__given the start and end date, monica will run just this time range, else the full time range given by supplied climate data": "",

@@ -415,6 +415,125 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 	return m;
 }
 
+vector<OId> parseOutputIds(const J11Array& oidArray, 
+													 std::map<int, std::pair<std::string, std::string>>& oid2nameAndUnit)
+{
+	vector<OId> outputIds;
+
+	auto getOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_) -> OId::OP
+	{
+		if(arr.size() > index && arr[index].is_string())
+		{
+			string ops = arr[index].string_value();
+			if(toUpper(ops) == "SUM")
+				return OId::SUM;
+			else if(toUpper(ops) == "AVG")
+				return OId::AVG;
+			else if(toUpper(ops) == "MEDIAN")
+				return OId::MEDIAN;
+			else if(toUpper(ops) == "MIN")
+				return OId::MIN;
+			else if(toUpper(ops) == "MAX")
+				return OId::MAX;
+			else if(toUpper(ops) == "FIRST")
+				return OId::FIRST;
+			else if(toUpper(ops) == "LAST")
+				return OId::LAST;
+			else if(toUpper(ops) == "NONE")
+				return OId::NONE;
+		}
+		return def;
+	};
+
+	auto getCropPart = [](J11Array arr, int index, int def = -1) -> int
+	{
+		if(arr.size() > index && arr[index].is_string())
+		{
+			string ops = arr[index].string_value();
+			if(toUpper(ops) == "ROOT")
+				return OId::ROOT;
+			else if(toUpper(ops) == "LEAF")
+				return OId::LEAF;
+			else if(toUpper(ops) == "SHOOT")
+				return OId::SHOOT;
+			else if(toUpper(ops) == "FRUIT")
+				return OId::FRUIT;
+			else if(toUpper(ops) == "STRUCT")
+				return OId::STRUCT;
+			else if(toUpper(ops) == "SUGAR")
+				return OId::SUGAR;
+		}
+		return def;
+	};
+
+	const auto& name2result = buildOutputTable().name2result;
+	for(Json idj : oidArray)
+	{
+		if(idj.is_string())
+		{
+			string name = idj.string_value();
+			auto it = name2result.find(name);
+			if(it != name2result.end())
+			{
+				auto data = it->second;
+				outputIds.push_back(OId(data.id));
+				outputIds.back().name = data.name;
+				oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
+			}
+		}
+		else if(idj.is_array())
+		{
+			auto arr = idj.array_items();
+			if(arr.size() >= 1)
+			{
+				OId oid;
+				//try to set op2, either for single values or for already grouped values
+				if(arr.size() >= 2 && arr[1].is_string())
+				{
+					auto op = getOp(arr, 1);
+					if(op != OId::_UNDEFINED_)
+						oid.op2 = op;
+					else
+					{
+						auto cp = getCropPart(arr, 1);
+						if(cp > -1)
+							oid.from = oid.to = cp;
+					}
+				}
+				else
+					oid.op2 = getOp(arr, 4, OId::AVG);
+				
+				if(arr.size() >= 3 && arr[1].is_number() && arr[2].is_number())
+				{
+					oid.from = arr[1].int_value() - 1;
+					oid.to = arr[2].int_value() - 1;
+				}
+				else if(arr.size() >= 3 && arr[1].is_string() && arr[2].is_string())
+				{
+					auto from = getCropPart(arr, 1);
+					auto to = getCropPart(arr, 2);
+					if(from > -1 && to > -1)
+						oid.from = from, oid.to = to;
+				}
+				oid.op = getOp(arr, 3, OId::NONE);
+
+				string name = arr[0].string_value();
+				auto it = name2result.find(name);
+				if(it != name2result.end())
+				{
+					auto data = it->second;
+					oid.id = data.id;
+					oid.name = data.name;
+					outputIds.push_back(oid);
+					oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
+				}
+			}
+		}
+	}
+
+	return outputIds;
+}
+
 Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
 	vector<Json> cropSiteSim;
@@ -492,52 +611,30 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	if(!success)
 		return Env();
 
-	for(Json idj : simj["output"]["daily"].array_items())
-	{
-		if(idj.is_string())
-		{
-			string name = idj.string_value();
-			auto it = result3().find(name);
-			if(it != result3().end())
-			{
-				auto data = it->second;
-				env.outputIds.push_back(OId(data.id));
-				env.outputId2nameAndUnit[data.id] = make_pair(data.name, data.unit);
-			}
-		}
-		else if(idj.is_array())
-		{
-			auto arr = idj.array_items();
-			if(arr.size() >= 1)
-			{
-				OId oid;
-				if(arr.size() >= 3 && arr[1].is_number() && arr[2].is_number())
-				{
-					oid.from = arr[1].int_value() - 1;
-					oid.to = arr[2].int_value() - 1;
-				}
-				if(arr.size() >= 4 && arr[3].is_string())
-				{
-					string ops = arr[3].string_value();
-					if(toUpper(ops) == "SUM")
-						oid.op = OId::SUM;
-					else if(toUpper(ops) == "AVG")
-						oid.op = OId::AVG;
-				}
+	env.dailyOutputIds = parseOutputIds(simj["output"]["daily"].array_items(), 
+																			env.outputId2nameAndUnit);
 
-				string name = arr[0].string_value();
-				auto it = result3().find(name);
-				if(it != result3().end())
-				{
-					auto data = it->second;
-					oid.id = data.id;
-					env.outputIds.push_back(oid);
-					env.outputId2nameAndUnit[data.id] = make_pair(data.name, data.unit);
-				}
-			}
+	env.monthlyOutputIds = parseOutputIds(simj["output"]["monthly"].array_items(),
+																				env.outputId2nameAndUnit);
+
+	env.yearlyOutputIds = parseOutputIds(simj["output"]["yearly"].array_items(),
+																			 env.outputId2nameAndUnit);
+
+	env.runOutputIds = parseOutputIds(simj["output"]["run"].array_items(),
+																		env.outputId2nameAndUnit);
+
+	if(simj["output"]["at"].is_object())
+	{
+		for(auto p : simj["output"]["at"].object_items())
+		{
+			Date d = Date::fromIsoDateString(p.first);
+			if(d.isValid())
+				env.atOutputIds[d] = parseOutputIds(p.second.array_items(),
+																								 env.outputId2nameAndUnit);
 		}
 	}
-	
+
+
 	//get no of climate file header lines from sim.json, but prefer from params map
 	auto climateDataSettings = simj["climate.csv-options"];
 	map<string, string> headerNames;

@@ -24,6 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica.h"
 #include "cultivation-method.h"
+#include "climate/climate-common.h"
 
 namespace Monica
 {
@@ -39,15 +40,23 @@ namespace Monica
 
 	struct OId : public Tools::Json11Serializable
 	{
-		enum OP { AVG, SUM, NONE };
+		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_ };
 		
+		enum { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR };
+
 		OId() {}
 
 		OId(int id) : id(id) {}
 		
+		OId(int id, int cropPart) : id(id), from(cropPart), to(cropPart) {}
+
 		OId(int id, OP op) : id(id), op(op), from(0), to(20) {}
+
+		OId(int id, OP op, OP op2) : id(id), op(op), op2(op2), from(0), to(20) {}
 		
 		OId(int id, OP op, int from, int to) : id(id), op(op), from(from), to(to) {}
+
+		OId(int id, OP op, int from, int to, OP op2) : id(id), op(op), op2(op2), from(from), to(to) {}
 
 		OId(json11::Json object);
 
@@ -58,7 +67,9 @@ namespace Monica
 		bool isRange() const { return from >= 0 && to >= 0; }
 
 		int id{-1};
-		OP op{NONE};
+		std::string name;
+		OP op{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
+		OP op2{AVG}; //! aggregate values in a second time range (e.g. monthly)
 		int from{-2}, to{-1};
 	};
 		
@@ -88,7 +99,12 @@ namespace Monica
     //! vector of elements holding the data of the single crops in the rotation
     std::vector<CultivationMethod> cropRotation;
 
-		std::vector<OId> outputIds;
+		std::vector<OId> dailyOutputIds;
+		std::vector<OId> monthlyOutputIds;
+		std::vector<OId> yearlyOutputIds;
+		std::vector<OId> runOutputIds;
+		std::vector<OId> cropOutputIds;
+		std::map<Tools::Date, std::vector<OId>> atOutputIds;
 		//! is not being serialized to Json
 		std::map<int, std::pair<std::string, std::string>> outputId2nameAndUnit;
 
@@ -130,9 +146,53 @@ namespace Monica
 
   //------------------------------------------------------------------------------------------
 
+	struct MonicaRefs
+	{
+		MonicaRefs refresh(int timestep, Tools::Date currentDate)
+		{
+			MonicaRefs copy(*this);
+			copy.timestep = timestep;
+			copy.currentDate = currentDate;
+			copy.mcg = copy.monica.cropGrowth();
+			copy.cropPlanted = copy.monica.isCropPlanted();
+			return copy;
+		}
+
+		const MonicaModel& monica;
+		const SoilTemperature& temp;
+		const SoilMoisture& moist;
+		const SoilOrganic& org;
+		const SoilColumn& soilc;
+		const SoilTransport& trans;
+		const CropGrowth* mcg;
+		bool cropPlanted;
+		Climate::DataAccessor da;
+		int timestep;
+		Tools::Date currentDate;
+	};
+
+	struct BOTRes
+	{
+		typedef std::vector<json11::Json> ResultVector;
+		std::map<int, std::function<void(MonicaRefs&, ResultVector&, OId)>> ofs;
+		std::map<std::string, Result2> name2result;
+	};
+	BOTRes& buildOutputTable();
+
 	struct Output
 	{
-		std::map<int, Tools::J11Array> daily;
+		typedef int Id;
+		typedef int Month;
+		typedef int Year;
+		//typedef std::pair<std::string, std::string> SpeciesAndCultivarId;
+		typedef std::string SpeciesAndCultivarId;
+
+		std::vector<Tools::J11Array> daily;
+		std::map<Month, std::vector<Tools::J11Array>> monthly;
+		std::vector<Tools::J11Array> yearly;
+		std::map<Tools::Date, std::vector<Tools::J11Array>> at;
+		std::map<SpeciesAndCultivarId, std::vector<Tools::J11Array>> crop;
+		std::vector<json11::Json> run;
 	};
 	
 	//! structure holding all results of one monica run
@@ -175,29 +235,6 @@ namespace Monica
 	//! @param env the environment completely defining what the model needs and gets
 	//! @return a structure with all the Monica results
   Result runMonica(Env env);
-
-	void initializeFoutHeader(std::ostream&);
-	void initializeGoutHeader(std::ostream&);
-	void writeCropResults(const CropGrowth*, 
-												std::ostream&, 
-												std::ostream&, 
-												bool);
-	void storeCropResults(const std::vector<OId>& outputIds,
-												Output& res,
-												const CropGrowth* mcg,
-												bool cropPlanted);
-
-	void writeGeneralResults(std::ostream& fout, 
-													 std::ostream& gout, 
-													 Env& env,
-													 MonicaModel& monica, 
-													 int d);
-	void storeGeneralResults(const std::vector<OId>& outputIds,
-													 Output& res,
-													 Env& env,
-													 MonicaModel& monica,
-													 int d);
-	void dumpMonicaParametersIntoFile(std::string, CentralParameterProvider& cpp);
 }
 
 #endif

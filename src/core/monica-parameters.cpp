@@ -42,199 +42,8 @@ using namespace Tools;
 using namespace Climate;
 using namespace json11;
 
-
-const vector<Result2>& Monica::result2()
-{
-	static vector<Result2> res2 = {
-		Result2{0, "Date", "", "Date"},
-	Result2{1, "Crop", "", "Crop name"},
-	Result2{2, "TraDef", "0;1", "TranspirationDeficit"},
-	Result2{3, "Tra", "mm", "ActualTranspiration"},
-	Result2{4, "NDef", "0;1", "CropNRedux"},
-	Result2{5, "HeatRed", "0;1", " HeatStressRedux"},
-	Result2{6, "FrostRed", "0;1", "FrostStressRedux"},
-	Result2{7, "OxRed", "0;1", "OxygenDeficit"},
-
-	Result2{8, "Stage", "", "DevelopmentalStage"},
-	Result2{9, "TempSum", "°Cd", "CurrentTemperatureSum"},
-	Result2{10, "VernF", "0;1", "VernalisationFactor"},
-	Result2{11, "DaylF", "0;1", "DaylengthFactor"},
-	Result2{12, "IncRoot", "kg ha-1", "OrganGrowthIncrement root"},
-	Result2{13, "IncLeaf", "kg ha-1", "OrganGrowthIncrement leaf"},
-	Result2{14, "IncShoot", "kg ha-1", "OrganGrowthIncrement shoot"},
-	Result2{15, "IncFruit", "kg ha-1", "OrganGrowthIncrement fruit"},
-	Result2{16, "RelDev", "0;1", "RelativeTotalDevelopment"},
-	Result2{17, "LT50", "°C", "LT50"},
-	Result2{18, "AbBiom", "kg ha-1", "AbovegroundBiomass"},
-	Result2{19, "Root", "kgDM ha-1", "get_OrganBiomass(i)"},
-	Result2{20, "Leaf", "kgDM ha-1", "get_OrganBiomass(i)"},
-	Result2{21, "Shoot", "kgDM ha-1", "get_OrganBiomass(i)"},
-	Result2{22, "Fruit", "kgDM ha-1", "get_OrganBiomass(i)"},
-	Result2{23, "Struct", "kgDM ha-1", "get_OrganBiomass(i)"},
-	Result2{24, "Sugar", "kgDM ha-1", "get_OrganBiomass(i)"},
-	Result2{25, "Yield", "kgDM ha-1", "get_PrimaryCropYield"},
-	Result2{26, "SumYield", "kgDM ha-1", "get_AccumulatedPrimaryCropYield"},
-	Result2{27, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate"},
-	Result2{28, "NetPhot", "kgCH2O ha-1", "NetPhotosynthesis"},
-	Result2{29, "MaintR", "kgCH2O ha-1", "MaintenanceRespirationAS"},
-	Result2{30, "GrowthR", "kgCH2O ha-1", "GrowthRespirationAS"},
-	Result2{31, "StomRes", "s m-1", "StomataResistance"},
-	Result2{32, "Height", "m", "CropHeight"},
-	Result2{33, "LAI", "m2 m-2", "LeafAreaIndex"},
-	Result2{34, "RootDep", "layer#", "RootingDepth"},
-	Result2{35, "EffRootDep", "m", "Effective RootingDepth"},
-	
-	Result2{36, "TotBiomN", "kgN ha-1", "TotalBiomassNContent"},
-	Result2{37, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent"},
-	Result2{38, "SumNUp", "kgN ha-1", "SumTotalNUptake"},
-	Result2{39, "ActNup", "kgN ha-1", "ActNUptake"},
-	Result2{40, "PotNup", "kgN ha-1", "PotNUptake"},
-	Result2{41, "NFixed", "kgN ha-1", "NFixed"},
-	Result2{42, "Target", "kgN ha-1", "TargetNConcentration"},
-	Result2{43, "CritN", "kgN ha-1", "CriticalNConcentration"},
-	Result2{44, "AbBiomNc", "kgN ha-1", "AbovegroundBiomassNConcentration"},
-	Result2{45, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"},
-	
-	Result2{46, "Protein", "kg kg-1", "RawProteinConcentration"},
-	
-	Result2{47, "NPP", "kgC ha-1", "NPP"},
-	Result2{48, "NPPRoot", "kgC ha-1", "NPP root"},
-	Result2{49, "NPPLeaf", "kgC ha-1", "NPP leaf"},
-	Result2{50, "NPPShoot", "kgC ha-1", "NPP shoot"},
-	Result2{51, "NPPFruit", "kgC ha-1", "NPP fruit"},
-	Result2{52, "NPPStruct", "kgC ha-1", "NPP struct"},
-	Result2{53, "NPPSugar", "kgC ha-1", "NPP sugar"},
-
-	Result2{54, "GPP", "kgC ha-1", "GPP"},
-
-	Result2{55, "Ra", "kgC ha-1", "Ra"},
-	Result2{56, "RaRoot", "kgC ha-1", "Ra root"},
-	Result2{57, "RaLeaf", "kgC ha-1", "Ra leaf"},
-	Result2{58, "RaShoot", "kgC ha-1", "Ra shoot"},
-	Result2{59, "RaFruit", "kgC ha-1", "Ra fruit"},
-	Result2{60, "RaStruct", "kgC ha-1", "Ra struct"},
-	Result2{61, "RaSugar", "kgC ha-1", "Ra sugar"},
-	
-	Result2{62, "Mois", "m3 m-3", "Soil moisture content"},
-	
-	Result2{63, "Precip", "mm", "Precipitation"},
-	Result2{64, "Irrig", "mm", "Irrigation"},
-	Result2{65, "Infilt", "mm", "Infiltration"},
-	Result2{66, "Surface", "mm", "Surface water storage"},
-	Result2{67, "RunOff", "mm", "Surface water runoff"},
-	Result2{68, "SnowD", "mm", "Snow depth"},
-	Result2{69, "FrostD", "m", "Frost front depth in soil"},
-	Result2{70, "ThawD", "m", "Thaw front depth in soil"},
-	
-	Result2{71, "PASW", "m3 m-3", "PASW"},
-	
-	Result2{72, "SurfTemp", "°C", ""},
-	Result2{73, "STemp", "°C", ""},
-	//Result2{73, "STemp0", "°C", ""},
-	//Result2{74, "STemp1", "°C", ""},
-	//Result2{75, "STemp2", "°C", ""},
-	//Result2{76, "STemp3", "°C", ""},
-	//Result2{77, "STemp4", "°C", ""},
-	Result2{78, "Act_Ev", "mm", ""},
-	Result2{79, "Act_ET", "mm", ""},
-	Result2{80, "ET0", "mm", ""},
-	Result2{81, "Kc", "", ""},
-	Result2{82, "AtmCO2", "ppm", "Atmospheric CO2 concentration"},
-	Result2{83, "Groundw", "m", ""},
-	Result2{84, "Recharge", "mm", ""},
-	Result2{85, "NLeach", "kgN ha-1", ""},
-	Result2{86, "NO3", "kgN m-3", ""},
-	Result2{87, "Carb", "kgN m-3", "Soil Carbamid"},
-	Result2{88, "NH4", "kgN m-3", ""},
-	Result2{89, "NO2", "kgN m-3", ""},
-			Result2{90, "SOC", "kgC kg-1", "get_SoilOrganicC"},
-		Result2{91, "SOC-X-Y", "gC m-2", "SOC-X-Y"},
-		//Result2{91, "SOC_0_30", "gC m-2", "SOC-0-30"},
-		//Result2{92, "SOC_0_200", "gC m-2", "SOC-0-200"},
-		Result2{93, "AOMf", "kgC m-3", "get_AOM_FastSum"},
-		Result2{94, "AOMs", "kgC m-3", "get_AOM_SlowSum"},
-		Result2{95, "SMBf", "kgC m-3", "get_SMB_Fast"},
-		Result2{96, "SMBs", "kgC m-3", "get_SMB_Slow"},
-		Result2{97, "SOMf", "kgC m-3", "get_SOM_Fast"},
-		Result2{98, "SOMs", "kgC m-3", "get_SOM_Slow"},
-		Result2{99, "CBal", "kgC m-3", "get_CBalance"},
-
-		Result2{100, "Nmin", "kgN ha-1", "NetNMineralisationRate"},
-		Result2{101, "NetNmin", "kgN ha-1", "NetNmin"},
-		Result2{102, "Denit", "kgN ha-1", "Denit"},
-		Result2{103, "N2O", "kgN ha-1", "N2O"},
-		Result2{104, "SoilpH", "", "SoilpH"},
-		Result2{105, "NEP", "kgC ha-1", "NEP"},
-		Result2{106, "NEE", "kgC ha-", "NEE"},
-		Result2{107, "Rh", "kgC ha-", "Rh"},
-
-		Result2{108, "Tmin", "", ""},
-		Result2{109, "Tavg", "", ""},
-		Result2{110, "Tmax", "", ""},
-		Result2{111, "Wind", "", ""},
-		Result2{112, "Globrad", "", ""},
-		Result2{113, "Relhumid", "", ""},
-		Result2{114, "Sunhours", "", ""},
-
-
-		//Result2{, "Root10", "kgDM ha-1", ""},
-		//Result2{, "AbGBiom", "kgDM ha-1", ""},
-		//Result2{, "Yield", "kgDM ha-1", ""},
-		//Result2{, "EarNo", "#", ""},
-		//Result2{, "GrainNo", "#", ""},
-
-		//Result2{, "NGrain", "-", ""},
-
-		Result2{115, "BedGrad", "0;1", ""},
-		//Result2{116, "M0-10", "m3 m-3", ""},
-		//Result2{117, "M10-20", "m3 m-3", ""},
-		//Result2{118, "M20-30", "m3 m-3", ""},
-		//Result2{119, "M30-40", "m3 m-3", ""},
-		//Result2{120, "M40-50", "m3 m-3", ""},
-		//Result2{121, "M50-60", "m3 m-3", ""},
-		//Result2{122, "M60-70", "m3 m-3", ""},
-		//Result2{123, "M70-80", "m3 m-3", ""},
-		//Result2{124, "M80-90", "m3 m-3", ""},
-		//Result2{125, "M0-30", "m3 m-3", ""},
-		//Result2{126, "M30-60", "m3 m-3", ""},
-		//Result2{127, "M60-90", "m3 m-3", ""},
-		//Result2{128, "M0-60", "m3 m-3", ""},
-		//Result2{129, "M0-90", "m3 m-3", ""},
-		//Result2{130, "PAW0-200", "mm", ""},
-		//Result2{131, "PAW0-130", "mm", ""},
-		//Result2{132, "PAW0-150", "mm", ""},
-		Result2{133, "N", "kgN m-3", ""},
-		//Result2{133, "N0-30", "kgN ha-1", ""},
-		//Result2{134, "N30-60", "kgN ha-1", ""},
-		//Result2{135, "N60-90", "kgN ha-1", ""},
-		//Result2{136, "N90-120", "kgN ha-1", ""},
-		//Result2{137, "N0-60", "kgN ha-1", ""},
-		//Result2{138, "N0-90", "kgN ha-1", ""},
-		//Result2{139, "N0-200", "kgN ha-1", ""},
-		//Result2{140, "N0-130", "kgN ha-1", ""},
-		//Result2{141, "N0-150", "kgN ha-1", ""},
-		//Result2{142, "NH430", "kgN ha-1", ""},
-		//Result2{143, "NH460", "kgN ha-1", ""},
-		//Result2{144, "NH490", "kgN ha-1", ""},
-		Result2{145, "Co", "kgC m-3", ""},
-		//Result2{145, "Co0-10", "kgC ha-1", ""},
-		//Result2{146, "Co0-30", "kgC ha-1", ""},
-		//Result2{147, "T0-10", "°C", ""},
-		//Result2{148, "T20-30", "°C", ""},
-		//Result2{149, "T50-60", "°C", ""},
-		//Result2{150, "CO2", "kgC ha-1", "DecomposerRespiration"},
-		Result2{151, "NH3", "kgN ha-1", "NH3_Volatilised"},
-		//Result2{, "N2O", "-", ""},
-		//Result2{, "N2", "-", ""},
-		//Result2{, "Ngas", "-", ""},
-		Result2{152, "NFert", "kgN ha-1", "dailySumFertiliser"}
-		};
-
-
-		return res2;
-}
-
-const map<string, Result2>& Monica::result3()
+/*
+const map<string, Result2>& Monica::result2()
 {
 	static map<string, Result2> res2 = 
 	{{"Date", {0, "Date", "", "Date"}},
@@ -412,12 +221,20 @@ const map<string, Result2>& Monica::result3()
 //Result2{, "N2O", "-", ""}},
 //Result2{, "N2", "-", ""}},
 //Result2{, "Ngas", "-", ""}},
-{"NFert", {152, "NFert", "kgN ha-1", "dailySumFertiliser"}}
-	};
+{"NFert", {152, "NFert", "kgN ha-1", "dailySumFertiliser"}},
+	{"WaterContent", {153, "WaterContent", "%nFC", "soil water content"}},
+	{"CapillaryRise", {154, "CapillaryRise", "mm", "capillary rise"}},
+	{"PercolationRate",{155, "PercolationRate", "mm", "percolation rate"}},
+	{"SMB-CO2-ER", {156, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate"}},
+	{"Evapotranspiration", {157, "Evapotranspiration", "mm", "monica.getEvapotranspiration()"}},
+	{"Evaporation", {158, "Evaporation", "mm", "monica.getEvaporation()"}},
+	{"Transpiration", {159, "Transpiration", "mm", "monica.getTranspiration()"}}
+};
 
 
 	return res2;
 }
+*/
 
 
 //------------------------------------------------------------------------------

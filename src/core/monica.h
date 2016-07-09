@@ -218,11 +218,13 @@ namespace Monica
 
 		SoilColumn& soilColumnNC() { return _soilColumn; }
 
+		Climate::DataAccessor climateData() const { return _dataAccessor; }
+
 		/*
 		 * @brief returns value for current crop.
 		 * @return crop growth
 		 */
-		CropGrowth* cropGrowth() { return _currentCropGrowth; }
+		CropGrowth* cropGrowth() const { return _currentCropGrowth; }
 
 		/*
 		 * @brief Returns net radiation.
@@ -294,12 +296,6 @@ namespace Monica
 		double vw_AtmosphericCO2Concentration;
 		double vs_GroundwaterDepth{0.0};
 	};
-
-	inline char const* greet( )
-	{
-		return "Hello world";
-	}
-
 }
 
 #endif

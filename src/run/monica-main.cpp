@@ -342,7 +342,7 @@ int main(int argc, char** argv)
 			if(activateDebug)
 				cout << "starting MONICA with JSON input files" << endl;
 
-			map<int, J11Array> dailyOut;
+			vector<J11Array> dailyOut;
 
 			if(mode == monica)
 			{
@@ -351,8 +351,8 @@ int main(int argc, char** argv)
 			else
 			{
 				Json res = runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
-				for(auto& p : res["daily"].object_items())
-					dailyOut[stoi(p.first)] = p.second.array_items();
+				for(auto& j : res["daily"].array_items())
+					dailyOut.push_back(j.array_items());
 			}
 			
 			if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
@@ -382,7 +382,7 @@ int main(int argc, char** argv)
 			bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
 
 			ostringstream oss1, oss2;
-			for(auto oid : env.outputIds)
+			for(auto oid : env.dailyOutputIds)
 			{
 				string name, unit;
 				tie(name, unit) = env.outputId2nameAndUnit.at(oid.id);
@@ -401,11 +401,12 @@ int main(int argc, char** argv)
 
 			if(!dailyOut.empty())
 			{
-				for(size_t i = 0, size = dailyOut.begin()->second.size(); i < size; i++)
+				for(size_t k = 0, size = dailyOut.begin()->size(); k < size; k++)
 				{
-					for(auto oid : env.outputIds)
+					size_t i = 0;
+					for(auto oid : env.dailyOutputIds)
 					{
-						Json j = dailyOut[oid.id].at(i);
+						Json j = dailyOut.at(i).at(k);
 						switch(j.type())
 						{
 						case Json::NUMBER: out << j.number_value() << csvSep; break;
@@ -427,6 +428,7 @@ int main(int argc, char** argv)
 						default: out << "UNKNOWN" << csvSep;
 						}
 						}
+						++i;
 					}
 					out << endl;
 				}
