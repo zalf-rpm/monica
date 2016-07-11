@@ -31,10 +31,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #endif
 
 #include "json11/json11.hpp"
+#include "tools/json11-helper.h"
 #include "run-monica.h"
 
 namespace Monica
 {
+	void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
+	void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
+
 #ifndef NO_ZMQ
   void startZeroMQMonica(zmq::context_t* zmqContext, std::string inputSocketAddress, std::string outputSocketAddress, bool isInProcess = false);
 
@@ -42,6 +46,8 @@ namespace Monica
 
 	json11::Json runZeroMQMonicaFull(zmq::context_t* zmqContext, std::string socketAddress, Env env);
 #endif
+
+
 }
 
 #endif

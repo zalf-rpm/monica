@@ -40,23 +40,23 @@ namespace Monica
 
 	struct OId : public Tools::Json11Serializable
 	{
-		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_ };
+		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
 		
-		enum { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR };
+		enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, _UNDEFINED_ORGAN_ };
 
 		OId() {}
 
 		OId(int id) : id(id) {}
 		
-		OId(int id, int cropPart) : id(id), from(cropPart), to(cropPart) {}
+		OId(int id, ORGAN cropPart) : id(id), fromOrOrgan(int(cropPart)) {}
 
-		OId(int id, OP op) : id(id), op(op), from(0), to(20) {}
+		OId(int id, OP op) : id(id), op(op), fromOrOrgan(0), to(20) {}
 
-		OId(int id, OP op, OP op2) : id(id), op(op), op2(op2), from(0), to(20) {}
+		OId(int id, OP op, OP op2) : id(id), op(op), op2(op2), fromOrOrgan(0), to(20) {}
 		
-		OId(int id, OP op, int from, int to) : id(id), op(op), from(from), to(to) {}
+		OId(int id, OP op, int from, int to) : id(id), op(op), fromOrOrgan(from), to(to) {}
 
-		OId(int id, OP op, int from, int to, OP op2) : id(id), op(op), op2(op2), from(from), to(to) {}
+		OId(int id, OP op, int from, int to, OP op2) : id(id), op(op), op2(op2), fromOrOrgan(from), to(to) {}
 
 		OId(json11::Json object);
 
@@ -64,13 +64,16 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 		
-		bool isRange() const { return from >= 0 && to >= 0; }
+		bool isRange() const { return fromOrOrgan >= 0 && to >= 0; }
+
+		bool isOrgan() const { return fromOrOrgan >= 0 && to < 0; }
 
 		int id{-1};
 		std::string name;
+		std::string unit;
 		OP op{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
 		OP op2{AVG}; //! aggregate values in a second time range (e.g. monthly)
-		int from{-2}, to{-1};
+		int fromOrOrgan{-1}, to{-1};
 	};
 		
 	//---------------------------------------------------------------------------
@@ -105,8 +108,6 @@ namespace Monica
 		std::vector<OId> runOutputIds;
 		std::vector<OId> cropOutputIds;
 		std::map<Tools::Date, std::vector<OId>> atOutputIds;
-		//! is not being serialized to Json
-		std::map<int, std::pair<std::string, std::string>> outputId2nameAndUnit;
 
     int customId{-1};
 

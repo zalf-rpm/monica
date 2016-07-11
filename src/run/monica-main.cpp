@@ -97,6 +97,96 @@ void sendControlMessage(zmq::context_t& context,
 	cout << "Received ack: " << msg.type() << endl;
 }
 
+void writeOutputHeaderRows(ostream& out,
+													 const vector<OId>& outputIds,
+													 string csvSep,
+													 bool includeHeaderRow,
+													 bool includeUnitsRow)
+{
+	ostringstream oss1, oss2;
+	for(auto oid : outputIds)
+	{
+		bool isOrgan = oid.isOrgan();
+		if(isOrgan)
+			oid.to = oid.fromOrOrgan;
+		else
+			oid.fromOrOrgan--, oid.to--;
+		
+		for(int i = oid.fromOrOrgan; i <= oid.to; i++)
+		{
+			oss1 << "\"" << oid.name;
+			string suffix;
+			if(isOrgan)
+			{
+				suffix = "_";
+				switch(OId::ORGAN(oid.fromOrOrgan))
+				{
+				case OId::ROOT: suffix += "Root"; break;
+				case OId::LEAF: suffix += "Leaf"; break;
+				case OId::SHOOT: suffix += "Shoot"; break;
+				case OId::FRUIT: suffix += "Fruit"; break;
+				case OId::STRUCT: suffix += "Struct"; break;
+				case OId::SUGAR: suffix += "Sugar"; break;
+				default:;
+				}
+			}
+			else if(oid.isRange())
+				suffix = string("_") + to_string(i);
+			oss1 << suffix << "\"" << csvSep;
+			oss2 << "[" << oid.unit << "]" << csvSep;
+		}
+	}
+
+	if(includeHeaderRow)
+		out << oss1.str() << endl;
+	if(includeUnitsRow)
+		out << oss2.str() << endl;
+}
+
+void writeOutput(ostream& out, 
+								 const vector<OId>& outputIds, 
+								 const vector<J11Array>& values,
+								 string csvSep, 
+								 bool includeHeaderRow, 
+								 bool includeUnitsRow)
+{
+	if(!values.empty())
+	{
+		for(size_t k = 0, size = values.begin()->size(); k < size; k++)
+		{
+			size_t i = 0;
+			for(auto oid : outputIds)
+			{
+				Json j = values.at(i).at(k);
+				switch(j.type())
+				{
+				case Json::NUMBER: out << j.number_value() << csvSep; break;
+				case Json::STRING: out << j.string_value() << csvSep; break;
+				case Json::BOOL: out << j.bool_value() << csvSep; break;
+				case Json::ARRAY:
+				{
+					for(Json jv : j.array_items())
+					{
+						switch(jv.type())
+						{
+						case Json::NUMBER: out << jv.number_value() << csvSep; break;
+						case Json::STRING: out << jv.string_value() << csvSep; break;
+						case Json::BOOL: out << jv.bool_value() << csvSep; break;
+						default: out << "UNKNOWN" << csvSep;
+						}
+					}
+					break;
+				default: out << "UNKNOWN" << csvSep;
+				}
+				}
+				++i;
+			}
+			out << endl;
+		}
+	}
+	out.flush();
+}
+
 string appName = "monica";
 string version = "2.0.0-beta";
 
@@ -193,7 +283,6 @@ int main(int argc, char** argv)
 					<< "./" << appName << endl
 					<< "\t [-d | --debug] ... show debug outputs" << endl
 					<< "\t [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
-					//<< "\t [--hermes] ... use old hermes format files" << endl
 					<< "\t [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
 					<< "\t [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
 					<< "\t [[-ca | --control-address] CONTROL-ADDRESS (default: " << controlAddress << ")] ... address of control node" << endl
@@ -231,15 +320,6 @@ int main(int argc, char** argv)
 			else if(debug)
 				cout << "Control command: " << command << " unknown, should be one of [start-new, start-max or stop]!" << endl;
 		}
-		//else if(mode == hermes)
-		//{
-		//	if(debug)
-		//		cout << "starting MONICA with old HERMES input files" << endl;
-		//Monica::runWithHermesData(fixSystemSeparator(pathToSimJson), debug);
-		//
-		//	if(debug)
-		//		cout << "finished MONICA" << endl;
-		//}
 		else if(mode == zmqServer)
 		{
 			if(debug)
@@ -342,17 +422,15 @@ int main(int argc, char** argv)
 			if(activateDebug)
 				cout << "starting MONICA with JSON input files" << endl;
 
-			vector<J11Array> dailyOut;
-
+			Output output;
 			if(mode == monica)
 			{
-				dailyOut = runMonica(env).out.daily;
+				output = runMonica(env).out;
 			}
 			else
 			{
 				Json res = runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
-				for(auto& j : res["daily"].array_items())
-					dailyOut.push_back(j.array_items());
+				addResultMessageToOutput(res.object_items(), output);
 			}
 			
 			if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
@@ -381,59 +459,56 @@ int main(int argc, char** argv)
 			bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
 			bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
 
-			ostringstream oss1, oss2;
-			for(auto oid : env.dailyOutputIds)
+			if(!output.daily.empty())
 			{
-				string name, unit;
-				tie(name, unit) = env.outputId2nameAndUnit.at(oid.id);
-
-				for(int i = oid.from; i < oid.to; i++)
-				{
-					oss1 << "\"" << name << (oid.isRange() ? string("_") + to_string(i) : "") << "\"" << csvSep;
-					oss2 << "[" << unit << "]" << csvSep;
-				}
+				writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, env.dailyOutputIds, output.daily, csvSep, includeHeaderRow, includeUnitsRow);
 			}
 
-			if(includeHeaderRow)
-				out << oss1.str() << endl;
-			if(includeUnitsRow)
-				out << oss2.str() << endl;
-
-			if(!dailyOut.empty())
+			if(!output.monthly.empty())
 			{
-				for(size_t k = 0, size = dailyOut.begin()->size(); k < size; k++)
+				out << endl;
+				writeOutputHeaderRows(out, env.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+				for(auto& p : output.monthly)
+					writeOutput(out, env.monthlyOutputIds, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+			}
+
+			if(!output.yearly.empty())
+			{
+				out << endl;
+				writeOutputHeaderRows(out, env.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, env.yearlyOutputIds, output.yearly, csvSep, includeHeaderRow, includeUnitsRow);
+			}
+
+			if(!output.at.empty())
+			{
+				for(auto& p : env.atOutputIds)
 				{
-					size_t i = 0;
-					for(auto oid : env.dailyOutputIds)
-					{
-						Json j = dailyOut.at(i).at(k);
-						switch(j.type())
-						{
-						case Json::NUMBER: out << j.number_value() << csvSep; break;
-						case Json::STRING: out << j.string_value() << csvSep; break;
-						case Json::BOOL: out << j.bool_value() << csvSep; break;
-						case Json::ARRAY:
-						{
-							for(Json jv : j.array_items())
-							{
-								switch(jv.type())
-								{
-								case Json::NUMBER: out << jv.number_value() << csvSep; break;
-								case Json::STRING: out << jv.string_value() << csvSep; break;
-								case Json::BOOL: out << jv.bool_value() << csvSep; break;
-								default: out << "UNKNOWN" << csvSep;
-								}
-							}
-							break;
-						default: out << "UNKNOWN" << csvSep;
-						}
-						}
-						++i;
-					}
 					out << endl;
+					auto ci = output.at.find(p.first);
+					if(ci != output.at.end())
+					{
+						out << p.first.toIsoDateString() << endl;
+						writeOutputHeaderRows(out, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+						writeOutput(out, p.second, ci->second, csvSep, includeHeaderRow, includeUnitsRow);
+					}
 				}
 			}
-			out.flush();
+
+			if(!output.crop.empty())
+			{
+				out << endl;
+				writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+				for(auto& p : output.crop)
+					writeOutput(out, env.cropOutputIds, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+			}
+
+			if(!output.run.empty())
+			{
+				out << endl;
+				writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, env.runOutputIds, {output.run}, csvSep, includeHeaderRow, includeUnitsRow);
+			}
 
 			if(writeOutputFile)
 				fout.close();
@@ -449,250 +524,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-
-/*
-int main_(int argc, char** argv)
-{
-	setlocale(LC_ALL, "");
-	setlocale(LC_NUMERIC, "C");
-
-	//use a possibly non-default db-connections.ini
-	//Db::dbConnectionParameters("db-connections.ini");
-
-	enum Mode { monica, hermes, zmqClient, zmqServer };
-
-#ifndef NO_ZMQ
-	zmq::context_t context(1);
-#endif
-
-	if(argc >= 1)// && false)
-	{
-		bool debug = false, debugSet = false;
-		string startDate, endDate;
-		bool writeOutputFiles = false, writeOutputFilesSet = false;
-		string pathToOutput;
-		Mode mode = monica;
-		int port = 5560;
-		string address = "localhost";
-		string pathToSimJson = "./sim.json", crop, site, climate;
-		bool useZmqProxy = false;
-		string controlAddress = "localhost";
-		int controlPort = 6666;
-		string command = "";
-		int count = 1;
-
-		for(auto i = 1; i < argc; i++)
-		{
-			string arg = argv[i];
-			if(arg == "-d" || arg == "--debug")
-				debug = debugSet = true;
-			else if(arg == "--use-zmq-proxy")
-				useZmqProxy = true;
-			else if(arg == "--hermes")
-				mode = hermes;
-			else if(arg == "--zmq-client")
-				mode = zmqClient;
-			else if(arg == "--zmq-server")
-				mode = zmqServer;
-			else if((arg == "-ca" || arg == "--control-address")
-							&& i + 1 < argc)
-				controlAddress = argv[++i];
-			else if((arg == "-cp" || arg == "--control-port")
-							&& i + 1 < argc)
-				controlPort = stoi(argv[++i]);
-			else if(arg == "--send"
-							&& i + 1 < argc)
-				command = argv[++i];
-			else if(arg == "--count"
-							&& i + 1 < argc)
-				count = atoi(argv[++i]);
-			else if((arg == "-a" || arg == "--address")
-							&& i + 1 < argc)
-				address = argv[++i];
-			else if((arg == "-p" || arg == "--port")
-							&& i + 1 < argc)
-				port = stoi(argv[++i]);
-			else if((arg == "-sd" || arg == "--start-date")
-							&& i + 1 < argc)
-				startDate = argv[++i];
-			else if((arg == "-ed" || arg == "--end-date")
-							&& i + 1 < argc)
-				endDate = argv[++i];
-			else if(arg == "-w" || arg == "--write-output-files")
-				writeOutputFiles = writeOutputFilesSet = true;
-			else if((arg == "-o" || arg == "--path-to-output")
-							&& i + 1 < argc)
-				pathToOutput = argv[++i];
-			else if((arg == "-c" || arg == "--path-to-crop")
-							&& i + 1 < argc)
-				crop = argv[++i];
-			else if((arg == "-s" || arg == "--path-to-site")
-							&& i + 1 < argc)
-				site = argv[++i];
-			else if((arg == "-w" || arg == "--path-to-climate")
-							&& i + 1 < argc)
-				climate = argv[++i];
-			else if(arg == "-h" || arg == "--help")
-			{
-				cout
-					<< "./" << appName << endl
-					<< "\t [-d | --debug] ... show debug outputs" << endl
-					<< "\t [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
-					<< "\t [--hermes] ... use old hermes format files" << endl
-					<< "\t [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
-					<< "\t [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
-					<< "\t [[-ca | --control-address] CONTROL-ADDRESS (default: " << controlAddress << ")] ... address of control node" << endl
-					<< "\t [[-cp | --control-port] CONTROL-PORT (default: " << controlPort << ")] ... port of control node" << endl
-					<< "\t [--send] COMMAND (start-new | start-max | stop)] ... send message to zmq control node" << endl
-					<< "\t [--count] COUNT (default: " << count << ")] ... tell in control message how many MONICA processes to start/stop" << endl
-					<< "\t [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
-					<< "\t [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
-					<< "\t [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
-					<< "\t [[-o | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
-					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
-					<< "\t [[-s | --path-to-site] FILE (default: ./site.json)] ... path to site.json file" << endl
-					<< "\t [[-w | --path-to-climate] FILE (default: ./climate.csv)] ... path to climate.csv" << endl
-					<< "\t [-h | --help] ... this help output" << endl
-					<< "\t [-v | --version] ... outputs MONICA version" << endl
-					<< "\t path-to-sim-json ... path to sim.json file" << endl;
-				exit(0);
-			}
-			else if(arg == "-v" || arg == "--version")
-				cout << "MONICA version " << version << endl, exit(0);
-			else
-				pathToSimJson = argv[i];
-		}
-
-		if(!command.empty())
-		{
-			if(command == "start-new"
-				 || command == "start-max"
-				 || command == "stop")
-				sendControlMessage(context, controlAddress, controlPort, command, count);
-			else if(debug)
-				cout << "Control command: " << command << " unknown, should be one of [start-new, start-max or stop]!" << endl;
-		}
-		else if(mode == hermes)
-		{
-			if(debug)
-				cout << "starting MONICA with old HERMES input files" << endl;
-
-			Monica::runWithHermesData(fixSystemSeparator(pathToSimJson), debug);
-
-			if(debug)
-				cout << "finished MONICA" << endl;
-		}
-		else if(mode == zmqServer)
-		{
-			if(debug)
-				cout << "starting ZeroMQ MONICA server" << endl;
-
-			startZeroMQMonicaFull(&context, string("tcp://") + (useZmqProxy ? address : "*") + ":" + to_string(port), useZmqProxy);
-
-			if(debug)
-				cout << "stopped ZeroMQ MONICA server" << endl;
-		}
-		else
-		{
-			auto pathAndFile = splitPathToFile(pathToSimJson);
-			auto pathOfSimJson = pathAndFile.first;
-
-			auto simj = parseJsonString(readFile(pathToSimJson));
-			auto simm = simj.object_items();
-
-			if(!startDate.empty())
-				simm["start-date"] = startDate;
-
-			if(!endDate.empty())
-				simm["end-date"] = endDate;
-
-			if(debugSet)
-				simm["debug?"] = debug;
-
-			if(writeOutputFilesSet)
-				simm["write-output-files?"] = writeOutputFiles;
-
-			if(!pathToOutput.empty())
-				simm["path-to-output"] = pathToOutput;
-
-			simm["sim.json"] = pathToSimJson;
-
-			if(!crop.empty())
-				simm["crop.json"] = crop;
-			auto pathToCropJson = simm["crop.json"].string_value();
-			if(!isAbsolutePath(pathToCropJson))
-				simm["crop.json"] = pathOfSimJson + pathToCropJson;
-
-			if(!site.empty())
-				simm["site.json"] = site;
-			auto pathToSiteJson = simm["site.json"].string_value();
-			if(!isAbsolutePath(pathToSiteJson))
-				simm["site.json"] = pathOfSimJson + pathToSiteJson;
-
-			if(!climate.empty())
-				simm["climate.csv"] = climate;
-			auto pathToClimateCSV = simm["climate.csv"].string_value();
-			if(!isAbsolutePath(pathToClimateCSV))
-				simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
-
-			map<string, string> ps;
-			ps["sim-json-str"] = json11::Json(simm).dump();
-			ps["crop-json-str"] = readFile(simm["crop.json"].string_value());
-			ps["site-json-str"] = readFile(simm["site.json"].string_value());
-			//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
-
-			auto env = createEnvFromJsonConfigFiles(ps);
-			activateDebug = env.debugMode;
-
-			// open rmout.dat
-			//debug() << "Outputpath: " << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << endl;
-			auto fout = make_shared<ofstream>();
-			env.fout = fout;
-			fout->open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "rmout.csv");
-			if(fout->fail())
-			{
-				cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "rmout.csv") << "\"" << endl;
-				//return res;
-			}
-
-			// open smout.dat
-			auto gout = make_shared<ofstream>();
-			env.gout = gout;
-			gout->open(ensureDirExists(env.params.pathToOutputDir() + pathSeparator()) + "smout.csv");
-			if(gout->fail())
-			{
-				cerr << "Error while opening output file \"" << (env.params.pathToOutputDir() + pathSeparator() + "smout.csv").c_str() << "\"" << endl;
-				//return res;
-			}
-
-			if(activateDebug)
-				cout << "starting MONICA with JSON input files" << endl;
-
-			if(mode == monica)
-			{
-				auto res = runMonica(env);
-			}
-			else
-			{
-				runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
-			}
-
-			if(gout)
-				gout->close();
-			if(fout)
-				fout->close();
-
-			if(activateDebug)
-				cout << "finished MONICA" << endl;
-		}
-	}
-
-	//test();
-
-	//writeDbParams();
-
-	return 0;
-}
-//*/

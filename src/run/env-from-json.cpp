@@ -415,12 +415,11 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 	return m;
 }
 
-vector<OId> parseOutputIds(const J11Array& oidArray, 
-													 std::map<int, std::pair<std::string, std::string>>& oid2nameAndUnit)
+vector<OId> parseOutputIds(const J11Array& oidArray)
 {
 	vector<OId> outputIds;
 
-	auto getOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_) -> OId::OP
+	auto getOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -445,7 +444,8 @@ vector<OId> parseOutputIds(const J11Array& oidArray,
 		return def;
 	};
 
-	auto getCropPart = [](J11Array arr, int index, int def = -1) -> int
+	
+	auto getCropPart = [](J11Array arr, int index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -476,9 +476,11 @@ vector<OId> parseOutputIds(const J11Array& oidArray,
 			if(it != name2result.end())
 			{
 				auto data = it->second;
-				outputIds.push_back(OId(data.id));
-				outputIds.back().name = data.name;
-				oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
+				OId oid(data.id);
+				oid.name = data.name;
+				oid.unit = data.unit;
+				outputIds.push_back(oid);
+				//oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
 			}
 		}
 		else if(idj.is_array())
@@ -487,36 +489,7 @@ vector<OId> parseOutputIds(const J11Array& oidArray,
 			if(arr.size() >= 1)
 			{
 				OId oid;
-				//try to set op2, either for single values or for already grouped values
-				if(arr.size() >= 2 && arr[1].is_string())
-				{
-					auto op = getOp(arr, 1);
-					if(op != OId::_UNDEFINED_)
-						oid.op2 = op;
-					else
-					{
-						auto cp = getCropPart(arr, 1);
-						if(cp > -1)
-							oid.from = oid.to = cp;
-					}
-				}
-				else
-					oid.op2 = getOp(arr, 4, OId::AVG);
 				
-				if(arr.size() >= 3 && arr[1].is_number() && arr[2].is_number())
-				{
-					oid.from = arr[1].int_value() - 1;
-					oid.to = arr[2].int_value() - 1;
-				}
-				else if(arr.size() >= 3 && arr[1].is_string() && arr[2].is_string())
-				{
-					auto from = getCropPart(arr, 1);
-					auto to = getCropPart(arr, 2);
-					if(from > -1 && to > -1)
-						oid.from = from, oid.to = to;
-				}
-				oid.op = getOp(arr, 3, OId::NONE);
-
 				string name = arr[0].string_value();
 				auto it = name2result.find(name);
 				if(it != name2result.end())
@@ -524,8 +497,61 @@ vector<OId> parseOutputIds(const J11Array& oidArray,
 					auto data = it->second;
 					oid.id = data.id;
 					oid.name = data.name;
+					oid.unit = data.unit;
+					//oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
+										
+					if(arr.size() >= 2)
+					{
+						auto val1 = arr[1];
+						if(val1.is_number())
+							oid.fromOrOrgan = val1.int_value();
+						else if(val1.is_string())
+						{
+							auto op = getOp(arr, 1);
+							if(op != OId::_UNDEFINED_OP_)
+								oid.op2 = op;
+							else
+							{
+								auto cp = getCropPart(arr, 1);
+								if(cp != OId::_UNDEFINED_ORGAN_)
+									oid.fromOrOrgan = cp;
+							}
+						}
+						else if(val1.is_array())
+						{
+							auto arr2 = arr[1].array_items();
+
+							if(arr2.size() >= 1)
+							{
+								auto val1_0 = arr2[0];
+								if(val1_0.is_number())
+									oid.fromOrOrgan = val1_0.int_value();
+								else if(val1_0.is_string())
+								{
+									auto cp = getCropPart(arr2, 0);
+									if(cp != OId::_UNDEFINED_ORGAN_)
+										oid.fromOrOrgan = cp;
+								}
+							}
+							if(arr2.size() >= 2)
+							{
+								auto val1_1 = arr2[1];
+								if(val1_1.is_number())
+									oid.to = val1_1.int_value();
+								else if(val1_1.is_string())
+								{
+									oid.to = oid.fromOrOrgan;
+									oid.op = getOp(arr2, 1, OId::AVG);
+								}
+							}
+							if(arr2.size() >= 3)
+								oid.op = getOp(arr2, 2, OId::AVG);
+						}
+					}
+					if(arr.size() >= 3)
+						oid.op2 = getOp(arr, 2, OId::AVG);
+					
 					outputIds.push_back(oid);
-					oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
 				}
 			}
 		}
@@ -611,17 +637,13 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	if(!success)
 		return Env();
 
-	env.dailyOutputIds = parseOutputIds(simj["output"]["daily"].array_items(), 
-																			env.outputId2nameAndUnit);
+	env.dailyOutputIds = parseOutputIds(simj["output"]["daily"].array_items());
 
-	env.monthlyOutputIds = parseOutputIds(simj["output"]["monthly"].array_items(),
-																				env.outputId2nameAndUnit);
+	env.monthlyOutputIds = parseOutputIds(simj["output"]["monthly"].array_items());
 
-	env.yearlyOutputIds = parseOutputIds(simj["output"]["yearly"].array_items(),
-																			 env.outputId2nameAndUnit);
+	env.yearlyOutputIds = parseOutputIds(simj["output"]["yearly"].array_items());
 
-	env.runOutputIds = parseOutputIds(simj["output"]["run"].array_items(),
-																		env.outputId2nameAndUnit);
+	env.cropOutputIds = parseOutputIds(simj["output"]["crop"].array_items());
 
 	if(simj["output"]["at"].is_object())
 	{
@@ -629,10 +651,11 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 		{
 			Date d = Date::fromIsoDateString(p.first);
 			if(d.isValid())
-				env.atOutputIds[d] = parseOutputIds(p.second.array_items(),
-																								 env.outputId2nameAndUnit);
+				env.atOutputIds[d] = parseOutputIds(p.second.array_items());
 		}
 	}
+
+	env.runOutputIds = parseOutputIds(simj["output"]["run"].array_items());
 
 
 	//get no of climate file header lines from sim.json, but prefer from params map

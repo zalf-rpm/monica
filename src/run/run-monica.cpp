@@ -51,8 +51,10 @@ OId::OId(json11::Json j)
 Errors OId::merge(json11::Json j)
 {
 	set_int_value(id, j, "id");
-	set_int_value(from, j, "from");
+	set_int_value(fromOrOrgan, j, "fromOrOrgan");
 	set_int_value(to, j, "to");
+	set_string_value(name, j, "name");
+	set_string_value(unit, j, "unit");
 
 	op = OP(int_valueD(j, "op", NONE));
 	op2 = OP(int_valueD(j, "op2", AVG));
@@ -65,9 +67,11 @@ json11::Json OId::to_json() const
 	return json11::Json::object {
 		{"type", "OId"},
 		{"id", id},
+		{"name", name},
+		{"unit", unit},
 		{"op", int(op)},
 		{"op2", int(op2)},
-		{"from", from},
+		{"fromOrOrgan", fromOrOrgan},
 		{"to", to}
 	};
 }
@@ -354,7 +358,9 @@ void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits =
 {
 	Vector multipleValues;
 	vector<double> vs;
-	for(int i = oid.from; i <= oid.to; i++)
+	if(oid.isOrgan())
+		oid.to = oid.fromOrOrgan;
+	for(int i = oid.fromOrOrgan; i <= oid.to; i++)
 	{
 		T v = getValue(i);
 		if(oid.op == OId::NONE)
@@ -398,6 +404,16 @@ BOTRes& Monica::buildOutputTable()
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
 				results.push_back(m.currentDate.toIsoDateString());
+			});
+			build({id++, "Month", "", "output current Month"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(int(m.currentDate.month()));
+			});
+			build({id++, "Year", "", "output current Year"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(int(m.currentDate.year()));
 			});
 			build({id++, "Crop", "", "crop name"},
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
@@ -493,41 +509,14 @@ BOTRes& Monica::buildOutputTable()
 			{
 				results.push_back(m.cropPlanted ? round(m.mcg->get_AbovegroundBiomass(), 1) : 0.0);
 			});
-			build({id++, "Root", "kgDM ha-1", "get_OrganBiomass(i)"},
+			build({id++, "OrgBiom", "kgDM ha-1", "get_OrganBiomass(i)"},
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
-				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 1
-													? round(m.mcg->get_OrganBiomass(0), 1) : 0.0);
-			});
-			build({id++, "Leaf", "kgDM ha-1", "get_OrganBiomass(i)"},
-						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
-			{
-				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 2
-													? round(m.mcg->get_OrganBiomass(1), 1) : 0.0);
-			});
-			build({id++, "Shoot", "kgDM ha-1", "get_OrganBiomass(i)"}, 
-						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
-			{
-				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 3
-													? round(m.mcg->get_OrganBiomass(2), 1) : 0.0);
-			});
-			build({id++, "Fruit", "kgDM ha-1", "get_OrganBiomass(i)"}, 
-						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
-			{
-				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 4
-													? round(m.mcg->get_OrganBiomass(3), 1) : 0.0);
-			});
-			build({id++, "Struct", "kgDM ha-1", "get_OrganBiomass(i)"}, 
-						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
-			{
-				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 5
-															? round(m.mcg->get_OrganBiomass(4), 1) : 0.0);
-			});
-			build({id++, "Sugar", "kgDM ha-1", "get_OrganBiomass(i)"}, 
-						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
-			{
-				results.push_back(m.cropPlanted && m.mcg->get_NumberOfOrgans() >= 6
-													? round(m.mcg->get_OrganBiomass(5), 1) : 0.0);
+				store<double>(oid, results, [&](int i)
+				{
+					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
+						? m.mcg->get_OrganBiomass(i) : 0.0;
+				}, 1);
 			});
 			build({id++, "Yield", "kgDM ha-1", "get_PrimaryCropYield"}, 
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
@@ -653,8 +642,8 @@ BOTRes& Monica::buildOutputTable()
 				store<double>(oid, results, [&](int i)
 				{
 					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
-						? round(m.mcg->get_OrganSpecificNPP(i), 4) : 0.0;
-				}, 3);
+						? m.mcg->get_OrganSpecificNPP(i) : 0.0;
+				}, 4);
 			});
 
 			build({id++, "GPP", "kgC ha-1", "GPP"}, 
@@ -674,8 +663,8 @@ BOTRes& Monica::buildOutputTable()
 				store<double>(oid, results, [&](int i)
 				{
 					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
-						? round(m.mcg->get_OrganSpecificTotalRespired(i), 4) : 0.0;
-				}, 3);
+						? m.mcg->get_OrganSpecificTotalRespired(i) : 0.0;
+				}, 4);
 			});
 
 			build({id++, "Mois", "m3 m-3", "Soil moisture content"}, 
@@ -684,11 +673,6 @@ BOTRes& Monica::buildOutputTable()
 				store<double>(oid, results, [&](int i){ return m.moist.get_SoilMoisture(i); }, 3);
 			});
 
-			build({id++, "Precip", "mm", "Precipitation"}, 
-						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
-			{
-				results.push_back(round(m.da.dataForTimestep(Climate::precip, m.timestep), 2));
-			});
 			build({id++, "Irrig", "mm", "Irrigation"}, 
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
@@ -911,6 +895,11 @@ BOTRes& Monica::buildOutputTable()
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
 				results.push_back(round(m.da.dataForTimestep(Climate::tmax, m.timestep), 4));
+			});
+			build({id++, "Precip", "mm", "Precipitation"},
+						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				results.push_back(round(m.da.dataForTimestep(Climate::precip, m.timestep), 2));
 			});
 			build({id++, "Wind", "", ""}, 
 						[](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
@@ -1292,18 +1281,20 @@ Result Monica::runMonica(Env env)
 		}
 		else
 			storeResults(env.yearlyOutputIds, intermediateYearlyResults, monicaRefs, d, currentDate);
+
+		storeResults(env.runOutputIds, intermediateRunResults, monicaRefs, d, currentDate);
 	}
 
-	//store results for a single run
+	//store/aggregate results for a single run
 	size_t i = 0;
 	res.out.run.resize(env.runOutputIds.size());
 	for(auto oid : env.runOutputIds)
 	{
-		res.out.run[i] = applyOIdOP(oid.op, intermediateRunResults.at(oid.id));
+		res.out.run[i] = applyOIdOP(oid.op, intermediateRunResults.at(i));
 		++i;
 	}
 
-	//store results for a single crop
+	//store/aggregate results for a single crop
 	for(auto& p : intermediateCropResults)
 	{
 		auto& vs = res.out.crop[p.first];
@@ -1311,7 +1302,11 @@ Result Monica::runMonica(Env env)
 		vs.resize(env.cropOutputIds.size());
 		for(auto oid : env.cropOutputIds)
 		{
-			vs[i].push_back(applyOIdOP(oid.op, p.second.at(oid.id)));
+			auto& ivs = p.second.at(i);
+			if(ivs.front().is_string())
+				vs[i].push_back(ivs.front());
+			else
+				vs[i].push_back(applyOIdOP(oid.op, p.second.at(i)));
 			++i;
 		}
 	}
