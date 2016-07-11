@@ -3723,13 +3723,11 @@ namespace
  * @param v Vector yield component
  * @param bmv
  */
-	double _cropYield(const VYC& v, const vector<double>& bmv)
+	double calculateCropYield(const VYC& ycs, const vector<double>& bmv)
 	{
 		double yield = 0;
-		for(VYC::const_iterator ci = v.begin(); ci != v.end(); ci++)
-		{
-			yield += bmv.at(ci->organId - 1) * (ci->yieldPercentage);
-		}
+		for(auto yc : ycs)
+			yield += bmv.at(yc.organId - 1) * (yc.yieldPercentage);
 		return yield;
 	}
 
@@ -3739,14 +3737,11 @@ namespace
  * @param v Vector yield component
  * @param bmv
  */
-	double _cropFreshMatterYield(const VYC& v, const vector<double>& bmv)
+	double calculateCropFreshMatterYield(const VYC& ycs, const vector<double>& bmv)
 	{
 		double freshMatterYield = 0;
-		for(VYC::const_iterator ci = v.begin(); ci != v.end(); ci++)
-		{
-			freshMatterYield += bmv.at(ci->organId - 1) * (ci->yieldPercentage) / (ci->yieldDryMatter);
-		}
-
+		for(auto yc : ycs)
+			freshMatterYield += bmv.at(yc.organId - 1) * yc.yieldPercentage / yc.yieldDryMatter;
 		return freshMatterYield;
 	}
 } // namespace
@@ -3760,10 +3755,10 @@ double CropGrowth::get_PrimaryCropYield() const
 
 	if(eva2_usage == NUTZUNG_GANZPFLANZE)
 	{
-		return _cropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
+		return calculateCropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
 	}
 
-	return _cropYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
+	return calculateCropYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
 }
 
 /**
@@ -3774,9 +3769,9 @@ double CropGrowth::get_SecondaryCropYield() const
 {
 	if(eva2_usage == NUTZUNG_GANZPFLANZE || eva2_usage == NUTZUNG_GRUENDUENGUNG)
 	{
-		return _cropYield(eva2_secondaryYieldComponents, vc_OrganBiomass);
+		return calculateCropYield(eva2_secondaryYieldComponents, vc_OrganBiomass);
 	}
-	return _cropYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
+	return calculateCropYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
 }
 
 /**
@@ -3788,10 +3783,10 @@ double CropGrowth::get_CropYieldAfterCutting() const
 
 	if(eva2_usage == NUTZUNG_GANZPFLANZE)
 	{
-		return _cropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
+		return calculateCropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
 	}
 
-	return _cropYield(pc_OrganIdsForCutting, vc_OrganBiomass);
+	return calculateCropYield(pc_OrganIdsForCutting, vc_OrganBiomass);
 }
 
 /**
@@ -3802,9 +3797,9 @@ double CropGrowth::get_FreshPrimaryCropYield() const
 {
 	if(eva2_usage == NUTZUNG_GANZPFLANZE)
 	{
-		return _cropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
+		return calculateCropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
 	}
-	return _cropFreshMatterYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
+	return calculateCropFreshMatterYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
 }
 
 /**
@@ -3815,9 +3810,9 @@ double CropGrowth::get_FreshSecondaryCropYield() const
 {
 	if(eva2_usage == NUTZUNG_GANZPFLANZE || eva2_usage == NUTZUNG_GRUENDUENGUNG)
 	{
-		return _cropFreshMatterYield(eva2_secondaryYieldComponents, vc_OrganBiomass);
+		return calculateCropFreshMatterYield(eva2_secondaryYieldComponents, vc_OrganBiomass);
 	}
-	return _cropFreshMatterYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
+	return calculateCropFreshMatterYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
 }
 
 /**
@@ -3829,10 +3824,10 @@ double CropGrowth::get_FreshCropYieldAfterCutting() const
 
 	if(eva2_usage == NUTZUNG_GANZPFLANZE)
 	{
-		return _cropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
+		return calculateCropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
 	}
 
-	return _cropFreshMatterYield(pc_OrganIdsForCutting, vc_OrganBiomass);
+	return calculateCropFreshMatterYield(pc_OrganIdsForCutting, vc_OrganBiomass);
 }
 
 /**
