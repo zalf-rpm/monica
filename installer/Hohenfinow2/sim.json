@@ -65,20 +65,21 @@
 			"NEP", "NEE", "Rh", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
 		],
 		"daily": [
-			"Date", "Crop", "Yield", "SumYield", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
+			"Date", "Crop", ["NO3", [1, 20]], "Yield", "SumYield", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
 		],
 		"monthly": [
-			"Month",
+			"Year", "Month",
 			["SOC", [1, 1, "AVG"]], ["SOC", [1, 3, "AVG"]],
 			["WaterContent", [1, 9, "AVG"]], "Recharge", "NLeach", 
 			["SnowD", "MAX"], ["SnowD", "SUM"], ["FrostD", "SUM"],
 			["RunOff", "SUM"], ["NH3", "SUM"], ["Precip", "SUM"], "Act_ET"
 		],
-		"yearly": ["Year", ["RunOff", "SUM"], ["NLeach", "SUM"], ["Recharge", "SUM"]],
-		"run": ["Precip"],
+		"yearly": ["Year", ["N", [1, 3]], ["RunOff", "SUM"], ["NLeach", "SUM"], ["Recharge", "SUM"]],
+		"run": [["Precip", "SUM"]],
 		"crop": ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
 		"at": {
 			"0000-03-31": [
+				"Year",
 				["N", [1, 9, "SUM"]],
 				["STemp", [1, 3, "SUM"]],
 				["STemp", [1, 3, "AVG"]],

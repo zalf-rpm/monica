@@ -419,7 +419,7 @@ vector<OId> parseOutputIds(const J11Array& oidArray)
 {
 	vector<OId> outputIds;
 
-	auto getOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
+	auto getAggregationOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -445,7 +445,7 @@ vector<OId> parseOutputIds(const J11Array& oidArray)
 	};
 
 	
-	auto getCropPart = [](J11Array arr, int index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
+	auto getOrgan = [](J11Array arr, int index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -479,8 +479,8 @@ vector<OId> parseOutputIds(const J11Array& oidArray)
 				OId oid(data.id);
 				oid.name = data.name;
 				oid.unit = data.unit;
+				oid.jsonInput = name;
 				outputIds.push_back(oid);
-				//oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
 			}
 		}
 		else if(idj.is_array())
@@ -498,24 +498,20 @@ vector<OId> parseOutputIds(const J11Array& oidArray)
 					oid.id = data.id;
 					oid.name = data.name;
 					oid.unit = data.unit;
-					//oid2nameAndUnit[data.id] = make_pair(data.name, data.unit);
+					oid.jsonInput = Json(arr).dump();
 										
 					if(arr.size() >= 2)
 					{
 						auto val1 = arr[1];
 						if(val1.is_number())
-							oid.fromOrOrgan = val1.int_value();
+							oid.fromLayer = val1.int_value() - 1;
 						else if(val1.is_string())
 						{
-							auto op = getOp(arr, 1);
+							auto op = getAggregationOp(arr, 1);
 							if(op != OId::_UNDEFINED_OP_)
-								oid.op2 = op;
+								oid.timeAggOp = op;
 							else
-							{
-								auto cp = getCropPart(arr, 1);
-								if(cp != OId::_UNDEFINED_ORGAN_)
-									oid.fromOrOrgan = cp;
-							}
+								oid.organ = getOrgan(arr, 1, OId::_UNDEFINED_ORGAN_);
 						}
 						else if(val1.is_array())
 						{
@@ -525,31 +521,27 @@ vector<OId> parseOutputIds(const J11Array& oidArray)
 							{
 								auto val1_0 = arr2[0];
 								if(val1_0.is_number())
-									oid.fromOrOrgan = val1_0.int_value();
+									oid.fromLayer = val1_0.int_value() - 1;
 								else if(val1_0.is_string())
-								{
-									auto cp = getCropPart(arr2, 0);
-									if(cp != OId::_UNDEFINED_ORGAN_)
-										oid.fromOrOrgan = cp;
-								}
+									oid.organ = getOrgan(arr2, 0, OId::_UNDEFINED_ORGAN_);
 							}
 							if(arr2.size() >= 2)
 							{
 								auto val1_1 = arr2[1];
 								if(val1_1.is_number())
-									oid.to = val1_1.int_value();
+									oid.toLayer = val1_1.int_value() - 1;
 								else if(val1_1.is_string())
 								{
-									oid.to = oid.fromOrOrgan;
-									oid.op = getOp(arr2, 1, OId::AVG);
+									oid.toLayer = oid.fromLayer;
+									oid.layerAggOp = getAggregationOp(arr2, 1, OId::AVG);
 								}
 							}
 							if(arr2.size() >= 3)
-								oid.op = getOp(arr2, 2, OId::AVG);
+								oid.layerAggOp = getAggregationOp(arr2, 2, OId::AVG);
 						}
 					}
 					if(arr.size() >= 3)
-						oid.op2 = getOp(arr, 2, OId::AVG);
+						oid.timeAggOp = getAggregationOp(arr, 2, OId::AVG);
 					
 					outputIds.push_back(oid);
 				}
@@ -656,8 +648,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	}
 
 	env.runOutputIds = parseOutputIds(simj["output"]["run"].array_items());
-
-
+	
 	//get no of climate file header lines from sim.json, but prefer from params map
 	auto climateDataSettings = simj["climate.csv-options"];
 	map<string, string> headerNames;

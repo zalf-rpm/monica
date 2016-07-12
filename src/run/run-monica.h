@@ -46,17 +46,29 @@ namespace Monica
 
 		OId() {}
 
-		OId(int id) : id(id) {}
+		//! just name 
+		OId(int id) 
+			: id(id) {}
 		
-		OId(int id, ORGAN cropPart) : id(id), fromOrOrgan(int(cropPart)) {}
+		//! id and organ
+		OId(int id, ORGAN organ) 
+			: id(id), organ(organ) {}
 
-		OId(int id, OP op) : id(id), op(op), fromOrOrgan(0), to(20) {}
+		//! id and layer aggregation
+		OId(int id, OP layerAgg) 
+			: id(id), layerAggOp(layerAgg), fromLayer(0), toLayer(20) {}
 
-		OId(int id, OP op, OP op2) : id(id), op(op), op2(op2), fromOrOrgan(0), to(20) {}
+		//! id, layer aggregation and time aggregation, shortcut for aggregating all layers in non daily setting
+		OId(int id, OP layerAgg, OP timeAgg) 
+			: id(id), layerAggOp(layerAgg), timeAggOp(timeAgg), fromLayer(0), toLayer(20) {}
 		
-		OId(int id, OP op, int from, int to) : id(id), op(op), fromOrOrgan(from), to(to) {}
+		//! id, layer aggregation of from to (incl) to layers
+		OId(int id, int from, int to, OP layerAgg)
+			: id(id), layerAggOp(layerAgg), fromLayer(from), toLayer(to) {}
 
-		OId(int id, OP op, int from, int to, OP op2) : id(id), op(op), op2(op2), fromOrOrgan(from), to(to) {}
+		//! aggregate layers from to (incl) to in a non daily setting
+		OId(int id, int from, int to, OP layerAgg, OP timeAgg)
+			: id(id), layerAggOp(layerAgg), timeAggOp(timeAgg), fromLayer(from), toLayer(to) {}
 
 		OId(json11::Json object);
 
@@ -64,18 +76,25 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 		
-		bool isRange() const { return fromOrOrgan >= 0 && to >= 0; }
+		bool isRange() const { return fromLayer >= 0 && toLayer >= 0 && fromLayer < toLayer; }
 
-		bool isOrgan() const { return fromOrOrgan >= 0 && to < 0; }
+		bool isOrgan() const { return organ != _UNDEFINED_ORGAN_; }
+
+		virtual std::string toString(bool includeTimeAgg = false) const;
+
+		std::string toString(OId::OP op) const;
+		std::string toString(OId::ORGAN organ) const;
 
 		int id{-1};
 		std::string name;
 		std::string unit;
-		OP op{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
-		OP op2{AVG}; //! aggregate values in a second time range (e.g. monthly)
-		int fromOrOrgan{-1}, to{-1};
+		std::string jsonInput;
+		OP layerAggOp{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
+		OP timeAggOp{AVG}; //! aggregate values in a second time range (e.g. monthly)
+		ORGAN organ{_UNDEFINED_ORGAN_};
+		int fromLayer{-1}, toLayer{-1};
 	};
-		
+
 	//---------------------------------------------------------------------------
 
   struct Env : public Tools::Json11Serializable

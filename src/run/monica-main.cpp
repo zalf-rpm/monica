@@ -101,46 +101,44 @@ void writeOutputHeaderRows(ostream& out,
 													 const vector<OId>& outputIds,
 													 string csvSep,
 													 bool includeHeaderRow,
-													 bool includeUnitsRow)
+													 bool includeUnitsRow, 
+													 bool includeTimeAgg = true)
 {
-	ostringstream oss1, oss2;
+	ostringstream oss1, oss2, oss3, oss4;
 	for(auto oid : outputIds)
 	{
+		int fromLayer = oid.fromLayer, toLayer = oid.toLayer;
 		bool isOrgan = oid.isOrgan();
+		bool isRange = oid.isRange() && oid.layerAggOp == OId::NONE;
 		if(isOrgan)
-			oid.to = oid.fromOrOrgan;
-		else
-			oid.fromOrOrgan--, oid.to--;
+			toLayer = fromLayer = int(oid.organ); // organ is being represented just by the value of fromLayer currently
+		else if(isRange) 
+			fromLayer++, toLayer++; // display 1-indexed layer numbers to users
+		else 
+			toLayer = fromLayer; // for aggregated ranges, which aren't being displayed as range
 		
-		for(int i = oid.fromOrOrgan; i <= oid.to; i++)
+		for(int i = fromLayer; i <= toLayer; i++)
 		{
-			oss1 << "\"" << oid.name;
-			string suffix;
+			oss1 << "\"";
 			if(isOrgan)
-			{
-				suffix = "_";
-				switch(OId::ORGAN(oid.fromOrOrgan))
-				{
-				case OId::ROOT: suffix += "Root"; break;
-				case OId::LEAF: suffix += "Leaf"; break;
-				case OId::SHOOT: suffix += "Shoot"; break;
-				case OId::FRUIT: suffix += "Fruit"; break;
-				case OId::STRUCT: suffix += "Struct"; break;
-				case OId::SUGAR: suffix += "Sugar"; break;
-				default:;
-				}
-			}
-			else if(oid.isRange())
-				suffix = string("_") + to_string(i);
-			oss1 << suffix << "\"" << csvSep;
-			oss2 << "[" << oid.unit << "]" << csvSep;
+				oss1 << oid.name << "/" << oid.toString(oid.organ);
+			else if(isRange)
+				oss1 << oid.name << "_" << to_string(i);
+			else
+				oss1 << oid.name;
+			oss1 << "\"" << csvSep;
+			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep;
+			oss3 << "\"m:" << oid.toString(includeTimeAgg) << "\"" << csvSep;
+			oss2 << "\"[" << oid.unit << "]\"" << csvSep;
 		}
 	}
 
 	if(includeHeaderRow)
-		out << oss1.str() << endl;
-	if(includeUnitsRow)
-		out << oss2.str() << endl;
+		out
+		<< oss1.str() << endl
+		<< oss4.str() << endl
+		<< oss3.str() << endl
+		<< oss2.str() << endl;
 }
 
 void writeOutput(ostream& out, 
@@ -179,6 +177,7 @@ void writeOutput(ostream& out,
 				default: out << "UNKNOWN" << csvSep;
 				}
 				}
+
 				++i;
 			}
 			out << endl;
@@ -461,7 +460,7 @@ int main(int argc, char** argv)
 
 			if(!output.daily.empty())
 			{
-				writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, false);
 				writeOutput(out, env.dailyOutputIds, output.daily, csvSep, includeHeaderRow, includeUnitsRow);
 			}
 

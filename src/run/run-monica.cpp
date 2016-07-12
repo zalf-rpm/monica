@@ -51,13 +51,16 @@ OId::OId(json11::Json j)
 Errors OId::merge(json11::Json j)
 {
 	set_int_value(id, j, "id");
-	set_int_value(fromOrOrgan, j, "fromOrOrgan");
-	set_int_value(to, j, "to");
+	set_int_value(fromLayer, j, "fromLayer");
+	set_int_value(toLayer, j, "toLayer");
 	set_string_value(name, j, "name");
 	set_string_value(unit, j, "unit");
+	set_string_value(jsonInput, j, "jsonInput");
 
-	op = OP(int_valueD(j, "op", NONE));
-	op2 = OP(int_valueD(j, "op2", AVG));
+	layerAggOp = OP(int_valueD(j, "op", NONE));
+	timeAggOp = OP(int_valueD(j, "op2", AVG));
+
+	organ = ORGAN(int_valueD(j, "organ", _UNDEFINED_ORGAN_));
 
 	return{};
 }
@@ -69,11 +72,69 @@ json11::Json OId::to_json() const
 		{"id", id},
 		{"name", name},
 		{"unit", unit},
-		{"op", int(op)},
-		{"op2", int(op2)},
-		{"fromOrOrgan", fromOrOrgan},
-		{"to", to}
+		{"op", int(layerAggOp)},
+		{"op2", int(timeAggOp)},
+		{"fromLayer", fromLayer},
+		{"toLayer", toLayer},
+		{"jsonInput", jsonInput}
 	};
+}
+
+
+std::string OId::toString(bool includeTimeAgg) const
+{
+	ostringstream oss;
+	oss << "[";
+	oss << name;
+	if(isOrgan())
+		oss << ", " << toString(organ);
+	else if(isRange())
+		oss << ", [" << (fromLayer + 1) << ", " << (toLayer + 1)
+		<< (layerAggOp != OId::NONE ? string(", ") + toString(layerAggOp) : "")
+		<< "]";
+	else if(fromLayer >= 0)
+		oss << ", " << (fromLayer + 1);
+	if(includeTimeAgg)
+		oss << ", " << toString(timeAggOp);
+	oss << "]";
+
+	return oss.str();
+}
+
+std::string OId::toString(OId::OP op) const
+{
+	string res("undef");
+	switch(op)
+	{
+	case AVG: res = "AVG"; break;
+	case MEDIAN: res = "MEDIAN"; break;
+	case SUM: res = "SUM"; break;
+	case MIN: res = "MIN"; break;
+	case MAX: res = "MAX"; break;
+	case FIRST: res = "FIRST"; break;
+	case LAST: res = "LAST"; break;
+	case NONE: res = "NONE"; break;
+	case _UNDEFINED_OP_:
+	default:;
+	}
+	return res;
+}
+
+std::string OId::toString(OId::ORGAN organ) const
+{
+	string res("undef");
+	switch(organ)
+	{
+	case ROOT: res = "Root"; break;
+	case LEAF: res = "Leaf"; break;
+	case SHOOT: res = "Shoot"; break;
+	case FRUIT: res = "Fruit"; break;
+	case STRUCT: res = "Struct"; break;
+	case SUGAR: res = "Sugar"; break;
+	case _UNDEFINED_ORGAN_:
+	default:;
+	}
+	return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -313,6 +374,7 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 	pout.close();
 }
 
+
 double applyOIdOP(OId::OP op, const vector<double>& vs)
 {
 	double v = vs.back();
@@ -347,10 +409,36 @@ double applyOIdOP(OId::OP op, const vector<double>& vs)
 
 Json applyOIdOP(OId::OP op, const vector<Json>& js)
 {
-	vector<double> ds;
-	for(auto j : js)
-		ds.push_back(j.number_value());
-	return applyOIdOP(op, ds);
+	Json res;
+
+	if(!js.empty() && js.front().is_array())
+	{
+		vector<vector<double>> dss(js.front().array_items().size());
+		for(auto& j : js)
+		{
+			int i = 0;
+			for(auto& j2 : j.array_items())
+			{
+				dss[i].push_back(j2.number_value());
+				++i;
+			}
+		}
+
+		J11Array r;
+		for(auto& ds : dss)
+			r.push_back(applyOIdOP(op, ds));
+
+		res = r;
+	}
+	else
+	{
+		vector<double> ds;
+		for(auto j : js)
+			ds.push_back(j.number_value());
+		res = applyOIdOP(op, ds);
+	}
+
+	return res;
 }
 
 template<typename T, typename Vector>
@@ -359,20 +447,21 @@ void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits =
 	Vector multipleValues;
 	vector<double> vs;
 	if(oid.isOrgan())
-		oid.to = oid.fromOrOrgan;
-	for(int i = oid.fromOrOrgan; i <= oid.to; i++)
+		oid.toLayer = oid.fromLayer = int(oid.organ);
+
+	for(int i = oid.fromLayer; i <= oid.toLayer; i++)
 	{
 		T v = getValue(i);
-		if(oid.op == OId::NONE)
+		if(oid.layerAggOp == OId::NONE)
 			multipleValues.push_back(Tools::round(v, roundToDigits));
 		else
 			vs.push_back(v);
 	}
 
-	if(oid.op == OId::NONE)
+	if(oid.layerAggOp == OId::NONE)
 		into.push_back(multipleValues);
 	else
-		into.push_back(applyOIdOP(oid.op, vs));
+		into.push_back(applyOIdOP(oid.layerAggOp, vs));
 }
 
 BOTRes& Monica::buildOutputTable()
@@ -1256,7 +1345,7 @@ Result Monica::runMonica(Env env)
 			res.out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
 			for(auto oid : env.monthlyOutputIds)
 			{
-				res.out.monthly[currentMonth][i].push_back(applyOIdOP(oid.op, intermediateMonthlyResults.at(i)));
+				res.out.monthly[currentMonth][i].push_back(applyOIdOP(oid.timeAggOp, intermediateMonthlyResults.at(i)));
 				intermediateMonthlyResults[i].clear();
 				++i;
 			}
@@ -1274,7 +1363,7 @@ Result Monica::runMonica(Env env)
 			res.out.yearly.resize(intermediateYearlyResults.size());
 			for(auto oid : env.yearlyOutputIds)
 			{
-				res.out.yearly[i].push_back(applyOIdOP(oid.op, intermediateYearlyResults.at(i)));
+				res.out.yearly[i].push_back(applyOIdOP(oid.timeAggOp, intermediateYearlyResults.at(i)));
 				intermediateYearlyResults[i].clear();
 				++i;
 			}
@@ -1290,7 +1379,7 @@ Result Monica::runMonica(Env env)
 	res.out.run.resize(env.runOutputIds.size());
 	for(auto oid : env.runOutputIds)
 	{
-		res.out.run[i] = applyOIdOP(oid.op, intermediateRunResults.at(i));
+		res.out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
 		++i;
 	}
 
@@ -1306,7 +1395,7 @@ Result Monica::runMonica(Env env)
 			if(ivs.front().is_string())
 				vs[i].push_back(ivs.front());
 			else
-				vs[i].push_back(applyOIdOP(oid.op, p.second.at(i)));
+				vs[i].push_back(applyOIdOP(oid.timeAggOp, p.second.at(i)));
 			++i;
 		}
 	}
