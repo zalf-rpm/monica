@@ -1092,16 +1092,15 @@ void storeResults(const vector<OId>& outputIds,
 									Date currentDate)
 {
 	const auto& ofs = buildOutputTable().ofs;
-	
+	auto mrr = mr.refresh(timestep, currentDate);
+
 	size_t i = 0;
 	results.resize(outputIds.size());
 	for(auto oid : outputIds)
 	{
 		auto ofi = ofs.find(oid.id);
 		if(ofi != ofs.end())
-			ofi->second(mr.refresh(timestep, currentDate), results[i], oid);
-		//for(auto r : results[i])
-		//	cout << oid.name << ": " << (r.is_number() ? to_string(r.number_value()) : r.string_value()) << endl;
+			ofi->second(mrr, results[i], oid);
 		++i;
 	}
 };
