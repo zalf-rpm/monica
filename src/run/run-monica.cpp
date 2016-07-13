@@ -51,16 +51,17 @@ OId::OId(json11::Json j)
 Errors OId::merge(json11::Json j)
 {
 	set_int_value(id, j, "id");
-	set_int_value(fromLayer, j, "fromLayer");
-	set_int_value(toLayer, j, "toLayer");
 	set_string_value(name, j, "name");
 	set_string_value(unit, j, "unit");
 	set_string_value(jsonInput, j, "jsonInput");
 
-	layerAggOp = OP(int_valueD(j, "op", NONE));
-	timeAggOp = OP(int_valueD(j, "op2", AVG));
+	layerAggOp = OP(int_valueD(j, "layerAggOp", NONE));
+	timeAggOp = OP(int_valueD(j, "timeAggOp", AVG));
 
 	organ = ORGAN(int_valueD(j, "organ", _UNDEFINED_ORGAN_));
+
+	set_int_value(fromLayer, j, "fromLayer");
+	set_int_value(toLayer, j, "toLayer");
 
 	return{};
 }
@@ -72,11 +73,12 @@ json11::Json OId::to_json() const
 		{"id", id},
 		{"name", name},
 		{"unit", unit},
-		{"op", int(layerAggOp)},
-		{"op2", int(timeAggOp)},
+		{"jsonInput", jsonInput},
+		{"layerAggOp", int(layerAggOp)},
+		{"timeAggOp", int(timeAggOp)},
+		{"organ", int(organ)},
 		{"fromLayer", fromLayer},
-		{"toLayer", toLayer},
-		{"jsonInput", jsonInput}
+		{"toLayer", toLayer}
 	};
 }
 
@@ -148,23 +150,31 @@ Env::Env(json11::Json j)
 	merge(j);
 }
 
+namespace
+{
+	template<typename Vector>
+	void extractAndStore(Json jv, Vector& v)
+	{
+		v.clear();
+		for(Json cmj : jv.array_items())
+			v.push_back(cmj);
+	}
+}
+
 Errors Env::merge(json11::Json j)
 {
 	params.merge(j["params"]);
 
 	da.merge(j["da"]);
 
-	cropRotation.clear();
-	for(Json cmj : j["cropRotation"].array_items())
-		cropRotation.push_back(cmj);
-
-	dailyOutputIds.clear();
-	for(Json oidj : j["dailyOutputIds"].array_items())
-		dailyOutputIds.push_back(oidj);
-
-	monthlyOutputIds.clear();
-	for(Json oidj : j["monthlyOutputIds"].array_items())
-		monthlyOutputIds.push_back(oidj);
+	extractAndStore(j["cropRotation"], cropRotation);
+	extractAndStore(j["dailyOutputIds"], dailyOutputIds);
+	extractAndStore(j["monthlyOutputIds"], monthlyOutputIds);
+	extractAndStore(j["yearlyOutputIds"], yearlyOutputIds);
+	extractAndStore(j["runOutputIds"], runOutputIds);
+	extractAndStore(j["cropOutputIds"], cropOutputIds);
+	for(auto& p : j["atOutputIds"].object_items())
+		extractAndStore(p.second, atOutputIds[Date::fromIsoDateString(p.first)]);
 
 	set_bool_value(debugMode, j, "debugMode");
 
@@ -177,12 +187,20 @@ json11::Json Env::to_json() const
 	for(const auto& c : cropRotation)
 		cr.push_back(c.to_json());
 
+	J11Object aoids;
+	for(auto p : atOutputIds)
+		aoids[p.first.toIsoDateString()] = p.second;
+
 	return json11::Json::object{
 		{"type", "Env"},
 		{"params", params.to_json()},
 		{"cropRotation", cr},
 		{"dailyOutputIds", dailyOutputIds},
-		{"monthlyOutputIds", dailyOutputIds},
+		{"monthlyOutputIds", monthlyOutputIds},
+		{"yearlyOutputIds", yearlyOutputIds},
+		{"runOutputIds", runOutputIds},
+		{"cropOutputIds", cropOutputIds},
+		{"monthlyOutputIds", aoids},
 		{"da", da.to_json()},
 		{"debugMode", debugMode}
 	};
