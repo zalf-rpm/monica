@@ -45,23 +45,41 @@ void stopMonicaProcesses(zmq::context_t& context,
 	try
 	{
 		socket.connect(address);
+		//cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
+
+		//send finish message and wait for reply from MONICA server process
+		//might take too long in practice, then we have to shut down a MONICA process in a better way
+		for(int i = 0; i < count; i++)
+		{
+			J11Object resultMsg;
+			resultMsg["type"] = "finish";
+			try
+			{
+				s_send(socket, Json(resultMsg).dump());
+
+				try
+				{
+					auto msg = receiveMsg(socket);
+					cout << "Received ack: " << msg.type() << endl;
+				}
+				catch(zmq::error_t e)
+				{
+					cerr
+						<< "Exception on trying to receive 'ack' reply message on zmq socket with address: "
+						<< address << "! Error: [" << e.what() << "]" << endl;
+				}
+			}
+			catch(zmq::error_t e)
+			{
+				cerr 
+					<< "Exception on trying to send 'finish' message on zmq socket with address: " << address
+					<< "! Error: [" << e.what() << "]" << endl;
+			}
+		}
 	}
 	catch(zmq::error_t e)
 	{
-		cerr << "Coulnd't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
-	}
-	//cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
-
-	//send finish message and wait for reply from MONICA server process
-	//might take too long in practice, then we have to shut down a MONICA process in a better way
-	for(int i = 0; i < count; i++)
-	{
-		J11Object resultMsg;
-		resultMsg["type"] = "finish";
-		s_send(socket, Json(resultMsg).dump());
-
-		auto msg = receiveMsg(socket);
-		cout << "Received ack: " << msg.type() << endl;
+		cerr << "Couldn't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
 	}
 }
 
@@ -113,103 +131,151 @@ int main (int argc,
 	try
 	{
 		socket.bind(address);
+
+		int started = 0;
+
+		//loop until receive finish message
+		while(true)
+		{
+			try
+			{
+				auto msg = receiveMsg(socket);
+				cout << "Received message: " << msg.toString() << endl;
+				//    if(!msg.valid)
+				//    {
+				//      this_thread::sleep_for(chrono::milliseconds(100));
+				//      continue;
+				//    }
+
+				string msgType = msg.type();
+				if(msgType == "finish")
+				{
+					J11Object resultMsg;
+					resultMsg["type"] = "ack";
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr
+							<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
+							<< address << "! Still will finish " << appName << "! Error: [" << e.what() << "]" << endl;
+					}
+					break;
+				}
+				else if(msgType == "start-new")
+				{
+					Json& fmsg = msg.json;
+
+					int count = fmsg["count"].int_value();
+
+#ifdef WIN32
+					string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+#else
+					string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort) + " &";
+#endif
+					string fullCmd = fixSystemSeparator(cmd);
+
+					int successfullyStarted = 0;
+					for(int i = 0; i < count; i++)
+					{
+						int res = system(fullCmd.c_str());
+						cout << "result of running '" << cmd << "': " << res << endl;
+						started++, successfullyStarted++;
+					}
+
+					J11Object resultMsg;
+					resultMsg["type"] = "result";
+					resultMsg["started"] = successfullyStarted;
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr
+							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump() 
+							<< " on zmq socket with address: " << address 
+							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+					}
+				}
+				else if(msgType == "start-max")
+				{
+					Json& fmsg = msg.json;
+
+					int count = fmsg["count"].int_value();
+					int stop = max(0, started - count);
+
+					string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+					string fullCmd = fixSystemSeparator(cmd);
+
+					int additionallyStarted = 0;
+					for(int i = started; i < count; i++)
+					{
+						int res = system(fullCmd.c_str());
+						cout << "res: " << res << endl;
+						if(res)
+							started++, additionallyStarted++;
+					}
+
+					if(stop > 0)
+						stopMonicaProcesses(context, proxyAddress, backendProxyPort, stop);
+
+					J11Object resultMsg;
+					resultMsg["type"] = "result";
+					resultMsg["started"] = additionallyStarted;
+					resultMsg["shut-down"] = stop;
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr
+							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump()
+							<< " on zmq socket with address: " << address
+							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+					}
+				}
+				else if(msgType == "stop")
+				{
+					Json& fmsg = msg.json;
+
+					int count = fmsg["count"].int_value();
+					int stop = started - count;
+					if(stop > 0)
+						stopMonicaProcesses(context, proxyAddress, backendProxyPort, stop);
+
+					J11Object resultMsg;
+					resultMsg["type"] = "result";
+					resultMsg["shut-down"] = stop;
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr
+							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump()
+							<< " on zmq socket with address: " << address
+							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+					}
+				}
+			}
+			catch(zmq::error_t e)
+			{
+				cerr
+					<< "Exception on trying to receive request message on zmq socket with address: "
+					<< address << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+			}
+		}
 	}
 	catch(zmq::error_t e)
 	{
 		cerr << "Coulnd't bind socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
 	}
 	cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
-
-	int started = 0;
-
-	//loop until receive finish message
-	while(true)
-	{
-		auto msg = receiveMsg(socket);
-		cout << "Received message: " << msg.toString() << endl;
-		//    if(!msg.valid)
-		//    {
-		//      this_thread::sleep_for(chrono::milliseconds(100));
-		//      continue;
-		//    }
-
-		string msgType = msg.type();
-		if(msgType == "finish")
-		{
-			J11Object resultMsg;
-			resultMsg["type"] = "ack";
-			s_send(socket, Json(resultMsg).dump());
-			break;
-		}
-		else if(msgType == "start-new")
-		{
-			Json& fmsg = msg.json;
-
-			int count = fmsg["count"].int_value();
-			
-#ifdef WIN32
-			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
-#else
-			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort) + " &";
-#endif
-			string fullCmd = fixSystemSeparator(cmd);
-
-			int successfullyStarted = 0;
-			for(int i = 0; i < count; i++)
-			{
-				int res = system(fullCmd.c_str());
-				cout << "result of running '" << cmd << "': " << res << endl;
-				started++, successfullyStarted++;
-			}
-					
-			J11Object resultMsg;
-			resultMsg["type"] = "result";
-			resultMsg["started"] = successfullyStarted;
-			s_send(socket, Json(resultMsg).dump());
-		}
-		else if(msgType == "start-max")
-		{
-			Json& fmsg = msg.json;
-
-			int count = fmsg["count"].int_value();
-			int stop = max(0, started - count);
-
-			string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
-			string fullCmd = fixSystemSeparator(cmd);
-
-			int additionallyStarted = 0;
-			for(int i = started; i < count; i++)
-			{
-				int res = system(fullCmd.c_str());
-				cout << "res: " << res << endl;
-				if(res)
-					started++, additionallyStarted++;
-			}
-
-			if(stop > 0)
-				stopMonicaProcesses(context, proxyAddress, backendProxyPort, stop);
-
-			J11Object resultMsg;
-			resultMsg["type"] = "result";
-			resultMsg["started"] = additionallyStarted;
-			resultMsg["shut-down"] = stop;
-			s_send(socket, Json(resultMsg).dump());
-		}
-		else if(msgType == "stop")
-		{
-			Json& fmsg = msg.json;
-
-			int count = fmsg["count"].int_value();
-			int stop = started - count;
-			if(stop > 0)
-				stopMonicaProcesses(context, proxyAddress, backendProxyPort, stop);
-
-			J11Object resultMsg;
-			resultMsg["type"] = "result";
-			resultMsg["shut-down"] = stop;
-			s_send(socket, Json(resultMsg).dump());
-		}
-	}
 
 	cout << "exiting monica-zmq-control" << endl;
 	return 0;

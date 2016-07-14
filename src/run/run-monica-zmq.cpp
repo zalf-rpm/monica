@@ -192,169 +192,190 @@ json11::Json createYearlyResultsMessage(map<ResultId, double>& avs)
 void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAddress, string outputSocketAddress, bool isInProcess)
 {
   zmq::socket_t input(*zmqContext, isInProcess ? ZMQ_PAIR : ZMQ_PULL);
-//  cout << "MONICA: connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
-  input.connect(inputSocketAddress.c_str());
-//  cout << "MONICA: connected monica zeromq input socket to address: " << inputSocketAddress << endl;
+	debug() << "MONICA: connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
+	try
+	{
+		input.connect(inputSocketAddress.c_str());
+		debug() << "MONICA: connected monica zeromq input socket to address: " << inputSocketAddress << endl;
 
-  zmq::socket_t output_(*zmqContext, ZMQ_PUSH);
-  zmq::socket_t& output = isInProcess ? input : output_;
-  if(isInProcess)
-    ;//cout << "MONICA: using monica zeromq pair input socket also as output socket at address: " << outputSocketAddress << endl;
-  else
-  {
-//    cout << "MONICA: binding monica zeromq output socket to address: " << outputSocketAddress << endl;
-    output.bind(outputSocketAddress.c_str());
-//    cout << "MONICA: bound monica zeromq output socket to address: " << outputSocketAddress << endl;
-  }
+		zmq::socket_t output_(*zmqContext, ZMQ_PUSH);
+		zmq::socket_t& output = isInProcess ? input : output_;
+		if(isInProcess)
+			debug() << "MONICA: using monica zeromq pair input socket also as output socket at address: " << outputSocketAddress << endl;
+		else
+		{
+			debug() << "MONICA: binding monica zeromq output socket to address: " << outputSocketAddress << endl;
+			output.bind(outputSocketAddress.c_str());
+			debug() << "MONICA: bound monica zeromq output socket to address: " << outputSocketAddress << endl;
+		}
 
-  unique_ptr<MonicaModel> monicaUPtr;
+		unique_ptr<MonicaModel> monicaUPtr;
+		map<ResultId, double> aggregatedValues;
 
-  map<ResultId, double> aggregatedValues;
+		//the possibly active crop
+		CropPtr crop;
+		int customId = -1;
+		int prevDevStage = 0;
+		while(true)
+		{
+			try
+			{
+				auto msg = receiveMsg(input);
+				//    cout << "Received message " << msg.toString() << endl;
+		//    if(!msg.valid)
+		//    {
+		//      this_thread::sleep_for(chrono::milliseconds(100));
+		//      continue;
+		//    }
 
-//  Tools::activateDebug = true;
+				string msgType = msg.type();
+				if(msgType == "finish")
+					break;
+				else
+				{
+					if(msgType == "initMonica")
+					{
+						if(monicaUPtr)
+							monicaUPtr.reset();
 
-  //the possibly active crop
-  CropPtr crop;
-  int customId = -1;
-  int prevDevStage = 0;
-  while(true)
-  {
-    auto msg = receiveMsg(input);
-    //    cout << "Received message " << msg.toString() << endl;
-//    if(!msg.valid)
-//    {
-//      this_thread::sleep_for(chrono::milliseconds(100));
-//      continue;
-//    }
+						Json& initMsg = msg.json;
 
-    string msgType = msg.type();
-    if(msgType == "finish")
-      break;
-    else
-    {
-      if(msgType == "initMonica")
-      {
-        if(monicaUPtr)
-          monicaUPtr.reset();
+						customId = initMsg["customId"].int_value();
+						SiteParameters site(initMsg["site"]);
+						CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
+						cpp.siteParameters = site;
+						monicaUPtr = unique_ptr<MonicaModel>(new MonicaModel(cpp));//make_unique<MonicaModel>(cpp);
 
-        Json& initMsg = msg.json;
+						aggregatedValues.clear();
+					}
+					else if(msgType == "dailyStep")
+					{
+						if(!monicaUPtr)
+						{
+							cout << "Error: No initMonica message has been received yet, dropping message " << msg.toString() << endl;
+							continue;
+						}
 
-        customId = initMsg["customId"].int_value();
-        SiteParameters site(initMsg["site"]);
-//        SoilPMsPtr soil(new SoilPMs());
-//        for(auto sp : initMsg["soil"].array_items())
-//          soil->push_back(sp);
-        CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
-        cpp.siteParameters = site;
-        monicaUPtr = unique_ptr<MonicaModel>(new MonicaModel(cpp));//make_unique<MonicaModel>(cpp);
+						MonicaModel& monica = *monicaUPtr.get();
 
-        aggregatedValues.clear();
-      }
-      else if(msgType == "dailyStep")
-      {
-        if(!monicaUPtr)
-        {
-          cout << "Error: No initMonica message has been received yet, dropping message " << msg.toString() << endl;
-          continue;
-        }
+						monica.resetDailyCounter();
 
-        MonicaModel& monica = *monicaUPtr.get();
+						// test if monica's crop has been dying in previous step
+						// if yes, it will be incorporated into soil
+						if(monica.cropGrowth() && monica.cropGrowth()->isDying())
+							monica.incorporateCurrentCrop();
 
-        monica.resetDailyCounter();
+						auto dsm = msg.json["climateData"].object_items();
 
-        // test if monica's crop has been dying in previous step
-        // if yes, it will be incorporated into soil
-        if(monica.cropGrowth() && monica.cropGrowth()->isDying())
-          monica.incorporateCurrentCrop();
+						Date date = Date::fromIsoDateString(msg.json["date"].string_value(), false);
+						map<Climate::ACD, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
+																										 {Climate::tavg, dsm["tavg"].number_value()},
+																										 {Climate::tmax, dsm["tmax"].number_value()},
+																										 {Climate::precip, dsm["precip"].number_value()},
+																										 {Climate::wind, dsm["wind"].number_value()},
+																										 {Climate::globrad, dsm["globrad"].number_value()},
+																										 {Climate::relhumid, dsm["relhumid"].number_value()}};
 
-        auto dsm = msg.json["climateData"].object_items();
+						debug() << "currentDate: " << date.toString() << endl;
 
-        Date date = Date::fromIsoDateString(msg.json["date"].string_value(), false);
-        map<Climate::ACD, double> climateData = {{Climate::tmin, dsm["tmin"].number_value()},
-                                                 {Climate::tavg, dsm["tavg"].number_value()},
-                                                 {Climate::tmax, dsm["tmax"].number_value()},
-                                                 {Climate::precip, dsm["precip"].number_value()},
-                                                 {Climate::wind, dsm["wind"].number_value()},
-                                                 {Climate::globrad, dsm["globrad"].number_value()},
-                                                 {Climate::relhumid, dsm["relhumid"].number_value()}};
+						auto dailyStepResultMsg = Json::object{{"date", date.toIsoDateString()}};
 
-        debug() << "currentDate: " << date.toString() << endl;
+						//apply worksteps
+						string err;
+						if(msg.json.has_shape({{"worksteps", Json::ARRAY}}, err))
+						{
+							for(auto ws : msg.json["worksteps"].array_items())
+							{
+								auto wsType = ws["type"].string_value();
+								if(wsType == "Seed")
+								{
+									Seed seed(ws);
+									seed.apply(&monica);
+									crop = seed.crop();
+									prevDevStage = 0;
+								}
+								else if(wsType == "Harvest")
+								{
+									Harvest h(ws);
+									auto cropResult = h.cropResult();
+									cropResult->date = date;
 
-        auto dailyStepResultMsg = Json::object {{"date", date.toIsoDateString()}};
+									h.apply(&monica);
+									dailyStepResultMsg["harvesting"] =
+										createHarvestingMessage(*cropResult.get(), *monicaUPtr.get());
 
-        //apply worksteps
-        string err;
-        if(msg.json.has_shape({{"worksteps", Json::ARRAY}}, err))
-        {
-          for(auto ws : msg.json["worksteps"].array_items())
-          {
-            auto wsType = ws["type"].string_value();
-            if(wsType == "Seed")
-            {
-              Seed seed(ws);
-              seed.apply(&monica);
-              crop = seed.crop();
-              prevDevStage = 0;
-            }
-            else if(wsType == "Harvest")
-            {
-              Harvest h(ws);
-              auto cropResult = h.cropResult();
-              cropResult->date = date;
+									//to count the applied fertiliser for the next production process
+									monica.resetFertiliserCounter();
+									crop.reset();
+									prevDevStage = 0;
+								}
+								else if(wsType == "Cutting")
+									Cutting(ws).apply(&monica);
+								else if(wsType == "MineralFertiliserApplication")
+									MineralFertiliserApplication(ws).apply(&monica);
+								else if(wsType == "OrganicFertiliserApplication")
+									OrganicFertiliserApplication(ws).apply(&monica);
+								else if(wsType == "TillageApplication")
+									TillageApplication(ws).apply(&monica);
+								else if(wsType == "IrrigationApplication")
+									IrrigationApplication(ws).apply(&monica);
+							}
+						}
 
-              h.apply(&monica);
-              dailyStepResultMsg["harvesting"] =
-                  createHarvestingMessage(*cropResult.get(), *monicaUPtr.get());
+						if(monica.isCropPlanted())
+							monica.cropStep(date, climateData);
 
-              //to count the applied fertiliser for the next production process
-              monica.resetFertiliserCounter();
-              crop.reset();
-              prevDevStage = 0;
-            }
-            else if(wsType == "Cutting")
-              Cutting(ws).apply(&monica);
-            else if(wsType == "MineralFertiliserApplication")
-              MineralFertiliserApplication(ws).apply(&monica);
-            else if(wsType == "OrganicFertiliserApplication")
-              OrganicFertiliserApplication(ws).apply(&monica);
-            else if(wsType == "TillageApplication")
-              TillageApplication(ws).apply(&monica);
-            else if(wsType == "IrrigationApplication")
-              IrrigationApplication(ws).apply(&monica);
-          }
-        }
+						monica.generalStep(date, climateData);
 
-        if(monica.isCropPlanted())
-          monica.cropStep(date, climateData);
+						aggregateValues(aggregatedValues, climateData, monica);
 
-        monica.generalStep(date, climateData);
+						dailyStepResultMsg["soil"] = createSoilResultsMessage(monica);
 
-        aggregateValues(aggregatedValues, climateData, monica);
+						if(date.day() == 31 && date.month() == 3)
+							dailyStepResultMsg["march31st"] = createMarch31stResultsMessage(monica);
 
-        dailyStepResultMsg["soil"] = createSoilResultsMessage(monica);
+						if(date.day() == date.daysInMonth())
+							dailyStepResultMsg["monthly"] = createMonthlyResultsMessage(date, aggregatedValues, monica);
 
-        if(date.day() == 31 && date.month() == 3)
-          dailyStepResultMsg["march31st"] = createMarch31stResultsMessage(monica);
+						if(date == Date(31, 12, date.year()))
+							dailyStepResultMsg["yearly"] = createYearlyResultsMessage(aggregatedValues);
 
-        if(date.day() == date.daysInMonth())
-          dailyStepResultMsg["monthly"] = createMonthlyResultsMessage(date, aggregatedValues, monica);
+						int devStage = monica.cropGrowth() ? monica.cropGrowth()->get_DevelopmentalStage() + 1 : 0;
+						if(prevDevStage < devStage)
+						{
+							prevDevStage = devStage;
+							dailyStepResultMsg["newDevStage"] = devStage;
+						}
 
-        if(date == Date(31,12,date.year()))
-          dailyStepResultMsg["yearly"] = createYearlyResultsMessage(aggregatedValues);
+						try
+						{
+							s_send(output, Json(dailyStepResultMsg).dump());
+						}
+						catch(zmq::error_t e)
+						{
+							cerr
+								<< "Exception on trying to send message on zmq push socket with address: "
+								<< outputSocketAddress << "! Error: [" << e.what() << "]" << endl;
+						}
+					}
+				}
+			}
+			catch(zmq::error_t e)
+			{
+				cerr
+					<< "Exception on trying to receive message on zmq pull socket with address: "
+					<< inputSocketAddress << "! Will continue to receive push messages! Error: [" << e.what() << "]" << endl;
+			}
+		}
+	}
+	catch(zmq::error_t e)
+	{
+		cerr 
+			<< "Couldn't connect socket to address: " << inputSocketAddress << " or "
+			<< outputSocketAddress << "! Error: [" << e.what() << "]" << endl;
+	}
 
-        int devStage = monica.cropGrowth() ? monica.cropGrowth()->get_DevelopmentalStage() + 1 : 0;
-        if(prevDevStage < devStage)
-        {
-          prevDevStage = devStage;
-          dailyStepResultMsg["newDevStage"] = devStage;
-        }
-
-        s_send(output, Json(dailyStepResultMsg).dump());
-      }
-    }
-  }
-
-//  cout << "exiting startZeroMQMonica" << endl;
+	debug() << "exiting startZeroMQMonica" << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -457,56 +478,84 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 			socket.connect(socketAddress);
 		else
 			socket.bind(socketAddress);
+		debug() << "MONICA: bound monica zeromq reply socket to address: " << socketAddress << endl;
+
+		//the possibly active crop
+		while(true)
+		{
+			try
+			{
+				auto msg = receiveMsg(socket);
+
+				//    cout << "Received message " << msg.toString() << endl;
+				//    if(!msg.valid)
+				//    {
+				//      this_thread::sleep_for(chrono::milliseconds(100));
+				//      continue;
+				//    }
+
+				string msgType = msg.type();
+				if(msgType == "finish")
+				{
+					J11Object resultMsg;
+					resultMsg["type"] = "ack";
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr 
+							<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
+							<< socketAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+					}
+					break;
+				}
+				else if(msgType == "Env")
+				{
+					Json& fullMsg = msg.json;
+
+					Env env(msg.json);
+
+					activateDebug = env.debugMode;
+
+					env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+						[](string soilTexture, int distance)
+					{
+						return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+					};
+
+					auto res = runMonica(env);
+
+					J11Object resultMsg;
+					resultMsg["type"] = "result";
+					addOutputToResultMessage(res.out, resultMsg);
+
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr 
+							<< "Exception on trying to reply with result message on zmq socket with address: "
+							<< socketAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+					}
+				}
+			}
+			catch(zmq::error_t e)
+			{
+				cerr 
+					<< "Exception on trying to receive request message on zmq socket with address: "
+					<< socketAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+			}
+		}
 	}
 	catch(zmq::error_t e)
 	{
-		cerr << "Coulnd't " << (useZmqProxy ? "connect" : "bind") << " socket to address: " << socketAddress << "! Error: " << e.what() << endl;
-	}
-	debug() << "MONICA: bound monica zeromq reply socket to address: " << socketAddress << endl;
-
-	//the possibly active crop
-	while(true)
-	{
-		auto msg = receiveMsg(socket);
-		//    cout << "Received message " << msg.toString() << endl;
-		//    if(!msg.valid)
-		//    {
-		//      this_thread::sleep_for(chrono::milliseconds(100));
-		//      continue;
-		//    }
-
-		string msgType = msg.type();
-		if(msgType == "finish")
-		{
-			J11Object resultMsg;
-			resultMsg["type"] = "ack";
-			s_send(socket, Json(resultMsg).dump());
-			break;
-		}
-		else if(msgType == "Env")
-		{
-			Json& fullMsg = msg.json;
-
-			Env env(msg.json);
-
-			activateDebug = env.debugMode;
-
-			env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-				[](string soilTexture, int distance)
-			{
-				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-			};
-			
-			auto res = runMonica(env);
-
-			J11Object resultMsg;
-			resultMsg["type"] = "result";
-
-			addOutputToResultMessage(res.out, resultMsg);
-
-			s_send(socket, Json(resultMsg).dump());
-		}
-		
+		cerr 
+			<< "Couldn't " << (useZmqProxy ? "connect" : "bind") 
+			<< " zmq socket to address: " << socketAddress << "! Error: " << e.what() << endl;
 	}
 
 	debug() << "exiting startZeroMQMonicaFull" << endl;
@@ -514,25 +563,44 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 
 Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, Env env)
 {
+	Json res;
+
 	zmq::socket_t socket(*zmqContext, ZMQ_REQ);
 	debug() << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
 	try
 	{
 		socket.connect(socketAddress);
+		debug() << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
+
+		string s = env.to_json().dump();
+
+		try
+		{
+			if(s_send(socket, env.to_json().dump()))
+			{
+				try
+				{
+					auto msg = receiveMsg(socket);
+					res = msg.json;
+				}
+				catch(zmq::error_t e)
+				{
+					cerr 
+						<< "Exception on trying to receive reply message on zmq socket with address: "
+						<< socketAddress << "! Error: [" << e.what() << "]" << endl;
+				}
+			}
+		}
+		catch(zmq::error_t e)
+		{
+			cerr
+				<< "Exception on trying to request MONICA run with message on zmq socket with address: "
+				<< socketAddress << "! Error: [" << e.what() << "]" << endl;
+		}
 	}
 	catch(zmq::error_t e)
 	{
 		cerr << "Coulnd't connect socket to address: " << socketAddress << "! Error: " << e.what() << endl;
-	}
-	debug() << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
-
-	string s = env.to_json().dump();
-
-	Json res;
-	if(s_send(socket, env.to_json().dump()))
-	{
-		auto msg = receiveMsg(socket);
-		res = msg.json;
 	}
 
 	debug() << "exiting runZeroMQMonicaFull" << endl;

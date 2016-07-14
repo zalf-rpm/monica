@@ -50,7 +50,7 @@ int main (int argc,
 	}
 	
 	zmq::context_t context(1);
-	
+
 	// setup the proxy 
 	// socket facing clients
 	zmq::socket_t frontend (context, ZMQ_ROUTER);

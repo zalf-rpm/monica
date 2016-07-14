@@ -81,20 +81,38 @@ void sendControlMessage(zmq::context_t& context,
 	try
 	{
 		socket.connect(address);
+		//cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
+
+		J11Object resultMsg;
+		resultMsg["type"] = messageType;
+		resultMsg["count"] = count;
+		try
+		{
+			s_send(socket, Json(resultMsg).dump());
+		
+			try
+			{
+				auto msg = receiveMsg(socket);
+				cout << "Received ack: " << msg.type() << endl;
+			}
+			catch(zmq::error_t e)
+			{
+				cerr
+					<< "Exception on trying to receive 'ack' reply message on zmq socket with address: "
+					<< address << "! Error: [" << e.what() << "]" << endl;
+			}
+		}
+		catch(zmq::error_t e)
+		{
+			cerr
+				<< "Exception on trying to send request message: " << Json(resultMsg).dump() << " on zmq socket with address: "
+				<< address << "! Error: [" << e.what() << "]" << endl;
+		}
 	}
 	catch(zmq::error_t e)
 	{
-		cerr << "Coulnd't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
+		cerr << "Couldn't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
 	}
-	//cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
-
-	J11Object resultMsg;
-	resultMsg["type"] = messageType;
-	resultMsg["count"] = count;
-	s_send(socket, Json(resultMsg).dump());
-
-	auto msg = receiveMsg(socket);
-	cout << "Received ack: " << msg.type() << endl;
 }
 
 void writeOutputHeaderRows(ostream& out,
