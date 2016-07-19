@@ -192,16 +192,15 @@ int main (int argc,
 					int count = fmsg["count"].int_value();
 
 #ifdef WIN32
-					string cmd = string("start monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+					string cmd = string("start /b monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
 #else
 					string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort) + " &";
 #endif
-					string fullCmd = fixSystemSeparator(cmd);
-
+					
 					int successfullyStarted = 0;
 					for(int i = 0; i < count; i++)
 					{
-						int res = system(fullCmd.c_str());
+						int res = system(cmd.c_str());
 						debug() << "result of running '" << cmd << "': " << res << endl;
 						started++, successfullyStarted++;
 					}
@@ -229,17 +228,15 @@ int main (int argc,
 					int stop = max(0, started - count);
 
 #ifdef WIN32
-					string cmd = string("start monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
+					string cmd = string("start /b monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort);
 #else
 					string cmd = string("monica --use-zmq-proxy --zmq-server --port ") + to_string(backendProxyPort) + " &";
 #endif
 
-					string fullCmd = fixSystemSeparator(cmd);
-
 					int additionallyStarted = 0;
 					for(int i = started; i < count; i++)
 					{
-						int res = system(fullCmd.c_str());
+						int res = system(cmd.c_str());
 						debug() << "result of running '" << cmd << "': " << res << endl;
 						started++, additionallyStarted++;
 					}
