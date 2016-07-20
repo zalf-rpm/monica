@@ -142,9 +142,6 @@ void MonicaModel::seedCrop(CropPtr crop)
                                                cps->speciesParams.pc_TargetN30));
       addDailySumFertiliser(fert_amount);
     }
-
-    //if(writeOutputFiles())
-    //  writeCropParameters(_pathToOutputDir, *_currentCrop.get());
   }
 }
 

@@ -31,7 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
-#include "../core/monica-typedefs.h"
 #include "tools/json11-helper.h"
 #include "tools/algorithms.h"
 
@@ -309,7 +308,7 @@ std::string Result::toString()
 //--------------------------------------------------------------------------------------
 
 pair<Date, map<Climate::ACD, double>>
-Monica::climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
+climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 {
 	Date startDate = da.startDate();
 	Date currentDate = startDate + stepNo;

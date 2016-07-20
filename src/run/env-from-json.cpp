@@ -22,15 +22,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "../run/run-monica.h"
 #include "../io/database-io.h"
-#include "../core/monica-typedefs.h"
-#include "../core/monica.h"
 #include "tools/json11-helper.h"
 #include "tools/helper.h"
 #include "climate/climate-file-io.h"
-#include "../core/simulation.h"
 #include "soil/conversion.h"
 #include "soil/soil-from-db.h"
-#include "../core/monica-parameters.h"
 
 using namespace std;
 using namespace Monica;

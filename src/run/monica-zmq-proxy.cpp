@@ -13,8 +13,12 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include "zhelpers.hpp"
+#include <cstdlib>
 
+#include "zhelpers.hpp"
+#include "tools/debug.h"
+
+using namespace Tools;
 using namespace std;
 
 string appName = "monica-zmq-proxy";
@@ -25,6 +29,8 @@ int main (int argc,
 {
 	int frontendPort = 5555;
 	int backendPort = 5556;
+	bool startControlNode = false;
+	int controlNodePort = 6666;
 	
 	for(auto i = 1; i < argc; i++)
 	{
@@ -35,12 +41,22 @@ int main (int argc,
 		else if((arg == "-b" || arg == "--backend-port")
 						&& i + 1 < argc)
 			backendPort = stoi(argv[++i]);
+		else if(arg == "-c" || arg == "--start-control-node")
+			startControlNode = true;
+		else if((arg == "-cp" || arg == "--control-port")
+						&& i + 1 < argc)
+			controlNodePort = stoi(argv[++i]);
+		else if(arg == "-d" || arg == "--debug")
+			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
 		{
 			cout
 				<< "./" << appName << " " << endl
 				<< "\t [[-f | --frontend-port] FRONTEND-PORT (default: " << frontendPort << ")]\t ... run " << appName << " with given frontend port" << endl
 				<< "\t [[-b | --backend-port] BACKEND-PORT (default: " << backendPort << ")]\t ... run " << appName << " with given backend port" << endl
+				<< "\t [-c | --start-control-node]\t\t\t ... start control node, connected to proxy" << endl
+				<< "\t [[-cp | --control-port] CONTROL-NODE-PORT (default: " << controlNodePort << ")]\t ... run control node at given port" << endl
+				<< "\t [-h | --debug]\t\t\t ... enable debug outputs" << endl
 				<< "\t [-h | --help]\t\t\t ... this help output" << endl
 				<< "\t [-v | --version]\t\t ... outputs " << appName << " version" << endl;
 			exit(0);
@@ -80,6 +96,19 @@ int main (int argc,
 	}
 	cout << "Bound " << appName << " zeromq dealer socket to backend address: " << beAddress << "!" << endl;
 
+	if(startControlNode)
+	{
+		ostringstream oss;
+#ifdef WIN32
+		oss << "start /b monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlNodePort;
+#else
+		oss << "monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlNodePort << " &";
+#endif
+
+		int res = system(oss.str().c_str());
+		debug() << "result of running '" << oss.str() << "': " << res << endl;
+	}
+	
 	// start the proxy
 	try
 	{

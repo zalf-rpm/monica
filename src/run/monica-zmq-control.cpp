@@ -13,9 +13,10 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 
 #include <string>
 

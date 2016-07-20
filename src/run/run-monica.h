@@ -22,6 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
+#include "../core/monica-exports.h"
 #include "../core/monica.h"
 #include "cultivation-method.h"
 #include "climate/climate-common.h"
@@ -38,7 +39,7 @@ namespace Monica
 #endif
   }
 
-	struct OId : public Tools::Json11Serializable
+	struct MONICA_API OId : public Tools::Json11Serializable
 	{
 		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
 		
@@ -97,7 +98,7 @@ namespace Monica
 
 	//---------------------------------------------------------------------------
 
-  struct Env : public Tools::Json11Serializable
+	struct MONICA_API Env : public Tools::Json11Serializable
   {
     Env() {}
 		
@@ -134,16 +135,7 @@ namespace Monica
 
     std::string toString() const;
 
-    //Set execution mode of Monica.
-    //Disables debug outputs for some modes.
-    void setMode(int m){ mode = m; }
-
-    int getMode() const { return mode; }
-
     std::string berestRequestAddress;
-//    std::string berestRequestProtocol;
-    //    std::string berestRequestHost;
-//    std::string berestRequestPort;
 
     //zeromq reply socket for datastream controlled MONICA run
     std::string inputDatastreamAddress;
@@ -158,15 +150,11 @@ namespace Monica
     std::string outputDatastreamPort;
 
 		bool debugMode{false};
-
-  private:
-    //! Variable for differentiate betweend execution modes of MONICA
-    int mode{MODE_LC_DSS};
   };
 
   //------------------------------------------------------------------------------------------
 
-	struct MonicaRefs
+	struct MONICA_API MonicaRefs
 	{
 		MonicaRefs refresh(int timestep, Tools::Date currentDate)
 		{
@@ -191,15 +179,15 @@ namespace Monica
 		Tools::Date currentDate;
 	};
 
-	struct BOTRes
+	struct MONICA_API BOTRes
 	{
 		typedef std::vector<json11::Json> ResultVector;
 		std::map<int, std::function<void(MonicaRefs&, ResultVector&, OId)>> ofs;
 		std::map<std::string, Result2> name2result;
 	};
-	BOTRes& buildOutputTable();
+	MONICA_API BOTRes& buildOutputTable();
 
-	struct Output
+	struct MONICA_API Output
 	{
 		typedef int Id;
 		typedef int Month;
@@ -216,7 +204,7 @@ namespace Monica
 	};
 	
 	//! structure holding all results of one monica run
-	class Result
+	class MONICA_API Result
 	{
 	public:
 		Result() {}
@@ -248,13 +236,13 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  std::pair<Tools::Date, std::map<Climate::ACD, double>>
-  climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);
+  //std::pair<Tools::Date, std::map<Climate::ACD, double>>
+  //climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);
 
   //! main function for running monica under a given Env(ironment)
 	//! @param env the environment completely defining what the model needs and gets
 	//! @return a structure with all the Monica results
-  Result runMonica(Env env);
+  MONICA_API Result runMonica(Env env);
 }
 
 #endif

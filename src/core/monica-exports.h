@@ -4,8 +4,6 @@
 
 /*
 Authors: 
-Claas Nendel <claas.nendel@zalf.de>
-Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
 Maintainers: 
@@ -15,14 +13,13 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef FILE_IO_H_
-#define FILE_IO_H_
+#ifndef MONICA_EXPORTS_H
+#define MONICA_EXPORTS_H
 
-#include <string>
+#ifdef MONICA_EXPORTS
+#define MONICA_API __declspec(dllexport)
+#else
+#define MONICA_API __declspec(dllimport)
+#endif
 
-namespace Monica
-{
-
-}  
-
-#endif 
+#endif // MONICA_EXPORTS_H

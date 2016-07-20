@@ -24,10 +24,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <chrono>
 #include <thread>
 
-#ifndef NO_ZMQ
 #include "zmq.hpp"
 #include "zhelpers.hpp"
-#endif
+
 #include "json11/json11.hpp"
 
 #include "run-monica-zmq.h"
@@ -36,10 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica.h"
 #include "../io/database-io.h"
 #include "run-monica.h"
-
-#ifndef NO_ZMQ
 #include "tools/zmq-helper.h"
-#endif
 
 using namespace std;
 using namespace Monica;
@@ -47,6 +43,7 @@ using namespace Tools;
 using namespace json11;
 using namespace Soil;
 
+/*
 json11::Json createHarvestingMessage(CMResult result, const MonicaModel& monica)
 {
   result.results[sumFertiliser] = monica.sumFertiliser();
@@ -113,7 +110,9 @@ json11::Json createMarch31stResultsMessage(const MonicaModel& monica)
 	return jsonMsg;
 }
 
-void aggregateValues(map<ResultId, double>& avs, map<Climate::ACD, double>& climateData, const MonicaModel& monica)
+void aggregateValues(map<ResultId, double>& avs, 
+										 map<Climate::ACD, double>& climateData, 
+										 const MonicaModel& monica)
 {
 	avs[avg10cmMonthlyAvgCorg] += monica.avgCorg(0.1);
 	avs[avg30cmMonthlyAvgCorg] += monica.avgCorg(0.3);
@@ -128,7 +127,9 @@ void aggregateValues(map<ResultId, double>& avs, map<Climate::ACD, double>& clim
 	avs[yearlySumNLeaching] += monica.nLeaching();
 }
 
-json11::Json createMonthlyResultsMessage(Date date, map<ResultId, double>& avs, const MonicaModel& monica)
+json11::Json createMonthlyResultsMessage(Date date, 
+																				 map<ResultId, double>& avs, 
+																				 const MonicaModel& monica)
 {
 	auto jsonMsg = json11::Json::object{
 	{to_string(avg10cmMonthlyAvgCorg), avs[avg10cmMonthlyAvgCorg] / double(date.daysInMonth())},
@@ -187,10 +188,14 @@ json11::Json createYearlyResultsMessage(map<ResultId, double>& avs)
 
 	return jsonMsg;
 }
+*/
 
-#ifndef NO_ZMQ
-void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAddress, string outputSocketAddress, bool isInProcess)
+void Monica::startZeroMQMonica(zmq::context_t* zmqContext, 
+															 string inputSocketAddress, 
+															 string outputSocketAddress, 
+															 bool isInProcess)
 {
+	/*
   zmq::socket_t input(*zmqContext, isInProcess ? ZMQ_PAIR : ZMQ_PULL);
 	debug() << "MONICA: connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
 	try
@@ -376,6 +381,7 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext, string inputSocketAdd
 	}
 
 	debug() << "exiting startZeroMQMonica" << endl;
+	*/
 }
 
 //-----------------------------------------------------------------------------
@@ -561,7 +567,9 @@ void Monica::startZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddr
 	debug() << "exiting startZeroMQMonicaFull" << endl;
 }
 
-Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddress, Env env)
+Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, 
+																 string socketAddress, 
+																 Env env)
 {
 	Json res;
 
@@ -585,7 +593,7 @@ Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 				}
 				catch(zmq::error_t e)
 				{
-					cerr 
+					cerr
 						<< "Exception on trying to receive reply message on zmq socket with address: "
 						<< socketAddress << "! Error: [" << e.what() << "]" << endl;
 				}
@@ -606,5 +614,4 @@ Json Monica::runZeroMQMonicaFull(zmq::context_t* zmqContext, string socketAddres
 	debug() << "exiting runZeroMQMonicaFull" << endl;
 	return res;
 }
-#endif
 

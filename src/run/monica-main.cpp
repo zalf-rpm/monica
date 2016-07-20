@@ -31,7 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../run/run-monica.h"
 #include "../run/run-monica-zmq.h"
 #include "../io/database-io.h"
-#include "../core/monica-typedefs.h"
 #include "../core/monica.h"
 #include "tools/json11-helper.h"
 #include "climate/climate-file-io.h"
@@ -39,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/conversion.h"
 #include "env-from-json.h"
 #include "tools/algorithms.h"
+#include "../io/csv-format.h"
 
 using namespace std;
 using namespace Monica;
@@ -56,17 +56,6 @@ void test()
 	//Json j = readAndParseFile("installer/Hohenfinow2/json/test.crop.json");
 	//auto j2 = findAndReplaceReferences(j, j);
 	//auto str = j2.dump();
-}
-
-void writeDbParams()
-{
-	//writeCropParameters("../monica-parameters/crops");
-	//writeMineralFertilisers("../monica-parameters/mineral-fertilisers");
-	//writeOrganicFertilisers("../monica-parameters/organic-fertilisers");
-	//writeCropResidues("../monica-parameters/crop-residues");
-	//writeUserParameters(MODE_HERMES, "../monica-parameters/user-parameters");
-	//writeUserParameters(MODE_EVA2, "../monica-parameters/user-parameters");
-	//writeUserParameters(MODE_MACSUR_SCALING, "../monica-parameters/user-parameters");
 }
 
 void sendControlMessage(zmq::context_t& context,
@@ -113,95 +102,6 @@ void sendControlMessage(zmq::context_t& context,
 	{
 		cerr << "Couldn't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
 	}
-}
-
-void writeOutputHeaderRows(ostream& out,
-													 const vector<OId>& outputIds,
-													 string csvSep,
-													 bool includeHeaderRow,
-													 bool includeUnitsRow, 
-													 bool includeTimeAgg = true)
-{
-	ostringstream oss1, oss2, oss3, oss4;
-	for(auto oid : outputIds)
-	{
-		int fromLayer = oid.fromLayer, toLayer = oid.toLayer;
-		bool isOrgan = oid.isOrgan();
-		bool isRange = oid.isRange() && oid.layerAggOp == OId::NONE;
-		if(isOrgan)
-			toLayer = fromLayer = int(oid.organ); // organ is being represented just by the value of fromLayer currently
-		else if(isRange) 
-			fromLayer++, toLayer++; // display 1-indexed layer numbers to users
-		else 
-			toLayer = fromLayer; // for aggregated ranges, which aren't being displayed as range
-		
-		for(int i = fromLayer; i <= toLayer; i++)
-		{
-			oss1 << "\"";
-			if(isOrgan)
-				oss1 << oid.name << "/" << oid.toString(oid.organ);
-			else if(isRange)
-				oss1 << oid.name << "_" << to_string(i);
-			else
-				oss1 << oid.name;
-			oss1 << "\"" << csvSep;
-			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep;
-			oss3 << "\"m:" << oid.toString(includeTimeAgg) << "\"" << csvSep;
-			oss2 << "\"[" << oid.unit << "]\"" << csvSep;
-		}
-	}
-
-	if(includeHeaderRow)
-		out
-		<< oss1.str() << endl
-		<< oss4.str() << endl
-		<< oss3.str() << endl
-		<< oss2.str() << endl;
-}
-
-void writeOutput(ostream& out, 
-								 const vector<OId>& outputIds, 
-								 const vector<J11Array>& values,
-								 string csvSep, 
-								 bool includeHeaderRow, 
-								 bool includeUnitsRow)
-{
-	if(!values.empty())
-	{
-		for(size_t k = 0, size = values.begin()->size(); k < size; k++)
-		{
-			size_t i = 0;
-			for(auto oid : outputIds)
-			{
-				Json j = values.at(i).at(k);
-				switch(j.type())
-				{
-				case Json::NUMBER: out << j.number_value() << csvSep; break;
-				case Json::STRING: out << j.string_value() << csvSep; break;
-				case Json::BOOL: out << j.bool_value() << csvSep; break;
-				case Json::ARRAY:
-				{
-					for(Json jv : j.array_items())
-					{
-						switch(jv.type())
-						{
-						case Json::NUMBER: out << jv.number_value() << csvSep; break;
-						case Json::STRING: out << jv.string_value() << csvSep; break;
-						case Json::BOOL: out << jv.bool_value() << csvSep; break;
-						default: out << "UNKNOWN" << csvSep;
-						}
-					}
-					break;
-				default: out << "UNKNOWN" << csvSep;
-				}
-				}
-
-				++i;
-			}
-			out << endl;
-		}
-	}
-	out.flush();
 }
 
 string appName = "monica";

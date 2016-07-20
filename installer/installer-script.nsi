@@ -10,9 +10,11 @@
 
 	!ifdef X86
 		!define Arch "x86"
+		!define WinPlatform "Win32"
 		!define ArchBit "32bit"
 	!else
 		!define Arch "x64"
+		!define WinPlatform "x64"
 		!define ArchBit "64bit"
 	!endif
 
@@ -93,9 +95,12 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   SetOutPath "$INSTDIR"
   
   ;ADD YOUR OWN FILES HERE...
-  File /oname=monica.exe "..\project-files\release\monica.exe"  
-  File /oname=monica-zmq-control.exe "..\project-files\release\monica-zmq-control.exe"  
-  File /oname=monica-zmq-proxy.exe "..\project-files\release\monica-zmq-proxy.exe"  
+  File /oname=monica.exe "..\project-files\${WinPlatform}\Release\monica.exe"  
+  File /oname=monica-run.exe "..\project-files\${WinPlatform}\Release\monica-run.exe"  
+  ;File /oname=monica-zmq-run.exe "..\project-files\${WinPlatform}\Release\monica-zmq-run.exe"  
+  File /oname=libmonica.dll "..\project-files\${WinPlatform}\Release\libmonica.dll"  
+  File /oname=monica-zmq-control.exe "..\project-files\${WinPlatform}\release\monica-zmq-control.exe"  
+  File /oname=monica-zmq-proxy.exe "..\project-files\${WinPlatform}\release\monica-zmq-proxy.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
 	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
   File "${SysLibsDir}\binaries\windows\vc14\${Arch}\libsodium-1.0.10\libsodium.dll"
