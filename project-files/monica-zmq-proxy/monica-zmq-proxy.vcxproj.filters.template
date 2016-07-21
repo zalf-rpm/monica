@@ -45,6 +45,9 @@
     <ClCompile Include="..\..\..\util\json11\json11.cpp">
       <Filter>Source Files\json11</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\util\tools\debug.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\util\tools\date.h">
@@ -61,6 +64,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\util\json11\json11.hpp">
       <Filter>Header Files\json11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\util\tools\debug.h">
+      <Filter>Header Files\tools</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

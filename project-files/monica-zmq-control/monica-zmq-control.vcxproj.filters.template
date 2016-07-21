@@ -25,11 +25,14 @@
     <Filter Include="Source Files\tools">
       <UniqueIdentifier>{6b917465-c93f-44a8-b511-b88da3ade462}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\monica">
+      <UniqueIdentifier>{211a6292-fd8f-4c97-8976-25f254b040ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\monica\run">
+      <UniqueIdentifier>{c467a742-70cf-48fa-86ad-5eca1eeefd7c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\run\monica-zmq-control.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\util\json11\json11.cpp">
       <Filter>Source Files\json11</Filter>
     </ClCompile>
@@ -44,6 +47,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\util\tools\zmq-helper.cpp">
       <Filter>Source Files\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\util\tools\debug.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\run\monica-zmq-control.cpp">
+      <Filter>Source Files\monica\run</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +69,9 @@
       <Filter>Header Files\tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\zmq-helper.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\util\tools\debug.h">
       <Filter>Header Files\tools</Filter>
     </ClInclude>
   </ItemGroup>
