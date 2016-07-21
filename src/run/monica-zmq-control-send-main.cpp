@@ -42,14 +42,32 @@ int main(int argc, char** argv)
 
 	zmq::context_t context(1);
 
+	bool debug = false, debugSet = false;
+	string address = "localhost";
+	int port = 6666;
+	string command = "";
+	int count = 1;
+
+	auto printHelp = [=]()
+	{
+		cout
+			<< appName << endl
+			<< " [-d | --debug] ... show debug outputs" << endl
+			<< " [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
+			<< " [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
+			<< " [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
+			<< " [[-a | --address] CONTROL-ADDRESS (default: " << address << ")] ... address of control node" << endl
+			<< " [[-p | --port] CONTROL-PORT (default: " << port << ")] ... port of control node" << endl
+			<< " [[-n | --start-new] COUNT] ... start COUNT new MONICA nodes" << endl
+			<< " [[-m | --start-max] COUNT] ... start maximum COUNT MONICA nodes" << endl
+			<< " [[-s | --stop] COUNT] ... stop COUNT MONICA nodes" << endl
+			<< " [send PARAMETERS] ... send command to MONICA ZeroMQ control node via calling 'monica-zmq-control-send' with PARMETERS" << endl
+			<< " [-h | --help] ... this help output" << endl
+			<< " [-v | --version] ... outputs MONICA version" << endl;
+	};
+
 	if(argc >= 1)
 	{
-		bool debug = false, debugSet = false;
-		string address = "localhost";
-		int port = 6666;
-		string command = "";
-		int count = 1;
-
 		for(auto i = 1; i < argc; i++)
 		{
 			string arg = argv[i];
@@ -80,24 +98,9 @@ int main(int argc, char** argv)
 				count = atoi(argv[++i]);
 			}
 			else if(arg == "-h" || arg == "--help")
-			{
-				cout
-					<< "./" << appName << endl
-					<< "\t [-d | --debug] ... show debug outputs" << endl
-					<< "\t [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
-					<< "\t [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
-					<< "\t [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
-					<< "\t [[-a | --address] CONTROL-ADDRESS (default: " << address << ")] ... address of control node" << endl
-					<< "\t [[-p | --port] CONTROL-PORT (default: " << port << ")] ... port of control node" << endl
-					<< "\t [[-n | --start-new] COUNT] ... start COUNT new MONICA nodes" << endl
-					<< "\t [[-m | --start-max] COUNT] ... start maximum COUNT MONICA nodes" << endl
-					<< "\t [[-s | --stop] COUNT] ... stop COUNT MONICA nodes" << endl
-					<< "\t [-h | --help] ... this help output" << endl
-					<< "\t [-v | --version] ... outputs MONICA version" << endl;
-			  exit(0);
-			}
+				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
-				cout << "MONICA version " << version << endl, exit(0);
+				cout << appName << " version " << version << endl, exit(0);
 		}
 
 		if(!command.empty())

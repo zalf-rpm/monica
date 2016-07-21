@@ -97,9 +97,11 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   ;ADD YOUR OWN FILES HERE...
   File /oname=monica.exe "..\project-files\${WinPlatform}\Release\monica.exe"  
   File /oname=monica-run.exe "..\project-files\${WinPlatform}\Release\monica-run.exe"  
-  ;File /oname=monica-zmq-run.exe "..\project-files\${WinPlatform}\Release\monica-zmq-run.exe"  
+  File /oname=monica-zmq-run.exe "..\project-files\${WinPlatform}\Release\monica-zmq-run.exe"  
+  File /oname=monica-zmq-server.exe "..\project-files\${WinPlatform}\Release\monica-zmq-server.exe"  
   File /oname=libmonica.dll "..\project-files\${WinPlatform}\Release\libmonica.dll"  
   File /oname=monica-zmq-control.exe "..\project-files\${WinPlatform}\release\monica-zmq-control.exe"  
+  File /oname=monica-zmq-control-send.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-send.exe"  
   File /oname=monica-zmq-proxy.exe "..\project-files\${WinPlatform}\release\monica-zmq-proxy.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
 	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
@@ -145,29 +147,6 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "Hohenfinow2\sim.json"
 	File "Hohenfinow2\climate.csv"
 	File "Hohenfinow2\climate.ods"
-
-	;the json version files with project name prepended
-  ;CreateDirectory $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
-  ;SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\json-from-db
-  ;File "Hohenfinow2\json-from-db\test.crop.json"
-  ;File "Hohenfinow2\json-from-db\test.sim.json"
-  ;File "Hohenfinow2\json-from-db\test.site.json"
-	;File "Hohenfinow2\json-from-db\test.climate.csv"
-  
-	;the old hermes files
-  ;SetOutPath "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
-	;File "Hohenfinow2\old-hermes-format-files\monica.ini"
-  ;File "Hohenfinow2\old-hermes-format-files\Irrig.TXT"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.991"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.992"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.993"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.994"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.995"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.996"
-  ;File "Hohenfinow2\old-hermes-format-files\MET_HF.997"
-  ;File "Hohenfinow2\old-hermes-format-files\ROTATION.txt"
-  ;File "Hohenfinow2\old-hermes-format-files\SLAGDUNG.txt"
-  ;File "Hohenfinow2\old-hermes-format-files\SOIL.txt"
 		
   SetOutPath "$INSTDIR"
   
@@ -214,21 +193,19 @@ SectionEnd
 Section "Uninstall"
 
   Delete "$INSTDIR\monica.exe"
+  Delete "$INSTDIR\monica-run.exe"
+  Delete "$INSTDIR\monica-zmq-run.exe"
+  Delete "$INSTDIR\monica-zmq-server.exe"
   Delete "$INSTDIR\monica-zmq-control.exe"
+  Delete "$INSTDIR\monica-zmq-control-send.exe"
   Delete "$INSTDIR\monica-zmq-proxy.exe"
   Delete "$INSTDIR\*.dll"
-  ;Delete "$INSTDIR\climate.dll"
-  ;Delete "$INSTDIR\tools.dll"
-  ;Delete "$INSTDIR\db.dll"
-  ;Delete "$INSTDIR\libmysql.dll"  
-  ;Delete "$INSTDIR\mingwm10.dll"  
-  ;Delete "$INSTDIR\libgcc_s_dw2-1.dll"
-  ;Delete "$INSTDIR\gmon.out"
+  
   Delete "$INSTDIR\LICENSE"
   ;Delete "$INSTDIR\Readme.pdf"
-	Delete "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
-	Delete "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	Delete "$INSTDIR\version.txt"
+  Delete "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
+  Delete "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
+  Delete "$INSTDIR\version.txt"
 	
 	
 	Delete "$PROFILE\MONICA\LICENSE"
@@ -236,29 +213,7 @@ Section "Uninstall"
   Delete "$PROFILE\MONICA\sqlite-db\monica.sqlite"
 	Delete "$PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite"
   RMDir "$PROFILE\MONICA\sqlite-db"
-  
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\monica.ini
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\Irrig.TXT
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.991
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.992
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.993
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.994
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.995
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.996
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\MET_HF.997  
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\ROTATION.txt
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\rmout.csv
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\smout.csv
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SLAGDUNG.txt
-  ;Delete $PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files\SOIL.txt
-	;RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\old-hermes-format-files"
-	
-	;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.climate.csv"
-  ;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.sim.json"
-	;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.crop.json"
-	;Delete "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db\test.site.json"
-	;RMDir "$PROFILE\MONICA\Examples\Hohenfinow2\json-from-db"
-	
+    
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.ods"
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.csv"
 	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\sim.json"

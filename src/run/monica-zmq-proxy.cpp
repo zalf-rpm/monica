@@ -32,6 +32,19 @@ int main (int argc,
 	bool startControlNode = false;
 	int controlNodePort = 6666;
 	
+	auto printHelp = [=]()
+	{
+		cout
+			<< appName << " " << endl
+			<< " [[-f | --frontend-port] FRONTEND-PORT (default: " << frontendPort << ")] ... run " << appName << " with given frontend port" << endl
+			<< " [[-b | --backend-port] BACKEND-PORT (default: " << backendPort << ")] ... run " << appName << " with given backend port" << endl
+			<< " [-c | --start-control-node] ... start control node, connected to proxy" << endl
+			<< " [[-cp | --control-port] CONTROL-NODE-PORT (default: " << controlNodePort << ")] ... run control node at given port" << endl
+			<< " [-h | --debug] ... enable debug outputs" << endl
+			<< " [-h | --help] ... this help output" << endl
+			<< " [-v | --version] ... outputs " << appName << " version" << endl;
+	};
+
 	for(auto i = 1; i < argc; i++)
 	{
 		string arg = argv[i];
@@ -49,18 +62,7 @@ int main (int argc,
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
-		{
-			cout
-				<< "./" << appName << " " << endl
-				<< "\t [[-f | --frontend-port] FRONTEND-PORT (default: " << frontendPort << ")]\t ... run " << appName << " with given frontend port" << endl
-				<< "\t [[-b | --backend-port] BACKEND-PORT (default: " << backendPort << ")]\t ... run " << appName << " with given backend port" << endl
-				<< "\t [-c | --start-control-node]\t\t\t ... start control node, connected to proxy" << endl
-				<< "\t [[-cp | --control-port] CONTROL-NODE-PORT (default: " << controlNodePort << ")]\t ... run control node at given port" << endl
-				<< "\t [-h | --debug]\t\t\t ... enable debug outputs" << endl
-				<< "\t [-h | --help]\t\t\t ... this help output" << endl
-				<< "\t [-v | --version]\t\t ... outputs " << appName << " version" << endl;
-			exit(0);
-		}
+			printHelp(), exit(0);
 		else if(arg == "-v" || arg == "--version")
 			cout << appName << " version " << version << endl, exit(0);
 	}

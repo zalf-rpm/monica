@@ -45,7 +45,27 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
-	if(argc >= 1)
+	auto printHelp = [=]()
+	{
+		cout
+			<< appName << endl
+			<< " [-d | --debug] ... show debug outputs" << endl
+			<< " [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
+			<< " [[-op | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
+			<< " [[-o | --path-to-output-file] FILE (default: ./rmout.csv)] ... path to output file" << endl
+			<< " [[-do | --daily-outputs] [LIST] (default: value of key 'sim.json:output.daily')] ... list of daily output elements" << endl
+			<< " [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
+			<< " [[-s | --path-to-site] FILE (default: ./site.json)] ... path to site.json file" << endl
+			<< " [[-w | --path-to-climate] FILE (default: ./climate.csv)] ... path to climate.csv" << endl
+			<< " [-h | --help] ... this help output" << endl
+			<< " [-v | --version] ... outputs " << appName << " version" << endl
+			<< " path-to-sim-json ... path to sim.json file" << endl;
+	};
+
+
+	if(argc > 1)
 	{
 		bool debug = false, debugSet = false;
 		string startDate, endDate;
@@ -85,26 +105,9 @@ int main(int argc, char** argv)
 			        && i+1 < argc)
 				climate = argv[++i];
 			else if(arg == "-h" || arg == "--help")
-			{
-				cout
-					<< "./" << appName << endl
-					<< "\t [-d | --debug] ... show debug outputs" << endl
-					<< "\t [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-					<< "\t [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
-					<< "\t [[-op | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
-					<< "\t [[-o | --path-to-output-file] FILE (default: ./rmout.csv)] ... path to output file" << endl
-					<< "\t [[-do | --daily-outputs] [LIST] (default: value of key 'sim.json:output.daily')] ... list of daily output elements" << endl
-					<< "\t [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
-					<< "\t [[-s | --path-to-site] FILE (default: ./site.json)] ... path to site.json file" << endl
-					<< "\t [[-w | --path-to-climate] FILE (default: ./climate.csv)] ... path to climate.csv" << endl
-					<< "\t [-h | --help] ... this help output" << endl
-					<< "\t [-v | --version] ... outputs MONICA version" << endl
-					<< "\t path-to-sim-json ... path to sim.json file" << endl;
-				exit(0);
-			}
+				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
-				cout << "MONICA version " << version << endl, exit(0);
+				cout << appName << " version " << version << endl, exit(0);
 			else
 				pathToSimJson = argv[i];
 		}
@@ -284,6 +287,9 @@ int main(int argc, char** argv)
 		if(activateDebug)
 			cout << "finished MONICA" << endl;
 	}
+	else 
+		printHelp();
+
 	
 	return 0;
 }

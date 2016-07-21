@@ -55,14 +55,26 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
+	int port = 5560;
+	string address = "localhost";
+	bool connectToZmqProxy = false;
+
+	auto printHelp = [=]()
+	{
+		cout
+			<< appName << endl
+			<< " [-d | --debug] ... show debug outputs" << endl
+			<< " [[-c | --connect-to-proxy]] ... connect MONICA server process to a ZeroMQ proxy" << endl
+			<< " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
+			<< " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
+			<< " [-h | --help] ... this help output" << endl
+			<< " [-v | --version] ... outputs MONICA version" << endl;
+	};
+
 	zmq::context_t context(1);
 
 	if(argc >= 1)
 	{
-		int port = 5560;
-		string address = "localhost";
-		bool connectToZmqProxy = false;
-
 		for(auto i = 1; i < argc; i++)
 		{
 			string arg = argv[i];
@@ -77,19 +89,9 @@ int main(int argc, char** argv)
 							&& i + 1 < argc)
 				port = stoi(argv[++i]);
 			else if(arg == "-h" || arg == "--help")
-			{
-				cout
-					<< "./" << appName << endl
-					<< "\t [-d | --debug] ... show debug outputs" << endl
-					<< "\t [[-c | --connect-to-proxy]] ... connect MONICA server process to a ZeroMQ proxy" << endl
-					<< "\t [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
-					<< "\t [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
-					<< "\t [-h | --help] ... this help output" << endl
-					<< "\t [-v | --version] ... outputs MONICA version" << endl;
-			  exit(0);
-			}
+				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
-				cout << "MONICA version " << version << endl, exit(0);
+				cout << appName << " version " << version << endl, exit(0);
 		}
 
 		debug() << "starting ZeroMQ MONICA server" << endl;

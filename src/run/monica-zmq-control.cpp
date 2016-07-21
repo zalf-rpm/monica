@@ -107,6 +107,19 @@ int main (int argc,
 	int backendProxyPort = 5556;
 	string proxyAddress = "localhost";
 
+	auto printHelp = [=]()
+	{
+		cout
+			<< appName << " " << endl
+			<< " [[-c | --port] COMM-PORT (default: " << commPort << ")] ... run " << appName << " with given control port" << endl
+			<< " [[-a | --proxy-address] PROXY-ADDRESS (default: " << proxyAddress << ")] ... connect client to give IP address" << endl
+			<< " [[-f | --frontend-proxy-port] PROXY-PORT (default: " << frontendProxyPort << ")] ... communicate with started MONICA ZeroMQ servers via given frontend proxy port" << endl
+			<< " [[-b | --backend-proxy-port] PROXY-PORT (default: " << backendProxyPort << ")] ... connect started MONICA ZeroMQ servers to given backend proxy port" << endl
+			<< " [-h | --debug] ... enable debug outputs" << endl
+			<< " [-h | --help] ... this help output" << endl
+			<< " [-v | --version] ... outputs " << appName << " version" << endl;
+	};
+	
 	for(auto i = 1; i < argc; i++)
 	{
 		string arg = argv[i];
@@ -125,18 +138,7 @@ int main (int argc,
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
-		{
-			cout
-				<< "./" << appName << " " << endl
-				<< "\t [[-c | --port] COMM-PORT (default: " << commPort << ")]\t ... run " << appName << " with given control port" << endl
-				<< "\t [[-a | --proxy-address] PROXY-ADDRESS (default: " << proxyAddress << ")]\t ... connect client to give IP address" << endl
-				<< "\t [[-f | --frontend-proxy-port] PROXY-PORT (default: " << frontendProxyPort << ")]\t ... communicate with started MONICA ZeroMQ servers via given frontend proxy port" << endl
-				<< "\t [[-b | --backend-proxy-port] PROXY-PORT (default: " << backendProxyPort << ")]\t ... connect started MONICA ZeroMQ servers to given backend proxy port" << endl
-				<< "\t [-h | --debug]\t\t\t ... enable debug outputs" << endl
-				<< "\t [-h | --help]\t\t\t ... this help output" << endl
-				<< "\t [-v | --version]\t\t ... outputs " << appName << " version" << endl;
-			exit(0);
-		}
+			printHelp(), exit(0);
 		else if(arg == "-v" || arg == "--version")
 			cout << appName << " version " << version << endl, exit(0);
 	}
