@@ -1154,9 +1154,6 @@ Errors SiteParameters::merge(json11::Json j)
 			if(sp.has_shape({{"Thickness", Json::NUMBER}}, err)
 				 || sp.has_shape({{"Thickness", Json::ARRAY}}, err))
 				repeatLayer = max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0));
-			else
-				res.errors.push_back(string("Couldn't read 'Thickness' key from JSON object ('SoilProfileParameters' JSON array index: ") +
-														 to_string(spi) + "):\n" + sp.dump());
 
 			//simply repeat the last layer as often as necessary to fill the 20 layers
 			if(spi + 1 == spsCount)
