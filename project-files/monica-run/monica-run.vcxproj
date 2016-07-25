@@ -243,7 +243,6 @@
     <ClInclude Include="..\..\src\io\csv-format.h" />
     <ClInclude Include="..\..\src\io\database-io.h" />
     <ClInclude Include="..\..\src\run\env-from-json.h" />
-    <ClInclude Include="..\..\src\run\run-monica.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\climate\climate-common.cpp" />

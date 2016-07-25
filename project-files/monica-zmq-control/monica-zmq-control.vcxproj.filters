@@ -13,22 +13,22 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\tools">
-      <UniqueIdentifier>{dbef5862-6ccf-44f2-a98d-88cb79bd9821}</UniqueIdentifier>
+    <Filter Include="Header Files\json11">
+      <UniqueIdentifier>{6ab4128e-fcfe-4099-b70f-2a1608ff099f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\tools">
-      <UniqueIdentifier>{84075413-f195-42e4-9797-ba7cccb8e667}</UniqueIdentifier>
+      <UniqueIdentifier>{6267d515-2bfe-42af-b83d-c7b4282177c2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\json11">
-      <UniqueIdentifier>{388ddc27-56a0-45a7-9904-199885000b8f}</UniqueIdentifier>
+      <UniqueIdentifier>{921f2a81-64c6-40d7-824c-7e7ab4b8d2c4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\json11">
-      <UniqueIdentifier>{882c8c2b-b567-44d1-9b9b-4b48ee683829}</UniqueIdentifier>
+    <Filter Include="Source Files\tools">
+      <UniqueIdentifier>{6b917465-c93f-44a8-b511-b88da3ade462}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\run\monica-zmq-proxy.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\..\util\json11\json11.cpp">
+      <Filter>Source Files\json11</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\util\tools\date.cpp">
       <Filter>Source Files\tools</Filter>
@@ -42,14 +42,17 @@
     <ClCompile Include="..\..\..\util\tools\zmq-helper.cpp">
       <Filter>Source Files\tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\util\json11\json11.cpp">
-      <Filter>Source Files\json11</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\util\tools\debug.cpp">
       <Filter>Source Files\tools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\run\monica-zmq-control-main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\util\json11\json11.hpp">
+      <Filter>Header Files\json11</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\util\tools\date.h">
       <Filter>Header Files\tools</Filter>
     </ClInclude>
@@ -61,9 +64,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\zmq-helper.h">
       <Filter>Header Files\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\util\json11\json11.hpp">
-      <Filter>Header Files\json11</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\debug.h">
       <Filter>Header Files\tools</Filter>

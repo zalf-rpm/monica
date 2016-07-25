@@ -27,14 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{107EFAC1-8674-48BA-ADA0-4C751160BA96}</ProjectGuid>
-    <RootNamespace>monicalib</RootNamespace>
+    <ProjectGuid>{31EEA5F3-50BC-464C-8A7E-8CDF713C9D63}</ProjectGuid>
+    <RootNamespace>monicazmqserver</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>libmonica</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -46,7 +45,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -58,14 +57,14 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -94,21 +93,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>libmonica</TargetName>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='monica dll|Win32'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>libmonica</TargetName>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>libmonica</TargetName>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>libmonica</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,14 +108,14 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -154,14 +146,14 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -193,7 +185,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -201,8 +193,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -215,7 +207,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RUN_HERMES;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -223,8 +215,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -247,21 +239,7 @@
     <ClInclude Include="..\..\..\util\tools\json11-helper.h" />
     <ClInclude Include="..\..\..\util\tools\read-ini.h" />
     <ClInclude Include="..\..\..\util\tools\zmq-helper.h" />
-    <ClInclude Include="..\..\src\core\crop-growth.h" />
-    <ClInclude Include="..\..\src\core\crop.h" />
-    <ClInclude Include="..\..\src\core\monica-parameters.h" />
-    <ClInclude Include="..\..\src\core\monica.h" />
-    <ClInclude Include="..\..\src\core\soilcolumn.h" />
-    <ClInclude Include="..\..\src\core\soilmoisture.h" />
-    <ClInclude Include="..\..\src\core\soilorganic.h" />
-    <ClInclude Include="..\..\src\core\soiltemperature.h" />
-    <ClInclude Include="..\..\src\core\soiltransport.h" />
-    <ClInclude Include="..\..\src\core\monica-exports.h" />
-    <ClInclude Include="..\..\src\core\voc-common.h" />
-    <ClInclude Include="..\..\src\core\voc-guenther.h" />
-    <ClInclude Include="..\..\src\core\voc-jjv.h" />
-    <ClInclude Include="..\..\src\run\cultivation-method.h" />
-    <ClInclude Include="..\..\src\run\run-monica.h" />
+    <ClInclude Include="..\..\src\run\run-monica-zmq.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\climate\climate-common.cpp" />
@@ -279,19 +257,8 @@
     <ClCompile Include="..\..\..\util\tools\json11-helper.cpp" />
     <ClCompile Include="..\..\..\util\tools\read-ini.cpp" />
     <ClCompile Include="..\..\..\util\tools\zmq-helper.cpp" />
-    <ClCompile Include="..\..\src\core\crop-growth.cpp" />
-    <ClCompile Include="..\..\src\core\crop.cpp" />
-    <ClCompile Include="..\..\src\core\voc-guenther.cpp" />
-    <ClCompile Include="..\..\src\core\voc-jjv.cpp" />
-    <ClCompile Include="..\..\src\core\monica-parameters.cpp" />
-    <ClCompile Include="..\..\src\core\monica.cpp" />
-    <ClCompile Include="..\..\src\run\cultivation-method.cpp" />
-    <ClCompile Include="..\..\src\run\run-monica.cpp" />
-    <ClCompile Include="..\..\src\core\soilcolumn.cpp" />
-    <ClCompile Include="..\..\src\core\soilmoisture.cpp" />
-    <ClCompile Include="..\..\src\core\soilorganic.cpp" />
-    <ClCompile Include="..\..\src\core\soiltemperature.cpp" />
-    <ClCompile Include="..\..\src\core\soiltransport.cpp" />
+    <ClCompile Include="..\..\src\run\monica-zmq-server-main.cpp" />
+    <ClCompile Include="..\..\src\run\run-monica-zmq.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\monica.rc" />

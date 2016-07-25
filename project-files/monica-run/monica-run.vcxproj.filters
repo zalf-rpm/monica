@@ -102,9 +102,6 @@
     <ClInclude Include="..\..\..\util\json11\json11.hpp">
       <Filter>Headerdateien\json11</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\run\run-monica.h">
-      <Filter>Headerdateien\monica\run</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\util\tools\json11-helper.h">
       <Filter>Headerdateien\tools</Filter>
     </ClInclude>

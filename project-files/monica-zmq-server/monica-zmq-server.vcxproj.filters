@@ -46,23 +46,11 @@
     <Filter Include="Headerdateien\monica">
       <UniqueIdentifier>{0d4d2dfa-41ee-4981-a0df-cc2a45330965}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Headerdateien\monica\core">
-      <UniqueIdentifier>{14093a09-018c-4d0e-9287-b15486b2726a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Headerdateien\monica\io">
-      <UniqueIdentifier>{468a5bdb-27e5-4867-9271-17f324241ed6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Headerdateien\monica\run">
       <UniqueIdentifier>{0389a3c5-dcb0-4f53-b0fb-4523761adb5c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Quelldateien\monica">
       <UniqueIdentifier>{d85df80c-435a-4c95-b13f-b6411b2bd006}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Quelldateien\monica\core">
-      <UniqueIdentifier>{be7f9266-f201-4e31-8f84-955cdc49fedd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Quelldateien\monica\io">
-      <UniqueIdentifier>{05439511-d991-429d-8a10-c4faea088929}</UniqueIdentifier>
     </Filter>
     <Filter Include="Quelldateien\monica\run">
       <UniqueIdentifier>{5a5e5c87-f3c9-4971-acab-1b6a33a96450}</UniqueIdentifier>
@@ -90,6 +78,9 @@
     <ClInclude Include="..\..\..\util\tools\helper.h">
       <Filter>Headerdateien\tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\util\tools\read-ini.h">
+      <Filter>Headerdateien\tools</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\util\climate\climate-common.h">
       <Filter>Headerdateien\climate</Filter>
     </ClInclude>
@@ -108,31 +99,7 @@
     <ClInclude Include="..\..\..\util\json11\json11.hpp">
       <Filter>Headerdateien\json11</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\crop.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\monica.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\monica-parameters.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\soilcolumn.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\soilmoisture.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\soilorganic.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\soiltemperature.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\soiltransport.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\run\run-monica.h">
+    <ClInclude Include="..\..\src\run\run-monica-zmq.h">
       <Filter>Headerdateien\monica\run</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\json11-helper.h">
@@ -140,27 +107,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\zmq-helper.h">
       <Filter>Headerdateien\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\crop-growth.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\run\cultivation-method.h">
-      <Filter>Headerdateien\monica\run</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\voc-guenther.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\voc-jjv.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\voc-common.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\util\tools\read-ini.h">
-      <Filter>Headerdateien\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\monica-exports.h">
-      <Filter>Headerdateien\monica\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +128,9 @@
     <ClCompile Include="..\..\..\util\tools\date.cpp">
       <Filter>Quelldateien\tools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\util\tools\read-ini.cpp">
+      <Filter>Quelldateien\tools</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\util\tools\debug.cpp">
       <Filter>Quelldateien\tools</Filter>
     </ClCompile>
@@ -197,32 +146,8 @@
     <ClCompile Include="..\..\..\util\json11\json11.cpp">
       <Filter>Quelldateien\json11</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\run\run-monica.cpp">
+    <ClCompile Include="..\..\src\run\run-monica-zmq.cpp">
       <Filter>Quelldateien\monica\run</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\crop.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\monica.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\monica-parameters.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\soilcolumn.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\soilmoisture.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\soilorganic.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\soiltemperature.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\soiltransport.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\util\tools\helper.cpp">
       <Filter>Quelldateien\tools</Filter>
@@ -233,20 +158,8 @@
     <ClCompile Include="..\..\..\util\tools\json11-helper.cpp">
       <Filter>Quelldateien\tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\crop-growth.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\run\cultivation-method.cpp">
+    <ClCompile Include="..\..\src\run\monica-zmq-server-main.cpp">
       <Filter>Quelldateien\monica\run</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\voc-guenther.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\voc-jjv.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\util\tools\read-ini.cpp">
-      <Filter>Quelldateien\tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
