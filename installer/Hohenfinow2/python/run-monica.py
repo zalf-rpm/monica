@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-15-*-
 
 import sys
-sys.path.append('../../../')	 # path to monica.py
-import monica_py
+sys.path.append('.')	 # path to monica.py
+import monica_python
 import os
 import datetime
 import shutil
@@ -29,7 +29,7 @@ def main():
 	#print "startDate: " + sim["start-date"]
 	#print "sim: " + json.dumps(sim)
 
-	y2y = monica_py.runMonica({
+	y2y = monica_python.runMonica({
 		"sim-json-str" : json.dumps(sim),
 		"site-json-str" : json.dumps(site),
 		"crop-json-str" : json.dumps(crop)

@@ -14,21 +14,27 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include <string>
+#include <algorithm>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
+#include <boost/python/list.hpp>
+#include <boost/python/dict.hpp>
 
-#include "core/monica.h"
-#include "run/env-from-json.h"
+#include "json11/json11.hpp"
+
+#include "../core/monica.h"
+#include "../run/env-from-json.h"
 #include "tools/date.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
-#include "core/simulation.h"
+#include "tools/json11-helper.h"
 
 using namespace boost::python;
 
 using namespace std;
 using namespace Monica;
 using namespace Tools;
+using namespace json11;
 
 dict rm(dict params)
 {
@@ -39,12 +45,62 @@ dict rm(dict params)
 
 	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
 	activateDebug = env.debugMode;
+		
+	auto res = Monica::runMonica(env);
+
+	dict d;
+
+	boost::python::list dl;
+	for(const auto& a : res.out.daily)
+		dl.append(Json(a).dump());
+	d["daily"] = dl;
+	
+	boost::python::list ml;
+	for(const auto& p : res.out.monthly)
+		ml.append(Json(p.second).dump());
+	d["monthly"] = ml;
+
+	boost::python::list yl;
+	for(const auto& a : res.out.yearly)
+		yl.append(Json(a).dump());
+	d["yearly"] = yl;
+
+	for(const auto& p : res.out.at)
+	{
+		boost::python::list al;
+		for(const auto& a : p.second)
+			al.append(Json(a).dump());
+		d[p.first.toIsoDateString()] = al;
+	}
+
+	for(const auto& p : res.out.crop)
+	{
+		boost::python::list cl;
+		for(const auto& a : p.second)
+			cl.append(Json(a).dump());
+		d[p.first] = cl;
+	}
+
+	d["run"] = Json(res.out.run).dump();
+	
+	return d;
+}
+
+dict rm2(dict params)
+{
+	stl_input_iterator<string> begin(params.keys()), end;
+	map<string, string> n2jos;
+	for_each(begin, end,
+					 [&](string key){ n2jos[key] = extract<string>(params[key]); });
+
+	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
+	activateDebug = env.debugMode;
 
 	auto res = Monica::runMonica(env);
 
 	size_t ey = env.da.endDate().year();
 	dict d;
-	for (size_t i = 0, size = res.pvrs.size(); i < size; i++)
+	for(size_t i = 0, size = res.pvrs.size(); i < size; i++)
 	{
 		size_t year = ey - size + 1 + i;
 		double yield = res.pvrs[i].results[primaryYieldTM] / 10.0;
@@ -54,28 +110,8 @@ dict rm(dict params)
 	return d;
 }
 
-/*
-dict rhm(string path, bool debug)
-{
-	auto res = runWithHermesData(path, debug);
 
-	size_t ey = res.pvrs.size();
-	dict d;
-	for (size_t i = 0, size = res.pvrs.size(); i < size; i++)
-	{
-		size_t year = ey - size + 1 + i;
-		double yield = res.pvrs[i].results[primaryYieldTM] / 10.0;
-		//cout << "year: " << year << " yield: " << yield << " tTM" << endl;
-		d[year] = Tools::round(yield, 3);
-	}
-	return d;
-}
-*/
-
-//dict rhmnd(string path){ return rhm(path, false); }
-//dict rhmd(string path){ return rhm(path, true); }
-
-BOOST_PYTHON_MODULE(monica_py)
+BOOST_PYTHON_MODULE(monica_python)
 {
 	/*
   class_<CarbiocialConfiguration>("CarbiocialConfiguration")
@@ -97,6 +133,4 @@ BOOST_PYTHON_MODULE(monica_py)
       */
 
   def("runMonica", rm);
-//def("runHermesMonica", rhmnd);
-//def("runHermesMonicaD", rhmd);
 }

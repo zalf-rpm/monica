@@ -41,7 +41,6 @@ local.properties
 
 # User-specific files
 *.suo
-*.user
 *.sln.docstates
 
 # Build results
@@ -196,9 +195,6 @@ installer/Hohenfinow2/*.dat
 /monica-mpmas/DEF237
 
 *.pro
-*.sln
-*.vcxproj
-*.filters
 HF2_automatic_yield
 src/run/production-process.h.autosave
 /installer/Hohenfinow2/smout.csv
@@ -208,3 +204,4 @@ src/run/production-process.h.autosave
 *.opendb
 project-files/monica.VC.db
 /inputs.json
+/project-files/monica-full/monica.VC.db

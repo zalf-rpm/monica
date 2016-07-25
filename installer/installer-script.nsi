@@ -100,6 +100,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   File /oname=monica-zmq-run.exe "..\project-files\${WinPlatform}\Release\monica-zmq-run.exe"  
   File /oname=monica-zmq-server.exe "..\project-files\${WinPlatform}\Release\monica-zmq-server.exe"  
   File /oname=libmonica.dll "..\project-files\${WinPlatform}\Release\libmonica.dll"  
+	File /oname=monica_python.pyd "..\project-files\${WinPlatform}\Release\monica_python.pyd"  
   File /oname=monica-zmq-control.exe "..\project-files\${WinPlatform}\release\monica-zmq-control.exe"  
   File /oname=monica-zmq-control-send.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-send.exe"  
   File /oname=monica-zmq-proxy.exe "..\project-files\${WinPlatform}\release\monica-zmq-proxy.exe"  
@@ -107,6 +108,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
   File "${SysLibsDir}\binaries\windows\vc14\${Arch}\libsodium-1.0.10\libsodium.dll"
   File "${SysLibsDir}\binaries\windows\vc14\${Arch}\zeromq-dev-master\libzmq.dll"
+	File "${SysLibsDir}\binaries\windows\vc14\${Arch}\boost-python\boost_python-vc140-mt-1_61.dll"
 	File "..\LICENSE"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
@@ -154,6 +156,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
   WriteRegStr "HKCU" "Software\MONICA" "" $INSTDIR
   	  
 	${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR"
+	${EnvVarUpdate} $0 "PYTHONPATH" "P" "HKCU" "$INSTDIR"
 	
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -241,5 +244,6 @@ Section "Uninstall"
   DeleteRegKey /ifempty HKCU "Software\MONICA"
 
 	${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR"
+	${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR"
 	
 SectionEnd
