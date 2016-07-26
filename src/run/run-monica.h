@@ -22,7 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "../core/monica-exports.h"
+#include "common/dll-exports.h"
 #include "../core/monica.h"
 #include "cultivation-method.h"
 #include "climate/climate-common.h"
@@ -39,7 +39,7 @@ namespace Monica
 #endif
   }
 
-	struct MONICA_API OId : public Tools::Json11Serializable
+	struct DLL_API OId : public Tools::Json11Serializable
 	{
 		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
 		
@@ -98,7 +98,7 @@ namespace Monica
 
 	//---------------------------------------------------------------------------
 
-	struct MONICA_API Env : public Tools::Json11Serializable
+	struct DLL_API Env : public Tools::Json11Serializable
   {
     Env() {}
 		
@@ -154,7 +154,7 @@ namespace Monica
 
   //------------------------------------------------------------------------------------------
 
-	struct MONICA_API MonicaRefs
+	struct DLL_API MonicaRefs
 	{
 		MonicaRefs refresh(int timestep, Tools::Date currentDate)
 		{
@@ -179,15 +179,15 @@ namespace Monica
 		Tools::Date currentDate;
 	};
 
-	struct MONICA_API BOTRes
+	struct DLL_API BOTRes
 	{
 		typedef std::vector<json11::Json> ResultVector;
 		std::map<int, std::function<void(MonicaRefs&, ResultVector&, OId)>> ofs;
 		std::map<std::string, Result2> name2result;
 	};
-	MONICA_API BOTRes& buildOutputTable();
+	DLL_API BOTRes& buildOutputTable();
 
-	struct MONICA_API Output
+	struct DLL_API Output
 	{
 		typedef int Id;
 		typedef int Month;
@@ -203,11 +203,11 @@ namespace Monica
 		std::vector<json11::Json> run;
 	};
 	
-	MONICA_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
-	MONICA_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
+	DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
+	DLL_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
 
 	//! structure holding all results of one monica run
-	class MONICA_API Result
+	class DLL_API Result
 	{
 	public:
 		Result() {}
@@ -245,7 +245,7 @@ namespace Monica
   //! main function for running monica under a given Env(ironment)
 	//! @param env the environment completely defining what the model needs and gets
 	//! @return a structure with all the Monica results
-  MONICA_API Result runMonica(Env env);
+  DLL_API Result runMonica(Env env);
 }
 
 #endif

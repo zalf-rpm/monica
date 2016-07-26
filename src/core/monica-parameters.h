@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "monica-exports.h"
+#include "common/dll-exports.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
 #include "tools/json11-helper.h"
@@ -313,7 +313,7 @@ namespace Monica
 	/**
 	 * @brief structure holding the results for a particular crop (in one year usually)
 	 */
-  struct MONICA_API CMResult : public Tools::Json11Serializable
+  struct DLL_API CMResult : public Tools::Json11Serializable
 	{
     CMResult() {}
 
@@ -344,7 +344,7 @@ namespace Monica
 	/**
 	 * @brief
 	 */
-  struct MONICA_API YieldComponent : public Tools::Json11Serializable
+  struct DLL_API YieldComponent : public Tools::Json11Serializable
 	{
     YieldComponent(){}
 
@@ -363,7 +363,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct MONICA_API SpeciesParameters : public Tools::Json11Serializable
+  struct DLL_API SpeciesParameters : public Tools::Json11Serializable
   {
     SpeciesParameters() {}
 
@@ -430,7 +430,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct MONICA_API CultivarParameters : public Tools::Json11Serializable
+  struct DLL_API CultivarParameters : public Tools::Json11Serializable
   {
     CultivarParameters() {}
 
@@ -489,7 +489,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct MONICA_API CropParameters : public Tools::Json11Serializable
+  struct DLL_API CropParameters : public Tools::Json11Serializable
   {
     CropParameters() {}
 
@@ -520,7 +520,7 @@ namespace Monica
    * Simple data structure that holds information about mineral fertiliser.
    * @author Xenia Holtmann, Claas Nendel
    */
-  class MONICA_API MineralFertiliserParameters : public Tools::Json11Serializable
+  class DLL_API MineralFertiliserParameters : public Tools::Json11Serializable
   {
   public:
     MineralFertiliserParameters() {}
@@ -577,7 +577,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct MONICA_API NMinUserParameters : public Tools::Json11Serializable
+  struct DLL_API NMinUserParameters : public Tools::Json11Serializable
   {
     NMinUserParameters() {}
 
@@ -596,7 +596,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct MONICA_API IrrigationParameters : public Tools::Json11Serializable
+  struct DLL_API IrrigationParameters : public Tools::Json11Serializable
   {
     IrrigationParameters() {}
 
@@ -614,7 +614,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct MONICA_API AutomaticIrrigationParameters : public IrrigationParameters
+  struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters
   {
     AutomaticIrrigationParameters() {}
 
@@ -632,7 +632,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  class MONICA_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable
+  class DLL_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable
   {
   public:
     MeasuredGroundwaterTableInformation() {}
@@ -659,7 +659,7 @@ namespace Monica
 	/**
 	 * @author Claas Nendel, Michael Berg
 	 */
-  struct MONICA_API SiteParameters : public Tools::Json11Serializable
+  struct DLL_API SiteParameters : public Tools::Json11Serializable
 	{
     SiteParameters(){}
 
@@ -686,7 +686,7 @@ namespace Monica
 	/**
 	* @brief Data structure that containts all relevant parameters for the automatic yield trigger.
 	*/
-  class MONICA_API AutomaticHarvestParameters : public Tools::Json11Serializable
+  class DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable
 	{
   public:
     //! Enumeration for defining automatic harvesting times
@@ -728,7 +728,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct MONICA_API NMinCropParameters : public Tools::Json11Serializable
+  struct DLL_API NMinCropParameters : public Tools::Json11Serializable
 	{
     NMinCropParameters() {}
 
@@ -747,7 +747,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct MONICA_API OrganicMatterParameters : public Tools::Json11Serializable
+  struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable
   {
     OrganicMatterParameters() {}
 
@@ -781,7 +781,7 @@ namespace Monica
 
   //-------------------------------------------
 
-  struct MONICA_API OrganicFertiliserParameters : public OrganicMatterParameters
+  struct DLL_API OrganicFertiliserParameters : public OrganicMatterParameters
   {
     OrganicFertiliserParameters() {}
 
@@ -799,7 +799,7 @@ namespace Monica
 
   //-------------------------------------------
 
-  struct MONICA_API CropResidueParameters : public OrganicMatterParameters
+  struct DLL_API CropResidueParameters : public OrganicMatterParameters
   {
     CropResidueParameters() {}
 
@@ -817,7 +817,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-  struct MONICA_API SimulationParameters : public Tools::Json11Serializable
+  struct DLL_API SimulationParameters : public Tools::Json11Serializable
   {
     SimulationParameters() {}
 
@@ -858,7 +858,7 @@ namespace Monica
 	 * Class that holds information of crop defined by user.
 	 * @author Xenia Specka
 	 */
-  struct MONICA_API UserCropParameters : public Tools::Json11Serializable
+  struct DLL_API UserCropParameters : public Tools::Json11Serializable
 	{
     UserCropParameters() {}
 
@@ -891,7 +891,7 @@ namespace Monica
 	 * Class that holds information about user defined environment parameters.
 	 * @author Xenia Specka
 	 */
-  struct MONICA_API UserEnvironmentParameters : public Tools::Json11Serializable
+  struct DLL_API UserEnvironmentParameters : public Tools::Json11Serializable
 	{
     UserEnvironmentParameters(){}
 
@@ -919,7 +919,7 @@ namespace Monica
 	 * Class that holds information about user defined soil moisture parameters.
 	 * @author Xenia Specka
 	 */
-  struct MONICA_API UserSoilMoistureParameters : public Tools::Json11Serializable
+  struct DLL_API UserSoilMoistureParameters : public Tools::Json11Serializable
 	{
 		UserSoilMoistureParameters();
 
@@ -963,7 +963,7 @@ namespace Monica
 	 * Class that holds information about user defined soil temperature parameters.
 	 * @author Xenia Specka
 	 */
-  struct MONICA_API UserSoilTemperatureParameters : public Tools::Json11Serializable
+  struct DLL_API UserSoilTemperatureParameters : public Tools::Json11Serializable
 	{
     UserSoilTemperatureParameters(){}
 
@@ -994,7 +994,7 @@ namespace Monica
 	 * Class that holds information about user defined soil transport parameters.
 	 * @author Xenia Specka
 	 */
-  struct MONICA_API UserSoilTransportParameters : public Tools::Json11Serializable
+  struct DLL_API UserSoilTransportParameters : public Tools::Json11Serializable
 	{
     UserSoilTransportParameters(){}
 
@@ -1016,7 +1016,7 @@ namespace Monica
 	 * Class that holds information about user-defined soil organic parameters.
 	 * @author Claas Nendel
 	 */
-  struct MONICA_API UserSoilOrganicParameters : public Tools::Json11Serializable
+  struct DLL_API UserSoilOrganicParameters : public Tools::Json11Serializable
 	{
     UserSoilOrganicParameters(){}
 
@@ -1074,7 +1074,7 @@ namespace Monica
 	 *
 	 * @author Xenia Specka
 	 */
-	class MONICA_API CentralParameterProvider : public Tools::Json11Serializable
+	class DLL_API CentralParameterProvider : public Tools::Json11Serializable
 	{
 	public:
     CentralParameterProvider();

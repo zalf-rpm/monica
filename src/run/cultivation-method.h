@@ -27,7 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "../core/monica-exports.h"
+#include "common/dll-exports.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
 #include "tools/json11-helper.h"
@@ -39,7 +39,7 @@ namespace Monica
 {
   class MonicaModel;
 
-  class MONICA_API WorkStep : public Tools::Json11Serializable
+  class DLL_API WorkStep : public Tools::Json11Serializable
 	{
 	public:
     WorkStep(){}
@@ -71,7 +71,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class MONICA_API Seed : public WorkStep
+	class DLL_API Seed : public WorkStep
 	{
 	public:
     Seed(){}
@@ -106,7 +106,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class MONICA_API Harvest : public WorkStep
+	class DLL_API Harvest : public WorkStep
 	{
 	public:
 		Harvest();
@@ -152,7 +152,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	class MONICA_API Cutting : public WorkStep
+	class DLL_API Cutting : public WorkStep
 	{
 	public:
     Cutting(const Tools::Date& at);
@@ -172,7 +172,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class MONICA_API MineralFertiliserApplication : public WorkStep
+	class DLL_API MineralFertiliserApplication : public WorkStep
 	{
 	public:
 		MineralFertiliserApplication(const Tools::Date& at,
@@ -202,7 +202,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	class MONICA_API OrganicFertiliserApplication : public WorkStep
+	class DLL_API OrganicFertiliserApplication : public WorkStep
 	{
 	public:
 		OrganicFertiliserApplication(const Tools::Date& at,
@@ -239,7 +239,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class MONICA_API TillageApplication : public WorkStep
+	class DLL_API TillageApplication : public WorkStep
 	{
 	public:
     TillageApplication(const Tools::Date& at, double depth);
@@ -264,7 +264,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class MONICA_API IrrigationApplication : public WorkStep
+	class DLL_API IrrigationApplication : public WorkStep
 	{
 	public:
     IrrigationApplication(const Tools::Date& at, double amount,
@@ -295,9 +295,9 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	MONICA_API WSPtr makeWorkstep(json11::Json object);
+	DLL_API WSPtr makeWorkstep(json11::Json object);
 
-  class MONICA_API CultivationMethod
+  class DLL_API CultivationMethod
       : public Tools::Json11Serializable
       , public std::multimap<Tools::Date, WSPtr>
 	{
@@ -366,14 +366,14 @@ namespace Monica
 	};
 	
 	template<>
-	MONICA_API inline void CultivationMethod::addApplication<Seed>(const Seed& s)
+	DLL_API inline void CultivationMethod::addApplication<Seed>(const Seed& s)
   {
     insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
     _crop = s.crop();
   }
 	
   template<>
-	MONICA_API inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
+	DLL_API inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
   {
     insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
     _cropResult = h.cropResult();
