@@ -33,8 +33,6 @@ set(LIBMONICA_SOURCE
 	src/core/monica.h
 	src/core/monica.cpp
 	
-	src/core/monica-exports.h
-
 	src/core/monica-parameters.h
 	src/core/monica-parameters.cpp
 		
@@ -108,10 +106,6 @@ set(LIBMONICA_SOURCE
 	${UTIL_DIR}/tools/read-ini.h
 	${UTIL_DIR}/tools/read-ini.cpp
 
-
-	${UTIL_DIR}/tools/zmq-helper.h
-	${UTIL_DIR}/tools/zmq-helper.cpp
-
 	# soil library code
 	#-------------------------------------------
 	${UTIL_DIR}/soil/constants.h
@@ -130,6 +124,7 @@ target_link_libraries(libmonica
 )
 set_target_properties(libmonica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 set_target_properties(libmonica PROPERTIES PREFIX "")
+set_target_properties(libmonica PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_EXPORTS")
 
 #------------------------------------------------------------------------------
 
@@ -223,8 +218,10 @@ add_executable(monica-run ${MONICA_RUN_SOURCE})
 target_link_libraries(monica-run
 	${CMAKE_THREAD_LIBS_INIT}
 	dl
+	libmonica
 )
 set_target_properties(monica-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+set_target_properties(monica-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 #------------------------------------------------------------------------------
 
@@ -421,12 +418,14 @@ target_link_libraries(monica-zmq-run
 	${CMAKE_THREAD_LIBS_INIT}
 	dl
 	zmq
+	libmonica
 )
+set_target_properties(monica-zmq-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 #------------------------------------------------------------------------------
 
 # create monica-zmq-server executable, the server running monica via zeromq requests
-set(MONICA_ZMQ_RUN_SOURCE
+set(MONICA_ZMQ_SERVER_SOURCE
 
 	src/run/run-monica-zmq.h
 	src/run/run-monica-zmq.cpp
@@ -495,7 +494,9 @@ target_link_libraries(monica-zmq-server
 	${CMAKE_THREAD_LIBS_INIT}
 	dl
 	zmq
+	libmonica
 )
+set_target_properties(monica-zmq-server PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 #------------------------------------------------------------------------------
 
@@ -580,7 +581,11 @@ set(MONICA_PYTHON_SOURCE
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
 add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE})
-target_link_libraries(monica_python ${Boost_LIBRARIES} libmonica)
+target_link_libraries(monica_python 
+	${Boost_LIBRARIES} 
+	libmonica
+)
 set_target_properties(monica_python PROPERTIES PREFIX "")
 set_target_properties(monica_python PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+set_target_properties(monica_python PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
