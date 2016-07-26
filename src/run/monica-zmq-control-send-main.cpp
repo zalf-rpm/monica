@@ -107,10 +107,10 @@ int main(int argc, char** argv)
 		{
 			zmq::socket_t socket(context, ZMQ_REQ);
 
-			string address = string("tcp://") + address + ":" + to_string(port);
+			string address_ = string("tcp://") + address + ":" + to_string(port);
 			try
 			{
-				socket.connect(address);
+				socket.connect(address_);
 				//cout << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
 
 				J11Object resultMsg;
@@ -129,19 +129,19 @@ int main(int argc, char** argv)
 					{
 						cerr
 							<< "Exception on trying to receive 'ack' reply message on zmq socket with address: "
-							<< address << "! Error: [" << e.what() << "]" << endl;
+							<< address_ << "! Error: [" << e.what() << "]" << endl;
 					}
 				}
 				catch(zmq::error_t e)
 				{
 					cerr
 						<< "Exception on trying to send request message: " << Json(resultMsg).dump() << " on zmq socket with address: "
-						<< address << "! Error: [" << e.what() << "]" << endl;
+						<< address_ << "! Error: [" << e.what() << "]" << endl;
 				}
 			}
 			catch(zmq::error_t e)
 			{
-				cerr << "Couldn't connect socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
+				cerr << "Couldn't connect socket to address: " << address_ << "! Error: [" << e.what() << "]" << endl;
 			}
 		}
 	}
