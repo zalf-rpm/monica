@@ -82,7 +82,7 @@ int main (int argc,
 		cerr << "Couldn't bind frontend socket to address: " << feAddress << "! Error: [" << e.what() << "]" << endl;
 		exit(1);
 	}
-	cout << "Bound " << appName << " zeromq router socket to frontend address: " << feAddress << "!" << endl;
+	debug() << "Bound " << appName << " zeromq router socket to frontend address: " << feAddress << "!" << endl;
 
 	// socket facing services
 	zmq::socket_t backend (context, ZMQ_DEALER);
@@ -96,7 +96,7 @@ int main (int argc,
 		cerr << "Couldn't bind backend socket to address: " << beAddress << "! Error: [" << e.what() << "]" << endl;
 		exit(1);
 	}
-	cout << "Bound " << appName << " zeromq dealer socket to backend address: " << beAddress << "!" << endl;
+	debug() << "Bound " << appName << " zeromq dealer socket to backend address: " << beAddress << "!" << endl;
 
 	if(startControlNode)
 	{

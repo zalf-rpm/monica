@@ -34,9 +34,7 @@ namespace Monica
   class SoilColumn;
   class MonicaModel;
   struct SiteParameters;
-
-
-
+	
   //#########################################################################
   // Snow Component
   //#########################################################################
