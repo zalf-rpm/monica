@@ -2,15 +2,9 @@
 # -*- coding: ISO-8859-15-*-
 
 import sys
-#sys.path.append('')	 # path to monica_python.pyd .so
+#sys.path.append('')	 # path to monica_python.pyd or monica_python.so
 import monica_python
-import os
-import datetime
-import shutil
-import time
 import json
-import csv
-
 
 def main():
 
@@ -37,10 +31,6 @@ def main():
 		"crop-json-str" : json.dumps(crop)
 	})
 
-	if len(results) > 0:
-		for type, rows in results.iteritems():
-			print type, ": "
-			for jsonValue in rows:
-				print jsonValue
-
+	print json.loads(results["run"])
+		
 main()
