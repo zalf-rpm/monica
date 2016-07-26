@@ -249,7 +249,7 @@ int main (int argc,
 					J11Object resultMsg;
 					resultMsg["type"] = "result";
 					resultMsg["started"] = additionallyStarted;
-					resultMsg["shut-down"] = stop;
+					resultMsg["stopped"] = stop;
 					try
 					{
 						s_send(socket, Json(resultMsg).dump());
@@ -272,7 +272,7 @@ int main (int argc,
 
 					J11Object resultMsg;
 					resultMsg["type"] = "result";
-					resultMsg["shut-down"] = stop;
+					resultMsg["stopped"] = stop;
 					try
 					{
 						s_send(socket, Json(resultMsg).dump());

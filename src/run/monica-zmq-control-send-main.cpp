@@ -123,7 +123,18 @@ int main(int argc, char** argv)
 					try
 					{
 						auto msg = receiveMsg(socket);
-						cout << "Received ack: " << msg.type() << endl;
+						if(msg.json["type"].string_value() == "result")
+						{
+							if(command == "start-new")
+								cout << "OK: successfully started " << msg.json["started"].int_value() << " MONICA instances" << endl;
+							else if(command == "start-max")
+								cout 
+								<< "OK: successfully started/stopped " 
+								<< msg.json["started"].int_value() << "/" << msg.json["stopped"].int_value() 
+								<< " MONICA instances" << endl;
+							else if(command == "stop")
+								cout << "OK: successfully stopped " << msg.json["stopped"].int_value() << " MONICA instances" << endl;
+						}
 					}
 					catch(zmq::error_t e)
 					{
