@@ -156,9 +156,6 @@
     <ClInclude Include="..\..\..\util\tools\read-ini.h">
       <Filter>Headerdateien\tools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\monica-exports.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\db\sqlite3.c">
