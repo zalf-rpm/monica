@@ -89,7 +89,7 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_DLL;DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -108,7 +108,7 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_DLL;DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -128,7 +128,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_DLL;DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -150,7 +150,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_DLL;DLL_EXPORTS;MONICA_EXPORTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
