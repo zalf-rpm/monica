@@ -174,9 +174,6 @@
     <ClCompile Include="..\..\..\util\tools\zmq-helper.cpp" />
     <ClCompile Include="..\..\src\run\monica-zmq-control-send-main.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\monica.rc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
