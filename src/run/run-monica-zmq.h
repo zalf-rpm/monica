@@ -34,9 +34,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-	void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
-	void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
-
   void startZeroMQMonica(zmq::context_t* zmqContext, 
 												 std::string inputSocketAddress, 
 												 std::string outputSocketAddress, 

@@ -1102,6 +1102,94 @@ BOTRes& Monica::buildOutputTable()
 	return m;
 }
 
+//-----------------------------------------------------------------------------
+
+void Monica::addOutputToResultMessage(Output& out, J11Object& msg)
+{
+	J11Array daily;
+	for(auto& vs : out.daily)
+		daily.push_back(vs);
+	msg["daily"] = daily;
+
+	J11Object monthly;
+	for(auto& p : out.monthly)
+	{
+		J11Array jvs;
+		for(auto& vs : p.second)
+			jvs.push_back(vs);
+		monthly[to_string(p.first)] = jvs;
+	}
+	msg["monthly"] = monthly;
+
+	J11Array yearly;
+	for(auto& vs : out.yearly)
+		yearly.push_back(vs);
+	msg["yearly"] = yearly;
+
+	J11Object at;
+	for(auto& p : out.at)
+	{
+		J11Array jvs;
+		for(auto& vs : p.second)
+			jvs.push_back(vs);
+		at[p.first.toIsoDateString()] = jvs;
+	}
+	msg["at"] = at;
+
+	J11Object crop;
+	for(auto& p : out.crop)
+	{
+		J11Array jvs;
+		for(auto& vs : p.second)
+			jvs.push_back(vs);
+		crop[p.first] = jvs;
+	}
+	msg["crop"] = crop;
+
+	msg["run"] = out.run;
+}
+
+
+//-----------------------------------------------------------------------------
+
+void Monica::addResultMessageToOutput(const J11Object& msg, Output& out)
+{
+	auto ci = msg.find("daily");
+	if(ci != msg.end())
+		for(auto& j : ci->second.array_items())
+			out.daily.push_back(j.array_items());
+
+	ci = msg.find("monthly");
+	if(ci != msg.end())
+		for(auto& p : ci->second.object_items())
+			for(auto& j : p.second.array_items())
+				out.monthly[stoi(p.first)].push_back(j.array_items());
+
+	ci = msg.find("yearly");
+	if(ci != msg.end())
+		for(auto& j : ci->second.array_items())
+			out.yearly.push_back(j.array_items());
+
+	ci = msg.find("at");
+	if(ci != msg.end())
+		for(auto& p : ci->second.object_items())
+			for(auto& j : p.second.array_items())
+				out.at[Date::fromIsoDateString(p.first)].push_back(j.array_items());
+
+	ci = msg.find("crop");
+	if(ci != msg.end())
+		for(auto& p : ci->second.object_items())
+			for(auto& j : p.second.array_items())
+				out.crop[p.first].push_back(j.array_items());
+
+	ci = msg.find("run");
+	if(ci != msg.end())
+		for(auto& j : ci->second.array_items())
+			out.run.push_back(j);
+}
+
+//-----------------------------------------------------------------------------
+
 void storeResults(const vector<OId>& outputIds,
 									vector<BOTRes::ResultVector>& results,
 									MonicaRefs& mr,

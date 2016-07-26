@@ -203,6 +203,9 @@ namespace Monica
 		std::vector<json11::Json> run;
 	};
 	
+	MONICA_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
+	MONICA_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
+
 	//! structure holding all results of one monica run
 	class MONICA_API Result
 	{
