@@ -18,7 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <set>
 
-#include "env-from-json.h"
+#include "env-json-from-json-config.h"
 #include "tools/debug.h"
 #include "../run/run-monica.h"
 #include "../io/database-io.h"
@@ -52,28 +52,11 @@ EResult<Json> Monica::parseJsonString(string jsonString)
 	return{j};
 }
 
-/*
-struct JsonAndErrors 
-{
-	JsonAndErrors(Json j) : json(j) {}
-	JsonAndErrors(string e) { errors.push_back(e); }
-	JsonAndErrors(vector<string> es) : errors(es) {}
-	JsonAndErrors(Json j, string e) : json(j) { errors.push_back(e); }
-	JsonAndErrors(Json j, vector<string> es) : json(j), errors(es) {}
+//-----------------------------------------------------------------------------
 
-	bool success() const { return errors.empty(); }
+const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns();
 
-	Json json;
-	vector<string> errors;
-};
-*/
-
-typedef EResult<Json> JsonAndErrors;
-
-const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedPatterns();
-
-//! returns pair<Json, success?>
-JsonAndErrors findAndReplaceReferences(const Json& root, const Json& j)
+EResult<Json> Monica::findAndReplaceReferences(const Json& root, const Json& j)
 {
 	auto sp = supportedPatterns();
 
@@ -161,11 +144,13 @@ JsonAndErrors findAndReplaceReferences(const Json& root, const Json& j)
 	return{j, errors};
 }
 
-const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedPatterns()
+//-----------------------------------------------------------------------------
+
+const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns()
 {
-	auto ref = [](const Json& root, const Json& j) -> JsonAndErrors
+	auto ref = [](const Json& root, const Json& j) -> EResult<Json>
 	{
-		static map<pair<string, string>, JsonAndErrors> cache;
+		static map<pair<string, string>, EResult<Json>> cache;
 		if(j.array_items().size() == 3
 			 && j[1].is_string()
 			 && j[2].is_string())
@@ -184,7 +169,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't resolve reference: ") + j.dump() + "!"};
 	};
 
-	auto fromDb = [](const Json&, const Json& j) -> JsonAndErrors
+	auto fromDb = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if((j.array_items().size() >= 3 && j[1].is_string())
 		   || (j.array_items().size() == 2 && j[1].is_object()))
@@ -327,7 +312,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't load data from DB: ") + j.dump() + "!"};
 	};
 
-	auto fromFile = [](const Json& root, const Json& j) -> JsonAndErrors
+	auto fromFile = [](const Json& root, const Json& j) -> EResult<Json>
 	{
 		string error;
 
@@ -349,7 +334,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't include file with function: ") + j.dump() + "!"};
 	};
 
-	auto humus2corg = [](const Json&, const Json& j) -> JsonAndErrors
+	auto humus2corg = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_number())
@@ -357,7 +342,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
 	};
 
-	auto ld2trd = [](const Json&, const Json& j) -> JsonAndErrors
+	auto ld2trd = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_number()
@@ -366,7 +351,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't convert bulk density class to raw density using function: ") + j.dump() + "!"};
 	};
 
-	auto KA52clay = [](const Json&, const Json& j) -> JsonAndErrors
+	auto KA52clay = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
@@ -374,7 +359,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
 	};
 
-	auto KA52sand = [](const Json&, const Json& j) -> JsonAndErrors
+	auto KA52sand = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_string())
@@ -382,7 +367,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};;
 	};
 
-	auto sandClay2lambda = [](const Json&, const Json& j) -> JsonAndErrors
+	auto sandClay2lambda = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 3
 		   && j[1].is_number()
@@ -391,7 +376,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't get lambda value from soil sand and clay content: ") + j.dump() + "!"};
 	};
 
-	auto percent = [](const Json&, const Json& j) -> JsonAndErrors
+	auto percent = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
 		   && j[1].is_number())
@@ -399,7 +384,7 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't convert percent to decimal percent value: ") + j.dump() + "!"};
 	};
 
-	static map<string, function<JsonAndErrors(const Json&,const Json&)>> m{
+	static map<string, function<EResult<Json>(const Json&,const Json&)>> m{
 			{"include-from-db", fromDb},
 			{"include-from-file", fromFile},
 			{"ref", ref},
@@ -410,135 +395,6 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 			{"sandAndClay2lambda", sandClay2lambda},
 			{"%", percent}};
 	return m;
-}
-
-
-Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
-{
-	vector<Json> cropSiteSim;
-	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
-		cropSiteSim.push_back(printPossibleErrors(parseJsonString(params[name])));
-
-	for(auto& j : cropSiteSim)
-		if(j.is_null())
-			return Env();
-
-	string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
-
-	auto addBasePath = [&](Json& j, string basePath)
-	{
-		string err;
-		if(!j.has_shape({{"include-file-base-path", Json::STRING}}, err))
-		{
-			auto m = j.object_items();
-			m["include-file-base-path"] = pathToParameters;
-			j = m;
-		}
-	};
-
-	vector<Json> cropSiteSim2;
-	//collect all errors in all files and don't stop as early as possible
-	set<string> errors;
-	for(auto& j : cropSiteSim)
-	{
-		addBasePath(j, pathToParameters);
-		auto r = findAndReplaceReferences(j, j);
-		if(r.success())
-			cropSiteSim2.push_back(r.result);
-		else
-			errors.insert(r.errors.begin(), r.errors.end());
-	}
-
-	if(!errors.empty())
-	{
-		for(auto e : errors)
-			cerr << e << endl;
-		return Env();
-	}
-
-	auto cropj = cropSiteSim2.at(0);
-	auto sitej = cropSiteSim2.at(1);
-	auto simj = cropSiteSim2.at(2);
-
-	Env env;
-	
-	//store debug mode in env, take from sim.json, but prefer params map
-	env.debugMode = simj["debug?"].bool_value();
-
-	bool success = true;
-	success = success && printPossibleErrors(env.params.userEnvironmentParameters.merge(sitej["EnvironmentParameters"]), activateDebug);
-	success = success && printPossibleErrors(env.params.userCropParameters.merge(cropj["CropParameters"]), activateDebug);
-	success = success && printPossibleErrors(env.params.userSoilTemperatureParameters.merge(sitej["SoilTemperatureParameters"]), activateDebug);
-	success = success && printPossibleErrors(env.params.userSoilTransportParameters.merge(sitej["SoilTransportParameters"]), activateDebug);
-	success = success && printPossibleErrors(env.params.userSoilOrganicParameters.merge(sitej["SoilOrganicParameters"]), activateDebug);
-	success = success && printPossibleErrors(env.params.userSoilMoistureParameters.merge(sitej["SoilMoistureParameters"]), activateDebug);
-	env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-			[](string soilTexture, int distance)
-			{
-				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-			};
-	success = success && printPossibleErrors(env.params.siteParameters.merge(sitej["SiteParameters"]), activateDebug);
-	success = success && printPossibleErrors(env.params.simulationParameters.merge(simj), activateDebug);
-
-	for(Json cmj : cropj["cropRotation"].array_items())
-	{
-		CultivationMethod cm;
-		success = success && printPossibleErrors(cm.merge(cmj), activateDebug);
-		env.cropRotation.push_back(cm);
-	}
-
-	if(!success)
-		return Env();
-
-	env.dailyOutputIds = parseOutputIds(simj["output"]["daily"].array_items());
-
-	env.monthlyOutputIds = parseOutputIds(simj["output"]["monthly"].array_items());
-
-	env.yearlyOutputIds = parseOutputIds(simj["output"]["yearly"].array_items());
-
-	env.cropOutputIds = parseOutputIds(simj["output"]["crop"].array_items());
-
-	if(simj["output"]["at"].is_object())
-	{
-		for(auto p : simj["output"]["at"].object_items())
-		{
-			Date d = Date::fromIsoDateString(p.first);
-			if(d.isValid())
-				env.atOutputIds[d] = parseOutputIds(p.second.array_items());
-		}
-	}
-
-	env.runOutputIds = parseOutputIds(simj["output"]["run"].array_items());
-	
-	//get no of climate file header lines from sim.json, but prefer from params map
-	auto climateDataSettings = simj["climate.csv-options"];
-	map<string, string> headerNames;
-	for(auto p : climateDataSettings["header-to-acd-names"].object_items())
-		headerNames[p.first] = p.second.string_value();
-
-	CSVViaHeaderOptions options;
-	options.separator = string_valueD(climateDataSettings, "csv-separator", ",");
-	options.noOfHeaderLines = size_t(int_valueD(climateDataSettings, "no-of-climate-file-header-lines", 2));
-	options.headerName2ACDName = headerNames;
-
-	//add start/end date to sim json object
-	set_iso_date_value(options.startDate, simj, "start-date");
-	set_iso_date_value(options.endDate, simj, "end-date");
-	debug() << "startDate: " << options.startDate.toIsoDateString()
-		<< " endDate: " << options.endDate.toIsoDateString()
-		<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
-		<< endl;
-
-	env.da = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
-	                                              options);
-
-	if(!env.da.isValid())
-		return Env();
-
-	//env.params.setWriteOutputFiles(simj["output"]["write-file?"].bool_value());
-	env.params.setPathToOutputDir(simj["path-to-output"].string_value());
-
-	return env;
 }
 
 //-----------------------------------------------------------------------------

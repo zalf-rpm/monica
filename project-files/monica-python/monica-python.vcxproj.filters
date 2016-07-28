@@ -84,9 +84,6 @@
     <ClCompile Include="..\..\src\python\monica_py.cpp">
       <Filter>Source Files\monica\python</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\run\env-from-json.cpp">
-      <Filter>Source Files\monica\run</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\util\tools\algorithms.cpp">
       <Filter>Source Files\tools</Filter>
     </ClCompile>
@@ -126,6 +123,12 @@
     <ClCompile Include="..\..\src\io\database-io.cpp">
       <Filter>Source Files\monica\io</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\run\env-from-json-config.cpp">
+      <Filter>Source Files\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\run\env-json-from-json-config.cpp">
+      <Filter>Source Files\monica\run</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\util\tools\date.h">
@@ -142,9 +145,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\debug.h">
       <Filter>Header Files\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\run\env-from-json.h">
-      <Filter>Header Files\monica\run</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\util\tools\datastructures.h">
       <Filter>Header Files\tools</Filter>
@@ -187,6 +187,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\io\database-io.h">
       <Filter>Header Files\monica\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\run\env-from-json-config.h">
+      <Filter>Header Files\monica\run</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\run\env-json-from-json-config.h">
+      <Filter>Header Files\monica\run</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

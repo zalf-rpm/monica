@@ -35,7 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
-#include "env-from-json.h"
+#include "env-json-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
 
@@ -217,8 +217,8 @@ int main(int argc, char** argv)
 		ps["site-json-str"] = printPossibleErrors(readFile(simm["site.json"].string_value()), activateDebug);
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
-		auto env = createEnvFromJsonConfigFiles(ps);
-		activateDebug = env.debugMode;
+		auto env = createEnvJsonFromJsonConfigFiles(ps);
+		activateDebug = env["debugMode"].bool_value();
 
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
@@ -253,38 +253,46 @@ int main(int argc, char** argv)
 		bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
 		bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
 
+		auto toOIdVector = [](const Json& a)
+		{
+			vector<OId> oids;
+			for(auto j : a.array_items())
+				oids.push_back(OId(j));
+			return oids;
+		};
+
 		if(!output.daily.empty())
 		{
-			writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, false);
-			writeOutput(out, env.dailyOutputIds, output.daily, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["dailyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, false);
+			writeOutput(out, toOIdVector(env["dailyOutputIds"]), output.daily, csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(!output.monthly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["monthlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.monthly)
-				writeOutput(out, env.monthlyOutputIds, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, toOIdVector(env["monthlyOutputIds"]), p.second, csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(!output.yearly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, env.yearlyOutputIds, output.yearly, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["yearlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, toOIdVector(env["yearlyOutputIds"]), output.yearly, csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(!output.at.empty())
 		{
-			for(auto& p : env.atOutputIds)
+			for(auto& p : env["atOutputIds"].object_items())
 			{
 				out << endl;
 				auto ci = output.at.find(p.first);
 				if(ci != output.at.end())
 				{
-					out << p.first.toIsoDateString() << endl;
-					writeOutputHeaderRows(out, p.second, csvSep, includeHeaderRow, includeUnitsRow);
-					writeOutput(out, p.second, ci->second, csvSep, includeHeaderRow, includeUnitsRow);
+					out << p.first << endl;
+					writeOutputHeaderRows(out, toOIdVector(p.second), csvSep, includeHeaderRow, includeUnitsRow);
+					writeOutput(out, toOIdVector(p.second), ci->second, csvSep, includeHeaderRow, includeUnitsRow);
 				}
 			}
 		}
@@ -292,16 +300,16 @@ int main(int argc, char** argv)
 		if(!output.crop.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.crop)
-				writeOutput(out, env.cropOutputIds, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, toOIdVector(env["cropOutputIds"]), p.second, csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(!output.run.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, env.runOutputIds, {output.run}, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["runOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, toOIdVector(env["runOutputIds"]), {output.run}, csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(writeOutputFile)

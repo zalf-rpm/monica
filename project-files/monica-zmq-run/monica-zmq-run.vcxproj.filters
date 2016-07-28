@@ -61,6 +61,12 @@
     <Filter Include="Quelldateien\monica\run">
       <UniqueIdentifier>{5a5e5c87-f3c9-4971-acab-1b6a33a96450}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Quelldateien\monica\core">
+      <UniqueIdentifier>{95ba0c2c-948f-4c4d-a1da-9edde906bc0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\monica\core">
+      <UniqueIdentifier>{59a97230-c1bb-48ba-929e-e282c7bbf7b7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\util\db\abstract-db-connections.h">
@@ -120,14 +126,20 @@
     <ClInclude Include="..\..\..\util\soil\soil-from-db.h">
       <Filter>Headerdateien\soil</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\run\env-from-json.h">
-      <Filter>Headerdateien\monica\run</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\io\csv-format.h">
       <Filter>Headerdateien\monica\io</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\run\run-monica-zmq.h">
       <Filter>Headerdateien\monica\run</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\run\env-json-from-json-config.h">
+      <Filter>Headerdateien\monica\run</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\monica-parameters.h">
+      <Filter>Headerdateien\monica\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\io\output.h">
+      <Filter>Headerdateien\monica\io</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -185,9 +197,6 @@
     <ClCompile Include="..\..\..\util\soil\soil-from-db.cpp">
       <Filter>Quelldateien\soil</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\run\env-from-json.cpp">
-      <Filter>Quelldateien\monica\run</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\run\monica-zmq-run-main.cpp">
       <Filter>Quelldateien\monica\run</Filter>
     </ClCompile>
@@ -196,6 +205,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\run\run-monica-zmq.cpp">
       <Filter>Quelldateien\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\run\env-json-from-json-config.cpp">
+      <Filter>Quelldateien\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\monica-parameters.cpp">
+      <Filter>Quelldateien\monica\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\io\output.cpp">
+      <Filter>Quelldateien\monica\io</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

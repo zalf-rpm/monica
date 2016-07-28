@@ -23,16 +23,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 #include <mutex>
 
+#include "monica-parameters.h"
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
-#include "monica-parameters.h"
-#include "monica.h"
 #include "tools/debug.h"
 #include "soil/conversion.h"
 #include "soil/soil.h"
-#include "../io/database-io.h"
 
 using namespace Db;
 using namespace std;

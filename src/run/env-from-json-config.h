@@ -3,39 +3,30 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef RUN_MONICA_ZMQ_H_
-#define RUN_MONICA_ZMQ_H_
+#ifndef MONICA_ENV_FROM_JSON_CONFIG_H
+#define MONICA_ENV_FROM_JSON_CONFIG_H
 
 #include <string>
-#include <vector>
-#include <list>
-#include <utility>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <memory>
 
-#include "zmq.hpp"
-
+#include "tools/date.h"
+#include "run-monica.h"
 #include "json11/json11.hpp"
 #include "tools/json11-helper.h"
+#include "env-json-from-json-config.h"
 
 namespace Monica
 {
-	json11::Json sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
-																				std::string socketAddress,
-																				json11::Json envJson);
+	Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 }
 
-#endif
+#endif //MONICA_ENV_FROM_JSON_CONFIG_H

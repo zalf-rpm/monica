@@ -37,7 +37,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "soil/soil.h"
 #include "soil/constants.h"
-//#include "../io/output.h"
 
 namespace Monica
 {
@@ -647,9 +646,6 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	/**
-	 * @author Claas Nendel, Michael Berg
-	 */
   struct DLL_API SiteParameters : public Tools::Json11Serializable
 	{
     SiteParameters(){}

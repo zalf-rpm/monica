@@ -13,8 +13,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef RUN_MONICA_ZMQ_H_
-#define RUN_MONICA_ZMQ_H_
+#ifndef SERVE_MONICA_ZMQ_H_
+#define SERVE_MONICA_ZMQ_H_
 
 #include <string>
 #include <vector>
@@ -33,9 +33,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-	json11::Json sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
-																				std::string socketAddress,
-																				json11::Json envJson);
+  void startZeroMQMonica(zmq::context_t* zmqContext, 
+												 std::string inputSocketAddress, 
+												 std::string outputSocketAddress, 
+												 bool isInProcess = false);
+	
+	enum ZmqSocketType { Reply, ProxyReply, Pull, Push };
+	void serveZmqMonicaFull(zmq::context_t* zmqContext, 
+													std::vector<std::pair<ZmqSocketType, std::string>> socketAddresses);
 }
 
 #endif

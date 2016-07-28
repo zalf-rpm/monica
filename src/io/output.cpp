@@ -459,9 +459,9 @@ BOTRes& Monica::buildOutputTable()
 
 	auto build = [&](Result2 r
 #ifndef JUST_OUTPUTS
-									 , decltype(m.ofs)::mapped_type of)
+									 , decltype(m.ofs)::mapped_type of
 #endif
-	{
+	){
 #ifndef JUST_OUTPUTS
 		m.ofs[r.id] = of;
 #endif

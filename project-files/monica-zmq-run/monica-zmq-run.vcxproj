@@ -88,14 +88,14 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>USE_DLL;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>JUST_OUTPUTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -107,14 +107,14 @@
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>USE_DLL;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>JUST_OUTPUTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -127,7 +127,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>USE_DLL;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>JUST_OUTPUTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -135,8 +135,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -149,7 +149,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>USE_DLL;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>JUST_OUTPUTS;WIN32;NO_MYSQL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\util;..\..\..\sys-libs\includes\zeromq-dev-master</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -157,8 +157,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>libmonica.lib;libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libzmq.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)..\increase-build-number.bat $(SolutionDir)..</Command>
@@ -183,9 +183,11 @@
     <ClInclude Include="..\..\..\util\tools\json11-helper.h" />
     <ClInclude Include="..\..\..\util\tools\read-ini.h" />
     <ClInclude Include="..\..\..\util\tools\zmq-helper.h" />
+    <ClInclude Include="..\..\src\core\monica-parameters.h" />
     <ClInclude Include="..\..\src\io\csv-format.h" />
     <ClInclude Include="..\..\src\io\database-io.h" />
-    <ClInclude Include="..\..\src\run\env-from-json.h" />
+    <ClInclude Include="..\..\src\io\output.h" />
+    <ClInclude Include="..\..\src\run\env-json-from-json-config.h" />
     <ClInclude Include="..\..\src\run\run-monica-zmq.h" />
   </ItemGroup>
   <ItemGroup>
@@ -206,9 +208,11 @@
     <ClCompile Include="..\..\..\util\tools\json11-helper.cpp" />
     <ClCompile Include="..\..\..\util\tools\read-ini.cpp" />
     <ClCompile Include="..\..\..\util\tools\zmq-helper.cpp" />
+    <ClCompile Include="..\..\src\core\monica-parameters.cpp" />
     <ClCompile Include="..\..\src\io\csv-format.cpp" />
     <ClCompile Include="..\..\src\io\database-io.cpp" />
-    <ClCompile Include="..\..\src\run\env-from-json.cpp" />
+    <ClCompile Include="..\..\src\io\output.cpp" />
+    <ClCompile Include="..\..\src\run\env-json-from-json-config.cpp" />
     <ClCompile Include="..\..\src\run\monica-zmq-run-main.cpp" />
     <ClCompile Include="..\..\src\run\run-monica-zmq.cpp" />
   </ItemGroup>

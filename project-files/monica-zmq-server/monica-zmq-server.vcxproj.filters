@@ -108,6 +108,9 @@
     <ClInclude Include="..\..\..\util\tools\zmq-helper.h">
       <Filter>Headerdateien\tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\run\serve-monica-zmq.h">
+      <Filter>Headerdateien\monica\run</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\db\sqlite3.c">
@@ -159,6 +162,9 @@
       <Filter>Quelldateien\tools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\run\monica-zmq-server-main.cpp">
+      <Filter>Quelldateien\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\run\serve-monica-zmq.cpp">
       <Filter>Quelldateien\monica\run</Filter>
     </ClCompile>
   </ItemGroup>

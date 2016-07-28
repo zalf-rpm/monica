@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "monica-zmq-proxy", "monica-zmq-proxy\monica-zmq-proxy.vcxproj", "{B731CCE5-9E7E-47CD-8CB3-A87C277CE59C}"
 EndProject
@@ -15,9 +15,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "monica-run", "monica-run\mo
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "monica-zmq-run", "monica-zmq-run\monica-zmq-run.vcxproj", "{20372B82-78E8-430A-B537-FCEE88AC22F0}"
-	ProjectSection(ProjectDependencies) = postProject
-		{107EFAC1-8674-48BA-ADA0-4C751160BA96} = {107EFAC1-8674-48BA-ADA0-4C751160BA96}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "monica-zmq-control-send", "monica-zmq-control-send\monica-zmq-control-send.vcxproj", "{7974BF43-19F2-4C81-B62B-A74CC21DA5B5}"
 EndProject
