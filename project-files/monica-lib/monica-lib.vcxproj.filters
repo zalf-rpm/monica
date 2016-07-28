@@ -156,6 +156,9 @@
     <ClInclude Include="..\..\..\util\tools\read-ini.h">
       <Filter>Headerdateien\tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\io\output.h">
+      <Filter>Headerdateien\monica\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\db\sqlite3.c">
@@ -238,6 +241,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\util\tools\read-ini.cpp">
       <Filter>Quelldateien\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\io\output.cpp">
+      <Filter>Quelldateien\monica\io</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

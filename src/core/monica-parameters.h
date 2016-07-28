@@ -37,6 +37,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "soil/soil.h"
 #include "soil/constants.h"
+//#include "../io/output.h"
 
 namespace Monica
 {
@@ -57,16 +58,6 @@ namespace Monica
 	//enum { MONTH=12 };
 
 	//----------------------------------------------------------------------------
-
-	struct Result2
-	{
-		int id; 
-		std::string name;
-		std::string unit;
-		std::string description;
-	};
-
-	//const std::map<std::string, Result2>& result2();
 
   enum ResultId
 	{

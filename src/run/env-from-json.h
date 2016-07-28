@@ -30,6 +30,8 @@ namespace Monica
 	Tools::EResult<json11::Json> parseJsonString(std::string jsonString);
 
 	Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
+
+	json11::Json createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string> params);
 }
 
 #endif //MONICA_ENV_FROM_JSON_H

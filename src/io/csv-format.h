@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 #include "tools/json11-helper.h"
-#include "../run/run-monica.h"
+#include "../io/output.h"
 
 namespace Monica
 {

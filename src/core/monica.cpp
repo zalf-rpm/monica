@@ -30,7 +30,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
-#include "../io/file-io.h"
 #include "voc-common.h"
 
 using namespace Monica;

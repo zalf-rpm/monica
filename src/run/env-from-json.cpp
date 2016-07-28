@@ -27,6 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
 #include "soil/soil-from-db.h"
+#include "../io/output.h"
 
 using namespace std;
 using namespace Monica;
@@ -411,142 +412,6 @@ const map<string, function<JsonAndErrors(const Json&, const Json&)>>& supportedP
 	return m;
 }
 
-vector<OId> parseOutputIds(const J11Array& oidArray)
-{
-	vector<OId> outputIds;
-
-	auto getAggregationOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
-	{
-		if(arr.size() > index && arr[index].is_string())
-		{
-			string ops = arr[index].string_value();
-			if(toUpper(ops) == "SUM")
-				return OId::SUM;
-			else if(toUpper(ops) == "AVG")
-				return OId::AVG;
-			else if(toUpper(ops) == "MEDIAN")
-				return OId::MEDIAN;
-			else if(toUpper(ops) == "MIN")
-				return OId::MIN;
-			else if(toUpper(ops) == "MAX")
-				return OId::MAX;
-			else if(toUpper(ops) == "FIRST")
-				return OId::FIRST;
-			else if(toUpper(ops) == "LAST")
-				return OId::LAST;
-			else if(toUpper(ops) == "NONE")
-				return OId::NONE;
-		}
-		return def;
-	};
-
-	
-	auto getOrgan = [](J11Array arr, int index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
-	{
-		if(arr.size() > index && arr[index].is_string())
-		{
-			string ops = arr[index].string_value();
-			if(toUpper(ops) == "ROOT")
-				return OId::ROOT;
-			else if(toUpper(ops) == "LEAF")
-				return OId::LEAF;
-			else if(toUpper(ops) == "SHOOT")
-				return OId::SHOOT;
-			else if(toUpper(ops) == "FRUIT")
-				return OId::FRUIT;
-			else if(toUpper(ops) == "STRUCT")
-				return OId::STRUCT;
-			else if(toUpper(ops) == "SUGAR")
-				return OId::SUGAR;
-		}
-		return def;
-	};
-
-	const auto& name2result = buildOutputTable().name2result;
-	for(Json idj : oidArray)
-	{
-		if(idj.is_string())
-		{
-			string name = idj.string_value();
-			auto it = name2result.find(name);
-			if(it != name2result.end())
-			{
-				auto data = it->second;
-				OId oid(data.id);
-				oid.name = data.name;
-				oid.unit = data.unit;
-				oid.jsonInput = name;
-				outputIds.push_back(oid);
-			}
-		}
-		else if(idj.is_array())
-		{
-			auto arr = idj.array_items();
-			if(arr.size() >= 1)
-			{
-				OId oid;
-				
-				string name = arr[0].string_value();
-				auto it = name2result.find(name);
-				if(it != name2result.end())
-				{
-					auto data = it->second;
-					oid.id = data.id;
-					oid.name = data.name;
-					oid.unit = data.unit;
-					oid.jsonInput = Json(arr).dump();
-										
-					if(arr.size() >= 2)
-					{
-						auto val1 = arr[1];
-						if(val1.is_number())
-							oid.fromLayer = val1.int_value() - 1;
-						else if(val1.is_string())
-						{
-							auto op = getAggregationOp(arr, 1);
-							if(op != OId::_UNDEFINED_OP_)
-								oid.timeAggOp = op;
-							else
-								oid.organ = getOrgan(arr, 1, OId::_UNDEFINED_ORGAN_);
-						}
-						else if(val1.is_array())
-						{
-							auto arr2 = arr[1].array_items();
-
-							if(arr2.size() >= 1)
-							{
-								auto val1_0 = arr2[0];
-								if(val1_0.is_number())
-									oid.fromLayer = val1_0.int_value() - 1;
-								else if(val1_0.is_string())
-									oid.organ = getOrgan(arr2, 0, OId::_UNDEFINED_ORGAN_);
-							}
-							if(arr2.size() >= 2)
-							{
-								auto val1_1 = arr2[1];
-								if(val1_1.is_number())
-									oid.toLayer = val1_1.int_value() - 1;
-								else if(val1_1.is_string())
-								{
-									oid.toLayer = oid.fromLayer;
-									oid.layerAggOp = getAggregationOp(arr2, 1, OId::AVG);
-								}
-							}
-							if(arr2.size() >= 3)
-								oid.layerAggOp = getAggregationOp(arr2, 2, OId::AVG);
-						}
-					}
-					if(arr.size() >= 3)
-						oid.timeAggOp = getAggregationOp(arr, 2, OId::AVG);
-					
-					outputIds.push_back(oid);
-				}
-			}
-		}
-	}
-
-	return outputIds;
-}
 
 Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
@@ -675,4 +540,115 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 
 	return env;
 }
+
+//-----------------------------------------------------------------------------
+
+Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string> params)
+{
+	vector<Json> cropSiteSim;
+	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
+		cropSiteSim.push_back(printPossibleErrors(parseJsonString(params[name])));
+
+	for(auto& j : cropSiteSim)
+		if(j.is_null())
+			return Json();
+
+	string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
+
+	auto addBasePath = [&](Json& j, string basePath)
+	{
+		string err;
+		if(!j.has_shape({{"include-file-base-path", Json::STRING}}, err))
+		{
+			auto m = j.object_items();
+			m["include-file-base-path"] = pathToParameters;
+			j = m;
+		}
+	};
+
+	vector<Json> cropSiteSim2;
+	//collect all errors in all files and don't stop as early as possible
+	set<string> errors;
+	for(auto& j : cropSiteSim)
+	{
+		addBasePath(j, pathToParameters);
+		auto r = findAndReplaceReferences(j, j);
+		if(r.success())
+			cropSiteSim2.push_back(r.result);
+		else
+			errors.insert(r.errors.begin(), r.errors.end());
+	}
+
+	if(!errors.empty())
+	{
+		for(auto e : errors)
+			cerr << e << endl;
+		return Json();
+	}
+
+	auto cropj = cropSiteSim2.at(0);
+	auto sitej = cropSiteSim2.at(1);
+	auto simj = cropSiteSim2.at(2);
+
+	J11Object env;
+
+	//store debug mode in env, take from sim.json, but prefer params map
+	env["debugMode"] = simj["debug?"].bool_value();
+
+	J11Object cpp = {
+			{ "type", "CentralParameterProvider" }
+		, {"userCropParameters", cropj["CropParameters"]}
+		, {"userEnvironmentParameters", sitej["EnvironmentParameters"]}
+		, {"userSoilMoistureParameters", sitej["SoilOrganicParameters"]}
+		, {"userSoilTemperatureParameters", sitej["SoilTemperatureParameters"]}
+		, {"userSoilTransportParameters", sitej["SoilTransportParameters"]}
+		, {"userSoilOrganicParameters", sitej["SoilMoistureParameters"]}
+		, {"simulationParameters", simj}
+		, {"siteParameters", sitej["SiteParameters"]}
+	};
+
+	env["params"] = cpp;
+	env["cropRotation"] = cropj["cropRotation"];
+	env["dailyOutputIds"] = parseOutputIds(simj["output"]["daily"].array_items());
+	env["monthlyOutputIds"] = parseOutputIds(simj["output"]["monthly"].array_items());
+	env["yearlyOutputIds"] = parseOutputIds(simj["output"]["yearly"].array_items());
+	env["cropOutputIds"] = parseOutputIds(simj["output"]["crop"].array_items());
+	if(simj["output"]["at"].is_object())
+	{
+		J11Object aoids;
+		for(auto p : simj["output"]["at"].object_items())
+		{
+			Date d = Date::fromIsoDateString(p.first);
+			if(d.isValid())
+				aoids[p.first] = parseOutputIds(p.second.array_items());
+		}
+		env["atOutputIds"] = aoids;
+	}
+	env["runOutputIds"] = parseOutputIds(simj["output"]["run"].array_items());
+
+	//get no of climate file header lines from sim.json, but prefer from params map
+	auto climateDataSettings = simj["climate.csv-options"];
+	map<string, string> headerNames;
+	for(auto p : climateDataSettings["header-to-acd-names"].object_items())
+		headerNames[p.first] = p.second.string_value();
+
+	CSVViaHeaderOptions options;
+	options.separator = string_valueD(climateDataSettings, "csv-separator", ",");
+	options.noOfHeaderLines = size_t(int_valueD(climateDataSettings, "no-of-climate-file-header-lines", 2));
+	options.headerName2ACDName = headerNames;
+
+	//add start/end date to sim json object
+	set_iso_date_value(options.startDate, simj, "start-date");
+	set_iso_date_value(options.endDate, simj, "end-date");
+	debug() << "startDate: " << options.startDate.toIsoDateString()
+		<< " endDate: " << options.endDate.toIsoDateString()
+		<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
+		<< endl;
+
+	env["da"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+																									 options);
+
+	return env;
+}
+
 
