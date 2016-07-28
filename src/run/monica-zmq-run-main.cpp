@@ -224,7 +224,7 @@ int main(int argc, char** argv)
 			cout << "starting MONICA with JSON input files" << endl;
 
 		Output output;
-		Json res = runZeroMQMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
+		Json res = sendZmqRequestMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
 		addResultMessageToOutput(res.object_items(), output);
 
 		if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())

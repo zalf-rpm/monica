@@ -38,14 +38,14 @@ namespace Monica
 												 std::string inputSocketAddress, 
 												 std::string outputSocketAddress, 
 												 bool isInProcess = false);
+	
+	enum ZmqSocketType { Reply, ProxyReply, Pull, Push };
+	void serveZmqMonicaFull(zmq::context_t* zmqContext, 
+													std::vector<std::pair<ZmqSocketType, std::string>> socketAddresses);
 
-	void startZeroMQMonicaFull(zmq::context_t* zmqContext, 
-														 std::string socketAddress, 
-														 bool useZmqProxy);
-
-	json11::Json runZeroMQMonicaFull(zmq::context_t* zmqContext, 
-																	 std::string socketAddress, 
-																	 Env env);
+	json11::Json sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
+																				std::string socketAddress,
+																				Env env);
 }
 
 #endif

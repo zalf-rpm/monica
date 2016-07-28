@@ -57,6 +57,9 @@ int main(int argc, char** argv)
 
 	int port = 5560;
 	string address = "localhost";
+	int resultPort = 7777;
+	string resultAddress = "localhost";
+	bool usePipeline = false;
 	bool connectToZmqProxy = false;
 
 	auto printHelp = [=]()
@@ -67,6 +70,9 @@ int main(int argc, char** argv)
 			<< " [[-c | --connect-to-proxy]] ... connect MONICA server process to a ZeroMQ proxy" << endl
 			<< " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
 			<< " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
+			<< " [[-r | --result] ... use different result socket (parameter is optional, when non default result address/port are used)" << endl
+			<< " [[-ra | --result-address] ADDRESS (default: " << resultAddress << ")] ... bind socket to this IP address for results" << endl
+			<< " [[-rp | --result-port] PORT (default: " << resultPort << ")] ... bind socket to this port for results" << endl
 			<< " [-h | --help] ... this help output" << endl
 			<< " [-v | --version] ... outputs MONICA version" << endl;
 	};
@@ -80,7 +86,7 @@ int main(int argc, char** argv)
 			string arg = argv[i];
 			if(arg == "-d" || arg == "--debug")
 				activateDebug = true;
-			else if(arg == "--connect-to-proxy")
+			else if((arg == "-c" || arg == "--connect-to-proxy"))
 				connectToZmqProxy = true;
 			else if((arg == "-a" || arg == "--address")
 							&& i + 1 < argc)
@@ -88,6 +94,20 @@ int main(int argc, char** argv)
 			else if((arg == "-p" || arg == "--port")
 							&& i + 1 < argc)
 				port = stoi(argv[++i]);
+			if(arg == "-r" || arg == "--result-socket")
+				usePipeline = true;
+			else if((arg == "-ra" || arg == "--result-address")
+							&& i + 1 < argc)
+			{
+				address = argv[++i];
+				usePipeline = true;
+			}
+			else if((arg == "-rp" || arg == "--result-port")
+							&& i + 1 < argc)
+			{
+				port = stoi(argv[++i]);
+				usePipeline = true;
+			}
 			else if(arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
@@ -96,9 +116,19 @@ int main(int argc, char** argv)
 
 		debug() << "starting ZeroMQ MONICA server" << endl;
 		
-		startZeroMQMonicaFull(&context,
-													string("tcp://") + (connectToZmqProxy ? address : "*") + ":" + to_string(port), 
-													connectToZmqProxy);
+		string recvAddress = string("tcp://") + (connectToZmqProxy ? address : "*") + ":" + to_string(port);
+		vector<pair<ZmqSocketType, string>> addresses;
+		if(usePipeline)
+		{
+			addresses.push_back(make_pair(Pull, recvAddress));
+			addresses.push_back(make_pair(Push, string("tcp://*:") + to_string(port)));
+		}
+		if(connectToZmqProxy)
+			addresses.push_back(make_pair(ProxyReply, recvAddress));
+		else
+			addresses.push_back(make_pair(Reply, recvAddress));
+
+		serveZmqMonicaFull(&context, addresses);
 		
 		debug() << "stopped ZeroMQ MONICA server" << endl;
 	}
