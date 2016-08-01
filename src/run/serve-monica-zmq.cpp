@@ -424,7 +424,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		try
 		{
 			if(distinctSendSocket)
-				sendSocket.bind(sAddress);
+				sendSocket.connect(sAddress);
 			
 			//the possibly active crop
 			while(true)

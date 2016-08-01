@@ -99,13 +99,13 @@ int main(int argc, char** argv)
 			else if((arg == "-ra" || arg == "--result-address")
 							&& i + 1 < argc)
 			{
-				address = argv[++i];
+				resultAddress = argv[++i];
 				usePipeline = true;
 			}
 			else if((arg == "-rp" || arg == "--result-port")
 							&& i + 1 < argc)
 			{
-				port = stoi(argv[++i]);
+				resultPort = stoi(argv[++i]);
 				usePipeline = true;
 			}
 			else if(arg == "-h" || arg == "--help")
@@ -116,14 +116,14 @@ int main(int argc, char** argv)
 
 		debug() << "starting ZeroMQ MONICA server" << endl;
 		
-		string recvAddress = string("tcp://") + (connectToZmqProxy ? address : "*") + ":" + to_string(port);
+		string recvAddress = string("tcp://") + address + ":" + to_string(port);
 		vector<pair<ZmqSocketType, string>> addresses;
 		if(usePipeline)
 		{
 			addresses.push_back(make_pair(Pull, recvAddress));
-			addresses.push_back(make_pair(Push, string("tcp://*:") + to_string(port)));
-		}
-		if(connectToZmqProxy)
+			addresses.push_back(make_pair(Push, string("tcp://") + resultAddress + ":" + to_string(resultPort)));
+		} 
+		else if(connectToZmqProxy)
 			addresses.push_back(make_pair(ProxyReply, recvAddress));
 		else
 			addresses.push_back(make_pair(Reply, recvAddress));

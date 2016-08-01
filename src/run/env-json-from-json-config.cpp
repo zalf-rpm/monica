@@ -447,6 +447,7 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 	auto simj = cropSiteSim2.at(2);
 
 	J11Object env;
+	env["type"] = "Env";
 
 	//store debug mode in env, take from sim.json, but prefer params map
 	env["debugMode"] = simj["debug?"].bool_value();
