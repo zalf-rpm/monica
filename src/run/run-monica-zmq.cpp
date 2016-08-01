@@ -50,11 +50,12 @@ Json Monica::sendZmqRequestMonicaFull(zmq::context_t* zmqContext,
 {
 	Json res;
 
-	zmq::socket_t socket(*zmqContext, ZMQ_REQ);
+	zmq::socket_t socket(*zmqContext, ZMQ_REQ);// ZMQ_PUSH);
 	debug() << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
 	try
 	{
 		socket.connect(socketAddress);
+		//socket.bind(socketAddress);
 		debug() << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
 
 		//string s = envJson.dump();
