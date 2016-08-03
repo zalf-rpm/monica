@@ -6,80 +6,60 @@ print zmq.pyzmq_version()
 import time
 import json
 import types
-
-def main():
-	with open("../sim.json") as f:
-		sim = json.load(f)
-
-	with open("site-soil-profile-from-db.json") as f:
-		site = json.load(f)
-
-	with open("../crop.json") as f:
-		crop = json.load(f)
-
-
-
-  producer()
-
-
-
-def producer():
-  context = zmq.Context()
-  socket = context.socket(zmq.PUSH)
-  socket.bind("tcp://127.0.0.1:5560")
-
-  # Start your result manager and workers before you start your producers
-
-
-
-
-main()
+import sys
+sys.path.append('C:/Users/berg.ZALF-AD/GitHub/monica/project-files/Win32/Release')	 # path to monica_python.pyd or monica_python.so
+sys.path.append('C:/Users/berg.ZALF-AD/GitHub/util/soil')
+print sys.path
+print sys.version
+from soil_conversion import *
+import monica_python
 
 def isAbsolutePath(p):
-  return p.startswith("/") or p.startswith("\\")
+	return p.startswith("/") or p.startswith("\\")
 
 def fixSystemSeparator(p):
-  return p
+	return p
 
 def defaultValue(d, key, default):
-  return key in d if d[key] else default
+	return d[key] if key in d else default
 
 def readAndParseJsonFile(path):
-  with open(path) as f:
-    return {"result": json.load(f), "errors": [], "success": True}
-  return {"result": {}, "errors": ["Error opening file with path : '" + path + "'!"], "success": False}
+	with open(path) as f:
+		return {"result": json.load(f), "errors": [], "success": True}
+	return {"result": {}, "errors": ["Error opening file with path : '" + path + "'!"], "success": False}
 
 def parseJsonString(jsonString):
-  return {"result": json.loads(jsonString), "errors": [], "success": True}
+	return {"result": json.loads(jsonString), "errors": [], "success": True}
+
+def isStringType(j):
+	return type(j) == types.StringType or type(j) == types.UnicodeType
 
 def findAndReplaceReferences(root, j):
 	sp = supportedPatterns()
 
 	success = True
 	errors = []
-  type(errors.
 
-	if type(j) == types.ListType:
+	if type(j) == types.ListType and len(j) > 0:
 	
 		arr = []
 		arrayIsReferenceFunction = False
 
-		if type(j[0]) == types.StringType:
-			#auto p = sp.find(j[0].string_value());
+		if isStringType(j[0]):
 			if j[0] in sp:
-        f = sp[j[0]]
+				f = sp[j[0]]
 				arrayIsReferenceFunction = True
 
 				#check for nested function invocations in the arguments
 				funcArr = []
-        for i in j: 
+				for i in j: 
 					r = findAndReplaceReferences(root, i)
 					success = success and r["success"]
 					if not r["success"]:
 						for e in r["errors"]:
 							errors.append(e)
 					funcArr.append(r["result"])
-
+				
 				#invoke function
 				jaes = f(root, funcArr)
 
@@ -91,13 +71,12 @@ def findAndReplaceReferences(root, j):
 				#if successful try to recurse into result for functions in result
 				if jaes["success"]:
 					r = findAndReplaceReferences(root, jaes["result"])
-          rSuccess = r["errors"].
 					success = success and r["success"]
 					if not r["success"]:
 						for e in r["errors"]:
 							errors.append(e)
-					return {"result": r.result, "errors": errors, "success": len(errors) == 0}
-				else
+					return {"result": r["result"], "errors": errors, "success": len(errors) == 0}
+				else:
 					return {"result": {}, "errors": errors, "success": len(errors) == 0}
 
 		if not arrayIsReferenceFunction:
@@ -130,26 +109,26 @@ def findAndReplaceReferences(root, j):
 def supportedPatterns():
 
 	def ref(root, j):
-    if "cache" not in ref.__dict__: 
-      ref.cache = {} 
-		    
-		if len(j) == 3
-			 and type(j[1]) == types.StringType
-			 and type(j[2]) == types.StringType
+		if "cache" not in ref.__dict__: 
+			ref.cache = {} 
+
+		if len(j) == 3 \
+		 and isStringType(j[1]) \
+		 and isStringType(j[2]):
 
 			key1 = j[1]
 			key2 = j[2]
 
-      if (key1, key2) in cache:
-				return cache[(key1, key2)]
+			if (key1, key2) in ref.cache:
+				return ref.cache[(key1, key2)]
 			
 			res = findAndReplaceReferences(root, root[key1][key2])
-			cache[(key1, key2)] = res
+			ref.cache[(key1, key2)] = res
 			return res
 		
 		return {"result": j, "errors": ["Couldn't resolve reference: " + json.dumps(j) + "!"], "success" : False}
 	
-  '''
+	'''
 	auto fromDb = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if((j.array_items().size() >= 3 && j[1].is_string())
@@ -292,54 +271,53 @@ def supportedPatterns():
 
 		return{j, string("Couldn't load data from DB: ") + j.dump() + "!"};
 	};
-  '''
+	'''
 
 	def fromFile(root, j):
 		error = ""
 
-		if len(j) == 2
-		   and type(j[1]) == types.StringType:
+		if len(j) == 2 and isStringType(j[1]):
 
 			basePath = defaultValue(root, "include-file-base-path", ".")
 			pathToFile = j[1]
-			pathToFile = fixSystemSeparator(isAbsolutePath(pathToFile)
-																			if pathToFile 
+			pathToFile = fixSystemSeparator(pathToFile 
+																			if isAbsolutePath(pathToFile) 
 																			else basePath + "/" + pathToFile)
 			jo = readAndParseJsonFile(pathToFile)
 			if jo["success"] and not type(jo["result"]) == None:
-				return {"result": jo.result, "errors": [], "success": True}
+				return {"result": jo["result"], "errors": [], "success": True}
 			
 			return {"result": j, "errors": ["Couldn't include file with path: '" + pathToFile + "'!"], "success": False}
 
 		return {"result": j, "errors": ["Couldn't include file with function: " + json.dumps(j) + "!"], "success": False}
 
 	def humus2corg(r, j):
-		if len(j) == 2
-		   and type(j[1]) == types.IntType:
-			return {"result": Soil::humus_st2corg(j[1]), "errors": [], "success": True}
+		if len(j) == 2 \
+			and type(j[1]) == types.IntType:
+			return {"result": humus_st2corg(j[1]), "errors": [], "success": True}
 		return {"result": j, "errors": ["Couldn't convert humus level to corg: " + json.dumps(j) + "!"], "success": False}
 
 	def ld2trd(r, j):
-		if len(j) == 3
-        and type(j[1]) == types.IntType
-		    and type(j[2]) == types.FloatType:
+		if len(j) == 3 \
+			and type(j[1]) == types.IntType \
+			and type(j[2]) == types.FloatType:
 			return {"result": ld_eff2trd(j[1], j[2]), "errors": [], "success": True}
 		return {"result": j, "errors": ["Couldn't convert bulk density class to raw density using function: " + json.dumps(j) + "!"], "success": False}
 
 	def KA52clay(r, j):
-		if len(j) == 2 and type(j[1]) == types.StringType:
+		if len(j) == 2 and isStringType(j[1]):
 			return {"result": KA5texture2clay(j[1]), "errors": [], "success": True}
 		return {"result": j, "errors": ["Couldn't get soil clay content from KA5 soil class: " + json.dumps(j) + "!"], "success": False}
 
 	def KA52sand(r, j):
-		if len(j) == 2 and type(j[1]) = types.StringType:
+		if len(j) == 2 and isStringType(j[1]):
 			return {"result": KA5texture2sand(j[1]), "errors": [], "success": True}
 		return {"result": j, "errors": ["Couldn't get soil sand content from KA5 soil class: " + json.dumps(j) + "!"], "success": False}
 
 	def sandClay2lambda(r, j):
-		if len(j) == 3
-		   and type(j[1]) == types.FloatType
-		   and type(j[2]) == types.FloatType:
+		if len(j) == 3 \
+			and type(j[1]) == types.FloatType \
+			and type(j[2]) == types.FloatType:
 			return {"result": sandAndClay2lambda(j[1], j[2]), "errors": [], "success": True}
 		return {"result": j, "errors": ["Couldn't get lambda value from soil sand and clay content: " + json.dumps(j) + "!"], "success": False}
 
@@ -348,23 +326,24 @@ def supportedPatterns():
 			return {"result": j[1] / 100.0, "errors": [], "success": True}
 		return {"result": j, "errors": ["Couldn't convert percent to decimal percent value: " + json.dumps(j) + "!"], "success": False}
 
-  if "m" not in supportedPatterns.__dict__: 
-    supportedPatterns.m = {
-      "include-from-db": fromDb,
-			"include-from-file": fromFile,
-			"ref": ref,
-			"humus_st2corg": humus2corg,
-			"ld_eff2trd": ld2trd,
-			"KA5TextureClass2clay": KA52clay,
-			"KA5TextureClass2sand": KA52sand,
-			"sandAndClay2lambda": sandClay2lambda,
-			"%": percent
-    }
+	if "m" not in supportedPatterns.__dict__: 
+		supportedPatterns.m = \
+			{
+			#"include-from-db": fromDb
+			  "include-from-file": fromFile
+			, "ref": ref
+			, "humus_st2corg": humus2corg
+			, "ld_eff2trd": ld2trd
+			, "KA5TextureClass2clay": KA52clay
+			, "KA5TextureClass2sand": KA52sand
+			, "sandAndClay2lambda": sandClay2lambda
+			, "%": percent
+			}
 
 	return supportedPatterns.m;
 
-def printPossibleErrors(es, includeWarnings = false):
-  if(not es["success"]:
+def printPossibleErrors(es, includeWarnings = False):
+	if not es["success"]:
 		for e in es["errors"]:
 			print e
 
@@ -374,12 +353,7 @@ def printPossibleErrors(es, includeWarnings = false):
 
 	return es["success"]
 
-
-def createEnvJsonFromJsonConfigFiles(params):
-	cropSiteSim = [];
-	for name in ["crop-json-str", "site-json-str", "sim-json-str"]:
-		cropSiteSim.append(printPossibleErrors(parseJsonString(params[name])))
-
+def createEnvJsonFromJsonConfigFiles(cropSiteSim):
 	for j in cropSiteSim:
 		if j == None:
 			return None
@@ -388,7 +362,7 @@ def createEnvJsonFromJsonConfigFiles(params):
 
 	def addBasePath(j, basePath):
 		if not "include-file-base-path" in j:
-			m["include-file-base-path"] = pathToParameters
+			j["include-file-base-path"] = pathToParameters
 
 	cropSiteSim2 = []
 	#collect all errors in all files and don't stop as early as possible
@@ -397,8 +371,8 @@ def createEnvJsonFromJsonConfigFiles(params):
 		addBasePath(j, pathToParameters)
 		r = findAndReplaceReferences(j, j)
 		if r["success"]:
-			cropSiteSim2.append(r["result"]
-		else
+			cropSiteSim2.append(r["result"])
+		else:
 			errors.update(r["errors"])
 
 	if len(errors) > 0:
@@ -428,16 +402,21 @@ def createEnvJsonFromJsonConfigFiles(params):
 		, "siteParameters": sitej["SiteParameters"]
 	}
 
+	def parseOutputIds(oids):
+		j = json.dumps(oids)
+		rs = monica_python.parseOutputIdsToJsonString(j)
+		return json.loads(rs, "latin-1")
+
 	env["params"] = cpp
 	env["cropRotation"] = cropj["cropRotation"]
 	env["dailyOutputIds"] = parseOutputIds(simj["output"]["daily"])
 	env["monthlyOutputIds"] = parseOutputIds(simj["output"]["monthly"])
 	env["yearlyOutputIds"] = parseOutputIds(simj["output"]["yearly"])
 	env["cropOutputIds"] = parseOutputIds(simj["output"]["crop"])
-	if(type(simj["output"]["at"] == types.DictType:
+	if type(simj["output"]["at"]) == types.DictType:
 		aoids = {}
 		for k, v in simj["output"]["at"].iteritems():
-      aoids[k] = parseOutputIds(v)
+			aoids[k] = parseOutputIds(v)
 		env["atOutputIds"] = aoids
 	env["runOutputIds"] = parseOutputIds(simj["output"]["run"])
 
@@ -448,13 +427,47 @@ def createEnvJsonFromJsonConfigFiles(params):
 	options["separator"] = defaultValue(climateDataSettings, "csv-separator", ",")
 	options["noOfHeaderLines"] = defaultValue(climateDataSettings, "no-of-climate-file-header-lines", 2)
 	options["headerName2ACDName"] = climateDataSettings["header-to-acd-names"]
-
-	#add start/end date to sim json object
 	options["startDate"] = simj["start-date"]
 	options["endDate"] = simj["end-date"]
 	print "startDate:", options["startDate"], "endDate:", options["endDate"]
-  
-	env["da"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"], options)
+
+	with open(simj["climate.csv"]) as f:
+		climateCSVString = f.read()
+
+	env["da"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climateCSVString, json.dumps(options)))
 
 	return env
 
+
+
+def main():
+	with open("../sim.json") as f:
+		sim = json.load(f)
+
+	with open("../site.json") as f:
+		site = json.load(f)
+
+	with open("../crop.json") as f:
+		crop = json.load(f)
+
+	sim["include-file-base-path"] = "../../../../"
+	sim["climate.csv"] = "../climate.csv"
+
+	env = createEnvJsonFromJsonConfigFiles([crop, site, sim])
+	print env
+
+	#producer()
+
+
+
+def producer():
+	context = zmq.Context()
+	socket = context.socket(zmq.PUSH)
+	socket.bind("tcp://127.0.0.1:5560")
+
+	# Start your result manager and workers before you start your producers
+
+
+
+
+main()
