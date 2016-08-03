@@ -12,7 +12,7 @@ def collector():
   socket.bind("tcp://127.0.0.1:7777")
   collector_data = []
   leave = False
-  while !leave:
+  while not leave:
     result = socket.recv_json()
     collector_data.append(result)
     if result["type"] == "finish":

@@ -29,6 +29,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/algorithms.h"
 #include "tools/debug.h"
 #include "tools/json11-helper.h"
+#include "../io/output.h"
+#include "climate/climate-file-io.h"
 
 using namespace boost::python;
 
@@ -36,6 +38,7 @@ using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace json11;
+using namespace Climate;
 
 dict rm(dict params)
 {
@@ -59,7 +62,50 @@ dict rm(dict params)
 	return d;
 }
 
+string parseOutputIdsToJsonString(string oidArrayString)
+{
+	string err;
+	J11Array oidArray = Json::parse(oidArrayString, err).array_items();
+	return Json(parseOutputIds(oidArray)).dump();
+}
+
+string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVString,
+																													string optionsJsonString)
+{
+	string err;
+	J11Object options = Json::parse(optionsJsonString, err).object_items();
+	CSVViaHeaderOptions os;
+	os.separator = options["separator"].string_value();
+	os.startDate = Date::fromIsoDateString(options["startDate"].string_value());
+	os.endDate = Date::fromIsoDateString(options["endDate"].string_value());
+	os.noOfHeaderLines = options["noOfHeaderLines"].int_value();
+	
+	map<string, string> hn2acdn;
+	for(auto p : options["headerName2ACDName"].object_items())
+		os.headerName2ACDName[p.first] = p.second.string_value();
+
+	//os.separator = extract<string>(options["separator"]);
+	//os.startDate = Date::fromIsoDateString(extract<string>(options["startDate"]));
+	//os.endDate = Date::fromIsoDateString(extract<string>(options["endDate"]));
+	//os.noOfHeaderLines = extract<int>(options["noOfHeaderLines"]);
+	//stl_input_iterator<string> begin(options.keys()), end;
+	//map<string, string> hn2acdn;
+	//for_each(begin, end,
+	//				 [&](string key){ hn2acdn[key] = extract<string>(options[key]); });
+	//os.headerName2ACDName = hn2acdn;
+
+	return Json(readClimateDataFromCSVStringViaHeaders(climateCSVString, os)).dump();
+}
+
+string test(string t)
+{
+	return t;
+}
+
 BOOST_PYTHON_MODULE(monica_python)
 {
   def("runMonica", rm);
+	def("parseOutputIdsToJsonString", parseOutputIdsToJsonString);
+	def("readClimateDataFromCSVStringViaHeadersToJsonString", readClimateDataFromCSVStringViaHeadersToJsonString);
+	def("test", test);
 }
