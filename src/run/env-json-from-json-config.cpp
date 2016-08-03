@@ -64,7 +64,7 @@ EResult<Json> Monica::findAndReplaceReferences(const Json& root, const Json& j)
 	bool success = true;
 	vector<string> errors;
 
-	if(j.is_array())
+	if(j.is_array() && j.array_items().size() > 0)
 	{
 		J11Array arr;
 
