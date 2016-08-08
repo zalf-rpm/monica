@@ -64,35 +64,32 @@ dict rm(dict params)
 
 string parseOutputIdsToJsonString(string oidArrayString)
 {
-	string err;
-	J11Array oidArray = Json::parse(oidArrayString, err).array_items();
-	return Json(parseOutputIds(oidArray)).dump();
+	string res;
+	auto r = parseJsonString(oidArrayString);
+	if(r.success())
+		res = Json(parseOutputIds(r.result.array_items())).dump();
+	return res;
 }
 
 string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVString,
 																													string optionsJsonString)
 {
-	string err;
-	J11Object options = Json::parse(optionsJsonString, err).object_items();
+	string res;
+	auto r = parseJsonString(optionsJsonString);
 	CSVViaHeaderOptions os;
-	os.separator = options["separator"].string_value();
-	os.startDate = Date::fromIsoDateString(options["startDate"].string_value());
-	os.endDate = Date::fromIsoDateString(options["endDate"].string_value());
-	os.noOfHeaderLines = options["noOfHeaderLines"].int_value();
-	
-	map<string, string> hn2acdn;
-	for(auto p : options["headerName2ACDName"].object_items())
-		os.headerName2ACDName[p.first] = p.second.string_value();
+	if(r.success())
+	{
+		J11Object options = r.result.object_items();
+		bool useLeapYears = options["useLeapYears"].bool_value();
+		os.separator = options["separator"].string_value();
+		os.startDate = Date::fromIsoDateString(options["startDate"].string_value(), useLeapYears);
+		os.endDate = Date::fromIsoDateString(options["endDate"].string_value(), useLeapYears);
+		os.noOfHeaderLines = options["noOfHeaderLines"].int_value();
 
-	//os.separator = extract<string>(options["separator"]);
-	//os.startDate = Date::fromIsoDateString(extract<string>(options["startDate"]));
-	//os.endDate = Date::fromIsoDateString(extract<string>(options["endDate"]));
-	//os.noOfHeaderLines = extract<int>(options["noOfHeaderLines"]);
-	//stl_input_iterator<string> begin(options.keys()), end;
-	//map<string, string> hn2acdn;
-	//for_each(begin, end,
-	//				 [&](string key){ hn2acdn[key] = extract<string>(options[key]); });
-	//os.headerName2ACDName = hn2acdn;
+		map<string, string> hn2acdn;
+		for(auto p : options["headerName2ACDName"].object_items())
+			os.headerName2ACDName[p.first] = p.second.string_value();
+	}
 
 	return Json(readClimateDataFromCSVStringViaHeaders(climateCSVString, os)).dump();
 }
