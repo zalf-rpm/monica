@@ -2,17 +2,18 @@
 # -*- coding: ISO-8859-15-*-
 
 import zmq
-print zmq.pyzmq_version()
 import time
 import json
 import types
 import sys
 sys.path.append('C:/Users/berg.ZALF-AD/GitHub/monica/project-files/Win32/Release')	 # path to monica_python.pyd or monica_python.so
 sys.path.append('C:/Users/berg.ZALF-AD/GitHub/util/soil')
-print sys.path
-print sys.version
 from soil_conversion import *
 import monica_python
+
+#print "pyzmq version: ", zmq.pyzmq_version()
+#print "sys.path: ", sys.path
+#print "sys.version: ", sys.version
 
 def isAbsolutePath(p):
 	return p.startswith("/") or p.startswith("\\")
@@ -353,7 +354,7 @@ def printPossibleErrors(es, includeWarnings = False):
 
 	return es["success"]
 
-def createEnvJsonFromJsonConfigFiles(cropSiteSim):
+def createEnvJsonFromJsonConfig(cropSiteSim):
 	for j in cropSiteSim:
 		if j == None:
 			return None
@@ -405,7 +406,8 @@ def createEnvJsonFromJsonConfigFiles(cropSiteSim):
 	def parseOutputIds(oids):
 		j = json.dumps(oids)
 		rs = monica_python.parseOutputIdsToJsonString(j)
-		return json.loads(rs, "latin-1")
+		p = json.loads(rs, "latin-1")
+		return p
 
 	env["params"] = cpp
 	env["cropRotation"] = cropj["cropRotation"]
@@ -429,6 +431,7 @@ def createEnvJsonFromJsonConfigFiles(cropSiteSim):
 	options["headerName2ACDName"] = climateDataSettings["header-to-acd-names"]
 	options["startDate"] = simj["start-date"]
 	options["endDate"] = simj["end-date"]
+	options["useLeapYears"] = False
 	print "startDate:", options["startDate"], "endDate:", options["endDate"]
 
 	with open(simj["climate.csv"]) as f:
@@ -437,7 +440,6 @@ def createEnvJsonFromJsonConfigFiles(cropSiteSim):
 	env["da"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climateCSVString, json.dumps(options)))
 
 	return env
-
 
 
 def main():
@@ -453,21 +455,31 @@ def main():
 	sim["include-file-base-path"] = "../../../../"
 	sim["climate.csv"] = "../climate.csv"
 
-	env = createEnvJsonFromJsonConfigFiles([crop, site, sim])
-	print env
+	env = createEnvJsonFromJsonConfig([crop, site, sim])
+	#print env
 
-	#producer()
+	producer(env)
 
 
-
-def producer():
+def producer(env):
 	context = zmq.Context()
 	socket = context.socket(zmq.PUSH)
 	socket.bind("tcp://127.0.0.1:5560")
 
+	consumerSocket = context.socket(zmq.PUSH)
+	consumerSocket.connect("tcp://127.0.0.1:7777");
+	
+	workerControlSocket = context.socket(zmq.PUB)
+	consumerSocket.bind("tcp://127.0.0.1:6666");
+	
+	for i in range(1):
+		socket.send_json(env)
+
 	# Start your result manager and workers before you start your producers
 
-
+	consumerSocket.send_json({"type": "finish"})
+	workerControlSocket.send("finish " + json.dumps({"type": "finish"}))
+	
 
 
 main()

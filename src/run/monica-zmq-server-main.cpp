@@ -59,6 +59,8 @@ int main(int argc, char** argv)
 	string address = "localhost";
 	int resultPort = 7777;
 	string resultAddress = "localhost";
+	int controlPort = 6666;
+	string controlAddress = "localhost";
 	bool usePipeline = false;
 	bool connectToZmqProxy = false;
 
@@ -73,6 +75,8 @@ int main(int argc, char** argv)
 			<< " [[-r | --result] ... use different result socket (parameter is optional, when non default result address/port are used)" << endl
 			<< " [[-ra | --result-address] ADDRESS (default: " << resultAddress << ")] ... bind socket to this IP address for results" << endl
 			<< " [[-rp | --result-port] PORT (default: " << resultPort << ")] ... bind socket to this port for results" << endl
+			<< " [[-ca | --control-address] ADDRESS (default: " << controlAddress << ")] ... connect socket to this IP address for control messages" << endl
+			<< " [[-cp | --control-port] PORT (default: " << controlPort << ")] ... bind socket to this port for control messages" << endl
 			<< " [-h | --help] ... this help output" << endl
 			<< " [-v | --version] ... outputs MONICA version" << endl;
 	};
@@ -108,6 +112,12 @@ int main(int argc, char** argv)
 				resultPort = stoi(argv[++i]);
 				usePipeline = true;
 			}
+			else if((arg == "-ca" || arg == "--control-address")
+							&& i + 1 < argc)
+				controlAddress = argv[++i];
+			else if((arg == "-cp" || arg == "--control-port")
+							&& i + 1 < argc)
+				controlPort = stoi(argv[++i]);
 			else if(arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
@@ -117,16 +127,18 @@ int main(int argc, char** argv)
 		debug() << "starting ZeroMQ MONICA server" << endl;
 		
 		string recvAddress = string("tcp://") + address + ":" + to_string(port);
-		vector<pair<ZmqSocketType, string>> addresses;
+		map<ZmqSocketRole, pair<ZmqSocketType, string>> addresses;
 		if(usePipeline)
 		{
-			addresses.push_back(make_pair(Pull, recvAddress));
-			addresses.push_back(make_pair(Push, string("tcp://") + resultAddress + ":" + to_string(resultPort)));
+			addresses[ReceiveJob] = make_pair(Pull, recvAddress);
+			addresses[SendResult] = make_pair(Push, string("tcp://") + resultAddress + ":" + to_string(resultPort));
 		} 
 		else if(connectToZmqProxy)
-			addresses.push_back(make_pair(ProxyReply, recvAddress));
+			addresses[ReceiveJob] = make_pair(ProxyReply, recvAddress);
 		else
-			addresses.push_back(make_pair(Reply, recvAddress));
+			addresses[ReceiveJob] = make_pair(Reply, recvAddress);
+
+		addresses[Control] = make_pair(Subscribe, string("tcp://") + controlAddress + ":" + to_string(controlPort));
 
 		serveZmqMonicaFull(&context, addresses);
 		

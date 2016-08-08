@@ -386,7 +386,7 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext,
 //-----------------------------------------------------------------------------
 
 void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext, 
-																vector<pair<ZmqSocketType, string>> socketAddresses)
+																std::map<ZmqSocketRole, std::pair<ZmqSocketType, std::string>> socketAddresses)
 {
 	if(socketAddresses.empty())
 	{
@@ -395,11 +395,12 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 	}
 
 	ZmqSocketType rType; string rAddress;
-	tie(rType, rAddress) = socketAddresses.front();
+	auto rci = socketAddresses.find(ReceiveJob);
+	if(rci != socketAddresses.end())
+		tie(rType, rAddress) = rci->second;
 	int receiveSocketType = ZMQ_REP;
 	if(rType == Pull)
 		receiveSocketType = ZMQ_PULL;
-
 	zmq::socket_t socket(*zmqContext, receiveSocketType);
 	
 	try
@@ -415,86 +416,115 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		debug() << "MONICA: bound monica zeromq reply socket to address: " << rAddress << endl;
 
 		ZmqSocketType sType; string sAddress = rAddress;
-		if(socketAddresses.size() > 1)
-			tie(sType, sAddress) = socketAddresses.at(1);
+		auto sci = socketAddresses.find(SendResult);
+		if(sci != socketAddresses.end())
+			tie(sType, sAddress) = sci->second;
 		int sendSocketType = ZMQ_PUSH;
 		zmq::socket_t sendSocket(*zmqContext, sendSocketType);
 		bool distinctSendSocket = sAddress != rAddress;
 
+		ZmqSocketType cType; string cAddress = rAddress;
+		auto cci = socketAddresses.find(Control);
+		if(cci != socketAddresses.end())
+			tie(cType, cAddress) = cci->second;
+		int controlSocketType = ZMQ_SUB;
+		zmq::socket_t controlSocket(*zmqContext, controlSocketType);
+		bool distinctControlSocket = cAddress != rAddress;
+		
+		zmq::pollitem_t items[] = 
+		{{socket, 0, ZMQ_POLLIN, 0}
+		,{controlSocket, 0, ZMQ_POLLIN, 0}
+		};
+		
 		try
 		{
 			if(distinctSendSocket)
 				sendSocket.connect(sAddress);
 			
-			//the possibly active crop
-			while(true)
+			try
 			{
-				try
+				if(distinctControlSocket)
 				{
-					auto msg = receiveMsg(socket);
+					controlSocket.connect(cAddress);
+					controlSocket.setsockopt(ZMQ_SUBSCRIBE, "finish ", 7);
+				}
+				//subscriber.setsockopt(ZMQ_SUBSCRIBE, "10001 ", 6);
 
-					//    cout << "Received message " << msg.toString() << endl;
-					//    if(!msg.valid)
-					//    {
-					//      this_thread::sleep_for(chrono::milliseconds(100));
-					//      continue;
-					//    }
-
-					string msgType = msg.type();
-					if(msgType == "finish")
+				while(true)
+				{
+					try
 					{
-						J11Object resultMsg;
-						resultMsg["type"] = "ack";
-						try
+						Msg msg;
+						zmq::poll(&items[0], distinctControlSocket ? 2 : 1, -1);
+
+						if(items[0].revents & ZMQ_POLLIN)
+							msg = receiveMsg(socket);
+						if(distinctControlSocket
+							 && items[1].revents & ZMQ_POLLIN)
+							msg = receiveMsg(controlSocket);
+
+						//auto msg = receiveMsg(socket);
+
+						string msgType = msg.type();
+						if(msgType == "finish")
 						{
-							s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
+							J11Object resultMsg;
+							resultMsg["type"] = "ack";
+							try
+							{
+								s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
+							}
+							catch(zmq::error_t e)
+							{
+								cerr
+									<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
+									<< sAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+							}
+							break;
 						}
-						catch(zmq::error_t e)
+						else if(msgType == "Env")
 						{
-							cerr
-								<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
-								<< sAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+							Json& fullMsg = msg.json;
+
+							Env env(msg.json);
+
+							activateDebug = env.debugMode;
+
+							env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+								[](string soilTexture, int distance)
+							{
+								return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+							};
+
+							auto res = runMonica(env);
+
+							J11Object resultMsg;
+							resultMsg["type"] = "result";
+							addOutputToResultMessage(res.out, resultMsg);
+
+							try
+							{
+								s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
+							}
+							catch(zmq::error_t e)
+							{
+								cerr
+									<< "Exception on trying to reply with result message on zmq socket with address: "
+									<< sAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+							}
 						}
-						break;
 					}
-					else if(msgType == "Env")
+					catch(zmq::error_t e)
 					{
-						Json& fullMsg = msg.json;
-
-						Env env(msg.json);
-
-						activateDebug = env.debugMode;
-
-						env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-							[](string soilTexture, int distance)
-						{
-							return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-						};
-
-						auto res = runMonica(env);
-
-						J11Object resultMsg;
-						resultMsg["type"] = "result";
-						addOutputToResultMessage(res.out, resultMsg);
-
-						try
-						{
-							s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
-						}
-						catch(zmq::error_t e)
-						{
-							cerr
-								<< "Exception on trying to reply with result message on zmq socket with address: "
-								<< sAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
-						}
+						cerr
+							<< "Exception on trying to receive request message on zmq socket with address: "
+							<< rAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
 					}
 				}
-				catch(zmq::error_t e)
-				{
-					cerr
-						<< "Exception on trying to receive request message on zmq socket with address: "
-						<< rAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
-				}
+			}
+			catch(zmq::error_t e)
+			{
+				cerr << "Couldn't connect zmq subscribe socket to address: " << cAddress << "! Error: " << e.what() << endl;
 			}
 		}
 		catch(zmq::error_t e)

@@ -38,9 +38,10 @@ namespace Monica
 												 std::string outputSocketAddress, 
 												 bool isInProcess = false);
 	
-	enum ZmqSocketType { Reply, ProxyReply, Pull, Push };
-	void serveZmqMonicaFull(zmq::context_t* zmqContext, 
-													std::vector<std::pair<ZmqSocketType, std::string>> socketAddresses);
+	enum ZmqSocketType { Reply, ProxyReply, Pull, Push, Subscribe };
+	enum ZmqSocketRole { ReceiveJob, SendResult, Control };
+	void serveZmqMonicaFull(zmq::context_t* zmqContext,
+													std::map<ZmqSocketRole, std::pair<ZmqSocketType, std::string>> socketAddresses);
 }
 
 #endif
