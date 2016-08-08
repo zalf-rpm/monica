@@ -1410,10 +1410,11 @@ Errors SimulationParameters::merge(json11::Json j)
 
   set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
   p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
-
+	
   set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
   p_NMinFertiliserPartition.merge(j["NMinFertiliserPartition"]);
   p_NMinUserParams.merge(j["NMinUserParams"]);
+	set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 
   set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
   set_bool_value(p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
@@ -1421,33 +1422,32 @@ Errors SimulationParameters::merge(json11::Json j)
   set_double_value(p_LayerThickness, j, "LayerThickness");
 
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
-  set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
-
+  
 	return res;
 }
 
 json11::Json SimulationParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "SimulationParameters"},
-    {"startDate", startDate.toIsoDateString()},
-    {"endDate", endDate.toIsoDateString()},
-    {"NitrogenResponseOn", pc_NitrogenResponseOn},
-    {"WaterDeficitResponseOn", pc_WaterDeficitResponseOn},
-    {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
-    {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
-    {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
-    {"AutoIrrigationParams", p_AutoIrrigationParams},
-    {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
-    {"NMinFertiliserPartition", p_NMinFertiliserPartition},
-    {"NMinUserParams", p_NMinUserParams},
-    {"UseSecondaryYields", p_UseSecondaryYields},
-    {"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger},
-    {"NumberOfLayers", p_NumberOfLayers},
-    {"LayerThickness", p_LayerThickness},
-    {"StartPVIndex", p_StartPVIndex},
-    {"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising}
-  };
+  return json11::Json::object 
+	{{"type", "SimulationParameters"}
+	,{"startDate", startDate.toIsoDateString()}
+	,{"endDate", endDate.toIsoDateString()}
+	,{"NitrogenResponseOn", pc_NitrogenResponseOn}
+	,{"WaterDeficitResponseOn", pc_WaterDeficitResponseOn}
+	,{"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn}
+	,{"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn }
+  ,{"UseAutomaticIrrigation", p_UseAutomaticIrrigation}
+  ,{"AutoIrrigationParams", p_AutoIrrigationParams}
+  ,{"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod}
+  ,{"NMinFertiliserPartition", p_NMinFertiliserPartition}
+  ,{"NMinUserParams", p_NMinUserParams}
+	,{"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising}
+  ,{"UseSecondaryYields", p_UseSecondaryYields}
+  ,{"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger}
+  ,{"NumberOfLayers", p_NumberOfLayers}
+  ,{"LayerThickness", p_LayerThickness}
+  ,{"StartPVIndex", p_StartPVIndex}
+	};
 }
 
 //-----------------------------------------------------------------------------------------

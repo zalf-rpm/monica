@@ -23,7 +23,7 @@
 	"path-to-output": "./",
 	
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
-	"include-file-base-path": "../",
+	"include-file-base-path": "./",
 	
 	"__configuration options for the monica outputs": "",
 	"output": { 
@@ -65,7 +65,7 @@
 			"NEP", "NEE", "Rh", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
 		],
 		"daily": [
-			"Date", "Crop", ["NO3", [1, 20]], "Yield", "SumYield", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
+			"Date", "Crop", ["NO3", [1, 20]], "NFert", "Yield", "SumYield", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
 		],
 		"monthly": [
 			"Year", "Month",
@@ -128,13 +128,15 @@
 	},
 
 	"__if monica internal automatic fertilizing via NMin method is to be used, configure here": "",
-	"UseNMinMineralFertilisingMethod": false,
-	"NMinUserParams": { "min": 0, "max": 0, "delayInDays": 0 },
-	"NMinFertiliserPartition": {
+	"UseNMinMineralFertilisingMethod": true,
+	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
+	"NMinFertiliserPartition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"],
+	"_NMinFertiliserPartition": {
 		"id": "my AN",
 		"name": "my very own ammonium nitrate variant",
 		"Carbamid": 0,
-		"NH4": 0,
-		"NO3": 0
-	}
+		"NH4": 0.5,
+		"NO3": 0.5
+	},
+	"JulianDayAutomaticFertilising": 89
 }
