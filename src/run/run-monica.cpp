@@ -367,7 +367,6 @@ Result Monica::runMonica(Env env)
 	vector<BOTRes::ResultVector> intermediateYearlyResults;
 	vector<BOTRes::ResultVector> intermediateRunResults;
 	map<string, vector<BOTRes::ResultVector>> intermediateCropResults;
-	map<Date, vector<BOTRes::ResultVector>> intermediateAtResults;
 	
 	MonicaRefs monicaRefs
 	{
@@ -555,8 +554,11 @@ Result Monica::runMonica(Env env)
 			res.out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
 			for(auto oid : env.monthlyOutputIds)
 			{
-				res.out.monthly[currentMonth][i].push_back(applyOIdOP(oid.timeAggOp, intermediateMonthlyResults.at(i)));
-				intermediateMonthlyResults[i].clear();
+				if(!intermediateMonthlyResults.empty())
+				{
+					res.out.monthly[currentMonth][i].push_back(applyOIdOP(oid.timeAggOp, intermediateMonthlyResults.at(i)));
+					intermediateMonthlyResults[i].clear();
+				}
 				++i;
 			}
 
@@ -573,8 +575,11 @@ Result Monica::runMonica(Env env)
 			res.out.yearly.resize(intermediateYearlyResults.size());
 			for(auto oid : env.yearlyOutputIds)
 			{
-				res.out.yearly[i].push_back(applyOIdOP(oid.timeAggOp, intermediateYearlyResults.at(i)));
-				intermediateYearlyResults[i].clear();
+				if(!intermediateYearlyResults.empty())
+				{
+					res.out.yearly[i].push_back(applyOIdOP(oid.timeAggOp, intermediateYearlyResults.at(i)));
+					intermediateYearlyResults[i].clear();
+				}
 				++i;
 			}
 		}
@@ -589,7 +594,8 @@ Result Monica::runMonica(Env env)
 	res.out.run.resize(env.runOutputIds.size());
 	for(auto oid : env.runOutputIds)
 	{
-		res.out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
+		if(!intermediateRunResults.empty())
+			res.out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
 		++i;
 	}
 
@@ -602,10 +608,13 @@ Result Monica::runMonica(Env env)
 		for(auto oid : env.cropOutputIds)
 		{
 			auto& ivs = p.second.at(i);
-			if(ivs.front().is_string())
-				vs[i].push_back(ivs.front());
-			else
-				vs[i].push_back(applyOIdOP(oid.timeAggOp, p.second.at(i)));
+			if(!ivs.empty())
+			{
+				if(ivs.front().is_string())
+					vs[i].push_back(ivs.front());
+				else
+					vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+			}
 			++i;
 		}
 	}

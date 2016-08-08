@@ -135,31 +135,35 @@ std::string OId::toString(OId::ORGAN organ) const
 
 double Monica::applyOIdOP(OId::OP op, const vector<double>& vs)
 {
-	double v = vs.back();
-
-	switch(op)
+	double v = 0.0;
+	if(!vs.empty())
 	{
-	case OId::AVG:
-		v = accumulate(vs.begin(), vs.end(), 0.0) / vs.size();
-		break;
-	case OId::MEDIAN:
-		v = median(vs);
-		break;
-	case OId::SUM:
-		v = accumulate(vs.begin(), vs.end(), 0.0);
-		break;
-	case OId::MIN:
-		v = minMax(vs).first;
-		break;
-	case OId::MAX:
-		v = minMax(vs).second;
-		break;
-	case OId::FIRST:
-		v = vs.front();
-		break;
-	case OId::LAST:
-	case OId::NONE:
-	default:;
+		v = vs.back();
+
+		switch(op)
+		{
+		case OId::AVG:
+			v = accumulate(vs.begin(), vs.end(), 0.0) / vs.size();
+			break;
+		case OId::MEDIAN:
+			v = median(vs);
+			break;
+		case OId::SUM:
+			v = accumulate(vs.begin(), vs.end(), 0.0);
+			break;
+		case OId::MIN:
+			v = minMax(vs).first;
+			break;
+		case OId::MAX:
+			v = minMax(vs).second;
+			break;
+		case OId::FIRST:
+			v = vs.front();
+			break;
+		case OId::LAST:
+		case OId::NONE:
+		default:;
+		}
 	}
 
 	return v;
