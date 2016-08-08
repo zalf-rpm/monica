@@ -25,10 +25,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-	Tools::EResult<json11::Json> readAndParseJsonFile(std::string path);
-
-	Tools::EResult<json11::Json> parseJsonString(std::string jsonString);
-
 	Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json& root, 
 																												const json11::Json& j);
 

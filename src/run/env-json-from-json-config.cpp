@@ -35,23 +35,6 @@ using namespace json11;
 using namespace Tools;
 using namespace Climate;
 
-EResult<Json> Monica::readAndParseJsonFile(string path)
-{
-	auto r = readFile(path);
-	if(r.success())
-		return parseJsonString(r.result);
-	return{Json(), r.errors};
-}
-
-EResult<Json> Monica::parseJsonString(string jsonString)
-{
-	string err;
-	Json j = Json::parse(jsonString, err);
-	if(!err.empty())
-		return{j, string("Error parsing JSON object: '") + jsonString + "' "};
-	return{j};
-}
-
 //-----------------------------------------------------------------------------
 
 const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns();
