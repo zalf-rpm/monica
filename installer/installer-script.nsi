@@ -22,6 +22,7 @@
 
 	!define ParamsRepoDir "..\..\monica-parameters"
 	!define SysLibsDir "..\..\sys-libs"
+  !define UtilDir "..\..\util"
 
   !include "..\build-number.nsh"
 
@@ -103,6 +104,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File /oname=monica_python.pyd "..\project-files\${WinPlatform}\Release\monica_python.pyd"  
   File /oname=monica-zmq-control.exe "..\project-files\${WinPlatform}\release\monica-zmq-control.exe"  
   File /oname=monica-zmq-control-send.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-send.exe"  
+	File /oname=monica-zmq-control-client.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-client.exe"  
   File /oname=monica-zmq-proxy.exe "..\project-files\${WinPlatform}\release\monica-zmq-proxy.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
 	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
@@ -113,6 +115,8 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
   File "..\documentation\version.txt"
+  File "..\src\python\env_json_from_json_config.py"
+  File "${UtilDir}\soil\soil_conversion.py"
 
 	;SetOutPath $INSTDIR\meta.json
   ;File "..\meta.json\meta.crop.json"
@@ -149,7 +153,18 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "Hohenfinow2\sim.json"
 	File "Hohenfinow2\climate.csv"
 	File "Hohenfinow2\climate.ods"
-		
+	
+	CreateDirectory "$PROFILE\MONICA\Examples\Hohenfinow2\python"
+	;example files for the python version
+	SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2\python
+	File "Hohenfinow2\python\carbiocial.sqlite"
+	File "Hohenfinow2\python\db-connections.ini"
+	File "Hohenfinow2\python\run-monica.py"
+	File "Hohenfinow2\python\run-work-collector.py"
+	File "Hohenfinow2\python\run-work-producer.py"
+	File "Hohenfinow2\python\site-soil-profile-from-db.json"
+	
+	
   SetOutPath "$INSTDIR"
   
   ;Store installation folder
