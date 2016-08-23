@@ -12,14 +12,17 @@ def collector():
   while not leave:
     result = socket.recv_json()
     if result["type"] == "finish":
+      print "received finish message"
       leave = True
     else:
+      print "received work results"
       c = result["crop"]
-      collector_data[c["Crop"]] += c["Yield"]
-    print "received message"
-    print "intermediate: ", collector_data
+      print c
+      for cropName, data in c.iteritems(): 
+        collector_data[cropName] = collector_data.setdefault(cropName, 0) + data[2]
+    print "intermediate results: ", collector_data
     
-  print collector_data
+  print "final results: ", collector_data
 
 collector()
 
