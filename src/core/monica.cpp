@@ -133,6 +133,7 @@ void MonicaModel::seedCrop(CropPtr crop)
     if(_simPs.p_UseNMinMineralFertilisingMethod &&
        _currentCrop->seedDate().dayOfYear() <= _currentCrop->harvestDate().dayOfYear())
     {
+			_soilColumn.clearTopDressingParams();
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = applyMineralFertiliserViaNMinMethod
                            (_simPs.p_NMinFertiliserPartition,
@@ -534,9 +535,10 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
 
   _soilColumn.deleteAOMPool();
 
-  _soilColumn.applyPossibleDelayedFerilizer();
-  double delayed_fert_amount = _soilColumn.applyPossibleTopDressing();
-  addDailySumFertiliser(delayed_fert_amount);
+	auto possibleDelayedFertilizerAmount = _soilColumn.applyPossibleDelayedFerilizer();
+	addDailySumFertiliser(possibleDelayedFertilizerAmount);
+  double possibleTopDressingAmount = _soilColumn.applyPossibleTopDressing();
+  addDailySumFertiliser(possibleTopDressingAmount);
 
   if(_currentCrop &&
      _currentCrop->isValid() &&
@@ -544,14 +546,15 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
      _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() &&
      julday == _simPs.p_JulianDayAutomaticFertilising)
   {
+		_soilColumn.clearTopDressingParams();
     debug() << "nMin fertilising winter crop" << endl;
     auto cps = _currentCrop->cropParameters();
-    double fert_amount = applyMineralFertiliserViaNMinMethod
-                         (_simPs.p_NMinFertiliserPartition,
-                          NMinCropParameters(cps->speciesParams.pc_SamplingDepth,
-                                             cps->speciesParams.pc_TargetNSamplingDepth,
-                                             cps->speciesParams.pc_TargetN30));
-    addDailySumFertiliser(fert_amount);
+		double fertilizerAmount = applyMineralFertiliserViaNMinMethod
+		(_simPs.p_NMinFertiliserPartition,
+		 NMinCropParameters(cps->speciesParams.pc_SamplingDepth,
+												cps->speciesParams.pc_TargetNSamplingDepth,
+												cps->speciesParams.pc_TargetN30));
+    addDailySumFertiliser(fertilizerAmount);
 	}
 
   _soilTemperature.step(tmin, tmax, globrad);

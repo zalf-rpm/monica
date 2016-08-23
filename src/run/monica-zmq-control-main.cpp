@@ -27,10 +27,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "tools/helper.h"
 #include "tools/debug.h"
+#include "monica-zmq-defaults.h"
 
 using namespace std;
 using namespace Tools;
 using namespace json11;
+using namespace Monica;
 
 string appName = "monica-zmq-control";
 string version = "0.0.1";
@@ -102,10 +104,10 @@ int stopMonicaProcesses(zmq::context_t& context,
 int main (int argc, 
 					char** argv)
 {
-	int commPort = 6666;
-	int frontendProxyPort = 5555;
-	int backendProxyPort = 5556;
-	string proxyAddress = "localhost";
+	int commPort = defaultControlPort;
+	string proxyAddress = defaultProxyAddress; 
+	int frontendProxyPort = defaultProxyFrontendPort;
+	int backendProxyPort = defaultProxyBackendPort;
 
 	auto printHelp = [=]()
 	{
@@ -153,7 +155,7 @@ int main (int argc,
 	{
 		socket.bind(address);
 
-		int started = 0;
+		map<string, int> started;
 
 		//loop until receive finish message
 		while(true)
@@ -165,11 +167,6 @@ int main (int argc,
 					continue;
 
 				debug() << "Received message: " << msg.toString() << endl;
-				//    if(!msg.valid)
-				//    {
-				//      this_thread::sleep_for(chrono::milliseconds(100));
-				//      continue;
-				//    }
 
 				string msgType = msg.type();
 				if(msgType == "finish")
@@ -188,29 +185,102 @@ int main (int argc,
 					}
 					break;
 				}
-				else if(msgType == "start-new")
+				else if(msgType == "start-new"
+								|| msgType == "start-max"
+								|| msgType == "stop")
 				{
 					Json& fmsg = msg.json;
 
 					int count = fmsg["count"].int_value();
-
-#ifdef WIN32
-					string cmd = string("start /b monica-zmq-server --connect-to-proxy --port ") + to_string(backendProxyPort);
-#else
-					string cmd = string("monica-zmq-server --connect-to-proxy --port ") + to_string(backendProxyPort) + " &";
-#endif
 					
-					int successfullyStarted = 0;
-					for(int i = 0; i < count; i++)
+					string proxyAddress = fmsg["proxy-address"].string_value();
+					int proxyFrontendPort = fmsg["proxy-frontend-port"].int_value(); 
+					int proxyBackendPort = fmsg["proxy-backend-port"].int_value();
+					
+					//string serviceAddress = fmsg["service-address"].string_value();
+					bool isService = !fmsg["service-port"].is_null();
+					int servicePort = fmsg["service-port"].int_value();
+
+					string controlAddress = fmsg["control-address"].string_value();
+					int controlPort = fmsg["control-port"].int_value();
+
+					string inputAddress = fmsg["input-address"].string_value();
+					int inputPort = fmsg["input-port"].int_value();
+
+					string outputAddress = fmsg["output-address"].string_value();
+					int outputPort = fmsg["output-port"].int_value();
+					
+					string addresses;
+					string stopAddress;
+					int stopPort;
+					if(!proxyAddress.empty())
 					{
-						int res = system(cmd.c_str());
-						debug() << "result of running '" << cmd << "': " << res << endl;
-						started++, successfullyStarted++;
+						stopAddress = proxyAddress, stopPort = proxyFrontendPort;
+						addresses = 
+							string(" --connect-to-proxy")
+							+ " --address " + proxyAddress + " --port " + to_string(proxyBackendPort);
+						if(!controlAddress.empty())
+							addresses += " --control-address " + controlAddress + " --control-port " + to_string(controlPort);
+					}
+					else if(isService)
+					{
+						count = max(count, 1);
+						//stopAddress = "127.0.0.1", stopPort = servicePort;
+						stopAddress = "localhost", stopPort = servicePort;
+						addresses = string(" --address *") + " --port " + to_string(servicePort);
+						if(!controlAddress.empty())
+							addresses += " --control-address " + controlAddress + " --control-port " + to_string(controlPort);
+					}
+					else if(!outputAddress.empty() && !inputAddress.empty())
+					{
+						addresses =
+							string(" --address ") + inputAddress + " --port " + to_string(inputPort)
+							+ " --output-address " + outputAddress + " --output-port " + to_string(outputPort);
+						if(!controlAddress.empty())
+							addresses += " --control-address " + controlAddress + " --control-port " + to_string(controlPort);
+					}
+					
+#ifdef WIN32
+					string cmd = string("start /b monica-zmq-server -d ") + addresses;
+#else
+					string cmd = string("monica-zmq-server") + addresses + " &";
+#endif
+					cout << "addresses: " << addresses << endl;
+
+					bool isStartMax = msgType == "startMax";
+					bool isStop = msgType == "stop";
+					int& started_ = started[addresses];
+					int successfullyStarted = 0;
+					int i = isStartMax ? started_ : 0;
+					int stop = 0;
+					if(isStartMax)
+						stop = max(0, started_ - count);
+					else if(isStop)
+						stop = max(0, min(count, started_));
+
+					if(!isStop)
+					{
+						for(; i < count; i++)
+						{
+							int res = system(cmd.c_str());
+							debug() << "result of running '" << cmd << "': " << res << endl;
+							started[addresses]++, successfullyStarted++;
+						}
+					}
+
+					if((isStartMax || isStop)
+						 && !stopAddress.empty())
+					{
+						auto stopped = stopMonicaProcesses(context, stopAddress, stopPort, stop);
+						if(isStop)
+							started_ -= stopped;
 					}
 
 					J11Object resultMsg;
 					resultMsg["type"] = "result";
 					resultMsg["started"] = successfullyStarted;
+					if(isStartMax || isStop)
+						resultMsg["stopped"] = stop;
 					try
 					{
 						s_send(socket, Json(resultMsg).dump());
@@ -220,68 +290,6 @@ int main (int argc,
 						cerr
 							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump() 
 							<< " on zmq socket with address: " << address 
-							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
-					}
-				}
-				else if(msgType == "start-max")
-				{
-					Json& fmsg = msg.json;
-
-					int count = fmsg["count"].int_value();
-					int stop = max(0, started - count);
-
-#ifdef WIN32
-					string cmd = string("start /b monica-zmq-server --connect-to-proxy --port ") + to_string(backendProxyPort);
-#else
-					string cmd = string("monica-zmq-server --connect-to-proxy --port ") + to_string(backendProxyPort) + " &";
-#endif
-
-					int additionallyStarted = 0;
-					for(int i = started; i < count; i++)
-					{
-						int res = system(cmd.c_str());
-						debug() << "result of running '" << cmd << "': " << res << endl;
-						started++, additionallyStarted++;
-					}
-
-					stopMonicaProcesses(context, proxyAddress, backendProxyPort, stop);
-
-					J11Object resultMsg;
-					resultMsg["type"] = "result";
-					resultMsg["started"] = additionallyStarted;
-					resultMsg["stopped"] = stop;
-					try
-					{
-						s_send(socket, Json(resultMsg).dump());
-					}
-					catch(zmq::error_t e)
-					{
-						cerr
-							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump()
-							<< " on zmq socket with address: " << address
-							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
-					}
-				}
-				else if(msgType == "stop")
-				{
-					Json& fmsg = msg.json;
-
-					int count = fmsg["count"].int_value();
-					int stop = max(0, min(count, started));
-					started -= stopMonicaProcesses(context, proxyAddress, frontendProxyPort, stop);
-
-					J11Object resultMsg;
-					resultMsg["type"] = "result";
-					resultMsg["stopped"] = stop;
-					try
-					{
-						s_send(socket, Json(resultMsg).dump());
-					}
-					catch(zmq::error_t e)
-					{
-						cerr
-							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump()
-							<< " on zmq socket with address: " << address
 							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
 					}
 				}

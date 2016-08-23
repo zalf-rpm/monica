@@ -402,18 +402,24 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 	if(rType == Pull)
 		receiveSocketType = ZMQ_PULL;
 	zmq::socket_t socket(*zmqContext, receiveSocketType);
+	socket.setsockopt(ZMQ_LINGER, 0);
 	
 	try
 	{
-		debug() << "MONICA: connecting monica zeromq reply socket to address: " << rAddress << endl;
 		//normal reply socket has to bind to address
 		if(rType == Reply)
+		{
+			debug() << "MONICA: binding monica zeromq reply socket to address: " << rAddress << endl;
 			socket.bind(rAddress);
+			debug() << "MONICA: bound monica zeromq reply socket to address: " << rAddress << endl;
+		}
 		//proxy reply socket or pull socket have to connect to either proxy dealer socket or push socket
 		else
+		{
+			debug() << "MONICA: connecting monica zeromq reply socket to address: " << rAddress << endl;
 			socket.connect(rAddress);
-			
-		debug() << "MONICA: bound monica zeromq reply socket to address: " << rAddress << endl;
+			debug() << "MONICA: connected monica zeromq reply socket to address: " << rAddress << endl;
+		}
 
 		ZmqSocketType sType; string sAddress = rAddress;
 		auto sci = socketAddresses.find(SendResult);
@@ -443,12 +449,14 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 			
 			try
 			{
+				int topicCharCount = 0;
 				if(distinctControlSocket)
 				{
+					topicCharCount = 6;
 					controlSocket.connect(cAddress);
-					controlSocket.setsockopt(ZMQ_SUBSCRIBE, "finish ", 7);
+					controlSocket.setsockopt(ZMQ_SUBSCRIBE, "finish", topicCharCount);
+					controlSocket.setsockopt(ZMQ_LINGER, 0);
 				}
-				//subscriber.setsockopt(ZMQ_SUBSCRIBE, "10001 ", 6);
 
 				while(true)
 				{
@@ -461,7 +469,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							msg = receiveMsg(socket);
 						if(distinctControlSocket
 							 && items[1].revents & ZMQ_POLLIN)
-							msg = receiveMsg(controlSocket);
+							msg = receiveMsg(controlSocket, topicCharCount);
 
 						//auto msg = receiveMsg(socket);
 
@@ -511,6 +519,21 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 								cerr
 									<< "Exception on trying to reply with result message on zmq socket with address: "
 									<< sAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+							}
+						}
+						else
+						{
+							J11Object resultMsg;
+							resultMsg["type"] = "error";
+							try
+							{
+								s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
+							}
+							catch(zmq::error_t e)
+							{
+								cerr
+									<< "Exception on trying to reply to '" << msgType << "' request with 'error' message on zmq socket with address: "
+									<< sAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
 							}
 						}
 					}

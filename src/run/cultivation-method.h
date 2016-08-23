@@ -142,6 +142,8 @@ namespace Monica
 
     CMResultPtr cropResult() const { return _cropResult; }
 
+		void setCrop(CropPtr c) { _crop = c; }
+
   private:
     CropPtr _crop;
     CMResultPtr _cropResult;

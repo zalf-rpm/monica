@@ -300,6 +300,8 @@ namespace Monica
     double vt_SoilSurfaceTemperature{0.0};
     double vm_SnowDepth{0.0};
 
+		void clearTopDressingParams() { _vf_TopDressing = 0.0, _vf_TopDressingDelay = 0; }
+
   private:
     std::size_t calculateNumberOfOrganicLayers();
 

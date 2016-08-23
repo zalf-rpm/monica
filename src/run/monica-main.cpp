@@ -89,6 +89,8 @@ int main(int argc, char** argv)
 
 		if(oss.str() == "monica-zmq")
 			printZmqHelp();
+		else if(oss.str().substr(0, 7) != "monica-")
+			printHelp();
 		else
 			system(oss.str().c_str());
 	}

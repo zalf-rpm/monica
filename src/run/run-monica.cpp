@@ -611,9 +611,9 @@ Result Monica::runMonica(Env env)
 			if(!ivs.empty())
 			{
 				if(ivs.front().is_string())
-					vs[i].push_back(ivs.front());
+					vs[i] = ivs.front();
 				else
-					vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+					vs[i] = applyOIdOP(oid.timeAggOp, ivs);
 			}
 			++i;
 		}

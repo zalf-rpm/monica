@@ -98,7 +98,7 @@ json11::Json Seed::to_json(bool includeFullCropParameters) const
 	return json11::Json::object{
 		{"type", type()},
 		{"date", date().toIsoDateString()},
-		{"crop", _crop->to_json(includeFullCropParameters)}};
+		{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}};
 }
 
 void Seed::apply(MonicaModel* model)
@@ -135,12 +135,12 @@ Harvest::Harvest(json11::Json j)
 Errors Harvest::merge(json11::Json j)
 {
 	Errors res = WorkStep::merge(j);
-	set_shared_ptr_value(_crop, j, "crop");
+	//set_shared_ptr_value(_crop, j, "crop");
 	//this is dangerous as this is actually a value object,
 	//but one could think later, that it should actually refer to
 	//the shared crop (between CultivationMethod, MonicaModel, Seed, Harvest etc.)
-	if(_crop)
-		_crop->setHarvestDate(date());
+	//if(_crop)
+	//	_crop->setHarvestDate(date());
 	_cropResult = make_shared<CMResult>(_crop ? _crop->id() : "");
 	set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
@@ -154,7 +154,7 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	return json11::Json::object{
 		{"type", type()},
 		{"date", date().toIsoDateString()},
-		{"crop", _crop->to_json(includeFullCropParameters)},
+		{"crop", _crop ? _crop->to_json(includeFullCropParameters) :json11::Json()},
 		{"method", _method},
 		{"percentage", _percentage},
 		{"exported", _exported}};
@@ -529,6 +529,8 @@ Errors CultivationMethod::merge(json11::Json j)
 		{
 			if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{
+				harvest->setCrop(_crop);
+				_crop->setHarvestDate(harvest->date());
 				_cropResult = harvest->cropResult();
 			}
 		}

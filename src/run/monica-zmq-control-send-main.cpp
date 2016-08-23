@@ -27,10 +27,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "tools/debug.h"
 #include "tools/json11-helper.h"
+#include "monica-zmq-defaults.h"
 
 using namespace std;
 using namespace Tools;
 using namespace json11;
+using namespace Monica;
 
 string appName = "monica-zmq-control-send";
 string version = "2.0.0-beta";
@@ -43,25 +45,44 @@ int main(int argc, char** argv)
 	zmq::context_t context(1);
 
 	bool debug = false, debugSet = false;
-	string address = "localhost";
-	int port = 6666;
+	string address = defaultControlAddress;
+	int port = defaultControlPort;
 	string command = "";
 	int count = 1;
 
+	bool connectToZmqProxy = false;
+	string proxyAddress = defaultProxyAddress;
+	int proxyFrontendPort = defaultProxyFrontendPort;
+	int proxyBackendPort = defaultProxyBackendPort;
+	bool usePipeline = false;
+	string inputAddress = defaultInputAddress;
+	int inputPort = defaultInputPort;
+	string outputAddress = defaultOutputAddress;
+	int outputPort = defaultOutputPort;
+	string pubControlAddress = defaultPublisherControlAddress;
+	int pubControlPort = defaultPublisherControlPort;
+	
 	auto printHelp = [=]()
 	{
 		cout
 			<< appName << endl
 			<< " [-d | --debug] ... show debug outputs" << endl
-			<< " [--use-zmq-proxy] ... connect MONICA process to a ZeroMQ proxy" << endl
-			<< " [--zmq-client] ... run in client mode communicating to a MONICA ZeroMQ server" << endl
-			<< " [--zmq-server] ... run in server mode communicating with MONICA ZeroMQ clients" << endl
 			<< " [[-a | --address] CONTROL-ADDRESS (default: " << address << ")] ... address of control node" << endl
 			<< " [[-p | --port] CONTROL-PORT (default: " << port << ")] ... port of control node" << endl
 			<< " [[-n | --start-new] COUNT] ... start COUNT new MONICA nodes" << endl
 			<< " [[-m | --start-max] COUNT] ... start maximum COUNT MONICA nodes" << endl
 			<< " [[-s | --stop] COUNT] ... stop COUNT MONICA nodes" << endl
-			<< " [send PARAMETERS] ... send command to MONICA ZeroMQ control node via calling 'monica-zmq-control-send' with PARMETERS" << endl
+			<< " [[-c | --connect-to-proxy]] ... connect MONICA service to a ZeroMQ proxy and use proxy address/port defaults" << endl
+			<< " [[-pa | --proxy-address] ADDRESS (default: " << inputAddress << ")] ... proxy address to connect MONICA service to" << endl
+			<< " [[-pfp | --proxy-frontend-port] PORT (default: " << inputPort << ")] ... proxy client side port of proxy to be used by MONICA service" << endl
+			<< " [[-pbp | --proxy-backend-port] PORT (default: " << inputPort << ")] ... proxy service side port of proxy to be used by MONICA service" << endl
+			<< " [[-ia | --input-address] ADDRESS (default: " << inputAddress << ")] ... address to get inputs from for MONICA service" << endl
+			<< " [[-ip | --input-port] PORT (default: " << inputPort << ")] ... port to get inputs from for MONICA service" << endl
+			<< " [[-od | --output-defaults] ... use MONICA service in a pipeline, but use output address/port defaults" << endl
+			<< " [[-oa | --output-address] ADDRESS (default: " << outputAddress << ")] ... address for send outputs of MONICA service to" << endl
+			<< " [[-op | --output-port] PORT (default: " << outputPort << ")] ... port to send outputs of MONICA service to" << endl
+			<< " [[-pca | --publisher-control-address] ADDRESS (default: " << pubControlAddress << ")] ... address of a publisher where MONICA service will listen for control messages" << endl
+			<< " [[-pcp | --publisher-control-port] PORT (default: " << pubControlPort << ")] ... port of a publisher where MONICA service will listen for control messages" << endl
 			<< " [-h | --help] ... this help output" << endl
 			<< " [-v | --version] ... outputs MONICA version" << endl;
 	};
@@ -81,22 +102,44 @@ int main(int argc, char** argv)
 				port = stoi(argv[++i]);
 			else if((arg == "-n" || arg == "--start-new")
 							&& i + 1 < argc)
-			{
-				command = "start-new";
-				count = atoi(argv[++i]);
-			}
+				command = "start-new", count = atoi(argv[++i]);
 			else if((arg == "-m" || arg == "--start-max")
 							&& i + 1 < argc)
-			{
-				command = "start-max";
-				count = atoi(argv[++i]);
-			}
+				command = "start-max", count = atoi(argv[++i]);
 			else if((arg == "-s" || arg == "--stop")
 							&& i + 1 < argc)
-			{
-				command = "stop";
-				count = atoi(argv[++i]);
-			}
+				command = "stop", count = atoi(argv[++i]);
+			else if((arg == "-c" || arg == "--connect-to-proxy"))
+				connectToZmqProxy = true;
+			else if((arg == "-pa" || arg == "--proxy-address")
+							&& i + 1 < argc)
+				proxyAddress = argv[++i];
+			else if((arg == "-pfp" || arg == "--proxy-frontend-port")
+							&& i + 1 < argc)
+				proxyFrontendPort = stoi(argv[++i]);
+			else if((arg == "-pbp" || arg == "--proxy-backend-port")
+							&& i + 1 < argc)
+				proxyBackendPort = stoi(argv[++i]);
+			else if((arg == "-ia" || arg == "--input-address")
+							&& i + 1 < argc)
+				inputAddress = argv[++i];
+			else if((arg == "-ip" || arg == "--input-port")
+							&& i + 1 < argc)
+				inputPort = stoi(argv[++i]);
+			if(arg == "-od" || arg == "--output-defaults")
+				usePipeline = true;
+			else if((arg == "-oa" || arg == "--output-address")
+							&& i + 1 < argc)
+				outputAddress = argv[++i], usePipeline = true;
+			else if((arg == "-op" || arg == "--output-port")
+							&& i + 1 < argc)
+				outputPort = stoi(argv[++i]), usePipeline = true;
+			else if((arg == "-pca" || arg == "--publisher-control-address")
+							&& i + 1 < argc)
+				pubControlAddress = argv[++i];
+			else if((arg == "-pcp" || arg == "--publisher-control-port")
+							&& i + 1 < argc)
+				pubControlPort = stoi(argv[++i]);
 			else if(arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
@@ -116,6 +159,27 @@ int main(int argc, char** argv)
 				J11Object resultMsg;
 				resultMsg["type"] = command;
 				resultMsg["count"] = count;
+				resultMsg["control-address"] = pubControlAddress;
+				resultMsg["control-port"] = pubControlPort;
+				if(usePipeline)
+				{
+					resultMsg["input-address"] = inputAddress;
+					resultMsg["input-port"] = inputPort;
+					resultMsg["output-address"] = outputAddress;
+					resultMsg["output-port"] = outputPort;
+				}
+				else if(connectToZmqProxy)
+				{
+					resultMsg["proxy-address"] = proxyAddress;
+					resultMsg["proxy-frontend-port"] = proxyFrontendPort; 
+					resultMsg["proxy-backend-port"] = proxyBackendPort;
+				}
+				else
+				{
+					//resultMsg["service-address"] = inputAddress;
+					resultMsg["service-port"] = inputPort;
+				}
+				
 				try
 				{
 					s_send(socket, Json(resultMsg).dump());

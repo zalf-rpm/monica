@@ -38,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "env-json-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
+#include "monica-zmq-defaults.h"
 
 using namespace std;
 using namespace Monica;
@@ -60,10 +61,11 @@ int main(int argc, char** argv)
 	string pathToOutput;
 	string pathToOutputFile;
 	bool writeOutputFile = false;
-	int port = 5560;
-	string address = "localhost";
+	string address = defaultInputAddress;
+	int port = defaultInputPort;
 	string pathToSimJson = "./sim.json", crop, site, climate;
 	string dailyOutputs;
+	bool useLeapYears = true, useLeapYearsSet = false;
 
 	auto printHelp = [=]()
 	{
@@ -74,6 +76,7 @@ int main(int argc, char** argv)
 			<< " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
 			<< " [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
 			<< " [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " [[-nly | --no-leap-years]] ... skip 29th of february on leap years in climate data" << endl
 			<< " [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
 			<< " [[-op | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
 			<< " [[-o | --path-to-output-file] FILE (default: ./rmout.csv)] ... path to output file" << endl
@@ -107,6 +110,8 @@ int main(int argc, char** argv)
 			else if((arg == "-ed" || arg == "--end-date")
 			        && i+1 < argc)
 				endDate = argv[++i];
+			else if(arg == "-nly" || arg == "--no-leap-years")
+				useLeapYears = false, useLeapYearsSet = true;
 			else if((arg == "-op" || arg == "--path-to-output")
 			        && i+1 < argc)
 				pathToOutput = argv[++i];
@@ -176,6 +181,9 @@ int main(int argc, char** argv)
 		auto pathToClimateCSV = simm["climate.csv"].string_value();
 		if(!isAbsolutePath(pathToClimateCSV))
 			simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
+
+		if(useLeapYearsSet)
+			simm["use-leap-years"] = useLeapYears;
 
 		if(!dailyOutputs.empty())
 		{
@@ -297,19 +305,29 @@ int main(int argc, char** argv)
 			}
 		}
 
+		auto makeWriteOutputCompatible = [](const J11Array& a)
+		{
+			vector<J11Array> vs;
+			for(auto j : a)
+				vs.push_back({j});
+			return vs;
+		};
+
 		if(!output.crop.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.crop)
-				writeOutput(out, toOIdVector(env["cropOutputIds"]), p.second, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, toOIdVector(env["cropOutputIds"]), makeWriteOutputCompatible(p.second),
+										csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(!output.run.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, toOIdVector(env["runOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, toOIdVector(env["runOutputIds"]), {output.run}, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, toOIdVector(env["runOutputIds"]), makeWriteOutputCompatible(output.run), 
+									csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(writeOutputFile)

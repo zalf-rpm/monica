@@ -17,9 +17,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "zhelpers.hpp"
 #include "tools/debug.h"
+#include "monica-zmq-defaults.h"
 
 using namespace Tools;
 using namespace std;
+using namespace Monica;
 
 string appName = "monica-zmq-proxy";
 string version = "0.0.1";
@@ -27,10 +29,10 @@ string version = "0.0.1";
 int main (int argc, 
 					char** argv)
 {
-	int frontendPort = 5555;
-	int backendPort = 5556;
+	int frontendPort = defaultProxyFrontendPort;
+	int backendPort = defaultProxyBackendPort;
 	bool startControlNode = false;
-	int controlNodePort = 6666;
+	int controlPort = defaultControlPort;
 	
 	auto printHelp = [=]()
 	{
@@ -39,7 +41,7 @@ int main (int argc,
 			<< " [[-f | --frontend-port] FRONTEND-PORT (default: " << frontendPort << ")] ... run " << appName << " with given frontend port" << endl
 			<< " [[-b | --backend-port] BACKEND-PORT (default: " << backendPort << ")] ... run " << appName << " with given backend port" << endl
 			<< " [-c | --start-control-node] ... start control node, connected to proxy" << endl
-			<< " [[-cp | --control-port] CONTROL-NODE-PORT (default: " << controlNodePort << ")] ... run control node at given port" << endl
+			<< " [[-cp | --control-port] CONTROL-NODE-PORT (default: " << controlPort << ")] ... run control node at given port" << endl
 			<< " [-h | --debug] ... enable debug outputs" << endl
 			<< " [-h | --help] ... this help output" << endl
 			<< " [-v | --version] ... outputs " << appName << " version" << endl;
@@ -58,7 +60,7 @@ int main (int argc,
 			startControlNode = true;
 		else if((arg == "-cp" || arg == "--control-port")
 						&& i + 1 < argc)
-			controlNodePort = stoi(argv[++i]);
+			controlPort = stoi(argv[++i]);
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
@@ -102,7 +104,7 @@ int main (int argc,
 	{
 		ostringstream oss;
 #ifdef WIN32
-		oss << "start /b monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlNodePort;
+		oss << "start /b monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlPort;
 #else
 		oss << "monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlNodePort << " &";
 #endif

@@ -45,6 +45,15 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
+	bool debug = false, debugSet = false;
+	string startDate, endDate;
+	string pathToOutput;
+	string pathToOutputFile;
+	bool writeOutputFile = false;
+	string pathToSimJson = "./sim.json", crop, site, climate;
+	string dailyOutputs;
+	bool useLeapYears = true, useLeapYearsSet = false;
+
 	auto printHelp = [=]()
 	{
 		cout
@@ -52,6 +61,7 @@ int main(int argc, char** argv)
 			<< " [-d | --debug] ... show debug outputs" << endl
 			<< " [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
 			<< " [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " [[-nly | --no-leap-years]] ... skip 29th of february on leap years in climate data" << endl
 			<< " [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
 			<< " [[-op | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
 			<< " [[-o | --path-to-output-file] FILE (default: ./rmout.csv)] ... path to output file" << endl
@@ -63,29 +73,22 @@ int main(int argc, char** argv)
 			<< " [-v | --version] ... outputs " << appName << " version" << endl
 			<< " path-to-sim-json ... path to sim.json file" << endl;
 	};
-
-
+	
 	if(argc > 1)
 	{
-		bool debug = false, debugSet = false;
-		string startDate, endDate;
-		string pathToOutput;
-		string pathToOutputFile;
-		bool writeOutputFile = false;
-		string pathToSimJson = "./sim.json", crop, site, climate;
-		string dailyOutputs;
-
 		for(auto i = 1; i < argc; i++)
 		{
 			string arg = argv[i];
 			if(arg == "-d" || arg == "--debug")
 				debug = debugSet = true;
 			else if((arg == "-sd" || arg == "--start-date")
-			        && i+1 < argc)
+							&& i + 1 < argc)
 				startDate = argv[++i];
 			else if((arg == "-ed" || arg == "--end-date")
-			        && i+1 < argc)
+							&& i + 1 < argc)
 				endDate = argv[++i];
+			else if(arg == "-nly" || arg == "--no-leap-years")
+				useLeapYears = false, useLeapYearsSet = true;
 			else if((arg == "-op" || arg == "--path-to-output")
 			        && i+1 < argc)
 				pathToOutput = argv[++i];
@@ -155,6 +158,9 @@ int main(int argc, char** argv)
 		auto pathToClimateCSV = simm["climate.csv"].string_value();
 		if(!isAbsolutePath(pathToClimateCSV))
 			simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
+
+		if(useLeapYearsSet)
+			simm["use-leap-years"] = useLeapYears;
 
 		if(!dailyOutputs.empty())
 		{
@@ -266,19 +272,29 @@ int main(int argc, char** argv)
 			}
 		}
 
+		auto makeWriteOutputCompatible = [](const J11Array& a)
+		{
+			vector<J11Array> vs;
+			for(auto j : a)
+				vs.push_back({j});
+			return vs;
+		};
+
 		if(!output.crop.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.crop)
-				writeOutput(out, env.cropOutputIds, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, env.cropOutputIds, makeWriteOutputCompatible(p.second),
+										csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(!output.run.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, env.runOutputIds, {output.run}, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, env.runOutputIds, makeWriteOutputCompatible(output.run), 
+									csvSep, includeHeaderRow, includeUnitsRow);
 		}
 
 		if(writeOutputFile)

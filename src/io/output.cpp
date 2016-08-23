@@ -379,12 +379,7 @@ void Monica::addOutputToResultMessage(Output& out, J11Object& msg)
 
 	J11Object crop;
 	for(auto& p : out.crop)
-	{
-		J11Array jvs;
-		for(auto& vs : p.second)
-			jvs.push_back(vs);
-		crop[p.first] = jvs;
-	}
+		crop[p.first] = p.second;
 	msg["crop"] = crop;
 
 	msg["run"] = out.run;
@@ -419,13 +414,11 @@ void Monica::addResultMessageToOutput(const J11Object& msg, Output& out)
 	ci = msg.find("crop");
 	if(ci != msg.end())
 		for(auto& p : ci->second.object_items())
-			for(auto& j : p.second.array_items())
-				out.crop[p.first].push_back(j.array_items());
+			out.crop[p.first] = p.second.array_items();
 
 	ci = msg.find("run");
 	if(ci != msg.end())
-		for(auto& j : ci->second.array_items())
-			out.run.push_back(j);
+		out.run = ci->second.array_items();
 }
 
 //-----------------------------------------------------------------------------
@@ -659,11 +652,18 @@ BOTRes& Monica::buildOutputTable()
 #ifndef JUST_OUTPUTS
 						, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
-				store<double>(oid, results, [&](int i)
-				{
-					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
-						? m.mcg->get_OrganBiomass(i) : 0.0;
-				}, 1);
+				if(oid.isOrgan() 
+					 && m.cropPlanted
+					 && m.mcg->get_NumberOfOrgans() >= oid.organ)
+					results.push_back(round(m.mcg->get_OrganBiomass(oid.organ), 1));
+				else
+					results.push_back(0.0);
+
+				//store<double>(oid, results, [&](int i)
+				//{
+				//	return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
+				//		? m.mcg->get_OrganBiomass(i) : 0.0;
+				//}, 1);
 			}
 #endif 
 			);
@@ -858,11 +858,18 @@ BOTRes& Monica::buildOutputTable()
 #ifndef JUST_OUTPUTS
 						, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
-				store<double>(oid, results, [&](int i)
-				{
-					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
-						? m.mcg->get_OrganSpecificNPP(i) : 0.0;
-				}, 4);
+				if(oid.isOrgan()
+					 && m.cropPlanted
+					 && m.mcg->get_NumberOfOrgans() >= oid.organ)
+					results.push_back(round(m.mcg->get_OrganSpecificNPP(oid.organ), 4));
+				else
+					results.push_back(0.0);
+
+				//store<double>(oid, results, [&](int i)
+				//{
+				//	return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
+				//		? m.mcg->get_OrganSpecificNPP(i) : 0.0;
+				//}, 4);
 			}
 #endif 
 			);
@@ -888,11 +895,18 @@ BOTRes& Monica::buildOutputTable()
 #ifndef JUST_OUTPUTS
 						, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
 			{
-				store<double>(oid, results, [&](int i)
-				{
-					return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
-						? m.mcg->get_OrganSpecificTotalRespired(i) : 0.0;
-				}, 4);
+				if(oid.isOrgan()
+					 && m.cropPlanted
+					 && m.mcg->get_NumberOfOrgans() >= oid.organ)
+					results.push_back(round(m.mcg->get_OrganSpecificTotalRespired(oid.organ), 4));
+				else
+					results.push_back(0.0);
+
+				//store<double>(oid, results, [&](int i)
+				//{
+				//	return m.cropPlanted && m.mcg->get_NumberOfOrgans() >= i
+				//		? m.mcg->get_OrganSpecificTotalRespired(i) : 0.0;
+				//}, 4);
 			}
 #endif 
 			);

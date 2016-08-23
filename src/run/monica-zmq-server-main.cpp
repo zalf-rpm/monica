@@ -38,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "env-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
+#include "monica-zmq-defaults.h"
 
 using namespace std;
 using namespace Monica;
@@ -55,12 +56,12 @@ int main(int argc, char** argv)
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
-	int port = 5560;
-	string address = "localhost";
-	int resultPort = 7777;
-	string resultAddress = "localhost";
-	int controlPort = 6666;
-	string controlAddress = "localhost";
+	string address = defaultInputAddress; 
+	int port = defaultInputPort;
+	string outputAddress = defaultOutputAddress;
+	int outputPort = defaultOutputPort;
+	string controlAddress = defaultControlAddress;
+	int controlPort = defaultControlPort;
 	bool usePipeline = false;
 	bool connectToZmqProxy = false;
 
@@ -72,9 +73,9 @@ int main(int argc, char** argv)
 			<< " [[-c | --connect-to-proxy]] ... connect MONICA server process to a ZeroMQ proxy" << endl
 			<< " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
 			<< " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
-			<< " [[-r | --result] ... use different result socket (parameter is optional, when non default result address/port are used)" << endl
-			<< " [[-ra | --result-address] ADDRESS (default: " << resultAddress << ")] ... bind socket to this IP address for results" << endl
-			<< " [[-rp | --result-port] PORT (default: " << resultPort << ")] ... bind socket to this port for results" << endl
+			<< " [[-od | --output-defaults] ... use different result socket (parameter is optional, when non default result address/port are used)" << endl
+			<< " [[-oa | --output-address] ADDRESS (default: " << outputAddress << ")] ... bind socket to this IP address for results" << endl
+			<< " [[-op | --output-port] PORT (default: " << outputPort << ")] ... bind socket to this port for results" << endl
 			<< " [[-ca | --control-address] ADDRESS (default: " << controlAddress << ")] ... connect socket to this IP address for control messages" << endl
 			<< " [[-cp | --control-port] PORT (default: " << controlPort << ")] ... bind socket to this port for control messages" << endl
 			<< " [-h | --help] ... this help output" << endl
@@ -98,20 +99,14 @@ int main(int argc, char** argv)
 			else if((arg == "-p" || arg == "--port")
 							&& i + 1 < argc)
 				port = stoi(argv[++i]);
-			if(arg == "-r" || arg == "--result-socket")
+			if(arg == "-od" || arg == "--output-defaults")
 				usePipeline = true;
-			else if((arg == "-ra" || arg == "--result-address")
+			else if((arg == "-oa" || arg == "--output-address")
 							&& i + 1 < argc)
-			{
-				resultAddress = argv[++i];
-				usePipeline = true;
-			}
-			else if((arg == "-rp" || arg == "--result-port")
+				outputAddress = argv[++i], usePipeline = true;
+			else if((arg == "-op" || arg == "--output-port")
 							&& i + 1 < argc)
-			{
-				resultPort = stoi(argv[++i]);
-				usePipeline = true;
-			}
+				outputPort = stoi(argv[++i]), usePipeline = true;
 			else if((arg == "-ca" || arg == "--control-address")
 							&& i + 1 < argc)
 				controlAddress = argv[++i];
@@ -131,7 +126,7 @@ int main(int argc, char** argv)
 		if(usePipeline)
 		{
 			addresses[ReceiveJob] = make_pair(Pull, recvAddress);
-			addresses[SendResult] = make_pair(Push, string("tcp://") + resultAddress + ":" + to_string(resultPort));
+			addresses[SendResult] = make_pair(Push, string("tcp://") + outputAddress + ":" + to_string(outputPort));
 		} 
 		else if(connectToZmqProxy)
 			addresses[ReceiveJob] = make_pair(ProxyReply, recvAddress);

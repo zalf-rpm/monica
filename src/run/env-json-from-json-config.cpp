@@ -478,6 +478,8 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 	options.headerName2ACDName = headerNames;
 
 	//add start/end date to sim json object
+	options.startDate.setUseLeapYears(simj["use-leap-years"].bool_value());
+	options.endDate.setUseLeapYears(simj["use-leap-years"].bool_value());
 	set_iso_date_value(options.startDate, simj, "start-date");
 	set_iso_date_value(options.endDate, simj, "end-date");
 	debug() << "startDate: " << options.startDate.toIsoDateString()
