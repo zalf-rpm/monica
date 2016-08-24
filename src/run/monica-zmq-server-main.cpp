@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 		addresses[Control] = make_pair(Subscribe, string("tcp://") + controlAddress + ":" + to_string(controlPort));
 
 		serveZmqMonicaFull(&context, addresses);
-		
+
 		debug() << "stopped ZeroMQ MONICA server" << endl;
 	}
 

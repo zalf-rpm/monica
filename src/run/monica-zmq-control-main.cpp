@@ -183,6 +183,9 @@ int main (int argc,
 							<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
 							<< address << "! Still will finish " << appName << "! Error: [" << e.what() << "]" << endl;
 					}
+					socket.setsockopt(ZMQ_LINGER, 0);
+					socket.close();
+
 					break;
 				}
 				else if(msgType == "start-new"

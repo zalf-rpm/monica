@@ -402,7 +402,6 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 	if(rType == Pull)
 		receiveSocketType = ZMQ_PULL;
 	zmq::socket_t socket(*zmqContext, receiveSocketType);
-	socket.setsockopt(ZMQ_LINGER, 0);
 	
 	try
 	{
@@ -455,7 +454,6 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 					topicCharCount = 6;
 					controlSocket.connect(cAddress);
 					controlSocket.setsockopt(ZMQ_SUBSCRIBE, "finish", topicCharCount);
-					controlSocket.setsockopt(ZMQ_LINGER, 0);
 				}
 
 				while(true)
@@ -488,6 +486,15 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 									<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
 									<< sAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
 							}
+							sendSocket.setsockopt(ZMQ_LINGER, 0);
+							sendSocket.close();
+
+							controlSocket.setsockopt(ZMQ_LINGER, 0);
+							controlSocket.close();
+							
+							socket.setsockopt(ZMQ_LINGER, 0);
+							socket.close();
+							
 							break;
 						}
 						else if(msgType == "Env")
