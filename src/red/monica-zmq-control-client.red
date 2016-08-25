@@ -47,7 +47,8 @@ defaults: [
 ]
 
 ;address: any [get-argument 1 tcp://localhost:8888]
-stop-msg-template: {finish{"type": "finish"}}
+stop-msg-template: {{"type": "finish"}}
+stop-pub-msg-template: {finish{"type": "finish"}}
 
 control-stop-msg-template: {
 	{	"type": "finish"
@@ -89,10 +90,11 @@ pipeline-msg-template: {
 
 
 log-error: does [  ; FIXME: should go to stderr
+	;print ["system-error: " system-error]
 	print form-error system-error
 ]
 
-log?: true
+log?: false
 log: function [out][
 	if log? [print out]
 ]
@@ -168,12 +170,16 @@ connect-to: function [host port cf dcf][
 	]
 ]
 
-disconnect-from: function [host port cf dcf][
-	either disconnect socket replace-multi "tcp://host:port" reduce ["host" host "port" port] [
+disconnect-from: function [cf dcf][
+	lep: get-string socket last-endpoint
+	either all [
+		not empty? lep
+		disconnect socket lep
+	][
 		cf/enable?: true
 		dcf/enable?: false
 	][
-		log-error
+		;log-error
 		cf/enable?: true
 		dcf/enable?: false
 	]
@@ -191,12 +197,13 @@ stop: function [host port count][
 			either connect stopSocket address [
 				send-msg stopSocket stop-msg-template	
 				receive-msg stopSocket	
-				disconnect stopSocket address
+				disconnect stopSocket get-string stopSocket last-endpoint
 			][
 				log-error
 			]
 		]
 	]
+	unless close-socket stopSocket [log-error]
 ]
 
 stop-via-pub: function [host port][
@@ -205,19 +212,20 @@ stop-via-pub: function [host port][
 	][
 		if use-timeouts [set-timeouts stopSocket]
 
-		address: replace-multi "tcp://*:port" reduce ["port" port]
+		address: replace-multi "tcp://127.0.0.1:port" reduce ["port" port]
 		
 		either serve stopSocket address [
-			print "now waiting to publish finish message"
+			;print "now waiting to publish finish message"
 			wait 2 ;wait 2 seconds for subscribers to connect
 		
-			send-msg stopSocket stop-msg-template
+			send-msg stopSocket stop-pub-msg-template
 					
-			print unserve stopSocket address
+			if not unbind stopSocket get-string stopSocket last-endpoint [log-error]
 		][
 			log-error
 		]
 	]
+	unless close-socket stopSocket [log-error]
 ] 
 
 either zero? pool: make-pool 1 [
@@ -241,7 +249,7 @@ either zero? pool: make-pool 1 [
 					if use-timeouts: face/data [set-timeouts socket]
 				]
 				con: button "connect" [connect-to control-address/text control-port/text con discon]
-				discon: button "disconnect" disabled [disconnect-from control-address/text control-port/text con discon]
+				discon: button "disconnect" disabled [disconnect-from con discon]
 				text
 				
 				type: drop-down "start-new" data ["start-new" "start-max" "stop"] select 1 
@@ -324,7 +332,7 @@ either zero? pool: make-pool 1 [
 			do [
 				;connect-to control-address/text control-port/text con discon
 				self/actors: object [on-close: func [f e] [
-					disconnect-from control-address/text control-port/text con discon
+					disconnect-from con discon
 				]]
 			]
 		]

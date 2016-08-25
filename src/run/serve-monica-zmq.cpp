@@ -494,7 +494,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							
 							socket.setsockopt(ZMQ_LINGER, 0);
 							socket.close();
-							
+
 							break;
 						}
 						else if(msgType == "Env")
