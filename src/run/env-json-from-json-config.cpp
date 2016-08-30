@@ -320,33 +320,57 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 	auto humus2corg = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
-		   && j[1].is_number())
-			return{Soil::humus_st2corg(j[1].int_value())};
+			 && j[1].is_number())
+		{
+			auto ecorg = Soil::humusClass2corg(j[1].int_value());
+			if(ecorg.success())
+				return ecorg.result;
+			else
+				return{j, ecorg.errors};
+		}
 		return{j, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
 	};
 
-	auto ld2trd = [](const Json&, const Json& j) -> EResult<Json>
+	auto bdc2rd = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 3
-		   && j[1].is_number()
-		   && j[2].is_number())
-			return{Soil::ld_eff2trd(j[1].int_value(), j[2].number_value())};
+			 && j[1].is_number()
+			 && j[2].is_number())
+		{
+			auto erd = Soil::bulkDensityClass2rawDensity(j[1].int_value(), j[2].number_value());
+			if(erd.success())
+				return erd.result;
+			else
+				return{j, erd.errors};
+		}
 		return{j, string("Couldn't convert bulk density class to raw density using function: ") + j.dump() + "!"};
 	};
 
 	auto KA52clay = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
-		   && j[1].is_string())
-			return{Soil::KA5texture2clay(j[1].string_value())};
+			 && j[1].is_string())
+		{
+			auto ec = Soil::KA5texture2clay(j[1].string_value());
+			if(ec.success())
+				return ec.result;
+			else 
+				return{j, ec.errors};
+		}
 		return{j, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
 	};
 
 	auto KA52sand = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if(j.array_items().size() == 2
-		   && j[1].is_string())
-			return{Soil::KA5texture2sand(j[1].string_value())};
+			 && j[1].is_string())
+		{
+			auto es = Soil::KA5texture2sand(j[1].string_value());
+			if(es.success())
+				return es.result;
+			else
+				return{j, es.errors};
+		}
 		return{j, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};;
 	};
 
@@ -372,10 +396,15 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 			{"include-from-file", fromFile},
 			{"ref", ref},
 			{"humus_st2corg", humus2corg},
-			{"ld_eff2trd", ld2trd},
+			{"humus-class->corg", humus2corg},
+			{"ld_eff2trd", bdc2rd},
+			{"bulk-density-class->raw-density", bdc2rd},
 			{"KA5TextureClass2clay", KA52clay},
+			{"KA5-texture-class->clay", KA52clay},
 			{"KA5TextureClass2sand", KA52sand},
+			{"KA5-texture-class->sand", KA52sand},
 			{"sandAndClay2lambda", sandClay2lambda},
+			{"sand-and-clay->lambda", sandClay2lambda},
 			{"%", percent}};
 	return m;
 }
