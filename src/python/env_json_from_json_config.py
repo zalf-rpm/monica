@@ -372,6 +372,9 @@ def createEnvJsonFromJsonConfig(cropSiteSim):
 	#collect all errors in all files and don't stop as early as possible
 	errors = set()
 	for k, j in cropSiteSim.iteritems():
+		if k == "climate":
+			continue
+
 		addBasePath(j, pathToParameters)
 		r = findAndReplaceReferences(j, j)
 		if r["success"]:
@@ -437,8 +440,11 @@ def createEnvJsonFromJsonConfig(cropSiteSim):
 	options["useLeapYears"] = simj["use-leap-years"]
 	print "startDate:", options["startDate"], "endDate:", options["endDate"]
 
-	with open(simj["climate.csv"]) as f:
-		climateCSVString = f.read()
+	if "climate" in cropSiteSim:
+		climateCSVString = cropSiteSim["climate"]
+	else:
+		with open(simj["climate.csv"]) as f:
+			climateCSVString = f.read()
 
 	env["da"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climateCSVString, json.dumps(options)))
 
