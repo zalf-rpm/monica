@@ -670,65 +670,36 @@ FrostComponent::updateLambdaRedux()
  * @param mm Monica model
  */
 SoilMoisture::SoilMoisture(MonicaModel& mm)
-  : soilColumn(mm.soilColumnNC()),
-    siteParameters(mm.siteParameters()),
-    monica(mm),
-    smPs(mm.soilmoistureParameters()),
-    envPs(mm.environmentParameters()),
-    cropPs(mm.cropParameters()),
-    vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1),
-    vs_NumberOfLayers(soilColumn.vs_NumberOfLayers()), //extern
-    vm_ActualEvapotranspiration(0.0),
-    vm_AvailableWater(vm_NumberOfLayers, 0.0), // Soil available water in [mm]
-    vm_CapillaryRise(0),
-    pm_CapillaryRiseRate(vm_NumberOfLayers, 0.0),
-    vm_CapillaryWater(vm_NumberOfLayers, 0.0), // soil capillary water in [mm]
-    vm_CapillaryWater70(vm_NumberOfLayers, 0.0), // 70% of soil capillary water in [mm]
-    vm_Evaporation(vm_NumberOfLayers, 0.0), //intern
-    vm_Evapotranspiration(vm_NumberOfLayers, 0.0), //intern
-    vm_FieldCapacity(vm_NumberOfLayers, 0.0),
-    vm_FluxAtLowerBoundary(0.0),
-    vm_GravitationalWater(vm_NumberOfLayers, 0.0), // Gravitational water in [mm d-1] //intern
-    vm_GrossPrecipitation(0.0), //internal
-    vm_GroundwaterAdded(0),
-    //vm_GroundwaterDistance(vm_NumberOfLayers, 0), // map (joachim)
-    vm_GroundwaterTable(0),
-    vm_HeatConductivity(vm_NumberOfLayers, 0),
-    vm_Infiltration(0.0),
-    vm_Interception(0.0),
-    vc_KcFactor(0.6),
-    vm_Lambda(vm_NumberOfLayers, 0.0),
-    vm_LambdaReduced(0),
-    vs_Latitude(siteParameters.vs_Latitude),
-    vm_LayerThickness(vm_NumberOfLayers, 0.01),
-    vw_MaxAirTemperature(0),
-    vw_MeanAirTemperature(0),
-    vw_MinAirTemperature(0),
-    vc_NetPrecipitation(0.0),
-    vw_NetRadiation(0),
-    vm_PermanentWiltingPoint(vm_NumberOfLayers, 0.0),
-    vc_PercentageSoilCoverage(0.0),
-    vm_PercolationRate(vm_NumberOfLayers, 0.0), // Percolation rate in [mm d-1] //intern
-    vw_Precipitation(0),
-    vm_ReferenceEvapotranspiration(6.0), //internal
-    vw_RelativeHumidity(0),
-    vm_ResidualEvapotranspiration(vm_NumberOfLayers, 0.0),
-    vm_SoilMoisture(vm_NumberOfLayers, 0.20), //result
-    vm_SoilMoisture_crit(0), vm_SoilMoistureDeficit(0),
-    vm_SoilPoreVolume(vm_NumberOfLayers, 0.0),
-    vc_StomataResistance(0),
-    vm_SurfaceRunOff(0.0), //internal
-    vm_SumSurfaceRunOff(0.0), // intern accumulation variable
-    vm_SurfaceWaterStorage(0.0),
-    vm_TotalWaterRemoval(0),
-    vm_Transpiration(vm_NumberOfLayers, 0.0), //intern
-    vm_TranspirationDeficit(0),
-    vm_WaterFlux(vm_NumberOfLayers, 0.0),
-    vw_WindSpeed(0),
-    vw_WindSpeedHeight(0),
-    vm_XSACriticalSoilMoisture(0),
-    snowComponent(soilColumn, smPs),
-    frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)
+  : soilColumn(mm.soilColumnNC())
+  , siteParameters(mm.siteParameters())
+  , monica(mm)
+  , smPs(mm.soilmoistureParameters())
+  , envPs(mm.environmentParameters())
+  , cropPs(mm.cropParameters())
+  , vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1)
+  , vs_NumberOfLayers(soilColumn.vs_NumberOfLayers()) //extern
+  , vm_AvailableWater(vm_NumberOfLayers, 0.0) // Soil available water in [mm]
+  , pm_CapillaryRiseRate(vm_NumberOfLayers, 0.0)
+  , vm_CapillaryWater(vm_NumberOfLayers, 0.0) // soil capillary water in [mm]
+  , vm_CapillaryWater70(vm_NumberOfLayers, 0.0) // 70% of soil capillary water in [mm]
+  , vm_Evaporation(vm_NumberOfLayers, 0.0) //intern
+  , vm_Evapotranspiration(vm_NumberOfLayers, 0.0) //intern
+  , vm_FieldCapacity(vm_NumberOfLayers, 0.0)
+  , vm_GravitationalWater(vm_NumberOfLayers, 0.0) // Gravitational water in [mm d-1] //intern
+//, vm_GroundwaterDistance(vm_NumberOfLayers, 0), // map (joachim)
+  , vm_HeatConductivity(vm_NumberOfLayers, 0)
+  , vm_Lambda(vm_NumberOfLayers, 0.0)
+  , vs_Latitude(siteParameters.vs_Latitude)
+  , vm_LayerThickness(vm_NumberOfLayers, 0.01)
+  , vm_PermanentWiltingPoint(vm_NumberOfLayers, 0.0)
+  , vm_PercolationRate(vm_NumberOfLayers, 0.0) // Percolation rate in [mm d-1] //intern
+  , vm_ResidualEvapotranspiration(vm_NumberOfLayers, 0.0)
+  , vm_SoilMoisture(vm_NumberOfLayers, 0.20) //result
+  , vm_SoilPoreVolume(vm_NumberOfLayers, 0.0)
+  , vm_Transpiration(vm_NumberOfLayers, 0.0) //intern
+  , vm_WaterFlux(vm_NumberOfLayers, 0.0)
+  , snowComponent(soilColumn, smPs)
+  , frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)
 {
   debug() << "Constructor: SoilMoisture" << endl;
 
@@ -1178,8 +1149,6 @@ void SoilMoisture::fm_CapillaryRise() {
   */
 void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
 
-  double vm_PercolationFactor;
-  double vm_LambdaReduced;
   vm_GroundwaterAdded = 0.0;
 
   for (int i_Layer = 0; i_Layer < vm_NumberOfLayers - 1; i_Layer++) {
@@ -1197,8 +1166,8 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
 	  = (vm_SoilMoisture[i_Layer + 1] - vm_FieldCapacity[i_Layer + 1]) * 1000.0 * vm_LayerThickness[i_Layer
 	      + 1];
 
-        vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent.getLambdaRedux(i_Layer + 1);
-        vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[i_Layer + 1];
+        double vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent.getLambdaRedux(i_Layer + 1);
+        double vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[i_Layer + 1];
         vm_PercolationRate[i_Layer + 1] = ((vm_GravitationalWater[i_Layer + 1] * vm_GravitationalWater[i_Layer + 1]
             * vm_LambdaReduced) / vm_PercolationFactor);
 
@@ -1209,7 +1178,7 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
         }
 
         vm_SoilMoisture[i_Layer + 1] = vm_FieldCapacity[i_Layer + 1] + (vm_GravitationalWater[i_Layer + 1]
-	  / 1000.0 / vm_LayerThickness[i_Layer + 1]);
+																																				/ 1000.0 / vm_LayerThickness[i_Layer + 1]);
 
         if (vm_SoilMoisture[i_Layer + 1] > vm_SoilPoreVolume[i_Layer + 1]) {
 
