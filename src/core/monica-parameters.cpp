@@ -1158,7 +1158,13 @@ Errors SiteParameters::merge(json11::Json j)
 				repeatLayer = 20 - layerCount;
 
 			for(int i = 1; i <= repeatLayer; i++)
-				vs_SoilParameters->push_back(sp);
+			{
+				SoilParameters sps;
+				auto es = sps.merge(sp);
+				vs_SoilParameters->push_back(sps);
+				if(es.failure())
+					res.append(es);
+			}
 
 			layerCount += repeatLayer;
 		}
