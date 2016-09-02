@@ -417,16 +417,17 @@ def createEnvJsonFromJsonConfig(cropSiteSim):
 
 	env["params"] = cpp
 	env["cropRotation"] = cropj["cropRotation"]
-	env["dailyOutputIds"] = parseOutputIds(simj["output"]["daily"])
-	env["monthlyOutputIds"] = parseOutputIds(simj["output"]["monthly"])
-	env["yearlyOutputIds"] = parseOutputIds(simj["output"]["yearly"])
-	env["cropOutputIds"] = parseOutputIds(simj["output"]["crop"])
-	if type(simj["output"]["at"]) == types.DictType:
+	env["dailyOutputIds"] = parseOutputIds(simj["output"].get("daily", []))
+	env["monthlyOutputIds"] = parseOutputIds(simj["output"].get("monthly", []))
+	env["yearlyOutputIds"] = parseOutputIds(simj["output"].get("yearly", []))
+	env["cropOutputIds"] = parseOutputIds(simj["output"].get("crop", []))
+	if type(simj["output"].get("at", [])) == types.DictType:
 		aoids = {}
-		for k, v in simj["output"]["at"].iteritems():
+		for k, v in simj["output"].get("at", []).iteritems():
 			aoids[k] = parseOutputIds(v)
 		env["atOutputIds"] = aoids
-	env["runOutputIds"] = parseOutputIds(simj["output"]["run"])
+	env["runOutputIds"] = parseOutputIds(simj["output"].get("run", []))
+
 
 	#get no of climate file header lines from sim.json, but prefer from params map
 	climateDataSettings = simj["climate.csv-options"]
