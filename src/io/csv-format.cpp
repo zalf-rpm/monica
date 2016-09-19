@@ -71,9 +71,7 @@ void Monica::writeOutputHeaderRows(ostream& out,
 void Monica::writeOutput(ostream& out,
 												 const vector<OId>& outputIds,
 												 const vector<J11Array>& values,
-												 string csvSep,
-												 bool includeHeaderRow,
-												 bool includeUnitsRow)
+												 string csvSep)
 {
 	if(!values.empty())
 	{

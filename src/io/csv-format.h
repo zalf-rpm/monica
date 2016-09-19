@@ -37,9 +37,7 @@ namespace Monica
 	void writeOutput(std::ostream& out,
 									 const std::vector<OId>& outputIds,
 									 const std::vector<Tools::J11Array>& values,
-									 std::string csvSep,
-									 bool includeHeaderRow,
-									 bool includeUnitsRow);
+									 std::string csvSep);
 }  
 
 #endif 

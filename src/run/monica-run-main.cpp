@@ -239,7 +239,7 @@ int main(int argc, char** argv)
 		if(!output.daily.empty())
 		{
 			writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, false);
-			writeOutput(out, env.dailyOutputIds, output.daily, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, env.dailyOutputIds, output.daily, csvSep);
 		}
 
 		if(!output.monthly.empty())
@@ -247,14 +247,14 @@ int main(int argc, char** argv)
 			out << endl;
 			writeOutputHeaderRows(out, env.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.monthly)
-				writeOutput(out, env.monthlyOutputIds, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, env.monthlyOutputIds, p.second, csvSep);
 		}
 
 		if(!output.yearly.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, env.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, env.yearlyOutputIds, output.yearly, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, env.yearlyOutputIds, output.yearly, csvSep);
 		}
 
 		if(!output.at.empty())
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
 				{
 					out << p.first.toIsoDateString() << endl;
 					writeOutputHeaderRows(out, p.second, csvSep, includeHeaderRow, includeUnitsRow);
-					writeOutput(out, p.second, ci->second, csvSep, includeHeaderRow, includeUnitsRow);
+					writeOutput(out, p.second, ci->second, csvSep);
 				}
 			}
 		}
@@ -285,16 +285,14 @@ int main(int argc, char** argv)
 			out << endl;
 			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.crop)
-				writeOutput(out, env.cropOutputIds, makeWriteOutputCompatible(p.second),
-										csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, env.cropOutputIds, makeWriteOutputCompatible(p.second), csvSep);
 		}
 
 		if(!output.run.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, env.runOutputIds, makeWriteOutputCompatible(output.run), 
-									csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, env.runOutputIds, makeWriteOutputCompatible(output.run), csvSep);
 		}
 
 		if(writeOutputFile)

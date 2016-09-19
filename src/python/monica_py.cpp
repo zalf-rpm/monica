@@ -85,7 +85,7 @@ string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVStrin
 		os.startDate = Date::fromIsoDateString(options["startDate"].string_value(), useLeapYears);
 		os.endDate = Date::fromIsoDateString(options["endDate"].string_value(), useLeapYears);
 		os.noOfHeaderLines = options["noOfHeaderLines"].int_value();
-
+				
 		map<string, string> hn2acdn;
 		for(auto p : options["headerName2ACDName"].object_items())
 			os.headerName2ACDName[p.first] = p.second.string_value();
