@@ -398,13 +398,13 @@ def createEnvJsonFromJsonConfig(cropSiteSim):
 	env["debugMode"] = simj["debug?"]
 
 	cpp = {
-			"type": "CentralParameterProvider" 
+		  "type": "CentralParameterProvider" 
 		, "userCropParameters": cropj["CropParameters"]
 		, "userEnvironmentParameters": sitej["EnvironmentParameters"]
-		, "userSoilMoistureParameters": sitej["SoilOrganicParameters"]
+		, "userSoilMoistureParameters": sitej["SoilMoistureParameters"]
 		, "userSoilTemperatureParameters": sitej["SoilTemperatureParameters"]
 		, "userSoilTransportParameters": sitej["SoilTransportParameters"]
-		, "userSoilOrganicParameters": sitej["SoilMoistureParameters"]
+		, "userSoilOrganicParameters": sitej["SoilOrganicParameters"]
 		, "simulationParameters": simj
 		, "siteParameters": sitej["SiteParameters"]
 	}
