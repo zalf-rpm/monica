@@ -32,6 +32,9 @@ void Monica::writeOutputHeaderRows(ostream& out,
 																	 bool includeTimeAgg)
 {
 	ostringstream oss1, oss2, oss3, oss4;
+
+	size_t j = 0;
+	auto oidsSize = outputIds.size();
 	for(auto oid : outputIds)
 	{
 		int fromLayer = oid.fromLayer, toLayer = oid.toLayer;
@@ -53,17 +56,21 @@ void Monica::writeOutputHeaderRows(ostream& out,
 				oss1 << oid.name << "_" << to_string(i);
 			else
 				oss1 << oid.name;
-			oss1 << "\"" << csvSep;
-			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep;
-			oss3 << "\"m:" << oid.toString(includeTimeAgg) << "\"" << csvSep;
-			oss2 << "\"[" << oid.unit << "]\"" << csvSep;
+			auto csvSep_ = j + 1 == oidsSize && i == toLayer ? "" : csvSep;
+			oss1 << "\"" << csvSep_;
+			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep_;
+			oss3 << "\"m:" << oid.toString(includeTimeAgg) << "\"" << csvSep_;
+			oss2 << "\"[" << oid.unit << "]\"" << csvSep_;
 		}
+		++j;
 	}
 
 	if(includeHeaderRow)
-		out
-		<< oss1.str() << endl
-		<< oss4.str() << endl
+		out << oss1.str() << endl;
+	if(includeUnitsRow)
+		out << oss4.str() << endl;
+	if(includeTimeAgg)
+		out 
 		<< oss3.str() << endl
 		<< oss2.str() << endl;
 }
@@ -78,29 +85,35 @@ void Monica::writeOutput(ostream& out,
 		for(size_t k = 0, size = values.begin()->size(); k < size; k++)
 		{
 			size_t i = 0;
+			auto oidsSize = outputIds.size();
 			for(auto oid : outputIds)
 			{
+				auto csvSep_ = i + 1 ==  oidsSize ? "" : csvSep;
 				Json j = values.at(i).at(k);
 				switch(j.type())
 				{
-				case Json::NUMBER: out << j.number_value() << csvSep; break;
-				case Json::STRING: out << j.string_value() << csvSep; break;
-				case Json::BOOL: out << j.bool_value() << csvSep; break;
+				case Json::NUMBER: out << j.number_value() << csvSep_; break;
+				case Json::STRING: out << j.string_value() << csvSep_; break;
+				case Json::BOOL: out << j.bool_value() << csvSep_; break;
 				case Json::ARRAY:
 				{
+					size_t jvi = 0;
+					auto jSize = j.array_items().size();
 					for(Json jv : j.array_items())
 					{
+						auto csvSep__ = jvi + 1 == jSize ? "" : csvSep_;
 						switch(jv.type())
 						{
-						case Json::NUMBER: out << jv.number_value() << csvSep; break;
-						case Json::STRING: out << jv.string_value() << csvSep; break;
-						case Json::BOOL: out << jv.bool_value() << csvSep; break;
-						default: out << "UNKNOWN" << csvSep;
+						case Json::NUMBER: out << jv.number_value() << csvSep__; break;
+						case Json::STRING: out << jv.string_value() << csvSep__; break;
+						case Json::BOOL: out << jv.bool_value() << csvSep__; break;
+						default: out << "UNKNOWN" << csvSep__;
 						}
+						++jvi;
 					}
 					break;
-				default: out << "UNKNOWN" << csvSep;
 				}
+				default: out << "UNKNOWN" << csvSep_;
 				}
 
 				++i;

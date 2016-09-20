@@ -34,7 +34,7 @@
 		"csv-options": {
 			"include-header-row": true,
 			"include-units-row": true,
-			"csv-separator": "\t"
+			"csv-separator": ","
 		},
 		
 		"__what data to include in the daily monica output": "",

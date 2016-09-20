@@ -335,10 +335,15 @@ def supportedPatterns():
 			  "include-from-file": fromFile
 			, "ref": ref
 			, "humus_st2corg": humus2corg
+			, "humus-class->corg": humus2corg
 			, "ld_eff2trd": ld2trd
+			, "bulk-density-class->raw-density": ld2trd
 			, "KA5TextureClass2clay": KA52clay
+			, "KA5-texture-class->clay": KA52clay
 			, "KA5TextureClass2sand": KA52sand
+			, "KA5-texture-class->sand": KA52sand
 			, "sandAndClay2lambda": sandClay2lambda
+			, "sand-and-clay->lambda": sandClay2lambda
 			, "%": percent
 			}
 
