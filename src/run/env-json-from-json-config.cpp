@@ -324,7 +324,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		{
 			auto ecorg = Soil::humusClass2corg(j[1].int_value());
 			if(ecorg.success())
-				return ecorg.result;
+				return{ecorg.result};
 			else
 				return{j, ecorg.errors};
 		}
@@ -339,7 +339,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		{
 			auto erd = Soil::bulkDensityClass2rawDensity(j[1].int_value(), j[2].number_value());
 			if(erd.success())
-				return erd.result;
+				return{erd.result};
 			else
 				return{j, erd.errors};
 		}
@@ -353,7 +353,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		{
 			auto ec = Soil::KA5texture2clay(j[1].string_value());
 			if(ec.success())
-				return ec.result;
+				return{ec.result};
 			else 
 				return{j, ec.errors};
 		}
@@ -367,7 +367,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		{
 			auto es = Soil::KA5texture2sand(j[1].string_value());
 			if(es.success())
-				return es.result;
+				return{es.result};
 			else
 				return{j, es.errors};
 		}
