@@ -437,8 +437,8 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		bool distinctControlSocket = cAddress != rAddress;
 		
 		zmq::pollitem_t items[] = 
-		{{socket, 0, ZMQ_POLLIN, 0}
-		,{controlSocket, 0, ZMQ_POLLIN, 0}
+		{{(void*)socket, 0, ZMQ_POLLIN, 0}
+		,{(void*)controlSocket, 0, ZMQ_POLLIN, 0}
 		};
 		
 		try
