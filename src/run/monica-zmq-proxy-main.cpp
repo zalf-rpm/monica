@@ -106,7 +106,7 @@ int main (int argc,
 #ifdef WIN32
 		oss << "start /b monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlPort;
 #else
-		oss << "monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlNodePort << " &";
+		oss << "monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c " << controlPort << " &";
 #endif
 
 		int res = system(oss.str().c_str());
