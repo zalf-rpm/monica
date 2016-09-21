@@ -272,7 +272,7 @@ int main(int argc, char** argv)
 		if(!output.daily.empty())
 		{
 			writeOutputHeaderRows(out, toOIdVector(env["dailyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, false);
-			writeOutput(out, toOIdVector(env["dailyOutputIds"]), output.daily, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, toOIdVector(env["dailyOutputIds"]), output.daily, csvSep);
 		}
 
 		if(!output.monthly.empty())
@@ -280,14 +280,14 @@ int main(int argc, char** argv)
 			out << endl;
 			writeOutputHeaderRows(out, toOIdVector(env["monthlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.monthly)
-				writeOutput(out, toOIdVector(env["monthlyOutputIds"]), p.second, csvSep, includeHeaderRow, includeUnitsRow);
+				writeOutput(out, toOIdVector(env["monthlyOutputIds"]), p.second, csvSep);
 		}
 
 		if(!output.yearly.empty())
 		{
 			out << endl;
 			writeOutputHeaderRows(out, toOIdVector(env["yearlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
-			writeOutput(out, toOIdVector(env["yearlyOutputIds"]), output.yearly, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutput(out, toOIdVector(env["yearlyOutputIds"]), output.yearly, csvSep);
 		}
 
 		if(!output.at.empty())
@@ -300,7 +300,7 @@ int main(int argc, char** argv)
 				{
 					out << p.first << endl;
 					writeOutputHeaderRows(out, toOIdVector(p.second), csvSep, includeHeaderRow, includeUnitsRow);
-					writeOutput(out, toOIdVector(p.second), ci->second, csvSep, includeHeaderRow, includeUnitsRow);
+					writeOutput(out, toOIdVector(p.second), ci->second, csvSep);
 				}
 			}
 		}
@@ -319,7 +319,7 @@ int main(int argc, char** argv)
 			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
 			for(auto& p : output.crop)
 				writeOutput(out, toOIdVector(env["cropOutputIds"]), makeWriteOutputCompatible(p.second),
-										csvSep, includeHeaderRow, includeUnitsRow);
+										csvSep);
 		}
 
 		if(!output.run.empty())
@@ -327,7 +327,7 @@ int main(int argc, char** argv)
 			out << endl;
 			writeOutputHeaderRows(out, toOIdVector(env["runOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
 			writeOutput(out, toOIdVector(env["runOutputIds"]), makeWriteOutputCompatible(output.run), 
-									csvSep, includeHeaderRow, includeUnitsRow);
+									csvSep);
 		}
 
 		if(writeOutputFile)
