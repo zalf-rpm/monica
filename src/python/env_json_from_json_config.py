@@ -444,7 +444,7 @@ def createEnvJsonFromJsonConfig(cropSiteSim):
 	options["startDate"] = simj["start-date"]
 	options["endDate"] = simj["end-date"]
 	options["useLeapYears"] = simj["use-leap-years"]
-	print "startDate:", options["startDate"], "endDate:", options["endDate"]
+	#print "startDate:", options["startDate"], "endDate:", options["endDate"]
 
 	if "climate" in cropSiteSim:
 		climateCSVString = cropSiteSim["climate"]
