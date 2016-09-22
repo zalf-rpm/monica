@@ -62,6 +62,9 @@ set(LIBMONICA_SOURCE
 	
 	src/run/run-monica.h
 	src/run/run-monica.cpp
+
+	src/io/output.h
+	src/io/output.cpp
 	
 	# db library code
 	#-------------------------------------------
@@ -149,8 +152,11 @@ set(MONICA_RUN_SOURCE
 	src/io/database-io.h
 	src/io/database-io.cpp
 		
-	src/run/env-from-json.h
-	src/run/env-from-json.cpp
+	src/run/env-from-json-config.h
+	src/run/env-from-json-config.cpp
+
+	src/run/env-json-from-json-config.h
+	src/run/env-json-from-json-config.cpp
 	
 	src/run/monica-run-main.cpp
 	
@@ -342,8 +348,11 @@ set(MONICA_ZMQ_RUN_SOURCE
 	src/io/database-io.h
 	src/io/database-io.cpp
 		
-	src/run/env-from-json.h
-	src/run/env-from-json.cpp
+	src/run/env-from-json-config.h
+	src/run/env-from-json-config.cpp
+
+	src/run/env-json-from-json-config.h
+	src/run/env-json-from-json-config.cpp
 
 	src/run/run-monica-zmq.h
 	src/run/run-monica-zmq.cpp
@@ -430,6 +439,9 @@ set(MONICA_ZMQ_SERVER_SOURCE
 	src/run/run-monica-zmq.h
 	src/run/run-monica-zmq.cpp
 
+	src/run/serve-monica-zmq.h
+	src/run/serve-monica-zmq.cpp
+
 	src/run/monica-zmq-server-main.cpp
 	
 	# db library code
@@ -515,8 +527,11 @@ set(MONICA_PYTHON_SOURCE
 	src/io/database-io.h
 	src/io/database-io.cpp
 		
-	src/run/env-from-json.h
-	src/run/env-from-json.cpp
+	src/run/env-from-json-config.h
+	src/run/env-from-json-config.cpp
+
+	src/run/env-json-from-json-config.h
+	src/run/env-json-from-json-config.cpp
 	
 	src/python/monica_py.cpp
 	
