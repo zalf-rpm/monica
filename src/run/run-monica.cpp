@@ -79,6 +79,9 @@ Errors Env::merge(json11::Json j)
 	extractAndStore(j["runOutputIds"], runOutputIds);
 
 	set_bool_value(debugMode, j, "debugMode");
+	
+	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
+	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
 	return{};
 }
@@ -94,17 +97,19 @@ json11::Json Env::to_json() const
 		aoids[p.first.toIsoDateString()] = p.second;
 
 	return json11::Json::object{
-		{"type", "Env"},
-		{"params", params.to_json()},
-		{"cropRotation", cr},
-		{"dailyOutputIds", dailyOutputIds},
-		{"monthlyOutputIds", monthlyOutputIds},
-		{"yearlyOutputIds", yearlyOutputIds},
-		{"atOutputIds", aoids},
-		{"cropOutputIds", cropOutputIds},
-		{"runOutputIds", runOutputIds},
-		{"da", da.to_json()},
-		{"debugMode", debugMode}
+		 {"type", "Env"}
+		,{"params", params.to_json()}
+		,{"cropRotation", cr}
+		,{"dailyOutputIds", dailyOutputIds}
+		,{"monthlyOutputIds", monthlyOutputIds}
+		,{"yearlyOutputIds", yearlyOutputIds}
+		,{"atOutputIds", aoids}
+		,{"cropOutputIds", cropOutputIds}
+		,{"runOutputIds", runOutputIds}
+		,{"da", da.to_json()}
+		,{"debugMode", debugMode}
+		,{"pathToClimateCSV", pathToClimateCSV}
+		,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	};
 }
 

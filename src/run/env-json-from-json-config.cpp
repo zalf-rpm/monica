@@ -495,22 +495,11 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 	}
 	env["runOutputIds"] = parseOutputIds(simj["output"]["run"].array_items());
 
-	//get no of climate file header lines from sim.json, but prefer from params map
-	auto climateDataSettings = simj["climate.csv-options"];
-	map<string, string> headerNames;
-	for(auto p : climateDataSettings["header-to-acd-names"].object_items())
-		headerNames[p.first] = p.second.string_value();
-
-	CSVViaHeaderOptions options;
-	options.separator = string_valueD(climateDataSettings, "csv-separator", ",");
-	options.noOfHeaderLines = size_t(int_valueD(climateDataSettings, "no-of-climate-file-header-lines", 2));
-	options.headerName2ACDName = headerNames;
-
-	//add start/end date to sim json object
-	options.startDate.setUseLeapYears(simj["use-leap-years"].bool_value());
-	options.endDate.setUseLeapYears(simj["use-leap-years"].bool_value());
-	set_iso_date_value(options.startDate, simj, "start-date");
-	set_iso_date_value(options.endDate, simj, "end-date");
+	auto climateDataSettings = simj["climate.csv-options"].object_items();
+	climateDataSettings["start-date"] = simj["start-date"];
+	climateDataSettings["end-date"] = simj["end-date"];
+	climateDataSettings["use-leap-years"] = simj["use-leap-years"];
+	CSVViaHeaderOptions options(climateDataSettings);
 	debug() << "startDate: " << options.startDate.toIsoDateString()
 		<< " endDate: " << options.endDate.toIsoDateString()
 		<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")

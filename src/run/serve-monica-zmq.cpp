@@ -35,12 +35,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica.h"
 #include "tools/zmq-helper.h"
 #include "../io/output.h"
+#include "climate/climate-file-io.h"
 
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace json11;
 using namespace Soil;
+using namespace Climate;
 
 /*
 json11::Json createHarvestingMessage(CMResult result, const MonicaModel& monica)
@@ -502,6 +504,8 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							Json& fullMsg = msg.json;
 
 							Env env(msg.json);
+							if(!env.da.isValid() && !env.pathToClimateCSV.empty())
+								env.da = readClimateDataFromCSVFileViaHeaders(env.pathToClimateCSV, env.csvViaHeaderOptions);
 
 							activateDebug = activateDebug && env.debugMode;
 
