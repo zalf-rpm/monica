@@ -32,6 +32,14 @@ namespace Monica
 	static const char* defaultOutputAddress = "localhost";
 	static const int defaultOutputPort = 7777;
 
+	static const char* defProxyFrontendAddress = "tcp://localhost:5555";
+	static const char* defProxyBackendAddress = "tcp://localhost:5566";
+	static const char* defControlAddress = "tcp://localhost:8888";
+	static const char* defPublisherControlAddress = "tcp://localhost:8899";
+	static const char* defInputAddress = "tcp:://localhost:6666";
+	static const char* defOutputAddress = "tcp://localhost:7777";
+	static const char* defServeAddress = "tcp:://*:6666";
+
 }
 
 #endif

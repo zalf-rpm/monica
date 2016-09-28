@@ -65,26 +65,31 @@ int main(int argc, char** argv)
 	auto printHelp = [=]()
 	{
 		cout
-			<< appName << endl
-			<< " [-d | --debug] ... show debug outputs" << endl
-			<< " [[-a | --address] CONTROL-ADDRESS (default: " << address << ")] ... address of control node" << endl
-			<< " [[-p | --port] CONTROL-PORT (default: " << port << ")] ... port of control node" << endl
-			<< " [[-n | --start-new] COUNT] ... start COUNT new MONICA nodes" << endl
-			<< " [[-m | --start-max] COUNT] ... start maximum COUNT MONICA nodes" << endl
-			<< " [[-s | --stop] COUNT] ... stop COUNT MONICA nodes" << endl
-			<< " [[-c | --connect-to-proxy]] ... connect MONICA service to a ZeroMQ proxy and use proxy address/port defaults" << endl
-			<< " [[-pa | --proxy-address] ADDRESS (default: " << inputAddress << ")] ... proxy address to connect MONICA service to" << endl
-			<< " [[-pfp | --proxy-frontend-port] PORT (default: " << inputPort << ")] ... proxy client side port of proxy to be used by MONICA service" << endl
-			<< " [[-pbp | --proxy-backend-port] PORT (default: " << inputPort << ")] ... proxy service side port of proxy to be used by MONICA service" << endl
-			<< " [[-ia | --input-address] ADDRESS (default: " << inputAddress << ")] ... address to get inputs from for MONICA service" << endl
-			<< " [[-ip | --input-port] PORT (default: " << inputPort << ")] ... port to get inputs from for MONICA service" << endl
-			<< " [[-od | --output-defaults] ... use MONICA service in a pipeline, but use output address/port defaults" << endl
-			<< " [[-oa | --output-address] ADDRESS (default: " << outputAddress << ")] ... address for send outputs of MONICA service to" << endl
-			<< " [[-op | --output-port] PORT (default: " << outputPort << ")] ... port to send outputs of MONICA service to" << endl
-			<< " [[-pca | --publisher-control-address] ADDRESS (default: " << pubControlAddress << ")] ... address of a publisher where MONICA service will listen for control messages" << endl
-			<< " [[-pcp | --publisher-control-port] PORT (default: " << pubControlPort << ")] ... port of a publisher where MONICA service will listen for control messages" << endl
-			<< " [-h | --help] ... this help output" << endl
-			<< " [-v | --version] ... outputs MONICA version" << endl;
+			<< appName << "[commands/options]" << endl
+			<< endl
+			<< "commands/options:" << endl
+			<< endl
+			<< " -h   | --help ... this help output" << endl
+			<< " -v   | --version ... outputs " << appName << " version" << endl
+			<< endl
+			<< " -d   | --debug ... show debug outputs" << endl
+			<< " -a   | --address CONTROL-ADDRESS (default: " << address << ") ... address of control node" << endl
+			<< " -p   | --port CONTROL-PORT (default: " << port << ") ... port of control node" << endl
+			<< " -n   | --start-new COUNT] ... start COUNT new MONICA nodes" << endl
+			<< " -m   | --start-max COUNT ... start maximum COUNT MONICA nodes" << endl
+			<< " -s   | --stop] COUNT ... stop COUNT MONICA nodes" << endl
+			<< " -c   | --connect-to-proxy ... connect MONICA service to a ZeroMQ proxy and use proxy address/port defaults" << endl
+			<< " -pa  | --proxy-address ADDRESS (default: " << inputAddress << ") ... proxy address to connect MONICA service to" << endl
+			<< " -pfp | --proxy-frontend-port PORT (default: " << inputPort << ") ... proxy client side port of proxy to be used by MONICA service" << endl
+			<< " -pbp | --proxy-backend-port PORT (default: " << inputPort << ") ... proxy service side port of proxy to be used by MONICA service" << endl
+			<< " -ia  | --input-address ADDRESS (default: " << inputAddress << ") ... address to get inputs from for MONICA service" << endl
+			<< " -ip  | --input-port PORT (default: " << inputPort << ") ... port to get inputs from for MONICA service" << endl
+			<< " -od  | --output-defaults ... use MONICA service in a pipeline, but use output address/port defaults" << endl
+			<< " -oa  | --output-address ADDRESS (default: " << outputAddress << ") ... address for send outputs of MONICA service to" << endl
+			<< " -op  | --output-port PORT (default: " << outputPort << ") ... port to send outputs of MONICA service to" << endl
+			<< " -pca | --publisher-control-address ADDRESS (default: " << pubControlAddress << ") ... address of a publisher where MONICA service will listen for control messages" << endl
+			<< " -pcp | --publisher-control-port PORT (default: " << pubControlPort << ") ... port of a publisher where MONICA service will listen for control messages" << endl;
+			
 	};
 
 	if(argc >= 1)

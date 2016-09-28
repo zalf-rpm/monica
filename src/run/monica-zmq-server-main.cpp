@@ -48,7 +48,8 @@ using namespace json11;
 string appName = "monica-zmq-server";
 string version = "2.0.0-beta";
 
-int main(int argc, char** argv)
+/*
+int main_(int argc, char** argv)
 {
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
@@ -134,6 +135,107 @@ int main(int argc, char** argv)
 			addresses[ReceiveJob] = make_pair(Reply, recvAddress);
 
 		addresses[Control] = make_pair(Subscribe, string("tcp://") + controlAddress + ":" + to_string(controlPort));
+
+		serveZmqMonicaFull(&context, addresses);
+
+		debug() << "stopped ZeroMQ MONICA server" << endl;
+	}
+
+	return 0;
+}
+*/
+
+int main(int argc, char** argv)
+{
+	setlocale(LC_ALL, "");
+	setlocale(LC_NUMERIC, "C");
+
+	//use a possibly non-default db-connections.ini
+	//Db::dbConnectionParameters("db-connections.ini");
+
+	string serveAddress = defServeAddress;
+	string proxyAddress = defProxyBackendAddress;
+	bool connectToZmqProxy = false;
+	string inputAddress = defInputAddress;
+	string outputAddress = defOutputAddress;
+	bool usePipeline = false;
+	string controlAddress = defControlAddress;
+
+	auto printHelp = [=]()
+	{
+		cout
+			<< appName << "[options]" << endl
+			<< endl
+			<< "options:" << endl
+			<< endl
+			<< " -h | --help ... this help output" << endl
+			<< " -v | --version ... outputs " << appName << " version" << endl
+			<< endl
+			<< " -d | --debug ... show debug outputs" << endl
+			<< " -s | --serve-address [ADDRESS] (default: " << serveAddress << ")] ... serve MONICA on given address" << endl
+			<< " -p | --proxy-address [(PROXY-)ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress << ")] ... receive work via proxy from given address(es)" << endl
+			<< " -i | --input-address [ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress << ")] ... receive work from given address(es)" << endl
+			<< " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress << ")] ... send results to this address(es)" << endl
+			<< " -c | --control-address [ADDRESS] (default: " << controlAddress << ")] ... connect MONICA server to this address for control messages" << endl;
+			
+	};
+
+	zmq::context_t context(1);
+
+	if(argc >= 1)
+	{
+		for(auto i = 1; i < argc; i++)
+		{
+			string arg = argv[i];
+			if(arg == "-d" || arg == "--debug")
+				activateDebug = true;
+			else if(arg == "-s" || arg == "--serve-address")
+			{
+				if(i + 1 < argc && argv[i + 1][0] != '-')
+					serveAddress = argv[++i];
+			}
+			else if(arg == "-p" || arg == "--proxy-address")
+			{
+				connectToZmqProxy = true;
+				if(i + 1 < argc && argv[i + 1][0] != '-')
+					proxyAddress = argv[++i];
+			}
+			else if(arg == "-i" || arg == "--input-address")
+			{
+				if(i + 1 < argc && argv[i + 1][0] != '-')
+					inputAddress = argv[++i];
+			}
+			else if(arg == "-o" || arg == "--output-address")
+			{
+				usePipeline = true;
+				if(i + 1 < argc && argv[i + 1][0] != '-')
+					outputAddress = argv[++i];
+			}
+			else if(arg == "-c" || arg == "--control-address")
+			{
+				if(i + 1 < argc && argv[i + 1][0] != '-')
+					controlAddress = argv[++i];
+			}
+			else if(arg == "-h" || arg == "--help")
+				printHelp(), exit(0);
+			else if(arg == "-v" || arg == "--version")
+				cout << appName << " version " << version << endl, exit(0);
+		}
+
+		debug() << "starting ZeroMQ MONICA server" << endl;
+
+		map<ZmqSocketRole, pair<ZmqSocketType, vector<string>>> addresses;
+		if(usePipeline)
+		{
+			addresses[ReceiveJob] = make_pair(Pull, splitString(inputAddress, ","));
+			addresses[SendResult] = make_pair(Push, splitString(outputAddress, ","));
+		}
+		else if(connectToZmqProxy)
+			addresses[ReceiveJob] = make_pair(ProxyReply, splitString(proxyAddress, ","));
+		else
+			addresses[ReceiveJob] = make_pair(Reply, splitString(serveAddress, ","));
+
+		addresses[Control] = make_pair(Subscribe, vector<string>{controlAddress});
 
 		serveZmqMonicaFull(&context, addresses);
 

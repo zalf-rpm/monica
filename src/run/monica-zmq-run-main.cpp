@@ -70,23 +70,24 @@ int main(int argc, char** argv)
 	auto printHelp = [=]()
 	{
 		cout
-			<< appName << endl
-			<< " [-d | --debug] ... show debug outputs" << endl
-			<< " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
-			<< " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
-			<< " [[-sd | --start-date] ISO-DATE (default: start of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-			<< " [[-ed | --end-date] ISO-DATE (default: end of given climate data)] ... date in iso-date-format yyyy-mm-dd" << endl
-			<< " [[-nly | --no-leap-years]] ... skip 29th of february on leap years in climate data" << endl
-			<< " [-w | --write-output-files] ... write MONICA output files (rmout, smout)" << endl
-			<< " [[-op | --path-to-output] DIRECTORY (default: .)] ... path to output directory" << endl
-			<< " [[-o | --path-to-output-file] FILE (default: ./rmout.csv)] ... path to output file" << endl
-			<< " [[-do | --daily-outputs] [LIST] (default: value of key 'sim.json:output.daily')] ... list of daily output elements" << endl
-			<< " [[-c | --path-to-crop] FILE (default: ./crop.json)] ... path to crop.json file" << endl
-			<< " [[-s | --path-to-site] FILE (default: ./site.json)] ... path to site.json file" << endl
-			<< " [[-w | --path-to-climate] FILE (default: ./climate.csv)] ... path to climate.csv" << endl
-			<< " [-h | --help] ... this help output" << endl
-			<< " [-v | --version] ... outputs MONICA version" << endl
-			<< " path-to-sim-json ... path to sim.json file" << endl;
+			<< appName << " [options] path-to-sim-json" << endl
+			<< endl
+			<< " -h   | --help ... this help output" << endl
+			<< " -v   | --version ... outputs MONICA version" << endl
+			<< endl
+			<< " -d   | --debug ... show debug outputs" << endl
+			<< " -a   | --address (PROXY-)ADDRESS (default: " << address << ") ... connect client to give IP address" << endl
+			<< " -p   | --port (PROXY-)PORT (default: " << port << ") ... run server/connect client on/to given port" << endl
+			<< " -sd  | --start-date ISO-DATE (default: start of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " -ed  | --end-date ISO-DATE (default: end of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " -nly | --no-leap-years ... skip 29th of february on leap years in climate data" << endl
+			<< " -w   | --write-output-files ... write MONICA output files (rmout, smout)" << endl
+			<< " -op  | --path-to-output DIRECTORY (default: .) ... path to output directory" << endl
+			<< " -o   | --path-to-output-file FILE (default: ./rmout.csv) ... path to output file" << endl
+			<< " -do  | --daily-outputs [LIST] (default: value of key 'sim.json:output.daily') ... list of daily output elements" << endl
+			<< " -c   | --path-to-crop FILE (default: ./crop.json) ... path to crop.json file" << endl
+			<< " -s   | --path-to-site FILE (default: ./site.json) ... path to site.json file" << endl
+			<< " -w   | --path-to-climate FILE (default: ./climate.csv) ... path to climate.csv" << endl;
 	};
 
 	zmq::context_t context(1);

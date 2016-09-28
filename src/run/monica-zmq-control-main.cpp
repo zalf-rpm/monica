@@ -112,14 +112,18 @@ int main (int argc,
 	auto printHelp = [=]()
 	{
 		cout
-			<< appName << " " << endl
-			<< " [[-c | --port] COMM-PORT (default: " << commPort << ")] ... run " << appName << " with given control port" << endl
-			<< " [[-a | --proxy-address] PROXY-ADDRESS (default: " << proxyAddress << ")] ... connect client to give IP address" << endl
-			<< " [[-f | --frontend-proxy-port] PROXY-PORT (default: " << frontendProxyPort << ")] ... communicate with started MONICA ZeroMQ servers via given frontend proxy port" << endl
-			<< " [[-b | --backend-proxy-port] PROXY-PORT (default: " << backendProxyPort << ")] ... connect started MONICA ZeroMQ servers to given backend proxy port" << endl
-			<< " [-h | --debug] ... enable debug outputs" << endl
-			<< " [-h | --help] ... this help output" << endl
-			<< " [-v | --version] ... outputs " << appName << " version" << endl;
+			<< appName << " [options] " << endl
+			<< endl
+			<< "options:" << endl
+			<< endl
+			<< " -h | --help ... this help output" << endl
+			<< " -v | --version ... outputs " << appName << " version" << endl
+			<< endl
+			<< " -c | --port COMM-PORT (default: " << commPort << ") ... run " << appName << " with given control port" << endl
+			<< " -a | --proxy-address PROXY-ADDRESS (default: " << proxyAddress << ") ... connect client to give IP address" << endl
+			<< " -f | --frontend-proxy-port PROXY-PORT (default: " << frontendProxyPort << ") ... communicate with started MONICA ZeroMQ servers via given frontend proxy port" << endl
+			<< " -b | --backend-proxy-port PROXY-PORT (default: " << backendProxyPort << ") ... connect started MONICA ZeroMQ servers to given backend proxy port" << endl
+			<< " -d | --debug ... enable debug outputs" << endl;
 	};
 	
 	for(auto i = 1; i < argc; i++)
@@ -219,36 +223,34 @@ int main (int argc,
 					if(!proxyAddress.empty())
 					{
 						stopAddress = proxyAddress, stopPort = proxyFrontendPort;
-						addresses = 
-							string(" --connect-to-proxy")
-							+ " --address " + proxyAddress + " --port " + to_string(proxyBackendPort);
+						addresses = string(" -p tcp://") + proxyAddress + ":" + to_string(proxyBackendPort);
 						if(!controlAddress.empty())
-							addresses += " --control-address " + controlAddress + " --control-port " + to_string(controlPort);
+							addresses += " -c tcp://" + controlAddress + ":" + to_string(controlPort);
 					}
 					else if(isService)
 					{
 						count = max(count, 1);
 						//stopAddress = "127.0.0.1", stopPort = servicePort;
 						stopAddress = "localhost", stopPort = servicePort;
-						addresses = string(" --address *") + " --port " + to_string(servicePort);
+						addresses = string(" -s tcp://*:") + to_string(servicePort);
 						if(!controlAddress.empty())
-							addresses += " --control-address " + controlAddress + " --control-port " + to_string(controlPort);
+							addresses += " -c tcp://" + controlAddress + ":" + to_string(controlPort);
 					}
 					else if(!outputAddress.empty() && !inputAddress.empty())
 					{
 						addresses =
-							string(" --address ") + inputAddress + " --port " + to_string(inputPort)
-							+ " --output-address " + outputAddress + " --output-port " + to_string(outputPort);
+							string(" -i tcp://") + inputAddress + ":" + to_string(inputPort)
+							+ " -o tcp://" + outputAddress + ":" + to_string(outputPort);
 						if(!controlAddress.empty())
-							addresses += " --control-address " + controlAddress + " --control-port " + to_string(controlPort);
+							addresses += " -c tcp://" + controlAddress + ":" + to_string(controlPort);
 					}
 					
 #ifdef WIN32
-					string cmd = string("start /b monica-zmq-server -d ") + addresses;
+					string cmd = string("start /b monica-zmq-server ") + addresses;
 #else
 					string cmd = string("monica-zmq-server") + addresses + " &";
 #endif
-					cout << "addresses: " << addresses << endl;
+					//cout << "addresses: " << addresses << endl;
 
 					bool isStartMax = msgType == "startMax";
 					bool isStop = msgType == "stop";

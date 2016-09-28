@@ -33,27 +33,35 @@ int main(int argc, char** argv)
 	auto printHelp = [=]()
 	{
 		cout
-			<< appName << endl
-			<< " [-h | --help] ... this help output" << endl
-			<< " [-v | --version] ... outputs " << appName << " version" << endl
-			<< " [ run PARAMETERS ... start monica-run with PARAMETERS" << endl
-			<< " | zmq [ run PARAMETERS ... run MONICA ZeroMQ client 'monica-zmq-run' with PARAMETERS" << endl
+			<< appName << " commands/options" << endl
+			<< endl
+			<< "commands/options:" << endl
+			<< endl
+			<< " -h | --help ... this help output" << endl
+			<< " -v | --version ... outputs " << appName << " version" << endl
+			<< endl
+			<< "   run PARAMETERS ... start monica-run with PARAMETERS" << endl
+			<< " | zmq   run PARAMETERS ... run MONICA ZeroMQ client 'monica-zmq-run' with PARAMETERS" << endl
 			<< "       | server PARAMETERS ... run MONICA ZeroMQ server 'monica-zmq-server' with PARAMETERS" << endl
 			<< "       | proxy PARAMETERS ... run MONICA ZeroMQ proxy 'monica-zmq-proxy' with PARAMETERS" << endl
 			<< "       | control PARAMETERS ... run MONICA ZeroMQ control node 'monica-zmq-control' with PARAMETERS" << endl
-			<< "       | control send PARAMETERS]] ... send command to MONICA ZeroMQ control node via calling 'monica-zmq-control-send' with PARMETERS" << endl;
+			<< "       | control send PARAMETERS ... send command to MONICA ZeroMQ control node via calling 'monica-zmq-control-send' with PARMETERS" << endl;
 	};
 
 	auto printZmqHelp = [=]()
 	{
 		cout
-			<< appName << endl
-			<< " [-h | --help] ... this help output" << endl
-			<< " [ run PARAMETERS ... run MONICA ZeroMQ client 'monica-zmq-run' with PARAMETERS" << endl
+			<< appName << " zmq commands/options" << endl
+			<< endl
+			<< "commands/options:" << endl
+			<< endl
+			<< " -h | --help ... this help output" << endl
+			<< endl
+			<< "   run PARAMETERS ... run MONICA ZeroMQ client 'monica-zmq-run' with PARAMETERS" << endl
 			<< " | server PARAMETERS ... run MONICA ZeroMQ server 'monica-zmq-server' with PARAMETERS" << endl
 			<< " | proxy PARAMETERS ... run MONICA ZeroMQ proxy 'monica-zmq-proxy' with PARAMETERS" << endl
 			<< " | control PARAMETERS ... run MONICA ZeroMQ control node 'monica-zmq-control' with PARAMETERS" << endl
-			<< " | control send PARAMETERS] ... send command to MONICA ZeroMQ control node via calling 'monica-zmq-control-send' with PARMETERS" << endl;
+			<< " | control send PARAMETERS ... send command to MONICA ZeroMQ control node via calling 'monica-zmq-control-send' with PARMETERS" << endl;
 	};
 
 	if(argc > 1)

@@ -388,7 +388,7 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext,
 //-----------------------------------------------------------------------------
 
 void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext, 
-																std::map<ZmqSocketRole, std::pair<ZmqSocketType, std::string>> socketAddresses)
+																map<ZmqSocketRole, pair<ZmqSocketType, vector<string>>> socketAddresses)
 {
 	if(socketAddresses.empty())
 	{
@@ -396,65 +396,85 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		return;
 	}
 
-	ZmqSocketType rType; string rAddress;
+	ZmqSocketType rType; vector<string> rAddresses;
 	auto rci = socketAddresses.find(ReceiveJob);
 	if(rci != socketAddresses.end())
-		tie(rType, rAddress) = rci->second;
+		tie(rType, rAddresses) = rci->second;
 	int receiveSocketType = ZMQ_REP;
 	if(rType == Pull)
 		receiveSocketType = ZMQ_PULL;
 	zmq::socket_t socket(*zmqContext, receiveSocketType);
-	
+
 	try
 	{
 		//normal reply socket has to bind to address
 		if(rType == Reply)
 		{
-			debug() << "MONICA: binding monica zeromq reply socket to address: " << rAddress << endl;
-			socket.bind(rAddress);
-			debug() << "MONICA: bound monica zeromq reply socket to address: " << rAddress << endl;
+			debug() << "MONICA: binding monica zeromq reply socket to address: ";
+			int i = 0;
+			for(auto address : rAddresses)
+				debug() << (i > 0 ? "," : "") << address, ++i;
+			debug() << endl;
+			for(auto address : rAddresses)
+				socket.bind(address);
+			debug() << "MONICA: bound monica zeromq reply socket to address: ";
+			i = 0;
+			for(auto address : rAddresses)
+				debug() << (i > 0 ? "," : "") << address, ++i;
+			debug() << endl;
 		}
 		//proxy reply socket or pull socket have to connect to either proxy dealer socket or push socket
 		else
 		{
-			debug() << "MONICA: connecting monica zeromq reply socket to address: " << rAddress << endl;
-			socket.connect(rAddress);
-			debug() << "MONICA: connected monica zeromq reply socket to address: " << rAddress << endl;
+			debug() << "MONICA: connecting monica zeromq reply socket to address: ";
+			int i = 0;
+			for(auto address : rAddresses)
+				debug() << (i > 0 ? "," : "") << address, ++i;
+			debug() << endl;
+			for(auto address : rAddresses)
+				socket.connect(address);
+			debug() << "MONICA: connected monica zeromq reply socket to address: ";
+			i = 0;
+			for(auto address : rAddresses)
+				debug() << (i > 0 ? "," : "") << address, ++i;
+			debug() << endl;
 		}
 
-		ZmqSocketType sType; string sAddress = rAddress;
+		ZmqSocketType sType; vector<string> sAddresses = rAddresses;
 		auto sci = socketAddresses.find(SendResult);
 		if(sci != socketAddresses.end())
-			tie(sType, sAddress) = sci->second;
+			tie(sType, sAddresses) = sci->second;
 		int sendSocketType = ZMQ_PUSH;
 		zmq::socket_t sendSocket(*zmqContext, sendSocketType);
-		bool distinctSendSocket = sAddress != rAddress;
+		bool distinctSendSocket = sAddresses != rAddresses;
 
-		ZmqSocketType cType; string cAddress = rAddress;
+		ZmqSocketType cType; vector<string> cAddresses = rAddresses;
 		auto cci = socketAddresses.find(Control);
 		if(cci != socketAddresses.end())
-			tie(cType, cAddress) = cci->second;
+			tie(cType, cAddresses) = cci->second;
 		int controlSocketType = ZMQ_SUB;
 		zmq::socket_t controlSocket(*zmqContext, controlSocketType);
-		bool distinctControlSocket = cAddress != rAddress;
-		
-		zmq::pollitem_t items[] = 
+		bool distinctControlSocket = cAddresses != rAddresses;
+
+		zmq::pollitem_t items[] =
 		{{(void*)socket, 0, ZMQ_POLLIN, 0}
 		,{(void*)controlSocket, 0, ZMQ_POLLIN, 0}
 		};
-		
+
 		try
 		{
 			if(distinctSendSocket)
-				sendSocket.connect(sAddress);
-			
+				for(auto address : sAddresses)
+					sendSocket.connect(address);
+
 			try
 			{
 				int topicCharCount = 0;
 				if(distinctControlSocket)
 				{
 					topicCharCount = 6;
-					controlSocket.connect(cAddress);
+					for(auto address : cAddresses)
+						controlSocket.connect(address);
 					controlSocket.setsockopt(ZMQ_SUBSCRIBE, "finish", topicCharCount);
 				}
 
@@ -484,16 +504,18 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							}
 							catch(zmq::error_t e)
 							{
-								cerr
-									<< "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: "
-									<< sAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+								cerr << "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address(es): ";
+								int i = 0;
+								for(auto address : sAddresses)
+									cerr << (i > 0 ? "," : "") << address, ++i;
+								cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
 							}
 							sendSocket.setsockopt(ZMQ_LINGER, 0);
 							sendSocket.close();
 
 							controlSocket.setsockopt(ZMQ_LINGER, 0);
 							controlSocket.close();
-							
+
 							socket.setsockopt(ZMQ_LINGER, 0);
 							socket.close();
 
@@ -527,9 +549,11 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							}
 							catch(zmq::error_t e)
 							{
-								cerr
-									<< "Exception on trying to reply with result message on zmq socket with address: "
-									<< sAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+								cerr << "Exception on trying to reply with result message on zmq socket with address: ";
+								int i = 0;
+								for(auto address : sAddresses)
+									cerr << (i > 0 ? "," : "") << address, ++i;
+								cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
 							}
 						}
 						else
@@ -542,35 +566,53 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							}
 							catch(zmq::error_t e)
 							{
-								cerr
-									<< "Exception on trying to reply to '" << msgType << "' request with 'error' message on zmq socket with address: "
-									<< sAddress << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+								cerr 
+									<< "Exception on trying to reply to '" << msgType 
+									<< "' request with 'error' message on zmq socket with address: ";
+								int i = 0;
+								for(auto address : sAddresses)
+									cerr << (i > 0 ? "," : "") << address, ++i;
+								cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
 							}
 						}
 					}
 					catch(zmq::error_t e)
 					{
-						cerr
-							<< "Exception on trying to receive request message on zmq socket with address: "
-							<< rAddress << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+						cerr << "Exception on trying to receive request message on zmq socket with address: ";
+						int i = 0;
+						for(auto address : rAddresses)
+							cerr << (i > 0 ? "," : "") << address, ++i;
+						cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
 					}
 				}
 			}
 			catch(zmq::error_t e)
 			{
-				cerr << "Couldn't connect zmq subscribe socket to address: " << cAddress << "! Error: " << e.what() << endl;
+				cerr << "Couldn't connect zmq subscribe socket to address: ";
+				int i = 0;
+				for(auto address : cAddresses)
+					cerr << (i > 0 ? "," : "") << address, ++i; 
+				cerr << "! Error: " << e.what() << endl;
 			}
 		}
 		catch(zmq::error_t e)
 		{
-			cerr << "Couldn't bind zmq push socket to address: " << sAddress << "! Error: " << e.what() << endl;
+			cerr << "Couldn't bind zmq push socket to address: ";
+			int i = 0;
+			for(auto address : sAddresses)
+				cerr << (i > 0 ? "," : "") << address, ++i; 
+			cerr << "! Error: " << e.what() << endl;
 		}
 	}
 	catch(zmq::error_t e)
 	{
-		cerr 
-			<< "Couldn't " << (rType == Reply ? "bind" : "connect") 
-			<< " zmq socket to address: " << rAddress << "! Error: " << e.what() << endl;
+		cerr
+			<< "Couldn't " << (rType == Reply ? "bind" : "connect")
+			<< " zmq socket to address: ";
+		int i = 0;
+		for(auto address : rAddresses)
+			cerr << (i > 0 ? "," : "") << address, ++i;
+		cerr << "! Error: " << e.what() << endl;
 	}
 
 	debug() << "exiting serveZmqMonicaFull" << endl;

@@ -37,14 +37,17 @@ int main (int argc,
 	auto printHelp = [=]()
 	{
 		cout
-			<< appName << " " << endl
-			<< " [[-f | --frontend-port] FRONTEND-PORT (default: " << frontendPort << ")] ... run " << appName << " with given frontend port" << endl
-			<< " [[-b | --backend-port] BACKEND-PORT (default: " << backendPort << ")] ... run " << appName << " with given backend port" << endl
-			<< " [-c | --start-control-node] ... start control node, connected to proxy" << endl
-			<< " [[-cp | --control-port] CONTROL-NODE-PORT (default: " << controlPort << ")] ... run control node at given port" << endl
-			<< " [-h | --debug] ... enable debug outputs" << endl
-			<< " [-h | --help] ... this help output" << endl
-			<< " [-v | --version] ... outputs " << appName << " version" << endl;
+			<< appName << " [options] " << endl
+			<< endl
+			<< "options:" << endl
+			<< endl
+			<< " -h | --help ... this help output" << endl
+			<< " -v | --version ... outputs " << appName << " version"
+			<< endl
+			<< " -f | --frontend-port FRONTEND-PORT (default: " << frontendPort << ") ... run " << appName << " with given frontend port" << endl
+			<< " -b | --backend-port BACKEND-PORT (default: " << backendPort << ") ... run " << appName << " with given backend port" << endl
+			<< " -c | --start-control-node [CONTROL-NODE-PORT] (default: " << controlPort << ") ... start control node, connected to proxy, on given port" << endl
+			<< " -d | --debug ... enable debug outputs" << endl;
 	};
 
 	for(auto i = 1; i < argc; i++)
@@ -57,10 +60,11 @@ int main (int argc,
 						&& i + 1 < argc)
 			backendPort = stoi(argv[++i]);
 		else if(arg == "-c" || arg == "--start-control-node")
+		{
 			startControlNode = true;
-		else if((arg == "-cp" || arg == "--control-port")
-						&& i + 1 < argc)
-			controlPort = stoi(argv[++i]);
+			if(i + 1 < argc && argv[i + 1][0] != '-')
+				controlPort = stoi(argv[++i]);
+		}
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
