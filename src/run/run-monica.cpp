@@ -324,7 +324,7 @@ void storeResults(const vector<OId>& outputIds,
 Result Monica::runMonica(Env env)
 {
 	//activateDebug = true;
-	if(true)//activateDebug)
+	if(activateDebug)
 	{
 		writeDebugInputs(env, "inputs.json");
 	}
