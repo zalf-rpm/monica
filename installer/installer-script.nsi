@@ -116,7 +116,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
   File "..\documentation\version.txt"
-  File "..\src\python\env_json_from_json_config.py"
+  File "..\src\python\monica_io.py"
   File "${UtilDir}\soil\soil_conversion.py"
 
 	;SetOutPath $INSTDIR\meta.json
