@@ -435,10 +435,7 @@ set_target_properties(monica-zmq-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 # create monica-zmq-server executable, the server running monica via zeromq requests
 set(MONICA_ZMQ_SERVER_SOURCE
-
-	src/run/run-monica-zmq.h
-	src/run/run-monica-zmq.cpp
-
+	
 	src/run/serve-monica-zmq.h
 	src/run/serve-monica-zmq.cpp
 
@@ -459,6 +456,9 @@ set(MONICA_ZMQ_SERVER_SOURCE
 	#-------------------------------------------
 	${UTIL_DIR}/climate/climate-common.h
 	${UTIL_DIR}/climate/climate-common.cpp
+	
+	${UTIL_DIR}/climate/climate-file-io.h
+	${UTIL_DIR}/climate/climate-file-io.cpp
 	
 	# json11 library code
 	#-------------------------------------------
