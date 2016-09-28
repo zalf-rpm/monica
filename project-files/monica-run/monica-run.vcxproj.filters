@@ -173,9 +173,6 @@
     <ClCompile Include="..\..\..\util\soil\soil-from-db.cpp">
       <Filter>Quelldateien\soil</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\run\monica-run-main.cpp">
-      <Filter>Quelldateien\monica\run</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\io\csv-format.cpp">
       <Filter>Quelldateien\monica\io</Filter>
     </ClCompile>
@@ -189,6 +186,9 @@
       <Filter>Quelldateien\monica\run</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\run\env-from-json-config.cpp">
+      <Filter>Quelldateien\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\run\monica-run-main.cpp">
       <Filter>Quelldateien\monica\run</Filter>
     </ClCompile>
   </ItemGroup>

@@ -99,9 +99,6 @@
     <ClInclude Include="..\..\..\util\json11\json11.hpp">
       <Filter>Headerdateien\json11</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\run\run-monica-zmq.h">
-      <Filter>Headerdateien\monica\run</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\util\tools\json11-helper.h">
       <Filter>Headerdateien\tools</Filter>
     </ClInclude>
@@ -110,6 +107,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\run\serve-monica-zmq.h">
       <Filter>Headerdateien\monica\run</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\util\climate\climate-file-io.h">
+      <Filter>Headerdateien\climate</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -149,9 +149,6 @@
     <ClCompile Include="..\..\..\util\json11\json11.cpp">
       <Filter>Quelldateien\json11</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\run\run-monica-zmq.cpp">
-      <Filter>Quelldateien\monica\run</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\util\tools\helper.cpp">
       <Filter>Quelldateien\tools</Filter>
     </ClCompile>
@@ -166,6 +163,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\run\serve-monica-zmq.cpp">
       <Filter>Quelldateien\monica\run</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\util\climate\climate-file-io.cpp">
+      <Filter>Quelldateien\climate</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
