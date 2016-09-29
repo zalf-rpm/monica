@@ -208,14 +208,9 @@ int main (int argc,
 					bool isService = !fmsg["service-port"].is_null();
 					int servicePort = fmsg["service-port"].int_value();
 
-					string controlAddress = fmsg["control-address"].string_value();
-					int controlPort = fmsg["control-port"].int_value();
-
-					string inputAddress = fmsg["input-address"].string_value();
-					int inputPort = fmsg["input-port"].int_value();
-
-					string outputAddress = fmsg["output-address"].string_value();
-					int outputPort = fmsg["output-port"].int_value();
+					string controlAddresses = fmsg["control-addresses"].string_value();
+					string inputAddresses = fmsg["input-addresses"].string_value();
+					string outputAddresses = fmsg["output-addresses"].string_value();
 					
 					string addresses;
 					string stopAddress;
@@ -224,8 +219,8 @@ int main (int argc,
 					{
 						stopAddress = proxyAddress, stopPort = proxyFrontendPort;
 						addresses = string(" -p tcp://") + proxyAddress + ":" + to_string(proxyBackendPort);
-						if(!controlAddress.empty())
-							addresses += " -c tcp://" + controlAddress + ":" + to_string(controlPort);
+						if(!controlAddresses.empty())
+							addresses += " -c " + controlAddresses;
 					}
 					else if(isService)
 					{
@@ -233,16 +228,14 @@ int main (int argc,
 						//stopAddress = "127.0.0.1", stopPort = servicePort;
 						stopAddress = "localhost", stopPort = servicePort;
 						addresses = string(" -s tcp://*:") + to_string(servicePort);
-						if(!controlAddress.empty())
-							addresses += " -c tcp://" + controlAddress + ":" + to_string(controlPort);
+						if(!controlAddresses.empty())
+							addresses += " -c " + controlAddresses;
 					}
-					else if(!outputAddress.empty() && !inputAddress.empty())
+					else if(!outputAddresses.empty() && !inputAddresses.empty())
 					{
-						addresses =
-							string(" -i tcp://") + inputAddress + ":" + to_string(inputPort)
-							+ " -o tcp://" + outputAddress + ":" + to_string(outputPort);
-						if(!controlAddress.empty())
-							addresses += " -c tcp://" + controlAddress + ":" + to_string(controlPort);
+						addresses = string(" -i ") + inputAddresses + " -o " + outputAddresses;
+						if(!controlAddresses.empty())
+							addresses += " -c " + controlAddresses;
 					}
 					
 #ifdef WIN32
