@@ -42,7 +42,7 @@ int main (int argc,
 			<< "options:" << endl
 			<< endl
 			<< " -h | --help ... this help output" << endl
-			<< " -v | --version ... outputs " << appName << " version"
+			<< " -v | --version ... outputs " << appName << " version" << endl
 			<< endl
 			<< " -f | --frontend-port FRONTEND-PORT (default: " << frontendPort << ") ... run " << appName << " with given frontend port" << endl
 			<< " -b | --backend-port BACKEND-PORT (default: " << backendPort << ") ... run " << appName << " with given backend port" << endl
