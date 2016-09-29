@@ -262,7 +262,7 @@ vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
     vc_TotalTemperatureSum += pc_StageTemperatureSum[i_Stage];
   }
 
-  vc_FinalDevelopmentalStage = pc_NumberOfDevelopmentalStages - 1;
+  vc_FinalDevelopmentalStage = pc_NumberOfDevelopmentalStages - 1; // was " pc_N - 1; " (AKP 18/11/2015)
 
   // Determining the initial crop organ's biomass
   for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++) {
@@ -1842,7 +1842,7 @@ void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
 
 
 /**
-* @brief Frost kill
+* @brief Frost kill                                              ////// not considered for EVA3!!!! (AKP (11/11/2015) ////////
 *
 * @param vw_MaxAirTemperature
 * @param vw_MinAirTemperature
@@ -1856,7 +1856,6 @@ void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
 // **	Low-Temperature Responses of Cereals: Analyses and     **
 // **	Simulation. Crop Sci. 54:2395–2405.                    **
 // ************************************************************
-
 
 	double vc_LT50old = vc_LT50;
 	double vc_NightTemperature = 0.0;
@@ -1922,11 +1921,16 @@ void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
 	if (vc_CrownTemperature < vc_LT50){
 		
 		vc_CropFrostRedux *= 0.5;	
-		
+
 	}
 
+	//AKP 10/08/2015
+	else {
+		vc_CropFrostRedux = 1.0;
+	}
 	return;
 }
+
 
 /**
  * @brief Drought impact on crop fertility

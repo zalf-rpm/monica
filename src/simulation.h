@@ -53,11 +53,11 @@ class Eva2SimulationConfiguration
     Eva2SimulationConfiguration() {}
     ~Eva2SimulationConfiguration(){}
 
-    void setClassification(int classification) { this->classification = classification; }
+	void setClassification(std::string classification) { this->classification = classification; }   // was int (AKP 15/10/2015)
     void setFruchtArt(std::string fruchtArt) { this->fruchtArt.push_back(fruchtArt); }
     void setFruchtFolge(std::string fruchtFolge) { this->fruchtFolge = fruchtFolge; }
-    void setFruchtfolgeGlied(int fruchtfolgeGlied) { this->fruchtfolgeGlied.push_back(fruchtfolgeGlied); }
-    void addFfgAnlage(int anl) { this->ffg_anlagen.push_back(anl); }
+	void setFruchtfolgeGlied(int fruchtfolgeGlied) { this->fruchtfolgeGlied.push_back(fruchtfolgeGlied); }    
+    void addFfgAnlage(std::string anl) { this->ffg_anlagen.push_back(anl); }   // was (int anl) (AKP 15/10/2015)
     void setFruchtfolgeYear(std::string year) { this->fruchtfolgeYear.push_back(year); fruchtfolgeYearInt.push_back(atoi(year.c_str()));}
     void setLocation(int location) { this->location = location; }
     void setLocationName(std::string location) { this->locationName = location; }
@@ -70,11 +70,11 @@ class Eva2SimulationConfiguration
     void setPseudoSimulation(bool state) { this->pseudoSimulation = state; }
 
 
-    int getClassification() const { return classification; }
+    std::string getClassification() const { return classification; }  // was int (AKP 15/10/2015)
     std::vector<std::string> getFruchtArt() const { return fruchtArt; }
     std::string getFruchtFolge() const { return fruchtFolge; }
-    std::vector<int> getFruchtfolgeGlied() const { return fruchtfolgeGlied; }
-    std::vector<int> getFfgAnlage() const { return ffg_anlagen; }
+	std::vector<int> getFruchtfolgeGlied() const { return fruchtfolgeGlied; }   // was std::vector<int> (AKP 15/10/2015)
+	std::vector<std::string> getFfgAnlage() const { return ffg_anlagen; }   // was std::vector<int> (AKP 15/10/2015)
     std::vector<std::string> getFruchtfolgeYear() const { return fruchtfolgeYear; }
     std::vector<int> getFruchtfolgeYearInt() const { return fruchtfolgeYearInt; }
     int getLocation() const { return location; }
@@ -92,10 +92,10 @@ class Eva2SimulationConfiguration
 
   private:
     int location;
-    int classification;
+    std::string classification;  // was int (AKP 15/10/2015)
     int variante;
-    std::vector<int> fruchtfolgeGlied;
-    std::vector<int> ffg_anlagen;
+    std::vector<int> fruchtfolgeGlied;   // was std::vector<int> (AKP 15/10/2015)
+	std::vector<std::string> ffg_anlagen;    // was std::vector<int> (AKP 15/10/2015)
     std::vector<std::string> fruchtfolgeYear;
     int profil_number;
 

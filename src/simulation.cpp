@@ -84,13 +84,13 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   int location;
   std::string locationName;
   int profil_nr;
-  int classification;
+  string classification;    //war int (AKP 15/10/2015)
   int variante;
   string fruchtfolge;
-  std::vector<int> fruchtfolge_glied;
+  std::vector<int> fruchtfolge_glied; 
   std::vector<string> fruchtart;
   std::vector<string> fruchtfolgeYear;
-  std::vector<int> anlagen;
+  std::vector<string> anlagen;  //war std::vector<int> (AKP 15/10/2015)
   string output_path;
   Tools::Date start_date;
   Tools::Date end_date;
@@ -107,35 +107,35 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
       pseudo=false;
       fruchtfolge = "01";
 
-      fruchtfolge_glied.push_back(1);
+      fruchtfolge_glied.push_back(1);   
       fruchtart.push_back("145");       // Sommergerste
       fruchtfolgeYear.push_back("2005");
-      anlagen.push_back(1);
+      anlagen.push_back("01");    //was _back(1); (AKP 15/10/2015)
 
       fruchtfolge_glied.push_back(2);
       fruchtart.push_back("041");       // Ölrettich
       fruchtfolgeYear.push_back("2005");
-      anlagen.push_back(1);
+	  anlagen.push_back("02");
 
       fruchtfolge_glied.push_back(3);
       fruchtart.push_back("141");       // Silomais
       fruchtfolgeYear.push_back("2006");
-      anlagen.push_back(1);
+	  anlagen.push_back("03");
 
       fruchtfolge_glied.push_back(4);
       fruchtart.push_back("175");       // Wintertriticale
       fruchtfolgeYear.push_back("2007");
-      anlagen.push_back(1);
+	  anlagen.push_back("04");
 
       fruchtfolge_glied.push_back(5);
       fruchtart.push_back("180");       // Futterhirse
       fruchtfolgeYear.push_back("2007");
-      anlagen.push_back(1);
+	  anlagen.push_back("05");
 
       fruchtfolge_glied.push_back(6);
       fruchtart.push_back("176");       // Winterweizen
       fruchtfolgeYear.push_back("2008");
-      anlagen.push_back(1);
+	  anlagen.push_back("06");
 
       output_path = "./";
       start_date = Tools::Date(1,11,2005,true);
@@ -187,8 +187,8 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   cout << fruchtfolge_glied.size() << endl;
   for (unsigned int i=0; i<size; i++) {
       std::ostringstream id_string;
-      int ffg_temp = fruchtfolge_glied.at(i);
-      int ffg_anlage = anlagen.at(i);
+	  int ffg_temp = fruchtfolge_glied.at(i);    //was int (AKP 16/10/2015)
+	  std::string ffg_anlage = anlagen.at(i);    //was int (AKP 16/10/2015)
       std::string ff_temp = fruchtart.at(i);
       std::string ff_year = fruchtfolgeYear.at(i);
 
@@ -228,8 +228,8 @@ Monica::runEVA2Simulation(const Eva2SimulationConfiguration *simulation_config)
   size = fruchtfolge_glied.size();
   for (unsigned int i=0; i<size; i++) {
       std::ostringstream id_string;
-      int ffg_temp = fruchtfolge_glied.at(i);
-      int ffg_anlage = anlagen.at(i);
+	  int ffg_temp = fruchtfolge_glied.at(i);   //was int (AKP 16/10/2015)
+	  std::string ffg_anlage = anlagen.at(i);    //was int (AKP 16/10/2015)
       std::string ff_temp = fruchtart.at(i);
       std::string ff_year = fruchtfolgeYear.at(i);
 

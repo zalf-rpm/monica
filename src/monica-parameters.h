@@ -989,7 +989,7 @@ namespace Monica
 	public:
 
 		Harvest(const Tools::Date& at, CropPtr crop, PVResultPtr cropResult, std::string method = "total")
-			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method) { }
+			: WorkStep(at), _crop(crop), _cropResult(cropResult), _method(method), _exported(true) { }
 
 		virtual void apply(MonicaModel* model);
 
@@ -1473,7 +1473,7 @@ namespace Monica
 	public:
 		UserInitialValues() :
 			p_initPercentageFC(0.8),
-			p_initSoilNitrate(0.0001),
+			p_initSoilNitrate(0.0001),   // changed for EVA (16/7/2015, AKP), was 0.0001
 			p_initSoilAmmonium(0.0001)
 		{}
 
@@ -1742,16 +1742,13 @@ namespace Monica
 
 	void testClimateData(Climate::DataAccessor &climateData);
 
-	std::vector<ProductionProcess>
-	applySAChanges(std::vector<ProductionProcess> ff,
-								 const CentralParameterProvider &centralParameterProvider);
-
+	
 
 	CropPtr hermesCropId2Crop(const std::string& hermesCropId);
 
   //----------------------------------------------------------------------------
 
-  const std::vector<std::pair<int, std::string>>& availableMonicaCrops();
+  const std::vector<std::pair<int, std::string> >& availableMonicaCrops();
 }
 
 #endif

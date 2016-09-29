@@ -2,8 +2,6 @@
 Authors: 
 Xenia Specka <xenia.specka@zalf.de>
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
 Maintainers: 
 Currently maintained by the authors.
 
@@ -80,8 +78,7 @@ Monica::readSoilParametersForEva2(const GeneralParameters &gps, int profil_nr, i
     if (!initialized) {
 
       // prepare request
-		
-		const char *request_base = "select p.id_profil, p.id_hor, p.HO_cm, p.HU_cm, p.S, p.T, p.TRD_g_jecm3, c.Corg, c.ph, p.BoArt, p.Skellet "
+      const char *request_base = "select p.id_profil, p.id_hor, p.HO_cm, p.HU_cm, p.S, p.T, p.TRD_g_jecm3, c.Corg, c.ph, p.BoArt, p.Skellet "
         "from eva2.3_31_Boden_Physik as p inner join eva2.3_32_Boden_Chemie as c "
         "on p.id_profil = c.id_profil AND p.id_hor = c.id_hor "
         "where p.id_profil=%i and p.id_standort=%i order by id_hor";
@@ -93,9 +90,9 @@ Monica::readSoilParametersForEva2(const GeneralParameters &gps, int profil_nr, i
 
       // connect to database eva2
       DB *con = newConnection("eva2");
-	  DBRow row;
-	  con->select(request);
 
+      DBRow row;
+      con->select(request);
 
       int index = 0;
       int layer_count = 0;
@@ -150,7 +147,7 @@ Monica::readSoilParametersForEva2(const GeneralParameters &gps, int profil_nr, i
 
         double stone = -1;
         if (! row[10].empty()) {
-            // Please test here if a conversion of the stone content is necessary!
+            // Please test hear if a conversion of the stone content is necessary!
             // According to Matthias Willms, the stone content provided in the
             // eva2 database is a volumetric percent. According to the MONICA documentation
             // the unit of the stone content is kg kg-1, a weight-based percent.
@@ -475,7 +472,6 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
 {
   // some debug messages
   debug() << "----------------------------------------------------------------\n";
-
   debug() << "--> Reading weather parameters for profile number: " << profil_nr << endl; //<< " (" << station << ")"<< endl;
   debug() << "Start date: " << start_date.toString() << endl;
   debug() << "End date: " << end_date.toString() << endl;
@@ -510,35 +506,11 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
       id_parameter[5] = WIND_2m;
       cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
   }
-// Added 16/3/2015 by AKP due to new WindSpeedHeight in EVA2-DB
-  if (location == LOCATION_DORNBURG) {
-	  id_parameter[5] = WIND_2m;
-	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
-  }
 
-// Added 17/3/2015 by AKP due to new WindSpeedHeight in EVA2-DB
-  if (location == LOCATION_ETTLINGEN) {
-	  id_parameter[5] = WIND_2m;
-	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
-  }
-
-  // Added 18/4/2016 by AKP due to new WindSpeedHeight in EVA2-DB
-  if (location == LOCATION_HAUS_DUESSE) {
-	  id_parameter[5] = WIND_10m;
-	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 10;
-  }
-
-  // Added 19/4/2016 by AKP due to WindSpeedHeight in EVA2-DB
-  if (location == LOCATION_LINDENHOF) {
-	  id_parameter[5] = WIND_2m;
-	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 2;
-  }
 
   if  (location == LOCATION_BERNBURG) {
       //id_parameter[5] = WIND_10m;
-     // cpp.userEnvironmentParameters.p_WindSpeedHeight = 8;
-     // id_parameter[5] = WIND_8m;    
-	  cpp.userEnvironmentParameters.p_WindSpeedHeight = 19;
+      cpp.userEnvironmentParameters.p_WindSpeedHeight = 8;
       id_parameter[5] = WIND_19m;    
   }
 
@@ -617,7 +589,6 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
   static L lockable;
   static bool initialized = false;
 
-
   if (!initialized) {
       L::Lock lock(lockable);
 
@@ -645,21 +616,20 @@ Monica::climateDataFromEva2DB(int location, int profil_nr, Tools::Date start_dat
                   if ( (edate > station.end) && (station.end != Date(1,1,1951) && (station.end.isValid())) ) {
                       edate=station.end;
                   }
-				  unit_globrad_initialized = false;
-				  ostringstream request;
+                  unit_globrad_initialized = false;
+                  ostringstream request;
+                  request << "SELECT id_messgroesse, datum, Wert, E FROM 1_50_Wetter WHERE (";
+                  request << "id_messgroesse=" << id_parameter[param];
+                  request << ") AND WStation='" << name
+                      << "' AND Datum>=" << sdate.toMysqlString().c_str() << " "
+                      << "AND Datum<=" << edate.toMysqlString().c_str() << " "
+                      << "order by id_messgroesse ASC, datum ASC";
 
-				  request << "SELECT id_messgroesse, datum, Wert, E FROM 1_50_Wetter WHERE (";
-				  request << "id_messgroesse=" << id_parameter[param];
-				  request << ") AND WStation='" << name
-					  << "' AND Datum>=" << sdate.toMysqlString().c_str() << " "
-					  << "AND Datum<=" << edate.toMysqlString().c_str() << " "
-					  << "order by id_messgroesse ASC, datum ASC";
 
+                  debug() << "\n" << request.str() << endl <<  endl;
 
-				  debug() << "\n" << request.str() << endl << endl;
-
-				  // date needed for applying precipitation correction values
-				  Date date = start_date;
+                  // date needed for applying precipitation correction values
+                  Date date = start_date;
 
                   // connect to database eva2
                   DB *con = newConnection("eva2");
@@ -909,7 +879,7 @@ Monica::getFilename(int station_id, int profil_nr)
     station = "gueterfelde";
     break;
   case LOCATION_HAUS_DUESSE:
-    station = "hausduesse";
+    station = "haus_duesse";
     break;
   case LOCATION_OBERWEISSBACH:
     station = "oberweissbach";
@@ -956,12 +926,6 @@ Monica::getFilename(int station_id, int profil_nr)
   case LOCATION_GUELZOW_OEKO:
     station = "gülzow_oekofeld";
     break;
-  case LOCATION_LINDENHOF:
-	  station = "lindenhof";
-	  break;
-  case LOCATION_NIEDERWEILER:
-	  station = "niederweiler";
-	  break;
   default:
     cerr << "Unknown station id." << endl;
     assert(0);
@@ -1060,42 +1024,33 @@ Monica::readGroundwaterInfos(CentralParameterProvider& cpp, int location)
  * @param id_string
  * @return
  */
-
-/*********************************************************************
-**
-**getCropManagementData different for EVA2 and EVA3 (AKP 15/10/2015)**
-**
-**********************************************************************
-*/
-
 std::vector<ProductionProcess>
 Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int location)
 {
-
   vector<ProductionProcess> ff;
   vector<string> id_pg_list;
   id_pg_list.push_back(id_string);
 
   // debug
-  debug() << endl << "Reading sowing and harvesting date from eva3 database" << endl;
+  debug() << endl << "Reading sowing and harvesting date from eva2 database" << endl;
 
   static L lockable;
 
   L::Lock lock(lockable);
 
-  // connect to eva3 database
-  DB *con = newConnection("eva3");
-  DB *con2 = newConnection("eva3");
+  // connect to eva2 database
+  DB *con = newConnection("eva2");
+  DB *con2 = newConnection("eva2");
 
 
   // Special implementation to catch perennial crops
-  // especially for ff04 of the EVA experiments
+  // especially for ff04 of the eva2 experiments
 
   bool perennial = false;
 
   // first check, if the current crop is perennial
   std::ostringstream request_multi_years;
-  request_multi_years << "SELECT WinSomMehrj FROM S_Fruechte S where ID_Frucht=" << eva2_crop;
+  request_multi_years << "SELECT winsommehrj FROM S_Fruechte S where id_frucht=" << eva2_crop;
   con->select(request_multi_years.str().c_str());
   debug() << request_multi_years.str().c_str() << endl;
   // get date of sowing
@@ -1104,18 +1059,18 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
     string text= row_perennial[0];
     if (text == "mehrjaehrig") {
         perennial = true;
-        debug() << "Mehrjaehrig" << endl;
+        debug() << "Mehrjährig" << endl;
     }
   }
 
   // if the crop is perennial, there may be different fruchtfolgeglieder
-  // that hold information for the same crop
+  // that holds information for the same crop
   if (perennial) {
       // get all id_pgs in this crop rotation with the same fruchtfolgeglied
-      std::string id_string_short = id_string.substr(0,8);     //was substr(0,6) in EVA2 (AKP 16/11/2015)
+      std::string id_string_short = id_string.substr(0,6);
       std::ostringstream request_pruefglieder;
 
-      request_pruefglieder << "SELECT Fruchtfolgeglied, Fruchtart, Erntejahr  FROM Tab_Versuchsglieder P where code like \"" << id_string_short << "%\" order by Fruchtfolgeglied";   //new table (AKP 16/10/2015)
+      request_pruefglieder << "SELECT id_fruchtfolgeglied, id_frucht, erntejahr  FROM 3_70_Pruefglieder P where id_pg like \"" << id_string_short << "%\" order by id_fruchtfolgeglied";
       con->select(request_pruefglieder.str().c_str());
       debug() << request_pruefglieder.str().c_str() << endl;
 
@@ -1160,8 +1115,8 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
 
   // get sowing date -------------------------
   std::ostringstream request_sowing;
-  request_sowing << "SELECT Datum_MONICA, ID_Versuch FROM Tab_Bew_Daten T where ID_Versuch like \""
-               << id_string << "%\" and Arbeit like \"2%\" and Datum_MONICA is not null order by Datum_MONICA ASC";    //new table (AKP 16/10/2015)
+  request_sowing << "SELECT Datum, ID_pg FROM 2_60_Bew_Daten T where id_pg like \""
+               << id_string << "%\" and id_arbeit like \"2%\" and datum is not null order by Datum ASC";
   con->select(request_sowing.str().c_str());
   debug() << request_sowing.str().c_str() << endl;
 
@@ -1177,9 +1132,9 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
 
   pp.addApplication(Seed(sowing_date, crop));
 
-  // check 12th item in id (was 10 in eva2 ID), because there can be found
+  // check 10th item in id, because there can be found
   // the real type of usage
-  const char gp_char = id_pg[12];
+  const char gp_char = id_pg[10];
   int usage = satoi(&gp_char);
 
   // Ganzpflanze oder Korn geerntet?
@@ -1191,7 +1146,7 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
     }
   }
   if (usage == NUTZUNG_GANZPFLANZE && eva2_crop!="160") {
-    // Ausnahme für Sudangras, da in Ettlingen zweimal geschnitten und es mit
+    // Ausnahme für Sudangras, da in Ettlingen zweimal geschnitten und des mit
     // dem Schneiden Probleme gab
     debug() << "Ganzpflanze: " << eva2_crop.c_str() << "\t" << id_pg << endl;
     //ganz_pflanze = true;
@@ -1220,15 +1175,10 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
 
       // get harvest date  ------------------------------------
       std::ostringstream request_harvest;
-      request_harvest << "SELECT DatumErnte FROM PB_T_2_10_Ertraege T where id_pg like \""
-                   << id_string << "%\" and id_termin=60 and datumernte is not null group by DatumErnte order by DatumErnte";    //new table (AKP 16/10/2015)
+      request_harvest << "SELECT DatumErnte FROM 2_10_Ertraege T where id_pg like \""
+                   << id_string << "%\" and id_termin=61 and datumernte is not null group by DatumErnte order by DatumErnte";
 
-      bool return_value = con->select(request_harvest.str().c_str());
-	  
-	  if (!return_value) {
-		  cerr << "Error: Database request was not successful. Aborting now ..." << endl;
-		  exit(-1);
-	  }
+      con->select(request_harvest.str().c_str());
       debug() << request_harvest.str().c_str() << endl;
 
       // get date of harvest
@@ -1246,8 +1196,8 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
 
     // check if there are cutting dates provided
     std::ostringstream request_cutting;
-    request_cutting << "SELECT DatumErnte FROM PB_T_2_10_Ertraege T where id_pg like \""
-                     << id_string << "%\" and (id_termin>=61 and id_termin<=70) and datumernte is not null "
+    request_cutting << "SELECT DatumErnte FROM 2_10_Ertraege T where id_pg like \""
+                     << id_string << "%\" and (id_termin>=62 and id_termin<=69) and datumernte is not null "
                      << " group by DatumErnte";
     con->select(request_cutting.str().c_str());
     debug() << request_cutting.str().c_str() << endl;
@@ -1275,8 +1225,8 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
     // get tillages
     debug() << endl;
     std::ostringstream request_tillages;
-    request_tillages << "SELECT Arbeit, Datum_MONICA FROM Tab_Bew_Daten T where ID_Versuch like \""
-                         << id_string << "%\" and Arbeit like \"1%\"";
+    request_tillages << "SELECT id_Arbeit, Datum FROM 2_60_Bew_Daten T where id_pg like \""
+                         << id_string << "%\" and id_arbeit like \"1%\"";
     con->select(request_tillages.str().c_str());
     debug() << request_tillages.str().c_str() << endl;
 
@@ -1299,8 +1249,8 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
     // get fertilisation
     debug() << endl;
     std::ostringstream request_fertiliser;
-    request_fertiliser << "SELECT Id_Bew_Daten, Datum_MONICA FROM Tab_Bew_Daten T where ID_Versuch like \""
-                          << id_string << "%\" and Arbeit like \"3%\"";
+    request_fertiliser << "SELECT Id_bew_daten, datum FROM 2_60_Bew_Daten T where id_pg like \""
+                          << id_string << "%\" and id_arbeit like \"3%\"";
     con->select(request_fertiliser.str().c_str());
     debug() << request_fertiliser.str().c_str() << endl;
     debug() << "Found " << con->getNumberOfRows() << " fertilisers" << endl << endl;
@@ -1314,9 +1264,9 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
 
        // get amount and id of fertiliser
        std::ostringstream request_fertiliser_id;
-       request_fertiliser_id << "SELECT Duenger, Menge "
-                             << "FROM Tab_Betriebsmittel_Duenger T where id_bew_daten = \""    // (AKP 16/10/2015) neue Spalte Duenger musste in MySQL DB angelegt werden da nur eine Spalte Dünger existierte, die MONICA natürlich nicht lesen kann 
-                             << bew_id << "\" and Duenger is not null";
+       request_fertiliser_id << "SELECT id_Duenger, Menge "
+                             << "FROM 2_63_Betriebsmittel_Duenger T where id_bew_daten = \""
+                             << bew_id << "\" and id_Duenger is not null";
        debug() << request_fertiliser_id.str().c_str() << endl;
        con2->select(request_fertiliser_id.str().c_str());
 
@@ -1389,7 +1339,6 @@ Monica::getCropManagementData(std::string id_string, std::string eva2_crop, int 
   debug() << endl;
   return ff;
 }
- 
 
 
 OrganicMatterParameters*
@@ -1401,9 +1350,9 @@ Monica::getOrganicFertiliserDetails(OrganicMatterParameters *omp, std::string fe
 
   L::Lock lock(lockable);
 
-  DB *con = newConnection("eva3");  //AKPPP
+  DB *con = newConnection("eva2");
   std::ostringstream request_fertiliser;
-  request_fertiliser << " SELECT TM_PrzFM, NO3_N_PrzFM, NH4_N_PrzFM, Harnstoff_N_PrzFM FROM S_Duenger S where Duenger=\"" << fert_id.c_str() << "\"";
+  request_fertiliser << " SELECT TM_PrzFM, NO3_N_PrzFM, NH4_N_PrzFM, Harnstoff_N_PrzFM FROM S_Duenger S where id_duenger=\"" << fert_id.c_str() << "\"";
 
   debug() << request_fertiliser.str().c_str() << endl;
   con->select(request_fertiliser.str().c_str());
@@ -1439,9 +1388,9 @@ Monica::getOrganicFertiliserConversionFactor(std::string fert_id)
 
   L::Lock lock(lockable);
 
-  DB *con = newConnection("eva3");  //AKPPP
+  DB *con = newConnection("eva2");
   std::ostringstream request_fertiliser;
-  request_fertiliser << " SELECT Einheit, Faktor_Liter_in_kg FROM S_Duenger S where Duenger=\"" << fert_id.c_str() << "\" and (Einheit=\"kg/ha\" or Einheit=\"l/ha\" or Einheit=\"m3/ha\")";
+  request_fertiliser << " SELECT Einheit, Faktor_Liter_in_kg FROM S_Duenger S where id_duenger=\"" << fert_id.c_str() << "\" and (Einheit=\"kg\" or Einheit=\"l\" or Einheit=\"m3\")";
 
   debug() << request_fertiliser.str().c_str() << endl;
   con->select(request_fertiliser.str().c_str());
@@ -1455,7 +1404,7 @@ Monica::getOrganicFertiliserConversionFactor(std::string fert_id)
   }
   delete con;
 
-  if (einheit == "m3/ha") {  //AKPPP
+  if (einheit == "m3") {
       factor_je_liter *= 1000.0;  // m3 --> l
   }
 
@@ -1481,9 +1430,9 @@ Monica::getNPercentageInFertilizer(std::string id_fert)
 
   L::Lock lock(lockable);
 
-  DB *con = newConnection("eva3");  //AKPPP
+  DB *con = newConnection("eva2");
   std::ostringstream request_fertiliser;
-  request_fertiliser << " SELECT Nges_PrzFM FROM S_Duenger S where Duenger=\"" << id_fert.c_str() << "\" and (Einheit=\"kg/ha\" or Einheit=\"l/ha\" or Einheit=\"m3/ha\")";
+  request_fertiliser << " SELECT Nges_PrzFM FROM S_Duenger S where id_duenger=\"" << id_fert.c_str() << "\" and (Einheit=\"kg\" or Einheit=\"l\" or Einheit=\"m3\")";
 
   debug() << request_fertiliser.str().c_str() << endl;
   con->select(request_fertiliser.str().c_str());
@@ -1516,20 +1465,14 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
     return make_pair(mineral,3);  // Ammonsulfatsalpeter
   } else if (name == "D57") {
     return make_pair(mineral,2);  // Diammonsulphat
-  } else if (name == "D74" || name == "D141" || name == "D66" || name == "D67" || name == "D78") {
-	return make_pair(mineral,11);  // NPK-Dünger (verschiedene Sorten)
+  } else if (name == "D74" || name == "D141" || name == "D66") {
+	  return make_pair(mineral,11);  // NPK-Dünger (verschiedene Sorten)
   } else if (name == "D45") {
     return make_pair(mineral,12);  // Harnstoff mit Nitrifikationshemmstoff
   } else if (name == "D44") {
     return make_pair(mineral,8);  // Harnstoff
-  } else if (name == "D48") {
-	return make_pair(mineral, 1);  // Kalkammonsalpeter mit Magnesium
   } else if (name == "D52") {
     return make_pair(mineral,14);  // Stickstoffdüngerlösung mit Schwefel, Piasan 24 S
-  } else if (name == "D56") {
-	return make_pair(mineral,7);  // NP-Dünger
-  } else if (name == "D61") {
-	return make_pair(mineral, 7);  // NP-Dünger
   } else if (name == "D140") {
     return make_pair(mineral,4);  // Alzon 2
   } else if (name == "D145") {
@@ -1542,22 +1485,14 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
       return make_pair(mineral,15);  // Ammoniumnitrat-Harnstoff-Lösung + Ammoniumthiosulfat
   } else if (name == "D206") {
     return make_pair(mineral,16);  // Alzon flüssig S
-  } else if (name == "D212") {
-	return make_pair(mineral, 22);  // Rapspower
   } else if (name == "D213") {
-	return make_pair(mineral,19);  // Entec 26
-  } else if (name == "D221") {
-	return make_pair(mineral,20);  // NPK-Dünger + Bor
-  } else if (name == "D222") {
-	return make_pair(mineral, 21);  // NP-Dünger
-  } else if (name == "D62") {
-	return make_pair(mineral,7);  // NP-Dünger
+	return make_pair(mineral, 19);  // Entec 26
   } else if (name == "D40") {
     return make_pair(mineral,17);  // Piamon
   }
 
   else if (name == "D611") {
-      return make_pair(organic, 3);  //parameter ID = 26 represents digestate in Ascha (AKP 11/08/2015)
+      return make_pair(organic, 3);
   } else if (name == "D612") {
       return make_pair(organic, 3);
   } else if (name == "D613") {
@@ -1650,49 +1585,8 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
       return make_pair(organic, 3);
   } else if (name == "D657") {
       return make_pair(organic, 3);
-  } else if (name == "D664") {
-	  return make_pair(organic, 3);
-  } else if (name == "D665") {
-	  return make_pair(organic, 3);
-  } else if (name == "D666") {
-	  return make_pair(organic, 3);
-  } else if (name == "D667") {
-	  return make_pair(organic, 3);
-  } else if (name == "D671") {
-	  return make_pair(organic, 3);
-  } else if (name == "D672") {
-	  return make_pair(organic, 3);
-  } else if (name == "D674") {
-	  return make_pair(organic, 3);
-  } else if (name == "D675") {
-	  return make_pair(organic, 3);
-  } else if (name == "D676") {
-	  return make_pair(organic, 3);
-  } else if (name == "D677") {
-	  return make_pair(organic, 3);
-  } else if (name == "D678") {
-	  return make_pair(organic, 3);
-  } else if (name == "D679") {
-	  return make_pair(organic, 3);
-  } else if (name == "D680") {
-	  return make_pair(organic, 3);
-  } else if (name == "D681") {
-	  return make_pair(organic, 3);
-  } else if (name == "D682") {
-	  return make_pair(organic, 3);
-  } else if (name == "D683") {
-	  return make_pair(organic, 3);
-  } else if (name == "D684") {
-	  return make_pair(organic, 3);
-  } else if (name == "D685") {
-	  return make_pair(organic, 3);
-  } else if (name == "D686") {
-	  return make_pair(organic, 3);
-  } else if (name == "D687") {
-	  return make_pair(organic, 3);
-  } else if (name == "D688") {
-	  return make_pair(organic, 3);
   }
+
 
 
   // undefined mineral fertilisers
@@ -1708,8 +1602,6 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
     return make_pair(undefined,0);  // Kieserit fein
   } else if (name == "D131") {
       return make_pair(undefined,0);  // Kieserit granuliert
-  } else if (name == "D132") {
-	  return make_pair(undefined, 0);  // Novaphosphat
   } else if (name == "D134") {
     return make_pair(undefined,0);  // Dolokorn 90
   } else if (name == "D21") {
@@ -1742,8 +1634,6 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
     return make_pair(undefined,0);  // Calcium Carbonat
   } else if (name == "D147") {
     return make_pair(undefined,0);  // Mangan Chelat
-  } else if (name == "D147neu") {
-    return make_pair(undefined,0);  // Mangan Chelat neu
   } else if (name == "D148") {
     return make_pair(undefined,0);  // Nutribor
   } else if (name == "D150") {
@@ -1751,28 +1641,12 @@ Monica::eva2FertiliserId2monicaFertiliserId(const string& name)
   } else if (name == "D151") {
     return make_pair(undefined,0);  // Kalk, Optiflor 80/10
   } else if (name == "D153") {
-	return make_pair(undefined, 0);  // PK 9,9-25,8 (5+0)
-  }
-
-  if (name == "D208") {
+    return make_pair(undefined,0);  // PK 9,9-25,8 (5+0)
+  } else if (name == "D208") {
     return make_pair(undefined,0);  // Thomaskali
   } else if (name == "D205") {
     return make_pair(undefined,0);  // PK-Dünger mit Mg und S 11-22 (4+6)
-  } else if (name == "D211") {
-	return make_pair(undefined, 0);  // PK-Dünger mit Mg, S, Ca, CaO
-  } else if (name == "D214") {
-	return make_pair(undefined, 0);  // PK-Dünger mit Mg Granukal 88
-  } else if (name == "D215") {
-	return make_pair(undefined, 0);  // Granukal 88
-  } else if (name == "D216") {
-	return make_pair(undefined, 0);  // Thomaskali 8-15-6
-  } else if (name == "D217") {
-	return make_pair(undefined, 0);  // EXCELLO-Basis
-  } else if (name == "D220") {
-	return make_pair(undefined, 0);  // Granukal 80/5
-  } else if (name == "D223") {
-	return make_pair(undefined, 0);  // Lebosol
-  } else if (name == "0") {
+  }else if (name == "0") {
     return make_pair(undefined,0);
   }
 
@@ -1868,45 +1742,32 @@ Monica::getEva2CropId2Crop(std::string eva2_crop, int location)
   if(eva2_crop == EVA2_WINTER_ROGGEN) return CropPtr(new Crop(3, "Winterroggen"));
   if(eva2_crop == EVA2_SOMMER_ROGGEN) return CropPtr(new Crop(20, "Sommerroggen"));
   if(eva2_crop == EVA2_WINTERTRITICALE) return CropPtr(new Crop(19, "Wintertriticale"));
-  if(eva2_crop == EVA2_WINTERTRITICALE_WINTERWICKE) return CropPtr(new Crop(19, "Wintertriticale - Winterwicke"));  // added AKP (11.04.2016) to model crop rotation
-  if(eva2_crop == EVA2_WINTERTRITICALE_WEIDELGRAS) return CropPtr(new Crop(19, "Wintertriticale - Weidelgras"));  // added AKP (11.04.2016) to model crop rotation
-  if(eva2_crop == EVA2_WINTERTRITICALE_ACKERBOHNE) return CropPtr(new Crop(19, "Wintertriticale - Ackerbohne"));  // added AKP (23.09.2016) to model crop rotation
-  if(eva2_crop == EVA2_WINTERTRITICALE_ERBSE) return CropPtr(new Crop(19, "Wintertriticale - Erbse"));  // added AKP (23.09.2016) to model crop rotation
   if(eva2_crop == EVA2_WINTER_ROGGEN_TRITICALE) return CropPtr(new Crop(19, "Winterroggen - Wintertriticale"));
   if(eva2_crop == EVA2_SOMMER_TRITICALE) return CropPtr(new Crop(23, "Sommertriticale"));
   if(eva2_crop == EVA2_SOMMER_ROGGEN_TRITICALE) return CropPtr(new Crop(23, "Sommerroggen - Sommertriticale"));
 
 
   if(eva2_crop == EVA2_ZUECKER_RUEBE) return CropPtr(new Crop(10, "Zuckerrübe"));
-  if(eva2_crop == EVA2_FUTTER_RUEBE) return CropPtr(new Crop(10, "Futterrübe"));
   if(eva2_crop == EVA2_SENF) return CropPtr(new Crop(11, "Senf"));
 
   if(eva2_crop == EVA2_WELSCHES_WEIDELGRAS) return CropPtr(new Crop(16, "Welsches Weidelgras"));
   if(eva2_crop == EVA2_EINJ_WEIDELGRAS) return CropPtr(new Crop(16, "Einjähriges Weidelgras"));
   if(eva2_crop == EVA2_BASTARD_WEIDELGRAS) return CropPtr(new Crop(16, "Bastard-Weidelgras"));
-  if(eva2_crop == EVA2_DEUTSCHES_WEIDELGRAS) return CropPtr(new Crop(16, "Deutsches Weidelgras"));
-  if(eva2_crop == EVA2_DEUTSCHES_WEID_WELSCHES_WEID) return CropPtr(new Crop(16, "Deutsches Weidelgras - Welsches Weidelgras"));
-  if(eva2_crop == EVA2_A3_MISCHUNG) return CropPtr(new Crop(16, "Grasmischung A3")); // added AKP (02.08.2016) to model crop rotation, A3 includes Welsches-, Deutsches- und Bastard-Weidelgras
-  if(eva2_crop == EVA2_WIESENSCHWINGEL) return CropPtr(new Crop(16, "Wiesenschwingel")); // added AKP (23.09.2016) to model crop rotation
   if(eva2_crop == EVA_SUDANGRAS) return CropPtr(new Crop(18, "Sudangras"));
   if(eva2_crop == EVA2_OEL_RETTICH) return CropPtr(new Crop(17, "Ölrettich"));
   if(eva2_crop == EVA2_PHACELIA) return CropPtr(new Crop(12, "Phacelia"));
   if(eva2_crop == EVA2_FUTTERHIRSE) return CropPtr(new Crop(21, "Futterhirse"));
-  if(eva2_crop == EVA2_MAIS_KLEE) return CropPtr(new Crop(7, "Mais_Kleegras"));
 
   if(eva2_crop == EVA2_KLEEGRAS) return CropPtr(new Crop(13, "Kleegras"));
   if(eva2_crop == EVA2_LUZERNEGRAS) return CropPtr(new Crop(14, "Luzerne"));
   if(eva2_crop == EVA2_LUZERNE_KLEEGRAS) return CropPtr(new Crop(15, "Luzerne - Kleegras"));
-  if(eva2_crop == EVA2_BOKHARAKLEE) return CropPtr(new Crop(13, "Bokharaklee")); // added AKP (26.09.2016) to model crop rotation
 
   if(eva2_crop == EVA2_HAFER_SORTENGEMISCH) return CropPtr(new Crop(22, "Hafer Sortengemisch"));
   if(eva2_crop == EVA2_HAFER) return CropPtr(new Crop(22, "Hafer"));
   if(eva2_crop == EVA2_KARTOFFEL) return CropPtr(new Crop(8, "Frühe Kartoffel"));
   //if(eva2_crop == EVA2_SONNENBLUME) return CropPtr(new Crop(9, "TODO: Parametersatz für Sonnenblume zuweisen"));
-  if(eva2_crop == EVA2_ERBSE) return CropPtr(new Crop(24, "Erbse"));
-  if(eva2_crop == EVA2_LANDSBERGER_GEMENGE) return CropPtr(new Crop(15, "Landsberger Gemenge")); // links to alfalfa-clover mix; TODO: new parameter set in MONICA sqlite db
-  if(eva2_crop == EVA2_WROGGEN_WWICKEN) return CropPtr(new Crop(3, "Winterroggen")); // links to winter rye; TODO: new parameter set in MONICA sqlite db
-  if(eva2_crop == EVA2_WROGGEN_WWICKEN_WEIDELGRAS) return CropPtr(new Crop(3, "Winterroggen")); // added AKP (23.09.2016) to model crop rotation
+  if(eva2_crop == EVA2_ERBSE) return CropPtr(new Crop(25, "Erbse"));
+  if(eva2_crop == EVA2_LANDSBERGER_GEMENGE) return CropPtr(new Crop(26, "Landsberger Gemenge"));
 
 
   
@@ -1926,7 +1787,7 @@ Monica::getEva2CropId2Crop(std::string eva2_crop, int location)
   }
 
   if(eva2_crop == EVA2_WINTER_RAPS) return CropPtr(new Crop(9, "Winterraps"));
-  if(eva2_crop == EVA2_SOMMER_RAPS) return CropPtr(new Crop(9, "Sommerraps")); //was parameter id = 50 before, but not calibrated yet (AKP, 29/11/13)
+  if(eva2_crop == EVA2_SOMMER_RAPS) return CropPtr(new Crop(50, "Sommerraps"));
 
 
 

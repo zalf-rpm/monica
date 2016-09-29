@@ -318,6 +318,7 @@ void MonicaModel::seedCrop(CropPtr crop)
  */
 void MonicaModel::harvestCurrentCrop(bool exported)
 {
+	cout << "EXPORTED: " << exported << endl;
 	//could be just a fallow, so there might be no CropGrowth object
 	if (_currentCrop.get() && _currentCrop->isValid())
   {
@@ -822,7 +823,7 @@ double MonicaModel::CO2ForDate(double year, double julianday, bool leapYear)
   else
     decimalDate = year + (julianday/365.0);
 
-	// Atmospheric CO2 conenctration according to RCP 8.5
+	// Atmospheric CO2 conenctration according to RCP 8.5back
 
   co2 = 222.0 + exp(0.01467 * (decimalDate - 1650.0)) + 2.5 * sin((decimalDate - 0.5) / 0.1592);
   return co2;
