@@ -36,9 +36,9 @@ namespace Monica
 	static const char* defProxyBackendAddress = "tcp://localhost:5566";
 	static const char* defControlAddress = "tcp://localhost:8888";
 	static const char* defPublisherControlAddress = "tcp://localhost:8899";
-	static const char* defInputAddress = "tcp:://localhost:6666";
+	static const char* defInputAddress = "tcp://localhost:6666";
 	static const char* defOutputAddress = "tcp://localhost:7777";
-	static const char* defServeAddress = "tcp:://*:6666";
+	static const char* defServeAddress = "tcp://*:6666";
 
 }
 
