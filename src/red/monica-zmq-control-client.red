@@ -36,14 +36,11 @@ defaults: [
 	proxy-address "localhost"
 	proxy-frontend-port 5555
 	proxy-backend-port 5566
-	control-address "localhost"
-	control-port 8888
-	publisher-control-address "localhost"
-	publisher-control-port 8899
-	input-address "localhost"
-	input-port 6666
-	output-address "localhost"
-	output-port 7777
+	control-address "tcp://localhost:8888"
+	publisher-control-address "tcp://localhost:8899"
+	input-address "tcp://localhost:6666"
+	output-address "tcp://localhost:7777"
+	service-port 6666
 ]
 
 ;address: any [get-argument 1 tcp://localhost:8888]
@@ -59,8 +56,7 @@ control-stop-msg-template: {
 service-msg-template: {
 	{	"type": <type>
 	,	"count": <count>
-	,	"control-address": <control-address>
-	,	"control-port": <control-port>
+	,	"control-addresses": <control-addresses>
 	,	"service-port": <service-port>
 	}
 }
@@ -68,8 +64,7 @@ service-msg-template: {
 proxy-msg-template: {
 	{	"type": <type>
 	,	"count": <count>
-	,	"control-address": <control-address>
-	,	"control-port": <control-port>
+	,	"control-addresses": <control-addresses>
 	,	"proxy-address": <proxy-address>
 	, 	"proxy-frontend-port": <proxy-frontend-port>
 	,	"proxy-backend-port": <proxy-backend-port>
@@ -79,12 +74,9 @@ proxy-msg-template: {
 pipeline-msg-template: {
 	{	"type": <type>
 	,	"count": <count>
-	,	"control-address": <control-address>
-	,	"control-port": <control-port>
-	,	"input-address": <input-address>	
-	,	"input-port": <input-port>
-	,	"output-address": <output-address>	
-	,	"output-port": <output-port>
+	,	"control-addresses": <control-addresses>
+	,	"input-addresses": <input-addresses>	
+	,	"output-addresses": <output-addresses>	
 	}
 }
 
@@ -145,6 +137,7 @@ comment {
 }
 
 def: function ['k][
+	print k
 	v: select defaults k 
 	either any [
 		(type? v) = string! 
@@ -159,8 +152,8 @@ replace-multi: function [template multi /mold*][
 ]
 
 
-connect-to: function [host port cf dcf][
-	either connect socket replace-multi "tcp://host:port" reduce ["host" host "port" port] [
+connect-to: function [address cf dcf][
+	either connect socket address [
 		cf/enable?: false
 		dcf/enable?: true
 	][
@@ -185,15 +178,13 @@ disconnect-from: function [cf dcf][
 	]
 ]
 
-stop: function [host port count][
+stop: function [address count][
 	either zero? stopSocket: open-socket pool request! [
 		log-error
 	][
 		if use-timeouts [set-timeouts stopSocket]
 
 		loop count [
-			address: replace-multi "tcp://host:port" reduce ["host" host "port" port ]
-			
 			either connect stopSocket address [
 				send-msg stopSocket stop-msg-template	
 				receive-msg stopSocket	
@@ -206,7 +197,7 @@ stop: function [host port count][
 	unless close-socket stopSocket [log-error]
 ]
 
-stop-via-pub: function [host port][
+stop-via-pub: function [port][
 	either zero? stopSocket: open-socket pool publish! [
 		log-error
 	][
@@ -238,52 +229,48 @@ either zero? pool: make-pool 1 [
 
 		view compose/deep [
 			title: "MONICA ZeroMQ control client"
-			below
+						
+			across 
+			text "Control node address:" control-address: field 150 (def control-address)
+			return
 			
-			panel 4 [
-				across 
-				text "Control node address:" control-address: field (def control-address)
-				text "port:" control-port: field (def control-port)
-				
-				check "Use timeouts" data (use-timeouts) [
-					if use-timeouts: face/data [set-timeouts socket]
-				]
-				con: button "connect" [connect-to control-address/text control-port/text con discon]
-				discon: button "disconnect" disabled [disconnect-from con discon]
-				text
-				
-				type: drop-down "start-new" data ["start-new" "start-max" "stop"] select 1 
-				count: field "1" text "MONICA instances" text 
-
-				text "Publisher control address:" pub-control-address: field (def publisher-control-address) 
-				text "port:" pub-control-port: field (def publisher-control-port)   
+			check "Use timeouts" data (use-timeouts) [
+				if use-timeouts: face/data [set-timeouts socket]
 			]
-			
+			con: button "connect" [connect-to control-address/text con discon]
+			discon: button "disconnect" disabled [disconnect-from con discon]
+			return
+							
+			type: drop-down "start-new" data ["start-new" "start-max" "stop"] select 1 
+			count: field "1" text "MONICA instances"
+			return  
+
+			text "Publisher control address(es):" pub-control-addresses: field 150 (def publisher-control-address) 
+			return 
+
+			below
 			tp: tab-panel [
 				"Pipeline" [
 					across
-					text "Input address:" input-address: field (def input-address) 
-					text "port:" input-port: field (def input-port) 
+					text "Input address(es):" input-addresses: field 150 (def input-address) 
 					return
-					text "Output address:" output-address: field (def output-address) 
-					text "port:" output-port: field (def output-port)
+					text "Output address(es):" output-addresses: field 150 (def output-address) 
 					return
 					button "action" react [face/text: type/text face/enable?: not con/enable?] [
 						m: replace-multi/mold* pipeline-msg-template reduce [
 							"<type>" type/text
 							"<count>" to integer! count/data
-							"<control-address>" pub-control-address/text
-							"<control-port>" to integer! pub-control-port/data
-							"<input-address>" input-address/text
-							"<input-port>" to integer! input-port/data
-							"<output-address>" output-address/text
-							"<output-port>" to integer! output-port/data
+							"<control-addresses>" pub-control-addresses/text
+							"<input-addresses>" input-addresses/text
+							"<output-addresses>" output-addresses/text
 						]
 						send-msg socket m
 						receive-msg socket 
 					]   
 					button "stop" [
-						stop-via-pub pub-control-address/text to integer! pub-control-port/data
+						stop-via-pub to integer! first parse pub-control-address/text [
+							collect [some ["tcp://" thru ":" keep [to "," | thru end] opt ","]]
+						] 
 					] 
 				]
 				"Proxy" [
@@ -296,8 +283,7 @@ either zero? pool: make-pool 1 [
 						m: replace-multi/mold* proxy-msg-template reduce [
 							"<type>" type/text
 							"<count>" to integer! count/data
-							"<control-address>" pub-control-address/text
-							"<control-port>" to integer! pub-control-port/data
+							"<control-address>" pub-control-addresses/text
 							"<proxy-address>" proxy-address/text
 							"<proxy-frontend-port>" to integer! frontend-port/data
 							"<proxy-backend-port>" to integer! backend-port/data
@@ -311,14 +297,13 @@ either zero? pool: make-pool 1 [
 				]
 				"Single-service" [
 					across
-					text "Service port:" service-port: field (def input-port)
+					text "Service port:" service-port: field (def service-port)
 					return
 					button "action" react [face/text: type/text face/enable?: not con/enable?] [
 						m: replace-multi/mold* service-msg-template reduce [
 							"<type>" type/text
 							"<count>" to integer! count/data
-							"<control-address>" pub-control-address/text
-							"<control-port>" to integer! pub-control-port/data
+							"<control-address>" pub-control-addresses/text
 							"<service-port>" to integer! service-port/data
 						]
 						send-msg socket m
