@@ -54,29 +54,29 @@ control-stop-msg-template: {
 }
 
 service-msg-template: {
-	{	"type": <type>
+	{	"type": "<type>"
 	,	"count": <count>
-	,	"control-addresses": <control-addresses>
+	,	"control-addresses": "<control-addresses>"
 	,	"service-port": <service-port>
 	}
 }
 
 proxy-msg-template: {
-	{	"type": <type>
+	{	"type": "<type>"
 	,	"count": <count>
-	,	"control-addresses": <control-addresses>
-	,	"proxy-address": <proxy-address>
+	,	"control-addresses": "<control-addresses>"
+	,	"proxy-address": "<proxy-address>"
 	, 	"proxy-frontend-port": <proxy-frontend-port>
 	,	"proxy-backend-port": <proxy-backend-port>
 	}
 }
 
 pipeline-msg-template: {
-	{	"type": <type>
+	{	"type": "<type>"
 	,	"count": <count>
-	,	"control-addresses": <control-addresses>
-	,	"input-addresses": <input-addresses>	
-	,	"output-addresses": <output-addresses>	
+	,	"control-addresses": "<control-addresses>"
+	,	"input-addresses": "<input-addresses>"	
+	,	"output-addresses": "<output-addresses>"	
 	}
 }
 
@@ -137,7 +137,7 @@ comment {
 }
 
 def: function ['k][
-	print k
+	;print k
 	v: select defaults k 
 	either any [
 		(type? v) = string! 
@@ -145,9 +145,9 @@ def: function ['k][
 	] [v] [to string! v]
 ]
 
-replace-multi: function [template multi /mold*][
+replace-multi: function [template multi][
 	t: copy template
-	foreach [k v] multi [replace t k either mold* [mold v] [v]]
+	foreach [k v] multi [replace t k v v]
 	t
 ]
 
@@ -257,18 +257,20 @@ either zero? pool: make-pool 1 [
 					text "Output address(es):" output-addresses: field 150 (def output-address) 
 					return
 					button "action" react [face/text: type/text face/enable?: not con/enable?] [
-						m: replace-multi/mold* pipeline-msg-template reduce [
+						;print input-addresses/text
+						m: replace-multi pipeline-msg-template reduce [
 							"<type>" type/text
 							"<count>" to integer! count/data
 							"<control-addresses>" pub-control-addresses/text
 							"<input-addresses>" input-addresses/text
 							"<output-addresses>" output-addresses/text
 						]
+						;print m
 						send-msg socket m
 						receive-msg socket 
 					]   
 					button "stop" [
-						stop-via-pub to integer! first parse pub-control-address/text [
+						stop-via-pub to integer! first parse pub-control-addresses/text [
 							collect [some ["tcp://" thru ":" keep [to "," | thru end] opt ","]]
 						] 
 					] 
@@ -280,7 +282,7 @@ either zero? pool: make-pool 1 [
 					text "backend-port:" backend-port: field (def proxy-backend-port)
 					return
 					button "action" react [face/text: type/text face/enable?: not con/enable?] [
-						m: replace-multi/mold* proxy-msg-template reduce [
+						m: replace-multi proxy-msg-template reduce [
 							"<type>" type/text
 							"<count>" to integer! count/data
 							"<control-address>" pub-control-addresses/text
@@ -300,7 +302,7 @@ either zero? pool: make-pool 1 [
 					text "Service port:" service-port: field (def service-port)
 					return
 					button "action" react [face/text: type/text face/enable?: not con/enable?] [
-						m: replace-multi/mold* service-msg-template reduce [
+						m: replace-multi service-msg-template reduce [
 							"<type>" type/text
 							"<count>" to integer! count/data
 							"<control-address>" pub-control-addresses/text
