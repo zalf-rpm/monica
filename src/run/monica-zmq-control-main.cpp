@@ -302,7 +302,7 @@ int main (int argc,
 	}
 	catch(zmq::error_t e)
 	{
-		cerr << "Coulnd't bind socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
+		cerr << "Couldn't bind socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
 	}
 	debug() << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
 
