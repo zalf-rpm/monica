@@ -238,17 +238,18 @@ int main(int argc, char** argv)
 		string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
 		bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
 		bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+		bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
 		if(!output.daily.empty())
 		{
-			writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, false);
+			writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			writeOutput(out, env.dailyOutputIds, output.daily, csvSep);
 		}
 
 		if(!output.monthly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, env.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.monthly)
 				writeOutput(out, env.monthlyOutputIds, p.second, csvSep);
 		}
@@ -256,7 +257,7 @@ int main(int argc, char** argv)
 		if(!output.yearly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, env.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			writeOutput(out, env.yearlyOutputIds, output.yearly, csvSep);
 		}
 
@@ -269,7 +270,7 @@ int main(int argc, char** argv)
 				if(ci != output.at.end())
 				{
 					out << p.first.toIsoDateString() << endl;
-					writeOutputHeaderRows(out, p.second, csvSep, includeHeaderRow, includeUnitsRow);
+					writeOutputHeaderRows(out, p.second, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 					writeOutput(out, p.second, ci->second, csvSep);
 				}
 			}
@@ -286,7 +287,7 @@ int main(int argc, char** argv)
 		if(!output.crop.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.crop)
 				writeOutput(out, env.cropOutputIds, makeWriteOutputCompatible(p.second), csvSep);
 		}
@@ -294,7 +295,7 @@ int main(int argc, char** argv)
 		if(!output.run.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			writeOutput(out, env.runOutputIds, makeWriteOutputCompatible(output.run), csvSep);
 		}
 

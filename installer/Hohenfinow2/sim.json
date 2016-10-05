@@ -34,6 +34,7 @@
 		"csv-options": {
 			"include-header-row": true,
 			"include-units-row": true,
+			"include-aggregation-rows": false,
 			"csv-separator": ","
 		},
 		

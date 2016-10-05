@@ -58,9 +58,9 @@ void Monica::writeOutputHeaderRows(ostream& out,
 				oss1 << oid.name;
 			auto csvSep_ = j + 1 == oidsSize && i == toLayer ? "" : csvSep;
 			oss1 << "\"" << csvSep_;
-			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep_;
+			oss2 << "\"[" << oid.unit << "]\"" << csvSep_; 
 			oss3 << "\"m:" << oid.toString(includeTimeAgg) << "\"" << csvSep_;
-			oss2 << "\"[" << oid.unit << "]\"" << csvSep_;
+			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep_;
 		}
 		++j;
 	}
@@ -68,11 +68,11 @@ void Monica::writeOutputHeaderRows(ostream& out,
 	if(includeHeaderRow)
 		out << oss1.str() << endl;
 	if(includeUnitsRow)
-		out << oss4.str() << endl;
+		out << oss2.str() << endl;
 	if(includeTimeAgg)
 		out 
 		<< oss3.str() << endl
-		<< oss2.str() << endl;
+		<< oss4.str() << endl;
 }
 
 void Monica::writeOutput(ostream& out,

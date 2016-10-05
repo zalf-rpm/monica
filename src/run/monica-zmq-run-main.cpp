@@ -261,6 +261,7 @@ int main(int argc, char** argv)
 		string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
 		bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
 		bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+		bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
 		auto toOIdVector = [](const Json& a)
 		{
@@ -272,14 +273,14 @@ int main(int argc, char** argv)
 
 		if(!output.daily.empty())
 		{
-			writeOutputHeaderRows(out, toOIdVector(env["dailyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, false);
+			writeOutputHeaderRows(out, toOIdVector(env["dailyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			writeOutput(out, toOIdVector(env["dailyOutputIds"]), output.daily, csvSep);
 		}
 
 		if(!output.monthly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["monthlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["monthlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.monthly)
 				writeOutput(out, toOIdVector(env["monthlyOutputIds"]), p.second, csvSep);
 		}
@@ -287,7 +288,7 @@ int main(int argc, char** argv)
 		if(!output.yearly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["yearlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["yearlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			writeOutput(out, toOIdVector(env["yearlyOutputIds"]), output.yearly, csvSep);
 		}
 
@@ -300,7 +301,7 @@ int main(int argc, char** argv)
 				if(ci != output.at.end())
 				{
 					out << p.first << endl;
-					writeOutputHeaderRows(out, toOIdVector(p.second), csvSep, includeHeaderRow, includeUnitsRow);
+					writeOutputHeaderRows(out, toOIdVector(p.second), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 					writeOutput(out, toOIdVector(p.second), ci->second, csvSep);
 				}
 			}
@@ -317,7 +318,7 @@ int main(int argc, char** argv)
 		if(!output.crop.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.crop)
 				writeOutput(out, toOIdVector(env["cropOutputIds"]), makeWriteOutputCompatible(p.second),
 										csvSep);
@@ -326,7 +327,7 @@ int main(int argc, char** argv)
 		if(!output.run.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["runOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow);
+			writeOutputHeaderRows(out, toOIdVector(env["runOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			writeOutput(out, toOIdVector(env["runOutputIds"]), makeWriteOutputCompatible(output.run), 
 									csvSep);
 		}
