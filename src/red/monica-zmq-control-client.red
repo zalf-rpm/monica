@@ -197,19 +197,23 @@ stop: function [address count][
 	unless close-socket stopSocket [log-error]
 ]
 
-stop-via-pub: function [port][
+stop-via-pub: function [port /delay secs][
 	either zero? stopSocket: open-socket pool publish! [
 		log-error
 	][
 		if use-timeouts [set-timeouts stopSocket]
 
-		address: replace-multi "tcp://127.0.0.1:port" reduce ["port" port]
+		address: replace-multi "tcp://*:port" reduce ["port" port]
 		
 		either serve stopSocket address [
-			;print "now waiting to publish finish message"
-			wait 2 ;wait 2 seconds for subscribers to connect
+			
+			; try sending finish messages for 60 * delay seconds
+			loop 30 [
+				;print "now waiting to publish finish message"
+				wait any [secs 1] ;wait 2 seconds for subscribers to connect
 		
-			send-msg stopSocket stop-pub-msg-template
+				send-msg stopSocket stop-pub-msg-template
+			]
 					
 			if not unbind stopSocket get-string stopSocket last-endpoint [log-error]
 		][
@@ -228,7 +232,7 @@ either zero? pool: make-pool 1 [
 		if use-timeouts [set-timeouts socket]
 
 		view compose/deep [
-			title: "MONICA ZeroMQ control client"
+			title "MONICA ZeroMQ control client"
 						
 			across 
 			text "Control node address:" control-address: field 150 (def control-address)
@@ -245,7 +249,8 @@ either zero? pool: make-pool 1 [
 			count: field "1" text "MONICA instances"
 			return  
 
-			text "Publisher control address(es):" pub-control-addresses: field 150 (def publisher-control-address) 
+			text "Publisher control address(es):" pub-control-addresses: field 150 (def publisher-control-address)
+			;text "wait for" pub-send-delay: field "2" text "seconds"
 			return 
 
 			below
@@ -270,9 +275,9 @@ either zero? pool: make-pool 1 [
 						receive-msg socket 
 					]   
 					button "stop" [
-						stop-via-pub to integer! first parse pub-control-addresses/text [
+						stop-via-pub/delay to integer! first parse pub-control-addresses/text [
 							collect [some ["tcp://" thru ":" keep [to "," | thru end] opt ","]]
-						] 
+						] 1 ;to integer! pub-send-delay/text
 					] 
 				]
 				"Proxy" [
