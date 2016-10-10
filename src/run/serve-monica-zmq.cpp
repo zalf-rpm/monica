@@ -472,10 +472,11 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 				int topicCharCount = 0;
 				if(distinctControlSocket)
 				{
-					topicCharCount = 6;
+					auto topic = "finish";
+					topicCharCount = sizeof(topic);
 					for(auto address : cAddresses)
 						controlSocket.connect(address);
-					controlSocket.setsockopt(ZMQ_SUBSCRIBE, "finish", topicCharCount);
+					controlSocket.setsockopt(ZMQ_SUBSCRIBE, topic, topicCharCount);
 				}
 
 				while(true)
@@ -496,19 +497,23 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 						string msgType = msg.type();
 						if(msgType == "finish")
 						{
-							J11Object resultMsg;
-							resultMsg["type"] = "ack";
-							try
+							//only send reply when not in pipeline configuration
+							if(rType != Pull)
 							{
-								s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
-							}
-							catch(zmq::error_t e)
-							{
-								cerr << "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address(es): ";
-								int i = 0;
-								for(auto address : sAddresses)
-									cerr << (i > 0 ? "," : "") << address, ++i;
-								cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+								J11Object resultMsg;
+								resultMsg["type"] = "ack";
+								try
+								{
+									s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
+								}
+								catch(zmq::error_t e)
+								{
+									cerr << "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address(es): ";
+									int i = 0;
+									for(auto address : sAddresses)
+										cerr << (i > 0 ? "," : "") << address, ++i;
+									cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
+								}
 							}
 							sendSocket.setsockopt(ZMQ_LINGER, 0);
 							sendSocket.close();

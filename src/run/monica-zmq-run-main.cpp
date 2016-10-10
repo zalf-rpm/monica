@@ -320,8 +320,7 @@ int main(int argc, char** argv)
 			out << endl;
 			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.crop)
-				writeOutput(out, toOIdVector(env["cropOutputIds"]), makeWriteOutputCompatible(p.second),
-										csvSep);
+				writeOutput(out, toOIdVector(env["cropOutputIds"]), p.second, csvSep);
 		}
 
 		if(!output.run.empty())

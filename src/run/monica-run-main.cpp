@@ -289,7 +289,7 @@ int main(int argc, char** argv)
 			out << endl;
 			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.crop)
-				writeOutput(out, env.cropOutputIds, makeWriteOutputCompatible(p.second), csvSep);
+				writeOutput(out, env.cropOutputIds, p.second, csvSep);
 		}
 
 		if(!output.run.empty())
