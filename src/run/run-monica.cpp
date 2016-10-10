@@ -368,11 +368,12 @@ Result Monica::runMonica(Env env)
 		: nextCMApplicationDate;
 	debug() << "next app-date: " << nextCMApplicationDate.toString()
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+	bool currentCropIsPlanted = false;
 
 	vector<BOTRes::ResultVector> intermediateMonthlyResults;
 	vector<BOTRes::ResultVector> intermediateYearlyResults;
 	vector<BOTRes::ResultVector> intermediateRunResults;
-	map<string, vector<BOTRes::ResultVector>> intermediateCropResults;
+	vector<BOTRes::ResultVector> intermediateCropResults;
 	
 	MonicaRefs monicaRefs
 	{
@@ -537,9 +538,29 @@ Result Monica::runMonica(Env env)
 		{
 			monica.cropStep(currentDate, dateAndClimateDataP.second);
 			storeResults(env.cropOutputIds, 
-									 intermediateCropResults[monica.currentCrop()->id()],
+									 intermediateCropResults,
 									 monicaRefs, 
 									 d, currentDate);
+
+			if(monica.currentCrop()->harvestDate() - 1 == currentDate.toRelativeDate(0, monica.currentCrop()->harvestDate().useLeapYears()))
+			{
+				size_t i = 0;
+				auto& vs = res.out.crop[monica.currentCrop()->id()];
+				vs.resize(intermediateCropResults.size());
+				for(auto oid : env.cropOutputIds)
+				{
+					if(!intermediateCropResults.empty())
+					{
+						auto& ivs = intermediateCropResults.at(i);
+						if(ivs.front().is_string())
+							vs[i].push_back(ivs.front());
+						else
+							vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+						intermediateCropResults[i].clear();
+					}
+					++i;
+				}
+			}
 		}
 		
 		monica.generalStep(currentDate, dateAndClimateDataP.second);
@@ -605,6 +626,7 @@ Result Monica::runMonica(Env env)
 		++i;
 	}
 
+	/*
 	//store/aggregate results for a single crop
 	for(auto& p : intermediateCropResults)
 	{
@@ -624,6 +646,7 @@ Result Monica::runMonica(Env env)
 			++i;
 		}
 	}
+	*/
 	
 	debug() << "returning from runMonica" << endl;
 	return res;

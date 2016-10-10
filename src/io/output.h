@@ -148,7 +148,7 @@ namespace Monica
 		std::map<Month, std::vector<Tools::J11Array>> monthly;
 		std::vector<Tools::J11Array> yearly;
 		std::map<Tools::Date, std::vector<Tools::J11Array>> at;
-		std::map<SpeciesAndCultivarId, Tools::J11Array> crop;
+		std::map<SpeciesAndCultivarId, std::vector<Tools::J11Array>> crop;
 		std::vector<json11::Json> run;
 	};
 

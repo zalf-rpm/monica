@@ -414,7 +414,8 @@ void Monica::addResultMessageToOutput(const J11Object& msg, Output& out)
 	ci = msg.find("crop");
 	if(ci != msg.end())
 		for(auto& p : ci->second.object_items())
-			out.crop[p.first] = p.second.array_items();
+			for(auto& j : p.second.array_items())
+				out.crop[p.first].push_back(j.array_items());
 
 	ci = msg.find("run");
 	if(ci != msg.end())
