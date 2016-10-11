@@ -109,7 +109,7 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 
-		bool isRange() const { return fromLayer >= 0 && toLayer >= 0 && fromLayer < toLayer; }
+		bool isRange() const { return fromLayer >= 0 && toLayer >= 0; }// && fromLayer < toLayer; }
 
 		bool isOrgan() const { return organ != _UNDEFINED_ORGAN_; }
 

@@ -111,6 +111,7 @@ void Monica::writeOutput(ostream& out,
 						}
 						++jvi;
 					}
+					out << csvSep_; 
 					break;
 				}
 				default: out << "UNKNOWN" << csvSep_;

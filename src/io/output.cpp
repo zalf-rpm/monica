@@ -294,7 +294,10 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 					{
 						auto val1 = arr[1];
 						if(val1.is_number())
+						{
 							oid.fromLayer = val1.int_value() - 1;
+							oid.toLayer = oid.fromLayer;
+						}
 						else if(val1.is_string())
 						{
 							auto op = getAggregationOp(arr, 1);
@@ -434,7 +437,11 @@ void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits =
 
 	for(int i = oid.fromLayer; i <= oid.toLayer; i++)
 	{
-		T v = getValue(i);
+		T v = 0;
+		if(i < 0)
+			debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Returning 0." << endl;
+		else
+			v = getValue(i);
 		if(oid.layerAggOp == OId::NONE)
 			multipleValues.push_back(Tools::round(v, roundToDigits));
 		else
