@@ -1013,6 +1013,15 @@ BOTRes& Monica::buildOutputTable()
 			}
 #endif 
 			);
+			build({ id++, "Pot_ET", "mm", "" }
+#ifndef JUST_OUTPUTS
+				, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				double potentialET = m.moist->get_ET0() * m.moist->get_KcFactor();
+				results.push_back(round(potentialET, 1));
+			}
+#endif 
+			);
 			build({id++, "Act_ET", "mm", ""}
 #ifndef JUST_OUTPUTS
 						, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
