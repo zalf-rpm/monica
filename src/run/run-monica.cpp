@@ -390,6 +390,26 @@ Result Monica::runMonica(Env env)
 		return res;
 	}
 
+	auto aggregateCropOutput = [&]()
+	{
+		size_t i = 0;
+		auto& vs = res.out.crop[monica.currentCrop()->id()];
+		vs.resize(intermediateCropResults.size());
+		for(auto oid : env.cropOutputIds)
+		{
+			if(!intermediateCropResults.empty())
+			{
+				auto& ivs = intermediateCropResults.at(i);
+				if(ivs.front().is_string())
+					vs[i].push_back(ivs.front());
+				else
+					vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+				intermediateCropResults[i].clear();
+			}
+			++i;
+		}
+	};
+	
 	//beware: !!!! if there are absolute days used, then there is basically
 	//no rotation if the last crop in the crop rotation has changed
 	//the loop starts anew but the first crops date has already passed
@@ -441,6 +461,8 @@ Result Monica::runMonica(Env env)
 					debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
 					debug() << "####################################################" << endl;
 
+					aggregateCropOutput();
+
 					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
 					auto harvestApplication =
 						unique_ptr<Harvest>(new Harvest(currentDate,
@@ -458,7 +480,7 @@ Result Monica::runMonica(Env env)
 				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			//apply everything to do at current day
 			//cout << currentPP.toString().c_str() << endl;
-			currentCM.apply(nextCMApplicationDate, &monica);
+			currentCM.apply(nextCMApplicationDate, &monica, {{"Harvest", aggregateCropOutput}});
 
 			//get the next application date to wait for (either absolute or relative)
 			Date prevPPApplicationDate = nextCMApplicationDate;
@@ -541,26 +563,6 @@ Result Monica::runMonica(Env env)
 									 intermediateCropResults,
 									 monicaRefs, 
 									 d, currentDate);
-
-			if(monica.currentCrop()->harvestDate() - 1 == currentDate.toRelativeDate(0, monica.currentCrop()->harvestDate().useLeapYears()))
-			{
-				size_t i = 0;
-				auto& vs = res.out.crop[monica.currentCrop()->id()];
-				vs.resize(intermediateCropResults.size());
-				for(auto oid : env.cropOutputIds)
-				{
-					if(!intermediateCropResults.empty())
-					{
-						auto& ivs = intermediateCropResults.at(i);
-						if(ivs.front().is_string())
-							vs[i].push_back(ivs.front());
-						else
-							vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
-						intermediateCropResults[i].clear();
-					}
-					++i;
-				}
-			}
 		}
 		
 		monica.generalStep(currentDate, dateAndClimateDataP.second);

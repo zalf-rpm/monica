@@ -323,9 +323,13 @@ namespace Monica
     
 //    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
 
-    void apply(const Tools::Date& date, MonicaModel* model) const;
+    void apply(const Tools::Date& date, MonicaModel* model, 
+							 std::map<std::string, std::function<void()>> onWSTypeCustomAction 
+							 = std::map<std::string, std::function<void()>>()) const;
 
 		Tools::Date nextDate(const Tools::Date & date) const;
+
+		std::vector<WSPtr> nextApplications(const Tools::Date& date) const;
 
 		std::string name() const { return _name; }
 

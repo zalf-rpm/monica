@@ -554,12 +554,21 @@ json11::Json CultivationMethod::to_json() const
     {"worksteps", wss}};
 }
 
-void CultivationMethod::apply(const Date& date, MonicaModel* model) const
+void CultivationMethod::apply(const Date& date, 
+															MonicaModel* model,
+															map<string, function<void()>> onWSTypeCustomAction) const
 {
 	auto p = equal_range(date);
 	while(p.first != p.second)
 	{
-		p.first->second->apply(model);
+		auto ws = p.first->second;
+		if(!onWSTypeCustomAction.empty())
+		{
+			auto it = onWSTypeCustomAction.find(ws->type());
+			if(it != onWSTypeCustomAction.end())
+				it->second();
+		}
+		ws->apply(model);
 		p.first++;
 	}
 }
@@ -568,6 +577,15 @@ Date CultivationMethod::nextDate(const Date& date) const
 {
 	auto ci = upper_bound(date);
 	return ci != end() ? ci->first : Date();
+}
+
+vector<WSPtr> CultivationMethod::nextApplications(const Date& date) const
+{
+	vector<WSPtr> apps;
+	auto p = equal_range(date);
+	while(p.first != p.second)
+		apps.push_back(p.first->second);
+	return apps;
 }
 
 Date CultivationMethod::startDate() const
