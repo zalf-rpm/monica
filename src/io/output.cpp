@@ -836,6 +836,22 @@ BOTRes& Monica::buildOutputTable()
 			}
 #endif 
 			);
+			build({ id++, "Nstress", "-", "NitrogenStressIndex" }
+#ifndef JUST_OUTPUTS
+				, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
+			{
+				double Nstress = 0;
+				double AbBiomNc = m.cropPlanted ? round(m.mcg->get_AbovegroundBiomassNConcentration(), 3) : 0.0;
+				double CritN = m.cropPlanted ? round(m.mcg->get_CriticalNConcentration(), 3) : 0.0;
+
+				if (m.cropPlanted)
+				{
+					Nstress = AbBiomNc < CritN ? round((AbBiomNc/ CritN), 3) : 1;
+				}
+				results.push_back(Nstress);
+			}
+#endif 
+			);
 			build({id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"}
 #ifndef JUST_OUTPUTS
 						, [](MonicaRefs& m, BOTRes::ResultVector& results, OId oid)
