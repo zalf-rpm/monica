@@ -323,7 +323,7 @@ void storeResults(const vector<OId>& outputIds,
 
 Result Monica::runMonica(Env env)
 {
-	//activateDebug = true;
+	activateDebug = env.debugMode;
 	if(activateDebug)
 	{
 		writeDebugInputs(env, "inputs.json");
@@ -401,7 +401,14 @@ Result Monica::runMonica(Env env)
 			{
 				auto& ivs = intermediateCropResults.at(i);
 				if(ivs.front().is_string())
-					vs[i].push_back(ivs.front());
+				{
+					switch(oid.timeAggOp)
+					{
+					case OId::FIRST: vs[i].push_back(ivs.front()); break;
+					case OId::LAST: vs[i].push_back(ivs.back()); break;
+					default: vs[i].push_back(ivs.front());
+					}
+				}
 				else
 					vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
 				intermediateCropResults[i].clear();
@@ -473,7 +480,7 @@ Result Monica::runMonica(Env env)
 			}
 		}
 
-		//there's something to at this day
+		//apply worksteps and cycle through crop rotation
 		if(nextAbsoluteCMApplicationDate == currentDate)
 		{
 			debug() << "applying at: " << nextCMApplicationDate.toString()
@@ -557,17 +564,27 @@ Result Monica::runMonica(Env env)
 
 		// run crop step
 		if(monica.isCropPlanted())
-		{
 			monica.cropStep(currentDate, dateAndClimateDataP.second);
-			storeResults(env.cropOutputIds, 
-									 intermediateCropResults,
-									 monicaRefs, 
-									 d, currentDate);
-		}
 		
 		monica.generalStep(currentDate, dateAndClimateDataP.second);
+
+		//-------------------------------------------------------------------------
+		//store results
+		
+		//daily results
+		//----------------
 		storeResults(env.dailyOutputIds, res.out.daily, monicaRefs, d, currentDate);
 
+		//crop results
+		//----------------
+		if(monica.isCropPlanted())
+			storeResults(env.cropOutputIds,
+									 intermediateCropResults,
+									 monicaRefs,
+									 d, currentDate);
+
+		//at (a certain time) results
+		//-------------------
 		//try to find exact date
 		auto ati = env.atOutputIds.find(currentDate);
 		//is not exact date, try to find relative one
@@ -596,7 +613,8 @@ Result Monica::runMonica(Env env)
 		else
 			storeResults(env.monthlyOutputIds, intermediateMonthlyResults, monicaRefs, d, currentDate);
 
-		// Yearly accumulated values
+		//yearly results 
+		//------------------
 		if(currentDate.year() != (currentDate - 1).year() 
 			 && d > 0)
 		{
@@ -615,6 +633,7 @@ Result Monica::runMonica(Env env)
 		else
 			storeResults(env.yearlyOutputIds, intermediateYearlyResults, monicaRefs, d, currentDate);
 
+		//(whole) run results 
 		storeResults(env.runOutputIds, intermediateRunResults, monicaRefs, d, currentDate);
 	}
 
@@ -627,33 +646,7 @@ Result Monica::runMonica(Env env)
 			res.out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
 		++i;
 	}
-
-	/*
-	//store/aggregate results for a single crop
-	for(auto& p : intermediateCropResults)
-	{
-		auto& vs = res.out.crop[p.first];
-		i = 0;
-		vs.resize(env.cropOutputIds.size());
-		for(auto oid : env.cropOutputIds)
-		{
-			auto& ivs = p.second.at(i);
-			if(!ivs.empty())
-			{
-				if(ivs.front().is_string())
-					vs[i] = ivs.front();
-				else
-					vs[i] = applyOIdOP(oid.timeAggOp, ivs);
-			}
-			++i;
-		}
-	}
-	*/
 	
 	debug() << "returning from runMonica" << endl;
 	return res;
 }
-
-
-
-

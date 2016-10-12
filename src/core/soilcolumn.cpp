@@ -288,23 +288,22 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
  *
  * @see ApplyFertiliser
  */
-double SoilColumn::applyPossibleTopDressing() {
-  // do nothing if there is no active delay time
-  if(_vf_TopDressingDelay > 0) {
+double SoilColumn::applyPossibleTopDressing() 
+{
+	double amount = 0;
 
-    // if there is a delay time, decrement this value for this time step
-    _vf_TopDressingDelay--;
-
-    // test if now is the correct time for applying top dressing
-    if(_vf_TopDressingDelay == 0) {
-      double amount = _vf_TopDressing;
-      applyMineralFertiliser(_vf_TopDressingPartition, amount);
-      _vf_TopDressing = 0;
-      return amount;
-
-    }
-  }
-  return 0.0;
+	if(_vf_TopDressingDelay > 0)
+	{
+		_vf_TopDressingDelay--;
+	}
+	else if(_vf_TopDressingDelay == 0 
+					&& _vf_TopDressing > 0.0)
+	{
+		amount = _vf_TopDressing;
+		applyMineralFertiliser(_vf_TopDressingPartition, amount);
+		_vf_TopDressing = 0;
+	}
+  return amount;
 }
 
 /**
