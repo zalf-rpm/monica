@@ -37,6 +37,12 @@ using namespace Climate;
 
 Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
+	Env env;
+	if(!printPossibleErrors(env.merge(createEnvJsonFromJsonConfigFiles(params)), activateDebug))
+		return Env();
+	return env;
+	
+	/*
 	vector<Json> cropSiteSim;
 	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
 		cropSiteSim.push_back(printPossibleErrors(parseJsonString(params[name])));
@@ -152,6 +158,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	env.params.setPathToOutputDir(simj["path-to-output"].string_value());
 
 	return env;
+	*/
 }
 
 //-----------------------------------------------------------------------------

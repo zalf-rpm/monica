@@ -55,35 +55,43 @@ Env::Env(json11::Json j)
 namespace
 {
 	template<typename Vector>
-	void extractAndStore(Json jv, Vector& v)
+	Errors extractAndStore(Json jv, Vector& vec)
 	{
-		v.clear();
+		Errors es;
+		vec.clear();
 		for(Json cmj : jv.array_items())
-			v.push_back(cmj);
+		{
+			Vector::value_type v;
+			es.append(v.merge(cmj));
+			vec.push_back(v);
+		}
+		return es;
 	}
 }
 
 Errors Env::merge(json11::Json j)
 {
-	params.merge(j["params"]);
+	Errors es;
 
-	da.merge(j["da"]);
+	es.append(params.merge(j["params"]));
 
-	extractAndStore(j["cropRotation"], cropRotation);
-	extractAndStore(j["dailyOutputIds"], dailyOutputIds);
-	extractAndStore(j["monthlyOutputIds"], monthlyOutputIds);
-	extractAndStore(j["yearlyOutputIds"], yearlyOutputIds);
+	es.append(da.merge(j["da"]));
+
+	es.append(extractAndStore(j["cropRotation"], cropRotation));
+	es.append(extractAndStore(j["dailyOutputIds"], dailyOutputIds));
+	es.append(extractAndStore(j["monthlyOutputIds"], monthlyOutputIds));
+	es.append(extractAndStore(j["yearlyOutputIds"], yearlyOutputIds));
 	for(auto& p : j["atOutputIds"].object_items())
-		extractAndStore(p.second, atOutputIds[Date::fromIsoDateString(p.first)]);
-	extractAndStore(j["cropOutputIds"], cropOutputIds);
-	extractAndStore(j["runOutputIds"], runOutputIds);
+		es.append(extractAndStore(p.second, atOutputIds[Date::fromIsoDateString(p.first)]));
+	es.append(extractAndStore(j["cropOutputIds"], cropOutputIds));
+	es.append(extractAndStore(j["runOutputIds"], runOutputIds));
 
 	set_bool_value(debugMode, j, "debugMode");
 	
 	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
-	return{};
+	return es;
 }
 
 json11::Json Env::to_json() const
