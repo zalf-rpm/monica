@@ -565,6 +565,8 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 						{
 							J11Object resultMsg;
 							resultMsg["type"] = "error";
+							debug() << "Error, original message was: " << msg.msg << endl;
+
 							try
 							{
 								s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
