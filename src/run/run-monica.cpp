@@ -91,6 +91,8 @@ Errors Env::merge(json11::Json j)
 	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
+	set_string_value(customId, j, "customId");
+
 	return es;
 }
 
@@ -118,6 +120,7 @@ json11::Json Env::to_json() const
 		,{"debugMode", debugMode}
 		,{"pathToClimateCSV", pathToClimateCSV}
 		,{"csvViaHeaderOptions", csvViaHeaderOptions}
+		,{"customId", customId}
 	};
 }
 
@@ -339,6 +342,7 @@ Result Monica::runMonica(Env env)
 
 	Result res;
 	res.customId = env.customId;
+	res.out.customId = env.customId;
 
 	if(env.cropRotation.empty())
 	{

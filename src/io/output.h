@@ -150,6 +150,7 @@ namespace Monica
 		std::map<Tools::Date, std::vector<Tools::J11Array>> at;
 		std::map<SpeciesAndCultivarId, std::vector<Tools::J11Array>> crop;
 		std::vector<json11::Json> run;
+		std::string customId;
 	};
 
 	DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);

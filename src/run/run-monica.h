@@ -73,7 +73,7 @@ namespace Monica
 		std::vector<OId> cropOutputIds;
 		std::map<Tools::Date, std::vector<OId>> atOutputIds;
 
-    int customId{-1};
+    std::string customId;
 
     CentralParameterProvider params;
 
@@ -110,7 +110,7 @@ namespace Monica
 		Tools::GridPoint gp;
 		//is as gp before used to track results when multiple parallel
 		//unordered invocations of monica will happen
-		int customId;
+		std::string customId;
 
 		//! vector of the result of one crop per year
     std::vector<CMResult> pvrs;

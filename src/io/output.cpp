@@ -350,6 +350,8 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 
 void Monica::addOutputToResultMessage(Output& out, J11Object& msg)
 {
+	msg["customId"] = out.customId;
+
 	J11Array daily;
 	for(auto& vs : out.daily)
 		daily.push_back(vs);
@@ -392,7 +394,11 @@ void Monica::addOutputToResultMessage(Output& out, J11Object& msg)
 
 void Monica::addResultMessageToOutput(const J11Object& msg, Output& out)
 {
-	auto ci = msg.find("daily");
+	auto ci = msg.find("customId");
+	if(ci != msg.end())
+		out.customId = ci->second.string_value();
+
+	ci = msg.find("daily");
 	if(ci != msg.end())
 		for(auto& j : ci->second.array_items())
 			out.daily.push_back(j.array_items());
