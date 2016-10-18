@@ -158,7 +158,7 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 	env.params.setPathToOutputDir(simj["path-to-output"].string_value());
 
 	return env;
-	*/
+	//*/
 }
 
 //-----------------------------------------------------------------------------
