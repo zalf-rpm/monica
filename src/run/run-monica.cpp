@@ -61,7 +61,7 @@ namespace
 		vec.clear();
 		for(Json cmj : jv.array_items())
 		{
-			Vector::value_type v;
+			typename Vector::value_type v;
 			es.append(v.merge(cmj));
 			vec.push_back(v);
 		}
