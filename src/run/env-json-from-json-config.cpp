@@ -465,7 +465,7 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 	env["debugMode"] = simj["debug?"].bool_value();
 
 	J11Object cpp = {
-			{ "type", "CentralParameterProvider" }
+			{"type", "CentralParameterProvider"}
 		, {"userCropParameters", cropj["CropParameters"]}
 		, {"userEnvironmentParameters", sitej["EnvironmentParameters"]}
 		, {"userSoilMoistureParameters", sitej["SoilMoistureParameters"]}

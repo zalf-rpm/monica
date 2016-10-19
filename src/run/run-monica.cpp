@@ -258,48 +258,7 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 		cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
 		return;
 	}
-	pout << "{" << endl;
-	auto cropPs = env.params.userCropParameters.to_json().dump();
-	pout << "\"userCropParameters\":" << endl << cropPs << "," << endl;
-	auto simPs = env.params.simulationParameters.to_json().dump();
-	pout << "\"simulationParameters\":" << endl << simPs << "," << endl;
-	auto envPs = env.params.userEnvironmentParameters.to_json().dump();
-	pout << "\"userEnvironmentParameters\":" << endl << envPs << "," << endl;
-	auto smPs = env.params.userSoilMoistureParameters.to_json().dump();
-	pout << "\"userSoilMoistureParameters\":" << endl << smPs << "," << endl;
-	auto soPs = env.params.userSoilOrganicParameters.to_json().dump();
-	pout << "\"userSoilOrganicParameters\":" << endl << soPs << "," << endl;
-	auto stempPs = env.params.userSoilTemperatureParameters.to_json().dump();
-	pout << "\"userSoilTemperatureParameters\":" << endl << stempPs << "," << endl;
-	auto stransPs = env.params.userSoilTransportParameters.to_json().dump();
-	pout << "\"userSoilTransportParameters\":" << endl << stransPs << "," << endl;
-	auto sitePs = env.params.siteParameters.to_json().dump();
-	pout << "\"siteParameters\":" << endl << sitePs << "," << endl;
-	pout << "\"crop-rotation\": {" << endl;
-	bool isFirstItem = true;
-	for(auto cm : env.cropRotation)
-	{
-		pout
-			<< (isFirstItem ? "  " : ", ")
-			<< "\"" << (cm.crop() ? cm.crop()->id() : "NULL crop") << "\":" << cm.to_json().dump() << endl;
-		isFirstItem = !isFirstItem && isFirstItem;
-	}
-	pout << "}," << endl;
-	pout << "\"climate-data\": [" << endl;
-	isFirstItem = true;
-	for(size_t i = 0, nosp = env.da.noOfStepsPossible(); i < nosp; i++)
-	{
-		pout
-			<< (isFirstItem ? "  " : ", ")
-			<< "[\"" << env.da.dateForStep(i).toIsoDateString()
-			<< "\", " << env.da.dataForTimestep(tavg, i)
-			<< ", " << env.da.dataForTimestep(precip, i)
-			<< ", " << env.da.dataForTimestep(globrad, i)
-			<< "]" << endl;
-		isFirstItem = !isFirstItem && isFirstItem;
-	}
-	pout << "]" << endl;
-	pout << "}" << endl;
+	pout << env.to_json().dump() << endl;
 	pout.flush();
 	pout.close();
 }
