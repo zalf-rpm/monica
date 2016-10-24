@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
-#include "../core/monica.h"
+#include "../core/monica-model.h"
 #include "cultivation-method.h"
 #include "climate/climate-common.h"
 #include "../io/output.h"
@@ -66,13 +66,9 @@ namespace Monica
     //! vector of elements holding the data of the single crops in the rotation
     std::vector<CultivationMethod> cropRotation;
 
-		std::vector<OId> dailyOutputIds;
-		std::vector<OId> monthlyOutputIds;
-		std::vector<OId> yearlyOutputIds;
-		std::vector<OId> runOutputIds;
-		std::vector<OId> cropOutputIds;
-		std::map<Tools::Date, std::vector<OId>> atOutputIds;
-
+		json11::Json events;
+		json11::Json outputs;
+		
     std::string customId;
 
     CentralParameterProvider params;
@@ -98,7 +94,7 @@ namespace Monica
 
   //------------------------------------------------------------------------------------------
 
-	
+	/*
 	//! structure holding all results of one monica run
 	class DLL_API Result
 	{
@@ -129,6 +125,19 @@ namespace Monica
 
 		std::string toString();
 	};
+	//*/
+
+	//---------------------------------------------------------------------------
+
+	struct StoreData
+	{
+		void storeResultsIfSpecApplies(const MonicaModel& monica);
+
+		Spec spec;
+		std::vector<OId> outputIds;
+		std::vector<Tools::J11Array> intermediateResults;
+		std::vector<Tools::J11Array> results;
+	};
 
 	//----------------------------------------------------------------------------
 
@@ -138,7 +147,7 @@ namespace Monica
   //! main function for running monica under a given Env(ironment)
 	//! @param env the environment completely defining what the model needs and gets
 	//! @return a structure with all the Monica results
-  DLL_API Result runMonica(Env env);
+  DLL_API Output runMonica(Env env);
 }
 
 #endif

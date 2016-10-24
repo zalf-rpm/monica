@@ -23,7 +23,7 @@
 	"path-to-output": "./",
 	
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
-	"include-file-base-path": "./",
+	"include-file-base-path": "../",
 	
 	"__configuration options for the monica outputs": "",
 	"output": { 
@@ -38,6 +38,87 @@
 			"csv-separator": ","
 		},
 		
+		"events": [
+			{	"start": "xxxx-05-01",
+				"end": "xxxx-07-31",
+				"from": "xxxx-xx-20",
+				"to": "xxxx-xx-31"}, ["Year", ["SOC", [1, 20]]],
+
+			"daily", [
+				"Date", "Crop", "Stage", "Yield", "SumYield", ["SOC", [1, 6]], "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
+			],
+
+			"monthly", [
+				"Year", "Month",
+				["SOC", [1, 1, "AVG"]], ["SOC", [1, 3, "AVG"]],
+				["WaterContent", [1, 9, "AVG"]], "Recharge", "NLeach", 
+				["SnowD", "MAX"], ["SnowD", "SUM"], ["FrostD", "SUM"],
+				["RunOff", "SUM"], ["NH3", "SUM"], ["Precip", "SUM"], "Act_ET"
+			],
+
+			"run", [["Precip", "SUM"]],
+
+			"xxxx-03-31", [
+				"Year",
+				["N", [1, 9, "SUM"]],
+				["STemp", [1, 3, "SUM"]],
+				["STemp", [1, 3, "AVG"]],
+				["NO3", [1, 9, "SUM"]],
+				["Mois", [1, 3, "AVG"]],
+				["Mois", [4, 6, "AVG"]],
+				["Mois", [7, 9, "AVG"]],
+				["Mois", [1, 9, "AVG"]],
+				"Recharge",
+				["CapillaryRise", [1, 3, "AVG"]], 
+				["CapillaryRise", [4, 6, "AVG"]],
+				["CapillaryRise", [7, 9, "AVG"]],
+				["PercolationRate", [1, 3, "AVG"]],
+				["PercolationRate", [4, 6, "AVG"]],
+				["PercolationRate", [7, 9, "AVG"]],
+				"Act_ET", "Act_Ev", "NH3",
+				"Evapotranspiration", "Evaporation", "Transpiration"
+			],
+
+			{	"start": "xxxx-05-01",
+				"end": "xxxx-07-31",
+				"at": "xxxx-xx-15"}, ["Date", "Stage", "TempSum"]
+		],
+
+
+		"events2": {
+			"daily": [],
+			"xxxx-xx-xx": [],
+			"xx-xx": [],
+			"xx": [],
+			
+			"monthly": [],
+			"f:xxxx-xx-01,t:xxxx-xx-31": [],
+			"monthly:2000-xx-01|2005-xx-31": [],
+			
+			"s:xxxx-05-01,f:xxxx-xx-20,t:xxxx-xx-25,e:xxxx-07-31": [],
+			"start:xxxx-05-01, from:xxxx-xx-20, to:xxxx-xx-25, end:xxxx-07-31": [],
+			"start:xxxx-05-01, from:xxxx-xx-20, to:xxxx-xx-31, end:xxxx-07-31": [],
+
+			"xxxx-05-01|xxxx-06-15": [],
+			"xxxx-05-xx|xxxx-06-xx": [],
+
+			"xxxx-xx-12": [],
+			"xxxx-xx-01|xxxx-xx-15": [],
+			"xx-01|xx-15": [],
+
+			"seeding": [],
+			"harvesting": [],
+			"seeding|harvesting": [],
+			"start: 2010, end: 2020, from: xxxx-05-01, to: xxxx-07-31": [],
+
+			"Stage > 1": [],
+			"Stage = 1": [],
+			"Stage = 1|Stage = 3": [], 
+			"[Mois, 1] < 0.5": ["Date", ["Mois", 1]],
+
+			"run": []
+		},
+
 		"__what data to include in the daily monica output": "",
 		"_daily": [
 			"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",

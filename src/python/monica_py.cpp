@@ -22,14 +22,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "../core/monica.h"
+#include "../core/monica-model.h"
 #include "../run/env-from-json-config.h"
 #include "../run/run-monica.h"
 #include "tools/date.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
 #include "tools/json11-helper.h"
-#include "../io/output.h"
+#include "../io/build-output.h"
 #include "climate/climate-file-io.h"
 
 using namespace boost::python;
@@ -50,13 +50,10 @@ dict rm(dict params)
 	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
 	activateDebug = env.debugMode;
 		
-	auto res = Monica::runMonica(env);
+	auto out = Monica::runMonica(env);
 	
-	map<string, Json> m;
-	addOutputToResultMessage(res.out, m);
-
 	dict d;
-	for(auto& p : m)
+	for(auto& p : out.to_json().object_items())
 		d[p.first] = p.second.dump();
 
 	return d;

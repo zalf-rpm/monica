@@ -27,7 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <numeric>
 
 #include "tools/debug.h"
-#include "monica.h"
+#include "monica-model.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
 #include "voc-common.h"
@@ -68,7 +68,7 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   , _soilOrganicPs(cpp.userSoilOrganicParameters)
   , _simPs(cpp.simulationParameters)
   //, _writeOutputFiles(cpp.writeOutputFiles())
-  , _pathToOutputDir(cpp.pathToOutputDir())
+  //, _pathToOutputDir(cpp.pathToOutputDir())
   , _groundwaterInformation(cpp.groundwaterInformation)
   , _soilColumn(_simPs.p_LayerThickness,
                 _soilOrganicPs.ps_MaxMineralisationDepth,
@@ -477,12 +477,26 @@ void MonicaModel::applyTillage(double depth)
 	_soilColumn.applyTillage(depth);
 }
 
+void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateData)
+{
+	_currentStepDate = date;
+	_currentStepClimateData = climateData;
+
+	if(isCropPlanted())
+		cropStep();//date, climateData);
+
+	generalStep();//date, climateData);
+}
+
 /**
  * @brief Simulating the soil processes for one time step.
  * @param stepNo Number of current processed step
  */
-void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
+void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 {
+	auto date = _currentStepDate;
+	auto climateData = _currentStepClimateData;
+
   unsigned int julday = date.julianDay();
 //  unsigned int year = currentDate.year();
   bool leapYear = date.isLeapYear();
@@ -568,32 +582,11 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
   _soilTransport.step();
 }
 
-void MonicaModel::generalStep(unsigned int stepNo)
+
+void MonicaModel::cropStep()//Tools::Date date, std::map<Climate::ACD, double> climateData)
 {
-  Date startDate = _dataAccessor.startDate();
-  Date currentDate = startDate + stepNo;
-  double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
-  double tavg = _dataAccessor.dataForTimestep(Climate::tavg, stepNo);
-  double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
-  double precip = _dataAccessor.dataForTimestep(Climate::precip, stepNo);
-  double wind = _dataAccessor.dataForTimestep(Climate::wind, stepNo);
-  double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-
-  // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
-       _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
-
-  generalStep(currentDate, {{Climate::tmin, tmin},
-                            {Climate::tavg, tavg},
-                            {Climate::tmax, tmax},
-                            {Climate::precip, precip},
-                            {Climate::wind, wind},
-                            {Climate::globrad, globrad},
-                            {Climate::relhumid, relhumid}});
-}
-
-void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> climateData)
-{
+	auto date = _currentStepDate;
+	auto climateData = _currentStepClimateData;
   // do nothing if there is no crop
   if(!_currentCropGrowth)
     return;
@@ -666,40 +659,6 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
 
 	//debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
 	_currentCropGrowth->calculateVOCEmissions(mcd);
-}
-
-
-/**
- * @brief Simulating crop growth for one time step.
- */
-void MonicaModel::cropStep(unsigned int stepNo)
-{
-  Date startDate = _dataAccessor.startDate();
-  Date currentDate = startDate + stepNo;
-  double tavg = _dataAccessor.dataForTimestep(Climate::tavg, stepNo);
-  double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
-  double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
-  double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-
-  // test if data for sunhours are available; if not, value is set to -1.0
-  double sunhours = _dataAccessor.hasAvailableClimateData(Climate::sunhours) ?
-	  _dataAccessor.dataForTimestep(Climate::sunhours, stepNo) : -1.0;		
-
-  // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
-      _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
-
-  double wind =  _dataAccessor.dataForTimestep(Climate::wind, stepNo);
-  double precip =  _dataAccessor.dataForTimestep(Climate::precip, stepNo);
-
-  cropStep(currentDate, {{Climate::tmin, tmin},
-                         {Climate::tavg, tavg},
-                         {Climate::tmax, tmax},
-                         {Climate::precip, precip},
-                         {Climate::wind, wind},
-                         {Climate::globrad, globrad},
-                         {Climate::relhumid, relhumid},
-                         {Climate::sunhours, sunhours}});
 }
 
 /**

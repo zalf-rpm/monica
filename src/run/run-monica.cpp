@@ -33,6 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "db/abstract-db-connections.h"
 #include "tools/json11-helper.h"
 #include "tools/algorithms.h"
+#include "../io/build-output.h"
 
 using namespace Monica;
 using namespace std;
@@ -77,21 +78,18 @@ Errors Env::merge(json11::Json j)
 
 	es.append(da.merge(j["da"]));
 
-	es.append(extractAndStore(j["cropRotation"], cropRotation));
-	es.append(extractAndStore(j["dailyOutputIds"], dailyOutputIds));
-	es.append(extractAndStore(j["monthlyOutputIds"], monthlyOutputIds));
-	es.append(extractAndStore(j["yearlyOutputIds"], yearlyOutputIds));
-	for(auto& p : j["atOutputIds"].object_items())
-		es.append(extractAndStore(p.second, atOutputIds[Date::fromIsoDateString(p.first)]));
-	es.append(extractAndStore(j["cropOutputIds"], cropOutputIds));
-	es.append(extractAndStore(j["runOutputIds"], runOutputIds));
+	events = j["events"];
+	outputs = j["outputs"];
 
+	es.append(extractAndStore(j["cropRotation"], cropRotation));
+	
 	set_bool_value(debugMode, j, "debugMode");
 	
 	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
 	set_string_value(customId, j, "customId");
+	events = j["events"];
 
 	return es;
 }
@@ -102,25 +100,17 @@ json11::Json Env::to_json() const
 	for(const auto& c : cropRotation)
 		cr.push_back(c.to_json());
 
-	J11Object aoids;
-	for(auto p : atOutputIds)
-		aoids[p.first.toIsoDateString()] = p.second;
-
 	return json11::Json::object{
 		 {"type", "Env"}
 		,{"params", params.to_json()}
 		,{"cropRotation", cr}
-		,{"dailyOutputIds", dailyOutputIds}
-		,{"monthlyOutputIds", monthlyOutputIds}
-		,{"yearlyOutputIds", yearlyOutputIds}
-		,{"atOutputIds", aoids}
-		,{"cropOutputIds", cropOutputIds}
-		,{"runOutputIds", runOutputIds}
 		,{"da", da.to_json()}
 		,{"debugMode", debugMode}
 		,{"pathToClimateCSV", pathToClimateCSV}
 		,{"csvViaHeaderOptions", csvViaHeaderOptions}
 		,{"customId", customId}
+		,{"events", events}
+		,{"outputs", outputs}
 	};
 }
 
@@ -179,6 +169,7 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 * @param id ResultId of output
 * @return Vector of result values
 */
+/*
 std::vector<double> Result::getResultsById(int id)
 {
 	// test if crop results are requested
@@ -203,6 +194,7 @@ std::vector<double> Result::getResultsById(int id)
 	return generalResults[(ResultId)id];
 }
 
+
 std::string Result::toString()
 {
 	ostringstream s;
@@ -217,11 +209,12 @@ std::string Result::toString()
 
 	return s.str();
 }
+//*/
 
 //--------------------------------------------------------------------------------------
 
-pair<Date, map<Climate::ACD, double>>
-climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
+pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAccessor& da,
+																												 size_t stepNo)
 {
 	Date startDate = da.startDate();
 	Date currentDate = startDate + stepNo;
@@ -237,14 +230,15 @@ climateDataForStep(const Climate::DataAccessor& da, size_t stepNo)
 		? da.dataForTimestep(Climate::relhumid, stepNo)
 		: -1.0;
 
-	map<Climate::ACD, double> m{
-		{ Climate::tmin, tmin },
-	{ Climate::tavg, tavg },
-	{ Climate::tmax, tmax },
-	{ Climate::precip, precip },
-	{ Climate::wind, wind },
-	{ Climate::globrad, globrad },
-	{ Climate::relhumid, relhumid }};
+	map<Climate::ACD, double> m
+	{{ Climate::tmin, tmin }
+	,{ Climate::tavg, tavg }
+	,{ Climate::tmax, tmax }
+	,{ Climate::precip, precip }
+	,{ Climate::wind, wind }
+	,{ Climate::globrad, globrad }
+	,{ Climate::relhumid, relhumid }
+	};
 	return make_pair(currentDate, m);
 }
 
@@ -267,18 +261,10 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 //-----------------------------------------------------------------------------
 
 void storeResults(const vector<OId>& outputIds,
-									vector<BOTRes::ResultVector>& results,
-									MonicaRefs& mr,
-									int timestep,
-									Date currentDate)
+									vector<J11Array>& results,
+									const MonicaModel& monica)
 {
 	const auto& ofs = buildOutputTable().ofs;
-
-	auto mrr = MonicaRefs(mr);
-	mrr.timestep = timestep;
-	mrr.currentDate = currentDate;
-	mrr.mcg = mrr.monica->cropGrowth();
-	mrr.cropPlanted = mrr.monica->isCropPlanted();
 
 	size_t i = 0;
 	results.resize(outputIds.size());
@@ -286,12 +272,136 @@ void storeResults(const vector<OId>& outputIds,
 	{
 		auto ofi = ofs.find(oid.id);
 		if(ofi != ofs.end())
-			ofi->second(mrr, results[i], oid);
+			ofi->second(monica, results[i], oid);
 		++i;
 	}
 };
 
-Result Monica::runMonica(Env env)
+//-----------------------------------------------------------------------------
+
+void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
+{
+	auto cd = monica.currentStepDate();
+
+	auto y = cd.year();
+	auto m = cd.month();
+	auto d = cd.day();
+
+	//check if we are in the start/end range or no year, month, day specified
+	if(spec.start.value().year.isValue() && y < spec.start.value().year.value()
+		 || spec.end.value().year.isValue() && y > spec.end.value().year.value())
+		return;
+	if(spec.start.value().month.isValue() && m < spec.start.value().month.value()
+		 || spec.end.value().month.isValue() && m > spec.end.value().month.value())
+		return;
+	if(spec.start.value().day.isValue() && d < spec.start.value().day.value()
+		 || spec.end.value().day.isValue() && d > spec.end.value().day.value())
+		return;
+	
+	//at spec takes precedence over range spec, if both would be set
+	if(spec.isAt())
+	{
+		if((spec.at.value().year.isNothing() || y == spec.at.value().year.value())
+			 && (spec.at.value().month.isNothing() || m == spec.at.value().month.value())
+			 && (spec.at.value().day.isNothing()
+					 || d == spec.at.value().day.value()
+					 || (spec.at.value().day.isValue() && d < spec.at.value().day.value() && d == cd.daysInMonth())))
+		{
+			storeResults(outputIds, results, monica);
+		}
+	}
+	//spec.at.isValue() can also mean "xxxx-xx-xx" = daily values
+	else if(spec.at.isValue())
+	{
+		storeResults(outputIds, results, monica);
+	}
+	else
+	{
+		//check if we are in the aggregating from/to range
+		if((spec.from.value().year.isNothing() || y >= spec.from.value().year.value())
+			 && (spec.to.value().year.isNothing() || y <= spec.to.value().year.value()))
+		{
+			if((spec.from.value().month.isNothing() || m >= spec.from.value().month.value())
+				 && (spec.to.value().month.isNothing() || m <= spec.to.value().month.value()))
+			{
+				if((spec.from.value().day.isNothing() || d >= spec.from.value().day.value())
+					 && (spec.to.value().day.isNothing() || d <= spec.to.value().day.value()))
+				{
+					storeResults(outputIds, intermediateResults, monica);
+
+					//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
+					//aggregate intermediate values
+					if((spec.to.value().year.isNothing() || y == spec.to.value().year.value())
+						 && (spec.to.value().month.isNothing() || m == spec.to.value().month.value())
+						 && ((spec.to.value().day.isValue() && d == spec.to.value().day.value())
+								 || (spec.to.value().day.isValue() && d < spec.to.value().day.value() && d == cd.daysInMonth())))
+					{
+						size_t i = 0;
+						results.resize(intermediateResults.size());
+						for(auto oid : outputIds)
+						{
+							if(!intermediateResults.empty())
+							{
+								auto& ivs = intermediateResults.at(i);
+								if(ivs.front().is_string())
+								{
+									switch(oid.timeAggOp)
+									{
+									case OId::FIRST: results[i].push_back(ivs.front()); break;
+									case OId::LAST: results[i].push_back(ivs.back()); break;
+									default: results[i].push_back(ivs.front());
+									}
+								}
+								else
+									results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+
+								intermediateResults[i].clear();
+							}
+							++i;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date endDate)
+{
+	map<string, Json> shortcuts = 
+	{{"daily", J11Object{{"at", "xxxx-xx-xx"}}}
+	,{"monthly", J11Object{{"from", "xxxx-xx-01"}, {"to", "xxxx-xx-31"}}}
+	,{"yearly", J11Object{{"from", "xxxx-01-01"}, {"to", "xxxx-12-31"}}}
+	,{"run", J11Object{{"from", startDate.toIsoDateString()}, {"to", endDate.toIsoDateString()}}}
+	};
+
+	vector<StoreData> storeData;
+
+	auto e2os = event2oids.array_items();
+	for(size_t i = 0, size = e2os.size(); i < size; i+=2)
+	{
+		StoreData sd;
+		sd.spec.origSpec = e2os[i];
+		Json spec = sd.spec.origSpec;
+		if(spec.is_string())
+		{
+			auto ss = spec.string_value();
+			auto ci = shortcuts.find(ss);
+			if(ci != shortcuts.end())
+				spec = ci->second;
+		}
+		else if(!spec.is_object())
+			continue;
+		sd.spec.merge(spec);
+		sd.outputIds = parseOutputIds(e2os[i+1].array_items());
+		
+		storeData.push_back(sd);
+	}
+
+	return storeData;
+}
+
+Output Monica::runMonica(Env env)
 {
 	activateDebug = env.debugMode;
 	if(activateDebug)
@@ -299,14 +409,13 @@ Result Monica::runMonica(Env env)
 		writeDebugInputs(env, "inputs.json");
 	}
 
-	Result res;
-	res.customId = env.customId;
-	res.out.customId = env.customId;
+	Output out;
+	out.customId = env.customId;
 
 	if(env.cropRotation.empty())
 	{
 		debug() << "Error: Crop rotation is empty!" << endl;
-		return res;
+		return out;
 	}
 
 	debug() << "starting Monica" << endl;
@@ -341,16 +450,28 @@ Result Monica::runMonica(Env env)
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 	bool currentCropIsPlanted = false;
 
-	vector<BOTRes::ResultVector> intermediateMonthlyResults;
-	vector<BOTRes::ResultVector> intermediateYearlyResults;
-	vector<BOTRes::ResultVector> intermediateRunResults;
-	vector<BOTRes::ResultVector> intermediateCropResults;
-	
-	MonicaRefs monicaRefs
+	vector<J11Array> intermediateMonthlyResults;
+	vector<J11Array> intermediateYearlyResults;
+	vector<J11Array> intermediateRunResults;
+	vector<J11Array> intermediateCropResults;
+
+	std::vector<OId> dailyOutputIds = parseOutputIds(env.outputs["daily"].array_items());
+	std::vector<OId> monthlyOutputIds = parseOutputIds(env.outputs["monthly"].array_items());
+	std::vector<OId> yearlyOutputIds = parseOutputIds(env.outputs["yearly"].array_items());
+	std::vector<OId> runOutputIds = parseOutputIds(env.outputs["run"].array_items());
+	std::vector<OId> cropOutputIds = parseOutputIds(env.outputs["crop"].array_items());
+	std::map<Tools::Date, std::vector<OId>> atOutputIds;
+	if(env.outputs["at"].is_object())
 	{
-		&monica, &monica.soilTemperature(), &monica.soilMoisture(), &monica.soilOrganic(), &monica.soilColumn(),
-		&monica.soilTransport(), monica.cropGrowth(), monica.isCropPlanted(), env.da, 0, currentDate
-	};
+		for(auto p : env.outputs["at"].object_items())
+		{
+			Date d = Date::fromIsoDateString(p.first);
+			if(d.isValid())
+				atOutputIds[d] = parseOutputIds(p.second.array_items());
+		}
+	}
+
+	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
 
 	//if for some reason there are no applications (no nothing) in the
 	//production process: quit
@@ -358,15 +479,16 @@ Result Monica::runMonica(Env env)
 	{
 		debug() << "start of production-process: " << currentCM.toString()
 			<< " is not valid" << endl;
-		return res;
+		return out;
 	}
 
+	//*
 	auto aggregateCropOutput = [&]()
 	{
 		size_t i = 0;
-		auto& vs = res.out.crop[monica.currentCrop()->id()];
+		auto& vs = out.crop[monica.currentCrop()->id()];
 		vs.resize(intermediateCropResults.size());
-		for(auto oid : env.cropOutputIds)
+		for(auto oid : cropOutputIds)
 		{
 			if(!intermediateCropResults.empty())
 			{
@@ -387,6 +509,7 @@ Result Monica::runMonica(Env env)
 			++i;
 		}
 	};
+	//*/
 	
 	//beware: !!!! if there are absolute days used, then there is basically
 	//no rotation if the last crop in the crop rotation has changed
@@ -458,7 +581,7 @@ Result Monica::runMonica(Env env)
 				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			//apply everything to do at current day
 			//cout << currentPP.toString().c_str() << endl;
-			currentCM.apply(nextCMApplicationDate, &monica, {{"Harvest", aggregateCropOutput}});
+			currentCM.apply(nextCMApplicationDate, &monica);// , {{"Harvest", aggregateCropOutput}});
 
 			//get the next application date to wait for (either absolute or relative)
 			Date prevPPApplicationDate = nextCMApplicationDate;
@@ -483,27 +606,6 @@ Result Monica::runMonica(Env env)
 
 			if(!nextAbsoluteCMApplicationDate.isValid())
 			{
-				//get yieldresults for crop
-				CMResult r = currentCM.cropResult();
-				r.customId = currentCM.customId();
-				r.date = currentDate;
-
-				if(!env.params.simulationParameters.p_UseSecondaryYields)
-					r.results[secondaryYield] = 0;
-				r.results[sumFertiliser] = monica.sumFertiliser();
-				r.results[daysWithCrop] = monica.daysWithCrop();
-				r.results[NStress] = monica.getAccumulatedNStress();
-				r.results[WaterStress] = monica.getAccumulatedWaterStress();
-				r.results[HeatStress] = monica.getAccumulatedHeatStress();
-				r.results[OxygenStress] = monica.getAccumulatedOxygenStress();
-
-				res.pvrs.push_back(r);
-				//        debug() << "py: " << r.pvResults[primaryYield] << endl;
-				//            << " sy: " << r.pvResults[secondaryYield]
-				//            << " iw: " << r.pvResults[sumIrrigation]
-				//            << " sf: " << monica.sumFertiliser()
-				//            << endl;
-
 				//to count the applied fertiliser for the next production process
 				monica.resetFertiliserCounter();
 
@@ -531,49 +633,46 @@ Result Monica::runMonica(Env env)
 				nextAbsoluteCMApplicationDate.addYears(1);
 		}
 
-		const auto& dateAndClimateDataP = climateDataForStep(env.da, d);
-
-		// run crop step
-		if(monica.isCropPlanted())
-			monica.cropStep(currentDate, dateAndClimateDataP.second);
-		
-		monica.generalStep(currentDate, dateAndClimateDataP.second);
+		monica.step(currentDate, climateDataForStep(env.da, d).second);
 
 		//-------------------------------------------------------------------------
 		//store results
 		
+		for(auto& s : store)
+			s.storeResultsIfSpecApplies(monica);
+
+		//*
 		//daily results
 		//----------------
-		storeResults(env.dailyOutputIds, res.out.daily, monicaRefs, d, currentDate);
+		storeResults(dailyOutputIds, out.daily, monica);
 
 		//crop results
 		//----------------
 		if(monica.isCropPlanted())
-			storeResults(env.cropOutputIds,
+			storeResults(cropOutputIds,
 									 intermediateCropResults,
-									 monicaRefs,
-									 d, currentDate);
+									 monica);
 
 		//at (a certain time) results
 		//-------------------
 		//try to find exact date
-		auto ati = env.atOutputIds.find(currentDate);
+		auto ati = atOutputIds.find(currentDate);
 		//is not exact date, try to find relative one
-		if(ati == env.atOutputIds.end())
-			ati = env.atOutputIds.find(currentDate.toRelativeDate());
-		if(ati != env.atOutputIds.end())
-			storeResults(ati->second, res.out.at[ati->first], monicaRefs, d, currentDate);
+		if(ati == atOutputIds.end())
+			ati = atOutputIds.find(currentDate.toRelativeDate());
+		if(ati != atOutputIds.end())
+			storeResults(ati->second, out.at[ati->first], monica);
 
 		if(currentDate.month() != currentMonth 
 			 || d == nods - 1)
 		{
 			size_t i = 0;
-			res.out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
-			for(auto oid : env.monthlyOutputIds)
+			out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
+			for(auto oid : monthlyOutputIds)
 			{
 				if(!intermediateMonthlyResults.empty())
 				{
-					res.out.monthly[currentMonth][i].push_back(applyOIdOP(oid.timeAggOp, intermediateMonthlyResults.at(i)));
+					out.monthly[currentMonth][i].push_back(applyOIdOP(oid.timeAggOp, intermediateMonthlyResults.at(i)));
 					intermediateMonthlyResults[i].clear();
 				}
 				++i;
@@ -582,7 +681,7 @@ Result Monica::runMonica(Env env)
 			currentMonth = currentDate.month();
 		}
 		else
-			storeResults(env.monthlyOutputIds, intermediateMonthlyResults, monicaRefs, d, currentDate);
+			storeResults(monthlyOutputIds, intermediateMonthlyResults, monica);
 
 		//yearly results 
 		//------------------
@@ -590,34 +689,44 @@ Result Monica::runMonica(Env env)
 			 && d > 0)
 		{
 			size_t i = 0;
-			res.out.yearly.resize(intermediateYearlyResults.size());
-			for(auto oid : env.yearlyOutputIds)
+			out.yearly.resize(intermediateYearlyResults.size());
+			for(auto oid : yearlyOutputIds)
 			{
 				if(!intermediateYearlyResults.empty())
 				{
-					res.out.yearly[i].push_back(applyOIdOP(oid.timeAggOp, intermediateYearlyResults.at(i)));
+					out.yearly[i].push_back(applyOIdOP(oid.timeAggOp, intermediateYearlyResults.at(i)));
 					intermediateYearlyResults[i].clear();
 				}
 				++i;
 			}
 		}
 		else
-			storeResults(env.yearlyOutputIds, intermediateYearlyResults, monicaRefs, d, currentDate);
+			storeResults(yearlyOutputIds, intermediateYearlyResults, monica);
 
 		//(whole) run results 
-		storeResults(env.runOutputIds, intermediateRunResults, monicaRefs, d, currentDate);
+		storeResults(runOutputIds, intermediateRunResults, monica);
+		//*/
 	}
 
+	//*
 	//store/aggregate results for a single run
 	size_t i = 0;
-	res.out.run.resize(env.runOutputIds.size());
-	for(auto oid : env.runOutputIds)
+	out.run.resize(runOutputIds.size());
+	for(auto oid : runOutputIds)
 	{
 		if(!intermediateRunResults.empty())
-			res.out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
+			out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
 		++i;
+	}
+	//*/
+	
+	for(const auto& sd : store)
+	{
+		auto os = sd.spec.origSpec.dump();
+		out.origSpec2oids[os] = sd.outputIds;
+		out.origSpec2results[os] = sd.results;
 	}
 	
 	debug() << "returning from runMonica" << endl;
-	return res;
+	return out;
 }

@@ -111,9 +111,6 @@
     <ClInclude Include="..\..\src\core\crop.h">
       <Filter>Headerdateien\monica\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\monica.h">
-      <Filter>Headerdateien\monica\core</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\monica-parameters.h">
       <Filter>Headerdateien\monica\core</Filter>
     </ClInclude>
@@ -159,6 +156,12 @@
     <ClInclude Include="..\..\src\io\output.h">
       <Filter>Headerdateien\monica\io</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\monica-model.h">
+      <Filter>Headerdateien\monica\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\io\build-output.h">
+      <Filter>Headerdateien\monica\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\db\sqlite3.c">
@@ -198,9 +201,6 @@
       <Filter>Quelldateien\monica\run</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\crop.cpp">
-      <Filter>Quelldateien\monica\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\monica.cpp">
       <Filter>Quelldateien\monica\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\monica-parameters.cpp">
@@ -243,6 +243,12 @@
       <Filter>Quelldateien\tools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\io\output.cpp">
+      <Filter>Quelldateien\monica\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\monica-model.cpp">
+      <Filter>Quelldateien\monica\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\io\build-output.cpp">
       <Filter>Quelldateien\monica\io</Filter>
     </ClCompile>
   </ItemGroup>

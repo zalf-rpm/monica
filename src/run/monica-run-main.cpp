@@ -211,7 +211,7 @@ int main(int argc, char** argv)
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
 
-		Output output = runMonica(env).out;
+		Output output = runMonica(env);
 
 		if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
 			pathToOutputFile = fixSystemSeparator(simm["path-to-output"].string_value() + "/"
@@ -242,28 +242,28 @@ int main(int argc, char** argv)
 
 		if(!output.daily.empty())
 		{
-			writeOutputHeaderRows(out, env.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, env.dailyOutputIds, output.daily, csvSep);
+			writeOutputHeaderRows(out, output.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutput(out, output.dailyOutputIds, output.daily, csvSep);
 		}
 
 		if(!output.monthly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutputHeaderRows(out, output.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.monthly)
-				writeOutput(out, env.monthlyOutputIds, p.second, csvSep);
+				writeOutput(out, output.monthlyOutputIds, p.second, csvSep);
 		}
 
 		if(!output.yearly.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, env.yearlyOutputIds, output.yearly, csvSep);
+			writeOutputHeaderRows(out, output.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutput(out, output.yearlyOutputIds, output.yearly, csvSep);
 		}
 
 		if(!output.at.empty())
 		{
-			for(auto& p : env.atOutputIds)
+			for(auto& p : output.atOutputIds)
 			{
 				out << endl;
 				auto ci = output.at.find(p.first);
@@ -287,16 +287,16 @@ int main(int argc, char** argv)
 		if(!output.crop.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutputHeaderRows(out, output.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
 			for(auto& p : output.crop)
-				writeOutput(out, env.cropOutputIds, p.second, csvSep);
+				writeOutput(out, output.cropOutputIds, p.second, csvSep);
 		}
 
 		if(!output.run.empty())
 		{
 			out << endl;
-			writeOutputHeaderRows(out, env.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, env.runOutputIds, makeWriteOutputCompatible(output.run), csvSep);
+			writeOutputHeaderRows(out, output.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutput(out, output.runOutputIds, makeWriteOutputCompatible(output.run), csvSep);
 		}
 
 		if(writeOutputFile)

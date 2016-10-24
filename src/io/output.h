@@ -26,6 +26,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
+#include "../core/monica-model.h"
+
 
 namespace Monica
 {
@@ -39,32 +41,6 @@ namespace Monica
 
 	//---------------------------------------------------------------------------
 
-	class MonicaModel;
-	class SoilTemperature;
-	class SoilMoisture;
-	class SoilOrganic;
-	class SoilColumn;
-	class SoilTransport;
-	class CropGrowth;
-
-	struct MonicaRefs
-	{
-		const MonicaModel* monica;
-		const SoilTemperature* temp;
-		const SoilMoisture* moist;
-		const SoilOrganic* org;
-		const SoilColumn* soilc;
-		const SoilTransport* trans;
-		const CropGrowth* mcg;
-		bool cropPlanted;
-		Climate::DataAccessor da;
-		int timestep;
-		Tools::Date currentDate;
-	};
-
-	//---------------------------------------------------------------------------
-
-	
 	struct DLL_API OId : public Tools::Json11Serializable
 	{
 		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
@@ -128,16 +104,55 @@ namespace Monica
 		int fromLayer{-1}, toLayer{-1};
 	};
 
-	double applyOIdOP(OId::OP op, const std::vector<double>& vs);
+	//---------------------------------------------------------------------------
 
-	json11::Json applyOIdOP(OId::OP op, const std::vector<json11::Json>& js);
+	struct DMY
+	{
+		Tools::Maybe<std::size_t> day;
+		Tools::Maybe<std::size_t> month;
+		Tools::Maybe<int> year;
+	};
+
+	struct Spec : public Tools::Json11Serializable
+	{
+		Spec() {}
+
+		Spec(json11::Json j) { merge(j); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+
+		json11::Json origSpec;
+
+		Tools::Maybe<DMY> start;
+		Tools::Maybe<DMY> end;
+
+		Tools::Maybe<DMY> from;
+		Tools::Maybe<DMY> to;
+
+		Tools::Maybe<DMY> at;
+
+		bool isYearRange() const { return from.value().year.isValue() && to.value().year.isValue(); }
+		bool isMonthRange() const { return from.value().month.isValue() && to.value().month.isValue(); }
+		bool isDayRange() const { return from.value().day.isValue() && to.value().day.isValue(); }
+
+		bool isAt() const { return at.isValue() && (at.value().year.isValue() || at.value().month.isValue() || at.value().day.isValue()); }
+		bool isRange() const { return !isAt(); }
+	};
 
 	//---------------------------------------------------------------------------
-		
-	DLL_API std::vector<OId> parseOutputIds(const Tools::J11Array& oidArray);
 
-	struct DLL_API Output
+	struct DLL_API Output : public Tools::Json11Serializable
 	{
+		Output() {}
+
+		Output(json11::Json object);
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+		
 		typedef int Id;
 		typedef int Month;
 		typedef int Year;
@@ -151,23 +166,20 @@ namespace Monica
 		std::map<SpeciesAndCultivarId, std::vector<Tools::J11Array>> crop;
 		std::vector<json11::Json> run;
 		std::string customId;
+
+		std::vector<OId> dailyOutputIds;
+		std::vector<OId> monthlyOutputIds;
+		std::vector<OId> yearlyOutputIds;
+		std::vector<OId> runOutputIds;
+		std::vector<OId> cropOutputIds;
+		std::map<Tools::Date, std::vector<OId>> atOutputIds;
+
+		std::map<std::string, std::vector<OId>> origSpec2oids;
+		std::map<std::string, std::vector<Tools::J11Array>> origSpec2results;
 	};
 
-	DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
-	DLL_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
-
-	//-----------------------------------------------------------------------------
-
-	struct DLL_API BOTRes
-	{
-#ifndef JUST_OUTPUTS 
-		typedef std::vector<json11::Json> ResultVector;
-		std::map<int, std::function<void(MonicaRefs&, ResultVector&, OId)>> ofs;
-#endif
-		std::map<std::string, Result2> name2result;
-	};
-
-	DLL_API BOTRes& buildOutputTable();
+	//DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
+	//DLL_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
 }  
 
 #endif 

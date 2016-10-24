@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../run/run-monica.h"
 #include "../run/run-monica-zmq.h"
 #include "../io/database-io.h"
-#include "../core/monica.h"
+#include "../core/monica-model.h"
 #include "tools/json11-helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
@@ -232,9 +232,9 @@ int main(int argc, char** argv)
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
 
-		Output output;
-		Json res = sendZmqRequestMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
-		addResultMessageToOutput(res.object_items(), output);
+		
+		Json out_ = sendZmqRequestMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
+		Output output(out_);
 
 		if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
 			pathToOutputFile = fixSystemSeparator(simm["path-to-output"].string_value() + "/"

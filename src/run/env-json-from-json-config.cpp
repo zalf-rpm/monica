@@ -478,6 +478,9 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 
 	env["params"] = cpp;
 	env["cropRotation"] = cropj["cropRotation"];
+	env["events"] = simj["output"]["events"];
+	env["outputs"] = simj["output"];
+	/*
 	env["dailyOutputIds"] = parseOutputIds(simj["output"]["daily"].array_items());
 	env["monthlyOutputIds"] = parseOutputIds(simj["output"]["monthly"].array_items());
 	env["yearlyOutputIds"] = parseOutputIds(simj["output"]["yearly"].array_items());
@@ -494,6 +497,7 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 		env["atOutputIds"] = aoids;
 	}
 	env["runOutputIds"] = parseOutputIds(simj["output"]["run"].array_items());
+	//*/
 
 	auto climateDataSettings = simj["climate.csv-options"].object_items();
 	climateDataSettings["start-date"] = simj["start-date"];

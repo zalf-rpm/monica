@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../core/monica-parameters.h"
-#include "../core/monica.h"
+#include "../core/monica-model.h"
 #include "tools/debug.h"
 #include "soil/conversion.h"
 #include "soil/soil.h"
