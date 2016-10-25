@@ -41,9 +41,16 @@ namespace Monica
 	struct DLL_API BOTRes
 	{
 		std::map<int, std::function<void(const MonicaModel&, Tools::J11Array&, OId)>> ofs;
-		std::map<std::string, Result2> name2result;
+		std::map<std::string, OutputMetadata> name2metadata;
 	};
 
 	DLL_API BOTRes& buildOutputTable();
+
+	struct DLL_API BOTRes2
+	{
+		std::map<int, std::function<json11::Json(const MonicaModel&, OId)>> ofs;
+		std::map<std::string, OutputMetadata> name2metadata;
+	};
+	DLL_API BOTRes2& buildOutputTable2();
 }  
 #endif 

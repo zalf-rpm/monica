@@ -133,6 +133,8 @@ namespace Monica
 	{
 		void storeResultsIfSpecApplies(const MonicaModel& monica);
 
+		Tools::Maybe<bool> withinEventStartEndRange;
+		Tools::Maybe<bool> withinEventFromToRange;
 		Spec spec;
 		std::vector<OId> outputIds;
 		std::vector<Tools::J11Array> intermediateResults;

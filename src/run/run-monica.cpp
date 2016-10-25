@@ -264,7 +264,7 @@ void storeResults(const vector<OId>& outputIds,
 									vector<J11Array>& results,
 									const MonicaModel& monica)
 {
-	const auto& ofs = buildOutputTable().ofs;
+	const auto& ofs = buildOutputTable2().ofs;
 
 	size_t i = 0;
 	results.resize(outputIds.size());
@@ -272,7 +272,7 @@ void storeResults(const vector<OId>& outputIds,
 	{
 		auto ofi = ofs.find(oid.id);
 		if(ofi != ofs.end())
-			ofi->second(monica, results[i], oid);
+			results[i].push_back(ofi->second(monica, oid));
 		++i;
 	}
 };
@@ -281,6 +281,96 @@ void storeResults(const vector<OId>& outputIds,
 
 void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 {
+	//check for non date events, like seeding etc
+	if(!spec.time2event.empty() && !monica.currentEvents().empty())
+	{
+		if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value)
+		{
+			auto s = spec.time2event["start"];
+			if(!s.empty())
+			{
+				if(monica.currentEvents().find(s) != monica.currentEvents().end())
+					withinEventStartEndRange = true;
+			}
+		}
+		else if(withinEventStartEndRange.isValue())
+		{
+			auto e = spec.time2event["end"];
+			if(!e.empty())
+			{
+				if(monica.currentEvents().find(e) != monica.currentEvents().end())
+					withinEventStartEndRange = false;
+			}
+		}
+
+		bool isCurrentlyToEvent = false;
+		if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value)
+		{
+			auto f = spec.time2event["from"];
+			if(!f.empty())
+			{
+				if(monica.currentEvents().find(f) != monica.currentEvents().end())
+					withinEventFromToRange = true;
+			}
+		}
+		else if(withinEventFromToRange.isValue())
+		{
+			auto t = spec.time2event["to"];
+			if(!t.empty())
+			{
+				if(monica.currentEvents().find(t) != monica.currentEvents().end())
+					isCurrentlyToEvent = true;
+			}
+		}
+
+		auto a = spec.time2event["at"];
+		bool isAtEvent = !a.empty() && monica.currentEvents().find(a) != monica.currentEvents().end();
+
+		if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value)
+		{
+			if(isAtEvent)
+			{
+				storeResults(outputIds, results, monica);
+			} 
+			else if(withinEventFromToRange.isNothing() || withinEventFromToRange.value)
+			{
+				storeResults(outputIds, intermediateResults, monica);
+
+				if(isCurrentlyToEvent)
+				{
+					size_t i = 0;
+					results.resize(intermediateResults.size());
+					for(auto oid : outputIds)
+					{
+						if(!intermediateResults.empty())
+						{
+							auto& ivs = intermediateResults.at(i);
+							if(ivs.front().is_string())
+							{
+								switch(oid.timeAggOp)
+								{
+								case OId::FIRST: results[i].push_back(ivs.front()); break;
+								case OId::LAST: results[i].push_back(ivs.back()); break;
+								default: results[i].push_back(ivs.front());
+								}
+							}
+							else
+								results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+
+							intermediateResults[i].clear();
+						}
+						++i;
+					}
+					withinEventFromToRange = false;
+				}
+			}
+		}
+
+
+	}
+	
+	//is a date based event
+
 	auto cd = monica.currentStepDate();
 
 	auto y = cd.year();
@@ -373,6 +463,8 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 	,{"monthly", J11Object{{"from", "xxxx-xx-01"}, {"to", "xxxx-xx-31"}}}
 	,{"yearly", J11Object{{"from", "xxxx-01-01"}, {"to", "xxxx-12-31"}}}
 	,{"run", J11Object{{"from", startDate.toIsoDateString()}, {"to", endDate.toIsoDateString()}}}
+	,{"seeding", J11Object{{"at", "seeding"}}}
+	,{"harvesting", J11Object{{"at", "harvesting"}}}
 	};
 
 	vector<StoreData> storeData;

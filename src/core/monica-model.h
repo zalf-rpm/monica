@@ -28,6 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 #include <memory>
 #include <queue>
+#include <set>
 
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
@@ -143,6 +144,7 @@ namespace Monica
 		{
 			_dailySumIrrigationWater = 0.0;
 			_dailySumFertiliser = 0.0;
+			clearEvents();
 		}
 
 		void applyIrrigation(double amount, 
@@ -183,8 +185,7 @@ namespace Monica
 		double getSumNH3Volatilised() const;
 		double getsum30cmActDenitrificationRate() const;
 		double getETa() const;
-
-
+		
 		const SoilTemperature& soilTemperature() const { return _soilTemperature; }
 
 		const SoilMoisture& soilMoisture() const { return _soilMoisture; }
@@ -219,6 +220,10 @@ namespace Monica
 		Tools::Date currentStepDate() const { return _currentStepDate; }
 
 		const std::map<Climate::ACD, double>& currentStepClimateData() const { return _currentStepClimateData; }
+
+		void addEvent(std::string e) { _currentEvents.insert(e); }
+		void clearEvents() { _currentEvents.clear(); }
+		std::set<std::string> currentEvents() const { return _currentEvents; }
 
 	private:
 		const SiteParameters _sitePs;
@@ -256,6 +261,7 @@ namespace Monica
 
 		Tools::Date _currentStepDate;
 		std::map<Climate::ACD, double> _currentStepClimateData;
+		std::set<std::string> _currentEvents;
 
 		int p_daysWithCrop{0};
 		double p_accuNStress{0.0};

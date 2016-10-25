@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-	struct Result2
+	struct OutputMetadata
 	{
 		int id;
 		std::string name;
@@ -125,6 +125,8 @@ namespace Monica
 
 		json11::Json origSpec;
 
+		std::map<std::string, std::string> time2event;
+
 		Tools::Maybe<DMY> start;
 		Tools::Maybe<DMY> end;
 
@@ -139,6 +141,8 @@ namespace Monica
 
 		bool isAt() const { return at.isValue() && (at.value().year.isValue() || at.value().month.isValue() || at.value().day.isValue()); }
 		bool isRange() const { return !isAt(); }
+
+		static std::set<std::string> events();
 	};
 
 	//---------------------------------------------------------------------------

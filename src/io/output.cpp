@@ -154,65 +154,90 @@ Tools::Errors Spec::merge(json11::Json j)
 	DMY dmy;
 	if(!s.empty() && !s[0].empty())
 	{
-		if(s.size() > 0)
-			dmy.year = parseInt(s[0]);
-		if(s.size() > 1)
-			dmy.month = parseInt<size_t>(s[1]);
-		if(s.size() > 2)
-			dmy.day = parseInt<size_t>(s[2]);
-		start = dmy;
+		if(events().find(s[0]) != events().end())
+			time2event["start"] = s[0];
+		else
+		{
+			if(s.size() > 0)
+				dmy.year = parseInt(s[0]);
+			if(s.size() > 1)
+				dmy.month = parseInt<size_t>(s[1]);
+			if(s.size() > 2)
+				dmy.day = parseInt<size_t>(s[2]);
+			start = dmy;
+		}
 	}
 
 	auto e = splitString(j["end"].string_value(), "-");
 	dmy = DMY();
 	if(!e.empty() && !e[0].empty())
 	{
-		if(e.size() > 0)
-			dmy.year = parseInt(e[0]);
-		if(e.size() > 1)
-			dmy.month = parseInt<size_t>(e[1]);
-		if(e.size() > 2)
-			dmy.day = parseInt<size_t>(e[2]);
-		end = dmy;
+		if(events().find(e[0]) != events().end())
+			time2event["end"] = e[0];
+		else
+		{
+			if(e.size() > 0)
+				dmy.year = parseInt(e[0]);
+			if(e.size() > 1)
+				dmy.month = parseInt<size_t>(e[1]);
+			if(e.size() > 2)
+				dmy.day = parseInt<size_t>(e[2]);
+			end = dmy;
+		}
 	}
 
 	auto a = splitString(j["at"].string_value(), "-");
 	dmy = DMY();
 	if(!a.empty() && !a[0].empty())
 	{
-		if(a.size() > 0)
-			dmy.year = parseInt(a[0]);
-		if(a.size() > 1)
-			dmy.month = parseInt<size_t>(a[1]);
-		if(a.size() > 2)
-			dmy.day = parseInt<size_t>(a[2]);
-		at = dmy;
+		if(events().find(a[0]) != events().end())
+			time2event["at"] = a[0];
+		else
+		{
+			if(a.size() > 0)
+				dmy.year = parseInt(a[0]);
+			if(a.size() > 1)
+				dmy.month = parseInt<size_t>(a[1]);
+			if(a.size() > 2)
+				dmy.day = parseInt<size_t>(a[2]);
+			at = dmy;
+		}
 	}
 
 	auto f = splitString(j["from"].string_value(), "-");
 	dmy = DMY();
 	if(!f.empty() && !f[0].empty())
 	{
-		if(f.size() > 0)
-			dmy.year = parseInt(f[0]);
-		if(f.size() > 1)
-			dmy.month = parseInt<size_t>(f[1]);
-		if(f.size() > 2)
-			dmy.day = parseInt<size_t>(f[2]);
-		from = dmy;
+		if(events().find(f[0]) != events().end())
+			time2event["from"] = f[0];
+		else
+		{
+			if(f.size() > 0)
+				dmy.year = parseInt(f[0]);
+			if(f.size() > 1)
+				dmy.month = parseInt<size_t>(f[1]);
+			if(f.size() > 2)
+				dmy.day = parseInt<size_t>(f[2]);
+			from = dmy;
+		}
 	}
 
 	auto t = splitString(j["to"].string_value(), "-");
 	dmy = DMY();
 	if(!t.empty() && !t[0].empty())
 	{
-		if(t.size() > 0)
-			dmy.year = parseInt(t[0]);
-		if(t.size() > 1)
-			dmy.month = parseInt<size_t>(t[1]);
-		if(t.size() > 2)
-			dmy.day = parseInt<size_t>(t[2]);
-		to = dmy;
+		if(events().find(t[0]) != events().end())
+			time2event["to"] = t[0];
+		else
+		{
+			if(t.size() > 0)
+				dmy.year = parseInt(t[0]);
+			if(t.size() > 1)
+				dmy.month = parseInt<size_t>(t[1]);
+			if(t.size() > 2)
+				dmy.day = parseInt<size_t>(t[2]);
+			to = dmy;
+		}
 	}
 
 	return{};
@@ -276,6 +301,17 @@ json11::Json Spec::to_json() const
 	}
 
 	return o;
+}
+
+std::set<std::string> Spec::events()
+{
+	static const set<string> es = 
+	{"seeding"
+	,"harvesting"
+	,"cutting"
+	};
+
+	return es;
 }
 
 //-----------------------------------------------------------------------------
