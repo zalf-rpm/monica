@@ -33,6 +33,9 @@ void Monica::writeOutputHeaderRows(ostream& out,
 {
 	ostringstream oss1, oss2, oss3, oss4;
 
+	using namespace std::string_literals;
+	string escapeTokens = "\n\""s + csvSep;
+
 	size_t j = 0;
 	auto oidsSize = outputIds.size();
 	for(auto oid : outputIds)
@@ -49,22 +52,25 @@ void Monica::writeOutputHeaderRows(ostream& out,
 
 		for(int i = fromLayer; i <= toLayer; i++)
 		{
-			oss1 << "\"";
+			ostringstream oss11;
 			if(isOrgan)
-				oss1 << oid.name << "/" << oid.toString(oid.organ);
+				oss11 << oid.name << "/" << oid.toString(oid.organ);
 			else if(isRange)
-				oss1 << oid.name << "_" << to_string(i);
+				oss11 << oid.name << "_" << to_string(i);
 			else
-				oss1 << oid.name;
+				oss11 << oid.name;
 			auto csvSep_ = j + 1 == oidsSize && i == toLayer ? "" : csvSep;
-			oss1 << "\"" << csvSep_;
-			oss2 << "\"[" << oid.unit << "]\"" << csvSep_; 
-			oss3 << "\"m:" << oid.toString(includeTimeAgg) << "\"" << csvSep_;
-			oss4 << "\"j:" << replace(oid.jsonInput, "\"", "") << "\"" << csvSep_;
+			oss1 << (oss11.str().find_first_of(escapeTokens) == string::npos ? oss11.str() : "\""s + oss11.str() + "\""s) << csvSep_;
+			auto os2 = "["s + oid.unit + "]"s;
+			oss2 << (os2.find_first_of(escapeTokens) == string::npos ? os2 : "\""s + os2 + "\""s) << csvSep_;
+			auto os3 = "m:"s + oid.toString(includeTimeAgg);
+			oss3 << (os3.find_first_of(escapeTokens) == string::npos ? os3 : "\""s + os3 + "\""s) << csvSep_;
+			auto os4 = "j:"s + replace(oid.jsonInput, "\"", "");
+			oss4 << (os4.find_first_of(escapeTokens) == string::npos ? os4 : "\""s + os4 + "\""s) << csvSep_;
 		}
 		++j;
 	}
-
+	
 	if(includeHeaderRow)
 		out << oss1.str() << endl;
 	if(includeUnitsRow)
@@ -80,6 +86,9 @@ void Monica::writeOutput(ostream& out,
 												 const vector<J11Array>& values,
 												 string csvSep)
 {
+	using namespace std::string_literals;
+	string escapeTokens = "\n\""s + csvSep;
+
 	if(!values.empty())
 	{
 		for(size_t k = 0, size = values.begin()->size(); k < size; k++)
@@ -93,7 +102,12 @@ void Monica::writeOutput(ostream& out,
 				switch(j.type())
 				{
 				case Json::NUMBER: out << j.number_value() << csvSep_; break;
-				case Json::STRING: out << j.string_value() << csvSep_; break;
+				case Json::STRING: 
+					out 
+					<< (j.string_value().find_first_of(escapeTokens) == string::npos 
+																	 ? j.string_value() 
+																	 : "\""s + j.string_value() + "\""s) 
+					<< csvSep_; break;
 				case Json::BOOL: out << j.bool_value() << csvSep_; break;
 				case Json::ARRAY:
 				{
@@ -101,11 +115,16 @@ void Monica::writeOutput(ostream& out,
 					auto jSize = j.array_items().size();
 					for(Json jv : j.array_items())
 					{
-						auto csvSep__ = jvi + 1 == jSize ? "" : csvSep_;
+						auto csvSep__ = jvi + 1 == jSize ? "" : csvSep;
 						switch(jv.type())
 						{
 						case Json::NUMBER: out << jv.number_value() << csvSep__; break;
-						case Json::STRING: out << jv.string_value() << csvSep__; break;
+						case Json::STRING: 
+							out 
+								<< (jv.string_value().find_first_of(escapeTokens) == string::npos
+										? jv.string_value()
+										: "\""s + jv.string_value() + "\""s)
+								<< csvSep__; break;
 						case Json::BOOL: out << jv.bool_value() << csvSep__; break;
 						default: out << "UNKNOWN" << csvSep__;
 						}

@@ -455,19 +455,18 @@ Output Monica::runMonica(Env env)
 	vector<J11Array> intermediateRunResults;
 	vector<J11Array> intermediateCropResults;
 
-	std::vector<OId> dailyOutputIds = parseOutputIds(env.outputs["daily"].array_items());
-	std::vector<OId> monthlyOutputIds = parseOutputIds(env.outputs["monthly"].array_items());
-	std::vector<OId> yearlyOutputIds = parseOutputIds(env.outputs["yearly"].array_items());
-	std::vector<OId> runOutputIds = parseOutputIds(env.outputs["run"].array_items());
-	std::vector<OId> cropOutputIds = parseOutputIds(env.outputs["crop"].array_items());
-	std::map<Tools::Date, std::vector<OId>> atOutputIds;
+	out.dailyOutputIds = parseOutputIds(env.outputs["daily"].array_items());
+	out.monthlyOutputIds = parseOutputIds(env.outputs["monthly"].array_items());
+	out.yearlyOutputIds = parseOutputIds(env.outputs["yearly"].array_items());
+	out.runOutputIds = parseOutputIds(env.outputs["run"].array_items());
+	out.cropOutputIds = parseOutputIds(env.outputs["crop"].array_items());
 	if(env.outputs["at"].is_object())
 	{
 		for(auto p : env.outputs["at"].object_items())
 		{
 			Date d = Date::fromIsoDateString(p.first);
 			if(d.isValid())
-				atOutputIds[d] = parseOutputIds(p.second.array_items());
+				out.atOutputIds[d] = parseOutputIds(p.second.array_items());
 		}
 	}
 
@@ -488,7 +487,7 @@ Output Monica::runMonica(Env env)
 		size_t i = 0;
 		auto& vs = out.crop[monica.currentCrop()->id()];
 		vs.resize(intermediateCropResults.size());
-		for(auto oid : cropOutputIds)
+		for(auto oid : out.cropOutputIds)
 		{
 			if(!intermediateCropResults.empty())
 			{
@@ -644,23 +643,23 @@ Output Monica::runMonica(Env env)
 		//*
 		//daily results
 		//----------------
-		storeResults(dailyOutputIds, out.daily, monica);
+		storeResults(out.dailyOutputIds, out.daily, monica);
 
 		//crop results
 		//----------------
 		if(monica.isCropPlanted())
-			storeResults(cropOutputIds,
+			storeResults(out.cropOutputIds,
 									 intermediateCropResults,
 									 monica);
 
 		//at (a certain time) results
 		//-------------------
 		//try to find exact date
-		auto ati = atOutputIds.find(currentDate);
+		auto ati = out.atOutputIds.find(currentDate);
 		//is not exact date, try to find relative one
-		if(ati == atOutputIds.end())
-			ati = atOutputIds.find(currentDate.toRelativeDate());
-		if(ati != atOutputIds.end())
+		if(ati == out.atOutputIds.end())
+			ati = out.atOutputIds.find(currentDate.toRelativeDate());
+		if(ati != out.atOutputIds.end())
 			storeResults(ati->second, out.at[ati->first], monica);
 
 		if(currentDate.month() != currentMonth 
@@ -668,7 +667,7 @@ Output Monica::runMonica(Env env)
 		{
 			size_t i = 0;
 			out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
-			for(auto oid : monthlyOutputIds)
+			for(auto oid : out.monthlyOutputIds)
 			{
 				if(!intermediateMonthlyResults.empty())
 				{
@@ -681,7 +680,7 @@ Output Monica::runMonica(Env env)
 			currentMonth = currentDate.month();
 		}
 		else
-			storeResults(monthlyOutputIds, intermediateMonthlyResults, monica);
+			storeResults(out.monthlyOutputIds, intermediateMonthlyResults, monica);
 
 		//yearly results 
 		//------------------
@@ -690,7 +689,7 @@ Output Monica::runMonica(Env env)
 		{
 			size_t i = 0;
 			out.yearly.resize(intermediateYearlyResults.size());
-			for(auto oid : yearlyOutputIds)
+			for(auto oid : out.yearlyOutputIds)
 			{
 				if(!intermediateYearlyResults.empty())
 				{
@@ -701,18 +700,18 @@ Output Monica::runMonica(Env env)
 			}
 		}
 		else
-			storeResults(yearlyOutputIds, intermediateYearlyResults, monica);
+			storeResults(out.yearlyOutputIds, intermediateYearlyResults, monica);
 
 		//(whole) run results 
-		storeResults(runOutputIds, intermediateRunResults, monica);
+		storeResults(out.runOutputIds, intermediateRunResults, monica);
 		//*/
 	}
 
 	//*
 	//store/aggregate results for a single run
 	size_t i = 0;
-	out.run.resize(runOutputIds.size());
-	for(auto oid : runOutputIds)
+	out.run.resize(out.runOutputIds.size());
+	for(auto oid : out.runOutputIds)
 	{
 		if(!intermediateRunResults.empty())
 			out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));

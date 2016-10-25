@@ -219,13 +219,14 @@ int main(int argc, char** argv)
 
 		writeOutputFile = !pathToOutputFile.empty();
 
-		ofstream fout;
+		ofstream fout, fout2;
 		if(writeOutputFile)
 		{
 			string path, filename;
 			tie(path, filename) = splitPathToFile(pathToOutputFile);
 			ensureDirExists(path);
 			fout.open(pathToOutputFile);
+			fout2.open(path + "_" + filename);
 			if(fout.fail())
 			{
 				cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
@@ -240,6 +241,17 @@ int main(int argc, char** argv)
 		bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
 		bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
+		for(const auto& p : output.origSpec2oids)
+		{
+			auto ci = output.origSpec2results.find(p.first);
+			if(ci != output.origSpec2results.end())
+			{
+				writeOutputHeaderRows(fout2, p.second, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+				writeOutput(fout2, p.second, ci->second, csvSep);
+				fout2 << endl;
+			}
+		}
+		
 		if(!output.daily.empty())
 		{
 			writeOutputHeaderRows(out, output.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
