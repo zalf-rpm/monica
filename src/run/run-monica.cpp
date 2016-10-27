@@ -209,11 +209,240 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 
 //-----------------------------------------------------------------------------
 
+template<typename T = int>
+Maybe<T> parseInt(const string& s)
+{
+	Maybe<T> res;
+	if(s.empty() || (s.size() > 1 && s.substr(0, 2) == "xx"))
+		return res;
+	else
+	{
+		try { res = stoi(s); }
+		catch(exception e) {}
+	}
+	return res;
+}
+
+function<bool(const MonicaModel&)> buildExpression(J11Array a)
+{
+	if(a.size() == 3
+		 && (a[0].is_number() || a[0].is_string() || a[0].is_array())
+		 && a[1].is_string()
+		 && (a[2].is_number() || a[2].is_string() || a[2].is_array()))
+	{
+		Json leftj = a[0];
+		string ops = a[1].string_value();
+		Json rightj = a[2];
+			
+		function<bool(double, double)> op;
+		if(ops == "<")
+			op = [](double l, double r){ 
+			return l < r; 
+		};
+		else if(ops == "<=")
+			op = [](double l, double r){ return l <= r; };
+		else if(ops == "=")
+			op = [](double l, double r){ return l == r; };
+		else if(ops == "!=")
+			op = [](double l, double r){ return l != r; };
+		else if(ops == ">")
+			op = [](double l, double r){ return l > r; };
+		else if(ops == ">=")
+			op = [](double l, double r){ return l >= r; };
+
+		const auto& ofs = buildOutputTable().ofs;
+		decltype(buildOutputTable().ofs)::mapped_type lf, rf;
+		OId loid, roid;
+		if(!leftj.is_number())
+		{
+			auto loids = parseOutputIds({leftj});
+			if(!loids.empty())
+			{
+				loid = loids.front();
+				auto ofi = ofs.find(loid.id);
+				if(ofi != ofs.end())
+					lf = ofi->second;
+			}
+		}
+		if(!rightj.is_number())
+		{
+			auto roids = parseOutputIds({rightj});
+			if(!roids.empty())
+			{
+				roid = roids.front();
+				auto ofi = ofs.find(roid.id);
+				if(ofi != ofs.end())
+					rf = ofi->second;
+			}
+		}
+
+		if(lf && rf && op)
+		{
+			return [=](const MonicaModel& m)
+			{
+				auto lj = lf(m, loid);
+				auto rj = rf(m, roid);
+				return lj.is_number() && rj.is_number() ? op(lj.number_value(), rj.number_value()) : false;
+			};
+		}
+		else if(lf && rightj.is_number() && op)
+		{
+			double d = rightj.number_value();
+
+			return [=](const MonicaModel& m)
+			{
+				auto lj = lf(m, loid);
+				if(lj.is_number())
+					return op(lj.number_value(), d);
+				else if(lj.is_array())
+				{
+					auto lja = lj.array_items();
+					accumulate(lja.begin(), lja.end(), true, [=](bool acc, Json j)
+					{
+						return acc && (j.is_number() ? op(j.number_value(), d) : false);
+					});
+				}
+				return false;
+			};
+		}
+		else if(leftj.is_number() && rf && op)
+		{
+			double d = leftj.number_value();
+
+			return [=](const MonicaModel& m)
+			{
+				auto rj = rf(m, roid);
+				if(rj.is_number())
+					return op(rj.number_value(), d);
+				else if(rj.is_array())
+				{
+					auto rja = rj.array_items();
+					accumulate(rja.begin(), rja.end(), true, [=](bool acc, Json j)
+					{
+						return acc && (j.is_number() ? op(j.number_value(), d) : false);
+					});
+				}
+				return false;
+			};
+		}
+	}
+
+
+	return function<bool(const MonicaModel&)>();
+}
+
+Tools::Errors Spec::merge(json11::Json j)
+{
+	auto js = j.dump();
+
+	init(start, j, "start");
+	init(end, j, "end");
+	init(at, j, "at");
+	init(from, j, "from");
+	init(to, j, "to");
+
+	return{};
+}
+
+void Spec::init(Maybe<DMY>& member, Json j, string time)
+{
+	auto events_ = events();
+	auto jt = j[time];
+	
+	
+	//it should be an expression
+	if(jt.is_array())
+	{
+		if(auto f = buildExpression(jt.array_items()))
+		{
+			time2expression[time] = f;
+			eventType = eExpression;
+		}
+	}
+	else if(jt.is_string())
+	{
+		auto s = splitString(j[time].string_value(), "-");
+		if(!s.empty() && !s[0].empty())
+		{
+			//is crop event
+			if(events_.find(s[0]) != events_.end())
+			{
+				time2event[time] = s[0];
+				eventType = eCrop;
+			}
+			//is date event
+			else
+			{
+				DMY dmy;
+				if(s.size() > 0)
+					dmy.year = parseInt(s[0]);
+				if(s.size() > 1)
+					dmy.month = parseInt<size_t>(s[1]);
+				if(s.size() > 2)
+					dmy.day = parseInt<size_t>(s[2]);
+				member = dmy;
+				eventType = eDate;
+			}
+		}
+	}
+}
+
+json11::Json Spec::to_json() const
+{
+	auto padDM = [](int i){ return (i < 10 ? string("0") : string()) + to_string(i); };
+	auto padY = [](int i)
+	{ return (i < 10
+						? string("0")
+						: (i < 100
+							 ? string("00")
+							 : (i < 1000
+									? string("000")
+									: string())))
+		+ to_string(i); };
+
+	J11Object o{{"type", "Spec"}};
+
+	auto extendMsgBy = [&](const Maybe<DMY>& member, string time)
+	{
+		if(member.isValue())
+		{
+			auto s = string("")
+				+ (member.value().year.isValue() ? padY(member.value().year.value()) : "xxxx")
+				+ (member.value().month.isValue() ? padDM(member.value().month.value()) : "xx")
+				+ (member.value().day.isValue() ? padDM(member.value().day.value()) : "xx");
+			if(s != "xxxx-xx-xx")
+				o[time] = s;
+		}
+	};
+
+	extendMsgBy(start, "start");
+	extendMsgBy(end, "end");
+	extendMsgBy(at, "at");
+	extendMsgBy(from, "from"); 
+	extendMsgBy(to, "to");
+	
+	return o;
+}
+
+std::set<std::string> Spec::events()
+{
+	static const set<string> es =
+	{"seeding"
+		,"harvesting"
+		,"cutting"
+	};
+
+	return es;
+}
+
+//-----------------------------------------------------------------------------
+
+
 void storeResults(const vector<OId>& outputIds,
 									vector<J11Array>& results,
 									const MonicaModel& monica)
 {
-	const auto& ofs = buildOutputTable2().ofs;
+	const auto& ofs = buildOutputTable().ofs;
 
 	size_t i = 0;
 	results.resize(outputIds.size());
@@ -259,6 +488,62 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 {
 	switch(spec.eventType)
 	{
+	case Spec::eExpression:
+	{
+		bool isCurrentlyEndEvent = false;
+		if(!spec.time2expression.empty())
+		{
+			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
+			{
+				if(auto f = spec.time2expression["start"])
+					withinEventStartEndRange = f(monica);
+			}
+			else if(withinEventStartEndRange.isValue())
+			{
+				if(auto f = spec.time2expression["end"])
+					isCurrentlyEndEvent = f(monica);
+			}
+
+			bool isCurrentlyToEvent = false;
+			if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
+			{
+				if(auto f = spec.time2expression["from"])
+					withinEventFromToRange = f(monica);
+			}
+			else if(withinEventFromToRange.isValue())
+			{
+				if(auto f = spec.time2expression["to"])
+					isCurrentlyToEvent = f(monica);
+			}
+
+			string os = spec.origSpec.dump();
+
+			auto af = spec.time2expression["at"];
+			bool isAtEvent = af && af(monica);
+
+			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+			{
+				if(isAtEvent)
+				{
+					storeResults(outputIds, results, monica);
+				}
+				else if(withinEventFromToRange.value())
+				{
+					storeResults(outputIds, intermediateResults, monica);
+
+					if(isCurrentlyToEvent)
+					{
+						aggregateResults();
+						withinEventFromToRange = false;
+					}
+
+					if(isCurrentlyEndEvent)
+						withinEventStartEndRange = false;
+				}
+			}
+		}
+	}
+	break;
 	case Spec::eCrop:
 	{
 		bool isCurrentlyEndEvent = false;
@@ -395,7 +680,7 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 		}
 	}
 	break;
-	case Spec::eExpression: default:;
+	default:;
 	}
 }
 
@@ -418,13 +703,21 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 		StoreData sd;
 		sd.spec.origSpec = e2os[i];
 		Json spec = sd.spec.origSpec;
+		//find shortcut for string or store string as 'at' pattern
 		if(spec.is_string())
 		{
 			auto ss = spec.string_value();
 			auto ci = shortcuts.find(ss);
 			if(ci != shortcuts.end())
 				spec = ci->second;
+			else if(ss.size() == 10)
+				spec = J11Object{{"at", ss}};
 		}
+		//an array means it's an expression pattern to be stored at 'at' 
+		else if(spec.is_array())
+			spec = J11Object{{"at", spec}};
+		//everything else (number, bool, null) we ignore
+		//object is the default we assume
 		else if(!spec.is_object())
 			continue;
 		sd.spec.merge(spec);

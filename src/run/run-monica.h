@@ -94,40 +94,51 @@ namespace Monica
 
   //------------------------------------------------------------------------------------------
 
-	/*
-	//! structure holding all results of one monica run
-	class DLL_API Result
+	struct Spec : public Tools::Json11Serializable
 	{
-	public:
-		Result() {}
-		~Result() {}
+		struct DMY
+		{
+			Tools::Maybe<std::size_t> day;
+			Tools::Maybe<std::size_t> month;
+			Tools::Maybe<int> year;
+		};
 
-		//! just to keep track of the grid point the calculation is being made for
-		Tools::GridPoint gp;
-		//is as gp before used to track results when multiple parallel
-		//unordered invocations of monica will happen
-		std::string customId;
+		enum EventType { eDate, eCrop, eExpression };
 
-		//! vector of the result of one crop per year
-    std::vector<CMResult> pvrs;
+		Spec() {}
 
-		//! results not regarding a particular crop in a rotation
-		typedef std::map<ResultId, std::vector<double>> RId2Vector;
-		RId2Vector generalResults;
+		Spec(json11::Json j) { merge(j); }
 
-		std::vector<double> getResultsById(int id);
+		virtual Tools::Errors merge(json11::Json j);
 
-		int sizeGeneralResults() { return int(generalResults.size()); }
+		void init(Tools::Maybe<DMY>& member, json11::Json j, std::string time);
 
-		std::vector<std::string> dates;
+		virtual json11::Json to_json() const;
 
-		Output out;
+		json11::Json origSpec;
 
-		std::string toString();
+		EventType eventType;
+
+		std::map<std::string, std::string> time2event;
+		std::map<std::string, std::function<bool(const MonicaModel&)>> time2expression;
+
+		Tools::Maybe<DMY> start;
+		Tools::Maybe<DMY> end;
+
+		Tools::Maybe<DMY> from;
+		Tools::Maybe<DMY> to;
+
+		Tools::Maybe<DMY> at;
+
+		bool isYearRange() const { return from.value().year.isValue() && to.value().year.isValue(); }
+		bool isMonthRange() const { return from.value().month.isValue() && to.value().month.isValue(); }
+		bool isDayRange() const { return from.value().day.isValue() && to.value().day.isValue(); }
+
+		bool isAt() const { return at.isValue() && (at.value().year.isValue() || at.value().month.isValue() || at.value().day.isValue()); }
+		bool isRange() const { return !isAt(); }
+
+		static std::set<std::string> events();
 	};
-	//*/
-
-	//---------------------------------------------------------------------------
 
 	struct StoreData
 	{

@@ -32,6 +32,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
+	struct OutputMetadata
+	{
+		int id;
+		std::string name;
+		std::string unit;
+		std::string description;
+	};
+
+	//---------------------------------------------------------------------------
+
 	double applyOIdOP(OId::OP op, const std::vector<double>& vs);
 
 	json11::Json applyOIdOP(OId::OP op, const std::vector<json11::Json>& js);
@@ -40,17 +50,9 @@ namespace Monica
 
 	struct DLL_API BOTRes
 	{
-		std::map<int, std::function<void(const MonicaModel&, Tools::J11Array&, OId)>> ofs;
-		std::map<std::string, OutputMetadata> name2metadata;
-	};
-
-	DLL_API BOTRes& buildOutputTable();
-
-	struct DLL_API BOTRes2
-	{
 		std::map<int, std::function<json11::Json(const MonicaModel&, OId)>> ofs;
 		std::map<std::string, OutputMetadata> name2metadata;
 	};
-	DLL_API BOTRes2& buildOutputTable2();
+	DLL_API BOTRes& buildOutputTable();
 }  
 #endif 

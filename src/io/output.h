@@ -31,16 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-	struct OutputMetadata
-	{
-		int id;
-		std::string name;
-		std::string unit;
-		std::string description;
-	};
-
-	//---------------------------------------------------------------------------
-
 	struct DLL_API OId : public Tools::Json11Serializable
 	{
 		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
@@ -106,51 +96,6 @@ namespace Monica
 
 	//---------------------------------------------------------------------------
 
-	struct DMY
-	{
-		Tools::Maybe<std::size_t> day;
-		Tools::Maybe<std::size_t> month;
-		Tools::Maybe<int> year;
-	};
-
-	struct Spec : public Tools::Json11Serializable
-	{
-		enum EventType { eDate, eCrop, eExpression };
-
-		Spec() {}
-
-		Spec(json11::Json j) { merge(j); }
-
-		virtual Tools::Errors merge(json11::Json j);
-
-		virtual json11::Json to_json() const;
-
-		json11::Json origSpec;
-
-		EventType eventType;
-
-		std::map<std::string, std::string> time2event;
-
-		Tools::Maybe<DMY> start;
-		Tools::Maybe<DMY> end;
-
-		Tools::Maybe<DMY> from;
-		Tools::Maybe<DMY> to;
-
-		Tools::Maybe<DMY> at;
-
-		bool isYearRange() const { return from.value().year.isValue() && to.value().year.isValue(); }
-		bool isMonthRange() const { return from.value().month.isValue() && to.value().month.isValue(); }
-		bool isDayRange() const { return from.value().day.isValue() && to.value().day.isValue(); }
-
-		bool isAt() const { return at.isValue() && (at.value().year.isValue() || at.value().month.isValue() || at.value().day.isValue()); }
-		bool isRange() const { return !isAt(); }
-
-		static std::set<std::string> events();
-	};
-
-	//---------------------------------------------------------------------------
-
 	struct DLL_API Output : public Tools::Json11Serializable
 	{
 		Output() {}
@@ -172,9 +117,6 @@ namespace Monica
 
 		std::vector<Data> data;
 	};
-
-	//DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
-	//DLL_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
 }  
 
 #endif 
