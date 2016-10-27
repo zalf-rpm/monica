@@ -219,14 +219,13 @@ int main(int argc, char** argv)
 
 		writeOutputFile = !pathToOutputFile.empty();
 
-		ofstream fout, fout2;
+		ofstream fout;
 		if(writeOutputFile)
 		{
 			string path, filename;
 			tie(path, filename) = splitPathToFile(pathToOutputFile);
 			ensureDirExists(path);
 			fout.open(pathToOutputFile);
-			fout2.open(path + "_" + filename);
 			if(fout.fail())
 			{
 				cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
@@ -241,74 +240,13 @@ int main(int argc, char** argv)
 		bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
 		bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
-		for(const auto& p : output.origSpec2oids)
+		for(const auto& d : output.data)
 		{
-			auto ci = output.origSpec2results.find(p.first);
-			if(ci != output.origSpec2results.end())
-			{
-				writeOutputHeaderRows(fout2, p.second, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-				writeOutput(fout2, p.second, ci->second, csvSep);
-				fout2 << endl;
-			}
-		}
-		
-		if(!output.daily.empty())
-		{
-			writeOutputHeaderRows(out, output.dailyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, output.dailyOutputIds, output.daily, csvSep);
-		}
-
-		if(!output.monthly.empty())
-		{
+			out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
+			writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutput(out, d.outputIds, d.results, csvSep);
 			out << endl;
-			writeOutputHeaderRows(out, output.monthlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			for(auto& p : output.monthly)
-				writeOutput(out, output.monthlyOutputIds, p.second, csvSep);
-		}
-
-		if(!output.yearly.empty())
-		{
-			out << endl;
-			writeOutputHeaderRows(out, output.yearlyOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, output.yearlyOutputIds, output.yearly, csvSep);
-		}
-
-		if(!output.at.empty())
-		{
-			for(auto& p : output.atOutputIds)
-			{
-				out << endl;
-				auto ci = output.at.find(p.first);
-				if(ci != output.at.end())
-				{
-					out << p.first.toIsoDateString() << endl;
-					writeOutputHeaderRows(out, p.second, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-					writeOutput(out, p.second, ci->second, csvSep);
-				}
-			}
-		}
-
-		auto makeWriteOutputCompatible = [](const J11Array& a)
-		{
-			vector<J11Array> vs;
-			for(auto j : a)
-				vs.push_back({j});
-			return vs;
-		};
-
-		if(!output.crop.empty())
-		{
-			out << endl;
-			writeOutputHeaderRows(out, output.cropOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			for(auto& p : output.crop)
-				writeOutput(out, output.cropOutputIds, p.second, csvSep);
-		}
-
-		if(!output.run.empty())
-		{
-			out << endl;
-			writeOutputHeaderRows(out, output.runOutputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, output.runOutputIds, makeWriteOutputCompatible(output.run), csvSep);
+			
 		}
 
 		if(writeOutputFile)

@@ -131,6 +131,7 @@ namespace Monica
 
 	struct StoreData
 	{
+		void aggregateResults();
 		void storeResultsIfSpecApplies(const MonicaModel& monica);
 
 		Tools::Maybe<bool> withinEventStartEndRange;

@@ -263,72 +263,13 @@ int main(int argc, char** argv)
 		bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
 		bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
-		auto toOIdVector = [](const Json& a)
+		for(const auto& d : output.data)
 		{
-			vector<OId> oids;
-			for(auto j : a.array_items())
-				oids.push_back(OId(j));
-			return oids;
-		};
-
-		if(!output.daily.empty())
-		{
-			writeOutputHeaderRows(out, toOIdVector(env["dailyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, toOIdVector(env["dailyOutputIds"]), output.daily, csvSep);
-		}
-
-		if(!output.monthly.empty())
-		{
+			out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
+			writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+			writeOutput(out, d.outputIds, d.results, csvSep);
 			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["monthlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			for(auto& p : output.monthly)
-				writeOutput(out, toOIdVector(env["monthlyOutputIds"]), p.second, csvSep);
-		}
 
-		if(!output.yearly.empty())
-		{
-			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["yearlyOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, toOIdVector(env["yearlyOutputIds"]), output.yearly, csvSep);
-		}
-
-		if(!output.at.empty())
-		{
-			for(auto& p : env["atOutputIds"].object_items())
-			{
-				out << endl;
-				auto ci = output.at.find(p.first);
-				if(ci != output.at.end())
-				{
-					out << p.first << endl;
-					writeOutputHeaderRows(out, toOIdVector(p.second), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-					writeOutput(out, toOIdVector(p.second), ci->second, csvSep);
-				}
-			}
-		}
-
-		auto makeWriteOutputCompatible = [](const J11Array& a)
-		{
-			vector<J11Array> vs;
-			for(auto j : a)
-				vs.push_back({j});
-			return vs;
-		};
-
-		if(!output.crop.empty())
-		{
-			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["cropOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			for(auto& p : output.crop)
-				writeOutput(out, toOIdVector(env["cropOutputIds"]), p.second, csvSep);
-		}
-
-		if(!output.run.empty())
-		{
-			out << endl;
-			writeOutputHeaderRows(out, toOIdVector(env["runOutputIds"]), csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, toOIdVector(env["runOutputIds"]), makeWriteOutputCompatible(output.run), 
-									csvSep);
 		}
 
 		if(writeOutputFile)

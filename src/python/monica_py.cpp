@@ -77,10 +77,9 @@ string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVStrin
 	if(r.success())
 	{
 		J11Object options = r.result.object_items();
-		bool useLeapYears = options["use-leap-years"].bool_value();
 		os.separator = options["csv-separator"].string_value();
-		os.startDate = Date::fromIsoDateString(options["start-date"].string_value(), useLeapYears);
-		os.endDate = Date::fromIsoDateString(options["end-date"].string_value(), useLeapYears);
+		os.startDate = Date::fromIsoDateString(options["start-date"].string_value());
+		os.endDate = Date::fromIsoDateString(options["end-date"].string_value());
 		os.noOfHeaderLines = options["no-of-climate-file-header-line"].int_value();
 				
 		map<string, string> hn2acdn;

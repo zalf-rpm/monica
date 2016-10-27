@@ -160,57 +160,6 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 	da.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
 
-/**
-* Returns the result vector of a special output. Python swig is
-* not able to wrap stl-maps correctly. Stl-vectors are working
-* properly so this function has been implemented to use the results
-* in wrapped python code.
-*
-* @param id ResultId of output
-* @return Vector of result values
-*/
-/*
-std::vector<double> Result::getResultsById(int id)
-{
-	// test if crop results are requested
-	if(id == primaryYield || id == secondaryYield || id == sumIrrigation ||
-		 id == sumFertiliser || id == biomassNContent || id == sumTotalNUptake ||
-		 id == cropHeight || id == cropname || id == sumETaPerCrop || sumTraPerCrop ||
-		 id == primaryYieldTM || id == secondaryYieldTM || id == daysWithCrop || id == aboveBiomassNContent ||
-		 id == NStress || id == WaterStress || id == HeatStress || id == OxygenStress || id == aboveGroundBiomass ||
-		 id == anthesisDay || id == maturityDay || id == harvestDay ||
-		 id == soilMoist0_90cmAtHarvest || id == corg0_30cmAtHarvest || id == nmin0_90cmAtHarvest)
-	{
-		vector<double> result_vector;
-		int size = pvrs.size();
-		for(int i = 0; i < size; i++)
-		{
-			CMResult crop_result = pvrs.at(i);
-			result_vector.push_back(crop_result.results[(ResultId)id]);
-		}
-		return result_vector;
-	}
-
-	return generalResults[(ResultId)id];
-}
-
-
-std::string Result::toString()
-{
-	ostringstream s;
-	map<ResultId, std::vector<double> >::iterator it;
-	// show content:
-	for(it = generalResults.begin(); it != generalResults.end(); it++)
-	{
-		ResultId id = (*it).first;
-		std::vector<double> data = (*it).second;
-		s << resultIdInfo(id).shortName.c_str() << ":\t" << data.at(data.size() - 1) << endl;
-	}
-
-	return s.str();
-}
-//*/
-
 //--------------------------------------------------------------------------------------
 
 pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAccessor& da,
@@ -279,180 +228,174 @@ void storeResults(const vector<OId>& outputIds,
 
 //-----------------------------------------------------------------------------
 
-void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
+void StoreData::aggregateResults()
 {
-	//check for non date events, like seeding etc
-	if(!spec.time2event.empty() && !monica.currentEvents().empty())
+	size_t i = 0;
+	results.resize(intermediateResults.size());
+	for(auto oid : outputIds)
 	{
-		if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value)
+		if(!intermediateResults.empty())
 		{
-			auto s = spec.time2event["start"];
-			if(!s.empty())
+			auto& ivs = intermediateResults.at(i);
+			if(ivs.front().is_string())
 			{
-				if(monica.currentEvents().find(s) != monica.currentEvents().end())
-					withinEventStartEndRange = true;
-			}
-		}
-		else if(withinEventStartEndRange.isValue())
-		{
-			auto e = spec.time2event["end"];
-			if(!e.empty())
-			{
-				if(monica.currentEvents().find(e) != monica.currentEvents().end())
-					withinEventStartEndRange = false;
-			}
-		}
-
-		bool isCurrentlyToEvent = false;
-		if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value)
-		{
-			auto f = spec.time2event["from"];
-			if(!f.empty())
-			{
-				if(monica.currentEvents().find(f) != monica.currentEvents().end())
-					withinEventFromToRange = true;
-			}
-		}
-		else if(withinEventFromToRange.isValue())
-		{
-			auto t = spec.time2event["to"];
-			if(!t.empty())
-			{
-				if(monica.currentEvents().find(t) != monica.currentEvents().end())
-					isCurrentlyToEvent = true;
-			}
-		}
-
-		auto a = spec.time2event["at"];
-		bool isAtEvent = !a.empty() && monica.currentEvents().find(a) != monica.currentEvents().end();
-
-		if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value)
-		{
-			if(isAtEvent)
-			{
-				storeResults(outputIds, results, monica);
-			} 
-			else if(withinEventFromToRange.isNothing() || withinEventFromToRange.value)
-			{
-				storeResults(outputIds, intermediateResults, monica);
-
-				if(isCurrentlyToEvent)
+				switch(oid.timeAggOp)
 				{
-					size_t i = 0;
-					results.resize(intermediateResults.size());
-					for(auto oid : outputIds)
-					{
-						if(!intermediateResults.empty())
-						{
-							auto& ivs = intermediateResults.at(i);
-							if(ivs.front().is_string())
-							{
-								switch(oid.timeAggOp)
-								{
-								case OId::FIRST: results[i].push_back(ivs.front()); break;
-								case OId::LAST: results[i].push_back(ivs.back()); break;
-								default: results[i].push_back(ivs.front());
-								}
-							}
-							else
-								results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
-
-							intermediateResults[i].clear();
-						}
-						++i;
-					}
-					withinEventFromToRange = false;
+				case OId::FIRST: results[i].push_back(ivs.front()); break;
+				case OId::LAST: results[i].push_back(ivs.back()); break;
+				default: results[i].push_back(ivs.front());
 				}
 			}
+			else
+				results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+
+			intermediateResults[i].clear();
 		}
-
-
+		++i;
 	}
-	
-	//is a date based event
+}
 
-	auto cd = monica.currentStepDate();
-
-	auto y = cd.year();
-	auto m = cd.month();
-	auto d = cd.day();
-
-	//check if we are in the start/end range or no year, month, day specified
-	if(spec.start.value().year.isValue() && y < spec.start.value().year.value()
-		 || spec.end.value().year.isValue() && y > spec.end.value().year.value())
-		return;
-	if(spec.start.value().month.isValue() && m < spec.start.value().month.value()
-		 || spec.end.value().month.isValue() && m > spec.end.value().month.value())
-		return;
-	if(spec.start.value().day.isValue() && d < spec.start.value().day.value()
-		 || spec.end.value().day.isValue() && d > spec.end.value().day.value())
-		return;
-	
-	//at spec takes precedence over range spec, if both would be set
-	if(spec.isAt())
+void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
+{
+	switch(spec.eventType)
 	{
-		if((spec.at.value().year.isNothing() || y == spec.at.value().year.value())
-			 && (spec.at.value().month.isNothing() || m == spec.at.value().month.value())
-			 && (spec.at.value().day.isNothing()
-					 || d == spec.at.value().day.value()
-					 || (spec.at.value().day.isValue() && d < spec.at.value().day.value() && d == cd.daysInMonth())))
+	case Spec::eCrop:
+	{
+		bool isCurrentlyEndEvent = false;
+		const auto& currentEvents = monica.currentEvents();
+		if(!spec.time2event.empty() || !currentEvents.empty())
 		{
-			storeResults(outputIds, results, monica);
-		}
-	}
-	//spec.at.isValue() can also mean "xxxx-xx-xx" = daily values
-	else if(spec.at.isValue())
-	{
-		storeResults(outputIds, results, monica);
-	}
-	else
-	{
-		//check if we are in the aggregating from/to range
-		if((spec.from.value().year.isNothing() || y >= spec.from.value().year.value())
-			 && (spec.to.value().year.isNothing() || y <= spec.to.value().year.value()))
-		{
-			if((spec.from.value().month.isNothing() || m >= spec.from.value().month.value())
-				 && (spec.to.value().month.isNothing() || m <= spec.to.value().month.value()))
+			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
 			{
-				if((spec.from.value().day.isNothing() || d >= spec.from.value().day.value())
-					 && (spec.to.value().day.isNothing() || d <= spec.to.value().day.value()))
+				auto s = spec.time2event["start"];
+				if(!s.empty())
+				{
+					if(currentEvents.find(s) != currentEvents.end())
+						withinEventStartEndRange = true;
+				}
+			}
+			else if(withinEventStartEndRange.isValue())
+			{
+				auto e = spec.time2event["end"];
+				if(!e.empty())
+				{
+					if(currentEvents.find(e) != currentEvents.end())
+						isCurrentlyEndEvent = true;
+				}
+			}
+
+			bool isCurrentlyToEvent = false;
+			if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
+			{
+				auto f = spec.time2event["from"];
+				if(!f.empty())
+				{
+					if(currentEvents.find(f) != currentEvents.end())
+						withinEventFromToRange = true;
+				}
+			}
+			else if(withinEventFromToRange.isValue())
+			{
+				auto t = spec.time2event["to"];
+				if(!t.empty())
+				{
+					if(currentEvents.find(t) != currentEvents.end())
+						isCurrentlyToEvent = true;
+				}
+			}
+
+			auto a = spec.time2event["at"];
+			bool isAtEvent = !a.empty() && currentEvents.find(a) != currentEvents.end();
+
+			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+			{
+				if(isAtEvent)
+				{
+					storeResults(outputIds, results, monica);
+				}
+				else if(withinEventFromToRange.value())
 				{
 					storeResults(outputIds, intermediateResults, monica);
 
-					//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
-					//aggregate intermediate values
-					if((spec.to.value().year.isNothing() || y == spec.to.value().year.value())
-						 && (spec.to.value().month.isNothing() || m == spec.to.value().month.value())
-						 && ((spec.to.value().day.isValue() && d == spec.to.value().day.value())
-								 || (spec.to.value().day.isValue() && d < spec.to.value().day.value() && d == cd.daysInMonth())))
+					if(isCurrentlyToEvent)
 					{
-						size_t i = 0;
-						results.resize(intermediateResults.size());
-						for(auto oid : outputIds)
-						{
-							if(!intermediateResults.empty())
-							{
-								auto& ivs = intermediateResults.at(i);
-								if(ivs.front().is_string())
-								{
-									switch(oid.timeAggOp)
-									{
-									case OId::FIRST: results[i].push_back(ivs.front()); break;
-									case OId::LAST: results[i].push_back(ivs.back()); break;
-									default: results[i].push_back(ivs.front());
-									}
-								}
-								else
-									results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+						aggregateResults();
+						withinEventFromToRange = false;
+					}
 
-								intermediateResults[i].clear();
-							}
-							++i;
+					if(isCurrentlyEndEvent)
+						withinEventStartEndRange = false;
+				}
+			}
+		}
+	}
+	break;
+	case Spec::eDate:
+	{
+		auto cd = monica.currentStepDate();
+
+		auto y = cd.year();
+		auto m = cd.month();
+		auto d = cd.day();
+
+		//check if we are in the start/end range or no year, month, day specified
+		if(spec.start.value().year.isValue() && y < spec.start.value().year.value()
+			 || spec.end.value().year.isValue() && y > spec.end.value().year.value())
+			return;
+		if(spec.start.value().month.isValue() && m < spec.start.value().month.value()
+			 || spec.end.value().month.isValue() && m > spec.end.value().month.value())
+			return;
+		if(spec.start.value().day.isValue() && d < spec.start.value().day.value()
+			 || spec.end.value().day.isValue() && d > spec.end.value().day.value())
+			return;
+
+		//at spec takes precedence over range spec, if both would be set
+		if(spec.isAt())
+		{
+			if((spec.at.value().year.isNothing() || y == spec.at.value().year.value())
+				 && (spec.at.value().month.isNothing() || m == spec.at.value().month.value())
+				 && (spec.at.value().day.isNothing()
+						 || d == spec.at.value().day.value()
+						 || (spec.at.value().day.isValue() && d < spec.at.value().day.value() && d == cd.daysInMonth())))
+			{
+				storeResults(outputIds, results, monica);
+			}
+		}
+		//spec.at.isValue() can also mean "xxxx-xx-xx" = daily values
+		else if(spec.at.isValue())
+		{
+			storeResults(outputIds, results, monica);
+		}
+		else
+		{
+			//check if we are in the aggregating from/to range
+			if((spec.from.value().year.isNothing() || y >= spec.from.value().year.value())
+				 && (spec.to.value().year.isNothing() || y <= spec.to.value().year.value()))
+			{
+				if((spec.from.value().month.isNothing() || m >= spec.from.value().month.value())
+					 && (spec.to.value().month.isNothing() || m <= spec.to.value().month.value()))
+				{
+					if((spec.from.value().day.isNothing() || d >= spec.from.value().day.value())
+						 && (spec.to.value().day.isNothing() || d <= spec.to.value().day.value()))
+					{
+						storeResults(outputIds, intermediateResults, monica);
+
+						//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
+						//aggregate intermediate values
+						if((spec.to.value().year.isNothing() || y == spec.to.value().year.value())
+							 && (spec.to.value().month.isNothing() || m == spec.to.value().month.value())
+							 && ((spec.to.value().day.isValue() && d == spec.to.value().day.value())
+									 || (spec.to.value().day.isValue() && d < spec.to.value().day.value() && d == cd.daysInMonth())))
+						{
+							aggregateResults();
 						}
 					}
 				}
 			}
 		}
+	}
+	break;
+	case Spec::eExpression: default:;
 	}
 }
 
@@ -495,14 +438,14 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 
 Output Monica::runMonica(Env env)
 {
+	Output out;
+	out.customId = env.customId;
+
 	activateDebug = env.debugMode;
 	if(activateDebug)
 	{
 		writeDebugInputs(env, "inputs.json");
 	}
-
-	Output out;
-	out.customId = env.customId;
 
 	if(env.cropRotation.empty())
 	{
@@ -542,26 +485,6 @@ Output Monica::runMonica(Env env)
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 	bool currentCropIsPlanted = false;
 
-	vector<J11Array> intermediateMonthlyResults;
-	vector<J11Array> intermediateYearlyResults;
-	vector<J11Array> intermediateRunResults;
-	vector<J11Array> intermediateCropResults;
-
-	out.dailyOutputIds = parseOutputIds(env.outputs["daily"].array_items());
-	out.monthlyOutputIds = parseOutputIds(env.outputs["monthly"].array_items());
-	out.yearlyOutputIds = parseOutputIds(env.outputs["yearly"].array_items());
-	out.runOutputIds = parseOutputIds(env.outputs["run"].array_items());
-	out.cropOutputIds = parseOutputIds(env.outputs["crop"].array_items());
-	if(env.outputs["at"].is_object())
-	{
-		for(auto p : env.outputs["at"].object_items())
-		{
-			Date d = Date::fromIsoDateString(p.first);
-			if(d.isValid())
-				out.atOutputIds[d] = parseOutputIds(p.second.array_items());
-		}
-	}
-
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
 
 	//if for some reason there are no applications (no nothing) in the
@@ -573,35 +496,16 @@ Output Monica::runMonica(Env env)
 		return out;
 	}
 
-	//*
-	auto aggregateCropOutput = [&]()
+	auto calcNextAbsoluteCMApplicationDate = [=](Date currentDate, Date nextCMAppDate, Date prevCMAppDate)
 	{
-		size_t i = 0;
-		auto& vs = out.crop[monica.currentCrop()->id()];
-		vs.resize(intermediateCropResults.size());
-		for(auto oid : out.cropOutputIds)
-		{
-			if(!intermediateCropResults.empty())
-			{
-				auto& ivs = intermediateCropResults.at(i);
-				if(ivs.front().is_string())
-				{
-					switch(oid.timeAggOp)
-					{
-					case OId::FIRST: vs[i].push_back(ivs.front()); break;
-					case OId::LAST: vs[i].push_back(ivs.back()); break;
-					default: vs[i].push_back(ivs.front());
-					}
-				}
-				else
-					vs[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
-				intermediateCropResults[i].clear();
-			}
-			++i;
-		}
+		return useRelativeDates ? nextCMAppDate.toAbsoluteDate
+			(currentDate.year() + (nextCMAppDate.dayOfYear() > prevCMAppDate.dayOfYear()
+														 ? 0
+														 : 1),
+			 true)
+			: nextCMAppDate;
 	};
-	//*/
-	
+
 	//beware: !!!! if there are absolute days used, then there is basically
 	//no rotation if the last crop in the crop rotation has changed
 	//the loop starts anew but the first crops date has already passed
@@ -611,8 +515,9 @@ Output Monica::runMonica(Env env)
 
 	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
 	{
+		monica.dailyReset();
+
 		debug() << "currentDate: " << currentDate.toString() << endl;
-		monica.resetDailyCounter();
 
 		//    if (currentDate.year() == 2012) {
 		//        cout << "Reaching problem year :-)" << endl;
@@ -653,7 +558,7 @@ Output Monica::runMonica(Env env)
 					debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
 					debug() << "####################################################" << endl;
 
-					aggregateCropOutput();
+					//aggregateCropOutput();
 
 					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
 					auto harvestApplication =
@@ -666,6 +571,7 @@ Output Monica::runMonica(Env env)
 		}
 
 		//apply worksteps and cycle through crop rotation
+		Date prevCMApplicationDate = nextCMApplicationDate;
 		if(nextAbsoluteCMApplicationDate == currentDate)
 		{
 			debug() << "applying at: " << nextCMApplicationDate.toString()
@@ -675,148 +581,51 @@ Output Monica::runMonica(Env env)
 			currentCM.apply(nextCMApplicationDate, &monica);// , {{"Harvest", aggregateCropOutput}});
 
 			//get the next application date to wait for (either absolute or relative)
-			Date prevPPApplicationDate = nextCMApplicationDate;
-
 			nextCMApplicationDate = currentCM.nextDate(nextCMApplicationDate);
-
-			nextAbsoluteCMApplicationDate = useRelativeDates
-				? nextCMApplicationDate.toAbsoluteDate
-				(currentDate.year()
-				 + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear()
-						? 0
-						: 1),
-				 true)
-				: nextCMApplicationDate;
+			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
 
 			debug() << "next app-date: " << nextCMApplicationDate.toString()
 				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-			//if application date was not valid, we're (probably) at the end
-			//of the application list of this production process
-			//-> go to the next one in the crop rotation
-
-
-			if(!nextAbsoluteCMApplicationDate.isValid())
-			{
-				//to count the applied fertiliser for the next production process
-				monica.resetFertiliserCounter();
-
-				//resets crop values for use in next year
-				currentCM.crop()->reset();
-
-				cmci++;
-				//start anew if we reached the end of the crop rotation
-				if(cmci == env.cropRotation.end())
-					cmci = env.cropRotation.begin();
-
-				currentCM = *cmci;
-				nextCMApplicationDate = currentCM.startDate();
-				nextAbsoluteCMApplicationDate =
-					useRelativeDates ? nextCMApplicationDate.toAbsoluteDate
-					(currentDate.year() + (nextCMApplicationDate.dayOfYear() > prevPPApplicationDate.dayOfYear() ? 0 : 1),
-					 true) : nextCMApplicationDate;
-				debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
-					<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-			}
-			//if we got our next date relative it might be possible that
-			//the actual relative date belongs into the next year
-			//this is the case if we're already (dayOfYear) past the next dayOfYear
-			if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
-				nextAbsoluteCMApplicationDate.addYears(1);
 		}
 
+		//monica main stepping method
 		monica.step(currentDate, climateDataForStep(env.da, d).second);
 
-		//-------------------------------------------------------------------------
 		//store results
-		
 		for(auto& s : store)
 			s.storeResultsIfSpecApplies(monica);
 
-		//*
-		//daily results
-		//----------------
-		storeResults(out.dailyOutputIds, out.daily, monica);
-
-		//crop results
-		//----------------
-		if(monica.isCropPlanted())
-			storeResults(out.cropOutputIds,
-									 intermediateCropResults,
-									 monica);
-
-		//at (a certain time) results
-		//-------------------
-		//try to find exact date
-		auto ati = out.atOutputIds.find(currentDate);
-		//is not exact date, try to find relative one
-		if(ati == out.atOutputIds.end())
-			ati = out.atOutputIds.find(currentDate.toRelativeDate());
-		if(ati != out.atOutputIds.end())
-			storeResults(ati->second, out.at[ati->first], monica);
-
-		if(currentDate.month() != currentMonth 
-			 || d == nods - 1)
+		//if the next application date is not valid, we're (probably) at the end
+		//of the application list of this cultivation method
+		//and go to the next one in the crop rotation
+		if(!nextAbsoluteCMApplicationDate.isValid())
 		{
-			size_t i = 0;
-			out.monthly[currentMonth].resize(intermediateMonthlyResults.size());
-			for(auto oid : out.monthlyOutputIds)
-			{
-				if(!intermediateMonthlyResults.empty())
-				{
-					out.monthly[currentMonth][i].push_back(applyOIdOP(oid.timeAggOp, intermediateMonthlyResults.at(i)));
-					intermediateMonthlyResults[i].clear();
-				}
-				++i;
-			}
+			//to count the applied fertiliser for the next production process
+			monica.resetFertiliserCounter();
 
-			currentMonth = currentDate.month();
+			//resets crop values for use in next year
+			currentCM.crop()->reset();
+
+			cmci++;
+			//start anew if we reached the end of the crop rotation
+			if(cmci == env.cropRotation.end())
+				cmci = env.cropRotation.begin();
+
+			currentCM = *cmci;
+			nextCMApplicationDate = currentCM.startDate();
+			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
+			debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
+				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 		}
-		else
-			storeResults(out.monthlyOutputIds, intermediateMonthlyResults, monica);
-
-		//yearly results 
-		//------------------
-		if(currentDate.year() != (currentDate - 1).year() 
-			 && d > 0)
-		{
-			size_t i = 0;
-			out.yearly.resize(intermediateYearlyResults.size());
-			for(auto oid : out.yearlyOutputIds)
-			{
-				if(!intermediateYearlyResults.empty())
-				{
-					out.yearly[i].push_back(applyOIdOP(oid.timeAggOp, intermediateYearlyResults.at(i)));
-					intermediateYearlyResults[i].clear();
-				}
-				++i;
-			}
-		}
-		else
-			storeResults(out.yearlyOutputIds, intermediateYearlyResults, monica);
-
-		//(whole) run results 
-		storeResults(out.runOutputIds, intermediateRunResults, monica);
-		//*/
+		//if we got our next date relative it might be possible that
+		//the actual relative date belongs into the next year
+		//this is the case if we're already (dayOfYear) past the next dayOfYear
+		if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
+			nextAbsoluteCMApplicationDate.addYears(1);
 	}
-
-	//*
-	//store/aggregate results for a single run
-	size_t i = 0;
-	out.run.resize(out.runOutputIds.size());
-	for(auto oid : out.runOutputIds)
-	{
-		if(!intermediateRunResults.empty())
-			out.run[i] = applyOIdOP(oid.timeAggOp, intermediateRunResults.at(i));
-		++i;
-	}
-	//*/
 	
 	for(const auto& sd : store)
-	{
-		auto os = sd.spec.origSpec.dump();
-		out.origSpec2oids[os] = sd.outputIds;
-		out.origSpec2results[os] = sd.results;
-	}
+		out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results});
 	
 	debug() << "returning from runMonica" << endl;
 	return out;

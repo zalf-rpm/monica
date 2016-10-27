@@ -211,13 +211,7 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 		}
 	}
 
-  delete _currentCropGrowth;
-  _currentCropGrowth = nullptr;
-  _currentCrop.reset();
-  _soilTransport.remove_Crop();
-  _soilColumn.remove_Crop();
-  _soilMoisture.remove_Crop();
-  _soilOrganic.remove_Crop();
+	_clearCropUponNextDay = true;
 }
 
 void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
@@ -451,6 +445,26 @@ double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertiliserParamet
                                                          ups.delayInDays);
 }
 
+void MonicaModel::dailyReset()
+{
+	_dailySumIrrigationWater = 0.0;
+	_dailySumFertiliser = 0.0;
+	clearEvents();
+
+	if(_clearCropUponNextDay)
+	{
+		delete _currentCropGrowth;
+		_currentCropGrowth = nullptr;
+		_currentCrop.reset();
+		_soilTransport.remove_Crop();
+		_soilColumn.remove_Crop();
+		_soilMoisture.remove_Crop();
+		_soilOrganic.remove_Crop();
+
+		_clearCropUponNextDay = false;
+	}
+}
+
 void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/)
 {
@@ -678,7 +692,7 @@ double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear)
 
 double MonicaModel::CO2ForDate(Date d)
 {
-  double decimalDate = d.year() + d.julianDay()/(d.useLeapYears() && d.isLeapYear() ? 366.0 : 365);
+  double decimalDate = d.year() + d.julianDay()/(d.isLeapYear() ? 366.0 : 365);
 
   //Atmospheric CO2 concentration according to RCP 8.5
   return 222.0 + exp(0.01467*(decimalDate - 1650.0)) + 2.5*sin((decimalDate - 0.5)/0.1592);

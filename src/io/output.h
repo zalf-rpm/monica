@@ -115,6 +115,8 @@ namespace Monica
 
 	struct Spec : public Tools::Json11Serializable
 	{
+		enum EventType { eDate, eCrop, eExpression };
+
 		Spec() {}
 
 		Spec(json11::Json j) { merge(j); }
@@ -124,6 +126,8 @@ namespace Monica
 		virtual json11::Json to_json() const;
 
 		json11::Json origSpec;
+
+		EventType eventType;
 
 		std::map<std::string, std::string> time2event;
 
@@ -157,29 +161,16 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 		
-		typedef int Id;
-		typedef int Month;
-		typedef int Year;
-		//typedef std::pair<std::string, std::string> SpeciesAndCultivarId;
-		typedef std::string SpeciesAndCultivarId;
-
-		std::vector<Tools::J11Array> daily;
-		std::map<Month, std::vector<Tools::J11Array>> monthly;
-		std::vector<Tools::J11Array> yearly;
-		std::map<Tools::Date, std::vector<Tools::J11Array>> at;
-		std::map<SpeciesAndCultivarId, std::vector<Tools::J11Array>> crop;
-		std::vector<json11::Json> run;
 		std::string customId;
 
-		std::vector<OId> dailyOutputIds;
-		std::vector<OId> monthlyOutputIds;
-		std::vector<OId> yearlyOutputIds;
-		std::vector<OId> runOutputIds;
-		std::vector<OId> cropOutputIds;
-		std::map<Tools::Date, std::vector<OId>> atOutputIds;
+		struct Data
+		{
+			std::string origSpec;
+			std::vector<OId> outputIds;
+			std::vector<Tools::J11Array> results;
+		};
 
-		std::map<std::string, std::vector<OId>> origSpec2oids;
-		std::map<std::string, std::vector<Tools::J11Array>> origSpec2results;
+		std::vector<Data> data;
 	};
 
 	//DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);

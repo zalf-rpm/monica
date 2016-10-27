@@ -105,6 +105,7 @@ void Seed::apply(MonicaModel* model)
 {
 	debug() << "seeding crop: " << _crop->toString() << " at: " << date().toString() << endl;
 	model->seedCrop(_crop);
+	model->addEvent("seeding");
 }
 
 //------------------------------------------------------------------------------
@@ -232,6 +233,7 @@ void Harvest::apply(MonicaModel* model)
 			debug() << "pruning shoots of: " << crop->toString() << " at: " << date().toString() << endl;
 			model->shootPruningCurrentCrop(_percentage, _exported);
 		}
+		model->addEvent("harvesting");
 	}
 	else
 	{
@@ -288,6 +290,7 @@ void Cutting::apply(MonicaModel* model)
 	crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 
 	model->cropGrowth()->applyCutting();
+	model->addEvent("cutting");
 }
 
 //------------------------------------------------------------------------------
@@ -555,19 +558,12 @@ json11::Json CultivationMethod::to_json() const
 }
 
 void CultivationMethod::apply(const Date& date, 
-															MonicaModel* model,
-															map<string, function<void()>> onWSTypeCustomAction) const
+															MonicaModel* model) const
 {
 	auto p = equal_range(date);
 	while(p.first != p.second)
 	{
 		auto ws = p.first->second;
-		if(!onWSTypeCustomAction.empty())
-		{
-			auto it = onWSTypeCustomAction.find(ws->type());
-			if(it != onWSTypeCustomAction.end())
-				it->second();
-		}
 		ws->apply(model);
 		p.first++;
 	}

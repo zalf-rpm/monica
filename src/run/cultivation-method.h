@@ -154,6 +154,39 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
+	/*
+	class DLL_API AutomaticHarvest : public Harvest
+	{
+	public:
+		AutomaticHarvest();
+
+		AutomaticHarvest(const Tools::Date& at,
+										 CropPtr crop,
+										 CMResultPtr cropResult,
+										 std::string method = "total");
+
+		AutomaticHarvest(json11::Json j);
+
+		virtual AutomaticHarvest* clone() const { return new AutomaticHarvest(*this); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const { return to_json(true); }
+
+		json11::Json to_json(bool includeFullCropParameters) const;
+
+		virtual std::string type() const { return "AutomaticHarvest"; }
+
+		virtual void apply(MonicaModel* model);
+
+	private:
+		std::string _harvestTime; //!< Harvest time parameter
+		int _latestHarvestDOY{-1};
+	};
+	*/
+
+	//----------------------------------------------------------------------------
+
 	class DLL_API Cutting : public WorkStep
 	{
 	public:
@@ -323,9 +356,7 @@ namespace Monica
     
 //    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
 
-    void apply(const Tools::Date& date, MonicaModel* model, 
-							 std::map<std::string, std::function<void()>> onWSTypeCustomAction 
-							 = std::map<std::string, std::function<void()>>()) const;
+    void apply(const Tools::Date& date, MonicaModel* model) const;
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 

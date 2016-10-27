@@ -1085,7 +1085,7 @@ BOTRes2& Monica::buildOutputTable2()
 			});
 
 			build({id++, "Month", "", "output current Month"},
-						[](const const MonicaModel& monica, OId oid)
+						[](const MonicaModel& monica, OId oid)
 			{
 				return int(monica.currentStepDate().month());
 			});

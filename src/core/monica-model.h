@@ -140,12 +140,7 @@ namespace Monica
 
 		void resetFertiliserCounter(){ _sumFertiliser = 0; }
 
-		void resetDailyCounter()
-		{
-			_dailySumIrrigationWater = 0.0;
-			_dailySumFertiliser = 0.0;
-			clearEvents();
-		}
+		void dailyReset();
 
 		void applyIrrigation(double amount, 
 												 double nitrateConcentration = 0,
@@ -262,6 +257,8 @@ namespace Monica
 		Tools::Date _currentStepDate;
 		std::map<Climate::ACD, double> _currentStepClimateData;
 		std::set<std::string> _currentEvents;
+
+		bool _clearCropUponNextDay{false};
 
 		int p_daysWithCrop{0};
 		double p_accuNStress{0.0};

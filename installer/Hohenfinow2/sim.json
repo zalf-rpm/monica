@@ -34,7 +34,7 @@
 		"csv-options": {
 			"include-header-row": true,
 			"include-units-row": true,
-			"include-aggregation-rows": false,
+			"include-aggregation-rows": true,
 			"csv-separator": ","
 		},
 		
@@ -55,6 +55,8 @@
 				["SnowD", "MAX"], ["SnowD", "SUM"], ["FrostD", "SUM"],
 				["RunOff", "SUM"], ["NH3", "SUM"], ["Precip", "SUM"], "Act_ET"
 			],
+
+			"yearly", ["Year", ["N", [1, 3]], ["RunOff", "SUM"], ["NLeach", "SUM"], ["Recharge", "SUM"]],
 
 			"run", [["Precip", "SUM"]],
 
@@ -81,7 +83,12 @@
 
 			{	"start": "xxxx-05-01",
 				"end": "xxxx-07-31",
-				"at": "xxxx-xx-15"}, ["Date", "Stage", "TempSum"]
+				"at": "xxxx-xx-15"}, ["Date", "Stage", "TempSum"],
+
+			"seeding", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			"harvesting", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			{"from": "seeding",
+			"to": "harvesting"}, ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]]
 		],
 
 

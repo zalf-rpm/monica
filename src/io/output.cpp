@@ -150,12 +150,16 @@ Tools::Errors Spec::merge(json11::Json j)
 	if(j.is_string() && j.string_value().size() == 10)
 		j = J11Object{{"at", j.string_value()}};
 
+	auto events_ = events();
 	auto s = splitString(j["start"].string_value(), "-");
 	DMY dmy;
 	if(!s.empty() && !s[0].empty())
 	{
-		if(events().find(s[0]) != events().end())
+		if(events_.find(s[0]) != events_.end())
+		{
 			time2event["start"] = s[0];
+			eventType = eCrop;
+		}
 		else
 		{
 			if(s.size() > 0)
@@ -165,6 +169,7 @@ Tools::Errors Spec::merge(json11::Json j)
 			if(s.size() > 2)
 				dmy.day = parseInt<size_t>(s[2]);
 			start = dmy;
+			eventType = eDate;
 		}
 	}
 
@@ -172,8 +177,11 @@ Tools::Errors Spec::merge(json11::Json j)
 	dmy = DMY();
 	if(!e.empty() && !e[0].empty())
 	{
-		if(events().find(e[0]) != events().end())
+		if(events_.find(e[0]) != events_.end())
+		{
 			time2event["end"] = e[0];
+			eventType = eCrop;
+		}
 		else
 		{
 			if(e.size() > 0)
@@ -183,6 +191,7 @@ Tools::Errors Spec::merge(json11::Json j)
 			if(e.size() > 2)
 				dmy.day = parseInt<size_t>(e[2]);
 			end = dmy;
+			eventType = eDate;
 		}
 	}
 
@@ -190,8 +199,11 @@ Tools::Errors Spec::merge(json11::Json j)
 	dmy = DMY();
 	if(!a.empty() && !a[0].empty())
 	{
-		if(events().find(a[0]) != events().end())
+		if(events_.find(a[0]) != events_.end())
+		{
 			time2event["at"] = a[0];
+			eventType = eCrop;
+		}
 		else
 		{
 			if(a.size() > 0)
@@ -201,6 +213,7 @@ Tools::Errors Spec::merge(json11::Json j)
 			if(a.size() > 2)
 				dmy.day = parseInt<size_t>(a[2]);
 			at = dmy;
+			eventType = eDate;
 		}
 	}
 
@@ -208,8 +221,11 @@ Tools::Errors Spec::merge(json11::Json j)
 	dmy = DMY();
 	if(!f.empty() && !f[0].empty())
 	{
-		if(events().find(f[0]) != events().end())
+		if(events_.find(f[0]) != events_.end())
+		{
 			time2event["from"] = f[0];
+			eventType = eCrop;
+		}
 		else
 		{
 			if(f.size() > 0)
@@ -219,6 +235,7 @@ Tools::Errors Spec::merge(json11::Json j)
 			if(f.size() > 2)
 				dmy.day = parseInt<size_t>(f[2]);
 			from = dmy;
+			eventType = eDate;
 		}
 	}
 
@@ -226,8 +243,11 @@ Tools::Errors Spec::merge(json11::Json j)
 	dmy = DMY();
 	if(!t.empty() && !t[0].empty())
 	{
-		if(events().find(t[0]) != events().end())
+		if(events_.find(t[0]) != events_.end())
+		{
 			time2event["to"] = t[0];
+			eventType = eCrop;
+		}
 		else
 		{
 			if(t.size() > 0)
@@ -237,6 +257,7 @@ Tools::Errors Spec::merge(json11::Json j)
 			if(t.size() > 2)
 				dmy.day = parseInt<size_t>(t[2]);
 			to = dmy;
+			eventType = eDate;
 		}
 	}
 
@@ -341,45 +362,15 @@ namespace
 Errors Output::merge(json11::Json j)
 {
 	Errors es;
-	es.append(extractAndStore(j["dailyOutputIds"], dailyOutputIds));
-	es.append(extractAndStore(j["monthlyOutputIds"], monthlyOutputIds));
-	es.append(extractAndStore(j["yearlyOutputIds"], yearlyOutputIds));
-	for(auto& p : j["atOutputIds"].object_items())
-	es.append(extractAndStore(p.second, atOutputIds[Date::fromIsoDateString(p.first)]));
-	es.append(extractAndStore(j["cropOutputIds"], cropOutputIds));
-	es.append(extractAndStore(j["runOutputIds"], runOutputIds));
 
 	customId = j["customId"].string_value();
 
-	for(auto& j : j["daily"].array_items())
-		daily.push_back(j.array_items());
-
-	for(auto& p : j["monthly"].object_items())
-		for(auto& j : p.second.array_items())
-			monthly[stoi(p.first)].push_back(j.array_items());
-
-	for(auto& j : j["yearly"].array_items())
-		yearly.push_back(j.array_items());
-
-	for(auto& p : j["at"].object_items())
-		for(auto& j : p.second.array_items())
-			at[Date::fromIsoDateString(p.first)].push_back(j.array_items());
-
-	for(auto& p : j["crop"].object_items())
-		for(auto& j : p.second.array_items())
-			crop[p.first].push_back(j.array_items());
-
-	run = j["run"].array_items();
-
-	for(auto& p : j["origSpec2oids"].object_items())
-		origSpec2oids[p.first] = toVector<OId>(p.second);
-
-	for(auto& p : j["origSpec2results"].object_items())
+	for(const auto& d : j["data"].array_items())
 	{
 		vector<J11Array> v;
-		for(auto& j : p.second.array_items())
+		for(auto& j : d["results"].array_items())
 			v.push_back(j.array_items());
-		origSpec2results[p.first] = v;
+		data.push_back({d["origSpec"].string_value(), toVector<OId>(d["outputIds"]), v});
 	}
 
 	return es;
@@ -387,70 +378,23 @@ Errors Output::merge(json11::Json j)
 
 json11::Json Output::to_json() const
 {
-	J11Object aoids;
-	for(auto p : atOutputIds)
-		aoids[p.first.toIsoDateString()] = p.second;
-
-	J11Array daily_;
-	for(auto& vs : daily)
-		daily_.push_back(vs);
-
-	J11Object monthly_;
-	for(auto& p : monthly)
+	J11Array ds;
+	for(const auto& d : data)
 	{
-		J11Array jvs;
-		for(auto& vs : p.second)
-			jvs.push_back(vs);
-		monthly_[to_string(p.first)] = jvs;
-	}
-
-	J11Array yearly_;
-	for(auto& vs : yearly)
-		yearly_.push_back(vs);
-
-	J11Object at_;
-	for(auto& p : at)
-	{
-		J11Array jvs;
-		for(auto& vs : p.second)
-			jvs.push_back(vs);
-		at_[p.first.toIsoDateString()] = jvs;
-	}
-
-	J11Object crop_;
-	for(auto& p : crop)
-		crop_[p.first] = p.second;
-
-	J11Object os2oids;
-	for(auto& p : origSpec2oids)
-		os2oids[p.first] = toJsonArray(p.second);
-
-	J11Object os2res;
-	for(auto& p : origSpec2results)
-	{
-		J11Array a;
-		for(auto rs : p.second)
-			a.push_back(rs);
-		os2oids[p.first] = a;
+		J11Array rs;
+		for(auto r : d.results)
+			rs.push_back(r);
+		ds.push_back(J11Object
+		{{"origSpec", d.origSpec}
+		,{"outputIds", toJsonArray(d.outputIds)}
+		,{"results", rs}
+		});
 	}
 
 	return json11::Json::object
 	{{"type", "Output"}
-	,{"dailyOutputIds", dailyOutputIds}
-	,{"monthlyOutputIds", monthlyOutputIds}
-	,{"yearlyOutputIds", yearlyOutputIds}
-	,{"atOutputIds", aoids}
-	,{"cropOutputIds", cropOutputIds}
-	,{"runOutputIds", runOutputIds}
 	,{"customId", customId}
-	,{"daily", daily_}
-	,{"monthly", monthly_}
-	,{"yearly", yearly_}
-	,{"at", at_}
-	,{"crop", crop_}
-	,{"run", run}
-	,{"origSpec2oids", os2oids}
-	,{"origSpec2results", os2res}
+	,{"data", ds}
 	};
 }
 
