@@ -102,55 +102,8 @@ namespace Monica
 
 		std::string toString(bool detailed = false) const;
 
-		void setHarvestYields(double primaryYield, double secondaryYield)
-		{
-			_primaryYield += primaryYield;
-			_secondaryYield += secondaryYield;
-		}
-
-		void setHarvestYieldsTM(double primaryYieldTM, double secondaryYieldTM)
-		{
-			_primaryYieldTM += primaryYieldTM;
-			_secondaryYieldTM += secondaryYieldTM;
-		}
-
-		void setYieldNContent(double primaryYieldN, double secondaryYieldN)
-		{
-			_primaryYieldN += primaryYieldN;
-			_secondaryYieldN += secondaryYieldN;
-		}
-
-		void addAppliedIrrigationWater(double amount) { _appliedAmountIrrigation += amount; }
-		void setSumTotalNUptake(double sum) { _sumTotalNUptake = sum; }
-		void setCropHeight(double height) {_cropHeight = height; }
-		void setAccumulatedETa(double eta) { _accumulatedETa = eta; }
-		void setAccumulatedTranspiration(double transp) { _accumulatedTranspiration = transp;  }
-
-		double appliedIrrigationWater() const { return _appliedAmountIrrigation; }
-		double sumTotalNUptake() const {return _sumTotalNUptake; }
-		double primaryYield() const { return _primaryYield * _crossCropAdaptionFactor; }
-		double aboveGroundBiomass() const { return _primaryYield * _crossCropAdaptionFactor + _secondaryYield * _crossCropAdaptionFactor; }
-		double secondaryYield() const { return _secondaryYield * _crossCropAdaptionFactor; }
-		double primaryYieldTM() const {  return _primaryYieldTM * _crossCropAdaptionFactor; }
-		double secondaryYieldTM() const { return _secondaryYieldTM * _crossCropAdaptionFactor; }
-		double primaryYieldN() const { return _primaryYieldN; }
-		double aboveGroundBiomasseN() const { return _primaryYieldN + _secondaryYieldN; }
-		double secondaryYieldN() const { return _secondaryYieldN; }
-		double cropHeight() const { return _cropHeight; }
-
-		void reset();
-
 		void setEva2TypeUsage(int type) { eva2_typeUsage = type; }
 		int getEva2TypeUsage() const { return eva2_typeUsage; }
-
-		double get_AccumulatedETa() const {return _accumulatedETa;}
-		double get_AccumulatedTranspiration() const { return _accumulatedTranspiration; }
-
-		void setAnthesisDay(int day) { _anthesisDay = day; }
-		int getAnthesisDay() const { return _anthesisDay; }
-
-		void setMaturityDay(int day) { _maturityDay = day; }
-		int getMaturityDay() const { return _maturityDay; }
 		
     // Automatic yield trigger parameters
 		bool useAutomaticHarvestTrigger() { return _automaticHarvest; }
@@ -172,25 +125,10 @@ namespace Monica
     CropParametersPtr _perennialCropParams;
     CropResidueParametersPtr _residueParams;
 
-    double _primaryYield{0.0};
-    double _secondaryYield{0.};
-    double _primaryYieldTM{0.0};
-    double _secondaryYieldTM{0.0};
-    double _appliedAmountIrrigation{0.0};
-    double _primaryYieldN{0.0};
-    double _secondaryYieldN{0.0};
-    double _sumTotalNUptake{0.0};
-
     double _crossCropAdaptionFactor{1.0};
-    double _cropHeight{0.0};
-    double _accumulatedETa{0.0};
-    double _accumulatedTranspiration{0.0};
 
     int eva2_typeUsage{NUTZUNG_UNDEFINED};
 
-    int _anthesisDay{-1};
-    int _maturityDay{-1};
-		
     bool _automaticHarvest{false};
 		AutomaticHarvestParameters _automaticHarvestParams;
 	};

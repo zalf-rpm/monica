@@ -528,38 +528,6 @@ ResultIdInfo Monica::resultIdInfo(ResultId rid)
 
 //------------------------------------------------------------------------------
 
-CMResult::CMResult(json11::Json j)
-{
-  merge(j);
-}
-
-Errors CMResult::merge(json11::Json j)
-{
-  set_string_value(id, j, "cropId");
-  set_int_value(customId, j, "customId");
-  set_iso_date_value(date, j, "date");
-
-  for(auto jpvr : j["cmResults"].object_items())
-    results[ResultId(stoi(jpvr.first))] = jpvr.second.number_value();
-
-	return{};
-}
-
-json11::Json CMResult::to_json() const
-{
-  json11::Json::object pvrs;
-  for(auto pvr : results)
-    pvrs[to_string(pvr.first)] = pvr.second;
-  return json11::Json::object {
-    {"type", "CMResult"},
-    {"cropId", id},
-		{"customId", customId},
-    {"date", date.toIsoDateString()},
-    {"cmResults", pvrs}};
-}
-
-//------------------------------------------------------------------------------
-
 /**
  * @brief Constructor
  * @param oid organ ID

@@ -113,7 +113,6 @@ namespace Monica
 
     Harvest(const Tools::Date& at,
             CropPtr crop,
-            CMResultPtr cropResult,
             std::string method = "total");
 
     Harvest(json11::Json j);
@@ -140,13 +139,10 @@ namespace Monica
 
     void setExported(bool exported)	{ _exported = exported; }
 
-    CMResultPtr cropResult() const { return _cropResult; }
-
 		void setCrop(CropPtr c) { _crop = c; }
 
   private:
     CropPtr _crop;
-    CMResultPtr _cropResult;
     std::string _method;
     double _percentage{0};
     bool _exported{true};
@@ -162,7 +158,6 @@ namespace Monica
 
 		AutomaticHarvest(const Tools::Date& at,
 										 CropPtr crop,
-										 CMResultPtr cropResult,
 										 std::string method = "total");
 
 		AutomaticHarvest(json11::Json j);
@@ -183,7 +178,7 @@ namespace Monica
 		std::string _harvestTime; //!< Harvest time parameter
 		int _latestHarvestDOY{-1};
 	};
-	*/
+	//*/
 
 	//----------------------------------------------------------------------------
 
@@ -380,9 +375,6 @@ namespace Monica
 
 		std::string toString() const;
 
-    CMResult cropResult() const { return *(_cropResult.get()); }
-    CMResultPtr cropResultPtr() const { return _cropResult; }
-
 		//the custom id is used to keep a potentially usage defined
     //mapping to an entity from another domain,
     //e.g. a Carbiocial CropActivity which the CultivationMethod was based on
@@ -397,9 +389,6 @@ namespace Monica
 		std::string _name;
 		CropPtr _crop;
     bool _irrigateCrop{false};
-
-    //store results of the cultivation method
-    CMResultPtr _cropResult;
 	};
 	
 	template<>
@@ -413,7 +402,6 @@ namespace Monica
 	DLL_API inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
   {
     insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
-    _cropResult = h.cropResult();
   }
 
 }

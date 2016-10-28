@@ -300,35 +300,6 @@ namespace Monica
 
 	ResultIdInfo resultIdInfo(ResultId rid);
 
-	/**
-	 * @brief structure holding the results for a particular crop (in one year usually)
-	 */
-  struct DLL_API CMResult : public Tools::Json11Serializable
-	{
-    CMResult() {}
-
-    CMResult(std::string id) : id(id) {}
-
-    CMResult(json11::Json object);
-
-    virtual Tools::Errors merge(json11::Json j);
-
-    virtual json11::Json to_json() const;
-
-		//! id of crop
-    std::string id;
-
-		//custom id to enable mapping of monica results to user defined other entities
-		//e.g. a crop activity id from Carbiocial
-    int customId{-1};
-    Tools::Date date;
-
-		//! different results for a particular crop
-    std::map<ResultId, double> results;
-	};
-
-  typedef std::shared_ptr<CMResult> CMResultPtr;
-
 	//----------------------------------------------------------------------------
 
 	/**

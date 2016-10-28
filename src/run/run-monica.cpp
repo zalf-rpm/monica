@@ -848,8 +848,7 @@ Output Monica::runMonica(Env env)
 					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
 					auto harvestApplication =
 						unique_ptr<Harvest>(new Harvest(currentDate,
-																						currentCM.crop(),
-																						currentCM.cropResultPtr()));
+																						currentCM.crop()));
 					harvestApplication->apply(&monica);
 				}
 			}
@@ -887,9 +886,6 @@ Output Monica::runMonica(Env env)
 		{
 			//to count the applied fertiliser for the next production process
 			monica.resetFertiliserCounter();
-
-			//resets crop values for use in next year
-			currentCM.crop()->reset();
 
 			cmci++;
 			//start anew if we reached the end of the crop rotation

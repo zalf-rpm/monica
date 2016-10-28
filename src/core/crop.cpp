@@ -171,13 +171,5 @@ string Crop::toString(bool detailed) const
   return s.str();
 }
 
-void Crop::reset()
-{
-	_primaryYield = _secondaryYield = _appliedAmountIrrigation = 0;
-	_primaryYieldN = _secondaryYieldN = _accumulatedETa = _accumulatedTranspiration = 0.0;
-	_primaryYieldTM = _secondaryYield = 0.0;
-	_anthesisDay = _maturityDay = -1;
-}
-
 //------------------------------------------------------------------------------
 

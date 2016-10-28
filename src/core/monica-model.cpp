@@ -473,11 +473,7 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
   {
     _soilOrganic.addIrrigationWater(amount);
     _soilColumn.applyIrrigation(amount, nitrateConcentration);
-    if(_currentCrop)
-    {
-      _currentCrop->addAppliedIrrigationWater(amount);
-      addDailySumIrrigationWater(amount);
-    }
+		addDailySumIrrigationWater(amount);
   }
 }
 
@@ -637,8 +633,7 @@ void MonicaModel::cropStep()//Tools::Date date, std::map<Climate::ACD, double> c
                                              aips.nitrateConcentration))
     {
       _soilOrganic.addIrrigationWater(aips.amount);
-      _currentCrop->addAppliedIrrigationWater(aips.amount);
-      _dailySumIrrigationWater += aips.amount;
+      addDailySumIrrigationWater(aips.amount);
     }
   }
 
