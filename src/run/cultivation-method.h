@@ -139,6 +139,7 @@ namespace Monica
 
     void setExported(bool exported)	{ _exported = exported; }
 
+		CropPtr crop() const { return _crop; }
 		void setCrop(CropPtr c) { _crop = c; }
 
   private:
@@ -150,14 +151,15 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	/*
+	//*
 	class DLL_API AutomaticHarvest : public Harvest
 	{
 	public:
 		AutomaticHarvest();
 
-		AutomaticHarvest(const Tools::Date& at,
-										 CropPtr crop,
+		AutomaticHarvest(CropPtr crop,
+										 std::string harvestTime,
+										 int latestHarvestDOY,
 										 std::string method = "total");
 
 		AutomaticHarvest(json11::Json j);

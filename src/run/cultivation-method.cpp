@@ -222,6 +222,60 @@ void Harvest::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
+AutomaticHarvest::AutomaticHarvest()
+	: Harvest()
+{}
+
+AutomaticHarvest::AutomaticHarvest(CropPtr crop,
+																	 std::string harvestTime,
+																	 int latestHarvestDOY,
+																	 std::string method)
+	: Harvest(Date(), crop, method)
+	, _harvestTime(harvestTime)
+	, _latestHarvestDOY(latestHarvestDOY)
+{
+}
+
+AutomaticHarvest::AutomaticHarvest(json11::Json j)
+	: Harvest(j)
+{
+	merge(j);
+}
+
+Errors AutomaticHarvest::merge(json11::Json j)
+{
+	Errors res = Harvest::merge(j);
+
+	set_string_value(_harvestTime, j, "harvestTime");
+	set_int_value(_latestHarvestDOY, j, "latestHarvestDOY");
+
+	return res;
+}
+
+json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const
+{
+	auto o = Harvest::to_json(includeFullCropParameters).object_items();
+	o["type"] = type();
+	o["harvestTime"] = _harvestTime;
+	o["latestHarvestDOY"] = _latestHarvestDOY;
+	return o;
+}
+
+void AutomaticHarvest::apply(MonicaModel* model)
+{
+	if(model->cropGrowth() 
+		 && _harvestTime == "maturity"
+		 && (model->cropGrowth()->maturityReached()
+				 || _latestHarvestDOY == model->currentStepDate().julianDay()))
+	{
+		Harvest::apply(model);
+		model->addEvent("AutomaticHarvest");
+		model->addEvent("automatic-harvesting");
+	}
+}
+
+//------------------------------------------------------------------------------
+
 Cutting::Cutting(const Tools::Date& at)
 	: WorkStep(at)
 {}
