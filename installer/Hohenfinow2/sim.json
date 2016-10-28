@@ -34,53 +34,61 @@
 		"csv-options": {
 			"include-header-row": true,
 			"include-units-row": true,
-			"include-aggregation-rows": false,
+			"include-aggregation-rows": true,
 			"csv-separator": ","
 		},
 		
-		"__what data to include in the daily monica output": "",
-		"_daily": [
-			"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",
-			"Stage", "TempSum", "VernF", "DaylF", 
-			"IncRoot", "IncLeaf", "IncShoot", "IncFruit", 
-			"RelDev", "LT50", "AbBiom", 
-			["OrgBiom", "Root"], ["OrgBiom", "Leaf"], ["OrgBiom", "Shoot"], 
-			["OrgBiom", "Fruit"], ["OrgBiom", "Struct"], ["OrgBiom", "Sugar"],
-			"Yield", "SumYield", "GroPhot", "NetPhot", "MaintR", "GrowthR",	"StomRes",
-			"Height", "LAI", "RootDep", "EffRootDep", "TotBiomN", "AbBiomN", "SumNUp",
-			"ActNup", "PotNup", "NFixed", "Target", "CritN", "AbBiomNc", "YieldNc", 
-			"Protein", 
-			"NPP", ["NPP", "Root"], ["NPP", "Leaf"], ["NPP", "Shoot"], 
-			["NPP", "Fruit"], ["NPP", "Struct"], ["NPP", "Sugar"],
-			"GPP", 
-			"Ra", 
-			["Ra", "Root"], ["Ra", "Leaf"], ["Ra", "Shoot"], ["Ra", "Fruit"], 
-			["Ra", "Struct"], ["Ra", "Sugar"],
-			["Mois", [1, 20]], "Precip", "Irrig", "Infilt", "Surface", "RunOff", "SnowD", "FrostD",
-			"ThawD", ["PASW", [1, 20]], "SurfTemp", ["STemp", [1, 5]], 
-			"Act_Ev", "Act_ET", "ET0", "Kc", "AtmCO2", "Groundw", "Recharge", "NLeach",
-			["NO3", [1, 20]], "Carb", ["NH4", [1, 20]], ["NO2", [1, 4]], 
-			["SOC", [1, 6]], ["SOC-X-Y", [1, 3,	"SUM"]], ["SOC-X-Y", [1, 20, "SUM"]],
-			["AOMf", 1], ["AOMs", 1], ["SMBf", 1], ["SMBs", 1], ["SOMf", 1], 
-			["SOMs", 1], ["CBal", 1], ["Nmin", [1, 3]], "NetNmin", "Denit", "N2O", "SoilpH",
-			"NEP", "NEE", "Rh", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours",
-			"NFert"
-		],
-		"daily": [
-			"Date", "Crop", "Stage", "Yield", "SumYield", ["SOC", [1, 6]], "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
-		],
-		"monthly": [
-			"Year", "Month",
-			["SOC", [1, 1, "AVG"]], ["SOC", [1, 3, "AVG"]],
-			["WaterContent", [1, 9, "AVG"]], "Recharge", "NLeach", 
-			["SnowD", "MAX"], ["SnowD", "SUM"], ["FrostD", "SUM"],
-			["RunOff", "SUM"], ["NH3", "SUM"], ["Precip", "SUM"], "Act_ET"
-		],
-		"yearly": ["Year", ["N", [1, 3]], ["RunOff", "SUM"], ["NLeach", "SUM"], ["Recharge", "SUM"]],
-		"run": [["Precip", "SUM"]],
-		"crop": ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
-		"at": {
-			"0000-03-31": [
+		"__what data to include in the monica output according to the events defined by the keys": "",
+		"events": [
+			{	"start": "xxxx-05-01",
+				"end": "xxxx-07-31",
+				"from": "xxxx-xx-20",
+				"to": "xxxx-xx-31"}, ["Year", ["SOC", [1, 20]]],
+
+			"daily", [
+				"Date", "Crop", "Stage", "Yield", "SumYield", ["SOC", [1, 6]], "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
+			],
+			"_daily", [
+				"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",
+				"Stage", "TempSum", "VernF", "DaylF", 
+				"IncRoot", "IncLeaf", "IncShoot", "IncFruit", 
+				"RelDev", "LT50", "AbBiom", 
+				["OrgBiom", "Root"], ["OrgBiom", "Leaf"], ["OrgBiom", "Shoot"], 
+				["OrgBiom", "Fruit"], ["OrgBiom", "Struct"], ["OrgBiom", "Sugar"],
+				"Yield", "SumYield", "GroPhot", "NetPhot", "MaintR", "GrowthR",	"StomRes",
+				"Height", "LAI", "RootDep", "EffRootDep", "TotBiomN", "AbBiomN", "SumNUp",
+				"ActNup", "PotNup", "NFixed", "Target", "CritN", "AbBiomNc", "YieldNc", 
+				"Protein", 
+				"NPP", ["NPP", "Root"], ["NPP", "Leaf"], ["NPP", "Shoot"], 
+				["NPP", "Fruit"], ["NPP", "Struct"], ["NPP", "Sugar"],
+				"GPP", 
+				"Ra", 
+				["Ra", "Root"], ["Ra", "Leaf"], ["Ra", "Shoot"], ["Ra", "Fruit"], 
+				["Ra", "Struct"], ["Ra", "Sugar"],
+				["Mois", [1, 20]], "Precip", "Irrig", "Infilt", "Surface", "RunOff", "SnowD", "FrostD",
+				"ThawD", ["PASW", [1, 20]], "SurfTemp", ["STemp", [1, 5]], 
+				"Act_Ev", "Act_ET", "ET0", "Kc", "AtmCO2", "Groundw", "Recharge", "NLeach",
+				["NO3", [1, 20]], "Carb", ["NH4", [1, 20]], ["NO2", [1, 4]], 
+				["SOC", [1, 6]], ["SOC-X-Y", [1, 3,	"SUM"]], ["SOC-X-Y", [1, 20, "SUM"]],
+				["AOMf", 1], ["AOMs", 1], ["SMBf", 1], ["SMBs", 1], ["SOMf", 1], 
+				["SOMs", 1], ["CBal", 1], ["Nmin", [1, 3]], "NetNmin", "Denit", "N2O", "SoilpH",
+				"NEP", "NEE", "Rh", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours",
+				"NFert"
+			],
+
+			"monthly", [
+				"Year", "Month",
+				["SOC", [1, 1, "AVG"]], ["SOC", [1, 3, "AVG"]],
+				["WaterContent", [1, 9, "AVG"]], "Recharge", "NLeach", 
+				["SnowD", "MAX"], ["SnowD", "SUM"], ["FrostD", "SUM"],
+				["RunOff", "SUM"], ["NH3", "SUM"], ["Precip", "SUM"], "Act_ET"
+			],
+
+			"yearly", ["Year", ["N", [1, 3]], ["RunOff", "SUM"], ["NLeach", "SUM"], ["Recharge", "SUM"]],
+
+			"run", [["Precip", "SUM"]],
+
+			"xxxx-03-31", [
 				"Year",
 				["N", [1, 9, "SUM"]],
 				["STemp", [1, 3, "SUM"]],
@@ -99,8 +107,24 @@
 				["PercolationRate", [7, 9, "AVG"]],
 				"Act_ET", "Act_Ev", "NH3",
 				"Evapotranspiration", "Evaporation", "Transpiration"
-			]
-		}
+			],
+
+			{	"start": "xxxx-05-01",
+				"end": "xxxx-07-31",
+				"at": "xxxx-xx-15"}, ["Date", "Stage", "TempSum"],
+
+			"seeding", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			"harvesting", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			{	"from": "seeding",
+				"to": "harvesting"}, ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
+
+			
+			["Stage", "=", 2], ["Date", "Stage"],
+			{"at": ["Stage", "=", 2]}, ["Date", "Stage", ["Mois",1]],
+			[["Mois", 1], "<", 0.5], ["Date", ["Mois",1]],
+			{	"from": ["Stage", "=", 2],
+				"to": ["Stage", "=", 3]}, ["Crop", "Stage"]
+		]
 	},
 	
 	"__given the start and end date, monica will run just this time range, else the full time range given by supplied climate data": "",

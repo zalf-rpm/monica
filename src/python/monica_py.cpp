@@ -22,14 +22,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "../core/monica.h"
+#include "../core/monica-model.h"
 #include "../run/env-from-json-config.h"
 #include "../run/run-monica.h"
 #include "tools/date.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
 #include "tools/json11-helper.h"
-#include "../io/output.h"
+#include "../io/build-output.h"
 #include "climate/climate-file-io.h"
 
 using namespace boost::python;
@@ -50,13 +50,10 @@ dict rm(dict params)
 	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
 	activateDebug = env.debugMode;
 		
-	auto res = Monica::runMonica(env);
+	auto out = Monica::runMonica(env);
 	
-	map<string, Json> m;
-	addOutputToResultMessage(res.out, m);
-
 	dict d;
-	for(auto& p : m)
+	for(auto& p : out.to_json().object_items())
 		d[p.first] = p.second.dump();
 
 	return d;
@@ -80,10 +77,9 @@ string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVStrin
 	if(r.success())
 	{
 		J11Object options = r.result.object_items();
-		bool useLeapYears = options["use-leap-years"].bool_value();
 		os.separator = options["csv-separator"].string_value();
-		os.startDate = Date::fromIsoDateString(options["start-date"].string_value(), useLeapYears);
-		os.endDate = Date::fromIsoDateString(options["end-date"].string_value(), useLeapYears);
+		os.startDate = Date::fromIsoDateString(options["start-date"].string_value());
+		os.endDate = Date::fromIsoDateString(options["end-date"].string_value());
 		os.noOfHeaderLines = options["no-of-climate-file-header-line"].int_value();
 				
 		map<string, string> hn2acdn;

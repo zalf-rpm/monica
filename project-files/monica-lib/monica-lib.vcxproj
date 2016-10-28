@@ -184,7 +184,7 @@
     <ClInclude Include="..\..\src\core\crop-growth.h" />
     <ClInclude Include="..\..\src\core\crop.h" />
     <ClInclude Include="..\..\src\core\monica-parameters.h" />
-    <ClInclude Include="..\..\src\core\monica.h" />
+    <ClInclude Include="..\..\src\core\monica-model.h" />
     <ClInclude Include="..\..\src\core\soilcolumn.h" />
     <ClInclude Include="..\..\src\core\soilmoisture.h" />
     <ClInclude Include="..\..\src\core\soilorganic.h" />
@@ -193,6 +193,7 @@
     <ClInclude Include="..\..\src\core\voc-common.h" />
     <ClInclude Include="..\..\src\core\voc-guenther.h" />
     <ClInclude Include="..\..\src\core\voc-jjv.h" />
+    <ClInclude Include="..\..\src\io\build-output.h" />
     <ClInclude Include="..\..\src\io\output.h" />
     <ClInclude Include="..\..\src\run\cultivation-method.h" />
     <ClInclude Include="..\..\src\run\run-monica.h" />
@@ -217,7 +218,8 @@
     <ClCompile Include="..\..\src\core\voc-guenther.cpp" />
     <ClCompile Include="..\..\src\core\voc-jjv.cpp" />
     <ClCompile Include="..\..\src\core\monica-parameters.cpp" />
-    <ClCompile Include="..\..\src\core\monica.cpp" />
+    <ClCompile Include="..\..\src\core\monica-model.cpp" />
+    <ClCompile Include="..\..\src\io\build-output.cpp" />
     <ClCompile Include="..\..\src\io\output.cpp" />
     <ClCompile Include="..\..\src\run\cultivation-method.cpp" />
     <ClCompile Include="..\..\src\run\run-monica.cpp" />

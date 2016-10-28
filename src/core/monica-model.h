@@ -28,6 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 #include <memory>
 #include <queue>
+#include <set>
 
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
@@ -62,11 +63,11 @@ namespace Monica
 
 		~MonicaModel();
 
-		void generalStep(Tools::Date date, std::map<Climate::ACD, double> climateData);
-		void generalStep(unsigned int stepNo);
-
-		void cropStep(Tools::Date date, std::map<Climate::ACD, double> climateData);
-		void cropStep(unsigned int stepNo);
+		void step(Tools::Date date, std::map<Climate::ACD, double> climateData);
+		
+		void generalStep();// Tools::Date date, std::map<Climate::ACD, double> climateData);
+		
+		void cropStep();// Tools::Date date, std::map<Climate::ACD, double> climateData);
 
 		double CO2ForDate(double year, double julianDay, bool isLeapYear);
 		double CO2ForDate(Tools::Date);
@@ -139,13 +140,10 @@ namespace Monica
 
 		void resetFertiliserCounter(){ _sumFertiliser = 0; }
 
-		void resetDailyCounter()
-		{
-			_dailySumIrrigationWater = 0.0;
-			_dailySumFertiliser = 0.0;
-		}
+		void dailyReset();
 
-		void applyIrrigation(double amount, double nitrateConcentration = 0,
+		void applyIrrigation(double amount, 
+												 double nitrateConcentration = 0,
 		                     double sulfateConcentration = 0);
 
 		void applyTillage(double depth);
@@ -156,8 +154,6 @@ namespace Monica
 		}
 
 		double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
-
-		//bool writeOutputFiles() {return _writeOutputFiles; }
 
 		double avgCorg(double depth_m) const;
 		double mean90cmWaterContent() const;
@@ -184,53 +180,21 @@ namespace Monica
 		double getSumNH3Volatilised() const;
 		double getsum30cmActDenitrificationRate() const;
 		double getETa() const;
-
-
-		/*
-		 * @brief Returns soil temperature
-		 * @return temperature
-		 */
+		
 		const SoilTemperature& soilTemperature() const { return _soilTemperature; }
 
-		/*
-		 * @brief Returns soil moisture.
-		 * @return Moisture
-		 */
 		const SoilMoisture& soilMoisture() const { return _soilMoisture; }
 
-		/*
-		 * @brief Returns soil organic mass.
-		 * @return soil organic
-		 */
 		const SoilOrganic& soilOrganic() const { return _soilOrganic; }
 
-		/*
-		 * @brief Returns soil transport
-		 * @return soil transport
-		 */
 		const SoilTransport& soilTransport() const { return _soilTransport; }
 
-		/*
-		 * @brief Returns soil column
-		 * @return soil column
-		 */
 		const SoilColumn& soilColumn() const { return _soilColumn; }
 
 		SoilColumn& soilColumnNC() { return _soilColumn; }
 
-		Climate::DataAccessor climateData() const { return _dataAccessor; }
-
-		/*
-		 * @brief returns value for current crop.
-		 * @return crop growth
-		 */
 		CropGrowth* cropGrowth() const { return _currentCropGrowth; }
 
-		/*
-		 * @brief Returns net radiation.
-		 * @param globrad
-		 * @return radiation
-		 */
 		double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
 
 		int daysWithCrop() const {return p_daysWithCrop; }
@@ -240,7 +204,6 @@ namespace Monica
 		double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
 		const SiteParameters& siteParameters() const { return _sitePs; }
-
 		const UserSoilMoistureParameters& soilmoistureParameters() const { return _smPs; }
 		const UserEnvironmentParameters& environmentParameters() const { return _envPs; }
 		const UserCropParameters& cropParameters() const { return _cropPs; }
@@ -248,6 +211,14 @@ namespace Monica
 		const UserSoilTransportParameters& soilTransportParameters() const { return _soilTransPs; }
 		const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
 		const SimulationParameters& simulationParameters() const { return _simPs; }
+
+		Tools::Date currentStepDate() const { return _currentStepDate; }
+
+		const std::map<Climate::ACD, double>& currentStepClimateData() const { return _currentStepClimateData; }
+
+		void addEvent(std::string e) { _currentEvents.insert(e); }
+		void clearEvents() { _currentEvents.clear(); }
+		std::set<std::string> currentEvents() const { return _currentEvents; }
 
 	private:
 		const SiteParameters _sitePs;
@@ -258,8 +229,7 @@ namespace Monica
 		const UserSoilTransportParameters _soilTransPs;
 		const UserSoilOrganicParameters _soilOrganicPs;
 		const SimulationParameters _simPs;
-		//bool _writeOutputFiles{false};
-		std::string _pathToOutputDir;
+		//std::string _pathToOutputDir;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;
 
 		SoilColumn _soilColumn; //!< main soil data structure
@@ -284,8 +254,11 @@ namespace Monica
 
 		double _dailySumIrrigationWater{0.0};
 
-		//! climate data available to the model
-		Climate::DataAccessor _dataAccessor;
+		Tools::Date _currentStepDate;
+		std::map<Climate::ACD, double> _currentStepClimateData;
+		std::set<std::string> _currentEvents;
+
+		bool _clearCropUponNextDay{false};
 
 		int p_daysWithCrop{0};
 		double p_accuNStress{0.0};

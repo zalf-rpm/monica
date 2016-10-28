@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "soilorganic.h"
 #include "soilcolumn.h"
-#include "monica.h"
+#include "monica-model.h"
 #include "crop-growth.h"
 #include "tools/debug.h"
 #include "soil/constants.h"

@@ -26,45 +26,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
+#include "../core/monica-model.h"
+
 
 namespace Monica
 {
-	struct Result2
-	{
-		int id;
-		std::string name;
-		std::string unit;
-		std::string description;
-	};
-
-	//---------------------------------------------------------------------------
-
-	class MonicaModel;
-	class SoilTemperature;
-	class SoilMoisture;
-	class SoilOrganic;
-	class SoilColumn;
-	class SoilTransport;
-	class CropGrowth;
-
-	struct MonicaRefs
-	{
-		const MonicaModel* monica;
-		const SoilTemperature* temp;
-		const SoilMoisture* moist;
-		const SoilOrganic* org;
-		const SoilColumn* soilc;
-		const SoilTransport* trans;
-		const CropGrowth* mcg;
-		bool cropPlanted;
-		Climate::DataAccessor da;
-		int timestep;
-		Tools::Date currentDate;
-	};
-
-	//---------------------------------------------------------------------------
-
-	
 	struct DLL_API OId : public Tools::Json11Serializable
 	{
 		enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
@@ -128,46 +94,29 @@ namespace Monica
 		int fromLayer{-1}, toLayer{-1};
 	};
 
-	double applyOIdOP(OId::OP op, const std::vector<double>& vs);
-
-	json11::Json applyOIdOP(OId::OP op, const std::vector<json11::Json>& js);
-
 	//---------------------------------------------------------------------------
+
+	struct DLL_API Output : public Tools::Json11Serializable
+	{
+		Output() {}
+
+		Output(json11::Json object);
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
 		
-	DLL_API std::vector<OId> parseOutputIds(const Tools::J11Array& oidArray);
-
-	struct DLL_API Output
-	{
-		typedef int Id;
-		typedef int Month;
-		typedef int Year;
-		//typedef std::pair<std::string, std::string> SpeciesAndCultivarId;
-		typedef std::string SpeciesAndCultivarId;
-
-		std::vector<Tools::J11Array> daily;
-		std::map<Month, std::vector<Tools::J11Array>> monthly;
-		std::vector<Tools::J11Array> yearly;
-		std::map<Tools::Date, std::vector<Tools::J11Array>> at;
-		std::map<SpeciesAndCultivarId, std::vector<Tools::J11Array>> crop;
-		std::vector<json11::Json> run;
 		std::string customId;
+
+		struct Data
+		{
+			std::string origSpec;
+			std::vector<OId> outputIds;
+			std::vector<Tools::J11Array> results;
+		};
+
+		std::vector<Data> data;
 	};
-
-	DLL_API void addOutputToResultMessage(Output& out, Tools::J11Object& msg);
-	DLL_API void addResultMessageToOutput(const Tools::J11Object& msg, Output& out);
-
-	//-----------------------------------------------------------------------------
-
-	struct DLL_API BOTRes
-	{
-#ifndef JUST_OUTPUTS 
-		typedef std::vector<json11::Json> ResultVector;
-		std::map<int, std::function<void(MonicaRefs&, ResultVector&, OId)>> ofs;
-#endif
-		std::map<std::string, Result2> name2result;
-	};
-
-	DLL_API BOTRes& buildOutputTable();
 }  
 
 #endif 

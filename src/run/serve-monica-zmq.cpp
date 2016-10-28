@@ -542,15 +542,11 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 								return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 							};
 
-							auto res = runMonica(env);
-
-							J11Object resultMsg;
-							resultMsg["type"] = "result";
-							addOutputToResultMessage(res.out, resultMsg);
+							auto out = runMonica(env);
 
 							try
 							{
-								s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
+								s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
 							}
 							catch(zmq::error_t e)
 							{

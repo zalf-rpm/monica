@@ -478,31 +478,15 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 
 	env["params"] = cpp;
 	env["cropRotation"] = cropj["cropRotation"];
-	env["dailyOutputIds"] = parseOutputIds(simj["output"]["daily"].array_items());
-	env["monthlyOutputIds"] = parseOutputIds(simj["output"]["monthly"].array_items());
-	env["yearlyOutputIds"] = parseOutputIds(simj["output"]["yearly"].array_items());
-	env["cropOutputIds"] = parseOutputIds(simj["output"]["crop"].array_items());
-	if(simj["output"]["at"].is_object())
-	{
-		J11Object aoids;
-		for(auto p : simj["output"]["at"].object_items())
-		{
-			Date d = Date::fromIsoDateString(p.first);
-			if(d.isValid())
-				aoids[p.first] = parseOutputIds(p.second.array_items());
-		}
-		env["atOutputIds"] = aoids;
-	}
-	env["runOutputIds"] = parseOutputIds(simj["output"]["run"].array_items());
+	env["events"] = simj["output"]["events"];
+	env["outputs"] = simj["output"];
 
 	auto climateDataSettings = simj["climate.csv-options"].object_items();
 	climateDataSettings["start-date"] = simj["start-date"];
 	climateDataSettings["end-date"] = simj["end-date"];
-	climateDataSettings["use-leap-years"] = simj["use-leap-years"];
 	CSVViaHeaderOptions options(climateDataSettings);
 	debug() << "startDate: " << options.startDate.toIsoDateString()
 		<< " endDate: " << options.endDate.toIsoDateString()
-		<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
 		<< endl;
 
 	env["da"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),

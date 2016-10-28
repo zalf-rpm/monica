@@ -27,7 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <numeric>
 
 #include "tools/debug.h"
-#include "monica.h"
+#include "monica-model.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
 #include "voc-common.h"
@@ -68,7 +68,7 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   , _soilOrganicPs(cpp.userSoilOrganicParameters)
   , _simPs(cpp.simulationParameters)
   //, _writeOutputFiles(cpp.writeOutputFiles())
-  , _pathToOutputDir(cpp.pathToOutputDir())
+  //, _pathToOutputDir(cpp.pathToOutputDir())
   , _groundwaterInformation(cpp.groundwaterInformation)
   , _soilColumn(_simPs.p_LayerThickness,
                 _soilOrganicPs.ps_MaxMineralisationDepth,
@@ -211,13 +211,7 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 		}
 	}
 
-  delete _currentCropGrowth;
-  _currentCropGrowth = nullptr;
-  _currentCrop.reset();
-  _soilTransport.remove_Crop();
-  _soilColumn.remove_Crop();
-  _soilMoisture.remove_Crop();
-  _soilOrganic.remove_Crop();
+	_clearCropUponNextDay = true;
 }
 
 void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
@@ -451,6 +445,26 @@ double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertiliserParamet
                                                          ups.delayInDays);
 }
 
+void MonicaModel::dailyReset()
+{
+	_dailySumIrrigationWater = 0.0;
+	_dailySumFertiliser = 0.0;
+	clearEvents();
+
+	if(_clearCropUponNextDay)
+	{
+		delete _currentCropGrowth;
+		_currentCropGrowth = nullptr;
+		_currentCrop.reset();
+		_soilTransport.remove_Crop();
+		_soilColumn.remove_Crop();
+		_soilMoisture.remove_Crop();
+		_soilOrganic.remove_Crop();
+
+		_clearCropUponNextDay = false;
+	}
+}
+
 void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/)
 {
@@ -477,12 +491,26 @@ void MonicaModel::applyTillage(double depth)
 	_soilColumn.applyTillage(depth);
 }
 
+void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateData)
+{
+	_currentStepDate = date;
+	_currentStepClimateData = climateData;
+
+	if(isCropPlanted())
+		cropStep();//date, climateData);
+
+	generalStep();//date, climateData);
+}
+
 /**
  * @brief Simulating the soil processes for one time step.
  * @param stepNo Number of current processed step
  */
-void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
+void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 {
+	auto date = _currentStepDate;
+	auto climateData = _currentStepClimateData;
+
   unsigned int julday = date.julianDay();
 //  unsigned int year = currentDate.year();
   bool leapYear = date.isLeapYear();
@@ -568,32 +596,11 @@ void MonicaModel::generalStep(Date date, std::map<ACD, double> climateData)
   _soilTransport.step();
 }
 
-void MonicaModel::generalStep(unsigned int stepNo)
+
+void MonicaModel::cropStep()//Tools::Date date, std::map<Climate::ACD, double> climateData)
 {
-  Date startDate = _dataAccessor.startDate();
-  Date currentDate = startDate + stepNo;
-  double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
-  double tavg = _dataAccessor.dataForTimestep(Climate::tavg, stepNo);
-  double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
-  double precip = _dataAccessor.dataForTimestep(Climate::precip, stepNo);
-  double wind = _dataAccessor.dataForTimestep(Climate::wind, stepNo);
-  double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-
-  // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
-       _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
-
-  generalStep(currentDate, {{Climate::tmin, tmin},
-                            {Climate::tavg, tavg},
-                            {Climate::tmax, tmax},
-                            {Climate::precip, precip},
-                            {Climate::wind, wind},
-                            {Climate::globrad, globrad},
-                            {Climate::relhumid, relhumid}});
-}
-
-void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> climateData)
-{
+	auto date = _currentStepDate;
+	auto climateData = _currentStepClimateData;
   // do nothing if there is no crop
   if(!_currentCropGrowth)
     return;
@@ -668,40 +675,6 @@ void MonicaModel::cropStep(Tools::Date date, std::map<Climate::ACD, double> clim
 	_currentCropGrowth->calculateVOCEmissions(mcd);
 }
 
-
-/**
- * @brief Simulating crop growth for one time step.
- */
-void MonicaModel::cropStep(unsigned int stepNo)
-{
-  Date startDate = _dataAccessor.startDate();
-  Date currentDate = startDate + stepNo;
-  double tavg = _dataAccessor.dataForTimestep(Climate::tavg, stepNo);
-  double tmax = _dataAccessor.dataForTimestep(Climate::tmax, stepNo);
-  double tmin = _dataAccessor.dataForTimestep(Climate::tmin, stepNo);
-  double globrad = _dataAccessor.dataForTimestep(Climate::globrad, stepNo);
-
-  // test if data for sunhours are available; if not, value is set to -1.0
-  double sunhours = _dataAccessor.hasAvailableClimateData(Climate::sunhours) ?
-	  _dataAccessor.dataForTimestep(Climate::sunhours, stepNo) : -1.0;		
-
-  // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = _dataAccessor.hasAvailableClimateData(Climate::relhumid) ?
-      _dataAccessor.dataForTimestep(Climate::relhumid, stepNo) : -1.0;
-
-  double wind =  _dataAccessor.dataForTimestep(Climate::wind, stepNo);
-  double precip =  _dataAccessor.dataForTimestep(Climate::precip, stepNo);
-
-  cropStep(currentDate, {{Climate::tmin, tmin},
-                         {Climate::tavg, tavg},
-                         {Climate::tmax, tmax},
-                         {Climate::precip, precip},
-                         {Climate::wind, wind},
-                         {Climate::globrad, globrad},
-                         {Climate::relhumid, relhumid},
-                         {Climate::sunhours, sunhours}});
-}
-
 /**
 * @brief Returns atmospheric CO2 concentration for date [ppm]
 *
@@ -719,7 +692,7 @@ double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear)
 
 double MonicaModel::CO2ForDate(Date d)
 {
-  double decimalDate = d.year() + d.julianDay()/(d.useLeapYears() && d.isLeapYear() ? 366.0 : 365);
+  double decimalDate = d.year() + d.julianDay()/(d.isLeapYear() ? 366.0 : 365);
 
   //Atmospheric CO2 concentration according to RCP 8.5
   return 222.0 + exp(0.01467*(decimalDate - 1650.0)) + 2.5*sin((decimalDate - 0.5)/0.1592);

@@ -25,7 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "soiltemperature.h"
 #include "soilcolumn.h"
-#include "monica.h"
+#include "monica-model.h"
 #include "tools/debug.h"
 
 using namespace std;
