@@ -61,7 +61,7 @@ namespace Monica
     virtual void setDate(Tools::Date date) {_date = date; }
 
 		//! do whatever the workstep has to do
-		virtual void apply(MonicaModel* model) = 0;
+		virtual void apply(MonicaModel* model);
 
 	protected:
 		Tools::Date _date;

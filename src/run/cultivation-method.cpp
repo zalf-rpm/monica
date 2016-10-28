@@ -68,6 +68,12 @@ json11::Json WorkStep::to_json() const
 		{"date", date().toIsoDateString()},};
 }
 
+void WorkStep::apply(MonicaModel* model)
+{
+	model->addEvent("WorkStep");
+	model->addEvent("workstep");
+}
+
 //------------------------------------------------------------------------------
 
 Seed::Seed(const Tools::Date& at, CropPtr crop)
@@ -105,6 +111,7 @@ void Seed::apply(MonicaModel* model)
 {
 	debug() << "seeding crop: " << _crop->toString() << " at: " << date().toString() << endl;
 	model->seedCrop(_crop);
+	model->addEvent("Seed");
 	model->addEvent("seeding");
 }
 
@@ -233,6 +240,7 @@ void Harvest::apply(MonicaModel* model)
 			debug() << "pruning shoots of: " << crop->toString() << " at: " << date().toString() << endl;
 			model->shootPruningCurrentCrop(_percentage, _exported);
 		}
+		model->addEvent("Harvest");
 		model->addEvent("harvesting");
 	}
 	else
@@ -290,6 +298,7 @@ void Cutting::apply(MonicaModel* model)
 	crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 
 	model->cropGrowth()->applyCutting();
+	model->addEvent("Cutting");
 	model->addEvent("cutting");
 }
 
@@ -330,6 +339,8 @@ void MineralFertiliserApplication::apply(MonicaModel* model)
 {
 	debug() << toString() << endl;
 	model->applyMineralFertiliser(partition(), amount());
+	model->addEvent("MineralFertiliserApplication");
+	model->addEvent("mineral-fertilizing");
 }
 
 //------------------------------------------------------------------------------
@@ -373,6 +384,8 @@ void OrganicFertiliserApplication::apply(MonicaModel* model)
 {
 	debug() << toString() << endl;
 	model->applyOrganicFertiliser(_params, _amount, _incorporation);
+	model->addEvent("OrganicFertiliserApplication");
+	model->addEvent("organic-fertilizing");
 }
 
 //------------------------------------------------------------------------------
@@ -407,6 +420,8 @@ void TillageApplication::apply(MonicaModel* model)
 {
 	debug() << toString() << endl;
 	model->applyTillage(_depth);
+	model->addEvent("TillageApplication");
+	model->addEvent("tillage");
 }
 
 //------------------------------------------------------------------------------
@@ -445,6 +460,8 @@ void IrrigationApplication::apply(MonicaModel* model)
 {
 	//cout << toString() << endl;
 	model->applyIrrigation(amount(), nitrateConcentration());
+	model->addEvent("IrrigationApplication");
+	model->addEvent("irrigation");
 }
 
 //------------------------------------------------------------------------------
@@ -480,7 +497,7 @@ CultivationMethod::CultivationMethod(CropPtr crop,
 	, _crop(crop)
 	, _cropResult(new CMResult(crop->id()))
 {
-	debug() << "ProductionProcess: " << name.c_str() << endl;
+	debug() << "CultivationMethod: " << name.c_str() << endl;
 
 	if(crop->seedDate().isValid())
 		addApplication(Seed(crop->seedDate(), _crop));

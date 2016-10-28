@@ -276,65 +276,71 @@ function<bool(const MonicaModel&)> buildExpression(J11Array a)
 			}
 		}
 
+		auto applyOp = [=](Json lj, Json rj)
+		{
+			if(lj.is_number() && rj.is_number())
+				return op(lj.number_value(), rj.number_value());
+			else if(lj.is_array() && rj.is_number())
+			{
+				double rn = rj.number_value();
+				auto lja = lj.array_items();
+				return accumulate(lja.begin(), lja.end(), true, [=](bool acc, Json j)
+				{
+					return acc && (j.is_number() ? op(j.number_value(), rn) : false);
+				});
+			}
+			else if(lj.is_number() && rj.is_array())
+			{
+				double ln = lj.number_value();
+				auto rja = rj.array_items();
+				return accumulate(rja.begin(), rja.end(), true, [=](bool acc, Json j)
+				{
+					return acc && (j.is_number() ? op(j.number_value(), ln) : false);
+				});
+			}
+			else if(lj.is_array() && rj.is_array())
+			{
+				auto lja = lj.array_items();
+				auto rja = rj.array_items();
+				vector<bool> res;
+				//compare values point wise (dot product)
+				transform(lja.begin(), lja.end(), rja.begin(), back_inserter(res), [=](Json left, Json right)
+				{
+					return left.is_number() && right.is_number() ? op(left.number_value(), right.number_value()) : false;
+				});
+				return accumulate(res.begin(), res.end(), true, [](bool acc, bool v){ return acc && v; });
+			}
+			return false;
+		};
+		
 		if(lf && rf && op)
 		{
 			return [=](const MonicaModel& m)
-			{
-				auto lj = lf(m, loid);
-				auto rj = rf(m, roid);
-				return lj.is_number() && rj.is_number() ? op(lj.number_value(), rj.number_value()) : false;
+			{ 
+				return applyOp(lf(m, loid), rf(m, roid));
 			};
 		}
 		else if(lf && rightj.is_number() && op)
 		{
-			double d = rightj.number_value();
-
 			return [=](const MonicaModel& m)
 			{
-				auto lj = lf(m, loid);
-				if(lj.is_number())
-					return op(lj.number_value(), d);
-				else if(lj.is_array())
-				{
-					auto lja = lj.array_items();
-					accumulate(lja.begin(), lja.end(), true, [=](bool acc, Json j)
-					{
-						return acc && (j.is_number() ? op(j.number_value(), d) : false);
-					});
-				}
-				return false;
+				return applyOp(lf(m, loid), rightj);
 			};
 		}
 		else if(leftj.is_number() && rf && op)
 		{
-			double d = leftj.number_value();
-
 			return [=](const MonicaModel& m)
 			{
-				auto rj = rf(m, roid);
-				if(rj.is_number())
-					return op(rj.number_value(), d);
-				else if(rj.is_array())
-				{
-					auto rja = rj.array_items();
-					accumulate(rja.begin(), rja.end(), true, [=](bool acc, Json j)
-					{
-						return acc && (j.is_number() ? op(j.number_value(), d) : false);
-					});
-				}
-				return false;
+				return applyOp(leftj, rf(m, roid));
 			};
 		}
 	}
-
 
 	return function<bool(const MonicaModel&)>();
 }
 
 Tools::Errors Spec::merge(json11::Json j)
 {
-	auto js = j.dump();
-
 	init(start, j, "start");
 	init(end, j, "end");
 	init(at, j, "at");
@@ -346,11 +352,9 @@ Tools::Errors Spec::merge(json11::Json j)
 
 void Spec::init(Maybe<DMY>& member, Json j, string time)
 {
-	auto events_ = events();
 	auto jt = j[time];
 	
-	
-	//it should be an expression
+	//is an expression event
 	if(jt.is_array())
 	{
 		if(auto f = buildExpression(jt.array_items()))
@@ -361,27 +365,29 @@ void Spec::init(Maybe<DMY>& member, Json j, string time)
 	}
 	else if(jt.is_string())
 	{
-		auto s = splitString(j[time].string_value(), "-");
-		if(!s.empty() && !s[0].empty())
+		auto jts = jt.string_value();
+		if(!jts.empty())
 		{
-			//is crop event
-			if(events_.find(s[0]) != events_.end())
-			{
-				time2event[time] = s[0];
-				eventType = eCrop;
-			}
+			auto s = splitString(jts, "-");
 			//is date event
-			else
+			if(jts.size() == 10
+				 && s.size() == 3
+				 && s[0].size() == 4
+				 && s[1].size() == 2
+				 && s[2].size() == 2)
 			{
 				DMY dmy;
-				if(s.size() > 0)
-					dmy.year = parseInt(s[0]);
-				if(s.size() > 1)
-					dmy.month = parseInt<size_t>(s[1]);
-				if(s.size() > 2)
-					dmy.day = parseInt<size_t>(s[2]);
+				dmy.year = parseInt(s[0]);
+				dmy.month = parseInt<size_t>(s[1]);
+				dmy.day = parseInt<size_t>(s[2]);
 				member = dmy;
 				eventType = eDate;
+			}
+			//treat all other strings as potential workstep event
+			else
+			{
+				time2event[time] = jts;
+				eventType = eCrop;
 			}
 		}
 	}
@@ -424,19 +430,7 @@ json11::Json Spec::to_json() const
 	return o;
 }
 
-std::set<std::string> Spec::events()
-{
-	static const set<string> es =
-	{"seeding"
-		,"harvesting"
-		,"cutting"
-	};
-
-	return es;
-}
-
 //-----------------------------------------------------------------------------
-
 
 void storeResults(const vector<OId>& outputIds,
 									vector<J11Array>& results,
@@ -691,8 +685,6 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 	,{"monthly", J11Object{{"from", "xxxx-xx-01"}, {"to", "xxxx-xx-31"}}}
 	,{"yearly", J11Object{{"from", "xxxx-01-01"}, {"to", "xxxx-12-31"}}}
 	,{"run", J11Object{{"from", startDate.toIsoDateString()}, {"to", endDate.toIsoDateString()}}}
-	,{"seeding", J11Object{{"at", "seeding"}}}
-	,{"harvesting", J11Object{{"at", "harvesting"}}}
 	};
 
 	vector<StoreData> storeData;
@@ -710,7 +702,7 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 			auto ci = shortcuts.find(ss);
 			if(ci != shortcuts.end())
 				spec = ci->second;
-			else if(ss.size() == 10)
+			else 
 				spec = J11Object{{"at", ss}};
 		}
 		//an array means it's an expression pattern to be stored at 'at' 

@@ -136,8 +136,6 @@ namespace Monica
 
 		bool isAt() const { return at.isValue() && (at.value().year.isValue() || at.value().month.isValue() || at.value().day.isValue()); }
 		bool isRange() const { return !isAt(); }
-
-		static std::set<std::string> events();
 	};
 
 	struct StoreData
