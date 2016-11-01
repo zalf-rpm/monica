@@ -685,6 +685,7 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 	,{"monthly", J11Object{{"from", "xxxx-xx-01"}, {"to", "xxxx-xx-31"}}}
 	,{"yearly", J11Object{{"from", "xxxx-01-01"}, {"to", "xxxx-12-31"}}}
 	,{"run", J11Object{{"from", startDate.toIsoDateString()}, {"to", endDate.toIsoDateString()}}}
+	,{"crop", J11Object{{"from", "seeding"}, {"to", "harvesting"}}}
 	};
 
 	vector<StoreData> storeData;
