@@ -30,8 +30,8 @@ set(LIBMONICA_SOURCE
 	src/core/crop-growth.h
 	src/core/crop-growth.cpp
 	
-	src/core/monica.h
-	src/core/monica.cpp
+	src/core/monica-model.h
+	src/core/monica-model.cpp
 	
 	src/core/monica-parameters.h
 	src/core/monica-parameters.cpp
@@ -66,6 +66,10 @@ set(LIBMONICA_SOURCE
 	src/io/output.h
 	src/io/output.cpp
 	
+	src/io/build-output.h
+	src/io/build-output.cpp
+	
+
 	# db library code
 	#-------------------------------------------
 	${UTIL_DIR}/db/abstract-db-connections.h
@@ -347,6 +351,9 @@ set(MONICA_ZMQ_RUN_SOURCE
 	
 	src/io/database-io.h
 	src/io/database-io.cpp
+
+	src/io/output.h
+	src/io/output.cpp
 		
 	src/run/env-from-json-config.h
 	src/run/env-from-json-config.cpp

@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include <string>
+
 #include "tools/debug.h"
 
 #include "csv-format.h"
@@ -23,6 +25,12 @@ using namespace Monica;
 using namespace Tools;
 using namespace std;
 using namespace json11;
+
+//copied from MSVC string.h, because gcc 4.7.2 seams not to know ""s
+inline string operator "" _s(const char *_Str, size_t _Len)
+{	// construct literal from [_Str, _Str + _Len)
+	return (string(_Str, _Len));
+}
 
 void Monica::writeOutputHeaderRows(ostream& out,
 																	 const vector<OId>& outputIds,
@@ -33,8 +41,8 @@ void Monica::writeOutputHeaderRows(ostream& out,
 {
 	ostringstream oss1, oss2, oss3, oss4;
 
-	using namespace std::string_literals;
-	string escapeTokens = "\n\""s + csvSep;
+	//using namespace std::string_literals;
+	string escapeTokens = "\n\""_s + csvSep;
 
 	size_t j = 0;
 	auto oidsSize = outputIds.size();
@@ -60,13 +68,13 @@ void Monica::writeOutputHeaderRows(ostream& out,
 			else
 				oss11 << oid.name;
 			auto csvSep_ = j + 1 == oidsSize && i == toLayer ? "" : csvSep;
-			oss1 << (oss11.str().find_first_of(escapeTokens) == string::npos ? oss11.str() : "\""s + oss11.str() + "\""s) << csvSep_;
-			auto os2 = "["s + oid.unit + "]"s;
-			oss2 << (os2.find_first_of(escapeTokens) == string::npos ? os2 : "\""s + os2 + "\""s) << csvSep_;
-			auto os3 = "m:"s + oid.toString(includeTimeAgg);
-			oss3 << (os3.find_first_of(escapeTokens) == string::npos ? os3 : "\""s + os3 + "\""s) << csvSep_;
-			auto os4 = "j:"s + replace(oid.jsonInput, "\"", "");
-			oss4 << (os4.find_first_of(escapeTokens) == string::npos ? os4 : "\""s + os4 + "\""s) << csvSep_;
+			oss1 << (oss11.str().find_first_of(escapeTokens) == string::npos ? oss11.str() : "\""_s + oss11.str() + "\""_s) << csvSep_;
+			auto os2 = "["_s + oid.unit + "]"_s;
+			oss2 << (os2.find_first_of(escapeTokens) == string::npos ? os2 : "\""_s + os2 + "\""_s) << csvSep_;
+			auto os3 = "m:"_s + oid.toString(includeTimeAgg);
+			oss3 << (os3.find_first_of(escapeTokens) == string::npos ? os3 : "\""_s + os3 + "\""_s) << csvSep_;
+			auto os4 = "j:"_s + replace(oid.jsonInput, "\"", "");
+			oss4 << (os4.find_first_of(escapeTokens) == string::npos ? os4 : "\""_s + os4 + "\""_s) << csvSep_;
 		}
 		++j;
 	}
@@ -86,8 +94,8 @@ void Monica::writeOutput(ostream& out,
 												 const vector<J11Array>& values,
 												 string csvSep)
 {
-	using namespace std::string_literals;
-	string escapeTokens = "\n\""s + csvSep;
+	//using namespace std::string_literals;
+	string escapeTokens = "\n\""_s + csvSep;
 
 	if(!values.empty())
 	{
@@ -106,7 +114,7 @@ void Monica::writeOutput(ostream& out,
 					out 
 					<< (j.string_value().find_first_of(escapeTokens) == string::npos 
 																	 ? j.string_value() 
-																	 : "\""s + j.string_value() + "\""s) 
+																	 : "\""_s + j.string_value() + "\""_s) 
 					<< csvSep_; break;
 				case Json::BOOL: out << j.bool_value() << csvSep_; break;
 				case Json::ARRAY:
@@ -123,7 +131,7 @@ void Monica::writeOutput(ostream& out,
 							out 
 								<< (jv.string_value().find_first_of(escapeTokens) == string::npos
 										? jv.string_value()
-										: "\""s + jv.string_value() + "\""s)
+										: "\""_s + jv.string_value() + "\""_s)
 								<< csvSep__; break;
 						case Json::BOOL: out << jv.bool_value() << csvSep__; break;
 						default: out << "UNKNOWN" << csvSep__;
