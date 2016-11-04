@@ -86,7 +86,7 @@ string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVStrin
 		for(auto p : options["header-to-acd-names"].object_items())
 			os.headerName2ACDName[p.first] = p.second.string_value();
 	}
-
+		
 	return Json(readClimateDataFromCSVStringViaHeaders(climateCSVString, os)).dump();
 }
 
