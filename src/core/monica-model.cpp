@@ -687,10 +687,7 @@ double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear)
 
 double MonicaModel::CO2ForDate(Date d)
 {
-  double decimalDate = d.year() + d.julianDay()/(d.isLeapYear() ? 366.0 : 365);
-
-  //Atmospheric CO2 concentration according to RCP 8.5
-  return 222.0 + exp(0.01467*(decimalDate - 1650.0)) + 2.5*sin((decimalDate - 0.5)/0.1592);
+	return CO2ForDate(d.year(), d.julianDay(), d.isLeapYear());
 }
 
 
