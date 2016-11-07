@@ -40,6 +40,7 @@ Errors OId::merge(json11::Json j)
 {
 	set_int_value(id, j, "id");
 	set_string_value(name, j, "name");
+	set_string_value(displayName, j, "displayName");
 	set_string_value(unit, j, "unit");
 	set_string_value(jsonInput, j, "jsonInput");
 
@@ -56,17 +57,18 @@ Errors OId::merge(json11::Json j)
 
 json11::Json OId::to_json() const
 {
-	return json11::Json::object{
-		{"type", "OId"},
-		{"id", id},
-		{"name", name},
-		{"unit", unit},
-		{"jsonInput", jsonInput},
-		{"layerAggOp", int(layerAggOp)},
-		{"timeAggOp", int(timeAggOp)},
-		{"organ", int(organ)},
-		{"fromLayer", fromLayer},
-		{"toLayer", toLayer}
+	return json11::Json::object
+	{{"type", "OId"}
+	,{"id", id}
+	,{"name", name}
+	,{"displayName", displayName}
+	,{"unit", unit}
+	,{"jsonInput", jsonInput}
+	,{"layerAggOp", int(layerAggOp)}
+	,{"timeAggOp", int(timeAggOp)}
+	,{"organ", int(organ)}
+	,{"fromLayer", fromLayer}
+	,{"toLayer", toLayer}
 	};
 }
 

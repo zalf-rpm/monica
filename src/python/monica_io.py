@@ -129,11 +129,11 @@ def write_output_header_rows(output_ids,
         for i in range(from_layer, to_layer+1):
             str1 = ""
             if is_organ:
-                str1 += oid["name"] + "/" + organ_to_string(oid["organ"])
+                str1 += (oid["name"] + "/" + organ_to_string(oid["organ"])) if len(oid["displayName"]) == 0 else oid["displayName"]
             elif is_range:
-                str1 += oid["name"] + "_" + str(i)
+                str1 += (oid["name"] + "_" + str(i)) if len(oid["displayName"]) == 0 else oid["displayName"]
             else:
-                str1 += oid["name"]
+                str1 += oid["name"] if len(oid["displayName"]) == 0 else oid["displayName"]
             row1.append(str1)
             row4.append("j:" + oid["jsonInput"].replace("\"", ""))
             row3.append("m:" + oid_to_string(oid, include_time_agg))

@@ -343,10 +343,12 @@ Tools::Errors Spec::merge(json11::Json j)
 {
 	init(start, j, "start");
 	init(end, j, "end");
+	Maybe<DMY> dummy;
+	init(dummy, j, "while");
 	init(at, j, "at");
 	init(from, j, "from");
 	init(to, j, "to");
-
+	
 	return{};
 }
 
@@ -453,33 +455,42 @@ void storeResults(const vector<OId>& outputIds,
 
 void StoreData::aggregateResults()
 {
-	size_t i = 0;
-	results.resize(intermediateResults.size());
-	for(auto oid : outputIds)
+	if(!intermediateResults.empty())
 	{
-		if(!intermediateResults.empty())
+		if(results.size() < intermediateResults.size())
+			results.resize(intermediateResults.size());
+
+		assert(intermediateResults.size() == outputIds.size());
+
+		size_t i = 0;
+		for(auto oid : outputIds)
 		{
 			auto& ivs = intermediateResults.at(i);
-			if(ivs.front().is_string())
+			if(!ivs.empty())
 			{
-				switch(oid.timeAggOp)
+				if(ivs.front().is_string())
 				{
-				case OId::FIRST: results[i].push_back(ivs.front()); break;
-				case OId::LAST: results[i].push_back(ivs.back()); break;
-				default: results[i].push_back(ivs.front());
+					switch(oid.timeAggOp)
+					{
+					case OId::FIRST: results[i].push_back(ivs.front()); break;
+					case OId::LAST: results[i].push_back(ivs.back()); break;
+					default: results[i].push_back(ivs.front());
+					}
 				}
-			}
-			else
-				results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+				else
+					results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
 
-			intermediateResults[i].clear();
+				intermediateResults[i].clear();
+			}
+			++i;
 		}
-		++i;
 	}
 }
 
 void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 {
+	string os = spec.origSpec.dump();
+
 	switch(spec.eventType)
 	{
 	case Spec::eExpression:
@@ -487,6 +498,7 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 		bool isCurrentlyEndEvent = false;
 		if(!spec.time2expression.empty())
 		{
+			//check and possibly set start/end markers
 			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
 			{
 				if(auto f = spec.time2expression["start"])
@@ -498,41 +510,57 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 					isCurrentlyEndEvent = f(monica);
 			}
 
-			bool isCurrentlyToEvent = false;
-			if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
-			{
-				if(auto f = spec.time2expression["from"])
-					withinEventFromToRange = f(monica);
-			}
-			else if(withinEventFromToRange.isValue())
-			{
-				if(auto f = spec.time2expression["to"])
-					isCurrentlyToEvent = f(monica);
-			}
-
-			string os = spec.origSpec.dump();
-
-			auto af = spec.time2expression["at"];
-			bool isAtEvent = af && af(monica);
-
+			//do something if we are in start/end range or nothing is set at all (means do it always)
 			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
 			{
-				if(isAtEvent)
+				//check for at event
+				auto af = spec.time2expression["at"];
+				if(af && af(monica))
 				{
 					storeResults(outputIds, results, monica);
 				}
-				else if(withinEventFromToRange.value())
+				//or while event
+				else if(auto wf = spec.time2expression["while"])
 				{
-					storeResults(outputIds, intermediateResults, monica);
-
-					if(isCurrentlyToEvent)
+					if(wf(monica))
 					{
+						storeResults(outputIds, intermediateResults, monica);
+					}
+					else if(!intermediateResults.empty()
+									&& !intermediateResults.front().empty())
+					{
+						//if while event was not successful but we got intermediate results, they should be aggregated
 						aggregateResults();
-						withinEventFromToRange = false;
+					}
+				}
+				//or from/to range event
+				else
+				{
+					bool isCurrentlyToEvent = false;
+					if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
+					{
+						if(auto f = spec.time2expression["from"])
+							withinEventFromToRange = f(monica);
+					}
+					else if(withinEventFromToRange.isValue())
+					{
+						if(auto f = spec.time2expression["to"])
+							isCurrentlyToEvent = f(monica);
 					}
 
-					if(isCurrentlyEndEvent)
-						withinEventStartEndRange = false;
+					if(withinEventFromToRange.value())
+					{
+						storeResults(outputIds, intermediateResults, monica);
+
+						if(isCurrentlyToEvent)
+						{
+							aggregateResults();
+							withinEventFromToRange = false;
+						}
+
+						if(isCurrentlyEndEvent)
+							withinEventStartEndRange = false;
+					}
 				}
 			}
 		}
@@ -544,6 +572,7 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 		const auto& currentEvents = monica.currentEvents();
 		if(!spec.time2event.empty() || !currentEvents.empty())
 		{
+			//set possibly start/end markers
 			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
 			{
 				auto s = spec.time2event["start"];
@@ -563,47 +592,50 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 				}
 			}
 
-			bool isCurrentlyToEvent = false;
-			if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
-			{
-				auto f = spec.time2event["from"];
-				if(!f.empty())
-				{
-					if(currentEvents.find(f) != currentEvents.end())
-						withinEventFromToRange = true;
-				}
-			}
-			else if(withinEventFromToRange.isValue())
-			{
-				auto t = spec.time2event["to"];
-				if(!t.empty())
-				{
-					if(currentEvents.find(t) != currentEvents.end())
-						isCurrentlyToEvent = true;
-				}
-			}
-
+			//is at event
 			auto a = spec.time2event["at"];
-			bool isAtEvent = !a.empty() && currentEvents.find(a) != currentEvents.end();
-
-			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+			if(!a.empty() && currentEvents.find(a) != currentEvents.end())
 			{
-				if(isAtEvent)
+				storeResults(outputIds, results, monica);
+			}
+			//is from/to event
+			else
+			{
+				bool isCurrentlyToEvent = false;
+				if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
 				{
-					storeResults(outputIds, results, monica);
-				}
-				else if(withinEventFromToRange.value())
-				{
-					storeResults(outputIds, intermediateResults, monica);
-
-					if(isCurrentlyToEvent)
+					auto f = spec.time2event["from"];
+					if(!f.empty())
 					{
-						aggregateResults();
-						withinEventFromToRange = false;
+						if(currentEvents.find(f) != currentEvents.end())
+							withinEventFromToRange = true;
 					}
+				}
+				else if(withinEventFromToRange.isValue())
+				{
+					auto t = spec.time2event["to"];
+					if(!t.empty())
+					{
+						if(currentEvents.find(t) != currentEvents.end())
+							isCurrentlyToEvent = true;
+					}
+				}
 
-					if(isCurrentlyEndEvent)
-						withinEventStartEndRange = false;
+				if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+				{
+					if(withinEventFromToRange.value())
+					{
+						storeResults(outputIds, intermediateResults, monica);
+
+						if(isCurrentlyToEvent)
+						{
+							aggregateResults();
+							withinEventFromToRange = false;
+						}
+
+						if(isCurrentlyEndEvent)
+							withinEventStartEndRange = false;
+					}
 				}
 			}
 		}
@@ -906,9 +938,13 @@ Output Monica::runMonica(Env env)
 			nextAbsoluteCMApplicationDate.addYears(1);
 	}
 	
-	for(const auto& sd : store)
+	for(auto& sd : store)
+	{
+		//aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
+		sd.aggregateResults();
 		out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results});
-	
+	}
+
 	debug() << "returning from runMonica" << endl;
 	return out;
 }

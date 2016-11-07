@@ -62,11 +62,11 @@ void Monica::writeOutputHeaderRows(ostream& out,
 		{
 			ostringstream oss11;
 			if(isOrgan)
-				oss11 << oid.name << "/" << oid.toString(oid.organ);
+				oss11 << (oid.displayName.empty() ? oid.name + "/" + oid.toString(oid.organ) : oid.displayName);
 			else if(isRange)
-				oss11 << oid.name << "_" << to_string(i);
+				oss11 << (oid.displayName.empty() ? oid.name + "_" + to_string(i) : oid.displayName);
 			else
-				oss11 << oid.name;
+				oss11 << (oid.displayName.empty() ? oid.name : oid.displayName);
 			auto csvSep_ = j + 1 == oidsSize && i == toLayer ? "" : csvSep;
 			oss1 << (oss11.str().find_first_of(escapeTokens) == string::npos ? oss11.str() : "\""_s + oss11.str() + "\""_s) << csvSep_;
 			auto os2 = "["_s + oid.unit + "]"_s;

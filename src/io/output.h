@@ -86,6 +86,7 @@ namespace Monica
 
 		int id{-1};
 		std::string name;
+		std::string displayName;
 		std::string unit;
 		std::string jsonInput;
 		OP layerAggOp{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
