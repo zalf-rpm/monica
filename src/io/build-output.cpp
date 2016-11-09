@@ -160,12 +160,15 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 		if(idj.is_string())
 		{
 			string name = idj.string_value();
-			auto it = name2metadata.find(name);
+			auto names = splitString(name, "|");
+			names.resize(2);
+			auto it = name2metadata.find(names[0]);
 			if(it != name2metadata.end())
 			{
 				auto data = it->second;
 				OId oid(data.id);
 				oid.name = data.name;
+				oid.displayName = names[1];
 				oid.unit = data.unit;
 				oid.jsonInput = name;
 				outputIds.push_back(oid);
@@ -179,12 +182,15 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 				OId oid;
 
 				string name = arr[0].string_value();
-				auto it = name2metadata.find(name);
+				auto names = splitString(name, "|");
+				names.resize(2);
+				auto it = name2metadata.find(names[0]);
 				if(it != name2metadata.end())
 				{
 					auto data = it->second;
 					oid.id = data.id;
 					oid.name = data.name;
+					oid.displayName = names[1];
 					oid.unit = data.unit;
 					oid.jsonInput = Json(arr).dump();
 
@@ -325,6 +331,12 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return monica.currentStepDate().toIsoDateString();
+			});
+
+			build({id++, "DOY", "", "output current day of year"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return int(monica.currentStepDate().dayOfYear());
 			});
 
 			build({id++, "Month", "", "output current Month"},
@@ -1042,6 +1054,12 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.getTranspiration(), 1);
+			});
+
+			build({id++, "GrainN", "kg ha-1", "get_FruitBiomassNContent"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_FruitBiomassNContent(), 5) : 0.0;
 			});
 
 			tableBuild = true;
