@@ -1302,7 +1302,13 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			vc_RadiationUseEfficiency = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPoint) / (4.5 * Ci + 10.5
 																																											* vc_CO2CompensationPoint) * 8.3769), 0.5);
 			vc_RadiationUseEfficiencyReference = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference) / (4.5 * Ci + 10.5
-																																																				* vc_CO2CompensationPointReference) * 8.3769), 0.5);
+			
+																																																	* vc_CO2CompensationPointReference) * 8.3769), 0.5);
+			if (vc_RadiationUseEfficiency < 0)
+			{
+				vc_RadiationUseEfficiency = 0;
+				vc_RadiationUseEfficiencyReference = 0;
+			}
 
 			vc_AssimilationRate = (Ci - vc_CO2CompensationPoint) * vc_Vcmax / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
 			vc_AssimilationRateReference = (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0
