@@ -491,7 +491,7 @@ void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateD
 {
 	_currentStepDate = date;
 	_currentStepClimateData = climateData;
-
+		
 	if(isCropPlanted())
 		cropStep();//date, climateData);
 
@@ -552,7 +552,7 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
                                                   leapYear)
                         : gw_value / 100.0; // [cm] --> [m]
 
-  if (int(vw_AtmosphericCO2Concentration) == 0)
+  if (int(_envPs.p_AtmosphericCO2) == 0)
     vw_AtmosphericCO2Concentration = CO2ForDate(date);
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;

@@ -266,7 +266,7 @@ namespace Monica
 		double p_accuHeatStress{0.0};
 		double p_accuOxygenStress{0.0};
 
-		double vw_AtmosphericCO2Concentration;
+		double vw_AtmosphericCO2Concentration{0.0};
 		double vs_GroundwaterDepth{0.0};
 	};
 }
