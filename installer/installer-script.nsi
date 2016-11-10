@@ -104,7 +104,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File /oname=monica_python.pyd "..\project-files\${WinPlatform}\Release\monica_python.pyd"  
   File /oname=monica-zmq-control.exe "..\project-files\${WinPlatform}\release\monica-zmq-control.exe"  
   File /oname=monica-zmq-control-send.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-send.exe"  
-	File /oname=monica-zmq-control-client.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-client.exe"  
+	;File /oname=monica-zmq-control-client.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-client.exe"  
   File /oname=monica-zmq-proxy.exe "..\project-files\${WinPlatform}\release\monica-zmq-proxy.exe"  
 	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
 	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
