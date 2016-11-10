@@ -170,7 +170,7 @@ namespace Monica
     // members ------------------------------------------------------------
 
     double vs_LayerThickness; //!< Soil layer's vertical extension [m]
-    double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
+    //double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
     double vs_SoilWaterFlux{0.0}; //!< Water flux at the upper boundary of the soil layer [l m-2]
 
     std::vector<AOM_Properties> vo_AOM_Pool; //!< List of different added organic matter pools in soil layer
@@ -246,7 +246,7 @@ namespace Monica
      * Returns number of layers.
      * @return Number of layers.
      */
-    inline std::size_t vs_NumberOfLayers() const { return size(); }//vs_SoilLayers.size(); }
+    inline std::size_t vs_NumberOfLayers() const { return size(); }
 		void applyTillage(double depth);
 
     /**
@@ -256,28 +256,10 @@ namespace Monica
      */
     inline std::size_t vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
 
-//    /**
-//     * Overloaded operator for a fortran-similar access to a C-array.
-//     * @return SoilLayer at given Index.
-//     */
-//    SoilLayer& operator[](size_t i_Layer) { return vs_SoilLayers[i_Layer]; }
-
-//    /**
-//     * Overloaded operator for a fortran-similar access to a C-array.
-//     * @return SoilLayer at given Index.
-//     */
-//    const SoilLayer & operator[](size_t i_Layer) const { return vs_SoilLayers.at(i_Layer); }
-
-//    //! Returns a soil layer at given Index.
-//    SoilLayer& at(size_t i_Layer) { return at(i_Layer); }//vs_SoilLayers[i_Layer]; }
-
-//    //! Returns a soil layer at given Index.
-//    const SoilLayer& at(size_t i_Layer) const { return at(i_Layer); }//vs_SoilLayers.at(i_Layer); }
-
     //! Returns the thickness of a layer.
     //! Right now by definition all layers have the same size,
     //! therefor only the thickness of first layer is returned.
-    double vs_LayerThickness() const { return at(0).vs_LayerThickness; } //vs_SoilLayers[0].vs_LayerThickness; }
+    double vs_LayerThickness() const { return at(0).vs_LayerThickness; } 
 
     //! Returns daily crop N uptake [kg N ha-1 d-1]
     double get_DailyCropNUptake() const { return vq_CropNUptake * 10000.0; }
@@ -289,9 +271,7 @@ namespace Monica
     void remove_Crop();
 
     double sumSoilTemperature(int layers) const;
-
-    std::vector<SoilLayer> vs_SoilLayers; //!< Vector of all layers in column.
-
+		    
     double vs_SurfaceWaterStorage{0.0}; //!< Content of above-ground water storage [mm]
     double vs_InterceptionStorage{0.0}; //!< Amount of intercepted water on crop surface [mm]
     int vm_GroundwaterTable{0}; //!< Layer of current groundwater table

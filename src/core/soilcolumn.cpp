@@ -53,7 +53,7 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
   , vs_SoilNO3(sps.vs_SoilNitrate)
   , _sps(sps)
   , vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
-  , vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
+  //, vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
 {
 }
 
@@ -130,8 +130,6 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
   , pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
 {
   debug() << "Constructor: SoilColumn "  << (soilParams ? soilParams->size() : 0) << endl;
-//  for(auto sp : *this)//soilParams)
-//    vs_SoilLayers.push_back(SoilLayer(ps_LayerThickness, sp, &initParams));
   if(soilParams)
 		for(auto sp : *soilParams)
 			push_back(SoilLayer(ps_LayerThickness, sp));
@@ -153,9 +151,8 @@ size_t SoilColumn::calculateNumberOfOrganicLayers()
   size_t count = 0;
   for(size_t i = 0; i < vs_NumberOfLayers(); i++)
   {
-    //std::cout << vs_SoilLayers[i].vs_LayerThickness << std::endl;
     count++;
-    lsum += at(i).vs_LayerThickness; //vs_SoilLayers[i].vs_LayerThickness;
+    lsum += at(i).vs_LayerThickness; 
 
     if(lsum >= ps_MaxMineralisationDepth)
       break;
@@ -471,7 +468,7 @@ void SoilColumn::applyTillage(double depth)
   double soil_organic_matter = 0.0;
   double soil_temperature = 0.0;
   double soil_moisture = 0.0;
-  double soil_moistureOld = 0.0;
+  //double soil_moistureOld = 0.0;
   double som_slow = 0.0;
   double som_fast = 0.0;
   double smb_slow = 0.0;
@@ -488,7 +485,7 @@ void SoilColumn::applyTillage(double depth)
     //soil_organic_matter += at(i).vs_SoilOrganicMatter();
     soil_temperature += at(i).get_Vs_SoilTemperature();
     soil_moisture += at(i).get_Vs_SoilMoisture_m3();
-    soil_moistureOld += at(i).vs_SoilMoistureOld_m3;
+    //soil_moistureOld += at(i).vs_SoilMoistureOld_m3;
     som_slow += at(i).vs_SOM_Slow;
     som_fast += at(i).vs_SOM_Fast;
     smb_slow += at(i).vs_SMB_Slow;
@@ -504,7 +501,7 @@ void SoilColumn::applyTillage(double depth)
   //soil_organic_matter /= layer_index;
   soil_temperature /= layer_index;
   soil_moisture /= layer_index;
-  soil_moistureOld /= layer_index;
+  //soil_moistureOld /= layer_index;
   som_slow /= layer_index;
   som_fast /= layer_index;
   smb_slow /= layer_index;
@@ -522,7 +519,7 @@ void SoilColumn::applyTillage(double depth)
     //at(i).set_SoilOrganicMatter(soil_organic_matter);
     at(i).set_Vs_SoilTemperature(soil_temperature);
     at(i).set_Vs_SoilMoisture_m3(soil_moisture);
-    at(i).vs_SoilMoistureOld_m3 = soil_moistureOld;
+    //at(i).vs_SoilMoistureOld_m3 = soil_moistureOld;
     at(i).vs_SOM_Slow = som_slow;
     at(i).vs_SOM_Fast = som_fast;
     at(i).vs_SMB_Slow = smb_slow;
@@ -623,22 +620,20 @@ void SoilColumn::applyTillage(double depth)
  */
 size_t SoilColumn::getLayerNumberForDepth(double depth)
 {
-  int layer=0;
-  int size= vs_SoilLayers.size();
-  double accu_depth=0;
-  double layer_thickness=at(0).vs_LayerThickness; //this->soilLayer(0).vs_LayerThickness;
+	int layer = 0;
+	double accu_depth = 0;
+	double layer_thickness = at(0).vs_LayerThickness;
 
-  // find number of layer that lay between the given depth
-  for (int i=0; i<size; i++) {
-
-    accu_depth+=layer_thickness;
-    if (depth <= accu_depth) {
+	// find number of layer that lay between the given depth
+	for(int i = 0, _size = size(); i < _size; i++)
+	{
+		accu_depth += layer_thickness;
+		if(depth <= accu_depth)
       break;
-    }
-    layer++;
-  }
+		layer++;
+	}
 
-  return layer;
+	return layer;
 }
 
 /**
