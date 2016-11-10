@@ -444,6 +444,58 @@ void TillageApplication::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
+OverwriteSoilMoisture::OverwriteSoilMoisture(const Tools::Date& at,
+																						 double soilMoisturePercentFC)
+	: WorkStep(at)
+	, _percentFC(soilMoisturePercentFC)
+{}
+
+OverwriteSoilMoisture::OverwriteSoilMoisture(json11::Json j)
+{
+	merge(j);
+}
+
+Errors OverwriteSoilMoisture::merge(json11::Json j)
+{
+	Errors res = WorkStep::merge(j);
+	_percentFC = j["soilMoisturePercentFC"];
+	return res;
+}
+
+json11::Json OverwriteSoilMoisture::to_json() const
+{
+	return json11::Json::object{
+		{"type", type()},
+		{"date", date().toIsoDateString()},
+		{"soilMoisturePercentFC", _percentFC}
+	};
+}
+
+void OverwriteSoilMoisture::apply(MonicaModel* model)
+{
+	auto& sc = model->soilColumnNC();
+	auto nols = sc.vs_NumberOfLayers();
+
+	vector<double> pfcs(nols);
+	if(_percentFC.is_number())
+		pfcs = vector<double>(nols, _percentFC.number_value());
+	else if(_percentFC.is_array())
+	{
+		auto v = double_vector(_percentFC);
+		for(size_t i = 0, pfcss = pfcs.size(), vs = v.size(); i < pfcss && i < vs; i++)
+			pfcs[i] = v[i];
+	}
+	
+	for(size_t i = 0; i < nols; i++)
+		sc[i].set_Vs_SoilMoisture_m3(sc[i].vs_FieldCapacity() * pfcs[i] / 100.0);
+
+	model->addEvent("OverwriteSoilMoisture");
+	model->addEvent("overwrite");
+}
+
+//------------------------------------------------------------------------------
+
+
 IrrigationApplication::IrrigationApplication(const Tools::Date& at,
 																						 double amount,
 																						 IrrigationParameters params)
@@ -491,6 +543,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 		return make_shared<Seed>(j);
 	else if(type == "Harvest")
 		return make_shared<Harvest>(j);
+	else if(type == "AutomaticHarvest")
+		return make_shared<AutomaticHarvest>(j);
 	else if(type == "Cutting")
 		return make_shared<Cutting>(j);
 	else if(type == "MineralFertiliserApplication")
@@ -501,6 +555,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 		return make_shared<TillageApplication>(j);
 	else if(type == "IrrigationApplication")
 		return make_shared<IrrigationApplication>(j);
+	else if(type == "OverwriteSoilMoisture")
+		return make_shared<OverwriteSoilMoisture>(j);
 
 	return WSPtr();
 }

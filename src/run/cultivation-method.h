@@ -296,6 +296,31 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	class DLL_API OverwriteSoilMoisture : public WorkStep
+	{
+	public:
+		OverwriteSoilMoisture(const Tools::Date& at, double soilMoisturePercentFC);
+
+		OverwriteSoilMoisture(json11::Json object);
+
+		virtual OverwriteSoilMoisture* clone() const { return new OverwriteSoilMoisture(*this); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+
+		virtual std::string type() const { return "OverwriteSoilMoisture"; }
+
+		virtual void apply(MonicaModel* model);
+
+		//std::vector<double> soilMoisturePercentFCs() const { return _percentFCs; }
+
+	private:
+		json11::Json _percentFC;
+	};
+
+	//----------------------------------------------------------------------------
+
 	class DLL_API IrrigationApplication : public WorkStep
 	{
 	public:
