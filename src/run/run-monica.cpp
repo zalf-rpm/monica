@@ -235,10 +235,8 @@ function<bool(const MonicaModel&)> buildExpression(J11Array a)
 		Json rightj = a[2];
 			
 		function<bool(double, double)> op;
-		if(ops == "<")
-			op = [](double l, double r){ 
-			return l < r; 
-		};
+		if(ops == "<") 
+			op = [](double l, double r){ return l < r; };
 		else if(ops == "<=")
 			op = [](double l, double r){ return l <= r; };
 		else if(ops == "=")
@@ -739,6 +737,15 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 				spec = J11Object{{"at", ss}};
 		}
 		//an array means it's an expression pattern to be stored at 'at' 
+		else if(spec.is_array()
+						&& spec.array_items().size() == 4
+						&& spec[0].is_string()
+						&& (spec[0].string_value() == "while"
+								|| spec[0].string_value() == "at"))
+		{
+			auto sa = spec.array_items();
+			spec = J11Object{{spec[0].string_value(), J11Array(sa.begin() + 1, sa.end())}};
+		}
 		else if(spec.is_array())
 			spec = J11Object{{"at", spec}};
 		//everything else (number, bool, null) we ignore

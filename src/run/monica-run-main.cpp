@@ -52,7 +52,6 @@ int main(int argc, char** argv)
 	bool writeOutputFile = false;
 	string pathToSimJson = "./sim.json", crop, site, climate;
 	string dailyOutputs;
-	bool useLeapYears = true, useLeapYearsSet = false;
 
 	auto printHelp = [=]()
 	{
@@ -65,13 +64,12 @@ int main(int argc, char** argv)
 			<< " -v   | --version ... outputs " << appName << " version" << endl
 			<< endl
 			<< " -d   | --debug ... show debug outputs" << endl
-			<< " -sd  | --start-date ISO-DATE (default: start of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
-			<< " -ed  | --end-date ISO-DATE (default: end of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
-			<< " -nly | --no-leap-years ... skip 29th of february on leap years in climate data" << endl
-			<< " -w   | --write-output-files ... write MONICA output files (rmout, smout)" << endl
+			//<< " -sd  | --start-date ISO-DATE (default: start of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
+			//<< " -ed  | --end-date ISO-DATE (default: end of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " -w   | --write-output-files ... write MONICA output files" << endl
 			<< " -op  | --path-to-output DIRECTORY (default: .) ... path to output directory" << endl
-			<< " -o   | --path-to-output-file FILE (default: ./rmout.csv) ... path to output file" << endl
-			<< " -do  | --daily-outputs [LIST] (default: value of key 'sim.json:output.daily') ... list of daily output elements" << endl
+			<< " -o   | --path-to-output-file FILE ... path to output file" << endl
+			//<< " -do  | --daily-outputs [LIST] (default: value of key 'sim.json:output.daily') ... list of daily output elements" << endl
 			<< " -c   | --path-to-crop FILE (default: ./crop.json) ... path to crop.json file" << endl
 			<< " -s   | --path-to-site FILE (default: ./site.json) ... path to site.json file" << endl
 			<< " -w   | --path-to-climate FILE (default: ./climate.csv) ... path to climate.csv" << endl;
@@ -84,23 +82,21 @@ int main(int argc, char** argv)
 			string arg = argv[i];
 			if(arg == "-d" || arg == "--debug")
 				debug = debugSet = true;
-			else if((arg == "-sd" || arg == "--start-date")
-							&& i + 1 < argc)
-				startDate = argv[++i];
-			else if((arg == "-ed" || arg == "--end-date")
-							&& i + 1 < argc)
-				endDate = argv[++i];
-			else if(arg == "-nly" || arg == "--no-leap-years")
-				useLeapYears = false, useLeapYearsSet = true;
+			//else if((arg == "-sd" || arg == "--start-date")
+			//				&& i + 1 < argc)
+			//	startDate = argv[++i];
+			//else if((arg == "-ed" || arg == "--end-date")
+			//				&& i + 1 < argc)
+			//	endDate = argv[++i];
 			else if((arg == "-op" || arg == "--path-to-output")
 			        && i+1 < argc)
 				pathToOutput = argv[++i];
 			else if((arg == "-o" || arg == "--path-to-output-file")
 							&& i + 1 < argc)
 				pathToOutputFile = argv[++i];
-			else if((arg == "-do" || arg == "--daily-outputs")
-							&& i + 1 < argc)
-				dailyOutputs = argv[++i];
+			//else if((arg == "-do" || arg == "--daily-outputs")
+			//				&& i + 1 < argc)
+			//	dailyOutputs = argv[++i];
 			else if((arg == "-c" || arg == "--path-to-crop")
 			        && i+1 < argc)
 				crop = argv[++i];
@@ -127,11 +123,11 @@ int main(int argc, char** argv)
 				cerr << e << endl;
 		auto simm = simj.result.object_items();
 
-		if(!startDate.empty())
-			simm["start-date"] = startDate;
+		//if(!startDate.empty())
+		//	simm["start-date"] = startDate;
 
-		if(!endDate.empty())
-			simm["end-date"] = endDate;
+		//if(!endDate.empty())
+		//	simm["end-date"] = endDate;
 
 		if(debugSet)
 			simm["debug?"] = debug;
@@ -162,9 +158,7 @@ int main(int argc, char** argv)
 		if(!isAbsolutePath(pathToClimateCSV))
 			simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
 
-		if(useLeapYearsSet)
-			simm["use-leap-years"] = useLeapYears;
-
+		/*
 		if(!dailyOutputs.empty())
 		{
 			auto outm = simm["output"].object_items();
@@ -197,6 +191,7 @@ int main(int argc, char** argv)
 			outm["daily"] = daily;
 			simm["output"] = outm;
 		}
+		*/
 
 		map<string, string> ps;
 		ps["sim-json-str"] = json11::Json(simm).dump();

@@ -9,6 +9,10 @@
 
 	"__options for reading the climate csv file, how many header lines to read, which separator to use and optional conversion of headers to internally known names": "",
 	"climate.csv-options": {
+		"__given the start and end date, monica will run just this time range, else the full time range given by supplied climate data": "",
+		"start-date": "1991-01-01",
+		"end-date": "1997-12-31",
+	
 		"no-of-climate-file-header-lines": 1,
 		"csv-separator": ",",
 		"header-to-acd-names": {
@@ -40,14 +44,44 @@
 		
 		"__what data to include in the monica output according to the events defined by the keys": "",
 		"events": [
-			{	"start": "xxxx-05-01",
-				"end": "xxxx-07-31",
-				"from": "xxxx-xx-20",
-				"to": "xxxx-xx-31"}, ["Year", ["SOC", [1, 20]]],
+			"crop", [
+				["Year", "LAST"],
+				["DOY|SowDOY", "FIRST"],
+				["LAI|MaxLAI", "MAX"],
+				["PercolationRate|WDrain", 15, "SUM"],
+				["Act_ET|CumET", "SUM"],
+				["Act_Ev|Evap", "SUM"],
+				["Mois|SoilAvW", [1, 15, "SUM"], "LAST"],
+				["Runoff", "SUM"],
+				["ET0|Eto", "SUM"],
+				["Tmax|TMAXAve", "AVG"],
 
-			"daily", [
-				"Date", "Crop", "Stage", "Yield", "SumYield", ["SOC", [1, 6]], "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours"
+				["Yield", "LAST"],
+				["AbBiom|Biom-ma", "LAST"],
+				["AbBiomN|CroN-ma", "LAST"],
+				["GrainN", "LAST"]
 			],
+
+			["while", "Stage", "=", 5], [
+				["DOY|AntDOY", "FIRST"],
+				["AbBiom|Biom-an", "First"],
+				["AbBiomN|CroN-an", "FIRST"]
+			],
+
+			["while", "Stage", "=", 7], [
+				["Yield", "FIRST"],
+				["DOY|MatDOY", "FIRST"], 
+				["AbBiom|Biom-ma", "First"],
+				["AbBiomN|CroN-ma", "FIRST"],
+				["GrainN", "FIRST"]
+			],
+			
+			["while", "Stage", "=", 2], [
+				["DOY|EmergDOY", "FIRST"]
+			]
+		],
+		
+		"_events" : [
 			"_daily", [
 				"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",
 				"Stage", "TempSum", "VernF", "DaylF", 
@@ -117,7 +151,6 @@
 			"harvesting", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
 			{	"from": "seeding",
 				"to": "harvesting"}, ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
-
 			
 			["Stage", "=", 2], ["Date", "Stage"],
 			{"at": ["Stage", "=", 2]}, ["Date", "Stage", ["Mois",1]],
@@ -127,11 +160,7 @@
 		]
 	},
 	
-	"__given the start and end date, monica will run just this time range, else the full time range given by supplied climate data": "",
-	"start-date": "1991-01-01",
-	"end-date": "1997-12-31",
-	"use-leap-years": true,
-
+	
 	"__SHOULDN'T BE CHANGED CURRENTLY, as monica assumes partly 20 layers and 10cm layer thickness": "",
 	"NumberOfLayers": 20,
 	"LayerThickness": [0.1, "m"],

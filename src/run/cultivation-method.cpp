@@ -271,6 +271,7 @@ void AutomaticHarvest::apply(MonicaModel* model)
 		Harvest::apply(model);
 		model->addEvent("AutomaticHarvest");
 		model->addEvent("automatic-harvesting");
+		model->addEvent("harvesting");
 	}
 }
 
