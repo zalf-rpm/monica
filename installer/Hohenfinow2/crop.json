@@ -81,7 +81,7 @@
 	}, 
 
 	"__relative date crop rotation example": "",
-	"_cropRotation": [
+	"cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "0000-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
@@ -112,9 +112,15 @@
 		}
 	],
 
-	"cropRotation": [
+	"__example with workstep which overwrites soil moisture at the given day with the percentage of fieldcapacity of the layer": "",
+	"_cropRotation": [
 		{
 			"worksteps": [
+        		{ "date": "0000-09-22", "type": "SetValue", "var": ["Mois", 1], "value": ["=", ["Fc", 1], "*", 0.7] },			
+				{ "date": "0000-09-23", "type": "SetValue", "var": ["Mois", [1, 10]], "value": ["=", ["Fc", [1, 10]], "*", 0.7] },			
+				{ "date": "0000-09-24", "type": "SetValue", "var": ["Mois", 1], "value": ["Fc", 1] },
+				{ "date": "0000-09-25", "type": "SetValue", "var": ["Mois", [1,20]], "value": 0.2 },			
+				{ "date": "0000-09-26", "type": "SetValue", "var": ["Mois", 1], "value": 0.2 },			
 				{ "date": "0000-09-23", "type": "Seed", "crop": ["ref", "crops", "WW"] },
 				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WW"] }
 			]
