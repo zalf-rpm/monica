@@ -34,6 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/soil.h"
 #include "../core/monica-parameters.h"
 #include "../core/crop.h"
+#include "../io/output.h"
 
 namespace Monica
 {
@@ -296,27 +297,29 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API OverwriteSoilMoisture : public WorkStep
+	class DLL_API SetValue : public WorkStep
 	{
 	public:
-		OverwriteSoilMoisture(const Tools::Date& at, double soilMoisturePercentFC);
+		SetValue(const Tools::Date& at, OId oid, json11::Json value);
 
-		OverwriteSoilMoisture(json11::Json object);
+		SetValue(json11::Json object);
 
-		virtual OverwriteSoilMoisture* clone() const { return new OverwriteSoilMoisture(*this); }
+		virtual SetValue* clone() const { return new SetValue(*this); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
 
-		virtual std::string type() const { return "OverwriteSoilMoisture"; }
+		virtual std::string type() const { return "SetValue"; }
 
 		virtual void apply(MonicaModel* model);
 
-		//std::vector<double> soilMoisturePercentFCs() const { return _percentFCs; }
+		json11::Json value() const { return _value; }
 
 	private:
-		json11::Json _percentFC;
+		OId _oid;
+		json11::Json _value;
+		std::function<json11::Json(const Monica::MonicaModel*)> _getValue;
 	};
 
 	//----------------------------------------------------------------------------

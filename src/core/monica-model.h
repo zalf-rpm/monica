@@ -182,15 +182,18 @@ namespace Monica
 		double getETa() const;
 		
 		const SoilTemperature& soilTemperature() const { return _soilTemperature; }
+		SoilTemperature& soilTemperatureNC() { return _soilTemperature; }
 
 		const SoilMoisture& soilMoisture() const { return _soilMoisture; }
+		SoilMoisture& soilMoistureNC() { return _soilMoisture; }
 
 		const SoilOrganic& soilOrganic() const { return _soilOrganic; }
+		SoilOrganic& soilOrganicNC() { return _soilOrganic; }
 
 		const SoilTransport& soilTransport() const { return _soilTransport; }
+		SoilTransport& soilTransportNC() { return _soilTransport; }
 
 		const SoilColumn& soilColumn() const { return _soilColumn; }
-
 		SoilColumn& soilColumnNC() { return _soilColumn; }
 
 		CropGrowth* cropGrowth() const { return _currentCropGrowth; }

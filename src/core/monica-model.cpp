@@ -583,10 +583,10 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 
   _soilTemperature.step(tmin, tmax, globrad);
   _soilMoisture.step(vs_GroundwaterDepth,
-                     precip, tmax, tmin,
-                     (relhumid / 100.0), tavg, wind,
+										 precip, tmax, tmin,
+										 (relhumid / 100.0), tavg, wind,
                      _envPs.p_WindSpeedHeight,
-		 globrad, julday);
+										 globrad, julday);
 
   _soilOrganic.step(tavg, precip, wind);
   _soilTransport.step();

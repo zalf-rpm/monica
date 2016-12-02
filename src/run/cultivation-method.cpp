@@ -34,6 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/conversion.h"
 #include "soil/soil.h"
 #include "../io/database-io.h"
+#include "../io/build-output.h"
 
 #include "cultivation-method.h"
 
@@ -445,57 +446,92 @@ void TillageApplication::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-OverwriteSoilMoisture::OverwriteSoilMoisture(const Tools::Date& at,
-																						 double soilMoisturePercentFC)
+SetValue::SetValue(const Tools::Date& at,
+									 OId oid,
+									 json11::Json value)
 	: WorkStep(at)
-	, _percentFC(soilMoisturePercentFC)
+	, _oid(oid)
+	, _value(value)
 {}
 
-OverwriteSoilMoisture::OverwriteSoilMoisture(json11::Json j)
+SetValue::SetValue(json11::Json j)
 {
 	merge(j);
 }
 
-Errors OverwriteSoilMoisture::merge(json11::Json j)
+Errors SetValue::merge(json11::Json j)
 {
 	Errors res = WorkStep::merge(j);
-	_percentFC = j["soilMoisturePercentFC"];
+
+	auto oids = parseOutputIds({j["var"]});
+	if(!oids.empty())
+		_oid = oids[0];
+	else
+		return res;
+
+	_value = j["value"];
+	if(_value.is_array())
+	{
+		auto jva = _value.array_items();
+		if(!jva.empty())
+		{
+			//is an expression
+			if(jva[0] == "=" && jva.size() == 4)
+			{
+				auto f = buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
+				_getValue = [=](const MonicaModel* mm){ return f(*mm); };
+			}
+			else
+			{
+				auto oids = parseOutputIds({_value});
+				if(!oids.empty())
+				{
+					auto oid = oids[0];
+					const auto& ofs = buildOutputTable().ofs;
+					auto ofi = ofs.find(oid.id);
+					if(ofi != ofs.end())
+					{
+						auto f = ofi->second;
+						_getValue = [=](const MonicaModel* mm){ return f(*mm, oid); };
+					}
+				}
+			}
+		}
+	}
+	else
+		_getValue = [=](const MonicaModel*){ return _value; };
+
 	return res;
 }
 
-json11::Json OverwriteSoilMoisture::to_json() const
+json11::Json SetValue::to_json() const
 {
-	return json11::Json::object{
-		{"type", type()},
-		{"date", date().toIsoDateString()},
-		{"soilMoisturePercentFC", _percentFC}
+	return json11::Json::object
+	{{"type", type()}
+	,{"date", date().toIsoDateString()}
+	,{"var", _oid.jsonInput}
+	,{"value", _value}
 	};
 }
 
-void OverwriteSoilMoisture::apply(MonicaModel* model)
+void SetValue::apply(MonicaModel* model)
 {
-	auto& sc = model->soilColumnNC();
-	auto nols = sc.vs_NumberOfLayers();
+	if(!_getValue)
+		return;
 
-	vector<double> pfcs(nols);
-	if(_percentFC.is_number())
-		pfcs = vector<double>(nols, _percentFC.number_value());
-	else if(_percentFC.is_array())
+	const auto& setfs = buildOutputTable().setfs;
+	auto ci = setfs.find(_oid.id);
+	if(ci != setfs.end())
 	{
-		auto v = double_vector(_percentFC);
-		for(size_t i = 0, pfcss = pfcs.size(), vs = v.size(); i < pfcss && i < vs; i++)
-			pfcs[i] = v[i];
+		auto v = _getValue(model);
+		ci->second(*model, _oid, v);
 	}
-	
-	for(size_t i = 0; i < nols; i++)
-		sc[i].set_Vs_SoilMoisture_m3(sc[i].vs_FieldCapacity() * pfcs[i] / 100.0);
 
-	model->addEvent("OverwriteSoilMoisture");
-	model->addEvent("overwrite");
+	model->addEvent("SetValue");
+	model->addEvent("set-value");
 }
 
 //------------------------------------------------------------------------------
-
 
 IrrigationApplication::IrrigationApplication(const Tools::Date& at,
 																						 double amount,
@@ -556,8 +592,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 		return make_shared<TillageApplication>(j);
 	else if(type == "IrrigationApplication")
 		return make_shared<IrrigationApplication>(j);
-	else if(type == "OverwriteSoilMoisture")
-		return make_shared<OverwriteSoilMoisture>(j);
+	else if(type == "SetValue")
+		return make_shared<SetValue>(j);
 
 	return WSPtr();
 }

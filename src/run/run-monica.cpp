@@ -167,12 +167,6 @@ pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAcce
 {
 	Date startDate = da.startDate();
 	Date currentDate = startDate + stepNo;
-	double tmin = da.dataForTimestep(Climate::tmin, stepNo);
-	double tavg = da.dataForTimestep(Climate::tavg, stepNo);
-	double tmax = da.dataForTimestep(Climate::tmax, stepNo);
-	double precip = da.dataForTimestep(Climate::precip, stepNo);
-	double wind = da.dataForTimestep(Climate::wind, stepNo);
-	double globrad = da.dataForTimestep(Climate::globrad, stepNo);
 
 	// test if data for relhumid are available; if not, value is set to -1.0
 	double relhumid = da.hasAvailableClimateData(Climate::relhumid)
@@ -180,12 +174,12 @@ pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAcce
 		: -1.0;
 
 	map<Climate::ACD, double> m
-	{{ Climate::tmin, tmin }
-	,{ Climate::tavg, tavg }
-	,{ Climate::tmax, tmax }
-	,{ Climate::precip, precip }
-	,{ Climate::wind, wind }
-	,{ Climate::globrad, globrad }
+	{{ Climate::tmin, da.dataForTimestep(Climate::tmin, stepNo)}
+	,{ Climate::tavg, da.dataForTimestep(Climate::tavg, stepNo)}
+	,{ Climate::tmax, da.dataForTimestep(Climate::tmax, stepNo)}
+	,{ Climate::precip, da.dataForTimestep(Climate::precip, stepNo)}
+	,{ Climate::wind, da.dataForTimestep(Climate::wind, stepNo)}
+	,{ Climate::globrad, da.dataForTimestep(Climate::globrad, stepNo)}
 	,{ Climate::relhumid, relhumid }
 	};
 	return make_pair(currentDate, m);
@@ -223,119 +217,6 @@ Maybe<T> parseInt(const string& s)
 	return res;
 }
 
-function<bool(const MonicaModel&)> buildExpression(J11Array a)
-{
-	if(a.size() == 3
-		 && (a[0].is_number() || a[0].is_string() || a[0].is_array())
-		 && a[1].is_string()
-		 && (a[2].is_number() || a[2].is_string() || a[2].is_array()))
-	{
-		Json leftj = a[0];
-		string ops = a[1].string_value();
-		Json rightj = a[2];
-			
-		function<bool(double, double)> op;
-		if(ops == "<") 
-			op = [](double l, double r){ return l < r; };
-		else if(ops == "<=")
-			op = [](double l, double r){ return l <= r; };
-		else if(ops == "=")
-			op = [](double l, double r){ return l == r; };
-		else if(ops == "!=")
-			op = [](double l, double r){ return l != r; };
-		else if(ops == ">")
-			op = [](double l, double r){ return l > r; };
-		else if(ops == ">=")
-			op = [](double l, double r){ return l >= r; };
-
-		const auto& ofs = buildOutputTable().ofs;
-		decltype(buildOutputTable().ofs)::mapped_type lf, rf;
-		OId loid, roid;
-		if(!leftj.is_number())
-		{
-			auto loids = parseOutputIds({leftj});
-			if(!loids.empty())
-			{
-				loid = loids.front();
-				auto ofi = ofs.find(loid.id);
-				if(ofi != ofs.end())
-					lf = ofi->second;
-			}
-		}
-		if(!rightj.is_number())
-		{
-			auto roids = parseOutputIds({rightj});
-			if(!roids.empty())
-			{
-				roid = roids.front();
-				auto ofi = ofs.find(roid.id);
-				if(ofi != ofs.end())
-					rf = ofi->second;
-			}
-		}
-
-		auto applyOp = [=](Json lj, Json rj)
-		{
-			if(lj.is_number() && rj.is_number())
-				return op(lj.number_value(), rj.number_value());
-			else if(lj.is_array() && rj.is_number())
-			{
-				double rn = rj.number_value();
-				auto lja = lj.array_items();
-				return accumulate(lja.begin(), lja.end(), true, [=](bool acc, Json j)
-				{
-					return acc && (j.is_number() ? op(j.number_value(), rn) : false);
-				});
-			}
-			else if(lj.is_number() && rj.is_array())
-			{
-				double ln = lj.number_value();
-				auto rja = rj.array_items();
-				return accumulate(rja.begin(), rja.end(), true, [=](bool acc, Json j)
-				{
-					return acc && (j.is_number() ? op(j.number_value(), ln) : false);
-				});
-			}
-			else if(lj.is_array() && rj.is_array())
-			{
-				auto lja = lj.array_items();
-				auto rja = rj.array_items();
-				vector<bool> res;
-				//compare values point wise (dot product)
-				transform(lja.begin(), lja.end(), rja.begin(), back_inserter(res), [=](Json left, Json right)
-				{
-					return left.is_number() && right.is_number() ? op(left.number_value(), right.number_value()) : false;
-				});
-				return accumulate(res.begin(), res.end(), true, [](bool acc, bool v){ return acc && v; });
-			}
-			return false;
-		};
-		
-		if(lf && rf && op)
-		{
-			return [=](const MonicaModel& m)
-			{ 
-				return applyOp(lf(m, loid), rf(m, roid));
-			};
-		}
-		else if(lf && rightj.is_number() && op)
-		{
-			return [=](const MonicaModel& m)
-			{
-				return applyOp(lf(m, loid), rightj);
-			};
-		}
-		else if(leftj.is_number() && rf && op)
-		{
-			return [=](const MonicaModel& m)
-			{
-				return applyOp(leftj, rf(m, roid));
-			};
-		}
-	}
-
-	return function<bool(const MonicaModel&)>();
-}
 
 Tools::Errors Spec::merge(json11::Json j)
 {
@@ -357,7 +238,7 @@ void Spec::init(Maybe<DMY>& member, Json j, string time)
 	//is an expression event
 	if(jt.is_array())
 	{
-		if(auto f = buildExpression(jt.array_items()))
+		if(auto f = buildCompareExpression(jt.array_items()))
 		{
 			time2expression[time] = f;
 			eventType = eExpression;
@@ -902,7 +783,7 @@ Output Monica::runMonica(Env env)
 				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			//apply everything to do at current day
 			//cout << currentPP.toString().c_str() << endl;
-			currentCM.apply(nextCMApplicationDate, &monica);// , {{"Harvest", aggregateCropOutput}});
+			currentCM.apply(nextCMApplicationDate, &monica);
 
 			//get the next application date to wait for (either absolute or relative)
 			nextCMApplicationDate = currentCM.nextDate(nextCMApplicationDate);

@@ -17,6 +17,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <fstream>
 #include <algorithm>
 #include <mutex>
+#include <numeric>
+#include <iterator>
 
 #include "build-output.h"
 
@@ -302,6 +304,28 @@ Json getComplexValues(OId oid, function<T(int)> getValue, int roundToDigits = 0)
 	return oid.layerAggOp == OId::NONE ? Json(multipleValues) : Json(applyOIdOP(oid.layerAggOp, vs));
 }
 
+void setComplexValues(OId oid, function<void(int, json11::Json)> setValue, Json value)
+{
+	if(oid.isOrgan())
+		oid.toLayer = oid.fromLayer = int(oid.organ);
+
+	J11Array values;
+	if(value.is_object() || value.is_null())
+		return;
+	else if(value.is_array())
+		values = value.array_items();
+	else
+		values = J11Array(oid.toLayer - oid.fromLayer + 1, value);
+	
+	for(int i = oid.fromLayer, k = 0, vsize = values.size(); i <= oid.toLayer, k < vsize; i++, k++)
+	{
+		if(i < 0)
+			debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Can't set value." << endl;
+		else
+			setValue(i, values[k]);
+	}
+}
+
 BOTRes& Monica::buildOutputTable()
 {
 	static mutex lockable;
@@ -310,9 +334,14 @@ BOTRes& Monica::buildOutputTable()
 	static BOTRes m;
 	static bool tableBuild = false;
 
-	auto build = [&](OutputMetadata r, decltype(m.ofs)::mapped_type of)
+	typedef decltype(m.setfs)::mapped_type SETF_T;
+	auto build = [&](OutputMetadata r, 
+									 decltype(m.ofs)::mapped_type of,
+									 decltype(m.setfs)::mapped_type setf = SETF_T())
 	{
 		m.ofs[r.id] = of;
+		if(setf)
+			m.setfs[r.id] = setf;
 		m.name2metadata[r.name] = r;
 	};
 
@@ -661,6 +690,14 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilMoisture().get_SoilMoisture(i); }, 3);
+			}, 
+						[](MonicaModel& monica, OId oid, Json value)
+			{
+				setComplexValues(oid, [&](int i, Json j)
+				{
+					if(j.is_number())
+						monica.soilColumnNC()[i].set_Vs_SoilMoisture_m3(j.number_value());
+				}, value);
 			});
 
 			build({id++, "Irrig", "mm", "Irrigation"},
@@ -1062,9 +1099,133 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_FruitBiomassNContent(), 5) : 0.0;
 			});
 
+			build({id++, "Fc", "m3 m-3", "field capacity"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_FieldCapacity(); }, 4);
+			});
+
+			build({id++, "Pwp", "m3 m-3", "permanent wilting point"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_PermanentWiltingPoint(); }, 4);
+			});
+
 			tableBuild = true;
 		}
 	}
 
 	return m;
+}
+
+//-----------------------------------------------------------------------------
+
+std::function<bool(double, double)> Monica::getCompareOp(std::string ops)
+{
+	function<bool(double, double)> op = [](double, double){ return false; };
+
+	if(ops == "<")
+		op = [](double l, double r){ return l < r; };
+	else if(ops == "<=")
+		op = [](double l, double r){ return l <= r; };
+	else if(ops == "=")
+		op = [](double l, double r){ return l == r; };
+	else if(ops == "!=")
+		op = [](double l, double r){ return l != r; };
+	else if(ops == ">")
+		op = [](double l, double r){ return l > r; };
+	else if(ops == ">=")
+		op = [](double l, double r){ return l >= r; };
+
+	return op;
+}
+
+bool Monica::applyCompareOp(std::function<bool(double, double)> op, Json lj, Json rj)
+{
+	if(lj.is_number() && rj.is_number())
+		return op(lj.number_value(), rj.number_value());
+	else if(lj.is_array() && rj.is_number())
+	{
+		double rn = rj.number_value();
+		auto lja = lj.array_items();
+		return accumulate(lja.begin(), lja.end(), true, [=](bool acc, Json j)
+		{
+			return acc && (j.is_number() ? op(j.number_value(), rn) : false);
+		});
+	}
+	else if(lj.is_number() && rj.is_array())
+	{
+		double ln = lj.number_value();
+		auto rja = rj.array_items();
+		return accumulate(rja.begin(), rja.end(), true, [=](bool acc, Json j)
+		{
+			return acc && (j.is_number() ? op(j.number_value(), ln) : false);
+		});
+	}
+	else if(lj.is_array() && rj.is_array())
+	{
+		auto lja = lj.array_items();
+		auto rja = rj.array_items();
+		vector<bool> res;
+		//compare values point wise (dot product)
+		transform(lja.begin(), lja.end(), rja.begin(), back_inserter(res), [=](Json left, Json right)
+		{
+			return left.is_number() && right.is_number() ? op(left.number_value(), right.number_value()) : false;
+		});
+		return accumulate(res.begin(), res.end(), true, [](bool acc, bool v){ return acc && v; });
+	}
+	return false;
+}
+
+std::function<double(double, double)> Monica::getPrimitiveCalcOp(std::string ops)
+{
+	function<double(double, double)> op = [](double, double){ return 0.0; };
+
+	if(ops == "+")
+		op = [](double l, double r){ return l + r; };
+	else if(ops == "-")
+		op = [](double l, double r){ return l - r; };
+	else if(ops == "*")
+		op = [](double l, double r){ return l * r; };
+	else if(ops == "/")
+		op = [](double l, double r){ return l / r; };
+
+	return op;
+}
+
+json11::Json Monica::applyPrimitiveCalcOp(std::function<double(double, double)> op, json11::Json lj, json11::Json rj)
+{
+	if(lj.is_number() && rj.is_number())
+		return op(lj.number_value(), rj.number_value());
+	else if(lj.is_array() && rj.is_number())
+	{
+		double rn = rj.number_value();
+		auto lja = lj.array_items();
+		vector<double> res;
+		for(auto left : lja)
+			res.push_back(left.is_number() ? op(left.number_value(), rn) : 0.0);
+		return toPrimJsonArray(res);
+	}
+	else if(lj.is_number() && rj.is_array())
+	{
+		double ln = lj.number_value();
+		auto rja = rj.array_items();
+		vector<double> res;
+		for(auto right : rja)
+			res.push_back(right.is_number() ? op(ln, right.number_value()) : 0.0);
+		return toPrimJsonArray(res);
+	}
+	else if(lj.is_array() && rj.is_array())
+	{
+		auto lja = lj.array_items();
+		auto rja = rj.array_items();
+		vector<bool> res;
+		//compare values point wise (dot product)
+		transform(lja.begin(), lja.end(), rja.begin(), back_inserter(res), [=](Json left, Json right)
+		{
+			return left.is_number() && right.is_number() ? op(left.number_value(), right.number_value()) : 0.0;
+		});
+		return toPrimJsonArray(res);
+	}
+	return 0.0;
 }
