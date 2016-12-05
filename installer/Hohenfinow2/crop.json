@@ -116,7 +116,11 @@
 	"_cropRotation": [
 		{
 			"worksteps": [
-        		{ "date": "0000-09-22", "type": "SetValue", "var": ["Mois", 1], "value": ["=", ["Fc", 1], "*", 0.7] },			
+        { "date": "0000-09-22", "type": "SetValue", "var": ["NO2", 1], "value": ["=", ["NO2", 1], "*", 0.5] },			
+				{ "date": "0000-09-23", "type": "SetValue", "var": ["NO3", [1, 10]], "value": ["=", ["NO3", [1, 10]], "*", 2] },			
+				{ "date": "0000-09-24", "type": "SetValue", "var": ["NH4", 1], "value": ["NH4", 1] },
+				{ "date": "0000-09-25", "type": "SetValue", "var": ["Carb", [1,20]], "value": 0.01 },			
+				{ "date": "0000-09-22", "type": "SetValue", "var": ["Mois", 1], "value": ["=", ["Fc", 1], "*", 0.7] },			
 				{ "date": "0000-09-23", "type": "SetValue", "var": ["Mois", [1, 10]], "value": ["=", ["Fc", [1, 10]], "*", 0.7] },			
 				{ "date": "0000-09-24", "type": "SetValue", "var": ["Mois", 1], "value": ["Fc", 1] },
 				{ "date": "0000-09-25", "type": "SetValue", "var": ["Mois", [1,20]], "value": 0.2 },			
