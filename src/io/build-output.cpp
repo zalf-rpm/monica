@@ -823,24 +823,58 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNO3(); }, 3);
+			},
+						[](MonicaModel& monica, OId oid, Json value)
+			{
+				setComplexValues(oid, [&](int i, Json j)
+				{
+					if(j.is_number())
+						monica.soilColumnNC()[i].vs_SoilNO3 = j.number_value();
+				}, value);
 			});
 
 			build({id++, "Carb", "kgN m-3", "Soil Carbamid"},
 						[](const MonicaModel& monica, OId oid)
 			{
-				return round(monica.soilColumn().at(0).get_SoilCarbamid(), 4);
+				//return round(monica.soilColumn().at(0).get_SoilCarbamid(), 4);
+				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilCarbamid(); }, 4);
+				
+			},
+						[](MonicaModel& monica, OId oid, Json value)
+			{
+				setComplexValues(oid, [&](int i, Json j)
+				{
+					if(j.is_number())
+						monica.soilColumnNC()[i].vs_SoilCarbamid = j.number_value();
+				}, value);
 			});
 
 			build({id++, "NH4", "kgN m-3", ""},
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNH4(); }, 4);
+			},
+						[](MonicaModel& monica, OId oid, Json value)
+			{
+				setComplexValues(oid, [&](int i, Json j)
+				{
+					if(j.is_number())
+						monica.soilColumnNC()[i].vs_SoilNH4 = j.number_value();
+				}, value);
 			});
 
 			build({id++, "NO2", "kgN m-3", ""},
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNO2(); }, 4);
+			},
+						[](MonicaModel& monica, OId oid, Json value)
+			{
+				setComplexValues(oid, [&](int i, Json j)
+				{
+					if(j.is_number())
+						monica.soilColumnNC()[i].vs_SoilNO2 = j.number_value();
+				}, value);
 			});
 
 			build({id++, "SOC", "kgC kg-1", "get_SoilOrganicC"},
