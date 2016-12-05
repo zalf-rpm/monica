@@ -385,7 +385,7 @@ namespace Monica
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 
-		std::vector<WSPtr> nextApplications(const Tools::Date& date) const;
+		std::vector<WSPtr> applicationsAt(const Tools::Date& date) const;
 
 		std::string name() const { return _name; }
 

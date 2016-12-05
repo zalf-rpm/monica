@@ -173,20 +173,7 @@ void Harvest::apply(MonicaModel* model)
 			 || _method == "cutting")
 		{
 			debug() << "harvesting crop: " << crop->toString() << " at: " << date().toString() << endl;
-			//crop->setHarvestYields(model->cropGrowth()->get_FreshPrimaryCropYield() / 100.0,
-			//											 model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
-			//crop->setHarvestYieldsTM(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
-			//												 model->cropGrowth()->get_SecondaryCropYield() / 100.0);
-
-			//crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
-			//											 model->cropGrowth()->get_SecondaryYieldNContent());
-			//crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
-			//crop->setCropHeight(model->cropGrowth()->get_CropHeight());
-			//crop->setAccumulatedETa(model->cropGrowth()->get_AccumulatedETa());
-			//crop->setAccumulatedTranspiration(model->cropGrowth()->get_AccumulatedTranspiration());
-			//crop->setAnthesisDay(model->cropGrowth()->getAnthesisDay());
-			//crop->setMaturityDay(model->cropGrowth()->getMaturityDay());
-
+			
 			if(_method == "total")
 				model->harvestCurrentCrop(_exported);
 			else if(_method == "fruitHarvest")
@@ -685,12 +672,14 @@ json11::Json CultivationMethod::to_json() const
 void CultivationMethod::apply(const Date& date, 
 															MonicaModel* model) const
 {
-	auto p = equal_range(date);
-	while(p.first != p.second)
+	//apply everything at date
+	for(auto wsp : applicationsAt(date))
+		wsp->apply(model);
+
+	//check if dynamic worksteps can be applied
+	for(auto wsp : applicationsAt(Date()))
 	{
-		auto ws = p.first->second;
-		ws->apply(model);
-		p.first++;
+		wsp->apply(model);
 	}
 }
 
@@ -700,12 +689,15 @@ Date CultivationMethod::nextDate(const Date& date) const
 	return ci != end() ? ci->first : Date();
 }
 
-vector<WSPtr> CultivationMethod::nextApplications(const Date& date) const
+vector<WSPtr> CultivationMethod::applicationsAt(const Date& date) const
 {
 	vector<WSPtr> apps;
 	auto p = equal_range(date);
 	while(p.first != p.second)
+	{
 		apps.push_back(p.first->second);
+		p.first++;
+	}
 	return apps;
 }
 

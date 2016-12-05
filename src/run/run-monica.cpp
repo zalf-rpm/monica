@@ -725,55 +725,10 @@ Output Monica::runMonica(Env env)
 
 		debug() << "currentDate: " << currentDate.toString() << endl;
 
-		//    if (currentDate.year() == 2012) {
-		//        cout << "Reaching problem year :-)" << endl;
-		//    }
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil
 		if(monica.cropGrowth() && monica.cropGrowth()->isDying())
 			monica.incorporateCurrentCrop();
-
-		/////////////////////////////////////////////////////////////////
-		// AUTOMATIC HARVEST TRIGGER
-		/////////////////////////////////////////////////////////////////
-
-		/**
-		* @TODO Change passing of automatic trigger parameters when building crop rotation (specka).
-		* The automatic harvest trigger is passed globally to the method that reads in crop rotation
-		* via hermes files because it cannot be configured crop specific with the HERMES format.
-		* The harvest trigger prevents the adding of a harvest application as done in the normal case
-		* that uses hard coded harvest data configured via the rotation file.
-		*
-		* When using the Json format, for each crop individual settings can be specified. The automatic
-		* harvest trigger should be one of those options. Don't forget to pass a crop-specific latest
-		* harvest date via json parameters too, that is now specified in the sqlite database globally
-		* for each crop.
-		*/
-
-		// Test if automatic harvest trigger is used
-		if(monica.cropGrowth() && currentCM.crop()->useAutomaticHarvestTrigger())
-		{
-			// Test if crop should be harvested at maturity
-			if(currentCM.crop()->getAutomaticHarvestParams().getHarvestTime() == AutomaticHarvestParameters::maturity)
-			{
-
-				if(monica.cropGrowth()->maturityReached()
-					 || currentCM.crop()->getAutomaticHarvestParams().getLatestHarvestDOY() == currentDate.julianDay())
-				{
-					debug() << "####################################################" << endl;
-					debug() << "AUTOMATIC HARVEST TRIGGER EVENT" << endl;
-					debug() << "####################################################" << endl;
-
-					//aggregateCropOutput();
-
-					//auto harvestApplication = make_unique<Harvest>(currentDate, currentPP.crop(), currentPP.cropResultPtr());
-					auto harvestApplication =
-						unique_ptr<Harvest>(new Harvest(currentDate,
-																						currentCM.crop()));
-					harvestApplication->apply(&monica);
-				}
-			}
-		}
 
 		//apply worksteps and cycle through crop rotation
 		Date prevCMApplicationDate = nextCMApplicationDate;
