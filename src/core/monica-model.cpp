@@ -350,12 +350,7 @@ void MonicaModel::incorporateCurrentCrop()
                                   totalNConcentration);
   }
 
-  delete _currentCropGrowth;
-  _currentCropGrowth = NULL;
-  _currentCrop = CropPtr();
-  _soilTransport.remove_Crop();
-  _soilColumn.remove_Crop();
-  _soilMoisture.remove_Crop();
+	_clearCropUponNextDay = true;
 }
 
 /**
@@ -492,10 +487,10 @@ void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateD
 	_currentStepDate = date;
 	_currentStepClimateData = climateData;
 		
-	if(isCropPlanted())
-		cropStep();//date, climateData);
+	if(isCropPlanted() && !_clearCropUponNextDay)
+		cropStep();
 
-	generalStep();//date, climateData);
+	generalStep();
 }
 
 /**
