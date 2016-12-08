@@ -261,7 +261,7 @@ int main (int argc,
 						for(; i < count; i++)
 						{
 							int res = system(cmd.c_str());
-							debug() << "result of running '" << cmd << "': " << res << endl;
+							Tools::debug() << "result of running '" << cmd << "': " << res << endl;
 							started[addresses]++, successfullyStarted++;
 						}
 					}
@@ -291,6 +291,49 @@ int main (int argc,
 							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
 					}
 				}
+				else if(msgType == "start-pipeline-proxies"
+								|| msgType == "stop-pipeline-proxies")
+				{
+					Json& fmsg = msg.json;
+
+					int inFrontendPort = fmsg["input-frontend-port"].int_value();
+					int inBackendPort = fmsg["input-backend-port"].int_value();
+					int outFrontendPort = fmsg["output-frontend-port"].int_value();
+					int outBackendPort = fmsg["output-backend-port"].int_value();
+
+					string inArgs = string(" -f ") + to_string(inFrontendPort) + " -b " + to_string(inBackendPort);
+					string outArgs = string(" -f ") + to_string(outFrontendPort) + " -b " + to_string(outBackendPort);
+
+#ifdef WIN32
+					string inCmd = string("start /b monica-zmq-proxy -p ") + inArgs;
+					string outCmd = string("start /b monica-zmq-proxy -p ") + outArgs;
+#else
+					string inCmd = string("monica-zmq-proxy -p ") + inArgs + " &";
+					string outCmd = string("monica-zmq-proxy -p ") + outArgs + " &";
+#endif
+					//cout << "inCmd: " << inCmd << " outCmd: " << outCmd << endl;
+
+					int res = system(inCmd.c_str());
+					Tools::debug() << "result of running '" << inCmd << "': " << res << endl;
+
+					res = system(outCmd.c_str());
+					Tools::debug() << "result of running '" << outCmd << "': " << res << endl;
+
+					J11Object resultMsg;
+					resultMsg["type"] = "result";
+					resultMsg["ok"] = true;
+					try
+					{
+						s_send(socket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr
+							<< "Exception on trying to reply with result message: " << Json(resultMsg).dump()
+							<< " on zmq socket with address: " << address
+							<< "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+					}
+				}
 			}
 			catch(zmq::error_t e)
 			{
@@ -304,8 +347,8 @@ int main (int argc,
 	{
 		cerr << "Couldn't bind socket to address: " << address << "! Error: [" << e.what() << "]" << endl;
 	}
-	debug() << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
+	Tools::debug() << "Bound " << appName << " zeromq reply socket to address: " << address << "!" << endl;
 
-	debug() << "exiting monica-zmq-control" << endl;
+	Tools::debug() << "exiting monica-zmq-control" << endl;
 	return 0;
 }

@@ -33,6 +33,7 @@ int main (int argc,
 	int backendPort = defaultProxyBackendPort;
 	bool startControlNode = false;
 	int controlPort = defaultControlPort;
+	bool usePipelinePorts = false;
 	
 	auto printHelp = [=]()
 	{
@@ -44,6 +45,7 @@ int main (int argc,
 			<< " -h | --help ... this help output" << endl
 			<< " -v | --version ... outputs " << appName << " version" << endl
 			<< endl
+			<< " -p | --pipeline-ports (default: use Router/Dealer sockets)" << endl
 			<< " -f | --frontend-port FRONTEND-PORT (default: " << frontendPort << ") ... run " << appName << " with given frontend port" << endl
 			<< " -b | --backend-port BACKEND-PORT (default: " << backendPort << ") ... run " << appName << " with given backend port" << endl
 			<< " -c | --start-control-node [CONTROL-NODE-PORT] (default: " << controlPort << ") ... start control node, connected to proxy, on given port" << endl
@@ -65,6 +67,8 @@ int main (int argc,
 			if(i + 1 < argc && argv[i + 1][0] != '-')
 				controlPort = stoi(argv[++i]);
 		}
+		else if(arg == "-p" || arg == "--pipeline-ports")
+			usePipelinePorts = true;
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
@@ -77,7 +81,7 @@ int main (int argc,
 
 	// setup the proxy 
 	// socket facing clients
-	zmq::socket_t frontend (context, ZMQ_ROUTER);
+	zmq::socket_t frontend (context, usePipelinePorts ? ZMQ_PULL : ZMQ_ROUTER);
 	string feAddress = string("tcp://*:") + to_string(frontendPort);
 	try
 	{
@@ -91,7 +95,7 @@ int main (int argc,
 	debug() << "Bound " << appName << " zeromq router socket to frontend address: " << feAddress << "!" << endl;
 
 	// socket facing services
-	zmq::socket_t backend (context, ZMQ_DEALER);
+	zmq::socket_t backend (context, usePipelinePorts ? ZMQ_PUSH : ZMQ_DEALER);
 	string beAddress = string("tcp://*:") + to_string(backendPort);
 	try
 	{
