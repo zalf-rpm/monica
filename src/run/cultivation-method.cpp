@@ -628,6 +628,8 @@ Errors CultivationMethod::merge(json11::Json j)
 	for(auto wsj : j["worksteps"].array_items())
 	{
 		auto ws = makeWorkstep(wsj);
+		if(!ws)
+			continue;
 		insert(make_pair(iso_date_value(wsj, "date"), ws));
 		string wsType = ws->type();
 		if(wsType == "Seed")
