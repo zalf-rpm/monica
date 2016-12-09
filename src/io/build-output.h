@@ -83,7 +83,7 @@ namespace Monica
 			auto op = getOp(ops);
 
 			const auto& ofs = buildOutputTable().ofs;
-			decltype(buildOutputTable().ofs)::mapped_type lf, rf;
+			typename decltype(buildOutputTable().ofs)::mapped_type lf, rf;
 			Monica::OId loid, roid;
 			if(!leftj.is_number())
 			{
