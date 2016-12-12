@@ -3350,7 +3350,7 @@ double CropGrowth::get_NetPhotosynthesis() const
 }
 
 
-Voc::Emissions CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
+void CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
 {
 	Voc::SpeciesData species;
 	species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
@@ -3358,13 +3358,11 @@ Voc::Emissions CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mc
 	species.mFol = get_OrganBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
 	species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
 
-	auto gems = Voc::calculateGuentherVOCEmissions(species, mcd);
+	_guentherEmissions = Voc::calculateGuentherVOCEmissions(species, mcd);
 	//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
-	auto jjvems = Voc::calculateJJVVOCEmissions(species, mcd);
+	_jjvEmissions = Voc::calculateJJVVOCEmissions(species, mcd);
 	//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
-
-	return gems;
 }
 
 /**

@@ -1145,6 +1145,30 @@ BOTRes& Monica::buildOutputTable()
 				return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_PermanentWiltingPoint(); }, 4);
 			});
 
+			build({id++, "guenther-isoprene-emission", "", "daily isoprene-emission of all species from Guenther model"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->guentherEmissions().isoprene_emission, 5) : 0.0;
+			});
+
+			build({id++, "guenther-monoterpene-emission", "", "daily monoterpene emission of all species from Guenther model"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->guentherEmissions().monoterpene_emission, 5) : 0.0;
+			});
+
+			build({id++, "jjv-isoprene-emission", "", "daily isoprene-emission of all species from JJV model"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->jjvEmissions().isoprene_emission, 5) : 0.0;
+			});
+
+			build({id++, "jjv-monoterpene-emission", "", "daily monoterpene emission of all species from JJV model"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->jjvEmissions().monoterpene_emission, 5) : 0.0;
+			});
+
 			tableBuild = true;
 		}
 	}

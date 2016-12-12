@@ -206,7 +206,9 @@ namespace Monica
     double fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
                                    double vc_TotalRespired);
 
-		Voc::Emissions calculateVOCEmissions(const Voc::MicroClimateData& mcd);
+		void calculateVOCEmissions(const Voc::MicroClimateData& mcd);
+		Voc::Emissions guentherEmissions() const { return _guentherEmissions; }
+		Voc::Emissions jjvEmissions() const { return _jjvEmissions; }
 
     double get_ReferenceEvapotranspiration() const;
     double get_RemainingEvapotranspiration() const;
@@ -577,7 +579,8 @@ namespace Monica
 
     bool vc_MaturityReached{false};
 
-
+		Voc::Emissions _guentherEmissions;
+		Voc::Emissions _jjvEmissions;
   };
 }
 
