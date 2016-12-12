@@ -342,7 +342,7 @@ namespace Monica
 		double vm_ReferenceEvapotranspiration{6.0}; //!< Evapotranspiration of a 12mm cut grass crop at sufficient water supply [mm]
 		double vw_RelativeHumidity{0.0}; //!< [m3 m-3]
     std::vector<double> vm_ResidualEvapotranspiration; //!< Residual evapotranspiration in [mm]
-    std::vector<double> vm_SaturatedHydraulicConductivity; //!< Saturated hydraulic conductivity [m s-1]
+    std::vector<double> vm_SaturatedHydraulicConductivity; //!< Saturated hydraulic conductivity [mm d-1]
 
     std::vector<double> vm_SoilMoisture; //!< Result - Soil moisture of layer [m3 m-3]
 		double vm_SoilMoisture_crit{0};
