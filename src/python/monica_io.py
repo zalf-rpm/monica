@@ -617,6 +617,8 @@ def add_climate_data_to_env(env, simj, climate_csv_string=""):
     options["csv-separator"] = default_value(climate_data_settings, "csv-separator", ",")
     options["no-of-climate-file-header-line"] = default_value(climate_data_settings, "no-of-climate-file-header-lines", 2)
     options["header-to-acd-names"] = climate_data_settings["header-to-acd-names"]
+    options["end-date"] = climate_data_settings["end-date"]
+    options["start-date"] = climate_data_settings["start-date"]
     #print "startDate:", options["startDate"], "endDate:", options["endDate"]
 
     if not climate_csv_string:
