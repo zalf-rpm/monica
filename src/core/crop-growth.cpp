@@ -1837,7 +1837,7 @@ void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
 
 	}
 
-	if(vc_CurrentTotalTemperatureSum >= pc_EndSensitivePhaseHeatStress)
+	if(vc_CurrentTotalTemperatureSum >= pc_EndSensitivePhaseHeatStress || vc_FractionOpenFlowers == 1)
 	{
 		if(vc_TotalCropHeatImpact < vc_CropHeatRedux)
 		{

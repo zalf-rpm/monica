@@ -172,7 +172,11 @@ def write_output(output_ids, values):
 
 def is_absolute_path(p):
     "is absolute path"
-    return p.startswith("/") or p.startswith("\\")
+    return p.startswith("/") \
+        or (len(p) == 2 and p[1] == ":") \
+        or (len(p) > 2 and p[1] == ":" \
+            and (p[2] == "\\" \
+                or p[2] == "/"))
 
 
 def fix_system_separator(p):
