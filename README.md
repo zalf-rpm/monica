@@ -75,9 +75,9 @@ Contributions are welcome.
 MONICA is model of the [Institue of Landscape Systems Analysis](http://www.zalf.de/en/institute_einrichtungen/lsa/Pages/default.aspx) at the [Leibniz Centre for Agricultural Landscape Research (ZALF)](http://www.zalf.de/en).
 
 Authors
-* Claas Nendel <claas.nendel@zalf.de>
-* Xenia Specka <xenia.specka@zalf.de>
-* Michael Berg-Mohnicke <michael.berg@zalf.de>
+* Claas Nendel (claas (dot) nendel [at] zalf (dot) de)
+* Xenia Specka (xenia (dot) specka [at] zalf (dot) de)
+* Michael Berg-Mohnicke (michael (dot) berg [at] zalf (dot) de)
 
 Maintainers:
 Currently maintained by the authors.
