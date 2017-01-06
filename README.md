@@ -8,8 +8,7 @@ The acronym MONICA is derived from „MOdel of Nitrogen and Carbon dynamics in A
 
 # Building
 
-In order to build MONICA one needs to have at least to clone the repositories zalf-lsa/util (non core MONICA code), 
-zalf-lsa/sys-libs (source of some external libraries and pre-build binaries for Windows) and 
+In order to build MONICA one needs to have at least to clone the repositories zalf-lsa/util (non core MONICA code), zalf-lsa/sys-libs (includes of some external libraries and pre-build binaries for Windows) and 
 zalf-lsa/monica-parameters (parameters repository for MONICA). 
 If the repositories are cloned alongside the MONICA repository no pathes have to be adjusted in the project files.
 
@@ -32,18 +31,26 @@ installer\Hohenfinow2\out.csv.
 
 ## Linux
 
+To build MONICA under Linux, run inside the monica repository directory `cmake -i`.
 
+to create the makefile interactively. Then a `make` should you leave with a working version of MONICA. If you compiled the code in the repository directory running
 
+    ./monica run installer/Hohenfinow2/sim.json > out.csv
+
+from the shell should run the standard example and write the results into out.csv.
 
 
 # Usage
 
 MONICA consists right now of a number of tools/parts. Most of them can be called at the commandline like
+
     monica command1 [command2] parameter1 parameter2 ....
+
 eg. to run MONICA locally with the standard Hohenfinow2 example under Windows using the standard installer, 
 go to the c:\users\USER_PROFILE\MONICA directory and execute in a Commandshell
+
     monica run Examples/Hohenfinow2/sim.json > out.csv
-    
+
 Alternatively one can type always the full name of the tool, which are named monica-run, monica-zmq-run, monica-zmq-server etc, 
 monica is just a proxy program calling the actual tools. There are the following tools/versions of MONICA available.
 
