@@ -40,6 +40,12 @@ defaults: [
 	publisher-control-address "tcp://localhost:8899"
 	input-address "tcp://localhost:6666"
 	output-address "tcp://localhost:7777"
+	input-host "localhost"
+	output-host "localhost"
+	input-fe-port 6666
+	output-fe-port 7788
+	input-be-port 6677
+	output-be-port 7777
 	service-port 6666
 ]
 
@@ -79,6 +85,16 @@ pipeline-msg-template: {
 	,	"output-addresses": "<output-addresses>"	
 	}
 }
+
+pipeline-proxy-msg-template: {
+	{	"type": "<type>"
+	,	"input-frontend-port": <input-frontend-port>
+	,	"input-backend-port": <input-backend-port>	
+	,	"output-frontend-port": <output-frontend-port>	
+	,	"output-backend-port": <output-backend-port>	
+	}
+}
+
 
 
 log-error: does [  ; FIXME: should go to stderr
@@ -256,28 +272,51 @@ either zero? pool: make-pool 1 [
 			below
 			tp: tab-panel [
 				"Pipeline" [
-					across
-					text "Input address(es):" input-addresses: field 150 (def input-address) 
-					return
-					text "Output address(es):" output-addresses: field 150 (def output-address) 
-					return
-					button "action" react [face/text: type/text face/enable?: not con/enable?] [
-						;print input-addresses/text
-						m: replace-multi pipeline-msg-template reduce [
-							"<type>" type/text
-							"<count>" to integer! count/data
-							"<control-addresses>" pub-control-addresses/text
-							"<input-addresses>" input-addresses/text
-							"<output-addresses>" output-addresses/text
+					across 
+					panel [
+						across
+						text "Input host:" input-host: field 100 (def input-host)
+						text "frontend port:" input-fe-port: field 50 (def input-fe-port)
+						text "backend port:" input-be-port: field 50 (def input-be-port) 
+						return
+						text "Output host:" output-host: field 100 (def output-host)
+						text "frontend port:" output-fe-port: field 50 (def output-fe-port)
+						text "backend port:" output-be-port: field 50 (def output-be-port)
+						return
+						button "start proxies" [
+							m: replace-multi pipeline-proxy-msg-template reduce [
+								"<type>" "start-pipeline-proxies"
+								"<input-frontend-port>" to integer! input-fe-port/data
+								"<input-backend-port>" to integer! input-be-port/data
+								"<output-frontend-port>" to integer! output-fe-port/data
+								"<output-backend-port>" to integer! output-be-port/data
+							]
+							;print m
+							send-msg socket m
+							receive-msg socket
+						] 
+						button "action" react [face/text: type/text face/enable?: not con/enable?] [
+							;print input-addresses/text
+							m: replace-multi pipeline-msg-template reduce [
+								"<type>" type/text
+								"<count>" to integer! count/data
+								"<control-addresses>" pub-control-addresses/text
+								"<input-addresses>" replace-multi "tcp://host:port" reduce [ "host" input-host/data "port" input-be-port/data]
+								"<output-addresses>" replace-multi "tcp://host:port" reduce [ "host" output-host/data "port" output-fe-port/data]
+							]
+							;print m
+							send-msg socket m
+							receive-msg socket 
+						]   
+						button "stop" [
+							stop-via-pub/delay to integer! first parse pub-control-addresses/text [
+								collect [some ["tcp://" thru ":" keep [to "," | thru end] opt ","]]
+							] 1 ;to integer! pub-send-delay/text
 						]
-						;print m
-						send-msg socket m
-						receive-msg socket 
-					]   
-					button "stop" [
-						stop-via-pub/delay to integer! first parse pub-control-addresses/text [
-							collect [some ["tcp://" thru ":" keep [to "," | thru end] opt ","]]
-						] 1 ;to integer! pub-send-delay/text
+					]
+					panel [
+						across
+						
 					] 
 				]
 				"Proxy" [
