@@ -467,8 +467,18 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 	}
 
 	// old DLP
-	vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin((-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus)
-																											/ vc_DeclinationCosinus)) / PI;
+	double asin_argument = (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+	if (asin_argument < -1)
+	{
+		asin_argument = -1;
+	}
+	else if (asin_argument > 1)
+	{
+		asin_argument = 1;
+	}
+	vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(asin_argument)) / PI;	
+	//vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin((-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus)
+	//																										/ vc_DeclinationCosinus)) / PI;
 
 	// Calculation of the mean photosynthetically active radiation [J m-2] - old RDN
 	vc_PhotActRadiationMean = 3600.0 * (vc_DeclinationSinus * vc_AstronomicDayLenght + 24.0 / PI * vc_DeclinationCosinus
