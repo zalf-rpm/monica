@@ -6,6 +6,21 @@ The acronym MONICA is derived from „MOdel of Nitrogen and Carbon dynamics in A
 
 # Content
 
+* [Download](#download)
+* [Building](#building)
+  * [Windows](#windows)
+  * [Linux](#linux)
+* [Usage](#usage)
+* [Installation](#installation)
+* [Contributing](#contributing)
+* [License](#license)
+
+
+# Download
+
+32bit Windows builds can be downloaded from [the ZALF cloud](https://zcloud.zalf.de/index.php/s/ELkme4kaLX1a3Ei). Download the most current version with the highest build number.
+
+
 # Building
 
 In order to build MONICA one needs to have at least to clone the repositories zalf-lsa/util (non core MONICA code), zalf-lsa/sys-libs (includes of some external libraries and pre-build binaries for Windows) and 
@@ -20,7 +35,7 @@ in the "C/C++|General|Additional Include Directories" section.
 In order to run the examples, copy the file db-connections.ini.template and rename it to db-connections.ini. 
 This file is used to configure access to SQLite and MySQL databases (access to the later is not being compiled into MONICA by default).
 
-## Windows (Visual Studio)
+## Windows
 
 Use Visual Studio 2015 (Community is enough) and open monica.sln in project-files. Check that all pathes are correct in the projects.
 You should be able to compile successfully all projects. 
