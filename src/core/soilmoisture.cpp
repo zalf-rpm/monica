@@ -28,6 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "crop-growth.h"
 #include "monica-model.h"
 #include "tools/debug.h"
+#include "tools/algorithms.h"
 
 using namespace std;
 using namespace Monica;
@@ -610,7 +611,7 @@ FrostComponent::updateLambdaRedux()
 
   for (size_t i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
 
-    if (i_Layer < (size_t(floor((vm_FrostDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
+    if (i_Layer < (size_t(std::floor((vm_FrostDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
 
       // soil layer is frozen
       soilColumn[i_Layer].vs_SoilFrozen = true;
@@ -621,7 +622,7 @@ FrostComponent::updateLambdaRedux()
       }
     }
 
-    if (i_Layer < (size_t(floor((vm_ThawDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
+    if (i_Layer < (size_t(std::floor((vm_ThawDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5)))) {
       // soil layer is thawing
 
       if (vm_ThawDepth < (double(i_Layer + 1) * soilColumn[i_Layer].vs_LayerThickness) && (vm_ThawDepth < vm_FrostDepth)) {
@@ -713,7 +714,7 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
   //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
   pm_LayerThickness = mm.simulationParameters().p_LayerThickness;
 
-  pm_LeachingDepthLayer = int(floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
+  pm_LeachingDepthLayer = int(std::floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
 
   for (int i=0; i<vm_NumberOfLayers; i++) {
     vm_SaturatedHydraulicConductivity.resize(vm_NumberOfLayers, smPs.pm_SaturatedHydraulicConductivity); // original [8640 mm d-1]
@@ -1600,6 +1601,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   } // vm_PotentialEvapotranspiration > 0.0
   vm_ActualEvapotranspiration = vm_ActualTranspiration + vm_ActualEvaporation + vc_EvaporatedFromIntercept
       + vm_EvaporatedFromSurface;
+    
 
 	//std::cout << setprecision(11) << "vm_ActualTranspiration: " << vm_ActualTranspiration << std::endl;
 	//std::cout << setprecision(11) << "vm_ActualEvaporation: " << vm_ActualEvaporation << std::endl;
@@ -1665,18 +1667,36 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   vc_Declination = -23.4 * cos(2.0 * PI * ((vs_JulianDay + 10.0) / 365.0));
   vc_DeclinationSinus = sin(vc_Declination * PI / 180.0) * sin(vs_Latitude * PI / 180.0);
   vc_DeclinationCosinus = cos(vc_Declination * PI / 180.0) * cos(vs_Latitude * PI / 180.0);
-  vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(vc_DeclinationSinus / vc_DeclinationCosinus)) / PI;
-  vc_EffectiveDayLenght = 12.0 * (PI + 2.0 * asin((-sin(8.0 * PI / 180.0) + vc_DeclinationSinus)
-      / vc_DeclinationCosinus)) / PI;
-  vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin((-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus)
-      / vc_DeclinationCosinus)) / PI;
+  
+  double arg_AstroDayLength = vc_DeclinationSinus / vc_DeclinationCosinus;
+  arg_AstroDayLength = bound(-1.0, arg_AstroDayLength, 1.0); //The argument of asin must be in the range of -1 to 1  
+  vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(arg_AstroDayLength)) / PI;
+  
+  double arg_EffectiveDayLength = (-sin(8.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+  arg_EffectiveDayLength = bound(-1.0, arg_EffectiveDayLength, 1.0); //The argument of asin must be in the range of -1 to 1
+  vc_EffectiveDayLenght = 12.0 * (PI + 2.0 * asin(arg_EffectiveDayLength)) / PI;
+  
+  double arg_PhotoDayLength = (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+  arg_PhotoDayLength = bound(-1.0, arg_PhotoDayLength, 1.0); //The argument of asin must be in the range of -1 to 1
+  vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(arg_PhotoDayLength)) / PI;
+  
+  double arg_PhotAct = min(1.0,((vc_DeclinationSinus / vc_DeclinationCosinus) * (vc_DeclinationSinus / vc_DeclinationCosinus))); //The argument of sqrt must be >= 0
   vc_PhotActRadiationMean = 3600.0 * (vc_DeclinationSinus * vc_AstronomicDayLenght + 24.0 / PI * vc_DeclinationCosinus
-      * sqrt(1.0 - ((vc_DeclinationSinus / vc_DeclinationCosinus) * (vc_DeclinationSinus / vc_DeclinationCosinus))));
-  vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean * exp(-0.14 / (vc_PhotActRadiationMean
-      / (vc_AstronomicDayLenght * 3600.0)));
+      * sqrt(1.0 - arg_PhotAct));
+  
+  
+  vc_ClearDayRadiation = 0;
+  if (vc_PhotActRadiationMean > 0 && vc_AstronomicDayLenght > 0)
+  {
+	  vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean * exp(-0.14 / (vc_PhotActRadiationMean
+		  / (vc_AstronomicDayLenght * 3600.0)));
+  }
+
   vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
   double SC = 24.0 * 60.0 / PI * 8.20 *(1.0 + 0.033 * cos(2.0 * PI * vs_JulianDay / 365.0));
-  double SHA = acos(-tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0));
+  double arg_SHA = bound(-1.0, -tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0), 1.0); //The argument of acos must be in the range of -1 to 1
+  double SHA = acos(arg_SHA);
+  
   vc_ExtraterrestrialRadiation = SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * sin(SHA)) / 100.0; // [J cm-2] --> [MJ m-2]
 
   // Calculation of atmospheric pressure
@@ -1720,9 +1740,7 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   vm_SurfaceResistance = vc_StomataResistance / 1.44;
 
   double vc_ClearSkySolarRadiation = (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation;
-  double vc_RelativeShortwaveRadiation = vw_GlobalRadiation / vc_ClearSkySolarRadiation;
-
-  if (vc_RelativeShortwaveRadiation > 1.0) vc_RelativeShortwaveRadiation = 1.0;
+  double vc_RelativeShortwaveRadiation = vc_ClearSkySolarRadiation > 0 ? min(vw_GlobalRadiation / vc_ClearSkySolarRadiation, 1.0) : 1.0;
 
   double pc_BolzmannConstant = 0.0000000049;
   double vc_ShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vw_GlobalRadiation;

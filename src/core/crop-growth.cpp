@@ -25,6 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilmoisture.h"
 #include "monica-parameters.h"
 #include "tools/helper.h"
+#include "tools/algorithms.h"
 #include "voc-guenther.h"
 #include "voc-jjv.h"
 
@@ -440,7 +441,7 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 															double vw_GlobalRadiation,
 															double vw_SunshineHours)
 {
-
+	
 	double vc_DeclinationSinus = 0.0; // old SINLD
 	double vc_DeclinationCosinus = 0.0; // old COSLD
 
@@ -451,7 +452,9 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 	vc_DeclinationCosinus = cos(vc_Declination * PI / 180.0) * cos(vs_Latitude * PI / 180.0);
 
 	// Calculation of the atmospheric day lenght - old DL
-	vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(vc_DeclinationSinus / vc_DeclinationCosinus)) / PI;
+	double arg_AstroDayLength = vc_DeclinationSinus / vc_DeclinationCosinus;
+	arg_AstroDayLength = bound(-1.0, arg_AstroDayLength, 1.0); //The argument of asin must be in the range of -1 to 1 
+	vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(arg_AstroDayLength)) / PI;
 
 	// Calculation of the effective day length - old DLE
 
@@ -465,28 +468,25 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 	{
 		vc_EffectiveDayLength = 12.0 * (PI + 2.0 * asin(EDLHelper)) / PI;
 	}
+	/*EDLHelper = bound(-1.0, EDLHelper, 1.0);
+	vc_EffectiveDayLength = 12.0 * (PI + 2.0 * asin(EDLHelper)) / PI;*/
 
 	// old DLP
-	double asin_argument = (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
-	if (asin_argument < -1)
-	{
-		asin_argument = -1;
-	}
-	else if (asin_argument > 1)
-	{
-		asin_argument = 1;
-	}
-	vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(asin_argument)) / PI;	
-	//vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin((-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus)
-	//																										/ vc_DeclinationCosinus)) / PI;
+	double arg_PhotoDayLength = (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+	arg_PhotoDayLength = bound(-1.0, arg_PhotoDayLength, 1.0); //The argument of asin must be in the range of -1 to 1
+	vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(arg_PhotoDayLength)) / PI;
 
 	// Calculation of the mean photosynthetically active radiation [J m-2] - old RDN
+	double arg_PhotAct = min(1.0, ((vc_DeclinationSinus / vc_DeclinationCosinus) * (vc_DeclinationSinus / vc_DeclinationCosinus))); //The argument of sqrt must be >= 0
 	vc_PhotActRadiationMean = 3600.0 * (vc_DeclinationSinus * vc_AstronomicDayLenght + 24.0 / PI * vc_DeclinationCosinus
-																			* sqrt(1.0 - ((vc_DeclinationSinus / vc_DeclinationCosinus) * (vc_DeclinationSinus / vc_DeclinationCosinus))));
+																			* sqrt(1.0 - arg_PhotAct));
 
-	// Calculation of radiation on a clear day [J m-2] - old DRC
-	vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean * exp(-0.14 / (vc_PhotActRadiationMean
-																																							 / (vc_AstronomicDayLenght * 3600.0)));
+	// Calculation of radiation on a clear day [J m-2] - old DRC	
+	if (vc_PhotActRadiationMean > 0 && vc_AstronomicDayLenght > 0)
+		vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean * exp(-0.14 / (vc_PhotActRadiationMean
+			/ (vc_AstronomicDayLenght * 3600.0)));
+	else
+		vc_ClearDayRadiation = 0;
 
 	// Calculation of radiation on an overcast day [J m-2] - old DRO
 	vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
@@ -494,14 +494,20 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 	// Calculation of extraterrestrial radiation - old EXT
 	double pc_SolarConstant = 0.082; //[MJ m-2 d-1] Note: Here is the difference to HERMES, which calculates in [J cm-2 d-1]!
 	double SC = 24.0 * 60.0 / PI * pc_SolarConstant *(1.0 + 0.033 * cos(2.0 * PI * vs_JulianDay / 365.0));
-	double vc_SunsetSolarAngle = acos(-tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0));
+
+	double arg_SolarAngle = -tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0);
+	arg_SolarAngle = bound(-1.0, arg_SolarAngle, 1.0);
+	double vc_SunsetSolarAngle = acos(arg_SolarAngle);
 	vc_ExtraterrestrialRadiation = SC * (vc_SunsetSolarAngle * vc_DeclinationSinus + vc_DeclinationCosinus * sin(vc_SunsetSolarAngle)); // [MJ m-2]
 
 	if(vw_GlobalRadiation > 0.0)
 		vc_GlobalRadiation = vw_GlobalRadiation;
-	else
+	else if (vc_AstronomicDayLenght > 0)	
 		vc_GlobalRadiation = vc_ExtraterrestrialRadiation *
-		(0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLenght);
+			(0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLenght);	
+	else
+		vc_GlobalRadiation = 0;
+	
 }
 
 /**
@@ -1601,8 +1607,11 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	// comparing clear day radiation and measured PAR in [J m-2].
 	// HERMES uses PAR as 50% of global radiation
 
-	vc_OvercastSkyTimeFraction = (vc_ClearDayRadiation - (1000000.0 * vc_GlobalRadiation * 0.50)) / (0.8
-																																																	 * vc_ClearDayRadiation); // [J m-2]
+	
+	if (vc_ClearDayRadiation != 0)
+		vc_OvercastSkyTimeFraction =(vc_ClearDayRadiation - (1000000.0 * vc_GlobalRadiation * 0.50)) / (0.8 * vc_ClearDayRadiation); // [J m-2]
+	else
+		vc_OvercastSkyTimeFraction = 0;
 
 	if(vc_OvercastSkyTimeFraction > 1.0)
 	{
@@ -2459,13 +2468,13 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	//std::cout << "pc_InitialRootingDepth: " << pc_InitialRootingDepth << std::endl;
 
 	// Calculating rooting depth layer []
-	vc_RootingDepth = int(floor(0.5 + (vc_RootingDepth_m / layerThickness))); // []
+	vc_RootingDepth = int(std::floor(0.5 + (vc_RootingDepth_m / layerThickness))); // []
 	if(vc_RootingDepth > nols)
 	{
 		vc_RootingDepth = nols;
 	}
 
-	vc_RootingZone = int(floor(0.5 + ((1.3 * vc_RootingDepth_m) / layerThickness))); // []
+	vc_RootingZone = int(std::floor(0.5 + ((1.3 * vc_RootingDepth_m) / layerThickness))); // []
 	if(vc_RootingZone > nols)
 	{
 		vc_RootingZone = nols;
@@ -2738,7 +2747,10 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 	// vw_NetRadiation = vc_GlobalRadiation * (1.0 - pc_ReferenceAlbedo); // [MJ m-2]
 
 	double vc_ClearSkyShortwaveRadiation = (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation;
-	double vc_RelativeShortwaveRadiation = vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation;
+	
+	double vc_RelativeShortwaveRadiation = vc_ClearSkyShortwaveRadiation > 0
+		? vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation : 0;	
+
 	double vc_NetShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vc_GlobalRadiation;
 
 	double pc_BolzmanConstant = 0.0000000049; // Bolzmann constant 4.903 * 10-9 MJ m-2 K-4 d-1
@@ -2753,6 +2765,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 																		+ (vc_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0)) * vc_WindSpeed_2m * vc_SaturationDeficit))
 		/ (vc_SaturatedVapourPressureSlope + vc_PsycrometerConstant * (1.0 + (vc_SurfaceResistance / vc_AerodynamicResistance)));
 
+	
 	return vc_ReferenceEvapotranspiration;
 }
 
@@ -2870,6 +2883,7 @@ void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
 	{
 		vc_EvaporatedFromIntercept = 0.0;
 	}
+
 
 	// if the plant has matured, no transpiration occurs!
 	if(vc_DevelopmentalStage < vc_FinalDevelopmentalStage)
