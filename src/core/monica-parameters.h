@@ -627,7 +627,7 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
-    double vs_Latitude{60.0};
+    double vs_Latitude{52.5}; //ZALF latitude
     double vs_Slope{0.01}; //!< [m m-1]
     double vs_HeightNN{50.0}; //!< [m]
     double vs_GroundwaterDepth{70.0}; //!< [m]
