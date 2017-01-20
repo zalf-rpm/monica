@@ -1708,10 +1708,12 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	double vc_GrowthRespirationSum = 0.0;
 
-	for(int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
+	if (vc_Assimilates > 0)
 	{
-		vc_GrowthRespirationSum += (vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ])
-			* pc_OrganGrowthRespiration[i_Organ];
+		for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
+		{
+			vc_GrowthRespirationSum += pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ] * vc_Assimilates * pc_OrganGrowthRespiration[i_Organ];
+		}
 	}
 
 
