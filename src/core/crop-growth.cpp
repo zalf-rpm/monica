@@ -97,6 +97,8 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_MaxNUptakeParam(cps.speciesParams.pc_MaxNUptakeParam)
 	, pc_MinimumNConcentration(cps.speciesParams.pc_MinimumNConcentration)
 	, pc_MinimumTemperatureForAssimilation(cps.speciesParams.pc_MinimumTemperatureForAssimilation)
+	, pc_MaximumTemperatureForAssimilation(cps.speciesParams.pc_MaximumTemperatureForAssimilation)
+	, pc_OptimumTemperatureForAssimilation(cps.speciesParams.pc_OptimumTemperatureForAssimilation)
 	, pc_MinimumTemperatureRootGrowth(cps.speciesParams.pc_MinimumTemperatureRootGrowth)
 	, pc_NConcentrationAbovegroundBiomass(cps.speciesParams.pc_NConcentrationAbovegroundBiomass)
 	, pc_NConcentrationB0(cps.speciesParams.pc_NConcentrationB0)
@@ -368,6 +370,8 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 													pc_DefaultRadiationUseEfficiency,
 													pc_MaxAssimilationRate,
 													pc_MinimumTemperatureForAssimilation,
+													pc_OptimumTemperatureForAssimilation,
+													pc_MaximumTemperatureForAssimilation,
 													vc_AstronomicDayLenght,
 													vc_Declination,
 													vc_ClearDayRadiation,
@@ -1175,6 +1179,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 																			 double pc_DefaultRadiationUseEfficiency,
 																			 double pc_MaxAssimilationRate,
 																			 double pc_MinimumTemperatureForAssimilation,
+																			 double pc_OptimumTemperatureForAssimilation,
+																			 double pc_MaximumTemperatureForAssimilation,
 																			 double vc_AstronomicDayLenght,
 																			 double vc_Declination,
 																			 double vc_ClearDayRadiation,
@@ -1265,9 +1271,27 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
 	vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
 
+	auto WangEngelTemperatureResponse = [](double t, double tmin, double topt, double tmax, double betacoeff)
+	{
+		if (t < tmin)
+		{
+			return 0.0; //prevent nan values with t < tmin
+		}
+		if (t > tmax)
+		{
+			return 0.0;
+		}
+		double alfa = log(2) / log((tmax - tmin) / (topt - tmin));
+
+		double numerator = 2 * pow(t - tmin, alfa)*pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
+		double denominator = pow(topt - tmin, 2 * alfa);
+		
+		return pow(numerator/denominator, betacoeff);
+	};
+
 	if(pc_CarboxylationPathway == 1)
 	{
-
+		
 		// Calculation of CO2 impact on crop growth
 		if(pc_CO2Method == 3)
 		{
@@ -1285,9 +1309,12 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			// of ARCWHEAT1 simulation model. Plant Cell Environ. 18(7):736-748.
 			//////////////////////////////////////////////////////////////////////////
 
-			KTvmax = exp(68800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0)
-									 / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314)) * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
+			//OLD exponential response
+			//KTvmax = exp(68800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0)
+			//						 / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314)) * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
 
+			KTvmax = max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature, pc_MinimumTemperatureForAssimilation, pc_OptimumTemperatureForAssimilation, pc_MaximumTemperatureForAssimilation, 1.0));
+			
 			KTkc = exp(65800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
 				* pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
 
@@ -1337,7 +1364,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			}
 
 		}
-		else if(pc_CO2Method == 2)
+		else if(pc_CO2Method == 2) 
 		{
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1345,8 +1372,13 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			// Hoffmann, F. 1995. Fagus, a model for growth and development of
 			// beech. Ecol. Mod. 83 (3):327-348.
 			//////////////////////////////////////////////////////////////////////////
+			double t_response = WangEngelTemperatureResponse(vw_MeanAirTemperature, pc_MinimumTemperatureForAssimilation, pc_OptimumTemperatureForAssimilation, pc_MaximumTemperatureForAssimilation, 1.0);
+			
+			vc_AssimilationRate = pc_MaxAssimilationRate * t_response;
+			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * t_response;
 
-			if(vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation)
+			//OLD hard-coded response
+			/*if(vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation)
 			{
 				vc_AssimilationRate = 0.0;
 				vc_AssimilationRateReference = 0.0;
@@ -1377,7 +1409,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			{
 				vc_AssimilationRate = 0.0;
 				vc_AssimilationRateReference = 0.0;
-			}
+			}*/
 
 
 			/** @FOR_PARAM */
@@ -1400,94 +1432,101 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	}
 	else
 	{ //if pc_CarboxylationPathway = 2
-		if(vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation)
-		{
-			vc_AssimilationRate = 0;
-			vc_AssimilationRateReference = 0.0;
 
-			// Sage & Kubien (2007): The temperature response of C3 and C4 phtotsynthesis.
-			// Plant, Cell and Environment 30, 1086 - 1106.
+		double t_response = WangEngelTemperatureResponse(vw_MeanAirTemperature, pc_MinimumTemperatureForAssimilation, pc_OptimumTemperatureForAssimilation, pc_MaximumTemperatureForAssimilation, 1.0);
 
-		}
-		else if(vw_MeanAirTemperature < 9.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.08;
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.08;
-		}
-		else if(vw_MeanAirTemperature < 14.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (0.071 + (vw_MeanAirTemperature - 9.0) * 0.03);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.071 + (vw_MeanAirTemperature - 9.0) * 0.03);
-		}
-		else if(vw_MeanAirTemperature < 20.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (0.221 + (vw_MeanAirTemperature - 14.0) * 0.09);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.221 + (vw_MeanAirTemperature - 14.0) * 0.09);
-		}
-		else if(vw_MeanAirTemperature < 24.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (0.761 + (vw_MeanAirTemperature - 20.0) * 0.04);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.761 + (vw_MeanAirTemperature - 20.0) * 0.04);
-		}
-		else if(vw_MeanAirTemperature < 32.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (0.921 + (vw_MeanAirTemperature - 24.0) * 0.01);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.921 + (vw_MeanAirTemperature - 24.0) * 0.01);
-		}
-		else if(vw_MeanAirTemperature < 38.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate;
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate;
-		}
-		else if(vw_MeanAirTemperature < 42.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 38.0) * 0.01);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 38.0) * 0.01);
-		}
-		else if(vw_MeanAirTemperature < 45.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (0.96 - (vw_MeanAirTemperature - 42.0) * 0.04);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.96 - (vw_MeanAirTemperature - 42.0) * 0.04);
-		}
-		else if(vw_MeanAirTemperature < 54.0)
-		{
-			vc_AssimilationRate = pc_MaxAssimilationRate * (0.84 - (vw_MeanAirTemperature - 45.0) * 0.09);
-			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.84 - (vw_MeanAirTemperature - 45.0) * 0.09);
-		}
-		else
-		{
-			vc_AssimilationRate = 0;
-			vc_AssimilationRateReference = 0;
+		vc_AssimilationRate = pc_MaxAssimilationRate * t_response;
+		vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * t_response;
 
-			//      // HERMES
-			//    } else if (vw_MeanAirTemperature < 9.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.0555;
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.0555;
-			//    } else if (vw_MeanAirTemperature < 16.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.05 + (vw_MeanAirTemperature - 9.0) /7.0 * 0.75);
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.05 + (vw_MeanAirTemperature - 9.0) /7 * 0.075);
-			//    } else if (vw_MeanAirTemperature < 18.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.8 + (vw_MeanAirTemperature - 16.0) * 0.07);
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.8 + (vw_MeanAirTemperature - 16.0) * 0.07);
-			//    } else if (vw_MeanAirTemperature < 20.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.94 + (vw_MeanAirTemperature - 18.0) * 0.03);
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.94 + (vw_MeanAirTemperature - 18.0) * 0.03);
-			//    } else if (vw_MeanAirTemperature < 30.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate;
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate;
-			//    } else if (vw_MeanAirTemperature < 36.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 30.0) * 0.0083);
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 30.0) * 0.0083);
-			//    } else if (vw_MeanAirTemperature < 42.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.95 - (vw_MeanAirTemperature - 36.0) * 0.0065);
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.95 - (vw_MeanAirTemperature - 36.0) * 0.0065);
-			//    } else if (vw_MeanAirTemperature < 55.0) {
-			//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.91 - (vw_MeanAirTemperature - 42.0) * 0.07);
-			//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.91 - (vw_MeanAirTemperature - 42.0) * 0.07);
-			//    } else {
-			//      vc_AssimilationRate = 0;
-			//      vc_AssimilationRateReference = 0;
-		}
+		//OLD hard-coded response
+		//if(vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation)
+		//{
+		//	vc_AssimilationRate = 0;
+		//	vc_AssimilationRateReference = 0.0;
+
+		//	// Sage & Kubien (2007): The temperature response of C3 and C4 phtotsynthesis.
+		//	// Plant, Cell and Environment 30, 1086 - 1106.
+
+		//}
+		//else if(vw_MeanAirTemperature < 9.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.08;
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.08;
+		//}
+		//else if(vw_MeanAirTemperature < 14.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (0.071 + (vw_MeanAirTemperature - 9.0) * 0.03);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.071 + (vw_MeanAirTemperature - 9.0) * 0.03);
+		//}
+		//else if(vw_MeanAirTemperature < 20.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (0.221 + (vw_MeanAirTemperature - 14.0) * 0.09);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.221 + (vw_MeanAirTemperature - 14.0) * 0.09);
+		//}
+		//else if(vw_MeanAirTemperature < 24.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (0.761 + (vw_MeanAirTemperature - 20.0) * 0.04);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.761 + (vw_MeanAirTemperature - 20.0) * 0.04);
+		//}
+		//else if(vw_MeanAirTemperature < 32.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (0.921 + (vw_MeanAirTemperature - 24.0) * 0.01);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.921 + (vw_MeanAirTemperature - 24.0) * 0.01);
+		//}
+		//else if(vw_MeanAirTemperature < 38.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate;
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate;
+		//}
+		//else if(vw_MeanAirTemperature < 42.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 38.0) * 0.01);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 38.0) * 0.01);
+		//}
+		//else if(vw_MeanAirTemperature < 45.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (0.96 - (vw_MeanAirTemperature - 42.0) * 0.04);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.96 - (vw_MeanAirTemperature - 42.0) * 0.04);
+		//}
+		//else if(vw_MeanAirTemperature < 54.0)
+		//{
+		//	vc_AssimilationRate = pc_MaxAssimilationRate * (0.84 - (vw_MeanAirTemperature - 45.0) * 0.09);
+		//	vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.84 - (vw_MeanAirTemperature - 45.0) * 0.09);
+		//}
+		//else
+		//{
+		//	vc_AssimilationRate = 0;
+		//	vc_AssimilationRateReference = 0;
+
+		//	//      // HERMES
+		//	//    } else if (vw_MeanAirTemperature < 9.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.0555;
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * vw_MeanAirTemperature / 10.0 * 0.0555;
+		//	//    } else if (vw_MeanAirTemperature < 16.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.05 + (vw_MeanAirTemperature - 9.0) /7.0 * 0.75);
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.05 + (vw_MeanAirTemperature - 9.0) /7 * 0.075);
+		//	//    } else if (vw_MeanAirTemperature < 18.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.8 + (vw_MeanAirTemperature - 16.0) * 0.07);
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.8 + (vw_MeanAirTemperature - 16.0) * 0.07);
+		//	//    } else if (vw_MeanAirTemperature < 20.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.94 + (vw_MeanAirTemperature - 18.0) * 0.03);
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.94 + (vw_MeanAirTemperature - 18.0) * 0.03);
+		//	//    } else if (vw_MeanAirTemperature < 30.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate;
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate;
+		//	//    } else if (vw_MeanAirTemperature < 36.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 30.0) * 0.0083);
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (1.0 - (vw_MeanAirTemperature - 30.0) * 0.0083);
+		//	//    } else if (vw_MeanAirTemperature < 42.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.95 - (vw_MeanAirTemperature - 36.0) * 0.0065);
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.95 - (vw_MeanAirTemperature - 36.0) * 0.0065);
+		//	//    } else if (vw_MeanAirTemperature < 55.0) {
+		//	//      vc_AssimilationRate = pc_MaxAssimilationRate * (0.91 - (vw_MeanAirTemperature - 42.0) * 0.07);
+		//	//      vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * (0.91 - (vw_MeanAirTemperature - 42.0) * 0.07);
+		//	//    } else {
+		//	//      vc_AssimilationRate = 0;
+		//	//      vc_AssimilationRateReference = 0;
+		//}
 	}
 
 	if(vc_CuttingDelayDays > 0)

@@ -155,6 +155,8 @@ namespace Monica
                                double pc_DefaultRadiationUseEfficiency,
                                double pc_MaxAssimilationRate,
                                double pc_MinimumTemperatureForAssimilation,
+							   double pc_OptimumTemperatureForAssimilation,
+							   double pc_MaximumTemperatureForAssimilation,
                                double vc_AstronomicDayLenght,
                                double vc_Declination,
                                double vc_ClearDayRadiation,
@@ -468,6 +470,8 @@ namespace Monica
     double vc_MaxRootingDepth{0.0}; //! old WURM
     double pc_MinimumNConcentration;
     double pc_MinimumTemperatureForAssimilation;	//! old MINTMP
+	double pc_OptimumTemperatureForAssimilation;
+	double pc_MaximumTemperatureForAssimilation;
     double pc_MinimumTemperatureRootGrowth;
     double vc_NetMaintenanceRespiration{0.0};			//! old MAINT
     double vc_NetPhotosynthesis{0.0}; //! old GTW

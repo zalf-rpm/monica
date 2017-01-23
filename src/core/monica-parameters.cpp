@@ -590,6 +590,8 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_double_value(pc_StageAtMaxDiameter, j, "StageAtMaxDiameter");
   set_double_value(pc_MinimumNConcentration, j, "MinimumNConcentration");
   set_double_value(pc_MinimumTemperatureForAssimilation, j, "MinimumTemperatureForAssimilation");
+  set_double_value(pc_OptimumTemperatureForAssimilation, j, "OptimumTemperatureForAssimilation");
+  set_double_value(pc_MaximumTemperatureForAssimilation, j, "MaximumTemperatureForAssimilation");
   set_double_value(pc_NConcentrationAbovegroundBiomass, j, "NConcentrationAbovegroundBiomass");
   set_double_value(pc_NConcentrationB0, j, "NConcentrationB0");
   set_double_value(pc_NConcentrationPN, j, "NConcentrationPN");
@@ -642,6 +644,8 @@ json11::Json SpeciesParameters::to_json() const
   {"StageAtMaxDiameter", pc_StageAtMaxDiameter},
   {"MinimumNConcentration", pc_MinimumNConcentration},
   {"MinimumTemperatureForAssimilation", pc_MinimumTemperatureForAssimilation},
+  {"OptimumTemperatureForAssimilation", pc_OptimumTemperatureForAssimilation},
+  {"MaximumTemperatureForAssimilation", pc_MaximumTemperatureForAssimilation},
   {"NConcentrationAbovegroundBiomass", pc_NConcentrationAbovegroundBiomass},
   {"NConcentrationB0", pc_NConcentrationB0},
   {"NConcentrationPN", pc_NConcentrationPN},

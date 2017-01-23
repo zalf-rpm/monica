@@ -351,6 +351,8 @@ namespace Monica
     double pc_StageAtMaxDiameter{0.0};
     double pc_MinimumNConcentration{0.0};
     double pc_MinimumTemperatureForAssimilation{0.0};
+	double pc_OptimumTemperatureForAssimilation{ 0.0 };
+	double pc_MaximumTemperatureForAssimilation{ 0.0 };
     double pc_NConcentrationAbovegroundBiomass{0.0};
     double pc_NConcentrationB0{0.0};
     double pc_NConcentrationPN{0.0};
