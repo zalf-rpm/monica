@@ -3,8 +3,8 @@
 	"__!!! check and beautify JSON files with http://codebeautify.org/jsonviewer or https://jsonformatter.curiousconcept.com# !!!": "",
 	
 	"__define paths to crop.json, site.json and climate.csv, no path means read from directory where sim.json (THIS file) has been found; files names are abitrary": "",
-	"crop.json": "crop.json",
-	"site.json": "site.json",
+	"crop.json": "crop+.json",
+	"site.json": "site+.json",
 	"climate.csv": "climate.csv",
 
 	"__options for reading the climate csv file, how many header lines to read, which separator to use and optional conversion of headers to internally known names": "",
@@ -46,9 +46,60 @@
 		},
 		
 		"__what data to include in the monica output according to the events defined by the keys": "",
-				
-		"events" : [
+		"events": [
 			"daily", [
+				"Date",
+				"Crop",
+				"Recharge",
+				["PercolationRate", [1,20]],
+				"guenther-isoprene-emission|G-Iso",
+				"guenther-monoterpene-emission|G-Mono",
+				"jjv-isoprene-emission|JJV-Iso",
+				"jjv-monoterpene-emission|JJV-Mono"
+			]
+		],
+		
+		"__events": [
+			"crop", [
+				["Year", "LAST"],
+				["DOY|SowDOY", "FIRST"],
+				["LAI|MaxLAI", "MAX"],
+				["PercolationRate|WDrain", 15, "SUM"],
+				["Act_ET|CumET", "SUM"],
+				["Act_Ev|Evap", "SUM"],
+				["Mois|SoilAvW", [1, 15, "SUM"], "LAST"],
+				["Runoff", "SUM"],
+				["ET0|Eto", "SUM"],
+				["Tmax|TMAXAve", "AVG"],
+
+				["Yield", "LAST"],
+				["AbBiom|Biom-ma", "LAST"],
+				["AbBiomN|CroN-ma", "LAST"],
+				["GrainN", "LAST"]
+			],
+
+			["while", "Stage", "=", 5], [
+				["DOY|AntDOY", "FIRST"],
+				["AbBiom|Biom-an", "First"],
+				["AbBiomN|CroN-an", "FIRST"]
+			],
+
+			["while", "Stage", "=", 7], [
+				["Yield", "FIRST"],
+				["DOY|MatDOY", "FIRST"], 
+				["AbBiom|Biom-ma", "First"],
+				["AbBiomN|CroN-ma", "FIRST"],
+				["GrainN", "FIRST"]
+			],
+			
+			["while", "Stage", "=", 2], [
+				["DOY|EmergDOY", "FIRST"]
+			]
+		],
+		
+		
+		"_events" : [
+			"_daily", [
 				"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",
 				"Stage", "TempSum", "VernF", "DaylF", 
 				"IncRoot", "IncLeaf", "IncShoot", "IncFruit", 
@@ -107,7 +158,22 @@
 				["PercolationRate", [7, 9, "AVG"]],
 				"Act_ET", "Act_Ev", "NH3",
 				"Evapotranspiration", "Evaporation", "Transpiration"
-			]
+			],
+
+			{	"start": "xxxx-05-01",
+				"end": "xxxx-07-31",
+				"at": "xxxx-xx-15"}, ["Date", "Stage", "TempSum"],
+
+			"seeding", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			"harvesting", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			{	"from": "seeding",
+				"to": "harvesting"}, ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
+			
+			["Stage", "=", 2], ["Date", "Stage"],
+			{"at": ["Stage", "=", 2]}, ["Date", "Stage", ["Mois",1]],
+			[["Mois", 1], "<", 0.5], ["Date", ["Mois",1]],
+			{	"from": ["Stage", "=", 2],
+				"to": ["Stage", "=", 3]}, ["Crop", "Stage"]
 		]
 	},
 	

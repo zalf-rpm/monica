@@ -209,7 +209,7 @@ int main(int argc, char** argv)
 		Output output = runMonica(env);
 
 		if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
-			pathToOutputFile = fixSystemSeparator(simm["path-to-output"].string_value() + "/"
+			pathToOutputFile = fixSystemSeparator(simm["output"]["path-to-output"].string_value() + "/"
 																						+ simm["output"]["file-name"].string_value());
 
 		writeOutputFile = !pathToOutputFile.empty();

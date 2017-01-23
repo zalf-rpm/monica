@@ -500,41 +500,8 @@ void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateD
 void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 {
 	auto date = _currentStepDate;
-	auto climateData = _currentStepClimateData;
-
-  unsigned int julday = date.julianDay();
-//  unsigned int year = currentDate.year();
-  bool leapYear = date.isLeapYear();
-  double tmin = climateData[Climate::tmin];
-  double tavg = climateData[Climate::tavg];
-  double tmax = climateData[Climate::tmax];
-  double precip = climateData[Climate::precip];
-  double wind = climateData[Climate::wind];
-  double globrad = climateData[Climate::globrad];
-
-  // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = climateData.find(Climate::relhumid) == climateData.end()
-                    ? -1.0
-                    : climateData[Climate::relhumid];
-
-//  cout << "tmin:\t" << tmin << endl;
-//  cout << "tavg:\t" << tavg << endl;
-//  cout << "tmax:\t" << tmax << endl;
-//  cout << "precip:\t" << precip << endl;
-//  cout << "wind:\t" << wind << endl;
-//  cout << "globrad:\t" << globrad << endl;
-//  cout << "relhumid:\t" << relhumid << endl;
-  // write climate data into separate file with hermes format
-//  std::ofstream climate_file((_env.pathToOutputDir+"climate.csv").c_str(), ios_base::app);
-//  if (stepNo==0) {
-//      climate_file << "Tp_av\t"<<"Tpmin\t"<<"Tpmax\t"<<"T_s10\t"<<"T_s20\t"<<"vappd\t"<<"wind\t"<<"sundu\t"<<"radia\t"<<"prec\t"<<"tagesnummer\t"<<"RF\t"<< endl;
-//      climate_file << "C_deg\t"<<"C_deg\t"<<"C_deg\t"<<"C_deg\t"<<"C_deg\t"<<"mm_Hg\t"<<"m/se\t"<<"hours\t"<<"J/cm²\t"<<"mm\t"<<"jday\t"<<"%\t"<<endl;
-//      climate_file << "-----------------------------------" << endl;
-// }
-//
-//  climate_file << tavg <<"\t" << tmin <<"\t" << tmax <<"\t" << 0.0 <<"\t" << 0.0 <<"\t"
-//      << 0.0 <<"\t" << wind <<"\t" << sunhours <<"\t" << globrad <<"\t" << precip <<"\t" << stepNo <<"\t" << relhumid << endl;
-//  climate_file.close();
+	unsigned int julday = date.julianDay();
+	bool leapYear = date.isLeapYear();
 
   // test if simulated gw or measured values should be used
   double gw_value = _groundwaterInformation.getGroundwaterInformation(date);
@@ -559,11 +526,11 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
   double possibleTopDressingAmount = _soilColumn.applyPossibleTopDressing();
   addDailySumFertiliser(possibleTopDressingAmount);
 
-  if(_currentCrop &&
-     _currentCrop->isValid() &&
-     _simPs.p_UseNMinMineralFertilisingMethod &&
-     _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() &&
-     julday == _simPs.p_JulianDayAutomaticFertilising)
+  if(_currentCrop 
+		 && _currentCrop->isValid() 
+		 && _simPs.p_UseNMinMineralFertilisingMethod 
+		 && _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() 
+		 && julday == _simPs.p_JulianDayAutomaticFertilising)
   {
 		_soilColumn.clearTopDressingParams();
     debug() << "nMin fertilising winter crop" << endl;
@@ -576,13 +543,19 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
     addDailySumFertiliser(fertilizerAmount);
 	}
 
+	double tmin = _currentStepClimateData[Climate::tmin];
+	double tavg = _currentStepClimateData[Climate::tavg];
+	double tmax = _currentStepClimateData[Climate::tmax];
+	double precip = _currentStepClimateData[Climate::precip];
+	double wind = _currentStepClimateData[Climate::wind];
+	double globrad = _currentStepClimateData[Climate::globrad];
+
   _soilTemperature.step(tmin, tmax, globrad);
   _soilMoisture.step(vs_GroundwaterDepth,
 										 precip, tmax, tmin,
 										 (relhumid / 100.0), tavg, wind,
                      _envPs.p_WindSpeedHeight,
 										 globrad, julday);
-
   _soilOrganic.step(tavg, precip, wind);
   _soilTransport.step();
 }

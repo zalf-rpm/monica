@@ -163,7 +163,7 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 //--------------------------------------------------------------------------------------
 
 pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAccessor& da,
-																												 size_t stepNo)
+																												 size_t stepNo, double latitude)
 {
 	Date startDate = da.startDate();
 	Date currentDate = startDate + stepNo;
@@ -173,13 +173,21 @@ pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAcce
 		? da.dataForTimestep(Climate::relhumid, stepNo)
 		: -1.0;
 
+	double globrad = da.hasAvailableClimateData(Climate::globrad)
+		? da.dataForTimestep(Climate::globrad, stepNo)
+		: (da.hasAvailableClimateData(Climate::sunhours)
+			 ? Tools::sunshine2globalRadiation(currentDate.julianDay(),
+																				 da.dataForTimestep(Climate::sunhours, stepNo),
+																				 latitude, true)
+			 : -1.0);
+	
 	map<Climate::ACD, double> m
 	{{ Climate::tmin, da.dataForTimestep(Climate::tmin, stepNo)}
 	,{ Climate::tavg, da.dataForTimestep(Climate::tavg, stepNo)}
 	,{ Climate::tmax, da.dataForTimestep(Climate::tmax, stepNo)}
 	,{ Climate::precip, da.dataForTimestep(Climate::precip, stepNo)}
 	,{ Climate::wind, da.dataForTimestep(Climate::wind, stepNo)}
-	,{ Climate::globrad, da.dataForTimestep(Climate::globrad, stepNo)}
+	,{ Climate::globrad, globrad}
 	,{ Climate::relhumid, relhumid }
 	};
 	return make_pair(currentDate, m);
@@ -749,7 +757,7 @@ Output Monica::runMonica(Env env)
 		}
 
 		//monica main stepping method
-		monica.step(currentDate, climateDataForStep(env.da, d).second);
+		monica.step(currentDate, climateDataForStep(env.da, d, env.params.siteParameters.vs_Latitude).second);
 
 		//store results
 		for(auto& s : store)

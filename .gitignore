@@ -205,3 +205,4 @@ src/run/production-process.h.autosave
 project-files/monica.VC.db
 /inputs.json
 /project-files/monica-full/monica.VC.db
+*.exe
