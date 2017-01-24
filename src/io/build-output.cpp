@@ -482,7 +482,7 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_LT50(), 1) : 0.0;
 			});
 
-			build({id++, "AbBiom", "kg ha-1", "AbovegroundBiomass"},
+			build({id++, "AbBiom", "kgDM ha-1", "AbovegroundBiomass"},
 						[](const MonicaModel& monica, OId oid)
 			{
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_AbovegroundBiomass(), 1) : 0.0;

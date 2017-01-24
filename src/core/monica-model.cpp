@@ -543,12 +543,13 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
     addDailySumFertiliser(fertilizerAmount);
 	}
 
-	double tmin = _currentStepClimateData[Climate::tmin];
-	double tavg = _currentStepClimateData[Climate::tavg];
-	double tmax = _currentStepClimateData[Climate::tmax];
-	double precip = _currentStepClimateData[Climate::precip];
-	double wind = _currentStepClimateData[Climate::wind];
-	double globrad = _currentStepClimateData[Climate::globrad];
+	auto climateData = currentStepClimateData();
+	double tmin = climateData[Climate::tmin];
+	double tavg = climateData[Climate::tavg];
+	double tmax = climateData[Climate::tmax];
+	double precip = climateData[Climate::precip];
+	double wind = climateData[Climate::wind];
+	double globrad = climateData[Climate::globrad];
 
   _soilTemperature.step(tmin, tmax, globrad);
   _soilMoisture.step(vs_GroundwaterDepth,
@@ -564,7 +565,7 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 void MonicaModel::cropStep()//Tools::Date date, std::map<Climate::ACD, double> climateData)
 {
 	auto date = _currentStepDate;
-	auto climateData = _currentStepClimateData;
+	auto climateData = currentStepClimateData();
   // do nothing if there is no crop
   if(!_currentCropGrowth)
     return;

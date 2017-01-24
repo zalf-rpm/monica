@@ -118,6 +118,85 @@ void Seed::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
+AutomaticSowing::AutomaticSowing(const Tools::Date& at, CropPtr crop)
+	: WorkStep()
+	, _crop(crop)
+{
+	if(_crop)
+		_crop->setSeedDate(at);
+}
+
+AutomaticSowing::AutomaticSowing(json11::Json j)
+{
+	merge(j);
+}
+
+Errors AutomaticSowing::merge(json11::Json j)
+{
+	Errors res = WorkStep::merge(j);
+
+	set_iso_date_value(_minDate, j, "min-date");
+	set_iso_date_value(_maxDate, j, "max-date");
+	set_double_value(_minTempThreshold, j, "min-temp");
+	set_int_value(_daysInTempWindow, j, "days-in-temp-window");
+	set_double_value(_minPercentASW, j, "min-%-asw");
+	set_double_value(_maxPercentASW, j, "max-%-asw");
+	set_double_value(_max3dayPrecipSum, j, "max-3d-precip");
+	set_double_value(_maxCurrentDayPrecipSum, j, "max-curr-day-precip");
+	set_double_value(_tempSumAboveBaseTemp, j, "temp-sum-above-base-temp");
+	set_double_value(_baseTemp, j, "base-temp");
+
+	set_shared_ptr_value(_crop, j, "crop");
+	if(_crop)
+		_crop->setSeedDate(date());
+
+	return res;
+}
+
+json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
+{
+	return json11::Json::object
+	{{"type", type()}
+	,{"min-date", J11Array{_minDate.toIsoDateString(), "", "earliest sowing date"}}
+	,{"max-date", J11Array{_maxDate.toIsoDateString(), "", "latest sowing date"}}
+	,{"min-temp", J11Array{_minTempThreshold, "°C", "minimal air temperature for sowing (T >= thresh && avg T in Twindow >= thresh)"}}
+	,{"days-in-temp-window", J11Array{_daysInTempWindow, "d", "days to be used for sliding window of min-temp"}}
+	,{"min-%-asw", J11Array{_minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"}}
+	,{"max-%-asw", J11Array{_maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"}}
+	,{"max-3d-precip-sum", J11Array{_max3dayPrecipSum, "mm", "sum of precipitation in the last three days (including current day)"}}
+	,{"max-curr-day-precip", J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"}}
+	,{"temp-sum-above-base-temp", J11Array{_tempSumAboveBaseTemp, "°C", "temperature sum above T-base needed"}}
+	,{"base-temp", J11Array{_baseTemp, "°C", "base temperature above which temp-sum-above-base-temp is counted"}}
+	,{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}
+	};
+}
+
+void AutomaticSowing::apply(MonicaModel* model)
+{
+	debug() << "automatically sowing crop: " << _crop->toString() << " at: " << date().toString() << endl;
+
+	auto currentDate = model->currentStepDate();
+	if(currentDate < _minDate)
+		return;
+
+	if(currentDate == _maxDate)
+	{
+		model->seedCrop(_crop);
+		return;
+	}
+
+
+
+
+
+
+	model->seedCrop(_crop);
+	model->addEvent("Seed");
+	model->addEvent("seeding");
+}
+
+//------------------------------------------------------------------------------
+
 Harvest::Harvest()
 	: _method("total")
 {}

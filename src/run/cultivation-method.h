@@ -105,6 +105,52 @@ namespace Monica
     CropPtr _crop;
 	};
 
+	//---------------------------------------------------------------------------
+
+	class DLL_API AutomaticSowing : public WorkStep
+	{
+	public:
+		AutomaticSowing() {}
+
+		AutomaticSowing(const Tools::Date& at, CropPtr crop);
+
+		AutomaticSowing(json11::Json object);
+
+		virtual Seed* clone() const { return new Seed(*this); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const { return to_json(true); }
+
+		json11::Json to_json(bool includeFullCropParameters) const;
+
+		virtual std::string type() const { return "AutomaticSowing"; }
+
+		virtual void apply(MonicaModel* model);
+
+		void setDate(Tools::Date date)
+		{
+			this->_date = date;
+			_crop->setSeedAndHarvestDate(date, _crop->harvestDate());
+		}
+
+		CropPtr crop() const { return _crop; }
+
+	private:
+		Tools::Date _minDate;
+		Tools::Date _maxDate;
+		double _minTempThreshold{0};
+		int _daysInTempWindow{0};
+		double _minPercentASW{0};
+		double _maxPercentASW{100};
+		double _max3dayPrecipSum{0};
+		double _maxCurrentDayPrecipSum{0};
+		double _tempSumAboveBaseTemp{0};
+		double _baseTemp{0};
+		CropPtr _crop;
+	};
+
+
 	//----------------------------------------------------------------------------
 
 	class DLL_API Harvest : public WorkStep
