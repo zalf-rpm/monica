@@ -2338,17 +2338,18 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		if(i_Organ != vc_StorageOrgan)
 		{
 			// Wurzel, Sprossachse, Blatt
-			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-				- (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
-			vc_OrganBiomass[vc_StorageOrgan] += pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ]; // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			double reallocationRate = pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] -= reallocationRate;
+			vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] - reallocationRate; // [kg CH2O ha-1]
+			vc_OrganBiomass[vc_StorageOrgan] += reallocationRate;
 		}
 		else
 		{
-			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-				- (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
 		}
 
-		vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
 		vc_OrganGreenBiomass[i_Organ] = vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ]; // [kg CH2O ha-1]
 
 		if((vc_OrganGreenBiomass[i_Organ]) < 0.0)
