@@ -217,10 +217,12 @@ namespace Monica
 
 		Tools::Date currentStepDate() const { return _currentStepDate; }
 
-		const std::map<Climate::ACD, double>& currentStepClimateData()
+		const std::map<Climate::ACD, double>& currentStepClimateData() const
 		{
-			return _currentStepClimateData.back();
+			return _climateData.back();
 		}
+
+		const std::vector<std::map<Climate::ACD, double>>& climateData() const { return _climateData; }
 
 		void addEvent(std::string e) { _currentEvents.insert(e); }
 		void clearEvents() { _currentEvents.clear(); }
@@ -261,7 +263,7 @@ namespace Monica
 		double _dailySumIrrigationWater{0.0};
 
 		Tools::Date _currentStepDate;
-		std::vector<std::map<Climate::ACD, double>> _currentStepClimateData;
+		std::vector<std::map<Climate::ACD, double>> _climateData;
 		std::set<std::string> _currentEvents;
 
 		bool _clearCropUponNextDay{false};

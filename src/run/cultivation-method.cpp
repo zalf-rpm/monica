@@ -185,6 +185,12 @@ void AutomaticSowing::apply(MonicaModel* model)
 		return;
 	}
 
+	auto cd = model->climateData();
+	double tavg = accumulate(cd.rbegin(), cd.rbegin() + _daysInTempWindow, 0.0, [](double acc, const map<ACD, double>& d)
+	{
+		auto it = d.find(Climate::tavg);
+		return acc + (it == d.end() ? 0 : it->second);
+	}) / min(int(cd.size()), _daysInTempWindow);
 
 
 

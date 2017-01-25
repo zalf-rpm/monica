@@ -485,7 +485,7 @@ void MonicaModel::applyTillage(double depth)
 void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateData)
 {
 	_currentStepDate = date;
-	_currentStepClimateData = climateData;
+	_currentStepClimateData.push_back(climateData);
 		
 	if(isCropPlanted() && !_clearCropUponNextDay)
 		cropStep();
@@ -497,7 +497,7 @@ void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateD
  * @brief Simulating the soil processes for one time step.
  * @param stepNo Number of current processed step
  */
-void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
+void MonicaModel::generalStep()
 {
 	auto date = _currentStepDate;
 	unsigned int julday = date.julianDay();
@@ -562,7 +562,7 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 }
 
 
-void MonicaModel::cropStep()//Tools::Date date, std::map<Climate::ACD, double> climateData)
+void MonicaModel::cropStep()
 {
 	auto date = _currentStepDate;
 	auto climateData = currentStepClimateData();
