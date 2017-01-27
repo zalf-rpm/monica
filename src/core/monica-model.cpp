@@ -485,7 +485,7 @@ void MonicaModel::applyTillage(double depth)
 void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateData)
 {
 	_currentStepDate = date;
-	_currentStepClimateData.push_back(climateData);
+	_climateData.push_back(climateData);
 		
 	if(isCropPlanted() && !_clearCropUponNextDay)
 		cropStep();
