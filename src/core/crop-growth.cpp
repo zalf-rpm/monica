@@ -1708,7 +1708,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	if(vc_TranspirationDeficit < vc_DroughtStressThreshold)
 	{
-		vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
+		//vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
+		vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit/ vc_DroughtStressThreshold;
 
 	}
 
