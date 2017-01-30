@@ -148,7 +148,11 @@ Errors AutomaticSowing::merge(json11::Json j)
 
 	set_shared_ptr_value(_crop, j, "crop");
 	if(_crop)
+	{
 		_crop->setSeedDate(date());
+		if(j["is-winter-crop"].is_bool())
+			_crop->setIsWinterCrop(j["is-winter-crop"].bool_value());
+	}
 
 	return res;
 }
@@ -167,6 +171,7 @@ json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 	,{"max-curr-day-precip", J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"}}
 	,{"temp-sum-above-base-temp", J11Array{_tempSumAboveBaseTemp, "°C", "temperature sum above T-base needed"}}
 	,{"base-temp", J11Array{_baseTemp, "°C", "base temperature above which temp-sum-above-base-temp is counted"}}
+	,{"is-winter-crop", _crop ? _crop->isWinterCrop() : json11::Json()}
 	,{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}
 	};
 }
@@ -175,30 +180,92 @@ void AutomaticSowing::apply(MonicaModel* model)
 {
 	debug() << "automatically sowing crop: " << _crop->toString() << " at: " << date().toString() << endl;
 
-	auto currentDate = model->currentStepDate();
-	if(currentDate < _minDate)
-		return;
-
-	if(currentDate == _maxDate)
+	auto seed = [&]()
 	{
 		model->seedCrop(_crop);
+		model->addEvent("AutomaticSowing");
+		model->addEvent("automatic-sowing");
+		_cropSeed = true;
+	};
+
+	auto currentDate = model->currentStepDate();
+	if(currentDate < _minDate)
+	{
+		_cropSeed = false;
+		return;
+	}
+
+	if(currentDate >= _maxDate)
+	{
+		seed();
 		return;
 	}
 
 	auto cd = model->climateData();
-	double tavg = accumulate(cd.rbegin(), cd.rbegin() + _daysInTempWindow, 0.0, [](double acc, const map<ACD, double>& d)
+	auto currentCd = cd.back();
+	
+	auto avg = [&](Climate::ACD acd)
+	{
+		return accumulate(cd.rbegin(), cd.rbegin() + _daysInTempWindow, 0.0,
+											[acd](double acc, const map<ACD, double>& d)
+		{
+			auto it = d.find(acd);
+			return acc + (it == d.end() ? 0 : it->second);
+		}) / min(int(cd.size()), _daysInTempWindow);
+	};
+
+	//check temperature
+	bool Tok = false;
+	if(_crop->isWinterCrop())
+	{
+		double avgTavg = avg(Climate::tavg);
+		Tok = avgTavg <= _minTempThreshold;
+	}
+	else
+	{
+		double avgTmin = avg(Climate::tmin);
+		bool avgTminOk = avgTmin >= _minTempThreshold;
+		bool TminOk = currentCd[Climate::tmin] >= _minTempThreshold;
+		Tok = avgTminOk && TminOk;
+	}
+	
+	if(!Tok)
+		return;
+
+	//check soil moisture
+	bool soilMoistureOk = false;
+	double sm = model->avgSoilMoisture(0, 0);
+	double asw = model->soilColumn().at(0).vs_FieldCapacity() - model->soilColumn().at(0).vs_PermanentWiltingPoint();
+	double currentPercentASW = sm / asw * 100.0;
+	soilMoistureOk = _minPercentASW <= currentPercentASW && currentPercentASW <= _maxPercentASW;
+	if(!soilMoistureOk)
+		return;
+
+	//check precipitation
+	bool precipOk = false;
+	double psum3d = accumulate(cd.rbegin(), cd.rbegin() + 3, 0.0,
+										[](double acc, const map<ACD, double>& d)
+	{
+		auto it = d.find(Climate::precip);
+		return acc + (it == d.end() ? 0 : it->second);
+	});
+	double currentp = currentCd[Climate::precip];
+	precipOk = psum3d <= _max3dayPrecipSum && currentp <= _maxCurrentDayPrecipSum;
+	if(!precipOk)
+		return;
+
+	//check temperature sum
+	double baseTemp = _baseTemp;
+	double tempSum = accumulate(cd.begin(), cd.end(), 0.0,
+															[baseTemp](double acc, const map<ACD, double>& d)
 	{
 		auto it = d.find(Climate::tavg);
-		return acc + (it == d.end() ? 0 : it->second);
-	}) / min(int(cd.size()), _daysInTempWindow);
-
-
-
-
-
-	model->seedCrop(_crop);
-	model->addEvent("Seed");
-	model->addEvent("seeding");
+		return acc + (it == d.end() ? 0 : max(0.0, it->second - baseTemp));
+	});
+	if(tempSum < _tempSumAboveBaseTemp)
+		return;
+	
+	seed();
 }
 
 //------------------------------------------------------------------------------
@@ -650,6 +717,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 	string type = string_value(j["type"]);
 	if(type == "Seed")
 		return make_shared<Seed>(j);
+	else if(type == "AutomaticSowing")
+		return make_shared<AutomaticSowing>(j);
 	else if(type == "Harvest")
 		return make_shared<Harvest>(j);
 	else if(type == "AutomaticHarvest")
@@ -720,6 +789,17 @@ Errors CultivationMethod::merge(json11::Json j)
 		if(wsType == "Seed")
 		{
 			if(Seed* seed = dynamic_cast<Seed*>(ws.get()))
+			{
+				_crop = seed->crop();
+				if(_name.empty() && _crop)
+				{
+					_name = _crop->id();
+				}
+			}
+		}
+		else if(wsType == "AutomaticSowing")
+		{
+			if(AutomaticSowing* seed = dynamic_cast<AutomaticSowing*>(ws.get()))
 			{
 				_crop = seed->crop();
 				if(_name.empty() && _crop)

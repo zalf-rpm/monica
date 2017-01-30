@@ -529,7 +529,7 @@ void MonicaModel::generalStep()
   if(_currentCrop 
 		 && _currentCrop->isValid() 
 		 && _simPs.p_UseNMinMineralFertilisingMethod 
-		 && _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() 
+		 && _currentCrop->isWinterCrop()
 		 && julday == _simPs.p_JulianDayAutomaticFertilising)
   {
 		_soilColumn.clearTopDressingParams();

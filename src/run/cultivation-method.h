@@ -116,7 +116,7 @@ namespace Monica
 
 		AutomaticSowing(json11::Json object);
 
-		virtual Seed* clone() const { return new Seed(*this); }
+		virtual AutomaticSowing* clone() const { return new AutomaticSowing(*this); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -148,6 +148,7 @@ namespace Monica
 		double _tempSumAboveBaseTemp{0};
 		double _baseTemp{0};
 		CropPtr _crop;
+		bool _cropSeed{false};
 	};
 
 
