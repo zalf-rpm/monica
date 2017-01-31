@@ -482,11 +482,8 @@ void MonicaModel::applyTillage(double depth)
 	_soilColumn.applyTillage(depth);
 }
 
-void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateData)
+void MonicaModel::step()
 {
-	_currentStepDate = date;
-	_climateData.push_back(climateData);
-		
 	if(isCropPlanted() && !_clearCropUponNextDay)
 		cropStep();
 
@@ -851,16 +848,15 @@ double MonicaModel::avg30cmSoilTemperature() const
  * @param end_layer
  * @return Average soil moisture concentation
  */
-double MonicaModel::avgSoilMoisture(int start_layer, int end_layer) const
+double MonicaModel::avgSoilMoisture(size_t startLayer, 
+																		size_t endLayerInclusive) const
 {
-  int num=0;
-  double accu = 0.0;
-  for (int i=start_layer; i<end_layer; i++)
-  {
-    accu+=_soilColumn.at(i).get_Vs_SoilMoisture_m3();
-    num++;
-  }
-  return accu/num;
+	size_t nols = max<size_t>(0, min<size_t>(endLayerInclusive - startLayer + 1, _soilColumn.size()));
+	return accumulate(_soilColumn.begin(), _soilColumn.begin() + nols, 0.0,
+										[](double acc, const SoilLayer& sl)
+	{
+		return sl.get_Vs_SoilMoisture_m3();
+	}) / nols;
 }
 
 /**

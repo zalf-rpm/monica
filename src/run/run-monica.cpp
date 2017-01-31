@@ -674,22 +674,17 @@ Output Monica::runMonica(Env env)
 
 	debug() << "currentDate" << endl;
 	Date currentDate = env.da.startDate();
-	size_t nods = env.da.noOfStepsPossible();
-	debug() << "nods: " << nods << endl;
-
-	size_t currentMonth = currentDate.month();
-	unsigned int dim = 0; //day in current month
 
 	//iterator through the production processes
-	vector<CultivationMethod>::const_iterator cmci = env.cropRotation.begin();
+	auto cmci = env.cropRotation.begin();
 	//direct handle to current process
-	CultivationMethod currentCM = *cmci;
+	CultivationMethod* currentCM = cmci == env.cropRotation.end() ? nullptr : &(*cmci);
 	//are the dates in the production process relative dates
 	//or are they absolute as produced by the hermes inputs
-	bool useRelativeDates = currentCM.startDate().isRelativeDate();
+	bool useRelativeDates = currentCM->startDate().isRelativeDate();
 	//the next application date, either a relative or an absolute date
 	//to get the correct applications out of the production processes
-	Date nextCMApplicationDate = currentCM.startDate();
+	Date nextCMApplicationDate = currentCM->startDate();
 	//a definitely absolute next application date to keep track where
 	//we are in the list of climate data
 	Date nextAbsoluteCMApplicationDate = useRelativeDates
@@ -697,18 +692,8 @@ Output Monica::runMonica(Env env)
 		: nextCMApplicationDate;
 	debug() << "next app-date: " << nextCMApplicationDate.toString()
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-	bool currentCropIsPlanted = false;
 
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
-
-	//if for some reason there are no applications (no nothing) in the
-	//production process: quit
-	if(!nextAbsoluteCMApplicationDate.isValid())
-	{
-		debug() << "start of production-process: " << currentCM.toString()
-			<< " is not valid" << endl;
-		return out;
-	}
 
 	auto calcNextAbsoluteCMApplicationDate = [=](Date currentDate, Date nextCMAppDate, Date prevCMAppDate)
 	{
@@ -727,29 +712,36 @@ Output Monica::runMonica(Env env)
 	//thus for absolute dates the crop rotation has to be as long as there
 	//are climate data !!!!!
 
-	for(unsigned int d = 0; d < nods; ++d, ++currentDate, ++dim)
+	for(size_t d = 0, nods = env.da.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
+		debug() << "currentDate: " << currentDate.toString() << endl;
+
 		monica.dailyReset();
 
-		debug() << "currentDate: " << currentDate.toString() << endl;
+		monica.setCurrentStepDate(currentDate);
+		monica.setCurrentStepClimateData(climateDataForStep(env.da, d, env.params.siteParameters.vs_Latitude).second);
 
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil
 		if(monica.cropGrowth() && monica.cropGrowth()->isDying())
 			monica.incorporateCurrentCrop();
 
+		//try to apply dynamic worksteps
+		if(currentCM)
+			currentCM->apply(&monica);
+
 		//apply worksteps and cycle through crop rotation
 		Date prevCMApplicationDate = nextCMApplicationDate;
-		if(nextAbsoluteCMApplicationDate == currentDate)
+		if(currentCM && nextAbsoluteCMApplicationDate == currentDate)
 		{
 			debug() << "applying at: " << nextCMApplicationDate.toString()
 				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			//apply everything to do at current day
 			//cout << currentPP.toString().c_str() << endl;
-			currentCM.apply(nextCMApplicationDate, &monica);
+			currentCM->apply(nextCMApplicationDate, &monica);
 
 			//get the next application date to wait for (either absolute or relative)
-			nextCMApplicationDate = currentCM.nextDate(nextCMApplicationDate);
+			nextCMApplicationDate = currentCM->nextDate(nextCMApplicationDate);
 			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
 
 			debug() << "next app-date: " << nextCMApplicationDate.toString()
@@ -757,7 +749,7 @@ Output Monica::runMonica(Env env)
 		}
 
 		//monica main stepping method
-		monica.step(currentDate, climateDataForStep(env.da, d, env.params.siteParameters.vs_Latitude).second);
+		monica.step();
 
 		//store results
 		for(auto& s : store)
@@ -766,7 +758,7 @@ Output Monica::runMonica(Env env)
 		//if the next application date is not valid, we're (probably) at the end
 		//of the application list of this cultivation method
 		//and go to the next one in the crop rotation
-		if(!nextAbsoluteCMApplicationDate.isValid())
+		if(currentCM && !nextAbsoluteCMApplicationDate.isValid())
 		{
 			//to count the applied fertiliser for the next production process
 			monica.resetFertiliserCounter();
@@ -776,8 +768,8 @@ Output Monica::runMonica(Env env)
 			if(cmci == env.cropRotation.end())
 				cmci = env.cropRotation.begin();
 
-			currentCM = *cmci;
-			nextCMApplicationDate = currentCM.startDate();
+			currentCM = &(*cmci);
+			nextCMApplicationDate = currentCM->startDate();
 			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
 			debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
 				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;

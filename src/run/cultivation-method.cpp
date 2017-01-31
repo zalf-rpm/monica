@@ -178,6 +178,9 @@ json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 
 void AutomaticSowing::apply(MonicaModel* model)
 {
+	if(_cropSeeded)
+		return;
+
 	debug() << "automatically sowing crop: " << _crop->toString() << " at: " << date().toString() << endl;
 
 	auto seed = [&]()
@@ -185,23 +188,28 @@ void AutomaticSowing::apply(MonicaModel* model)
 		model->seedCrop(_crop);
 		model->addEvent("AutomaticSowing");
 		model->addEvent("automatic-sowing");
-		_cropSeed = true;
+		_cropSeeded = true;
 	};
 
 	auto currentDate = model->currentStepDate();
-	if(currentDate < _minDate)
+	if(!_inSowingRange && currentDate.toRelativeDate() < _minDate)
 	{
-		_cropSeed = false;
+		_cropSeeded = false;
 		return;
 	}
+	else
+	{
+		_inSowingRange = true;
+	}
 
-	if(currentDate >= _maxDate)
+	if(_inSowingRange && currentDate.toRelativeDate() >= _maxDate)
 	{
 		seed();
+		_inSowingRange = false;
 		return;
 	}
 
-	auto cd = model->climateData();
+	const auto& cd = model->climateData();
 	auto currentCd = cd.back();
 	
 	auto avg = [&](Climate::ACD acd)
@@ -791,7 +799,7 @@ Errors CultivationMethod::merge(json11::Json j)
 			if(Seed* seed = dynamic_cast<Seed*>(ws.get()))
 			{
 				_crop = seed->crop();
-				if(_name.empty() && _crop)
+				if((_name.empty() || _name == "Fallow") && _crop)
 				{
 					_name = _crop->id();
 				}
@@ -802,7 +810,7 @@ Errors CultivationMethod::merge(json11::Json j)
 			if(AutomaticSowing* seed = dynamic_cast<AutomaticSowing*>(ws.get()))
 			{
 				_crop = seed->crop();
-				if(_name.empty() && _crop)
+				if((_name.empty() || _name == "Fallow") && _crop)
 				{
 					_name = _crop->id();
 				}
@@ -850,6 +858,16 @@ void CultivationMethod::apply(const Date& date,
 	}
 }
 
+void CultivationMethod::apply(MonicaModel* model) const
+{
+	//check if dynamic worksteps can be applied
+	for(auto wsp : applicationsAt(Date()))
+	{
+		wsp->apply(model);
+	}
+}
+
+
 Date CultivationMethod::nextDate(const Date& date) const
 {
 	auto ci = upper_bound(date);
@@ -872,14 +890,20 @@ Date CultivationMethod::startDate() const
 {
 	if(empty())
 		return Date();
-	return begin()->first;
+	auto it = begin();
+	while(it != end() && !it->first.isValid())
+		it++;
+	return it->first;
 }
 
 Date CultivationMethod::endDate() const
 {
 	if(empty())
 		return Date();
-	return rbegin()->first;
+	auto it = rbegin();
+	while(it != rend() && !it->first.isValid())
+		it++;
+	return it->first;
 }
 
 std::string CultivationMethod::toString() const

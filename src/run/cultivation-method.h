@@ -64,6 +64,8 @@ namespace Monica
 		//! do whatever the workstep has to do
 		virtual void apply(MonicaModel* model);
 
+		//virtual bool 
+
 	protected:
 		Tools::Date _date;
 	};
@@ -148,7 +150,8 @@ namespace Monica
 		double _tempSumAboveBaseTemp{0};
 		double _baseTemp{0};
 		CropPtr _crop;
-		bool _cropSeed{false};
+		bool _inSowingRange{false};
+		bool _cropSeeded{false};
 	};
 
 
@@ -425,10 +428,10 @@ namespace Monica
 		{
       insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
     }
-    
-//    void addApplication(WSPtr a){ insert(std::make_pair(a->date(), a)); }
 
     void apply(const Tools::Date& date, MonicaModel* model) const;
+
+		void apply(MonicaModel* model) const;
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 
