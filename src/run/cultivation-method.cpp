@@ -135,8 +135,8 @@ Errors AutomaticSowing::merge(json11::Json j)
 {
 	Errors res = WorkStep::merge(j);
 
-	set_iso_date_value(_minDate, j, "min-date");
-	set_iso_date_value(_maxDate, j, "max-date");
+	set_iso_date_value(_earliestDate, j, "earliest-date");
+	set_iso_date_value(_latestDate, j, "latest-date");
 	set_double_value(_minTempThreshold, j, "min-temp");
 	set_int_value(_daysInTempWindow, j, "days-in-temp-window");
 	set_double_value(_minPercentASW, j, "min-%-asw");
@@ -161,8 +161,8 @@ json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 {
 	return json11::Json::object
 	{{"type", type()}
-	,{"min-date", J11Array{_minDate.toIsoDateString(), "", "earliest sowing date"}}
-	,{"max-date", J11Array{_maxDate.toIsoDateString(), "", "latest sowing date"}}
+	,{"earliest-date", J11Array{_earliestDate.toIsoDateString(), "", "earliest sowing date"}}
+	,{"latest-date", J11Array{_latestDate.toIsoDateString(), "", "latest sowing date"}}
 	,{"min-temp", J11Array{_minTempThreshold, "°C", "minimal air temperature for sowing (T >= thresh && avg T in Twindow >= thresh)"}}
 	,{"days-in-temp-window", J11Array{_daysInTempWindow, "d", "days to be used for sliding window of min-temp"}}
 	,{"min-%-asw", J11Array{_minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"}}
@@ -176,33 +176,59 @@ json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 	};
 }
 
+bool isSoilMoistureOk(MonicaModel* model, 
+											double minPercentASW, 
+											double maxPercentASW)
+{
+	bool soilMoistureOk = false;
+	double sm = model->avgSoilMoisture(0, 0);
+	double asw = model->soilColumn().at(0).vs_FieldCapacity() - model->soilColumn().at(0).vs_PermanentWiltingPoint();
+	double currentPercentASW = sm / asw * 100.0;
+	soilMoistureOk = minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
+
+	return soilMoistureOk;
+}
+
+bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>>& climateData, 
+											 double max3dayPrecipSum, 
+											 double maxCurrentDayPrecipSum)
+{
+	bool precipOk = false;
+	double psum3d = accumulate(climateData.rbegin(), climateData.rbegin() + 3, 0.0,
+														 [](double acc, const map<ACD, double>& d)
+	{
+		auto it = d.find(Climate::precip);
+		return acc + (it == d.end() ? 0 : it->second);
+	});
+	double currentp = climateData.back().at(Climate::precip);
+	precipOk = psum3d <= max3dayPrecipSum && currentp <= maxCurrentDayPrecipSum;
+
+	return precipOk;
+}
+
 void AutomaticSowing::apply(MonicaModel* model)
 {
 	if(_cropSeeded)
 		return;
 
-	debug() << "automatically sowing crop: " << _crop->toString() << " at: " << date().toString() << endl;
+	auto currentDate = model->currentStepDate();
 
 	auto seed = [&]()
 	{
 		model->seedCrop(_crop);
+		_crop->setSeedDate(currentDate);
 		model->addEvent("AutomaticSowing");
 		model->addEvent("automatic-sowing");
 		_cropSeeded = true;
+		debug() << "automatically sowing crop: " << _crop->toString() << " at: " << currentDate.toString() << endl;
 	};
 
-	auto currentDate = model->currentStepDate();
-	if(!_inSowingRange && currentDate.toRelativeDate() < _minDate)
-	{
-		_cropSeeded = false;
+	if(!_inSowingRange && currentDate.toRelativeDate() < _earliestDate)
 		return;
-	}
 	else
-	{
 		_inSowingRange = true;
-	}
 
-	if(_inSowingRange && currentDate.toRelativeDate() >= _maxDate)
+	if(_inSowingRange && currentDate.toRelativeDate() >= _latestDate)
 	{
 		seed();
 		_inSowingRange = false;
@@ -241,25 +267,11 @@ void AutomaticSowing::apply(MonicaModel* model)
 		return;
 
 	//check soil moisture
-	bool soilMoistureOk = false;
-	double sm = model->avgSoilMoisture(0, 0);
-	double asw = model->soilColumn().at(0).vs_FieldCapacity() - model->soilColumn().at(0).vs_PermanentWiltingPoint();
-	double currentPercentASW = sm / asw * 100.0;
-	soilMoistureOk = _minPercentASW <= currentPercentASW && currentPercentASW <= _maxPercentASW;
-	if(!soilMoistureOk)
+	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
 		return;
 
 	//check precipitation
-	bool precipOk = false;
-	double psum3d = accumulate(cd.rbegin(), cd.rbegin() + 3, 0.0,
-										[](double acc, const map<ACD, double>& d)
-	{
-		auto it = d.find(Climate::precip);
-		return acc + (it == d.end() ? 0 : it->second);
-	});
-	double currentp = currentCd[Climate::precip];
-	precipOk = psum3d <= _max3dayPrecipSum && currentp <= _maxCurrentDayPrecipSum;
-	if(!precipOk)
+	if(!isPrecipitationOk(cd, _max3dayPrecipSum, _maxCurrentDayPrecipSum))
 		return;
 
 	//check temperature sum
@@ -370,57 +382,97 @@ void Harvest::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-AutomaticHarvest::AutomaticHarvest()
+AutomaticHarvesting::AutomaticHarvesting()
 	: Harvest()
+	, _harvestTime("maturity")
 {}
 
-AutomaticHarvest::AutomaticHarvest(CropPtr crop,
-																	 std::string harvestTime,
-																	 int latestHarvestDOY,
-																	 std::string method)
+AutomaticHarvesting::AutomaticHarvesting(CropPtr crop,
+																				 std::string harvestTime,
+																				 Date latestHarvest,
+																				 std::string method)
 	: Harvest(Date(), crop, method)
 	, _harvestTime(harvestTime)
-	, _latestHarvestDOY(latestHarvestDOY)
-{
-}
+	, _latestDate(latestHarvest)
+{}
 
-AutomaticHarvest::AutomaticHarvest(json11::Json j)
+AutomaticHarvesting::AutomaticHarvesting(json11::Json j)
 	: Harvest(j)
+	, _harvestTime("maturity")
 {
 	merge(j);
 }
 
-Errors AutomaticHarvest::merge(json11::Json j)
+Errors AutomaticHarvesting::merge(json11::Json j)
 {
 	Errors res = Harvest::merge(j);
 
-	set_string_value(_harvestTime, j, "harvestTime");
-	set_int_value(_latestHarvestDOY, j, "latestHarvestDOY");
+	set_iso_date_value(_latestDate, j, "latest-date");
+	set_double_value(_minPercentASW, j, "min-%-asw");
+	set_double_value(_maxPercentASW, j, "max-%-asw");
+	set_double_value(_max3dayPrecipSum, j, "max-3d-precip");
+	set_double_value(_maxCurrentDayPrecipSum, j, "max-curr-day-precip");
+	set_string_value(_harvestTime, j, "harvest-time");
 
 	return res;
 }
 
-json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const
+json11::Json AutomaticHarvesting::to_json(bool includeFullCropParameters) const
 {
 	auto o = Harvest::to_json(includeFullCropParameters).object_items();
 	o["type"] = type();
-	o["harvestTime"] = _harvestTime;
-	o["latestHarvestDOY"] = _latestHarvestDOY;
+	o["latest-date"] = J11Array{_latestDate.toIsoDateString(), "", "latest harvesting date"};
+	o["min-%-asw"] = J11Array{_minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"};
+	o["max-%-asw"], J11Array{_maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"};
+	o["max-3d-precip-sum"], J11Array{_max3dayPrecipSum, "mm", "sum of precipitation in the last three days (including current day)"};
+	o["max-curr-day-precip"], J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"};
+	o["harvest-time"] = _harvestTime;
 	return o;
 }
 
-void AutomaticHarvest::apply(MonicaModel* model)
+void AutomaticHarvesting::apply(MonicaModel* model)
 {
-	if(model->cropGrowth() 
-		 && _harvestTime == "maturity"
-		 && (model->cropGrowth()->maturityReached()
-				 || _latestHarvestDOY == model->currentStepDate().julianDay()))
+	if(!model->cropGrowth() 
+		 || _cropHarvested)
+		return;
+
+	auto currentDate = model->currentStepDate();
+
+	auto harvest = [&]()
 	{
 		Harvest::apply(model);
-		model->addEvent("AutomaticHarvest");
+		model->addEvent("AutomaticHarvesting");
 		model->addEvent("automatic-harvesting");
 		model->addEvent("harvesting");
+		_cropHarvested = true;
+		debug() << "automatically harvesting crop: " << crop()->toString() << " at: " << currentDate.toString() << endl;
+	};
+
+	auto relSeedDate = model->currentCrop()->seedDate().toRelativeDate();
+	if(relSeedDate > _latestDate)
+		_latestDate.addYears(1);
+
+	if(relSeedDate < _latestDate
+		 && currentDate.toRelativeDate() >= _latestDate)
+	{
+		harvest();
+		return;
 	}
+
+	//check for maturity
+	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
+	if(!isMaturityReached)
+		return;
+	
+	//check soil moisture
+	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
+		return;
+
+	//check precipitation
+	if(!isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum))
+		return;
+
+	harvest();
 }
 
 //------------------------------------------------------------------------------
@@ -729,8 +781,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 		return make_shared<AutomaticSowing>(j);
 	else if(type == "Harvest")
 		return make_shared<Harvest>(j);
-	else if(type == "AutomaticHarvest")
-		return make_shared<AutomaticHarvest>(j);
+	else if(type == "AutomaticHarvesting")
+		return make_shared<AutomaticHarvesting>(j);
 	else if(type == "Cutting")
 		return make_shared<Cutting>(j);
 	else if(type == "MineralFertiliserApplication")
@@ -816,7 +868,7 @@ Errors CultivationMethod::merge(json11::Json j)
 				}
 			}
 		}
-		else if(wsType == "Harvest")
+		else if(wsType == "Harvest" || wsType == "AutomaticHarvesting")
 		{
 			if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{
@@ -850,21 +902,13 @@ void CultivationMethod::apply(const Date& date,
 	//apply everything at date
 	for(auto wsp : applicationsAt(date))
 		wsp->apply(model);
-
-	//check if dynamic worksteps can be applied
-	for(auto wsp : applicationsAt(Date()))
-	{
-		wsp->apply(model);
-	}
 }
 
 void CultivationMethod::apply(MonicaModel* model) const
 {
 	//check if dynamic worksteps can be applied
 	for(auto wsp : applicationsAt(Date()))
-	{
-		wsp->apply(model);
-	}
+			wsp->apply(model);
 }
 
 
@@ -919,3 +963,8 @@ std::string CultivationMethod::toString() const
 	return s.str();
 }
 
+void CultivationMethod::reset()
+{
+	for(auto p : *this)
+		p.second->reset();
+}

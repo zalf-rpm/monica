@@ -21,6 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
 #include <iostream>
 #include <memory>
 #include <functional>
@@ -64,7 +65,13 @@ namespace Monica
 		//! do whatever the workstep has to do
 		virtual void apply(MonicaModel* model);
 
-		//virtual bool 
+		//! tell if this workstep is active and can be used 
+		//! a workstep might temporarily be deactivated, eg a dynamic sowing workstep
+		//! which has to be checked for sowing every day, but not anymore after sowing
+		virtual bool isActive() const { return true; }
+
+		//! reset potential state of workstep
+		virtual void reset() {}
 
 	protected:
 		Tools::Date _date;
@@ -138,9 +145,13 @@ namespace Monica
 
 		CropPtr crop() const { return _crop; }
 
+		virtual bool isActive() const { return !_cropSeeded; }
+
+		virtual void reset() { _cropSeeded = _inSowingRange = false; }
+
 	private:
-		Tools::Date _minDate;
-		Tools::Date _maxDate;
+		Tools::Date _earliestDate;
+		Tools::Date _latestDate;
 		double _minTempThreshold{0};
 		int _daysInTempWindow{0};
 		double _minPercentASW{0};
@@ -153,7 +164,6 @@ namespace Monica
 		bool _inSowingRange{false};
 		bool _cropSeeded{false};
 	};
-
 
 	//----------------------------------------------------------------------------
 
@@ -202,20 +212,19 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	//*
-	class DLL_API AutomaticHarvest : public Harvest
+	class DLL_API AutomaticHarvesting : public Harvest
 	{
 	public:
-		AutomaticHarvest();
+		AutomaticHarvesting();
 
-		AutomaticHarvest(CropPtr crop,
-										 std::string harvestTime,
-										 int latestHarvestDOY,
-										 std::string method = "total");
+		AutomaticHarvesting(CropPtr crop,
+												std::string harvestTime,
+												Tools::Date latestHarvest,
+												std::string method = "total");
 
-		AutomaticHarvest(json11::Json j);
+		AutomaticHarvesting(json11::Json object);
 
-		virtual AutomaticHarvest* clone() const { return new AutomaticHarvest(*this); }
+		virtual AutomaticHarvesting* clone() const { return new AutomaticHarvesting(*this); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -223,15 +232,23 @@ namespace Monica
 
 		json11::Json to_json(bool includeFullCropParameters) const;
 
-		virtual std::string type() const { return "AutomaticHarvest"; }
+		virtual std::string type() const { return "AutomaticHarvesting"; }
 
 		virtual void apply(MonicaModel* model);
 
+		virtual bool isActive() const { return !_cropHarvested; }
+
+		virtual void reset() { _cropHarvested = false; }
+
 	private:
 		std::string _harvestTime; //!< Harvest time parameter
-		int _latestHarvestDOY{-1};
+		Tools::Date _latestDate;
+		double _minPercentASW{0};
+		double _maxPercentASW{100};
+		double _max3dayPrecipSum{0};
+		double _maxCurrentDayPrecipSum{0};
+		bool _cropHarvested{false};
 	};
-	//*/
 
 	//----------------------------------------------------------------------------
 
@@ -463,6 +480,9 @@ namespace Monica
 
     void setIrrigateCrop(bool irr){ _irrigateCrop = irr; }
     bool irrigateCrop() const { return _irrigateCrop; }
+
+		//! reset cultivation method to initial state, if it will be reused (eg in a crop rotation)
+		void reset();
 
 	private:
     int _customId{0};

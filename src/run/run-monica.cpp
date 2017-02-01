@@ -769,6 +769,7 @@ Output Monica::runMonica(Env env)
 				cmci = env.cropRotation.begin();
 
 			currentCM = &(*cmci);
+			currentCM->reset();
 			nextCMApplicationDate = currentCM->startDate();
 			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
 			debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
