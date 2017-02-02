@@ -4255,11 +4255,11 @@ bool CropGrowth::isAnthesisDay(int old_dev_stage, int new_dev_stage)
 {
 	if(pc_NumberOfDevelopmentalStages == 6)
 	{
-		return (old_dev_stage == 4 && new_dev_stage == 5);
+		return (old_dev_stage == 3 && new_dev_stage == 4);
 	}
 	else if(pc_NumberOfDevelopmentalStages == 7)
 	{
-		return (old_dev_stage == 5 && new_dev_stage == 6);
+		return (old_dev_stage == 4 && new_dev_stage == 5);
 	}
 
 	return false;
@@ -4276,12 +4276,12 @@ bool CropGrowth::isMaturityDay(int old_dev_stage, int new_dev_stage)
 	// corn crops
 	if(pc_NumberOfDevelopmentalStages == 6)
 	{
-		return (old_dev_stage == 5 && new_dev_stage == 6);
+		return (old_dev_stage == 4 && new_dev_stage == 5);
 	}
 	// maize, sorghum and other crops with 7 developmental stages
 	else if(pc_NumberOfDevelopmentalStages == 7)
 	{
-		return (old_dev_stage == 6 && new_dev_stage == 7);
+		return (old_dev_stage == 5 && new_dev_stage == 6);
 	}
 
 	return false;

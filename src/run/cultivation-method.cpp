@@ -181,8 +181,9 @@ bool isSoilMoistureOk(MonicaModel* model,
 											double maxPercentASW)
 {
 	bool soilMoistureOk = false;
-	double sm = model->avgSoilMoisture(0, 0);
-	double asw = model->soilColumn().at(0).vs_FieldCapacity() - model->soilColumn().at(0).vs_PermanentWiltingPoint();
+	double pwp = model->soilColumn().at(0).vs_PermanentWiltingPoint();
+	double sm = max(0.0, model->soilColumn().at(0).get_Vs_SoilMoisture_m3() - pwp);
+	double asw = model->soilColumn().at(0).vs_FieldCapacity() - pwp;
 	double currentPercentASW = sm / asw * 100.0;
 	soilMoistureOk = minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
 
@@ -223,12 +224,15 @@ void AutomaticSowing::apply(MonicaModel* model)
 		debug() << "automatically sowing crop: " << _crop->toString() << " at: " << currentDate.toString() << endl;
 	};
 
-	if(!_inSowingRange && currentDate.toRelativeDate() < _earliestDate)
+	auto earliestDate = _earliestDate.isRelativeDate() ? _earliestDate.toAbsoluteDate(currentDate.year()) : _earliestDate;
+	auto latestDate = _latestDate.isRelativeDate() ? _latestDate.toAbsoluteDate(currentDate.year()) : _latestDate;
+
+	if(!_inSowingRange && currentDate < earliestDate)
 		return;
 	else
 		_inSowingRange = true;
 
-	if(_inSowingRange && currentDate.toRelativeDate() >= _latestDate)
+	if(_inSowingRange && currentDate >= latestDate)
 	{
 		seed();
 		_inSowingRange = false;
@@ -432,10 +436,16 @@ json11::Json AutomaticHarvesting::to_json(bool includeFullCropParameters) const
 
 void AutomaticHarvesting::apply(MonicaModel* model)
 {
+	//no crop or already harvested
 	if(!model->cropGrowth() 
 		 || _cropHarvested)
 		return;
 
+	//check for maturity
+	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
+	if(!isMaturityReached)
+		return;
+	
 	auto currentDate = model->currentStepDate();
 
 	auto harvest = [&]()
@@ -448,21 +458,21 @@ void AutomaticHarvesting::apply(MonicaModel* model)
 		debug() << "automatically harvesting crop: " << crop()->toString() << " at: " << currentDate.toString() << endl;
 	};
 
-	auto relSeedDate = model->currentCrop()->seedDate().toRelativeDate();
-	if(relSeedDate > _latestDate)
-		_latestDate.addYears(1);
+	//make dates comparable
+	auto sd = model->currentCrop()->seedDate();
+	auto seedDate = sd.isRelativeDate() ? sd.toAbsoluteDate(currentDate.year()) : sd;
+	auto latestDate = _latestDate.isRelativeDate() ? _latestDate.toAbsoluteDate(currentDate.year()) : _latestDate;
+	
+	//check if user forgot to add one year to winter crop's latest seed date, if the date was relative
+	if(seedDate > latestDate)
+		latestDate.addYears(1);
 
-	if(relSeedDate < _latestDate
-		 && currentDate.toRelativeDate() >= _latestDate)
+	//harvest after or at latested date
+	if(currentDate >= latestDate)
 	{
 		harvest();
 		return;
 	}
-
-	//check for maturity
-	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
-	if(!isMaturityReached)
-		return;
 	
 	//check soil moisture
 	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))

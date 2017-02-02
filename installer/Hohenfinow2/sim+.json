@@ -27,7 +27,7 @@
 	"debug?": false,
 		
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
-	"include-file-base-path": "./",
+	"include-file-base-path": "../",
 	
 	"__configuration options for the monica outputs": "",
 	"output": { 
@@ -50,6 +50,10 @@
 			"daily", [
 				"Date",
 				"Crop",
+				"Stage",
+				"Tavg",
+				"Precip",
+				["Mois", 1],
 				"Recharge",
 				["PercolationRate", [1,20]],
 				"guenther-isoprene-emission|G-Iso",

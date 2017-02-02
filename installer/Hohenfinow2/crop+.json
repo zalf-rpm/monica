@@ -84,7 +84,22 @@
 	"cropRotation": [
 		{
 			"worksteps": [
-				{ "date": "0000-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
+				{ "date": "0000-09-23", "type": "__Seed", "crop": ["ref", "crops", "WR"] },
+				{ 
+					"type": "AutomaticSowing", 
+					"crop": ["ref", "crops", "WR"],
+					"earliest-date": "0000-10-01",
+					"latest-date": "0000-11-10",
+					"min-temp": 18.5,
+					"days-in-temp-window": 14,
+					"min-%-asw": 0,
+					"max-%-asw": 100,
+					"max-3d-precip-sum": 2,
+					"max-curr-day-precip": 0.1,
+					"temp-sum-above-base-temp": 0,
+					"base-temp": 0,
+					"is-winter-crop": true
+				},
 				{
 					"date": "0001-05-05",
 					"type": "IrrigationApplication",
@@ -107,7 +122,16 @@
 					"_db_partition": ["include-from-db", "mineral_fertiliser", "AN"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
+				{ "date": "0001-07-27", "type": "__Harvest", "crop": ["ref", "crops", "WR"] },
+				{ 
+					"type": "AutomaticHarvesting", 
+					"latest-date": "0000-09-05",
+					"min-%-asw": 0,
+					"max-%-asw": 100,
+					"max-3d-precip-sum": 2,
+					"max-curr-day-precip": 0.1,
+					"harvest-time": "maturity"
+				}
 			]
 		}
 	],
