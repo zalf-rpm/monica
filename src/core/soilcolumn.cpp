@@ -186,35 +186,38 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 																		double vf_FertiliserMaxApplication,
 																		int vf_TopDressingDelay)
 {
-  // Wassergehalt > Feldkapazität
   if(at(0).get_Vs_SoilMoisture_m3() > at(0).vs_FieldCapacity())
   {
     _delayedNMinApplications.push_back([=]()
     {
-      return this->applyMineralFertiliserViaNMinMethod(fp, vf_SamplingDepth, vf_CropNTarget,
-                                                       vf_CropNTarget30, vf_FertiliserMinApplication,
-                                                       vf_FertiliserMaxApplication, vf_TopDressingDelay);
+      return this->applyMineralFertiliserViaNMinMethod(fp, 
+																											 vf_SamplingDepth, 
+																											 vf_CropNTarget,
+                                                       vf_CropNTarget30, 
+																											 vf_FertiliserMinApplication,
+                                                       vf_FertiliserMaxApplication, 
+																											 vf_TopDressingDelay);
     });
 
-    //cerr << "Soil too wet for fertilisation. "
-    //  "Fertiliser event adjourned to next day." << endl;
-    return 0.0;
-  }
-
-  double vf_SoilNO3Sum = 0.0;
-  double vf_SoilNO3Sum30 = 0.0;
-  double vf_SoilNH4Sum = 0.0;
-  double vf_SoilNH4Sum30 = 0.0;
+    debug() << "Soil too wet for fertilisation. Fertiliser event adjourned to next day." << endl;
+		return 0.0;
+	}
+  
   int vf_Layer30cm = getLayerNumberForDepth(0.3);
+	int layerSamplingDepth = getLayerNumberForDepth(vf_SamplingDepth);
 
-  for(int i_Layer = 0; i_Layer < (ceil(vf_SamplingDepth / at(i_Layer).vs_LayerThickness)); i_Layer++)
+	double vf_SoilNO3Sum = 0.0;
+	double vf_SoilNH4Sum = 0.0;
+	for(int i_Layer = 0; i_Layer < layerSamplingDepth /*(ceil(vf_SamplingDepth / at(i_Layer).vs_LayerThickness))*/; i_Layer++)
   {
     //vf_TargetLayer is in cm. We want number of layers
     vf_SoilNO3Sum += at(i_Layer).vs_SoilNO3; //! [kg N m-3]
     vf_SoilNH4Sum += at(i_Layer).vs_SoilNH4; //! [kg N m-3]
   }
 
-  // Same calculation for a depth of 30 cm
+	double vf_SoilNO3Sum30 = 0.0;
+	double vf_SoilNH4Sum30 = 0.0;
+	// Same calculation for a depth of 30 cm
   /** @todo Must be adapted when using variable layer depth. */
   for(int i_Layer = 0; i_Layer < vf_Layer30cm; i_Layer++)
   {
@@ -223,12 +226,8 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
   }
 
   // Converts [kg N ha-1] to [kg N m-3]
-  double vf_CropNTargetValue;
-  vf_CropNTargetValue = vf_CropNTarget / 10000.0 / at(0).vs_LayerThickness;
-
-  // Converts [kg N ha-1] to [kg N m-3]
-  double vf_CropNTargetValue30;
-  vf_CropNTargetValue30 = vf_CropNTarget30 / 10000.0 / at(0).vs_LayerThickness;
+  double vf_CropNTargetValue = vf_CropNTarget / 10000.0 / at(0).vs_LayerThickness;
+  double vf_CropNTargetValue30 = vf_CropNTarget30 / 10000.0 / at(0).vs_LayerThickness;
 
   double vf_FertiliserDemandVol = vf_CropNTargetValue - (vf_SoilNO3Sum + vf_SoilNH4Sum);
   double vf_FertiliserDemandVol30 = vf_CropNTargetValue30 - (vf_SoilNO3Sum30 + vf_SoilNH4Sum30);
@@ -244,7 +243,6 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
     // If the N demand of the crop is smaller than the user defined
     // minimum fertilisation then no need to fertilise
     vf_FertiliserRecommendation = 0.0;
-    //cerr << "Fertiliser demand below minimum application value. No fertiliser applied." << endl;
   }
 
   if(vf_FertiliserRecommendation > vf_FertiliserMaxApplication)
@@ -256,10 +254,6 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
     _vf_TopDressingPartition = fp;
     _vf_TopDressingDelay = vf_TopDressingDelay;
     vf_FertiliserRecommendation = vf_FertiliserMaxApplication;
-
-    //cerr << "Fertiliser demand above maximum application value. "
-    //  "A top dressing of " << _vf_TopDressing <<
-    //  " will be applied from now on day" << vf_TopDressingDelay << "." << endl;
   }
 
   //Apply fertiliser
@@ -272,7 +266,7 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
   //we simply assume it really will be applied, in the worst case
   //the delay is so long, that the crop is already harvested until
   //the top-dressing will be applied
-  return vf_FertiliserRecommendation;// + _vf_TopDressing);
+  return vf_FertiliserRecommendation;
 }
 
 // prüft ob top-dressing angewendet werden sollte, ansonsten wird

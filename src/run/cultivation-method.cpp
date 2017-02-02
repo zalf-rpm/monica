@@ -574,6 +574,91 @@ void MineralFertiliserApplication::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
+NDemandMineralFertiliserApplication::
+NDemandMineralFertiliserApplication(int stage, 
+																		double depth,
+																		MineralFertiliserParameters partition,
+																		double amount)
+	: MineralFertiliserApplication(Date(), partition, amount)
+	, _depth(depth)
+	, _stage(stage)
+{}
+
+NDemandMineralFertiliserApplication::NDemandMineralFertiliserApplication(json11::Json j)
+{
+	merge(j);
+}
+
+Errors NDemandMineralFertiliserApplication::merge(json11::Json j)
+{
+	Errors res = MineralFertiliserApplication::merge(j);
+	set_double_value(_depth, j, "depth");
+	set_int_value(_stage, j, "stage");
+	return res;
+}
+
+json11::Json NDemandMineralFertiliserApplication::to_json() const
+{
+	auto o = MineralFertiliserApplication::to_json().object_items();
+	o["type"] = type();
+	o["depth"] = J11Array{_depth, "m", "depth of Nmin measurement"};
+	o["stage"] = J11Array{_stage, "", "if this development stage is entered, the fertilizer will be applied"};
+	return o;
+}
+
+void NDemandMineralFertiliserApplication::apply(MonicaModel* model)
+{
+	auto cg = model->cropGrowth();
+	auto cc = model->currentCrop();
+	if(_appliedFertilizer 
+		 || !cg 
+		 || !cc)
+		return;
+
+	auto cps = model->currentCrop()->cropParameters();
+	
+	auto applyFertilizer = [&](double amount)
+	{
+		debug() << toString() << endl;
+
+		/*
+		const NMinUserParameters& ups = model->simPs.p_NMinUserParams;
+		return model->soilColumnNC().applyMineralFertiliserViaNMinMethod(partition(),
+																																		 _depth < 0.01 ? cps->speciesParams.pc_SamplingDepth : _depth,
+																																		 cps->speciesParams.pc_TargetNSamplingDepth,
+																																		 cps->speciesParams.pc_TargetN30,
+																																		 ups.min,
+																																		 ups.max,
+																																		 ups.delayInDays);
+	  */
+		model->applyMineralFertiliser(partition(), amount);
+		_appliedFertilizer = true;
+		model->addEvent("NDemandMineralFertiliserApplication");
+		model->addEvent("N-demand-mineral-fertilizing");
+	};
+	
+
+	//apply at seeding time
+	if(_stage == 0)
+	{
+		applyFertilizer(amount());
+		return;
+	}
+
+	auto currStage = model->cropGrowth()->get_DevelopmentalStage() + 1;
+	if(currStage == _stage)
+	{
+
+
+
+	}
+
+
+
+}
+
+//------------------------------------------------------------------------------
+
 OrganicFertiliserApplication::
 OrganicFertiliserApplication(const Tools::Date& at,
 														 OrganicMatterParametersPtr params,
@@ -878,7 +963,8 @@ Errors CultivationMethod::merge(json11::Json j)
 				}
 			}
 		}
-		else if(wsType == "Harvest" || wsType == "AutomaticHarvesting")
+		else if(wsType == "Harvest" 
+						|| wsType == "AutomaticHarvesting")
 		{
 			if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{

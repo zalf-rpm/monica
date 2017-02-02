@@ -275,6 +275,8 @@ namespace Monica
 	class DLL_API MineralFertiliserApplication : public WorkStep
 	{
 	public:
+		MineralFertiliserApplication() {}
+
 		MineralFertiliserApplication(const Tools::Date& at,
 																 MineralFertiliserParameters partition,
                                  double amount);
@@ -301,6 +303,40 @@ namespace Monica
 	};
 
   //----------------------------------------------------------------------------
+
+	class DLL_API NDemandMineralFertiliserApplication : public MineralFertiliserApplication
+	{
+	public:
+		NDemandMineralFertiliserApplication() {}
+
+		NDemandMineralFertiliserApplication(int stage,
+																				double depth, 
+																				MineralFertiliserParameters partition,
+																				double amount);
+
+		NDemandMineralFertiliserApplication(json11::Json object);
+
+		virtual NDemandMineralFertiliserApplication* clone() const { return new NDemandMineralFertiliserApplication(*this); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+
+		virtual std::string type() const { return "NDemandMineralFertiliserApplication"; }
+
+		virtual void apply(MonicaModel* model);
+
+		virtual bool isActive() const { return !_appliedFertilizer; }
+
+		virtual void reset() { _appliedFertilizer = false; }
+
+	private:
+		double _depth{0.0};
+		int _stage{0};
+		bool _appliedFertilizer{false};
+	};
+
+	//----------------------------------------------------------------------------
 
 	class DLL_API OrganicFertiliserApplication : public WorkStep
 	{
