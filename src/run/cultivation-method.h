@@ -58,7 +58,7 @@ namespace Monica
 
     virtual std::string type() const { return "WorkStep"; }
 
-		Tools::Date date() const { return _date; }
+		virtual Tools::Date date() const { return _date; }
 
     virtual void setDate(Tools::Date date) {_date = date; }
 
@@ -102,7 +102,7 @@ namespace Monica
 
     virtual void apply(MonicaModel* model);
 
-    void setDate(Tools::Date date)
+    virtual void setDate(Tools::Date date)
     {
       this->_date = date;
       _crop->setSeedAndHarvestDate(date, _crop->harvestDate());
@@ -137,7 +137,7 @@ namespace Monica
 
 		virtual void apply(MonicaModel* model);
 
-		void setDate(Tools::Date date)
+		virtual void setDate(Tools::Date date)
 		{
 			this->_date = date;
 			_crop->setSeedAndHarvestDate(date, _crop->harvestDate());
@@ -147,7 +147,11 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropSeeded; }
 
-		virtual void reset() { _cropSeeded = _inSowingRange = false; }
+		virtual void reset() 
+		{ 
+			_cropSeeded = _inSowingRange = false; 
+			setDate(Tools::Date());
+		}
 
 	private:
 		Tools::Date _earliestDate;
@@ -190,7 +194,7 @@ namespace Monica
 
     virtual void apply(MonicaModel* model);
 
-    void setDate(Tools::Date date)
+    virtual void setDate(Tools::Date date)
     {
       this->_date = date;
       _crop->setSeedAndHarvestDate(_crop->seedDate(), date);
@@ -238,7 +242,11 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropHarvested; }
 
-		virtual void reset() { _cropHarvested = false; }
+		virtual void reset() 
+		{ 
+			_cropHarvested = false; 
+			setDate(Tools::Date());
+		}
 
 	private:
 		std::string _harvestTime; //!< Harvest time parameter
@@ -304,33 +312,46 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	class DLL_API NDemandMineralFertiliserApplication : public MineralFertiliserApplication
+	class DLL_API NDemandApplication : public WorkStep
 	{
 	public:
-		NDemandMineralFertiliserApplication() {}
+		NDemandApplication() {}
 
-		NDemandMineralFertiliserApplication(int stage,
-																				double depth, 
-																				MineralFertiliserParameters partition,
-																				double amount);
+		NDemandApplication(int stage,
+											 double depth,
+											 MineralFertiliserParameters partition,
+											 double Ndemand);
 
-		NDemandMineralFertiliserApplication(json11::Json object);
+		NDemandApplication(Tools::Date date,
+											 double depth,
+											 MineralFertiliserParameters partition,
+											 double Ndemand);
 
-		virtual NDemandMineralFertiliserApplication* clone() const { return new NDemandMineralFertiliserApplication(*this); }
+		NDemandApplication(json11::Json object);
+
+		virtual NDemandApplication* clone() const { return new NDemandApplication(*this); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
 
-		virtual std::string type() const { return "NDemandMineralFertiliserApplication"; }
+		virtual std::string type() const { return "NDemandApplication"; }
 
 		virtual void apply(MonicaModel* model);
 
+		MineralFertiliserParameters partition() const { return _partition; }
+
 		virtual bool isActive() const { return !_appliedFertilizer; }
 
-		virtual void reset() { _appliedFertilizer = false; }
+		virtual void reset() 
+		{ 
+			_appliedFertilizer = false; 
+			setDate(Tools::Date());
+		}
 
 	private:
+		MineralFertiliserParameters _partition;
+		double _Ndemand{0};
 		double _depth{0.0};
 		int _stage{0};
 		bool _appliedFertilizer{false};

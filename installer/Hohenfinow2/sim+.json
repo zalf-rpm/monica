@@ -54,6 +54,7 @@
 				"Tavg",
 				"Precip",
 				["Mois", 1],
+				"RootDep",
 				"Recharge",
 				["PercolationRate", [1,20]],
 				"guenther-isoprene-emission|G-Iso",

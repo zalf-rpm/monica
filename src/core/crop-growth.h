@@ -231,6 +231,7 @@ namespace Monica
     double get_LeafAreaIndex() const;
     double get_CropHeight() const;
     int get_RootingDepth() const;
+		double get_RootingDepth_m() const { return vc_RootingDepth_m; }
     double get_SoilCoverage() const;
     double get_KcFactor() const;
     double get_StomataResistance() const;

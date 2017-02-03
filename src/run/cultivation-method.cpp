@@ -455,6 +455,7 @@ void AutomaticHarvesting::apply(MonicaModel* model)
 		model->addEvent("automatic-harvesting");
 		model->addEvent("harvesting");
 		_cropHarvested = true;
+		setDate(currentDate);
 		debug() << "automatically harvesting crop: " << crop()->toString() << " at: " << currentDate.toString() << endl;
 	};
 
@@ -557,11 +558,12 @@ Errors MineralFertiliserApplication::merge(json11::Json j)
 
 json11::Json MineralFertiliserApplication::to_json() const
 {
-	return json11::Json::object{
-		{"type", type()},
-		{"date", date().toIsoDateString()},
-		{"amount", _amount},
-		{"partition", _partition}};
+	return json11::Json::object
+	{{"type", type()}
+	,{"date", date().toIsoDateString()}
+	,{"amount", _amount}
+	,{"partition", _partition}
+	};
 }
 
 void MineralFertiliserApplication::apply(MonicaModel* model)
@@ -574,87 +576,80 @@ void MineralFertiliserApplication::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-NDemandMineralFertiliserApplication::
-NDemandMineralFertiliserApplication(int stage, 
-																		double depth,
-																		MineralFertiliserParameters partition,
-																		double amount)
-	: MineralFertiliserApplication(Date(), partition, amount)
+NDemandApplication::
+NDemandApplication(int stage,
+									 double depth,
+									 MineralFertiliserParameters partition,
+									 double Ndemand)
+	: WorkStep(Date())
+	, _partition(partition)
+	, _Ndemand(Ndemand)
 	, _depth(depth)
 	, _stage(stage)
 {}
 
-NDemandMineralFertiliserApplication::NDemandMineralFertiliserApplication(json11::Json j)
+NDemandApplication::NDemandApplication(Tools::Date date,
+																			 double depth,
+																			 MineralFertiliserParameters partition,
+																			 double Ndemand)
+	: WorkStep(date)
+	, _partition(partition)
+	, _Ndemand(Ndemand)
+	, _depth(depth)
+{}
+
+NDemandApplication::NDemandApplication(json11::Json j)
 {
 	merge(j);
 }
 
-Errors NDemandMineralFertiliserApplication::merge(json11::Json j)
+Errors NDemandApplication::merge(json11::Json j)
 {
-	Errors res = MineralFertiliserApplication::merge(j);
+	Errors res = WorkStep::merge(j);
+	set_double_value(_Ndemand, j, "N-demand");
+	set_value_obj_value(_partition, j, "partition");
 	set_double_value(_depth, j, "depth");
 	set_int_value(_stage, j, "stage");
+	
 	return res;
 }
 
-json11::Json NDemandMineralFertiliserApplication::to_json() const
+json11::Json NDemandApplication::to_json() const
 {
-	auto o = MineralFertiliserApplication::to_json().object_items();
-	o["type"] = type();
-	o["depth"] = J11Array{_depth, "m", "depth of Nmin measurement"};
-	o["stage"] = J11Array{_stage, "", "if this development stage is entered, the fertilizer will be applied"};
+	auto o = J11Object 
+	{{"type", type()}
+	,{"N-demand", _Ndemand}
+	,{"partition", _partition}
+	,{"depth", J11Array{_depth, "m", "depth of Nmin measurement"}}
+	};
+	if(date().isValid())
+		o["date"] = date().toIsoDateString();
+	else
+		o["stage"] = J11Array{_stage, "", "if this development stage is entered, the fertilizer will be applied"};
+	
 	return o;
 }
 
-void NDemandMineralFertiliserApplication::apply(MonicaModel* model)
+void NDemandApplication::apply(MonicaModel* model)
 {
 	auto cg = model->cropGrowth();
-	auto cc = model->currentCrop();
 	if(_appliedFertilizer 
-		 || !cg 
-		 || !cc)
+		 || !cg)
 		return;
-
-	auto cps = model->currentCrop()->cropParameters();
 	
-	auto applyFertilizer = [&](double amount)
+	auto currStage = cg->get_DevelopmentalStage() + 1;
+	if(date().isValid() //is timed application
+		 || _stage == 0 // apply at seeding time
+		 || currStage == _stage) //
 	{
+		double rd = cg->get_RootingDepth_m();
 		debug() << toString() << endl;
-
-		/*
-		const NMinUserParameters& ups = model->simPs.p_NMinUserParams;
-		return model->soilColumnNC().applyMineralFertiliserViaNMinMethod(partition(),
-																																		 _depth < 0.01 ? cps->speciesParams.pc_SamplingDepth : _depth,
-																																		 cps->speciesParams.pc_TargetNSamplingDepth,
-																																		 cps->speciesParams.pc_TargetN30,
-																																		 ups.min,
-																																		 ups.max,
-																																		 ups.delayInDays);
-	  */
-		model->applyMineralFertiliser(partition(), amount);
+		model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth, _Ndemand);
 		_appliedFertilizer = true;
-		model->addEvent("NDemandMineralFertiliserApplication");
-		model->addEvent("N-demand-mineral-fertilizing");
-	};
-	
-
-	//apply at seeding time
-	if(_stage == 0)
-	{
-		applyFertilizer(amount());
-		return;
+		setDate(model->currentStepDate());
+		model->addEvent("NDemandApplication");
+		model->addEvent("N-demand-fertilizing");
 	}
-
-	auto currStage = model->cropGrowth()->get_DevelopmentalStage() + 1;
-	if(currStage == _stage)
-	{
-
-
-
-	}
-
-
-
 }
 
 //------------------------------------------------------------------------------
@@ -882,6 +877,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 		return make_shared<Cutting>(j);
 	else if(type == "MineralFertiliserApplication")
 		return make_shared<MineralFertiliserApplication>(j);
+	else if(type == "NDemandApplication")
+		return make_shared<NDemandApplication>(j);
 	else if(type == "OrganicFertiliserApplication")
 		return make_shared<OrganicFertiliserApplication>(j);
 	else if(type == "TillageApplication")
@@ -992,6 +989,18 @@ json11::Json CultivationMethod::to_json() const
 	};
 }
 
+/*
+void CultivationMethod::apply(const Date& currentDate,
+															MonicaModel* model) const
+{
+
+
+	//apply everything at date
+	for(auto wsp : applicationsAt(date))
+		wsp->apply(model);
+}
+*/
+
 void CultivationMethod::apply(const Date& date, 
 															MonicaModel* model) const
 {
@@ -1003,8 +1012,7 @@ void CultivationMethod::apply(const Date& date,
 void CultivationMethod::apply(MonicaModel* model) const
 {
 	//check if dynamic worksteps can be applied
-	for(auto wsp : applicationsAt(Date()))
-			wsp->apply(model);
+	apply(Date(), model);
 }
 
 
@@ -1033,7 +1041,7 @@ Date CultivationMethod::startDate() const
 	auto it = begin();
 	while(it != end() && !it->first.isValid())
 		it++;
-	return it->first;
+	return it == end() ? Date() : it->first;
 }
 
 Date CultivationMethod::endDate() const
@@ -1043,7 +1051,7 @@ Date CultivationMethod::endDate() const
 	auto it = rbegin();
 	while(it != rend() && !it->first.isValid())
 		it++;
-	return it->first;
+	return it == rend() ? Date() : it->first;
 }
 
 std::string CultivationMethod::toString() const

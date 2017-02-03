@@ -165,6 +165,34 @@ size_t SoilColumn::calculateNumberOfOrganicLayers()
   return count;
 }
 
+double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+																										double demandDepth,
+																										double NdemandKgHa)
+{
+	double sumSoilNkgHa = 0.0;
+	int depthCm = 0;
+	int i = 0;
+	for(const auto& layer : *this)
+	{
+		double layerSize = layer.vs_LayerThickness;
+		depthCm += int(layerSize * 100.0);
+
+		//convert [kg N m-3] to [kg N ha-1]
+		sumSoilNkgHa += (at(i).vs_SoilNO3 + at(i).vs_SoilNH4) * 10000.0 * layerSize;
+
+		if(depthCm >= int(demandDepth * 100))
+			break;
+
+		i++;
+	}
+
+	double fertilizerRecommendation = NdemandKgHa - sumSoilNkgHa;
+	if(fertilizerRecommendation > 0)
+		applyMineralFertiliser(fp, fertilizerRecommendation);
+
+	return fertilizerRecommendation;
+}
+
 /**
  * Method for calculating fertilizer demand from crop demand and soil mineral
  * status (Nmin method).
@@ -322,9 +350,10 @@ void SoilColumn::applyMineralFertiliser(MineralFertiliserParameters fp,
   debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
           << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
-  at(0).vs_SoilNO3 += amount * fp.getNO3() / 10000.0 / at(0).vs_LayerThickness;
-  at(0).vs_SoilNH4 += amount * fp.getNH4() / 10000.0 / at(0).vs_LayerThickness;
-  at(0).vs_SoilCarbamid += amount * fp.getCarbamid() / 10000.0 / at(0).vs_LayerThickness;
+	double kgHaTokgm3 = 10000.0 / at(0).vs_LayerThickness;
+  at(0).vs_SoilNO3 += amount * fp.getNO3() / kgHaTokgm3;
+  at(0).vs_SoilNH4 += amount * fp.getNH4() / kgHaTokgm3;
+  at(0).vs_SoilCarbamid += amount * fp.getCarbamid() / kgHaTokgm3;
 }
 
 
