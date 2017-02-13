@@ -60,6 +60,10 @@ namespace Monica
 
 		virtual Tools::Date date() const { return _date; }
 
+		virtual Tools::Date earliestDate() const { return Tools::Date(); }
+
+		virtual Tools::Date latestDate() const { return Tools::Date(); }
+
     virtual void setDate(Tools::Date date) {_date = date; }
 
 		//! do whatever the workstep has to do
@@ -152,6 +156,10 @@ namespace Monica
 			_cropSeeded = _inSowingRange = false; 
 			setDate(Tools::Date());
 		}
+
+		virtual Tools::Date earliestDate() const { return _earliestDate; }
+
+		virtual Tools::Date latestDate() const { return _latestDate; }
 
 	private:
 		Tools::Date _earliestDate;
@@ -247,6 +255,8 @@ namespace Monica
 			_cropHarvested = false; 
 			setDate(Tools::Date());
 		}
+
+		virtual Tools::Date latestDate() const { return _latestDate; }
 
 	private:
 		std::string _harvestTime; //!< Harvest time parameter

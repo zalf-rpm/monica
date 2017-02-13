@@ -614,22 +614,12 @@ def create_env_json_from_json_config(crop_site_sim):
 
 def add_climate_data_to_env(env, simj, climate_csv_string=""):
     "add climate data separately to env"
-    #get no of climate file header lines from sim.json, but prefer from params map
-    climate_data_settings = simj["climate.csv-options"]
-
-    options = {}
-    options["csv-separator"] = default_value(climate_data_settings, "csv-separator", ",")
-    options["no-of-climate-file-header-line"] = default_value(climate_data_settings, "no-of-climate-file-header-lines", 2)
-    options["header-to-acd-names"] = climate_data_settings["header-to-acd-names"]
-    options["end-date"] = climate_data_settings["end-date"]
-    options["start-date"] = climate_data_settings["start-date"]
-    #print "startDate:", options["startDate"], "endDate:", options["endDate"]
 
     if not climate_csv_string:
         with open(simj["climate.csv"]) as _:
             climate_csv_string = _.read()
 
     if climate_csv_string:
-        env["da"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climate_csv_string, json.dumps(options)))
+        env["da"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climate_csv_string, json.dumps(simj["climate.csv-options"])))
 
     return env

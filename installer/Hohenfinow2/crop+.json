@@ -84,7 +84,13 @@
 	"cropRotation": [
 		{
 			"worksteps": [
-				{ "date": "0000-09-23", "type": "__Seed", "crop": ["ref", "crops", "WR"] },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [1, 3]], "value": 0.002 },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", 1], "value": 0.000333 },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", 1], "value": 0.000222 }
+			]
+		},
+		{
+			"worksteps": [
 				{ 
 					"type": "AutomaticSowing", 
 					"crop": ["ref", "crops", "WR"],
@@ -101,28 +107,26 @@
 					"is-winter-crop": true
 				},
 				{
-					"date": "0001-05-05",
-					"type": "IrrigationApplication",
-					"amount": [1.0, "mm"],
-					"parameters": {
-						"nitrateConcentration": [0.0, "mg dm-3"],
-						"sulfateConcentration": [334, "mg dm-3"]
-					}
+					"type": "NDemandApplication", 
+					"stage": 3,
+					"partition": ["ref", "fert-params", "AN"],
+					"N-demand": [70, "kg"],
+					"depth": [0.9, "m"]
 				},
 				{
-					"date": "0001-04-03",
-					"type": "MineralFertiliserApplication",
-					"amount": [40.0, "kg N"],
-					"partition": ["ref", "fert-params", "AN"]
+					"type": "NDemandApplication",
+					"stage": 3,
+					"partition": ["ref", "fert-params", "AN"],
+					"N-demand": [70, "kg"],
+					"depth": [0.9, "m"]
 				},
 				{
-					"date": "0001-05-07",
-					"type": "MineralFertiliserApplication",
-					"amount": [40.0, "kg N"],
-					"_db_partition": ["include-from-db", "mineral_fertiliser", "AN"],
-					"partition": ["ref", "fert-params", "AN"]
+					"type": "NDemandApplication",
+					"stage": 4,
+					"partition": ["ref", "fert-params", "AN"],
+					"N-demand": [70, "kg"],
+					"depth": [0.9, "m"]
 				},
-				{ "date": "0001-07-27", "type": "__Harvest", "crop": ["ref", "crops", "WR"] },
 				{ 
 					"type": "AutomaticHarvesting", 
 					"latest-date": "0000-09-05",

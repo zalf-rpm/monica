@@ -1038,20 +1038,62 @@ Date CultivationMethod::startDate() const
 {
 	if(empty())
 		return Date();
+
+	auto dynEarliestStart = Date();
+	for(auto app : applicationsAt(Date()))
+	{
+		auto ed = app->earliestDate();
+		if((ed.isValid()
+				&& dynEarliestStart.isValid()
+				&& ed < dynEarliestStart)
+			 || (ed.isValid() 
+					 && !dynEarliestStart.isValid()))
+			dynEarliestStart = ed;
+	}
+
 	auto it = begin();
 	while(it != end() && !it->first.isValid())
 		it++;
-	return it == end() ? Date() : it->first;
+
+	if(dynEarliestStart.isValid() && it != end())
+		return dynEarliestStart < it->first ? dynEarliestStart : it->first;
+	else if(dynEarliestStart.isValid())
+		return dynEarliestStart;
+	else if(it != end())
+		return it->first;
+	
+	return Date();
 }
 
 Date CultivationMethod::endDate() const
 {
 	if(empty())
 		return Date();
+
+	auto dynLatestEnd = Date();
+	for(auto app : applicationsAt(Date()))
+	{
+		auto ed = app->latestDate();
+		if((ed.isValid()
+				&& dynLatestEnd.isValid()
+				&& ed > dynLatestEnd)
+			 || (ed.isValid()
+					 && !dynLatestEnd.isValid()))
+			dynLatestEnd = ed;
+	}
+
 	auto it = rbegin();
 	while(it != rend() && !it->first.isValid())
 		it++;
-	return it == rend() ? Date() : it->first;
+
+	if(dynLatestEnd.isValid() && it != rend())
+		return dynLatestEnd > it->first ? dynLatestEnd : it->first;
+	else if(dynLatestEnd.isValid())
+		return dynLatestEnd;
+	else if(it != rend())
+		return it->first;
+
+	return Date();
 }
 
 std::string CultivationMethod::toString() const

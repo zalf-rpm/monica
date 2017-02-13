@@ -675,26 +675,40 @@ Output Monica::runMonica(Env env)
 	debug() << "currentDate" << endl;
 	Date currentDate = env.da.startDate();
 
-	//iterator through the production processes
+	auto calcNextAbsoluteCMApplicationDate = [=](Date currentDate, Date nextCMAppDate)
+	{
+		auto absDate = nextCMAppDate;
+		if(absDate.isRelativeDate())
+			absDate.toAbsoluteDate(currentDate.year());
+		if(absDate < currentDate)
+			absDate.addYears(1);
+		return absDate;
+	};
+
+	//iterator through the crop rotation
 	auto cmci = env.cropRotation.begin();
-	//direct handle to current process
+	//direct handle to current cultivation method
 	CultivationMethod* currentCM = cmci == env.cropRotation.end() ? nullptr : &(*cmci);
 	//are the dates in the production process relative dates
 	//or are they absolute as produced by the hermes inputs
-	bool useRelativeDates = currentCM->startDate().isRelativeDate();
+	//bool useRelativeDates = currentCM->startDate().isRelativeDate();
 	//the next application date, either a relative or an absolute date
-	//to get the correct applications out of the production processes
+	//to get the correct applications out of the cultivation method
 	Date nextCMApplicationDate = currentCM->startDate();
 	//a definitely absolute next application date to keep track where
 	//we are in the list of climate data
+	Date nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
+	/*
 	Date nextAbsoluteCMApplicationDate = useRelativeDates
 		? nextCMApplicationDate.toAbsoluteDate(currentDate.year())// + 1) // + 1 probably due to use in DSS and have one year to init monica 
 		: nextCMApplicationDate;
 	debug() << "next app-date: " << nextCMApplicationDate.toString()
 		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+*/
 
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
 
+	/*
 	auto calcNextAbsoluteCMApplicationDate = [=](Date currentDate, Date nextCMAppDate, Date prevCMAppDate)
 	{
 		return useRelativeDates ? nextCMAppDate.toAbsoluteDate
@@ -704,13 +718,7 @@ Output Monica::runMonica(Env env)
 			 true)
 			: nextCMAppDate;
 	};
-
-	//beware: !!!! if there are absolute days used, then there is basically
-	//no rotation if the last crop in the crop rotation has changed
-	//the loop starts anew but the first crops date has already passed
-	//so the crop won't be seeded again or any work applied
-	//thus for absolute dates the crop rotation has to be as long as there
-	//are climate data !!!!!
+	*/
 
 	for(size_t d = 0, nods = env.da.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
@@ -742,7 +750,8 @@ Output Monica::runMonica(Env env)
 
 			//get the next application date to wait for (either absolute or relative)
 			nextCMApplicationDate = currentCM->nextDate(nextCMApplicationDate);
-			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
+			//nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
+			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
 
 			debug() << "next app-date: " << nextCMApplicationDate.toString()
 				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
@@ -771,15 +780,16 @@ Output Monica::runMonica(Env env)
 			currentCM = &(*cmci);
 			currentCM->reset();
 			nextCMApplicationDate = currentCM->startDate();
-			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
+			//nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
+			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
 			debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
 				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 		}
 		//if we got our next date relative it might be possible that
 		//the actual relative date belongs into the next year
 		//this is the case if we're already (dayOfYear) past the next dayOfYear
-		if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
-			nextAbsoluteCMApplicationDate.addYears(1);
+		//	if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
+		//	nextAbsoluteCMApplicationDate.addYears(1);
 	}
 	
 	for(auto& sd : store)
