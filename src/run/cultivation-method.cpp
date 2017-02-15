@@ -69,10 +69,11 @@ json11::Json WorkStep::to_json() const
 		{"date", date().toIsoDateString()},};
 }
 
-void WorkStep::apply(MonicaModel* model)
+bool WorkStep::apply(MonicaModel* model)
 {
 	model->addEvent("WorkStep");
 	model->addEvent("workstep");
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -108,12 +109,13 @@ json11::Json Seed::to_json(bool includeFullCropParameters) const
 		{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}};
 }
 
-void Seed::apply(MonicaModel* model)
+bool Seed::apply(MonicaModel* model)
 {
 	debug() << "seeding crop: " << _crop->toString() << " at: " << date().toString() << endl;
 	model->seedCrop(_crop);
 	model->addEvent("Seed");
 	model->addEvent("seeding");
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -207,10 +209,10 @@ bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>>& climat
 	return precipOk;
 }
 
-void AutomaticSowing::apply(MonicaModel* model)
+bool AutomaticSowing::apply(MonicaModel* model)
 {
 	if(_cropSeeded)
-		return;
+		return false;
 
 	auto currentDate = model->currentStepDate();
 
@@ -228,7 +230,7 @@ void AutomaticSowing::apply(MonicaModel* model)
 	auto latestDate = _latestDate.isRelativeDate() ? _latestDate.toAbsoluteDate(currentDate.year()) : _latestDate;
 
 	if(!_inSowingRange && currentDate < earliestDate)
-		return;
+		return false;
 	else
 		_inSowingRange = true;
 
@@ -236,7 +238,7 @@ void AutomaticSowing::apply(MonicaModel* model)
 	{
 		seed();
 		_inSowingRange = false;
-		return;
+		return true;
 	}
 
 	const auto& cd = model->climateData();
@@ -268,15 +270,15 @@ void AutomaticSowing::apply(MonicaModel* model)
 	}
 	
 	if(!Tok)
-		return;
+		return false;
 
 	//check soil moisture
 	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
-		return;
+		return false;
 
 	//check precipitation
 	if(!isPrecipitationOk(cd, _max3dayPrecipSum, _maxCurrentDayPrecipSum))
-		return;
+		return false;
 
 	//check temperature sum
 	double baseTemp = _baseTemp;
@@ -287,9 +289,10 @@ void AutomaticSowing::apply(MonicaModel* model)
 		return acc + (it == d.end() ? 0 : max(0.0, it->second - baseTemp));
 	});
 	if(tempSum < _tempSumAboveBaseTemp)
-		return;
+		return false;
 	
 	seed();
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -338,7 +341,7 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	};
 }
 
-void Harvest::apply(MonicaModel* model)
+bool Harvest::apply(MonicaModel* model)
 {
 	if(model->cropGrowth())
 	{
@@ -382,6 +385,8 @@ void Harvest::apply(MonicaModel* model)
 		debug() << "crop was already harvested. This must be the fallback harvest application ";
 		debug() << "that is not necessary anymore and should be ignored" << endl;
 	}
+
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -434,17 +439,19 @@ json11::Json AutomaticHarvesting::to_json(bool includeFullCropParameters) const
 	return o;
 }
 
-void AutomaticHarvesting::apply(MonicaModel* model)
+bool AutomaticHarvesting::apply(MonicaModel* model)
 {
 	//no crop or already harvested
-	if(!model->cropGrowth() 
-		 || _cropHarvested)
-		return;
+	if(!model->cropGrowth())
+		return false;
+		 
+	if(_cropHarvested)
+		return true;
 
 	//check for maturity
 	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
 	if(!isMaturityReached)
-		return;
+		return false;
 	
 	auto currentDate = model->currentStepDate();
 
@@ -472,18 +479,19 @@ void AutomaticHarvesting::apply(MonicaModel* model)
 	if(currentDate >= latestDate)
 	{
 		harvest();
-		return;
+		return true;
 	}
 	
 	//check soil moisture
 	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
-		return;
+		return false;
 
 	//check precipitation
 	if(!isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum))
-		return;
+		return false;
 
 	harvest();
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -510,7 +518,7 @@ json11::Json Cutting::to_json() const
 		{"date", date().toIsoDateString()}};
 }
 
-void Cutting::apply(MonicaModel* model)
+bool Cutting::apply(MonicaModel* model)
 {
 	assert(model->currentCrop() && model->cropGrowth());
 	auto crop = model->currentCrop();
@@ -530,6 +538,8 @@ void Cutting::apply(MonicaModel* model)
 	model->cropGrowth()->applyCutting();
 	model->addEvent("Cutting");
 	model->addEvent("cutting");
+
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -566,12 +576,14 @@ json11::Json MineralFertiliserApplication::to_json() const
 	};
 }
 
-void MineralFertiliserApplication::apply(MonicaModel* model)
+bool MineralFertiliserApplication::apply(MonicaModel* model)
 {
 	debug() << toString() << endl;
 	model->applyMineralFertiliser(partition(), amount());
 	model->addEvent("MineralFertiliserApplication");
 	model->addEvent("mineral-fertilizing");
+
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -630,12 +642,13 @@ json11::Json NDemandApplication::to_json() const
 	return o;
 }
 
-void NDemandApplication::apply(MonicaModel* model)
+bool NDemandApplication::apply(MonicaModel* model)
 {
 	auto cg = model->cropGrowth();
-	if(_appliedFertilizer 
-		 || !cg)
-		return;
+	if(!cg)
+		return false;
+	if(_appliedFertilizer) 
+		return false;
 	
 	auto currStage = cg->get_DevelopmentalStage() + 1;
 	if(date().isValid() //is timed application
@@ -649,7 +662,9 @@ void NDemandApplication::apply(MonicaModel* model)
 		setDate(model->currentStepDate());
 		model->addEvent("NDemandApplication");
 		model->addEvent("N-demand-fertilizing");
+		return true;
 	}
+	return false;
 }
 
 //------------------------------------------------------------------------------
@@ -689,12 +704,13 @@ json11::Json OrganicFertiliserApplication::to_json() const
 		{"incorporation", _incorporation}};
 }
 
-void OrganicFertiliserApplication::apply(MonicaModel* model)
+bool OrganicFertiliserApplication::apply(MonicaModel* model)
 {
 	debug() << toString() << endl;
 	model->applyOrganicFertiliser(_params, _amount, _incorporation);
 	model->addEvent("OrganicFertiliserApplication");
 	model->addEvent("organic-fertilizing");
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -725,12 +741,13 @@ json11::Json TillageApplication::to_json() const
 		{"depth", _depth}};
 }
 
-void TillageApplication::apply(MonicaModel* model)
+bool TillageApplication::apply(MonicaModel* model)
 {
 	debug() << toString() << endl;
 	model->applyTillage(_depth);
 	model->addEvent("TillageApplication");
 	model->addEvent("tillage");
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -803,10 +820,10 @@ json11::Json SetValue::to_json() const
 	};
 }
 
-void SetValue::apply(MonicaModel* model)
+bool SetValue::apply(MonicaModel* model)
 {
 	if(!_getValue)
-		return;
+		return true;
 
 	const auto& setfs = buildOutputTable().setfs;
 	auto ci = setfs.find(_oid.id);
@@ -818,6 +835,7 @@ void SetValue::apply(MonicaModel* model)
 
 	model->addEvent("SetValue");
 	model->addEvent("set-value");
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -852,12 +870,13 @@ json11::Json IrrigationApplication::to_json() const
 		{"parameters", _params}};
 }
 
-void IrrigationApplication::apply(MonicaModel* model)
+bool IrrigationApplication::apply(MonicaModel* model)
 {
 	//cout << toString() << endl;
 	model->applyIrrigation(amount(), nitrateConcentration());
 	model->addEvent("IrrigationApplication");
 	model->addEvent("irrigation");
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -936,7 +955,7 @@ Errors CultivationMethod::merge(json11::Json j)
 		auto ws = makeWorkstep(wsj);
 		if(!ws)
 			continue;
-		insert(make_pair(iso_date_value(wsj, "date"), ws));
+		_worksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
 		string wsType = ws->type();
 		if(wsType == "Seed")
 		{
@@ -971,13 +990,15 @@ Errors CultivationMethod::merge(json11::Json j)
 		}
 	}
 
+	updateDynamicWorkstepCount();
+
 	return res;
 }
 
 json11::Json CultivationMethod::to_json() const
 {
 	auto wss = J11Array();
-	for(auto d2ws : *this)
+	for(auto d2ws : _worksteps)
 		wss.push_back(d2ws.second->to_json());
 
 	return J11Object
@@ -989,43 +1010,38 @@ json11::Json CultivationMethod::to_json() const
 	};
 }
 
-/*
-void CultivationMethod::apply(const Date& currentDate,
+bool CultivationMethod::apply(const Date& date, 
 															MonicaModel* model) const
 {
-
-
+	bool someFinishedWorksteps = false;
 	//apply everything at date
-	for(auto wsp : applicationsAt(date))
-		wsp->apply(model);
-}
-*/
-
-void CultivationMethod::apply(const Date& date, 
-															MonicaModel* model) const
-{
-	//apply everything at date
-	for(auto wsp : applicationsAt(date))
-		wsp->apply(model);
+	for(auto wsp : workstepsAt(date))
+		if(wsp->apply(model))
+			someFinishedWorksteps = true;
+	return someFinishedWorksteps;
 }
 
-void CultivationMethod::apply(MonicaModel* model) const
+bool CultivationMethod::apply(MonicaModel* model) 
 {
 	//check if dynamic worksteps can be applied
-	apply(Date(), model);
+	if(bool someFinishedWorksteps = apply(Date(), model))
+	{
+		updateDynamicWorkstepCount();
+		return someFinishedWorksteps;
+	}
+	return false;
 }
-
 
 Date CultivationMethod::nextDate(const Date& date) const
 {
-	auto ci = upper_bound(date);
-	return ci != end() ? ci->first : Date();
+	auto ci = _worksteps.upper_bound(date);
+	return ci != _worksteps.end() ? ci->first : Date();
 }
 
-vector<WSPtr> CultivationMethod::applicationsAt(const Date& date) const
+vector<WSPtr> CultivationMethod::workstepsAt(const Date& date) const
 {
 	vector<WSPtr> apps;
-	auto p = equal_range(date);
+	auto p = _worksteps.equal_range(date);
 	while(p.first != p.second)
 	{
 		apps.push_back(p.first->second);
@@ -1034,13 +1050,37 @@ vector<WSPtr> CultivationMethod::applicationsAt(const Date& date) const
 	return apps;
 }
 
+vector<WSPtr> CultivationMethod::staticWorksteps() const
+{
+	vector<WSPtr> wss;
+	for(auto p : _worksteps)
+		if(p.first.isValid())
+			wss.push_back(p.second);
+	return wss;
+}
+
+vector<WSPtr> CultivationMethod::dynamicWorksteps(bool justUnfinishedWorksteps) const
+{
+	vector<WSPtr> wss;
+	if(justUnfinishedWorksteps)
+	{
+		for(auto ws : workstepsAt(Date()))
+			if(ws->isActive())
+				wss.push_back(ws);
+	}
+	else
+		wss = workstepsAt(Date());
+
+	return wss;
+}
+
 Date CultivationMethod::startDate() const
 {
-	if(empty())
+	if(_worksteps.empty())
 		return Date();
 
 	auto dynEarliestStart = Date();
-	for(auto app : applicationsAt(Date()))
+	for(auto app : workstepsAt(Date()))
 	{
 		auto ed = app->earliestDate();
 		if((ed.isValid()
@@ -1051,15 +1091,15 @@ Date CultivationMethod::startDate() const
 			dynEarliestStart = ed;
 	}
 
-	auto it = begin();
-	while(it != end() && !it->first.isValid())
+	auto it = _worksteps.begin();
+	while(it != _worksteps.end() && !it->first.isValid())
 		it++;
 
-	if(dynEarliestStart.isValid() && it != end())
+	if(dynEarliestStart.isValid() && it != _worksteps.end())
 		return dynEarliestStart < it->first ? dynEarliestStart : it->first;
 	else if(dynEarliestStart.isValid())
 		return dynEarliestStart;
-	else if(it != end())
+	else if(it != _worksteps.end())
 		return it->first;
 	
 	return Date();
@@ -1067,11 +1107,11 @@ Date CultivationMethod::startDate() const
 
 Date CultivationMethod::endDate() const
 {
-	if(empty())
+	if(_worksteps.empty())
 		return Date();
 
 	auto dynLatestEnd = Date();
-	for(auto app : applicationsAt(Date()))
+	for(auto app : workstepsAt(Date()))
 	{
 		auto ed = app->latestDate();
 		if((ed.isValid()
@@ -1082,15 +1122,15 @@ Date CultivationMethod::endDate() const
 			dynLatestEnd = ed;
 	}
 
-	auto it = rbegin();
-	while(it != rend() && !it->first.isValid())
+	auto it = _worksteps.rbegin();
+	while(it != _worksteps.rend() && !it->first.isValid())
 		it++;
 
-	if(dynLatestEnd.isValid() && it != rend())
+	if(dynLatestEnd.isValid() && it != _worksteps.rend())
 		return dynLatestEnd > it->first ? dynLatestEnd : it->first;
 	else if(dynLatestEnd.isValid())
 		return dynLatestEnd;
-	else if(it != rend())
+	else if(it != _worksteps.rend())
 		return it->first;
 
 	return Date();
@@ -1103,7 +1143,7 @@ std::string CultivationMethod::toString() const
 		<< " start: " << startDate().toString()
 		<< " end: " << endDate().toString() << endl;
 	s << "worksteps:" << endl;
-	for(auto p : *this)
+	for(auto p : _worksteps)
 		s << "at: " << p.first.toString()
 		<< " what: " << p.second->toString() << endl;
 	return s.str();
@@ -1111,6 +1151,6 @@ std::string CultivationMethod::toString() const
 
 void CultivationMethod::reset()
 {
-	for(auto p : *this)
+	for(auto p : _worksteps)
 		p.second->reset();
 }

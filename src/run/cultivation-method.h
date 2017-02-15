@@ -67,7 +67,8 @@ namespace Monica
     virtual void setDate(Tools::Date date) {_date = date; }
 
 		//! do whatever the workstep has to do
-		virtual void apply(MonicaModel* model);
+		//! returns true if workstep is finished (dynamic worksteps might need to be applied again)
+		virtual bool apply(MonicaModel* model);
 
 		//! tell if this workstep is active and can be used 
 		//! a workstep might temporarily be deactivated, eg a dynamic sowing workstep
@@ -104,7 +105,7 @@ namespace Monica
 
     virtual std::string type() const { return "Seed"; }
 
-    virtual void apply(MonicaModel* model);
+    virtual bool apply(MonicaModel* model);
 
     virtual void setDate(Tools::Date date)
     {
@@ -139,7 +140,7 @@ namespace Monica
 
 		virtual std::string type() const { return "AutomaticSowing"; }
 
-		virtual void apply(MonicaModel* model);
+		virtual bool apply(MonicaModel* model);
 
 		virtual void setDate(Tools::Date date)
 		{
@@ -200,7 +201,7 @@ namespace Monica
 
     virtual std::string type() const { return "Harvest"; }
 
-    virtual void apply(MonicaModel* model);
+    virtual bool apply(MonicaModel* model);
 
     virtual void setDate(Tools::Date date)
     {
@@ -246,7 +247,7 @@ namespace Monica
 
 		virtual std::string type() const { return "AutomaticHarvesting"; }
 
-		virtual void apply(MonicaModel* model);
+		virtual bool apply(MonicaModel* model);
 
 		virtual bool isActive() const { return !_cropHarvested; }
 
@@ -285,7 +286,7 @@ namespace Monica
 
     virtual std::string type() const { return "Cutting"; }
 
-		virtual void apply(MonicaModel* model);
+		virtual bool apply(MonicaModel* model);
   };
 
 	//----------------------------------------------------------------------------
@@ -309,7 +310,7 @@ namespace Monica
 
     virtual std::string type() const { return "MineralFertiliserApplication"; }
 
-    virtual void apply(MonicaModel* model);
+    virtual bool apply(MonicaModel* model);
 
     MineralFertiliserParameters partition() const { return _partition; }
 
@@ -347,7 +348,7 @@ namespace Monica
 
 		virtual std::string type() const { return "NDemandApplication"; }
 
-		virtual void apply(MonicaModel* model);
+		virtual bool apply(MonicaModel* model);
 
 		MineralFertiliserParameters partition() const { return _partition; }
 
@@ -387,7 +388,7 @@ namespace Monica
 
     virtual std::string type() const { return "OrganicFertiliserApplication"; }
 
-    virtual void apply(MonicaModel* model);
+    virtual bool apply(MonicaModel* model);
 
     //! Returns parameter for organic fertilizer
     OrganicMatterParametersPtr parameters() const { return _params; }
@@ -421,7 +422,7 @@ namespace Monica
 
     virtual std::string type() const { return "TillageApplication"; }
 
-    virtual void apply(MonicaModel* model);
+    virtual bool apply(MonicaModel* model);
 
 		double depth() const { return _depth; }
 
@@ -446,7 +447,7 @@ namespace Monica
 
 		virtual std::string type() const { return "SetValue"; }
 
-		virtual void apply(MonicaModel* model);
+		virtual bool apply(MonicaModel* model);
 
 		json11::Json value() const { return _value; }
 
@@ -474,7 +475,7 @@ namespace Monica
 
     virtual std::string type() const { return "IrrigationApplication"; }
 
-		virtual void apply(MonicaModel* model);
+		virtual bool apply(MonicaModel* model);
 
 		double amount() const { return _amount; }
 
@@ -493,7 +494,7 @@ namespace Monica
 
   class DLL_API CultivationMethod
       : public Tools::Json11Serializable
-      , public std::multimap<Tools::Date, WSPtr>
+      //, public std::multimap<Tools::Date, WSPtr>
 	{
 	public:
     CultivationMethod(const std::string& name = std::string("Fallow"));
@@ -510,16 +511,25 @@ namespace Monica
 		template<class Application>
 		void addApplication(const Application& a)
 		{
-      insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
+      _worksteps.insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
+			updateDynamicWorkstepCount();
     }
 
-    void apply(const Tools::Date& date, MonicaModel* model) const;
+    bool apply(const Tools::Date& date, MonicaModel* model) const;
 
-		void apply(MonicaModel* model) const;
+		bool apply(MonicaModel* model);
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 
-		std::vector<WSPtr> applicationsAt(const Tools::Date& date) const;
+		std::vector<WSPtr> workstepsAt(const Tools::Date& date) const;
+
+		std::vector<WSPtr> staticWorksteps() const;
+
+		std::vector<WSPtr> dynamicWorksteps(bool justUnfinishedWorksteps = false) const;
+
+		std::vector<WSPtr> unfinishedDynamicWorksteps() const { return dynamicWorksteps(true); }
+
+		bool allDynamicWorkstepsFinished() const { return _unfinishedDynamicWorkstepsCount == 0; }
 
 		std::string name() const { return _name; }
 
@@ -533,9 +543,9 @@ namespace Monica
 		//! when does the whole PV end
     Tools::Date endDate() const;
 
-    const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return *this; }
+    const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _worksteps; }
 
-    void clearWorksteps() { clear(); }
+    void clearWorksteps() { _worksteps.clear(); }
 
 		std::string toString() const;
 
@@ -551,25 +561,39 @@ namespace Monica
 		//! reset cultivation method to initial state, if it will be reused (eg in a crop rotation)
 		void reset();
 
+		void updateDynamicWorkstepCount() { _unfinishedDynamicWorkstepsCount = unfinishedDynamicWorksteps().size(); }
+
 	private:
+		std::multimap<Tools::Date, WSPtr> _worksteps;
     int _customId{0};
 		std::string _name;
 		CropPtr _crop;
     bool _irrigateCrop{false};
+		size_t _unfinishedDynamicWorkstepsCount{0};
 	};
 	
 	template<>
 	DLL_API inline void CultivationMethod::addApplication<Seed>(const Seed& s)
   {
-    insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
+    _worksteps.insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
     _crop = s.crop();
+		updateDynamicWorkstepCount();
   }
+
+	template<>
+	DLL_API inline void CultivationMethod::addApplication<AutomaticSowing>(const AutomaticSowing& s)
+	{
+		_worksteps.insert(std::make_pair(s.date(), std::make_shared<AutomaticSowing>(s)));
+		_crop = s.crop();
+		updateDynamicWorkstepCount();
+	}
 	
-  template<>
-	DLL_API inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
-  {
-    insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
-  }
+  //template<>
+	//DLL_API inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
+  //{
+  //  _worksteps.insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
+  //}
+	
 
 }
 
