@@ -843,6 +843,7 @@ namespace Monica
     double pc_GrowthRespirationParameter1{0.0};
     double pc_GrowthRespirationParameter2{0.0};
     double pc_Tortuosity{0.0};
+	bool pc_AdjustRootDepthForSoilProps{true};
 	};
 
 	//----------------------------------------------------------------------------

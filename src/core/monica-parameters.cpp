@@ -1460,6 +1460,7 @@ Errors UserCropParameters::merge(json11::Json j)
   set_double_value(pc_GrowthRespirationParameter1, j, "GrowthRespirationParameter1");
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
+  set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
 
 	return res;
 }
@@ -1482,7 +1483,8 @@ json11::Json UserCropParameters::to_json() const
     {"MaxCropNDemand", pc_MaxCropNDemand},
     {"GrowthRespirationParameter1", pc_GrowthRespirationParameter1},
     {"GrowthRespirationParameter2", pc_GrowthRespirationParameter2},
-    {"Tortuosity", pc_Tortuosity}
+    {"Tortuosity", pc_Tortuosity},
+	{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps }
   };
 }
 

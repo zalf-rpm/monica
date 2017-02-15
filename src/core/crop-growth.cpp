@@ -192,19 +192,26 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	vc_NConcentrationRoot = pc_NConcentrationRoot;
 
 	// Initialising the initial maximum rooting depth
-	double vc_SandContent = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
-	double vc_BulkDensity = soilColumn[0].vs_SoilBulkDensity(); // [kg m-3]
-	if(vc_SandContent < 0.55)
-		vc_SandContent = 0.55;
+	if (cropPs.pc_AdjustRootDepthForSoilProps)
+	{
+		double vc_SandContent = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
+		double vc_BulkDensity = soilColumn[0].vs_SoilBulkDensity(); // [kg m-3]
+		if (vc_SandContent < 0.55)
+			vc_SandContent = 0.55;
 
-	vc_SoilSpecificMaxRootingDepth = vs_SoilSpecificMaxRootingDepth > 0.0
-		? vs_SoilSpecificMaxRootingDepth
-		: vc_SandContent
-		* ((1.1 - vc_SandContent) / 0.275)
-		* (1.4 / (vc_BulkDensity / 1000.0)
-			 + (vc_BulkDensity * vc_BulkDensity / 40000000.0)); // [m]
+		vc_SoilSpecificMaxRootingDepth = vs_SoilSpecificMaxRootingDepth > 0.0
+			? vs_SoilSpecificMaxRootingDepth
+			: vc_SandContent
+			* ((1.1 - vc_SandContent) / 0.275)
+			* (1.4 / (vc_BulkDensity / 1000.0)
+				+ (vc_BulkDensity * vc_BulkDensity / 40000000.0)); // [m]
 
-	vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
+		vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
+	}
+	else
+	{
+		vc_MaxRootingDepth = pc_CropSpecificMaxRootingDepth; //[m]
+	}
 
 	// change organs for yield components in case of eva2 simulation
 	// if type of usage is defined
