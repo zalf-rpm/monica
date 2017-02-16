@@ -1123,7 +1123,7 @@ Errors SiteParameters::merge(json11::Json j)
 			int repeatLayer = 1;
 			if(sp.has_shape({{"Thickness", Json::NUMBER}}, err)
 				 || sp.has_shape({{"Thickness", Json::ARRAY}}, err))
-				repeatLayer = min(20, max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0)));
+				repeatLayer = min(20 - int(layerCount), max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0)));
 
 			//simply repeat the last layer as often as necessary to fill the 20 layers
 			if(spi + 1 == spsCount)
