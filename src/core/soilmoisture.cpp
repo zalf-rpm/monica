@@ -29,6 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-model.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"
+#include "soil/conversion.h"
 
 using namespace std;
 using namespace Monica;
@@ -1123,7 +1124,11 @@ void SoilMoisture::fm_CapillaryRise() {
     for (int i_Layer = vm_StartLayer; i_Layer >= 0; i_Layer--)
     {
       std::string vs_SoilTexture = soilColumn[i_Layer].vs_SoilTexture();
-      pm_CapillaryRiseRate = smPs.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
+			if (vs_SoilTexture.empty())
+				vs_SoilTexture = Soil::sandAndClay2KA5texture(soilColumn[i_Layer].vs_SoilSandContent(), soilColumn[i_Layer].vs_SoilClayContent());
+		
+			assert(!vs_SoilTexture.empty());
+			pm_CapillaryRiseRate = smPs.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
       if(pm_CapillaryRiseRate < vm_CapillaryRiseRate)
       {
