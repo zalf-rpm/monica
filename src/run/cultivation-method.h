@@ -60,9 +60,15 @@ namespace Monica
 
 		virtual Tools::Date date() const { return _date; }
 
+		virtual Tools::Date absDate() const { return _date.isAbsoluteDate() ? _date : _absDate; }
+
 		virtual Tools::Date earliestDate() const { return Tools::Date(); }
 
+		virtual Tools::Date absEarliestDate() const { return Tools::Date(); }
+
 		virtual Tools::Date latestDate() const { return Tools::Date(); }
+
+		virtual Tools::Date absLatestDate() const { return Tools::Date(); }
 
     virtual void setDate(Tools::Date date) {_date = date; }
 
@@ -75,11 +81,12 @@ namespace Monica
 		//! which has to be checked for sowing every day, but not anymore after sowing
 		virtual bool isActive() const { return true; }
 
-		//! reset potential state of workstep
-		virtual void reset() {}
+		//! reinit potential state of workstep
+		virtual void reinit(size_t year);
 
 	protected:
 		Tools::Date _date;
+		Tools::Date _absDate;
 	};
 
   typedef std::shared_ptr<WorkStep> WSPtr;
@@ -142,29 +149,27 @@ namespace Monica
 
 		virtual bool apply(MonicaModel* model);
 
-		virtual void setDate(Tools::Date date)
-		{
-			this->_date = date;
-			_crop->setSeedAndHarvestDate(date, _crop->harvestDate());
-		}
+		virtual void setDate(Tools::Date date);
 
 		CropPtr crop() const { return _crop; }
 
 		virtual bool isActive() const { return !_cropSeeded; }
 
-		virtual void reset() 
-		{ 
-			_cropSeeded = _inSowingRange = false; 
-			setDate(Tools::Date());
-		}
+		virtual void reinit(size_t year);
 
 		virtual Tools::Date earliestDate() const { return _earliestDate; }
 
+		virtual Tools::Date absEarliestDate() const { return _absEarliestDate; }
+
 		virtual Tools::Date latestDate() const { return _latestDate; }
 
+		virtual Tools::Date absLatestDate() const { return _absLatestDate; }
+
 	private:
+		Tools::Date _absEarliestDate;
 		Tools::Date _earliestDate;
 		Tools::Date _latestDate;
+		Tools::Date _absLatestDate;
 		double _minTempThreshold{0};
 		int _daysInTempWindow{0};
 		double _minPercentASW{0};
@@ -251,17 +256,16 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropHarvested; }
 
-		virtual void reset() 
-		{ 
-			_cropHarvested = false; 
-			setDate(Tools::Date());
-		}
+		virtual void reinit(size_t year);
 
 		virtual Tools::Date latestDate() const { return _latestDate; }
+
+		virtual Tools::Date absLatestDate() const { return _absLatestDate; }
 
 	private:
 		std::string _harvestTime; //!< Harvest time parameter
 		Tools::Date _latestDate;
+		Tools::Date _absLatestDate;
 		double _minPercentASW{0};
 		double _maxPercentASW{100};
 		double _max3dayPrecipSum{0};
@@ -354,11 +358,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_appliedFertilizer; }
 
-		virtual void reset() 
-		{ 
-			_appliedFertilizer = false; 
-			setDate(Tools::Date());
-		}
+		virtual void reinit(size_t year);
 
 	private:
 		MineralFertiliserParameters _partition;
@@ -511,25 +511,32 @@ namespace Monica
 		template<class Application>
 		void addApplication(const Application& a)
 		{
-      _worksteps.insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
-			updateDynamicWorkstepCount();
+      _allWorksteps.insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
     }
 
-    bool apply(const Tools::Date& date, MonicaModel* model) const;
+    void apply(const Tools::Date& date, MonicaModel* model) const;
 
-		bool apply(MonicaModel* model);
+		void absApply(const Tools::Date& date, MonicaModel* model) const;
+
+		void apply(MonicaModel* model);
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 
+		Tools::Date nextAbsDate(const Tools::Date & date) const;
+
 		std::vector<WSPtr> workstepsAt(const Tools::Date& date) const;
+
+		std::vector<WSPtr> absWorkstepsAt(const Tools::Date& date) const;
+
+		bool areOnlyAbsoluteWorksteps() const;
 
 		std::vector<WSPtr> staticWorksteps() const;
 
-		std::vector<WSPtr> dynamicWorksteps(bool justUnfinishedWorksteps = false) const;
+		std::vector<WSPtr> allDynamicWorksteps() const;
 
-		std::vector<WSPtr> unfinishedDynamicWorksteps() const { return dynamicWorksteps(true); }
+		std::vector<WSPtr> unfinishedDynamicWorksteps() const { return _unfinishedDynamicWorksteps; }
 
-		bool allDynamicWorkstepsFinished() const { return _unfinishedDynamicWorkstepsCount == 0; }
+		bool allDynamicWorkstepsFinished() const { return _unfinishedDynamicWorksteps.empty(); }
 
 		std::string name() const { return _name; }
 
@@ -540,12 +547,16 @@ namespace Monica
 		//! when does the PV start
     Tools::Date startDate() const;
 
+		Tools::Date absStartDate() const;
+
 		//! when does the whole PV end
     Tools::Date endDate() const;
 
-    const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _worksteps; }
+		Tools::Date absEndDate() const;
 
-    void clearWorksteps() { _worksteps.clear(); }
+    const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _allWorksteps; }
+
+    void clearWorksteps() { _allWorksteps.clear(); }
 
 		std::string toString() const;
 
@@ -558,40 +569,37 @@ namespace Monica
     void setIrrigateCrop(bool irr){ _irrigateCrop = irr; }
     bool irrigateCrop() const { return _irrigateCrop; }
 
-		//! reset cultivation method to initial state, if it will be reused (eg in a crop rotation)
-		void reset();
-
-		void updateDynamicWorkstepCount() { _unfinishedDynamicWorkstepsCount = unfinishedDynamicWorksteps().size(); }
+		//! reinit cultivation method to initial state, if it will be reused (eg in a crop rotation)
+		void reinit(size_t year);
 
 	private:
-		std::multimap<Tools::Date, WSPtr> _worksteps;
+		std::multimap<Tools::Date, WSPtr> _allWorksteps;
+		std::multimap<Tools::Date, WSPtr> _absWorksteps;
+		std::vector<WSPtr> _unfinishedDynamicWorksteps;
     int _customId{0};
 		std::string _name;
 		CropPtr _crop;
     bool _irrigateCrop{false};
-		size_t _unfinishedDynamicWorkstepsCount{0};
 	};
 	
 	template<>
 	DLL_API inline void CultivationMethod::addApplication<Seed>(const Seed& s)
   {
-    _worksteps.insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
+    _allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
     _crop = s.crop();
-		updateDynamicWorkstepCount();
   }
 
 	template<>
 	DLL_API inline void CultivationMethod::addApplication<AutomaticSowing>(const AutomaticSowing& s)
 	{
-		_worksteps.insert(std::make_pair(s.date(), std::make_shared<AutomaticSowing>(s)));
+		_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<AutomaticSowing>(s)));
 		_crop = s.crop();
-		updateDynamicWorkstepCount();
 	}
 	
   //template<>
 	//DLL_API inline void CultivationMethod::addApplication<Harvest>(const Harvest& h)
   //{
-  //  _worksteps.insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
+  //  _allWorksteps.insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
   //}
 	
 

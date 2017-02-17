@@ -693,15 +693,17 @@ Output Monica::runMonica(Env env)
 	auto cmci = env.cropRotation.begin();
 	//direct handle to current cultivation method
 	CultivationMethod* currentCM = cmci == env.cropRotation.end() ? nullptr : &(*cmci);
+	currentCM->reinit(currentDate.year());
+
 	//are the dates in the production process relative dates
 	//or are they absolute as produced by the hermes inputs
 	//bool useRelativeDates = currentCM->startDate().isRelativeDate();
 	//the next application date, either a relative or an absolute date
 	//to get the correct applications out of the cultivation method
-	Date nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->startDate();
+	Date nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
 	//a definitely absolute next application date to keep track where
 	//we are in the list of climate data
-	Date nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
+	Date nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
 	/*
 	Date nextAbsoluteCMApplicationDate = useRelativeDates
 		? nextCMApplicationDate.toAbsoluteDate(currentDate.year())// + 1) // + 1 probably due to use in DSS and have one year to init monica 
@@ -711,18 +713,6 @@ Output Monica::runMonica(Env env)
 */
 
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
-
-	/*
-	auto calcNextAbsoluteCMApplicationDate = [=](Date currentDate, Date nextCMAppDate, Date prevCMAppDate)
-	{
-		return useRelativeDates ? nextCMAppDate.toAbsoluteDate
-			(currentDate.year() + (nextCMAppDate.dayOfYear() > prevCMAppDate.dayOfYear()
-														 ? 0
-														 : 1),
-			 true)
-			: nextCMAppDate;
-	};
-	*/
 
 	for(size_t d = 0, nods = env.da.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
@@ -743,19 +733,17 @@ Output Monica::runMonica(Env env)
 			currentCM->apply(&monica);
 
 		//apply worksteps and cycle through crop rotation
-		Date prevCMApplicationDate = nextCMApplicationDate;
 		if(currentCM && nextAbsoluteCMApplicationDate == currentDate)
 		{
 			debug() << "applying at: " << nextCMApplicationDate.toString()
 				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			//apply everything to do at current day
 			//cout << currentPP.toString().c_str() << endl;
-			currentCM->apply(nextCMApplicationDate, &monica);
+			currentCM->absApply(nextCMApplicationDate, &monica);
 
 			//get the next application date to wait for (either absolute or relative)
-			nextCMApplicationDate = currentCM->nextDate(nextCMApplicationDate);
-			//nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
-			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
+			nextCMApplicationDate = currentCM->nextAbsDate(nextCMApplicationDate);
+			nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
 						
 			debug() << "next app-date: " << nextCMApplicationDate.toString()
 				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
@@ -778,24 +766,24 @@ Output Monica::runMonica(Env env)
 			//to count the applied fertiliser for the next production process
 			monica.resetFertiliserCounter();
 
-			cmci++;
+			//delete fully cultivation methods with only absolute worksteps,
+			//because they won't participate in a new run when wrapping the crop rotation 
+			if(cmci->areOnlyAbsoluteWorksteps())
+				cmci = env.cropRotation.erase(cmci);
+			else
+				cmci++;
+
 			//start anew if we reached the end of the crop rotation
 			if(cmci == env.cropRotation.end())
 				cmci = env.cropRotation.begin();
 
 			currentCM = &(*cmci);
-			currentCM->reset();
-			nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->startDate();
-			//nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate, prevCMApplicationDate);
-			nextAbsoluteCMApplicationDate = calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
+			currentCM->reinit(currentDate.year());
+			nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
+			nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
 			debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
 				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 		}
-		//if we got our next date relative it might be possible that
-		//the actual relative date belongs into the next year
-		//this is the case if we're already (dayOfYear) past the next dayOfYear
-		//	if(useRelativeDates && currentDate > nextAbsoluteCMApplicationDate)
-		//	nextAbsoluteCMApplicationDate.addYears(1);
 	}
 	
 	for(auto& sd : store)

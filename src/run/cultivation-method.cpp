@@ -76,6 +76,12 @@ bool WorkStep::apply(MonicaModel* model)
 	return true;
 }
 
+void WorkStep::reinit(size_t year) 
+{ 
+	if(_date.isValid())
+		_absDate = _date.isAbsoluteDate() ? _date : _date.toAbsoluteDate(year);
+}
+
 //------------------------------------------------------------------------------
 
 Seed::Seed(const Tools::Date& at, CropPtr crop)
@@ -226,15 +232,12 @@ bool AutomaticSowing::apply(MonicaModel* model)
 		debug() << "automatically sowing crop: " << _crop->toString() << " at: " << currentDate.toString() << endl;
 	};
 
-	auto earliestDate = _earliestDate.isRelativeDate() ? _earliestDate.toAbsoluteDate(currentDate.year()) : _earliestDate;
-	auto latestDate = _latestDate.isRelativeDate() ? _latestDate.toAbsoluteDate(currentDate.year()) : _latestDate;
-
-	if(!_inSowingRange && currentDate < earliestDate)
+	if(!_inSowingRange && currentDate < _absEarliestDate)
 		return false;
 	else
 		_inSowingRange = true;
 
-	if(_inSowingRange && currentDate >= latestDate)
+	if(_inSowingRange && currentDate >= _absLatestDate)
 	{
 		seed();
 		_inSowingRange = false;
@@ -294,6 +297,22 @@ bool AutomaticSowing::apply(MonicaModel* model)
 	seed();
 	return true;
 }
+
+void AutomaticSowing::setDate(Tools::Date date)
+{
+	this->_date = date;
+	_crop->setSeedAndHarvestDate(date, _crop->harvestDate());
+}
+
+void AutomaticSowing::reinit(size_t year)
+{
+	WorkStep::reinit(year);
+	_cropSeeded = _inSowingRange = false;
+	setDate(Tools::Date());
+	_absEarliestDate = _earliestDate.isAbsoluteDate() ? _earliestDate : _earliestDate.toAbsoluteDate(year);
+	_absLatestDate = _latestDate.isAbsoluteDate() ? _latestDate : _latestDate.toAbsoluteDate(year);
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -469,14 +488,13 @@ bool AutomaticHarvesting::apply(MonicaModel* model)
 	//make dates comparable
 	auto sd = model->currentCrop()->seedDate();
 	auto seedDate = sd.isRelativeDate() ? sd.toAbsoluteDate(currentDate.year()) : sd;
-	auto latestDate = _latestDate.isRelativeDate() ? _latestDate.toAbsoluteDate(currentDate.year()) : _latestDate;
 	
 	//check if user forgot to add one year to winter crop's latest seed date, if the date was relative
-	if(seedDate > latestDate)
-		latestDate.addYears(1);
+	if(seedDate > _absLatestDate)
+		_absLatestDate.addYears(1);
 
 	//harvest after or at latested date
-	if(currentDate >= latestDate)
+	if(currentDate >= _absLatestDate)
 	{
 		harvest();
 		return true;
@@ -493,6 +511,15 @@ bool AutomaticHarvesting::apply(MonicaModel* model)
 	harvest();
 	return true;
 }
+
+void AutomaticHarvesting::reinit(size_t year)
+{
+	WorkStep::reinit(year);
+	_cropHarvested = false;
+	setDate(Tools::Date());
+	_absLatestDate = _latestDate.isAbsoluteDate() ? _latestDate : _latestDate.toAbsoluteDate(year);
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -666,6 +693,14 @@ bool NDemandApplication::apply(MonicaModel* model)
 	}
 	return false;
 }
+
+void NDemandApplication::reinit(size_t year)
+{
+	WorkStep::reinit(year);
+	_appliedFertilizer = false;
+	setDate(Tools::Date());
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -955,7 +990,7 @@ Errors CultivationMethod::merge(json11::Json j)
 		auto ws = makeWorkstep(wsj);
 		if(!ws)
 			continue;
-		_worksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
+		_allWorksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
 		string wsType = ws->type();
 		if(wsType == "Seed")
 		{
@@ -990,15 +1025,13 @@ Errors CultivationMethod::merge(json11::Json j)
 		}
 	}
 
-	updateDynamicWorkstepCount();
-
 	return res;
 }
 
 json11::Json CultivationMethod::to_json() const
 {
 	auto wss = J11Array();
-	for(auto d2ws : _worksteps)
+	for(auto d2ws : _allWorksteps)
 		wss.push_back(d2ws.second->to_json());
 
 	return J11Object
@@ -1010,38 +1043,46 @@ json11::Json CultivationMethod::to_json() const
 	};
 }
 
-bool CultivationMethod::apply(const Date& date, 
+void CultivationMethod::apply(const Date& date, 
 															MonicaModel* model) const
 {
-	bool someFinishedWorksteps = false;
-	//apply everything at date
 	for(auto wsp : workstepsAt(date))
-		if(wsp->apply(model))
-			someFinishedWorksteps = true;
-	return someFinishedWorksteps;
+		wsp->apply(model);
 }
 
-bool CultivationMethod::apply(MonicaModel* model) 
+void CultivationMethod::absApply(const Date& date,
+																 MonicaModel* model) const
 {
-	//check if dynamic worksteps can be applied
-	if(bool someFinishedWorksteps = apply(Date(), model))
-	{
-		updateDynamicWorkstepCount();
-		return someFinishedWorksteps;
-	}
-	return false;
+	for(auto wsp : absWorkstepsAt(date))
+		wsp->apply(model);
+}
+
+void CultivationMethod::apply(MonicaModel* model) 
+{
+	auto& udws = _unfinishedDynamicWorksteps;
+	udws.erase(remove_if(udws.begin(), udws.end(),
+											 [model](WSPtr wsp){
+		return wsp->apply(model);
+	}), udws.end());
 }
 
 Date CultivationMethod::nextDate(const Date& date) const
 {
-	auto ci = _worksteps.upper_bound(date);
-	return ci != _worksteps.end() ? ci->first : Date();
+	auto ci = _allWorksteps.upper_bound(date);
+	return ci != _allWorksteps.end() ? ci->first : Date();
 }
+
+Date CultivationMethod::nextAbsDate(const Date& date) const
+{
+	auto ci = _absWorksteps.upper_bound(date);
+	return ci != _absWorksteps.end() ? ci->first : Date();
+}
+
 
 vector<WSPtr> CultivationMethod::workstepsAt(const Date& date) const
 {
 	vector<WSPtr> apps;
-	auto p = _worksteps.equal_range(date);
+	auto p = _allWorksteps.equal_range(date);
 	while(p.first != p.second)
 	{
 		apps.push_back(p.first->second);
@@ -1050,33 +1091,45 @@ vector<WSPtr> CultivationMethod::workstepsAt(const Date& date) const
 	return apps;
 }
 
+vector<WSPtr> CultivationMethod::absWorkstepsAt(const Date& date) const
+{
+	vector<WSPtr> apps;
+	auto p = _absWorksteps.equal_range(date);
+	while(p.first != p.second)
+	{
+		apps.push_back(p.first->second);
+		p.first++;
+	}
+	return apps;
+}
+
+
+bool CultivationMethod::areOnlyAbsoluteWorksteps() const
+{
+	return all_of(_allWorksteps.begin(), _allWorksteps.end(),
+								[](decltype(_allWorksteps)::value_type p)
+	{ 
+		return p.first.isValid() && p.first.isAbsoluteDate(); 
+	});
+}
+
 vector<WSPtr> CultivationMethod::staticWorksteps() const
 {
 	vector<WSPtr> wss;
-	for(auto p : _worksteps)
+	for(auto p : _allWorksteps)
 		if(p.first.isValid())
 			wss.push_back(p.second);
 	return wss;
 }
 
-vector<WSPtr> CultivationMethod::dynamicWorksteps(bool justUnfinishedWorksteps) const
+vector<WSPtr> CultivationMethod::allDynamicWorksteps() const
 {
-	vector<WSPtr> wss;
-	if(justUnfinishedWorksteps)
-	{
-		for(auto ws : workstepsAt(Date()))
-			if(ws->isActive())
-				wss.push_back(ws);
-	}
-	else
-		wss = workstepsAt(Date());
-
-	return wss;
+	return workstepsAt(Date());
 }
 
 Date CultivationMethod::startDate() const
 {
-	if(_worksteps.empty())
+	if(_allWorksteps.empty())
 		return Date();
 
 	auto dynEarliestStart = Date();
@@ -1091,23 +1144,54 @@ Date CultivationMethod::startDate() const
 			dynEarliestStart = ed;
 	}
 
-	auto it = _worksteps.begin();
-	while(it != _worksteps.end() && !it->first.isValid())
+	auto it = _allWorksteps.begin();
+	while(it != _allWorksteps.end() && !it->first.isValid())
 		it++;
 
-	if(dynEarliestStart.isValid() && it != _worksteps.end())
+	if(dynEarliestStart.isValid() && it != _allWorksteps.end())
 		return dynEarliestStart < it->first ? dynEarliestStart : it->first;
 	else if(dynEarliestStart.isValid())
 		return dynEarliestStart;
-	else if(it != _worksteps.end())
+	else if(it != _allWorksteps.end())
 		return it->first;
 	
 	return Date();
 }
 
+Date CultivationMethod::absStartDate() const
+{
+	if(_absWorksteps.empty())
+		return Date();
+
+	auto dynEarliestStart = Date();
+	for(auto app : absWorkstepsAt(Date()))
+	{
+		auto ed = app->absEarliestDate();
+		if((ed.isValid()
+				&& dynEarliestStart.isValid()
+				&& ed < dynEarliestStart)
+			 || (ed.isValid()
+					 && !dynEarliestStart.isValid()))
+			dynEarliestStart = ed;
+	}
+
+	auto it = _absWorksteps.begin();
+	while(it != _absWorksteps.end() && !it->first.isValid())
+		it++;
+
+	if(dynEarliestStart.isValid() && it != _absWorksteps.end())
+		return dynEarliestStart < it->first ? dynEarliestStart : it->first;
+	else if(dynEarliestStart.isValid())
+		return dynEarliestStart;
+	else if(it != _absWorksteps.end())
+		return it->first;
+
+	return Date();
+}
+
 Date CultivationMethod::endDate() const
 {
-	if(_worksteps.empty())
+	if(_allWorksteps.empty())
 		return Date();
 
 	auto dynLatestEnd = Date();
@@ -1122,15 +1206,46 @@ Date CultivationMethod::endDate() const
 			dynLatestEnd = ed;
 	}
 
-	auto it = _worksteps.rbegin();
-	while(it != _worksteps.rend() && !it->first.isValid())
+	auto it = _allWorksteps.rbegin();
+	while(it != _allWorksteps.rend() && !it->first.isValid())
 		it++;
 
-	if(dynLatestEnd.isValid() && it != _worksteps.rend())
+	if(dynLatestEnd.isValid() && it != _allWorksteps.rend())
 		return dynLatestEnd > it->first ? dynLatestEnd : it->first;
 	else if(dynLatestEnd.isValid())
 		return dynLatestEnd;
-	else if(it != _worksteps.rend())
+	else if(it != _allWorksteps.rend())
+		return it->first;
+
+	return Date();
+}
+
+Date CultivationMethod::absEndDate() const
+{
+	if(_absWorksteps.empty())
+		return Date();
+
+	auto dynLatestEnd = Date();
+	for(auto app : absWorkstepsAt(Date()))
+	{
+		auto ed = app->latestDate();
+		if((ed.isValid()
+				&& dynLatestEnd.isValid()
+				&& ed > dynLatestEnd)
+			 || (ed.isValid()
+					 && !dynLatestEnd.isValid()))
+			dynLatestEnd = ed;
+	}
+
+	auto it = _absWorksteps.rbegin();
+	while(it != _absWorksteps.rend() && !it->first.isValid())
+		it++;
+
+	if(dynLatestEnd.isValid() && it != _absWorksteps.rend())
+		return dynLatestEnd > it->first ? dynLatestEnd : it->first;
+	else if(dynLatestEnd.isValid())
+		return dynLatestEnd;
+	else if(it != _absWorksteps.rend())
 		return it->first;
 
 	return Date();
@@ -1143,14 +1258,22 @@ std::string CultivationMethod::toString() const
 		<< " start: " << startDate().toString()
 		<< " end: " << endDate().toString() << endl;
 	s << "worksteps:" << endl;
-	for(auto p : _worksteps)
+	for(auto p : _allWorksteps)
 		s << "at: " << p.first.toString()
 		<< " what: " << p.second->toString() << endl;
 	return s.str();
 }
 
-void CultivationMethod::reset()
+void CultivationMethod::reinit(size_t year)
 {
-	for(auto p : _worksteps)
-		p.second->reset();
+	_absWorksteps.clear();
+	_unfinishedDynamicWorksteps.clear();
+	for(auto p : _allWorksteps)
+	{
+		p.second->reinit(year);
+		Date absDate = p.first.isValid() && p.first.isRelativeDate() ? p.first.toAbsoluteDate(year) : p.first;
+		_absWorksteps.insert(make_pair(absDate, p.second));
+		if(!absDate.isValid())
+			_unfinishedDynamicWorksteps.push_back(p.second);
+	}
 }
