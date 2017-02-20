@@ -684,7 +684,8 @@ bool NDemandApplication::apply(MonicaModel* model)
 	{
 		double rd = cg->get_RootingDepth_m();
 		debug() << toString() << endl;
-		model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth, _Ndemand);
+		double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth, _Ndemand);
+		model->addDailySumFertiliser(appliedAmount);
 		_appliedFertilizer = true;
 		setDate(model->currentStepDate());
 		model->addEvent("NDemandApplication");
