@@ -37,8 +37,8 @@
 		"WW": {
 			"_db_cropParams": ["_include-from-db", "crop", "wheat", "winter wheat"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/wheat.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter wheat.json"]
+				"species": ["include-from-file", "monica-parameters/crops/wheat_EU.json"],
+				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter wheat_EU.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "wheat", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
@@ -84,30 +84,51 @@
 	"cropRotation": [
 		{
 			"worksteps": [
-				{ "date": "0000-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
-				{
-					"date": "0001-05-05",
-					"type": "IrrigationApplication",
-					"amount": [1.0, "mm"],
-					"parameters": {
-						"nitrateConcentration": [0.0, "mg dm-3"],
-						"sulfateConcentration": [334, "mg dm-3"]
-					}
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [1, 3]], "value": 0.002 },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [4, 12]], "value": 0.000333 },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [13,15]], "value": 0.000222 }
+			]
+		},
+		{
+			"worksteps": [
+				{ 
+					"type": "AutomaticSowing", 
+					"crop": ["ref", "crops", "WW"],
+					"earliest-date": "0000-10-01",
+					"latest-date": "0000-11-10",
+					"min-temp": 18.5,
+					"days-in-temp-window": 14,
+					"min-%-asw": 0,
+					"max-%-asw": 100,
+					"max-3d-precip-sum": 2,
+					"max-curr-day-precip": 0.1,
+					"temp-sum-above-base-temp": 0,
+					"base-temp": 0,
+					"is-winter-crop": true
 				},
 				{
-					"date": "0001-04-03",
-					"type": "MineralFertiliserApplication",
-					"amount": [40.0, "kg N"],
-					"partition": ["ref", "fert-params", "AN"]
+					"type": "NDemandApplication",
+					"stage": 3,
+					"partition": ["ref", "fert-params", "AN"],
+					"N-demand": [70, "kg"],
+					"depth": [0.9, "m"]
 				},
 				{
-					"date": "0001-05-07",
-					"type": "MineralFertiliserApplication",
-					"amount": [40.0, "kg N"],
-					"_db_partition": ["include-from-db", "mineral_fertiliser", "AN"],
-					"partition": ["ref", "fert-params", "AN"]
+					"type": "NDemandApplication",
+					"stage": 4,
+					"partition": ["ref", "fert-params", "AN"],
+					"N-demand": [70, "kg"],
+					"depth": [0.9, "m"]
 				},
-				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
+				{ 
+					"type": "AutomaticHarvesting", 
+					"latest-date": "0001-09-05",
+					"min-%-asw": 0,
+					"max-%-asw": 100,
+					"max-3d-precip-sum": 2,
+					"max-curr-day-precip": 0.1,
+					"harvest-time": "maturity"
+				}
 			]
 		}
 	],

@@ -482,11 +482,8 @@ void MonicaModel::applyTillage(double depth)
 	_soilColumn.applyTillage(depth);
 }
 
-void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateData)
+void MonicaModel::step()
 {
-	_currentStepDate = date;
-	_currentStepClimateData = climateData;
-		
 	if(isCropPlanted() && !_clearCropUponNextDay)
 		cropStep();
 
@@ -497,7 +494,7 @@ void MonicaModel::step(Tools::Date date, std::map<Climate::ACD, double> climateD
  * @brief Simulating the soil processes for one time step.
  * @param stepNo Number of current processed step
  */
-void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
+void MonicaModel::generalStep()
 {
 	auto date = _currentStepDate;
 	unsigned int julday = date.julianDay();
@@ -529,7 +526,7 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
   if(_currentCrop 
 		 && _currentCrop->isValid() 
 		 && _simPs.p_UseNMinMineralFertilisingMethod 
-		 && _currentCrop->seedDate().dayOfYear() > _currentCrop->harvestDate().dayOfYear() 
+		 && _currentCrop->isWinterCrop()
 		 && julday == _simPs.p_JulianDayAutomaticFertilising)
   {
 		_soilColumn.clearTopDressingParams();
@@ -543,12 +540,13 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
     addDailySumFertiliser(fertilizerAmount);
 	}
 
-	double tmin = _currentStepClimateData[Climate::tmin];
-	double tavg = _currentStepClimateData[Climate::tavg];
-	double tmax = _currentStepClimateData[Climate::tmax];
-	double precip = _currentStepClimateData[Climate::precip];
-	double wind = _currentStepClimateData[Climate::wind];
-	double globrad = _currentStepClimateData[Climate::globrad];
+	auto climateData = currentStepClimateData();
+	double tmin = climateData[Climate::tmin];
+	double tavg = climateData[Climate::tavg];
+	double tmax = climateData[Climate::tmax];
+	double precip = climateData[Climate::precip];
+	double wind = climateData[Climate::wind];
+	double globrad = climateData[Climate::globrad];
 
   _soilTemperature.step(tmin, tmax, globrad);
   _soilMoisture.step(vs_GroundwaterDepth,
@@ -561,10 +559,10 @@ void MonicaModel::generalStep()//Date date, std::map<ACD, double> climateData)
 }
 
 
-void MonicaModel::cropStep()//Tools::Date date, std::map<Climate::ACD, double> climateData)
+void MonicaModel::cropStep()
 {
 	auto date = _currentStepDate;
-	auto climateData = _currentStepClimateData;
+	auto climateData = currentStepClimateData();
   // do nothing if there is no crop
   if(!_currentCropGrowth)
     return;
@@ -850,16 +848,15 @@ double MonicaModel::avg30cmSoilTemperature() const
  * @param end_layer
  * @return Average soil moisture concentation
  */
-double MonicaModel::avgSoilMoisture(int start_layer, int end_layer) const
+double MonicaModel::avgSoilMoisture(size_t startLayer, 
+																		size_t endLayerInclusive) const
 {
-  int num=0;
-  double accu = 0.0;
-  for (int i=start_layer; i<end_layer; i++)
-  {
-    accu+=_soilColumn.at(i).get_Vs_SoilMoisture_m3();
-    num++;
-  }
-  return accu/num;
+	size_t nols = max<size_t>(0, min<size_t>(endLayerInclusive - startLayer + 1, _soilColumn.size()));
+	return accumulate(_soilColumn.begin(), _soilColumn.begin() + nols, 0.0,
+										[](double acc, const SoilLayer& sl)
+	{
+		return sl.get_Vs_SoilMoisture_m3();
+	}) / nols;
 }
 
 /**

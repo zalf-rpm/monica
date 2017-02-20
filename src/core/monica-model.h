@@ -63,11 +63,11 @@ namespace Monica
 
 		~MonicaModel();
 
-		void step(Tools::Date date, std::map<Climate::ACD, double> climateData);
+		void step();
 		
-		void generalStep();// Tools::Date date, std::map<Climate::ACD, double> climateData);
+		void generalStep();
 		
-		void cropStep();// Tools::Date date, std::map<Climate::ACD, double> climateData);
+		void cropStep();
 
 		double CO2ForDate(double year, double julianDay, bool isLeapYear);
 		double CO2ForDate(Tools::Date);
@@ -167,7 +167,7 @@ namespace Monica
 		double getAccumulatedSnowDepth() const;
 		double getAccumulatedFrostDepth() const;
 		double avg30cmSoilTemperature() const;
-		double avgSoilMoisture(int start_layer, int end_layer) const;
+		double avgSoilMoisture(size_t startLayer, size_t endLayerInclusive) const;
 		double avgCapillaryRise(int start_layer, int end_layer) const;
 		double avgPercolationRate(int start_layer, int end_layer) const;
 		double sumSurfaceRunOff() const;
@@ -216,13 +216,20 @@ namespace Monica
 		const SimulationParameters& simulationParameters() const { return _simPs; }
 
 		Tools::Date currentStepDate() const { return _currentStepDate; }
+		void setCurrentStepDate(Tools::Date d) { _currentStepDate = d; }
 
-		const std::map<Climate::ACD, double>& currentStepClimateData() const { return _currentStepClimateData; }
+		const std::map<Climate::ACD, double>& currentStepClimateData() const
+		{
+			return _climateData.back();
+		}
+		void setCurrentStepClimateData(const std::map<Climate::ACD, double>& cd) { _climateData.push_back(cd); }
+		
+		const std::vector<std::map<Climate::ACD, double>>& climateData() const { return _climateData; }
 
 		void addEvent(std::string e) { _currentEvents.insert(e); }
 		void clearEvents() { _currentEvents.clear(); }
 		std::set<std::string> currentEvents() const { return _currentEvents; }
-
+		
 	private:
 		const SiteParameters _sitePs;
 		const UserSoilMoistureParameters _smPs;
@@ -258,7 +265,7 @@ namespace Monica
 		double _dailySumIrrigationWater{0.0};
 
 		Tools::Date _currentStepDate;
-		std::map<Climate::ACD, double> _currentStepClimateData;
+		std::vector<std::map<Climate::ACD, double>> _climateData;
 		std::set<std::string> _currentEvents;
 
 		bool _clearCropUponNextDay{false};

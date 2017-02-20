@@ -157,6 +157,17 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const
   return o;
 }
 
+bool Crop::isWinterCrop() const
+{
+	if(_isWinterCrop.isValue())
+		return _isWinterCrop.value();
+	else if(seedDate().isValid() && harvestDate().isValid())
+		return seedDate().dayOfYear() > harvestDate().dayOfYear();
+
+	return false;
+}
+
+
 string Crop::toString(bool detailed) const
 {
   ostringstream s;

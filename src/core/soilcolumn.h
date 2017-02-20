@@ -225,6 +225,10 @@ namespace Monica
     //! apply delayed fertiliser application again (yielding possible top dressing)
     double applyPossibleDelayedFerilizer();
 
+		double applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+																						double demandDepth,
+																						double Ndemand);
+
     double applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fertiliserPartition,
                                                double vf_SamplingDepth,
                                                double vf_CropNTargetValue,
