@@ -350,7 +350,7 @@ void SoilColumn::applyMineralFertiliser(MineralFertiliserParameters fp,
   debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
           << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
-	double kgHaTokgm3 = 10000.0 / at(0).vs_LayerThickness;
+	double kgHaTokgm3 = 10000.0 * at(0).vs_LayerThickness;
   at(0).vs_SoilNO3 += amount * fp.getNO3() / kgHaTokgm3;
   at(0).vs_SoilNH4 += amount * fp.getNH4() / kgHaTokgm3;
   at(0).vs_SoilCarbamid += amount * fp.getCarbamid() / kgHaTokgm3;
