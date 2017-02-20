@@ -75,17 +75,7 @@ string readClimateDataFromCSVStringViaHeadersToJsonString(string climateCSVStrin
 	auto r = parseJsonString(optionsJsonString);
 	CSVViaHeaderOptions os;
 	if(r.success())
-	{
-		J11Object options = r.result.object_items();
-		os.separator = options["csv-separator"].string_value();
-		os.startDate = Date::fromIsoDateString(options["start-date"].string_value());
-		os.endDate = Date::fromIsoDateString(options["end-date"].string_value());
-		os.noOfHeaderLines = options["no-of-climate-file-header-line"].int_value();
-				
-		map<string, string> hn2acdn;
-		for(auto p : options["header-to-acd-names"].object_items())
-			os.headerName2ACDName[p.first] = p.second.string_value();
-	}
+		os.merge(r.result);
 		
 	return Json(readClimateDataFromCSVStringViaHeaders(climateCSVString, os)).dump();
 }

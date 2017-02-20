@@ -1277,6 +1277,8 @@ void SoilOrganic::fo_N2OProduction()
 			* po_N2OProductionRate
 			* (1.0 / (1.0 + (pow(2.0, soilColumn[i_Layer].vs_SoilpH()) - OrganicConstants::po_pKaHNO2)));
 
+		vo_N2OProduction[i_Layer] *= soilColumn[i_Layer].vs_LayerThickness * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
+
 		vo_N2O_Produced += vo_N2OProduction[i_Layer];
 	}
 
@@ -1844,7 +1846,7 @@ double SoilOrganic::get_SumNH3_Volatilised() const
  */
 double SoilOrganic::get_N2O_Produced() const
 {
-	return vo_N2O_Produced * 10000.0;
+	return vo_N2O_Produced;
 }
 
 
@@ -1854,7 +1856,7 @@ double SoilOrganic::get_N2O_Produced() const
  */
 double SoilOrganic::get_SumN2O_Produced() const
 {
-	return vo_SumN2O_Produced * 10000.0;
+	return vo_SumN2O_Produced;
 }
 
 

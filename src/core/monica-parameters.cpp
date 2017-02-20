@@ -1123,7 +1123,7 @@ Errors SiteParameters::merge(json11::Json j)
 			int repeatLayer = 1;
 			if(sp.has_shape({{"Thickness", Json::NUMBER}}, err)
 				 || sp.has_shape({{"Thickness", Json::ARRAY}}, err))
-				repeatLayer = min(20, max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0)));
+				repeatLayer = min(20 - int(layerCount), max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0)));
 
 			//simply repeat the last layer as often as necessary to fill the 20 layers
 			if(spi + 1 == spsCount)
@@ -1460,6 +1460,7 @@ Errors UserCropParameters::merge(json11::Json j)
   set_double_value(pc_GrowthRespirationParameter1, j, "GrowthRespirationParameter1");
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
+  set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
 
 	return res;
 }
@@ -1482,7 +1483,8 @@ json11::Json UserCropParameters::to_json() const
     {"MaxCropNDemand", pc_MaxCropNDemand},
     {"GrowthRespirationParameter1", pc_GrowthRespirationParameter1},
     {"GrowthRespirationParameter2", pc_GrowthRespirationParameter2},
-    {"Tortuosity", pc_Tortuosity}
+    {"Tortuosity", pc_Tortuosity},
+	{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps }
   };
 }
 

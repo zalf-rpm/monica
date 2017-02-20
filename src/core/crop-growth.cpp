@@ -192,19 +192,26 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	vc_NConcentrationRoot = pc_NConcentrationRoot;
 
 	// Initialising the initial maximum rooting depth
-	double vc_SandContent = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
-	double vc_BulkDensity = soilColumn[0].vs_SoilBulkDensity(); // [kg m-3]
-	if(vc_SandContent < 0.55)
-		vc_SandContent = 0.55;
+	if (cropPs.pc_AdjustRootDepthForSoilProps)
+	{
+		double vc_SandContent = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
+		double vc_BulkDensity = soilColumn[0].vs_SoilBulkDensity(); // [kg m-3]
+		if (vc_SandContent < 0.55)
+			vc_SandContent = 0.55;
 
-	vc_SoilSpecificMaxRootingDepth = vs_SoilSpecificMaxRootingDepth > 0.0
-		? vs_SoilSpecificMaxRootingDepth
-		: vc_SandContent
-		* ((1.1 - vc_SandContent) / 0.275)
-		* (1.4 / (vc_BulkDensity / 1000.0)
-			 + (vc_BulkDensity * vc_BulkDensity / 40000000.0)); // [m]
+		vc_SoilSpecificMaxRootingDepth = vs_SoilSpecificMaxRootingDepth > 0.0
+			? vs_SoilSpecificMaxRootingDepth
+			: vc_SandContent
+			* ((1.1 - vc_SandContent) / 0.275)
+			* (1.4 / (vc_BulkDensity / 1000.0)
+				+ (vc_BulkDensity * vc_BulkDensity / 40000000.0)); // [m]
 
-	vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
+		vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
+	}
+	else
+	{
+		vc_MaxRootingDepth = pc_CropSpecificMaxRootingDepth; //[m]
+	}
 
 	// change organs for yield components in case of eva2 simulation
 	// if type of usage is defined
@@ -1708,7 +1715,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	if(vc_TranspirationDeficit < vc_DroughtStressThreshold)
 	{
-		vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
+		//vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
+		vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit/ vc_DroughtStressThreshold;
 
 	}
 
@@ -2338,17 +2346,18 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		if(i_Organ != vc_StorageOrgan)
 		{
 			// Wurzel, Sprossachse, Blatt
-			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-				- (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
-			vc_OrganBiomass[vc_StorageOrgan] += pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ]; // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			double reallocationRate = pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] -= reallocationRate;
+			vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] - reallocationRate; // [kg CH2O ha-1]
+			vc_OrganBiomass[vc_StorageOrgan] += reallocationRate;
 		}
 		else
 		{
-			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep)
-				- (vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
 		}
 
-		vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
 		vc_OrganGreenBiomass[i_Organ] = vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ]; // [kg CH2O ha-1]
 
 		if((vc_OrganGreenBiomass[i_Organ]) < 0.0)
