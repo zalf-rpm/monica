@@ -467,11 +467,6 @@ bool AutomaticHarvesting::apply(MonicaModel* model)
 	if(_cropHarvested)
 		return true;
 
-	//check for maturity
-	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
-	if(!isMaturityReached)
-		return false;
-	
 	auto currentDate = model->currentStepDate();
 
 	auto harvest = [&]()
@@ -485,6 +480,18 @@ bool AutomaticHarvesting::apply(MonicaModel* model)
 		debug() << "automatically harvesting crop: " << crop()->toString() << " at: " << currentDate.toString() << endl;
 	};
 
+	//harvest after or at latested date
+	if(currentDate >= _absLatestDate)
+	{
+		harvest();
+		return true;
+	}
+
+	//check for maturity
+	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
+	if(!isMaturityReached)
+		return false;
+
 	//make dates comparable
 	auto sd = model->currentCrop()->seedDate();
 	auto seedDate = sd.isRelativeDate() ? sd.toAbsoluteDate(currentDate.year()) : sd;
@@ -492,13 +499,6 @@ bool AutomaticHarvesting::apply(MonicaModel* model)
 	//check if user forgot to add one year to winter crop's latest seed date, if the date was relative
 	if(seedDate > _absLatestDate)
 		_absLatestDate.addYears(1);
-
-	//harvest after or at latested date
-	if(currentDate >= _absLatestDate)
-	{
-		harvest();
-		return true;
-	}
 	
 	//check soil moisture
 	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
