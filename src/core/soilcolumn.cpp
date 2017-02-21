@@ -186,7 +186,7 @@ double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertiliserParameters 
 		i++;
 	}
 
-	double fertilizerRecommendation = NdemandKgHa - sumSoilNkgHa;
+	double fertilizerRecommendation = max(0.0, NdemandKgHa - sumSoilNkgHa);
 	if(fertilizerRecommendation > 0)
 		applyMineralFertiliser(fp, fertilizerRecommendation);
 
