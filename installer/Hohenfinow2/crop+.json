@@ -8,6 +8,7 @@
 	"__user defined crops section to be used via references": "",
 	"crops": {
 		"WR": {
+			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", {"db": "monica", "type": "crop", "species": "rye", "cultivar": "winter rye"}],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rye.json"],
@@ -17,15 +18,17 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rye.json"]
 		},
 		"SM": {
+			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "maize", "silage maize"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/maize.json"],
+				"species": ["include-from-file", "monica-parameters/crops/maize_EU.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage maize.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "maize", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/maize.json"]
 		},
 		"MEP": {
+			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "potato", "moderately early potato"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/potato.json"],
@@ -35,6 +38,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/potato.json"]
 		},
 		"WW": {
+			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "wheat", "winter wheat"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/wheat_EU.json"],
@@ -44,6 +48,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
 		},
 		"WG": {
+			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "barley", "winter barley"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
@@ -53,6 +58,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
 		},
 		"SG": {
+			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "barley", "spring barley"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
@@ -62,6 +68,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
 		},
 		"SC": {
+			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "rape", "winter rape"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rape.json"],
@@ -80,8 +87,18 @@
 		"CADLM": ["include-from-file", "monica-parameters/organic-fertilisers/CADLM.json"]
 	}, 
 
-	"__relative date crop rotation example": "",
 	"cropRotation": [
+		{
+			"worksteps": [
+				{ "date": "0000-04-24", "type": "OverwriteSoilMoisture", "soilMoisturePercentFC": 70.0 },
+				{ "date": "0000-04-24", "type": "Seed", "crop": ["ref", "crops", "SM"] },
+				{ "date": "0001-10-10", "type": "Harvest"}
+			]
+		}
+	],
+
+	"__relative date crop rotation example": "",
+	"_____cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [1, 3]], "value": 0.002 },
@@ -103,8 +120,7 @@
 					"max-3d-precip-sum": 2,
 					"max-curr-day-precip": 0.1,
 					"temp-sum-above-base-temp": 0,
-					"base-temp": 0,
-					"is-winter-crop": true
+					"base-temp": 0
 				},
 				{
 					"type": "NDemandApplication",
@@ -284,6 +300,6 @@
 	"__general crop parameters for the monica model": "",
 	"_db_CropParameters": ["_include-from-db", {"type": "crop-params", "name": "hermes"}],
 	"CropParameters": {
-		"DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
+		"=": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
 	}
 }

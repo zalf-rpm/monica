@@ -130,8 +130,8 @@ void MonicaModel::seedCrop(CropPtr crop)
 //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
 //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
-    if(_simPs.p_UseNMinMineralFertilisingMethod &&
-       _currentCrop->seedDate().dayOfYear() <= _currentCrop->harvestDate().dayOfYear())
+		if(_simPs.p_UseNMinMineralFertilisingMethod
+			 && !currentCrop()->isWinterCrop())
     {
 			_soilColumn.clearTopDressingParams();
       debug() << "nMin fertilising summer crop" << endl;

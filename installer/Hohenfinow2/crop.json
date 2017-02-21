@@ -8,6 +8,7 @@
 	"__user defined crops section to be used via references": "",
 	"crops": {
 		"WR": {
+			"is-winter-crop": true,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rye.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/rye/winter rye.json"]
@@ -15,6 +16,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rye.json"]
 		},
 		"SM": {
+			"is-winter-crop": false,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/maize.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage maize.json"]
@@ -22,6 +24,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/maize.json"]
 		},
 		"MEP": {
+			"is-winter-crop": false,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/potato.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/potato/moderately early potato.json"]
@@ -29,6 +32,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/potato.json"]
 		},
 		"WW": {
+			"is-winter-crop": true,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/wheat.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter wheat.json"]
@@ -36,6 +40,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
 		},
 		"WG": {
+			"is-winter-crop": true,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/barley/winter barley.json"]
@@ -43,6 +48,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
 		},
 		"SG": {
+			"is-winter-crop": false,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/barley/spring barley.json"]
@@ -50,6 +56,7 @@
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
 		},
 		"SC": {
+			"is-winter-crop": true,
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rape.json"],
 				"cultivar": ["include-from-file", "monica-parameters/crops/rape/winter rape.json"]
@@ -226,7 +233,5 @@
 	],
 
 	"__general crop parameters for the monica model": "",
-	"CropParameters": {
-		"DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
-	}
+	"CropParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
 }

@@ -39,7 +39,7 @@
 	"__all kinds of more general monica parameters": "",
   "SoilTemperatureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-temperature.json"],
 	"EnvironmentParameters": {
-    "DEFAULT": ["include-from-file", "monica-parameters/user-parameters/hermes-environment.json"],
+    "=": ["include-from-file", "monica-parameters/user-parameters/hermes-environment.json"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
   },
