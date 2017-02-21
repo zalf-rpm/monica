@@ -100,6 +100,7 @@ namespace Monica
 		{
       setSeedDate(sd);
       setHarvestDate(hd);
+			
 		}
 
 		void addCuttingDate(const Tools::Date cd) { _cuttingDates.push_back(cd); }

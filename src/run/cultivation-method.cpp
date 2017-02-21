@@ -58,8 +58,11 @@ WorkStep::WorkStep(json11::Json j)
 
 Errors WorkStep::merge(json11::Json j)
 {
+	Errors res = Json11Serializable::merge(j);
+
 	set_iso_date_value(_date, j, "date");
-	return{};
+
+	return res;
 }
 
 json11::Json WorkStep::to_json() const
@@ -156,11 +159,7 @@ Errors AutomaticSowing::merge(json11::Json j)
 
 	set_shared_ptr_value(_crop, j, "crop");
 	if(_crop)
-	{
 		_crop->setSeedDate(date());
-		if(j["is-winter-crop"].is_bool())
-			_crop->setIsWinterCrop(j["is-winter-crop"].bool_value());
-	}
 
 	return res;
 }

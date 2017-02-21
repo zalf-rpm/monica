@@ -77,13 +77,16 @@ Crop::Crop(json11::Json j)
 
 Errors Crop::merge(json11::Json j)
 {
-	Errors res;
+	Errors res = Json11Serializable::merge(j);
 
 	set_iso_date_value(_seedDate, j, "seedDate");
 	set_iso_date_value(_harvestDate, j, "havestDate");
 	set_int_value(_dbId, j, "id");
 	set_string_value(_speciesName, j, "species");
 	set_string_value(_cultivarName, j, "cultivar");
+
+	if(j["is-winter-crop"].is_bool())
+		_isWinterCrop.setValue(j["is-winter-crop"].bool_value());
 
 	string err;
 	if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
@@ -133,16 +136,19 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const
   for(auto cd : _cuttingDates)
     cds.push_back(cd.toIsoDateString());
 
-  J11Object o{
-    {"type", "Crop"},
-    {"id", _dbId},
-    {"species", _speciesName},
-    {"cultivar", _cultivarName},
-    {"seedDate", _seedDate.toIsoDateString()},
-    {"harvestDate", _harvestDate.toIsoDateString()},
-    {"cuttingDates", cds},
-    {"automaticHarvest", _automaticHarvest},
-    {"AutomaticHarvestParams", _automaticHarvestParams}};
+  J11Object o
+	{{"type", "Crop"}
+  ,{"id", _dbId}
+  ,{"species", _speciesName}
+  ,{"cultivar", _cultivarName}
+  ,{"seedDate", _seedDate.toIsoDateString()}
+  ,{"harvestDate", _harvestDate.toIsoDateString()}
+	,{"cuttingDates", cds}
+  ,{"automaticHarvest", _automaticHarvest}
+  ,{"AutomaticHarvestParams", _automaticHarvestParams}};
+
+	if(_isWinterCrop.isValue())
+		o["is-winter-crop"] = _isWinterCrop.value();
 
   if(includeFullCropParameters)
   {

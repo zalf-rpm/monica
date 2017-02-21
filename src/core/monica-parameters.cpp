@@ -571,13 +571,7 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
 
 Errors SpeciesParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_string_value(pc_SpeciesId, j, "SpeciesName");
   set_int_value(pc_CarboxylationPathway, j, "CarboxylationPathway");
@@ -690,14 +684,9 @@ CultivarParameters::CultivarParameters(json11::Json j)
 
 Errors CultivarParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 	
+	string err;
   if(j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
     pc_OrganIdsForPrimaryYield = toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]);
 	else
@@ -854,13 +843,7 @@ MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
 
 Errors MineralFertiliserParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
@@ -898,13 +881,7 @@ NMinUserParameters::NMinUserParameters(json11::Json j)
 
 Errors NMinUserParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(min, j, "min");
   set_double_value(max, j, "max");
@@ -937,14 +914,8 @@ IrrigationParameters::IrrigationParameters(json11::Json j)
 
 Errors IrrigationParameters::merge(json11::Json j)
 {
-	Errors res; 
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
-
+	Errors res = Json11Serializable::merge(j);
+	
   set_double_value(nitrateConcentration, j, "nitrateConcentration");
   set_double_value(sulfateConcentration, j, "sulfateConcentration");
 
@@ -977,13 +948,7 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
 
 Errors AutomaticIrrigationParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
   set_double_value(amount, j, "amount");
@@ -1091,15 +1056,9 @@ SiteParameters::SiteParameters(json11::Json j)
 
 Errors SiteParameters::merge(json11::Json j)
 {
-	Errors res;
+	Errors res = Json11Serializable::merge(j);
 
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
-
-	err = "";
+	string err = "";
   set_double_value(vs_Latitude, j, "Latitude");
   set_double_value(vs_Slope, j, "Slope");
   set_double_value(vs_HeightNN, j, "HeightNN");
@@ -1179,13 +1138,7 @@ AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j)
 
 Errors AutomaticHarvestParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   int ht = -1;
   set_int_value(ht, j, "harvestTime");
@@ -1217,13 +1170,7 @@ NMinCropParameters::NMinCropParameters(json11::Json j)
 
 Errors NMinCropParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(samplingDepth, j, "samplingDepth");
   set_double_value(nTarget, j, "nTarget");
@@ -1250,13 +1197,7 @@ OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
 
 Errors OrganicMatterParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(vo_AOM_DryMatterContent, j, "AOM_DryMatterContent");
   set_double_value(vo_AOM_NH4Content, j, "AOM_NH4Content");
@@ -1303,13 +1244,7 @@ OrganicFertiliserParameters::OrganicFertiliserParameters(json11::Json j)
 
 Errors OrganicFertiliserParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   res.append(OrganicMatterParameters::merge(j));
 
@@ -1337,13 +1272,7 @@ CropResidueParameters::CropResidueParameters(json11::Json j)
 
 Errors CropResidueParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   res.append(OrganicMatterParameters::merge(j));
   set_string_value(species, j, "species");
@@ -1370,13 +1299,7 @@ SimulationParameters::SimulationParameters(json11::Json j)
 
 Errors SimulationParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_iso_date_value(startDate, j, "startDate");
   set_iso_date_value(endDate, j, "endDate");
@@ -1437,13 +1360,7 @@ UserCropParameters::UserCropParameters(json11::Json j)
 
 Errors UserCropParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient");
   set_double_value(pc_ReferenceMaxAssimilationRate, j, "ReferenceMaxAssimilationRate");
@@ -1497,13 +1414,7 @@ UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
 
 Errors UserEnvironmentParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(p_Albedo, j, "Albedo");
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
@@ -1548,13 +1459,7 @@ UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
 
 Errors UserSoilMoistureParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
   set_double_value(pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity");
@@ -1623,13 +1528,7 @@ UserSoilTemperatureParameters::UserSoilTemperatureParameters(json11::Json j)
 
 Errors UserSoilTemperatureParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(pt_NTau, j, "NTau");
   set_double_value(pt_InitialSurfaceTemperature, j, "InitialSurfaceTemperature");
@@ -1676,13 +1575,7 @@ UserSoilTransportParameters::UserSoilTransportParameters(json11::Json j)
 
 Errors UserSoilTransportParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(pq_DispersionLength, j, "DispersionLength");
   set_double_value(pq_AD, j, "AD");
@@ -1711,13 +1604,7 @@ UserSoilOrganicParameters::UserSoilOrganicParameters(json11::Json j)
 
 Errors UserSoilOrganicParameters::merge(json11::Json j)
 {
-	Errors res;
-
-	string err;
-	if(j.has_shape({{"DEFAULT", json11::Json::OBJECT}}, err))
-	{
-		res = merge(j["DEFAULT"]);
-	}
+	Errors res = Json11Serializable::merge(j);
 
   set_double_value(po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard");
   set_double_value(po_SOM_FastDecCoeffStandard, j, "SOM_FastDecCoeffStandard");
