@@ -689,11 +689,22 @@ Output Monica::runMonica(Env env)
 		return Date();
 	};
 
+	//cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
+	//if pure absolute CMs are finished
+	vector<CultivationMethod*> cropRotation;
+	for(auto& cm : env.cropRotation)
+		cropRotation.push_back(&cm);
+
 	//iterator through the crop rotation
-	auto cmci = env.cropRotation.begin();
+	auto cmci = cropRotation.begin();
+	
+	//keep track of the year a cultivation method has been used in, to prevent initializing it again for the same year
+	map<int, set<CultivationMethod*>> year2cm;
+	
 	//direct handle to current cultivation method
-	CultivationMethod* currentCM = cmci == env.cropRotation.end() ? nullptr : &(*cmci);
+	CultivationMethod* currentCM = cmci == cropRotation.end() ? nullptr : *cmci;
 	currentCM->reinit(currentDate.year());
+	year2cm[currentDate.year()].insert(*cmci);
 
 	//are the dates in the production process relative dates
 	//or are they absolute as produced by the hermes inputs
@@ -714,6 +725,7 @@ Output Monica::runMonica(Env env)
 
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
 
+	
 	for(size_t d = 0, nods = env.da.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
@@ -768,21 +780,42 @@ Output Monica::runMonica(Env env)
 
 			//delete fully cultivation methods with only absolute worksteps,
 			//because they won't participate in a new run when wrapping the crop rotation 
-			if(cmci->areOnlyAbsoluteWorksteps())
-				cmci = env.cropRotation.erase(cmci);
+			//delete fully cultivation methods with only absolute worksteps,
+			//because they won't participate in a new run when wrapping the crop rotation 
+			if((*cmci)->areOnlyAbsoluteWorksteps())
+				cmci = cropRotation.erase(cmci);
 			else
 				cmci++;
 
 			//start anew if we reached the end of the crop rotation
-			if(cmci == env.cropRotation.end())
-				cmci = env.cropRotation.begin();
+			if(cmci == cropRotation.end())
+				cmci = cropRotation.begin();
 
-			currentCM = &(*cmci);
-			currentCM->reinit(currentDate.year());
-			nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
-			nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
-			debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
-				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			//check if there's at least a cultivation method left in cropRotation
+			if(cmci != cropRotation.end())
+			{
+				//if the newly set cultivation method has already been used this year
+				int year = currentDate.year();
+				auto it = year2cm.find(year);
+				if(it != year2cm.end())
+				{
+					if(it->second.find(*cmci) != it->second.end())
+						year++;
+				}
+
+				currentCM = *cmci;
+				currentCM->reinit(year);
+				year2cm[year].insert(*cmci);
+				nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
+				nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
+				debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
+					<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			}
+			else
+			{
+				currentCM = nullptr;
+				nextCMApplicationDate = nextAbsoluteCMApplicationDate = Date();
+			}
 		}
 	}
 	
