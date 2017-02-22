@@ -222,7 +222,7 @@ int main(int argc, char** argv)
 			else if(arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
-				cout << appName << " version " << version " zmq_version: " << major << "." << minor << "." << patch << endl, exit(0);
+				cout << appName << " version " << version << " ZeroMQ version: " << major << "." << minor << "." << patch << endl, exit(0);
 		}
 
 		debug() << "starting ZeroMQ MONICA server" << endl;
