@@ -161,6 +161,9 @@ int main(int argc, char** argv)
 	bool usePipeline = false;
 	string controlAddress = defControlAddress;
 
+	int major, minor, patch;
+	zmq::version(&major, &minor, &patch);
+
 	auto printHelp = [=]()
 	{
 		cout
@@ -169,7 +172,7 @@ int main(int argc, char** argv)
 			<< "options:" << endl
 			<< endl
 			<< " -h | --help ... this help output" << endl
-			<< " -v | --version ... outputs " << appName << " version" << endl
+			<< " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
 			<< endl
 			<< " -d | --debug ... show debug outputs" << endl
 			<< " -s | --serve-address [ADDRESS] (default: " << serveAddress << ")] ... serve MONICA on given address" << endl
@@ -219,7 +222,7 @@ int main(int argc, char** argv)
 			else if(arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
-				cout << appName << " version " << version << endl, exit(0);
+				cout << appName << " version " << version " zmq_version: " << major << "." << minor << "." << patch << endl, exit(0);
 		}
 
 		debug() << "starting ZeroMQ MONICA server" << endl;
