@@ -41,22 +41,24 @@ namespace Monica
 {
   class MonicaModel;
 
-  class DLL_API WorkStep : public Tools::Json11Serializable
+  class DLL_API Workstep : public Tools::Json11Serializable
 	{
 	public:
-    WorkStep(){}
+    Workstep(){}
 
-    WorkStep(const Tools::Date& d);
+    Workstep(const Tools::Date& d);
 
-    WorkStep(json11::Json object);
+		Workstep(size_t noOfDaysAfterEvent, const std::string& afterEvent);
 
-    virtual WorkStep* clone() const = 0;
+    Workstep(json11::Json object);
+
+    virtual Workstep* clone() const = 0;
 
     virtual Tools::Errors merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
-    virtual std::string type() const { return "WorkStep"; }
+    virtual std::string type() const { return "Workstep"; }
 
 		virtual Tools::Date date() const { return _date; }
 
@@ -72,14 +74,25 @@ namespace Monica
 
     virtual void setDate(Tools::Date date) {_date = date; }
 
+		virtual int noOfDaysAfterEvent() const { return _applyNoOfDaysAfterEvent; }
+
+		virtual std::string afterEvent() const { return _afterEvent; }
+
 		//! do whatever the workstep has to do
 		//! returns true if workstep is finished (dynamic worksteps might need to be applied again)
 		virtual bool apply(MonicaModel* model);
 
+		//! apply only if condition() is met (is used for dynamicWorksteps)
+		virtual bool applyWithPossibleCondition(MonicaModel* model);
+
+		virtual bool condition(MonicaModel* model);
+
+		virtual bool isDynamicWorkstep() const { return !_date.isValid(); }
+
 		//! tell if this workstep is active and can be used 
 		//! a workstep might temporarily be deactivated, eg a dynamic sowing workstep
 		//! which has to be checked for sowing every day, but not anymore after sowing
-		virtual bool isActive() const { return true; }
+		virtual bool isActive() const { return _isActive; }
 
 		//! reinit potential state of workstep
 		virtual void reinit(size_t year);
@@ -87,13 +100,17 @@ namespace Monica
 	protected:
 		Tools::Date _date;
 		Tools::Date _absDate;
+		int _applyNoOfDaysAfterEvent{-1};
+		std::string _afterEvent;
+		int _daysAfterEventCount{-1};
+		bool _isActive{true};
 	};
 
-  typedef std::shared_ptr<WorkStep> WSPtr;
+  typedef std::shared_ptr<Workstep> WSPtr;
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API Seed : public WorkStep
+	class DLL_API Seed : public Workstep
 	{
 	public:
     Seed(){}
@@ -128,12 +145,10 @@ namespace Monica
 
 	//---------------------------------------------------------------------------
 
-	class DLL_API AutomaticSowing : public WorkStep
+	class DLL_API AutomaticSowing : public Seed
 	{
 	public:
 		AutomaticSowing() {}
-
-		AutomaticSowing(const Tools::Date& at, CropPtr crop);
 
 		AutomaticSowing(json11::Json object);
 
@@ -148,6 +163,8 @@ namespace Monica
 		virtual std::string type() const { return "AutomaticSowing"; }
 
 		virtual bool apply(MonicaModel* model);
+
+		virtual bool condition(MonicaModel* model);
 
 		virtual void setDate(Tools::Date date);
 
@@ -185,7 +202,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API Harvest : public WorkStep
+	class DLL_API Harvest : public Workstep
 	{
 	public:
 		Harvest();
@@ -254,6 +271,8 @@ namespace Monica
 
 		virtual bool apply(MonicaModel* model);
 
+		virtual bool condition(MonicaModel* model);
+
 		virtual bool isActive() const { return !_cropHarvested; }
 
 		virtual void reinit(size_t year);
@@ -275,7 +294,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API Cutting : public WorkStep
+	class DLL_API Cutting : public Workstep
 	{
 	public:
     Cutting(const Tools::Date& at);
@@ -295,7 +314,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API MineralFertiliserApplication : public WorkStep
+	class DLL_API MineralFertiliserApplication : public Workstep
 	{
 	public:
 		MineralFertiliserApplication() {}
@@ -327,7 +346,7 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	class DLL_API NDemandApplication : public WorkStep
+	class DLL_API NDemandApplication : public Workstep
 	{
 	public:
 		NDemandApplication() {}
@@ -354,6 +373,8 @@ namespace Monica
 
 		virtual bool apply(MonicaModel* model);
 
+		virtual bool condition(MonicaModel* model);
+
 		MineralFertiliserParameters partition() const { return _partition; }
 
 		virtual bool isActive() const { return !_appliedFertilizer; }
@@ -370,7 +391,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API OrganicFertiliserApplication : public WorkStep
+	class DLL_API OrganicFertiliserApplication : public Workstep
 	{
 	public:
 		OrganicFertiliserApplication(const Tools::Date& at,
@@ -407,7 +428,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API TillageApplication : public WorkStep
+	class DLL_API TillageApplication : public Workstep
 	{
 	public:
     TillageApplication(const Tools::Date& at, double depth);
@@ -432,7 +453,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API SetValue : public WorkStep
+	class DLL_API SetValue : public Workstep
 	{
 	public:
 		SetValue(const Tools::Date& at, OId oid, json11::Json value);
@@ -459,7 +480,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API IrrigationApplication : public WorkStep
+	class DLL_API IrrigationApplication : public Workstep
 	{
 	public:
     IrrigationApplication(const Tools::Date& at, double amount,

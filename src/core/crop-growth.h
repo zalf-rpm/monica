@@ -62,6 +62,7 @@ namespace Monica
                const SiteParameters& siteParams,
                const UserCropParameters& cropPs,
                const SimulationParameters& simPs,
+							 std::function<void(std::string)> fireEvent,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
     void applyCutting();
@@ -586,6 +587,8 @@ namespace Monica
 
 		Voc::Emissions _guentherEmissions;
 		Voc::Emissions _jjvEmissions;
+
+		std::function<void(std::string)> _fireEvent;
   };
 }
 

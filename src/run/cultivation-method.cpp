@@ -47,48 +47,85 @@ using namespace Climate;
 
 //----------------------------------------------------------------------------
 
-WorkStep::WorkStep(const Tools::Date& d)
+Workstep::Workstep(const Tools::Date& d)
 	: _date(d)
 {}
 
-WorkStep::WorkStep(json11::Json j)
+Workstep::Workstep(size_t noOfDaysAfterEvent, const std::string& afterEvent)
+	: _applyNoOfDaysAfterEvent(noOfDaysAfterEvent)
+	, _afterEvent(afterEvent)
+{}
+
+Workstep::Workstep(json11::Json j)
 {
 	merge(j);
 }
 
-Errors WorkStep::merge(json11::Json j)
+Errors Workstep::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
 	set_iso_date_value(_date, j, "date");
+	set_int_value(_applyNoOfDaysAfterEvent, j, "days");
+	set_string_value(_afterEvent, j, "after");
 
 	return res;
 }
 
-json11::Json WorkStep::to_json() const
+json11::Json Workstep::to_json() const
 {
 	return json11::Json::object{
 		{"type", type()},
 		{"date", date().toIsoDateString()},};
 }
 
-bool WorkStep::apply(MonicaModel* model)
+bool Workstep::apply(MonicaModel* model)
 {
-	model->addEvent("WorkStep");
+	model->addEvent("Workstep");
 	model->addEvent("workstep");
 	return true;
 }
 
-void WorkStep::reinit(size_t year) 
+bool Workstep::applyWithPossibleCondition(MonicaModel* model)
+{
+	bool workstepFinished = false;
+	if(isActive())
+	{
+		if(isDynamicWorkstep())
+			workstepFinished = condition(model) ? apply(model) : false;
+		else
+			workstepFinished = apply(model);
+	}
+	return workstepFinished;
+}
+
+bool Workstep::condition(MonicaModel* model)
+{
+	auto currEvents = model->currentEvents();
+	auto prevEvents = model->previousDaysEvents();
+	
+	auto ceit = currEvents.find(_afterEvent);
+	if(_daysAfterEventCount >= 0)
+		_daysAfterEventCount++;
+	else if(ceit != currEvents.end()
+					|| prevEvents.find(_afterEvent) != prevEvents.end())
+		_daysAfterEventCount = 0;
+
+	return _daysAfterEventCount == _applyNoOfDaysAfterEvent;
+}
+
+void Workstep::reinit(size_t year) 
 { 
 	if(_date.isValid())
 		_absDate = _date.isAbsoluteDate() ? _date : _date.toAbsoluteDate(year);
+
+	_daysAfterEventCount = -1;
 }
 
 //------------------------------------------------------------------------------
 
 Seed::Seed(const Tools::Date& at, CropPtr crop)
-	: WorkStep(at)
+	: Workstep(at)
 	, _crop(crop)
 {
 	if(_crop)
@@ -102,7 +139,7 @@ Seed::Seed(json11::Json j)
 
 Errors Seed::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 	set_shared_ptr_value(_crop, j, "crop");
 	if(_crop)
 		_crop->setSeedDate(date());
@@ -120,22 +157,17 @@ json11::Json Seed::to_json(bool includeFullCropParameters) const
 
 bool Seed::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	debug() << "seeding crop: " << _crop->toString() << " at: " << date().toString() << endl;
 	model->seedCrop(_crop);
 	model->addEvent("Seed");
 	model->addEvent("seeding");
+
 	return true;
 }
 
 //------------------------------------------------------------------------------
-
-AutomaticSowing::AutomaticSowing(const Tools::Date& at, CropPtr crop)
-	: WorkStep()
-	, _crop(crop)
-{
-	if(_crop)
-		_crop->setSeedDate(at);
-}
 
 AutomaticSowing::AutomaticSowing(json11::Json j)
 {
@@ -144,7 +176,7 @@ AutomaticSowing::AutomaticSowing(json11::Json j)
 
 Errors AutomaticSowing::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 
 	set_iso_date_value(_earliestDate, j, "earliest-date");
 	set_iso_date_value(_latestDate, j, "latest-date");
@@ -216,20 +248,26 @@ bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>>& climat
 
 bool AutomaticSowing::apply(MonicaModel* model)
 {
-	if(_cropSeeded)
-		return false;
-
 	auto currentDate = model->currentStepDate();
 
-	auto seed = [&]()
-	{
-		model->seedCrop(_crop);
-		_crop->setSeedDate(currentDate);
-		model->addEvent("AutomaticSowing");
-		model->addEvent("automatic-sowing");
-		_cropSeeded = true;
-		debug() << "automatically sowing crop: " << _crop->toString() << " at: " << currentDate.toString() << endl;
-	};
+	setDate(currentDate);
+	_crop->setSeedDate(currentDate);
+
+	Seed::apply(model);
+	model->addEvent("AutomaticSowing");
+	model->addEvent("automatic-sowing");
+	_cropSeeded = true;
+	_inSowingRange = false;
+
+	return true;
+}
+
+bool AutomaticSowing::condition(MonicaModel* model)
+{
+	if(_cropSeeded)
+		return false;
+	
+	auto currentDate = model->currentStepDate();
 
 	if(!_inSowingRange && currentDate < _absEarliestDate)
 		return false;
@@ -237,15 +275,11 @@ bool AutomaticSowing::apply(MonicaModel* model)
 		_inSowingRange = true;
 
 	if(_inSowingRange && currentDate >= _absLatestDate)
-	{
-		seed();
-		_inSowingRange = false;
 		return true;
-	}
 
 	const auto& cd = model->climateData();
 	auto currentCd = cd.back();
-	
+
 	auto avg = [&](Climate::ACD acd)
 	{
 		return accumulate(cd.rbegin(), cd.rbegin() + _daysInTempWindow, 0.0,
@@ -270,7 +304,7 @@ bool AutomaticSowing::apply(MonicaModel* model)
 		bool TminOk = currentCd[Climate::tmin] >= _minTempThreshold;
 		Tok = avgTminOk && TminOk;
 	}
-	
+
 	if(!Tok)
 		return false;
 
@@ -292,8 +326,7 @@ bool AutomaticSowing::apply(MonicaModel* model)
 	});
 	if(tempSum < _tempSumAboveBaseTemp)
 		return false;
-	
-	seed();
+
 	return true;
 }
 
@@ -305,7 +338,8 @@ void AutomaticSowing::setDate(Tools::Date date)
 
 void AutomaticSowing::reinit(size_t year)
 {
-	WorkStep::reinit(year);
+	Workstep::reinit(year);
+
 	_cropSeeded = _inSowingRange = false;
 	setDate(Tools::Date());
 	_absEarliestDate = _earliestDate.isAbsoluteDate() ? _earliestDate : _earliestDate.toAbsoluteDate(year);
@@ -322,7 +356,7 @@ Harvest::Harvest()
 Harvest::Harvest(const Tools::Date& at,
 								 CropPtr crop,
 								 std::string method)
-	: WorkStep(at)
+	: Workstep(at)
 	, _crop(crop)
 	, _method(method)
 {
@@ -338,7 +372,7 @@ Harvest::Harvest(json11::Json j)
 
 Errors Harvest::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 
 	set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
@@ -361,6 +395,8 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 
 bool Harvest::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	if(model->cropGrowth())
 	{
 		auto crop = model->currentCrop();
@@ -459,61 +495,36 @@ json11::Json AutomaticHarvesting::to_json(bool includeFullCropParameters) const
 
 bool AutomaticHarvesting::apply(MonicaModel* model)
 {
-	//no crop or already harvested
-	if(!model->cropGrowth())
-		return false;
-		 
-	if(_cropHarvested)
-		return true;
-
-	auto currentDate = model->currentStepDate();
-
-	auto harvest = [&]()
-	{
-		Harvest::apply(model);
-		model->addEvent("AutomaticHarvesting");
-		model->addEvent("automatic-harvesting");
-		model->addEvent("harvesting");
-		_cropHarvested = true;
-		setDate(currentDate);
-		debug() << "automatically harvesting crop: " << crop()->toString() << " at: " << currentDate.toString() << endl;
-	};
-
-	//harvest after or at latested date
-	if(currentDate >= _absLatestDate)
-	{
-		harvest();
-		return true;
-	}
-
-	//check for maturity
-	bool isMaturityReached = _harvestTime == "maturity" && model->cropGrowth()->maturityReached();
-	if(!isMaturityReached)
-		return false;
-
-	//make dates comparable
-	auto sd = model->currentCrop()->seedDate();
-	auto seedDate = sd.isRelativeDate() ? sd.toAbsoluteDate(currentDate.year()) : sd;
+	setDate(model->currentStepDate());
 	
-	//check if user forgot to add one year to winter crop's latest seed date, if the date was relative
-	if(seedDate > _absLatestDate)
-		_absLatestDate.addYears(1);
+	Harvest::apply(model);
 	
-	//check soil moisture
-	if(!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
-		return false;
+	model->addEvent("AutomaticHarvesting");
+	model->addEvent("automatic-harvesting");
+	_cropHarvested = true;
 
-	//check precipitation
-	if(!isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum))
-		return false;
-
-	harvest();
 	return true;
+}
+
+bool AutomaticHarvesting::condition(MonicaModel* model)
+{
+	bool conditionMet = false;
+	
+	auto cg = model->cropGrowth();
+	if(cg && !_cropHarvested) //got a crop and not yet harvested
+		conditionMet =
+			model->currentStepDate() >= _absLatestDate  //harvest after or at latested date
+			|| (_harvestTime == "maturity" && model->cropGrowth()->maturityReached()) //has maturity been reached
+			|| isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
+			|| isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum); //check precipitation
+
+	return conditionMet;
 }
 
 void AutomaticHarvesting::reinit(size_t year)
 {
-	WorkStep::reinit(year);
+	Workstep::reinit(year);
+
 	_cropHarvested = false;
 	setDate(Tools::Date());
 	_absLatestDate = _latestDate.isAbsoluteDate() ? _latestDate : _latestDate.toAbsoluteDate(year);
@@ -523,18 +534,18 @@ void AutomaticHarvesting::reinit(size_t year)
 //------------------------------------------------------------------------------
 
 Cutting::Cutting(const Tools::Date& at)
-	: WorkStep(at)
+	: Workstep(at)
 {}
 
 Cutting::Cutting(json11::Json j)
-	: WorkStep(j)
+	: Workstep(j)
 {
 	merge(j);
 }
 
 Errors Cutting::merge(json11::Json j)
 {
-	return WorkStep::merge(j);
+	return Workstep::merge(j);
 }
 
 json11::Json Cutting::to_json() const
@@ -546,6 +557,8 @@ json11::Json Cutting::to_json() const
 
 bool Cutting::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	assert(model->currentCrop() && model->cropGrowth());
 	auto crop = model->currentCrop();
 	debug() << "Cutting crop: " << crop->toString() << " at: " << date().toString() << endl;
@@ -574,7 +587,7 @@ MineralFertiliserApplication::
 MineralFertiliserApplication(const Tools::Date& at,
 														 MineralFertiliserParameters partition,
 														 double amount)
-	: WorkStep(at)
+	: Workstep(at)
 	, _partition(partition)
 	, _amount(amount)
 {}
@@ -586,7 +599,7 @@ MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
 
 Errors MineralFertiliserApplication::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 	set_value_obj_value(_partition, j, "partition");
 	set_double_value(_amount, j, "amount");
 	return res;
@@ -604,6 +617,8 @@ json11::Json MineralFertiliserApplication::to_json() const
 
 bool MineralFertiliserApplication::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	debug() << toString() << endl;
 	model->applyMineralFertiliser(partition(), amount());
 	model->addEvent("MineralFertiliserApplication");
@@ -619,7 +634,7 @@ NDemandApplication(int stage,
 									 double depth,
 									 MineralFertiliserParameters partition,
 									 double Ndemand)
-	: WorkStep(Date())
+	: Workstep(Date())
 	, _partition(partition)
 	, _Ndemand(Ndemand)
 	, _depth(depth)
@@ -630,7 +645,7 @@ NDemandApplication::NDemandApplication(Tools::Date date,
 																			 double depth,
 																			 MineralFertiliserParameters partition,
 																			 double Ndemand)
-	: WorkStep(date)
+	: Workstep(date)
 	, _partition(partition)
 	, _Ndemand(Ndemand)
 	, _depth(depth)
@@ -643,7 +658,7 @@ NDemandApplication::NDemandApplication(json11::Json j)
 
 Errors NDemandApplication::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 	set_double_value(_Ndemand, j, "N-demand");
 	set_value_obj_value(_partition, j, "partition");
 	set_double_value(_depth, j, "depth");
@@ -670,33 +685,41 @@ json11::Json NDemandApplication::to_json() const
 
 bool NDemandApplication::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
+	double rd = model->cropGrowth()->get_RootingDepth_m();
+	debug() << toString() << endl;
+	double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth, _Ndemand);
+	model->addDailySumFertiliser(appliedAmount);
+	_appliedFertilizer = true;
+	setDate(model->currentStepDate());
+	model->addEvent("NDemandApplication");
+	model->addEvent("N-demand-fertilizing");
+
+	return true;
+}
+
+bool NDemandApplication::condition(MonicaModel* model)
+{
+	bool conditionMet = false;
+
 	auto cg = model->cropGrowth();
-	if(!cg)
-		return false;
-	if(_appliedFertilizer) 
-		return false;
-	
-	auto currStage = cg->get_DevelopmentalStage() + 1;
-	if(date().isValid() //is timed application
-		 || _stage == 0 // apply at seeding time
-		 || currStage == _stage) //
+	if(cg && !_appliedFertilizer)
 	{
-		double rd = cg->get_RootingDepth_m();
-		debug() << toString() << endl;
-		double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth, _Ndemand);
-		model->addDailySumFertiliser(appliedAmount);
-		_appliedFertilizer = true;
-		setDate(model->currentStepDate());
-		model->addEvent("NDemandApplication");
-		model->addEvent("N-demand-fertilizing");
-		return true;
+		auto currStage = cg->get_DevelopmentalStage() + 1;
+		conditionMet =
+			date().isValid() //is timed application
+			|| _stage == 0   //apply at seeding time
+			|| currStage == _stage; //reached the requested stage
 	}
-	return false;
+
+	return conditionMet;
 }
 
 void NDemandApplication::reinit(size_t year)
 {
-	WorkStep::reinit(year);
+	Workstep::reinit(year);
+
 	_appliedFertilizer = false;
 	setDate(Tools::Date());
 }
@@ -709,7 +732,7 @@ OrganicFertiliserApplication(const Tools::Date& at,
 														 OrganicMatterParametersPtr params,
 														 double amount,
 														 bool incorp)
-	: WorkStep(at)
+	: Workstep(at)
 	, _params(params)
 	, _amount(amount)
 	, _incorporation(incorp)
@@ -722,7 +745,7 @@ OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
 
 Errors OrganicFertiliserApplication::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 	set_shared_ptr_value(_params, j, "parameters");
 	set_double_value(_amount, j, "amount");
 	set_bool_value(_incorporation, j, "incorporation");
@@ -741,10 +764,13 @@ json11::Json OrganicFertiliserApplication::to_json() const
 
 bool OrganicFertiliserApplication::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	debug() << toString() << endl;
 	model->applyOrganicFertiliser(_params, _amount, _incorporation);
 	model->addEvent("OrganicFertiliserApplication");
 	model->addEvent("organic-fertilizing");
+
 	return true;
 }
 
@@ -752,7 +778,7 @@ bool OrganicFertiliserApplication::apply(MonicaModel* model)
 
 TillageApplication::TillageApplication(const Tools::Date& at,
 																			 double depth)
-	: WorkStep(at)
+	: Workstep(at)
 	, _depth(depth)
 {}
 
@@ -763,7 +789,7 @@ TillageApplication::TillageApplication(json11::Json j)
 
 Errors TillageApplication::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 	set_double_value(_depth, j, "depth");
 	return res;
 }
@@ -778,10 +804,13 @@ json11::Json TillageApplication::to_json() const
 
 bool TillageApplication::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	debug() << toString() << endl;
 	model->applyTillage(_depth);
 	model->addEvent("TillageApplication");
 	model->addEvent("tillage");
+
 	return true;
 }
 
@@ -790,7 +819,7 @@ bool TillageApplication::apply(MonicaModel* model)
 SetValue::SetValue(const Tools::Date& at,
 									 OId oid,
 									 json11::Json value)
-	: WorkStep(at)
+	: Workstep(at)
 	, _oid(oid)
 	, _value(value)
 {}
@@ -802,7 +831,7 @@ SetValue::SetValue(json11::Json j)
 
 Errors SetValue::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 
 	auto oids = parseOutputIds({j["var"]});
 	if(!oids.empty())
@@ -857,6 +886,8 @@ json11::Json SetValue::to_json() const
 
 bool SetValue::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	if(!_getValue)
 		return true;
 
@@ -870,6 +901,7 @@ bool SetValue::apply(MonicaModel* model)
 
 	model->addEvent("SetValue");
 	model->addEvent("set-value");
+
 	return true;
 }
 
@@ -878,7 +910,7 @@ bool SetValue::apply(MonicaModel* model)
 IrrigationApplication::IrrigationApplication(const Tools::Date& at,
 																						 double amount,
 																						 IrrigationParameters params)
-	: WorkStep(at)
+	: Workstep(at)
 	, _amount(amount)
 	, _params(params)
 {}
@@ -890,7 +922,7 @@ IrrigationApplication::IrrigationApplication(json11::Json j)
 
 Errors IrrigationApplication::merge(json11::Json j)
 {
-	Errors res = WorkStep::merge(j);
+	Errors res = Workstep::merge(j);
 	set_double_value(_amount, j, "amount");
 	set_value_obj_value(_params, j, "parameters");
 	return res;
@@ -907,10 +939,13 @@ json11::Json IrrigationApplication::to_json() const
 
 bool IrrigationApplication::apply(MonicaModel* model)
 {
+	Workstep::apply(model);
+
 	//cout << toString() << endl;
 	model->applyIrrigation(amount(), nitrateConcentration());
 	model->addEvent("IrrigationApplication");
 	model->addEvent("irrigation");
+
 	return true;
 }
 
@@ -1061,8 +1096,9 @@ void CultivationMethod::apply(MonicaModel* model)
 {
 	auto& udws = _unfinishedDynamicWorksteps;
 	udws.erase(remove_if(udws.begin(), udws.end(),
-											 [model](WSPtr wsp){
-		return wsp->apply(model);
+											 [model](WSPtr wsp)
+	{
+		return wsp->applyWithPossibleCondition(model);
 	}), udws.end());
 }
 

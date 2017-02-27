@@ -227,8 +227,9 @@ namespace Monica
 		const std::vector<std::map<Climate::ACD, double>>& climateData() const { return _climateData; }
 
 		void addEvent(std::string e) { _currentEvents.insert(e); }
-		void clearEvents() { _currentEvents.clear(); }
-		std::set<std::string> currentEvents() const { return _currentEvents; }
+		void clearEvents();
+		const std::set<std::string>& currentEvents() const { return _currentEvents; }
+		const std::set<std::string>& previousDaysEvents() const { return _previousDaysEvents; }
 		
 	private:
 		const SiteParameters _sitePs;
@@ -267,6 +268,7 @@ namespace Monica
 		Tools::Date _currentStepDate;
 		std::vector<std::map<Climate::ACD, double>> _climateData;
 		std::set<std::string> _currentEvents;
+		std::set<std::string> _previousDaysEvents;
 
 		bool _clearCropUponNextDay{false};
 

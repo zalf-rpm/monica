@@ -16,10 +16,8 @@
 		"no-of-climate-file-header-lines": 1,
 		"csv-separator": ",",
 		"header-to-acd-names": {
-			"DE-date": "de-date"
-		}, 
-		"_convert": {
-			"globrad": ["*", 100]
+			"DE-date": "de-date",
+			"GlobalRadiation": ["globrad", "*", 100]
 		}
 	},
 	

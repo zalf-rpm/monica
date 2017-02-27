@@ -90,6 +90,62 @@
 	"cropRotation": [
 		{
 			"worksteps": [
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [1,3]], "value": 0.01 },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [4,12]], "value": 0.002222 },
+				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [13,15]], "value": 0.0003333 }
+			]
+		},
+		{
+			"worksteps": [
+				{ 
+					"type": "Seed",
+					"date": "0000-04-03",
+					"crop": ["ref", "crops", "SM"] 
+				},
+				{
+					"type": "MineralFertiliserApplication",
+					"days": 2,
+					"after": "anthesis",
+					"amount": [10.0, "kg N"],
+					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
+				},
+				{
+					"type": "MineralFertiliserApplication",
+					"date": "0000-04-03",
+					"amount": [30.0, "kg N"],
+					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
+				},
+				{
+					"type": "MineralFertiliserApplication",
+					"date": "0000-05-15",
+					"amount": [220, "kg N"],
+					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
+				},
+				{ 
+					"type": "Harvest", 
+					"date": "0000-10-03"
+				},
+				{
+					"type": "OrganicFertiliserApplication",
+					"days": 3,
+					"after": "harvesting",
+					"amount": [30000, "kg N"],
+					"parameters": ["ref", "fert-params", "CADLM"],
+					"incorporation": true
+				},
+				{ 
+					"type": "TillageApplication",
+					"days": 7,
+					"after": "harvesting", 
+					"depth": 0.3
+				}
+			]
+		}
+	],
+
+	"_____cropRotation": [
+		{
+			"worksteps": [
 				{ "date": "0000-04-24", "type": "OverwriteSoilMoisture", "soilMoisturePercentFC": 70.0 },
 				{ "date": "0000-04-24", "type": "Seed", "crop": ["ref", "crops", "SM"] },
 				{ "date": "0001-10-10", "type": "Harvest"}
@@ -98,7 +154,7 @@
 	],
 
 	"__relative date crop rotation example": "",
-	"_____cropRotation": [
+	"____cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [1, 3]], "value": 0.002 },

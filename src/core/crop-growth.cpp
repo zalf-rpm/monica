@@ -49,6 +49,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 const SiteParameters& stps,
 											 const UserCropParameters& cropPs,
 											 const SimulationParameters& simPs,
+											 std::function<void(std::string)> fireEvent,
 											 int usage)
 	: soilColumn(sc)
 	, cropPs(cropPs)
@@ -149,6 +150,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
 	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+	, _fireEvent(fireEvent)
 {
 	// Determining the total temperature sum of all developmental stages after
 	// emergence (that's why i_Stage starts with 1) until before senescence
@@ -294,12 +296,18 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 														vc_CropNRedux);
 
 	if(isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage))
+	{
 		vc_AnthesisDay = int(vs_JulianDay);
+		if(_fireEvent)
+			_fireEvent("anthesis");
+	}
 
 	if(isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage))
 	{
 		vc_MaturityDay = int(vs_JulianDay);
 		vc_MaturityReached = true;
+		if(_fireEvent)
+			_fireEvent("maturity");
 	}
 
 	vc_DaylengthFactor =

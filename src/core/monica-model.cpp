@@ -117,6 +117,7 @@ void MonicaModel::seedCrop(CropPtr crop)
                                         _sitePs,
                                         _cropPs,
                                         _simPs,
+																				[this](string event){ this->addEvent(event); },
                                         crop->getEva2TypeUsage());
 
     if (_currentCrop->perennialCropParameters())
@@ -1001,3 +1002,8 @@ double MonicaModel::getsum30cmActDenitrificationRate() const
   return sum;
 }
 
+void MonicaModel::clearEvents() 
+{ 
+	_previousDaysEvents = _currentEvents;
+	_currentEvents.clear(); 
+}
