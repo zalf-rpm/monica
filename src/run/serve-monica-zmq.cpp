@@ -39,6 +39,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace std;
 using namespace Monica;
+using namespace Monica::ZmqServer;
 using namespace Tools;
 using namespace json11;
 using namespace Soil;
@@ -191,10 +192,10 @@ json11::Json createYearlyResultsMessage(map<ResultId, double>& avs)
 }
 */
 
-void Monica::startZeroMQMonica(zmq::context_t* zmqContext, 
-															 string inputSocketAddress, 
-															 string outputSocketAddress, 
-															 bool isInProcess)
+void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext, 
+																					string inputSocketAddress,
+																					string outputSocketAddress,
+																					bool isInProcess)
 {
 	/*
   zmq::socket_t input(*zmqContext, isInProcess ? ZMQ_PAIR : ZMQ_PULL);
@@ -387,8 +388,8 @@ void Monica::startZeroMQMonica(zmq::context_t* zmqContext,
 
 //-----------------------------------------------------------------------------
 
-void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext, 
-																map<ZmqSocketRole, pair<ZmqSocketType, vector<string>>> socketAddresses)
+void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
+																					 map<SocketRole, SocketConfig> socketAddresses)
 {
 	if(socketAddresses.empty())
 	{
@@ -396,62 +397,46 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		return;
 	}
 
-	ZmqSocketType rType; vector<string> rAddresses;
+	
+	SocketConfig rconfig;
 	auto rci = socketAddresses.find(ReceiveJob);
 	if(rci != socketAddresses.end())
-		tie(rType, rAddresses) = rci->second;
+		rconfig = rci->second;
+	vector<string> rAddresses = rconfig.addresses;
 	int receiveSocketType = ZMQ_REP;
-	if(rType == Pull)
+	if(rconfig.type == Pull)
 		receiveSocketType = ZMQ_PULL;
 	zmq::socket_t socket(*zmqContext, receiveSocketType);
 
 	try
 	{
-		//normal reply socket has to bind to address
-		if(rType == Reply)
-		{
-			debug() << "MONICA: binding monica zeromq reply socket to address: ";
-			int i = 0;
-			for(auto address : rAddresses)
-				debug() << (i > 0 ? "," : "") << address, ++i;
-			debug() << endl;
-			for(auto address : rAddresses)
-				socket.bind(address);
-			debug() << "MONICA: bound monica zeromq reply socket to address: ";
-			i = 0;
-			for(auto address : rAddresses)
-				debug() << (i > 0 ? "," : "") << address, ++i;
-			debug() << endl;
-		}
-		//proxy reply socket or pull socket have to connect to either proxy dealer socket or push socket
-		else
-		{
-			debug() << "MONICA: connecting monica zeromq reply socket to address: ";
-			int i = 0;
-			for(auto address : rAddresses)
-				debug() << (i > 0 ? "," : "") << address, ++i;
-			debug() << endl;
-			for(auto address : rAddresses)
-				socket.connect(address);
-			debug() << "MONICA: connected monica zeromq reply socket to address: ";
-			i = 0;
-			for(auto address : rAddresses)
-				debug() << (i > 0 ? "," : "") << address, ++i;
-			debug() << endl;
-		}
+		debug() << "MONICA: " << (rconfig.op == bind ? "binding" : "connecting") << " monica zeromq receiving socket to address: ";
+		int i = 0;
+		for(auto address : rAddresses)
+			debug() << (i > 0 ? "," : "") << address, ++i;
+		debug() << endl;
+		for(auto address : rAddresses)
+			rconfig.op == bind ? socket.bind(address) : socket.connect(address);
+		debug() << "MONICA: " << (rconfig.op == bind ? "bound" : "connected") << " monica zeromq receiving socket to address: ";
+		i = 0;
+		for(auto address : rAddresses)
+			debug() << (i > 0 ? "," : "") << address, ++i;
+		debug() << endl;
 
-		ZmqSocketType sType; vector<string> sAddresses = rAddresses;
+		vector<string> sAddresses = rconfig.addresses;
+		SocketConfig sconfig;
 		auto sci = socketAddresses.find(SendResult);
 		if(sci != socketAddresses.end())
-			tie(sType, sAddresses) = sci->second;
+			sconfig = sci->second, sAddresses = sconfig.addresses;
 		int sendSocketType = ZMQ_PUSH;
 		zmq::socket_t sendSocket(*zmqContext, sendSocketType);
 		bool distinctSendSocket = sAddresses != rAddresses;
 
-		ZmqSocketType cType; vector<string> cAddresses = rAddresses;
+		vector<string> cAddresses = rconfig.addresses;
+		SocketConfig cconfig;
 		auto cci = socketAddresses.find(Control);
 		if(cci != socketAddresses.end())
-			tie(cType, cAddresses) = cci->second;
+			cconfig = cci->second, cAddresses = cconfig.addresses;
 		int controlSocketType = ZMQ_SUB;
 		zmq::socket_t controlSocket(*zmqContext, controlSocketType);
 		bool distinctControlSocket = cAddresses != rAddresses;
@@ -465,7 +450,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		{
 			if(distinctSendSocket)
 				for(auto address : sAddresses)
-					sendSocket.connect(address);
+					sconfig.op == bind ? sendSocket.bind(address) : sendSocket.connect(address);
 
 			try
 			{
@@ -475,7 +460,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 					auto topic = "finish";
 					topicCharCount = sizeof(topic);
 					for(auto address : cAddresses)
-						controlSocket.connect(address);
+						cconfig.op == bind ? controlSocket.bind(address) : controlSocket.connect(address);
 					controlSocket.setsockopt(ZMQ_SUBSCRIBE, topic, topicCharCount);
 				}
 
@@ -498,7 +483,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 						if(msgType == "finish")
 						{
 							//only send reply when not in pipeline configuration
-							if(rType != Pull)
+							if(rconfig.type != Pull)
 							{
 								J11Object resultMsg;
 								resultMsg["type"] = "ack";
@@ -591,7 +576,9 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 			}
 			catch(zmq::error_t e)
 			{
-				cerr << "Couldn't connect zmq subscribe socket to address: ";
+				cerr 
+					<< "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
+					<< " zmq subscribe socket to address: ";
 				int i = 0;
 				for(auto address : cAddresses)
 					cerr << (i > 0 ? "," : "") << address, ++i; 
@@ -600,7 +587,9 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		}
 		catch(zmq::error_t e)
 		{
-			cerr << "Couldn't bind zmq push socket to address: ";
+			cerr 
+				<< "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
+				<< " zmq push socket to address: ";
 			int i = 0;
 			for(auto address : sAddresses)
 				cerr << (i > 0 ? "," : "") << address, ++i; 
@@ -610,7 +599,7 @@ void Monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 	catch(zmq::error_t e)
 	{
 		cerr
-			<< "Couldn't " << (rType == Reply ? "bind" : "connect")
+			<< "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
 			<< " zmq socket to address: ";
 		int i = 0;
 		for(auto address : rAddresses)

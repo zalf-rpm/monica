@@ -42,6 +42,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace std;
 using namespace Monica;
+using namespace Monica::ZmqServer;
 using namespace Tools;
 using namespace json11;
 
@@ -161,6 +162,9 @@ int main(int argc, char** argv)
 	bool usePipeline = false;
 	string controlAddress = defControlAddress;
 
+	SocketOp inputOp = ZmqServer::connect;
+	SocketOp outputOp = ZmqServer::connect;
+
 	int major, minor, patch;
 	zmq::version(&major, &minor, &patch);
 
@@ -177,10 +181,13 @@ int main(int argc, char** argv)
 			<< " -d | --debug ... show debug outputs" << endl
 			<< " -s | --serve-address [ADDRESS] (default: " << serveAddress << ")] ... serve MONICA on given address" << endl
 			<< " -p | --proxy-address [(PROXY-)ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress << ")] ... receive work via proxy from given address(es)" << endl
-			<< " -i | --input-address [ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress << ")] ... receive work from given address(es)" << endl
+			<< " -bi | --bind-input ... bind the input port" << endl
+			<< " -ci | --connect-input (default) ... connect the input port" << endl
+			<< " -i | --input-address [bind|connect]|[ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress << ")] ... receive work from given address(es)" << endl
+			<< " -bo | --bind-output ... bind the output port" << endl
+			<< " -co | --connect-output (default) ... connect the output port" << endl
 			<< " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress << ")] ... send results to this address(es)" << endl
 			<< " -c | --control-address [ADDRESS] (default: " << controlAddress << ")] ... connect MONICA server to this address for control messages" << endl;
-			
 	};
 
 	zmq::context_t context(1);
@@ -203,11 +210,19 @@ int main(int argc, char** argv)
 				if(i + 1 < argc && argv[i + 1][0] != '-')
 					proxyAddress = argv[++i];
 			}
+			if(arg == "-bi" || arg == "--bind-input")
+				inputOp = ZmqServer::bind;
+			if(arg == "-ci" || arg == "--connect-input")
+				inputOp = ZmqServer::connect;
 			else if(arg == "-i" || arg == "--input-address")
 			{
 				if(i + 1 < argc && argv[i + 1][0] != '-')
 					inputAddress = argv[++i];
 			}
+			if(arg == "-bo" || arg == "--bind-output")
+				outputOp = ZmqServer::bind;
+			if(arg == "-co" || arg == "--connect-output")
+				outputOp = ZmqServer::connect;
 			else if(arg == "-o" || arg == "--output-address")
 			{
 				usePipeline = true;
@@ -227,18 +242,18 @@ int main(int argc, char** argv)
 
 		debug() << "starting ZeroMQ MONICA server" << endl;
 
-		map<ZmqSocketRole, pair<ZmqSocketType, vector<string>>> addresses;
+		map<SocketRole, SocketConfig> addresses;
 		if(usePipeline)
 		{
-			addresses[ReceiveJob] = make_pair(Pull, splitString(inputAddress, ","));
-			addresses[SendResult] = make_pair(Push, splitString(outputAddress, ","));
+			addresses[ReceiveJob] = {Pull, splitString(inputAddress, ","), inputOp};
+			addresses[SendResult] = {Push, splitString(outputAddress, ","), outputOp};
 		}
 		else if(connectToZmqProxy)
-			addresses[ReceiveJob] = make_pair(ProxyReply, splitString(proxyAddress, ","));
+			addresses[ReceiveJob] = {ProxyReply, splitString(proxyAddress, ","), ZmqServer::connect};
 		else
-			addresses[ReceiveJob] = make_pair(Reply, splitString(serveAddress, ","));
+			addresses[ReceiveJob] = {Reply, splitString(serveAddress, ","), ZmqServer::bind};
 
-		addresses[Control] = make_pair(Subscribe, vector<string>{controlAddress});
+		addresses[Control] = {Subscribe, vector<string>{controlAddress}, ZmqServer::connect};
 
 		serveZmqMonicaFull(&context, addresses);
 

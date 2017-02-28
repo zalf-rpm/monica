@@ -33,15 +33,25 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-  void startZeroMQMonica(zmq::context_t* zmqContext, 
-												 std::string inputSocketAddress, 
-												 std::string outputSocketAddress, 
-												 bool isInProcess = false);
-	
-	enum ZmqSocketType { Reply, ProxyReply, Pull, Push, Subscribe };
-	enum ZmqSocketRole { ReceiveJob, SendResult, Control };
-	void serveZmqMonicaFull(zmq::context_t* zmqContext,
-													std::map<ZmqSocketRole, std::pair<ZmqSocketType, std::vector<std::string>>> socketAddresses);
+	namespace ZmqServer
+	{
+		void startZeroMQMonica(zmq::context_t* zmqContext,
+													 std::string inputSocketAddress,
+													 std::string outputSocketAddress,
+													 bool isInProcess = false);
+
+		enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe };
+		enum SocketRole { ReceiveJob, SendResult, Control };
+		enum SocketOp { bind, connect };
+		struct SocketConfig
+		{
+			SocketType type;
+			std::vector<std::string> addresses;
+			SocketOp op;
+		};
+		void serveZmqMonicaFull(zmq::context_t* zmqContext,
+														std::map<SocketRole, SocketConfig> socketAddresses);
+	}
 }
 
 #endif
