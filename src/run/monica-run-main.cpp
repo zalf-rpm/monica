@@ -13,7 +13,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -28,6 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "env-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
+#include "db/abstract-db-connections.h"
 
 using namespace std;
 using namespace Monica;
@@ -42,9 +44,16 @@ int main(int argc, char** argv)
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 
-	//use a possibly non-default db-connections.ini
-	//Db::dbConnectionParameters("db-connections.ini");
-
+	//init path to db-connections.ini
+	if(auto monicaHome = getenv("MONICA_HOME"))
+	{
+		auto pathToFile = string(monicaHome) + pathSeparator() + "db-connections.ini";
+		//init for dll/so
+		initPathToDB(pathToFile);
+		//init for monica-run
+		Db::dbConnectionParameters(pathToFile);
+	}
+	
 	bool debug = false, debugSet = false;
 	string startDate, endDate;
 	string pathToOutput;
@@ -52,7 +61,7 @@ int main(int argc, char** argv)
 	bool writeOutputFile = false;
 	string pathToSimJson = "./sim.json", crop, site, climate;
 	string dailyOutputs;
-
+	
 	auto printHelp = [=]()
 	{
 		cout
