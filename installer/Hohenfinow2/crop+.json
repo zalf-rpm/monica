@@ -12,7 +12,7 @@
 			"_db_cropParams": ["_include-from-db", {"db": "monica", "type": "crop", "species": "rye", "cultivar": "winter rye"}],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rye.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/rye/winter rye.json"]
+				"cultivar": ["include-from-file", "monica-parameters/crops/rye/winter-rye.json"]
 			},
 			"_db_residueParams": ["_include-from-db", {"db": "monica", "type": "crop_residue", "species": "rye", "residue-type": ""}],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rye.json"]
@@ -21,8 +21,8 @@
 			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "maize", "silage maize"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/maize_EU.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage maize.json"]
+				"species": ["include-from-file", "monica-parameters/crops/maize.json"],
+				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage-maize.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "maize", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/maize.json"]
@@ -32,7 +32,7 @@
 			"_db_cropParams": ["_include-from-db", "crop", "potato", "moderately early potato"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/potato.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/potato/moderately early potato.json"]
+				"cultivar": ["include-from-file", "monica-parameters/crops/potato/moderately-early-potato.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "potato", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/potato.json"]
@@ -41,8 +41,8 @@
 			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "wheat", "winter wheat"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/wheat_EU.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter wheat_EU.json"]
+				"species": ["include-from-file", "monica-parameters/crops/wheat.json"],
+				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter-wheat.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "wheat", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
@@ -52,7 +52,7 @@
 			"_db_cropParams": ["_include-from-db", "crop", "barley", "winter barley"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/barley/winter barley.json"]
+				"cultivar": ["include-from-file", "monica-parameters/crops/barley/winter-barley.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "barley", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
@@ -62,7 +62,7 @@
 			"_db_cropParams": ["_include-from-db", "crop", "barley", "spring barley"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/barley/spring barley.json"]
+				"cultivar": ["include-from-file", "monica-parameters/crops/barley/spring-barley.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "barley", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
@@ -72,7 +72,7 @@
 			"_db_cropParams": ["_include-from-db", "crop", "rape", "winter rape"],
 			"cropParams": {
 				"species": ["include-from-file", "monica-parameters/crops/rape.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/rape/winter rape.json"]
+				"cultivar": ["include-from-file", "monica-parameters/crops/rape/winter-rape.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "rape", ""],
 			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rape.json"]
@@ -356,6 +356,6 @@
 	"__general crop parameters for the monica model": "",
 	"_db_CropParameters": ["_include-from-db", {"type": "crop-params", "name": "hermes"}],
 	"CropParameters": {
-		"=": ["include-from-file", "monica-parameters/user-parameters/hermes-crop.json"]
+		"=": ["include-from-file", "monica-parameters/general/crop.json"]
 	}
 }

@@ -37,13 +37,13 @@
   },
 	
 	"__all kinds of more general monica parameters": "",
-  "SoilTemperatureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-temperature.json"],
+  "SoilTemperatureParameters": ["include-from-file", "monica-parameters/general/soil-temperature.json"],
 	"EnvironmentParameters": {
-    "=": ["include-from-file", "monica-parameters/user-parameters/hermes-environment.json"],
+    "=": ["include-from-file", "monica-parameters/general/environment.json"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
   },
-  "SoilOrganicParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-organic.json"],
-  "SoilTransportParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-transport.json"],
-  "SoilMoistureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-moisture.json"]
+  "SoilOrganicParameters": ["include-from-file", "monica-parameters/general/soil-organic.json"],
+  "SoilTransportParameters": ["include-from-file", "monica-parameters/general/soil-transport.json"],
+  "SoilMoistureParameters": ["include-from-file", "monica-parameters/general/soil-moisture.json"]
 }
