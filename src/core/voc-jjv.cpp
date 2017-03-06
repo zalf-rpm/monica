@@ -191,7 +191,7 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 	//(vcMax, jMax -> vcmax_in, jmax_in).
 	//There is an option to set these variables here for testing purpose only.
 
-	const size_t fl = lemi.foliage_layer;
+	//const size_t fl = lemi.foliage_layer;
 	const double parabs = lemi.pho.par * ABSO; // fw: TODO: implement absorbed radiation (parshd_fl, parsun_fl) together with fraction of sunlit foliage (ts_sunlitfoliagefraction_fl, 1 - ts_sunlitfoliagefraction_fl)
 
 	if(true)

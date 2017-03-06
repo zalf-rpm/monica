@@ -587,6 +587,9 @@ namespace Monica
 
 		Voc::Emissions _guentherEmissions;
 		Voc::Emissions _jjvEmissions;
+		double _efMono{0};
+		double _efMonos{0};
+		double _efIso{0};
 
 		std::function<void(std::string)> _fireEvent;
   };

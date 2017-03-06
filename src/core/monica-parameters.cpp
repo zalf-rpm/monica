@@ -618,59 +618,67 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_int_value(pc_CuttingDelayDays, j, "CuttingDelayDays");
   set_double_value(pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor");
 
+	set_double_value(pc_efMono, j, "ef-mono");
+	set_double_value(pc_efMonos, j, "ef-monos");
+	set_double_value(pc_efIso, j, "ef-iso");
+
 	return res;
 }
 
 json11::Json SpeciesParameters::to_json() const
 {
-  auto species = J11Object {
-  {"type", "SpeciesParameters"},
-  {"SpeciesName", pc_SpeciesId},
-//  {"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages},
-//  {"NumberOfOrgans", pc_NumberOfOrgans},
-  {"CarboxylationPathway", pc_CarboxylationPathway},
-  {"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency},
-  {"PartBiologicalNFixation", pc_PartBiologicalNFixation},
-  {"InitialKcFactor", pc_InitialKcFactor},
-  {"LuxuryNCoeff", pc_LuxuryNCoeff},
-  {"MaxCropDiameter", pc_MaxCropDiameter},
-  {"StageAtMaxHeight", pc_StageAtMaxHeight},
-  {"StageAtMaxDiameter", pc_StageAtMaxDiameter},
-  {"MinimumNConcentration", pc_MinimumNConcentration},
-  {"MinimumTemperatureForAssimilation", pc_MinimumTemperatureForAssimilation},
-  {"OptimumTemperatureForAssimilation", pc_OptimumTemperatureForAssimilation},
-  {"MaximumTemperatureForAssimilation", pc_MaximumTemperatureForAssimilation},
-  {"NConcentrationAbovegroundBiomass", pc_NConcentrationAbovegroundBiomass},
-  {"NConcentrationB0", pc_NConcentrationB0},
-  {"NConcentrationPN", pc_NConcentrationPN},
-  {"NConcentrationRoot", pc_NConcentrationRoot},
-  {"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress},
-  {"FieldConditionModifier", pc_FieldConditionModifier},
-  {"AssimilateReallocation", pc_AssimilateReallocation},
-  {"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)},
-  {"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)},
-  {"OrganGrowthRespiration", toPrimJsonArray(pc_OrganGrowthRespiration)},
-  {"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)},
-  {"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)},
-  {"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)},
-  {"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)},
-  {"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)},
-  {"SamplingDepth", pc_SamplingDepth},
-  {"TargetNSamplingDepth", pc_TargetNSamplingDepth},
-  {"TargetN30", pc_TargetN30},
-  {"MaxNUptakeParam", pc_MaxNUptakeParam},
-  {"RootDistributionParam", pc_RootDistributionParam},
-  {"PlantDensity", pc_PlantDensity},
-  {"RootGrowthLag", pc_RootGrowthLag},
-  {"MinimumTemperatureRootGrowth", pc_MinimumTemperatureRootGrowth},
-  {"InitialRootingDepth", pc_InitialRootingDepth},
-  {"RootPenetrationRate", pc_RootPenetrationRate},
-  {"RootFormFactor", pc_RootFormFactor},
-  {"SpecificRootLength", pc_SpecificRootLength},
-  {"StageAfterCut", pc_StageAfterCut},
-  {"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress},
-  {"CuttingDelayDays", pc_CuttingDelayDays},
-  {"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor}};
+  auto species = J11Object 
+	{{"type", "SpeciesParameters"}
+	,{"SpeciesName", pc_SpeciesId}
+//  ,{"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages}
+//  ,{"NumberOfOrgans", pc_NumberOfOrgans}
+  ,{"CarboxylationPathway", pc_CarboxylationPathway}
+	,{"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency}
+	,{"PartBiologicalNFixation", pc_PartBiologicalNFixation}
+  ,{"InitialKcFactor", pc_InitialKcFactor}
+  ,{"LuxuryNCoeff", pc_LuxuryNCoeff}
+  ,{"MaxCropDiameter", pc_MaxCropDiameter}
+  ,{"StageAtMaxHeight", pc_StageAtMaxHeight}
+  ,{"StageAtMaxDiameter", pc_StageAtMaxDiameter}
+  ,{"MinimumNConcentration", pc_MinimumNConcentration}
+  ,{"MinimumTemperatureForAssimilation", pc_MinimumTemperatureForAssimilation}
+  ,{"OptimumTemperatureForAssimilation", pc_OptimumTemperatureForAssimilation}
+  ,{"MaximumTemperatureForAssimilation", pc_MaximumTemperatureForAssimilation}
+  ,{"NConcentrationAbovegroundBiomass", pc_NConcentrationAbovegroundBiomass}
+  ,{"NConcentrationB0", pc_NConcentrationB0}
+  ,{"NConcentrationPN", pc_NConcentrationPN}
+  ,{"NConcentrationRoot", pc_NConcentrationRoot}
+  ,{"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress}
+  ,{"FieldConditionModifier", pc_FieldConditionModifier}
+  ,{"AssimilateReallocation", pc_AssimilateReallocation}
+  ,{"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)}
+  ,{"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)}
+  ,{"OrganGrowthRespiration", toPrimJsonArray(pc_OrganGrowthRespiration)}
+  ,{"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)}
+  ,{"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)}
+  ,{"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)}
+  ,{"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)}
+  ,{"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)}
+  ,{"SamplingDepth", pc_SamplingDepth}
+  ,{"TargetNSamplingDepth", pc_TargetNSamplingDepth}
+  ,{"TargetN30", pc_TargetN30}
+  ,{"MaxNUptakeParam", pc_MaxNUptakeParam}
+  ,{"RootDistributionParam", pc_RootDistributionParam}
+  ,{"PlantDensity", pc_PlantDensity}
+  ,{"RootGrowthLag", pc_RootGrowthLag}
+  ,{"MinimumTemperatureRootGrowth", pc_MinimumTemperatureRootGrowth}
+  ,{"InitialRootingDepth", pc_InitialRootingDepth}
+  ,{"RootPenetrationRate", pc_RootPenetrationRate}
+  ,{"RootFormFactor", pc_RootFormFactor}
+  ,{"SpecificRootLength", pc_SpecificRootLength}
+  ,{"StageAfterCut", pc_StageAfterCut}
+  ,{"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress}
+  ,{"CuttingDelayDays", pc_CuttingDelayDays}
+  ,{"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor}
+	,{ "ef-mono", J11Array{pc_efMono, "ug gDW-1 h-1"} }
+	,{ "ef-monos", J11Array{pc_efMonos, "ug gDW-1 h-1"} }
+	,{ "ef-iso", J11Array{pc_efIso, "ug gDW-1 h-1"} }
+	};
 
   return species;
 }
