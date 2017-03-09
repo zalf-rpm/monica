@@ -152,7 +152,7 @@
 				{
 					"date": "1993-12-16",
 					"type": "OrganicFertiliserApplication",
-					"amount": [30000, "kg N"],
+					"amount": [30000, "kg"],
 					"parameters": ["ref", "fert-params", "CADLM"],
 					"incorporation": true
 				},
