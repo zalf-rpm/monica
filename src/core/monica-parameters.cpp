@@ -621,6 +621,7 @@ Errors SpeciesParameters::merge(json11::Json j)
 	set_double_value(pc_efMono, j, "ef-mono");
 	set_double_value(pc_efMonos, j, "ef-monos");
 	set_double_value(pc_efIso, j, "ef-iso");
+	set_double_value(pc_VCMAX25, j, "VCMAX25");
 
 	return res;
 }
@@ -678,6 +679,7 @@ json11::Json SpeciesParameters::to_json() const
 	,{ "ef-mono", J11Array{pc_efMono, "ug gDW-1 h-1"} }
 	,{ "ef-monos", J11Array{pc_efMonos, "ug gDW-1 h-1"} }
 	,{ "ef-iso", J11Array{pc_efIso, "ug gDW-1 h-1"} }
+	,{ "VCMAX25", pc_VCMAX25}
 	};
 
   return species;

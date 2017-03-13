@@ -391,6 +391,7 @@ namespace Monica
 		double pc_efMono{0.5}; //!< = MTsynt [ug gDW-1 h-1] Monoterpenes, which will be emitted right after synthesis
 		double pc_efMonos{0.5}; //! = MTpool [ug gDW-1 h-1] Monoterpenes, which will be stored after synthesis in stores (mostly intra- oder intercellular space of leafs and then are being emitted; quasi evaporation)
 		double pc_efIso{0}; //! Isoprene emission factor
+		double pc_VCMAX25{0}; //!
   };
 
   typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;

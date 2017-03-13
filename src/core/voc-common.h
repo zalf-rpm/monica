@@ -157,7 +157,7 @@ namespace Voc
 
 		double DS_IS{0.0};
 		double DS_MT{0.0};
-		double HD_IS{0.0};
+		double HD_IS{284600.0};
 		double HD_MT{284600.0};
 
 		//for temp replacement code
@@ -165,7 +165,7 @@ namespace Voc
 		double SDJ{703.0};
 		double KC25{260.0};
 		double KO25{179.0};
-		double VCMAX25{80.0};
+		double VCMAX25{80.0}; //corn: 13.1
 		double QJVC{2.0};
 		double AEJM{37000.0};
 
