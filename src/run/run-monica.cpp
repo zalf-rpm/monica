@@ -650,6 +650,11 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 	return storeData;
 }
 
+void Monica::initPathToDB(const std::string& initialPathToIniFile)
+{
+	Db::dbConnectionParameters(initialPathToIniFile);
+}
+
 Output Monica::runMonica(Env env)
 {
 	Output out;
@@ -675,20 +680,6 @@ Output Monica::runMonica(Env env)
 	debug() << "currentDate" << endl;
 	Date currentDate = env.da.startDate();
 
-	auto calcNextAbsoluteCMApplicationDate = [=](Date currentDate, Date nextCMAppDate)
-	{
-		if(nextCMAppDate.isValid())
-		{
-			auto absDate = nextCMAppDate;
-			if(absDate.isRelativeDate())
-				absDate.toAbsoluteDate(currentDate.year());
-			if(absDate < currentDate)
-				absDate.addYears(1);
-			return absDate;
-		}
-		return Date();
-	};
-
 	//cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
 	//if pure absolute CMs are finished
 	vector<CultivationMethod*> cropRotation;
@@ -706,25 +697,9 @@ Output Monica::runMonica(Env env)
 	currentCM->reinit(currentDate.year());
 	year2cm[currentDate.year()].insert(*cmci);
 
-	//are the dates in the production process relative dates
-	//or are they absolute as produced by the hermes inputs
-	//bool useRelativeDates = currentCM->startDate().isRelativeDate();
-	//the next application date, either a relative or an absolute date
-	//to get the correct applications out of the cultivation method
-	Date nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
-	//a definitely absolute next application date to keep track where
-	//we are in the list of climate data
-	Date nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
-	/*
-	Date nextAbsoluteCMApplicationDate = useRelativeDates
-		? nextCMApplicationDate.toAbsoluteDate(currentDate.year())// + 1) // + 1 probably due to use in DSS and have one year to init monica 
-		: nextCMApplicationDate;
-	debug() << "next app-date: " << nextCMApplicationDate.toString()
-		<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-*/
+	Date nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
 
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
-
 	
 	for(size_t d = 0, nods = env.da.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
@@ -747,18 +722,12 @@ Output Monica::runMonica(Env env)
 		//apply worksteps and cycle through crop rotation
 		if(currentCM && nextAbsoluteCMApplicationDate == currentDate)
 		{
-			debug() << "applying at: " << nextCMApplicationDate.toString()
-				<< " absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
-			//apply everything to do at current day
-			//cout << currentPP.toString().c_str() << endl;
-			currentCM->absApply(nextCMApplicationDate, &monica);
+			debug() << "applying absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			currentCM->absApply(nextAbsoluteCMApplicationDate, &monica);
 
-			//get the next application date to wait for (either absolute or relative)
-			nextCMApplicationDate = currentCM->nextAbsDate(nextCMApplicationDate);
-			nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
+			nextAbsoluteCMApplicationDate = currentCM->nextAbsDate(nextAbsoluteCMApplicationDate);
 						
-			debug() << "next app-date: " << nextCMApplicationDate.toString()
-				<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			debug() << " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 		}
 
 		//monica main stepping method
@@ -773,7 +742,7 @@ Output Monica::runMonica(Env env)
 		//and go to the next one in the crop rotation
 		if(currentCM 
 			 && currentCM->allDynamicWorkstepsFinished()
-			 && !nextCMApplicationDate.isValid())
+			 && !nextAbsoluteCMApplicationDate.isValid())
 		{
 			//to count the applied fertiliser for the next production process
 			monica.resetFertiliserCounter();
@@ -806,15 +775,13 @@ Output Monica::runMonica(Env env)
 				currentCM = *cmci;
 				currentCM->reinit(year);
 				year2cm[year].insert(*cmci);
-				nextCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
-				nextAbsoluteCMApplicationDate = nextCMApplicationDate; // calcNextAbsoluteCMApplicationDate(currentDate, nextCMApplicationDate);
-				debug() << "new valid next app-date: " << nextCMApplicationDate.toString()
-					<< " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+				nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
+				debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			}
 			else
 			{
 				currentCM = nullptr;
-				nextCMApplicationDate = nextAbsoluteCMApplicationDate = Date();
+				nextAbsoluteCMApplicationDate = Date();
 			}
 		}
 	}

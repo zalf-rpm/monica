@@ -150,6 +150,10 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
 	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+	, _efMono(cps.speciesParams.pc_efMono)
+	, _efMonos(cps.speciesParams.pc_efMonos)
+	, _efIso(cps.speciesParams.pc_efIso)
+	, _VCMAX25(cps.speciesParams.pc_VCMAX25)
 	, _fireEvent(fireEvent)
 {
 	// Determining the total temperature sum of all developmental stages after
@@ -3439,6 +3443,9 @@ void CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
 	species.lai = get_LeafAreaIndex();
 	species.mFol = get_OrganBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
 	species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+	species.EF_MONO = _efMono;
+	species.EF_MONOS = _efMonos;
+	species.EF_ISO = _efIso;
 
 	_guentherEmissions = Voc::calculateGuentherVOCEmissions(species, mcd);
 	//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;

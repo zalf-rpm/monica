@@ -39,21 +39,21 @@
 	"__all kinds of more general monica parameters": "",
 	
 	"_db_SoilTemperatureParameters": ["_include-from-db", "soil-temperature-params", "hermes"],
-  "SoilTemperatureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-temperature.json"],
+  "SoilTemperatureParameters": ["include-from-file", "monica-parameters/general/soil-temperature.json"],
   
 	"EnvironmentParameters": {
 		"_db_=": ["_include-from-db", "environment-params", "hermes"],
-    "=": ["include-from-file", "monica-parameters/user-parameters/hermes-environment.json"],
+    "=": ["include-from-file", "monica-parameters/general/environment.json"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
   },
 	
 	"_db_SoilOrganicParameters": ["_include-from-db", "soil-organic-params", "hermes"],
-  "SoilOrganicParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-organic.json"],
+  "SoilOrganicParameters": ["include-from-file", "monica-parameters/general/soil-organic.json"],
 	
 	"_db_SoilTransportParameters": ["_include-from-db", "soil-transport-params", "hermes"],
-  "SoilTransportParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-transport.json"],
+  "SoilTransportParameters": ["include-from-file", "monica-parameters/general/soil-transport.json"],
 	
 	"_db_SoilMoistureParameters": ["_include-from-db", "soil-moisture-params", "hermes"],
-  "SoilMoistureParameters": ["include-from-file", "monica-parameters/user-parameters/hermes-soil-moisture.json"]
+  "SoilMoistureParameters": ["include-from-file", "monica-parameters/general/soil-moisture.json"]
 }

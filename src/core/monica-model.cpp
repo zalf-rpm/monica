@@ -634,6 +634,9 @@ void MonicaModel::cropStep()
 	mcd.tFol24 = mcd.tFol;
 	mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
 
+	mcd.sunlitfoliagefraction = 1;
+	mcd.sunlitfoliagefraction24 = 1;
+
 	//debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
 	_currentCropGrowth->calculateVOCEmissions(mcd);
 }

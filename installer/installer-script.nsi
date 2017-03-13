@@ -144,8 +144,8 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File /r "${ParamsRepoDir}\crops"
 	File /r "${ParamsRepoDir}\mineral-fertilisers"
 	File /r "${ParamsRepoDir}\organic-fertilisers"
-	File /r "${ParamsRepoDir}\user-parameters"
-		
+	File /r "${ParamsRepoDir}\general"
+			
 	;the example directory
 	CreateDirectory "$PROFILE\MONICA\Examples\Hohenfinow2"
 	;the json version files with name name convention
@@ -175,6 +175,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 			
 	${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR"
 	${EnvVarUpdate} $0 "PYTHONPATH" "P" "HKCU" "$INSTDIR"
+	${EnvVarUpdate} $0 "MONICA_HOME" "A" "HKCU" "$PROFILE\MONICA"
 	
 	;Create uninstaller
 	WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -253,6 +254,8 @@ Section "Uninstall"
 	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2
 
 	RMDir  $PROFILE\MONICA\Examples
+	
+	RMDir  $PROFILE\MONICA\monica-parameters
 	RMDir  $PROFILE\MONICA
 	
 	Delete "$INSTDIR\Uninstall.exe"
@@ -273,5 +276,6 @@ Section "Uninstall"
 
 	${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR"
 	${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR"
+	${un.EnvVarUpdate} $0 "MONICA_HOME" "R" "HKCU" "$PROFILE\MONICA"
 	
 SectionEnd

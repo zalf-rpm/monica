@@ -83,7 +83,7 @@ namespace Monica
     double get_SMB_Slow(int i_Layer) const;
     double get_SOM_Fast(int i_Layer) const;
     double get_SOM_Slow(int i_Layer) const;
-    double get_CBalance(int i_Layer) const;
+		double get_CBalance(int i_Layer) const;
     double get_SMB_CO2EvolutionRate(int i_layer) const;
     double get_ActDenitrificationRate(int i_Layer) const;
     double get_NetNMineralisationRate(int i_Layer) const;
@@ -98,6 +98,8 @@ namespace Monica
     double get_DecomposerRespiration() const;
     double get_NetEcosystemProduction() const;
     double get_NetEcosystemExchange() const;
+
+		double get_Organic_N(int i_Layer) const;
 
   private:
     //void fo_OM_Input(bool vo_AOM_Addition);

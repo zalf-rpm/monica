@@ -1898,3 +1898,23 @@ void SoilOrganic::remove_Crop()
 {
 	crop = NULL;
 }
+
+double SoilOrganic::get_Organic_N(int i) const
+{
+	double orgN = 0;
+
+	orgN += get_SMB_Fast(i) / organicPs.po_CN_Ratio_SMB;
+	orgN += get_SMB_Slow(i) / organicPs.po_CN_Ratio_SMB;
+
+	double cn = soilColumn.at(i).vs_Soil_CN_Ratio();
+	orgN += get_SOM_Fast(i) / cn;
+	orgN += get_SOM_Slow(i) / cn;
+
+	for(const auto& aomp : soilColumn.at(i).vo_AOM_Pool)
+	{
+		orgN += aomp.vo_AOM_Fast / aomp.vo_CN_Ratio_AOM_Fast;
+		orgN += aomp.vo_AOM_Slow / aomp.vo_CN_Ratio_AOM_Slow;
+	}
+
+	return orgN;
+}
