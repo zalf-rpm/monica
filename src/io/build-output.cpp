@@ -895,6 +895,12 @@ BOTRes& Monica::buildOutputTable()
 				}, 4);
 			});
 
+			build({ id++, "OrgN", "kg N m-3", "get_Organic_N" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_Organic_N(i); }, 4);
+			});
+
 			build({id++, "AOMf", "kgC m-3", "get_AOM_FastSum"},
 						[](const MonicaModel& monica, OId oid)
 			{
