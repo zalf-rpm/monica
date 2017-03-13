@@ -153,6 +153,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, _efMono(cps.speciesParams.pc_efMono)
 	, _efMonos(cps.speciesParams.pc_efMonos)
 	, _efIso(cps.speciesParams.pc_efIso)
+	, _VCMAX25(cps.speciesParams.pc_VCMAX25)
 	, _fireEvent(fireEvent)
 {
 	// Determining the total temperature sum of all developmental stages after

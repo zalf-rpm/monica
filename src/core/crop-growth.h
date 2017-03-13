@@ -590,6 +590,7 @@ namespace Monica
 		double _efMono{0};
 		double _efMonos{0};
 		double _efIso{0};
+		double _VCMAX25{0};
 
 		std::function<void(std::string)> _fireEvent;
   };
