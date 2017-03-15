@@ -307,6 +307,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 			pathToFile = fixSystemSeparator(isAbsolutePath(pathToFile)
 																			? pathToFile
 																			: basePath + "/" + pathToFile);
+			pathToFile = replaceEnvVars(pathToFile);
 			auto jo = readAndParseJsonFile(pathToFile);
 			if(jo.success() && !jo.result.is_null())
 				return{jo.result};

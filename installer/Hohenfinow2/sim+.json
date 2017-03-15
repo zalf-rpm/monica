@@ -25,7 +25,7 @@
 	"debug?": false,
 		
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
-	"include-file-base-path": "./",
+	"include-file-base-path": "${MONICA_HOME}/",
 	
 	"__configuration options for the monica outputs": "",
 	"output": { 
@@ -44,7 +44,7 @@
 		},
 		
 		"__what data to include in the monica output according to the events defined by the keys": "",
-		"___events": [
+		"events": [
 			"daily", [
 				"Date",
 				"Crop",
@@ -54,7 +54,7 @@
 				["Mois", 1],
 				"RootDep",
 				"Recharge",
-				["PercolationRate", [1,20]],
+				["PercolationRate", [1,5]],
 				"guenther-isoprene-emission|G-Iso",
 				"guenther-monoterpene-emission|G-Mono",
 				"jjv-isoprene-emission|JJV-Iso",
@@ -63,7 +63,7 @@
 		],
 		
 
-		"events": [
+		"___events": [
 			"daily", [
 				"Date", "Crop", "TraDef", "NDef", "HeatRed",
 				"Stage", "RelDev", "AbBiom", ["OrgBiom", "Fruit"], "Yield","LAI",
