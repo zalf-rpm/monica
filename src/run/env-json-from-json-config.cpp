@@ -304,10 +304,10 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		{
 			string basePath = string_valueD(root, "include-file-base-path", ".");
 			string pathToFile = j[1].string_value();
-			pathToFile = fixSystemSeparator(isAbsolutePath(pathToFile)
-																			? pathToFile
-																			: basePath + "/" + pathToFile);
+			if(!isAbsolutePath(pathToFile))
+				pathToFile = basePath + "/" + pathToFile;
 			pathToFile = replaceEnvVars(pathToFile);
+			pathToFile = fixSystemSeparator(pathToFile);
 			auto jo = readAndParseJsonFile(pathToFile);
 			if(jo.success() && !jo.result.is_null())
 				return{jo.result};

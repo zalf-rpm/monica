@@ -12,6 +12,7 @@
 # Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
+import os
 import time
 import json
 import types
@@ -178,10 +179,35 @@ def is_absolute_path(p):
             and (p[2] == "\\" \
                 or p[2] == "/"))
 
-
-def fix_system_separator(p):
+def fix_system_separator(path):
     "fix system separator"
-    return p
+    path = path.replace("\\", "/")
+    new_path = path
+    while True:
+        new_path = path.replace("//", "/")
+        if new_path == path:
+            break
+        path = new_path
+    return new_path
+
+def replace_env_vars(path):
+    "replace ${ENV_VAR} in path"
+    start_token = "${"
+    end_token = "}"
+    start_pos = path.find(start_token)
+    while start_pos > -1:
+        end_pos = path.find(end_token, start_pos + 1)
+        if end_pos > -1:
+            name_start = start_pos + 2
+            env_var_name = path[name_start : end_pos]
+            env_var_content = os.environ.get(env_var_name, None)
+            if env_var_content:
+                path = path.replace(path[start_pos : end_pos + 1], env_var_content)
+                start_pos = path.find(start_token)
+            else:
+                start_pos = path.find(start_token, end_pos + 1)
+
+    return path
 
 
 def default_value(dic, key, default):
@@ -453,9 +479,10 @@ def supported_patterns():
 
             base_path = default_value(root, "include-file-base-path", ".")
             path_to_file = j__[1]
-            path_to_file = fix_system_separator(path_to_file
-                                                if is_absolute_path(path_to_file)
-                                                else base_path + "/" + path_to_file)
+            if not is_absolute_path(path_to_file):
+                path_to_file = base_path + "/" + path_to_file
+            path_to_file = replace_env_vars(path_to_file)
+            path_to_file = fix_system_separator(path_to_file)
             jo_ = read_and_parse_json_file(path_to_file)
             if jo_["success"] and not isinstance(jo_["result"], types.NoneType):
                 return {"result": jo_["result"], "errors": [], "success": True}
