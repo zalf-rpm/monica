@@ -82,7 +82,6 @@ json11::Json Workstep::to_json() const
 bool Workstep::apply(MonicaModel* model)
 {
 	model->addEvent("Workstep");
-	model->addEvent("workstep");
 	return true;
 }
 
@@ -95,12 +94,16 @@ bool Workstep::applyWithPossibleCondition(MonicaModel* model)
 			workstepFinished = condition(model) ? apply(model) : false;
 		else
 			workstepFinished = apply(model);
+		_isActive = !workstepFinished;
 	}
 	return workstepFinished;
 }
 
 bool Workstep::condition(MonicaModel* model)
 {
+	if(_afterEvent.empty())
+		return false;
+
 	auto currEvents = model->currentEvents();
 	auto prevEvents = model->previousDaysEvents();
 	
@@ -119,12 +122,13 @@ void Workstep::reinit(size_t year)
 	if(_date.isValid())
 		_absDate = _date.isAbsoluteDate() ? _date : _date.toAbsoluteDate(year);
 
+	_isActive = true;
 	_daysAfterEventCount = -1;
 }
 
 //------------------------------------------------------------------------------
 
-Seed::Seed(const Tools::Date& at, CropPtr crop)
+Sowing::Sowing(const Tools::Date& at, CropPtr crop)
 	: Workstep(at)
 	, _crop(crop)
 {
@@ -132,37 +136,46 @@ Seed::Seed(const Tools::Date& at, CropPtr crop)
 		_crop->setSeedDate(at);
 }
 
-Seed::Seed(json11::Json j)
+Sowing::Sowing(json11::Json j)
 {
 	merge(j);
 }
 
-Errors Seed::merge(json11::Json j)
+Errors Sowing::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_shared_ptr_value(_crop, j, "crop");
 	if(_crop)
+	{
 		_crop->setSeedDate(date());
+		set_int_value(_plantDensity, j, "PlantDensity");
+		if(_plantDensity > 0)
+			_crop->cropParameters()->speciesParams.pc_PlantDensity = _plantDensity;
+	}
 
 	return res;
 }
 
-json11::Json Seed::to_json(bool includeFullCropParameters) const
+json11::Json Sowing::to_json(bool includeFullCropParameters) const
 {
-	return json11::Json::object{
-		{"type", type()},
-		{"date", date().toIsoDateString()},
-		{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}};
+	auto o = json11::Json::object
+	{{"type", type()}
+	,{"date", date().toIsoDateString()}
+	,{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}};
+
+	if(_plantDensity > 0)
+		o["PlantDensity"] = J11Array{_plantDensity, "plants m-2"};
+
+	return o;
 }
 
-bool Seed::apply(MonicaModel* model)
+bool Sowing::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
 	debug() << "seeding crop: " << _crop->toString() << " at: " << date().toString() << endl;
 	model->seedCrop(_crop);
-	model->addEvent("Seed");
-	model->addEvent("seeding");
+	model->addEvent("Sowing");
 
 	return true;
 }
@@ -253,9 +266,8 @@ bool AutomaticSowing::apply(MonicaModel* model)
 	setDate(currentDate);
 	_crop->setSeedDate(currentDate);
 
-	Seed::apply(model);
+	Sowing::apply(model);
 	model->addEvent("AutomaticSowing");
-	model->addEvent("automatic-sowing");
 	_cropSeeded = true;
 	_inSowingRange = false;
 
@@ -430,7 +442,6 @@ bool Harvest::apply(MonicaModel* model)
 			model->shootPruningCurrentCrop(_percentage, _exported);
 		}
 		model->addEvent("Harvest");
-		model->addEvent("harvesting");
 	}
 	else
 	{
@@ -445,12 +456,12 @@ bool Harvest::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-AutomaticHarvesting::AutomaticHarvesting()
+AutomaticHarvest::AutomaticHarvest()
 	: Harvest()
 	, _harvestTime("maturity")
 {}
 
-AutomaticHarvesting::AutomaticHarvesting(CropPtr crop,
+AutomaticHarvest::AutomaticHarvest(CropPtr crop,
 																				 std::string harvestTime,
 																				 Date latestHarvest,
 																				 std::string method)
@@ -459,14 +470,14 @@ AutomaticHarvesting::AutomaticHarvesting(CropPtr crop,
 	, _latestDate(latestHarvest)
 {}
 
-AutomaticHarvesting::AutomaticHarvesting(json11::Json j)
+AutomaticHarvest::AutomaticHarvest(json11::Json j)
 	: Harvest(j)
 	, _harvestTime("maturity")
 {
 	merge(j);
 }
 
-Errors AutomaticHarvesting::merge(json11::Json j)
+Errors AutomaticHarvest::merge(json11::Json j)
 {
 	Errors res = Harvest::merge(j);
 
@@ -480,7 +491,7 @@ Errors AutomaticHarvesting::merge(json11::Json j)
 	return res;
 }
 
-json11::Json AutomaticHarvesting::to_json(bool includeFullCropParameters) const
+json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const
 {
 	auto o = Harvest::to_json(includeFullCropParameters).object_items();
 	o["type"] = type();
@@ -493,20 +504,19 @@ json11::Json AutomaticHarvesting::to_json(bool includeFullCropParameters) const
 	return o;
 }
 
-bool AutomaticHarvesting::apply(MonicaModel* model)
+bool AutomaticHarvest::apply(MonicaModel* model)
 {
 	setDate(model->currentStepDate());
 	
 	Harvest::apply(model);
 	
-	model->addEvent("AutomaticHarvesting");
-	model->addEvent("automatic-harvesting");
+	model->addEvent("AutomaticHarvest");
 	_cropHarvested = true;
 
 	return true;
 }
 
-bool AutomaticHarvesting::condition(MonicaModel* model)
+bool AutomaticHarvest::condition(MonicaModel* model)
 {
 	bool conditionMet = false;
 	
@@ -521,7 +531,7 @@ bool AutomaticHarvesting::condition(MonicaModel* model)
 	return conditionMet;
 }
 
-void AutomaticHarvesting::reinit(size_t year)
+void AutomaticHarvest::reinit(size_t year)
 {
 	Workstep::reinit(year);
 
@@ -576,15 +586,14 @@ bool Cutting::apply(MonicaModel* model)
 
 	model->cropGrowth()->applyCutting();
 	model->addEvent("Cutting");
-	model->addEvent("cutting");
 
 	return true;
 }
 
 //------------------------------------------------------------------------------
 
-MineralFertiliserApplication::
-MineralFertiliserApplication(const Tools::Date& at,
+MineralFertilization::
+MineralFertilization(const Tools::Date& at,
 														 MineralFertiliserParameters partition,
 														 double amount)
 	: Workstep(at)
@@ -592,12 +601,12 @@ MineralFertiliserApplication(const Tools::Date& at,
 	, _amount(amount)
 {}
 
-MineralFertiliserApplication::MineralFertiliserApplication(json11::Json j)
+MineralFertilization::MineralFertilization(json11::Json j)
 {
 	merge(j);
 }
 
-Errors MineralFertiliserApplication::merge(json11::Json j)
+Errors MineralFertilization::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_value_obj_value(_partition, j, "partition");
@@ -605,7 +614,7 @@ Errors MineralFertiliserApplication::merge(json11::Json j)
 	return res;
 }
 
-json11::Json MineralFertiliserApplication::to_json() const
+json11::Json MineralFertilization::to_json() const
 {
 	return json11::Json::object
 	{{"type", type()}
@@ -615,22 +624,21 @@ json11::Json MineralFertiliserApplication::to_json() const
 	};
 }
 
-bool MineralFertiliserApplication::apply(MonicaModel* model)
+bool MineralFertilization::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
 	debug() << toString() << endl;
 	model->applyMineralFertiliser(partition(), amount());
-	model->addEvent("MineralFertiliserApplication");
-	model->addEvent("mineral-fertilizing");
+	model->addEvent("MineralFertilization");
 
 	return true;
 }
 
 //------------------------------------------------------------------------------
 
-NDemandApplication::
-NDemandApplication(int stage,
+NDemandFertilization::
+NDemandFertilization(int stage,
 									 double depth,
 									 MineralFertiliserParameters partition,
 									 double Ndemand)
@@ -641,7 +649,7 @@ NDemandApplication(int stage,
 	, _stage(stage)
 {}
 
-NDemandApplication::NDemandApplication(Tools::Date date,
+NDemandFertilization::NDemandFertilization(Tools::Date date,
 																			 double depth,
 																			 MineralFertiliserParameters partition,
 																			 double Ndemand)
@@ -651,12 +659,12 @@ NDemandApplication::NDemandApplication(Tools::Date date,
 	, _depth(depth)
 {}
 
-NDemandApplication::NDemandApplication(json11::Json j)
+NDemandFertilization::NDemandFertilization(json11::Json j)
 {
 	merge(j);
 }
 
-Errors NDemandApplication::merge(json11::Json j)
+Errors NDemandFertilization::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_double_value(_Ndemand, j, "N-demand");
@@ -667,7 +675,7 @@ Errors NDemandApplication::merge(json11::Json j)
 	return res;
 }
 
-json11::Json NDemandApplication::to_json() const
+json11::Json NDemandFertilization::to_json() const
 {
 	auto o = J11Object 
 	{{"type", type()}
@@ -683,7 +691,7 @@ json11::Json NDemandApplication::to_json() const
 	return o;
 }
 
-bool NDemandApplication::apply(MonicaModel* model)
+bool NDemandFertilization::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
@@ -693,13 +701,12 @@ bool NDemandApplication::apply(MonicaModel* model)
 	model->addDailySumFertiliser(appliedAmount);
 	_appliedFertilizer = true;
 	setDate(model->currentStepDate());
-	model->addEvent("NDemandApplication");
-	model->addEvent("N-demand-fertilizing");
+	model->addEvent("NDemandFertilization");
 
 	return true;
 }
 
-bool NDemandApplication::condition(MonicaModel* model)
+bool NDemandFertilization::condition(MonicaModel* model)
 {
 	bool conditionMet = false;
 
@@ -716,7 +723,7 @@ bool NDemandApplication::condition(MonicaModel* model)
 	return conditionMet;
 }
 
-void NDemandApplication::reinit(size_t year)
+void NDemandFertilization::reinit(size_t year)
 {
 	Workstep::reinit(year);
 
@@ -727,8 +734,8 @@ void NDemandApplication::reinit(size_t year)
 
 //------------------------------------------------------------------------------
 
-OrganicFertiliserApplication::
-OrganicFertiliserApplication(const Tools::Date& at,
+OrganicFertilization::
+OrganicFertilization(const Tools::Date& at,
 														 OrganicMatterParametersPtr params,
 														 double amount,
 														 bool incorp)
@@ -738,12 +745,12 @@ OrganicFertiliserApplication(const Tools::Date& at,
 	, _incorporation(incorp)
 {}
 
-OrganicFertiliserApplication::OrganicFertiliserApplication(json11::Json j)
+OrganicFertilization::OrganicFertilization(json11::Json j)
 {
 	merge(j);
 }
 
-Errors OrganicFertiliserApplication::merge(json11::Json j)
+Errors OrganicFertilization::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_shared_ptr_value(_params, j, "parameters");
@@ -752,7 +759,7 @@ Errors OrganicFertiliserApplication::merge(json11::Json j)
 	return res;
 }
 
-json11::Json OrganicFertiliserApplication::to_json() const
+json11::Json OrganicFertilization::to_json() const
 {
 	return json11::Json::object{
 		{"type", type()},
@@ -762,39 +769,38 @@ json11::Json OrganicFertiliserApplication::to_json() const
 		{"incorporation", _incorporation}};
 }
 
-bool OrganicFertiliserApplication::apply(MonicaModel* model)
+bool OrganicFertilization::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
 	debug() << toString() << endl;
 	model->applyOrganicFertiliser(_params, _amount, _incorporation);
-	model->addEvent("OrganicFertiliserApplication");
-	model->addEvent("organic-fertilizing");
+	model->addEvent("OrganicFertilization");
 
 	return true;
 }
 
 //------------------------------------------------------------------------------
 
-TillageApplication::TillageApplication(const Tools::Date& at,
+Tillage::Tillage(const Tools::Date& at,
 																			 double depth)
 	: Workstep(at)
 	, _depth(depth)
 {}
 
-TillageApplication::TillageApplication(json11::Json j)
+Tillage::Tillage(json11::Json j)
 {
 	merge(j);
 }
 
-Errors TillageApplication::merge(json11::Json j)
+Errors Tillage::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_double_value(_depth, j, "depth");
 	return res;
 }
 
-json11::Json TillageApplication::to_json() const
+json11::Json Tillage::to_json() const
 {
 	return json11::Json::object{
 		{"type", type()},
@@ -802,14 +808,13 @@ json11::Json TillageApplication::to_json() const
 		{"depth", _depth}};
 }
 
-bool TillageApplication::apply(MonicaModel* model)
+bool Tillage::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
 	debug() << toString() << endl;
 	model->applyTillage(_depth);
-	model->addEvent("TillageApplication");
-	model->addEvent("tillage");
+	model->addEvent("Tillage");
 
 	return true;
 }
@@ -900,14 +905,13 @@ bool SetValue::apply(MonicaModel* model)
 	}
 
 	model->addEvent("SetValue");
-	model->addEvent("set-value");
 
 	return true;
 }
 
 //------------------------------------------------------------------------------
 
-IrrigationApplication::IrrigationApplication(const Tools::Date& at,
+Irrigation::Irrigation(const Tools::Date& at,
 																						 double amount,
 																						 IrrigationParameters params)
 	: Workstep(at)
@@ -915,12 +919,12 @@ IrrigationApplication::IrrigationApplication(const Tools::Date& at,
 	, _params(params)
 {}
 
-IrrigationApplication::IrrigationApplication(json11::Json j)
+Irrigation::Irrigation(json11::Json j)
 {
 	merge(j);
 }
 
-Errors IrrigationApplication::merge(json11::Json j)
+Errors Irrigation::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_double_value(_amount, j, "amount");
@@ -928,7 +932,7 @@ Errors IrrigationApplication::merge(json11::Json j)
 	return res;
 }
 
-json11::Json IrrigationApplication::to_json() const
+json11::Json Irrigation::to_json() const
 {
 	return json11::Json::object{
 		{"type", type()},
@@ -937,14 +941,13 @@ json11::Json IrrigationApplication::to_json() const
 		{"parameters", _params}};
 }
 
-bool IrrigationApplication::apply(MonicaModel* model)
+bool Irrigation::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
 	//cout << toString() << endl;
 	model->applyIrrigation(amount(), nitrateConcentration());
-	model->addEvent("IrrigationApplication");
-	model->addEvent("irrigation");
+	model->addEvent("Irrigation");
 
 	return true;
 }
@@ -954,26 +957,31 @@ bool IrrigationApplication::apply(MonicaModel* model)
 WSPtr Monica::makeWorkstep(json11::Json j)
 {
 	string type = string_value(j["type"]);
-	if(type == "Seed")
-		return make_shared<Seed>(j);
+	if(type == "Sowing"
+		 || type == "Seed") //deprecated name
+		return make_shared<Sowing>(j);
 	else if(type == "AutomaticSowing")
 		return make_shared<AutomaticSowing>(j);
 	else if(type == "Harvest")
 		return make_shared<Harvest>(j);
-	else if(type == "AutomaticHarvesting")
-		return make_shared<AutomaticHarvesting>(j);
+	else if(type == "AutomaticHarvest")
+		return make_shared<AutomaticHarvest>(j);
 	else if(type == "Cutting")
 		return make_shared<Cutting>(j);
-	else if(type == "MineralFertiliserApplication")
-		return make_shared<MineralFertiliserApplication>(j);
-	else if(type == "NDemandApplication")
-		return make_shared<NDemandApplication>(j);
-	else if(type == "OrganicFertiliserApplication")
-		return make_shared<OrganicFertiliserApplication>(j);
-	else if(type == "TillageApplication")
-		return make_shared<TillageApplication>(j);
-	else if(type == "IrrigationApplication")
-		return make_shared<IrrigationApplication>(j);
+	else if(type == "MineralFertilization" 
+					|| type == "MineralFertiliserApplication") //deprecated name
+		return make_shared<MineralFertilization>(j);
+	else if(type == "NDemandFertilization")
+		return make_shared<NDemandFertilization>(j);
+	else if(type == "OrganicFertilization" 
+					|| type == "OrganicFertiliserApplication") //deprecated name
+		return make_shared<OrganicFertilization>(j);
+	else if(type == "Tillage" 
+					|| type == "TillageApplication") //deprecated name
+		return make_shared<Tillage>(j);
+	else if(type == "Irrigation" 
+					|| type == "IrrigationApplication") //deprecated name
+		return make_shared<Irrigation>(j);
 	else if(type == "SetValue")
 		return make_shared<SetValue>(j);
 
@@ -992,7 +1000,7 @@ CultivationMethod::CultivationMethod(CropPtr crop,
 	debug() << "CultivationMethod: " << name.c_str() << endl;
 
 	if(crop->seedDate().isValid())
-		addApplication(Seed(crop->seedDate(), _crop));
+		addApplication(Sowing(crop->seedDate(), _crop));
 
 	if(crop->harvestDate().isValid())
 	{
@@ -1027,9 +1035,9 @@ Errors CultivationMethod::merge(json11::Json j)
 			continue;
 		_allWorksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
 		string wsType = ws->type();
-		if(wsType == "Seed")
+		if(wsType == "Sowing")
 		{
-			if(Seed* seed = dynamic_cast<Seed*>(ws.get()))
+			if(Sowing* seed = dynamic_cast<Sowing*>(ws.get()))
 			{
 				_crop = seed->crop();
 				if((_name.empty() || _name == "Fallow") && _crop)
@@ -1050,7 +1058,7 @@ Errors CultivationMethod::merge(json11::Json j)
 			}
 		}
 		else if(wsType == "Harvest" 
-						|| wsType == "AutomaticHarvesting")
+						|| wsType == "AutomaticHarvest")
 		{
 			if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{

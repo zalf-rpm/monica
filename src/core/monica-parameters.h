@@ -376,7 +376,7 @@ namespace Monica
     double pc_TargetN30{0.0};
     double pc_MaxNUptakeParam{0.0};
     double pc_RootDistributionParam{0.0};
-    double pc_PlantDensity{0.0};
+    int pc_PlantDensity{0}; //! [plants m-2]
     double pc_RootGrowthLag{0.0};
     double pc_MinimumTemperatureRootGrowth{0.0};
     double pc_InitialRootingDepth{0.0};

@@ -264,10 +264,10 @@
 				"end": "xxxx-07-31",
 				"at": "xxxx-xx-15"}, ["Date", "Stage", "TempSum"],
 
-			"seeding", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
-			"harvesting", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
-			{	"from": "seeding",
-				"to": "harvesting"}, ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
+			"Seed", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			"Harvest", ["Crop", ["OrgBiom", "Fruit"], "Yield"],
+			{	"from": "Seed",
+				"to": "Harvest"}, ["Crop", ["OrgBiom", "Fruit", "SUM"], ["Yield", "LAST"]],
 			
 			["Stage", "=", 2], ["Date", "Stage"],
 			{"at": ["Stage", "=", 2]}, ["Date", "Stage", ["Mois",1]],

@@ -100,7 +100,7 @@ namespace Monica
 	protected:
 		Tools::Date _date;
 		Tools::Date _absDate;
-		int _applyNoOfDaysAfterEvent{-1};
+		int _applyNoOfDaysAfterEvent{0};
 		std::string _afterEvent;
 		int _daysAfterEventCount{-1};
 		bool _isActive{true};
@@ -110,16 +110,16 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API Seed : public Workstep
+	class DLL_API Sowing : public Workstep
 	{
 	public:
-    Seed(){}
+    Sowing(){}
 
-    Seed(const Tools::Date& at, CropPtr crop);
+    Sowing(const Tools::Date& at, CropPtr crop);
 
-    Seed(json11::Json object);
+    Sowing(json11::Json object);
 
-    virtual Seed* clone() const {return new Seed(*this); }
+    virtual Sowing* clone() const {return new Sowing(*this); }
 
     virtual Tools::Errors merge(json11::Json j);
 
@@ -127,7 +127,7 @@ namespace Monica
 
     json11::Json to_json(bool includeFullCropParameters) const;
 
-    virtual std::string type() const { return "Seed"; }
+    virtual std::string type() const { return "Sowing"; }
 
     virtual bool apply(MonicaModel* model);
 
@@ -141,11 +141,12 @@ namespace Monica
 
   private:
     CropPtr _crop;
+		int _plantDensity{-1}; //[plants m-2]
 	};
 
 	//---------------------------------------------------------------------------
 
-	class DLL_API AutomaticSowing : public Seed
+	class DLL_API AutomaticSowing : public Sowing
 	{
 	public:
 		AutomaticSowing() {}
@@ -247,19 +248,19 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	class DLL_API AutomaticHarvesting : public Harvest
+	class DLL_API AutomaticHarvest : public Harvest
 	{
 	public:
-		AutomaticHarvesting();
+		AutomaticHarvest();
 
-		AutomaticHarvesting(CropPtr crop,
+		AutomaticHarvest(CropPtr crop,
 												std::string harvestTime,
 												Tools::Date latestHarvest,
 												std::string method = "total");
 
-		AutomaticHarvesting(json11::Json object);
+		AutomaticHarvest(json11::Json object);
 
-		virtual AutomaticHarvesting* clone() const { return new AutomaticHarvesting(*this); }
+		virtual AutomaticHarvest* clone() const { return new AutomaticHarvest(*this); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -267,7 +268,7 @@ namespace Monica
 
 		json11::Json to_json(bool includeFullCropParameters) const;
 
-		virtual std::string type() const { return "AutomaticHarvesting"; }
+		virtual std::string type() const { return "AutomaticHarvest"; }
 
 		virtual bool apply(MonicaModel* model);
 
@@ -314,24 +315,24 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API MineralFertiliserApplication : public Workstep
+	class DLL_API MineralFertilization : public Workstep
 	{
 	public:
-		MineralFertiliserApplication() {}
+		MineralFertilization() {}
 
-		MineralFertiliserApplication(const Tools::Date& at,
+		MineralFertilization(const Tools::Date& at,
 																 MineralFertiliserParameters partition,
                                  double amount);
 
-    MineralFertiliserApplication(json11::Json object);
+    MineralFertilization(json11::Json object);
 
-    virtual MineralFertiliserApplication* clone() const {return new MineralFertiliserApplication(*this); }
+    virtual MineralFertilization* clone() const {return new MineralFertilization(*this); }
 
     virtual Tools::Errors merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
-    virtual std::string type() const { return "MineralFertiliserApplication"; }
+    virtual std::string type() const { return "MineralFertilization"; }
 
     virtual bool apply(MonicaModel* model);
 
@@ -346,30 +347,30 @@ namespace Monica
 
   //----------------------------------------------------------------------------
 
-	class DLL_API NDemandApplication : public Workstep
+	class DLL_API NDemandFertilization : public Workstep
 	{
 	public:
-		NDemandApplication() {}
+		NDemandFertilization() {}
 
-		NDemandApplication(int stage,
-											 double depth,
-											 MineralFertiliserParameters partition,
-											 double Ndemand);
+		NDemandFertilization(int stage,
+												 double depth,
+												 MineralFertiliserParameters partition,
+												 double Ndemand);
 
-		NDemandApplication(Tools::Date date,
-											 double depth,
-											 MineralFertiliserParameters partition,
-											 double Ndemand);
+		NDemandFertilization(Tools::Date date,
+												 double depth,
+												 MineralFertiliserParameters partition,
+												 double Ndemand);
 
-		NDemandApplication(json11::Json object);
+		NDemandFertilization(json11::Json object);
 
-		virtual NDemandApplication* clone() const { return new NDemandApplication(*this); }
+		virtual NDemandFertilization* clone() const { return new NDemandFertilization(*this); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
 
-		virtual std::string type() const { return "NDemandApplication"; }
+		virtual std::string type() const { return "NDemandFertilization"; }
 
 		virtual bool apply(MonicaModel* model);
 
@@ -391,23 +392,23 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API OrganicFertiliserApplication : public Workstep
+	class DLL_API OrganicFertilization : public Workstep
 	{
 	public:
-		OrganicFertiliserApplication(const Tools::Date& at,
+		OrganicFertilization(const Tools::Date& at,
                                  const OrganicMatterParametersPtr params,
 																 double amount,
                                  bool incorp = true);
 
-    OrganicFertiliserApplication(json11::Json j);
+    OrganicFertilization(json11::Json j);
 
-    virtual OrganicFertiliserApplication* clone() const {return new OrganicFertiliserApplication(*this); }
+    virtual OrganicFertilization* clone() const {return new OrganicFertilization(*this); }
 
     virtual Tools::Errors merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
-    virtual std::string type() const { return "OrganicFertiliserApplication"; }
+    virtual std::string type() const { return "OrganicFertilization"; }
 
     virtual bool apply(MonicaModel* model);
 
@@ -428,20 +429,20 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API TillageApplication : public Workstep
+	class DLL_API Tillage : public Workstep
 	{
 	public:
-    TillageApplication(const Tools::Date& at, double depth);
+    Tillage(const Tools::Date& at, double depth);
 
-    TillageApplication(json11::Json object);
+    Tillage(json11::Json object);
 
-    virtual TillageApplication* clone() const {return new TillageApplication(*this); }
+    virtual Tillage* clone() const {return new Tillage(*this); }
 
     virtual Tools::Errors merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
-    virtual std::string type() const { return "TillageApplication"; }
+    virtual std::string type() const { return "Tillage"; }
 
     virtual bool apply(MonicaModel* model);
 
@@ -480,21 +481,21 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API IrrigationApplication : public Workstep
+	class DLL_API Irrigation : public Workstep
 	{
 	public:
-    IrrigationApplication(const Tools::Date& at, double amount,
+    Irrigation(const Tools::Date& at, double amount,
                           IrrigationParameters params = IrrigationParameters());
 
-    IrrigationApplication(json11::Json object);
+    Irrigation(json11::Json object);
 
-    virtual IrrigationApplication* clone() const {return new IrrigationApplication(*this); }
+    virtual Irrigation* clone() const {return new Irrigation(*this); }
 
     virtual Tools::Errors merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
-    virtual std::string type() const { return "IrrigationApplication"; }
+    virtual std::string type() const { return "Irrigation"; }
 
 		virtual bool apply(MonicaModel* model);
 
@@ -520,7 +521,7 @@ namespace Monica
 	public:
     CultivationMethod(const std::string& name = std::string("Fallow"));
 
-    //! is semantically the equivalent to creating an empty CM and adding Seed, Harvest and Cutting applications
+    //! is semantically the equivalent to creating an empty CM and adding Sowing, Harvest and Cutting applications
     CultivationMethod(CropPtr crop, const std::string& name = std::string());
 
     CultivationMethod(json11::Json object);
@@ -604,9 +605,9 @@ namespace Monica
 	};
 	
 	template<>
-	DLL_API inline void CultivationMethod::addApplication<Seed>(const Seed& s)
+	DLL_API inline void CultivationMethod::addApplication<Sowing>(const Sowing& s)
   {
-    _allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Seed>(s)));
+    _allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Sowing>(s)));
     _crop = s.crop();
   }
 

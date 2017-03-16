@@ -72,6 +72,8 @@ namespace Monica
 
     const CropParametersPtr cropParameters() const { return _cropParams; }
 
+		CropParametersPtr cropParameters() { return _cropParams; }
+
     void setCropParameters(CropParametersPtr cps) { _cropParams = cps; }
 
     CropParametersPtr perennialCropParameters() const { return _perennialCropParams; }

@@ -294,9 +294,9 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 							for(auto ws : msg.json["worksteps"].array_items())
 							{
 								auto wsType = ws["type"].string_value();
-								if(wsType == "Seed")
+								if(wsType == "Sowing")
 								{
-									Seed seed(ws);
+									Sowing seed(ws);
 									seed.apply(&monica);
 									crop = seed.crop();
 									prevDevStage = 0;
@@ -318,14 +318,14 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 								}
 								else if(wsType == "Cutting")
 									Cutting(ws).apply(&monica);
-								else if(wsType == "MineralFertiliserApplication")
-									MineralFertiliserApplication(ws).apply(&monica);
-								else if(wsType == "OrganicFertiliserApplication")
-									OrganicFertiliserApplication(ws).apply(&monica);
-								else if(wsType == "TillageApplication")
-									TillageApplication(ws).apply(&monica);
-								else if(wsType == "IrrigationApplication")
-									IrrigationApplication(ws).apply(&monica);
+								else if(wsType == "MineralFertilization")
+									MineralFertilization(ws).apply(&monica);
+								else if(wsType == "OrganicFertilization")
+									OrganicFertilization(ws).apply(&monica);
+								else if(wsType == "Tillage")
+									Tillage(ws).apply(&monica);
+								else if(wsType == "Irrigation")
+									Irrigation(ws).apply(&monica);
 							}
 						}
 

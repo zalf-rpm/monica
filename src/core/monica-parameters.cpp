@@ -606,7 +606,7 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_double_value(pc_TargetN30, j, "TargetN30");
   set_double_value(pc_MaxNUptakeParam, j, "MaxNUptakeParam");
   set_double_value(pc_RootDistributionParam, j, "RootDistributionParam");
-  set_double_value(pc_PlantDensity, j, "PlantDensity");
+  set_int_value(pc_PlantDensity, j, "PlantDensity");
   set_double_value(pc_RootGrowthLag, j, "RootGrowthLag");
   set_double_value(pc_MinimumTemperatureRootGrowth, j, "MinimumTemperatureRootGrowth");
   set_double_value(pc_InitialRootingDepth, j, "InitialRootingDepth");
@@ -665,7 +665,7 @@ json11::Json SpeciesParameters::to_json() const
   ,{"TargetN30", pc_TargetN30}
   ,{"MaxNUptakeParam", pc_MaxNUptakeParam}
   ,{"RootDistributionParam", pc_RootDistributionParam}
-  ,{"PlantDensity", pc_PlantDensity}
+	,{"PlantDensity", J11Array{pc_PlantDensity, "plants m-2"}}
   ,{"RootGrowthLag", pc_RootGrowthLag}
   ,{"MinimumTemperatureRootGrowth", pc_MinimumTemperatureRootGrowth}
   ,{"InitialRootingDepth", pc_InitialRootingDepth}

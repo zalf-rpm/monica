@@ -98,25 +98,25 @@
 		{
 			"worksteps": [
 				{ 
-					"type": "Seed",
+					"type": "Sowing",
 					"date": "0000-04-03",
 					"crop": ["ref", "crops", "SM"] 
 				},
 				{
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"days": 2,
 					"after": "anthesis",
 					"amount": [10.0, "kg N"],
 					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
 				},
 				{
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"date": "0000-04-03",
 					"amount": [30.0, "kg N"],
 					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
 				},
 				{
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"date": "0000-05-15",
 					"amount": [220, "kg N"],
 					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
@@ -126,17 +126,17 @@
 					"date": "0000-10-03"
 				},
 				{
-					"type": "OrganicFertiliserApplication",
+					"type": "OrganicFertilization",
 					"days": 3,
-					"after": "harvesting",
+					"after": "Harvest",
 					"amount": [30000, "kg"],
 					"parameters": ["ref", "fert-params", "CADLM"],
 					"incorporation": true
 				},
 				{ 
-					"type": "TillageApplication",
+					"type": "Tillage",
 					"days": 7,
-					"after": "harvesting", 
+					"after": "Harvest", 
 					"depth": 0.3
 				}
 			]
@@ -147,7 +147,7 @@
 		{
 			"worksteps": [
 				{ "date": "0000-04-24", "type": "OverwriteSoilMoisture", "soilMoisturePercentFC": 70.0 },
-				{ "date": "0000-04-24", "type": "Seed", "crop": ["ref", "crops", "SM"] },
+				{ "date": "0000-04-24", "type": "Sowing", "crop": ["ref", "crops", "SM"] },
 				{ "date": "0001-10-10", "type": "Harvest"}
 			]
 		}
@@ -218,7 +218,7 @@
 				{ "date": "0000-09-24", "type": "SetValue", "var": ["Mois", 1], "value": ["Fc", 1] },
 				{ "date": "0000-09-25", "type": "SetValue", "var": ["Mois", [1,20]], "value": 0.2 },			
 				{ "date": "0000-09-26", "type": "SetValue", "var": ["Mois", 1], "value": 0.2 },			
-				{ "date": "0000-09-23", "type": "Seed", "crop": ["ref", "crops", "WW"] },
+				{ "date": "0000-09-23", "type": "Sowing", "crop": ["ref", "crops", "WW"] },
 				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WW"] }
 			]
 		}
@@ -228,10 +228,10 @@
   "__cropRotation": [
 		{
 			"worksteps": [
-				{ "date": "1991-09-23", "type": "Seed", "crop": ["ref", "crops", "WR"] },
+				{ "date": "1991-09-23", "type": "Sowing", "crop": ["ref", "crops", "WR"] },
 				{
 					"date": "1992-05-05",
-					"type": "IrrigationApplication",
+					"type": "Irrigation",
 					"amount": [1.0, "mm"],
 					"parameters": {
 						"nitrateConcentration": [0.0, "mg dm-3"],
@@ -240,13 +240,13 @@
 				},
 				{
 					"date": "1992-04-03",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [40.0, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "1992-05-07",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [40.0, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
@@ -257,98 +257,98 @@
 			"worksteps": [
 				{
 					"date": "1993-04-23",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [125, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1993-04-27", "type": "TillageApplication", "depth": [0.15, "m"] },
-				{ "date": "1993-05-04", "type": "Seed", "crop": ["ref", "crops", "SM"] },
+				{ "date": "1993-04-27", "type": "Tillage", "depth": [0.15, "m"] },
+				{ "date": "1993-05-04", "type": "Sowing", "crop": ["ref", "crops", "SM"] },
 				{
 					"date": "1993-05-10",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1993-09-23", "type": "Harvest", "crop": ["ref", "crops", "SM"] },
 				{
 					"date": "1993-12-16",
-					"type": "OrganicFertiliserApplication",
+					"type": "OrganicFertilization",
 					"amount": [30000, "kg"],
 					"parameters": ["ref", "fert-params", "CADLM"],
 					"incorporation": true
 				},
-				{ "date": "1993-12-22", "type": "TillageApplication", "depth": [0.1, "m"] }
+				{ "date": "1993-12-22", "type": "Tillage", "depth": [0.1, "m"] }
 			]
 		},
 		{
 			"worksteps": [
-				{ "date": "1994-04-25", "type": "Seed", "crop": ["ref", "crops", "MEP"] },
+				{ "date": "1994-04-25", "type": "Sowing", "crop": ["ref", "crops", "MEP"] },
 				{
 					"date": "1994-05-04",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [90, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1994-09-06", "type": "Harvest", "crop": ["ref", "crops", "MEP"] },
-				{ "date": "1994-09-29", "type": "TillageApplication", "depth": [0.15, "m"] }
+				{ "date": "1994-09-29", "type": "Tillage", "depth": [0.15, "m"] }
 			]
 		},
 		{
 			"worksteps": [
-				{ "date": "1994-10-11", "type": "Seed", "crop": ["ref", "crops", "WW"] },
+				{ "date": "1994-10-11", "type": "Sowing", "crop": ["ref", "crops", "WW"] },
 				{
 					"date": "1995-03-24",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "1995-04-27",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [40, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{
 					"date": "1995-05-12",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1995-08-02", "type": "Harvest", "crop": ["ref", "crops", "WW"] },
-				{ "date": "1995-08-03", "type": "TillageApplication", "depth": [0.15, "m"] }
+				{ "date": "1995-08-03", "type": "Tillage", "depth": [0.15, "m"] }
 			]
 		},
 		{
 			"worksteps": [
-				{ "date": "1995-09-07", "type": "Seed", "crop": ["ref", "crops", "WG"] },
+				{ "date": "1995-09-07", "type": "Sowing", "crop": ["ref", "crops", "WG"] },
 				{
 					"date": "1996-03-21",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1996-04-13", "type": "Harvest", "crop": ["ref", "crops", "WG"] },
-				{ "date": "1996-04-14", "type": "TillageApplication", "depth": [0.10, "m"] }
+				{ "date": "1996-04-14", "type": "Tillage", "depth": [0.10, "m"] }
 			]
 		},
 		{
 			"worksteps": [
-				{ "date": "1996-04-17", "type": "Seed", "crop": ["ref", "crops", "SG"] },
+				{ "date": "1996-04-17", "type": "Sowing", "crop": ["ref", "crops", "SG"] },
 				{ "date": "1996-09-10", "type": "Harvest", "crop": ["ref", "crops", "SG"] },
-				{ "date": "1996-09-17", "type": "TillageApplication", "depth": [0.10, "m"] }
+				{ "date": "1996-09-17", "type": "Tillage", "depth": [0.10, "m"] }
 			]
 		},
 		{
 			"worksteps": [
-				{ "date": "1997-04-04", "type": "Seed", "crop": ["ref", "crops", "SC"] },
+				{ "date": "1997-04-04", "type": "Sowing", "crop": ["ref", "crops", "SC"] },
 				{
 					"date": "1997-04-10",
-					"type": "MineralFertiliserApplication",
+					"type": "MineralFertilization",
 					"amount": [80, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
 				{ "date": "1997-07-08", "type": "Harvest", "crop": ["ref", "crops", "SC"] },
-				{ "date": "1997-07-09", "type": "TillageApplication", "depth": [0.10, "m"] }
+				{ "date": "1997-07-09", "type": "Tillage", "depth": [0.10, "m"] }
 			]
 		}
 	],
