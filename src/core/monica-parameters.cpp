@@ -631,8 +631,6 @@ json11::Json SpeciesParameters::to_json() const
   auto species = J11Object 
 	{{"type", "SpeciesParameters"}
 	,{"SpeciesName", pc_SpeciesId}
-//  ,{"NumberOfDevelopmentalStages", pc_NumberOfDevelopmentalStages}
-//  ,{"NumberOfOrgans", pc_NumberOfOrgans}
   ,{"CarboxylationPathway", pc_CarboxylationPathway}
 	,{"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency}
 	,{"PartBiologicalNFixation", pc_PartBiologicalNFixation}
