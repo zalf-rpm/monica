@@ -82,9 +82,9 @@
 	"__user defined fertilizer parameteres section to be used via references": "",
 	"fert-params": {
 		"_db_AN": ["_include-from-db", {"db": "monica", "type": "mineral_fertiliser", "name": "AN"}],
-		"AN": ["include-from-file", "mineral-fertilizers/AN.json"],
+		"AN": ["include-from-file", "mineral-fertilisers/AN.json"],
 		"_db_CADLM": ["_include-from-db", "organic_fertilizer", "CADLM"],
-		"CADLM": ["include-from-file", "organic-fertilizers/CADLM.json"]
+		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
 	"cropRotation": [
@@ -107,19 +107,19 @@
 					"days": 2,
 					"after": "anthesis",
 					"amount": [10.0, "kg N"],
-					"partition": ["include-from-file", "mineral-fertilizers/U.json"]
+					"partition": ["include-from-file", "mineral-fertilisers/U.json"]
 				},
 				{
 					"type": "MineralFertilization",
 					"date": "0000-04-03",
 					"amount": [30.0, "kg N"],
-					"partition": ["include-from-file", "mineral-fertilizers/U.json"]
+					"partition": ["include-from-file", "mineral-fertilisers/U.json"]
 				},
 				{
 					"type": "MineralFertilization",
 					"date": "0000-05-15",
 					"amount": [220, "kg N"],
-					"partition": ["include-from-file", "mineral-fertilizers/U.json"]
+					"partition": ["include-from-file", "mineral-fertilisers/U.json"]
 				},
 				{ 
 					"type": "Harvest", 

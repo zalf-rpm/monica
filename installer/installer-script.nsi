@@ -268,8 +268,8 @@ Section "Uninstall"
 	Delete $SMPROGRAMS\$StartMenuFolder\MONICA.lnk
 	Delete $SMPROGRAMS\$StartMenuFolder\Uninstall.lnk
 	Delete $SMPROGRAMS\$StartMenuFolder\Readme.lnk
-	Delete $SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk
-	Delete $SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk
+	Delete "$SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk"
+	Delete "$SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk"
 	Delete $DESKTOP\MONICA.lnk
 	RMDir $SMPROGRAMS\$StartMenuFolder
 	

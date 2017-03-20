@@ -67,8 +67,8 @@
 	
 	"__user defined fertilizer parameteres section to be used via references": "",
 	"fert-params": {
-		"AN": ["include-from-file", "mineral-fertilizers/AN.json"],
-		"CADLM": ["include-from-file", "organic-fertilizers/CADLM.json"]
+		"AN": ["include-from-file", "mineral-fertilisers/AN.json"],
+		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
 	"__relative date crop rotation example": "",
