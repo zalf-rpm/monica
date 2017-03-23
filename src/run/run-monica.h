@@ -103,7 +103,7 @@ namespace Monica
 			Tools::Maybe<int> year;
 		};
 
-		enum EventType { eDate, eCrop, eExpression };
+		enum EventType { eDate, eCrop, eExpression, eUnset };
 
 		Spec() {}
 
@@ -117,7 +117,7 @@ namespace Monica
 
 		json11::Json origSpec;
 
-		EventType eventType;
+		EventType eventType{eUnset};
 
 		std::map<std::string, std::string> time2event;
 		std::map<std::string, std::function<bool(const MonicaModel&)>> time2expression;
