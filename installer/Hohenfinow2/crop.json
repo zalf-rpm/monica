@@ -10,65 +10,65 @@
 		"WR": {
 			"is-winter-crop": true,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/rye.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/rye/winter-rye.json"]
+				"species": ["include-from-file", "crops/rye.json"],
+				"cultivar": ["include-from-file", "crops/rye/winter-rye.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rye.json"]
+			"residueParams": ["include-from-file", "crop-residues/rye.json"]
 		},
 		"SM": {
 			"is-winter-crop": false,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/maize.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage-maize.json"]
+				"species": ["include-from-file", "crops/maize.json"],
+				"cultivar": ["include-from-file", "crops/maize/silage-maize.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/maize.json"]
+			"residueParams": ["include-from-file", "crop-residues/maize.json"]
 		},
 		"MEP": {
 			"is-winter-crop": false,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/potato.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/potato/moderately-early-potato.json"]
+				"species": ["include-from-file", "crops/potato.json"],
+				"cultivar": ["include-from-file", "crops/potato/moderately-early-potato.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/potato.json"]
+			"residueParams": ["include-from-file", "crop-residues/potato.json"]
 		},
 		"WW": {
 			"is-winter-crop": true,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/wheat.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter-wheat.json"]
+				"species": ["include-from-file", "crops/wheat.json"],
+				"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
+			"residueParams": ["include-from-file", "crop-residues/wheat.json"]
 		},
 		"WG": {
 			"is-winter-crop": true,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/barley/winter-barley.json"]
+				"species": ["include-from-file", "crops/barley.json"],
+				"cultivar": ["include-from-file", "crops/barley/winter-barley.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
+			"residueParams": ["include-from-file", "crop-residues/barley.json"]
 		},
 		"SG": {
 			"is-winter-crop": false,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/barley/spring-barley.json"]
+				"species": ["include-from-file", "crops/barley.json"],
+				"cultivar": ["include-from-file", "crops/barley/spring-barley.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
+			"residueParams": ["include-from-file", "crop-residues/barley.json"]
 		},
 		"SC": {
 			"is-winter-crop": true,
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/rape.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/rape/winter-rape.json"]
+				"species": ["include-from-file", "crops/rape.json"],
+				"cultivar": ["include-from-file", "crops/rape/winter-rape.json"]
 			},
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rape.json"]
+			"residueParams": ["include-from-file", "crop-residues/rape.json"]
 		}
 	},
 	
 	"__user defined fertilizer parameteres section to be used via references": "",
 	"fert-params": {
-		"AN": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"],
-		"CADLM": ["include-from-file", "monica-parameters/organic-fertilisers/CADLM.json"]
+		"AN": ["include-from-file", "mineral-fertilisers/AN.json"],
+		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
 	"__relative date crop rotation example": "",
@@ -233,5 +233,5 @@
 	],
 
 	"__general crop parameters for the monica model": "",
-	"CropParameters": ["include-from-file", "monica-parameters/general/crop.json"]
+	"CropParameters": ["include-from-file", "general/crop.json"]
 }

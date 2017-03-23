@@ -339,8 +339,6 @@ namespace Monica
 
     // members
     std::string pc_SpeciesId;
-//    int pc_NumberOfDevelopmentalStages{0};
-//    int pc_NumberOfOrgans{0};
     int pc_CarboxylationPathway{0};
     double pc_DefaultRadiationUseEfficiency{0.0};
     double pc_PartBiologicalNFixation{0.0};
@@ -351,8 +349,8 @@ namespace Monica
     double pc_StageAtMaxDiameter{0.0};
     double pc_MinimumNConcentration{0.0};
     double pc_MinimumTemperatureForAssimilation{0.0};
-	double pc_OptimumTemperatureForAssimilation{ 0.0 };
-	double pc_MaximumTemperatureForAssimilation{ 0.0 };
+		double pc_OptimumTemperatureForAssimilation{0.0};
+		double pc_MaximumTemperatureForAssimilation{0.0};
     double pc_NConcentrationAbovegroundBiomass{0.0};
     double pc_NConcentrationB0{0.0};
     double pc_NConcentrationPN{0.0};

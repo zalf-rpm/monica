@@ -13,7 +13,7 @@
 		"start-date": "1991-01-01",
 		"end-date": "1997-12-31",
 	
-		"no-of-climate-file-header-lines": 1,
+		"no-of-climate-file-header-lines": 2,
 		"csv-separator": ",",
 		"header-to-acd-names": {
 			"DE-date": "de-date",
@@ -25,7 +25,7 @@
 	"debug?": false,
 		
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
-	"include-file-base-path": "${MONICA_HOME}/",
+	"include-file-base-path": "${MONICA_PARAMETERS}/",
 	
 	"__configuration options for the monica outputs": "",
 	"output": { 
@@ -301,9 +301,9 @@
 	},
 
 	"__if monica internal automatic fertilizing via NMin method is to be used, configure here": "",
-	"UseNMinMineralFertilisingMethod": true,
+	"UseNMinMineralFertilisingMethod": false,
 	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
-	"NMinFertiliserPartition": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"],
+	"NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
 	"_NMinFertiliserPartition": {
 		"id": "my AN",
 		"name": "my very own ammonium nitrate variant",

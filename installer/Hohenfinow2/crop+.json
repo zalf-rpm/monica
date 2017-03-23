@@ -11,80 +11,80 @@
 			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", {"db": "monica", "type": "crop", "species": "rye", "cultivar": "winter rye"}],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/rye.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/rye/winter-rye.json"]
+				"species": ["include-from-file", "crops/rye.json"],
+				"cultivar": ["include-from-file", "crops/rye/winter-rye.json"]
 			},
 			"_db_residueParams": ["_include-from-db", {"db": "monica", "type": "crop_residue", "species": "rye", "residue-type": ""}],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rye.json"]
+			"residueParams": ["include-from-file", "crop-residues/rye.json"]
 		},
 		"SM": {
 			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "maize", "silage maize"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/maize.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/maize/silage-maize.json"]
+				"species": ["include-from-file", "crops/maize.json"],
+				"cultivar": ["include-from-file", "crops/maize/silage-maize.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "maize", ""],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/maize.json"]
+			"residueParams": ["include-from-file", "crop-residues/maize.json"]
 		},
 		"MEP": {
 			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "potato", "moderately early potato"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/potato.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/potato/moderately-early-potato.json"]
+				"species": ["include-from-file", "crops/potato.json"],
+				"cultivar": ["include-from-file", "crops/potato/moderately-early-potato.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "potato", ""],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/potato.json"]
+			"residueParams": ["include-from-file", "crop-residues/potato.json"]
 		},
 		"WW": {
 			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "wheat", "winter wheat"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/wheat.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/wheat/winter-wheat.json"]
+				"species": ["include-from-file", "crops/wheat.json"],
+				"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "wheat", ""],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/wheat.json"]
+			"residueParams": ["include-from-file", "crop-residues/wheat.json"]
 		},
 		"WG": {
 			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "barley", "winter barley"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/barley/winter-barley.json"]
+				"species": ["include-from-file", "crops/barley.json"],
+				"cultivar": ["include-from-file", "crops/barley/winter-barley.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "barley", ""],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
+			"residueParams": ["include-from-file", "crop-residues/barley.json"]
 		},
 		"SG": {
 			"is-winter-crop": false,
 			"_db_cropParams": ["_include-from-db", "crop", "barley", "spring barley"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/barley.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/barley/spring-barley.json"]
+				"species": ["include-from-file", "crops/barley.json"],
+				"cultivar": ["include-from-file", "crops/barley/spring-barley.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "barley", ""],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/barley.json"]
+			"residueParams": ["include-from-file", "crop-residues/barley.json"]
 		},
 		"SC": {
 			"is-winter-crop": true,
 			"_db_cropParams": ["_include-from-db", "crop", "rape", "winter rape"],
 			"cropParams": {
-				"species": ["include-from-file", "monica-parameters/crops/rape.json"],
-				"cultivar": ["include-from-file", "monica-parameters/crops/rape/winter-rape.json"]
+				"species": ["include-from-file", "crops/rape.json"],
+				"cultivar": ["include-from-file", "crops/rape/winter-rape.json"]
 			},
 			"_db_residueParams": ["_include-from-db", "crop_residue", "rape", ""],
-			"residueParams": ["include-from-file", "monica-parameters/crop-residues/rape.json"]
+			"residueParams": ["include-from-file", "crop-residues/rape.json"]
 		}
 	},
 	
 	"__user defined fertilizer parameteres section to be used via references": "",
 	"fert-params": {
 		"_db_AN": ["_include-from-db", {"db": "monica", "type": "mineral_fertiliser", "name": "AN"}],
-		"AN": ["include-from-file", "monica-parameters/mineral-fertilisers/AN.json"],
-		"_db_CADLM": ["_include-from-db", "organic_fertiliser", "CADLM"],
-		"CADLM": ["include-from-file", "monica-parameters/organic-fertilisers/CADLM.json"]
+		"AN": ["include-from-file", "mineral-fertilisers/AN.json"],
+		"_db_CADLM": ["_include-from-db", "organic_fertilizer", "CADLM"],
+		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
 	"cropRotation": [
@@ -107,19 +107,19 @@
 					"days": 2,
 					"after": "anthesis",
 					"amount": [10.0, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
+					"partition": ["include-from-file", "mineral-fertilisers/U.json"]
 				},
 				{
 					"type": "MineralFertilization",
 					"date": "0000-04-03",
 					"amount": [30.0, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
+					"partition": ["include-from-file", "mineral-fertilisers/U.json"]
 				},
 				{
 					"type": "MineralFertilization",
 					"date": "0000-05-15",
 					"amount": [220, "kg N"],
-					"partition": ["include-from-file", "monica-parameters/mineral-fertilisers/U.json"]
+					"partition": ["include-from-file", "mineral-fertilisers/U.json"]
 				},
 				{ 
 					"type": "Harvest", 
@@ -356,6 +356,6 @@
 	"__general crop parameters for the monica model": "",
 	"_db_CropParameters": ["_include-from-db", {"type": "crop-params", "name": "hermes"}],
 	"CropParameters": {
-		"=": ["include-from-file", "monica-parameters/general/crop.json"]
+		"=": ["include-from-file", "general/crop.json"]
 	}
 }

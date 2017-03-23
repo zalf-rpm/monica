@@ -176,6 +176,7 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR"
 	${EnvVarUpdate} $0 "PYTHONPATH" "P" "HKCU" "$INSTDIR"
 	${EnvVarUpdate} $0 "MONICA_HOME" "A" "HKCU" "$PROFILE\MONICA"
+	${EnvVarUpdate} $0 "MONICA_PARAMETERS" "A" "HKCU" "$PROFILE\MONICA\monica-parameters"
 	
 	;Create uninstaller
 	WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -214,43 +215,43 @@ SectionEnd
 
 Section "Uninstall"
 
-	Delete "$INSTDIR\monica.exe"
-	Delete "$INSTDIR\monica-run.exe"
-	Delete "$INSTDIR\monica-zmq-run.exe"
-	Delete "$INSTDIR\monica-zmq-server.exe"
-	Delete "$INSTDIR\monica-zmq-control.exe"
-	Delete "$INSTDIR\monica-zmq-control-send.exe"
-	Delete "$INSTDIR\monica-zmq-proxy.exe"
-	Delete "$INSTDIR\*.dll"
+	Delete $INSTDIR\monica.exe
+	Delete $INSTDIR\monica-run.exe
+	Delete $INSTDIR\monica-zmq-run.exe
+	Delete $INSTDIR\monica-zmq-server.exe
+	Delete $INSTDIR\monica-zmq-control.exe
+	Delete $INSTDIR\monica-zmq-control-send.exe
+	Delete $INSTDIR\monica-zmq-proxy.exe
+	Delete $INSTDIR\*.dll
+	Delete $INSTDIR\*.py*
 	
-	Delete "$INSTDIR\LICENSE"
-	;Delete "$INSTDIR\Readme.pdf"
-	Delete "$INSTDIR\en_user_manual_MONICA_windows.pdf"	
-	Delete "$INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf"
-	Delete "$INSTDIR\version.txt"
-	
-	
-	Delete "$PROFILE\MONICA\LICENSE"
-	Delete "$PROFILE\MONICA\db-connections.ini"
-	Delete "$PROFILE\MONICA\sqlite-db\monica.sqlite"
-	Delete "$PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite"
-	RMDir "$PROFILE\MONICA\sqlite-db"
+	Delete $INSTDIR\LICENSE
+	;Delete "$INSTDIR\Readme.pdf
+	Delete $INSTDIR\en_user_manual_MONICA_windows.pdf
+	Delete $INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf
+	Delete $INSTDIR\version.txt
+		
+	Delete $PROFILE\MONICA\LICENSE
+	Delete $PROFILE\MONICA\db-connections.ini
+	Delete $PROFILE\MONICA\sqlite-db\monica.sqlite
+	Delete $PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite
+	RMDir $PROFILE\MONICA\sqlite-db
 
-	Delete "Hohenfinow2\python\carbiocial.sqlite"
-	Delete "Hohenfinow2\python\db-connections.ini"
-	Delete "Hohenfinow2\python\run-monica.py"
-	Delete "Hohenfinow2\python\run-work-collector.py"
-	Delete "Hohenfinow2\python\run-work-producer.py"
-	Delete "Hohenfinow2\python\site-soil-profile-from-db.json"
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\carbiocial.sqlite
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\db-connections.ini
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-monica.py
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-work-collector.py
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-work-producer.py
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\site-soil-profile-from-db.json
 	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2\python
 
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\climate.csv"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\sim.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\crop.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\site.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\sim+.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\crop+.json"
-	Delete "$PROFILE\MONICA\Examples\Hohenfinow2\site+.json"
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate.csv
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim+.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop+.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site+.json
 	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2
 
 	RMDir  $PROFILE\MONICA\Examples
@@ -258,24 +259,25 @@ Section "Uninstall"
 	RMDir  $PROFILE\MONICA\monica-parameters
 	RMDir  $PROFILE\MONICA
 	
-	Delete "$INSTDIR\Uninstall.exe"
+	Delete $INSTDIR\Uninstall.exe
 
-	RMDir "$INSTDIR"
+	RMDir $INSTDIR
 	
 	!insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder
 		
-	Delete "$SMPROGRAMS\$StartMenuFolder\MONICA.lnk"
-	Delete "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk"
-	Delete "$SMPROGRAMS\$StartMenuFolder\Readme.lnk"
+	Delete $SMPROGRAMS\$StartMenuFolder\MONICA.lnk
+	Delete $SMPROGRAMS\$StartMenuFolder\Uninstall.lnk
+	Delete $SMPROGRAMS\$StartMenuFolder\Readme.lnk
 	Delete "$SMPROGRAMS\$StartMenuFolder\Documentation MONICA for Windows.lnk"
 	Delete "$SMPROGRAMS\$StartMenuFolder\Dokumentation MONICA for Windows.lnk"
-	Delete "$DESKTOP\MONICA.lnk"
-	RMDir "$SMPROGRAMS\$StartMenuFolder"
+	Delete $DESKTOP\MONICA.lnk
+	RMDir $SMPROGRAMS\$StartMenuFolder
 	
 	DeleteRegKey /ifempty HKCU "Software\MONICA"
 
 	${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR"
 	${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR"
 	${un.EnvVarUpdate} $0 "MONICA_HOME" "R" "HKCU" "$PROFILE\MONICA"
+	${un.EnvVarUpdate} $0 "MONICA_PARAMETERS" "R" "HKCU" "$PROFILE\MONICA"
 	
 SectionEnd
