@@ -401,7 +401,7 @@ BOTRes& Monica::buildOutputTable()
 			build({id++, "Tra", "mm", "ActualTranspiration"},
 						[](const MonicaModel& monica, OId oid)
 			{
-				return monica.cropGrowth() ? round(monica.cropGrowth()->get_ActualTranspiration(), 2) : 0.0;
+				return round(monica.getTranspiration(), 2);
 			});
 
 			build({id++, "NDef", "0;1", "CropNRedux"},
@@ -779,8 +779,7 @@ BOTRes& Monica::buildOutputTable()
 
 						, [](const MonicaModel& monica, OId oid)
 			{
-				double potentialET = monica.soilMoisture().get_ET0() * monica.soilMoisture().get_KcFactor();
-				return round(potentialET, 1);
+				return round(monica.soilMoisture().get_PotentialEvapotranspiration(), 1);
 			});
 
 			build({id++, "Act_ET", "mm", ""},
@@ -1136,7 +1135,8 @@ BOTRes& Monica::buildOutputTable()
 			build({ id++, "ETa/ETc", "", "actual evapotranspiration / potential evapotranspiration" },
 				[](const MonicaModel& monica, OId oid)
 			{
-				return round(monica.getETa() / monica.getEvapotranspiration(), 1);
+				auto potET = monica.soilMoisture().get_PotentialEvapotranspiration();
+				return potET > 0 ? round(monica.getETa() / potET, 2) : 1.0;
 			});
 
 			build({id++, "Transpiration", "mm", ""},

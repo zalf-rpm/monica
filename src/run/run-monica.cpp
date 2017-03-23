@@ -230,12 +230,12 @@ Tools::Errors Spec::merge(json11::Json j)
 {
 	init(start, j, "start");
 	init(end, j, "end");
-	Maybe<DMY> dummy;
-	init(dummy, j, "while");
 	init(at, j, "at");
 	init(from, j, "from");
 	init(to, j, "to");
-	
+	Maybe<DMY> dummy;
+	init(dummy, j, "while");
+
 	return{};
 }
 
@@ -249,7 +249,8 @@ void Spec::init(Maybe<DMY>& member, Json j, string time)
 		if(auto f = buildCompareExpression(jt.array_items()))
 		{
 			time2expression[time] = f;
-			eventType = eExpression;
+			if(eventType == eUnset)
+				eventType = eExpression;
 		}
 	}
 	else if(jt.is_string())
@@ -512,7 +513,16 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 				{
 					if(withinEventFromToRange.value())
 					{
-						storeResults(outputIds, intermediateResults, monica);
+						// allow an while expression in an eCrop section
+						if(auto wf = spec.time2expression["while"])
+						{
+							if(wf(monica))
+							{
+								storeResults(outputIds, intermediateResults, monica);
+							}
+						}
+						else
+							storeResults(outputIds, intermediateResults, monica);
 
 						if(isCurrentlyToEvent)
 						{

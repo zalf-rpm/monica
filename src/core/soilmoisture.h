@@ -196,6 +196,11 @@ namespace Monica
     //! Returns evapotranspiration value [mm]
     double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; }
 
+		double get_PotentialEvapotranspiration() const
+		{
+			return get_ET0() * get_KcFactor();
+		}
+
     //! Returns evaporation value [mm]
     double get_ActualEvaporation() const { return vm_ActualEvaporation; }
 
