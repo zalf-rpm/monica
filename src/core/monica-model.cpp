@@ -955,7 +955,7 @@ double MonicaModel::getEvaporation() const
 
 double MonicaModel::getETa() const
 {
-  return _soilMoisture.get_Evapotranspiration();
+  return _soilMoisture.get_ActualEvapotranspiration();
 }
 
 /**

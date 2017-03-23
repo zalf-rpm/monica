@@ -194,7 +194,7 @@ namespace Monica
     double get_SurfaceRunOff() const { return vm_SurfaceRunOff; }
 
     //! Returns evapotranspiration value [mm]
-    double get_Evapotranspiration() const { return vm_ActualEvapotranspiration; }
+    double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; }
 
     //! Returns evaporation value [mm]
     double get_ActualEvaporation() const { return vm_ActualEvaporation; }

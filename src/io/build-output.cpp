@@ -356,6 +356,12 @@ BOTRes& Monica::buildOutputTable()
 		{
 			int id = 0;
 
+			build({ id++, "Count", "", "output 1 for counting things" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return 1;
+			});
+
 			build({id++, "Date", "", "output current date"},
 						[](const MonicaModel& monica, OId oid)
 			{
@@ -780,7 +786,7 @@ BOTRes& Monica::buildOutputTable()
 			build({id++, "Act_ET", "mm", ""},
 						[](const MonicaModel& monica, OId oid)
 			{
-				return round(monica.soilMoisture().get_Evapotranspiration(), 1);
+				return round(monica.soilMoisture().get_ActualEvapotranspiration(), 1);
 			});
 
 			build({id++, "ET0", "mm", ""},
@@ -1125,6 +1131,12 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.getEvaporation(), 1);
+			});
+
+			build({ id++, "ETa/ETc", "", "actual evapotranspiration / potential evapotranspiration" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.getETa() / monica.getEvapotranspiration(), 1);
 			});
 
 			build({id++, "Transpiration", "mm", ""},
