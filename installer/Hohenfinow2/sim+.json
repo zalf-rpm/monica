@@ -49,6 +49,7 @@
 				"Date",
 				"Crop",
 				"Stage",
+				"ETa/ETc",
 				"Tavg",
 				"Precip",
 				["Mois", 1],
@@ -62,8 +63,53 @@
 			]
 		],
 		
+		"2 events": [
+			{	
+				"from": "Sowing", 
+				"to": "Harvest",
+				"_while": ["ETa/ETc", "<", 0.4]
+			}, [
+				["Year", "FIRST"],
+				["Count", "SUM"]	
+			],	
 
-		"___events": [
+			{	
+				"from": "Sowing", 
+				"to": "Harvest",
+				"while": ["ETa/ETc", "<", 0.4]
+			}, [
+				["Year", "FIRST"],
+				["Count", "SUM"]	
+			],	
+
+			{	
+				"start": "Sowing",
+				"end": "Harvest",
+				"at": ["ETa/ETc", ">", 1.0]
+			}, [
+				"Year", "ETa/ETc"
+			],	
+
+			{	
+				"from": "Sowing", 
+				"to": "maturity",
+				"_while": ["ETa/ETc", "<", 0.4]
+			}, [
+				["Year", "FIRST"],
+				["Count", "SUM"]	
+			],
+
+			{	
+				"from": "Sowing", 
+				"to": "maturity",
+				"while": ["ETa/ETc", "<", 0.4]
+			}, [
+				["Year", "FIRST"],
+				["Count", "SUM"]	
+			]
+		],
+
+		"3 events": [
 			"daily", [
 				"Date", "Crop", "TraDef", "NDef", "HeatRed",
 				"Stage", "RelDev", "AbBiom", ["OrgBiom", "Fruit"], "Yield","LAI",
@@ -72,7 +118,7 @@
 			]
 		],
 
-		"__events": [
+		"4 events": [
 			"crop", [
 				["Year", "LAST"],
 				["DOY|SowDOY", "FIRST"],
@@ -111,7 +157,7 @@
 		],
 		
 		
-		"___events" : [
+		"5 events" : [
 			"daily", [
 				"Date", 
 				"Crop", 

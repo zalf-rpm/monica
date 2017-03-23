@@ -343,6 +343,7 @@ BOTRes& Monica::buildOutputTable()
 		if(setf)
 			m.setfs[r.id] = setf;
 		m.name2metadata[r.name] = r;
+		return r;
 	};
 
 	// only initialize once
@@ -1120,7 +1121,7 @@ BOTRes& Monica::buildOutputTable()
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilOrganic().get_SMB_CO2EvolutionRate(i); }, 1);
 			});
 
-			build({id++, "Evapotranspiration", "mm", ""},
+			build({id++, "Evapotranspiration", "mm", "Remaining evapotranspiration"},
 						[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.getEvapotranspiration(), 1);

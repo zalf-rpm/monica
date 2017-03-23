@@ -918,7 +918,7 @@ double MonicaModel::surfaceRunoff() const
 }
 
 /**
- * Returns evapotranspiration [mm]
+ * Returns remaining evapotranspiration [mm]
  * @return
  */
 double MonicaModel::getEvapotranspiration() const
