@@ -1187,6 +1187,12 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->jjvEmissions().monoterpene_emission, 5) : 0.0;
 			});
 
+			build({ id++, "Nresid", "kg N ha-1", "Nitrogen content in crop residues" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_ResiduesNContent(), 1) : 0.0;
+			});
+
 			tableBuild = true;
 		}
 	}
