@@ -95,7 +95,7 @@ namespace Voc
 	static const double PO2 = 0.208; //!< volumentric percentage of oxygen in the canopy air
 
 	// voc module specific constants
-
+	
 	//! absorbance factor, Collatz et al. 1991 
 	static double const ABSO{0.860};
 	//! light modifier, Guenther et al. 1993; (Staudt et al. 2004 f. Q.ilex: 0.0041, Bertin et al. 1997 f. Q.ilex: 0.00147, Harley et al. 2004 f. M.indica: 0.00145) 
@@ -126,7 +126,10 @@ namespace Voc
 	static double const TOPT{314.0};
 	//! reference temperature (K), Guenther et al. 1993 
 	static double const TREF{30.0 + D_IN_K};
-	
+		
+	// photofarquhar specific constants
+	static double const TK25 = 298.16;
+
 	//---------------------------------------------------------------------------
 
 	struct SpeciesData
@@ -160,14 +163,17 @@ namespace Voc
 		double HD_IS{284600.0};
 		double HD_MT{284600.0};
 
-		//for temp replacement code
-		double HDJ{220000.0};
-		double SDJ{703.0};
+		double HDJ{220000.0}; //! fw: "HDJ": curvature parameter of jMax (J mol-1) (Kattge et al. 2007: 200000; Farquhar et al. 1980: 220000; Harley et al. 1992: 201000) 
+		double SDJ{703.0}; //! fw: "SDJ": electron transport temperature response parameter (Kattge et al. 2007: 647; Farquhar et al. 1980: 710; Harley et al. 1992: 650)
 		double KC25{260.0};
 		double KO25{179.0};
 		double VCMAX25{80.0}; //corn: 13.1
 		double QJVC{2.0};
-		double AEJM{37000.0};
+
+		double AEKC{59356}; // for corn
+		double AEKO{35948}; // for corn
+		double AEJM{37000}; //for corn
+
 
 		//double SCALE_I{1.0};
 		//double SCALE_M{1.0};
@@ -192,7 +198,7 @@ namespace Voc
 		
 		// leaf internal O2 concentration per canopy layer(umol m - 2)
 		//	physiology  oi_vtfl  oi_vtfl  double  V : F  210.0  mol : 10 ^ -6 : m^-2
-		double internalO2concentration{0};
+		double oi{0};
 		
 		// Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		// physiology  ko_vtfl  ko_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
@@ -212,7 +218,7 @@ namespace Voc
 		
 		// CO2 compensation point at 25oC per canopy layer (umol m-2)
 		// physiology  comp_vtfl  comp_vtfl  double  V : F  30.0  mol : 10 ^ -6 : m^-2
-		double CO2compensationPointAt25DegC{0};
+		double comp{0};
 		
 		// Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		// physiology  kc_vtfl  kc_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
