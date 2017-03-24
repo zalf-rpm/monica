@@ -95,7 +95,7 @@ namespace Monica
 		virtual bool isActive() const { return _isActive; }
 
 		//! reinit potential state of workstep
-		virtual void reinit(size_t year);
+		virtual bool reinit(Tools::Date date, bool addYear = false);
 
 	protected:
 		Tools::Date _date;
@@ -173,7 +173,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropSeeded; }
 
-		virtual void reinit(size_t year);
+		virtual bool reinit(Tools::Date date, bool addYear = false);
 
 		virtual Tools::Date earliestDate() const { return _earliestDate; }
 
@@ -276,7 +276,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropHarvested; }
 
-		virtual void reinit(size_t year);
+		virtual bool reinit(Tools::Date date, bool addYear = false);
 
 		virtual Tools::Date latestDate() const { return _latestDate; }
 
@@ -380,7 +380,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_appliedFertilizer; }
 
-		virtual void reinit(size_t year);
+		virtual bool reinit(Tools::Date date, bool addYear = false);
 
 	private:
 		MineralFertiliserParameters _partition;
@@ -592,7 +592,7 @@ namespace Monica
     bool irrigateCrop() const { return _irrigateCrop; }
 
 		//! reinit cultivation method to initial state, if it will be reused (eg in a crop rotation)
-		void reinit(size_t year);
+		void reinit(Tools::Date date);
 
 	private:
 		std::multimap<Tools::Date, WSPtr> _allWorksteps;

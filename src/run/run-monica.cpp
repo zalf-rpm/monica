@@ -546,16 +546,25 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 		auto m = cd.month();
 		auto d = cd.day();
 
-		//check if we are in the start/end range or no year, month, day specified
-		if(spec.start.value().year.isValue() && y < spec.start.value().year.value()
-			 || spec.end.value().year.isValue() && y > spec.end.value().year.value())
-			return;
-		if(spec.start.value().month.isValue() && m < spec.start.value().month.value()
-			 || spec.end.value().month.isValue() && m > spec.end.value().month.value())
-			return;
-		if(spec.start.value().day.isValue() && d < spec.start.value().day.value()
-			 || spec.end.value().day.isValue() && d > spec.end.value().day.value())
-			return;
+		if(spec.start.isValue() || spec.end.isValue())
+		{
+			//build dates to compare against
+			auto sv = spec.start.value();
+			Date start(sv.day.isNothing() ? d : sv.day.value(),
+								 sv.month.isNothing() ? m : sv.month.value(),
+								 sv.year.isNothing() ? y : sv.year.value(),
+								 false, true);
+
+			auto ev = spec.end.value();
+			Date end(ev.day.isNothing() ? d : ev.day.value(),
+							 ev.month.isNothing() ? m : ev.month.value(),
+							 ev.year.isNothing() ? y : ev.year.value(),
+							 false, true);
+
+			//check if we are in the start/end range or no year, month, day specified
+			if(cd < start || cd > end)
+				return;
+		}
 
 		//at spec takes precedence over range spec, if both would be set
 		if(spec.isAt())
@@ -576,29 +585,28 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 		}
 		else
 		{
-			//check if we are in the aggregating from/to range
-			if((spec.from.value().year.isNothing() || y >= spec.from.value().year.value())
-				 && (spec.to.value().year.isNothing() || y <= spec.to.value().year.value()))
-			{
-				if((spec.from.value().month.isNothing() || m >= spec.from.value().month.value())
-					 && (spec.to.value().month.isNothing() || m <= spec.to.value().month.value()))
-				{
-					if((spec.from.value().day.isNothing() || d >= spec.from.value().day.value())
-						 && (spec.to.value().day.isNothing() || d <= spec.to.value().day.value()))
-					{
-						storeResults(outputIds, intermediateResults, monica);
+			//build dates to compare against
+			auto fv = spec.from.value();
+			Date from(fv.day.isNothing() ? d : fv.day.value(),
+								fv.month.isNothing() ? m : fv.month.value(),
+								fv.year.isNothing() ? y : fv.year.value(),
+								false, true);
 
-						//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
-						//aggregate intermediate values
-						if((spec.to.value().year.isNothing() || y == spec.to.value().year.value())
-							 && (spec.to.value().month.isNothing() || m == spec.to.value().month.value())
-							 && ((spec.to.value().day.isValue() && d == spec.to.value().day.value())
-									 || (spec.to.value().day.isValue() && d < spec.to.value().day.value() && d == cd.daysInMonth())))
-						{
-							aggregateResults();
-						}
-					}
-				}
+			auto tv = spec.to.value();
+			Date to(tv.day.isNothing() ? d : tv.day.value(),
+							tv.month.isNothing() ? m : tv.month.value(),
+							tv.year.isNothing() ? y : tv.year.value(),
+							false, true);
+
+			//check if we are in the aggregating from/to range
+			if(from <= cd && cd <= to)
+			{
+				storeResults(outputIds, intermediateResults, monica);
+
+				//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
+				//aggregate intermediate values
+				if(cd == to)
+					aggregateResults();
 			}
 		}
 	}
@@ -704,7 +712,7 @@ Output Monica::runMonica(Env env)
 	
 	//direct handle to current cultivation method
 	CultivationMethod* currentCM = cmci == cropRotation.end() ? nullptr : *cmci;
-	currentCM->reinit(currentDate.year());
+	currentCM->reinit(currentDate);
 	year2cm[currentDate.year()].insert(*cmci);
 
 	Date nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
@@ -783,7 +791,7 @@ Output Monica::runMonica(Env env)
 				}
 
 				currentCM = *cmci;
-				currentCM->reinit(year);
+				currentCM->reinit(currentDate);
 				year2cm[year].insert(*cmci);
 				nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
 				debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;

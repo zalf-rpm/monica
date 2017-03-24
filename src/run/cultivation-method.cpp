@@ -45,6 +45,24 @@ using namespace Soil;
 using namespace Tools;
 using namespace Climate;
 
+
+std::pair<Date, bool> makeInitAbsDate(Date date, Date initDate, bool addYear)
+{
+	bool addedYear = false;
+
+	if(date.isAbsoluteDate())
+		return make_pair(date, addedYear);
+
+	Date absDate = date.toAbsoluteDate(initDate.year());
+	if(addYear || absDate < initDate)
+	{
+		addedYear = true;
+		absDate.addYears(1);
+	}
+
+	return make_pair(absDate, addedYear);
+}
+
 //----------------------------------------------------------------------------
 
 Workstep::Workstep(const Tools::Date& d)
@@ -117,13 +135,17 @@ bool Workstep::condition(MonicaModel* model)
 	return _daysAfterEventCount == _applyNoOfDaysAfterEvent;
 }
 
-void Workstep::reinit(size_t year) 
+bool Workstep::reinit(Tools::Date date, bool addYear)
 { 
+	bool addedYear = false;
+
 	if(_date.isValid())
-		_absDate = _date.isAbsoluteDate() ? _date : _date.toAbsoluteDate(year);
+		tie(_absDate, addedYear) = makeInitAbsDate(_date, date, addYear);
 
 	_isActive = true;
 	_daysAfterEventCount = -1;
+
+	return addedYear;
 }
 
 //------------------------------------------------------------------------------
@@ -348,14 +370,18 @@ void AutomaticSowing::setDate(Tools::Date date)
 	_crop->setSeedAndHarvestDate(date, _crop->harvestDate());
 }
 
-void AutomaticSowing::reinit(size_t year)
+bool AutomaticSowing::reinit(Tools::Date date, bool addYear)
 {
-	Workstep::reinit(year);
+	Workstep::reinit(date, addYear);
 
 	_cropSeeded = _inSowingRange = false;
 	setDate(Tools::Date());
-	_absEarliestDate = _earliestDate.isAbsoluteDate() ? _earliestDate : _earliestDate.toAbsoluteDate(year);
-	_absLatestDate = _latestDate.isAbsoluteDate() ? _latestDate : _latestDate.toAbsoluteDate(year);
+
+	bool addedYear1, addedYear2;
+	tie(_absEarliestDate, addedYear1) = makeInitAbsDate(_earliestDate, date, addYear);
+	tie(_absLatestDate, addedYear2) = makeInitAbsDate(_latestDate, date, addYear);
+
+	return addedYear1 || addedYear2;
 }
 
 
@@ -531,13 +557,17 @@ bool AutomaticHarvest::condition(MonicaModel* model)
 	return conditionMet;
 }
 
-void AutomaticHarvest::reinit(size_t year)
+bool AutomaticHarvest::reinit(Tools::Date date, bool addYear)
 {
-	Workstep::reinit(year);
+	Workstep::reinit(date, addYear);
 
 	_cropHarvested = false;
 	setDate(Tools::Date());
-	_absLatestDate = _latestDate.isAbsoluteDate() ? _latestDate : _latestDate.toAbsoluteDate(year);
+
+	bool addedYear;
+	tie(_absLatestDate, addedYear) = makeInitAbsDate(_latestDate, date, addYear);
+
+	return addedYear;
 }
 
 
@@ -723,14 +753,14 @@ bool NDemandFertilization::condition(MonicaModel* model)
 	return conditionMet;
 }
 
-void NDemandFertilization::reinit(size_t year)
+bool NDemandFertilization::reinit(Tools::Date date, bool addYear)
 {
-	Workstep::reinit(year);
+	bool addedYear = Workstep::reinit(date, addYear);
 
 	_appliedFertilizer = false;
-	setDate(Tools::Date());
-}
 
+	return false;
+}
 
 //------------------------------------------------------------------------------
 
@@ -1308,16 +1338,17 @@ std::string CultivationMethod::toString() const
 	return s.str();
 }
 
-void CultivationMethod::reinit(size_t year)
+void CultivationMethod::reinit(Tools::Date date)
 {
 	_absWorksteps.clear();
 	_unfinishedDynamicWorksteps.clear();
+	bool addedYear = false;
 	for(auto p : _allWorksteps)
 	{
-		p.second->reinit(year);
-		Date absDate = p.first.isValid() && p.first.isRelativeDate() ? p.first.toAbsoluteDate(year) : p.first;
-		_absWorksteps.insert(make_pair(absDate, p.second));
-		if(!absDate.isValid())
+		auto ws = p.second;
+		addedYear = ws->reinit(date, addedYear) || addedYear;
+		_absWorksteps.insert(make_pair(ws->absDate(), p.second));
+		if(!ws->absDate().isValid())
 			_unfinishedDynamicWorksteps.push_back(p.second);
 	}
 }
