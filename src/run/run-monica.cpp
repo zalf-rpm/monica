@@ -156,14 +156,19 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 		acd = sunhours;
 	else if(name == "relhumid")
 		acd = relhumid;
+	else if(name == "co2")
+		acd = co2;
 
 	da.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
 
 //--------------------------------------------------------------------------------------
 
-pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAccessor& da,
-																												 size_t stepNo, double latitude)
+/*
+pair<Date, map<Climate::ACD, double>> 
+climateDataForStep(const Climate::DataAccessor& da,
+									 size_t stepNo,
+									 double latitude)
 {
 	Date startDate = da.startDate();
 	Date currentDate = startDate + stepNo;
@@ -192,6 +197,7 @@ pair<Date, map<Climate::ACD, double>> climateDataForStep(const Climate::DataAcce
 	};
 	return make_pair(currentDate, m);
 }
+*/
 
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
@@ -726,7 +732,7 @@ Output Monica::runMonica(Env env)
 		monica.dailyReset();
 
 		monica.setCurrentStepDate(currentDate);
-		monica.setCurrentStepClimateData(climateDataForStep(env.da, d, env.params.siteParameters.vs_Latitude).second);
+		monica.setCurrentStepClimateData(env.da.allDataForStep(d, env.params.siteParameters.vs_Latitude));
 
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil

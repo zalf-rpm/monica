@@ -502,6 +502,14 @@ void MonicaModel::generalStep()
 	unsigned int julday = date.julianDay();
 	bool leapYear = date.isLeapYear();
 
+	auto climateData = currentStepClimateData();
+	double tmin = climateData[Climate::tmin];
+	double tavg = climateData[Climate::tavg];
+	double tmax = climateData[Climate::tmax];
+	double precip = climateData[Climate::precip];
+	double wind = climateData[Climate::wind];
+	double globrad = climateData[Climate::globrad];
+
   // test if simulated gw or measured values should be used
   double gw_value = _groundwaterInformation.getGroundwaterInformation(date);
   //  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
@@ -513,7 +521,10 @@ void MonicaModel::generalStep()
                                                   leapYear)
                         : gw_value / 100.0; // [cm] --> [m]
 
-  if (int(_envPs.p_AtmosphericCO2) == 0)
+	auto co2it = climateData.find(Climate::co2);
+	if(co2it != climateData.end())
+		vw_AtmosphericCO2Concentration = co2it->second;
+	else if (int(_envPs.p_AtmosphericCO2) == 0)
     vw_AtmosphericCO2Concentration = CO2ForDate(date);
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;
@@ -542,21 +553,18 @@ void MonicaModel::generalStep()
     addDailySumFertiliser(fertilizerAmount);
 	}
 
-	auto climateData = currentStepClimateData();
-	double tmin = climateData[Climate::tmin];
-	double tavg = climateData[Climate::tavg];
-	double tmax = climateData[Climate::tmax];
-	double precip = climateData[Climate::precip];
-	double wind = climateData[Climate::wind];
-	double globrad = climateData[Climate::globrad];
-
   _soilTemperature.step(tmin, tmax, globrad);
   _soilMoisture.step(vs_GroundwaterDepth,
-										 precip, tmax, tmin,
-										 (relhumid / 100.0), tavg, wind,
+										 precip,
+										 tmax,
+										 tmin,
+										 (relhumid / 100.0),
+										 tavg, 
+										 wind,
                      _envPs.p_WindSpeedHeight,
-										 globrad, julday);
-  _soilOrganic.step(tavg, precip, wind);
+										 globrad,
+										 julday);
+	_soilOrganic.step(tavg, precip, wind);
   _soilTransport.step();
 }
 
@@ -579,12 +587,12 @@ void MonicaModel::cropStep()
   double globrad = climateData[Climate::globrad];
 
   // test if data for sunhours are available; if not, value is set to -1.0
-  double sunhours = climateData.find(Climate::sunhours) == climateData.end()
-                    ? -1.0 : climateData[Climate::sunhours];
+	auto sunhit = climateData.find(Climate::sunhours);
+	double sunhours = sunhit == climateData.end() ? -1.0 : sunhit->second;
 
   // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = climateData.find(Climate::relhumid) == climateData.end()
-                    ? -1.0 : climateData[Climate::relhumid];
+	auto rhit = climateData.find(Climate::relhumid);
+	double relhumid = rhit == climateData.end() ? -1.0 : rhit->second;
 
   double wind =  climateData[Climate::wind];
   double precip =  climateData[Climate::precip];
