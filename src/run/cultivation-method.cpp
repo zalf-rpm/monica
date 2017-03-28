@@ -661,7 +661,7 @@ NDemandFertilization(int stage,
 									 double depth,
 									 MineralFertiliserParameters partition,
 									 double Ndemand)
-	: Workstep(Date())
+	: Workstep()
 	, _partition(partition)
 	, _Ndemand(Ndemand)
 	, _depth(depth)
@@ -673,6 +673,7 @@ NDemandFertilization::NDemandFertilization(Tools::Date date,
 																			 MineralFertiliserParameters partition,
 																			 double Ndemand)
 	: Workstep(date)
+	, _initialDate(date)
 	, _partition(partition)
 	, _Ndemand(Ndemand)
 	, _depth(depth)
@@ -686,6 +687,7 @@ NDemandFertilization::NDemandFertilization(json11::Json j)
 Errors NDemandFertilization::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
+	_initialDate = date();
 	set_double_value(_Ndemand, j, "N-demand");
 	set_value_obj_value(_partition, j, "partition");
 	set_double_value(_depth, j, "depth");
@@ -702,8 +704,8 @@ json11::Json NDemandFertilization::to_json() const
 	,{"partition", _partition}
 	,{"depth", J11Array{_depth, "m", "depth of Nmin measurement"}}
 	};
-	if(date().isValid())
-		o["date"] = date().toIsoDateString();
+	if(_initialDate.isValid())
+		o["date"] = _initialDate.toIsoDateString();
 	else
 		o["stage"] = J11Array{_stage, "", "if this development stage is entered, the fertilizer will be applied"};
 	
@@ -719,6 +721,7 @@ bool NDemandFertilization::apply(MonicaModel* model)
 	double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth, _Ndemand);
 	model->addDailySumFertiliser(appliedAmount);
 	_appliedFertilizer = true;
+	//record date of application until next reinit
 	setDate(model->currentStepDate());
 	model->addEvent("NDemandFertilization");
 
@@ -744,6 +747,8 @@ bool NDemandFertilization::condition(MonicaModel* model)
 
 bool NDemandFertilization::reinit(Tools::Date date, bool addYear)
 {
+	setDate(_initialDate);
+
 	bool addedYear = Workstep::reinit(date, addYear);
 
 	_appliedFertilizer = false;
@@ -1317,7 +1322,7 @@ std::string CultivationMethod::toString() const
 	return s.str();
 }
 
-void CultivationMethod::reinit(Tools::Date date)
+bool CultivationMethod::reinit(Tools::Date date)
 {
 	_absWorksteps.clear();
 	_unfinishedDynamicWorksteps.clear();
@@ -1330,4 +1335,6 @@ void CultivationMethod::reinit(Tools::Date date)
 		if(!ws->absDate().isValid())
 			_unfinishedDynamicWorksteps.push_back(p.second);
 	}
+
+	return addedYear;
 }

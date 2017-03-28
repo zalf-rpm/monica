@@ -84,6 +84,7 @@ Errors Env::merge(json11::Json j)
 	es.append(extractAndStore(j["cropRotation"], cropRotation));
 	
 	set_bool_value(debugMode, j, "debugMode");
+	set_bool_value(ignoreMissedCultivationMethods, j, "ignore-missed-cultivation-methods");
 	
 	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
@@ -100,17 +101,18 @@ json11::Json Env::to_json() const
 	for(const auto& c : cropRotation)
 		cr.push_back(c.to_json());
 
-	return json11::Json::object{
-		 {"type", "Env"}
-		,{"params", params.to_json()}
-		,{"cropRotation", cr}
-		,{"da", da.to_json()}
-		,{"debugMode", debugMode}
-		,{"pathToClimateCSV", pathToClimateCSV}
-		,{"csvViaHeaderOptions", csvViaHeaderOptions}
-		,{"customId", customId}
-		,{"events", events}
-		,{"outputs", outputs}
+	return json11::Json::object
+	{{"type", "Env"}
+	,{"params", params.to_json()}
+	,{"cropRotation", cr}
+	,{"da", da.to_json()}
+	,{"debugMode", debugMode}
+	,{"ignore-missed-cultivation-methods", ignoreMissedCultivationMethods}
+	,{"pathToClimateCSV", pathToClimateCSV}
+	,{"csvViaHeaderOptions", csvViaHeaderOptions}
+	,{"customId", customId}
+	,{"events", events}
+	,{"outputs", outputs}
 	};
 }
 
@@ -711,17 +713,75 @@ Output Monica::runMonica(Env env)
 		cropRotation.push_back(&cm);
 
 	//iterator through the crop rotation
-	auto cmci = cropRotation.begin();
-	
-	//keep track of the year a cultivation method has been used in, to prevent initializing it again for the same year
-	map<int, set<CultivationMethod*>> year2cm;
-	
-	//direct handle to current cultivation method
-	CultivationMethod* currentCM = cmci == cropRotation.end() ? nullptr : *cmci;
-	currentCM->reinit(currentDate);
-	year2cm[currentDate.year()].insert(*cmci);
+	auto cmit = cropRotation.begin();
 
-	Date nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
+	auto findNextCultivationMethod = [&](Date currentDate,
+																			 bool advanceToNextCM = true)
+	{
+		CultivationMethod* currentCM = nullptr;
+		Date nextAbsoluteCMApplicationDate;
+
+		//it might be possible that the next cultivation method has to be skipped (if cover/catch crop)
+		bool notFoundNextCM = true;
+		while(notFoundNextCM)
+		{
+			if(advanceToNextCM)
+			{
+				//delete fully cultivation methods with only absolute worksteps,
+				//because they won't participate in a new run when wrapping the crop rotation 
+				//delete fully cultivation methods with only absolute worksteps,
+				//because they won't participate in a new run when wrapping the crop rotation 
+				if((*cmit)->areOnlyAbsoluteWorksteps())
+					cmit = cropRotation.erase(cmit);
+				else
+					cmit++;
+
+				//start anew if we reached the end of the crop rotation
+				if(cmit == cropRotation.end())
+					cmit = cropRotation.begin();
+			}
+
+			//check if there's at least a cultivation method left in cropRotation
+			if(cmit != cropRotation.end())
+			{
+				advanceToNextCM = true;
+
+				currentCM = *cmit;
+				bool addedYear = currentCM->reinit(currentDate);
+				Date absStartDate = currentCM->absStartDate();
+
+				//try next CM in crop rotation
+				//if addedYear is true, means it was necessary to shift CM to next year, which means
+				//the CM can be removed if it is just a cover/catch crop
+				notFoundNextCM =
+					(addedYear && currentCM->canBeSkipped())
+					|| (absStartDate < currentDate
+							&& env.ignoreMissedCultivationMethods
+							&& currentCM->canBeSkipped());
+
+				if(notFoundNextCM)
+					nextAbsoluteCMApplicationDate = Date();
+				else
+				{
+					nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
+					debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+				}
+			}
+			else
+			{
+				currentCM = nullptr;
+				nextAbsoluteCMApplicationDate = Date();
+				notFoundNextCM = false;
+			}
+		}
+
+		return make_pair(currentCM, nextAbsoluteCMApplicationDate);
+	};
+
+	//direct handle to current cultivation method
+	CultivationMethod* currentCM;
+	Date nextAbsoluteCMApplicationDate;
+	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
 
 	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
 	
@@ -771,42 +831,7 @@ Output Monica::runMonica(Env env)
 			//to count the applied fertiliser for the next production process
 			monica.resetFertiliserCounter();
 
-			//delete fully cultivation methods with only absolute worksteps,
-			//because they won't participate in a new run when wrapping the crop rotation 
-			//delete fully cultivation methods with only absolute worksteps,
-			//because they won't participate in a new run when wrapping the crop rotation 
-			if((*cmci)->areOnlyAbsoluteWorksteps())
-				cmci = cropRotation.erase(cmci);
-			else
-				cmci++;
-
-			//start anew if we reached the end of the crop rotation
-			if(cmci == cropRotation.end())
-				cmci = cropRotation.begin();
-
-			//check if there's at least a cultivation method left in cropRotation
-			if(cmci != cropRotation.end())
-			{
-				//if the newly set cultivation method has already been used this year
-				int year = currentDate.year();
-				auto it = year2cm.find(year);
-				if(it != year2cm.end())
-				{
-					if(it->second.find(*cmci) != it->second.end())
-						year++;
-				}
-
-				currentCM = *cmci;
-				currentCM->reinit(currentDate);
-				year2cm[year].insert(*cmci);
-				nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
-				debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-			}
-			else
-			{
-				currentCM = nullptr;
-				nextAbsoluteCMApplicationDate = Date();
-			}
+			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate);
 		}
 	}
 	

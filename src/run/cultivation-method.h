@@ -378,6 +378,7 @@ namespace Monica
 		virtual bool reinit(Tools::Date date, bool addYear = false);
 
 	private:
+		Tools::Date _initialDate;
 		MineralFertiliserParameters _partition;
 		double _Ndemand{0};
 		double _depth{0.0};
@@ -587,7 +588,10 @@ namespace Monica
     bool irrigateCrop() const { return _irrigateCrop; }
 
 		//! reinit cultivation method to initial state, if it will be reused (eg in a crop rotation)
-		void reinit(Tools::Date date);
+		//! returns if it was necessary to add a year to shift relative dates after date
+		bool reinit(Tools::Date date);
+
+		bool canBeSkipped() const { return _canBeSkipped; }
 
 	private:
 		std::multimap<Tools::Date, WSPtr> _allWorksteps;

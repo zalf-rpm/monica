@@ -98,7 +98,7 @@
 					"_db_partition": ["include-from-db", "mineral_fertiliser", "AN"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "0001-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
+				{ "date": "0001-07-27", "type": "Harvest" }
 			]
 		}
 	],
@@ -129,7 +129,7 @@
 					"amount": [40.0, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1992-07-27", "type": "Harvest", "crop": ["ref", "crops", "WR"] }
+				{ "date": "1992-07-27", "type": "Harvest" }
 			]
 		},
 		{
@@ -148,7 +148,7 @@
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1993-09-23", "type": "Harvest", "crop": ["ref", "crops", "SM"] },
+				{ "date": "1993-09-23", "type": "Harvest" },
 				{
 					"date": "1993-12-16",
 					"type": "OrganicFertilization",
@@ -168,7 +168,7 @@
 					"amount": [90, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1994-09-06", "type": "Harvest", "crop": ["ref", "crops", "MEP"] },
+				{ "date": "1994-09-06", "type": "Harvest" },
 				{ "date": "1994-09-29", "type": "Tillage", "depth": [0.15, "m"] }
 			]
 		},
@@ -193,7 +193,7 @@
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1995-08-02", "type": "Harvest", "crop": ["ref", "crops", "WW"] },
+				{ "date": "1995-08-02", "type": "Harvest" },
 				{ "date": "1995-08-03", "type": "Tillage", "depth": [0.15, "m"] }
 			]
 		},
@@ -206,14 +206,14 @@
 					"amount": [60, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1996-04-13", "type": "Harvest", "crop": ["ref", "crops", "WG"] },
+				{ "date": "1996-04-13", "type": "Harvest" },
 				{ "date": "1996-04-14", "type": "Tillage", "depth": [0.10, "m"] }
 			]
 		},
 		{
 			"worksteps": [
 				{ "date": "1996-04-17", "type": "Sowing", "crop": ["ref", "crops", "SG"] },
-				{ "date": "1996-09-10", "type": "Harvest", "crop": ["ref", "crops", "SG"] },
+				{ "date": "1996-09-10", "type": "Harvest" },
 				{ "date": "1996-09-17", "type": "Tillage", "depth": [0.10, "m"] }
 			]
 		},
@@ -226,7 +226,7 @@
 					"amount": [80, "kg N"],
 					"partition": ["ref", "fert-params", "AN"]
 				},
-				{ "date": "1997-07-08", "type": "Harvest", "crop": ["ref", "crops", "SC"] },
+				{ "date": "1997-07-08", "type": "Harvest" },
 				{ "date": "1997-07-09", "type": "Tillage", "depth": [0.10, "m"] }
 			]
 		}

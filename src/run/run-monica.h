@@ -90,6 +90,7 @@ namespace Monica
     std::string outputDatastreamPort;
 
 		bool debugMode{false};
+		bool ignoreMissedCultivationMethods{false};
   };
 
   //------------------------------------------------------------------------------------------
