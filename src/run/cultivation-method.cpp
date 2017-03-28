@@ -211,7 +211,7 @@ AutomaticSowing::AutomaticSowing(json11::Json j)
 
 Errors AutomaticSowing::merge(json11::Json j)
 {
-	Errors res = Workstep::merge(j);
+	Errors res = Sowing::merge(j);
 
 	set_iso_date_value(_earliestDate, j, "earliest-date");
 	set_iso_date_value(_latestDate, j, "latest-date");
@@ -224,30 +224,25 @@ Errors AutomaticSowing::merge(json11::Json j)
 	set_double_value(_tempSumAboveBaseTemp, j, "temp-sum-above-base-temp");
 	set_double_value(_baseTemp, j, "base-temp");
 
-	set_shared_ptr_value(_crop, j, "crop");
-	if(_crop)
-		_crop->setSeedDate(date());
-
 	return res;
 }
 
 json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 {
-	return json11::Json::object
-	{{"type", type()}
-	,{"earliest-date", J11Array{_earliestDate.toIsoDateString(), "", "earliest sowing date"}}
-	,{"latest-date", J11Array{_latestDate.toIsoDateString(), "", "latest sowing date"}}
-	,{"min-temp", J11Array{_minTempThreshold, "°C", "minimal air temperature for sowing (T >= thresh && avg T in Twindow >= thresh)"}}
-	,{"days-in-temp-window", J11Array{_daysInTempWindow, "d", "days to be used for sliding window of min-temp"}}
-	,{"min-%-asw", J11Array{_minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"}}
-	,{"max-%-asw", J11Array{_maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"}}
-	,{"max-3d-precip-sum", J11Array{_max3dayPrecipSum, "mm", "sum of precipitation in the last three days (including current day)"}}
-	,{"max-curr-day-precip", J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"}}
-	,{"temp-sum-above-base-temp", J11Array{_tempSumAboveBaseTemp, "°C", "temperature sum above T-base needed"}}
-	,{"base-temp", J11Array{_baseTemp, "°C", "base temperature above which temp-sum-above-base-temp is counted"}}
-	,{"is-winter-crop", _crop ? _crop->isWinterCrop() : json11::Json()}
-	,{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()}
-	};
+	auto o = Sowing::to_json().object_items();
+	o["type"] = type();
+	o["earliest-date"] = J11Array{_earliestDate.toIsoDateString(), "", "earliest sowing date"};
+	o["latest-date"] = J11Array{_latestDate.toIsoDateString(), "", "latest sowing date"};
+	o["min-temp"] = J11Array{_minTempThreshold, "°C", "minimal air temperature for sowing (T >= thresh && avg T in Twindow >= thresh)"};
+	o["days-in-temp-window"] = J11Array{_daysInTempWindow, "d", "days to be used for sliding window of min-temp"};
+	o["min-%-asw"] = J11Array{_minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"};
+	o["max-%-asw"] = J11Array{_maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"};
+	o["max-3d-precip-sum"] = J11Array{_max3dayPrecipSum, "mm", "sum of precipitation in the last three days (including current day)"};
+	o["max-curr-day-precip"] = J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"};
+	o["temp-sum-above-base-temp"] = J11Array{_tempSumAboveBaseTemp, "°C", "temperature sum above T-base needed"};
+	o["base-temp"] = J11Array{_baseTemp, "°C", "base temperature above which temp-sum-above-base-temp is counted"};
+
+	return o;
 }
 
 bool isSoilMoistureOk(MonicaModel* model, 
@@ -286,7 +281,7 @@ bool AutomaticSowing::apply(MonicaModel* model)
 	auto currentDate = model->currentStepDate();
 
 	setDate(currentDate);
-	_crop->setSeedDate(currentDate);
+	crop()->setSeedDate(currentDate);
 
 	Sowing::apply(model);
 	model->addEvent("AutomaticSowing");
@@ -326,7 +321,7 @@ bool AutomaticSowing::condition(MonicaModel* model)
 
 	//check temperature
 	bool Tok = false;
-	if(_crop->isWinterCrop())
+	if(crop()->isWinterCrop())
 	{
 		double avgTavg = avg(Climate::tavg);
 		Tok = avgTavg <= _minTempThreshold;
@@ -362,12 +357,6 @@ bool AutomaticSowing::condition(MonicaModel* model)
 		return false;
 
 	return true;
-}
-
-void AutomaticSowing::setDate(Tools::Date date)
-{
-	this->_date = date;
-	_crop->setSeedAndHarvestDate(date, _crop->harvestDate());
 }
 
 bool AutomaticSowing::reinit(Tools::Date date, bool addYear)
@@ -424,7 +413,6 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	return json11::Json::object
 	{{"type", type()}
 	,{"date", date().toIsoDateString()}
-//,{"crop", _crop ? _crop->to_json(includeFullCropParameters) :json11::Json()}
 	,{"method", _method}
 	,{"percentage", _percentage}
 	,{ "exported", _exported }
@@ -549,10 +537,11 @@ bool AutomaticHarvest::condition(MonicaModel* model)
 	auto cg = model->cropGrowth();
 	if(cg && !_cropHarvested) //got a crop and not yet harvested
 		conditionMet =
-			model->currentStepDate() >= _absLatestDate  //harvest after or at latested date
-			|| (_harvestTime == "maturity" && model->cropGrowth()->maturityReached()) //has maturity been reached
-			|| isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
-			|| isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum); //check precipitation
+		model->currentStepDate() >= _absLatestDate  //harvest after or at latested date
+		|| (_harvestTime == "maturity" 
+				&& model->cropGrowth()->maturityReached() //has maturity been reached
+				&& isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
+				&& isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
 	return conditionMet;
 }
@@ -1057,6 +1046,7 @@ Errors CultivationMethod::merge(json11::Json j)
 	set_int_value(_customId, j, "customId");
 	set_string_value(_name, j, "name");
 	set_bool_value(_irrigateCrop, j, "irrigateCrop");
+	set_bool_value(_canBeSkipped, j, "can-be-skipped");
 
 	for(auto wsj : j["worksteps"].array_items())
 	{
@@ -1065,26 +1055,14 @@ Errors CultivationMethod::merge(json11::Json j)
 			continue;
 		_allWorksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
 		string wsType = ws->type();
-		if(wsType == "Sowing")
+		if(wsType == "Sowing"
+			 || wsType == "AutomaticSowing")
 		{
-			if(Sowing* seed = dynamic_cast<Sowing*>(ws.get()))
+			if(Sowing* sowing = dynamic_cast<Sowing*>(ws.get()))
 			{
-				_crop = seed->crop();
+				_crop = sowing->crop();
 				if((_name.empty() || _name == "Fallow") && _crop)
-				{
 					_name = _crop->id();
-				}
-			}
-		}
-		else if(wsType == "AutomaticSowing")
-		{
-			if(AutomaticSowing* seed = dynamic_cast<AutomaticSowing*>(ws.get()))
-			{
-				_crop = seed->crop();
-				if((_name.empty() || _name == "Fallow") && _crop)
-				{
-					_name = _crop->id();
-				}
 			}
 		}
 		else if(wsType == "Harvest" 
@@ -1112,6 +1090,7 @@ json11::Json CultivationMethod::to_json() const
 	,{"customId", _customId}
   ,{"name", _name}
   ,{"irrigateCrop", _irrigateCrop}
+	,{"can-be-skipped", _canBeSkipped}
   ,{"worksteps", wss}
 	};
 }

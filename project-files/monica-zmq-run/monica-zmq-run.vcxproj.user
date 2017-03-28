@@ -1,26 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>installer\Hohenfinow2\sim.json</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-a cluster2 -p 9999 ..\voce-project\run-monica\sim-14.json</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>PATH=..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master;..\sys-libs\binaries\windows\vc14\x86\libsodium-1.0.10;%PATH%</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>installer\Hohenfinow2\sim.json</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-a cluster2 -p 9999 ..\voce-project\run-monica\sim-14.json</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\..</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>PATH=..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master;..\sys-libs\binaries\windows\vc14\x64\libsodium-1.0.10;%PATH%
 </LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>installer\Hohenfinow2\sim.json</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-a cluster2 -p 9999 ..\voce-project\run-monica\sim-14.json</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>PATH=..\sys-libs\binaries\windows\vc14\x86\zeromq-dev-master;..\sys-libs\binaries\windows\vc14\x86\libsodium-1.0.10;%PATH%</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>installer\Hohenfinow2\sim.json</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-a cluster2 -p 9999 ..\voce-project\run-monica\sim-14.json</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\..</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>PATH=..\sys-libs\binaries\windows\vc14\x64\zeromq-dev-master;..\sys-libs\binaries\windows\vc14\x64\libsodium-1.0.10;%PATH%

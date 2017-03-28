@@ -167,10 +167,6 @@ namespace Monica
 
 		virtual bool condition(MonicaModel* model);
 
-		virtual void setDate(Tools::Date date);
-
-		CropPtr crop() const { return _crop; }
-
 		virtual bool isActive() const { return !_cropSeeded; }
 
 		virtual bool reinit(Tools::Date date, bool addYear = false);
@@ -196,7 +192,6 @@ namespace Monica
 		double _maxCurrentDayPrecipSum{0};
 		double _tempSumAboveBaseTemp{0};
 		double _baseTemp{0};
-		CropPtr _crop;
 		bool _inSowingRange{false};
 		bool _cropSeeded{false};
 	};
@@ -602,6 +597,7 @@ namespace Monica
 		std::string _name;
 		CropPtr _crop;
     bool _irrigateCrop{false};
+		bool _canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
 	};
 	
 	template<>

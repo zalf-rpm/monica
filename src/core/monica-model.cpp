@@ -25,12 +25,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <chrono>
 #include <thread>
 #include <numeric>
+#include <cmath>
 
 #include "tools/debug.h"
 #include "monica-model.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
 #include "voc-common.h"
+#include "tools/algorithms.h"
 
 using namespace Monica;
 using namespace std;
@@ -568,6 +570,30 @@ void MonicaModel::generalStep()
   _soilTransport.step();
 }
 
+pair<double, double> laiSunShade(double lai, int doy, double latitude)
+{
+	auto calc = [&](int th)
+	{
+		double PI = 3.145;
+		double solarDeclination = -0.4093 * cos(2 * PI * (doy + 10) / 365);
+		double dA = sin(solarDeclination) * sin(latitude);
+		double dB = cos(solarDeclination) * cos(latitude);
+		double dHa = PI * (th - 12) / 12;
+		double phi = acos(dA + dB * cos(dHa));  // can be -ve
+
+		double omega = 0.7; //0.5 for boreal forests, 0.7 for deciduous species
+		double laiSun = 2 * cos(phi)*(1 - exp(-0.5*omega*lai / cos(phi)));
+		return laiSun;
+	};
+
+	vector<double> laiSuns;
+	for(int h = 1; h <= 24; h++)
+		laiSuns.push_back(calc(h));
+
+	double avgLaiSun = average(laiSuns);
+
+	return make_pair(avgLaiSun, lai - avgLaiSun);
+}
 
 void MonicaModel::cropStep()
 {
@@ -644,6 +670,8 @@ void MonicaModel::cropStep()
 
 	mcd.sunlitfoliagefraction = 1;
 	mcd.sunlitfoliagefraction24 = 1;
+
+	//auto res = laiSunShade(cropGrowth()->get_LeafAreaIndex(), julday, 53.0);
 
 	//debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
 	_currentCropGrowth->calculateVOCEmissions(mcd);
