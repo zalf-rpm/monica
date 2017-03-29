@@ -87,8 +87,9 @@
 		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
-	"1 cropRotation": [
+	"cropRotation": [
 		{
+			"can-be-skipped": true,
 			"worksteps": [
 				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [1,3]], "value": 0.01 },
 				{ "date": "1991-01-01", "type": "SetValue", "var": ["NH4", [4,12]], "value": 0.002222 },
@@ -143,18 +144,8 @@
 		}
 	],
 
-	"2 cropRotation": [
-		{
-			"worksteps": [
-				{ "date": "0000-04-24", "type": "OverwriteSoilMoisture", "soilMoisturePercentFC": 70.0 },
-				{ "date": "0000-04-24", "type": "Sowing", "crop": ["ref", "crops", "SM"] },
-				{ "date": "0001-10-10", "type": "Harvest"}
-			]
-		}
-	],
-
 	"__relative date crop rotation example": "",
-	"cropRotation": [
+	"3 cropRotation": [
 		{
 			"can-be-skipped": true,
 			"worksteps": [
@@ -205,12 +196,21 @@
 			]
 		},
 		{
-			"can-be-skipped": true,
+			"is-cover-crop": true,
 			"worksteps": [
 				{ 
-					"type": "Sowing", 
+					"type": "AutomaticSowing", 
 					"crop": ["ref", "crops", "WG"],
-					"date": "0000-08-01"
+					"earliest-date": "0000-08-01",
+					"latest-date": "0000-09-01",
+					"min-temp": 18.5,
+					"days-in-temp-window": 14,
+					"min-%-asw": 0,
+					"max-%-asw": 100,
+					"max-3d-precip-sum": 2,
+					"max-curr-day-precip": 0.1,
+					"temp-sum-above-base-temp": 0,
+					"base-temp": 0
 				},
 				{ 
 					"type": "Harvest", 
