@@ -84,7 +84,6 @@ Errors Env::merge(json11::Json j)
 	es.append(extractAndStore(j["cropRotation"], cropRotation));
 	
 	set_bool_value(debugMode, j, "debugMode");
-	set_bool_value(ignoreMissedCultivationMethods, j, "ignore-missed-cultivation-methods");
 	
 	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
@@ -107,7 +106,6 @@ json11::Json Env::to_json() const
 	,{"cropRotation", cr}
 	,{"da", da.to_json()}
 	,{"debugMode", debugMode}
-	,{"ignore-missed-cultivation-methods", ignoreMissedCultivationMethods}
 	,{"pathToClimateCSV", pathToClimateCSV}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	,{"customId", customId}
@@ -745,25 +743,41 @@ Output Monica::runMonica(Env env)
 			if(cmit != cropRotation.end())
 			{
 				advanceToNextCM = true;
-
 				currentCM = *cmit;
+				
+				//addedYear tells that the start of the cultivation method was before currentDate and thus the whole 
+				//CM had to be moved into the next year
+				//is possible for relative dates
 				bool addedYear = currentCM->reinit(currentDate);
-				Date absStartDate = currentCM->absStartDate();
-
-				//try next CM in crop rotation
-				//if addedYear is true, means it was necessary to shift CM to next year, which means
-				//the CM can be removed if it is just a cover/catch crop
-				notFoundNextCM =
-					(addedYear && currentCM->canBeSkipped())
-					|| (absStartDate < currentDate
-							&& env.ignoreMissedCultivationMethods
-							&& currentCM->canBeSkipped());
+				if(addedYear)
+				{
+					//current CM is a cover crop, check if the latest sowing date would have been before current date, 
+					//if so, skip current CM
+					if(currentCM->isCoverCrop())
+					{
+						//if current CM's latest sowing date is actually after current date, we have to 
+						//reinit current CM again, but this time prevent shifting it to the next year
+						if(!(notFoundNextCM = currentCM->absLatestSowingDate().withYear(currentDate.year()) < currentDate))
+							currentCM->reinit(currentDate, true);
+					}
+					else //if current CM was marked skipable, skip it
+						notFoundNextCM = currentCM->canBeSkipped();
+				}
+				else //not added year or CM was had also absolute dates
+				{
+					if(currentCM->isCoverCrop())
+						notFoundNextCM = currentCM->absLatestSowingDate() < currentDate;
+					else if(currentCM->canBeSkipped())
+						notFoundNextCM = currentCM->absStartDate() < currentDate;
+					else
+						notFoundNextCM = false;
+				}
 
 				if(notFoundNextCM)
 					nextAbsoluteCMApplicationDate = Date();
 				else
 				{
-					nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate();
+					nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty() ? Date() : currentCM->absStartDate(false);
 					debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 				}
 			}

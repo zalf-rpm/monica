@@ -64,13 +64,13 @@ namespace Monica
 
 		virtual Tools::Date absDate() const { return _date.isAbsoluteDate() ? _date : _absDate; }
 
-		virtual Tools::Date earliestDate() const { return Tools::Date(); }
+		virtual Tools::Date earliestDate() const { return date(); }
 
-		virtual Tools::Date absEarliestDate() const { return Tools::Date(); }
+		virtual Tools::Date absEarliestDate() const { return absDate(); }
 
-		virtual Tools::Date latestDate() const { return Tools::Date(); }
+		virtual Tools::Date latestDate() const { return date(); }
 
-		virtual Tools::Date absLatestDate() const { return Tools::Date(); }
+		virtual Tools::Date absLatestDate() const { return absDate(); }
 
     virtual void setDate(Tools::Date date) {_date = date; }
 
@@ -95,7 +95,7 @@ namespace Monica
 		virtual bool isActive() const { return _isActive; }
 
 		//! reinit potential state of workstep
-		virtual bool reinit(Tools::Date date, bool addYear = false);
+		virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
 
 	protected:
 		Tools::Date _date;
@@ -169,7 +169,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropSeeded; }
 
-		virtual bool reinit(Tools::Date date, bool addYear = false);
+		virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
 
 		virtual Tools::Date earliestDate() const { return _earliestDate; }
 
@@ -271,7 +271,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_cropHarvested; }
 
-		virtual bool reinit(Tools::Date date, bool addYear = false);
+		virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
 
 		virtual Tools::Date latestDate() const { return _latestDate; }
 
@@ -375,7 +375,7 @@ namespace Monica
 
 		virtual bool isActive() const { return !_appliedFertilizer; }
 
-		virtual bool reinit(Tools::Date date, bool addYear = false);
+		virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
 
 	private:
 		Tools::Date _initialDate;
@@ -565,7 +565,9 @@ namespace Monica
 		//! when does the PV start
     Tools::Date startDate() const;
 
-		Tools::Date absStartDate() const;
+		Tools::Date absStartDate(bool includeDynamicWorksteps = true) const;
+
+		Tools::Date absLatestSowingDate() const;
 
 		//! when does the whole PV end
     Tools::Date endDate() const;
@@ -589,19 +591,22 @@ namespace Monica
 
 		//! reinit cultivation method to initial state, if it will be reused (eg in a crop rotation)
 		//! returns if it was necessary to add a year to shift relative dates after date
-		bool reinit(Tools::Date date);
+		bool reinit(Tools::Date date, bool forceInitYear = false);
 
 		bool canBeSkipped() const { return _canBeSkipped; }
 
+		bool isCoverCrop() const { return _isCoverCrop; }
+
 	private:
 		std::multimap<Tools::Date, WSPtr> _allWorksteps;
-		std::multimap<Tools::Date, WSPtr> _absWorksteps;
+		std::multimap<Tools::Date, WSPtr> _allAbsWorksteps;
 		std::vector<WSPtr> _unfinishedDynamicWorksteps;
     int _customId{0};
 		std::string _name;
 		CropPtr _crop;
     bool _irrigateCrop{false};
 		bool _canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
+		bool _isCoverCrop{false}; //! is like canBeSkipped (and implies it), but different rule for when cultivation methods will be skipped
 	};
 	
 	template<>
