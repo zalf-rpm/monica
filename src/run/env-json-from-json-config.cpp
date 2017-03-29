@@ -464,7 +464,6 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 
 	//store debug mode in env, take from sim.json, but prefer params map
 	env["debugMode"] = simj["debug?"].bool_value();
-	env["ignore-missed-cultivation-methods"] = simj["ignore-missed-cultivation-methods"].bool_value();
 
 	J11Object cpp = {
 			{"type", "CentralParameterProvider"}

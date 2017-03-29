@@ -617,7 +617,6 @@ def create_env_json_from_json_config(crop_site_sim):
 
     #store debug mode in env, take from sim.json, but prefer params map
     env["debugMode"] = simj["debug?"]
-    env["ignore-missed-cultivation-methods"] = simj["ignore-missed-cultivation-methods"]
 
     cpp = {
         "type": "CentralParameterProvider",

@@ -24,10 +24,6 @@
 	"__set to 'true' to enable debug outputs and also write 'inputs.json' file into output directory": "",
 	"debug?": false,
 
-	"__set to true and cultivation methods in the past will be ignored, else a crop rotation won't run, because MONICA waits for a date already in the past to happen'": "",
-	"__is set to false, by default to prevent accidental skipping of cultivation methods due to wrong dates etc": "",
-	"ignore-missed-cultivation-methods": true,
-		
 	"__the include file base path to be used if no other value is in crop/site.json specified": "",
 	"include-file-base-path": "${MONICA_PARAMETERS}/",
 	
