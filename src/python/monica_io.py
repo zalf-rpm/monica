@@ -564,28 +564,30 @@ def supported_patterns():
     return supported_patterns.m
 
 
-def print_possible_errors(es, include_warnings=False):
-    if not es["success"]:
-        for e in es["errors"]:
-            print e
+def print_possible_errors(errs, include_warnings=False):
+    if not errs["success"]:
+        for err in errs["errors"]:
+            print err
 
-    if include_warnings and "warnings" in es:
-        for w in es["warnings"]:
-            print w
+    if include_warnings and "warnings" in errs:
+        for war in errs["warnings"]:
+            print war
 
-    return es["success"]
+    return errs["success"]
 
 
 def create_env_json_from_json_config(crop_site_sim):
+    "create the json version of the env from the json config files"
     for k, j in crop_site_sim.iteritems():
-        if j == None:
+        if j is None:
             return None
 
     path_to_parameters = crop_site_sim["sim"]["include-file-base-path"]
 
-    def add_base_path(j, basePath):
+    def add_base_path(j, base_path):
+        "add include file base path if not there"
         if not "include-file-base-path" in j:
-            j["include-file-base-path"] = path_to_parameters
+            j["include-file-base-path"] = base_path
 
     crop_site_sim2 = {}
     #collect all errors in all files and don't stop as early as possible
@@ -595,15 +597,15 @@ def create_env_json_from_json_config(crop_site_sim):
             continue
 
         add_base_path(j, path_to_parameters)
-        r = find_and_replace_references(j, j)
-        if r["success"]:
-            crop_site_sim2[k] = r["result"]
+        res = find_and_replace_references(j, j)
+        if res["success"]:
+            crop_site_sim2[k] = res["result"]
         else:
-            errors.update(r["errors"])
+            errors.update(res["errors"])
 
     if len(errors) > 0:
-        for e in errors:
-            print e
+        for err in errors:
+            print err
         return None
 
     cropj = crop_site_sim2["crop"]
@@ -615,6 +617,7 @@ def create_env_json_from_json_config(crop_site_sim):
 
     #store debug mode in env, take from sim.json, but prefer params map
     env["debugMode"] = simj["debug?"]
+    env["ignore-missed-cultivation-methods"] = simj["ignore-missed-cultivation-methods"]
 
     cpp = {
         "type": "CentralParameterProvider",
