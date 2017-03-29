@@ -500,7 +500,7 @@ Errors AutomaticHarvest::merge(json11::Json j)
 	set_iso_date_value(_latestDate, j, "latest-date");
 	set_double_value(_minPercentASW, j, "min-%-asw");
 	set_double_value(_maxPercentASW, j, "max-%-asw");
-	set_double_value(_max3dayPrecipSum, j, "max-3d-precip");
+	set_double_value(_max3dayPrecipSum, j, "max-3d-precip-sum");
 	set_double_value(_maxCurrentDayPrecipSum, j, "max-curr-day-precip");
 	set_string_value(_harvestTime, j, "harvest-time");
 
