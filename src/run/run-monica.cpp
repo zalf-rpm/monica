@@ -76,7 +76,7 @@ Errors Env::merge(json11::Json j)
 
 	es.append(params.merge(j["params"]));
 
-	es.append(da.merge(j["da"]));
+	es.append(climateData.merge(j["climateData"]));
 
 	events = j["events"];
 	outputs = j["outputs"];
@@ -104,7 +104,7 @@ json11::Json Env::to_json() const
 	{{"type", "Env"}
 	,{"params", params.to_json()}
 	,{"cropRotation", cr}
-	,{"da", da.to_json()}
+	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
 	,{"pathToClimateCSV", pathToClimateCSV}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
@@ -120,8 +120,8 @@ string Env::toString() const
 	s << " noOfLayers: " << params.simulationParameters.p_NumberOfLayers
 		<< " layerThickness: " << params.simulationParameters.p_LayerThickness
 		<< endl;
-	s << "ClimateData: from: " << da.startDate().toString()
-		<< " to: " << da.endDate().toString() << endl;
+	s << "ClimateData: from: " << climateData.startDate().toString()
+		<< " to: " << climateData.endDate().toString() << endl;
 	s << "Fruchtfolge: " << endl;
 	for(const CultivationMethod& cm : cropRotation)
 		s << cm.toString() << endl;
@@ -159,7 +159,7 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 	else if(name == "co2")
 		acd = co2;
 
-	da.addOrReplaceClimateData(AvailableClimateData(acd), data);
+	climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
 
 //--------------------------------------------------------------------------------------
@@ -702,7 +702,7 @@ Output Monica::runMonica(Env env)
 	MonicaModel monica(env.params);
 
 	debug() << "currentDate" << endl;
-	Date currentDate = env.da.startDate();
+	Date currentDate = env.climateData.startDate();
 
 	//cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
 	//if pure absolute CMs are finished
@@ -797,16 +797,16 @@ Output Monica::runMonica(Env env)
 	Date nextAbsoluteCMApplicationDate;
 	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
 
-	vector<StoreData> store = setupStorage(env.events, env.da.startDate(), env.da.endDate());
+	vector<StoreData> store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
 	
-	for(size_t d = 0, nods = env.da.noOfStepsPossible(); d < nods; ++d, ++currentDate)
+	for(size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
 
 		monica.dailyReset();
 
 		monica.setCurrentStepDate(currentDate);
-		monica.setCurrentStepClimateData(env.da.allDataForStep(d, env.params.siteParameters.vs_Latitude));
+		monica.setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
 
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil

@@ -54,12 +54,12 @@ namespace Monica
 
     //Interface method for python wrapping. Simply returns number
     //of possible simulation steps according to avaible climate data.
-    std::size_t numberOfPossibleSteps() const { return da.noOfStepsPossible(); }
+    std::size_t numberOfPossibleSteps() const { return climateData.noOfStepsPossible(); }
 
     void addOrReplaceClimateData(std::string, const std::vector<double>& data);
 
     //! object holding the climate data
-    Climate::DataAccessor da;
+    Climate::DataAccessor climateData;
 		std::string pathToClimateCSV;
 		json11::Json csvViaHeaderOptions;
 
