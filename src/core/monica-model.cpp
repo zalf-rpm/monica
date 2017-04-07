@@ -570,29 +570,23 @@ void MonicaModel::generalStep()
   _soilTransport.step();
 }
 
-pair<double, double> laiSunShade(double lai, int doy, double latitude)
+pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai)
 {
-	auto calc = [&](int th)
-	{
-		double PI = 3.145;
-		double solarDeclination = -0.4093 * cos(2 * PI * (doy + 10) / 365);
-		double dA = sin(solarDeclination) * sin(latitude);
-		double dB = cos(solarDeclination) * cos(latitude);
-		double dHa = PI * (th - 12) / 12;
-		double phi = acos(dA + dB * cos(dHa));  // can be -ve
+	//taken from Astronomy.cs Astronomy::SolarDeclination and Astronomy::SolarElevation
+	double PI = 3.1415926536;
+	double solarDeclination = -0.4093*cos(2*PI*(doy + 10)/365);
+	double dA = sin(solarDeclination)*sin(latitude);
+	double dB = cos(solarDeclination)*cos(latitude);
+	double dHa = PI*(hour - 12)/12;
+	double phi = asin(dA + dB*cos(dHa));
 
-		double omega = 0.7; //0.5 for boreal forests, 0.7 for deciduous species
-		double laiSun = 2 * cos(phi)*(1 - exp(-0.5*omega*lai / cos(phi)));
-		return laiSun;
-	};
-
-	vector<double> laiSuns;
-	for(int h = 1; h <= 24; h++)
-		laiSuns.push_back(calc(h));
-
-	double avgLaiSun = average(laiSuns);
-
-	return make_pair(avgLaiSun, lai - avgLaiSun);
+	//taken from Norman, J.M., 1982. Simulation of microclimates. In:
+	//Hatfield, J.L., Thomason, I.J. (Eds.), Biometeorology in
+	//Integrated Pest Management.Academic Press, New York,
+	//pp. 65–99. Equation (14)
+	double laiSun = 2*cos(phi)*(1 - exp(-0.5*lai/cos(phi)));
+	
+	return make_pair(laiSun, lai - laiSun);
 }
 
 void MonicaModel::cropStep()
@@ -668,11 +662,11 @@ void MonicaModel::cropStep()
 	mcd.tFol24 = mcd.tFol;
 	mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
 
-	mcd.sunlitfoliagefraction = 1;
-	mcd.sunlitfoliagefraction24 = 1;
-
-	//auto res = laiSunShade(cropGrowth()->get_LeafAreaIndex(), julday, 53.0);
-
+	double lai = _currentCropGrowth->get_LeafAreaIndex();
+	auto sunShadeLaiAtZenith = laiSunShade(_sitePs.vs_Latitude, julday, 12, lai);
+	mcd.sunlitfoliagefraction = sunShadeLaiAtZenith.first / lai;
+	mcd.sunlitfoliagefraction24 = mcd.sunlitfoliagefraction;
+	
 	//debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
 	_currentCropGrowth->calculateVOCEmissions(mcd);
 }

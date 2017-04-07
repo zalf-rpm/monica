@@ -194,25 +194,31 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 	//There is an option to set these variables here for testing purpose only.
 
 	//const size_t fl = lemi.foliage_layer;
-	const double parabs = lemi.pho.par * ABSO; // fw: TODO: implement absorbed radiation (parshd_fl, parsun_fl) together with fraction of sunlit foliage (ts_sunlitfoliagefraction_fl, 1 - ts_sunlitfoliagefraction_fl)
+	double parabs = lemi.pho.par * ABSO;
+	// fw: TODO: implement absorbed radiation (parshd_fl, parsun_fl) together with fraction of sunlit foliage (ts_sunlitfoliagefraction_fl, 1 - ts_sunlitfoliagefraction_fl)
 
-	double frad = 1.0; 
-	int nss = 1;  // no light
-	if(true) //mc_.parsun_fl[fl] + mc_.parshd_fl[fl] > 0.0)
-	{
-		// shade and sun cycle
-		frad = mcd.sunlitfoliagefraction; //mc_.fsun_fl[fl];
-		nss = 2;
-	}
-
+	// Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
+	// physiology  kc_vtfl  kc_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
 	double kc = 0;
+	// Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
+	// physiology  ko_vtfl  ko_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
 	double ko = 0;
+	// species and layer specific intercellular concentration of CO2 (umol mol-1)
+	// physiology  ci_vtfl  ci_vtfl  double  V : F  350.0  mol : 10 ^ -6 : m^-2
 	double ci = 0;
+	// leaf internal O2 concentration per canopy layer(umol m - 2)
+	//	physiology  oi_vtfl  oi_vtfl  double  V : F  210.0  mol : 10 ^ -6 : m^-2
 	double oi = 0;
+	// CO2 compensation point at 25oC per canopy layer (umol m-2)
+	// physiology  comp_vtfl  comp_vtfl  double  V : F  30.0  mol : 10 ^ -6 : m^-2
 	double comp = 0;
+	// actual activity state of rubisco  per canopy layer (umol m-2 s-1)
+	// physiology  vcMax_vtfl  vcMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
 	double vcMax = 0;
+	// actual electron transport capacity per canopy layer(umol m - 2 s - 1)
+	// physiology  jMax_vtfl  jMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
 	double jMax = 0;
-	for(int n = 0; n < nss; ++n)
+	for(auto frad : {mcd.sunlitfoliagefraction, 1 - mcd.sunlitfoliagefraction})
 	{
 		double oi_ = PO2 * MMOL_IN_MOL;
 		if(mcd.tFol > 25.0)
@@ -221,7 +227,7 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 
 		// For testing: photosynthesis variables without spatial or seasonal differentiation (according Collatz et al. 1991) 
 		// temperature modification term; efficiency reduction due to temperature
-		double const  ft_term = 1.0 / (1.0 + exp((-species.HDJ + species.SDJ * lemi.fol.tempK) / (RGAS * lemi.fol.tempK)));
+		double ft_term = 1.0 / (1.0 + exp((-species.HDJ + species.SDJ * lemi.fol.tempK) / (RGAS * lemi.fol.tempK)));
 
 		// calc kc
 		//--------
@@ -257,26 +263,35 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 		
 		ci += frad * 0.7 * 370.0;
 
+		//calc vcMax
+		//----------
 		//fw: "VCMAX25": maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
-		vcMax += frad * species.VCMAX25 * ft_term * pow(2.4, (lemi.fol.tempK - TEMP0) * 0.1);
+		//vcMax += frad * species.VCMAX25 * ft_term * pow(2.4, (lemi.fol.tempK - TEMP0) * 0.1);
+		
+		//berryball.cpp:161/jarvis.cpp:200
+		vcMax += frad * species.VCMAX25 * exp(species.AEVC * term1) * term2;
 
 		// calc jMax
 		//----------
 		// fw: "AEJM": activation energy for electron transport (J mol-1); "QJVC": relation between maximum electron transport rate and RubP saturated rate of carboxylation (--)
-		jMax += frad * species.VCMAX25 * species.QJVC * ft_term * exp(species.AEJM * (lemi.fol.tempK - TEMP0) / (RGAS * TEMP0 * lemi.fol.tempK));
+		//jMax += frad * species.VCMAX25 * species.QJVC * ft_term * exp(species.AEJM * (lemi.fol.tempK - TEMP0) / (RGAS * TEMP0 * lemi.fol.tempK));
+
+		double slaScale = species.SLAMIN / species.sla;
+		//simplified from growthpsim.cpp:1909, instead of vcAct25_vtfl from farquhardndc.cpp:825
+		double jAct25 = species.VCMAX25 * species.QJVC;
+		double jMax25 = jAct25 * slaScale;
 
 		// berryball.cpp:181
-		double const term_peak = 
-			(1.0 + exp((273.15 * species.SDJ - species.HDJ) / (273.15 * RGAS)))
-			/ (1.0 + exp((species.SDJ * tempK - species.HDJ) / (RGAS * tempK)));
-		//jMax += frad * ph_.jMax25_vtfl[vt][fl] * exp(species.AEJM * term_arrh) * term_peak;
+		//double const term_peak = 
+		//	(1.0 + exp((273.15 * species.SDJ - species.HDJ) / (273.15 * RGAS)))
+		//	/ (1.0 + exp((species.SDJ * tempK - species.HDJ) / (RGAS * tempK)));
+		//jMax += frad * jMax25 * exp(species.AEJM * term_arrh) * term_peak;
+		//this can be ignored, because VCMAX25 should vcAct25, which we don't have
+		//if(jAct25 > 0)
+		//	jMax *= species.VCMAX25 * species.QJVC / jAct25;
 
 		// jarvis.cpp:204
-		//jMax = += frad * ph_.jMax25_vtfl[vt][fl] * exp(species.AEJM * term1) * term2;
-
-
-
-
+		jMax += frad * jMax25 * exp(species.AEJM * term1) * term2;
 	}
 
 	// electron transport rate and electron usage 
@@ -284,22 +299,19 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 	double km = ko > 0.0 ? kc * (1.0 + oi / ko) : 0.0;
 
 	// fw: "jj": electron provision (umol m-2 s-1) / electron transport rate
-	const double tmp_var = ((parabs + species.jMax) * (parabs + species.jMax)) - (4.0 * species.THETA * parabs * species.jMax);
+	const double tmp_var = ((parabs + jMax) * (parabs + jMax)) - (4.0 * species.THETA * parabs * jMax);
 	// fw: In Grote et al. 2014 tmp_var is stated as the inverse sqrt even though it is only the sqrt 
 	double  jj = tmp_var > 0.0 ? (parabs + jMax - sqrt(tmp_var)) / (2.0 * species.THETA) : 0.0;
 
 	// fw: "jv": used electron transport for photosynthesis (C assimilation) (umol m-2 s-1) / fraction of J used for photosynthesis / electron flux required to support Rubisco-limited carbon assimilation 
 	// fw: "comp_vtfl" : CO2 compensation point(umol mol - 1)
-	double  jv = species.intercellularCO2concentration + km > 0.0
-		? 4.0 * species.vcMax * (species.intercellularCO2concentration + 2.0 * comp)
-		/ (species.intercellularCO2concentration + km)
+	double  jv = ci + km > 0.0 ? 4.0 * vcMax * (ci + 2.0 * comp) / (ci + km)
 		: 0.0;
 
 	// bvoc emission potential from photosynthesis (excess energy after carbon assimilation)
 	// _gamma->ph = (( C1 + C2 * std::max( -GAMMA_MAX, jj - jv)) * jj * std::min( 1.0, this->phys->ci_vtfl[vt][fl] / this->phys->comp_vtfl[vt][fl])); // Wie dann mit normalized Bedingungen umgehen???
-	return species.comp > 0.0
-		? ((C1 + C2 * std::max(-GAMMA_MAX, jj - jv)) * jj * std::min(1.0, species.intercellularCO2concentration
-																																 / comp))
+	return comp > 0.0
+		? ((C1 + C2 * std::max(-GAMMA_MAX, jj - jv)) * jj * std::min(1.0, ci / comp))
 		: 0.0;
 }
 
