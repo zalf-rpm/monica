@@ -173,8 +173,9 @@ namespace Voc
 		double AEKC{59356}; // for corn
 		double AEKO{35948}; // for corn
 		double AEJM{37000}; //for corn
-
-
+		double AEVC{58520}; //for corn
+		double SLAMIN{20}; //for corn
+		
 		//double SCALE_I{1.0};
 		//double SCALE_M{1.0};
 
@@ -195,34 +196,6 @@ namespace Voc
 		// vegstructure  specific_foliage_area sla_vtfl  double  V : F  0.0  m ^ 2 : g : 10 ^ -3
 		// specific leaf area (pc_SpecificLeafArea / cps.cultivarParams.pc_SpecificLeafArea) pc_SpecificLeafArea[vc_DevelopmentalStage]
 		double sla{0};
-		
-		// leaf internal O2 concentration per canopy layer(umol m - 2)
-		//	physiology  oi_vtfl  oi_vtfl  double  V : F  210.0  mol : 10 ^ -6 : m^-2
-		double oi{0};
-		
-		// Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
-		// physiology  ko_vtfl  ko_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
-		double ko{0};
-
-		// actual electron transport capacity per canopy layer(umol m - 2 s - 1)
-		// physiology  jMax_vtfl  jMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
-		double jMax{0};
-
-		// species and layer specific intercellular concentration of CO2 (umol mol-1)
-    // physiology  ci_vtfl  ci_vtfl  double  V : F  350.0  mol : 10 ^ -6 : m^-2
-		double intercellularCO2concentration{0};
-		
-		// actual activity state of rubisco  per canopy layer (umol m-2 s-1)
-		// physiology  vcMax_vtfl  vcMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
-		double vcMax{0};
-		
-		// CO2 compensation point at 25oC per canopy layer (umol m-2)
-		// physiology  comp_vtfl  comp_vtfl  double  V : F  30.0  mol : 10 ^ -6 : m^-2
-		double comp{0};
-		
-		// Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
-		// physiology  kc_vtfl  kc_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
-		double kc{0};
 	};
 
 	//----------------------------------------------------------------------------

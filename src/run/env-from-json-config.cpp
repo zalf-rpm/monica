@@ -148,10 +148,10 @@ Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
 		<< " use leap years?: " << (options.startDate.useLeapYears() ? "true" : "false")
 		<< endl;
 
-	env.da = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+	env.climateData = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
 	                                              options);
 
-	if(!env.da.isValid())
+	if(!env.climateData.isValid())
 		return Env();
 
 	//env.params.setWriteOutputFiles(simj["output"]["write-file?"].bool_value());
