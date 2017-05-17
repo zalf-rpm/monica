@@ -789,6 +789,12 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.soilMoisture().get_ActualEvapotranspiration(), 1);
 			});
 
+			build({ id++, "Act_ET2", "mm", "" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return round((monica.soilMoisture().get_ActualEvaporation() + monica.getTranspiration()), 2);
+			});
+
 			build({id++, "ET0", "mm", ""},
 						[](const MonicaModel& monica, OId oid)
 			{
@@ -1162,6 +1168,12 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_PermanentWiltingPoint(); }, 4);
+			});
+
+			build({ id++, "Sat", "m3 m-3", "saturation" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_Saturation(); }, 4);
 			});
 
 			build({id++, "guenther-isoprene-emission", "", "daily isoprene-emission of all species from Guenther model"},
