@@ -21,13 +21,14 @@ def read_ascii_grid(path_to_file, include_no_data=False, row_offset=0, col_offse
         #skip the header (first 6 lines)
         for _ in range(0, 6):
             file_.next()
-        row = 0
+        row = -1
         for line in file_:
-            col = 0
+            row += 1
+            col = -1
             for col_str in line.strip().split(" "):
+                col += 1
                 if not include_no_data and int(col_str) == -9999:
                     continue
                 data[(row_offset+row, col_offset+col)] = int(col_str)
-                col += 1
-            row += 1
+
         return data
