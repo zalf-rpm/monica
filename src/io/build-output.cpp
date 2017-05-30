@@ -500,7 +500,7 @@ BOTRes& Monica::buildOutputTable()
 			{
 				if(oid.isOrgan()
 					 && monica.cropGrowth()
-					 && monica.cropGrowth()->get_NumberOfOrgans() >= oid.organ)
+					 && monica.cropGrowth()->get_NumberOfOrgans() > oid.organ)
 					return round(monica.cropGrowth()->get_OrganBiomass(oid.organ), 1);
 				else
 					return 0.0;
@@ -664,7 +664,7 @@ BOTRes& Monica::buildOutputTable()
 			{
 				if(oid.isOrgan()
 					 && monica.cropGrowth()
-					 && monica.cropGrowth()->get_NumberOfOrgans() >= oid.organ)
+					 && monica.cropGrowth()->get_NumberOfOrgans() > oid.organ)
 					return round(monica.cropGrowth()->get_OrganSpecificNPP(oid.organ), 4);
 				else
 					return 0.0;
@@ -687,7 +687,7 @@ BOTRes& Monica::buildOutputTable()
 			{
 				if(oid.isOrgan()
 					 && monica.cropGrowth()
-					 && monica.cropGrowth()->get_NumberOfOrgans() >= oid.organ)
+					 && monica.cropGrowth()->get_NumberOfOrgans() > oid.organ)
 					return round(monica.cropGrowth()->get_OrganSpecificTotalRespired(oid.organ), 4);
 				else
 					return 0.0;
