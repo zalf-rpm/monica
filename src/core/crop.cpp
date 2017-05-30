@@ -88,6 +88,9 @@ Errors Crop::merge(json11::Json j)
 	if(j["is-winter-crop"].is_bool())
 		_isWinterCrop.setValue(j["is-winter-crop"].bool_value());
 
+	if(j["is-perennial-crop"].is_bool())
+		_isPerennialCrop.setValue(j["is-perennial-crop"].bool_value());
+
 	string err;
 	if(j.has_shape({{"cropParams", json11::Json::OBJECT}}, err))
 	{
@@ -102,17 +105,30 @@ Errors Crop::merge(json11::Json j)
 			_speciesName = _cropParams->speciesParams.pc_SpeciesId;
 		if(_cultivarName.empty() && _cropParams)
 			_cultivarName = _cropParams->cultivarParams.pc_CultivarId;
+
+		if(_cropParams)
+		{
+			if(_isPerennialCrop.isValue())
+				_cropParams->cultivarParams.pc_Perennial = _isPerennialCrop.value();
+			else
+				_isPerennialCrop.setValue(_cropParams->cultivarParams.pc_Perennial);
+		}
 	}
 	else
 		res.errors.push_back(string("Couldn't find 'cropParams' key in JSON object:\n") + j.dump());
 
-	err = "";
-	if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
+	if(_isPerennialCrop.isValue() && _isPerennialCrop.value())
 	{
-		auto jcps = j["perennialCropParams"];
-		if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err)
-			 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
-			_perennialCropParams = make_shared<CropParameters>(j["cropParams"]);
+		err = "";
+		if(j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err))
+		{
+			auto jcps = j["perennialCropParams"];
+			if(jcps.has_shape({{"species", json11::Json::OBJECT}}, err)
+				 && jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
+				_perennialCropParams = make_shared<CropParameters>(j["cropParams"]);
+		}
+		else
+			_perennialCropParams = _cropParams;
 	}
 
 	err = "";
@@ -154,7 +170,7 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const
   {
     if(_cropParams)
       o["cropParams"] = cropParameters()->to_json();
-    if(_perennialCropParams)
+    if(_perennialCropParams && _cropParams != _perennialCropParams)
       o["perennialCropParams"] = perennialCropParameters()->to_json();
     if(_residueParams)
       o["residueParams"] = residueParameters()->to_json();
@@ -173,6 +189,13 @@ bool Crop::isWinterCrop() const
 	return false;
 }
 
+bool Crop::isPerennialCrop() const
+{
+	if(_isPerennialCrop.isValue())
+		return _isPerennialCrop.value();
+
+	return false;
+}
 
 string Crop::toString(bool detailed) const
 {

@@ -96,6 +96,10 @@ namespace Monica
 
 		void setIsWinterCrop(bool isWC = true) { _isWinterCrop = isWC; }
 
+		bool isPerennialCrop() const;
+
+		void setIsPerennialCrop(bool isPC = true) { _isPerennialCrop = isPC; }
+
 		std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
 
     void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd)
@@ -128,6 +132,7 @@ namespace Monica
 		Tools::Date _seedDate;
 		Tools::Date _harvestDate;
 		Tools::Maybe<bool> _isWinterCrop;
+		Tools::Maybe<bool> _isPerennialCrop;
 		std::vector<Tools::Date> _cuttingDates;
     CropParametersPtr _cropParams;
     CropParametersPtr _perennialCropParams;

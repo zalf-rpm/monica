@@ -7,6 +7,14 @@
 	
 	"__user defined crops section to be used via references": "",
 	"crops": {
+		"CGL": {
+			"is-winter-crop": false,
+			"cropParams": {
+				"species": ["include-from-file", "crops/clover-grass-ley.json"],
+				"cultivar": ["include-from-file", "crops/clover-grass-ley/.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/clover-grass-ley.json"]
+		},
 		"WR": {
 			"is-winter-crop": true,
 			"cropParams": {
@@ -71,8 +79,17 @@
 		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
+	"1 cropRotation": [
+		{
+			"worksteps": [
+				{ "date": "0000-09-23", "type": "Sowing", "crop": ["ref", "crops", "CGL"] },
+				{ "date": "0001-07-27", "type": "Harvest" }
+			]
+		}
+	],
+
 	"__relative date crop rotation example": "",
-	"_cropRotation": [
+	"cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "0000-09-23", "type": "Sowing", "crop": ["ref", "crops", "WR"] },
@@ -104,7 +121,7 @@
 	],
 
 	"__absolute date crop rotation example": "",
-  "cropRotation": [
+  "3 cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "1991-09-23", "type": "Sowing", "crop": ["ref", "crops", "WR"] },
