@@ -754,11 +754,20 @@ double CropGrowth::fc_OxygenDeficiency(double d_CriticalOxygenContent)
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::vector<double> pc_BaseTemperature,
-																					 std::vector<double> pc_OptimumTemperature, std::vector<double> pc_StageTemperatureSum,
-																					 bool pc_Perennial, bool vc_GrowthCycleEnded, double vc_TimeStep, double d_SoilMoisture_m3, double d_FieldCapacity,
-																					 double d_PermanentWiltingPoint, int pc_NumberOfDevelopmentalStages, double vc_VernalisationFactor,
-																					 double vc_DaylengthFactor, double vc_CropNRedux)
+void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, 
+																					 std::vector<double> pc_BaseTemperature,
+																					 std::vector<double> pc_OptimumTemperature, 
+																					 std::vector<double> pc_StageTemperatureSum,
+																					 bool pc_Perennial, 
+																					 bool vc_GrowthCycleEnded, 
+																					 double vc_TimeStep, 
+																					 double d_SoilMoisture_m3, 
+																					 double d_FieldCapacity,
+																					 double d_PermanentWiltingPoint, 
+																					 int pc_NumberOfDevelopmentalStages, 
+																					 double vc_VernalisationFactor,
+																					 double vc_DaylengthFactor, 
+																					 double vc_CropNRedux)
 {
 	double vc_CapillaryWater;
 	double vc_DevelopmentAccelerationByNitrogenStress = 0.0; // old NPROG
@@ -953,7 +962,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature, std::ve
 			else if(vc_DevelopmentalStage == (pc_NumberOfDevelopmentalStages - 1))
 			{
 				vc_StageExcessTemperatureSum = 0.0;
-				if((pc_Perennial) && (vc_GrowthCycleEnded))
+				if(pc_Perennial && vc_GrowthCycleEnded)
 				{
 					vc_DevelopmentalStage = 0;
 					fc_UpdateCropParametersForPerennial();
