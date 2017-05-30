@@ -1078,6 +1078,12 @@ Errors SiteParameters::merge(json11::Json j)
 
 	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
 	{
+		auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
+		vs_SoilParameters = p.first;
+		if(p.second.failure())
+			res.append(p.second);
+
+		/*
 		const auto& sps = j["SoilProfileParameters"].array_items();
 		vs_SoilParameters = make_shared<SoilPMs>();
 		size_t layerCount = 0;
@@ -1107,6 +1113,7 @@ Errors SiteParameters::merge(json11::Json j)
 
 			layerCount += repeatLayer;
 		}
+		*/
 	}
 	else
 		res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());

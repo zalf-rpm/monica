@@ -266,11 +266,12 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 			{
 				if(db.empty())
 					db = "soil";
-				vector<Json> spjs;
+				//vector<Json> spjs;
 				int profileId = isParamMap ? j[1]["id"].int_value() : j[2].int_value();
-				auto sps = Soil::soilParameters(db, profileId);
-				for(auto sp : *sps)
-					spjs.push_back(sp.to_json());
+				auto spjs = Soil::jsonSoilParameters(db, profileId);
+				//auto sps = Soil::soilParameters(db, profileId);
+				//for(auto sp : *sps)
+				//	spjs.push_back(sp.to_json());
 
 				return{spjs};
 			}
@@ -393,7 +394,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 	};
 
 	static map<string, function<EResult<Json>(const Json&,const Json&)>> m{
-			{"include-from-db", fromDb},
+			//{"include-from-db", fromDb},
 			{"include-from-file", fromFile},
 			{"ref", ref},
 			{"humus_st2corg", humus2corg},
