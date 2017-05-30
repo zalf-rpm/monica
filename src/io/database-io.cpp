@@ -88,7 +88,7 @@ namespace
 			"id, "
 			"description, "
 			"perennial, "
-			"permanent_cultivar_id, "
+			//"permanent_cultivar_id, "
 			"max_assimilation_rate, "
 			"max_crop_height, "
 			"crop_height_P1, "
@@ -296,7 +296,7 @@ CultivarParametersPtr Monica::getCultivarParametersFromMonicaDB(const string& sp
 		cps->pc_CultivarId = row[i++];
 		cps->pc_Description = row[i++];
 		cps->pc_Perennial = stob(row[i++]);
-		cps->pc_PermanentCultivarId = row[i++];
+		//cps->pc_PermanentCultivarId = row[i++];
 		cps->pc_MaxAssimilationRate = stof(row[i++]);
 		cps->pc_MaxCropHeight = stof(row[i++]);
 		cps->pc_CropHeightP1 = stof(row[i++]);

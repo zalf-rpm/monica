@@ -411,7 +411,7 @@ namespace Monica
     std::string pc_CultivarId;
     std::string pc_Description;
     bool pc_Perennial{false};
-    std::string pc_PermanentCultivarId;
+    //std::string pc_PermanentCultivarId;
     double pc_MaxAssimilationRate{0.0};
     double pc_MaxCropHeight{0.0};
     double pc_ResidueNRatio{0.0};
