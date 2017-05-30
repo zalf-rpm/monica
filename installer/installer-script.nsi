@@ -31,7 +31,7 @@
 
 	;Name and file
 	Name "MONICA"
-	OutFile "MONICA-Setup-2.0.0-beta-${Arch}-${ArchBit}-build${BuildNumber}.exe"
+	OutFile "MONICA-Setup-2.0.0-${Arch}-${ArchBit}-build${BuildNumber}.exe"
 
 	;Default installation folder
 	InstallDir "$PROGRAMFILES\MONICA"
