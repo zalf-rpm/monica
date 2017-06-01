@@ -1,0 +1,89 @@
+  {
+	"__UNDERSCORES IN FRONT MEANS IGNORE THE KEY, this is just to keep a valid JSON file": "",
+	"__!!! check and beautify JSON files with http://codebeautify.org/jsonviewer !!!": "",
+	
+	"__this is the path which is prepended to 'include-from-file' paths, if they are relative paths": "",
+	"_include-file-base-path": "../",
+	
+	"__user defined crops section to be used via references": "",
+	"crops": {
+		"CGL": {
+			"is-winter-crop": false,
+			"cropParams": {
+				"species": ["include-from-file", "crops/clover-grass-ley.json"],
+				"cultivar": ["include-from-file", "crops/clover-grass-ley/.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/clover-grass-ley.json"]
+		},
+		"WR": {
+			"is-winter-crop": true,
+			"cropParams": {
+				"species": ["include-from-file", "crops/rye.json"],
+				"cultivar": ["include-from-file", "crops/rye/winter-rye.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/rye.json"]
+		},
+		"SM": {
+			"is-winter-crop": false,
+			"cropParams": {
+				"species": ["include-from-file", "crops/maize.json"],
+				"cultivar": ["include-from-file", "crops/maize/silage-maize.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/maize.json"]
+		},
+		"MEP": {
+			"is-winter-crop": false,
+			"cropParams": {
+				"species": ["include-from-file", "crops/potato.json"],
+				"cultivar": ["include-from-file", "crops/potato/moderately-early-potato.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/potato.json"]
+		},
+		"WW": {
+			"is-winter-crop": true,
+			"cropParams": {
+				"species": ["include-from-file", "crops/wheat.json"],
+				"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/wheat.json"]
+		},
+		"WG": {
+			"is-winter-crop": true,
+			"cropParams": {
+				"species": ["include-from-file", "crops/barley.json"],
+				"cultivar": ["include-from-file", "crops/barley/winter-barley.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/barley.json"]
+		},
+		"SG": {
+			"is-winter-crop": false,
+			"cropParams": {
+				"species": ["include-from-file", "crops/barley.json"],
+				"cultivar": ["include-from-file", "crops/barley/spring-barley.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/barley.json"]
+		},
+		"SC": {
+			"is-winter-crop": true,
+			"cropParams": {
+				"species": ["include-from-file", "crops/rape.json"],
+				"cultivar": ["include-from-file", "crops/rape/winter-rape.json"]
+			},
+			"residueParams": ["include-from-file", "crop-residues/rape.json"]
+		}
+	},
+	
+	"__user defined fertilizer parameteres section to be used via references": "",
+	"fert-params": {
+		"AN": ["include-from-file", "mineral-fertilisers/AN.json"],
+		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"],
+		"NPK": ["include-from-file", "mineral-fertilisers/AN.json"],
+		"H": ["include-from-file", "mineral-fertilisers/U.json"]
+	}, 
+
+	"__relative date crop rotation example": "",
+	"cropRotation": [],
+
+	"__general crop parameters for the monica model": "",
+	"CropParameters": ["include-from-file", "general/crop.json"]
+}

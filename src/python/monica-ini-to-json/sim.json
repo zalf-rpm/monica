@@ -1,0 +1,111 @@
+{
+	"__UNDERSCORES IN FRONT MEANS IGNORE THE KEY, this is just to keep a valid JSON file": "",
+	"__!!! check and beautify JSON files with http://codebeautify.org/jsonviewer or https://jsonformatter.curiousconcept.com# !!!": "",
+	
+	"__define paths to crop.json, site.json and climate.csv, no path means read from directory where sim.json (THIS file) has been found; files names are abitrary": "",
+	"crop.json": "crop.json",
+	"site.json": "site.json",
+	"climate.csv": "climate.csv",
+
+	"__options for reading the climate csv file, how many header lines to read, which separator to use and optional conversion of headers to internally known names": "",
+	"climate.csv-options": {
+		"__given the start and end date, monica will run just this time range, else the full time range given by supplied climate data": "",
+		"start-date": "1991-01-01",
+		"end-date": "1997-12-31",
+	
+		"no-of-climate-file-header-lines": 2,
+		"csv-separator": ",",
+		"header-to-acd-names": {
+			"DE-date": "de-date",
+			"GlobalRadiation": ["globrad", "*", 100]
+		}
+	},
+	
+	"__set to 'true' to enable debug outputs and also write 'inputs.json' file into output directory": "",
+	"debug?": false,
+
+	"__the include file base path to be used if no other value is in crop/site.json specified": "",
+	"include-file-base-path": "${MONICA_PARAMETERS}/",
+	
+	"__configuration options for the monica outputs": "",
+	"output": { 
+	  "write-file?": false,
+
+		"__path to the directory file output is written to, when enabled (either via debug?: true or write-file?: true)": "",
+		"path-to-output": "./",
+		"file-name": "out.csv",
+	
+		"__how to write and what to include in monica CSV output": "",
+		"csv-options": {
+			"include-header-row": true,
+			"include-units-row": true,
+			"include-aggregation-rows": true,
+			"csv-separator": ","
+		},
+		
+		"__what data to include in the monica output according to the events defined by the keys": "",
+				
+		"events" : [
+			"daily", [
+				"Date", "Crop", "TraDef", "Tra", "NDef", "HeatRed", "FrostRed", "OxRed",
+				"Stage", "TempSum", "VernF", "DaylF", 
+				"IncRoot", "IncLeaf", "IncShoot", "IncFruit", 
+				"RelDev", "LT50", "AbBiom", 
+				["OrgBiom", "Root"], ["OrgBiom", "Leaf"], ["OrgBiom", "Shoot"], 
+				["OrgBiom", "Fruit"], ["OrgBiom", "Struct"], ["OrgBiom", "Sugar"],
+				"Yield", "SumYield", "GroPhot", "NetPhot", "MaintR", "GrowthR",	"StomRes",
+				"Height", "LAI", "RootDep", "EffRootDep", "TotBiomN", "AbBiomN", "SumNUp",
+				"ActNup", "PotNup", "NFixed", "Target", "CritN", "AbBiomNc", "YieldNc", 
+				"Protein", 
+				"NPP", ["NPP", "Root"], ["NPP", "Leaf"], ["NPP", "Shoot"], 
+				["NPP", "Fruit"], ["NPP", "Struct"], ["NPP", "Sugar"],
+				"GPP", 
+				"Ra", 
+				["Ra", "Root"], ["Ra", "Leaf"], ["Ra", "Shoot"], ["Ra", "Fruit"], 
+				["Ra", "Struct"], ["Ra", "Sugar"],
+				["Mois", [1, 20]], "Precip", "Irrig", "Infilt", "Surface", "RunOff", "SnowD", "FrostD",
+				"ThawD", ["PASW", [1, 20]], "SurfTemp", ["STemp", [1, 5]], 
+				"Act_Ev", "Act_ET", "ET0", "Kc", "AtmCO2", "Groundw", "Recharge", "NLeach",
+				["NO3", [1, 20]], "Carb", ["NH4", [1, 20]], ["NO2", [1, 4]], 
+				["SOC", [1, 6]], ["SOC-X-Y", [1, 3,	"SUM"]], ["SOC-X-Y", [1, 20, "SUM"]],
+				["AOMf", 1], ["AOMs", 1], ["SMBf", 1], ["SMBs", 1], ["SOMf", 1], 
+				["SOMs", 1], ["CBal", 1], ["Nmin", [1, 3]], "NetNmin", "Denit", "N2O", "SoilpH",
+				"NEP", "NEE", "Rh", "Tmin", "Tavg", "Tmax", "Wind", "Globrad", "Relhumid", "Sunhours",
+				"NFert"
+			]
+		]
+	},
+	
+	
+	"__SHOULDN'T BE CHANGED CURRENTLY, as monica assumes partly 20 layers and 10cm layer thickness": "",
+	"NumberOfLayers": 20,
+	"LayerThickness": [0.1, "m"],
+
+	"__turn on/off some model switches": "",
+	"UseSecondaryYields": true,
+	"NitrogenResponseOn": true,
+	"WaterDeficitResponseOn": true,
+	"EmergenceMoistureControlOn": true,
+	"EmergenceFloodingControlOn": true,
+
+	"__if monica internal automatic irrigation is to be used, configure donations here": "",
+	"UseAutomaticIrrigation": false,
+	"AutoIrrigationParams": {
+		"irrigationParameters": {
+			"nitrateConcentration": [0, "mg dm-3"],
+			"sulfateConcentration": [0, "mg dm-3"]
+		},
+		"amount": [17, "mm"],
+		"threshold": 0.35
+	},
+
+	"__if monica internal automatic fertilizing via NMin method is to be used, configure here": "",
+	"UseNMinMineralFertilisingMethod": false,
+	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
+	"NMinFertilizers": {
+		"1": ["include-from-file", "mineral-fertilisers/AN.json"],
+		"2": ["include-from-file", "mineral-fertilisers/AN.json"]
+	},
+	"NMinFertiliserPartition": ["ref", "NMinFertilizers", "1"],
+	"JulianDayAutomaticFertilising": 89
+}
