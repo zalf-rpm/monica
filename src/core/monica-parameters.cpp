@@ -1131,7 +1131,7 @@ json11::Json SiteParameters::to_json() const
   {"GroundwaterDepth", J11Array {vs_GroundwaterDepth, "m"}},
   {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
   {"DrainageCoeff", vs_DrainageCoeff},
-  {"NDeposition", vq_NDeposition},
+	{"NDeposition", J11Array {vq_NDeposition, "kg N ha-1 y-1"}},
   {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
 
   if(vs_SoilParameters)
