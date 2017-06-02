@@ -245,6 +245,12 @@ Section "Uninstall"
 	Delete $PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite
 	RMDir $PROFILE\MONICA\sqlite-db
 
+	Delete $PROFILE\MONICA\monica-ini-to-json\monica-ini-to-json.py
+	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-sim.json
+	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-site.json
+	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-crop.json
+	RMDir $PROFILE\MONICA\monica-ini-to-json
+
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\carbiocial.sqlite
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\db-connections.ini
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-monica.py

@@ -638,7 +638,7 @@ namespace Monica
     double vs_GroundwaterDepth{70.0}; //!< [m]
     double vs_Soil_CN_Ratio{10.0};
     double vs_DrainageCoeff{1.0};
-    double vq_NDeposition{30.0};
+    double vq_NDeposition{30.0}; //!< [kg N ha-1 y-1]
     double vs_MaxEffectiveRootingDepth{2.0};
 
     Soil::SoilPMsPtr vs_SoilParameters;
