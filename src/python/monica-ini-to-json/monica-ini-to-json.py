@@ -44,11 +44,9 @@ def main():
 
     config = {
         "monica.ini": "./monica.ini",
-        "sim.json": "./sim.json",
+        "sim.json": "./conversion-template-sim.json",
         "out-suffix": "-from-monica-ini"
     }
-
-    path_to_template_sim_json = "./sim.json"
 
     if len(sys.argv) == 2 and sys.argv[1] == "-h":
         print "usage: [python] monica-ini-to-json.py [monica.ini=path-to-monica.ini] [sim.json=path-to-template-sim.json] [out-suffix=suffix-to-append-to-sim-site-crop-climate.files]"

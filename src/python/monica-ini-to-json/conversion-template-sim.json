@@ -3,9 +3,9 @@
 	"__!!! check and beautify JSON files with http://codebeautify.org/jsonviewer or https://jsonformatter.curiousconcept.com# !!!": "",
 	
 	"__define paths to crop.json, site.json and climate.csv, no path means read from directory where sim.json (THIS file) has been found; files names are abitrary": "",
-	"crop.json": "crop.json",
-	"site.json": "site.json",
-	"climate.csv": "climate.csv",
+	"crop.json": "conversion-template-crop.json",
+	"site.json": "conversion-template-site.json",
+	"climate.csv": "",
 
 	"__options for reading the climate csv file, how many header lines to read, which separator to use and optional conversion of headers to internally known names": "",
 	"climate.csv-options": {

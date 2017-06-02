@@ -31,7 +31,7 @@
 
 	;Name and file
 	Name "MONICA"
-	OutFile "MONICA-Setup-2.0.0-${Arch}-${ArchBit}-build${BuildNumber}.exe"
+	OutFile "MONICA-Setup-2.0.1-${Arch}-${ArchBit}-build${BuildNumber}.exe"
 
 	;Default installation folder
 	InstallDir "$PROGRAMFILES\MONICA"
@@ -136,6 +136,14 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "..\sqlite-db\monica.sqlite"
 	File "..\sqlite-db\ka5-soil-data.sqlite"
 
+	;create conversion script dir
+	CreateDirectory "$PROFILE\MONICA\monica-ini-to-json"
+	SetOutPath "$PROFILE\MONICA\monica-ini-to-json"
+	File "..\src\python\monica-ini-to-json\monica-ini-to-json.py"
+	File "..\src\python\monica-ini-to-json\conversion-template-sim.json"
+	File "..\src\python\monica-ini-to-json\conversion-template-site.json"
+	File "..\src\python\monica-ini-to-json\conversion-template-crop.json"
+	
 	;create parameter directories
 	CreateDirectory "$PROFILE\MONICA\monica-parameters"
 	;the json version files with name name convention
