@@ -10,7 +10,7 @@
     "Latitude": 52.80939865112305,
     "Slope": 0,
     "HeightNN": [0 , "m"],
-    "NDeposition": 30,
+    "NDeposition": [30, "kg N ha-1 y-1"],
 		
 		"__soil profile parameters define the soil-column, the 'Thickness' parameter is optional and means create as many 10cm layers as necessary for the 'Thickness'": "",
     "SoilProfileParameters": [
@@ -37,23 +37,18 @@
   },
 	
 	"__all kinds of more general monica parameters": "",
-	
-	"_db_SoilTemperatureParameters": ["_include-from-db", "soil-temperature-params", "hermes"],
+
   "SoilTemperatureParameters": ["include-from-file", "general/soil-temperature.json"],
   
 	"EnvironmentParameters": {
-		"_db_=": ["_include-from-db", "environment-params", "hermes"],
     "=": ["include-from-file", "general/environment.json"],
     "LeachingDepth": 2.0,
     "WindSpeedHeight": 2.5
   },
 	
-	"_db_SoilOrganicParameters": ["_include-from-db", "soil-organic-params", "hermes"],
   "SoilOrganicParameters": ["include-from-file", "general/soil-organic.json"],
 	
-	"_db_SoilTransportParameters": ["_include-from-db", "soil-transport-params", "hermes"],
   "SoilTransportParameters": ["include-from-file", "general/soil-transport.json"],
 	
-	"_db_SoilMoistureParameters": ["_include-from-db", "soil-moisture-params", "hermes"],
   "SoilMoistureParameters": ["include-from-file", "general/soil-moisture.json"]
 }

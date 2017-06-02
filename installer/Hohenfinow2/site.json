@@ -10,7 +10,7 @@
     "Latitude": 52.80939865112305,
     "Slope": 0,
     "HeightNN": [0 , "m"],
-    "NDeposition": 30,
+    "NDeposition": [30, "kg N ha-1 y-1"],
 		
 		"__soil profile parameters define the soil-column, the 'Thickness' parameter is optional and means create as many 10cm layers as necessary for the 'Thickness'": "",
     "SoilProfileParameters": [
