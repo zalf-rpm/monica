@@ -25,7 +25,6 @@ import ConfigParser as cp
 
 YEAR_BORDERS = [[0, 30, 2000], [31, 99, 1900]]
 YEAR_SUFFIX_DIGITS = 3
-OUTPUT_SUFFIX = "-from-monica-ini"
 
 def make_date(s):
   year = int(s[-2:])
@@ -43,21 +42,32 @@ def make_date(s):
 def main():
     "main"
 
-    path_to_monica_ini = "./monica.ini"
+    config = {
+        "monica.ini": "./monica.ini",
+        "sim.json": "./sim.json",
+        "out-suffix": "-from-monica-ini"
+    }
+
     path_to_template_sim_json = "./sim.json"
 
-    if len(sys.argv) > 1:
-      path_to_monica_ini = sys.argv[1]
-    if len(sys.argv) > 2:
-      path_to_template_sim_json = sys.argv[2]
+    if len(sys.argv) == 2 and sys.argv[1] == "-h":
+        print "usage: [python] monica-ini-to-json.py [monica.ini=path-to-monica.ini] [sim.json=path-to-template-sim.json] [out-suffix=suffix-to-append-to-sim-site-crop-climate.files]"
+        print "defaults:", config
+        return
 
-    dir_of_monica_ini = os.path.dirname(path_to_monica_ini)
-    dir_of_template_sim_json = os.path.dirname(path_to_template_sim_json)
+    if len(sys.argv) > 1:
+        for arg in sys.argv[1:]:
+            k, v = arg.split("=")
+            if k in config:
+                config[k] = v
+
+    dir_of_monica_ini = os.path.dirname(config["monica.ini"])
+    dir_of_template_sim_json = os.path.dirname(config["sim.json"])
 
     ini = cp.ConfigParser()
-    ini.read([path_to_monica_ini])
+    ini.read([config["monica.ini"]])
 
-    with open(path_to_template_sim_json) as _:
+    with open(config["sim.json"]) as _:
         sim = json.load(_)
 
     def path_to_file(path_to_f, abs_prefix):
@@ -75,10 +85,10 @@ def main():
 
     # reference the correct files in sim.json
     # sim.json is just for completness reasons and is unused/not needed
-    sim["sim.json"] = "sim" + OUTPUT_SUFFIX + ".json"
-    sim["site.json"] = "site" + OUTPUT_SUFFIX + ".json"
-    sim["crop.json"] = "crop" + OUTPUT_SUFFIX + ".json"
-    sim["climate.csv"] = "climate" + OUTPUT_SUFFIX + ".csv"
+    sim["sim.json"] = "sim" + config["out-suffix"] + ".json"
+    sim["site.json"] = "site" + config["out-suffix"] + ".json"
+    sim["crop.json"] = "crop" + config["out-suffix"] + ".json"
+    sim["climate.csv"] = "climate" + config["out-suffix"] + ".csv"
 
 
     # NMin method settings
@@ -341,6 +351,17 @@ def main():
                 "sunhours",
                 "wind",
                 "relhumid"
+            ])
+            climate_data.append([
+                "[]",
+                "[°C]",
+                "[°C]",
+                "[°C]",
+                "[mm]",
+                "[MJ/m2]",
+                "[h]",
+                "[m/s]",
+                "[%]"
             ])
 
             has_globrad = False

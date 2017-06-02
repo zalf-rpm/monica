@@ -63,7 +63,7 @@
 			},
 			"residueParams": ["include-from-file", "crop-residues/barley.json"]
 		},
-		"SC": {
+		"WC": {
 			"is-winter-crop": true,
 			"cropParams": {
 				"species": ["include-from-file", "crops/rape.json"],
