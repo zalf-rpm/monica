@@ -505,7 +505,7 @@ def supported_patterns():
                 "success": False}
 
     def ld_to_trd(_, j__):
-        if len(json) == 3 \
+        if len(j__) == 3 \
             and isinstance(j__[1], types.IntType) \
             and isinstance(j__[2], types.FloatType):
             return {"result": soil_io.bulk_density_class_to_raw_density(j__[1], j__[2]), "errors": [], "success": True}
