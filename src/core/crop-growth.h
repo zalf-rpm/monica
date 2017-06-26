@@ -248,6 +248,7 @@ namespace Monica
     int get_DevelopmentalStage() const;
     double get_RelativeTotalDevelopment() const;
     double get_OrganBiomass(int i_Organ) const;
+	double get_OrganGreenBiomass(int i_Organ) const;
     double get_AbovegroundBiomass() const;
     double get_LT50() const;
     double get_AbovegroundBiomassNContent() const;

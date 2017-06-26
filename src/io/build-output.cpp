@@ -506,6 +506,17 @@ BOTRes& Monica::buildOutputTable()
 					return 0.0;
 			});
 
+			build({ id++, "OrgGreenBiom", "kgDM ha-1", "get_OrganGreenBiomass(i)" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				if (oid.isOrgan()
+					&& monica.cropGrowth()
+					&& monica.cropGrowth()->get_NumberOfOrgans() > oid.organ)
+					return round(monica.cropGrowth()->get_OrganGreenBiomass(oid.organ), 1);
+				else
+					return 0.0;
+			});
+
 			build({id++, "Yield", "kgDM ha-1", "get_PrimaryCropYield"},
 						[](const MonicaModel& monica, OId oid)
 			{
