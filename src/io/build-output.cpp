@@ -369,6 +369,12 @@ BOTRes& Monica::buildOutputTable()
 				return monica.currentStepDate().toIsoDateString();
 			});
 
+			build({id++, "days-since-start", "", "output number of days since simulation start"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.currentStepDate() - monica.simulationParameters().startDate;
+			});
+
 			build({id++, "DOY", "", "output current day of year"},
 						[](const MonicaModel& monica, OId oid)
 			{

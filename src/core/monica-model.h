@@ -214,6 +214,7 @@ namespace Monica
 		const UserSoilTransportParameters& soilTransportParameters() const { return _soilTransPs; }
 		const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
 		const SimulationParameters& simulationParameters() const { return _simPs; }
+		SimulationParameters& simulationParametersNC() { return _simPs; }
 
 		Tools::Date currentStepDate() const { return _currentStepDate; }
 		void setCurrentStepDate(Tools::Date d) { _currentStepDate = d; }
@@ -239,7 +240,7 @@ namespace Monica
 		const UserSoilTemperatureParameters _soilTempPs;
 		const UserSoilTransportParameters _soilTransPs;
 		const UserSoilOrganicParameters _soilOrganicPs;
-		const SimulationParameters _simPs;
+		SimulationParameters _simPs;
 		//std::string _pathToOutputDir;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;
 
