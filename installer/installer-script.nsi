@@ -33,9 +33,23 @@
 	Name "MONICA"
 	OutFile "MONICA-Setup-2.0.1-${Arch}-${ArchBit}-build${BuildNumber}.exe"
 
+	Function .onInit
+		; Must set $INSTDIR here to avoid adding ${MUI_PRODUCT} to the end of the
+		; path when user selects a new directory using the 'Browse' button.
+		!ifdef X86
+  		StrCpy $INSTDIR "$PROGRAMFILES\MONICA"
+		!else
+			StrCpy $INSTDIR "$PROGRAMFILES64\MONICA"
+		!endif
+	FunctionEnd
+
 	;Default installation folder
-	InstallDir "$PROGRAMFILES\MONICA"
-	
+	;!ifdef X86
+	;	InstallDir "$PROGRAMFILES\MONICA"
+	;!else
+	;	InstallDir "$PROGRAMFILES64\MONICA"
+	;!endif
+
 	;Get installation folder from registry if available
 	InstallDirRegKey HKCU "Software\MONICA" ""
 
