@@ -238,8 +238,8 @@ namespace Voc
 		std::map<int, double> speciesId_2_isoprene_emission;
 		std::map<int, double> speciesId_2_monoterpene_emission;
 
-		double isoprene_emission{0.0}; //!< isoprene emissions per timestep
-		double monoterpene_emission{0.0}; //!< monoterpene emissions per timestep
+		double isoprene_emission{0.0}; //!< [ug m-2ground h-1] isoprene emissions per timestep
+		double monoterpene_emission{0.0}; //!< [ug m-2ground h-1] monoterpene emissions per timestep
 	};
 
 	//----------------------------------------------------------------------------
