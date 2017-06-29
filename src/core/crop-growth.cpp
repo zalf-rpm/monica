@@ -3667,6 +3667,15 @@ double CropGrowth::get_OrganBiomass(int i_Organ) const
 }
 
 /**
+* @brief Returns current green biomass of organ i [kg ha-1]
+* @return organ biomass
+*/
+double CropGrowth::get_OrganGreenBiomass(int i_Organ) const
+{
+	return vc_OrganGreenBiomass[i_Organ];
+}
+
+/**
  * @brief Returns aboveground biomass [kg ha-1]
  * @return organ biomass
  */
