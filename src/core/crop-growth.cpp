@@ -7,6 +7,7 @@ Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
+Tommaso Stella <tommaso.stella@zalf.de>
 
 Maintainers:
 Currently maintained by the authors.
@@ -28,6 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/algorithms.h"
 #include "voc-guenther.h"
 #include "voc-jjv.h"
+#include "voc-common.h"
 
 const double PI = 3.14159265358979323;
 
@@ -53,6 +55,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 int usage)
 	: soilColumn(sc)
 	, cropPs(cropPs)
+	, speciesPs(cps.speciesParams)
 	, vs_Latitude(stps.vs_Latitude)
 	, pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
 	, pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
@@ -150,10 +153,6 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
 	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
-	, _efMono(cps.speciesParams.pc_efMono)
-	, _efMonos(cps.speciesParams.pc_efMonos)
-	, _efIso(cps.speciesParams.pc_efIso)
-	, _VCMAX25(cps.speciesParams.pc_VCMAX25)
 	, _fireEvent(fireEvent)
 {
 	// Determining the total temperature sum of all developmental stages after
@@ -1197,24 +1196,28 @@ double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
-																			 double vw_MaxAirTemperature,
-																			 double vw_MinAirTemperature,
-																			 double vc_GlobalRadiation,
-																			 double vw_AtmosphericCO2Concentration,
-																			 double vs_Latitude,
-																			 double vc_LeafAreaIndex,
-																			 double pc_DefaultRadiationUseEfficiency,
-																			 double pc_MaxAssimilationRate,
-																			 double pc_MinimumTemperatureForAssimilation,
-																			 double pc_OptimumTemperatureForAssimilation,
-																			 double pc_MaximumTemperatureForAssimilation,
-																			 double vc_AstronomicDayLenght,
-																			 double vc_Declination,
-																			 double vc_ClearDayRadiation,
-																			 double vc_EffectiveDayLength,
-																			 double vc_OvercastDayRadiation)
+CropGrowth::CPRet CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
+																										double vw_MaxAirTemperature,
+																										double vw_MinAirTemperature,
+																										double vc_GlobalRadiation,
+																										double vw_AtmosphericCO2Concentration,
+																										double vs_Latitude,
+																										double vc_LeafAreaIndex,
+																										double pc_DefaultRadiationUseEfficiency,
+																										double pc_MaxAssimilationRate,
+																										double pc_MinimumTemperatureForAssimilation,
+																										double pc_OptimumTemperatureForAssimilation,
+																										double pc_MaximumTemperatureForAssimilation,
+																										double vc_AstronomicDayLenght,
+																										double vc_Declination,
+																										double vc_ClearDayRadiation,
+																										double vc_EffectiveDayLength,
+																										double vc_OvercastDayRadiation)
 {
+	using namespace Voc;
+
+	CPRet res;
+
 	double vc_CO2CompensationPoint = 0.0; // old COcomp
 	double vc_CO2CompensationPointReference = 0.0;
 	double vc_RadiationUseEfficiency = 0.0; // old EFF
@@ -1278,15 +1281,14 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	double vc_PhotoGrowthRespiration = 0.0;
 	double vc_DarkGrowthRespiration = 0.0;
 
-	const UserCropParameters& user_crops = cropPs;
-	double pc_ReferenceLeafAreaIndex = user_crops.pc_ReferenceLeafAreaIndex;
-	double pc_ReferenceMaxAssimilationRate = user_crops.pc_ReferenceMaxAssimilationRate;
-	double pc_MaintenanceRespirationParameter_1 = user_crops.pc_MaintenanceRespirationParameter1;
-	double pc_MaintenanceRespirationParameter_2 = user_crops.pc_MaintenanceRespirationParameter2;
+	double pc_ReferenceLeafAreaIndex = cropPs.pc_ReferenceLeafAreaIndex;
+	double pc_ReferenceMaxAssimilationRate = cropPs.pc_ReferenceMaxAssimilationRate;
+	double pc_MaintenanceRespirationParameter_1 = cropPs.pc_MaintenanceRespirationParameter1;
+	double pc_MaintenanceRespirationParameter_2 = cropPs.pc_MaintenanceRespirationParameter2;
 
-	double pc_GrowthRespirationParameter_1 = user_crops.pc_GrowthRespirationParameter1;
-	double pc_GrowthRespirationParameter_2 = user_crops.pc_GrowthRespirationParameter2;
-	double pc_CanopyReflectionCoeff = user_crops.pc_CanopyReflectionCoefficient; // old REFLC;
+	double pc_GrowthRespirationParameter_1 = cropPs.pc_GrowthRespirationParameter1;
+	double pc_GrowthRespirationParameter_2 = cropPs.pc_GrowthRespirationParameter2;
+	double pc_CanopyReflectionCoeff = cropPs.pc_CanopyReflectionCoefficient; // old REFLC;
 
 //  std::cout << setprecision(15) << "pc_ReferenceLeafAreaIndex: " << pc_ReferenceLeafAreaIndex << std::endl;
 //  std::cout << setprecision(15) << "pc_ReferenceMaxAssimilationRate: " << pc_ReferenceMaxAssimilationRate << std::endl;
@@ -1301,16 +1303,11 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	auto WangEngelTemperatureResponse = [](double t, double tmin, double topt, double tmax, double betacoeff)
 	{
-		if (t < tmin)
-		{
-			return 0.0; //prevent nan values with t < tmin
-		}
-		if (t > tmax)
-		{
+		//prevent nan values with t < tmin
+		if(t < tmin || t > tmax)
 			return 0.0;
-		}
+		
 		double alfa = log(2) / log((tmax - tmin) / (topt - tmin));
-
 		double numerator = 2 * pow(t - tmin, alfa)*pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
 		double denominator = pow(topt - tmin, 2 * alfa);
 		
@@ -1336,45 +1333,55 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			// concentration and increased temperature on winter-wheat - Test
 			// of ARCWHEAT1 simulation model. Plant Cell Environ. 18(7):736-748.
 			//////////////////////////////////////////////////////////////////////////
+			
+			double tempK = vw_MeanAirTemperature + D_IN_K;
+			double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
+			double term2 = sqrt(tempK / TK25);
+			KTkc = exp(speciesPs.AEKC * term1) * term2;
+			KTko = exp(speciesPs.AEKO * term1) * term2;
+			res.kc = Mkc = speciesPs.KC25 * KTkc; //[µmol mol-1]
+			res.ko = Mko = speciesPs.KO25 * KTko; //[mmol mol-1]
 
 			//OLD exponential response
-			//KTvmax = exp(68800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0)
-			//						 / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314)) * pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
+			//KTvmax = exp(speciesPs.AEVC * term1) * term2;
+			KTvmax = max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
+																												 pc_MinimumTemperatureForAssimilation,
+																												 pc_OptimumTemperatureForAssimilation,
+																												 pc_MaximumTemperatureForAssimilation,
+																												 1.0));
 
-			KTvmax = max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature, pc_MinimumTemperatureForAssimilation, pc_OptimumTemperatureForAssimilation, pc_MaximumTemperatureForAssimilation, 1.0));
-			
-			KTkc = exp(65800.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
-				* pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
-
-			KTko = exp(1400.0 * ((vw_MeanAirTemperature + 273.0) - 298.0) / (298.0 * (vw_MeanAirTemperature + 273.0) * 8.314))
-				* pow(((vw_MeanAirTemperature + 273.0) / 298.0), 0.5);
-
-			// Berechnung des Transformationsfaktors fr pflanzenspez. AMAX bei 25 grad
+			// Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
 			vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
 			vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
-			vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
+			res.vcmax = vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
 			vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
+			
+			//Oi = 210.0 + (0.047
+			res.oi = Oi = 210.0 * (0.047 
+										- 0.0013087 * vw_MeanAirTemperature
+										+ 0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature)
+										- 0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature))
+				/ 0.026934;// [mmol mol-1]
 
-			Mkc = 460.0 * KTkc; //[µmol mol-1]
-			Mko = 330.0 * KTko; //[mmol mol-1]
+			res.ci = Ci = vw_AtmosphericCO2Concentration * 0.7 
+				* (1.674 - 0.061294 * vw_MeanAirTemperature
+					 + 0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature)
+					 - 0.0000088741 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature))
+				/ 0.73547;// [µmol mol-1]
 
-			Oi = 210.0 + (0.047 - 0.0013087 * vw_MeanAirTemperature + 0.000025603 * (vw_MeanAirTemperature
-																																							 * vw_MeanAirTemperature) - 0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature
-																																																													 * vw_MeanAirTemperature)) / 0.026934;// [mmol mol-1]
-
-			Ci = vw_AtmosphericCO2Concentration * 0.7 * (1.674 - 0.061294 * vw_MeanAirTemperature + 0.0011688
-																									 * (vw_MeanAirTemperature * vw_MeanAirTemperature) - 0.0000088741 * (vw_MeanAirTemperature
-																																																											 * vw_MeanAirTemperature * vw_MeanAirTemperature)) / 0.73547;// [µmol mol-1]
-
-			vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko); // [µmol mol-1] 
+			//similar to LDNDC::jarvis.cpp:217
+			res.comp = vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko); // [µmol mol-1] 
 			vc_CO2CompensationPointReference = 0.5 * 0.21 * vc_VcmaxReference * Mkc * Oi / (vc_VcmaxReference * Mko); // [µmol mol-1]
 
 			// Mitchell et al. 1995:
-			vc_RadiationUseEfficiency = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPoint) / (4.5 * Ci + 10.5
-																																											* vc_CO2CompensationPoint) * 8.3769), 0.5);
-			vc_RadiationUseEfficiencyReference = min((0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference) / (4.5 * Ci + 10.5
-			
-																																																	* vc_CO2CompensationPointReference) * 8.3769), 0.5);
+			vc_RadiationUseEfficiency = min(0.77 / 2.1 * (Ci - vc_CO2CompensationPoint)
+																			/ (4.5 * Ci + 10.5
+																				 * vc_CO2CompensationPoint) * 8.3769,
+																			0.5);
+			vc_RadiationUseEfficiencyReference = min(0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference)
+																							 / (4.5 * Ci + 10.5
+																									* vc_CO2CompensationPointReference) * 8.3769,
+																							 0.5);
 			if (vc_RadiationUseEfficiency < 0)
 			{
 				vc_RadiationUseEfficiency = 0;
@@ -1382,8 +1389,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			}
 
 			vc_AssimilationRate = (Ci - vc_CO2CompensationPoint) * vc_Vcmax / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
-			vc_AssimilationRateReference = (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0
-																																																								+ Oi / Mko)) * 1.656;
+			vc_AssimilationRateReference = (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference 
+				/ (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
 
 			if(vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation)
 			{
@@ -1449,9 +1456,10 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			vc_HoffmannC0 = 80.0 - 0.036 * (vc_GlobalRadiation * 86400.0 / 1000000.0);
 
 
-			vc_HoffmannKCO2 = ((vw_AtmosphericCO2Concentration - vc_HoffmannC0) / (vc_HoffmannK1
-																																						 + vw_AtmosphericCO2Concentration - vc_HoffmannC0)) / ((350.0 - vc_HoffmannC0) / (vc_HoffmannK1 + 350.0
-																																																																															- vc_HoffmannC0));
+			vc_HoffmannKCO2 = ((vw_AtmosphericCO2Concentration - vc_HoffmannC0)
+												 / (vc_HoffmannK1 + vw_AtmosphericCO2Concentration - vc_HoffmannC0)) 
+				/ ((350.0 - vc_HoffmannC0) 
+					 / (vc_HoffmannK1 + 350.0 - vc_HoffmannC0));
 
 			vc_AssimilationRate = vc_AssimilationRate * vc_HoffmannKCO2;
 			vc_AssimilationRateReference = vc_AssimilationRateReference * vc_HoffmannKCO2;
@@ -1586,22 +1594,26 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	SSLAE = sin((90.0 + vc_Declination - vs_Latitude) * PI / 180.0); // = HERMES
 
-	X = log(1.0 + 0.45 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency / (SSLAE
-																																																								 * vc_AssimilationRate)); // = HERMES
+	X = log(1.0 + 0.45 * vc_ClearDayRadiation 
+					/ (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency
+					/ (SSLAE * vc_AssimilationRate)); // = HERMES
 	XReference = log(1.0 + 0.45 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0)
 									 * vc_NetRadiationUseEfficiencyReference / (SSLAE * vc_AssimilationRateReference));
 
 	PHCH1 = SSLAE * vc_AssimilationRate * vc_EffectiveDayLength * X / (1.0 + X); // = HERMES
 	PHCH1Reference = SSLAE * vc_AssimilationRateReference * vc_EffectiveDayLength * XReference / (1.0 + XReference);
 
-	Y = log(1.0 + 0.55 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency / ((5.0
-																																																									- SSLAE) * vc_AssimilationRate)); // = HERMES
-	YReference = log(1.0 + 0.55 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency
+	Y = log(1.0 + 0.55 * vc_ClearDayRadiation 
+					/ (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency
+					/ ((5.0 - SSLAE) * vc_AssimilationRate)); // = HERMES
+	YReference = log(1.0 + 0.55 * vc_ClearDayRadiation 
+									 / (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency
 									 / ((5.0 - SSLAE) * vc_AssimilationRateReference));
 
 	PHCH2 = (5.0 - SSLAE) * vc_AssimilationRate * vc_EffectiveDayLength * Y / (1.0 + Y); // = HERMES
-	PHCH2Reference = (5.0 - SSLAE) * vc_AssimilationRateReference * vc_EffectiveDayLength * YReference / (1.0
-																																																				+ YReference);
+	PHCH2Reference = (5.0 - SSLAE) * vc_AssimilationRateReference 
+		* vc_EffectiveDayLength * YReference
+		/ (1.0 + YReference);
 
 	PHCH = 0.95 * (PHCH1 + PHCH2) + 20.5; // = HERMES
 	PHCHReference = 0.95 * (PHCH1Reference + PHCH2Reference) + 20.5;
@@ -1630,8 +1642,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 		PHCLReference = PHC4Reference * (1.0 - exp(-PHC3Reference / PHC4Reference));
 	}
 
-	Z = vc_OvercastDayRadiation / (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency / (5.0
-																																																	 * vc_AssimilationRate);
+	Z = vc_OvercastDayRadiation / (vc_EffectiveDayLength * 3600.0) 
+		* vc_NetRadiationUseEfficiency / (5.0 * vc_AssimilationRate);
 
 	PHOH1 = 5.0 * vc_AssimilationRate * vc_EffectiveDayLength * Z / (1.0 + Z);
 	PHOH = 0.9935 * PHOH1 + 1.1;
@@ -1676,7 +1688,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	
 	if (vc_ClearDayRadiation != 0)
-		vc_OvercastSkyTimeFraction =(vc_ClearDayRadiation - (1000000.0 * vc_GlobalRadiation * 0.50)) / (0.8 * vc_ClearDayRadiation); // [J m-2]
+		vc_OvercastSkyTimeFraction = 
+		(vc_ClearDayRadiation - (1000000.0 * vc_GlobalRadiation * 0.50))
+		/ (0.8 * vc_ClearDayRadiation); // [J m-2]
 	else
 		vc_OvercastSkyTimeFraction = 0;
 
@@ -1691,15 +1705,14 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	}
 
 	// Calculation of gross CO2 assimilation in dependence of cloudiness
-	vc_GrossCO2Assimilation = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2Assimilation + (1.0
-																																													- vc_OvercastSkyTimeFraction) * vc_ClearDayCO2Assimilation;
+	vc_GrossCO2Assimilation = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2Assimilation 
+		+ (1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2Assimilation;
 
-	vc_GrossCO2AssimilationReference = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2AssimilationReference + (1.0
-																																																						- vc_OvercastSkyTimeFraction) * vc_ClearDayCO2AssimilationReference;
+	vc_GrossCO2AssimilationReference = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2AssimilationReference 
+		+ (1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2AssimilationReference;
 
 	if(vc_OxygenDeficit < 1.0)
 	{
-
 		// vc_OxygenDeficit separates drought stress (ETa/Etp) from saturation stress.
 		vc_DroughtStressThreshold = 0.0;
 	}
@@ -1762,17 +1775,19 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	double vc_NormalisedDayLength = 2.0 - (vc_PhotoperiodicDaylength / 12.0);
 
-	vc_PhotoMaintenanceRespiration = vc_MaintenanceRespirationSum * pow(2.0, (pc_MaintenanceRespirationParameter_1
-																																						* (vc_PhotoTemperature - pc_MaintenanceRespirationParameter_2))) * (2.0 - vc_NormalisedDayLength);// @todo: [g m-2] --> [kg ha-1]
+	vc_PhotoMaintenanceRespiration = vc_MaintenanceRespirationSum
+		* pow(2.0, (pc_MaintenanceRespirationParameter_1 
+								* (vc_PhotoTemperature - pc_MaintenanceRespirationParameter_2)))
+		* (2.0 - vc_NormalisedDayLength);// @todo: [g m-2] --> [kg ha-1]
 
-	vc_DarkMaintenanceRespiration = vc_MaintenanceRespirationSum * pow(2.0, (pc_MaintenanceRespirationParameter_1
-																																					 * (vc_NightTemperature - pc_MaintenanceRespirationParameter_2))) * vc_NormalisedDayLength; // @todo: [g m-2] --> [kg ha-1]
+	vc_DarkMaintenanceRespiration = vc_MaintenanceRespirationSum 
+		* pow(2.0, (pc_MaintenanceRespirationParameter_1 
+								* (vc_NightTemperature - pc_MaintenanceRespirationParameter_2))) 
+		* vc_NormalisedDayLength; // @todo: [g m-2] --> [kg ha-1]
 
 	vc_MaintenanceRespirationAS = vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration; // [kg CH2O ha-1]
 
 	vc_Assimilates -= vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration; // [kg CH2O ha-1]
-
-
 
 	double vc_GrowthRespirationSum = 0.0;
 
@@ -1780,20 +1795,21 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	{
 		for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
 		{
-			vc_GrowthRespirationSum += pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ] * vc_Assimilates * pc_OrganGrowthRespiration[i_Organ];
+			vc_GrowthRespirationSum += pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ] 
+				* vc_Assimilates * pc_OrganGrowthRespiration[i_Organ];
 		}
 	}
 
-
 	if(vc_Assimilates > 0.0)
 	{
-		vc_PhotoGrowthRespiration = vc_GrowthRespirationSum * pow(2.0, (pc_GrowthRespirationParameter_1
-																																		* (vc_PhotoTemperature - pc_GrowthRespirationParameter_2))) * (2.0 - vc_NormalisedDayLength); // [kg CH2O ha-1]
+		vc_PhotoGrowthRespiration = vc_GrowthRespirationSum 
+			* pow(2.0, (pc_GrowthRespirationParameter_1 
+									* (vc_PhotoTemperature - pc_GrowthRespirationParameter_2))) 
+			* (2.0 - vc_NormalisedDayLength); // [kg CH2O ha-1]
 
 		if(vc_Assimilates > vc_PhotoGrowthRespiration)
 		{
 			vc_Assimilates -= vc_PhotoGrowthRespiration;
-
 		}
 		else
 		{
@@ -1802,17 +1818,15 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 		}
 	}
 
-
-
-
 	if(vc_Assimilates > 0.0)
 	{
-		vc_DarkGrowthRespiration = vc_GrowthRespirationSum * pow(2.0, (pc_GrowthRespirationParameter_1
-																																	 * (vc_PhotoTemperature - pc_GrowthRespirationParameter_2))) * vc_NormalisedDayLength; // [kg CH2O ha-1]
+		vc_DarkGrowthRespiration = vc_GrowthRespirationSum 
+			* pow(2.0, (pc_GrowthRespirationParameter_1
+									* (vc_PhotoTemperature - pc_GrowthRespirationParameter_2))) 
+			* vc_NormalisedDayLength; // [kg CH2O ha-1]
 
 		if(vc_Assimilates > vc_DarkGrowthRespiration)
 		{
-
 			vc_Assimilates -= vc_DarkGrowthRespiration;
 		}
 		else
@@ -1861,6 +1875,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	}
 	// This section is now inactive
 	// #########################################################################
+
+	return res;
 }
 
 
@@ -3448,13 +3464,19 @@ double CropGrowth::get_NetPhotosynthesis() const
 void CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
 {
 	Voc::SpeciesData species;
-	species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
+	//species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
 	species.lai = get_LeafAreaIndex();
 	species.mFol = get_OrganBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
 	species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
-	species.EF_MONO = _efMono;
-	species.EF_MONOS = _efMonos;
-	species.EF_ISO = _efIso;
+
+	species.EF_MONO = speciesPs.EF_MONO;
+	species.EF_MONOS = speciesPs.EF_MONOS;
+	species.EF_ISO = speciesPs.EF_ISO;
+	species.VCMAX25 = speciesPs.VCMAX25;
+	species.AEKC = speciesPs.AEKC;
+	species.AEKO = speciesPs.AEKO;
+	species.AEVC = speciesPs.AEVC;
+	species.KC25 = speciesPs.KC25;
 
 	_guentherEmissions = Voc::calculateGuentherVOCEmissions(species, mcd);
 	//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;

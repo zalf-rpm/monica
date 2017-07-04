@@ -137,44 +137,36 @@ namespace Voc
 		int id{0};
 
 		//common
-		//! emission factor monoterpene
-		double EF_MONOS{0.0};
-		//! emission factor monoterpene
-		double EF_MONO{0.0};
-		//! emission factor isoprene 
-		double EF_ISO{0.0};
+		double EF_MONOS{0.0}; //!< emission rate of stored terpenes under standard conditions (ug gDW-1 h-1)
+		double EF_MONO{0.0}; //!< monoterpene emission rate under standard conditions (ug gDW-1 h-1)
+		double EF_ISO{0.0}; //!< isoprene emission rate under standard conditions (ug gDW-1 h-1)
 
 		//jjv
-		double THETA{0.9};
-		//! decrease of emission activity with age
-		double FAGE{1.0};
-		//! isoprene emission with SIM module
-		double CT_IS{0.0};
-		//! monoterpene emission with SIM module
-		double CT_MT{0.0};
+		double THETA{0.9}; //!< curvature parameter
+		double FAGE{1.0}; //!< relative decrease of emission synthesis per foliage age class
+		double CT_IS{0.0}; //!< scaling constant for temperature sensitivity of isoprene synthase.
+		double CT_MT{0.0}; //!< scaling constant for temperature sensitivity
 
-		//! isoprene emitter
-		double HA_IS{0.0};
-		//! monoterpene emitter
-		double HA_MT{0.0};
+		double HA_IS{0.0}; //!< activation energy for isoprene synthase (J mol-1)
+		double HA_MT{0.0}; //!< activation energy for GDP synthase (J mol-1)
 
-		double DS_IS{0.0};
-		double DS_MT{0.0};
-		double HD_IS{284600.0};
-		double HD_MT{284600.0};
+		double DS_IS{0.0}; //!< entropy term for isoprene synthase sensitivity to temperature (J:mol-1:K-1)
+		double DS_MT{0.0}; //!< entropy term for GDP synthase sensitivity to temperature (J:mol-1:K-1)
+		double HD_IS{284600.0}; //!< deactivation energy for isoprene synthase (J mol-1)
+		double HD_MT{284600.0}; //!< deactivation energy for monoterpene synthase (J mol-1)
 
 		double HDJ{220000.0}; //! fw: "HDJ": curvature parameter of jMax (J mol-1) (Kattge et al. 2007: 200000; Farquhar et al. 1980: 220000; Harley et al. 1992: 201000) 
 		double SDJ{703.0}; //! fw: "SDJ": electron transport temperature response parameter (Kattge et al. 2007: 647; Farquhar et al. 1980: 710; Harley et al. 1992: 650)
-		double KC25{260.0};
-		double KO25{179.0};
-		double VCMAX25{80.0}; //corn: 13.1
-		double QJVC{2.0};
+		double KC25{260.0}; //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+		double KO25{179.0}; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+		double VCMAX25{80.0}; //!< corn: 13.1 | maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
+		double QJVC{2.0}; //!< relation between maximum electron transport rate and RubP saturated rate of carboxylation (--)
 
-		double AEKC{59356}; // for corn
-		double AEKO{35948}; // for corn
-		double AEJM{37000}; //for corn
-		double AEVC{58520}; //for corn
-		double SLAMIN{20}; //for corn
+		double AEKC{59356}; //!< for corn | activation energy for Michaelis-Menten constant for CO2 (J mol-1)
+		double AEKO{35948}; //!< for corn | activation energy for Michaelis-Menten constant for O2 (J mol-1)
+		double AEJM{37000}; //!< for corn | activation energy for electron transport (J mol-1) 
+		double AEVC{58520}; //!< for corn | activation energy for photosynthesis (J mol-1)
+		double SLAMIN{20}; //!< for corn | specific leaf area under full light (m2 kg-1)
 		
 		//double SCALE_I{1.0};
 		//double SCALE_M{1.0};

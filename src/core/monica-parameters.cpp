@@ -618,10 +618,15 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_int_value(pc_CuttingDelayDays, j, "CuttingDelayDays");
   set_double_value(pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor");
 
-	set_double_value(pc_efMono, j, "ef-mono");
-	set_double_value(pc_efMonos, j, "ef-monos");
-	set_double_value(pc_efIso, j, "ef-iso");
-	set_double_value(pc_VCMAX25, j, "VCMAX25");
+	set_double_value(EF_MONO, j, "EF_MONO");
+	set_double_value(EF_MONOS, j, "EF_MONOS");
+	set_double_value(EF_ISO, j, "EF_ISO");
+	set_double_value(VCMAX25, j, "VCMAX25");
+	set_double_value(AEKC, j, "AEKC");
+	set_double_value(AEVC, j, "AEVC");
+	set_double_value(AEKO, j, "AEKO");
+	set_double_value(KC25, j, "KC25");
+	set_double_value(KO25, j, "KO25");
 
 	return res;
 }
@@ -674,10 +679,16 @@ json11::Json SpeciesParameters::to_json() const
   ,{"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress}
   ,{"CuttingDelayDays", pc_CuttingDelayDays}
   ,{"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor}
-	,{ "ef-mono", J11Array{pc_efMono, "ug gDW-1 h-1"} }
-	,{ "ef-monos", J11Array{pc_efMonos, "ug gDW-1 h-1"} }
-	,{ "ef-iso", J11Array{pc_efIso, "ug gDW-1 h-1"} }
-	,{ "VCMAX25", pc_VCMAX25}
+
+	,{"EF_MONO", J11Array{EF_MONO, "ug gDW-1 h-1"}}
+	,{"EF_MONOS", J11Array{EF_MONOS, "ug gDW-1 h-1"}}
+	,{"EF_ISO", J11Array{EF_ISO, "ug gDW-1 h-1"}}
+	,{"VCMAX25", J11Array{VCMAX25, "umol m-2 s-1"}}
+	,{"AEKC", J11Array{AEKC, "J mol-1"}}
+	,{"AEKO", J11Array{AEKO, "J mol-1"}}
+	,{"AEVC", J11Array{AEVC, "J mol-1"}}
+	,{"KC25", J11Array{KC25, "umol mol-1 ubar-1"}}
+	,{"KO25", J11Array{KO25, "mmol mol-1 mbar-1"}}
 	};
 
   return species;

@@ -146,7 +146,16 @@ namespace Monica
 
     double fc_SoilCoverage(double vc_LeafAreaIndex);
 
-    void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
+		struct CPRet
+		{
+			double kc{0}; //! temperature corrected Michaelis Menten constant for CO2 (umol mol-1)
+			double ko{0}; //!< temperature corrected Michaelis Menten constant for O2 (umol mol-1)
+			double oi{0}; //!< intercellular concentration of oxygen (mmol mol-1)
+			double ci{0}; //!< intercellular concentration of carbon (umol mol-1)
+			double comp{0}; //!< co2 compensation point for photosynthesis (umol mol-1)
+			double vcmax{0}; //!< temperature corrected maximum RubP saturated rate of carboxylation (umol m-2 s-1)
+		};
+    CPRet fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                                double vw_MaxAirTemperature,
                                double vw_MinAirTemperature,
                                double vw_GlobalRadiation,
@@ -156,8 +165,8 @@ namespace Monica
                                double pc_DefaultRadiationUseEfficiency,
                                double pc_MaxAssimilationRate,
                                double pc_MinimumTemperatureForAssimilation,
-							   double pc_OptimumTemperatureForAssimilation,
-							   double pc_MaximumTemperatureForAssimilation,
+																double pc_OptimumTemperatureForAssimilation,
+																double pc_MaximumTemperatureForAssimilation,
                                double vc_AstronomicDayLenght,
                                double vc_Declination,
                                double vc_ClearDayRadiation,
@@ -377,6 +386,7 @@ namespace Monica
     SoilColumn& soilColumn;
     CropParametersPtr perennialCropParams;
     const UserCropParameters& cropPs;
+		SpeciesParameters speciesPs;
 
     //! old N
     //    static const double vw_AtmosphericCO2Concentration;
@@ -588,10 +598,7 @@ namespace Monica
 
 		Voc::Emissions _guentherEmissions;
 		Voc::Emissions _jjvEmissions;
-		double _efMono{0};
-		double _efMonos{0};
-		double _efIso{0};
-		double _VCMAX25{0};
+		Voc::SpeciesData _vocSpecies;
 
 		std::function<void(std::string)> _fireEvent;
   };

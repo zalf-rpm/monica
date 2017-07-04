@@ -386,10 +386,15 @@ namespace Monica
     int pc_CuttingDelayDays{0};
     double pc_DroughtImpactOnFertilityFactor{0.0};
 
-		double pc_efMono{0.5}; //!< = MTsynt [ug gDW-1 h-1] Monoterpenes, which will be emitted right after synthesis
-		double pc_efMonos{0.5}; //! = MTpool [ug gDW-1 h-1] Monoterpenes, which will be stored after synthesis in stores (mostly intra- oder intercellular space of leafs and then are being emitted; quasi evaporation)
-		double pc_efIso{0}; //! Isoprene emission factor
-		double pc_VCMAX25{0}; //!
+		double EF_MONO{0.5}; //!< = MTsynt [ug gDW-1 h-1] Monoterpenes, which will be emitted right after synthesis
+		double EF_MONOS{0.5}; //! = MTpool [ug gDW-1 h-1] Monoterpenes, which will be stored after synthesis in stores (mostly intra- oder intercellular space of leafs and then are being emitted; quasi evaporation)
+		double EF_ISO{0}; //! Isoprene emission factor
+		double VCMAX25{0}; //!< maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
+		double AEKC{65800.0}; //!< activation energy for Michaelis-Menten constant for CO2 (J mol-1) | MONICA default=65800.0 | LDNDC default=59356.0
+		double AEKO{1400.0}; //!< activation energy for Michaelis-Menten constant for O2 (J mol-1) | MONICA default=65800.0 | LDNDC default=35948.0
+		double AEVC{68800.0}; //!< activation energy for photosynthesis (J mol-1) | MONICA default=68800.0 | LDNDC default=58520.0
+		double KC25{460.0}; //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1) | MONICA default=460.0 | LDNDC default=260.0
+		double KO25{330.0}; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
   };
 
   typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
