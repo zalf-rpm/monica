@@ -40,7 +40,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace Voc;
 
-Voc::Emissions Voc::calculateJJVVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+Voc::Emissions Voc::calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, std::map<CPData, double>>> sds,
 																														const MicroClimateData& mcd,
 																														double dayFraction,
 																														bool calculateParTempTerm)
@@ -49,8 +49,11 @@ Voc::Emissions Voc::calculateJJVVOCEmissionsMultipleSpecies(std::vector<SpeciesD
 
 	double const tslength = SEC_IN_DAY * dayFraction;
 
-	for(const SpeciesData& species : sds)
+	for(const auto& p : sds)
 	{
+		const SpeciesData& species = p.first;
+		const auto& cpData = p.second;
+
 		if(species.mFol > 0.0)
 		{
 			leaf_emission_t lemi;
@@ -78,7 +81,7 @@ Voc::Emissions Voc::calculateJJVVOCEmissionsMultipleSpecies(std::vector<SpeciesD
 			leminorm.fol.tempK = TREF;
 
 			// emission in dependence on light and temperature for photosynthesis and enzyme activity, weighted over canopy layers 
-			auto lems = calcLeafEmission(lemi, leminorm, species, mcd);
+			auto lems = calcLeafEmission(lemi, leminorm, species, mcd, cpData);
 
 			// conversion from (ugC g-1 h-1) to (umol m-2 ground s-1) and weighting with leaf area and time step length in seconds
 			//(reciprocal to the input conversion) 
@@ -113,6 +116,7 @@ LeafEmissions Voc::calcLeafEmission(const leaf_emission_t& lemi,
 																		const leaf_emission_t& leminorm,
 																		const SpeciesData& species,
 																		const MicroClimateData& mcd,
+																		const std::map<CPData, double>& cpData,
 																		bool calculateParTempTerm)
 {
 	LeafEmissions lems;
@@ -126,10 +130,10 @@ LeafEmissions Voc::calcLeafEmission(const leaf_emission_t& lemi,
 
 	// Emission potential from photosynthesis (energy supply); same for isoprene and monoterpene; actual and normalized 
 	// activity factor for photosynthesis (energy supply)
-	double gamma_ph = gamma_PH(lemi, species, mcd);
+	double gamma_ph = gamma_PH(lemi, species, mcd, cpData);
 
 	//!< normalized activity factor for photosynthesis (energy supply)
-	double gamma_phnorm = gamma_PH(leminorm, species, mcd);
+	double gamma_phnorm = gamma_PH(leminorm, species, mcd, cpData);
 
 	double gamma_phrel = gamma_phnorm > 0.0 ? gamma_ph / gamma_phnorm : 0.0;
 
@@ -179,7 +183,8 @@ LeafEmissions Voc::calcLeafEmission(const leaf_emission_t& lemi,
 
 double Voc::gamma_PH(const leaf_emission_t& lemi,
 										 SpeciesData species,
-										 const MicroClimateData& mcd)
+										 const MicroClimateData& mcd,
+										 std::map<CPData, double> cpData)
 {
 	double tempK = lemi.fol.tempK;
 
@@ -199,35 +204,35 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 
 	// Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 	// physiology  kc_vtfl  kc_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
-	double kc = 0;
+	double kc = cpData[KC]; // 0;
 	// Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 	// physiology  ko_vtfl  ko_vtfl  double  V : F  0.0  mol : 10 ^ -6 : mol^-1 : bar : 10 ^ -6
-	double ko = 0;
+	double ko = cpData[KO]; // 0;
 	// species and layer specific intercellular concentration of CO2 (umol mol-1)
 	// physiology  ci_vtfl  ci_vtfl  double  V : F  350.0  mol : 10 ^ -6 : m^-2
-	double ci = 0;
+	double ci = cpData[CI]; // 0;
 	// leaf internal O2 concentration per canopy layer(umol m - 2)
 	//	physiology  oi_vtfl  oi_vtfl  double  V : F  210.0  mol : 10 ^ -6 : m^-2
-	double oi = 0;
+	double oi = cpData[OI]; // 0;
 	// CO2 compensation point at 25oC per canopy layer (umol m-2)
 	// physiology  comp_vtfl  comp_vtfl  double  V : F  30.0  mol : 10 ^ -6 : m^-2
-	double comp = 0;
+	double comp = cpData[COMP]; // 0;
 	// actual activity state of rubisco  per canopy layer (umol m-2 s-1)
 	// physiology  vcMax_vtfl  vcMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
-	double vcMax = 0;
+	double vcMax = cpData[VCMAX]; // 0;
 	// actual electron transport capacity per canopy layer(umol m - 2 s - 1)
 	// physiology  jMax_vtfl  jMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
 	double jMax = 0;
 	for(auto frad : {mcd.sunlitfoliagefraction, 1 - mcd.sunlitfoliagefraction})
 	{
-		double oi_ = PO2 * MMOL_IN_MOL;
-		if(mcd.tFol > 25.0)
-			oi_ *= (0.047 - 0.001308*mcd.tFol + 0.000025603*sqr(mcd.tFol) - 0.00000021441*pow(mcd.tFol, 3.0)) / 0.026934;
-		oi += frad * oi_;
+//		double oi_ = PO2 * MMOL_IN_MOL;
+//		if(mcd.tFol > 25.0)
+//			oi_ *= (0.047 - 0.001308*mcd.tFol + 0.000025603*sqr(mcd.tFol) - 0.00000021441*pow(mcd.tFol, 3.0)) / 0.026934;
+//		oi += frad * oi_;
 
 		// For testing: photosynthesis variables without spatial or seasonal differentiation (according Collatz et al. 1991) 
 		// temperature modification term; efficiency reduction due to temperature
-		double ft_term = 1.0 / (1.0 + exp((-species.HDJ + species.SDJ * lemi.fol.tempK) / (RGAS * lemi.fol.tempK)));
+//		double ft_term = 1.0 / (1.0 + exp((-species.HDJ + species.SDJ * lemi.fol.tempK) / (RGAS * lemi.fol.tempK)));
 
 		// calc kc
 		//--------
@@ -239,17 +244,17 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 		double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
 		double term2 = sqrt(tempK / TK25);
 		// berryball.cpp:155
-		double term_arrh = term1;
+//		double term_arrh = term1;
 		//double term2 = 1; 
 
-		kc += frad * species.KC25 * exp(species.AEKC * term1) * term2;
+//		kc += frad * species.KC25 * exp(species.AEKC * term1) * term2;
 
 		// calc ko
 		//--------
 		// fw: "KO25": Michaelis-Menten constant for O2 at 25oC (mmol mol-1 / mbar)
 		//ko += species.KO25 * pow(1.2, (tempK - TEMP0) * 0.1);
 
-		ko += frad * species.KO25 * exp(species.AEKO * term1) * term2;
+//		ko += frad * species.KO25 * exp(species.AEKO * term1) * term2;
 
 		// calc comp
 		//----------
@@ -257,11 +262,11 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 		//comp += 0.5 * species.kc * species.oi * 0.21 / species.ko; // 
 
 		//berryball.cpp:216
-		static double const AEC = 24600.0;  // activation energy for compensation point
-		static double const C25 = 36.9;     // compensation point value at 25 oC
-		comp += frad * C25 * exp(AEC * term_arrh);
+//		static double const AEC = 24600.0;  // activation energy for compensation point
+//		static double const C25 = 36.9;     // compensation point value at 25 oC
+//		comp += frad * C25 * exp(AEC * term_arrh);
 		
-		ci += frad * 0.7 * 370.0;
+//		ci += frad * 0.7 * 370.0;
 
 		//calc vcMax
 		//----------
@@ -269,7 +274,7 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 		//vcMax += frad * species.VCMAX25 * ft_term * pow(2.4, (lemi.fol.tempK - TEMP0) * 0.1);
 		
 		//berryball.cpp:161/jarvis.cpp:200
-		vcMax += frad * species.VCMAX25 * exp(species.AEVC * term1) * term2;
+//		vcMax += frad * species.VCMAX25 * exp(species.AEVC * term1) * term2;
 
 		// calc jMax
 		//----------

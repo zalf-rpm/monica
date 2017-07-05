@@ -41,17 +41,18 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Voc
 {
-	Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+	Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, std::map<CPData, double>>> speciesData,
 																										const MicroClimateData& mcd,
 																										double dayFraction = 1.0,
 																										bool calculateParTempTerm = false);
 
 	inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
 																						const MicroClimateData& mcd,
+																						const std::map<CPData, double>& cpdata,
 																						double dayFraction = 1.0,
 																						bool calculateParTempTerm = false)
 	{
-		return calculateJJVVOCEmissionsMultipleSpecies({sd}, mcd, dayFraction, calculateParTempTerm);
+		return calculateJJVVOCEmissionsMultipleSpecies({std::make_pair(sd, cpdata)}, mcd, dayFraction, calculateParTempTerm);
 	}
 
 	//this->get_option< bool >( "CalcParTempDependence", false);
@@ -59,11 +60,13 @@ namespace Voc
 																 const leaf_emission_t& leminorm,
 																 const SpeciesData& sd,
 																 const MicroClimateData& mcd,
+																 const std::map<CPData, double>& cpData,
 																 bool calculateParTempTerm = false);
 
 	double gamma_PH(const leaf_emission_t& lemi,
 									SpeciesData sd,
-									const MicroClimateData& mcd);
+									const MicroClimateData& mcd,
+									std::map<CPData, double> cpData);
 
 	struct GammaEnRes
 	{

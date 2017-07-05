@@ -146,16 +146,7 @@ namespace Monica
 
     double fc_SoilCoverage(double vc_LeafAreaIndex);
 
-		struct CPRet
-		{
-			double kc{0}; //! temperature corrected Michaelis Menten constant for CO2 (umol mol-1)
-			double ko{0}; //!< temperature corrected Michaelis Menten constant for O2 (umol mol-1)
-			double oi{0}; //!< intercellular concentration of oxygen (mmol mol-1)
-			double ci{0}; //!< intercellular concentration of carbon (umol mol-1)
-			double comp{0}; //!< co2 compensation point for photosynthesis (umol mol-1)
-			double vcmax{0}; //!< temperature corrected maximum RubP saturated rate of carboxylation (umol m-2 s-1)
-		};
-    CPRet fc_CropPhotosynthesis(double vw_MeanAirTemperature,
+		void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                                double vw_MaxAirTemperature,
                                double vw_MinAirTemperature,
                                double vw_GlobalRadiation,
@@ -599,6 +590,7 @@ namespace Monica
 		Voc::Emissions _guentherEmissions;
 		Voc::Emissions _jjvEmissions;
 		Voc::SpeciesData _vocSpecies;
+		std::map<Voc::CPData, double> _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
   };

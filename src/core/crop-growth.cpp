@@ -1196,27 +1196,25 @@ double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
  *
  * @author Claas Nendel
  */
-CropGrowth::CPRet CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
-																										double vw_MaxAirTemperature,
-																										double vw_MinAirTemperature,
-																										double vc_GlobalRadiation,
-																										double vw_AtmosphericCO2Concentration,
-																										double vs_Latitude,
-																										double vc_LeafAreaIndex,
-																										double pc_DefaultRadiationUseEfficiency,
-																										double pc_MaxAssimilationRate,
-																										double pc_MinimumTemperatureForAssimilation,
-																										double pc_OptimumTemperatureForAssimilation,
-																										double pc_MaximumTemperatureForAssimilation,
-																										double vc_AstronomicDayLenght,
-																										double vc_Declination,
-																										double vc_ClearDayRadiation,
-																										double vc_EffectiveDayLength,
-																										double vc_OvercastDayRadiation)
+void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
+																			 double vw_MaxAirTemperature,
+																			 double vw_MinAirTemperature,
+																			 double vc_GlobalRadiation,
+																			 double vw_AtmosphericCO2Concentration,
+																			 double vs_Latitude,
+																			 double vc_LeafAreaIndex,
+																			 double pc_DefaultRadiationUseEfficiency,
+																			 double pc_MaxAssimilationRate,
+																			 double pc_MinimumTemperatureForAssimilation,
+																			 double pc_OptimumTemperatureForAssimilation,
+																			 double pc_MaximumTemperatureForAssimilation,
+																			 double vc_AstronomicDayLenght,
+																			 double vc_Declination,
+																			 double vc_ClearDayRadiation,
+																			 double vc_EffectiveDayLength,
+																			 double vc_OvercastDayRadiation)
 {
 	using namespace Voc;
-
-	CPRet res;
 
 	double vc_CO2CompensationPoint = 0.0; // old COcomp
 	double vc_CO2CompensationPointReference = 0.0;
@@ -1339,8 +1337,10 @@ CropGrowth::CPRet CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature
 			double term2 = sqrt(tempK / TK25);
 			KTkc = exp(speciesPs.AEKC * term1) * term2;
 			KTko = exp(speciesPs.AEKO * term1) * term2;
-			res.kc = Mkc = speciesPs.KC25 * KTkc; //[µmol mol-1]
-			res.ko = Mko = speciesPs.KO25 * KTko; //[mmol mol-1]
+			Mkc = speciesPs.KC25 * KTkc; //[µmol mol-1]
+			_cropPhotosynthesisResults[KC] = Mkc;
+			Mko = speciesPs.KO25 * KTko; //[mmol mol-1]
+			_cropPhotosynthesisResults[KO] = Mko;
 
 			//OLD exponential response
 			//KTvmax = exp(speciesPs.AEVC * term1) * term2;
@@ -1353,25 +1353,29 @@ CropGrowth::CPRet CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature
 			// Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
 			vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
 			vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
-			res.vcmax = vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
+			vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
+			_cropPhotosynthesisResults[VCMAX] = vc_Vcmax;
 			vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
 			
 			//Oi = 210.0 + (0.047
-			res.oi = Oi = 210.0 * (0.047 
+			Oi = 210.0 * (0.047 
 										- 0.0013087 * vw_MeanAirTemperature
 										+ 0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature)
 										- 0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature))
 				/ 0.026934;// [mmol mol-1]
+			_cropPhotosynthesisResults[OI] = Oi;
 
-			res.ci = Ci = vw_AtmosphericCO2Concentration * 0.7 
+			Ci = vw_AtmosphericCO2Concentration * 0.7 
 				* (1.674 - 0.061294 * vw_MeanAirTemperature
 					 + 0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature)
 					 - 0.0000088741 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature))
 				/ 0.73547;// [µmol mol-1]
+			_cropPhotosynthesisResults[CI] = Ci;
 
 			//similar to LDNDC::jarvis.cpp:217
-			res.comp = vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko); // [µmol mol-1] 
+			vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko); // [µmol mol-1] 
 			vc_CO2CompensationPointReference = 0.5 * 0.21 * vc_VcmaxReference * Mkc * Oi / (vc_VcmaxReference * Mko); // [µmol mol-1]
+			_cropPhotosynthesisResults[COMP] = vc_CO2CompensationPoint;
 
 			// Mitchell et al. 1995:
 			vc_RadiationUseEfficiency = min(0.77 / 2.1 * (Ci - vc_CO2CompensationPoint)
@@ -1875,8 +1879,6 @@ CropGrowth::CPRet CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature
 	}
 	// This section is now inactive
 	// #########################################################################
-
-	return res;
 }
 
 
@@ -3481,7 +3483,7 @@ void CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
 	_guentherEmissions = Voc::calculateGuentherVOCEmissions(species, mcd);
 	//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
-	_jjvEmissions = Voc::calculateJJVVOCEmissions(species, mcd);
+	_jjvEmissions = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults);
 	//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
 }
 

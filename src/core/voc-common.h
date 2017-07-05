@@ -132,6 +132,17 @@ namespace Voc
 
 	//---------------------------------------------------------------------------
 
+	//crop photosynthesis result names
+	enum CPData 
+	{ 
+		KC, //!< temperature corrected Michaelis Menten constant for CO2 (umol mol-1)
+		KO, //!< temperature corrected Michaelis Menten constant for O2 (umol mol-1)
+		OI, //!< intercellular concentration of oxygen (mmol mol-1)
+		CI, //!< intercellular concentration of carbon (umol mol-1)
+		COMP, //!< co2 compensation point for photosynthesis (umol mol-1)
+		VCMAX //!< temperature corrected maximum RubP saturated rate of carboxylation (umol m-2 s-1)
+	};
+
 	struct SpeciesData
 	{
 		int id{0};
