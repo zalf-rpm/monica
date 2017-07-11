@@ -1405,29 +1405,32 @@ Errors UserCropParameters::merge(json11::Json j)
   set_double_value(pc_Tortuosity, j, "Tortuosity");
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
 
+	set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j, "__enable_Photosynthesis_WangEngelTemperatureResponse__");
+
 	return res;
 }
 
 json11::Json UserCropParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserCropParameters"},
-    {"CanopyReflectionCoefficient", pc_CanopyReflectionCoefficient},
-    {"ReferenceMaxAssimilationRate", pc_ReferenceMaxAssimilationRate},
-    {"ReferenceLeafAreaIndex", pc_ReferenceLeafAreaIndex},
-    {"MaintenanceRespirationParameter1", pc_MaintenanceRespirationParameter1},
-    {"MaintenanceRespirationParameter2", pc_MaintenanceRespirationParameter2},
-    {"MinimumNConcentrationRoot", pc_MinimumNConcentrationRoot},
-    {"MinimumAvailableN", pc_MinimumAvailableN},
-    {"ReferenceAlbedo", pc_ReferenceAlbedo},
-    {"StomataConductanceAlpha", pc_StomataConductanceAlpha},
-    {"SaturationBeta", pc_SaturationBeta},
-    {"GrowthRespirationRedux", pc_GrowthRespirationRedux},
-    {"MaxCropNDemand", pc_MaxCropNDemand},
-    {"GrowthRespirationParameter1", pc_GrowthRespirationParameter1},
-    {"GrowthRespirationParameter2", pc_GrowthRespirationParameter2},
-    {"Tortuosity", pc_Tortuosity},
-	{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps }
+  return json11::Json::object 
+	{{"type", "UserCropParameters"}
+  ,{"CanopyReflectionCoefficient", pc_CanopyReflectionCoefficient}
+	,{"ReferenceMaxAssimilationRate", pc_ReferenceMaxAssimilationRate}
+  ,{"ReferenceLeafAreaIndex", pc_ReferenceLeafAreaIndex}
+  ,{"MaintenanceRespirationParameter1", pc_MaintenanceRespirationParameter1}
+  ,{"MaintenanceRespirationParameter2", pc_MaintenanceRespirationParameter2}
+  ,{"MinimumNConcentrationRoot", pc_MinimumNConcentrationRoot}
+  ,{"MinimumAvailableN", pc_MinimumAvailableN}
+  ,{"ReferenceAlbedo", pc_ReferenceAlbedo}
+  ,{"StomataConductanceAlpha", pc_StomataConductanceAlpha}
+  ,{"SaturationBeta", pc_SaturationBeta}
+  ,{"GrowthRespirationRedux", pc_GrowthRespirationRedux}
+  ,{"MaxCropNDemand", pc_MaxCropNDemand}
+  ,{"GrowthRespirationParameter1", pc_GrowthRespirationParameter1}
+  ,{"GrowthRespirationParameter2", pc_GrowthRespirationParameter2}
+  ,{"Tortuosity", pc_Tortuosity}
+	,{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps}
+	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
   };
 }
 

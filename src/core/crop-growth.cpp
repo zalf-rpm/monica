@@ -1343,12 +1343,13 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			_cropPhotosynthesisResults[KO] = Mko;
 
 			//OLD exponential response
-			//KTvmax = exp(speciesPs.AEVC * term1) * term2;
-			KTvmax = max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
-																												 pc_MinimumTemperatureForAssimilation,
-																												 pc_OptimumTemperatureForAssimilation,
-																												 pc_MaximumTemperatureForAssimilation,
-																												 1.0));
+			KTvmax = cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__
+				? max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
+																										pc_MinimumTemperatureForAssimilation,
+																										pc_OptimumTemperatureForAssimilation,
+																										pc_MaximumTemperatureForAssimilation,
+																										1.0))
+				: exp(speciesPs.AEVC * term1) * term2;
 
 			// Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
 			vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
