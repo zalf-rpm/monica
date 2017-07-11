@@ -18,7 +18,7 @@ The acronym MONICA is derived from „MOdel of Nitrogen and Carbon dynamics in A
 
 # Download
 
-32bit Windows builds can be downloaded from [the ZALF cloud](https://zcloud.zalf.de/index.php/s/ELkme4kaLX1a3Ei). Download the most current version with the highest build number.
+Builds can be downloaded from the repositorys [releases page](https://github.com/zalf-lsa/monica/releases).
 
 
 # Building
