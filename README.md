@@ -18,7 +18,7 @@ The acronym MONICA is derived from „MOdel of Nitrogen and Carbon dynamics in A
 
 # Download
 
-Builds can be downloaded from the repositorys [releases page](https://github.com/zalf-lsa/monica/releases).
+Builds can be downloaded from the repository's [releases page](https://github.com/zalf-lsa/monica/releases).
 
 
 # Building
@@ -100,6 +100,7 @@ Authors
 * Claas Nendel (claas (dot) nendel [at] zalf (dot) de)
 * Xenia Specka (xenia (dot) specka [at] zalf (dot) de)
 * Michael Berg-Mohnicke (michael (dot) berg [at] zalf (dot) de)
+* Tommaso Stella (tommaso (dot) stella [at] zalf (dot) de)
 
 Maintainers:
 Currently maintained by the authors.
