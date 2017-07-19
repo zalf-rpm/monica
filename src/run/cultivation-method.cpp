@@ -92,9 +92,12 @@ Errors Workstep::merge(json11::Json j)
 
 json11::Json Workstep::to_json() const
 {
-	return json11::Json::object{
-		{"type", type()},
-		{"date", date().toIsoDateString()},};
+	return json11::Json::object
+	{{"type", type()}
+	,{"date", date().toIsoDateString()}
+	,{"days", _applyNoOfDaysAfterEvent}
+	,{"after", _afterEvent}
+	};
 }
 
 bool Workstep::apply(MonicaModel* model)
@@ -119,18 +122,19 @@ bool Workstep::applyWithPossibleCondition(MonicaModel* model)
 
 bool Workstep::condition(MonicaModel* model)
 {
-	if(_afterEvent.empty())
+	if(_afterEvent == "" 
+		 || _applyNoOfDaysAfterEvent <= 0)
 		return false;
 
 	auto currEvents = model->currentEvents();
 	auto prevEvents = model->previousDaysEvents();
 	
 	auto ceit = currEvents.find(_afterEvent);
-	if(_daysAfterEventCount >= 0)
+	if(_daysAfterEventCount > 0)
 		_daysAfterEventCount++;
 	else if(ceit != currEvents.end()
 					|| prevEvents.find(_afterEvent) != prevEvents.end())
-		_daysAfterEventCount = 0;
+		_daysAfterEventCount = 1;
 
 	return _daysAfterEventCount == _applyNoOfDaysAfterEvent;
 }
@@ -145,7 +149,7 @@ bool Workstep::reinit(Tools::Date date, bool addYear, bool forceInitYear)
 		_absDate = Date();
 
 	_isActive = true;
-	_daysAfterEventCount = -1;
+	_daysAfterEventCount = 0;
 
 	return addedYear;
 }
@@ -1055,6 +1059,7 @@ Errors CultivationMethod::merge(json11::Json j)
 	set_bool_value(_irrigateCrop, j, "irrigateCrop");
 	set_bool_value(_canBeSkipped, j, "can-be-skipped");
 	set_bool_value(_isCoverCrop, j, "is-cover-crop");
+	set_bool_value(_repeat, j, "repeat");
 
 	for(auto wsj : j["worksteps"].array_items())
 	{
@@ -1100,6 +1105,7 @@ json11::Json CultivationMethod::to_json() const
   ,{"irrigateCrop", _irrigateCrop}
 	,{"can-be-skipped", _canBeSkipped}
 	,{"is-cover-crop", _isCoverCrop}
+	,{"repeat", _repeat}
   ,{"worksteps", wss}
 	};
 }

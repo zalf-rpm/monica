@@ -102,7 +102,7 @@ namespace Monica
 		Tools::Date _absDate;
 		int _applyNoOfDaysAfterEvent{0};
 		std::string _afterEvent;
-		int _daysAfterEventCount{-1};
+		int _daysAfterEventCount{0};
 		bool _isActive{true};
 	};
 
@@ -597,6 +597,8 @@ namespace Monica
 
 		bool isCoverCrop() const { return _isCoverCrop; }
 
+		bool repeat() const { return _repeat; }
+
 	private:
 		std::multimap<Tools::Date, WSPtr> _allWorksteps;
 		std::multimap<Tools::Date, WSPtr> _allAbsWorksteps;
@@ -607,6 +609,7 @@ namespace Monica
     bool _irrigateCrop{false};
 		bool _canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
 		bool _isCoverCrop{false}; //! is like canBeSkipped (and implies it), but different rule for when cultivation methods will be skipped
+		bool _repeat{true}; //! if false the cultivation method won't participate in wrapping at the end of the crop rotation
 	};
 	
 	template<>

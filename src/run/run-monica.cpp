@@ -729,9 +729,8 @@ Output Monica::runMonica(Env env)
 			{
 				//delete fully cultivation methods with only absolute worksteps,
 				//because they won't participate in a new run when wrapping the crop rotation 
-				//delete fully cultivation methods with only absolute worksteps,
-				//because they won't participate in a new run when wrapping the crop rotation 
-				if((*cmit)->areOnlyAbsoluteWorksteps())
+				if((*cmit)->areOnlyAbsoluteWorksteps() 
+					 || !(*cmit)->repeat())
 					cmit = cropRotation.erase(cmit);
 				else
 					cmit++;
