@@ -103,16 +103,19 @@ void MonicaModel::seedCrop(CropPtr crop)
 {
   debug() << "seedCrop" << endl;
   delete _currentCropGrowth;
-  p_daysWithCrop = 0;
+	_currentCropGrowth = NULL;
+	
+	p_daysWithCrop = 0;
   p_accuNStress = 0.0;
   p_accuWaterStress = 0.0;
   p_accuHeatStress = 0.0;
   p_accuOxygenStress = 0.0;
 
-  _currentCropGrowth = NULL;
-  _currentCrop = crop;
-  if(_currentCrop->isValid())
+  if(crop->isValid())
   {
+		_currentCrop = crop;
+		_cultivationMethodCount++;
+
     auto cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,
                                         *cps,

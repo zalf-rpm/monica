@@ -363,6 +363,12 @@ BOTRes& Monica::buildOutputTable()
 				return 1;
 			});
 
+			build({id++, "CM-count", "", "output the order number of the current cultivation method"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cultivationMethodCount();
+			});
+
 			build({id++, "Date", "", "output current date"},
 						[](const MonicaModel& monica, OId oid)
 			{

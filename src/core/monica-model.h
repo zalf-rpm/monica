@@ -232,6 +232,8 @@ namespace Monica
 		const std::set<std::string>& currentEvents() const { return _currentEvents; }
 		const std::set<std::string>& previousDaysEvents() const { return _previousDaysEvents; }
 		
+		int cultivationMethodCount() const { return _cultivationMethodCount; }
+
 	private:
 		const SiteParameters _sitePs;
 		const UserSoilMoistureParameters _smPs;
@@ -281,6 +283,8 @@ namespace Monica
 
 		double vw_AtmosphericCO2Concentration{0.0};
 		double vs_GroundwaterDepth{0.0};
+
+		int _cultivationMethodCount{0};
 	};
 }
 
