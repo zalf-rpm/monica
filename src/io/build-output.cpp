@@ -332,7 +332,7 @@ BOTRes& Monica::buildOutputTable()
 
 	//map of output ids to outputfunction
 	static BOTRes m;
-	static bool tableBuild = false;
+	static bool tableBuilt = false;
 
 	typedef decltype(m.setfs)::mapped_type SETF_T;
 	auto build = [&](OutputMetadata r, 
@@ -347,13 +347,13 @@ BOTRes& Monica::buildOutputTable()
 	};
 
 	// only initialize once
-	if(!tableBuild)
+	if(!tableBuilt)
 	{
 		lock_guard<mutex> lock(lockable);
 
 		//test if after waiting for the lock the other thread
 		//already initialized the whole thing
-		if(!tableBuild)
+		if(!tableBuilt)
 		{
 			int id = 0;
 
@@ -1223,7 +1223,7 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_ResiduesNContent(), 1) : 0.0;
 			});
 
-			tableBuild = true;
+			tableBuilt = true;
 		}
 	}
 
