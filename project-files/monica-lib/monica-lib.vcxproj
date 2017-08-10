@@ -185,6 +185,7 @@
     <ClInclude Include="..\..\src\core\crop.h" />
     <ClInclude Include="..\..\src\core\monica-parameters.h" />
     <ClInclude Include="..\..\src\core\monica-model.h" />
+    <ClInclude Include="..\..\src\core\photosynthesis-FvCB.h" />
     <ClInclude Include="..\..\src\core\soilcolumn.h" />
     <ClInclude Include="..\..\src\core\soilmoisture.h" />
     <ClInclude Include="..\..\src\core\soilorganic.h" />
@@ -215,6 +216,7 @@
     <ClCompile Include="..\..\..\util\tools\read-ini.cpp" />
     <ClCompile Include="..\..\src\core\crop-growth.cpp" />
     <ClCompile Include="..\..\src\core\crop.cpp" />
+    <ClCompile Include="..\..\src\core\photosynthesis-FvCB.cpp" />
     <ClCompile Include="..\..\src\core\voc-guenther.cpp" />
     <ClCompile Include="..\..\src\core\voc-jjv.cpp" />
     <ClCompile Include="..\..\src\core\monica-parameters.cpp" />
