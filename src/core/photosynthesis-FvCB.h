@@ -31,7 +31,7 @@ namespace FvCB
 	struct FvCB_canopy_hourly_params {
 		double Vcmax_25;
 		double kn = { 0.713 }; //coefficient of leaf nitrogen allocation
-		double gb = { 1.5 }; //boundary layer conducance, mol m-2 s-1 bar-1; TODO: function needed
+		double gb = { 1.5 }; //boundary layer conductance, mol m-2 s-1 bar-1; TODO: function needed
 		double g0 = { 0.01 }; //residual stomatal conductance (with irradiance approaching zero), mol m-2 s-1 bar-1
 		double gm_25 = { 0.10125 }; //mesophyll conductance (C3) at 25°C, mol m-2 s-1 bar-1
 	};
@@ -45,7 +45,7 @@ namespace FvCB
 		double VPD; //KPa
 		double Ca; //ambient CO2 partial pressure, µbar or µmol mol-1
 		double fO3 = { 1.0 }; //effect of high ozone fluxes on rubisco-limited photosynthesis
-		double flsO3 = { 1.0 }; //effect of cumulative ozone uptake on rubisco-limited photosynthesis
+		double fls = { 1.0 }; //effect of senescence on rubisco-limited photosynthesis, modified by cumulative ozone uptake 
 	};
 
 	struct FvCB_canopy_hourly_out {
@@ -55,7 +55,7 @@ namespace FvCB
 		double canopy_resp; //µmol CO2 m-2 h-1
 		double canopy_gross_photos; //µmol CO2 m-2 h-1
 		double gs_sun; //mol m-2 s-1 bar-1
-		double gs_sh;
+		double gs_sh; //mol m-2 s-1 bar-1
 	};
 	
 	FvCB_canopy_hourly_out FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);

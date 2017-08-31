@@ -529,8 +529,8 @@ FvCB_canopy_hourly_out FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_canopy_
 	double A_rub_sh = A1_f(lumped_rub_sh); //µmol CO2 m-2 s-1 (unit ground area)
 	double A_el_sh = A1_f(lumped_el_sh);
 
-	double A_sun = std::fmin(A_rub_sun * in.fO3 * in.flsO3, A_el_sun);
-	double A_sh = std::fmin(A_rub_sh * in.fO3 * in.flsO3, A_el_sh);
+	double A_sun = std::fmin(A_rub_sun * in.fO3 * in.fls, A_el_sun);
+	double A_sh = std::fmin(A_rub_sh * in.fO3 * in.fls, A_el_sh);
 	
 	out.canopy_net_photos = (A_sun + A_sh) * 3600.0;
 	out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;
