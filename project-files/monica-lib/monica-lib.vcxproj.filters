@@ -162,6 +162,9 @@
     <ClInclude Include="..\..\src\io\build-output.h">
       <Filter>Headerdateien\monica\io</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\photosynthesis-FvCB.h">
+      <Filter>Headerdateien\monica\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\util\db\sqlite3.c">
@@ -250,6 +253,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\io\build-output.cpp">
       <Filter>Quelldateien\monica\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\photosynthesis-FvCB.cpp">
+      <Filter>Quelldateien\monica\core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
