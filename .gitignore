@@ -1,3 +1,7 @@
+cluster2-release/
+cluster3-release/
+CMakeFiles/
+
 # dot files
 .*
 
