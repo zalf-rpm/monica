@@ -129,7 +129,7 @@ target_link_libraries(libmonica
 	${CMAKE_THREAD_LIBS_INIT}
 	dl
 )
-set_target_properties(libmonica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+#set_target_properties(libmonica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 set_target_properties(libmonica PROPERTIES PREFIX "")
 set_target_properties(libmonica PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_EXPORTS")
 
@@ -143,7 +143,7 @@ target_link_libraries(monica
 	${CMAKE_THREAD_LIBS_INIT}
 	dl
 )
-set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+#set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -231,7 +231,7 @@ target_link_libraries(monica-run
 	libmonica
 )
 set_target_properties(monica-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
-set_target_properties(monica-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
+#set_target_properties(monica-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 #------------------------------------------------------------------------------
 
@@ -268,6 +268,7 @@ target_link_libraries(monica-zmq-control
 	dl
 	zmq
 )
+#set_target_properties(monica-zmq-control PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -304,6 +305,7 @@ target_link_libraries(monica-zmq-control-send
 	dl
 	zmq
 )
+#set_target_properties(monica-zmq-control-send PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -340,6 +342,7 @@ target_link_libraries(monica-zmq-proxy
 	dl
 	zmq
 )
+#set_target_properties(monica-zmq-proxy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -437,6 +440,7 @@ target_link_libraries(monica-zmq-run
 	libmonica
 )
 set_target_properties(monica-zmq-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
+#set_target_properties(monica-zmq-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -516,6 +520,7 @@ target_link_libraries(monica-zmq-server
 	libmonica
 )
 set_target_properties(monica-zmq-server PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
+#set_target_properties(monica-zmq-server PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -608,6 +613,6 @@ target_link_libraries(monica_python
 	libmonica
 )
 set_target_properties(monica_python PROPERTIES PREFIX "")
-set_target_properties(monica_python PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+#set_target_properties(monica_python PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 set_target_properties(monica_python PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
