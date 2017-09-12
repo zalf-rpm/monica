@@ -1050,6 +1050,14 @@ BOTRes& Monica::buildOutputTable()
 				return ci == cd.end() ? 0.0 : round(ci->second, 4);
 			});
 
+			build({id++, "Tmax>=40", "0|1", "if Tmax >= 40°C then 1 else 0"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				const auto& cd = monica.currentStepClimateData();
+				auto ci = cd.find(Climate::tmax);
+				return ci == cd.end() ? 0 : (ci->second >= 40 ? 1 : 0);
+			});
+
 			build({id++, "Precip", "mm", "Precipitation"},
 						[](const MonicaModel& monica, OId oid)
 			{
