@@ -21,6 +21,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace FvCB;
 
+std::map<FvCB_Model_Consts, double> FvCB::c_bernacchi = {{Rd, 18.72},{Vcmax, 26.35},{Vomax, 22.98},{Gamma, 19.02},{Kc, 38.05},{Ko, 20.30},{Jmax, 17.57}}; //dimensionless
+std::map<FvCB_Model_Consts, double> FvCB::deltaH_bernacchi = {{Rd, 46.39},{Vcmax, 65.33},{Vomax, 60.11},{Gamma, 37.83},{Kc, 79.43},{Ko, 36.38},{Jmax, 43.54}}; //kJ mol - 1
+
 //estimate the fraction of diffuse radiation; it requires hourly input
 double diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev)
 {
@@ -439,7 +442,7 @@ double derive_gs_f(double A, double x1, double x2, double gamma, double Rd, doub
 
 #pragma region
 //Model composition (C3)
-FvCB_canopy_hourly_out FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par)
+FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par)
 {
 	FvCB_canopy_hourly_out out;
 

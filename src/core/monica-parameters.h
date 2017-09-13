@@ -854,6 +854,7 @@ namespace Monica
 		bool pc_AdjustRootDepthForSoilProps{true};
 
 		bool __enable_Photosynthesis_WangEngelTemperatureResponse__{false};
+		bool __enable_hourly_FvCB_photosynthesis__{false};
 	};
 
 	//----------------------------------------------------------------------------

@@ -162,7 +162,8 @@ namespace Monica
                                double vc_Declination,
                                double vc_ClearDayRadiation,
                                double vc_EffectiveDayLength,
-                               double vc_OvercastDayRadiation);
+                               double vc_OvercastDayRadiation,
+															 int vs_JulianDay);
 
     void fc_HeatStressImpact(double vw_MeanAirTemperature,
                              double vw_MaxAirTemperature,
@@ -367,6 +368,11 @@ namespace Monica
 
     void fc_UpdateCropParametersForPerennial();
 
+		std::pair<const std::vector<double>&, const std::vector<double>&> sunlitAndShadedLAI() const 
+		{ 
+			return make_pair(vc_sunlitLeafAreaIndex, vc_shadedLeafAreaIndex); 
+		}
+
   private:
     int pc_NumberOfAbovegroundOrgans() const;
 
@@ -460,6 +466,8 @@ namespace Monica
     double vc_InterceptionStorage{0.0};
     double vc_KcFactor{0.6};			//! old FKc
     double vc_LeafAreaIndex{0.0};	//! old LAI
+		std::vector<double> vc_sunlitLeafAreaIndex;	
+		std::vector<double> vc_shadedLeafAreaIndex;	
     double pc_LowTemperatureExposure;
     double pc_LimitingTemperatureHeatStress;
     double vc_LT50{-3.0};

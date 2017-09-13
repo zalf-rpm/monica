@@ -25,8 +25,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 namespace FvCB
 {
 	enum FvCB_Model_Consts { Rd = 0, Vcmax, Vomax, Gamma, Kc, Ko, Jmax };
-	std::map<FvCB_Model_Consts, double> c_bernacchi = { { Rd, 18.72},{ Vcmax, 26.35 },{ Vomax, 22.98 },{ Gamma, 19.02 },{ Kc, 38.05 },{ Ko, 20.30 }, { Jmax, 17.57 } }; //dimensionless
-	std::map<FvCB_Model_Consts, double> deltaH_bernacchi = { { Rd, 46.39 },{ Vcmax, 65.33 },{ Vomax, 60.11 },{ Gamma, 37.83 },{ Kc, 79.43 },{ Ko, 36.38 },{ Jmax, 43.54 } }; //kJ mol - 1
+	extern std::map<FvCB_Model_Consts, double> c_bernacchi;// = {{ Rd, 18.72},{ Vcmax, 26.35 },{ Vomax, 22.98 },{ Gamma, 19.02 },{ Kc, 38.05 },{ Ko, 20.30 }, { Jmax, 17.57 }}; //dimensionless
+	extern std::map<FvCB_Model_Consts, double> deltaH_bernacchi;// = {{ Rd, 46.39 },{ Vcmax, 65.33 },{ Vomax, 60.11 },{ Gamma, 37.83 },{ Kc, 79.43 },{ Ko, 36.38 },{ Jmax, 43.54 }}; //kJ mol - 1
 		
 	struct FvCB_canopy_hourly_params {
 		double Vcmax_25;

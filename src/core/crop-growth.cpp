@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-guenther.h"
 #include "voc-jjv.h"
 #include "voc-common.h"
+#include "photosynthesis-FvCB.h"
 
 const double PI = 3.14159265358979323;
 
@@ -91,6 +92,8 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_InitialKcFactor(cps.speciesParams.pc_InitialKcFactor)
 	, pc_InitialOrganBiomass(cps.speciesParams.pc_InitialOrganBiomass)
 	, pc_InitialRootingDepth(cps.speciesParams.pc_InitialRootingDepth)
+	, vc_sunlitLeafAreaIndex(24)
+	, vc_shadedLeafAreaIndex(24)
 	, pc_LowTemperatureExposure(cps.cultivarParams.pc_LowTemperatureExposure)
 	, pc_LimitingTemperatureHeatStress(cps.speciesParams.pc_LimitingTemperatureHeatStress)
 	, pc_LT50cultivar(cps.cultivarParams.pc_LT50cultivar)
@@ -394,7 +397,8 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 													vc_Declination,
 													vc_ClearDayRadiation,
 													vc_EffectiveDayLength,
-													vc_OvercastDayRadiation);
+													vc_OvercastDayRadiation,
+													vs_JulianDay);
 
 		fc_HeatStressImpact(vw_MaxAirTemperature,
 												vw_MinAirTemperature,
@@ -1212,7 +1216,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 																			 double vc_Declination,
 																			 double vc_ClearDayRadiation,
 																			 double vc_EffectiveDayLength,
-																			 double vc_OvercastDayRadiation)
+																			 double vc_OvercastDayRadiation,
+																			 int vs_JulianDay)
 {
 	using namespace Voc;
 
@@ -1735,6 +1740,55 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	{
 		vc_GrossCO2Assimilation = vc_GrossCO2Assimilation; // *  vc_TranspirationDeficit;
 	}
+
+#pragma region 
+	
+	double dailyGP = 0;
+	if(cropPs.__enable_hourly_FvCB_photosynthesis__)
+	{
+		vector<double> hourlyGlobrads;
+		vector<double> hourlyExtrarad;
+		int sunriseH = 0;
+
+		for(int h = 0; h < 24; h++)
+		{
+			double hgr = hourlyRad(vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h);
+			if(hgr > 0 && hourlyGlobrads.back() == 0.0)
+				sunriseH = h;
+			hourlyGlobrads.push_back(hgr);
+
+			hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
+		}
+
+		using namespace FvCB;
+
+		for(int h = 0; h < 24; h++)
+		{
+			FvCB_canopy_hourly_in in;
+
+			double hourlyTemp = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
+			in.leaf_temp = hourlyTemp;
+			in.global_rad = hourlyGlobrads.at(h);
+			in.extra_terr_rad = hourlyExtrarad.at(h);
+			in.LAI = vc_LeafAreaIndex;
+			in.solar_el = solarElevation(h, vs_Latitude, vs_JulianDay);
+			in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
+			in.Ca = vw_AtmosphericCO2Concentration;
+
+			FvCB_canopy_hourly_params hps;
+			hps.Vcmax_25 = speciesPs.VCMAX25;
+
+			auto res = FvCB_canopy_hourly(in, hps);
+			vc_sunlitLeafAreaIndex[h] = res.LAI_sun;
+			vc_shadedLeafAreaIndex[h] = res.LAI_sh;
+
+			// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
+			dailyGP += res.canopy_gross_photos * 44. / 100. / 1000.;
+		}
+	}
+#pragma endregion hourly FvCB code
+	
+	vc_GrossCO2Assimilation = cropPs.__enable_hourly_FvCB_photosynthesis__ ? dailyGP : vc_GrossCO2Assimilation;
 
 	// Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [kg CH2O ha-1 d-1]
 	vc_GrossPhotosynthesis = vc_GrossCO2Assimilation * 30.0 / 44.0;

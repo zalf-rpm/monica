@@ -1406,6 +1406,7 @@ Errors UserCropParameters::merge(json11::Json j)
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
 
 	set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j, "__enable_Photosynthesis_WangEngelTemperatureResponse__");
+	set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
 
 	return res;
 }
@@ -1431,6 +1432,7 @@ json11::Json UserCropParameters::to_json() const
   ,{"Tortuosity", pc_Tortuosity}
 	,{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps}
 	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
+	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
   };
 }
 
