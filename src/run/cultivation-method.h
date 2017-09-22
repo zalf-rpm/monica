@@ -529,7 +529,8 @@ namespace Monica
 		template<class Application>
 		void addApplication(const Application& a)
 		{
-      _allWorksteps.insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
+      //_allWorksteps.insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
+			_allWorksteps.push_back(std::make_shared<Application>(a));
     }
 
     void apply(const Tools::Date& date, MonicaModel* model) const;
@@ -574,7 +575,8 @@ namespace Monica
 
 		Tools::Date absEndDate() const;
 
-    const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _allWorksteps; }
+    //const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _allWorksteps; }
+		const std::vector<WSPtr>& getWorksteps() const { return _allWorksteps; }
 
     void clearWorksteps() { _allWorksteps.clear(); }
 
@@ -600,8 +602,10 @@ namespace Monica
 		bool repeat() const { return _repeat; }
 
 	private:
-		std::multimap<Tools::Date, WSPtr> _allWorksteps;
-		std::multimap<Tools::Date, WSPtr> _allAbsWorksteps;
+		std::vector<WSPtr> _allWorksteps;
+		std::vector<WSPtr> _allAbsWorksteps;
+		//std::multimap<Tools::Date, WSPtr> _allWorksteps;
+		//std::multimap<Tools::Date, WSPtr> _allAbsWorksteps;
 		std::vector<WSPtr> _unfinishedDynamicWorksteps;
     int _customId{0};
 		std::string _name;
@@ -615,14 +619,16 @@ namespace Monica
 	template<>
 	DLL_API inline void CultivationMethod::addApplication<Sowing>(const Sowing& s)
   {
-    _allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Sowing>(s)));
+    //_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Sowing>(s)));
+		_allWorksteps.push_back(std::make_shared<Sowing>(s));
     _crop = s.crop();
   }
 
 	template<>
 	DLL_API inline void CultivationMethod::addApplication<AutomaticSowing>(const AutomaticSowing& s)
 	{
-		_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<AutomaticSowing>(s)));
+		//_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<AutomaticSowing>(s)));
+		_allWorksteps.push_back(std::make_shared<AutomaticSowing>(s));
 		_crop = s.crop();
 	}
 	
