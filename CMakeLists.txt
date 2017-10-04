@@ -57,6 +57,9 @@ set(LIBMONICA_SOURCE
 	src/core/voc-jjv.h
 	src/core/voc-jjv.cpp
 
+	src/core/photosynthesis-FvCB.h
+	src/core/photosynthesis-FvCB.cpp
+	
 	src/run/cultivation-method.h
 	src/run/cultivation-method.cpp
 	
@@ -230,8 +233,8 @@ target_link_libraries(monica-run
 	dl
 	libmonica
 )
-set_target_properties(monica-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
-#set_target_properties(monica-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
+#set_target_properties(monica-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
+set_target_properties(monica-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 #------------------------------------------------------------------------------
 
