@@ -1272,10 +1272,12 @@ void SoilOrganic::fo_N2OProduction()
 	{
 
 		// pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being available at higer pH values
+		double pH_response = 1.0 / (1.0 + pow(2.0, soilColumn[i_Layer].vs_SoilpH() - OrganicConstants::po_pKaHNO2));
+
 		vo_N2OProduction[i_Layer] = soilColumn[i_Layer].vs_SoilNO2
 			* fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
 			* po_N2OProductionRate
-			* (1.0 / (1.0 + (pow(2.0, soilColumn[i_Layer].vs_SoilpH()) - OrganicConstants::po_pKaHNO2)));
+			* pH_response;
 
 		vo_N2OProduction[i_Layer] *= soilColumn[i_Layer].vs_LayerThickness * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
 
@@ -1643,8 +1645,7 @@ double SoilOrganic::fo_NH3onNitriteOxidation(double d_SoilNH4, double d_SoilpH)
 	double po_Inhibitor_NH3 = organicPs.po_Inhibitor_NH3;
 	double fo_NH3onNitriteOxidation = 0.0;
 
-	fo_NH3onNitriteOxidation = po_Inhibitor_NH3 + d_SoilNH4	* (1.0 - 1.0 / (1.0
-																																					+ pow(10.0, (d_SoilpH - OrganicConstants::po_pKaNH3)))) / po_Inhibitor_NH3;
+	fo_NH3onNitriteOxidation = po_Inhibitor_NH3 / (po_Inhibitor_NH3 + d_SoilNH4 * (1 - 1 / (1.0 + pow(10.0, d_SoilpH - OrganicConstants::po_pKaNH3))));
 
 	return fo_NH3onNitriteOxidation;
 }
