@@ -1775,10 +1775,20 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
 			in.Ca = vw_AtmosphericCO2Concentration;
 
-			FvCB_canopy_hourly_params hps;
-			hps.Vcmax_25 = speciesPs.VCMAX25;
+			//test
+			/*in.leaf_temp = 25.0;
+			in.global_rad = 1.5;
+			in.extra_terr_rad = 2.0;
+			in.LAI = 5.0;
+			in.solar_el = 1.2;
+			in.VPD = 2.1;
+			in.Ca = 350;*/
 
-			auto res = FvCB_canopy_hourly(in, hps);
+			FvCB_canopy_hourly_params hps;
+			//hps.Vcmax_25 = speciesPs.VCMAX25;
+			hps.Vcmax_25 = 100.0;//test TODO: delete and add VCMAX25 to param file
+
+			auto res = FvCB_canopy_hourly_C3(in, hps);
 			vc_sunlitLeafAreaIndex[h] = res.LAI_sun;
 			vc_shadedLeafAreaIndex[h] = res.LAI_sh;
 

@@ -58,7 +58,7 @@ namespace FvCB
 		double gs_sh; //mol m-2 s-1 bar-1
 	};
 	
-	FvCB_canopy_hourly_out FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);
+	FvCB_canopy_hourly_out FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);
 	
 }
 

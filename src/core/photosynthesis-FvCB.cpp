@@ -442,7 +442,7 @@ double derive_gs_f(double A, double x1, double x2, double gamma, double Rd, doub
 
 #pragma region
 //Model composition (C3)
-FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par)
+FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par)
 {
 	FvCB_canopy_hourly_out out;
 
@@ -466,9 +466,13 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_c
 	//-------------------
 	//3. canopy photosynthetic capacity
 	double Vcmax = Vcmax_bernacchi_f(in.leaf_temp, par.Vcmax_25);
+	double Vcmax_25 = Vcmax_bernacchi_f(25.0, par.Vcmax_25); //the value at 25°C calculated with bernacchi slightly deviates from par.Vcmax_25
+
+	//test
+	//Vcmax = 100.0;
 		
-	double Vc_25 = canopy_ps_capacity_f(in.LAI, par.Vcmax_25, par.kn); //µmol m - 2 s - 1 (unit ground area)
-	double Vc_sun_25 = canopy_ps_capacity_sunlit_f(in.LAI, in.solar_el, par.Vcmax_25, par.kn);
+	double Vc_25 = canopy_ps_capacity_f(in.LAI, Vcmax_25, par.kn); //µmol m - 2 s - 1 (unit ground area)
+	double Vc_sun_25 = canopy_ps_capacity_sunlit_f(in.LAI, in.solar_el, Vcmax_25, par.kn);
 	double Vc_sh_25 = Vc_25 - Vc_sun_25;
 	double Vc = canopy_ps_capacity_f(in.LAI, Vcmax, par.kn); 
 	double Vc_sun = canopy_ps_capacity_sunlit_f(in.LAI, in.solar_el, Vcmax, par.kn);
@@ -515,58 +519,69 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly(FvCB_canopy_hourly_in in, FvCB_c
 	double gm_sun = gm_t * out.LAI_sun;
 	double gm_sh = gm_t * out.LAI_sh;
 
-	//6.1.4 fVPD
-	double fVPD = fVPD_f(in.VPD);
-
-	//6.2 calculate lumped coeffs (sun/shade)
-	Lumped_Coeffs lumped_rub_sun = calculate_lumped_coeffs(std::get<0>(x1_x2_rub_sun), std::get<1>(x1_x2_rub_sun), fVPD, in.Ca, gamma_sun, Rd_sun, g0_sun, gm_sun, gb_sun);
-	Lumped_Coeffs lumped_el_sun = calculate_lumped_coeffs(std::get<0>(x1_x2_el_sun), std::get<1>(x1_x2_el_sun), fVPD, in.Ca, gamma_sun, Rd_sun, g0_sun, gm_sun, gb_sun);
-	
-	Lumped_Coeffs lumped_rub_sh = calculate_lumped_coeffs(std::get<0>(x1_x2_rub_sh), std::get<1>(x1_x2_rub_sh), fVPD, in.Ca, gamma_sh, Rd_sh, g0_sh, gm_sh, gb_sh);
-	Lumped_Coeffs lumped_el_sh = calculate_lumped_coeffs(std::get<0>(x1_x2_el_sh), std::get<1>(x1_x2_el_sh), fVPD, in.Ca, gamma_sh, Rd_sh, g0_sh, gm_sh, gb_sh);
-	
-	//6.3 calculate assimilation
-	double A_rub_sun = A1_f(lumped_rub_sun); //µmol CO2 m-2 s-1 (unit ground area)
-	double A_el_sun = A1_f(lumped_el_sun);
-
-	double A_rub_sh = A1_f(lumped_rub_sh); //µmol CO2 m-2 s-1 (unit ground area)
-	double A_el_sh = A1_f(lumped_el_sh);
-
-	double A_sun = std::fmin(A_rub_sun * in.fO3 * in.fls, A_el_sun);
-	double A_sh = std::fmin(A_rub_sh * in.fO3 * in.fls, A_el_sh);
-	
-	out.canopy_net_photos = (A_sun + A_sh) * 3600.0;
-	out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;
-	
-	//6.4 derive stomatal conductance
-	//6.4.1 determine whether photosynthesis is rubisco or electron limited
-	double x1_sun;
-	double x2_sun;
-	if (A_sun == A_el_sun)
+	if (in.global_rad <= 0.0)
 	{
-		x1_sun = std::get<0>(x1_x2_el_sun);
-		x2_sun = std::get<1>(x1_x2_el_sun);
+		//handle cases where no photosynthesis can occur
+		out.canopy_gross_photos = 0.0;
+		out.canopy_net_photos = out.canopy_gross_photos - out.canopy_resp;
+		out.gs_sun = g0_sun;
+		out.gs_sh = g0_sh;
 	}
 	else
 	{
-		x1_sun = std::get<0>(x1_x2_rub_sun);
-		x2_sun = std::get<1>(x1_x2_rub_sun);
-	}
-	double x1_sh;
-	double x2_sh;
-	if (A_sh == A_el_sh)
-	{
-		x1_sh = std::get<0>(x1_x2_el_sh);
-		x2_sh = std::get<1>(x1_x2_el_sh);
-	}
-	else
-	{
-		x1_sh = std::get<0>(x1_x2_rub_sh);
-		x2_sh = std::get<1>(x1_x2_rub_sh);
-	}
-	//6.4.2 gs
-	out.gs_sun = derive_gs_f(A_sun, x1_sun, x2_sun, gamma_sun, Rd_sun, gm_sun, fVPD, par.g0);
-	out.gs_sh = derive_gs_f(A_sh, x1_sh, x2_sh, gamma_sh, Rd_sh, gm_sh, fVPD, par.g0);
+		//6.1.4 fVPD
+		double fVPD = fVPD_f(in.VPD);
+
+		//6.2 calculate lumped coeffs (sun/shade)
+		Lumped_Coeffs lumped_rub_sun = calculate_lumped_coeffs(std::get<0>(x1_x2_rub_sun), std::get<1>(x1_x2_rub_sun), fVPD, in.Ca, gamma_sun, Rd_sun, g0_sun, gm_sun, gb_sun);
+		Lumped_Coeffs lumped_el_sun = calculate_lumped_coeffs(std::get<0>(x1_x2_el_sun), std::get<1>(x1_x2_el_sun), fVPD, in.Ca, gamma_sun, Rd_sun, g0_sun, gm_sun, gb_sun);
+
+		Lumped_Coeffs lumped_rub_sh = calculate_lumped_coeffs(std::get<0>(x1_x2_rub_sh), std::get<1>(x1_x2_rub_sh), fVPD, in.Ca, gamma_sh, Rd_sh, g0_sh, gm_sh, gb_sh);
+		Lumped_Coeffs lumped_el_sh = calculate_lumped_coeffs(std::get<0>(x1_x2_el_sh), std::get<1>(x1_x2_el_sh), fVPD, in.Ca, gamma_sh, Rd_sh, g0_sh, gm_sh, gb_sh);
+
+		//6.3 calculate assimilation
+		double A_rub_sun = A1_f(lumped_rub_sun); //µmol CO2 m-2 s-1 (unit ground area)
+		double A_el_sun = A1_f(lumped_el_sun);
+
+		double A_rub_sh = A1_f(lumped_rub_sh); //µmol CO2 m-2 s-1 (unit ground area)
+		double A_el_sh = A1_f(lumped_el_sh);
+
+		double A_sun = std::fmin(A_rub_sun * in.fO3 * in.fls, A_el_sun);
+		double A_sh = std::fmin(A_rub_sh * in.fO3 * in.fls, A_el_sh);
+
+		out.canopy_net_photos = (A_sun + A_sh) * 3600.0;
+		out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;
+
+		//6.4 derive stomatal conductance
+		//6.4.1 determine whether photosynthesis is rubisco or electron limited
+		double x1_sun;
+		double x2_sun;
+		if (A_sun == A_el_sun)
+		{
+			x1_sun = std::get<0>(x1_x2_el_sun);
+			x2_sun = std::get<1>(x1_x2_el_sun);
+		}
+		else
+		{
+			x1_sun = std::get<0>(x1_x2_rub_sun);
+			x2_sun = std::get<1>(x1_x2_rub_sun);
+		}
+		double x1_sh;
+		double x2_sh;
+		if (A_sh == A_el_sh)
+		{
+			x1_sh = std::get<0>(x1_x2_el_sh);
+			x2_sh = std::get<1>(x1_x2_el_sh);
+		}
+		else
+		{
+			x1_sh = std::get<0>(x1_x2_rub_sh);
+			x2_sh = std::get<1>(x1_x2_rub_sh);
+		}
+		//6.4.2 gs
+		out.gs_sun = derive_gs_f(A_sun, x1_sun, x2_sun, gamma_sun, Rd_sun, gm_sun, fVPD, par.g0);
+		out.gs_sh = derive_gs_f(A_sh, x1_sh, x2_sh, gamma_sh, Rd_sh, gm_sh, fVPD, par.g0);
+	}	
 		
 	return out;
 }
