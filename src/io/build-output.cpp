@@ -1237,6 +1237,37 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_ResiduesNContent(), 1) : 0.0;
 			});
 
+			build({id++, "Sand", "kg kg-1", "Soil sand content"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilSandContent(); }, 2);
+			});
+
+			build({id++, "Clay", "kg kg-1", "Soil clay content"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilClayContent(); }, 2);
+			});
+
+			build({id++, "Silt", "kg kg-1", "Soil silt content"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilSiltContent(); }, 2);
+			});
+
+			build({id++, "Stone", "kg kg-1", "Soil stone content"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilStoneContent(); }, 2);
+			});
+
+			build({id++, "pH", "kg kg-1", "Soil pH content"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilpH(); }, 2);
+			});
+
+
 			tableBuilt = true;
 		}
 	}
