@@ -45,6 +45,11 @@
 		
 		"__what data to include in the monica output according to the events defined by the keys": "",
 		"events": [
+			"crop", [
+				"Crop",
+				["CM-count", "LAST"]
+			],
+
 			"daily", [
 				"Date",
 				"Crop",
