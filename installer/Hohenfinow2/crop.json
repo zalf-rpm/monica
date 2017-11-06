@@ -79,23 +79,6 @@
 		"CADLM": ["include-from-file", "organic-fertilisers/CADLM.json"]
 	}, 
 
-	"0 cropRotation": [
-		{
-			"worksteps": [
-				{ "date": "0000-09-23", "type": "Sowing", "crop": {
-					"is-winter-crop": true,
-					"cropParams": {
-						"_species": ["include-from-file", "crops/wheat.json"],
-						"species": ["include-from-file", "projects/fnr-voce/wheat.json"],
-						"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
-					},
-					"residueParams": ["include-from-file", "crop-residues/wheat.json"]
-				} },
-				{ "date": "0001-07-27", "type": "Harvest" }
-			]
-		}
-	],
-
 	"1 cropRotation": [
 		{
 			"worksteps": [
@@ -267,8 +250,5 @@
 	],
 
 	"__general crop parameters for the monica model": "",
-	"CropParameters": {
-		"=": ["include-from-file", "general/crop.json"],
-		"__enable_hourly_FvCB_photosynthesis__": false
-	}
+	"CropParameters": ["include-from-file", "general/crop.json"]
 }
