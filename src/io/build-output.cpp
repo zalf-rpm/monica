@@ -441,7 +441,7 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_OxygenDeficit(), 2) : 0.0;
 			});
 
-			build({id++, "Stage", "", "DevelopmentalStage"},
+			build({id++, "Stage", "1-6/7", "DevelopmentalStage"},
 						[](const MonicaModel& monica, OId oid)
 			{
 				return monica.cropGrowth() ? monica.cropGrowth()->get_DevelopmentalStage() + 1 : 0;
