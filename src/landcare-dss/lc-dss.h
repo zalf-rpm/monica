@@ -58,6 +58,250 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+  enum ResultId
+	{
+		//! primary yield for the crop (e.g. the actual fruit)
+		primaryYield,
+
+		//! secondary yield for the crop (e.g. leafs and other stuff useable)
+		secondaryYield,
+
+		//! above ground biomass of the crop
+		aboveGroundBiomass,
+
+		//! Julian day of anthesis of the crop
+		anthesisDay,
+
+		//! Julian day of maturity of the crop
+		maturityDay,
+		
+		//! Julian day of harvest
+		harvestDay,
+
+		//! sum of applied fertilizer for that crop during growth period
+		sumFertiliser,
+
+		//! sum of used irrigation water for the crop during growth period
+		sumIrrigation,
+
+		//! sum of N turnover
+		sumMineralisation,
+
+		//! the monthly average of the average corg content in the first 10 cm soil
+		avg10cmMonthlyAvgCorg,
+
+		//! the monthly average of the average corg content in the first 30 cm soil
+		avg30cmMonthlyAvgCorg,
+
+		//! the monthly average of the summed up water content in the first 90 cm soil
+		mean90cmMonthlyAvgWaterContent,
+
+		//! at some day in the year the sum of the N content in the first 90cm soil
+		sum90cmYearlyNatDay,
+
+		//! the monthly summed up amount of ground water recharge
+		monthlySumGroundWaterRecharge,
+
+		//! the monthly sum of N leaching
+		monthlySumNLeaching,
+
+		//! height of crop at harvesting date
+		cropHeight,
+
+		//! sum of NO3 content in the first 90cm soil at a special, hardcoded date
+		sum90cmYearlyNO3AtDay,
+
+		//! sum of NH4 content in the first 90cm soil at a special, hardcoded date
+		sum90cmYearlyNH4AtDay,
+
+		//! value of maximal snow depth during simulation duration
+		maxSnowDepth,
+
+		//! sum of snow depth for every day
+		sumSnowDepth,
+
+		//! sum of frost depth
+		sumFrostDepth,
+
+		//! Average soil temperature in the first 30cm soil at special, hardcoded date
+		avg30cmSoilTemperature,
+
+		//! Sum of soil temperature in the first 30cm soil at special, hardcoded date
+		sum30cmSoilTemperature,
+
+		//! Average soilmoisture content in first 30cm soil at special, hardcoded date
+		avg0_30cmSoilMoisture,
+
+		//! Average soilmoisture content in 30-60cm soil at special, hardcoded date
+		avg30_60cmSoilMoisture,
+
+		//! Average soilmoisture content in 60-90cm soil at special, hardcoded date
+		avg60_90cmSoilMoisture,
+
+		//! Average soilmoisture content in 0-90cm soil at special, hardcoded date
+		avg0_90cmSoilMoisture,
+
+		//! soilmoisture content in 0-90cm soil at special at harvest
+		soilMoist0_90cmAtHarvest,
+
+		//! corg content in the first 30 cm soil at harvest
+		corg0_30cmAtHarvest,
+
+		//! Nmin content in the first 90 cm soil at harvest
+		nmin0_90cmAtHarvest,
+
+		//! water flux at bottom layer of soil at special, hardcoded date
+		waterFluxAtLowerBoundary,
+
+		//! capillary rise in first 30 cm soil at special date
+		avg0_30cmCapillaryRise,
+
+		//! capillary rise in 30-60 cm soil at special date
+		avg30_60cmCapillaryRise,
+
+		//! capillary rise in 60-90cm cm soil at special date
+		avg60_90cmCapillaryRise,
+
+		//! percolation ratein first 30 cm soil at special date
+		avg0_30cmPercolationRate,
+
+		//! percolation ratein 30-60 cm soil at special date
+		avg30_60cmPercolationRate,
+
+		//! percolation rate in 60-90cm cm soil at special date
+		avg60_90cmPercolationRate,
+
+		//! sum of surface run off volumes during hole simulation duration
+		sumSurfaceRunOff,
+
+		//! Evapotranspiration amount at a special date
+		evapotranspiration,
+
+		//! Transpiration amount at a special date
+		transpiration,
+
+		//! Evaporation amount at a special date
+		evaporation,
+
+		//! N content in biomass after harvest
+		biomassNContent,
+
+		//! N content in above ground biomass after harvest
+		aboveBiomassNContent,
+
+		//! sum of total N uptake of plant
+		sumTotalNUptake,
+
+		//! sum of CO2 evolution rate in first 30 cm soil at special date
+		sum30cmSMB_CO2EvolutionRate,
+
+		//! volatilised NH3 at a special date
+		NH3Volatilised,
+
+		//! sum of all volatilised NH3
+		sumNH3Volatilised,
+
+		//! sum of denitrification rate in first 30cm at a special date
+		sum30cmActDenitrificationRate,
+
+		//! leaching N at boundary at special date
+		leachingNAtBoundary,
+
+		//! leaching N accumulated for a year
+		yearlySumNLeaching,
+
+		//! Groundwater recharge accumulated for a year
+		yearlySumGroundWaterRecharge,
+
+		//! Evapotranspiration in time of crop cultivation
+		sumETaPerCrop,
+		sumTraPerCrop,
+		cropname,
+		primaryYieldTM,
+		secondaryYieldTM,
+		monthlySurfaceRunoff,
+		monthlyPrecip,
+		monthlyETa,
+		monthlySoilMoistureL0,
+		monthlySoilMoistureL1,
+		monthlySoilMoistureL2,
+		monthlySoilMoistureL3,
+		monthlySoilMoistureL4,
+		monthlySoilMoistureL5,
+		monthlySoilMoistureL6,
+		monthlySoilMoistureL7,
+		monthlySoilMoistureL8,
+		monthlySoilMoistureL9,
+		monthlySoilMoistureL10,
+		monthlySoilMoistureL11,
+		monthlySoilMoistureL12,
+		monthlySoilMoistureL13,
+		monthlySoilMoistureL14,
+		monthlySoilMoistureL15,
+		monthlySoilMoistureL16,
+		monthlySoilMoistureL17,
+		monthlySoilMoistureL18,
+		daysWithCrop,
+		NStress,
+		WaterStress,
+		HeatStress,
+		OxygenStress,
+		dev_stage,
+
+		// Daily outputs used for time-dependant sensitivity analysis
+
+		//! soilmoisture content in 0-90cm soil
+		soilMoist0_90cm,
+
+		//! corg content in the first 30 cm soil 
+		corg0_30cm,
+
+		//! Nmin content in the first 90 cm soil
+		nmin0_90cm,
+
+    //! evapotranspiration
+		ETa,
+
+		dailyAGB,
+
+    dailyAGB_N,
+
+    rootingDepth
+	};
+
+  //! @return list of results from a single crop
+	std::vector<ResultId> cropResultIds();
+
+  std::pair<std::string, std::string> nameAndUnitForResultId(ResultId rid);
+
+	std::vector<int> eva2CropResultIds();
+	std::vector<int> eva2MonthlyResultIds();
+
+  //! @return list of the montly results
+	std::vector<ResultId> monthlyResultIds();
+
+  //! @return list of ids used for sensitivity analysis
+	std::vector<int> CCGermanyResultIds();
+
+  struct ResultIdInfo
+  {
+    ResultIdInfo(const std::string& n,
+                 const std::string& u,
+                 const std::string& sn = std::string())
+      : name(n),
+        unit(u),
+        shortName(sn)
+    {}
+
+    std::string name;
+		std::string unit;
+		std::string shortName;
+	};
+
+	ResultIdInfo resultIdInfo(ResultId rid);
+
+	//----------------------------------------------------------------------------
+
 	/**
 	 * @brief
 	 */

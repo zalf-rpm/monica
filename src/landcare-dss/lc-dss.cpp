@@ -40,7 +40,493 @@ using namespace Tools;
 using namespace Climate;
 using namespace json11;
 
+/*
+const map<string, Result2>& Monica::result2()
+{
+	static map<string, Result2> res2 = 
+	{{"Date", {0, "Date", "", "Date"}},
+		{"Crop", {1, "Crop", "", "Crop name"}},
+		{"TraDef", {2, "TraDef", "0;1", "TranspirationDeficit"}},
+		{"Tra", {3, "Tra", "mm", "ActualTranspiration"}},
+		{"NDef", {4, "NDef", "0;1", "CropNRedux"}},
+		{"HeatRed", {5, "HeatRed", "0;1", " HeatStressRedux"}},
+	{"FrostRed", {6, "FrostRed", "0;1", "FrostStressRedux"}},
+	{"OxRed", {7, "OxRed", "0;1", "OxygenDeficit"}},
 
+	{"Stage", {8, "Stage", "", "DevelopmentalStage"}},
+	{"TempSum", {9, "TempSum", "°Cd", "CurrentTemperatureSum"}},
+	{"VernF", {10, "VernF", "0;1", "VernalisationFactor"}},
+	{"DaylF", {11, "DaylF", "0;1", "DaylengthFactor"}},
+	{"IncRoot", {12, "IncRoot", "kg ha-1", "OrganGrowthIncrement root"}},
+	{"IncLeaf", {13, "IncLeaf", "kg ha-1", "OrganGrowthIncrement leaf"}},
+	{"IncShoot", {14, "IncShoot", "kg ha-1", "OrganGrowthIncrement shoot"}},
+	{"IncFruit", {15, "IncFruit", "kg ha-1", "OrganGrowthIncrement fruit"}},
+	{"RelDev", {16, "RelDev", "0;1", "RelativeTotalDevelopment"}},
+	{"LT50", {17, "LT50", "°C", "LT50"}},
+	{"AbBiom", {18, "AbBiom", "kg ha-1", "AbovegroundBiomass"}},
+	{"Root", {19, "Root", "kgDM ha-1", "get_OrganBiomass(i)"}},
+	{"Leaf", {20, "Leaf", "kgDM ha-1", "get_OrganBiomass(i)"}},
+	{"Shoot", {21, "Shoot", "kgDM ha-1", "get_OrganBiomass(i)"}},
+	{"Fruit", {22, "Fruit", "kgDM ha-1", "get_OrganBiomass(i)"}},
+	{"Struct", {23, "Struct", "kgDM ha-1", "get_OrganBiomass(i)"}},
+	{"Sugar", {24, "Sugar", "kgDM ha-1", "get_OrganBiomass(i)"}},
+	{"Yield", {25, "Yield", "kgDM ha-1", "get_PrimaryCropYield"}},
+	{"SumYield", {26, "SumYield", "kgDM ha-1", "get_AccumulatedPrimaryCropYield"}},
+	{"GroPhot", {27, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate"}},
+	{"NetPhot", {28, "NetPhot", "kgCH2O ha-1", "NetPhotosynthesis"}},
+	{"MaintR", {29, "MaintR", "kgCH2O ha-1", "MaintenanceRespirationAS"}},
+	{"GrowthR", {30, "GrowthR", "kgCH2O ha-1", "GrowthRespirationAS"}},
+	{"StomRes", {31, "StomRes", "s m-1", "StomataResistance"}},
+	{"Height", {32, "Height", "m", "CropHeight"}},
+	{"LAI", {33, "LAI", "m2 m-2", "LeafAreaIndex"}},
+	{"RootDep", {34, "RootDep", "layer#", "RootingDepth"}},
+	{"EffRootDep", {35, "EffRootDep", "m", "Effective RootingDepth"}},
+
+	{"TotBiomN", {36, "TotBiomN", "kgN ha-1", "TotalBiomassNContent"}},
+	{"AbBiomN", {37, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent"}},
+	{"SumNUp", {38, "SumNUp", "kgN ha-1", "SumTotalNUptake"}},
+	{"ActNup", {39, "ActNup", "kgN ha-1", "ActNUptake"}},
+	{"PotNup", {40, "PotNup", "kgN ha-1", "PotNUptake"}},
+	{"NFixed", {41, "NFixed", "kgN ha-1", "NFixed"}},
+	{"Target", {42, "Target", "kgN ha-1", "TargetNConcentration"}},
+	{"CritN", {43, "CritN", "kgN ha-1", "CriticalNConcentration"}},
+	{"AbBiomNc", {44, "AbBiomNc", "kgN ha-1", "AbovegroundBiomassNConcentration"}},
+	{"YieldNc", {45, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"}},
+
+	{"Protein", {46, "Protein", "kg kg-1", "RawProteinConcentration"}},
+
+	{"NPP", {47, "NPP", "kgC ha-1", "NPP"}},
+	{"NPPRoot", {48, "NPPRoot", "kgC ha-1", "NPP root"}},
+	{"NPPLeaf", {49, "NPPLeaf", "kgC ha-1", "NPP leaf"}},
+	{"NPPShoot", {50, "NPPShoot", "kgC ha-1", "NPP shoot"}},
+	{"NPPFruit", {51, "NPPFruit", "kgC ha-1", "NPP fruit"}},
+	{"NPPStruct", {52, "NPPStruct", "kgC ha-1", "NPP struct"}},
+	{"NPPSugar", {53, "NPPSugar", "kgC ha-1", "NPP sugar"}},
+
+	{"GPP", {54, "GPP", "kgC ha-1", "GPP"}},
+
+	{"Ra", {55, "Ra", "kgC ha-1", "Ra"}},
+	{"RaRoot", {56, "RaRoot", "kgC ha-1", "Ra root"}},
+	{"RaLeaf", {57, "RaLeaf", "kgC ha-1", "Ra leaf"}},
+	{"RaShoot", {58, "RaShoot", "kgC ha-1", "Ra shoot"}},
+	{"RaFruit", {59, "RaFruit", "kgC ha-1", "Ra fruit"}},
+	{"RaStruct", {60, "RaStruct", "kgC ha-1", "Ra struct"}},
+	{"RaSugar", {61, "RaSugar", "kgC ha-1", "Ra sugar"}},
+
+	{"Mois", {62, "Mois", "m3 m-3", "Soil moisture content"}},
+
+	{"Precip", {63, "Precip", "mm", "Precipitation"}},
+	{"Irrig", {64, "Irrig", "mm", "Irrigation"}},
+	{"Infilt", {65, "Infilt", "mm", "Infiltration"}},
+	{"Surface", {66, "Surface", "mm", "Surface water storage"}},
+	{"RunOff", {67, "RunOff", "mm", "Surface water runoff"}},
+	{"SnowD", {68, "SnowD", "mm", "Snow depth"}},
+	{"FrostD", {69, "FrostD", "m", "Frost front depth in soil"}},
+	{"ThawD", {70, "ThawD", "m", "Thaw front depth in soil"}},
+
+	{"PASW", {71, "PASW", "m3 m-3", "PASW"}},
+
+	{"SurfTemp", {72, "SurfTemp", "°C", ""}},
+	{"STemp", {73, "STemp", "°C", ""}},
+{"Act_Ev", {78, "Act_Ev", "mm", ""}},
+{"Act_ET", {79, "Act_ET", "mm", ""}},
+{"ET0", {80, "ET0", "mm", ""}},
+{"Kc", {81, "Kc", "", ""}},
+{"AtmCO2", {82, "AtmCO2", "ppm", "Atmospheric CO2 concentration"}},
+{"Groundw", {83, "Groundw", "m", ""}},
+{"Recharge", {84, "Recharge", "mm", ""}},
+{"NLeach", {85, "NLeach", "kgN ha-1", ""}},
+{"NO3", {86, "NO3", "kgN m-3", ""}},
+{"Carb", {87, "Carb", "kgN m-3", "Soil Carbamid"}},
+{"NH4", {88, "NH4", "kgN m-3", ""}},
+	{"NO2", {89, "NO2", "kgN m-3", ""}},
+	{"SOC", {90, "SOC", "kgC kg-1", "get_SoilOrganicC"}},
+	{"SOC-X-Y", {91, "SOC-X-Y", "gC m-2", "SOC-X-Y"}},
+
+	{"AOMf", {93, "AOMf", "kgC m-3", "get_AOM_FastSum"}},
+{"AOMs", {94, "AOMs", "kgC m-3", "get_AOM_SlowSum"}},
+{"SMBf", {95, "SMBf", "kgC m-3", "get_SMB_Fast"}},
+{"SMBs", {96, "SMBs", "kgC m-3", "get_SMB_Slow"}},
+{"SOMf", {97, "SOMf", "kgC m-3", "get_SOM_Fast"}},
+{"SOMs", {98, "SOMs", "kgC m-3", "get_SOM_Slow"}},
+{"CBal", {99, "CBal", "kgC m-3", "get_CBalance"}},
+
+{"Nmin", {100, "Nmin", "kgN ha-1", "NetNMineralisationRate"}},
+{"NetNmin", {101, "NetNmin", "kgN ha-1", "NetNmin"}},
+{"Denit", {102, "Denit", "kgN ha-1", "Denit"}},
+{"N2O", {103, "N2O", "kgN ha-1", "N2O"}},
+{"SoilpH", {104, "SoilpH", "", "SoilpH"}},
+{"NEP", {105, "NEP", "kgC ha-1", "NEP"}},
+{"NEE", {106, "NEE", "kgC ha-", "NEE"}},
+{"Rh", {107, "Rh", "kgC ha-", "Rh"}},
+
+{"Tmin", {108, "Tmin", "", ""}},
+{"Tavg", {109, "Tavg", "", ""}},
+{"Tmax", {110, "Tmax", "", ""}},
+{"Wind", {111, "Wind", "", ""}},
+{"Globrad", {112, "Globrad", "", ""}},
+{"Relhumid", {113, "Relhumid", "", ""}},
+{"Sunhours", {114, "Sunhours", "", ""}},
+
+
+//Result2{, "Root10", "kgDM ha-1", ""}},
+//Result2{, "AbGBiom", "kgDM ha-1", ""}},
+//Result2{, "Yield", "kgDM ha-1", ""}},
+//Result2{, "EarNo", "#", ""}},
+//Result2{, "GrainNo", "#", ""}},
+
+//Result2{, "NGrain", "-", ""}},
+
+{"BedGrad", {115, "BedGrad", "0;1", ""}},
+//Result2{116, "M0-10", "m3 m-3", ""}},
+//Result2{117, "M10-20", "m3 m-3", ""}},
+//Result2{118, "M20-30", "m3 m-3", ""}},
+//Result2{119, "M30-40", "m3 m-3", ""}},
+//Result2{120, "M40-50", "m3 m-3", ""}},
+//Result2{121, "M50-60", "m3 m-3", ""}},
+//Result2{122, "M60-70", "m3 m-3", ""}},
+//Result2{123, "M70-80", "m3 m-3", ""}},
+//Result2{124, "M80-90", "m3 m-3", ""}},
+//Result2{125, "M0-30", "m3 m-3", ""}},
+//Result2{126, "M30-60", "m3 m-3", ""}},
+//Result2{127, "M60-90", "m3 m-3", ""}},
+//Result2{128, "M0-60", "m3 m-3", ""}},
+//Result2{129, "M0-90", "m3 m-3", ""}},
+//Result2{130, "PAW0-200", "mm", ""}},
+//Result2{131, "PAW0-130", "mm", ""}},
+//Result2{132, "PAW0-150", "mm", ""}},
+{"N", {133, "N", "kgN m-3", ""}},
+//Result2{133, "N0-30", "kgN ha-1", ""}},
+//Result2{134, "N30-60", "kgN ha-1", ""}},
+//Result2{135, "N60-90", "kgN ha-1", ""}},
+//Result2{136, "N90-120", "kgN ha-1", ""}},
+//Result2{137, "N0-60", "kgN ha-1", ""}},
+//Result2{138, "N0-90", "kgN ha-1", ""}},
+//Result2{139, "N0-200", "kgN ha-1", ""}},
+//Result2{140, "N0-130", "kgN ha-1", ""}},
+//Result2{141, "N0-150", "kgN ha-1", ""}},
+//Result2{142, "NH430", "kgN ha-1", ""}},
+//Result2{143, "NH460", "kgN ha-1", ""}},
+//Result2{144, "NH490", "kgN ha-1", ""}},
+{"Co", {145, "Co", "kgC m-3", ""}},
+//Result2{145, "Co0-10", "kgC ha-1", ""}},
+//Result2{146, "Co0-30", "kgC ha-1", ""}},
+//Result2{147, "T0-10", "°C", ""}},
+//Result2{148, "T20-30", "°C", ""}},
+//Result2{149, "T50-60", "°C", ""}},
+//Result2{150, "CO2", "kgC ha-1", "DecomposerRespiration"}},
+{"NH3", {151, "NH3", "kgN ha-1", "NH3_Volatilised"}},
+//Result2{, "N2O", "-", ""}},
+//Result2{, "N2", "-", ""}},
+//Result2{, "Ngas", "-", ""}},
+{"NFert", {152, "NFert", "kgN ha-1", "dailySumFertiliser"}},
+	{"WaterContent", {153, "WaterContent", "%nFC", "soil water content"}},
+	{"CapillaryRise", {154, "CapillaryRise", "mm", "capillary rise"}},
+	{"PercolationRate",{155, "PercolationRate", "mm", "percolation rate"}},
+	{"SMB-CO2-ER", {156, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate"}},
+	{"Evapotranspiration", {157, "Evapotranspiration", "mm", "monica.getEvapotranspiration()"}},
+	{"Evaporation", {158, "Evaporation", "mm", "monica.getEvaporation()"}},
+	{"Transpiration", {159, "Transpiration", "mm", "monica.getTranspiration()"}}
+};
+
+
+	return res2;
+}
+*/
+
+
+//------------------------------------------------------------------------------
+
+vector<ResultId> Monica::cropResultIds()
+{
+  return {
+    primaryYield, secondaryYield, sumFertiliser,
+    sumIrrigation, anthesisDay, maturityDay, harvestDay//, sumMineralisation
+  };
+}
+
+pair<string, string> Monica::nameAndUnitForResultId(ResultId rid)
+{
+  switch(rid)
+  {
+  case primaryYield: return make_pair("Primär-Ertrag", "dt/ha");
+  case secondaryYield: return make_pair("Sekundär-Ertrag", "dt/ha");
+  case sumFertiliser: return make_pair("N-Düngung", "kg/ha");
+  case sumIrrigation: return make_pair("Beregnungswasser", "mm/ha");
+  }
+  return make_pair("", "");
+}
+
+//------------------------------------------------------------------------------
+
+vector<ResultId> Monica::monthlyResultIds()
+{
+  return {
+    avg10cmMonthlyAvgCorg, avg30cmMonthlyAvgCorg,
+    mean90cmMonthlyAvgWaterContent,
+    monthlySumGroundWaterRecharge, monthlySumNLeaching};
+}
+
+//------------------------------------------------------------------------------
+
+vector<int> Monica::CCGermanyResultIds()
+{
+  return {
+    primaryYield,                   // done
+    yearlySumGroundWaterRecharge,
+    yearlySumNLeaching};
+}
+
+//------------------------------------------------------------------------------
+
+vector<int> Monica::eva2CropResultIds()
+{
+  return {
+    cropname,
+    primaryYieldTM,
+    secondaryYieldTM,
+    sumFertiliser,
+    sumETaPerCrop,
+    biomassNContent,
+    daysWithCrop,
+    aboveBiomassNContent,
+    NStress,
+    WaterStress,
+    HeatStress,
+    OxygenStress};
+}
+
+//------------------------------------------------------------------------------
+
+vector<int> Monica::eva2MonthlyResultIds()
+{
+	return{ 
+		avg10cmMonthlyAvgCorg,
+		avg30cmMonthlyAvgCorg,
+		mean90cmMonthlyAvgWaterContent,
+    monthlySumGroundWaterRecharge,
+    monthlySumNLeaching,
+    monthlySurfaceRunoff,
+    monthlyPrecip,
+    monthlyETa,
+    monthlySoilMoistureL0,
+    monthlySoilMoistureL1,
+    monthlySoilMoistureL2,
+    monthlySoilMoistureL3,
+    monthlySoilMoistureL4,
+    monthlySoilMoistureL5,
+    monthlySoilMoistureL6,
+    monthlySoilMoistureL7,
+    monthlySoilMoistureL8,
+    monthlySoilMoistureL9,
+    monthlySoilMoistureL10,
+    monthlySoilMoistureL11,
+    monthlySoilMoistureL12,
+    monthlySoilMoistureL13,
+    monthlySoilMoistureL14,
+    monthlySoilMoistureL15,
+    monthlySoilMoistureL16,
+    monthlySoilMoistureL17,
+    monthlySoilMoistureL18};
+}
+
+//------------------------------------------------------------------------------
+
+/**
+ * Returns some information about a result id.
+ * @param rid ResultID of interest
+ * @return ResultIdInfo Information object of result ids
+ */
+ResultIdInfo Monica::resultIdInfo(ResultId rid)
+{
+  switch(rid)
+  {
+  case primaryYield:
+    return ResultIdInfo("Hauptertrag", "dt/ha", "primYield");
+  case secondaryYield:
+    return ResultIdInfo("Nebenertrag", "dt/ha", "secYield");
+  case aboveGroundBiomass:
+    return ResultIdInfo("Oberirdische Biomasse", "dt/ha", "AbBiom");
+  case anthesisDay:
+	  return ResultIdInfo("Tag der Blüte", "Jul. day", "anthesisDay");
+  case maturityDay:
+	  return ResultIdInfo("Tag der Reife", "Jul. day", "maturityDay");
+  case harvestDay:
+      return ResultIdInfo("Tag der Ernte", "Date", "harvestDay");
+  case sumFertiliser:
+    return ResultIdInfo("N", "kg/ha", "sumFert");
+  case sumIrrigation:
+    return ResultIdInfo("Beregnungswassermenge", "mm/ha", "sumIrrig");
+  case sumMineralisation:
+    return ResultIdInfo("Mineralisation", "????", "sumMin");
+  case avg10cmMonthlyAvgCorg:
+    return ResultIdInfo("Kohlenstoffgehalt 0-10cm", "% kg C/kg Boden", "Corg10cm");
+  case avg30cmMonthlyAvgCorg:
+    return ResultIdInfo("Kohlenstoffgehalt 0-30cm", "% kg C/kg Boden", "Corg30cm");
+  case mean90cmMonthlyAvgWaterContent:
+    return ResultIdInfo("Bodenwassergehalt 0-90cm", "%nFK", "Moist90cm");
+  case sum90cmYearlyNatDay:
+    return ResultIdInfo("Boden-Nmin-Gehalt 0-90cm am 31.03.", "kg N/ha", "Nmin3103");
+  case monthlySumGroundWaterRecharge:
+    return ResultIdInfo("Grundwasserneubildung", "mm", "GWRech");
+  case monthlySumNLeaching:
+    return ResultIdInfo("N-Auswaschung", "kg N/ha", "monthLeachN");
+  case cropHeight:
+    return ResultIdInfo("Pflanzenhöhe zum Erntezeitpunkt", "m","cropHeight");
+  case sum90cmYearlyNO3AtDay:
+    return ResultIdInfo("Summe Nitratkonzentration in 0-90cm Boden am 31.03.", "kg N/ha","NO3_90cm");
+  case sum90cmYearlyNH4AtDay:
+    return ResultIdInfo("Ammoniumkonzentratio in 0-90cm Boden am 31.03.", "kg N/ha", "NH4_90cm");
+  case maxSnowDepth:
+    return ResultIdInfo("Maximale Schneetiefe während der Simulation","m","maxSnowDepth");
+  case sumSnowDepth:
+    return ResultIdInfo("Akkumulierte Schneetiefe der gesamten Simulation", "m","sumSnowDepth");
+  case sumFrostDepth:
+    return ResultIdInfo("Akkumulierte Frosttiefe der gesamten Simulation","m","sumFrostDepth");
+  case avg30cmSoilTemperature:
+    return ResultIdInfo("Durchschnittliche Bodentemperatur in 0-30cm Boden am 31.03.", "°C","STemp30cm");
+  case sum30cmSoilTemperature:
+    return ResultIdInfo("Akkumulierte Bodentemperature der ersten 30cm des Bodens am 31.03", "°C","sumSTemp30cm");
+  case avg0_30cmSoilMoisture:
+    return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-30cm Boden am 31.03.", "%","Moist0_30");
+  case avg30_60cmSoilMoisture:
+    return ResultIdInfo("Durchschnittlicher Wassergehalt in 30-60cm Boden am 31.03.", "%","Moist30_60");
+  case avg60_90cmSoilMoisture:
+    return ResultIdInfo("Durchschnittlicher Wassergehalt in 60-90cm Boden am 31.03.", "%","Moist60_90");
+  case avg0_90cmSoilMoisture:
+    return ResultIdInfo("Durchschnittlicher Wassergehalt in 0-90cm Boden am 31.03.", "%","Moist0_90");
+  case waterFluxAtLowerBoundary:
+    return ResultIdInfo("Sickerwasser der unteren Bodengrenze am 31.03.", "mm/d", "waterFlux");
+  case avg0_30cmCapillaryRise:
+    return ResultIdInfo("Durchschnittlicher kapillarer Aufstieg in 0-30cm Boden am 31.03.", "mm/d", "capRise0_30");
+  case avg30_60cmCapillaryRise:
+    return ResultIdInfo("Durchschnittlicher kapillarer Aufstieg in 30-60cm Boden am 31.03.", "mm/d", "capRise30_60");
+  case avg60_90cmCapillaryRise:
+    return ResultIdInfo("Durchschnittlicher kapillarer Aufstieg in 60-90cm Boden am 31.03.", "mm/d", "capRise60_90");
+  case avg0_30cmPercolationRate:
+    return ResultIdInfo("Durchschnittliche Durchflussrate in 0-30cm Boden am 31.03.", "mm/d", "percRate0_30");
+  case avg30_60cmPercolationRate:
+    return ResultIdInfo("Durchschnittliche Durchflussrate in 30-60cm Boden am 31.03.", "mm/d", "percRate30_60");
+  case avg60_90cmPercolationRate:
+    return ResultIdInfo("Durchschnittliche Durchflussrate in 60-90cm Boden am 31.03.", "mm/d", "percRate60_90");
+  case sumSurfaceRunOff:
+    return ResultIdInfo("Summe des Oberflächenabflusses der gesamten Simulation", "mm", "sumSurfRunOff");
+  case evapotranspiration:
+    return ResultIdInfo("Evaporatranspiration am 31.03.", "mm", "ET");
+  case transpiration:
+    return ResultIdInfo("Transpiration am 31.03.", "mm", "transp");
+  case evaporation:
+    return ResultIdInfo("Evaporation am 31.03.", "mm", "evapo");
+  case biomassNContent:
+    return ResultIdInfo("Stickstoffanteil im Erntegut", "kg N/ha", "biomNContent");
+  case aboveBiomassNContent:
+    return ResultIdInfo("Stickstoffanteil in der gesamten oberirdischen Biomasse", "kg N/ha", "aboveBiomassNContent");
+  case sumTotalNUptake:
+    return ResultIdInfo("Summe des aufgenommenen Stickstoffs", "kg/ha", "sumNUptake");
+  case sum30cmSMB_CO2EvolutionRate:
+    return ResultIdInfo("SMB-CO2 Evolutionsrate in 0-30cm Boden am 31.03.", "kg/ha", "sumSMB_CO2_EvRate");
+  case NH3Volatilised:
+    return ResultIdInfo("Menge des verdunstenen Stickstoffs (NH3) am 31.03.", "kg N / m2 d", "NH3Volat");
+  case sumNH3Volatilised:
+    return ResultIdInfo("Summe des verdunstenen Stickstoffs (NH3) des gesamten Simulationszeitraums", "kg N / m2", "sumNH3Volat");
+  case sum30cmActDenitrificationRate:
+    return ResultIdInfo("Summe der Denitrifikationsrate in 0-30cm Boden am 31.03.", "kg N / m3 d", "denitRate");
+  case leachingNAtBoundary:
+    return ResultIdInfo("Menge des ausgewaschenen Stickstoffs im Boden am 31.03.", "kg / ha", "leachN");
+  case yearlySumGroundWaterRecharge:
+    return ResultIdInfo("Gesamt-akkumulierte Grundwasserneubildung im Jahr", "mm", "Yearly_GWRech");
+  case yearlySumNLeaching:
+    return ResultIdInfo("Gesamt-akkumulierte N-Auswaschung im Jahr", "kg N/ha", "Yearly_monthLeachN");
+  case sumETaPerCrop:
+    return ResultIdInfo("Evapotranspiration pro Vegetationszeit der Pflanze", "mm", "ETa_crop");
+  case sumTraPerCrop:
+	  return ResultIdInfo("Transpiration pro Vegetationszeit der Pflanze", "mm", "Tra_crop");
+  case cropname:
+    return ResultIdInfo("Pflanzenname", "", "cropname");
+  case primaryYieldTM:
+    return ResultIdInfo("Hauptertrag in TM", "dt TM/ha", "primYield");
+  case secondaryYieldTM:
+    return ResultIdInfo("Nebenertrag in TM", "dt TM/ha", "secYield");
+  case soilMoist0_90cmAtHarvest:
+	  return ResultIdInfo("Wassergehalt zur Ernte in 0-90cm", "%", "moist90Harvest");
+  case corg0_30cmAtHarvest:
+	  return ResultIdInfo("Corg-Gehalt zur Ernte in 0-30cm", "% kg C/kg Boden", "corg30Harvest");
+  case nmin0_90cmAtHarvest:
+	  return ResultIdInfo("Nmin zur Ernte in 0-90cm", "kg N/ha", "nmin90Harvest");
+  case monthlySurfaceRunoff:
+    return ResultIdInfo("Monatlich akkumulierte Oberflächenabfluss", "mm", "monthlySurfaceRunoff");
+  case monthlyPrecip:
+    return ResultIdInfo("Akkumulierte korrigierte  Niederschläge pro Monat", "mm", "monthlyPrecip");
+  case monthlyETa:
+    return ResultIdInfo("Akkumulierte korrigierte Evapotranspiration pro Monat", "mm", "monthlyETa");
+  case monthlySoilMoistureL0:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 1", "Vol-%", "monthlySoilMoisL1");
+  case monthlySoilMoistureL1:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 2", "Vol-%", "monthlySoilMoisL2");
+  case monthlySoilMoistureL2:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 3", "Vol-%", "monthlySoilMoisL3");
+  case monthlySoilMoistureL3:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 4", "Vol-%", "monthlySoilMoisL4");
+  case monthlySoilMoistureL4:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 5", "Vol-%", "monthlySoilMoisL5");
+  case monthlySoilMoistureL5:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 6", "Vol-%", "monthlySoilMoisL6");
+  case monthlySoilMoistureL6:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 7", "Vol-%", "monthlySoilMoisL7");
+  case monthlySoilMoistureL7:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 8", "Vol-%", "monthlySoilMoisL8");
+  case monthlySoilMoistureL8:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 9", "Vol-%", "monthlySoilMoisL9");
+  case monthlySoilMoistureL9:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 10", "Vol-%", "monthlySoilMoisL10");
+  case monthlySoilMoistureL10:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 11", "Vol-%", "monthlySoilMoisL11");
+  case monthlySoilMoistureL11:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 12", "Vol-%", "monthlySoilMoisL12");
+  case monthlySoilMoistureL12:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 13", "Vol-%", "monthlySoilMoisL13");
+  case monthlySoilMoistureL13:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 14", "Vol-%", "monthlySoilMoisL14");
+  case monthlySoilMoistureL14:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 15", "Vol-%", "monthlySoilMoisL15");
+  case monthlySoilMoistureL15:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 16", "Vol-%", "monthlySoilMoisL16");
+  case monthlySoilMoistureL16:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 17", "Vol-%", "monthlySoilMoisL17");
+  case monthlySoilMoistureL17:
+		return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 18", "Vol-%", "monthlySoilMoisL18");
+  case monthlySoilMoistureL18:
+    return ResultIdInfo("Monatlicher mittlerer Wassergehalt für Schicht 19", "Vol-%", "monthlySoilMoisL19");
+  case daysWithCrop:
+    return ResultIdInfo("Anzahl der Tage mit Pflanzenbewuchs", "d", "daysWithCrop");
+  case NStress:
+    return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "NStress");
+  case WaterStress:
+    return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "waterStress");
+  case HeatStress:
+    return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "heatStress");
+  case OxygenStress:
+    return ResultIdInfo("Akkumulierte Werte für N-Stress", "", "oxygenStress");
+  case dev_stage:
+    return ResultIdInfo("Liste mit täglichen Werten für das Entwicklungsstadium", "[]", "devStage");
+  case soilMoist0_90cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für den Wassergehalt in 0-90cm", "[%]", "soilMoist0_90");
+  case corg0_30cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für Corg in 0-30cm", "[]", "corg0_30");
+  case nmin0_90cm:
+	  return ResultIdInfo("Liste mit täglichen Werten für Nmin in 0-90cm", "[kg N / ha]", "nmin0_90");
+  case ETa:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "mm", "ETa");
+  case dailyAGB:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "kg FM ha-1", "dailyAGB");
+  case dailyAGB_N:
+	  return ResultIdInfo("Aktuelle Evapotranspiration", "kg N ha-1", "dailyAGB_N");
+	default: ;
+	}
+	return ResultIdInfo("", "");
+}
+
+//------------------------------------------------------------------------------
 
 /**
  * @brief Constructor
