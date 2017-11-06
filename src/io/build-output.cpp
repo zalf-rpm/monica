@@ -541,6 +541,12 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_AccumulatedPrimaryCropYield(), 1) : 0.0;
 			});
 
+			build({ id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_SecondaryCropYield(), 1) : 0.0;
+			});
+
 			build({id++, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate"},
 						[](const MonicaModel& monica, OId oid)
 			{
