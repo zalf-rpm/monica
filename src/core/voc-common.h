@@ -140,7 +140,8 @@ namespace Voc
 		OI, //!< intercellular concentration of oxygen (mmol mol-1)
 		CI, //!< intercellular concentration of carbon (umol mol-1)
 		COMP, //!< co2 compensation point for photosynthesis (umol mol-1)
-		VCMAX //!< temperature corrected maximum RubP saturated rate of carboxylation (umol m-2 s-1)
+		VCMAX, //!< temperature corrected maximum RubP saturated rate of carboxylation (umol m-2 s-1)
+		JMAX //!<  actual electron transport capacity per canopy layer(umol m - 2 s - 1)
 	};
 
 	struct SpeciesData
@@ -238,6 +239,17 @@ namespace Voc
 
 	struct Emissions
 	{
+		Emissions& operator+=(const Emissions& other)
+		{
+			for(auto p : other.speciesId_2_isoprene_emission)
+				speciesId_2_isoprene_emission[p.first] += p.second;
+			for(auto p : other.speciesId_2_monoterpene_emission)
+				speciesId_2_monoterpene_emission[p.first] += p.second;
+			isoprene_emission += other.isoprene_emission;
+			monoterpene_emission += other.monoterpene_emission;
+			return *this;
+		}
+
 		std::map<int, double> speciesId_2_isoprene_emission;
 		std::map<int, double> speciesId_2_monoterpene_emission;
 

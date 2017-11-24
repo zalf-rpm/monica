@@ -222,7 +222,8 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 	double vcMax = cpData[VCMAX]; // 0;
 	// actual electron transport capacity per canopy layer(umol m - 2 s - 1)
 	// physiology  jMax_vtfl  jMax_vtfl  double  V : F  0.0  mol : 10 ^ -6 : m^-2 : s^-1
-	double jMax = 0;
+	double jMax = cpData[JMAX]; // 0;
+	/*
 	for(auto frad : {mcd.sunlitfoliagefraction, 1 - mcd.sunlitfoliagefraction})
 	{
 //		double oi_ = PO2 * MMOL_IN_MOL;
@@ -298,6 +299,7 @@ double Voc::gamma_PH(const leaf_emission_t& lemi,
 		// jarvis.cpp:204
 		jMax += frad * jMax25 * exp(species.AEJM * term1) * term2;
 	}
+	*/
 
 	// electron transport rate and electron usage 
 	// fw: "km": michaelis-menten coefficient for electron transport capacity
