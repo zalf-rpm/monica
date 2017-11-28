@@ -484,6 +484,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	
 	double Jmax_c_sun = Jmax_bernacchi_f(in.leaf_temp, Jmax_c_sun_25);
 	double Jmax_c_sh = Jmax_bernacchi_f(in.leaf_temp, Jmax_c_sh_25);
+	out.jmax_c = Jmax_c_sun + Jmax_c_sh;
 
 	double J_c_sun = J_bernacchi_f(Ic_sun, in.leaf_temp, Jmax_c_sun); //µmol m - 2 s - 1 (unit ground area)
 	double J_c_sh = J_bernacchi_f(Ic_sh, in.leaf_temp, Jmax_c_sh);

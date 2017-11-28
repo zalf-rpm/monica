@@ -55,11 +55,11 @@ Voc::calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
 
 			// conversion of microclimate variables
 			lemi.pho.par = mcd.rad * FPAR * W_IN_UMOL; // par [umol m-2 s-1 pa-radiation] = rad_fl [W m-2 global radiation] * 0.45 * 4.57
-			lemi.pho.par24 = mcd.rad24 * FPAR * W_IN_UMOL;
-			lemi.pho.par240 = mcd.rad240 * FPAR * W_IN_UMOL;
+			//lemi.pho.par24 = mcd.rad24 * FPAR * W_IN_UMOL;
+			//lemi.pho.par240 = mcd.rad240 * FPAR * W_IN_UMOL;
 			lemi.fol.tempK = mcd.tFol + D_IN_K;
-			lemi.fol.tempK24 = mcd.tFol24 + D_IN_K;
-			lemi.fol.tempK240 = mcd.tFol240 + D_IN_K;
+			//lemi.fol.tempK24 = mcd.tFol24 + D_IN_K;
+			//lemi.fol.tempK240 = mcd.tFol240 + D_IN_K;
 
 			// emission in dependence on light and temperature, weighted over canopy layers
 			auto lems = calcLeafEmission(lemi, species.EF_MONOS);
