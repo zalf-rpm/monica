@@ -215,6 +215,10 @@ namespace Monica
 				
 		double pc_EarlyRefLeafExp{ 12.0 }; //!< 12 = wheat (first guess)
 		double pc_RefLeafExp{ 20.0 }; //!< 20 = wheat, 22 = maize (first guess)
+
+		double pc_MinTempDev_WE;
+		double pc_OptTempDev_WE;
+		double pc_MaxTempDev_WE;
   };
 
   typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
@@ -614,6 +618,7 @@ namespace Monica
     double pc_Tortuosity{0.0};
 		bool pc_AdjustRootDepthForSoilProps{true};
 
+		bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
 		bool __enable_Photosynthesis_WangEngelTemperatureResponse__{false};
 		bool __enable_hourly_FvCB_photosynthesis__{false};
 		bool __enable_T_response_leaf_expansion__{ false };

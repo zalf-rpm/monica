@@ -732,6 +732,19 @@ double CropGrowth::fc_OxygenDeficiency(double d_CriticalOxygenContent)
 	return vc_OxygenDeficit;
 }
 
+double WangEngelTemperatureResponse (double t, double tmin, double topt, double tmax, double betacoeff)
+{
+	//prevent nan values with t < tmin
+	if (t < tmin || t > tmax)
+		return 0.0;
+
+	double alfa = log(2) / log((tmax - tmin) / (topt - tmin));
+	double numerator = 2 * pow(t - tmin, alfa)*pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
+	double denominator = pow(topt - tmin, 2 * alfa);
+
+	return pow(numerator / denominator, betacoeff);
+};
+
 /**
  * @brief Determining the crop's developmental stage
  *
@@ -941,20 +954,41 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 		{
 			vc_CurrentTemperatureSum[vc_DevelopmentalStage] = 0.0;
 		}
-		else if(vw_MeanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage])
+		else 
 		{
-
-			if(vw_MeanAirTemperature > pc_OptimumTemperature[vc_DevelopmentalStage])
+			if (cropPs.__enable_Phenology_WangEngelTemperatureResponse__)
 			{
-				vw_MeanAirTemperature = pc_OptimumTemperature[vc_DevelopmentalStage];
+				double devTresponse = max(0.0, WangEngelTemperatureResponse(vw_MeanAirTemperature,
+					cultivarPs.pc_MinTempDev_WE,
+					cultivarPs.pc_OptTempDev_WE,
+					cultivarPs.pc_MaxTempDev_WE,
+					1.0));
+				
+				vc_CurrentTemperatureSum[vc_DevelopmentalStage] += devTresponse * vw_MeanAirTemperature
+					* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
+
+				vc_CurrentTotalTemperatureSum += devTresponse * vw_MeanAirTemperature
+					* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
 			}
+			else
+			{
+				if (vw_MeanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage])
+				{
+					if (vw_MeanAirTemperature > pc_OptimumTemperature[vc_DevelopmentalStage])
+					{
+						vw_MeanAirTemperature = pc_OptimumTemperature[vc_DevelopmentalStage];
+					}
 
-			vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vw_MeanAirTemperature
-																													- pc_BaseTemperature[vc_DevelopmentalStage]) * vc_VernalisationFactor * vc_DaylengthFactor
-				* vc_DevelopmentAccelerationByStress * vc_TimeStep;
+					vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vw_MeanAirTemperature
+						- pc_BaseTemperature[vc_DevelopmentalStage]) * vc_VernalisationFactor * vc_DaylengthFactor
+						* vc_DevelopmentAccelerationByStress * vc_TimeStep;
 
-			vc_CurrentTotalTemperatureSum += (vw_MeanAirTemperature - pc_BaseTemperature[vc_DevelopmentalStage])
-				* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
+					vc_CurrentTotalTemperatureSum += (vw_MeanAirTemperature - pc_BaseTemperature[vc_DevelopmentalStage])
+						* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
+				}
+			}
+			
+			
 
 		}
 
@@ -1331,18 +1365,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
 	vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
 
-	auto WangEngelTemperatureResponse = [](double t, double tmin, double topt, double tmax, double betacoeff)
-	{
-		//prevent nan values with t < tmin
-		if(t < tmin || t > tmax)
-			return 0.0;
-		
-		double alfa = log(2) / log((tmax - tmin) / (topt - tmin));
-		double numerator = 2 * pow(t - tmin, alfa)*pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
-		double denominator = pow(topt - tmin, 2 * alfa);
-		
-		return pow(numerator/denominator, betacoeff);
-	};
+	
 
 	if(pc_CarboxylationPathway == 1)
 	{

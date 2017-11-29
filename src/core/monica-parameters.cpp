@@ -276,6 +276,11 @@ Errors CultivarParameters::merge(json11::Json j)
 	set_double_value(pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
 	set_double_value(pc_RefLeafExp, j, "RefLeafExp");
 
+	set_double_value(pc_MinTempDev_WE, j, "MinTempDev_WE");
+	set_double_value(pc_OptTempDev_WE, j, "OptTempDev_WE");
+	set_double_value(pc_MaxTempDev_WE, j, "MaxTempDev_WE");
+	
+
 	return res;
 }
 
@@ -324,8 +329,11 @@ json11::Json CultivarParameters::to_json() const
   {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
   {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
   {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)},
-	{ "EarlyRefLeafExp", pc_EarlyRefLeafExp },
-	{ "RefLeafExp", pc_RefLeafExp }
+	{"EarlyRefLeafExp", pc_EarlyRefLeafExp },
+	{"RefLeafExp", pc_RefLeafExp },
+	{"MinTempDev_WE", pc_MinTempDev_WE },
+	{"OptTempDev_WE", pc_OptTempDev_WE },
+	{"MaxTempDev_WE", pc_MaxTempDev_WE }
 	};
 
   return cultivar;
@@ -930,6 +938,7 @@ Errors UserCropParameters::merge(json11::Json j)
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
 
 	set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j, "__enable_Photosynthesis_WangEngelTemperatureResponse__");
+	set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j, "__enable_Phenology_WangEngelTemperatureResponse__");
 	set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
 	set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
 	
@@ -956,6 +965,7 @@ json11::Json UserCropParameters::to_json() const
   ,{"GrowthRespirationParameter2", pc_GrowthRespirationParameter2}
   ,{"Tortuosity", pc_Tortuosity}
 	,{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps}
+	,{ "__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__ }
 	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
 	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
 	,{ "__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__ }
