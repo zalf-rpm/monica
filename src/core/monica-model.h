@@ -255,7 +255,7 @@ namespace Monica
 		CropGrowth* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
 
 		//VOC members
-		const int _stepSize24{0}, _stepSize240{10};
+		const int _stepSize24{1}, _stepSize240{10};
 		std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
 		int _index24{0}, _index240{0};
 		bool _full24{false}, _full240{false};

@@ -641,6 +641,7 @@ void MonicaModel::cropStep()
   p_accuHeatStress += _currentCropGrowth->get_HeatStressRedux();
   p_accuOxygenStress += _currentCropGrowth->get_OxygenDeficit();
 
+	/*
 	//prepare VOC calculations
 	//TODO: right now assumes that we have daily values and thus xxx24 is the same as xxx
 	double globradWm2 = globrad * 1000000.0 / 86400.0; //MJ/m2/d (a sum) -> W/m2
@@ -672,6 +673,7 @@ void MonicaModel::cropStep()
 	
 	//debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
 	_currentCropGrowth->calculateVOCEmissions(mcd);
+	*/
 }
 
 /**

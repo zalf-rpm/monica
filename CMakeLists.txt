@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8) #3.2.2)
+cmake_minimum_required(VERSION 3.2.2)
 project(monica)
 
 add_definitions(
@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(UTIL_DIR "../util")
 set(SYS_LIBS_DIR "../sys-libs")
+
 
 include_directories("src")
 include_directories(${UTIL_DIR})
@@ -527,8 +528,25 @@ set_target_properties(monica-zmq-server PROPERTIES COMPILE_DEFINITIONS "USE_DLL"
 
 #------------------------------------------------------------------------------
 
-find_package(PythonLibs)
-include_directories(${PYTHON_INCLUDE_DIRS})
+#set path and lib manually because for some reasons on the cluster1/2 on debian 9 python3.4m is found instead of 2.7
+set(PYTHON_INCLUDE_DIR "/usr/include/python2.7/")
+set(PYTHON_LIBRARY "/usr/lib/x86_64-linux-gnu/libpython2.7.so")
+
+find_package(PythonInterp 2.7 EXACT REQUIRED)
+find_package(PythonLibs 2.7 EXACT REQUIRED)
+
+#message(STATUS "PYTHON_VERSION_STRING = ${PYTHON_VERSION_STRING}")
+#message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
+#message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+#message(STATUS "PYTHON_INCLUDE_DIRS = ${PYTHON_INCLUDE_DIRS}")
+#message(STATUS "PYTHONLIBS_VERSION_STRING = ${PYTHONLIBS_VERSION_STRING}")
+
+#set(Python_ADDITIONAL_VERSIONS 2.7)
+#find_package(PythonLibs)
+#message(STATUS ${PYTHON_INCLUDE_DIRS})
+#include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(${PYTHON_INCLUDE_DIR})
+#message(STATUS "INCLUDE_DIRECTORIES = ${INCLUDE_DIRECTORIES}")
 
 find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})

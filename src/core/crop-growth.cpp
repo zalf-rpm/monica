@@ -157,6 +157,10 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
 	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+	, _rad24(_stepSize24)
+	, _rad240(_stepSize240)
+	, _tfol24(_stepSize24)
+	, _tfol240(_stepSize240)
 	, _fireEvent(fireEvent)
 {
 	// Determining the total temperature sum of all developmental stages after
@@ -1812,11 +1816,72 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			hps.Vcmax_25 = 100.0;//test TODO: delete and add VCMAX25 to param file
 
 			auto res = FvCB_canopy_hourly_C3(in, hps);
+			_cropPhotosynthesisResults[JMAX] = res.jmax_c;
 			vc_sunlitLeafAreaIndex[h] = res.LAI_sun;
 			vc_shadedLeafAreaIndex[h] = res.LAI_sh;
 
 			// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
 			dailyGP += res.canopy_gross_photos * 44. / 100. / 1000.;
+						
+
+			// calculate VOC emissions
+			double globradWm2 = in.global_rad * 1000000.0; //MW/m2 -> W/m2
+			if(_index240 < _stepSize240 - 1)
+				_index240++;
+			else
+			{
+				_index240 = 0;
+				_full240 = true;
+			}
+			_rad240[_index240] = globradWm2;
+			_tfol240[_index240] = in.leaf_temp;
+
+			if(_index24 < _stepSize24 - 1)
+				_index24++;
+			else
+			{
+				_index24 = 0;
+				_full24 = true;
+			}
+			_rad24[_index24] = globradWm2;
+			_tfol24[_index24] = in.leaf_temp;
+
+			Voc::MicroClimateData mcd;
+			//hourly or time step average global radiation (in case of monica usually 24h)
+			mcd.rad = globradWm2;
+			mcd.rad24 = accumulate(_rad24.begin(), _rad24.end(), 0.0) / (_full24 ? _rad24.size() : _index24 + 1);
+			mcd.rad240 = accumulate(_rad240.begin(), _rad240.end(), 0.0) / (_full240 ? _rad240.size() : _index240 + 1);
+			mcd.tFol = in.leaf_temp;
+			mcd.tFol24 = accumulate(_tfol24.begin(), _tfol24.end(), 0.0) / (_full24 ? _tfol24.size() : _index24 + 1);
+			mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
+
+			//double lai = vc_LeafAreaIndex;
+			//auto sunShadeLaiAtZenith = laiSunShade(_sitePs.vs_Latitude, julday, 12, lai);
+			//mcd.sunlitfoliagefraction = sunShadeLaiAtZenith.first / lai;
+			//mcd.sunlitfoliagefraction24 = mcd.sunlitfoliagefraction;
+
+			Voc::SpeciesData species;
+			//species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
+			species.lai = vc_LeafAreaIndex;
+			species.mFol = get_OrganBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
+			species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+
+			species.EF_MONO = speciesPs.EF_MONO;
+			species.EF_MONOS = speciesPs.EF_MONOS;
+			species.EF_ISO = speciesPs.EF_ISO;
+			species.VCMAX25 = speciesPs.VCMAX25;
+			species.AEKC = speciesPs.AEKC;
+			species.AEKO = speciesPs.AEKO;
+			species.AEVC = speciesPs.AEVC;
+			species.KC25 = speciesPs.KC25;
+
+			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd);
+			_guentherEmissions += ges;
+			//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
+
+			auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults);
+			_jjvEmissions += jjves;
+			//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
 		}
 	}
 #pragma endregion hourly FvCB code

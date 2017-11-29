@@ -56,6 +56,7 @@ namespace FvCB
 		double canopy_gross_photos; //µmol CO2 m-2 h-1
 		double gs_sun; //mol m-2 s-1 bar-1
 		double gs_sh; //mol m-2 s-1 bar-1
+		double jmax_c; //umol m-2 s-1
 	};
 	
 	FvCB_canopy_hourly_out FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);
