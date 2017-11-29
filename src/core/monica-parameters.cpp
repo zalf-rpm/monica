@@ -142,6 +142,8 @@ Errors SpeciesParameters::merge(json11::Json j)
 	set_double_value(KC25, j, "KC25");
 	set_double_value(KO25, j, "KO25");
 
+	set_int_value(pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
+
 	return res;
 }
 
@@ -203,6 +205,8 @@ json11::Json SpeciesParameters::to_json() const
 	,{"AEVC", J11Array{AEVC, "J mol-1"}}
 	,{"KC25", J11Array{KC25, "umol mol-1 ubar-1"}}
 	,{"KO25", J11Array{KO25, "mmol mol-1 mbar-1"}}
+
+	,{ "TransitionStageLeafExp", J11Array{ pc_TransitionStageLeafExp, "1-7"}},
 	};
 
   return species;
@@ -268,6 +272,9 @@ Errors CultivarParameters::merge(json11::Json j)
     pc_AssimilatePartitioningCoeff.push_back(double_vector(js));
   for(auto js : j["OrganSenescenceRate"].array_items())
     pc_OrganSenescenceRate.push_back(double_vector(js));
+		
+	set_double_value(pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
+	set_double_value(pc_RefLeafExp, j, "RefLeafExp");
 
 	return res;
 }
@@ -316,7 +323,10 @@ json11::Json CultivarParameters::to_json() const
   {"LatestHarvestDoy", pc_LatestHarvestDoy},
   {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
   {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
-  {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)}};
+  {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)},
+	{ "EarlyRefLeafExp", pc_EarlyRefLeafExp },
+	{ "RefLeafExp", pc_RefLeafExp }
+	};
 
   return cultivar;
 }
@@ -921,7 +931,8 @@ Errors UserCropParameters::merge(json11::Json j)
 
 	set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j, "__enable_Photosynthesis_WangEngelTemperatureResponse__");
 	set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
-
+	set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
+	
 	return res;
 }
 
@@ -947,6 +958,7 @@ json11::Json UserCropParameters::to_json() const
 	,{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps}
 	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
 	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
+	,{ "__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__ }
   };
 }
 

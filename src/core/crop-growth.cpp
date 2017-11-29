@@ -57,6 +57,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	: soilColumn(sc)
 	, cropPs(cropPs)
 	, speciesPs(cps.speciesParams)
+	, cultivarPs(cps.cultivarParams)
 	, vs_Latitude(stps.vs_Latitude)
 	, pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
 	, pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
@@ -366,7 +367,9 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 								pc_CropHeightP1,
 								pc_CropHeightP2);
 
-		fc_CropGreenArea(vc_OrganGrowthIncrement[1],
+		fc_CropGreenArea(vw_MeanAirTemperature,
+										 vc_DevelopmentalStage,
+										 vc_OrganGrowthIncrement[1],
 										 vc_OrganSenescenceIncrement[1],
 										 vc_CropHeight,
 										 vc_CropDiameter,
@@ -1126,7 +1129,9 @@ void CropGrowth::fc_CropSize(double pc_MaxCropHeight,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropGreenArea(double d_LeafBiomassIncrement,
+void CropGrowth::fc_CropGreenArea(double vw_MeanAirTemperature,
+																	double vc_DevelopmentalStage,
+																	double d_LeafBiomassIncrement,
 																	double d_LeafBiomassDecrement,
 																	double vc_CropHeight,
 																	double vc_CropDiameter,
@@ -1138,9 +1143,27 @@ void CropGrowth::fc_CropGreenArea(double d_LeafBiomassIncrement,
 																	double pc_PlantDensity,
 																	double vc_TimeStep)
 {
+	double TempResponseExpansion = 1.0;
+	if (cropPs.__enable_T_response_leaf_expansion__)
+	{
+		//Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
+		if (vc_DevelopmentalStage + 1 <= speciesPs.pc_TransitionStageLeafExp)
+		{
+			//Early stages leaf expansion T response
+			//!!!! maybe referenceTempResponseExpansion calculation should be moved to the constructor because it has to be calculated just once per crop
+			double referenceTempResponseExpansion = 223.9 * exp(-5.03 * exp(-0.0653 * cultivarPs.pc_EarlyRefLeafExp));
+			TempResponseExpansion = std::min(223.9 * exp(-5.03 * exp(-0.0653 * vw_MeanAirTemperature)) / referenceTempResponseExpansion, 1.3);
+		}
+		else
+		{
+			//leaf expansion T response
+			double referenceTempResponseExpansion = 37.7 * exp(-7.23 * exp(-0.1462 * cultivarPs.pc_RefLeafExp));
+			TempResponseExpansion = std::min(37.7 * exp(-7.23 * exp(-0.1462 * vw_MeanAirTemperature)) / referenceTempResponseExpansion, 1.3);
+		}
+	}
 
-	vc_LeafAreaIndex += (d_LeafBiomassIncrement * (d_SpecificLeafAreaStart + (d_CurrentTemperatureSum
-																																						/ d_StageTemperatureSum * (d_SpecificLeafAreaEnd - d_SpecificLeafAreaStart))) * vc_TimeStep)
+	vc_LeafAreaIndex += (d_LeafBiomassIncrement *  TempResponseExpansion * (d_SpecificLeafAreaStart + (d_CurrentTemperatureSum
+		/ d_StageTemperatureSum * (d_SpecificLeafAreaEnd - d_SpecificLeafAreaStart))) * vc_TimeStep)
 		- (d_LeafBiomassDecrement * d_SpecificLeafAreaEarly * vc_TimeStep); // [ha ha-1]
 
 	if(vc_LeafAreaIndex <= 0.0)
@@ -1866,8 +1889,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 		{
 			vc_GrowthRespirationSum += pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ] 
 				* vc_Assimilates * pc_OrganGrowthRespiration[i_Organ];
+			
 		}
-	}
+	}			
 
 	if(vc_Assimilates > 0.0)
 	{
