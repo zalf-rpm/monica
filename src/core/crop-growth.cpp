@@ -156,6 +156,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
 	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+	, vs_ImpenetrableLayerDepth(stps.vs_ImpenetrableLayerDepth)
 	, _rad24(_stepSize24)
 	, _rad240(_stepSize240)
 	, _tfol24(_stepSize24)
@@ -224,6 +225,9 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	{
 		vc_MaxRootingDepth = pc_CropSpecificMaxRootingDepth; //[m]
 	}
+
+	if(vs_ImpenetrableLayerDepth > 0)
+		vc_MaxRootingDepth = min(vc_MaxRootingDepth, vs_ImpenetrableLayerDepth);
 
 	// change organs for yield components in case of eva2 simulation
 	// if type of usage is defined
@@ -1852,11 +1856,11 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			species.AEVC = speciesPs.AEVC;
 			species.KC25 = speciesPs.KC25;
 
-			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd);
+			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1./24.);
 			_guentherEmissions += ges;
 			//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
-			auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults);
+			auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1./24.);
 			_jjvEmissions += jjves;
 			//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
 		}
@@ -2596,15 +2600,19 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	}
 
 	// In case of drought stress the root will grow deeper
-	if((vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage])) &&
-		(vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth) &&
-		 (vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)))
+	if(vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage]) 
+		 && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth 
+		 && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1))
 	{
 		vc_MaxRootingDepth += 0.005;
 	}
 
 	if(vc_MaxRootingDepth > (double(nols - 1) * layerThickness))
 		vc_MaxRootingDepth = double(nols - 1) * layerThickness;
+
+	//restrict rootgrowth to everything above impentrable layer
+	if(vs_ImpenetrableLayerDepth > 0)
+		vc_MaxRootingDepth = min(vc_MaxRootingDepth, vs_ImpenetrableLayerDepth);
 
 
 	// ***************************************************************************
@@ -2663,20 +2671,13 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	}
 
 	if(vc_RootingDepth_m <= pc_InitialRootingDepth)
-	{
 		vc_RootingDepth_m = pc_InitialRootingDepth;
-	}
 
 	if(vc_RootingDepth_m > vc_MaxRootingDepth)
-	{
 		vc_RootingDepth_m = vc_MaxRootingDepth; // [m]
-	}
-
 
 	if(vc_RootingDepth_m > vs_MaxEffectiveRootingDepth)
-	{
 		vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
-	}
 
 	//std::cout << "vs_MaxEffectiveRootingDepth: " << vs_MaxEffectiveRootingDepth << std::endl;
 	//std::cout << "vc_RootPenetrationRate: " << vc_RootPenetrationRate << std::endl;
@@ -2689,15 +2690,11 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	// Calculating rooting depth layer []
 	vc_RootingDepth = int(std::floor(0.5 + (vc_RootingDepth_m / layerThickness))); // []
 	if(vc_RootingDepth > nols)
-	{
 		vc_RootingDepth = nols;
-	}
 
 	vc_RootingZone = int(std::floor(0.5 + ((1.3 * vc_RootingDepth_m) / layerThickness))); // []
 	if(vc_RootingZone > nols)
-	{
 		vc_RootingZone = nols;
-	}
 
 	vc_TotalRootLength = vc_RootBiomass * pc_SpecificRootLength; //[m m-2]
 
