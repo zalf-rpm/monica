@@ -57,6 +57,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	: soilColumn(sc)
 	, cropPs(cropPs)
 	, speciesPs(cps.speciesParams)
+	, cultivarPs(cps.cultivarParams)
 	, vs_Latitude(stps.vs_Latitude)
 	, pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
 	, pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
@@ -374,7 +375,9 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 								pc_CropHeightP1,
 								pc_CropHeightP2);
 
-		fc_CropGreenArea(vc_OrganGrowthIncrement[1],
+		fc_CropGreenArea(vw_MeanAirTemperature,
+										 vc_DevelopmentalStage,
+										 vc_OrganGrowthIncrement[1],
 										 vc_OrganSenescenceIncrement[1],
 										 vc_CropHeight,
 										 vc_CropDiameter,
@@ -733,6 +736,19 @@ double CropGrowth::fc_OxygenDeficiency(double d_CriticalOxygenContent)
 	return vc_OxygenDeficit;
 }
 
+double WangEngelTemperatureResponse (double t, double tmin, double topt, double tmax, double betacoeff)
+{
+	//prevent nan values with t < tmin
+	if (t < tmin || t > tmax)
+		return 0.0;
+
+	double alfa = log(2) / log((tmax - tmin) / (topt - tmin));
+	double numerator = 2 * pow(t - tmin, alfa)*pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
+	double denominator = pow(topt - tmin, 2 * alfa);
+
+	return pow(numerator / denominator, betacoeff);
+};
+
 /**
  * @brief Determining the crop's developmental stage
  *
@@ -942,20 +958,41 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 		{
 			vc_CurrentTemperatureSum[vc_DevelopmentalStage] = 0.0;
 		}
-		else if(vw_MeanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage])
+		else 
 		{
-
-			if(vw_MeanAirTemperature > pc_OptimumTemperature[vc_DevelopmentalStage])
+			if (cropPs.__enable_Phenology_WangEngelTemperatureResponse__)
 			{
-				vw_MeanAirTemperature = pc_OptimumTemperature[vc_DevelopmentalStage];
+				double devTresponse = max(0.0, WangEngelTemperatureResponse(vw_MeanAirTemperature,
+					cultivarPs.pc_MinTempDev_WE,
+					cultivarPs.pc_OptTempDev_WE,
+					cultivarPs.pc_MaxTempDev_WE,
+					1.0));
+				
+				vc_CurrentTemperatureSum[vc_DevelopmentalStage] += devTresponse * vw_MeanAirTemperature
+					* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
+
+				vc_CurrentTotalTemperatureSum += devTresponse * vw_MeanAirTemperature
+					* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
 			}
+			else
+			{
+				if (vw_MeanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage])
+				{
+					if (vw_MeanAirTemperature > pc_OptimumTemperature[vc_DevelopmentalStage])
+					{
+						vw_MeanAirTemperature = pc_OptimumTemperature[vc_DevelopmentalStage];
+					}
 
-			vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vw_MeanAirTemperature
-																													- pc_BaseTemperature[vc_DevelopmentalStage]) * vc_VernalisationFactor * vc_DaylengthFactor
-				* vc_DevelopmentAccelerationByStress * vc_TimeStep;
+					vc_CurrentTemperatureSum[vc_DevelopmentalStage] += (vw_MeanAirTemperature
+						- pc_BaseTemperature[vc_DevelopmentalStage]) * vc_VernalisationFactor * vc_DaylengthFactor
+						* vc_DevelopmentAccelerationByStress * vc_TimeStep;
 
-			vc_CurrentTotalTemperatureSum += (vw_MeanAirTemperature - pc_BaseTemperature[vc_DevelopmentalStage])
-				* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
+					vc_CurrentTotalTemperatureSum += (vw_MeanAirTemperature - pc_BaseTemperature[vc_DevelopmentalStage])
+						* vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress * vc_TimeStep;
+				}
+			}
+			
+			
 
 		}
 
@@ -1134,7 +1171,9 @@ void CropGrowth::fc_CropSize(double pc_MaxCropHeight,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropGreenArea(double d_LeafBiomassIncrement,
+void CropGrowth::fc_CropGreenArea(double vw_MeanAirTemperature,
+																	double vc_DevelopmentalStage,
+																	double d_LeafBiomassIncrement,
 																	double d_LeafBiomassDecrement,
 																	double vc_CropHeight,
 																	double vc_CropDiameter,
@@ -1146,9 +1185,27 @@ void CropGrowth::fc_CropGreenArea(double d_LeafBiomassIncrement,
 																	double pc_PlantDensity,
 																	double vc_TimeStep)
 {
+	double TempResponseExpansion = 1.0;
+	if (cropPs.__enable_T_response_leaf_expansion__)
+	{
+		//Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
+		if (vc_DevelopmentalStage + 1 <= speciesPs.pc_TransitionStageLeafExp)
+		{
+			//Early stages leaf expansion T response
+			//!!!! maybe referenceTempResponseExpansion calculation should be moved to the constructor because it has to be calculated just once per crop
+			double referenceTempResponseExpansion = 223.9 * exp(-5.03 * exp(-0.0653 * cultivarPs.pc_EarlyRefLeafExp));
+			TempResponseExpansion = std::min(223.9 * exp(-5.03 * exp(-0.0653 * vw_MeanAirTemperature)) / referenceTempResponseExpansion, 1.3);
+		}
+		else
+		{
+			//leaf expansion T response
+			double referenceTempResponseExpansion = 37.7 * exp(-7.23 * exp(-0.1462 * cultivarPs.pc_RefLeafExp));
+			TempResponseExpansion = std::min(37.7 * exp(-7.23 * exp(-0.1462 * vw_MeanAirTemperature)) / referenceTempResponseExpansion, 1.3);
+		}
+	}
 
-	vc_LeafAreaIndex += (d_LeafBiomassIncrement * (d_SpecificLeafAreaStart + (d_CurrentTemperatureSum
-																																						/ d_StageTemperatureSum * (d_SpecificLeafAreaEnd - d_SpecificLeafAreaStart))) * vc_TimeStep)
+	vc_LeafAreaIndex += (d_LeafBiomassIncrement *  TempResponseExpansion * (d_SpecificLeafAreaStart + (d_CurrentTemperatureSum
+		/ d_StageTemperatureSum * (d_SpecificLeafAreaEnd - d_SpecificLeafAreaStart))) * vc_TimeStep)
 		- (d_LeafBiomassDecrement * d_SpecificLeafAreaEarly * vc_TimeStep); // [ha ha-1]
 
 	if(vc_LeafAreaIndex <= 0.0)
@@ -1312,18 +1369,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
 	vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
 
-	auto WangEngelTemperatureResponse = [](double t, double tmin, double topt, double tmax, double betacoeff)
-	{
-		//prevent nan values with t < tmin
-		if(t < tmin || t > tmax)
-			return 0.0;
-		
-		double alfa = log(2) / log((tmax - tmin) / (topt - tmin));
-		double numerator = 2 * pow(t - tmin, alfa)*pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
-		double denominator = pow(topt - tmin, 2 * alfa);
-		
-		return pow(numerator/denominator, betacoeff);
-	};
+	
 
 	if(pc_CarboxylationPathway == 1)
 	{
@@ -1935,8 +1981,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 		{
 			vc_GrowthRespirationSum += pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ] 
 				* vc_Assimilates * pc_OrganGrowthRespiration[i_Organ];
+			
 		}
-	}
+	}			
 
 	if(vc_Assimilates > 0.0)
 	{

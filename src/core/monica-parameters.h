@@ -151,6 +151,8 @@ namespace Monica
 		double AEVC{68800.0}; //!< activation energy for photosynthesis (J mol-1) | MONICA default=68800.0 | LDNDC default=58520.0
 		double KC25{460.0}; //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1) | MONICA default=460.0 | LDNDC default=260.0
 		double KO25{330.0}; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
+
+		int pc_TransitionStageLeafExp{ -1 }; //!< [1-7]
   };
 
   typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
@@ -210,6 +212,13 @@ namespace Monica
     std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
     std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
     std::vector<YieldComponent> pc_OrganIdsForCutting;
+				
+		double pc_EarlyRefLeafExp{ 12.0 }; //!< 12 = wheat (first guess)
+		double pc_RefLeafExp{ 20.0 }; //!< 20 = wheat, 22 = maize (first guess)
+
+		double pc_MinTempDev_WE;
+		double pc_OptTempDev_WE;
+		double pc_MaxTempDev_WE;
   };
 
   typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
@@ -610,8 +619,10 @@ namespace Monica
     double pc_Tortuosity{0.0};
 		bool pc_AdjustRootDepthForSoilProps{true};
 
+		bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
 		bool __enable_Photosynthesis_WangEngelTemperatureResponse__{false};
 		bool __enable_hourly_FvCB_photosynthesis__{false};
+		bool __enable_T_response_leaf_expansion__{ false };
 	};
 
 	//----------------------------------------------------------------------------

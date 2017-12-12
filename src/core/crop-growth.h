@@ -132,7 +132,9 @@ namespace Monica
                      double pc_CropHeightP1,
                      double pc_CropHeightP2);
 
-    void fc_CropGreenArea(double d_LeafBiomassIncrement,
+    void fc_CropGreenArea(double vw_MeanAirTemperature,
+													double vc_DevelopmentalStage,
+													double d_LeafBiomassIncrement,
                           double d_LeafBiomassDecrement,
                           double vc_CropHeiht,
                           double vc_CropDiameter,
@@ -384,6 +386,7 @@ namespace Monica
     CropParametersPtr perennialCropParams;
     const UserCropParameters& cropPs;
 		SpeciesParameters speciesPs;
+		CultivarParameters cultivarPs;
 
     //! old N
     //    static const double vw_AtmosphericCO2Concentration;
