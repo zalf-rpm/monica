@@ -2989,7 +2989,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 	else
 	{
 
-		if(pc_CarboxylationPathway = 1)
+		if(pc_CarboxylationPathway == 1)
 		{
 			vc_StomataResistance = // [s m-1]
 				(vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit / pc_SaturationBeta))
