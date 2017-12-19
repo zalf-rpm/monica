@@ -526,11 +526,25 @@ void MonicaModel::generalStep()
                                                   leapYear)
                         : gw_value / 100.0; // [cm] --> [m]
 
+	// first try to get CO2 concentration from climate data
 	auto co2it = climateData.find(Climate::co2);
 	if(co2it != climateData.end())
+	{
 		vw_AtmosphericCO2Concentration = co2it->second;
-	else if (int(_envPs.p_AtmosphericCO2) == 0)
-    vw_AtmosphericCO2Concentration = CO2ForDate(date);
+	}
+	else 
+	{
+		// try to get yearly values from UserEnvironmentParameters
+		auto co2sit = _envPs.p_AtmosphericCO2s.find(date.year());
+		if(co2sit != _envPs.p_AtmosphericCO2s.end())
+			vw_AtmosphericCO2Concentration = co2sit->second;
+		// potentially use MONICA algorithm to calculate CO2 concentration
+		else if(int(_envPs.p_AtmosphericCO2) == 0)
+			vw_AtmosphericCO2Concentration = CO2ForDate(date);
+		// if everything fails value in UserEnvironmentParameters for the whole simulation
+		else 
+			vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
+	}
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;
 

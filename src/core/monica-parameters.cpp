@@ -956,6 +956,12 @@ Errors UserEnvironmentParameters::merge(json11::Json j)
 
   set_double_value(p_Albedo, j, "Albedo");
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
+	if(j["AtmosphericCO2s"].is_object())
+	{
+		p_AtmosphericCO2s.clear();
+		for(auto p : j["AtmosphericCO2s"].object_items())
+			p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
+	}
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
   set_double_value(p_LeachingDepth, j, "LeachingDepth");
   set_double_value(p_timeStep, j, "timeStep");
@@ -968,16 +974,21 @@ Errors UserEnvironmentParameters::merge(json11::Json j)
 
 json11::Json UserEnvironmentParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserEnvironmentParameters"},
-    {"Albedo", p_Albedo},
-    {"AtmosphericCO2", p_AtmosphericCO2},
-    {"WindSpeedHeight", p_WindSpeedHeight},
-    {"LeachingDepth", p_LeachingDepth},
-    {"timeStep", p_timeStep},
-    {"MaxGroundwaterDepth", p_MaxGroundwaterDepth},
-    {"MinGroundwaterDepth", p_MinGroundwaterDepth},
-    {"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
+	json11::Json::object co2s;
+	for(auto p : p_AtmosphericCO2s)
+		co2s[to_string(p.first)] = p.second;
+
+  return json11::Json::object 
+	{{"type", "UserEnvironmentParameters"}
+  ,{"Albedo", p_Albedo}
+  ,{"AtmosphericCO2", p_AtmosphericCO2}
+	,{"AtmosphericCO2s", co2s}
+  ,{"WindSpeedHeight", p_WindSpeedHeight}
+  ,{"LeachingDepth", p_LeachingDepth}
+  ,{"timeStep", p_timeStep}
+  ,{"MaxGroundwaterDepth", p_MaxGroundwaterDepth}
+  ,{"MinGroundwaterDepth", p_MinGroundwaterDepth}
+  ,{"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
   };
 }
 
