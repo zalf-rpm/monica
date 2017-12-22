@@ -201,7 +201,7 @@ bool Sowing::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
-	debug() << "sowing crop: " << _crop->toString() << " at: " << date().toString() << endl;
+	debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
 	model->seedCrop(_crop);
 	model->addEvent("Sowing");
 
@@ -286,7 +286,7 @@ bool AutomaticSowing::apply(MonicaModel* model)
 {
 	auto currentDate = model->currentStepDate();
 
-	setDate(currentDate);
+	//setDate(currentDate); //-> commented out, causes the identification as dynamic workstep to fail
 	crop()->setSeedDate(currentDate);
 
 	Sowing::apply(model);
@@ -437,7 +437,7 @@ bool Harvest::apply(MonicaModel* model)
 			 || _method == "fruitHarvest"
 			 || _method == "cutting")
 		{
-			debug() << "harvesting crop: " << crop->toString() << " at: " << date().toString() << endl;
+			debug() << "harvesting crop: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
 			
 			if(_method == "total")
 				model->harvestCurrentCrop(_exported);
@@ -448,17 +448,17 @@ bool Harvest::apply(MonicaModel* model)
 		}
 		else if(_method == "leafPruning")
 		{
-			debug() << "pruning leaves of: " << crop->toString() << " at: " << date().toString() << endl;
+			debug() << "pruning leaves of: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
 			model->leafPruningCurrentCrop(_percentage, _exported);
 		}
 		else if(_method == "tipPruning")
 		{
-			debug() << "pruning tips of: " << crop->toString() << " at: " << date().toString() << endl;
+			debug() << "pruning tips of: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
 			model->tipPruningCurrentCrop(_percentage, _exported);
 		}
 		else if(_method == "shootPruning")
 		{
-			debug() << "pruning shoots of: " << crop->toString() << " at: " << date().toString() << endl;
+			debug() << "pruning shoots of: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
 			model->shootPruningCurrentCrop(_percentage, _exported);
 		}
 		model->addEvent("Harvest");
@@ -526,7 +526,8 @@ json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const
 
 bool AutomaticHarvest::apply(MonicaModel* model)
 {
-	setDate(model->currentStepDate());
+	//setDate(model->currentStepDate()); //-> commented out, caused the detection as dynamic workstep to fail
+	model->currentCrop()->setHarvestDate(model->currentStepDate());
 	
 	Harvest::apply(model);
 	
@@ -1200,10 +1201,8 @@ vector<WSPtr> CultivationMethod::absWorkstepsAt(const Date& date) const
 bool CultivationMethod::areOnlyAbsoluteWorksteps() const
 {
 	return all_of(_allWorksteps.begin(), _allWorksteps.end(),
-								//[](decltype(_allWorksteps)::value_type p)
 								[](decltype(_allWorksteps)::value_type ws)
 	{ 
-		//return p.first.isValid() && p.first.isAbsoluteDate(); 
 		return ws->date().isValid() && ws->date().isAbsoluteDate();
 	});
 }
