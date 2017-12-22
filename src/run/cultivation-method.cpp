@@ -373,10 +373,12 @@ bool AutomaticSowing::reinit(Tools::Date date, bool addYear, bool forceInitYear)
 	setDate(Tools::Date());
 
 	bool addedYear1, addedYear2;
-	tie(_absEarliestDate, addedYear1) = makeInitAbsDate(_earliestDate, date, addYear, forceInitYear);
-	tie(_absLatestDate, addedYear2) = makeInitAbsDate(_latestDate, date, addYear, forceInitYear);
-
-	return addedYear1 || addedYear2;
+	//init first the latest date, if the latest date stays in current year, so has to stay the earliest date (thus force current year)
+	//if there is a forced current (init) year, this will force both dates to this year
+	tie(_absLatestDate, addedYear1) = makeInitAbsDate(_latestDate, date, addYear, forceInitYear);
+	tie(_absEarliestDate, addedYear2) = makeInitAbsDate(_earliestDate, date, addYear, forceInitYear || !addedYear1);
+	
+	return addedYear1;// || addedYear2;
 }
 
 
