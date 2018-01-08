@@ -409,7 +409,8 @@ namespace Monica
     double vs_Soil_CN_Ratio{10.0};
     double vs_DrainageCoeff{1.0};
     double vq_NDeposition{30.0}; //!< [kg N ha-1 y-1]
-    double vs_MaxEffectiveRootingDepth{2.0};
+    double vs_MaxEffectiveRootingDepth{2.0}; //!< [m]
+		double vs_ImpenetrableLayerDepth{-1}; //!< [m]
 
     Soil::SoilPMsPtr vs_SoilParameters;
 	};
@@ -642,6 +643,7 @@ namespace Monica
 
     double p_Albedo{0.23};
     double p_AtmosphericCO2{0.0};
+		std::map<int, double> p_AtmosphericCO2s;
     double p_WindSpeedHeight{2.0};
     double p_LeachingDepth{0.0};
     double p_timeStep{0.0};

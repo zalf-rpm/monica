@@ -592,6 +592,7 @@ namespace Monica
 
     int vc_CuttingDelayDays{0};
     double vs_MaxEffectiveRootingDepth;
+		double vs_ImpenetrableLayerDepth;
 
     int vc_AnthesisDay{-1};
     int vc_MaturityDay{-1};

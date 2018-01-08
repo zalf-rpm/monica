@@ -618,6 +618,7 @@ Errors SiteParameters::merge(json11::Json j)
   set_double_value(vs_DrainageCoeff, j, "DrainageCoeff");
   set_double_value(vq_NDeposition, j, "NDeposition");
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
+	set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
 
 	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
 	{
@@ -625,38 +626,6 @@ Errors SiteParameters::merge(json11::Json j)
 		vs_SoilParameters = p.first;
 		if(p.second.failure())
 			res.append(p.second);
-
-		/*
-		const auto& sps = j["SoilProfileParameters"].array_items();
-		vs_SoilParameters = make_shared<SoilPMs>();
-		size_t layerCount = 0;
-		for(size_t spi = 0, spsCount = sps.size(); spi < spsCount; spi++)
-		{
-			Json sp = sps.at(spi);
-
-			//repeat layers if there is an associated Thickness parameter
-			string err;
-			int repeatLayer = 1;
-			if(sp.has_shape({{"Thickness", Json::NUMBER}}, err)
-				 || sp.has_shape({{"Thickness", Json::ARRAY}}, err))
-				repeatLayer = min(20 - int(layerCount), max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1)*10.0, 0)));
-
-			//simply repeat the last layer as often as necessary to fill the 20 layers
-			if(spi + 1 == spsCount)
-				repeatLayer = 20 - layerCount;
-
-			for(int i = 1; i <= repeatLayer; i++)
-			{
-				SoilParameters sps;
-				auto es = sps.merge(sp);
-				vs_SoilParameters->push_back(sps);
-				if(es.failure())
-					res.append(es);
-			}
-
-			layerCount += repeatLayer;
-		}
-		*/
 	}
 	else
 		res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
@@ -666,16 +635,18 @@ Errors SiteParameters::merge(json11::Json j)
 
 json11::Json SiteParameters::to_json() const
 {
-  auto sps = J11Object {
-  {"type", "SiteParameters"},
-  {"Latitude", J11Array {vs_Latitude, "", "latitude in decimal degrees"}},
-  {"Slope", J11Array {vs_Slope, "m m-1"}},
-  {"HeightNN", J11Array {vs_HeightNN, "m", "height above sea level"}},
-  {"GroundwaterDepth", J11Array {vs_GroundwaterDepth, "m"}},
-  {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
-  {"DrainageCoeff", vs_DrainageCoeff},
-	{"NDeposition", J11Array {vq_NDeposition, "kg N ha-1 y-1"}},
-  {"MaxEffectiveRootingDepth", vs_MaxEffectiveRootingDepth}};
+  auto sps = J11Object
+	{{"type", "SiteParameters"}
+  ,{"Latitude", J11Array {vs_Latitude, "", "latitude in decimal degrees"}}
+  ,{"Slope", J11Array {vs_Slope, "m m-1"}}
+  ,{"HeightNN", J11Array {vs_HeightNN, "m", "height above sea level"}}
+  ,{"GroundwaterDepth", J11Array {vs_GroundwaterDepth, "m"}}
+  ,{"Soil_CN_Ratio", vs_Soil_CN_Ratio}
+  ,{"DrainageCoeff", vs_DrainageCoeff}
+	,{"NDeposition", J11Array {vq_NDeposition, "kg N ha-1 y-1"}}
+	,{"MaxEffectiveRootingDepth", J11Array{vs_MaxEffectiveRootingDepth, "m"}}
+	,{"ImpenetrableLayerDepth", J11Array {vs_ImpenetrableLayerDepth, "m"}}
+	};
 
   if(vs_SoilParameters)
     sps["SoilProfileParameters"] = toJsonArray(*vs_SoilParameters);
@@ -985,6 +956,12 @@ Errors UserEnvironmentParameters::merge(json11::Json j)
 
   set_double_value(p_Albedo, j, "Albedo");
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
+	if(j["AtmosphericCO2s"].is_object())
+	{
+		p_AtmosphericCO2s.clear();
+		for(auto p : j["AtmosphericCO2s"].object_items())
+			p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
+	}
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
   set_double_value(p_LeachingDepth, j, "LeachingDepth");
   set_double_value(p_timeStep, j, "timeStep");
@@ -997,16 +974,21 @@ Errors UserEnvironmentParameters::merge(json11::Json j)
 
 json11::Json UserEnvironmentParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserEnvironmentParameters"},
-    {"Albedo", p_Albedo},
-    {"AtmosphericCO2", p_AtmosphericCO2},
-    {"WindSpeedHeight", p_WindSpeedHeight},
-    {"LeachingDepth", p_LeachingDepth},
-    {"timeStep", p_timeStep},
-    {"MaxGroundwaterDepth", p_MaxGroundwaterDepth},
-    {"MinGroundwaterDepth", p_MinGroundwaterDepth},
-    {"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
+	json11::Json::object co2s;
+	for(auto p : p_AtmosphericCO2s)
+		co2s[to_string(p.first)] = p.second;
+
+  return json11::Json::object 
+	{{"type", "UserEnvironmentParameters"}
+  ,{"Albedo", p_Albedo}
+  ,{"AtmosphericCO2", p_AtmosphericCO2}
+	,{"AtmosphericCO2s", co2s}
+  ,{"WindSpeedHeight", p_WindSpeedHeight}
+  ,{"LeachingDepth", p_LeachingDepth}
+  ,{"timeStep", p_timeStep}
+  ,{"MaxGroundwaterDepth", p_MaxGroundwaterDepth}
+  ,{"MinGroundwaterDepth", p_MinGroundwaterDepth}
+  ,{"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
   };
 }
 
