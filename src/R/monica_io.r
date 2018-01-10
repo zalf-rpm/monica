@@ -19,6 +19,7 @@
 library(stringr)
 library(sets)
 library(readr)
+library(jsonlite)
 
 print("local monica_io.r")
 
@@ -170,22 +171,22 @@ write_output_header_rows <- function(output_ids,
                         else 
                           oid$displayName)
       }
-      append(row1, str1)
-      append(row4, paste0("j:", gsub("\"", "", oid$jsonInput)))
-      append(row3, paste0("m:",  oid_to_string(oid, include_time_agg)))
-      append(row2, paste0("[", oid$unit, "]"))
+      row1 <- append(row1, str1)
+      row4 <- append(row4, paste0("j:", gsub("\"", "", oid$jsonInput)))
+      row3 <- append(row3, paste0("m:",  oid_to_string(oid, include_time_agg)))
+      row2 <- append(row2, paste0("[", oid$unit, "]"))
     }
   }
 
   out = list()
   if(include_header_row)
-    append(out, row1)
+    out <- append(out, row1)
   if(include_units_row)
-    append(out, row4)
+    out <- append(out, row4)
   if(include_time_agg)
   {
-    append(out, row3)
-    append(out, row2)
+    out <- append(out, row3)
+    out <- append(out, row2)
   }
   
   out
@@ -198,23 +199,23 @@ write_output <- function(output_ids, values)
   out <- list()
   if(length(values) > 0)
   {
-    for(k in 0 : length(values[1]))
+    for(k in 1 : length(values[[1]]))
     {
-      i <- 0
+      i <- 1
       row <- list()
       for(. in output_ids)
       {
-        j__ <- values[i][k]
+        j__ <- values[[i]][[k]]
         if(typeof(j__, "list"))
         {
           for(jv_ in j__)
-            append(row, jv_)
+            row <- append(row, jv_)
         }
         else
-          append(row, j__)
+          row <- append(row, j__)
         i <- i + 1
       }
-      out.append(row)
+      out <- append(out, row)
     }
   }
   out
@@ -269,18 +270,18 @@ replace_env_vars <- function(path)
 default_value <- function(dic, key, default)
 {
   "return default value if key not there"
-  if(is.null(dic[key][[1]])) default else dic[key]
+  if(is.null(dic[[key]])) default else dic[[key]]
 }
 
 read_and_parse_json_file <- function(path)
 {
   tryCatch(
-    list("result" = fromJSON(file = path), "errors" = list(), "success" = TRUE),
+    return(list("result" = fromJSON(read_file(path), simplifyVector = FALSE), "errors" = list(), "success" = TRUE)),
     error = function(e) 
     {
-      list("result" = NA,
-           "errors" = list(paste0("Error opening file with path : '", path, "'!")),
-           "success" = FALSE)
+      return(list("result" = NA,
+                  "errors" = list(paste0("Error opening file with path : '", path, "'!")),
+                  "success" = FALSE))
     }
   )
 }
@@ -296,15 +297,15 @@ is_string_type <- function(j)
 }
 
 #python list/js array like thing
-is_list <- function(j)
+is_array <- function(j)
 {
-  typeof(j) == "list" && is.null(names(j))
+  is.list(j) && is.null(names(j))
 }
 
 #python dict/js object/c++ map like thing
 is_dict <- function(j)
 {
-  typeof(j) == "list" && !is.null(names(j)) && length(j) == length(names(j))
+  is.list(j) && !is.null(names(j)) && length(j) == length(names(j))
 }
 
 
@@ -315,7 +316,7 @@ find_and_replace_references <- function(root, j)
   success <- TRUE
   errors <- list()
 
-  if(is_list(j) && length(j) > 0)
+  if(is_array(j) && length(j) > 0)
   {
       arr <- list()
       array_is_reference_function <- FALSE
@@ -323,9 +324,9 @@ find_and_replace_references <- function(root, j)
       j1 <- j[[1]]
       if(is_string_type(j1))
       {
-        if(j1 %in% sp)
+        if(!is.null(sp[[j1]]))
         {
-          f <- sp[j1]
+          f <- sp[[j1]]
           array_is_reference_function <- TRUE
 
           #check for nested function invocations in the arguments
@@ -336,8 +337,8 @@ find_and_replace_references <- function(root, j)
             success <- success && res$success
             if(! res$success)
               for(err in res$errors)
-                append(errors, err)
-            append(funcArr, res$result)
+                errors <- append(errors, err)
+            funcArr <- append(funcArr, res$result)
           }
             
           #invoke function
@@ -346,7 +347,7 @@ find_and_replace_references <- function(root, j)
           success <- success && jaes$success
           if(!jaes$success)
             for(err in jaes$errors)
-              append(errors, err)
+              errors <- append(errors, err)
 
           #if successful try to recurse into result for functions in result
           if(jaes$success)
@@ -355,7 +356,7 @@ find_and_replace_references <- function(root, j)
             success <- success && res$success
             if(!res$success)
               for(err in res$errors)
-                append(errors, err)
+                errors <- append(errors, err)
             return(list("result" = res$result, "errors" = errors, "success" = length(errors) == 0))
           }
           else
@@ -371,8 +372,8 @@ find_and_replace_references <- function(root, j)
           success <- success && res$success
           if(!res$success)
             for(err in res$errors)
-              append(errors, err)
-          append(arr, res$result)
+              errors <- append(errors, err)
+          arr <- append(arr, res$result)
         }
       }
 
@@ -386,13 +387,13 @@ find_and_replace_references <- function(root, j)
 
       for(k in names(j))
       {
-        v = j[k]
+        v = j[[k]]
         r <- find_and_replace_references(root, v)
         success <- success && r$success
         if(!r$success)
           for(e in r$errors)
-            append(errors, e)
-        append(obj, k = r$result)
+            errors <- append(errors, e)
+        obj[[k]] <- r$result
       }
         
       return(list("result" = obj, "errors" = errors, "success" = length(errors) == 0))
@@ -402,7 +403,7 @@ find_and_replace_references <- function(root, j)
   list("result" = j, "errors" = errors, "success" = length(errors) == 0)
 }
 
-supported_patterns <- function()
+supported_patterns <- function(. = NA)
 {
   ref <- function(root, j)
   {
@@ -450,7 +451,7 @@ supported_patterns <- function()
 
       return(list("result" = j__,
                   "errors" = list(paste0("Couldn't include file with path: '", path_to_file, "'!")),
-                  "success" = False))
+                  "success" = FALSE))
     }
         
     list("result" = j__,
@@ -530,6 +531,7 @@ supported_patterns <- function()
       "%" = percent
     )
   
+  m <- attr(supported_patterns, "m")
   attr(supported_patterns, "m")
 }
 
@@ -549,7 +551,7 @@ print_possible_errors <- function(errs, include_warnings=FALSE)
 
 create_env_json_from_json_config <- function(crop_site_sim)
 {
-  "create the json version of the env from the json config files"
+  #"create the json version of the env from the json config files"
   for(k in names(crop_site_sim))
   {
     j <- crop_site_sim[[k]]
@@ -562,8 +564,9 @@ create_env_json_from_json_config <- function(crop_site_sim)
   add_base_path <- function(j, base_path)
   {
     #"add include file base path if not there"
-    if(!"include-file-base-path" %in% j)
-      j$include-file-base-path = base_path
+    if(is.null(j$"include-file-base-path"))
+      j$"include-file-base-path" <- base_path
+    j
   }
           
   crop_site_sim2 = list()
@@ -575,17 +578,17 @@ create_env_json_from_json_config <- function(crop_site_sim)
     if(k == "climate")
       next
 
-    add_base_path(j, path_to_parameters)
+    j = add_base_path(j, path_to_parameters)
     res <- find_and_replace_references(j, j)
     if(res$success)
       crop_site_sim2[[k]] <- res$result
     else
-      append(errors, res$errors)
+      errors <- append(errors, res$errors)
   }
      
   if(length(errors) > 0)
   {
-    for(err in errors)
+    for(err in as.set(errors))
       print(err)
     return(NA)
   }
@@ -613,17 +616,15 @@ create_env_json_from_json_config <- function(crop_site_sim)
       "siteParameters" = sitej$SiteParameters
   )
   
-  append(env,
-    list(params = cpp,
-    cropRotation = cropj$cropRotation,
-    events = simj$output$events,
+  env[["params"]] <- cpp
+  env[["cropRotation"]] <- cropj$cropRotation
+  env[["events"]] <- simj$output$events
   
-    pathToClimateCSV = simj$climate.csv,
-    csvViaHeaderOptions = simj$"climate.csv-options")
-  )
-    
-  climate_csv_string = if("climate" %in% crop_site_sim) crop_site_sim$climate else NA
-  if(!is.na(climate_csv_string))
+  env[["pathToClimateCSV"]] <- simj$climate.csv
+  env[["csvViaHeaderOptions"]] <- simj$"climate.csv-options"
+ 
+  climate_csv_string = crop_site_sim$climate
+  if(!is.null(climate_csv_string) && nchar(climate_csv_string) > 0)
     add_climate_data_to_env(env, simj, climate_csv_string)
   
   return(env)
