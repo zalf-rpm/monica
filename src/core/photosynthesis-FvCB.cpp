@@ -14,12 +14,17 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include  "photosynthesis-FvCB.h"
 #include <tuple>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
+#include <iostream>
+
+#include  "photosynthesis-FvCB.h"
+#include "tools/helper.h"
 
 using namespace FvCB;
+using namespace Tools;
+using namespace std;
 
 std::map<FvCB_Model_Consts, double> FvCB::c_bernacchi = {{Rd, 18.72},{Vcmax, 26.35},{Vomax, 22.98},{Gamma, 19.02},{Kc, 38.05},{Ko, 20.30},{Jmax, 17.57}}; //dimensionless
 std::map<FvCB_Model_Consts, double> FvCB::deltaH_bernacchi = {{Rd, 46.39},{Vcmax, 65.33},{Vomax, 60.11},{Gamma, 37.83},{Kc, 79.43},{Ko, 36.38},{Jmax, 43.54}}; //kJ mol - 1
@@ -267,7 +272,7 @@ double Gamma_bernacchi_f(double leafT, double Vcmax, double Vomax)
 {
 	double numerator = 0.5 * Vomax * Kc_bernacchi_f(leafT) * Oi_f(leafT);
 	double denominator = Vcmax * Ko_bernacchi_f(leafT);
-	return numerator / denominator;
+	return flt_equal_zero(denominator) ? 0.0 : numerator / denominator;
 }
 
 #pragma endregion FvCB model params
@@ -350,7 +355,7 @@ std::tuple<double, double> x_rubisco(double leafT, double Vcmax)
 	return std::make_tuple(x1, x2);
 }
 
-std::tuple<double, double>x_electron(double J, double gamma)
+std::tuple<double, double> x_electron(double J, double gamma)
 {
 	double x1 = J / 4.5;
 	double x2 = 10.5 / 4.5 * gamma;
@@ -477,6 +482,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double Vc = canopy_ps_capacity_f(in.LAI, Vcmax, par.kn); 
 	double Vc_sun = canopy_ps_capacity_sunlit_f(in.LAI, in.solar_el, Vcmax, par.kn);
 	double Vc_sh = Vc - Vc_sun;
+	cout << Vc << endl;
 
 	//4. canopy electron transport capacity
 	double Jmax_c_sun_25 = 2.1 * Vc_sun_25; // µmol m - 2 s - 1 (unit ground area)
@@ -494,7 +500,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double Rd_sh = Rd_bernacchi_f(in.leaf_temp)* out.LAI_sh;
 
 	out.canopy_resp = (Rd_sun + Rd_sh) * 3600.0;
-
+	
 	//6. Coupled photosynthesis - stomatal conductance
 	//6.1. estimate inputs (for solving cubic equation)
 	//6.1.1 Gamma
@@ -503,6 +509,14 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double gamma_sun = Gamma_bernacchi_f(in.leaf_temp, Vc_sun, Vomax_sun);
 	double gamma_sh = Gamma_bernacchi_f(in.leaf_temp, Vc_sh, Vomax_sh);
 
+	//calculate some outputs for to be used in VOCE modules
+	out.kc = Kc_bernacchi_f(in.leaf_temp);
+	out.ko = Ko_bernacchi_f(in.leaf_temp);
+	out.oi = Oi_f(in.leaf_temp);
+	out.comp = gamma_sun + gamma_sh;
+	out.vcMax = Vcmax;
+	out.jMax = Jmax_c_sun + Jmax_c_sh;
+	
 	//6.1.2 x1, x2 rubisco
 	std::tuple<double, double> x1_x2_rub_sun = x_rubisco(in.leaf_temp, Vc_sun);
 	std::tuple<double, double> x1_x2_rub_sh = x_rubisco(in.leaf_temp, Vc_sh);

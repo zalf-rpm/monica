@@ -57,6 +57,12 @@ namespace FvCB
 		double gs_sun; //mol m-2 s-1 bar-1
 		double gs_sh; //mol m-2 s-1 bar-1
 		double jmax_c; //umol m-2 s-1
+		double kc; //µmol mol-1 mbar-1 ... Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer
+		double ko; //µmol mol-1 mbar-1 ... Michaelis - Menten constant for O2 reaction of rubisco per canopy layer
+		double oi; //µmol m-2 ... leaf internal O2 concentration per canopy layer
+		double comp; //µmol mol-1 ... CCO2 compensation point at 25oC per canopy layer
+		double vcMax; //µmol m-2 s-1 ... actual activity state of rubisco  per canopy layer
+		double jMax; //µmol m-2 s-1 ... actual electron transport capacity per canopy layer
 	};
 	
 	FvCB_canopy_hourly_out FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);

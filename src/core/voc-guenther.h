@@ -47,9 +47,6 @@ namespace Voc
 	{
 		return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
 	}
-	
-	LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
-																 double _species_EF_MONOS);
 }
 
 #endif

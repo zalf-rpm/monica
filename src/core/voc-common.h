@@ -36,28 +36,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Voc
 {
-	template<typename T>
-	bool flt_equal_eps(T f1, T f2, T eps = std::numeric_limits<T>::epsilon())
-	{
-		return ((std::fabs(f1) < eps) && (std::fabs(f2) < eps))
-			|| std::fabs(T(f1 - f2)) < eps;
-	}
-
-	template<typename T> bool flt_equal_zero(T f, T eps = std::numeric_limits<T>::epsilon())
-	{
-		return  flt_equal_eps(T(0.0), f, eps);
-	}
-
-	template<typename T>
-	inline T const& bound_max(T const& val, T const& max)
-	{
-		return val > max ? max : val;
-	}
-
-	template<typename T> inline T sqr(T const& n) { return  n * n; }
-	
-	//----------------------------------------------------------------------------
-	
 #define KILO 1.0e+03
 #define MILLI 1.0e-03
 
@@ -132,16 +110,16 @@ namespace Voc
 
 	//---------------------------------------------------------------------------
 
-	//crop photosynthesis result names
-	enum CPData 
+	//crop photosynthesis result variables
+	struct CPData 
 	{ 
-		KC, //!< temperature corrected Michaelis Menten constant for CO2 (umol mol-1)
-		KO, //!< temperature corrected Michaelis Menten constant for O2 (umol mol-1)
-		OI, //!< intercellular concentration of oxygen (mmol mol-1)
-		CI, //!< intercellular concentration of carbon (umol mol-1)
-		COMP, //!< co2 compensation point for photosynthesis (umol mol-1)
-		VCMAX, //!< temperature corrected maximum RubP saturated rate of carboxylation (umol m-2 s-1)
-		JMAX //!<  actual electron transport capacity per canopy layer(umol m - 2 s - 1)
+		double kc{0}; //!< Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
+		double ko{0}; //!< Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
+		double oi{0}; //!< species and layer specific intercellular concentration of CO2 (umol mol-1)
+		double ci{0}; //!< leaf internal O2 concentration per canopy layer(umol m - 2)
+		double comp{0}; //!< CO2 compensation point at 25oC per canopy layer (umol m-2)
+		double vcMax{0}; //!< actual activity state of rubisco  per canopy layer (umol m-2 s-1)
+		double jMax{0}; //!<  actual electron transport capacity per canopy layer(umol m - 2 s - 1)
 	};
 
 	struct SpeciesData
@@ -180,8 +158,8 @@ namespace Voc
 		double AEVC{58520}; //!< for corn | activation energy for photosynthesis (J mol-1)
 		double SLAMIN{20}; //!< for corn | specific leaf area under full light (m2 kg-1)
 		
-		//double SCALE_I{1.0};
-		//double SCALE_M{1.0};
+		double SCALE_I{1.0};
+		double SCALE_M{1.0};
 
 		// species and canopy layer specific foliage biomass(dry weight).
 		// physiology  mFol_vtfl  mFol_vtfl  double  V : F  0.0  kg : m^-2
@@ -209,30 +187,32 @@ namespace Voc
 		//common
 		// radiation per canopy layer(W m - 2)
 		// microclimate  rad_fl rad_fl  double  F  0.0  W:m^-2
-		double rad;  
+		double rad{0};
 		// radiation regime over the last 24hours(W m - 2)
 		// microclimate  rad24_fl rad24_fl  double  F  0.0  W:m^-2
-		double rad24; 
+		double rad24{0};
 		// radiation regime over the last 10days (W m-2)
 		// microclimate  rad240_fl rad240_fl  double  F  0.0  W:m^-2
-		double rad240; 
+		double rad240{0};
 		// foliage temperature per canopy layer(oC)
 		// microclimate  tFol_fl tFol_fl  double  F  0.0  oC
-		double tFol;  
+		double tFol{0};
 		// temperature regime over the last 24hours
 		// microclimate  tFol24_fl tFol24_fl  double  F  0.0  oC
-		double tFol24; 
+		double tFol24{0};
 		// temperature regime over the last 10days
 		// microclimate  tFol240_fl tFol240_fl  double  F  0.0  oC
-		double tFol240;
+		double tFol240{0};
 
 		//jjv
 		// fraction of sunlit foliage per canopy layer
 		// microclimate  ts_sunlitfoliagefraction_fl ts_sunlitfoliagefraction_fl  double  F  0.0 ?
-		double sunlitfoliagefraction;
+		double sunlitfoliagefraction{0};
 		// fraction of sunlit foliage over the past 24 hours per canopy layer
 		// microclimate  sunlitfoliagefraction24_fl  sunlitfoliagefraction24_fl  double  F  0.0 ?
-		double sunlitfoliagefraction24;
+		double sunlitfoliagefraction24{0};
+
+		double co2concentration{0};
 	};
 
 	//----------------------------------------------------------------------------
@@ -250,11 +230,11 @@ namespace Voc
 			return *this;
 		}
 
-		std::map<int, double> speciesId_2_isoprene_emission;
-		std::map<int, double> speciesId_2_monoterpene_emission;
+		std::map<int, double> speciesId_2_isoprene_emission; //!< [umol m-2Ground ts-1] isoprene emissions per timestep and plant
+		std::map<int, double> speciesId_2_monoterpene_emission; //!< [umol m-2Ground ts-1] monoterpene emissions per timestep and plant
 
-		double isoprene_emission{0.0}; //!< [ug m-2ground h-1] isoprene emissions per timestep
-		double monoterpene_emission{0.0}; //!< [ug m-2ground h-1] monoterpene emissions per timestep
+		double isoprene_emission{0.0}; //!< [umol m-2Ground ts-1] isoprene emissions per timestep
+		double monoterpene_emission{0.0}; //!< [umol m-2Ground ts-1] monoterpene emissions per timestep
 	};
 
 	//----------------------------------------------------------------------------

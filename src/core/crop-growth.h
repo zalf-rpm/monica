@@ -608,7 +608,7 @@ namespace Monica
 		Voc::Emissions _guentherEmissions;
 		Voc::Emissions _jjvEmissions;
 		Voc::SpeciesData _vocSpecies;
-		std::map<Voc::CPData, double> _cropPhotosynthesisResults;
+		Voc::CPData _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
   };
