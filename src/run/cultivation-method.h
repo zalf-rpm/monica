@@ -382,7 +382,7 @@ namespace Monica
 		MineralFertiliserParameters _partition;
 		double _Ndemand{0};
 		double _depth{0.0};
-		int _stage{0};
+		int _stage{1};
 		bool _appliedFertilizer{false};
 	};
 
