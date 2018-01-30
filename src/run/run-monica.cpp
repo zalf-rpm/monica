@@ -85,7 +85,10 @@ Errors Env::merge(json11::Json j)
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
-	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
+	if(j["pathToClimateCSV"].is_string())
+		pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
+	else if(j["pathToClimateCSV"].is_array())
+		pathsToClimateCSV = toStringVector(j["pathToClimateCSV"].array_items());
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
 	set_string_value(customId, j, "customId");
@@ -106,7 +109,7 @@ json11::Json Env::to_json() const
 	,{"cropRotation", cr}
 	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
-	,{"pathToClimateCSV", pathToClimateCSV}
+	,{"pathsToClimateCSV", toPrimJsonArray(pathsToClimateCSV)}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	,{"customId", customId}
 	,{"events", events}

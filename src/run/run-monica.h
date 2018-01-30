@@ -60,7 +60,7 @@ namespace Monica
 
     //! object holding the climate data
     Climate::DataAccessor climateData;
-		std::string pathToClimateCSV;
+		std::vector<std::string> pathsToClimateCSV;
 		json11::Json csvViaHeaderOptions;
 
     //! vector of elements holding the data of the single crops in the rotation
