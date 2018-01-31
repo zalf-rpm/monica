@@ -85,10 +85,13 @@ Errors Env::merge(json11::Json j)
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
-	if(j["pathToClimateCSV"].is_string())
+	if(j["pathToClimateCSV"].is_string() && !j["pathToClimateCSV"].string_value().empty())
 		pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
 	else if(j["pathToClimateCSV"].is_array())
-		pathsToClimateCSV = toStringVector(j["pathToClimateCSV"].array_items());
+	{
+		auto paths = toStringVector(j["pathToClimateCSV"].array_items());
+		remove_copy(paths.begin(), paths.end(), pathsToClimateCSV.begin(), "");
+	}
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
 	set_string_value(customId, j, "customId");
