@@ -325,9 +325,10 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 			_fireEvent("maturity");
 	}
 
-	if(old_DevelopmentalStage != vc_DevelopmentalStage)
+	// fire stage event on stage change or right after sowing
+	if(old_DevelopmentalStage != vc_DevelopmentalStage || _noOfCropSteps == 0)
 		if(_fireEvent)
-			_fireEvent(string("Stage-") + to_string(vc_DevelopmentalStage));
+			_fireEvent(string("Stage-") + to_string(vc_DevelopmentalStage+1));
 
 	vc_DaylengthFactor =
 		fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
@@ -464,6 +465,7 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 			fc_NetPrimaryProduction(vc_GrossPrimaryProduction,
 															vc_TotalRespired);
 	}
+	_noOfCropSteps++;
 }
 
 /**

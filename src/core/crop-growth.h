@@ -434,6 +434,7 @@ namespace Monica
     int vm_DepthGroundwaterTable{0};		//! old GRW
     int pc_DevelopmentAccelerationByNitrogenStress;
     int vc_DevelopmentalStage{0};			//! old INTWICK
+		int _noOfCropSteps{0};
     double vc_DroughtImpactOnFertility{1.0};
     double pc_DroughtImpactOnFertilityFactor;
     std::vector<double> pc_DroughtStressThreshold;	//! old DRYswell
