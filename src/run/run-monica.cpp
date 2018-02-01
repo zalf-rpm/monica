@@ -90,11 +90,14 @@ Errors Env::merge(json11::Json j)
 	else if(j["pathToClimateCSV"].is_array())
 	{
 		auto paths = toStringVector(j["pathToClimateCSV"].array_items());
-		remove_copy(paths.begin(), paths.end(), pathsToClimateCSV.begin(), "");
+		for(auto path : paths)
+			if(!path.empty())
+				pathsToClimateCSV.push_back(path);
 	}
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
-	set_string_value(customId, j, "customId");
+	//set_string_value(customId, j, "customId");
+	customId = j["customId"];
 	events = j["events"];
 
 	return es;
@@ -131,7 +134,7 @@ string Env::toString() const
 	s << "Fruchtfolge: " << endl;
 	for(const CultivationMethod& cm : cropRotation)
 		s << cm.toString() << endl;
-	s << "customId: " << customId;
+	s << "customId: " << customId.dump();
 	return s.str();
 }
 

@@ -159,7 +159,7 @@ Errors Output::merge(json11::Json j)
 {
 	Errors es;
 
-	customId = j["customId"].string_value();
+	customId = j["customId"];// .string_value();
 
 	for(const auto& d : j["data"].array_items())
 	{
