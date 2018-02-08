@@ -163,9 +163,23 @@ int main(int argc, char** argv)
 
 		if(!climate.empty())
 			simm["climate.csv"] = climate;
-		auto pathToClimateCSV = simm["climate.csv"].string_value();
-		if(!isAbsolutePath(pathToClimateCSV))
-			simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
+		if(simm["climate.csv"].is_string())
+		{
+			auto pathToClimateCSV = simm["climate.csv"].string_value();
+			if(!isAbsolutePath(pathToClimateCSV))
+				simm["climate.csv"] = pathOfSimJson + pathToClimateCSV;
+		}
+		else if(simm["climate.csv"].is_array())
+		{
+			vector<string> ps;
+			for(auto j : simm["climate.csv"].array_items())
+			{
+				auto pathToClimateCSV = j.string_value();
+				if(!isAbsolutePath(pathToClimateCSV))
+					ps.push_back(pathOfSimJson + pathToClimateCSV);
+			}
+			simm["climate.csv"] = toPrimJsonArray(ps);
+		}
 
 		/*
 		if(!dailyOutputs.empty())

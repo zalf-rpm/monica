@@ -434,6 +434,7 @@ namespace Monica
     int vm_DepthGroundwaterTable{0};		//! old GRW
     int pc_DevelopmentAccelerationByNitrogenStress;
     int vc_DevelopmentalStage{0};			//! old INTWICK
+		int _noOfCropSteps{0};
     double vc_DroughtImpactOnFertility{1.0};
     double pc_DroughtImpactOnFertilityFactor;
     std::vector<double> pc_DroughtStressThreshold;	//! old DRYswell
@@ -608,7 +609,7 @@ namespace Monica
 		Voc::Emissions _guentherEmissions;
 		Voc::Emissions _jjvEmissions;
 		Voc::SpeciesData _vocSpecies;
-		std::map<Voc::CPData, double> _cropPhotosynthesisResults;
+		Voc::CPData _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
   };

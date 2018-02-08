@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #define RUN_MONICA_H_
 
 #include <ostream>
+#include <vector>
 
 #include "json11/json11.hpp"
 
@@ -60,7 +61,7 @@ namespace Monica
 
     //! object holding the climate data
     Climate::DataAccessor climateData;
-		std::string pathToClimateCSV;
+		std::vector<std::string> pathsToClimateCSV;
 		json11::Json csvViaHeaderOptions;
 
     //! vector of elements holding the data of the single crops in the rotation
@@ -69,7 +70,8 @@ namespace Monica
 		json11::Json events;
 		json11::Json outputs;
 		
-    std::string customId;
+    //std::string customId;
+	  json11::Json customId;
 
     CentralParameterProvider params;
 

@@ -20,27 +20,28 @@ library(stringr)
 library(sets)
 library(readr)
 library(jsonlite)
+library(rlist)
+library(rzmq)
 
 print("local monica_io.r")
 
-OP_AVG = 1
-OP_MEDIAN = 2
-OP_SUM = 3
-OP_MIN = 4
-OP_MAX = 5
-OP_FIRST = 6
-OP_LAST = 7
-OP_NONE = 8
-OP_UNDEFINED_OP_ = 9
+OP_AVG = 0
+OP_MEDIAN = 1
+OP_SUM = 2
+OP_MIN = 3
+OP_MAX = 4
+OP_FIRST = 5
+OP_LAST = 6
+OP_NONE = 7
+OP_UNDEFINED_OP_ = 8
 
-
-ORGAN_ROOT = 1
-ORGAN_LEAF = 2
-ORGAN_SHOOT = 3
-ORGAN_FRUIT = 4
-ORGAN_STRUCT = 5
-ORGAN_SUGAR = 6
-ORGAN_UNDEFINED_ORGAN_ = 7
+ORGAN_ROOT = 0
+ORGAN_LEAF = 1
+ORGAN_SHOOT = 2
+ORGAN_FRUIT = 3
+ORGAN_STRUCT = 4
+ORGAN_SUGAR = 5
+ORGAN_UNDEFINED_ORGAN_ = 6
 
 
 oid_is_organ <- function(oid)
@@ -56,33 +57,33 @@ oid_is_range <- function(oid)
 
 op_to_string <- function(op)
 {
-  switch(op,
-    OP_AVG: "AVG",
-    OP_MEDIAN: "MEDIAN",
-    OP_SUM: "SUM",
-    OP_MIN: "MIN",
-    OP_MAX: "MAX",
-    OP_FIRST: "FIRST",
-    OP_LAST: "LAST",
-    OP_NONE: "NONE",
-    OP_UNDEFINED_OP_: "undef",
-    "undef"
+  op_name = switch(op + 1,
+    "AVG", #OP_AVG
+    "MEDIAN", #OP_MEDIAN
+    "SUM", #OP_SUM
+    "MIN", #OP_MIN
+    "MAX", #OP_MAX
+    "FIRST", #OP_FIRST
+    "LAST", #OP_LAST
+    "NONE", #OP_NONE
+    "undef" #OP_UNDEFINED_OP_
   )
+  op_name
 }
   
 
 organ_to_string <- function(organ)
 {
-  switch(organ, 
-    ORGAN_ROOT: "Root",
-    ORGAN_LEAF: "Leaf",
-    ORGAN_SHOOT: "Shoot",
-    ORGAN_FRUIT: "Fruit",
-    ORGAN_STRUCT: "Struct",
-    ORGAN_SUGAR: "Sugar",
-    ORGAN_UNDEFINED_ORGAN_: "undef",
-    "undef"
+  o_name = switch(organ + 1, 
+    "Root", #ORGAN_ROOT
+    "Leaf", #ORGAN_LEAF
+    "Shoot", #ORGAN_SHOOT
+    "Fruit", #ORGAN_FRUIT
+    "Struct", #ORGAN_STRUCT
+    "Sugar", #ORGAN_SUGAR
+    "undef" #ORGAN_UNDEFINED_ORGAN_
   )
+  o_name
 }
 
 
@@ -119,7 +120,37 @@ oid_to_string <- function(oid, include_time_agg)
   )
 }
 
-write_output_header_rows <- function(output_ids,
+create_R_from_JSON_string <- function(json_string)
+{
+  jsonlite::fromJSON(json_string, 
+                     simplifyVector = FALSE, 
+                     simplifyDataFrame = FALSE,
+                     simplifyMatrix = FALSE)
+}
+
+create_R_from_JSON_file <- function(path_to_json_file)
+{
+  create_R_from_JSON_string(read_file(path_to_json_file))
+}
+
+create_JSON_string_from_R <- function(R_data)
+{
+  rjson::toJSON(R_data)
+}
+
+send_JSON_string <- function(socket, json_string)
+{
+  #send.socket(socket, rj_in_str)
+  send.raw.string(socket, json_string)
+}
+
+receive_JSON_string <- function(socket)
+{
+  receive.string(socket)
+}
+
+
+create_output_header_rows <- function(output_ids,
                                      include_header_row=TRUE,
                                      include_units_row=TRUE,
                                      include_time_agg=FALSE)
@@ -171,29 +202,29 @@ write_output_header_rows <- function(output_ids,
                         else 
                           oid$displayName)
       }
-      row1 <- append(row1, str1)
-      row4 <- append(row4, paste0("j:", gsub("\"", "", oid$jsonInput)))
-      row3 <- append(row3, paste0("m:",  oid_to_string(oid, include_time_agg)))
-      row2 <- append(row2, paste0("[", oid$unit, "]"))
+      row1 <- list.append(row1, str1)
+      row4 <- list.append(row4, paste0("j:", gsub("\"", "", oid$jsonInput)))
+      row3 <- list.append(row3, paste0("m:",  oid_to_string(oid, include_time_agg)))
+      row2 <- list.append(row2, paste0("[", oid$unit, "]"))
     }
   }
 
   out = list()
   if(include_header_row)
-    out <- append(out, row1)
+    out <- list.append(out, row1)
   if(include_units_row)
-    out <- append(out, row4)
+    out <- list.append(out, row4)
   if(include_time_agg)
   {
-    out <- append(out, row3)
-    out <- append(out, row2)
+    out <- list.append(out, row3)
+    out <- list.append(out, row2)
   }
   
   out
 }
 
 
-write_output <- function(output_ids, values)
+create_output_data_rows <- function(output_ids, values)
 {
   #"write actual output lines"
   out <- list()
@@ -206,20 +237,51 @@ write_output <- function(output_ids, values)
       for(. in output_ids)
       {
         j__ <- values[[i]][[k]]
-        if(typeof(j__, "list"))
+        if(typeof(j__) == "list")
         {
           for(jv_ in j__)
-            row <- append(row, jv_)
+            row <- list.append(row, jv_)
         }
         else
-          row <- append(row, j__)
+          row <- list.append(row, j__)
         i <- i + 1
       }
-      out <- append(out, row)
+      out <- list.append(out, row)
     }
   }
   out
 }
+
+
+write_output <- function(result_json, file = "", sep = ",")
+{
+  sink(file)
+  for(d in result_json$data)
+  {
+    cat("\"", str_replace_all(d$origSpec, "\"", ""), "\"\n", sep = "")
+    
+    header <- create_output_header_rows(d$outputIds, 
+                                       include_header_row = TRUE,
+                                       include_units_row = TRUE,
+                                       include_time_agg = FALSE)
+    for(h in header)
+    {
+      do.call(cat, c(h, sep = sep))
+      cat("\n") 
+    }
+    
+    data <- create_output_data_rows(d$outputIds, d$results)
+    for(d in data)
+    {
+      do.call(cat, c(d, sep = sep))
+      cat("\n") 
+    }
+    
+    cat("\n")
+  }
+  sink()
+}
+
 
 is_absolute_path <- function(p)
 {
@@ -337,8 +399,8 @@ find_and_replace_references <- function(root, j)
             success <- success && res$success
             if(! res$success)
               for(err in res$errors)
-                errors <- append(errors, err)
-            funcArr <- append(funcArr, res$result)
+                errors <- list.append(errors, err)
+            funcArr <- list.append(funcArr, res$result)
           }
             
           #invoke function
@@ -347,7 +409,7 @@ find_and_replace_references <- function(root, j)
           success <- success && jaes$success
           if(!jaes$success)
             for(err in jaes$errors)
-              errors <- append(errors, err)
+              errors <- list.append(errors, err)
 
           #if successful try to recurse into result for functions in result
           if(jaes$success)
@@ -356,7 +418,7 @@ find_and_replace_references <- function(root, j)
             success <- success && res$success
             if(!res$success)
               for(err in res$errors)
-                errors <- append(errors, err)
+                errors <- list.append(errors, err)
             return(list("result" = res$result, "errors" = errors, "success" = length(errors) == 0))
           }
           else
@@ -372,8 +434,8 @@ find_and_replace_references <- function(root, j)
           success <- success && res$success
           if(!res$success)
             for(err in res$errors)
-              errors <- append(errors, err)
-          arr <- append(arr, res$result)
+              errors <- list.append(errors, err)
+          arr <- list.append(arr, res$result)
         }
       }
 
@@ -392,7 +454,7 @@ find_and_replace_references <- function(root, j)
         success <- success && r$success
         if(!r$success)
           for(e in r$errors)
-            errors <- append(errors, e)
+            errors <- list.append(errors, e)
         obj[[k]] <- r$result
       }
         
@@ -583,7 +645,7 @@ create_env_json_from_json_config <- function(crop_site_sim)
     if(res$success)
       crop_site_sim2[[k]] <- res$result
     else
-      errors <- append(errors, res$errors)
+      errors <- list.append(errors, res$errors)
   }
      
   if(length(errors) > 0)

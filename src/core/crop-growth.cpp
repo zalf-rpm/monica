@@ -325,6 +325,11 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 			_fireEvent("maturity");
 	}
 
+	// fire stage event on stage change or right after sowing
+	if(old_DevelopmentalStage != vc_DevelopmentalStage || _noOfCropSteps == 0)
+		if(_fireEvent)
+			_fireEvent(string("Stage-") + to_string(vc_DevelopmentalStage+1));
+
 	vc_DaylengthFactor =
 		fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
 											 vc_EffectiveDayLength,
@@ -460,6 +465,7 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 			fc_NetPrimaryProduction(vc_GrossPrimaryProduction,
 															vc_TotalRespired);
 	}
+	_noOfCropSteps++;
 }
 
 /**
@@ -1369,11 +1375,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
 	vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
 
-	
-
 	if(pc_CarboxylationPathway == 1)
 	{
-		
 		// Calculation of CO2 impact on crop growth
 		if(pc_CO2Method == 3)
 		{
@@ -1397,9 +1400,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			KTkc = exp(speciesPs.AEKC * term1) * term2;
 			KTko = exp(speciesPs.AEKO * term1) * term2;
 			Mkc = speciesPs.KC25 * KTkc; //[µmol mol-1]
-			_cropPhotosynthesisResults[KC] = Mkc;
+			_cropPhotosynthesisResults.kc = Mkc;
 			Mko = speciesPs.KO25 * KTko; //[mmol mol-1]
-			_cropPhotosynthesisResults[KO] = Mko;
+			_cropPhotosynthesisResults.ko = Mko *1000.0; // mmol -> umol
 
 			//OLD exponential response
 			KTvmax = cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__
@@ -1410,11 +1413,12 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 																										1.0))
 				: exp(speciesPs.AEVC * term1) * term2;
 
+			
 			// Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
 			vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
 			vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
 			vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
-			_cropPhotosynthesisResults[VCMAX] = vc_Vcmax;
+			_cropPhotosynthesisResults.vcMax = vc_Vcmax;
 			vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
 			
 			//Oi = 210.0 + (0.047
@@ -1423,19 +1427,19 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 										+ 0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature)
 										- 0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature))
 				/ 0.026934;// [mmol mol-1]
-			_cropPhotosynthesisResults[OI] = Oi;
+			_cropPhotosynthesisResults.oi = Oi * 1000.0; // mmol -> umol
 
 			Ci = vw_AtmosphericCO2Concentration * 0.7 
 				* (1.674 - 0.061294 * vw_MeanAirTemperature
 					 + 0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature)
 					 - 0.0000088741 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature))
 				/ 0.73547;// [µmol mol-1]
-			_cropPhotosynthesisResults[CI] = Ci;
+			_cropPhotosynthesisResults.ci = Ci;
 
 			//similar to LDNDC::jarvis.cpp:217
 			vc_CO2CompensationPoint = 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko); // [µmol mol-1] 
 			vc_CO2CompensationPointReference = 0.5 * 0.21 * vc_VcmaxReference * Mkc * Oi / (vc_VcmaxReference * Mko); // [µmol mol-1]
-			_cropPhotosynthesisResults[COMP] = vc_CO2CompensationPoint;
+			_cropPhotosynthesisResults.comp = vc_CO2CompensationPoint;
 
 			// Mitchell et al. 1995:
 			vc_RadiationUseEfficiency = min(0.77 / 2.1 * (Ci - vc_CO2CompensationPoint)
@@ -1798,7 +1802,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 #pragma region 
 	
 	double dailyGP = 0;
-	if(cropPs.__enable_hourly_FvCB_photosynthesis__)
+	if(cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1)
 	{
 		vector<double> hourlyGlobrads;
 		vector<double> hourlyExtrarad;
@@ -1816,6 +1820,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 		using namespace FvCB;
 
+		_guentherEmissions = Voc::Emissions();
+		_jjvEmissions = Voc::Emissions();
+
 		for(int h = 0; h < 24; h++)
 		{
 			FvCB_canopy_hourly_in in;
@@ -1829,28 +1836,24 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
 			in.Ca = vw_AtmosphericCO2Concentration;
 
-			//test
-			/*in.leaf_temp = 25.0;
-			in.global_rad = 1.5;
-			in.extra_terr_rad = 2.0;
-			in.LAI = 5.0;
-			in.solar_el = 1.2;
-			in.VPD = 2.1;
-			in.Ca = 350;*/
-
 			FvCB_canopy_hourly_params hps;
-			//hps.Vcmax_25 = speciesPs.VCMAX25;
-			hps.Vcmax_25 = 100.0;//test TODO: delete and add VCMAX25 to param file
+			hps.Vcmax_25 = speciesPs.VCMAX25;
 
 			auto res = FvCB_canopy_hourly_C3(in, hps);
-			_cropPhotosynthesisResults[JMAX] = res.jmax_c;
+			
+			_cropPhotosynthesisResults.kc = res.kc;
+			_cropPhotosynthesisResults.ko = res.ko * 1000;
+			_cropPhotosynthesisResults.oi = res.oi * 1000;
+			//_cropPhotosynthesisResults.ci = res.ci;
+			_cropPhotosynthesisResults.vcMax = res.vcMax;
+			_cropPhotosynthesisResults.jMax = res.jMax;
+
 			vc_sunlitLeafAreaIndex[h] = res.LAI_sun;
 			vc_shadedLeafAreaIndex[h] = res.LAI_sh;
 
 			// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
 			dailyGP += res.canopy_gross_photos * 44. / 100. / 1000.;
-						
-
+				
 			// calculate VOC emissions
 			double globradWm2 = in.global_rad * 1000000.0; //MW/m2 -> W/m2
 			if(_index240 < _stepSize240 - 1)
@@ -1881,9 +1884,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			mcd.tFol = in.leaf_temp;
 			mcd.tFol24 = accumulate(_tfol24.begin(), _tfol24.end(), 0.0) / (_full24 ? _tfol24.size() : _index24 + 1);
 			mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
+			mcd.co2concentration = vw_AtmosphericCO2Concentration;
 
-			//double lai = vc_LeafAreaIndex;
-			//auto sunShadeLaiAtZenith = laiSunShade(_sitePs.vs_Latitude, julday, 12, lai);
+			//auto sunShadeLaiAtZenith = laiSunShade(_sitePs.vs_Latitude, julday, 12, vc_LeafAreaIndex);
 			//mcd.sunlitfoliagefraction = sunShadeLaiAtZenith.first / lai;
 			//mcd.sunlitfoliagefraction24 = mcd.sunlitfoliagefraction;
 
@@ -1903,17 +1906,21 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			species.KC25 = speciesPs.KC25;
 
 			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1./24.);
+			//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
 			_guentherEmissions += ges;
 			//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
-			auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1./24.);
+			auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1./24., false);
+			//cout << "J: C: " << jjves.monoterpene_emission << " em: " << jjves.isoprene_emission << endl;
 			_jjvEmissions += jjves;
 			//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
 		}
 	}
 #pragma endregion hourly FvCB code
 	
-	vc_GrossCO2Assimilation = cropPs.__enable_hourly_FvCB_photosynthesis__ ? dailyGP : vc_GrossCO2Assimilation;
+	vc_GrossCO2Assimilation = cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1 
+		? dailyGP 
+		: vc_GrossCO2Assimilation;
 
 	// Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [kg CH2O ha-1 d-1]
 	vc_GrossPhotosynthesis = vc_GrossCO2Assimilation * 30.0 / 44.0;

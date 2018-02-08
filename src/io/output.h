@@ -107,7 +107,8 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 		
-		std::string customId;
+		//std::string customId;
+		json11::Json customId;
 
 		struct Data
 		{

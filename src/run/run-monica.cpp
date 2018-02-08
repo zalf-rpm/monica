@@ -85,10 +85,19 @@ Errors Env::merge(json11::Json j)
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
-	set_string_value(pathToClimateCSV, j, "pathToClimateCSV");
+	if(j["pathToClimateCSV"].is_string() && !j["pathToClimateCSV"].string_value().empty())
+		pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
+	else if(j["pathToClimateCSV"].is_array())
+	{
+		auto paths = toStringVector(j["pathToClimateCSV"].array_items());
+		for(auto path : paths)
+			if(!path.empty())
+				pathsToClimateCSV.push_back(path);
+	}
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
-	set_string_value(customId, j, "customId");
+	//set_string_value(customId, j, "customId");
+	customId = j["customId"];
 	events = j["events"];
 
 	return es;
@@ -106,7 +115,7 @@ json11::Json Env::to_json() const
 	,{"cropRotation", cr}
 	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
-	,{"pathToClimateCSV", pathToClimateCSV}
+	,{"pathsToClimateCSV", toPrimJsonArray(pathsToClimateCSV)}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	,{"customId", customId}
 	,{"events", events}
@@ -125,7 +134,7 @@ string Env::toString() const
 	s << "Fruchtfolge: " << endl;
 	for(const CultivationMethod& cm : cropRotation)
 		s << cm.toString() << endl;
-	s << "customId: " << customId;
+	s << "customId: " << customId.dump();
 	return s.str();
 }
 

@@ -516,8 +516,8 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							Json& fullMsg = msg.json;
 
 							Env env(msg.json);
-							if(!env.climateData.isValid() && !env.pathToClimateCSV.empty())
-								env.climateData = readClimateDataFromCSVFileViaHeaders(env.pathToClimateCSV, env.csvViaHeaderOptions);
+							if(!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
+								env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
 
 							activateDebug = activateDebug && env.debugMode;
 

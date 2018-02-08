@@ -84,9 +84,16 @@ Errors Workstep::merge(json11::Json j)
 	Errors res = Json11Serializable::merge(j);
 
 	set_iso_date_value(_date, j, "date");
+	//at is a shortcut for after=event and days=1
+	auto at = string_value(j, "at");
+	if(!at.empty())
+	{
+		_afterEvent = at;
+		_applyNoOfDaysAfterEvent = 1;
+	}
 	set_int_value(_applyNoOfDaysAfterEvent, j, "days");
 	set_string_value(_afterEvent, j, "after");
-
+	
 	return res;
 }
 
@@ -747,7 +754,6 @@ bool NDemandFertilization::condition(MonicaModel* model)
 		auto currStage = cg->get_DevelopmentalStage() + 1;
 		conditionMet =
 			date().isValid() //is timed application
-			|| _stage == 0   //apply at seeding time
 			|| currStage == _stage; //reached the requested stage
 	}
 

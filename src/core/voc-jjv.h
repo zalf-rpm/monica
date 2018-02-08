@@ -41,44 +41,19 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Voc
 {
-	Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, std::map<CPData, double>>> speciesData,
+	Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, CPData>> speciesData,
 																										const MicroClimateData& mcd,
 																										double dayFraction = 1.0,
 																										bool calculateParTempTerm = false);
 
 	inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
 																						const MicroClimateData& mcd,
-																						const std::map<CPData, double>& cpdata,
+																						CPData cpdata,
 																						double dayFraction = 1.0,
 																						bool calculateParTempTerm = false)
 	{
 		return calculateJJVVOCEmissionsMultipleSpecies({std::make_pair(sd, cpdata)}, mcd, dayFraction, calculateParTempTerm);
 	}
-
-	//this->get_option< bool >( "CalcParTempDependence", false);
-	LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
-																 const leaf_emission_t& leminorm,
-																 const SpeciesData& sd,
-																 const MicroClimateData& mcd,
-																 const std::map<CPData, double>& cpData,
-																 bool calculateParTempTerm = false);
-
-	double gamma_PH(const leaf_emission_t& lemi,
-									SpeciesData sd,
-									const MicroClimateData& mcd,
-									std::map<CPData, double> cpData);
-
-	struct GammaEnRes
-	{
-		double en_iso{0.0}; //!< activity factor related to enzyme activity (isoprene synthase)
-		double en_mono{0.0}; //!< activity factor related to enzyme activity (monoterpene synthase)
-
-		double ennorm_iso{0.0}; //!< normalized activity factor related to enzyme activity (isoprene synthase)
-		double ennorm_mono{0.0}; //!< normalized activity factor related to enzyme activity (monoterpene synthase)
-	};
-	GammaEnRes gamma_EN(const leaf_emission_t& lemi, 
-											const leaf_emission_t& leminorm,
-											const SpeciesData& sd);
 }
 
 #endif  
