@@ -4338,6 +4338,7 @@ void CropGrowth::applyCutting()
 
 
 	vc_OrganBiomass = new_OrganBiomass;
+	vc_LeafAreaIndex = vc_OrganBiomass[1] * pc_SpecificLeafArea[vc_DevelopmentalStage];
 
 	// reset stage and temperature some after cutting
 	int stage_after_cutting = pc_StageAfterCut - 1;

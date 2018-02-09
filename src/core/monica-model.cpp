@@ -386,6 +386,7 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 		_currentCropGrowth->set_OrganBiomass(2, shootsToRemain);
 		_currentCropGrowth->set_OrganBiomass(3, 0.0); // fruit is not present after cutting
 		_currentCropGrowth->set_OrganBiomass(5, 0.0); // sugar is not present after cutting
+		_currentCropGrowth->setLeafAreaIndex(_currentCropGrowth->get_OrganBiomass(1) * _currentCropGrowth->getSpecificLeafArea(_currentCropGrowth->get_DevelopmentalStage()));
 		_currentCropGrowth->set_DevelopmentalStage(stageAfterCut); // sets developmentag stage according to crop database
 		_currentCropGrowth->set_CuttingDelayDays(); // sets delay after cutting according to crop database
 		_currentCropGrowth->set_MaxAssimilationRate(0.9); // Reduces maximum assimilation rate by 10%

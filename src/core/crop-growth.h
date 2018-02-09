@@ -375,6 +375,12 @@ namespace Monica
 			return make_pair(vc_sunlitLeafAreaIndex, vc_shadedLeafAreaIndex); 
 		}
 
+		double getLeafAreaIndex() const { return vc_LeafAreaIndex; }
+
+		void setLeafAreaIndex(double lai) { vc_LeafAreaIndex = lai; }
+
+		double getSpecificLeafArea(int stage) const { return pc_SpecificLeafArea[stage]; }
+
   private:
     int pc_NumberOfAbovegroundOrgans() const;
 
