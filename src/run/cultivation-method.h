@@ -306,6 +306,11 @@ namespace Monica
     virtual std::string type() const { return "Cutting"; }
 
 		virtual bool apply(MonicaModel* model);
+
+	private:
+		std::map<int, double> _organId2cuttingFraction;
+		std::map<int, double> _organId2exportFraction;
+		double _cutMaxAssimilationRateFraction{1.0};
   };
 
 	//----------------------------------------------------------------------------
