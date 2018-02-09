@@ -53,6 +53,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 const UserCropParameters& cropPs,
 											 const SimulationParameters& simPs,
 											 std::function<void(std::string)> fireEvent,
+											 std::function<void(double, double)> addOrganicMatter,
 											 int usage)
 	: soilColumn(sc)
 	, cropPs(cropPs)
@@ -143,7 +144,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, vs_SoilMineralNContent(soilColumn.vs_NumberOfLayers(), 0.0)
 	, pc_SpecificLeafArea(cps.cultivarParams.pc_SpecificLeafArea)
 	, pc_SpecificRootLength(cps.speciesParams.pc_SpecificRootLength)
-	, pc_StageAfterCut(cps.speciesParams.pc_StageAfterCut)
+	, pc_StageAfterCut(cps.speciesParams.pc_StageAfterCut-1)
 	, pc_StageAtMaxDiameter(cps.speciesParams.pc_StageAtMaxDiameter)
 	, pc_StageAtMaxHeight(cps.speciesParams.pc_StageAtMaxHeight)
 	, pc_StageMaxRootNConcentration(cps.speciesParams.pc_StageMaxRootNConcentration)
@@ -163,6 +164,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, _tfol24(_stepSize24)
 	, _tfol240(_stepSize240)
 	, _fireEvent(fireEvent)
+	, _addOrganicMatter(addOrganicMatter)
 {
 	// Determining the total temperature sum of all developmental stages after
 	// emergence (that's why i_Stage starts with 1) until before senescence
@@ -4298,65 +4300,71 @@ double CropGrowth::get_OrganSpecificNPP(int organ)  const
 
 int CropGrowth::get_StageAfterCut() const
 {
-	return pc_StageAfterCut - 1;
+	return pc_StageAfterCut;
 }
 
-void CropGrowth::applyCutting()
+void CropGrowth::applyCutting(std::map<int, double>& organs,
+															std::map<int, double>& exports,
+															double cutMaxAssimilateFraction)
 {
-	double old_above_biomass = vc_AbovegroundBiomass;
-	double removing_biomass = 0.0;
+	double oldAbovegroundBiomass = vc_AbovegroundBiomass;
+	double removingBiomass = 0.0;
 
-	debug() << "CropGrowth::applyCutting()" << endl;
-	std::vector<double> new_OrganBiomass;      //! old WORG
-	for(int organ = 1; organ < pc_NumberOfOrgans + 1; organ++)
+	Tools::debug() << "CropGrowth::applyCutting()" << endl;
+
+	if(organs.empty())
+		for(auto yc : pc_OrganIdsForCutting)
+			organs[yc.organId - 1] = yc.yieldPercentage;
+	
+	double residuesBiomass = 0;
+	for(auto p : organs)
 	{
+		int organId = p.first;
+		double cutFraction = p.second;
+		double exportFraction = exports[organId];
+		double oldOrganBiomass = vc_OrganBiomass.at(organId);
+		double export100Biomass = oldOrganBiomass * cutFraction;
+		double newOrganBiomass = oldOrganBiomass - export100Biomass;
+		debug() << "cutting organ with id: " << organId << " with old biomass: " << oldOrganBiomass
+			<< " by percentage: " << (cutFraction * 100) << "% -> new biomass: " << newOrganBiomass
+			<< " exporting percentage: " << (exportFraction * 100) << "% -> export biomass: " << (export100Biomass * (1 - exportFraction))
+			<< " -> residues biomass: " << export100Biomass * (1 - exportFraction) << endl;
+		vc_AbovegroundBiomass -= export100Biomass;
+		removingBiomass += export100Biomass;
+		residuesBiomass += export100Biomass * (1 - exportFraction);
+		vc_OrganBiomass[organId] = newOrganBiomass;
+	}
+	debug() << "total removing biomass: " << removingBiomass << " residuesBiomass: " << residuesBiomass << endl;
 
-		int cut_organ_count = pc_OrganIdsForCutting.size();
-		double biomasse = vc_OrganBiomass.at(organ - 1);
-		debug() << "Alte Biomasse: " << biomasse << "\tOrgan: " << organ << endl;
-		for(int cut_organ = 0; cut_organ < cut_organ_count; cut_organ++)
-		{
-
-			YieldComponent yc = YieldComponent(pc_OrganIdsForCutting.at(cut_organ));
-
-			if(organ == yc.organId)
-			{
-				debug() << "YC yc.yieldPercentage: " << yc.yieldPercentage << endl;
-				biomasse = vc_OrganBiomass.at(organ - 1) * ((1 - yc.yieldPercentage));
-				vc_AbovegroundBiomass -= biomasse;
-
-				removing_biomass += biomasse;
-			}
-
-		}
-		new_OrganBiomass.push_back(biomasse);
-		debug() << "Neue Biomasse: " << biomasse << endl;
+	if(residuesBiomass > 0)
+	{
+		//prepare to add crop residues to soilorganic (AOMs)
+		double residueNConcentration = get_AbovegroundBiomassNConcentration();
+		debug() << "adding organic matter from cut residues to soilOrganic" << endl;
+		debug() << "Residue biomass: " << residuesBiomass
+			<< " Residue N concentration: " << residueNConcentration << endl;
+		_addOrganicMatter(residuesBiomass, residueNConcentration);
 	}
 
-
-	vc_TotalBiomassNContent = (removing_biomass / old_above_biomass) * vc_TotalBiomassNContent;
-
-
-	vc_OrganBiomass = new_OrganBiomass;
+	//update LAI
 	vc_LeafAreaIndex = vc_OrganBiomass[1] * pc_SpecificLeafArea[vc_DevelopmentalStage];
 
 	// reset stage and temperature some after cutting
-	int stage_after_cutting = pc_StageAfterCut - 1;
-	for(int stage = stage_after_cutting; stage < pc_NumberOfDevelopmentalStages; stage++)
-	{
+	int stageAfterCutting = pc_StageAfterCut;
+	for(int stage = stageAfterCutting; stage < pc_NumberOfDevelopmentalStages; stage++)
 		vc_CurrentTemperatureSum[stage] = 0.0;
-	}
+	
 	vc_CurrentTotalTemperatureSum = 0.0;
-	vc_DevelopmentalStage = stage_after_cutting;
+	vc_DevelopmentalStage = stageAfterCutting;
 	vc_CuttingDelayDays = pc_CuttingDelayDays;
-	pc_MaxAssimilationRate = pc_MaxAssimilationRate * 0.9;
+	pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilateFraction;
 
+	vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * vc_TotalBiomassNContent;
 }
 
 void
 CropGrowth::applyFruitHarvest(double yieldPercentage)
 {
-
 	double old_above_biomass = vc_AbovegroundBiomass;
 	double removing_biomass = 0.0;
 	double residues = 0.0;

@@ -591,13 +591,75 @@ Cutting::Cutting(json11::Json j)
 Errors Cutting::merge(json11::Json j)
 {
 	return Workstep::merge(j);
+
+	auto organId = [](string organName)
+	{
+		string os = toUpper(organName);
+		if(os == "ROOT")
+			return 0;
+		else if(os == "LEAF")
+			return 1;
+		else if(os == "SHOOT")
+			return 2;
+		else if(os == "FRUIT")
+			return 3;
+		else if(os == "STRUCT")
+			return 4;
+		else if(os == "SUGAR")
+			return 5;
+	};
+
+	bool export_ = j["export"].is_bool() ? j["export"].bool_value() : false;
+
+	for(auto p : j["organs"].object_items())
+	{
+		int oid = organId(p.first);
+		_organId2cuttingFraction[oid] = int_valueD(p.second, 0) / 100.0;
+		_organId2exportFraction[oid] = 0;
+	}
+
+	for(auto p : j["export"].object_items())
+	{
+		int oid = organId(p.first);
+		_organId2exportFraction[oid] = int_valueD(p.second, 0) / 100.0;
+	}
+
+	set_double_value(_cutMaxAssimilationRateFraction, j, "cut-max-assimilation-rate", [](double v){ return v / 100.0; });
 }
 
 json11::Json Cutting::to_json() const
 {
-	return json11::Json::object{
-		{"type", type()},
-		{"date", date().toIsoDateString()}};
+	auto organName = [](int organId)
+	{
+		string res = "unknown";
+		switch(organId)
+		{
+		case 0: res = "Root"; break;
+		case 1: res = "Leaf"; break;
+		case 2: res = "Shoot"; break;
+		case 3: res = "Fruit"; break;
+		case 4: res = "Struct"; break;
+		case 5: res = "Sugar"; break;
+		default: "unknown";
+		}
+		return res;
+	};
+
+	J11Object organs;
+	for(auto p : _organId2cuttingFraction)
+		organs[organName(p.first)] = J11Array{int(p.second * 100.0), "%"};
+
+	J11Object exports;
+	for(auto p : _organId2exportFraction)
+		exports[organName(p.first)] = J11Array{int(p.second * 100.0), "%"};
+
+	return json11::Json::object
+	{{"type", type()}
+	,{"date", date().toIsoDateString()}
+	,{"organs", organs}
+	,{"exports", exports}
+	,{"cut-max-assimilation-rate", J11Array{int(_cutMaxAssimilationRateFraction * 100.0), "%"}}
+	};
 }
 
 bool Cutting::apply(MonicaModel* model)
@@ -619,7 +681,7 @@ bool Cutting::apply(MonicaModel* model)
 	//crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
 	//crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 
-	model->cropGrowth()->applyCutting();
+	model->cropGrowth()->applyCutting(_organId2cuttingFraction, _organId2exportFraction, _cutMaxAssimilationRateFraction);
 	model->addEvent("Cutting");
 
 	return true;

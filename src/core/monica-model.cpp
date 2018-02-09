@@ -116,6 +116,10 @@ void MonicaModel::seedCrop(CropPtr crop)
 		_currentCrop = crop;
 		_cultivationMethodCount++;
 
+		auto addOMFunc = [this](double amount, double nconc)
+		{
+			this->_soilOrganic.addOrganicMatter(this->_currentCrop->residueParameters(), amount, nconc); 
+		};
     auto cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,
                                         *cps,
@@ -123,6 +127,7 @@ void MonicaModel::seedCrop(CropPtr crop)
                                         _cropPs,
                                         _simPs,
 																				[this](string event){ this->addEvent(event); },
+																				addOMFunc,
                                         crop->getEva2TypeUsage());
 
     if (_currentCrop->perennialCropParameters())

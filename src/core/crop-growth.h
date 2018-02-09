@@ -63,9 +63,12 @@ namespace Monica
                const UserCropParameters& cropPs,
                const SimulationParameters& simPs,
 							 std::function<void(std::string)> fireEvent,
+							 std::function<void(double, double)> addOrganicMatter,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
-    void applyCutting();
+    void applyCutting(std::map<int, double>& organs,
+											std::map<int, double>& exports,
+											double cutMaxAssimilateFraction);
     void applyFruitHarvest(double percentage);
 
     void step(double vw_MeanAirTemperature,
@@ -389,7 +392,7 @@ namespace Monica
 
     // members
     SoilColumn& soilColumn;
-    CropParametersPtr perennialCropParams;
+		CropParametersPtr perennialCropParams;
     const UserCropParameters& cropPs;
 		SpeciesParameters speciesPs;
 		CultivarParameters cultivarPs;
@@ -431,7 +434,7 @@ namespace Monica
     std::vector<double> vc_CurrentTemperatureSum;	//! old SUM
     double vc_CurrentTotalTemperatureSum{0.0};			//! old FP
     double vc_CurrentTotalTemperatureSumRoot{0.0};
-    int pc_CuttingDelayDays;
+		int pc_CuttingDelayDays{0};
     double vc_DaylengthFactor{0.0};						//! old DAYL
     std::vector<double> pc_DaylengthRequirement;		//! old DEC
     int vc_DaysAfterBeginFlowering{0};
@@ -557,7 +560,7 @@ namespace Monica
     double vs_SoilSpecificMaxRootingDepth{0.0};
     std::vector<double> pc_SpecificLeafArea;		//! old LAIFKT [ha kg-1]
     double pc_SpecificRootLength;
-    int pc_StageAfterCut;
+		int pc_StageAfterCut{0}; //0-indexed
     double pc_StageAtMaxDiameter;
     double pc_StageAtMaxHeight;
     std::vector<double> pc_StageMaxRootNConcentration;	//! old WGMAX
@@ -618,6 +621,7 @@ namespace Monica
 		Voc::CPData _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
+		std::function<void(double, double)> _addOrganicMatter;
   };
 }
 
