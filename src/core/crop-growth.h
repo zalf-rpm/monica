@@ -322,7 +322,8 @@ namespace Monica
     */
     void set_OrganBiomass(int organ, double organBiomass)
     {
-      vc_OrganBiomass[organ] = organBiomass;
+			if(organ < vc_OrganBiomass.size())
+				vc_OrganBiomass[organ] = organBiomass;
     }
 
     /*
@@ -383,6 +384,11 @@ namespace Monica
 		void setLeafAreaIndex(double lai) { vc_LeafAreaIndex = lai; }
 
 		double getSpecificLeafArea(int stage) const { return pc_SpecificLeafArea[stage]; }
+
+		double sumExportedCutBiomass() const { return vc_sumExportedCutBiomass; }
+		double exportedCutBiomass() const { return vc_exportedCutBiomass; }
+		double sumResidueCutBiomass() const { return vc_sumResidueCutBiomass; }
+		double residueCutBiomass() const { return vc_residueCutBiomass; }
 
   private:
     int pc_NumberOfAbovegroundOrgans() const;
@@ -599,6 +605,10 @@ namespace Monica
     double vc_AccumulatedETa{0.0};
     double vc_AccumulatedTranspiration{0.0};
     double vc_AccumulatedPrimaryCropYield{0.0};
+		double vc_sumExportedCutBiomass{0.0};
+		double vc_exportedCutBiomass{0.0};
+		double vc_sumResidueCutBiomass{0.0};
+		double vc_residueCutBiomass{0.0};
 
     int vc_CuttingDelayDays{0};
     double vs_MaxEffectiveRootingDepth;

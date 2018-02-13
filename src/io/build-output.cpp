@@ -541,6 +541,31 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_AccumulatedPrimaryCropYield(), 1) : 0.0;
 			});
 
+			build({id++, "sumExportedCutBiomass", "kgDM ha-1", "return sum (across cuts) of exported cut biomass for current crop"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->sumExportedCutBiomass(), 1) : 0.0;
+			});
+
+			build({id++, "exportedCutBiomass", "kgDM ha-1", "return exported cut biomass for current crop and cut"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->exportedCutBiomass(), 1) : 0.0;
+			});
+
+			build({id++, "sumResidueCutBiomass", "kgDM ha-1", "return sum (across cuts) of residue cut biomass for current crop"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->sumResidueCutBiomass(), 1) : 0.0;
+			});
+
+			build({id++, "residueCutBiomass", "kgDM ha-1", "return residue cut biomass for current crop and cut"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->residueCutBiomass(), 1) : 0.0;
+			});
+
+
 			build({ id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield" },
 				[](const MonicaModel& monica, OId oid)
 			{

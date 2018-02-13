@@ -590,7 +590,7 @@ Cutting::Cutting(json11::Json j)
 
 Errors Cutting::merge(json11::Json j)
 {
-	return Workstep::merge(j);
+	auto errors = Workstep::merge(j);
 
 	auto organId = [](string organName)
 	{
@@ -609,13 +609,13 @@ Errors Cutting::merge(json11::Json j)
 			return 5;
 	};
 
-	bool export_ = j["export"].is_bool() ? j["export"].bool_value() : false;
+	bool export_ = j["export"].is_bool() ? j["export"].bool_value() : true;
 
 	for(auto p : j["organs"].object_items())
 	{
 		int oid = organId(p.first);
 		_organId2cuttingFraction[oid] = int_valueD(p.second, 0) / 100.0;
-		_organId2exportFraction[oid] = 0;
+		_organId2exportFraction[oid] = export_ ? 1 : 0;
 	}
 
 	for(auto p : j["export"].object_items())
@@ -625,6 +625,8 @@ Errors Cutting::merge(json11::Json j)
 	}
 
 	set_double_value(_cutMaxAssimilationRateFraction, j, "cut-max-assimilation-rate", [](double v){ return v / 100.0; });
+
+	return errors;
 }
 
 json11::Json Cutting::to_json() const

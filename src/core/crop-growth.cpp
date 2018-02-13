@@ -4305,18 +4305,18 @@ int CropGrowth::get_StageAfterCut() const
 
 void CropGrowth::applyCutting(std::map<int, double>& organs,
 															std::map<int, double>& exports,
-															double cutMaxAssimilateFraction)
+															double cutMaxAssimilationFraction)
 {
 	double oldAbovegroundBiomass = vc_AbovegroundBiomass;
-	double removingBiomass = 0.0;
+	double sumCutBiomass = 0.0;
 
 	Tools::debug() << "CropGrowth::applyCutting()" << endl;
 
 	if(organs.empty())
 		for(auto yc : pc_OrganIdsForCutting)
 			organs[yc.organId - 1] = yc.yieldPercentage;
-	
-	double residuesBiomass = 0;
+
+	double sumResidueBiomass = 0;
 	for(auto p : organs)
 	{
 		int organId = p.first;
@@ -4330,20 +4330,28 @@ void CropGrowth::applyCutting(std::map<int, double>& organs,
 			<< " exporting percentage: " << (exportFraction * 100) << "% -> export biomass: " << (export100Biomass * (1 - exportFraction))
 			<< " -> residues biomass: " << export100Biomass * (1 - exportFraction) << endl;
 		vc_AbovegroundBiomass -= export100Biomass;
-		removingBiomass += export100Biomass;
-		residuesBiomass += export100Biomass * (1 - exportFraction);
+		sumCutBiomass += export100Biomass;
+		sumResidueBiomass += export100Biomass * (1 - exportFraction);
 		vc_OrganBiomass[organId] = newOrganBiomass;
 	}
-	debug() << "total removing biomass: " << removingBiomass << " residuesBiomass: " << residuesBiomass << endl;
+	
+	vc_exportedCutBiomass = sumCutBiomass - sumResidueBiomass;
+	vc_sumExportedCutBiomass += vc_exportedCutBiomass;
+	vc_residueCutBiomass = sumResidueBiomass;
+	vc_sumResidueCutBiomass += vc_residueCutBiomass;
 
-	if(residuesBiomass > 0)
+	debug() << "total cut biomass: " << sumCutBiomass
+		<< " exported cut biomass: " << vc_exportedCutBiomass
+		<< " residue cut biomass: " << vc_residueCutBiomass << endl;
+	
+	if(sumResidueBiomass > 0)
 	{
 		//prepare to add crop residues to soilorganic (AOMs)
 		double residueNConcentration = get_AbovegroundBiomassNConcentration();
 		debug() << "adding organic matter from cut residues to soilOrganic" << endl;
-		debug() << "Residue biomass: " << residuesBiomass
+		debug() << "Residue biomass: " << sumResidueBiomass
 			<< " Residue N concentration: " << residueNConcentration << endl;
-		_addOrganicMatter(residuesBiomass, residueNConcentration);
+		_addOrganicMatter(sumResidueBiomass, residueNConcentration);
 	}
 
 	//update LAI
@@ -4357,7 +4365,7 @@ void CropGrowth::applyCutting(std::map<int, double>& organs,
 	vc_CurrentTotalTemperatureSum = 0.0;
 	vc_DevelopmentalStage = stageAfterCutting;
 	vc_CuttingDelayDays = pc_CuttingDelayDays;
-	pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilateFraction;
+	pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilationFraction;
 
 	vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * vc_TotalBiomassNContent;
 }
