@@ -35,8 +35,11 @@ class MonicaIO {
    
 	trace("Hello World");
 	  
-    //var crop = sys.io.File.getContent("C:/Users/berg.ZALF-AD/GitHub/monica/installer/Hohenfinow2/crop.json");
-	var crop = Http.requestUrl("https://raw.githubusercontent.com/zalf-rpm/monica/master/installer/Hohenfinow2/crop.json");
+  #if python
+  var crop = sys.io.File.getContent("C:/Users/berg.ZALF-AD/GitHub/monica/installer/Hohenfinow2/crop.json");
+  #elseif js
+  var crop = Http.requestUrl("https://raw.githubusercontent.com/zalf-rpm/monica/master/installer/Hohenfinow2/crop.json");
+  #end
 	//trace(crop);
 	//trace("----------------------------------");
 	
