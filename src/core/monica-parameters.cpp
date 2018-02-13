@@ -268,10 +268,22 @@ Errors CultivarParameters::merge(json11::Json j)
   set_double_value(pc_RespiratoryStress, j, "RespiratoryStress");
   set_int_value(pc_LatestHarvestDoy, j, "LatestHarvestDoy");
 
-  for(auto js : j["AssimilatePartitioningCoeff"].array_items())
-    pc_AssimilatePartitioningCoeff.push_back(double_vector(js));
-  for(auto js : j["OrganSenescenceRate"].array_items())
-    pc_OrganSenescenceRate.push_back(double_vector(js));
+	if(j["AssimilatePartitioningCoeff"].is_array())
+	{
+		auto apcs = j["AssimilatePartitioningCoeff"].array_items();
+		int i = 0;
+		pc_AssimilatePartitioningCoeff.resize(apcs.size());
+		for(auto js : apcs)
+			pc_AssimilatePartitioningCoeff[i++] = double_vector(js);
+	}
+	if(j["OrganSenescenceRate"].is_array())
+	{
+		auto osrs = j["OrganSenescenceRate"].array_items();
+		int i = 0;
+		pc_OrganSenescenceRate.resize(osrs.size());
+		for(auto js : osrs)
+			pc_OrganSenescenceRate[i++] = double_vector(js);
+	}
 		
 	set_double_value(pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
 	set_double_value(pc_RefLeafExp, j, "RefLeafExp");
@@ -936,10 +948,10 @@ json11::Json UserCropParameters::to_json() const
   ,{"GrowthRespirationParameter2", pc_GrowthRespirationParameter2}
   ,{"Tortuosity", pc_Tortuosity}
 	,{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps}
-	,{ "__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__ }
+	,{"__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__}
 	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
 	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
-	,{ "__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__ }
+	,{"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__}
   };
 }
 

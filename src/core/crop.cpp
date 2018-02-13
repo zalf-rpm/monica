@@ -139,8 +139,11 @@ Errors Crop::merge(json11::Json j)
 
 	err = "";
 	if(j.has_shape({{"cuttingDates", json11::Json::ARRAY}}, err))
+	{
+		_cuttingDates.clear();
 		for(auto cd : j["cuttingDates"].array_items())
 			_cuttingDates.push_back(Tools::Date::fromIsoDateString(cd.string_value()));
+	}
 
 	return res;
 }
