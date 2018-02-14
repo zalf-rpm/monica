@@ -54,7 +54,7 @@
 	InstallDirRegKey HKCU "Software\MONICA" ""
 
 	;Request application privileges for Windows Vista
-	RequestExecutionLevel admin
+	;RequestExecutionLevel admin
 
 ;--------------------------------
 ;Variables
@@ -134,12 +134,6 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "..\src\python\ascii_io.py"
 	File "${UtilDir}\soil\soil_io.py"
 
-	;SetOutPath $INSTDIR\meta.json
-	;File "..\meta.json\meta.crop.json"
-	;File "..\meta.json\meta.sim.json"
-	;File "..\meta.json\meta.site.json"
-	;File "..\meta.json\README.md"
-
 	CreateDirectory "$PROFILE\MONICA"
 	SetOutPath $PROFILE\MONICA
 	File /oname=db-connections.ini "..\db-connections-install.ini"
@@ -172,6 +166,10 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	CreateDirectory "$PROFILE\MONICA\Examples\Hohenfinow2"
 	;the json version files with name name convention
 	SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2
+	File "Hohenfinow2\crop-min.json"
+	File "Hohenfinow2\site-min.json"
+	File "Hohenfinow2\sim-min.json"
+	File "Hohenfinow2\climate-min.csv"
 	File "Hohenfinow2\crop.json"
 	File "Hohenfinow2\site.json"
 	File "Hohenfinow2\sim.json"
@@ -273,6 +271,10 @@ Section "Uninstall"
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\site-soil-profile-from-db.json
 	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2\python
 
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate-min.csv
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim-min.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop-min.json
+	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site-min.json
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate.csv
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim.json
 	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop.json
