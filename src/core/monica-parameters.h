@@ -579,7 +579,7 @@ namespace Monica
     bool p_UseSecondaryYields{true};
     bool p_UseAutomaticHarvestTrigger{false};
 
-    int p_NumberOfLayers{0};
+    int p_NumberOfLayers{20};
     double p_LayerThickness{0.1};
 
     int p_StartPVIndex{0};
