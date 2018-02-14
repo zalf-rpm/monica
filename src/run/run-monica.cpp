@@ -855,7 +855,7 @@ Output Monica::runMonica(Env env)
 			//to count the applied fertiliser for the next production process
 			monica.resetFertiliserCounter();
 
-			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate);
+			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate + 1);
 		}
 	}
 	
