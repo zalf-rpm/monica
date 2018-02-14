@@ -1,0 +1,35 @@
+{
+  "SiteParameters": {
+    "Latitude": 52.8,
+    "Slope": 0,
+    "HeightNN": [0 , "m"],
+    "NDeposition": [30, "kg N ha-1 y-1"],
+		
+    "SoilProfileParameters": [
+			{
+				"Thickness": [0.3, "m"],
+				"SoilOrganicCarbon": [0.8, "%"],
+				"KA5TextureClass": "Sl2",
+				"SoilRawDensity": [1446, "kg m-3"]
+			}, 
+			{
+				"Thickness": 0.1,
+				"SoilOrganicCarbon": [0.15, "%"],
+				"KA5TextureClass": "Sl2",
+				"SoilRawDensity": [1446, "kg m-3"]
+			},
+			{
+				"Thickness": 1.6,
+				"SoilOrganicCarbon": [0.05, "%"],
+				"KA5TextureClass": "Sl2",
+				"SoilRawDensity": [1446, "kg m-3"]
+			}
+		]
+  },
+	
+  "SoilTemperatureParameters": ["include-from-file", "general/soil-temperature.json"],
+	"EnvironmentParameters": ["include-from-file", "general/environment.json"],
+  "SoilOrganicParameters": ["include-from-file", "general/soil-organic.json"],
+  "SoilTransportParameters": ["include-from-file", "general/soil-transport.json"],
+  "SoilMoistureParameters": ["include-from-file", "general/soil-moisture.json"]
+}

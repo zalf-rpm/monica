@@ -95,17 +95,39 @@
 		}
 	],
 
-	"1 cropRotation": [
+	"__example using automatic sowing and harvesting": "",
+	"cropRotation": [
 		{
 			"worksteps": [
-				{ "date": "0000-09-23", "type": "Sowing", "crop": ["ref", "crops", "CGL"] },
-				{ "date": "0001-07-27", "type": "Harvest" }
+				 { 
+						"type": "AutomaticSowing", 
+						"crop": ["ref", "crops", "WW"],
+						"earliest-date": "0000-02-11",
+						"latest-date": "0000-11-08",
+						"min-temp": 18.5,
+						"days-in-temp-window": 14,
+						"min-%-asw": 0,
+						"max-%-asw": 100,
+						"max-3d-precip-sum": 2,
+						"max-curr-day-precip": 0.1,
+						"temp-sum-above-base-temp": 0,
+						"base-temp": 0 
+					},
+				  { 
+						"type": "AutomaticHarvest", 
+						"latest-date": "0001-10-03",
+						"min-%-asw": 0,
+						"max-%-asw": 150,
+						"max-3d-precip-sum": 999,
+						"max-curr-day-precip": 999,
+						"harvest-time": "maturity"
+					}
 			]
 		}
 	],
 
 	"__relative date crop rotation example": "",
-	"cropRotation": [
+	"2 cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "0000-09-23", "type": "Sowing", "crop": ["ref", "crops", "WR"] },
@@ -266,8 +288,5 @@
 	],
 
 	"__general crop parameters for the monica model": "",
-	"CropParameters": {
-		"=": ["include-from-file", "general/crop.json"],
-		"__enable_hourly_FvCB_photosynthesis__": false
-	}
+	"CropParameters": ["include-from-file", "general/crop.json"]
 }

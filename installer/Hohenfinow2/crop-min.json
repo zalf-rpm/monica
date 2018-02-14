@@ -1,0 +1,23 @@
+  {
+	"cropRotation": [
+		{
+			"worksteps": [
+				{ 
+					"date": "0000-09-23", 
+					"type": "Sowing", 
+					"crop": {
+							"is-winter-crop": true,
+							"cropParams": {
+								"species": ["include-from-file", "crops/wheat.json"],
+								"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+						},
+						"residueParams": ["include-from-file", "crop-residues/wheat.json"]
+					} 
+				},
+				{ "date": "0001-07-27", "type": "Harvest" }
+			]
+		}
+	],
+
+	"CropParameters": ["include-from-file", "general/crop.json"]
+}

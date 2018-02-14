@@ -14,10 +14,10 @@
 		"end-date": "1997-12-31",
 	
 		"no-of-climate-file-header-lines": 2,
-		"csv-separator": ",",
+		"csv-separator": ";",
 		"header-to-acd-names": {
 			"DE-date": "de-date",
-			"Globalstrahlung": ["globrad", "*", 100]
+			"globrad": ["globrad", "/", 100]
 		}
 	},
 	
@@ -45,11 +45,6 @@
 		
 		"__what data to include in the monica output according to the events defined by the keys": "",
 		"events": [
-			"crop", [
-				"Crop",
-				["CM-count", "LAST"]
-			],
-
 			"daily", [
 				"Date",
 				"Crop",
@@ -60,11 +55,7 @@
 				["Mois", 1],
 				"RootDep",
 				"Recharge",
-				["PercolationRate", [1,5]],
-				"guenther-isoprene-emission|G-Iso",
-				"guenther-monoterpene-emission|G-Mono",
-				"jjv-isoprene-emission|JJV-Iso",
-				"jjv-monoterpene-emission|JJV-Mono"
+				["PercolationRate", [1,5]]
 			]
 		],
 		
@@ -328,11 +319,6 @@
 		]
 	},
 	
-	
-	"__SHOULDN'T BE CHANGED CURRENTLY, as monica assumes partly 20 layers and 10cm layer thickness": "",
-	"NumberOfLayers": 20,
-	"LayerThickness": [0.1, "m"],
-
 	"__turn on/off some model switches": "",
 	"UseSecondaryYields": true,
 	"NitrogenResponseOn": true,
