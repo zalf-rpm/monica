@@ -419,6 +419,13 @@ Errors Harvest::merge(json11::Json j)
 	set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
 	set_bool_value(_exported, j, "exported");
+	set_bool_value(_optCarbonConservation, j, "opt-carbon-conservation");
+	set_double_value(_cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
+	int ccu = int_valueD(j, "cover-crop-usage", -1);
+	if(ccu >= 0)
+		_coverCropUsage = CoverCropUsage(ccu);
+	set_double_value(_residueHeq, j, "residue-heq");
+	set_double_value(_organicFertilizerHeq, j, "organic-fertilizer-heq");
 
 	return res;
 }
@@ -430,7 +437,12 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	,{"date", date().toIsoDateString()}
 	,{"method", _method}
 	,{"percentage", _percentage}
-	,{ "exported", _exported }
+	,{"exported", _exported}
+	,{"opt-carbon-conservation", _optCarbonConservation}
+	,{"crop-impact-on-humus-balance", _cropImpactOnHumusBalance}
+	,{"cover-crop-usage", _coverCropUsage == greenManure ? "green-manure" : "biomass-production"}
+	,{"residue-heq", _residueHeq}
+	,{"organic-fertilizer-heq", _organicFertilizerHeq}
 	};
 }
 

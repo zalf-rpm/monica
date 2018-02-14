@@ -200,6 +200,8 @@ namespace Monica
 
 	class DLL_API Harvest : public Workstep
 	{
+		enum CoverCropUsage { greenManure = 0, biomassProduction };
+
 	public:
 		Harvest();
 
@@ -239,6 +241,11 @@ namespace Monica
     std::string _method;
     double _percentage{0};
     bool _exported{true};
+		bool _optCarbonConservation{false};
+		double _cropImpactOnHumusBalance{0};
+		CoverCropUsage _coverCropUsage{greenManure};
+		double _residueHeq{0};
+		double _organicFertilizerHeq{0};
 	};
 
   //----------------------------------------------------------------------------

@@ -129,6 +129,15 @@ namespace Monica
 			_sumFertiliser +=amount;
 		}
 
+		double dailySumOrganicFertilizerDM() const { return _dailySumOrganicFertilizerDM; }
+		double sumOrganicFertilizerDM() const { return _sumOrganicFertilizerDM; }
+
+		void addDailySumOrganicFertilizerDM(double amountDM)
+		{
+			_dailySumOrganicFertilizerDM += amountDM;
+			_sumOrganicFertilizerDM += amountDM;
+		}
+
 		double dailySumIrrigationWater() const { return _dailySumIrrigationWater; }
 
 		void addDailySumIrrigationWater(double amount)
@@ -138,7 +147,11 @@ namespace Monica
 
 		double sumFertiliser() const { return _sumFertiliser; }
 
-		void resetFertiliserCounter(){ _sumFertiliser = 0; }
+		void resetFertiliserCounter()
+		{ 
+			_sumFertiliser = 0; 
+			_sumOrganicFertilizerDM = 0;
+		}
 
 		void dailyReset();
 
@@ -265,6 +278,11 @@ namespace Monica
 
 		//! stores the daily sum of applied fertiliser
 		double _dailySumFertiliser{0.0};
+
+		double _dailySumOrganicFertilizerDM{0.0};
+		double _sumOrganicFertilizerDM{0.0};
+
+		double _humusBalanceCarryOver{0.0};
 
 		double _dailySumIrrigationWater{0.0};
 

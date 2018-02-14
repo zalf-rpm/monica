@@ -166,30 +166,8 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 	//could be just a fallow, so there might be no CropGrowth object
 	if (_currentCrop && _currentCrop->isValid())
   {
-    if(!exported)
+    if(exported)
     {
-			//prepare to add the total plant to soilorganic (AOMs)
-			double abovegroundBiomass = _currentCropGrowth->get_AbovegroundBiomass();
-			double abovegroundBiomassNConcentration = 
-				_currentCropGrowth->get_AbovegroundBiomassNConcentration();
-			debug() << "adding organic matter from aboveground biomass to soilOrganic" << endl;
-			debug() << "aboveground biomass: " << abovegroundBiomass
-				<< " Aboveground biomass N concentration: " << abovegroundBiomassNConcentration << endl;
-			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
-			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
-			debug() << "adding organic matter from root to soilOrganic" << endl;
-			debug() << "root biomass: " << rootBiomass
-				<< " Root N concentration: " << rootNConcentration << endl;
-			
-      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                    abovegroundBiomass,
-                                    abovegroundBiomassNConcentration);
-      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                    rootBiomass,
-                                    rootNConcentration);
-		}
-		else 
-		{
 			//prepare to add root and crop residues to soilorganic (AOMs)
 			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
 			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
@@ -197,11 +175,11 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 			debug() << "root biomass: " << rootBiomass
 				<< " Root N concentration: " << rootNConcentration << endl;
 
-      _soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                    rootBiomass,
-                                    rootNConcentration);
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+																		rootBiomass,
+																		rootNConcentration);
 
-      double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
+			double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
 
 			//!@todo Claas: das hier noch berechnen
 			double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
@@ -217,8 +195,30 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 				<< " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
 
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-                                    residueBiomass,
-                                    residueNConcentration);
+																		residueBiomass,
+																		residueNConcentration);
+		}
+		else 
+		{
+			//prepare to add the total plant to soilorganic (AOMs)
+			double abovegroundBiomass = _currentCropGrowth->get_AbovegroundBiomass();
+			double abovegroundBiomassNConcentration =
+				_currentCropGrowth->get_AbovegroundBiomassNConcentration();
+			debug() << "adding organic matter from aboveground biomass to soilOrganic" << endl;
+			debug() << "aboveground biomass: " << abovegroundBiomass
+				<< " Aboveground biomass N concentration: " << abovegroundBiomassNConcentration << endl;
+			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
+			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
+			debug() << "adding organic matter from root to soilOrganic" << endl;
+			debug() << "root biomass: " << rootBiomass
+				<< " Root N concentration: " << rootNConcentration << endl;
+
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+																		abovegroundBiomass,
+																		abovegroundBiomassNConcentration);
+			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+																		rootBiomass,
+																		rootNConcentration);
 		}
 	}
 
@@ -437,6 +437,7 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParametersPtr params
 		_soilOrganic.setIncorporation(incorporation);
 		_soilOrganic.addOrganicMatter(params, amount, params->vo_NConcentration);
 		addDailySumFertiliser(amount * params->vo_NConcentration);
+		addDailySumOrganicFertilizerDM(amount * params->vo_AOM_DryMatterContent);
 	}
 }
 
@@ -457,6 +458,7 @@ void MonicaModel::dailyReset()
 {
 	_dailySumIrrigationWater = 0.0;
 	_dailySumFertiliser = 0.0;
+	_dailySumOrganicFertilizerDM = 0.0;
 	clearEvents();
 
 	if(_clearCropUponNextDay)
