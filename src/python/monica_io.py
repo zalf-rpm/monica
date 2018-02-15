@@ -206,8 +206,8 @@ def replace_env_vars(path):
                 start_pos = path.find(start_token)
             else:
                 start_pos = path.find(start_token, end_pos + 1)
-		else:
-			break
+        else:
+            break
 
     return path
 
