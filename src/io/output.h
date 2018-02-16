@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
-#include "../core/monica-model.h"
+//#include "../core/monica-model.h"
 
 
 namespace Monica

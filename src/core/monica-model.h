@@ -43,6 +43,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 #include "soil/soil.h"
 #include "soil/constants.h"
+#include "../run/cultivation-method.h"
 
 namespace Monica
 {
@@ -87,7 +88,7 @@ namespace Monica
 		bool isCropPlanted() const { return _currentCrop.get() && _currentCrop->isValid(); }
 
 		//! harvest the currently seeded crop
-		void harvestCurrentCrop(bool exported);
+		void harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
 
 		//! harvest the fruit of the current crop
 		void fruitHarvestCurrentCrop(double percentage, bool exported);
@@ -247,6 +248,10 @@ namespace Monica
 		
 		int cultivationMethodCount() const { return _cultivationMethodCount; }
 
+		double optCarbonExportedResidues() const { return _optCarbonExportedResidues; }
+		double optCarbonReturnedResidues() const { return _optCarbonReturnedResidues; }
+		double humusBalanceCarryOver() const { return _humusBalanceCarryOver; }
+
 	private:
 		const SiteParameters _sitePs;
 		const UserSoilMoistureParameters _smPs;
@@ -285,6 +290,9 @@ namespace Monica
 		double _humusBalanceCarryOver{0.0};
 
 		double _dailySumIrrigationWater{0.0};
+
+		double _optCarbonExportedResidues{0.0};
+		double _optCarbonReturnedResidues{0.0};
 
 		Tools::Date _currentStepDate;
 		std::vector<std::map<Climate::ACD, double>> _climateData;

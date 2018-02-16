@@ -161,7 +161,8 @@ void MonicaModel::seedCrop(CropPtr crop)
  *
  * Deletes the current crop.
  */
-void MonicaModel::harvestCurrentCrop(bool exported)
+void MonicaModel::harvestCurrentCrop(bool exported, 
+																		 Harvest::OptCarbonManagementData optCarbMgmtData)
 {
 	//could be just a fallow, so there might be no CropGrowth object
 	if (_currentCrop && _currentCrop->isValid())
@@ -179,24 +180,55 @@ void MonicaModel::harvestCurrentCrop(bool exported)
 																		rootBiomass,
 																		rootNConcentration);
 
-			double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
+			if(optCarbMgmtData.optCarbonConservation)
+			{
+				double residueBiomass = _currentCropGrowth->get_ResidueBiomass(false); //kg ha-1
+				double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
+				double appliedOrganicFertilizerDryMatter = sumOrganicFertilizerDM(); //kg ha-1
+				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000 * optCarbMgmtData.organicFertilizerHeq;
+				double potentialHumusFromResidues = residueBiomass / 1000 * optCarbMgmtData.residueHeq;
+				double fractionToBeLeftOnField = 0;
+				if(intermediateHumusBalance < 0)
+				{
+					fractionToBeLeftOnField = 1;
+					if(intermediateHumusBalance + potentialHumusFromResidues > 0)
+						fractionToBeLeftOnField = -intermediateHumusBalance / potentialHumusFromResidues;
+				}
+				if(optCarbMgmtData.isCoverCrop && optCarbMgmtData.coverCropUsage == Harvest::greenManure)
+					fractionToBeLeftOnField = 1;
 
-			//!@todo Claas: das hier noch berechnen
-			double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
-			debug() << "adding organic matter from residues to soilOrganic" << endl;
-			debug() << "residue biomass: " << residueBiomass
-				<< " Residue N concentration: " << residueNConcentration << endl;
-			debug() << "primary yield biomass: " << _currentCropGrowth->get_PrimaryCropYield()
-				<< " Primary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration() << endl;
-			debug() << "secondary yield biomass: " << _currentCropGrowth->get_SecondaryCropYield()
-				<< " Secondary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration() << endl;
-			debug() << "Residues N content: " << _currentCropGrowth->get_ResiduesNContent()
-				<< " Primary yield N content: " << _currentCropGrowth->get_PrimaryYieldNContent()
-				<< " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
+				_optCarbonReturnedResidues = residueBiomass * fractionToBeLeftOnField;
 
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-																		residueBiomass,
-																		residueNConcentration);
+				//TODO
+				//_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+				//															returnedResidues,
+				//															residueNConcentration);
+				_optCarbonExportedResidues = residueBiomass - _optCarbonReturnedResidues;
+				
+				_humusBalanceCarryOver = intermediateHumusBalance + _optCarbonReturnedResidues / 1000 * optCarbMgmtData.residueHeq;
+			}
+			else //normal case
+			{
+
+				double residueBiomass = _currentCropGrowth->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
+
+				//!@todo Claas: das hier noch berechnen
+				double residueNConcentration = _currentCropGrowth->get_ResiduesNConcentration();
+				debug() << "adding organic matter from residues to soilOrganic" << endl;
+				debug() << "residue biomass: " << residueBiomass
+					<< " Residue N concentration: " << residueNConcentration << endl;
+				debug() << "primary yield biomass: " << _currentCropGrowth->get_PrimaryCropYield()
+					<< " Primary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration() << endl;
+				debug() << "secondary yield biomass: " << _currentCropGrowth->get_SecondaryCropYield()
+					<< " Secondary yield N concentration: " << _currentCropGrowth->get_PrimaryYieldNConcentration() << endl;
+				debug() << "Residues N content: " << _currentCropGrowth->get_ResiduesNContent()
+					<< " Primary yield N content: " << _currentCropGrowth->get_PrimaryYieldNContent()
+					<< " Secondary yield N content: " << _currentCropGrowth->get_SecondaryYieldNContent() << endl;
+
+				_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+																			residueBiomass,
+																			residueNConcentration);
+			}
 		}
 		else 
 		{
@@ -459,6 +491,8 @@ void MonicaModel::dailyReset()
 	_dailySumIrrigationWater = 0.0;
 	_dailySumFertiliser = 0.0;
 	_dailySumOrganicFertilizerDM = 0.0;
+	_optCarbonExportedResidues = 0.0;
+	_optCarbonReturnedResidues = 0.0;
 	clearEvents();
 
 	if(_clearCropUponNextDay)

@@ -565,6 +565,23 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->residueCutBiomass(), 1) : 0.0;
 			});
 
+			build({id++, "optCarbonExportedResidues", "kgDM ha-1", "return exported part of the residues according to optimal carbon balance"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.optCarbonExportedResidues(), 1);
+			});
+
+			build({id++, "optCarbonReturnedResidues", "kgDM ha-1", "return returned to soil part of the residues according to optimal carbon balance"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.optCarbonReturnedResidues(), 1);
+			});
+
+			build({id++, "humusBalanceCarryOver", "Heq-NRW ha-1", "return humus balance carry over according to optimal carbon balance"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.humusBalanceCarryOver(), 1);
+			});
 
 			build({ id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield" },
 				[](const MonicaModel& monica, OId oid)

@@ -419,13 +419,13 @@ Errors Harvest::merge(json11::Json j)
 	set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
 	set_bool_value(_exported, j, "exported");
-	set_bool_value(_optCarbonConservation, j, "opt-carbon-conservation");
-	set_double_value(_cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
+	set_bool_value(_optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
+	set_double_value(_optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
 	int ccu = int_valueD(j, "cover-crop-usage", -1);
 	if(ccu >= 0)
-		_coverCropUsage = CoverCropUsage(ccu);
-	set_double_value(_residueHeq, j, "residue-heq");
-	set_double_value(_organicFertilizerHeq, j, "organic-fertilizer-heq");
+		_optCarbMgmtData.coverCropUsage = CoverCropUsage(ccu);
+	set_double_value(_optCarbMgmtData.residueHeq, j, "residue-heq");
+	set_double_value(_optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
 
 	return res;
 }
@@ -438,11 +438,11 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	,{"method", _method}
 	,{"percentage", _percentage}
 	,{"exported", _exported}
-	,{"opt-carbon-conservation", _optCarbonConservation}
-	,{"crop-impact-on-humus-balance", _cropImpactOnHumusBalance}
-	,{"cover-crop-usage", _coverCropUsage == greenManure ? "green-manure" : "biomass-production"}
-	,{"residue-heq", _residueHeq}
-	,{"organic-fertilizer-heq", _organicFertilizerHeq}
+	,{"opt-carbon-conservation", _optCarbMgmtData.optCarbonConservation}
+	,{"crop-impact-on-humus-balance", _optCarbMgmtData.cropImpactOnHumusBalance}
+	,{"cover-crop-usage", _optCarbMgmtData.coverCropUsage == greenManure ? "green-manure" : "biomass-production"}
+	,{"residue-heq", _optCarbMgmtData.residueHeq}
+	,{"organic-fertilizer-heq", _optCarbMgmtData.organicFertilizerHeq}
 	};
 }
 
@@ -461,7 +461,7 @@ bool Harvest::apply(MonicaModel* model)
 			debug() << "harvesting crop: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
 			
 			if(_method == "total")
-				model->harvestCurrentCrop(_exported);
+				model->harvestCurrentCrop(_exported, _optCarbMgmtData);
 			else if(_method == "fruitHarvest")
 				model->fruitHarvestCurrentCrop(_percentage, _exported);
 			else if(_method == "cutting")
@@ -1170,6 +1170,7 @@ Errors CultivationMethod::merge(json11::Json j)
 			if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{
 				harvest->setCrop(_crop);
+				harvest->setIsCoverCrop(_isCoverCrop);
 				_crop->setHarvestDate(harvest->date());
 			}
 		}
