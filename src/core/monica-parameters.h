@@ -568,6 +568,7 @@ namespace Monica
     bool pc_WaterDeficitResponseOn{true};
     bool pc_EmergenceFloodingControlOn{true};
     bool pc_EmergenceMoistureControlOn{true};
+		bool pc_FrostKillOn{true};
 
     bool p_UseAutomaticIrrigation{false};
     AutomaticIrrigationParameters p_AutoIrrigationParams;

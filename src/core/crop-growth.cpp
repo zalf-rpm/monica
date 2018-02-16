@@ -55,7 +55,8 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 std::function<void(std::string)> fireEvent,
 											 std::function<void(double, double)> addOrganicMatter,
 											 int usage)
-	: soilColumn(sc)
+	: _frostKillOn(simPs.pc_FrostKillOn)
+	, soilColumn(sc)
 	, cropPs(cropPs)
 	, speciesPs(cps.speciesParams)
 	, cultivarPs(cps.cultivarParams)
@@ -422,8 +423,9 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 												vw_MinAirTemperature,
 												vc_CurrentTotalTemperatureSum);
 
-		fc_FrostKill(vw_MaxAirTemperature,
-								 vw_MinAirTemperature);
+		if(_frostKillOn)
+			fc_FrostKill(vw_MaxAirTemperature,
+									 vw_MinAirTemperature);
 
 		fc_DroughtImpactOnFertility(vc_TranspirationDeficit);
 
@@ -2228,6 +2230,8 @@ void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
 	double vc_RespiratoryStress = pc_RespiratoryStress * vc_RespirationFactor * vc_SnowDepthFactor;
 
 	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening + vc_LowTemperatureExposure + vc_RespiratoryStress;
+	//cout << "LT50: " << vc_LT50 << " LT50old: " << vc_LT50old << " FH: " << vc_FrostHardening << " FDH: " << vc_FrostDehardening
+	//	<< " LTE: " << vc_LowTemperatureExposure << " RS: " << vc_RespiratoryStress << " LT50c: " << pc_LT50cultivar << endl;
 
 	if(vc_LT50 > -3.0)
 	{

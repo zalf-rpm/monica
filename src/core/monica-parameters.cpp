@@ -849,6 +849,7 @@ Errors SimulationParameters::merge(json11::Json j)
   set_bool_value(pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn");
   set_bool_value(pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn");
   set_bool_value(pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn");
+	set_bool_value(pc_FrostKillOn, j, "FrostKillOn");
 
   set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
   p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
@@ -878,6 +879,7 @@ json11::Json SimulationParameters::to_json() const
 	,{"WaterDeficitResponseOn", pc_WaterDeficitResponseOn}
 	,{"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn}
 	,{"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn }
+	,{"FrostKillOn", pc_FrostKillOn}
   ,{"UseAutomaticIrrigation", p_UseAutomaticIrrigation}
   ,{"AutoIrrigationParams", p_AutoIrrigationParams}
   ,{"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod}

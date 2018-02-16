@@ -391,6 +391,8 @@ namespace Monica
 		double residueCutBiomass() const { return vc_residueCutBiomass; }
 
   private:
+		bool _frostKillOn{true};
+
     int pc_NumberOfAbovegroundOrgans() const;
 
     bool isAnthesisDay(int old_dev_stage, int new_dev_stage);
