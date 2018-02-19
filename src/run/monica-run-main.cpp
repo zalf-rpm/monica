@@ -141,6 +141,9 @@ int main(int argc, char** argv)
 		if(debugSet)
 			simm["debug?"] = debug;
 
+		//set debug mode in run-monica ... in libmonica has to be set separately in runMonica
+		activateDebug = simm["debug?"].bool_value();
+
 		if(!pathToOutput.empty())
 			simm["path-to-output"] = pathToOutput;
 
@@ -224,7 +227,6 @@ int main(int argc, char** argv)
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
 		auto env = createEnvFromJsonConfigFiles(ps);
-		activateDebug = env.debugMode;
 
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
