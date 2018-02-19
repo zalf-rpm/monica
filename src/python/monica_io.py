@@ -27,7 +27,7 @@ import monica_python
 
 #print "sys.version: ", sys.version
 
-print "local monica_io.py"
+print("local monica_io.py")
 
 OP_AVG = 0
 OP_MEDIAN = 1
@@ -569,11 +569,11 @@ def supported_patterns():
 def print_possible_errors(errs, include_warnings=False):
     if not errs["success"]:
         for err in errs["errors"]:
-            print err
+            print(err)
 
     if include_warnings and "warnings" in errs:
         for war in errs["warnings"]:
-            print war
+            print(war)
 
     return errs["success"]
 
@@ -607,7 +607,7 @@ def create_env_json_from_json_config(crop_site_sim):
 
     if len(errors) > 0:
         for err in errors:
-            print err
+            print(err)
         return None
 
     cropj = crop_site_sim2["crop"]
@@ -638,6 +638,7 @@ def create_env_json_from_json_config(crop_site_sim):
 
     env["pathToClimateCSV"] = simj["climate.csv"]
     env["csvViaHeaderOptions"] = simj["climate.csv-options"]
+    env["csvViaHeaderOptions"]["latitude"] = sitej["SiteParameters"]["Latitude"]
 
     climate_csv_string = crop_site_sim["climate"] if "climate" in crop_site_sim else ""
     if climate_csv_string:
