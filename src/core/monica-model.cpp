@@ -182,30 +182,40 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 
 			if(optCarbMgmtData.optCarbonConservation)
 			{
-				double residueBiomass = _currentCropGrowth->get_ResidueBiomass(false); //kg ha-1
+				double residueBiomass = _currentCropGrowth->get_ResidueBiomass(false); //kg ha-1, secondary yield is ignored with this approach
 				double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
 				double appliedOrganicFertilizerDryMatter = sumOrganicFertilizerDM(); //kg ha-1
-				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000 * optCarbMgmtData.organicFertilizerHeq;
-				double potentialHumusFromResidues = residueBiomass / 1000 * optCarbMgmtData.residueHeq;
-				double fractionToBeLeftOnField = 0;
-				if(intermediateHumusBalance < 0)
+				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq;
+				double potentialHumusFromResidues = residueBiomass / 1000.0 * optCarbMgmtData.residueHeq;
+				
+				double fractionToBeLeftOnField = 0.0;
+				if (potentialHumusFromResidues > 0)
 				{
-					fractionToBeLeftOnField = 1;
-					if(intermediateHumusBalance + potentialHumusFromResidues > 0)
-						fractionToBeLeftOnField = -intermediateHumusBalance / potentialHumusFromResidues;
+					fractionToBeLeftOnField = -intermediateHumusBalance / potentialHumusFromResidues;
+					//0 <= fractionToBeLeftOnField <= 1
+					if (fractionToBeLeftOnField > 1)
+					{
+						fractionToBeLeftOnField = 1.0;
+					}
+					else if (fractionToBeLeftOnField < 0)
+					{
+						fractionToBeLeftOnField = 0.0;
+					}
 				}
+				
 				if(optCarbMgmtData.isCoverCrop && optCarbMgmtData.coverCropUsage == Harvest::greenManure)
-					fractionToBeLeftOnField = 1;
+					//if the cover crop is used as green manure, all the residues are incorporated regardless the humus balance
+					fractionToBeLeftOnField = 1.0;
 
 				_optCarbonReturnedResidues = residueBiomass * fractionToBeLeftOnField;
+				
+				_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+																			_optCarbonReturnedResidues,
+																			_currentCropGrowth->get_ResiduesNConcentration());
 
-				//TODO
-				//_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-				//															returnedResidues,
-				//															residueNConcentration);
 				_optCarbonExportedResidues = residueBiomass - _optCarbonReturnedResidues;
 				
-				_humusBalanceCarryOver = intermediateHumusBalance + _optCarbonReturnedResidues / 1000 * optCarbMgmtData.residueHeq;
+				_humusBalanceCarryOver = intermediateHumusBalance + _optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq;
 			}
 			else //normal case
 			{
@@ -468,7 +478,7 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParametersPtr params
 		debug() << "MONICA model: applyOrganicFertiliser:\t" << amount << "\t" << params->vo_NConcentration << endl;
 		_soilOrganic.setIncorporation(incorporation);
 		_soilOrganic.addOrganicMatter(params, amount, params->vo_NConcentration);
-		addDailySumFertiliser(amount * params->vo_NConcentration);
+		addDailySumOrgFertiliser(amount, params);
 		addDailySumOrganicFertilizerDM(amount * params->vo_AOM_DryMatterContent);
 	}
 }
@@ -490,6 +500,7 @@ void MonicaModel::dailyReset()
 {
 	_dailySumIrrigationWater = 0.0;
 	_dailySumFertiliser = 0.0;
+	_dailySumOrgFertiliser = 0.0;
 	_dailySumOrganicFertilizerDM = 0.0;
 	_optCarbonExportedResidues = 0.0;
 	_optCarbonReturnedResidues = 0.0;

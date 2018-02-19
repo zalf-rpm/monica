@@ -421,9 +421,11 @@ Errors Harvest::merge(json11::Json j)
 	set_bool_value(_exported, j, "exported");
 	set_bool_value(_optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
 	set_double_value(_optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
-	int ccu = int_valueD(j, "cover-crop-usage", -1);
-	if(ccu >= 0)
-		_optCarbMgmtData.coverCropUsage = CoverCropUsage(ccu);
+	auto ccu = j["cover-crop-usage"].string_value();
+	if(ccu == "green-manure")
+		_optCarbMgmtData.coverCropUsage = greenManure;
+	else
+		_optCarbMgmtData.coverCropUsage = biomassProduction;
 	set_double_value(_optCarbMgmtData.residueHeq, j, "residue-heq");
 	set_double_value(_optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
 

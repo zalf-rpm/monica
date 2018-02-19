@@ -45,6 +45,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/constants.h"
 #include "../run/cultivation-method.h"
 
+
 namespace Monica
 {
 	/* forward declaration */
@@ -130,6 +131,21 @@ namespace Monica
 			_sumFertiliser +=amount;
 		}
 
+		double dailySumOrgFertiliser() const { return _dailySumOrgFertiliser; }
+
+		void addDailySumOrgFertiliser(double amountFM, OrganicMatterParametersPtr params)
+		{
+			using namespace Soil;
+			double AOM_fast_factor = OrganicConstants::po_AOM_to_C * params->vo_PartAOM_to_AOM_Fast / params->vo_CN_Ratio_AOM_Fast;
+			double AOM_slow_factor = OrganicConstants::po_AOM_to_C * params->vo_PartAOM_to_AOM_Slow / params->vo_CN_Ratio_AOM_Slow;
+			double SOM_Factor = (1 - (params->vo_PartAOM_to_AOM_Fast + params->vo_PartAOM_to_AOM_Slow)) * OrganicConstants::po_AOM_to_C / soilColumn().at(0).vs_Soil_CN_Ratio(); // TODO ask CN for correctness 
+
+			double conversion = AOM_fast_factor + AOM_slow_factor + SOM_Factor + params->vo_AOM_NH4Content + params->vo_AOM_NO3Content;
+
+			_dailySumOrgFertiliser += amountFM * params->vo_AOM_DryMatterContent * conversion;
+			_sumOrgFertiliser += amountFM * params->vo_AOM_DryMatterContent * conversion;
+		}
+
 		double dailySumOrganicFertilizerDM() const { return _dailySumOrganicFertilizerDM; }
 		double sumOrganicFertilizerDM() const { return _sumOrganicFertilizerDM; }
 
@@ -147,10 +163,12 @@ namespace Monica
 		}
 
 		double sumFertiliser() const { return _sumFertiliser; }
+		double sumOrgFertiliser() const { return _sumOrgFertiliser; }
 
 		void resetFertiliserCounter()
 		{ 
 			_sumFertiliser = 0; 
+			_sumOrgFertiliser = 0;
 			_sumOrganicFertilizerDM = 0;
 		}
 
@@ -279,10 +297,12 @@ namespace Monica
 		bool _full24{false}, _full240{false};
 
 		//! store applied fertiliser during one production process
-		double _sumFertiliser{0.0};
+		double _sumFertiliser{0.0}; //mineral N
+		double _sumOrgFertiliser{ 0.0 }; //organic N
 
 		//! stores the daily sum of applied fertiliser
-		double _dailySumFertiliser{0.0};
+		double _dailySumFertiliser{0.0}; //mineral N
+		double _dailySumOrgFertiliser{ 0.0 }; //organic N
 
 		double _dailySumOrganicFertilizerDM{0.0};
 		double _sumOrganicFertilizerDM{0.0};
