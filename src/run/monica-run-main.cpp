@@ -264,7 +264,10 @@ int main(int argc, char** argv)
 		{
 			out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
 			writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, d.outputIds, d.results, csvSep);
+			if(env.returnObjOutputs())
+				writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
+			else
+				writeOutput(out, d.outputIds, d.results, csvSep);
 			out << endl;
 			
 		}
