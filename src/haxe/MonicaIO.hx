@@ -12,6 +12,8 @@
 // Landscape Systems Analysis at the ZALF.
 // Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
+package monica.io;
+
 import thx.Set;
 import haxe.DynamicAccess;
 import haxe.Http;
@@ -19,6 +21,7 @@ import haxe.Json;
 
 using Lambda;
 using MonicaIO.EResultTools;
+using StringTools;
 
 typedef EResult = {
   ?result: Dynamic,
@@ -156,6 +159,70 @@ class MonicaIO {
     return {result: j, errors: errors};
   }
 
+  static private function isAbsolutePath(p : String) : Bool
+  {
+    return p.startsWith("/") 
+        || (p.length == 2 && p.charAt(1) == ":") 
+        || (p.length > 2 && p.charAt(1) == ":" 
+          && (p.charAt(2) == "\\" 
+            || p.charAt(2) == "/"));
+  }
+
+  static private function replaceEnvVars(path : String) : String
+  {
+    //"replace ${ENV_VAR} in path"
+    var start_token = "${";
+    var end_token = "}";
+    var start_pos = path.indexOf(start_token);
+    while(start_pos > -1)
+    {
+        var end_pos = path.indexOf(end_token, start_pos + 1);
+        if(end_pos > -1)
+        {
+            var name_start = start_pos + 2;
+            var env_var_name = path.substring(name_start, end_pos);
+            var env_var_content = Sys.getEnv(env_var_name);
+            if(env_var_content.length > 0)
+            {
+                path = path.replace(path.substring(start_pos, end_pos + 1), env_var_content);
+                start_pos = path.indexOf(start_token);
+            }
+            else
+                start_pos = path.indexOf(start_token, end_pos + 1);
+        }
+        else
+            break;
+    }
+
+    return path;
+  }
+
+  private static function fixSystemSeparator(path : String) : String
+  {
+    //"fix system separator"
+    var path = path.replace("\\", "/");
+    var new_path = path;
+    while(true)
+    {
+      new_path = path.replace("//", "/");
+      if(new_path == path)
+        break;
+      path = new_path;
+    }
+    return new_path;
+  }
+
+  private static function readAndParseJsonFile(path : String) : EResult
+  {
+    var res = {result: null, errors: ['Error opening file with path: $path !']};
+    #if python
+    res = {result: sys.io.File.getContent(path), errors: []};
+    #end
+    return res;
+  }
+
+def parse_json_string(jsonString):
+    return {"result": json.loads(jsonString), "errors": [], "success": True}
 
   static private var _supportedPatterns : Map<String, Dynamic -> Dynamic -> EResult>;
   static private var _refCache = new Map<String, EResult>();
@@ -164,8 +231,7 @@ class MonicaIO {
   {
     var ref = function(root : DynamicAccess<Dynamic>, j : Array<Dynamic>) : EResult
     {
-      if(isArray(j)
-        && j.length == 3
+      if(j.length == 3
         && isString(j[1])
         && isString(j[2]))
       {
@@ -338,30 +404,26 @@ class MonicaIO {
     };
     */
 
-    /*
-    auto fromFile = [](const Json& root, const Json& j) -> EResult<Json>
+    var fromFile = function(root : DynamicAccess<Dynamic>, j : Array<Dynamic>) : EResult
     {
-      string error;
-
-      if(j.array_items().size() == 2
-        && j[1].is_string())
+      if(j.length == 2
+        && isString(j[1]))
       {
-        string basePath = string_valueD(root, "include-file-base-path", ".");
-        string pathToFile = j[1].string_value();
+        var basePath : String = if(root.exists("include-file-base-path")) root["include-file-base-path"] else ".";
+        var pathToFile : String = j[1];
         if(!isAbsolutePath(pathToFile))
           pathToFile = basePath + "/" + pathToFile;
         pathToFile = replaceEnvVars(pathToFile);
         pathToFile = fixSystemSeparator(pathToFile);
-        auto jo = readAndParseJsonFile(pathToFile);
-        if(jo.success() && !jo.result.is_null())
-          return{jo.result};
+        var jo = readAndParseJsonFile(pathToFile);
+        if(jo.success() && jo.result != null)
+          return {result: jo.result};
         
-        return{j, string("Couldn't include file with path: '") + pathToFile + "'!"};
+        return {result: j, errors: ['Couldn\'t include file with path: $pathToFile !']};
       }
 
-      return{j, string("Couldn't include file with function: ") + j.dump() + "!"};
+      return {result: j, errors: ['Couldn\'t include file with function: $j !']};
     };
-    */
 
   /*
     auto humus2corg = [](const Json&, const Json& j) -> EResult<Json>
@@ -443,7 +505,7 @@ class MonicaIO {
 	if(_supportedPatterns == null)
       _supportedPatterns = [
         //{"include-from-db", fromDb},
-        //"include-from-file" => fromFile,
+        "include-from-file" => fromFile,
         "ref" => ref,
         //"humus_st2corg" => humus2corg,
         //"humus-class->corg" => humus2corg,
