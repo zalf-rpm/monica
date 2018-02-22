@@ -1960,8 +1960,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			Voc::SpeciesData species;
 			//species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
 			species.lai = vc_LeafAreaIndex;
-			species.mFol = get_OrganBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
-			species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+			species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
+			species.sla = species.lai / species.mFol;//pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
 
 			species.EF_MONO = speciesPs.EF_MONO;
 			species.EF_MONOS = speciesPs.EF_MONOS;
@@ -2005,9 +2005,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			for (const auto& lf : { res.sunlit, res.shaded })
 			{
 				species.lai = lf.LAI;
-				species.mFol = get_OrganBiomass(LEAF) / (100. * 100.) * lf.LAI / (sun_LAI + sh_LAI); //kg/ha -> kg/m2
+				species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.) * lf.LAI / (sun_LAI + sh_LAI); //kg/ha -> kg/m2
 
-				mcd.rad = lf.rad; //W m-2
+				mcd.rad = lf.rad; //W m-2 global incident
 
 				_cropPhotosynthesisResults.kc = lf.kc;
 				_cropPhotosynthesisResults.ko = lf.ko * 1000;
