@@ -280,13 +280,14 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 											double vw_MinAirTemperature,
 											double vw_GlobalRadiation,
 											double vw_SunshineHours,
-											int vs_JulianDay,
+											Date currentDate,
 											double vw_RelativeHumidity,
 											double vw_WindSpeed,
 											double vw_WindSpeedHeight,
 											double vw_AtmosphericCO2Concentration,
 											double vw_GrossPrecipitation)
 {
+	int vs_JulianDay = int(currentDate.julianDay());
 	if(vc_CuttingDelayDays > 0)
 	{
 		vc_CuttingDelayDays--;
@@ -315,14 +316,14 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 
 	if(isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage))
 	{
-		vc_AnthesisDay = int(vs_JulianDay);
+		vc_AnthesisDay = vs_JulianDay;
 		if(_fireEvent)
 			_fireEvent("anthesis");
 	}
 
 	if(isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage))
 	{
-		vc_MaturityDay = int(vs_JulianDay);
+		vc_MaturityDay = vs_JulianDay;
 		vc_MaturityReached = true;
 		if(_fireEvent)
 			_fireEvent("maturity");
@@ -417,7 +418,7 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 													vc_ClearDayRadiation,
 													vc_EffectiveDayLength,
 													vc_OvercastDayRadiation,
-													vs_JulianDay);
+													currentDate);
 
 		fc_HeatStressImpact(vw_MaxAirTemperature,
 												vw_MinAirTemperature,
@@ -1249,6 +1250,74 @@ double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
 	return vc_SoilCoverage;
 }
 
+#define TEST_HOURLY_OUTPUT 
+#ifdef TEST_HOURLY_OUTPUT
+#include <fstream>
+ostream& tout()
+{
+	static ofstream out;
+	static bool init = false;
+	static bool failed = false;
+	if(!init)
+	{
+		out.open("hourly-data.csv");
+		failed = out.fail();
+		(failed ? cout : out) <<
+			"iso-date"
+			",hour"
+			",crop-name"
+			",in:global_rad"
+			",in:extra_terr_rad"
+			",in:solar_el"
+			",in:LAI"
+			",in:leaf_temp"
+			",in:VPD"
+			",in:Ca"
+			",in:fO3"
+			",in:fls"
+			",out:canopy_net_photos"
+			",out:canopy_res"
+			",out:canopy_gross_photos"
+			",out:jmax_c"
+			",out:guenther:iso"
+			",out:guenther:mono"
+			",out:sun:LAI"
+			",out:sun:gs"
+			",out:sun:kc"
+			",out:sun:ko"
+			",out:sun:oi"
+			",out:sun:ci"
+			",out:sun:comp"
+			",out:sun:vcMax"
+			",out:sun:jMax"
+			",out:sun:rad"
+			",out:sun:jj"
+			",out:sun:jv"
+			",out:jjv:sun:iso"
+			",out:jjv:sun:mono"
+			",out:sh:LAI"
+			",out:sh:gs"
+			",out:sh:kc"
+			",out:sh:ko"
+			",out:sh:oi"
+			",out:sh:ci"
+			",out:sh:comp"
+			",out:sh:vcMax"
+			",out:sh:jMax"
+			",out:sh:rad"
+			",out:sh:jj"
+			",out:sh:jv"
+			",out:jjv:sh:iso"
+			",out:jjv:sh:mono"
+			<< endl;
+
+		init = true;
+	}
+
+	return failed ? cout : out;
+}
+#endif
+
 /**
  * @brief Calculation of photosynthesis
  *
@@ -1292,7 +1361,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 																			 double vc_ClearDayRadiation,
 																			 double vc_EffectiveDayLength,
 																			 double vc_OvercastDayRadiation,
-																			 int vs_JulianDay)
+																			 Date currentDate)
 {
 	using namespace Voc;
 
@@ -1804,7 +1873,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	}
 
 #pragma region 
-	
+
+	int vs_JulianDay = currentDate.julianDay();
 	double dailyGP = 0;
 	if(cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1)
 	{
@@ -1845,8 +1915,6 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 			auto res = FvCB_canopy_hourly_C3(in, hps);
 			
-			
-
 			vc_sunlitLeafAreaIndex[h] = res.sunlit.LAI;
 			vc_shadedLeafAreaIndex[h] = res.shaded.LAI;
 
@@ -1909,6 +1977,28 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			_guentherEmissions += ges;
 			//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
+#ifdef TEST_HOURLY_OUTPUT
+			tout()
+				<< currentDate.toIsoDateString() 
+				<< "," << h
+				<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId 
+				<< "," << in.global_rad 
+				<< "," << in.extra_terr_rad
+				<< "," << in.solar_el
+				<< "," << in.LAI
+				<< "," << in.leaf_temp
+				<< "," << in.VPD
+				<< "," << in.Ca
+				<< "," << in.fO3
+				<< "," << in.fls
+				<< "," << res.canopy_net_photos
+				<< "," << res.canopy_resp
+				<< "," << res.canopy_gross_photos
+				<< "," << res.jmax_c
+				<< "," << ges.isoprene_emission
+				<< "," << ges.monoterpene_emission;
+#endif
+
 			double sun_LAI = res.sunlit.LAI;
 			double sh_LAI = res.shaded.LAI;
 			//JJV
@@ -1932,7 +2022,28 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				//cout << "J: C: " << jjves.monoterpene_emission << " em: " << jjves.isoprene_emission << endl;
 				_jjvEmissions += jjves;
 				//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
+					
+#ifdef TEST_HOURLY_OUTPUT
+				tout()
+					<< "," << lf.LAI
+					<< "," << lf.gs
+					<< "," << lf.kc
+					<< "," << lf.ko
+					<< "," << lf.oi
+					<< "," << lf.ci
+					<< "," << lf.comp
+					<< "," << lf.vcMax
+					<< "," << lf.jMax
+					<< "," << lf.rad
+					<< "," << lf.jj
+					<< "," << lf.jv
+					<< "," << jjves.isoprene_emission
+					<< "," << jjves.monoterpene_emission;
+#endif
 			}
+#ifdef TEST_HOURLY_OUTPUT
+			tout() << endl;
+#endif
 		}
 	}
 #pragma endregion hourly FvCB code
