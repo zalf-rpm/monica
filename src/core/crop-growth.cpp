@@ -1845,15 +1845,10 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 			auto res = FvCB_canopy_hourly_C3(in, hps);
 			
-			_cropPhotosynthesisResults.kc = res.kc;
-			_cropPhotosynthesisResults.ko = res.ko * 1000;
-			_cropPhotosynthesisResults.oi = res.oi * 1000;
-			//_cropPhotosynthesisResults.ci = res.ci;
-			_cropPhotosynthesisResults.vcMax = res.vcMax;
-			_cropPhotosynthesisResults.jMax = res.jMax;
+			
 
-			vc_sunlitLeafAreaIndex[h] = res.LAI_sun;
-			vc_shadedLeafAreaIndex[h] = res.LAI_sh;
+			vc_sunlitLeafAreaIndex[h] = res.sunlit.LAI;
+			vc_shadedLeafAreaIndex[h] = res.shaded.LAI;
 
 			// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
 			dailyGP += res.canopy_gross_photos * 44. / 100. / 1000.;
@@ -1909,15 +1904,35 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			species.AEVC = speciesPs.AEVC;
 			species.KC25 = speciesPs.KC25;
 
-			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1./24.);
+			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1. / 24.);
 			//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
 			_guentherEmissions += ges;
 			//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
-			auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1./24., false);
-			//cout << "J: C: " << jjves.monoterpene_emission << " em: " << jjves.isoprene_emission << endl;
-			_jjvEmissions += jjves;
-			//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
+			double sun_LAI = res.sunlit.LAI;
+			double sh_LAI = res.shaded.LAI;
+			//JJV
+			for (const auto& lf : { res.sunlit, res.shaded })
+			{
+				species.lai = lf.LAI;
+				species.mFol = get_OrganBiomass(LEAF) / (100. * 100.) * lf.LAI / (sun_LAI + sh_LAI); //kg/ha -> kg/m2
+
+				mcd.rad = lf.rad; //W m-2
+
+				_cropPhotosynthesisResults.kc = lf.kc;
+				_cropPhotosynthesisResults.ko = lf.ko * 1000;
+				_cropPhotosynthesisResults.oi = lf.oi * 1000;
+				_cropPhotosynthesisResults.ci = lf.ci;
+				_cropPhotosynthesisResults.vcMax = lf.vcMax;
+				_cropPhotosynthesisResults.jMax = lf.jMax;
+				_cropPhotosynthesisResults.jj = lf.jj;
+				_cropPhotosynthesisResults.jv = lf.jv;
+				
+				auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1. / 24., false);
+				//cout << "J: C: " << jjves.monoterpene_emission << " em: " << jjves.isoprene_emission << endl;
+				_jjvEmissions += jjves;
+				//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
+			}
 		}
 	}
 #pragma endregion hourly FvCB code
@@ -3342,6 +3357,7 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 	double vc_ConvectiveNUptake = 0.0; // old TRNSUM
 	double vc_DiffusiveNUptake = 0.0; // old SUMDIFF
 	std::vector<double> vc_ConvectiveNUptakeFromLayer(nols, 0.0); // old MASS
+
 	std::vector<double> vc_DiffusionCoeff(nols, 0.0); // old D
 	std::vector<double> vc_DiffusiveNUptakeFromLayer(nols, 0.0); // old DIFF
 	double vc_ConvectiveNUptake_1 = 0.0; // old MASSUM
