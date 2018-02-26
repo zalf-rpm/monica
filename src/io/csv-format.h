@@ -38,6 +38,10 @@ namespace Monica
 									 const std::vector<OId>& outputIds,
 									 const std::vector<Tools::J11Array>& values,
 									 std::string csvSep);
+	void writeOutputObj(std::ostream& out,
+											const std::vector<OId>& outputIds,
+											const std::vector<Tools::J11Object>& values,
+											std::string csvSep);
 }  
 
 #endif 

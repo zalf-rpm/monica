@@ -84,6 +84,8 @@ namespace Monica
 		std::string toString(OId::OP op) const;
 		std::string toString(OId::ORGAN organ) const;
 
+		std::string outputName() const;
+
 		int id{-1};
 		std::string name;
 		std::string displayName;
@@ -115,8 +117,8 @@ namespace Monica
 			std::string origSpec;
 			std::vector<OId> outputIds;
 			std::vector<Tools::J11Array> results;
+			std::vector<Tools::J11Object> resultsObj;
 		};
-
 		std::vector<Data> data;
 	};
 }  

@@ -48,23 +48,30 @@ namespace FvCB
 		double fls = { 1.0 }; //effect of senescence on rubisco-limited photosynthesis, modified by cumulative ozone uptake 
 	};
 
-	struct FvCB_canopy_hourly_out {
-		double LAI_sun; //m2 m-2
-		double LAI_sh; //m2 m-2
-		double canopy_net_photos; //µmol CO2 m-2 h-1
-		double canopy_resp; //µmol CO2 m-2 h-1
-		double canopy_gross_photos; //µmol CO2 m-2 h-1
-		double gs_sun; //mol m-2 s-1 bar-1
-		double gs_sh; //mol m-2 s-1 bar-1
-		double jmax_c; //umol m-2 s-1
+	struct FvCB_leaf_fraction {
+		double LAI; //m2 m-2
+		double gs; //mol m-2 s-1 bar-1
 		double kc; //µmol mol-1 mbar-1 ... Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer
 		double ko; //µmol mol-1 mbar-1 ... Michaelis - Menten constant for O2 reaction of rubisco per canopy layer
 		double oi; //µmol m-2 ... leaf internal O2 concentration per canopy layer
+		double ci; //µmol m-2 ... leaf internal O2 concentration per canopy layer
 		double comp; //µmol mol-1 ... CCO2 compensation point at 25oC per canopy layer
-		double vcMax; //µmol m-2 s-1 ... actual activity state of rubisco  per canopy layer
-		double jMax; //µmol m-2 s-1 ... actual electron transport capacity per canopy layer
+		double vcMax; //µmol m-2 s-1 ... actual activity state of rubisco  (unit leaf area)
+		double jMax; //µmol m-2 s-1 ... actual electron transport capacity (unit leaf area)
+		double rad; //W m-2 ... adsorbed (global?) radiation (unit ground area)
+		double jj; //umol m-2 s-1 ... electron provision (unit leaf area)
+		double jv; //umol m-2 s-1 ... used electron transport for photosynthesis (unit leaf area)
 	};
-	
+
+	struct FvCB_canopy_hourly_out {
+		double canopy_net_photos; //µmol CO2 m-2 h-1
+		double canopy_resp; //µmol CO2 m-2 h-1
+		double canopy_gross_photos; //µmol CO2 m-2 h-1
+		double jmax_c; //umol m-2 s-1
+		FvCB_leaf_fraction sunlit;
+		FvCB_leaf_fraction shaded;
+	};
+
 	FvCB_canopy_hourly_out FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);
 	
 }

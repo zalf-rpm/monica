@@ -1206,6 +1206,12 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.dailySumFertiliser(), 1);
 			});
 
+			build({ id++, "NOrgFert", "kgN ha-1", "dailySumOrgFertiliser" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.dailySumOrgFertiliser(), 1);
+			});
+
 			build({id++, "WaterContent", "%nFC", "soil water content"},
 						[](const MonicaModel& monica, OId oid)
 			{

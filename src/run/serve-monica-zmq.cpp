@@ -391,6 +391,8 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 																					 map<SocketRole, SocketConfig> socketAddresses)
 {
+	bool startedServerInDebugMode = activateDebug;
+
 	if(socketAddresses.empty())
 	{
 		cerr << "No supplied address for a receiving zmq socket! Exiting." << endl;
@@ -519,8 +521,8 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							if(!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
 								env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
 
-							activateDebug = activateDebug && env.debugMode;
-
+							env.debugMode = startedServerInDebugMode && env.debugMode;
+							
 							env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 								[](string soilTexture, int distance)
 							{

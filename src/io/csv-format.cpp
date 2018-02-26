@@ -152,4 +152,72 @@ void Monica::writeOutput(ostream& out,
 	out.flush();
 }
 
+void Monica::writeOutputObj(ostream& out,
+														const vector<OId>& outputIds,
+														const vector<J11Object>& values,
+														string csvSep)
+{
+	//using namespace std::string_literals;
+	string escapeTokens = "\n\""_s + csvSep;
+
+	if(!values.empty())
+	{
+		for(const auto& o : values)
+		{
+			size_t i = 0;
+			auto oidsSize = outputIds.size();
+			for(auto oid : outputIds)
+			{
+				auto csvSep_ = i + 1 == oidsSize ? "" : csvSep;
+				auto oi = o.find(oid.outputName());
+				if(oi != o.end())
+				{
+					Json j = oi->second;
+					switch(j.type())
+					{
+					case Json::NUMBER: out << j.number_value() << csvSep_; break;
+					case Json::STRING:
+						out
+							<< (j.string_value().find_first_of(escapeTokens) == string::npos
+									? j.string_value()
+									: "\""_s + j.string_value() + "\""_s)
+							<< csvSep_; break;
+					case Json::BOOL: out << j.bool_value() << csvSep_; break;
+					case Json::ARRAY:
+					{
+						size_t jvi = 0;
+						auto jSize = j.array_items().size();
+						for(Json jv : j.array_items())
+						{
+							auto csvSep__ = jvi + 1 == jSize ? "" : csvSep;
+							switch(jv.type())
+							{
+							case Json::NUMBER: out << jv.number_value() << csvSep__; break;
+							case Json::STRING:
+								out
+									<< (jv.string_value().find_first_of(escapeTokens) == string::npos
+											? jv.string_value()
+											: "\""_s + jv.string_value() + "\""_s)
+									<< csvSep__; break;
+							case Json::BOOL: out << jv.bool_value() << csvSep__; break;
+							default: out << "UNKNOWN" << csvSep__;
+							}
+							++jvi;
+						}
+						out << csvSep_;
+						break;
+					}
+					default: out << "UNKNOWN" << csvSep_;
+					}
+				}
+				++i;
+			}
+			out << endl;
+
+
+		}
+	}
+	out.flush();
+}
+
 

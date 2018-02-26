@@ -76,7 +76,7 @@ namespace Monica
               double vw_MinAirTemperature,
               double vw_GlobalRadiation,
               double vw_SunshineHours,
-              int vs_JulianDay,
+              Tools::Date currentDate,
               double vw_RelativeHumidity,
               double vw_WindSpeed,
               double vw_WindSpeedHeight,
@@ -168,7 +168,7 @@ namespace Monica
                                double vc_ClearDayRadiation,
                                double vc_EffectiveDayLength,
                                double vc_OvercastDayRadiation,
-															 int vs_JulianDay);
+															 Tools::Date currentDate);
 
     void fc_HeatStressImpact(double vw_MeanAirTemperature,
                              double vw_MaxAirTemperature,

@@ -98,7 +98,6 @@ Errors Env::merge(json11::Json j)
 
 	//set_string_value(customId, j, "customId");
 	customId = j["customId"];
-	events = j["events"];
 
 	return es;
 }
@@ -354,6 +353,22 @@ void storeResults(const vector<OId>& outputIds,
 	}
 };
 
+void storeResults2(const vector<OId>& outputIds,
+									 vector<J11Object>& results,
+									 const MonicaModel& monica)
+{
+	const auto& ofs = buildOutputTable().ofs;
+
+	J11Object result;
+	for(auto oid : outputIds)
+	{
+		auto ofi = ofs.find(oid.id);
+		if(ofi != ofs.end())
+			result[oid.outputName()] = ofi->second(monica, oid);
+	}
+	results.push_back(result);
+};
+
 //-----------------------------------------------------------------------------
 
 void StoreData::aggregateResults()
@@ -389,6 +404,40 @@ void StoreData::aggregateResults()
 		}
 	}
 }
+
+void StoreData::aggregateResultsObj()
+{
+	if(!intermediateResults.empty())
+	{
+		assert(intermediateResults.size() == outputIds.size());
+
+		J11Object result;
+		size_t i = 0;
+		for(auto oid : outputIds)
+		{
+			auto& ivs = intermediateResults.at(i);
+			if(!ivs.empty())
+			{
+				if(ivs.front().is_string())
+				{
+					switch(oid.timeAggOp)
+					{
+					case OId::FIRST: result[oid.outputName()] = ivs.front(); break;
+					case OId::LAST: result[oid.outputName()] = ivs.back(); break;
+					default: result[oid.outputName()] = ivs.front();
+					}
+				}
+				else
+					result[oid.outputName()] = applyOIdOP(oid.timeAggOp, ivs);
+
+				intermediateResults[i].clear();
+			}
+			++i;
+		}
+		resultsObj.push_back(result);
+	}
+}
+
 
 void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 {
@@ -630,6 +679,247 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
 	}
 }
 
+void StoreData::storeResultsIfSpecAppliesObj(const MonicaModel& monica)
+{
+	string os = spec.origSpec.dump();
+
+	switch(spec.eventType)
+	{
+	case Spec::eExpression:
+	{
+		bool isCurrentlyEndEvent = false;
+		if(!spec.time2expression.empty())
+		{
+			//check and possibly set start/end markers
+			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
+			{
+				if(auto f = spec.time2expression["start"])
+					withinEventStartEndRange = f(monica);
+			}
+			else if(withinEventStartEndRange.isValue())
+			{
+				if(auto f = spec.time2expression["end"])
+					isCurrentlyEndEvent = f(monica);
+			}
+
+			//do something if we are in start/end range or nothing is set at all (means do it always)
+			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+			{
+				//check for at event
+				auto af = spec.time2expression["at"];
+				if(af && af(monica))
+				{
+					storeResults2(outputIds, resultsObj, monica);
+				}
+				//or while event
+				else if(auto wf = spec.time2expression["while"])
+				{
+					if(wf(monica))
+					{
+						storeResults(outputIds, intermediateResults, monica);
+					}
+					else if(!intermediateResults.empty()
+									&& !intermediateResults.front().empty())
+					{
+						//if while event was not successful but we got intermediate results, they should be aggregated
+						aggregateResultsObj();
+					}
+				}
+				//or from/to range event
+				else
+				{
+					bool isCurrentlyToEvent = false;
+					if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
+					{
+						if(auto f = spec.time2expression["from"])
+							withinEventFromToRange = f(monica);
+					}
+					else if(withinEventFromToRange.isValue())
+					{
+						if(auto f = spec.time2expression["to"])
+							isCurrentlyToEvent = f(monica);
+					}
+
+					if(withinEventFromToRange.value())
+					{
+						storeResults(outputIds, intermediateResults, monica);
+
+						if(isCurrentlyToEvent)
+						{
+							aggregateResultsObj();
+							withinEventFromToRange = false;
+						}
+
+						if(isCurrentlyEndEvent)
+							withinEventStartEndRange = false;
+					}
+				}
+			}
+		}
+	}
+	break;
+	case Spec::eCrop:
+	{
+		bool isCurrentlyEndEvent = false;
+		const auto& currentEvents = monica.currentEvents();
+		if(!spec.time2event.empty() || !currentEvents.empty())
+		{
+			//set possibly start/end markers
+			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
+			{
+				auto s = spec.time2event["start"];
+				if(!s.empty())
+				{
+					if(currentEvents.find(s) != currentEvents.end())
+						withinEventStartEndRange = true;
+				}
+			}
+			else if(withinEventStartEndRange.isValue())
+			{
+				auto e = spec.time2event["end"];
+				if(!e.empty())
+				{
+					if(currentEvents.find(e) != currentEvents.end())
+						isCurrentlyEndEvent = true;
+				}
+			}
+
+			//is at event
+			auto a = spec.time2event["at"];
+			if(!a.empty() && currentEvents.find(a) != currentEvents.end())
+			{
+				storeResults2(outputIds, resultsObj, monica);
+			}
+			//is from/to event
+			else
+			{
+				bool isCurrentlyToEvent = false;
+				if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
+				{
+					auto f = spec.time2event["from"];
+					if(!f.empty())
+					{
+						if(currentEvents.find(f) != currentEvents.end())
+							withinEventFromToRange = true;
+					}
+				}
+				else if(withinEventFromToRange.isValue())
+				{
+					auto t = spec.time2event["to"];
+					if(!t.empty())
+					{
+						if(currentEvents.find(t) != currentEvents.end())
+							isCurrentlyToEvent = true;
+					}
+				}
+
+				if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+				{
+					if(withinEventFromToRange.value())
+					{
+						// allow an while expression in an eCrop section
+						if(auto wf = spec.time2expression["while"])
+						{
+							if(wf(monica))
+							{
+								storeResults(outputIds, intermediateResults, monica);
+							}
+						}
+						else
+							storeResults(outputIds, intermediateResults, monica);
+
+						if(isCurrentlyToEvent)
+						{
+							aggregateResultsObj();
+							withinEventFromToRange = false;
+						}
+
+						if(isCurrentlyEndEvent)
+							withinEventStartEndRange = false;
+					}
+				}
+			}
+		}
+	}
+	break;
+	case Spec::eDate:
+	{
+		auto cd = monica.currentStepDate();
+
+		auto y = cd.year();
+		auto m = cd.month();
+		auto d = cd.day();
+
+		if(spec.start.isValue() || spec.end.isValue())
+		{
+			//build dates to compare against
+			auto sv = spec.start.value();
+			Date start(sv.day.isNothing() ? d : sv.day.value(),
+								 sv.month.isNothing() ? m : sv.month.value(),
+								 sv.year.isNothing() ? y : sv.year.value(),
+								 false, true);
+
+			auto ev = spec.end.value();
+			Date end(ev.day.isNothing() ? d : ev.day.value(),
+							 ev.month.isNothing() ? m : ev.month.value(),
+							 ev.year.isNothing() ? y : ev.year.value(),
+							 false, true);
+
+			//check if we are in the start/end range or no year, month, day specified
+			if(cd < start || cd > end)
+				return;
+		}
+
+		//at spec takes precedence over range spec, if both would be set
+		if(spec.isAt())
+		{
+			if((spec.at.value().year.isNothing() || y == spec.at.value().year.value())
+				 && (spec.at.value().month.isNothing() || m == spec.at.value().month.value())
+				 && (spec.at.value().day.isNothing()
+						 || d == spec.at.value().day.value()
+						 || (spec.at.value().day.isValue() && d < spec.at.value().day.value() && d == cd.daysInMonth())))
+			{
+				storeResults2(outputIds, resultsObj, monica);
+			}
+		}
+		//spec.at.isValue() can also mean "xxxx-xx-xx" = daily values
+		else if(spec.at.isValue())
+		{
+			storeResults2(outputIds, resultsObj, monica);
+		}
+		else
+		{
+			//build dates to compare against
+			auto fv = spec.from.value();
+			Date from(fv.day.isNothing() ? d : fv.day.value(),
+								fv.month.isNothing() ? m : fv.month.value(),
+								fv.year.isNothing() ? y : fv.year.value(),
+								false, true);
+
+			auto tv = spec.to.value();
+			Date to(tv.day.isNothing() ? d : tv.day.value(),
+							tv.month.isNothing() ? m : tv.month.value(),
+							tv.year.isNothing() ? y : tv.year.value(),
+							false, true);
+
+			//check if we are in the aggregating from/to range
+			if(from <= cd && cd <= to)
+			{
+				storeResults(outputIds, intermediateResults, monica);
+
+				//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
+				//aggregate intermediate values
+				if(cd == to)
+					aggregateResultsObj();
+			}
+		}
+	}
+	break;
+	default:;
+	}
+}
+
+
 vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date endDate)
 {
 	map<string, Json> shortcuts = 
@@ -691,6 +981,7 @@ void Monica::initPathToDB(const std::string& initialPathToIniFile)
 Output Monica::runMonica(Env env)
 {
 	Output out;
+	bool returnObjOutputs = env.returnObjOutputs();
 	out.customId = env.customId;
 
 	activateDebug = env.debugMode;
@@ -843,7 +1134,12 @@ Output Monica::runMonica(Env env)
 
 		//store results
 		for(auto& s : store)
-			s.storeResultsIfSpecApplies(monica);
+		{
+			if(returnObjOutputs)
+				s.storeResultsIfSpecAppliesObj(monica);
+			else
+				s.storeResultsIfSpecApplies(monica);
+		}
 
 		//if the next application date is not valid, we're at the end
 		//of the application list of this cultivation method
@@ -862,8 +1158,11 @@ Output Monica::runMonica(Env env)
 	for(auto& sd : store)
 	{
 		//aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
-		sd.aggregateResults();
-		out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results});
+		if(returnObjOutputs)
+			sd.aggregateResultsObj();
+		else
+			sd.aggregateResults();
+		out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
 	}
 
 	debug() << "returning from runMonica" << endl;

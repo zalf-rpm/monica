@@ -433,16 +433,23 @@ double A3_f(Lumped_Coeffs lumped_coeffs)
 }
 #pragma endregion Cubic equation solutions
 
-double derive_gs_f(double A, double x1, double x2, double gamma, double Rd, double gm, double fVPD, double g0)
+std::tuple<double, double, double> derive_ci_cc_gs_f(double A, double x1, double x2, double gamma, double Rd, double gm, double fVPD, double g0)
 {
 	double numerator = -(A * x2 + Rd * x2 + gamma * x1);
 	double denominator = A + Rd - x1;
 	double Cc = numerator / denominator;
 	double Ci = Cc + (A / gm);
 	double Ci_star = gamma - Rd / gm;
-	return g0 + (A + Rd) / (Ci - Ci_star) * fVPD;
+	double gs = g0 + (A + Rd) / (Ci - Ci_star) * fVPD;
+	return std::make_tuple(Ci, Cc, gs);
 }
 
+double derive_jv_f(double A, double Rd, double gamma, double Cc)
+{
+	double numerator = (A + Rd)*(Cc + 10.5 / 4.5 * gamma)*4.5;
+	double denominator = (Cc - gamma);
+	return numerator/denominator;
+}
 #pragma endregion Coupled photosynthesis-stomatal conductance
 
 #pragma region
@@ -455,8 +462,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);	
 	double hourly_diffuse_rad = in.global_rad * diffuse_fraction;
 	double hourly_direct_rad = in.global_rad - hourly_diffuse_rad;
-	double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56; //µmol m - 2 s - 1 (unit ground area)
-	double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56; //1 W m-2 = 4.56 µmol m-2 s-1
+	double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //µmol m - 2 s - 1 (unit ground area)
+	double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //1 W m-2 = 4.56 µmol m-2 s-1; PAR = 0.45 * global radiation 
 	
 	//2. calculate Radiation absorbed by sunlit / shaded canopy
 	double Ic_sun = Ic_sun_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //µmol m - 2 s - 1 (unit ground area)
@@ -464,8 +471,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	
 	//2.1. calculate sunlit/shaded LAI
 	std::tuple<double, double> sun_shade_LAI = LAI_sunlit_shaded_f(in.LAI, in.solar_el);
-	out.LAI_sun = std::get<0>(sun_shade_LAI);
-	out.LAI_sh = std::get<1>(sun_shade_LAI);
+	out.sunlit.LAI = std::get<0>(sun_shade_LAI);
+	out.shaded.LAI = std::get<1>(sun_shade_LAI);
 
 	//For each fraction :
 	//-------------------
@@ -482,7 +489,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double Vc = canopy_ps_capacity_f(in.LAI, Vcmax, par.kn); 
 	double Vc_sun = canopy_ps_capacity_sunlit_f(in.LAI, in.solar_el, Vcmax, par.kn);
 	double Vc_sh = Vc - Vc_sun;
-	cout << Vc << endl;
+	//cout << Vc << endl;
 
 	//4. canopy electron transport capacity
 	double Jmax_c_sun_25 = 2.1 * Vc_sun_25; // µmol m - 2 s - 1 (unit ground area)
@@ -496,8 +503,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double J_c_sh = J_bernacchi_f(Ic_sh, in.leaf_temp, Jmax_c_sh);
 
 	//5. canopy respiration
-	double Rd_sun = Rd_bernacchi_f(in.leaf_temp)* out.LAI_sun; //µmol m - 2 s - 1 (unit ground area)
-	double Rd_sh = Rd_bernacchi_f(in.leaf_temp)* out.LAI_sh;
+	double Rd_sun = Rd_bernacchi_f(in.leaf_temp)* out.sunlit.LAI; //µmol m - 2 s - 1 (unit ground area)
+	double Rd_sh = Rd_bernacchi_f(in.leaf_temp)* out.shaded.LAI;
 
 	out.canopy_resp = (Rd_sun + Rd_sh) * 3600.0;
 	
@@ -510,12 +517,19 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double gamma_sh = Gamma_bernacchi_f(in.leaf_temp, Vc_sh, Vomax_sh);
 
 	//calculate some outputs for to be used in VOCE modules
-	out.kc = Kc_bernacchi_f(in.leaf_temp);
-	out.ko = Ko_bernacchi_f(in.leaf_temp);
-	out.oi = Oi_f(in.leaf_temp);
-	out.comp = gamma_sun + gamma_sh;
-	out.vcMax = Vcmax;
-	out.jMax = Jmax_c_sun + Jmax_c_sh;
+	out.sunlit.kc = out.shaded.kc = Kc_bernacchi_f(in.leaf_temp);
+	out.sunlit.ko = out.shaded.ko = Ko_bernacchi_f(in.leaf_temp);
+	out.sunlit.oi = out.shaded.oi = Oi_f(in.leaf_temp);
+	out.sunlit.comp = gamma_sun; 
+	out.shaded.comp = gamma_sh; 
+	out.sunlit.vcMax = Vc_sun / out.sunlit.LAI; //Vcmax;
+	out.shaded.vcMax = Vc_sh / out.shaded.LAI;//Vcmax;
+	out.sunlit.jMax = Jmax_c_sun / out.sunlit.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
+	out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
+	out.sunlit.rad = Ic_sun / 4.56 / 0.45; //W m - 2 (glob rad)
+	out.shaded.rad = Ic_sh / 4.56 / 0.45; //W m-2
+	out.sunlit.jj = J_c_sun / out.sunlit.LAI;
+	out.shaded.jj = J_c_sh / out.shaded.LAI;
 	
 	//6.1.2 x1, x2 rubisco
 	std::tuple<double, double> x1_x2_rub_sun = x_rubisco(in.leaf_temp, Vc_sun);
@@ -526,21 +540,21 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	std::tuple<double, double> x1_x2_el_sh = x_electron(J_c_sh, gamma_sh);
 
 	// 6.1.3 g0, gm, gb
-	double gb_sun = par.gb * out.LAI_sun; //mol m-2 s-1 bar-1 per unit ground area
-	double gb_sh = par.gb * out.LAI_sh;
-	double g0_sun = par.g0 * out.LAI_sun;
-	double g0_sh = par.g0 * out.LAI_sh;
+	double gb_sun = par.gb * out.sunlit.LAI; //mol m-2 s-1 bar-1 per unit ground area
+	double gb_sh = par.gb * out.shaded.LAI;
+	double g0_sun = par.g0 * out.sunlit.LAI;
+	double g0_sh = par.g0 * out.shaded.LAI;
 	double gm_t = gm_bernacchi_f(in.leaf_temp, par.gm_25);
-	double gm_sun = gm_t * out.LAI_sun;
-	double gm_sh = gm_t * out.LAI_sh;
+	double gm_sun = gm_t * out.sunlit.LAI;
+	double gm_sh = gm_t * out.shaded.LAI;
 
 	if (in.global_rad <= 0.0)
 	{
 		//handle cases where no photosynthesis can occur
 		out.canopy_gross_photos = 0.0;
 		out.canopy_net_photos = out.canopy_gross_photos - out.canopy_resp;
-		out.gs_sun = g0_sun;
-		out.gs_sh = g0_sh;
+		out.sunlit.gs = g0_sun;
+		out.shaded.gs = g0_sh;
 	}
 	else
 	{
@@ -594,8 +608,18 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 			x2_sh = std::get<1>(x1_x2_rub_sh);
 		}
 		//6.4.2 gs
-		out.gs_sun = derive_gs_f(A_sun, x1_sun, x2_sun, gamma_sun, Rd_sun, gm_sun, fVPD, par.g0);
-		out.gs_sh = derive_gs_f(A_sh, x1_sh, x2_sh, gamma_sh, Rd_sh, gm_sh, fVPD, par.g0);
+		auto sun_ci_cc_gs = derive_ci_cc_gs_f(A_sun, x1_sun, x2_sun, gamma_sun, Rd_sun, gm_sun, fVPD, par.g0);
+		out.sunlit.ci = get<0>(sun_ci_cc_gs);
+		out.sunlit.gs = get<2>(sun_ci_cc_gs);
+		auto sh_ci_cc_gs = derive_ci_cc_gs_f(A_sh, x1_sh, x2_sh, gamma_sh, Rd_sh, gm_sh, fVPD, par.g0);
+		out.shaded.ci = get<0>(sh_ci_cc_gs);
+		out.shaded.gs = get<2>(sh_ci_cc_gs);
+
+		//6.5 derive jv
+		out.sunlit.jv = derive_jv_f(A_sun, Rd_sun, gamma_sun, get<1>(sun_ci_cc_gs)) / out.sunlit.LAI;
+		out.shaded.jv = derive_jv_f(A_sh, Rd_sh, gamma_sh, get<1>(sh_ci_cc_gs)) / out.shaded.LAI;
+		
+
 	}	
 		
 	return out;

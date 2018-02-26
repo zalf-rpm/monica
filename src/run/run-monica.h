@@ -53,6 +53,8 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 
+		bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
+
     //Interface method for python wrapping. Simply returns number
     //of possible simulation steps according to avaible climate data.
     std::size_t numberOfPossibleSteps() const { return climateData.noOfStepsPossible(); }
@@ -143,7 +145,9 @@ namespace Monica
 	struct StoreData
 	{
 		void aggregateResults();
+		void aggregateResultsObj();
 		void storeResultsIfSpecApplies(const MonicaModel& monica);
+		void storeResultsIfSpecAppliesObj(const MonicaModel& monica);
 
 		Tools::Maybe<bool> withinEventStartEndRange;
 		Tools::Maybe<bool> withinEventFromToRange;
@@ -151,6 +155,7 @@ namespace Monica
 		std::vector<OId> outputIds;
 		std::vector<Tools::J11Array> intermediateResults;
 		std::vector<Tools::J11Array> results;
+		std::vector<Tools::J11Object> resultsObj;
 	};
 
 	//----------------------------------------------------------------------------

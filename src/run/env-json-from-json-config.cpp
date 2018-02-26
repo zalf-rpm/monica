@@ -484,14 +484,16 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 	env["outputs"] = simj["output"];
 
 	env["pathToClimateCSV"] = simj["climate.csv"];
-	env["csvViaHeaderOptions"] = simj["climate.csv-options"];
-	
+	auto csvos = simj["climate.csv-options"].object_items();
+	csvos["latitude"] = double_valueD(sitej["SiteParameters"], "Latitude", 0.0);
+	env["csvViaHeaderOptions"] = csvos;
+		
 	if(simj["climate.csv"].is_string())
 		env["climateData"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
-																															simj["climate.csv-options"]);
+																															env["csvViaHeaderOptions"]);
 	else if(simj["climate.csv"].is_array())
 		env["climateData"] = readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
-																															 simj["climate.csv-options"]);
+																															 env["csvViaHeaderOptions"]);
 
 	return env;
 }
