@@ -689,7 +689,7 @@ void MonicaModel::cropStep()
 
   double vw_WindSpeedHeight = _envPs.p_WindSpeedHeight;
 
-  _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, julday,
+  _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, date,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
                            vw_AtmosphericCO2Concentration, precip);
   if(_simPs.p_UseAutomaticIrrigation)

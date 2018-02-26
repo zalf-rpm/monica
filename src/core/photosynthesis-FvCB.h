@@ -58,9 +58,10 @@ namespace FvCB
 		double comp; //µmol mol-1 ... CCO2 compensation point at 25oC per canopy layer
 		double vcMax; //µmol m-2 s-1 ... actual activity state of rubisco  (unit leaf area)
 		double jMax; //µmol m-2 s-1 ... actual electron transport capacity (unit leaf area)
-		double rad; //W m-2 ... adsorbed (global?) radiation (unit ground area)
+		double rad; //W m-2 ... global radiation (unit ground area)
 		double jj; //umol m-2 s-1 ... electron provision (unit leaf area)
 		double jv; //umol m-2 s-1 ... used electron transport for photosynthesis (unit leaf area)
+		double jj1000; //umol m-2 s-1 ... electron provision (unit leaf area) at normalized conditions
 	};
 
 	struct FvCB_canopy_hourly_out {

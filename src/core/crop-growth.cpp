@@ -1269,7 +1269,10 @@ ostream& tout()
 			",in:global_rad"
 			",in:extra_terr_rad"
 			",in:solar_el"
+			",mcd:rad"
 			",in:LAI"
+			",in:mfol"
+			",in:sla"
 			",in:leaf_temp"
 			",in:VPD"
 			",in:Ca"
@@ -1279,9 +1282,11 @@ ostream& tout()
 			",out:canopy_res"
 			",out:canopy_gross_photos"
 			",out:jmax_c"
-			",out:guenther:iso"
-			",out:guenther:mono"
+			//",out:guenther:iso"
+			//",out:guenther:mono"
 			",out:sun:LAI"
+			",out:sun:mfol"
+			",out:sun:sla"
 			",out:sun:gs"
 			",out:sun:kc"
 			",out:sun:ko"
@@ -1292,10 +1297,15 @@ ostream& tout()
 			",out:sun:jMax"
 			",out:sun:rad"
 			",out:sun:jj"
+			",out:sun:jj1000"
 			",out:sun:jv"
+			",out:sun:guenther:iso"
+			",out:sun:guenther:mono"
 			",out:jjv:sun:iso"
 			",out:jjv:sun:mono"
 			",out:sh:LAI"
+			",out:sh:mfol"
+			",out:s:sla"
 			",out:sh:gs"
 			",out:sh:kc"
 			",out:sh:ko"
@@ -1306,7 +1316,10 @@ ostream& tout()
 			",out:sh:jMax"
 			",out:sh:rad"
 			",out:sh:jj"
+			",out:sh:jj1000"
 			",out:sh:jv"
+			",out:sh:guenther:iso"
+			",out:sh:guenther:mono"
 			",out:jjv:sh:iso"
 			",out:jjv:sh:mono"
 			<< endl;
@@ -1922,7 +1935,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			dailyGP += res.canopy_gross_photos * 44. / 100. / 1000.;
 				
 			// calculate VOC emissions
-			double globradWm2 = in.global_rad * 1000000.0; //MW/m2 -> W/m2
+			double globradWm2 = in.global_rad * 1000000.0 / 3600; //MJ m-2 h-1 -> W m-2
 			if(_index240 < _stepSize240 - 1)
 				_index240++;
 			else
@@ -1961,8 +1974,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			//species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
 			species.lai = vc_LeafAreaIndex;
 			species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
-			species.sla = species.lai / species.mFol;//pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
-
+			species.sla = species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+			
 			species.EF_MONO = speciesPs.EF_MONO;
 			species.EF_MONOS = speciesPs.EF_MONOS;
 			species.EF_ISO = speciesPs.EF_ISO;
@@ -1971,7 +1984,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			species.AEKO = speciesPs.AEKO;
 			species.AEVC = speciesPs.AEVC;
 			species.KC25 = speciesPs.KC25;
-
+			
 			auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1. / 24.);
 			//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
 			_guentherEmissions += ges;
@@ -1979,13 +1992,16 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 #ifdef TEST_HOURLY_OUTPUT
 			tout()
-				<< currentDate.toIsoDateString() 
+				<< currentDate.toIsoDateString()
 				<< "," << h
-				<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId 
-				<< "," << in.global_rad 
+				<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+				<< "," << in.global_rad
 				<< "," << in.extra_terr_rad
 				<< "," << in.solar_el
+				<< "," << mcd.rad
 				<< "," << in.LAI
+				<< "," << species.mFol
+				<< "," << species.sla
 				<< "," << in.leaf_temp
 				<< "," << in.VPD
 				<< "," << in.Ca
@@ -1994,9 +2010,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				<< "," << res.canopy_net_photos
 				<< "," << res.canopy_resp
 				<< "," << res.canopy_gross_photos
-				<< "," << res.jmax_c
-				<< "," << ges.isoprene_emission
-				<< "," << ges.monoterpene_emission;
+				<< "," << res.jmax_c;
+				//<< "," << ges.isoprene_emission
+				//<< "," << ges.monoterpene_emission;
 #endif
 
 			double sun_LAI = res.sunlit.LAI;
@@ -2006,8 +2022,15 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			{
 				species.lai = lf.LAI;
 				species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.) * lf.LAI / (sun_LAI + sh_LAI); //kg/ha -> kg/m2
+				species.sla = species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+
 
 				mcd.rad = lf.rad; //W m-2 global incident
+
+				//auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1. / 24.);
+				//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
+				//_guentherEmissions += ges;
+				//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
 				_cropPhotosynthesisResults.kc = lf.kc;
 				_cropPhotosynthesisResults.ko = lf.ko * 1000;
@@ -2016,8 +2039,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				_cropPhotosynthesisResults.vcMax = lf.vcMax;
 				_cropPhotosynthesisResults.jMax = lf.jMax;
 				_cropPhotosynthesisResults.jj = lf.jj;
+				_cropPhotosynthesisResults.jj1000 = lf.jj1000;
 				_cropPhotosynthesisResults.jv = lf.jv;
-				
+
 				auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1. / 24., false);
 				//cout << "J: C: " << jjves.monoterpene_emission << " em: " << jjves.isoprene_emission << endl;
 				_jjvEmissions += jjves;
@@ -2025,7 +2049,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 					
 #ifdef TEST_HOURLY_OUTPUT
 				tout()
-					<< "," << lf.LAI
+					<< "," << species.lai
+					<< "," << species.mFol
+					<< "," << species.sla
 					<< "," << lf.gs
 					<< "," << lf.kc
 					<< "," << lf.ko
@@ -2036,7 +2062,10 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 					<< "," << lf.jMax
 					<< "," << lf.rad
 					<< "," << lf.jj
+					<< "," << lf.jj1000
 					<< "," << lf.jv
+					<< "," << ges.isoprene_emission
+					<< "," << ges.monoterpene_emission
 					<< "," << jjves.isoprene_emission
 					<< "," << jjves.monoterpene_emission;
 #endif
