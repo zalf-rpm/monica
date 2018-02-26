@@ -16,7 +16,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <tuple>
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
 #include <iostream>
 
 #include  "photosynthesis-FvCB.h"
