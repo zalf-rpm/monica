@@ -16,7 +16,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <tuple>
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
 #include <iostream>
 
 #include  "photosynthesis-FvCB.h"
@@ -229,15 +229,24 @@ double Jmax_bernacchi_f(double leafT, double Jmax_25)
 
 double J_bernacchi_f(double Q, double leafT, double Jmax)
 {
-	double alfa = 0.5; //theoretical leaf absorbance
-	double beta = 0.77; //fraction of absorbed quanta reaching PSII
+	double alfa = 1; //total leaf absorbance (value to be checked)
+	double beta = 0.5; //fraction of absorbed quanta reaching PSII
 	double theta_ps2 = 0.76 + 0.018 * leafT - 3.7 * pow(10, -4) * pow(leafT, 2);
-	double theta_ps2max = 0.352 + 0.022 *leafT - 3.4 * pow(10, -4) * pow(leafT, 2);
-	double Q2 = Q * alfa * theta_ps2max * beta;
+	double phi_ps2max = 0.352 + 0.022 *leafT - 3.4 * pow(10, -4) * pow(leafT, 2);
+	double Q2 = Q * alfa * phi_ps2max * beta;
 
 	double numerator = Q2 + Jmax - sqrt(pow((Q2 + Jmax), 2) - 4 * theta_ps2 * Q2 * Jmax);
 	double denominator = 2 * theta_ps2;
 	return numerator / denominator;
+}
+
+double J_grote_f(double Q, double Jmax)
+{
+	double species_THETA = 0.9; //!< curvature parameter
+	const double tmp_var = ((Q + Jmax) * (Q + Jmax)) - (4.0 * species_THETA * Q * Jmax);
+	// fw: In Grote et al. 2014 tmp_var is stated as the inverse sqrt even though it is only the sqrt 
+	double  jj = tmp_var > 0.0 ? (Q + Jmax - sqrt(tmp_var)) / (2.0 * species_THETA) : 0.0;
+	return jj;
 }
 	
 double Rd_bernacchi_f(double leafT)
@@ -457,6 +466,20 @@ double derive_jv_f(double A, double Rd, double gamma, double Cc)
 FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par)
 {
 	FvCB_canopy_hourly_out out;
+	//0. initialize VOCE out
+	out.sunlit.vcMax = 0.0;
+	out.sunlit.jMax = 0.0;
+	out.sunlit.jj = 0.0;
+
+	out.shaded.vcMax = 0.0;
+	out.shaded.jMax = 0.0;
+	out.shaded.jj = 0.0;
+
+	out.sunlit.jj1000 = 0.0;
+	out.shaded.jj1000 = 0.0;
+	
+	out.sunlit.jv = 0.0;
+	out.shaded.jv = 0.0;
 
 	//1. calculate diffuse and direct radiation
 	double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);	
@@ -501,7 +524,9 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 
 	double J_c_sun = J_bernacchi_f(Ic_sun, in.leaf_temp, Jmax_c_sun); //µmol m - 2 s - 1 (unit ground area)
 	double J_c_sh = J_bernacchi_f(Ic_sh, in.leaf_temp, Jmax_c_sh);
-
+	//double J_c_sun = J_grote_f(Ic_sun, Jmax_c_sun); //µmol m - 2 s - 1 (unit ground area)
+	//double J_c_sh = J_grote_f(Ic_sh, Jmax_c_sh);
+	
 	//5. canopy respiration
 	double Rd_sun = Rd_bernacchi_f(in.leaf_temp)* out.sunlit.LAI; //µmol m - 2 s - 1 (unit ground area)
 	double Rd_sh = Rd_bernacchi_f(in.leaf_temp)* out.shaded.LAI;
@@ -516,20 +541,32 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double gamma_sun = Gamma_bernacchi_f(in.leaf_temp, Vc_sun, Vomax_sun);
 	double gamma_sh = Gamma_bernacchi_f(in.leaf_temp, Vc_sh, Vomax_sh);
 
-	//calculate some outputs for to be used in VOCE modules
+	//calculate some outputs to be used in VOCE modules
 	out.sunlit.kc = out.shaded.kc = Kc_bernacchi_f(in.leaf_temp);
 	out.sunlit.ko = out.shaded.ko = Ko_bernacchi_f(in.leaf_temp);
 	out.sunlit.oi = out.shaded.oi = Oi_f(in.leaf_temp);
 	out.sunlit.comp = gamma_sun; 
-	out.shaded.comp = gamma_sh; 
-	out.sunlit.vcMax = Vc_sun / out.sunlit.LAI; //Vcmax;
-	out.shaded.vcMax = Vc_sh / out.shaded.LAI;//Vcmax;
-	out.sunlit.jMax = Jmax_c_sun / out.sunlit.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
-	out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
-	out.sunlit.rad = Ic_sun / 4.56 / 0.45; //W m - 2 (glob rad)
-	out.shaded.rad = Ic_sh / 4.56 / 0.45; //W m-2
-	out.sunlit.jj = J_c_sun / out.sunlit.LAI;
-	out.shaded.jj = J_c_sh / out.shaded.LAI;
+	out.shaded.comp = gamma_sh;
+	//out.sunlit.rad = Ic_sun / 4.56 / 0.45 / 0.860; //W m - 2 (glob rad, 1 W m-2 = 4.56 µmol m-2 s-1; PAR = 0.45 * global radiation, 0.860 = adsorberd fraction in JJV model)
+	//out.shaded.rad = Ic_sh / 4.56 / 0.45 / 0.860; //W m-2
+	double hourly_globrad = in.global_rad * pow(10, 6) / 3600.0; //W m - 2
+	out.sunlit.rad = hourly_globrad > 0 ? hourly_globrad * Ic_sun / (Ic_sun + Ic_sh): 0.0;
+	out.shaded.rad = hourly_globrad > 0 ? hourly_globrad * Ic_sh / (Ic_sun + Ic_sh) : 0.0;
+
+	if (out.sunlit.LAI > 0)
+	{
+		out.sunlit.vcMax = Vc_sun / out.sunlit.LAI; //Vcmax;
+		out.sunlit.jMax = Jmax_c_sun / out.sunlit.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
+		out.sunlit.jj = J_c_sun / out.sunlit.LAI;
+		out.sunlit.jj1000 = J_bernacchi_f(1000, in.leaf_temp, out.sunlit.jMax);
+	}	
+	if (out.shaded.LAI > 0)
+	{
+		out.shaded.vcMax = Vc_sh / out.shaded.LAI;//Vcmax;
+		out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
+		out.shaded.jj = J_c_sh / out.shaded.LAI;
+		out.shaded.jj1000 = J_bernacchi_f(1000, in.leaf_temp, out.shaded.jMax);
+	}
 	
 	//6.1.2 x1, x2 rubisco
 	std::tuple<double, double> x1_x2_rub_sun = x_rubisco(in.leaf_temp, Vc_sun);
@@ -616,9 +653,14 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 		out.shaded.gs = get<2>(sh_ci_cc_gs);
 
 		//6.5 derive jv
-		out.sunlit.jv = derive_jv_f(A_sun, Rd_sun, gamma_sun, get<1>(sun_ci_cc_gs)) / out.sunlit.LAI;
-		out.shaded.jv = derive_jv_f(A_sh, Rd_sh, gamma_sh, get<1>(sh_ci_cc_gs)) / out.shaded.LAI;
-		
+		if (out.sunlit.LAI > 0)
+		{
+			out.sunlit.jv = derive_jv_f(A_sun, Rd_sun, gamma_sun, get<1>(sun_ci_cc_gs)) / out.sunlit.LAI;
+		}
+		if (out.shaded.LAI > 0)
+		{
+			out.shaded.jv = derive_jv_f(A_sh, Rd_sh, gamma_sh, get<1>(sh_ci_cc_gs)) / out.shaded.LAI;
+		}
 
 	}	
 		
