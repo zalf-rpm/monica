@@ -1250,7 +1250,7 @@ double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
 	return vc_SoilCoverage;
 }
 
-#define TEST_HOURLY_OUTPUT 
+//#define TEST_HOURLY_OUTPUT 
 #ifdef TEST_HOURLY_OUTPUT
 #include <fstream>
 ostream& tout()
