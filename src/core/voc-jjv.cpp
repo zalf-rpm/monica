@@ -147,12 +147,12 @@ LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
 
 	// Emission potential from photosynthesis (energy supply); same for isoprene and monoterpene;
 	// actual activity factor for photosynthesis (energy supply)
-	//double gamma_ph = gamma_PH(lemi.pho.par, species.THETA, cpData);
-	double gamma_ph = gamma_PH_Grote2014(cpData.comp, cpData.ci, cpData.jj, cpData.jv);
+	double gamma_ph = gamma_PH(lemi.pho.par, species.THETA, cpData);
+	//double gamma_ph = gamma_PH_Grote2014(cpData.comp, cpData.ci, cpData.jj, cpData.jv);
 
 	// normalized activity factor for photosynthesis (energy supply)
-	//double gamma_phnorm = gamma_PH(leminorm.pho.par, species.THETA, cpData);
-	double gamma_phnorm = gamma_PH_Grote2014(cpData.comp, cpData.ci, cpData.jj1000, cpData.jv);
+	double gamma_phnorm = gamma_PH(leminorm.pho.par, species.THETA, cpData);
+	//double gamma_phnorm = gamma_PH_Grote2014(cpData.comp, cpData.ci, cpData.jj1000, cpData.jv);
 
 	double gamma_phrel = gamma_phnorm > 0.0 ? gamma_ph / gamma_phnorm : 0.0;
 

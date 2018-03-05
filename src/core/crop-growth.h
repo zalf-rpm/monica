@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <math.h>
 #include <map>
 #include <string>
+#include <ostream>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -635,6 +636,11 @@ namespace Monica
 		std::function<void(std::string)> _fireEvent;
 		std::function<void(double, double)> _addOrganicMatter;
   };
+
+//#define TEST_HOURLY_OUTPUT
+#ifdef TEST_HOURLY_OUTPUT
+	std::ostream& tout(bool closeFile = false);
+#endif
 }
 
 #endif

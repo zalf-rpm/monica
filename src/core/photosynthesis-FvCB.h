@@ -74,6 +74,8 @@ namespace FvCB
 	};
 
 	FvCB_canopy_hourly_out FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par);
+	double Jmax_bernacchi_f(double leafT, double Jmax_25);
+	double Vcmax_bernacchi_f(double leafT, double Vcmax_25);
 	
 }
 

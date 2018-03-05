@@ -34,6 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../io/build-output.h"
+#include "../core/crop-growth.h"
 
 using namespace Monica;
 using namespace std;
@@ -1166,5 +1167,10 @@ Output Monica::runMonica(Env env)
 	}
 
 	debug() << "returning from runMonica" << endl;
+
+#ifdef TEST_HOURLY_OUTPUT
+	tout(true);
+#endif
+
 	return out;
 }

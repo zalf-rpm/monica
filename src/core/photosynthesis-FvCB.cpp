@@ -217,12 +217,12 @@ double Tresp_bernacchi_f(double c, double deltaH, double leafT)
 	return exp(c - deltaH / (R * Tk));
 }
 
-double Vcmax_bernacchi_f(double leafT, double Vcmax_25)
+double FvCB::Vcmax_bernacchi_f(double leafT, double Vcmax_25)
 {
 	return Vcmax_25 * Tresp_bernacchi_f(c_bernacchi[Vcmax], deltaH_bernacchi[Vcmax], leafT);
 }
 
-double Jmax_bernacchi_f(double leafT, double Jmax_25)
+double FvCB::Jmax_bernacchi_f(double leafT, double Jmax_25)
 {
 	return Jmax_25 * Tresp_bernacchi_f(c_bernacchi[Jmax], deltaH_bernacchi[Jmax], leafT);
 }

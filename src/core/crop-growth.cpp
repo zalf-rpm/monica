@@ -1250,14 +1250,21 @@ double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
 	return vc_SoilCoverage;
 }
 
-#define TEST_HOURLY_OUTPUT 
 #ifdef TEST_HOURLY_OUTPUT
 #include <fstream>
-ostream& tout()
+ostream& Monica::tout(bool closeFile)
 {
 	static ofstream out;
 	static bool init = false;
 	static bool failed = false;
+	if (closeFile)
+	{
+		init = false;
+		failed = false;
+		out.close();
+		return out;
+	}
+
 	if(!init)
 	{
 		out.open("hourly-data.csv");
@@ -2025,7 +2032,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				species.sla = species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
 
 
-				mcd.rad = lf.rad; //W m-2 global incident
+				mcd.rad = lf.rad;//lf.rad; //W m-2 global incident
 
 				//auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1. / 24.);
 				//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
@@ -2033,11 +2040,11 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
 
 				_cropPhotosynthesisResults.kc = lf.kc;
-				_cropPhotosynthesisResults.ko = lf.ko * 1000;
-				_cropPhotosynthesisResults.oi = lf.oi * 1000;
+				_cropPhotosynthesisResults.ko = lf.ko *1000;
+				_cropPhotosynthesisResults.oi = lf.oi *1000;
 				_cropPhotosynthesisResults.ci = lf.ci;
-				_cropPhotosynthesisResults.vcMax = lf.vcMax;
-				_cropPhotosynthesisResults.jMax = lf.jMax;
+				_cropPhotosynthesisResults.vcMax = FvCB::Vcmax_bernacchi_f(mcd.tFol, speciesPs.VCMAX25) * vc_CropNRedux * vc_TranspirationDeficit;//lf.vcMax;
+				_cropPhotosynthesisResults.jMax = FvCB::Jmax_bernacchi_f(mcd.tFol, 120)  * vc_CropNRedux * vc_TranspirationDeficit;//lf.jMax;
 				_cropPhotosynthesisResults.jj = lf.jj;
 				_cropPhotosynthesisResults.jj1000 = lf.jj1000;
 				_cropPhotosynthesisResults.jv = lf.jv;
