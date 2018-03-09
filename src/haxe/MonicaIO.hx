@@ -23,15 +23,21 @@ using Lambda;
 using MonicaIO.EResultTools;
 using StringTools;
 
-typedef EResult = {
-  ?result: Dynamic,
+typedef EResult<T> = {
+  ?result: T,
   ?errors: Array<String>,
 }
 
 class EResultTools<T> {
-  static public function success(r: EResult) return r.result != null && r.errors != null && r.errors.length == 0;
-  static public function failure(r: EResult) return !r.success();
+  static public function success<T>(r: EResult<T>) return r.result != null && r.errors != null && r.errors.length == 0;
+  static public function failure<T>(r: EResult<T>) return !r.success();
+
+  static public function result<T>(value: T) : EResult<T> return {result: value} 
+  static public function error<T>(error: String) : EResult<T> return {errors: [error]} 
 }
+
+
+
 
 class MonicaIO {
   static public function main(): Void {
@@ -70,7 +76,7 @@ class MonicaIO {
   static private function isObject(t) return Type.typeof(t) == TObject;
   static private function isString(t) return Std.is(t, Type.getClass(""));
   
-  static public function findAndReplaceReferences(root: Dynamic, j: Dynamic): EResult {
+  static public function findAndReplaceReferences(root: Dynamic, j: Dynamic): EResult<Dynamic> {
 	  
     var sp = supportedPatterns();
 
@@ -212,7 +218,7 @@ class MonicaIO {
     return new_path;
   }
 
-  private static function readAndParseJsonFile(path : String) : EResult
+  private static function readAndParseJsonFile(path : String) : EResult<Dynamic>
   {
     var res = {result: null, errors: ['Error opening file with path: $path !']};
     #if python
@@ -224,12 +230,12 @@ class MonicaIO {
 def parse_json_string(jsonString):
     return {"result": json.loads(jsonString), "errors": [], "success": True}
 
-  static private var _supportedPatterns : Map<String, Dynamic -> Dynamic -> EResult>;
-  static private var _refCache = new Map<String, EResult>();
+  static private var _supportedPatterns : Map<String, Dynamic -> Dynamic -> EResult<Dynamic>>;
+  static private var _refCache = new Map<String, EResult<Dynamic>>();
 
-  public static function supportedPatterns() : Map<String, Dynamic -> Dynamic -> EResult>
+  public static function supportedPatterns() : Map<String, Dynamic -> Dynamic -> EResult<Dynamic>>
   {
-    var ref = function(root : DynamicAccess<Dynamic>, j : Array<Dynamic>) : EResult
+    var ref = function(root : DynamicAccess<Dynamic>, j : Array<Dynamic>) : EResult<Dynamic>
     {
       if(j.length == 3
         && isString(j[1])
@@ -404,7 +410,7 @@ def parse_json_string(jsonString):
     };
     */
 
-    var fromFile = function(root : DynamicAccess<Dynamic>, j : Array<Dynamic>) : EResult
+    var fromFile = function(root : DynamicAccess<Dynamic>, j : Array<Dynamic>) : EResult<Dynamic>
     {
       if(j.length == 2
         && isString(j[1]))
