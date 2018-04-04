@@ -229,7 +229,7 @@ double FvCB::Jmax_bernacchi_f(double leafT, double Jmax_25)
 
 double J_bernacchi_f(double Q, double leafT, double Jmax)
 {
-	double alfa = 1; //total leaf absorbance (value to be checked)
+	double alfa = 0.85; //total leaf absorbance 
 	double beta = 0.5; //fraction of absorbed quanta reaching PSII
 	double theta_ps2 = 0.76 + 0.018 * leafT - 3.7 * pow(10, -4) * pow(leafT, 2);
 	double phi_ps2max = 0.352 + 0.022 *leafT - 3.4 * pow(10, -4) * pow(leafT, 2);
@@ -242,7 +242,7 @@ double J_bernacchi_f(double Q, double leafT, double Jmax)
 
 double J_grote_f(double Q, double Jmax)
 {
-	double species_THETA = 0.9; //!< curvature parameter
+	double species_THETA = 0.85; //!< curvature parameter
 	const double tmp_var = ((Q + Jmax) * (Q + Jmax)) - (4.0 * species_THETA * Q * Jmax);
 	// fw: In Grote et al. 2014 tmp_var is stated as the inverse sqrt even though it is only the sqrt 
 	double  jj = tmp_var > 0.0 ? (Q + Jmax - sqrt(tmp_var)) / (2.0 * species_THETA) : 0.0;
@@ -366,8 +366,11 @@ std::tuple<double, double> x_rubisco(double leafT, double Vcmax)
 
 std::tuple<double, double> x_electron(double J, double gamma)
 {
-	double x1 = J / 4.5;
-	double x2 = 10.5 / 4.5 * gamma;
+	//double x1 = J / 4.5;
+	//double x2 = 10.5 / 4.5 * gamma;
+
+	double x1 = J / 4.0;
+	double x2 = 2 * gamma;
 
 	return std::make_tuple(x1, x2);
 }
@@ -461,6 +464,58 @@ double derive_jv_f(double A, double Rd, double gamma, double Cc)
 }
 #pragma endregion Coupled photosynthesis-stomatal conductance
 
+#ifdef TEST_FVCB_HOURLY_OUTPUT
+#include <fstream>
+ostream& FvCB::tout(bool closeFile)
+{
+	static ofstream out;
+	static bool init = false;
+	static bool failed = false;
+	if (closeFile)
+	{
+		init = false;
+		failed = false;
+		out.close();
+		return out;
+	}
+
+	if (!init)
+	{
+		out.open("fvcb_hourly_data.csv");
+		failed = out.fail();
+		(failed ? cout : out) <<
+			"iso-date"
+			",hour"
+			",crop-name"
+			",co2"
+			",leaf_temp"
+			",in:LAI_sun"
+			",in:LAI_sh"
+			",out:Ic_sun"
+			",out:Ic_sh"
+			",out:A_rub_sun"
+			",out:A_el_sun"
+			",out:A_rub_sh"
+			",out:A_el_sh"
+			",out.sunlit.ci"
+			",out.sunlit.cc"
+			",out.shaded.ci"
+			",out.shaded.cc"
+			",gb_sun"
+			",gm_sun"
+			",gb_sh"
+			",gm_sh"
+			",out.sunlit.gs"
+			",out.shaded.gs"
+			<< endl;
+
+		init = true;
+	}
+
+	return failed ? cout : out;
+}
+#endif
+
 #pragma region
 //Model composition (C3)
 FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvCB_canopy_hourly_params par)
@@ -491,11 +546,20 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	//2. calculate Radiation absorbed by sunlit / shaded canopy
 	double Ic_sun = Ic_sun_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //µmol m - 2 s - 1 (unit ground area)
 	double Ic_sh = Ic_shade_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //µmol m - 2 s - 1 (unit ground area)
-	
+
 	//2.1. calculate sunlit/shaded LAI
 	std::tuple<double, double> sun_shade_LAI = LAI_sunlit_shaded_f(in.LAI, in.solar_el);
 	out.sunlit.LAI = std::get<0>(sun_shade_LAI);
 	out.shaded.LAI = std::get<1>(sun_shade_LAI);
+
+#ifdef TEST_FVCB_HOURLY_OUTPUT
+	tout()
+		<< "," << in.leaf_temp
+		<< "," << out.sunlit.LAI
+		<< "," << out.shaded.LAI
+		<< "," << Ic_sun
+		<< "," << Ic_sh;
+#endif
 
 	//For each fraction :
 	//-------------------
@@ -515,8 +579,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	//cout << Vc << endl;
 
 	//4. canopy electron transport capacity
-	double Jmax_c_sun_25 = 2.1 * Vc_sun_25; // µmol m - 2 s - 1 (unit ground area)
-	double Jmax_c_sh_25 = 2.1 * Vc_sh_25; 
+	double Jmax_c_sun_25 = 1.6 * Vc_sun_25; // µmol m - 2 s - 1 (unit ground area)
+	double Jmax_c_sh_25 = 1.6 * Vc_sh_25; 
 	
 	double Jmax_c_sun = Jmax_bernacchi_f(in.leaf_temp, Jmax_c_sun_25);
 	double Jmax_c_sh = Jmax_bernacchi_f(in.leaf_temp, Jmax_c_sh_25);
@@ -581,7 +645,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double gb_sh = par.gb * out.shaded.LAI;
 	double g0_sun = par.g0 * out.sunlit.LAI;
 	double g0_sh = par.g0 * out.shaded.LAI;
-	double gm_t = gm_bernacchi_f(in.leaf_temp, par.gm_25);
+	double gm_t = 0.4;// gm_bernacchi_f(in.leaf_temp, par.gm_25); //TODO: check correctness of gm_bernacchi_f
 	double gm_sun = gm_t * out.sunlit.LAI;
 	double gm_sh = gm_t * out.shaded.LAI;
 
@@ -611,6 +675,14 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 
 		double A_rub_sh = A1_f(lumped_rub_sh); //µmol CO2 m-2 s-1 (unit ground area)
 		double A_el_sh = A1_f(lumped_el_sh);
+
+#ifdef TEST_FVCB_HOURLY_OUTPUT
+		tout()
+			<< "," << A_rub_sun
+			<< "," << A_el_sun
+			<< "," << A_rub_sh
+			<< "," << A_el_sh;
+#endif
 
 		double A_sun = std::fmin(A_rub_sun * in.fO3 * in.fls, A_el_sun);
 		double A_sh = std::fmin(A_rub_sh * in.fO3 * in.fls, A_el_sh);
@@ -647,10 +719,26 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 		//6.4.2 gs
 		auto sun_ci_cc_gs = derive_ci_cc_gs_f(A_sun, x1_sun, x2_sun, gamma_sun, Rd_sun, gm_sun, fVPD, par.g0);
 		out.sunlit.ci = get<0>(sun_ci_cc_gs);
+		out.sunlit.cc = get<1>(sun_ci_cc_gs);
 		out.sunlit.gs = get<2>(sun_ci_cc_gs);
 		auto sh_ci_cc_gs = derive_ci_cc_gs_f(A_sh, x1_sh, x2_sh, gamma_sh, Rd_sh, gm_sh, fVPD, par.g0);
 		out.shaded.ci = get<0>(sh_ci_cc_gs);
+		out.shaded.cc = get<0>(sh_ci_cc_gs);
 		out.shaded.gs = get<2>(sh_ci_cc_gs);
+
+#ifdef TEST_FVCB_HOURLY_OUTPUT
+		tout()
+			<< "," << out.sunlit.ci
+			<< "," << out.sunlit.cc
+			<< "," << out.shaded.ci
+			<< "," << out.shaded.cc
+			<< "," << gb_sun
+			<< "," << gm_sun
+			<< "," << gb_sh
+			<< "," << gm_sh
+			<< "," << out.sunlit.gs
+			<< "," << out.shaded.gs;
+#endif
 
 		//6.5 derive jv
 		if (out.sunlit.LAI > 0)
@@ -663,7 +751,11 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 		}
 
 	}	
-		
+	
+	#ifdef TEST_FVCB_HOURLY_OUTPUT
+		tout() << endl;
+	#endif
+
 	return out;
 }
 
