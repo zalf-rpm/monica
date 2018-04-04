@@ -20,8 +20,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "env-json-from-json-config.h"
 #include "tools/debug.h"
-#include "../run/run-monica.h"
-#include "../io/database-io.h"
+//#include "../run/run-monica.h"
+//#include "../io/database-io.h"
 #include "tools/json11-helper.h"
 #include "tools/helper.h"
 #include "climate/climate-file-io.h"
@@ -152,6 +152,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't resolve reference: ") + j.dump() + "!"};
 	};
 
+	/*
 	auto fromDb = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if((j.array_items().size() >= 3 && j[1].is_string())
@@ -295,6 +296,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 
 		return{j, string("Couldn't load data from DB: ") + j.dump() + "!"};
 	};
+	*/
 
 	auto fromFile = [](const Json& root, const Json& j) -> EResult<Json>
 	{
