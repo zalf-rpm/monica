@@ -72,8 +72,11 @@ namespace Monica
 		json11::Json events;
 		json11::Json outputs;
 		
-    //std::string customId;
+		//! id identifiying this particular run
 	  json11::Json customId;
+
+		//! shared id between runs belonging together
+		std::string sharedId;
 
     CentralParameterProvider params;
 

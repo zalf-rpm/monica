@@ -18,6 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "zhelpers.hpp"
 #include "tools/debug.h"
 #include "monica-zmq-defaults.h"
+#include "tools/helper.h"
 
 using namespace Tools;
 using namespace std;
@@ -33,8 +34,9 @@ int main (int argc,
 	int backendPort = defaultProxyBackendPort;
 	bool startControlNode = false;
 	int controlPort = defaultControlPort;
-	bool usePipelinePorts = false;
-	
+	int frontendSocketType = ZMQ_ROUTER;
+	int backendSocketType = ZMQ_DEALER;
+
 	auto printHelp = [=]()
 	{
 		cout
@@ -45,11 +47,32 @@ int main (int argc,
 			<< " -h | --help ... this help output" << endl
 			<< " -v | --version ... outputs " << appName << " version" << endl
 			<< endl
-			<< " -p | --pipeline-ports (default: use Router/Dealer sockets)" << endl
+			<< " -p | --pipeline-ports (use PULL/PUSH sockets for frontend/backend) ... deprecated" << endl
+			<< " -pps | --pull-push-sockets (use PULL/PUSH sockets for frontend/backend)" << endl
+			<< " -prs | --pull-router-sockets (use PULL/ROUTER sockets for frontend/backend)" << endl
+			<< " -fst | --frontend-socket-type FRONTEND_SOCKET_TYPE (default: ROUTER) ... use given frontend socket type" << endl 
+			<< " -bst | --backend-type BACKEND_SOCKET_TYPE (default: DEALER) ... use given backend socket type" << endl
 			<< " -f | --frontend-port FRONTEND-PORT (default: " << frontendPort << ") ... run " << appName << " with given frontend port" << endl
 			<< " -b | --backend-port BACKEND-PORT (default: " << backendPort << ") ... run " << appName << " with given backend port" << endl
 			<< " -c | --start-control-node [CONTROL-NODE-PORT] (default: " << controlPort << ") ... start control node, connected to proxy, on given port" << endl
 			<< " -d | --debug ... enable debug outputs" << endl;
+	};
+
+	auto parseSocketType = [](string s)
+	{
+		string type = Tools::toLower(s);
+		if(type == "router")
+			return ZMQ_ROUTER;
+		else if(type == "dealer")
+			return ZMQ_DEALER;
+		else if(type == "push")
+			return ZMQ_PUSH;
+		else if(type == "pull")
+			return ZMQ_PULL;
+		else if(type == "req")
+			return ZMQ_REQ;
+		else if(type == "rep")
+			return ZMQ_REP;
 	};
 
 	for(auto i = 1; i < argc; i++)
@@ -67,8 +90,14 @@ int main (int argc,
 			if(i + 1 < argc && argv[i + 1][0] != '-')
 				controlPort = stoi(argv[++i]);
 		}
-		else if(arg == "-p" || arg == "--pipeline-ports")
-			usePipelinePorts = true;
+		else if(arg == "-p" || arg == "--pipeline-ports" || arg == "-pps" || arg == "--pull-push-sockets")
+			frontendSocketType = ZMQ_PULL, backendSocketType = ZMQ_PUSH;
+		else if(arg == "-prs" || arg == "--pull-router-sockets")
+			frontendSocketType = ZMQ_PULL, backendSocketType = ZMQ_ROUTER;
+		else if((arg == "-fst" || arg == "--frontend-socket-type") && i + 1 < argc)
+			frontendSocketType = parseSocketType(argv[++i]);
+		else if((arg == "-bst" || arg == "--backend-socket-type") && i + 1 < argc)
+			backendSocketType = parseSocketType(argv[++i]);
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
@@ -81,7 +110,7 @@ int main (int argc,
 
 	// setup the proxy 
 	// socket facing clients
-	zmq::socket_t frontend (context, usePipelinePorts ? ZMQ_PULL : ZMQ_ROUTER);
+	zmq::socket_t frontend (context, frontendSocketType);
 	string feAddress = string("tcp://*:") + to_string(frontendPort);
 	try
 	{
@@ -95,7 +124,7 @@ int main (int argc,
 	debug() << "Bound " << appName << " zeromq router socket to frontend address: " << feAddress << "!" << endl;
 
 	// socket facing services
-	zmq::socket_t backend (context, usePipelinePorts ? ZMQ_PUSH : ZMQ_DEALER);
+	zmq::socket_t backend (context, backendSocketType);
 	string beAddress = string("tcp://*:") + to_string(backendPort);
 	try
 	{

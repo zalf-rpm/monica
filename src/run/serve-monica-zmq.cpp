@@ -533,6 +533,8 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
 							try
 							{
+								if(!env.sharedId.empty())
+									s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);
 								s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
 							}
 							catch(zmq::error_t e)

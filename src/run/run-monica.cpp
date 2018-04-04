@@ -97,8 +97,8 @@ Errors Env::merge(json11::Json j)
 	}
 	csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
-	//set_string_value(customId, j, "customId");
 	customId = j["customId"];
+	set_string_value(sharedId, j, "sharedId");
 
 	return es;
 }

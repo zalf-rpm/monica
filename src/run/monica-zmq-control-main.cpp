@@ -108,6 +108,7 @@ int main (int argc,
 	string proxyAddress = defaultProxyAddress; 
 	int frontendProxyPort = defaultProxyFrontendPort;
 	int backendProxyPort = defaultProxyBackendPort;
+	bool prs = false;
 
 	auto printHelp = [=]()
 	{
@@ -119,6 +120,7 @@ int main (int argc,
 			<< " -h | --help ... this help output" << endl
 			<< " -v | --version ... outputs " << appName << " version" << endl
 			<< endl
+			<< " -prs | --pull-router-sockets ... use pull-router-sockets for pipeline proxy" << endl
 			<< " -c | --port COMM-PORT (default: " << commPort << ") ... run " << appName << " with given control port" << endl
 			<< " -a | --proxy-address PROXY-ADDRESS (default: " << proxyAddress << ") ... connect client to give IP address" << endl
 			<< " -f | --frontend-proxy-port PROXY-PORT (default: " << frontendProxyPort << ") ... communicate with started MONICA ZeroMQ servers via given frontend proxy port" << endl
@@ -141,6 +143,8 @@ int main (int argc,
 		else if((arg == "-b" || arg == "--backend-proxy-port")
 						&& i + 1 < argc)
 			backendProxyPort = stoi(argv[++i]);
+		else if(arg == "-prs" || arg == "--pull-router-sockets")
+			prs = true;
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")
@@ -306,10 +310,10 @@ int main (int argc,
 
 #ifdef WIN32
 					string inCmd = string("start /b monica-zmq-proxy -p ") + inArgs;
-					string outCmd = string("start /b monica-zmq-proxy -p ") + outArgs;
+					string outCmd = string("start /b monica-zmq-proxy -p") + (prs ? "rs " : " ") + outArgs;
 #else
 					string inCmd = string("monica-zmq-proxy -p ") + inArgs + " &";
-					string outCmd = string("monica-zmq-proxy -p ") + outArgs + " &";
+					string outCmd = string("monica-zmq-proxy -p") + (prs ? "rs " : " ") + outArgs + " &";
 #endif
 					//cout << "inCmd: " << inCmd << " outCmd: " << outCmd << endl;
 
