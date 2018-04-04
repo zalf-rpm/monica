@@ -548,11 +548,11 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 	double vc_SunsetSolarAngle = acos(arg_SolarAngle);
 	vc_ExtraterrestrialRadiation = SC * (vc_SunsetSolarAngle * vc_DeclinationSinus + vc_DeclinationCosinus * sin(vc_SunsetSolarAngle)); // [MJ m-2]
 
-	if(vw_GlobalRadiation > 0.0)
+	if (vw_GlobalRadiation > 0.0)
 		vc_GlobalRadiation = vw_GlobalRadiation;
-	else if (vc_AstronomicDayLenght > 0)	
+	else if (vc_AstronomicDayLenght > 0)
 		vc_GlobalRadiation = vc_ExtraterrestrialRadiation *
-			(0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLenght);	
+		(0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLenght);
 	else
 		vc_GlobalRadiation = 0;
 	
@@ -1214,7 +1214,7 @@ void CropGrowth::fc_CropGreenArea(double vw_MeanAirTemperature,
 			TempResponseExpansion = std::min(37.7 * exp(-7.23 * exp(-0.1462 * vw_MeanAirTemperature)) / referenceTempResponseExpansion, 1.3);
 		}
 	}
-
+		
 	vc_LeafAreaIndex += (d_LeafBiomassIncrement *  TempResponseExpansion * (d_SpecificLeafAreaStart + (d_CurrentTemperatureSum
 		/ d_StageTemperatureSum * (d_SpecificLeafAreaEnd - d_SpecificLeafAreaStart))) * vc_TimeStep)
 		- (d_LeafBiomassDecrement * d_SpecificLeafAreaEarly * vc_TimeStep); // [ha ha-1]
@@ -1919,6 +1919,14 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 		for(int h = 0; h < 24; h++)
 		{
+#ifdef TEST_FVCB_HOURLY_OUTPUT
+			FvCB::tout()
+				<< currentDate.toIsoDateString()
+				<< "," << h
+				<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+				<< "," << vw_AtmosphericCO2Concentration;
+#endif
+
 			FvCB_canopy_hourly_in in;
 
 			double hourlyTemp = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
@@ -2021,6 +2029,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				//<< "," << ges.isoprene_emission
 				//<< "," << ges.monoterpene_emission;
 #endif
+
+
 
 			double sun_LAI = res.sunlit.LAI;
 			double sh_LAI = res.shaded.LAI;
@@ -2218,6 +2228,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			* pc_OrganMaintenanceRespiration[i_Organ];
 	}
 
+	
 	if(vc_GrossPhotosynthesis < (vc_MaintenanceRespiration * vc_MaintenanceTemperatureDependency))
 	{
 		vc_NetMaintenanceRespiration = vc_GrossPhotosynthesis;
@@ -2231,6 +2242,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	{
 		vc_GrossPhotosynthesis = vc_NetMaintenanceRespiration;
 	}
+	
 	// This section is now inactive
 	// #########################################################################
 }
