@@ -30,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MONICA_EOM_H
 #define MONICA_EOM_H
 
-#include "monica-typedefs.h"
 #include "eom/src/eom-typedefs.h"
 
 namespace Monica
@@ -43,7 +42,7 @@ namespace Monica
       : pvpId(-1), cropId(-1), tillageType(plough),
       crossCropAdaptionFactor(0.0) {}
     Eom::PVPId pvpId;
-    CropId cropId;
+		int cropId;
     TillageType tillageType;
     double crossCropAdaptionFactor;
   };
