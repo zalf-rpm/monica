@@ -1206,11 +1206,24 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.dailySumFertiliser(), 1);
 			});
 
+			build({id++, "SumNFert", "kgN ha-1", "sum of N fertilizer applied during cropping period"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.sumFertiliser(), 1);
+			});
+
 			build({ id++, "NOrgFert", "kgN ha-1", "dailySumOrgFertiliser" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.dailySumOrgFertiliser(), 1);
 			});
+
+			build({id++, "SumNOrgFert", "kgN ha-1", "sum of N of organic fertilizer applied during cropping period"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.sumOrgFertiliser(), 1);
+			});
+
 
 			build({id++, "WaterContent", "%nFC", "soil water content"},
 						[](const MonicaModel& monica, OId oid)
