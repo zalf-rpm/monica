@@ -82,6 +82,7 @@ namespace Monica
               double vw_WindSpeed,
               double vw_WindSpeedHeight,
               double vw_AtmosphericCO2Concentration,
+							double vw_AtmosphericO3Concentration,
               double vw_GrossPrecipitation);
 
     //void get_CropIdentity();
@@ -157,6 +158,7 @@ namespace Monica
                                double vw_MinAirTemperature,
                                double vw_GlobalRadiation,
                                double vw_AtmosphericCO2Concentration,
+															 double vw_AtmosphericO3Concentration,
                                double vs_Latitude,
                                double vc_LeafAreaIndex,
                                double pc_DefaultRadiationUseEfficiency,

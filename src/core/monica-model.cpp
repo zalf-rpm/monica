@@ -675,6 +675,8 @@ void MonicaModel::cropStep()
   double tmax = climateData[Climate::tmax];
   double tmin = climateData[Climate::tmin];
   double globrad = climateData[Climate::globrad];
+	auto o3it = climateData.find(Climate::o3);
+	double o3 = o3it == climateData.end() ? 0.0 : o3it->second;
 
   // test if data for sunhours are available; if not, value is set to -1.0
 	auto sunhit = climateData.find(Climate::sunhours);
@@ -691,7 +693,7 @@ void MonicaModel::cropStep()
 
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, date,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
-                           vw_AtmosphericCO2Concentration, precip);
+                           vw_AtmosphericCO2Concentration, o3, precip);
   if(_simPs.p_UseAutomaticIrrigation)
   {
     const AutomaticIrrigationParameters& aips = _simPs.p_AutoIrrigationParams;
