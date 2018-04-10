@@ -47,17 +47,15 @@ double hourly_O3_reduction_Ac(double O3_up, double gamma1, double gamma2)
 	return fO3s_h;
 }
 
-double cumulative_O3_reduction_Ac(double fO3s_h_arr[], double rO3s, int h)
-{
-	double fO3s_d = 1.0;
-	
+double cumulative_O3_reduction_Ac(double fO3s_d, double fO3s_h, double rO3s, int h)
+{	
 	if (h == 0)
 	{
-		fO3s_d = fO3s_h_arr[h] * rO3s;
+		fO3s_d = fO3s_h * rO3s;
 	}
 	else
 	{
-		fO3s_d = fO3s_h_arr[h] * fO3s_h_arr[h - 1];
+		fO3s_d *= fO3s_h;
 	}
 
 	return fO3s_d;
@@ -85,8 +83,9 @@ double O3_recovery_factor_leaf_age(double reldev)
 double O3_senescence_factor(double gamma3, double O3_tot_up)
 {
 	//O3_tot_up µmol m - 2
-	//fO3l; factor accounting for both onset and rate of senescence
-	return std::max(0.5, 1.0 - gamma3 * O3_tot_up); //0.5 is arbitrary
+	//factor accounting for both onset and rate of senescence
+	double fO3l = std::max(0.5, 1.0 - gamma3 * O3_tot_up); //0.5 is arbitrary
+	return fO3l;
 }
 
 double leaf_senescence_reduction_Ac(double fO3l, double reldev, double GDD_flowering, double GDD_maturity)
@@ -151,38 +150,24 @@ double water_stress_stomatal_closure(double upper_thr, double lower_thr, double 
 
 #pragma region 
 //model composition
-
-//"auxiliary" variables; (revise design?)
-double fO3s_h[24];
-double fO3s_d = 1.0;
-double rO3s = 1.0;
-double WS_st_clos = 1.0;
-double fLA = 1.0;
-double cum_O3_up = 0.0;
-
-O3_impact_out FvCB_canopy_hourly(O3_impact_in in, O3_impact_params par)
+O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par)
 {
 	O3_impact_out out;
 
-	if (in.h == 0)
-	{
-		fLA = O3_recovery_factor_leaf_age(in.reldev);
-		rO3s = O3_damage_recovery(fO3s_d, fLA);
-		WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
-	}
+	double fLA = O3_recovery_factor_leaf_age(in.reldev);
+	double rO3s = O3_damage_recovery(in.fO3s_d_prev, fLA); //used only the first hour
+	double WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
 
 	double inst_O3_up = O3_uptake(in.O3a, in.gs, WS_st_clos); //nmol m-2 s-1
-	cum_O3_up += inst_O3_up * 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1
-	out.cum_O3_up = cum_O3_up;
-	fO3s_h[in.h] = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
+	out.hourly_O3_up += inst_O3_up * 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
+	double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 	
 	//short term O3 effect on Ac	
-	fO3s_d = cumulative_O3_reduction_Ac(fO3s_h, rO3s, in.h); 
-	out.fO3s_d = fO3s_d;
+	out.fO3s_d = cumulative_O3_reduction_Ac(in.fO3s_d_prev, fO3s_h, rO3s, in.h);	
 
 	//sensescence + long term O3 effect on Ac
-	double fO3l = O3_senescence_factor(par.gamma3, cum_O3_up);
-	out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
+	//double fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
+	//out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
 
 	return out;
 }

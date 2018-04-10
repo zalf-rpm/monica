@@ -637,6 +637,9 @@ namespace Monica
 
 		std::function<void(std::string)> _fireEvent;
 		std::function<void(double, double)> _addOrganicMatter;
+
+		double vc_O3_shortTermDamage{ 1.0 };
+		double vc_O3_sumUptake{ 0.0 };
   };
 
 //#define TEST_HOURLY_OUTPUT
