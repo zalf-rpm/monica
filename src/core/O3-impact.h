@@ -54,7 +54,12 @@ namespace O3impact
 		double fLS{ 0.0 }; //leaf senescence reduction of Ac, modified by O3 cumulative uptake
 	};	
 	
-	O3_impact_out O3_impact_hourly(O3_impact_in in, O3_impact_params par);
+	O3_impact_out O3_impact_hourly(O3_impact_in in, O3_impact_params par, bool WaterDeficitResponseStomata);
+
+	#define TEST_O3_HOURLY_OUTPUT
+#ifdef TEST_O3_HOURLY_OUTPUT
+	std::ostream& tout(bool closeFile = false);
+#endif
 }
 
 #endif

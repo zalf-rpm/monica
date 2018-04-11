@@ -1961,6 +1961,14 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			int root_depth = get_RootingDepth();
 			if (root_depth >= 1) //the crop has emerged
 			{
+#ifdef TEST_O3_HOURLY_OUTPUT
+				O3impact::tout()
+					<< currentDate.toIsoDateString()
+					<< "," << h
+					<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+					<< "," << vw_AtmosphericCO2Concentration
+					<< "," << vw_AtmosphericO3Concentration;
+#endif
 				double FC = 0, WP = 0, SWC = 0;
 				for (int i = 0; i < root_depth; i++)
 				{
@@ -1973,7 +1981,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				O3_in.WP = WP / (root_depth + 1); //wilting point, m3 m-3
 				O3_in.SWC = SWC / (root_depth + 1); //soil water content, m3 m-3
 				O3_in.ET0 = get_ReferenceEvapotranspiration();
-				O3_in.O3a = 60; //ambient O3 partial pressure, nbar or nmol mol-1
+				O3_in.O3a = vw_AtmosphericO3Concentration; //ambient O3 partial pressure, nbar or nmol mol-1
 				O3_in.gs = FvCB_res.sunlit.gs + FvCB_res.shaded.gs; //stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
 				O3_in.h = h; //hour of the day (0-23)
 				O3_in.reldev = vc_RelativeTotalDevelopment;
@@ -1982,7 +1990,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				O3_in.fO3s_d_prev = vc_O3_shortTermDamage; //short term ozone induced reduction of Ac of the previous time step
 				O3_in.sum_O3_up = vc_O3_sumUptake; //cumulated O3 uptake, µmol m-2 (unit ground area)			
 
-				auto O3_res = O3impact::O3_impact_hourly(O3_in, O3_par);
+				auto O3_res = O3impact::O3_impact_hourly(O3_in, O3_par, pc_WaterDeficitResponseOn);
 
 				vc_O3_shortTermDamage = O3_res.fO3s_d;
 				vc_O3_sumUptake += O3_res.hourly_O3_up;

@@ -19,8 +19,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <algorithm>
+#include <iostream>
 
 using namespace O3impact;
+using namespace std;
 
 //from Ewert and Porter, 2000. Global Change Biology, 6(7), 735-750
 double O3_uptake(double O3a, double gsc, double f_WS)
@@ -148,15 +150,63 @@ double water_stress_stomatal_closure(double upper_thr, double lower_thr, double 
 	return 1 - (std::exp(Drel * Fshape) - 1.0) / (std::exp(Fshape) - 1.0);
 }
 
+#ifdef TEST_O3_HOURLY_OUTPUT
+#include <fstream>
+ostream& O3impact::tout(bool closeFile)
+{
+	static ofstream out;
+	static bool init = false;
+	static bool failed = false;
+	if (closeFile)
+	{
+		init = false;
+		failed = false;
+		out.close();
+		return out;
+	}
+
+	if (!init)
+	{
+		out.open("O3_hourly_data.csv");
+		failed = out.fail();
+		(failed ? cout : out) <<
+			"iso-date"
+			",hour"
+			",crop-name"
+			",co2"
+			",o3"
+			",in.reldev"
+			",fLA"
+			",rO3s"
+			",WS_st_clos"
+			",in.gs"
+			",inst_O3_up"
+			",fO3s_h"
+			",in.fO3s_d_prev"
+			",out.fO3s_d"
+			",in.sum_O3_up"
+			<< endl;
+
+		init = true;
+	}
+
+	return failed ? cout : out;
+}
+#endif
+
 #pragma region 
 //model composition
-O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par)
+O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, bool WaterDeficitResponseStomata)
 {
 	O3_impact_out out;
 
 	double fLA = O3_recovery_factor_leaf_age(in.reldev);
 	double rO3s = O3_damage_recovery(in.fO3s_d_prev, fLA); //used only the first hour
-	double WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
+	double WS_st_clos = 1.0;
+	if (WaterDeficitResponseStomata)
+	{
+		WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
+	}	
 
 	double inst_O3_up = O3_uptake(in.O3a, in.gs, WS_st_clos); //nmol m-2 s-1
 	out.hourly_O3_up += inst_O3_up * 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
@@ -169,9 +219,26 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par)
 	//double fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
 	//out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
 
+#ifdef TEST_O3_HOURLY_OUTPUT
+	tout()
+	<< "," << in.reldev
+	<< "," << fLA
+	<< "," << rO3s
+	<< "," << WS_st_clos
+	<< "," << in.gs
+	<< "," << inst_O3_up
+	<< "," << fO3s_h
+	<< "," << in.fO3s_d_prev
+	<< "," << out.fO3s_d
+	<< "," << in.sum_O3_up
+	<< endl;
+#endif
+
 	return out;
 }
 #pragma endregion Model composition
+
+
 	
 	
 
