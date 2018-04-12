@@ -594,6 +594,7 @@ namespace Monica
     double vc_SumTotalNUptake{0.0};    //! summation of all calculated NUptake; needed for sensitivity analysis
     double vc_TotalRootLength{0.0};						//! old WULAEN
     double vc_TotalTemperatureSum{0.0};
+		double vc_TemperatureSumToFlowering{ 0.0 };
     std::vector<double> vc_Transpiration;			//! old TP
     std::vector<double> vc_TranspirationRedux;   //! old TRRED
     double vc_TranspirationDeficit{1.0};					//! old TRREL

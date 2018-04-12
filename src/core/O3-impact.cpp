@@ -95,11 +95,12 @@ double leaf_senescence_reduction_Ac(double fO3l, double reldev, double GDD_flowe
 	//senescence is assumed to start at flowering in normal conditions
 	double crit_reldev = GDD_flowering / GDD_maturity;
 	crit_reldev *= fO3l; //correction of onset due to O3 cumulative uptake
+	double senescence_impact_max = 0.4; //arbirary value
 	double fLS = 1.0;
 
 	if (reldev > crit_reldev)
 	{
-		fLS = std::max(0.0, 1.0 - (reldev - crit_reldev) / (fO3l - crit_reldev)); //correction of rate due to O3 cumulative uptake
+		fLS = std::max((1.0 - senescence_impact_max), 1.0 - senescence_impact_max * (reldev - crit_reldev) / (fO3l - crit_reldev)); //correction of rate due to O3 cumulative uptake
 	}
 	return fLS;
 }
@@ -185,6 +186,8 @@ ostream& O3impact::tout(bool closeFile)
 			",in.fO3s_d_prev"
 			",out.fO3s_d"
 			",in.sum_O3_up"
+			",fO3l"
+			",out.fLS"
 			<< endl;
 
 		init = true;
@@ -209,15 +212,15 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, 
 	}	
 
 	double inst_O3_up = O3_uptake(in.O3a, in.gs, WS_st_clos); //nmol m-2 s-1
-	out.hourly_O3_up += inst_O3_up * 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
+	out.hourly_O3_up += inst_O3_up / 1000; //from nmol to µmol //* 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
 	double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 	
 	//short term O3 effect on Ac	
 	out.fO3s_d = cumulative_O3_reduction_Ac(in.fO3s_d_prev, fO3s_h, rO3s, in.h);	
 
-	//sensescence + long term O3 effect on Ac
-	//double fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
-	//out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
+	//sensescence + long term O3 effect on Ac. !!also with [O3]=0, senescence will act to reduce fLS
+	double fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
+	out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
 
 #ifdef TEST_O3_HOURLY_OUTPUT
 	tout()
@@ -231,6 +234,8 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, 
 	<< "," << in.fO3s_d_prev
 	<< "," << out.fO3s_d
 	<< "," << in.sum_O3_up
+	<< "," << fO3l
+	<< "," << out.fLS
 	<< endl;
 #endif
 
