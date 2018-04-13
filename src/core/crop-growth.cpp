@@ -170,8 +170,12 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 {
 	// Determining the total temperature sum of all developmental stages after
 	// emergence (that's why i_Stage starts with 1) until before senescence
-	for(int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++)
+	for (int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++)
+	{
 		vc_TotalTemperatureSum += pc_StageTemperatureSum[i_Stage];
+		if (i_Stage < pc_NumberOfDevelopmentalStages - 3)
+			vc_TemperatureSumToFlowering += pc_StageTemperatureSum[i_Stage];
+	}
 
 	vc_FinalDevelopmentalStage = pc_NumberOfDevelopmentalStages - 1;
 
@@ -1941,10 +1945,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			FvCB_in.solar_el = solarElevation(h, vs_Latitude, vs_JulianDay);
 			FvCB_in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
 			FvCB_in.Ca = vw_AtmosphericCO2Concentration;
-			FvCB_in.fO3 = vc_O3_shortTermDamage;
 
 			FvCB_canopy_hourly_params hps;
-			hps.Vcmax_25 = speciesPs.VCMAX25;
+			hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage;
 
 			auto FvCB_res = FvCB_canopy_hourly_C3(FvCB_in, hps);
 			
@@ -1977,16 +1980,25 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 					SWC += soilColumn[i].get_Vs_SoilMoisture_m3();
 				}
 
+				//weighted average gs and conversion from unit ground area to unit leaf area
+				double lai_sun_weight = FvCB_res.sunlit.LAI / (FvCB_res.sunlit.LAI + FvCB_res.shaded.LAI);
+				double lai_sh_weight = 1 - lai_sun_weight;
+				double avg_leaf_gs = lai_sh_weight * FvCB_res.shaded.gs / FvCB_res.shaded.LAI;
+				if (FvCB_res.sunlit.LAI > 0)
+				{
+					avg_leaf_gs += lai_sun_weight * FvCB_res.sunlit.gs / FvCB_res.sunlit.LAI;
+				}
+
 				O3_in.FC = FC / (root_depth + 1); //field capacity, m3 m-3, avg in the rooted zone
 				O3_in.WP = WP / (root_depth + 1); //wilting point, m3 m-3
 				O3_in.SWC = SWC / (root_depth + 1); //soil water content, m3 m-3
 				O3_in.ET0 = get_ReferenceEvapotranspiration();
 				O3_in.O3a = vw_AtmosphericO3Concentration; //ambient O3 partial pressure, nbar or nmol mol-1
-				O3_in.gs = FvCB_res.sunlit.gs + FvCB_res.shaded.gs; //stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
+				O3_in.gs = avg_leaf_gs; //stomatal conductance mol m-2 s-1 bar-1 
 				O3_in.h = h; //hour of the day (0-23)
 				O3_in.reldev = vc_RelativeTotalDevelopment;
-				//O3_in.GDD_flo; //GDD from emergence to flowering
-				//O3_in.GDD_mat; //GDD from emergence to maturity
+				O3_in.GDD_flo = vc_TemperatureSumToFlowering; //GDD from emergence to flowering
+				O3_in.GDD_mat = vc_TotalTemperatureSum; //GDD from emergence to maturity
 				O3_in.fO3s_d_prev = vc_O3_shortTermDamage; //short term ozone induced reduction of Ac of the previous time step
 				O3_in.sum_O3_up = vc_O3_sumUptake; //cumulated O3 uptake, µmol m-2 (unit ground area)			
 
