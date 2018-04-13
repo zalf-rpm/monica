@@ -631,6 +631,7 @@ Errors SiteParameters::merge(json11::Json j)
   set_double_value(vq_NDeposition, j, "NDeposition");
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
 	set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
+	set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
 
 	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
 	{
@@ -658,6 +659,7 @@ json11::Json SiteParameters::to_json() const
 	,{"NDeposition", J11Array {vq_NDeposition, "kg N ha-1 y-1"}}
 	,{"MaxEffectiveRootingDepth", J11Array{vs_MaxEffectiveRootingDepth, "m"}}
 	,{"ImpenetrableLayerDepth", J11Array {vs_ImpenetrableLayerDepth, "m"}}
+	,{ "SoilSpecificHumusBalanceCorrection", J11Array{ vs_SoilSpecificHumusBalanceCorrection, "humus equivalents" } }
 	};
 
   if(vs_SoilParameters)

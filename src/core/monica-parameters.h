@@ -411,6 +411,7 @@ namespace Monica
     double vq_NDeposition{30.0}; //!< [kg N ha-1 y-1]
     double vs_MaxEffectiveRootingDepth{2.0}; //!< [m]
 		double vs_ImpenetrableLayerDepth{-1}; //!< [m]
+		double vs_SoilSpecificHumusBalanceCorrection{ 0.0 }; //humus equivalents
 
     Soil::SoilPMsPtr vs_SoilParameters;
 	};

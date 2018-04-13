@@ -185,7 +185,7 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 				double residueBiomass = _currentCropGrowth->get_ResidueBiomass(false); //kg ha-1, secondary yield is ignored with this approach
 				double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
 				double appliedOrganicFertilizerDryMatter = sumOrganicFertilizerDM(); //kg ha-1
-				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq;
+				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq - _sitePs.vs_SoilSpecificHumusBalanceCorrection;
 				double potentialHumusFromResidues = residueBiomass / 1000.0 * optCarbMgmtData.residueHeq;
 				
 				double fractionToBeLeftOnField = 0.0;
@@ -203,17 +203,26 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 					}
 				}
 				
-				if(optCarbMgmtData.isCoverCrop && optCarbMgmtData.coverCropUsage == Harvest::greenManure)
-					//if the cover crop is used as green manure, all the residues are incorporated regardless the humus balance
+				if(optCarbMgmtData.cropUsage == Harvest::greenManure)
+					//if the crop is used as green manure, all the residues are incorporated regardless the humus balance
 					fractionToBeLeftOnField = 1.0;
 
+				//calculate theoretical residue removal
 				_optCarbonReturnedResidues = residueBiomass * fractionToBeLeftOnField;
+				_optCarbonExportedResidues = residueBiomass - _optCarbonReturnedResidues;
 				
+				//adjust it if technically unfeasible
+				double maxExportedResidues = residueBiomass * optCarbMgmtData.maxResidueRecoverFraction;
+				if (_optCarbonExportedResidues > maxExportedResidues)
+				{
+					_optCarbonExportedResidues = maxExportedResidues;
+					_optCarbonReturnedResidues = residueBiomass - _optCarbonExportedResidues;
+				}
+
 				_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
 																			_optCarbonReturnedResidues,
 																			_currentCropGrowth->get_ResiduesNConcentration());
-
-				_optCarbonExportedResidues = residueBiomass - _optCarbonReturnedResidues;
+				
 				
 				_humusBalanceCarryOver = intermediateHumusBalance + _optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq;
 			}
