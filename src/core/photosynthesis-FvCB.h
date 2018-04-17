@@ -44,13 +44,13 @@ namespace FvCB
 		double leaf_temp; //°C
 		double VPD; //KPa
 		double Ca; //ambient CO2 partial pressure, µbar or µmol mol-1
-		double fO3 = { 1.0 }; //effect of high ozone fluxes on rubisco-limited photosynthesis
-		double fls = { 1.0 }; //effect of senescence on rubisco-limited photosynthesis, modified by cumulative ozone uptake 
+		//double fO3 = { 1.0 }; //effect of high ozone fluxes on rubisco-limited photosynthesis
+		//double fls = { 1.0 }; //effect of senescence on rubisco-limited photosynthesis, modified by cumulative ozone uptake 
 	};
 
 	struct FvCB_leaf_fraction {
 		double LAI; //m2 m-2
-		double gs; //mol m-2 s-1 bar-1
+		double gs; //mol m-2 s-1 bar-1 (unit ground area)
 		double kc; //µmol mol-1 mbar-1 ... Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer
 		double ko; //µmol mol-1 mbar-1 ... Michaelis - Menten constant for O2 reaction of rubisco per canopy layer
 		double oi; //µmol m-2 ... leaf internal O2 concentration per canopy layer
@@ -78,7 +78,7 @@ namespace FvCB
 	double Jmax_bernacchi_f(double leafT, double Jmax_25);
 	double Vcmax_bernacchi_f(double leafT, double Vcmax_25);
 	
-	//#define TEST_FVCB_HOURLY_OUTPUT
+	#define TEST_FVCB_HOURLY_OUTPUT
 #ifdef TEST_FVCB_HOURLY_OUTPUT
 	std::ostream& tout(bool closeFile = false);
 #endif

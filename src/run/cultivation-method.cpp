@@ -415,19 +415,20 @@ Harvest::Harvest(json11::Json j)
 Errors Harvest::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
-
+		
 	set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
 	set_bool_value(_exported, j, "exported");
 	set_bool_value(_optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
 	set_double_value(_optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
-	auto ccu = j["cover-crop-usage"].string_value();
-	if(ccu == "green-manure")
-		_optCarbMgmtData.coverCropUsage = greenManure;
+	auto cu = j["crop-usage"].string_value();
+	if(cu == "green-manure")
+		_optCarbMgmtData.cropUsage = greenManure;
 	else
-		_optCarbMgmtData.coverCropUsage = biomassProduction;
+		_optCarbMgmtData.cropUsage = biomassProduction;
 	set_double_value(_optCarbMgmtData.residueHeq, j, "residue-heq");
 	set_double_value(_optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
+	set_double_value(_optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction");
 
 	return res;
 }
@@ -442,9 +443,10 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	,{"exported", _exported}
 	,{"opt-carbon-conservation", _optCarbMgmtData.optCarbonConservation}
 	,{"crop-impact-on-humus-balance", _optCarbMgmtData.cropImpactOnHumusBalance}
-	,{"cover-crop-usage", _optCarbMgmtData.coverCropUsage == greenManure ? "green-manure" : "biomass-production"}
+	,{"crop-usage", _optCarbMgmtData.cropUsage == greenManure ? "green-manure" : "biomass-production"}
 	,{"residue-heq", _optCarbMgmtData.residueHeq}
 	,{"organic-fertilizer-heq", _optCarbMgmtData.organicFertilizerHeq}
+	,{ "max-residue-recover-fraction", _optCarbMgmtData.maxResidueRecoverFraction }
 	};
 }
 
@@ -1172,7 +1174,7 @@ Errors CultivationMethod::merge(json11::Json j)
 			if(Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{
 				harvest->setCrop(_crop);
-				harvest->setIsCoverCrop(_isCoverCrop);
+				//harvest->setIsCoverCrop(_isCoverCrop);
 				_crop->setHarvestDate(harvest->date());
 			}
 		}

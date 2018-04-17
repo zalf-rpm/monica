@@ -31,6 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-jjv.h"
 #include "voc-common.h"
 #include "photosynthesis-FvCB.h"
+#include "O3-impact.h"
 
 const double PI = 3.14159265358979323;
 
@@ -169,8 +170,12 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 {
 	// Determining the total temperature sum of all developmental stages after
 	// emergence (that's why i_Stage starts with 1) until before senescence
-	for(int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++)
+	for (int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++)
+	{
 		vc_TotalTemperatureSum += pc_StageTemperatureSum[i_Stage];
+		if (i_Stage < pc_NumberOfDevelopmentalStages - 3)
+			vc_TemperatureSumToFlowering += pc_StageTemperatureSum[i_Stage];
+	}
 
 	vc_FinalDevelopmentalStage = pc_NumberOfDevelopmentalStages - 1;
 
@@ -1929,31 +1934,82 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
 				<< "," << vw_AtmosphericCO2Concentration;
 #endif
-
-			FvCB_canopy_hourly_in in;
+			//hourly photosynthesis
+			FvCB_canopy_hourly_in FvCB_in;
 
 			double hourlyTemp = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
-			in.leaf_temp = hourlyTemp;
-			in.global_rad = hourlyGlobrads.at(h);
-			in.extra_terr_rad = hourlyExtrarad.at(h);
-			in.LAI = vc_LeafAreaIndex;
-			in.solar_el = solarElevation(h, vs_Latitude, vs_JulianDay);
-			in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
-			in.Ca = vw_AtmosphericCO2Concentration;
+			FvCB_in.leaf_temp = hourlyTemp;
+			FvCB_in.global_rad = hourlyGlobrads.at(h);
+			FvCB_in.extra_terr_rad = hourlyExtrarad.at(h);
+			FvCB_in.LAI = vc_LeafAreaIndex;
+			FvCB_in.solar_el = solarElevation(h, vs_Latitude, vs_JulianDay);
+			FvCB_in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
+			FvCB_in.Ca = vw_AtmosphericCO2Concentration;
 
 			FvCB_canopy_hourly_params hps;
-			hps.Vcmax_25 = speciesPs.VCMAX25;
+			hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage;
 
-			auto res = FvCB_canopy_hourly_C3(in, hps);
+			auto FvCB_res = FvCB_canopy_hourly_C3(FvCB_in, hps);
 			
-			vc_sunlitLeafAreaIndex[h] = res.sunlit.LAI;
-			vc_shadedLeafAreaIndex[h] = res.shaded.LAI;
+			vc_sunlitLeafAreaIndex[h] = FvCB_res.sunlit.LAI;
+			vc_shadedLeafAreaIndex[h] = FvCB_res.shaded.LAI;
 
 			// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
-			dailyGP += res.canopy_gross_photos * 44. / 100. / 1000.;
+			dailyGP += FvCB_res.canopy_gross_photos * 44. / 100. / 1000.;
+
+			//hourly O3 uptake and damage
+			O3impact::O3_impact_in O3_in;
+			O3impact::O3_impact_params O3_par;
+
+			int root_depth = get_RootingDepth();
+			if (root_depth >= 1) //the crop has emerged
+			{
+#ifdef TEST_O3_HOURLY_OUTPUT
+				O3impact::tout()
+					<< currentDate.toIsoDateString()
+					<< "," << h
+					<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+					<< "," << vw_AtmosphericCO2Concentration
+					<< "," << vw_AtmosphericO3Concentration;
+#endif
+				double FC = 0, WP = 0, SWC = 0;
+				for (int i = 0; i < root_depth; i++)
+				{
+					FC += soilColumn[i].vs_FieldCapacity();
+					WP += soilColumn[i].vs_PermanentWiltingPoint();
+					SWC += soilColumn[i].get_Vs_SoilMoisture_m3();
+				}
+
+				//weighted average gs and conversion from unit ground area to unit leaf area
+				double lai_sun_weight = FvCB_res.sunlit.LAI / (FvCB_res.sunlit.LAI + FvCB_res.shaded.LAI);
+				double lai_sh_weight = 1 - lai_sun_weight;
+				double avg_leaf_gs = lai_sh_weight * FvCB_res.shaded.gs / FvCB_res.shaded.LAI;
+				if (FvCB_res.sunlit.LAI > 0)
+				{
+					avg_leaf_gs += lai_sun_weight * FvCB_res.sunlit.gs / FvCB_res.sunlit.LAI;
+				}
+
+				O3_in.FC = FC / (root_depth + 1); //field capacity, m3 m-3, avg in the rooted zone
+				O3_in.WP = WP / (root_depth + 1); //wilting point, m3 m-3
+				O3_in.SWC = SWC / (root_depth + 1); //soil water content, m3 m-3
+				O3_in.ET0 = get_ReferenceEvapotranspiration();
+				O3_in.O3a = vw_AtmosphericO3Concentration; //ambient O3 partial pressure, nbar or nmol mol-1
+				O3_in.gs = avg_leaf_gs; //stomatal conductance mol m-2 s-1 bar-1 
+				O3_in.h = h; //hour of the day (0-23)
+				O3_in.reldev = vc_RelativeTotalDevelopment;
+				O3_in.GDD_flo = vc_TemperatureSumToFlowering; //GDD from emergence to flowering
+				O3_in.GDD_mat = vc_TotalTemperatureSum; //GDD from emergence to maturity
+				O3_in.fO3s_d_prev = vc_O3_shortTermDamage; //short term ozone induced reduction of Ac of the previous time step
+				O3_in.sum_O3_up = vc_O3_sumUptake; //cumulated O3 uptake, µmol m-2 (unit ground area)			
+
+				auto O3_res = O3impact::O3_impact_hourly(O3_in, O3_par, pc_WaterDeficitResponseOn);
+
+				vc_O3_shortTermDamage = O3_res.fO3s_d;
+				vc_O3_sumUptake += O3_res.hourly_O3_up;
+			}			
 				
 			// calculate VOC emissions
-			double globradWm2 = in.global_rad * 1000000.0 / 3600; //MJ m-2 h-1 -> W m-2
+			double globradWm2 = FvCB_in.global_rad * 1000000.0 / 3600; //MJ m-2 h-1 -> W m-2
 			if(_index240 < _stepSize240 - 1)
 				_index240++;
 			else
@@ -1962,7 +2018,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				_full240 = true;
 			}
 			_rad240[_index240] = globradWm2;
-			_tfol240[_index240] = in.leaf_temp;
+			_tfol240[_index240] = FvCB_in.leaf_temp;
 
 			if(_index24 < _stepSize24 - 1)
 				_index24++;
@@ -1972,14 +2028,14 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				_full24 = true;
 			}
 			_rad24[_index24] = globradWm2;
-			_tfol24[_index24] = in.leaf_temp;
+			_tfol24[_index24] = FvCB_in.leaf_temp;
 
 			Voc::MicroClimateData mcd;
 			//hourly or time step average global radiation (in case of monica usually 24h)
 			mcd.rad = globradWm2;
 			mcd.rad24 = accumulate(_rad24.begin(), _rad24.end(), 0.0) / (_full24 ? _rad24.size() : _index24 + 1);
 			mcd.rad240 = accumulate(_rad240.begin(), _rad240.end(), 0.0) / (_full240 ? _rad240.size() : _index240 + 1);
-			mcd.tFol = in.leaf_temp;
+			mcd.tFol = FvCB_in.leaf_temp;
 			mcd.tFol24 = accumulate(_tfol24.begin(), _tfol24.end(), 0.0) / (_full24 ? _tfol24.size() : _index24 + 1);
 			mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
 			mcd.co2concentration = vw_AtmosphericCO2Concentration;
@@ -2013,32 +2069,32 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				<< currentDate.toIsoDateString()
 				<< "," << h
 				<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
-				<< "," << in.global_rad
-				<< "," << in.extra_terr_rad
-				<< "," << in.solar_el
+				<< "," << FvCB_in.global_rad
+				<< "," << FvCB_in.extra_terr_rad
+				<< "," << FvCB_in.solar_el
 				<< "," << mcd.rad
-				<< "," << in.LAI
+				<< "," << FvCB_in.LAI
 				<< "," << species.mFol
 				<< "," << species.sla
-				<< "," << in.leaf_temp
-				<< "," << in.VPD
-				<< "," << in.Ca
-				<< "," << in.fO3
-				<< "," << in.fls
-				<< "," << res.canopy_net_photos
-				<< "," << res.canopy_resp
-				<< "," << res.canopy_gross_photos
-				<< "," << res.jmax_c;
+				<< "," << FvCB_in.leaf_temp
+				<< "," << FvCB_in.VPD
+				<< "," << FvCB_in.Ca
+				<< "," << FvCB_in.fO3
+				<< "," << FvCB_in.fls
+				<< "," << FvCB_res.canopy_net_photos
+				<< "," << FvCB_res.canopy_resp
+				<< "," << FvCB_res.canopy_gross_photos
+				<< "," << FvCB_res.jmax_c;
 				//<< "," << ges.isoprene_emission
 				//<< "," << ges.monoterpene_emission;
 #endif
 
 
 
-			double sun_LAI = res.sunlit.LAI;
-			double sh_LAI = res.shaded.LAI;
+			double sun_LAI = FvCB_res.sunlit.LAI;
+			double sh_LAI = FvCB_res.shaded.LAI;
 			//JJV
-			for (const auto& lf : { res.sunlit, res.shaded })
+			for (const auto& lf : { FvCB_res.sunlit, FvCB_res.shaded })
 			{
 				species.lai = lf.LAI;
 				species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.) * lf.LAI / (sun_LAI + sh_LAI); //kg/ha -> kg/m2

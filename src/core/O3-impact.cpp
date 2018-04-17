@@ -19,8 +19,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <algorithm>
+#include <iostream>
 
 using namespace O3impact;
+using namespace std;
 
 //from Ewert and Porter, 2000. Global Change Biology, 6(7), 735-750
 double O3_uptake(double O3a, double gsc, double f_WS)
@@ -47,17 +49,15 @@ double hourly_O3_reduction_Ac(double O3_up, double gamma1, double gamma2)
 	return fO3s_h;
 }
 
-double cumulative_O3_reduction_Ac(double fO3s_h_arr[], double rO3s, int h)
-{
-	double fO3s_d = 1.0;
-	
+double cumulative_O3_reduction_Ac(double fO3s_d, double fO3s_h, double rO3s, int h)
+{	
 	if (h == 0)
 	{
-		fO3s_d = fO3s_h_arr[h] * rO3s;
+		fO3s_d = fO3s_h * rO3s;
 	}
 	else
 	{
-		fO3s_d = fO3s_h_arr[h] * fO3s_h_arr[h - 1];
+		fO3s_d *= fO3s_h;
 	}
 
 	return fO3s_d;
@@ -85,8 +85,9 @@ double O3_recovery_factor_leaf_age(double reldev)
 double O3_senescence_factor(double gamma3, double O3_tot_up)
 {
 	//O3_tot_up µmol m - 2
-	//fO3l; factor accounting for both onset and rate of senescence
-	return std::max(0.5, 1.0 - gamma3 * O3_tot_up); //0.5 is arbitrary
+	//factor accounting for both onset and rate of senescence
+	double fO3l = std::max(0.5, 1.0 - gamma3 * O3_tot_up); //0.5 is arbitrary
+	return fO3l;
 }
 
 double leaf_senescence_reduction_Ac(double fO3l, double reldev, double GDD_flowering, double GDD_maturity)
@@ -94,11 +95,12 @@ double leaf_senescence_reduction_Ac(double fO3l, double reldev, double GDD_flowe
 	//senescence is assumed to start at flowering in normal conditions
 	double crit_reldev = GDD_flowering / GDD_maturity;
 	crit_reldev *= fO3l; //correction of onset due to O3 cumulative uptake
+	double senescence_impact_max = 0.4; //arbirary value
 	double fLS = 1.0;
 
 	if (reldev > crit_reldev)
 	{
-		fLS = std::max(0.0, 1.0 - (reldev - crit_reldev) / (fO3l - crit_reldev)); //correction of rate due to O3 cumulative uptake
+		fLS = std::max((1.0 - senescence_impact_max), 1.0 - senescence_impact_max * (reldev - crit_reldev) / (fO3l - crit_reldev)); //correction of rate due to O3 cumulative uptake
 	}
 	return fLS;
 }
@@ -149,44 +151,99 @@ double water_stress_stomatal_closure(double upper_thr, double lower_thr, double 
 	return 1 - (std::exp(Drel * Fshape) - 1.0) / (std::exp(Fshape) - 1.0);
 }
 
+#ifdef TEST_O3_HOURLY_OUTPUT
+#include <fstream>
+ostream& O3impact::tout(bool closeFile)
+{
+	static ofstream out;
+	static bool init = false;
+	static bool failed = false;
+	if (closeFile)
+	{
+		init = false;
+		failed = false;
+		out.close();
+		return out;
+	}
+
+	if (!init)
+	{
+		out.open("O3_hourly_data.csv");
+		failed = out.fail();
+		(failed ? cout : out) <<
+			"iso-date"
+			",hour"
+			",crop-name"
+			",co2"
+			",o3"
+			",in.reldev"
+			",fLA"
+			",rO3s"
+			",WS_st_clos"
+			",in.gs"
+			",inst_O3_up"
+			",fO3s_h"
+			",in.fO3s_d_prev"
+			",out.fO3s_d"
+			",in.sum_O3_up"
+			",fO3l"
+			",out.fLS"
+			<< endl;
+
+		init = true;
+	}
+
+	return failed ? cout : out;
+}
+#endif
+
 #pragma region 
 //model composition
-
-//"auxiliary" variables; (revise design?)
-double fO3s_h[24];
-double fO3s_d = 1.0;
-double rO3s = 1.0;
-double WS_st_clos = 1.0;
-double fLA = 1.0;
-double cum_O3_up = 0.0;
-
-O3_impact_out FvCB_canopy_hourly(O3_impact_in in, O3_impact_params par)
+O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, bool WaterDeficitResponseStomata)
 {
 	O3_impact_out out;
 
-	if (in.h == 0)
+	double fLA = O3_recovery_factor_leaf_age(in.reldev);
+	double rO3s = O3_damage_recovery(in.fO3s_d_prev, fLA); //used only the first hour
+	double WS_st_clos = 1.0;
+	if (WaterDeficitResponseStomata)
 	{
-		fLA = O3_recovery_factor_leaf_age(in.reldev);
-		rO3s = O3_damage_recovery(fO3s_d, fLA);
 		WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
-	}
+	}	
 
 	double inst_O3_up = O3_uptake(in.O3a, in.gs, WS_st_clos); //nmol m-2 s-1
-	cum_O3_up += inst_O3_up * 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1
-	out.cum_O3_up = cum_O3_up;
-	fO3s_h[in.h] = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
+	out.hourly_O3_up += inst_O3_up / 1000; //from nmol to µmol //* 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
+	double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 	
 	//short term O3 effect on Ac	
-	fO3s_d = cumulative_O3_reduction_Ac(fO3s_h, rO3s, in.h); 
-	out.fO3s_d = fO3s_d;
+	out.fO3s_d = cumulative_O3_reduction_Ac(in.fO3s_d_prev, fO3s_h, rO3s, in.h);	
 
-	//sensescence + long term O3 effect on Ac
-	double fO3l = O3_senescence_factor(par.gamma3, cum_O3_up);
+	//sensescence + long term O3 effect on Ac. !!also with [O3]=0, senescence will act to reduce fLS
+	double fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
 	out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
+
+#ifdef TEST_O3_HOURLY_OUTPUT
+	tout()
+	<< "," << in.reldev
+	<< "," << fLA
+	<< "," << rO3s
+	<< "," << WS_st_clos
+	<< "," << in.gs
+	<< "," << inst_O3_up
+	<< "," << fO3s_h
+	<< "," << in.fO3s_d_prev
+	<< "," << out.fO3s_d
+	<< "," << in.sum_O3_up
+	<< "," << fO3l
+	<< "," << out.fLS
+	<< endl;
+#endif
 
 	return out;
 }
 #pragma endregion Model composition
+
+
 	
 	
 

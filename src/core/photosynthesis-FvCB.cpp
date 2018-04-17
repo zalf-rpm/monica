@@ -507,6 +507,9 @@ ostream& FvCB::tout(bool closeFile)
 			",gm_sh"
 			",out.sunlit.gs"
 			",out.shaded.gs"
+			",A_sun"
+			",Rd_sun"
+			",gamma_sun"
 			<< endl;
 
 		init = true;
@@ -684,8 +687,11 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 			<< "," << A_el_sh;
 #endif
 
-		double A_sun = std::fmin(A_rub_sun * in.fO3 * in.fls, A_el_sun);
-		double A_sh = std::fmin(A_rub_sh * in.fO3 * in.fls, A_el_sh);
+		//double A_sun = std::fmin(A_rub_sun * in.fO3 * in.fls, A_el_sun);
+		//double A_sh = std::fmin(A_rub_sh * in.fO3 * in.fls, A_el_sh);
+
+		double A_sun = std::fmin(A_rub_sun, A_el_sun);
+		double A_sh = std::fmin(A_rub_sh, A_el_sh);
 
 		out.canopy_net_photos = (A_sun + A_sh) * 3600.0;
 		out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;
@@ -737,7 +743,10 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 			<< "," << gb_sh
 			<< "," << gm_sh
 			<< "," << out.sunlit.gs
-			<< "," << out.shaded.gs;
+			<< "," << out.shaded.gs
+			<< "," << A_sun
+			<< "," << Rd_sun
+			<< "," << gamma_sun;
 #endif
 
 		//6.5 derive jv
