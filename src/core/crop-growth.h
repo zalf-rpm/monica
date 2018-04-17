@@ -310,7 +310,7 @@ namespace Monica
 		/**
 		* @brief Returns short term O3 damage
 		*/
-		double CropGrowth::get_O3_shortTermDamage() const
+		double get_O3_shortTermDamage() const
 		{
 			return vc_O3_shortTermDamage;
 		}
@@ -318,7 +318,7 @@ namespace Monica
 		/**
 		* @brief Returns long term O3 damage
 		*/
-		double CropGrowth::get_O3_longTermDamage() const
+		double get_O3_longTermDamage() const
 		{
 			return vc_O3_longTermDamage;
 		}
@@ -326,7 +326,7 @@ namespace Monica
 		/**
 		* @brief Returns reduction factor of O3 uptake due to stomatal closure
 		*/
-		double CropGrowth::get_O3_WStomatalClosure() const
+		double get_O3_WStomatalClosure() const
 		{
 			return vc_O3_WStomatalClosure;
 		}
@@ -334,7 +334,7 @@ namespace Monica
 		/**
 		* @brief Returns O3 sum uptake
 		*/
-		double CropGrowth::get_O3_sumUptake() const
+		double get_O3_sumUptake() const
 		{
 			return vc_O3_sumUptake;
 		}
