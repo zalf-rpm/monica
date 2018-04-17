@@ -1947,7 +1947,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			FvCB_in.Ca = vw_AtmosphericCO2Concentration;
 
 			FvCB_canopy_hourly_params hps;
-			hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage;
+			hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage * vc_O3_longTermDamage;
 
 			auto FvCB_res = FvCB_canopy_hourly_C3(FvCB_in, hps);
 			
@@ -1960,6 +1960,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			//hourly O3 uptake and damage
 			O3impact::O3_impact_in O3_in;
 			O3impact::O3_impact_params O3_par;
+			O3_par.gamma3 = 0.05; //TODO: calibrate and add to crop params
+			O3_par.gamma1 = 0.025; //TODO: calibrate and add to crop params
 
 			int root_depth = get_RootingDepth();
 			if (root_depth >= 1) //the crop has emerged
@@ -2005,7 +2007,9 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				auto O3_res = O3impact::O3_impact_hourly(O3_in, O3_par, pc_WaterDeficitResponseOn);
 
 				vc_O3_shortTermDamage = O3_res.fO3s_d;
+				vc_O3_longTermDamage = O3_res.fO3l;
 				vc_O3_sumUptake += O3_res.hourly_O3_up;
+				vc_O3_WStomatalClosure = O3_res.WS_st_clos;
 			}			
 				
 			// calculate VOC emissions
@@ -4540,6 +4544,7 @@ int CropGrowth::get_StageAfterCut() const
 {
 	return pc_StageAfterCut;
 }
+
 
 void CropGrowth::applyCutting(std::map<int, double>& organs,
 															std::map<int, double>& exports,

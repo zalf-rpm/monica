@@ -205,13 +205,13 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, 
 
 	double fLA = O3_recovery_factor_leaf_age(in.reldev);
 	double rO3s = O3_damage_recovery(in.fO3s_d_prev, fLA); //used only the first hour
-	double WS_st_clos = 1.0;
+	out.WS_st_clos = 1.0;
 	if (WaterDeficitResponseStomata)
 	{
-		WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
-	}	
-
-	double inst_O3_up = O3_uptake(in.O3a, in.gs, WS_st_clos); //nmol m-2 s-1
+		out.WS_st_clos = water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
+	}
+	
+	double inst_O3_up = O3_uptake(in.O3a, in.gs, out.WS_st_clos); //nmol m-2 s-1
 	out.hourly_O3_up += inst_O3_up / 1000; //from nmol to µmol //* 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
 	double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 	
@@ -219,22 +219,22 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, 
 	out.fO3s_d = cumulative_O3_reduction_Ac(in.fO3s_d_prev, fO3s_h, rO3s, in.h);	
 
 	//sensescence + long term O3 effect on Ac. !!also with [O3]=0, senescence will act to reduce fLS
-	double fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
-	out.fLS = leaf_senescence_reduction_Ac(fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
+	out.fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
+	out.fLS = leaf_senescence_reduction_Ac(out.fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
 
 #ifdef TEST_O3_HOURLY_OUTPUT
 	tout()
 	<< "," << in.reldev
 	<< "," << fLA
 	<< "," << rO3s
-	<< "," << WS_st_clos
+	<< "," << out.WS_st_clos
 	<< "," << in.gs
 	<< "," << inst_O3_up
 	<< "," << fO3s_h
 	<< "," << in.fO3s_d_prev
 	<< "," << out.fO3s_d
 	<< "," << in.sum_O3_up
-	<< "," << fO3l
+	<< "," << out.fO3l
 	<< "," << out.fLS
 	<< endl;
 #endif
