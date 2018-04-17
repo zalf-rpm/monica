@@ -887,9 +887,7 @@ BOTRes& Monica::buildOutputTable()
 			build({ id++, "AtmO3", "ppb", "Atmospheric O3 concentration" },
 				[](const MonicaModel& monica, OId oid)
 			{
-				const auto& cd = monica.currentStepClimateData();
-				auto ci = cd.find(Climate::o3);
-				return ci == cd.end() ? 0.0 : round(ci->second, 4);
+				return round(monica.get_AtmosphericO3Concentration(), 0);
 			});
 
 			build({id++, "Groundw", "m", ""},
