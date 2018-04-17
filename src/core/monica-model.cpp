@@ -717,7 +717,7 @@ void MonicaModel::cropStep()
 
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, date,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
-                           vw_AtmosphericCO2Concentration, o3, precip);
+                           vw_AtmosphericCO2Concentration, vw_AtmosphericO3Concentration, precip);
   if(_simPs.p_UseAutomaticIrrigation)
   {
     const AutomaticIrrigationParameters& aips = _simPs.p_AutoIrrigationParams;

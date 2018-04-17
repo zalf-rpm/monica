@@ -1947,7 +1947,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			FvCB_in.Ca = vw_AtmosphericCO2Concentration;
 
 			FvCB_canopy_hourly_params hps;
-			hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage * vc_O3_longTermDamage;
+			hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage * vc_O3_senescence;
 
 			auto FvCB_res = FvCB_canopy_hourly_C3(FvCB_in, hps);
 			
@@ -2008,6 +2008,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 				vc_O3_shortTermDamage = O3_res.fO3s_d;
 				vc_O3_longTermDamage = O3_res.fO3l;
+				vc_O3_senescence = O3_res.fLS;
 				vc_O3_sumUptake += O3_res.hourly_O3_up;
 				vc_O3_WStomatalClosure = O3_res.WS_st_clos;
 			}			

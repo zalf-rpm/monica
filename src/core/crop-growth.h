@@ -672,6 +672,7 @@ namespace Monica
 
 		double vc_O3_shortTermDamage{ 1.0 };
 		double vc_O3_longTermDamage{ 1.0 };
+		double vc_O3_senescence{ 1.0 };
 		double vc_O3_sumUptake{ 0.0 };
 		double vc_O3_WStomatalClosure{ 1.0 };
 		
