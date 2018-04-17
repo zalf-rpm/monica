@@ -675,8 +675,24 @@ void MonicaModel::cropStep()
   double tmax = climateData[Climate::tmax];
   double tmin = climateData[Climate::tmin];
   double globrad = climateData[Climate::globrad];
+
+	// first try to get CO2 concentration from climate data
+	double o3 = 0.0;
 	auto o3it = climateData.find(Climate::o3);
-	double o3 = o3it == climateData.end() ? 0.0 : o3it->second;
+	if(o3it != climateData.end())
+	{
+		o3 = o3it->second;
+	}
+	else
+	{
+		// try to get yearly values from UserEnvironmentParameters
+		auto o3sit = _envPs.p_AtmosphericO3s.find(date.year());
+		if(o3sit != _envPs.p_AtmosphericO3s.end())
+			o3 = o3sit->second;
+		// if everything fails value in UserEnvironmentParameters for the whole simulation
+		else
+			o3 = _envPs.p_AtmosphericO3;
+	}
 
   // test if data for sunhours are available; if not, value is set to -1.0
 	auto sunhit = climateData.find(Climate::sunhours);

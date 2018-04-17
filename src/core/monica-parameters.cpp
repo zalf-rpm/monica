@@ -976,6 +976,13 @@ Errors UserEnvironmentParameters::merge(json11::Json j)
 		for(auto p : j["AtmosphericCO2s"].object_items())
 			p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
 	}
+	set_double_value(p_AtmosphericO3, j, "AtmosphericO3");
+	if(j["AtmosphericO3s"].is_object())
+	{
+		p_AtmosphericO3s.clear();
+		for(auto p : j["AtmosphericO3s"].object_items())
+			p_AtmosphericO3s[stoi(p.first)] = p.second.number_value();
+	}
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
   set_double_value(p_LeachingDepth, j, "LeachingDepth");
   set_double_value(p_timeStep, j, "timeStep");
@@ -992,11 +999,17 @@ json11::Json UserEnvironmentParameters::to_json() const
 	for(auto p : p_AtmosphericCO2s)
 		co2s[to_string(p.first)] = p.second;
 
+	json11::Json::object o3s;
+	for(auto p : p_AtmosphericO3s)
+		o3s[to_string(p.first)] = p.second;
+
   return json11::Json::object 
 	{{"type", "UserEnvironmentParameters"}
   ,{"Albedo", p_Albedo}
   ,{"AtmosphericCO2", p_AtmosphericCO2}
 	,{"AtmosphericCO2s", co2s}
+	,{"AtmosphericO3", p_AtmosphericO3}
+	,{"AtmosphericO3s", o3s}
   ,{"WindSpeedHeight", p_WindSpeedHeight}
   ,{"LeachingDepth", p_LeachingDepth}
   ,{"timeStep", p_timeStep}

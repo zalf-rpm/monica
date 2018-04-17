@@ -645,7 +645,9 @@ namespace Monica
     double p_Albedo{0.23};
     double p_AtmosphericCO2{0.0};
 		std::map<int, double> p_AtmosphericCO2s;
-    double p_WindSpeedHeight{2.0};
+		double p_AtmosphericO3{0.0};
+		std::map<int, double> p_AtmosphericO3s;
+		double p_WindSpeedHeight{2.0};
     double p_LeachingDepth{0.0};
     double p_timeStep{0.0};
 
