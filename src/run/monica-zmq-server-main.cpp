@@ -170,6 +170,7 @@ int main(int argc, char** argv)
 	string inputAddress = defInputAddress;
 	string outputAddress = defOutputAddress;
 	bool usePipeline = false;
+	bool useRouterOutputSocket = false;
 	string controlAddress = defControlAddress;
 
 	SocketOp inputOp = ZmqServer::connect;
@@ -197,6 +198,7 @@ int main(int argc, char** argv)
 			<< " -bo | --bind-output ... bind the output port" << endl
 			<< " -co | --connect-output (default) ... connect the output port" << endl
 			<< " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress << ")] ... send results to this address(es)" << endl
+			<< " -or | --router-output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress << ")] ... send results to this address(es) but use a router socket" << endl
 			<< " -c | --control-address [ADDRESS] (default: " << controlAddress << ")] ... connect MONICA server to this address for control messages" << endl;
 	};
 
@@ -239,6 +241,13 @@ int main(int argc, char** argv)
 				if(i + 1 < argc && argv[i + 1][0] != '-')
 					outputAddress = argv[++i];
 			}
+			else if(arg == "-or" || arg == "--router-output-address")
+			{
+				usePipeline = true;
+				useRouterOutputSocket = true;
+				if(i + 1 < argc && argv[i + 1][0] != '-')
+					outputAddress = argv[++i];
+			}
 			else if(arg == "-c" || arg == "--control-address")
 			{
 				if(i + 1 < argc && argv[i + 1][0] != '-')
@@ -256,7 +265,7 @@ int main(int argc, char** argv)
 		if(usePipeline)
 		{
 			addresses[ReceiveJob] = {Pull, splitString(inputAddress, ","), inputOp};
-			addresses[SendResult] = {Push, splitString(outputAddress, ","), outputOp};
+			addresses[SendResult] = {useRouterOutputSocket ? Router : Push, splitString(outputAddress, ","), outputOp};
 		}
 		else if(connectToZmqProxy)
 			addresses[ReceiveJob] = {ProxyReply, splitString(proxyAddress, ","), ZmqServer::connect};
