@@ -65,6 +65,7 @@ int main(int argc, char** argv)
 	int port = defaultInputPort;
 	string pathToSimJson = "./sim.json", crop, site, climate;
 	string dailyOutputs;
+	bool cesMode = false;
 
 	auto printHelp = [=]()
 	{
@@ -85,56 +86,133 @@ int main(int argc, char** argv)
 			//<< " -do  | --daily-outputs [LIST] (default: value of key 'sim.json:output.daily') ... list of daily output elements" << endl
 			<< " -c   | --path-to-crop FILE (default: ./crop.json) ... path to crop.json file" << endl
 			<< " -s   | --path-to-site FILE (default: ./site.json) ... path to site.json file" << endl
-			<< " -w   | --path-to-climate FILE (default: ./climate.csv) ... path to climate.csv" << endl;
+			<< " -w   | --path-to-climate FILE (default: ./climate.csv) ... path to climate.csv" << endl
+			<< " -ces  | --create-env-server ... start monica-zmq-run as a server on given port and create JSON env for clients" << endl;
 	};
 
 	zmq::context_t context(1);
-
-	if(argc > 1)
+	zmq::socket_t cesSocket(context, ZMQ_REP);
+	
+	if(argc <= 1)
 	{
-		for(auto i = 1; i < argc; i++)
+		printHelp();
+		return 0;
+	}
+		
+	for(auto i = 1; i < argc; i++)
+	{
+		string arg = argv[i];
+		if(arg == "-d" || arg == "--debug")
+			debug = debugSet = true;
+		else if((arg == "-a" || arg == "--address")
+						&& i + 1 < argc)
+			address = argv[++i];
+		else if((arg == "-p" || arg == "--port")
+						&& i + 1 < argc)
+			port = stoi(argv[++i]);
+		//else if((arg == "-sd" || arg == "--start-date")
+		//        && i+1 < argc)
+		//	startDate = argv[++i];
+		//else if((arg == "-ed" || arg == "--end-date")
+		//        && i+1 < argc)
+		//	endDate = argv[++i];
+		else if((arg == "-op" || arg == "--path-to-output")
+			      && i+1 < argc)
+			pathToOutput = argv[++i];
+		else if((arg == "-o" || arg == "--path-to-output-file")
+						&& i + 1 < argc)
+			pathToOutputFile = argv[++i];
+		//else if((arg == "-do" || arg == "--daily-outputs")
+		//				&& i + 1 < argc)
+		//	dailyOutputs = argv[++i];
+		else if((arg == "-c" || arg == "--path-to-crop")
+			      && i+1 < argc)
+			crop = argv[++i];
+		else if((arg == "-s" || arg == "--path-to-site")
+			      && i+1 < argc)
+			site = argv[++i];
+		else if((arg == "-w" || arg == "--path-to-climate")
+			      && i+1 < argc)
+			climate = argv[++i];
+		else if(arg == "-h" || arg == "--help")
+			printHelp(), exit(0);
+		else if(arg == "-v" || arg == "--version")
+			cout << appName << " version " << version << endl, exit(0);
+		else if((arg == "-ces" || arg == "--create-env-server")
+						&& i + 1 < argc)
+			cesMode = true;
+		else
+			pathToSimJson = argv[i];
+	}
+
+	
+	if(cesMode)
+	{
+		try
 		{
-			string arg = argv[i];
-			if(arg == "-d" || arg == "--debug")
-				debug = debugSet = true;
-			else if((arg == "-a" || arg == "--address")
-							&& i + 1 < argc)
-				address = argv[++i];
-			else if((arg == "-p" || arg == "--port")
-							&& i + 1 < argc)
-				port = stoi(argv[++i]);
-			//else if((arg == "-sd" || arg == "--start-date")
-			//        && i+1 < argc)
-			//	startDate = argv[++i];
-			//else if((arg == "-ed" || arg == "--end-date")
-			//        && i+1 < argc)
-			//	endDate = argv[++i];
-			else if((arg == "-op" || arg == "--path-to-output")
-			        && i+1 < argc)
-				pathToOutput = argv[++i];
-			else if((arg == "-o" || arg == "--path-to-output-file")
-							&& i + 1 < argc)
-				pathToOutputFile = argv[++i];
-			//else if((arg == "-do" || arg == "--daily-outputs")
-			//				&& i + 1 < argc)
-			//	dailyOutputs = argv[++i];
-			else if((arg == "-c" || arg == "--path-to-crop")
-			        && i+1 < argc)
-				crop = argv[++i];
-			else if((arg == "-s" || arg == "--path-to-site")
-			        && i+1 < argc)
-				site = argv[++i];
-			else if((arg == "-w" || arg == "--path-to-climate")
-			        && i+1 < argc)
-				climate = argv[++i];
-			else if(arg == "-h" || arg == "--help")
-				printHelp(), exit(0);
-			else if(arg == "-v" || arg == "--version")
-				cout << appName << " version " << version << endl, exit(0);
-			else
-				pathToSimJson = argv[i];
+			cesSocket.bind("tcp://*:" + to_string(port));
+		}
+		catch(zmq::error_t e)
+		{
+			cerr << "Couldn't bind zmq (create env server)-socket to address: tcp://*:" + to_string(port);
+			exit(1);
 		}
 
+		while(cesMode)
+		{
+			try
+			{
+				Msg msg = receiveMsg(cesSocket);
+
+				string msgType = msg.type();
+				if(msgType == "finish")
+				{
+					//only send reply when not in pipeline configuration
+					J11Object resultMsg;
+					resultMsg["type"] = "ack";
+					try
+					{
+						s_send(cesSocket, Json(resultMsg).dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr << "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address: tcp://*:" + to_string(port);
+						cerr << "! Will finish MONICA process! Error: [" << e.what() << "]" << endl;
+					}
+					cesSocket.setsockopt(ZMQ_LINGER, 0);
+					cesSocket.close();
+					break;
+				}
+				else if(msgType == "CreateEnv")
+				{
+					Json& fullMsg = msg.json;
+
+					auto env = createEnvJsonFromJsonObjects(
+					{{"sim", fullMsg["sim"]}
+					,{"crop", fullMsg["crop"]}
+					,{"site", fullMsg["site"]}});
+
+					try
+					{
+						s_send(cesSocket, env.dump());
+					}
+					catch(zmq::error_t e)
+					{
+						cerr << "Exception on trying to reply to 'CreateEnv' request with 'Env' message on zmq socket with address: tcp://*:" + to_string(port);
+						cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+					}
+
+				}
+			}
+			catch(zmq::error_t e)
+			{
+				cerr << "Exception on trying to receive request message on zmq socket with address: tcp://*:" + to_string(port);
+				cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
+			}
+		}
+	}
+	else
+	{
 		string pathOfSimJson, simFileName;
 		tie(pathOfSimJson, simFileName) = splitPathToFile(pathToSimJson);
 
@@ -216,18 +294,16 @@ int main(int argc, char** argv)
 
 		map<string, string> ps;
 		ps["sim-json-str"] = json11::Json(simm).dump();
-
 		ps["crop-json-str"] = printPossibleErrors(readFile(simm["crop.json"].string_value()), activateDebug);
 		ps["site-json-str"] = printPossibleErrors(readFile(simm["site.json"].string_value()), activateDebug);
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
-		auto env = createEnvJsonFromJsonConfigFiles(ps);
+		auto env = createEnvJsonFromJsonStrings(ps);
 		activateDebug = env["debugMode"].bool_value();
 
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
 
-		
 		Json out_ = sendZmqRequestMonicaFull(&context, string("tcp://") + address + ":" + to_string(port), env);
 		Output output(out_);
 
@@ -273,8 +349,6 @@ int main(int argc, char** argv)
 		if(activateDebug)
 			cout << "finished MONICA" << endl;
 	}
-	else
-		printHelp();
 	
 	return 0;
 }
