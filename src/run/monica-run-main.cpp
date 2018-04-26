@@ -126,7 +126,8 @@ int main(int argc, char** argv)
 		string pathOfSimJson, simFileName;
 		tie(pathOfSimJson, simFileName) = splitPathToFile(pathToSimJson);
 
-		auto simj = readAndParseJsonFile(pathToSimJson);
+		auto simjStr = printPossibleErrors(readFile(pathToSimJson));
+		auto simj = parseJsonString(simjStr);
 		if(simj.failure())
 			for(auto e : simj.errors)
 				cerr << e << endl;
@@ -220,8 +221,7 @@ int main(int argc, char** argv)
 		*/
 
 		map<string, string> ps;
-		ps["sim-json-str"] = json11::Json(simm).dump();
-
+		ps["sim-json-str"] = simjStr;
 		ps["crop-json-str"] = printPossibleErrors(readFile(simm["crop.json"].string_value()), activateDebug);
 		ps["site-json-str"] = printPossibleErrors(readFile(simm["site.json"].string_value()), activateDebug);
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();

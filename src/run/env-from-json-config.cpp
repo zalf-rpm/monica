@@ -38,7 +38,7 @@ using namespace Climate;
 Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
 	Env env;
-	if(!printPossibleErrors(env.merge(createEnvJsonFromJsonConfigFiles(params)), activateDebug))
+	if(!printPossibleErrors(env.merge(createEnvJsonFromJsonStrings(params)), activateDebug))
 		return Env();
 	return env;
 }
