@@ -887,9 +887,7 @@ BOTRes& Monica::buildOutputTable()
 			build({ id++, "AtmO3", "ppb", "Atmospheric O3 concentration" },
 				[](const MonicaModel& monica, OId oid)
 			{
-				const auto& cd = monica.currentStepClimateData();
-				auto ci = cd.find(Climate::o3);
-				return ci == cd.end() ? 0.0 : round(ci->second, 4);
+				return round(monica.get_AtmosphericO3Concentration(), 0);
 			});
 
 			build({id++, "Groundw", "m", ""},
@@ -1373,6 +1371,30 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilpH(); }, 2);
+			});
+
+			build({ id++, "O3-short-damage", "unitless", "short term ozone induced reduction of Ac" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_shortTermDamage(), 2) : 0.0;
+			});
+
+			build({ id++, "O3-long-damage", "unitless", "long term ozone induced senescence" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_longTermDamage(), 2) : 0.0;
+			});
+
+			build({ id++, "O3-WS-gs-reduction", "unitless", "water stress impact on stomatal conductance" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_WStomatalClosure(), 2) : 0.0;
+			});
+
+			build({ id++, "O3-total-uptake", "µmol m-2", "total O3 uptake" }, //TODO units are not correct
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_sumUptake(), 2) : 0.0;
 			});
 
 

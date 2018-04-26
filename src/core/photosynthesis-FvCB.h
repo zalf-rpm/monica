@@ -78,7 +78,7 @@ namespace FvCB
 	double Jmax_bernacchi_f(double leafT, double Jmax_25);
 	double Vcmax_bernacchi_f(double leafT, double Vcmax_25);
 	
-	#define TEST_FVCB_HOURLY_OUTPUT
+	//#define TEST_FVCB_HOURLY_OUTPUT
 #ifdef TEST_FVCB_HOURLY_OUTPUT
 	std::ostream& tout(bool closeFile = false);
 #endif

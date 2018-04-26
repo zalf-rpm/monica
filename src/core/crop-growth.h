@@ -307,6 +307,37 @@ namespace Monica
     inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa;}
     inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
 
+		/**
+		* @brief Returns short term O3 damage
+		*/
+		double get_O3_shortTermDamage() const
+		{
+			return vc_O3_shortTermDamage;
+		}
+
+		/**
+		* @brief Returns long term O3 damage
+		*/
+		double get_O3_longTermDamage() const
+		{
+			return vc_O3_longTermDamage;
+		}
+
+		/**
+		* @brief Returns reduction factor of O3 uptake due to stomatal closure
+		*/
+		double get_O3_WStomatalClosure() const
+		{
+			return vc_O3_WStomatalClosure;
+		}
+
+		/**
+		* @brief Returns O3 sum uptake
+		*/
+		double get_O3_sumUptake() const
+		{
+			return vc_O3_sumUptake;
+		}
 
     /*
    * @brief Getter for total biomass.
@@ -640,7 +671,11 @@ namespace Monica
 		std::function<void(double, double)> _addOrganicMatter;
 
 		double vc_O3_shortTermDamage{ 1.0 };
+		double vc_O3_longTermDamage{ 1.0 };
+		double vc_O3_senescence{ 1.0 };
 		double vc_O3_sumUptake{ 0.0 };
+		double vc_O3_WStomatalClosure{ 1.0 };
+		
   };
 
 //#define TEST_HOURLY_OUTPUT
