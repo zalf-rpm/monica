@@ -1,0 +1,78 @@
+{
+	"crop.json": "",
+	"site.json": "",
+	"climate.csv": "",
+
+	"climate.csv-options": {
+		"no-of-climate-file-header-lines": 2,
+		"csv-separator": ","
+	},
+	
+	"debug?": false,
+	"include-file-base-path": "${MONICA_PARAMETERS}/",
+
+	"output": { 
+		"obj-outputs?": true,
+
+	  "write-file?": false,
+
+		"path-to-output": "./",
+		"file-name": "",
+	
+		"csv-options": {
+			"include-header-row": true,
+			"include-units-row": true,
+			"include-aggregation-rows": false,
+			"csv-separator": ","
+		},
+		
+		"events" : [
+
+			"crop", [
+				"Year|year",
+				"Crop|crop",
+				["NFert|crop-sum-N-fert", "SUM"],
+				["Irrig|crop-sum-irrig", "SUM"]
+			],
+
+			"Harvest", [
+				"Year|harvest-year",
+				"Crop|crop",
+				"Yield|harvest-primary-yield",
+				"SecondaryYield|harvest-secondary-yield"
+			],
+
+			"monthly", [
+				"Year|year",
+				"Month|month",
+				["Recharge|monthly-sum-groundwater-recharge", "SUM"],
+				["NLeach|monthly-sum-N-leaching", "SUM"],
+				["SOC|monthly-avg-10cm-corg", [1, 1, "AVG"], "AVG"],
+				["SOC|monthly-avg-30cm-corg", [1, 3, "AVG"], "AVG"],
+				["Mois|monthly-avg-90cm-avg-water-content", [1, 9, "AVG"], "AVG"]
+			],
+			
+			"yearly", [
+				"Year|year",
+				["Recharge|yearly-sum-groundwater-recharge", "SUM"],
+				["NLeach|yearly-sum-N-leaching", "SUM"]
+			],
+
+			"xxxx-02-28", [
+				"Year|year",
+				["N|sum-90cm-Nmin", [1, 9, "SUM"]]
+			]
+		]
+	},
+
+	"UseSecondaryYields": true,
+	"NitrogenResponseOn": true,
+	"WaterDeficitResponseOn": true,
+	"EmergenceMoistureControlOn": true,
+	"EmergenceFloodingControlOn": true,
+
+	"UseNMinMineralFertilisingMethod": true,
+	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
+	"NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
+	"JulianDayAutomaticFertilising": 89
+}
