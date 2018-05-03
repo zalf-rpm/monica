@@ -138,8 +138,7 @@ int main(int argc, char** argv)
 			printHelp(), exit(0);
 		else if(arg == "-v" || arg == "--version")
 			cout << appName << " version " << version << endl, exit(0);
-		else if((arg == "-ces" || arg == "--create-env-server")
-						&& i + 1 < argc)
+		else if(arg == "-ces" || arg == "--create-env-server")
 			cesMode = true;
 		else
 			pathToSimJson = argv[i];
