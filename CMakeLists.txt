@@ -61,6 +61,9 @@ set(LIBMONICA_SOURCE
 	src/core/photosynthesis-FvCB.h
 	src/core/photosynthesis-FvCB.cpp
 	
+	src/core/O3-impact.h
+	src/core/O3-impact.cpp
+
 	src/run/cultivation-method.h
 	src/run/cultivation-method.cpp
 	
@@ -145,7 +148,7 @@ set(MONICA_SOURCE
 add_executable(monica ${MONICA_SOURCE})
 target_link_libraries(monica
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 )
 #set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
@@ -231,7 +234,7 @@ set(MONICA_RUN_SOURCE
 add_executable(monica-run ${MONICA_RUN_SOURCE})
 target_link_libraries(monica-run
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 	libmonica
 )
 #set_target_properties(monica-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
@@ -269,7 +272,7 @@ set(MONICA_ZMQ_CONTROL_SOURCE
 add_executable(monica-zmq-control ${MONICA_ZMQ_CONTROL_SOURCE})
 target_link_libraries(monica-zmq-control
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 	zmq
 )
 #set_target_properties(monica-zmq-control PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
@@ -306,7 +309,7 @@ set(MONICA_ZMQ_CONTROL_SEND_SOURCE
 add_executable(monica-zmq-control-send ${MONICA_ZMQ_CONTROL_SEND_SOURCE})
 target_link_libraries(monica-zmq-control-send
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 	zmq
 )
 #set_target_properties(monica-zmq-control-send PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
@@ -343,7 +346,7 @@ set(MONICA_ZMQ_PROXY_SOURCE
 add_executable(monica-zmq-proxy ${MONICA_ZMQ_PROXY_SOURCE})
 target_link_libraries(monica-zmq-proxy
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 	zmq
 )
 #set_target_properties(monica-zmq-proxy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
@@ -439,7 +442,7 @@ set(MONICA_ZMQ_RUN_SOURCE
 add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
 target_link_libraries(monica-zmq-run
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 	zmq
 	libmonica
 )
@@ -519,7 +522,7 @@ set(MONICA_ZMQ_SERVER_SOURCE
 add_executable(monica-zmq-server ${MONICA_ZMQ_SERVER_SOURCE})
 target_link_libraries(monica-zmq-server
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
+	#dl
 	zmq
 	libmonica
 )
