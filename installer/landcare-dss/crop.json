@@ -1,0 +1,106 @@
+	{
+		"cropRotation": {
+			"WW": {
+				"is-winter-crop": true,
+				"cropParams": {
+					"species": ["include-from-file", "crops/wheat.json"],
+					"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/wheat.json"]
+			},
+			"WB": {
+				"is-winter-crop": true,
+				"cropParams": {
+					"species": ["include-from-file", "crops/barley.json"],
+					"cultivar": ["include-from-file", "crops/barley/winter-barley.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/barley.json"]
+			},
+			"WR": {
+				"is-winter-crop": true,
+				"cropParams": {
+					"species": ["include-from-file", "crops/rye.json"],
+					"cultivar": ["include-from-file", "crops/rye/winter-rye.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/rye.json"]
+			},
+			"SB": {
+				"is-winter-crop": false,
+				"cropParams": {
+					"species": ["include-from-file", "crops/barley.json"],
+					"cultivar": ["include-from-file", "crops/barley/spring-barley.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/barley.json"]
+			},
+			"SM": {
+				"is-winter-crop": false,
+				"cropParams": {
+					"_species": ["include-from-file", "crops/maize.json"],
+					"_cultivar": ["include-from-file", "crops/maize/silage-maize.json"],
+					"species": ["include-from-file", "projects/sustag/maize.json"],
+					"cultivar": ["include-from-file", "projects/sustag/silage-maize.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/maize.json"]
+			},
+			"PO": {
+				"is-winter-crop": false,
+				"cropParams": {
+					"species": ["include-from-file", "crops/potato.json"],
+					"cultivar": ["include-from-file", "crops/potato/moderately-early-potato.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/potato.json"]
+			},
+			"WRa": {
+				"is-winter-crop": true,
+				"cropParams": {
+					"species": ["include-from-file", "crops/rape.json"],
+					"cultivar": ["include-from-file", "crops/rape/winter-rape.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/rape.json"]
+			},
+			"SBee": {
+				"is-winter-crop": false,
+				"cropParams": {
+					"species": ["include-from-file", "crops/sugar-beet.json"],
+					"cultivar": ["include-from-file", "crops/sugar-beet/.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/beet.json"]
+			},
+			"CLV": {
+				"is-winter-crop": false,
+				"cropParams": {
+					"species": {
+						"=": ["include-from-file", "crops/clover-grass-ley.json"],
+						"OrganMaintenanceRespiration":[  
+							0,
+							0.029999999999999999,
+							0.01,
+							0.014999999999999999
+						]
+					},
+					"cultivar": ["include-from-file", "crops/clover-grass-ley/.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/clover-grass-ley.json"]
+			},
+			"WTrit": {
+				"is-winter-crop": true,
+				"cropParams": {
+					"species": ["include-from-file", "crops/triticale.json"],
+					"cultivar": ["include-from-file", "crops/triticale/winter-triticale.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/triticale.json"]
+			},
+			"Erb": {
+				"is-winter-crop": false,
+				"cropParams": {
+					"species": ["include-from-file", "crops/field-pea.json"],
+					"cultivar": ["include-from-file", "crops/field-pea/24.json"]
+				},
+				"residueParams": ["include-from-file", "crop-residues/pea.json"]
+			}
+		},
+		"CropParameters": [
+			"include-from-file",
+			"general/crop.json"
+		]
+	}

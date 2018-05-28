@@ -221,7 +221,6 @@ int main(int argc, char** argv)
 
 		map<string, string> ps;
 		ps["sim-json-str"] = json11::Json(simm).dump();
-
 		ps["crop-json-str"] = printPossibleErrors(readFile(simm["crop.json"].string_value()), activateDebug);
 		ps["site-json-str"] = printPossibleErrors(readFile(simm["site.json"].string_value()), activateDebug);
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();

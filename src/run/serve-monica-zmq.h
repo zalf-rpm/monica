@@ -40,7 +40,7 @@ namespace Monica
 													 std::string outputSocketAddress,
 													 bool isInProcess = false);
 
-		enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe };
+		enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer };
 		enum SocketRole { ReceiveJob, SendResult, Control };
 		enum SocketOp { bind, connect };
 		struct SocketConfig
