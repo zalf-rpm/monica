@@ -73,6 +73,7 @@ int main (int argc,
 			return ZMQ_REQ;
 		else if(type == "rep")
 			return ZMQ_REP;
+		return -1; // default tread as error
 	};
 
 	for(auto i = 1; i < argc; i++)
@@ -94,10 +95,24 @@ int main (int argc,
 			frontendSocketType = ZMQ_PULL, backendSocketType = ZMQ_PUSH;
 		else if(arg == "-prs" || arg == "--pull-router-sockets")
 			frontendSocketType = ZMQ_PULL, backendSocketType = ZMQ_ROUTER;
-		else if((arg == "-fst" || arg == "--frontend-socket-type") && i + 1 < argc)
+		else if ((arg == "-fst" || arg == "--frontend-socket-type") && i + 1 < argc)
+		{
 			frontendSocketType = parseSocketType(argv[++i]);
-		else if((arg == "-bst" || arg == "--backend-socket-type") && i + 1 < argc)
+			if (-1 == frontendSocketType)
+			{
+				cerr << "invalid frontend-socket-type parameter" << endl;
+				exit(1);
+			}
+		}
+		else if ((arg == "-bst" || arg == "--backend-socket-type") && i + 1 < argc)
+		{
 			backendSocketType = parseSocketType(argv[++i]);
+			if (-1 == backendSocketType)
+			{
+				cerr << "invalid backend-socket-type parameter" << endl;
+				exit(1);
+			}
+		}
 		else if(arg == "-d" || arg == "--debug")
 			activateDebug = true;
 		else if(arg == "-h" || arg == "--help")

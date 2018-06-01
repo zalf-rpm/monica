@@ -608,7 +608,7 @@ Errors Cutting::merge(json11::Json j)
 {
 	auto errors = Workstep::merge(j);
 
-	auto organId = [](string organName)
+	auto organId = [](string organName, Tools::Errors& err)
 	{
 		string os = toUpper(organName);
 		if(os == "ROOT")
@@ -623,20 +623,24 @@ Errors Cutting::merge(json11::Json j)
 			return 4;
 		else if(os == "SUGAR")
 			return 5;
+		err.append(Errors(Errors::ERR, "organ id could not be resolved"));
+		return -1; // default error 
 	};
 
 	bool export_ = j["export"].is_bool() ? j["export"].bool_value() : true;
 
 	for(auto p : j["organs"].object_items())
 	{
-		int oid = organId(p.first);
+		int oid = organId(p.first, errors);
+		if (oid == -1) continue;
 		_organId2cuttingFraction[oid] = int_valueD(p.second, 0) / 100.0;
 		_organId2exportFraction[oid] = export_ ? 1 : 0;
 	}
 
 	for(auto p : j["export"].object_items())
 	{
-		int oid = organId(p.first);
+		int oid = organId(p.first, errors);
+		if (oid == -1) continue;
 		_organId2exportFraction[oid] = int_valueD(p.second, 0) / 100.0;
 	}
 
