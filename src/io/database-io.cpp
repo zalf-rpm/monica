@@ -236,7 +236,7 @@ SpeciesParametersPtr Monica::getSpeciesParametersFromMonicaDB(const string& spec
 		sps->pc_StageAtMaxDiameter = stof(row[i++]);
 		sps->pc_MaxNUptakeParam = stof(row[i++]);
 		sps->pc_RootDistributionParam = stof(row[i++]);
-		sps->pc_PlantDensity = stof(row[i++]);
+		sps->pc_PlantDensity = (int)stof(row[i++]);
 		sps->pc_RootGrowthLag = stof(row[i++]);
 		sps->pc_MinimumTemperatureRootGrowth = stof(row[i++]);
 		sps->pc_InitialRootingDepth = stof(row[i++]);

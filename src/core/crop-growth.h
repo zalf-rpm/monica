@@ -356,7 +356,7 @@ namespace Monica
     */
     void set_OrganBiomass(int organ, double organBiomass)
     {
-			if(organ < vc_OrganBiomass.size())
+			if(organ < (int)vc_OrganBiomass.size())
 				vc_OrganBiomass[organ] = organBiomass;
     }
 
