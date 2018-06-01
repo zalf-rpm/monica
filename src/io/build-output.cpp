@@ -109,7 +109,7 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 {
 	vector<OId> outputIds;
 
-	auto getAggregationOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
+	auto getAggregationOp = [](J11Array arr, uint index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -135,7 +135,7 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 	};
 
 
-	auto getOrgan = [](J11Array arr, int index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
+	auto getOrgan = [](J11Array arr, uint index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
