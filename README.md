@@ -39,11 +39,12 @@ After cloning the repositories you should have this file structure:
 To be able to call MONICA from Python (build the minimal Python interface) [Boost.Python](http://www.boost.org/doc/libs/1_66_0/libs/python/doc/html/index.html) is required. 
 Simply download and un-archive the whole BOOST distribution eg. [boost-1.66.7z](https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.7z).
 After unpacking boost ist will have following folder structure:
-|_ boost_1_66_0
-     |_ boost
-     |_ doc
-     |_ lib
-     |_ ...
+
+    |_ boost_1_66_0
+       |_ boost
+       |_ doc
+       |_ lib
+       |_ ...
 Either copy the boost_1_66_0 folder into the monica-master folder or create a symlink 
 
   > mklink /D boost <your boost path>` (e.g. mklink /D boost C:\boost_1_66_0)
@@ -68,9 +69,15 @@ installer\Hohenfinow2\out.csv.
 
 ## Linux
 
-To build MONICA under Linux, run inside the monica repository directory `cmake -i`.
+To build MONICA under Linux, run inside the monica-master repository directory
 
-to create the makefile interactively. Then a `make` should you leave with a working version of MONICA. If you compiled the code in the repository directory running
+    >mkdir -p `_cmake_linux`
+    >cd `_cmake_linux`
+    >cmake ../monica
+   
+to create the makefile.
+
+Then a `make` should you leave with a working version of MONICA. If you compiled the code in the repository directory running
 
     ./monica run installer/Hohenfinow2/sim.json > out.csv
 
