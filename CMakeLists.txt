@@ -76,6 +76,10 @@ find_package(Threads REQUIRED)
 GroupSources("src" ${PROJECT_SOURCE_DIR})
 GroupSources("util" "${PROJECT_SOURCE_DIR}/..")
 
+# resource
+file(GLOB LIBMONICA_RESOURCE_SOURCE
+	   src/resource/*)
+
 # core
 file(GLOB LIBMONICA_CORE_SOURCE
        src/core/*.cpp
@@ -155,7 +159,8 @@ set(LIBMONICA_SOURCE 	${LIBMONICA_IO_SOURCE}
 						${LIBMONICA_UTIL_JSON11_SOURCE} 
 						${LIBMONICA_UTIL_CLIMATE_SOURCE}
 						${LIBMONICA_UTIL_COMMON_SOURCE}
-						${LIBMONICA_UTIL_COMMON_SOURCE})
+						${LIBMONICA_UTIL_COMMON_SOURCE}
+						${LIBMONICA_RESOURCE_SOURCE})
 						
 #------------------------------------------------------------------------------
 
