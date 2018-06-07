@@ -18,26 +18,49 @@ The acronym MONICA is derived from „MOdel of Nitrogen and Carbon dynamics in A
 
 # Download
 
-Builds can be downloaded from the repository's [releases page](https://github.com/zalf-lsa/monica/releases).
+Builds can be downloaded from the repository's [releases page](https://github.com/zalf-rpm/monica/releases).
 
 
 # Building
 
-In order to build MONICA one needs to have at least to clone the repositories zalf-lsa/util (non core MONICA code), zalf-lsa/sys-libs (includes of some external libraries and pre-build binaries for Windows) and 
-zalf-lsa/monica-parameters (parameters repository for MONICA). 
-If the repositories are cloned alongside the MONICA repository no pathes have to be adjusted in the project files.
+In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/sys-libs (includes of some external libraries and pre-build binaries for Windows) and 
+zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
+The easiest way to do this it to clone zalf-rpm/monica-master with its submodules.
 
-To be able to call MONICA from Python (build the minimal Python interface) [Boost.Python](http://www.boost.org/doc/libs/1_63_0/libs/python/doc/html/index.html) is required. 
-Simply download and un-archive the whole BOOST distribution eg. [boost-1.63.7z](https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.7z).
-Also install Python to have the Python include directory available. Both pathes have to be adjusted in the monica-python project properties page 
-in the "C/C++|General|Additional Include Directories" section.
+After cloning the repositories you should have this file structure:
+
+    monica-master
+		      |_ monica
+		      |_ sys-lib
+		      |_ util
+		      |_ monica-parameters
+   
+
+To be able to call MONICA from Python (build the minimal Python interface) [Boost.Python](http://www.boost.org/doc/libs/1_66_0/libs/python/doc/html/index.html) is required. 
+Simply download and un-archive the whole BOOST distribution eg. [boost-1.66.7z](https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.7z).
+After unpacking boost ist will have following folder structure:
+
+    |_ boost_1_66_0
+       |_ boost
+       |_ doc
+       |_ lib
+       |_ ...
+Either copy the boost_1_66_0 folder into the monica-master folder or create a symlink 
+
+  > mklink /D boost <your boost path>` (e.g. mklink /D boost C:\boost_1_66_0)
+ 
+Boost has to be on the same level as monica.
+Also install Python to have the Python include directory available. 
 
 In order to run the examples, copy the file db-connections.ini.template and rename it to db-connections.ini. 
 This file is used to configure access to SQLite and MySQL databases (access to the later is not being compiled into MONICA by default).
 
 ## Windows
 
-Use Visual Studio 2015 (Community is enough) and open monica.sln in project-files. Check that all pathes are correct in the projects.
+Use Visual Studio 2017 (Community is enough) and cmake (3.2+) to create a solution file.
+run monica/update_solution.cmd or run monica/update_solution_x64.cmd. 
+These batch scripts will create folder (´_cmake_win32´ or ´_cmake_win64´) in which you can find a monica.sln.
+
 You should be able to compile successfully all projects. 
 
 The project monica-run will execute a local MONICA with the example Hohenfinow2 in the installer directory and output its result into 
@@ -46,9 +69,15 @@ installer\Hohenfinow2\out.csv.
 
 ## Linux
 
-To build MONICA under Linux, run inside the monica repository directory `cmake -i`.
+To build MONICA under Linux, run inside the monica-master repository directory
 
-to create the makefile interactively. Then a `make` should you leave with a working version of MONICA. If you compiled the code in the repository directory running
+    >mkdir -p `_cmake_linux`
+    >cd `_cmake_linux`
+    >cmake ../monica
+   
+to create the makefile.
+
+Then a `make` should you leave with a working version of MONICA. If you compiled the code in the repository directory running
 
     ./monica run installer/Hohenfinow2/sim.json > out.csv
 
