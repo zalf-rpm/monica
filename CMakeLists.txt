@@ -6,97 +6,109 @@ add_definitions(
 	-DNO_MYSQL
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#set absolute filenames (to resolve .. in paths)
+macro(set_absolute_path var_name path)
+	get_filename_component(toAbsPath ${path} ABSOLUTE)
+	set(${var_name} ${toAbsPath})
+endmacro(set_absolute_path)
 
-set(UTIL_DIR "../util")
-set(SYS_LIBS_DIR "../sys-libs")
+#define delete file from path
+macro(remove_file list_name file_name)
+	get_filename_component(toAbsPath ${file_name} ABSOLUTE)
+	list(REMOVE_ITEM ${list_name} "${toAbsPath}")
+endmacro(remove_file)
 
+#define source_groups 
+macro(GroupSources curdir baseDir)
+   file(GLOB children RELATIVE ${baseDir}/${curdir} ${baseDir}/${curdir}/*)
+   foreach(child ${children})
+		  if(IS_DIRECTORY ${baseDir}/${curdir}/${child})
+				  GroupSources(${curdir}/${child} ${baseDir})
+		  else()
+				string(REPLACE "/" "\\" groupname ${curdir})
+			source_group(${groupname} FILES ${baseDir}/${curdir}/${child})
+		  endif()
+   endforeach()
+endmacro()
 
+if(MSVC)
+	# disable security warnings in windows
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
+
+set_absolute_path(UTIL_DIR "../util")
+set_absolute_path(SYS_LIBS_DIR "../sys-libs")
+set_absolute_path(BOOST_DIR "../boost")
+
+# setup the target group variable, used to group targets into folders in IDEs
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+	
 include_directories("src")
-include_directories(${UTIL_DIR})
+include_directories("${UTIL_DIR}")
 include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
 include_directories("${SYS_LIBS_DIR}/includes/czmq-master")
 include_directories("${SYS_LIBS_DIR}/includes/libsodium-1.0.10")
+
+message(STATUS "cmake_generator = ${CMAKE_GENERATOR}")
+message(STATUS "size_of_void =  ${CMAKE_SIZEOF_VOID_P}")
+if(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
+    set(ARCH "x86")
+elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    set(ARCH "x64")
+endif()
+
+if(WIN32)
+    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc141/${ARCH}/zeromq-dev-master)
+    set(ZMQ_LIB_NAME libzmq)
+elseif(UNIX)
+    set(ZMQ_LIB_NAME zmq)
+	set(DL_LIB_NAME dl)
+endif()
 
 link_directories($ENV{HOME}/lib)
 
 find_package(Threads REQUIRED)
 
-# create monica shared library
-set(LIBMONICA_SOURCE
+#define folder structure in vs solution corresponding to real folder structure
+GroupSources("src" ${PROJECT_SOURCE_DIR})
+GroupSources("util" "${PROJECT_SOURCE_DIR}/..")
 
-	src/core/crop.h
-	src/core/crop.cpp
-	
-	src/core/crop-growth.h
-	src/core/crop-growth.cpp
-	
-	src/core/monica-model.h
-	src/core/monica-model.cpp
-	
-	src/core/monica-parameters.h
-	src/core/monica-parameters.cpp
-		
-	src/core/soilcolumn.h
-	src/core/soilcolumn.cpp
-	
-	src/core/soilmoisture.h
-	src/core/soilmoisture.cpp
-	
-	src/core/soilorganic.h
-	src/core/soilorganic.cpp
-	
-	src/core/soiltemperature.h
-	src/core/soiltemperature.cpp
-	
-	src/core/soiltransport.h
-	src/core/soiltransport.cpp
-	
-	src/core/voc-common.h
-	src/core/voc-guenther.h
-	src/core/voc-guenther.cpp
-	src/core/voc-jjv.h
-	src/core/voc-jjv.cpp
+# resource
+file(GLOB LIBMONICA_RESOURCE_SOURCE
+	   src/resource/*)
 
-	src/core/photosynthesis-FvCB.h
-	src/core/photosynthesis-FvCB.cpp
-	
-	src/run/cultivation-method.h
-	src/run/cultivation-method.cpp
-	
-	src/run/run-monica.h
-	src/run/run-monica.cpp
+# core
+file(GLOB LIBMONICA_CORE_SOURCE
+       src/core/*.cpp
+	   src/core/*.h)
+remove_file(LIBMONICA_CORE_SOURCE "src/core/simulation.cpp")
+remove_file(LIBMONICA_CORE_SOURCE "src/core/simulation.h")
+remove_file(LIBMONICA_CORE_SOURCE "src/core/monica-eom.cpp")
+remove_file(LIBMONICA_CORE_SOURCE "src/core/monica-eom.h")	   
 
-	src/io/output.h
-	src/io/output.cpp
-	
-	src/io/build-output.h
-	src/io/build-output.cpp
-	
+# util db
+file(GLOB_RECURSE LIBMONICA_UTIL_DB_SOURCE
+       ${UTIL_DIR}/db/*.cpp
+	   ${UTIL_DIR}/db/*.h 
+	   ${UTIL_DIR}/db/*.c )   
+remove_file(LIBMONICA_UTIL_DB_SOURCE "${UTIL_DIR}/db/orm--typedefs.h")
+remove_file(LIBMONICA_UTIL_DB_SOURCE "${UTIL_DIR}/db/orm--.cpp")
+remove_file(LIBMONICA_UTIL_DB_SOURCE "${UTIL_DIR}/db/orm--.h")
 
-	# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/abstract-db-connections.cpp
-	
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/db.cpp
-	
-	${UTIL_DIR}/db/sqlite3.h
-	${UTIL_DIR}/db/sqlite3.c
+# util climate
+file(GLOB_RECURSE LIBMONICA_UTIL_CLIMATE_SOURCE
+	   ${UTIL_DIR}/climate/climate-common.cpp
+	   ${UTIL_DIR}/climate/climate-common.h )   
 
-	# climate library code
-	#-------------------------------------------
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-common.cpp
-	
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	${UTIL_DIR}/json11/json11.cpp
+file(GLOB_RECURSE LIBMONICA_UTIL_JSON11_SOURCE
+	   ${UTIL_DIR}/json11/*.cpp
+	   ${UTIL_DIR}/json11/*.hpp 
+	   ${UTIL_DIR}/json11/*.h )   
 
-	# tools library code
-	#-------------------------------------------
+file(GLOB_RECURSE LIBMONICA_UTIL_TOOL_SOURCE
 	${UTIL_DIR}/tools/algorithms.h
 	${UTIL_DIR}/tools/algorithms.cpp
 
@@ -115,28 +127,41 @@ set(LIBMONICA_SOURCE
 	${UTIL_DIR}/tools/json11-helper.cpp
 
 	${UTIL_DIR}/tools/read-ini.h
-	${UTIL_DIR}/tools/read-ini.cpp
+	${UTIL_DIR}/tools/read-ini.cpp)
 
-	# soil library code
-	#-------------------------------------------
-	${UTIL_DIR}/soil/constants.h
-	${UTIL_DIR}/soil/constants.cpp
+file(GLOB_RECURSE LIBMONICA_UTIL_COMMON_SOURCE
+	${UTIL_DIR}/common/*.h)
 
-	${UTIL_DIR}/soil/conversion.h
-	${UTIL_DIR}/soil/conversion.cpp
+file(GLOB_RECURSE LIBMONICA_UTIL_SOIL_SOURCE
+	   ${UTIL_DIR}/soil/*.cpp
+	   ${UTIL_DIR}/soil/*.h )   
+remove_file(LIBMONICA_UTIL_SOIL_SOURCE "${UTIL_DIR}/soil/soil-from-db.h")
+remove_file(LIBMONICA_UTIL_SOIL_SOURCE "${UTIL_DIR}/soil/soil-from-db.cpp")
 
-	${UTIL_DIR}/soil/soil.h
-	${UTIL_DIR}/soil/soil.cpp
-)
-add_library(libmonica SHARED ${LIBMONICA_SOURCE})
-target_link_libraries(libmonica
-	${CMAKE_THREAD_LIBS_INIT}
-	dl
-)
-#set_target_properties(libmonica PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
-set_target_properties(libmonica PROPERTIES PREFIX "")
-set_target_properties(libmonica PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_EXPORTS")
+file(GLOB_RECURSE LIBMONICA_RUN_SOURCE
+	src/run/cultivation-method.h
+	src/run/cultivation-method.cpp
+	src/run/run-monica.h
+	src/run/run-monica.cpp)   
 
+file(GLOB_RECURSE LIBMONICA_IO_SOURCE
+	src/io/output.h
+	src/io/output.cpp
+	src/io/build-output.h
+	src/io/build-output.cpp)   
+
+set(LIBMONICA_SOURCE 	${LIBMONICA_IO_SOURCE} 
+						${LIBMONICA_RUN_SOURCE} 
+						${LIBMONICA_CORE_SOURCE} 
+						${LIBMONICA_UTIL_DB_SOURCE} 
+						${LIBMONICA_UTIL_SOIL_SOURCE} 
+						${LIBMONICA_UTIL_TOOL_SOURCE} 
+						${LIBMONICA_UTIL_JSON11_SOURCE} 
+						${LIBMONICA_UTIL_CLIMATE_SOURCE}
+						${LIBMONICA_UTIL_COMMON_SOURCE}
+						${LIBMONICA_UTIL_COMMON_SOURCE}
+						${LIBMONICA_RESOURCE_SOURCE})
+						
 #------------------------------------------------------------------------------
 
 # create monica cli starter 
@@ -145,14 +170,12 @@ set(MONICA_SOURCE
 add_executable(monica ${MONICA_SOURCE})
 target_link_libraries(monica
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
 )
-#set_target_properties(monica PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
 # create monica-run, the non-zeromq cli client, which runs monica locally
-set(MONICA_RUN_SOURCE
+set(MONICA_RUN_SOURCE_FILES
 	
 	src/io/csv-format.h
 	src/io/csv-format.cpp
@@ -167,75 +190,24 @@ set(MONICA_RUN_SOURCE
 	src/run/env-json-from-json-config.cpp
 	
 	src/run/monica-run-main.cpp
-	
-	# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/abstract-db-connections.cpp
-
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/db.cpp
-	
-	${UTIL_DIR}/db/sqlite3.h
-	${UTIL_DIR}/db/sqlite3.c
 
 	# climate library code
 	#-------------------------------------------
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
 
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-common.cpp
-	
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	${UTIL_DIR}/json11/json11.cpp
-
-	# tools library code
-	#-------------------------------------------
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/algorithms.cpp
-
-	${UTIL_DIR}/tools/datastructures.h
-
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/date.cpp
-
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/debug.cpp
-
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/helper.cpp
-
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/json11-helper.cpp
-
-	${UTIL_DIR}/tools/read-ini.h
-	${UTIL_DIR}/tools/read-ini.cpp
-
 	# soil library code
 	#-------------------------------------------
-	${UTIL_DIR}/soil/constants.h
-	${UTIL_DIR}/soil/constants.cpp
-
-	${UTIL_DIR}/soil/conversion.h
-	${UTIL_DIR}/soil/conversion.cpp
-
-	${UTIL_DIR}/soil/soil.h
-	${UTIL_DIR}/soil/soil.cpp
-	
 	${UTIL_DIR}/soil/soil-from-db.h
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
+
+set(MONICA_RUN_SOURCE ${MONICA_RUN_SOURCE_FILES} ${LIBMONICA_SOURCE})
 add_executable(monica-run ${MONICA_RUN_SOURCE})
 target_link_libraries(monica-run
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
-	libmonica
+	${CMAKE_DL_LIBS}
 )
-#set_target_properties(monica-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
-set_target_properties(monica-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 
 #------------------------------------------------------------------------------
 
@@ -269,10 +241,8 @@ set(MONICA_ZMQ_CONTROL_SOURCE
 add_executable(monica-zmq-control ${MONICA_ZMQ_CONTROL_SOURCE})
 target_link_libraries(monica-zmq-control
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
-	zmq
+	${ZMQ_LIB_NAME}
 )
-#set_target_properties(monica-zmq-control PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -306,10 +276,8 @@ set(MONICA_ZMQ_CONTROL_SEND_SOURCE
 add_executable(monica-zmq-control-send ${MONICA_ZMQ_CONTROL_SEND_SOURCE})
 target_link_libraries(monica-zmq-control-send
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
-	zmq
+	${ZMQ_LIB_NAME}
 )
-#set_target_properties(monica-zmq-control-send PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
@@ -343,15 +311,13 @@ set(MONICA_ZMQ_PROXY_SOURCE
 add_executable(monica-zmq-proxy ${MONICA_ZMQ_PROXY_SOURCE})
 target_link_libraries(monica-zmq-proxy
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
-	zmq
+	${ZMQ_LIB_NAME}
 )
-#set_target_properties(monica-zmq-proxy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
 # create monica-zmq-run executable, the cli client to monica-zmq-server
-set(MONICA_ZMQ_RUN_SOURCE
+set(MONICA_ZMQ_RUN_SOURCE_FILES
 	
 	src/io/csv-format.h
 	src/io/csv-format.cpp
@@ -359,9 +325,6 @@ set(MONICA_ZMQ_RUN_SOURCE
 	src/io/database-io.h
 	src/io/database-io.cpp
 
-	src/io/output.h
-	src/io/output.cpp
-		
 	src/run/env-from-json-config.h
 	src/run/env-from-json-config.cpp
 
@@ -373,186 +336,112 @@ set(MONICA_ZMQ_RUN_SOURCE
 
 	src/run/monica-zmq-run-main.cpp
 	
-	# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/abstract-db-connections.cpp
-
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/db.cpp
-	
-	${UTIL_DIR}/db/sqlite3.h
-	${UTIL_DIR}/db/sqlite3.c
-
 	# climate library code
 	#-------------------------------------------
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
 
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-common.cpp
-	
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	${UTIL_DIR}/json11/json11.cpp
-
 	# tools library code
 	#-------------------------------------------
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/algorithms.cpp
-
-	${UTIL_DIR}/tools/datastructures.h
-
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/date.cpp
-
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/debug.cpp
-
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/helper.cpp
-
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/json11-helper.cpp
-
-	${UTIL_DIR}/tools/read-ini.h
-	${UTIL_DIR}/tools/read-ini.cpp
-
 	${UTIL_DIR}/tools/zmq-helper.h
 	${UTIL_DIR}/tools/zmq-helper.cpp
 
 	# soil library code
 	#-------------------------------------------
-	${UTIL_DIR}/soil/constants.h
-	${UTIL_DIR}/soil/constants.cpp
-
-	${UTIL_DIR}/soil/conversion.h
-	${UTIL_DIR}/soil/conversion.cpp
-
-	${UTIL_DIR}/soil/soil.h
-	${UTIL_DIR}/soil/soil.cpp
-	
 	${UTIL_DIR}/soil/soil-from-db.h
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
+set(MONICA_ZMQ_RUN_SOURCE ${MONICA_ZMQ_RUN_SOURCE_FILES} ${LIBMONICA_SOURCE})
 add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
 target_link_libraries(monica-zmq-run
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
-	zmq
-	libmonica
+	${ZMQ_LIB_NAME}
+	${CMAKE_DL_LIBS}
 )
-set_target_properties(monica-zmq-run PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
-#set_target_properties(monica-zmq-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
 # create monica-zmq-server executable, the server running monica via zeromq requests
-set(MONICA_ZMQ_SERVER_SOURCE
+set(MONICA_ZMQ_SERVER_SOURCE_FILES
 	
 	src/run/serve-monica-zmq.h
 	src/run/serve-monica-zmq.cpp
-
 	src/run/monica-zmq-server-main.cpp
 	
 	# db library code
 	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/abstract-db-connections.cpp
-
 	${UTIL_DIR}/db/db.h
 	${UTIL_DIR}/db/db.cpp
-	
-	${UTIL_DIR}/db/sqlite3.h
-	${UTIL_DIR}/db/sqlite3.c
 
 	# climate library code
 	#-------------------------------------------
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-common.cpp
-	
+
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
-	
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	${UTIL_DIR}/json11/json11.cpp
 
 	# tools library code
 	#-------------------------------------------
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/algorithms.cpp
-
-	${UTIL_DIR}/tools/datastructures.h
-
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/date.cpp
-
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/debug.cpp
-
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/helper.cpp
-
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/json11-helper.cpp
-
-	${UTIL_DIR}/tools/read-ini.h
-	${UTIL_DIR}/tools/read-ini.cpp
-
 	${UTIL_DIR}/tools/zmq-helper.h
 	${UTIL_DIR}/tools/zmq-helper.cpp
+	
+		# db library code
+	#-------------------------------------------
+	${UTIL_DIR}/db/abstract-db-connections.h
+	${UTIL_DIR}/db/db.h
+	${UTIL_DIR}/db/sqlite3.h
+	# climate library code
+	#-------------------------------------------
+	${UTIL_DIR}/climate/climate-common.h
+	${UTIL_DIR}/climate/climate-file-io.h
+	# json11 library code
+	#-------------------------------------------
+	${UTIL_DIR}/json11/json11.hpp
+	# tools library code
+	#-------------------------------------------
+	${UTIL_DIR}/tools/algorithms.h
+	${UTIL_DIR}/tools/datastructures.h
+	${UTIL_DIR}/tools/date.h
+	${UTIL_DIR}/tools/debug.h
+	${UTIL_DIR}/tools/helper.h
+	${UTIL_DIR}/tools/json11-helper.h
+	${UTIL_DIR}/tools/read-ini.h
 
 	# soil library code
 	#-------------------------------------------
 	${UTIL_DIR}/soil/constants.h
-	${UTIL_DIR}/soil/constants.cpp
-
 	${UTIL_DIR}/soil/conversion.h
-	${UTIL_DIR}/soil/conversion.cpp
-
 	${UTIL_DIR}/soil/soil.h
-	${UTIL_DIR}/soil/soil.cpp
 )
+
+set(MONICA_ZMQ_SERVER_SOURCE ${LIBMONICA_SOURCE} ${MONICA_ZMQ_SERVER_SOURCE_FILES})
 add_executable(monica-zmq-server ${MONICA_ZMQ_SERVER_SOURCE})
 target_link_libraries(monica-zmq-server
 	${CMAKE_THREAD_LIBS_INIT}
-	dl
-	zmq
-	libmonica
+	${ZMQ_LIB_NAME}
+	${CMAKE_DL_LIBS}
 )
-set_target_properties(monica-zmq-server PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
-#set_target_properties(monica-zmq-server PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
 
 #------------------------------------------------------------------------------
 
 #set path and lib manually because for some reasons on the cluster1/2 on debian 9 python3.4m is found instead of 2.7
-set(PYTHON_INCLUDE_DIR "/usr/include/python2.7/")
-set(PYTHON_LIBRARY "/usr/lib/x86_64-linux-gnu/libpython2.7.so")
+message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
-find_package(PythonInterp 2.7 EXACT REQUIRED)
 find_package(PythonLibs 2.7 EXACT REQUIRED)
-
-#message(STATUS "PYTHON_VERSION_STRING = ${PYTHON_VERSION_STRING}")
-#message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
-#message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
-#message(STATUS "PYTHON_INCLUDE_DIRS = ${PYTHON_INCLUDE_DIRS}")
-#message(STATUS "PYTHONLIBS_VERSION_STRING = ${PYTHONLIBS_VERSION_STRING}")
-
-#set(Python_ADDITIONAL_VERSIONS 2.7)
-#find_package(PythonLibs)
-#message(STATUS ${PYTHON_INCLUDE_DIRS})
-#include_directories(${PYTHON_INCLUDE_DIRS})
+find_package(PythonInterp 2.7 EXACT REQUIRED)
+message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
+message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 include_directories(${PYTHON_INCLUDE_DIR})
-#message(STATUS "INCLUDE_DIRECTORIES = ${INCLUDE_DIRECTORIES}")
 
-find_package(Boost COMPONENTS python REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
+if(WIN32)
+    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc141/${ARCH}/boost-python)
+	include_directories(${BOOST_DIR})
+elseif(UNIX)
+	find_package(Boost COMPONENTS python REQUIRED)
+	include_directories(${Boost_INCLUDE_DIR})
+endif()
 
 # create monica python wrapper lib
-set(MONICA_PYTHON_SOURCE
+set(MONICA_PYTHON_SOURCE_FILES
 
 	src/io/csv-format.h
 	src/io/csv-format.cpp
@@ -568,72 +457,21 @@ set(MONICA_PYTHON_SOURCE
 	
 	src/python/monica_py.cpp
 	
-	# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/abstract-db-connections.cpp
-
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/db.cpp
-	
-	${UTIL_DIR}/db/sqlite3.h
-	${UTIL_DIR}/db/sqlite3.c
-
 	# climate library code
 	#-------------------------------------------
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
 
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-common.cpp
-	
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	${UTIL_DIR}/json11/json11.cpp
-
-	# tools library code
-	#-------------------------------------------
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/algorithms.cpp
-
-	${UTIL_DIR}/tools/datastructures.h
-
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/date.cpp
-
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/debug.cpp
-
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/helper.cpp
-
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/json11-helper.cpp
-
-	${UTIL_DIR}/tools/read-ini.h
-	${UTIL_DIR}/tools/read-ini.cpp
-
 	# soil library code
 	#-------------------------------------------
-	${UTIL_DIR}/soil/constants.h
-	${UTIL_DIR}/soil/constants.cpp
-
-	${UTIL_DIR}/soil/conversion.h
-	${UTIL_DIR}/soil/conversion.cpp
-
-	${UTIL_DIR}/soil/soil.h
-	${UTIL_DIR}/soil/soil.cpp
-	
 	${UTIL_DIR}/soil/soil-from-db.h
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
+set(MONICA_PYTHON_SOURCE ${MONICA_PYTHON_SOURCE_FILES} ${LIBMONICA_SOURCE})
 add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE})
 target_link_libraries(monica_python 
 	${Boost_LIBRARIES} 
-	libmonica
+	${PYTHON_LIBRARIES}
 )
 set_target_properties(monica_python PROPERTIES PREFIX "")
-#set_target_properties(monica_python PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY})
-set_target_properties(monica_python PROPERTIES COMPILE_DEFINITIONS "USE_DLL")
 

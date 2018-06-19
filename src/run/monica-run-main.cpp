@@ -221,7 +221,6 @@ int main(int argc, char** argv)
 
 		map<string, string> ps;
 		ps["sim-json-str"] = json11::Json(simm).dump();
-
 		ps["crop-json-str"] = printPossibleErrors(readFile(simm["crop.json"].string_value()), activateDebug);
 		ps["site-json-str"] = printPossibleErrors(readFile(simm["site.json"].string_value()), activateDebug);
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
@@ -264,7 +263,10 @@ int main(int argc, char** argv)
 		{
 			out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
 			writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-			writeOutput(out, d.outputIds, d.results, csvSep);
+			if(env.returnObjOutputs())
+				writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
+			else
+				writeOutput(out, d.outputIds, d.results, csvSep);
 			out << endl;
 			
 		}

@@ -20,8 +20,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "env-json-from-json-config.h"
 #include "tools/debug.h"
-#include "../run/run-monica.h"
-#include "../io/database-io.h"
+//#include "../run/run-monica.h"
+//#include "../io/database-io.h"
 #include "tools/json11-helper.h"
 #include "tools/helper.h"
 #include "climate/climate-file-io.h"
@@ -152,6 +152,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 		return{j, string("Couldn't resolve reference: ") + j.dump() + "!"};
 	};
 
+	/*
 	auto fromDb = [](const Json&, const Json& j) -> EResult<Json>
 	{
 		if((j.array_items().size() >= 3 && j[1].is_string())
@@ -295,6 +296,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 
 		return{j, string("Couldn't load data from DB: ") + j.dump() + "!"};
 	};
+	*/
 
 	auto fromFile = [](const Json& root, const Json& j) -> EResult<Json>
 	{
@@ -413,11 +415,20 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 
 //-----------------------------------------------------------------------------
 
-Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string> params)
+Json Monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params)
+{
+	map<string, Json> ps;
+	for(const auto& p : map<string, string>({{"crop-json-str", "crop"}, {"site-json-str", "site"}, {"sim-json-str", "sim"}}))
+		ps[p.second] = printPossibleErrors(parseJsonString(params[p.first]));
+
+	return createEnvJsonFromJsonObjects(ps);
+}
+
+Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params)
 {
 	vector<Json> cropSiteSim;
-	for(auto name : {"crop-json-str", "site-json-str", "sim-json-str"})
-		cropSiteSim.push_back(printPossibleErrors(parseJsonString(params[name])));
+	for(auto name : {"crop", "site", "sim"})
+		cropSiteSim.push_back(params[name]);
 
 	for(auto& j : cropSiteSim)
 		if(j.is_null())
@@ -488,10 +499,10 @@ Json Monica::createEnvJsonFromJsonConfigFiles(std::map<std::string, std::string>
 	csvos["latitude"] = double_valueD(sitej["SiteParameters"], "Latitude", 0.0);
 	env["csvViaHeaderOptions"] = csvos;
 		
-	if(simj["climate.csv"].is_string())
+	if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty())
 		env["climateData"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
 																															env["csvViaHeaderOptions"]);
-	else if(simj["climate.csv"].is_array())
+	else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty())
 		env["climateData"] = readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
 																															 env["csvViaHeaderOptions"]);
 

@@ -430,7 +430,7 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 		auto sci = socketAddresses.find(SendResult);
 		if(sci != socketAddresses.end())
 			sconfig = sci->second, sAddresses = sconfig.addresses;
-		int sendSocketType = ZMQ_PUSH;
+		int sendSocketType = sconfig.type == Router ? ZMQ_ROUTER : ZMQ_PUSH;
 		zmq::socket_t sendSocket(*zmqContext, sendSocketType);
 		bool distinctSendSocket = sAddresses != rAddresses;
 
@@ -533,6 +533,8 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
 							try
 							{
+								if(!env.sharedId.empty())
+									s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);
 								s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
 							}
 							catch(zmq::error_t e)

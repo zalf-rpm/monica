@@ -201,16 +201,16 @@ namespace Monica
 	class DLL_API Harvest : public Workstep
 	{
 	public:
-		enum CoverCropUsage { greenManure = 0, biomassProduction };
+		enum CropUsage { greenManure = 0, biomassProduction };
 
 		struct OptCarbonManagementData
 		{
 			bool optCarbonConservation{false};
 			double cropImpactOnHumusBalance{0};
-			CoverCropUsage coverCropUsage{greenManure};
+			double maxResidueRecoverFraction{ 1 };
+			CropUsage cropUsage{ biomassProduction };
 			double residueHeq{0};
 			double organicFertilizerHeq{0};
-			bool isCoverCrop{false};
 		};
 		
 	public:
@@ -247,7 +247,7 @@ namespace Monica
 		CropPtr crop() const { return _crop; }
 		void setCrop(CropPtr c) { _crop = c; }
 
-		void setIsCoverCrop(bool isCoverCrop) { _optCarbMgmtData.isCoverCrop = isCoverCrop; }
+		//void setIsCoverCrop(bool isCoverCrop) { _optCarbMgmtData.isCoverCrop = isCoverCrop; }
 
   private:
     CropPtr _crop;

@@ -184,6 +184,10 @@ namespace Monica
 		{
 			return vw_AtmosphericCO2Concentration;
 		}
+		double get_AtmosphericO3Concentration() const
+		{
+			return vw_AtmosphericO3Concentration;
+		}
 
 		double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
 
@@ -328,6 +332,7 @@ namespace Monica
 		double p_accuOxygenStress{0.0};
 
 		double vw_AtmosphericCO2Concentration{0.0};
+		double vw_AtmosphericO3Concentration{ 0.0 };
 		double vs_GroundwaterDepth{0.0};
 
 		int _cultivationMethodCount{0};

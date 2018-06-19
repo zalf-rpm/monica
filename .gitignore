@@ -210,3 +210,5 @@ project-files/monica.VC.db
 /inputs.json
 /project-files/monica-full/monica.VC.db
 *.exe
+/_cmake_win32
+/_cmake_win64

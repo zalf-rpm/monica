@@ -120,6 +120,9 @@ namespace Voc
 		double comp{0}; //!< CO2 compensation point at 25oC per canopy layer (umol m-2)
 		double vcMax{0}; //!< actual activity state of rubisco  per canopy layer (umol m-2 s-1)
 		double jMax{0}; //!<  actual electron transport capacity per canopy layer(umol m - 2 s - 1)
+		double jj{0}; //umol m-2 s-1 ... electron provision (unit leaf area)
+		double jj1000{0}; //umol m-2 s-1 ... electron provision (unit leaf area) under normalized conditions 
+		double jv{0}; //umol m-2 s-1 ... used electron transport for photosynthesis (unit leaf area)
 	};
 
 	struct SpeciesData

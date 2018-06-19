@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <math.h>
 #include <map>
 #include <string>
+#include <ostream>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -76,11 +77,12 @@ namespace Monica
               double vw_MinAirTemperature,
               double vw_GlobalRadiation,
               double vw_SunshineHours,
-              int vs_JulianDay,
+              Tools::Date currentDate,
               double vw_RelativeHumidity,
               double vw_WindSpeed,
               double vw_WindSpeedHeight,
               double vw_AtmosphericCO2Concentration,
+							double vw_AtmosphericO3Concentration,
               double vw_GrossPrecipitation);
 
     //void get_CropIdentity();
@@ -156,6 +158,7 @@ namespace Monica
                                double vw_MinAirTemperature,
                                double vw_GlobalRadiation,
                                double vw_AtmosphericCO2Concentration,
+															 double vw_AtmosphericO3Concentration,
                                double vs_Latitude,
                                double vc_LeafAreaIndex,
                                double pc_DefaultRadiationUseEfficiency,
@@ -168,7 +171,7 @@ namespace Monica
                                double vc_ClearDayRadiation,
                                double vc_EffectiveDayLength,
                                double vc_OvercastDayRadiation,
-															 int vs_JulianDay);
+															 Tools::Date currentDate);
 
     void fc_HeatStressImpact(double vw_MeanAirTemperature,
                              double vw_MaxAirTemperature,
@@ -304,6 +307,37 @@ namespace Monica
     inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa;}
     inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
 
+		/**
+		* @brief Returns short term O3 damage
+		*/
+		double get_O3_shortTermDamage() const
+		{
+			return vc_O3_shortTermDamage;
+		}
+
+		/**
+		* @brief Returns long term O3 damage
+		*/
+		double get_O3_longTermDamage() const
+		{
+			return vc_O3_longTermDamage;
+		}
+
+		/**
+		* @brief Returns reduction factor of O3 uptake due to stomatal closure
+		*/
+		double get_O3_WStomatalClosure() const
+		{
+			return vc_O3_WStomatalClosure;
+		}
+
+		/**
+		* @brief Returns O3 sum uptake
+		*/
+		double get_O3_sumUptake() const
+		{
+			return vc_O3_sumUptake;
+		}
 
     /*
    * @brief Getter for total biomass.
@@ -322,7 +356,7 @@ namespace Monica
     */
     void set_OrganBiomass(int organ, double organBiomass)
     {
-			if(organ < vc_OrganBiomass.size())
+			if(organ < (int)vc_OrganBiomass.size())
 				vc_OrganBiomass[organ] = organBiomass;
     }
 
@@ -591,6 +625,7 @@ namespace Monica
     double vc_SumTotalNUptake{0.0};    //! summation of all calculated NUptake; needed for sensitivity analysis
     double vc_TotalRootLength{0.0};						//! old WULAEN
     double vc_TotalTemperatureSum{0.0};
+		double vc_TemperatureSumToFlowering{ 0.0 };
     std::vector<double> vc_Transpiration;			//! old TP
     std::vector<double> vc_TranspirationRedux;   //! old TRRED
     double vc_TranspirationDeficit{1.0};					//! old TRREL
@@ -634,7 +669,19 @@ namespace Monica
 
 		std::function<void(std::string)> _fireEvent;
 		std::function<void(double, double)> _addOrganicMatter;
+
+		double vc_O3_shortTermDamage{ 1.0 };
+		double vc_O3_longTermDamage{ 1.0 };
+		double vc_O3_senescence{ 1.0 };
+		double vc_O3_sumUptake{ 0.0 };
+		double vc_O3_WStomatalClosure{ 1.0 };
+		
   };
+
+//#define TEST_HOURLY_OUTPUT
+#ifdef TEST_HOURLY_OUTPUT
+	std::ostream& tout(bool closeFile = false);
+#endif
 }
 
 #endif

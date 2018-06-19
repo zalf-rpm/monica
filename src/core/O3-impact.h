@@ -44,14 +44,24 @@ namespace O3impact
 		double reldev; //relative development
 		double GDD_flo; //GDD from emergence to flowering
 		double GDD_mat; //GDD from emergence to maturity
+		double fO3s_d_prev; //short term ozone induced reduction of Ac of the previous time step
+		double sum_O3_up; //cumulated O3 uptake, µmol m-2 (unit ground area)
 	};
 
 	struct O3_impact_out {
-		double cum_O3_up; //cumulative O3 uptake, µmol m-2 (unit ground area)
-		double fO3s_d; //short term ozone induced reduction of Ac
-		double fLS; //leaf senescence reduction of Ac, modified by O3 cumulative uptake
+		double hourly_O3_up{ 0.0 }; //hourly O3 uptake, µmol m-2 h-1 (unit ground area)
+		double fO3s_d{ 1.0 }; //short term ozone induced reduction of Ac
+		double fO3l{ 1.0 }; //long term ozone induced senescence
+		double fLS{ 1.0 }; //leaf senescence reduction of Ac, modified by O3 cumulative uptake
+		double WS_st_clos{ 1.0 };//water deficit factor for stomatal closure
 	};	
 	
+	O3_impact_out O3_impact_hourly(O3_impact_in in, O3_impact_params par, bool WaterDeficitResponseStomata);
+
+	//#define TEST_O3_HOURLY_OUTPUT
+#ifdef TEST_O3_HOURLY_OUTPUT
+	std::ostream& tout(bool closeFile = false);
+#endif
 }
 
 #endif

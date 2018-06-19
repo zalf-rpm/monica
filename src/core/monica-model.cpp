@@ -185,7 +185,7 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 				double residueBiomass = _currentCropGrowth->get_ResidueBiomass(false); //kg ha-1, secondary yield is ignored with this approach
 				double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
 				double appliedOrganicFertilizerDryMatter = sumOrganicFertilizerDM(); //kg ha-1
-				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq;
+				double intermediateHumusBalance = _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq - _sitePs.vs_SoilSpecificHumusBalanceCorrection;
 				double potentialHumusFromResidues = residueBiomass / 1000.0 * optCarbMgmtData.residueHeq;
 				
 				double fractionToBeLeftOnField = 0.0;
@@ -203,17 +203,26 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 					}
 				}
 				
-				if(optCarbMgmtData.isCoverCrop && optCarbMgmtData.coverCropUsage == Harvest::greenManure)
-					//if the cover crop is used as green manure, all the residues are incorporated regardless the humus balance
+				if(optCarbMgmtData.cropUsage == Harvest::greenManure)
+					//if the crop is used as green manure, all the residues are incorporated regardless the humus balance
 					fractionToBeLeftOnField = 1.0;
 
+				//calculate theoretical residue removal
 				_optCarbonReturnedResidues = residueBiomass * fractionToBeLeftOnField;
+				_optCarbonExportedResidues = residueBiomass - _optCarbonReturnedResidues;
 				
+				//adjust it if technically unfeasible
+				double maxExportedResidues = residueBiomass * optCarbMgmtData.maxResidueRecoverFraction;
+				if (_optCarbonExportedResidues > maxExportedResidues)
+				{
+					_optCarbonExportedResidues = maxExportedResidues;
+					_optCarbonReturnedResidues = residueBiomass - _optCarbonExportedResidues;
+				}
+
 				_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
 																			_optCarbonReturnedResidues,
 																			_currentCropGrowth->get_ResiduesNConcentration());
-
-				_optCarbonExportedResidues = residueBiomass - _optCarbonReturnedResidues;
+				
 				
 				_humusBalanceCarryOver = intermediateHumusBalance + _optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq;
 			}
@@ -592,7 +601,7 @@ void MonicaModel::generalStep()
 		if(co2sit != _envPs.p_AtmosphericCO2s.end())
 			vw_AtmosphericCO2Concentration = co2sit->second;
 		// potentially use MONICA algorithm to calculate CO2 concentration
-		else if(int(_envPs.p_AtmosphericCO2) == 0)
+		else if(int(_envPs.p_AtmosphericCO2) <= 0)
 			vw_AtmosphericCO2Concentration = CO2ForDate(date);
 		// if everything fails value in UserEnvironmentParameters for the whole simulation
 		else 
@@ -676,6 +685,23 @@ void MonicaModel::cropStep()
   double tmin = climateData[Climate::tmin];
   double globrad = climateData[Climate::globrad];
 
+	// first try to get CO2 concentration from climate data
+	auto o3it = climateData.find(Climate::o3);
+	if(o3it != climateData.end())
+	{
+		vw_AtmosphericO3Concentration = o3it->second;
+	}
+	else
+	{
+		// try to get yearly values from UserEnvironmentParameters
+		auto o3sit = _envPs.p_AtmosphericO3s.find(date.year());
+		if(o3sit != _envPs.p_AtmosphericO3s.end())
+			vw_AtmosphericO3Concentration = o3sit->second;
+		// if everything fails value in UserEnvironmentParameters for the whole simulation
+		else
+			vw_AtmosphericO3Concentration = _envPs.p_AtmosphericO3;
+	}
+
   // test if data for sunhours are available; if not, value is set to -1.0
 	auto sunhit = climateData.find(Climate::sunhours);
 	double sunhours = sunhit == climateData.end() ? -1.0 : sunhit->second;
@@ -689,9 +715,9 @@ void MonicaModel::cropStep()
 
   double vw_WindSpeedHeight = _envPs.p_WindSpeedHeight;
 
-  _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, julday,
+  _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, date,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
-                           vw_AtmosphericCO2Concentration, precip);
+                           vw_AtmosphericCO2Concentration, vw_AtmosphericO3Concentration, precip);
   if(_simPs.p_UseAutomaticIrrigation)
   {
     const AutomaticIrrigationParameters& aips = _simPs.p_AutoIrrigationParams;

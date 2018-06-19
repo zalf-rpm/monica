@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
-#include "../core/monica-model.h"
+//#include "../core/monica-model.h"
 
 using namespace Monica;
 using namespace Tools;
@@ -129,6 +129,16 @@ std::string OId::toString(OId::ORGAN organ) const
 	return res;
 }
 
+std::string OId::outputName() const 
+{
+	string outName = name;
+	if(isOrgan())
+		outName = outName + "/" + toString(organ);
+	if(!displayName.empty())
+		outName = displayName;
+	return outName;
+}
+
 //-----------------------------------------------------------------------------
 
 
@@ -163,10 +173,16 @@ Errors Output::merge(json11::Json j)
 
 	for(const auto& d : j["data"].array_items())
 	{
-		vector<J11Array> v;
+		vector<J11Array> vs;
+		vector<J11Object> os;
 		for(auto& j : d["results"].array_items())
-			v.push_back(j.array_items());
-		data.push_back({d["origSpec"].string_value(), toVector<OId>(d["outputIds"]), v});
+		{
+			if(j.is_array())
+				vs.push_back(j.array_items());
+			else if(j.is_object())
+				os.push_back(j.object_items());
+		}
+		data.push_back({d["origSpec"].string_value(), toVector<OId>(d["outputIds"]), vs, os});
 	}
 
 	return es;
@@ -178,8 +194,12 @@ json11::Json Output::to_json() const
 	for(const auto& d : data)
 	{
 		J11Array rs;
-		for(auto r : d.results)
-			rs.push_back(r);
+		if(!d.results.empty())
+			for(auto r : d.results)
+				rs.push_back(r);
+		else if(!d.resultsObj.empty())
+			for(auto o : d.resultsObj)
+				rs.push_back(o);
 		ds.push_back(J11Object
 		{{"origSpec", d.origSpec}
 		,{"outputIds", toJsonArray(d.outputIds)}

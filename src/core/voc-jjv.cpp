@@ -78,6 +78,22 @@ double gamma_PH(double par,
 	return cpd.comp > 0.0
 		? (C1 + C2 * std::max(-GAMMA_MAX, jj - jv)) * jj * std::min(1.0, cpd.ci / cpd.comp)
 		: 0.0;
+	//return gamma_PH_Grote2014(cpd.comp, cpd.ci, jj, jv);
+}
+
+double gamma_PH_Grote2014(
+	double comp,
+	double ci,
+	double jj,
+	double jv)
+{
+	// Emission calculation as described in Grote et al. (2014)	
+
+	// bvoc emission potential from photosynthesis (excess energy after carbon assimilation)
+	// _gamma->ph = (( C1 + C2 * std::max( -GAMMA_MAX, jj - jv)) * jj * std::min( 1.0, this->phys->ci_vtfl[vt][fl] / this->phys->comp_vtfl[vt][fl])); // Wie dann mit normalized Bedingungen umgehen???
+	return comp > 0.0
+		? (C1 + C2 * std::max(-GAMMA_MAX, jj - jv)) * jj * std::min(1.0, ci / comp)
+		: 0.0;
 }
 
 struct GammaEnRes
@@ -132,9 +148,11 @@ LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
 	// Emission potential from photosynthesis (energy supply); same for isoprene and monoterpene;
 	// actual activity factor for photosynthesis (energy supply)
 	double gamma_ph = gamma_PH(lemi.pho.par, species.THETA, cpData);
+	//double gamma_ph = gamma_PH_Grote2014(cpData.comp, cpData.ci, cpData.jj, cpData.jv);
 
 	// normalized activity factor for photosynthesis (energy supply)
 	double gamma_phnorm = gamma_PH(leminorm.pho.par, species.THETA, cpData);
+	//double gamma_phnorm = gamma_PH_Grote2014(cpData.comp, cpData.ci, cpData.jj1000, cpData.jv);
 
 	double gamma_phrel = gamma_phnorm > 0.0 ? gamma_ph / gamma_phnorm : 0.0;
 

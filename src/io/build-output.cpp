@@ -109,7 +109,7 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 {
 	vector<OId> outputIds;
 
-	auto getAggregationOp = [](J11Array arr, int index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
+	auto getAggregationOp = [](J11Array arr, uint index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -135,7 +135,7 @@ vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
 	};
 
 
-	auto getOrgan = [](J11Array arr, int index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
+	auto getOrgan = [](J11Array arr, uint index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
 	{
 		if(arr.size() > index && arr[index].is_string())
 		{
@@ -884,6 +884,12 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.get_AtmosphericCO2Concentration(), 0);
 			});
 
+			build({ id++, "AtmO3", "ppb", "Atmospheric O3 concentration" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.get_AtmosphericO3Concentration(), 0);
+			});
+
 			build({id++, "Groundw", "m", ""},
 						[](const MonicaModel& monica, OId oid)
 			{
@@ -1206,11 +1212,24 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.dailySumFertiliser(), 1);
 			});
 
+			build({id++, "SumNFert", "kgN ha-1", "sum of N fertilizer applied during cropping period"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.sumFertiliser(), 1);
+			});
+
 			build({ id++, "NOrgFert", "kgN ha-1", "dailySumOrgFertiliser" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.dailySumOrgFertiliser(), 1);
 			});
+
+			build({id++, "SumNOrgFert", "kgN ha-1", "sum of N of organic fertilizer applied during cropping period"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return round(monica.sumOrgFertiliser(), 1);
+			});
+
 
 			build({id++, "WaterContent", "%nFC", "soil water content"},
 						[](const MonicaModel& monica, OId oid)
@@ -1352,6 +1371,30 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).vs_SoilpH(); }, 2);
+			});
+
+			build({ id++, "O3-short-damage", "unitless", "short term ozone induced reduction of Ac" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_shortTermDamage(), 2) : 0.0;
+			});
+
+			build({ id++, "O3-long-damage", "unitless", "long term ozone induced senescence" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_longTermDamage(), 2) : 0.0;
+			});
+
+			build({ id++, "O3-WS-gs-reduction", "unitless", "water stress impact on stomatal conductance" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_WStomatalClosure(), 2) : 0.0;
+			});
+
+			build({ id++, "O3-total-uptake", "µmol m-2", "total O3 uptake" }, //TODO units are not correct
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_sumUptake(), 2) : 0.0;
 			});
 
 
