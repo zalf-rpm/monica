@@ -36,7 +36,6 @@ if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_STANDARD 11)
 
 set_absolute_path(UTIL_DIR "../util")
@@ -48,9 +47,11 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 	
 include_directories("src")
 include_directories("${UTIL_DIR}")
-include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
-include_directories("${SYS_LIBS_DIR}/includes/czmq-master")
-include_directories("${SYS_LIBS_DIR}/includes/libsodium-1.0.10")
+include_directories("${SYS_LIBS_DIR}/includes/zmq-helper")
+#include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
+#include_directories("${SYS_LIBS_DIR}/includes/czmq-master")
+#include_directories("${SYS_LIBS_DIR}/includes/libsodium-1.0.10")
+
 
 message(STATUS "cmake_generator = ${CMAKE_GENERATOR}")
 message(STATUS "size_of_void =  ${CMAKE_SIZEOF_VOID_P}")
@@ -60,11 +61,14 @@ elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
     set(ARCH "x64")
 endif()
 
-if(WIN32)
-    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc141/${ARCH}/zeromq-dev-master)
-    set(ZMQ_LIB_NAME libzmq)
+
+if(MSVC)
+	find_package(ZeroMQ CONFIG REQUIRED)
+	set(ZMQ_LIB_NAME libzmq-static)
 elseif(UNIX)
-    set(ZMQ_LIB_NAME zmq)
+    find_package(ZeroMQ CONFIG REQUIRED)
+	set(ZMQ_LIB_NAME libzmq-static)
+   
 	set(DL_LIB_NAME dl)
 endif()
 
@@ -172,6 +176,7 @@ target_link_libraries(monica
 	${CMAKE_THREAD_LIBS_INIT}
 )
 
+
 #------------------------------------------------------------------------------
 
 # create monica-run, the non-zeromq cli client, which runs monica locally
@@ -239,9 +244,12 @@ set(MONICA_ZMQ_CONTROL_SOURCE
 	${UTIL_DIR}/tools/zmq-helper.cpp
 )
 add_executable(monica-zmq-control ${MONICA_ZMQ_CONTROL_SOURCE})
+if (MSVC)
+target_compile_options(monica-zmq-control PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
 target_link_libraries(monica-zmq-control
-	${CMAKE_THREAD_LIBS_INIT}
 	${ZMQ_LIB_NAME}
+	${CMAKE_THREAD_LIBS_INIT}
 )
 
 #------------------------------------------------------------------------------
@@ -250,6 +258,7 @@ target_link_libraries(monica-zmq-control
 set(MONICA_ZMQ_CONTROL_SEND_SOURCE
 	
 	src/run/monica-zmq-control-send-main.cpp
+	
 
 	# json11 library code
 	#-------------------------------------------
@@ -274,10 +283,14 @@ set(MONICA_ZMQ_CONTROL_SEND_SOURCE
 	${UTIL_DIR}/tools/zmq-helper.cpp
 )
 add_executable(monica-zmq-control-send ${MONICA_ZMQ_CONTROL_SEND_SOURCE})
+if (MSVC)
+	target_compile_options(monica-zmq-control-send PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
 target_link_libraries(monica-zmq-control-send
-	${CMAKE_THREAD_LIBS_INIT}
 	${ZMQ_LIB_NAME}
+	${CMAKE_THREAD_LIBS_INIT}
 )
+
 
 #------------------------------------------------------------------------------
 
@@ -309,9 +322,12 @@ set(MONICA_ZMQ_PROXY_SOURCE
 	${UTIL_DIR}/tools/zmq-helper.cpp
 )
 add_executable(monica-zmq-proxy ${MONICA_ZMQ_PROXY_SOURCE})
+if (MSVC)
+target_compile_options(monica-zmq-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
 target_link_libraries(monica-zmq-proxy
-	${CMAKE_THREAD_LIBS_INIT}
 	${ZMQ_LIB_NAME}
+	${CMAKE_THREAD_LIBS_INIT}
 )
 
 #------------------------------------------------------------------------------
@@ -352,10 +368,14 @@ set(MONICA_ZMQ_RUN_SOURCE_FILES
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
 set(MONICA_ZMQ_RUN_SOURCE ${MONICA_ZMQ_RUN_SOURCE_FILES} ${LIBMONICA_SOURCE})
+
 add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
+if (MSVC)
+target_compile_options(monica-zmq-run PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
 target_link_libraries(monica-zmq-run
-	${CMAKE_THREAD_LIBS_INIT}
 	${ZMQ_LIB_NAME}
+	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
 )
 
@@ -416,10 +436,13 @@ set(MONICA_ZMQ_SERVER_SOURCE_FILES
 set(MONICA_ZMQ_SERVER_SOURCE ${LIBMONICA_SOURCE} ${MONICA_ZMQ_SERVER_SOURCE_FILES})
 add_executable(monica-zmq-server ${MONICA_ZMQ_SERVER_SOURCE})
 target_link_libraries(monica-zmq-server
-	${CMAKE_THREAD_LIBS_INIT}
 	${ZMQ_LIB_NAME}
+	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
 )
+if (MSVC)
+target_compile_options(monica-zmq-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
 
 #------------------------------------------------------------------------------
 
@@ -468,6 +491,7 @@ set(MONICA_PYTHON_SOURCE_FILES
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
 set(MONICA_PYTHON_SOURCE ${MONICA_PYTHON_SOURCE_FILES} ${LIBMONICA_SOURCE})
+
 add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE})
 target_link_libraries(monica_python 
 	${Boost_LIBRARIES} 
