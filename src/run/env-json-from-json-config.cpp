@@ -491,6 +491,7 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 
 	env["params"] = cpp;
 	env["cropRotation"] = cropj["cropRotation"];
+	env["cropRotations"] = cropj["cropRotations"];
 	env["events"] = simj["output"]["events"];
 	env["outputs"] = simj["output"];
 
