@@ -497,5 +497,6 @@ target_link_libraries(monica_python
 	${Boost_LIBRARIES} 
 	${PYTHON_LIBRARIES}
 )
+set_target_properties(monica_python PROPERTIES SUFFIX .pyd)
 set_target_properties(monica_python PROPERTIES PREFIX "")
 
