@@ -575,7 +575,10 @@ void MonicaModel::generalStep()
 	double tmax = climateData[Climate::tmax];
 	double precip = climateData[Climate::precip];
 	double wind = climateData[Climate::wind];
-	double globrad = climateData[Climate::globrad];
+	double globrad = climateData[Climate::globrad];	
+	
+	
+
 
   // test if simulated gw or measured values should be used
   double gw_value = _groundwaterInformation.getGroundwaterInformation(date);
@@ -635,18 +638,17 @@ void MonicaModel::generalStep()
 	}
 
   _soilTemperature.step(tmin, tmax, globrad);
-  _soilMoisture.step(vs_GroundwaterDepth,
-										 precip,
-										 tmax,
-										 tmin,
-										 (relhumid / 100.0),
-										 tavg, 
-										 wind,
-                     _envPs.p_WindSpeedHeight,
-										 globrad,
-										 julday);
+
+  // first try to get ReferenceEvapotranspiration from climate data
+  auto et0_it = climateData.find(Climate::et0);
+  double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;  
+
+  _soilMoisture.step(vs_GroundwaterDepth, precip, tmax, tmin,
+	  (relhumid / 100.0), tavg, wind, _envPs.p_WindSpeedHeight, globrad,
+	  julday, et0);
+  
 	_soilOrganic.step(tavg, precip, wind);
-  _soilTransport.step();
+	_soilTransport.step();
 }
 
 pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai)
@@ -710,14 +712,20 @@ void MonicaModel::cropStep()
 	auto rhit = climateData.find(Climate::relhumid);
 	double relhumid = rhit == climateData.end() ? -1.0 : rhit->second;
 
-  double wind =  climateData[Climate::wind];
-  double precip =  climateData[Climate::precip];
+	auto wind_it = climateData.find(Climate::wind);
+	double wind = wind_it == climateData.end() ? -1.0 : wind_it->second;
+
+	double precip =  climateData[Climate::precip];
+	
+	// check if reference evapotranspiration was provided via climate files
+	auto et0_it = climateData.find(Climate::et0);
+	double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;
 
   double vw_WindSpeedHeight = _envPs.p_WindSpeedHeight;
 
   _currentCropGrowth->step(tavg, tmax, tmin, globrad, sunhours, date,
                            (relhumid / 100.0), wind, vw_WindSpeedHeight,
-                           vw_AtmosphericCO2Concentration, vw_AtmosphericO3Concentration, precip);
+                           vw_AtmosphericCO2Concentration, vw_AtmosphericO3Concentration, precip, et0);
   if(_simPs.p_UseAutomaticIrrigation)
   {
     const AutomaticIrrigationParameters& aips = _simPs.p_AutoIrrigationParams;
