@@ -44,7 +44,7 @@ if(MSVC)
 		  set(MSVC_TOOLSET_VERSION 141)
 		elseif(MSVC_VERSION EQUAL 1900)
 		  # VS 2015
-		  set(MSVC_TOOLSET_VERSION 140)
+		  set(MSVC_TOOLSET_VERSION 14)
 		else()
 		 # we do not support older version
 		endif()
