@@ -22,20 +22,23 @@
 		!define ExecutableFolder "_cmake_win64\Release"
 	!endif
 
-	;!define VCversion "14"
-
 	!define ParamsRepoDir "..\..\monica-parameters"
 	!define SysLibsDir "..\..\sys-libs"
 	!define UtilDir "..\..\util"
 
-	!include "..\build-number.nsh"
-	
+	!ifndef VersionNumber
+		!define VersionNumber "2.0.2"
+	!endif
+	!ifndef BuildNumber
+		!include "..\build-number.nsh"
+	!endif
+
 ;--------------------------------
 ;General
 
 	;Name and file
 	Name "MONICA"
-	OutFile "MONICA-Setup-2.0.2-${Arch}-${ArchBit}-build${BuildNumber}.exe"
+	OutFile "MONICA-Setup-${VersionNumber}-${Arch}-${ArchBit}-build${BuildNumber}.exe"
 	
 	;Request application privileges for Windows Vista
 	RequestExecutionLevel user
