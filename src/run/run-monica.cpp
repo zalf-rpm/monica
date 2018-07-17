@@ -198,26 +198,29 @@ string Env::toString() const
 void
 Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 {
+	cout << "addOrReplaceClimsteData " << name.c_str() << endl;
 	int acd = 0;
-	if(name == "tmin")
+	if (name == "tmin")
 		acd = tmin;
-	else if(name == "tmax")
+	else if (name == "tmax")
 		acd = tmax;
-	else if(name == "tavg")
+	else if (name == "tavg")
 		acd = tavg;
-	else if(name == "precip")
+	else if (name == "precip")
 		acd = precip;
-	else if(name == "globrad")
+	else if (name == "globrad")
 		acd = globrad;
-	else if(name == "wind")
+	else if (name == "wind")
 		acd = wind;
-	else if(name == "sunhours")
+	else if (name == "sunhours")
 		acd = sunhours;
-	else if(name == "relhumid")
+	else if (name == "relhumid")
 		acd = relhumid;
-	else if(name == "co2")
+	else if (name == "co2")
 		acd = co2;
-
+	else if (name == "et0")
+		acd = et0;
+	
 	climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
 

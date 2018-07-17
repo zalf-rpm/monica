@@ -34,6 +34,21 @@ endmacro()
 if(MSVC)
 	# disable security warnings in windows
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	
+	# define MS Visual Studio toolset version
+	if(NOT DEFINED MSVC_TOOLSET_VERSION)
+		if(MSVC_VERSION GREATER_EQUAL 1920)
+		  set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
+		elseif(MSVC_VERSION GREATER_EQUAL 1910)
+		  # VS 2017
+		  set(MSVC_TOOLSET_VERSION 141)
+		elseif(MSVC_VERSION EQUAL 1900)
+		  # VS 2015
+		  set(MSVC_TOOLSET_VERSION 14)
+		else()
+		 # we do not support older version
+		endif()
+	endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
@@ -60,7 +75,6 @@ if(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
 elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
     set(ARCH "x64")
 endif()
-
 
 if(MSVC)
 	find_package(ZeroMQ CONFIG REQUIRED)
@@ -456,7 +470,8 @@ message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 include_directories(${PYTHON_INCLUDE_DIR})
 
 if(WIN32)
-    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc141/${ARCH}/boost-python)
+    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python)
+	message("${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python")
 	include_directories(${BOOST_DIR})
 elseif(UNIX)
 	find_package(Boost COMPONENTS python REQUIRED)
@@ -497,5 +512,8 @@ target_link_libraries(monica_python
 	${Boost_LIBRARIES} 
 	${PYTHON_LIBRARIES}
 )
+if (MSVC)
+	set_target_properties(monica_python PROPERTIES SUFFIX .pyd)
+endif()
 set_target_properties(monica_python PROPERTIES PREFIX "")
 

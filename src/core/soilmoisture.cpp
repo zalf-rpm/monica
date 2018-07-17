@@ -763,9 +763,9 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
                         double vw_WindSpeed,
                         double vw_WindSpeedHeight,
                         double vw_GlobalRadiation,
-                        int vs_JulianDay)
-{
-
+                        int vs_JulianDay,
+						double vw_ReferenceEvapotranspiration)
+{	
   for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
   {
     // initialization with moisture values stored in the layer
@@ -857,7 +857,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   fm_Evapotranspiration(vc_PercentageSoilCoverage, vc_KcFactor, siteParameters.vs_HeightNN, vw_MaxAirTemperature,
       vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature, vw_WindSpeed, vw_WindSpeedHeight,
-      vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay, vs_Latitude);
+      vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay, vs_Latitude, vw_ReferenceEvapotranspiration);
 
   fm_CapillaryRise();
 
@@ -1446,7 +1446,7 @@ void SoilMoisture::fm_BackwaterReplenishment() {
 void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, double vc_KcFactor, double vs_HeightNN,
     double vw_MaxAirTemperature, double vw_MinAirTemperature, double vw_RelativeHumidity, double vw_MeanAirTemperature,
     double vw_WindSpeed, double vw_WindSpeedHeight, double vw_GlobalRadiation, int vc_DevelopmentalStage, int vs_JulianDay,
-    double vs_Latitude) {
+    double vs_Latitude, double vw_ReferenceEvapotranspiration) {
   double vm_EReducer_1 = 0.0;
   double vm_EReducer_2 = 0.0;
   double vm_EReducer_3 = 0.0;
@@ -1473,9 +1473,14 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
   // If a crop grows, ETp is taken from crop module
   if (vc_DevelopmentalStage > 0) {
-    // Reference evapotranspiration is only grabbed here for consistent
-    // output in monica.cpp
-    vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
+	  // Reference evapotranspiration is only grabbed here for consistent
+	  // output in monica.cpp
+	if (vw_ReferenceEvapotranspiration < 0.0) {		
+		vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
+	}
+	else {		
+		vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+	}
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
@@ -1483,9 +1488,18 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
     vc_EvaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
 
   } else { // if no crop grows ETp is calculated from ET0 * kc
-    vm_ReferenceEvapotranspiration = ReferenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
-        vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature, vw_WindSpeed, vw_WindSpeedHeight,
-        vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
+    
+	  // calculate reference evapotranspiration if not provided via climate files
+	if (vw_ReferenceEvapotranspiration < 0.0) {		
+		vm_ReferenceEvapotranspiration = ReferenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
+			vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature, vw_WindSpeed, vw_WindSpeedHeight,
+			vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
+	}
+	else {
+		// use reference evapotranspiration from climate file		
+		vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+	}
+
     vm_PotentialEvapotranspiration = vm_ReferenceEvapotranspiration * vc_KcFactor; // - vm_InterceptionReference;
   }
 

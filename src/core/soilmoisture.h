@@ -164,17 +164,18 @@ namespace Monica
   public:
     SoilMoisture(MonicaModel& monica);
 
-    void step(double vs_DepthGroundwaterTable,
-              // Wetter Variablen
-              double vw_Precipitation,
-              double vw_MaxAirTemperature,
-              double vw_MinAirTemperature,
-              double vw_RelativeHumidity,
-              double vw_MeanAirTemperature,
-              double vw_WindSpeed,
-              double vw_WindSpeedHeight,
-              double vw_NetRadiation,
-              int vs_JulianDay);
+	void step(double vs_DepthGroundwaterTable,
+		// Wetter Variablen
+		double vw_Precipitation,
+		double vw_MaxAirTemperature,
+		double vw_MinAirTemperature,
+		double vw_RelativeHumidity,
+		double vw_MeanAirTemperature,
+		double vw_WindSpeed,
+		double vw_WindSpeedHeight,
+		double vw_NetRadiation,
+		int vs_JulianDay,
+		double vw_ReferenceEvapotranspiration);
 
     //void fm_SoilMoistureUpdate();
     double get_SnowDepth() const;
@@ -268,7 +269,8 @@ namespace Monica
                                double vw_NetRadiation,
                                int vc_DevelopmentalStage,
                                int vs_JulianDay,
-                               double vs_Latitude);
+                               double vs_Latitude,
+							   double vw_ReferenceEvapotranspiration);
 
     double ReferenceEvapotranspiration(double vs_HeightNN,
                                        double vw_MaxAirTemperature,

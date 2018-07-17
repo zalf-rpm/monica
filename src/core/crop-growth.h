@@ -82,8 +82,9 @@ namespace Monica
               double vw_WindSpeed,
               double vw_WindSpeedHeight,
               double vw_AtmosphericCO2Concentration,
-							double vw_AtmosphericO3Concentration,
-              double vw_GrossPrecipitation);
+			  double vw_AtmosphericO3Concentration,
+              double vw_GrossPrecipitation,
+		      double vw_ReferenceEvapotranspiration);
 
     //void get_CropIdentity();
     //void get_CropParameters();

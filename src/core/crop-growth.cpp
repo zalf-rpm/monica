@@ -291,7 +291,8 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 											double vw_WindSpeedHeight,
 											double vw_AtmosphericCO2Concentration,
 											double vw_AtmosphericO3Concentration,
-											double vw_GrossPrecipitation)
+											double vw_GrossPrecipitation,
+											double vw_ReferenceEvapotranspiration)
 {
 	int vs_JulianDay = int(currentDate.julianDay());
 	if(vc_CuttingDelayDays > 0)
@@ -446,17 +447,23 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 										 vs_SoilSpecificMaxRootingDepth,
 										 vw_MeanAirTemperature);
 
-		vc_ReferenceEvapotranspiration = fc_ReferenceEvapotranspiration(vs_HeightNN,
-																																		vw_MaxAirTemperature,
-																																		vw_MinAirTemperature,
-																																		vw_RelativeHumidity,
-																																		vw_MeanAirTemperature,
-																																		vw_WindSpeed,
-																																		vw_WindSpeedHeight,
-																																		vc_GlobalRadiation,
-																																		vw_AtmosphericCO2Concentration,
-																																		vc_GrossPhotosynthesisReference_mol);
-
+		// calculate reference evapotranspiration if not provided directly via climate files
+		if (vw_ReferenceEvapotranspiration < 0) {
+			vc_ReferenceEvapotranspiration = fc_ReferenceEvapotranspiration(vs_HeightNN,
+				vw_MaxAirTemperature,
+				vw_MinAirTemperature,
+				vw_RelativeHumidity,
+				vw_MeanAirTemperature,
+				vw_WindSpeed,
+				vw_WindSpeedHeight,
+				vc_GlobalRadiation,
+				vw_AtmosphericCO2Concentration,
+				vc_GrossPhotosynthesisReference_mol);			
+		}
+		else {			
+			// use reference evapotranspiration from climate file
+			vc_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+		}
 		fc_CropWaterUptake(vc_SoilCoverage,
 											 vc_RootingZone,
 											 soilColumn.vm_GroundwaterTable,

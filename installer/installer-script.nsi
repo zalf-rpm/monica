@@ -7,54 +7,61 @@
 
 	!include "MUI2.nsh"
 	!include "EnvVarUpdate.nsh"
-
+	
 	!ifdef X86
 		!define Arch "x86"
 		!define WinPlatform "Win32"
 		!define ArchBit "32bit"
+		!define BoostBit "x32"
+		!define ExecutableFolder "_cmake_win32\Release"
 	!else
 		!define Arch "x64"
 		!define WinPlatform "x64"
 		!define ArchBit "64bit"
+		!define BoostBit "x64"
+		!define ExecutableFolder "_cmake_win64\Release"
 	!endif
-
-	!define VCversion "14"
 
 	!define ParamsRepoDir "..\..\monica-parameters"
 	!define SysLibsDir "..\..\sys-libs"
 	!define UtilDir "..\..\util"
 
-	!include "..\build-number.nsh"
+	!ifndef VersionNumber
+		!define VersionNumber "2.0.2"
+	!endif
+	!ifndef BuildNumber
+		!include "..\build-number.nsh"
+	!endif
 
 ;--------------------------------
 ;General
 
 	;Name and file
 	Name "MONICA"
-	OutFile "MONICA-Setup-2.0.1-${Arch}-${ArchBit}-build${BuildNumber}.exe"
-
+	OutFile "MONICA-Setup-${VersionNumber}-${Arch}-${ArchBit}-build${BuildNumber}.exe"
+	
+	;Request application privileges for Windows Vista
+	RequestExecutionLevel user
+	
 	Function .onInit
+	
 		; Must set $INSTDIR here to avoid adding ${MUI_PRODUCT} to the end of the
 		; path when user selects a new directory using the 'Browse' button.
-		!ifdef X86
-  		StrCpy $INSTDIR "$PROGRAMFILES\MONICA"
-		!else
-			StrCpy $INSTDIR "$PROGRAMFILES64\MONICA"
-		!endif
+		StrCpy $INSTDIR "$LOCALAPPDATA\MONICA"
+		
+		; Must set $INSTDIR here to avoid adding ${MUI_PRODUCT} to the end of the
+		; path when user selects a new directory using the 'Browse' button.
+		;!ifdef X86
+			;StrCpy $INSTDIR "$PROGRAMFILES\MONICA"
+		;!else
+			;StrCpy $INSTDIR "$PROGRAMFILES64\MONICA"
+		;!endif
+	
 	FunctionEnd
-
-	;Default installation folder
-	;!ifdef X86
-	;	InstallDir "$PROGRAMFILES\MONICA"
-	;!else
-	;	InstallDir "$PROGRAMFILES64\MONICA"
-	;!endif
 
 	;Get installation folder from registry if available
 	InstallDirRegKey HKCU "Software\MONICA" ""
 
-	;Request application privileges for Windows Vista
-	;RequestExecutionLevel admin
 
 ;--------------------------------
 ;Variables
@@ -110,22 +117,17 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	SetOutPath "$INSTDIR"
 	
 	;ADD YOUR OWN FILES HERE...
-	File /oname=monica.exe "..\project-files\${WinPlatform}\Release\monica.exe"  
-	File /oname=monica-run.exe "..\project-files\${WinPlatform}\Release\monica-run.exe"  
-	File /oname=monica-zmq-run.exe "..\project-files\${WinPlatform}\Release\monica-zmq-run.exe"  
-	File /oname=monica-zmq-server.exe "..\project-files\${WinPlatform}\Release\monica-zmq-server.exe"  
-	File /oname=libmonica.dll "..\project-files\${WinPlatform}\Release\libmonica.dll"  
-	File /oname=monica_python.pyd "..\project-files\${WinPlatform}\Release\monica_python.pyd"  
-	File /oname=monica-zmq-control.exe "..\project-files\${WinPlatform}\release\monica-zmq-control.exe"  
-	File /oname=monica-zmq-control-send.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-send.exe"  
-	;File /oname=monica-zmq-control-client.exe "..\project-files\${WinPlatform}\release\monica-zmq-control-client.exe"  
-	File /oname=monica-zmq-proxy.exe "..\project-files\${WinPlatform}\release\monica-zmq-proxy.exe"  
-	File "C:\Program Files (x86)\Microsoft Visual Studio ${VCversion}.0\VC\redist\${Arch}\Microsoft.VC${VCversion}0.CRT\*.dll"
-	File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-runtime-l1-1-0.dll"
-	;File "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Remote Debugger\${Arch}\api-ms-win-crt-locale-l1-1-0.dll"
-	File "${SysLibsDir}\binaries\windows\vc14\${Arch}\libsodium-1.0.10\libsodium.dll"
-	File "${SysLibsDir}\binaries\windows\vc14\${Arch}\zeromq-dev-master\libzmq.dll"
-	File "${SysLibsDir}\binaries\windows\vc14\${Arch}\boost-python\boost_python-vc140-mt-1_61.dll"
+	File /oname=monica.exe "..\${ExecutableFolder}\monica.exe"  
+	File /oname=monica-run.exe "..\${ExecutableFolder}\monica-run.exe"  
+	File /oname=monica-zmq-run.exe "..\${ExecutableFolder}\monica-zmq-run.exe"  
+	File /oname=monica-zmq-server.exe "..\${ExecutableFolder}\monica-zmq-server.exe"  
+	File /oname=monica-zmq-control.exe "..\${ExecutableFolder}\monica-zmq-control.exe"  
+	File /oname=monica-zmq-control-send.exe "..\${ExecutableFolder}\monica-zmq-control-send.exe"  	
+	File /oname=monica-zmq-proxy.exe "..\${ExecutableFolder}\monica-zmq-proxy.exe"  	
+ 
+	File /oname=monica_python.pyd "..\${ExecutableFolder}\monica_python.pyd"  
+	File "${SysLibsDir}\binaries\windows\vc141\${Arch}\boost-python\boost_python-vc141-mt-${BoostBit}-1_66.dll"
+	
 	File "..\LICENSE"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
@@ -235,63 +237,67 @@ SectionEnd
 
 Section "Uninstall"
 
-	Delete $INSTDIR\monica.exe
-	Delete $INSTDIR\monica-run.exe
-	Delete $INSTDIR\monica-zmq-run.exe
-	Delete $INSTDIR\monica-zmq-server.exe
-	Delete $INSTDIR\monica-zmq-control.exe
-	Delete $INSTDIR\monica-zmq-control-send.exe
-	Delete $INSTDIR\monica-zmq-proxy.exe
-	Delete $INSTDIR\*.dll
-	Delete $INSTDIR\*.py*
-	
-	Delete $INSTDIR\LICENSE
-	;Delete "$INSTDIR\Readme.pdf
-	Delete $INSTDIR\en_user_manual_MONICA_windows.pdf
-	Delete $INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf
-	Delete $INSTDIR\version.txt
+;   Remove the installation directory
+    RMDir /r "$INSTDIR"
+	RMDir /r $PROFILE\MONICA
 		
-	Delete $PROFILE\MONICA\LICENSE
-	Delete $PROFILE\MONICA\db-connections.ini
-	Delete $PROFILE\MONICA\sqlite-db\monica.sqlite
-	Delete $PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite
-	RMDir $PROFILE\MONICA\sqlite-db
-
-	Delete $PROFILE\MONICA\monica-ini-to-json\monica-ini-to-json.py
-	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-sim.json
-	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-site.json
-	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-crop.json
-	RMDir $PROFILE\MONICA\monica-ini-to-json
-
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\carbiocial.sqlite
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\db-connections.ini
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-monica.py
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-work-collector.py
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-work-producer.py
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\site-soil-profile-from-db.json
-	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2\python
-
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate-min.csv
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim-min.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop-min.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site-min.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate.csv
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim+.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop+.json
-	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site+.json
-	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2
-
-	RMDir  $PROFILE\MONICA\Examples
+;	Delete $INSTDIR\monica.exe
+;	Delete $INSTDIR\monica-run.exe
+;	Delete $INSTDIR\monica-zmq-run.exe
+;	Delete $INSTDIR\monica-zmq-server.exe
+;	Delete $INSTDIR\monica-zmq-control.exe
+;	Delete $INSTDIR\monica-zmq-control-send.exe
+;	Delete $INSTDIR\monica-zmq-proxy.exe
+;	Delete $INSTDIR\*.dll
+;	Delete $INSTDIR\*.py*
 	
-	RMDir  $PROFILE\MONICA\monica-parameters
-	RMDir  $PROFILE\MONICA
-	
-	Delete $INSTDIR\Uninstall.exe
+;	Delete $INSTDIR\LICENSE
+	;Delete "$INSTDIR\Readme.pdf
+;	Delete $INSTDIR\en_user_manual_MONICA_windows.pdf
+;	Delete $INSTDIR\de_benutzerhandbuch_MONICA_windows.pdf
+;	Delete $INSTDIR\version.txt
+		
+;	Delete $PROFILE\MONICA\LICENSE
+;	Delete $PROFILE\MONICA\db-connections.ini
+;	Delete $PROFILE\MONICA\sqlite-db\monica.sqlite
+;	Delete $PROFILE\MONICA\sqlite-db\ka5-soil-data.sqlite
+;	RMDir $PROFILE\MONICA\sqlite-db
 
-	RMDir $INSTDIR
+;	Delete $PROFILE\MONICA\monica-ini-to-json\monica-ini-to-json.py
+;	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-sim.json
+;	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-site.json
+;	Delete $PROFILE\MONICA\monica-ini-to-json\conversion-template-crop.json
+;	RMDir $PROFILE\MONICA\monica-ini-to-json
+
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\carbiocial.sqlite
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\db-connections.ini
+;   Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-monica.py
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-work-collector.py
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\run-work-producer.py
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\python\site-soil-profile-from-db.json
+;	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2\python
+
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate-min.csv
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim-min.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop-min.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site-min.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\climate.csv
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\sim+.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\crop+.json
+;	Delete $PROFILE\MONICA\Examples\Hohenfinow2\site+.json
+;	RMDir  $PROFILE\MONICA\Examples\Hohenfinow2
+
+;	RMDir  $PROFILE\MONICA\Examples
+	
+;	RMDir  $PROFILE\MONICA\monica-parameters
+;	RMDir  $PROFILE\MONICA
+	
+;	Delete $INSTDIR\Uninstall.exe
+
+;	RMDir $INSTDIR
 	
 	!insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder
 		
