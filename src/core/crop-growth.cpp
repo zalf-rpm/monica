@@ -2641,7 +2641,8 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 																	double /*vs_SoilSpecificMaxRootingDepth*/,
 																	double vw_MeanAirTemperature)
 {
-	size_t nols = soilColumn.vs_NumberOfLayers();
+	assert(soilColumn.vs_NumberOfLayers() >= 0);
+	uint nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
 
 	double vc_MaxRootNConcentration = 0.0; // old WGM
@@ -3551,7 +3552,7 @@ void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
 			vc_TranspirationDeficit = 1.0; //[]
 		}
 
-		int vm_GroundwaterDistance = vc_GroundwaterTable - vc_RootingDepth;
+		int vm_GroundwaterDistance = (int)vc_GroundwaterTable - (int)vc_RootingDepth;
 		//std::cout << "vm_GroundwaterDistance: " << vm_GroundwaterDistance << std::endl;
 		if(vm_GroundwaterDistance <= 1)
 		{
@@ -4270,7 +4271,7 @@ double CropGrowth::get_HeatSumIrrigationEnd() const
 int CropGrowth::pc_NumberOfAbovegroundOrgans() const
 {
 	int count = 0;
-	for(int i = 0, size = pc_AbovegroundOrgan.size(); i < size; i++)
+	for(size_t i = 0, size = pc_AbovegroundOrgan.size(); i < size; i++)
 	{
 		if(pc_AbovegroundOrgan[i])
 		{

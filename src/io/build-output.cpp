@@ -316,8 +316,8 @@ void setComplexValues(OId oid, function<void(int, json11::Json)> setValue, Json 
 		values = value.array_items();
 	else
 		values = J11Array(oid.toLayer - oid.fromLayer + 1, value);
-	
-	for(int i = oid.fromLayer, k = 0, vsize = values.size(); i <= oid.toLayer, k < vsize; i++, k++)
+	assert(values.size() <= INT_MAX);
+	for(int i = oid.fromLayer, k = 0, vsize = (int)values.size(); i <= oid.toLayer, k < vsize; i++, k++)
 	{
 		if(i < 0)
 			debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Can't set value." << endl;

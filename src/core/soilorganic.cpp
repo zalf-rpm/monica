@@ -199,7 +199,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 
 	//MIT
 	auto nools = soilColumn.vs_NumberOfOrganicLayers();
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 		//New AOM pool
 		if(i_Layer == 0)
@@ -423,7 +423,7 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation)
 
 	vo_NH3_Volatilised = 0.0;
 
-	for(size_t i_Layer = 0; i_Layer < soilColumn.vs_NumberOfOrganicLayers(); i_Layer++)
+	for(int i_Layer = 0; i_Layer < soilColumn.vs_NumberOfOrganicLayers(); i_Layer++)
 	{
 
 		// kmol urea m-3 soil
@@ -691,7 +691,7 @@ void SoilOrganic::fo_MIT()
 
 	// Calculation of decay rate coefficients
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 		double tod = fo_TempOnDecompostion(soilColumn[i_Layer].get_Vs_SoilTemperature());
 		double mod = fo_MoistOnDecompostion(soilColumn[i_Layer].vs_SoilMoisture_pF());
@@ -725,7 +725,7 @@ void SoilOrganic::fo_MIT()
 	} // for
 
 	// Calculation of pool changes by decomposition
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 		for(AOM_Properties& AOM_Pool : soilColumn[i_Layer].vo_AOM_Pool)
 		{
@@ -831,7 +831,7 @@ void SoilOrganic::fo_MIT()
   //vo_CN_Ratio_SOM_Slow = siteParams.vs_Soil_CN_Ratio;
   //vo_CN_Ratio_SOM_Fast = siteParams.vs_Soil_CN_Ratio;
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
     double vo_CN_Ratio_SOM_Slow = soilColumn.at(i_Layer).vs_Soil_CN_Ratio();
     double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
@@ -863,7 +863,7 @@ void SoilOrganic::fo_MIT()
 	vo_NetNMineralisation = 0.0;
 
 	
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
     double vo_CN_Ratio_SOM_Slow = soilColumn.at(i_Layer).vs_Soil_CN_Ratio();
     double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
@@ -1014,7 +1014,7 @@ void SoilOrganic::fo_MIT()
 	vo_DecomposerRespiration = 0.0;
 
 	// Calculation of CO2 evolution
-	for (size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for (int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 		vo_SMB_SlowCO2EvolutionRate[i_Layer] = ((1.0 - po_SOM_SlowUtilizationEfficiency)
 			* vo_SOM_SlowDecRate[i_Layer])
@@ -1184,7 +1184,7 @@ void SoilOrganic::fo_Nitrification()
 	std::vector<double> vo_AmmoniaOxidationRate(nools, 0.0);
 	std::vector<double> vo_NitriteOxidationRate(nools, 0.0);
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 
 		// Calculate nitrification rate coefficients
@@ -1207,7 +1207,7 @@ void SoilOrganic::fo_Nitrification()
 	// Stange, F., C. Nendel (2014): N.N., in preparation
 
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 
 		if(soilColumn[i_Layer].vs_SoilNH4 > vo_AmmoniaOxidationRate[i_Layer])
@@ -1253,7 +1253,7 @@ void SoilOrganic::fo_Denitrification()
 	double po_TransportRateCoeff = organicPs.po_TransportRateCoeff;
 	vo_TotalDenitrification = 0.0;
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 
 		//Temperature function is the same as in Nitrification subroutine
@@ -1269,7 +1269,7 @@ void SoilOrganic::fo_Denitrification()
 
 	// update NO3 content of soil layer with denitrification balance [kg N m-3]
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 
 		if(soilColumn[i_Layer].vs_SoilNO3 > vo_ActDenitrificationRate[i_Layer])
@@ -1304,7 +1304,7 @@ void SoilOrganic::fo_N2OProduction()
 	double po_N2OProductionRate = organicPs.po_N2OProductionRate;
 	vo_N2O_Produced = 0.0;
 
-	for(size_t i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
 	{
 
 		// pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being available at higer pH values
@@ -1328,7 +1328,7 @@ void SoilOrganic::fo_N2OProduction()
  */
 void SoilOrganic::fo_PoolUpdate()
 {
-	for(size_t i_Layer = 0; i_Layer < soilColumn.vs_NumberOfOrganicLayers(); i_Layer++)
+	for(int i_Layer = 0; i_Layer < soilColumn.vs_NumberOfOrganicLayers(); i_Layer++)
 	{
 		vector<AOM_Properties>& AOM_Pool = soilColumn[i_Layer].vo_AOM_Pool;
 

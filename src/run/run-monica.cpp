@@ -264,16 +264,21 @@ climateDataForStep(const Climate::DataAccessor& da,
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	string pathToFile = fixSystemSeparator(ensureDirExists(env.params.pathToOutputDir()) + "/" + fileName);
-	pout.open(pathToFile);
-	if(pout.fail())
+	string path = Tools::fixSystemSeparator(env.params.pathToOutputDir());
+	if (Tools::ensureDirExists(path))
 	{
-		cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
-		return;
+		string pathToFile = path + "/" + fileName;
+		pout.open(pathToFile);
+		if(pout.fail())
+		{
+			cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
+			return;
+		}
+		pout << env.to_json().dump() << endl;
+		pout.flush();
+		pout.close();
 	}
-	pout << env.to_json().dump() << endl;
-	pout.flush();
-	pout.close();
+	cerr << "Error failed to create path: '" << path << "'." << endl;
 }
 
 
@@ -335,9 +340,9 @@ void Spec::init(Maybe<DMY>& member, Json j, string time)
 				 && s[2].size() == 2)
 			{
 				DMY dmy;
-				dmy.year = parseInt(s[0]);
-				dmy.month = parseInt<size_t>(s[1]);
-				dmy.day = parseInt<size_t>(s[2]);
+				dmy.year = parseInt<uint>(s[0]);
+				dmy.month = parseInt<uint>(s[1]);
+				dmy.day = parseInt<uint>(s[2]);
 				member = dmy;
 				eventType = eDate;
 			}

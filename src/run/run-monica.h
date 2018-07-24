@@ -124,9 +124,9 @@ namespace Monica
 	{
 		struct DMY
 		{
-			Tools::Maybe<std::size_t> day;
-			Tools::Maybe<std::size_t> month;
-			Tools::Maybe<int> year;
+			Tools::Maybe<uint> day;
+			Tools::Maybe<uint> month;
+			Tools::Maybe<uint> year;
 		};
 
 		enum EventType { eDate, eCrop, eExpression, eUnset };

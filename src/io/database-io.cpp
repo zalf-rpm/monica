@@ -460,13 +460,14 @@ void Monica::writeCropParameters(string path, std::string abstractDbSchema)
 {
 	for(auto amc : availableMonicaCrops())
 	{
-		CropParametersPtr cp = getCropParametersFromMonicaDB(amc.speciesId,
-																												 amc.cultivarId,
-																												 abstractDbSchema);
+		CropParametersPtr cp = getCropParametersFromMonicaDB(amc.speciesId, amc.cultivarId, abstractDbSchema);
 
 		ofstream ofs;
 		string speciesDir = path + "/" + amc.speciesId;
-		ensureDirExists(surround("\"", speciesDir));
+		if (!Tools::ensureDirExists(surround("\"", speciesDir)))
+		{
+			cerr << "Error failed to create path: '" << speciesDir << "'." << endl;
+		}
 
 		auto s = fixSystemSeparator(path + "/" + amc.speciesId + ".json");
 		ofs.open(s);
@@ -544,8 +545,10 @@ void Monica::writeMineralFertilisers(string path,
 	{
 		auto mf = p.second;
 
-		ensureDirExists(surround("\"", path));
-
+		if (!Tools::ensureDirExists(surround("\"", path)))
+		{
+			cerr << "Error failed to create path: '" << path << "'." << endl;
+		}
 		ofstream ofs;
 		ofs.open(path + "/" + mf.getId() + ".json");
 
@@ -647,8 +650,10 @@ void Monica::writeOrganicFertilisers(string path, std::string abstractDbSchema)
 	{
 		OrganicFertiliserParametersPtr of = p.second;
 
-		ensureDirExists(surround("\"", path));
-
+		if (!Tools::ensureDirExists(surround("\"", path)))
+		{
+			cerr << "Error failed to create path: '" << path << "'." << endl;
+		}
 		ofstream ofs;
 		ofs.open(path + "/" + of->id + ".json");
 
@@ -760,10 +765,20 @@ void Monica::writeCropResidues(string path, std::string abstractDbSchema)
 			(noResidueType ? speciesPath
 			 : speciesPath + "/" + r->residueType) + ".json";
 
-		if(noResidueType)
-			ensureDirExists(surround("\"", path));
+		if (noResidueType)
+		{
+			if (!Tools::ensureDirExists(surround("\"", path)))
+			{
+				cerr << "Error failed to create path: '" << path << "'." << endl;
+			}
+		}
 		else
-			ensureDirExists(surround("\"", speciesPath));
+		{
+			if (!Tools::ensureDirExists(surround("\"", speciesPath)))
+			{
+				cerr << "Error failed to create path: '" << speciesPath << "'." << endl;
+			}
+		}
 
 		ofstream ofs;
 		ofs.open(residueTypePath);
@@ -1161,7 +1176,10 @@ void Monica::writeUserParameters(int type, string path, std::string abstractDbSc
 
 	auto ups = readUserParameterFromDatabase(type, abstractDbSchema);
 
-	ensureDirExists(surround("\"", path));
+	if (!Tools::ensureDirExists(surround("\"", path)))
+	{
+		cerr << "Error failed to create path: '" << path << "'." << endl;
+	}
 
 	{
 		ofstream ofs;

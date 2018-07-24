@@ -69,7 +69,7 @@ Workstep::Workstep(const Tools::Date& d)
 	: _date(d)
 {}
 
-Workstep::Workstep(size_t noOfDaysAfterEvent, const std::string& afterEvent)
+Workstep::Workstep(int noOfDaysAfterEvent, const std::string& afterEvent)
 	: _applyNoOfDaysAfterEvent(noOfDaysAfterEvent)
 	, _afterEvent(afterEvent)
 {}
