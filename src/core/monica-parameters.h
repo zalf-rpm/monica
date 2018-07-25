@@ -98,7 +98,7 @@ namespace Monica
 		}
 		int pc_NumberOfOrgans() const
 		{
-			assert(pc_BaseTemperature.size() <= INT_MAX);
+			assert(pc_OrganGrowthRespiration.size() <= INT_MAX);
 			return (int)pc_OrganGrowthRespiration.size();
 		}
 

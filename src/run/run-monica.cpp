@@ -278,7 +278,10 @@ void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 		pout.flush();
 		pout.close();
 	}
-	cerr << "Error failed to create path: '" << path << "'." << endl;
+	else
+	{
+		cerr << "Error failed to create path: '" << path << "'." << endl;
+	}
 }
 
 
