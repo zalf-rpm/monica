@@ -17,11 +17,12 @@
 
 import json
 import sys
+import zmq
+import os
 import monica_io
 
-import sys
 #print sys.path
-import zmq
+
 #print "pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version()
 
 
@@ -33,11 +34,11 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
   config = {
       "port": server["port"] if server["port"] else "6666",
       "server": server["server"] if server["server"] else "localhost",
-      "sim.json": "../sim-min.json",
-      "crop.json": "../crop-min.json",
-      "site.json": "../site-min.json",
-      "climate.csv": "../climate-min.csv",
-      "shared_id": shared_id
+      "sim.json": os.path.join(os.path.dirname(__file__), '../sim-min.json'),
+      "crop.json": os.path.join(os.path.dirname(__file__), '../crop-min.json'),
+      "site.json": os.path.join(os.path.dirname(__file__), '../site-min.json'),
+      "climate.csv": os.path.join(os.path.dirname(__file__), '../climate-min.csv'),
+      "shared_id": shared_id 
   }
   # read commandline args only if script is invoked directly from commandline
   if len(sys.argv) > 1 and __name__ == "__main__":
@@ -48,13 +49,15 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
 
   print "config:", config
   
+  socket.connect("tcp://" + config["server"] + ":" + config["port"])
+
   with open(config["sim.json"]) as _:
     sim_json = json.load(_)
 
-  with open(config["sim.json"]) as _:
+  with open(config["site.json"]) as _:
     site_json = json.load(_)
 
-  with open(config["sim.json"]) as _:
+  with open(config["crop.json"]) as _:
     crop_json = json.load(_)
 
   with open(config["climate.csv"]) as _:
@@ -73,6 +76,8 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
       env["sharedId"] = config["shared_id"]
 
   socket.send_json(env)
+
+  print "done"
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
         "port": server["port"] if server["port"] else "7777",
         "server": server["server"] if server["server"] else "localhost", 
         "shared_id": shared_id,
-        "out": path_to_output_dir if path_to_output_dir else "out/"
+        "out": path_to_output_dir if path_to_output_dir else os.path.join(os.path.dirname(__file__), 'out/')
     }
     if len(sys.argv) > 1 and __name__ == "__main__":
         for arg in sys.argv[1:]:
