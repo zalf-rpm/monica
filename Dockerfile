@@ -14,18 +14,19 @@ RUN mkdir -p /run/monica/sqlite-db
 ENV monica_dir /run/monica
 ENV supervisor_conf /etc/supervisor/supervisord.conf
 ENV monica_instances 3
+ENV executableSource _cmake_linux
 
 COPY docker/supervisord.conf ${supervisor_conf}
 
 # copy executables 
-COPY _cmake_linux/monica ${monica_dir}
-COPY _cmake_linux/monica-run ${monica_dir}
-COPY _cmake_linux/monica-zmq-control-send ${monica_dir}
-COPY _cmake_linux/monica-zmq-run ${monica_dir}
-COPY _cmake_linux/monica_python.so ${monica_dir}
-COPY _cmake_linux/monica-zmq-control ${monica_dir}
-COPY _cmake_linux/monica-zmq-proxy ${monica_dir}
-COPY _cmake_linux/monica-zmq-server ${monica_dir}
+COPY ${executableSource}/monica ${monica_dir}
+COPY ${executableSource}/monica-run ${monica_dir}
+COPY ${executableSource}/monica-zmq-control-send ${monica_dir}
+COPY ${executableSource}/monica-zmq-run ${monica_dir}
+COPY ${executableSource}/monica_python.so ${monica_dir}
+COPY ${executableSource}/monica-zmq-control ${monica_dir}
+COPY ${executableSource}/monica-zmq-proxy ${monica_dir}
+COPY ${executableSource}/monica-zmq-server ${monica_dir}
 
 # copy sqlite db
 COPY sqlite-db/ka5-soil-data.sqlite ${monica_dir}/sqlite-db/
