@@ -48,7 +48,7 @@ namespace Monica
 
     Workstep(const Tools::Date& d);
 
-		Workstep(size_t noOfDaysAfterEvent, const std::string& afterEvent);
+	Workstep(int noOfDaysAfterEvent, const std::string& afterEvent);
 
     Workstep(json11::Json object);
 

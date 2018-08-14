@@ -291,7 +291,8 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 											double vw_WindSpeedHeight,
 											double vw_AtmosphericCO2Concentration,
 											double vw_AtmosphericO3Concentration,
-											double vw_GrossPrecipitation)
+											double vw_GrossPrecipitation,
+											double vw_ReferenceEvapotranspiration)
 {
 	int vs_JulianDay = int(currentDate.julianDay());
 	if(vc_CuttingDelayDays > 0)
@@ -446,17 +447,23 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 										 vs_SoilSpecificMaxRootingDepth,
 										 vw_MeanAirTemperature);
 
-		vc_ReferenceEvapotranspiration = fc_ReferenceEvapotranspiration(vs_HeightNN,
-																																		vw_MaxAirTemperature,
-																																		vw_MinAirTemperature,
-																																		vw_RelativeHumidity,
-																																		vw_MeanAirTemperature,
-																																		vw_WindSpeed,
-																																		vw_WindSpeedHeight,
-																																		vc_GlobalRadiation,
-																																		vw_AtmosphericCO2Concentration,
-																																		vc_GrossPhotosynthesisReference_mol);
-
+		// calculate reference evapotranspiration if not provided directly via climate files
+		if (vw_ReferenceEvapotranspiration < 0) {
+			vc_ReferenceEvapotranspiration = fc_ReferenceEvapotranspiration(vs_HeightNN,
+				vw_MaxAirTemperature,
+				vw_MinAirTemperature,
+				vw_RelativeHumidity,
+				vw_MeanAirTemperature,
+				vw_WindSpeed,
+				vw_WindSpeedHeight,
+				vc_GlobalRadiation,
+				vw_AtmosphericCO2Concentration,
+				vc_GrossPhotosynthesisReference_mol);			
+		}
+		else {			
+			// use reference evapotranspiration from climate file
+			vc_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+		}
 		fc_CropWaterUptake(vc_SoilCoverage,
 											 vc_RootingZone,
 											 soilColumn.vm_GroundwaterTable,
@@ -2634,7 +2641,8 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 																	double /*vs_SoilSpecificMaxRootingDepth*/,
 																	double vw_MeanAirTemperature)
 {
-	size_t nols = soilColumn.vs_NumberOfLayers();
+	assert(soilColumn.vs_NumberOfLayers() >= 0);
+	uint nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
 
 	double vc_MaxRootNConcentration = 0.0; // old WGM
@@ -3544,7 +3552,7 @@ void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
 			vc_TranspirationDeficit = 1.0; //[]
 		}
 
-		int vm_GroundwaterDistance = vc_GroundwaterTable - vc_RootingDepth;
+		int vm_GroundwaterDistance = (int)vc_GroundwaterTable - (int)vc_RootingDepth;
 		//std::cout << "vm_GroundwaterDistance: " << vm_GroundwaterDistance << std::endl;
 		if(vm_GroundwaterDistance <= 1)
 		{
@@ -4263,7 +4271,7 @@ double CropGrowth::get_HeatSumIrrigationEnd() const
 int CropGrowth::pc_NumberOfAbovegroundOrgans() const
 {
 	int count = 0;
-	for(int i = 0, size = pc_AbovegroundOrgan.size(); i < size; i++)
+	for(size_t i = 0, size = pc_AbovegroundOrgan.size(); i < size; i++)
 	{
 		if(pc_AbovegroundOrgan[i])
 		{

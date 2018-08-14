@@ -243,7 +243,10 @@ int main(int argc, char** argv)
 		{
 			string path, filename;
 			tie(path, filename) = splitPathToFile(pathToOutputFile);
-			ensureDirExists(path);
+			if (!Tools::ensureDirExists(path))
+			{
+				cerr << "Error failed to create path: '" << path << "'." << endl;
+			}
 			fout.open(pathToOutputFile);
 			if(fout.fail())
 			{

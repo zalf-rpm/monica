@@ -43,16 +43,6 @@ using namespace Tools;
 using namespace Soil;
 using namespace json11;
 
-//-----------------------------------------------------------------------------
-
-Env::Env(CentralParameterProvider cpp)
-	: params(cpp)
-{}
-
-Env::Env(json11::Json j)
-{
-	merge(j);
-}
 
 namespace
 {
@@ -71,6 +61,49 @@ namespace
 	}
 }
 
+//-----------------------------------------------------------------------------
+
+CropRotation::CropRotation(json11::Json j)
+{
+	merge(j);
+}
+
+Errors CropRotation::merge(json11::Json j)
+{
+	Errors es;
+
+	set_iso_date_value(start, j, "start");
+	set_iso_date_value(end, j, "end");
+	es.append(extractAndStore(j["cropRotation"], cropRotation));
+
+	return es;
+}
+
+json11::Json CropRotation::to_json() const
+{
+	J11Array cr;
+	for(const auto& c : cropRotation)
+		cr.push_back(c.to_json());
+
+	return json11::Json::object
+	{{"type", "CropRotation"}
+	,{"start", start.toIsoDateString()}
+	,{"end", end.toIsoDateString()}
+	,{"cropRotation", cr}
+	};
+}
+
+//-----------------------------------------------------------------------------
+
+Env::Env(CentralParameterProvider cpp)
+	: params(cpp)
+{}
+
+Env::Env(json11::Json j)
+{
+	merge(j);
+}
+
 Errors Env::merge(json11::Json j)
 {
 	Errors es;
@@ -83,6 +116,7 @@ Errors Env::merge(json11::Json j)
 	outputs = j["outputs"];
 
 	es.append(extractAndStore(j["cropRotation"], cropRotation));
+	es.append(extractAndStore(j["cropRotations"], cropRotations));
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
@@ -106,13 +140,29 @@ Errors Env::merge(json11::Json j)
 json11::Json Env::to_json() const
 {
 	J11Array cr;
-	for(const auto& c : cropRotation)
-		cr.push_back(c.to_json());
+	for(const auto& cm : cropRotation)
+		cr.push_back(cm.to_json());
+	
+	J11Array crs;
+	for(const auto& c : cropRotations)
+	{
+		J11Array cr;
+		for(const auto& cm : c.cropRotation)
+			cr.push_back(cm.to_json());
 
-	return json11::Json::object
+		auto cro = J11Object
+		{{"from", c.start.toIsoDateString()}
+		,{"end", c.end.toIsoDateString()}
+    ,{"cropRotation", cr}
+		};
+		crs.push_back(cro);
+	}
+
+	return J11Object
 	{{"type", "Env"}
 	,{"params", params.to_json()}
 	,{"cropRotation", cr}
+	,{"cropRotations", crs}
 	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
 	,{"pathsToClimateCSV", toPrimJsonArray(pathsToClimateCSV)}
@@ -148,26 +198,29 @@ string Env::toString() const
 void
 Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 {
+	cout << "addOrReplaceClimsteData " << name.c_str() << endl;
 	int acd = 0;
-	if(name == "tmin")
+	if (name == "tmin")
 		acd = tmin;
-	else if(name == "tmax")
+	else if (name == "tmax")
 		acd = tmax;
-	else if(name == "tavg")
+	else if (name == "tavg")
 		acd = tavg;
-	else if(name == "precip")
+	else if (name == "precip")
 		acd = precip;
-	else if(name == "globrad")
+	else if (name == "globrad")
 		acd = globrad;
-	else if(name == "wind")
+	else if (name == "wind")
 		acd = wind;
-	else if(name == "sunhours")
+	else if (name == "sunhours")
 		acd = sunhours;
-	else if(name == "relhumid")
+	else if (name == "relhumid")
 		acd = relhumid;
-	else if(name == "co2")
+	else if (name == "co2")
 		acd = co2;
-
+	else if (name == "et0")
+		acd = et0;
+	
 	climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
 
@@ -211,16 +264,24 @@ climateDataForStep(const Climate::DataAccessor& da,
 void writeDebugInputs(const Env& env, string fileName = "inputs.json")
 {
 	ofstream pout;
-	string pathToFile = fixSystemSeparator(ensureDirExists(env.params.pathToOutputDir()) + "/" + fileName);
-	pout.open(pathToFile);
-	if(pout.fail())
+	string path = Tools::fixSystemSeparator(env.params.pathToOutputDir());
+	if (Tools::ensureDirExists(path))
 	{
-		cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
-		return;
+		string pathToFile = path + "/" + fileName;
+		pout.open(pathToFile);
+		if(pout.fail())
+		{
+			cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
+			return;
+		}
+		pout << env.to_json().dump() << endl;
+		pout.flush();
+		pout.close();
 	}
-	pout << env.to_json().dump() << endl;
-	pout.flush();
-	pout.close();
+	else
+	{
+		cerr << "Error failed to create path: '" << path << "'." << endl;
+	}
 }
 
 
@@ -282,9 +343,9 @@ void Spec::init(Maybe<DMY>& member, Json j, string time)
 				 && s[2].size() == 2)
 			{
 				DMY dmy;
-				dmy.year = parseInt(s[0]);
-				dmy.month = parseInt<size_t>(s[1]);
-				dmy.day = parseInt<size_t>(s[2]);
+				dmy.year = parseInt<uint>(s[0]);
+				dmy.month = parseInt<uint>(s[1]);
+				dmy.day = parseInt<uint>(s[2]);
 				member = dmy;
 				eventType = eDate;
 			}
@@ -991,11 +1052,11 @@ Output Monica::runMonica(Env env)
 		writeDebugInputs(env, "inputs.json");
 	}
 
-	if(env.cropRotation.empty())
-	{
-		debug() << "Error: Crop rotation is empty!" << endl;
-		return out;
-	}
+	//prefer multiple crop rotations, but use a single rotation if there
+	if(env.cropRotations.empty() && !env.cropRotation.empty())
+		env.cropRotations.push_back(CropRotation(env.climateData.startDate(), 
+																						 env.climateData.endDate(), 
+																						 env.cropRotation));
 
 	debug() << "starting Monica" << endl;
 	debug() << "-----" << endl;
@@ -1006,14 +1067,44 @@ Output Monica::runMonica(Env env)
 
 	debug() << "currentDate" << endl;
 	Date currentDate = env.climateData.startDate();
+	
+	//auto crit = env.cropRotations.empty() ? env.cropRotations.end() : env.cropRotations.begin();
+	auto crit = env.cropRotations.begin();
 
 	//cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
 	//if pure absolute CMs are finished
 	vector<CultivationMethod*> cropRotation;
-	for(auto& cm : env.cropRotation)
-		cropRotation.push_back(&cm);
+
+	auto checkAndInitShadowOfNextCropRotation = [&](Date currentDate)
+	{
+		if(crit != env.cropRotations.end())
+		{
+			//if current cropRotation is finished, try to move to next
+			if(crit->end.isValid()
+				 && currentDate == crit->end + 1)
+			{
+				crit++;
+				cropRotation.clear();
+			}
+
+			//check again, because we might have moved to next cropRotation
+			if(crit != env.cropRotations.end())
+			{
+				//if a new cropRotation starts, copy the the pointers to the CMs to the shadow CR
+				if(crit->start.isValid() 
+					 && currentDate == crit->start)
+				{
+					for(auto& cm : crit->cropRotation)
+						cropRotation.push_back(&cm);
+					return true;
+				}
+			}
+		}
+		return false;
+	};
 
 	//iterator through the crop rotation
+	//auto cmit = cropRotation.empty() ? cropRotation.end() : cropRotation.begin();
 	auto cmit = cropRotation.begin();
 
 	auto findNextCultivationMethod = [&](Date currentDate,
@@ -1105,6 +1196,13 @@ Output Monica::runMonica(Env env)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
 
+		if(checkAndInitShadowOfNextCropRotation(currentDate))
+		{
+			//cmit = cropRotation.empty() ? cropRotation.end() : cropRotation.begin();
+			cmit = cropRotation.begin();
+			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
+		}
+		
 		monica.dailyReset();
 
 		monica.setCurrentStepDate(currentDate);

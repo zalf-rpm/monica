@@ -33,6 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <list>
 #include <iostream>
+#include <assert.h>
 
 #include "monica-parameters.h"
 
@@ -225,9 +226,9 @@ namespace Monica
     //! apply delayed fertiliser application again (yielding possible top dressing)
     double applyPossibleDelayedFerilizer();
 
-		double applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
-																						double demandDepth,
-																						double Ndemand);
+	double applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+											double demandDepth,
+											double Ndemand);
 
     double applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fertiliserPartition,
                                                double vf_SamplingDepth,
@@ -250,15 +251,20 @@ namespace Monica
      * Returns number of layers.
      * @return Number of layers.
      */
-    inline std::size_t vs_NumberOfLayers() const { return size(); }
-		void applyTillage(double depth);
+    inline int vs_NumberOfLayers() const 
+	{ 
+		assert(size() <= INT_MAX);
+		return (int)size(); 
+	}
+	
+	void applyTillage(double depth);
 
     /**
      * Returns number of organic layers. Usually the number
      * of layers in the first 30 cm depth of soil.
      * @return Number of organic layers
      */
-    inline std::size_t vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
+    inline int vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
 
     //! Returns the thickness of a layer.
     //! Right now by definition all layers have the same size,
@@ -268,7 +274,7 @@ namespace Monica
     //! Returns daily crop N uptake [kg N ha-1 d-1]
     double get_DailyCropNUptake() const { return vq_CropNUptake * 10000.0; }
 
-    std::size_t getLayerNumberForDepth(double depth);
+    int getLayerNumberForDepth(double depth);
 
     void put_Crop(CropGrowth* crop);
 
@@ -284,14 +290,14 @@ namespace Monica
     double vt_SoilSurfaceTemperature{0.0};
     double vm_SnowDepth{0.0};
 
-		void clearTopDressingParams() { _vf_TopDressing = 0.0, _vf_TopDressingDelay = 0; }
+	void clearTopDressingParams() { _vf_TopDressing = 0.0, _vf_TopDressingDelay = 0; }
 
   private:
-    std::size_t calculateNumberOfOrganicLayers();
+    int calculateNumberOfOrganicLayers();
 
     double ps_MaxMineralisationDepth{0.4};
 
-    std::size_t _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
+    int _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
     double _vf_TopDressing{0.0};
     MineralFertiliserParameters _vf_TopDressingPartition;
     int _vf_TopDressingDelay{0};
