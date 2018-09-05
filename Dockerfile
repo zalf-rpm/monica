@@ -1,4 +1,5 @@
 #Download base image debian 9.5
+
 FROM debian:9.5
 
 ENV DEBIAN_FRONTED noninteractive
@@ -14,19 +15,20 @@ RUN mkdir -p /run/monica/sqlite-db
 ENV monica_dir /run/monica
 ENV supervisor_conf /etc/supervisor/supervisord.conf
 ENV monica_instances 3
-ENV executableSource _cmake_linux
+
+ARG  EXECUTABLE_SOURCE=_cmake_linux
 
 COPY docker/supervisord.conf ${supervisor_conf}
 
 # copy executables 
-COPY ${executableSource}/monica ${monica_dir}
-COPY ${executableSource}/monica-run ${monica_dir}
-COPY ${executableSource}/monica-zmq-control-send ${monica_dir}
-COPY ${executableSource}/monica-zmq-run ${monica_dir}
-COPY ${executableSource}/monica_python.so ${monica_dir}
-COPY ${executableSource}/monica-zmq-control ${monica_dir}
-COPY ${executableSource}/monica-zmq-proxy ${monica_dir}
-COPY ${executableSource}/monica-zmq-server ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica-run ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica-zmq-control-send ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica-zmq-run ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica_python.so ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica-zmq-control ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
+COPY ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
 
 # copy sqlite db
 COPY sqlite-db/ka5-soil-data.sqlite ${monica_dir}/sqlite-db/
