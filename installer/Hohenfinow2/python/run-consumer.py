@@ -26,20 +26,27 @@ import zmq
 import monica_io
 #print "path to monica_io: ", monica_io.__file__
 
-def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, server = {"server": None, "port": None}, shared_id = None):
+def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, server = {"server": None, "port": None}, shared_id = None):
     "collect data from workers"
 
     config = {
         "port": server["port"] if server["port"] else "7777",
         "server": server["server"] if server["server"] else "localhost", 
         "shared_id": shared_id,
-        "out": path_to_output_dir if path_to_output_dir else "out/"
+        "out": path_to_output_dir if path_to_output_dir else os.path.join(os.path.dirname(__file__), 'out/'),
+        "leave_after_finished_run": leave_after_finished_run
     }
     if len(sys.argv) > 1 and __name__ == "__main__":
         for arg in sys.argv[1:]:
             k,v = arg.split("=")
             if k in config:
-                config[k] = v
+                if k == "leave_after_finished_run":
+                    if (v == 'True' or v == 'true'): 
+                        config[k] = True
+                    else: 
+                        config[k] = False
+                else:
+                    config[k] = v
 
     print "consumer config:", config
 
@@ -92,6 +99,8 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
                             writer.writerow(row)
 
                     writer.writerow([])
+            if config["leave_after_finished_run"] == True :
+                leave = True
 
         return leave
 

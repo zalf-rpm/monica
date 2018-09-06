@@ -25,7 +25,6 @@ Builds can be downloaded from the repository's [releases page](https://github.co
 
 In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/sys-libs (includes of some external libraries and pre-build binaries for Windows) and 
 zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
-The easiest way to do this it to clone zalf-rpm/monica-master with its submodules.
 
 After cloning the repositories you should have this file structure:
 
