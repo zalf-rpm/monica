@@ -321,58 +321,6 @@ Tools::Errors Spec::merge(json11::Json j)
 	return{};
 }
 
-/*/
-void Spec::init(Maybe<DMY>& member, Json j, string time)
-{
-	auto j = j[time];
-	
-	//is an expression event
-	if(j.is_array())
-	{
-		if(auto f = buildCompareExpression(j.array_items()))
-		{
-			time2expression[time] = f;
-			if(eventType == eUnset)
-				eventType = eExpression;
-		}
-	}
-	else if(j.is_string())
-	{
-		auto jts = j.string_value();
-		if(!jts.empty())
-		{
-			auto s = splitString(jts, "-");
-			//is date event
-			if(jts.size() == 10
-				 && s.size() == 3
-				 && s[0].size() == 4
-				 && s[1].size() == 2
-				 && s[2].size() == 2)
-			{
-				DMY dmy;
-				dmy.year = parseInt<uint>(s[0]);
-				dmy.month = parseInt<uint>(s[1]);
-				dmy.day = parseInt<uint>(s[2]);
-				member = dmy;
-				eventType = eDate;
-			}
-			else
-			//treat all other strings as potential workstep event
-			else
-			{
-				auto f = [jts](const MonicaModel& monica){
-					const auto& currentEvents = monica.currentEvents();
-					return currentEvents.find(jts) != currentEvents.end();
-				};
-				time2expression[time] = f;
-				eventType = eExpression;
-				//time2event[time] = jts;
-				//eventType = eCrop;
-			}
-		}
-	}
-}
-*/
 std::function<bool(const MonicaModel&)> Spec::createExpressionFunc(Json j)
 {
 	//is an expression event
@@ -424,46 +372,6 @@ std::function<bool(const MonicaModel&)> Spec::createExpressionFunc(Json j)
 	}
 
 	return std::function<bool(const MonicaModel&)>();
-}
-
-json11::Json Spec::to_json() const
-{
-	/*
-	auto padDM = [](int i){ return (i < 10 ? string("0") : string()) + to_string(i); };
-	auto padY = [](int i)
-	{ return (i < 10
-						? string("0")
-						: (i < 100
-							 ? string("00")
-							 : (i < 1000
-									? string("000")
-									: string())))
-		+ to_string(i); };
-
-	J11Object o{{"type", "Spec"}};
-
-	auto extendMsgBy = [&](const Maybe<DMY>& member, string time)
-	{
-		if(member.isValue())
-		{
-			auto s = string("")
-				+ (member.value().year.isValue() ? padY(member.value().year.value()) : "xxxx")
-				+ (member.value().month.isValue() ? padDM(member.value().month.value()) : "xx")
-				+ (member.value().day.isValue() ? padDM(member.value().day.value()) : "xx");
-			if(s != "xxxx-xx-xx")
-				o[time] = s;
-		}
-	};
-
-	extendMsgBy(start, "start");
-	extendMsgBy(end, "end");
-	extendMsgBy(at, "at");
-	extendMsgBy(from, "from"); 
-	extendMsgBy(to, "to");
-	
-	return o;
-	*/
-	return origSpec;
 }
 
 //-----------------------------------------------------------------------------
@@ -575,13 +483,15 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica, bool storeO
 	string os = spec.origSpec.dump();
 	bool isCurrentlyEndEvent = false;
 	
-	//check and possibly set start/end markers
+	// check for possible start event (if one exists at all and just enter in that case if it is false)
 	if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
 	{
 		if(spec.startf)
 			withinEventStartEndRange = spec.startf(monica);
 	}
-	else if(withinEventStartEndRange.isValue())
+	
+	// check for end event (doesn't need a start event, but if there was one at all, it has to be true)
+	if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.isValue())
 	{
 		if(spec.endf)
 			isCurrentlyEndEvent = spec.endf(monica);
@@ -648,7 +558,7 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica, bool storeO
 		}
 	}
 
-	if(isCurrentlyEndEvent && withinEventStartEndRange.isValue())
+	if(isCurrentlyEndEvent)
 		withinEventStartEndRange = false;
 }
 
@@ -698,7 +608,10 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 			continue;
 
 		//if "at" and "while" are missing, add by default an "every day" "at"
-		if(spec["at"].is_null() && spec["while"].is_null())
+		if(spec["at"].is_null() 
+			 && spec["while"].is_null()
+			 && spec["from"].is_null() 
+			 && spec["to"].is_null())
 		{
 			auto o = spec.object_items();
 			o["at"] = "xxxx-xx-xx";

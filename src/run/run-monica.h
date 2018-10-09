@@ -130,7 +130,7 @@ namespace Monica
 
 		std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
 
-		virtual json11::Json to_json() const;
+		virtual json11::Json to_json() const { return origSpec; }
 
 		json11::Json origSpec;
 
