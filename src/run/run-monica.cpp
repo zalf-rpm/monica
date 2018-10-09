@@ -304,34 +304,41 @@ Maybe<T> parseInt(const string& s)
 
 Tools::Errors Spec::merge(json11::Json j)
 {
-	init(start, j, "start");
-	init(end, j, "end");
-	init(at, j, "at");
-	init(from, j, "from");
-	init(to, j, "to");
-	Maybe<DMY> dummy;
-	init(dummy, j, "while");
+	//init(start, j, "start");
+	//init(end, j, "end");
+	//init(at, j, "at");
+	//init(from, j, "from");
+	//init(to, j, "to");
+	//Maybe<DMY> dummy;
+	//init(dummy, j, "while");
+	startf = createExpressionFunc(j["start"]);
+	endf = createExpressionFunc(j["end"]);
+	atf = createExpressionFunc(j["at"]);
+	fromf = createExpressionFunc(j["from"]);
+	tof = createExpressionFunc(j["to"]);
+	whilef = createExpressionFunc(j["while"]);
 
 	return{};
 }
 
+/*/
 void Spec::init(Maybe<DMY>& member, Json j, string time)
 {
-	auto jt = j[time];
+	auto j = j[time];
 	
 	//is an expression event
-	if(jt.is_array())
+	if(j.is_array())
 	{
-		if(auto f = buildCompareExpression(jt.array_items()))
+		if(auto f = buildCompareExpression(j.array_items()))
 		{
 			time2expression[time] = f;
 			if(eventType == eUnset)
 				eventType = eExpression;
 		}
 	}
-	else if(jt.is_string())
+	else if(j.is_string())
 	{
-		auto jts = jt.string_value();
+		auto jts = j.string_value();
 		if(!jts.empty())
 		{
 			auto s = splitString(jts, "-");
@@ -349,18 +356,79 @@ void Spec::init(Maybe<DMY>& member, Json j, string time)
 				member = dmy;
 				eventType = eDate;
 			}
+			else
 			//treat all other strings as potential workstep event
 			else
 			{
-				time2event[time] = jts;
-				eventType = eCrop;
+				auto f = [jts](const MonicaModel& monica){
+					const auto& currentEvents = monica.currentEvents();
+					return currentEvents.find(jts) != currentEvents.end();
+				};
+				time2expression[time] = f;
+				eventType = eExpression;
+				//time2event[time] = jts;
+				//eventType = eCrop;
 			}
 		}
 	}
 }
+*/
+std::function<bool(const MonicaModel&)> Spec::createExpressionFunc(Json j)
+{
+	//is an expression event
+	if(j.is_array())
+	{
+		if(auto f = buildCompareExpression(j.array_items()))
+			return f;
+	}
+	else if(j.is_string())
+	{
+		auto jts = j.string_value();
+		if(!jts.empty())
+		{
+			auto s = splitString(jts, "-");
+			//is date event
+			if(jts.size() == 10
+				 && s.size() == 3
+				 && s[0].size() == 4
+				 && s[1].size() == 2
+				 && s[2].size() == 2)
+			{
+				auto year = parseInt<uint>(s[0]);
+				auto month = parseInt<uint>(s[1]);
+				auto day = parseInt<uint>(s[2]);
+
+				auto f = [day, month, year](const MonicaModel& monica){
+					auto cd = monica.currentStepDate();
+
+					// build date to compare against
+					// apply min() for day, to allow for matching of the last day for each month by choosing 31st
+					Date date(day.isNothing() ? cd.day() : min(day.value(), cd.daysInMonth()),
+										month.isNothing() ? cd.month() : month.value(),
+										year.isNothing() ? cd.year() : year.value(),
+										false, true);
+
+					return date == cd;
+				};
+				return f;
+			}
+			//treat all other strings as potential workstep event
+			else
+			{
+				return [jts](const MonicaModel& monica){
+					const auto& currentEvents = monica.currentEvents();
+					return currentEvents.find(jts) != currentEvents.end();
+				};
+			}
+		}
+	}
+
+	return std::function<bool(const MonicaModel&)>();
+}
 
 json11::Json Spec::to_json() const
 {
+	/*
 	auto padDM = [](int i){ return (i < 10 ? string("0") : string()) + to_string(i); };
 	auto padY = [](int i)
 	{ return (i < 10
@@ -394,6 +462,8 @@ json11::Json Spec::to_json() const
 	extendMsgBy(to, "to");
 	
 	return o;
+	*/
+	return origSpec;
 }
 
 //-----------------------------------------------------------------------------
@@ -415,9 +485,9 @@ void storeResults(const vector<OId>& outputIds,
 	}
 };
 
-void storeResults2(const vector<OId>& outputIds,
-									 vector<J11Object>& results,
-									 const MonicaModel& monica)
+void storeResultsObj(const vector<OId>& outputIds,
+										 vector<J11Object>& results,
+										 const MonicaModel& monica)
 {
 	const auto& ofs = buildOutputTable().ofs;
 
@@ -500,487 +570,87 @@ void StoreData::aggregateResultsObj()
 	}
 }
 
-
-void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica)
+void StoreData::storeResultsIfSpecApplies(const MonicaModel& monica, bool storeObjOutputs)
 {
 	string os = spec.origSpec.dump();
-
-	switch(spec.eventType)
+	bool isCurrentlyEndEvent = false;
+	
+	//check and possibly set start/end markers
+	if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
 	{
-	case Spec::eExpression:
-	{
-		bool isCurrentlyEndEvent = false;
-		if(!spec.time2expression.empty())
-		{
-			//check and possibly set start/end markers
-			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
-			{
-				if(auto f = spec.time2expression["start"])
-					withinEventStartEndRange = f(monica);
-			}
-			else if(withinEventStartEndRange.isValue())
-			{
-				if(auto f = spec.time2expression["end"])
-					isCurrentlyEndEvent = f(monica);
-			}
-
-			//do something if we are in start/end range or nothing is set at all (means do it always)
-			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
-			{
-				//check for at event
-				auto af = spec.time2expression["at"];
-				if(af && af(monica))
-				{
-					storeResults(outputIds, results, monica);
-				}
-				//or while event
-				else if(auto wf = spec.time2expression["while"])
-				{
-					if(wf(monica))
-					{
-						storeResults(outputIds, intermediateResults, monica);
-					}
-					else if(!intermediateResults.empty()
-									&& !intermediateResults.front().empty())
-					{
-						//if while event was not successful but we got intermediate results, they should be aggregated
-						aggregateResults();
-					}
-				}
-				//or from/to range event
-				else
-				{
-					bool isCurrentlyToEvent = false;
-					if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
-					{
-						if(auto f = spec.time2expression["from"])
-							withinEventFromToRange = f(monica);
-					}
-					else if(withinEventFromToRange.isValue())
-					{
-						if(auto f = spec.time2expression["to"])
-							isCurrentlyToEvent = f(monica);
-					}
-
-					if(withinEventFromToRange.value())
-					{
-						storeResults(outputIds, intermediateResults, monica);
-
-						if(isCurrentlyToEvent)
-						{
-							aggregateResults();
-							withinEventFromToRange = false;
-						}
-
-						if(isCurrentlyEndEvent)
-							withinEventStartEndRange = false;
-					}
-				}
-			}
-		}
+		if(spec.startf)
+			withinEventStartEndRange = spec.startf(monica);
 	}
-	break;
-	case Spec::eCrop:
+	else if(withinEventStartEndRange.isValue())
 	{
-		bool isCurrentlyEndEvent = false;
-		const auto& currentEvents = monica.currentEvents();
-		if(!spec.time2event.empty() || !currentEvents.empty())
-		{
-			//set possibly start/end markers
-			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
-			{
-				auto s = spec.time2event["start"];
-				if(!s.empty())
-				{
-					if(currentEvents.find(s) != currentEvents.end())
-						withinEventStartEndRange = true;
-				}
-			}
-			else if(withinEventStartEndRange.isValue())
-			{
-				auto e = spec.time2event["end"];
-				if(!e.empty())
-				{
-					if(currentEvents.find(e) != currentEvents.end())
-						isCurrentlyEndEvent = true;
-				}
-			}
+		if(spec.endf)
+			isCurrentlyEndEvent = spec.endf(monica);
+	}
 
-			//is at event
-			auto a = spec.time2event["at"];
-			if(!a.empty() && currentEvents.find(a) != currentEvents.end())
-			{
-				storeResults(outputIds, results, monica);
-			}
-			//is from/to event
+	//do something if we are in start/end range or nothing is set at all (means do it always)
+	if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
+	{
+		//check for at event
+		if(spec.atf && spec.atf(monica))
+		{
+			if(storeObjOutputs)
+				storeResultsObj(outputIds, resultsObj, monica);
 			else
-			{
-				bool isCurrentlyToEvent = false;
-				if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
-				{
-					auto f = spec.time2event["from"];
-					if(!f.empty())
-					{
-						if(currentEvents.find(f) != currentEvents.end())
-							withinEventFromToRange = true;
-					}
-				}
-				else if(withinEventFromToRange.isValue())
-				{
-					auto t = spec.time2event["to"];
-					if(!t.empty())
-					{
-						if(currentEvents.find(t) != currentEvents.end())
-							isCurrentlyToEvent = true;
-					}
-				}
-
-				if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
-				{
-					if(withinEventFromToRange.value())
-					{
-						// allow an while expression in an eCrop section
-						if(auto wf = spec.time2expression["while"])
-						{
-							if(wf(monica))
-							{
-								storeResults(outputIds, intermediateResults, monica);
-							}
-						}
-						else
-							storeResults(outputIds, intermediateResults, monica);
-
-						if(isCurrentlyToEvent)
-						{
-							aggregateResults();
-							withinEventFromToRange = false;
-						}
-
-						if(isCurrentlyEndEvent)
-							withinEventStartEndRange = false;
-					}
-				}
-			}
-		}
-	}
-	break;
-	case Spec::eDate:
-	{
-		auto cd = monica.currentStepDate();
-
-		auto y = cd.year();
-		auto m = cd.month();
-		auto d = cd.day();
-
-		if(spec.start.isValue() || spec.end.isValue())
-		{
-			//build dates to compare against
-			auto sv = spec.start.value();
-			Date start(sv.day.isNothing() ? d : sv.day.value(),
-								 sv.month.isNothing() ? m : sv.month.value(),
-								 sv.year.isNothing() ? y : sv.year.value(),
-								 false, true);
-
-			auto ev = spec.end.value();
-			Date end(ev.day.isNothing() ? d : ev.day.value(),
-							 ev.month.isNothing() ? m : ev.month.value(),
-							 ev.year.isNothing() ? y : ev.year.value(),
-							 false, true);
-
-			//check if we are in the start/end range or no year, month, day specified
-			if(cd < start || cd > end)
-				return;
-		}
-
-		//at spec takes precedence over range spec, if both would be set
-		if(spec.isAt())
-		{
-			if((spec.at.value().year.isNothing() || y == spec.at.value().year.value())
-				 && (spec.at.value().month.isNothing() || m == spec.at.value().month.value())
-				 && (spec.at.value().day.isNothing()
-						 || d == spec.at.value().day.value()
-						 || (spec.at.value().day.isValue() && d < spec.at.value().day.value() && d == cd.daysInMonth())))
-			{
 				storeResults(outputIds, results, monica);
+		}
+		//or from/to range event
+		else if(spec.fromf && spec.tof)
+		{
+			bool isCurrentlyToEvent = false;
+			if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
+				withinEventFromToRange = spec.fromf(monica);
+			else if(withinEventFromToRange.isValue())
+				isCurrentlyToEvent = spec.tof(monica);
+
+			if(withinEventFromToRange.value())
+			{
+				// if while is specified together with a from/to range, store only if the while is true
+				// but aggregate only if the range is left
+				// this means the range specifies the extend of recording
+				if(spec.whilef)
+				{
+					if(spec.whilef(monica))
+						storeResults(outputIds, intermediateResults, monica);
+				}
+				else
+					storeResults(outputIds, intermediateResults, monica);
+
+				if(isCurrentlyToEvent) 
+				{
+					if(storeObjOutputs)
+						aggregateResultsObj();
+					else
+						aggregateResults();
+					withinEventFromToRange = false;
+				}
 			}
 		}
-		//spec.at.isValue() can also mean "xxxx-xx-xx" = daily values
-		else if(spec.at.isValue())
+		//or a single while aggregating expression
+		else if(spec.whilef)
 		{
-			storeResults(outputIds, results, monica);
-		}
-		else
-		{
-			//build dates to compare against
-			auto fv = spec.from.value();
-			Date from(fv.day.isNothing() ? d : fv.day.value(),
-								fv.month.isNothing() ? m : fv.month.value(),
-								fv.year.isNothing() ? y : fv.year.value(),
-								false, true);
-
-			auto tv = spec.to.value();
-			Date to(tv.day.isNothing() ? d : tv.day.value(),
-							tv.month.isNothing() ? m : tv.month.value(),
-							tv.year.isNothing() ? y : tv.year.value(),
-							false, true);
-
-			//check if we are in the aggregating from/to range
-			if(from <= cd && cd <= to)
-			{
+			if(spec.whilef(monica)) {
 				storeResults(outputIds, intermediateResults, monica);
-
-				//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
-				//aggregate intermediate values
-				if(cd == to)
+			}
+			else if(!intermediateResults.empty()
+							&& !intermediateResults.front().empty())
+			{
+				//if while event was not successful but we got intermediate results, they should be aggregated
+				if(storeObjOutputs)
+					aggregateResultsObj();
+				else
 					aggregateResults();
 			}
 		}
 	}
-	break;
-	default:;
-	}
+
+	if(isCurrentlyEndEvent && withinEventStartEndRange.isValue())
+		withinEventStartEndRange = false;
 }
-
-void StoreData::storeResultsIfSpecAppliesObj(const MonicaModel& monica)
-{
-	string os = spec.origSpec.dump();
-
-	switch(spec.eventType)
-	{
-	case Spec::eExpression:
-	{
-		bool isCurrentlyEndEvent = false;
-		if(!spec.time2expression.empty())
-		{
-			//check and possibly set start/end markers
-			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
-			{
-				if(auto f = spec.time2expression["start"])
-					withinEventStartEndRange = f(monica);
-			}
-			else if(withinEventStartEndRange.isValue())
-			{
-				if(auto f = spec.time2expression["end"])
-					isCurrentlyEndEvent = f(monica);
-			}
-
-			//do something if we are in start/end range or nothing is set at all (means do it always)
-			if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
-			{
-				//check for at event
-				auto af = spec.time2expression["at"];
-				if(af && af(monica))
-				{
-					storeResults2(outputIds, resultsObj, monica);
-				}
-				//or while event
-				else if(auto wf = spec.time2expression["while"])
-				{
-					if(wf(monica))
-					{
-						storeResults(outputIds, intermediateResults, monica);
-					}
-					else if(!intermediateResults.empty()
-									&& !intermediateResults.front().empty())
-					{
-						//if while event was not successful but we got intermediate results, they should be aggregated
-						aggregateResultsObj();
-					}
-				}
-				//or from/to range event
-				else
-				{
-					bool isCurrentlyToEvent = false;
-					if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
-					{
-						if(auto f = spec.time2expression["from"])
-							withinEventFromToRange = f(monica);
-					}
-					else if(withinEventFromToRange.isValue())
-					{
-						if(auto f = spec.time2expression["to"])
-							isCurrentlyToEvent = f(monica);
-					}
-
-					if(withinEventFromToRange.value())
-					{
-						storeResults(outputIds, intermediateResults, monica);
-
-						if(isCurrentlyToEvent)
-						{
-							aggregateResultsObj();
-							withinEventFromToRange = false;
-						}
-
-						if(isCurrentlyEndEvent)
-							withinEventStartEndRange = false;
-					}
-				}
-			}
-		}
-	}
-	break;
-	case Spec::eCrop:
-	{
-		bool isCurrentlyEndEvent = false;
-		const auto& currentEvents = monica.currentEvents();
-		if(!spec.time2event.empty() || !currentEvents.empty())
-		{
-			//set possibly start/end markers
-			if(withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value())
-			{
-				auto s = spec.time2event["start"];
-				if(!s.empty())
-				{
-					if(currentEvents.find(s) != currentEvents.end())
-						withinEventStartEndRange = true;
-				}
-			}
-			else if(withinEventStartEndRange.isValue())
-			{
-				auto e = spec.time2event["end"];
-				if(!e.empty())
-				{
-					if(currentEvents.find(e) != currentEvents.end())
-						isCurrentlyEndEvent = true;
-				}
-			}
-
-			//is at event
-			auto a = spec.time2event["at"];
-			if(!a.empty() && currentEvents.find(a) != currentEvents.end())
-			{
-				storeResults2(outputIds, resultsObj, monica);
-			}
-			//is from/to event
-			else
-			{
-				bool isCurrentlyToEvent = false;
-				if(withinEventFromToRange.isNothing() || !withinEventFromToRange.value())
-				{
-					auto f = spec.time2event["from"];
-					if(!f.empty())
-					{
-						if(currentEvents.find(f) != currentEvents.end())
-							withinEventFromToRange = true;
-					}
-				}
-				else if(withinEventFromToRange.isValue())
-				{
-					auto t = spec.time2event["to"];
-					if(!t.empty())
-					{
-						if(currentEvents.find(t) != currentEvents.end())
-							isCurrentlyToEvent = true;
-					}
-				}
-
-				if(withinEventStartEndRange.isNothing() || withinEventStartEndRange.value())
-				{
-					if(withinEventFromToRange.value())
-					{
-						// allow an while expression in an eCrop section
-						if(auto wf = spec.time2expression["while"])
-						{
-							if(wf(monica))
-							{
-								storeResults(outputIds, intermediateResults, monica);
-							}
-						}
-						else
-							storeResults(outputIds, intermediateResults, monica);
-
-						if(isCurrentlyToEvent)
-						{
-							aggregateResultsObj();
-							withinEventFromToRange = false;
-						}
-
-						if(isCurrentlyEndEvent)
-							withinEventStartEndRange = false;
-					}
-				}
-			}
-		}
-	}
-	break;
-	case Spec::eDate:
-	{
-		auto cd = monica.currentStepDate();
-
-		auto y = cd.year();
-		auto m = cd.month();
-		auto d = cd.day();
-
-		if(spec.start.isValue() || spec.end.isValue())
-		{
-			//build dates to compare against
-			auto sv = spec.start.value();
-			Date start(sv.day.isNothing() ? d : sv.day.value(),
-								 sv.month.isNothing() ? m : sv.month.value(),
-								 sv.year.isNothing() ? y : sv.year.value(),
-								 false, true);
-
-			auto ev = spec.end.value();
-			Date end(ev.day.isNothing() ? d : ev.day.value(),
-							 ev.month.isNothing() ? m : ev.month.value(),
-							 ev.year.isNothing() ? y : ev.year.value(),
-							 false, true);
-
-			//check if we are in the start/end range or no year, month, day specified
-			if(cd < start || cd > end)
-				return;
-		}
-
-		//at spec takes precedence over range spec, if both would be set
-		if(spec.isAt())
-		{
-			if((spec.at.value().year.isNothing() || y == spec.at.value().year.value())
-				 && (spec.at.value().month.isNothing() || m == spec.at.value().month.value())
-				 && (spec.at.value().day.isNothing()
-						 || d == spec.at.value().day.value()
-						 || (spec.at.value().day.isValue() && d < spec.at.value().day.value() && d == cd.daysInMonth())))
-			{
-				storeResults2(outputIds, resultsObj, monica);
-			}
-		}
-		//spec.at.isValue() can also mean "xxxx-xx-xx" = daily values
-		else if(spec.at.isValue())
-		{
-			storeResults2(outputIds, resultsObj, monica);
-		}
-		else
-		{
-			//build dates to compare against
-			auto fv = spec.from.value();
-			Date from(fv.day.isNothing() ? d : fv.day.value(),
-								fv.month.isNothing() ? m : fv.month.value(),
-								fv.year.isNothing() ? y : fv.year.value(),
-								false, true);
-
-			auto tv = spec.to.value();
-			Date to(tv.day.isNothing() ? d : tv.day.value(),
-							tv.month.isNothing() ? m : tv.month.value(),
-							tv.year.isNothing() ? y : tv.year.value(),
-							false, true);
-
-			//check if we are in the aggregating from/to range
-			if(from <= cd && cd <= to)
-			{
-				storeResults(outputIds, intermediateResults, monica);
-
-				//if on last day of range or last day in month (even if month has less than 31 days (= marker for end of month))
-				//aggregate intermediate values
-				if(cd == to)
-					aggregateResultsObj();
-			}
-		}
-	}
-	break;
-	default:;
-	}
-}
-
 
 vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date endDate)
 {
@@ -1026,6 +696,15 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 		//object is the default we assume
 		else if(!spec.is_object())
 			continue;
+
+		//if "at" and "while" are missing, add by default an "every day" "at"
+		if(spec["at"].is_null() && spec["while"].is_null())
+		{
+			auto o = spec.object_items();
+			o["at"] = "xxxx-xx-xx";
+			spec = o;
+		}
+
 		sd.spec.merge(spec);
 		sd.outputIds = parseOutputIds(e2os[i+1].array_items());
 		
@@ -1233,12 +912,7 @@ Output Monica::runMonica(Env env)
 
 		//store results
 		for(auto& s : store)
-		{
-			if(returnObjOutputs)
-				s.storeResultsIfSpecAppliesObj(monica);
-			else
-				s.storeResultsIfSpecApplies(monica);
-		}
+			s.storeResultsIfSpecApplies(monica, returnObjOutputs);
 
 		//if the next application date is not valid, we're at the end
 		//of the application list of this cultivation method

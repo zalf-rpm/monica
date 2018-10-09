@@ -122,54 +122,31 @@ namespace Monica
 
 	struct Spec : public Tools::Json11Serializable
 	{
-		struct DMY
-		{
-			Tools::Maybe<uint> day;
-			Tools::Maybe<uint> month;
-			Tools::Maybe<uint> year;
-		};
-
-		enum EventType { eDate, eCrop, eExpression, eUnset };
-
 		Spec() {}
 
 		Spec(json11::Json j) { merge(j); }
 
 		virtual Tools::Errors merge(json11::Json j);
 
-		void init(Tools::Maybe<DMY>& member, json11::Json j, std::string time);
+		std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
 
 		virtual json11::Json to_json() const;
 
 		json11::Json origSpec;
 
-		EventType eventType{eUnset};
-
-		std::map<std::string, std::string> time2event;
-		std::map<std::string, std::function<bool(const MonicaModel&)>> time2expression;
-
-		Tools::Maybe<DMY> start;
-		Tools::Maybe<DMY> end;
-
-		Tools::Maybe<DMY> from;
-		Tools::Maybe<DMY> to;
-
-		Tools::Maybe<DMY> at;
-
-		bool isYearRange() const { return from.value().year.isValue() && to.value().year.isValue(); }
-		bool isMonthRange() const { return from.value().month.isValue() && to.value().month.isValue(); }
-		bool isDayRange() const { return from.value().day.isValue() && to.value().day.isValue(); }
-
-		bool isAt() const { return at.isValue() && (at.value().year.isValue() || at.value().month.isValue() || at.value().day.isValue()); }
-		bool isRange() const { return !isAt(); }
+		std::function<bool(const MonicaModel&)> startf;
+		std::function<bool(const MonicaModel&)> endf;
+		std::function<bool(const MonicaModel&)> fromf;
+		std::function<bool(const MonicaModel&)> tof;
+		std::function<bool(const MonicaModel&)> atf;
+		std::function<bool(const MonicaModel&)> whilef;
 	};
 
 	struct StoreData
 	{
 		void aggregateResults();
 		void aggregateResultsObj();
-		void storeResultsIfSpecApplies(const MonicaModel& monica);
-		void storeResultsIfSpecAppliesObj(const MonicaModel& monica);
+		void storeResultsIfSpecApplies(const MonicaModel& monica, bool storeObjOutputs = false);
 
 		Tools::Maybe<bool> withinEventStartEndRange;
 		Tools::Maybe<bool> withinEventFromToRange;
