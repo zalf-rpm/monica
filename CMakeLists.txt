@@ -517,3 +517,44 @@ if (MSVC)
 endif()
 set_target_properties(monica_python PROPERTIES PREFIX "")
 
+#------------------------------------------------------------------------------
+
+# create monica-zmq-run executable, the cli client to monica-zmq-server
+set(CLIMATE_IO_LIB_FILES
+	
+	# climate library code
+	#-------------------------------------------
+	${UTIL_DIR}/climate/climate-file-io.h
+	${UTIL_DIR}/climate/climate-file-io.cpp
+
+	${UTIL_DIR}/tools/algorithms.h
+	${UTIL_DIR}/tools/algorithms.cpp
+
+	${UTIL_DIR}/tools/date.h
+	${UTIL_DIR}/tools/date.cpp
+
+	${UTIL_DIR}/tools/debug.h
+	${UTIL_DIR}/tools/debug.cpp
+
+	${UTIL_DIR}/tools/helper.h
+	${UTIL_DIR}/tools/helper.cpp
+
+	${UTIL_DIR}/tools/json11-helper.h
+	${UTIL_DIR}/tools/json11-helper.cpp
+)
+set(CLIMATE_IO_LIB_SOURCE 	${CLIMATE_IO_LIB_FILES} 
+							${LIBMONICA_UTIL_CLIMATE_SOURCE}
+							${LIBMONICA_UTIL_JSON11_SOURCE}
+							${LIBMONICA_UTIL_COMMON_SOURCE})
+
+add_library(libclimateio SHARED ${CLIMATE_IO_LIB_SOURCE})
+if (MSVC)
+target_compile_options(libclimateio PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
+target_link_libraries(libclimateio
+	${ZMQ_LIB_NAME}
+	${CMAKE_THREAD_LIBS_INIT}
+	${CMAKE_DL_LIBS}
+)
+set_target_properties(libclimateio PROPERTIES PREFIX "")
+set_target_properties(libclimateio PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_EXPORTS")
