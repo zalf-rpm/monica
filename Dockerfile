@@ -15,10 +15,14 @@ RUN mkdir -p /run/monica/sqlite-db
 ENV monica_dir /run/monica
 ENV supervisor_conf /etc/supervisor/supervisord.conf
 ENV monica_instances 3
+ENV MONICA_WORK /monica_data
 
 ARG  EXECUTABLE_SOURCE=_cmake_linux
 
 COPY docker/supervisord.conf ${supervisor_conf}
+
+RUN mkdir -p $MONICA_WORK
+RUN chmod -R 777 ${MONICA_WORK}
 
 # copy executables 
 COPY ${EXECUTABLE_SOURCE}/monica ${monica_dir}
