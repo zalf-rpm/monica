@@ -633,7 +633,36 @@ Errors Cutting::merge(json11::Json j)
 	{
 		int oid = organId(p.first, errors);
 		if (oid == -1) continue;
-		_organId2cuttingFraction[oid] = int_valueD(p.second, 0) / 100.0;
+		Value v;
+		auto arr = p.second.array_items();
+		if (arr.size() > 0) 
+			v.value = double_valueD(arr[0].number_value(), 0);
+		if (arr.size() > 1) {
+			v.unit = percentage;
+			auto p = arr[1].string_value();
+			if (p == "kg ha-1")
+				v.unit = biomass;
+			else if (p == "m2 m-2" && oid == 1)
+				v.unit = LAI;
+			else if (p == "%")
+				v.value = v.value / 100.0;
+			else {
+				// treat no unit as percentage
+				v.value = v.value / 100.0;
+				errors.append(string("Unknown unit: ") + p + " in Cutting workstep: " + j.dump());
+			}
+		}
+		if (arr.size() > 2) {
+			auto col = arr[2].string_value();
+			if (col == "cut")
+				v.cut_or_left = cut;
+			else if (col == "left")
+				v.cut_or_left = left;
+			else
+				v.cut_or_left = none;
+		}
+
+		_organId2cuttingSpec[oid] = v;
 		_organId2exportFraction[oid] = export_ ? 1 : 0;
 	}
 
@@ -668,8 +697,16 @@ json11::Json Cutting::to_json() const
 	};
 
 	J11Object organs;
-	for(auto p : _organId2cuttingFraction)
-		organs[organName(p.first)] = J11Array{int(p.second * 100.0), "%"};
+	for(auto p : _organId2cuttingSpec)
+		organs[organName(p.first)] = J11Array{
+		p.second.value * (p.second.unit == percentage ? 100.0 : 1.0), 
+		p.second.unit == percentage ? "%" : (p.second.unit == biomass ? "kg ha-1" : "m2 m-2"),
+		p.second.cut_or_left == cut ? "cut" : "left"
+	};
+
+	J11Object organsBiomAfterCutting;
+	for (auto p : _organId2biomAfterCutting)
+		organsBiomAfterCutting[organName(p.first)] = J11Array{ int(p.second), "kg ha-1" };
 
 	J11Object exports;
 	for(auto p : _organId2exportFraction)
@@ -703,7 +740,7 @@ bool Cutting::apply(MonicaModel* model)
 	//crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
 	//crop->setCropHeight(model->cropGrowth()->get_CropHeight());
 
-	model->cropGrowth()->applyCutting(_organId2cuttingFraction, _organId2exportFraction, _cutMaxAssimilationRateFraction);
+	model->cropGrowth()->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
 	model->addEvent("Cutting");
 
 	return true;

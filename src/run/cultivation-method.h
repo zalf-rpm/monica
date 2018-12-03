@@ -323,8 +323,18 @@ namespace Monica
 
 		virtual bool apply(MonicaModel* model);
 
+
+	enum CL { cut, left, none };
+	enum Unit { percentage, biomass, LAI };
+	struct Value {
+		double value{ 0.0 };
+		Unit unit{ percentage };
+		CL cut_or_left{ cut };
+	};
+
 	private:
-		std::map<int, double> _organId2cuttingFraction;
+		std::map<int, Value> _organId2cuttingSpec;
+		std::map<int, double> _organId2biomAfterCutting;
 		std::map<int, double> _organId2exportFraction;
 		double _cutMaxAssimilationRateFraction{1.0};
   };

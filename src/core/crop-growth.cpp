@@ -2662,7 +2662,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
 
 	//double pc_GrowthRespirationRedux = user_crops->getPc_GrowthRespirationRedux();
-
 	// Assuming that growth respiration takes 30% of total assimilation --> 0.7 [kg ha-1]
 	//vc_NetPhotosynthesis = (vc_GrossPhotosynthesis - vc_NetMaintenanceRespiration + vc_ReserveAssimilatePool) * pc_GrowthRespirationRedux; // from HERMES algorithms
 	vc_NetPhotosynthesis = vc_Assimilates; // from AGROSIM algorithms
@@ -2686,7 +2685,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 
 	for(int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
 	{
-
 		vc_AssimilatePartitioningCoeffOld = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage - 1][i_Organ];
 		vc_AssimilatePartitioningCoeff = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ];
 
@@ -2697,10 +2695,8 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 			vc_AssimilatePartitioningCoeff = vc_AssimilatePartitioningCoeff * vc_CropHeatRedux * vc_DroughtImpactOnFertility;
 		}
 
-
 		if((vc_CurrentTemperatureSum[vc_DevelopmentalStage] / pc_StageTemperatureSum[vc_DevelopmentalStage]) > 1)
 		{
-
 			// Pflanze ist ausgewachsen
 			vc_OrganGrowthIncrement[i_Organ] = 0.0;
 			vc_OrganSenescenceIncrement[i_Organ] = 0.0;
@@ -2708,17 +2704,14 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 			{
 				vc_GrowthCycleEnded = true;
 			}
-
 		}
 		else
 		{
-
 			// test if there is a positive bilance of produced assimilates
 			// if vc_NetPhotosynthesis is negativ, the crop needs more for
 			// maintenance than for building new biomass
 			if(vc_NetPhotosynthesis < 0.0)
 			{
-
 				// reduce biomass from leaf and shoot because of negative assimilate
 				//! TODO: hard coded organ ids; must be more generalized because in database organ_ids can be mixed
 				vc_OrganBiomass[i_Organ];
@@ -2737,8 +2730,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 						// temporary hack because complex algorithm produces questionable results
 						debug() << "LEAF - Not enough biomass for reduction - Reducing only what is available " << endl;
 						vc_OrganGrowthIncrement[i_Organ] = (-1) * vc_OrganBiomass[i_Organ];
-
-
 						//                      debug() << "LEAF - Not enough biomass for reduction; Need to calculate new partition coefficient" << endl;
 						//                      // calculate new partition coefficient to detect, how much of organ biomass
 						//                      // can be reduced
@@ -2751,7 +2742,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 						//                      vc_OrganGrowthIncrement[i_Organ] = incr;
 						//                      debug() << "LEAF - Reducing organ by " << incr << " (" << vc_OrganBiomass[i_Organ] + vc_OrganGrowthIncrement[i_Organ] << ")"<< endl;
 					}
-
 				}
 				else if(i_Organ == SHOOT)
 				{ // shoot
@@ -2768,8 +2758,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 						// temporary hack because complex algorithm produces questionable results
 						debug() << "SHOOT - Not enough biomass for reduction - Reducing only what is available " << endl;
 						vc_OrganGrowthIncrement[i_Organ] = (-1) * vc_OrganBiomass[i_Organ];
-
-
 						//                      debug() << "SHOOT - Not enough biomass for reduction; Need to calculate new partition coefficient" << endl;
 						//
 						//                      assimilate_partition_shoot = fabs(vc_OrganBiomass[i_Organ] / vc_NetPhotosynthesis);
@@ -2802,22 +2790,18 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 				else
 				{
 					// root or storage organ - do nothing in case of negative photosynthesis
-					vc_OrganGrowthIncrement[i_Organ] = 0.0;
+					vc_OrganGrowthIncrement[i_Organ] = 0;
 				}
-
 			}
 			else
 			{ // if (vc_NetPhotosynthesis < 0.0) {
 				vc_OrganGrowthIncrement[i_Organ] = vc_NetPhotosynthesis *
-					(vc_AssimilatePartitioningCoeffOld
-					 + ((vc_AssimilatePartitioningCoeff - vc_AssimilatePartitioningCoeffOld)
-							* (vc_CurrentTemperatureSum[vc_DevelopmentalStage]
-								 / pc_StageTemperatureSum[vc_DevelopmentalStage]))) * vc_CropNRedux; // [kg CH2O ha-1]
+					(vc_AssimilatePartitioningCoeffOld + ((vc_AssimilatePartitioningCoeff - vc_AssimilatePartitioningCoeffOld)
+							* (vc_CurrentTemperatureSum[vc_DevelopmentalStage]/pc_StageTemperatureSum[vc_DevelopmentalStage]))) * vc_CropNRedux; // [kg CH2O ha-1]
 			}
 			vc_OrganSenescenceIncrement[i_Organ] = (vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ]) *
 				(pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ]
-				 + ((pc_OrganSenescenceRate[vc_DevelopmentalStage][i_Organ]
-						 - pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ])
+				 + ((pc_OrganSenescenceRate[vc_DevelopmentalStage][i_Organ]- pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ])
 						* (vc_CurrentTemperatureSum[vc_DevelopmentalStage] / pc_StageTemperatureSum[vc_DevelopmentalStage]))); // [kg CH2O ha-1]
 
 		}
@@ -2833,12 +2817,11 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		}
 		else
 		{
-			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
+			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep ); // [kg CH2O ha-1]
 			vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
 		}
 
 		vc_OrganGreenBiomass[i_Organ] = vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ]; // [kg CH2O ha-1]
-
 		if((vc_OrganGreenBiomass[i_Organ]) < 0.0)
 		{
 			vc_OrganDeadBiomass[i_Organ] = vc_OrganBiomass[i_Organ];
@@ -3233,7 +3216,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 
 	// Slope of saturation water vapour pressure-to-temperature relation
 	vc_SaturatedVapourPressureSlope = (4098.0 * (0.6108 * exp((17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature
-																																															 + 237.3)))) / ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
+																													 + 237.3)))) / ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
 
 	// Calculation of wind speed in 2m height
 	vc_WindSpeed_2m = vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42)));
@@ -3277,8 +3260,8 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 
 	double pc_BolzmanConstant = 0.0000000049; // Bolzmann constant 4.903 * 10-9 MJ m-2 K-4 d-1
 	vw_NetRadiation = vc_NetShortwaveRadiation - (pc_BolzmanConstant
-																								* (pow((vw_MinAirTemperature + 273.16), 4.0) + pow((vw_MaxAirTemperature
-																																																		+ 273.16), 4.0)) / 2.0 * (1.35 * vc_RelativeShortwaveRadiation - 0.35)
+															* (pow((vw_MinAirTemperature + 273.16), 4.0) + pow((vw_MaxAirTemperature
+																		+ 273.16), 4.0)) / 2.0 * (1.35 * vc_RelativeShortwaveRadiation - 0.35)
 																								* (0.34 - 0.14 * sqrt(vc_VapourPressure)));
 
 	// Calculation of reference evapotranspiration
@@ -3319,7 +3302,6 @@ void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
 {
 	size_t nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
-
 	double vc_PotentialTranspirationDeficit = 0.0; // [mm]
 	vc_PotentialTranspiration = 0.0; // old TRAMAX [mm]
 	double vc_PotentialEvapotranspiration = 0.0; // [mm]
@@ -4554,8 +4536,7 @@ int CropGrowth::get_StageAfterCut() const
 	return pc_StageAfterCut;
 }
 
-
-void CropGrowth::applyCutting(std::map<int, double>& organs,
+void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 															std::map<int, double>& exports,
 															double cutMaxAssimilationFraction)
 {
@@ -4564,29 +4545,79 @@ void CropGrowth::applyCutting(std::map<int, double>& organs,
 
 	Tools::debug() << "CropGrowth::applyCutting()" << endl;
 
-	if(organs.empty())
-		for(auto yc : pc_OrganIdsForCutting)
-			organs[yc.organId - 1] = yc.yieldPercentage;
+	if (organs.empty()) {
+		for (auto yc : pc_OrganIdsForCutting) {
+			Cutting::Value v;
+			v.value = yc.yieldPercentage;
+			organs[yc.organId - 1] = v;
+		}
+	}
 
 	double sumResidueBiomass = 0;
 	for(auto p : organs)
 	{
 		int organId = p.first;
-		double cutFraction = p.second;
-		double exportFraction = exports[organId];
+		Cutting::Value organSpec = p.second;
+
 		double oldOrganBiomass = vc_OrganBiomass.at(organId);
-		double export100Biomass = oldOrganBiomass * cutFraction;
-		double newOrganBiomass = oldOrganBiomass - export100Biomass;
+		double newOrganBiomass = 0.0;
+		double cutOrganBiomass = 0.0;
+				
+		if (organSpec.unit == Cutting::biomass) {
+			if (organSpec.cut_or_left == Cutting::cut) {
+				cutOrganBiomass = std::min(organSpec.value, oldOrganBiomass);
+				newOrganBiomass = oldOrganBiomass - cutOrganBiomass;
+			}
+			else if (organSpec.cut_or_left == Cutting::left) {
+				newOrganBiomass = std::min(organSpec.value, oldOrganBiomass);
+				cutOrganBiomass = oldOrganBiomass - newOrganBiomass;				
+			}			
+		}
+
+		else if (organSpec.unit == Cutting::percentage) {
+			if (organSpec.cut_or_left == Cutting::cut) {
+				cutOrganBiomass = organSpec.value * oldOrganBiomass;
+				newOrganBiomass = oldOrganBiomass - cutOrganBiomass;
+			}
+			else if (organSpec.cut_or_left == Cutting::left) {
+				newOrganBiomass = organSpec.value * oldOrganBiomass;
+				cutOrganBiomass = oldOrganBiomass - newOrganBiomass;
+			}
+		}
+
+		else if (organSpec.unit == Cutting::LAI) {
+			//only "left" is supported for LAI
+			double currentLAI = get_LeafAreaIndex();
+			if (organSpec.value > currentLAI) {
+				newOrganBiomass = oldOrganBiomass;
+				cutOrganBiomass = 0.0;				
+			}
+			else {
+				newOrganBiomass = std::min(organSpec.value / pc_SpecificLeafArea[vc_DevelopmentalStage], oldOrganBiomass);
+				cutOrganBiomass = oldOrganBiomass - newOrganBiomass;
+			}
+			
+		}
+
+		double exportBiomass = cutOrganBiomass * exports[organId];
+		
 		debug() << "cutting organ with id: " << organId << " with old biomass: " << oldOrganBiomass
-			<< " by percentage: " << (cutFraction * 100) << "% -> new biomass: " << newOrganBiomass
-			<< " exporting percentage: " << (exportFraction * 100) << "% -> export biomass: " << (export100Biomass * (1 - exportFraction))
-			<< " -> residues biomass: " << export100Biomass * (1 - exportFraction) << endl;
-		vc_AbovegroundBiomass -= export100Biomass;
-		sumCutBiomass += export100Biomass;
-		sumResidueBiomass += export100Biomass * (1 - exportFraction);
+		 		<< " exporting percentage: " << (exports[organId] * 100) << "% -> export biomass: " << exportBiomass
+				<< " -> residues biomass: " << (cutOrganBiomass - exportBiomass) << endl;
+		vc_AbovegroundBiomass -= cutOrganBiomass;
+		sumCutBiomass += cutOrganBiomass;
+		sumResidueBiomass += (cutOrganBiomass - exportBiomass);
 		vc_OrganBiomass[organId] = newOrganBiomass;
+
+//		debug() << "cutting organ with id: " << organId << " with old biomass: " << oldOrganBiomass
+//			<< " exporting percentage: " << (exportFraction * 100) << "% -> export biomass: " << (export100Biomass * (1 - exportFraction))
+//			<< " -> residues biomass: " << export100Biomass * (1 - exportFraction) << endl;
+//		vc_AbovegroundBiomass -= export100Biomass;
+//		sumCutBiomass += export100Biomass;
+//		sumResidueBiomass += export100Biomass * (1 - exportFraction);
+//		vc_OrganBiomass[organId] = newOrganBiomass;
 	}
-	
+
 	vc_exportedCutBiomass = sumCutBiomass - sumResidueBiomass;
 	vc_sumExportedCutBiomass += vc_exportedCutBiomass;
 	vc_residueCutBiomass = sumResidueBiomass;

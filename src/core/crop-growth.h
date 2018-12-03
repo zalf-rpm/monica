@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-parameters.h"
 #include "soilcolumn.h"
 #include "voc-common.h"
+#include "run/cultivation-method.h"
 
 namespace Monica
 {
@@ -67,10 +68,11 @@ namespace Monica
 							 std::function<void(double, double)> addOrganicMatter,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
-    void applyCutting(std::map<int, double>& organs,
+    void applyCutting(std::map<int, Cutting::Value>& organs,
 											std::map<int, double>& exports,
 											double cutMaxAssimilateFraction);
-    void applyFruitHarvest(double percentage);
+
+	void applyFruitHarvest(double percentage);
 
     void step(double vw_MeanAirTemperature,
               double vw_MaxAirTemperature,
