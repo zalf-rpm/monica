@@ -1088,7 +1088,8 @@ Errors Irrigation::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 	set_double_value(_amount, j, "amount");
-	set_value_obj_value(_params, j, "parameters");
+	if(j["parameters"].is_object())
+		set_value_obj_value(_params, j, "parameters");
 	return res;
 }
 
