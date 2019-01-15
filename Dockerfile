@@ -15,6 +15,7 @@ ENV monica_dir /run/monica
 ENV supervisor_conf /etc/supervisor/supervisord.conf
 ENV monica_instances 3
 ENV MONICA_WORK /monica_data
+ENV MONICA_HOME ${monica_dir}
 
 ARG  EXECUTABLE_SOURCE=_cmake_linux
 
