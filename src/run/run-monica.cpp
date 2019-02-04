@@ -168,6 +168,7 @@ json11::Json Env::to_json() const
 	,{"pathsToClimateCSV", toPrimJsonArray(pathsToClimateCSV)}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	,{"customId", customId}
+	,{"sharedId", sharedId}
 	,{"events", events}
 	,{"outputs", outputs}
 	};

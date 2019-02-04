@@ -31,16 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-  inline std::string pathSeparator()
-  {
-    return
-    #ifdef __unix__
-        "/";
-#else
-        "\\";
-#endif
-  }
-	
 	struct CropRotation : public Tools::Json11Serializable
 	{
 		CropRotation() {}

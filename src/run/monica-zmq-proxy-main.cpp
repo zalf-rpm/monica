@@ -140,6 +140,8 @@ int main (int argc,
 
 	// socket facing services
 	zmq::socket_t backend (context, backendSocketType);
+	if(backendSocketType == ZMQ_ROUTER)
+		backend.setsockopt(ZMQ_ROUTER_MANDATORY, 1);
 	string beAddress = string("tcp://*:") + to_string(backendPort);
 	try
 	{

@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 	//init path to db-connections.ini
 	if(auto monicaHome = getenv("MONICA_HOME"))
 	{
-		auto pathToFile = string(monicaHome) + pathSeparator() + "db-connections.ini";
+		auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
 		//init for dll/so
 		initPathToDB(pathToFile);
 		//init for monica-run
