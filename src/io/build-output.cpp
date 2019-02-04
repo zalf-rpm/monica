@@ -1397,6 +1397,17 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_sumUptake(), 2) : 0.0;
 			});
 
+			build({ id++, "NO3conv", "", "get_vq_Convection" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Convection(i); }, 8);
+			});
+
+			build({ id++, "NO3disp", "", "get_vq_Dispersion" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Dispersion(i); }, 8);
+			});
 
 			tableBuilt = true;
 		}
