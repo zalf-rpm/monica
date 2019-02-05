@@ -182,7 +182,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 	double layerThickness = soilColumn[0].vs_LayerThickness;
 
 	// check if the added organic matter is from crop residues
-	bool areCropResidueParams = int(params->vo_CN_Ratio_AOM_Fast * 100.0) == 0;
+	bool areCropResidueParams = int(params->vo_CN_Ratio_AOM_Fast * 10000.0) == 0;
 	bool areOrganicFertilizerParams = !areCropResidueParams;
 
 	// calculate the CN AOM Fast ratio and added organic carbon amount from the added organic matter and its N concentration
@@ -264,14 +264,17 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 	}
 
 	int poolSetIndex = -1;
-	if(areOrganicFertilizerParams)
+	if(areCropResidueParams)
 	{
 		int i = 0;
 		// find the index of an existing matching set of pools
 		for(const auto& pool : soilColumn[0].vo_AOM_Pool)
 		{
 			if(isSamePoolAsParams(pool))
+			{
 				poolSetIndex = i;
+				break;
+			}
 			i++;
 		}
 	}
@@ -313,18 +316,14 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 				cpool.vo_AOM_NH4Content = params->vo_AOM_NH4Content;
 				cpool.vo_AOM_Slow = AOM_SlowInput = params->vo_PartAOM_to_AOM_Slow * vo_AddedOrganicCarbonAmount;
 				cpool.vo_AOM_Fast = AOM_FastInput = params->vo_PartAOM_to_AOM_Fast * vo_AddedOrganicCarbonAmount;
-				cpool.incorporation = this->incorporation;
 			}
 		}
-
-		// and remember the index into this list = this is our pool to update
-		poolSetIndex = int(soilColumn[0].vo_AOM_Pool.size() - 1);
 	}
 	else
 	{
 		auto& cpool = soilColumn[intoLayerIndex].vo_AOM_Pool[poolSetIndex];
-		cpool.vo_AOM_Slow = AOM_SlowInput = params->vo_PartAOM_to_AOM_Slow * vo_AddedOrganicCarbonAmount;
-		cpool.vo_AOM_Fast = AOM_FastInput = params->vo_PartAOM_to_AOM_Fast * vo_AddedOrganicCarbonAmount;
+		cpool.vo_AOM_Slow += AOM_SlowInput = params->vo_PartAOM_to_AOM_Slow * vo_AddedOrganicCarbonAmount;
+		cpool.vo_AOM_Fast += AOM_FastInput = params->vo_PartAOM_to_AOM_Fast * vo_AddedOrganicCarbonAmount;
 	}
 	
 	double vo_SoilNH4Input = 
@@ -350,7 +349,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 	soilColumn[intoLayerIndex].vs_SoilNO3 += vo_SoilNO3Input;
 	soilColumn[intoLayerIndex].vs_SOM_Fast += SOM_FastInput;
 
-	//store for further use
+	// store for further use
 	vo_AOM_SlowInput += AOM_SlowInput;
 	vo_AOM_FastInput += AOM_FastInput;
 	vo_SOM_FastInput += SOM_FastInput;
