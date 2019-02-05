@@ -4609,7 +4609,13 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		sumCutBiomass += cutOrganBiomass;
 		sumResidueBiomass += (cutOrganBiomass - exportBiomass);
 		vc_OrganBiomass[organId] = newOrganBiomass;
-		vc_OrganDeadBiomass[organId] = newOrganBiomass * std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
+		if (oldOrganBiomass == 0) {
+			vc_OrganDeadBiomass[organId] = 0;
+		}
+		else {
+			vc_OrganDeadBiomass[organId] = newOrganBiomass * std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
+		}
+		
 
 //		debug() << "cutting organ with id: " << organId << " with old biomass: " << oldOrganBiomass
 //			<< " exporting percentage: " << (exportFraction * 100) << "% -> export biomass: " << (export100Biomass * (1 - exportFraction))

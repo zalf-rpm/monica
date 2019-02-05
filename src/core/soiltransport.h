@@ -66,6 +66,10 @@ namespace Monica
 
     double get_NLeaching() const;
 
+	//debug
+	double get_vq_Dispersion(int i_Layer) const;
+	double get_vq_Convection(int i_Layer) const;
+
   private:
     //methods
     void calculateSoilTransportStep();

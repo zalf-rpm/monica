@@ -102,6 +102,8 @@ void SoilTransport::calculateSoilTransportStep() {
       vq_TimeStepFactor = 0.25;
     else if ((vq_PercolationRate[i_Layer] > 15.0) && (vq_TimeStepFactor >= 0.25))
       vq_TimeStepFactor = 0.125;
+	//vq_TimeStepFactor = 1.0; //debug
+	//vq_PercolationRate[i_Layer] = 0.0; //debug
   }
 //  cout << "vq_SoilNO3[0]: " << vq_SoilNO3[0] << endl;
 
@@ -113,6 +115,7 @@ void SoilTransport::calculateSoilTransportStep() {
   fq_NUptake();
 
   // Nitrate transport is called according to the set time step
+  vq_LeachingAtBoundary = 0.0;
   for (int i_TimeStep = 0; i_TimeStep < (1.0 / vq_TimeStepFactor); i_TimeStep++) {
     fq_NTransport(vs_LeachingDepth, vq_TimeStepFactor);
   }
@@ -203,7 +206,7 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
   double vq_DispersionLength = stPs.pq_DispersionLength; // [m]
   double vq_SoilProfile = 0.0;
   int vq_LeachingDepthLayerIndex = 0;
-  vq_LeachingAtBoundary = 0.0;
+  
 
   std::vector<double> vq_SoilMoistureGradient(vs_NumberOfLayers, 0.0);
 
@@ -221,10 +224,10 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
     const double wf0 = soilColumn[0].vs_SoilWaterFlux;
     const double lt = soilColumn[i_Layer].vs_LayerThickness;
     const double NO3 = vq_SoilNO3_aq[i_Layer];
-
+		
     if (i_Layer == 0) {
       const double pr = vq_PercolationRate[i_Layer] / 1000.0 * vq_TimeStepFactor; // [mm t-1 --> m t-1]
-      const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
+	  const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
 
       if (pr >= 0.0 && wf0 >= 0.0) {
 
@@ -249,7 +252,7 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
       const double pr_o = vq_PercolationRate[i_Layer - 1] / 1000.0 * vq_TimeStepFactor; //[mm t-1 --> m t-1] * [t t-1]
       const double pr = vq_PercolationRate[i_Layer] / 1000.0 * vq_TimeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
       const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
-
+	  
       if (pr >= 0.0 && pr_o >= 0.0) {
         const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
 
@@ -293,6 +296,8 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
         const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
         vq_Convection[i_Layer] = (-(NO3_o * pr_o)) / lt;
       }
+
+	  //vq_Convection[i_Layer] = 0.0;//debug
 
     }// else
   } // for
@@ -355,23 +360,10 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
       const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
       vq_Dispersion[i_Layer] = vq_DispersionCoeff[i_Layer - 1] * (NO3_o - NO3) / (lt * lt);
     }
+	//vq_Dispersion[i_Layer] = 0.0; //debug
   } // for
-
-  // Update of NO3 concentration
-  // including transfomation back into [kg NO3-N m soil-3]
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
-
-    vq_SoilNO3_aq[i_Layer] += (vq_Dispersion[i_Layer] - vq_Convection[i_Layer]) / vq_SoilMoisture[i_Layer];
-//    double no3 = vq_SoilNO3_aq[i_Layer];
-//    double disp = vq_Dispersion[i_Layer];
-//    double conv = vq_Convection[i_Layer];
-//    double sm = vq_SoilMoisture[i_Layer];
-//    cout << i_Layer << "\t" << no3 << "\t" << disp << "\t" << conv << "\t" <<  sm << endl;
-  }
-
-
-
+  
+  
   if (vq_PercolationRate[vq_LeachingDepthLayerIndex] > 0.0) {
 
     //vq_LeachingDepthLayerIndex = gewählte Auswaschungstiefe
@@ -402,6 +394,21 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
     }
   }
 
+  // Update of NO3 concentration
+  // including transfomation back into [kg NO3-N m soil-3]
+  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
+
+
+	  vq_SoilNO3_aq[i_Layer] += (vq_Dispersion[i_Layer] - vq_Convection[i_Layer]) / vq_SoilMoisture[i_Layer];
+	  //    double no3 = vq_SoilNO3_aq[i_Layer];
+	  //    double disp = vq_Dispersion[i_Layer];
+	  //    double conv = vq_Convection[i_Layer];
+	  //    double sm = vq_SoilMoisture[i_Layer];
+	  //    cout << i_Layer << "\t" << no3 << "\t" << disp << "\t" << conv << "\t" <<  sm << endl;
+  }
+
+  
+
 //  cout << "vq_LeachingAtBoundary: " << vq_LeachingAtBoundary << endl;
 }
 
@@ -411,6 +418,22 @@ void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFac
  */
 double SoilTransport::get_SoilNO3(int i_Layer) const {
   return vq_SoilNO3[i_Layer];
+}
+
+/**
+* @brief Returns Nitrate dispersion for each layer [i]
+* @return Soil NO3 dispersion
+*/
+double SoilTransport::get_vq_Dispersion(int i_Layer) const {
+	return vq_Dispersion[i_Layer];
+}
+
+/**
+* @brief Returns Nitrate convection for each layer [i]
+* @return Soil NO3 dispersion
+*/
+double SoilTransport::get_vq_Convection(int i_Layer) const {
+	return vq_Convection[i_Layer];
 }
 
 /**
