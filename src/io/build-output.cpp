@@ -1236,10 +1236,10 @@ BOTRes& Monica::buildOutputTable()
 			{
 				return getComplexValues<double>(oid, [&](int i)
 				{
-					double smm3 = monica.soilMoisture().get_SoilMoisture(i); // soilc.at(i).get_Vs_SoilMoisture_m3();
+					double smm3 = monica.soilMoisture().get_SoilMoisture(i); 
 					double fc = monica.soilColumn().at(i).vs_FieldCapacity();
 					double pwp = monica.soilColumn().at(i).vs_PermanentWiltingPoint();
-					return smm3 / (fc - pwp); //[%nFK]
+					return (smm3 - pwp) / (fc - pwp); //[%nFK]
 				}, 4);
 			});
 
