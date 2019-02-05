@@ -4542,6 +4542,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 {
 	double oldAbovegroundBiomass = vc_AbovegroundBiomass;
 	double sumCutBiomass = 0.0;
+	double currentSLA = get_LeafAreaIndex() / (vc_OrganBiomass[1] - vc_OrganDeadBiomass[1]);
 
 	Tools::debug() << "CropGrowth::applyCutting()" << endl;
 
@@ -4561,8 +4562,9 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 
 		double oldOrganBiomass = vc_OrganBiomass.at(organId);
 		double oldOrganDeadBiomass = vc_OrganDeadBiomass.at(organId);
+		double oldOrganGreenBiomass = oldOrganBiomass - oldOrganDeadBiomass;
 		double newOrganBiomass = 0.0;
-		double cutOrganBiomass = 0.0;
+		double cutOrganBiomass = 0.0;		
 				
 		if (organSpec.unit == Cutting::biomass) {
 			if (organSpec.cut_or_left == Cutting::cut) {
@@ -4572,7 +4574,15 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 			else if (organSpec.cut_or_left == Cutting::left) {
 				newOrganBiomass = std::min(organSpec.value, oldOrganBiomass);
 				cutOrganBiomass = oldOrganBiomass - newOrganBiomass;				
-			}			
+			}
+
+			//update dead biomass
+			if (oldOrganBiomass == 0) {
+				vc_OrganDeadBiomass[organId] = 0;
+			}
+			else {
+				vc_OrganDeadBiomass[organId] = newOrganBiomass * std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
+			}
 		}
 
 		else if (organSpec.unit == Cutting::percentage) {
@@ -4584,18 +4594,28 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 				newOrganBiomass = organSpec.value * oldOrganBiomass;
 				cutOrganBiomass = oldOrganBiomass - newOrganBiomass;
 			}
+
+			//update dead biomass
+			if (oldOrganBiomass == 0) {
+				vc_OrganDeadBiomass[organId] = 0;
+			}
+			else {
+				vc_OrganDeadBiomass[organId] = newOrganBiomass * std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
+			}
 		}
 
 		else if (organSpec.unit == Cutting::LAI) {
 			//only "left" is supported for LAI
 			double currentLAI = get_LeafAreaIndex();
 			if (organSpec.value > currentLAI) {
-				newOrganBiomass = oldOrganBiomass;
-				cutOrganBiomass = 0.0;				
+				newOrganBiomass = oldOrganGreenBiomass;
+				cutOrganBiomass = oldOrganDeadBiomass;
+				vc_OrganDeadBiomass[organId] = 0; //all the dead biomass is assumed to be cut
 			}
 			else {
-				newOrganBiomass = std::min(organSpec.value / pc_SpecificLeafArea[vc_DevelopmentalStage], oldOrganBiomass);
+				newOrganBiomass = std::min(organSpec.value / currentSLA, oldOrganGreenBiomass);
 				cutOrganBiomass = oldOrganBiomass - newOrganBiomass;
+				vc_OrganDeadBiomass[organId] = 0; //all the dead biomass is assumed to be cut
 			}
 			
 		}
@@ -4609,12 +4629,6 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		sumCutBiomass += cutOrganBiomass;
 		sumResidueBiomass += (cutOrganBiomass - exportBiomass);
 		vc_OrganBiomass[organId] = newOrganBiomass;
-		if (oldOrganBiomass == 0) {
-			vc_OrganDeadBiomass[organId] = 0;
-		}
-		else {
-			vc_OrganDeadBiomass[organId] = newOrganBiomass * std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
-		}
 		
 
 //		debug() << "cutting organ with id: " << organId << " with old biomass: " << oldOrganBiomass
@@ -4646,7 +4660,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	}
 
 	//update LAI
-	vc_LeafAreaIndex = vc_OrganBiomass[1] * pc_SpecificLeafArea[vc_DevelopmentalStage];
+	vc_LeafAreaIndex = (vc_OrganBiomass[1] - vc_OrganDeadBiomass[1]) * currentSLA;	
 
 	// reset stage and temperature some after cutting
 	int stageAfterCutting = pc_StageAfterCut;
