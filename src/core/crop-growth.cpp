@@ -87,7 +87,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	, pc_EmergenceMoistureControlOn(simPs.pc_EmergenceMoistureControlOn)
 	, pc_EndSensitivePhaseHeatStress(cps.cultivarParams.pc_EndSensitivePhaseHeatStress)
 	, pc_FieldConditionModifier(cps.speciesParams.pc_FieldConditionModifier)
-	, vo_FreshSoilOrganicMatter(soilColumn.vs_NumberOfLayers(), 0.0)
+	//, vo_FreshSoilOrganicMatter(soilColumn.vs_NumberOfLayers(), 0.0)
 	, pc_FrostDehardening(cps.cultivarParams.pc_FrostDehardening)
 	, pc_FrostHardening(cps.cultivarParams.pc_FrostHardening)
 	, pc_HeatSumIrrigationStart(cps.cultivarParams.pc_HeatSumIrrigationStart)
@@ -193,6 +193,8 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 		if(pc_StorageOrgan[i_Organ])
 			vc_StorageOrgan = i_Organ;
 	}
+
+	vc_OrganGreenBiomass = vc_OrganBiomass;
 
 	vc_RootBiomass = pc_InitialOrganBiomass[0]; // [kg ha-1]
 
@@ -1355,19 +1357,18 @@ ostream& Monica::tout(bool closeFile)
 }
 #endif
 
-void CropGrowth::fc_DeadRootDistribution(double vc_RootDensityFactorSum, 
-																				 const vector<double>& vc_RootDensityFactor)
+void CropGrowth::fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIncrement,
+	double vc_RootDensityFactorSum,
+	const vector<double>& vc_RootDensityFactor)
 {
-	double rootNconcentration = get_RootNConcentration();
-	double rootBiomass = vc_OrganDeadBiomass[0];
 	uint nMineralisationlayer = uint(soilColumn.vs_NumberOfOrganicLayers());
 	uint nRootLayer = uint((pc_SpecificRootLength / 1000.0 / 0.1) + 0.5); // + 0.5 = round to integer
 	for (uint i = 0; i < nRootLayer; i++)
 	{
-		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * rootBiomass;
+		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * dailyDeadRootBiomassIncrement;
 		//just add organica matter if > 0.0001
 		if(int(deadRootBiomassAtLayer * 10000) > 0)
-			_addOrganicMatter(deadRootBiomassAtLayer, rootNconcentration, i < nMineralisationlayer ? i : nMineralisationlayer);
+			_addOrganicMatter(deadRootBiomassAtLayer, vc_NConcentrationRoot, i < nMineralisationlayer ? i : nMineralisationlayer);
 	}
 }
 
@@ -2225,8 +2226,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	// AGOSIM night and day maintenance and growth respiration
 	for(int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
 	{
-		vc_MaintenanceRespirationSum += (vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ])
-			* pc_OrganMaintenanceRespiration[i_Organ]; // [kg CH2O ha-1]
+		vc_MaintenanceRespirationSum += vc_OrganGreenBiomass[i_Organ] * pc_OrganMaintenanceRespiration[i_Organ]; // [kg CH2O ha-1]
 	// * vc_ActiveFraction[i_Organ]; wenn nicht schon durch acc dead matter abgedeckt
 	}
 
@@ -2314,8 +2314,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	for(int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
 	{
-		vc_MaintenanceRespiration += (vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ])
-			* pc_OrganMaintenanceRespiration[i_Organ];
+		vc_MaintenanceRespiration += vc_OrganGreenBiomass[i_Organ] * pc_OrganMaintenanceRespiration[i_Organ];
 	}
 
 	
@@ -2694,14 +2693,12 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 
 	//old PESUM [kg m-2 --> kg ha-1]
 	vc_TotalBiomassNContent += (soilColumn.vq_CropNUptake * 10000.0) + vc_FixedN;
-
-
-
+	 
 	// Dry matter production
 	// old NRKOM
 	// double assimilate_partition_shoot = 0.7;
 	double assimilate_partition_leaf = 0.3;
-
+	vector<double> dailyDeadBiomassIncrement(pc_NumberOfOrgans, 0.0);
 	for(int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++)
 	{
 		vc_AssimilatePartitioningCoeffOld = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage - 1][i_Organ];
@@ -2733,7 +2730,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 			{
 				// reduce biomass from leaf and shoot because of negative assimilate
 				//! TODO: hard coded organ ids; must be more generalized because in database organ_ids can be mixed
-				vc_OrganBiomass[i_Organ];
+				//vc_OrganBiomass[i_Organ];
 
 				if(i_Organ == LEAF)
 				{ // leaf
@@ -2818,8 +2815,9 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 					(vc_AssimilatePartitioningCoeffOld + ((vc_AssimilatePartitioningCoeff - vc_AssimilatePartitioningCoeffOld)
 							* (vc_CurrentTemperatureSum[vc_DevelopmentalStage]/pc_StageTemperatureSum[vc_DevelopmentalStage]))) * vc_CropNRedux; // [kg CH2O ha-1]
 			}
-			vc_OrganSenescenceIncrement[i_Organ] = (vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ]) *
-				(pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ]
+			vc_OrganSenescenceIncrement[i_Organ] = 
+				vc_OrganGreenBiomass[i_Organ]
+				* (pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ]
 				 + ((pc_OrganSenescenceRate[vc_DevelopmentalStage][i_Organ]- pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ])
 						* (vc_CurrentTemperatureSum[vc_DevelopmentalStage] / pc_StageTemperatureSum[vc_DevelopmentalStage]))); // [kg CH2O ha-1]
 
@@ -2831,8 +2829,18 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 			vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep); // [kg CH2O ha-1]
 			double reallocationRate = pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
 			vc_OrganBiomass[i_Organ] -= reallocationRate;
-			vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] - reallocationRate; // [kg CH2O ha-1]
+			dailyDeadBiomassIncrement[i_Organ] = vc_OrganSenescenceIncrement[i_Organ] - reallocationRate;
+			vc_OrganDeadBiomass[i_Organ] += dailyDeadBiomassIncrement[i_Organ]; // [kg CH2O ha-1]
 			vc_OrganBiomass[vc_StorageOrgan] += reallocationRate;
+
+			//update the root biomass and dead root biomass vars
+			//root dead biomass will be transfered to proper AOM pools
+			if (i_Organ == 0)
+			{
+				vc_OrganBiomass[0] -= dailyDeadBiomassIncrement[0];
+				vc_OrganDeadBiomass[0] -= dailyDeadBiomassIncrement[0];
+				vc_TotalBiomassNContent -= dailyDeadBiomassIncrement[0] * vc_NConcentrationRoot;
+			}
 		}
 		else
 		{
@@ -3041,7 +3049,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum) * vc_TotalRootLength; // [m m-3]
 	
 	// calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
-	fc_DeadRootDistribution(vc_RootDensityFactorSum, vc_RootDensityFactor);
+	fc_MoveDailyDeadRootBiomassToSoil(dailyDeadBiomassIncrement[0], vc_RootDensityFactorSum, vc_RootDensityFactor);
 
 	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
 	{
@@ -3052,10 +3060,10 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 			vc_RootDiameter[i_Layer] = 0.0002 - ((i_Layer + 1) * 0.00001); // [m]
 
 		// Default root decay - 10 %
-		vo_FreshSoilOrganicMatter[i_Layer] += vc_RootNIncrement
-			* vc_RootDensity[i_Layer]
-			* 10.0
-			/ vc_TotalRootLength;
+		//vo_FreshSoilOrganicMatter[i_Layer] += vc_RootNIncrement
+		//	* vc_RootDensity[i_Layer]
+		//	* 10.0
+		//	/ vc_TotalRootLength;
 
 	}
 	// *****************************************************************************
@@ -4563,7 +4571,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 {
 	double oldAbovegroundBiomass = vc_AbovegroundBiomass;
 	double sumCutBiomass = 0.0;
-	double currentSLA = get_LeafAreaIndex() / (vc_OrganBiomass[1] - vc_OrganDeadBiomass[1]);
+	double currentSLA = get_LeafAreaIndex() / vc_OrganGreenBiomass[1];
 
 	Tools::debug() << "CropGrowth::applyCutting()" << endl;
 
@@ -4681,7 +4689,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	}
 
 	//update LAI
-	vc_LeafAreaIndex = (vc_OrganBiomass[1] - vc_OrganDeadBiomass[1]) * currentSLA;	
+	vc_LeafAreaIndex = vc_OrganGreenBiomass[1] * currentSLA;
 
 	// reset stage and temperature some after cutting
 	int stageAfterCutting = pc_StageAfterCut;
@@ -4693,6 +4701,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	vc_CuttingDelayDays = pc_CuttingDelayDays;
 	pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilationFraction;
 
+	//TODO: this may be wrong
 	vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * vc_TotalBiomassNContent;
 }
 
@@ -4713,7 +4722,7 @@ CropGrowth::applyFruitHarvest(double yieldPercentage)
 	vc_AbovegroundBiomass -= fruitBiomass;
 	removing_biomass += fruitBiomass;
 	residues = vc_OrganBiomass.at(3) * (1.0 - yieldPercentage);
-	vc_OrganBiomass.at(3) = 0.0;
+	vc_OrganBiomass[3] = 0.0;
 
 	new_OrganBiomass.push_back(fruitBiomass);
 	debug() << "New fruit biomass: " << fruitBiomass << endl;

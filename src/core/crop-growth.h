@@ -156,7 +156,8 @@ namespace Monica
 
     double fc_SoilCoverage(double vc_LeafAreaIndex);
 
-		void fc_DeadRootDistribution(double vc_RootDensityFactorSum, 
+		void fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIncrement, 
+																 double vc_RootDensityFactorSum,
 																 const std::vector<double>& vc_RootDensityFactor);
 
 		void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
@@ -506,7 +507,7 @@ namespace Monica
     double pc_FieldConditionModifier;
     int vc_FinalDevelopmentalStage{0};
     double vc_FixedN{0.0};
-    std::vector<double> vo_FreshSoilOrganicMatter;	//! old NFOS
+    //std::vector<double> vo_FreshSoilOrganicMatter;	//! old NFOS
     double pc_FrostDehardening;
     double pc_FrostHardening;
     double vc_GlobalRadiation{0.0};

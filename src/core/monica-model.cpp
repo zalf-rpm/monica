@@ -170,7 +170,8 @@ void MonicaModel::harvestCurrentCrop(bool exported,
     if(exported)
     {
 			//prepare to add root and crop residues to soilorganic (AOMs)
-			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
+			//dead root biomass has already been added daily, so just living root biomass is left
+			double rootBiomass = _currentCropGrowth->get_OrganGreenBiomass(0); 
 			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
 			debug() << "adding organic matter from root to soilOrganic" << endl;
 			debug() << "root biomass: " << rootBiomass
