@@ -2841,6 +2841,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 				vc_OrganBiomass[0] -= dailyDeadBiomassIncrement[0];
 				vc_OrganDeadBiomass[0] -= dailyDeadBiomassIncrement[0];
 				vc_TotalBiomassNContent -= dailyDeadBiomassIncrement[0] * vc_NConcentrationRoot;
+
 			}
 		}
 		else
@@ -4661,6 +4662,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		sumCutBiomass += cutOrganBiomass;
 		sumResidueBiomass += (cutOrganBiomass - exportBiomass);
 		vc_OrganBiomass[organId] = newOrganBiomass;
+		vc_OrganGreenBiomass[organId] = vc_OrganBiomass[organId] - vc_OrganDeadBiomass[organId];
 		
 
 //		debug() << "cutting organ with id: " << organId << " with old biomass: " << oldOrganBiomass
@@ -4692,7 +4694,10 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	}
 
 	//update LAI
-	vc_LeafAreaIndex = vc_OrganGreenBiomass[1] * currentSLA;
+	if (vc_OrganGreenBiomass[1] > 0)
+	{
+		vc_LeafAreaIndex = vc_OrganGreenBiomass[1] * currentSLA;
+	}
 
 	// reset stage and temperature some after cutting
 	int stageAfterCutting = pc_StageAfterCut;
@@ -4706,7 +4711,11 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		
 	//double rootNcontent = vc_TotalBiomassNContent - get_AbovegroundBiomassNContent();
 	//vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * get_AbovegroundBiomassNContent() + rootNcontent;
-	vc_TotalBiomassNContent -= (1 - vc_AbovegroundBiomass / oldAbovegroundBiomass) * oldAgbNcontent;
+	if (oldAbovegroundBiomass > 0.0)
+	{
+		vc_TotalBiomassNContent -= (1 - vc_AbovegroundBiomass / oldAbovegroundBiomass) * oldAgbNcontent;
+	}
+	
 }
 
 void
