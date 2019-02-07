@@ -65,7 +65,7 @@ namespace Monica
                const UserCropParameters& cropPs,
                const SimulationParameters& simPs,
 							 std::function<void(std::string)> fireEvent,
-							 std::function<void(double, double)> addOrganicMatter,
+							 std::function<void(double, double, double)> addOrganicMatter,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
     void applyCutting(std::map<int, Cutting::Value>& organs,
@@ -155,6 +155,9 @@ namespace Monica
                           double vc_TimeStep);
 
     double fc_SoilCoverage(double vc_LeafAreaIndex);
+
+		void fc_DeadRootDistribution(double vc_RootDensityFactorSum, 
+																 const std::vector<double>& vc_RootDensityFactor);
 
 		void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                                double vw_MaxAirTemperature,
@@ -671,7 +674,7 @@ namespace Monica
 		Voc::CPData _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
-		std::function<void(double, double)> _addOrganicMatter;
+		std::function<void(double, double, int)> _addOrganicMatter;
 
 		double vc_O3_shortTermDamage{ 1.0 };
 		double vc_O3_longTermDamage{ 1.0 };

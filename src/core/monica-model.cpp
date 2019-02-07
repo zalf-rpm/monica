@@ -116,9 +116,9 @@ void MonicaModel::seedCrop(CropPtr crop)
 		_currentCrop = crop;
 		_cultivationMethodCount++;
 
-		auto addOMFunc = [this](double amount, double nconc)
+		auto addOMFunc = [this](double amount, double nconc, int intoLayerIndex)
 		{
-			this->_soilOrganic.addOrganicMatter(this->_currentCrop->residueParameters(), amount, nconc); 
+			this->_soilOrganic.addOrganicMatter(this->_currentCrop->residueParameters(), amount, nconc, intoLayerIndex); 
 		};
     auto cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,

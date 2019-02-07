@@ -54,7 +54,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 const UserCropParameters& cropPs,
 											 const SimulationParameters& simPs,
 											 std::function<void(std::string)> fireEvent,
-											 std::function<void(double, double)> addOrganicMatter,
+											 std::function<void(double, double, double)> addOrganicMatter,
 											 int usage)
 	: _frostKillOn(simPs.pc_FrostKillOn)
 	, soilColumn(sc)
@@ -432,6 +432,7 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 												vw_MinAirTemperature,
 												vc_CurrentTotalTemperatureSum);
 
+
 		if(_frostKillOn)
 			fc_FrostKill(vw_MaxAirTemperature,
 									 vw_MinAirTemperature);
@@ -439,6 +440,8 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 		fc_DroughtImpactOnFertility(vc_TranspirationDeficit);
 
 		fc_CropNitrogen();
+		
+		
 
 		fc_CropDryMatter(vc_DevelopmentalStage,
 										 vc_Assimilates,
@@ -1351,6 +1354,22 @@ ostream& Monica::tout(bool closeFile)
 	return failed ? cout : out;
 }
 #endif
+
+void CropGrowth::fc_DeadRootDistribution(double vc_RootDensityFactorSum, 
+																				 const vector<double>& vc_RootDensityFactor)
+{
+	double rootNconcentration = get_RootNConcentration();
+	double rootBiomass = vc_OrganDeadBiomass[0];
+	uint nMineralisationlayer = uint(soilColumn.vs_NumberOfOrganicLayers());
+	uint nRootLayer = uint((pc_SpecificRootLength / 1000.0 / 0.1) + 0.5); // + 0.5 = round to integer
+	for (uint i = 0; i < nRootLayer; i++)
+	{
+		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * rootBiomass;
+		//just add organica matter if > 0.0001
+		if(int(deadRootBiomassAtLayer * 10000) > 0)
+			_addOrganicMatter(deadRootBiomassAtLayer, rootNconcentration, i < nMineralisationlayer ? i : nMineralisationlayer);
+	}
+}
 
 /**
  * @brief Calculation of photosynthesis
@@ -3019,8 +3038,10 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	// Calculating root density per layer from total root length and
 	// a relative root density distribution factor
 	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
-		vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum)
-		* vc_TotalRootLength; // [m m-3]
+		vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum) * vc_TotalRootLength; // [m m-3]
+	
+	// calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
+	fc_DeadRootDistribution(vc_RootDensityFactorSum, vc_RootDensityFactor);
 
 	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
 	{
@@ -3130,7 +3151,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	}
 
 
-
+	
 
 
 }
@@ -4656,7 +4677,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		debug() << "adding organic matter from cut residues to soilOrganic" << endl;
 		debug() << "Residue biomass: " << sumResidueBiomass
 			<< " Residue N concentration: " << residueNConcentration << endl;
-		_addOrganicMatter(sumResidueBiomass, residueNConcentration);
+		_addOrganicMatter(sumResidueBiomass, residueNConcentration, 0);
 	}
 
 	//update LAI

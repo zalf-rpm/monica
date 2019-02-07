@@ -168,8 +168,6 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 	addedOrganicMatter = false;
 }
 
-
-
 void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 																	 double addedOrganicMatterAmount,
 																	 double addedOrganicMatterNConcentration,
