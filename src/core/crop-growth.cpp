@@ -1361,15 +1361,16 @@ void CropGrowth::fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIn
 	double vc_RootDensityFactorSum,
 	const vector<double>& vc_RootDensityFactor)
 {
-	uint nMineralisationlayer = uint(soilColumn.vs_NumberOfOrganicLayers());
-	uint nRootLayer = uint((pc_SpecificRootLength / 1000.0 / 0.1) + 0.5); // + 0.5 = round to integer
-	for (uint i = 0; i < nRootLayer; i++)
+	uint nMineralisationlayer = uint(soilColumn.vs_NumberOfOrganicLayers() - 1);
+	
+	for (uint i = 0; i < vc_RootingZone; i++)
 	{
 		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * dailyDeadRootBiomassIncrement;
 		//just add organica matter if > 0.0001
 		if(int(deadRootBiomassAtLayer * 10000) > 0)
 			_addOrganicMatter(deadRootBiomassAtLayer, vc_NConcentrationRoot, i < nMineralisationlayer ? i : nMineralisationlayer);
 	}
+	
 }
 
 /**
@@ -4570,6 +4571,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 															double cutMaxAssimilationFraction)
 {
 	double oldAbovegroundBiomass = vc_AbovegroundBiomass;
+	double oldAgbNcontent = get_AbovegroundBiomassNContent();
 	double sumCutBiomass = 0.0;
 	double currentSLA = get_LeafAreaIndex() / vc_OrganGreenBiomass[1];
 
@@ -4594,6 +4596,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		double oldOrganGreenBiomass = oldOrganBiomass - oldOrganDeadBiomass;
 		double newOrganBiomass = 0.0;
 		double cutOrganBiomass = 0.0;		
+
 				
 		if (organSpec.unit == Cutting::biomass) {
 			if (organSpec.cut_or_left == Cutting::cut) {
@@ -4700,9 +4703,10 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	vc_DevelopmentalStage = stageAfterCutting;
 	vc_CuttingDelayDays = pc_CuttingDelayDays;
 	pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilationFraction;
-
-	//TODO: this may be wrong
-	vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * vc_TotalBiomassNContent;
+		
+	//double rootNcontent = vc_TotalBiomassNContent - get_AbovegroundBiomassNContent();
+	//vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * get_AbovegroundBiomassNContent() + rootNcontent;
+	vc_TotalBiomassNContent -= (1 - vc_AbovegroundBiomass / oldAbovegroundBiomass) * oldAgbNcontent;
 }
 
 void
