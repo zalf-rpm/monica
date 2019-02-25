@@ -3730,10 +3730,14 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 	{
 
 		// wurzel ist gewachsen
-		vc_NConcentrationRoot = ((vc_RootBiomassOld * vc_NConcentrationRoot)
-														 + ((vc_RootBiomass - vc_RootBiomassOld) / (vc_AbovegroundBiomass
-																																				- vc_AbovegroundBiomassOld + vc_BelowgroundBiomass - vc_BelowgroundBiomassOld
-																																				+ vc_RootBiomass - vc_RootBiomassOld) * vc_TotalNInput)) / vc_RootBiomass;
+		vc_NConcentrationRoot = 
+			((vc_RootBiomassOld * vc_NConcentrationRoot) 
+			 + ((vc_RootBiomass - vc_RootBiomassOld) 
+					/ (vc_AbovegroundBiomass - vc_AbovegroundBiomassOld 
+						 + vc_BelowgroundBiomass - vc_BelowgroundBiomassOld
+						 + vc_RootBiomass - vc_RootBiomassOld) 
+					* vc_TotalNInput)) 
+			/ vc_RootBiomass;
 
 		vc_NConcentrationRoot = min(vc_NConcentrationRoot, pc_StageMaxRootNConcentration[vc_DevelopmentalStage]);
 
