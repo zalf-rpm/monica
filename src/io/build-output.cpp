@@ -1453,6 +1453,11 @@ BOTRes& Monica::buildOutputTable()
 				}, 5);
 			});
 
+			build({id++, "rootNConcentration", "", "rootNConcentration"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->rootNConcentration(), 4) : 0.0;
+			});
 
 			tableBuilt = true;
 		}

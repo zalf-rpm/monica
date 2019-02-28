@@ -928,6 +928,7 @@ Errors UserCropParameters::merge(json11::Json j)
 	set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j, "__enable_Phenology_WangEngelTemperatureResponse__");
 	set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
 	set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
+	set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
 	
 	return res;
 }
@@ -956,6 +957,7 @@ json11::Json UserCropParameters::to_json() const
 	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
 	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
 	,{"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__}
+	,{"__disable_daily_root_biomass_to_soil__", __disable_daily_root_biomass_to_soil__}
   };
 }
 

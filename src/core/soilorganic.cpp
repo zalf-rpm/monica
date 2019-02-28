@@ -206,6 +206,8 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 				 / 10000.0
 				 / layerThickness);
 
+		double added_CN_ratio = added_Corg_amount / added_Norg_amount;
+
 		debug() << "Added organic matter N amount: " << added_Norg_amount << endl;
 
 		double N_for_AOM_slow = added_Corg_amount * params->vo_PartAOM_to_AOM_Slow / params->vo_CN_Ratio_AOM_Slow;
@@ -339,6 +341,10 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 			double added_fast_N = params->vo_PartAOM_to_AOM_Fast * added_Corg_amount / added_CN_ratio_AOM_fast;
 			cpool.vo_AOM_Fast += AOM_fast_input = params->vo_PartAOM_to_AOM_Fast * added_Corg_amount;
 			double new_CN_ratio_AOM_fast = cpool.vo_AOM_Fast / (pool_fast_N + added_fast_N);
+
+			//if(new_CN_ratio_AOM_fast > 300)
+			//	cout << "bla" << endl;
+
 			cpool.vo_CN_Ratio_AOM_Fast = new_CN_ratio_AOM_fast;
 		}
 

@@ -431,6 +431,8 @@ namespace Monica
 		double sumResidueCutBiomass() const { return vc_sumResidueCutBiomass; }
 		double residueCutBiomass() const { return vc_residueCutBiomass; }
 
+		double rootNConcentration() const { return vc_NConcentrationRoot; }
+
   private:
 		bool _frostKillOn{true};
 

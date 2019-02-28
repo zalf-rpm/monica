@@ -1369,7 +1369,8 @@ void CropGrowth::fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIn
 		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * dailyDeadRootBiomassIncrement;
 		//just add organica matter if > 0.0001
 		if(int(deadRootBiomassAtLayer * 10000) > 0)
-			layer2deadRootBiomassAtLayer[i < nools ? i : nools - 1] += deadRootBiomassAtLayer;
+			//layer2deadRootBiomassAtLayer[i < nools ? i : nools - 1] += deadRootBiomassAtLayer;
+			layer2deadRootBiomassAtLayer[0] += deadRootBiomassAtLayer;
 	}
 
 	if(!layer2deadRootBiomassAtLayer.empty())
@@ -3059,7 +3060,8 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum) * vc_TotalRootLength; // [m m-3]
 	
 	// calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
-	fc_MoveDailyDeadRootBiomassToSoil(dailyDeadBiomassIncrement[0], vc_RootDensityFactorSum, vc_RootDensityFactor);
+	if(!cropPs.__disable_daily_root_biomass_to_soil__)
+		fc_MoveDailyDeadRootBiomassToSoil(dailyDeadBiomassIncrement[0], vc_RootDensityFactorSum, vc_RootDensityFactor);
 
 	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
 	{
