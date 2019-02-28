@@ -1409,6 +1409,40 @@ BOTRes& Monica::buildOutputTable()
 				return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Dispersion(i); }, 8);
 			});
 
+			build({id++, "noOfAOMPools", "", "number of AOM pools in existence currently"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return int(monica.soilColumn().at(0).vo_AOM_Pool.size());
+			});
+
+			build({id++, "CN_Ratio_AOM_Fast", "", "CN_Ratio_AOM_Fast"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) {
+					const auto& layer = monica.soilColumn().at(i);
+					return layer.vo_AOM_Pool.empty() ? 0.0 : layer.vo_AOM_Pool.at(0).vo_CN_Ratio_AOM_Fast;
+				}, 5);
+			});
+
+			build({id++, "AOM_Fast", "", "AOM_Fast"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) {
+					const auto& layer = monica.soilColumn().at(i);
+					return layer.vo_AOM_Pool.empty() ? 0.0 : layer.vo_AOM_Pool.at(0).vo_AOM_Fast;
+				}, 5);
+			});
+
+			build({id++, "AOM_Slow", "", "AOM_Slow"},
+						[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) {
+					const auto& layer = monica.soilColumn().at(i);
+					return layer.vo_AOM_Pool.empty() ? 0.0 : layer.vo_AOM_Pool.at(0).vo_AOM_Slow;
+				}, 5);
+			});
+
+
 			tableBuilt = true;
 		}
 	}
