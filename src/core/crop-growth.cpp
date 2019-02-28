@@ -54,7 +54,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 											 const UserCropParameters& cropPs,
 											 const SimulationParameters& simPs,
 											 std::function<void(std::string)> fireEvent,
-											 std::function<void(double, double, double)> addOrganicMatter,
+											 std::function<void(std::map<int, double>, double)> addOrganicMatter,
 											 int usage)
 	: _frostKillOn(simPs.pc_FrostKillOn)
 	, soilColumn(sc)
@@ -1361,16 +1361,19 @@ void CropGrowth::fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIn
 	double vc_RootDensityFactorSum,
 	const vector<double>& vc_RootDensityFactor)
 {
-	uint nMineralisationlayer = uint(soilColumn.vs_NumberOfOrganicLayers() - 1);
+	uint nools = soilColumn.vs_NumberOfOrganicLayers();
 	
+	map<int, double> layer2deadRootBiomassAtLayer;
 	for (uint i = 0; i < vc_RootingZone; i++)
 	{
 		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * dailyDeadRootBiomassIncrement;
 		//just add organica matter if > 0.0001
 		if(int(deadRootBiomassAtLayer * 10000) > 0)
-			_addOrganicMatter(deadRootBiomassAtLayer, vc_NConcentrationRoot, i < nMineralisationlayer ? i : nMineralisationlayer);
+			layer2deadRootBiomassAtLayer[i < nools ? i : nools - 1] += deadRootBiomassAtLayer;
 	}
-	
+
+	if(!layer2deadRootBiomassAtLayer.empty())
+		_addOrganicMatter(layer2deadRootBiomassAtLayer, vc_NConcentrationRoot);
 }
 
 /**
@@ -2841,7 +2844,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 				vc_OrganBiomass[0] -= dailyDeadBiomassIncrement[0];
 				vc_OrganDeadBiomass[0] -= dailyDeadBiomassIncrement[0];
 				vc_TotalBiomassNContent -= dailyDeadBiomassIncrement[0] * vc_NConcentrationRoot;
-
 			}
 		}
 		else
@@ -2883,19 +2885,25 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 		vc_MaxRootNConcentration = pc_StageMaxRootNConcentration[vc_DevelopmentalStage];
 	}
 
-	vc_CropNDemand = ((vc_TargetNConcentration * vc_AbovegroundBiomass)
-										+ (vc_RootBiomass * vc_MaxRootNConcentration)
-										+ (vc_TargetNConcentration * vc_BelowgroundBiomass / pc_ResidueNRatio)
-										- vc_TotalBiomassNContent) * vc_TimeStep; // [kg ha-1]
+	vc_CropNDemand = 
+		((vc_TargetNConcentration * vc_AbovegroundBiomass)
+		 + (vc_RootBiomass * vc_MaxRootNConcentration)
+		 + (vc_TargetNConcentration * vc_BelowgroundBiomass / pc_ResidueNRatio)
+		 - vc_TotalBiomassNContent)
+		* vc_TimeStep; // [kg ha-1]
 
-	vc_NConcentrationOptimum = ((vc_TargetNConcentration
-															 - (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) * vc_AbovegroundBiomass
-															+ (vc_TargetNConcentration
-																 - (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) * vc_BelowgroundBiomass / pc_ResidueNRatio
-															+ (vc_RootBiomass * vc_MaxRootNConcentration) - vc_TotalBiomassNContent) * vc_TimeStep; // [kg ha-1]
-
-
-
+	vc_NConcentrationOptimum = 
+		((vc_TargetNConcentration
+			- (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15)
+		 * vc_AbovegroundBiomass
+		 + (vc_TargetNConcentration
+				- (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) 
+		 * vc_BelowgroundBiomass 
+		 / pc_ResidueNRatio
+		 + (vc_RootBiomass * vc_MaxRootNConcentration) 
+		 - vc_TotalBiomassNContent) 
+		* vc_TimeStep; // [kg ha-1]
+	 
 	if(vc_CropNDemand > (pc_MaxCropNDemand * vc_TimeStep))
 	{
 		// Not more than 6kg N per day to be taken up.
@@ -3729,8 +3737,7 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 
 	if(vc_RootBiomass > vc_RootBiomassOld)
 	{
-
-		// wurzel ist gewachsen
+		// root has been growing
 		vc_NConcentrationRoot = 
 			((vc_RootBiomassOld * vc_NConcentrationRoot) 
 			 + ((vc_RootBiomass - vc_RootBiomassOld) 
@@ -3740,29 +3747,38 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 					* vc_TotalNInput)) 
 			/ vc_RootBiomass;
 
-		vc_NConcentrationRoot = min(vc_NConcentrationRoot, pc_StageMaxRootNConcentration[vc_DevelopmentalStage]);
+		vc_NConcentrationRoot = bound(pc_MinimumNConcentrationRoot,
+																	vc_NConcentrationRoot, 
+																	pc_StageMaxRootNConcentration[vc_DevelopmentalStage]);
+		
+		//vc_NConcentrationRoot = min(vc_NConcentrationRoot, pc_StageMaxRootNConcentration[vc_DevelopmentalStage]);
 
-
-		if(vc_NConcentrationRoot < pc_MinimumNConcentrationRoot)
-		{
-			vc_NConcentrationRoot = pc_MinimumNConcentrationRoot;
-		}
+		//if(vc_NConcentrationRoot < pc_MinimumNConcentrationRoot)
+		//{
+		//	vc_NConcentrationRoot = pc_MinimumNConcentrationRoot;
+		//}
 	}
 
-	vc_NConcentrationAbovegroundBiomass = (vc_TotalBiomassNContent + vc_TotalNInput
-																				 - (vc_RootBiomass * vc_NConcentrationRoot))
-		/ (vc_AbovegroundBiomass + (vc_BelowgroundBiomass / pc_ResidueNRatio));
+	vc_NConcentrationAbovegroundBiomass = 
+		(vc_TotalBiomassNContent
+		 + vc_TotalNInput
+		 - (vc_RootBiomass * vc_NConcentrationRoot))
+		/ (vc_AbovegroundBiomass
+			 + (vc_BelowgroundBiomass / pc_ResidueNRatio));
 
-	if((vc_NConcentrationAbovegroundBiomass * vc_AbovegroundBiomass) < (vc_AbovegroundBiomassOld
-																																			* vc_NConcentrationAbovegroundBiomassOld))
+	if((vc_NConcentrationAbovegroundBiomass * vc_AbovegroundBiomass) 
+		 < (vc_NConcentrationAbovegroundBiomassOld * vc_AbovegroundBiomassOld))
 	{
-
-		vc_NConcentrationAbovegroundBiomass = vc_AbovegroundBiomassOld * vc_NConcentrationAbovegroundBiomassOld
+		vc_NConcentrationAbovegroundBiomass =
+			vc_NConcentrationAbovegroundBiomassOld * vc_AbovegroundBiomassOld
 			/ vc_AbovegroundBiomass;
 
-		vc_NConcentrationRoot = (vc_TotalBiomassNContent + vc_TotalNInput
-														 - (vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass)
-														 - (vc_NConcentrationAbovegroundBiomass / pc_ResidueNRatio * vc_BelowgroundBiomass)) / vc_RootBiomass;
+		vc_NConcentrationRoot = 
+			(vc_TotalBiomassNContent
+			 + vc_TotalNInput
+			 - (vc_NConcentrationAbovegroundBiomass * vc_AbovegroundBiomass)
+			 - (vc_NConcentrationAbovegroundBiomass / pc_ResidueNRatio * vc_BelowgroundBiomass))
+			/ vc_RootBiomass;
 	}
 }
 
@@ -4694,7 +4710,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 		debug() << "adding organic matter from cut residues to soilOrganic" << endl;
 		debug() << "Residue biomass: " << sumResidueBiomass
 			<< " Residue N concentration: " << residueNConcentration << endl;
-		_addOrganicMatter(sumResidueBiomass, residueNConcentration, 0);
+		_addOrganicMatter({{0, sumResidueBiomass}}, residueNConcentration);
 	}
 
 	//update LAI

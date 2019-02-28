@@ -65,7 +65,7 @@ namespace Monica
                const UserCropParameters& cropPs,
                const SimulationParameters& simPs,
 							 std::function<void(std::string)> fireEvent,
-							 std::function<void(double, double, double)> addOrganicMatter,
+							 std::function<void(std::map<int, double>, double)> addOrganicMatter,
                int eva2_usage = NUTZUNG_UNDEFINED);
 
     void applyCutting(std::map<int, Cutting::Value>& organs,
@@ -675,7 +675,7 @@ namespace Monica
 		Voc::CPData _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
-		std::function<void(double, double, int)> _addOrganicMatter;
+		std::function<void(std::map<int, double>, double)> _addOrganicMatter;
 
 		double vc_O3_shortTermDamage{ 1.0 };
 		double vc_O3_longTermDamage{ 1.0 };
