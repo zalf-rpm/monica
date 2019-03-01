@@ -177,9 +177,10 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 			debug() << "root biomass: " << rootBiomass
 				<< " Root N concentration: " << rootNConcentration << endl;
 
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-																		rootBiomass,
-																		rootNConcentration);
+			_currentCropGrowth->addAndDistributeRootBiomassInSoil(rootBiomass);
+			//_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+			//															rootBiomass,
+			//															rootNConcentration);
 
 			if(optCarbMgmtData.optCarbonConservation)
 			{
@@ -268,9 +269,11 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
 																		abovegroundBiomass,
 																		abovegroundBiomassNConcentration);
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-																		rootBiomass,
-																		rootNConcentration);
+
+			_currentCropGrowth->addAndDistributeRootBiomassInSoil(rootBiomass);
+			//_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+			//															rootBiomass,
+			//															rootNConcentration);
 		}
 	}
 

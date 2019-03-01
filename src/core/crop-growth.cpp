@@ -1357,24 +1357,29 @@ ostream& Monica::tout(bool closeFile)
 }
 #endif
 
-void CropGrowth::fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIncrement,
-	double vc_RootDensityFactorSum,
-	const vector<double>& vc_RootDensityFactor)
+void CropGrowth::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
+																							double vc_RootDensityFactorSum,
+																							const vector<double>& vc_RootDensityFactor)
 {
 	uint nools = soilColumn.vs_NumberOfOrganicLayers();
 	
 	map<int, double> layer2deadRootBiomassAtLayer;
 	for (uint i = 0; i < vc_RootingZone; i++)
 	{
-		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * dailyDeadRootBiomassIncrement;
+		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * deadRootBiomass;
 		//just add organica matter if > 0.0001
 		if(int(deadRootBiomassAtLayer * 10000) > 0)
-			//layer2deadRootBiomassAtLayer[i < nools ? i : nools - 1] += deadRootBiomassAtLayer;
-			layer2deadRootBiomassAtLayer[0] += deadRootBiomassAtLayer;
+			layer2deadRootBiomassAtLayer[i < nools ? i : nools - 1] += deadRootBiomassAtLayer;
 	}
 
 	if(!layer2deadRootBiomassAtLayer.empty())
 		_addOrganicMatter(layer2deadRootBiomassAtLayer, vc_NConcentrationRoot);
+}
+
+void CropGrowth::addAndDistributeRootBiomassInSoil(double rootBiomass)
+{
+	auto p = calcRootDensityFactorAndSum();
+	fc_MoveDeadRootBiomassToSoil(rootBiomass, p.second, p.first);
 }
 
 /**
@@ -3035,34 +3040,19 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	//std::cout << "pc_SpecificRootLength: " << pc_SpecificRootLength << std::endl;
 
 	// Calculating a root density distribution factor []
-	std::vector<double> vc_RootDensityFactor(nols, 0.0);
-	for(size_t i_Layer = 0; i_Layer < nols; i_Layer++)
-	{
-		if(i_Layer < vc_RootingDepth)
-			vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness)); // []
-		else if(i_Layer < vc_RootingZone)
-			vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness))
-			* (1.0 - ((i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth))); // []
-		else
-			vc_RootDensityFactor[i_Layer] = 0.0; // []
-
-		//std::cout << setprecision(11) << "vc_RootDensityFactor[i_Layer]: " << i_Layer << ", " << vc_RootDensityFactor[i_Layer] << std::endl;
-	}
-
-	// Summing up all factors to scale to a relative factor between [0;1]
+	std::vector<double> vc_RootDensityFactor; 
 	double vc_RootDensityFactorSum = 0.0;
-	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
-		vc_RootDensityFactorSum += vc_RootDensityFactor[i_Layer]; // []
-
+	tie(vc_RootDensityFactor, vc_RootDensityFactorSum) = calcRootDensityFactorAndSum();
+	
+	// calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
+	if(!cropPs.__disable_daily_root_biomass_to_soil__)
+		fc_MoveDeadRootBiomassToSoil(dailyDeadBiomassIncrement[0], vc_RootDensityFactorSum, vc_RootDensityFactor);
+	
 	// Calculating root density per layer from total root length and
 	// a relative root density distribution factor
 	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
 		vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum) * vc_TotalRootLength; // [m m-3]
-	
-	// calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
-	if(!cropPs.__disable_daily_root_biomass_to_soil__)
-		fc_MoveDailyDeadRootBiomassToSoil(dailyDeadBiomassIncrement[0], vc_RootDensityFactorSum, vc_RootDensityFactor);
-
+		
 	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
 	{
 		// Root diameter [m]
@@ -3169,12 +3159,36 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	{
 		vc_CropNDemand = vc_CropNDemand / 10000.0; // [kg ha-1 --> kg m-2]
 	}
-
-
-	
-
-
 }
+
+pair<vector<double>, double> CropGrowth::calcRootDensityFactorAndSum()
+{
+	uint nols = soilColumn.vs_NumberOfLayers();
+	double layerThickness = soilColumn.vs_LayerThickness();
+
+	// Calculating a root density distribution factor []
+	std::vector<double> vc_RootDensityFactor(nols, 0.0);
+	for(size_t i_Layer = 0; i_Layer < nols; i_Layer++)
+	{
+		if(i_Layer < vc_RootingDepth)
+			vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness)); // []
+		else if(i_Layer < vc_RootingZone)
+			vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness))
+			* (1.0 - ((i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth))); // []
+		else
+			vc_RootDensityFactor[i_Layer] = 0.0; // []
+
+		//std::cout << setprecision(11) << "vc_RootDensityFactor[i_Layer]: " << i_Layer << ", " << vc_RootDensityFactor[i_Layer] << std::endl;
+	}
+
+	// Summing up all factors to scale to a relative factor between [0;1]
+	double vc_RootDensityFactorSum = 0.0;
+	for(size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++)
+		vc_RootDensityFactorSum += vc_RootDensityFactor[i_Layer]; // []
+
+	return make_pair(vc_RootDensityFactor, vc_RootDensityFactorSum);
+}
+
 
 /**
  * @brief Reference evapotranspiration

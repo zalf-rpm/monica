@@ -156,9 +156,11 @@ namespace Monica
 
     double fc_SoilCoverage(double vc_LeafAreaIndex);
 
-		void fc_MoveDailyDeadRootBiomassToSoil(double dailyDeadRootBiomassIncrement, 
-																 double vc_RootDensityFactorSum,
-																 const std::vector<double>& vc_RootDensityFactor);
+		void fc_MoveDeadRootBiomassToSoil(double deadRootBiomass, 
+																			double vc_RootDensityFactorSum,
+																			const std::vector<double>& vc_RootDensityFactor);
+
+		void addAndDistributeRootBiomassInSoil(double rootBiomass);
 
 		void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                                double vw_MaxAirTemperature,
@@ -432,6 +434,8 @@ namespace Monica
 		double residueCutBiomass() const { return vc_residueCutBiomass; }
 
 		double rootNConcentration() const { return vc_NConcentrationRoot; }
+
+		std::pair<std::vector<double>, double> calcRootDensityFactorAndSum();
 
   private:
 		bool _frostKillOn{true};
