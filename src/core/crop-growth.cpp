@@ -3767,21 +3767,30 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 		 - (vc_RootBiomass * vc_NConcentrationRoot))
 		/ (vc_AbovegroundBiomass
 			 + (vc_BelowgroundBiomass / pc_ResidueNRatio));
-
+	
+	
 	if((vc_NConcentrationAbovegroundBiomass * vc_AbovegroundBiomass) 
 		 < (vc_NConcentrationAbovegroundBiomassOld * vc_AbovegroundBiomassOld))
 	{
-		vc_NConcentrationAbovegroundBiomass =
+		double temp_vc_NConcentrationAbovegroundBiomass =
 			vc_NConcentrationAbovegroundBiomassOld * vc_AbovegroundBiomassOld
 			/ vc_AbovegroundBiomass;
 
-		vc_NConcentrationRoot = 
+		double temp_vc_NConcentrationRoot = 
 			(vc_TotalBiomassNContent
 			 + vc_TotalNInput
 			 - (vc_NConcentrationAbovegroundBiomass * vc_AbovegroundBiomass)
 			 - (vc_NConcentrationAbovegroundBiomass / pc_ResidueNRatio * vc_BelowgroundBiomass))
 			/ vc_RootBiomass;
+
+		if (temp_vc_NConcentrationRoot >= pc_MinimumNConcentrationRoot)
+		{
+			vc_NConcentrationAbovegroundBiomass = temp_vc_NConcentrationAbovegroundBiomass;
+			vc_NConcentrationRoot = temp_vc_NConcentrationRoot;
+		}
 	}
+	
+	
 }
 
 
@@ -4737,7 +4746,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	{
 		vc_TotalBiomassNContent -= (1 - vc_AbovegroundBiomass / oldAbovegroundBiomass) * oldAgbNcontent;
 	}
-	
+
 }
 
 void
