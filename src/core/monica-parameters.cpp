@@ -113,7 +113,12 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_double_vector(pc_StageMaxRootNConcentration, j, "StageMaxRootNConcentration");
   set_double_vector(pc_InitialOrganBiomass, j, "InitialOrganBiomass");
   set_double_vector(pc_CriticalOxygenContent, j, "CriticalOxygenContent");
-  set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
+	
+	set_double_vector(pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
+	if (pc_StageMobilFromStorageCoeff.empty())
+		pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+  
+	set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
   set_bool_vector(pc_StorageOrgan, j, "StorageOrgan");
   set_double_value(pc_SamplingDepth, j, "SamplingDepth");
   set_double_value(pc_TargetNSamplingDepth, j, "TargetNSamplingDepth");
@@ -177,6 +182,7 @@ json11::Json SpeciesParameters::to_json() const
   ,{"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)}
   ,{"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)}
   ,{"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)}
+	,{"StageMobilFromStorageCoeff", toPrimJsonArray(pc_StageMobilFromStorageCoeff)}
   ,{"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)}
   ,{"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)}
   ,{"SamplingDepth", pc_SamplingDepth}
