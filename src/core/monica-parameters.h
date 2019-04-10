@@ -130,6 +130,7 @@ namespace Monica
 		std::vector<double> pc_StageMaxRootNConcentration;
 		std::vector<double> pc_InitialOrganBiomass;
 		std::vector<double> pc_CriticalOxygenContent;
+	  std::vector<double> pc_StageMobilFromStorageCoeff;
 
 		std::vector<bool> pc_AbovegroundOrgan;
 		std::vector<bool> pc_StorageOrgan;
@@ -162,6 +163,7 @@ namespace Monica
 		double KO25{ 330.0 }; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
 
 		int pc_TransitionStageLeafExp{ -1 }; //!< [1-7]
+	
 	};
 
 	typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
