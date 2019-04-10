@@ -146,7 +146,7 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 	fo_Volatilisation(addedOrganicMatter, vw_MeanAirTemperature, vw_WindSpeed);
 	fo_Nitrification();
 	fo_Denitrification();
-	fo_N2OProduction();
+	vo_N2O_Produced =	fo_N2OProduction();
 	fo_PoolUpdate();
 
 	vo_NetEcosystemProduction =
@@ -1293,33 +1293,37 @@ void SoilOrganic::fo_Denitrification()
 
 }
 
-
 /**
  * @brief N2O production
  */
-void SoilOrganic::fo_N2OProduction()
+double SoilOrganic::fo_N2OProduction()
 {
+	auto soilpH = [&](size_t i){ return soilColumn[i].vs_SoilpH(); };
+	auto soilNO2 = [&](size_t i){ return soilColumn[i].vs_SoilNO2; };
+	auto layerThick = [&](size_t i){ return soilColumn[i].vs_LayerThickness; };
+	auto soilTemp = [&](size_t i){ return soilColumn[i].get_Vs_SoilTemperature(); };
+
 	auto nools = soilColumn.vs_NumberOfOrganicLayers();
-	std::vector<double> vo_N2OProduction(nools, 0.0);
-	double po_N2OProductionRate = organicPs.po_N2OProductionRate;
-	vo_N2O_Produced = 0.0;
+	double N2OProductionRate = organicPs.po_N2OProductionRate;
+	double pKaHNO2 = OrganicConstants::po_pKaHNO2;
+	double sumN2OProduced = 0.0;
 
-	for(int i_Layer = 0; i_Layer < nools; i_Layer++)
+	for(int i = 0; i < nools; i++)
 	{
-
 		// pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being available at higer pH values
-		double pH_response = 1.0 / (1.0 + pow(2.0, soilColumn[i_Layer].vs_SoilpH() - OrganicConstants::po_pKaHNO2));
+		double pH_response = 1.0 / (1.0 + pow(2.0, soilpH(i) - pKaHNO2));
 
-		vo_N2OProduction[i_Layer] = soilColumn[i_Layer].vs_SoilNO2
-			* fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature())
-			* po_N2OProductionRate
-			* pH_response;
+		double N2OProductionAtLayer =
+			soilNO2(i)
+			* fo_TempOnNitrification(soilTemp(i))
+			* N2OProductionRate
+			* pH_response
+			* layerThick(i) * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
 
-		vo_N2OProduction[i_Layer] *= soilColumn[i_Layer].vs_LayerThickness * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
-
-		vo_N2O_Produced += vo_N2OProduction[i_Layer];
+		sumN2OProduced += N2OProductionAtLayer;
 	}
 
+	return sumN2OProduced;
 }
 
 
@@ -1553,36 +1557,22 @@ double SoilOrganic::fo_MoistOnHydrolysis(double d_SoilMoisture_pF)
  * @param d_SoilTemperature
  * @return
  */
-double SoilOrganic::fo_TempOnNitrification(double d_SoilTemperature)
+double SoilOrganic::fo_TempOnNitrification(double soilTemp)
 {
-	double fo_TempOnNitrification = 0.0;
+	double result = 0.0;
 
-	if(d_SoilTemperature <= 2.0 && d_SoilTemperature > -40.0)
-	{
-		fo_TempOnNitrification = 0.0;
-
-	}
-	else if(d_SoilTemperature > 2.0 && d_SoilTemperature <= 6.0)
-	{
-		fo_TempOnNitrification = 0.15 * (d_SoilTemperature - 2.0);
-
-	}
-	else if(d_SoilTemperature > 6.0 && d_SoilTemperature <= 20.0)
-	{
-		fo_TempOnNitrification = 0.1 * d_SoilTemperature;
-
-	}
-	else if(d_SoilTemperature > 20.0 && d_SoilTemperature <= 70.0)
-	{
-		fo_TempOnNitrification
-			= exp(0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature));
-	}
+	if(soilTemp <= 2.0 && soilTemp > -40.0)
+		result = 0.0;
+	else if(soilTemp > 2.0 && soilTemp <= 6.0)
+		result = 0.15 * (soilTemp - 2.0);
+	else if(soilTemp > 6.0 && soilTemp <= 20.0)
+		result = 0.1 * soilTemp;
+	else if(soilTemp > 20.0 && soilTemp <= 70.0)
+		result = exp(0.47 - (0.027 * soilTemp) + (0.00193 * soilTemp * soilTemp));
 	else
-	{
 		vo_ErrorMessage = "irregular soil temperature";
-	}
 
-	return fo_TempOnNitrification;
+	return result;
 }
 
 /**
