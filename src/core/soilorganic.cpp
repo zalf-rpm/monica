@@ -140,12 +140,13 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 	//cout << "total_biomass : " << total_biomass << std::endl; // JV!
 
 	//fo_OM_Input(vo_AOM_Addition);
+	fo_Urea(vw_Precipitation + irrigationAmount);
 	// Mineralisation Immobilisitation Turn-Over
 	fo_MIT();
-	//fo_Volatilisation(addedOrganicMatter, vw_MeanAirTemperature, vw_WindSpeed);
+	fo_Volatilisation(addedOrganicMatter, vw_MeanAirTemperature, vw_WindSpeed);
 	fo_Nitrification();
-	//fo_Denitrification();
-	//fo_N2OProduction();
+	fo_Denitrification();
+	fo_N2OProduction();
 	fo_PoolUpdate();
 
 	vo_NetEcosystemProduction =
