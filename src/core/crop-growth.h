@@ -692,7 +692,8 @@ namespace Monica
 		double vc_O3_WStomatalClosure{ 1.0 };
 
 		bool _assimilatePartCoeffsReduced{ false };
-
+		double vc_KTkc{ 0 }; // old KTkc
+		double vc_KTko{ 0 }; // old KTkc
 	};
 
 	//#define TEST_HOURLY_OUTPUT

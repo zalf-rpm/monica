@@ -1472,8 +1472,8 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	double vc_RadiationUseEfficiency = 0.0; // old EFF
 	double vc_RadiationUseEfficiencyReference = 0.0;
 	double KTvmax = 0.0; // old KTvmax
-	double KTkc = 0.0; // old KTkc
-	double KTko = 0.0; // old KTko
+	//double KTkc = 0.0; // old KTkc
+	//double KTko = 0.0; // old KTko
 	double vc_AmaxFactor = 0.0; // old fakamax
 	double vc_AmaxFactorReference = 0.0;
 	double vc_Vcmax = 0.0; // old vcmax
@@ -1570,12 +1570,12 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			double tempK = vw_MeanAirTemperature + D_IN_K;
 			double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
 			double term2 = sqrt(tempK / TK25);
-			KTkc = exp(speciesPs.AEKC * term1) * term2;
-			KTko = exp(speciesPs.AEKO * term1) * term2;
-			Mkc = speciesPs.KC25 * KTkc; //[µmol mol-1]
+			vc_KTkc = exp(speciesPs.AEKC * term1) * term2;
+			vc_KTko = exp(speciesPs.AEKO * term1) * term2;
+			Mkc = speciesPs.KC25 * vc_KTkc; //[µmol mol-1]
 			_cropPhotosynthesisResults.kc = Mkc;
 			_cropPhotosynthesisResults.kc = Mkc;
-			Mko = speciesPs.KO25 * KTko; //[mmol mol-1]
+			Mko = speciesPs.KO25 * vc_KTko; //[mmol mol-1]
 			_cropPhotosynthesisResults.ko = Mko * 1000.0; // mmol -> umol
 
 			//OLD exponential response
@@ -2786,7 +2786,13 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	//vc_NetPhotosynthesis = (vc_GrossPhotosynthesis - vc_NetMaintenanceRespiration + vc_ReserveAssimilatePool) * pc_GrowthRespirationRedux; // from HERMES algorithms
 	vc_NetPhotosynthesis = vc_Assimilates; // from AGROSIM algorithms
 	//double stage_mobil_from_storage_coeff = 0.3;
-	double mobilization_from_storage = vc_OrganBiomass[vc_StorageOrgan] * speciesPs.pc_StageMobilFromStorageCoeff[vc_DevelopmentalStage];
+	double TMP_Regulatory_factor = speciesPs.pc_StageMobilFromStorageCoeff[vc_DevelopmentalStage];
+
+	if (vc_DevelopmentalStage == 1) {
+		TMP_Regulatory_factor = speciesPs.pc_StageMobilFromStorageCoeff[vc_DevelopmentalStage] * vc_KTkc;
+	}
+
+	double mobilization_from_storage = vc_OrganBiomass[vc_StorageOrgan] * speciesPs.pc_StageMobilFromStorageCoeff[vc_DevelopmentalStage] * vc_KTkc;
 
 	vc_ReserveAssimilatePool = 0.0;
 
