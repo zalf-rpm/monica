@@ -718,6 +718,12 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
 			});
 
+			build({ id++, "YieldN", "kgN ha-1", "PrimaryYieldNContent" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNContent(), 3) : 0.0;
+			});
+
 			build({id++, "Protein", "kg kg-1", "RawProteinConcentration"},
 						[](const MonicaModel& monica, OId oid)
 			{
