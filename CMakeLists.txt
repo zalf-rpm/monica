@@ -56,6 +56,8 @@ set(CMAKE_CXX_STANDARD 11)
 set_absolute_path(UTIL_DIR "../util")
 set_absolute_path(SYS_LIBS_DIR "../sys-libs")
 set_absolute_path(BOOST_DIR "../boost")
+set_absolute_path(CAPNP_SCHEMAS_DIR "../../GitHub/capnproto_schemas")
+set_absolute_path(CAPNP_DIR "../../GitHub/capnproto")
 
 # setup the target group variable, used to group targets into folders in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -63,6 +65,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include_directories("src")
 include_directories("${UTIL_DIR}")
 include_directories("${SYS_LIBS_DIR}/includes/zmq-helper")
+include_directories("${CAPNP_SCHEMAS_DIR}")
+include_directories("${CAPNP_DIR}/c++/src")
 #include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
 #include_directories("${SYS_LIBS_DIR}/includes/czmq-master")
 #include_directories("${SYS_LIBS_DIR}/includes/libsodium-1.0.10")
@@ -558,3 +562,88 @@ target_link_libraries(libclimateio
 )
 set_target_properties(libclimateio PROPERTIES PREFIX "")
 set_target_properties(libclimateio PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_EXPORTS")
+
+#------------------------------------------------------------------------------
+
+# create monica-capnp-server executable, the server running monica via CapNProto RPC
+set(MONICA_CAPNP_SERVER_SOURCE_FILES
+	src/run/monica-capnp-server-main.cpp
+	
+	# capnproto schema files
+    #--------------------
+    ${CAPNP_SCHEMAS_DIR}/climate_data.capnp.h
+    ${CAPNP_SCHEMAS_DIR}/climate_data.capnp.c++
+    ${CAPNP_SCHEMAS_DIR}/model.capnp.h
+    ${CAPNP_SCHEMAS_DIR}/model.capnp.c++
+    ${CAPNP_SCHEMAS_DIR}/geo_coord.capnp.h
+    ${CAPNP_SCHEMAS_DIR}/geo_coord.capnp.c++
+    ${CAPNP_SCHEMAS_DIR}/common.capnp.h
+    ${CAPNP_SCHEMAS_DIR}/common.capnp.c++
+    ${CAPNP_SCHEMAS_DIR}/service.capnp.h
+    ${CAPNP_SCHEMAS_DIR}/service.capnp.c++
+
+	# db library code
+	#-------------------------------------------
+	${UTIL_DIR}/db/db.h
+	${UTIL_DIR}/db/db.cpp
+
+	# climate library code
+	#-------------------------------------------
+
+	${UTIL_DIR}/climate/climate-file-io.h
+	${UTIL_DIR}/climate/climate-file-io.cpp
+
+	# tools library code
+	#-------------------------------------------
+	
+		# db library code
+	#-------------------------------------------
+	${UTIL_DIR}/db/abstract-db-connections.h
+	${UTIL_DIR}/db/db.h
+	${UTIL_DIR}/db/sqlite3.h
+	# climate library code
+	#-------------------------------------------
+	${UTIL_DIR}/climate/climate-common.h
+	${UTIL_DIR}/climate/climate-file-io.h
+	# json11 library code
+	#-------------------------------------------
+	${UTIL_DIR}/json11/json11.hpp
+	# tools library code
+	#-------------------------------------------
+	${UTIL_DIR}/tools/algorithms.h
+	${UTIL_DIR}/tools/datastructures.h
+	${UTIL_DIR}/tools/date.h
+	${UTIL_DIR}/tools/debug.h
+	${UTIL_DIR}/tools/helper.h
+	${UTIL_DIR}/tools/json11-helper.h
+	${UTIL_DIR}/tools/read-ini.h
+
+	# soil library code
+	#-------------------------------------------
+	${UTIL_DIR}/soil/constants.h
+	${UTIL_DIR}/soil/conversion.h
+	${UTIL_DIR}/soil/soil.h
+)
+
+set(MONICA_CAPNP_SERVER_SOURCE 
+    ${LIBMONICA_SOURCE} 
+    ${MONICA_CAPNP_SERVER_SOURCE_FILES})
+
+# create monica-capnp-server
+add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE})
+target_link_libraries(monica-capnp-server
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${CMAKE_DL_LIBS}
+  "Ws2_32.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-async.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-http.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-gzip.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnpc.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp-json.lib"
+  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp-rpc.lib"
+)
+if (MSVC)
+target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
