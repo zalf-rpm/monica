@@ -18,8 +18,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <fstream>
 #include <string>
 #include <tuple>
+#include <vector>
+#include <algorithm>
 
 #include <kj/debug.h>
+
+#include <kj/common.h>
+#define KJ_MVCAP(var) var = kj::mv(var)
+
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 
@@ -47,60 +53,97 @@ using namespace Monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
-using namespace zalf::capnp::rpc;
-
+using namespace zalf::capnp;
 
 string appName = "monica-capnp-server";
-string version = "2.0.0-beta";
+string version = "1.0.0-beta";
 
 std::map<std::string, DataAccessor> daCache;
 bool startedServerInDebugMode = false;
 
-class RunMonicaImpl final : public Model::Instance::Server
+DataAccessor fromCapnpData(capnp::List<rpc::Climate::Element>::Reader&& header, capnp::List<capnp::List<float>>::Reader&& data)
 {
-	// Implementation of the Calculator Cap'n Proto interface.
+	DataAccessor da;
+	
+	typedef rpc::Climate::Element E;
+
+	if (data.size() == 0)
+		return da;
+
+	vector<double> d(data.size());
+	int i = 0;
+	for (auto elem : header)
+	{
+		auto vs = data[i];
+		transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
+		switch (elem) {
+		case E::TMIN: da.addClimateData(ACD::tmin, d); break;
+		case E::TAVG: da.addClimateData(ACD::tavg, d); break;
+		case E::TMAX: da.addClimateData(ACD::tmax, d); break;
+		case E::PRECIP: da.addClimateData(ACD::precip, d); break;
+		case E::RELHUMID: da.addClimateData(ACD::relhumid, d); break;
+		case E::WIND: da.addClimateData(ACD::wind, d); break;
+		case E::GLOBRAD: da.addClimateData(ACD::globrad, d); break;
+
+		}
+		i++;
+	}
+
+	return da;
+}
+
+class RunMonicaImpl final : public rpc::Model::Instance::Server
+{
+	// Implementation of the Model::Instance Cap'n Proto interface
 
 public:
 	kj::Promise<void> runEnv(RunEnvContext context) override
 	{
 		auto envR = context.getParams().getEnv(); 
-		auto timeSeriesR = envR.getTimeSeries();
-		auto envStr = envR.getJsonEnv();
 
-		string err;
-		const Json& envJson = Json::parse(envStr.cStr(), err);
+		auto runMonica = [&context, envR](DataAccessor da = DataAccessor()) {
+			string err;
+			const Json& envJson = Json::parse(envR.getJsonEnv().cStr(), err);
 
-		Env env(envJson);
-		if (!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
-			env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+			Env env(envJson);
+			if (da.isValid())
+				env.climateData = da;
+			else if (!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
+				env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
 
-		env.debugMode = startedServerInDebugMode && env.debugMode;
+			env.debugMode = startedServerInDebugMode && env.debugMode;
 
-		env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-			[](string soilTexture, int distance)
-		{
-			return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+			env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+				[](string soilTexture, int distance) {
+				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+			};
+
+			auto out = Monica::runMonica(env);
+
+			context.getResults().setResult(out.toString());
 		};
 
-		auto out = runMonica(env);
-
-		context.getResults().setResult(out.toString());
+		if (envR.hasTimeSeries()) {
+			auto ts = envR.getTimeSeries();
+			auto headerProm = ts.headerRequest().send();
+			auto dataTProm = ts.dataTRequest().send();
+			
+			auto finalProm = headerProm
+				.then([KJ_MVCAP(dataTProm)](capnp::Response<rpc::Climate::TimeSeries::HeaderResults>&& headerRes) mutable {
+				auto header = headerRes.getHeader();
+				return dataTProm.then([KJ_MVCAP(header)](capnp::Response<rpc::Climate::TimeSeries::DataTResults>&& dataTRes) mutable {
+					return fromCapnpData(kj::mv(header), dataTRes.getData());
+				});
+			}).then(runMonica);
+		}
+		else {
+			runMonica();
+		}
 
 		return kj::READY_NOW;
 	}
-
-	/*
-	kj::Promise<void> runSet(RunSetContext context) override
-	{
-		return kj::READY_NOW;
-	}
-
-	kj::Promise<void> run(RunContext context) override
-	{
-		return kj::READY_NOW;
-	}
-	*/
 };
+
 
 int main(int argc, const char* argv[]){
 

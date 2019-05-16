@@ -104,8 +104,8 @@ file(GLOB LIBMONICA_RESOURCE_SOURCE
 
 # core
 file(GLOB LIBMONICA_CORE_SOURCE
-       src/core/*.cpp
-	   src/core/*.h)
+     src/core/*.cpp
+	 src/core/*.h)
 remove_file(LIBMONICA_CORE_SOURCE "src/core/simulation.cpp")
 remove_file(LIBMONICA_CORE_SOURCE "src/core/simulation.h")
 remove_file(LIBMONICA_CORE_SOURCE "src/core/monica-eom.cpp")
@@ -113,76 +113,77 @@ remove_file(LIBMONICA_CORE_SOURCE "src/core/monica-eom.h")
 
 # util db
 file(GLOB_RECURSE LIBMONICA_UTIL_DB_SOURCE
-       ${UTIL_DIR}/db/*.cpp
-	   ${UTIL_DIR}/db/*.h 
-	   ${UTIL_DIR}/db/*.c )   
+     ${UTIL_DIR}/db/*.cpp
+	 ${UTIL_DIR}/db/*.h 
+	 ${UTIL_DIR}/db/*.c )   
 remove_file(LIBMONICA_UTIL_DB_SOURCE "${UTIL_DIR}/db/orm--typedefs.h")
 remove_file(LIBMONICA_UTIL_DB_SOURCE "${UTIL_DIR}/db/orm--.cpp")
 remove_file(LIBMONICA_UTIL_DB_SOURCE "${UTIL_DIR}/db/orm--.h")
 
 # util climate
 file(GLOB_RECURSE LIBMONICA_UTIL_CLIMATE_SOURCE
-	   ${UTIL_DIR}/climate/climate-common.cpp
-	   ${UTIL_DIR}/climate/climate-common.h )   
+     ${UTIL_DIR}/climate/climate-common.cpp
+	 ${UTIL_DIR}/climate/climate-common.h )   
 
 file(GLOB_RECURSE LIBMONICA_UTIL_JSON11_SOURCE
-	   ${UTIL_DIR}/json11/*.cpp
-	   ${UTIL_DIR}/json11/*.hpp 
-	   ${UTIL_DIR}/json11/*.h )   
+	 ${UTIL_DIR}/json11/*.cpp
+	 ${UTIL_DIR}/json11/*.hpp 
+	 ${UTIL_DIR}/json11/*.h )   
 
 file(GLOB_RECURSE LIBMONICA_UTIL_TOOL_SOURCE
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/algorithms.cpp
+	 ${UTIL_DIR}/tools/algorithms.h
+	 ${UTIL_DIR}/tools/algorithms.cpp
 
-	${UTIL_DIR}/tools/datastructures.h
+	 ${UTIL_DIR}/tools/datastructures.h
 
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/date.cpp
+	 ${UTIL_DIR}/tools/date.h
+	 ${UTIL_DIR}/tools/date.cpp
 
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/debug.cpp
+	 ${UTIL_DIR}/tools/debug.h
+	 ${UTIL_DIR}/tools/debug.cpp
 
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/helper.cpp
+	 ${UTIL_DIR}/tools/helper.h
+	 ${UTIL_DIR}/tools/helper.cpp
 
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/json11-helper.cpp
+	 ${UTIL_DIR}/tools/json11-helper.h
+	 ${UTIL_DIR}/tools/json11-helper.cpp
 
-	${UTIL_DIR}/tools/read-ini.h
-	${UTIL_DIR}/tools/read-ini.cpp)
+	 ${UTIL_DIR}/tools/read-ini.h
+	 ${UTIL_DIR}/tools/read-ini.cpp)
 
 file(GLOB_RECURSE LIBMONICA_UTIL_COMMON_SOURCE
-	${UTIL_DIR}/common/*.h)
+	 ${UTIL_DIR}/common/*.h)
 
 file(GLOB_RECURSE LIBMONICA_UTIL_SOIL_SOURCE
-	   ${UTIL_DIR}/soil/*.cpp
-	   ${UTIL_DIR}/soil/*.h )   
+	 ${UTIL_DIR}/soil/*.cpp
+	 ${UTIL_DIR}/soil/*.h )   
 remove_file(LIBMONICA_UTIL_SOIL_SOURCE "${UTIL_DIR}/soil/soil-from-db.h")
 remove_file(LIBMONICA_UTIL_SOIL_SOURCE "${UTIL_DIR}/soil/soil-from-db.cpp")
 
 file(GLOB_RECURSE LIBMONICA_RUN_SOURCE
-	src/run/cultivation-method.h
-	src/run/cultivation-method.cpp
-	src/run/run-monica.h
-	src/run/run-monica.cpp)   
+	 src/run/cultivation-method.h
+	 src/run/cultivation-method.cpp
+	 src/run/run-monica.h
+	 src/run/run-monica.cpp)   
 
 file(GLOB_RECURSE LIBMONICA_IO_SOURCE
-	src/io/output.h
-	src/io/output.cpp
-	src/io/build-output.h
-	src/io/build-output.cpp)   
+	 src/io/output.h
+	 src/io/output.cpp
+	 src/io/build-output.h
+	 src/io/build-output.cpp)   
 
-set(LIBMONICA_SOURCE 	${LIBMONICA_IO_SOURCE} 
-						${LIBMONICA_RUN_SOURCE} 
-						${LIBMONICA_CORE_SOURCE} 
-						${LIBMONICA_UTIL_DB_SOURCE} 
-						${LIBMONICA_UTIL_SOIL_SOURCE} 
-						${LIBMONICA_UTIL_TOOL_SOURCE} 
-						${LIBMONICA_UTIL_JSON11_SOURCE} 
-						${LIBMONICA_UTIL_CLIMATE_SOURCE}
-						${LIBMONICA_UTIL_COMMON_SOURCE}
-						${LIBMONICA_UTIL_COMMON_SOURCE}
-						${LIBMONICA_RESOURCE_SOURCE})
+set(LIBMONICA_SOURCE 
+    ${LIBMONICA_IO_SOURCE} 
+	${LIBMONICA_RUN_SOURCE} 
+	${LIBMONICA_CORE_SOURCE} 
+	${LIBMONICA_UTIL_DB_SOURCE} 
+	${LIBMONICA_UTIL_SOIL_SOURCE} 
+	${LIBMONICA_UTIL_TOOL_SOURCE} 
+	${LIBMONICA_UTIL_JSON11_SOURCE} 
+	${LIBMONICA_UTIL_CLIMATE_SOURCE}
+	${LIBMONICA_UTIL_COMMON_SOURCE}
+	${LIBMONICA_UTIL_COMMON_SOURCE}
+	${LIBMONICA_RESOURCE_SOURCE})
 						
 #------------------------------------------------------------------------------
 
@@ -276,7 +277,6 @@ target_link_libraries(monica-zmq-control
 set(MONICA_ZMQ_CONTROL_SEND_SOURCE
 	
 	src/run/monica-zmq-control-send-main.cpp
-	
 
 	# json11 library code
 	#-------------------------------------------
@@ -385,7 +385,9 @@ set(MONICA_ZMQ_RUN_SOURCE_FILES
 	${UTIL_DIR}/soil/soil-from-db.h
 	${UTIL_DIR}/soil/soil-from-db.cpp
 )
-set(MONICA_ZMQ_RUN_SOURCE ${MONICA_ZMQ_RUN_SOURCE_FILES} ${LIBMONICA_SOURCE})
+set(MONICA_ZMQ_RUN_SOURCE 
+    ${MONICA_ZMQ_RUN_SOURCE_FILES} 
+	${LIBMONICA_SOURCE})
 
 add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
 if (MSVC)
@@ -406,11 +408,6 @@ set(MONICA_ZMQ_SERVER_SOURCE_FILES
 	src/run/serve-monica-zmq.cpp
 	src/run/monica-zmq-server-main.cpp
 	
-	# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/db.cpp
-
 	# climate library code
 	#-------------------------------------------
 
@@ -422,28 +419,6 @@ set(MONICA_ZMQ_SERVER_SOURCE_FILES
 	${UTIL_DIR}/tools/zmq-helper.h
 	${UTIL_DIR}/tools/zmq-helper.cpp
 	
-		# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/sqlite3.h
-	# climate library code
-	#-------------------------------------------
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-file-io.h
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	# tools library code
-	#-------------------------------------------
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/datastructures.h
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/read-ini.h
-
 	# soil library code
 	#-------------------------------------------
 	${UTIL_DIR}/soil/constants.h
@@ -451,7 +426,9 @@ set(MONICA_ZMQ_SERVER_SOURCE_FILES
 	${UTIL_DIR}/soil/soil.h
 )
 
-set(MONICA_ZMQ_SERVER_SOURCE ${LIBMONICA_SOURCE} ${MONICA_ZMQ_SERVER_SOURCE_FILES})
+set(MONICA_ZMQ_SERVER_SOURCE 
+    ${LIBMONICA_SOURCE} 
+	${MONICA_ZMQ_SERVER_SOURCE_FILES})
 add_executable(monica-zmq-server ${MONICA_ZMQ_SERVER_SOURCE})
 target_link_libraries(monica-zmq-server
 	${ZMQ_LIB_NAME}
@@ -503,13 +480,10 @@ set(MONICA_PYTHON_SOURCE_FILES
 	#-------------------------------------------
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
-
-	# soil library code
-	#-------------------------------------------
-	${UTIL_DIR}/soil/soil-from-db.h
-	${UTIL_DIR}/soil/soil-from-db.cpp
 )
-set(MONICA_PYTHON_SOURCE ${MONICA_PYTHON_SOURCE_FILES} ${LIBMONICA_SOURCE})
+set(MONICA_PYTHON_SOURCE 
+    ${MONICA_PYTHON_SOURCE_FILES} 
+	${LIBMONICA_SOURCE})
 
 add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE})
 target_link_libraries(monica_python 
@@ -546,19 +520,20 @@ set(CLIMATE_IO_LIB_FILES
 	${UTIL_DIR}/tools/json11-helper.h
 	${UTIL_DIR}/tools/json11-helper.cpp
 )
-set(CLIMATE_IO_LIB_SOURCE 	${CLIMATE_IO_LIB_FILES} 
-							${LIBMONICA_UTIL_CLIMATE_SOURCE}
-							${LIBMONICA_UTIL_JSON11_SOURCE}
-							${LIBMONICA_UTIL_COMMON_SOURCE})
+set(CLIMATE_IO_LIB_SOURCE 	
+    ${CLIMATE_IO_LIB_FILES} 
+	${LIBMONICA_UTIL_CLIMATE_SOURCE}
+	${LIBMONICA_UTIL_JSON11_SOURCE}
+	${LIBMONICA_UTIL_COMMON_SOURCE})
 
 add_library(libclimateio SHARED ${CLIMATE_IO_LIB_SOURCE})
 if (MSVC)
 target_compile_options(libclimateio PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
 target_link_libraries(libclimateio
-	${ZMQ_LIB_NAME}
-	${CMAKE_THREAD_LIBS_INIT}
-	${CMAKE_DL_LIBS}
+	                  ${ZMQ_LIB_NAME}
+	                  ${CMAKE_THREAD_LIBS_INIT}
+	                  ${CMAKE_DL_LIBS}
 )
 set_target_properties(libclimateio PROPERTIES PREFIX "")
 set_target_properties(libclimateio PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_EXPORTS")
@@ -582,47 +557,16 @@ set(MONICA_CAPNP_SERVER_SOURCE_FILES
     ${CAPNP_SCHEMAS_DIR}/service.capnp.h
     ${CAPNP_SCHEMAS_DIR}/service.capnp.c++
 
-	# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/db.cpp
-
 	# climate library code
 	#-------------------------------------------
 
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
 
-	# tools library code
-	#-------------------------------------------
-	
-		# db library code
-	#-------------------------------------------
-	${UTIL_DIR}/db/abstract-db-connections.h
-	${UTIL_DIR}/db/db.h
-	${UTIL_DIR}/db/sqlite3.h
 	# climate library code
 	#-------------------------------------------
-	${UTIL_DIR}/climate/climate-common.h
-	${UTIL_DIR}/climate/climate-file-io.h
-	# json11 library code
-	#-------------------------------------------
-	${UTIL_DIR}/json11/json11.hpp
-	# tools library code
-	#-------------------------------------------
-	${UTIL_DIR}/tools/algorithms.h
-	${UTIL_DIR}/tools/datastructures.h
-	${UTIL_DIR}/tools/date.h
-	${UTIL_DIR}/tools/debug.h
-	${UTIL_DIR}/tools/helper.h
-	${UTIL_DIR}/tools/json11-helper.h
-	${UTIL_DIR}/tools/read-ini.h
-
-	# soil library code
-	#-------------------------------------------
-	${UTIL_DIR}/soil/constants.h
-	${UTIL_DIR}/soil/conversion.h
-	${UTIL_DIR}/soil/soil.h
+	${UTIL_DIR}/climate/capnp-data-accessor.h
+	${UTIL_DIR}/climate/capnp-data-accessor.cpp
 )
 
 set(MONICA_CAPNP_SERVER_SOURCE 
@@ -632,18 +576,18 @@ set(MONICA_CAPNP_SERVER_SOURCE
 # create monica-capnp-server
 add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE})
 target_link_libraries(monica-capnp-server
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${CMAKE_DL_LIBS}
-  "Ws2_32.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-async.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-http.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-gzip.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnpc.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp-json.lib"
-  "${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp-rpc.lib"
-)
+${CMAKE_THREAD_LIBS_INIT}
+${CMAKE_DL_LIBS}
+"Ws2_32.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-async.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-http.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/kj-gzip.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnpc.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp-json.lib"
+"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:Debug>:-debug>/capnp-rpc.lib")
+
 if (MSVC)
-target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+#target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
