@@ -565,8 +565,8 @@ set(MONICA_CAPNP_SERVER_SOURCE_FILES
 
 	# climate library code
 	#-------------------------------------------
-	${UTIL_DIR}/climate/capnp-data-accessor.h
-	${UTIL_DIR}/climate/capnp-data-accessor.cpp
+	#${UTIL_DIR}/climate/capnp-data-accessor.h
+	#${UTIL_DIR}/climate/capnp-data-accessor.cpp
 )
 
 set(MONICA_CAPNP_SERVER_SOURCE 

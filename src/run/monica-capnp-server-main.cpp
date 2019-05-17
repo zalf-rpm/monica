@@ -61,22 +61,26 @@ string version = "1.0.0-beta";
 std::map<std::string, DataAccessor> daCache;
 bool startedServerInDebugMode = false;
 
-DataAccessor fromCapnpData(capnp::List<rpc::Climate::Element>::Reader&& header, capnp::List<capnp::List<float>>::Reader&& data)
+DataAccessor fromCapnpData(
+	const Date& startDate, 
+	const Date& endDate, 
+	capnp::List<rpc::Climate::Element>::Reader header, 
+	capnp::List<capnp::List<float>>::Reader data)
 {
-	DataAccessor da;
-	
 	typedef rpc::Climate::Element E;
 
 	if (data.size() == 0)
-		return da;
+		return DataAccessor();
 
-	vector<double> d(data.size());
-	int i = 0;
-	for (auto elem : header)
+	DataAccessor da(startDate, endDate);
+	vector<double> d(data[0].size());
+	for(int i = 0; i < header.size(); i++)
 	{
 		auto vs = data[i];
-		transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
-		switch (elem) {
+		//transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
+		for (int k = 0; k < vs.size(); k++)
+			d[k] = vs[k];
+		switch (header[i]) {
 		case E::TMIN: da.addClimateData(ACD::tmin, d); break;
 		case E::TAVG: da.addClimateData(ACD::tavg, d); break;
 		case E::TMAX: da.addClimateData(ACD::tmax, d); break;
@@ -84,9 +88,8 @@ DataAccessor fromCapnpData(capnp::List<rpc::Climate::Element>::Reader&& header, 
 		case E::RELHUMID: da.addClimateData(ACD::relhumid, d); break;
 		case E::WIND: da.addClimateData(ACD::wind, d); break;
 		case E::GLOBRAD: da.addClimateData(ACD::globrad, d); break;
-
+		default:;
 		}
-		i++;
 	}
 
 	return da;
@@ -101,7 +104,7 @@ public:
 	{
 		auto envR = context.getParams().getEnv(); 
 
-		auto runMonica = [&context, envR](DataAccessor da = DataAccessor()) {
+		auto runMonica = [context, envR](DataAccessor da = DataAccessor()) mutable {
 			string err;
 			const Json& envJson = Json::parse(envR.getJsonEnv().cStr(), err);
 
@@ -118,29 +121,38 @@ public:
 				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 			};
 
-			auto out = Monica::runMonica(env);
-
-			context.getResults().setResult(out.toString());
+			return Monica::runMonica(env);
 		};
 
 		if (envR.hasTimeSeries()) {
 			auto ts = envR.getTimeSeries();
+			auto rangeProm = ts.rangeRequest().send();
 			auto headerProm = ts.headerRequest().send();
 			auto dataTProm = ts.dataTRequest().send();
 			
-			auto finalProm = headerProm
-				.then([KJ_MVCAP(dataTProm)](capnp::Response<rpc::Climate::TimeSeries::HeaderResults>&& headerRes) mutable {
-				auto header = headerRes.getHeader();
-				return dataTProm.then([KJ_MVCAP(header)](capnp::Response<rpc::Climate::TimeSeries::DataTResults>&& dataTRes) mutable {
-					return fromCapnpData(kj::mv(header), dataTRes.getData());
+			return rangeProm
+				.then([KJ_MVCAP(headerProm), KJ_MVCAP(dataTProm)](auto&& rangeResponse) mutable {
+				return headerProm
+					.then([KJ_MVCAP(rangeResponse), KJ_MVCAP(dataTProm)](auto&& headerResponse) mutable {
+					return dataTProm
+						.then([KJ_MVCAP(rangeResponse), KJ_MVCAP(headerResponse)](auto&& dataTResponse) mutable {
+						auto sd = rangeResponse.getStartDate();
+						auto ed = rangeResponse.getEndDate();
+						return fromCapnpData(
+							Date(sd.getDay(), sd.getMonth(), sd.getYear()),
+							Date(ed.getDay(), ed.getMonth(), ed.getYear()),
+							headerResponse.getHeader(), dataTResponse.getData());
+					});
 				});
-			}).then(runMonica);
+			}).then([context, runMonica](DataAccessor da) mutable {
+				auto out = runMonica(da);
+				context.getResults().setResult(out.toString());
+			});
 		}
 		else {
 			runMonica();
+			return kj::READY_NOW;
 		}
-
-		return kj::READY_NOW;
 	}
 };
 
@@ -151,7 +163,7 @@ int main(int argc, const char* argv[]){
 	setlocale(LC_NUMERIC, "C");
 
 	string address = "*";
-	int port = -1;
+	int port = 6666;
 
 	//init path to db-connections.ini
 	if (auto monicaHome = getenv("MONICA_HOME"))
@@ -211,11 +223,11 @@ int main(int argc, const char* argv[]){
 		debug() << "starting Cap'n Proto MONICA server" << endl;
 
 		// Set up a server.
-		capnp::EzRpcServer server(kj::heap<RunMonicaImpl>(), address + (port < 0 ? "" : to_string(port)));
+		capnp::EzRpcServer server(kj::heap<RunMonicaImpl>(), address + (port < 0 ? "" : string(":") + to_string(port)));
 
 		// Write the port number to stdout, in case it was chosen automatically.
 		auto& waitScope = server.getWaitScope();
-		uint port = server.getPort().wait(waitScope);
+		port = server.getPort().wait(waitScope);
 		if (port == 0) {
 			// The address format "unix:/path/to/socket" opens a unix domain socket,
 			// in which case the port will be zero.
