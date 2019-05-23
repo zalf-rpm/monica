@@ -47,6 +47,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-common.h"
 
 #include "model.capnp.h"
+#include "common.capnp.h"
 
 using namespace std;
 using namespace Monica;
@@ -73,21 +74,22 @@ DataAccessor fromCapnpData(
 		return DataAccessor();
 
 	DataAccessor da(startDate, endDate);
-	vector<double> d(data[0].size());
+	//vector<double> d(data[0].size());
 	for(int i = 0; i < header.size(); i++)
 	{
 		auto vs = data[i];
+		vector<double> d(data[0].size());
 		//transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
 		for (int k = 0; k < vs.size(); k++)
 			d[k] = vs[k];
 		switch (header[i]) {
-		case E::TMIN: da.addClimateData(ACD::tmin, d); break;
-		case E::TAVG: da.addClimateData(ACD::tavg, d); break;
-		case E::TMAX: da.addClimateData(ACD::tmax, d); break;
-		case E::PRECIP: da.addClimateData(ACD::precip, d); break;
-		case E::RELHUMID: da.addClimateData(ACD::relhumid, d); break;
-		case E::WIND: da.addClimateData(ACD::wind, d); break;
-		case E::GLOBRAD: da.addClimateData(ACD::globrad, d); break;
+		case E::TMIN: da.addClimateData(ACD::tmin, std::move(d)); break;
+		case E::TAVG: da.addClimateData(ACD::tavg, std::move(d)); break;
+		case E::TMAX: da.addClimateData(ACD::tmax, std::move(d)); break;
+		case E::PRECIP: da.addClimateData(ACD::precip, std::move(d)); break;
+		case E::RELHUMID: da.addClimateData(ACD::relhumid, std::move(d)); break;
+		case E::WIND: da.addClimateData(ACD::wind, std::move(d)); break;
+		case E::GLOBRAD: da.addClimateData(ACD::globrad, std::move(d)); break;
 		default:;
 		}
 	}
@@ -95,18 +97,25 @@ DataAccessor fromCapnpData(
 	return da;
 }
 
-class RunMonicaImpl final : public rpc::Model::Instance::Server
+class RunMonicaImpl final : public rpc::Model::EnvInstance::Server
 {
 	// Implementation of the Model::Instance Cap'n Proto interface
 
 public:
-	kj::Promise<void> runEnv(RunEnvContext context) override
+	kj::Promise<void> run(RunContext context) override
 	{
+		cout << "runEnv" << endl;
+
 		auto envR = context.getParams().getEnv(); 
 
 		auto runMonica = [context, envR](DataAccessor da = DataAccessor()) mutable {
 			string err;
-			const Json& envJson = Json::parse(envR.getJsonEnv().cStr(), err);
+			auto rest = envR.getRest();
+			if (!rest.getStructure().isJson())
+				return Monica::Output();
+
+			const Json& envJson = Json::parse(rest.getValue().cStr(), err);
+			//cout << "runMonica: " << envJson["customId"].dump() << endl;
 
 			Env env(envJson);
 			if (da.isValid())
@@ -146,7 +155,9 @@ public:
 				});
 			}).then([context, runMonica](DataAccessor da) mutable {
 				auto out = runMonica(da);
-				context.getResults().setResult(out.toString());
+				auto rs = context.getResults();
+				rs.initResult();
+				rs.getResult().setValue(out.toString());
 			});
 		}
 		else {

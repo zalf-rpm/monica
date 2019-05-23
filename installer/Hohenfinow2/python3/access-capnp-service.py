@@ -105,18 +105,18 @@ def main():
 
     csv_time_series = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(climate_data_capnp.Climate.TimeSeries)
     #header = csv_time_series.header().wait().header
-    monica_instance = capnp.TwoPartyClient("localhost:6666").bootstrap().cast_as(model_capnp.Model.Instance)
+    monica_instance = capnp.TwoPartyClient("localhost:6666").bootstrap().cast_as(model_capnp.Model.EnvInstance)
     
     proms = []
-    for i in range(300):
+    for i in range(10):
         env["customId"] = str(i)
-        proms.append(monica_instance.runEnv({"jsonEnv": json.dumps(env), "timeSeries": csv_time_series}))
+        proms.append(monica_instance.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
 
     reslist = capnp.join_promises(proms).wait()
     #reslist.wait()
     
     for res in reslist:
-        print(json.loads(res.result)["customId"]) #.result["customId"])
+        print(json.loads(res.result.value)["customId"]) #.result["customId"])
 
     #        .then(lambda res: setattr(_context.results, "result", \
     #           self.calc_yearly_tavg(res[2].startDate, res[2].endDate, res[0].header, res[1].data))) 
