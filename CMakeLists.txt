@@ -56,7 +56,7 @@ set(CMAKE_CXX_STANDARD 11)
 set_absolute_path(UTIL_DIR "../util")
 set_absolute_path(SYS_LIBS_DIR "../sys-libs")
 set_absolute_path(BOOST_DIR "../boost")
-set_absolute_path(CAPNP_SCHEMAS_DIR "../../GitHub/capnproto_schemas")
+set_absolute_path(CAPNP_SCHEMAS_DIR "../../GitHub/capnproto_schemas/cpp-out")
 set_absolute_path(CAPNP_DIR "../../GitHub/capnproto")
 
 # setup the target group variable, used to group targets into folders in IDEs
