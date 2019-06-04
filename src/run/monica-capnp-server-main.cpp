@@ -109,7 +109,7 @@ class RunMonicaImpl final : public rpc::Model::EnvInstance::Server
 public:
 	kj::Promise<void> run(RunContext context) override
 	{
-		cout << "runEnv" << endl;
+		debug() << ".";
 
 		auto envR = context.getParams().getEnv(); 
 
@@ -193,8 +193,6 @@ public:
 
 	kj::Promise<void> run(RunContext context) override
 	{
-		cout << "Proxy::run" << endl;
-
 		int id = id2x.begin()->first;
 		X min = id2x.begin()->second;
 		if (min.jobs > 0)
@@ -207,15 +205,14 @@ public:
 				}
 			}
 		}
-
 		
 		auto req = min.client.runRequest();
 		req.setEnv(context.getParams().getEnv());
 		id2x[id].jobs++;
-		cout << "bbbbb" << endl;
+		cout << "added job to worker: " << id << " now " << id2x[id].jobs << " in worker queue" << endl;
 		return req.send().then([context, id, this](auto&& res) mutable {
-			cout << "ccccc" << endl;
 			this->id2x[id].jobs--;
+			cout << "finished job of worker: " << id << " now " << id2x[id].jobs << " in worker queue" << endl;
 			context.setResults(res);
 			});
 	}
@@ -311,6 +308,8 @@ int main_(int argc, const char* argv[]){
 	return 0;
 }
 
+capnp::Capability::Client mainInterface(nullptr);
+
 kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider) {
 	return ioProvider.newPipeThread([](
 		kj::AsyncIoProvider& ioProvider, kj::AsyncIoStream& stream, kj::WaitScope& waitScope) {
@@ -329,17 +328,17 @@ struct ErrorHandler : public kj::TaskSet::ErrorHandler {
 		kj::throwFatalException(kj::mv(exception));
 	}
 };
-
 ErrorHandler eh;
 kj::TaskSet tasks(eh);
-capnp::Capability::Client mainInterface(nullptr);
 
 struct ServerContext {
 	kj::Own<kj::AsyncIoStream> stream;
 	capnp::TwoPartyVatNetwork network;
 	capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
 
-	ServerContext(kj::Own<kj::AsyncIoStream>&& stream, capnp::ReaderOptions readerOpts)
+	ServerContext(
+		kj::Own<kj::AsyncIoStream>&& stream, 
+		capnp::ReaderOptions readerOpts)
 		: stream(kj::mv(stream))
 		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER, readerOpts)
 		, rpcSystem(makeRpcServer(network, mainInterface)) {}
@@ -352,19 +351,13 @@ void acceptLoop(kj::Own<kj::ConnectionReceiver>&& listener, capnp::ReaderOptions
 			kj::Own<kj::AsyncIoStream>&& connection) {
 				acceptLoop(kj::mv(listener), readerOpts);
 
+				cout << "connection from client" << endl;
 				auto server = kj::heap<ServerContext>(kj::mv(connection), readerOpts);
 
 				// Arrange to destroy the server context when all references are gone, or when the
 				// EzRpcServer is destroyed (which will destroy the TaskSet).
 				tasks.add(server->network.onDisconnect().attach(kj::mv(server)));
 		})));
-}
-
-capnp::rpc::twoparty::VatId::Reader serverVatIdReader() {
-	capnp::MallocMessageBuilder hostIdMessage(8);
-	auto hostId = hostIdMessage.initRoot<capnp::rpc::twoparty::VatId>();
-	hostId.setSide(capnp::rpc::twoparty::Side::SERVER);
-	return hostIdMessage.getRoot<capnp::rpc::twoparty::VatId>();
 }
 
 struct ThreadContext {
@@ -379,11 +372,16 @@ struct ThreadContext {
 	}
 };
 
-pair<kj::ForkedPromise<void>, zalf::capnp::rpc::Model::EnvInstance::Client> createMonicaEnvThread(kj::AsyncIoProvider& ioProvider) {
+pair<kj::ForkedPromise<void>, zalf::capnp::rpc::Model::EnvInstance::Client> 
+createMonicaEnvThread(kj::AsyncIoProvider& ioProvider) {
 	auto serverThread = runServer(ioProvider);
 	auto tc = kj::heap<ThreadContext>(kj::mv(serverThread));
-	auto vatId = serverVatIdReader();
+
+	capnp::MallocMessageBuilder vatIdMessage(8);
+	auto vatId = vatIdMessage.initRoot<capnp::rpc::twoparty::VatId>();
+	vatId.setSide(capnp::rpc::twoparty::Side::CLIENT);
 	auto client = tc->rpcSystem.bootstrap(vatId).castAs<rpc::Model::EnvInstance>();
+
 	auto prom = tc->network.onDisconnect().attach(kj::mv(tc));
 	return make_pair(prom.fork(), kj::mv(client));
 }
@@ -473,24 +471,15 @@ int main(int argc, const char* argv[]) {
 						acceptLoop(kj::mv(listener), capnp::ReaderOptions());
 				})));
 		
-		//auto network = ioContext.provider->getNetwork();
-		//auto addr = address + (port < 0 ? "" : string(":") + to_string(port));
-		//auto inetStream = network.parseAddress(addr, 0)
-		//	.then([](kj::Own<kj::NetworkAddress>&& addr) { return connectAttach(kj::mv(addr)); }).wait(ioContext.waitScope);
-		//capnp::TwoPartyVatNetwork inetNetwork(*inetStream, capnp::rpc::twoparty::Side::CLIENT);
-		//capnp::RpcSystem<capnp::rpc::twoparty::VatId> inetRpcSystem(makeRpcClient(inetNetwork));
-
 		vector<rpc::Model::EnvInstance::Client> clients;
-		auto promAndClient1 = createMonicaEnvThread(*ioContext.provider);
-		//auto promAndClient2 = createMonicaEnvThread(*ioContext.provider);
-		//auto promAndClient3 = createMonicaEnvThread(*ioContext.provider);
-		clients.push_back(kj::mv(promAndClient1.second));
-		//clients.push_back(kj::mv(promAndClient2.second));
-		//clients.push_back(kj::mv(promAndClient3.second));
+		vector<kj::Promise<void>> proms;
+		for (int i = 0; i < 4; i++) {
+			auto promAndClient = createMonicaEnvThread(*ioContext.provider);
+			proms.push_back(promAndClient.first.addBranch());
+			clients.push_back(kj::mv(promAndClient.second));
+		}
+		//init the proxy, which will be 
 		mainInterface = kj::heap<RunMonicaProxy>(clients);
-		// Set up a server.
-		//capnp::EzRpcServer server(kj::heap<RunMonicaProxy>(clients), address + (port < 0 ? "" : string(":") + to_string(port)));
-		//capnp::EzRpcServer server(kj::heap<RunMonicaProxy>(), address + (port < 0 ? "" : string(":") + to_string(port)));
 			 	 
 		// Run forever, accepting connections and handling requests.
 		kj::NEVER_DONE.wait(ioContext.waitScope);

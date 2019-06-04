@@ -108,9 +108,18 @@ def main():
     monica_instance = capnp.TwoPartyClient("localhost:6666").bootstrap().cast_as(model_capnp.Model.EnvInstance)
     
     proms = []
-    for i in range(1):
+    for i in range(500):
         env["customId"] = str(i)
         proms.append(monica_instance.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
+
+    
+    for i in range (10):
+        ps = proms[i*50:i*50+50]
+
+        for res in capnp.join_promises(ps).wait():
+            print(json.loads(res.result.value)["customId"]) #.result["customId"])
+
+    return
 
     reslist = capnp.join_promises(proms).wait()
     #reslist.wait()
