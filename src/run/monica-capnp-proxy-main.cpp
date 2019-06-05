@@ -61,9 +61,10 @@ using namespace json11;
 using namespace Climate;
 using namespace zalf::capnp;
 
-string appName = "monica-capnp-server";
+string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
+/*
 std::map<std::string, DataAccessor> daCache;
 bool startedServerInDebugMode = false;
 
@@ -171,7 +172,7 @@ public:
 		}
 	}
 };
-
+*/
 
 class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 {
@@ -182,17 +183,20 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 	};
 
 	map<int, X> _id2x;
-	int id = 0;
+	int _id = 0;
 
 public:
-	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client> monicas)  {
-		for (auto&& client : monicas) {
-			_id2x[id++] = { kj::mv(client), 0 };
-		}
-	}
+	//RunMonicaProxy(vector<rpc::Model::EnvInstance::Client> monicas)  {
+	//	for (auto&& client : monicas) {
+	//		_id2x[_id++] = { kj::mv(client), 0 };
+	//	}
+	//}
 
 	kj::Promise<void> run(RunContext context) override //run @0 (env :Env) -> (result :Common.StructuredText);
 	{
+		if(_id2x.empty())
+			return kj::READY_NOW;
+
 		int id = _id2x.begin()->first;
 		X min = _id2x.begin()->second;
 		if (min.jobs > 0)
@@ -214,33 +218,42 @@ public:
 			this->_id2x[id].jobs--;
 			cout << "finished job of worker: " << id << " now " << _id2x[id].jobs << " in worker queue" << endl;
 			context.setResults(res);
+			}, [context, id, this](kj::Exception&& exception) {
+				cout << "job for worker with id: " << id << " failed" << endl;
+				cout << "Exception: " << exception.getDescription().cStr() << endl;
+				//try to erase id from map, so it can't be used anymore
+				if(_id2x.find(id) != _id2x.end())
+					_id2x.erase(id);
+				//return this->run(context);
 			});
 	}
 
 	kj::Promise<void> registerService(RegisterServiceContext context) override  //registerService @0 [Service] (service :Service);
 	{
 		auto service = context.getParams().getService().getAs<rpc::Model::EnvInstance>();
-		_id2x[id++] = { kj::mv(service), 0 };
+		_id2x[_id++] = { kj::mv(service), 0 };
+		cout << "added service to proxy: " << _id << " services registered now" << endl;
 		return kj::READY_NOW;
 	}
 
 	kj::Promise<void> registerService2(RegisterService2Context context) override  //registerService2 @0 (service :EnvInstance);
 	{
 		auto service = context.getParams().getService();
-		_id2x[id++] = { kj::mv(service), 0 };
+		_id2x[_id++] = { kj::mv(service), 0 };
+		cout << "added service to proxy: " << _id << " services registered now" << endl;
 		return kj::READY_NOW;
 	}
-	
+
 };
 
 
-int main_(int argc, const char* argv[]){
+int main(int argc, const char* argv[]){
 
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 
 	string address = "*";
-	int port = 6666;
+	int port = -1;
 
 	//init path to db-connections.ini
 	if (auto monicaHome = getenv("MONICA_HOME"))
@@ -265,9 +278,6 @@ int main_(int argc, const char* argv[]){
 			<< " -h | --help ... this help output" << endl
 			<< " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
 			<< endl
-			<< " -d | --debug ... show debug outputs" << endl
-			<< " -a | --address ... ADDRESS (default: " << address << ")] "
-			"... runs server bound to given address, may be '*' to bind to all local addresses" << endl
 			<< " -p | --port ... PORT (default: none)] "
 			"... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl;
 	};
@@ -277,16 +287,7 @@ int main_(int argc, const char* argv[]){
 		for (auto i = 1; i < argc; i++)
 		{
 			string arg = argv[i];
-			if (arg == "-d" || arg == "--debug") {
-				activateDebug = true;
-				startedServerInDebugMode = true;
-			}
-			else if (arg == "-a" || arg == "--address")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					address = argv[++i];
-			}
-			else if (arg == "-p" || arg == "--port")
+			if (arg == "-p" || arg == "--port")
 			{
 				if (i + 1 < argc && argv[i + 1][0] != '-')
 					port = stoi(argv[++i]);
@@ -297,10 +298,10 @@ int main_(int argc, const char* argv[]){
 				cout << appName << " version " << version << endl, exit(0);
 		}
 
-		debug() << "starting Cap'n Proto MONICA server" << endl;
+		debug() << "starting Cap'n Proto MONICA proxy" << endl;
 
 		// Set up a server.
-		capnp::EzRpcServer server(kj::heap<RunMonicaImpl>(), address + (port < 0 ? "" : string(":") + to_string(port)));
+		capnp::EzRpcServer server(kj::heap<RunMonicaProxy>(), address + (port < 0 ? "" : string(":") + to_string(port)));
 
 		// Write the port number to stdout, in case it was chosen automatically.
 		auto& waitScope = server.getWaitScope();
@@ -317,173 +318,13 @@ int main_(int argc, const char* argv[]){
 		// Run forever, accepting connections and handling requests.
 		kj::NEVER_DONE.wait(waitScope);
 
-		debug() << "stopped Cap'n Proto MONICA server" << endl;
+		debug() << "stopped Cap'n Proto MONICA proxy" << endl;
 	}
 
 	return 0;
 }
 
-
-int main(int argc, const char* argv[]) {
-
-	setlocale(LC_ALL, "");
-	setlocale(LC_NUMERIC, "C");
-
-	string proxyAddress = "localhost";
-	int proxyPort = 6666;
-	bool connectToProxy = false;
-
-	string address = "*";
-	int port = -1;
-
-	bool hideServer = false;
-
-	//init path to db-connections.ini
-	if (auto monicaHome = getenv("MONICA_HOME"))
-	{
-		auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-		//init for dll/so
-		initPathToDB(pathToFile);
-		//init for monica-run
-		Db::dbConnectionParameters(pathToFile);
-	}
-
-	//use a possibly non-default db-connections.ini
-	//Db::dbConnectionParameters("db-connections.ini");
-
-	auto printHelp = [=]()
-	{
-		cout
-			<< appName << "[options]" << endl
-			<< endl
-			<< "options:" << endl
-			<< endl
-			<< " -h | --help "
-			"... this help output" << endl
-			<< " -v | --version "
-			"... outputs " << appName << " version and ZeroMQ version being used" << endl
-			<< endl
-			<< " -d | --debug "
-			"... show debug outputs" << endl
-			<< " -i | --hide "
-			"... hide server (default: " << (hideServer ? "true" : "false") << " as service on give address and port" << endl
-			<< " -a | --address ... ADDRESS (default: " << address << ")] "
-			"... runs server bound to given address, may be '*' to bind to all local addresses" << endl
-			<< " -p | --port ... PORT (default: none)] "
-			"... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
-			<< " -cp | --connect-to-proxy "
-			"... connect to proxy at -pa and -pp" << endl
-			<< " -pa | --proxy-address "
-			"... ADDRESS (default: " << proxyAddress << ")] "
-			"... connects server to proxy running at given address" << endl
-			<< " -pp | --proxy-port ... PORT (default: " << proxyPort << ")] "
-			"... connects server to proxy running on given port." << endl;
-	};
-
-	if (argc >= 1)
-	{
-		for (auto i = 1; i < argc; i++)
-		{
-			string arg = argv[i];
-			if (arg == "-d" || arg == "--debug") {
-				activateDebug = true;
-				startedServerInDebugMode = true;
-			}
-			else if (arg == "-i" || arg == "--hide") 
-			{
-				hideServer = true;
-			}
-			else if (arg == "-a" || arg == "--address")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					address = argv[++i];
-			}
-			else if (arg == "-p" || arg == "--port")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					port = stoi(argv[++i]);
-			}
-			else if (arg == "-cp" || arg == "--connect-to-proxy")
-			{
-				connectToProxy = true;
-			}
-			else if (arg == "-pa" || arg == "--proxy-address")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					proxyAddress = argv[++i];
-			}
-			else if (arg == "-pp" || arg == "--proxy-port")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					proxyPort = stoi(argv[++i]);
-			}
-			else if (arg == "-h" || arg == "--help")
-				printHelp(), exit(0);
-			else if (arg == "-v" || arg == "--version")
-				cout << appName << " version " << version << endl, exit(0);
-		}
-
-		debug() << "starting Cap'n Proto MONICA server" << endl;
-
-		//create monica server implementation
-		rpc::Model::EnvInstance::Client runMonicaImplClient = kj::heap<RunMonicaImpl>();
-
-		if (connectToProxy)
-		{
-			//create client connection to proxy
-			try
-			{
-				capnp::EzRpcClient client(proxyAddress, proxyPort);
-
-				auto& cWaitScope = client.getWaitScope();
-
-				// Request the bootstrap capability from the server.
-				rpc::Model::EnvInstanceProxy::Client cap = client.getMain<rpc::Model::EnvInstanceProxy>();
-
-				// Make a call to the capability.
-				auto request = cap.registerService2Request();
-				request.setService(runMonicaImplClient);
-				request.send().wait(cWaitScope);
-
-				if (hideServer)
-					kj::NEVER_DONE.wait(cWaitScope);
-			}
-			catch (exception e)
-			{
-				cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl 
-					<< "Exception: " << e.what() << endl;
-			}
-		}
-
-		if(!hideServer)
-		{
-			capnp::EzRpcServer server(runMonicaImplClient, address + (port < 0 ? "" : string(":") + to_string(port)));
-
-			// Write the port number to stdout, in case it was chosen automatically.
-			auto& waitScope = server.getWaitScope();
-			port = server.getPort().wait(waitScope);
-			if (port == 0) {
-				// The address format "unix:/path/to/socket" opens a unix domain socket,
-				// in which case the port will be zero.
-				std::cout << "Listening on Unix socket..." << std::endl;
-			}
-			else {
-				std::cout << "Listening on port " << port << "..." << std::endl;
-			}
-
-			// Run forever, accepting connections and handling requests.
-			kj::NEVER_DONE.wait(waitScope);
-		}
-
-		debug() << "stopped Cap'n Proto MONICA server" << endl;
-	}
-
-	return 0;
-}
-
-
-
-
+/*
 capnp::Capability::Client mainInterface(nullptr);
 
 kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider) {
@@ -562,7 +403,7 @@ createMonicaEnvThread(kj::AsyncIoProvider& ioProvider) {
 	return make_pair(prom.fork(), kj::mv(client));
 }
 
-int main__(int argc, const char* argv[]) {
+int main(int argc, const char* argv[]) {
 
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
@@ -665,3 +506,4 @@ int main__(int argc, const char* argv[]) {
 
 	return 0;
 }
+*/
