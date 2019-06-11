@@ -543,6 +543,8 @@ set_target_properties(libclimateio PROPERTIES COMPILE_DEFINITIONS "USE_DLL;DLL_E
 # create monica-capnp-server executable, the server running monica via CapNProto RPC
 set(MONICA_CAPNP_SERVER_SOURCE_FILES
 	src/run/monica-capnp-server-main.cpp
+	src/run/run-monica-capnp.h
+	src/run/run-monica-capnp.cpp
 	
 	# capnproto schema files
     #--------------------
@@ -562,11 +564,6 @@ set(MONICA_CAPNP_SERVER_SOURCE_FILES
 
 	${UTIL_DIR}/climate/climate-file-io.h
 	${UTIL_DIR}/climate/climate-file-io.cpp
-
-	# climate library code
-	#-------------------------------------------
-	#${UTIL_DIR}/climate/capnp-data-accessor.h
-	#${UTIL_DIR}/climate/capnp-data-accessor.cpp
 )
 
 set(MONICA_CAPNP_SERVER_SOURCE 
@@ -608,6 +605,8 @@ endif()
 # create monica-capnp-proxy executable, a server forwarding monica CapNProto RPC requests to registered monica instances
 set(MONICA_CAPNP_PROXY_SOURCE_FILES
 	src/run/monica-capnp-proxy-main.cpp
+	src/run/run-monica-capnp.h
+	src/run/run-monica-capnp.cpp
 	
 	# capnproto schema files
     #--------------------
@@ -621,6 +620,12 @@ set(MONICA_CAPNP_PROXY_SOURCE_FILES
     ${CAPNP_SCHEMAS_DIR}/common.capnp.c++
     ${CAPNP_SCHEMAS_DIR}/service.capnp.h
     ${CAPNP_SCHEMAS_DIR}/service.capnp.c++
+
+	# climate library code
+	#-------------------------------------------
+
+	${UTIL_DIR}/climate/climate-file-io.h
+	${UTIL_DIR}/climate/climate-file-io.cpp
 )
 
 set(MONICA_CAPNP_PROXY_SOURCE 

@@ -13,43 +13,25 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <stdio.h>
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <tuple>
 #include <vector>
 #include <algorithm>
 
 #include <kj/debug.h>
-
 #include <kj/common.h>
 #define KJ_MVCAP(var) var = kj::mv(var)
 
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
-
 #include <capnp/rpc-twoparty.h>
 #include <kj/thread.h>
 
-
-
-#include "json11/json11.hpp"
-
-#include "tools/helper.h"
-
-#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
-#include "run-monica.h"
-#include "../io/database-io.h"
-#include "../core/monica-model.h"
-#include "tools/json11-helper.h"
-#include "climate/climate-file-io.h"
-#include "soil/conversion.h"
-#include "env-from-json-config.h"
-#include "tools/algorithms.h"
-#include "../io/csv-format.h"
-#include "climate/climate-common.h"
+#include "db/abstract-db-connections.h"
+
+#include "run-monica-capnp.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
@@ -64,116 +46,6 @@ using namespace zalf::capnp;
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
-/*
-std::map<std::string, DataAccessor> daCache;
-bool startedServerInDebugMode = false;
-
-DataAccessor fromCapnpData(
-	const Date& startDate, 
-	const Date& endDate, 
-	capnp::List<rpc::Climate::Element>::Reader header, 
-	capnp::List<capnp::List<float>>::Reader data)
-{
-	typedef rpc::Climate::Element E;
-
-	if (data.size() == 0)
-		return DataAccessor();
-
-	DataAccessor da(startDate, endDate);
-	//vector<double> d(data[0].size());
-	for(int i = 0; i < header.size(); i++)
-	{
-		auto vs = data[i];
-		vector<double> d(data[0].size());
-		//transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
-		for (int k = 0; k < vs.size(); k++)
-			d[k] = vs[k];
-		switch (header[i]) {
-		case E::TMIN: da.addClimateData(ACD::tmin, std::move(d)); break;
-		case E::TAVG: da.addClimateData(ACD::tavg, std::move(d)); break;
-		case E::TMAX: da.addClimateData(ACD::tmax, std::move(d)); break;
-		case E::PRECIP: da.addClimateData(ACD::precip, std::move(d)); break;
-		case E::RELHUMID: da.addClimateData(ACD::relhumid, std::move(d)); break;
-		case E::WIND: da.addClimateData(ACD::wind, std::move(d)); break;
-		case E::GLOBRAD: da.addClimateData(ACD::globrad, std::move(d)); break;
-		default:;
-		}
-	}
-
-	return da;
-}
-
-class RunMonicaImpl final : public rpc::Model::EnvInstance::Server
-{
-	// Implementation of the Model::Instance Cap'n Proto interface
-
-public:
-	kj::Promise<void> run(RunContext context) override
-	{
-		debug() << ".";
-
-		auto envR = context.getParams().getEnv(); 
-
-		auto runMonica = [context, envR](DataAccessor da = DataAccessor()) mutable {
-			string err;
-			auto rest = envR.getRest();
-			if (!rest.getStructure().isJson())
-				return Monica::Output();
-
-			const Json& envJson = Json::parse(rest.getValue().cStr(), err);
-			//cout << "runMonica: " << envJson["customId"].dump() << endl;
-
-			Env env(envJson);
-			if (da.isValid())
-				env.climateData = da;
-			else if (!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
-				env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
-
-			env.debugMode = startedServerInDebugMode && env.debugMode;
-
-			env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-				[](string soilTexture, int distance) {
-				return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-			};
-
-			return Monica::runMonica(env);
-		};
-
-		if (envR.hasTimeSeries()) {
-			auto ts = envR.getTimeSeries();
-			auto rangeProm = ts.rangeRequest().send();
-			auto headerProm = ts.headerRequest().send();
-			auto dataTProm = ts.dataTRequest().send();
-			
-			return rangeProm
-				.then([KJ_MVCAP(headerProm), KJ_MVCAP(dataTProm)](auto&& rangeResponse) mutable {
-				return headerProm
-					.then([KJ_MVCAP(rangeResponse), KJ_MVCAP(dataTProm)](auto&& headerResponse) mutable {
-					return dataTProm
-						.then([KJ_MVCAP(rangeResponse), KJ_MVCAP(headerResponse)](auto&& dataTResponse) mutable {
-						auto sd = rangeResponse.getStartDate();
-						auto ed = rangeResponse.getEndDate();
-						return fromCapnpData(
-							Date(sd.getDay(), sd.getMonth(), sd.getYear()),
-							Date(ed.getDay(), ed.getMonth(), ed.getYear()),
-							headerResponse.getHeader(), dataTResponse.getData());
-					});
-				});
-			}).then([context, runMonica](DataAccessor da) mutable {
-				auto out = runMonica(da);
-				auto rs = context.getResults();
-				rs.initResult();
-				rs.getResult().setValue(out.toString());
-			});
-		}
-		else {
-			runMonica();
-			return kj::READY_NOW;
-		}
-	}
-};
-*/
-
 class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 {
 	typedef rpc::Model::EnvInstance::Client MonicaClient;
@@ -186,11 +58,13 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 	int _id = 0;
 
 public:
-	//RunMonicaProxy(vector<rpc::Model::EnvInstance::Client> monicas)  {
-	//	for (auto&& client : monicas) {
-	//		_id2x[_id++] = { kj::mv(client), 0 };
-	//	}
-	//}
+	RunMonicaProxy() {}
+
+	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client> monicas)  {
+		for (auto&& client : monicas) {
+			_id2x[_id++] = { kj::mv(client), 0 };
+		}
+	}
 
 	kj::Promise<void> run(RunContext context) override //run @0 (env :Env) -> (result :Common.StructuredText);
 	{
@@ -224,7 +98,7 @@ public:
 				//try to erase id from map, so it can't be used anymore
 				if(_id2x.find(id) != _id2x.end())
 					_id2x.erase(id);
-				//return this->run(context);
+				return this->run(context);
 			});
 	}
 
@@ -246,8 +120,8 @@ public:
 
 };
 
-
-int main(int argc, const char* argv[]){
+/*
+int main_working_no_disconnect_support(int argc, const char* argv[]){
 
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
@@ -323,15 +197,15 @@ int main(int argc, const char* argv[]){
 
 	return 0;
 }
+*/
 
-/*
 capnp::Capability::Client mainInterface(nullptr);
 
-kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider) {
-	return ioProvider.newPipeThread([](
+kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
+	return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
 		kj::AsyncIoProvider& ioProvider, kj::AsyncIoStream& stream, kj::WaitScope& waitScope) {
 			capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
-			auto server = makeRpcServer(network, kj::heap<RunMonicaImpl>());
+			auto server = makeRpcServer(network, kj::heap<RunMonicaImpl>(startMonicaThreadsInDebugMode));
 			network.onDisconnect().wait(waitScope);
 		});
 }
@@ -354,7 +228,7 @@ struct ServerContext {
 	capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
 
 	ServerContext(
-		kj::Own<kj::AsyncIoStream>&& stream, 
+		kj::Own<kj::AsyncIoStream>&& stream,
 		capnp::ReaderOptions readerOpts)
 		: stream(kj::mv(stream))
 		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER, readerOpts)
@@ -389,9 +263,9 @@ struct ThreadContext {
 	}
 };
 
-pair<kj::ForkedPromise<void>, zalf::capnp::rpc::Model::EnvInstance::Client> 
-createMonicaEnvThread(kj::AsyncIoProvider& ioProvider) {
-	auto serverThread = runServer(ioProvider);
+pair<kj::ForkedPromise<void>, zalf::capnp::rpc::Model::EnvInstance::Client>
+createMonicaEnvThread(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
+	auto serverThread = runServer(ioProvider, startMonicaThreadsInDebugMode);
 	auto tc = kj::heap<ThreadContext>(kj::mv(serverThread));
 
 	capnp::MallocMessageBuilder vatIdMessage(8);
@@ -409,14 +283,14 @@ int main(int argc, const char* argv[]) {
 	setlocale(LC_NUMERIC, "C");
 
 	string address = "*";
-	int port = 6666;
+	int port = -1;
+	uint no_of_threads = 0;
+	bool startMonicaThreadsInDebugMode = false;
 
 	//init path to db-connections.ini
 	if (auto monicaHome = getenv("MONICA_HOME"))
 	{
 		auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-		//init for dll/so
-		initPathToDB(pathToFile);
 		//init for monica-run
 		Db::dbConnectionParameters(pathToFile);
 	}
@@ -434,11 +308,12 @@ int main(int argc, const char* argv[]) {
 			<< " -h | --help ... this help output" << endl
 			<< " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
 			<< endl
-			<< " -d | --debug ... show debug outputs" << endl
-			<< " -a | --address ... ADDRESS (default: " << address << ")] "
-			"... runs server bound to given address, may be '*' to bind to all local addresses" << endl
+			<< " -d | --debug "
+			"... show debug outputs" << endl
 			<< " -p | --port ... PORT (default: none)] "
-			"... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl;
+			"... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
+			<< " -t | --monica-threads ... NUMBER (default: " << no_of_threads << ")] "
+			"... starts additionally to the proxy NUMBER of MONICA threads which can be served via the proxy." << endl;
 	};
 
 	if (argc >= 1)
@@ -447,18 +322,17 @@ int main(int argc, const char* argv[]) {
 		{
 			string arg = argv[i];
 			if (arg == "-d" || arg == "--debug") {
-				activateDebug = true;
-				startedServerInDebugMode = true;
-			}
-			else if (arg == "-a" || arg == "--address")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					address = argv[++i];
+				startMonicaThreadsInDebugMode = true;
 			}
 			else if (arg == "-p" || arg == "--port")
 			{
 				if (i + 1 < argc && argv[i + 1][0] != '-')
 					port = stoi(argv[++i]);
+			}
+			else if (arg == "-t" || arg == "--monica-threads")
+			{
+				if (i + 1 < argc && argv[i + 1][0] != '-')
+					no_of_threads = stoi(argv[++i]);
 			}
 			else if (arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
@@ -466,15 +340,15 @@ int main(int argc, const char* argv[]) {
 				cout << appName << " version " << version << endl, exit(0);
 		}
 
-		debug() << "starting Cap'n Proto MONICA server" << endl;
-				
+		debug() << "starting Cap'n Proto MONICA proxy" << endl;
+
 		auto ioContext = kj::setupAsyncIo();
 		int callCount = 0;
 		int handleCount = 0;
-		
+
 		auto paf = kj::newPromiseAndFulfiller<uint>();
 		kj::ForkedPromise<uint> portPromise = paf.promise.fork();
-		
+
 		auto& network = ioContext.provider->getNetwork();
 		auto bindAddress = address + (port < 0 ? "" : string(":") + to_string(port));
 		uint defaultPort = 0;
@@ -487,23 +361,33 @@ int main(int argc, const char* argv[]) {
 						portFulfiller->fulfill(listener->getPort());
 						acceptLoop(kj::mv(listener), capnp::ReaderOptions());
 				})));
-		
+					 
 		vector<rpc::Model::EnvInstance::Client> clients;
 		vector<kj::Promise<void>> proms;
-		for (int i = 0; i < 4; i++) {
-			auto promAndClient = createMonicaEnvThread(*ioContext.provider);
+		for (uint i = 0; i < no_of_threads; i++) {
+			auto promAndClient = createMonicaEnvThread(*ioContext.provider, startMonicaThreadsInDebugMode);
 			proms.push_back(promAndClient.first.addBranch());
 			clients.push_back(kj::mv(promAndClient.second));
 		}
 		//init the proxy, which will be 
 		mainInterface = kj::heap<RunMonicaProxy>(clients);
-			 	 
+
+		port = portPromise.addBranch().wait(ioContext.waitScope);
+		if (port == 0) {
+			// The address format "unix:/path/to/socket" opens a unix domain socket,
+			// in which case the port will be zero.
+			std::cout << "Listening on Unix socket..." << std::endl;
+		}
+		else {
+			std::cout << "Listening on port " << port << "..." << std::endl;
+		}
+		
 		// Run forever, accepting connections and handling requests.
 		kj::NEVER_DONE.wait(ioContext.waitScope);
 
-		debug() << "stopped Cap'n Proto MONICA server" << endl;
+		debug() << "stopped Cap'n Proto MONICA proxy" << endl;
 	}
 
 	return 0;
 }
-*/
+
