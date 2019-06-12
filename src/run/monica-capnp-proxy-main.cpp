@@ -46,8 +46,27 @@ using namespace zalf::capnp;
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
+class RunMonicaProxy;
+class Unregister final : public rpc::Common::Unregister::Server
+{
+public:
+	Unregister(RunMonicaProxy& proxy, int monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
+
+	~Unregister();
+
+	kj::Promise<void> unregister(UnregisterContext context) override; //unregister @1 ();
+
+	private:
+		void unreg();
+
+		RunMonicaProxy& _proxy;
+		int _monicaServerId;
+};
+
 class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 {
+	friend class Unregister;
+
 	typedef rpc::Model::EnvInstance::Client MonicaClient;
 	struct X {
 		MonicaClient client{ nullptr };
@@ -98,15 +117,18 @@ public:
 				//try to erase id from map, so it can't be used anymore
 				if(_id2x.find(id) != _id2x.end())
 					_id2x.erase(id);
-				return this->run(context);
+				//return this->run(context);
 			});
 	}
 
-	kj::Promise<void> registerService(RegisterServiceContext context) override  //registerService @0 [Service] (service :Service);
+	kj::Promise<void> registerService(RegisterServiceContext context) override  //registerService @0 [Service] (service :Service) -> (unregister :Unregister);
 	{
 		auto service = context.getParams().getService().getAs<rpc::Model::EnvInstance>();
 		_id2x[_id++] = { kj::mv(service), 0 };
 		cout << "added service to proxy: " << _id << " services registered now" << endl;
+
+		context.getResults().setUnregister(kj::heap<Unregister>(*this, _id - 1));
+
 		return kj::READY_NOW;
 	}
 
@@ -119,6 +141,22 @@ public:
 	}
 
 };
+
+Unregister::~Unregister() {
+	unreg();
+}
+
+void Unregister::unreg() {
+	cout << "unregistering id: " << _monicaServerId << endl;
+	if (_proxy._id2x.find(_monicaServerId) != _proxy._id2x.end())
+		_proxy._id2x.erase(_monicaServerId);
+}
+
+kj::Promise<void> Unregister::unregister(UnregisterContext context) //unregister @1 ();
+{
+	unreg();
+	return kj::READY_NOW;
+}
 
 /*
 int main_working_no_disconnect_support(int argc, const char* argv[]){

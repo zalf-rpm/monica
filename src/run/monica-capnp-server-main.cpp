@@ -152,6 +152,8 @@ int main(int argc, const char* argv[]) {
 		//create monica server implementation
 		rpc::Model::EnvInstance::Client runMonicaImplClient = kj::heap<RunMonicaImpl>(startedServerInDebugMode);
 
+		capnp::Capability::Client unregister(nullptr);
+
 		if (connectToProxy)
 		{
 			//create client connection to proxy
@@ -165,9 +167,11 @@ int main(int argc, const char* argv[]) {
 				rpc::Model::EnvInstanceProxy::Client cap = client.getMain<rpc::Model::EnvInstanceProxy>();
 
 				// Make a call to the capability.
-				auto request = cap.registerService2Request();
+				//auto request = cap.registerService2Request();
+				auto request = cap.registerServiceRequest<rpc::Model::EnvInstance>();
 				request.setService(runMonicaImplClient);
-				request.send().wait(cWaitScope);
+				auto response = request.send().wait(cWaitScope);
+				unregister = response.asGeneric<rpc::Model::EnvInstance>().getUnregister();
 
 				if (hideServer)
 					kj::NEVER_DONE.wait(cWaitScope);
