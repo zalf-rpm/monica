@@ -105,10 +105,10 @@ def main():
 
     csv_time_series = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(climate_data_capnp.Climate.TimeSeries)
     #header = csv_time_series.header().wait().header
-    monica_instance = capnp.TwoPartyClient("localhost:6666").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+    monica_instance = capnp.TwoPartyClient("localhost:8888").bootstrap().cast_as(model_capnp.Model.EnvInstance)
     
     proms = []
-    for i in range(500):
+    for i in range(10):
         env["customId"] = str(i)
         proms.append(monica_instance.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
 
@@ -117,7 +117,8 @@ def main():
         ps = proms[i*50:i*50+50]
 
         for res in capnp.join_promises(ps).wait():
-            print(json.loads(res.result.value)["customId"]) #.result["customId"])
+            if len(res.result.value) > 0:
+                print(json.loads(res.result.value)["customId"]) #.result["customId"])
 
     return
 
