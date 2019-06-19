@@ -58,7 +58,7 @@ COPY db-connections-install.ini ${monica_dir}/db-connections.ini
 
 COPY docker/start_monica_supervisor.sh /start.sh
 
-CMD ["sh /start.sh"]
+CMD ["sh", "/start.sh"]
 ENV DEBIAN_FRONTED teletype
 
 EXPOSE ${monica_producer_port} ${monica_consumer_port} ${monica_intern_in_port} ${monica_intern_out_port}
