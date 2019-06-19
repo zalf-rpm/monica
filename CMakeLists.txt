@@ -56,8 +56,8 @@ set(CMAKE_CXX_STANDARD 11)
 set_absolute_path(UTIL_DIR "../util")
 set_absolute_path(SYS_LIBS_DIR "../sys-libs")
 set_absolute_path(BOOST_DIR "../boost")
-set_absolute_path(CAPNP_SCHEMAS_DIR "../../GitHub/capnproto_schemas/cpp-out")
-set_absolute_path(CAPNP_DIR "../../GitHub/capnproto")
+set_absolute_path(CAPNP_SCHEMAS_DIR "../capnproto_schemas/cpp-out")
+#set_absolute_path(CAPNP_DIR "capnproto")
 
 # setup the target group variable, used to group targets into folders in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -66,7 +66,8 @@ include_directories("src")
 include_directories("${UTIL_DIR}")
 include_directories("${SYS_LIBS_DIR}/includes/zmq-helper")
 include_directories("${CAPNP_SCHEMAS_DIR}")
-include_directories("${CAPNP_DIR}/c++/src")
+include_directories("${SYS_LIBS_DIR}/includes/capnproto-master")
+#include_directories("${CAPNP_DIR}/c++/src")
 #include_directories("${SYS_LIBS_DIR}/includes/zeromq-dev-master")
 #include_directories("${SYS_LIBS_DIR}/includes/czmq-master")
 #include_directories("${SYS_LIBS_DIR}/includes/libsodium-1.0.10")
@@ -79,6 +80,8 @@ if(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
 elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
     set(ARCH "x64")
 endif()
+
+find_package(CapnProto CONFIG REQUIRED)
 
 if(MSVC)
 	find_package(ZeroMQ CONFIG REQUIRED)
@@ -572,33 +575,24 @@ set(MONICA_CAPNP_SERVER_SOURCE
 
 # create monica-capnp-server
 add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE})
+#target_link_libraries(main PRIVATE CapnProto::kj CapnProto::capnp CapnProto::capnpc CapnProto::kj-gzip)
 target_link_libraries(monica-capnp-server
 ${CMAKE_THREAD_LIBS_INIT}
 ${CMAKE_DL_LIBS}
 "Ws2_32.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj-async.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj-http.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj-gzip.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnp.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnpc.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnp-json.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnp-rpc.lib")
-
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj-async.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj-http.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj-gzip.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnp.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnpc.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnp-json.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnp-rpc.lib")
-
+CapnProto::kj 
+CapnProto::kj-async
+CapnProto::kj-gzip
+CapnProto::kj-http
+CapnProto::capnp 
+CapnProto::capnpc 
+CapnProto::capnp-json
+CapnProto::capnp-rpc
+)
 
 if (MSVC)
-#target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
-
 
 #------------------------------------------------------------------------------
 
@@ -638,25 +632,16 @@ target_link_libraries(monica-capnp-proxy
 ${CMAKE_THREAD_LIBS_INIT}
 ${CMAKE_DL_LIBS}
 "Ws2_32.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj-async.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj-http.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/kj/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/kj-gzip.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnp.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnpc.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnp-json.lib"
-#"C:/Users/berg.ZALF-AD/GitHub/capnproto/c++/src/capnp/$<$<CONFIG:Release>:Release>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Debug>:Debug>/capnp-rpc.lib")
-
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj-async.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj-http.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/kj-gzip.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnp.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnpc.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnp-json.lib"
-"${SYS_LIBS_DIR}/binaries/windows/vc141/x64/capnproto/static$<$<CONFIG:RelWithDebInfo>:-reldebug>$<$<CONFIG:Debug>:-debug>/capnp-rpc.lib")
-
+CapnProto::kj 
+CapnProto::kj-async
+CapnProto::kj-gzip
+CapnProto::kj-http
+CapnProto::capnp 
+CapnProto::capnpc 
+CapnProto::capnp-json
+CapnProto::capnp-rpc
+)
 
 if (MSVC)
-#target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
