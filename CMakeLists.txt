@@ -51,7 +51,7 @@ if(MSVC)
 	endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 set_absolute_path(UTIL_DIR "../util")
 set_absolute_path(SYS_LIBS_DIR "../sys-libs")

@@ -3,13 +3,13 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -17,6 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <tuple>
 #include <vector>
+#include <list>
 #include <algorithm>
 
 #include <kj/debug.h>
@@ -56,11 +57,11 @@ public:
 
 	kj::Promise<void> unregister(UnregisterContext context) override; //unregister @1 ();
 
-	private:
-		void unreg();
+private:
+	void unreg();
 
-		RunMonicaProxy& _proxy;
-		int _monicaServerId;
+	RunMonicaProxy& _proxy;
+	int _monicaServerId;
 };
 
 class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
@@ -69,62 +70,62 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 
 	typedef rpc::Model::EnvInstance::Client MonicaClient;
 	struct X {
+		int id{ 0 };
 		MonicaClient client{ nullptr };
 		int jobs{ 0 };
 	};
 
-	map<int, X> _id2x;
+	std::list<X> _xs;
 	int _id = 0;
 
 public:
 	RunMonicaProxy() {}
 
-	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client> monicas)  {
+	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client>& monicas) {
 		for (auto&& client : monicas) {
-			_id2x[_id++] = { kj::mv(client), 0 };
+			_xs.push_back({ _id++, kj::mv(client), 0 });
 		}
 	}
 
 	kj::Promise<void> run(RunContext context) override //run @0 (env :Env) -> (result :Common.StructuredText);
 	{
-		if(_id2x.empty())
+		if (_xs.empty())
 			return kj::READY_NOW;
 
-		int id = _id2x.begin()->first;
-		X min = _id2x.begin()->second;
-		if (min.jobs > 0)
-		{
-			for (auto& p : _id2x) {
-				if (p.second.jobs < min.jobs) {
-					id = p.first; 
-					min.client = p.second.client;
-					min.jobs = p.second.jobs;
+		X& min = _xs.front();
+		if (min.jobs > 0) {
+			for (auto& x : _xs) {
+				if (x.jobs < min.jobs) {
+					min = x;
 				}
 			}
 		}
-		
+
 		auto req = min.client.runRequest();
 		req.setEnv(context.getParams().getEnv());
-		_id2x[id].jobs++;
-		cout << "added job to worker: " << id << " now " << _id2x[id].jobs << " in worker queue" << endl;
+		min.jobs++;
+		cout << "added job to worker: " << min.id << " now " << min.jobs << " in worker queue" << endl;
+		int id = min.id;
 		return req.send().then([context, id, this](auto&& res) mutable {
-			this->_id2x[id].jobs--;
-			cout << "finished job of worker: " << id << " now " << _id2x[id].jobs << " in worker queue" << endl;
-			context.setResults(res);
+			for (X& x : this->_xs) {
+				if (x.id == id) {
+					x.jobs--;
+					cout << "finished job of worker: " << id << " now " << x.jobs << " in worker queue" << endl;
+					context.setResults(res);
+				}
+			}
 			}, [context, id, this](kj::Exception&& exception) {
 				cout << "job for worker with id: " << id << " failed" << endl;
 				cout << "Exception: " << exception.getDescription().cStr() << endl;
 				//try to erase id from map, so it can't be used anymore
-				if(_id2x.find(id) != _id2x.end())
-					_id2x.erase(id);
-				//return this->run(context);
+				_xs.remove_if([=](auto& x) { return x.id == id; });
 			});
 	}
 
 	kj::Promise<void> registerService(RegisterServiceContext context) override  //registerService @0 [Service] (service :Service) -> (unregister :Unregister);
 	{
 		auto service = context.getParams().getService().getAs<rpc::Model::EnvInstance>();
-		_id2x[_id++] = { kj::mv(service), 0 };
+		_xs.push_back({ _id++, kj::mv(service), 0 });
 		cout << "added service to proxy: " << _id << " services registered now" << endl;
 
 		context.getResults().setUnregister(kj::heap<Unregister>(*this, _id - 1));
@@ -135,7 +136,7 @@ public:
 	kj::Promise<void> registerService2(RegisterService2Context context) override  //registerService2 @0 (service :EnvInstance);
 	{
 		auto service = context.getParams().getService();
-		_id2x[_id++] = { kj::mv(service), 0 };
+		_xs.push_back({ _id++, kj::mv(service), 0 });
 		cout << "added service to proxy: " << _id << " services registered now" << endl;
 		return kj::READY_NOW;
 	}
@@ -148,8 +149,7 @@ Unregister::~Unregister() {
 
 void Unregister::unreg() {
 	cout << "unregistering id: " << _monicaServerId << endl;
-	if (_proxy._id2x.find(_monicaServerId) != _proxy._id2x.end())
-		_proxy._id2x.erase(_monicaServerId);
+	_proxy._xs.remove_if([=](auto& x) { return x.id == _monicaServerId; });
 }
 
 kj::Promise<void> Unregister::unregister(UnregisterContext context) //unregister @1 ();
@@ -301,7 +301,12 @@ struct ThreadContext {
 	}
 };
 
-pair<kj::ForkedPromise<void>, zalf::capnp::rpc::Model::EnvInstance::Client>
+struct CMETRes {
+	kj::ForkedPromise<void> fp;
+	zalf::capnp::rpc::Model::EnvInstance::Client client;
+};
+
+CMETRes
 createMonicaEnvThread(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
 	auto serverThread = runServer(ioProvider, startMonicaThreadsInDebugMode);
 	auto tc = kj::heap<ThreadContext>(kj::mv(serverThread));
@@ -312,7 +317,7 @@ createMonicaEnvThread(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsIn
 	auto client = tc->rpcSystem.bootstrap(vatId).castAs<rpc::Model::EnvInstance>();
 
 	auto prom = tc->network.onDisconnect().attach(kj::mv(tc));
-	return make_pair(prom.fork(), kj::mv(client));
+	return CMETRes{ prom.fork(), kj::mv(client) };
 }
 
 int main(int argc, const char* argv[]) {
@@ -399,13 +404,13 @@ int main(int argc, const char* argv[]) {
 						portFulfiller->fulfill(listener->getPort());
 						acceptLoop(kj::mv(listener), capnp::ReaderOptions());
 				})));
-					 
+
 		vector<rpc::Model::EnvInstance::Client> clients;
 		vector<kj::Promise<void>> proms;
 		for (uint i = 0; i < no_of_threads; i++) {
 			auto promAndClient = createMonicaEnvThread(*ioContext.provider, startMonicaThreadsInDebugMode);
-			proms.push_back(promAndClient.first.addBranch());
-			clients.push_back(kj::mv(promAndClient.second));
+			proms.push_back(promAndClient.fp.addBranch());
+			clients.push_back(kj::mv(promAndClient.client));
 		}
 		//init the proxy, which will be 
 		mainInterface = kj::heap<RunMonicaProxy>(clients);
@@ -419,7 +424,7 @@ int main(int argc, const char* argv[]) {
 		else {
 			std::cout << "Listening on port " << port << "..." << std::endl;
 		}
-		
+
 		// Run forever, accepting connections and handling requests.
 		kj::NEVER_DONE.wait(ioContext.waitScope);
 
