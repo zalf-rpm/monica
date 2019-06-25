@@ -17,7 +17,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <tuple>
 #include <vector>
-#include <list>
 #include <algorithm>
 
 #include <kj/debug.h>
@@ -70,20 +69,18 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 
 	typedef rpc::Model::EnvInstance::Client MonicaClient;
 	struct X {
-		int id{ 0 };
 		MonicaClient client{ nullptr };
 		int jobs{ 0 };
 	};
 
-	std::list<X> _xs;
-	int _id = 0;
+	std::vector<X> _xs;
 
 public:
 	RunMonicaProxy() {}
 
 	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client>& monicas)  {
 		for (auto&& client : monicas) {
-			_xs.push_back({ _id++, kj::mv(client), 0 });
+			_xs.push_back({ kj::mv(client), 0 });
 		}
 	}
 
@@ -93,42 +90,64 @@ public:
 			return kj::READY_NOW;
 
 		X& min = _xs.front();
-		if (min.jobs > 0) {
-			for (auto& x : _xs) {
+		size_t id = 0;
+		if (min.jobs > 0 || min.jobs < 0) {
+			for(auto size = _xs.size(); id < size; id++){
+				auto& x = _xs[id];
+				if(x.jobs < 0) //skip empty storage places
+					continue;
 				if (x.jobs < min.jobs) {
 					min = x;
+					if(min.jobs == 0) //stop searching if a worker has nothing to do
+						break;
 				}
 			}
 		}
+		if(min.jobs < 0) //just empty storage places, no clients connected
+			return kj::READY_NOW;
 		
 		auto req = min.client.runRequest();
 		req.setEnv(context.getParams().getEnv());
 		min.jobs++;
-		cout << "added job to worker: " << min.id << " now " << min.jobs << " in worker queue" << endl;
-		int id = min.id;
+		cout << "added job to worker: " << id << " now " << min.jobs << " in worker queue" << endl;
 		return req.send().then([context, id, this](auto&& res) mutable {
-			for(X& x : this->_xs) {
-				if(x.id == id) {
-					x.jobs--;
-					cout << "finished job of worker: " << id << " now " << x.jobs << " in worker queue" << endl;
-					context.setResults(res);
-				}
+			if(id < this->_xs.size()) {
+				X& x = _xs[id];
+				x.jobs--;
+				cout << "finished job of worker: " << id << " now " << x.jobs << " in worker queue" << endl;
+				context.setResults(res);
 			}
 			}, [context, id, this](kj::Exception&& exception) {
 				cout << "job for worker with id: " << id << " failed" << endl;
 				cout << "Exception: " << exception.getDescription().cStr() << endl;
 				//try to erase id from map, so it can't be used anymore
-				_xs.remove_if([=](auto& x){ return x.id == id; });
+				if(id < this->_xs.size()) {
+					_xs[id] = { nullptr, -1 };
+				}
 			});
 	}
 
 	kj::Promise<void> registerService(RegisterServiceContext context) override  //registerService @0 [Service] (service :Service) -> (unregister :Unregister);
 	{
 		auto service = context.getParams().getService().getAs<rpc::Model::EnvInstance>();
-		_xs.push_back({ _id++, kj::mv(service), 0 });
-		cout << "added service to proxy: " << _id << " services registered now" << endl;
+		bool filledEmptySlot = false;
+		int id = 0;
+		for(X& x : _xs){
+			if(x.jobs < 0){
+				x = { kj::mv(service), 0 };
+				filledEmptySlot = true;
+				break;
+			}
+			id++;
+		}
+		if(!filledEmptySlot){
+			_xs.push_back({ kj::mv(service), 0 });
+			id = _xs.size() - 1;
+		}
 
-		context.getResults().setUnregister(kj::heap<Unregister>(*this, _id - 1));
+		cout << "added service to proxy: " << id << " services registered now" << endl;
+
+		context.getResults().setUnregister(kj::heap<Unregister>(*this, id));
 
 		return kj::READY_NOW;
 	}
@@ -136,8 +155,21 @@ public:
 	kj::Promise<void> registerService2(RegisterService2Context context) override  //registerService2 @0 (service :EnvInstance);
 	{
 		auto service = context.getParams().getService();
-		_xs.push_back({ _id++, kj::mv(service), 0 });
-		cout << "added service to proxy: " << _id << " services registered now" << endl;
+		bool filledEmptySlot = false;
+		int id = 0;
+		for(X& x : _xs){
+			if(x.jobs < 0){
+				x = { kj::mv(service), 0 };
+				filledEmptySlot = true;
+				break;
+			}
+			id++;
+		}
+		if(!filledEmptySlot){
+			_xs.push_back({ kj::mv(service), 0 });
+			id = _xs.size() - 1;
+		}
+		cout << "added service to proxy: " << id << " services registered now" << endl;
 		return kj::READY_NOW;
 	}
 
@@ -149,7 +181,9 @@ Unregister::~Unregister() {
 
 void Unregister::unreg() {
 	cout << "unregistering id: " << _monicaServerId << endl;
-	_proxy._xs.remove_if([=](auto& x){ return x.id == _monicaServerId; });
+	if(_monicaServerId < _proxy._xs.size()) {
+		_proxy._xs[_monicaServerId] = { nullptr, -1 };
+	}
 }
 
 kj::Promise<void> Unregister::unregister(UnregisterContext context) //unregister @1 ();

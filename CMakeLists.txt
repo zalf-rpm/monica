@@ -51,7 +51,7 @@ if(MSVC)
 	endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 set_absolute_path(UTIL_DIR "../util")
 set_absolute_path(SYS_LIBS_DIR "../sys-libs")
@@ -559,8 +559,8 @@ set(MONICA_CAPNP_SERVER_SOURCE_FILES
     ${CAPNP_SCHEMAS_DIR}/geo_coord.capnp.c++
     ${CAPNP_SCHEMAS_DIR}/common.capnp.h
     ${CAPNP_SCHEMAS_DIR}/common.capnp.c++
-    ${CAPNP_SCHEMAS_DIR}/service.capnp.h
-    ${CAPNP_SCHEMAS_DIR}/service.capnp.c++
+    #${CAPNP_SCHEMAS_DIR}/service.capnp.h
+    #${CAPNP_SCHEMAS_DIR}/service.capnp.c++
 
 	# climate library code
 	#-------------------------------------------
@@ -579,15 +579,15 @@ add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE})
 target_link_libraries(monica-capnp-server
 ${CMAKE_THREAD_LIBS_INIT}
 ${CMAKE_DL_LIBS}
-"Ws2_32.lib"
-CapnProto::kj 
-CapnProto::kj-async
-CapnProto::kj-gzip
-CapnProto::kj-http
-CapnProto::capnp 
-CapnProto::capnpc 
-CapnProto::capnp-json
-CapnProto::capnp-rpc
+#"Ws2_32.lib"
+kj 
+kj-async
+#kj-gzip
+kj-http
+capnp 
+capnpc 
+capnp-json
+capnp-rpc
 )
 
 if (MSVC)
@@ -612,8 +612,8 @@ set(MONICA_CAPNP_PROXY_SOURCE_FILES
     ${CAPNP_SCHEMAS_DIR}/geo_coord.capnp.c++
     ${CAPNP_SCHEMAS_DIR}/common.capnp.h
     ${CAPNP_SCHEMAS_DIR}/common.capnp.c++
-    ${CAPNP_SCHEMAS_DIR}/service.capnp.h
-    ${CAPNP_SCHEMAS_DIR}/service.capnp.c++
+    #${CAPNP_SCHEMAS_DIR}/service.capnp.h
+    #${CAPNP_SCHEMAS_DIR}/service.capnp.c++
 
 	# climate library code
 	#-------------------------------------------
@@ -631,15 +631,15 @@ add_executable(monica-capnp-proxy ${MONICA_CAPNP_PROXY_SOURCE})
 target_link_libraries(monica-capnp-proxy
 ${CMAKE_THREAD_LIBS_INIT}
 ${CMAKE_DL_LIBS}
-"Ws2_32.lib"
-CapnProto::kj 
-CapnProto::kj-async
-CapnProto::kj-gzip
-CapnProto::kj-http
-CapnProto::capnp 
-CapnProto::capnpc 
-CapnProto::capnp-json
-CapnProto::capnp-rpc
+#"Ws2_32.lib"
+kj 
+kj-async
+#kj-gzip
+kj-http
+capnp 
+capnpc 
+capnp-json
+capnp-rpc
 )
 
 if (MSVC)
