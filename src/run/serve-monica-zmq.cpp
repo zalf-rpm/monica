@@ -23,17 +23,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <thread>
 #include <tuple>
 
-#include "zmq.hpp"
-#include "zhelpers.hpp"
-
+#include "zeromq/zmq.hpp"
+#include "zeromq/zhelpers.hpp"
+#include "zeromq/zmq-helper.h"
 #include "json11/json11.hpp"
-
 #include "serve-monica-zmq.h"
 #include "cultivation-method.h"
 #include "tools/debug.h"
 #include "../io/database-io.h"
 #include "run-monica.h"
-#include "tools/zmq-helper.h"
 #include "../io/output.h"
 #include "climate/climate-file-io.h"
 

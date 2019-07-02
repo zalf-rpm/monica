@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "tools/date.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "../core/monica-parameters.h"
 
 namespace Monica

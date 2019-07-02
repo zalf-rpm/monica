@@ -20,11 +20,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <string>
 
-#include "zhelpers.hpp"
+#include "zeromq/zhelpers.hpp"
+#include "zeromq/zmq-helper.h"
 #include "json11/json11.hpp"
-
-#include "tools/zmq-helper.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "tools/helper.h"
 #include "tools/debug.h"
 #include "monica-zmq-defaults.h"

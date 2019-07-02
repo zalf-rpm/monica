@@ -21,14 +21,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <boost/python/dict.hpp>
 
 #include "json11/json11.hpp"
-
+#include "json11/json11-helper.h"
 #include "../core/monica-model.h"
 #include "../run/env-from-json-config.h"
 #include "../run/run-monica.h"
 #include "tools/date.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
-#include "tools/json11-helper.h"
 #include "../io/build-output.h"
 #include "climate/climate-file-io.h"
 

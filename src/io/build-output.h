@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
 #include "../core/monica-model.h"

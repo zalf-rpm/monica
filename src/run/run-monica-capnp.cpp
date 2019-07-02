@@ -40,7 +40,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica.h"
 #include "../io/database-io.h"
 #include "../core/monica-model.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
 #include "env-from-json-config.h"

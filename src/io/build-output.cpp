@@ -22,7 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "build-output.h"
 
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "tools/debug.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
