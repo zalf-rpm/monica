@@ -145,7 +145,13 @@ public:
 			id = _xs.size() - 1;
 		}
 
-		cout << "added service to proxy: " << id << " services registered now" << endl;
+		int count = 0;
+		for (X& x : _xs) {
+			if (x.jobs >= 0)
+				count++;
+		}
+				
+		cout << "added service to proxy: " << count << " services registered now" << endl;
 
 		context.getResults().setUnregister(kj::heap<Unregister>(*this, id));
 
@@ -169,7 +175,14 @@ public:
 			_xs.push_back({ kj::mv(service), 0 });
 			id = _xs.size() - 1;
 		}
-		cout << "added service to proxy: " << id << " services registered now" << endl;
+
+		int count = 0;
+		for (X& x : _xs) {
+			if (x.jobs >= 0)
+				count++;
+		}
+
+		cout << "added service to proxy: " << count << " services registered now" << endl;
 		return kj::READY_NOW;
 	}
 
