@@ -40,31 +40,25 @@ endmacro()
 
 if(MSVC)
 	# disable security warnings in windows
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	
 	# define MS Visual Studio toolset version
 	if(NOT DEFINED MSVC_TOOLSET_VERSION)
-		if(MSVC_VERSION GREATER_EQUAL 1920)
-		  set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
+		if(MSVC_VERSION GREATER_EQUAL 1930)
+			set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
+		elseif(MSVC_VERSION GREATER_EQUAL 1920)
+		  set(MSVC_TOOLSET_VERSION 142) # VS 2019
 		elseif(MSVC_VERSION GREATER_EQUAL 1910)
-		  # VS 2017
-		  set(MSVC_TOOLSET_VERSION 141)
+		  set(MSVC_TOOLSET_VERSION 141) # VS 2017
 		elseif(MSVC_VERSION EQUAL 1900)
-		  # VS 2015
-		  set(MSVC_TOOLSET_VERSION 14)
+		  set(MSVC_TOOLSET_VERSION 14) # VS 2015
 		else()
 		 # we do not support older version
 		endif()
 	endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
-
-set_absolute_path(UTIL_DIR "../util")
-set_absolute_path(SYS_LIBS_DIR "../sys-libs")
-set_absolute_path(BOOST_DIR "../boost")
-set_absolute_path(CAPNP_SCHEMAS_DIR "../capnproto_schemas")
-#set_absolute_path(CAPNP_DIR "capnproto")
+#set(CMAKE_CXX_STANDARD 14)
 
 # setup the target group variable, used to group targets into folders in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -79,12 +73,6 @@ elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
     set(ARCH "x64")
 endif()
 
-#find_package(ZeroMQ CONFIG REQUIRED)
-#set(ZMQ_LIB_NAME libzmq-static)
-#if(UNIX)
-#set(DL_LIB_NAME dl)
-#endif()
-
 link_directories($ENV{HOME}/lib)
 
 find_package(Threads REQUIRED)
@@ -93,44 +81,51 @@ find_package(Threads REQUIRED)
 GroupSources("src" ${PROJECT_SOURCE_DIR})
 GroupSources("util" "${PROJECT_SOURCE_DIR}/..")
 
-# resource
-file(GLOB LIBMONICA_RESOURCE_SOURCE
-	src/resource/*
-)
+#------------------------------------------------------------------------------
 
-# core
-file(GLOB LIBMONICA_CORE_SOURCE
-	src/core/*.cpp
-	src/core/*.h
-)
-remove_file(LIBMONICA_CORE_SOURCE "src/core/simulation.cpp")
-remove_file(LIBMONICA_CORE_SOURCE "src/core/simulation.h")
-remove_file(LIBMONICA_CORE_SOURCE "src/core/monica-eom.cpp")
-remove_file(LIBMONICA_CORE_SOURCE "src/core/monica-eom.h")	   
+# create monica run static lib to compile code just once
+add_library(monica_lib 
+	src/core/crop.h
+	src/core/crop.cpp
+	src/core/crop-growth.h
+	src/core/crop-growth.cpp
+	src/core/monica-model.h
+	src/core/monica-model.cpp
+	src/core/monica-parameters.h
+	src/core/monica-parameters.cpp
+	src/core/O3-impact.h
+	src/core/O3-impact.cpp
+	src/core/photosynthesis-FvCB.h
+	src/core/photosynthesis-FvCB.cpp
+	src/core/soilcolumn.h
+	src/core/soilcolumn.cpp
+	src/core/soilmoisture.h
+	src/core/soilmoisture.cpp
+	src/core/soilorganic.h
+	src/core/soilorganic.cpp
+	src/core/soiltemperature.h
+	src/core/soiltemperature.cpp
+	src/core/soiltransport.h
+	src/core/soiltransport.cpp
+	src/core/voc-common.h
+	src/core/voc-guenther.h
+	src/core/voc-guenther.cpp
+	src/core/voc-jjv.h
+	src/core/voc-jjv.cpp
 
-file(GLOB_RECURSE LIBMONICA_RUN_SOURCE
-	src/run/cultivation-method.h
-	src/run/cultivation-method.cpp
-	src/run/run-monica.h
-	src/run/run-monica.cpp
-)
-
-file(GLOB_RECURSE LIBMONICA_IO_SOURCE
 	src/io/output.h
 	src/io/output.cpp
 	src/io/build-output.h
 	src/io/build-output.cpp
-)
 
-set(LIBMONICA_SOURCE 
-	${LIBMONICA_IO_SOURCE} 
-	${LIBMONICA_RUN_SOURCE} 
-	${LIBMONICA_CORE_SOURCE} 
-	${LIBMONICA_RESOURCE_SOURCE}
-)
+	src/run/cultivation-method.h
+	src/run/cultivation-method.cpp
+	src/run/run-monica.h
+	src/run/run-monica.cpp
 
-# create monica run static lib to compile code just once
-add_library(monica_lib ${LIBMONICA_SOURCE})
+	src/resource/version.h
+	src/resource/version_resource.rc
+)
 target_include_directories(monica_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 if (MSVC)
 	target_compile_options(monica_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
@@ -277,43 +272,45 @@ target_link_libraries(monica-zmq-server
 
 #------------------------------------------------------------------------------
 
+#set_absolute_path(SYS_LIBS_DIR "../sys-libs")
+#set_absolute_path(BOOST_DIR "../boost")
+
 #set path and lib manually because for some reasons on the cluster1/2 on debian 9 python3.4m is found instead of 2.7
-message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+#message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
-find_package(PythonLibs 2.7 EXACT REQUIRED)
-find_package(PythonInterp 2.7 EXACT REQUIRED)
-message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
-message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
-include_directories(${PYTHON_INCLUDE_DIR})
+#find_package(PythonLibs 2.7 EXACT REQUIRED)
+#find_package(PythonInterp 2.7 EXACT REQUIRED)
+#message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
+#message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+#include_directories(${PYTHON_INCLUDE_DIR})
 
-if(WIN32)
-    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python)
-	message("${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python")
-	include_directories(${BOOST_DIR})
-elseif(UNIX)
-	find_package(Boost COMPONENTS python REQUIRED)
-	include_directories(${Boost_INCLUDE_DIR})
-endif()
+#if(WIN32)
+#	link_directories(${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python)
+#	message("${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python")
+#	include_directories(${BOOST_DIR})
+#elseif(UNIX)
+#	find_package(Boost COMPONENTS python REQUIRED)
+#	include_directories(${Boost_INCLUDE_DIR})
+#endif()
 
 # create monica python wrapper lib
-set(MONICA_PYTHON_SOURCE_FILES
-	src/python/monica_py.cpp
-)
-add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE_FILES})
-if (MSVC)
-	target_compile_options(monica_python PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-endif()
-target_link_libraries(monica_python 
-	${Boost_LIBRARIES} 
-	${PYTHON_LIBRARIES}
-	monica_run_lib
-)
-if (MSVC)
-	set_target_properties(monica_python PROPERTIES SUFFIX .pyd)
-endif()
-set_target_properties(monica_python PROPERTIES PREFIX "")
+#set(MONICA_PYTHON_SOURCE_FILES
+#	src/python/monica_py.cpp
+#)
+#add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE_FILES})
+#target_link_libraries(monica_python 
+#	${Boost_LIBRARIES} 
+#	${PYTHON_LIBRARIES}
+#	monica_run_lib
+#)
+#if (MSVC)
+#	set_target_properties(monica_python PROPERTIES SUFFIX .pyd)
+#endif()
+#set_target_properties(monica_python PROPERTIES PREFIX "")
 
 #------------------------------------------------------------------------------
+
+set_absolute_path(CAPNP_SCHEMAS_DIR "../capnproto_schemas")
 
 find_package(CapnProto CONFIG REQUIRED)
 
@@ -366,6 +363,7 @@ target_link_libraries(monica-capnp-proxy
 	CapnProto::capnp-rpc
 	monica_lib
 )
+target_include_directories(monica-capnp-proxy PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 if (MSVC)
 	target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
