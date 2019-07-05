@@ -1231,7 +1231,7 @@ BOTRes& Monica::buildOutputTable()
 			});
 
 
-			build({id++, "WaterContent", "%nFC", "soil water content"},
+			build({id++, "WaterContent", "%nFC", "soil water content in % of available soil water"},
 						[](const MonicaModel& monica, OId oid)
 			{
 				return getComplexValues<double>(oid, [&](int i)
@@ -1242,6 +1242,17 @@ BOTRes& Monica::buildOutputTable()
 					return smm3 / (fc - pwp); //[%nFK]
 				}, 4);
 			});
+
+			build({ id++, "AWC", "m3 m-3", "available water capacity" },
+				[](const MonicaModel& monica, OId oid)
+				{
+					return getComplexValues<double>(oid, [&](int i)
+						{
+							double fc = monica.soilColumn().at(i).vs_FieldCapacity();
+							double pwp = monica.soilColumn().at(i).vs_PermanentWiltingPoint();
+							return fc - pwp; 
+						}, 4);
+				});
 
 			build({id++, "CapillaryRise", "mm", "capillary rise"},
 						[](const MonicaModel& monica, OId oid)
