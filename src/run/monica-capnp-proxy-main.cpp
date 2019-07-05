@@ -89,27 +89,27 @@ public:
 		if (_xs.empty())
 			return kj::READY_NOW;
 
-		X& min = _xs.front();
+		X* min = &_xs.front();
 		size_t id = 0;
-		if (min.jobs > 0 || min.jobs < 0) {
+		if (min->jobs > 0 || min->jobs < 0) {
 			for (auto size = _xs.size(); id < size; id++) {
 				auto& x = _xs[id];
 				if (x.jobs < 0) //skip empty storage places
 					continue;
-				if (x.jobs < min.jobs) {
-					min = x;
-					if (min.jobs == 0) //stop searching if a worker has nothing to do
+				if (x.jobs < min->jobs) {
+					min = &x;
+					if (min->jobs == 0) //stop searching if a worker has nothing to do
 						break;
 				}
 			}
 		}
-		if (min.jobs < 0) //just empty storage places, no clients connected
+		if (min->jobs < 0) //just empty storage places, no clients connected
 			return kj::READY_NOW;
 
-		auto req = min.client.runRequest();
+		auto req = min->client.runRequest();
 		req.setEnv(context.getParams().getEnv());
-		min.jobs++;
-		cout << "added job to worker: " << id << " now " << min.jobs << " in worker queue" << endl;
+		min->jobs++;
+		cout << "added job to worker: " << id << " now " << min->jobs << " in worker queue" << endl;
 		return req.send().then([context, id, this](auto&& res) mutable {
 			if (id < this->_xs.size()) {
 				X& x = _xs[id];
