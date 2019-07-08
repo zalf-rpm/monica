@@ -237,6 +237,15 @@ Errors AutomaticSowing::merge(json11::Json j)
 	set_double_value(_tempSumAboveBaseTemp, j, "temp-sum-above-base-temp");
 	set_double_value(_baseTemp, j, "base-temp");
 
+	json11::Json avgSoilTemp = j["avg-soil-temp"];
+	if (avgSoilTemp.is_object())
+	{
+		set_double_value(_soilDepthForAveraging, avgSoilTemp, "depth");
+		set_int_value(_daysInSoilTempWindow, avgSoilTemp, "days");
+		set_double_value(_sowingIfAboveAvgSoilTemp, avgSoilTemp, "T");
+		_checkForSoilTemperature = _soilDepthForAveraging > 0 && _daysInSoilTempWindow > 0 && _sowingIfAboveAvgSoilTemp > 0;
+	}
+		
 	return res;
 }
 
@@ -254,6 +263,10 @@ json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 	o["max-curr-day-precip"] = J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"};
 	o["temp-sum-above-base-temp"] = J11Array{_tempSumAboveBaseTemp, "°C", "temperature sum above T-base needed"};
 	o["base-temp"] = J11Array{_baseTemp, "°C", "base temperature above which temp-sum-above-base-temp is counted"};
+	o["avg-soil-temp"] = J11Object
+	{ {"depth", J11Array{_soilDepthForAveraging, "m", "soil depth until averaging will be done"}}
+	,{"days", J11Array{_daysInSoilTempWindow, "d", "window/number of days for which the average temperature must be greater"} }
+	,{"Tavg", J11Array{_sowingIfAboveAvgSoilTemp, "°C", "temperature which has to be reached on average"}} };
 
 	return o;
 }
@@ -289,6 +302,20 @@ bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>>& climat
 	return precipOk;
 }
 
+bool isSoilTemperatureOk(
+	const std::vector<double>& soilTemps,
+	double windowDays,
+	double targetAvgSoilTemp)
+{
+	double sum = 0;
+	auto size = soilTemps.size();
+	for (int i = size - 1; i >= 0; i--)
+		sum += soilTemps[i];
+	double avg = size > windowDays ? windowDays : size;
+	return avg >= targetAvgSoilTemp;
+}
+
+
 bool AutomaticSowing::apply(MonicaModel* model)
 {
 	auto currentDate = model->currentStepDate();
@@ -309,6 +336,17 @@ bool AutomaticSowing::condition(MonicaModel* model)
 	if(_cropSeeded)
 		return false;
 	
+	//check soil temperature if requested
+	if (_checkForSoilTemperature) {
+		double avgSoilTemp = 0;
+		for (size_t layer = 0, size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging); layer < size; layer++)
+			avgSoilTemp += model->soilTemperature().get_SoilTemperature(layer);
+		_avgSoilTemps.push_back(avgSoilTemp);
+
+		if (!isSoilTemperatureOk(_avgSoilTemps, _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp))
+			return false;
+	}
+
 	auto currentDate = model->currentStepDate();
 
 	if(!_inSowingRange && currentDate < _absEarliestDate)

@@ -641,7 +641,7 @@ void SoilColumn::applyTillage(double depth)
  * @param depth Depth in meters
  * @return Index of layer
  */
-int SoilColumn::getLayerNumberForDepth(double depth)
+int SoilColumn::getLayerNumberForDepth(double depth) const
 {
 	int layer = 0;
 	double accu_depth = 0;

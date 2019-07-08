@@ -192,6 +192,13 @@ namespace Monica
 		double _maxCurrentDayPrecipSum{0};
 		double _tempSumAboveBaseTemp{0};
 		double _baseTemp{0};
+
+		bool _checkForSoilTemperature{ false };
+		double _soilDepthForAveraging{ 0.30 }; //= 30 cm
+		int _daysInSoilTempWindow{ 0 }; 
+		double _sowingIfAboveAvgSoilTemp{ 0 };
+		std::vector<double> _avgSoilTemps;
+		
 		bool _inSowingRange{false};
 		bool _cropSeeded{false};
 	};
