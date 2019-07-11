@@ -97,6 +97,10 @@ namespace Monica
 		//! reinit potential state of workstep
 		virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
 
+		virtual std::function<double(MonicaModel*)> registerDailyFunction(std::function<std::vector<double>&()> getDailyValues) { 
+			return std::function<double(MonicaModel*)>(); 
+		};
+
 	protected:
 		Tools::Date _date;
 		Tools::Date _absDate;
@@ -179,6 +183,8 @@ namespace Monica
 
 		virtual Tools::Date absLatestDate() const { return _absLatestDate; }
 
+		virtual std::function<double(MonicaModel*)> registerDailyFunction(std::function<std::vector<double>&()> getDailyValues);
+
 	private:
 		Tools::Date _absEarliestDate;
 		Tools::Date _earliestDate;
@@ -197,7 +203,7 @@ namespace Monica
 		double _soilDepthForAveraging{ 0.30 }; //= 30 cm
 		int _daysInSoilTempWindow{ 0 }; 
 		double _sowingIfAboveAvgSoilTemp{ 0 };
-		std::vector<double> _avgSoilTemps;
+		std::function<std::vector<double>&()> _getAvgSoilTemps;
 		
 		bool _inSowingRange{false};
 		bool _cropSeeded{false};

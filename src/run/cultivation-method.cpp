@@ -242,7 +242,7 @@ Errors AutomaticSowing::merge(json11::Json j)
 	{
 		set_double_value(_soilDepthForAveraging, avgSoilTemp, "depth");
 		set_int_value(_daysInSoilTempWindow, avgSoilTemp, "days");
-		set_double_value(_sowingIfAboveAvgSoilTemp, avgSoilTemp, "T");
+		set_double_value(_sowingIfAboveAvgSoilTemp, avgSoilTemp, "Tavg");
 		_checkForSoilTemperature = _soilDepthForAveraging > 0 && _daysInSoilTempWindow > 0 && _sowingIfAboveAvgSoilTemp > 0;
 	}
 		
@@ -304,14 +304,18 @@ bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>>& climat
 
 bool isSoilTemperatureOk(
 	const std::vector<double>& soilTemps,
-	double windowDays,
+	int windowDays,
 	double targetAvgSoilTemp)
 {
+	if (soilTemps.empty())
+		return false;
+
 	double sum = 0;
 	auto size = soilTemps.size();
-	for (int i = size - 1; i >= 0; i--)
+	for (int i = int(size - 1); i >= 0 && i >= size - windowDays; i--)
 		sum += soilTemps[i];
-	double avg = size > windowDays ? windowDays : size;
+	double avg = sum / (size > windowDays ? windowDays : size);
+	//cout << "avg: " << avg << endl;
 	return avg >= targetAvgSoilTemp;
 }
 
@@ -331,19 +335,29 @@ bool AutomaticSowing::apply(MonicaModel* model)
 	return true;
 }
 
+std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(std::function<std::vector<double>&()> getDailyValues)
+{
+	if (!_checkForSoilTemperature)
+		return std::function<double(MonicaModel*)>();
+
+	_getAvgSoilTemps = getDailyValues;
+	return [this](MonicaModel* model) -> double {
+		double avgSoilTemp = 0;
+		size_t i = 0;
+		for (size_t size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging); i < size; i++)
+			avgSoilTemp += model->soilTemperature().get_SoilTemperature(int(i));
+		return avgSoilTemp / double(i);
+	};
+}
+
 bool AutomaticSowing::condition(MonicaModel* model)
 {
 	if(_cropSeeded)
 		return false;
 	
-	//check soil temperature if requested
+	// check soil temperature if requested
 	if (_checkForSoilTemperature) {
-		double avgSoilTemp = 0;
-		for (size_t layer = 0, size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging); layer < size; layer++)
-			avgSoilTemp += model->soilTemperature().get_SoilTemperature(layer);
-		_avgSoilTemps.push_back(avgSoilTemp);
-
-		if (!isSoilTemperatureOk(_avgSoilTemps, _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp))
+		if (!isSoilTemperatureOk(_getAvgSoilTemps(), _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp))
 			return false;
 	}
 
