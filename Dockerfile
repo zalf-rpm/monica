@@ -44,7 +44,7 @@ COPY ${EXECUTABLE_SOURCE}/monica ${monica_dir}
 COPY ${EXECUTABLE_SOURCE}/monica-run ${monica_dir}
 COPY ${EXECUTABLE_SOURCE}/monica-zmq-control-send ${monica_dir}
 COPY ${EXECUTABLE_SOURCE}/monica-zmq-run ${monica_dir}
-COPY ${EXECUTABLE_SOURCE}/monica_python.so ${monica_dir}
+#COPY ${EXECUTABLE_SOURCE}/monica_python.so ${monica_dir}
 COPY ${EXECUTABLE_SOURCE}/monica-zmq-control ${monica_dir}
 COPY ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
 COPY ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
