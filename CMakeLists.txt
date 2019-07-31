@@ -319,7 +319,8 @@ capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS
 ${CAPNP_SCHEMAS_DIR}/common.capnp 
 ${CAPNP_SCHEMAS_DIR}/climate_data.capnp
 ${CAPNP_SCHEMAS_DIR}/model.capnp
-${CAPNP_SCHEMAS_DIR}/geo_coord.capnp)
+${CAPNP_SCHEMAS_DIR}/geo_coord.capnp
+${CAPNP_SCHEMAS_DIR}/cluster_admin_service.capnp)
 message(STATUS "CAPNP_SRCS: " "${CAPNP_SRCS}")	
 
 # create monica-capnp-server executable, the server running monica via CapNProto RPC

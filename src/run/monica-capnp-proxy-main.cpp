@@ -47,14 +47,14 @@ string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
 class RunMonicaProxy;
-class Unregister final : public rpc::Common::Unregister::Server
+class Unregister final : public rpc::Common::Callback::Server
 {
 public:
 	Unregister(RunMonicaProxy& proxy, int monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
 
 	~Unregister();
 
-	kj::Promise<void> unregister(UnregisterContext context) override; //unregister @1 ();
+	kj::Promise<void> call(CallContext context) override; //call @0 ();
 
 private:
 	void unreg();
@@ -127,21 +127,21 @@ public:
 			});
 	}
 
-	kj::Promise<void> registerService(RegisterServiceContext context) override  //registerService @0 [Service] (service :Service) -> (unregister :Unregister);
+	kj::Promise<void> registerEnvInstance(RegisterEnvInstanceContext context) override  // registerEnvInstance @0 (instance :EnvInstance) -> (unregister :Common.Callback);
 	{
-		auto service = context.getParams().getService().getAs<rpc::Model::EnvInstance>();
+		auto instance = context.getParams().getInstance();
 		bool filledEmptySlot = false;
 		int id = 0;
 		for (X& x : _xs) {
 			if (x.jobs < 0) {
-				x = { kj::mv(service), 0 };
+				x = { kj::mv(instance), 0 };
 				filledEmptySlot = true;
 				break;
 			}
 			id++;
 		}
 		if (!filledEmptySlot) {
-			_xs.push_back({ kj::mv(service), 0 });
+			_xs.push_back({ kj::mv(instance), 0 });
 			id = _xs.size() - 1;
 		}
 
@@ -157,35 +157,6 @@ public:
 
 		return kj::READY_NOW;
 	}
-
-	kj::Promise<void> registerService2(RegisterService2Context context) override  //registerService2 @0 (service :EnvInstance);
-	{
-		auto service = context.getParams().getService();
-		bool filledEmptySlot = false;
-		int id = 0;
-		for (X& x : _xs) {
-			if (x.jobs < 0) {
-				x = { kj::mv(service), 0 };
-				filledEmptySlot = true;
-				break;
-			}
-			id++;
-		}
-		if (!filledEmptySlot) {
-			_xs.push_back({ kj::mv(service), 0 });
-			id = _xs.size() - 1;
-		}
-
-		int count = 0;
-		for (X& x : _xs) {
-			if (x.jobs >= 0)
-				count++;
-		}
-
-		cout << "added service to proxy: " << count << " services registered now" << endl;
-		return kj::READY_NOW;
-	}
-
 };
 
 Unregister::~Unregister() {
@@ -199,7 +170,7 @@ void Unregister::unreg() {
 	}
 }
 
-kj::Promise<void> Unregister::unregister(UnregisterContext context) //unregister @1 ();
+kj::Promise<void> Unregister::call(CallContext context) // call @0 ();
 {
 	unreg();
 	return kj::READY_NOW;

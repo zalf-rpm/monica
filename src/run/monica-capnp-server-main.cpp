@@ -38,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
+#include "cluster_admin_service.capnp.h"
 
 using namespace std;
 using namespace Monica;
@@ -57,6 +58,11 @@ int main(int argc, const char* argv[]) {
 	string proxyAddress = "localhost";
 	int proxyPort = 6666;
 	bool connectToProxy = false;
+
+	string factoryAddress = "localhost";
+	int factoryPort = 9999;
+	bool connectToFactory = false;
+	string registrationToken = "";
 
 	string address = "*";
 	int port = -1;
@@ -101,7 +107,16 @@ int main(int argc, const char* argv[]) {
 			"... ADDRESS (default: " << proxyAddress << ")] "
 			"... connects server to proxy running at given address" << endl
 			<< " -pp | --proxy-port ... PORT (default: " << proxyPort << ")] "
-			"... connects server to proxy running on given port." << endl;
+			"... connects server to proxy running on given port." << endl
+			<< " -cf | --connect-to-factory "
+			"... connect to factory at -fa and -fp" << endl
+			<< " -fa | --factory-address "
+			"... ADDRESS (default: " << factoryAddress << ")] "
+			"... connects server to factory running at given address" << endl
+			<< " -fp | --factory-port ... PORT (default: " << factoryPort << ")] "
+			"... connects server to factory running on given port." << endl
+			<< " -rt | --registration-token ... REGISTRATION_TOKEN (default: " << registrationToken << ")] "
+			"... a token proving the authority to register this MONICA instance at the factory." << endl;
 	};
 
 	if (argc >= 1)
@@ -141,6 +156,25 @@ int main(int argc, const char* argv[]) {
 				if (i + 1 < argc && argv[i + 1][0] != '-')
 					proxyPort = stoi(argv[++i]);
 			}
+			else if (arg == "-cf" || arg == "--connect-to-factory")
+			{
+				connectToFactory = true;
+			}
+			else if (arg == "-fa" || arg == "--factory-address")
+			{
+				if (i + 1 < argc && argv[i + 1][0] != '-')
+					factoryAddress = argv[++i];
+			}
+			else if (arg == "-fp" || arg == "--factory-port")
+			{
+				if (i + 1 < argc && argv[i + 1][0] != '-')
+					factoryPort = stoi(argv[++i]);
+			}
+			else if (arg == "-rt" || arg == "--registration-token")
+			{
+				if (i + 1 < argc && argv[i + 1][0] != '-')
+					registrationToken = argv[++i];
+			}
 			else if (arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
 			else if (arg == "-v" || arg == "--version")
@@ -167,9 +201,35 @@ int main(int argc, const char* argv[]) {
 				rpc::Model::EnvInstanceProxy::Client cap = client.getMain<rpc::Model::EnvInstanceProxy>();
 
 				// Make a call to the capability.
-				//auto request = cap.registerService2Request();
-				auto request = cap.registerServiceRequest<rpc::Model::EnvInstance>();
-				request.setService(runMonicaImplClient);
+				auto request = cap.registerEnvInstanceRequest();
+				request.setInstance(runMonicaImplClient);
+				auto response = request.send().wait(cWaitScope);
+				unregister = response.getUnregister();
+
+				if (hideServer)
+					kj::NEVER_DONE.wait(cWaitScope);
+			}
+			catch (exception e)
+			{
+				cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl 
+					<< "Exception: " << e.what() << endl;
+			}
+		} else if (connectToFactory)
+		{
+			//create client connection to a factory
+			try
+			{
+				capnp::EzRpcClient client(factoryAddress, factoryPort);
+
+				auto& cWaitScope = client.getWaitScope();
+
+				// Request the bootstrap capability from the server.
+				Cluster::ModelInstanceFactory::Client cap = client.getMain<Cluster::ModelInstanceFactory>();
+
+				// Make a call to the capability.
+				auto request = cap.registerModelInstanceRequest<rpc::Model::EnvInstance>();
+				request.setInstance(runMonicaImplClient);
+				request.setRegistrationToken(registrationToken);
 				auto response = request.send().wait(cWaitScope);
 				unregister = response.asGeneric<rpc::Model::EnvInstance>().getUnregister();
 
@@ -178,7 +238,7 @@ int main(int argc, const char* argv[]) {
 			}
 			catch (exception e)
 			{
-				cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl 
+				cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl
 					<< "Exception: " << e.what() << endl;
 			}
 		}
