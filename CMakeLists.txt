@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2.2)
+cmake_minimum_required(VERSION 3.14)
 project(monica)
 
 add_definitions(
@@ -37,8 +37,11 @@ if(MSVC)
 	
 	# define MS Visual Studio toolset version
 	if(NOT DEFINED MSVC_TOOLSET_VERSION)
-		if(MSVC_VERSION GREATER_EQUAL 1920)
+		if(MSVC_VERSION GREATER_EQUAL 1930)
 		  set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
+		elseif(MSVC_VERSION GREATER_EQUAL 1920)
+		  # VS 2019
+		  set(MSVC_TOOLSET_VERSION 142) # VS 2019
 		elseif(MSVC_VERSION GREATER_EQUAL 1910)
 		  # VS 2017
 		  set(MSVC_TOOLSET_VERSION 141)
@@ -55,7 +58,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set_absolute_path(UTIL_DIR "../util")
 set_absolute_path(SYS_LIBS_DIR "../sys-libs")
-set_absolute_path(BOOST_DIR "../boost")
+#set_absolute_path(BOOST_DIR "../boost")
 
 # setup the target group variable, used to group targets into folders in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -461,61 +464,61 @@ endif()
 #------------------------------------------------------------------------------
 
 #set path and lib manually because for some reasons on the cluster1/2 on debian 9 python3.4m is found instead of 2.7
-message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+# message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
-find_package(PythonLibs 2.7 EXACT REQUIRED)
-find_package(PythonInterp 2.7 EXACT REQUIRED)
-message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
-message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
-include_directories(${PYTHON_INCLUDE_DIR})
+# find_package(PythonLibs 2.7 EXACT REQUIRED)
+# find_package(PythonInterp 2.7 EXACT REQUIRED)
+# message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
+# message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+# include_directories(${PYTHON_INCLUDE_DIR})
 
-if(WIN32)
-    link_directories(${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python)
-	message("${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python")
-	include_directories(${BOOST_DIR})
-elseif(UNIX)
-	find_package(Boost COMPONENTS python REQUIRED)
-	include_directories(${Boost_INCLUDE_DIR})
-endif()
+# if(WIN32)
+#     link_directories(${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python)
+# 	message("${SYS_LIBS_DIR}/binaries/windows/vc${MSVC_TOOLSET_VERSION}/${ARCH}/boost-python")
+# 	include_directories(${BOOST_DIR})
+# elseif(UNIX)
+# 	find_package(Boost COMPONENTS python REQUIRED)
+# 	include_directories(${Boost_INCLUDE_DIR})
+# endif()
 
-# create monica python wrapper lib
-set(MONICA_PYTHON_SOURCE_FILES
+# # create monica python wrapper lib
+# set(MONICA_PYTHON_SOURCE_FILES
 
-	src/io/csv-format.h
-	src/io/csv-format.cpp
+# 	src/io/csv-format.h
+# 	src/io/csv-format.cpp
 	
-	src/io/database-io.h
-	src/io/database-io.cpp
+# 	src/io/database-io.h
+# 	src/io/database-io.cpp
 		
-	src/run/env-from-json-config.h
-	src/run/env-from-json-config.cpp
+# 	src/run/env-from-json-config.h
+# 	src/run/env-from-json-config.cpp
 
-	src/run/env-json-from-json-config.h
-	src/run/env-json-from-json-config.cpp
+# 	src/run/env-json-from-json-config.h
+# 	src/run/env-json-from-json-config.cpp
 	
-	src/python/monica_py.cpp
+# 	src/python/monica_py.cpp
 	
-	# climate library code
-	#-------------------------------------------
-	${UTIL_DIR}/climate/climate-file-io.h
-	${UTIL_DIR}/climate/climate-file-io.cpp
+# 	# climate library code
+# 	#-------------------------------------------
+# 	${UTIL_DIR}/climate/climate-file-io.h
+# 	${UTIL_DIR}/climate/climate-file-io.cpp
 
-	# soil library code
-	#-------------------------------------------
-	${UTIL_DIR}/soil/soil-from-db.h
-	${UTIL_DIR}/soil/soil-from-db.cpp
-)
-set(MONICA_PYTHON_SOURCE ${MONICA_PYTHON_SOURCE_FILES} ${LIBMONICA_SOURCE})
+# 	# soil library code
+# 	#-------------------------------------------
+# 	${UTIL_DIR}/soil/soil-from-db.h
+# 	${UTIL_DIR}/soil/soil-from-db.cpp
+# )
+# set(MONICA_PYTHON_SOURCE ${MONICA_PYTHON_SOURCE_FILES} ${LIBMONICA_SOURCE})
 
-add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE})
-target_link_libraries(monica_python 
-	${Boost_LIBRARIES} 
-	${PYTHON_LIBRARIES}
-)
-if (MSVC)
-	set_target_properties(monica_python PROPERTIES SUFFIX .pyd)
-endif()
-set_target_properties(monica_python PROPERTIES PREFIX "")
+# add_library(monica_python SHARED ${MONICA_PYTHON_SOURCE})
+# target_link_libraries(monica_python 
+# 	${Boost_LIBRARIES} 
+# 	${PYTHON_LIBRARIES}
+# )
+# if (MSVC)
+# 	set_target_properties(monica_python PROPERTIES SUFFIX .pyd)
+# endif()
+# set_target_properties(monica_python PROPERTIES PREFIX "")
 
 #------------------------------------------------------------------------------
 
