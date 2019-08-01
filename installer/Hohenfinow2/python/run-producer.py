@@ -66,10 +66,10 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
   env = monica_io.create_env_json_from_json_config({
       "crop": crop_json,
       "site": site_json,
-      "sim": sim_json,
+      "sim": sim_json
       #"climate": climate_csv
-      "pathToClimateCSV" : PATH_TO_CLIMATE_FILE
   })
+  env["pathToClimateCSV"] = PATH_TO_CLIMATE_FILE
 
   #print env
 
