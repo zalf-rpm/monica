@@ -84,20 +84,48 @@ def main():
 
     model_factories = admin_master.availableModels().wait().factories
     if len(model_factories) > 0:
-        model_factory = model_factories[0]
-        print(model_factory.modelId().wait().id)
-        monica = model_factory.newInstance().wait().instance.as_interface(model_capnp.Model.EnvInstance)
-        monica = model_factory.newInstance().wait().instance.as_interface(model_capnp.Model.EnvInstance)
-        #cloud_proxy = model_factory.newCloudViaProxy(10).wait().proxy.cast_as(model_capnp.Model.EnvInstance)
 
-        proms = []
-        for i in range(2):
-            env["customId"] = str(i)
-            proms.append(monica.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
-        
-        for res in capnp.join_promises(proms).wait():
-            if len(res.result.value) > 0:
-                print(json.loads(res.result.value)["customId"]) #.result["customId"])
+        model_factory = model_factories[0]
+
+        # get instance id
+        print(model_factory.modelId().wait().id)
+
+        if False: #True:
+            # get a single instance
+            print("requesting single instance ...")
+            monica = model_factory.newInstance().wait().instance.as_interface(model_capnp.Model.EnvInstance)
+            #cloud_proxy = model_factory.newCloudViaProxy(10).wait().proxy.cast_as(model_capnp.Model.EnvInstance)
+
+            proms = []
+            print("running jobs on single instance ...")
+            for i in range(5):
+                env["customId"] = str(i)
+                proms.append(monica.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
+            
+            print("results from single instance ...")
+            for res in capnp.join_promises(proms).wait():
+                if len(res.result.value) > 0:
+                    print(json.loads(res.result.value)["customId"]) #.result["customId"])
+
+        if True:
+            # get multiple instances
+            print("requesting multiple instances ...")
+            instances = model_factory.newInstances(5).wait().instances
+            monicas = []
+            for i in instances:
+                monicas.append(i.cap.as_interface(model_capnp.Model.EnvInstance))
+
+            proms = []
+            print("running jobs on multiple instances ...")
+            for i in range(len(monicas)):
+                env["customId"] = str(i)
+                proms.append(monicas[i].run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
+            
+            print("results from multiple instances ...")
+            for res in capnp.join_promises(proms).wait():
+                if len(res.result.value) > 0:
+                    print(json.loads(res.result.value)["customId"]) #.result["customId"])
+
 
     return
 
