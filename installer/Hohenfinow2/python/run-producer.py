@@ -24,7 +24,7 @@ import monica_io
 #print sys.path
 
 #print "pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version()
-
+PATH_TO_CLIMATE_FILE = "/monica_data/climate-data/climate-min.csv"
 
 def run_producer(server = {"server": None, "port": None}, shared_id = None):
 
@@ -37,7 +37,7 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
       "sim.json": os.path.join(os.path.dirname(__file__), '../sim-min.json'),
       "crop.json": os.path.join(os.path.dirname(__file__), '../crop-min.json'),
       "site.json": os.path.join(os.path.dirname(__file__), '../site-min.json'),
-      "climate.csv": os.path.join(os.path.dirname(__file__), '../climate-min.csv'),
+ #     "climate.csv": os.path.join(os.path.dirname(__file__), '../climate-min.csv'),
       "shared_id": shared_id 
   }
   # read commandline args only if script is invoked directly from commandline
@@ -60,15 +60,17 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
   with open(config["crop.json"]) as _:
     crop_json = json.load(_)
 
-  with open(config["climate.csv"]) as _:
-    climate_csv = _.read()
+  # with open(config["climate.csv"]) as _:
+  #   climate_csv = _.read()
 
   env = monica_io.create_env_json_from_json_config({
       "crop": crop_json,
       "site": site_json,
       "sim": sim_json,
-      "climate": climate_csv
+      #"climate": climate_csv
+      "pathToClimateCSV" : PATH_TO_CLIMATE_FILE
   })
+
   #print env
 
   # add shared ID if env to be sent to routable monicas
