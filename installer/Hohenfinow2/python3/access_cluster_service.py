@@ -90,10 +90,11 @@ def main():
         # get instance id
         print(model_factory.modelId().wait().id)
 
-        if False: #True:
+        if True:
             # get a single instance
             print("requesting single instance ...")
-            monica = model_factory.newInstance().wait().instance.as_interface(model_capnp.Model.EnvInstance)
+            cap_holder = model_factory.newInstance().wait().instance
+            monica = cap_holder.cap.as_interface(model_capnp.Model.EnvInstance)
             #cloud_proxy = model_factory.newCloudViaProxy(10).wait().proxy.cast_as(model_capnp.Model.EnvInstance)
 
             proms = []
@@ -107,13 +108,17 @@ def main():
                 if len(res.result.value) > 0:
                     print(json.loads(res.result.value)["customId"]) #.result["customId"])
 
+
+            cap_holder.free.call().wait()
+            #del cap_holder.free
+
         if True:
             # get multiple instances
             print("requesting multiple instances ...")
-            instances = model_factory.newInstances(5).wait().instances
+            cap_holders = model_factory.newInstances(5).wait().instances
             monicas = []
-            for i in instances:
-                monicas.append(i.cap.as_interface(model_capnp.Model.EnvInstance))
+            for chs in cap_holders:
+                monicas.append(chs.cap.as_interface(model_capnp.Model.EnvInstance))
 
             proms = []
             print("running jobs on multiple instances ...")
@@ -242,3 +247,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print("bla")
