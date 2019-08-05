@@ -667,6 +667,12 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_ActNUptake(), 2) : 0.0;
 			});
 
+			build({ id++, "RootWaUptak", "KgN ha-1", "RootWatUptakefromLayer" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.cropGrowth() ? monica.cropGrowth()->get_Transpiration(i) : 0.0; }, 4);
+			});
+
 			build({id++, "PotNup", "kgN ha-1", "PotNUptake"},
 						[](const MonicaModel& monica, OId oid)
 			{
@@ -716,6 +722,12 @@ BOTRes& Monica::buildOutputTable()
 						[](const MonicaModel& monica, OId oid)
 			{
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
+			});
+
+			build({ id++, "YieldN", "kgN ha-1", "PrimaryYieldNContent" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNContent(), 3) : 0.0;
 			});
 
 			build({id++, "Protein", "kg kg-1", "RawProteinConcentration"},
@@ -777,6 +789,13 @@ BOTRes& Monica::buildOutputTable()
 						monica.soilColumnNC()[i].set_Vs_SoilMoisture_m3(j.number_value());
 				}, value);
 			});
+
+			build({ id++, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer" },
+				[](const MonicaModel& monica, OId oid)
+			{
+				return getComplexValues<double>(oid, [&](int i) { return monica.cropGrowth() ? monica.cropGrowth()->get_NUptakeFromLayer(i) * 10000.0 : 0.0; }, 4);
+			});
+
 
 			build({id++, "Irrig", "mm", "Irrigation"},
 						[](const MonicaModel& monica, OId oid)

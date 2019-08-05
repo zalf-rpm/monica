@@ -10,13 +10,13 @@
 		!define Arch "x86"
 		!define WinPlatform "Win32"
 		!define ArchBit "32bit"
-		!define BoostBit "x32"
+		#!define BoostBit "x32"
 		!define ExecutableFolder "_cmake_win32\Release"
 	!else
 		!define Arch "x64"
 		!define WinPlatform "x64"
 		!define ArchBit "64bit"
-		!define BoostBit "x64"
+		#!define BoostBit "x64"
 		!define ExecutableFolder "_cmake_win64\Release"
 	!endif
 
@@ -109,8 +109,8 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File /oname=monica-zmq-control-send.exe "..\${ExecutableFolder}\monica-zmq-control-send.exe"  	
 	File /oname=monica-zmq-proxy.exe "..\${ExecutableFolder}\monica-zmq-proxy.exe"  	
  
-	File /oname=monica_python.pyd "..\${ExecutableFolder}\monica_python.pyd"  
-	File "${SysLibsDir}\binaries\windows\vc141\${Arch}\boost-python\boost_python-vc141-mt-${BoostBit}-1_66.dll"
+	#File /oname=monica_python.pyd "..\${ExecutableFolder}\monica_python.pyd"  
+	#File "${SysLibsDir}\binaries\windows\vc141\${Arch}\boost-python\boost_python-vc141-mt-${BoostBit}-1_66.dll"
 	
 	File "..\LICENSE"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"

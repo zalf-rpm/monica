@@ -45,7 +45,7 @@ if(MSVC)
 	# define MS Visual Studio toolset version
 	if(NOT DEFINED MSVC_TOOLSET_VERSION)
 		if(MSVC_VERSION GREATER_EQUAL 1930)
-			set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
+		  set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
 		elseif(MSVC_VERSION GREATER_EQUAL 1920)
 		  set(MSVC_TOOLSET_VERSION 142) # VS 2019
 		elseif(MSVC_VERSION GREATER_EQUAL 1910)
