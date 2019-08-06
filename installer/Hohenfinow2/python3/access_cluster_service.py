@@ -23,11 +23,10 @@ import time
 import monica_io3
 
 import capnp
-#import climate_data_capnp
-capnp.remove_import_hook()
-climate_data_capnp = capnp.load("capnproto_schemas/climate_data.capnp")
-model_capnp = capnp.load("capnproto_schemas/model.capnp")
-cluster_admin_service_capnp = capnp.load("capnproto_schemas/cluster_admin_service.capnp")
+capnp.add_import_hook(additional_paths=["../../../../vcpkg/packages/capnproto_x64-windows-static/include/", "../../../../capnproto_schemas/"])
+import common_capnp
+import climate_data_capnp
+import cluster_admin_service_capnp
 
 def main():
 
@@ -93,10 +92,12 @@ def main():
         if True:
             # get a single instance
             print("requesting single instance ...")
-            cap_holder = model_factory.newInstance().wait().instance
-            monica = cap_holder.cap.as_interface(model_capnp.Model.EnvInstance)
-            #cloud_proxy = model_factory.newCloudViaProxy(10).wait().proxy.cast_as(model_capnp.Model.EnvInstance)
-
+            cap_holder = model_factory.newInstance().instance
+            monica = cap_holder.cap().wait().cap.as_interface(model_capnp.Model.EnvInstance)
+            sturdy_ref = cap_holder.save().wait().sturdyRef
+            
+            #monica = cap_holder.cap.as_interface(model_capnp.Model.EnvInstance)
+            
             proms = []
             print("running jobs on single instance ...")
             for i in range(5):
@@ -108,7 +109,7 @@ def main():
                 if len(res.result.value) > 0:
                     print(json.loads(res.result.value)["customId"]) #.result["customId"])
 
-
+            
             cap_holder.free.call().wait()
             #del cap_holder.free
 

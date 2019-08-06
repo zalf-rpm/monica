@@ -23,10 +23,9 @@ import time
 import monica_io3
 
 import capnp
-#import climate_data_capnp
-capnp.remove_import_hook()
-climate_data_capnp = capnp.load("capnproto_schemas/climate_data.capnp")
-model_capnp = capnp.load("capnproto_schemas/model.capnp")
+capnp.add_import_hook(additional_paths=["../../../../vcpkg/packages/capnproto_x64-windows-static/include/", "../../../../capnproto_schemas/"])
+import model_capnp
+import climate_data_capnp
 
 def main():
 
@@ -105,7 +104,8 @@ def main():
 
     csv_time_series = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(climate_data_capnp.Climate.TimeSeries)
     #header = csv_time_series.header().wait().header
-    monica_instance = capnp.TwoPartyClient("localhost:8888").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+    monica_instance = capnp.TwoPartyClient("localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+    #monica_instance = capnp.TwoPartyClient("login01.cluster.zalf.de:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
     
     proms = []
     for i in range(10):
