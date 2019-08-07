@@ -274,7 +274,7 @@ namespace Monica
     //! Returns daily crop N uptake [kg N ha-1 d-1]
     double get_DailyCropNUptake() const { return vq_CropNUptake * 10000.0; }
 
-    int getLayerNumberForDepth(double depth) const;
+    uint getLayerNumberForDepth(double depth) const;
 
     void put_Crop(CropGrowth* crop);
 
