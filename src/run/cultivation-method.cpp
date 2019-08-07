@@ -343,8 +343,8 @@ std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(std::
 	_getAvgSoilTemps = getDailyValues;
 	return [this](MonicaModel* model) -> double {
 		double avgSoilTemp = 0;
-		size_t i = 0;
-		for (size_t size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++)
+		uint i = 0;
+		for (uint size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++)
 			avgSoilTemp += model->soilTemperature().get_SoilTemperature(int(i));
 		return avgSoilTemp / double(i);
 	};
