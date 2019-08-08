@@ -58,6 +58,9 @@ COPY db-connections-install.ini ${monica_dir}/db-connections.ini
 
 COPY docker/start_monica_supervisor.sh /start.sh
 
+RUN useradd -ms /bin/bash myuser
+USER myuser
+
 CMD ["sh", "/start.sh"]
 ENV DEBIAN_FRONTED teletype
 

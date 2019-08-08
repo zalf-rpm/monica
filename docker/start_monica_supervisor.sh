@@ -1,6 +1,5 @@
 #!/bin/sh
 #verify mounted dirs
-ls -al
 ls -al /monica_data
 if [ -d "/monica_data/climate-data" ]; then 
     ls -al "/monica_data/climate-data"
