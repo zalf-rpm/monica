@@ -6,8 +6,8 @@
 
 #define VERSION_MAJOR               3
 #define VERSION_MINOR               0
-#define VERSION_REVISION            1
-#define VERSION_BUILD               180
+#define VERSION_REVISION            2
+#define VERSION_BUILD               181
 
 #define VER_FILE_VERSION            VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, VERSION_BUILD
 #define VER_FILE_VERSION_STR        STRINGIZE(VERSION_MAJOR)        \
