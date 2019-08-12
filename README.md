@@ -23,65 +23,41 @@ Builds can be downloaded from the repository's [releases page](https://github.co
 
 # Building
 
-In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/sys-libs (includes of some external libraries and pre-build binaries for Windows) and 
+In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/capnproto_schemas and 
 zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
 
 After cloning the repositories you should have this file structure:
 
     monica-master
 		      |_ monica
-		      |_ sys-lib
 		      |_ util
 		      |_ monica-parameters
+		      |_ capnproto_schemas
    
 
-To be able to call MONICA from Python (build the minimal Python interface) [Boost.Python](http://www.boost.org/doc/libs/1_66_0/libs/python/doc/html/index.html) is required. 
-Simply download and un-archive the whole BOOST distribution eg. [boost-1.66.7z](https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.7z).
-After unpacking boost ist will have following folder structure:
-
-    |_ boost_1_66_0
-       |_ boost
-       |_ doc
-       |_ lib
-       |_ ...
-Either copy the boost_1_66_0 folder into the monica-master folder or create a symlink 
-
-  > mklink /D boost <your boost path>` (e.g. mklink /D boost C:\boost_1_66_0)
- 
-Boost has to be on the same level as monica.
-Also install Python to have the Python include directory available. 
+Also install Python to run the minimal examples. 
 
 In order to run the examples, copy the file db-connections.ini.template and rename it to db-connections.ini. 
 This file is used to configure access to SQLite and MySQL databases (access to the later is not being compiled into MONICA by default).
 
 ## Windows
+ see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Windows) for installation and build instructions
 
-Use Visual Studio 2017 (Community is enough) and cmake (3.2+) to create a solution file.
-run monica/update_solution.cmd or run monica/update_solution_x64.cmd. 
-These batch scripts will create folder (´_cmake_win32´ or ´_cmake_win64´) in which you can find a monica.sln.
-
-You should be able to compile successfully all projects. 
-
-The project monica-run will execute a local MONICA with the example Hohenfinow2 in the installer directory and output its result into 
+monica-run will execute a local MONICA with the example Hohenfinow2 in the installer directory and output its result into 
 installer\Hohenfinow2\out.csv.
 
-
+    cd monica/_cmake_win64
+    ./monica run installer/Hohenfinow2/sim.json > out.csv
+    
 ## Linux
 
-To build MONICA under Linux, run inside the monica-master repository directory
+see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Linux) for installation and build instructions.
 
-    >mkdir -p `_cmake_linux`
-    >cd `_cmake_linux`
-    >cmake ../monica
-   
-to create the makefile.
+Run the standard example and write the results into out.csv
+Shell:
 
-Then a `make` should you leave with a working version of MONICA. If you compiled the code in the repository directory running
-
+    cd monica/_cmake_linux
     ./monica run installer/Hohenfinow2/sim.json > out.csv
-
-from the shell should run the standard example and write the results into out.csv.
-
 
 # Usage
 
@@ -99,7 +75,6 @@ monica is just a proxy program calling the actual tools. There are the following
 
 * libmonica ... the libmonica.dll/.so with the MONICA core functionality
 * monica ... the proxy tool, to call the other tools
-* monica-python ... the monica_python.dll/.so to be used as Python library, acting as simple bridge to call MONICA from Python
 * monica-run ... the standalone MONICA commandline model (using libmonica)
 * monica-zmq-control ... a tool to run on the server and accepting ZeroMQ messages to spawn MONICA servers/ZMQ Proxies etc
 * monica-zmq-control-send ... a client side tool to send ZMQ messages to the server 
@@ -112,8 +87,7 @@ monica is just a proxy program calling the actual tools. There are the following
 
 On Windows an NSIS installer can be created. The installer will by default install all programm code into c:\program files and
 the parameters, databases and examples into c:\users\USER_PROFILE\MONICA. The MONICA install directory will be added to the 
-PATH environment variable as well as add it to the PYTHONPATH environment variable. So after a normal installation MONICA should be useable
-from the commandline as well as from Python (import monica_python).
+PATH environment variable as well as add it to the PYTHONPATH environment variable. So after a normal installation MONICA should be useable from the commandline.
 
 
 ## Contributing 
