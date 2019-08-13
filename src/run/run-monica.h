@@ -56,36 +56,47 @@ namespace Monica
     Env(CentralParameterProvider cpp);
 
 		Env(json11::Json object);
+		// construct env from json object
 
 		virtual Tools::Errors merge(json11::Json j);
+		// merge a json file into Env
 
 		virtual json11::Json to_json() const;
+		// serialize to json
 
 		bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
-
-    //Interface method for python wrapping. Simply returns number
-    //of possible simulation steps according to avaible climate data.
-    std::size_t numberOfPossibleSteps() const { return climateData.noOfStepsPossible(); }
-
-    void addOrReplaceClimateData(std::string, const std::vector<double>& data);
+		// is the output as a list (e.g. days) of an object (holding all the requested data)
 
     //! object holding the climate data
     Climate::DataAccessor climateData;
-		std::vector<std::string> pathsToClimateCSV;
-		json11::Json csvViaHeaderOptions;
+		// 1. priority, object holding the climate data
 
-    //! vector of elements holding the data of the single crops in the rotation
+		std::string climateCSV;
+		// 2nd priority, if climateData not valid, try to read climate data from csv string
+
+		std::vector<std::string> pathsToClimateCSV;
+		// 3. priority, if climateCSV is empty, try to load climate data from vector of file paths
+				
+		json11::Json csvViaHeaderOptions;
+		// the csv options for reading/parsing csv data
+
     std::vector<CultivationMethod> cropRotation;
+		// vector of elements holding the data of the single crops in the rotation
+
 		std::vector<CropRotation> cropRotations;
+		// optionally 
 
 		json11::Json events;
-		json11::Json outputs;
-		
-		//! id identifiying this particular run
-	  json11::Json customId;
+		// the events section defining the requested outputs
 
-		//! shared id between runs belonging together
+		json11::Json outputs;
+		// the whole outputs section
+		
+	  json11::Json customId;
+		// id identifiying this particular run
+
 		std::string sharedId;
+		// shared id between runs belonging together
 
     CentralParameterProvider params;
 
@@ -94,16 +105,16 @@ namespace Monica
     std::string berestRequestAddress;
 
     //zeromq reply socket for datastream controlled MONICA run
-    std::string inputDatastreamAddress;
-    std::string inputDatastreamProtocol;
+    //std::string inputDatastreamAddress;
+    //std::string inputDatastreamProtocol;
 //    std::string inputDatastreamHost;
-    std::string inputDatastreamPort;
+    //std::string inputDatastreamPort;
 
     //zeromq publish socket for outputs of MONICA
-    std::string outputDatastreamAddress;
-    std::string outputDatastreamProtocol;
+    //std::string outputDatastreamAddress;
+    //std::string outputDatastreamProtocol;
 //    std::string outputDatastreamHost;
-    std::string outputDatastreamPort;
+    //std::string outputDatastreamPort;
 
 		bool debugMode{false};
   };

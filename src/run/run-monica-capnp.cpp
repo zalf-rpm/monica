@@ -97,6 +97,16 @@ DataAccessor fromCapnpData(
 	return da;
 }
 
+kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
+{
+	auto rs = context.getResults();
+	rs.initInfo();
+	rs.getInfo().setId("some monica_id");
+	rs.getInfo().setName("Monica capnp server");
+	rs.getInfo().setDescription("some description");
+	return kj::READY_NOW;
+}
+
 kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 {
 	debug() << ".";
@@ -107,16 +117,24 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 		string err;
 		auto rest = envR.getRest();
 		if (!rest.getStructure().isJson())
-			return Monica::Output();
+			return Monica::Output(string("Error: 'rest' field is not valid JSON!"));
 
 		const Json& envJson = Json::parse(rest.getValue().cStr(), err);
 		//cout << "runMonica: " << envJson["customId"].dump() << endl;
 
-		Env env(envJson);
-		if (da.isValid())
+    Env env;
+    auto errors = env.merge(envJson);
+
+		if (da.isValid()) {
 			env.climateData = da;
-		else if (!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
-			env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+		}	else if (!env.climateData.isValid()) {
+			if (!env.climateCSV.empty()) {
+				env.climateData = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+			}
+			else if (!env.pathsToClimateCSV.empty()) {
+				env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+			}
+		}
 
 		env.debugMode = _startedServerInDebugMode && env.debugMode;
 
@@ -125,7 +143,12 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 			return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 		};
 
-		return Monica::runMonica(env);
+    auto out = Monica::runMonica(env);
+
+    out.errors = errors.errors;
+    out.warnings = errors.warnings;
+
+    return out;
 	};
 
 	if (envR.hasTimeSeries()) {
@@ -156,7 +179,10 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 			});
 	}
 	else {
-		runMonica();
+		auto out = runMonica();
+    auto rs = context.getResults();
+    rs.initResult();
+    rs.getResult().setValue(out.toString());
 		return kj::READY_NOW;
 	}
 }

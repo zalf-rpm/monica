@@ -37,6 +37,8 @@ namespace Monica
 	public:
 		RunMonicaImpl(bool startedServerInDebugMode = false) : _startedServerInDebugMode(startedServerInDebugMode) {}
 
+		kj::Promise<void> info(InfoContext context) override;
+
 		kj::Promise<void> run(RunContext context) override;
 	};
 

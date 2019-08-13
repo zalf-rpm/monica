@@ -35,10 +35,10 @@ namespace Monica
 {
 	namespace ZmqServer
 	{
-		void startZeroMQMonica(zmq::context_t* zmqContext,
-													 std::string inputSocketAddress,
-													 std::string outputSocketAddress,
-													 bool isInProcess = false);
+		//void startZeroMQMonica(zmq::context_t* zmqContext,
+		//											 std::string inputSocketAddress,
+		//											 std::string outputSocketAddress,
+		//											 bool isInProcess = false);
 
 		enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer };
 		enum SocketRole { ReceiveJob, SendResult, Control };

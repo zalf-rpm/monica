@@ -190,12 +190,12 @@ json11::Json createYearlyResultsMessage(map<ResultId, double>& avs)
 }
 */
 
+/*
 void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext, 
 																					string inputSocketAddress,
 																					string outputSocketAddress,
 																					bool isInProcess)
 {
-	/*
   zmq::socket_t input(*zmqContext, isInProcess ? ZMQ_PAIR : ZMQ_PULL);
 	debug() << "MONICA: connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
 	try
@@ -381,8 +381,8 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 	}
 
 	debug() << "exiting startZeroMQMonica" << endl;
-	*/
 }
+*/
 
 //-----------------------------------------------------------------------------
 
@@ -515,10 +515,15 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 						{
 							Json& fullMsg = msg.json;
 
-							Env env(msg.json);
-							if(!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
-								env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+              Env env;
+              auto errors = env.merge(msg.json);
 
+							if (!env.climateData.isValid()) {
+								if (!env.climateCSV.empty())
+									env.climateData = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+								else if (!env.pathsToClimateCSV.empty())
+									env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+							}
 							env.debugMode = startedServerInDebugMode && env.debugMode;
 							
 							env.params.userSoilMoistureParameters.getCapillaryRiseRate =
@@ -528,6 +533,9 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 							};
 
 							auto out = runMonica(env);
+
+              out.errors = errors.errors;
+              out.warnings = errors.warnings;
 
 							try
 							{

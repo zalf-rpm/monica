@@ -120,6 +120,9 @@ Errors Env::merge(json11::Json j)
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
+	set_string_value(climateCSV, j, "climateCSV");
+
+	// move pathToClimateCSV whatever it is into an vector as we support multiple climate files (merging)
 	if(j["pathToClimateCSV"].is_string() && !j["pathToClimateCSV"].string_value().empty())
 		pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
 	else if(j["pathToClimateCSV"].is_array())
@@ -165,6 +168,7 @@ json11::Json Env::to_json() const
 	,{"cropRotations", crs}
 	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
+	,{"climateCSV", climateCSV}
 	,{"pathsToClimateCSV", toPrimJsonArray(pathsToClimateCSV)}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	,{"customId", customId}
@@ -196,6 +200,7 @@ string Env::toString() const
 * @param acd
 * @param data
 */
+/*
 void
 Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 {
@@ -224,6 +229,7 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 	
 	climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
+*/
 
 //--------------------------------------------------------------------------------------
 

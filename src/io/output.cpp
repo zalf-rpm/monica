@@ -185,6 +185,9 @@ Errors Output::merge(json11::Json j)
 		data.push_back({d["origSpec"].string_value(), toVector<OId>(d["outputIds"]), vs, os});
 	}
 
+  errors = toStringVector(j["errors"]);
+  warnings = toStringVector(j["warnings"]);
+
 	return es;
 }
 
@@ -211,6 +214,8 @@ json11::Json Output::to_json() const
 	{{"type", "Output"}
 	,{"customId", customId}
 	,{"data", ds}
+  ,{"errors", toPrimJsonArray(errors)}
+  ,{"warnings", toPrimJsonArray(warnings)}
 	};
 }
 
