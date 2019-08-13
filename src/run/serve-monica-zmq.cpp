@@ -518,24 +518,30 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
               Env env;
               auto errors = env.merge(msg.json);
 
+              EResult<DataAccessor> eda;
 							if (!env.climateData.isValid()) {
 								if (!env.climateCSV.empty())
-									env.climateData = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+									eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
 								else if (!env.pathsToClimateCSV.empty())
-									env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+									eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
 							}
-							env.debugMode = startedServerInDebugMode && env.debugMode;
-							
-							env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-								[](string soilTexture, int distance)
-							{
-								return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-							};
 
-							auto out = runMonica(env);
+              Monica::Output out;
+              if (eda.success()) {
+                env.climateData = eda.result;
+                
+                env.debugMode = startedServerInDebugMode && env.debugMode;
 
-              out.errors = errors.errors;
-              out.warnings = errors.warnings;
+                env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+                  [](string soilTexture, int distance) {
+                  return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+                };
+
+                out = runMonica(env);
+              }
+              
+              out.errors = eda.errors;
+              out.warnings = eda.warnings;
 
 							try
 							{

@@ -501,11 +501,11 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 	env["csvViaHeaderOptions"] = csvos;
 		
 	if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty())
-		env["climateData"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
-																															env["csvViaHeaderOptions"]);
+		env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+																															env["csvViaHeaderOptions"]));
 	else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty())
-		env["climateData"] = readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
-																															 env["csvViaHeaderOptions"]);
+		env["climateData"] = printPossibleErrors(readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
+																															 env["csvViaHeaderOptions"]));
 
 	return env;
 }

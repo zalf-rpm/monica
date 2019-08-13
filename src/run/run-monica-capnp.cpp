@@ -125,28 +125,34 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
     Env env;
     auto errors = env.merge(envJson);
 
+    EResult<DataAccessor> eda;
 		if (da.isValid()) {
-			env.climateData = da;
+			eda.result = da;
 		}	else if (!env.climateData.isValid()) {
 			if (!env.climateCSV.empty()) {
-				env.climateData = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+				eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
 			}
 			else if (!env.pathsToClimateCSV.empty()) {
-				env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+				eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
 			}
 		}
 
-		env.debugMode = _startedServerInDebugMode && env.debugMode;
+    Monica::Output out;
+    if (eda.success()) {
+      env.climateData = eda.result;
 
-		env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-			[](string soilTexture, int distance) {
-			return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-		};
+      env.debugMode = _startedServerInDebugMode && env.debugMode;
 
-    auto out = Monica::runMonica(env);
+      env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+        [](string soilTexture, int distance) {
+        return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+      };
 
-    out.errors = errors.errors;
-    out.warnings = errors.warnings;
+      out = Monica::runMonica(env);
+    }
+
+    out.errors = eda.errors;
+    out.warnings = eda.warnings;
 
     return out;
 	};
