@@ -63,79 +63,77 @@ using namespace zalf::capnp;
 //std::map<std::string, DataAccessor> daCache;
 
 DataAccessor fromCapnpData(
-	const Date& startDate,
-	const Date& endDate,
-	capnp::List<rpc::Climate::Element>::Reader header,
-	capnp::List<capnp::List<float>>::Reader data)
-{
-	typedef rpc::Climate::Element E;
+  const Date& startDate,
+  const Date& endDate,
+  capnp::List<rpc::Climate::Element>::Reader header,
+  capnp::List<capnp::List<float>>::Reader data) {
+  typedef rpc::Climate::Element E;
 
-	if (data.size() == 0)
-		return DataAccessor();
+  if (data.size() == 0)
+    return DataAccessor();
 
-	DataAccessor da(startDate, endDate);
-	//vector<double> d(data[0].size());
-	for (int i = 0; i < header.size(); i++)
-	{
-		auto vs = data[i];
-		vector<double> d(data[0].size());
-		//transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
-		for (int k = 0; k < vs.size(); k++)
-			d[k] = vs[k];
-		switch (header[i]) {
-		case E::TMIN: da.addClimateData(ACD::tmin, std::move(d)); break;
-		case E::TAVG: da.addClimateData(ACD::tavg, std::move(d)); break;
-		case E::TMAX: da.addClimateData(ACD::tmax, std::move(d)); break;
-		case E::PRECIP: da.addClimateData(ACD::precip, std::move(d)); break;
-		case E::RELHUMID: da.addClimateData(ACD::relhumid, std::move(d)); break;
-		case E::WIND: da.addClimateData(ACD::wind, std::move(d)); break;
-		case E::GLOBRAD: da.addClimateData(ACD::globrad, std::move(d)); break;
-		default:;
-		}
-	}
+  DataAccessor da(startDate, endDate);
+  //vector<double> d(data[0].size());
+  for (int i = 0; i < header.size(); i++) {
+    auto vs = data[i];
+    vector<double> d(data[0].size());
+    //transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
+    for (int k = 0; k < vs.size(); k++)
+      d[k] = vs[k];
+    switch (header[i]) {
+      case E::TMIN: da.addClimateData(ACD::tmin, std::move(d)); break;
+      case E::TAVG: da.addClimateData(ACD::tavg, std::move(d)); break;
+      case E::TMAX: da.addClimateData(ACD::tmax, std::move(d)); break;
+      case E::PRECIP: da.addClimateData(ACD::precip, std::move(d)); break;
+      case E::RELHUMID: da.addClimateData(ACD::relhumid, std::move(d)); break;
+      case E::WIND: da.addClimateData(ACD::wind, std::move(d)); break;
+      case E::GLOBRAD: da.addClimateData(ACD::globrad, std::move(d)); break;
+      default:;
+    }
+  }
 
-	return da;
+  return da;
 }
 
 kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
 {
-	auto rs = context.getResults();
-	rs.initInfo();
-	rs.getInfo().setId("some monica_id");
-	rs.getInfo().setName("Monica capnp server");
-	rs.getInfo().setDescription("some description");
-	return kj::READY_NOW;
+  auto rs = context.getResults();
+  rs.initInfo();
+  rs.getInfo().setId("some monica_id");
+  rs.getInfo().setName("Monica capnp server");
+  rs.getInfo().setDescription("some description");
+  return kj::READY_NOW;
 }
 
 kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 {
-	debug() << ".";
+  debug() << ".";
 
-	auto envR = context.getParams().getEnv();
+  auto envR = context.getParams().getEnv();
 
-	auto runMonica = [context, envR, this](DataAccessor da = DataAccessor()) mutable {
-		string err;
-		auto rest = envR.getRest();
-		if (!rest.getStructure().isJson())
-			return Monica::Output(string("Error: 'rest' field is not valid JSON!"));
+  auto runMonica = [context, envR, this](DataAccessor da = DataAccessor()) mutable {
+    string err;
+    auto rest = envR.getRest();
+    if (!rest.getStructure().isJson()) {
+      return Monica::Output(string("Error: 'rest' field is not valid JSON!"));
+    }
 
-		const Json& envJson = Json::parse(rest.getValue().cStr(), err);
-		//cout << "runMonica: " << envJson["customId"].dump() << endl;
+    const Json& envJson = Json::parse(rest.getValue().cStr(), err);
+    //cout << "runMonica: " << envJson["customId"].dump() << endl;
 
     Env env;
     auto errors = env.merge(envJson);
 
     EResult<DataAccessor> eda;
-		if (da.isValid()) {
-			eda.result = da;
-		}	else if (!env.climateData.isValid()) {
-			if (!env.climateCSV.empty()) {
-				eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
-			}
-			else if (!env.pathsToClimateCSV.empty()) {
-				eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
-			}
-		}
+    if (da.isValid()) {
+      eda.result = da;
+    } else if (!env.climateData.isValid()) {
+      if (!env.climateCSV.empty()) {
+        eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+      } else if (!env.pathsToClimateCSV.empty()) {
+        eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+      }
+    }
 
     Monica::Output out;
     if (eda.success()) {
@@ -155,40 +153,39 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
     out.warnings = eda.warnings;
 
     return out;
-	};
+  };
 
-	if (envR.hasTimeSeries()) {
-		auto ts = envR.getTimeSeries();
-		auto rangeProm = ts.rangeRequest().send();
-		auto headerProm = ts.headerRequest().send();
-		auto dataTProm = ts.dataTRequest().send();
+  if (envR.hasTimeSeries()) {
+    auto ts = envR.getTimeSeries();
+    auto rangeProm = ts.rangeRequest().send();
+    auto headerProm = ts.headerRequest().send();
+    auto dataTProm = ts.dataTRequest().send();
 
-		return rangeProm
-			.then([KJ_MVCAP(headerProm), KJ_MVCAP(dataTProm)](auto&& rangeResponse) mutable {
-			return headerProm
-				.then([KJ_MVCAP(rangeResponse), KJ_MVCAP(dataTProm)](auto&& headerResponse) mutable {
-				return dataTProm
-					.then([KJ_MVCAP(rangeResponse), KJ_MVCAP(headerResponse)](auto&& dataTResponse) mutable {
-					auto sd = rangeResponse.getStartDate();
-					auto ed = rangeResponse.getEndDate();
-					return fromCapnpData(
-						Date(sd.getDay(), sd.getMonth(), sd.getYear()),
-						Date(ed.getDay(), ed.getMonth(), ed.getYear()),
-						headerResponse.getHeader(), dataTResponse.getData());
-				});
-			});
-		}).then([context, runMonica](DataAccessor da) mutable {
-			auto out = runMonica(da);
-			auto rs = context.getResults();
-			rs.initResult();
-			rs.getResult().setValue(out.toString());
-			});
-	}
-	else {
-		auto out = runMonica();
+    return rangeProm
+      .then([KJ_MVCAP(headerProm), KJ_MVCAP(dataTProm)](auto&& rangeResponse) mutable {
+      return headerProm
+        .then([KJ_MVCAP(rangeResponse), KJ_MVCAP(dataTProm)](auto&& headerResponse) mutable {
+        return dataTProm
+          .then([KJ_MVCAP(rangeResponse), KJ_MVCAP(headerResponse)](auto&& dataTResponse) mutable {
+          auto sd = rangeResponse.getStartDate();
+          auto ed = rangeResponse.getEndDate();
+          return fromCapnpData(
+            Date(sd.getDay(), sd.getMonth(), sd.getYear()),
+            Date(ed.getDay(), ed.getMonth(), ed.getYear()),
+            headerResponse.getHeader(), dataTResponse.getData());
+        });
+      });
+    }).then([context, runMonica](DataAccessor da) mutable {
+      auto out = runMonica(da);
+      auto rs = context.getResults();
+      rs.initResult();
+      rs.getResult().setValue(out.toString());
+            });
+  } else {
+    auto out = runMonica();
     auto rs = context.getResults();
     rs.initResult();
     rs.getResult().setValue(out.toString());
-		return kj::READY_NOW;
-	}
+    return kj::READY_NOW;
+  }
 }
