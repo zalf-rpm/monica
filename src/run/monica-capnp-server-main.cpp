@@ -45,7 +45,7 @@ using namespace Monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
-using namespace zalf::capnp;
+using namespace mas;
 
 string appName = "monica-capnp-server";
 string version = "1.0.0-beta";
@@ -224,14 +224,14 @@ int main(int argc, const char* argv[]) {
 				auto& cWaitScope = client.getWaitScope();
 
 				// Request the bootstrap capability from the server.
-				Cluster::ModelInstanceFactory::Client cap = client.getMain<Cluster::ModelInstanceFactory>();
+				rpc::Cluster::ModelInstanceFactory::Client cap = client.getMain<rpc::Cluster::ModelInstanceFactory>();
 
 				// Make a call to the capability.
-				auto request = cap.registerModelInstanceRequest<rpc::Model::EnvInstance>();
+				auto request = cap.registerModelInstanceRequest();
 				request.setInstance(runMonicaImplClient);
 				request.setRegistrationToken(registrationToken);
 				auto response = request.send().wait(cWaitScope);
-				unregister = response.asGeneric<rpc::Model::EnvInstance>().getUnregister();
+				unregister = response.getUnregister();
 
 				if (hideServer)
 					kj::NEVER_DONE.wait(cWaitScope);

@@ -58,7 +58,7 @@ using namespace Monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
-using namespace zalf::capnp;
+using namespace mas;
 
 //std::map<std::string, DataAccessor> daCache;
 
@@ -188,4 +188,10 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
     rs.getResult().setValue(out.toString());
     return kj::READY_NOW;
   }
+}
+
+kj::Promise<void> RunMonicaImpl::stop(StopContext context) //override
+{
+  exit(0);
+  return kj::READY_NOW;
 }

@@ -41,7 +41,7 @@ using namespace Monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
-using namespace zalf::capnp;
+using namespace mas;
 
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
@@ -321,7 +321,7 @@ struct ThreadContext {
 
 struct CMETRes {
 	kj::ForkedPromise<void> fp;
-	zalf::capnp::rpc::Model::EnvInstance::Client client;
+	rpc::Model::EnvInstance::Client client;
 };
 
 CMETRes

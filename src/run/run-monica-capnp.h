@@ -28,7 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-	class RunMonicaImpl final : public zalf::capnp::rpc::Model::EnvInstance::Server
+	class RunMonicaImpl final : public mas::rpc::Model::EnvInstance::Server
 	{
 		// Implementation of the Model::Instance Cap'n Proto interface
 
@@ -40,6 +40,8 @@ namespace Monica
 		kj::Promise<void> info(InfoContext context) override;
 
 		kj::Promise<void> run(RunContext context) override;
+
+    kj::Promise<void> stop(StopContext context) override;
 	};
 
 }
