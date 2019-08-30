@@ -192,6 +192,8 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 
 kj::Promise<void> RunMonicaImpl::stop(StopContext context) //override
 {
-  exit(0);
+  cout << "Stop received. Exiting. cout" << endl;
+  KJ_LOG(INFO, "Stop received. Exiting.");
+  unregister.callRequest().send().then([](auto&&) { exit(0); });
   return kj::READY_NOW;
 }

@@ -15,18 +15,19 @@
 # Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import os
-import sys
-import json
-import time
-
 import monica_io3
-
+import time
+import json
+import sys
+import os
 import capnp
-capnp.add_import_hook(additional_paths=["../../../../vcpkg/packages/capnproto_x64-windows-static/include/", "../../../../capnproto_schemas/"])
+capnp.add_import_hook(additional_paths=[
+                      "../../../../vcpkg/packages/capnproto_x64-windows-static/include/", "../../../../capnproto_schemas/"])
 import common_capnp
 import climate_data_capnp
 import cluster_admin_service_capnp
+import model_capnp
+
 
 def main():
 
@@ -37,7 +38,7 @@ def main():
         "crop.json": os.path.join(os.path.dirname(__file__), '../crop-min.json'),
         "site.json": os.path.join(os.path.dirname(__file__), '../site-min.json'),
         "climate.csv": os.path.join(os.path.dirname(__file__), '../climate-min.csv'),
-        "shared_id": None 
+        "shared_id": None
     }
     # read commandline args only if script is invoked directly from commandline
     if len(sys.argv) > 1 and __name__ == "__main__":
@@ -61,25 +62,27 @@ def main():
         "crop": crop_json,
         "site": site_json,
         "sim": sim_json,
-        "climate": "" #climate_csv
+        "climate": ""  # climate_csv
     })
     #env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
-    #env["pathToClimateCSV"] = config["climate.csv"]
-
+    env["pathToClimateCSV"] = "blbla"  # config["climate.csv"]
 
     #rust_client = capnp.TwoPartyClient("localhost:4000")
     #client = capnp.TwoPartyClient("localhost:8000")
 
+    csv_time_series = capnp.TwoPartyClient("localhost:11000").bootstrap().cast_as(
+        climate_data_capnp.Climate.TimeSeries)
+    #monica = capnp.TwoPartyClient("localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+
     master_available = False
     while not master_available:
         try:
-            admin_master = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(cluster_admin_service_capnp.Cluster.AdminMaster)
+            admin_master = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(
+                cluster_admin_service_capnp.Cluster.AdminMaster)
             master_available = True
         except:
-            #time.sleep(1)
+            # time.sleep(1)
             pass
-
-    csv_time_series = capnp.TwoPartyClient("localhost:11000").bootstrap().cast_as(climate_data_capnp.Climate.TimeSeries)
 
     model_factories = admin_master.availableModels().wait().factories
     if len(model_factories) > 0:
@@ -89,52 +92,57 @@ def main():
         # get instance id
         print(model_factory.modelId().wait().id)
 
-        if True:
+        if False:  # True:
             # get a single instance
             print("requesting single instance ...")
             cap_holder = model_factory.newInstance().instance
+            #cap_holder = model_factory.restoreSturdyRef("8a88e1f6-6eb3-430e-bdf6-7bb19e9283ba:0").cap
             monica = cap_holder.cap().wait().cap.as_interface(model_capnp.Model.EnvInstance)
             sturdy_ref = cap_holder.save().wait().sturdyRef
-            
-            #monica = cap_holder.cap.as_interface(model_capnp.Model.EnvInstance)
-            
+            print("single instance sturdy ref:", sturdy_ref)
+
             proms = []
             print("running jobs on single instance ...")
             for i in range(5):
                 env["customId"] = str(i)
-                proms.append(monica.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
-            
+                proms.append(monica.run({"rest": {"value": json.dumps(env), "structure": {
+                             "json": None}}, "timeSeries": csv_time_series}))
+
             print("results from single instance ...")
             for res in capnp.join_promises(proms).wait():
                 if len(res.result.value) > 0:
-                    print(json.loads(res.result.value)["customId"]) #.result["customId"])
+                    # .result["customId"])
+                    print(json.loads(res.result.value)["customId"])
 
-            
-            cap_holder.free.call().wait()
-            #del cap_holder.free
+            # cap_holder.release().wait()
 
         if True:
             # get multiple instances
             print("requesting multiple instances ...")
-            cap_holders = model_factory.newInstances(5).wait().instances
-            monicas = []
-            for chs in cap_holders:
-                monicas.append(chs.cap.as_interface(model_capnp.Model.EnvInstance))
+            #cap_holders = model_factory.newInstances(5).wait().instances
+            cap_holders = model_factory.newInstances(5).instances
+            entries = cap_holders.cap().wait().cap
+            monica_proms = []
+            for ent in entries:
+                monica_proms.append(ent.entry.cap().then(
+                    lambda res: res.cap.as_interface(model_capnp.Model.EnvInstance)))
+
+            monicas = capnp.join_promises(monica_proms).wait()
 
             proms = []
             print("running jobs on multiple instances ...")
             for i in range(len(monicas)):
                 env["customId"] = str(i)
-                proms.append(monicas[i].run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
-            
+                proms.append(monicas[i].run({"rest": {"value": json.dumps(
+                    env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
+
             print("results from multiple instances ...")
             for res in capnp.join_promises(proms).wait():
                 if len(res.result.value) > 0:
-                    print(json.loads(res.result.value)["customId"]) #.result["customId"])
-
+                    # .result["customId"])
+                    print(json.loads(res.result.value)["customId"])
 
     return
-
 
     """
     climate_service = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(climate_data_capnp.Climate.DataService)
@@ -167,40 +175,42 @@ def main():
                 ts.simulationInfo().then(lambda r: print(r.simInfo)).wait()
     """
 
-    csv_time_series = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(climate_data_capnp.Climate.TimeSeries)
+    csv_time_series = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(
+        climate_data_capnp.Climate.TimeSeries)
     #header = csv_time_series.header().wait().header
-    monica_instance = capnp.TwoPartyClient("localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+    monica_instance = capnp.TwoPartyClient(
+        "localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
     #monica_instance = capnp.TwoPartyClient("login01.cluster.zalf.de:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
-    
+
     proms = []
     for i in range(10):
         env["customId"] = str(i)
-        proms.append(monica_instance.run({"rest": {"value": json.dumps(env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
+        proms.append(monica_instance.run({"rest": {"value": json.dumps(
+            env), "structure": {"json": None}}, "timeSeries": csv_time_series}))
 
-    
-    for i in range (10):
-        ps = proms[i*50:i*50+50]
+    for i in range(10):
+        ps = proms[i * 50:i * 50 + 50]
 
         for res in capnp.join_promises(ps).wait():
             if len(res.result.value) > 0:
-                print(json.loads(res.result.value)["customId"]) #.result["customId"])
+                # .result["customId"])
+                print(json.loads(res.result.value)["customId"])
 
     return
 
     reslist = capnp.join_promises(proms).wait()
-    #reslist.wait()
-    
+    # reslist.wait()
+
     for res in reslist:
-        print(json.loads(res.result.value)["customId"]) #.result["customId"])
+        print(json.loads(res.result.value)["customId"])  # .result["customId"])
 
     #        .then(lambda res: setattr(_context.results, "result", \
-    #           self.calc_yearly_tavg(res[2].startDate, res[2].endDate, res[0].header, res[1].data))) 
+    #           self.calc_yearly_tavg(res[2].startDate, res[2].endDate, res[0].header, res[1].data)))
 
     #result_j = monica_instance.runEnv({"jsonEnv": json.dumps(env), "timeSeries": csv_time_series}).wait().result
     #result = json.loads(result_j)
 
     #print("result:", result)
-
 
     """
     #req = model.run_request()
@@ -211,7 +221,7 @@ def main():
     result = model.run(tavg_ts).wait().result
     end_time = time.perf_counter()
     print("rust:", result, "time:", (end_time - start_time), "s")
-    """     
+    """
 
     """
     models = climate_service.models().wait().models
