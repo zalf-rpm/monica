@@ -32,6 +32,7 @@ class RunMonicaImpl final : public mas::rpc::Model::EnvInstance::Server {
   // Implementation of the Model::Instance Cap'n Proto interface
   bool _startedServerInDebugMode{ false };
   mas::rpc::Common::Callback::Client unregister{ nullptr };
+  int idCount{ 0 };
 
 public:
   RunMonicaImpl(bool startedServerInDebugMode = false) : _startedServerInDebugMode(startedServerInDebugMode) {}

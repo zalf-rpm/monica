@@ -53,7 +53,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "run-monica-capnp.h"
 
-using namespace std;
+#include "common/sole.hpp"
+
+//using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace json11;
@@ -76,7 +78,7 @@ DataAccessor fromCapnpData(
   //vector<double> d(data[0].size());
   for (int i = 0; i < header.size(); i++) {
     auto vs = data[i];
-    vector<double> d(data[0].size());
+    std::vector<double> d(data[0].size());
     //transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
     for (int k = 0; k < vs.size(); k++)
       d[k] = vs[k];
@@ -99,7 +101,7 @@ kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
 {
   auto rs = context.getResults();
   rs.initInfo();
-  rs.getInfo().setId("some monica_id");
+  rs.getInfo().setId("monica_" + sole::uuid4().str());
   rs.getInfo().setName("Monica capnp server");
   rs.getInfo().setDescription("some description");
   return kj::READY_NOW;
@@ -112,10 +114,10 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
   auto envR = context.getParams().getEnv();
 
   auto runMonica = [context, envR, this](DataAccessor da = DataAccessor()) mutable {
-    string err;
+    std::string err;
     auto rest = envR.getRest();
     if (!rest.getStructure().isJson()) {
-      return Monica::Output(string("Error: 'rest' field is not valid JSON!"));
+      return Monica::Output(std::string("Error: 'rest' field is not valid JSON!"));
     }
 
     const Json& envJson = Json::parse(rest.getValue().cStr(), err);
@@ -142,7 +144,7 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
       env.debugMode = _startedServerInDebugMode && env.debugMode;
 
       env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-        [](string soilTexture, int distance) {
+        [](std::string soilTexture, int distance) {
         return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
       };
 
@@ -192,8 +194,10 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 
 kj::Promise<void> RunMonicaImpl::stop(StopContext context) //override
 {
-  cout << "Stop received. Exiting. cout" << endl;
+  std::cout << "Stop received. Exiting. cout" << std::endl;
   KJ_LOG(INFO, "Stop received. Exiting.");
-  unregister.callRequest().send().then([](auto&&) { exit(0); });
-  return kj::READY_NOW;
+  return unregister.callRequest().send().then([](auto&&) { 
+    std::cout << "exit(0)" << std::endl;
+    exit(0); 
+                                              });
 }

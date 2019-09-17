@@ -38,7 +38,9 @@ def main():
         "crop.json": os.path.join(os.path.dirname(__file__), '../crop-min.json'),
         "site.json": os.path.join(os.path.dirname(__file__), '../site-min.json'),
         "climate.csv": os.path.join(os.path.dirname(__file__), '../climate-min.csv'),
-        "shared_id": None
+        "shared_id": None,
+        "climate_service_address": "10.10.24.186:11000",
+        "admin_master_address": "10.10.24.186:8000"
     }
     # read commandline args only if script is invoked directly from commandline
     if len(sys.argv) > 1 and __name__ == "__main__":
@@ -64,20 +66,26 @@ def main():
         "sim": sim_json,
         "climate": ""  # climate_csv
     })
-    #env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
+    # env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
     env["pathToClimateCSV"] = "blbla"  # config["climate.csv"]
 
-    #rust_client = capnp.TwoPartyClient("localhost:4000")
-    #client = capnp.TwoPartyClient("localhost:8000")
+    with open("env.json", "r") as _:
+        env = json.load(_)
 
-    csv_time_series = capnp.TwoPartyClient("localhost:11000").bootstrap().cast_as(
+    # with open("env.json", "w") as _:
+    #    _.write(json.dumps(env))
+
+    # rust_client = capnp.TwoPartyClient("localhost:4000")
+    # client = capnp.TwoPartyClient("localhost:8000")
+
+    csv_time_series = capnp.TwoPartyClient(config["climate_service_address"]).bootstrap().cast_as(
         climate_data_capnp.Climate.TimeSeries)
-    #monica = capnp.TwoPartyClient("localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+    # monica = capnp.TwoPartyClient("localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
 
     master_available = False
     while not master_available:
         try:
-            admin_master = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(
+            admin_master = capnp.TwoPartyClient(config["admin_master_address"]).bootstrap().cast_as(
                 cluster_admin_service_capnp.Cluster.AdminMaster)
             master_available = True
         except:
@@ -92,11 +100,12 @@ def main():
         # get instance id
         print(model_factory.modelId().wait().id)
 
-        if False:  # True:
+        if True:
             # get a single instance
             print("requesting single instance ...")
             cap_holder = model_factory.newInstance().instance
-            #cap_holder = model_factory.restoreSturdyRef("8a88e1f6-6eb3-430e-bdf6-7bb19e9283ba:0").cap
+            # cap_holder = model_factory.restoreSturdyRef(
+            #    "b37e2e43-8a72-4dc0-8cb1-2bdc416d8148").cap
             monica = cap_holder.cap().wait().cap.as_interface(model_capnp.Model.EnvInstance)
             sturdy_ref = cap_holder.save().wait().sturdyRef
             print("single instance sturdy ref:", sturdy_ref)
@@ -119,9 +128,18 @@ def main():
         if True:
             # get multiple instances
             print("requesting multiple instances ...")
-            #cap_holders = model_factory.newInstances(5).wait().instances
             cap_holders = model_factory.newInstances(5).instances
-            entries = cap_holders.cap().wait().cap
+            restore = True
+            # cap_holders = model_factory.restoreSturdyRef(
+            #    "96495c8f-e241-4289-bee4-f314fef5b16d").cap
+            sturdy_ref_p = cap_holders.save()
+            entries_p = cap_holders.cap()
+            sturdy_ref_p, entries_p = capnp.join_promises(
+                [sturdy_ref_p, entries_p]).wait()
+            entries = entries_p.cap
+
+            sturdy_ref = sturdy_ref_p.sturdyRef
+            print("multi instance sturdy ref:", sturdy_ref)
             monica_proms = []
             for ent in entries:
                 monica_proms.append(ent.entry.cap().then(
@@ -177,10 +195,10 @@ def main():
 
     csv_time_series = capnp.TwoPartyClient("localhost:8000").bootstrap().cast_as(
         climate_data_capnp.Climate.TimeSeries)
-    #header = csv_time_series.header().wait().header
+    # header = csv_time_series.header().wait().header
     monica_instance = capnp.TwoPartyClient(
         "localhost:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
-    #monica_instance = capnp.TwoPartyClient("login01.cluster.zalf.de:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
+    # monica_instance = capnp.TwoPartyClient("login01.cluster.zalf.de:9999").bootstrap().cast_as(model_capnp.Model.EnvInstance)
 
     proms = []
     for i in range(10):
@@ -207,15 +225,15 @@ def main():
     #        .then(lambda res: setattr(_context.results, "result", \
     #           self.calc_yearly_tavg(res[2].startDate, res[2].endDate, res[0].header, res[1].data)))
 
-    #result_j = monica_instance.runEnv({"jsonEnv": json.dumps(env), "timeSeries": csv_time_series}).wait().result
-    #result = json.loads(result_j)
+    # result_j = monica_instance.runEnv({"jsonEnv": json.dumps(env), "timeSeries": csv_time_series}).wait().result
+    # result = json.loads(result_j)
 
-    #print("result:", result)
+    # print("result:", result)
 
     """
-    #req = model.run_request()
-    #req.data = ts
-    #result = req.send().wait().result
+    # req = model.run_request()
+    # req.data = ts
+    # result = req.send().wait().result
     tavg_ts = ts.subheader(["tavg"]).wait().timeSeries
     start_time = time.perf_counter()
     result = model.run(tavg_ts).wait().result
@@ -227,32 +245,32 @@ def main():
     models = climate_service.models().wait().models
     if len(models) > 0:
         model = models[0]
-        #req = model.run_request()
-        #req.data = ts
-        #result = req.send().wait().result
+        # req = model.run_request()
+        # req.data = ts
+        # result = req.send().wait().result
         tavg_ts = ts.subheader(["tavg"]).wait().timeSeries
         start_time = time.perf_counter()
         result = model.run(tavg_ts).wait().result
         end_time = time.perf_counter()
         print("python:", result, "time:", (end_time - start_time), "s")
 
-    #text_prom = data_services.getText_request().send()
-    #text = text_prom.wait()
+    # text_prom = data_services.getText_request().send()
+    # text = text_prom.wait()
 
-    #gk_coord = data_services.getCoord_request().send().wait()
+    # gk_coord = data_services.getCoord_request().send().wait()
 
-    #req = data_services.getSoilDataService_request()
-    #req.id = 1
-    #sds_prom = req.send()
-    #sds = sds_prom.wait()
-    #soil_req = sds_prom.soilDataService.getSoilIdAt_request()
-    #soil_req.gkCoord.meridianNo = 5
-    #soil_req.gkCoord.r = 1000
-    #soil_req.gkCoord.h = 2000
-    #soilId_prom = soil_req.send()
-    #resp = soilId_prom.wait()
+    # req = data_services.getSoilDataService_request()
+    # req.id = 1
+    # sds_prom = req.send()
+    # sds = sds_prom.wait()
+    # soil_req = sds_prom.soilDataService.getSoilIdAt_request()
+    # soil_req.gkCoord.meridianNo = 5
+    # soil_req.gkCoord.r = 1000
+    # soil_req.gkCoord.h = 2000
+    # soilId_prom = soil_req.send()
+    # resp = soilId_prom.wait()
     
-    #print(resp.soilId)
+    # print(resp.soilId)
     """
 
 

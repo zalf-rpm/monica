@@ -165,6 +165,7 @@ int main(int argc, const char* argv[]) {
     auto runMonicaImpl_ = kj::heap<RunMonicaImpl>(startedServerInDebugMode);
     auto& runMonicaImpl = *runMonicaImpl_;
     rpc::Model::EnvInstance::Client runMonicaImplClient = kj::mv(runMonicaImpl_); // kj::heap<RunMonicaImpl>(startedServerInDebugMode);
+    debug() << "created monica" << endl;
 
     mas::rpc::Common::Callback::Client unregister(nullptr);
 
@@ -200,6 +201,7 @@ int main(int argc, const char* argv[]) {
 
         // Request the bootstrap capability from the server.
         rpc::Cluster::ModelInstanceFactory::Client cap = client.getMain<rpc::Cluster::ModelInstanceFactory>();
+        debug() << "got factory cap" << endl;
 
         // Make a call to the capability.
         auto request = cap.registerModelInstanceRequest();
@@ -208,6 +210,7 @@ int main(int argc, const char* argv[]) {
         auto response = request.send().wait(cWaitScope);
         unregister = response.getUnregister();
         runMonicaImpl.setUnregister(unregister);
+        debug() << "registered at factory" << endl;
 
         //if (hideServer)
         kj::NEVER_DONE.wait(cWaitScope);
