@@ -225,9 +225,9 @@ namespace Monica
 		double pc_EarlyRefLeafExp{ 12.0 }; //!< 12 = wheat (first guess)
 		double pc_RefLeafExp{ 20.0 }; //!< 20 = wheat, 22 = maize (first guess)
 
-		double pc_MinTempDev_WE;
-		double pc_OptTempDev_WE;
-		double pc_MaxTempDev_WE;
+    double pc_MinTempDev_WE{ 0.0 };
+    double pc_OptTempDev_WE{ 0.0 };
+    double pc_MaxTempDev_WE{ 0.0 };
 	};
 
 	typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
@@ -766,6 +766,55 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+  struct DLL_API StixParameters : public Tools::Json11Serializable {
+    StixParameters() {}
+
+    StixParameters(json11::Json object);
+
+    virtual Tools::Errors merge(json11::Json j);
+
+    virtual json11::Json to_json() const;
+
+    int code_vnit{ 1 };
+    int code_tnit{ 2 };
+    int code_rationit{ 2 };
+    int code_hourly_wfps_nit{ 2 };
+    int code_pdenit{ 1 };
+    int code_ratiodenit{ 2 };
+    int code_hourly_wfps_denit{ 2 };
+    double hminn{ 0.3 };
+    double hoptn{ 0.9 };
+    double pHminnit{ 4.0 }; 
+    double pHmaxnit{ 7.2 };
+    double nh4_min{ 1.0 }; // [mg NH4-N/kg soil]
+    double pHminden{ 7.2 }; 
+    double pHmaxden{ 9.2 };
+    double wfpsc{ 0.62 }; 
+    double tdenitopt_gauss{ 47 }; // [°C]
+    double scale_tdenitopt{ 25 }; // [°C]
+    double Kd{ 148 }; // [mg NO3-N/L]
+    double k_desat{ 3.0 }; // [1/day]
+    double fnx{ 0.8 }; // [1/day]
+    double vnitmax{ 27.3 }; // [mg NH4-N/kg soil/day]
+    double Kamm{ 24 }; // [mg NH4-N/L]
+    double tnitmin{ 5.0 }; // [°C]
+    double tnitopt{ 30.0 }; // [°C]
+    double tnitop2{ 35.0 }; // [°C]
+    double tnitmax{ 58.0 }; // [°C]
+    double tnitopt_gauss{ 32.5 }; // [°C"]
+    double scale_tnitopt{ 16.0 }; // [°C]
+    double rationit{ 0.0016 }; 
+    double cmin_pdenit{ 1.0 }; // [% [0-100]]
+    double cmax_pdenit{ 6.0 }; // [% [0-100]]
+    double min_pdenit{ 1.0 }; // [mg N/Kg soil/day]
+    double max_pdenit{ 20.0 }; // [mg N/kg soil/day]
+    double ratiodenit{ 0.2 }; 
+    double profdenit{ 20 }; // [cm]
+    double vpotdenit{ 2.0 }; // [kg N/ha/day]
+  };
+
+  //----------------------------------------------------------------------------
+
 	/**
 	 * Class that holds information about user-defined soil organic parameters.
 	 * @author Claas Nendel
@@ -815,8 +864,9 @@ namespace Monica
 		double po_AtmosphericResistance{ 0.0025 }; // 0.0025 [s m-1], from Sadeghi et al. 1988
 		double po_N2OProductionRate{ 0.5 }; // 0.5 [d-1]
 		double po_Inhibitor_NH3{ 1.0 }; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
-
 		double ps_MaxMineralisationDepth{ 0.4 };
+
+    StixParameters stixParams;
 	};
 
 	//----------------------------------------------------------------------------

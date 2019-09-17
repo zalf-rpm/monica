@@ -1175,6 +1175,97 @@ json11::Json UserSoilTransportParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+StixParameters::StixParameters(json11::Json j) {
+  merge(j);
+}
+
+Errors StixParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
+
+  set_int_value(code_vnit, j, "code_vnit");
+  set_int_value(code_tnit, j, "code_tnit");
+  set_int_value(code_rationit, j, "code_rationit");
+  set_int_value(code_hourly_wfps_nit, j, "code_hourly_wfps_nit");
+  set_int_value(code_pdenit, j, "code_pdenit");
+  set_int_value(code_ratiodenit, j, "code_ratiodenit");
+  set_int_value(code_hourly_wfps_denit, j, "code_hourly_wfps_denit");
+  set_double_value(hminn, j, "hminn");
+  set_double_value(hoptn, j, "hoptn");
+  set_double_value(pHminnit, j, "pHminnit");
+  set_double_value(pHmaxnit, j, "pHmaxnit");
+  set_double_value(nh4_min, j, "nh4_min");
+  set_double_value(pHminden, j, "pHminden");
+  set_double_value(pHmaxden, j, "pHmaxden");
+  set_double_value(wfpsc, j, "wfpsc");
+  set_double_value(tdenitopt_gauss, j, "tdenitopt_gauss");
+  set_double_value(scale_tdenitopt, j, "scale_tdenitopt");
+  set_double_value(Kd, j, "Kd");
+  set_double_value(k_desat, j, "k_desat");
+  set_double_value(fnx, j, "fnx");
+  set_double_value(vnitmax, j, "vnitmax");
+  set_double_value(Kamm, j, "Kamm");
+  set_double_value(tnitmin, j, "tnitmin");
+  set_double_value(tnitopt, j, "tnitopt");
+  set_double_value(tnitop2, j, "tnitop2");
+  set_double_value(tnitmax, j, "tnitmax");
+  set_double_value(tnitopt_gauss, j, "tnitopt_gauss");
+  set_double_value(scale_tnitopt, j, "scale_tnitopt");
+  set_double_value(rationit, j, "rationit");
+  set_double_value(cmin_pdenit, j, "cmin_pdenit");
+  set_double_value(cmax_pdenit, j, "cmax_pdenit");
+  set_double_value(min_pdenit, j, "min_pdenit");
+  set_double_value(max_pdenit, j, "max_pdenit");
+  set_double_value(ratiodenit, j, "ratiodenit");
+  set_double_value(profdenit, j, "profdenit");
+  set_double_value(vpotdenit, j, "vpotdenit");
+
+  return res;
+}
+
+json11::Json StixParameters::to_json() const {
+  return json11::Json::object
+  {{"type", "StixParameters"}
+  ,{"code_vnit", J11Array {code_vnit, ""}}
+  ,{"code_tnit", J11Array {code_tnit, ""}}
+  ,{"code_rationit", J11Array {code_rationit, ""}}
+  ,{"code_hourly_wfps_nit", J11Array {code_hourly_wfps_nit, ""}}
+  ,{"code_pdenit", J11Array {code_pdenit, ""}}
+  ,{"code_ratiodenit", J11Array {code_ratiodenit, ""}}
+  ,{"code_hourly_wfps_denit", J11Array {code_hourly_wfps_denit, ""}}
+  ,{"hminn", J11Array {hminn, ""}}
+  ,{"hoptn", J11Array {hoptn, ""}}
+  ,{"pHminnit", J11Array {pHminnit, ""}}
+  ,{"pHmaxnit", J11Array {pHmaxnit, ""}}
+  ,{"nh4_min", J11Array {nh4_min, ""}}
+  ,{"pHminden", J11Array {pHminden, ""}}
+  ,{"pHmaxden", J11Array {pHmaxden, ""}}
+  ,{"wfpsc", J11Array {wfpsc, ""}}
+  ,{"tdenitopt_gauss", J11Array {tdenitopt_gauss, ""}}
+  ,{"scale_tdenitopt", J11Array {scale_tdenitopt, ""}}
+  ,{"Kd", J11Array {Kd, ""}}
+  ,{"k_desat", J11Array {k_desat, ""}}
+  ,{"fnx", J11Array {fnx, ""}}
+  ,{"vnitmax", J11Array {vnitmax, ""}}
+  ,{"Kamm", J11Array {Kamm, ""}}
+  ,{"tnitmin", J11Array {tnitmin, ""}}
+  ,{"tnitopt", J11Array {tnitopt, ""}}
+  ,{"tnitop2", J11Array {tnitop2, ""}}
+  ,{"tnitmax", J11Array {tnitmax, ""}}
+  ,{"tnitopt_gauss", J11Array {tnitopt_gauss, ""}}
+  ,{"scale_tnitopt", J11Array {scale_tnitopt, ""}}
+  ,{"rationit", J11Array {rationit, ""}}
+  ,{"cmin_pdenit", J11Array {cmin_pdenit, ""}}
+  ,{"cmax_pdenit", J11Array {cmax_pdenit, ""}}
+  ,{"min_pdenit", J11Array {min_pdenit, ""}}
+  ,{"max_pdenit", J11Array {max_pdenit, ""}}
+  ,{"ratiodenit", J11Array {ratiodenit, ""}}
+  ,{"profdenit", J11Array {profdenit, ""}}
+  ,{"vpotdenit", vpotdenit}
+  };
+}
+
+//-----------------------------------------------------------------------------
+
 UserSoilOrganicParameters::UserSoilOrganicParameters(json11::Json j)
 {
   merge(j);
@@ -1220,6 +1311,8 @@ Errors UserSoilOrganicParameters::merge(json11::Json j)
   set_double_value(po_N2OProductionRate, j, "N2OProductionRate");
   set_double_value(po_Inhibitor_NH3, j, "Inhibitor_NH3");
   set_double_value(ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
+
+  if (j["stix"].is_object()) res.append(stixParams.merge(j["stix"]));
 
 	return res;
 }
