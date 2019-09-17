@@ -1146,26 +1146,25 @@ double fWFPS(double swc, double hminn, double hoptn, double fc, double sat) {
 
 } // namespace nit
 
-double nitrification(const StixParameters& ps, 
-                     double NH4,
-                     double pH, 
-                     double soilT, 
-                     double soilwaterContent, 
-                     double fc, 
-                     double sat) {
+// nitrification
+double vnit(const StixParameters& ps, 
+            double NH4,
+            double pH,
+            double soilT,
+            double soilwaterContent,
+            double fc,
+            double sat) {
   auto vnitpot = 0.0;
   auto fNH4res = 0.0;
   switch (ps.code_vnit) {
     case 1:
-    {
       vnitpot = ps.fnx * (NH4 - ps.nh4_min);
       fNH4res = 1;
-    } break;
+      break;
     case 2:
-    {
       vnitpot = ps.vnitmax;
       fNH4res = nit::fNH4(NH4, ps.nh4_min, soilwaterContent, ps.Kamm);
-    } break;
+      break;
     default:;
   }
 
@@ -1186,9 +1185,27 @@ double nitrification(const StixParameters& ps,
 
 namespace denit {
 
+double fNO3(double NO3, double w, double Kd) {
+  return NO3 / (NO3 + (w * Kd));
+}
+
+double fT(double t, double tdenitopt_gauss, double scale_tdenitopt) {
+  auto delta = t - tdenitopt_gauss; 
+  return exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt));
+}
+
+double fWFPS(double wfps, double wfpsc) {
+  return pow((wfps - wfpsc) / (1 - wfpsc), 1.74);
+}
+
 } // namespace denit
 
-double denitrification(const StixParameters& ps, double corg) {
+// denitrification
+double vdenit(const StixParameters& ps, 
+              double corg,
+              double NO3,
+              double soilT,
+              double soilwaterContent) {
   auto vdenitpot = 0.0;
   switch (ps.code_pdenit) {
     case 1: vdenitpot = ps.vpotdenit; break;
@@ -1198,13 +1215,39 @@ double denitrification(const StixParameters& ps, double corg) {
   
   return
     vdenitpot
-    * denit::fNO3()
-    * denit::fT()
-    * denit::fWFPS();
+    * denit::fNO3(NO3, soilwaterContent, ps.Kd)
+    * denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt)
+    * denit::fWFPS(soilwaterContent, ps.wfpsc);
 }
 
-double N20() {
+namespace n2o {
 
+}
+
+double N20(const StixParameters& ps, 
+           double wfps) {
+  
+  auto z = 0;
+  switch (ps.code_rationit) {
+    case 1: z = ps.rationit; break;
+    case 2: z = 0.16 * (0.4 * wfps - 1.04) / (wfps - 1.04); break;
+    default:;
+  }
+
+  auto r = 0;
+  switch (ps.code_ratiodenit) {
+    case 1: r = ps.ratiodenit; break;
+    case 2:
+    default:;
+  }
+
+  auto N2Onit = z * vnit * N2Odenit;
+  auto N2Onit_2 = r * vdenit;
+  
+  return
+    z
+    * vnit
+    * N2Odenit;
 }
 
 } // namespace stix
