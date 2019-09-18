@@ -109,6 +109,7 @@ namespace Monica
     void fo_Nitrification();
     void fo_Denitrification();
     double fo_N2OProduction();
+    double fo_stics_N2OProduction();
     void fo_PoolUpdate();
     double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
     double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);

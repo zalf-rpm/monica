@@ -19,15 +19,17 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  * @file soilorganic.cpp
  */
 
+#include "soilorganic.h"
+
 #include <algorithm>
 #include <cmath>
 
-#include "soilorganic.h"
 #include "soilcolumn.h"
 #include "monica-model.h"
 #include "crop-growth.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
+#include "stics-nit-denit-n2o.h"
 
 using namespace std;
 using namespace Monica;
@@ -143,7 +145,9 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   fo_Volatilisation(addedOrganicMatter, vw_MeanAirTemperature, vw_WindSpeed);
   fo_Nitrification();
   fo_Denitrification();
-  vo_N2O_Produced = fo_N2OProduction();
+  vo_N2O_Produced = organicPs.sticsParams.use
+    ? fo_stics_N2OProduction()
+    : fo_N2OProduction();
   fo_PoolUpdate();
 
   vo_NetEcosystemProduction =
@@ -1096,192 +1100,6 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
   }
 }
 
-namespace stics {
-
-double inline stepwiseLinearFunction3(double x,
-                                      double xmin,
-                                      double xmax, 
-                                      double ymin = 0.0, 
-                                      double ymax = 1.0) {
-  if (x < xmin) return ymin;
-  if (x > xmax) return ymax;
-  return ymin + (ymax - ymin) / (xmax - xmin) * (x - xmin);
-}
-
-inline double stepwiseLinearFunction4(double x, 
-                                      double xmin, 
-                                      double x1, 
-                                      double x2, 
-                                      double xmax, 
-                                      double ymin = 0.0, 
-                                      double ymax = 1.0) {
-  if (x <= xmin) return ymin;
-  if (xmin < x && x < x1) return ymin + (ymax - ymin) / (x1 - xmin) * (x - xmin);
-  if (x1 <= x && x <= x2) return ymax;
-  return ymax - ((ymax - ymin) / (xmax - x2) * (x - x2));
-}
-
-namespace nit {
-
-double fNH4(double NH4, double nh4_min, double w, double Kamm) {
-  return (NH4 - nh4_min) / ((NH4 - nh4_min) + (w * Kamm));
-}
-
-double fpH(double pHminnit, double pH, double pHmaxnit) {
-  return stepwiseLinearFunction3(pH, pHminnit, pHmaxnit);
-}
-
-double fTgauss(double t, double tnitopt_gauss, double scale_tnitopt) {
-  return exp(-1 * (t - (tnitopt_gauss * tnitopt_gauss)) / (scale_tnitopt * scale_tnitopt));
-}
-
-
-double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2, double tnitmax) {
-  return stepwiseLinearFunction4(t, tnitmin, tnitopt, tnitopt2, tnitmax);
-}
-
-double fWFPS(double wfps, double hminn, double hoptn, double fc, double sat) {
-  return stepwiseLinearFunction4(wfps, hminn, hoptn, fc, sat);
-}
-
-} // namespace nit
-
-// nitrification
-double vnit(const SticsParameters& ps, 
-            double NH4,
-            double pH,
-            double soilT,
-            double wfps,
-            double soilwaterContent,
-            double fc,
-            double sat) {
-  auto vnitpot = 0.0;
-  auto fNH4res = 0.0;
-  switch (ps.code_vnit) {
-    case 1:
-      vnitpot = ps.fnx * (NH4 - ps.nh4_min);
-      fNH4res = 1;
-      break;
-    case 2:
-      vnitpot = ps.vnitmax;
-      fNH4res = nit::fNH4(NH4, ps.nh4_min, soilwaterContent, ps.Kamm);
-      break;
-    default:;
-  }
-
-  auto fTres = 0;
-  switch (ps.code_tnit) {
-    case 1: fTres = nit::fTstep(soilT, ps.tnitmin, ps.tnitopt, ps.tnitop2, ps.tnitmax); break;
-    case 2: fTres = nit::fTgauss(soilT, ps.tnitopt_gauss, ps.scale_tnitopt); break;
-    default:;
-  }
-
-  return 
-    vnitpot
-    * fNH4res
-    * nit::fpH(ps.pHminnit, pH, ps.pHmaxnit)
-    * fTres
-    * nit::fWFPS(wfps, ps.hminn, ps.hoptn, fc, sat);
-}
-
-namespace denit {
-
-double fNO3(double NO3, double w, double Kd) {
-  return NO3 / (NO3 + (w * Kd));
-}
-
-double fT(double t, double tdenitopt_gauss, double scale_tdenitopt) {
-  auto delta = t - tdenitopt_gauss; 
-  return exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt));
-}
-
-// water-filled pore space
-double fWFPS(double wfps, double wfpsc) {
-  return pow((wfps - wfpsc) / (1 - wfpsc), 1.74);
-}
-
-} // namespace denit
-
-// denitrification
-double vdenit(const SticsParameters& ps, 
-              double corg,
-              double NO3,
-              double soilT,
-              double wfps,
-              double soilwaterContent) {
-  auto vdenitpot = 0.0;
-  switch (ps.code_pdenit) {
-    case 1: vdenitpot = ps.vpotdenit; break;
-    case 2: vdenitpot = stepwiseLinearFunction3(corg, ps.cmin_pdenit, ps.cmax_pdenit, ps.min_pdenit, ps.max_pdenit); break;
-    default:;
-  }
-  
-  return
-    vdenitpot
-    * denit::fNO3(NO3, soilwaterContent, ps.Kd)
-    * denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt)
-    * denit::fWFPS(wfps, ps.wfpsc);
-}
-
-namespace N2O {
-
-double fpH(double pH, double pHminden, double pHmaxden) {
-  return stepwiseLinearFunction3(pH, pHminden, pHmaxden, 1.0, 0.0);
-}
-
-double fWFPS(double WFPS, double wfpsc) {
-  return 1 - (WFPS - wfpsc) / (1 - wfpsc);
-}
-
-double rcor(double wfpsc, double pH, double pHminden, double pHmaxden) {
-  auto rest = fpH(pH, pHminden, pHmaxden);
-  return rest / fWFPS(0.815, wfpsc);
-}
-
-double fNO3(double NO3) {
-  return NO3 / (NO3 + 1);
-}
-
-}
-
-double N20(const SticsParameters& ps, 
-           double corg,
-           double NO3,
-           double soilT,
-           double wfps,
-           double soilwaterContent,
-           double NH4,
-           double pH,
-           double fc,
-           double sat) {
-  
-  auto z = 0;
-  switch (ps.code_rationit) {
-    case 1: z = ps.rationit; break;
-    case 2: z = 0.16 * (0.4 * wfps - 1.04) / (wfps - 1.04); break;
-    default:;
-  }
-
-  auto r = 0;
-  switch (ps.code_ratiodenit) {
-    case 1: r = ps.ratiodenit; break;
-    case 2: r = 
-      N2O::rcor(ps.wfpsc, pH, ps.pHminden, ps.pHmaxden)
-      * N2O::fWFPS(wfps, ps.wfpsc) 
-      * N2O::fNO3(NO3);
-      break;
-    default:;
-  }
-
-  auto N2Onit = z * vnit(ps, NH4, pH, soilT, wfps, soilwaterContent, fc, sat);
-
-   auto N2Odenit = r * vdenit(ps, corg, NO3, soilT, wfps, soilwaterContent);
-  
-  return N2Onit + N2Odenit;
-}
-
-} // namespace stics
-
 /**
  * @brief Internal Subroutine Nitrification
  */
@@ -1377,26 +1195,26 @@ void SoilOrganic::fo_Denitrification() {
  * @brief N2O production
  */
 double SoilOrganic::fo_N2OProduction() {
-  auto soilpH = [&](size_t i) { return soilColumn[i].vs_SoilpH(); };
-  auto soilNO2 = [&](size_t i) { return soilColumn[i].vs_SoilNO2; };
-  auto layerThick = [&](size_t i) { return soilColumn[i].vs_LayerThickness; };
-  auto soilTemp = [&](size_t i) { return soilColumn[i].get_Vs_SoilTemperature(); };
-
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
   double N2OProductionRate = organicPs.po_N2OProductionRate;
   double pKaHNO2 = OrganicConstants::po_pKaHNO2;
   double sumN2OProduced = 0.0;
 
   for (int i = 0; i < nools; i++) {
+    auto soilpH = soilColumn[i].vs_SoilpH();
+    auto soilNO2 = soilColumn[i].vs_SoilNO2;
+    auto layerThick = soilColumn[i].vs_LayerThickness;
+    auto soilTemp = soilColumn[i].get_Vs_SoilTemperature();
+    
     // pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being available at higer pH values
-    double pH_response = 1.0 / (1.0 + pow(2.0, soilpH(i) - pKaHNO2));
+    double pH_response = 1.0 / (1.0 + pow(2.0, soilpH - pKaHNO2));
 
     double N2OProductionAtLayer =
-      soilNO2(i)
-      * fo_TempOnNitrification(soilTemp(i))
+      soilNO2
+      * fo_TempOnNitrification(soilTemp)
       * N2OProductionRate
       * pH_response
-      * layerThick(i) * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
+      * layerThick * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
 
     sumN2OProduced += N2OProductionAtLayer;
   }
@@ -1404,6 +1222,36 @@ double SoilOrganic::fo_N2OProduction() {
   return sumN2OProduced;
 }
 
+double SoilOrganic::fo_stics_N2OProduction() {
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
+  double sumN2OProduced = 0.0;
+  auto sticsParams = organicPs.sticsParams;
+
+  for (int i = 0; i < nools; i++) {
+    auto sci = soilColumn[i];
+
+    double N2OProductionAtLayer = stics::N20(sticsParams,
+                                             sci.vs_SoilOrganicCarbon(),
+                                             sci.get_SoilNO3(),
+                                             sci.get_Vs_SoilTemperature(),
+                                             0,
+                                             sci.get_Vs_SoilMoisture_m3(),
+                                             sci.get_SoilNH4(),
+                                             sci.vs_SoilpH(),
+                                             sci.vs_FieldCapacity(),
+                                             sci.vs_Saturation());
+    
+    //soilNO2
+    //  * fo_TempOnNitrification(soilTemp)
+    //  * N2OProductionRate
+    //  * pH_response
+    //  * layerThick * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
+
+    sumN2OProduced += N2OProductionAtLayer;
+  }
+
+  return sumN2OProduced;
+}
 
 /**
  * @brief Internal Subroutine Pool update

@@ -1327,7 +1327,7 @@ Errors UserSoilOrganicParameters::merge(json11::Json j)
   set_double_value(po_Inhibitor_NH3, j, "Inhibitor_NH3");
   set_double_value(ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
 
-  if (j["stics"].is_object()) res.append(stixParams.merge(j["stics"]));
+  if (j["stics"].is_object()) res.append(sticsParams.merge(j["stics"]));
 
 	return res;
 }

@@ -112,6 +112,8 @@ add_library(monica_lib
 	src/core/voc-guenther.cpp
 	src/core/voc-jjv.h
 	src/core/voc-jjv.cpp
+	src/core/stics-nit-denit-n2o.h
+	src/core/stics-nit-denit-n2o.cpp
 
 	src/io/output.h
 	src/io/output.cpp
