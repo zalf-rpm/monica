@@ -69,11 +69,12 @@ Errors YieldComponent::merge(json11::Json j)
 
 json11::Json YieldComponent::to_json() const
 {
-  return json11::Json::object{
-    {"type", "YieldComponent"},
-    {"organId", organId},
-    {"yieldPercentage", yieldPercentage},
-    {"yieldDryMatter", yieldDryMatter}};
+  return json11::Json::object
+  {{"type", "YieldComponent"}
+  ,{"organId", organId}
+  ,{"yieldPercentage", yieldPercentage}
+  ,{"yieldDryMatter", yieldDryMatter}
+  };
 }
 
 //------------------------------------------------------------------------------
@@ -206,7 +207,7 @@ json11::Json SpeciesParameters::to_json() const
 	,{"KC25", J11Array{KC25, "umol mol-1 ubar-1"}}
 	,{"KO25", J11Array{KO25, "mmol mol-1 mbar-1"}}
 
-	,{ "TransitionStageLeafExp", J11Array{ pc_TransitionStageLeafExp, "1-7"}},
+	,{ "TransitionStageLeafExp", J11Array{ pc_TransitionStageLeafExp, "1-7"}}
 	};
 
   return species;
@@ -306,47 +307,47 @@ json11::Json CultivarParameters::to_json() const
   for(auto v : pc_OrganSenescenceRate)
     osrs.push_back(toPrimJsonArray(v));
 
-  auto cultivar = J11Object {
-  {"type", "CultivarParameters"},
-  {"CultivarName", pc_CultivarId},
-  {"Description", pc_Description},
-  {"Perennial", pc_Perennial},
-  {"MaxAssimilationRate", pc_MaxAssimilationRate},
-  {"MaxCropHeight", J11Array {pc_MaxCropHeight, "m"}},
-  {"ResidueNRatio", pc_ResidueNRatio},
-  {"LT50cultivar", pc_LT50cultivar},
-  {"CropHeightP1", pc_CropHeightP1},
-  {"CropHeightP2", pc_CropHeightP2},
-  {"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth},
-  {"AssimilatePartitioningCoeff", apcs},
-  {"OrganSenescenceRate", osrs},
-  {"BaseDaylength", J11Array {toPrimJsonArray(pc_BaseDaylength), "h"}},
-  {"OptimumTemperature", J11Array {toPrimJsonArray(pc_OptimumTemperature), "°C"}},
-  {"DaylengthRequirement", J11Array {toPrimJsonArray(pc_DaylengthRequirement), "h"}},
-  {"DroughtStressThreshold", toPrimJsonArray(pc_DroughtStressThreshold)},
-  {"SpecificLeafArea", J11Array {toPrimJsonArray(pc_SpecificLeafArea), "ha kg-1"}},
-  {"StageKcFactor", J11Array {toPrimJsonArray(pc_StageKcFactor), "1;0"}},
-  {"StageTemperatureSum", J11Array {toPrimJsonArray(pc_StageTemperatureSum), "°C d"}},
-  {"VernalisationRequirement", toPrimJsonArray(pc_VernalisationRequirement)},
-  {"HeatSumIrrigationStart", pc_HeatSumIrrigationStart},
-  {"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd},
-  {"CriticalTemperatureHeatStress", J11Array {pc_CriticalTemperatureHeatStress, "°C"}},
-  {"BeginSensitivePhaseHeatStress", J11Array {pc_BeginSensitivePhaseHeatStress, "°C d"}},
-  {"EndSensitivePhaseHeatStress", J11Array {pc_EndSensitivePhaseHeatStress, "°C d"}},
-  {"FrostHardening", pc_FrostHardening},
-  {"FrostDehardening", pc_FrostDehardening},
-  {"LowTemperatureExposure", pc_LowTemperatureExposure},
-  {"RespiratoryStress", pc_RespiratoryStress},
-  {"LatestHarvestDoy", pc_LatestHarvestDoy},
-  {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
-  {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
-  {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)},
-	{"EarlyRefLeafExp", pc_EarlyRefLeafExp },
-	{"RefLeafExp", pc_RefLeafExp },
-	{"MinTempDev_WE", pc_MinTempDev_WE },
-	{"OptTempDev_WE", pc_OptTempDev_WE },
-	{"MaxTempDev_WE", pc_MaxTempDev_WE }
-	};
+  auto cultivar = J11Object
+  {{"type", "CultivarParameters"}
+  ,{"CultivarName", pc_CultivarId}
+  ,{"Description", pc_Description}
+  ,{"Perennial", pc_Perennial}
+  ,{"MaxAssimilationRate", pc_MaxAssimilationRate}
+  ,{"MaxCropHeight", J11Array {pc_MaxCropHeight, "m"}}
+  ,{"ResidueNRatio", pc_ResidueNRatio}
+  ,{"LT50cultivar", pc_LT50cultivar}
+  ,{"CropHeightP1", pc_CropHeightP1}
+  ,{"CropHeightP2", pc_CropHeightP2}
+  ,{"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth}
+  ,{"AssimilatePartitioningCoeff", apcs}
+  ,{"OrganSenescenceRate", osrs}
+  ,{"BaseDaylength", J11Array {toPrimJsonArray(pc_BaseDaylength), "h"}}
+  ,{"OptimumTemperature", J11Array {toPrimJsonArray(pc_OptimumTemperature), "°C"}}
+  ,{"DaylengthRequirement", J11Array {toPrimJsonArray(pc_DaylengthRequirement), "h"}}
+  ,{"DroughtStressThreshold", toPrimJsonArray(pc_DroughtStressThreshold)}
+  ,{"SpecificLeafArea", J11Array {toPrimJsonArray(pc_SpecificLeafArea), "ha kg-1"}}
+  ,{"StageKcFactor", J11Array {toPrimJsonArray(pc_StageKcFactor), "1;0"}}
+  ,{"StageTemperatureSum", J11Array {toPrimJsonArray(pc_StageTemperatureSum), "°C d"}}
+  ,{"VernalisationRequirement", toPrimJsonArray(pc_VernalisationRequirement)}
+  ,{"HeatSumIrrigationStart", pc_HeatSumIrrigationStart}
+  ,{"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd}
+  ,{"CriticalTemperatureHeatStress", J11Array {pc_CriticalTemperatureHeatStress, "°C"}}
+  ,{"BeginSensitivePhaseHeatStress", J11Array {pc_BeginSensitivePhaseHeatStress, "°C d"}}
+  ,{"EndSensitivePhaseHeatStress", J11Array {pc_EndSensitivePhaseHeatStress, "°C d"}}
+  ,{"FrostHardening", pc_FrostHardening}
+  ,{"FrostDehardening", pc_FrostDehardening}
+  ,{"LowTemperatureExposure", pc_LowTemperatureExposure}
+  ,{"RespiratoryStress", pc_RespiratoryStress}
+  ,{"LatestHarvestDoy", pc_LatestHarvestDoy}
+  ,{"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)}
+  ,{"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)}
+  ,{"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)}
+  ,{ "EarlyRefLeafExp", pc_EarlyRefLeafExp }
+  ,{ "RefLeafExp", pc_RefLeafExp }
+  ,{ "MinTempDev_WE", pc_MinTempDev_WE }
+  ,{ "OptTempDev_WE", pc_OptTempDev_WE }
+  ,{ "MaxTempDev_WE", pc_MaxTempDev_WE }
+  };
 
   return cultivar;
 }
@@ -378,10 +379,11 @@ Errors CropParameters::merge(json11::Json sj, json11::Json cj)
 
 json11::Json CropParameters::to_json() const
 {
-  return J11Object {
-    {"type", "CropParameters"},
-    {"species", speciesParams.to_json()},
-    {"cultivar", cultivarParams.to_json()}};
+  return J11Object 
+  {{"type", "CropParameters"}
+  ,{"species", speciesParams.to_json()}
+  ,{"cultivar", cultivarParams.to_json()}
+  };
 }
 
 
@@ -419,13 +421,14 @@ Errors MineralFertiliserParameters::merge(json11::Json j)
 
 json11::Json MineralFertiliserParameters::to_json() const
 {
-  return J11Object {
-    {"type", "MineralFertiliserParameters"},
-    {"id", id},
-    {"name", name},
-    {"Carbamid", vo_Carbamid},
-    {"NH4", vo_NH4},
-    {"NO3", vo_NO3}};
+  return J11Object 
+  {{"type", "MineralFertiliserParameters"}
+  ,{"id", id}
+  ,{"name", name}
+  ,{"Carbamid", vo_Carbamid}
+  ,{"NH4", vo_NH4}
+  ,{"NO3", vo_NO3}
+  };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -455,11 +458,12 @@ Errors NMinUserParameters::merge(json11::Json j)
 
 json11::Json NMinUserParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "NMinUserParameters"},
-    {"min", min},
-    {"max", max},
-    {"delayInDays", delayInDays}};
+  return json11::Json::object 
+  {{"type", "NMinUserParameters"}
+  ,{"min", min}
+  ,{"max", max}
+  ,{"delayInDays", delayInDays}
+  };
 }
 
 //------------------------------------------------------------------------------
@@ -487,10 +491,11 @@ Errors IrrigationParameters::merge(json11::Json j)
 
 json11::Json IrrigationParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "IrrigationParameters"},
-		{"nitrateConcentration", J11Array {nitrateConcentration, "mg dm-3"}},
-		{"sulfateConcentration", J11Array {sulfateConcentration, "mg dm-3"}}};
+  return json11::Json::object 
+  {{"type", "IrrigationParameters"}
+	,{"nitrateConcentration", J11Array {nitrateConcentration, "mg dm-3"}}
+	,{"sulfateConcentration", J11Array {sulfateConcentration, "mg dm-3"}}
+  };
 }
 
 //------------------------------------------------------------------------------
@@ -522,11 +527,12 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j)
 
 json11::Json AutomaticIrrigationParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "AutomaticIrrigationParameters"},
-    {"irrigationParameters", IrrigationParameters::to_json()},
-    {"amount", J11Array {amount, "mm"}},
-    {"threshold", threshold}};
+  return json11::Json::object 
+  {{"type", "AutomaticIrrigationParameters"}
+  ,{"irrigationParameters", IrrigationParameters::to_json()}
+  ,{"amount", J11Array {amount, "mm"}}
+  ,{"threshold", threshold}
+  };
 }
 
 //------------------------------------------------------------------------------
@@ -558,10 +564,11 @@ json11::Json MeasuredGroundwaterTableInformation::to_json() const
   for(auto p : groundwaterInfo)
     gi[p.first.toIsoDateString()] = p.second;
 
-  return json11::Json::object {
-    {"type", "MeasuredGroundwaterTableInformation"},
-    {"groundwaterInformationAvailable", groundwaterInformationAvailable},
-    {"groundwaterInfo", gi}};
+  return json11::Json::object 
+  {{"type", "MeasuredGroundwaterTableInformation"}
+  ,{"groundwaterInformationAvailable", groundwaterInformationAvailable}
+  ,{"groundwaterInfo", gi}
+  };
 }
 
 void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path)
@@ -694,9 +701,10 @@ Errors AutomaticHarvestParameters::merge(json11::Json j)
 
 json11::Json AutomaticHarvestParameters::to_json() const
 {
-  return J11Object {
-    {"harvestTime", int(_harvestTime)},
-    {"latestHavestDOY", _latestHarvestDOY}};
+  return J11Object 
+  {{"harvestTime", int(_harvestTime)}
+  ,{"latestHavestDOY", _latestHarvestDOY}
+  };
 }
 
 //------------------------------------------------------------------------------
@@ -724,11 +732,12 @@ Errors NMinCropParameters::merge(json11::Json j)
 
 json11::Json NMinCropParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "NMinCropParameters"},
-    {"samplingDepth", samplingDepth},
-    {"nTarget", nTarget},
-    {"nTarget30", nTarget30}};
+  return json11::Json::object 
+  {{"type", "NMinCropParameters"}
+  ,{"samplingDepth", samplingDepth}
+  ,{"nTarget", nTarget}
+  ,{"nTarget30", nTarget30}
+  };
 }
 
 //------------------------------------------------------------------------------
@@ -761,21 +770,22 @@ Errors OrganicMatterParameters::merge(json11::Json j)
 
 json11::Json OrganicMatterParameters::to_json() const
 {
-  return J11Object {
-    {"type", "OrganicMatterParameters"},
-    {"AOM_DryMatterContent", J11Array {vo_AOM_DryMatterContent, "kg DM kg FM-1", "Dry matter content of added organic matter"}},
-    {"AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}},
-    {"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter"}},
-    {"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Carbamide content in added organic matter"}},
-    {"AOM_SlowDecCoeffStandard", J11Array {vo_AOM_SlowDecCoeffStandard, "d-1", "Decomposition rate coefficient of slow AOM at standard conditions"}},
-    {"AOM_FastDecCoeffStandard", J11Array {vo_AOM_FastDecCoeffStandard, "d-1", "Decomposition rate coefficient of fast AOM at standard conditions"}},
-    {"PartAOM_to_AOM_Slow", J11Array {vo_PartAOM_to_AOM_Slow, "kg kg-1", "Part of AOM that is assigned to the slowly decomposing pool"}},
-    {"PartAOM_to_AOM_Fast", J11Array {vo_PartAOM_to_AOM_Fast, "kg kg-1", "Part of AOM that is assigned to the rapidly decomposing pool"}},
-    {"CN_Ratio_AOM_Slow", J11Array {vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool"}},
-    {"CN_Ratio_AOM_Fast", J11Array {vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool"}},
-    {"PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}},
-    {"PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}},
-    {"NConcentration", vo_NConcentration}};
+  return J11Object 
+  {{"type", "OrganicMatterParameters"}
+  ,{"AOM_DryMatterContent", J11Array {vo_AOM_DryMatterContent, "kg DM kg FM-1", "Dry matter content of added organic matter"}}
+  ,{"AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}}
+  ,{"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter"}}
+  ,{"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Carbamide content in added organic matter"}}
+  ,{"AOM_SlowDecCoeffStandard", J11Array {vo_AOM_SlowDecCoeffStandard, "d-1", "Decomposition rate coefficient of slow AOM at standard conditions"}}
+  ,{"AOM_FastDecCoeffStandard", J11Array {vo_AOM_FastDecCoeffStandard, "d-1", "Decomposition rate coefficient of fast AOM at standard conditions"}}
+  ,{"PartAOM_to_AOM_Slow", J11Array {vo_PartAOM_to_AOM_Slow, "kg kg-1", "Part of AOM that is assigned to the slowly decomposing pool"}}
+  ,{"PartAOM_to_AOM_Fast", J11Array {vo_PartAOM_to_AOM_Fast, "kg kg-1", "Part of AOM that is assigned to the rapidly decomposing pool"}}
+  ,{"CN_Ratio_AOM_Slow", J11Array {vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool"}}
+  ,{"CN_Ratio_AOM_Fast", J11Array {vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool"}}
+  ,{"PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}}
+  ,{"PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}}
+  ,{"NConcentration", vo_NConcentration}
+  };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -1069,32 +1079,33 @@ Errors UserSoilMoistureParameters::merge(json11::Json j)
 
 json11::Json UserSoilMoistureParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserSoilMoistureParameters"},
-    {"CriticalMoistureDepth", pm_CriticalMoistureDepth},
-    {"SaturatedHydraulicConductivity", pm_SaturatedHydraulicConductivity},
-    {"SurfaceRoughness", pm_SurfaceRoughness},
-    {"GroundwaterDischarge", pm_GroundwaterDischarge},
-    {"HydraulicConductivityRedux", pm_HydraulicConductivityRedux},
-    {"SnowAccumulationTresholdTemperature", pm_SnowAccumulationTresholdTemperature},
-    {"KcFactor", pm_KcFactor},
-    {"TemperatureLimitForLiquidWater", pm_TemperatureLimitForLiquidWater},
-    {"CorrectionSnow", pm_CorrectionSnow},
-    {"CorrectionRain", pm_CorrectionRain},
-    {"SnowMaxAdditionalDensity", pm_SnowMaxAdditionalDensity},
-    {"NewSnowDensityMin", pm_NewSnowDensityMin},
-    {"SnowRetentionCapacityMin", pm_SnowRetentionCapacityMin},
-    {"RefreezeParameter1", pm_RefreezeParameter1},
-    {"RefreezeParameter2", pm_RefreezeParameter2},
-    {"RefreezeTemperature", pm_RefreezeTemperature},
-    {"SnowMeltTemperature", pm_SnowMeltTemperature},
-    {"SnowPacking", pm_SnowPacking},
-    {"SnowRetentionCapacityMax", pm_SnowRetentionCapacityMax},
-    {"EvaporationZeta", pm_EvaporationZeta},
-    {"XSACriticalSoilMoisture", pm_XSACriticalSoilMoisture},
-    {"MaximumEvaporationImpactDepth", pm_MaximumEvaporationImpactDepth},
-    {"MaxPercolationRate", pm_MaxPercolationRate},
-    {"MoistureInitValue", pm_MoistureInitValue}};
+  return json11::Json::object 
+  {{"type", "UserSoilMoistureParameters"}
+  ,{"CriticalMoistureDepth", pm_CriticalMoistureDepth}
+  ,{"SaturatedHydraulicConductivity", pm_SaturatedHydraulicConductivity}
+  ,{"SurfaceRoughness", pm_SurfaceRoughness}
+  ,{"GroundwaterDischarge", pm_GroundwaterDischarge}
+  ,{"HydraulicConductivityRedux", pm_HydraulicConductivityRedux}
+  ,{"SnowAccumulationTresholdTemperature", pm_SnowAccumulationTresholdTemperature}
+  ,{"KcFactor", pm_KcFactor}
+  ,{"TemperatureLimitForLiquidWater", pm_TemperatureLimitForLiquidWater}
+  ,{"CorrectionSnow", pm_CorrectionSnow}
+  ,{"CorrectionRain", pm_CorrectionRain}
+  ,{"SnowMaxAdditionalDensity", pm_SnowMaxAdditionalDensity}
+  ,{"NewSnowDensityMin", pm_NewSnowDensityMin}
+  ,{"SnowRetentionCapacityMin", pm_SnowRetentionCapacityMin}
+  ,{"RefreezeParameter1", pm_RefreezeParameter1}
+  ,{"RefreezeParameter2", pm_RefreezeParameter2}
+  ,{"RefreezeTemperature", pm_RefreezeTemperature}
+  ,{"SnowMeltTemperature", pm_SnowMeltTemperature}
+  ,{"SnowPacking", pm_SnowPacking}
+  ,{"SnowRetentionCapacityMax", pm_SnowRetentionCapacityMax}
+  ,{"EvaporationZeta", pm_EvaporationZeta}
+  ,{"XSACriticalSoilMoisture", pm_XSACriticalSoilMoisture}
+  ,{"MaximumEvaporationImpactDepth", pm_MaximumEvaporationImpactDepth}
+  ,{"MaxPercolationRate", pm_MaxPercolationRate}
+  ,{"MoistureInitValue", pm_MoistureInitValue}
+  };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -1127,21 +1138,22 @@ Errors UserSoilTemperatureParameters::merge(json11::Json j)
 
 json11::Json UserSoilTemperatureParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserSoilTemperatureParameters"},
-    {"NTau", pt_NTau},
-    {"InitialSurfaceTemperature", pt_InitialSurfaceTemperature},
-    {"BaseTemperature", pt_BaseTemperature},
-    {"QuartzRawDensity", pt_QuartzRawDensity},
-    {"DensityAir", pt_DensityAir},
-    {"DensityWater", pt_DensityWater},
-    {"DensityHumus", pt_DensityHumus},
-    {"SpecificHeatCapacityAir", pt_SpecificHeatCapacityAir},
-    {"SpecificHeatCapacityQuartz", pt_SpecificHeatCapacityQuartz},
-    {"SpecificHeatCapacityWater", pt_SpecificHeatCapacityWater},
-    {"SpecificHeatCapacityHumus", pt_SpecificHeatCapacityHumus},
-    {"SoilAlbedo", pt_SoilAlbedo},
-    {"SoilMoisture", pt_SoilMoisture}};
+  return json11::Json::object 
+  {{"type", "UserSoilTemperatureParameters"}
+  ,{"NTau", pt_NTau}
+  ,{"InitialSurfaceTemperature", pt_InitialSurfaceTemperature}
+  ,{"BaseTemperature", pt_BaseTemperature}
+  ,{"QuartzRawDensity", pt_QuartzRawDensity}
+  ,{"DensityAir", pt_DensityAir}
+  ,{"DensityWater", pt_DensityWater}
+  ,{"DensityHumus", pt_DensityHumus}
+  ,{"SpecificHeatCapacityAir", pt_SpecificHeatCapacityAir}
+  ,{"SpecificHeatCapacityQuartz", pt_SpecificHeatCapacityQuartz}
+  ,{"SpecificHeatCapacityWater", pt_SpecificHeatCapacityWater}
+  ,{"SpecificHeatCapacityHumus", pt_SpecificHeatCapacityHumus}
+  ,{"SoilAlbedo", pt_SoilAlbedo}
+  ,{"SoilMoisture", pt_SoilMoisture}
+  };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -1165,23 +1177,25 @@ Errors UserSoilTransportParameters::merge(json11::Json j)
 
 json11::Json UserSoilTransportParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserSoilTransportParameters"},
-    {"DispersionLength", pq_DispersionLength},
-    {"AD", pq_AD},
-    {"DiffusionCoefficientStandard", pq_DiffusionCoefficientStandard},
-    {"NDeposition", pq_NDeposition}};
+  return json11::Json::object 
+  {{"type", "UserSoilTransportParameters"}
+  ,{"DispersionLength", pq_DispersionLength}
+  ,{"AD", pq_AD}
+  ,{"DiffusionCoefficientStandard", pq_DiffusionCoefficientStandard}
+  ,{"NDeposition", pq_NDeposition}
+  };
 }
 
 //-----------------------------------------------------------------------------------------
 
-StixParameters::StixParameters(json11::Json j) {
+SticsParameters::SticsParameters(json11::Json j) {
   merge(j);
 }
 
-Errors StixParameters::merge(json11::Json j) {
+Errors SticsParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
+  set_bool_value(use, j, "use");
   set_int_value(code_vnit, j, "code_vnit");
   set_int_value(code_tnit, j, "code_tnit");
   set_int_value(code_rationit, j, "code_rationit");
@@ -1222,9 +1236,10 @@ Errors StixParameters::merge(json11::Json j) {
   return res;
 }
 
-json11::Json StixParameters::to_json() const {
+json11::Json SticsParameters::to_json() const {
   return json11::Json::object
-  {{"type", "StixParameters"}
+  {{"type", "SticsParameters"}
+  ,{"use", use}
   ,{"code_vnit", J11Array {code_vnit, ""}}
   ,{"code_tnit", J11Array {code_tnit, ""}}
   ,{"code_rationit", J11Array {code_rationit, ""}}
@@ -1312,51 +1327,51 @@ Errors UserSoilOrganicParameters::merge(json11::Json j)
   set_double_value(po_Inhibitor_NH3, j, "Inhibitor_NH3");
   set_double_value(ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
 
-  if (j["stix"].is_object()) res.append(stixParams.merge(j["stix"]));
+  if (j["stics"].is_object()) res.append(stixParams.merge(j["stics"]));
 
 	return res;
 }
 
 json11::Json UserSoilOrganicParameters::to_json() const
 {
-  return json11::Json::object {
-    {"type", "UserSoilOrganicParameters"},
-    {"SOM_SlowDecCoeffStandard", J11Array {po_SOM_SlowDecCoeffStandard, "d-1"}},
-    {"SOM_FastDecCoeffStandard", J11Array {po_SOM_FastDecCoeffStandard, "d-1"}},
-    {"SMB_SlowMaintRateStandard", J11Array {po_SMB_SlowMaintRateStandard, "d-1"}},
-    {"SMB_FastMaintRateStandard", J11Array {po_SMB_FastMaintRateStandard, "d-1"}},
-    {"SMB_SlowDeathRateStandard", J11Array {po_SMB_SlowDeathRateStandard, "d-1"}},
-    {"SMB_FastDeathRateStandard", J11Array {po_SMB_FastDeathRateStandard, "d-1"}},
-    {"SMB_UtilizationEfficiency", J11Array {po_SMB_UtilizationEfficiency, "d-1"}},
-    {"SOM_SlowUtilizationEfficiency", J11Array {po_SOM_SlowUtilizationEfficiency, ""}},
-    {"SOM_FastUtilizationEfficiency", J11Array {po_SOM_FastUtilizationEfficiency, ""}},
-    {"AOM_SlowUtilizationEfficiency", J11Array {po_AOM_SlowUtilizationEfficiency, ""}},
-    {"AOM_FastUtilizationEfficiency", J11Array {po_AOM_FastUtilizationEfficiency, ""}},
-    {"AOM_FastMaxC_to_N", J11Array {po_AOM_FastMaxC_to_N, ""}},
-    {"PartSOM_Fast_to_SOM_Slow", J11Array {po_PartSOM_Fast_to_SOM_Slow, ""}},
-    {"PartSMB_Slow_to_SOM_Fast", J11Array {po_PartSMB_Slow_to_SOM_Fast, ""}},
-    {"PartSMB_Fast_to_SOM_Fast", J11Array {po_PartSMB_Fast_to_SOM_Fast, ""}},
-    {"PartSOM_to_SMB_Slow", J11Array {po_PartSOM_to_SMB_Slow, ""}},
-    {"PartSOM_to_SMB_Fast", J11Array {po_PartSOM_to_SMB_Fast, ""}},
-    {"CN_Ratio_SMB", J11Array {po_CN_Ratio_SMB, ""}},
-    {"LimitClayEffect", J11Array {po_LimitClayEffect, "kg kg-1"}},
-    {"AmmoniaOxidationRateCoeffStandard", J11Array {po_AmmoniaOxidationRateCoeffStandard, "d-1"}},
-    {"NitriteOxidationRateCoeffStandard", J11Array {po_NitriteOxidationRateCoeffStandard, "d-1"}},
-    {"TransportRateCoeff", J11Array {po_TransportRateCoeff, "d-1"}},
-    {"SpecAnaerobDenitrification", J11Array {po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1"}},
-    {"ImmobilisationRateCoeffNO3", J11Array {po_ImmobilisationRateCoeffNO3, "d-1"}},
-    {"ImmobilisationRateCoeffNH4", J11Array {po_ImmobilisationRateCoeffNH4, "d-1"}},
-    {"Denit1", J11Array {po_Denit1, ""}},
-    {"Denit2", J11Array {po_Denit2, ""}},
-    {"Denit3", J11Array {po_Denit3, ""}},
-    {"HydrolysisKM", J11Array {po_HydrolysisKM, ""}},
-    {"ActivationEnergy", J11Array {po_ActivationEnergy, ""}},
-    {"HydrolysisP1", J11Array {po_HydrolysisP1, ""}},
-    {"HydrolysisP2", J11Array {po_HydrolysisP2, ""}},
-    {"AtmosphericResistance", J11Array {po_AtmosphericResistance, "s m-1"}},
-    {"N2OProductionRate", J11Array {po_N2OProductionRate, "d-1"}},
-    {"Inhibitor_NH3", J11Array {po_Inhibitor_NH3, "kg N m-3"}},
-    {"MaxMineralisationDepth", ps_MaxMineralisationDepth}
+  return json11::Json::object 
+  {{"type", "UserSoilOrganicParameters"}
+  ,{"SOM_SlowDecCoeffStandard", J11Array {po_SOM_SlowDecCoeffStandard, "d-1"}}
+  ,{"SOM_FastDecCoeffStandard", J11Array {po_SOM_FastDecCoeffStandard, "d-1"}}
+  ,{"SMB_SlowMaintRateStandard", J11Array {po_SMB_SlowMaintRateStandard, "d-1"}}
+  ,{"SMB_FastMaintRateStandard", J11Array {po_SMB_FastMaintRateStandard, "d-1"}}
+  ,{"SMB_SlowDeathRateStandard", J11Array {po_SMB_SlowDeathRateStandard, "d-1"}}
+  ,{"SMB_FastDeathRateStandard", J11Array {po_SMB_FastDeathRateStandard, "d-1"}}
+  ,{"SMB_UtilizationEfficiency", J11Array {po_SMB_UtilizationEfficiency, "d-1"}}
+  ,{"SOM_SlowUtilizationEfficiency", J11Array {po_SOM_SlowUtilizationEfficiency, ""}}
+  ,{"SOM_FastUtilizationEfficiency", J11Array {po_SOM_FastUtilizationEfficiency, ""}}
+  ,{"AOM_SlowUtilizationEfficiency", J11Array {po_AOM_SlowUtilizationEfficiency, ""}}
+  ,{"AOM_FastUtilizationEfficiency", J11Array {po_AOM_FastUtilizationEfficiency, ""}}
+  ,{"AOM_FastMaxC_to_N", J11Array {po_AOM_FastMaxC_to_N, ""}}
+  ,{"PartSOM_Fast_to_SOM_Slow", J11Array {po_PartSOM_Fast_to_SOM_Slow, ""}}
+  ,{"PartSMB_Slow_to_SOM_Fast", J11Array {po_PartSMB_Slow_to_SOM_Fast, ""}}
+  ,{"PartSMB_Fast_to_SOM_Fast", J11Array {po_PartSMB_Fast_to_SOM_Fast, ""}}
+  ,{"PartSOM_to_SMB_Slow", J11Array {po_PartSOM_to_SMB_Slow, ""}}
+  ,{"PartSOM_to_SMB_Fast", J11Array {po_PartSOM_to_SMB_Fast, ""}}
+  ,{"CN_Ratio_SMB", J11Array {po_CN_Ratio_SMB, ""}}
+  ,{"LimitClayEffect", J11Array {po_LimitClayEffect, "kg kg-1"}}
+  ,{"AmmoniaOxidationRateCoeffStandard", J11Array {po_AmmoniaOxidationRateCoeffStandard, "d-1"}}
+  ,{"NitriteOxidationRateCoeffStandard", J11Array {po_NitriteOxidationRateCoeffStandard, "d-1"}}
+  ,{"TransportRateCoeff", J11Array {po_TransportRateCoeff, "d-1"}}
+  ,{"SpecAnaerobDenitrification", J11Array {po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1"}}
+  ,{"ImmobilisationRateCoeffNO3", J11Array {po_ImmobilisationRateCoeffNO3, "d-1"}}
+  ,{"ImmobilisationRateCoeffNH4", J11Array {po_ImmobilisationRateCoeffNH4, "d-1"}}
+  ,{"Denit1", J11Array {po_Denit1, ""}}
+  ,{"Denit2", J11Array {po_Denit2, ""}}
+  ,{"Denit3", J11Array {po_Denit3, ""}}
+  ,{"HydrolysisKM", J11Array {po_HydrolysisKM, ""}}
+  ,{"ActivationEnergy", J11Array {po_ActivationEnergy, ""}}
+  ,{"HydrolysisP1", J11Array {po_HydrolysisP1, ""}}
+  ,{"HydrolysisP2", J11Array {po_HydrolysisP2, ""}}
+  ,{"AtmosphericResistance", J11Array {po_AtmosphericResistance, "s m-1"}}
+  ,{"N2OProductionRate", J11Array {po_N2OProductionRate, "d-1"}}
+  ,{"Inhibitor_NH3", J11Array {po_Inhibitor_NH3, "kg N m-3"}}
+  ,{"MaxMineralisationDepth", ps_MaxMineralisationDepth}
   };
 }
 
@@ -1395,16 +1410,16 @@ Errors CentralParameterProvider::merge(json11::Json j)
 
 json11::Json CentralParameterProvider::to_json() const
 {
-	return json11::Json::object{
-			{"type", "CentralParameterProvider"}
-		, {"userCropParameters", userCropParameters.to_json()}
-		, {"userEnvironmentParameters", userEnvironmentParameters.to_json()}
-		, {"userSoilMoistureParameters", userSoilMoistureParameters.to_json()}
-		, {"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()}
-		, {"userSoilTransportParameters", userSoilTransportParameters.to_json()}
-		, {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()}
-		, {"simulationParameters", simulationParameters.to_json()}
-		, {"siteParameters", siteParameters.to_json()}
+	return json11::Json::object
+  {{"type", "CentralParameterProvider"}
+	,{"userCropParameters", userCropParameters.to_json()}
+	,{"userEnvironmentParameters", userEnvironmentParameters.to_json()}
+	,{"userSoilMoistureParameters", userSoilMoistureParameters.to_json()}
+	,{"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()}
+	,{"userSoilTransportParameters", userSoilTransportParameters.to_json()}
+	,{"userSoilOrganicParameters", userSoilOrganicParameters.to_json()}
+	,{"simulationParameters", simulationParameters.to_json()}
+	,{"siteParameters", siteParameters.to_json()}
 		//, {"groundwaterInformation", groundwaterInformation.to_json()}
 		//, {"writeOutputFiles", writeOutputFiles()}
 	};

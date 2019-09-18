@@ -766,15 +766,16 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct DLL_API StixParameters : public Tools::Json11Serializable {
-    StixParameters() {}
+  struct DLL_API SticsParameters : public Tools::Json11Serializable {
+    SticsParameters() {}
 
-    StixParameters(json11::Json object);
+    SticsParameters(json11::Json object);
 
     virtual Tools::Errors merge(json11::Json j);
 
     virtual json11::Json to_json() const;
 
+    bool use{ false };
     int code_vnit{ 1 };
     int code_tnit{ 2 };
     int code_rationit{ 2 };
@@ -866,7 +867,7 @@ namespace Monica
 		double po_Inhibitor_NH3{ 1.0 }; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
 		double ps_MaxMineralisationDepth{ 0.4 };
 
-    StixParameters stixParams;
+    SticsParameters stixParams;
 	};
 
 	//----------------------------------------------------------------------------
