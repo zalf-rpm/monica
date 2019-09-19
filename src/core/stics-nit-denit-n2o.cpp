@@ -4,7 +4,7 @@
 
 /*
 Authors:
-Michael Berg <michael.berg@zalf.de>
+Michael Berg <michael.berg-mohnicke@zalf.de>
 
 Maintainers:
 Currently maintained by the authors.
@@ -14,8 +14,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include  "stics-nit-denit-n2o.h"
-
-namespace stics {
 
 double inline stepwiseLinearFunction3(double x,
                                       double xmin,
@@ -66,14 +64,14 @@ double fWFPS(double wfps, double hminn, double hoptn, double fc, double sat) {
 } // namespace nit
 
 // nitrification
-double vnit(const Monica::SticsParameters& ps,
-            double NH4,
-            double pH,
-            double soilT,
-            double wfps,
-            double soilwaterContent,
-            double fc,
-            double sat) {
+double stics::vnit(const Monica::SticsParameters& ps,
+                   double NH4,
+                   double pH,
+                   double soilT,
+                   double wfps,
+                   double soilWaterContent,
+                   double fc,
+                   double sat) {
   auto vnitpot = 0.0;
   auto fNH4res = 0.0;
   switch (ps.code_vnit) {
@@ -83,7 +81,7 @@ double vnit(const Monica::SticsParameters& ps,
       break;
     case 2:
       vnitpot = ps.vnitmax;
-      fNH4res = nit::fNH4(NH4, ps.nh4_min, soilwaterContent, ps.Kamm);
+      fNH4res = nit::fNH4(NH4, ps.nh4_min, soilWaterContent, ps.Kamm);
       break;
     default:;
   }
@@ -122,12 +120,12 @@ double fWFPS(double wfps, double wfpsc) {
 } // namespace denit
 
 // denitrification
-double vdenit(const Monica::SticsParameters& ps,
-              double corg,
-              double NO3,
-              double soilT,
-              double wfps,
-              double soilwaterContent) {
+double stics::vdenit(const Monica::SticsParameters& ps,
+                     double corg,
+                     double NO3,
+                     double soilT,
+                     double wfps,
+                     double soilWaterContent) {
   auto vdenitpot = 0.0;
   switch (ps.code_pdenit) {
     case 1: vdenitpot = ps.vpotdenit; break;
@@ -137,12 +135,12 @@ double vdenit(const Monica::SticsParameters& ps,
 
   return
     vdenitpot
-    * denit::fNO3(NO3, soilwaterContent, ps.Kd)
+    * denit::fNO3(NO3, soilWaterContent, ps.Kd)
     * denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt)
     * denit::fWFPS(wfps, ps.wfpsc);
 }
 
-namespace N2O {
+namespace n2o {
 
 double fpH(double pH, double pHminden, double pHmaxden) {
   return stepwiseLinearFunction3(pH, pHminden, pHmaxden, 1.0, 0.0);
@@ -163,16 +161,12 @@ double fNO3(double NO3) {
 
 }
 
-double N20(const Monica::SticsParameters& ps,
-           double corg,
-           double NO3,
-           double soilT,
-           double wfps,
-           double soilwaterContent,
-           double NH4,
-           double pH,
-           double fc,
-           double sat) {
+double stics::N2O(const Monica::SticsParameters& ps,
+                  double NO3,
+                  double wfps,
+                  double pH,
+                  double vnit,
+                  double vdenit) {
 
   auto z = 0;
   switch (ps.code_rationit) {
@@ -185,17 +179,30 @@ double N20(const Monica::SticsParameters& ps,
   switch (ps.code_ratiodenit) {
     case 1: r = ps.ratiodenit; break;
     case 2: r =
-      N2O::rcor(ps.wfpsc, pH, ps.pHminden, ps.pHmaxden)
-      * N2O::fWFPS(wfps, ps.wfpsc)
-      * N2O::fNO3(NO3);
+      n2o::rcor(ps.wfpsc, pH, ps.pHminden, ps.pHmaxden)
+      * n2o::fWFPS(wfps, ps.wfpsc)
+      * n2o::fNO3(NO3);
       break;
     default:;
   }
 
-  auto N2Onit = z * vnit(ps, NH4, pH, soilT, wfps, soilwaterContent, fc, sat);
-  auto N2Odenit = r * vdenit(ps, corg, NO3, soilT, wfps, soilwaterContent);
+  auto N2Onit = z * vnit;
+  auto N2Odenit = r * vdenit;
 
   return N2Onit + N2Odenit;
 }
 
-} // namespace stics
+double stics::N2O(const Monica::SticsParameters& ps,
+                  double corg,
+                  double NO3,
+                  double soilT,
+                  double wfps,
+                  double soilWaterContent,
+                  double NH4,
+                  double pH,
+                  double fc,
+                  double sat) {
+  auto nit = vnit(ps, NH4, pH, soilT, wfps, soilWaterContent, fc, sat);
+  auto denit = vdenit(ps, corg, NO3, soilT, wfps, soilWaterContent);
+  return N2O(ps, NO3, wfps, pH, nit, denit);
+}

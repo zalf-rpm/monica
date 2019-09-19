@@ -107,9 +107,12 @@ namespace Monica
     void fo_MIT();
     void fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTemperature, double vw_WindSpeed);
     void fo_Nitrification();
+    void fo_stics_Nitrification();
     void fo_Denitrification();
+    void fo_stics_Denitrification();
     double fo_N2OProduction();
     double fo_stics_N2OProduction();
+    double fo_stics_N2OProduction_pure();
     void fo_PoolUpdate();
     double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
     double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
@@ -141,7 +144,7 @@ namespace Monica
     double vo_DecomposerRespiration{0.0};
     std::string vo_ErrorMessage;
     std::vector<double> vo_InertSoilOrganicC;
-    double vo_N2O_Produced{0.0};
+    double vo_N2O_Produced{0.0}; // [kg-N2O-N/ha]
     double vo_NetEcosystemExchange{0.0};
     double vo_NetEcosystemProduction{0.0};
     double vo_NetNMineralisation{0.0};
@@ -156,7 +159,7 @@ namespace Monica
     std::vector<double> vo_SOM_FastDelta;
     double vo_SOM_FastInput{0.0}; //!< SOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_SOM_SlowDelta;
-    double vo_SumDenitrification{0.0};
+    double vo_SumDenitrification{0.0}; // kg-N/m2
     double vo_SumNetNMineralisation{0.0};
     double vo_SumN2O_Produced{0.0};
     double vo_SumNH3_Volatilised{0.0};

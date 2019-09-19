@@ -4,7 +4,7 @@
 
 /*
 Authors:
-Michael Berg <michael.berg@zalf.de>
+Michael Berg <michael.berg-mohnicke@zalf.de>
 
 Maintainers:
 Currently maintained by the authors.
@@ -19,28 +19,49 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace stics
 {		
+// NH4 [mg-NH4-N/kg-soil]
+// NO3 [mg-NO3-N/kg-soil]
+// wfps = water-filled pore space [] = soil-water-content/saturation
+// soilWaterContent = gravimetric soil water content [kg-water/kg-soil]
+// soilT = soil temperature [°C]
+// fc = fieldcapacity [m3-water/m3-soil]
+// sat = saturation [m3-water/m3-soil]
+
+// nitrification [mg-N/kg-soil/day]
 double vnit(const Monica::SticsParameters& ps,
-            double NH4,
+            double NH4, 
             double pH,
             double soilT,
-            double wfps,
-            double soilwaterContent,
+            double wfps, 
+            double soilWaterContent, 
             double fc,
             double sat);
 
+// denitrification [mg-N/kg-soil/day]
 double vdenit(const Monica::SticsParameters& ps,
               double corg,
               double NO3,
               double soilT,
               double wfps,
-              double soilwaterContent);
+              double soilWaterContent);
 
-double N20(const Monica::SticsParameters& ps,
+// N2O emissions [mg-N2O-N/kg-soil/day]
+// vnit [mg-n/kg-soil/day]
+// vdenit [mg-N/kg-soil/day]
+double N2O(const Monica::SticsParameters& ps,
+           double NO3,
+           double wfps,
+           double pH,
+           double vnit,
+           double vdenit);
+
+// N2O emissions [mg-N2O-N/kg-soil/day]
+double N2O(const Monica::SticsParameters& ps,
            double corg,
            double NO3,
            double soilT,
            double wfps,
-           double soilwaterContent,
+           double soilWaterContent,
            double NH4,
            double pH,
            double fc,

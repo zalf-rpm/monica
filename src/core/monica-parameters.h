@@ -775,7 +775,9 @@ namespace Monica
 
     virtual json11::Json to_json() const;
 
-    bool use{ false };
+    bool use_n2o{ false };
+    bool use_nit{ false };
+    bool use_denit{ false };
     int code_vnit{ 1 };
     int code_tnit{ 2 };
     int code_rationit{ 2 };

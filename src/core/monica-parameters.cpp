@@ -1195,7 +1195,9 @@ SticsParameters::SticsParameters(json11::Json j) {
 Errors SticsParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
-  set_bool_value(use, j, "use");
+  set_bool_value(use_n2o, j, "use_n2o");
+  set_bool_value(use_nit, j, "use_nit");
+  set_bool_value(use_denit, j, "use_denit");
   set_int_value(code_vnit, j, "code_vnit");
   set_int_value(code_tnit, j, "code_tnit");
   set_int_value(code_rationit, j, "code_rationit");
@@ -1239,7 +1241,9 @@ Errors SticsParameters::merge(json11::Json j) {
 json11::Json SticsParameters::to_json() const {
   return json11::Json::object
   {{"type", "SticsParameters"}
-  ,{"use", use}
+  ,{"use_n2o", use_n2o}
+  ,{"use_nit", use_nit}
+  ,{"use_denit", use_denit}
   ,{"code_vnit", J11Array {code_vnit, ""}}
   ,{"code_tnit", J11Array {code_tnit, ""}}
   ,{"code_rationit", J11Array {code_rationit, ""}}
