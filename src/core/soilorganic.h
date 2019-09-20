@@ -106,13 +106,28 @@ namespace Monica
     void fo_Urea(double vo_RainIrrigation);
     void fo_MIT();
     void fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTemperature, double vw_WindSpeed);
+    
+    // MONICA nitrification code
     void fo_Nitrification();
+    
+    // use STICS nitrification code
     void fo_stics_Nitrification();
+
+    // MONICA dentrification code
     void fo_Denitrification();
+
+    // use STICS denitrification code
     void fo_stics_Denitrification();
+
+    // MONICA N2O production code
     double fo_N2OProduction();
+
+    // use STICS N2O production code
     double fo_stics_N2OProduction();
+
+    // purely use STICS N2O production code
     double fo_stics_N2OProduction_pure();
+
     void fo_PoolUpdate();
     double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
     double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
@@ -133,6 +148,7 @@ namespace Monica
     std::size_t vs_NumberOfOrganicLayers{0};
     bool addedOrganicMatter{false};
     double irrigationAmount{0.0};
+    std::vector<double> vo_ActNitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_ActDenitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_AOM_FastDeltaSum;
 		double vo_AOM_FastInput{0.0}; //!< AOMfast pool change by direct input [kg C m-3]

@@ -15,6 +15,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include  "stics-nit-denit-n2o.h"
 
+#include <algorithm>
+
 double inline stepwiseLinearFunction3(double x,
                                       double xmin,
                                       double xmax,
@@ -41,7 +43,7 @@ inline double stepwiseLinearFunction4(double x,
 namespace nit {
 
 double fNH4(double NH4, double nh4_min, double w, double Kamm) {
-  return (NH4 - nh4_min) / ((NH4 - nh4_min) + (w * Kamm));
+  return std::max(0.0, NH4 - nh4_min) / (std::max(0.0, NH4 - nh4_min) + (w * Kamm));
 }
 
 double fpH(double pHminnit, double pH, double pHmaxnit) {
@@ -49,9 +51,8 @@ double fpH(double pHminnit, double pH, double pHmaxnit) {
 }
 
 double fTgauss(double t, double tnitopt_gauss, double scale_tnitopt) {
-  return exp(-1 * (t - (tnitopt_gauss * tnitopt_gauss)) / (scale_tnitopt * scale_tnitopt));
+  return exp(-1 * pow(t - tnitopt_gauss, 2) / pow(scale_tnitopt, 2));
 }
-
 
 double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2, double tnitmax) {
   return stepwiseLinearFunction4(t, tnitmin, tnitopt, tnitopt2, tnitmax);
@@ -76,7 +77,7 @@ double stics::vnit(const Monica::SticsParameters& ps,
   auto fNH4res = 0.0;
   switch (ps.code_vnit) {
     case 1:
-      vnitpot = ps.fnx * (NH4 - ps.nh4_min);
+      vnitpot = ps.fnx * std::max(0.0, NH4 - ps.nh4_min);
       fNH4res = 1;
       break;
     case 2:
@@ -86,7 +87,7 @@ double stics::vnit(const Monica::SticsParameters& ps,
     default:;
   }
 
-  auto fTres = 0;
+  auto fTres = 0.0;
   switch (ps.code_tnit) {
     case 1: fTres = nit::fTstep(soilT, ps.tnitmin, ps.tnitopt, ps.tnitop2, ps.tnitmax); break;
     case 2: fTres = nit::fTgauss(soilT, ps.tnitopt_gauss, ps.scale_tnitopt); break;
@@ -146,8 +147,8 @@ double fpH(double pH, double pHminden, double pHmaxden) {
   return stepwiseLinearFunction3(pH, pHminden, pHmaxden, 1.0, 0.0);
 }
 
-double fWFPS(double WFPS, double wfpsc) {
-  return 1 - (WFPS - wfpsc) / (1 - wfpsc);
+double fWFPS(double wfps, double wfpsc) {
+  return 1.0 - (wfps - wfpsc) / (1.0 - wfpsc);
 }
 
 double rcor(double wfpsc, double pH, double pHminden, double pHmaxden) {
@@ -168,14 +169,14 @@ double stics::N2O(const Monica::SticsParameters& ps,
                   double vnit,
                   double vdenit) {
 
-  auto z = 0;
+  auto z = 0.0;
   switch (ps.code_rationit) {
     case 1: z = ps.rationit; break;
     case 2: z = 0.16 * (0.4 * wfps - 1.04) / (wfps - 1.04); break;
     default:;
   }
 
-  auto r = 0;
+  auto r = 0.0;
   switch (ps.code_ratiodenit) {
     case 1: r = ps.ratiodenit; break;
     case 2: r =
