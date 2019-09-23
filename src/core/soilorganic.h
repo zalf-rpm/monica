@@ -101,6 +101,17 @@ namespace Monica
 
 		double get_Organic_N(int i_Layer) const;
 
+    double actAmmoniaOxidationRate(int i) const {
+      return vo_ActAmmoniaOxidationRate.at(i);
+    }
+
+    double actNitrificationRate(int i) const {
+      return vo_ActNitrificationRate.at(i);
+    }
+    double actDenitrificationRate(int i) const {
+      return vo_ActDenitrificationRate.at(i);
+    }
+
   private:
     //void fo_OM_Input(bool vo_AOM_Addition);
     void fo_Urea(double vo_RainIrrigation);
@@ -148,6 +159,7 @@ namespace Monica
     std::size_t vs_NumberOfOrganicLayers{0};
     bool addedOrganicMatter{false};
     double irrigationAmount{0.0};
+    std::vector<double> vo_ActAmmoniaOxidationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_ActNitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_ActDenitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_AOM_FastDeltaSum;

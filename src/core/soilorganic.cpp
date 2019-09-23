@@ -52,6 +52,7 @@ SoilOrganic::SoilOrganic(SoilColumn& sc,
   organicPs(userParams),
   vs_NumberOfLayers(sc.vs_NumberOfLayers()),
   vs_NumberOfOrganicLayers(sc.vs_NumberOfOrganicLayers()),
+  vo_ActAmmoniaOxidationRate(sc.vs_NumberOfOrganicLayers()),
   vo_ActNitrificationRate(sc.vs_NumberOfOrganicLayers()),
   vo_ActDenitrificationRate(sc.vs_NumberOfOrganicLayers()),
   vo_AOM_FastDeltaSum(sc.vs_NumberOfOrganicLayers()),
@@ -1120,40 +1121,46 @@ void SoilOrganic::fo_Nitrification() {
   std::vector<double> vo_NitriteOxidationRateCoeff(nools, 0.0);
 
   //! Nitrification rate [kg NH4-N m-3 d-1]
-  std::vector<double> vo_AmmoniaOxidationRate(nools, 0.0);
+  //std::vector<double> vo_AmmoniaOxidationRate(nools, 0.0);
   //std::vector<double> vo_NitriteOxidationRate(nools, 0.0);
 
   for (int i = 0; i < nools; i++) {
+    auto& sci = soilColumn[i];
+    auto NH4 = sci.vs_SoilNH4;
+
     // Calculate nitrification rate coefficients
-//    cout << "SO-2:\t" << soilColumn[i_Layer].vs_SoilMoisture_pF() << endl;
-    vo_AmmoniaOxidationRateCoeff[i] = po_AmmoniaOxidationRateCoeffStandard * fo_TempOnNitrification(
-      soilColumn[i].get_Vs_SoilTemperature()) * fo_MoistOnNitrification(soilColumn[i].vs_SoilMoisture_pF());
+    //  cout << "SO-2:\t" << soilColumn[i_Layer].vs_SoilMoisture_pF() << endl;
+    vo_AmmoniaOxidationRateCoeff[i] = 
+      po_AmmoniaOxidationRateCoeffStandard 
+      * fo_TempOnNitrification(sci.get_Vs_SoilTemperature()) 
+      * fo_MoistOnNitrification(sci.vs_SoilMoisture_pF());
 
-    vo_AmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * soilColumn[i].vs_SoilNH4;
+    vo_ActAmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4;
 
-    vo_NitriteOxidationRateCoeff[i] = po_NitriteOxidationRateCoeffStandard
-      * fo_TempOnNitrification(soilColumn[i].get_Vs_SoilTemperature())
-      * fo_MoistOnNitrification(soilColumn[i].vs_SoilMoisture_pF())
-      * fo_NH3onNitriteOxidation(soilColumn[i].vs_SoilNH4, soilColumn[i].vs_SoilpH());
+    vo_NitriteOxidationRateCoeff[i] = 
+      po_NitriteOxidationRateCoeffStandard
+      * fo_TempOnNitrification(sci.get_Vs_SoilTemperature())
+      * fo_MoistOnNitrification(sci.vs_SoilMoisture_pF())
+      * fo_NH3onNitriteOxidation(NH4, sci.vs_SoilpH());
 
-    vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * soilColumn[i].vs_SoilNO2;
+    vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * sci.vs_SoilNO2;
 
     // Update NH4, NO2 and NO3 content with nitrification balance
     // Stange, F., C. Nendel (2014): N.N., in preparation
-    if (soilColumn[i].vs_SoilNH4 > vo_AmmoniaOxidationRate[i]) {
-      soilColumn[i].vs_SoilNH4 -= vo_AmmoniaOxidationRate[i];
-      soilColumn[i].vs_SoilNO2 += vo_AmmoniaOxidationRate[i];
+    if (NH4 > vo_ActAmmoniaOxidationRate[i]) {
+      sci.vs_SoilNH4 -= vo_ActAmmoniaOxidationRate[i];
+      sci.vs_SoilNO2 += vo_ActAmmoniaOxidationRate[i];
     } else {
-      soilColumn[i].vs_SoilNO2 += soilColumn[i].vs_SoilNH4;
-      soilColumn[i].vs_SoilNH4 = 0.0;
+      sci.vs_SoilNO2 += NH4;
+      sci.vs_SoilNH4 = 0.0;
     }
 
-    if (soilColumn[i].vs_SoilNO2 > vo_ActNitrificationRate[i]) {
-      soilColumn[i].vs_SoilNO2 -= vo_ActNitrificationRate[i];
-      soilColumn[i].vs_SoilNO3 += vo_ActNitrificationRate[i];
+    if (sci.vs_SoilNO2 > vo_ActNitrificationRate[i]) {
+      sci.vs_SoilNO2 -= vo_ActNitrificationRate[i];
+      sci.vs_SoilNO3 += vo_ActNitrificationRate[i];
     } else {
-      soilColumn[i].vs_SoilNO3 += soilColumn[i].vs_SoilNO2;
-      soilColumn[i].vs_SoilNO2 = 0.0;
+      sci.vs_SoilNO3 += sci.vs_SoilNO2;
+      sci.vs_SoilNO2 = 0.0;
     }
   }
 }
@@ -1163,16 +1170,17 @@ void SoilOrganic::fo_stics_Nitrification() {
   auto sticsParams = organicPs.sticsParams;
 
   for (int i = 0; i < nools; i++) {
-    auto sci = soilColumn[i];
+    auto& sci = soilColumn[i];
     auto sm = sci.get_Vs_SoilMoisture_m3(); // m3-water/m3-soil
     auto sbd = sci.vs_SoilBulkDensity(); // kg-soil/m3-soil
+    auto NH4 = sci.get_SoilNH4();
 
     auto kgN_per_m3_to_mgN_per_kg = 1000.0 * 1000.0 / sbd;
     auto mgN_per_kg_to_kgN_per_m3 = 1 / kgN_per_m3_to_mgN_per_kg;
 
     vo_ActNitrificationRate[i] =
       stics::vnit(sticsParams,
-                  sci.get_SoilNH4() * kgN_per_m3_to_mgN_per_kg, // kg-NH4-N/m3-soil -> mg-NH4-N/kg-soil)
+                  NH4 * kgN_per_m3_to_mgN_per_kg, // kg-NH4-N/m3-soil -> mg-NH4-N/kg-soil)
                   sci.vs_SoilpH(), // []
                   sci.get_Vs_SoilTemperature(), // [°C]
                   sm / sci.vs_Saturation(), // soil water-filled pore space []
@@ -1181,12 +1189,12 @@ void SoilOrganic::fo_stics_Nitrification() {
                   sci.vs_Saturation())
       * mgN_per_kg_to_kgN_per_m3; // mg-N -> kg-N;
 
-    if (soilColumn[i].vs_SoilNH4 > vo_ActNitrificationRate[i]) {
-      soilColumn[i].vs_SoilNH4 -= vo_ActNitrificationRate[i];
-      soilColumn[i].vs_SoilNO3 += vo_ActNitrificationRate[i];
+    if (NH4 > vo_ActNitrificationRate[i]) {
+      sci.vs_SoilNH4 -= vo_ActNitrificationRate[i];
+      sci.vs_SoilNO3 += vo_ActNitrificationRate[i];
     } else {
-      soilColumn[i].vs_SoilNO3 += soilColumn[i].vs_SoilNH4;
-      soilColumn[i].vs_SoilNH4 = 0.0;
+      sci.vs_SoilNO3 += NH4;
+      sci.vs_SoilNH4 = 0.0;
     }
   }
 }
@@ -1201,28 +1209,29 @@ void SoilOrganic::fo_Denitrification() {
   double po_TransportRateCoeff = organicPs.po_TransportRateCoeff;
   vo_TotalDenitrification = 0.0;
 
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
+  for (int i = 0; i < nools; i++) {
+    auto& sci = soilColumn[i];
+    auto NO3 = sci.vs_SoilNO3;
+
     //Temperature function is the same as in Nitrification subroutine
-    vo_PotDenitrificationRate[i_Layer] = po_SpecAnaerobDenitrification
-      * vo_SMB_CO2EvolutionRate[i_Layer]
-      * fo_TempOnNitrification(soilColumn[i_Layer].get_Vs_SoilTemperature());
+    vo_PotDenitrificationRate[i] = po_SpecAnaerobDenitrification
+      * vo_SMB_CO2EvolutionRate[i]
+      * fo_TempOnNitrification(sci.get_Vs_SoilTemperature());
 
-    vo_ActDenitrificationRate[i_Layer] = min(vo_PotDenitrificationRate[i_Layer]
-                                             * fo_MoistOnDenitrification(soilColumn[i_Layer].get_Vs_SoilMoisture_m3(),
-                                                                         soilColumn[i_Layer].vs_Saturation()), po_TransportRateCoeff
-                                             * soilColumn[i_Layer].vs_SoilNO3);
-  }
-
-  // update NO3 content of soil layer with denitrification balance [kg N m-3]
-  for (int i_Layer = 0; i_Layer < nools; i_Layer++) {
-    if (soilColumn[i_Layer].vs_SoilNO3 > vo_ActDenitrificationRate[i_Layer]) {
-      soilColumn[i_Layer].vs_SoilNO3 -= vo_ActDenitrificationRate[i_Layer];
+    vo_ActDenitrificationRate[i] = 
+      min(vo_PotDenitrificationRate[i] * fo_MoistOnDenitrification(sci.get_Vs_SoilMoisture_m3(),
+                                                                   sci.vs_Saturation()),
+          po_TransportRateCoeff * NO3);
+  
+    // update NO3 content of soil layer with denitrification balance [kg N m-3]
+    if (NO3 > vo_ActDenitrificationRate[i]) {
+      sci.vs_SoilNO3 -= vo_ActDenitrificationRate[i];
     } else {
-      vo_ActDenitrificationRate[i_Layer] = soilColumn[i_Layer].vs_SoilNO3;
-      soilColumn[i_Layer].vs_SoilNO3 = 0.0;
+      vo_ActDenitrificationRate[i] = NO3;
+      sci.vs_SoilNO3 = 0.0;
     }
 
-    vo_TotalDenitrification += vo_ActDenitrificationRate[i_Layer] * soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2] ;
+    vo_TotalDenitrification += vo_ActDenitrificationRate[i] * soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2] ;
   }
 
   vo_SumDenitrification += vo_TotalDenitrification; // [kg N m-2]
@@ -1234,10 +1243,11 @@ void SoilOrganic::fo_stics_Denitrification() {
   vo_TotalDenitrification = 0.0;
   
   for (int i = 0; i < nools; i++) {
-    auto sci = soilColumn[i];
+    auto& sci = soilColumn[i];
     auto sm = sci.get_Vs_SoilMoisture_m3(); // m3-water/m3-soil
     auto sbd = sci.vs_SoilBulkDensity(); // kg-soil/m3-soil
-    auto layerThickness = soilColumn[i].vs_LayerThickness;
+    auto layerThickness = sci.vs_LayerThickness;
+    auto NO3 = sci.get_SoilNO3();
 
     auto kgN_per_m3_to_mgN_per_kg = 1000.0 * 1000.0 / sbd;
     auto mgN_per_kg_to_kgN_per_m3 = 1 / kgN_per_m3_to_mgN_per_kg;
@@ -1245,24 +1255,23 @@ void SoilOrganic::fo_stics_Denitrification() {
     vo_ActDenitrificationRate[i] =
       stics::vdenit(sticsParams,
                     sci.vs_SoilOrganicCarbon() * 100.0, // kg-C/kg-soil = % [0-1] -> % [0-100]
-                    sci.get_SoilNO3() * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
+                    NO3 * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
                     sci.get_Vs_SoilTemperature(), // [°C]
                     sm / sci.vs_Saturation(), // soil water-filled pore space []
                     sm * 1000 / sbd) // gravimetric soil water content kg-water/kg-soil
       * mgN_per_kg_to_kgN_per_m3; // mg-N -> kg-N;
-  }
 
-  // update NO3 content of soil layer with denitrification balance [kg N m-3]
-  for (int i = 0; i < nools; i++) {
-    if (soilColumn[i].vs_SoilNO3 > vo_ActDenitrificationRate[i]) {
-      soilColumn[i].vs_SoilNO3 -= vo_ActDenitrificationRate[i];
+    // update NO3 content of soil layer with denitrification balance [kg N m-3]
+    if (NO3 > vo_ActDenitrificationRate[i]) {
+      sci.vs_SoilNO3 -= vo_ActDenitrificationRate[i];
     } else {
-      vo_ActDenitrificationRate[i] = soilColumn[i].vs_SoilNO3;
-      soilColumn[i].vs_SoilNO3 = 0.0;
+      vo_ActDenitrificationRate[i] = NO3;
+      sci.vs_SoilNO3 = 0.0;
     }
     vo_TotalDenitrification += vo_ActDenitrificationRate[i] * soilColumn[0].vs_LayerThickness; // [kg m-3] --> [kg m-2] ;
-  }
 
+  }
+  
   vo_SumDenitrification += vo_TotalDenitrification; // [kg N m-2]
 }
 
@@ -1303,7 +1312,7 @@ double SoilOrganic::fo_stics_N2OProduction() {
   auto sticsParams = organicPs.sticsParams;
 
   for (int i = 0; i < nools; i++) {
-    auto sci = soilColumn[i];
+    auto& sci = soilColumn[i];
     auto sm = sci.get_Vs_SoilMoisture_m3(); // m3-water/m3-soil
     auto sbd = sci.vs_SoilBulkDensity(); // kg-soil/m3-soil
     auto layerThickness = soilColumn[i].vs_LayerThickness;
