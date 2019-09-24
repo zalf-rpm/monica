@@ -55,11 +55,11 @@ double fTgauss(double t, double tnitopt_gauss, double scale_tnitopt) {
 }
 
 double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2, double tnitmax) {
-  return stepwiseLinearFunction4(t, tnitmin, tnitopt, tnitopt2, tnitmax);
+  return std::max(0.0, stepwiseLinearFunction4(t, tnitmin, tnitopt, tnitopt2, tnitmax));
 }
 
 double fWFPS(double wfps, double hminn, double hoptn, double fc, double sat) {
-  return stepwiseLinearFunction4(wfps, hminn, hoptn, fc, sat);
+  return std::max(0.0, stepwiseLinearFunction4(wfps, hminn * fc, hoptn * fc, fc, sat));
 }
 
 } // namespace nit
@@ -172,7 +172,7 @@ double stics::N2O(const Monica::SticsParameters& ps,
   auto z = 0.0;
   switch (ps.code_rationit) {
     case 1: z = ps.rationit; break;
-    case 2: z = 0.16 * (0.4 * wfps - 1.04) / (wfps - 1.04); break;
+    case 2: z = 0.16 * (0.4 * wfps - 1.04) / (wfps - 1.04) / 100.0; break;
     default:;
   }
 
