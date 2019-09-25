@@ -136,9 +136,6 @@ namespace Monica
     // use STICS N2O production code
     double fo_stics_N2OProduction();
 
-    // purely use STICS N2O production code
-    double fo_stics_N2OProduction_pure();
-
     void fo_PoolUpdate();
     double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
     double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
