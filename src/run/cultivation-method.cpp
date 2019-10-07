@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../core/monica-parameters.h"
 #include "../core/monica-model.h"
@@ -237,6 +237,15 @@ Errors AutomaticSowing::merge(json11::Json j)
 	set_double_value(_tempSumAboveBaseTemp, j, "temp-sum-above-base-temp");
 	set_double_value(_baseTemp, j, "base-temp");
 
+	json11::Json avgSoilTemp = j["avg-soil-temp"];
+	if (avgSoilTemp.is_object())
+	{
+		set_double_value(_soilDepthForAveraging, avgSoilTemp, "depth");
+		set_int_value(_daysInSoilTempWindow, avgSoilTemp, "days");
+		set_double_value(_sowingIfAboveAvgSoilTemp, avgSoilTemp, "Tavg");
+		_checkForSoilTemperature = _soilDepthForAveraging > 0 && _daysInSoilTempWindow > 0 && _sowingIfAboveAvgSoilTemp > 0;
+	}
+		
 	return res;
 }
 
@@ -244,16 +253,20 @@ json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const
 {
 	auto o = Sowing::to_json().object_items();
 	o["type"] = type();
-	o["earliest-date"] = J11Array{ _earliestDate.toIsoDateString(), "", "earliest sowing date" };
-	o["latest-date"] = J11Array{ _latestDate.toIsoDateString(), "", "latest sowing date" };
-	o["min-temp"] = J11Array{ _minTempThreshold, "°C", "minimal air temperature for sowing (T >= thresh && avg T in Twindow >= thresh)" };
-	o["days-in-temp-window"] = J11Array{ _daysInTempWindow, "d", "days to be used for sliding window of min-temp" };
-	o["min-%-asw"] = J11Array{ _minPercentASW, "%", "minimal soil-moisture in percent of available soil-water" };
-	o["max-%-asw"] = J11Array{ _maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water" };
-	o["max-3d-precip-sum"] = J11Array{ _max3dayPrecipSum, "mm", "sum of precipitation in the last three days (including current day)" };
-	o["max-curr-day-precip"] = J11Array{ _maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day" };
-	o["temp-sum-above-base-temp"] = J11Array{ _tempSumAboveBaseTemp, "°C", "temperature sum above T-base needed" };
-	o["base-temp"] = J11Array{ _baseTemp, "°C", "base temperature above which temp-sum-above-base-temp is counted" };
+	o["earliest-date"] = J11Array{_earliestDate.toIsoDateString(), "", "earliest sowing date"};
+	o["latest-date"] = J11Array{_latestDate.toIsoDateString(), "", "latest sowing date"};
+	o["min-temp"] = J11Array{_minTempThreshold, "ï¿½C", "minimal air temperature for sowing (T >= thresh && avg T in Twindow >= thresh)"};
+	o["days-in-temp-window"] = J11Array{_daysInTempWindow, "d", "days to be used for sliding window of min-temp"};
+	o["min-%-asw"] = J11Array{_minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"};
+	o["max-%-asw"] = J11Array{_maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"};
+	o["max-3d-precip-sum"] = J11Array{_max3dayPrecipSum, "mm", "sum of precipitation in the last three days (including current day)"};
+	o["max-curr-day-precip"] = J11Array{_maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"};
+	o["temp-sum-above-base-temp"] = J11Array{_tempSumAboveBaseTemp, "ï¿½C", "temperature sum above T-base needed"};
+	o["base-temp"] = J11Array{_baseTemp, "ï¿½C", "base temperature above which temp-sum-above-base-temp is counted"};
+	o["avg-soil-temp"] = J11Object
+	{ {"depth", J11Array{_soilDepthForAveraging, "m", "soil depth until averaging will be done"}}
+	,{"days", J11Array{_daysInSoilTempWindow, "d", "window/number of days for which the average temperature must be greater"} }
+	,{"Tavg", J11Array{_sowingIfAboveAvgSoilTemp, "ï¿½C", "temperature which has to be reached on average"}} };
 
 	return o;
 }
@@ -289,6 +302,24 @@ bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>>& climat
 	return precipOk;
 }
 
+bool isSoilTemperatureOk(
+	const std::vector<double>& soilTemps,
+	int windowDays,
+	double targetAvgSoilTemp)
+{
+	if (soilTemps.empty())
+		return false;
+
+	double sum = 0;
+	auto size = soilTemps.size();
+	for (int i = int(size - 1); i >= 0 && i >= size - windowDays; i--)
+		sum += soilTemps[i];
+	double avg = sum / (size > windowDays ? windowDays : size);
+	//cout << "avg: " << avg << endl;
+	return avg >= targetAvgSoilTemp;
+}
+
+
 bool AutomaticSowing::apply(MonicaModel* model)
 {
 	auto currentDate = model->currentStepDate();
@@ -304,10 +335,31 @@ bool AutomaticSowing::apply(MonicaModel* model)
 	return true;
 }
 
+std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(std::function<std::vector<double>&()> getDailyValues)
+{
+	if (!_checkForSoilTemperature)
+		return std::function<double(MonicaModel*)>();
+
+	_getAvgSoilTemps = getDailyValues;
+	return [this](MonicaModel* model) -> double {
+		double avgSoilTemp = 0;
+		uint i = 0;
+		for (uint size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++)
+			avgSoilTemp += model->soilTemperature().get_SoilTemperature(int(i));
+		return avgSoilTemp / double(i);
+	};
+}
+
 bool AutomaticSowing::condition(MonicaModel* model)
 {
 	if (_cropSeeded)
 		return false;
+	
+	// check soil temperature if requested
+	if (_checkForSoilTemperature) {
+		if (!isSoilTemperatureOk(_getAvgSoilTemps(), _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp))
+			return false;
+	}
 
 	auto currentDate = model->currentStepDate();
 

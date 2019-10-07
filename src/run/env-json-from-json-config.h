@@ -21,16 +21,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/date.h"
 #include "run-monica.h"
 #include "json11/json11.hpp"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 
 namespace Monica
 {
 	Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json& root, 
 																												const json11::Json& j);
 
-	json11::Json createEnvJsonFromJsonStrings(std::map<std::string, std::string> params);
+  json11::Json createEnvJsonFromJsonStrings(std::map<std::string, std::string> params);
 
-	json11::Json createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
+  json11::Json createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
 }
 
 #endif //MONICA_ENV_FROM_JSON_H

@@ -212,3 +212,4 @@ project-files/monica.VC.db
 *.exe
 /_cmake_win32
 /_cmake_win64
+_cmake_vs2019_win64

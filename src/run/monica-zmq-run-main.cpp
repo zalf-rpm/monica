@@ -22,17 +22,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "zhelpers.hpp"
 
 #include "json11/json11.hpp"
-
-#include "tools/zmq-helper.h"
+#include "json11/json11-helper.h"
+#include "zeromq/zmq-helper.h"
 #include "tools/helper.h"
-
 #include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "../run/run-monica.h"
 #include "../run/run-monica-zmq.h"
 #include "../io/database-io.h"
 #include "../core/monica-model.h"
-#include "tools/json11-helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
 #include "env-json-from-json-config.h"

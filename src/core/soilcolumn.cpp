@@ -641,14 +641,14 @@ void SoilColumn::applyTillage(double depth)
  * @param depth Depth in meters
  * @return Index of layer
  */
-int SoilColumn::getLayerNumberForDepth(double depth)
+uint SoilColumn::getLayerNumberForDepth(double depth) const
 {
-	int layer = 0;
+	uint layer = 0;
 	double accu_depth = 0;
 	double layer_thickness = at(0).vs_LayerThickness;
 
 	// find number of layer that lay between the given depth
-	for (size_t i = 0, _size = size(); i < _size; i++)
+	for (uint i = 0, _size = size(); i < _size; i++)
 	{
 		accu_depth += layer_thickness;
 		if (depth <= accu_depth)

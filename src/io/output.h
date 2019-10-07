@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
 //#include "../core/monica-model.h"
@@ -103,6 +103,8 @@ namespace Monica
 	{
 		Output() {}
 
+    Output(std::string error) { errors.push_back(error); }
+
 		Output(json11::Json object);
 
 		virtual Tools::Errors merge(json11::Json j);
@@ -120,6 +122,9 @@ namespace Monica
 			std::vector<Tools::J11Object> resultsObj;
 		};
 		std::vector<Data> data;
+
+    std::vector<std::string> errors;
+    std::vector<std::string> warnings;
 	};
 }  
 

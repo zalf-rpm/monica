@@ -15,7 +15,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <cstdlib>
 
-#include "zhelpers.hpp"
+#include "zeromq/zhelpers.hpp"
 #include "tools/debug.h"
 #include "monica-zmq-defaults.h"
 #include "tools/helper.h"

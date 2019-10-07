@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "climate/climate-common.h"
 #include "db/abstract-db-connections.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../io/build-output.h"
 #include "../core/crop-growth.h"
@@ -120,6 +120,9 @@ Errors Env::merge(json11::Json j)
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
+	set_string_value(climateCSV, j, "climateCSV");
+
+	// move pathToClimateCSV whatever it is into an vector as we support multiple climate files (merging)
 	if(j["pathToClimateCSV"].is_string() && !j["pathToClimateCSV"].string_value().empty())
 		pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
 	else if(j["pathToClimateCSV"].is_array())
@@ -165,6 +168,7 @@ json11::Json Env::to_json() const
 	,{"cropRotations", crs}
 	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
+	,{"climateCSV", climateCSV}
 	,{"pathsToClimateCSV", toPrimJsonArray(pathsToClimateCSV)}
 	,{"csvViaHeaderOptions", csvViaHeaderOptions}
 	,{"customId", customId}
@@ -196,6 +200,7 @@ string Env::toString() const
 * @param acd
 * @param data
 */
+/*
 void
 Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 {
@@ -224,6 +229,7 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
 	
 	climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
+*/
 
 //--------------------------------------------------------------------------------------
 
@@ -661,6 +667,29 @@ Output Monica::runMonica(Env env)
 	debug() << "currentDate" << endl;
 	Date currentDate = env.climateData.startDate();
 	
+	// create a way for worksteps to let the runtime calculate at a daily basis things a workstep needs when being executed
+	// e.g. to actually accumulate values from days before the workstep (for calculating a moving window of past values)
+	int dailyFuncId = 0;
+	map<int, vector<double>> dailyValues;
+	vector<function<void()>> applyDailyFuncs;
+
+	//iterate through all the worksteps in the croprotation(s) and check for functions which have to run daily
+	for (auto& cr : env.cropRotations) {
+		for (auto& cm : cr.cropRotation) {
+			for (auto wsptr : cm.getWorksteps()) {
+				auto df = wsptr->registerDailyFunction([&dailyValues, dailyFuncId]() -> vector<double> & {
+					return dailyValues[dailyFuncId];
+					});
+				if (df) {
+					applyDailyFuncs.push_back([&monica, df, dailyFuncId, &dailyValues] {
+						dailyValues[dailyFuncId].push_back(df(&monica));
+						});
+				}
+				dailyFuncId++;
+			}
+		}
+	}
+
 	//auto crit = env.cropRotations.empty() ? env.cropRotations.end() : env.cropRotations.begin();
 	auto crit = env.cropRotations.begin();
 
@@ -823,6 +852,13 @@ Output Monica::runMonica(Env env)
 
 		//monica main stepping method
 		monica.step();
+
+		// call all daily functions, assuming it's better to do this after the steps, than before
+		// so the daily monica calculations will be taken into account
+		// but means also that a workstep which gets executed before the steps, can't take the
+		// values into account by applying a daily function
+		for (auto& f : applyDailyFuncs)
+			f();
 
 		//store results
 		for(auto& s : store)

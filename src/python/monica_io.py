@@ -22,7 +22,7 @@ import sys
 #print "sys.path: ", sys.path
 
 import soil_io
-import monica_python
+#import monica_python
 #print "path to monica_python: ", monica_python.__file__
 
 #print "sys.version: ", sys.version
@@ -655,7 +655,7 @@ def add_climate_data_to_env(env, simj, climate_csv_string=""):
         with open(simj["climate.csv"]) as _:
             climate_csv_string = _.read()
 
-    if climate_csv_string:
-        env["climateData"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climate_csv_string, json.dumps(simj["climate.csv-options"])))
+    #if climate_csv_string:
+    #    env["climateData"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climate_csv_string, json.dumps(simj["climate.csv-options"])))
 
     return env

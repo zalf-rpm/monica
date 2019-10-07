@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common/dll-exports.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "soil/soil.h"
 #include "../core/monica-parameters.h"
 #include "../core/crop.h"
@@ -96,6 +96,10 @@ namespace Monica
 
 		//! reinit potential state of workstep
 		virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
+
+		virtual std::function<double(MonicaModel*)> registerDailyFunction(std::function<std::vector<double>&()> getDailyValues) { 
+			return std::function<double(MonicaModel*)>(); 
+		};
 
 	protected:
 		Tools::Date _date;
@@ -179,6 +183,8 @@ namespace Monica
 
 		virtual Tools::Date absLatestDate() const { return _absLatestDate; }
 
+		virtual std::function<double(MonicaModel*)> registerDailyFunction(std::function<std::vector<double>&()> getDailyValues);
+
 	private:
 		Tools::Date _absEarliestDate;
 		Tools::Date _earliestDate;
@@ -192,6 +198,13 @@ namespace Monica
 		double _maxCurrentDayPrecipSum{0};
 		double _tempSumAboveBaseTemp{0};
 		double _baseTemp{0};
+
+		bool _checkForSoilTemperature{ false };
+		double _soilDepthForAveraging{ 0.30 }; //= 30 cm
+		int _daysInSoilTempWindow{ 0 }; 
+		double _sowingIfAboveAvgSoilTemp{ 0 };
+		std::function<std::vector<double>&()> _getAvgSoilTemps;
+		
 		bool _inSowingRange{false};
 		bool _cropSeeded{false};
 	};

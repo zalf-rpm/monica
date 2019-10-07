@@ -22,7 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 //#include "../run/run-monica.h"
 //#include "../io/database-io.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "tools/helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
@@ -501,11 +501,11 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 	env["csvViaHeaderOptions"] = csvos;
 		
 	if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty())
-		env["climateData"] = readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
-																															env["csvViaHeaderOptions"]);
+		env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+																															env["csvViaHeaderOptions"]));
 	else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty())
-		env["climateData"] = readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
-																															 env["csvViaHeaderOptions"]);
+		env["climateData"] = printPossibleErrors(readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
+																															 env["csvViaHeaderOptions"]));
 
 	return env;
 }

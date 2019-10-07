@@ -23,17 +23,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <thread>
 #include <tuple>
 
-#include "zmq.hpp"
-#include "zhelpers.hpp"
-
+#include "zeromq/zmq.hpp"
+#include "zeromq/zhelpers.hpp"
+#include "zeromq/zmq-helper.h"
 #include "json11/json11.hpp"
-
 #include "serve-monica-zmq.h"
 #include "cultivation-method.h"
 #include "tools/debug.h"
 #include "../io/database-io.h"
 #include "run-monica.h"
-#include "tools/zmq-helper.h"
 #include "../io/output.h"
 #include "climate/climate-file-io.h"
 
@@ -192,12 +190,12 @@ json11::Json createYearlyResultsMessage(map<ResultId, double>& avs)
 }
 */
 
+/*
 void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext, 
 																					string inputSocketAddress,
 																					string outputSocketAddress,
 																					bool isInProcess)
 {
-	/*
   zmq::socket_t input(*zmqContext, isInProcess ? ZMQ_PAIR : ZMQ_PULL);
 	debug() << "MONICA: connecting monica zeromq input socket to address: " << inputSocketAddress << endl;
 	try
@@ -383,8 +381,8 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 	}
 
 	debug() << "exiting startZeroMQMonica" << endl;
-	*/
 }
+*/
 
 //-----------------------------------------------------------------------------
 
@@ -517,19 +515,33 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 						{
 							Json& fullMsg = msg.json;
 
-							Env env(msg.json);
-							if(!env.climateData.isValid() && !env.pathsToClimateCSV.empty())
-								env.climateData = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+              Env env;
+              auto errors = env.merge(msg.json);
 
-							env.debugMode = startedServerInDebugMode && env.debugMode;
-							
-							env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-								[](string soilTexture, int distance)
-							{
-								return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-							};
+              EResult<DataAccessor> eda;
+							if (!env.climateData.isValid()) {
+								if (!env.climateCSV.empty())
+									eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+								else if (!env.pathsToClimateCSV.empty())
+									eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+							}
 
-							auto out = runMonica(env);
+              Monica::Output out;
+              if (eda.success()) {
+                env.climateData = eda.result;
+                
+                env.debugMode = startedServerInDebugMode && env.debugMode;
+
+                env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+                  [](string soilTexture, int distance) {
+                  return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+                };
+
+                out = runMonica(env);
+              }
+              
+              out.errors = eda.errors;
+              out.warnings = eda.warnings;
 
 							try
 							{

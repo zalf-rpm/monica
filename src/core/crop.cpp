@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <mutex>
 
 #include "tools/helper.h"
-#include "tools/json11-helper.h"
+#include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../core/monica-parameters.h"
 #include "tools/debug.h"
