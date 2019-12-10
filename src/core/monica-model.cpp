@@ -116,9 +116,9 @@ void MonicaModel::seedCrop(CropPtr crop)
 		_currentCrop = crop;
 		_cultivationMethodCount++;
 
-		auto addOMFunc = [this](double amount, double nconc)
+		auto addOMFunc = [this](std::map<int, double> layer2amount, double nconc)
 		{
-			this->_soilOrganic.addOrganicMatter(this->_currentCrop->residueParameters(), amount, nconc); 
+			this->_soilOrganic.addOrganicMatter(this->_currentCrop->residueParameters(), layer2amount, nconc); 
 		};
     auto cps = _currentCrop->cropParameters();
     _currentCropGrowth = new CropGrowth(_soilColumn,
@@ -170,15 +170,17 @@ void MonicaModel::harvestCurrentCrop(bool exported,
     if(exported)
     {
 			//prepare to add root and crop residues to soilorganic (AOMs)
-			double rootBiomass = _currentCropGrowth->get_OrganBiomass(0);
+			//dead root biomass has already been added daily, so just living root biomass is left
+			double rootBiomass = _currentCropGrowth->get_OrganGreenBiomass(0); 
 			double rootNConcentration = _currentCropGrowth->get_RootNConcentration();
 			debug() << "adding organic matter from root to soilOrganic" << endl;
 			debug() << "root biomass: " << rootBiomass
 				<< " Root N concentration: " << rootNConcentration << endl;
 
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-																		rootBiomass,
-																		rootNConcentration);
+			_currentCropGrowth->addAndDistributeRootBiomassInSoil(rootBiomass);
+			//_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+			//															rootBiomass,
+			//															rootNConcentration);
 
 			if(optCarbMgmtData.optCarbonConservation)
 			{
@@ -267,9 +269,11 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
 																		abovegroundBiomass,
 																		abovegroundBiomassNConcentration);
-			_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
-																		rootBiomass,
-																		rootNConcentration);
+
+			_currentCropGrowth->addAndDistributeRootBiomassInSoil(rootBiomass);
+			//_soilOrganic.addOrganicMatter(_currentCrop->residueParameters(),
+			//															rootBiomass,
+			//															rootNConcentration);
 		}
 	}
 

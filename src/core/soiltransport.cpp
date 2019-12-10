@@ -25,6 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soiltransport.h"
 #include "crop-growth.h"
 #include "tools/debug.h"
+#include "tools/debug.h"
 
 using namespace std;
 using namespace Monica;
