@@ -2540,7 +2540,6 @@ void CropGrowth::fc_CropNitrogen()
 {
 	double vc_RootNRedux = 0.0; // old REDWU
 	double vc_RootNReduxHelper = 0.0; // old WUX
-	//double vc_MinimumNConcentration   = 0.0; // old MININ
 	double vc_CropNReduxHelper = 0.0; // old AUX
 
 	vc_CriticalNConcentration = pc_NConcentrationPN *
@@ -2572,42 +2571,31 @@ void CropGrowth::fc_CropNitrogen()
 		vc_RootNRedux = 1.0;
 	}
 
-	if(pc_PartBiologicalNFixation <= 0.01)
+
+	if(vc_NConcentrationAbovegroundBiomass < vc_CriticalNConcentration)
 	{
-		if(vc_NConcentrationAbovegroundBiomass < vc_CriticalNConcentration)
+
+		if(vc_NConcentrationAbovegroundBiomass <= pc_MinimumNConcentration)
 		{
-
-			if(vc_NConcentrationAbovegroundBiomass <= pc_MinimumNConcentration)
-			{
-				vc_CropNRedux = 0.0;
-			}
-			else
-			{
-
-				vc_CropNReduxHelper = (vc_NConcentrationAbovegroundBiomass - pc_MinimumNConcentration)
-					/ (vc_CriticalNConcentration - pc_MinimumNConcentration);
-
-				//       // New Monica appraoch
-				vc_CropNRedux = 1.0 - exp(pc_MinimumNConcentration - (5.0 * vc_CropNReduxHelper));
-
-				//        // Original HERMES approach
-				//        vc_CropNRedux = (1.0 - exp(1.0 + 1.0 / (vc_CropNReduxHelper - 1.0))) *
-				//                    (1.0 - exp(1.0 + 1.0 / (vc_CropNReduxHelper - 1.0)));
-			}
+			vc_CropNRedux = 0.0;
 		}
 		else
 		{
-			vc_CropNRedux = 1.0;
+
+			vc_CropNReduxHelper = (vc_NConcentrationAbovegroundBiomass - pc_MinimumNConcentration)
+				/ (vc_CriticalNConcentration - pc_MinimumNConcentration);
+
+			//       // New Monica appraoch
+			vc_CropNRedux = 1.0 - exp(pc_MinimumNConcentration - (5.0 * vc_CropNReduxHelper));
+
+			//        // Original HERMES approach
+			//        vc_CropNRedux = (1.0 - exp(1.0 + 1.0 / (vc_CropNReduxHelper - 1.0))) *
+			//                    (1.0 - exp(1.0 + 1.0 / (vc_CropNReduxHelper - 1.0)));
 		}
 	}
 	else
 	{
-		if(vc_NConcentrationAbovegroundBiomass < vc_CriticalNConcentration)
-		{
-			vc_FixedN = vc_CriticalNConcentration - vc_NConcentrationAbovegroundBiomass;
-			vc_NConcentrationAbovegroundBiomass = vc_CriticalNConcentration;
-			vc_CropNRedux = 1.0;
-		}
+		vc_CropNRedux = 1.0;
 	}
 
 	if(pc_NitrogenResponseOn == false)
@@ -2635,11 +2623,11 @@ void CropGrowth::fc_CropNitrogen()
  * @author Claas Nendel
  */
 void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
-																	double vc_Assimilates,
-																	double /*vc_NetMaintenanceRespiration*/,
-																	double /*pc_CropSpecificMaxRootingDepth*/,
-																	double /*vs_SoilSpecificMaxRootingDepth*/,
-																	double vw_MeanAirTemperature)
+									double vc_Assimilates,
+									double /*vc_NetMaintenanceRespiration*/,
+									double /*pc_CropSpecificMaxRootingDepth*/,
+									double /*vs_SoilSpecificMaxRootingDepth*/,
+									double vw_MeanAirTemperature)
 {
 	assert(soilColumn.vs_NumberOfLayers() >= 0);
 	uint nols = soilColumn.vs_NumberOfLayers();
@@ -2674,7 +2662,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	vc_TotalBiomass = 0.0;
 
 	//old PESUM [kg m-2 --> kg ha-1]
-	vc_TotalBiomassNContent += (soilColumn.vq_CropNUptake * 10000.0) + vc_FixedN;
+	//vc_TotalBiomassNContent += (soilColumn.vq_CropNUptake * 10000.0) + vc_FixedN;
 
 
 
@@ -2855,15 +2843,15 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	}
 
 	vc_CropNDemand = ((vc_TargetNConcentration * vc_AbovegroundBiomass)
-										+ (vc_RootBiomass * vc_MaxRootNConcentration)
-										+ (vc_TargetNConcentration * vc_BelowgroundBiomass / pc_ResidueNRatio)
-										- vc_TotalBiomassNContent) * vc_TimeStep; // [kg ha-1]
+					+ (vc_RootBiomass * vc_MaxRootNConcentration)
+					+ (vc_TargetNConcentration * vc_BelowgroundBiomass / pc_ResidueNRatio)
+					- vc_TotalBiomassNContent) * vc_TimeStep; // [kg ha-1]
 
 	vc_NConcentrationOptimum = ((vc_TargetNConcentration
-															 - (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) * vc_AbovegroundBiomass
-															+ (vc_TargetNConcentration
-																 - (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) * vc_BelowgroundBiomass / pc_ResidueNRatio
-															+ (vc_RootBiomass * vc_MaxRootNConcentration) - vc_TotalBiomassNContent) * vc_TimeStep; // [kg ha-1]
+								- (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) * vc_AbovegroundBiomass
+								+ (vc_TargetNConcentration
+								- (vc_TargetNConcentration - vc_CriticalNConcentration) * 0.15) * vc_BelowgroundBiomass / pc_ResidueNRatio
+								+ (vc_RootBiomass * vc_MaxRootNConcentration) - vc_TotalBiomassNContent) * vc_TimeStep; // [kg ha-1]
 
 
 
@@ -2968,13 +2956,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	if(vc_RootingDepth_m > vs_MaxEffectiveRootingDepth)
 		vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
 
-	//std::cout << "vs_MaxEffectiveRootingDepth: " << vs_MaxEffectiveRootingDepth << std::endl;
-	//std::cout << "vc_RootPenetrationRate: " << vc_RootPenetrationRate << std::endl;
-	//std::cout << "pc_RootPenetrationRate: " << pc_RootPenetrationRate << std::endl;
-	//std::cout << "vc_CurrentTotalTemperatureSumRoot: " << vc_CurrentTotalTemperatureSumRoot << std::endl;
-	//std::cout << "vc_DailyTemperatureRoot: " << vc_DailyTemperatureRoot << std::endl;
-	//std::cout << "pc_RootGrowthLag: " << pc_RootGrowthLag << std::endl;
-	//std::cout << "pc_InitialRootingDepth: " << pc_InitialRootingDepth << std::endl;
 
 	// Calculating rooting depth layer []
 	vc_RootingDepth = int(std::floor(0.5 + (vc_RootingDepth_m / layerThickness))); // []
@@ -2987,15 +2968,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 
 	vc_TotalRootLength = vc_RootBiomass * pc_SpecificRootLength; //[m m-2]
 
-	//std::cout << "vc_MaxRootingDepth: " << vc_MaxRootingDepth << std::endl;
-	//std::cout << "vc_RootingDepth: " << vc_RootingDepth << std::endl;
-	//std::cout << "vc_RootingZone: " << vc_RootingZone << std::endl;
-	//std::cout << "vc_RootingDepth_m: " << vc_RootingDepth_m << std::endl;
-	//std::cout << "vc_TotalRootLength: " << vc_TotalRootLength << std::endl;
-	//std::cout << "vs_LayerThickness: " << vs_LayerThickness << std::endl;
-	//std::cout << "pc_RootFormFactor: " << pc_RootFormFactor << std::endl;
-	//std::cout << "pc_SpecificRootLength: " << pc_SpecificRootLength << std::endl;
-
 	// Calculating a root density distribution factor []
 	std::vector<double> vc_RootDensityFactor(nols, 0.0);
 	for(size_t i_Layer = 0; i_Layer < nols; i_Layer++)
@@ -3007,8 +2979,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 			* (1.0 - ((i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth))); // []
 		else
 			vc_RootDensityFactor[i_Layer] = 0.0; // []
-
-		//std::cout << setprecision(11) << "vc_RootDensityFactor[i_Layer]: " << i_Layer << ", " << vc_RootDensityFactor[i_Layer] << std::endl;
 	}
 
 	// Summing up all factors to scale to a relative factor between [0;1]
@@ -3156,15 +3126,15 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
  * @return Reference evapotranspiration
  */
 double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
-																									double vw_MaxAirTemperature,
-																									double vw_MinAirTemperature,
-																									double vw_RelativeHumidity,
-																									double vw_MeanAirTemperature,
-																									double vw_WindSpeed,
-																									double vw_WindSpeedHeight,
-																									double vc_GlobalRadiation,
-																									double vw_AtmosphericCO2Concentration,
-																									double vc_GrossPhotosynthesisReference_mol)
+												double vw_MaxAirTemperature,
+												double vw_MinAirTemperature,
+												double vw_RelativeHumidity,
+												double vw_MeanAirTemperature,
+												double vw_WindSpeed,
+												double vw_WindSpeedHeight,
+												double vc_GlobalRadiation,
+												double vw_AtmosphericCO2Concentration,
+												double vc_GrossPhotosynthesisReference_mol)
 {
 	double vc_AtmosphericPressure; //[kPA]
 	double vc_PsycrometerConstant; //[kPA °C-1]
@@ -3216,7 +3186,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 
 	// Slope of saturation water vapour pressure-to-temperature relation
 	vc_SaturatedVapourPressureSlope = (4098.0 * (0.6108 * exp((17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature
-																													 + 237.3)))) / ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
+									 + 237.3)))) / ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
 
 	// Calculation of wind speed in 2m height
 	vc_WindSpeed_2m = vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42)));
@@ -3260,14 +3230,14 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 
 	double pc_BolzmanConstant = 0.0000000049; // Bolzmann constant 4.903 * 10-9 MJ m-2 K-4 d-1
 	vw_NetRadiation = vc_NetShortwaveRadiation - (pc_BolzmanConstant
-															* (pow((vw_MinAirTemperature + 273.16), 4.0) + pow((vw_MaxAirTemperature
-																		+ 273.16), 4.0)) / 2.0 * (1.35 * vc_RelativeShortwaveRadiation - 0.35)
-																								* (0.34 - 0.14 * sqrt(vc_VapourPressure)));
+					* (pow((vw_MinAirTemperature + 273.16), 4.0) + pow((vw_MaxAirTemperature
+					+ 273.16), 4.0)) / 2.0 * (1.35 * vc_RelativeShortwaveRadiation - 0.35)
+					* (0.34 - 0.14 * sqrt(vc_VapourPressure)));
 
 	// Calculation of reference evapotranspiration
 	// Penman-Monteith-Method FAO
 	vc_ReferenceEvapotranspiration = ((0.408 * vc_SaturatedVapourPressureSlope * vw_NetRadiation)
-																		+ (vc_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0)) * vc_WindSpeed_2m * vc_SaturationDeficit))
+									+ (vc_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0)) * vc_WindSpeed_2m * vc_SaturationDeficit))
 		/ (vc_SaturatedVapourPressureSlope + vc_PsycrometerConstant * (1.0 + (vc_SurfaceResistance / vc_AerodynamicResistance)));
 
 	
@@ -3293,12 +3263,12 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
  * @author Claas Nendel
  */
 void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
-																		size_t vc_RootingZone,
-																		size_t vc_GroundwaterTable,
-																		double vc_ReferenceEvapotranspiration,
-																		double vw_GrossPrecipitation,
-																		double /*vc_CurrentTotalTemperatureSum*/,
-																		double /*vc_TotalTemperatureSum*/)
+									size_t vc_RootingZone,
+									size_t vc_GroundwaterTable,
+									double vc_ReferenceEvapotranspiration,
+									double vw_GrossPrecipitation,
+									double /*vc_CurrentTotalTemperatureSum*/,
+									double /*vc_TotalTemperatureSum*/)
 {
 	size_t nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
@@ -3679,6 +3649,8 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 
 		} // for
 
+		// *** Biological N Fixation ***
+
 		vc_FixedN = pc_PartBiologicalNFixation * vc_CropNDemand * 10000.0; // [kg N ha-1]
 		//Part of the deficit which can be covered by biologocal N fixation.
 
@@ -3694,6 +3666,7 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 	} // if
 
 	vc_SumTotalNUptake += vc_TotalNUptake;
+	vc_TotalBiomassNContent += vc_TotalNInput;
 
 
 	if(vc_RootBiomass > vc_RootBiomassOld)
@@ -3701,9 +3674,9 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 
 		// wurzel ist gewachsen
 		vc_NConcentrationRoot = ((vc_RootBiomassOld * vc_NConcentrationRoot)
-														 + ((vc_RootBiomass - vc_RootBiomassOld) / (vc_AbovegroundBiomass
-																																				- vc_AbovegroundBiomassOld + vc_BelowgroundBiomass - vc_BelowgroundBiomassOld
-																																				+ vc_RootBiomass - vc_RootBiomassOld) * vc_TotalNInput)) / vc_RootBiomass;
+								+ ((vc_RootBiomass - vc_RootBiomassOld) / (vc_AbovegroundBiomass
+								- vc_AbovegroundBiomassOld + vc_BelowgroundBiomass - vc_BelowgroundBiomassOld
+								+ vc_RootBiomass - vc_RootBiomassOld) * vc_TotalNInput)) / vc_RootBiomass;
 
 		vc_NConcentrationRoot = min(vc_NConcentrationRoot, pc_StageMaxRootNConcentration[vc_DevelopmentalStage]);
 
@@ -3714,20 +3687,19 @@ void CropGrowth::fc_CropNUptake(int vc_RootingZone,
 		}
 	}
 
-	vc_NConcentrationAbovegroundBiomass = (vc_TotalBiomassNContent + vc_TotalNInput
-																				 - (vc_RootBiomass * vc_NConcentrationRoot))
+	vc_NConcentrationAbovegroundBiomass = (vc_TotalBiomassNContent - (vc_RootBiomass * vc_NConcentrationRoot))
 		/ (vc_AbovegroundBiomass + (vc_BelowgroundBiomass / pc_ResidueNRatio));
 
 	if((vc_NConcentrationAbovegroundBiomass * vc_AbovegroundBiomass) < (vc_AbovegroundBiomassOld
-																																			* vc_NConcentrationAbovegroundBiomassOld))
+									* vc_NConcentrationAbovegroundBiomassOld))
 	{
 
 		vc_NConcentrationAbovegroundBiomass = vc_AbovegroundBiomassOld * vc_NConcentrationAbovegroundBiomassOld
 			/ vc_AbovegroundBiomass;
 
 		vc_NConcentrationRoot = (vc_TotalBiomassNContent + vc_TotalNInput
-														 - (vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass)
-														 - (vc_NConcentrationAbovegroundBiomass / pc_ResidueNRatio * vc_BelowgroundBiomass)) / vc_RootBiomass;
+								- (vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass)
+								- (vc_NConcentrationAbovegroundBiomass / pc_ResidueNRatio * vc_BelowgroundBiomass)) / vc_RootBiomass;
 	}
 }
 
