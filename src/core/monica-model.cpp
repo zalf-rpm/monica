@@ -483,16 +483,16 @@ void MonicaModel::applyMineralFertiliser(MineralFertiliserParameters partition,
 }
 
 void MonicaModel::applyOrganicFertiliser(const OrganicMatterParametersPtr params,
-                                         double amount,
+                                         double amountFM,
                                          bool incorporation)
 {
 	if(params)
 	{
-		debug() << "MONICA model: applyOrganicFertiliser:\t" << amount << "\t" << params->vo_NConcentration << endl;
+		debug() << "MONICA model: applyOrganicFertiliser:\t" << amountFM << "\t" << params->vo_NConcentration << endl;
 		_soilOrganic.setIncorporation(incorporation);
-		_soilOrganic.addOrganicMatter(params, amount, params->vo_NConcentration);
-		addDailySumOrgFertiliser(amount, params);
-		addDailySumOrganicFertilizerDM(amount * params->vo_AOM_DryMatterContent);
+		_soilOrganic.addOrganicMatter(params, amountFM, params->vo_NConcentration);
+		addDailySumOrgFertiliser(amountFM, params);
+		addDailySumOrganicFertilizerDM(amountFM * params->vo_AOM_DryMatterContent);
 	}
 }
 
