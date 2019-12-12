@@ -60,7 +60,17 @@ namespace Monica
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
     void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
-                          double amount, double nConcentration = 0);
+													std::map<int, double> layer2amount,
+													double nConcentration = 0);
+
+		void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
+													double amount,
+													double nConcentration = 0,
+													int intoLayerIndex = 0)
+		{
+			addOrganicMatter(addedOrganicMatter, {{intoLayerIndex, amount}}, nConcentration);
+		}
+
 
     void addIrrigationWater(double amount);
 
@@ -147,7 +157,7 @@ namespace Monica
     double fo_MoistOnNitrification(double d_SoilMoisture_pF);
     double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
-
+		void fo_distributeDeadRootBiomass();
     SoilColumn& soilColumn;
     const SiteParameters& siteParams;
     const UserSoilOrganicParameters& organicPs;

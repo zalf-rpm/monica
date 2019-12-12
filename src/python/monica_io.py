@@ -27,7 +27,9 @@ import soil_io
 
 #print "sys.version: ", sys.version
 
-print("local monica_io.py")
+#print("local monica_io.py")
+
+CACHE_REFS = False
 
 OP_AVG = 0
 OP_MEDIAN = 1
@@ -309,7 +311,7 @@ def find_and_replace_references(root, j):
 def supported_patterns():
 
     def ref(root, j):
-        if "cache" not in ref.__dict__:
+        if CACHE_REFS and "cache" not in ref.__dict__:
             ref.cache = {}
 
         if len(j) == 3 \
@@ -319,11 +321,12 @@ def supported_patterns():
             key1 = j[1]
             key2 = j[2]
 
-            if (key1, key2) in ref.cache:
+            if CACHE_REFS and (key1, key2) in ref.cache:
                 return ref.cache[(key1, key2)]
 
             res = find_and_replace_references(root, root[key1][key2])
-            ref.cache[(key1, key2)] = res
+            if CACHE_REFS:
+                ref.cache[(key1, key2)] = res
             return res
 
         return {"result": j,

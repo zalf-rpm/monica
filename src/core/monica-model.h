@@ -112,7 +112,7 @@ namespace Monica
 		                            double amount);
 
 		void applyOrganicFertiliser(const OrganicMatterParametersPtr,
-		                            double amount,
+		                            double amountFM,
 		                            bool incorporation);
 
 		bool useNMinMineralFertilisingMethod() const

@@ -87,6 +87,7 @@ namespace Monica
     double vo_AOM_FastDelta{0.0}; //!< Difference of AOM fast between to timesteps
 
     bool incorporation{false};  //!< True if organic fertilizer is added with a subsequent incorporation.
+		bool noVolatilization{true}; //!< true means it's a crop residue and won't participate in vo_volatilisation()
   };
 
   //----------------------------------------------------------------------------
