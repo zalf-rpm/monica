@@ -355,12 +355,6 @@ bool AutomaticSowing::condition(MonicaModel* model)
 	if (_cropSeeded)
 		return false;
 	
-	// check soil temperature if requested
-	if (_checkForSoilTemperature) {
-		if (!isSoilTemperatureOk(_getAvgSoilTemps(), _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp))
-			return false;
-	}
-
 	auto currentDate = model->currentStepDate();
 
 	if (!_inSowingRange && currentDate < _absEarliestDate)
@@ -370,6 +364,12 @@ bool AutomaticSowing::condition(MonicaModel* model)
 
 	if (_inSowingRange && currentDate >= _absLatestDate)
 		return true;
+
+  // check soil temperature if requested
+  if (_checkForSoilTemperature) {
+    if (!isSoilTemperatureOk(_getAvgSoilTemps(), _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp))
+      return false;
+  }
 
 	const auto& cd = model->climateData();
 	auto currentCd = cd.back();
