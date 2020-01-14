@@ -40,7 +40,8 @@ def main():
         "climate.csv": os.path.join(os.path.dirname(__file__), '../climate-min.csv'),
         "shared_id": None,
         "climate_service_address": "10.10.24.186:11000",
-        "climate_data_service_address": "localhost:11001",
+        #"climate_data_service_address": "localhost:11001",
+        "climate_data_service_address": "login01.cluster.zalf.de:11001",
         "admin_master_address": "10.10.24.186:8000"
     }
     # read commandline args only if script is invoked directly from commandline
@@ -68,7 +69,45 @@ def main():
     coord.latlon.lat = 46.51412
     coord.latlon.lon = 12.81895
     ctss = real1.closestTimeSeriesAt(coord).wait().timeSeries
+    cts1 = ctss[0]
+    header = cts1.header().wait().header
+    datat = cts1.dataT().wait().data
+    print(scen1.simulationInfo().wait().simulationInfo)
+    stations = sim1.stations().wait().stations
+    station1 = stations[0]
+    print(station1.geoCoord().wait().geoCoord)
+    allts = station1.allTimeSeries().wait().allTimeSeries
+    allts1 = allts[0]
+    print(allts1.simulationInfo().wait().simulationInfo)
+    print(allts1.scenarioInfo().wait().scenarioInfo)
+    print(allts1.realizationInfo().wait().realizationInfo)
+    ds = allts1.data().wait().data
+    dst = allts1.dataT().wait().data
 
+    sim2 = sims[1]
+    scen2 = sim2.scenarios().wait().scenarios[0]
+    real2 = scen2.realizations().wait().realizations[0]
+    cts2 = real2.closestTimeSeriesAt(coord).wait().timeSeries[0]
+    cts2.simulationInfo().wait().simulationInfo
+    data2 = cts2.data().wait().data
+    
+    station2 = sim2.stations().wait().stations[0]
+    allts2 = station2.allTimeSeries().wait().allTimeSeries[0]
+    data3 = allts2.data().wait().data
+
+    coord.latlon.lat = 51.18323
+    coord.latlon.lon = 2.84376
+    ctss3 = real1.closestTimeSeriesAt(coord).wait().timeSeries[0]
+    ds3 = ctss3.data().wait().data
+    ctss4 = real2.closestTimeSeriesAt(coord).wait().timeSeries[0]
+    ds4 = ctss4.data().wait().data
+
+    coord.latlon.lat = 44.10437
+    coord.latlon.lon = 26.55972
+    ctss5 = real1.closestTimeSeriesAt(coord).wait().timeSeries[0]
+    ds5 = ctss5.data().wait().data
+    ctss6 = real2.closestTimeSeriesAt(coord).wait().timeSeries[0]
+    ds6 = ctss6.data().wait().data
 
 #46.51412,12.81895
     #csv_time_series = capnp.TwoPartyClient(config["climate_service_address"]).bootstrap().cast_as(
