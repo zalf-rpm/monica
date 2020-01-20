@@ -67,9 +67,9 @@ using namespace mas;
 DataAccessor fromCapnpData(
   const Date& startDate,
   const Date& endDate,
-  capnp::List<rpc::Climate::Element>::Reader header,
+  capnp::List<rpc::ClimateData::Element>::Reader header,
   capnp::List<capnp::List<float>>::Reader data) {
-  typedef rpc::Climate::Element E;
+  typedef rpc::ClimateData::Element E;
 
   if (data.size() == 0)
     return DataAccessor();
