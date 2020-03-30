@@ -1101,11 +1101,19 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.soilOrganic().get_Denitrification(), 5);
 			});
 
-			build({ id++, "N2O", "kgN ha-1", "N2O" },
-				[](const MonicaModel& monica, OId oid)
-			{
-				return round(monica.soilOrganic().get_N2O_Produced(), 5);
-			});
+      build({ id++, "N2O", "kgN ha-1", "N2O" },
+            [](const MonicaModel& monica, OId oid)
+            {
+              return round(monica.soilOrganic().get_N2O_Produced(), 5);
+            });
+      build({ id++, "N2Onit", "kgN ha-1", "N2O from nitrification" },
+            [](const MonicaModel& monica, OId oid) {
+              return round(monica.soilOrganic().get_N2O_Produced_Nit(), 5);
+            });
+      build({ id++, "N2Odenit", "kgN ha-1", "N2O from denitrification" },
+            [](const MonicaModel& monica, OId oid) {
+              return round(monica.soilOrganic().get_N2O_Produced_Denit(), 5);
+            });
 
 			build({ id++, "SoilpH", "", "SoilpH" },
 				[](const MonicaModel& monica, OId oid)

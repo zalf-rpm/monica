@@ -48,7 +48,8 @@ double vdenit(const Monica::SticsParameters& ps,
 // N2O emissions [mg-N2O-N/kg-soil/day]
 // vnit [mg-n/kg-soil/day]
 // vdenit [mg-N/kg-soil/day]
-double N2O(const Monica::SticsParameters& ps,
+typedef std::pair<double, double> NitDenitN2O;
+NitDenitN2O N2O(const Monica::SticsParameters& ps,
            double NO3,
            double wfps,
            double pH,
@@ -56,7 +57,7 @@ double N2O(const Monica::SticsParameters& ps,
            double vdenit);
 
 // N2O emissions [mg-N2O-N/kg-soil/day]
-double N2O(const Monica::SticsParameters& ps,
+NitDenitN2O N2O(const Monica::SticsParameters& ps,
            double corg,
            double NO3,
            double soilT,
