@@ -581,7 +581,10 @@ void MonicaModel::generalStep()
 	double wind = climateData[Climate::wind];
 	double globrad = climateData[Climate::globrad];	
 	
-	
+	// test if data for relhumid are available; if not, value is set to -1.0
+	double relhumid = climateData.find(Climate::relhumid) == climateData.end()
+		? -1.0
+		: climateData[Climate::relhumid];
 
 
   // test if simulated gw or measured values should be used
