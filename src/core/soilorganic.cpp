@@ -1300,14 +1300,13 @@ void SoilOrganic::fo_stics_Denitrification() {
     auto kgN_per_m3_to_mgN_per_kg = 1000.0 * 1000.0 / sbdi;
     auto mgN_per_kg_to_kgN_per_m3 = 1 / kgN_per_m3_to_mgN_per_kg;
 
-    vo_ActDenitrificationRate[i] =
-      stics::vdenit(sticsParams,
-                    sci.vs_SoilOrganicCarbon() * 100.0, // kg-C/kg-soil = % [0-1] -> % [0-100]
-                    NO3i * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
-                    sci.get_Vs_SoilTemperature(), // [°C]
-                    smi / sci.vs_Saturation(), // soil water-filled pore space []
-                    smi * 1000 / sbdi) // gravimetric soil water content kg-water/kg-soil
-      * mgN_per_kg_to_kgN_per_m3; // mg-N -> kg-N;
+    stics::vdenit(sticsParams,
+                sci.vs_SoilOrganicCarbon() * 100.0, // kg-C/kg-soil = % [0-1] -> % [0-100]
+                NO3i * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
+                sci.get_Vs_SoilTemperature(), // [°C]
+                smi / sci.vs_Saturation(), // soil water-filled pore space []
+                smi * 1000 / sbdi) // gravimetric soil water content kg-water/kg-soil
+    * mgN_per_kg_to_kgN_per_m3; // mg-N -> kg-N;
 
     // update NO3 content of soil layer with denitrification balance [kg N m-3]
     if (NO3i > vo_ActDenitrificationRate[i]) {

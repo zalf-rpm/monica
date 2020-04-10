@@ -27,17 +27,17 @@ double inline stepwiseLinearFunction3(double x,
   return ymin + (ymax - ymin) / (xmax - xmin) * (x - xmin);
 }
 
-inline double stepwiseLinearFunction4(double x,
-                                      double xmin,
-                                      double x1,
-                                      double x2,
-                                      double xmax,
+inline double stepwiseLinearFunction4(double x,    
+                                      double xmin,   
+                                      double x1,   
+                                      double x2,   
+                                      double xmax,  
                                       double ymin = 0.0,
                                       double ymax = 1.0) {
-  if (x <= xmin) return ymin;
+  if (x <= xmin || x > xmax ) return ymin;
   if (xmin < x && x < x1) return ymin + (ymax - ymin) / (x1 - xmin) * (x - xmin);
   if (x1 <= x && x <= x2) return ymax;
-  return ymax - ((ymax - ymin) / (xmax - x2) * (x - x2));
+  return ymax + ((ymin - ymax) / (xmax - x2) * (x - x2));
 }
 
 namespace nit {
@@ -59,7 +59,7 @@ double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2, double 
 }
 
 double fWFPS(double wfps, double hminn, double hoptn, double fc, double sat) {
-  return std::max(0.0, stepwiseLinearFunction4(wfps, hminn * fc, hoptn * fc, fc, sat));
+  return stepwiseLinearFunction4(wfps, hminn * fc / sat, hoptn * fc / sat, fc / sat, sat / sat);
 }
 
 } // namespace nit
@@ -115,7 +115,7 @@ double fT(double t, double tdenitopt_gauss, double scale_tdenitopt) {
 
 // water-filled pore space
 double fWFPS(double wfps, double wfpsc) {
-  return pow((wfps - wfpsc) / (1 - wfpsc), 1.74);
+  return pow((std::max(wfps, wfpsc) - wfpsc) / (1 - wfpsc), 1.74);
 }
 
 } // namespace denit
@@ -134,11 +134,11 @@ double stics::vdenit(const Monica::SticsParameters& ps,
     default:;
   }
 
-  return
-    vdenitpot
-    * denit::fNO3(NO3, soilWaterContent, ps.Kd)
-    * denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt)
-    * denit::fWFPS(wfps, ps.wfpsc);
+    return
+        vdenitpot
+        * denit::fNO3(NO3, soilWaterContent, ps.Kd)
+        * denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt)
+        * denit::fWFPS(wfps, ps.wfpsc);
 }
 
 namespace n2o {
