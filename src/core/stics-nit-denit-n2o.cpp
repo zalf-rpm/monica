@@ -162,7 +162,7 @@ double fNO3(double NO3) {
 
 }
 
-double stics::N2O(const Monica::SticsParameters& ps,
+stics::NitDenitN2O stics::N2O(const Monica::SticsParameters& ps,
                   double NO3,
                   double wfps,
                   double pH,
@@ -190,10 +190,10 @@ double stics::N2O(const Monica::SticsParameters& ps,
   auto N2Onit = z * vnit;
   auto N2Odenit = r * vdenit;
 
-  return N2Onit + N2Odenit;
+  return std::make_pair(N2Onit, N2Odenit);
 }
 
-double stics::N2O(const Monica::SticsParameters& ps,
+stics::NitDenitN2O stics::N2O(const Monica::SticsParameters& ps,
                   double corg,
                   double NO3,
                   double soilT,

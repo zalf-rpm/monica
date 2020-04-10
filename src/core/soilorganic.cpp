@@ -154,9 +154,12 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   if (organicPs.sticsParams.use_denit) fo_stics_Denitrification();
   else fo_Denitrification();
   
-  vo_N2O_Produced = organicPs.sticsParams.use_n2o
+  auto N2OProducedNitDenit = organicPs.sticsParams.use_n2o
     ? fo_stics_N2OProduction()
-    : fo_N2OProduction();
+    : make_pair(fo_N2OProduction(), 0.0);
+  vo_N2O_Produced_Nit = N2OProducedNitDenit.first;
+  vo_N2O_Produced_Denit = N2OProducedNitDenit.second;
+  vo_N2O_Produced = vo_N2O_Produced_Nit + vo_N2O_Produced_Denit;
 
   fo_PoolUpdate();
 
@@ -1354,9 +1357,9 @@ double SoilOrganic::fo_N2OProduction() {
   return sumN2OProduced;
 }
 
-double SoilOrganic::fo_stics_N2OProduction() {
+SoilOrganic::NitDenitN2O SoilOrganic::fo_stics_N2OProduction() {
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
-  double sumN2OProduced = 0.0;
+  double sumN2OProducedNit = 0.0, sumN2OProducedDenit = 0.0;
   auto sticsParams = organicPs.sticsParams;
 
   for (int i = 0; i < nools; i++) {
@@ -1367,22 +1370,25 @@ double SoilOrganic::fo_stics_N2OProduction() {
 
     auto kgN_per_m3_to_mgN_per_kg = 1000.0 * 1000.0 / sbdi;
     auto mgN_per_kg_to_kgN_per_m3 = 1 / kgN_per_m3_to_mgN_per_kg;
-
-    double N2OProductionAtLayer =
+    
+    double stics2monicaUnits = 
+      mgN_per_kg_to_kgN_per_m3 // /kg-soil -> /m3-soil 
+      * lti // /m3-soil -> /m2-soil
+      * 10000.0; // /m2-soil -> /ha-soil
+    
+    auto N2ONitDenitAtLayer =
       stics::N2O(sticsParams,
                  sci.get_SoilNO3() * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
                  smi / sci.vs_Saturation(), // soil water-filled pore space []
                  sci.vs_SoilpH(), // []
                  vo_ActNitrificationRate[i] * kgN_per_m3_to_mgN_per_kg, // nitrification rate [mg-N/kg-soil/day] (* sbd = /m3-soil -> /kg-soil ; * 1000 = kg-N -> mg-N) 
-                 vo_ActDenitrificationRate[i] * kgN_per_m3_to_mgN_per_kg) // denitrification rate [mg-N/kg-soil/day] (* sbd = /m3-soil -> /kg-soil ; * 1000 = kg-N -> mg-N)
-      * mgN_per_kg_to_kgN_per_m3 // /kg-soil -> /m3-soil 
-      * lti // /m3-soil -> /m2-soil
-      * 10000.0; // /m2-soil -> /ha-soil
+                 vo_ActDenitrificationRate[i] * kgN_per_m3_to_mgN_per_kg); // denitrification rate [mg-N/kg-soil/day] (* sbd = /m3-soil -> /kg-soil ; * 1000 = kg-N -> mg-N)
 
-    sumN2OProduced += N2OProductionAtLayer;
+    sumN2OProducedNit += N2ONitDenitAtLayer.first * stics2monicaUnits;
+    sumN2OProducedDenit += N2ONitDenitAtLayer.second * stics2monicaUnits;
   }
 
-  return sumN2OProduced;
+  return make_pair(sumN2OProducedNit, sumN2OProducedDenit);
 }
 
 /**

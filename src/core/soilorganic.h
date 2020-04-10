@@ -100,6 +100,8 @@ namespace Monica
     double get_NH3_Volatilised() const;
     double get_SumNH3_Volatilised() const;
     double get_N2O_Produced() const;
+    double get_N2O_Produced_Nit() const { return vo_N2O_Produced_Nit; }
+    double get_N2O_Produced_Denit() const { return vo_N2O_Produced_Denit; }
     double get_SumN2O_Produced() const;
     double get_NetNMineralisation() const;
     double get_SumNetNMineralisation() const;
@@ -143,8 +145,9 @@ namespace Monica
     // MONICA N2O production code
     double fo_N2OProduction();
 
+    typedef std::pair<double, double> NitDenitN2O;
     // use STICS N2O production code
-    double fo_stics_N2OProduction();
+    NitDenitN2O fo_stics_N2OProduction();
 
     void fo_PoolUpdate();
     double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
@@ -180,6 +183,8 @@ namespace Monica
     std::string vo_ErrorMessage;
     std::vector<double> vo_InertSoilOrganicC;
     double vo_N2O_Produced{0.0}; // [kg-N2O-N/ha]
+    double vo_N2O_Produced_Nit{ 0.0 }; // [kg-N2O-N/ha]
+    double vo_N2O_Produced_Denit{ 0.0 }; // [kg-N2O-N/ha]
     double vo_NetEcosystemExchange{0.0};
     double vo_NetEcosystemProduction{0.0};
     double vo_NetNMineralisation{0.0};
