@@ -1303,6 +1303,7 @@ void SoilOrganic::fo_stics_Denitrification() {
     auto kgN_per_m3_to_mgN_per_kg = 1000.0 * 1000.0 / sbdi;
     auto mgN_per_kg_to_kgN_per_m3 = 1 / kgN_per_m3_to_mgN_per_kg;
 
+    vo_ActDenitrificationRate[i] =
     stics::vdenit(sticsParams,
                 sci.vs_SoilOrganicCarbon() * 100.0, // kg-C/kg-soil = % [0-1] -> % [0-100]
                 NO3i * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
