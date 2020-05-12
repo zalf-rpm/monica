@@ -65,11 +65,11 @@ using namespace mas;
 //std::map<std::string, DataAccessor> daCache;
 
 DataAccessor fromCapnpData(
-  const Date& startDate,
-  const Date& endDate,
-  capnp::List<rpc::ClimateData::Element>::Reader header,
+  const Tools::Date& startDate,
+  const Tools::Date& endDate,
+  capnp::List<rpc::Climate::Element>::Reader header,
   capnp::List<capnp::List<float>>::Reader data) {
-  typedef rpc::ClimateData::Element E;
+  typedef rpc::Climate::Element E;
 
   if (data.size() == 0)
     return DataAccessor();
@@ -100,10 +100,9 @@ DataAccessor fromCapnpData(
 kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
 {
   auto rs = context.getResults();
-  rs.initInfo();
-  rs.getInfo().setId("monica_" + sole::uuid4().str());
-  rs.getInfo().setName("Monica capnp server");
-  rs.getInfo().setDescription("some description");
+  rs.setId("monica_" + sole::uuid4().str());
+  rs.setName("Monica capnp server");
+  rs.setDescription("some description");
   return kj::READY_NOW;
 }
 
@@ -172,8 +171,8 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
           auto sd = rangeResponse.getStartDate();
           auto ed = rangeResponse.getEndDate();
           return fromCapnpData(
-            Date(sd.getDay(), sd.getMonth(), sd.getYear()),
-            Date(ed.getDay(), ed.getMonth(), ed.getYear()),
+            Tools::Date(sd.getDay(), sd.getMonth(), sd.getYear()),
+            Tools::Date(ed.getDay(), ed.getMonth(), ed.getYear()),
             headerResponse.getHeader(), dataTResponse.getData());
         });
       });
