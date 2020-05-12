@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(monica)
 
+option(WITH_CAPNPROTO "Create also Cap'n Proto server" OFF)
+
 add_compile_definitions(NO_MYSQL)
 set(MT_RUNTIME_LIB 1)
 
@@ -312,6 +314,8 @@ target_link_libraries(monica-zmq-server
 
 #------------------------------------------------------------------------------
 
+if (WITH_CAPNPROTO)
+
 set_absolute_path(CAPNP_SCHEMAS_DIR "../capnproto_schemas")
 
 find_package(CapnProto CONFIG REQUIRED)
@@ -322,6 +326,7 @@ ${CAPNP_SCHEMAS_DIR}/common.capnp
 ${CAPNP_SCHEMAS_DIR}/climate_data.capnp
 ${CAPNP_SCHEMAS_DIR}/model.capnp
 ${CAPNP_SCHEMAS_DIR}/geo_coord.capnp
+#${CAPNP_SCHEMAS_DIR}/date.capnp
 ${CAPNP_SCHEMAS_DIR}/cluster_admin_service.capnp)
 message(STATUS "CAPNP_SRCS: " "${CAPNP_SRCS}")	
 
@@ -369,4 +374,6 @@ target_link_libraries(monica-capnp-proxy
 target_include_directories(monica-capnp-proxy PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 if (MSVC)
 	target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
+
 endif()
