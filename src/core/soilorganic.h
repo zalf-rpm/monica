@@ -173,10 +173,10 @@ namespace Monica
     std::vector<double> vo_ActNitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_ActDenitrificationRate; //!< [kg N m-3 d-1]
     std::vector<double> vo_AOM_FastDeltaSum;
-		double vo_AOM_FastInput{0.0}; //!< AOMfast pool change by direct input [kg C m-3]
+    std::vector<double> vo_AOM_FastInput; //!< AOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_AOM_FastSum;
     std::vector<double> vo_AOM_SlowDeltaSum;
-    double vo_AOM_SlowInput{0.0}; //!< AOMslow pool change by direct input [kg C m-3]
+    std::vector<double> vo_AOM_SlowInput; //!< AOMslow pool change by direct input [kg C m-3]
     std::vector<double> vo_AOM_SlowSum;
     std::vector<double> vo_CBalance;
     double vo_DecomposerRespiration{0.0};
@@ -197,7 +197,7 @@ namespace Monica
     std::vector<double> vs_SoilMineralNContent;
     std::vector<double> vo_SoilOrganicC;
     std::vector<double> vo_SOM_FastDelta;
-    double vo_SOM_FastInput{0.0}; //!< SOMfast pool change by direct input [kg C m-3]
+    std::vector<double> vo_SOM_FastInput; //!< SOMfast pool change by direct input [kg C m-3]
     std::vector<double> vo_SOM_SlowDelta;
     double vo_SumDenitrification{0.0}; // kg-N/m2
     double vo_SumNetNMineralisation{0.0};
