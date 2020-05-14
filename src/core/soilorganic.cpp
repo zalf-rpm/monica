@@ -58,8 +58,10 @@ SoilOrganic::SoilOrganic(SoilColumn& sc,
   vo_ActNitrificationRate(sc.vs_NumberOfOrganicLayers()),
   vo_ActDenitrificationRate(sc.vs_NumberOfOrganicLayers()),
   vo_AOM_FastDeltaSum(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_FastInput(sc.vs_NumberOfOrganicLayers()),
   vo_AOM_FastSum(sc.vs_NumberOfOrganicLayers()),
   vo_AOM_SlowDeltaSum(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_SlowInput(sc.vs_NumberOfOrganicLayers()),
   vo_AOM_SlowSum(sc.vs_NumberOfOrganicLayers()),
   vo_CBalance(sc.vs_NumberOfOrganicLayers()),
   vo_InertSoilOrganicC(sc.vs_NumberOfOrganicLayers()),
@@ -68,6 +70,7 @@ SoilOrganic::SoilOrganic(SoilColumn& sc,
   vo_SMB_FastDelta(sc.vs_NumberOfOrganicLayers()),
   vo_SMB_SlowDelta(sc.vs_NumberOfOrganicLayers()),
   vo_SoilOrganicC(sc.vs_NumberOfOrganicLayers()),
+  vo_SOM_FastInput(sc.vs_NumberOfOrganicLayers()),
   vo_SOM_FastDelta(sc.vs_NumberOfOrganicLayers()),
   vo_SOM_SlowDelta(sc.vs_NumberOfOrganicLayers()) {
   // Subroutine Pool initialisation
@@ -176,9 +179,13 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   //thus in order apply irrigation water or fertiliser, this has to be
   //done before the stepping method
   irrigationAmount = 0.0;
-  vo_AOM_SlowInput = 0.0;
-  vo_AOM_FastInput = 0.0;
-  vo_SOM_FastInput = 0.0;
+
+  int nools = soilColumn.vs_NumberOfOrganicLayers();
+  for (int i = 0; i < nools; i++) {
+    vo_AOM_SlowInput[i] = 0.0;
+    vo_AOM_FastInput[i] = 0.0;
+    vo_SOM_FastInput[i] = 0.0;
+  }
   addedOrganicMatter = false;
 }
 
@@ -376,7 +383,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 			/ layerThickness;
 
 		double SOM_FastInput =
-			(1.0 - (params->vo_PartAOM_to_AOM_Slow + params->vo_PartAOM_to_AOM_Fast))
+			max(0.0, (1.0 - (params->vo_PartAOM_to_AOM_Slow + params->vo_PartAOM_to_AOM_Fast)))
 			* added_Corg_amount;
 
 		// immediate top layer pool update
@@ -385,9 +392,9 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 		soilColumn[intoLayerIndex].vs_SOM_Fast += SOM_FastInput;
 
 		// store for further use
-		vo_AOM_SlowInput += AOM_slow_input;
-		vo_AOM_FastInput += AOM_fast_input;
-		vo_SOM_FastInput += SOM_FastInput;
+		vo_AOM_SlowInput[intoLayerIndex] += AOM_slow_input;
+		vo_AOM_FastInput[intoLayerIndex] += AOM_fast_input;
+		vo_SOM_FastInput[intoLayerIndex] += SOM_FastInput;
 	}
 
 	addedOrganicMatter = true;
@@ -1421,29 +1428,16 @@ void SoilOrganic::fo_PoolUpdate()
 		soilColumn[i].vs_SMB_Slow += vo_SMB_SlowDelta[i];
 		soilColumn[i].vs_SMB_Fast += vo_SMB_FastDelta[i];
 
-		if(i == 0)
-		{
-			vo_CBalance[i] = 
-				vo_AOM_SlowInput 
-				+ vo_AOM_FastInput 
-				+ vo_AOM_SlowDeltaSum[i]
-				+ vo_AOM_FastDeltaSum[i] 
-				+ vo_SMB_SlowDelta[i]
-				+ vo_SMB_FastDelta[i] 
-				+ vo_SOM_SlowDelta[i]
-				+ vo_SOM_FastDelta[i] 
-				+ vo_SOM_FastInput;
-		}
-		else
-		{
-			vo_CBalance[i] = 
-				vo_AOM_SlowDeltaSum[i]
-				+ vo_AOM_FastDeltaSum[i] 
-				+ vo_SMB_SlowDelta[i]
-				+ vo_SMB_FastDelta[i] 
-				+ vo_SOM_SlowDelta[i]
-				+ vo_SOM_FastDelta[i];
-		}
+		vo_CBalance[i] = 
+			vo_AOM_SlowInput[i]
+			+ vo_AOM_FastInput[i]
+			+ vo_AOM_SlowDeltaSum[i]
+			+ vo_AOM_FastDeltaSum[i] 
+			+ vo_SMB_SlowDelta[i]
+			+ vo_SMB_FastDelta[i] 
+			+ vo_SOM_SlowDelta[i]
+			+ vo_SOM_FastDelta[i] 
+			+ vo_SOM_FastInput[i];
 
 		// ([kg C kg-1] * [kg m-3]) - [kg C m-3]
 		vo_SoilOrganicC[i] = 
