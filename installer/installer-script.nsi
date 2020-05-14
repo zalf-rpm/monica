@@ -115,9 +115,11 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	File "..\LICENSE"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
+	File "..\src\python\monica_io3.py"
 	File "..\src\python\monica_io.py"
 	File "..\src\python\ascii_io.py"
 	File "${UtilDir}\soil\soil_io.py"
+	File "${UtilDir}\soil\soil_io3.py"
 
 	CreateDirectory "$PROFILE\MONICA"
 	SetOutPath $PROFILE\MONICA

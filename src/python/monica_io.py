@@ -644,21 +644,7 @@ def create_env_json_from_json_config(crop_site_sim):
     env["csvViaHeaderOptions"] = simj["climate.csv-options"]
     env["csvViaHeaderOptions"]["latitude"] = sitej["SiteParameters"]["Latitude"]
 
-    climate_csv_string = crop_site_sim["climate"] if "climate" in crop_site_sim else ""
-    if climate_csv_string:
-        add_climate_data_to_env(env, simj, climate_csv_string)
+    env["climateCSV"] = crop_site_sim["climate"]
 
     return env
-
-
-def add_climate_data_to_env(env, simj, climate_csv_string=""):
-    "add climate data separately to env"
-
-    if not climate_csv_string:
-        with open(simj["climate.csv"]) as _:
-            climate_csv_string = _.read()
-
-    #if climate_csv_string:
-    #    env["climateData"] = json.loads(monica_python.readClimateDataFromCSVStringViaHeadersToJsonString(climate_csv_string, json.dumps(simj["climate.csv-options"])))
-
-    return env
+    
