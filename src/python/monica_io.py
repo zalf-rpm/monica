@@ -644,7 +644,7 @@ def create_env_json_from_json_config(crop_site_sim):
     env["csvViaHeaderOptions"] = simj["climate.csv-options"]
     env["csvViaHeaderOptions"]["latitude"] = sitej["SiteParameters"]["Latitude"]
 
-    env["climateCSV"] = crop_site_sim["climate"]
+    env["climateCSV"] = crop_site_sim["climate"] if "climate" in crop_site_sim else ""
 
     return env
     
