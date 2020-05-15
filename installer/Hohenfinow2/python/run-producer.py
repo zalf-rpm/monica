@@ -40,7 +40,7 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
         "site.json": os.path.join(os.path.dirname(__file__), '../site-min.json'),
         "climate.csv": PATH_TO_CLIMATE_FILE,
         "debugout": "/out",
-        "writenv": false,
+        "writenv": False,
         "shared_id": shared_id 
     }
     # read commandline args only if script is invoked directly from commandline
