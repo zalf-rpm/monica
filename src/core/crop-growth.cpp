@@ -3412,7 +3412,10 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 	vc_ReferenceEvapotranspiration = ((0.408 * vc_SaturatedVapourPressureSlope * vw_NetRadiation)
 		+ (vc_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0)) * vc_WindSpeed_2m * vc_SaturationDeficit))
 		/ (vc_SaturatedVapourPressureSlope + vc_PsycrometerConstant * (1.0 + (vc_SurfaceResistance / vc_AerodynamicResistance)));
-
+	
+	if (vc_ReferenceEvapotranspiration < 0.0) {
+		vc_ReferenceEvapotranspiration = 0.0;
+	}
 
 	return vc_ReferenceEvapotranspiration;
 }
