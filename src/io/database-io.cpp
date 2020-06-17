@@ -927,7 +927,7 @@ Monica::readUserSoilMoistureParametersFromDatabase(string type,
                                                    std::string abstractDbSchema)
 {
 	UserSoilMoistureParameters user_soil_moisture;
-	user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, int distance)
+	user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, size_t distance)
 	{
 		return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
 	};

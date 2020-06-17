@@ -85,7 +85,7 @@ namespace Monica
       SC(SoilColumn& sc, 
 				 SoilLayer& gl, 
 				 SoilLayer& bl, 
-				 int vs_nols)
+				 size_t vs_nols)
 				: sc(sc)
 				, gl(gl)
 				, bl(bl)
@@ -115,7 +115,7 @@ namespace Monica
     std::vector<double> vt_B;
     std::vector<double> vt_MatrixPrimaryDiagonal;
     std::vector<double> vt_MatrixSecundaryDiagonal;
-    double vt_HeatFlow;
+    double vt_HeatFlow{ 0.0 };
     std::vector<double> vt_HeatConductivity;
     std::vector<double> vt_HeatConductivityMean;
     std::vector<double> vt_HeatCapacity;

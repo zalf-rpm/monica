@@ -533,7 +533,7 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                 env.debugMode = startedServerInDebugMode && env.debugMode;
 
                 env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-                  [](string soilTexture, int distance) {
+                  [](string soilTexture, size_t distance) {
                   return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
                 };
 

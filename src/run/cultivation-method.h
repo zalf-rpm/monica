@@ -381,7 +381,7 @@ namespace Monica
 
 	private:
 		MineralFertiliserParameters _partition;
-		double _amount;
+		double _amount{ 0.0 };
 	};
 
   //----------------------------------------------------------------------------

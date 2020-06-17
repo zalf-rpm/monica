@@ -230,8 +230,8 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 		return 0.0;
 	}
 
-	int vf_Layer30cm = getLayerNumberForDepth(0.3);
-	int layerSamplingDepth = getLayerNumberForDepth(vf_SamplingDepth);
+	auto vf_Layer30cm = getLayerNumberForDepth(0.3);
+	auto layerSamplingDepth = getLayerNumberForDepth(vf_SamplingDepth);
 
 	double vf_SoilNO3Sum = 0.0;
 	double vf_SoilNH4Sum = 0.0;
@@ -485,7 +485,7 @@ void SoilColumn::applyIrrigation(double vi_IrrigationAmount,
  */
 void SoilColumn::applyTillage(double depth)
 {
-	int layer_index = getLayerNumberForDepth(depth) + 1;
+	auto layer_index = getLayerNumberForDepth(depth) + 1;
 
 	double soil_organic_carbon = 0.0;
 	double soil_organic_matter = 0.0;
@@ -502,7 +502,7 @@ void SoilColumn::applyTillage(double depth)
 	double no3 = 0.0;
 
 	// add up all parameters that are affected by tillage
-	for (int i = 0; i < layer_index; i++)
+	for (size_t i = 0; i < layer_index; i++)
 	{
 		soil_organic_carbon += at(i).vs_SoilOrganicCarbon();
 		//soil_organic_matter += at(i).vs_SoilOrganicMatter();
@@ -535,7 +535,7 @@ void SoilColumn::applyTillage(double depth)
 	no3 /= layer_index;
 
 	// use calculated mean values for all affected layers
-	for (int i = 0; i < layer_index; i++)
+	for (size_t i = 0; i < layer_index; i++)
 	{
 		//assert((soil_organic_carbon - (soil_organic_matter * OrganicConstants::po_SOM_to_C)) < 0.00001);
 		at(i).set_SoilOrganicCarbon(soil_organic_carbon);
@@ -554,7 +554,7 @@ void SoilColumn::applyTillage(double depth)
 	}
 
 	// merge aom pool
-	size_t aom_pool_count = at(0).vo_AOM_Pool.size();
+	auto aom_pool_count = at(0).vo_AOM_Pool.size();
 
 	if (aom_pool_count > 0)
 	{
@@ -573,12 +573,12 @@ void SoilColumn::applyTillage(double depth)
 		//cout << "Soil parameters before applying tillage for the first "<< layer_index+1 << " layers: " << endl;
 
 		// add up pools for affected layer with same index
-		for (int j = 0; j < layer_index; j++)
+		for (size_t j = 0; j < layer_index; j++)
 		{
 			//cout << "Layer " << j << endl << endl;
 
 			SoilLayer &layer = at(j);
-			unsigned int pool_index = 0;
+			size_t pool_index = 0;
 			for (auto aomp : layer.vo_AOM_Pool)
 			{
 				aom_slow[pool_index] += aomp.vo_AOM_Slow;
@@ -593,7 +593,7 @@ void SoilColumn::applyTillage(double depth)
 		}
 
 		//
-		for (unsigned int pool_index = 0; pool_index < aom_pool_count; pool_index++)
+		for (size_t pool_index = 0; pool_index < aom_pool_count; pool_index++)
 		{
 			aom_slow[pool_index] = aom_slow[pool_index] / layer_index;
 			aom_fast[pool_index] = aom_fast[pool_index] / layer_index;
@@ -602,11 +602,11 @@ void SoilColumn::applyTillage(double depth)
 		//cout << "Soil parameters after applying tillage for the first "<< layer_index+1 << " layers: " << endl;
 
 		// rewrite parameters of aom pool with mean values
-		for (int j = 0; j < layer_index; j++)
+		for (size_t j = 0; j < layer_index; j++)
 		{
 			SoilLayer& layer = at(j);
 			//cout << "Layer " << j << endl << endl;
-			unsigned int pool_index = 0;
+			size_t pool_index = 0;
 			for (auto aomp : layer.vo_AOM_Pool)
 			{
 				aomp.vo_AOM_Slow = aom_slow[pool_index];
@@ -641,14 +641,14 @@ void SoilColumn::applyTillage(double depth)
  * @param depth Depth in meters
  * @return Index of layer
  */
-uint SoilColumn::getLayerNumberForDepth(double depth) const
+size_t SoilColumn::getLayerNumberForDepth(double depth) const
 {
-	uint layer = 0;
+	size_t layer = 0;
 	double accu_depth = 0;
 	double layer_thickness = at(0).vs_LayerThickness;
 
 	// find number of layer that lay between the given depth
-	for (uint i = 0, _size = size(); i < _size; i++)
+	for (size_t i = 0, _size = size(); i < _size; i++)
 	{
 		accu_depth += layer_thickness;
 		if (depth <= accu_depth)

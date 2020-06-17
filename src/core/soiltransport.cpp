@@ -40,97 +40,79 @@ using namespace Tools;
  * @author Claas Nendel
  */
 SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const UserSoilTransportParameters& stPs,
-                             double p_LeachingDepth, double p_timeStep, double pc_MinimumAvailableN)
-  : soilColumn(sc),
-    stPs(stPs),
-    vs_NumberOfLayers(sc.vs_NumberOfLayers()), //extern
-    vq_Convection(vs_NumberOfLayers, 0.0),
-    vq_CropNUptake(0.0),
-    vq_DiffusionCoeff(vs_NumberOfLayers, 0.0),
-    vq_Dispersion(vs_NumberOfLayers, 0.0),
-    vq_DispersionCoeff(vs_NumberOfLayers, 1.0),
-    vq_FieldCapacity(vs_NumberOfLayers, 0.0),
-    vq_LayerThickness(vs_NumberOfLayers,0.1),
-    vq_LeachingAtBoundary(0.0),
-    vs_NDeposition(sps.vq_NDeposition),
-    vc_NUptakeFromLayer(vs_NumberOfLayers, 0.0),
-    vq_PoreWaterVelocity(vs_NumberOfLayers, 0.0),
-    vq_SoilMoisture(vs_NumberOfLayers, 0.2),
-    vq_SoilNO3(vs_NumberOfLayers, 0.0),
-    vq_SoilNO3_aq(vs_NumberOfLayers, 0.0),
-    vq_TimeStep(1.0),
-    vq_TotalDispersion(vs_NumberOfLayers, 0.0),
-    vq_PercolationRate(vs_NumberOfLayers, 0.0),
-    pc_MinimumAvailableN(pc_MinimumAvailableN)
+  double p_LeachingDepth, double p_timeStep, double pc_MinimumAvailableN)
+  : soilColumn(sc)
+  , stPs(stPs)
+  //, vs_NumberOfLayers(sc.vs_NumberOfLayers()) //extern
+  , vq_Convection(sc.vs_NumberOfLayers(), 0.0)
+  , vq_DiffusionCoeff(sc.vs_NumberOfLayers(), 0.0)
+  , vq_Dispersion(sc.vs_NumberOfLayers(), 0.0)
+  , vq_DispersionCoeff(sc.vs_NumberOfLayers(), 1.0)
+  //, vq_FieldCapacity(sc.vs_NumberOfLayers(), 0.0)
+  , vs_LeachingDepth(p_LeachingDepth)
+  , vs_NDeposition(sps.vq_NDeposition)
+  , vc_NUptakeFromLayer(sc.vs_NumberOfLayers(), 0.0)
+  , vq_PoreWaterVelocity(sc.vs_NumberOfLayers(), 0.0)
+  //, vq_SoilMoisture(sc.vs_NumberOfLayers(), 0.2)
+  , vq_SoilNO3(sc.vs_NumberOfLayers(), 0.0)
+  , vq_SoilNO3_aq(sc.vs_NumberOfLayers(), 0.0)
+  , vq_TimeStep(p_timeStep)
+  , vq_TotalDispersion(sc.vs_NumberOfLayers(), 0.0)
+  , vq_PercolationRate(sc.vs_NumberOfLayers(), 0.0)
+  , pc_MinimumAvailableN(pc_MinimumAvailableN)
 {
   debug() << "!!! N Deposition: " << vs_NDeposition << endl;
-  vs_LeachingDepth = p_LeachingDepth;
-  vq_TimeStep = p_timeStep;
-}
-
-/**
- * @brief Single calculation step that is called by monica model.
- */
-void SoilTransport::step() {
-  calculateSoilTransportStep();
 }
 
 /**
  * @brief Computes a soil transport step
  */
-void SoilTransport::calculateSoilTransportStep() {
+void SoilTransport::step() {
+  double minTimeStepFactor = 1.0; // [t t-1]
+  const auto nols = soilColumn.vs_NumberOfLayers();
 
-  double vq_TimeStepFactor = 1.0; // [t t-1]
+  for (size_t i = 0; i < nols; i++) {
+    //vq_FieldCapacity[i] = soilColumn[i].vs_FieldCapacity();
+    //vq_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
+    vq_SoilNO3[i] = soilColumn[i].vs_SoilNO3;
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-    vq_FieldCapacity[i_Layer] = soilColumn[i_Layer].vs_FieldCapacity();
-    vq_SoilMoisture[i_Layer] = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
-    vq_SoilNO3[i_Layer] = soilColumn[i_Layer].vs_SoilNO3;
+    vc_NUptakeFromLayer[i] = crop ? crop->get_NUptakeFromLayer(i) : 0;
+    if (i == nols - 1) 
+      vq_PercolationRate[i] = soilColumn.vs_FluxAtLowerBoundary; //[mm]
+    else
+      vq_PercolationRate[i] = soilColumn[i + 1].vs_SoilWaterFlux; //[mm]
 
-    vq_LayerThickness[i_Layer] = soilColumn[0].vs_LayerThickness;
-    vc_NUptakeFromLayer[i_Layer] = crop ? crop->get_NUptakeFromLayer(i_Layer) : 0;
-    if (i_Layer == (vs_NumberOfLayers - 1)){
-      vq_PercolationRate[i_Layer] = soilColumn.vs_FluxAtLowerBoundary ; //[mm]
-    } else {
-      vq_PercolationRate[i_Layer] = soilColumn[i_Layer + 1].vs_SoilWaterFlux; //[mm]
-    }
     // Variable time step in case of high water fluxes to ensure stable numerics
-    if ((vq_PercolationRate[i_Layer] <= 5.0) && (vq_TimeStepFactor >= 1.0))
-      vq_TimeStepFactor = 1.0;
-    else if ((vq_PercolationRate[i_Layer] > 5.0) && (vq_PercolationRate[i_Layer] <= 10.0) && (vq_TimeStepFactor >= 1.0))
-      vq_TimeStepFactor = 0.5;
-    else if ((vq_PercolationRate[i_Layer] > 10.0) && (vq_PercolationRate[i_Layer] <= 15.0) && (vq_TimeStepFactor >= 0.5))
-      vq_TimeStepFactor = 0.25;
-    else if ((vq_PercolationRate[i_Layer] > 15.0) && (vq_TimeStepFactor >= 0.25))
-      vq_TimeStepFactor = 0.125;
-	//vq_TimeStepFactor = 1.0; //debug
-	//vq_PercolationRate[i_Layer] = 0.0; //debug
-  }
-//  cout << "vq_SoilNO3[0]: " << vq_SoilNO3[0] << endl;
+    auto pri = vq_PercolationRate[i];
+    auto timeStepFactorCurrentLayer = minTimeStepFactor;
+    if (-5.0 <= pri && pri <= 5.0 && minTimeStepFactor > 1.0)
+      timeStepFactorCurrentLayer = 1.0;
+    else if ((-10.0 <= pri && pri < -5.0) || (5.0 < pri && pri <= 10.0))
+      timeStepFactorCurrentLayer = 0.5;
+    else if ((-15.0 <= pri && pri < -10.0) || (10.0 < pri && pri <= 15.0))
+      timeStepFactorCurrentLayer = 0.25;
+    else if (pri < -15.0 || pri > 15.0)
+      timeStepFactorCurrentLayer = 0.125;
 
-//  if (isnan(vq_SoilNO3[0])) {
-//      cout << "vq_SoilNO3[0]: " << "NAN" << endl;
-//  }
+    minTimeStepFactor = min(minTimeStepFactor, timeStepFactorCurrentLayer);
+  }
 
   fq_NDeposition(vs_NDeposition);
   fq_NUptake();
 
   // Nitrate transport is called according to the set time step
   vq_LeachingAtBoundary = 0.0;
-  for (int i_TimeStep = 0; i_TimeStep < (1.0 / vq_TimeStepFactor); i_TimeStep++) {
-    fq_NTransport(vs_LeachingDepth, vq_TimeStepFactor);
-  }
+  for (int i_TimeStep = 0; i_TimeStep < (1.0 / minTimeStepFactor); i_TimeStep++) 
+    fq_NTransport(vs_LeachingDepth, minTimeStepFactor);
 
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
+  for (int i = 0; i < nols; i++) {
+    vq_SoilNO3[i] = vq_SoilNO3_aq[i] * soilColumn[i].get_Vs_SoilMoisture_m3();
 
-    vq_SoilNO3[i_Layer] = vq_SoilNO3_aq[i_Layer] * vq_SoilMoisture[i_Layer];
+    if (vq_SoilNO3[i] < 0.0) 
+      vq_SoilNO3[i] = 0.0;
 
-    if (vq_SoilNO3[i_Layer] < 0.0) {
-      vq_SoilNO3[i_Layer] = 0.0;
-    }
-
-    soilColumn[i_Layer].vs_SoilNO3 = vq_SoilNO3[i_Layer];
-  } // for
+    soilColumn[i].vs_SoilNO3 = vq_SoilNO3[i];
+  } 
 
 }
 
@@ -150,7 +132,6 @@ void SoilTransport::fq_NDeposition(double vs_NDeposition) {
 
   // Addition of N deposition to top layer [kg N m-3]
   vq_SoilNO3[0] += vq_DailyNDeposition / (10000.0 * soilColumn[0].vs_LayerThickness);
-
 }
 
 /**
@@ -160,39 +141,32 @@ void SoilTransport::fq_NDeposition(double vs_NDeposition) {
  * Kersebaum 1989
  */
 void SoilTransport::fq_NUptake() {
+  const auto nols = soilColumn.vs_NumberOfLayers();
   double vq_CropNUptake = 0.0;
-
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
+  for (int i = 0; i < nols; i++)
   {
+    const auto lti = soilColumn[i].vs_LayerThickness;
+    const auto smi = soilColumn[i].get_Vs_SoilMoisture_m3();
+
     // Lower boundary for N exploitation per layer
-    if (vc_NUptakeFromLayer[i_Layer] > ((vq_SoilNO3[i_Layer] * vq_LayerThickness[i_Layer]) - pc_MinimumAvailableN)) {
+    if (vc_NUptakeFromLayer[i] > ((vq_SoilNO3[i] * lti) - pc_MinimumAvailableN))
+      vc_NUptakeFromLayer[i] = ((vq_SoilNO3[i] * lti) - pc_MinimumAvailableN); // Crop N uptake from layer i [kg N m-2]
 
-      // Crop N uptake from layer i [kg N m-2]
-      vc_NUptakeFromLayer[i_Layer] = ((vq_SoilNO3[i_Layer] * vq_LayerThickness[i_Layer]) - pc_MinimumAvailableN);
-    }
+    if (vc_NUptakeFromLayer[i] < 0) 
+      vc_NUptakeFromLayer[i] = 0;
 
-    if (vc_NUptakeFromLayer[i_Layer] < 0) {
-      vc_NUptakeFromLayer[i_Layer] = 0;
-    }
-
-    vq_CropNUptake += vc_NUptakeFromLayer[i_Layer];
+    vq_CropNUptake += vc_NUptakeFromLayer[i];
 
     // Subtracting crop N uptake
-    vq_SoilNO3[i_Layer] -= vc_NUptakeFromLayer[i_Layer] / vq_LayerThickness[i_Layer];
+    vq_SoilNO3[i] -= vc_NUptakeFromLayer[i] / lti;
 
     // Calculation of solute NO3 concentration on the basis of the soil moisture
     // content before movement of current time step (kg m soil-3 --> kg m solute-3)
-    vq_SoilNO3_aq[i_Layer] = vq_SoilNO3[i_Layer] / vq_SoilMoisture[i_Layer];
-    if (vq_SoilNO3_aq[i_Layer] < 0) {
-//        cout << "vq_SoilNO3_aq[i_Layer] < 0 " << endl;
-    }
-
-  } // for
+    vq_SoilNO3_aq[i] = vq_SoilNO3[i] / smi;
+  } 
 
   soilColumn.vq_CropNUptake = vq_CropNUptake; // [kg m-2]
-
 }
-
 
 /**
  * @brief Calculation of N transport
@@ -200,217 +174,174 @@ void SoilTransport::fq_NUptake() {
  *
  * Kersebaum 1989
  */
-void SoilTransport::fq_NTransport(double vs_LeachingDepth, double vq_TimeStepFactor) {
-
-  double vq_DiffusionCoeffStandard = stPs.pq_DiffusionCoefficientStandard;// [m2 d-1]; old D0
+void SoilTransport::fq_NTransport(double leachingDepth, double timeStepFactor) {
+  double diffusionCoeffStandard = stPs.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
   double AD = stPs.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
-  double vq_DispersionLength = stPs.pq_DispersionLength; // [m]
-  double vq_SoilProfile = 0.0;
-  int vq_LeachingDepthLayerIndex = 0;
-  
+  double dispersionLength = stPs.pq_DispersionLength; // [m]
+  double soilProfile = 0.0;
+  size_t leachingDepthLayerIndex = 0;
+  const auto nols = soilColumn.vs_NumberOfLayers();
+  std::vector<double> soilMoistureGradient(nols, 0.0);
 
-  std::vector<double> vq_SoilMoistureGradient(vs_NumberOfLayers, 0.0);
-
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-    vq_SoilProfile += vq_LayerThickness[i_Layer];
-
-    if ((vq_SoilProfile - 0.001) < vs_LeachingDepth) {
-      vq_LeachingDepthLayerIndex = i_Layer;
-    }
+  for (size_t i = 0; i < nols; i++) {
+    soilProfile += soilColumn[i].vs_LayerThickness;
+    if ((soilProfile - 0.001) < leachingDepth) 
+      leachingDepthLayerIndex = i;
   }
 
   // Caluclation of convection for different cases of flux direction
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++)
-  {
-    const double wf0 = soilColumn[0].vs_SoilWaterFlux;
-    const double lt = soilColumn[i_Layer].vs_LayerThickness;
-    const double NO3 = vq_SoilNO3_aq[i_Layer];
+  for (size_t i = 0; i < nols; i++) {
+    const auto wf0 = soilColumn[0].vs_SoilWaterFlux;
+    const auto lt = soilColumn[i].vs_LayerThickness;
+    const auto NO3 = vq_SoilNO3_aq[i];
 		
-    if (i_Layer == 0) {
-      const double pr = vq_PercolationRate[i_Layer] / 1000.0 * vq_TimeStepFactor; // [mm t-1 --> m t-1]
-	  const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
+    if (i == 0) {
+      const double pr = vq_PercolationRate[i] / 1000.0 * timeStepFactor; // [mm t-1 --> m t-1]
+      const double NO3_u = vq_SoilNO3_aq[i + 1];
 
       if (pr >= 0.0 && wf0 >= 0.0) {
-
-        // old KONV = Konvektion Diss S. 23
-        vq_Convection[i_Layer] = (NO3 * pr) / lt; //[kg m-3] * [m t-1] / [m]
-
+        vq_Convection[i] = (NO3 * pr) / lt; //[kg m-3] * [m t-1] / [m] // old KONV = Konvektion Diss S. 23
       } else if (pr >= 0 && wf0 < 0) {
-
-        vq_Convection[i_Layer] = (NO3 * pr) / lt;
-
+        vq_Convection[i] = (NO3 * pr) / lt;
       } else if (pr < 0 && wf0 < 0) {
-        vq_Convection[i_Layer] = (NO3_u * pr) / lt;
-
+        vq_Convection[i] = (NO3_u * pr) / lt;
       } else if (pr < 0 && wf0 >= 0) {
-
-        vq_Convection[i_Layer] = (NO3_u * pr) / lt;
+        vq_Convection[i] = (NO3_u * pr) / lt;
       }
 
-    } else if (i_Layer < vs_NumberOfLayers - 1) {
-
+    } else if (i < nols - 1) {
       // layer > 0 && < bottom
-      const double pr_o = vq_PercolationRate[i_Layer - 1] / 1000.0 * vq_TimeStepFactor; //[mm t-1 --> m t-1] * [t t-1]
-      const double pr = vq_PercolationRate[i_Layer] / 1000.0 * vq_TimeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
-      const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
+      const double pr_o = vq_PercolationRate[i - 1] / 1000.0 * timeStepFactor; //[mm t-1 --> m t-1] * [t t-1]
+      const double pr = vq_PercolationRate[i] / 1000.0 * timeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
+      const double NO3_u = vq_SoilNO3_aq[i + 1];
 	  
       if (pr >= 0.0 && pr_o >= 0.0) {
-        const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
-
-        // old KONV = Konvektion Diss S. 23
-        vq_Convection[i_Layer] = ((NO3 * pr) - (NO3_o * pr_o)) / lt;
-
+        const double NO3_o = vq_SoilNO3_aq[i - 1];
+        vq_Convection[i] = ((NO3 * pr) - (NO3_o * pr_o)) / lt; // old KONV = Konvektion Diss S. 23
       } else if (pr >= 0 && pr_o < 0) {
-
-        vq_Convection[i_Layer] = ((NO3 * pr) - (NO3 * pr_o)) / lt;
-
+        vq_Convection[i] = ((NO3 * pr) - (NO3 * pr_o)) / lt;
       } else if (pr < 0 && pr_o < 0) {
-
-        vq_Convection[i_Layer] = ((NO3_u * pr) - (NO3 * pr_o)) / lt;
-
+        vq_Convection[i] = ((NO3_u * pr) - (NO3 * pr_o)) / lt;
       } else if (pr < 0 && pr_o >= 0) {
-        const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
-        vq_Convection[i_Layer] = ((NO3_u * pr) - (NO3_o * pr_o)) / lt;
+        const double NO3_o = vq_SoilNO3_aq[i - 1];
+        vq_Convection[i] = ((NO3_u * pr) - (NO3_o * pr_o)) / lt;
       }
-
     } else {
-
       // bottom layer
-      const double pr_o = vq_PercolationRate[i_Layer - 1] / 1000.0 * vq_TimeStepFactor; // [m t-1] * [t t-1]
-      const double pr = soilColumn.vs_FluxAtLowerBoundary / 1000.0 * vq_TimeStepFactor; // [m t-1] * [t t-1]
+      const double pr_o = vq_PercolationRate[i - 1] / 1000.0 * timeStepFactor; // [m t-1] * [t t-1]
+      const double pr = soilColumn.vs_FluxAtLowerBoundary / 1000.0 * timeStepFactor; // [m t-1] * [t t-1]
 
       if (pr >= 0.0 && pr_o >= 0.0) {
-        const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
-
-        // KONV = Konvektion Diss S. 23
-        vq_Convection[i_Layer] = ((NO3 * pr) - (NO3_o * pr_o)) / lt;
-
+        const double NO3_o = vq_SoilNO3_aq[i - 1];
+        vq_Convection[i] = ((NO3 * pr) - (NO3_o * pr_o)) / lt; // KONV = Konvektion Diss S. 23
       } else if (pr >= 0 && pr_o < 0) {
-
-        vq_Convection[i_Layer] = ((NO3 * pr) - (NO3 * pr_o)) / lt;
-
+        vq_Convection[i] = ((NO3 * pr) - (NO3 * pr_o)) / lt;
       } else if (pr < 0 && pr_o < 0) {
-
-        vq_Convection[i_Layer] = (-(NO3 * pr_o)) / lt;
-
+        vq_Convection[i] = (-(NO3 * pr_o)) / lt;
       } else if (pr < 0 && pr_o >= 0) {
-        const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
-        vq_Convection[i_Layer] = (-(NO3_o * pr_o)) / lt;
+        const double NO3_o = vq_SoilNO3_aq[i - 1];
+        vq_Convection[i] = (-(NO3_o * pr_o)) / lt;
       }
-
-	  //vq_Convection[i_Layer] = 0.0;//debug
-
     }// else
   } // for
 
-
   // Calculation of dispersion depending of pore water velocity
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
-    const double pr = vq_PercolationRate[i_Layer] / 1000.0 * vq_TimeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
-    const double pr0 = soilColumn[0].vs_SoilWaterFlux / 1000.0 * vq_TimeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
-    const double lt = soilColumn[i_Layer].vs_LayerThickness;
-    const double NO3 = vq_SoilNO3_aq[i_Layer];
-
+  for (size_t i = 0; i < nols; i++) {
+    const auto pri = vq_PercolationRate[i] / 1000.0 * timeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
+    const auto pr0 = soilColumn[0].vs_SoilWaterFlux / 1000.0 * timeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
+    const auto lti = soilColumn[i].vs_LayerThickness;
+    const auto NO3i = vq_SoilNO3_aq[i];
+    const auto fci = soilColumn[i].vs_FieldCapacity();
+    const auto smi = soilColumn[i].get_Vs_SoilMoisture_m3();
 
     // Original: W(I) --> um Steingehalt korrigierte Feldkapazität
     /** @todo Claas: generelle Korrektur der Feldkapazität durch den Steingehalt */
-    if (i_Layer == vs_NumberOfLayers - 1) {
-      vq_PoreWaterVelocity[i_Layer] = fabs((pr) / vq_FieldCapacity[i_Layer]); // [m t-1]
-      vq_SoilMoistureGradient[i_Layer] = (vq_SoilMoisture[i_Layer]); //[m3 m-3]
-    } else {
-      vq_PoreWaterVelocity[i_Layer] = fabs((pr) / ((vq_FieldCapacity[i_Layer]
-			        + vq_FieldCapacity[i_Layer + 1]) * 0.5)); // [m t-1]
-      vq_SoilMoistureGradient[i_Layer] = ((vq_SoilMoisture[i_Layer])
-				 + (vq_SoilMoisture[i_Layer + 1])) * 0.5; //[m3 m-3]
+    if (i == nols - 1) {
+      vq_PoreWaterVelocity[i] = fabs((pri) / fci); // [m t-1]
+      soilMoistureGradient[i] = smi; //[m3 m-3]
+    }
+    else {
+      const auto fcip1 = soilColumn[i + 1].vs_FieldCapacity();
+      const auto smip1 = soilColumn[i + 1].get_Vs_SoilMoisture_m3();
+      vq_PoreWaterVelocity[i] = fabs((pri) / ((fci + fcip1) * 0.5)); // [m t-1]
+      soilMoistureGradient[i] = (smi + smip1) * 0.5; //[m3 m-3]
     }
 
-    vq_DiffusionCoeff[i_Layer] = vq_DiffusionCoeffStandard
-			   * (AD * exp(vq_SoilMoistureGradient[i_Layer] * 2.0 * 5.0)
-			   / vq_SoilMoistureGradient[i_Layer]) * vq_TimeStepFactor; //[m2 t-1] * [t t-1]
+    vq_DiffusionCoeff[i] = 
+      diffusionCoeffStandard
+      * (AD * exp(soilMoistureGradient[i] * 2.0 * 5.0)
+        / soilMoistureGradient[i]) * timeStepFactor; //[m2 t-1] * [t t-1]
 
-    // Dispersion coefficient, old DB
-    if (i_Layer == 0) {
+   // Dispersion coefficient, old DB
+    if (i == 0) {
+      vq_DispersionCoeff[i] = soilMoistureGradient[i] * (vq_DiffusionCoeff[i] // [m2 t-1]
+        + dispersionLength * vq_PoreWaterVelocity[i]) // [m] * [m t-1]
+        - (0.5 * lti * fabs(pri)) // [m] * [m t-1]
+        + ((0.5 * vq_TimeStep * timeStepFactor * fabs((pri + pr0) / 2.0))  // [t] * [t t-1] * [m t-1]
+          * vq_PoreWaterVelocity[i]); // * [m t-1]
+          //-->[m2 t-1]
+    }
+    else {
+      const double pr_o = vq_PercolationRate[i - 1] / 1000.0 * timeStepFactor; // [m t-1]
 
-      vq_DispersionCoeff[i_Layer] = vq_SoilMoistureGradient[i_Layer] * (vq_DiffusionCoeff[i_Layer] // [m2 t-1]
-	+ vq_DispersionLength * vq_PoreWaterVelocity[i_Layer]) // [m] * [m t-1]
-	- (0.5 * lt * fabs(pr)) // [m] * [m t-1]
-	+ ((0.5 * vq_TimeStep * vq_TimeStepFactor * fabs((pr + pr0) / 2.0))  // [t] * [t t-1] * [m t-1]
-	* vq_PoreWaterVelocity[i_Layer]); // * [m t-1]
-	//-->[m2 t-1]
-    } else {
-      const double pr_o = vq_PercolationRate[i_Layer - 1] / 1000.0 * vq_TimeStepFactor; // [m t-1]
-
-      vq_DispersionCoeff[i_Layer] = vq_SoilMoistureGradient[i_Layer] * (vq_DiffusionCoeff[i_Layer]
-	+ vq_DispersionLength * vq_PoreWaterVelocity[i_Layer]) - (0.5 * lt * fabs(pr))
-	+ ((0.5 * vq_TimeStep * vq_TimeStepFactor * fabs((pr + pr_o) / 2.0)) * vq_PoreWaterVelocity[i_Layer]);
+      vq_DispersionCoeff[i] = soilMoistureGradient[i] * (vq_DiffusionCoeff[i]
+        + dispersionLength * vq_PoreWaterVelocity[i]) - (0.5 * lti * fabs(pri))
+        + ((0.5 * vq_TimeStep * timeStepFactor * fabs((pri + pr_o) / 2.0)) * vq_PoreWaterVelocity[i]);
     }
 
     //old DISP = Gesamt-Dispersion (D in Diss S. 23)
-    if (i_Layer == 0) {
-      const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
+    if (i == 0) {
+      const double NO3_u = vq_SoilNO3_aq[i + 1];
       // vq_Dispersion = Dispersion upwards or downwards, depending on the position in the profile [kg m-3]
-      vq_Dispersion[i_Layer] = -vq_DispersionCoeff[i_Layer] * (NO3 - NO3_u) / (lt * lt); // [m2] * [kg m-3] / [m2]
-
-    } else if (i_Layer < vs_NumberOfLayers - 1) {
-      const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
-      const double NO3_u = vq_SoilNO3_aq[i_Layer + 1];
-      vq_Dispersion[i_Layer] = (vq_DispersionCoeff[i_Layer - 1] * (NO3_o - NO3) / (lt * lt))
-	- (vq_DispersionCoeff[i_Layer] * (NO3 - NO3_u) / (lt * lt));
-    } else {
-      const double NO3_o = vq_SoilNO3_aq[i_Layer - 1];
-      vq_Dispersion[i_Layer] = vq_DispersionCoeff[i_Layer - 1] * (NO3_o - NO3) / (lt * lt);
+      vq_Dispersion[i] = -vq_DispersionCoeff[i] * (NO3i - NO3_u) / (lti * lti); // [m2] * [kg m-3] / [m2]
     }
-	//vq_Dispersion[i_Layer] = 0.0; //debug
+    else if (i < nols - 1) {
+      const double NO3_o = vq_SoilNO3_aq[i - 1];
+      const double NO3_u = vq_SoilNO3_aq[i + 1];
+      vq_Dispersion[i] = (vq_DispersionCoeff[i - 1] * (NO3_o - NO3i) / (lti * lti))
+        - (vq_DispersionCoeff[i] * (NO3i - NO3_u) / (lti * lti));
+    }
+    else {
+      const double NO3_o = vq_SoilNO3_aq[i - 1];
+      vq_Dispersion[i] = vq_DispersionCoeff[i - 1] * (NO3_o - NO3i) / (lti * lti);
+    }
   } // for
   
-  
-  if (vq_PercolationRate[vq_LeachingDepthLayerIndex] > 0.0) {
-
+  if (vq_PercolationRate[leachingDepthLayerIndex] > 0.0) {
     //vq_LeachingDepthLayerIndex = gewählte Auswaschungstiefe
-    const double lt = soilColumn[vq_LeachingDepthLayerIndex].vs_LayerThickness;
-    const double NO3 = vq_SoilNO3_aq[vq_LeachingDepthLayerIndex];
+    const auto lt = soilColumn[leachingDepthLayerIndex].vs_LayerThickness;
+    const auto NO3 = vq_SoilNO3_aq[leachingDepthLayerIndex];
 
-    if (vq_LeachingDepthLayerIndex < vs_NumberOfLayers - 1) {
-      const double pr_u = vq_PercolationRate[vq_LeachingDepthLayerIndex + 1] / 1000.0 * vq_TimeStepFactor;// [m t-1]
-      const double NO3_u = vq_SoilNO3_aq[vq_LeachingDepthLayerIndex + 1]; // [kg m-3]
+    if (leachingDepthLayerIndex < nols - 1) {
+      const double pr_u = vq_PercolationRate[leachingDepthLayerIndex + 1] / 1000.0 * timeStepFactor;// [m t-1]
+      const double NO3_u = vq_SoilNO3_aq[leachingDepthLayerIndex + 1]; // [kg m-3]
       //vq_LeachingAtBoundary: Summe für Auswaschung (Diff + Konv), old OUTSUM
-      vq_LeachingAtBoundary += ((pr_u * NO3) / lt * 10000.0 * lt) + ((vq_DispersionCoeff[vq_LeachingDepthLayerIndex]
-	* (NO3 - NO3_u)) / (lt * lt) * 10000.0 * lt); //[kg ha-1]
+      vq_LeachingAtBoundary += ((pr_u * NO3) / lt * 10000.0 * lt) + ((vq_DispersionCoeff[leachingDepthLayerIndex]
+        * (NO3 - NO3_u)) / (lt * lt) * 10000.0 * lt); //[kg ha-1]
     } else {
-      const double pr_u = soilColumn.vs_FluxAtLowerBoundary / 1000.0 * vq_TimeStepFactor; // [m t-1]
+      const double pr_u = soilColumn.vs_FluxAtLowerBoundary / 1000.0 * timeStepFactor; // [m t-1]
       vq_LeachingAtBoundary += pr_u * NO3 / lt * 10000.0 * lt; //[kg ha-1]
     }
-
   } else {
+    const auto pr_u = vq_PercolationRate[leachingDepthLayerIndex] / 1000.0 * timeStepFactor;
+    const auto lt = soilColumn[leachingDepthLayerIndex].vs_LayerThickness;
+    const auto NO3 = vq_SoilNO3_aq[leachingDepthLayerIndex];
 
-    const double pr_u = vq_PercolationRate[vq_LeachingDepthLayerIndex] / 1000.0 * vq_TimeStepFactor;
-    const double lt = soilColumn[vq_LeachingDepthLayerIndex].vs_LayerThickness;
-    const double NO3 = vq_SoilNO3_aq[vq_LeachingDepthLayerIndex];
-
-    if (vq_LeachingDepthLayerIndex < vs_NumberOfLayers - 1) {
-      const double NO3_u = vq_SoilNO3_aq[vq_LeachingDepthLayerIndex + 1];
-      vq_LeachingAtBoundary += ((pr_u * NO3_u) / (lt * 10000.0 * lt)) + vq_DispersionCoeff[vq_LeachingDepthLayerIndex]
-	* (NO3 - NO3_u) / ((lt * lt) * 10000.0 * lt); //[kg ha-1]
+    if (leachingDepthLayerIndex < nols - 1) {
+      const double NO3_u = vq_SoilNO3_aq[leachingDepthLayerIndex + 1];
+      vq_LeachingAtBoundary += ((pr_u * NO3_u) / (lt * 10000.0 * lt)) + vq_DispersionCoeff[leachingDepthLayerIndex]
+        * (NO3 - NO3_u) / ((lt * lt) * 10000.0 * lt); //[kg ha-1]
     }
   }
+
+  vq_LeachingAtBoundary = max(0.0, vq_LeachingAtBoundary);
 
   // Update of NO3 concentration
   // including transfomation back into [kg NO3-N m soil-3]
-  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-
-
-	  vq_SoilNO3_aq[i_Layer] += (vq_Dispersion[i_Layer] - vq_Convection[i_Layer]) / vq_SoilMoisture[i_Layer];
-	  //    double no3 = vq_SoilNO3_aq[i_Layer];
-	  //    double disp = vq_Dispersion[i_Layer];
-	  //    double conv = vq_Convection[i_Layer];
-	  //    double sm = vq_SoilMoisture[i_Layer];
-	  //    cout << i_Layer << "\t" << no3 << "\t" << disp << "\t" << conv << "\t" <<  sm << endl;
+  for (size_t i = 0; i < nols; i++) {
+    const auto smi = soilColumn[i].get_Vs_SoilMoisture_m3();
+    vq_SoilNO3_aq[i] += (vq_Dispersion[i] - vq_Convection[i]) / smi;
   }
-
-  
-
-//  cout << "vq_LeachingAtBoundary: " << vq_LeachingAtBoundary << endl;
 }
 
 /**

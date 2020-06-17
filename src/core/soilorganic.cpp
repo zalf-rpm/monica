@@ -180,8 +180,8 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   //done before the stepping method
   irrigationAmount = 0.0;
 
-  int nools = soilColumn.vs_NumberOfOrganicLayers();
-  for (int i = 0; i < nools; i++) {
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
+  for (size_t i = 0; i < nools; i++) {
     vo_AOM_SlowInput[i] = 0.0;
     vo_AOM_FastInput[i] = 0.0;
     vo_SOM_FastInput[i] = 0.0;
@@ -190,12 +190,12 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 }
 
 void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
-																	 map<int, double> layer2addedOrganicMatterAmount,
+																	 map<size_t, double> layer2addedOrganicMatterAmount,
 																	 double addedOrganicMatterNConcentration)
 {
 	debug() << "SoilOrganic: addOrganicMatter: " << params->toString() << endl;
 
-	int nools = soilColumn.vs_NumberOfOrganicLayers();
+	auto nools = soilColumn.vs_NumberOfOrganicLayers();
 	double layerThickness = soilColumn[0].vs_LayerThickness;
 
 	// check if the added organic matter is from crop residues
@@ -305,7 +305,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 	
 	for(const auto& p : layer2addedOrganicMatterAmount)
 	{
-		int intoLayerIndex = p.first;
+		auto intoLayerIndex = p.first;
 		double addedOrganicMatterAmount = p.second;
 
 		// calculate the CN ratio for AOM fast, if we're talking about crop residues and the
@@ -332,7 +332,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 			pool.noVolatilization = areCropResidueParams;
 
 			// append this pool (template) to each layers pool list
-			for(int i = 0; i < nools; i++)
+			for(size_t i = 0; i < nools; i++)
 			{
 				soilColumn[i].vo_AOM_Pool.push_back(pool);
 

@@ -131,7 +131,7 @@ public:
 	{
 		auto instance = context.getParams().getInstance();
 		bool filledEmptySlot = false;
-		int id = 0;
+		size_t id = 0;
 		for (X& x : _xs) {
 			if (x.jobs < 0) {
 				x = { kj::mv(instance), 0 };

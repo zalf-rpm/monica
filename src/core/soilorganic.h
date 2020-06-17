@@ -60,13 +60,13 @@ namespace Monica
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
     void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
-													std::map<int, double> layer2amount,
+													std::map<size_t, double> layer2amount,
 													double nConcentration = 0);
 
 		void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
 													double amount,
 													double nConcentration = 0,
-													int intoLayerIndex = 0)
+													size_t intoLayerIndex = 0)
 		{
 			addOrganicMatter(addedOrganicMatter, {{intoLayerIndex, amount}}, nConcentration);
 		}

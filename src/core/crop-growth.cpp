@@ -54,7 +54,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 	const UserCropParameters& cropPs,
 	const SimulationParameters& simPs,
 	std::function<void(std::string)> fireEvent,
-	std::function<void(std::map<int, double>, double)> addOrganicMatter,
+	std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 	int usage)
 	: _frostKillOn(simPs.pc_FrostKillOn)
 	, soilColumn(sc)
@@ -478,9 +478,9 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 			vc_TotalTemperatureSum);
 
 		fc_CropNUptake(vc_RootingZone,
-			soilColumn.vm_GroundwaterTable,
-			vc_CurrentTotalTemperatureSum,
-			vc_TotalTemperatureSum);
+      soilColumn.vm_GroundwaterTable,
+      vc_CurrentTotalTemperatureSum,
+      vc_TotalTemperatureSum);
 
 		vc_GrossPrimaryProduction =
 			fc_GrossPrimaryProduction(vc_GrossAssimilates);
@@ -1398,10 +1398,10 @@ void CropGrowth::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
 	double vc_RootDensityFactorSum,
 	const vector<double>& vc_RootDensityFactor)
 {
-	uint nools = soilColumn.vs_NumberOfOrganicLayers();
+	auto nools = soilColumn.vs_NumberOfOrganicLayers();
 
-	map<int, double> layer2deadRootBiomassAtLayer;
-	for (uint i = 0; i < vc_RootingZone; i++)
+	map<size_t, double> layer2deadRootBiomassAtLayer;
+	for (size_t i = 0; i < vc_RootingZone; i++)
 	{
 		double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * deadRootBiomass;
 		//just add organica matter if > 0.0001
@@ -2092,7 +2092,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			O3_par.gamma3 = 0.05; //TODO: calibrate and add to crop params
 			O3_par.gamma1 = 0.025; //TODO: calibrate and add to crop params
 
-			int root_depth = get_RootingDepth();
+			auto root_depth = get_RootingDepth();
 			if (root_depth >= 1) //the crop has emerged
 			{
 #ifdef TEST_O3_HOURLY_OUTPUT
@@ -2749,7 +2749,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	double vw_MeanAirTemperature)
 {
 	assert(soilColumn.vs_NumberOfLayers() >= 0);
-	uint nols = soilColumn.vs_NumberOfLayers();
+	auto nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
 
 	double vc_MaxRootNConcentration = 0.0; // old WGM
@@ -2763,7 +2763,6 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 	//std::vector<double> vc_RootLengthInLayer(nols, 0.0);	// old WULAE2
 	//  std::vector<double> vc_CapillaryWater(nols, 0.0);
 	//std::vector<double> vc_RootSurface(nols, 0.0); // old FL
-
 
 	const UserCropParameters& user_crops = cropPs;
 	double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
@@ -2912,7 +2911,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 				vc_OrganGrowthIncrement[i_Organ] = vc_NetPhotosynthesis *
 					(vc_AssimilatePartitioningCoeffOld + ((vc_AssimilatePartitioningCoeff - vc_AssimilatePartitioningCoeffOld)
 						* (vc_CurrentTemperatureSum[vc_DevelopmentalStage] / pc_StageTemperatureSum[vc_DevelopmentalStage]))) * vc_CropNRedux; // [kg CH2O ha-1]
-				double ___mobilization_from_storage = true;
+				bool ___mobilization_from_storage = true;
 
 				if (___mobilization_from_storage == true)
 				{
@@ -3252,7 +3251,7 @@ void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
 
 pair<vector<double>, double> CropGrowth::calcRootDensityFactorAndSum()
 {
-	uint nols = soilColumn.vs_NumberOfLayers();
+	auto nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
 
 	// Calculating a root density distribution factor []
@@ -3701,12 +3700,12 @@ void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropNUptake(int vc_RootingZone,
-	int vc_GroundwaterTable,
-	double /*vc_CurrentTotalTemperatureSum*/,
-	double /*vc_TotalTemperatureSum*/)
+void CropGrowth::fc_CropNUptake(size_t vc_RootingZone,
+  size_t vc_GroundwaterTable,
+  double /*vc_CurrentTotalTemperatureSum*/,
+  double /*vc_TotalTemperatureSum*/)
 {
-	size_t nols = soilColumn.vs_NumberOfLayers();
+	auto nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
 
 	double vc_ConvectiveNUptake = 0.0; // old TRNSUM
@@ -4124,7 +4123,7 @@ double CropGrowth::get_CropHeight() const
  * @brief Returns rooting depth [layer]
  * @return rooting depth
  */
-int CropGrowth::get_RootingDepth() const
+size_t CropGrowth::get_RootingDepth() const
 {
 	return vc_RootingDepth;
 }
@@ -4300,7 +4299,7 @@ double CropGrowth::get_LT50() const
  * @brief Returns crop N uptake from layer i [kg N ha-1]
  * @return Crop N uptake
  */
-double CropGrowth::get_NUptakeFromLayer(int i_Layer) const
+double CropGrowth::get_NUptakeFromLayer(size_t i_Layer) const
 {
 	return vc_NUptakeFromLayer[i_Layer];
 }

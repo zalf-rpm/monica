@@ -65,7 +65,7 @@ namespace Monica
 			const UserCropParameters& cropPs,
 			const SimulationParameters& simPs,
 			std::function<void(std::string)> fireEvent,
-			std::function<void(std::map<int, double>, double)> addOrganicMatter,
+			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 			int eva2_usage = NUTZUNG_UNDEFINED);
 
 		void applyCutting(std::map<int, Cutting::Value>& organs,
@@ -217,10 +217,10 @@ namespace Monica
 			double vc_CurrentTotalTemperatureSum,
 			double vc_TotalTemperatureSum);
 
-		void fc_CropNUptake(int vc_RootingDepth,
-			int vm_GroundwaterTable,
-			double vc_CurrentTotalTemperatureSum,
-			double vc_TotalTemperatureSum);
+    void fc_CropNUptake(size_t vc_RootingDepth,
+      size_t vm_GroundwaterTable,
+      double vc_CurrentTotalTemperatureSum,
+      double vc_TotalTemperatureSum);
 
 		double fc_GrossPrimaryProduction(double vc_Assimilates);
 
@@ -249,7 +249,7 @@ namespace Monica
 		double get_NetPhotosynthesis() const;
 		double get_LeafAreaIndex() const;
 		double get_CropHeight() const;
-		int get_RootingDepth() const;
+		size_t get_RootingDepth() const;
 		double get_RootingDepth_m() const { return vc_RootingDepth_m; }
 		double get_SoilCoverage() const;
 		double get_KcFactor() const;
@@ -274,7 +274,7 @@ namespace Monica
 		double get_FruitBiomassNContent() const;
 		double get_HeatSumIrrigationStart() const;
 		double get_HeatSumIrrigationEnd() const;
-		double get_NUptakeFromLayer(int i_Layer) const;
+		double get_NUptakeFromLayer(size_t i_Layer) const;
 		double get_TotalBiomass() const;
 		double get_TotalBiomassNContent() const;
 		double get_RootNConcentration() const;
@@ -319,34 +319,22 @@ namespace Monica
 		/**
 		* @brief Returns short term O3 damage
 		*/
-		double get_O3_shortTermDamage() const
-		{
-			return vc_O3_shortTermDamage;
-		}
+		double get_O3_shortTermDamage() const { return vc_O3_shortTermDamage; }
 
 		/**
 		* @brief Returns long term O3 damage
 		*/
-		double get_O3_longTermDamage() const
-		{
-			return vc_O3_longTermDamage;
-		}
+		double get_O3_longTermDamage() const { return vc_O3_longTermDamage; }
 
 		/**
 		* @brief Returns reduction factor of O3 uptake due to stomatal closure
 		*/
-		double get_O3_WStomatalClosure() const
-		{
-			return vc_O3_WStomatalClosure;
-		}
+		double get_O3_WStomatalClosure() const { return vc_O3_WStomatalClosure; }
 
 		/**
 		* @brief Returns O3 sum uptake
 		*/
-		double get_O3_sumUptake() const
-		{
-			return vc_O3_sumUptake;
-		}
+		double get_O3_sumUptake() const { return vc_O3_sumUptake; }
 
 		/*
 	 * @brief Getter for total biomass.
@@ -382,10 +370,7 @@ namespace Monica
 			vc_CurrentTotalTemperatureSum = 0.0;
 		}
 
-		void set_CuttingDelayDays()
-		{
-			vc_CuttingDelayDays = pc_CuttingDelayDays;
-		}
+		void set_CuttingDelayDays() { vc_CuttingDelayDays = pc_CuttingDelayDays; }
 
 		/*
 		* @brief Setter for maximum assimilation rate.
@@ -606,9 +591,9 @@ namespace Monica
 		std::vector<double> vc_RootEffectivity; //! old WUEFF
 		double pc_RootFormFactor;
 		double pc_RootGrowthLag;
-		unsigned int vc_RootingDepth{ 0 };                                            //! old WURZ
+		size_t vc_RootingDepth{ 0 };                                            //! old WURZ
 		double vc_RootingDepth_m{ 0.0 };
-		unsigned int vc_RootingZone{ 0 };
+		size_t vc_RootingZone{ 0 };
 		double pc_RootPenetrationRate;
 		double vm_SaturationDeficit{ 0.0 };
 		double vc_SoilCoverage{ 0.0 };
@@ -683,7 +668,7 @@ namespace Monica
 		Voc::CPData _cropPhotosynthesisResults;
 
 		std::function<void(std::string)> _fireEvent;
-		std::function<void(std::map<int, double>, double)> _addOrganicMatter;
+		std::function<void(std::map<size_t, double>, double)> _addOrganicMatter;
 
 		double vc_O3_shortTermDamage{ 1.0 };
 		double vc_O3_longTermDamage{ 1.0 };

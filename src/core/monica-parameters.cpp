@@ -1043,9 +1043,8 @@ json11::Json UserEnvironmentParameters::to_json() const
 
 UserSoilMoistureParameters::UserSoilMoistureParameters()
 {
-	getCapillaryRiseRate = [](string soilTexture, int distance) { return 0; };
+	getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
 }
-
 
 UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
 	: UserSoilMoistureParameters()

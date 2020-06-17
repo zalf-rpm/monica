@@ -53,7 +53,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm)
 	, vt_MatrixSecundaryDiagonal(vt_NumberOfLayers + 1)
 	, vt_HeatConductivity(vt_NumberOfLayers)
 	, vt_HeatConductivityMean(vt_NumberOfLayers)
-	, vt_HeatCapacity(int(vt_NumberOfLayers))
+	, vt_HeatCapacity(vt_NumberOfLayers)
 {
 	debug() << "Constructor: SoilColumn" << endl;
 

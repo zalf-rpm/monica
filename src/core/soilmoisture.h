@@ -70,13 +70,13 @@ namespace Monica
 
 			SoilColumn& soilColumn;
 
-      double vm_SnowDensity; //!< Snow density [kg dm-3]
-      double vm_SnowDepth; //!< Snow depth [mm]
-      double vm_FrozenWaterInSnow; //!< [mm]
-      double vm_LiquidWaterInSnow; //!< [mm]
-      double vm_WaterToInfiltrate; //!< [mm]
-      double vm_maxSnowDepth;     //!< [mm]
-      double vm_AccumulatedSnowDepth; //!< [mm]
+      double vm_SnowDensity{ 0.0 }; //!< Snow density [kg dm-3]
+      double vm_SnowDepth{ 0.0 }; //!< Snow depth [mm]
+      double vm_FrozenWaterInSnow{ 0.0 }; //!< [mm]
+      double vm_LiquidWaterInSnow{ 0.0 }; //!< [mm]
+      double vm_WaterToInfiltrate{ 0.0 }; //!< [mm]
+      double vm_maxSnowDepth{ 0.0 };     //!< [mm]
+      double vm_AccumulatedSnowDepth{ 0.0 }; //!< [mm]
 
       // extern or user defined snow parameter
       double vm_SnowmeltTemperature;                  //!< Base temperature for snowmelt [°C]
@@ -111,7 +111,7 @@ namespace Monica
       void calcSoilFrost(double mean_air_temperature, double snow_depth);
       double getFrostDepth() const { return vm_FrostDepth; }
       double getThawDepth() const { return vm_ThawDepth; }
-      double getLambdaRedux(int layer) const { return vm_LambdaRedux[layer]; }
+      double getLambdaRedux(size_t layer) const { return vm_LambdaRedux[layer]; }
       double getAccumulatedFrostDepth() const { return vm_accumulatedFrostDepth; }
       double getTemperatureUnderSnow() const { return vm_TemperatureUnderSnow; }
 
@@ -242,7 +242,7 @@ namespace Monica
 
     void fm_Infiltration(double vm_WaterToInfiltrate,
                          double vc_PercentageSoilCoverage,
-                         int vm_GroundwaterTable);
+                         size_t vm_GroundwaterTable);
 
     double get_DeprivationFactor(int layerNo, double deprivationDepth,
                                  double zeta, double vs_LayerThickness);
@@ -301,8 +301,8 @@ namespace Monica
     const UserSoilMoistureParameters& smPs;
     const UserEnvironmentParameters& envPs;
     const UserCropParameters& cropPs;
-		const int vm_NumberOfLayers{0};
-		const int vs_NumberOfLayers{0};
+		const size_t vm_NumberOfLayers{0};
+		const size_t vs_NumberOfLayers{0};
 
 		double vm_ActualEvaporation{0.0}; //!< Sum of evaporation of all layers [mm]
 		double vm_ActualEvapotranspiration{0.0}; //!< Sum of evaporation and transpiration of all layers [mm]
@@ -323,7 +323,7 @@ namespace Monica
 		double vm_GroundwaterAdded{0.0};
 		double vm_GroundwaterDischarge{0.0};
     //std::vector<int> vm_GroundwaterDistance; /**< Distance between groundwater table and eff. rooting depth [m] */
-		int vm_GroundwaterTable{0}; //!< Layer of groundwater table []
+		size_t vm_GroundwaterTable{0}; //!< Layer of groundwater table []
     std::vector<double> vm_HeatConductivity; //!< Heat conductivity of layer [J m-1 d-1]
 		double vm_HydraulicConductivityRedux{0.0}; //!< Reduction factor for hydraulic conductivity [0.1 - 9.9]
 		double vm_Infiltration{0.0}; //!< Amount of water that infiltrates into top soil layer [mm]

@@ -171,7 +171,7 @@ namespace Monica
 
     // members ------------------------------------------------------------
 
-    double vs_LayerThickness; //!< Soil layer's vertical extension [m]
+    double vs_LayerThickness{ 0.1 }; //!< Soil layer's vertical extension [m]
     //double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
     double vs_SoilWaterFlux{0.0}; //!< Water flux at the upper boundary of the soil layer [l m-2]
 
@@ -247,25 +247,16 @@ namespace Monica
                          double vi_IrrigationNConcentration);
     void deleteAOMPool();
 
-
-    /**
-     * Returns number of layers.
-     * @return Number of layers.
-     */
-    inline int vs_NumberOfLayers() const 
-	{ 
-		assert(size() <= INT_MAX);
-		return (int)size(); 
-	}
+    inline size_t vs_NumberOfLayers() const { return size(); }
 	
-	void applyTillage(double depth);
+    void applyTillage(double depth);
 
     /**
      * Returns number of organic layers. Usually the number
      * of layers in the first 30 cm depth of soil.
      * @return Number of organic layers
      */
-    inline int vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
+    inline size_t vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
 
     //! Returns the thickness of a layer.
     //! Right now by definition all layers have the same size,
@@ -275,7 +266,7 @@ namespace Monica
     //! Returns daily crop N uptake [kg N ha-1 d-1]
     double get_DailyCropNUptake() const { return vq_CropNUptake * 10000.0; }
 
-    uint getLayerNumberForDepth(double depth) const;
+    size_t getLayerNumberForDepth(double depth) const;
 
     void put_Crop(CropGrowth* crop);
 
@@ -285,7 +276,7 @@ namespace Monica
 		    
     double vs_SurfaceWaterStorage{0.0}; //!< Content of above-ground water storage [mm]
     double vs_InterceptionStorage{0.0}; //!< Amount of intercepted water on crop surface [mm]
-    int vm_GroundwaterTable{0}; //!< Layer of current groundwater table
+    size_t vm_GroundwaterTable{0}; //!< Layer of current groundwater table
     double vs_FluxAtLowerBoundary{0.0}; //!< Water flux out of bottom layer
     double vq_CropNUptake{0.0}; //!< Daily amount of N taken up by the crop [kg m-2]
     double vt_SoilSurfaceTemperature{0.0};

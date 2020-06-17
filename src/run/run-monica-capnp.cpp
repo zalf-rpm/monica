@@ -143,7 +143,7 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
       env.debugMode = _startedServerInDebugMode && env.debugMode;
 
       env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-        [](std::string soilTexture, int distance) {
+        [](std::string soilTexture, size_t distance) {
         return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
       };
 

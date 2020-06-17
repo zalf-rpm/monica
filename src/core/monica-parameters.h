@@ -686,7 +686,7 @@ namespace Monica
 
 		virtual json11::Json to_json() const;
 
-		std::function<double(std::string, int)> getCapillaryRiseRate;
+		std::function<double(std::string, size_t)> getCapillaryRiseRate;
 
 		double pm_CriticalMoistureDepth{ 0.0 };
 		double pm_SaturatedHydraulicConductivity{ 0.0 };
