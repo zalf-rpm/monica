@@ -1661,7 +1661,8 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
     + 237.3)))) / ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
 
   // Calculation of wind speed in 2m height
-  vm_WindSpeed_2m = vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42)));
+  vm_WindSpeed_2m = max(0.5, vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42))));
+  // 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
 
   // Calculation of the aerodynamic resistance
   vm_AerodynamicResistance = 208.0 / vm_WindSpeed_2m;
