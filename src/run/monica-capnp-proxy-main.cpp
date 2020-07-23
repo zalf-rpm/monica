@@ -50,7 +50,7 @@ class RunMonicaProxy;
 class Unregister final : public rpc::Common::Callback::Server
 {
 public:
-	Unregister(RunMonicaProxy& proxy, int monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
+	Unregister(RunMonicaProxy& proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
 
 	~Unregister();
 
@@ -60,7 +60,7 @@ private:
 	void unreg();
 
 	RunMonicaProxy& _proxy;
-	int _monicaServerId;
+	size_t _monicaServerId;
 };
 
 class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
@@ -70,7 +70,11 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 	typedef rpc::Model::EnvInstance::Client MonicaClient;
 	struct X {
 		MonicaClient client{ nullptr };
+		size_t id{ 0 };
 		int jobs{ 0 };
+
+		void unset() { jobs = -1; client = nullptr; }
+		void reset(MonicaClient&& client) { jobs = 0; this->client = client; }
 	};
 
 	std::vector<X> _xs;
@@ -79,8 +83,9 @@ public:
 	RunMonicaProxy() {}
 
 	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client>& monicas) {
+		size_t id = 0;
 		for (auto&& client : monicas) {
-			_xs.push_back({ kj::mv(client), 0 });
+			_xs.push_back({ kj::mv(client), id++, 0 });
 		}
 	}
 
@@ -90,10 +95,9 @@ public:
 			return kj::READY_NOW;
 
 		X* min = &_xs.front();
-		size_t id = 0;
 		if (min->jobs > 0 || min->jobs < 0) {
-			for (auto size = _xs.size(); id < size; id++) {
-				auto& x = _xs[id];
+			for (size_t i = 0, size = _xs.size(); i < size; i++) {
+				auto& x = _xs[i];
 				if (x.jobs < 0) //skip empty storage places
 					continue;
 				if (x.jobs < min->jobs) {
@@ -109,6 +113,7 @@ public:
 		auto req = min->client.runRequest();
 		req.setEnv(context.getParams().getEnv());
 		min->jobs++;
+		auto id = min->id;
 		cout << "added job to worker: " << id << " now " << min->jobs << " in worker queue" << endl;
 		return req.send().then([context, id, this](auto&& res) mutable {
 			if (id < this->_xs.size()) {
@@ -122,7 +127,7 @@ public:
 				cout << "Exception: " << exception.getDescription().cStr() << endl;
 				//try to erase id from map, so it can't be used anymore
 				if (id < this->_xs.size()) {
-					_xs[id] = { nullptr, -1 };
+					_xs[id].unset();
 				}
 			});
 	}
@@ -131,18 +136,19 @@ public:
 	{
 		auto instance = context.getParams().getInstance();
 		bool filledEmptySlot = false;
-		size_t id = 0;
+		size_t registeredAsId = 0;
 		for (X& x : _xs) {
 			if (x.jobs < 0) {
-				x = { kj::mv(instance), 0 };
+				//x = { kj::mv(instance), x.id, 0 };
+				x.reset(kj::mv(instance));
+				registeredAsId = x.id;
 				filledEmptySlot = true;
 				break;
 			}
-			id++;
 		}
 		if (!filledEmptySlot) {
-			_xs.push_back({ kj::mv(instance), 0 });
-			id = _xs.size() - 1;
+			_xs.push_back({ kj::mv(instance), _xs.size(), 0 });
+			registeredAsId = _xs.back().id;
 		}
 
 		int count = 0;
@@ -151,9 +157,9 @@ public:
 				count++;
 		}
 				
-		cout << "added service to proxy: " << count << " services registered now" << endl;
+		cout << "added service to proxy: service-id: " << registeredAsId << " -> " << count << " services registered now" << endl;
 
-		context.getResults().setUnregister(kj::heap<Unregister>(*this, id));
+		context.getResults().setUnregister(kj::heap<Unregister>(*this, registeredAsId));
 
 		return kj::READY_NOW;
 	}
@@ -166,7 +172,7 @@ Unregister::~Unregister() {
 void Unregister::unreg() {
 	cout << "unregistering id: " << _monicaServerId << endl;
 	if (_monicaServerId < _proxy._xs.size()) {
-		_proxy._xs[_monicaServerId] = { nullptr, -1 };
+		_proxy._xs[_monicaServerId].unset();
 	}
 }
 
