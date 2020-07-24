@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(monica)
 
-option(WITH_CAPNPROTO "Create also Cap'n Proto server" OFF)
+option(WITH_CAPNPROTO "Create also Cap'n Proto server" ON)
 
 add_compile_definitions(NO_MYSQL)
 set(MT_RUNTIME_LIB 1)
