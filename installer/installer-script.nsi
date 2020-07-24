@@ -101,13 +101,15 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	SetOutPath "$INSTDIR"
 	
 	;ADD YOUR OWN FILES HERE...
-	File /oname=monica.exe "..\${ExecutableFolder}\monica.exe"  
-	File /oname=monica-run.exe "..\${ExecutableFolder}\monica-run.exe"  
-	File /oname=monica-zmq-run.exe "..\${ExecutableFolder}\monica-zmq-run.exe"  
-	File /oname=monica-zmq-server.exe "..\${ExecutableFolder}\monica-zmq-server.exe"  
-	File /oname=monica-zmq-control.exe "..\${ExecutableFolder}\monica-zmq-control.exe"  
-	File /oname=monica-zmq-control-send.exe "..\${ExecutableFolder}\monica-zmq-control-send.exe"  	
-	File /oname=monica-zmq-proxy.exe "..\${ExecutableFolder}\monica-zmq-proxy.exe"  	
+	File /oname=monica.exe "..\${ExecutableFolder}\monica.exe"
+	File /oname=monica-run.exe "..\${ExecutableFolder}\monica-run.exe"
+	File /oname=monica-zmq-run.exe "..\${ExecutableFolder}\monica-zmq-run.exe"
+	File /oname=monica-zmq-server.exe "..\${ExecutableFolder}\monica-zmq-server.exe"
+	File /oname=monica-zmq-control.exe "..\${ExecutableFolder}\monica-zmq-control.exe"
+	File /oname=monica-zmq-control-send.exe "..\${ExecutableFolder}\monica-zmq-control-send.exe"
+	File /oname=monica-zmq-proxy.exe "..\${ExecutableFolder}\monica-zmq-proxy.exe"
+	File /oname=monica-capnp-proxy.exe "..\${ExecutableFolder}\monica-capnp-proxy.exe"
+	File /oname=monica-capnp-server.exe "..\${ExecutableFolder}\monica-capnp-server.exe"
  
 	#File /oname=monica_python.pyd "..\${ExecutableFolder}\monica_python.pyd"  
 	#File "${SysLibsDir}\binaries\windows\vc141\${Arch}\boost-python\boost_python-vc141-mt-${BoostBit}-1_66.dll"
