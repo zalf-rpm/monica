@@ -444,7 +444,7 @@ BOTRes& Monica::buildOutputTable()
 			build({ id++, "Stage", "1-6/7", "DevelopmentalStage" },
 				[](const MonicaModel& monica, OId oid)
 			{
-				return monica.cropGrowth() ? monica.cropGrowth()->get_DevelopmentalStage() + 1 : 0;
+				return monica.cropGrowth() ? int(monica.cropGrowth()->get_DevelopmentalStage()) + 1 : 0;
 			},
 				[](MonicaModel& monica, OId oid, Json value)
 			{

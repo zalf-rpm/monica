@@ -306,7 +306,7 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 
 	vc_OxygenDeficit = fc_OxygenDeficiency(pc_CriticalOxygenContent[vc_DevelopmentalStage]);
 
-	int old_DevelopmentalStage = vc_DevelopmentalStage;
+	size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 
 	fc_CropDevelopmentalStage(vw_MeanAirTemperature,
 		pc_BaseTemperature,
@@ -821,7 +821,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 	double d_SoilMoisture_m3,
 	double d_FieldCapacity,
 	double d_PermanentWiltingPoint,
-	int pc_NumberOfDevelopmentalStages,
+	size_t pc_NumberOfDevelopmentalStages,
 	double vc_VernalisationFactor,
 	double vc_DaylengthFactor,
 	double vc_CropNRedux)
@@ -835,7 +835,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 
 
 
-	double old_DevelopmentalStage = vc_DevelopmentalStage;
+	size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 	if (vc_DevelopmentalStage == 0)
 	{
 		if (pc_Perennial)
@@ -1117,7 +1117,9 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
  *
  * @author Claas Nendel
  */
-double CropGrowth::fc_KcFactor(int vc_DevelopmentalStage, double d_StageTemperatureSum, double d_CurrentTemperatureSum,
+double CropGrowth::fc_KcFactor(size_t vc_DevelopmentalStage, 
+  double d_StageTemperatureSum, 
+	double d_CurrentTemperatureSum,
 	double pc_InitialKcFactor, // DB
 	double d_StageKcFactor, // DB
 	double d_EarlierStageKcFactor) // DB
@@ -1239,7 +1241,7 @@ void CropGrowth::fc_CropSize(double pc_MaxCropHeight,
  * @author Claas Nendel
  */
 void CropGrowth::fc_CropGreenArea(double vw_MeanAirTemperature,
-	double vc_DevelopmentalStage,
+	size_t vc_DevelopmentalStage,
 	double d_LeafBiomassIncrement,
 	double d_LeafBiomassDecrement,
 	double vc_CropHeight,
@@ -2741,7 +2743,7 @@ void CropGrowth::fc_CropNitrogen()
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropDryMatter(int vc_DevelopmentalStage,
+void CropGrowth::fc_CropDryMatter(size_t vc_DevelopmentalStage,
 	double vc_Assimilates,
 	double /*vc_NetMaintenanceRespiration*/,
 	double /*pc_CropSpecificMaxRootingDepth*/,
@@ -4240,7 +4242,7 @@ double CropGrowth::get_CurrentTemperatureSum() const
  * @brief Returns developmental stage[]
  * @return deveklopmental stage
  */
-int CropGrowth::get_DevelopmentalStage() const
+size_t CropGrowth::get_DevelopmentalStage() const
 {
 	return vc_DevelopmentalStage;
 }
@@ -5000,7 +5002,7 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 *
 * Method is called after calculation of the developmental stage.
 */
-bool CropGrowth::isAnthesisDay(int old_dev_stage, int new_dev_stage)
+bool CropGrowth::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	if (pc_NumberOfDevelopmentalStages == 6)
 	{
@@ -5020,7 +5022,7 @@ bool CropGrowth::isAnthesisDay(int old_dev_stage, int new_dev_stage)
 *
 * Method is called after calculation of the developmental stage.
 */
-bool CropGrowth::isMaturityDay(int old_dev_stage, int new_dev_stage)
+bool CropGrowth::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	// corn crops
 	if (pc_NumberOfDevelopmentalStages == 6)
@@ -5067,10 +5069,10 @@ CropGrowth::maturityReached() const
 }
 
 
-void CropGrowth::setStage(int newStage)
+void CropGrowth::setStage(size_t newStage)
 {
 	vc_CurrentTotalTemperatureSum = 0.0;
-	for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++)
+	for (size_t stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++)
 		if (stage < newStage)
 			vc_CurrentTotalTemperatureSum += vc_CurrentTemperatureSum[stage];
 		else

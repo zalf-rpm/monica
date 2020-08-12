@@ -119,12 +119,12 @@ namespace Monica
 			double d_SoilMoisture_m3,
 			double d_FieldCapacity,
 			double d_PermanentWiltingPoint,
-			int pc_NumberOfDevelopmentalStages,
+			size_t pc_NumberOfDevelopmentalStages,
 			double vc_VernalisationFactor,
 			double vc_DaylengthFactor,
 			double vc_CropNRedux);
 
-		double fc_KcFactor(int vc_DevelopmentalStage,
+		double fc_KcFactor(size_t vc_DevelopmentalStage,
 			double d_StageTemperatureSum,
 			double d_CurrentTemperatureSum,
 			double pc_InitialKcFactor,
@@ -141,7 +141,7 @@ namespace Monica
 			double pc_CropHeightP2);
 
 		void fc_CropGreenArea(double vw_MeanAirTemperature,
-			double vc_DevelopmentalStage,
+			size_t vc_DevelopmentalStage,
 			double d_LeafBiomassIncrement,
 			double d_LeafBiomassDecrement,
 			double vc_CropHeiht,
@@ -193,7 +193,7 @@ namespace Monica
 
 		void fc_CropNitrogen();
 
-		void fc_CropDryMatter(int vc_DevelopmentalStage,
+		void fc_CropDryMatter(size_t vc_DevelopmentalStage,
 			double vc_GrossPhotosynthesis, double, double,
 			double vc_NetMaintenanceRespiration,
 			double vw_MeanAirTemperature);
@@ -263,7 +263,7 @@ namespace Monica
 		double get_ActualTranspiration() const;
 		double get_OxygenDeficit() const;
 		double get_CurrentTemperatureSum() const;
-		int get_DevelopmentalStage() const;
+		size_t get_DevelopmentalStage() const;
 		double get_RelativeTotalDevelopment() const;
 		double get_OrganBiomass(int i_Organ) const;
 		double get_OrganGreenBiomass(int i_Organ) const;
@@ -361,10 +361,10 @@ namespace Monica
 		* @brief Setter for developmental stage.
 		* @sets Developmental stage of crop.
 		*/
-		void set_DevelopmentalStage(int devStage)
+		void set_DevelopmentalStage(size_t devStage)
 		{
 			vc_DevelopmentalStage = devStage;
-			for (int stage = devStage; stage < pc_NumberOfDevelopmentalStages; stage++) {
+			for (size_t stage = devStage; stage < pc_NumberOfDevelopmentalStages; stage++) {
 				vc_CurrentTemperatureSum[stage] = 0.0;
 			}
 			vc_CurrentTotalTemperatureSum = 0.0;
@@ -422,15 +422,15 @@ namespace Monica
 
 		std::pair<std::vector<double>, double> calcRootDensityFactorAndSum();
 
-		void setStage(int newStage);
+		void setStage(size_t newStage);
 
 	private:
 		bool _frostKillOn{ true };
 
 		int pc_NumberOfAbovegroundOrgans() const;
 
-		bool isAnthesisDay(int old_dev_stage, int new_dev_stage);
-		bool isMaturityDay(int old_dev_stage, int new_dev_stage);
+		bool isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage);
+		bool isMaturityDay(size_t old_dev_stage, size_t new_dev_stage);
 
 		// members
 		SoilColumn& soilColumn;
@@ -484,7 +484,7 @@ namespace Monica
 		double pc_DefaultRadiationUseEfficiency;
 		int vm_DepthGroundwaterTable{ 0 };		//! old GRW
 		int pc_DevelopmentAccelerationByNitrogenStress;
-		int vc_DevelopmentalStage{ 0 };			//! old INTWICK
+		size_t vc_DevelopmentalStage{ 0 };			//! old INTWICK
 		int _noOfCropSteps{ 0 };
 		double vc_DroughtImpactOnFertility{ 1.0 };
 		double pc_DroughtImpactOnFertilityFactor;
@@ -498,7 +498,7 @@ namespace Monica
 		double vc_EvaporatedFromIntercept{ 0.0 };
 		double vc_ExtraterrestrialRadiation{ 0.0 };
 		double pc_FieldConditionModifier;
-		int vc_FinalDevelopmentalStage{ 0 };
+		size_t vc_FinalDevelopmentalStage{ 0 };
 		double vc_FixedN{ 0.0 };
 		//std::vector<double> vo_FreshSoilOrganicMatter;	//! old NFOS
 		double pc_FrostDehardening;
