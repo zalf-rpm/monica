@@ -46,6 +46,8 @@ using namespace mas;
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
+typedef rpc::Model::EnvInstance<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText> MonicaEnvInstance;
+
 class RunMonicaProxy;
 class Unregister final : public rpc::Common::Callback::Server
 {
@@ -63,18 +65,17 @@ private:
 	size_t _monicaServerId;
 };
 
-class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
+class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy< mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText>::Server
 {
 	friend class Unregister;
-
-	typedef rpc::Model::EnvInstance::Client MonicaClient;
+		
 	struct X {
-		MonicaClient client{ nullptr };
+		MonicaEnvInstance::Client client{ nullptr };
 		size_t id{ 0 };
 		int jobs{ 0 };
 
 		void unset() { jobs = -1; client = nullptr; }
-		void reset(MonicaClient&& client) { jobs = 0; this->client = client; }
+		void reset(MonicaEnvInstance::Client&& client) { jobs = 0; this->client = client; }
 	};
 
 	std::vector<X> _xs;
@@ -82,7 +83,7 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy::Server
 public:
 	RunMonicaProxy() {}
 
-	RunMonicaProxy(vector<rpc::Model::EnvInstance::Client>& monicas) {
+	RunMonicaProxy(vector<MonicaEnvInstance::Client>& monicas) {
 		size_t id = 0;
 		for (auto&& client : monicas) {
 			_xs.push_back({ kj::mv(client), id++, 0 });
@@ -327,7 +328,7 @@ struct ThreadContext {
 
 struct CMETRes {
 	kj::ForkedPromise<void> fp;
-	rpc::Model::EnvInstance::Client client;
+	MonicaEnvInstance::Client client;
 };
 
 CMETRes
@@ -338,7 +339,7 @@ createMonicaEnvThread(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsIn
 	capnp::MallocMessageBuilder vatIdMessage(8);
 	auto vatId = vatIdMessage.initRoot<capnp::rpc::twoparty::VatId>();
 	vatId.setSide(capnp::rpc::twoparty::Side::CLIENT);
-	auto client = tc->rpcSystem.bootstrap(vatId).castAs<rpc::Model::EnvInstance>();
+	auto client = tc->rpcSystem.bootstrap(vatId).castAs<MonicaEnvInstance>();
 
 	auto prom = tc->network.onDisconnect().attach(kj::mv(tc));
 	return CMETRes{ prom.fork(), kj::mv(client) };
@@ -429,7 +430,7 @@ int main(int argc, const char* argv[]) {
 						acceptLoop(kj::mv(listener), capnp::ReaderOptions());
 				})));
 
-		vector<rpc::Model::EnvInstance::Client> clients;
+		vector<MonicaEnvInstance::Client> clients;
 		vector<kj::Promise<void>> proms;
 		for (uint i = 0; i < no_of_threads; i++) {
 			auto promAndClient = createMonicaEnvThread(*ioContext.provider, startMonicaThreadsInDebugMode);

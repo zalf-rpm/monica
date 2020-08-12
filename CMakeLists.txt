@@ -324,6 +324,7 @@ set(CAPNPC_SRC_PREFIX ${CAPNP_SCHEMAS_DIR})
 capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS 
 ${CAPNP_SCHEMAS_DIR}/common.capnp 
 ${CAPNP_SCHEMAS_DIR}/climate_data.capnp
+${CAPNP_SCHEMAS_DIR}/soil_data.capnp
 ${CAPNP_SCHEMAS_DIR}/model.capnp
 ${CAPNP_SCHEMAS_DIR}/geo_coord.capnp
 ${CAPNP_SCHEMAS_DIR}/date.capnp

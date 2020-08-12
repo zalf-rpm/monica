@@ -28,7 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-class RunMonicaImpl final : public mas::rpc::Model::EnvInstance::Server {
+class RunMonicaImpl final : public mas::rpc::Model::EnvInstance<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText>::Server {
   // Implementation of the Model::Instance Cap'n Proto interface
   bool _startedServerInDebugMode{ false };
   mas::rpc::Common::Callback::Client unregister{ nullptr };

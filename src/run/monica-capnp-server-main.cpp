@@ -50,6 +50,9 @@ using namespace mas;
 string appName = "monica-capnp-server";
 string version = "1.0.0-beta";
 
+typedef rpc::Model::EnvInstance<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText> MonicaEnvInstance;
+typedef rpc::Model::EnvInstanceProxy<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText> MonicaEnvInstanceProxy;
+
 int main(int argc, const char* argv[]) {
 
   setlocale(LC_ALL, "");
@@ -164,7 +167,7 @@ int main(int argc, const char* argv[]) {
     //create monica server implementation
     auto runMonicaImpl_ = kj::heap<RunMonicaImpl>(startedServerInDebugMode);
     auto& runMonicaImpl = *runMonicaImpl_;
-    rpc::Model::EnvInstance::Client runMonicaImplClient = kj::mv(runMonicaImpl_); // kj::heap<RunMonicaImpl>(startedServerInDebugMode);
+    MonicaEnvInstance::Client runMonicaImplClient = kj::mv(runMonicaImpl_); // kj::heap<RunMonicaImpl>(startedServerInDebugMode);
     debug() << "created monica" << endl;
 
     mas::rpc::Common::Callback::Client unregister(nullptr);
@@ -177,7 +180,7 @@ int main(int argc, const char* argv[]) {
         auto& cWaitScope = client.getWaitScope();
 
         // Request the bootstrap capability from the server.
-        rpc::Model::EnvInstanceProxy::Client cap = client.getMain<rpc::Model::EnvInstanceProxy>();
+        MonicaEnvInstanceProxy::Client cap = client.getMain<MonicaEnvInstanceProxy>();
 
         // Make a call to the capability.
         auto request = cap.registerEnvInstanceRequest();
