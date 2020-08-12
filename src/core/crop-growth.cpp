@@ -5005,13 +5005,9 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 bool CropGrowth::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	if (pc_NumberOfDevelopmentalStages == 6)
-	{
-		return (old_dev_stage == 3 && new_dev_stage == 4);
-	}
+		return (old_dev_stage == 2 && new_dev_stage == 3);
 	else if (pc_NumberOfDevelopmentalStages == 7)
-	{
 		return (old_dev_stage == 4 && new_dev_stage == 5);
-	}
 
 	return false;
 }
@@ -5026,14 +5022,10 @@ bool CropGrowth::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	// corn crops
 	if (pc_NumberOfDevelopmentalStages == 6)
-	{
 		return (old_dev_stage == 4 && new_dev_stage == 5);
-	}
 	// maize, sorghum and other crops with 7 developmental stages
 	else if (pc_NumberOfDevelopmentalStages == 7)
-	{
 		return (old_dev_stage == 5 && new_dev_stage == 6);
-	}
 
 	return false;
 }
