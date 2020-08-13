@@ -16,7 +16,9 @@ import os
 import time
 import json
 import sys
+from pathlib import Path
 
+sys.path.append(str(Path(os.path.realpath(__file__)).parent.parent.parent.parent / "util/soil"))
 import soil_io3
 #import monica_python
 #print("path to monica_python: ", monica_python.__file__)
