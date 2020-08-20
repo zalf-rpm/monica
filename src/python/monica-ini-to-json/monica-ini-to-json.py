@@ -21,7 +21,7 @@ import csv
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 import sys
-import ConfigParser as cp
+import configparser as cp
 
 YEAR_BORDERS = [[0, 30, 2000], [31, 99, 1900]]
 YEAR_SUFFIX_DIGITS = 3
@@ -49,8 +49,8 @@ def main():
     }
 
     if len(sys.argv) == 2 and sys.argv[1] == "-h":
-        print "usage: [python] monica-ini-to-json.py [monica.ini=path-to-monica.ini] [sim.json=path-to-template-sim.json] [out-suffix=suffix-to-append-to-sim-site-crop-climate.files]"
-        print "defaults:", config
+        print("usage: [python] monica-ini-to-json.py [monica.ini=path-to-monica.ini] [sim.json=path-to-template-sim.json] [out-suffix=suffix-to-append-to-sim-site-crop-climate.files]")
+        print("defaults:", config)
         return
 
     if len(sys.argv) > 1:
@@ -111,16 +111,16 @@ def main():
         sim["UseAutomaticIrrigation"] = True
 
         if ini.has_option("automatic_irrigation", "amount"):
-            sim["UseAutomaticIrrigation"]["amount"] = ini.getint("automatic_irrigation", "amount")
+            sim["AutoIrrigationParams"]["amount"] = ini.getint("automatic_irrigation", "amount")
 
         if ini.has_option("automatic_irrigation", "treshold"):
-            sim["UseAutomaticIrrigation"]["treshold"] = ini.getfloat("automatic_irrigation", "treshold")
+            sim["AutoIrrigationParams"]["treshold"] = ini.getfloat("automatic_irrigation", "treshold")
 
         if ini.has_option("automatic_irrigation", "nitrate"):
-            sim["UseAutomaticIrrigation"]["AutoIrrigationParams"]["irrigationParameters"]["nitrateConcentration"][0] = ini.getfloat("automatic_irrigation", "nitrate")
+            sim["AutoIrrigationParams"]["irrigationParameters"]["nitrateConcentration"][0] = ini.getfloat("automatic_irrigation", "nitrate")
 
         if ini.has_option("automatic_irrigation", "sulfate"):
-            sim["UseAutomaticIrrigation"]["AutoIrrigationParams"]["irrigationParameters"]["sulfateConcentration"][0] = ini.getfloat("automatic_irrigation", "sulfate")
+            sim["AutoIrrigationParams"]["irrigationParameters"]["sulfateConcentration"][0] = ini.getfloat("automatic_irrigation", "sulfate")
 
     # site settings
     if ini.has_section("site_parameters"):
@@ -154,7 +154,7 @@ def main():
             first_id = None     
 
             #skip header line      
-            _.next()     
+            next(_)     
 
             for line in _:
                 es = line.split()
@@ -188,7 +188,7 @@ def main():
         with open(path_to_file(ini.get("files", "fertiliser"), dir_of_monica_ini)) as _:
 
             #skip header line
-            _.next()
+            next(_)
 
             for line in _:
                 if line.strip() == "end":
@@ -208,7 +208,7 @@ def main():
         with open(path_to_file(ini.get("files", "irrigation"), dir_of_monica_ini)) as _:
 
             #skip header line
-            _.next()
+            next(_)
 
             for line in _:
                 if line.strip() == "end":
@@ -232,7 +232,7 @@ def main():
             sorted_irrig_keys = sorted(irrig_apps)
 
             #skip header line
-            _.next()
+            next(_)
 
             def append_ferts(wss, sfk):
                 data = ferts[sfk]
@@ -369,9 +369,9 @@ def main():
 
                 with open(path_to_file(ini.get("files", "climate_prefix") + str(year)[-YEAR_SUFFIX_DIGITS:], dir_of_monica_ini)) as _:
 
-                    _.next()
-                    _.next()
-                    _.next()
+                    next(_)
+                    next(_)
+                    next(_)
 
                     for line in _:
 
@@ -405,20 +405,20 @@ def main():
                     del row[5]
 
             # write climate data
-            with(open(dir_of_monica_ini + "/" + sim["climate.csv"], "wb")) as _:
+            with(open(dir_of_monica_ini + "/" + sim["climate.csv"], "w")) as _:
                 writer = csv.writer(_, delimiter=",")
                 writer.writerows(climate_data)
 
     # write sim.json
     with(open(dir_of_monica_ini + "/" + sim["sim.json"], "w")) as _:
-        json.dump(sim, _)
+        json.dump(sim, _, indent=2)
 
     # write site.json
     with(open(dir_of_monica_ini + "/" + sim["site.json"], "w")) as _:
-        json.dump(site, _)
+        json.dump(site, _, indent=2)
 
     # write crop.json
     with(open(dir_of_monica_ini + "/" + sim["crop.json"], "w")) as _:
-        json.dump(crop, _)
+        json.dump(crop, _, indent=2)
 
 main()
