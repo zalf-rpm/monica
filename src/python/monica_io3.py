@@ -12,20 +12,19 @@
 # Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import os
-import time
 import json
-import sys
+import os
 from pathlib import Path
+import sys
+import time
 
-sys.path.append(str(Path(os.path.realpath(__file__)).parent.parent.parent.parent / "util/soil"))
+PATH_TO_SOIL_IO3 = Path(os.path.realpath(__file__)).parent.parent.parent.parent / "util/soil"
+
+if str(PATH_TO_SOIL_IO3) not in sys.path:
+    sys.path.insert(1, str(PATH_TO_SOIL_IO3))
 import soil_io3
-#import monica_python
-#print("path to monica_python: ", monica_python.__file__)
 
-#print("sys.version: ", sys.version)
-
-#print("local monica_io3.py")
+#------------------------------------------------------------------------------
 
 CACHE_REFS = False
 
@@ -48,16 +47,19 @@ ORGAN_STRUCT = 4
 ORGAN_SUGAR = 5
 ORGAN_UNDEFINED_ORGAN_ = 6
 
+#------------------------------------------------------------------------------
 
 def oid_is_organ(oid):
     return oid["organ"] != ORGAN_UNDEFINED_ORGAN_
 
+#------------------------------------------------------------------------------
 
 def oid_is_range(oid):
     return oid["fromLayer"] >= 0 \
         and oid["toLayer"] >= 0 #\
         #and oid["fromLayer"] < oid["toLayer"]
 
+#------------------------------------------------------------------------------
 
 def op_to_string(op):
     return {
@@ -72,6 +74,7 @@ def op_to_string(op):
         OP_UNDEFINED_OP_: "undef"
     }.get(op, "undef")
 
+#------------------------------------------------------------------------------
 
 def organ_to_string(organ):
     return {
@@ -84,6 +87,7 @@ def organ_to_string(organ):
         ORGAN_UNDEFINED_ORGAN_: "undef"
     }.get(organ, "undef")
 
+#------------------------------------------------------------------------------
 
 def oid_to_string(oid, include_time_agg):
     oss = ""
@@ -103,6 +107,7 @@ def oid_to_string(oid, include_time_agg):
 
     return oss
 
+#------------------------------------------------------------------------------
 
 def write_output_header_rows(output_ids,
                              include_header_row=True,
@@ -151,6 +156,7 @@ def write_output_header_rows(output_ids,
 
     return out
 
+#------------------------------------------------------------------------------
 
 def write_output(output_ids, values):
     "write actual output lines"
@@ -170,6 +176,7 @@ def write_output(output_ids, values):
             out.append(row)
     return out
 
+#------------------------------------------------------------------------------
 
 def is_absolute_path(p):
     "is absolute path"
@@ -178,6 +185,8 @@ def is_absolute_path(p):
         or (len(p) > 2 and p[1] == ":" \
             and (p[2] == "\\" \
                 or p[2] == "/"))
+
+#------------------------------------------------------------------------------
 
 def fix_system_separator(path):
     "fix system separator"
@@ -189,6 +198,8 @@ def fix_system_separator(path):
             break
         path = new_path
     return new_path
+
+#------------------------------------------------------------------------------
 
 def replace_env_vars(path):
     "replace ${ENV_VAR} in path"
@@ -211,11 +222,13 @@ def replace_env_vars(path):
 
     return path
 
+#------------------------------------------------------------------------------
 
 def default_value(dic, key, default):
     "return default value if key not there"
     return dic[key] if key in dic else default
 
+#------------------------------------------------------------------------------
 
 def read_and_parse_json_file(path):
     with open(path) as f:
@@ -224,14 +237,17 @@ def read_and_parse_json_file(path):
             "errors": ["Error opening file with path : '" + path + "'!"],
             "success": False}
 
+#------------------------------------------------------------------------------
 
 def parse_json_string(jsonString):
     return {"result": json.loads(jsonString), "errors": [], "success": True}
 
+#------------------------------------------------------------------------------
 
 def is_string_type(j):
     return isinstance(j, str)
 
+#------------------------------------------------------------------------------
 
 def find_and_replace_references(root, j):
     sp = supported_patterns()
@@ -304,6 +320,7 @@ def find_and_replace_references(root, j):
 
     return {"result": j, "errors": errors, "success": len(errors) == 0}
 
+#------------------------------------------------------------------------------
 
 def supported_patterns():
 
@@ -566,6 +583,7 @@ def supported_patterns():
 
     return supported_patterns.m
 
+#------------------------------------------------------------------------------
 
 def print_possible_errors(errs, include_warnings=False):
     if not errs["success"]:
@@ -578,6 +596,7 @@ def print_possible_errors(errs, include_warnings=False):
 
     return errs["success"]
 
+#------------------------------------------------------------------------------
 
 def create_env_json_from_json_config(crop_site_sim):
     "create the json version of the env from the json config files"
