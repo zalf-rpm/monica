@@ -75,6 +75,8 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-run ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
 
 # copy sqlite db
 COPY sqlite-db/ka5-soil-data.sqlite ${monica_dir}/sqlite-db/
