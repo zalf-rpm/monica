@@ -4,7 +4,7 @@ FROM debian:10.3 AS build-env
 # Update Ubuntu Software repository
 RUN apt-get update
 # install monica prerequisites
-RUN apt-get install -y apt-utils curl unzip tar cmake
+RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
 RUN apt-get install -y git python-pip python-dev build-essential
 
 ARG  VERSION_MAYOR="false"
