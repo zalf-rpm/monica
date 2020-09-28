@@ -1516,6 +1516,16 @@ BOTRes& Monica::buildOutputTable()
               oid.toLayer = min(oid.toLayer, nools - 1);
               return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actDenitrificationRate(i); }, 6);
             });
+			build({ id++, "rootDensity", "", "cropGrowth->vc_RootDensity" },
+        [](const MonicaModel& monica, OId oid) 
+				{
+          return getComplexValues<double>(oid, [&](int i) {
+            return monica.cropGrowth() ? monica.cropGrowth()->getRootDensity(i) : 0.0; }, 4);
+        });
+      build({ id++, "rootingZone", "", "cropGrowth->vc_RootingZone" },
+        [](const MonicaModel& monica, OId oid) {
+          return monica.cropGrowth() ? monica.cropGrowth()->rootingZone() : 0.0;
+        });
 
 			tableBuilt = true;
 		}

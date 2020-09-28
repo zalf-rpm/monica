@@ -424,6 +424,10 @@ namespace Monica
 
 		void setStage(size_t newStage);
 
+		double getRootDensity(int layer) const { return vc_RootDensity.at(layer); }
+
+		size_t rootingZone() const { return vc_RootingZone; };
+
 	private:
 		bool _frostKillOn{ true };
 
