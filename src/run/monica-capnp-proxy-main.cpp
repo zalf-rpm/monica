@@ -36,6 +36,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model.capnp.h"
 #include "common.capnp.h"
 
+#include "common/sole.hpp"
+
 using namespace std;
 using namespace Monica;
 using namespace Tools;
@@ -88,6 +90,15 @@ public:
 		for (auto&& client : monicas) {
 			_xs.push_back({ kj::mv(client), id++, 0 });
 		}
+	}
+
+	kj::Promise<void> info(InfoContext context) //override
+	{
+		auto rs = context.getResults();
+		rs.setId("monica-proxy_" + sole::uuid4().str());
+		rs.setName("Monica capnp proxy");
+		rs.setDescription("");
+		return kj::READY_NOW;
 	}
 
 	kj::Promise<void> run(RunContext context) override //run @0 (env :Env) -> (result :Common.StructuredText);

@@ -102,7 +102,7 @@ kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
   auto rs = context.getResults();
   rs.setId("monica_" + sole::uuid4().str());
   rs.setName("Monica capnp server");
-  rs.setDescription("some description");
+  rs.setDescription("");
   return kj::READY_NOW;
 }
 
