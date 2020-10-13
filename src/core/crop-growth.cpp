@@ -323,14 +323,15 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 		vc_DaylengthFactor,
 		vc_CropNRedux);
 
-	if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage))
+	if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
+		if (_fireEvent) 
+			_fireEvent("emergence");
+	} else if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage))
 	{
 		vc_AnthesisDay = vs_JulianDay;
 		if (_fireEvent)
 			_fireEvent("anthesis");
-	}
-
-	if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage))
+	} else if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage))
 	{
 		vc_MaturityDay = vs_JulianDay;
 		vc_MaturityReached = true;
@@ -339,9 +340,10 @@ void CropGrowth::step(double vw_MeanAirTemperature,
 	}
 
 	// fire stage event on stage change or right after sowing
-	if (old_DevelopmentalStage != vc_DevelopmentalStage || _noOfCropSteps == 0)
+	if (old_DevelopmentalStage != vc_DevelopmentalStage || _noOfCropSteps == 0) {
 		if (_fireEvent)
 			_fireEvent(string("Stage-") + to_string(vc_DevelopmentalStage + 1));
+	}
 
 	vc_DaylengthFactor =
 		fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
@@ -833,9 +835,6 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 	double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature();
 	double vc_StageExcessTemperatureSum = 0.0;
 
-
-
-	size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 	if (vc_DevelopmentalStage == 0)
 	{
 		if (pc_Perennial)
