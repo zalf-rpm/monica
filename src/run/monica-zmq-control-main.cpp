@@ -20,7 +20,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <string>
 
-#include "zeromq/zhelpers.hpp"
 #include "zeromq/zmq-helper.h"
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"

@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <tuple>
 
 #include "zeromq/zmq.hpp"
-#include "zeromq/zhelpers.hpp"
+
 #include "zeromq/zmq-helper.h"
 #include "json11/json11.hpp"
 #include "run-monica-zmq.h"

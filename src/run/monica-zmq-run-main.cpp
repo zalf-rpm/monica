@@ -19,8 +19,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <tuple>
 
-#include "zhelpers.hpp"
-
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"
 #include "zeromq/zmq-helper.h"
