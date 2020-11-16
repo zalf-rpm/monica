@@ -116,6 +116,14 @@ void SoilTransport::step() {
 
 }
 
+void SoilTransport::deserialize(mas::models::monica::SoilTransportModuleState::Reader reader) {
+
+}
+
+void SoilTransport::serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const {
+
+}
+
 /**
  * @brief Calculation of N deposition
  * Transformation of annual N Deposition into a daily value,

@@ -57,6 +57,10 @@ namespace Monica
   public:
     SoilTemperature(MonicaModel& monica);
 
+    SoilTemperature(mas::models::monica::SoilTemperatureModuleState::Reader reader) { deserialize(reader); }
+    void deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const;
+
     void step(double tmin, double tmax, double globrad);
 
     double f_SoilSurfaceTemperature(double tmin, double tmax, double globrad);
@@ -76,34 +80,32 @@ namespace Monica
     SoilLayer _soilColumn_vt_GroundLayer;
     SoilLayer _soilColumn_vt_BottomLayer;
 
-    struct SC
-    {
+    struct SC {
       SoilColumn& sc;
       SoilLayer& gl;
       SoilLayer& bl;
       std::size_t vs_nols;
-      SC(SoilColumn& sc, 
-				 SoilLayer& gl, 
-				 SoilLayer& bl, 
-				 size_t vs_nols)
-				: sc(sc)
-				, gl(gl)
-				, bl(bl)
-				, vs_nols(vs_nols)
-			{}
+      SC(SoilColumn& sc,
+        SoilLayer& gl,
+        SoilLayer& bl,
+        size_t vs_nols)
+        : sc(sc)
+        , gl(gl)
+        , bl(bl)
+        , vs_nols(vs_nols) {}
 
-			SoilLayer& operator[](std::size_t i) const
-			{
-				if(i < vs_nols)
+      SoilLayer& operator[](std::size_t i) const {
+        if (i < vs_nols)
           return sc[i];
-        else if(i < vs_nols + 1)
+        else if (i < vs_nols + 1)
           return gl;
 
         return bl;
       }
 
       const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
-    } soilColumn;
+    };
+    SC* soilColumn{ nullptr };
 
     const std::size_t vt_NumberOfLayers;
     const std::size_t vs_NumberOfLayers;

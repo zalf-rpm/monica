@@ -53,9 +53,19 @@ namespace Monica
   class SoilOrganic
   {
   public:
-    SoilOrganic(SoilColumn& soilColumn,
-                const SiteParameters& sps,
-                const SoilOrganicModuleParameters& userParams);
+    SoilOrganic(SoilColumn* soilColumn,
+                const SoilOrganicModuleParameters* userParams);
+
+    SoilOrganic(SoilColumn* sc,
+      const SoilOrganicModuleParameters* userParams,
+      mas::models::monica::SoilOrganicModuleState::Reader reader)
+      : soilColumn(sc)
+      , organicPs(userParams) {
+      deserialize(reader);
+    }
+
+    void deserialize(mas::models::monica::SoilOrganicModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilOrganicModuleState::Builder builder) const;
 
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
@@ -161,9 +171,9 @@ namespace Monica
     double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
 		//void fo_distributeDeadRootBiomass();
-    SoilColumn& soilColumn;
-    const SiteParameters& siteParams;
-    const SoilOrganicModuleParameters& organicPs;
+
+    SoilColumn* soilColumn{ nullptr };
+    const SoilOrganicModuleParameters* organicPs{ nullptr };
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};

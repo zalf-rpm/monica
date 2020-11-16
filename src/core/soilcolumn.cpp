@@ -56,6 +56,14 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
 {
 }
 
+void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) {
+
+}
+
+void SoilLayer::serialize(mas::models::monica::SoilLayerState::Builder builder) const {
+
+}
+
 /**
  * Soil layer's moisture content, expressed as logarithm of
  * pressure head in cm water column. Algorithm of Van Genuchten is used.
@@ -135,6 +143,15 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
 
 	_vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
+
+void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader) {
+
+}
+
+void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder) const {
+
+}
+
 
 /**
  * @brief Calculates number of organic layers.

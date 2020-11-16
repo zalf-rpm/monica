@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <queue>
 #include <set>
 
+#include <kj/memory.h>
 #include "monica/monica_state.capnp.h"
 
 #include "climate/climate-common.h"
@@ -64,7 +65,11 @@ namespace Monica
 	public:
 		MonicaModel(const CentralParameterProvider& cpp);
 
-		~MonicaModel();
+		~MonicaModel() {}
+
+		MonicaModel(mas::models::monica::MonicaModelState::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::MonicaModelState::Reader reader);
 
 		void serialize(mas::models::monica::MonicaModelState::Builder builder);
 
@@ -220,20 +225,20 @@ namespace Monica
 		double getsum30cmActDenitrificationRate() const;
 		double getETa() const;
 		
-		const SoilTemperature& soilTemperature() const { return _soilTemperature; }
-		SoilTemperature& soilTemperatureNC() { return _soilTemperature; }
+		const SoilTemperature& soilTemperature() const { return *_soilTemperature; }
+		SoilTemperature& soilTemperatureNC() { return *_soilTemperature; }
 
-		const SoilMoisture& soilMoisture() const { return _soilMoisture; }
-		SoilMoisture& soilMoistureNC() { return _soilMoisture; }
+		const SoilMoisture& soilMoisture() const { return *_soilMoisture; }
+		SoilMoisture& soilMoistureNC() { return *_soilMoisture; }
 
-		const SoilOrganic& soilOrganic() const { return _soilOrganic; }
-		SoilOrganic& soilOrganicNC() { return _soilOrganic; }
+		const SoilOrganic& soilOrganic() const { return *_soilOrganic; }
+		SoilOrganic& soilOrganicNC() { return *_soilOrganic; }
 
-		const SoilTransport& soilTransport() const { return _soilTransport; }
-		SoilTransport& soilTransportNC() { return _soilTransport; }
+		const SoilTransport& soilTransport() const { return *_soilTransport; }
+		SoilTransport& soilTransportNC() { return *_soilTransport; }
 
-		const SoilColumn& soilColumn() const { return _soilColumn; }
-		SoilColumn& soilColumnNC() { return _soilColumn; }
+		const SoilColumn& soilColumn() const { return *_soilColumn; }
+		SoilColumn& soilColumnNC() { return *_soilColumn; }
 
 		CropGrowth* cropGrowth() const { return _currentCropGrowth; }
 
@@ -289,19 +294,13 @@ namespace Monica
 		//std::string _pathToOutputDir;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;
 
-		SoilColumn _soilColumn; //!< main soil data structure
-		SoilTemperature _soilTemperature; //!< temperature code
-		SoilMoisture _soilMoisture; //!< moisture code
-		SoilOrganic _soilOrganic; //!< organic code
-		SoilTransport _soilTransport; //!< transport code
-		CropPtr _currentCrop; //! currently possibly planted crop
+		kj::Own<SoilColumn> _soilColumn; //!< main soil data structure
+		kj::Own<SoilTemperature> _soilTemperature; //!< temperature code
+		kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
+		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
+		kj::Own<SoilTransport> _soilTransport; //!< transport code
+		CropPtr _currentCrop{ nullptr }; //! currently possibly planted crop
 		CropGrowth* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
-
-		//VOC members
-		//const int _stepSize24{1}, _stepSize240{10};
-		//std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
-		//int _index24{0}, _index240{0};
-		//bool _full24{false}, _full240{false};
 
 		//! store applied fertiliser during one production process
 		double _sumFertiliser{0.0}; //mineral N

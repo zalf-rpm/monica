@@ -51,6 +51,10 @@ namespace Monica
       SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps);
       ~SnowComponent() {}
 
+      SnowComponent(SoilColumn& sc, mas::models::monica::SnowModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
+      void deserialize(mas::models::monica::SnowModuleState::Reader reader);
+      void serialize(mas::models::monica::SnowModuleState::Builder builder) const;
+
       void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
 
       double getVm_SnowDepth() const { return this->vm_SnowDepth; }
@@ -108,6 +112,10 @@ namespace Monica
                      double pm_HydraulicConductivityRedux,
                      double p_timeStep);
 
+      FrostComponent(SoilColumn& sc, mas::models::monica::FrostModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
+      void deserialize(mas::models::monica::FrostModuleState::Reader reader);
+      void serialize(mas::models::monica::FrostModuleState::Builder builder) const;
+
       void calcSoilFrost(double mean_air_temperature, double snow_depth);
       double getFrostDepth() const { return vm_FrostDepth; }
       double getThawDepth() const { return vm_ThawDepth; }
@@ -163,6 +171,11 @@ namespace Monica
   {
   public:
     SoilMoisture(MonicaModel& monica);
+
+    SoilMoisture(MonicaModel& monica, mas::models::monica::SoilMoistureModuleState::Reader reader)
+    : monica(monica) { deserialize(reader); }
+    void deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const;
 
 	void step(double vs_DepthGroundwaterTable,
 		// Wetter Variablen

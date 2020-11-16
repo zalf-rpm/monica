@@ -30,11 +30,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "tools/debug.h"
 #include "db/abstract-db-connections.h"
+#include "../mas-infrastructure/src/cpp/common/rpc-connections.h"
 
 #include "run-monica-capnp.h"
 
+#include <capnp/persistent.capnp.h>
 #include "model.capnp.h"
 #include "common.capnp.h"
+#include "registry.capnp.h"
 
 #include "common/sole.hpp"
 
@@ -44,6 +47,7 @@ using namespace Tools;
 using namespace json11;
 using namespace Climate;
 using namespace mas;
+using namespace mas::infrastructure::common;
 
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
@@ -81,11 +85,12 @@ class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy< mas::rpc::Comm
 	};
 
 	std::vector<X> _xs;
+	std::string _uuid;
 
 public:
-	RunMonicaProxy() {}
+	RunMonicaProxy() : _uuid(sole::uuid4().str()) {}
 
-	RunMonicaProxy(vector<MonicaEnvInstance::Client>& monicas) {
+	RunMonicaProxy(vector<MonicaEnvInstance::Client>& monicas) : _uuid(sole::uuid4().str()) {
 		size_t id = 0;
 		for (auto&& client : monicas) {
 			_xs.push_back({ kj::mv(client), id++, 0 });
@@ -95,7 +100,8 @@ public:
 	kj::Promise<void> info(InfoContext context) //override
 	{
 		auto rs = context.getResults();
-		rs.setId("monica-proxy_" + sole::uuid4().str());
+
+		rs.setId("monica-proxy_" + _uuid);
 		rs.setName("Monica capnp proxy");
 		rs.setDescription("");
 		return kj::READY_NOW;
@@ -194,86 +200,7 @@ kj::Promise<void> Unregister::call(CallContext context) // call @0 ();
 	return kj::READY_NOW;
 }
 
-/*
-int main_working_no_disconnect_support(int argc, const char* argv[]){
-
-	setlocale(LC_ALL, "");
-	setlocale(LC_NUMERIC, "C");
-
-	string address = "*";
-	int port = -1;
-
-	//init path to db-connections.ini
-	if (auto monicaHome = getenv("MONICA_HOME"))
-	{
-		auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-		//init for dll/so
-		initPathToDB(pathToFile);
-		//init for monica-run
-		Db::dbConnectionParameters(pathToFile);
-	}
-
-	//use a possibly non-default db-connections.ini
-	//Db::dbConnectionParameters("db-connections.ini");
-
-	auto printHelp = [=]()
-	{
-		cout
-			<< appName << "[options]" << endl
-			<< endl
-			<< "options:" << endl
-			<< endl
-			<< " -h | --help ... this help output" << endl
-			<< " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
-			<< endl
-			<< " -p | --port ... PORT (default: none)] "
-			"... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl;
-	};
-
-	if (argc >= 1)
-	{
-		for (auto i = 1; i < argc; i++)
-		{
-			string arg = argv[i];
-			if (arg == "-p" || arg == "--port")
-			{
-				if (i + 1 < argc && argv[i + 1][0] != '-')
-					port = stoi(argv[++i]);
-			}
-			else if (arg == "-h" || arg == "--help")
-				printHelp(), exit(0);
-			else if (arg == "-v" || arg == "--version")
-				cout << appName << " version " << version << endl, exit(0);
-		}
-
-		debug() << "starting Cap'n Proto MONICA proxy" << endl;
-
-		// Set up a server.
-		capnp::EzRpcServer server(kj::heap<RunMonicaProxy>(), address + (port < 0 ? "" : string(":") + to_string(port)));
-
-		// Write the port number to stdout, in case it was chosen automatically.
-		auto& waitScope = server.getWaitScope();
-		port = server.getPort().wait(waitScope);
-		if (port == 0) {
-			// The address format "unix:/path/to/socket" opens a unix domain socket,
-			// in which case the port will be zero.
-			std::cout << "Listening on Unix socket..." << std::endl;
-		}
-		else {
-			std::cout << "Listening on port " << port << "..." << std::endl;
-		}
-
-		// Run forever, accepting connections and handling requests.
-		kj::NEVER_DONE.wait(waitScope);
-
-		debug() << "stopped Cap'n Proto MONICA proxy" << endl;
-	}
-
-	return 0;
-}
-*/
-
-capnp::Capability::Client mainInterface(nullptr);
+//capnp::Capability::Client mainInterface(nullptr);
 
 kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
 	return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
@@ -284,46 +211,46 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool 
 		});
 }
 
-kj::Promise<kj::Own<kj::AsyncIoStream>> connectAttach(kj::Own<kj::NetworkAddress>&& addr) {
-	return addr->connect().attach(kj::mv(addr));
-}
+//kj::Promise<kj::Own<kj::AsyncIoStream>> connectAttach(kj::Own<kj::NetworkAddress>&& addr) {
+//	return addr->connect().attach(kj::mv(addr));
+//}
 
-struct ErrorHandler : public kj::TaskSet::ErrorHandler {
-	void taskFailed(kj::Exception&& exception) override {
-		kj::throwFatalException(kj::mv(exception));
-	}
-};
-ErrorHandler eh;
-kj::TaskSet tasks(eh);
+//struct ErrorHandler : public kj::TaskSet::ErrorHandler {
+//	void taskFailed(kj::Exception&& exception) override {
+//		kj::throwFatalException(kj::mv(exception));
+//	}
+//};
+//ErrorHandler eh;
+//kj::TaskSet tasks(eh);
 
-struct ServerContext {
-	kj::Own<kj::AsyncIoStream> stream;
-	capnp::TwoPartyVatNetwork network;
-	capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
+//struct ServerContext {
+//	kj::Own<kj::AsyncIoStream> stream;
+//	capnp::TwoPartyVatNetwork network;
+//	capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
 
-	ServerContext(
-		kj::Own<kj::AsyncIoStream>&& stream,
-		capnp::ReaderOptions readerOpts)
-		: stream(kj::mv(stream))
-		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER, readerOpts)
-		, rpcSystem(makeRpcServer(network, mainInterface)) {}
-};
+//	ServerContext(
+//		kj::Own<kj::AsyncIoStream>&& stream,
+//		capnp::ReaderOptions readerOpts)
+//		: stream(kj::mv(stream))
+//		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER, readerOpts)
+//		, rpcSystem(makeRpcServer(network, mainInterface)) {}
+//};
 
-void acceptLoop(kj::Own<kj::ConnectionReceiver>&& listener, capnp::ReaderOptions readerOpts) {
-	auto ptr = listener.get();
-	tasks.add(ptr->accept().then(kj::mvCapture(kj::mv(listener),
-		[readerOpts](kj::Own<kj::ConnectionReceiver>&& listener,
-			kj::Own<kj::AsyncIoStream>&& connection) {
-				acceptLoop(kj::mv(listener), readerOpts);
+//void acceptLoop(kj::Own<kj::ConnectionReceiver>&& listener, capnp::ReaderOptions readerOpts) {
+//	auto ptr = listener.get();
+//	tasks.add(ptr->accept().then(kj::mvCapture(kj::mv(listener),
+//		[readerOpts](kj::Own<kj::ConnectionReceiver>&& listener,
+//			kj::Own<kj::AsyncIoStream>&& connection) {
+//				acceptLoop(kj::mv(listener), readerOpts);
 
-				cout << "connection from client" << endl;
-				auto server = kj::heap<ServerContext>(kj::mv(connection), readerOpts);
+//				cout << "connection from client" << endl;
+//				auto server = kj::heap<ServerContext>(kj::mv(connection), readerOpts);
 
 				// Arrange to destroy the server context when all references are gone, or when the
 				// EzRpcServer is destroyed (which will destroy the TaskSet).
-				tasks.add(server->network.onDisconnect().attach(kj::mv(server)));
-		})));
-}
+//				tasks.add(server->network.onDisconnect().attach(kj::mv(server)));
+//		})));
+//}
 
 struct ThreadContext {
 	kj::AsyncIoProvider::PipeThread serverThread;
@@ -373,7 +300,7 @@ int main(int argc, const char* argv[]) {
 		//init for monica-run
 		Db::dbConnectionParameters(pathToFile);
 	}
-
+		
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");
 
@@ -422,25 +349,22 @@ int main(int argc, const char* argv[]) {
 		debug() << "starting Cap'n Proto MONICA proxy" << endl;
 
 		auto ioContext = kj::setupAsyncIo();
-		int callCount = 0;
-		int handleCount = 0;
 
-		auto paf = kj::newPromiseAndFulfiller<uint>();
-		kj::ForkedPromise<uint> portPromise = paf.promise.fork();
+		//auto paf = kj::newPromiseAndFulfiller<uint>();
+		//kj::ForkedPromise<uint> portPromise = paf.promise.fork();
 
-		auto& network = ioContext.provider->getNetwork();
-		auto bindAddress = address + (port < 0 ? "" : string(":") + to_string(port));
-		uint defaultPort = 0;
+		//auto& network = ioContext.provider->getNetwork();
+		//auto bindAddress = address + (port < 0 ? "" : string(":") + to_string(port));
+		//uint defaultPort = 0;
 
-		tasks.add(network.parseAddress(bindAddress, defaultPort)
-			.then(kj::mvCapture(paf.fulfiller,
-				[](kj::Own<kj::PromiseFulfiller<uint>>&& portFulfiller,
-					kj::Own<kj::NetworkAddress>&& addr) {
-						auto listener = addr->listen();
-						portFulfiller->fulfill(listener->getPort());
-						acceptLoop(kj::mv(listener), capnp::ReaderOptions());
-				})));
-
+		//auto&& portFulfiller = paf.fulfiller;
+		//tasks.add(network.parseAddress(bindAddress, defaultPort)
+		//  .then([KJ_MVCAP(portFulfiller)](kj::Own<kj::NetworkAddress>&& addr) mutable {
+		//  auto listener = addr->listen();
+		//  portFulfiller->fulfill(listener->getPort());
+		//  acceptLoop(kj::mv(listener), capnp::ReaderOptions());
+		//}));
+		
 		vector<MonicaEnvInstance::Client> clients;
 		vector<kj::Promise<void>> proms;
 		for (uint i = 0; i < no_of_threads; i++) {
@@ -448,10 +372,52 @@ int main(int argc, const char* argv[]) {
 			proms.push_back(promAndClient.fp.addBranch());
 			clients.push_back(kj::mv(promAndClient.client));
 		}
-		//init the proxy, which will be 
-		mainInterface = kj::heap<RunMonicaProxy>(clients);
 
-		port = portPromise.addBranch().wait(ioContext.waitScope);
+		capnp::Capability::Client mainInterface = kj::heap<RunMonicaProxy>(clients);
+
+		ConnectionManager conman;
+		auto portPromise = conman.bind(ioContext, mainInterface, address, port < 0 ? 0U : kj::uint(port));
+		auto port = portPromise.wait(ioContext.waitScope);
+		
+		//port = portPromise.addBranch().wait(ioContext.waitScope);
+		
+		/*
+		auto cap = conman.connect(ioContext, "capnp://insecure@localhost:10001/abcd").wait(ioContext.waitScope);
+		auto registratorCap = cap.castAs<rpc::registry::Registrator>();
+		auto regReq = registratorCap.registerRequest();
+		regReq.setCategoryId("abc");
+		regReq.setRef(mainInterface.castAs<rpc::Common::Identifiable>());
+//{
+			auto regResp = regReq.send().wait(ioContext.waitScope);
+			auto unreg = regResp.getUnreg();
+//		}
+		//unreg.callRequest().send().wait(ioContext.waitScope);
+
+		auto bsCap = conman.connect(ioContext, "capnp://insecure@localhost:10001").wait(ioContext.waitScope);
+		auto registryCap = bsCap.castAs<rpc::registry::Registry>();
+		auto entriesReq = registryCap.entriesRequest();
+		entriesReq.setCategoryId("abc");
+		auto entriesRes = entriesReq.send().wait(ioContext.waitScope);
+		auto entries = entriesRes.getEntries();
+		auto fstEntry = entries[0];
+		//auto self = fstEntry.getRef().castAs<rpc::Model::EnvInstanceProxy<capnp::Text, capnp::Text>>();
+		auto catId = fstEntry.getCategoryId();
+		cout << "catId: " << catId.cStr() << endl;
+		auto ref = fstEntry.getRef();
+		auto persistSelfCap = fstEntry.getRef().castAs<capnp::Persistent<capnp::Text, capnp::Text>>();
+
+		auto saveReq = persistSelfCap.saveRequest();
+		auto sturdyRefRes = saveReq.send().wait(ioContext.waitScope);
+		auto sturdyRef = sturdyRefRes.getSturdyRef().cStr();
+		cout << "sr: " << sturdyRef << endl;
+
+		auto saveReq2 = persistSelfCap.saveRequest();
+		auto sturdyRefRes2 = saveReq2.send().wait(ioContext.waitScope);
+		auto sturdyRef2 = sturdyRefRes2.getSturdyRef().cStr();
+		cout << "sr2: " << sturdyRef2 << endl;
+		*/
+
+		//port = portPromise.addBranch().wait(ioContext.waitScope);
 		if (port == 0) {
 			// The address format "unix:/path/to/socket" opens a unix domain socket,
 			// in which case the port will be zero.

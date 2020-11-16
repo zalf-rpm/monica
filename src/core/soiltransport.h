@@ -47,6 +47,10 @@ namespace Monica
                   double p_timeStep,
                   double pc_MinimumAvailableN);
 
+    SoilTransport(mas::models::monica::SoilTransportModuleState::Reader reader) { deserialize(reader); }
+    void deserialize(mas::models::monica::SoilTransportModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const;
+
     void step();
 
     //! calculates daily N deposition

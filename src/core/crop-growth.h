@@ -29,6 +29,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <utility>
 
+#include "monica/monica_state.capnp.h"
+
 #include "monica-parameters.h"
 #include "soilcolumn.h"
 #include "voc-common.h"
@@ -67,6 +69,11 @@ namespace Monica
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 			int eva2_usage = NUTZUNG_UNDEFINED);
+
+		CropGrowth(SoilColumn& sc, const CropModuleParameters& cropPs, mas::models::monica::CropModuleState::Reader reader)
+			: soilColumn(sc), cropPs(cropPs) { deserialize(reader); }
+		void deserialize(mas::models::monica::CropModuleState::Reader reader);
+		void serialize(mas::models::monica::CropModuleState::Builder builder) const;
 
 		void applyCutting(std::map<int, Cutting::Value>& organs,
 			std::map<int, double>& exports,

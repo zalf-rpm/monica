@@ -67,6 +67,14 @@ SnowComponent::SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters&
 //  cout << "Monica: vm_SnowMaxAdditionalDensity " << vm_SnowMaxAdditionalDensity << endl;
 }
 
+void SnowComponent::deserialize(mas::models::monica::SnowModuleState::Reader reader) {
+
+}
+
+void SnowComponent::serialize(mas::models::monica::SnowModuleState::Builder builder) const {
+
+}
+
 /*!
  * @brief Calculation of snow layer
  *
@@ -355,6 +363,14 @@ FrostComponent::FrostComponent(SoilColumn& sc,
   vm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux),
   pt_TimeStep(p_timeStep),
   pm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux) {}
+
+void FrostComponent::deserialize(mas::models::monica::FrostModuleState::Reader reader) {
+
+}
+
+void FrostComponent::serialize(mas::models::monica::FrostModuleState::Builder builder) const {
+
+}
 
 /*!
  * @brief Calculation of soil frost
@@ -708,8 +724,12 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
   //  }
 }
 
-MonicaModel::~MonicaModel() {
-  delete _currentCropGrowth;
+void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader) {
+
+}
+
+void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
+
 }
 
 /*!

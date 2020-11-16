@@ -231,6 +231,14 @@ SoilTemperature::SoilTemperature(MonicaModel& mm)
 	}
 }
 
+void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader) {
+
+}
+
+void SoilTemperature::serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const {
+
+}
+
 //! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad)
 {

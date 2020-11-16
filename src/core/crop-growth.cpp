@@ -265,6 +265,14 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 
 }
 
+	void CropGrowth::deserialize(mas::models::monica::CropModuleState::Reader reader) {
+
+	}
+
+	void CropGrowth::serialize(mas::models::monica::CropModuleState::Builder builder) const {
+
+	}
+
 /**
  * @brief Calculates a single time step.
  *
