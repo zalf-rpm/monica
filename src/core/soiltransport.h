@@ -42,7 +42,7 @@ namespace Monica
   public:
     SoilTransport(SoilColumn& soilColumn,
                   const SiteParameters& sps,
-                  const UserSoilTransportParameters& stPs,
+                  const SoilTransportModuleParameters& stPs,
                   double p_LeachingDepth,
                   double p_timeStep,
                   double pc_MinimumAvailableN);
@@ -72,7 +72,7 @@ namespace Monica
 
   private:
     SoilColumn& soilColumn;
-    const UserSoilTransportParameters& stPs;
+    const SoilTransportModuleParameters& stPs;
     //const size_t vs_NumberOfLayers;
     std::vector<double> vq_Convection;
     double vq_CropNUptake{ 0.0 };

@@ -51,7 +51,7 @@ using namespace Tools;
 CropGrowth::CropGrowth(SoilColumn& sc,
 	const CropParameters& cps,
 	const SiteParameters& stps,
-	const UserCropParameters& cropPs,
+	const CropModuleParameters& cropPs,
 	const SimulationParameters& simPs,
 	std::function<void(std::string)> fireEvent,
 	std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
@@ -2765,7 +2765,7 @@ void CropGrowth::fc_CropDryMatter(size_t vc_DevelopmentalStage,
 	//  std::vector<double> vc_CapillaryWater(nols, 0.0);
 	//std::vector<double> vc_RootSurface(nols, 0.0); // old FL
 
-	const UserCropParameters& user_crops = cropPs;
+	const CropModuleParameters& user_crops = cropPs;
 	double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
 
 	//double pc_GrowthRespirationRedux = user_crops->getPc_GrowthRespirationRedux();
@@ -3322,7 +3322,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 	double vc_ReferenceEvapotranspiration; //[mm]
 	double vw_NetRadiation; //[MJ m-2]
 
-	const UserCropParameters& user_crops = cropPs;
+	const CropModuleParameters& user_crops = cropPs;
 	double pc_SaturationBeta = user_crops.pc_SaturationBeta; // Original: Yu et al. 2001; beta = 3.5
 	double pc_StomataConductanceAlpha = user_crops.pc_StomataConductanceAlpha; // Original: Yu et al. 2001; alpha = 0.06
 	double pc_ReferenceAlbedo = user_crops.pc_ReferenceAlbedo; // FAO Green gras reference albedo from Allen et al. (1998)

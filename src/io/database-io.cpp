@@ -599,7 +599,7 @@ getAllOrganicFertiliserParametersFromMonicaDB(std::string abstractDbSchema = "mo
 				"from organic_fertiliser");
 			while(!(row = con->getRow()).empty())
 			{
-				OrganicFertiliserParametersPtr omp = make_shared<OrganicFertiliserParameters>();
+				OrganicFertiliserParametersPtr omp = make_shared<OrganicFertilizerParameters>();
 
 				int i = 0;
 
@@ -637,7 +637,7 @@ OrganicFertiliserParametersPtr
 Monica::getOrganicFertiliserParametersFromMonicaDB(const std::string& id,
                                                    std::string abstractDbSchema)
 {
-	static OrganicFertiliserParametersPtr nothing = make_shared<OrganicFertiliserParameters>();
+	static OrganicFertiliserParametersPtr nothing = make_shared<OrganicFertilizerParameters>();
 
 	auto m = getAllOrganicFertiliserParametersFromMonicaDB(abstractDbSchema);
 	auto ci = m.find(id);
@@ -811,11 +811,11 @@ DBPtr userParamsSelect(string type, string module, std::string abstractDbSchema 
 	return con;
 }
 
-UserCropParameters
+CropModuleParameters
 Monica::readUserCropParametersFromDatabase(string type,
                                            std::string abstractDbSchema)
 {
-	UserCropParameters user_crops;
+	CropModuleParameters user_crops;
 	
 	DBPtr con = userParamsSelect(type, "crop", abstractDbSchema);
 
@@ -889,11 +889,11 @@ Monica::readUserSimParametersFromDatabase(string type,
 	return sim;
 }
 
-UserEnvironmentParameters
+EnvironmentParameters
 Monica::readUserEnvironmentParametersFromDatabase(string type,
                                                   std::string abstractDbSchema)
 {
-	UserEnvironmentParameters user_env;
+	EnvironmentParameters user_env;
 
 	DBPtr con = userParamsSelect(type, "environment");
 
@@ -922,11 +922,11 @@ Monica::readUserEnvironmentParametersFromDatabase(string type,
 	return user_env;
 }
 
-UserSoilMoistureParameters
+SoilMoistureModuleParameters
 Monica::readUserSoilMoistureParametersFromDatabase(string type,
                                                    std::string abstractDbSchema)
 {
-	UserSoilMoistureParameters user_soil_moisture;
+	SoilMoistureModuleParameters user_soil_moisture;
 	user_soil_moisture.getCapillaryRiseRate = [](string soilTexture, size_t distance)
 	{
 		return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
@@ -989,11 +989,11 @@ Monica::readUserSoilMoistureParametersFromDatabase(string type,
 	return user_soil_moisture;
 }
 
-UserSoilTemperatureParameters
+SoilTemperatureModuleParameters
 Monica::readUserSoilTemperatureParametersFromDatabase(string type,
                                                       std::string abstractDbSchema)
 {
-	UserSoilTemperatureParameters user_soil_temperature;
+	SoilTemperatureModuleParameters user_soil_temperature;
 
 	DBPtr con = userParamsSelect(type, "soil_temperature", abstractDbSchema);
 
@@ -1030,11 +1030,11 @@ Monica::readUserSoilTemperatureParametersFromDatabase(string type,
 	return user_soil_temperature;
 }
 
-UserSoilTransportParameters
+SoilTransportModuleParameters
 Monica::readUserSoilTransportParametersFromDatabase(string type,
                                                     std::string abstractDbSchema)
 {
-	UserSoilTransportParameters user_soil_transport;
+	SoilTransportModuleParameters user_soil_transport;
 
 	DBPtr con = userParamsSelect(type, "soil_transport", abstractDbSchema);
 
@@ -1053,11 +1053,11 @@ Monica::readUserSoilTransportParametersFromDatabase(string type,
 	return user_soil_transport;
 }
 
-UserSoilOrganicParameters
+SoilOrganicModuleParameters
 Monica::readUserSoilOrganicParametersFromDatabase(string type,
                                                   std::string abstractDbSchema)
 {
-	UserSoilOrganicParameters user_soil_organic;
+	SoilOrganicModuleParameters user_soil_organic;
 
 	DBPtr con = userParamsSelect(type, "soil_organic", abstractDbSchema);
 
