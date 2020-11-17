@@ -34,14 +34,14 @@ using namespace Monica;
 using namespace Tools;
 
 //! Create soil column giving a the number of layers it consists of
-SoilTemperature::SoilTemperature(MonicaModel& mm, kj::Own<SoilTemperatureModuleParameters> tempPs)
+SoilTemperature::SoilTemperature(MonicaModel& mm, kj::Own<SoilTemperatureModuleParameters> params)
 	: _soilColumn(mm.soilColumnNC())
 	, monica(mm)
   , soilColumn(kj::heap<SC>(&_soilColumn,
 		&_soilColumn_vt_GroundLayer,
 		&_soilColumn_vt_BottomLayer,
 		_soilColumn.vs_NumberOfLayers()))
-	, _tempPs(kj::mv(tempPs))
+	, _params(kj::mv(params))
 	, vt_NumberOfLayers(_soilColumn.vs_NumberOfLayers() + 2)
 	, vs_NumberOfLayers(_soilColumn.vs_NumberOfLayers())
 	, vs_SoilMoisture_const(vt_NumberOfLayers)
@@ -70,24 +70,24 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, kj::Own<SoilTemperatureModuleP
 		_soilColumn_vt_GroundLayer = _soilColumn_vt_BottomLayer = _soilColumn.back();
 	}
 	
-	double pt_BaseTemperature = _tempPs->pt_BaseTemperature;  // temp für unterste Schicht (durch. Jahreslufttemp-)
-	double pt_InitialSurfaceTemperature = _tempPs->pt_InitialSurfaceTemperature; // Replace by Mean air temperature
-	double pt_Ntau = _tempPs->pt_NTau;
+	double pt_BaseTemperature = _params->pt_BaseTemperature;  // temp für unterste Schicht (durch. Jahreslufttemp-)
+	double pt_InitialSurfaceTemperature = _params->pt_InitialSurfaceTemperature; // Replace by Mean air temperature
+	double pt_Ntau = _params->pt_NTau;
 	double pt_TimeStep = monica.environmentParameters().p_timeStep;  // schon in soil_moisture in DB extrahiert
-	double ps_QuartzRawDensity = _tempPs->pt_QuartzRawDensity;
-	double pt_SpecificHeatCapacityWater = _tempPs->pt_SpecificHeatCapacityWater;   // [J kg-1 K-1]
-	double pt_SpecificHeatCapacityQuartz = _tempPs->pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
-	double pt_SpecificHeatCapacityAir = _tempPs->pt_SpecificHeatCapacityAir;       // [J kg-1 K-1]
-	double pt_SpecificHeatCapacityHumus = _tempPs->pt_SpecificHeatCapacityHumus;   // [J kg-1 K-1]
-	double pt_DensityWater = _tempPs->pt_DensityWater;   // [kg m-3]
-	double pt_DensityAir = _tempPs->pt_DensityAir;       // [kg m-3]
-	double pt_DensityHumus = _tempPs->pt_DensityHumus;   // [kg m-3]
+	double ps_QuartzRawDensity = _params->pt_QuartzRawDensity;
+	double pt_SpecificHeatCapacityWater = _params->pt_SpecificHeatCapacityWater;   // [J kg-1 K-1]
+	double pt_SpecificHeatCapacityQuartz = _params->pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
+	double pt_SpecificHeatCapacityAir = _params->pt_SpecificHeatCapacityAir;       // [J kg-1 K-1]
+	double pt_SpecificHeatCapacityHumus = _params->pt_SpecificHeatCapacityHumus;   // [J kg-1 K-1]
+	double pt_DensityWater = _params->pt_DensityWater;   // [kg m-3]
+	double pt_DensityAir = _params->pt_DensityAir;       // [kg m-3]
+	double pt_DensityHumus = _params->pt_DensityHumus;   // [kg m-3]
 
 
 	// according to sensitivity tests, soil moisture has minor
 	// influence to the temperature and thus can be set as constant
 	// by xenia
-	double ps_SoilMoisture_const = _tempPs->pt_SoilMoisture;
+	double ps_SoilMoisture_const = _params->pt_SoilMoisture;
 
 
 	// Initialising the soil properties until a database feed is realised
@@ -248,7 +248,8 @@ void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleStat
 }
 
 void SoilTemperature::serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const {
-
+	builder.initModuleParams();
+	_params->serialize(builder.getModuleParams());
 }
 
 //! Single calculation step

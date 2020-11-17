@@ -662,7 +662,7 @@ SoilMoisture::SoilMoisture(MonicaModel* mm, kj::Own<SoilMoistureModuleParameters
   : soilColumn(mm->soilColumnNC())
   , siteParameters(mm->siteParameters())
   , monica(mm)
-  , smPs(kj::mv(smPs))
+  , _params(kj::mv(smPs))
   , envPs(mm->environmentParameters())
   , cropPs(mm->cropParameters())
   , vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1)
@@ -741,7 +741,8 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
 }
 
 void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
-
+  builder.initModuleParams();
+  _params->serialize(builder.getModuleParams());
 }
 
 /*!
@@ -804,7 +805,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   } else {
     vc_CropPlanted = false;
-    vc_KcFactor = smPs->pm_KcFactor;
+    vc_KcFactor = _params->pm_KcFactor;
     vc_NetPrecipitation = vw_Precipitation;
     vc_PercentageSoilCoverage = 0.0;
   }
@@ -1107,7 +1108,7 @@ void SoilMoisture::fm_CapillaryRise() {
     for (int i = int(vm_StartLayer); i >= 0; i--) {
       std::string vs_SoilTexture = soilColumn[i].vs_SoilTexture();
       assert(!vs_SoilTexture.empty());
-      pm_CapillaryRiseRate = smPs->getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
+      pm_CapillaryRiseRate = _params->getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
       if (pm_CapillaryRiseRate < vm_CapillaryRiseRate)
         vm_CapillaryRiseRate = pm_CapillaryRiseRate;
@@ -1408,14 +1409,14 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   double vm_SnowDepth = snowComponent->getVm_SnowDepth();
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
-  pm_EvaporationZeta = smPs->pm_EvaporationZeta; // Parameterdatei
+  pm_EvaporationZeta = _params->pm_EvaporationZeta; // Parameterdatei
 
   // Das sind die Steuerungsparameter für die Steigung der Entzugsfunktion
-  vm_XSACriticalSoilMoisture = smPs->pm_XSACriticalSoilMoisture;
+  vm_XSACriticalSoilMoisture = _params->pm_XSACriticalSoilMoisture;
 
   /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
    * da muss was dran gemacht werden */
-  pm_MaximumEvaporationImpactDepth = smPs->pm_MaximumEvaporationImpactDepth; // Parameterdatei
+  pm_MaximumEvaporationImpactDepth = _params->pm_MaximumEvaporationImpactDepth; // Parameterdatei
 
 
   // If a crop grows, ETp is taken from crop module

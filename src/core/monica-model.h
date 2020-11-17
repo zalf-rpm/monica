@@ -251,7 +251,7 @@ namespace Monica
 		double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
 		const SiteParameters& siteParameters() const { return _sitePs; }
-		const SoilMoistureModuleParameters& soilmoistureParameters() const { return _smPs; }
+		//const SoilMoistureModuleParameters& soilmoistureParameters() const { return _smPs; }
 		const EnvironmentParameters& environmentParameters() const { return _envPs; }
 		const CropModuleParameters& cropParameters() const { return _cropPs; }
 		//const SoilTemperatureModuleParameters& soilTemperatureParameters() const { return _soilTempPs; }
@@ -284,12 +284,12 @@ namespace Monica
 
 	private:
 		const SiteParameters _sitePs;
-		const SoilMoistureModuleParameters _smPs;
+		//const SoilMoistureModuleParameters _smPs;
 		const EnvironmentParameters _envPs;
 		const CropModuleParameters _cropPs;
-		const SoilTemperatureModuleParameters _soilTempPs;
-		const SoilTransportModuleParameters _soilTransPs;
-		const SoilOrganicModuleParameters _soilOrganicPs;
+		//const SoilTemperatureModuleParameters _soilTempPs;
+		//const SoilTransportModuleParameters _soilTransPs;
+		//const SoilOrganicModuleParameters _soilOrganicPs;
 		SimulationParameters _simPs;
 		//std::string _pathToOutputDir;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;

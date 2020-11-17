@@ -310,7 +310,7 @@ namespace Monica
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
     MonicaModel* monica{ nullptr };
-    kj::Own<SoilMoistureModuleParameters> smPs;
+    kj::Own<SoilMoistureModuleParameters> _params;
     const EnvironmentParameters& envPs;
     const CropModuleParameters& cropPs;
 		const size_t vm_NumberOfLayers{0};

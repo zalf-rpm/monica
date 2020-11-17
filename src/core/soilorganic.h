@@ -172,7 +172,7 @@ namespace Monica
 		//void fo_distributeDeadRootBiomass();
 
     SoilColumn* soilColumn{ nullptr };
-    kj::Own<SoilOrganicModuleParameters> organicPs;
+    kj::Own<SoilOrganicModuleParameters> _params;
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};
