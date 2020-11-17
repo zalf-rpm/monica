@@ -55,9 +55,9 @@ namespace Monica
   class SoilTemperature
   {
   public:
-    SoilTemperature(MonicaModel& monica);
+    SoilTemperature(MonicaModel& monica, kj::Own<SoilTemperatureModuleParameters> tempPs);
 
-    SoilTemperature(mas::models::monica::SoilTemperatureModuleState::Reader reader) { deserialize(reader); }
+    SoilTemperature(MonicaModel& monica, mas::models::monica::SoilTemperatureModuleState::Reader reader);
     void deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader);
     void serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const;
 
@@ -79,7 +79,9 @@ namespace Monica
     MonicaModel& monica;
     SoilLayer _soilColumn_vt_GroundLayer;
     SoilLayer _soilColumn_vt_BottomLayer;
+    kj::Own<SoilTemperatureModuleParameters> _tempPs;
 
+    /*
     struct SC {
       SoilColumn& sc;
       SoilLayer& gl;
@@ -103,9 +105,46 @@ namespace Monica
         return bl;
       }
 
-      const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
+      SoilLayer& at(std::size_t i) { return (*this)[i]; }
+      inline const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
+    };*/
+    struct SC {
+      SoilColumn* sc;
+      SoilLayer* gl;
+      SoilLayer* bl;
+      std::size_t vs_nols;
+      SC(SoilColumn* sc,
+        SoilLayer* gl,
+        SoilLayer* bl,
+        size_t vs_nols)
+        : sc(sc)
+        , gl(gl)
+        , bl(bl)
+        , vs_nols(vs_nols) {}
+
+      SoilLayer& operator[](std::size_t i) const {
+        if (i < vs_nols)
+          return sc->at(i);
+        else if (i < vs_nols + 1)
+          return *gl;
+
+        return *bl;
+      }
+
+      /*
+      SC& operator=(SC& other) {
+        sc = other.sc;
+        gl = other.gl;
+        bl = other.bl;
+        vs_nols = other.vs_nols;
+        return *this;
+      }
+      */
+
+      SoilLayer& at(std::size_t i) { return (*this)[i]; }
+      inline const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
     };
-    SC* soilColumn{ nullptr };
+    kj::Own<SC> soilColumn;
 
     const std::size_t vt_NumberOfLayers;
     const std::size_t vs_NumberOfLayers;

@@ -55,7 +55,7 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
-  MineralFertiliserParameters 
+  MineralFertilizerParameters 
 		getMineralFertiliserParametersFromMonicaDB(const std::string& mineralFertiliserId,
 		                                           std::string abstractDbSchema = "monica");
 

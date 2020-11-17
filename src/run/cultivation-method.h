@@ -360,7 +360,7 @@ namespace Monica
 		MineralFertilization() {}
 
 		MineralFertilization(const Tools::Date& at,
-																 MineralFertiliserParameters partition,
+																 MineralFertilizerParameters partition,
                                  double amount);
 
     MineralFertilization(json11::Json object);
@@ -375,12 +375,12 @@ namespace Monica
 
     virtual bool apply(MonicaModel* model);
 
-    MineralFertiliserParameters partition() const { return _partition; }
+    MineralFertilizerParameters partition() const { return _partition; }
 
 		double amount() const { return _amount; }
 
 	private:
-		MineralFertiliserParameters _partition;
+		MineralFertilizerParameters _partition;
 		double _amount{ 0.0 };
 	};
 
@@ -393,12 +393,12 @@ namespace Monica
 
 		NDemandFertilization(int stage,
 												 double depth,
-												 MineralFertiliserParameters partition,
+												 MineralFertilizerParameters partition,
 												 double Ndemand);
 
 		NDemandFertilization(Tools::Date date,
 												 double depth,
-												 MineralFertiliserParameters partition,
+												 MineralFertilizerParameters partition,
 												 double Ndemand);
 
 		NDemandFertilization(json11::Json object);
@@ -415,7 +415,7 @@ namespace Monica
 
 		virtual bool condition(MonicaModel* model);
 
-		MineralFertiliserParameters partition() const { return _partition; }
+		MineralFertilizerParameters partition() const { return _partition; }
 
 		virtual bool isActive() const { return !_appliedFertilizer; }
 
@@ -423,7 +423,7 @@ namespace Monica
 
 	private:
 		Tools::Date _initialDate;
-		MineralFertiliserParameters _partition;
+		MineralFertilizerParameters _partition;
 		double _Ndemand{0};
 		double _depth{0.0};
 		int _stage{1};

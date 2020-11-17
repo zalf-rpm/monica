@@ -116,7 +116,7 @@ namespace Monica
 
 		void incorporateCurrentCrop();
 
-		void applyMineralFertiliser(MineralFertiliserParameters partition,
+		void applyMineralFertiliser(MineralFertilizerParameters partition,
 		                            double amount);
 
 		void applyOrganicFertiliser(const OrganicMatterParametersPtr,
@@ -129,7 +129,7 @@ namespace Monica
 		}
 
 		double applyMineralFertiliserViaNMinMethod
-				(MineralFertiliserParameters partition, NMinCropParameters cropParams);
+				(MineralFertilizerParameters partition, NMinCropParameters cropParams);
 
 		double dailySumFertiliser() const { return _dailySumFertiliser; }
 
@@ -240,7 +240,7 @@ namespace Monica
 		const SoilColumn& soilColumn() const { return *_soilColumn; }
 		SoilColumn& soilColumnNC() { return *_soilColumn; }
 
-		CropGrowth* cropGrowth() const { return _currentCropGrowth; }
+		CropModule* cropGrowth() const { return _currentCropGrowth; }
 
 		double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
 
@@ -254,9 +254,9 @@ namespace Monica
 		const SoilMoistureModuleParameters& soilmoistureParameters() const { return _smPs; }
 		const EnvironmentParameters& environmentParameters() const { return _envPs; }
 		const CropModuleParameters& cropParameters() const { return _cropPs; }
-		const SoilTemperatureModuleParameters& soilTemperatureParameters() const { return _soilTempPs; }
-		const SoilTransportModuleParameters& soilTransportParameters() const { return _soilTransPs; }
-		const SoilOrganicModuleParameters& soilOrganicParameters() const { return _soilOrganicPs; }
+		//const SoilTemperatureModuleParameters& soilTemperatureParameters() const { return _soilTempPs; }
+		//const SoilTransportModuleParameters& soilTransportParameters() const { return _soilTransPs; }
+		//const SoilOrganicModuleParameters& soilOrganicParameters() const { return _soilOrganicPs; }
 		const SimulationParameters& simulationParameters() const { return _simPs; }
 		SimulationParameters& simulationParametersNC() { return _simPs; }
 
@@ -300,7 +300,7 @@ namespace Monica
 		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
 		kj::Own<SoilTransport> _soilTransport; //!< transport code
 		CropPtr _currentCrop{ nullptr }; //! currently possibly planted crop
-		CropGrowth* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
+		CropModule* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
 
 		//! store applied fertiliser during one production process
 		double _sumFertiliser{0.0}; //mineral N

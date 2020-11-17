@@ -490,12 +490,12 @@ void Monica::writeCropParameters(string path, std::string abstractDbSchema)
 
 //------------------------------------------------------------------------------
 
-const map<string, MineralFertiliserParameters>&
+const map<string, MineralFertilizerParameters>&
 getAllMineralFertiliserParametersFromMonicaDB(string abstractDbSchema = "monica")
 {
 	static mutex lockable;
 	static bool initialized = false;
-	static map<string, MineralFertiliserParameters> m;
+	static map<string, MineralFertilizerParameters> m;
 
 	if(!initialized)
 	{
@@ -514,7 +514,7 @@ getAllMineralFertiliserParametersFromMonicaDB(string abstractDbSchema = "monica"
 				double nh4 = satof(row[3]);
 				double carbamid = satof(row[4]);
 
-				m[id] = MineralFertiliserParameters(id, name, carbamid, no3, nh4);
+				m[id] = MineralFertilizerParameters(id, name, carbamid, no3, nh4);
 			}
 
 			initialized = true;
@@ -529,13 +529,13 @@ getAllMineralFertiliserParametersFromMonicaDB(string abstractDbSchema = "monica"
 * @param id of the fertiliser
 * @return mineral fertiliser parameters value object with values from database
 */
-MineralFertiliserParameters
+MineralFertilizerParameters
 Monica::getMineralFertiliserParametersFromMonicaDB(const std::string& id,
                                                    string abstractDbSchema)
 {
 	auto m = getAllMineralFertiliserParametersFromMonicaDB(abstractDbSchema);
 	auto ci = m.find(id);
-	return ci != m.end() ? ci->second : MineralFertiliserParameters();
+	return ci != m.end() ? ci->second : MineralFertilizerParameters();
 }
 
 void Monica::writeMineralFertilisers(string path,

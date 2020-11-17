@@ -47,9 +47,9 @@ using namespace Soil;
  * @param org_fert Parameter for organic fertiliser
  */
 SoilOrganic::SoilOrganic(SoilColumn* sc,
-                         const SoilOrganicModuleParameters* userParams)
+  kj::Own<SoilOrganicModuleParameters> userParams)
   : soilColumn(sc),
-  organicPs(userParams),
+  organicPs(kj::mv(userParams)),
   vs_NumberOfLayers(sc->vs_NumberOfLayers()),
   vs_NumberOfOrganicLayers(sc->vs_NumberOfOrganicLayers()),
   vo_ActAmmoniaOxidationRate(sc->vs_NumberOfOrganicLayers()),
@@ -1891,7 +1891,7 @@ double SoilOrganic::get_NetEcosystemExchange() const {
   return vo_NetEcosystemExchange;
 }
 
-void SoilOrganic::put_Crop(CropGrowth* c) {
+void SoilOrganic::put_Crop(CropModule* c) {
   crop = c;
 }
 

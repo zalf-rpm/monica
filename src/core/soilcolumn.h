@@ -44,7 +44,7 @@ namespace Monica
   // forward declarations
   class SoilLayer;
   class SoilColumn;
-  class CropGrowth;
+  class CropModule;
 
   //std::vector<AOM_Properties> vo_AOM_Pool;
 
@@ -231,7 +231,7 @@ namespace Monica
     void deserialize(mas::models::monica::SoilColumnState::Reader reader);
     void serialize(mas::models::monica::SoilColumnState::Builder builder) const;
 
-    void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
+    void applyMineralFertiliser(MineralFertilizerParameters fertiliserPartition,
                                 double amount);
 
     //! apply left over fertiliser after delay time
@@ -240,11 +240,11 @@ namespace Monica
     //! apply delayed fertiliser application again (yielding possible top dressing)
     double applyPossibleDelayedFerilizer();
 
-	double applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+	double applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
 											double demandDepth,
 											double Ndemand);
 
-    double applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fertiliserPartition,
+    double applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fertiliserPartition,
                                                double vf_SamplingDepth,
                                                double vf_CropNTargetValue,
                                                double vf_CropNTargetValue30,
@@ -281,7 +281,7 @@ namespace Monica
 
     size_t getLayerNumberForDepth(double depth) const;
 
-    void put_Crop(CropGrowth* crop);
+    void put_Crop(CropModule* crop);
 
     void remove_Crop();
 
@@ -304,10 +304,10 @@ namespace Monica
 
     int _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
     double _vf_TopDressing{0.0};
-    MineralFertiliserParameters _vf_TopDressingPartition;
+    MineralFertilizerParameters _vf_TopDressingPartition;
     int _vf_TopDressingDelay{0};
 
-    CropGrowth* cropGrowth{nullptr};
+    CropModule* cropGrowth{nullptr};
 
     std::list<std::function<double()>> _delayedNMinApplications;
 

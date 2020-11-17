@@ -802,7 +802,7 @@ bool Cutting::apply(MonicaModel* model)
 
 MineralFertilization::
 MineralFertilization(const Tools::Date& at,
-	MineralFertiliserParameters partition,
+	MineralFertilizerParameters partition,
 	double amount)
 	: Workstep(at)
 	, _partition(partition)
@@ -848,7 +848,7 @@ bool MineralFertilization::apply(MonicaModel* model)
 NDemandFertilization::
 NDemandFertilization(int stage,
 	double depth,
-	MineralFertiliserParameters partition,
+	MineralFertilizerParameters partition,
 	double Ndemand)
 	: Workstep()
 	, _partition(partition)
@@ -859,7 +859,7 @@ NDemandFertilization(int stage,
 
 NDemandFertilization::NDemandFertilization(Tools::Date date,
 	double depth,
-	MineralFertiliserParameters partition,
+	MineralFertilizerParameters partition,
 	double Ndemand)
 	: Workstep(date)
 	, _initialDate(date)

@@ -65,9 +65,9 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   , _smPs(cpp.userSoilMoistureParameters)
   , _envPs(cpp.userEnvironmentParameters)
   , _cropPs(cpp.userCropParameters)
-  , _soilTempPs(cpp.userSoilTemperatureParameters)
-  , _soilTransPs(cpp.userSoilTransportParameters)
-  , _soilOrganicPs(cpp.userSoilOrganicParameters)
+  //, _soilTempPs(cpp.userSoilTemperatureParameters)
+  //, _soilTransPs(cpp.userSoilTransportParameters)
+  //, _soilOrganicPs(cpp.userSoilOrganicParameters)
   , _simPs(cpp.simulationParameters)
   //, _writeOutputFiles(cpp.writeOutputFiles())
   //, _pathToOutputDir(cpp.pathToOutputDir())
@@ -76,13 +76,13 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
     _soilOrganicPs.ps_MaxMineralisationDepth,
     _sitePs.vs_SoilParameters,
     _smPs.pm_CriticalMoistureDepth))
-  , _soilTemperature(kj::heap<SoilTemperature>(*this))
-  , _soilMoisture(kj::heap<SoilMoisture>(*this))
+  , _soilTemperature(kj::heap<SoilTemperature>(*this, kj::heap<SoilTemperatureModuleParameters>(cpp.userSoilTemperatureParameters)))
+  , _soilMoisture(kj::heap<SoilMoisture>(this, kj::heap<SoilMoistureModuleParameters>(cpp.userSoilMoistureParameters)))
   , _soilOrganic(kj::heap<SoilOrganic>(_soilColumn.get(),
-                 _soilOrganicPs))
-  , _soilTransport(kj::heap<SoilTransport>(_soilColumn.get(),
+                 kj::heap<SoilOrganicModuleParameters>(cpp.userSoilOrganicParameters)))
+  , _soilTransport(kj::heap<SoilTransport>(*_soilColumn.get(),
                    _sitePs,
-                   _soilTransPs,
+                   kj::heap<SoilTransportModuleParameters>(cpp.userSoilTransportParameters),
                    _envPs.p_LeachingDepth,
                    _envPs.p_timeStep,
                    _cropPs.pc_MinimumAvailableN))
@@ -206,8 +206,8 @@ void MonicaModel::seedCrop(CropPtr crop)
 			this->_soilOrganic->addOrganicMatter(this->_currentCrop->residueParameters(), layer2amount, nconc); 
 		};
     auto cps = _currentCrop->cropParameters();
-    _currentCropGrowth = kj::heap<CropGrowth>(
-      _soilColumn.get(),
+    _currentCropGrowth = kj::heap<CropModule>(
+      *_soilColumn.get(),
       *cps,
       _sitePs,
       _cropPs,
@@ -250,7 +250,7 @@ void MonicaModel::seedCrop(CropPtr crop)
 void MonicaModel::harvestCurrentCrop(bool exported, 
 																		 Harvest::OptCarbonManagementData optCarbMgmtData)
 {
-	//could be just a fallow, so there might be no CropGrowth object
+	//could be just a fallow, so there might be no CropModule object
 	if (_currentCrop && _currentCrop->isValid())
   {
     if(exported)
@@ -368,7 +368,7 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 
 void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 {
-	//could be just a fallow, so there might be no CropGrowth object
+	//could be just a fallow, so there might be no CropModule object
 	if (_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove fruit
@@ -394,7 +394,7 @@ void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 
 void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 {
-	//could be just a fallow, so there might be no CropGrowth object
+	//could be just a fallow, so there might be no CropModule object
   if(_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove leaves
@@ -420,7 +420,7 @@ void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 
 void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 {
-	//could be just a fallow, so there might be no CropGrowth object
+	//could be just a fallow, so there might be no CropModule object
   if(_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove tips
@@ -451,7 +451,7 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 
 	void MonicaModel::shootPruningCurrentCrop(double percentage, bool exported)
 {
-	//could be just a fallow, so there might be no CropGrowth object
+	//could be just a fallow, so there might be no CropModule object
 	if (_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove tips
@@ -486,7 +486,7 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
  */
 void MonicaModel::incorporateCurrentCrop()
 {
-  //could be just a fallow, so there might be no CropGrowth object
+  //could be just a fallow, so there might be no CropModule object
   if(_currentCrop && _currentCrop->isValid())
   {
     //prepare to add root and crop residues to soilorganic (AOMs)
@@ -514,7 +514,7 @@ void MonicaModel::incorporateCurrentCrop()
 
 void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 {
-	//could be just a fallow, so there might be no CropGrowth object
+	//could be just a fallow, so there might be no CropModule object
 	if (_currentCrop.get() && _currentCrop->isValid())
 	{
 		//prepare to remove tips
@@ -558,7 +558,7 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
  *
  * @todo Nothing implemented yet.
  */
-void MonicaModel::applyMineralFertiliser(MineralFertiliserParameters partition,
+void MonicaModel::applyMineralFertiliser(MineralFertilizerParameters partition,
                                          double amount)
 {
   if(!_simPs.p_UseNMinMineralFertilisingMethod)
@@ -582,10 +582,10 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParametersPtr params
 	}
 }
 
-double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters partition,
+double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters partition,
                                                         NMinCropParameters cps)
 {
-  const NMinUserParameters& ups = _simPs.p_NMinUserParams;
+  const NMinApplicationParameters& ups = _simPs.p_NMinUserParams;
   return _soilColumn->applyMineralFertiliserViaNMinMethod(partition,
                                                          cps.samplingDepth,
                                                          cps.nTarget,

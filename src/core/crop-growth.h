@@ -58,10 +58,10 @@ namespace Monica
  * 4 - Permanent structure <br>
  *
  */
-	class CropGrowth
+	class CropModule
 	{
 	public:
-		CropGrowth(SoilColumn& soilColumn,
+		CropModule(SoilColumn& soilColumn,
 			const CropParameters& cropParams,
 			const SiteParameters& siteParams,
 			const CropModuleParameters& cropPs,
@@ -70,7 +70,7 @@ namespace Monica
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 			int eva2_usage = NUTZUNG_UNDEFINED);
 
-		CropGrowth(SoilColumn& sc, const CropModuleParameters& cropPs, mas::models::monica::CropModuleState::Reader reader)
+		CropModule(SoilColumn& sc, const CropModuleParameters& cropPs, mas::models::monica::CropModuleState::Reader reader)
 			: soilColumn(sc), cropPs(cropPs) { deserialize(reader); }
 		void deserialize(mas::models::monica::CropModuleState::Reader reader);
 		void serialize(mas::models::monica::CropModuleState::Builder builder) const;

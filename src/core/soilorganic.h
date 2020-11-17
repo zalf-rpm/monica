@@ -33,13 +33,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 #include <list>
 
+#include "monica/monica_state.capnp.h"
 #include "monica-parameters.h"
 
 namespace Monica
 {
   // forward declaration
   class SoilColumn;
-  class CropGrowth;
+  class CropModule;
 
   /**
  * @brief Soil carbon and nitrogen part of model
@@ -54,13 +55,11 @@ namespace Monica
   {
   public:
     SoilOrganic(SoilColumn* soilColumn,
-                const SoilOrganicModuleParameters* userParams);
+                kj::Own<SoilOrganicModuleParameters> userParams);
 
     SoilOrganic(SoilColumn* sc,
-      const SoilOrganicModuleParameters* userParams,
       mas::models::monica::SoilOrganicModuleState::Reader reader)
-      : soilColumn(sc)
-      , organicPs(userParams) {
+      : soilColumn(sc) {
       deserialize(reader);
     }
 
@@ -93,7 +92,7 @@ namespace Monica
      * @param incorporation TRUE/FALSE
      */
     void setIncorporation(bool incorp) { this->incorporation = incorp; }
-    void put_Crop(CropGrowth* crop);
+    void put_Crop(CropModule* crop);
     void remove_Crop();
 
     double get_SoilOrganicC(int i_Layer) const;
@@ -173,7 +172,7 @@ namespace Monica
 		//void fo_distributeDeadRootBiomass();
 
     SoilColumn* soilColumn{ nullptr };
-    const SoilOrganicModuleParameters* organicPs{ nullptr };
+    kj::Own<SoilOrganicModuleParameters> organicPs;
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};
@@ -233,7 +232,7 @@ namespace Monica
     //! True, if organic fertilizer has been added with a following incorporation.
     //! Parameter is automatically set to false, if carbamid amount is falling below 0.001.
     bool incorporation{false};
-    CropGrowth* crop{nullptr};
+    CropModule* crop{nullptr};
   };
 
 } // namespace Monica

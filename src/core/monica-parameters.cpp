@@ -427,7 +427,7 @@ json11::Json CropParameters::to_json() const
 
 //------------------------------------------------------------------------------
 
-MineralFertiliserParameters::MineralFertiliserParameters(const string& id,
+MineralFertilizerParameters::MineralFertilizerParameters(const string& id,
                                                          const std::string& name,
                                                          double carbamid,
                                                          double no3,
@@ -439,20 +439,20 @@ MineralFertiliserParameters::MineralFertiliserParameters(const string& id,
     vo_NO3(no3)
 {}
 
-MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
+MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j)
 {
   merge(j);
 }
 
-void MineralFertiliserParameters::deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader) {
+void MineralFertilizerParameters::deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader) {
 
 }
 
-void MineralFertiliserParameters::serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const {
+void MineralFertilizerParameters::serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const {
 
 }
 
-Errors MineralFertiliserParameters::merge(json11::Json j)
+Errors MineralFertilizerParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -465,10 +465,10 @@ Errors MineralFertiliserParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json MineralFertiliserParameters::to_json() const
+json11::Json MineralFertilizerParameters::to_json() const
 {
   return J11Object 
-  {{"type", "MineralFertiliserParameters"}
+  {{"type", "MineralFertilizerParameters"}
   ,{"id", id}
   ,{"name", name}
   ,{"Carbamid", vo_Carbamid}
@@ -479,27 +479,27 @@ json11::Json MineralFertiliserParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-NMinUserParameters::NMinUserParameters(double min,
+NMinApplicationParameters::NMinApplicationParameters(double min,
                                        double max,
                                        int delayInDays)
   : min(min)
   , max(max)
   , delayInDays(delayInDays) { }
 
-NMinUserParameters::NMinUserParameters(json11::Json j)
+NMinApplicationParameters::NMinApplicationParameters(json11::Json j)
 {
   merge(j);
 }
 
-void NMinUserParameters::deserialize(mas::models::monica::NMinApplicationParameters::Reader reader) {
+void NMinApplicationParameters::deserialize(mas::models::monica::NMinApplicationParameters::Reader reader) {
 
 }
 
-void NMinUserParameters::serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const {
+void NMinApplicationParameters::serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const {
 
 }
 
-Errors NMinUserParameters::merge(json11::Json j)
+Errors NMinApplicationParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -510,10 +510,10 @@ Errors NMinUserParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json NMinUserParameters::to_json() const
+json11::Json NMinApplicationParameters::to_json() const
 {
   return json11::Json::object 
-  {{"type", "NMinUserParameters"}
+  {{"type", "NMinApplicationParameters"}
   ,{"min", min}
   ,{"max", max}
   ,{"delayInDays", delayInDays}

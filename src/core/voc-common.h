@@ -174,7 +174,7 @@ namespace Voc
 		
 		// species specific leaf area index.
 		// physiology  lai_vtfl  lai_vtfl  double  V : F  0.0  m ^ 2 : m^-2
-		// CropGrowth::get_LeafAreaIndex()
+		// CropModule::get_LeafAreaIndex()
 		double lai{0};
 
 		// specific foliage area (m2 kgDW-1).

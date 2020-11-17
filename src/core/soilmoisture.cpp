@@ -658,13 +658,13 @@ FrostComponent::updateLambdaRedux() {
  * @param stps Site parameters
  * @param mm Monica model
  */
-SoilMoisture::SoilMoisture(MonicaModel& mm)
-  : soilColumn(mm.soilColumnNC())
-  , siteParameters(mm.siteParameters())
+SoilMoisture::SoilMoisture(MonicaModel* mm, kj::Own<SoilMoistureModuleParameters> smPs)
+  : soilColumn(mm->soilColumnNC())
+  , siteParameters(mm->siteParameters())
   , monica(mm)
-  , smPs(mm.soilmoistureParameters())
-  , envPs(mm.environmentParameters())
-  , cropPs(mm.cropParameters())
+  , smPs(kj::mv(smPs))
+  , envPs(mm->environmentParameters())
+  , cropPs(mm->cropParameters())
   , vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1)
   , vs_NumberOfLayers(soilColumn.vs_NumberOfLayers()) //extern
   , vm_AvailableWater(vm_NumberOfLayers, 0.0) // Soil available water in [mm]
@@ -687,24 +687,24 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
 , vm_SoilPoreVolume(vm_NumberOfLayers, 0.0)
 , vm_Transpiration(vm_NumberOfLayers, 0.0) //intern
 , vm_WaterFlux(vm_NumberOfLayers, 0.0)
-, snowComponent(soilColumn, smPs)
-, frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep) {
+, snowComponent(kj::heap<SnowComponent>(soilColumn, *smPs.get()))
+, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs->pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
   debug() << "Constructor: SoilMoisture" << endl;
 
-  vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
+  vm_HydraulicConductivityRedux = smPs->pm_HydraulicConductivityRedux;
   pt_TimeStep = envPs.p_timeStep;
-  vm_SurfaceRoughness = smPs.pm_SurfaceRoughness;
-  vm_GroundwaterDischarge = smPs.pm_GroundwaterDischarge;
-  pm_MaxPercolationRate = smPs.pm_MaxPercolationRate;
+  vm_SurfaceRoughness = smPs->pm_SurfaceRoughness;
+  vm_GroundwaterDischarge = smPs->pm_GroundwaterDischarge;
+  pm_MaxPercolationRate = smPs->pm_MaxPercolationRate;
   pm_LeachingDepth = envPs.p_LeachingDepth;
 
   //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
-  pm_LayerThickness = mm.simulationParameters().p_LayerThickness;
+  pm_LayerThickness = mm->simulationParameters().p_LayerThickness;
 
   pm_LeachingDepthLayer = int(std::floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
 
   for (int i = 0; i < vm_NumberOfLayers; i++) {
-    vm_SaturatedHydraulicConductivity.resize(vm_NumberOfLayers, smPs.pm_SaturatedHydraulicConductivity); // original [8640 mm d-1]
+    vm_SaturatedHydraulicConductivity.resize(vm_NumberOfLayers, smPs->pm_SaturatedHydraulicConductivity); // original [8640 mm d-1]
   }
 
   //  double vm_GroundwaterDepth = 0.0;
@@ -722,6 +722,18 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
   //  for (int i_Layer = vm_NumberOfLayers - 1; i_Layer >= vm_GroundwaterTable; i_Layer--) {
   //    soilColumn[i_Layer].set_Vs_SoilMoisture_m3(soilColumn[i_Layer].get_Saturation());
   //  }
+}
+
+SoilMoisture::SoilMoisture(MonicaModel* mm, mas::models::monica::SoilMoistureModuleState::Reader reader)
+  : soilColumn(mm->soilColumnNC())
+  , siteParameters(mm->siteParameters())
+  , monica(mm)
+  , envPs(mm->environmentParameters())
+  , cropPs(mm->cropParameters())
+  //, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
+  //, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs->pm_HydraulicConductivityRedux, envPs.p_timeStep)) 
+{
+  deserialize(reader);
 }
 
 void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader) {
@@ -778,21 +790,21 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
 
-  if (monica.cropGrowth()) {
+  if (monica->cropGrowth()) {
     vc_CropPlanted = true;
-    vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
-    vc_KcFactor = monica.cropGrowth()->get_KcFactor();
-    vc_CropHeight = monica.cropGrowth()->get_CropHeight();
-    vc_DevelopmentalStage = monica.cropGrowth()->get_DevelopmentalStage();
+    vc_PercentageSoilCoverage = monica->cropGrowth()->get_SoilCoverage();
+    vc_KcFactor = monica->cropGrowth()->get_KcFactor();
+    vc_CropHeight = monica->cropGrowth()->get_CropHeight();
+    vc_DevelopmentalStage = monica->cropGrowth()->get_DevelopmentalStage();
     if (vc_DevelopmentalStage > 0) {
-      vc_NetPrecipitation = monica.cropGrowth()->get_NetPrecipitation();
+      vc_NetPrecipitation = monica->cropGrowth()->get_NetPrecipitation();
     } else {
       vc_NetPrecipitation = vw_Precipitation;
     }
 
   } else {
     vc_CropPlanted = false;
-    vc_KcFactor = smPs.pm_KcFactor;
+    vc_KcFactor = smPs->pm_KcFactor;
     vc_NetPrecipitation = vw_Precipitation;
     vc_PercentageSoilCoverage = 0.0;
   }
@@ -820,11 +832,11 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   soilColumn.vm_GroundwaterTable = vm_GroundwaterTable;
 
   // calculates snow layer water storage and release
-  snowComponent.calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
-  double vm_WaterToInfiltrate = snowComponent.getWaterToInfiltrate();
+  snowComponent->calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
+  double vm_WaterToInfiltrate = snowComponent->getWaterToInfiltrate();
 
   // Calculates frost and thaw depth and switches lambda
-  frostComponent.calcSoilFrost(vw_MeanAirTemperature, snowComponent.getVm_SnowDepth());
+  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getVm_SnowDepth());
 
   // calculates infiltration of water from surface
   fm_Infiltration(vm_WaterToInfiltrate, vc_PercentageSoilCoverage, vm_GroundwaterTable);
@@ -967,7 +979,7 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate, double vc_Percen
 
     vm_GravitationalWater[0] = (vm_SoilMoisture[0] - vm_FieldCapacity[0]) * 1000.0
       * vm_LayerThickness[0];
-    vm_LambdaReduced = vm_Lambda[0] * frostComponent.getLambdaRedux(0);
+    vm_LambdaReduced = vm_Lambda[0] * frostComponent->getLambdaRedux(0);
     vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[0];
     vm_PercolationRate[0] = (vm_GravitationalWater[0] * vm_GravitationalWater[0] * vm_LambdaReduced)
       / vm_PercolationFactor;
@@ -1095,7 +1107,7 @@ void SoilMoisture::fm_CapillaryRise() {
     for (int i = int(vm_StartLayer); i >= 0; i--) {
       std::string vs_SoilTexture = soilColumn[i].vs_SoilTexture();
       assert(!vs_SoilTexture.empty());
-      pm_CapillaryRiseRate = smPs.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
+      pm_CapillaryRiseRate = smPs->getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
       if (pm_CapillaryRiseRate < vm_CapillaryRiseRate)
         vm_CapillaryRiseRate = pm_CapillaryRiseRate;
@@ -1128,7 +1140,7 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
         // Soil moisture exceeding field capacity
         vm_GravitationalWater[i + 1] = (vm_SoilMoisture[i + 1] - vm_FieldCapacity[i + 1]) * 1000.0 * vm_LayerThickness[i + 1];
 
-        double vm_LambdaReduced = vm_Lambda[i + 1] * frostComponent.getLambdaRedux(i + 1);
+        double vm_LambdaReduced = vm_Lambda[i + 1] * frostComponent->getLambdaRedux(i + 1);
         double vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[i + 1];
         vm_PercolationRate[i + 1] = ((vm_GravitationalWater[i + 1] * vm_GravitationalWater[i + 1]
           * vm_LambdaReduced) / vm_PercolationFactor);
@@ -1279,7 +1291,7 @@ void SoilMoisture::fm_PercolationWithoutGroundwater() {
       // too much water for this layer so some water is released to layers below
       vm_GravitationalWater[i_Layer + 1] = (vm_SoilMoisture[i_Layer + 1] - vm_FieldCapacity[i_Layer + 1]) * 1000.0
         * vm_LayerThickness[0];
-      vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent.getLambdaRedux(i_Layer + 1);
+      vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent->getLambdaRedux(i_Layer + 1);
       vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[i_Layer + 1]);
       vm_PercolationRate[i_Layer + 1] = (vm_GravitationalWater[i_Layer + 1] * vm_GravitationalWater[i_Layer + 1]
         * vm_LambdaReduced) / vm_PercolationFactor;
@@ -1393,17 +1405,17 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   double vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
 
-  double vm_SnowDepth = snowComponent.getVm_SnowDepth();
+  double vm_SnowDepth = snowComponent->getVm_SnowDepth();
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
-  pm_EvaporationZeta = smPs.pm_EvaporationZeta; // Parameterdatei
+  pm_EvaporationZeta = smPs->pm_EvaporationZeta; // Parameterdatei
 
   // Das sind die Steuerungsparameter für die Steigung der Entzugsfunktion
-  vm_XSACriticalSoilMoisture = smPs.pm_XSACriticalSoilMoisture;
+  vm_XSACriticalSoilMoisture = smPs->pm_XSACriticalSoilMoisture;
 
   /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
    * da muss was dran gemacht werden */
-  pm_MaximumEvaporationImpactDepth = smPs.pm_MaximumEvaporationImpactDepth; // Parameterdatei
+  pm_MaximumEvaporationImpactDepth = smPs->pm_MaximumEvaporationImpactDepth; // Parameterdatei
 
 
   // If a crop grows, ETp is taken from crop module
@@ -1411,15 +1423,15 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
     // Reference evapotranspiration is only grabbed here for consistent
     // output in monica.cpp
     if (vw_ReferenceEvapotranspiration < 0.0) {
-      vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
+      vm_ReferenceEvapotranspiration = monica->cropGrowth()->get_ReferenceEvapotranspiration();
     } else {
       vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
-    vm_PotentialEvapotranspiration = monica.cropGrowth()->get_RemainingEvapotranspiration();
-    vc_EvaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
+    vm_PotentialEvapotranspiration = monica->cropGrowth()->get_RemainingEvapotranspiration();
+    vc_EvaporatedFromIntercept = monica->cropGrowth()->get_EvaporatedFromIntercept();
 
   } else { // if no crop grows ETp is calculated from ET0 * kc
 
@@ -1517,7 +1529,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
           // Transpiration is derived from ET0; Soil coverage and Kc factors
           // already considered in crop part!
-          vm_Transpiration[i_Layer] = monica.cropGrowth()->get_Transpiration(i_Layer);
+          vm_Transpiration[i_Layer] = monica->cropGrowth()->get_Transpiration(i_Layer);
 
           //std::cout << setprecision(11) << "vm_Transpiration[i_Layer]: " << i_Layer << ", " << vm_Transpiration[i_Layer] << std::endl;
 
@@ -1912,19 +1924,19 @@ double SoilMoisture::get_TranspirationDeficit() const {
  * @return Value for snow depth
  */
 double SoilMoisture::get_SnowDepth() const {
-  return snowComponent.getVm_SnowDepth();
+  return snowComponent->getVm_SnowDepth();
 }
 
 double SoilMoisture::getMaxSnowDepth() const {
-  return snowComponent.getMaxSnowDepth();
+  return snowComponent->getMaxSnowDepth();
 }
 
 double SoilMoisture::getAccumulatedSnowDepth() const {
-  return snowComponent.getAccumulatedSnowDepth();
+  return snowComponent->getAccumulatedSnowDepth();
 }
 
 double SoilMoisture::getAccumulatedFrostDepth() const {
-  return frostComponent.getAccumulatedFrostDepth();
+  return frostComponent->getAccumulatedFrostDepth();
 }
 
 
@@ -1933,10 +1945,10 @@ double SoilMoisture::getAccumulatedFrostDepth() const {
 * @return Value for snow depth
 */
 double SoilMoisture::getTemperatureUnderSnow() const {
-  return frostComponent.getTemperatureUnderSnow();
+  return frostComponent->getTemperatureUnderSnow();
 }
 
-void SoilMoisture::put_Crop(CropGrowth* c) {
+void SoilMoisture::put_Crop(CropModule* c) {
   crop = c;
 }
 

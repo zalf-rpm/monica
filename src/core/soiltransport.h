@@ -29,7 +29,7 @@ namespace Monica
 {
   // forward declarations
   class SoilColumn;
-  class CropGrowth;
+  class CropModule;
 
   /**
   * @brief Soil matter transport part of model
@@ -42,12 +42,13 @@ namespace Monica
   public:
     SoilTransport(SoilColumn& soilColumn,
                   const SiteParameters& sps,
-                  const SoilTransportModuleParameters& stPs,
+                  kj::Own<SoilTransportModuleParameters> stPs,
                   double p_LeachingDepth,
                   double p_timeStep,
                   double pc_MinimumAvailableN);
 
-    SoilTransport(mas::models::monica::SoilTransportModuleState::Reader reader) { deserialize(reader); }
+    SoilTransport(SoilColumn& soilColumn, mas::models::monica::SoilTransportModuleState::Reader reader) 
+      : soilColumn(soilColumn) { deserialize(reader); }
     void deserialize(mas::models::monica::SoilTransportModuleState::Reader reader);
     void serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const;
 
@@ -62,7 +63,7 @@ namespace Monica
     //! calcuates N transport in soil
     void fq_NTransport (double vs_LeachingDepth, double vq_TimeStep);
 
-    void put_Crop(CropGrowth* crop);
+    void put_Crop(CropModule* crop);
 
     void remove_Crop();
 
@@ -76,7 +77,7 @@ namespace Monica
 
   private:
     SoilColumn& soilColumn;
-    const SoilTransportModuleParameters& stPs;
+    kj::Own<SoilTransportModuleParameters> stPs;
     //const size_t vs_NumberOfLayers;
     std::vector<double> vq_Convection;
     double vq_CropNUptake{ 0.0 };
@@ -99,7 +100,7 @@ namespace Monica
 
     const double pc_MinimumAvailableN{ 0.0 }; //! kg m-2
 
-    CropGrowth* crop{nullptr};
+    CropModule* crop{nullptr};
   };
 
 } /* namespace Monica */

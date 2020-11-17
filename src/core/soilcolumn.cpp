@@ -181,7 +181,7 @@ int SoilColumn::calculateNumberOfOrganicLayers()
 	return count;
 }
 
-double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
 	double demandDepth,
 	double NdemandKgHa)
 {
@@ -222,7 +222,7 @@ double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertiliserParameters 
  * @param vf_TopDressingDelay Number of days for which the application of surplus fertilizer is delayed
  */
 double SoilColumn::
-applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
+applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fp,
 	double vf_SamplingDepth,
 	double vf_CropNTarget,
 	double vf_CropNTarget30,
@@ -361,7 +361,7 @@ double SoilColumn::applyPossibleDelayedFerilizer() {
  *
  * @author: Claas Nendel
  */
-void SoilColumn::applyMineralFertiliser(MineralFertiliserParameters fp,
+void SoilColumn::applyMineralFertiliser(MineralFertilizerParameters fp,
 	double amount) {
 	debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
 		<< " amount: " << amount << endl;
@@ -681,7 +681,7 @@ size_t SoilColumn::getLayerNumberForDepth(double depth) const
  *
  * @return crop object
  */
-void SoilColumn::put_Crop(CropGrowth* c) {
+void SoilColumn::put_Crop(CropModule* c) {
 	cropGrowth = c;
 }
 

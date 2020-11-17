@@ -170,10 +170,9 @@ namespace Monica
   class SoilMoisture
   {
   public:
-    SoilMoisture(MonicaModel& monica);
+    SoilMoisture(MonicaModel* monica, kj::Own<SoilMoistureModuleParameters> smPs);
 
-    SoilMoisture(MonicaModel& monica, mas::models::monica::SoilMoistureModuleState::Reader reader)
-    : monica(monica) { deserialize(reader); }
+    SoilMoisture(MonicaModel* monica, mas::models::monica::SoilMoistureModuleState::Reader reader);
     void deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader);
     void serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const;
 
@@ -228,10 +227,10 @@ namespace Monica
     double get_StomataResistance() const { return vc_StomataResistance; }
 
     //! Returns frost depth [m]
-    double get_FrostDepth() const { return frostComponent.getFrostDepth(); }
+    double get_FrostDepth() const { return frostComponent->getFrostDepth(); }
 
     //! Returns thaw depth [m]
-    double get_ThawDepth() const { return frostComponent.getThawDepth(); }
+    double get_ThawDepth() const { return frostComponent->getThawDepth(); }
 
     double get_CapillaryRise();
 
@@ -247,7 +246,7 @@ namespace Monica
                           double vm_PercentageSoilCoverage,
                           double vm_PotentialEvapotranspiration);
 
-    void put_Crop(Monica::CropGrowth* crop);
+    void put_Crop(Monica::CropModule* crop);
     void remove_Crop();
 
 //    void fm_SoilFrost(double vw_MeanAirTemperature,
@@ -310,8 +309,8 @@ namespace Monica
   private:
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
-    MonicaModel& monica;
-    const SoilMoistureModuleParameters& smPs;
+    MonicaModel* monica{ nullptr };
+    kj::Own<SoilMoistureModuleParameters> smPs;
     const EnvironmentParameters& envPs;
     const CropModuleParameters& cropPs;
 		const size_t vm_NumberOfLayers{0};
@@ -382,9 +381,9 @@ namespace Monica
 		double vw_WindSpeedHeight{0.0}; //!< [m]
 		double vm_XSACriticalSoilMoisture{0.0};
 
-    SnowComponent snowComponent;
-    FrostComponent frostComponent;
-    CropGrowth* crop{nullptr};
+    kj::Own<SnowComponent> snowComponent;
+    kj::Own<FrostComponent> frostComponent;
+    CropModule* crop{nullptr};
 
   }; // SoilMoisture
 

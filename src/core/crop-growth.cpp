@@ -48,7 +48,7 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-CropGrowth::CropGrowth(SoilColumn& sc,
+CropModule::CropModule(SoilColumn& sc,
 	const CropParameters& cps,
 	const SiteParameters& stps,
 	const CropModuleParameters& cropPs,
@@ -265,11 +265,11 @@ CropGrowth::CropGrowth(SoilColumn& sc,
 
 }
 
-	void CropGrowth::deserialize(mas::models::monica::CropModuleState::Reader reader) {
+	void CropModule::deserialize(mas::models::monica::CropModuleState::Reader reader) {
 
 	}
 
-	void CropGrowth::serialize(mas::models::monica::CropModuleState::Builder builder) const {
+	void CropModule::serialize(mas::models::monica::CropModuleState::Builder builder) const {
 
 	}
 
@@ -290,7 +290,7 @@ CropGrowth::CropGrowth(SoilColumn& sc,
  *
  * @author Claas Nendel
  */
-void CropGrowth::step(double vw_MeanAirTemperature,
+void CropModule::step(double vw_MeanAirTemperature,
 	double vw_MaxAirTemperature,
 	double vw_MinAirTemperature,
 	double vw_GlobalRadiation,
@@ -514,7 +514,7 @@ void CropGrowth::step(double vw_MeanAirTemperature,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
+void CropModule::fc_Radiation(double vs_JulianDay, double vs_Latitude,
 	double vw_GlobalRadiation,
 	double vw_SunshineHours)
 {
@@ -597,7 +597,7 @@ void CropGrowth::fc_Radiation(double vs_JulianDay, double vs_Latitude,
  *
  * @author Claas Nendel
  */
-double CropGrowth::fc_DaylengthFactor(double d_DaylengthRequirement, double vc_EffectiveDayLength,
+double CropModule::fc_DaylengthFactor(double d_DaylengthRequirement, double vc_EffectiveDayLength,
 	double vc_PhotoperiodicDayLength, double d_BaseDaylength)
 {
 	if (d_DaylengthRequirement > 0.0)
@@ -664,7 +664,7 @@ double CropGrowth::fc_DaylengthFactor(double d_DaylengthRequirement, double vc_E
  *
  * @author Claas Nendel
  */
-pair<double, double> CropGrowth::fc_VernalisationFactor(double vw_MeanAirTemperature,
+pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTemperature,
 	double vc_TimeStep,
 	double d_VernalisationRequirement,
 	double d_VernalisationDays)
@@ -746,7 +746,7 @@ pair<double, double> CropGrowth::fc_VernalisationFactor(double vw_MeanAirTempera
  *
  * @author Claas Nendel
  */
-double CropGrowth::fc_OxygenDeficiency(double d_CriticalOxygenContent)
+double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent)
 {
 	double vc_AirFilledPoreVolume = 0.0;
 	double vc_MaxOxygenDeficit = 0.0;
@@ -821,7 +821,7 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
+void CropModule::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 	std::vector<double> pc_BaseTemperature,
 	std::vector<double> pc_OptimumTemperature,
 	std::vector<double> pc_StageTemperatureSum,
@@ -1124,7 +1124,7 @@ void CropGrowth::fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
  *
  * @author Claas Nendel
  */
-double CropGrowth::fc_KcFactor(size_t vc_DevelopmentalStage, 
+double CropModule::fc_KcFactor(size_t vc_DevelopmentalStage, 
   double d_StageTemperatureSum, 
 	double d_CurrentTemperatureSum,
 	double pc_InitialKcFactor, // DB
@@ -1183,7 +1183,7 @@ double CropGrowth::fc_KcFactor(size_t vc_DevelopmentalStage,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropSize(double pc_MaxCropHeight,
+void CropModule::fc_CropSize(double pc_MaxCropHeight,
 	double pc_MaxCropDiameter,
 	double pc_StageAtMaxHeight,
 	double pc_StageAtMaxDiameter,
@@ -1247,7 +1247,7 @@ void CropGrowth::fc_CropSize(double pc_MaxCropHeight,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropGreenArea(double vw_MeanAirTemperature,
+void CropModule::fc_CropGreenArea(double vw_MeanAirTemperature,
 	size_t vc_DevelopmentalStage,
 	double d_LeafBiomassIncrement,
 	double d_LeafBiomassDecrement,
@@ -1308,7 +1308,7 @@ void CropGrowth::fc_CropGreenArea(double vw_MeanAirTemperature,
  *
  * @author Claas Nendel
  */
-double CropGrowth::fc_SoilCoverage(double vc_LeafAreaIndex)
+double CropModule::fc_SoilCoverage(double vc_LeafAreaIndex)
 {
 	vc_SoilCoverage = 1.0 - (exp(-0.5 * vc_LeafAreaIndex));
 
@@ -1403,7 +1403,7 @@ ostream& Monica::tout(bool closeFile)
 }
 #endif
 
-void CropGrowth::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
+void CropModule::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
 	double vc_RootDensityFactorSum,
 	const vector<double>& vc_RootDensityFactor)
 {
@@ -1422,7 +1422,7 @@ void CropGrowth::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
 		_addOrganicMatter(layer2deadRootBiomassAtLayer, vc_NConcentrationRoot);
 }
 
-void CropGrowth::addAndDistributeRootBiomassInSoil(double rootBiomass)
+void CropModule::addAndDistributeRootBiomassInSoil(double rootBiomass)
 {
 	auto p = calcRootDensityFactorAndSum();
 	fc_MoveDeadRootBiomassToSoil(rootBiomass, p.second, p.first);
@@ -1454,7 +1454,7 @@ void CropGrowth::addAndDistributeRootBiomassInSoil(double rootBiomass)
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
+void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	double vw_MaxAirTemperature,
 	double vw_MinAirTemperature,
 	double vc_GlobalRadiation,
@@ -2455,7 +2455,7 @@ void CropGrowth::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
  * @param vw_MinAirTemperature
  * @param vc_CurrentTotalTemperatureSum
  */
-void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
+void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
 	double vw_MinAirTemperature,
 	double vc_CurrentTotalTemperatureSum)
 {
@@ -2528,7 +2528,7 @@ void CropGrowth::fc_HeatStressImpact(double vw_MaxAirTemperature,
 * @param vw_MinAirTemperature
 */
 
-void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
+void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 	vw_MinAirTemperature)
 {
 
@@ -2629,7 +2629,7 @@ void CropGrowth::fc_FrostKill(double vw_MaxAirTemperature, double
  *
  * @param vc_TranspirationDeficit
  */
-void CropGrowth::fc_DroughtImpactOnFertility(double vc_TranspirationDeficit)
+void CropModule::fc_DroughtImpactOnFertility(double vc_TranspirationDeficit)
 {
 	if (vc_TranspirationDeficit < 0.0) vc_TranspirationDeficit = 0.0;
 
@@ -2665,7 +2665,7 @@ void CropGrowth::fc_DroughtImpactOnFertility(double vc_TranspirationDeficit)
  *
  * @param vc_CurrentTotalTemperatureSum
  */
-void CropGrowth::fc_CropNitrogen()
+void CropModule::fc_CropNitrogen()
 {
 	double vc_RootNRedux = 0.0; // old REDWU
 	double vc_RootNReduxHelper = 0.0; // old WUX
@@ -2750,7 +2750,7 @@ void CropGrowth::fc_CropNitrogen()
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropDryMatter(size_t vc_DevelopmentalStage,
+void CropModule::fc_CropDryMatter(size_t vc_DevelopmentalStage,
 	double vc_Assimilates,
 	double /*vc_NetMaintenanceRespiration*/,
 	double /*pc_CropSpecificMaxRootingDepth*/,
@@ -3258,7 +3258,7 @@ void CropGrowth::fc_CropDryMatter(size_t vc_DevelopmentalStage,
 	}
 }
 
-pair<vector<double>, double> CropGrowth::calcRootDensityFactorAndSum()
+pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum()
 {
 	auto nols = soilColumn.vs_NumberOfLayers();
 	double layerThickness = soilColumn.vs_LayerThickness();
@@ -3305,7 +3305,7 @@ pair<vector<double>, double> CropGrowth::calcRootDensityFactorAndSum()
  * @param vc_GrossPhotosynthesisReference_mol under well watered conditions
  * @return Reference evapotranspiration
  */
-double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
+double CropModule::fc_ReferenceEvapotranspiration(double vs_HeightNN,
 	double vw_MaxAirTemperature,
 	double vw_MinAirTemperature,
 	double vw_RelativeHumidity,
@@ -3446,7 +3446,7 @@ double CropGrowth::fc_ReferenceEvapotranspiration(double vs_HeightNN,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
+void CropModule::fc_CropWaterUptake(double vc_SoilCoverage,
 	size_t vc_RootingZone,
 	size_t vc_GroundwaterTable,
 	double vc_ReferenceEvapotranspiration,
@@ -3713,7 +3713,7 @@ void CropGrowth::fc_CropWaterUptake(double vc_SoilCoverage,
  *
  * @author Claas Nendel
  */
-void CropGrowth::fc_CropNUptake(size_t vc_RootingZone,
+void CropModule::fc_CropNUptake(size_t vc_RootingZone,
   size_t vc_GroundwaterTable,
   double /*vc_CurrentTotalTemperatureSum*/,
   double /*vc_TotalTemperatureSum*/)
@@ -3917,7 +3917,7 @@ void CropGrowth::fc_CropNUptake(size_t vc_RootingZone,
  *
  * @author Claas Nendel
  */
-double CropGrowth::fc_GrossPrimaryProduction(double vc_Assimilates)
+double CropModule::fc_GrossPrimaryProduction(double vc_Assimilates)
 {
 	double vc_GPP = 0.0;
 	// Converting photosynthesis rate from [kg CH2O ha-1 d-1] back to
@@ -3936,7 +3936,7 @@ double CropGrowth::fc_GrossPrimaryProduction(double vc_Assimilates)
 *
 * @author Claas Nendel
 */
-double CropGrowth::fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
+double CropModule::fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
 	double vc_TotalRespired)
 {
 	double vc_NPP = 0.0;
@@ -3951,7 +3951,7 @@ double CropGrowth::fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
  * @brief Returns crop name [ ]
  * @return crop name
  */
-std::string CropGrowth::get_CropName() const
+std::string CropModule::get_CropName() const
 {
 	return pc_CropName;
 }
@@ -3960,7 +3960,7 @@ std::string CropGrowth::get_CropName() const
  * @brief Returns gross photosynthesis rate [mol m-2 s-1]
  * @return photosynthesis rate
  */
-double CropGrowth::get_GrossPhotosynthesisRate() const
+double CropModule::get_GrossPhotosynthesisRate() const
 {
 	return vc_GrossPhotosynthesis_mol;
 }
@@ -3969,7 +3969,7 @@ double CropGrowth::get_GrossPhotosynthesisRate() const
  * @brief Returns gross photosynthesis rate [kg ha-1]
  * @return photosynthesis rate
  */
-double CropGrowth::get_GrossPhotosynthesisHaRate() const
+double CropModule::get_GrossPhotosynthesisHaRate() const
 {
 	return vc_GrossPhotosynthesis;
 }
@@ -3978,7 +3978,7 @@ double CropGrowth::get_GrossPhotosynthesisHaRate() const
  * @brief Returns assimilation rate [kg CO2 ha leaf-1]
  * @return Assimilation rate
  */
-double CropGrowth::get_AssimilationRate() const
+double CropModule::get_AssimilationRate() const
 {
 	return vc_AssimilationRate;
 }
@@ -3987,7 +3987,7 @@ double CropGrowth::get_AssimilationRate() const
  * @brief Returns assimilates [kg CO2 ha-1]
  * @return Assimilates
  */
-double CropGrowth::get_Assimilates() const
+double CropModule::get_Assimilates() const
 {
 	return vc_Assimilates;
 }
@@ -3997,7 +3997,7 @@ double CropGrowth::get_Assimilates() const
  * @brief Returns net maintenance respiration rate [kg CO2 ha-1]
  * @return Net maintenance respiration rate
  */
-double CropGrowth::get_NetMaintenanceRespiration() const
+double CropModule::get_NetMaintenanceRespiration() const
 {
 	return vc_NetMaintenanceRespiration;
 }
@@ -4006,7 +4006,7 @@ double CropGrowth::get_NetMaintenanceRespiration() const
  * @brief Returns maintenance respiration rate from AGROSIM [kg CO2 ha-1]
  * @return Maintenance respiration rate
  */
-double CropGrowth::get_MaintenanceRespirationAS() const
+double CropModule::get_MaintenanceRespirationAS() const
 {
 	return vc_MaintenanceRespirationAS;
 }
@@ -4016,21 +4016,21 @@ double CropGrowth::get_MaintenanceRespirationAS() const
  * @brief Returns growth respiration rate from AGROSIM [kg CO2 ha-1]
  * @return GRowth respiration rate
  */
-double CropGrowth::get_GrowthRespirationAS() const
+double CropModule::get_GrowthRespirationAS() const
 {
 	return vc_GrowthRespirationAS;
 }
 
 /**
  */
-double CropGrowth::get_VernalisationFactor() const
+double CropModule::get_VernalisationFactor() const
 {
 	return vc_VernalisationFactor;
 }
 
 /**
  */
-double CropGrowth::get_DaylengthFactor() const
+double CropModule::get_DaylengthFactor() const
 {
 	return vc_DaylengthFactor;
 }
@@ -4039,7 +4039,7 @@ double CropGrowth::get_DaylengthFactor() const
  * @brief Returns growth increment of organ i [kg CH2O ha-1 d-1]
  * @return Organ growth increment
  */
-double CropGrowth::get_OrganGrowthIncrement(int i_Organ) const
+double CropModule::get_OrganGrowthIncrement(int i_Organ) const
 {
 	return vc_OrganGrowthIncrement[i_Organ];
 }
@@ -4048,13 +4048,13 @@ double CropGrowth::get_OrganGrowthIncrement(int i_Organ) const
  * @brief Returns net photosynthesis [kg CH2O ha-1]
  * @return net photosynthesis
  */
-double CropGrowth::get_NetPhotosynthesis() const
+double CropModule::get_NetPhotosynthesis() const
 {
 	return vc_NetPhotosynthesis;
 }
 
 
-void CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
+void CropModule::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
 {
 	Voc::SpeciesData species;
 	//species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
@@ -4082,7 +4082,7 @@ void CropGrowth::calculateVOCEmissions(const Voc::MicroClimateData& mcd)
  * @brief Returns reference evapotranspiration [mm]
  * @return Reference evapotranspiration
  */
-double CropGrowth::get_ReferenceEvapotranspiration() const
+double CropModule::get_ReferenceEvapotranspiration() const
 {
 	return vc_ReferenceEvapotranspiration;
 }
@@ -4091,7 +4091,7 @@ double CropGrowth::get_ReferenceEvapotranspiration() const
  * @brief Returns evapotranspiration remaining after evaporation of intercepted water [mm]
  * @return Remaning evapotranspirationn
  */
-double CropGrowth::get_RemainingEvapotranspiration() const
+double CropModule::get_RemainingEvapotranspiration() const
 {
 	return vc_RemainingEvapotranspiration;
 }
@@ -4100,7 +4100,7 @@ double CropGrowth::get_RemainingEvapotranspiration() const
  * @brief Returns evaporation from intercepted water [mm]
  * @return evaporated from intercept
  */
-double CropGrowth::get_EvaporatedFromIntercept() const
+double CropModule::get_EvaporatedFromIntercept() const
 {
 	return vc_EvaporatedFromIntercept;
 }
@@ -4109,7 +4109,7 @@ double CropGrowth::get_EvaporatedFromIntercept() const
  * @brief Returns precipitation after interception on crop surface [mm]
  * @return Remaning net precipitation
  */
-double CropGrowth::get_NetPrecipitation() const
+double CropModule::get_NetPrecipitation() const
 {
 	return vc_NetPrecipitation;
 }
@@ -4118,7 +4118,7 @@ double CropGrowth::get_NetPrecipitation() const
  * @brief Returns leaf area index [m2 m-2]
  * @return Leaf area index
  */
-double CropGrowth::get_LeafAreaIndex() const
+double CropModule::get_LeafAreaIndex() const
 {
 	return vc_LeafAreaIndex;
 }
@@ -4127,7 +4127,7 @@ double CropGrowth::get_LeafAreaIndex() const
  * @brief Returns crop height [m]
  * @return crop height
  */
-double CropGrowth::get_CropHeight() const
+double CropModule::get_CropHeight() const
 {
 	return vc_CropHeight;
 }
@@ -4136,7 +4136,7 @@ double CropGrowth::get_CropHeight() const
  * @brief Returns rooting depth [layer]
  * @return rooting depth
  */
-size_t CropGrowth::get_RootingDepth() const
+size_t CropModule::get_RootingDepth() const
 {
 	return vc_RootingDepth;
 }
@@ -4145,7 +4145,7 @@ size_t CropGrowth::get_RootingDepth() const
  * @brief Returns soil coverage [0;1]
  * @return soil coverage
  */
-double CropGrowth::get_SoilCoverage() const
+double CropModule::get_SoilCoverage() const
 {
 	return vc_SoilCoverage;
 }
@@ -4154,7 +4154,7 @@ double CropGrowth::get_SoilCoverage() const
  * @brief Returns current Kc factor []
  * @return Kc factor
  */
-double CropGrowth::get_KcFactor() const
+double CropModule::get_KcFactor() const
 {
 	return vc_KcFactor;
 }
@@ -4163,7 +4163,7 @@ double CropGrowth::get_KcFactor() const
  * @brief Returns Stomata resistance [s m-1]
  * @return Stomata resistance
  */
-double CropGrowth::get_StomataResistance() const
+double CropModule::get_StomataResistance() const
 {
 	return vc_StomataResistance;
 }
@@ -4172,7 +4172,7 @@ double CropGrowth::get_StomataResistance() const
  * @brief Returns transpiration per layer[mm]
  * @return transpiration per layer
  */
-double CropGrowth::get_PotentialTranspiration() const
+double CropModule::get_PotentialTranspiration() const
 {
 	return vc_PotentialTranspiration;
 }
@@ -4181,7 +4181,7 @@ double CropGrowth::get_PotentialTranspiration() const
  * @brief Returns transpiration per layer[mm]
  * @return transpiration per layer
  */
-double CropGrowth::get_ActualTranspiration() const
+double CropModule::get_ActualTranspiration() const
 {
 	return vc_ActualTranspiration;
 }
@@ -4190,7 +4190,7 @@ double CropGrowth::get_ActualTranspiration() const
  * @brief Returns transpiration per layer[mm]
  * @return transpiration per layer
  */
-double CropGrowth::get_Transpiration(int i_Layer) const
+double CropModule::get_Transpiration(int i_Layer) const
 {
 	return vc_Transpiration[i_Layer];
 }
@@ -4199,7 +4199,7 @@ double CropGrowth::get_Transpiration(int i_Layer) const
  * @brief Returns transpiration deficit [0;1]
  * @return transpiration deficit
  */
-double CropGrowth::get_TranspirationDeficit() const
+double CropModule::get_TranspirationDeficit() const
 {
 	return vc_TranspirationDeficit;
 }
@@ -4208,7 +4208,7 @@ double CropGrowth::get_TranspirationDeficit() const
  * @brief Returns oxygen deficit [0;1]
  * @return oxygen deficit
  */
-double CropGrowth::get_OxygenDeficit() const
+double CropModule::get_OxygenDeficit() const
 {
 	return vc_OxygenDeficit;
 }
@@ -4217,7 +4217,7 @@ double CropGrowth::get_OxygenDeficit() const
  * @brief Returns Nitrogen deficit [0;1]
  * @return nitrogen deficit
  */
-double CropGrowth::get_CropNRedux() const
+double CropModule::get_CropNRedux() const
 {
 	return vc_CropNRedux;
 }
@@ -4226,12 +4226,12 @@ double CropGrowth::get_CropNRedux() const
  * @brief Returns Heat stress reductor [0;1]
  * @return heat stress reductor
  */
-double CropGrowth::get_HeatStressRedux() const
+double CropModule::get_HeatStressRedux() const
 {
 	return vc_CropHeatRedux;
 }
 
-double CropGrowth::get_FrostStressRedux() const
+double CropModule::get_FrostStressRedux() const
 {
 	return vc_CropFrostRedux;
 }
@@ -4240,7 +4240,7 @@ double CropGrowth::get_FrostStressRedux() const
  * @brief Returns current total temperature sum [°Cd]
  * @return Current temperature sum
  */
-double CropGrowth::get_CurrentTemperatureSum() const
+double CropModule::get_CurrentTemperatureSum() const
 {
 	return vc_CurrentTotalTemperatureSum;
 }
@@ -4249,7 +4249,7 @@ double CropGrowth::get_CurrentTemperatureSum() const
  * @brief Returns developmental stage[]
  * @return deveklopmental stage
  */
-size_t CropGrowth::get_DevelopmentalStage() const
+size_t CropModule::get_DevelopmentalStage() const
 {
 	return vc_DevelopmentalStage;
 }
@@ -4258,7 +4258,7 @@ size_t CropGrowth::get_DevelopmentalStage() const
  * @brief Returns Relative total development []
  * @return Relative total development
  */
-double CropGrowth::get_RelativeTotalDevelopment() const
+double CropModule::get_RelativeTotalDevelopment() const
 {
 	return vc_RelativeTotalDevelopment;
 }
@@ -4267,7 +4267,7 @@ double CropGrowth::get_RelativeTotalDevelopment() const
 * @brief Returns total number of organs[]
 * @return total number of organs
 */
-int CropGrowth::get_NumberOfOrgans() const
+int CropModule::get_NumberOfOrgans() const
 {
 	return pc_NumberOfOrgans;
 }
@@ -4276,7 +4276,7 @@ int CropGrowth::get_NumberOfOrgans() const
  * @brief Returns current biomass of organ i [kg ha-1]
  * @return organ biomass
  */
-double CropGrowth::get_OrganBiomass(int i_Organ) const
+double CropModule::get_OrganBiomass(int i_Organ) const
 {
 	return vc_OrganBiomass[i_Organ];
 }
@@ -4285,7 +4285,7 @@ double CropGrowth::get_OrganBiomass(int i_Organ) const
 * @brief Returns current green biomass of organ i [kg ha-1]
 * @return organ biomass
 */
-double CropGrowth::get_OrganGreenBiomass(int i_Organ) const
+double CropModule::get_OrganGreenBiomass(int i_Organ) const
 {
 	return vc_OrganGreenBiomass[i_Organ];
 }
@@ -4294,7 +4294,7 @@ double CropGrowth::get_OrganGreenBiomass(int i_Organ) const
  * @brief Returns aboveground biomass [kg ha-1]
  * @return organ biomass
  */
-double CropGrowth::get_AbovegroundBiomass() const
+double CropModule::get_AbovegroundBiomass() const
 {
 	return vc_AbovegroundBiomass;
 }
@@ -4303,7 +4303,7 @@ double CropGrowth::get_AbovegroundBiomass() const
 * @brief Returns crop's lethal temperature LT50 [°C]
 * @return LT50
 */
-double CropGrowth::get_LT50() const
+double CropModule::get_LT50() const
 {
 	return vc_LT50;
 }
@@ -4312,7 +4312,7 @@ double CropGrowth::get_LT50() const
  * @brief Returns crop N uptake from layer i [kg N ha-1]
  * @return Crop N uptake
  */
-double CropGrowth::get_NUptakeFromLayer(size_t i_Layer) const
+double CropModule::get_NUptakeFromLayer(size_t i_Layer) const
 {
 	return vc_NUptakeFromLayer[i_Layer];
 }
@@ -4321,7 +4321,7 @@ double CropGrowth::get_NUptakeFromLayer(size_t i_Layer) const
  * @brief Returns total crop biomass [kg ha-1]
  * @return Total crop biomass
  */
-double CropGrowth::get_TotalBiomass() const
+double CropModule::get_TotalBiomass() const
 {
 	return vc_TotalBiomass;
 }
@@ -4330,7 +4330,7 @@ double CropGrowth::get_TotalBiomass() const
 * @brief Returns total crop N content [kg N ha-1]
 * @return Total crop N uptake
 */
-double CropGrowth::get_TotalBiomassNContent() const
+double CropModule::get_TotalBiomassNContent() const
 {
 	return vc_TotalBiomassNContent;
 }
@@ -4339,7 +4339,7 @@ double CropGrowth::get_TotalBiomassNContent() const
  * @brief Returns aboveground biomass N content [kg N ha-1]
  * @return organ biomass
  */
-double CropGrowth::get_AbovegroundBiomassNContent() const
+double CropModule::get_AbovegroundBiomassNContent() const
 {
 	return vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass;
 }
@@ -4349,7 +4349,7 @@ double CropGrowth::get_AbovegroundBiomassNContent() const
 * @brief Returns fruit biomass N concentration [kg N kg DM]
 * @return organ biomass
 */
-double CropGrowth::get_FruitBiomassNConcentration() const
+double CropModule::get_FruitBiomassNConcentration() const
 {
 	return (vc_TotalBiomassNContent -
 		(get_OrganBiomass(0) * get_RootNConcentration())) /
@@ -4361,7 +4361,7 @@ double CropGrowth::get_FruitBiomassNConcentration() const
 * @brief Returns fruit biomass N content [kg N ha-1]
 * @return organ biomass
 */
-double CropGrowth::get_FruitBiomassNContent() const
+double CropModule::get_FruitBiomassNContent() const
 {
 	return (get_OrganBiomass(3) * get_FruitBiomassNConcentration());
 }
@@ -4370,7 +4370,7 @@ double CropGrowth::get_FruitBiomassNContent() const
  * @brief Returns root N content [kg N kg-1]
  * @return Root N content
  */
-double CropGrowth::get_RootNConcentration() const
+double CropModule::get_RootNConcentration() const
 {
 	return vc_NConcentrationRoot;
 }
@@ -4380,7 +4380,7 @@ double CropGrowth::get_RootNConcentration() const
  * @brief Returns target N content [kg N kg-1]
  * @return Target N content
  */
-double CropGrowth::get_TargetNConcentration() const
+double CropModule::get_TargetNConcentration() const
 {
 	return vc_TargetNConcentration;
 }
@@ -4389,7 +4389,7 @@ double CropGrowth::get_TargetNConcentration() const
  * @brief Returns critical N Content [kg N kg-1]
  * @return Critical N content
  */
-double CropGrowth::get_CriticalNConcentration() const
+double CropModule::get_CriticalNConcentration() const
 {
 	return vc_CriticalNConcentration;
 }
@@ -4398,7 +4398,7 @@ double CropGrowth::get_CriticalNConcentration() const
  * @brief Returns above-ground biomass N concentration [kg N kg-1]
  * @return Above-ground biomass N concentration
  */
-double CropGrowth::get_AbovegroundBiomassNConcentration() const
+double CropModule::get_AbovegroundBiomassNConcentration() const
 {
 	return vc_NConcentrationAbovegroundBiomass;
 }
@@ -4407,7 +4407,7 @@ double CropGrowth::get_AbovegroundBiomassNConcentration() const
  * @brief Returns heat sum for irrigation start [°C d]
  * @return heat sum for irrigation start
  */
-double CropGrowth::get_HeatSumIrrigationStart() const
+double CropModule::get_HeatSumIrrigationStart() const
 {
 	return pc_HeatSumIrrigationStart;
 }
@@ -4416,7 +4416,7 @@ double CropGrowth::get_HeatSumIrrigationStart() const
  * @brief Returns heat sum for irrigation end [°C d]
  * @return heat sum for irrigation end
  */
-double CropGrowth::get_HeatSumIrrigationEnd() const
+double CropModule::get_HeatSumIrrigationEnd() const
 {
 	return pc_HeatSumIrrigationEnd;
 }
@@ -4425,7 +4425,7 @@ double CropGrowth::get_HeatSumIrrigationEnd() const
  * @brief Returns number of above ground organs
  * @return number of above ground organs
  */
-int CropGrowth::pc_NumberOfAbovegroundOrgans() const
+int CropModule::pc_NumberOfAbovegroundOrgans() const
 {
 	int count = 0;
 	for (size_t i = 0, size = pc_AbovegroundOrgan.size(); i < size; i++)
@@ -4476,7 +4476,7 @@ namespace
  * @brief Returns primary crop yield
  * @return primary yield
  */
-double CropGrowth::get_PrimaryCropYield() const
+double CropModule::get_PrimaryCropYield() const
 {
 
 	if (eva2_usage == NUTZUNG_GANZPFLANZE)
@@ -4491,7 +4491,7 @@ double CropGrowth::get_PrimaryCropYield() const
  * @brief Returns secondary crop yield
  * @return crop yield
  */
-double CropGrowth::get_SecondaryCropYield() const
+double CropModule::get_SecondaryCropYield() const
 {
 	if (eva2_usage == NUTZUNG_GANZPFLANZE || eva2_usage == NUTZUNG_GRUENDUENGUNG)
 	{
@@ -4504,7 +4504,7 @@ double CropGrowth::get_SecondaryCropYield() const
 * @brief Returns crop yield after cutting
 * @return crop yield after cutting
 */
-double CropGrowth::get_CropYieldAfterCutting() const
+double CropModule::get_CropYieldAfterCutting() const
 {
 
 	if (eva2_usage == NUTZUNG_GANZPFLANZE)
@@ -4519,7 +4519,7 @@ double CropGrowth::get_CropYieldAfterCutting() const
  * @brief Returns primary crop yield fresh matter
  * @return primary yield
  */
-double CropGrowth::get_FreshPrimaryCropYield() const
+double CropModule::get_FreshPrimaryCropYield() const
 {
 	if (eva2_usage == NUTZUNG_GANZPFLANZE)
 	{
@@ -4532,7 +4532,7 @@ double CropGrowth::get_FreshPrimaryCropYield() const
  * @brief Returns secondary crop yield fresh matter
  * @return crop yield
  */
-double CropGrowth::get_FreshSecondaryCropYield() const
+double CropModule::get_FreshSecondaryCropYield() const
 {
 	if (eva2_usage == NUTZUNG_GANZPFLANZE || eva2_usage == NUTZUNG_GRUENDUENGUNG)
 	{
@@ -4545,7 +4545,7 @@ double CropGrowth::get_FreshSecondaryCropYield() const
 * @brief Returns fresh matter crop yield after cutting
 * @return fresh crop yield after cutting
 */
-double CropGrowth::get_FreshCropYieldAfterCutting() const
+double CropModule::get_FreshCropYieldAfterCutting() const
 {
 
 	if (eva2_usage == NUTZUNG_GANZPFLANZE)
@@ -4560,7 +4560,7 @@ double CropGrowth::get_FreshCropYieldAfterCutting() const
  * @brief Returns residue biomass
  * @return residue biomass
  */
-double CropGrowth::get_ResidueBiomass(bool useSecondaryCropYields) const
+double CropModule::get_ResidueBiomass(bool useSecondaryCropYields) const
 {
 	return vc_TotalBiomass - get_OrganBiomass(0) - get_PrimaryCropYield()
 		- (useSecondaryCropYields ? get_SecondaryCropYield() : 0);
@@ -4570,7 +4570,7 @@ double CropGrowth::get_ResidueBiomass(bool useSecondaryCropYields) const
  * @brief Returns residue N concentration [kg kg-1]
  * @return residue N concentration
  */
-double CropGrowth::get_ResiduesNConcentration() const
+double CropModule::get_ResiduesNConcentration() const
 {
 	return (vc_TotalBiomassNContent -
 		(get_OrganBiomass(0) * get_RootNConcentration())) /
@@ -4582,7 +4582,7 @@ double CropGrowth::get_ResiduesNConcentration() const
  * @brief Returns primary yield N concentration [kg kg-1]
  * @return primary yield N concentration
  */
-double CropGrowth::get_PrimaryYieldNConcentration() const
+double CropModule::get_PrimaryYieldNConcentration() const
 {
 	return (vc_TotalBiomassNContent -
 		(get_OrganBiomass(0) * get_RootNConcentration())) /
@@ -4590,23 +4590,23 @@ double CropGrowth::get_PrimaryYieldNConcentration() const
 		(vc_TotalBiomass - get_OrganBiomass(0) - get_PrimaryCropYield())));
 }
 
-double CropGrowth::get_ResiduesNContent(bool useSecondaryCropYields) const
+double CropModule::get_ResiduesNContent(bool useSecondaryCropYields) const
 {
 	return (get_ResidueBiomass(useSecondaryCropYields) * get_ResiduesNConcentration());
 }
 
-double CropGrowth::get_PrimaryYieldNContent() const
+double CropModule::get_PrimaryYieldNContent() const
 {
 	return (get_PrimaryCropYield() * get_PrimaryYieldNConcentration());
 }
 
-double CropGrowth::get_RawProteinConcentration() const
+double CropModule::get_RawProteinConcentration() const
 {
 	// Assuming an average N concentration of raw protein of 16%
 	return (get_PrimaryYieldNConcentration() * 6.25);
 }
 
-double CropGrowth::get_SecondaryYieldNContent() const
+double CropModule::get_SecondaryYieldNContent() const
 {
 	return (get_SecondaryCropYield() * get_ResiduesNConcentration());
 }
@@ -4615,7 +4615,7 @@ double CropGrowth::get_SecondaryYieldNContent() const
  * @brief Returns the accumulated crop's actual N uptake [kg N ha-1]
  * @return Sum crop actual N uptake
  */
-double CropGrowth::get_SumTotalNUptake() const
+double CropModule::get_SumTotalNUptake() const
 {
 	return vc_SumTotalNUptake;
 }
@@ -4624,7 +4624,7 @@ double CropGrowth::get_SumTotalNUptake() const
  * @brief Returns the crop's actual N uptake [kg N ha-1]
  * @return Actual N uptake
  */
-double CropGrowth::get_ActNUptake() const
+double CropModule::get_ActNUptake() const
 {
 	return vc_TotalNUptake;
 }
@@ -4633,7 +4633,7 @@ double CropGrowth::get_ActNUptake() const
  * @brief Returns the crop's potential N uptake [kg N ha-1]
  * @return Potential N uptake
  */
-double CropGrowth::get_PotNUptake() const
+double CropModule::get_PotNUptake() const
 {
 	return vc_CropNDemand * 10000.0;
 }
@@ -4642,7 +4642,7 @@ double CropGrowth::get_PotNUptake() const
  * @brief Returns the crop's N input via atmospheric fixation [kg N ha-1]
  * @return Biological N fixation
  */
-double CropGrowth::get_BiologicalNFixation() const
+double CropModule::get_BiologicalNFixation() const
 {
 	return vc_FixedN;
 }
@@ -4651,7 +4651,7 @@ double CropGrowth::get_BiologicalNFixation() const
  * @brief Returns the gross primary production [kg C ha-1 d-1]
  * @return Gross primary production
  */
-double CropGrowth::get_GrossPrimaryProduction() const
+double CropModule::get_GrossPrimaryProduction() const
 {
 	return vc_GrossPrimaryProduction;
 }
@@ -4660,7 +4660,7 @@ double CropGrowth::get_GrossPrimaryProduction() const
  * @brief Returns the net primary production [kg C ha-1 d-1]
  * @return Net primary production
  */
-double CropGrowth::get_NetPrimaryProduction() const
+double CropModule::get_NetPrimaryProduction() const
 {
 	return vc_NetPrimaryProduction;
 }
@@ -4669,7 +4669,7 @@ double CropGrowth::get_NetPrimaryProduction() const
  * @brief Returns the respiration [kg C ha-1 d-1]
  * @return Net primary production
  */
-double CropGrowth::get_AutotrophicRespiration() const
+double CropModule::get_AutotrophicRespiration() const
 {
 	return vc_TotalRespired / 30.0 * 12.0;;  // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
 }
@@ -4678,7 +4678,7 @@ double CropGrowth::get_AutotrophicRespiration() const
  * Returns the individual respiration of the organs [kg C ha-1 d-1]
  * based on the current ratio of the crop's biomass.
  */
-double CropGrowth::get_OrganSpecificTotalRespired(int organ)  const
+double CropModule::get_OrganSpecificTotalRespired(int organ)  const
 {
 	// get total amount of actual biomass
 	double total_biomass = totalBiomass();
@@ -4693,7 +4693,7 @@ double CropGrowth::get_OrganSpecificTotalRespired(int organ)  const
  * @brief Returns the organ-specific net primary production [kg C ha-1 d-1]
  * @return Organ-specific net primary production
  */
-double CropGrowth::get_OrganSpecificNPP(int organ)  const
+double CropModule::get_OrganSpecificNPP(int organ)  const
 {
 	// get total amount of actual biomass
 	double total_biomass = totalBiomass();
@@ -4706,12 +4706,12 @@ double CropGrowth::get_OrganSpecificNPP(int organ)  const
 	return (get_NetPrimaryProduction() * organ_percentage);
 }
 
-int CropGrowth::get_StageAfterCut() const
+int CropModule::get_StageAfterCut() const
 {
 	return pc_StageAfterCut;
 }
 
-void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
+void CropModule::applyCutting(std::map<int, Cutting::Value>& organs,
 	std::map<int, double>& exports,
 	double cutMaxAssimilationFraction)
 {
@@ -4720,7 +4720,7 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 	double sumCutBiomass = 0.0;
 	double currentSLA = get_LeafAreaIndex() / vc_OrganGreenBiomass[1];
 
-	Tools::debug() << "CropGrowth::applyCutting()" << endl;
+	Tools::debug() << "CropModule::applyCutting()" << endl;
 
 	if (organs.empty()) {
 		for (auto yc : pc_OrganIdsForCutting) {
@@ -4865,13 +4865,13 @@ void CropGrowth::applyCutting(std::map<int, Cutting::Value>& organs,
 }
 
 void
-CropGrowth::applyFruitHarvest(double yieldPercentage)
+CropModule::applyFruitHarvest(double yieldPercentage)
 {
 	double old_above_biomass = vc_AbovegroundBiomass;
 	double removing_biomass = 0.0;
 	double residues = 0.0;
 
-	debug() << "CropGrowth::applyFruitHarvest()" << endl;
+	debug() << "CropModule::applyFruitHarvest()" << endl;
 	std::vector<double> new_OrganBiomass;
 
 	double fruitBiomass = vc_OrganBiomass.at(3);
@@ -4903,19 +4903,19 @@ CropGrowth::applyFruitHarvest(double yieldPercentage)
 }
 
 double
-CropGrowth::get_AccumulatedETa() const
+CropModule::get_AccumulatedETa() const
 {
 	return vc_AccumulatedETa;
 }
 
 double
-CropGrowth::get_AccumulatedTranspiration() const
+CropModule::get_AccumulatedTranspiration() const
 {
 	return vc_AccumulatedTranspiration;
 }
 
 double
-CropGrowth::get_AccumulatedPrimaryCropYield() const
+CropModule::get_AccumulatedPrimaryCropYield() const
 {
 	return vc_AccumulatedPrimaryCropYield;
 }
@@ -4926,7 +4926,7 @@ CropGrowth::get_AccumulatedPrimaryCropYield() const
  * [m]
  */
 double
-CropGrowth::getEffectiveRootingDepth() const
+CropModule::getEffectiveRootingDepth() const
 {
 	size_t nols = soilColumn.vs_NumberOfLayers();
 
@@ -4941,7 +4941,7 @@ CropGrowth::getEffectiveRootingDepth() const
 * @brief Setter for crop parameters of perennial crops after the transplant season.
 * @sets crop parameters of perennial crops after the transplant season
 */
-void CropGrowth::fc_UpdateCropParametersForPerennial()
+void CropModule::fc_UpdateCropParametersForPerennial()
 {
 	pc_AbovegroundOrgan = perennialCropParams->speciesParams.pc_AbovegroundOrgan;
 	pc_AssimilatePartitioningCoeff = perennialCropParams->cultivarParams.pc_AssimilatePartitioningCoeff;
@@ -5009,7 +5009,7 @@ void CropGrowth::fc_UpdateCropParametersForPerennial()
 *
 * Method is called after calculation of the developmental stage.
 */
-bool CropGrowth::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage)
+bool CropModule::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	if (pc_NumberOfDevelopmentalStages == 6)
 		return (old_dev_stage == 2 && new_dev_stage == 3);
@@ -5025,7 +5025,7 @@ bool CropGrowth::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage)
 *
 * Method is called after calculation of the developmental stage.
 */
-bool CropGrowth::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage)
+bool CropModule::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	// corn crops
 	if (pc_NumberOfDevelopmentalStages == 6)
@@ -5042,7 +5042,7 @@ bool CropGrowth::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage)
  * @return Julian day of crop's anthesis
  */
 int
-CropGrowth::getAnthesisDay() const
+CropModule::getAnthesisDay() const
 {
 	//cout << "Getter anthesis " << vc_AnthesisDay << endl;
 	return vc_AnthesisDay;
@@ -5053,7 +5053,7 @@ CropGrowth::getAnthesisDay() const
 * @return Julian day of crop's maturity.
 */
 int
-CropGrowth::getMaturityDay() const
+CropModule::getMaturityDay() const
 {
 	//cout << "Getter maturity " << vc_MaturityDay << endl;
 	return vc_MaturityDay;
@@ -5061,14 +5061,14 @@ CropGrowth::getMaturityDay() const
 
 
 bool
-CropGrowth::maturityReached() const
+CropModule::maturityReached() const
 {
 	debug() << "vc_MaturityReached: " << vc_MaturityReached << endl;
 	return vc_MaturityReached;
 }
 
 
-void CropGrowth::setStage(size_t newStage)
+void CropModule::setStage(size_t newStage)
 {
 	vc_CurrentTotalTemperatureSum = 0.0;
 	for (size_t stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++)

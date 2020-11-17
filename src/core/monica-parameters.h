@@ -293,18 +293,18 @@ namespace Monica
 	 * Simple data structure that holds information about mineral fertiliser.
 	 * @author Xenia Holtmann, Claas Nendel
 	 */
-	class DLL_API MineralFertiliserParameters : public Tools::Json11Serializable
+	class DLL_API MineralFertilizerParameters : public Tools::Json11Serializable
 	{
 	public:
-		MineralFertiliserParameters() {}
+		MineralFertilizerParameters() {}
 
-		MineralFertiliserParameters(mas::models::monica::MineralFertilizerParameters::Reader reader) { deserialize(reader); }
+		MineralFertilizerParameters(mas::models::monica::MineralFertilizerParameters::Reader reader) { deserialize(reader); }
 
 		void deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader);
 
-		MineralFertiliserParameters(json11::Json object);
+		MineralFertilizerParameters(json11::Json object);
 
-		MineralFertiliserParameters(const std::string& id,
+		MineralFertilizerParameters(const std::string& id,
 			const std::string& name,
 			double carbamid,
 			double no3,
@@ -356,17 +356,17 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API NMinUserParameters : public Tools::Json11Serializable
+	struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable
 	{
-		NMinUserParameters() {}
+		NMinApplicationParameters() {}
 
-		NMinUserParameters(double min, double max, int delayInDays);
+		NMinApplicationParameters(double min, double max, int delayInDays);
 
-		NMinUserParameters(mas::models::monica::NMinApplicationParameters::Reader reader) { deserialize(reader); }
+		NMinApplicationParameters(mas::models::monica::NMinApplicationParameters::Reader reader) { deserialize(reader); }
 
 		void deserialize(mas::models::monica::NMinApplicationParameters::Reader reader);
 
-		NMinUserParameters(json11::Json object);
+		NMinApplicationParameters(json11::Json object);
 
 		void serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const;
 
@@ -684,8 +684,8 @@ namespace Monica
 		AutomaticIrrigationParameters p_AutoIrrigationParams;
 
 		bool p_UseNMinMineralFertilisingMethod{ false };
-		MineralFertiliserParameters p_NMinFertiliserPartition;
-		NMinUserParameters p_NMinUserParams;
+		MineralFertilizerParameters p_NMinFertiliserPartition;
+		NMinApplicationParameters p_NMinUserParams;
 
 		bool p_UseSecondaryYields{ true };
 		bool p_UseAutomaticHarvestTrigger{ false };
