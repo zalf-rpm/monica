@@ -27,6 +27,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <tuple>
 #include <limits>
 
+#include <capnp/message.h>
+#include <capnp/serialize-packed.h>
+#include <kj/filesystem.h>
+#include <kj/string.h>
+#include "monica/monica_state.capnp.h"
+
 #include "run-monica.h"
 #include "tools/debug.h"
 #include "climate/climate-common.h"
@@ -639,6 +645,19 @@ void Monica::initPathToDB(const std::string& initialPathToIniFile)
 	Db::dbConnectionParameters(initialPathToIniFile);
 }
 
+void serializeFullState(MonicaModel& monica) {
+	capnp::MallocMessageBuilder message;
+	auto monicaState = message.initRoot<mas::models::monica::MonicaModelState>();
+	monica.serialize(monicaState);
+
+	auto fs = kj::newDiskFilesystem();
+	const auto& curDir = fs->getCurrent();
+	auto tempFile = curDir.openFile(kj::Path(kj::str("monica_state.ser")), kj::WriteMode::CREATE);
+	KJ_IF_MAYBE(fd, tempFile->getFd()) {
+		capnp::writePackedMessageToFd(*fd, message);
+	} 
+}
+
 Output Monica::runMonica(Env env)
 {
 	Output out;
@@ -876,6 +895,8 @@ Output Monica::runMonica(Env env)
 
 			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate + 1);
 		}
+
+		serializeFullState(monica);
 	}
 	
 	for(auto& sd : store)

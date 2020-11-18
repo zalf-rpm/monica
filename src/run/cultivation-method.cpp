@@ -209,7 +209,7 @@ bool Sowing::apply(MonicaModel* model)
 	Workstep::apply(model);
 
 	debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
-	model->seedCrop(_crop);
+	model->seedCrop(_crop.get());
 	model->addEvent("Sowing");
 
 	return true;

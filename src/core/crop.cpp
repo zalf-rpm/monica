@@ -75,6 +75,14 @@ Crop::Crop(json11::Json j)
 	merge(j);
 }
 
+void Crop::deserialize(mas::models::monica::CropState::Reader reader) {
+
+}
+
+void Crop::serialize(mas::models::monica::CropState::Builder builder) const {
+
+}
+
 Errors Crop::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
