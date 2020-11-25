@@ -695,6 +695,10 @@ namespace Monica
 
 		int p_StartPVIndex{ 0 };
 		int p_JulianDayAutomaticFertilising{ 0 };
+
+		bool serializeMonicaStateAtEnd{ false };
+		bool loadSerializedMonicaStateAtStart{ false };
+		std::string pathToSerializationFile;
 	};
 
 	//----------------------------------------------------------------------------

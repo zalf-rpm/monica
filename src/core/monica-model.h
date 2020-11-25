@@ -282,14 +282,9 @@ namespace Monica
 
 	private:
 		kj::Own<SiteParameters> _sitePs;
-		//const SoilMoistureModuleParameters _smPs;
 		kj::Own<EnvironmentParameters> _envPs;
 		kj::Own<CropModuleParameters> _cropPs;
-		//const SoilTemperatureModuleParameters _soilTempPs;
-		//const SoilTransportModuleParameters _soilTransPs;
-		//const SoilOrganicModuleParameters _soilOrganicPs;
 		kj::Own<SimulationParameters> _simPs;
-		//std::string _pathToOutputDir;
 		kj::Own<MeasuredGroundwaterTableInformation> _groundwaterInformation;
 
 		kj::Own<SoilColumn> _soilColumn; //!< main soil data structure
@@ -297,7 +292,7 @@ namespace Monica
 		kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
 		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
 		kj::Own<SoilTransport> _soilTransport; //!< transport code
-		Crop* _currentCrop; //! currently possibly planted crop
+		Crop* _currentCrop{ nullptr }; //! currently possibly planted crop
 		kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 
 		//! store applied fertiliser during one production process
@@ -336,6 +331,10 @@ namespace Monica
 		double vs_GroundwaterDepth{0.0};
 
 		int _cultivationMethodCount{0};
+
+    public:
+      uint critPos{ 0 };
+      uint cmitPos{ 0 };
 	};
 }
 

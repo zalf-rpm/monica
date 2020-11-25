@@ -170,7 +170,7 @@ namespace Monica
   class SoilMoisture
   {
   public:
-    SoilMoisture(MonicaModel* monica, kj::Own<SoilMoistureModuleParameters> smPs);
+    SoilMoisture(MonicaModel* monica, const SoilMoistureModuleParameters& smPs);
 
     SoilMoisture(MonicaModel* monica, mas::models::monica::SoilMoistureModuleState::Reader reader);
     void deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader);
@@ -310,7 +310,7 @@ namespace Monica
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
     MonicaModel* monica{ nullptr };
-    kj::Own<SoilMoistureModuleParameters> _params;
+    SoilMoistureModuleParameters _params;
     const EnvironmentParameters& envPs;
     const CropModuleParameters& cropPs;
 		const size_t vm_NumberOfLayers{0};

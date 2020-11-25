@@ -76,17 +76,13 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
 		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
     _sitePs->vs_SoilParameters,
 		cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth))
-  , _soilTemperature(kj::heap<SoilTemperature>(*this, kj::heap<SoilTemperatureModuleParameters>(cpp.userSoilTemperatureParameters)))
-  //, _soilMoisture(kj::heap<SoilMoisture>(this, kj::heap<SoilMoistureModuleParameters>(cpp.userSoilMoistureParameters)))
-//  , _soilOrganic(kj::heap<SoilOrganic>(_soilColumn.get(),
-//    kj::heap<SoilOrganicModuleParameters>(cpp.userSoilOrganicParameters)))
-//  , _soilTransport(kj::heap<SoilTransport>(*_soilColumn.get(), *_sitePs,
-//    kj::heap<SoilTransportModuleParameters>(cpp.userSoilTransportParameters),
-//    _envPs->p_LeachingDepth, _envPs->p_timeStep, _cropPs->pc_MinimumAvailableN))
+  , _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters))
+  , _soilMoisture(kj::heap<SoilMoisture>(this, cpp.userSoilMoistureParameters))
+  , _soilOrganic(kj::heap<SoilOrganic>(_soilColumn.get(), cpp.userSoilOrganicParameters))
+  , _soilTransport(kj::heap<SoilTransport>(*_soilColumn.get(), *_sitePs, cpp.userSoilTransportParameters,
+    _envPs->p_LeachingDepth, _envPs->p_timeStep, _cropPs->pc_MinimumAvailableN))
 //  , vw_AtmosphericCO2Concentration(_envPs->p_AtmosphericCO2)
 {
-	auto smmp = kj::mv(kj::heap<SoilMoistureModuleParameters>(cpp.userSoilMoistureParameters));
-	_soilMoisture = kj::mv(kj::heap<SoilMoisture>(this, smmp));
 }
 
 Date deserializeDate(mas::common::Date::Reader reader) {
@@ -285,10 +281,10 @@ void MonicaModel::seedCrop(Crop* crop)
     if (_currentCrop->perennialCropParameters())
       _currentCropModule->setPerennialCropParameters(_currentCrop->perennialCropParameters());
 
-    _soilTransport->put_Crop(_currentCropModule);
-    _soilColumn->put_Crop(_currentCropModule);
-    _soilMoisture->put_Crop(_currentCropModule);
-    _soilOrganic->put_Crop(_currentCropModule);
+    _soilTransport->put_Crop(_currentCropModule.get());
+    _soilColumn->put_Crop(_currentCropModule.get());
+    _soilMoisture->put_Crop(_currentCropModule.get());
+    _soilOrganic->put_Crop(_currentCropModule.get());
 
 //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
 //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
@@ -433,6 +429,7 @@ void MonicaModel::harvestCurrentCrop(bool exported,
 	_clearCropUponNextDay = true;
 }
 
+/*
 void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropModule object
@@ -458,7 +455,9 @@ void MonicaModel::fruitHarvestCurrentCrop(double percentage, bool exported)
 		}
 	}
 }
+*/
 
+/*
 void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropModule object
@@ -484,7 +483,9 @@ void MonicaModel::leafPruningCurrentCrop(double percentage, bool exported)
 		}
 	}
 }
+*/
 
+/*
 void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropModule object
@@ -515,8 +516,10 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 		}
 	}
 }
+*/
 
-	void MonicaModel::shootPruningCurrentCrop(double percentage, bool exported)
+/*
+void MonicaModel::shootPruningCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropModule object
 	if (_currentCrop && _currentCrop->isValid())
@@ -546,6 +549,8 @@ void MonicaModel::tipPruningCurrentCrop(double percentage, bool exported)
 		}
 	}
 }
+*/
+
 /**
  * @brief Simulating plowing or incorporating of total crop.
  *
@@ -579,6 +584,7 @@ void MonicaModel::incorporateCurrentCrop()
  * Only removes some biomass of crop but not harvesting the crop.
  */
 
+/*
 void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 {
 	//could be just a fallow, so there might be no CropModule object
@@ -619,6 +625,7 @@ void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
 		}
 	}
 }
+*/
 
 /**
  * @brief Applying of fertilizer.
@@ -674,13 +681,12 @@ void MonicaModel::dailyReset()
 
 	if(_clearCropUponNextDay)
 	{
-		delete _currentCropModule;
-		_currentCropModule = nullptr;
-		_currentCrop = nullptr;
 		_soilTransport->remove_Crop();
 		_soilColumn->remove_Crop();
 		_soilMoisture->remove_Crop();
 		_soilOrganic->remove_Crop();
+		_currentCropModule = nullptr;
+		_currentCrop = nullptr;
 
 		_clearCropUponNextDay = false;
 	}

@@ -521,6 +521,30 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	class DLL_API SaveMonicaState : public Workstep {
+	public:
+		SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile);
+
+		SaveMonicaState(json11::Json object);
+
+		virtual SaveMonicaState* clone() const { return new SaveMonicaState(*this); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+
+		virtual std::string type() const { return "SaveMonicaState"; }
+
+		virtual bool apply(MonicaModel* model);
+
+		std::string pathToSerializedStateFile() const { return _pathToSerializedStateFile; }
+
+	private:
+		std::string _pathToSerializedStateFile;
+	};
+
+	//----------------------------------------------------------------------------
+
 	class DLL_API Irrigation : public Workstep
 	{
 	public:

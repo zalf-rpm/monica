@@ -55,7 +55,7 @@ namespace Monica
   class SoilTemperature
   {
   public:
-    SoilTemperature(MonicaModel& monica, kj::Own<SoilTemperatureModuleParameters> params);
+    SoilTemperature(MonicaModel& monica, const SoilTemperatureModuleParameters& params);
 
     SoilTemperature(MonicaModel& monica, mas::models::monica::SoilTemperatureModuleState::Reader reader);
     void deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader);
@@ -79,7 +79,7 @@ namespace Monica
     MonicaModel& monica;
     SoilLayer _soilColumn_vt_GroundLayer;
     SoilLayer _soilColumn_vt_BottomLayer;
-    kj::Own<SoilTemperatureModuleParameters> _params;
+    SoilTemperatureModuleParameters _params;
 
     /*
     struct SC {

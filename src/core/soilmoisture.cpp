@@ -658,11 +658,11 @@ FrostComponent::updateLambdaRedux() {
  * @param stps Site parameters
  * @param mm Monica model
  */
-SoilMoisture::SoilMoisture(MonicaModel* mm, kj::Own<SoilMoistureModuleParameters> smPs)
+SoilMoisture::SoilMoisture(MonicaModel* mm, const SoilMoistureModuleParameters& smPs)
   : soilColumn(mm->soilColumnNC())
   , siteParameters(mm->siteParameters())
   , monica(mm)
-  , _params(kj::mv(smPs))
+  , _params(smPs)
   , envPs(mm->environmentParameters())
   , cropPs(mm->cropParameters())
   , vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1)
@@ -687,15 +687,15 @@ SoilMoisture::SoilMoisture(MonicaModel* mm, kj::Own<SoilMoistureModuleParameters
 , vm_SoilPoreVolume(vm_NumberOfLayers, 0.0)
 , vm_Transpiration(vm_NumberOfLayers, 0.0) //intern
 , vm_WaterFlux(vm_NumberOfLayers, 0.0)
-, snowComponent(kj::heap<SnowComponent>(soilColumn, *smPs.get()))
-, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs->pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
+, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
+, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
   debug() << "Constructor: SoilMoisture" << endl;
 
-  vm_HydraulicConductivityRedux = smPs->pm_HydraulicConductivityRedux;
+  vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
   pt_TimeStep = envPs.p_timeStep;
-  vm_SurfaceRoughness = smPs->pm_SurfaceRoughness;
-  vm_GroundwaterDischarge = smPs->pm_GroundwaterDischarge;
-  pm_MaxPercolationRate = smPs->pm_MaxPercolationRate;
+  vm_SurfaceRoughness = smPs.pm_SurfaceRoughness;
+  vm_GroundwaterDischarge = smPs.pm_GroundwaterDischarge;
+  pm_MaxPercolationRate = smPs.pm_MaxPercolationRate;
   pm_LeachingDepth = envPs.p_LeachingDepth;
 
   //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
@@ -704,7 +704,7 @@ SoilMoisture::SoilMoisture(MonicaModel* mm, kj::Own<SoilMoistureModuleParameters
   pm_LeachingDepthLayer = int(std::floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
 
   for (int i = 0; i < vm_NumberOfLayers; i++) {
-    vm_SaturatedHydraulicConductivity.resize(vm_NumberOfLayers, smPs->pm_SaturatedHydraulicConductivity); // original [8640 mm d-1]
+    vm_SaturatedHydraulicConductivity.resize(vm_NumberOfLayers, smPs.pm_SaturatedHydraulicConductivity); // original [8640 mm d-1]
   }
 
   //  double vm_GroundwaterDepth = 0.0;
@@ -731,7 +731,7 @@ SoilMoisture::SoilMoisture(MonicaModel* mm, mas::models::monica::SoilMoistureMod
   , envPs(mm->environmentParameters())
   , cropPs(mm->cropParameters())
   //, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
-  //, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs->pm_HydraulicConductivityRedux, envPs.p_timeStep)) 
+  //, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) 
 {
   deserialize(reader);
 }
@@ -742,7 +742,7 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
 
 void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
   builder.initModuleParams();
-  _params->serialize(builder.getModuleParams());
+  _params.serialize(builder.getModuleParams());
 }
 
 /*!
@@ -805,7 +805,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   } else {
     vc_CropPlanted = false;
-    vc_KcFactor = _params->pm_KcFactor;
+    vc_KcFactor = _params.pm_KcFactor;
     vc_NetPrecipitation = vw_Precipitation;
     vc_PercentageSoilCoverage = 0.0;
   }
@@ -1108,7 +1108,7 @@ void SoilMoisture::fm_CapillaryRise() {
     for (int i = int(vm_StartLayer); i >= 0; i--) {
       std::string vs_SoilTexture = soilColumn[i].vs_SoilTexture();
       assert(!vs_SoilTexture.empty());
-      pm_CapillaryRiseRate = _params->getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
+      pm_CapillaryRiseRate = _params.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
       if (pm_CapillaryRiseRate < vm_CapillaryRiseRate)
         vm_CapillaryRiseRate = pm_CapillaryRiseRate;
@@ -1283,41 +1283,41 @@ void SoilMoisture::fm_PercolationWithoutGroundwater() {
   double vm_PercolationFactor;
   double vm_LambdaReduced;
 
-  for (int i_Layer = 0; i_Layer < vm_NumberOfLayers - 1; i_Layer++) {
+  for (int i = 0; i < vm_NumberOfLayers - 1; i++) {
 
-    vm_SoilMoisture[i_Layer + 1] += vm_PercolationRate[i_Layer] / 1000.0 / vm_LayerThickness[i_Layer];
+    vm_SoilMoisture[i + 1] += vm_PercolationRate[i] / 1000.0 / vm_LayerThickness[i];
 
-    if ((vm_SoilMoisture[i_Layer + 1] > vm_FieldCapacity[i_Layer + 1])) {
+    if ((vm_SoilMoisture[i + 1] > vm_FieldCapacity[i + 1])) {
 
       // too much water for this layer so some water is released to layers below
-      vm_GravitationalWater[i_Layer + 1] = (vm_SoilMoisture[i_Layer + 1] - vm_FieldCapacity[i_Layer + 1]) * 1000.0
+      vm_GravitationalWater[i + 1] = (vm_SoilMoisture[i + 1] - vm_FieldCapacity[i + 1]) * 1000.0
         * vm_LayerThickness[0];
-      vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent->getLambdaRedux(i_Layer + 1);
-      vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[i_Layer + 1]);
-      vm_PercolationRate[i_Layer + 1] = (vm_GravitationalWater[i_Layer + 1] * vm_GravitationalWater[i_Layer + 1]
+      vm_LambdaReduced = vm_Lambda[i + 1] * frostComponent->getLambdaRedux(i + 1);
+      vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[i + 1]);
+      vm_PercolationRate[i + 1] = (vm_GravitationalWater[i + 1] * vm_GravitationalWater[i + 1]
         * vm_LambdaReduced) / vm_PercolationFactor;
 
-      if (vm_PercolationRate[i_Layer + 1] > pm_MaxPercolationRate) {
-        vm_PercolationRate[i_Layer + 1] = pm_MaxPercolationRate;
+      if (vm_PercolationRate[i + 1] > pm_MaxPercolationRate) {
+        vm_PercolationRate[i + 1] = pm_MaxPercolationRate;
       }
 
-      vm_GravitationalWater[i_Layer + 1] = vm_GravitationalWater[i_Layer + 1] - vm_PercolationRate[i_Layer + 1];
+      vm_GravitationalWater[i + 1] = vm_GravitationalWater[i + 1] - vm_PercolationRate[i + 1];
 
-      if (vm_GravitationalWater[i_Layer + 1] < 0.0) {
-        vm_GravitationalWater[i_Layer + 1] = 0.0;
+      if (vm_GravitationalWater[i + 1] < 0.0) {
+        vm_GravitationalWater[i + 1] = 0.0;
       }
 
-      vm_SoilMoisture[i_Layer + 1] = vm_FieldCapacity[i_Layer + 1] + (vm_GravitationalWater[i_Layer + 1]
-        / 1000.0 / vm_LayerThickness[i_Layer + 1]);
+      vm_SoilMoisture[i + 1] = vm_FieldCapacity[i + 1] + (vm_GravitationalWater[i + 1]
+        / 1000.0 / vm_LayerThickness[i + 1]);
     } else {
 
       // no water will be released in other layers
-      vm_PercolationRate[i_Layer + 1] = 0.0;
-      vm_GravitationalWater[i_Layer + 1] = 0.0;
+      vm_PercolationRate[i + 1] = 0.0;
+      vm_GravitationalWater[i + 1] = 0.0;
     }
 
-    vm_WaterFlux[i_Layer + 1] = vm_PercolationRate[i_Layer];
-    vm_GroundwaterAdded = vm_PercolationRate[i_Layer + 1];
+    vm_WaterFlux[i + 1] = vm_PercolationRate[i];
+    vm_GroundwaterAdded = vm_PercolationRate[i + 1];
 
   } // for
 
@@ -1409,14 +1409,14 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   double vm_SnowDepth = snowComponent->getVm_SnowDepth();
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
-  pm_EvaporationZeta = _params->pm_EvaporationZeta; // Parameterdatei
+  pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
 
   // Das sind die Steuerungsparameter für die Steigung der Entzugsfunktion
-  vm_XSACriticalSoilMoisture = _params->pm_XSACriticalSoilMoisture;
+  vm_XSACriticalSoilMoisture = _params.pm_XSACriticalSoilMoisture;
 
   /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
    * da muss was dran gemacht werden */
-  pm_MaximumEvaporationImpactDepth = _params->pm_MaximumEvaporationImpactDepth; // Parameterdatei
+  pm_MaximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
 
 
   // If a crop grows, ETp is taken from crop module
@@ -1954,6 +1954,6 @@ void SoilMoisture::put_Crop(CropModule* c) {
 }
 
 void SoilMoisture::remove_Crop() {
-  crop = NULL;
+  crop = nullptr;
 }
 

@@ -39,10 +39,10 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, kj::Own<SoilTransportModuleParameters> params,
+SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const SoilTransportModuleParameters& params,
   double p_LeachingDepth, double p_timeStep, double pc_MinimumAvailableN)
   : soilColumn(sc)
-  , _params(kj::mv(params))
+  , _params(params)
   //, vs_NumberOfLayers(sc.vs_NumberOfLayers()) //extern
   , vq_Convection(sc.vs_NumberOfLayers(), 0.0)
   , vq_DiffusionCoeff(sc.vs_NumberOfLayers(), 0.0)
@@ -70,7 +70,7 @@ void SoilTransport::deserialize(mas::models::monica::SoilTransportModuleState::R
 
 void SoilTransport::serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const {
   builder.initModuleParams();
-  _params->serialize(builder.getModuleParams());
+  _params.serialize(builder.getModuleParams());
 }
 
 
@@ -186,9 +186,9 @@ void SoilTransport::fq_NUptake() {
  * Kersebaum 1989
  */
 void SoilTransport::fq_NTransport(double leachingDepth, double timeStepFactor) {
-  double diffusionCoeffStandard = _params->pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
-  double AD = _params->pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
-  double dispersionLength = _params->pq_DispersionLength; // [m]
+  double diffusionCoeffStandard = _params.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
+  double AD = _params.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
+  double dispersionLength = _params.pq_DispersionLength; // [m]
   double soilProfile = 0.0;
   size_t leachingDepthLayerIndex = 0;
   const auto nols = soilColumn.vs_NumberOfLayers();
@@ -392,6 +392,6 @@ void SoilTransport::put_Crop(CropModule* c) {
 }
 
 void SoilTransport::remove_Crop() {
-  crop = NULL;
+  crop = nullptr;
 }
 

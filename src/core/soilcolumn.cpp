@@ -691,7 +691,7 @@ void SoilColumn::put_Crop(CropModule* c) {
  * @return crop object is NULL
  */
 void SoilColumn::remove_Crop() {
-	cropGrowth = NULL;
+	cropGrowth = nullptr;
 }
 
 /**

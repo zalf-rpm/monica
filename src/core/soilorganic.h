@@ -54,8 +54,7 @@ namespace Monica
   class SoilOrganic
   {
   public:
-    SoilOrganic(SoilColumn* soilColumn,
-                kj::Own<SoilOrganicModuleParameters> userParams);
+    SoilOrganic(SoilColumn* soilColumn, const SoilOrganicModuleParameters& params);
 
     SoilOrganic(SoilColumn* sc,
       mas::models::monica::SoilOrganicModuleState::Reader reader)
@@ -172,7 +171,7 @@ namespace Monica
 		//void fo_distributeDeadRootBiomass();
 
     SoilColumn* soilColumn{ nullptr };
-    kj::Own<SoilOrganicModuleParameters> _params;
+    SoilOrganicModuleParameters _params;
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};

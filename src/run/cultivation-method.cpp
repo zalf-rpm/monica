@@ -23,6 +23,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 #include <mutex>
 
+#include <capnp/message.h>
+#include <capnp/serialize.h>
+#include <kj/filesystem.h>
+#include <kj/string.h>
+#include "monica/monica_state.capnp.h"
+
 #include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
@@ -506,10 +512,13 @@ bool Harvest::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
-	if (model->cropGrowth())
-	{
+	if (model->cropGrowth()) {
 		auto crop = model->currentCrop();
-
+		debug() << "harvesting crop: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
+		model->harvestCurrentCrop(_exported, _optCarbMgmtData);
+		model->addEvent("Harvest");
+	}
+		/*
 		if (_method == "total"
 			|| _method == "fruitHarvest"
 			|| _method == "cutting")
@@ -547,6 +556,7 @@ bool Harvest::apply(MonicaModel* model)
 		debug() << "crop was already harvested. This must be the fallback harvest application ";
 		debug() << "that is not necessary anymore and should be ignored" << endl;
 	}
+	*/
 
 	return true;
 }
@@ -1117,6 +1127,51 @@ bool SetValue::apply(MonicaModel* model)
 	}
 
 	model->addEvent("SetValue");
+
+	return true;
+}
+
+//------------------------------------------------------------------------------
+
+SaveMonicaState::SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile)
+	: Workstep(at)
+	, _pathToSerializedStateFile(pathToSerializedStateFile)
+{}
+
+SaveMonicaState::SaveMonicaState(json11::Json j) {
+	merge(j);
+}
+
+Errors SaveMonicaState::merge(json11::Json j) {
+	Errors res = Workstep::merge(j);
+	set_string_value(_pathToSerializedStateFile, j, "pathToSerializedStateFile");
+	return res;
+}
+
+json11::Json SaveMonicaState::to_json() const {
+	return json11::Json::object
+	{ {"type", type()}
+  , {"pathToSerializedStateFile", _pathToSerializedStateFile}
+	};
+}
+
+bool SaveMonicaState::apply(MonicaModel* model) {
+	Workstep::apply(model);
+
+	auto fs = kj::newDiskFilesystem();
+	const auto& curDir = fs->getCurrent();
+	auto file = curDir.openFile(kj::Path(kj::str(_pathToSerializedStateFile)), kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
+
+	capnp::MallocMessageBuilder message;
+	auto runtimeState = message.initRoot<mas::models::monica::RuntimeState>();
+	runtimeState.setCritPos(model->critPos);
+	runtimeState.setCmitPos(model->cmitPos);
+	auto modelState = runtimeState.initModelState();
+	model->serialize(modelState);
+	auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
+	file->writeAll(flatArray.asBytes());
+
+	model->addEvent("SaveMonicaState");
 
 	return true;
 }

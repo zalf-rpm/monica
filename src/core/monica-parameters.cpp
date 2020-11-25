@@ -1011,6 +1011,10 @@ Errors SimulationParameters::merge(json11::Json j)
   set_double_value(p_LayerThickness, j, "LayerThickness");
 
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
+
+  set_bool_value(serializeMonicaStateAtEnd, j, "serializeMonicaStateAtEnd");
+  set_bool_value(loadSerializedMonicaStateAtStart, j, "loadSerializedMonicaStateAtStart");
+  set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
   
 	return res;
 }
@@ -1037,6 +1041,9 @@ json11::Json SimulationParameters::to_json() const
   ,{"NumberOfLayers", p_NumberOfLayers}
   ,{"LayerThickness", p_LayerThickness}
   ,{"StartPVIndex", p_StartPVIndex}
+  ,{"serializeMonicaStateAtEnd", serializeMonicaStateAtEnd}
+  ,{"loadSerializedMonicaStateAtStart", loadSerializedMonicaStateAtStart}
+  ,{"pathToSerializationFile", pathToSerializationFile}
 	};
 }
 
