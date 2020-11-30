@@ -1140,7 +1140,7 @@ Monica::readUserSoilOrganicParametersFromDatabase(string type,
 	return user_soil_organic;
 }
 
-CentralParameterProvider
+CentralParameterProvider&&
 Monica::readUserParameterFromDatabase(int iType,
                                       std::string abstractDbSchema)
 {
@@ -1161,7 +1161,7 @@ Monica::readUserParameterFromDatabase(int iType,
 	cpp.userSoilTransportParameters = readUserSoilTransportParametersFromDatabase(type, abstractDbSchema);
 	cpp.simulationParameters = readUserSimParametersFromDatabase(type, abstractDbSchema);
 
-	return cpp;
+	return kj::mv(cpp);
 }
 
 void Monica::writeUserParameters(int type, string path, std::string abstractDbSchema)

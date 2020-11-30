@@ -27,6 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilcolumn.h"
 #include "monica-model.h"
 #include "tools/debug.h"
+#include "tools/helper.h"
 
 using namespace std;
 using namespace Climate;
@@ -244,12 +245,51 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, mas::models::monica::SoilTempe
 }
 
 void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader) {
-
+	vt_SoilSurfaceTemperature = reader.getSoilSurfaceTemperature();
+	//soilColumn                  @1  :SoilColumnState;
+	//monica                      @2  :MonicaModelState;
+	_soilColumn_vt_GroundLayer.deserialize(reader.getSoilColumnVtGroundLayer());
+	_soilColumn_vt_BottomLayer.deserialize(reader.getSoilColumnVtBottomLayer());
+	_params.deserialize(reader.getModuleParams());
+	vt_NumberOfLayers = reader.getNumberOfLayers();
+	vs_NumberOfLayers = reader.getVsNumberOfLayers();
+	setFromCapnpList(vs_SoilMoisture_const, reader.getVsSoilMoistureConst());
+	setFromCapnpList(vt_SoilTemperature, reader.getSoilTemperature());
+	setFromCapnpList(vt_V, reader.getV());
+	setFromCapnpList(vt_VolumeMatrix, reader.getVolumeMatrix());
+	setFromCapnpList(vt_VolumeMatrixOld, reader.getVolumeMatrixOld());
+	setFromCapnpList(vt_B, reader.getB());
+	setFromCapnpList(vt_MatrixPrimaryDiagonal, reader.getMatrixPrimaryDiagonal());
+	setFromCapnpList(vt_MatrixSecundaryDiagonal, reader.getMatrixSecundaryDiagonal());
+	vt_HeatFlow = reader.getHeatFlow();
+	setFromCapnpList(vt_HeatConductivity, reader.getHeatConductivity());
+	setFromCapnpList(vt_HeatConductivityMean, reader.getHeatConductivityMean());
+	setFromCapnpList(vt_HeatCapacity, reader.getHeatCapacity());
+	_dampingFactor = reader.getDampingFactor();
 }
 
 void SoilTemperature::serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const {
-	builder.initModuleParams();
-	_params.serialize(builder.getModuleParams());
+	builder.setSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
+	//soilColumn                  @1  :SoilColumnState;
+	//monica                      @2  :MonicaModelState;
+	_soilColumn_vt_GroundLayer.serialize(builder.initSoilColumnVtGroundLayer());
+	_soilColumn_vt_BottomLayer.serialize(builder.initSoilColumnVtBottomLayer());
+	_params.serialize(builder.initModuleParams());
+	builder.setNumberOfLayers(vt_NumberOfLayers);
+	builder.setVsNumberOfLayers(vs_NumberOfLayers);
+	setCapnpList(vs_SoilMoisture_const, builder.initVsSoilMoistureConst(vs_SoilMoisture_const.size()));
+	setCapnpList(vt_SoilTemperature, builder.initSoilTemperature(vt_SoilTemperature.size()));
+	setCapnpList(vt_V, builder.initV(vt_V.size()));
+	setCapnpList(vt_VolumeMatrix, builder.initVolumeMatrix(vt_VolumeMatrix.size()));
+	setCapnpList(vt_VolumeMatrixOld, builder.initVolumeMatrixOld(vt_VolumeMatrixOld.size()));
+	setCapnpList(vt_B, builder.initB(vt_B.size()));
+	setCapnpList(vt_MatrixPrimaryDiagonal, builder.initMatrixPrimaryDiagonal(vt_MatrixPrimaryDiagonal.size()));
+	setCapnpList(vt_MatrixSecundaryDiagonal, builder.initMatrixSecundaryDiagonal(vt_MatrixSecundaryDiagonal.size()));
+	builder.setHeatFlow(vt_HeatFlow);
+	setCapnpList(vt_HeatConductivity, builder.initHeatConductivity(vt_HeatConductivity.size()));
+	setCapnpList(vt_HeatConductivityMean, builder.initHeatConductivityMean(vt_HeatConductivityMean.size()));
+	setCapnpList(vt_HeatCapacity, builder.initHeatCapacity(vt_HeatCapacity.size()));
+	builder.setDampingFactor(_dampingFactor);
 }
 
 //! Single calculation step

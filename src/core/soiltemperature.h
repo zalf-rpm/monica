@@ -146,8 +146,8 @@ namespace Monica
     };
     kj::Own<SC> soilColumn;
 
-    const std::size_t vt_NumberOfLayers;
-    const std::size_t vs_NumberOfLayers;
+    std::size_t vt_NumberOfLayers;
+    std::size_t vs_NumberOfLayers;
     std::vector<double> vs_SoilMoisture_const;
     std::vector<double> vt_SoilTemperature;
     std::vector<double> vt_V;

@@ -313,8 +313,8 @@ namespace Monica
     SoilMoistureModuleParameters _params;
     const EnvironmentParameters& envPs;
     const CropModuleParameters& cropPs;
-		const size_t vm_NumberOfLayers{0};
-		const size_t vs_NumberOfLayers{0};
+		size_t vm_NumberOfLayers{0};
+		size_t vs_NumberOfLayers{0};
 
 		double vm_ActualEvaporation{0.0}; //!< Sum of evaporation of all layers [mm]
 		double vm_ActualEvapotranspiration{0.0}; //!< Sum of evaporation and transpiration of all layers [mm]

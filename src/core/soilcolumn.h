@@ -224,7 +224,7 @@ namespace Monica
   public:
     SoilColumn(double ps_LayerThickness,
                double ps_MaxMineralisationDepth,
-               const Soil::SoilPMsPtr soilParams,
+               Soil::SoilPMs* soilParams,
                double pm_CriticalMoistureDepth);
 
     SoilColumn(mas::models::monica::SoilColumnState::Reader reader) { deserialize(reader); }

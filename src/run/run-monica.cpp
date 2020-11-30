@@ -101,7 +101,7 @@ json11::Json CropRotation::to_json() const
 
 //-----------------------------------------------------------------------------
 
-Env::Env(CentralParameterProvider cpp)
+Env::Env(CentralParameterProvider&& cpp)
 	: params(cpp)
 {}
 

@@ -130,11 +130,11 @@ double SoilLayer::vs_SoilMoisture_pF()
  * @param soilParams Soil Parameter
  */
 SoilColumn::SoilColumn(double ps_LayerThickness,
-	double ps_MaxMineralisationDepth,
-	const SoilPMsPtr soilParams,
-	double pm_CriticalMoistureDepth)
-	: ps_MaxMineralisationDepth(ps_MaxMineralisationDepth)
-	, pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
+  double ps_MaxMineralisationDepth,
+  SoilPMs* soilParams,
+  double pm_CriticalMoistureDepth)
+  : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth)
+  , pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
 {
 	debug() << "Constructor: SoilColumn " << (soilParams ? soilParams->size() : 0) << endl;
 	if (soilParams)
@@ -145,11 +145,39 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
 }
 
 void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader) {
-
+	vs_SurfaceWaterStorage = reader.getVsSurfaceWaterStorage();
+	vs_InterceptionStorage = reader.getVsInterceptionStorage();
+	vm_GroundwaterTable = reader.getVmGroundwaterTable();
+	vs_FluxAtLowerBoundary = reader.getVsFluxAtLowerBoundary();
+	vq_CropNUptake = reader.getVqCropNUptake();
+	vt_SoilSurfaceTemperature = reader.getVtSoilSurfaceTemperature();
+	vm_SnowDepth = reader.getVmSnowDepth();
+	ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
+	_vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
+	_vf_TopDressing = reader.getVfTopDressing();
+	_vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
+	_vf_TopDressingDelay = reader.getVfTopDressingDelay();
+	//reader.getCropModule                  @12 :CropModuleState;
+	//std::list<std::function<double()>> _delayedNMinApplications;
+	pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
 }
 
 void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder) const {
-
+	builder.setVsSurfaceWaterStorage(vs_SurfaceWaterStorage);
+	builder.setVsInterceptionStorage(vs_InterceptionStorage);
+	builder.setVmGroundwaterTable(vm_GroundwaterTable);
+	builder.setVsFluxAtLowerBoundary(vs_FluxAtLowerBoundary);
+	builder.setVqCropNUptake(vq_CropNUptake);
+	builder.setVtSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
+	builder.setVmSnowDepth(vm_SnowDepth);
+	builder.setPsMaxMineralisationDepth(ps_MaxMineralisationDepth);
+	builder.setVsNumberOfOrganicLayers(_vs_NumberOfOrganicLayers);
+	builder.setVfTopDressing(_vf_TopDressing);
+	_vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
+	builder.setVfTopDressingDelay(_vf_TopDressingDelay);
+	//builder.setCropModule                  @12 :CropModuleState;
+	//std::list<std::function<double()>> _delayedNMinApplications;
+	builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
 }
 
 

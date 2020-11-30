@@ -61,26 +61,26 @@ namespace
 //------------------------------------------------------------------------------
 
 MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
-  : _sitePs(kj::heap<SiteParameters>(cpp.siteParameters))
+  : _sitePs(kj::mv(cpp.siteParameters))
   //, _smPs(cpp.userSoilMoistureParameters)
-  , _envPs(kj::heap<EnvironmentParameters>(cpp.userEnvironmentParameters))
+  , _envPs(kj::mv(cpp.userEnvironmentParameters))
   , _cropPs(kj::heap<CropModuleParameters>(cpp.userCropParameters))
   //, _soilTempPs(cpp.userSoilTemperatureParameters)
   //, _soilTransPs(cpp.userSoilTransportParameters)
   //, _soilOrganicPs(cpp.userSoilOrganicParameters)
-  , _simPs(kj::heap<SimulationParameters>(cpp.simulationParameters))
+  , _simPs(kj::mv(cpp.simulationParameters))
   //, _writeOutputFiles(cpp.writeOutputFiles())
   //, _pathToOutputDir(cpp.pathToOutputDir())
-  , _groundwaterInformation(kj::heap<MeasuredGroundwaterTableInformation>(cpp.groundwaterInformation))
-  , _soilColumn(kj::heap<SoilColumn>(_simPs->p_LayerThickness,
+  , _groundwaterInformation(kj::mv(cpp.groundwaterInformation))
+  , _soilColumn(_simPs.p_LayerThickness,
 		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-    _sitePs->vs_SoilParameters,
-		cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth))
-  , _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters))
-  , _soilMoisture(kj::heap<SoilMoisture>(this, cpp.userSoilMoistureParameters))
-  , _soilOrganic(kj::heap<SoilOrganic>(_soilColumn.get(), cpp.userSoilOrganicParameters))
-  , _soilTransport(kj::heap<SoilTransport>(*_soilColumn.get(), *_sitePs, cpp.userSoilTransportParameters,
-    _envPs->p_LeachingDepth, _envPs->p_timeStep, _cropPs->pc_MinimumAvailableN))
+    _sitePs.vs_SoilParameters,
+		cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth)
+  , _soilTemperature(*this, cpp.userSoilTemperatureParameters)
+  , _soilMoisture(this, cpp.userSoilMoistureParameters)
+  , _soilOrganic(&_soilColumn, cpp.userSoilOrganicParameters)
+  , _soilTransport(_soilColumn, _sitePs, cpp.userSoilTransportParameters,
+    _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs->pc_MinimumAvailableN)
 //  , vw_AtmosphericCO2Concentration(_envPs->p_AtmosphericCO2)
 {
 }
@@ -96,16 +96,16 @@ void serializeDate(const Date& date, mas::common::Date::Builder builder) {
 }
 
 void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader reader) {
-	_sitePs = kj::heap<SiteParameters>(reader.getSitePs());
-	_envPs = kj::heap<EnvironmentParameters>(reader.getEnvPs());
+	_sitePs.deserialize(reader.getSitePs());
+	_envPs.deserialize(reader.getEnvPs());
 	_cropPs = kj::heap<CropModuleParameters>(reader.getCropPs());
-	_simPs = kj::heap<SimulationParameters>(reader.getSimPs());
-	_groundwaterInformation = kj::heap<MeasuredGroundwaterTableInformation>(reader.getGroundwaterInformation());
-	_soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn());
-	_soilTemperature = kj::heap<SoilTemperature>(*this, reader.getSoilTemperature());
-	_soilMoisture = kj::heap<SoilMoisture>(this, reader.getSoilMoisture());
-	_soilOrganic = kj::heap<SoilOrganic>(_soilColumn.get(), reader.getSoilOrganic());
-	_soilTransport = kj::heap<SoilTransport>(*_soilColumn.get(), reader.getSoilTransport());
+	_simPs.deserialize(reader.getSimPs());
+	_groundwaterInformation.deserialize(reader.getGroundwaterInformation());
+	_soilColumn.deserialize(reader.getSoilColumn());
+	_soilTemperature.deserialize(*this, reader.getSoilTemperature());
+	_soilMoisture.deserialize(this, reader.getSoilMoisture());
+	_soilOrganic.deserialize(&_soilColumn, reader.getSoilOrganic());
+	_soilTransport.deserialize(_soilColumn, reader.getSoilTransport());
 
 	if (reader.hasCurrentCrop()) _currentCrop = kj::heap<Crop>(reader.getCurrentCrop());
 	if (reader.hasCurrentCropModule()) _currentCropModule = 
@@ -163,16 +163,16 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 }
 
 void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder builder) {
-	_sitePs->serialize(builder.initSitePs());
-	_envPs->serialize(builder.initEnvPs());
+	_sitePs.serialize(builder.initSitePs());
+	_envPs.serialize(builder.initEnvPs());
 	_cropPs->serialize(builder.initCropPs());
-	_simPs->serialize(builder.initSimPs());
-	_groundwaterInformation->serialize(builder.initGroundwaterInformation());
-	_soilColumn->serialize(builder.initSoilColumn());
-	_soilTemperature->serialize(builder.initSoilTemperature());
-	_soilMoisture->serialize(builder.initSoilMoisture());
-	_soilOrganic->serialize(builder.initSoilOrganic());
-	_soilTransport->serialize(builder.initSoilTransport());
+	_simPs.serialize(builder.initSimPs());
+	_groundwaterInformation.serialize(builder.initGroundwaterInformation());
+	_soilColumn.serialize(builder.initSoilColumn());
+	_soilTemperature.serialize(builder.initSoilTemperature());
+	_soilMoisture.serialize(builder.initSoilMoisture());
+	_soilOrganic.serialize(builder.initSoilOrganic());
+	_soilTransport.serialize(builder.initSoilTransport());
 
 	if (_currentCrop) _currentCrop->serialize(builder.initCurrentCrop());
 	if (_currentCropModule) _currentCropModule->serialize(builder.initCurrentCropModule());

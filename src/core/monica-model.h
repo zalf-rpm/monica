@@ -281,17 +281,17 @@ namespace Monica
 		double humusBalanceCarryOver() const { return _humusBalanceCarryOver; }
 
 	private:
-		kj::Own<SiteParameters> _sitePs;
-		kj::Own<EnvironmentParameters> _envPs;
+		SiteParameters _sitePs;
+		EnvironmentParameters _envPs;
 		kj::Own<CropModuleParameters> _cropPs;
-		kj::Own<SimulationParameters> _simPs;
-		kj::Own<MeasuredGroundwaterTableInformation> _groundwaterInformation;
+		SimulationParameters _simPs;
+		MeasuredGroundwaterTableInformation _groundwaterInformation;
 
-		kj::Own<SoilColumn> _soilColumn; //!< main soil data structure
-		kj::Own<SoilTemperature> _soilTemperature; //!< temperature code
-		kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
-		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
-		kj::Own<SoilTransport> _soilTransport; //!< transport code
+		SoilColumn _soilColumn; //!< main soil data structure
+		SoilTemperature _soilTemperature; //!< temperature code
+		SoilMoisture _soilMoisture; //!< moisture code
+		SoilOrganic _soilOrganic; //!< organic code
+		SoilTransport _soilTransport; //!< transport code
 		Crop* _currentCrop{ nullptr }; //! currently possibly planted crop
 		kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 

@@ -95,7 +95,7 @@ namespace Monica
 	SimulationParameters readUserSimParametersFromDatabase(std::string type,
 	                                                       std::string abstractDbSchema = "monica");
 
-	CentralParameterProvider readUserParameterFromDatabase(int type = 0,
+	CentralParameterProvider&& readUserParameterFromDatabase(int type = 0,
 	                                                       std::string abstractDbSchema = "monica");
 
 	void writeUserParameters(int type, std::string path, std::string abstractDbSchema = "monica");
