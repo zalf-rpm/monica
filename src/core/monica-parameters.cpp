@@ -706,12 +706,12 @@ double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Dat
 //------------------------------------------------------------------------------
 
 void SiteParameters::deserialize(mas::models::monica::SiteParameters::Reader reader) {
-  vs_SoilParameters = kj::heap<SoilPMs>();
+  vs_SoilParameters.clear();
+  vs_SoilParameters.resize(reader.getSoilParameters().size());
   uint i = 0;
   for (auto sp : reader.getSoilParameters()) {
-    vs_SoilParameters->at(i++).deserialize(sp);
+    vs_SoilParameters.at(i++).deserialize(sp);
   }
-
 }
 
 void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder builder) const {
@@ -726,9 +726,9 @@ void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder buil
   builder.setImpenetrableLayerDepth(vs_ImpenetrableLayerDepth);
   builder.setSoilSpecificHumusBalanceCorrection(vs_SoilSpecificHumusBalanceCorrection);
 
-  auto sps = builder.initSoilParameters(vs_SoilParameters->size());
+  auto sps = builder.initSoilParameters(vs_SoilParameters.size());
   for (uint i = 0; i < sps.size(); i++) {
-    vs_SoilParameters->at(i).serialize(sps[i]);
+    vs_SoilParameters.at(i).serialize(sps[i]);
   }
 }
 
@@ -737,7 +737,7 @@ SiteParameters::SiteParameters(json11::Json j)
   merge(j);
 }
 
-
+/*
 std::pair<kj::Own<SoilPMs>, Errors> createSoilPMs(const J11Array& jsonSoilPMs) {
   Errors errors;
 
@@ -770,6 +770,7 @@ std::pair<kj::Own<SoilPMs>, Errors> createSoilPMs(const J11Array& jsonSoilPMs) {
 
   return make_pair(kj::mv(soilPMs), errors);
 }
+*/
 
 
 Errors SiteParameters::merge(json11::Json j)
@@ -790,7 +791,7 @@ Errors SiteParameters::merge(json11::Json j)
 
 	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
 	{
-		auto p = ::createSoilPMs(j["SoilProfileParameters"].array_items());
+		auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
 		vs_SoilParameters = kj::mv(p.first);
 		if(p.second.failure())
 			res.append(p.second);
@@ -817,8 +818,7 @@ json11::Json SiteParameters::to_json() const
 	,{ "SoilSpecificHumusBalanceCorrection", J11Array{ vs_SoilSpecificHumusBalanceCorrection, "humus equivalents" } }
 	};
 
-  if(vs_SoilParameters)
-    sps["SoilProfileParameters"] = toJsonArray(*vs_SoilParameters);
+  sps["SoilProfileParameters"] = toJsonArray(vs_SoilParameters);
 
   return sps;
 }

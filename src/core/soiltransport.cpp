@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilmoisture.h"
 #include "soilcolumn.h"
 #include "soiltransport.h"
-#include "crop-growth.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 #include "tools/debug.h"
 

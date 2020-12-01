@@ -38,26 +38,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-  // forward declaration
   class SoilColumn;
   class CropModule;
 
-  /**
- * @brief Soil carbon and nitrogen part of model
- *
- * <img src="../images/soil_organic_schema.png">
- *
- * <img src="../images/nitrification_denitrification.png">
- *
- * @author Michael Berg, Claas Nendel, Xenia Specka
- */
   class SoilOrganic
   {
   public:
-    SoilOrganic(SoilColumn* soilColumn, const SoilOrganicModuleParameters& params);
+    SoilOrganic(SoilColumn& soilColumn, const SoilOrganicModuleParameters& params);
 
-    SoilOrganic(SoilColumn* sc,
-      mas::models::monica::SoilOrganicModuleState::Reader reader)
+    SoilOrganic(SoilColumn& sc, mas::models::monica::SoilOrganicModuleState::Reader reader)
       : soilColumn(sc) {
       deserialize(reader);
     }
@@ -170,7 +159,7 @@ namespace Monica
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
 		//void fo_distributeDeadRootBiomass();
 
-    SoilColumn* soilColumn{ nullptr };
+    SoilColumn& soilColumn;
     SoilOrganicModuleParameters _params;
 
     std::size_t vs_NumberOfLayers{0};
@@ -212,21 +201,6 @@ namespace Monica
     double vo_SumN2O_Produced{0.0};
     double vo_SumNH3_Volatilised{0.0};
     double vo_TotalDenitrification{0.0};
-
-    /*
-    struct AddedOMParams {
-      double vo_AddedOrganicCarbonAmount;
-      double vo_AddedOrganicMatterAmount;
-      double vo_AOM_DryMatterContent;
-      double vo_AOM_NH4Content;
-      double vo_AOM_NO3Content;
-      double vo_PartAOM_to_AOM_Slow;
-      double vo_PartAOM_to_AOM_Fast;
-    };
-
-    std::vector<AddedOMParams> newOM;
-
-     */
 
     //! True, if organic fertilizer has been added with a following incorporation.
     //! Parameter is automatically set to false, if carbamid amount is falling below 0.001.

@@ -27,7 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "soilcolumn.h"
 #include "monica-model.h"
-#include "crop-growth.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
 #include "tools/algorithms.h"
@@ -46,30 +46,30 @@ using namespace Soil;
  * @param stps Site parameters
  * @param org_fert Parameter for organic fertiliser
  */
-SoilOrganic::SoilOrganic(SoilColumn* sc, const SoilOrganicModuleParameters& userParams)
+SoilOrganic::SoilOrganic(SoilColumn& sc, const SoilOrganicModuleParameters& userParams)
   : soilColumn(sc),
   _params(userParams),
-  vs_NumberOfLayers(sc->vs_NumberOfLayers()),
-  vs_NumberOfOrganicLayers(sc->vs_NumberOfOrganicLayers()),
-  vo_ActAmmoniaOxidationRate(sc->vs_NumberOfOrganicLayers()),
-  vo_ActNitrificationRate(sc->vs_NumberOfOrganicLayers()),
-  vo_ActDenitrificationRate(sc->vs_NumberOfOrganicLayers()),
-  vo_AOM_FastDeltaSum(sc->vs_NumberOfOrganicLayers()),
-  vo_AOM_FastInput(sc->vs_NumberOfOrganicLayers()),
-  vo_AOM_FastSum(sc->vs_NumberOfOrganicLayers()),
-  vo_AOM_SlowDeltaSum(sc->vs_NumberOfOrganicLayers()),
-  vo_AOM_SlowInput(sc->vs_NumberOfOrganicLayers()),
-  vo_AOM_SlowSum(sc->vs_NumberOfOrganicLayers()),
-  vo_CBalance(sc->vs_NumberOfOrganicLayers()),
-  vo_InertSoilOrganicC(sc->vs_NumberOfOrganicLayers()),
-  vo_NetNMineralisationRate(sc->vs_NumberOfOrganicLayers()),
-  vo_SMB_CO2EvolutionRate(sc->vs_NumberOfOrganicLayers()),
-  vo_SMB_FastDelta(sc->vs_NumberOfOrganicLayers()),
-  vo_SMB_SlowDelta(sc->vs_NumberOfOrganicLayers()),
-  vo_SoilOrganicC(sc->vs_NumberOfOrganicLayers()),
-  vo_SOM_FastInput(sc->vs_NumberOfOrganicLayers()),
-  vo_SOM_FastDelta(sc->vs_NumberOfOrganicLayers()),
-  vo_SOM_SlowDelta(sc->vs_NumberOfOrganicLayers()) {
+  vs_NumberOfLayers(sc.vs_NumberOfLayers()),
+  vs_NumberOfOrganicLayers(sc.vs_NumberOfOrganicLayers()),
+  vo_ActAmmoniaOxidationRate(sc.vs_NumberOfOrganicLayers()),
+  vo_ActNitrificationRate(sc.vs_NumberOfOrganicLayers()),
+  vo_ActDenitrificationRate(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_FastDeltaSum(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_FastInput(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_FastSum(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_SlowDeltaSum(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_SlowInput(sc.vs_NumberOfOrganicLayers()),
+  vo_AOM_SlowSum(sc.vs_NumberOfOrganicLayers()),
+  vo_CBalance(sc.vs_NumberOfOrganicLayers()),
+  vo_InertSoilOrganicC(sc.vs_NumberOfOrganicLayers()),
+  vo_NetNMineralisationRate(sc.vs_NumberOfOrganicLayers()),
+  vo_SMB_CO2EvolutionRate(sc.vs_NumberOfOrganicLayers()),
+  vo_SMB_FastDelta(sc.vs_NumberOfOrganicLayers()),
+  vo_SMB_SlowDelta(sc.vs_NumberOfOrganicLayers()),
+  vo_SoilOrganicC(sc.vs_NumberOfOrganicLayers()),
+  vo_SOM_FastInput(sc.vs_NumberOfOrganicLayers()),
+  vo_SOM_FastDelta(sc.vs_NumberOfOrganicLayers()),
+  vo_SOM_SlowDelta(sc.vs_NumberOfOrganicLayers()) {
   // Subroutine Pool initialisation
   double po_SOM_SlowUtilizationEfficiency = _params.po_SOM_SlowUtilizationEfficiency;
   double po_PartSOM_to_SMB_Slow = _params.po_PartSOM_to_SMB_Slow;
@@ -81,7 +81,7 @@ SoilOrganic::SoilOrganic(SoilColumn* sc, const SoilOrganicModuleParameters& user
 
   //Conversion of soil organic carbon weight fraction to volume unit
   for (size_t i = 0; i < vs_NumberOfOrganicLayers; i++) {
-    SoilLayer& layer = (*soilColumn)[i];
+    SoilLayer& layer = soilColumn[i];
 
     vo_SoilOrganicC[i] = layer.vs_SoilOrganicCarbon() * layer.vs_SoilBulkDensity(); //[kg C kg-1] * [kg m-3] --> [kg C m-3]
 
@@ -188,7 +188,7 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
   //done before the stepping method
   irrigationAmount = 0.0;
 
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   for (size_t i = 0; i < nools; i++) {
     vo_AOM_SlowInput[i] = 0.0;
     vo_AOM_FastInput[i] = 0.0;
@@ -203,8 +203,8 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 {
 	debug() << "SoilOrganic: addOrganicMatter: " << params->toString() << endl;
 
-	auto nools = soilColumn->vs_NumberOfOrganicLayers();
-	double layerThickness = soilColumn->at(0).vs_LayerThickness;
+	auto nools = soilColumn.vs_NumberOfOrganicLayers();
+	double layerThickness = soilColumn.at(0).vs_LayerThickness;
 
 	// check if the added organic matter is from crop residues
 	bool areCropResidueParams = int(params->vo_CN_Ratio_AOM_Fast * 10000.0) == 0;
@@ -285,7 +285,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 			if(p.first < nools)
 			{
 				// kg N m-3 soil
-				soilColumn->at(p.first).vs_SoilCarbamid +=
+				soilColumn.at(p.first).vs_SoilCarbamid +=
 					p.second
 					* params->vo_AOM_DryMatterContent
 					* params->vo_AOM_CarbamidContent
@@ -300,7 +300,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 	{
 		int i = 0;
 		// find the index of an existing matching set of pools
-		for(const auto& pool : soilColumn->at(0).vo_AOM_Pool)
+		for(const auto& pool : soilColumn.at(0).vo_AOM_Pool)
 		{
 			if(isSamePoolAsParams(pool))
 			{
@@ -315,7 +315,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 	{
 		auto intoLayerIndex = p.first;
 		double addedOrganicMatterAmount = p.second;
-    auto& intoLayer = soilColumn->at(intoLayerIndex);
+    auto& intoLayer = soilColumn.at(intoLayerIndex);
 
 		// calculate the CN ratio for AOM fast, if we're talking about crop residues and the
 	  // equivalent added organic carbon amount for the given added organic matter amount
@@ -343,7 +343,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 			// append this pool (template) to each layers pool list
 			for(size_t i = 0; i < nools; i++)
 			{
-				soilColumn->at(i).vo_AOM_Pool.push_back(pool);
+				soilColumn.at(i).vo_AOM_Pool.push_back(pool);
 
 				// update the pool where the organic matter will go into
 				if(i == intoLayerIndex)
@@ -358,7 +358,7 @@ void SoilOrganic::addOrganicMatter(OrganicMatterParametersPtr params,
 			}
 
 			// pools are now created, so can be used in the other layers
-			poolSetIndex = int(soilColumn->at(0).vo_AOM_Pool.size() - 1);
+			poolSetIndex = int(soilColumn.at(0).vo_AOM_Pool.size() - 1);
 		}
 		else
 		{
@@ -467,7 +467,7 @@ void SoilOrganic::addIrrigationWater(double amount) {
    * @param vo_RainIrrigation
    */
 void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   std::vector<double> vo_SoilCarbamid_solid(nools, 0.0); // Solid carbamide concentration in soil solution [kmol urea m-3]
   std::vector<double> vo_SoilCarbamid_aq(nools, 0.0); // Dissolved carbamide concetzration in soil solution [kmol urea m-3]
   std::vector<double> vo_HydrolysisRate1(nools, 0.0); // [kg N d-1]
@@ -490,8 +490,8 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
 
   vo_NH3_Volatilised = 0.0;
 
-  for (int i = 0; i < soilColumn->vs_NumberOfOrganicLayers(); i++) {
-    auto& layer = soilColumn->at(i);
+  for (int i = 0; i < soilColumn.vs_NumberOfOrganicLayers(); i++) {
+    auto& layer = soilColumn.at(i);
 
     // kmol urea m-3 soil
     vo_SoilCarbamid_solid[i] = layer.vs_SoilCarbamid /
@@ -566,7 +566,7 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
     // Calculate general volatilisation from NH4-Pool in top layer
 
     if (i == 0) {
-      auto layer0 = soilColumn->at(0);
+      auto layer0 = soilColumn.at(0);
 
       vo_H3OIonConcentration = pow(10.0, (-layer0.vs_SoilpH())); // kmol m-3
       vo_NH3aq_EquilibriumConst = pow(10.0, ((-2728.3 /
@@ -618,7 +618,7 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
  */
 void SoilOrganic::fo_MIT() {
 
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   double po_SOM_SlowDecCoeffStandard = _params.po_SOM_SlowDecCoeffStandard;
   double po_SOM_FastDecCoeffStandard = _params.po_SOM_FastDecCoeffStandard;
   double po_SMB_SlowDeathRateStandard = _params.po_SMB_SlowDeathRateStandard;
@@ -738,7 +738,7 @@ void SoilOrganic::fo_MIT() {
   // Calculation of decay rate coefficients
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     double tod = fo_TempOnDecompostion(layi.get_Vs_SoilTemperature());
     double mod = fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF());
 
@@ -771,7 +771,7 @@ void SoilOrganic::fo_MIT() {
 
   // Calculation of pool changes by decomposition
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
 
     for (AOM_Properties& AOM_Pool : layi.vo_AOM_Pool) {
       // Eq.6-5 and 6-6 in the DAISY manual
@@ -870,7 +870,7 @@ void SoilOrganic::fo_MIT() {
 
   // Calculation of N balance
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
 
     double vo_CN_Ratio_SOM_Slow = layi.vs_Soil_CN_Ratio();
     double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
@@ -900,7 +900,7 @@ void SoilOrganic::fo_MIT() {
 
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
 
     double vo_CN_Ratio_SOM_Slow = layi.vs_Soil_CN_Ratio();
     double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
@@ -1020,7 +1020,7 @@ void SoilOrganic::fo_MIT() {
       layi.vs_SoilNH4 += fabs(vo_NBalance[i]);
     }
 
-    auto& lay0 = soilColumn->at(0);
+    auto& lay0 = soilColumn.at(0);
     vo_NetNMineralisationRate[i] = fabs(vo_NBalance[i]) * lay0.vs_LayerThickness; // [kg m-3] --> [kg m-2]
     vo_NetNMineralisation += fabs(vo_NBalance[i]) * lay0.vs_LayerThickness; // [kg m-3] --> [kg m-2]
     vo_SumNetNMineralisation += fabs(vo_NBalance[i]) * lay0.vs_LayerThickness; // [kg m-3] --> [kg m-2]
@@ -1049,7 +1049,7 @@ void SoilOrganic::fo_MIT() {
 
     vo_SMB_CO2EvolutionRate[i] = vo_SMB_SlowCO2EvolutionRate[i] + vo_SMB_FastCO2EvolutionRate[i];
 
-    vo_DecomposerRespiration += vo_SMB_CO2EvolutionRate[i] * soilColumn->at(i).vs_LayerThickness; // [kg C m-3] -> [kg C m-2]
+    vo_DecomposerRespiration += vo_SMB_CO2EvolutionRate[i] * soilColumn.at(i).vs_LayerThickness; // [kg C m-3] -> [kg C m-2]
 
   } // for i
 }
@@ -1079,7 +1079,7 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
 
   int vo_DaysAfterApplicationSum = 0;
 
-  auto lay0 = soilColumn->at(0);
+  auto lay0 = soilColumn.at(0);
 
   if (lay0.vs_SoilMoisture_pF() > 2.5) {
     vo_SoilWet = 0.0;
@@ -1172,7 +1172,7 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
  * @brief Internal Subroutine Nitrification
  */
 void SoilOrganic::fo_Nitrification() {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   double po_AmmoniaOxidationRateCoeffStandard = _params.po_AmmoniaOxidationRateCoeffStandard;
   double po_NitriteOxidationRateCoeffStandard = _params.po_NitriteOxidationRateCoeffStandard;
 
@@ -1185,7 +1185,7 @@ void SoilOrganic::fo_Nitrification() {
   //std::vector<double> vo_NitriteOxidationRate(nools, 0.0);
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     auto NH4i = layi.vs_SoilNH4;
 
     // Calculate nitrification rate coefficients
@@ -1226,11 +1226,11 @@ void SoilOrganic::fo_Nitrification() {
 }
 
 void SoilOrganic::fo_stics_Nitrification() {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   auto sticsParams = _params.sticsParams;
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     auto smi = layi.get_Vs_SoilMoisture_m3(); // m3-water/m3-soil
     auto sbdi = layi.vs_SoilBulkDensity(); // kg-soil/m3-soil
     auto NH4i = layi.get_SoilNH4();
@@ -1263,14 +1263,14 @@ void SoilOrganic::fo_stics_Nitrification() {
  * @brief Denitrification
  */
 void SoilOrganic::fo_Denitrification() {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   std::vector<double> vo_PotDenitrificationRate(nools, 0.0);
   double po_SpecAnaerobDenitrification = _params.po_SpecAnaerobDenitrification;
   double po_TransportRateCoeff = _params.po_TransportRateCoeff;
   vo_TotalDenitrification = 0.0;
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     auto NO3i = layi.vs_SoilNO3;
 
     //Temperature function is the same as in Nitrification subroutine
@@ -1298,12 +1298,12 @@ void SoilOrganic::fo_Denitrification() {
 }
 
 void SoilOrganic::fo_stics_Denitrification() {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   auto sticsParams = _params.sticsParams;
   vo_TotalDenitrification = 0.0;
   
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     auto smi = layi.get_Vs_SoilMoisture_m3(); // m3-water/m3-soil
     auto sbdi = layi.vs_SoilBulkDensity(); // kg-soil/m3-soil
     auto lti = layi.vs_LayerThickness;
@@ -1339,13 +1339,13 @@ void SoilOrganic::fo_stics_Denitrification() {
  * @brief N2O production
  */
 double SoilOrganic::fo_N2OProduction() {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   double N2OProductionRate = _params.po_N2OProductionRate;
   double pKaHNO2 = OrganicConstants::po_pKaHNO2;
   double sumN2OProduced = 0.0;
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     auto pHi = layi.vs_SoilpH();
     auto NO2i = layi.vs_SoilNO2;
     auto lti = layi.vs_LayerThickness;
@@ -1368,12 +1368,12 @@ double SoilOrganic::fo_N2OProduction() {
 }
 
 SoilOrganic::NitDenitN2O SoilOrganic::fo_stics_N2OProduction() {
-  auto nools = soilColumn->vs_NumberOfOrganicLayers();
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
   double sumN2OProducedNit = 0.0, sumN2OProducedDenit = 0.0;
   auto sticsParams = _params.sticsParams;
 
   for (int i = 0; i < nools; i++) {
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
     auto smi = layi.get_Vs_SoilMoisture_m3(); // m3-water/m3-soil
     auto sbdi = layi.vs_SoilBulkDensity(); // kg-soil/m3-soil
     auto lti = layi.vs_LayerThickness;
@@ -1406,9 +1406,9 @@ SoilOrganic::NitDenitN2O SoilOrganic::fo_stics_N2OProduction() {
  */
 void SoilOrganic::fo_PoolUpdate()
 {
-	for(int i = 0; i < soilColumn->vs_NumberOfOrganicLayers(); i++)
+	for(int i = 0; i < soilColumn.vs_NumberOfOrganicLayers(); i++)
 	{
-    auto& layi = soilColumn->at(i);
+    auto& layi = soilColumn.at(i);
 
 		vo_AOM_SlowDeltaSum[i] = 0.0;
 		vo_AOM_FastDeltaSum[i] = 0.0;
@@ -1711,7 +1711,7 @@ double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, doubl
  * @return Soil organic C
  */
 double SoilOrganic::get_SoilOrganicC(int i_Layer) const {
-  return vo_SoilOrganicC[i_Layer] / soilColumn->at(i_Layer).vs_SoilBulkDensity();
+  return vo_SoilOrganicC[i_Layer] / soilColumn.at(i_Layer).vs_SoilBulkDensity();
 }
 
 /**
@@ -1735,7 +1735,7 @@ double SoilOrganic::get_AOM_SlowSum(int i_Layer) const {
  * @return SMB fast
  */
 double SoilOrganic::get_SMB_Fast(int i_Layer) const {
-  return soilColumn->at(i_Layer).vs_SMB_Fast;
+  return soilColumn.at(i_Layer).vs_SMB_Fast;
 }
 
 /**
@@ -1743,7 +1743,7 @@ double SoilOrganic::get_SMB_Fast(int i_Layer) const {
  * @return SMB slow
  */
 double SoilOrganic::get_SMB_Slow(int i_Layer) const {
-  return soilColumn->at(i_Layer).vs_SMB_Slow;
+  return soilColumn.at(i_Layer).vs_SMB_Slow;
 }
 
 /**
@@ -1751,7 +1751,7 @@ double SoilOrganic::get_SMB_Slow(int i_Layer) const {
  * @return AOM fast
  */
 double SoilOrganic::get_SOM_Fast(int i_Layer) const {
-  return soilColumn->at(i_Layer).vs_SOM_Fast;
+  return soilColumn.at(i_Layer).vs_SOM_Fast;
 }
 
 /**
@@ -1759,7 +1759,7 @@ double SoilOrganic::get_SOM_Fast(int i_Layer) const {
  * @return SOM slow
  */
 double SoilOrganic::get_SOM_Slow(int i_Layer) const {
-  return soilColumn->at(i_Layer).vs_SOM_Slow;
+  return soilColumn.at(i_Layer).vs_SOM_Slow;
 }
 
 /**
@@ -1905,11 +1905,11 @@ double SoilOrganic::get_Organic_N(int i) const {
   orgN += get_SMB_Fast(i) / _params.po_CN_Ratio_SMB;
   orgN += get_SMB_Slow(i) / _params.po_CN_Ratio_SMB;
 
-  double cn = soilColumn->at(i).vs_Soil_CN_Ratio();
+  double cn = soilColumn.at(i).vs_Soil_CN_Ratio();
   orgN += get_SOM_Fast(i) / cn;
   orgN += get_SOM_Slow(i) / cn;
 
-  for (const auto& aomp : soilColumn->at(i).vo_AOM_Pool) {
+  for (const auto& aomp : soilColumn.at(i).vo_AOM_Pool) {
     orgN += aomp.vo_AOM_Fast / aomp.vo_CN_Ratio_AOM_Fast;
     orgN += aomp.vo_AOM_Slow / aomp.vo_CN_Ratio_AOM_Slow;
   }

@@ -21,7 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 #include <string>
 
-#include "crop-growth.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 #include "soilmoisture.h"
 #include "monica-parameters.h"

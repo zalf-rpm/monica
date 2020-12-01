@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "cultivation-method.h"
+
 #include <map>
 #include <sstream>
 #include <iostream>
@@ -22,6 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 #include <utility>
 #include <mutex>
+#include <algorithm>
 
 #include <capnp/message.h>
 #include <capnp/serialize.h>
@@ -41,8 +44,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/soil.h"
 #include "../io/database-io.h"
 #include "../io/build-output.h"
-
-#include "cultivation-method.h"
+#include "../core/soilcolumn.h"
+#include "../core/crop-module.h"
+#include "../core/soiltemperature.h"
 
 using namespace Db;
 using namespace std;
@@ -50,7 +54,6 @@ using namespace Monica;
 using namespace Soil;
 using namespace Tools;
 using namespace Climate;
-
 
 std::pair<Date, bool> makeInitAbsDate(Date date, Date initDate, bool addYear, bool forceInitYear = false)
 {

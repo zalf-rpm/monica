@@ -34,12 +34,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica/monica_state.capnp.h"
 
 #include "climate/climate-common.h"
-#include "soilcolumn.h"
-#include "soiltemperature.h"
-#include "soilmoisture.h"
-#include "soilorganic.h"
-#include "soiltransport.h"
-#include "crop.h"
 #include "tools/date.h"
 #include "tools/datastructures.h"
 #include "monica-parameters.h"
@@ -47,25 +41,21 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/soil.h"
 #include "soil/constants.h"
 #include "../run/cultivation-method.h"
-
+#include "soiltransport.h"
+#include "soilorganic.h"
+#include "soiltemperature.h"
+#include "soilmoisture.h"
+#include "crop-module.h"
+#include "soilcolumn.h"
 
 namespace Monica
 {
-	/* forward declaration */
-	class Configuration;
+	class Crop;
 
-	//----------------------------------------------------------------------------
-
-	/*!
-	 * @brief Core class of MONICA
-	 * @author Claas Nendel, Michael Berg
-	 */
 	class MonicaModel
 	{
 	public:
 		MonicaModel(const CentralParameterProvider& cpp);
-
-		~MonicaModel() {}
 
 		MonicaModel(mas::models::monica::MonicaModelState::Reader reader) { deserialize(reader); }
 
@@ -87,33 +77,14 @@ namespace Monica
 		                               double julianday,
 		                               bool leapYear);
 
-
-		//! seed given crop
 		void seedCrop(Crop* crop);
 
-		//! what crop is currently seeded ?
 		Crop* currentCrop() { return _currentCrop; }
 		const Crop* currentCrop() const { return _currentCrop; }
 
 		bool isCropPlanted() const { return _currentCrop && _currentCrop->isValid(); }
 
-		//! harvest the currently seeded crop
 		void harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
-
-		//! harvest the fruit of the current crop
-		void fruitHarvestCurrentCrop(double percentage, bool exported);
-
-		//! prune the leaves of the current crop
-		void leafPruningCurrentCrop(double percentage, bool exported);
-
-		//! prune the tips of the current crop
-		void tipPruningCurrentCrop(double percentage, bool exported);
-
-		//! prune the shoots of the current crop
-		void shootPruningCurrentCrop(double percentage, bool exported);
-
-		//! prune the shoots of the current crop
-		void cuttingCurrentCrop(double percentage, bool exported);
 
 		void incorporateCurrentCrop();
 
@@ -126,7 +97,7 @@ namespace Monica
 
 		bool useNMinMineralFertilisingMethod() const
 		{
-			return _simPs->p_UseNMinMineralFertilisingMethod;
+			return _simPs.p_UseNMinMineralFertilisingMethod;
 		}
 
 		double applyMineralFertiliserViaNMinMethod
@@ -142,18 +113,7 @@ namespace Monica
 
 		double dailySumOrgFertiliser() const { return _dailySumOrgFertiliser; }
 
-		void addDailySumOrgFertiliser(double amountFM, OrganicMatterParametersPtr params)
-		{
-			using namespace Soil;
-			double AOM_fast_factor = OrganicConstants::po_AOM_to_C * params->vo_PartAOM_to_AOM_Fast / params->vo_CN_Ratio_AOM_Fast;
-			double AOM_slow_factor = OrganicConstants::po_AOM_to_C * params->vo_PartAOM_to_AOM_Slow / params->vo_CN_Ratio_AOM_Slow;
-			double SOM_Factor = (1 - (params->vo_PartAOM_to_AOM_Fast + params->vo_PartAOM_to_AOM_Slow)) * OrganicConstants::po_AOM_to_C / soilColumn().at(0).vs_Soil_CN_Ratio(); // TODO ask CN for correctness 
-
-			double conversion = AOM_fast_factor + AOM_slow_factor + SOM_Factor + params->vo_AOM_NH4Content + params->vo_AOM_NO3Content;
-
-			_dailySumOrgFertiliser += amountFM * params->vo_AOM_DryMatterContent * conversion;
-			_sumOrgFertiliser += amountFM * params->vo_AOM_DryMatterContent * conversion;
-		}
+		void addDailySumOrgFertiliser(double amountFM, OrganicMatterParametersPtr params);
 
 		double dailySumOrganicFertilizerDM() const { return _dailySumOrganicFertilizerDM; }
 		double sumOrganicFertilizerDM() const { return _sumOrganicFertilizerDM; }
@@ -244,7 +204,7 @@ namespace Monica
 		CropModule* cropGrowth() { return _currentCropModule.get(); }
 		const CropModule* cropGrowth() const { return _currentCropModule.get(); }
 
-		double netRadiation(double globrad) { return globrad * (1 - _envPs->p_Albedo); }
+		double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
 
 		int daysWithCrop() const {return p_daysWithCrop; }
 		double getAccumulatedNStress() const { return p_accuNStress; }
@@ -252,11 +212,11 @@ namespace Monica
 		double getAccumulatedHeatStress() const { return p_accuHeatStress; }
 		double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
-		const SiteParameters& siteParameters() const { return *_sitePs; }
-		const EnvironmentParameters& environmentParameters() const { return *_envPs; }
-		const CropModuleParameters& cropParameters() const { return *_cropPs; }
-		const SimulationParameters& simulationParameters() const { return *_simPs; }
-		SimulationParameters& simulationParametersNC() { return *_simPs; }
+		const SiteParameters& siteParameters() const { return _sitePs; }
+		const EnvironmentParameters& environmentParameters() const { return _envPs; }
+		const CropModuleParameters& cropParameters() const { return _cropPs; }
+		const SimulationParameters& simulationParameters() const { return _simPs; }
+		SimulationParameters& simulationParametersNC() { return _simPs; }
 
 		Tools::Date currentStepDate() const { return _currentStepDate; }
 		void setCurrentStepDate(Tools::Date d) { _currentStepDate = d; }
@@ -283,15 +243,15 @@ namespace Monica
 	private:
 		SiteParameters _sitePs;
 		EnvironmentParameters _envPs;
-		kj::Own<CropModuleParameters> _cropPs;
+		CropModuleParameters _cropPs;
 		SimulationParameters _simPs;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;
 
-		SoilColumn _soilColumn; //!< main soil data structure
-		SoilTemperature _soilTemperature; //!< temperature code
-		SoilMoisture _soilMoisture; //!< moisture code
-		SoilOrganic _soilOrganic; //!< organic code
-		SoilTransport _soilTransport; //!< transport code
+		kj::Own<SoilColumn> _soilColumn; //!< main soil data structure
+		kj::Own<SoilTemperature> _soilTemperature; //!< temperature code
+		kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
+		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
+		kj::Own<SoilTransport> _soilTransport; //!< transport code
 		Crop* _currentCrop{ nullptr }; //! currently possibly planted crop
 		kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 

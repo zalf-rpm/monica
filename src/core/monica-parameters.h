@@ -486,7 +486,7 @@ namespace Monica
 		double vs_ImpenetrableLayerDepth{ -1 }; //!< [m]
 		double vs_SoilSpecificHumusBalanceCorrection{ 0.0 }; //humus equivalents
 
-		kj::Own<Soil::SoilPMs> vs_SoilParameters;
+		Soil::SoilPMs vs_SoilParameters;
 	};
 
 	//----------------------------------------------------------------------------

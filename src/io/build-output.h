@@ -29,7 +29,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica-model.h"
 #include "output.h"
 
-
 namespace Monica
 {
 	struct OutputMetadata

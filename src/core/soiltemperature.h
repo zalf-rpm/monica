@@ -44,11 +44,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iomanip>
 
 #include "soilcolumn.h"
+#include "monica-parameters.h"
 
 namespace Monica
 {
-  // forward declaration
-  class SoilColumn;
   class MonicaModel;
 
   //! Calculation of soil temperature is based on a model developed by PIC
@@ -81,7 +80,6 @@ namespace Monica
     SoilLayer _soilColumn_vt_BottomLayer;
     SoilTemperatureModuleParameters _params;
 
-    /*
     struct SC {
       SoilColumn& sc;
       SoilLayer& gl;
@@ -107,44 +105,7 @@ namespace Monica
 
       SoilLayer& at(std::size_t i) { return (*this)[i]; }
       inline const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
-    };*/
-    struct SC {
-      SoilColumn* sc;
-      SoilLayer* gl;
-      SoilLayer* bl;
-      std::size_t vs_nols;
-      SC(SoilColumn* sc,
-        SoilLayer* gl,
-        SoilLayer* bl,
-        size_t vs_nols)
-        : sc(sc)
-        , gl(gl)
-        , bl(bl)
-        , vs_nols(vs_nols) {}
-
-      SoilLayer& operator[](std::size_t i) const {
-        if (i < vs_nols)
-          return sc->at(i);
-        else if (i < vs_nols + 1)
-          return *gl;
-
-        return *bl;
-      }
-
-      /*
-      SC& operator=(SC& other) {
-        sc = other.sc;
-        gl = other.gl;
-        bl = other.bl;
-        vs_nols = other.vs_nols;
-        return *this;
-      }
-      */
-
-      SoilLayer& at(std::size_t i) { return (*this)[i]; }
-      inline const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
-    };
-    kj::Own<SC> soilColumn;
+    } soilColumn;
 
     std::size_t vt_NumberOfLayers;
     std::size_t vs_NumberOfLayers;

@@ -40,7 +40,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../io/build-output.h"
-#include "../core/crop-growth.h"
+#include "../core/crop-module.h"
 
 using namespace Monica;
 using namespace std;

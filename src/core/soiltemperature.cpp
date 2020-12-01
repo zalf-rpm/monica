@@ -28,6 +28,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-model.h"
 #include "tools/debug.h"
 #include "tools/helper.h"
+#include "monica-model.h"
+#include "soilmoisture.h"
+#include "crop-module.h"
 
 using namespace std;
 using namespace Climate;
@@ -38,10 +41,10 @@ using namespace Tools;
 SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModuleParameters& params)
 	: _soilColumn(mm.soilColumnNC())
 	, monica(mm)
-  , soilColumn(kj::heap<SC>(&_soilColumn,
-		&_soilColumn_vt_GroundLayer,
-		&_soilColumn_vt_BottomLayer,
-		_soilColumn.vs_NumberOfLayers()))
+  , soilColumn(_soilColumn,
+		_soilColumn_vt_GroundLayer,
+		_soilColumn_vt_BottomLayer,
+		_soilColumn.vs_NumberOfLayers())
 	, _params(params)
 	, vt_NumberOfLayers(_soilColumn.vs_NumberOfLayers() + 2)
 	, vs_NumberOfLayers(_soilColumn.vs_NumberOfLayers())
@@ -108,15 +111,15 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 
 	// Determination of the geometry parameters for soil temperature calculation
 	// with Cholesky-Method
-	auto& lay0 = soilColumn->at(0);
+	auto& lay0 = soilColumn.at(0);
 	vt_V[0] = lay0.vs_LayerThickness;
 	vt_B[0] = 2.0 / lay0.vs_LayerThickness;
 
 	auto vt_GroundLayer = vt_NumberOfLayers - 2;
 	auto vt_BottomLayer = vt_NumberOfLayers - 1;
 
-	soilColumn->at(vt_GroundLayer).vs_LayerThickness = 2.0 * soilColumn->at(vt_GroundLayer - 1).vs_LayerThickness;
-	soilColumn->at(vt_BottomLayer).vs_LayerThickness = 1.0;
+	soilColumn.at(vt_GroundLayer).vs_LayerThickness = 2.0 * soilColumn.at(vt_GroundLayer - 1).vs_LayerThickness;
+	soilColumn.at(vt_BottomLayer).vs_LayerThickness = 1.0;
 	vt_SoilTemperature[vt_GroundLayer] = (vt_SoilTemperature[vt_GroundLayer - 1] + pt_BaseTemperature) * 0.5;
 	vt_SoilTemperature[vt_BottomLayer] = pt_BaseTemperature;
 
@@ -124,7 +127,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 
 	for(size_t i = 1; i < vt_NumberOfLayers; i++)
 	{
-		double vt_h1 = soilColumn->at(i).vs_LayerThickness; // [m]
+		double vt_h1 = soilColumn.at(i).vs_LayerThickness; // [m]
 		vt_B[i] = 2.0 / (vt_h1 + vt_h0); // [m]
 		vt_V[i] = vt_h1 * pt_Ntau; // [m3]
 		vt_h0 = vt_h1;
@@ -143,7 +146,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 		// 53 -62.
 		// Note: in this original publication lambda is calculated in cal cm-1 s-1 K-1!
 		///////////////////////////////////////////////////////////////////////////////////////
-		const double sbdi = soilColumn->at(i).vs_SoilBulkDensity();
+		const double sbdi = soilColumn.at(i).vs_SoilBulkDensity();
 		const double smi = vs_SoilMoisture_const.at(i);
 
 		vt_HeatConductivity[i] =
@@ -170,8 +173,8 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 		const double dq = ps_QuartzRawDensity;
 		const double da = pt_DensityAir;
 		const double dh = pt_DensityHumus;
-		const double spv = soilColumn->at(i).vs_Saturation();
-		const double som = soilColumn->at(i).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
+		const double spv = soilColumn.at(i).vs_Saturation();
+		const double som = soilColumn.at(i).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
 
 		vt_HeatCapacity[i] =
 			(smi * dw * cw)
@@ -199,8 +202,8 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 	vt_HeatConductivityMean[0] = vt_HeatConductivity[0];
 
 	for(size_t i = 1; i < vt_NumberOfLayers; i++)	{
-		const double lti_1 = soilColumn->at(i - 1).vs_LayerThickness;
-		const double lti = soilColumn->at(i).vs_LayerThickness;
+		const double lti_1 = soilColumn.at(i - 1).vs_LayerThickness;
+		const double lti = soilColumn.at(i).vs_LayerThickness;
 		const double hci_1 = vt_HeatConductivity.at(i - 1);
 		const double hci = vt_HeatConductivity.at(i);
 
@@ -235,12 +238,10 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 SoilTemperature::SoilTemperature(MonicaModel& mm, mas::models::monica::SoilTemperatureModuleState::Reader reader)
   : _soilColumn(mm.soilColumnNC())
   , monica(mm)
-  , soilColumn(kj::heap<SC>(&_soilColumn,
-    &_soilColumn_vt_GroundLayer,
-    &_soilColumn_vt_BottomLayer,
-    _soilColumn.vs_NumberOfLayers()))
-  , vt_NumberOfLayers(_soilColumn.vs_NumberOfLayers() + 2)
-	, vs_NumberOfLayers(_soilColumn.vs_NumberOfLayers()) {
+  , soilColumn(_soilColumn,
+    _soilColumn_vt_GroundLayer,
+    _soilColumn_vt_BottomLayer,
+    _soilColumn.vs_NumberOfLayers()) {
 	deserialize(reader); 
 }
 
@@ -314,7 +315,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 	vt_Solution[0] = 
 		(vt_VolumeMatrixOld[0] 
 		 + (vt_VolumeMatrix[0] - vt_VolumeMatrixOld[0])
-		 / soilColumn->at(0).vs_LayerThickness)
+		 / soilColumn.at(0).vs_LayerThickness)
 		* vt_SoilTemperature[0] + vt_HeatFlow;
 
 	for(size_t i = 1; i < vt_NumberOfLayers; i++)
@@ -322,7 +323,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 		vt_Solution[i] = 
 			(vt_VolumeMatrixOld[i]
 			 + (vt_VolumeMatrix[i] - vt_VolumeMatrixOld[i])
-			 / soilColumn->at(i).vs_LayerThickness)
+			 / soilColumn.at(i).vs_LayerThickness)
 			* vt_SoilTemperature[i];
 	}
 	// end subroutine NumericalSolution
@@ -374,7 +375,7 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 	for(size_t i = 0; i < vs_NumberOfLayers; i++)
 	{
 		vt_VolumeMatrixOld[i] = vt_VolumeMatrix[i];
-		soilColumn->at(i).set_Vs_SoilTemperature(vt_SoilTemperature[i]);
+		soilColumn.at(i).set_Vs_SoilTemperature(vt_SoilTemperature[i]);
 	}
 
 	vt_VolumeMatrixOld[vt_GroundLayer] = vt_VolumeMatrix[vt_GroundLayer];
@@ -456,7 +457,7 @@ double SoilTemperature::get_SoilSurfaceTemperature() const
  */
 double SoilTemperature::get_SoilTemperature(int layer) const
 {
-	return soilColumn->at(layer).get_Vs_SoilTemperature();
+	return soilColumn.at(layer).get_Vs_SoilTemperature();
 }
 
 /**
@@ -482,7 +483,7 @@ double SoilTemperature::get_AvgTopSoilTemperature(double sumLT) const
 
 	for(size_t i = 0; i < vs_NumberOfLayers; i++)
 	{
-		auto& layi = soilColumn->at(i);
+		auto& layi = soilColumn.at(i);
 		count++;
 		tempSum += layi.get_Vs_SoilTemperature();
 		lsum += layi.vs_LayerThickness;
