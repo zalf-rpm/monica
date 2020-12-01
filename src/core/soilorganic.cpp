@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/constants.h"
 #include "tools/algorithms.h"
 #include "stics-nit-denit-n2o.h"
+#include "tools/helper.h"
 
 using namespace std;
 using namespace Monica;
@@ -134,8 +135,52 @@ void SoilOrganic::deserialize(mas::models::monica::SoilOrganicModuleState::Reade
 }
 
 void SoilOrganic::serialize(mas::models::monica::SoilOrganicModuleState::Builder builder) const {
-  builder.initModuleParams();
-  _params.serialize(builder.getModuleParams());
+  //soilColumn                          @0  :SoilColumnState;
+  //siteParams                          @1  :Params.SiteParameters;
+  _params.serialize(builder.initModuleParams());
+
+  builder.setVsNumberOfLayers(vs_NumberOfLayers);
+  builder.setVsNumberOfOrganicLayers(vs_NumberOfOrganicLayers);
+  builder.setAddedOrganicMatter(addedOrganicMatter);
+  builder.setIrrigationAmount(irrigationAmount);
+  setCapnpList(vo_ActAmmoniaOxidationRate, builder.initActAmmoniaOxidationRate(vo_ActAmmoniaOxidationRate.size()));
+  setCapnpList(vo_ActNitrificationRate, builder.initActNitrificationRate(vo_ActNitrificationRate.size()));
+  setCapnpList(vo_ActDenitrificationRate, builder.initActDenitrificationRate(vo_ActDenitrificationRate.size()));
+  setCapnpList(vo_AOM_FastDeltaSum, builder.initAomFastDeltaSum(vo_AOM_FastDeltaSum.size()));
+  setCapnpList(vo_AOM_FastInput, builder.initAomFastInput(vo_AOM_FastInput.size()));
+  setCapnpList(vo_AOM_FastSum, builder.initAomFastSum(vo_AOM_FastSum.size()));
+  setCapnpList(vo_AOM_SlowDeltaSum, builder.initAomSlowDeltaSum(vo_AOM_SlowDeltaSum.size()));
+  setCapnpList(vo_AOM_SlowInput, builder.initAomSlowInput(vo_AOM_SlowInput.size()));
+  setCapnpList(vo_AOM_SlowSum, builder.initAomSlowSum(vo_AOM_SlowSum.size()));
+  setCapnpList(vo_CBalance, builder.initCBalance(vo_CBalance.size()));
+  builder.setDecomposerRespiration(vo_DecomposerRespiration);
+  builder.setErrorMessage(vo_ErrorMessage);
+  setCapnpList(vo_InertSoilOrganicC, builder.initInertSoilOrganicC(vo_InertSoilOrganicC.size()));
+  builder.setN2oProduced(vo_N2O_Produced);
+  builder.setN2oProducedNit(vo_N2O_Produced_Nit);
+  builder.setN2oProducedDenit(vo_N2O_Produced_Denit);
+  builder.setNetEcosystemExchange(vo_NetEcosystemExchange);
+  builder.setNetEcosystemProduction(vo_NetEcosystemProduction);
+  builder.setNetNMineralisation(vo_NetNMineralisation);
+  setCapnpList(vo_NetNMineralisationRate, builder.initNetNMineralisationRate(vo_NetNMineralisationRate.size()));
+  builder.setTotalNH3Volatilised(vo_Total_NH3_Volatilised);
+  builder.setNh3Volatilised(vo_NH3_Volatilised);
+  setCapnpList(vo_SMB_CO2EvolutionRate, builder.initSmbCO2EvolutionRate(vo_SMB_CO2EvolutionRate.size()));
+  setCapnpList(vo_SMB_FastDelta, builder.initSmbFastDelta(vo_SMB_FastDelta.size()));
+  setCapnpList(vo_SMB_SlowDelta, builder.initSmbSlowDelta(vo_SMB_SlowDelta.size()));
+  setCapnpList(vs_SoilMineralNContent, builder.initVsSoilMineralNContent(vs_SoilMineralNContent.size())); 
+  setCapnpList(vo_SoilOrganicC, builder.initSoilOrganicC(vo_SoilOrganicC.size()));
+  setCapnpList(vo_SOM_FastDelta, builder.initSomFastDelta(vo_SOM_FastDelta.size()));
+  setCapnpList(vo_SOM_FastInput, builder.initSomFastInput(vo_SOM_FastInput.size()));
+  setCapnpList(vo_SOM_SlowDelta, builder.initSomSlowDelta(vo_SOM_SlowDelta.size()));
+  builder.setSumDenitrification(vo_SumDenitrification);
+  builder.setSumNetNMineralisation(vo_SumNetNMineralisation);
+  builder.setSumN2OProduced(vo_SumN2O_Produced);
+  builder.setSumNH3Volatilised(vo_SumNH3_Volatilised);
+  builder.setTotalDenitrification(vo_TotalDenitrification);
+
+  builder.setIncorporation(incorporation);
+  //cropModule                          @43 :CropModuleState;
 }
 
 /**
