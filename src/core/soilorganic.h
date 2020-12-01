@@ -80,8 +80,8 @@ namespace Monica
      * @param incorporation TRUE/FALSE
      */
     void setIncorporation(bool incorp) { this->incorporation = incorp; }
-    void put_Crop(CropModule* crop);
-    void remove_Crop();
+    void putCrop(CropModule* cm) { cropModule = cm; }
+    void removeCrop() { cropModule = nullptr; }
 
     double get_SoilOrganicC(int i_Layer) const;
     double get_AOM_FastSum(int i_Layer) const;
@@ -205,7 +205,7 @@ namespace Monica
     //! True, if organic fertilizer has been added with a following incorporation.
     //! Parameter is automatically set to false, if carbamid amount is falling below 0.001.
     bool incorporation{false};
-    CropModule* crop{nullptr};
+    CropModule* cropModule{nullptr};
   };
 
 } // namespace Monica

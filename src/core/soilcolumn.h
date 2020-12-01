@@ -41,12 +41,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-  // forward declarations
   class SoilLayer;
   class SoilColumn;
   class CropModule;
-
-  //std::vector<AOM_Properties> vo_AOM_Pool;
 
   /**
    * @author Claas Nendel, Michael Berg
@@ -281,9 +278,9 @@ namespace Monica
 
     size_t getLayerNumberForDepth(double depth) const;
 
-    void put_Crop(CropModule* crop);
+    void putCrop(CropModule* cm) { cropModule = cm; }
 
-    void remove_Crop();
+    void removeCrop() { cropModule = nullptr; }
 
     double sumSoilTemperature(int layers) const;
 		    
@@ -307,7 +304,7 @@ namespace Monica
     MineralFertilizerParameters _vf_TopDressingPartition;
     int _vf_TopDressingDelay{0};
 
-    CropModule* cropGrowth{nullptr};
+    CropModule* cropModule{nullptr};
 
     std::list<std::function<double()>> _delayedNMinApplications;
 

@@ -148,7 +148,7 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
                        double vw_WindSpeed) {
 
   double vc_NetPrimaryProduction = 0.0;
-  vc_NetPrimaryProduction = crop ? crop->get_NetPrimaryProduction() : 0;
+  vc_NetPrimaryProduction = cropModule ? cropModule->get_NetPrimaryProduction() : 0;
 
   //cout << "get_OrganBiomass(organ) : " << organ << ", " << organ_percentage << std::endl; // JV!
   //cout << "total_biomass : " << total_biomass << std::endl; // JV!
@@ -1889,14 +1889,6 @@ double SoilOrganic::get_NetEcosystemProduction() const {
  */
 double SoilOrganic::get_NetEcosystemExchange() const {
   return vo_NetEcosystemExchange;
-}
-
-void SoilOrganic::put_Crop(CropModule* c) {
-  crop = c;
-}
-
-void SoilOrganic::remove_Crop() {
-  crop = nullptr;
 }
 
 double SoilOrganic::get_Organic_N(int i) const {

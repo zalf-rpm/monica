@@ -63,9 +63,9 @@ namespace Monica
     //! calcuates N transport in soil
     void fq_NTransport (double vs_LeachingDepth, double vq_TimeStep);
 
-    void put_Crop(CropModule* crop);
+    void putCrop(CropModule* cm) { cropModule = cm; }
 
-    void remove_Crop();
+    void removeCrop() { cropModule = nullptr; }
 
     double get_SoilNO3(int i_Layer) const;
 
@@ -100,7 +100,7 @@ namespace Monica
 
     const double pc_MinimumAvailableN{ 0.0 }; //! kg m-2
 
-    CropModule* crop{nullptr};
+    CropModule* cropModule{nullptr};
   };
 
 } /* namespace Monica */

@@ -110,20 +110,12 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureMod
   , siteParameters(mm.siteParameters())
   , monica(mm)
   , envPs(mm.environmentParameters())
-  , cropPs(mm.cropParameters())
-  //, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
-  //, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) 
-{
+  , cropPs(mm.cropParameters()) {
   deserialize(reader);
 }
 
 void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader) {
-  //soilColumn                      @0  :SoilColumnState;
-  //siteParameters                  @1  :Params.SiteParameters;
-  //monica                          @2  :MonicaModelState;
   _params.deserialize(reader.getModuleParams());
-  //envPs                           @4  :Params.EnvironmentParameters;
-  //cropPs                          @5  :Params.CropModuleParameters;
 
   vm_NumberOfLayers = reader.getNumberOfLayers();
   vs_NumberOfLayers = reader.getVsNumberOfLayers();
@@ -609,7 +601,7 @@ double SoilMoisture::get_PercolationRate(int layer) const {
  *
  */
 void SoilMoisture::fm_CapillaryRise() {
-  auto vc_RootingDepth = crop ? crop->get_RootingDepth() : 0;
+  auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
   auto vm_GroundwaterDistance = vm_GroundwaterTable - vc_RootingDepth;// []
 
   if (vm_GroundwaterDistance < 1)
@@ -1103,9 +1095,9 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   //std::cout << setprecision(11) << "vc_EvaporatedFromIntercept: " << vc_EvaporatedFromIntercept << std::endl;
   //std::cout << setprecision(11) << "vm_EvaporatedFromSurface: " << vm_EvaporatedFromSurface << std::endl;
 
-  if (crop) {
-    crop->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
-    crop->accumulateTranspiration(vm_ActualTranspiration);
+  if (cropModule) {
+    cropModule->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
+    cropModule->accumulateTranspiration(vm_ActualTranspiration);
   }
 }
 
@@ -1475,7 +1467,6 @@ double SoilMoisture::getAccumulatedFrostDepth() const {
   return frostComponent->getAccumulatedFrostDepth();
 }
 
-
 /**
 * @brief Returns snow depth [mm]
 * @return Value for snow depth
@@ -1483,12 +1474,3 @@ double SoilMoisture::getAccumulatedFrostDepth() const {
 double SoilMoisture::getTemperatureUnderSnow() const {
   return frostComponent->getTemperatureUnderSnow();
 }
-
-void SoilMoisture::put_Crop(CropModule* c) {
-  crop = c;
-}
-
-void SoilMoisture::remove_Crop() {
-  crop = nullptr;
-}
-

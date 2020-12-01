@@ -72,40 +72,27 @@ namespace Monica
     double get_CapillaryRise(int layer) const;
     double get_PercolationRate(int layer) const;
 
-    //! Returns infiltration value [mm]
-    double get_Infiltration() const { return vm_Infiltration; }
+    double get_Infiltration() const { return vm_Infiltration; } // [mm]
 
-    //! Returns surface water storage [mm]
-    double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; }
+    double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; } // [mm]
 
-    //! Returns surface overflow [mm]
-    double get_SurfaceRunOff() const { return vm_SurfaceRunOff; }
+    double get_SurfaceRunOff() const { return vm_SurfaceRunOff; } // [mm]
 
-    //! Returns evapotranspiration value [mm]
-    double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; }
+    double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; } // [mm]
 
-		double get_PotentialEvapotranspiration() const
-		{
-			return get_ET0() * get_KcFactor();
-		}
+		double get_PotentialEvapotranspiration() const { return get_ET0() * get_KcFactor(); }
 
-    //! Returns evaporation value [mm]
-    double get_ActualEvaporation() const { return vm_ActualEvaporation; }
+    double get_ActualEvaporation() const { return vm_ActualEvaporation; } // [mm]
 
-    //! Returns reference evapotranspiration [mm]
-    double get_ET0() const { return vm_ReferenceEvapotranspiration; }
+    double get_ET0() const { return vm_ReferenceEvapotranspiration; } // [mm]
 
-    //! Returns percentage soil coverage.
     double get_PercentageSoilCoverage() const { return vc_PercentageSoilCoverage; }
 
-    //! Returns stomata resistance [s-1]
-    double get_StomataResistance() const { return vc_StomataResistance; }
+    double get_StomataResistance() const { return vc_StomataResistance; } // [s-1]
 
-    //! Returns frost depth [m]
-    double get_FrostDepth() const;
+    double get_FrostDepth() const; // [m]
 
-    //! Returns thaw depth [m]
-    double get_ThawDepth() const;
+    double get_ThawDepth() const; // [m]
 
     double get_CapillaryRise();
 
@@ -121,11 +108,8 @@ namespace Monica
                           double vm_PercentageSoilCoverage,
                           double vm_PotentialEvapotranspiration);
 
-    void put_Crop(Monica::CropModule* crop);
-    void remove_Crop();
-
-//    void fm_SoilFrost(double vw_MeanAirTemperature,
-//                      double vm_SnowDepth);
+    void putCrop(Monica::CropModule* cm) { cropModule = cm; }
+    void removeCrop() { cropModule = nullptr; }
 
     void fm_Infiltration(double vm_WaterToInfiltrate,
                          double vc_PercentageSoilCoverage,
@@ -258,7 +242,7 @@ namespace Monica
 
     kj::Own<SnowComponent> snowComponent;
     kj::Own<FrostComponent> frostComponent;
-    CropModule* crop{nullptr};
+    CropModule* cropModule{nullptr};
   }; 
 
 }

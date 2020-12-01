@@ -453,11 +453,11 @@ bool SoilColumn::applyIrrigationViaTrigger(double vi_IrrigationThreshold,
 {
 	//is actually only called from cropStep and thus there should always
 	//be a crop
-	assert(cropGrowth != NULL);
+	assert(cropModule != NULL);
 
-	double s = cropGrowth->get_HeatSumIrrigationStart();
-	double e = cropGrowth->get_HeatSumIrrigationEnd();
-	double cts = cropGrowth->get_CurrentTemperatureSum();
+	double s = cropModule->get_HeatSumIrrigationStart();
+	double e = cropModule->get_HeatSumIrrigationEnd();
+	double cts = cropModule->get_CurrentTemperatureSum();
 
 	if (cts < s || cts > e)
 		return false;
@@ -700,24 +700,6 @@ size_t SoilColumn::getLayerNumberForDepth(double depth) const
 	}
 
 	return layer;
-}
-
-/**
- * @brief Makes crop information available when needed.
- *
- * @return crop object
- */
-void SoilColumn::put_Crop(CropModule* c) {
-	cropGrowth = c;
-}
-
-/**
- * @brief Deletes crop object when not needed anymore.
- *
- * @return crop object is NULL
- */
-void SoilColumn::remove_Crop() {
-	cropGrowth = nullptr;
 }
 
 /**

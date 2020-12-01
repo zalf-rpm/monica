@@ -267,10 +267,10 @@ void MonicaModel::seedCrop(Crop* crop)
     if (_currentCrop->perennialCropParameters())
       _currentCropModule->setPerennialCropParameters(_currentCrop->perennialCropParameters());
 
-    _soilTransport->put_Crop(_currentCropModule.get());
-    _soilColumn->put_Crop(_currentCropModule.get());
-    _soilMoisture->put_Crop(_currentCropModule.get());
-    _soilOrganic->put_Crop(_currentCropModule.get());
+    _soilTransport->putCrop(_currentCropModule.get());
+    _soilColumn->putCrop(_currentCropModule.get());
+    _soilMoisture->putCrop(_currentCropModule.get());
+    _soilOrganic->putCrop(_currentCropModule.get());
 
 //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
 //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
@@ -679,10 +679,10 @@ void MonicaModel::dailyReset()
 
 	if(_clearCropUponNextDay)
 	{
-		_soilTransport->remove_Crop();
-		_soilColumn->remove_Crop();
-		_soilMoisture->remove_Crop();
-		_soilOrganic->remove_Crop();
+		_soilTransport->removeCrop();
+		_soilColumn->removeCrop();
+		_soilMoisture->removeCrop();
+		_soilOrganic->removeCrop();
 		_currentCropModule = nullptr;
 		_currentCrop = nullptr;
 
