@@ -210,10 +210,7 @@ target_link_libraries(monica_lib
 set(MONICA_RUN_SOURCE_FILES
 	src/io/csv-format.h
 	src/io/csv-format.cpp
-	
-	src/io/database-io.h
-	src/io/database-io.cpp
-
+		
 	src/run/env-from-json-config.h
 	src/run/env-from-json-config.cpp
 

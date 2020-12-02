@@ -67,8 +67,7 @@ namespace Monica
 			const CropModuleParameters& cropPs,
 			const SimulationParameters& simPs,
 			std::function<void(std::string)> fireEvent,
-			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-			int eva2_usage = NUTZUNG_UNDEFINED);
+			std::function<void(std::map<size_t, double>, double)> addOrganicMatter);
 
 		CropModule(SoilColumn& sc, const CropModuleParameters& cropPs, mas::models::monica::CropModuleState::Reader reader)
 			: soilColumn(sc), cropPs(cropPs) { deserialize(reader); }
@@ -405,7 +404,7 @@ namespace Monica
 			vc_AccumulatedPrimaryCropYield += primaryCropYield;
 		}
 
-		void setPerennialCropParameters(CropParametersPtr cps) { perennialCropParams = cps; }
+		void setPerennialCropParameters(const CropParameters* cps) { perennialCropParams = cps; }
 
 		void fc_UpdateCropParametersForPerennial();
 
@@ -445,7 +444,7 @@ namespace Monica
 
 		// members
 		SoilColumn& soilColumn;
-		CropParametersPtr perennialCropParams;
+		const CropParameters* perennialCropParams{ nullptr };
 		const CropModuleParameters& cropPs;
 		SpeciesParameters speciesPs;
 		CultivarParameters cultivarPs;
@@ -644,10 +643,6 @@ namespace Monica
 		double vc_VernalisationFactor{ 0.0 };					//! old FV
 		std::vector<double> pc_VernalisationRequirement;	//! old VSCHWELL
 		bool pc_WaterDeficitResponseOn;
-
-		int eva2_usage;
-		std::vector<YieldComponent> eva2_primaryYieldComponents;
-		std::vector<YieldComponent> eva2_secondaryYieldComponents;
 
 		bool dyingOut{ false };
 		double vc_AccumulatedETa{ 0.0 };

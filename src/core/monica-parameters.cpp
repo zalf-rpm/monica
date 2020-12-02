@@ -93,11 +93,119 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
 }
 
 void SpeciesParameters::deserialize(mas::models::monica::SpeciesParameters::Reader reader) {
-
+  pc_SpeciesId = reader.getSpeciesId();
+  pc_CarboxylationPathway = reader.getCarboxylationPathway();
+  pc_DefaultRadiationUseEfficiency = reader.getDefaultRadiationUseEfficiency();
+  pc_PartBiologicalNFixation = reader.getPartBiologicalNFixation();
+  pc_InitialKcFactor = reader.getInitialKcFactor();
+  pc_LuxuryNCoeff = reader.getLuxuryNCoeff();
+  pc_MaxCropDiameter = reader.getMaxCropDiameter();
+  pc_StageAtMaxHeight = reader.getStageAtMaxHeight();
+  pc_StageAtMaxDiameter = reader.getStageAtMaxDiameter();
+  pc_MinimumNConcentration = reader.getMinimumNConcentration();
+  pc_MinimumTemperatureForAssimilation = reader.getMinimumTemperatureForAssimilation();
+  pc_OptimumTemperatureForAssimilation = reader.getOptimumTemperatureForAssimilation();
+  pc_MaximumTemperatureForAssimilation = reader.getMaximumTemperatureForAssimilation();
+  pc_NConcentrationAbovegroundBiomass = reader.getNConcentrationAbovegroundBiomass();
+  pc_NConcentrationB0 = reader.getNConcentrationB0();
+  pc_NConcentrationPN = reader.getNConcentrationPN();
+  pc_NConcentrationRoot = reader.getNConcentrationRoot();
+  pc_DevelopmentAccelerationByNitrogenStress = reader.getDevelopmentAccelerationByNitrogenStress();
+  pc_FieldConditionModifier = reader.getFieldConditionModifier();
+  pc_AssimilateReallocation = reader.getAssimilateReallocation();
+  setFromCapnpList(pc_BaseTemperature, reader.getBaseTemperature());
+  setFromCapnpList(pc_OrganMaintenanceRespiration, reader.getOrganMaintenanceRespiration());
+  setFromCapnpList(pc_OrganGrowthRespiration, reader.getOrganGrowthRespiration());
+  setFromCapnpList(pc_StageMaxRootNConcentration, reader.getStageMaxRootNConcentration());
+  setFromCapnpList(pc_InitialOrganBiomass, reader.getInitialOrganBiomass());
+  setFromCapnpList(pc_CriticalOxygenContent, reader.getCriticalOxygenContent());
+  setFromCapnpList(pc_StageMobilFromStorageCoeff, reader.getStageMobilFromStorageCoeff());
+  setFromCapnpList(pc_AbovegroundOrgan, reader.getAbovegroundOrgan());
+  setFromCapnpList(pc_StorageOrgan, reader.getStorageOrgan());
+  pc_SamplingDepth = reader.getSamplingDepth();
+  pc_TargetNSamplingDepth = reader.getTargetNSamplingDepth();
+  pc_TargetN30 = reader.getTargetN30();
+  pc_MaxNUptakeParam = reader.getMaxNUptakeParam();
+  pc_RootDistributionParam = reader.getRootDistributionParam();
+  pc_PlantDensity = reader.getPlantDensity();
+  pc_RootGrowthLag = reader.getRootGrowthLag();
+  pc_MinimumTemperatureRootGrowth = reader.getMinimumTemperatureRootGrowth();
+  pc_InitialRootingDepth = reader.getInitialRootingDepth();
+  pc_RootPenetrationRate = reader.getRootPenetrationRate();
+  pc_RootFormFactor = reader.getRootFormFactor();
+  pc_SpecificRootLength = reader.getSpecificRootLength();
+  pc_StageAfterCut = reader.getStageAfterCut();
+  pc_LimitingTemperatureHeatStress = reader.getLimitingTemperatureHeatStress();
+  pc_CuttingDelayDays = reader.getCuttingDelayDays();
+  pc_DroughtImpactOnFertilityFactor = reader.getDroughtImpactOnFertilityFactor();
+  EF_MONO = reader.getEfMono();
+  EF_MONOS = reader.getEfMonos();
+  EF_ISO = reader.getEfIso();
+  VCMAX25 = reader.getVcMax25();
+  AEKC = reader.getAekc();
+  AEKO = reader.getAeko();
+  AEVC = reader.getAevc();
+  KC25 = reader.getKc25();
+  KO25 = reader.getKo25();
+  pc_TransitionStageLeafExp = reader.getTransitionStageLeafExp();
 }
 
 void SpeciesParameters::serialize(mas::models::monica::SpeciesParameters::Builder builder) const {
-
+  builder.setSpeciesId(pc_SpeciesId);
+  builder.setCarboxylationPathway(pc_CarboxylationPathway);
+  builder.setDefaultRadiationUseEfficiency(pc_DefaultRadiationUseEfficiency);
+  builder.setPartBiologicalNFixation(pc_PartBiologicalNFixation);
+  builder.setInitialKcFactor(pc_InitialKcFactor);
+  builder.setLuxuryNCoeff(pc_LuxuryNCoeff);
+  builder.setMaxCropDiameter(pc_MaxCropDiameter);
+  builder.setStageAtMaxHeight(pc_StageAtMaxHeight);
+  builder.setStageAtMaxDiameter(pc_StageAtMaxDiameter);
+  builder.setMinimumNConcentration(pc_MinimumNConcentration);
+  builder.setMinimumTemperatureForAssimilation(pc_MinimumTemperatureForAssimilation);
+  builder.setOptimumTemperatureForAssimilation(pc_OptimumTemperatureForAssimilation);
+  builder.setMaximumTemperatureForAssimilation(pc_MaximumTemperatureForAssimilation);
+  builder.setNConcentrationAbovegroundBiomass(pc_NConcentrationAbovegroundBiomass);
+  builder.setNConcentrationB0(pc_NConcentrationB0);
+  builder.setNConcentrationPN(pc_NConcentrationPN);
+  builder.setNConcentrationRoot(pc_NConcentrationRoot);
+  builder.setDevelopmentAccelerationByNitrogenStress(pc_DevelopmentAccelerationByNitrogenStress);
+  builder.setFieldConditionModifier(pc_FieldConditionModifier);
+  builder.setAssimilateReallocation(pc_AssimilateReallocation);
+  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature(pc_BaseTemperature.size()));
+  setCapnpList(pc_OrganMaintenanceRespiration, builder.initOrganMaintenanceRespiration(pc_OrganMaintenanceRespiration.size()));
+  setCapnpList(pc_OrganGrowthRespiration, builder.initOrganGrowthRespiration(pc_OrganGrowthRespiration.size()));
+  setCapnpList(pc_StageMaxRootNConcentration, builder.initStageMaxRootNConcentration(pc_StageMaxRootNConcentration.size()));
+  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass(pc_InitialOrganBiomass.size()));
+  setCapnpList(pc_CriticalOxygenContent, builder.initCriticalOxygenContent(pc_CriticalOxygenContent.size()));
+  setCapnpList(pc_StageMobilFromStorageCoeff, builder.initStageMobilFromStorageCoeff(pc_StageMobilFromStorageCoeff.size()));
+  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan(pc_AbovegroundOrgan.size()));
+  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan(pc_StorageOrgan.size()));
+  builder.setSamplingDepth(pc_SamplingDepth);
+  builder.setTargetNSamplingDepth(pc_TargetNSamplingDepth);
+  builder.setTargetN30(pc_TargetN30);
+  builder.setMaxNUptakeParam(pc_MaxNUptakeParam);
+  builder.setRootDistributionParam(pc_RootDistributionParam);
+  builder.setPlantDensity(pc_PlantDensity);
+  builder.setRootGrowthLag(pc_RootGrowthLag);
+  builder.setMinimumTemperatureRootGrowth(pc_MinimumTemperatureRootGrowth);
+  builder.setInitialRootingDepth(pc_InitialRootingDepth);
+  builder.setRootPenetrationRate(pc_RootPenetrationRate);
+  builder.setRootFormFactor(pc_RootFormFactor);
+  builder.setSpecificRootLength(pc_SpecificRootLength);
+  builder.setStageAfterCut(pc_StageAfterCut);
+  builder.setLimitingTemperatureHeatStress(pc_LimitingTemperatureHeatStress);
+  builder.setCuttingDelayDays(pc_CuttingDelayDays);
+  builder.setDroughtImpactOnFertilityFactor(pc_DroughtImpactOnFertilityFactor);
+  builder.setEfMono(EF_MONO);
+  builder.setEfMonos(EF_MONOS);
+  builder.setEfIso(EF_ISO);
+  builder.setVcMax25(VCMAX25);
+  builder.setAekc(AEKC);
+  builder.setAeko(AEKO);
+  builder.setAevc(AEVC);
+  builder.setKc25(KC25);
+  builder.setKo25(KO25);
+  builder.setTransitionStageLeafExp(pc_TransitionStageLeafExp);
 }
 
 Errors SpeciesParameters::merge(json11::Json j)
@@ -395,11 +503,13 @@ CropParameters::CropParameters(json11::Json sj, json11::Json cj)
 }
 
 void CropParameters::deserialize(mas::models::monica::CropParameters::Reader reader) {
-
+  speciesParams.deserialize(reader.getSpeciesParams());
+  cultivarParams.deserialize(reader.getCultivarParams());
 }
 
 void CropParameters::serialize(mas::models::monica::CropParameters::Builder builder) const {
-
+  speciesParams.serialize(builder.initSpeciesParams());
+  cultivarParams.serialize(builder.initCultivarParams());
 }
 
 Errors CropParameters::merge(json11::Json j)
@@ -907,11 +1017,35 @@ json11::Json NMinCropParameters::to_json() const
 //------------------------------------------------------------------------------
 
 void OrganicMatterParameters::deserialize(mas::models::monica::OrganicMatterParameters::Reader reader) {
-
+  vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
+  vo_AOM_NH4Content = reader.getAomNH4Content();
+  vo_AOM_NO3Content = reader.getAomNO3Content();
+  vo_AOM_CarbamidContent = reader.getAomCarbamidContent();
+  vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
+  vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
+  vo_PartAOM_to_AOM_Slow = reader.getPartAOMToAOMSlow();
+  vo_PartAOM_to_AOM_Fast = reader.getPartAOMToAOMFast();
+  vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
+  vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
+  vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowToSMBSlow();
+  vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowToSMBFast();
+  vo_NConcentration = reader.getNConcentration();
 }
 
 void OrganicMatterParameters::serialize(mas::models::monica::OrganicMatterParameters::Builder builder) const {
-
+  builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
+  builder.setAomNH4Content(vo_AOM_NH4Content);
+  builder.setAomNO3Content(vo_AOM_NO3Content);
+  builder.setAomCarbamidContent(vo_AOM_CarbamidContent);
+  builder.setAomSlowDecCoeffStandard(vo_AOM_SlowDecCoeffStandard);
+  builder.setAomFastDecCoeffStandard(vo_AOM_FastDecCoeffStandard);
+  builder.setPartAOMToAOMSlow(vo_PartAOM_to_AOM_Slow);
+  builder.setPartAOMToAOMFast(vo_PartAOM_to_AOM_Fast);
+  builder.setCnRatioAOMSlow(vo_CN_Ratio_AOM_Slow);
+  builder.setCnRatioAOMFast(vo_CN_Ratio_AOM_Fast);
+  builder.setPartAOMSlowToSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
+  builder.setPartAOMSlowToSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
+  builder.setNConcentration(vo_NConcentration);
 }
 
 OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
@@ -999,11 +1133,15 @@ json11::Json OrganicFertilizerParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 void CropResidueParameters::deserialize(mas::models::monica::CropResidueParameters::Reader reader) {
-
+  OrganicMatterParameters::deserialize(reader.getParams());
+  species = reader.getSpecies();
+  residueType = reader.getResidueType();
 }
 
 void CropResidueParameters::serialize(mas::models::monica::CropResidueParameters::Builder builder) const {
-
+  OrganicMatterParameters::serialize(builder.initParams());
+  builder.setSpecies(species);
+  builder.setResidueType(residueType);
 }
 
 CropResidueParameters::CropResidueParameters(json11::Json j)

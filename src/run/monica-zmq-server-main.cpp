@@ -27,7 +27,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "run-monica.h"
 #include "serve-monica-zmq.h"
-#include "../io/database-io.h"
 #include "../core/monica-model.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"

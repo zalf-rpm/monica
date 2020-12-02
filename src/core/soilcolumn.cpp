@@ -39,6 +39,54 @@ using namespace std;
 using namespace Soil;
 using namespace Tools;
 
+void AOM_Properties::deserialize(mas::models::monica::AOMProperties::Reader reader) {
+	vo_AOM_Slow = reader.getAomSlow();
+	vo_AOM_Fast = reader.getAomFast();
+	vo_AOM_SlowDecRate_to_SMB_Slow = reader.getAomSlowDecRatetoSMBSlow();
+	vo_AOM_SlowDecRate_to_SMB_Fast = reader.getAomSlowDecRatetoSMBFast();
+	vo_AOM_FastDecRate_to_SMB_Slow = reader.getAomFastDecRatetoSMBSlow();
+	vo_AOM_FastDecRate_to_SMB_Fast = reader.getAomFastDecRatetoSMBFast();
+	vo_AOM_SlowDecCoeff = reader.getAomSlowDecCoeff();
+	vo_AOM_FastDecCoeff = reader.getAomFastDecCoeff();
+	vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
+	vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
+	vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowtoSMBSlow();
+	vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowtoSMBFast();
+	vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
+	vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
+	vo_DaysAfterApplication = reader.getDaysAfterApplication();
+	vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
+	vo_AOM_NH4Content = reader.getAomNH4Content();
+	vo_AOM_SlowDelta = reader.getAomSlowDelta();
+	vo_AOM_FastDelta = reader.getAomFastDelta();
+	incorporation = reader.getIncorporation();
+	noVolatilization = reader.getNoVolatilization();
+}
+
+void AOM_Properties::serialize(mas::models::monica::AOMProperties::Builder builder) const {
+	builder.setAomSlow(vo_AOM_Slow);
+	builder.setAomFast(vo_AOM_Fast);
+	builder.setAomSlowDecRatetoSMBSlow(vo_AOM_SlowDecRate_to_SMB_Slow);
+	builder.setAomSlowDecRatetoSMBFast(vo_AOM_SlowDecRate_to_SMB_Fast);
+	builder.setAomFastDecRatetoSMBSlow(vo_AOM_FastDecRate_to_SMB_Slow);
+	builder.setAomFastDecRatetoSMBFast(vo_AOM_FastDecRate_to_SMB_Fast);
+	builder.setAomSlowDecCoeff(vo_AOM_SlowDecCoeff);
+	builder.setAomFastDecCoeff(vo_AOM_FastDecCoeff);
+	builder.setAomSlowDecCoeffStandard(vo_AOM_SlowDecCoeffStandard);
+	builder.setAomFastDecCoeffStandard(vo_AOM_FastDecCoeffStandard);
+	builder.setPartAOMSlowtoSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
+	builder.setPartAOMSlowtoSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
+	builder.setCnRatioAOMSlow(vo_CN_Ratio_AOM_Slow);
+	builder.setCnRatioAOMFast(vo_CN_Ratio_AOM_Fast);
+	builder.setDaysAfterApplication(vo_DaysAfterApplication);
+	builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
+	builder.setAomNH4Content(vo_AOM_NH4Content);
+	builder.setAomSlowDelta(vo_AOM_SlowDelta);
+	builder.setAomFastDelta(vo_AOM_FastDelta);
+	builder.setIncorporation(incorporation);
+	builder.setNoVolatilization(noVolatilization);
+}
+
 
 /**
  * Constructor
@@ -57,11 +105,48 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
 }
 
 void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) {
+	vs_LayerThickness = reader.getLayerThickness();
+	vs_SoilWaterFlux = reader.getSoilWaterFlux();
 
+	auto aomp = reader.getVoAOMPool();
+	vo_AOM_Pool.resize(aomp.size());
+	uint i = 0;
+	for (auto aom : vo_AOM_Pool) aom.deserialize(aomp[i++]);
+
+	vs_SOM_Slow = reader.getSomSlow();
+	vs_SOM_Fast = reader.getSomFast();
+	vs_SMB_Slow = reader.getSmbSlow();
+	vs_SMB_Fast = reader.getSmbFast();
+	vs_SoilCarbamid = reader.getSoilCarbamid();
+	vs_SoilNH4 = reader.getSoilNH4();
+	vs_SoilNO2 = reader.getSoilNO2();
+	vs_SoilNO3 = reader.getSoilNO3();
+	vs_SoilFrozen = reader.getSoilFrozen();
+	_sps.deserialize(reader.getSps());
+	vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
+	vs_SoilTemperature = reader.getSoilTemperature();
 }
 
 void SoilLayer::serialize(mas::models::monica::SoilLayerState::Builder builder) const {
+	builder.setLayerThickness(vs_LayerThickness);
+	builder.setSoilWaterFlux(vs_SoilWaterFlux);
 
+	auto aomp = builder.initVoAOMPool(vo_AOM_Pool.size());
+	uint i = 0;
+	for (auto aom : vo_AOM_Pool) aom.serialize(aomp[i++]);
+
+	builder.setSomSlow(vs_SOM_Slow);
+	builder.setSomFast(vs_SOM_Fast);
+	builder.setSmbSlow(vs_SMB_Slow);
+	builder.setSmbFast(vs_SMB_Fast);
+	builder.setSoilCarbamid(vs_SoilCarbamid);
+	builder.setSoilNH4(vs_SoilNH4);
+	builder.setSoilNO2(vs_SoilNO2);
+	builder.setSoilNO3(vs_SoilNO3);
+	builder.setSoilFrozen(vs_SoilFrozen);
+	_sps.serialize(builder.initSps());
+	builder.setSoilMoistureM3(vs_SoilMoisture_m3);
+	builder.setSoilTemperature(vs_SoilTemperature);
 }
 
 /**

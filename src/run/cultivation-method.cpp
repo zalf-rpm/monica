@@ -42,7 +42,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "soil/conversion.h"
 #include "soil/soil.h"
-#include "../io/database-io.h"
 #include "../io/build-output.h"
 #include "../core/soilcolumn.h"
 #include "../core/crop-module.h"
@@ -172,13 +171,13 @@ bool Workstep::reinit(Tools::Date date, bool addYear, bool forceInitYear)
 
 //------------------------------------------------------------------------------
 
-Sowing::Sowing(const Tools::Date& at, CropPtr crop)
-	: Workstep(at)
-	, _crop(crop)
-{
-	if (_crop)
-		_crop->setSeedDate(at);
-}
+//Sowing::Sowing(const Tools::Date& at, CropPtr crop)
+//	: Workstep(at)
+//	, _crop(crop)
+//{
+//	if (_crop)
+//		_crop->setSeedDate(at);
+//}
 
 Sowing::Sowing(json11::Json j)
 {
@@ -188,15 +187,13 @@ Sowing::Sowing(json11::Json j)
 Errors Sowing::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
-	set_shared_ptr_value(_crop, j, "crop");
-	if (_crop)
-	{
-		_crop->setSeedDate(date());
-		set_int_value(_plantDensity, j, "PlantDensity");
-		if (_plantDensity > 0)
-			_crop->cropParameters()->speciesParams.pc_PlantDensity = _plantDensity;
-	}
-
+	//set_shared_ptr_value(_crop, j, "crop");
+	_cropToPlant = kj::heap<Crop>(j["crop"]);
+	_crop = _cropToPlant.get();
+	_crop->setSeedDate(date());
+	set_int_value(_plantDensity, j, "PlantDensity");
+	if (_plantDensity > 0)
+		_crop->cropParameters().speciesParams.pc_PlantDensity = _plantDensity;
 	return res;
 }
 
@@ -205,7 +202,7 @@ json11::Json Sowing::to_json(bool includeFullCropParameters) const
 	auto o = json11::Json::object
 	{ {"type", type()}
 	,{"date", date().toIsoDateString()}
-	,{"crop", _crop ? _crop->to_json(includeFullCropParameters) : json11::Json()} };
+	,{"crop", _crop->to_json(includeFullCropParameters)} };
 
 	if (_plantDensity > 0)
 		o["PlantDensity"] = J11Array{ _plantDensity, "plants m-2" };
@@ -218,7 +215,7 @@ bool Sowing::apply(MonicaModel* model)
 	Workstep::apply(model);
 
 	debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
-	model->seedCrop(_crop.get());
+	model->seedCrop(kj::mv(_cropToPlant));
 	model->addEvent("Sowing");
 
 	return true;
@@ -452,32 +449,22 @@ bool AutomaticSowing::reinit(Tools::Date date, bool addYear, bool forceInitYear)
 
 //------------------------------------------------------------------------------
 
-Harvest::Harvest()
-	: _method("total")
-{}
-
-Harvest::Harvest(const Tools::Date& at,
-	CropPtr crop,
-	std::string method)
-	: Workstep(at)
-	, _crop(crop)
-	, _method(method)
-{
-	if (_crop)
-		_crop->setHarvestDate(at);
-}
-
-Harvest::Harvest(json11::Json j)
-	: _method("total")
-{
-	merge(j);
-}
+//Harvest::Harvest(const Tools::Date& at,
+//	Crop* crop,
+//	std::string method)
+//	: Workstep(at)
+//	, _crop(crop)
+//	, _method(method)
+//{
+//	if (_crop)
+//		_crop->setHarvestDate(at);
+//}
 
 Errors Harvest::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
 
-	set_string_value(_method, j, "method");
+	//set_string_value(_method, j, "method");
 	set_double_value(_percentage, j, "percentage");
 	set_bool_value(_exported, j, "exported");
 	set_bool_value(_optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
@@ -499,7 +486,7 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	return json11::Json::object
 	{ {"type", type()}
 	,{"date", date().toIsoDateString()}
-	,{"method", _method}
+	//,{"method", _method}
 	,{"percentage", _percentage}
 	,{"exported", _exported}
 	,{"opt-carbon-conservation", _optCarbMgmtData.optCarbonConservation}
@@ -507,7 +494,7 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	,{"crop-usage", _optCarbMgmtData.cropUsage == greenManure ? "green-manure" : "biomass-production"}
 	,{"residue-heq", _optCarbMgmtData.residueHeq}
 	,{"organic-fertilizer-heq", _optCarbMgmtData.organicFertilizerHeq}
-	,{ "max-residue-recover-fraction", _optCarbMgmtData.maxResidueRecoverFraction }
+	,{"max-residue-recover-fraction", _optCarbMgmtData.maxResidueRecoverFraction }
 	};
 }
 
@@ -516,50 +503,11 @@ bool Harvest::apply(MonicaModel* model)
 	Workstep::apply(model);
 
 	if (model->cropGrowth()) {
-		auto crop = model->currentCrop();
+		auto crop = model->harvestCurrentCrop(_exported, _optCarbMgmtData);
 		debug() << "harvesting crop: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
-		model->harvestCurrentCrop(_exported, _optCarbMgmtData);
+		if (_sowing) _sowing->setCropForReplanting(kj::mv(crop));
 		model->addEvent("Harvest");
 	}
-		/*
-		if (_method == "total"
-			|| _method == "fruitHarvest"
-			|| _method == "cutting")
-		{
-			debug() << "harvesting crop: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
-
-			if (_method == "total")
-				model->harvestCurrentCrop(_exported, _optCarbMgmtData);
-			else if (_method == "fruitHarvest")
-				model->fruitHarvestCurrentCrop(_percentage, _exported);
-			else if (_method == "cutting")
-				model->cuttingCurrentCrop(_percentage, _exported);
-		}
-		else if (_method == "leafPruning")
-		{
-			debug() << "pruning leaves of: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
-			model->leafPruningCurrentCrop(_percentage, _exported);
-		}
-		else if (_method == "tipPruning")
-		{
-			debug() << "pruning tips of: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
-			model->tipPruningCurrentCrop(_percentage, _exported);
-		}
-		else if (_method == "shootPruning")
-		{
-			debug() << "pruning shoots of: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
-			model->shootPruningCurrentCrop(_percentage, _exported);
-		}
-		model->addEvent("Harvest");
-	}
-	else
-	{
-		debug() << "Cannot harvest crop because there is not one anymore" << endl;
-		debug() << "Maybe automatic harvest trigger was already activated so that the ";
-		debug() << "crop was already harvested. This must be the fallback harvest application ";
-		debug() << "that is not necessary anymore and should be ignored" << endl;
-	}
-	*/
 
 	return true;
 }
@@ -571,14 +519,14 @@ AutomaticHarvest::AutomaticHarvest()
 	, _harvestTime("maturity")
 {}
 
-AutomaticHarvest::AutomaticHarvest(CropPtr crop,
-	std::string harvestTime,
-	Date latestHarvest,
-	std::string method)
-	: Harvest(Date(), crop, method)
-	, _harvestTime(harvestTime)
-	, _latestDate(latestHarvest)
-{}
+//AutomaticHarvest::AutomaticHarvest(Crop* crop,
+//	std::string harvestTime,
+//	Date latestHarvest,
+//	std::string method)
+//	: Harvest(Date(), crop, method)
+//	, _harvestTime(harvestTime)
+//	, _latestDate(latestHarvest)
+//{}
 
 AutomaticHarvest::AutomaticHarvest(json11::Json j)
 	: Harvest(j)
@@ -961,7 +909,7 @@ bool NDemandFertilization::reinit(Tools::Date date, bool addYear, bool forceInit
 
 OrganicFertilization::
 OrganicFertilization(const Tools::Date& at,
-	OrganicMatterParametersPtr params,
+	const OrganicMatterParameters& params,
 	double amount,
 	bool incorp)
 	: Workstep(at)
@@ -978,7 +926,7 @@ OrganicFertilization::OrganicFertilization(json11::Json j)
 Errors OrganicFertilization::merge(json11::Json j)
 {
 	Errors res = Workstep::merge(j);
-	set_shared_ptr_value(_params, j, "parameters");
+	_params.merge(j["parameters"]);
 	set_double_value(_amount, j, "amount");
 	set_bool_value(_incorporation, j, "incorporation");
 	return res;
@@ -990,7 +938,7 @@ json11::Json OrganicFertilization::to_json() const
 		{"type", type()},
 		{"date", date().toIsoDateString()},
 		{"amount", _amount},
-		{"parameters", _params ? _params->to_json() : ""},
+		{"parameters", _params.to_json()},
 		{"incorporation", _incorporation} };
 }
 
@@ -1263,28 +1211,28 @@ CultivationMethod::CultivationMethod(const string& name)
 	: _name(name)
 {}
 
-CultivationMethod::CultivationMethod(CropPtr crop,
-	const std::string& name)
-	: _name(name.empty() ? crop->id() : name)
-	, _crop(crop)
-{
-	debug() << "CultivationMethod: " << name.c_str() << endl;
-
-	if (crop->seedDate().isValid())
-		addApplication(Sowing(crop->seedDate(), _crop));
-
-	if (crop->harvestDate().isValid())
-	{
-		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
-		addApplication(Harvest(crop->harvestDate(), _crop));
-	}
-
-	for (Date cd : crop->getCuttingDates())
-	{
-		debug() << "Add cutting date: " << cd.toString() << endl;
-		addApplication(Cutting(cd));
-	}
-}
+//CultivationMethod::CultivationMethod(CropPtr crop,
+//	const std::string& name)
+//	: _name(name.empty() ? crop->id() : name)
+//	, _crop(crop)
+//{
+//	debug() << "CultivationMethod: " << name.c_str() << endl;
+//
+//	if (crop->seedDate().isValid())
+//		addApplication(Sowing(crop->seedDate(), _crop));
+//
+//	if (crop->harvestDate().isValid())
+//	{
+//		debug() << "crop->harvestDate(): " << crop->harvestDate().toString().c_str() << endl;
+//		addApplication(Harvest(crop->harvestDate(), _crop));
+//	}
+//
+//	for (Date cd : crop->getCuttingDates())
+//	{
+//		debug() << "Add cutting date: " << cd.toString() << endl;
+//		addApplication(Cutting(cd));
+//	}
+//}
 
 CultivationMethod::CultivationMethod(json11::Json j)
 {
@@ -1302,6 +1250,9 @@ Errors CultivationMethod::merge(json11::Json j)
 	set_bool_value(_isCoverCrop, j, "is-cover-crop");
 	set_bool_value(_repeat, j, "repeat");
 
+	// keep reference to sowing workstep for use with harvest workstep
+	Sowing* sowingWS = nullptr;
+
 	for (auto wsj : j["worksteps"].array_items())
 	{
 		auto ws = makeWorkstep(wsj);
@@ -1315,19 +1266,21 @@ Errors CultivationMethod::merge(json11::Json j)
 		{
 			if (Sowing* sowing = dynamic_cast<Sowing*>(ws.get()))
 			{
+				sowingWS = sowing;
 				_crop = sowing->crop();
 				if ((_name.empty() || _name == "Fallow") && _crop)
 					_name = _crop->id();
 			}
-		}
-		else if (wsType == "Harvest"
-			|| wsType == "AutomaticHarvest")
+    }
+    else if (wsType == "Harvest"
+      || wsType == "AutomaticHarvest")
 		{
 			if (Harvest* harvest = dynamic_cast<Harvest*>(ws.get()))
 			{
-				harvest->setCrop(_crop);
-				//harvest->setIsCoverCrop(_isCoverCrop);
-				_crop->setHarvestDate(harvest->date());
+				if (sowingWS) {
+					harvest->setSowing(sowingWS);
+					sowingWS->crop()->setHarvestDate(harvest->date());
+				}
 			}
 		}
 	}

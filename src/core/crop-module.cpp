@@ -54,8 +54,7 @@ CropModule::CropModule(SoilColumn& sc,
 	const CropModuleParameters& cropPs,
 	const SimulationParameters& simPs,
 	std::function<void(std::string)> fireEvent,
-	std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-	int usage)
+	std::function<void(std::map<size_t, double>, double)> addOrganicMatter)
 	: _frostKillOn(simPs.pc_FrostKillOn)
 	, soilColumn(sc)
 	, cropPs(cropPs)
@@ -158,7 +157,6 @@ CropModule::CropModule(SoilColumn& sc,
 	, vc_TranspirationRedux(soilColumn.vs_NumberOfLayers(), 1.0)
 	, pc_VernalisationRequirement(cps.cultivarParams.pc_VernalisationRequirement)
 	, pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
-	, eva2_usage(usage)
 	, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
 	, vs_ImpenetrableLayerDepth(stps.vs_ImpenetrableLayerDepth)
 	, _rad24(_stepSize24)
@@ -239,30 +237,6 @@ CropModule::CropModule(SoilColumn& sc,
 
 	if (vs_ImpenetrableLayerDepth > 0)
 		vc_MaxRootingDepth = min(vc_MaxRootingDepth, vs_ImpenetrableLayerDepth);
-
-	// change organs for yield components in case of eva2 simulation
-	// if type of usage is defined
-	debug() << "EVA2 Nutzungsart " << eva2_usage << "\t" << pc_CropName.c_str() << endl;
-	if (eva2_usage == NUTZUNG_GANZPFLANZE)
-	{
-		debug() << "Ganzpflanze" << endl;
-		for (YieldComponent yc : pc_OrganIdsForPrimaryYield)
-			eva2_primaryYieldComponents.push_back(yc);
-		for (YieldComponent yc : pc_OrganIdsForSecondaryYield)
-			eva2_primaryYieldComponents.push_back(yc);
-		eva2_secondaryYieldComponents.clear();
-	}
-
-	if (eva2_usage == NUTZUNG_GRUENDUENGUNG)
-	{
-		// if gruenduengung, put all organs that are in primary yield components
-			// into secondary yield component, because the secondary yield stays on
-			// the farm
-		debug() << "Gründüngung" << endl;
-		for (YieldComponent yc : pc_OrganIdsForPrimaryYield)
-			eva2_secondaryYieldComponents.push_back(yc);
-	}
-
 }
 
 	void CropModule::deserialize(mas::models::monica::CropModuleState::Reader reader) {
@@ -4478,12 +4452,6 @@ namespace
  */
 double CropModule::get_PrimaryCropYield() const
 {
-
-	if (eva2_usage == NUTZUNG_GANZPFLANZE)
-	{
-		return calculateCropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
-	}
-
 	return calculateCropYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
 }
 
@@ -4493,10 +4461,6 @@ double CropModule::get_PrimaryCropYield() const
  */
 double CropModule::get_SecondaryCropYield() const
 {
-	if (eva2_usage == NUTZUNG_GANZPFLANZE || eva2_usage == NUTZUNG_GRUENDUENGUNG)
-	{
-		return calculateCropYield(eva2_secondaryYieldComponents, vc_OrganBiomass);
-	}
 	return calculateCropYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
 }
 
@@ -4506,12 +4470,6 @@ double CropModule::get_SecondaryCropYield() const
 */
 double CropModule::get_CropYieldAfterCutting() const
 {
-
-	if (eva2_usage == NUTZUNG_GANZPFLANZE)
-	{
-		return calculateCropYield(eva2_primaryYieldComponents, vc_OrganBiomass);
-	}
-
 	return calculateCropYield(pc_OrganIdsForCutting, vc_OrganBiomass);
 }
 
@@ -4521,10 +4479,6 @@ double CropModule::get_CropYieldAfterCutting() const
  */
 double CropModule::get_FreshPrimaryCropYield() const
 {
-	if (eva2_usage == NUTZUNG_GANZPFLANZE)
-	{
-		return calculateCropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
-	}
 	return calculateCropFreshMatterYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
 }
 
@@ -4534,10 +4488,6 @@ double CropModule::get_FreshPrimaryCropYield() const
  */
 double CropModule::get_FreshSecondaryCropYield() const
 {
-	if (eva2_usage == NUTZUNG_GANZPFLANZE || eva2_usage == NUTZUNG_GRUENDUENGUNG)
-	{
-		return calculateCropFreshMatterYield(eva2_secondaryYieldComponents, vc_OrganBiomass);
-	}
 	return calculateCropFreshMatterYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
 }
 
@@ -4547,12 +4497,6 @@ double CropModule::get_FreshSecondaryCropYield() const
 */
 double CropModule::get_FreshCropYieldAfterCutting() const
 {
-
-	if (eva2_usage == NUTZUNG_GANZPFLANZE)
-	{
-		return calculateCropFreshMatterYield(eva2_primaryYieldComponents, vc_OrganBiomass);
-	}
-
 	return calculateCropFreshMatterYield(pc_OrganIdsForCutting, vc_OrganBiomass);
 }
 

@@ -77,21 +77,21 @@ namespace Monica
 		                               double julianday,
 		                               bool leapYear);
 
-		void seedCrop(Crop* crop);
+		void seedCrop(kj::Own<Crop> crop);
 
 		Crop* currentCrop() { return _currentCrop; }
 		const Crop* currentCrop() const { return _currentCrop; }
 
 		bool isCropPlanted() const { return _currentCrop && _currentCrop->isValid(); }
 
-		void harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
+		kj::Own<Crop> harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
 
 		void incorporateCurrentCrop();
 
 		void applyMineralFertiliser(MineralFertilizerParameters partition,
 		                            double amount);
 
-		void applyOrganicFertiliser(const OrganicMatterParametersPtr,
+		void applyOrganicFertiliser(const OrganicMatterParameters& omps,
 		                            double amountFM,
 		                            bool incorporation);
 
@@ -113,7 +113,7 @@ namespace Monica
 
 		double dailySumOrgFertiliser() const { return _dailySumOrgFertiliser; }
 
-		void addDailySumOrgFertiliser(double amountFM, OrganicMatterParametersPtr params);
+		void addDailySumOrgFertiliser(double amountFM, const OrganicMatterParameters& params);
 
 		double dailySumOrganicFertilizerDM() const { return _dailySumOrganicFertilizerDM; }
 		double sumOrganicFertilizerDM() const { return _sumOrganicFertilizerDM; }
@@ -252,7 +252,7 @@ namespace Monica
 		kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
 		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
 		kj::Own<SoilTransport> _soilTransport; //!< transport code
-		Crop* _currentCrop{ nullptr }; //! currently possibly planted crop
+		kj::Own<Crop> _currentCrop; //! currently possibly planted crop
 		kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 
 		//! store applied fertiliser during one production process
