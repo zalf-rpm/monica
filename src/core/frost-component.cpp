@@ -23,10 +23,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilcolumn.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"
+#include "tools/helper.h"
 
 using namespace std;
 using namespace Monica;
-//using namespace Tools;
+using namespace Tools;
 
 FrostComponent::FrostComponent(SoilColumn& sc,
   double pm_HydraulicConductivityRedux,
@@ -38,11 +39,29 @@ FrostComponent::FrostComponent(SoilColumn& sc,
   pm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux) {}
 
 void FrostComponent::deserialize(mas::models::monica::FrostModuleState::Reader reader) {
-
+  vm_FrostDepth = reader.getFrostDepth();
+  vm_accumulatedFrostDepth = reader.getAccumulatedFrostDepth();
+  vm_NegativeDegreeDays = reader.getNegativeDegreeDays();
+  vm_ThawDepth = reader.getThawDepth();
+  vm_FrostDays = reader.getFrostDays();
+  setFromCapnpList(vm_LambdaRedux, reader.getLambdaRedux());
+  vm_TemperatureUnderSnow = reader.getTemperatureUnderSnow();
+  vm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
+  pt_TimeStep = reader.getPtTimeStep();
+  pm_HydraulicConductivityRedux = reader.getPmHydraulicConductivityRedux();
 }
 
 void FrostComponent::serialize(mas::models::monica::FrostModuleState::Builder builder) const {
-
+  builder.setFrostDepth(vm_FrostDepth);
+  builder.setAccumulatedFrostDepth(vm_accumulatedFrostDepth);
+  builder.setNegativeDegreeDays(vm_NegativeDegreeDays);
+  builder.setThawDepth(vm_ThawDepth);
+  builder.setFrostDays(vm_FrostDays);
+  setCapnpList(vm_LambdaRedux, builder.initLambdaRedux(vm_LambdaRedux.size()));
+  builder.setTemperatureUnderSnow(vm_TemperatureUnderSnow);
+  builder.setHydraulicConductivityRedux(vm_HydraulicConductivityRedux);
+  builder.setPtTimeStep(pt_TimeStep);
+  builder.setPmHydraulicConductivityRedux(pm_HydraulicConductivityRedux);
 }
 
 /*!

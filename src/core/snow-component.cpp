@@ -57,11 +57,49 @@ SnowComponent::SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters&
 }
 
 void SnowComponent::deserialize(mas::models::monica::SnowModuleState::Reader reader) {
-
+  vm_SnowDensity = reader.getSnowDensity();
+  vm_SnowDepth = reader.getSnowDepth();
+  vm_FrozenWaterInSnow = reader.getFrozenWaterInSnow();
+  vm_LiquidWaterInSnow = reader.getLiquidWaterInSnow();
+  vm_WaterToInfiltrate = reader.getWaterToInfiltrate();
+  vm_maxSnowDepth = reader.getMaxSnowDepth();
+  vm_AccumulatedSnowDepth = reader.getAccumulatedSnowDepth();
+  vm_SnowmeltTemperature = reader.getSnowmeltTemperature();
+  vm_SnowAccumulationThresholdTemperature = reader.getSnowAccumulationThresholdTemperature();
+  vm_TemperatureLimitForLiquidWater = reader.getTemperatureLimitForLiquidWater();
+  vm_CorrectionRain = reader.getCorrectionRain();
+  vm_CorrectionSnow = reader.getCorrectionSnow();
+  vm_RefreezeTemperature = reader.getRefreezeTemperature();
+  vm_RefreezeP1 = reader.getRefreezeP1();
+  vm_RefreezeP2 = reader.getRefreezeP2();
+  vm_NewSnowDensityMin = reader.getNewSnowDensityMin();
+  vm_SnowMaxAdditionalDensity = reader.getSnowMaxAdditionalDensity();
+  vm_SnowPacking = reader.getSnowPacking();
+  vm_SnowRetentionCapacityMin = reader.getSnowRetentionCapacityMin();
+  vm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
 }
 
 void SnowComponent::serialize(mas::models::monica::SnowModuleState::Builder builder) const {
-
+  builder.setSnowDensity(vm_SnowDensity);
+  builder.setSnowDepth(vm_SnowDepth);
+  builder.setFrozenWaterInSnow(vm_FrozenWaterInSnow);
+  builder.setLiquidWaterInSnow(vm_LiquidWaterInSnow);
+  builder.setWaterToInfiltrate(vm_WaterToInfiltrate);
+  builder.setMaxSnowDepth(vm_maxSnowDepth);
+  builder.setAccumulatedSnowDepth(vm_AccumulatedSnowDepth);
+  builder.setSnowmeltTemperature(vm_SnowmeltTemperature);
+  builder.setSnowAccumulationThresholdTemperature(vm_SnowAccumulationThresholdTemperature);
+  builder.setTemperatureLimitForLiquidWater(vm_TemperatureLimitForLiquidWater);
+  builder.setCorrectionRain(vm_CorrectionRain);
+  builder.setCorrectionSnow(vm_CorrectionSnow);
+  builder.setRefreezeTemperature(vm_RefreezeTemperature);
+  builder.setRefreezeP1(vm_RefreezeP1);
+  builder.setRefreezeP2(vm_RefreezeP2);
+  builder.setNewSnowDensityMin(vm_NewSnowDensityMin);
+  builder.setSnowMaxAdditionalDensity(vm_SnowMaxAdditionalDensity);
+  builder.setSnowPacking(vm_SnowPacking);
+  builder.setSnowRetentionCapacityMin(vm_SnowRetentionCapacityMin);
+  builder.setSnowRetentionCapacityMax(vm_SnowRetentionCapacityMax);
 }
 
 /*!
