@@ -131,14 +131,51 @@ SoilOrganic::SoilOrganic(SoilColumn& sc, const SoilOrganicModuleParameters& user
 }
 
 void SoilOrganic::deserialize(mas::models::monica::SoilOrganicModuleState::Reader reader) {
-
+  _params.deserialize(reader.getModuleParams());
+  vs_NumberOfLayers = reader.getVsNumberOfLayers();
+  vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
+  addedOrganicMatter = reader.getAddedOrganicMatter();
+  irrigationAmount = reader.getIrrigationAmount();
+  setFromCapnpList(vo_ActAmmoniaOxidationRate, reader.getActAmmoniaOxidationRate());
+  setFromCapnpList(vo_ActNitrificationRate, reader.getActNitrificationRate());
+  setFromCapnpList(vo_ActDenitrificationRate, reader.getActDenitrificationRate());
+  setFromCapnpList(vo_AOM_FastDeltaSum, reader.getAomFastDeltaSum());
+  setFromCapnpList(vo_AOM_FastInput, reader.getAomFastInput());
+  setFromCapnpList(vo_AOM_FastSum, reader.getAomFastSum());
+  setFromCapnpList(vo_AOM_SlowDeltaSum, reader.getAomSlowDeltaSum());
+  setFromCapnpList(vo_AOM_SlowInput, reader.getAomSlowInput());
+  setFromCapnpList(vo_AOM_SlowSum, reader.getAomSlowSum());
+  setFromCapnpList(vo_CBalance, reader.getCBalance());
+  vo_DecomposerRespiration = reader.getDecomposerRespiration();
+  vo_ErrorMessage = reader.getErrorMessage();
+  setFromCapnpList(vo_InertSoilOrganicC, reader.getInertSoilOrganicC());
+  vo_N2O_Produced = reader.getN2oProduced();
+  vo_N2O_Produced_Nit = reader.getN2oProducedNit();
+  vo_N2O_Produced_Denit = reader.getN2oProducedDenit();
+  vo_NetEcosystemExchange = reader.getNetEcosystemExchange();
+  vo_NetEcosystemProduction = reader.getNetEcosystemProduction();
+  vo_NetNMineralisation = reader.getNetNMineralisation();
+  setFromCapnpList(vo_NetNMineralisationRate, reader.getNetNMineralisationRate());
+  vo_Total_NH3_Volatilised = reader.getTotalNH3Volatilised();
+  vo_NH3_Volatilised = reader.getNh3Volatilised();
+  setFromCapnpList(vo_SMB_CO2EvolutionRate, reader.getSmbCO2EvolutionRate());
+  setFromCapnpList(vo_SMB_FastDelta, reader.getSmbFastDelta());
+  setFromCapnpList(vo_SMB_SlowDelta, reader.getSmbSlowDelta());
+  setFromCapnpList(vs_SoilMineralNContent, reader.getVsSoilMineralNContent());
+  setFromCapnpList(vo_SoilOrganicC, reader.getSoilOrganicC());
+  setFromCapnpList(vo_SOM_FastDelta, reader.getSomFastDelta());
+  setFromCapnpList(vo_SOM_FastInput, reader.getSomFastInput());
+  setFromCapnpList(vo_SOM_SlowDelta, reader.getSomSlowDelta());
+  vo_SumDenitrification = reader.getSumDenitrification();
+  vo_SumNetNMineralisation = reader.getSumNetNMineralisation();
+  vo_SumN2O_Produced = reader.getSumN2OProduced();
+  vo_SumNH3_Volatilised = reader.getSumNH3Volatilised();
+  vo_TotalDenitrification = reader.getTotalDenitrification();
+  incorporation = reader.getIncorporation();
 }
 
 void SoilOrganic::serialize(mas::models::monica::SoilOrganicModuleState::Builder builder) const {
-  //soilColumn                          @0  :SoilColumnState;
-  //siteParams                          @1  :Params.SiteParameters;
   _params.serialize(builder.initModuleParams());
-
   builder.setVsNumberOfLayers(vs_NumberOfLayers);
   builder.setVsNumberOfOrganicLayers(vs_NumberOfOrganicLayers);
   builder.setAddedOrganicMatter(addedOrganicMatter);
@@ -178,9 +215,7 @@ void SoilOrganic::serialize(mas::models::monica::SoilOrganicModuleState::Builder
   builder.setSumN2OProduced(vo_SumN2O_Produced);
   builder.setSumNH3Volatilised(vo_SumNH3_Volatilised);
   builder.setTotalDenitrification(vo_TotalDenitrification);
-
   builder.setIncorporation(incorporation);
-  //cropModule                          @43 :CropModuleState;
 }
 
 /**

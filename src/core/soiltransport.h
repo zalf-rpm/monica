@@ -98,7 +98,7 @@ namespace Monica
     std::vector<double> vq_TotalDispersion;
     std::vector<double> vq_PercolationRate; //!< Soil water flux from above [mm d-1]
 
-    const double pc_MinimumAvailableN{ 0.0 }; //! kg m-2
+    double pc_MinimumAvailableN{ 0.0 }; //! kg m-2
 
     CropModule* cropModule{nullptr};
   };

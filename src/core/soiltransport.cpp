@@ -65,12 +65,45 @@ SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const So
 }
 
 void SoilTransport::deserialize(mas::models::monica::SoilTransportModuleState::Reader reader) {
-
+  _params.deserialize(reader.getModuleParams());
+  setFromCapnpList(vq_Convection, reader.getConvection());
+  vq_CropNUptake = reader.getCropNUptake();
+  setFromCapnpList(vq_DiffusionCoeff, reader.getDiffusionCoeff());
+  setFromCapnpList(vq_Dispersion, reader.getDispersion());
+  setFromCapnpList(vq_DispersionCoeff, reader.getDispersionCoeff());
+  vs_LeachingDepth = reader.getVsLeachingDepth();
+  vq_LeachingAtBoundary = reader.getLeachingAtBoundary();
+  vs_NDeposition = reader.getVsNDeposition();
+  setFromCapnpList(vc_NUptakeFromLayer, reader.getVcNUptakeFromLayer());
+  setFromCapnpList(vq_PoreWaterVelocity, reader.getPoreWaterVelocity());
+  setFromCapnpList(vs_SoilMineralNContent, reader.getVsSoilMineralNContent());
+  setFromCapnpList(vq_SoilNO3, reader.getSoilNO3());
+  setFromCapnpList(vq_SoilNO3_aq, reader.getSoilNO3aq());
+  vq_TimeStep = reader.getTimeStep();
+  setFromCapnpList(vq_TotalDispersion, reader.getTotalDispersion());
+  setFromCapnpList(vq_PercolationRate, reader.getPercolationRate());
+  pc_MinimumAvailableN = reader.getPcMinimumAvailableN();
 }
 
 void SoilTransport::serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const {
-  builder.initModuleParams();
-  _params.serialize(builder.getModuleParams());
+  _params.serialize(builder.initModuleParams());
+  setCapnpList(vq_Convection, builder.initConvection(vq_Convection.size()));
+  builder.setCropNUptake(vq_CropNUptake);
+  setCapnpList(vq_DiffusionCoeff, builder.initDiffusionCoeff(vq_DiffusionCoeff.size()));
+  setCapnpList(vq_Dispersion, builder.initDispersion(vq_Dispersion.size()));
+  setCapnpList(vq_DispersionCoeff, builder.initDispersionCoeff(vq_DispersionCoeff.size()));
+  builder.setVsLeachingDepth(vs_LeachingDepth);
+  builder.setLeachingAtBoundary(vq_LeachingAtBoundary);
+  builder.setVsNDeposition(vs_NDeposition);
+  setCapnpList(vc_NUptakeFromLayer, builder.initVcNUptakeFromLayer(vc_NUptakeFromLayer.size()));
+  setCapnpList(vq_PoreWaterVelocity, builder.initPoreWaterVelocity(vq_PoreWaterVelocity.size()));
+  setCapnpList(vs_SoilMineralNContent, builder.initVsSoilMineralNContent(vs_SoilMineralNContent.size()));
+  setCapnpList(vq_SoilNO3, builder.initSoilNO3(vq_SoilNO3.size()));
+  setCapnpList(vq_SoilNO3_aq, builder.initSoilNO3aq(vq_SoilNO3_aq.size()));
+  builder.setTimeStep(vq_TimeStep);
+  setCapnpList(vq_TotalDispersion, builder.initTotalDispersion(vq_TotalDispersion.size()));
+  setCapnpList(vq_PercolationRate, builder.initPercolationRate(vq_PercolationRate.size()));
+  builder.setPcMinimumAvailableN(pc_MinimumAvailableN);
 }
 
 
