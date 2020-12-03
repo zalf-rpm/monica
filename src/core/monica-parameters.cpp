@@ -1657,11 +1657,57 @@ SoilMoistureModuleParameters::SoilMoistureModuleParameters()
 }
 
 void SoilMoistureModuleParameters::deserialize(mas::models::monica::SoilMoistureModuleParameters::Reader reader) {
-
+  pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
+  pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
+  pm_SurfaceRoughness = reader.getSurfaceRoughness();
+  pm_GroundwaterDischarge = reader.getGroundwaterDischarge();
+  pm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
+  pm_SnowAccumulationTresholdTemperature = reader.getSnowAccumulationTresholdTemperature();
+  pm_KcFactor = reader.getKcFactor();
+  pm_TemperatureLimitForLiquidWater = reader.getTemperatureLimitForLiquidWater();
+  pm_CorrectionSnow = reader.getCorrectionSnow();
+  pm_CorrectionRain = reader.getCorrectionRain();
+  pm_SnowMaxAdditionalDensity = reader.getSnowMaxAdditionalDensity();
+  pm_NewSnowDensityMin = reader.getNewSnowDensityMin();
+  pm_SnowRetentionCapacityMin = reader.getSnowRetentionCapacityMin();
+  pm_RefreezeParameter1 = reader.getRefreezeParameter1();
+  pm_RefreezeParameter2 = reader.getRefreezeParameter2();
+  pm_RefreezeTemperature = reader.getRefreezeTemperature();
+  pm_SnowMeltTemperature = reader.getSnowMeltTemperature();
+  pm_SnowPacking = reader.getSnowPacking();
+  pm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
+  pm_EvaporationZeta = reader.getEvaporationZeta();
+  pm_XSACriticalSoilMoisture = reader.getXsaCriticalSoilMoisture();
+  pm_MaximumEvaporationImpactDepth = reader.getMaximumEvaporationImpactDepth();
+  pm_MaxPercolationRate = reader.getMaxPercolationRate();
+  pm_MoistureInitValue = reader.getMoistureInitValue();
 }
 
 void SoilMoistureModuleParameters::serialize(mas::models::monica::SoilMoistureModuleParameters::Builder builder) const {
-
+  builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
+  builder.setSaturatedHydraulicConductivity(pm_SaturatedHydraulicConductivity);
+  builder.setSurfaceRoughness(pm_SurfaceRoughness);
+  builder.setGroundwaterDischarge(pm_GroundwaterDischarge);
+  builder.setHydraulicConductivityRedux(pm_HydraulicConductivityRedux);
+  builder.setSnowAccumulationTresholdTemperature(pm_SnowAccumulationTresholdTemperature);
+  builder.setKcFactor(pm_KcFactor);
+  builder.setTemperatureLimitForLiquidWater(pm_TemperatureLimitForLiquidWater);
+  builder.setCorrectionSnow(pm_CorrectionSnow);
+  builder.setCorrectionRain(pm_CorrectionRain);
+  builder.setSnowMaxAdditionalDensity(pm_SnowMaxAdditionalDensity);
+  builder.setNewSnowDensityMin(pm_NewSnowDensityMin);
+  builder.setSnowRetentionCapacityMin(pm_SnowRetentionCapacityMin);
+  builder.setRefreezeParameter1(pm_RefreezeParameter1);
+  builder.setRefreezeParameter2(pm_RefreezeParameter2);
+  builder.setRefreezeTemperature(pm_RefreezeTemperature);
+  builder.setSnowMeltTemperature(pm_SnowMeltTemperature);
+  builder.setSnowPacking(pm_SnowPacking);
+  builder.setSnowRetentionCapacityMax(pm_SnowRetentionCapacityMax);
+  builder.setEvaporationZeta(pm_EvaporationZeta);
+  builder.setXsaCriticalSoilMoisture(pm_XSACriticalSoilMoisture);
+  builder.setMaximumEvaporationImpactDepth(pm_MaximumEvaporationImpactDepth);
+  builder.setMaxPercolationRate(pm_MaxPercolationRate);
+  builder.setMoistureInitValue(pm_MoistureInitValue);
 }
 
 SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
@@ -1736,11 +1782,34 @@ json11::Json SoilMoistureModuleParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 void SoilTemperatureModuleParameters::deserialize(mas::models::monica::SoilTemperatureModuleParameters::Reader reader) {
-
+  pt_NTau = reader.getNTau();
+  pt_InitialSurfaceTemperature = reader.getInitialSurfaceTemperature();
+  pt_QuartzRawDensity = reader.getQuartzRawDensity();
+  pt_DensityAir = reader.getDensityAir();
+  pt_DensityWater = reader.getDensityWater();
+  pt_DensityHumus = reader.getDensityHumus();
+  pt_SpecificHeatCapacityAir = reader.getSpecificHeatCapacityAir();
+  pt_SpecificHeatCapacityQuartz = reader.getSpecificHeatCapacityQuartz();
+  pt_SpecificHeatCapacityWater = reader.getSpecificHeatCapacityWater();
+  pt_SpecificHeatCapacityHumus = reader.getSpecificHeatCapacityHumus();
+  pt_SoilAlbedo = reader.getSoilAlbedo();
+  pt_SoilMoisture = reader.getSoilMoisture();
 }
 
 void SoilTemperatureModuleParameters::serialize(mas::models::monica::SoilTemperatureModuleParameters::Builder builder) const {
-
+  builder.setNTau(pt_NTau);
+  builder.setInitialSurfaceTemperature(pt_InitialSurfaceTemperature);
+  builder.setBaseTemperature(pt_BaseTemperature);
+  builder.setQuartzRawDensity(pt_QuartzRawDensity);
+  builder.setDensityAir(pt_DensityAir);
+  builder.setDensityWater(pt_DensityWater);
+  builder.setDensityHumus(pt_DensityHumus);
+  builder.setSpecificHeatCapacityAir(pt_SpecificHeatCapacityAir);
+  builder.setSpecificHeatCapacityQuartz(pt_SpecificHeatCapacityQuartz);
+  builder.setSpecificHeatCapacityWater(pt_SpecificHeatCapacityWater);
+  builder.setSpecificHeatCapacityHumus(pt_SpecificHeatCapacityHumus);
+  builder.setSoilAlbedo(pt_SoilAlbedo);
+  builder.setSoilMoisture(pt_SoilMoisture);
 }
 
 SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j)
@@ -1792,11 +1861,17 @@ json11::Json SoilTemperatureModuleParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 void SoilTransportModuleParameters::deserialize(mas::models::monica::SoilTransportModuleParameters::Reader reader) {
-
+  pq_DispersionLength = reader.getDispersionLength();
+  pq_AD = reader.getAd();
+  pq_DiffusionCoefficientStandard = reader.getDiffusionCoefficientStandard();
+  pq_NDeposition = reader.getNDeposition();
 }
 
 void SoilTransportModuleParameters::serialize(mas::models::monica::SoilTransportModuleParameters::Builder builder) const {
-
+  builder.setDispersionLength(pq_DispersionLength);
+  builder.setAd(pq_AD);
+  builder.setDiffusionCoefficientStandard(pq_DiffusionCoefficientStandard);
+  builder.setNDeposition(pq_NDeposition);
 }
 
 SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j)
@@ -1834,7 +1909,45 @@ void SticsParameters::deserialize(mas::models::monica::SticsParameters::Reader r
 }
 
 void SticsParameters::serialize(mas::models::monica::SticsParameters::Builder builder) const {
-
+  builder.setUseN2O(use_n2o);
+  builder.setUseNit(use_nit);
+  builder.setUseDenit(use_denit);
+  builder.setCodeVnit(code_vnit);
+  builder.setCodeTnit(code_tnit);
+  builder.setCodeRationit(code_rationit);
+  builder.setCodeHourlyWfpsNit(code_hourly_wfps_nit);
+  builder.setCodePdenit(code_pdenit);
+  builder.setCodeRatiodenit(code_ratiodenit);
+  builder.setCodeHourlyWfpsDenit(code_hourly_wfps_denit);
+  builder.setHminn(hminn);
+  builder.setHoptn(hoptn);
+  builder.setPHminnit(pHminnit);
+  builder.setPHmaxnit(pHmaxnit);
+  builder.setNh4Min(nh4_min);
+  builder.setPHminden(pHminden);
+  builder.setPHmaxden(pHmaxden);
+  builder.setWfpsc(wfpsc);
+  builder.setTdenitoptGauss(tdenitopt_gauss);
+  builder.setScaleTdenitopt(scale_tdenitopt);
+  builder.setKd(Kd);
+    builder.setKDesat(k_desat);
+    builder.setFnx(@22 :Float64 = 0.8;     # [1 / day]
+    builder.setVnitmax(@23 :Float64 = 27.3;    # [mg NH4 - N / kg soil / day]
+    builder.setKamm(@24 :Float64 = 24;      # [mg NH4 - N / L]
+    builder.setTnitmin(@25 :Float64 = 5.0;     # [°C]
+    builder.setTnitopt(@26 :Float64 = 30.0;    # [°C]
+    builder.setTnitop2(@27 :Float64 = 35.0;    # [°C]
+    builder.setTnitmax(@28 :Float64 = 58.0;    # [°C]
+    builder.setTnitoptGauss(@29 :Float64 = 32.5;    # [°C]
+    builder.setScaleTnitopt(@30 :Float64 = 16.0;    # [°C]
+    builder.setRationit(@31 :Float64 = 0.0016;
+  builder.setCminPdenit(@32 :Float64 = 1.0;     # [% [0 - 100]]
+    builder.setCmaxPdenit(@33 :Float64 = 6.0;     # [% [0 - 100]]
+    builder.setMinPdenit(@34 :Float64 = 1.0;     # [mg N / Kg soil / day]
+    builder.setMaxPdenit(@35 :Float64 = 20.0;    # [mg N / kg soil / day]
+    builder.setRatiodenit(@36 :Float64 = 0.2;
+  builder.setProfdenit(@37 :Float64 = 20;      # [cm]
+    builder.setVpotdenit(@38 :Float64 = 2.0;     # [kg N / ha / day]
 }
 
 SticsParameters::SticsParameters(json11::Json j) {
@@ -1939,7 +2052,44 @@ void SoilOrganicModuleParameters::deserialize(mas::models::monica::SoilOrganicMo
 }
 
 void SoilOrganicModuleParameters::serialize(mas::models::monica::SoilOrganicModuleParameters::Builder builder) const {
+  somSlowDecCoeffStandard             @0  :Float64 = 4.30e-5;     # 4.30e-5[d - 1], Bruun et al. 2003 4.3e-5
+    somFastDecCoeffStandard             @1  :Float64 = 1.40e-4;     # 1.40e-4[d - 1], from DAISY manual 1.4e-4
+    smbSlowMaintRateStandard            @2  :Float64 = 1.00e-3;     # 1.00e-3[d - 1], from DAISY manual original 1.8e-3
+    smbFastMaintRateStandard            @3  :Float64 = 1.00e-2;     # 1.00e-2[d - 1], from DAISY manual
+    smbSlowDeathRateStandard            @4  :Float64 = 1.00e-3;     # 1.00e-3[d - 1], from DAISY manual
+    smbFastDeathRateStandard            @5  :Float64 = 1.00e-2;     # 1.00e-2[d - 1], from DAISY manual
+    smbUtilizationEfficiency            @6  :Float64 = 0.60;        # 0.60[], from DAISY manual 0.6
+    somSlowUtilizationEfficiency        @7  :Float64 = 0.40;        # 0.40[], from DAISY manual 0.4
+    somFastUtilizationEfficiency        @8  :Float64 = 0.50;        # 0.50[], from DAISY manual 0.5
+    aomSlowUtilizationEfficiency        @9  :Float64 = 0.40;        # 0.40[], from DAISY manual original 0.13
+    aomFastUtilizationEfficiency        @10 :Float64 = 0.10;        # 0.10[], from DAISY manual original 0.69
+    aomFastMaxCtoN                      @11 :Float64 = 1000.0;
+  partSOMFastToSOMSlow                @12 :Float64 = 0.30;        # 0.30[], Bruun et al. 2003
+    partSMBSlowToSOMFast                @13 :Float64 = 0.60;        # 0.60[], from DAISY manual
+    partSMBFastToSOMFast                @14 :Float64 = 0.60;        # 0.60[], from DAISY manual
+    partSOMToSMBSlow                    @15 :Float64 = 0.0150;      # 0.0150[], optimised
+    partSOMToSMBFast                    @16 :Float64 = 0.0002;      # 0.0002[], optimised
+    cmRatioSMB                          @17 :Float64 = 6.70;        # 6.70[], from DAISY manual
+    limitClayEffect                     @18 :Float64 = 0.25;        # 0.25[kg kg - 1], from DAISY manual
+    ammoniaOxidationRateCoeffStandard   @19 :Float64 = 1.0e-1;      # 1.0e-1[d - 1], from DAISY manual
+    nitriteOxidationRateCoeffStandard   @20 :Float64 = 9.0e-1;      # 9.0e-1[d - 1], fudged by Florian Stange
+    transportRateCoeff                  @21 :Float64 = 0.1;         # 0.1[d - 1], from DAISY manual
+    specAnaerobDenitrification          @22 :Float64 = 0.1;         # 0.1[g gas - N g CO2 - C - 1]
+    immobilisationRateCoeffNO3          @23 :Float64 = 0.5;         # 0.5[d - 1]
+    immobilisationRateCoeffNH4          @24 :Float64 = 0.5;         # 0.5[d - 1]
+    denit1                              @25 :Float64 = 0.2;         # 0.2 Denitrification parameter
+    denit2                              @26 :Float64 = 0.8;         # 0.8 Denitrification parameter
+    denit3                              @27 :Float64 = 0.9;         # 0.9 Denitrification parameter
+    hydrolysisKM                        @28 :Float64 = 0.00334;     # 0.00334 from Tabatabai 1973
+    activationEnergy                    @29 :Float64 = 41000.0;     # 41000.0 from Gould et al. 1973
+    hydrolysisP1                        @30 :Float64 = 4.259e-12;   # 4.259e-12 from Sadeghi et al. 1988
+    hydrolysisP2                        @31 :Float64 = 1.408e-12;   # 1.408e-12 from Sadeghi et al. 1988
+    atmosphericResistance               @32 :Float64 = 0.0025;      # 0.0025[s m - 1], from Sadeghi et al. 1988
+    n2oProductionRate                   @33 :Float64 = 0.5;         # 0.5[d - 1]
+    inhibitorNH3                        @34 :Float64 = 1.0;         # 1.0[kg N m - 3] NH3 - induced inhibitor for nitrite oxidation
+    psMaxMineralisationDepth            @35 :Float64 = 0.4;
 
+  sticsParams                         @36 :SticsParameters;
 }
 
 SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j)
