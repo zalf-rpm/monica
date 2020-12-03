@@ -1905,7 +1905,45 @@ json11::Json SoilTransportModuleParameters::to_json() const
 //-----------------------------------------------------------------------------------------
 
 void SticsParameters::deserialize(mas::models::monica::SticsParameters::Reader reader) {
-
+  use_n2o = reader.getUseN2O();
+  use_nit = reader.getUseNit();
+  use_denit = reader.getUseDenit();
+  code_vnit = reader.getCodeVnit();
+  code_tnit = reader.getCodeTnit();
+  code_rationit = reader.getCodeRationit();
+  code_hourly_wfps_nit = reader.getCodeHourlyWfpsNit();
+  code_pdenit = reader.getCodePdenit();
+  code_ratiodenit = reader.getCodeRatiodenit();
+  code_hourly_wfps_denit = reader.getCodeHourlyWfpsDenit();
+  hminn = reader.getHminn();
+  hoptn = reader.getHoptn();
+  pHminnit = reader.getPHminnit();
+  pHmaxnit = reader.getPHmaxnit();
+  nh4_min = reader.getNh4Min();
+  pHminden = reader.getPHminden();
+  pHmaxden = reader.getPHmaxden();
+  wfpsc = reader.getWfpsc();
+  tdenitopt_gauss = reader.getTdenitoptGauss();
+  scale_tdenitopt = reader.getScaleTdenitopt();
+  Kd = reader.getKd();
+  k_desat = reader.getKDesat();
+  fnx = reader.getFnx();
+  vnitmax = reader.getVnitmax();
+  Kamm = reader.getKamm();
+  tnitmin = reader.getTnitmin();
+  tnitopt = reader.getTnitopt();
+  tnitop2 = reader.getTnitop2();
+  tnitmax = reader.getTnitmax();
+  tnitopt_gauss = reader.getTnitoptGauss();
+  scale_tnitopt = reader.getScaleTnitopt();
+  rationit = reader.getRationit();
+  cmin_pdenit = reader.getCminPdenit();
+  cmax_pdenit = reader.getCmaxPdenit();
+  min_pdenit = reader.getMinPdenit();
+  max_pdenit = reader.getMaxPdenit();
+  ratiodenit = reader.getRatiodenit();
+  profdenit = reader.getProfdenit();
+  vpotdenit = reader.getVpotdenit();
 }
 
 void SticsParameters::serialize(mas::models::monica::SticsParameters::Builder builder) const {
@@ -1930,24 +1968,24 @@ void SticsParameters::serialize(mas::models::monica::SticsParameters::Builder bu
   builder.setTdenitoptGauss(tdenitopt_gauss);
   builder.setScaleTdenitopt(scale_tdenitopt);
   builder.setKd(Kd);
-    builder.setKDesat(k_desat);
-    builder.setFnx(@22 :Float64 = 0.8;     # [1 / day]
-    builder.setVnitmax(@23 :Float64 = 27.3;    # [mg NH4 - N / kg soil / day]
-    builder.setKamm(@24 :Float64 = 24;      # [mg NH4 - N / L]
-    builder.setTnitmin(@25 :Float64 = 5.0;     # [°C]
-    builder.setTnitopt(@26 :Float64 = 30.0;    # [°C]
-    builder.setTnitop2(@27 :Float64 = 35.0;    # [°C]
-    builder.setTnitmax(@28 :Float64 = 58.0;    # [°C]
-    builder.setTnitoptGauss(@29 :Float64 = 32.5;    # [°C]
-    builder.setScaleTnitopt(@30 :Float64 = 16.0;    # [°C]
-    builder.setRationit(@31 :Float64 = 0.0016;
-  builder.setCminPdenit(@32 :Float64 = 1.0;     # [% [0 - 100]]
-    builder.setCmaxPdenit(@33 :Float64 = 6.0;     # [% [0 - 100]]
-    builder.setMinPdenit(@34 :Float64 = 1.0;     # [mg N / Kg soil / day]
-    builder.setMaxPdenit(@35 :Float64 = 20.0;    # [mg N / kg soil / day]
-    builder.setRatiodenit(@36 :Float64 = 0.2;
-  builder.setProfdenit(@37 :Float64 = 20;      # [cm]
-    builder.setVpotdenit(@38 :Float64 = 2.0;     # [kg N / ha / day]
+  builder.setKDesat(k_desat);
+  builder.setFnx(fnx);
+  builder.setVnitmax(vnitmax);
+  builder.setKamm(Kamm);
+  builder.setTnitmin(tnitmin);
+  builder.setTnitopt(tnitopt);
+  builder.setTnitop2(tnitop2);
+  builder.setTnitmax(tnitmax);
+  builder.setTnitoptGauss(tnitopt_gauss);
+  builder.setScaleTnitopt(scale_tnitopt);
+  builder.setRationit(rationit);
+  builder.setCminPdenit(cmin_pdenit);
+  builder.setCmaxPdenit(cmax_pdenit);
+  builder.setMinPdenit(min_pdenit);
+  builder.setMaxPdenit(max_pdenit);
+  builder.setRatiodenit(ratiodenit);
+  builder.setProfdenit(profdenit);
+  builder.setVpotdenit(vpotdenit);
 }
 
 SticsParameters::SticsParameters(json11::Json j) {
@@ -2048,48 +2086,83 @@ json11::Json SticsParameters::to_json() const {
 //-----------------------------------------------------------------------------
 
 void SoilOrganicModuleParameters::deserialize(mas::models::monica::SoilOrganicModuleParameters::Reader reader) {
-
+  po_SOM_SlowDecCoeffStandard = reader.getSomSlowDecCoeffStandard();
+  po_SOM_FastDecCoeffStandard = reader.getSomFastDecCoeffStandard();
+  po_SMB_SlowMaintRateStandard = reader.getSmbSlowMaintRateStandard();
+  po_SMB_FastMaintRateStandard = reader.getSmbFastMaintRateStandard();
+  po_SMB_SlowDeathRateStandard = reader.getSmbSlowDeathRateStandard();
+  po_SMB_FastDeathRateStandard = reader.getSmbFastDeathRateStandard();
+  po_SMB_UtilizationEfficiency = reader.getSmbUtilizationEfficiency();
+  po_SOM_SlowUtilizationEfficiency = reader.getSomSlowUtilizationEfficiency();
+  po_SOM_FastUtilizationEfficiency = reader.getSomFastUtilizationEfficiency();
+  po_AOM_SlowUtilizationEfficiency = reader.getAomSlowUtilizationEfficiency();
+  po_AOM_FastUtilizationEfficiency = reader.getAomFastUtilizationEfficiency();
+  po_AOM_FastMaxC_to_N = reader.getAomFastMaxCtoN();
+  po_PartSOM_Fast_to_SOM_Slow = reader.getPartSOMFastToSOMSlow();
+  po_PartSMB_Slow_to_SOM_Fast = reader.getPartSMBSlowToSOMFast();
+  po_PartSMB_Fast_to_SOM_Fast = reader.getPartSMBFastToSOMFast();
+  po_PartSOM_to_SMB_Slow = reader.getPartSOMToSMBSlow();
+  po_PartSOM_to_SMB_Fast = reader.getPartSOMToSMBFast();
+  po_CN_Ratio_SMB = reader.getCnRatioSMB();
+  po_LimitClayEffect = reader.getLimitClayEffect();
+  po_AmmoniaOxidationRateCoeffStandard = reader.getAmmoniaOxidationRateCoeffStandard();
+  po_NitriteOxidationRateCoeffStandard = reader.getNitriteOxidationRateCoeffStandard();
+  po_TransportRateCoeff = reader.getTransportRateCoeff();
+  po_SpecAnaerobDenitrification = reader.getSpecAnaerobDenitrification();
+  po_ImmobilisationRateCoeffNO3 = reader.getImmobilisationRateCoeffNO3();
+  po_ImmobilisationRateCoeffNH4 = reader.getImmobilisationRateCoeffNH4();
+  po_Denit1 = reader.getDenit1();
+  po_Denit2 = reader.getDenit2();
+  po_Denit3 = reader.getDenit3();
+  po_HydrolysisKM = reader.getHydrolysisKM();
+  po_ActivationEnergy = reader.getActivationEnergy();
+  po_HydrolysisP1 = reader.getHydrolysisP1();
+  po_HydrolysisP2 = reader.getHydrolysisP2();
+  po_AtmosphericResistance = reader.getAtmosphericResistance();
+  po_N2OProductionRate = reader.getN2oProductionRate();
+  po_Inhibitor_NH3 = reader.getInhibitorNH3();
+  ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
+  sticsParams.deserialize(reader.getSticsParams());
 }
 
 void SoilOrganicModuleParameters::serialize(mas::models::monica::SoilOrganicModuleParameters::Builder builder) const {
-  somSlowDecCoeffStandard             @0  :Float64 = 4.30e-5;     # 4.30e-5[d - 1], Bruun et al. 2003 4.3e-5
-    somFastDecCoeffStandard             @1  :Float64 = 1.40e-4;     # 1.40e-4[d - 1], from DAISY manual 1.4e-4
-    smbSlowMaintRateStandard            @2  :Float64 = 1.00e-3;     # 1.00e-3[d - 1], from DAISY manual original 1.8e-3
-    smbFastMaintRateStandard            @3  :Float64 = 1.00e-2;     # 1.00e-2[d - 1], from DAISY manual
-    smbSlowDeathRateStandard            @4  :Float64 = 1.00e-3;     # 1.00e-3[d - 1], from DAISY manual
-    smbFastDeathRateStandard            @5  :Float64 = 1.00e-2;     # 1.00e-2[d - 1], from DAISY manual
-    smbUtilizationEfficiency            @6  :Float64 = 0.60;        # 0.60[], from DAISY manual 0.6
-    somSlowUtilizationEfficiency        @7  :Float64 = 0.40;        # 0.40[], from DAISY manual 0.4
-    somFastUtilizationEfficiency        @8  :Float64 = 0.50;        # 0.50[], from DAISY manual 0.5
-    aomSlowUtilizationEfficiency        @9  :Float64 = 0.40;        # 0.40[], from DAISY manual original 0.13
-    aomFastUtilizationEfficiency        @10 :Float64 = 0.10;        # 0.10[], from DAISY manual original 0.69
-    aomFastMaxCtoN                      @11 :Float64 = 1000.0;
-  partSOMFastToSOMSlow                @12 :Float64 = 0.30;        # 0.30[], Bruun et al. 2003
-    partSMBSlowToSOMFast                @13 :Float64 = 0.60;        # 0.60[], from DAISY manual
-    partSMBFastToSOMFast                @14 :Float64 = 0.60;        # 0.60[], from DAISY manual
-    partSOMToSMBSlow                    @15 :Float64 = 0.0150;      # 0.0150[], optimised
-    partSOMToSMBFast                    @16 :Float64 = 0.0002;      # 0.0002[], optimised
-    cmRatioSMB                          @17 :Float64 = 6.70;        # 6.70[], from DAISY manual
-    limitClayEffect                     @18 :Float64 = 0.25;        # 0.25[kg kg - 1], from DAISY manual
-    ammoniaOxidationRateCoeffStandard   @19 :Float64 = 1.0e-1;      # 1.0e-1[d - 1], from DAISY manual
-    nitriteOxidationRateCoeffStandard   @20 :Float64 = 9.0e-1;      # 9.0e-1[d - 1], fudged by Florian Stange
-    transportRateCoeff                  @21 :Float64 = 0.1;         # 0.1[d - 1], from DAISY manual
-    specAnaerobDenitrification          @22 :Float64 = 0.1;         # 0.1[g gas - N g CO2 - C - 1]
-    immobilisationRateCoeffNO3          @23 :Float64 = 0.5;         # 0.5[d - 1]
-    immobilisationRateCoeffNH4          @24 :Float64 = 0.5;         # 0.5[d - 1]
-    denit1                              @25 :Float64 = 0.2;         # 0.2 Denitrification parameter
-    denit2                              @26 :Float64 = 0.8;         # 0.8 Denitrification parameter
-    denit3                              @27 :Float64 = 0.9;         # 0.9 Denitrification parameter
-    hydrolysisKM                        @28 :Float64 = 0.00334;     # 0.00334 from Tabatabai 1973
-    activationEnergy                    @29 :Float64 = 41000.0;     # 41000.0 from Gould et al. 1973
-    hydrolysisP1                        @30 :Float64 = 4.259e-12;   # 4.259e-12 from Sadeghi et al. 1988
-    hydrolysisP2                        @31 :Float64 = 1.408e-12;   # 1.408e-12 from Sadeghi et al. 1988
-    atmosphericResistance               @32 :Float64 = 0.0025;      # 0.0025[s m - 1], from Sadeghi et al. 1988
-    n2oProductionRate                   @33 :Float64 = 0.5;         # 0.5[d - 1]
-    inhibitorNH3                        @34 :Float64 = 1.0;         # 1.0[kg N m - 3] NH3 - induced inhibitor for nitrite oxidation
-    psMaxMineralisationDepth            @35 :Float64 = 0.4;
-
-  sticsParams                         @36 :SticsParameters;
+  builder.setSomSlowDecCoeffStandard(po_SOM_SlowDecCoeffStandard);
+  builder.setSomFastDecCoeffStandard(po_SOM_FastDecCoeffStandard);
+  builder.setSmbSlowMaintRateStandard(po_SMB_SlowMaintRateStandard);
+  builder.setSmbFastMaintRateStandard(po_SMB_FastMaintRateStandard);
+  builder.setSmbSlowDeathRateStandard(po_SMB_SlowDeathRateStandard);
+  builder.setSmbFastDeathRateStandard(po_SMB_FastDeathRateStandard);
+  builder.setSmbUtilizationEfficiency(po_SMB_UtilizationEfficiency);
+  builder.setSomSlowUtilizationEfficiency(po_SOM_SlowUtilizationEfficiency);
+  builder.setSomFastUtilizationEfficiency(po_SOM_FastUtilizationEfficiency);
+  builder.setAomSlowUtilizationEfficiency(po_AOM_SlowUtilizationEfficiency);
+  builder.setAomFastUtilizationEfficiency(po_AOM_FastUtilizationEfficiency);
+  builder.setAomFastMaxCtoN(po_AOM_FastMaxC_to_N);
+  builder.setPartSOMFastToSOMSlow(po_PartSOM_Fast_to_SOM_Slow);
+  builder.setPartSMBSlowToSOMFast(po_PartSMB_Slow_to_SOM_Fast);
+  builder.setPartSMBFastToSOMFast(po_PartSMB_Fast_to_SOM_Fast);
+  builder.setPartSOMToSMBSlow(po_PartSOM_to_SMB_Slow);
+  builder.setPartSOMToSMBFast(po_PartSOM_to_SMB_Fast);
+  builder.setCnRatioSMB(po_CN_Ratio_SMB);
+  builder.setLimitClayEffect(po_LimitClayEffect);
+  builder.setAmmoniaOxidationRateCoeffStandard(po_AmmoniaOxidationRateCoeffStandard);
+  builder.setNitriteOxidationRateCoeffStandard(po_NitriteOxidationRateCoeffStandard);
+  builder.setTransportRateCoeff(po_TransportRateCoeff);
+  builder.setSpecAnaerobDenitrification(po_SpecAnaerobDenitrification);
+  builder.setImmobilisationRateCoeffNO3(po_ImmobilisationRateCoeffNO3);
+  builder.setImmobilisationRateCoeffNH4(po_ImmobilisationRateCoeffNH4);
+  builder.setDenit1(po_Denit1);
+  builder.setDenit2(po_Denit2);
+  builder.setDenit3(po_Denit3);
+  builder.setHydrolysisKM(po_HydrolysisKM);
+  builder.setActivationEnergy(po_ActivationEnergy);
+  builder.setHydrolysisP1(po_HydrolysisP1);
+  builder.setHydrolysisP2(po_HydrolysisP2);
+  builder.setAtmosphericResistance(po_AtmosphericResistance);
+  builder.setN2oProductionRate(po_N2OProductionRate);
+  builder.setInhibitorNH3(po_Inhibitor_NH3);
+  builder.setPsMaxMineralisationDepth(ps_MaxMineralisationDepth);
+  sticsParams.serialize(builder.initSticsParams());
 }
 
 SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j)

@@ -247,8 +247,6 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, mas::models::monica::SoilTempe
 
 void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader) {
 	vt_SoilSurfaceTemperature = reader.getSoilSurfaceTemperature();
-	//soilColumn                  @1  :SoilColumnState;
-	//monica                      @2  :MonicaModelState;
 	_soilColumn_vt_GroundLayer.deserialize(reader.getSoilColumnVtGroundLayer());
 	_soilColumn_vt_BottomLayer.deserialize(reader.getSoilColumnVtBottomLayer());
 	_params.deserialize(reader.getModuleParams());
@@ -271,8 +269,6 @@ void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleStat
 
 void SoilTemperature::serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const {
 	builder.setSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
-	//soilColumn                  @1  :SoilColumnState;
-	//monica                      @2  :MonicaModelState;
 	_soilColumn_vt_GroundLayer.serialize(builder.initSoilColumnVtGroundLayer());
 	_soilColumn_vt_BottomLayer.serialize(builder.initSoilColumnVtBottomLayer());
 	_params.serialize(builder.initModuleParams());

@@ -116,10 +116,8 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureMod
 
 void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader) {
   _params.deserialize(reader.getModuleParams());
-
   vm_NumberOfLayers = reader.getNumberOfLayers();
   vs_NumberOfLayers = reader.getVsNumberOfLayers();
-
   vm_ActualEvaporation = reader.getActualEvaporation();
   vm_ActualEvapotranspiration = reader.getActualEvapotranspiration();
   vm_ActualTranspiration = reader.getActualTranspiration();
@@ -132,7 +130,6 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
   setFromCapnpList(vm_Evapotranspiration, reader.getEvapotranspiration());
   setFromCapnpList(vm_FieldCapacity, reader.getFieldCapacity());
   vm_FluxAtLowerBoundary = reader.getFluxAtLowerBoundary();
-
   setFromCapnpList(vm_GravitationalWater, reader.getGravitationalWater());
   vm_GrossPrecipitation = reader.getGrossPrecipitation();
   vm_GroundwaterAdded = reader.getGroundwaterAdded();
@@ -164,7 +161,6 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
   vw_RelativeHumidity = reader.getRelativeHumidity();
   setFromCapnpList(vm_ResidualEvapotranspiration, reader.getResidualEvapotranspiration());
   setFromCapnpList(vm_SaturatedHydraulicConductivity, reader.getSaturatedHydraulicConductivity());
-
   setFromCapnpList(vm_SoilMoisture, reader.getSoilMoisture());
   vm_SoilMoisture_crit = reader.getSoilMoisturecrit();
   vm_SoilMoistureDeficit = reader.getSoilMoistureDeficit();
@@ -182,23 +178,14 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
   vw_WindSpeed = reader.getVwWindSpeed();
   vw_WindSpeedHeight = reader.getVwWindSpeedHeight();
   vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
-
   snowComponent->deserialize(reader.getSnowComponent());
   frostComponent->deserialize(reader.getFrostComponent());
-  //cropModule                      @70 :CropModuleState;
 }
 
 void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
-  //soilColumn                      @0  :SoilColumnState;
-  //siteParameters                  @1  :Params.SiteParameters;
-  //monica                          @2  :MonicaModelState;
   _params.serialize(builder.initModuleParams());
-  //envPs                           @4  :Params.EnvironmentParameters;
-  //cropPs                          @5  :Params.CropModuleParameters;
-
   builder.setNumberOfLayers(vm_NumberOfLayers);
   builder.setVsNumberOfLayers(vs_NumberOfLayers);
-
   builder.setActualEvaporation(vm_ActualEvaporation);
   builder.setActualEvapotranspiration(vm_ActualEvapotranspiration);
   builder.setActualTranspiration(vm_ActualTranspiration);
@@ -211,7 +198,6 @@ void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Build
   setCapnpList(vm_Evapotranspiration, builder.initEvapotranspiration(vm_Evapotranspiration.size()));
   setCapnpList(vm_FieldCapacity, builder.initFieldCapacity(vm_FieldCapacity.size()));
   builder.setFluxAtLowerBoundary(vm_FluxAtLowerBoundary);
-
   setCapnpList(vm_GravitationalWater, builder.initGravitationalWater(vm_GravitationalWater.size()));
   builder.setGrossPrecipitation(vm_GrossPrecipitation);
   builder.setGroundwaterAdded(vm_GroundwaterAdded);
@@ -243,7 +229,6 @@ void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Build
   builder.setRelativeHumidity(vw_RelativeHumidity);
   setCapnpList(vm_ResidualEvapotranspiration, builder.initResidualEvapotranspiration(vm_ResidualEvapotranspiration.size()));
   setCapnpList(vm_SaturatedHydraulicConductivity, builder.initSaturatedHydraulicConductivity(vm_SaturatedHydraulicConductivity.size()));
-
   setCapnpList(vm_SoilMoisture, builder.initSoilMoisture(vm_SoilMoisture.size()));
   builder.setSoilMoisturecrit(vm_SoilMoisture_crit);
   builder.setSoilMoistureDeficit(vm_SoilMoistureDeficit);
@@ -261,10 +246,8 @@ void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Build
   builder.setVwWindSpeed(vw_WindSpeed);
   builder.setVwWindSpeedHeight(vw_WindSpeedHeight);
   builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
-
   snowComponent->serialize(builder.initSnowComponent());
   frostComponent->serialize(builder.initFrostComponent());
-  //cropModule                      @70 :CropModuleState;
 }
 
 /*!
