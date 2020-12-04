@@ -663,7 +663,7 @@ namespace Monica
 		bool vc_MaturityReached{ false };
 
 		//VOC members
-		const int _stepSize24{ 24 }, _stepSize240{ 240 };
+		int _stepSize24{ 24 }, _stepSize240{ 240 };
 		std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
 		int _index24{ 0 }, _index240{ 0 };
 		bool _full24{ false }, _full240{ false };
