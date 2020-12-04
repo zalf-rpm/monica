@@ -101,7 +101,7 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 
 	if (reader.hasCurrentCrop()) _currentCrop = kj::heap<Crop>(reader.getCurrentCrop());
 	if (reader.hasCurrentCropModule()) {
-    _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _cropPs, reader.getCurrentCropModule());
+    _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _currentCrop->cropParameters(), _cropPs, reader.getCurrentCropModule());
 	}
 
 	_sumFertiliser = reader.getSumFertiliser();

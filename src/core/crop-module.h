@@ -69,8 +69,8 @@ namespace Monica
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter);
 
-		CropModule(SoilColumn& sc, const CropModuleParameters& cropPs, mas::models::monica::CropModuleState::Reader reader)
-			: soilColumn(sc), cropPs(cropPs) { deserialize(reader); }
+		CropModule(SoilColumn& sc, const CropParameters& cps, const CropModuleParameters& cropPs, mas::models::monica::CropModuleState::Reader reader)
+			: soilColumn(sc), cropPs(cropPs), speciesPs(cps.speciesParams), cultivarPs(cps.cultivarParams) { deserialize(reader); }
 		void deserialize(mas::models::monica::CropModuleState::Reader reader);
 		void serialize(mas::models::monica::CropModuleState::Builder builder) const;
 
@@ -446,8 +446,8 @@ namespace Monica
 		SoilColumn& soilColumn;
 		const CropParameters* perennialCropParams{ nullptr };
 		const CropModuleParameters& cropPs;
-		SpeciesParameters speciesPs;
-		CultivarParameters cultivarPs;
+		const SpeciesParameters& speciesPs;
+		const CultivarParameters& cultivarPs;
 
 		//! old N
 		//    static const double vw_AtmosphericCO2Concentration;
