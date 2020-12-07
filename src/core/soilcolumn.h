@@ -224,7 +224,8 @@ namespace Monica
                const Soil::SoilPMs& soilParams,
                double pm_CriticalMoistureDepth);
 
-    SoilColumn(mas::models::monica::SoilColumnState::Reader reader) { deserialize(reader); }
+    SoilColumn(mas::models::monica::SoilColumnState::Reader reader, CropModule* cropModule = nullptr)
+    : cropModule(cropModule) { deserialize(reader); }
     void deserialize(mas::models::monica::SoilColumnState::Reader reader);
     void serialize(mas::models::monica::SoilColumnState::Builder builder) const;
 
@@ -306,7 +307,19 @@ namespace Monica
 
     CropModule* cropModule{nullptr};
 
-    std::list<std::function<double()>> _delayedNMinApplications;
+    struct DelayedNMinApplicationParams {
+      void deserialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader);
+      void serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const;
+
+      MineralFertilizerParameters fp;
+      double vf_SamplingDepth;
+      double vf_CropNTarget;
+      double vf_CropNTarget30;
+      double vf_FertiliserMinApplication;
+      double vf_FertiliserMaxApplication;
+      int vf_TopDressingDelay;
+    };
+    std::list<DelayedNMinApplicationParams> _delayedNMinApplications;
 
     double pm_CriticalMoistureDepth{ 0 };
   };

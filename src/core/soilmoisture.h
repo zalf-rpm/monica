@@ -47,7 +47,7 @@ namespace Monica
   public:
     SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
 
-    SoilMoisture(MonicaModel& monica, mas::models::monica::SoilMoistureModuleState::Reader reader);
+    SoilMoisture(MonicaModel& monica, mas::models::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule = nullptr);
     void deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader);
     void serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const;
 

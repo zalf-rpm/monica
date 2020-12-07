@@ -476,8 +476,6 @@ CropModule::CropModule(SoilColumn& sc,
 		_jjvEmissions.deserialize(reader.getJjvEmissions());
 		_vocSpecies.deserialize(reader.getVocSpecies());
 		_cropPhotosynthesisResults.deserialize(reader.getCropPhotosynthesisResults());
-		// std::function<void(std::string)> _fireEvent
-		// std::function<void(std::map<size_t, double>
 		vc_O3_shortTermDamage = reader.getO3ShortTermDamage();
 		vc_O3_longTermDamage = reader.getO3LongTermDamage();
 		vc_O3_senescence = reader.getO3Senescence();
@@ -708,7 +706,6 @@ CropModule::CropModule(SoilColumn& sc,
     builder.setAnthesisDay(vc_AnthesisDay);
     builder.setMaturityDay(vc_MaturityDay);
     builder.setMaturityReached(vc_MaturityReached);
-    // VOC members
     builder.setStepSize24(_stepSize24);
     builder.setStepSize240(_stepSize240);
 		setCapnpList(_rad24, builder.initRad24(_rad24.size()));
@@ -723,8 +720,6 @@ CropModule::CropModule(SoilColumn& sc,
 		_jjvEmissions.serialize(builder.initJjvEmissions());
 		_vocSpecies.serialize(builder.initVocSpecies());
 		_cropPhotosynthesisResults.serialize(builder.initCropPhotosynthesisResults());
-    // std::function<void(std::string)> _fireEvent
-    // std::function<void(std::map<size_t, double>
     builder.setO3ShortTermDamage(vc_O3_shortTermDamage);
     builder.setO3LongTermDamage(vc_O3_longTermDamage);
     builder.setO3Senescence(vc_O3_senescence);

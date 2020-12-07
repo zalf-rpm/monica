@@ -46,8 +46,9 @@ namespace Monica
   public:
     SoilOrganic(SoilColumn& soilColumn, const SoilOrganicModuleParameters& params);
 
-    SoilOrganic(SoilColumn& sc, mas::models::monica::SoilOrganicModuleState::Reader reader)
-      : soilColumn(sc) {
+    SoilOrganic(SoilColumn& sc, mas::models::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
+      : soilColumn(sc)
+      , cropModule(cropModule) {
       deserialize(reader);
     }
 

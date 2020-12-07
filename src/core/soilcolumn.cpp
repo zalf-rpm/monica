@@ -240,8 +240,7 @@ void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader
 	_vf_TopDressing = reader.getVfTopDressing();
 	_vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
 	_vf_TopDressingDelay = reader.getVfTopDressingDelay();
-	//reader.getCropModule                  @12 :CropModuleState;
-	//std::list<std::function<double()>> _delayedNMinApplications;
+	setFromComplexCapnpList(_delayedNMinApplications, reader.getDelayedNMinApplications());
 	pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
 }
 
@@ -258,8 +257,7 @@ void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder
 	builder.setVfTopDressing(_vf_TopDressing);
 	_vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
 	builder.setVfTopDressingDelay(_vf_TopDressingDelay);
-	//builder.setCropModule                  @12 :CropModuleState;
-	//std::list<std::function<double()>> _delayedNMinApplications;
+	setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications(_delayedNMinApplications.size()));
 	builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
 }
 
@@ -343,16 +341,16 @@ applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fp,
 {
 	if (at(0).get_Vs_SoilMoisture_m3() > at(0).vs_FieldCapacity())
 	{
-		_delayedNMinApplications.push_back([=]()
-		{
-			return this->applyMineralFertiliserViaNMinMethod(fp,
-				vf_SamplingDepth,
-				vf_CropNTarget,
-				vf_CropNTarget30,
-				vf_FertiliserMinApplication,
-				vf_FertiliserMaxApplication,
-				vf_TopDressingDelay);
-		});
+		_delayedNMinApplications.push_back({
+      fp,
+      vf_SamplingDepth,
+      vf_CropNTarget,
+			vf_CropNTarget30,
+      vf_FertiliserMinApplication,
+      vf_FertiliserMaxApplication,
+      vf_TopDressingDelay
+      }
+    );
 
 		debug() << "Soil too wet for fertilisation. Fertiliser event adjourned to next day." << endl;
 		return 0.0;
@@ -457,12 +455,14 @@ double SoilColumn::applyPossibleTopDressing()
  * then removes the first fertilizer item in list.
  */
 double SoilColumn::applyPossibleDelayedFerilizer() {
-	list<std::function<double()> > delayedApps = _delayedNMinApplications;
+	auto& delayedApps = _delayedNMinApplications;
 	double n_amount = 0.0;
 	while (!delayedApps.empty()) {
-		n_amount += delayedApps.front()();
+		const auto& da = delayedApps.front();
+		n_amount += applyMineralFertiliserViaNMinMethod(
+			da.fp, da.vf_SamplingDepth, da.vf_CropNTarget, da.vf_CropNTarget30,
+			da.vf_FertiliserMinApplication, da.vf_FertiliserMaxApplication, da.vf_TopDressingDelay);
 		delayedApps.pop_front();
-		_delayedNMinApplications.pop_front();
 	}
 	return n_amount;
 }
@@ -801,6 +801,25 @@ double SoilColumn::sumSoilTemperature(int layers) const
 }
 
 //------------------------------------------------------------------------------
+
+void SoilColumn::DelayedNMinApplicationParams::deserialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {
+	fp.deserialize(reader.getFp());
+	vf_SamplingDepth = reader.getSamplingDepth();
+	vf_CropNTarget = reader.getCropNTarget();
+	vf_CropNTarget30 = reader.getCropNTarget30();
+	vf_FertiliserMinApplication = reader.getFertiliserMinApplication();
+	vf_FertiliserMaxApplication = reader.getFertiliserMaxApplication();
+	vf_TopDressingDelay = reader.getTopDressingDelay();
+}
+void SoilColumn::DelayedNMinApplicationParams::serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const {
+	fp.serialize(builder.initFp());
+	builder.setSamplingDepth(vf_SamplingDepth);
+	builder.setCropNTarget(vf_CropNTarget);
+	builder.setCropNTarget30(vf_CropNTarget30);
+	builder.setFertiliserMinApplication(vf_FertiliserMinApplication);
+	builder.setFertiliserMaxApplication(vf_FertiliserMaxApplication);
+	builder.setTopDressingDelay(vf_TopDressingDelay);
+}
 
 /**
  * @brief Constructor

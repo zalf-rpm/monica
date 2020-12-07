@@ -105,12 +105,13 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
   //  }
 }
 
-SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureModuleState::Reader reader)
+SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule)
   : soilColumn(mm.soilColumnNC())
   , siteParameters(mm.siteParameters())
   , monica(mm)
   , envPs(mm.environmentParameters())
-  , cropPs(mm.cropParameters()) {
+  , cropPs(mm.cropParameters())
+  , cropModule(cropModule) {
   deserialize(reader);
 }
 

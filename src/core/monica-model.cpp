@@ -84,26 +84,47 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 	_cropPs.deserialize(reader.getCropPs());
 	_simPs.deserialize(reader.getSimPs());
 	_groundwaterInformation.deserialize(reader.getGroundwaterInformation());
-	if (_soilColumn) _soilColumn->deserialize(reader.getSoilColumn());
-	else _soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn());
+
+	if (reader.hasCurrentCrop()) _currentCrop = kj::heap<Crop>(reader.getCurrentCrop());
+	if (reader.hasCurrentCropModule()) {
+		auto addOMFunc = [this](std::map<size_t, double> layer2amount, double nconc) {
+			this->_soilOrganic->addOrganicMatter(this->_currentCrop->residueParameters(), layer2amount, nconc);
+		};
+		_currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _currentCrop->cropParameters(), _cropPs,
+			[this](string event) { this->addEvent(event); }, addOMFunc, reader.getCurrentCropModule());
+	}
+
+	if (_soilColumn) {
+		_soilColumn->deserialize(reader.getSoilColumn());
+		_soilColumn->putCrop(_currentCropModule.get());
+	} else {
+		_soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn(), _currentCropModule.get());
+	}
 	
 	if (_soilTemperature) _soilTemperature->deserialize(reader.getSoilTemperature());
 	else _soilTemperature = kj::heap<SoilTemperature>(*this, reader.getSoilTemperature());
 
-	if (_soilMoisture) _soilMoisture->deserialize(reader.getSoilMoisture());
-	else _soilMoisture = kj::heap<SoilMoisture>(*this, reader.getSoilMoisture());
-
-	if (_soilOrganic) _soilOrganic->deserialize(reader.getSoilOrganic());
-	else _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn.get(), reader.getSoilOrganic());
-
-	if (_soilTransport) _soilTransport->deserialize(reader.getSoilTransport());
-	else _soilTransport = kj::heap<SoilTransport>(*_soilColumn.get(), reader.getSoilTransport());
-
-	if (reader.hasCurrentCrop()) _currentCrop = kj::heap<Crop>(reader.getCurrentCrop());
-	if (reader.hasCurrentCropModule()) {
-    _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _currentCrop->cropParameters(), _cropPs, reader.getCurrentCropModule());
+	if (_soilMoisture) {
+		_soilMoisture->deserialize(reader.getSoilMoisture());
+		_soilMoisture->putCrop(_currentCropModule.get());
+	} else {
+		_soilMoisture = kj::heap<SoilMoisture>(*this, reader.getSoilMoisture(), _currentCropModule.get());
 	}
 
+	if (_soilOrganic) {
+		_soilOrganic->deserialize(reader.getSoilOrganic());
+		_soilOrganic->putCrop(_currentCropModule.get());
+	} else {
+		_soilOrganic = kj::heap<SoilOrganic>(*_soilColumn.get(), reader.getSoilOrganic(), _currentCropModule.get());
+	}
+
+	if (_soilTransport) {
+		_soilTransport->deserialize(reader.getSoilTransport());
+		_soilTransport->putCrop(_currentCropModule.get());
+	} else {
+		_soilTransport = kj::heap<SoilTransport>(*_soilColumn.get(), reader.getSoilTransport(), _currentCropModule.get());
+	}
+	
 	_sumFertiliser = reader.getSumFertiliser();
 	_sumOrgFertiliser = reader.getSumOrgFertiliser();
 
