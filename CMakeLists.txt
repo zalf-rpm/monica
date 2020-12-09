@@ -3,8 +3,25 @@ project(monica)
 
 option(WITH_CAPNPROTO "Create also Cap'n Proto server" ON)
 
+#add_compile_definitions(CAPNPROTO_SERIALIZATION_SUPPORT)
 add_compile_definitions(NO_MYSQL)
 set(MT_RUNTIME_LIB 1)
+
+#set absolute filenames (to resolve .. in paths)
+macro(set_absolute_path var_name path)
+	get_filename_component(toAbsPath ${path} ABSOLUTE)
+	set(${var_name} ${toAbsPath})
+endmacro(set_absolute_path)
+
+if (WITH_CAPNPROTO)
+set_absolute_path(MAS_INFRASTRUCTURE_DIR "../mas-infrastructure")
+set_absolute_path(CAPNP_SCHEMAS_DIR "${MAS_INFRASTRUCTURE_DIR}/capnproto_schemas")
+
+if(NOT TARGET capnp_schemas_lib)
+message(STATUS "target: capnp_schemas_lib")
+	add_subdirectory(../mas-infrastructure/capnproto_schemas mas-infrastructure/capnproto_schemas)
+endif()
+endif()
 
 add_subdirectory(../util/tools/date util/date)
 add_subdirectory(../util/tools/helpers util/helpers)
@@ -14,12 +31,6 @@ add_subdirectory(../util/climate/climate-file-io util/climate-file-io)
 add_subdirectory(../util/soil util/soil)
 add_subdirectory(../util/db/db util/db)
 add_subdirectory(../util/zeromq util/zeromq)
-
-#set absolute filenames (to resolve .. in paths)
-macro(set_absolute_path var_name path)
-	get_filename_component(toAbsPath ${path} ABSOLUTE)
-	set(${var_name} ${toAbsPath})
-endmacro(set_absolute_path)
 
 #define delete file from path
 macro(remove_file list_name file_name)
@@ -60,6 +71,11 @@ if(MSVC)
 	endif()
 endif()
 
+# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 #set(CMAKE_CXX_STANDARD 14)
 
 # setup the target group variable, used to group targets into folders in IDEs
@@ -77,11 +93,41 @@ endif()
 
 link_directories($ENV{HOME}/lib)
 
+
+
 find_package(Threads REQUIRED)
 
 #define folder structure in vs solution corresponding to real folder structure
 GroupSources("src" ${PROJECT_SOURCE_DIR})
 GroupSources("util" "${PROJECT_SOURCE_DIR}/..")
+
+#------------------------------------------------------------------------------
+
+#if (WITH_CAPNPROTO)
+
+#set_absolute_path(MAS_INFRASTRUCTURE_DIR "../mas-infrastructure")
+#set_absolute_path(CAPNP_SCHEMAS_DIR "${MAS_INFRASTRUCTURE_DIR}/capnproto_schemas")
+
+#find_package(CapnProto CONFIG REQUIRED)
+
+#set(CAPNPC_SRC_PREFIX ${CAPNP_SCHEMAS_DIR})
+#capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS 
+#${CAPNP_SCHEMAS_DIR}/common.capnp 
+#${CAPNP_SCHEMAS_DIR}/climate_data.capnp
+#${CAPNP_SCHEMAS_DIR}/soil_data.capnp
+#${CAPNP_SCHEMAS_DIR}/model.capnp
+#${CAPNP_SCHEMAS_DIR}/geo_coord.capnp
+#${CAPNP_SCHEMAS_DIR}/date.capnp
+#${CAPNP_SCHEMAS_DIR}/persistence.capnp
+#${CAPNP_SCHEMAS_DIR}/registry.capnp
+#${CAPNP_SCHEMAS_DIR}/cluster_admin_service.capnp
+#${CAPNP_SCHEMAS_DIR}/monica/monica_params.capnp
+#${CAPNP_SCHEMAS_DIR}/monica/monica_state.capnp
+#)
+#message(STATUS "CAPNP_HDRS: " ${CAPNP_HDRS})
+#message(STATUS "CAPNP_SRCS: " ${CAPNP_SRCS})	
+
+#endif()
 
 #------------------------------------------------------------------------------
 
@@ -129,8 +175,11 @@ add_library(monica_lib
 
 	src/resource/version.h
 	src/resource/version_resource.rc
+
+	#${CAPNP_HDRS}
+	#${CAPNP_SRCS}
 )
-target_include_directories(monica_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(monica_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
 if (MSVC)
 	target_compile_options(monica_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
@@ -147,6 +196,8 @@ target_link_libraries(monica_lib
 	sqlite3_lib
 	climate_common_lib
 	climate_file_io_lib
+	capnp_schemas_lib
+	#CapnProto::capnp-rpc
 )
 
 #------------------------------------------------------------------------------
@@ -155,10 +206,7 @@ target_link_libraries(monica_lib
 set(MONICA_RUN_SOURCE_FILES
 	src/io/csv-format.h
 	src/io/csv-format.cpp
-	
-	src/io/database-io.h
-	src/io/database-io.cpp
-
+		
 	src/run/env-from-json-config.h
 	src/run/env-from-json-config.cpp
 
@@ -166,7 +214,7 @@ set(MONICA_RUN_SOURCE_FILES
 	src/run/env-json-from-json-config.cpp
 )
 add_library(monica_run_lib ${MONICA_RUN_SOURCE_FILES})
-target_include_directories(monica_run_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+#target_include_directories(monica_run_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 if (MSVC)
 	target_compile_options(monica_run_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
@@ -193,6 +241,7 @@ target_link_libraries(monica-run
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
 	monica_run_lib
+	#CapnProto::capnp-rpc
 )
 
 #------------------------------------------------------------------------------
@@ -243,6 +292,8 @@ set(MONICA_ZMQ_RUN_SOURCE
 	src/run/run-monica-zmq.h
 	src/run/run-monica-zmq.cpp
 	src/run/monica-zmq-run-main.cpp
+
+	${CAPNP_HDRS}
 )
 add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
 if (MSVC)
@@ -316,39 +367,24 @@ target_link_libraries(monica-zmq-server
 
 if (WITH_CAPNPROTO)
 
-set_absolute_path(CAPNP_SCHEMAS_DIR "../capnproto_schemas")
-
-find_package(CapnProto CONFIG REQUIRED)
-
-set(CAPNPC_SRC_PREFIX ${CAPNP_SCHEMAS_DIR})
-capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS 
-${CAPNP_SCHEMAS_DIR}/common.capnp 
-${CAPNP_SCHEMAS_DIR}/climate_data.capnp
-${CAPNP_SCHEMAS_DIR}/soil_data.capnp
-${CAPNP_SCHEMAS_DIR}/model.capnp
-${CAPNP_SCHEMAS_DIR}/geo_coord.capnp
-${CAPNP_SCHEMAS_DIR}/date.capnp
-${CAPNP_SCHEMAS_DIR}/cluster_admin_service.capnp)
-message(STATUS "CAPNP_SRCS: " "${CAPNP_SRCS}")	
-
 # create monica-capnp-server executable, the server running monica via CapNProto RPC
 set(MONICA_CAPNP_SERVER_SOURCE_FILES
 	src/run/monica-capnp-server-main.cpp
 	src/run/run-monica-capnp.h
 	src/run/run-monica-capnp.cpp
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
-set(MONICA_CAPNP_SERVER_SOURCE 
-	${MONICA_CAPNP_SERVER_SOURCE_FILES}
-	${CAPNP_SRCS}
-)
-add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE})
+add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE_FILES})
 target_link_libraries(monica-capnp-server
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
-	CapnProto::capnp-rpc
+	#CapnProto::capnp-rpc
 	monica_lib
 )
-target_include_directories(monica-capnp-server PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(monica-capnp-server PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
 if (MSVC)
 	target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
@@ -360,19 +396,19 @@ set(MONICA_CAPNP_PROXY_SOURCE_FILES
 	src/run/monica-capnp-proxy-main.cpp
 	src/run/run-monica-capnp.h
 	src/run/run-monica-capnp.cpp
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
-set(MONICA_CAPNP_PROXY_SOURCE 
-	${MONICA_CAPNP_PROXY_SOURCE_FILES}
-	${CAPNP_SRCS}
-)
-add_executable(monica-capnp-proxy ${MONICA_CAPNP_PROXY_SOURCE})
+add_executable(monica-capnp-proxy ${MONICA_CAPNP_PROXY_SOURCE_FILES})
 target_link_libraries(monica-capnp-proxy
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
-	CapnProto::capnp-rpc
+	#CapnProto::capnp-rpc
 	monica_lib
 )
-target_include_directories(monica-capnp-proxy PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(monica-capnp-proxy PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
 if (MSVC)
 	target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
