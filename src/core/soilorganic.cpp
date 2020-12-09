@@ -48,7 +48,7 @@ using namespace Soil;
  */
 SoilOrganic::SoilOrganic(SoilColumn& sc,
                          const SiteParameters& stps,
-                         const SoilOrganicModuleParameters& userParams)
+                         const UserSoilOrganicParameters& userParams)
   : soilColumn(sc),
   siteParams(stps),
   organicPs(userParams),

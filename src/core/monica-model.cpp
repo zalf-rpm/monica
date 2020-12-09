@@ -87,81 +87,12 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
                    _envPs.p_LeachingDepth,
                    _envPs.p_timeStep,
                    _cropPs.pc_MinimumAvailableN)
-	//, _rad24(_stepSize24)
-	//, _rad240(_stepSize240)
-	//, _tfol24(_stepSize24)
-	//, _tfol240(_stepSize240)
+	, _rad24(_stepSize24)
+	, _rad240(_stepSize240)
+	, _tfol24(_stepSize24)
+	, _tfol240(_stepSize240)
   , vw_AtmosphericCO2Concentration(_envPs.p_AtmosphericCO2)
 {}
-
-
-void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder builder) {
-	builder.initSitePs();
-	_sitePs.serialize(builder.getSitePs());
-
-
-	/*
-	smPs                            @1  :Params.SoilMoistureModuleParameters;
-	envPs                           @2  :Params.EnvironmentParameters;
-	cropPs                          @3  :Params.CropModuleParameters;
-	soilTempPs                      @4  :Params.SoilTemperatureModuleParameters;
-	soilTransPs                     @5  :Params.SoilTransportModuleParameters;
-	soilOrganicPs                   @6  :Params.SoilOrganicModuleParameters;
-	simPs                           @7  :Params.SimulationParameters;
-
-	groundwaterInformation          @8  :Params.MeasuredGroundwaterTableInformation;
-
-	soilColumn                      @9  :SoilColumnState; # main soil data structure
-		soilTemperature                 @10 :SoilTemperatureModuleState; # temperature code
-		soilMoisture                    @11 :SoilMoistureModuleState; # moisture code
-		soilOrganic                     @12 :SoilOrganicModuleState; # organic code
-		soilTransport                   @13 :SoilTransportModuleState; # transport code
-		currentCrop                     @14 :Crop; # currently possibly planted crop
-		currentCropGrowth               @15 :CropModuleState; # crop code for possibly planted crop
-
-		sumFertiliser                   @16 :Float64;
-	sumOrgFertiliser                @17 :Float64;
-
-	dailySumFertiliser              @18 :Float64;
-	dailySumOrgFertiliser           @19 :Float64;
-
-	dailySumOrganicFertilizerDM     @20 :Float64;
-	sumOrganicFertilizerDM          @21 :Float64;
-
-	humusBalanceCarryOver           @22 :Float64;
-
-	dailySumIrrigationWater         @23 :Float64;
-
-	optCarbonExportedResidues       @24 :Float64;
-	optCarbonReturnedResidues       @25 :Float64;
-
-	currentStepDate                 @26 :Date;
-
-	struct ACDToValue {
-		acd     @0 :UInt16;
-		value   @1 :Float64;
-	}
-	climateData                     @27 :List(List(ACDToValue));
-	currentEvents                   @28 :List(Text);
-	previousDaysEvents              @29 :List(Text);
-
-	clearCropUponNextDay            @30 :Bool;
-
-	daysWithCrop                    @31 :UInt16;
-	accuNStress                     @32 :Float64;
-	accuWaterStress                 @33 :Float64;
-	accuHeatStress                  @34 :Float64;
-	accuOxygenStress                @35 :Float64;
-
-	vwAtmosphericCO2Concentration   @36 :Float64;
-	vwAtmosphericO3Concentration    @37 :Float64;
-	vsGroundwaterDepth              @38 :Float64;
-
-	cultivationMethodCount          @39 :UInt16;
-	*/
-
-}
-
 
 
 /**

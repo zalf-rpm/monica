@@ -39,7 +39,7 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const SoilTransportModuleParameters& stPs,
+SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const UserSoilTransportParameters& stPs,
   double p_LeachingDepth, double p_timeStep, double pc_MinimumAvailableN)
   : soilColumn(sc)
   , stPs(stPs)

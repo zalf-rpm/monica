@@ -69,7 +69,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm)
 		_soilColumn_vt_GroundLayer = _soilColumn_vt_BottomLayer = _soilColumn.back();
 	}
 
-	const SoilTemperatureModuleParameters& user_temp = monica.soilTemperatureParameters();
+	const UserSoilTemperatureParameters& user_temp = monica.soilTemperatureParameters();
 	double pt_BaseTemperature = user_temp.pt_BaseTemperature;  // temp für unterste Schicht (durch. Jahreslufttemp-)
 	double pt_InitialSurfaceTemperature = user_temp.pt_InitialSurfaceTemperature; // Replace by Mean air temperature
 	double pt_Ntau = user_temp.pt_NTau;

@@ -55,7 +55,7 @@ namespace Monica
   public:
     SoilOrganic(SoilColumn& soilColumn,
                 const SiteParameters& sps,
-                const SoilOrganicModuleParameters& userParams);
+                const UserSoilOrganicParameters& userParams);
 
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
@@ -160,10 +160,10 @@ namespace Monica
     double fo_MoistOnNitrification(double d_SoilMoisture_pF);
     double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
-		//void fo_distributeDeadRootBiomass();
+		void fo_distributeDeadRootBiomass();
     SoilColumn& soilColumn;
     const SiteParameters& siteParams;
-    const SoilOrganicModuleParameters& organicPs;
+    const UserSoilOrganicParameters& organicPs;
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};
