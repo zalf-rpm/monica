@@ -58,6 +58,14 @@ YieldComponent::YieldComponent(json11::Json j)
   merge(j);
 }
 
+void YieldComponent::deserialize(mas::models::monica::YieldComponent::Reader reader) {
+  
+}
+
+void YieldComponent::serialize(mas::models::monica::YieldComponent::Builder builder) const {
+  
+}
+
 Errors YieldComponent::merge(json11::Json j)
 {
   set_int_value(organId, j, "organId");
@@ -82,6 +90,14 @@ json11::Json YieldComponent::to_json() const
 SpeciesParameters::SpeciesParameters(json11::Json j)
 {
   merge(j);
+}
+
+void SpeciesParameters::deserialize(mas::models::monica::SpeciesParameters::Reader reader) {
+
+}
+
+void SpeciesParameters::serialize(mas::models::monica::SpeciesParameters::Builder builder) const {
+
 }
 
 Errors SpeciesParameters::merge(json11::Json j)
@@ -224,6 +240,14 @@ json11::Json SpeciesParameters::to_json() const
 CultivarParameters::CultivarParameters(json11::Json j)
 {
   merge(j);
+}
+
+void CultivarParameters::deserialize(mas::models::monica::CultivarParameters::Reader reader) {
+
+}
+
+void CultivarParameters::serialize(mas::models::monica::CultivarParameters::Builder builder) const {
+
 }
 
 Errors CultivarParameters::merge(json11::Json j)
@@ -370,6 +394,14 @@ CropParameters::CropParameters(json11::Json sj, json11::Json cj)
   merge(sj, cj);
 }
 
+void CropParameters::deserialize(mas::models::monica::CropParameters::Reader reader) {
+
+}
+
+void CropParameters::serialize(mas::models::monica::CropParameters::Builder builder) const {
+
+}
+
 Errors CropParameters::merge(json11::Json j)
 {
   return merge(j["species"], j["cultivar"]);
@@ -412,6 +444,14 @@ MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
   merge(j);
 }
 
+void MineralFertiliserParameters::deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader) {
+
+}
+
+void MineralFertiliserParameters::serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const {
+
+}
+
 Errors MineralFertiliserParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
@@ -451,6 +491,14 @@ NMinUserParameters::NMinUserParameters(json11::Json j)
   merge(j);
 }
 
+void NMinUserParameters::deserialize(mas::models::monica::NMinApplicationParameters::Reader reader) {
+
+}
+
+void NMinUserParameters::serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const {
+
+}
+
 Errors NMinUserParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
@@ -483,6 +531,14 @@ IrrigationParameters::IrrigationParameters(double nitrateConcentration,
 IrrigationParameters::IrrigationParameters(json11::Json j)
 {
   merge(j);
+}
+
+void IrrigationParameters::deserialize(mas::models::monica::IrrigationParameters::Reader reader) {
+
+}
+
+void IrrigationParameters::serialize(mas::models::monica::IrrigationParameters::Builder builder) const {
+
 }
 
 Errors IrrigationParameters::merge(json11::Json j)
@@ -520,6 +576,14 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
   merge(j);
 }
 
+void AutomaticIrrigationParameters::deserialize(mas::models::monica::AutomaticIrrigationParameters::Reader reader) {
+
+}
+
+void AutomaticIrrigationParameters::serialize(mas::models::monica::AutomaticIrrigationParameters::Builder builder) const {
+
+}
+
 Errors AutomaticIrrigationParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
@@ -542,6 +606,14 @@ json11::Json AutomaticIrrigationParameters::to_json() const
 }
 
 //------------------------------------------------------------------------------
+
+void MeasuredGroundwaterTableInformation::deserialize(mas::models::monica::MeasuredGroundwaterTableInformation::Reader reader) {
+
+}
+
+void MeasuredGroundwaterTableInformation::serialize(mas::models::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
+
+}
 
 MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j)
 {
@@ -625,6 +697,14 @@ double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Dat
 
 //------------------------------------------------------------------------------
 
+void SiteParameters::deserialize(mas::models::monica::SiteParameters::Reader reader) {
+
+}
+
+void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder builder) const {
+  builder.setDrainageCoeff(1);
+}
+
 SiteParameters::SiteParameters(json11::Json j)
 {
   merge(j);
@@ -687,6 +767,14 @@ AutomaticHarvestParameters::AutomaticHarvestParameters(HarvestTime yt)
   : _harvestTime(yt)
 {}
 
+void AutomaticHarvestParameters::deserialize(mas::models::monica::AutomaticHarvestParameters::Reader reader) {
+
+}
+
+void AutomaticHarvestParameters::serialize(mas::models::monica::AutomaticHarvestParameters::Builder builder) const {
+
+}
+
 AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j)
 {
   merge(j);
@@ -720,6 +808,14 @@ NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, dou
     nTarget(nTarget),
     nTarget30(nTarget30) {}
 
+void NMinCropParameters::deserialize(mas::models::monica::NMinCropParameters::Reader reader) {
+
+}
+
+void NMinCropParameters::serialize(mas::models::monica::NMinCropParameters::Builder builder) const {
+
+}
+
 NMinCropParameters::NMinCropParameters(json11::Json j)
 {
   merge(j);
@@ -747,6 +843,14 @@ json11::Json NMinCropParameters::to_json() const
 }
 
 //------------------------------------------------------------------------------
+
+void OrganicMatterParameters::deserialize(mas::models::monica::OrganicMatterParameters::Reader reader) {
+
+}
+
+void OrganicMatterParameters::serialize(mas::models::monica::OrganicMatterParameters::Builder builder) const {
+
+}
 
 OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
 {
@@ -796,12 +900,20 @@ json11::Json OrganicMatterParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-OrganicFertiliserParameters::OrganicFertiliserParameters(json11::Json j)
+void OrganicFertilizerParameters::deserialize(mas::models::monica::OrganicFertilizerParameters::Reader reader) {
+
+}
+
+void OrganicFertilizerParameters::serialize(mas::models::monica::OrganicFertilizerParameters::Builder builder) const {
+
+}
+
+OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors OrganicFertiliserParameters::merge(json11::Json j)
+Errors OrganicFertilizerParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -813,16 +925,24 @@ Errors OrganicFertiliserParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json OrganicFertiliserParameters::to_json() const
+json11::Json OrganicFertilizerParameters::to_json() const
 {
   auto omp = OrganicMatterParameters::to_json().object_items();
-  omp["type"] = "OrganicFertiliserParameters";
+  omp["type"] = "OrganicFertilizerParameters";
   omp["id"] = id;
   omp["name"] = name;
   return omp;
 }
 
 //-----------------------------------------------------------------------------------------
+
+void CropResidueParameters::deserialize(mas::models::monica::CropResidueParameters::Reader reader) {
+
+}
+
+void CropResidueParameters::serialize(mas::models::monica::CropResidueParameters::Builder builder) const {
+
+}
 
 CropResidueParameters::CropResidueParameters(json11::Json j)
 {
@@ -850,6 +970,14 @@ json11::Json CropResidueParameters::to_json() const
 }
 
 //-----------------------------------------------------------------------------------------
+
+void SimulationParameters::deserialize(mas::models::monica::SimulationParameters::Reader reader) {
+
+}
+
+void SimulationParameters::serialize(mas::models::monica::SimulationParameters::Builder builder) const {
+
+}
 
 SimulationParameters::SimulationParameters(json11::Json j)
 {
@@ -914,12 +1042,20 @@ json11::Json SimulationParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-UserCropParameters::UserCropParameters(json11::Json j)
+void CropModuleParameters::deserialize(mas::models::monica::CropModuleParameters::Reader reader) {
+
+}
+
+void CropModuleParameters::serialize(mas::models::monica::CropModuleParameters::Builder builder) const {
+
+}
+
+CropModuleParameters::CropModuleParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors UserCropParameters::merge(json11::Json j)
+Errors CropModuleParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -949,10 +1085,10 @@ Errors UserCropParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json UserCropParameters::to_json() const
+json11::Json CropModuleParameters::to_json() const
 {
   return json11::Json::object 
-	{{"type", "UserCropParameters"}
+	{{"type", "CropModuleParameters"}
   ,{"CanopyReflectionCoefficient", pc_CanopyReflectionCoefficient}
 	,{"ReferenceMaxAssimilationRate", pc_ReferenceMaxAssimilationRate}
   ,{"ReferenceLeafAreaIndex", pc_ReferenceLeafAreaIndex}
@@ -979,12 +1115,20 @@ json11::Json UserCropParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-UserEnvironmentParameters::UserEnvironmentParameters(json11::Json j)
+void EnvironmentParameters::deserialize(mas::models::monica::EnvironmentParameters::Reader reader) {
+
+}
+
+void EnvironmentParameters::serialize(mas::models::monica::EnvironmentParameters::Builder builder) const {
+
+}
+
+EnvironmentParameters::EnvironmentParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors UserEnvironmentParameters::merge(json11::Json j)
+Errors EnvironmentParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -1013,7 +1157,7 @@ Errors UserEnvironmentParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json UserEnvironmentParameters::to_json() const
+json11::Json EnvironmentParameters::to_json() const
 {
 	json11::Json::object co2s;
 	for(auto p : p_AtmosphericCO2s)
@@ -1024,7 +1168,7 @@ json11::Json UserEnvironmentParameters::to_json() const
 		o3s[to_string(p.first)] = p.second;
 
   return json11::Json::object 
-	{{"type", "UserEnvironmentParameters"}
+	{{"type", "EnvironmentParameters"}
   ,{"Albedo", p_Albedo}
   ,{"AtmosphericCO2", p_AtmosphericCO2}
 	,{"AtmosphericCO2s", co2s}
@@ -1041,18 +1185,26 @@ json11::Json UserEnvironmentParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-UserSoilMoistureParameters::UserSoilMoistureParameters()
+SoilMoistureModuleParameters::SoilMoistureModuleParameters()
 {
 	getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
 }
 
-UserSoilMoistureParameters::UserSoilMoistureParameters(json11::Json j)
-	: UserSoilMoistureParameters()
+void SoilMoistureModuleParameters::deserialize(mas::models::monica::SoilMoistureModuleParameters::Reader reader) {
+
+}
+
+void SoilMoistureModuleParameters::serialize(mas::models::monica::SoilMoistureModuleParameters::Builder builder) const {
+
+}
+
+SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
+	: SoilMoistureModuleParameters()
 {
   merge(j);
 }
 
-Errors UserSoilMoistureParameters::merge(json11::Json j)
+Errors SoilMoistureModuleParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -1084,10 +1236,10 @@ Errors UserSoilMoistureParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json UserSoilMoistureParameters::to_json() const
+json11::Json SoilMoistureModuleParameters::to_json() const
 {
   return json11::Json::object 
-  {{"type", "UserSoilMoistureParameters"}
+  {{"type", "SoilMoistureModuleParameters"}
   ,{"CriticalMoistureDepth", pm_CriticalMoistureDepth}
   ,{"SaturatedHydraulicConductivity", pm_SaturatedHydraulicConductivity}
   ,{"SurfaceRoughness", pm_SurfaceRoughness}
@@ -1117,12 +1269,20 @@ json11::Json UserSoilMoistureParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-UserSoilTemperatureParameters::UserSoilTemperatureParameters(json11::Json j)
+void SoilTemperatureModuleParameters::deserialize(mas::models::monica::SoilTemperatureModuleParameters::Reader reader) {
+
+}
+
+void SoilTemperatureModuleParameters::serialize(mas::models::monica::SoilTemperatureModuleParameters::Builder builder) const {
+
+}
+
+SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors UserSoilTemperatureParameters::merge(json11::Json j)
+Errors SoilTemperatureModuleParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -1143,10 +1303,10 @@ Errors UserSoilTemperatureParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json UserSoilTemperatureParameters::to_json() const
+json11::Json SoilTemperatureModuleParameters::to_json() const
 {
   return json11::Json::object 
-  {{"type", "UserSoilTemperatureParameters"}
+  {{"type", "SoilTemperatureModuleParameters"}
   ,{"NTau", pt_NTau}
   ,{"InitialSurfaceTemperature", pt_InitialSurfaceTemperature}
   ,{"BaseTemperature", pt_BaseTemperature}
@@ -1165,12 +1325,20 @@ json11::Json UserSoilTemperatureParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-UserSoilTransportParameters::UserSoilTransportParameters(json11::Json j)
+void SoilTransportModuleParameters::deserialize(mas::models::monica::SoilTransportModuleParameters::Reader reader) {
+
+}
+
+void SoilTransportModuleParameters::serialize(mas::models::monica::SoilTransportModuleParameters::Builder builder) const {
+
+}
+
+SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors UserSoilTransportParameters::merge(json11::Json j)
+Errors SoilTransportModuleParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -1182,10 +1350,10 @@ Errors UserSoilTransportParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json UserSoilTransportParameters::to_json() const
+json11::Json SoilTransportModuleParameters::to_json() const
 {
   return json11::Json::object 
-  {{"type", "UserSoilTransportParameters"}
+  {{"type", "SoilTransportModuleParameters"}
   ,{"DispersionLength", pq_DispersionLength}
   ,{"AD", pq_AD}
   ,{"DiffusionCoefficientStandard", pq_DiffusionCoefficientStandard}
@@ -1194,6 +1362,14 @@ json11::Json UserSoilTransportParameters::to_json() const
 }
 
 //-----------------------------------------------------------------------------------------
+
+void SticsParameters::deserialize(mas::models::monica::SticsParameters::Reader reader) {
+
+}
+
+void SticsParameters::serialize(mas::models::monica::SticsParameters::Builder builder) const {
+
+}
 
 SticsParameters::SticsParameters(json11::Json j) {
   merge(j);
@@ -1292,12 +1468,20 @@ json11::Json SticsParameters::to_json() const {
 
 //-----------------------------------------------------------------------------
 
-UserSoilOrganicParameters::UserSoilOrganicParameters(json11::Json j)
+void SoilOrganicModuleParameters::deserialize(mas::models::monica::SoilOrganicModuleParameters::Reader reader) {
+
+}
+
+void SoilOrganicModuleParameters::serialize(mas::models::monica::SoilOrganicModuleParameters::Builder builder) const {
+
+}
+
+SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors UserSoilOrganicParameters::merge(json11::Json j)
+Errors SoilOrganicModuleParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -1343,10 +1527,10 @@ Errors UserSoilOrganicParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json UserSoilOrganicParameters::to_json() const
+json11::Json SoilOrganicModuleParameters::to_json() const
 {
   return json11::Json::object 
-  {{"type", "UserSoilOrganicParameters"}
+  {{"type", "SoilOrganicModuleParameters"}
   ,{"SOM_SlowDecCoeffStandard", J11Array {po_SOM_SlowDecCoeffStandard, "d-1"}}
   ,{"SOM_FastDecCoeffStandard", J11Array {po_SOM_FastDecCoeffStandard, "d-1"}}
   ,{"SMB_SlowMaintRateStandard", J11Array {po_SMB_SlowMaintRateStandard, "d-1"}}

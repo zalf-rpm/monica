@@ -80,17 +80,17 @@ namespace Monica
 
 	//-----------------------------------------------------------
 
-	UserCropParameters readUserCropParametersFromDatabase(std::string type,
+	CropModuleParameters readUserCropParametersFromDatabase(std::string type,
 	                                                      std::string abstractDbSchema = "monica");
-	UserEnvironmentParameters readUserEnvironmentParametersFromDatabase(std::string type,
+	EnvironmentParameters readUserEnvironmentParametersFromDatabase(std::string type,
 	                                                                    std::string abstractDbSchema = "monica");
-	UserSoilMoistureParameters readUserSoilMoistureParametersFromDatabase(std::string type,
+	SoilMoistureModuleParameters readUserSoilMoistureParametersFromDatabase(std::string type,
 	                                                                      std::string abstractDbSchema = "monica");
-	UserSoilOrganicParameters readUserSoilOrganicParametersFromDatabase(std::string type,
+	SoilOrganicModuleParameters readUserSoilOrganicParametersFromDatabase(std::string type,
 	                                                                    std::string abstractDbSchema = "monica");
-	UserSoilTemperatureParameters readUserSoilTemperatureParametersFromDatabase(std::string type,
+	SoilTemperatureModuleParameters readUserSoilTemperatureParametersFromDatabase(std::string type,
 	                                                                            std::string abstractDbSchema = "monica");
-	UserSoilTransportParameters readUserSoilTransportParametersFromDatabase(std::string type,
+	SoilTransportModuleParameters readUserSoilTransportParametersFromDatabase(std::string type,
 	                                                                        std::string abstractDbSchema = "monica");
 	SimulationParameters readUserSimParametersFromDatabase(std::string type,
 	                                                       std::string abstractDbSchema = "monica");

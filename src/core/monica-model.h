@@ -30,6 +30,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <queue>
 #include <set>
 
+#include "monica/monica_state.capnp.h"
+
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
 #include "soiltemperature.h"
@@ -51,7 +53,6 @@ namespace Monica
 	/* forward declaration */
 	class Configuration;
 
-
 	//----------------------------------------------------------------------------
 
 	/*!
@@ -64,6 +65,8 @@ namespace Monica
 		MonicaModel(const CentralParameterProvider& cpp);
 
 		~MonicaModel();
+
+		void serialize(mas::models::monica::MonicaModelState::Builder builder);
 
 		void step();
 		
@@ -243,12 +246,12 @@ namespace Monica
 		double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
 		const SiteParameters& siteParameters() const { return _sitePs; }
-		const UserSoilMoistureParameters& soilmoistureParameters() const { return _smPs; }
-		const UserEnvironmentParameters& environmentParameters() const { return _envPs; }
-		const UserCropParameters& cropParameters() const { return _cropPs; }
-		const UserSoilTemperatureParameters& soilTemperatureParameters() const { return _soilTempPs; }
-		const UserSoilTransportParameters& soilTransportParameters() const { return _soilTransPs; }
-		const UserSoilOrganicParameters& soilOrganicParameters() const { return _soilOrganicPs; }
+		const SoilMoistureModuleParameters& soilmoistureParameters() const { return _smPs; }
+		const EnvironmentParameters& environmentParameters() const { return _envPs; }
+		const CropModuleParameters& cropParameters() const { return _cropPs; }
+		const SoilTemperatureModuleParameters& soilTemperatureParameters() const { return _soilTempPs; }
+		const SoilTransportModuleParameters& soilTransportParameters() const { return _soilTransPs; }
+		const SoilOrganicModuleParameters& soilOrganicParameters() const { return _soilOrganicPs; }
 		const SimulationParameters& simulationParameters() const { return _simPs; }
 		SimulationParameters& simulationParametersNC() { return _simPs; }
 
@@ -276,12 +279,12 @@ namespace Monica
 
 	private:
 		const SiteParameters _sitePs;
-		const UserSoilMoistureParameters _smPs;
-		const UserEnvironmentParameters _envPs;
-		const UserCropParameters _cropPs;
-		const UserSoilTemperatureParameters _soilTempPs;
-		const UserSoilTransportParameters _soilTransPs;
-		const UserSoilOrganicParameters _soilOrganicPs;
+		const SoilMoistureModuleParameters _smPs;
+		const EnvironmentParameters _envPs;
+		const CropModuleParameters _cropPs;
+		const SoilTemperatureModuleParameters _soilTempPs;
+		const SoilTransportModuleParameters _soilTransPs;
+		const SoilOrganicModuleParameters _soilOrganicPs;
 		SimulationParameters _simPs;
 		//std::string _pathToOutputDir;
 		MeasuredGroundwaterTableInformation _groundwaterInformation;
@@ -295,10 +298,10 @@ namespace Monica
 		CropGrowth* _currentCropGrowth{nullptr}; //!< crop code for possibly planted crop
 
 		//VOC members
-		const int _stepSize24{1}, _stepSize240{10};
-		std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
-		int _index24{0}, _index240{0};
-		bool _full24{false}, _full240{false};
+		//const int _stepSize24{1}, _stepSize240{10};
+		//std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
+		//int _index24{0}, _index240{0};
+		//bool _full24{false}, _full240{false};
 
 		//! store applied fertiliser during one production process
 		double _sumFertiliser{0.0}; //mineral N

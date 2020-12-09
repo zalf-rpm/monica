@@ -47,7 +47,7 @@ using namespace Tools;
  * liquid water in snow. Snow parameters from
  * user data base are initialized.
  */
-SnowComponent::SnowComponent(SoilColumn& sc, const UserSoilMoistureParameters& smps) 
+SnowComponent::SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps) 
   : soilColumn(sc)
   , vm_SnowmeltTemperature(smps.pm_SnowMeltTemperature) // Base temperature for snowmelt [°C]
   , vm_SnowAccumulationThresholdTemperature(smps.pm_SnowAccumulationTresholdTemperature)

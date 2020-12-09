@@ -62,7 +62,7 @@ namespace Monica
 		CropGrowth(SoilColumn& soilColumn,
 			const CropParameters& cropParams,
 			const SiteParameters& siteParams,
-			const UserCropParameters& cropPs,
+			const CropModuleParameters& cropPs,
 			const SimulationParameters& simPs,
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
@@ -439,7 +439,7 @@ namespace Monica
 		// members
 		SoilColumn& soilColumn;
 		CropParametersPtr perennialCropParams;
-		const UserCropParameters& cropPs;
+		const CropModuleParameters& cropPs;
 		SpeciesParameters speciesPs;
 		CultivarParameters cultivarPs;
 

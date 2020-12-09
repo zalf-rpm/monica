@@ -48,7 +48,7 @@ namespace Monica
   class SnowComponent
   {
     public:
-      SnowComponent(SoilColumn& sc, const UserSoilMoistureParameters& smps);
+      SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps);
       ~SnowComponent() {}
 
       void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
@@ -298,9 +298,9 @@ namespace Monica
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
     MonicaModel& monica;
-    const UserSoilMoistureParameters& smPs;
-    const UserEnvironmentParameters& envPs;
-    const UserCropParameters& cropPs;
+    const SoilMoistureModuleParameters& smPs;
+    const EnvironmentParameters& envPs;
+    const CropModuleParameters& cropPs;
 		const size_t vm_NumberOfLayers{0};
 		const size_t vs_NumberOfLayers{0};
 
