@@ -215,7 +215,7 @@ namespace Monica
   public:
     SoilColumn(double ps_LayerThickness,
                double ps_MaxMineralisationDepth,
-               const Soil::SoilPMsPtr soilParams,
+               Soil::SoilPMs soilParams,
                double pm_CriticalMoistureDepth);
 
     void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,

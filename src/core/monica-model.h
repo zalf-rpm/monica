@@ -30,8 +30,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <queue>
 #include <set>
 
-#include "monica/monica_state.capnp.h"
-
 #include "climate/climate-common.h"
 #include "soilcolumn.h"
 #include "soiltemperature.h"
@@ -65,8 +63,6 @@ namespace Monica
 		MonicaModel(const CentralParameterProvider& cpp);
 
 		~MonicaModel();
-
-		void serialize(mas::models::monica::MonicaModelState::Builder builder);
 
 		void step();
 		
