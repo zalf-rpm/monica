@@ -85,21 +85,18 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 	_simPs.deserialize(reader.getSimPs());
 	_groundwaterInformation.deserialize(reader.getGroundwaterInformation());
 
-	if (reader.hasCurrentCrop()) _currentCrop = kj::heap<Crop>(reader.getCurrentCrop());
+	if (_soilColumn) _soilColumn->deserialize(reader.getSoilColumn());
+	else _soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn());
+
 	if (reader.hasCurrentCropModule()) {
 		auto addOMFunc = [this](std::map<size_t, double> layer2amount, double nconc) {
-			this->_soilOrganic->addOrganicMatter(this->_currentCrop->residueParameters(), layer2amount, nconc);
+			this->_soilOrganic->addOrganicMatter(this->_currentCropModule->residueParameters(), layer2amount, nconc);
 		};
-		_currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _currentCrop->cropParameters(), _cropPs,
+		_currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _cropPs,
 			[this](string event) { this->addEvent(event); }, addOMFunc, reader.getCurrentCropModule());
 	}
-
-	if (_soilColumn) {
-		_soilColumn->deserialize(reader.getSoilColumn());
-		_soilColumn->putCrop(_currentCropModule.get());
-	} else {
-		_soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn(), _currentCropModule.get());
-	}
+  
+	_soilColumn->putCrop(_currentCropModule.get());
 	
 	if (_soilTemperature) _soilTemperature->deserialize(reader.getSoilTemperature());
 	else _soilTemperature = kj::heap<SoilTemperature>(*this, reader.getSoilTemperature());
@@ -188,7 +185,6 @@ void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder build
 	_soilOrganic->serialize(builder.initSoilOrganic());
 	_soilTransport->serialize(builder.initSoilTransport());
 
-	if (_currentCrop) _currentCrop->serialize(builder.initCurrentCrop());
 	if (_currentCropModule) _currentCropModule->serialize(builder.initCurrentCropModule());
 	
 	builder.setSumFertiliser(_sumFertiliser);
@@ -260,11 +256,9 @@ void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder build
  * @brief Simulation of crop seed.
  * @param crop to be planted
  */
-void MonicaModel::seedCrop(kj::Own<Crop> crop)
+void MonicaModel::seedCrop(Crop* crop)
 {
   debug() << "seedCrop" << endl;
-  delete _currentCropModule;
-	_currentCropModule = NULL;
 	
 	p_daysWithCrop = 0;
   p_accuNStress = 0.0;
@@ -274,19 +268,18 @@ void MonicaModel::seedCrop(kj::Own<Crop> crop)
 
   if(crop->isValid())
   {
-		_currentCrop = kj::mv(crop);
 		_cultivationMethodCount++;
 
 		auto addOMFunc = [this](std::map<size_t, double> layer2amount, double nconc)
 		{
-			this->_soilOrganic->addOrganicMatter(this->_currentCrop->residueParameters(), layer2amount, nconc); 
+			this->_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(), layer2amount, nconc); 
 		};
-    auto cps = _currentCrop->cropParameters();
-    _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), cps, _sitePs, _cropPs, _simPs,
-      [this](string event) { this->addEvent(event); }, addOMFunc);
+    auto cps = crop->cropParameters();
+    _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), cps, crop->residueParameters(),
+			crop->isWinterCrop(), _sitePs, _cropPs, _simPs, [this](string event) { this->addEvent(event); }, addOMFunc);
 
-    if (_currentCrop->separatePerennialCropParameters())
-      _currentCropModule->setPerennialCropParameters(&_currentCrop->perennialCropParameters());
+    if (crop->separatePerennialCropParameters())
+      _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
 
     _soilTransport->putCrop(_currentCropModule.get());
     _soilColumn->putCrop(_currentCropModule.get());
@@ -297,7 +290,7 @@ void MonicaModel::seedCrop(kj::Own<Crop> crop)
 //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
 		if(_simPs.p_UseNMinMineralFertilisingMethod
-			 && !currentCrop()->isWinterCrop())
+			 && !_currentCropModule->isWinterCrop())
     {
 			_soilColumn->clearTopDressingParams();
       debug() << "nMin fertilising summer crop" << endl;
@@ -316,10 +309,10 @@ void MonicaModel::seedCrop(kj::Own<Crop> crop)
  *
  * Deletes the current crop.
  */
-kj::Own<Crop> MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData)
+void MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData)
 {
 	//could be just a fallow, so there might be no CropModule object
-	if (_currentCrop && _currentCrop->isValid())
+	if (_currentCropModule)
   {
     if(exported)
     {
@@ -376,7 +369,7 @@ kj::Own<Crop> MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonM
 					_optCarbonReturnedResidues = residueBiomass - _optCarbonExportedResidues;
 				}
 
-				_soilOrganic->addOrganicMatter(_currentCrop->residueParameters(),
+				_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
 																			_optCarbonReturnedResidues,
 																			_currentCropModule->get_ResiduesNConcentration());
 				
@@ -401,7 +394,7 @@ kj::Own<Crop> MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonM
 					<< " Primary yield N content: " << _currentCropModule->get_PrimaryYieldNContent()
 					<< " Secondary yield N content: " << _currentCropModule->get_SecondaryYieldNContent() << endl;
 
-				_soilOrganic->addOrganicMatter(_currentCrop->residueParameters(),
+				_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
 																			residueBiomass,
 																			residueNConcentration);
 			}
@@ -421,7 +414,7 @@ kj::Own<Crop> MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonM
 			debug() << "root biomass: " << rootBiomass
 				<< " Root N concentration: " << rootNConcentration << endl;
 
-			_soilOrganic->addOrganicMatter(_currentCrop->residueParameters(),
+			_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
 																		abovegroundBiomass,
 																		abovegroundBiomassNConcentration);
 
@@ -433,7 +426,6 @@ kj::Own<Crop> MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonM
 	}
 
 	_clearCropUponNextDay = true;
-	return kj::mv(_currentCrop);
 }
 
 /**
@@ -444,7 +436,7 @@ kj::Own<Crop> MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonM
 void MonicaModel::incorporateCurrentCrop()
 {
   //could be just a fallow, so there might be no CropModule object
-  if(_currentCrop && _currentCrop->isValid())
+  if(_currentCropModule)
   {
     //prepare to add root and crop residues to soilorganic (AOMs)
 	double total_biomass = _currentCropModule->totalBiomass();
@@ -455,7 +447,7 @@ void MonicaModel::incorporateCurrentCrop()
     debug() << "Total biomass: " << total_biomass << endl
         << " Total N concentration: " << totalNConcentration << endl;
 
-    _soilOrganic->addOrganicMatter(_currentCrop->residueParameters(),
+    _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
                                   total_biomass,
                                   totalNConcentration);
   }
@@ -579,8 +571,7 @@ void MonicaModel::dailyReset()
 		_soilColumn->removeCrop();
 		_soilMoisture->removeCrop();
 		_soilOrganic->removeCrop();
-		_currentCropModule = nullptr;
-		_currentCrop = nullptr;
+		_currentCropModule = kj::Own<CropModule>();
 
 		_clearCropUponNextDay = false;
 	}
@@ -680,20 +671,17 @@ void MonicaModel::generalStep()
   double possibleTopDressingAmount = _soilColumn->applyPossibleTopDressing();
   addDailySumFertiliser(possibleTopDressingAmount);
 
-  if(_currentCrop 
-		 && _currentCrop->isValid() 
+  if(_currentCropModule 
 		 && _simPs.p_UseNMinMineralFertilisingMethod
-		 && _currentCrop->isWinterCrop()
+		 && _currentCropModule->isWinterCrop()
 		 && julday == _simPs.p_JulianDayAutomaticFertilising)
   {
 		_soilColumn->clearTopDressingParams();
     debug() << "nMin fertilising winter crop" << endl;
-    auto cps = _currentCrop->cropParameters();
+    auto sps = _currentCropModule->speciesParameters();
 		double fertilizerAmount = applyMineralFertiliserViaNMinMethod
-		(_simPs.p_NMinFertiliserPartition,
-		 NMinCropParameters(cps.speciesParams.pc_SamplingDepth,
-												cps.speciesParams.pc_TargetNSamplingDepth,
-												cps.speciesParams.pc_TargetN30));
+		(_simPs.p_NMinFertiliserPartition, 
+			NMinCropParameters(sps.pc_SamplingDepth, sps.pc_TargetNSamplingDepth, sps.pc_TargetN30));
     addDailySumFertiliser(fertilizerAmount);
 	}
 

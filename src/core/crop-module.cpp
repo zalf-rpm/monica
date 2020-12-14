@@ -50,6 +50,8 @@ using namespace Tools;
  */
 CropModule::CropModule(SoilColumn& sc,
 	const CropParameters& cps,
+	const CropResidueParameters& rps,
+	bool isWinterCrop,
 	const SiteParameters& stps,
 	const CropModuleParameters& cropPs,
 	const SimulationParameters& simPs,
@@ -60,6 +62,8 @@ CropModule::CropModule(SoilColumn& sc,
 	, cropPs(cropPs)
 	, speciesPs(cps.speciesParams)
 	, cultivarPs(cps.cultivarParams)
+	, residuePs(rps)
+	, _isWinterCrop(isWinterCrop)
 	, vs_Latitude(stps.vs_Latitude)
 	, pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
 	, pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
@@ -241,6 +245,10 @@ CropModule::CropModule(SoilColumn& sc,
 
 	void CropModule::deserialize(mas::models::monica::CropModuleState::Reader reader) {
 		_frostKillOn = reader.getFrostKillOn();
+		speciesPs.deserialize(reader.getSpeciesParams());
+		cultivarPs.deserialize(reader.getCultivarParams());
+		residuePs.deserialize(reader.getResidueParams());
+		_isWinterCrop = reader.getIsWinterCrop();
 		vs_Latitude = reader.getVsLatitude();
 		vc_AbovegroundBiomass = reader.getAbovegroundBiomass();
 		vc_AbovegroundBiomassOld = reader.getAbovegroundBiomassOld();
@@ -488,6 +496,10 @@ CropModule::CropModule(SoilColumn& sc,
 
 	void CropModule::serialize(mas::models::monica::CropModuleState::Builder builder) const {
 		builder.setFrostKillOn(_frostKillOn);
+		speciesPs.serialize(builder.initSpeciesParams());
+		cultivarPs.serialize(builder.initCultivarParams());
+		residuePs.serialize(builder.initResidueParams());
+		builder.setIsWinterCrop(_isWinterCrop);
     builder.setVsLatitude(vs_Latitude);
     builder.setAbovegroundBiomass(vc_AbovegroundBiomass);
     builder.setAbovegroundBiomassOld(vc_AbovegroundBiomassOld);

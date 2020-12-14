@@ -934,12 +934,17 @@ double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Dat
 //------------------------------------------------------------------------------
 
 void SiteParameters::deserialize(mas::models::monica::SiteParameters::Reader reader) {
-  vs_SoilParameters.clear();
-  vs_SoilParameters.resize(reader.getSoilParameters().size());
-  uint i = 0;
-  for (auto sp : reader.getSoilParameters()) {
-    vs_SoilParameters.at(i++).deserialize(sp);
-  }
+  vs_Latitude = reader.getLatitude();
+  vs_Slope = reader.getSlope();
+  vs_HeightNN = reader.getHeightNN();
+  vs_GroundwaterDepth = reader.getGroundwaterDepth();
+  vs_Soil_CN_Ratio = reader.getSoilCNRatio();
+  vs_DrainageCoeff = reader.getDrainageCoeff();
+  vq_NDeposition = reader.getVqNDeposition();
+  vs_MaxEffectiveRootingDepth = reader.getMaxEffectiveRootingDepth();
+  vs_ImpenetrableLayerDepth = reader.getImpenetrableLayerDepth();
+  vs_SoilSpecificHumusBalanceCorrection = reader.getSoilSpecificHumusBalanceCorrection();
+  setFromComplexCapnpList(vs_SoilParameters, reader.getSoilParameters());
 }
 
 void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder builder) const {
@@ -953,11 +958,7 @@ void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder buil
   builder.setMaxEffectiveRootingDepth(vs_MaxEffectiveRootingDepth);
   builder.setImpenetrableLayerDepth(vs_ImpenetrableLayerDepth);
   builder.setSoilSpecificHumusBalanceCorrection(vs_SoilSpecificHumusBalanceCorrection);
-
-  auto sps = builder.initSoilParameters(vs_SoilParameters.size());
-  for (uint i = 0; i < sps.size(); i++) {
-    vs_SoilParameters.at(i).serialize(sps[i]);
-  }
+  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters(vs_SoilParameters.size()));
 }
 
 SiteParameters::SiteParameters(json11::Json j)

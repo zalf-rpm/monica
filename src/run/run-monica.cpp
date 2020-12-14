@@ -659,8 +659,8 @@ DFSRes deserializeFullState(kj::PathPtr pathToSerializationFile) {
 	capnp::InputStreamMessageReader message(aios);
 	auto runtimeState = message.getRoot<mas::models::monica::RuntimeState>();
 	DFSRes res;
-	res.critPos = runtimeState.getCritPos();
-	res.cmitPos = runtimeState.getCmitPos();
+	//res.critPos = runtimeState.getCritPos();
+	//res.cmitPos = runtimeState.getCmitPos();
 	res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
 	return res;
 }
@@ -687,15 +687,15 @@ Output Monica::runMonica(Env env)
 	debug() << "-----" << endl;
 
 	kj::Own<MonicaModel> monica;
-	uint critPos = 0;
-	uint cmitPos = 0;
+	//uint critPos = 0;
+	//uint cmitPos = 0;
 	if (env.params.simulationParameters.loadSerializedMonicaStateAtStart) {
 		auto pathToSerializedMonicaStateFile = kj::Path(kj::str(env.params.simulationParameters.pathToSerializationFile));
 		//auto pathToSerializedMonicaStateFile = kj::Path::parse(relativePathToSerializedMonicaStateFile);
 		auto dserRes = deserializeFullState(pathToSerializedMonicaStateFile);
 		monica = kj::mv(dserRes.monica);
-		critPos = dserRes.critPos;
-		cmitPos = dserRes.cmitPos;
+		//critPos = dserRes.critPos;
+		//cmitPos = dserRes.cmitPos;
 	} else {
 		monica = kj::heap<MonicaModel>(env.params);
 		monica->simulationParametersNC().startDate = env.climateData.startDate();
@@ -729,12 +729,11 @@ Output Monica::runMonica(Env env)
 		}
 	}
 
-	//auto crit = env.cropRotations.empty() ? env.cropRotations.end() : env.cropRotations.begin();
 	auto crit = env.cropRotations.begin();
 	//after loading deserialized state, move the iterator to the previous position if possible
 	//!!! attention doesn't check currently if the env is the same as when the state had been serialized !!!
-  while (critPos-- > 0 && crit + 1 != env.cropRotations.end())
-    crit++;
+  //while (critPos-- > 0 && crit + 1 != env.cropRotations.end())
+  //  crit++;
 
 	//cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
 	//if pure absolute CMs are finished
@@ -769,7 +768,6 @@ Output Monica::runMonica(Env env)
 	};
 
 	//iterator through the crop rotation
-	//auto cmit = cropRotation.empty() ? cropRotation.end() : cropRotation.begin();
 	auto cmit = cropRotation.begin();
 	//after loading deserialized state, move the iterator to the previous position if possible
 	//!!! attention doesn't check currently if the env is the same as when the state had been serialized !!!
@@ -855,12 +853,12 @@ Output Monica::runMonica(Env env)
 	};
 
 	//direct handle to current cultivation method
-	CultivationMethod* currentCM;
+	CultivationMethod* currentCM{ nullptr };
 	Date nextAbsoluteCMApplicationDate;
-	//tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
+	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
 
-	while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
-		tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, true);;
+	//while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
+	//	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, true);;
 
 	vector<StoreData> store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
 	
@@ -930,18 +928,18 @@ Output Monica::runMonica(Env env)
 	
 	if (monica->simulationParameters().serializeMonicaStateAtEnd) {
 		SaveMonicaState sms(currentDate, monica->simulationParameters().pathToSerializationFile);
-		uint critPos = 0;
-		auto crit_ = env.cropRotations.begin();
-		while (crit_ != env.cropRotations.end() && crit_ != crit)
-			crit_++, critPos++;
+		//uint critPos = 0;
+		//auto crit_ = env.cropRotations.begin();
+		//while (crit_ != env.cropRotations.end() && crit_ != crit)
+		//	crit_++, critPos++;
 
-		uint cmitPos = 0;
-		auto cmit_ = cropRotation.begin();
-		while (cmit_ != cropRotation.end() && cmit_ != cmit)
-			cmit_++, cmitPos++;
+		//uint cmitPos = 0;
+		//auto cmit_ = cropRotation.begin();
+		//while (cmit_ != cropRotation.end() && cmit_ != cmit)
+		//	cmit_++, cmitPos++;
 
-		monica->critPos = crit_ == env.cropRotations.end() ? 0 : critPos;
-		monica->cmitPos = cmit_ == cropRotation.end() ? 0 : cmitPos;
+		//monica->critPos = crit_ == env.cropRotations.end() ? 0 : critPos;
+		//monica->cmitPos = cmit_ == cropRotation.end() ? 0 : cmitPos;
 
 		sms.apply(monica.get());
 	}

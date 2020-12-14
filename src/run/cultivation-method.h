@@ -274,9 +274,10 @@ namespace Monica
 		void setSowing(Sowing* s) { _sowing = s; }
 
 		//void setIsCoverCrop(bool isCoverCrop) { _optCarbMgmtData.isCoverCrop = isCoverCrop; }
+	protected:
+		Sowing* _sowing{ nullptr };
 
   private:
-		Sowing* _sowing{ nullptr };
     double _percentage{0};
     bool _exported{true};
 		OptCarbonManagementData _optCarbMgmtData;

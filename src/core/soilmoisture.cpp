@@ -179,8 +179,8 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
   vw_WindSpeed = reader.getVwWindSpeed();
   vw_WindSpeedHeight = reader.getVwWindSpeedHeight();
   vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
-  snowComponent->deserialize(reader.getSnowComponent());
-  frostComponent->deserialize(reader.getFrostComponent());
+  if(reader.hasSnowComponent()) snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
+  if (reader.hasFrostComponent()) frostComponent = kj::heap<FrostComponent>(soilColumn, reader.getFrostComponent());
 }
 
 void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
@@ -247,8 +247,8 @@ void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Build
   builder.setVwWindSpeed(vw_WindSpeed);
   builder.setVwWindSpeedHeight(vw_WindSpeedHeight);
   builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
-  snowComponent->serialize(builder.initSnowComponent());
-  frostComponent->serialize(builder.initFrostComponent());
+  if (snowComponent) snowComponent->serialize(builder.initSnowComponent());
+  if (frostComponent) frostComponent->serialize(builder.initFrostComponent());
 }
 
 /*!

@@ -63,6 +63,8 @@ namespace Monica
 	public:
 		CropModule(SoilColumn& soilColumn,
 			const CropParameters& cropParams,
+			const CropResidueParameters& rps,
+			bool isWinterCrop,
 			const SiteParameters& siteParams,
 			const CropModuleParameters& cropPs,
 			const SimulationParameters& simPs,
@@ -70,13 +72,12 @@ namespace Monica
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter);
 
 		CropModule(SoilColumn& sc, 
-			const CropParameters& cps, 
 			const CropModuleParameters& cropPs, 
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 			mas::models::monica::CropModuleState::Reader reader)
-			: soilColumn(sc), cropPs(cropPs), speciesPs(cps.speciesParams), cultivarPs(cps.cultivarParams)
-			, _fireEvent(fireEvent), _addOrganicMatter(addOrganicMatter) { deserialize(reader); }
+			: soilColumn(sc), cropPs(cropPs), _fireEvent(fireEvent), 
+			_addOrganicMatter(addOrganicMatter) { deserialize(reader); }
 
 		void deserialize(mas::models::monica::CropModuleState::Reader reader);
 		void serialize(mas::models::monica::CropModuleState::Builder builder) const;
@@ -120,7 +121,6 @@ namespace Monica
 			double vc_VernalisationDays);
 
 		double fc_OxygenDeficiency(double pc_CriticalOxygenContent);
-
 
 		void fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 			std::vector<double> pc_BaseTemperature,
@@ -411,7 +411,7 @@ namespace Monica
 			vc_AccumulatedPrimaryCropYield += primaryCropYield;
 		}
 
-		void setPerennialCropParameters(const CropParameters* cps) { perennialCropParams = cps; }
+		void setPerennialCropParameters(const CropParameters& cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
 
 		void fc_UpdateCropParametersForPerennial();
 
@@ -441,6 +441,14 @@ namespace Monica
 
 		size_t rootingZone() const { return vc_RootingZone; };
 
+		const SpeciesParameters& speciesParameters() const { return speciesPs; }
+
+		const CultivarParameters& cultivarParameters() const { return cultivarPs; }
+
+		const CropResidueParameters& residueParameters() const { return residuePs; }
+
+		bool isWinterCrop() const { return _isWinterCrop; }
+
 	private:
 		bool _frostKillOn{ true };
 
@@ -451,10 +459,12 @@ namespace Monica
 
 		// members
 		SoilColumn& soilColumn;
-		const CropParameters* perennialCropParams{ nullptr };
+		kj::Own<CropParameters> perennialCropParams;
 		const CropModuleParameters& cropPs;
-		const SpeciesParameters& speciesPs;
-		const CultivarParameters& cultivarPs;
+		SpeciesParameters speciesPs;
+		CultivarParameters cultivarPs;
+		CropResidueParameters residuePs;
+		bool _isWinterCrop{ false };
 
 		//! old N
 		//    static const double vw_AtmosphericCO2Concentration;

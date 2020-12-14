@@ -107,12 +107,7 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
 void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) {
 	vs_LayerThickness = reader.getLayerThickness();
 	vs_SoilWaterFlux = reader.getSoilWaterFlux();
-
-	auto aomp = reader.getVoAOMPool();
-	vo_AOM_Pool.resize(aomp.size());
-	uint i = 0;
-	for (auto aom : vo_AOM_Pool) aom.deserialize(aomp[i++]);
-
+	setFromComplexCapnpList(vo_AOM_Pool, reader.getVoAOMPool());
 	vs_SOM_Slow = reader.getSomSlow();
 	vs_SOM_Fast = reader.getSomFast();
 	vs_SMB_Slow = reader.getSmbSlow();
@@ -130,11 +125,7 @@ void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) 
 void SoilLayer::serialize(mas::models::monica::SoilLayerState::Builder builder) const {
 	builder.setLayerThickness(vs_LayerThickness);
 	builder.setSoilWaterFlux(vs_SoilWaterFlux);
-
-	auto aomp = builder.initVoAOMPool(vo_AOM_Pool.size());
-	uint i = 0;
-	for (auto aom : vo_AOM_Pool) aom.serialize(aomp[i++]);
-
+	setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool(vo_AOM_Pool.size()));
 	builder.setSomSlow(vs_SOM_Slow);
 	builder.setSomFast(vs_SOM_Fast);
 	builder.setSmbSlow(vs_SMB_Slow);
@@ -242,6 +233,7 @@ void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader
 	_vf_TopDressingDelay = reader.getVfTopDressingDelay();
 	setFromComplexCapnpList(_delayedNMinApplications, reader.getDelayedNMinApplications());
 	pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
+	setFromComplexCapnpList(*this, reader.getLayers());
 }
 
 void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder) const {
@@ -259,6 +251,7 @@ void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder
 	builder.setVfTopDressingDelay(_vf_TopDressingDelay);
 	setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications(_delayedNMinApplications.size()));
 	builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
+	setComplexCapnpList(*this, builder.initLayers(size()));
 }
 
 
@@ -455,7 +448,7 @@ double SoilColumn::applyPossibleTopDressing()
  * then removes the first fertilizer item in list.
  */
 double SoilColumn::applyPossibleDelayedFerilizer() {
-	auto& delayedApps = _delayedNMinApplications;
+	auto delayedApps = _delayedNMinApplications;
 	double n_amount = 0.0;
 	while (!delayedApps.empty()) {
 		const auto& da = delayedApps.front();
@@ -463,6 +456,7 @@ double SoilColumn::applyPossibleDelayedFerilizer() {
 			da.fp, da.vf_SamplingDepth, da.vf_CropNTarget, da.vf_CropNTarget30,
 			da.vf_FertiliserMinApplication, da.vf_FertiliserMaxApplication, da.vf_TopDressingDelay);
 		delayedApps.pop_front();
+		_delayedNMinApplications.pop_front();
 	}
 	return n_amount;
 }

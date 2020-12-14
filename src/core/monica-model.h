@@ -77,14 +77,11 @@ namespace Monica
 		                               double julianday,
 		                               bool leapYear);
 
-		void seedCrop(kj::Own<Crop> crop);
+		void seedCrop(Crop* crop);
 
-		Crop* currentCrop() { return _currentCrop; }
-		const Crop* currentCrop() const { return _currentCrop; }
-
-		bool isCropPlanted() const { return _currentCrop && _currentCrop->isValid(); }
-
-		kj::Own<Crop> harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
+		bool isCropPlanted() const { return _currentCropModule; } 
+	
+		void harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
 
 		void incorporateCurrentCrop();
 
@@ -252,7 +249,6 @@ namespace Monica
 		kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
 		kj::Own<SoilOrganic> _soilOrganic; //!< organic code
 		kj::Own<SoilTransport> _soilTransport; //!< transport code
-		kj::Own<Crop> _currentCrop; //! currently possibly planted crop
 		kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 
 		//! store applied fertiliser during one production process
@@ -292,9 +288,9 @@ namespace Monica
 
 		int _cultivationMethodCount{0};
 
-    public:
-      uint critPos{ 0 };
-      uint cmitPos{ 0 };
+    //public:
+    //  uint critPos{ 0 };
+    //  uint cmitPos{ 0 };
 	};
 }
 

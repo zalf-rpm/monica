@@ -215,7 +215,7 @@ bool Sowing::apply(MonicaModel* model)
 	Workstep::apply(model);
 
 	debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
-	model->seedCrop(kj::mv(_cropToPlant));
+	model->seedCrop(_cropToPlant.get());
 	model->addEvent("Sowing");
 
 	return true;
@@ -503,9 +503,9 @@ bool Harvest::apply(MonicaModel* model)
 	Workstep::apply(model);
 
 	if (model->cropGrowth()) {
-		auto crop = model->harvestCurrentCrop(_exported, _optCarbMgmtData);
-		debug() << "harvesting crop: " << crop->toString() << " at: " << crop->harvestDate().toString() << endl;
-		if (_sowing) _sowing->setCropForReplanting(kj::mv(crop));
+		model->harvestCurrentCrop(_exported, _optCarbMgmtData);
+		if(_sowing)
+      debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
 		model->addEvent("Harvest");
 	}
 
@@ -565,7 +565,8 @@ json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const
 bool AutomaticHarvest::apply(MonicaModel* model)
 {
 	//setDate(model->currentStepDate()); //-> commented out, caused the detection as dynamic workstep to fail
-	model->currentCrop()->setHarvestDate(model->currentStepDate());
+	if(_sowing)
+    _sowing->crop()->setHarvestDate(model->currentStepDate());
 
 	Harvest::apply(model);
 
@@ -738,20 +739,8 @@ bool Cutting::apply(MonicaModel* model)
 {
 	Workstep::apply(model);
 
-	assert(model->currentCrop() && model->cropGrowth());
-	auto crop = model->currentCrop();
-	debug() << "Cutting crop: " << crop->toString() << " at: " << date().toString() << endl;
-	//crop->setHarvestYields(model->cropGrowth()->get_FreshPrimaryCropYield() / 100.0,
-	//											 model->cropGrowth()->get_FreshSecondaryCropYield() / 100.0);
-
-	//crop->setHarvestYieldsTM(model->cropGrowth()->get_PrimaryCropYield() / 100.0,
-	//												 model->cropGrowth()->get_SecondaryCropYield() / 100.0);
-
-	//crop->setYieldNContent(model->cropGrowth()->get_PrimaryYieldNContent(),
-	//											 model->cropGrowth()->get_SecondaryYieldNContent());
-
-	//crop->setSumTotalNUptake(model->cropGrowth()->get_SumTotalNUptake());
-	//crop->setCropHeight(model->cropGrowth()->get_CropHeight());
+	assert(model->cropGrowth());
+	debug() << "Cutting crop: " << model->cropGrowth()->speciesParameters().pc_SpeciesId << " at: " << date().toString() << endl;
 
 	model->cropGrowth()->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
 	model->addEvent("Cutting");
@@ -1115,8 +1104,8 @@ bool SaveMonicaState::apply(MonicaModel* model) {
 
 	capnp::MallocMessageBuilder message;
 	auto runtimeState = message.initRoot<mas::models::monica::RuntimeState>();
-	runtimeState.setCritPos(model->critPos);
-	runtimeState.setCmitPos(model->cmitPos);
+	//runtimeState.setCritPos(model->critPos);
+	//runtimeState.setCmitPos(model->cmitPos);
 	auto modelState = runtimeState.initModelState();
 	model->serialize(modelState);
 	auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
