@@ -35,16 +35,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iostream>
 #include <assert.h>
 
+#include "monica/monica_state.capnp.h"
+
 #include "monica-parameters.h"
 
 namespace Monica
 {
-  // forward declarations
   class SoilLayer;
   class SoilColumn;
-  class CropGrowth;
-
-  //std::vector<AOM_Properties> vo_AOM_Pool;
+  class CropModule;
 
   /**
    * @author Claas Nendel, Michael Berg
@@ -59,6 +58,9 @@ namespace Monica
    */
   struct AOM_Properties
   {
+    void deserialize(mas::models::monica::AOMProperties::Reader reader);
+    void serialize(mas::models::monica::AOMProperties::Builder builder) const;
+
     double vo_AOM_Slow{0.0}; //!< C content in slowly decomposing added organic matter pool [kgC m-3]
     double vo_AOM_Fast{0.0}; //!< C content in rapidly decomposing added organic matter pool [kgC m-3]
 
@@ -108,9 +110,13 @@ namespace Monica
     SoilLayer(){}
 
 //    SoilLayer(const UserInitialValues* initParams);
-
+    
     SoilLayer(double vs_LayerThickness,
-              const Soil::SoilParameters& soilParams);
+      const Soil::SoilParameters& soilParams);
+
+    SoilLayer(mas::models::monica::SoilLayerState::Reader reader) { deserialize(reader); }
+    void deserialize(mas::models::monica::SoilLayerState::Reader reader);
+    void serialize(mas::models::monica::SoilLayerState::Builder builder) const;
 
 		//!< Soil layer's organic matter content [kg OM kg-1]
 		double vs_SoilOrganicMatter() const { return _sps.vs_SoilOrganicMatter(); } 
@@ -215,10 +221,15 @@ namespace Monica
   public:
     SoilColumn(double ps_LayerThickness,
                double ps_MaxMineralisationDepth,
-               Soil::SoilPMs soilParams,
+               const Soil::SoilPMs& soilParams,
                double pm_CriticalMoistureDepth);
 
-    void applyMineralFertiliser(MineralFertiliserParameters fertiliserPartition,
+    SoilColumn(mas::models::monica::SoilColumnState::Reader reader, CropModule* cropModule = nullptr)
+    : cropModule(cropModule) { deserialize(reader); }
+    void deserialize(mas::models::monica::SoilColumnState::Reader reader);
+    void serialize(mas::models::monica::SoilColumnState::Builder builder) const;
+
+    void applyMineralFertiliser(MineralFertilizerParameters fertiliserPartition,
                                 double amount);
 
     //! apply left over fertiliser after delay time
@@ -227,11 +238,11 @@ namespace Monica
     //! apply delayed fertiliser application again (yielding possible top dressing)
     double applyPossibleDelayedFerilizer();
 
-	double applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+	double applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
 											double demandDepth,
 											double Ndemand);
 
-    double applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fertiliserPartition,
+    double applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fertiliserPartition,
                                                double vf_SamplingDepth,
                                                double vf_CropNTargetValue,
                                                double vf_CropNTargetValue30,
@@ -268,9 +279,9 @@ namespace Monica
 
     size_t getLayerNumberForDepth(double depth) const;
 
-    void put_Crop(CropGrowth* crop);
+    void putCrop(CropModule* cm) { cropModule = cm; }
 
-    void remove_Crop();
+    void removeCrop() { cropModule = nullptr; }
 
     double sumSoilTemperature(int layers) const;
 		    
@@ -291,14 +302,26 @@ namespace Monica
 
     int _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
     double _vf_TopDressing{0.0};
-    MineralFertiliserParameters _vf_TopDressingPartition;
+    MineralFertilizerParameters _vf_TopDressingPartition;
     int _vf_TopDressingDelay{0};
 
-    CropGrowth* cropGrowth{nullptr};
+    CropModule* cropModule{nullptr};
 
-    std::list<std::function<double()>> _delayedNMinApplications;
+    struct DelayedNMinApplicationParams {
+      void deserialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader);
+      void serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const;
 
-    double pm_CriticalMoistureDepth;
+      MineralFertilizerParameters fp;
+      double vf_SamplingDepth;
+      double vf_CropNTarget;
+      double vf_CropNTarget30;
+      double vf_FertiliserMinApplication;
+      double vf_FertiliserMaxApplication;
+      int vf_TopDressingDelay;
+    };
+    std::list<DelayedNMinApplicationParams> _delayedNMinApplications;
+
+    double pm_CriticalMoistureDepth{ 0 };
   };
 }
 

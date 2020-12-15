@@ -58,6 +58,18 @@ YieldComponent::YieldComponent(json11::Json j)
   merge(j);
 }
 
+void YieldComponent::deserialize(mas::models::monica::YieldComponent::Reader reader) {
+  organId = reader.getOrganId();
+  yieldPercentage = reader.getYieldPercentage();
+  yieldDryMatter = reader.getYieldDryMatter();
+}
+
+void YieldComponent::serialize(mas::models::monica::YieldComponent::Builder builder) const {
+  builder.setOrganId(organId);
+  builder.setYieldPercentage(yieldPercentage);
+  builder.setYieldDryMatter(yieldDryMatter);
+}
+
 Errors YieldComponent::merge(json11::Json j)
 {
   set_int_value(organId, j, "organId");
@@ -82,6 +94,122 @@ json11::Json YieldComponent::to_json() const
 SpeciesParameters::SpeciesParameters(json11::Json j)
 {
   merge(j);
+}
+
+void SpeciesParameters::deserialize(mas::models::monica::SpeciesParameters::Reader reader) {
+  pc_SpeciesId = reader.getSpeciesId();
+  pc_CarboxylationPathway = reader.getCarboxylationPathway();
+  pc_DefaultRadiationUseEfficiency = reader.getDefaultRadiationUseEfficiency();
+  pc_PartBiologicalNFixation = reader.getPartBiologicalNFixation();
+  pc_InitialKcFactor = reader.getInitialKcFactor();
+  pc_LuxuryNCoeff = reader.getLuxuryNCoeff();
+  pc_MaxCropDiameter = reader.getMaxCropDiameter();
+  pc_StageAtMaxHeight = reader.getStageAtMaxHeight();
+  pc_StageAtMaxDiameter = reader.getStageAtMaxDiameter();
+  pc_MinimumNConcentration = reader.getMinimumNConcentration();
+  pc_MinimumTemperatureForAssimilation = reader.getMinimumTemperatureForAssimilation();
+  pc_OptimumTemperatureForAssimilation = reader.getOptimumTemperatureForAssimilation();
+  pc_MaximumTemperatureForAssimilation = reader.getMaximumTemperatureForAssimilation();
+  pc_NConcentrationAbovegroundBiomass = reader.getNConcentrationAbovegroundBiomass();
+  pc_NConcentrationB0 = reader.getNConcentrationB0();
+  pc_NConcentrationPN = reader.getNConcentrationPN();
+  pc_NConcentrationRoot = reader.getNConcentrationRoot();
+  pc_DevelopmentAccelerationByNitrogenStress = reader.getDevelopmentAccelerationByNitrogenStress();
+  pc_FieldConditionModifier = reader.getFieldConditionModifier();
+  pc_AssimilateReallocation = reader.getAssimilateReallocation();
+  setFromCapnpList(pc_BaseTemperature, reader.getBaseTemperature());
+  setFromCapnpList(pc_OrganMaintenanceRespiration, reader.getOrganMaintenanceRespiration());
+  setFromCapnpList(pc_OrganGrowthRespiration, reader.getOrganGrowthRespiration());
+  setFromCapnpList(pc_StageMaxRootNConcentration, reader.getStageMaxRootNConcentration());
+  setFromCapnpList(pc_InitialOrganBiomass, reader.getInitialOrganBiomass());
+  setFromCapnpList(pc_CriticalOxygenContent, reader.getCriticalOxygenContent());
+  setFromCapnpList(pc_StageMobilFromStorageCoeff, reader.getStageMobilFromStorageCoeff());
+  setFromCapnpList(pc_AbovegroundOrgan, reader.getAbovegroundOrgan());
+  setFromCapnpList(pc_StorageOrgan, reader.getStorageOrgan());
+  pc_SamplingDepth = reader.getSamplingDepth();
+  pc_TargetNSamplingDepth = reader.getTargetNSamplingDepth();
+  pc_TargetN30 = reader.getTargetN30();
+  pc_MaxNUptakeParam = reader.getMaxNUptakeParam();
+  pc_RootDistributionParam = reader.getRootDistributionParam();
+  pc_PlantDensity = reader.getPlantDensity();
+  pc_RootGrowthLag = reader.getRootGrowthLag();
+  pc_MinimumTemperatureRootGrowth = reader.getMinimumTemperatureRootGrowth();
+  pc_InitialRootingDepth = reader.getInitialRootingDepth();
+  pc_RootPenetrationRate = reader.getRootPenetrationRate();
+  pc_RootFormFactor = reader.getRootFormFactor();
+  pc_SpecificRootLength = reader.getSpecificRootLength();
+  pc_StageAfterCut = reader.getStageAfterCut();
+  pc_LimitingTemperatureHeatStress = reader.getLimitingTemperatureHeatStress();
+  pc_CuttingDelayDays = reader.getCuttingDelayDays();
+  pc_DroughtImpactOnFertilityFactor = reader.getDroughtImpactOnFertilityFactor();
+  EF_MONO = reader.getEfMono();
+  EF_MONOS = reader.getEfMonos();
+  EF_ISO = reader.getEfIso();
+  VCMAX25 = reader.getVcMax25();
+  AEKC = reader.getAekc();
+  AEKO = reader.getAeko();
+  AEVC = reader.getAevc();
+  KC25 = reader.getKc25();
+  KO25 = reader.getKo25();
+  pc_TransitionStageLeafExp = reader.getTransitionStageLeafExp();
+}
+
+void SpeciesParameters::serialize(mas::models::monica::SpeciesParameters::Builder builder) const {
+  builder.setSpeciesId(pc_SpeciesId);
+  builder.setCarboxylationPathway(pc_CarboxylationPathway);
+  builder.setDefaultRadiationUseEfficiency(pc_DefaultRadiationUseEfficiency);
+  builder.setPartBiologicalNFixation(pc_PartBiologicalNFixation);
+  builder.setInitialKcFactor(pc_InitialKcFactor);
+  builder.setLuxuryNCoeff(pc_LuxuryNCoeff);
+  builder.setMaxCropDiameter(pc_MaxCropDiameter);
+  builder.setStageAtMaxHeight(pc_StageAtMaxHeight);
+  builder.setStageAtMaxDiameter(pc_StageAtMaxDiameter);
+  builder.setMinimumNConcentration(pc_MinimumNConcentration);
+  builder.setMinimumTemperatureForAssimilation(pc_MinimumTemperatureForAssimilation);
+  builder.setOptimumTemperatureForAssimilation(pc_OptimumTemperatureForAssimilation);
+  builder.setMaximumTemperatureForAssimilation(pc_MaximumTemperatureForAssimilation);
+  builder.setNConcentrationAbovegroundBiomass(pc_NConcentrationAbovegroundBiomass);
+  builder.setNConcentrationB0(pc_NConcentrationB0);
+  builder.setNConcentrationPN(pc_NConcentrationPN);
+  builder.setNConcentrationRoot(pc_NConcentrationRoot);
+  builder.setDevelopmentAccelerationByNitrogenStress(pc_DevelopmentAccelerationByNitrogenStress);
+  builder.setFieldConditionModifier(pc_FieldConditionModifier);
+  builder.setAssimilateReallocation(pc_AssimilateReallocation);
+  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature(pc_BaseTemperature.size()));
+  setCapnpList(pc_OrganMaintenanceRespiration, builder.initOrganMaintenanceRespiration(pc_OrganMaintenanceRespiration.size()));
+  setCapnpList(pc_OrganGrowthRespiration, builder.initOrganGrowthRespiration(pc_OrganGrowthRespiration.size()));
+  setCapnpList(pc_StageMaxRootNConcentration, builder.initStageMaxRootNConcentration(pc_StageMaxRootNConcentration.size()));
+  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass(pc_InitialOrganBiomass.size()));
+  setCapnpList(pc_CriticalOxygenContent, builder.initCriticalOxygenContent(pc_CriticalOxygenContent.size()));
+  setCapnpList(pc_StageMobilFromStorageCoeff, builder.initStageMobilFromStorageCoeff(pc_StageMobilFromStorageCoeff.size()));
+  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan(pc_AbovegroundOrgan.size()));
+  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan(pc_StorageOrgan.size()));
+  builder.setSamplingDepth(pc_SamplingDepth);
+  builder.setTargetNSamplingDepth(pc_TargetNSamplingDepth);
+  builder.setTargetN30(pc_TargetN30);
+  builder.setMaxNUptakeParam(pc_MaxNUptakeParam);
+  builder.setRootDistributionParam(pc_RootDistributionParam);
+  builder.setPlantDensity(pc_PlantDensity);
+  builder.setRootGrowthLag(pc_RootGrowthLag);
+  builder.setMinimumTemperatureRootGrowth(pc_MinimumTemperatureRootGrowth);
+  builder.setInitialRootingDepth(pc_InitialRootingDepth);
+  builder.setRootPenetrationRate(pc_RootPenetrationRate);
+  builder.setRootFormFactor(pc_RootFormFactor);
+  builder.setSpecificRootLength(pc_SpecificRootLength);
+  builder.setStageAfterCut(pc_StageAfterCut);
+  builder.setLimitingTemperatureHeatStress(pc_LimitingTemperatureHeatStress);
+  builder.setCuttingDelayDays(pc_CuttingDelayDays);
+  builder.setDroughtImpactOnFertilityFactor(pc_DroughtImpactOnFertilityFactor);
+  builder.setEfMono(EF_MONO);
+  builder.setEfMonos(EF_MONOS);
+  builder.setEfIso(EF_ISO);
+  builder.setVcMax25(VCMAX25);
+  builder.setAekc(AEKC);
+  builder.setAeko(AEKO);
+  builder.setAevc(AEVC);
+  builder.setKc25(KC25);
+  builder.setKo25(KO25);
+  builder.setTransitionStageLeafExp(pc_TransitionStageLeafExp);
 }
 
 Errors SpeciesParameters::merge(json11::Json j)
@@ -224,6 +352,110 @@ json11::Json SpeciesParameters::to_json() const
 CultivarParameters::CultivarParameters(json11::Json j)
 {
   merge(j);
+}
+
+void CultivarParameters::deserialize(mas::models::monica::CultivarParameters::Reader reader) {
+  pc_CultivarId = reader.getCultivarId();
+  pc_Description = reader.getDescription();
+  pc_Perennial = reader.getPerennial();
+  pc_MaxAssimilationRate = reader.getMaxAssimilationRate();
+  pc_MaxCropHeight = reader.getMaxCropHeight();
+  pc_ResidueNRatio = reader.getResidueNRatio();
+  pc_LT50cultivar = reader.getLt50cultivar();
+  pc_CropHeightP1 = reader.getCropHeightP1();
+  pc_CropHeightP2 = reader.getCropHeightP2();
+  pc_CropSpecificMaxRootingDepth = reader.getCropSpecificMaxRootingDepth();
+
+  {
+    auto listReader = reader.getAssimilatePartitioningCoeff();
+    uint i = 0;
+    for (auto& v : pc_AssimilatePartitioningCoeff) setFromCapnpList(v, listReader[i++]);
+  }
+
+  {
+    auto listReader = reader.getOrganSenescenceRate();
+    uint i = 0;
+    for (auto& v : pc_OrganSenescenceRate) setFromCapnpList(v, listReader[i++]);
+  }
+
+  setFromCapnpList(pc_BaseDaylength, reader.getBaseDaylength());
+  setFromCapnpList(pc_OptimumTemperature, reader.getOptimumTemperature());
+  setFromCapnpList(pc_DaylengthRequirement, reader.getDaylengthRequirement());
+  setFromCapnpList(pc_DroughtStressThreshold, reader.getDroughtStressThreshold());
+  setFromCapnpList(pc_SpecificLeafArea, reader.getSpecificLeafArea());
+  setFromCapnpList(pc_StageKcFactor, reader.getStageKcFactor());
+  setFromCapnpList(pc_StageTemperatureSum, reader.getStageTemperatureSum());
+  setFromCapnpList(pc_VernalisationRequirement, reader.getVernalisationRequirement());
+  pc_HeatSumIrrigationStart = reader.getHeatSumIrrigationStart();
+  pc_HeatSumIrrigationEnd = reader.getHeatSumIrrigationEnd();
+  pc_CriticalTemperatureHeatStress = reader.getCriticalTemperatureHeatStress();
+  pc_BeginSensitivePhaseHeatStress = reader.getBeginSensitivePhaseHeatStress();
+  pc_EndSensitivePhaseHeatStress = reader.getEndSensitivePhaseHeatStress();
+  pc_FrostHardening = reader.getFrostHardening();
+  pc_FrostDehardening = reader.getFrostDehardening();
+  pc_LowTemperatureExposure = reader.getLowTemperatureExposure();
+  pc_RespiratoryStress = reader.getRespiratoryStress();
+  pc_LatestHarvestDoy = reader.getLatestHarvestDoy();
+  setFromComplexCapnpList(pc_OrganIdsForPrimaryYield, reader.getOrganIdsForPrimaryYield());
+  setFromComplexCapnpList(pc_OrganIdsForSecondaryYield, reader.getOrganIdsForSecondaryYield());
+  setFromComplexCapnpList(pc_OrganIdsForCutting, reader.getOrganIdsForCutting());
+  pc_EarlyRefLeafExp = reader.getEarlyRefLeafExp();
+  pc_RefLeafExp = reader.getRefLeafExp();
+  pc_MinTempDev_WE = reader.getMinTempDevWE();
+  pc_OptTempDev_WE = reader.getOptTempDevWE();
+  pc_MaxTempDev_WE = reader.getMaxTempDevWE();
+}
+
+void CultivarParameters::serialize(mas::models::monica::CultivarParameters::Builder builder) const {
+  builder.setCultivarId(pc_CultivarId);
+  builder.setDescription(pc_Description);
+  builder.setPerennial(pc_Perennial);
+  builder.setMaxAssimilationRate(pc_MaxAssimilationRate);
+  builder.setMaxCropHeight(pc_MaxCropHeight);
+  builder.setResidueNRatio(pc_ResidueNRatio);
+  builder.setLt50cultivar(pc_LT50cultivar);
+  builder.setCropHeightP1(pc_CropHeightP1);
+  builder.setCropHeightP2(pc_CropHeightP2);
+  builder.setCropSpecificMaxRootingDepth(pc_CropSpecificMaxRootingDepth);
+
+  {
+    auto listBuilder = builder.initAssimilatePartitioningCoeff(pc_AssimilatePartitioningCoeff.size());
+    uint i = 0;
+    for (const auto& v : pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, v.size()));
+  }
+
+  {
+    auto listBuilder = builder.initOrganSenescenceRate(pc_OrganSenescenceRate.size());
+    uint i = 0;
+    for (const auto& v : pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, v.size()));
+  }
+
+  setCapnpList(pc_BaseDaylength, builder.initBaseDaylength(pc_BaseDaylength.size()));
+  setCapnpList(pc_OptimumTemperature, builder.initOptimumTemperature(pc_OptimumTemperature.size()));
+  setCapnpList(pc_DaylengthRequirement, builder.initDaylengthRequirement(pc_DaylengthRequirement.size()));
+  setCapnpList(pc_DroughtStressThreshold, builder.initDroughtStressThreshold(pc_DroughtStressThreshold.size()));
+  setCapnpList(pc_SpecificLeafArea, builder.initSpecificLeafArea(pc_SpecificLeafArea.size()));
+  setCapnpList(pc_StageKcFactor, builder.initStageKcFactor(pc_StageKcFactor.size()));
+  setCapnpList(pc_StageTemperatureSum, builder.initStageTemperatureSum(pc_StageTemperatureSum.size()));
+  setCapnpList(pc_VernalisationRequirement, builder.initVernalisationRequirement(pc_VernalisationRequirement.size()));
+  builder.setHeatSumIrrigationStart(pc_HeatSumIrrigationStart);
+  builder.setHeatSumIrrigationEnd(pc_HeatSumIrrigationEnd);
+  builder.setCriticalTemperatureHeatStress(pc_CriticalTemperatureHeatStress);
+  builder.setBeginSensitivePhaseHeatStress(pc_BeginSensitivePhaseHeatStress);
+  builder.setEndSensitivePhaseHeatStress(pc_EndSensitivePhaseHeatStress);
+  builder.setFrostHardening(pc_FrostHardening);
+  builder.setFrostDehardening(pc_FrostDehardening);
+  builder.setLowTemperatureExposure(pc_LowTemperatureExposure);
+  builder.setRespiratoryStress(pc_RespiratoryStress);
+  builder.setLatestHarvestDoy(pc_LatestHarvestDoy);
+  setComplexCapnpList(pc_OrganIdsForPrimaryYield, builder.initOrganIdsForPrimaryYield(pc_OrganIdsForPrimaryYield.size()));
+  setComplexCapnpList(pc_OrganIdsForSecondaryYield, builder.initOrganIdsForSecondaryYield(pc_OrganIdsForSecondaryYield.size()));
+  setComplexCapnpList(pc_OrganIdsForCutting, builder.initOrganIdsForCutting(pc_OrganIdsForCutting.size()));
+  builder.setEarlyRefLeafExp(pc_EarlyRefLeafExp);
+  builder.setRefLeafExp(pc_RefLeafExp);
+  builder.setMinTempDevWE(pc_MinTempDev_WE);
+  builder.setOptTempDevWE(pc_OptTempDev_WE);
+  builder.setMaxTempDevWE(pc_MaxTempDev_WE);
 }
 
 Errors CultivarParameters::merge(json11::Json j)
@@ -370,6 +602,16 @@ CropParameters::CropParameters(json11::Json sj, json11::Json cj)
   merge(sj, cj);
 }
 
+void CropParameters::deserialize(mas::models::monica::CropParameters::Reader reader) {
+  speciesParams.deserialize(reader.getSpeciesParams());
+  cultivarParams.deserialize(reader.getCultivarParams());
+}
+
+void CropParameters::serialize(mas::models::monica::CropParameters::Builder builder) const {
+  speciesParams.serialize(builder.initSpeciesParams());
+  cultivarParams.serialize(builder.initCultivarParams());
+}
+
 Errors CropParameters::merge(json11::Json j)
 {
   return merge(j["species"], j["cultivar"]);
@@ -395,7 +637,7 @@ json11::Json CropParameters::to_json() const
 
 //------------------------------------------------------------------------------
 
-MineralFertiliserParameters::MineralFertiliserParameters(const string& id,
+MineralFertilizerParameters::MineralFertilizerParameters(const string& id,
                                                          const std::string& name,
                                                          double carbamid,
                                                          double no3,
@@ -407,12 +649,28 @@ MineralFertiliserParameters::MineralFertiliserParameters(const string& id,
     vo_NO3(no3)
 {}
 
-MineralFertiliserParameters::MineralFertiliserParameters(json11::Json j)
+MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors MineralFertiliserParameters::merge(json11::Json j)
+void MineralFertilizerParameters::deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader) {
+  id = reader.getId();
+  name = reader.getName();
+  vo_Carbamid = reader.getCarbamid();
+  vo_NH4 = reader.getNh4();
+  vo_NO3 = reader.getNo3();
+}
+
+void MineralFertilizerParameters::serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const {
+  builder.setId(id);
+  builder.setName(name);
+  builder.setCarbamid(vo_Carbamid);
+  builder.setNh4(vo_NH4);
+  builder.setNo3(vo_NO3);
+}
+
+Errors MineralFertilizerParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -425,10 +683,10 @@ Errors MineralFertiliserParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json MineralFertiliserParameters::to_json() const
+json11::Json MineralFertilizerParameters::to_json() const
 {
   return J11Object 
-  {{"type", "MineralFertiliserParameters"}
+  {{"type", "MineralFertilizerParameters"}
   ,{"id", id}
   ,{"name", name}
   ,{"Carbamid", vo_Carbamid}
@@ -439,19 +697,31 @@ json11::Json MineralFertiliserParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-NMinUserParameters::NMinUserParameters(double min,
+NMinApplicationParameters::NMinApplicationParameters(double min,
                                        double max,
                                        int delayInDays)
   : min(min)
   , max(max)
   , delayInDays(delayInDays) { }
 
-NMinUserParameters::NMinUserParameters(json11::Json j)
+NMinApplicationParameters::NMinApplicationParameters(json11::Json j)
 {
   merge(j);
 }
 
-Errors NMinUserParameters::merge(json11::Json j)
+void NMinApplicationParameters::deserialize(mas::models::monica::NMinApplicationParameters::Reader reader) {
+  min = reader.getMin();
+  max = reader.getMax();
+  delayInDays = reader.getDelayInDays();
+}
+
+void NMinApplicationParameters::serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const {
+  builder.setMin(min);
+  builder.setMax(max);
+  builder.setDelayInDays(delayInDays);
+}
+
+Errors NMinApplicationParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
@@ -462,10 +732,10 @@ Errors NMinUserParameters::merge(json11::Json j)
 	return res;
 }
 
-json11::Json NMinUserParameters::to_json() const
+json11::Json NMinApplicationParameters::to_json() const
 {
   return json11::Json::object 
-  {{"type", "NMinUserParameters"}
+  {{"type", "NMinApplicationParameters"}
   ,{"min", min}
   ,{"max", max}
   ,{"delayInDays", delayInDays}
@@ -483,6 +753,16 @@ IrrigationParameters::IrrigationParameters(double nitrateConcentration,
 IrrigationParameters::IrrigationParameters(json11::Json j)
 {
   merge(j);
+}
+
+void IrrigationParameters::deserialize(mas::models::monica::IrrigationParameters::Reader reader) {
+  nitrateConcentration = reader.getNitrateConcentration();
+  sulfateConcentration = reader.getSulfateConcentration();
+}
+
+void IrrigationParameters::serialize(mas::models::monica::IrrigationParameters::Builder builder) const {
+  builder.setNitrateConcentration(nitrateConcentration);
+  builder.setSulfateConcentration(sulfateConcentration);
 }
 
 Errors IrrigationParameters::merge(json11::Json j)
@@ -520,6 +800,18 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
   merge(j);
 }
 
+void AutomaticIrrigationParameters::deserialize(mas::models::monica::AutomaticIrrigationParameters::Reader reader) {
+  IrrigationParameters::deserialize(reader.getParams());
+  amount = reader.getAmount();
+  threshold = reader.getThreshold();
+}
+
+void AutomaticIrrigationParameters::serialize(mas::models::monica::AutomaticIrrigationParameters::Builder builder) const {
+  IrrigationParameters::serialize(builder.initParams());
+  builder.setAmount(amount);
+  builder.setThreshold(threshold);
+}
+
 Errors AutomaticIrrigationParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
@@ -542,6 +834,22 @@ json11::Json AutomaticIrrigationParameters::to_json() const
 }
 
 //------------------------------------------------------------------------------
+
+void MeasuredGroundwaterTableInformation::deserialize(mas::models::monica::MeasuredGroundwaterTableInformation::Reader reader) {
+  groundwaterInformationAvailable = reader.getGroundwaterInformationAvailable();
+  groundwaterInfo.clear();
+  for (auto gi : reader.getGroundwaterInfo()) groundwaterInfo[Date(gi.getDate())] = gi.getValue();
+}
+
+void MeasuredGroundwaterTableInformation::serialize(mas::models::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
+  builder.setGroundwaterInformationAvailable(groundwaterInformationAvailable);
+  auto gis = builder.initGroundwaterInfo(groundwaterInfo.size());
+  uint i = 0;
+  for (auto p : groundwaterInfo) {
+    p.first.serialize(gis[i].initDate());
+    gis[i].setValue(p.second);
+  }
+}
 
 MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j)
 {
@@ -625,10 +933,74 @@ double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Dat
 
 //------------------------------------------------------------------------------
 
+void SiteParameters::deserialize(mas::models::monica::SiteParameters::Reader reader) {
+  vs_Latitude = reader.getLatitude();
+  vs_Slope = reader.getSlope();
+  vs_HeightNN = reader.getHeightNN();
+  vs_GroundwaterDepth = reader.getGroundwaterDepth();
+  vs_Soil_CN_Ratio = reader.getSoilCNRatio();
+  vs_DrainageCoeff = reader.getDrainageCoeff();
+  vq_NDeposition = reader.getVqNDeposition();
+  vs_MaxEffectiveRootingDepth = reader.getMaxEffectiveRootingDepth();
+  vs_ImpenetrableLayerDepth = reader.getImpenetrableLayerDepth();
+  vs_SoilSpecificHumusBalanceCorrection = reader.getSoilSpecificHumusBalanceCorrection();
+  setFromComplexCapnpList(vs_SoilParameters, reader.getSoilParameters());
+}
+
+void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder builder) const {
+  builder.setLatitude(vs_Latitude);
+  builder.setSlope(vs_Slope);
+  builder.setHeightNN(vs_HeightNN);
+  builder.setGroundwaterDepth(vs_GroundwaterDepth);
+  builder.setSoilCNRatio(vs_Soil_CN_Ratio);
+  builder.setDrainageCoeff(vs_DrainageCoeff);
+  builder.setVqNDeposition(vq_NDeposition);
+  builder.setMaxEffectiveRootingDepth(vs_MaxEffectiveRootingDepth);
+  builder.setImpenetrableLayerDepth(vs_ImpenetrableLayerDepth);
+  builder.setSoilSpecificHumusBalanceCorrection(vs_SoilSpecificHumusBalanceCorrection);
+  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters(vs_SoilParameters.size()));
+}
+
 SiteParameters::SiteParameters(json11::Json j)
 {
   merge(j);
 }
+
+/*
+std::pair<kj::Own<SoilPMs>, Errors> createSoilPMs(const J11Array& jsonSoilPMs) {
+  Errors errors;
+
+  auto soilPMs = kj::heap<SoilPMs>();
+  int layerCount = 0;
+  for (size_t spi = 0, spsCount = jsonSoilPMs.size(); spi < spsCount; spi++) {
+    Json sp = jsonSoilPMs.at(spi);
+
+    //repeat layers if there is an associated Thickness parameter
+    string err;
+    int repeatLayer = 1;
+    if (!sp["Thickness"].is_null())
+      repeatLayer = min(20 - layerCount,
+        max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1) * 10.0, 0)));
+
+    //simply repeat the last layer as often as necessary to fill the 20 layers
+    if (spi + 1 == spsCount)
+      repeatLayer = 20 - layerCount;
+
+    for (int i = 1; i <= repeatLayer; i++) {
+      SoilParameters sps;
+      auto es = sps.merge(sp);
+      soilPMs->push_back(sps);
+      if (es.failure())
+        errors.append(es);
+    }
+
+    layerCount += repeatLayer;
+  }
+
+  return make_pair(kj::mv(soilPMs), errors);
+}
+*/
+
 
 Errors SiteParameters::merge(json11::Json j)
 {
@@ -649,7 +1021,7 @@ Errors SiteParameters::merge(json11::Json j)
 	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
 	{
 		auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
-		vs_SoilParameters = p.first;
+		vs_SoilParameters = kj::mv(p.first);
 		if(p.second.failure())
 			res.append(p.second);
 	}
@@ -686,6 +1058,18 @@ AutomaticHarvestParameters::AutomaticHarvestParameters(HarvestTime yt)
   : _harvestTime(yt)
 {}
 
+void AutomaticHarvestParameters::deserialize(mas::models::monica::AutomaticHarvestParameters::Reader reader) {
+  typedef mas::models::monica::AutomaticHarvestParameters::HarvestTime HT;
+  _harvestTime = reader.getHarvestTime() == HT::MATURITY ? maturity : unknown;
+  _latestHarvestDOY = reader.getLatestHarvestDOY();
+}
+
+void AutomaticHarvestParameters::serialize(mas::models::monica::AutomaticHarvestParameters::Builder builder) const {
+  typedef mas::models::monica::AutomaticHarvestParameters::HarvestTime HT;
+  builder.setHarvestTime(_harvestTime == maturity ? HT::MATURITY : HT::UNKNOWN);
+  builder.setLatestHarvestDOY(_latestHarvestDOY);
+}
+
 AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j)
 {
   merge(j);
@@ -719,6 +1103,18 @@ NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, dou
     nTarget(nTarget),
     nTarget30(nTarget30) {}
 
+void NMinCropParameters::deserialize(mas::models::monica::NMinCropParameters::Reader reader) {
+  samplingDepth = reader.getSamplingDepth();
+  nTarget = reader.getNTarget();
+  nTarget30 = reader.getNTarget30();
+}
+
+void NMinCropParameters::serialize(mas::models::monica::NMinCropParameters::Builder builder) const {
+  builder.setSamplingDepth(samplingDepth);
+  builder.setNTarget(nTarget);
+  builder.setNTarget30(nTarget30);
+}
+
 NMinCropParameters::NMinCropParameters(json11::Json j)
 {
   merge(j);
@@ -746,6 +1142,38 @@ json11::Json NMinCropParameters::to_json() const
 }
 
 //------------------------------------------------------------------------------
+
+void OrganicMatterParameters::deserialize(mas::models::monica::OrganicMatterParameters::Reader reader) {
+  vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
+  vo_AOM_NH4Content = reader.getAomNH4Content();
+  vo_AOM_NO3Content = reader.getAomNO3Content();
+  vo_AOM_CarbamidContent = reader.getAomCarbamidContent();
+  vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
+  vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
+  vo_PartAOM_to_AOM_Slow = reader.getPartAOMToAOMSlow();
+  vo_PartAOM_to_AOM_Fast = reader.getPartAOMToAOMFast();
+  vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
+  vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
+  vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowToSMBSlow();
+  vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowToSMBFast();
+  vo_NConcentration = reader.getNConcentration();
+}
+
+void OrganicMatterParameters::serialize(mas::models::monica::OrganicMatterParameters::Builder builder) const {
+  builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
+  builder.setAomNH4Content(vo_AOM_NH4Content);
+  builder.setAomNO3Content(vo_AOM_NO3Content);
+  builder.setAomCarbamidContent(vo_AOM_CarbamidContent);
+  builder.setAomSlowDecCoeffStandard(vo_AOM_SlowDecCoeffStandard);
+  builder.setAomFastDecCoeffStandard(vo_AOM_FastDecCoeffStandard);
+  builder.setPartAOMToAOMSlow(vo_PartAOM_to_AOM_Slow);
+  builder.setPartAOMToAOMFast(vo_PartAOM_to_AOM_Fast);
+  builder.setCnRatioAOMSlow(vo_CN_Ratio_AOM_Slow);
+  builder.setCnRatioAOMFast(vo_CN_Ratio_AOM_Fast);
+  builder.setPartAOMSlowToSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
+  builder.setPartAOMSlowToSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
+  builder.setNConcentration(vo_NConcentration);
+}
 
 OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
 {
@@ -795,6 +1223,18 @@ json11::Json OrganicMatterParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+void OrganicFertilizerParameters::deserialize(mas::models::monica::OrganicFertilizerParameters::Reader reader) {
+  OrganicMatterParameters::deserialize(reader.getParams());
+  id = reader.getId();
+  name = reader.getName();
+}
+
+void OrganicFertilizerParameters::serialize(mas::models::monica::OrganicFertilizerParameters::Builder builder) const {
+  OrganicMatterParameters::serialize(builder.initParams());
+  builder.setId(id);
+  builder.setName(name);
+}
+
 OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j)
 {
   merge(j);
@@ -823,6 +1263,18 @@ json11::Json OrganicFertilizerParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+void CropResidueParameters::deserialize(mas::models::monica::CropResidueParameters::Reader reader) {
+  OrganicMatterParameters::deserialize(reader.getParams());
+  species = reader.getSpecies();
+  residueType = reader.getResidueType();
+}
+
+void CropResidueParameters::serialize(mas::models::monica::CropResidueParameters::Builder builder) const {
+  OrganicMatterParameters::serialize(builder.initParams());
+  builder.setSpecies(species);
+  builder.setResidueType(residueType);
+}
+
 CropResidueParameters::CropResidueParameters(json11::Json j)
 {
   merge(j);
@@ -849,6 +1301,60 @@ json11::Json CropResidueParameters::to_json() const
 }
 
 //-----------------------------------------------------------------------------------------
+
+void SimulationParameters::deserialize(mas::models::monica::SimulationParameters::Reader reader) {
+  startDate.deserialize(reader.getStartDate());
+  endDate.deserialize(reader.getEndDate());
+
+  pc_NitrogenResponseOn = reader.getNitrogenResponseOn();
+  pc_WaterDeficitResponseOn = reader.getWaterDeficitResponseOn();
+  pc_EmergenceFloodingControlOn = reader.getEmergenceFloodingControlOn();
+  pc_EmergenceMoistureControlOn = reader.getEmergenceMoistureControlOn();
+  pc_FrostKillOn = reader.getFrostKillOn();
+
+  p_UseAutomaticIrrigation = reader.getUseAutomaticIrrigation();
+  p_AutoIrrigationParams.deserialize(reader.getAutoIrrigationParams());
+
+  p_UseNMinMineralFertilisingMethod = reader.getUseNMinMineralFertilisingMethod();
+  p_NMinFertiliserPartition.deserialize(reader.getNMinFertiliserPartition());
+  p_NMinUserParams.deserialize(reader.getNMinApplicationParams());
+
+  p_UseSecondaryYields = reader.getUseSecondaryYields();
+  p_UseAutomaticHarvestTrigger = reader.getUseAutomaticHarvestTrigger();
+
+  p_NumberOfLayers = reader.getNumberOfLayers();
+  p_LayerThickness = reader.getLayerThickness();
+
+  p_StartPVIndex = reader.getStartPVIndex();
+  p_JulianDayAutomaticFertilising = reader.getJulianDayAutomaticFertilising();
+}
+
+void SimulationParameters::serialize(mas::models::monica::SimulationParameters::Builder builder) const {
+  startDate.serialize(builder.initStartDate());
+  endDate.serialize(builder.initEndDate());
+
+  builder.setNitrogenResponseOn(pc_NitrogenResponseOn);
+  builder.setWaterDeficitResponseOn(pc_WaterDeficitResponseOn);
+  builder.setEmergenceFloodingControlOn(pc_EmergenceFloodingControlOn);
+  builder.setEmergenceMoistureControlOn(pc_EmergenceMoistureControlOn);
+  builder.setFrostKillOn(pc_FrostKillOn);
+
+  builder.setUseAutomaticIrrigation(p_UseAutomaticIrrigation);
+  p_AutoIrrigationParams.serialize(builder.initAutoIrrigationParams());
+
+  builder.setUseNMinMineralFertilisingMethod(p_UseNMinMineralFertilisingMethod);
+  p_NMinFertiliserPartition.serialize(builder.initNMinFertiliserPartition());
+  p_NMinUserParams.serialize(builder.initNMinApplicationParams());
+
+  builder.setUseSecondaryYields(p_UseSecondaryYields);
+  builder.setUseAutomaticHarvestTrigger(p_UseAutomaticHarvestTrigger);
+
+  builder.setNumberOfLayers(p_NumberOfLayers);
+  builder.setLayerThickness(p_LayerThickness);
+
+  builder.setStartPVIndex(p_StartPVIndex);
+  builder.setJulianDayAutomaticFertilising(p_JulianDayAutomaticFertilising);
+}
 
 SimulationParameters::SimulationParameters(json11::Json j)
 {
@@ -882,6 +1388,11 @@ Errors SimulationParameters::merge(json11::Json j)
   set_double_value(p_LayerThickness, j, "LayerThickness");
 
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
+
+  set_bool_value(serializeMonicaStateAtEnd, j, "serializeMonicaStateAtEnd");
+  set_bool_value(loadSerializedMonicaStateAtStart, j, "loadSerializedMonicaStateAtStart");
+  noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
+  set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
   
 	return res;
 }
@@ -908,10 +1419,64 @@ json11::Json SimulationParameters::to_json() const
   ,{"NumberOfLayers", p_NumberOfLayers}
   ,{"LayerThickness", p_LayerThickness}
   ,{"StartPVIndex", p_StartPVIndex}
+  ,{"serializeMonicaStateAtEnd", serializeMonicaStateAtEnd}
+  ,{"loadSerializedMonicaStateAtStart", loadSerializedMonicaStateAtStart}
+  ,{"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)}
+  ,{"pathToSerializationFile", pathToSerializationFile}
 	};
 }
 
 //-----------------------------------------------------------------------------------------
+
+void CropModuleParameters::deserialize(mas::models::monica::CropModuleParameters::Reader reader) {
+  pc_CanopyReflectionCoefficient = reader.getCanopyReflectionCoefficient();
+  pc_ReferenceMaxAssimilationRate = reader.getReferenceMaxAssimilationRate();
+  pc_ReferenceLeafAreaIndex = reader.getReferenceLeafAreaIndex();
+  pc_MaintenanceRespirationParameter1 = reader.getMaintenanceRespirationParameter1();
+  pc_MaintenanceRespirationParameter2 = reader.getMaintenanceRespirationParameter2();
+  pc_MinimumNConcentrationRoot = reader.getMinimumNConcentrationRoot();
+  pc_MinimumAvailableN = reader.getMinimumAvailableN();
+  pc_ReferenceAlbedo = reader.getReferenceAlbedo();
+  pc_StomataConductanceAlpha = reader.getStomataConductanceAlpha();
+  pc_SaturationBeta = reader.getSaturationBeta();
+  pc_GrowthRespirationRedux = reader.getGrowthRespirationRedux();
+  pc_MaxCropNDemand = reader.getMaxCropNDemand();
+  pc_GrowthRespirationParameter1 = reader.getGrowthRespirationParameter1();
+  pc_GrowthRespirationParameter2 = reader.getGrowthRespirationParameter2();
+  pc_Tortuosity = reader.getTortuosity();
+  pc_AdjustRootDepthForSoilProps = reader.getAdjustRootDepthForSoilProps();
+
+  __enable_Phenology_WangEngelTemperatureResponse__ = reader.getExperimentalEnablePhenologyWangEngelTemperatureResponse();
+  __enable_Photosynthesis_WangEngelTemperatureResponse__ = reader.getExperimentalEnablePhotosynthesisWangEngelTemperatureResponse();
+  __enable_hourly_FvCB_photosynthesis__ = reader.getExperimentalEnableHourlyFvCBPhotosynthesis();
+  __enable_T_response_leaf_expansion__ = reader.getExperimentalEnableTResponseLeafExpansion();
+  __disable_daily_root_biomass_to_soil__ = reader.getExperimentalDisableDailyRootBiomassToSoil();
+}
+
+void CropModuleParameters::serialize(mas::models::monica::CropModuleParameters::Builder builder) const {
+  builder.setCanopyReflectionCoefficient(pc_CanopyReflectionCoefficient);
+  builder.setReferenceMaxAssimilationRate(pc_ReferenceMaxAssimilationRate);
+  builder.setReferenceLeafAreaIndex(pc_ReferenceLeafAreaIndex);
+  builder.setMaintenanceRespirationParameter1(pc_MaintenanceRespirationParameter1);
+  builder.setMaintenanceRespirationParameter2(pc_MaintenanceRespirationParameter2);
+  builder.setMinimumNConcentrationRoot(pc_MinimumNConcentrationRoot);
+  builder.setMinimumAvailableN(pc_MinimumAvailableN);
+  builder.setReferenceAlbedo(pc_ReferenceAlbedo);
+  builder.setStomataConductanceAlpha(pc_StomataConductanceAlpha);
+  builder.setSaturationBeta(pc_SaturationBeta);
+  builder.setGrowthRespirationRedux(pc_GrowthRespirationRedux);
+  builder.setMaxCropNDemand(pc_MaxCropNDemand);
+  builder.setGrowthRespirationParameter1(pc_GrowthRespirationParameter1);
+  builder.setGrowthRespirationParameter2(pc_GrowthRespirationParameter2);
+  builder.setTortuosity(pc_Tortuosity);
+  builder.setAdjustRootDepthForSoilProps(pc_AdjustRootDepthForSoilProps);
+
+  builder.setExperimentalEnablePhenologyWangEngelTemperatureResponse(__enable_Phenology_WangEngelTemperatureResponse__);
+  builder.setExperimentalEnablePhotosynthesisWangEngelTemperatureResponse(__enable_Photosynthesis_WangEngelTemperatureResponse__);
+  builder.setExperimentalEnableHourlyFvCBPhotosynthesis(__enable_hourly_FvCB_photosynthesis__);
+  builder.setExperimentalEnableTResponseLeafExpansion(__enable_T_response_leaf_expansion__);
+  builder.setExperimentalDisableDailyRootBiomassToSoil(__disable_daily_root_biomass_to_soil__);
+}
 
 CropModuleParameters::CropModuleParameters(json11::Json j)
 {
@@ -978,6 +1543,55 @@ json11::Json CropModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+void EnvironmentParameters::deserialize(mas::models::monica::EnvironmentParameters::Reader reader) {
+  p_Albedo = reader.getAlbedo();
+  p_AtmosphericCO2 = reader.getAtmosphericCO2();
+
+  p_AtmosphericCO2s.clear();
+  for (auto co2 : reader.getAtmosphericCO2s()) p_AtmosphericCO2s[co2.getYear()] = co2.getValue();
+
+  p_AtmosphericO3s.clear();
+  for (auto o3 : reader.getAtmosphericO3s()) p_AtmosphericO3s[o3.getYear()] = o3.getValue();
+
+  p_WindSpeedHeight = reader.getWindSpeedHeight();
+  p_LeachingDepth = reader.getLeachingDepth();
+  p_timeStep = reader.getTimeStep();
+
+  p_MaxGroundwaterDepth = reader.getMaxGroundwaterDepth();
+  p_MinGroundwaterDepth = reader.getMinGroundwaterDepth();
+  p_MinGroundwaterDepthMonth = reader.getMinGroundwaterDepthMonth();
+}
+
+void EnvironmentParameters::serialize(mas::models::monica::EnvironmentParameters::Builder builder) const {
+  builder.setAlbedo(p_Albedo);
+  builder.setAtmosphericCO2(p_AtmosphericCO2);
+
+  {
+    auto co2s = builder.initAtmosphericCO2s(p_AtmosphericCO2s.size());
+    uint i = 0;
+    for (auto p : p_AtmosphericCO2s) {
+      co2s[i].setYear(p.first);
+      co2s[i].setValue(p.second);
+    }
+  }
+  builder.setAtmosphericO3(p_AtmosphericO3);
+  {
+    auto o3s = builder.initAtmosphericO3s(p_AtmosphericO3s.size());
+    uint i = 0;
+    for (auto p : p_AtmosphericO3s) {
+      o3s[i].setYear(p.first);
+      o3s[i].setValue(p.second);
+    }
+  }
+  builder.setWindSpeedHeight(p_WindSpeedHeight);
+  builder.setLeachingDepth(p_LeachingDepth);
+  builder.setTimeStep(p_timeStep);
+
+  builder.setMaxGroundwaterDepth(p_MaxGroundwaterDepth);
+  builder.setMinGroundwaterDepth(p_MinGroundwaterDepth);
+  builder.setMinGroundwaterDepthMonth(p_MinGroundwaterDepthMonth);
+}
+
 EnvironmentParameters::EnvironmentParameters(json11::Json j)
 {
   merge(j);
@@ -1043,6 +1657,60 @@ json11::Json EnvironmentParameters::to_json() const
 SoilMoistureModuleParameters::SoilMoistureModuleParameters()
 {
 	getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
+}
+
+void SoilMoistureModuleParameters::deserialize(mas::models::monica::SoilMoistureModuleParameters::Reader reader) {
+  pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
+  pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
+  pm_SurfaceRoughness = reader.getSurfaceRoughness();
+  pm_GroundwaterDischarge = reader.getGroundwaterDischarge();
+  pm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
+  pm_SnowAccumulationTresholdTemperature = reader.getSnowAccumulationTresholdTemperature();
+  pm_KcFactor = reader.getKcFactor();
+  pm_TemperatureLimitForLiquidWater = reader.getTemperatureLimitForLiquidWater();
+  pm_CorrectionSnow = reader.getCorrectionSnow();
+  pm_CorrectionRain = reader.getCorrectionRain();
+  pm_SnowMaxAdditionalDensity = reader.getSnowMaxAdditionalDensity();
+  pm_NewSnowDensityMin = reader.getNewSnowDensityMin();
+  pm_SnowRetentionCapacityMin = reader.getSnowRetentionCapacityMin();
+  pm_RefreezeParameter1 = reader.getRefreezeParameter1();
+  pm_RefreezeParameter2 = reader.getRefreezeParameter2();
+  pm_RefreezeTemperature = reader.getRefreezeTemperature();
+  pm_SnowMeltTemperature = reader.getSnowMeltTemperature();
+  pm_SnowPacking = reader.getSnowPacking();
+  pm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
+  pm_EvaporationZeta = reader.getEvaporationZeta();
+  pm_XSACriticalSoilMoisture = reader.getXsaCriticalSoilMoisture();
+  pm_MaximumEvaporationImpactDepth = reader.getMaximumEvaporationImpactDepth();
+  pm_MaxPercolationRate = reader.getMaxPercolationRate();
+  pm_MoistureInitValue = reader.getMoistureInitValue();
+}
+
+void SoilMoistureModuleParameters::serialize(mas::models::monica::SoilMoistureModuleParameters::Builder builder) const {
+  builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
+  builder.setSaturatedHydraulicConductivity(pm_SaturatedHydraulicConductivity);
+  builder.setSurfaceRoughness(pm_SurfaceRoughness);
+  builder.setGroundwaterDischarge(pm_GroundwaterDischarge);
+  builder.setHydraulicConductivityRedux(pm_HydraulicConductivityRedux);
+  builder.setSnowAccumulationTresholdTemperature(pm_SnowAccumulationTresholdTemperature);
+  builder.setKcFactor(pm_KcFactor);
+  builder.setTemperatureLimitForLiquidWater(pm_TemperatureLimitForLiquidWater);
+  builder.setCorrectionSnow(pm_CorrectionSnow);
+  builder.setCorrectionRain(pm_CorrectionRain);
+  builder.setSnowMaxAdditionalDensity(pm_SnowMaxAdditionalDensity);
+  builder.setNewSnowDensityMin(pm_NewSnowDensityMin);
+  builder.setSnowRetentionCapacityMin(pm_SnowRetentionCapacityMin);
+  builder.setRefreezeParameter1(pm_RefreezeParameter1);
+  builder.setRefreezeParameter2(pm_RefreezeParameter2);
+  builder.setRefreezeTemperature(pm_RefreezeTemperature);
+  builder.setSnowMeltTemperature(pm_SnowMeltTemperature);
+  builder.setSnowPacking(pm_SnowPacking);
+  builder.setSnowRetentionCapacityMax(pm_SnowRetentionCapacityMax);
+  builder.setEvaporationZeta(pm_EvaporationZeta);
+  builder.setXsaCriticalSoilMoisture(pm_XSACriticalSoilMoisture);
+  builder.setMaximumEvaporationImpactDepth(pm_MaximumEvaporationImpactDepth);
+  builder.setMaxPercolationRate(pm_MaxPercolationRate);
+  builder.setMoistureInitValue(pm_MoistureInitValue);
 }
 
 SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
@@ -1116,6 +1784,37 @@ json11::Json SoilMoistureModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+void SoilTemperatureModuleParameters::deserialize(mas::models::monica::SoilTemperatureModuleParameters::Reader reader) {
+  pt_NTau = reader.getNTau();
+  pt_InitialSurfaceTemperature = reader.getInitialSurfaceTemperature();
+  pt_QuartzRawDensity = reader.getQuartzRawDensity();
+  pt_DensityAir = reader.getDensityAir();
+  pt_DensityWater = reader.getDensityWater();
+  pt_DensityHumus = reader.getDensityHumus();
+  pt_SpecificHeatCapacityAir = reader.getSpecificHeatCapacityAir();
+  pt_SpecificHeatCapacityQuartz = reader.getSpecificHeatCapacityQuartz();
+  pt_SpecificHeatCapacityWater = reader.getSpecificHeatCapacityWater();
+  pt_SpecificHeatCapacityHumus = reader.getSpecificHeatCapacityHumus();
+  pt_SoilAlbedo = reader.getSoilAlbedo();
+  pt_SoilMoisture = reader.getSoilMoisture();
+}
+
+void SoilTemperatureModuleParameters::serialize(mas::models::monica::SoilTemperatureModuleParameters::Builder builder) const {
+  builder.setNTau(pt_NTau);
+  builder.setInitialSurfaceTemperature(pt_InitialSurfaceTemperature);
+  builder.setBaseTemperature(pt_BaseTemperature);
+  builder.setQuartzRawDensity(pt_QuartzRawDensity);
+  builder.setDensityAir(pt_DensityAir);
+  builder.setDensityWater(pt_DensityWater);
+  builder.setDensityHumus(pt_DensityHumus);
+  builder.setSpecificHeatCapacityAir(pt_SpecificHeatCapacityAir);
+  builder.setSpecificHeatCapacityQuartz(pt_SpecificHeatCapacityQuartz);
+  builder.setSpecificHeatCapacityWater(pt_SpecificHeatCapacityWater);
+  builder.setSpecificHeatCapacityHumus(pt_SpecificHeatCapacityHumus);
+  builder.setSoilAlbedo(pt_SoilAlbedo);
+  builder.setSoilMoisture(pt_SoilMoisture);
+}
+
 SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j)
 {
   merge(j);
@@ -1164,6 +1863,20 @@ json11::Json SoilTemperatureModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
+void SoilTransportModuleParameters::deserialize(mas::models::monica::SoilTransportModuleParameters::Reader reader) {
+  pq_DispersionLength = reader.getDispersionLength();
+  pq_AD = reader.getAd();
+  pq_DiffusionCoefficientStandard = reader.getDiffusionCoefficientStandard();
+  pq_NDeposition = reader.getNDeposition();
+}
+
+void SoilTransportModuleParameters::serialize(mas::models::monica::SoilTransportModuleParameters::Builder builder) const {
+  builder.setDispersionLength(pq_DispersionLength);
+  builder.setAd(pq_AD);
+  builder.setDiffusionCoefficientStandard(pq_DiffusionCoefficientStandard);
+  builder.setNDeposition(pq_NDeposition);
+}
+
 SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j)
 {
   merge(j);
@@ -1193,6 +1906,90 @@ json11::Json SoilTransportModuleParameters::to_json() const
 }
 
 //-----------------------------------------------------------------------------------------
+
+void SticsParameters::deserialize(mas::models::monica::SticsParameters::Reader reader) {
+  use_n2o = reader.getUseN2O();
+  use_nit = reader.getUseNit();
+  use_denit = reader.getUseDenit();
+  code_vnit = reader.getCodeVnit();
+  code_tnit = reader.getCodeTnit();
+  code_rationit = reader.getCodeRationit();
+  code_hourly_wfps_nit = reader.getCodeHourlyWfpsNit();
+  code_pdenit = reader.getCodePdenit();
+  code_ratiodenit = reader.getCodeRatiodenit();
+  code_hourly_wfps_denit = reader.getCodeHourlyWfpsDenit();
+  hminn = reader.getHminn();
+  hoptn = reader.getHoptn();
+  pHminnit = reader.getPHminnit();
+  pHmaxnit = reader.getPHmaxnit();
+  nh4_min = reader.getNh4Min();
+  pHminden = reader.getPHminden();
+  pHmaxden = reader.getPHmaxden();
+  wfpsc = reader.getWfpsc();
+  tdenitopt_gauss = reader.getTdenitoptGauss();
+  scale_tdenitopt = reader.getScaleTdenitopt();
+  Kd = reader.getKd();
+  k_desat = reader.getKDesat();
+  fnx = reader.getFnx();
+  vnitmax = reader.getVnitmax();
+  Kamm = reader.getKamm();
+  tnitmin = reader.getTnitmin();
+  tnitopt = reader.getTnitopt();
+  tnitop2 = reader.getTnitop2();
+  tnitmax = reader.getTnitmax();
+  tnitopt_gauss = reader.getTnitoptGauss();
+  scale_tnitopt = reader.getScaleTnitopt();
+  rationit = reader.getRationit();
+  cmin_pdenit = reader.getCminPdenit();
+  cmax_pdenit = reader.getCmaxPdenit();
+  min_pdenit = reader.getMinPdenit();
+  max_pdenit = reader.getMaxPdenit();
+  ratiodenit = reader.getRatiodenit();
+  profdenit = reader.getProfdenit();
+  vpotdenit = reader.getVpotdenit();
+}
+
+void SticsParameters::serialize(mas::models::monica::SticsParameters::Builder builder) const {
+  builder.setUseN2O(use_n2o);
+  builder.setUseNit(use_nit);
+  builder.setUseDenit(use_denit);
+  builder.setCodeVnit(code_vnit);
+  builder.setCodeTnit(code_tnit);
+  builder.setCodeRationit(code_rationit);
+  builder.setCodeHourlyWfpsNit(code_hourly_wfps_nit);
+  builder.setCodePdenit(code_pdenit);
+  builder.setCodeRatiodenit(code_ratiodenit);
+  builder.setCodeHourlyWfpsDenit(code_hourly_wfps_denit);
+  builder.setHminn(hminn);
+  builder.setHoptn(hoptn);
+  builder.setPHminnit(pHminnit);
+  builder.setPHmaxnit(pHmaxnit);
+  builder.setNh4Min(nh4_min);
+  builder.setPHminden(pHminden);
+  builder.setPHmaxden(pHmaxden);
+  builder.setWfpsc(wfpsc);
+  builder.setTdenitoptGauss(tdenitopt_gauss);
+  builder.setScaleTdenitopt(scale_tdenitopt);
+  builder.setKd(Kd);
+  builder.setKDesat(k_desat);
+  builder.setFnx(fnx);
+  builder.setVnitmax(vnitmax);
+  builder.setKamm(Kamm);
+  builder.setTnitmin(tnitmin);
+  builder.setTnitopt(tnitopt);
+  builder.setTnitop2(tnitop2);
+  builder.setTnitmax(tnitmax);
+  builder.setTnitoptGauss(tnitopt_gauss);
+  builder.setScaleTnitopt(scale_tnitopt);
+  builder.setRationit(rationit);
+  builder.setCminPdenit(cmin_pdenit);
+  builder.setCmaxPdenit(cmax_pdenit);
+  builder.setMinPdenit(min_pdenit);
+  builder.setMaxPdenit(max_pdenit);
+  builder.setRatiodenit(ratiodenit);
+  builder.setProfdenit(profdenit);
+  builder.setVpotdenit(vpotdenit);
+}
 
 SticsParameters::SticsParameters(json11::Json j) {
   merge(j);
@@ -1290,6 +2087,86 @@ json11::Json SticsParameters::to_json() const {
 }
 
 //-----------------------------------------------------------------------------
+
+void SoilOrganicModuleParameters::deserialize(mas::models::monica::SoilOrganicModuleParameters::Reader reader) {
+  po_SOM_SlowDecCoeffStandard = reader.getSomSlowDecCoeffStandard();
+  po_SOM_FastDecCoeffStandard = reader.getSomFastDecCoeffStandard();
+  po_SMB_SlowMaintRateStandard = reader.getSmbSlowMaintRateStandard();
+  po_SMB_FastMaintRateStandard = reader.getSmbFastMaintRateStandard();
+  po_SMB_SlowDeathRateStandard = reader.getSmbSlowDeathRateStandard();
+  po_SMB_FastDeathRateStandard = reader.getSmbFastDeathRateStandard();
+  po_SMB_UtilizationEfficiency = reader.getSmbUtilizationEfficiency();
+  po_SOM_SlowUtilizationEfficiency = reader.getSomSlowUtilizationEfficiency();
+  po_SOM_FastUtilizationEfficiency = reader.getSomFastUtilizationEfficiency();
+  po_AOM_SlowUtilizationEfficiency = reader.getAomSlowUtilizationEfficiency();
+  po_AOM_FastUtilizationEfficiency = reader.getAomFastUtilizationEfficiency();
+  po_AOM_FastMaxC_to_N = reader.getAomFastMaxCtoN();
+  po_PartSOM_Fast_to_SOM_Slow = reader.getPartSOMFastToSOMSlow();
+  po_PartSMB_Slow_to_SOM_Fast = reader.getPartSMBSlowToSOMFast();
+  po_PartSMB_Fast_to_SOM_Fast = reader.getPartSMBFastToSOMFast();
+  po_PartSOM_to_SMB_Slow = reader.getPartSOMToSMBSlow();
+  po_PartSOM_to_SMB_Fast = reader.getPartSOMToSMBFast();
+  po_CN_Ratio_SMB = reader.getCnRatioSMB();
+  po_LimitClayEffect = reader.getLimitClayEffect();
+  po_AmmoniaOxidationRateCoeffStandard = reader.getAmmoniaOxidationRateCoeffStandard();
+  po_NitriteOxidationRateCoeffStandard = reader.getNitriteOxidationRateCoeffStandard();
+  po_TransportRateCoeff = reader.getTransportRateCoeff();
+  po_SpecAnaerobDenitrification = reader.getSpecAnaerobDenitrification();
+  po_ImmobilisationRateCoeffNO3 = reader.getImmobilisationRateCoeffNO3();
+  po_ImmobilisationRateCoeffNH4 = reader.getImmobilisationRateCoeffNH4();
+  po_Denit1 = reader.getDenit1();
+  po_Denit2 = reader.getDenit2();
+  po_Denit3 = reader.getDenit3();
+  po_HydrolysisKM = reader.getHydrolysisKM();
+  po_ActivationEnergy = reader.getActivationEnergy();
+  po_HydrolysisP1 = reader.getHydrolysisP1();
+  po_HydrolysisP2 = reader.getHydrolysisP2();
+  po_AtmosphericResistance = reader.getAtmosphericResistance();
+  po_N2OProductionRate = reader.getN2oProductionRate();
+  po_Inhibitor_NH3 = reader.getInhibitorNH3();
+  ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
+  sticsParams.deserialize(reader.getSticsParams());
+}
+
+void SoilOrganicModuleParameters::serialize(mas::models::monica::SoilOrganicModuleParameters::Builder builder) const {
+  builder.setSomSlowDecCoeffStandard(po_SOM_SlowDecCoeffStandard);
+  builder.setSomFastDecCoeffStandard(po_SOM_FastDecCoeffStandard);
+  builder.setSmbSlowMaintRateStandard(po_SMB_SlowMaintRateStandard);
+  builder.setSmbFastMaintRateStandard(po_SMB_FastMaintRateStandard);
+  builder.setSmbSlowDeathRateStandard(po_SMB_SlowDeathRateStandard);
+  builder.setSmbFastDeathRateStandard(po_SMB_FastDeathRateStandard);
+  builder.setSmbUtilizationEfficiency(po_SMB_UtilizationEfficiency);
+  builder.setSomSlowUtilizationEfficiency(po_SOM_SlowUtilizationEfficiency);
+  builder.setSomFastUtilizationEfficiency(po_SOM_FastUtilizationEfficiency);
+  builder.setAomSlowUtilizationEfficiency(po_AOM_SlowUtilizationEfficiency);
+  builder.setAomFastUtilizationEfficiency(po_AOM_FastUtilizationEfficiency);
+  builder.setAomFastMaxCtoN(po_AOM_FastMaxC_to_N);
+  builder.setPartSOMFastToSOMSlow(po_PartSOM_Fast_to_SOM_Slow);
+  builder.setPartSMBSlowToSOMFast(po_PartSMB_Slow_to_SOM_Fast);
+  builder.setPartSMBFastToSOMFast(po_PartSMB_Fast_to_SOM_Fast);
+  builder.setPartSOMToSMBSlow(po_PartSOM_to_SMB_Slow);
+  builder.setPartSOMToSMBFast(po_PartSOM_to_SMB_Fast);
+  builder.setCnRatioSMB(po_CN_Ratio_SMB);
+  builder.setLimitClayEffect(po_LimitClayEffect);
+  builder.setAmmoniaOxidationRateCoeffStandard(po_AmmoniaOxidationRateCoeffStandard);
+  builder.setNitriteOxidationRateCoeffStandard(po_NitriteOxidationRateCoeffStandard);
+  builder.setTransportRateCoeff(po_TransportRateCoeff);
+  builder.setSpecAnaerobDenitrification(po_SpecAnaerobDenitrification);
+  builder.setImmobilisationRateCoeffNO3(po_ImmobilisationRateCoeffNO3);
+  builder.setImmobilisationRateCoeffNH4(po_ImmobilisationRateCoeffNH4);
+  builder.setDenit1(po_Denit1);
+  builder.setDenit2(po_Denit2);
+  builder.setDenit3(po_Denit3);
+  builder.setHydrolysisKM(po_HydrolysisKM);
+  builder.setActivationEnergy(po_ActivationEnergy);
+  builder.setHydrolysisP1(po_HydrolysisP1);
+  builder.setHydrolysisP2(po_HydrolysisP2);
+  builder.setAtmosphericResistance(po_AtmosphericResistance);
+  builder.setN2oProductionRate(po_N2OProductionRate);
+  builder.setInhibitorNH3(po_Inhibitor_NH3);
+  builder.setPsMaxMineralisationDepth(ps_MaxMineralisationDepth);
+  sticsParams.serialize(builder.initSticsParams());
+}
 
 SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j)
 {

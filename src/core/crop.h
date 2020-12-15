@@ -25,6 +25,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
+#include "monica/monica_state.capnp.h"
+
 #include "tools/date.h"
 #include "json11/json11-helper.h"
 #include "../core/monica-parameters.h"
@@ -34,21 +36,27 @@ namespace Monica
   class Crop : public Tools::Json11Serializable
   {
 	public:
-    Crop(const std::string& speciesName = "fallow");
+    Crop() : _perennialCropParams(_cropParams) {}
 
-    Crop(const std::string& speciesName,
-         const std::string& cultivarName,
-         const CropParametersPtr cps = CropParametersPtr(),
-         const CropResidueParametersPtr rps = CropResidueParametersPtr(),
-         double crossCropAdaptionFactor = 1);
+    Crop(const Crop& other);
 
-    Crop(const std::string& speciesName,
-         const std::string& cultivarName,
-         const Tools::Date& seedDate,
-         const Tools::Date& harvestDate,
-         const CropParametersPtr cps = CropParametersPtr(),
-         const CropResidueParametersPtr rps = CropResidueParametersPtr(),
-         double crossCropAdaptionFactor = 1);
+    //Crop(const std::string& speciesName,
+    //     const std::string& cultivarName,
+    //     const CropParametersPtr cps = CropParametersPtr(),
+    //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
+    //     double crossCropAdaptionFactor = 1);
+
+    //Crop(const std::string& speciesName,
+    //     const std::string& cultivarName,
+    //     const Tools::Date& seedDate,
+    //     const Tools::Date& harvestDate,
+    //     const CropParametersPtr cps = CropParametersPtr(),
+    //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
+    //     double crossCropAdaptionFactor = 1);
+
+    Crop(mas::models::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
+    void deserialize(mas::models::monica::CropState::Reader reader);
+    void serialize(mas::models::monica::CropState::Builder builder) const;
 
     Crop(json11::Json object);
 
@@ -58,31 +66,29 @@ namespace Monica
 
     json11::Json to_json(bool includeFullCropParameters) const;
 
-    int dbId() const { return _dbId; }
-
-    void setDbId(int dbId){ _dbId = dbId; }
-
     std::string id() const { return speciesName() + "/" + cultivarName(); }
 
     std::string speciesName() const { return _speciesName; }
 
     std::string cultivarName() const { return _cultivarName; }
 
-    bool isValid() const { return cropParameters() && residueParameters(); }
+    bool isValid() const { return _isValid; }
 
-    const CropParametersPtr cropParameters() const { return _cropParams; }
+    const CropParameters& cropParameters() const { return _cropParams; }
 
-		CropParametersPtr cropParameters() { return _cropParams; }
+		CropParameters& cropParameters() { return _cropParams; }
 
-    void setCropParameters(CropParametersPtr cps) { _cropParams = cps; }
+    void setCropParameters(CropParameters&& cps) { _cropParams = cps; }
 
-    CropParametersPtr perennialCropParameters() const { return _perennialCropParams; }
+    bool separatePerennialCropParameters() const { return _separatePerennialCropParams; }
 
-    void setPerennialCropParameters(CropParametersPtr cps) { _perennialCropParams = cps; }
+    const CropParameters& perennialCropParameters() const { return _perennialCropParams; }
 
-		CropResidueParametersPtr residueParameters() const { return _residueParams; }
+    void setPerennialCropParameters(CropParameters&& cps) { _perennialCropParams = cps; }
 
-    void setResidueParameters(CropResidueParametersPtr rps) { _residueParams = rps; }
+		const CropResidueParameters& residueParameters() const { return _residueParams; }
+
+    void setResidueParameters(CropResidueParameters&& rps) { _residueParams = rps; }
 
 		Tools::Date seedDate() const { return _seedDate; }
 
@@ -113,9 +119,6 @@ namespace Monica
 
 		std::string toString(bool detailed = false) const;
 
-		void setEva2TypeUsage(int type) { eva2_typeUsage = type; }
-		int getEva2TypeUsage() const { return eva2_typeUsage; }
-		
     // Automatic yield trigger parameters
 		bool useAutomaticHarvestTrigger() { return _automaticHarvest; }
     void activateAutomaticHarvestTrigger(AutomaticHarvestParameters params)
@@ -126,7 +129,7 @@ namespace Monica
 		AutomaticHarvestParameters getAutomaticHarvestParams() { return _automaticHarvestParams; }
 
 	private:
-    int _dbId{-1};
+    bool _isValid{ false };
     std::string _speciesName;
     std::string _cultivarName;
 		Tools::Date _seedDate;
@@ -134,13 +137,12 @@ namespace Monica
 		Tools::Maybe<bool> _isWinterCrop;
 		Tools::Maybe<bool> _isPerennialCrop;
 		std::vector<Tools::Date> _cuttingDates;
-    CropParametersPtr _cropParams;
-    CropParametersPtr _perennialCropParams;
-    CropResidueParametersPtr _residueParams;
+    CropParameters _cropParams;
+    kj::Own<CropParameters> _separatePerennialCropParams;
+    CropParameters& _perennialCropParams;
+    CropResidueParameters _residueParams;
 
     double _crossCropAdaptionFactor{1.0};
-
-    int eva2_typeUsage{NUTZUNG_UNDEFINED};
 
     bool _automaticHarvest{false};
 		AutomaticHarvestParameters _automaticHarvestParams;

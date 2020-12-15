@@ -34,6 +34,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 #include <limits>
 
+#include "common/common-typedefs.h"
+#include "monica/monica_params.capnp.h"
+
 namespace Voc
 {
 #define KILO 1.0e+03
@@ -113,6 +116,31 @@ namespace Voc
 	//crop photosynthesis result variables
 	struct CPData 
 	{ 
+		void serialize(mas::models::monica::Voc::CPData::Builder builder) const {
+			builder.setKc(kc);
+			builder.setKo(ko);
+			builder.setOi(oi);
+			builder.setCi(ci);
+			builder.setComp(comp);
+			builder.setVcMax(vcMax);
+			builder.setJMax(jMax);
+			builder.setJj(jj);
+			builder.setJj1000(jj1000);
+			builder.setJv(jv);
+		}
+		void deserialize(mas::models::monica::Voc::CPData::Reader reader) {
+			kc = reader.getKc();
+			ko = reader.getKo();
+			oi = reader.getOi();
+			ci = reader.getCi();
+			comp = reader.getComp();
+			vcMax = reader.getVcMax();
+			jMax = reader.getJMax();
+			jj = reader.getJj();
+			jj1000 = reader.getJj1000();
+			jv = reader.getJv();
+		}
+
 		double kc{0}; //!< Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		double ko{0}; //!< Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
 		double oi{0}; //!< species and layer specific intercellular concentration of CO2 (umol mol-1)
@@ -127,6 +155,71 @@ namespace Voc
 
 	struct SpeciesData
 	{
+		void serialize(mas::models::monica::Voc::SpeciesData::Builder builder) const {
+			builder.setId(id);
+			builder.setEfMonos(EF_MONO);
+			builder.setEfMono(EF_MONO);
+			builder.setEfIso(EF_ISO);
+			builder.setTheta(THETA);
+      builder.setFage(FAGE);
+      builder.setCtIs(CT_IS);
+      builder.setCtMt(CT_MT);
+      builder.setHaIs(HA_IS);
+      builder.setHaMt(HA_MT);
+      builder.setDsIs(DS_IS);
+      builder.setDsMt(DS_MT);
+      builder.setHdIs(HD_IS);
+      builder.setHdMt(HD_MT);
+      builder.setHdj(HDJ);
+      builder.setSdj(SDJ);
+      builder.setKc25(KC25);
+      builder.setKo25(KO25);
+      builder.setVcMax25(VCMAX25);
+      builder.setQjvc(QJVC);
+      builder.setAekc(AEKC);
+      builder.setAeko(AEKO);
+      builder.setAejm(AEJM);
+      builder.setAevc(AEVC);
+      builder.setSlaMin(SLAMIN);
+      builder.setScaleI(SCALE_I);
+      builder.setScaleM(SCALE_M);
+			builder.setMFol(mFol);
+      builder.setLai(lai);
+      builder.setSla(sla);
+		}
+		void deserialize(mas::models::monica::Voc::SpeciesData::Reader reader) {
+			id = reader.getId();
+			EF_MONO = reader.getEfMonos();
+			EF_MONO = reader.getEfMono();
+			EF_ISO = reader.getEfIso();
+			THETA = reader.getTheta();
+			FAGE = reader.getFage();
+			CT_IS = reader.getCtIs();
+			CT_MT = reader.getCtMt();
+			HA_IS = reader.getHaIs();
+			HA_MT = reader.getHaMt();
+			DS_IS = reader.getDsIs();
+			DS_MT = reader.getDsMt();
+			HD_IS = reader.getHdIs();
+			HD_MT = reader.getHdMt();
+			HDJ = reader.getHdj();
+			SDJ = reader.getSdj();
+			KC25 = reader.getKc25();
+			KO25 = reader.getKo25();
+			VCMAX25 = reader.getVcMax25();
+			QJVC = reader.getQjvc();
+			AEKC = reader.getAekc();
+			AEKO = reader.getAeko();
+			AEJM = reader.getAejm();
+			AEVC = reader.getAevc();
+			SLAMIN = reader.getSlaMin();
+			SCALE_I = reader.getScaleI();
+			SCALE_M = reader.getScaleM();
+			mFol = reader.getMFol();
+			lai = reader.getLai();
+			sla = reader.getSla();
+		}
+
 		int id{0};
 
 		//common
@@ -174,7 +267,7 @@ namespace Voc
 		
 		// species specific leaf area index.
 		// physiology  lai_vtfl  lai_vtfl  double  V : F  0.0  m ^ 2 : m^-2
-		// CropGrowth::get_LeafAreaIndex()
+		// CropModule::get_LeafAreaIndex()
 		double lai{0};
 
 		// specific foliage area (m2 kgDW-1).
@@ -187,6 +280,29 @@ namespace Voc
 
 	struct MicroClimateData
 	{
+		void serialize(mas::models::monica::Voc::MicroClimateData::Builder builder) const {
+			builder.setRad(rad);
+			builder.setRad24(rad24);
+			builder.setRad240(rad240);
+			builder.setTFol(tFol);
+			builder.setTFol24(tFol24);
+			builder.setTFol240(tFol240);
+			builder.setSunlitfoliagefraction(sunlitfoliagefraction);
+			builder.setSunlitfoliagefraction24(sunlitfoliagefraction24);
+			builder.setCo2concentration(co2concentration);
+		}
+		void deserialize(mas::models::monica::Voc::MicroClimateData::Reader reader) {
+			rad = reader.getRad();
+			rad24 = reader.getRad24();
+			rad240 = reader.getRad240();
+			tFol = reader.getTFol();
+			tFol24 = reader.getTFol24();
+			tFol240 = reader.getTFol240();
+			sunlitfoliagefraction = reader.getSunlitfoliagefraction();
+			sunlitfoliagefraction24 = reader.getSunlitfoliagefraction24();
+			co2concentration = reader.getCo2concentration();
+		}
+
 		//common
 		// radiation per canopy layer(W m - 2)
 		// microclimate  rad_fl rad_fl  double  F  0.0  W:m^-2
@@ -222,6 +338,38 @@ namespace Voc
 
 	struct Emissions
 	{
+		void serialize(mas::models::monica::Voc::Emissions::Builder builder) const {
+			{
+				auto isos = builder.initSpeciesIdToIsopreneEmission(speciesId_2_isoprene_emission.size());
+				uint i = 0;
+				for (auto p : speciesId_2_isoprene_emission) {
+					isos[i].setSpeciesId(p.first);
+					isos[i++].setEmission(p.second);;
+				}
+			}
+			{
+				auto monos = builder.initSpeciesIdToMonoterpeneEmission(speciesId_2_monoterpene_emission.size());
+				uint i = 0;
+				for (auto p : speciesId_2_monoterpene_emission) {
+					monos[i].setSpeciesId(p.first);
+					monos[i++].setEmission(p.second);;
+				}
+			}
+			builder.setIsopreneEmission(isoprene_emission);
+			builder.setMonoterpeneEmission(monoterpene_emission);
+		}
+
+		void deserialize(mas::models::monica::Voc::Emissions::Reader reader) {
+      speciesId_2_isoprene_emission.clear();
+      for (auto e : reader.getSpeciesIdToIsopreneEmission()) speciesId_2_isoprene_emission[e.getSpeciesId()] = e.getEmission();
+
+			speciesId_2_monoterpene_emission.clear();
+			for (auto e : reader.getSpeciesIdToMonoterpeneEmission()) speciesId_2_monoterpene_emission[e.getSpeciesId()] = e.getEmission();
+			
+			isoprene_emission = reader.getIsopreneEmission();
+			monoterpene_emission = reader.getMonoterpeneEmission();
+		}
+
 		Emissions& operator+=(const Emissions& other)
 		{
 			for(auto p : other.speciesId_2_isoprene_emission)
@@ -244,6 +392,17 @@ namespace Voc
 
 	struct  photosynth_t
 	{
+		void serialize(mas::models::monica::Voc::PhotosynthT::Builder builder) const {
+			builder.setPar(par);
+			builder.setPar24(par24);
+			builder.setPar240(par240);
+		}
+		void deserialize(mas::models::monica::Voc::PhotosynthT::Reader reader) {
+			par = reader.getPar();
+			par24 = reader.getPar24();
+			par240 = reader.getPar240();
+		}
+
 		double par{0.0};     //!< photosynthetic active radiation (umol m-2 s-1)
 		double par24{0.0};   //!< 1 day aggregated photosynthetic active radiation (umol m-2 s-1)
 		double par240{0.0};  //!< 10 days aggregated photosynthetic active radiation (umol m-2 s-1)
@@ -253,6 +412,17 @@ namespace Voc
 
 	struct  foliage_t
 	{
+		void serialize(mas::models::monica::Voc::FoliageT::Builder builder) const {
+			builder.setTempK(tempK);
+			builder.setTempK24(tempK24);
+			builder.setTempK240(tempK240);
+		}
+		void deserialize(mas::models::monica::Voc::FoliageT::Reader reader) {
+			tempK = reader.getTempK();
+			tempK24 = reader.getTempK24();
+			tempK240 = reader.getTempK240();
+		}
+
 		double tempK{0.0}; //!< foliage temperature within a canopy layer (K)
 		double tempK24{0.0}; //!< 1 day aggregated foliage temperature within a canopy layer (K)
 		double tempK240{0.0}; //!< 10 days aggregated foliage temperature within a canopy layer (K)
@@ -262,6 +432,15 @@ namespace Voc
 
 	struct  enzyme_activity_t
 	{
+		void serialize(mas::models::monica::Voc::EnzymeActivityT::Builder builder) const {
+			builder.setEfIso(ef_iso);
+			builder.setEfMono(ef_mono);
+		}
+		void deserialize(mas::models::monica::Voc::EnzymeActivityT::Reader reader) {
+			ef_iso = reader.getEfIso();
+			ef_mono = reader.getEfMono();
+		}
+
 		double ef_iso{0.0}; //!< emission factor of isoprene(ug gDW-1 h-1)
 		double ef_mono{0.0}; //!< emission factor of monoterpenes (ug gDW-1 h-1)
 	};
@@ -270,6 +449,19 @@ namespace Voc
 
 	struct  leaf_emission_t
 	{
+		void serialize(mas::models::monica::Voc::LeafEmissionT::Builder builder) const {
+			builder.setFoliageLayer(foliage_layer);
+			pho.serialize(builder.initPho());
+			fol.serialize(builder.initFol());
+			enz_act.serialize(builder.initEnzAct());
+		}
+		void deserialize(mas::models::monica::Voc::LeafEmissionT::Reader reader) {
+			foliage_layer = reader.getFoliageLayer();
+			pho.deserialize(reader.getPho());
+			fol.deserialize(reader.getFol());
+			enz_act.deserialize(reader.getEnzAct());
+		}
+
 		std::size_t foliage_layer{0};
 
 		photosynth_t pho;
@@ -283,6 +475,15 @@ namespace Voc
 	{
 		LeafEmissions() {}
 		LeafEmissions(double x, double y) : isoprene(x), monoterp(y) {}
+
+		void serialize(mas::models::monica::Voc::LeafEmissions::Builder builder) const {
+			builder.setIsoprene(isoprene);
+			builder.setMonoterp(monoterp);
+		}
+		void deserialize(mas::models::monica::Voc::LeafEmissions::Reader reader) {
+			isoprene = reader.getIsoprene();
+			monoterp = reader.getMonoterp();
+		}
 
 		double isoprene{0.0}; //!< isoprene emission (ug m-2ground h-1)
 		double monoterp{0.0}; //!< monoterpene emission (ug m-2ground h-1)

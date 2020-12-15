@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilmoisture.h"
 #include "soilcolumn.h"
 #include "soiltransport.h"
-#include "crop-growth.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 #include "tools/debug.h"
 
@@ -39,10 +39,10 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const SoilTransportModuleParameters& stPs,
+SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const SoilTransportModuleParameters& params,
   double p_LeachingDepth, double p_timeStep, double pc_MinimumAvailableN)
   : soilColumn(sc)
-  , stPs(stPs)
+  , _params(params)
   //, vs_NumberOfLayers(sc.vs_NumberOfLayers()) //extern
   , vq_Convection(sc.vs_NumberOfLayers(), 0.0)
   , vq_DiffusionCoeff(sc.vs_NumberOfLayers(), 0.0)
@@ -64,6 +64,49 @@ SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const So
   debug() << "!!! N Deposition: " << vs_NDeposition << endl;
 }
 
+void SoilTransport::deserialize(mas::models::monica::SoilTransportModuleState::Reader reader) {
+  _params.deserialize(reader.getModuleParams());
+  setFromCapnpList(vq_Convection, reader.getConvection());
+  vq_CropNUptake = reader.getCropNUptake();
+  setFromCapnpList(vq_DiffusionCoeff, reader.getDiffusionCoeff());
+  setFromCapnpList(vq_Dispersion, reader.getDispersion());
+  setFromCapnpList(vq_DispersionCoeff, reader.getDispersionCoeff());
+  vs_LeachingDepth = reader.getVsLeachingDepth();
+  vq_LeachingAtBoundary = reader.getLeachingAtBoundary();
+  vs_NDeposition = reader.getVsNDeposition();
+  setFromCapnpList(vc_NUptakeFromLayer, reader.getVcNUptakeFromLayer());
+  setFromCapnpList(vq_PoreWaterVelocity, reader.getPoreWaterVelocity());
+  setFromCapnpList(vs_SoilMineralNContent, reader.getVsSoilMineralNContent());
+  setFromCapnpList(vq_SoilNO3, reader.getSoilNO3());
+  setFromCapnpList(vq_SoilNO3_aq, reader.getSoilNO3aq());
+  vq_TimeStep = reader.getTimeStep();
+  setFromCapnpList(vq_TotalDispersion, reader.getTotalDispersion());
+  setFromCapnpList(vq_PercolationRate, reader.getPercolationRate());
+  pc_MinimumAvailableN = reader.getPcMinimumAvailableN();
+}
+
+void SoilTransport::serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const {
+  _params.serialize(builder.initModuleParams());
+  setCapnpList(vq_Convection, builder.initConvection(vq_Convection.size()));
+  builder.setCropNUptake(vq_CropNUptake);
+  setCapnpList(vq_DiffusionCoeff, builder.initDiffusionCoeff(vq_DiffusionCoeff.size()));
+  setCapnpList(vq_Dispersion, builder.initDispersion(vq_Dispersion.size()));
+  setCapnpList(vq_DispersionCoeff, builder.initDispersionCoeff(vq_DispersionCoeff.size()));
+  builder.setVsLeachingDepth(vs_LeachingDepth);
+  builder.setLeachingAtBoundary(vq_LeachingAtBoundary);
+  builder.setVsNDeposition(vs_NDeposition);
+  setCapnpList(vc_NUptakeFromLayer, builder.initVcNUptakeFromLayer(vc_NUptakeFromLayer.size()));
+  setCapnpList(vq_PoreWaterVelocity, builder.initPoreWaterVelocity(vq_PoreWaterVelocity.size()));
+  setCapnpList(vs_SoilMineralNContent, builder.initVsSoilMineralNContent(vs_SoilMineralNContent.size()));
+  setCapnpList(vq_SoilNO3, builder.initSoilNO3(vq_SoilNO3.size()));
+  setCapnpList(vq_SoilNO3_aq, builder.initSoilNO3aq(vq_SoilNO3_aq.size()));
+  builder.setTimeStep(vq_TimeStep);
+  setCapnpList(vq_TotalDispersion, builder.initTotalDispersion(vq_TotalDispersion.size()));
+  setCapnpList(vq_PercolationRate, builder.initPercolationRate(vq_PercolationRate.size()));
+  builder.setPcMinimumAvailableN(pc_MinimumAvailableN);
+}
+
+
 /**
  * @brief Computes a soil transport step
  */
@@ -76,7 +119,7 @@ void SoilTransport::step() {
     //vq_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
     vq_SoilNO3[i] = soilColumn[i].vs_SoilNO3;
 
-    vc_NUptakeFromLayer[i] = crop ? crop->get_NUptakeFromLayer(i) : 0;
+    vc_NUptakeFromLayer[i] = cropModule ? cropModule->get_NUptakeFromLayer(i) : 0;
     if (i == nols - 1) 
       vq_PercolationRate[i] = soilColumn.vs_FluxAtLowerBoundary; //[mm]
     else
@@ -115,6 +158,7 @@ void SoilTransport::step() {
   } 
 
 }
+
 
 /**
  * @brief Calculation of N deposition
@@ -175,9 +219,9 @@ void SoilTransport::fq_NUptake() {
  * Kersebaum 1989
  */
 void SoilTransport::fq_NTransport(double leachingDepth, double timeStepFactor) {
-  double diffusionCoeffStandard = stPs.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
-  double AD = stPs.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
-  double dispersionLength = stPs.pq_DispersionLength; // [m]
+  double diffusionCoeffStandard = _params.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
+  double AD = _params.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
+  double dispersionLength = _params.pq_DispersionLength; // [m]
   double soilProfile = 0.0;
   size_t leachingDepthLayerIndex = 0;
   const auto nols = soilColumn.vs_NumberOfLayers();
@@ -374,13 +418,5 @@ double SoilTransport::get_vq_Convection(int i_Layer) const {
  */
 double SoilTransport::get_NLeaching() const {
   return vq_LeachingAtBoundary;
-}
-
-void SoilTransport::put_Crop(CropGrowth* c) {
-  crop = c;
-}
-
-void SoilTransport::remove_Crop() {
-  crop = NULL;
 }
 

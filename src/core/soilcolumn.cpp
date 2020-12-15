@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  * @see Monica::FertilizerTriggerThunk
  */
 
-#include "crop-growth.h"
+#include "crop-module.h"
 #include "soilcolumn.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
@@ -38,6 +38,54 @@ using namespace Monica;
 using namespace std;
 using namespace Soil;
 using namespace Tools;
+
+void AOM_Properties::deserialize(mas::models::monica::AOMProperties::Reader reader) {
+	vo_AOM_Slow = reader.getAomSlow();
+	vo_AOM_Fast = reader.getAomFast();
+	vo_AOM_SlowDecRate_to_SMB_Slow = reader.getAomSlowDecRatetoSMBSlow();
+	vo_AOM_SlowDecRate_to_SMB_Fast = reader.getAomSlowDecRatetoSMBFast();
+	vo_AOM_FastDecRate_to_SMB_Slow = reader.getAomFastDecRatetoSMBSlow();
+	vo_AOM_FastDecRate_to_SMB_Fast = reader.getAomFastDecRatetoSMBFast();
+	vo_AOM_SlowDecCoeff = reader.getAomSlowDecCoeff();
+	vo_AOM_FastDecCoeff = reader.getAomFastDecCoeff();
+	vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
+	vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
+	vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowtoSMBSlow();
+	vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowtoSMBFast();
+	vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
+	vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
+	vo_DaysAfterApplication = reader.getDaysAfterApplication();
+	vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
+	vo_AOM_NH4Content = reader.getAomNH4Content();
+	vo_AOM_SlowDelta = reader.getAomSlowDelta();
+	vo_AOM_FastDelta = reader.getAomFastDelta();
+	incorporation = reader.getIncorporation();
+	noVolatilization = reader.getNoVolatilization();
+}
+
+void AOM_Properties::serialize(mas::models::monica::AOMProperties::Builder builder) const {
+	builder.setAomSlow(vo_AOM_Slow);
+	builder.setAomFast(vo_AOM_Fast);
+	builder.setAomSlowDecRatetoSMBSlow(vo_AOM_SlowDecRate_to_SMB_Slow);
+	builder.setAomSlowDecRatetoSMBFast(vo_AOM_SlowDecRate_to_SMB_Fast);
+	builder.setAomFastDecRatetoSMBSlow(vo_AOM_FastDecRate_to_SMB_Slow);
+	builder.setAomFastDecRatetoSMBFast(vo_AOM_FastDecRate_to_SMB_Fast);
+	builder.setAomSlowDecCoeff(vo_AOM_SlowDecCoeff);
+	builder.setAomFastDecCoeff(vo_AOM_FastDecCoeff);
+	builder.setAomSlowDecCoeffStandard(vo_AOM_SlowDecCoeffStandard);
+	builder.setAomFastDecCoeffStandard(vo_AOM_FastDecCoeffStandard);
+	builder.setPartAOMSlowtoSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
+	builder.setPartAOMSlowtoSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
+	builder.setCnRatioAOMSlow(vo_CN_Ratio_AOM_Slow);
+	builder.setCnRatioAOMFast(vo_CN_Ratio_AOM_Fast);
+	builder.setDaysAfterApplication(vo_DaysAfterApplication);
+	builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
+	builder.setAomNH4Content(vo_AOM_NH4Content);
+	builder.setAomSlowDelta(vo_AOM_SlowDelta);
+	builder.setAomFastDelta(vo_AOM_FastDelta);
+	builder.setIncorporation(incorporation);
+	builder.setNoVolatilization(noVolatilization);
+}
 
 
 /**
@@ -54,6 +102,42 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
 	, vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
 	//, vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
 {
+}
+
+void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) {
+	vs_LayerThickness = reader.getLayerThickness();
+	vs_SoilWaterFlux = reader.getSoilWaterFlux();
+	setFromComplexCapnpList(vo_AOM_Pool, reader.getVoAOMPool());
+	vs_SOM_Slow = reader.getSomSlow();
+	vs_SOM_Fast = reader.getSomFast();
+	vs_SMB_Slow = reader.getSmbSlow();
+	vs_SMB_Fast = reader.getSmbFast();
+	vs_SoilCarbamid = reader.getSoilCarbamid();
+	vs_SoilNH4 = reader.getSoilNH4();
+	vs_SoilNO2 = reader.getSoilNO2();
+	vs_SoilNO3 = reader.getSoilNO3();
+	vs_SoilFrozen = reader.getSoilFrozen();
+	_sps.deserialize(reader.getSps());
+	vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
+	vs_SoilTemperature = reader.getSoilTemperature();
+}
+
+void SoilLayer::serialize(mas::models::monica::SoilLayerState::Builder builder) const {
+	builder.setLayerThickness(vs_LayerThickness);
+	builder.setSoilWaterFlux(vs_SoilWaterFlux);
+	setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool(vo_AOM_Pool.size()));
+	builder.setSomSlow(vs_SOM_Slow);
+	builder.setSomFast(vs_SOM_Fast);
+	builder.setSmbSlow(vs_SMB_Slow);
+	builder.setSmbFast(vs_SMB_Fast);
+	builder.setSoilCarbamid(vs_SoilCarbamid);
+	builder.setSoilNH4(vs_SoilNH4);
+	builder.setSoilNO2(vs_SoilNO2);
+	builder.setSoilNO3(vs_SoilNO3);
+	builder.setSoilFrozen(vs_SoilFrozen);
+	_sps.serialize(builder.initSps());
+	builder.setSoilMoistureM3(vs_SoilMoisture_m3);
+	builder.setSoilTemperature(vs_SoilTemperature);
 }
 
 /**
@@ -122,18 +206,54 @@ double SoilLayer::vs_SoilMoisture_pF()
  * @param soilParams Soil Parameter
  */
 SoilColumn::SoilColumn(double ps_LayerThickness,
-	double ps_MaxMineralisationDepth,
-	SoilPMs soilParams,
-	double pm_CriticalMoistureDepth)
-	: ps_MaxMineralisationDepth(ps_MaxMineralisationDepth)
-	, pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
+  double ps_MaxMineralisationDepth,
+  const SoilPMs& soilParams,
+  double pm_CriticalMoistureDepth)
+  : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth)
+  , pm_CriticalMoistureDepth(pm_CriticalMoistureDepth)
 {
 	debug() << "Constructor: SoilColumn " << soilParams.size() << endl;
-		for (auto sp : soilParams)
-			push_back(SoilLayer(ps_LayerThickness, sp));
-
+	for (auto sp : soilParams) push_back(SoilLayer(ps_LayerThickness, sp));
+	
 	_vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
+
+void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader) {
+	vs_SurfaceWaterStorage = reader.getVsSurfaceWaterStorage();
+	vs_InterceptionStorage = reader.getVsInterceptionStorage();
+	vm_GroundwaterTable = reader.getVmGroundwaterTable();
+	vs_FluxAtLowerBoundary = reader.getVsFluxAtLowerBoundary();
+	vq_CropNUptake = reader.getVqCropNUptake();
+	vt_SoilSurfaceTemperature = reader.getVtSoilSurfaceTemperature();
+	vm_SnowDepth = reader.getVmSnowDepth();
+	ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
+	_vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
+	_vf_TopDressing = reader.getVfTopDressing();
+	_vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
+	_vf_TopDressingDelay = reader.getVfTopDressingDelay();
+	setFromComplexCapnpList(_delayedNMinApplications, reader.getDelayedNMinApplications());
+	pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
+	setFromComplexCapnpList(*this, reader.getLayers());
+}
+
+void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder) const {
+	builder.setVsSurfaceWaterStorage(vs_SurfaceWaterStorage);
+	builder.setVsInterceptionStorage(vs_InterceptionStorage);
+	builder.setVmGroundwaterTable(vm_GroundwaterTable);
+	builder.setVsFluxAtLowerBoundary(vs_FluxAtLowerBoundary);
+	builder.setVqCropNUptake(vq_CropNUptake);
+	builder.setVtSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
+	builder.setVmSnowDepth(vm_SnowDepth);
+	builder.setPsMaxMineralisationDepth(ps_MaxMineralisationDepth);
+	builder.setVsNumberOfOrganicLayers(_vs_NumberOfOrganicLayers);
+	builder.setVfTopDressing(_vf_TopDressing);
+	_vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
+	builder.setVfTopDressingDelay(_vf_TopDressingDelay);
+	setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications(_delayedNMinApplications.size()));
+	builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
+	setComplexCapnpList(*this, builder.initLayers(size()));
+}
+
 
 /**
  * @brief Calculates number of organic layers.
@@ -163,7 +283,7 @@ int SoilColumn::calculateNumberOfOrganicLayers()
 	return count;
 }
 
-double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertiliserParameters fp,
+double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
 	double demandDepth,
 	double NdemandKgHa)
 {
@@ -204,7 +324,7 @@ double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertiliserParameters 
  * @param vf_TopDressingDelay Number of days for which the application of surplus fertilizer is delayed
  */
 double SoilColumn::
-applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
+applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fp,
 	double vf_SamplingDepth,
 	double vf_CropNTarget,
 	double vf_CropNTarget30,
@@ -214,16 +334,16 @@ applyMineralFertiliserViaNMinMethod(MineralFertiliserParameters fp,
 {
 	if (at(0).get_Vs_SoilMoisture_m3() > at(0).vs_FieldCapacity())
 	{
-		_delayedNMinApplications.push_back([=]()
-		{
-			return this->applyMineralFertiliserViaNMinMethod(fp,
-				vf_SamplingDepth,
-				vf_CropNTarget,
-				vf_CropNTarget30,
-				vf_FertiliserMinApplication,
-				vf_FertiliserMaxApplication,
-				vf_TopDressingDelay);
-		});
+		_delayedNMinApplications.push_back({
+      fp,
+      vf_SamplingDepth,
+      vf_CropNTarget,
+			vf_CropNTarget30,
+      vf_FertiliserMinApplication,
+      vf_FertiliserMaxApplication,
+      vf_TopDressingDelay
+      }
+    );
 
 		debug() << "Soil too wet for fertilisation. Fertiliser event adjourned to next day." << endl;
 		return 0.0;
@@ -328,10 +448,13 @@ double SoilColumn::applyPossibleTopDressing()
  * then removes the first fertilizer item in list.
  */
 double SoilColumn::applyPossibleDelayedFerilizer() {
-	list<std::function<double()> > delayedApps = _delayedNMinApplications;
+	auto delayedApps = _delayedNMinApplications;
 	double n_amount = 0.0;
 	while (!delayedApps.empty()) {
-		n_amount += delayedApps.front()();
+		const auto& da = delayedApps.front();
+		n_amount += applyMineralFertiliserViaNMinMethod(
+			da.fp, da.vf_SamplingDepth, da.vf_CropNTarget, da.vf_CropNTarget30,
+			da.vf_FertiliserMinApplication, da.vf_FertiliserMaxApplication, da.vf_TopDressingDelay);
 		delayedApps.pop_front();
 		_delayedNMinApplications.pop_front();
 	}
@@ -343,7 +466,7 @@ double SoilColumn::applyPossibleDelayedFerilizer() {
  *
  * @author: Claas Nendel
  */
-void SoilColumn::applyMineralFertiliser(MineralFertiliserParameters fp,
+void SoilColumn::applyMineralFertiliser(MineralFertilizerParameters fp,
 	double amount) {
 	debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
 		<< " amount: " << amount << endl;
@@ -409,11 +532,11 @@ bool SoilColumn::applyIrrigationViaTrigger(double vi_IrrigationThreshold,
 {
 	//is actually only called from cropStep and thus there should always
 	//be a crop
-	assert(cropGrowth != NULL);
+	assert(cropModule != NULL);
 
-	double s = cropGrowth->get_HeatSumIrrigationStart();
-	double e = cropGrowth->get_HeatSumIrrigationEnd();
-	double cts = cropGrowth->get_CurrentTemperatureSum();
+	double s = cropModule->get_HeatSumIrrigationStart();
+	double e = cropModule->get_HeatSumIrrigationEnd();
+	double cts = cropModule->get_CurrentTemperatureSum();
 
 	if (cts < s || cts > e)
 		return false;
@@ -659,24 +782,6 @@ size_t SoilColumn::getLayerNumberForDepth(double depth) const
 }
 
 /**
- * @brief Makes crop information available when needed.
- *
- * @return crop object
- */
-void SoilColumn::put_Crop(CropGrowth* c) {
-	cropGrowth = c;
-}
-
-/**
- * @brief Deletes crop object when not needed anymore.
- *
- * @return crop object is NULL
- */
-void SoilColumn::remove_Crop() {
-	cropGrowth = NULL;
-}
-
-/**
  * Returns sum of soiltemperature for several soil layers.
  * @param layers Number of layers that are of interest
  * @return Temperature sum
@@ -690,6 +795,25 @@ double SoilColumn::sumSoilTemperature(int layers) const
 }
 
 //------------------------------------------------------------------------------
+
+void SoilColumn::DelayedNMinApplicationParams::deserialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {
+	fp.deserialize(reader.getFp());
+	vf_SamplingDepth = reader.getSamplingDepth();
+	vf_CropNTarget = reader.getCropNTarget();
+	vf_CropNTarget30 = reader.getCropNTarget30();
+	vf_FertiliserMinApplication = reader.getFertiliserMinApplication();
+	vf_FertiliserMaxApplication = reader.getFertiliserMaxApplication();
+	vf_TopDressingDelay = reader.getTopDressingDelay();
+}
+void SoilColumn::DelayedNMinApplicationParams::serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const {
+	fp.serialize(builder.initFp());
+	builder.setSamplingDepth(vf_SamplingDepth);
+	builder.setCropNTarget(vf_CropNTarget);
+	builder.setCropNTarget30(vf_CropNTarget30);
+	builder.setFertiliserMinApplication(vf_FertiliserMinApplication);
+	builder.setFertiliserMaxApplication(vf_FertiliserMaxApplication);
+	builder.setTopDressingDelay(vf_TopDressingDelay);
+}
 
 /**
  * @brief Constructor

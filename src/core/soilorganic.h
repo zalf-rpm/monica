@@ -33,37 +33,35 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 #include <list>
 
+#include "monica/monica_state.capnp.h"
 #include "monica-parameters.h"
 
 namespace Monica
 {
-  // forward declaration
   class SoilColumn;
-  class CropGrowth;
+  class CropModule;
 
-  /**
- * @brief Soil carbon and nitrogen part of model
- *
- * <img src="../images/soil_organic_schema.png">
- *
- * <img src="../images/nitrification_denitrification.png">
- *
- * @author Michael Berg, Claas Nendel, Xenia Specka
- */
   class SoilOrganic
   {
   public:
-    SoilOrganic(SoilColumn& soilColumn,
-                const SiteParameters& sps,
-                const SoilOrganicModuleParameters& userParams);
+    SoilOrganic(SoilColumn& soilColumn, const SoilOrganicModuleParameters& params);
+
+    SoilOrganic(SoilColumn& sc, mas::models::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
+      : soilColumn(sc)
+      , cropModule(cropModule) {
+      deserialize(reader);
+    }
+
+    void deserialize(mas::models::monica::SoilOrganicModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilOrganicModuleState::Builder builder) const;
 
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
-    void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
+    void addOrganicMatter(const OrganicMatterParameters& addedOrganicMatter,
 													std::map<size_t, double> layer2amount,
 													double nConcentration = 0);
 
-		void addOrganicMatter(OrganicMatterParametersPtr addedOrganicMatter,
+		void addOrganicMatter(const OrganicMatterParameters& addedOrganicMatter,
 													double amount,
 													double nConcentration = 0,
 													size_t intoLayerIndex = 0)
@@ -83,8 +81,8 @@ namespace Monica
      * @param incorporation TRUE/FALSE
      */
     void setIncorporation(bool incorp) { this->incorporation = incorp; }
-    void put_Crop(CropGrowth* crop);
-    void remove_Crop();
+    void putCrop(CropModule* cm) { cropModule = cm; }
+    void removeCrop() { cropModule = nullptr; }
 
     double get_SoilOrganicC(int i_Layer) const;
     double get_AOM_FastSum(int i_Layer) const;
@@ -161,9 +159,9 @@ namespace Monica
     double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
     double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
 		//void fo_distributeDeadRootBiomass();
+
     SoilColumn& soilColumn;
-    const SiteParameters& siteParams;
-    const SoilOrganicModuleParameters& organicPs;
+    SoilOrganicModuleParameters _params;
 
     std::size_t vs_NumberOfLayers{0};
     std::size_t vs_NumberOfOrganicLayers{0};
@@ -205,25 +203,10 @@ namespace Monica
     double vo_SumNH3_Volatilised{0.0};
     double vo_TotalDenitrification{0.0};
 
-    /*
-    struct AddedOMParams {
-      double vo_AddedOrganicCarbonAmount;
-      double vo_AddedOrganicMatterAmount;
-      double vo_AOM_DryMatterContent;
-      double vo_AOM_NH4Content;
-      double vo_AOM_NO3Content;
-      double vo_PartAOM_to_AOM_Slow;
-      double vo_PartAOM_to_AOM_Fast;
-    };
-
-    std::vector<AddedOMParams> newOM;
-
-     */
-
     //! True, if organic fertilizer has been added with a following incorporation.
     //! Parameter is automatically set to false, if carbamid amount is falling below 0.001.
     bool incorporation{false};
-    CropGrowth* crop{nullptr};
+    CropModule* cropModule{nullptr};
   };
 
 } // namespace Monica

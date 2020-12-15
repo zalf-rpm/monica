@@ -32,7 +32,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica-zmq.h"
 #include "cultivation-method.h"
 #include "tools/debug.h"
-#include "../io/database-io.h"
 
 using namespace std;
 using namespace Monica;

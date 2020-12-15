@@ -33,12 +33,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 #include "db/abstract-db-connections.h"
 #include "tools/debug.h"
+#include "../mas-infrastructure/src/cpp/common/rpc-connections.h"
 
 #include "run-monica-capnp.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
 #include "cluster_admin_service.capnp.h"
+#include "registry.capnp.h"
 
 using namespace std;
 using namespace Monica;
@@ -46,6 +48,7 @@ using namespace Tools;
 using namespace json11;
 using namespace Climate;
 using namespace mas;
+using namespace mas::infrastructure::common;
 
 string appName = "monica-capnp-server";
 string version = "1.0.0-beta";
@@ -98,21 +101,21 @@ int main(int argc, const char* argv[]) {
       "... show debug outputs" << endl
       //<< " -i | --hide "
       //"... hide server (default: " << (hideServer ? "true" : "false") << " as service on give address and port" << endl
-      << " -a | --address ... ADDRESS (default: " << address << ")] "
+      << " -a | --address ... ADDRESS (default: " << address << ") "
       "... runs server bound to given address, may be '*' to bind to all local addresses" << endl
-      << " -p | --port ... PORT (default: none)] "
+      << " -p | --port ... PORT (default: none) "
       "... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
       << " -cp | --connect-to-proxy "
       "... connect to proxy at -pa and -pp" << endl
       << " -pa | --proxy-address "
-      "... ADDRESS (default: " << proxyAddress << ")] "
+      "... ADDRESS (default: " << proxyAddress << ") "
       "... connects server to proxy running at given address" << endl
-      << " -pp | --proxy-port ... PORT (default: " << proxyPort << ")] "
+      << " -pp | --proxy-port ... PORT (default: " << proxyPort << ") "
       "... connects server to proxy running on given port." << endl
       << " -cf | --connect-to-factory "
-      "... connect to factory at -fa and -fp" << endl
-      << " -fa | --factory-address "
-      "... ADDRESS (default: " << factoryAddress << ")] "
+      "... connect to factory given sturdy ref -sr" << endl
+      << " -sr | --sturdy-ref "
+      "... STURDY_REF "
       "... connects server to factory running at given address" << endl
       << " -fp | --factory-port ... PORT (default: " << factoryPort << ")] "
       "... connects server to factory running on given port." << endl
@@ -147,7 +150,7 @@ int main(int argc, const char* argv[]) {
           proxyPort = stoi(argv[++i]);
       } else if (arg == "-cf" || arg == "--connect-to-factory") {
         connectToFactory = true;
-      } else if (arg == "-fa" || arg == "--factory-address") {
+      } else if (arg == "-sr" || arg == "--sturdy-ref") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           factoryAddress = argv[++i];
       } else if (arg == "-fp" || arg == "--factory-port") {

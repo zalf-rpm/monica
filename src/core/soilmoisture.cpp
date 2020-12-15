@@ -19,13 +19,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iostream>
 #include <cmath>
 
-/**
- * @file soilmoisture.cpp
- */
-
+#include "frost-component.h"
+#include "snow-component.h"
 #include "soilmoisture.h"
 #include "soilcolumn.h"
-#include "crop-growth.h"
+#include "crop-module.h"
 #include "monica-model.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"
@@ -35,618 +33,17 @@ using namespace std;
 using namespace Monica;
 using namespace Tools;
 
-// ------------------------------------------------------------------------
-// SNOW MODULE
-// ------------------------------------------------------------------------
-
-/**
- * @brief Constructor
- *
- * Default initialization of snow density,
- * snow depth, frotzen water in snow and
- * liquid water in snow. Snow parameters from
- * user data base are initialized.
- */
-SnowComponent::SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps) 
-  : soilColumn(sc)
-  , vm_SnowmeltTemperature(smps.pm_SnowMeltTemperature) // Base temperature for snowmelt [°C]
-  , vm_SnowAccumulationThresholdTemperature(smps.pm_SnowAccumulationTresholdTemperature)
-  , vm_TemperatureLimitForLiquidWater(smps.pm_TemperatureLimitForLiquidWater) // Lower temperature limit of liquid water in snow
-  , vm_CorrectionRain(smps.pm_CorrectionRain) // Correction factor for rain (no correction used here)
-  , vm_CorrectionSnow(smps.pm_CorrectionSnow) // Correction factor for snow (value used in COUP by Lars Egil H.)
-  , vm_RefreezeTemperature(smps.pm_RefreezeTemperature) // Base temperature for refreeze [°C]
-  , vm_RefreezeP1(smps.pm_RefreezeParameter1) // Refreeze parameter (Karvonen's value)
-  , vm_RefreezeP2(smps.pm_RefreezeParameter2) // Refreeze exponent (Karvonen's value)
-  , vm_NewSnowDensityMin(smps.pm_NewSnowDensityMin) // Minimum density of new snow
-  , vm_SnowMaxAdditionalDensity(smps.pm_SnowMaxAdditionalDensity) // Maximum additional density of snow (max rho = 0.35, Karvonen)
-  , vm_SnowPacking(smps.pm_SnowPacking) // Snow packing factor (calibrated by Helge Bonesmo)
-  , vm_SnowRetentionCapacityMin(smps.pm_SnowRetentionCapacityMin) // Minimum liquid water retention capacity in snow [mm]
-  , vm_SnowRetentionCapacityMax(smps.pm_SnowRetentionCapacityMax) { // Maximum liquid water retention capacity in snow [mm]
-//  cout << "Monica: vm_SnowmeltTemperature " << vm_SnowmeltTemperature << endl;
-//  cout << "Monica: vm_CorrectionRain " << vm_CorrectionRain << endl;
-//  cout << "Monica: vm_SnowMaxAdditionalDensity " << vm_SnowMaxAdditionalDensity << endl;
-}
-
-/*!
- * @brief Calculation of snow layer
- *
- * Calculation of snow layer thickness, density and water content according to
- * ECOMAG
- *
- * @param vw_MeanAirTemperature
- * @param vc_NetPrecipitation
- */
-void
-SnowComponent::calcSnowLayer(double mean_air_temperature, double net_precipitation) {
-  // Calcs netto precipitation
-  double net_precipitation_snow = 0.0;
-  double net_precipitation_water = 0.0;
-  net_precipitation = calcNetPrecipitation(mean_air_temperature, net_precipitation, net_precipitation_water, net_precipitation_snow);
-
-  // Calculate snowmelt
-  double vm_Snowmelt = calcSnowMelt(mean_air_temperature);
-
-  // Calculate refreeze in snow
-  double vm_Refreeze = calcRefreeze(mean_air_temperature);
-
-  // Calculate density of newly fallen snow
-  double vm_NewSnowDensity = calcNewSnowDensity(mean_air_temperature, net_precipitation_snow);
-
-  // Calculate average density of whole snowpack
-  vm_SnowDensity = calcAverageSnowDensity(net_precipitation_snow, vm_NewSnowDensity);
-
-
-  // Calculate amounts of water in frozen snow and liquid form
-  vm_FrozenWaterInSnow = vm_FrozenWaterInSnow + net_precipitation_snow - vm_Snowmelt + vm_Refreeze;
-  vm_LiquidWaterInSnow = vm_LiquidWaterInSnow + net_precipitation_water + vm_Snowmelt - vm_Refreeze;
-  double vm_SnowWaterEquivalent = vm_FrozenWaterInSnow + vm_LiquidWaterInSnow; // snow water equivalent [mm]
-
-  // Calculate snow's capacity to retain liquid
-  double vm_LiquidWaterRetainedInSnow = calcLiquidWaterRetainedInSnow(vm_FrozenWaterInSnow, vm_SnowWaterEquivalent);
-
-  // Calculate water release from snow
-  double vm_SnowLayerWaterRelease = 0.0;
-  if (vm_Refreeze > 0.0) {
-    vm_SnowLayerWaterRelease = 0.0;
-  } else if (vm_LiquidWaterInSnow <= vm_LiquidWaterRetainedInSnow) {
-    vm_SnowLayerWaterRelease = 0;
-  } else {
-    vm_SnowLayerWaterRelease = vm_LiquidWaterInSnow - vm_LiquidWaterRetainedInSnow;
-    vm_LiquidWaterInSnow -= vm_SnowLayerWaterRelease;
-    vm_SnowWaterEquivalent = vm_FrozenWaterInSnow + vm_LiquidWaterInSnow;
-  }
-
-  // Calculate snow depth from snow water equivalent
-  calcSnowDepth(vm_SnowWaterEquivalent);
-
-  // Calculate potential infiltration to soil
-  vm_WaterToInfiltrate = calcPotentialInfiltration(net_precipitation, vm_SnowLayerWaterRelease, vm_SnowDepth);
-}
-
-/**
- *
- * @param vw_MeanAirTemperature
- * @return
- */
-double
-SnowComponent::calcSnowMelt(double vw_MeanAirTemperature) {
-  double vm_MeltingFactor = 1.4 * (vm_SnowDensity / 0.1);
-  double vm_Snowmelt = 0.0;
-
-  if (vm_MeltingFactor > 4.7) {
-    vm_MeltingFactor = 4.7;
-  }
-
-  if (vm_FrozenWaterInSnow <= 0.0) {
-    vm_Snowmelt = 0.0;
-  } else if (vw_MeanAirTemperature < vm_SnowmeltTemperature) {
-    vm_Snowmelt = 0.0;
-  } else {
-    vm_Snowmelt = vm_MeltingFactor * (vw_MeanAirTemperature - vm_SnowmeltTemperature);
-    if (vm_Snowmelt > vm_FrozenWaterInSnow) {
-      vm_Snowmelt = vm_FrozenWaterInSnow;
-    }
-  }
-
-  return vm_Snowmelt;
-}
-
-/**
- *
- * @param mean_air_temperature
- * @param net_precipitation
- * @param vm_NetPrecipitationWater
- * @param vm_NetPrecipitationSnow
- * @return
- */
-double
-SnowComponent::calcNetPrecipitation(
-  double mean_air_temperature,
-  double net_precipitation,
-  double& net_precipitation_water, // return values
-  double& net_precipitation_snow)  // return values
-{
-  double liquid_water_precipitation = 0.0;
-
-  // Calculate forms and proportions of precipitation
-  if (mean_air_temperature >= vm_SnowAccumulationThresholdTemperature) {
-    liquid_water_precipitation = 1.0;
-  } else if (mean_air_temperature <= vm_TemperatureLimitForLiquidWater) {
-    liquid_water_precipitation = 0.0;
-  } else {
-    liquid_water_precipitation = (mean_air_temperature - vm_TemperatureLimitForLiquidWater)
-      / (vm_SnowAccumulationThresholdTemperature - vm_TemperatureLimitForLiquidWater);
-  }
-
-  net_precipitation_water = liquid_water_precipitation * vm_CorrectionRain * net_precipitation;
-  net_precipitation_snow = (1.0 - liquid_water_precipitation) * vm_CorrectionSnow * net_precipitation;
-
-  // Total net precipitation corrected for snow
-  net_precipitation = net_precipitation_snow + net_precipitation_water;
-
-  return net_precipitation;
-}
-
-/**
- *
- * @param vw_MeanAirTemperature
- * @return
- */
-double
-SnowComponent::calcRefreeze(double mean_air_temperature) {
-  double refreeze = 0.0;
-  double refreeze_helper = 0.0;
-
-  // no refreeze if it's too warm
-  if (mean_air_temperature > 0) {
-    refreeze_helper = 0;
-  } else {
-    refreeze_helper = mean_air_temperature;
-  }
-
-  if (refreeze_helper < vm_RefreezeTemperature) {
-    if (vm_LiquidWaterInSnow > 0.0) {
-      refreeze = vm_RefreezeP1 * pow((vm_RefreezeTemperature - refreeze_helper), vm_RefreezeP2);
-    }
-    if (refreeze > vm_LiquidWaterInSnow) {
-      refreeze = vm_LiquidWaterInSnow;
-    }
-  } else {
-    refreeze = 0;
-  }
-  return refreeze;
-}
-
-/**
- *
- * @param mean_air_temperature
- * @param net_precipitation_snow
- * @return
- */
-double
-SnowComponent::calcNewSnowDensity(double mean_air_temperature, double net_precipitation_snow) {
-  double new_snow_density = 0.0;
-  double snow_density_factor = 0.0;
-
-  if (net_precipitation_snow <= 0.0) {
-    // no snow
-    new_snow_density = 0.0;
-  } else {
-    //
-    snow_density_factor = (mean_air_temperature - vm_TemperatureLimitForLiquidWater)
-      / (vm_SnowAccumulationThresholdTemperature - vm_TemperatureLimitForLiquidWater);
-    if (snow_density_factor > 1.0) {
-      snow_density_factor = 1.0;
-    }
-    if (snow_density_factor < 0.0) {
-      snow_density_factor = 0.0;
-    }
-    new_snow_density = vm_NewSnowDensityMin + vm_SnowMaxAdditionalDensity * snow_density_factor;
-  }
-  return new_snow_density;
-}
-
-/**
- *
- * @param vm_NetPrecipitationSnow
- * @return
- */
-double
-SnowComponent::calcAverageSnowDensity(double net_precipitation_snow, double new_snow_density) {
-  double snow_density = 0.0;
-  if ((vm_SnowDepth + net_precipitation_snow) <= 0.0) {
-    // no snow
-    snow_density = 0.0;
-  } else {
-    snow_density = (((1.0 + vm_SnowPacking) * vm_SnowDensity * vm_SnowDepth) +
-      (new_snow_density * net_precipitation_snow)) / (vm_SnowDepth + net_precipitation_snow);
-    if (snow_density > (vm_NewSnowDensityMin + vm_SnowMaxAdditionalDensity)) {
-      snow_density = vm_NewSnowDensityMin + vm_SnowMaxAdditionalDensity;
-    }
-  }
-  return snow_density;
-}
-
-/**
- *
- * @param frozen_water_in_snow
- * @param snow_water_equivalent
- * @return
- */
-double
-SnowComponent::calcLiquidWaterRetainedInSnow(double frozen_water_in_snow, double snow_water_equivalent) {
-  double snow_retention_capacity;
-  double liquid_water_retained_in_snow;
-
-  if ((frozen_water_in_snow <= 0.0) || (vm_SnowDensity <= 0.0)) {
-    snow_retention_capacity = 0.0;
-  } else {
-    snow_retention_capacity = vm_SnowRetentionCapacityMax / 10.0 / vm_SnowDensity;
-
-    if (snow_retention_capacity < vm_SnowRetentionCapacityMin)
-      snow_retention_capacity = vm_SnowRetentionCapacityMin;
-    if (snow_retention_capacity > vm_SnowRetentionCapacityMax)
-      snow_retention_capacity = vm_SnowRetentionCapacityMax;
-  }
-
-  liquid_water_retained_in_snow = snow_retention_capacity * snow_water_equivalent;
-  return liquid_water_retained_in_snow;
-}
-
-/**
- *
- * @param net_precipitation
- * @param snow_layer_water_release
- * @param snow_depth
- * @return
- */
-double
-SnowComponent::calcPotentialInfiltration(double net_precipitation, double snow_layer_water_release, double snow_depth) {
-  double water_to_infiltrate = net_precipitation;
-  if (snow_depth >= 0.01) {
-    vm_WaterToInfiltrate = snow_layer_water_release;
-  }
-  return water_to_infiltrate;
-}
-
-/**
- * Calculates snow depth. If there is no snow, vm_SnowDensity
- * vm_FrozenWaterInSnow and vm_LiquidWaterInSnow are set to zero.
- *
- * @param snow_water_equivalent
- */
-void
-SnowComponent::calcSnowDepth(double snow_water_equivalent) {
-  double pm_WaterDensity = 1.0; // [kg dm-3]
-  if (snow_water_equivalent <= 0.0) {
-    vm_SnowDepth = 0.0;
-  } else {
-    vm_SnowDepth = snow_water_equivalent * pm_WaterDensity / vm_SnowDensity; // [mm * kg dm-3 kg-1 dm3]
-
-    // check if new snow depth is higher than maximal snow depth
-    if (vm_SnowDepth > vm_maxSnowDepth) {
-      vm_maxSnowDepth = vm_SnowDepth;
-    }
-
-    if (vm_SnowDepth < 0.01) {
-      vm_SnowDepth = 0.0;
-    }
-  }
-  if (vm_SnowDepth == 0.0) {
-    vm_SnowDensity = 0.0;
-    vm_FrozenWaterInSnow = 0.0;
-    vm_LiquidWaterInSnow = 0.0;
-  }
-
-  soilColumn.vm_SnowDepth = vm_SnowDepth;
-  vm_AccumulatedSnowDepth += vm_SnowDepth;
-}
-
-
-//#########################################################################
-// FROST MODULE
-//#########################################################################
-
-FrostComponent::FrostComponent(SoilColumn& sc,
-  double pm_HydraulicConductivityRedux,
-  double p_timeStep)
-  : soilColumn(sc),
-  vm_LambdaRedux(sc.vs_NumberOfLayers() + 1, 1.0),
-  vm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux),
-  pt_TimeStep(p_timeStep),
-  pm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux) {}
-
-/*!
- * @brief Calculation of soil frost
- *
- * Calculation of soil frost and thaw boundaries according to
- * ECOMAG
- *
- * @param vw_MeanAirTemperature
- * @param vm_SnowDepth
- */
-void FrostComponent::calcSoilFrost(double mean_air_temperature, double snow_depth) {
-  // calculation of mean values
-  double mean_field_capacity = getMeanFieldCapacity();
-  double mean_bulk_density = getMeanBulkDensity();
-
-  // heat conductivity for frozen and unfrozen soil
-  const double sii = calcSii(mean_field_capacity);
-  double heat_conductivity_frozen = calcHeatConductivityFrozen(mean_bulk_density, sii);
-  double heat_conductivity_unfrozen = calcHeatConductivityUnfrozen(mean_bulk_density, mean_field_capacity);
-
-  // temperature under snow
-  vm_TemperatureUnderSnow = calcTemperatureUnderSnow(mean_air_temperature, snow_depth);
-
-  // frost depth
-  vm_FrostDepth = calcFrostDepth(mean_field_capacity, heat_conductivity_frozen, vm_TemperatureUnderSnow);
-  vm_accumulatedFrostDepth += vm_FrostDepth;
-
-  // thaw depth
-  vm_ThawDepth = calcThawDepth(vm_TemperatureUnderSnow, heat_conductivity_unfrozen, mean_field_capacity);
-
-  updateLambdaRedux();
-}
-
-
-/**
- * @brief Calculates mean of bulk density
- * @return Mean bulk density
- */
-double
-FrostComponent::getMeanBulkDensity() {
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
-  double bulk_density_accu = 0.0;
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    bulk_density_accu += soilColumn[i_Layer].vs_SoilBulkDensity();
-  }
-  return (bulk_density_accu / double(vs_number_of_layers) / 1000.0); // [Mg m-3]
-}
-
-/**
- * Calculates current mean of field capacity
- * @return Mean field capacity
- */
-double
-FrostComponent::getMeanFieldCapacity() {
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
-  double mean_field_capacity_accu = 0.0;
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    mean_field_capacity_accu += soilColumn[i_Layer].vs_FieldCapacity();
-  }
-  return (mean_field_capacity_accu / double(vs_number_of_layers));
-}
-
-/**
- * Approach for frozen soil acroding to Hansson et al. 2004
- * Vadose Zone Journal 3:693-704
- *
- * @param mean_field_capacity
- * @return
- */
-double FrostComponent::calcSii(double mean_field_capacity) {
-  /** @TODO Parameters to be supplied from outside */
-  double pt_F1 = 13.05; // Hansson et al. 2004
-  double pt_F2 = 1.06; // Hansson et al. 2004
-
-  const double sii = (mean_field_capacity + (1.0 + (pt_F1 * pow(mean_field_capacity, pt_F2)) *
-    mean_field_capacity)) * 100.0;
-  return sii;
-}
-
-/**
- * Neusypina, T.A. (1979): Rascet teplovo rezima pocvi v modeli formirovanija urozaja.
- * Teoreticeskij osnovy i kolicestvennye metody programmirovanija urozaev. Leningrad,
- * 53 -62.
- * @param mean_bulk_density
- * @param sii
- * @return
- */
-double
-FrostComponent::calcHeatConductivityFrozen(double mean_bulk_density, double sii) {
-  double cond_frozen = ((3.0 * mean_bulk_density - 1.7) * 0.001) / (1.0
-    + (11.5 - 5.0 * mean_bulk_density) * exp((-50.0) * pow((sii / mean_bulk_density), 1.5))) * // [cal cm-1 K-1 s-1]
-    86400.0 * double(pt_TimeStep) * // [cal cm-1 K-1 d-1]
-    4.184 / // [J cm-1 K-1 d-1]
-    1000000.0 * 100;//  [MJ m-1 K-1 d-1]
-
-  return cond_frozen;
-}
-
-/**
- * Neusypina, T.A. (1979): Rascet teplovo rezima pocvi v modeli formirovanija urozaja.
- * Teoreticeskij osnovy i kolicestvennye metody programmirovanija urozaev. Leningrad,
- * 53 -62.
- * @param mean_bulk_density
- * @param theta
- * @return
- */
-double
-FrostComponent::calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity) {
-  double cond_unfrozen = ((3.0 * mean_bulk_density - 1.7) * 0.001) / (1.0 + (11.5 - 5.0
-    * mean_bulk_density) * exp((-50.0) * pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5)))
-    * double(pt_TimeStep) * // [cal cm-1 K-1 s-1]
-    4.184 * // [J cm-1 K-1 s-1]
-    100.0; // [W m-1 K-1]
-
-  return cond_unfrozen;
-}
-
-/**
- *
- * @param vm_TemperatureUnderSnow
- * @param heat_conductivity_unfrozen
- * @param mean_field_capacity
- * @return
- */
-double
-FrostComponent::calcThawDepth(double temperature_under_snow, double heat_conductivity_unfrozen, double mean_field_capacity) {
-  double thaw_helper1 = 0.0;
-  double thaw_helper2 = 0.0;
-  double thaw_helper3 = 0.0;
-  double thaw_helper4 = 0.0;
-
-  double thaw_depth = 0.0;
-
-  if (temperature_under_snow < 0.0) {
-    thaw_helper1 = temperature_under_snow * -1.0;
-  } else {
-    thaw_helper1 = temperature_under_snow;
-  }
-
-  if (vm_FrostDepth == 0.0) {
-    thaw_helper2 = 0.0;
-  } else {
-    /** @todo Claas: check that heat conductivity is in correct unit! */
-    thaw_helper2 = sqrt(2.0 * heat_conductivity_unfrozen * thaw_helper1 / (1000.0 * 79.0
-      * (mean_field_capacity * 100.0) / 100.0));
-  }
-
-  if (temperature_under_snow < 0.0) {
-    thaw_helper3 = thaw_helper2 * -1.0;
-  } else {
-    thaw_helper3 = thaw_helper2;
-  }
-
-  thaw_helper4 = this->vm_ThawDepth + thaw_helper3;
-
-  if (thaw_helper4 < 0.0) {
-    thaw_depth = 0.0;
-  } else {
-    thaw_depth = thaw_helper4;
-  }
-  return thaw_depth;
-}
-
-/**
- *
- * @param mean_field_capacity
- * @param heat_conductivity_frozen
- * @param temperature_under_snow
- * @return
- */
-double
-FrostComponent::calcFrostDepth(double mean_field_capacity, double heat_conductivity_frozen, double temperature_under_snow) {
-  double frost_depth = 0.0;
-
-  // Heat released/absorbed on freezing/thawing
-  double latent_heat = 1000.0 * (mean_field_capacity * 100.0) / 100.0 * 0.335;
-
-  // Summation of number of days with frost
-  if (this->vm_FrostDepth > 0.0) {
-    vm_FrostDays++;
-  }
-
-  // Ratio of energy sum from subsoil to vm_LatentHeat
-  double latent_heat_transfer = 0.3 * vm_FrostDays / latent_heat;
-
-  // Calculate temperature under snowpack
-  /** @todo Claas: At a later stage temperature under snow to pass on to soil
-   * surface temperature calculation in temperature module */
-  if (temperature_under_snow < 0.0) {
-    this->vm_NegativeDegreeDays -= temperature_under_snow;
-  }
-
-  if (this->vm_NegativeDegreeDays < 0.01) {
-    frost_depth = 0.0;
-  } else {
-    frost_depth = sqrt(((latent_heat_transfer / 2.0) * (latent_heat_transfer / 2.0)) + (2.0
-      * heat_conductivity_frozen * vm_NegativeDegreeDays / latent_heat)) - (latent_heat_transfer / 2.0);
-  }
-  return frost_depth;
-}
-
-/**
- *
- * @param mean_air_temperature
- * @param snow_depth
- * @return
- */
-double
-FrostComponent::calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth) {
-  double temperature_under_snow = 0.0;
-  if (snow_depth / 100.0 < 0.01) {
-    temperature_under_snow = mean_air_temperature;
-  } else if (vm_FrostDepth < 0.01) {
-    temperature_under_snow = mean_air_temperature;
-  } else {
-    temperature_under_snow = mean_air_temperature / (1.0 + (10.0 * snow_depth / 100.0) / this->vm_FrostDepth);
-  }
-  return temperature_under_snow;
-}
-
-/**
- *
- */
-void
-FrostComponent::updateLambdaRedux() {
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
-
-  for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-
-    if (i_Layer < (std::floor((vm_FrostDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5))) {
-
-      // soil layer is frozen
-      soilColumn[i_Layer].vs_SoilFrozen = true;
-      vm_LambdaRedux[i_Layer] = 0.0;
-
-      if (i_Layer == 0) {
-        vm_HydraulicConductivityRedux = 0.0;
-      }
-    }
-
-    if (i_Layer < (std::floor((vm_ThawDepth / soilColumn[i_Layer].vs_LayerThickness) + 0.5))) {
-      // soil layer is thawing
-
-      if (vm_ThawDepth < (double(i_Layer + 1) * soilColumn[i_Layer].vs_LayerThickness) && (vm_ThawDepth < vm_FrostDepth)) {
-        // soil layer is thawing but there is more frost than thaw
-        soilColumn[i_Layer].vs_SoilFrozen = true;
-        vm_LambdaRedux[i_Layer] = 0.0;
-        if (i_Layer == 0) {
-          vm_HydraulicConductivityRedux = 0.0;
-        }
-
-      } else {
-        // soil is thawing
-        soilColumn[i_Layer].vs_SoilFrozen = false;
-        vm_LambdaRedux[i_Layer] = 1.0;
-        if (i_Layer == 0) {
-          vm_HydraulicConductivityRedux = 0.1;
-        }
-      }
-    }
-
-    // no more frost, because all layers are thawing
-    if (vm_ThawDepth >= vm_FrostDepth) {
-      vm_ThawDepth = 0.0;
-      vm_FrostDepth = 0.0;
-      vm_NegativeDegreeDays = 0.0;
-      vm_FrostDays = 0;
-
-      vm_HydraulicConductivityRedux = pm_HydraulicConductivityRedux;
-      for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-        soilColumn[i_Layer].vs_SoilFrozen = false;
-        vm_LambdaRedux[i_Layer] = 1.0;
-      }
-    }
-  }
-}
-
-//#########################################################################
-// MOISTURE MODULE
-//#########################################################################
-
 /*!
  * @brief Constructor
  * @param sc Soil Column the moisture is calculated
  * @param stps Site parameters
  * @param mm Monica model
  */
-SoilMoisture::SoilMoisture(MonicaModel& mm)
+SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& smPs)
   : soilColumn(mm.soilColumnNC())
   , siteParameters(mm.siteParameters())
   , monica(mm)
-  , smPs(mm.soilmoistureParameters())
+  , _params(smPs)
   , envPs(mm.environmentParameters())
   , cropPs(mm.cropParameters())
   , vm_NumberOfLayers(soilColumn.vs_NumberOfLayers() + 1)
@@ -671,8 +68,8 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
 , vm_SoilPoreVolume(vm_NumberOfLayers, 0.0)
 , vm_Transpiration(vm_NumberOfLayers, 0.0) //intern
 , vm_WaterFlux(vm_NumberOfLayers, 0.0)
-, snowComponent(soilColumn, smPs)
-, frostComponent(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep) {
+, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
+, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
   debug() << "Constructor: SoilMoisture" << endl;
 
   vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
@@ -708,8 +105,150 @@ SoilMoisture::SoilMoisture(MonicaModel& mm)
   //  }
 }
 
-MonicaModel::~MonicaModel() {
-  delete _currentCropGrowth;
+SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule)
+  : soilColumn(mm.soilColumnNC())
+  , siteParameters(mm.siteParameters())
+  , monica(mm)
+  , envPs(mm.environmentParameters())
+  , cropPs(mm.cropParameters())
+  , cropModule(cropModule) {
+  deserialize(reader);
+}
+
+void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader) {
+  _params.deserialize(reader.getModuleParams());
+  vm_NumberOfLayers = reader.getNumberOfLayers();
+  vs_NumberOfLayers = reader.getVsNumberOfLayers();
+  vm_ActualEvaporation = reader.getActualEvaporation();
+  vm_ActualEvapotranspiration = reader.getActualEvapotranspiration();
+  vm_ActualTranspiration = reader.getActualTranspiration();
+  setFromCapnpList(vm_AvailableWater, reader.getAvailableWater());
+  vm_CapillaryRise = reader.getCapillaryRise();
+  setFromCapnpList(pm_CapillaryRiseRate, reader.getCapillaryRiseRate());
+  setFromCapnpList(vm_CapillaryWater, reader.getCapillaryWater());
+  setFromCapnpList(vm_CapillaryWater70, reader.getCapillaryWater70());
+  setFromCapnpList(vm_Evaporation, reader.getEvaporation());
+  setFromCapnpList(vm_Evapotranspiration, reader.getEvapotranspiration());
+  setFromCapnpList(vm_FieldCapacity, reader.getFieldCapacity());
+  vm_FluxAtLowerBoundary = reader.getFluxAtLowerBoundary();
+  setFromCapnpList(vm_GravitationalWater, reader.getGravitationalWater());
+  vm_GrossPrecipitation = reader.getGrossPrecipitation();
+  vm_GroundwaterAdded = reader.getGroundwaterAdded();
+  vm_GroundwaterDischarge = reader.getGroundwaterDischarge();
+  vm_GroundwaterTable = reader.getGroundwaterTable();
+  setFromCapnpList(vm_HeatConductivity, reader.getHeatConductivity());
+  vm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
+  vm_Infiltration = reader.getInfiltration();
+  vm_Interception = reader.getInterception();
+  vc_KcFactor = reader.getVcKcFactor();
+  setFromCapnpList(vm_Lambda, reader.getLambda());
+  vm_LambdaReduced = reader.getLambdaReduced();
+  vs_Latitude = reader.getVsLatitude();
+  setFromCapnpList(vm_LayerThickness, reader.getLayerThickness());
+  pm_LayerThickness = reader.getPmLayerThickness();
+  pm_LeachingDepth = reader.getPmLeachingDepth();
+  pm_LeachingDepthLayer = reader.getPmLeachingDepthLayer();
+  vw_MaxAirTemperature = reader.getVwMaxAirTemperature();
+  pm_MaxPercolationRate = reader.getPmMaxPercolationRate();
+  vw_MeanAirTemperature = reader.getVwMeanAirTemperature();
+  vw_MinAirTemperature = reader.getVwMinAirTemperature();
+  vc_NetPrecipitation = reader.getVcNetPrecipitation();
+  vw_NetRadiation = reader.getVwNetRadiation();
+  setFromCapnpList(vm_PermanentWiltingPoint, reader.getPermanentWiltingPoint());
+  vc_PercentageSoilCoverage = reader.getVcPercentageSoilCoverage();
+  setFromCapnpList(vm_PercolationRate, reader.getPercolationRate());
+  vw_Precipitation = reader.getVwPrecipitation();
+  vm_ReferenceEvapotranspiration = reader.getReferenceEvapotranspiration();
+  vw_RelativeHumidity = reader.getRelativeHumidity();
+  setFromCapnpList(vm_ResidualEvapotranspiration, reader.getResidualEvapotranspiration());
+  setFromCapnpList(vm_SaturatedHydraulicConductivity, reader.getSaturatedHydraulicConductivity());
+  setFromCapnpList(vm_SoilMoisture, reader.getSoilMoisture());
+  vm_SoilMoisture_crit = reader.getSoilMoisturecrit();
+  vm_SoilMoistureDeficit = reader.getSoilMoistureDeficit();
+  setFromCapnpList(vm_SoilPoreVolume, reader.getSoilPoreVolume());
+  vc_StomataResistance = reader.getVcStomataResistance();
+  vm_SurfaceRoughness = reader.getSurfaceRoughness();
+  vm_SurfaceRunOff = reader.getSurfaceRunOff();
+  vm_SumSurfaceRunOff = reader.getSumSurfaceRunOff();
+  vm_SurfaceWaterStorage = reader.getSurfaceWaterStorage();
+  pt_TimeStep = reader.getPtTimeStep();
+  vm_TotalWaterRemoval = reader.getTotalWaterRemoval();
+  setFromCapnpList(vm_Transpiration, reader.getTranspiration());
+  vm_TranspirationDeficit = reader.getTranspirationDeficit();
+  setFromCapnpList(vm_WaterFlux, reader.getWaterFlux());
+  vw_WindSpeed = reader.getVwWindSpeed();
+  vw_WindSpeedHeight = reader.getVwWindSpeedHeight();
+  vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
+  if(reader.hasSnowComponent()) snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
+  if (reader.hasFrostComponent()) frostComponent = kj::heap<FrostComponent>(soilColumn, reader.getFrostComponent());
+}
+
+void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
+  _params.serialize(builder.initModuleParams());
+  builder.setNumberOfLayers(vm_NumberOfLayers);
+  builder.setVsNumberOfLayers(vs_NumberOfLayers);
+  builder.setActualEvaporation(vm_ActualEvaporation);
+  builder.setActualEvapotranspiration(vm_ActualEvapotranspiration);
+  builder.setActualTranspiration(vm_ActualTranspiration);
+  setCapnpList(vm_AvailableWater, builder.initAvailableWater(vm_AvailableWater.size()));
+  builder.setCapillaryRise(vm_CapillaryRise);
+  setCapnpList(pm_CapillaryRiseRate, builder.initCapillaryRiseRate(pm_CapillaryRiseRate.size()));
+  setCapnpList(vm_CapillaryWater, builder.initCapillaryWater(vm_CapillaryWater.size()));
+  setCapnpList(vm_CapillaryWater70, builder.initCapillaryWater70(vm_CapillaryWater70.size()));
+  setCapnpList(vm_Evaporation, builder.initEvaporation(vm_Evaporation.size()));
+  setCapnpList(vm_Evapotranspiration, builder.initEvapotranspiration(vm_Evapotranspiration.size()));
+  setCapnpList(vm_FieldCapacity, builder.initFieldCapacity(vm_FieldCapacity.size()));
+  builder.setFluxAtLowerBoundary(vm_FluxAtLowerBoundary);
+  setCapnpList(vm_GravitationalWater, builder.initGravitationalWater(vm_GravitationalWater.size()));
+  builder.setGrossPrecipitation(vm_GrossPrecipitation);
+  builder.setGroundwaterAdded(vm_GroundwaterAdded);
+  builder.setGroundwaterDischarge(vm_GroundwaterDischarge);
+  builder.setGroundwaterTable(vm_GroundwaterTable);
+  setCapnpList(vm_HeatConductivity, builder.initHeatConductivity(vm_HeatConductivity.size()));
+  builder.setHydraulicConductivityRedux(vm_HydraulicConductivityRedux);
+  builder.setInfiltration(vm_Infiltration);
+  builder.setInterception(vm_Interception);
+  builder.setVcKcFactor(vc_KcFactor);
+  setCapnpList(vm_Lambda, builder.initLambda(vm_Lambda.size()));
+  builder.setLambdaReduced(vm_LambdaReduced);
+  builder.setVsLatitude(vs_Latitude);
+  setCapnpList(vm_LayerThickness, builder.initLayerThickness(vm_LayerThickness.size()));
+  builder.setPmLayerThickness(pm_LayerThickness);
+  builder.setPmLeachingDepth(pm_LeachingDepth);
+  builder.setPmLeachingDepthLayer(pm_LeachingDepthLayer);
+  builder.setVwMaxAirTemperature(vw_MaxAirTemperature);
+  builder.setPmMaxPercolationRate(pm_MaxPercolationRate);
+  builder.setVwMeanAirTemperature(vw_MeanAirTemperature);
+  builder.setVwMinAirTemperature(vw_MinAirTemperature);
+  builder.setVcNetPrecipitation(vc_NetPrecipitation);
+  builder.setVwNetRadiation(vw_NetRadiation);
+  setCapnpList(vm_PermanentWiltingPoint, builder.initPermanentWiltingPoint(vm_PermanentWiltingPoint.size()));
+  builder.setVcPercentageSoilCoverage(vc_PercentageSoilCoverage);
+  setCapnpList(vm_PercolationRate, builder.initPercolationRate(vm_PercolationRate.size()));
+  builder.setVwPrecipitation(vw_Precipitation);
+  builder.setReferenceEvapotranspiration(vm_ReferenceEvapotranspiration);
+  builder.setRelativeHumidity(vw_RelativeHumidity);
+  setCapnpList(vm_ResidualEvapotranspiration, builder.initResidualEvapotranspiration(vm_ResidualEvapotranspiration.size()));
+  setCapnpList(vm_SaturatedHydraulicConductivity, builder.initSaturatedHydraulicConductivity(vm_SaturatedHydraulicConductivity.size()));
+  setCapnpList(vm_SoilMoisture, builder.initSoilMoisture(vm_SoilMoisture.size()));
+  builder.setSoilMoisturecrit(vm_SoilMoisture_crit);
+  builder.setSoilMoistureDeficit(vm_SoilMoistureDeficit);
+  setCapnpList(vm_SoilPoreVolume, builder.initSoilPoreVolume(vm_SoilPoreVolume.size()));
+  builder.setVcStomataResistance(vc_StomataResistance);
+  builder.setSurfaceRoughness(vm_SurfaceRoughness);
+  builder.setSurfaceRunOff(vm_SurfaceRunOff);
+  builder.setSumSurfaceRunOff(vm_SumSurfaceRunOff);
+  builder.setSurfaceWaterStorage(vm_SurfaceWaterStorage);
+  builder.setPtTimeStep(pt_TimeStep);
+  builder.setTotalWaterRemoval(vm_TotalWaterRemoval);
+  setCapnpList(vm_Transpiration, builder.initTranspiration(vm_Transpiration.size()));
+  builder.setTranspirationDeficit(vm_TranspirationDeficit);
+  setCapnpList(vm_WaterFlux, builder.initWaterFlux(vm_WaterFlux.size()));
+  builder.setVwWindSpeed(vw_WindSpeed);
+  builder.setVwWindSpeedHeight(vw_WindSpeedHeight);
+  builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
+  if (snowComponent) snowComponent->serialize(builder.initSnowComponent());
+  if (frostComponent) frostComponent->serialize(builder.initFrostComponent());
 }
 
 /*!
@@ -772,7 +311,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   } else {
     vc_CropPlanted = false;
-    vc_KcFactor = smPs.pm_KcFactor;
+    vc_KcFactor = _params.pm_KcFactor;
     vc_NetPrecipitation = vw_Precipitation;
     vc_PercentageSoilCoverage = 0.0;
   }
@@ -800,11 +339,11 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   soilColumn.vm_GroundwaterTable = vm_GroundwaterTable;
 
   // calculates snow layer water storage and release
-  snowComponent.calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
-  double vm_WaterToInfiltrate = snowComponent.getWaterToInfiltrate();
+  snowComponent->calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
+  double vm_WaterToInfiltrate = snowComponent->getWaterToInfiltrate();
 
   // Calculates frost and thaw depth and switches lambda
-  frostComponent.calcSoilFrost(vw_MeanAirTemperature, snowComponent.getVm_SnowDepth());
+  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getVm_SnowDepth());
 
   // calculates infiltration of water from surface
   fm_Infiltration(vm_WaterToInfiltrate, vc_PercentageSoilCoverage, vm_GroundwaterTable);
@@ -947,7 +486,7 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate, double vc_Percen
 
     vm_GravitationalWater[0] = (vm_SoilMoisture[0] - vm_FieldCapacity[0]) * 1000.0
       * vm_LayerThickness[0];
-    vm_LambdaReduced = vm_Lambda[0] * frostComponent.getLambdaRedux(0);
+    vm_LambdaReduced = vm_Lambda[0] * frostComponent->getLambdaRedux(0);
     vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[0];
     vm_PercolationRate[0] = (vm_GravitationalWater[0] * vm_GravitationalWater[0] * vm_LambdaReduced)
       / vm_PercolationFactor;
@@ -1046,7 +585,7 @@ double SoilMoisture::get_PercolationRate(int layer) const {
  *
  */
 void SoilMoisture::fm_CapillaryRise() {
-  auto vc_RootingDepth = crop ? crop->get_RootingDepth() : 0;
+  auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
   auto vm_GroundwaterDistance = vm_GroundwaterTable - vc_RootingDepth;// []
 
   if (vm_GroundwaterDistance < 1)
@@ -1075,7 +614,7 @@ void SoilMoisture::fm_CapillaryRise() {
     for (int i = int(vm_StartLayer); i >= 0; i--) {
       std::string vs_SoilTexture = soilColumn[i].vs_SoilTexture();
       assert(!vs_SoilTexture.empty());
-      pm_CapillaryRiseRate = smPs.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
+      pm_CapillaryRiseRate = _params.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance);
 
       if (pm_CapillaryRiseRate < vm_CapillaryRiseRate)
         vm_CapillaryRiseRate = pm_CapillaryRiseRate;
@@ -1108,7 +647,7 @@ void SoilMoisture::fm_PercolationWithGroundwater(double vs_GroundwaterDepth) {
         // Soil moisture exceeding field capacity
         vm_GravitationalWater[i + 1] = (vm_SoilMoisture[i + 1] - vm_FieldCapacity[i + 1]) * 1000.0 * vm_LayerThickness[i + 1];
 
-        double vm_LambdaReduced = vm_Lambda[i + 1] * frostComponent.getLambdaRedux(i + 1);
+        double vm_LambdaReduced = vm_Lambda[i + 1] * frostComponent->getLambdaRedux(i + 1);
         double vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[i + 1];
         vm_PercolationRate[i + 1] = ((vm_GravitationalWater[i + 1] * vm_GravitationalWater[i + 1]
           * vm_LambdaReduced) / vm_PercolationFactor);
@@ -1250,41 +789,41 @@ void SoilMoisture::fm_PercolationWithoutGroundwater() {
   double vm_PercolationFactor;
   double vm_LambdaReduced;
 
-  for (int i_Layer = 0; i_Layer < vm_NumberOfLayers - 1; i_Layer++) {
+  for (int i = 0; i < vm_NumberOfLayers - 1; i++) {
 
-    vm_SoilMoisture[i_Layer + 1] += vm_PercolationRate[i_Layer] / 1000.0 / vm_LayerThickness[i_Layer];
+    vm_SoilMoisture[i + 1] += vm_PercolationRate[i] / 1000.0 / vm_LayerThickness[i];
 
-    if ((vm_SoilMoisture[i_Layer + 1] > vm_FieldCapacity[i_Layer + 1])) {
+    if ((vm_SoilMoisture[i + 1] > vm_FieldCapacity[i + 1])) {
 
       // too much water for this layer so some water is released to layers below
-      vm_GravitationalWater[i_Layer + 1] = (vm_SoilMoisture[i_Layer + 1] - vm_FieldCapacity[i_Layer + 1]) * 1000.0
+      vm_GravitationalWater[i + 1] = (vm_SoilMoisture[i + 1] - vm_FieldCapacity[i + 1]) * 1000.0
         * vm_LayerThickness[0];
-      vm_LambdaReduced = vm_Lambda[i_Layer + 1] * frostComponent.getLambdaRedux(i_Layer + 1);
-      vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[i_Layer + 1]);
-      vm_PercolationRate[i_Layer + 1] = (vm_GravitationalWater[i_Layer + 1] * vm_GravitationalWater[i_Layer + 1]
+      vm_LambdaReduced = vm_Lambda[i + 1] * frostComponent->getLambdaRedux(i + 1);
+      vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[i + 1]);
+      vm_PercolationRate[i + 1] = (vm_GravitationalWater[i + 1] * vm_GravitationalWater[i + 1]
         * vm_LambdaReduced) / vm_PercolationFactor;
 
-      if (vm_PercolationRate[i_Layer + 1] > pm_MaxPercolationRate) {
-        vm_PercolationRate[i_Layer + 1] = pm_MaxPercolationRate;
+      if (vm_PercolationRate[i + 1] > pm_MaxPercolationRate) {
+        vm_PercolationRate[i + 1] = pm_MaxPercolationRate;
       }
 
-      vm_GravitationalWater[i_Layer + 1] = vm_GravitationalWater[i_Layer + 1] - vm_PercolationRate[i_Layer + 1];
+      vm_GravitationalWater[i + 1] = vm_GravitationalWater[i + 1] - vm_PercolationRate[i + 1];
 
-      if (vm_GravitationalWater[i_Layer + 1] < 0.0) {
-        vm_GravitationalWater[i_Layer + 1] = 0.0;
+      if (vm_GravitationalWater[i + 1] < 0.0) {
+        vm_GravitationalWater[i + 1] = 0.0;
       }
 
-      vm_SoilMoisture[i_Layer + 1] = vm_FieldCapacity[i_Layer + 1] + (vm_GravitationalWater[i_Layer + 1]
-        / 1000.0 / vm_LayerThickness[i_Layer + 1]);
+      vm_SoilMoisture[i + 1] = vm_FieldCapacity[i + 1] + (vm_GravitationalWater[i + 1]
+        / 1000.0 / vm_LayerThickness[i + 1]);
     } else {
 
       // no water will be released in other layers
-      vm_PercolationRate[i_Layer + 1] = 0.0;
-      vm_GravitationalWater[i_Layer + 1] = 0.0;
+      vm_PercolationRate[i + 1] = 0.0;
+      vm_GravitationalWater[i + 1] = 0.0;
     }
 
-    vm_WaterFlux[i_Layer + 1] = vm_PercolationRate[i_Layer];
-    vm_GroundwaterAdded = vm_PercolationRate[i_Layer + 1];
+    vm_WaterFlux[i + 1] = vm_PercolationRate[i];
+    vm_GroundwaterAdded = vm_PercolationRate[i + 1];
 
   } // for
 
@@ -1373,17 +912,17 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   double vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
 
-  double vm_SnowDepth = snowComponent.getVm_SnowDepth();
+  double vm_SnowDepth = snowComponent->getVm_SnowDepth();
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
-  pm_EvaporationZeta = smPs.pm_EvaporationZeta; // Parameterdatei
+  pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
 
   // Das sind die Steuerungsparameter für die Steigung der Entzugsfunktion
-  vm_XSACriticalSoilMoisture = smPs.pm_XSACriticalSoilMoisture;
+  vm_XSACriticalSoilMoisture = _params.pm_XSACriticalSoilMoisture;
 
   /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
    * da muss was dran gemacht werden */
-  pm_MaximumEvaporationImpactDepth = smPs.pm_MaximumEvaporationImpactDepth; // Parameterdatei
+  pm_MaximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
 
 
   // If a crop grows, ETp is taken from crop module
@@ -1540,9 +1079,9 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   //std::cout << setprecision(11) << "vc_EvaporatedFromIntercept: " << vc_EvaporatedFromIntercept << std::endl;
   //std::cout << setprecision(11) << "vm_EvaporatedFromSurface: " << vm_EvaporatedFromSurface << std::endl;
 
-  if (crop) {
-    crop->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
-    crop->accumulateTranspiration(vm_ActualTranspiration);
+  if (cropModule) {
+    cropModule->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
+    cropModule->accumulateTranspiration(vm_ActualTranspiration);
   }
 }
 
@@ -1697,6 +1236,11 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
 
   return vm_ReferenceEvapotranspiration;
 }
+
+double SoilMoisture::get_FrostDepth() const { return frostComponent->getFrostDepth(); }
+
+//! Returns thaw depth [m]
+double SoilMoisture::get_ThawDepth() const { return frostComponent->getThawDepth(); }
 
 /*!
  * Get capillary rise from KA4
@@ -1892,35 +1436,25 @@ double SoilMoisture::get_TranspirationDeficit() const {
  * @return Value for snow depth
  */
 double SoilMoisture::get_SnowDepth() const {
-  return snowComponent.getVm_SnowDepth();
+  return snowComponent->getVm_SnowDepth();
 }
 
 double SoilMoisture::getMaxSnowDepth() const {
-  return snowComponent.getMaxSnowDepth();
+  return snowComponent->getMaxSnowDepth();
 }
 
 double SoilMoisture::getAccumulatedSnowDepth() const {
-  return snowComponent.getAccumulatedSnowDepth();
+  return snowComponent->getAccumulatedSnowDepth();
 }
 
 double SoilMoisture::getAccumulatedFrostDepth() const {
-  return frostComponent.getAccumulatedFrostDepth();
+  return frostComponent->getAccumulatedFrostDepth();
 }
-
 
 /**
 * @brief Returns snow depth [mm]
 * @return Value for snow depth
 */
 double SoilMoisture::getTemperatureUnderSnow() const {
-  return frostComponent.getTemperatureUnderSnow();
+  return frostComponent->getTemperatureUnderSnow();
 }
-
-void SoilMoisture::put_Crop(CropGrowth* c) {
-  crop = c;
-}
-
-void SoilMoisture::remove_Crop() {
-  crop = NULL;
-}
-

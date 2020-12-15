@@ -119,11 +119,16 @@ namespace Monica
 	public:
     Sowing(){}
 
-    Sowing(const Tools::Date& at, CropPtr crop);
+    //Sowing(const Tools::Date& at, Crop crop);
 
     Sowing(json11::Json object);
 
-    virtual Sowing* clone() const {return new Sowing(*this); }
+		Sowing(const Sowing& other) 
+			: _cropToPlant(other._cropToPlant ? kj::heap<Crop>(*other._cropToPlant.get()) : kj::Own<Crop>())
+			, _crop(_cropToPlant.get())
+			, _plantDensity(other._plantDensity) {}
+
+    virtual Sowing* clone() const { return new Sowing(*this); }
 
     virtual Tools::Errors merge(json11::Json j);
 
@@ -138,13 +143,18 @@ namespace Monica
     virtual void setDate(Tools::Date date)
     {
       this->_date = date;
-      _crop->setSeedAndHarvestDate(date, _crop->harvestDate());
+      _crop->setSeedDate(date);
     }
 
-    CropPtr crop() const { return _crop; }
+    const Crop* crop() const { return _crop; }
+
+		Crop* crop() { return _crop; }
+
+		void setCropForReplanting(kj::Own<Crop> c) { _cropToPlant = kj::mv(c); }
 
   private:
-    CropPtr _crop;
+    kj::Own<Crop> _cropToPlant;
+		Crop* _crop{ nullptr };
 		int _plantDensity{-1}; //[plants m-2]
 	};
 
@@ -184,7 +194,7 @@ namespace Monica
 		virtual Tools::Date absLatestDate() const { return _absLatestDate; }
 
 		virtual std::function<double(MonicaModel*)> registerDailyFunction(std::function<std::vector<double>&()> getDailyValues);
-
+		
 	private:
 		Tools::Date _absEarliestDate;
 		Tools::Date _earliestDate;
@@ -227,13 +237,13 @@ namespace Monica
 		};
 		
 	public:
-		Harvest();
+		Harvest() {}
 
-    Harvest(const Tools::Date& at,
-            CropPtr crop,
-            std::string method = "total");
+    //Harvest(const Tools::Date& at,
+    //        Crop* crop,
+    //        std::string method = "total");
 
-    Harvest(json11::Json j);
+		Harvest(json11::Json j) { merge(j); }
 
     virtual Harvest* clone() const { return new Harvest(*this); }
 
@@ -250,21 +260,24 @@ namespace Monica
     virtual void setDate(Tools::Date date)
     {
       this->_date = date;
-      _crop->setSeedAndHarvestDate(_crop->seedDate(), date);
+      _sowing->crop()->setHarvestDate(date);
     }
 
     void setPercentage(double percentage) { _percentage = percentage; }
 
     void setExported(bool exported)	{ _exported = exported; }
 
-		CropPtr crop() const { return _crop; }
-		void setCrop(CropPtr c) { _crop = c; }
+		const Crop& crop() const { return *_sowing->crop(); }
+
+		Sowing* sowing() { return _sowing; }
+
+		void setSowing(Sowing* s) { _sowing = s; }
 
 		//void setIsCoverCrop(bool isCoverCrop) { _optCarbMgmtData.isCoverCrop = isCoverCrop; }
+	protected:
+		Sowing* _sowing{ nullptr };
 
   private:
-    CropPtr _crop;
-    std::string _method;
     double _percentage{0};
     bool _exported{true};
 		OptCarbonManagementData _optCarbMgmtData;
@@ -277,10 +290,10 @@ namespace Monica
 	public:
 		AutomaticHarvest();
 
-		AutomaticHarvest(CropPtr crop,
-												std::string harvestTime,
-												Tools::Date latestHarvest,
-												std::string method = "total");
+		//AutomaticHarvest(Crop* crop,
+		//										std::string harvestTime,
+		//										Tools::Date latestHarvest,
+		//										std::string method = "total");
 
 		AutomaticHarvest(json11::Json object);
 
@@ -360,7 +373,7 @@ namespace Monica
 		MineralFertilization() {}
 
 		MineralFertilization(const Tools::Date& at,
-																 MineralFertiliserParameters partition,
+																 MineralFertilizerParameters partition,
                                  double amount);
 
     MineralFertilization(json11::Json object);
@@ -375,12 +388,12 @@ namespace Monica
 
     virtual bool apply(MonicaModel* model);
 
-    MineralFertiliserParameters partition() const { return _partition; }
+    MineralFertilizerParameters partition() const { return _partition; }
 
 		double amount() const { return _amount; }
 
 	private:
-		MineralFertiliserParameters _partition;
+		MineralFertilizerParameters _partition;
 		double _amount{ 0.0 };
 	};
 
@@ -393,12 +406,12 @@ namespace Monica
 
 		NDemandFertilization(int stage,
 												 double depth,
-												 MineralFertiliserParameters partition,
+												 MineralFertilizerParameters partition,
 												 double Ndemand);
 
 		NDemandFertilization(Tools::Date date,
 												 double depth,
-												 MineralFertiliserParameters partition,
+												 MineralFertilizerParameters partition,
 												 double Ndemand);
 
 		NDemandFertilization(json11::Json object);
@@ -415,7 +428,7 @@ namespace Monica
 
 		virtual bool condition(MonicaModel* model);
 
-		MineralFertiliserParameters partition() const { return _partition; }
+		MineralFertilizerParameters partition() const { return _partition; }
 
 		virtual bool isActive() const { return !_appliedFertilizer; }
 
@@ -423,7 +436,7 @@ namespace Monica
 
 	private:
 		Tools::Date _initialDate;
-		MineralFertiliserParameters _partition;
+		MineralFertilizerParameters _partition;
 		double _Ndemand{0};
 		double _depth{0.0};
 		int _stage{1};
@@ -436,9 +449,9 @@ namespace Monica
 	{
 	public:
 		OrganicFertilization(const Tools::Date& at,
-                                 const OrganicMatterParametersPtr params,
-																 double amount,
-                                 bool incorp = true);
+                        const OrganicMatterParameters& params,
+												double amount,
+                        bool incorp = true);
 
     OrganicFertilization(json11::Json j);
 
@@ -453,7 +466,7 @@ namespace Monica
     virtual bool apply(MonicaModel* model);
 
     //! Returns parameter for organic fertilizer
-    OrganicMatterParametersPtr parameters() const { return _params; }
+    const OrganicMatterParameters& parameters() const { return _params; }
 
 		//! Returns fertilization amount
 		double amount() const { return _amount; }
@@ -462,7 +475,7 @@ namespace Monica
 		bool incorporation() const { return _incorporation; }
 
   private:
-    OrganicMatterParametersPtr _params;
+    OrganicMatterParameters _params;
     double _amount{0.0};
     bool _incorporation{false};
 	};
@@ -521,6 +534,30 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
+	class DLL_API SaveMonicaState : public Workstep {
+	public:
+		SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile);
+
+		SaveMonicaState(json11::Json object);
+
+		virtual SaveMonicaState* clone() const { return new SaveMonicaState(*this); }
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+
+		virtual std::string type() const { return "SaveMonicaState"; }
+
+		virtual bool apply(MonicaModel* model);
+
+		std::string pathToSerializedStateFile() const { return _pathToSerializedStateFile; }
+
+	private:
+		std::string _pathToSerializedStateFile;
+	};
+
+	//----------------------------------------------------------------------------
+
 	class DLL_API Irrigation : public Workstep
 	{
 	public:
@@ -562,7 +599,7 @@ namespace Monica
     CultivationMethod(const std::string& name = std::string("Fallow"));
 
     //! is semantically the equivalent to creating an empty CM and adding Sowing, Harvest and Cutting applications
-    CultivationMethod(CropPtr crop, const std::string& name = std::string());
+    //CultivationMethod(CropPtr crop, const std::string& name = std::string());
 
     CultivationMethod(json11::Json object);
 
@@ -603,7 +640,7 @@ namespace Monica
 
 		std::string name() const { return _name; }
 
-		CropPtr crop() const { return _crop; }
+		const Crop& crop() const { return *_crop; }
 
     bool isFallow() const { return !_crop || !_crop->isValid();  }
 
@@ -648,12 +685,10 @@ namespace Monica
 	private:
 		std::vector<WSPtr> _allWorksteps;
 		std::vector<WSPtr> _allAbsWorksteps;
-		//std::multimap<Tools::Date, WSPtr> _allWorksteps;
-		//std::multimap<Tools::Date, WSPtr> _allAbsWorksteps;
 		std::vector<WSPtr> _unfinishedDynamicWorksteps;
     int _customId{0};
 		std::string _name;
-		CropPtr _crop;
+		const Crop* _crop{ nullptr };
     bool _irrigateCrop{false};
 		bool _canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
 		bool _isCoverCrop{false}; //! is like canBeSkipped (and implies it), but different rule for when cultivation methods will be skipped

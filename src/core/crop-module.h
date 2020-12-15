@@ -29,6 +29,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <utility>
 
+#include "monica/monica_state.capnp.h"
+
 #include "monica-parameters.h"
 #include "soilcolumn.h"
 #include "voc-common.h"
@@ -56,17 +58,29 @@ namespace Monica
  * 4 - Permanent structure <br>
  *
  */
-	class CropGrowth
+	class CropModule
 	{
 	public:
-		CropGrowth(SoilColumn& soilColumn,
+		CropModule(SoilColumn& soilColumn,
 			const CropParameters& cropParams,
+			const CropResidueParameters& rps,
+			bool isWinterCrop,
 			const SiteParameters& siteParams,
 			const CropModuleParameters& cropPs,
 			const SimulationParameters& simPs,
 			std::function<void(std::string)> fireEvent,
+			std::function<void(std::map<size_t, double>, double)> addOrganicMatter);
+
+		CropModule(SoilColumn& sc, 
+			const CropModuleParameters& cropPs, 
+			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-			int eva2_usage = NUTZUNG_UNDEFINED);
+			mas::models::monica::CropModuleState::Reader reader)
+			: soilColumn(sc), cropPs(cropPs), _fireEvent(fireEvent), 
+			_addOrganicMatter(addOrganicMatter) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::CropModuleState::Reader reader);
+		void serialize(mas::models::monica::CropModuleState::Builder builder) const;
 
 		void applyCutting(std::map<int, Cutting::Value>& organs,
 			std::map<int, double>& exports,
@@ -107,7 +121,6 @@ namespace Monica
 			double vc_VernalisationDays);
 
 		double fc_OxygenDeficiency(double pc_CriticalOxygenContent);
-
 
 		void fc_CropDevelopmentalStage(double vw_MeanAirTemperature,
 			std::vector<double> pc_BaseTemperature,
@@ -398,7 +411,7 @@ namespace Monica
 			vc_AccumulatedPrimaryCropYield += primaryCropYield;
 		}
 
-		void setPerennialCropParameters(CropParametersPtr cps) { perennialCropParams = cps; }
+		void setPerennialCropParameters(const CropParameters& cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
 
 		void fc_UpdateCropParametersForPerennial();
 
@@ -428,6 +441,14 @@ namespace Monica
 
 		size_t rootingZone() const { return vc_RootingZone; };
 
+		const SpeciesParameters& speciesParameters() const { return speciesPs; }
+
+		const CultivarParameters& cultivarParameters() const { return cultivarPs; }
+
+		const CropResidueParameters& residueParameters() const { return residuePs; }
+
+		bool isWinterCrop() const { return _isWinterCrop; }
+
 	private:
 		bool _frostKillOn{ true };
 
@@ -438,10 +459,12 @@ namespace Monica
 
 		// members
 		SoilColumn& soilColumn;
-		CropParametersPtr perennialCropParams;
+		kj::Own<CropParameters> perennialCropParams;
 		const CropModuleParameters& cropPs;
 		SpeciesParameters speciesPs;
 		CultivarParameters cultivarPs;
+		CropResidueParameters residuePs;
+		bool _isWinterCrop{ false };
 
 		//! old N
 		//    static const double vw_AtmosphericCO2Concentration;
@@ -638,10 +661,6 @@ namespace Monica
 		std::vector<double> pc_VernalisationRequirement;	//! old VSCHWELL
 		bool pc_WaterDeficitResponseOn;
 
-		int eva2_usage;
-		std::vector<YieldComponent> eva2_primaryYieldComponents;
-		std::vector<YieldComponent> eva2_secondaryYieldComponents;
-
 		bool dyingOut{ false };
 		double vc_AccumulatedETa{ 0.0 };
 		double vc_AccumulatedTranspiration{ 0.0 };
@@ -661,7 +680,7 @@ namespace Monica
 		bool vc_MaturityReached{ false };
 
 		//VOC members
-		const int _stepSize24{ 24 }, _stepSize240{ 240 };
+		int _stepSize24{ 24 }, _stepSize240{ 240 };
 		std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
 		int _index24{ 0 }, _index240{ 0 };
 		bool _full24{ false }, _full240{ false };

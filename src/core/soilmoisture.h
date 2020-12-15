@@ -15,137 +15,20 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef _SOILMOISTURE_H
-#define _SOILMOISTURE_H
-
-/**
- * @file soilmoisture.h
- */
+#pragma once
 
 #include <vector>
 
+#include "monica/monica_state.capnp.h"
 #include "monica-parameters.h"
-#include "crop-growth.h"
+#include "frost-component.h"
+#include "snow-component.h"
 
 namespace Monica 
 {
-
-  // forward declarations
-  class SoilColumn;
   class MonicaModel;
-  struct SiteParameters;
-	
-  //#########################################################################
-  // Snow Component
-  //#########################################################################
-
-  /**
-   * @brief Class for calculating snow depth and density according
-   * to specifications of ECOMAG.
-   *
-   * @author Specka, Nendel
-   */
-  class SnowComponent
-  {
-    public:
-      SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps);
-      ~SnowComponent() {}
-
-      void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
-
-      double getVm_SnowDepth() const { return this->vm_SnowDepth; }
-      double getWaterToInfiltrate() const { return this->vm_WaterToInfiltrate; }
-      double getMaxSnowDepth() const {return this->vm_maxSnowDepth; }
-      double getAccumulatedSnowDepth() const {return this->vm_AccumulatedSnowDepth; }
-
-    private:
-      double calcSnowMelt(double vw_MeanAirTemperature);
-      double calcNetPrecipitation(double mean_air_temperature, double net_precipitation, double& net_precipitation_water, double& net_precipitation_snow);
-      double calcRefreeze(double mean_air_temperature);
-      double calcNewSnowDensity(double vw_MeanAirTemperature,double vm_NetPrecipitationSnow);
-      double calcAverageSnowDensity(double net_precipitation_snow, double new_snow_density);
-      double calcLiquidWaterRetainedInSnow(double frozen_water_in_snow, double snow_water_equivalent);
-      double calcPotentialInfiltration(double net_precipitation, double snow_layer_water_release, double snow_depth);
-      void calcSnowDepth(double snow_water_equivalent);
-
-			SoilColumn& soilColumn;
-
-      double vm_SnowDensity{ 0.0 }; //!< Snow density [kg dm-3]
-      double vm_SnowDepth{ 0.0 }; //!< Snow depth [mm]
-      double vm_FrozenWaterInSnow{ 0.0 }; //!< [mm]
-      double vm_LiquidWaterInSnow{ 0.0 }; //!< [mm]
-      double vm_WaterToInfiltrate{ 0.0 }; //!< [mm]
-      double vm_maxSnowDepth{ 0.0 };     //!< [mm]
-      double vm_AccumulatedSnowDepth{ 0.0 }; //!< [mm]
-
-      // extern or user defined snow parameter
-      double vm_SnowmeltTemperature;                  //!< Base temperature for snowmelt [°C]
-      double vm_SnowAccumulationThresholdTemperature;
-      double vm_TemperatureLimitForLiquidWater;       //!< Lower temperature limit of liquid water in snow
-      double vm_CorrectionRain;                       //!< Correction factor for rain (no correction used here)
-      double vm_CorrectionSnow;                       //!< Correction factor for snow (value used in COUP by Lars Egil H.)
-      double vm_RefreezeTemperature;                  //!< Base temperature for refreeze [°C]
-      double vm_RefreezeP1;                           //!< Refreeze parameter (Karvonen's value)
-      double vm_RefreezeP2;                           //!< Refreeze exponent (Karvonen's value)
-      double vm_NewSnowDensityMin;                    //!< Minimum density of new snow
-      double vm_SnowMaxAdditionalDensity;             //!< Maximum additional density of snow (max rho = 0.35, Karvonen)
-      double vm_SnowPacking;                          //!< Snow packing factor (calibrated by Helge Bonesmo)
-      double vm_SnowRetentionCapacityMin;             //!< Minimum liquid water retention capacity in snow [mm]
-      double vm_SnowRetentionCapacityMax;             //!< Maximum liquid water retention capacity in snow [mm]
-
-  }; // SnowComponent
-
-
-
-  //#########################################################################
-  // Frost Component
-  //#########################################################################
-
-  class FrostComponent
-  {
-    public:
-      FrostComponent(SoilColumn& sc,
-                     double pm_HydraulicConductivityRedux,
-                     double p_timeStep);
-
-      void calcSoilFrost(double mean_air_temperature, double snow_depth);
-      double getFrostDepth() const { return vm_FrostDepth; }
-      double getThawDepth() const { return vm_ThawDepth; }
-      double getLambdaRedux(size_t layer) const { return vm_LambdaRedux[layer]; }
-      double getAccumulatedFrostDepth() const { return vm_accumulatedFrostDepth; }
-      double getTemperatureUnderSnow() const { return vm_TemperatureUnderSnow; }
-
-    private:
-      double getMeanBulkDensity();
-      double getMeanFieldCapacity();
-      double calcHeatConductivityFrozen(double mean_bulk_density, double sii);
-      double calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity);
-      double calcSii(double mean_field_capacity);
-      double calcThawDepth(double temperature_under_snow, double heat_conductivity_unfrozen, double mean_field_capacity);
-      double calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth);
-      double calcFrostDepth(double mean_field_capacity, double heat_conductivity_frozen, double temperature_under_snow);
-      void updateLambdaRedux();
-
-      SoilColumn& soilColumn;
-      double vm_FrostDepth{0.0};
-      double vm_accumulatedFrostDepth{0.0};
-      double vm_NegativeDegreeDays{0.0}; //!< Counts negative degree-days under snow
-      double vm_ThawDepth{0.0};
-      int vm_FrostDays{0};
-      std::vector<double> vm_LambdaRedux; //!< Reduction factor for Lambda []
-      double vm_TemperatureUnderSnow{0.0};
-
-
-      // user defined or data base parameter
-      double vm_HydraulicConductivityRedux{0.0};
-      double pt_TimeStep{0.0};
-
-      double pm_HydraulicConductivityRedux{0.0};
-  };
-
-  //#########################################################################
-  // MOISTURE MODULE
-  //#########################################################################
+  class SoilColumn;
+  class CropModule;
 
   /*!
    * @brief Calculation of the water model based on THESEUS.
@@ -162,7 +45,11 @@ namespace Monica
   class SoilMoisture
   {
   public:
-    SoilMoisture(MonicaModel& monica);
+    SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
+
+    SoilMoisture(MonicaModel& monica, mas::models::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule = nullptr);
+    void deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const;
 
 	void step(double vs_DepthGroundwaterTable,
 		// Wetter Variablen
@@ -185,40 +72,27 @@ namespace Monica
     double get_CapillaryRise(int layer) const;
     double get_PercolationRate(int layer) const;
 
-    //! Returns infiltration value [mm]
-    double get_Infiltration() const { return vm_Infiltration; }
+    double get_Infiltration() const { return vm_Infiltration; } // [mm]
 
-    //! Returns surface water storage [mm]
-    double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; }
+    double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; } // [mm]
 
-    //! Returns surface overflow [mm]
-    double get_SurfaceRunOff() const { return vm_SurfaceRunOff; }
+    double get_SurfaceRunOff() const { return vm_SurfaceRunOff; } // [mm]
 
-    //! Returns evapotranspiration value [mm]
-    double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; }
+    double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; } // [mm]
 
-		double get_PotentialEvapotranspiration() const
-		{
-			return get_ET0() * get_KcFactor();
-		}
+		double get_PotentialEvapotranspiration() const { return get_ET0() * get_KcFactor(); }
 
-    //! Returns evaporation value [mm]
-    double get_ActualEvaporation() const { return vm_ActualEvaporation; }
+    double get_ActualEvaporation() const { return vm_ActualEvaporation; } // [mm]
 
-    //! Returns reference evapotranspiration [mm]
-    double get_ET0() const { return vm_ReferenceEvapotranspiration; }
+    double get_ET0() const { return vm_ReferenceEvapotranspiration; } // [mm]
 
-    //! Returns percentage soil coverage.
     double get_PercentageSoilCoverage() const { return vc_PercentageSoilCoverage; }
 
-    //! Returns stomata resistance [s-1]
-    double get_StomataResistance() const { return vc_StomataResistance; }
+    double get_StomataResistance() const { return vc_StomataResistance; } // [s-1]
 
-    //! Returns frost depth [m]
-    double get_FrostDepth() const { return frostComponent.getFrostDepth(); }
+    double get_FrostDepth() const; // [m]
 
-    //! Returns thaw depth [m]
-    double get_ThawDepth() const { return frostComponent.getThawDepth(); }
+    double get_ThawDepth() const; // [m]
 
     double get_CapillaryRise();
 
@@ -234,11 +108,8 @@ namespace Monica
                           double vm_PercentageSoilCoverage,
                           double vm_PotentialEvapotranspiration);
 
-    void put_Crop(Monica::CropGrowth* crop);
-    void remove_Crop();
-
-//    void fm_SoilFrost(double vw_MeanAirTemperature,
-//                      double vm_SnowDepth);
+    void putCrop(Monica::CropModule* cm) { cropModule = cm; }
+    void removeCrop() { cropModule = nullptr; }
 
     void fm_Infiltration(double vm_WaterToInfiltrate,
                          double vc_PercentageSoilCoverage,
@@ -298,11 +169,11 @@ namespace Monica
     SoilColumn& soilColumn;
     const SiteParameters& siteParameters;
     MonicaModel& monica;
-    const SoilMoistureModuleParameters& smPs;
+    SoilMoistureModuleParameters _params;
     const EnvironmentParameters& envPs;
     const CropModuleParameters& cropPs;
-		const size_t vm_NumberOfLayers{0};
-		const size_t vs_NumberOfLayers{0};
+		size_t vm_NumberOfLayers{0};
+		size_t vs_NumberOfLayers{0};
 
 		double vm_ActualEvaporation{0.0}; //!< Sum of evaporation of all layers [mm]
 		double vm_ActualEvapotranspiration{0.0}; //!< Sum of evaporation and transpiration of all layers [mm]
@@ -369,16 +240,11 @@ namespace Monica
 		double vw_WindSpeedHeight{0.0}; //!< [m]
 		double vm_XSACriticalSoilMoisture{0.0};
 
-    SnowComponent snowComponent;
-    FrostComponent frostComponent;
-    CropGrowth* crop{nullptr};
-
-  }; // SoilMoisture
-
-
+    kj::Own<SnowComponent> snowComponent;
+    kj::Own<FrostComponent> frostComponent;
+    CropModule* cropModule{nullptr};
+  }; 
 
 }
-
-#endif
 
 

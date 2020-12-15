@@ -53,7 +53,7 @@ namespace Monica
   {
     Env() {}
 		
-    Env(CentralParameterProvider cpp);
+    Env(CentralParameterProvider&& cpp);
 
 		Env(json11::Json object);
 		// construct env from json object

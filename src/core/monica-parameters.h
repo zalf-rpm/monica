@@ -267,14 +267,18 @@ namespace Monica
 	 * Simple data structure that holds information about mineral fertiliser.
 	 * @author Xenia Holtmann, Claas Nendel
 	 */
-	class DLL_API MineralFertiliserParameters : public Tools::Json11Serializable
+	class DLL_API MineralFertilizerParameters : public Tools::Json11Serializable
 	{
 	public:
-		MineralFertiliserParameters() {}
+		MineralFertilizerParameters() {}
 
-		MineralFertiliserParameters(json11::Json object);
+		MineralFertilizerParameters(mas::models::monica::MineralFertilizerParameters::Reader reader) { deserialize(reader); }
 
-		MineralFertiliserParameters(const std::string& id,
+		void deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader);
+
+		MineralFertilizerParameters(json11::Json object);
+
+		MineralFertilizerParameters(const std::string& id,
 			const std::string& name,
 			double carbamid,
 			double no3,
@@ -324,14 +328,20 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API NMinUserParameters : public Tools::Json11Serializable
+	struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable
 	{
-		NMinUserParameters() {}
+		NMinApplicationParameters() {}
 
-		NMinUserParameters(double min, double max, int delayInDays);
+		NMinApplicationParameters(double min, double max, int delayInDays);
 
-		NMinUserParameters(json11::Json object);
-		
+		NMinApplicationParameters(mas::models::monica::NMinApplicationParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::NMinApplicationParameters::Reader reader);
+
+		NMinApplicationParameters(json11::Json object);
+
+		void serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -586,8 +596,8 @@ namespace Monica
 		AutomaticIrrigationParameters p_AutoIrrigationParams;
 
 		bool p_UseNMinMineralFertilisingMethod{ false };
-		MineralFertiliserParameters p_NMinFertiliserPartition;
-		NMinUserParameters p_NMinUserParams;
+		MineralFertilizerParameters p_NMinFertiliserPartition;
+		NMinApplicationParameters p_NMinUserParams;
 
 		bool p_UseSecondaryYields{ true };
 		bool p_UseAutomaticHarvestTrigger{ false };
@@ -597,6 +607,11 @@ namespace Monica
 
 		int p_StartPVIndex{ 0 };
 		int p_JulianDayAutomaticFertilising{ 0 };
+
+		bool serializeMonicaStateAtEnd{ false };
+		bool loadSerializedMonicaStateAtStart{ false };
+		uint noOfPreviousDaysSerializedClimateData{ 20 };
+		std::string pathToSerializationFile;
 	};
 
 	//----------------------------------------------------------------------------
@@ -796,19 +811,19 @@ namespace Monica
     double pHminden{ 7.2 }; 
     double pHmaxden{ 9.2 };
     double wfpsc{ 0.62 }; 
-    double tdenitopt_gauss{ 47 }; // [°C]
-    double scale_tdenitopt{ 25 }; // [°C]
+    double tdenitopt_gauss{ 47 }; // [ï¿½C]
+    double scale_tdenitopt{ 25 }; // [ï¿½C]
     double Kd{ 148 }; // [mg NO3-N/L]
     double k_desat{ 3.0 }; // [1/day]
     double fnx{ 0.8 }; // [1/day]
     double vnitmax{ 27.3 }; // [mg NH4-N/kg soil/day]
     double Kamm{ 24 }; // [mg NH4-N/L]
-    double tnitmin{ 5.0 }; // [°C]
-    double tnitopt{ 30.0 }; // [°C]
-    double tnitop2{ 35.0 }; // [°C]
-    double tnitmax{ 58.0 }; // [°C]
-    double tnitopt_gauss{ 32.5 }; // [°C]
-    double scale_tnitopt{ 16.0 }; // [°C]
+    double tnitmin{ 5.0 }; // [ï¿½C]
+    double tnitopt{ 30.0 }; // [ï¿½C]
+    double tnitop2{ 35.0 }; // [ï¿½C]
+    double tnitmax{ 58.0 }; // [ï¿½C]
+    double tnitopt_gauss{ 32.5 }; // [ï¿½C]
+    double scale_tnitopt{ 16.0 }; // [ï¿½C]
     double rationit{ 0.0016 }; 
     double cmin_pdenit{ 1.0 }; // [% [0-100]]
     double cmax_pdenit{ 6.0 }; // [% [0-100]]

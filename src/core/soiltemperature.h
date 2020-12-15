@@ -44,18 +44,21 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iomanip>
 
 #include "soilcolumn.h"
+#include "monica-parameters.h"
 
 namespace Monica
 {
-  // forward declaration
-  class SoilColumn;
   class MonicaModel;
 
   //! Calculation of soil temperature is based on a model developed by PIC
   class SoilTemperature
   {
   public:
-    SoilTemperature(MonicaModel& monica);
+    SoilTemperature(MonicaModel& monica, const SoilTemperatureModuleParameters& params);
+
+    SoilTemperature(MonicaModel& monica, mas::models::monica::SoilTemperatureModuleState::Reader reader);
+    void deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader);
+    void serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const;
 
     void step(double tmin, double tmax, double globrad);
 
@@ -75,38 +78,37 @@ namespace Monica
     MonicaModel& monica;
     SoilLayer _soilColumn_vt_GroundLayer;
     SoilLayer _soilColumn_vt_BottomLayer;
+    SoilTemperatureModuleParameters _params;
 
-    struct SC
-    {
+    struct SC {
       SoilColumn& sc;
       SoilLayer& gl;
       SoilLayer& bl;
       std::size_t vs_nols;
-      SC(SoilColumn& sc, 
-				 SoilLayer& gl, 
-				 SoilLayer& bl, 
-				 size_t vs_nols)
-				: sc(sc)
-				, gl(gl)
-				, bl(bl)
-				, vs_nols(vs_nols)
-			{}
+      SC(SoilColumn& sc,
+        SoilLayer& gl,
+        SoilLayer& bl,
+        size_t vs_nols)
+        : sc(sc)
+        , gl(gl)
+        , bl(bl)
+        , vs_nols(vs_nols) {}
 
-			SoilLayer& operator[](std::size_t i) const
-			{
-				if(i < vs_nols)
+      SoilLayer& operator[](std::size_t i) const {
+        if (i < vs_nols)
           return sc[i];
-        else if(i < vs_nols + 1)
+        else if (i < vs_nols + 1)
           return gl;
 
         return bl;
       }
 
-      const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
+      SoilLayer& at(std::size_t i) { return (*this)[i]; }
+      inline const SoilLayer& at(std::size_t i) const { return (*this)[i]; }
     } soilColumn;
 
-    const std::size_t vt_NumberOfLayers;
-    const std::size_t vs_NumberOfLayers;
+    std::size_t vt_NumberOfLayers;
+    std::size_t vs_NumberOfLayers;
     std::vector<double> vs_SoilMoisture_const;
     std::vector<double> vt_SoilTemperature;
     std::vector<double> vt_V;
