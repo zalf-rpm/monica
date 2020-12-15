@@ -699,6 +699,7 @@ Output Monica::runMonica(Env env)
 	}
 
 	monica->simulationParametersNC().endDate = env.climateData.endDate();
+	monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
 
 	debug() << "currentDate" << endl;
 	Date currentDate = env.climateData.startDate();
