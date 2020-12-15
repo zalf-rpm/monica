@@ -698,6 +698,7 @@ namespace Monica
 
 		bool serializeMonicaStateAtEnd{ false };
 		bool loadSerializedMonicaStateAtStart{ false };
+		uint noOfPreviousDaysSerializedClimateData{ 20 };
 		std::string pathToSerializationFile;
 	};
 

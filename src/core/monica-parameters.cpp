@@ -1391,6 +1391,7 @@ Errors SimulationParameters::merge(json11::Json j)
 
   set_bool_value(serializeMonicaStateAtEnd, j, "serializeMonicaStateAtEnd");
   set_bool_value(loadSerializedMonicaStateAtStart, j, "loadSerializedMonicaStateAtStart");
+  noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
   set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
   
 	return res;
@@ -1420,6 +1421,7 @@ json11::Json SimulationParameters::to_json() const
   ,{"StartPVIndex", p_StartPVIndex}
   ,{"serializeMonicaStateAtEnd", serializeMonicaStateAtEnd}
   ,{"loadSerializedMonicaStateAtStart", loadSerializedMonicaStateAtStart}
+  ,{"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)}
   ,{"pathToSerializationFile", pathToSerializationFile}
 	};
 }

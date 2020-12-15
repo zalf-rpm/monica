@@ -9,7 +9,7 @@
 		"_start-date": "1991-01-01",
 		"_end-date": "1991-12-31",
 		"start-date": "1992-01-01",
-		"end-date": "1992-01-01"
+		"end-date": "1992-12-31"
 	},
 	
 	"debug?": false,
@@ -17,6 +17,7 @@
 
 	"serializeMonicaStateAtEnd": true,
 	"loadSerializedMonicaStateAtStart": true,
+	"noOfPreviousDaysSerializedClimateData": 20,
 	"pathToSerializationFile": "C:/tmp/monicaStateSerialized.capnp",
 
 	"output": { 

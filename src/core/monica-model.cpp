@@ -140,12 +140,12 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 
 	_currentStepDate.deserialize(reader.getCurrentStepDate());
 
-	_climateData.clear();
 	_climateData.resize(reader.getClimateData().size());
 	{
 		uint i = 0;
 		for (const auto& mapList : reader.getClimateData()) {
 			auto& acd2val = _climateData[i++];
+			acd2val.clear();
 			for (const auto& readAcd2Val : mapList) {
 				acd2val[Climate::ACD(readAcd2Val.getAcd())] = readAcd2Val.getValue();
 			}
@@ -205,10 +205,13 @@ void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder build
 
 	_currentStepDate.serialize(builder.initCurrentStepDate());
 
-	auto buildCdList = builder.initClimateData(_climateData.size());
+	auto cdSize = _climateData.size();
+	auto serMaxDays = min(size_t(_simPs.noOfPreviousDaysSerializedClimateData), cdSize);
+	auto buildCdList = builder.initClimateData(serMaxDays);
 	{
 		uint i = 0;
-		for (auto& map : _climateData) {
+		for (size_t j = cdSize - serMaxDays; j < cdSize; j++){
+			auto& map = _climateData[j];
 			auto buildList = buildCdList.init(i++, map.size());
 			uint k = 0;
 			for (auto& p : map) {
