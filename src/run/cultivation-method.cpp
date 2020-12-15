@@ -1098,9 +1098,11 @@ json11::Json SaveMonicaState::to_json() const {
 bool SaveMonicaState::apply(MonicaModel* model) {
 	Workstep::apply(model);
 
+	auto pathToSerFile = kj::str(_pathToSerializedStateFile);
 	auto fs = kj::newDiskFilesystem();
-	const auto& curDir = fs->getCurrent();
-	auto file = curDir.openFile(kj::Path(kj::str(_pathToSerializedStateFile)), kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
+	auto file = isAbsolutePath(pathToSerFile.cStr())
+		? fs->getRoot().openFile(kj::Path::parse(pathToSerFile), kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
+    : fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile), kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
 
 	capnp::MallocMessageBuilder message;
 	auto runtimeState = message.initRoot<mas::models::monica::RuntimeState>();

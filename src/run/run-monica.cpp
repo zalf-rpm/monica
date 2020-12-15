@@ -650,10 +650,7 @@ struct DFSRes {
 	uint critPos{ 0 };
 	uint cmitPos{ 0 };
 };
-DFSRes deserializeFullState(kj::PathPtr pathToSerializationFile) {
-	auto fs = kj::newDiskFilesystem();
-	const auto& curDir = fs->getCurrent();
-	auto file = curDir.openFile(pathToSerializationFile);
+DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
 	auto allBytes = file->readAllBytes();
 	kj::ArrayInputStream aios(allBytes);
 	capnp::InputStreamMessageReader message(aios);
@@ -672,16 +669,12 @@ Output Monica::runMonica(Env env)
 	out.customId = env.customId;
 
 	activateDebug = env.debugMode;
-	if(activateDebug)
-	{
-		writeDebugInputs(env, "inputs.json");
-	}
+	if(activateDebug)	writeDebugInputs(env, "inputs.json");
 
 	//prefer multiple crop rotations, but use a single rotation if there
-	if(env.cropRotations.empty() && !env.cropRotation.empty())
-		env.cropRotations.push_back(CropRotation(env.climateData.startDate(), 
-																						 env.climateData.endDate(), 
-																						 env.cropRotation));
+	if (env.cropRotations.empty() && !env.cropRotation.empty()) {
+    env.cropRotations.push_back(CropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation));
+	}
 
 	debug() << "starting Monica" << endl;
 	debug() << "-----" << endl;
@@ -690,9 +683,13 @@ Output Monica::runMonica(Env env)
 	//uint critPos = 0;
 	//uint cmitPos = 0;
 	if (env.params.simulationParameters.loadSerializedMonicaStateAtStart) {
-		auto pathToSerializedMonicaStateFile = kj::Path(kj::str(env.params.simulationParameters.pathToSerializationFile));
-		//auto pathToSerializedMonicaStateFile = kj::Path::parse(relativePathToSerializedMonicaStateFile);
-		auto dserRes = deserializeFullState(pathToSerializedMonicaStateFile);
+		auto pathToSerFile = kj::str(env.params.simulationParameters.pathToSerializationFile);
+		auto fs = kj::newDiskFilesystem();
+		auto file = isAbsolutePath(pathToSerFile.cStr())
+			? fs->getRoot().openFile(kj::Path::parse(pathToSerFile))
+			: fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile));
+
+		auto dserRes = deserializeFullState(kj::mv(file));
 		monica = kj::mv(dserRes.monica);
 		//critPos = dserRes.critPos;
 		//cmitPos = dserRes.cmitPos;
@@ -926,8 +923,8 @@ Output Monica::runMonica(Env env)
 		}
 	}
 	
-	if (monica->simulationParameters().serializeMonicaStateAtEnd) {
-		SaveMonicaState sms(currentDate, monica->simulationParameters().pathToSerializationFile);
+	if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
+		SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationFile);
 		//uint critPos = 0;
 		//auto crit_ = env.cropRotations.begin();
 		//while (crit_ != env.cropRotations.end() && crit_ != crit)
