@@ -32,6 +32,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
+#include "monica/monica_params.capnp.h"
+
 #include "common/dll-exports.h"
 #include "climate/climate-common.h"
 #include "tools/date.h"
@@ -39,12 +41,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/soil.h"
 #include "soil/constants.h"
 
-namespace Monica
-{
+namespace Monica {
 	class CentralParameterProvider;
 
-	enum Eva2_Nutzung
-	{
+	enum Eva2_Nutzung {
 		NUTZUNG_UNDEFINED = 0,
 		NUTZUNG_GANZPFLANZE = 1,
 		NUTZUNG_KORN = 2,
@@ -62,12 +62,17 @@ namespace Monica
 	/**
 	 * @brief
 	 */
-	struct DLL_API YieldComponent : public Tools::Json11Serializable
-	{
+	struct DLL_API YieldComponent : public Tools::Json11Serializable {
 		YieldComponent() {}
 
 		YieldComponent(int organId, double yieldPercentage, double yieldDryMatter);
-		
+
+		YieldComponent(mas::models::monica::YieldComponent::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::YieldComponent::Reader reader);
+
+		void serialize(mas::models::monica::YieldComponent::Builder builder) const;
+
 		YieldComponent(json11::Json object);
 
 		virtual Tools::Errors merge(json11::Json j);
@@ -81,23 +86,26 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API SpeciesParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
 		SpeciesParameters() {}
 
 		SpeciesParameters(json11::Json j);
+
+		SpeciesParameters(mas::models::monica::SpeciesParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SpeciesParameters::Reader reader);
+
+		void serialize(mas::models::monica::SpeciesParameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
 
-		int pc_NumberOfDevelopmentalStages() const
-		{
+		int pc_NumberOfDevelopmentalStages() const {
 			assert(pc_BaseTemperature.size() <= INT_MAX);
 			return (int)pc_BaseTemperature.size();
 		}
-		int pc_NumberOfOrgans() const
-		{
+		int pc_NumberOfOrgans() const {
 			assert(pc_OrganGrowthRespiration.size() <= INT_MAX);
 			return (int)pc_OrganGrowthRespiration.size();
 		}
@@ -130,7 +138,7 @@ namespace Monica
 		std::vector<double> pc_StageMaxRootNConcentration;
 		std::vector<double> pc_InitialOrganBiomass;
 		std::vector<double> pc_CriticalOxygenContent;
-	  std::vector<double> pc_StageMobilFromStorageCoeff;
+		std::vector<double> pc_StageMobilFromStorageCoeff;
 
 		std::vector<bool> pc_AbovegroundOrgan;
 		std::vector<bool> pc_StorageOrgan;
@@ -163,19 +171,24 @@ namespace Monica
 		double KO25{ 330.0 }; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
 
 		int pc_TransitionStageLeafExp{ -1 }; //!< [1-7]
-	
+
 	};
 
 	typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API CultivarParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API CultivarParameters : public Tools::Json11Serializable {
 		CultivarParameters() {}
 
+		CultivarParameters(mas::models::monica::CultivarParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::CultivarParameters::Reader reader);
+
 		CultivarParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::CultivarParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -227,22 +240,27 @@ namespace Monica
 		double pc_EarlyRefLeafExp{ 12.0 }; //!< 12 = wheat (first guess)
 		double pc_RefLeafExp{ 20.0 }; //!< 20 = wheat, 22 = maize (first guess)
 
-    double pc_MinTempDev_WE{ 0.0 };
-    double pc_OptTempDev_WE{ 0.0 };
-    double pc_MaxTempDev_WE{ 0.0 };
+		double pc_MinTempDev_WE{ 0.0 };
+		double pc_OptTempDev_WE{ 0.0 };
+		double pc_MaxTempDev_WE{ 0.0 };
 	};
 
 	typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API CropParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API CropParameters : public Tools::Json11Serializable {
 		CropParameters() {}
+
+		CropParameters(mas::models::monica::CropParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::CropParameters::Reader reader);
 
 		CropParameters(json11::Json object);
 
 		CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
+
+		void serialize(mas::models::monica::CropParameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -267,8 +285,7 @@ namespace Monica
 	 * Simple data structure that holds information about mineral fertiliser.
 	 * @author Xenia Holtmann, Claas Nendel
 	 */
-	class DLL_API MineralFertilizerParameters : public Tools::Json11Serializable
-	{
+	class DLL_API MineralFertilizerParameters : public Tools::Json11Serializable {
 	public:
 		MineralFertilizerParameters() {}
 
@@ -283,7 +300,9 @@ namespace Monica
 			double carbamid,
 			double no3,
 			double nh4);
-		
+
+		void serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -328,8 +347,7 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable {
 		NMinApplicationParameters() {}
 
 		NMinApplicationParameters(double min, double max, int delayInDays);
@@ -353,13 +371,18 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API IrrigationParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
 		IrrigationParameters() {}
 
 		IrrigationParameters(double nitrateConcentration, double sulfateConcentration);
 
+		IrrigationParameters(mas::models::monica::IrrigationParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::IrrigationParameters::Reader reader);
+
 		IrrigationParameters(json11::Json object);
+
+		void serialize(mas::models::monica::IrrigationParameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -371,14 +394,19 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters
-	{
+	struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
 		AutomaticIrrigationParameters() {}
 
 		AutomaticIrrigationParameters(double a, double t, double nc, double sc);
 
+		AutomaticIrrigationParameters(mas::models::monica::AutomaticIrrigationParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::AutomaticIrrigationParameters::Reader reader);
+
 		AutomaticIrrigationParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::AutomaticIrrigationParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -389,13 +417,18 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	class DLL_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable
-	{
+	class DLL_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable {
 	public:
 		MeasuredGroundwaterTableInformation() {}
 
+		MeasuredGroundwaterTableInformation(mas::models::monica::MeasuredGroundwaterTableInformation::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::MeasuredGroundwaterTableInformation::Reader reader);
+
 		MeasuredGroundwaterTableInformation(json11::Json object);
-		
+
+		void serialize(mas::models::monica::MeasuredGroundwaterTableInformation::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -413,11 +446,16 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API SiteParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API SiteParameters : public Tools::Json11Serializable {
 		SiteParameters() {}
 
+		SiteParameters(mas::models::monica::SiteParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SiteParameters::Reader reader);
+
 		SiteParameters(json11::Json object);
+
+		void serialize(mas::models::monica::SiteParameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -442,15 +480,13 @@ namespace Monica
 	/**
 	* @brief Data structure that containts all relevant parameters for the automatic yield trigger.
 	*/
-	class DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable
-	{
+	class DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable {
 	public:
 		//! Enumeration for defining automatic harvesting times
 
 		//! Definition of different harvest time definition for the automatic
 		//! yield trigger
-		enum HarvestTime
-		{
+		enum HarvestTime {
 			maturity,	//!< crop is harvested when maturity is reached
 			unknown		//!< default error value
 		};
@@ -459,8 +495,14 @@ namespace Monica
 
 		AutomaticHarvestParameters(HarvestTime yt);
 
+		AutomaticHarvestParameters(mas::models::monica::AutomaticHarvestParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::AutomaticHarvestParameters::Reader reader);
+
 		AutomaticHarvestParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::AutomaticHarvestParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -484,14 +526,19 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API NMinCropParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API NMinCropParameters : public Tools::Json11Serializable {
 		NMinCropParameters() {}
 
 		NMinCropParameters(double samplingDepth, double nTarget, double nTarget30);
 
+		NMinCropParameters(mas::models::monica::NMinCropParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::NMinCropParameters::Reader reader);
+
 		NMinCropParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::NMinCropParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -503,12 +550,17 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
 		OrganicMatterParameters() {}
 
+		OrganicMatterParameters(mas::models::monica::OrganicMatterParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::OrganicMatterParameters::Reader reader);
+
 		OrganicMatterParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::OrganicMatterParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -537,12 +589,17 @@ namespace Monica
 
 	//-------------------------------------------
 
-	struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters
-	{
+	struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
 		OrganicFertilizerParameters() {}
 
+		OrganicFertilizerParameters(mas::models::monica::OrganicFertilizerParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::OrganicFertilizerParameters::Reader reader);
+
 		OrganicFertilizerParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::OrganicFertilizerParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -555,9 +612,14 @@ namespace Monica
 
 	//-------------------------------------------
 
-	struct DLL_API CropResidueParameters : public OrganicMatterParameters
-	{
+	struct DLL_API CropResidueParameters : public OrganicMatterParameters {
 		CropResidueParameters() {}
+
+		CropResidueParameters(mas::models::monica::CropResidueParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::CropResidueParameters::Reader reader);
+
+		void serialize(mas::models::monica::CropResidueParameters::Builder builder) const;
 
 		CropResidueParameters(json11::Json object);
 
@@ -573,12 +635,17 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	struct DLL_API SimulationParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API SimulationParameters : public Tools::Json11Serializable {
 		SimulationParameters() {}
 
+		SimulationParameters(mas::models::monica::SimulationParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SimulationParameters::Reader reader);
+
 		SimulationParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::SimulationParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -616,16 +683,21 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	  /**
-	   * Class that holds information of crop defined by user.
-	   * @author Xenia Specka
-	   */
-	struct DLL_API CropModuleParameters : public Tools::Json11Serializable
-	{
+		/**
+		 * Class that holds information of crop defined by user.
+		 * @author Xenia Specka
+		 */
+	struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
 		CropModuleParameters() {}
 
+		CropModuleParameters(mas::models::monica::CropModuleParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::CropModuleParameters::Reader reader);
+
 		CropModuleParameters(json11::Json object);
-				
+
+		void serialize(mas::models::monica::CropModuleParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -651,7 +723,7 @@ namespace Monica
 		bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
 		bool __enable_hourly_FvCB_photosynthesis__{ false };
 		bool __enable_T_response_leaf_expansion__{ false };
-		bool __disable_daily_root_biomass_to_soil__{false};
+		bool __disable_daily_root_biomass_to_soil__{ false };
 	};
 
 	//----------------------------------------------------------------------------
@@ -660,12 +732,17 @@ namespace Monica
 	 * Class that holds information about user defined environment parameters.
 	 * @author Xenia Specka
 	 */
-	struct DLL_API EnvironmentParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API EnvironmentParameters : public Tools::Json11Serializable {
 		EnvironmentParameters() {}
 
+		EnvironmentParameters(mas::models::monica::EnvironmentParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::EnvironmentParameters::Reader reader);
+
 		EnvironmentParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::EnvironmentParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -687,16 +764,21 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-	  /**
-	   * Class that holds information about user defined soil moisture parameters.
-	   * @author Xenia Specka
-	   */
-	struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable
-	{
+		/**
+		 * Class that holds information about user defined soil moisture parameters.
+		 * @author Xenia Specka
+		 */
+	struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
 		SoilMoistureModuleParameters();
 
+		SoilMoistureModuleParameters(mas::models::monica::SoilMoistureModuleParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SoilMoistureModuleParameters::Reader reader);
+
 		SoilMoistureModuleParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::SoilMoistureModuleParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -735,12 +817,17 @@ namespace Monica
 	 * Class that holds information about user defined soil temperature parameters.
 	 * @author Xenia Specka
 	 */
-	struct DLL_API SoilTemperatureModuleParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API SoilTemperatureModuleParameters : public Tools::Json11Serializable {
 		SoilTemperatureModuleParameters() {}
 
+		SoilTemperatureModuleParameters(mas::models::monica::SoilTemperatureModuleParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SoilTemperatureModuleParameters::Reader reader);
+
 		SoilTemperatureModuleParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::SoilTemperatureModuleParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -766,12 +853,17 @@ namespace Monica
 	 * Class that holds information about user defined soil transport parameters.
 	 * @author Xenia Specka
 	 */
-	struct DLL_API SoilTransportModuleParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API SoilTransportModuleParameters : public Tools::Json11Serializable {
 		SoilTransportModuleParameters() {}
 
+		SoilTransportModuleParameters(mas::models::monica::SoilTransportModuleParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SoilTransportModuleParameters::Reader reader);
+
 		SoilTransportModuleParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::SoilTransportModuleParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -784,68 +876,79 @@ namespace Monica
 
 	//----------------------------------------------------------------------------
 
-  struct DLL_API SticsParameters : public Tools::Json11Serializable {
-    SticsParameters() {}
+	struct DLL_API SticsParameters : public Tools::Json11Serializable {
+		SticsParameters() {}
 
-    SticsParameters(json11::Json object);
-		
-    virtual Tools::Errors merge(json11::Json j);
+		SticsParameters(mas::models::monica::SticsParameters::Reader reader) { deserialize(reader); }
 
-    virtual json11::Json to_json() const;
+		void deserialize(mas::models::monica::SticsParameters::Reader reader);
 
-    bool use_n2o{ false };
-    bool use_nit{ false };
-    bool use_denit{ false };
-    int code_vnit{ 1 };
-    int code_tnit{ 2 };
-    int code_rationit{ 2 };
-    int code_hourly_wfps_nit{ 2 };
-    int code_pdenit{ 1 };
-    int code_ratiodenit{ 2 };
-    int code_hourly_wfps_denit{ 2 };
-    double hminn{ 0.3 };
-    double hoptn{ 0.9 };
-    double pHminnit{ 4.0 }; 
-    double pHmaxnit{ 7.2 };
-    double nh4_min{ 1.0 }; // [mg NH4-N/kg soil]
-    double pHminden{ 7.2 }; 
-    double pHmaxden{ 9.2 };
-    double wfpsc{ 0.62 }; 
-    double tdenitopt_gauss{ 47 }; // [�C]
-    double scale_tdenitopt{ 25 }; // [�C]
-    double Kd{ 148 }; // [mg NO3-N/L]
-    double k_desat{ 3.0 }; // [1/day]
-    double fnx{ 0.8 }; // [1/day]
-    double vnitmax{ 27.3 }; // [mg NH4-N/kg soil/day]
-    double Kamm{ 24 }; // [mg NH4-N/L]
-    double tnitmin{ 5.0 }; // [�C]
-    double tnitopt{ 30.0 }; // [�C]
-    double tnitop2{ 35.0 }; // [�C]
-    double tnitmax{ 58.0 }; // [�C]
-    double tnitopt_gauss{ 32.5 }; // [�C]
-    double scale_tnitopt{ 16.0 }; // [�C]
-    double rationit{ 0.0016 }; 
-    double cmin_pdenit{ 1.0 }; // [% [0-100]]
-    double cmax_pdenit{ 6.0 }; // [% [0-100]]
-    double min_pdenit{ 1.0 }; // [mg N/Kg soil/day]
-    double max_pdenit{ 20.0 }; // [mg N/kg soil/day]
-    double ratiodenit{ 0.2 }; 
-    double profdenit{ 20 }; // [cm]
-    double vpotdenit{ 2.0 }; // [kg N/ha/day]
-  };
+		SticsParameters(json11::Json object);
 
-  //----------------------------------------------------------------------------
+		void serialize(mas::models::monica::SticsParameters::Builder builder) const;
+
+		virtual Tools::Errors merge(json11::Json j);
+
+		virtual json11::Json to_json() const;
+
+		bool use_n2o{ false };
+		bool use_nit{ false };
+		bool use_denit{ false };
+		int code_vnit{ 1 };
+		int code_tnit{ 2 };
+		int code_rationit{ 2 };
+		int code_hourly_wfps_nit{ 2 };
+		int code_pdenit{ 1 };
+		int code_ratiodenit{ 2 };
+		int code_hourly_wfps_denit{ 2 };
+		double hminn{ 0.3 };
+		double hoptn{ 0.9 };
+		double pHminnit{ 4.0 };
+		double pHmaxnit{ 7.2 };
+		double nh4_min{ 1.0 }; // [mg NH4-N/kg soil]
+		double pHminden{ 7.2 };
+		double pHmaxden{ 9.2 };
+		double wfpsc{ 0.62 };
+		double tdenitopt_gauss{ 47 }; // [°C]
+		double scale_tdenitopt{ 25 }; // [°C]
+		double Kd{ 148 }; // [mg NO3-N/L]
+		double k_desat{ 3.0 }; // [1/day]
+		double fnx{ 0.8 }; // [1/day]
+		double vnitmax{ 27.3 }; // [mg NH4-N/kg soil/day]
+		double Kamm{ 24 }; // [mg NH4-N/L]
+		double tnitmin{ 5.0 }; // [°C]
+		double tnitopt{ 30.0 }; // [°C]
+		double tnitop2{ 35.0 }; // [°C]
+		double tnitmax{ 58.0 }; // [°C]
+		double tnitopt_gauss{ 32.5 }; // [°C]
+		double scale_tnitopt{ 16.0 }; // [°C]
+		double rationit{ 0.0016 };
+		double cmin_pdenit{ 1.0 }; // [% [0-100]]
+		double cmax_pdenit{ 6.0 }; // [% [0-100]]
+		double min_pdenit{ 1.0 }; // [mg N/Kg soil/day]
+		double max_pdenit{ 20.0 }; // [mg N/kg soil/day]
+		double ratiodenit{ 0.2 };
+		double profdenit{ 20 }; // [cm]
+		double vpotdenit{ 2.0 }; // [kg N/ha/day]
+	};
+
+	//----------------------------------------------------------------------------
 
 	/**
 	 * Class that holds information about user-defined soil organic parameters.
 	 * @author Claas Nendel
 	 */
-	struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable
-	{
+	struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
 		SoilOrganicModuleParameters() {}
 
+		SoilOrganicModuleParameters(mas::models::monica::SoilOrganicModuleParameters::Reader reader) { deserialize(reader); }
+
+		void deserialize(mas::models::monica::SoilOrganicModuleParameters::Reader reader);
+
 		SoilOrganicModuleParameters(json11::Json object);
-		
+
+		void serialize(mas::models::monica::SoilOrganicModuleParameters::Builder builder) const;
+
 		virtual Tools::Errors merge(json11::Json j);
 
 		virtual json11::Json to_json() const;
@@ -887,7 +990,7 @@ namespace Monica
 		double po_Inhibitor_NH3{ 1.0 }; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
 		double ps_MaxMineralisationDepth{ 0.4 };
 
-    SticsParameters sticsParams;
+		SticsParameters sticsParams;
 	};
 
 	//----------------------------------------------------------------------------
@@ -899,8 +1002,7 @@ namespace Monica
 	 *
 	 * @author Xenia Specka
 	 */
-	class DLL_API CentralParameterProvider : public Tools::Json11Serializable
-	{
+	class DLL_API CentralParameterProvider : public Tools::Json11Serializable {
 	public:
 		CentralParameterProvider();
 
@@ -929,8 +1031,7 @@ namespace Monica
 		//bool writeOutputFiles() const { return _writeOutputFiles; }
 		//void setWriteOutputFiles(bool write) { _writeOutputFiles = write; }
 
-		std::string pathToOutputDir() const
-		{
+		std::string pathToOutputDir() const {
 			return _pathToOutputDir.empty() ? "./" : _pathToOutputDir;
 		}
 		void setPathToOutputDir(std::string path) { _pathToOutputDir = path; }
