@@ -144,9 +144,9 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 	_climateData.resize(reader.getClimateData().size());
 	{
 		uint i = 0;
-		for (auto& mapList : reader.getClimateData()) {
+		for (const auto& mapList : reader.getClimateData()) {
 			auto& acd2val = _climateData[i++];
-			for (auto& readAcd2Val : mapList) {
+			for (const auto& readAcd2Val : mapList) {
 				acd2val[Climate::ACD(readAcd2Val.getAcd())] = readAcd2Val.getValue();
 			}
 		}
