@@ -75,8 +75,8 @@ int main(int argc, char** argv)
 			<< " -v   | --version ... outputs " << appName << " version" << endl
 			<< endl
 			<< " -d   | --debug ... show debug outputs" << endl
-			//<< " -sd  | --start-date ISO-DATE (default: start of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
-			//<< " -ed  | --end-date ISO-DATE (default: end of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " -sd  | --start-date ISO-DATE (default: start of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
+			<< " -ed  | --end-date ISO-DATE (default: end of given climate data) ... date in iso-date-format yyyy-mm-dd" << endl
 			<< " -w   | --write-output-files ... write MONICA output files" << endl
 			<< " -op  | --path-to-output DIRECTORY (default: .) ... path to output directory" << endl
 			<< " -o   | --path-to-output-file FILE ... path to output file" << endl
@@ -93,12 +93,12 @@ int main(int argc, char** argv)
 			string arg = argv[i];
 			if(arg == "-d" || arg == "--debug")
 				debug = debugSet = true;
-			//else if((arg == "-sd" || arg == "--start-date")
-			//				&& i + 1 < argc)
-			//	startDate = argv[++i];
-			//else if((arg == "-ed" || arg == "--end-date")
-			//				&& i + 1 < argc)
-			//	endDate = argv[++i];
+			else if((arg == "-sd" || arg == "--start-date")
+							&& i + 1 < argc)
+				startDate = argv[++i];
+			else if((arg == "-ed" || arg == "--end-date")
+							&& i + 1 < argc)
+				endDate = argv[++i];
 			else if((arg == "-op" || arg == "--path-to-output")
 			        && i+1 < argc)
 				pathToOutput = argv[++i];
@@ -134,12 +134,11 @@ int main(int argc, char** argv)
 				cerr << e << endl;
 		auto simm = simj.result.object_items();
 
-		//if(!startDate.empty())
-		//	simm["start-date"] = startDate;
-
-		//if(!endDate.empty())
-		//	simm["end-date"] = endDate;
-
+		auto csvos = simm["climate.csv-options"].object_items();
+		if (!startDate.empty()) csvos["start-date"] = startDate;
+		if (!endDate.empty()) csvos["end-date"] = endDate;
+		simm["climate.csv-options"] = csvos;
+		
 		if(debugSet)
 			simm["debug?"] = debug;
 
