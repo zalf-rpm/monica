@@ -1,5 +1,5 @@
 {
-	"crop.json": "crop-min.json",
+	"crop.json": "crop-ser.json",
 	"site.json": "site-min.json",
 	"climate.csv": "climate-min.csv",
 
@@ -8,33 +8,32 @@
 		"csv-separator": ",",
 		"_start-date": "1991-01-01",
 		"_end-date": "1991-12-31",
-		"start-date": "1992-01-01",
-		"end-date": "1992-12-31"
+		"start-date": "1991-01-01",
+		"end-date": "1997-12-31"
 	},
 	
 	"debug?": false,
 	"include-file-base-path": "${MONICA_PARAMETERS}/",
 
-	"serializeMonicaStateAtEnd": true,
+	"serializeMonicaStateAtEnd": false,
 	"loadSerializedMonicaStateAtStart": true,
 	"noOfPreviousDaysSerializedClimateData": 20,
 	"pathToSerializationFile": "C:/tmp/monicaStateSerialized.capnp",
 
 	"output": { 
-	  "write-file?": true,
+	  "write-file?": false,
 
 		"path-to-output": "./",
 		"file-name": "sim-min-out.csv",
 	
 		"csv-options": {
-			"include-header-row": true,
-			"include-units-row": true,
+			"include-header-row": false,
+			"include-units-row": false,
 			"include-aggregation-rows": false,
 			"csv-separator": ","
 		},
 		
 		"events" : [
-			
 			"daily", [
 				"Date", 
 				"Crop", 
@@ -50,25 +49,7 @@
 				["SOC", [1, 3]], 
 				"Tavg", 
 				"Globrad"
-			],
-
-			"crop", [
-				"CM-count",
-				"Crop",
-				["Yield", "LAST"],
-				["Date|sowing", "FIRST"],
-				["Date|harvest", "LAST"]
-			],
-
-			"yearly", [
-				"Year", 
-				["N", [1, 3]], 
-				["RunOff", "SUM"], 
-				["NLeach", "SUM"], 
-				["Recharge", "SUM"]
-			],
-
-			"run", [["Precip", "SUM"]]
+			]
 		]
 	},
 
