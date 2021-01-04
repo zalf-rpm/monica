@@ -101,6 +101,7 @@ Errors Workstep::merge(json11::Json j)
 	}
 	set_int_value(_applyNoOfDaysAfterEvent, j, "days");
 	set_string_value(_afterEvent, j, "after");
+	set_bool_value(_runAtStartOfDay, j, "runAtStartOfDay");
 
 	return res;
 }
@@ -112,6 +113,7 @@ json11::Json Workstep::to_json() const
 	,{"date", date().toIsoDateString()}
 	,{"days", _applyNoOfDaysAfterEvent}
 	,{"after", _afterEvent}
+  ,{"runAtStartOfDay", _runAtStartOfDay}
 	};
 }
 
@@ -137,19 +139,14 @@ bool Workstep::applyWithPossibleCondition(MonicaModel* model)
 
 bool Workstep::condition(MonicaModel* model)
 {
-	if (_afterEvent == ""
-		|| _applyNoOfDaysAfterEvent <= 0)
-		return false;
+	if (_afterEvent == "" || _applyNoOfDaysAfterEvent <= 0) return false;
 
-	auto currEvents = model->currentEvents();
-	auto prevEvents = model->previousDaysEvents();
+	const auto& currEvents = model->currentEvents();
+	const auto& prevEvents = model->previousDaysEvents();
 
 	auto ceit = currEvents.find(_afterEvent);
-	if (_daysAfterEventCount > 0)
-		_daysAfterEventCount++;
-	else if (ceit != currEvents.end()
-		|| prevEvents.find(_afterEvent) != prevEvents.end())
-		_daysAfterEventCount = 1;
+	if (_daysAfterEventCount > 0) _daysAfterEventCount++;
+	else if (ceit != currEvents.end() || prevEvents.find(_afterEvent) != prevEvents.end()) _daysAfterEventCount = 1;
 
 	return _daysAfterEventCount == _applyNoOfDaysAfterEvent;
 }
@@ -1076,13 +1073,16 @@ bool SetValue::apply(MonicaModel* model)
 SaveMonicaState::SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile)
 	: Workstep(at)
 	, _pathToSerializedStateFile(pathToSerializedStateFile)
-{}
+{
+	_runAtStartOfDay = false; // by default run at the end of the day
+}
 
 SaveMonicaState::SaveMonicaState(json11::Json j) {
 	merge(j);
 }
 
 Errors SaveMonicaState::merge(json11::Json j) {
+	_runAtStartOfDay = false; // by default run at the end of the day
 	Errors res = Workstep::merge(j);
 	set_string_value(_pathToSerializedStateFile, j, "pathToSerializedStateFile");
 	return res;
@@ -1194,6 +1194,8 @@ WSPtr Monica::makeWorkstep(json11::Json j)
 		return make_shared<Irrigation>(j);
 	else if (type == "SetValue")
 		return make_shared<SetValue>(j);
+	else if (type == "SaveMonicaState")
+		return make_shared<SaveMonicaState>(j);
 
 	return WSPtr();
 }
@@ -1313,14 +1315,13 @@ void CultivationMethod::absApply(const Date& date,
 		ws->apply(model);
 }
 
-void CultivationMethod::apply(MonicaModel* model)
+void CultivationMethod::apply(MonicaModel* model, bool runOnlyAtStartOfDayWorksteps)
 {
-	auto& udws = _unfinishedDynamicWorksteps;
-	udws.erase(remove_if(udws.begin(), udws.end(),
-		[model](WSPtr wsp)
-	{
-		return wsp->applyWithPossibleCondition(model);
-	}), udws.end());
+  auto& udws = _unfinishedDynamicWorksteps;
+  udws.erase(remove_if(udws.begin(), udws.end(),
+    [model, runOnlyAtStartOfDayWorksteps](WSPtr wsp) {
+      return runOnlyAtStartOfDayWorksteps == wsp->runAtStartOfDay() ? wsp->applyWithPossibleCondition(model) : false;
+    }), udws.end());
 }
 
 Date CultivationMethod::nextDate(const Date& date) const

@@ -101,13 +101,16 @@ namespace Monica
 			return std::function<double(MonicaModel*)>(); 
 		};
 
+		bool runAtStartOfDay() const { return _runAtStartOfDay; }
+
 	protected:
-		Tools::Date _date;
-		Tools::Date _absDate;
-		int _applyNoOfDaysAfterEvent{0};
-		std::string _afterEvent;
-		int _daysAfterEventCount{0};
-		bool _isActive{true};
+    Tools::Date _date;
+    Tools::Date _absDate;
+    int _applyNoOfDaysAfterEvent{ 0 };
+    std::string _afterEvent;
+    int _daysAfterEventCount{ 0 };
+    bool _isActive{ true };
+		bool _runAtStartOfDay{ true };
 	};
 
   typedef std::shared_ptr<Workstep> WSPtr;
@@ -618,7 +621,7 @@ namespace Monica
 
 		void absApply(const Tools::Date& date, MonicaModel* model) const;
 
-		void apply(MonicaModel* model);
+		void apply(MonicaModel* model, bool runOnlyAtStartOfDayWorksteps);
 
 		Tools::Date nextDate(const Tools::Date & date) const;
 

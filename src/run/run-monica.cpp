@@ -860,6 +860,7 @@ Output Monica::runMonica(Env env)
 
 	vector<StoreData> store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
 	
+	monica->addEvent("run-started");
 	for(size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
@@ -881,9 +882,9 @@ Output Monica::runMonica(Env env)
 		if(monica->cropGrowth() && monica->cropGrowth()->isDying())
 			monica->incorporateCurrentCrop();
 
-		//try to apply dynamic worksteps
+		//try to apply dynamic worksteps marked to run before everything else that day
 		if(currentCM)
-			currentCM->apply(monica.get());
+			currentCM->apply(monica.get(), true);
 
 		//apply worksteps and cycle through crop rotation
 		if(currentCM && nextAbsoluteCMApplicationDate == currentDate)
@@ -905,6 +906,10 @@ Output Monica::runMonica(Env env)
 		// values into account by applying a daily function
 		for (auto& f : applyDailyFuncs)
 			f();
+
+		//try to apply dynamic worksteps marked to run AFTER everything else that day
+		if (currentCM)
+			currentCM->apply(monica.get(), false);
 
 		//store results
 		for(auto& s : store)
