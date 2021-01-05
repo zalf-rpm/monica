@@ -314,7 +314,6 @@ void MonicaModel::seedCrop(Crop* crop)
  */
 void MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonManagementData optCarbMgmtData)
 {
-	//could be just a fallow, so there might be no CropModule object
 	if (_currentCropModule)
   {
     if(exported)
@@ -438,13 +437,12 @@ void MonicaModel::harvestCurrentCrop(bool exported, Harvest::OptCarbonManagement
  */
 void MonicaModel::incorporateCurrentCrop()
 {
-  //could be just a fallow, so there might be no CropModule object
   if(_currentCropModule)
   {
     //prepare to add root and crop residues to soilorganic (AOMs)
-	double total_biomass = _currentCropModule->totalBiomass();
+    double total_biomass = _currentCropModule->totalBiomass();
     double totalNContent = _currentCropModule->get_AbovegroundBiomassNContent() + _currentCropModule->get_RootNConcentration() * _currentCropModule->get_OrganBiomass(0);
-	double totalNConcentration = totalNContent / total_biomass;
+    double totalNConcentration = totalNContent / total_biomass;
 
     debug() << "Adding organic matter from total biomass of crop to soilOrganic" << endl;
     debug() << "Total biomass: " << total_biomass << endl
