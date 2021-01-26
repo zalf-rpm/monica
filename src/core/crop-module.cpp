@@ -5382,6 +5382,8 @@ CropModule::getEffectiveRootingDepth() const
 */
 void CropModule::fc_UpdateCropParametersForPerennial()
 {
+	if (!perennialCropParams) return;
+
 	pc_AbovegroundOrgan = perennialCropParams->speciesParams.pc_AbovegroundOrgan;
 	pc_AssimilatePartitioningCoeff = perennialCropParams->cultivarParams.pc_AssimilatePartitioningCoeff;
 	pc_AssimilateReallocation = perennialCropParams->speciesParams.pc_AssimilateReallocation;
