@@ -96,6 +96,40 @@ DataAccessor fromCapnpData(
   return da;
 }
 
+J11Array fromCapnpSoilProfile(rpc::Soil::Profile::Reader profile) {
+  J11Array ls;
+  for (const auto& layer : profile.getLayers()) {
+    J11Object l;
+    l["Thickness"] = layer.getSize();
+    for (const auto& prop : layer.getProperties()) {
+      switch (prop.getName()) {
+      case rpc::Soil::PropertyName::SAND: l["Sand"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::CLAY: l["Clay"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::SILT: l["Silt"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::ORGANIC_CARBON: l["SoilOrganicCarbon"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::ORGANIC_MATTER: l["SoilOrganicMatter"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::BULK_DENSITY: l["SoilBulkDensity"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::RAW_DENSITY: l["SoilRawDensity"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::P_H: l["pH"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::SOIL_TYPE: l["KA5TextureClass"] = prop.getType(); break;
+      case rpc::Soil::PropertyName::PERMANENT_WILTING_POINT: l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::FIELD_CAPACITY: l["FieldCapacity"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::SATURATION: l["PoreVolume"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT: l["Lambda"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::SCELETON: l["Sceleton"] = prop.getF32Value() / 100.0; break;
+      case rpc::Soil::PropertyName::AMMONIUM: l["SoilAmmonium"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::NITRATE: l["SoilNitrate"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::CN_RATIO: l["CN"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::SOIL_MOISTURE: l["SoilMoisturePercentFC"] = prop.getF32Value(); break;
+      case rpc::Soil::PropertyName::IN_GROUNDWATER: l["is_in_groundwater"] = prop.getBValue(); break;
+      case rpc::Soil::PropertyName::IMPENETRABLE: l["is_impenetrable"] = prop.getBValue(); break;
+      }
+    }
+    ls.push_back(l);
+  }
+  return ls;
+}
+
 kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
 {
   auto rs = context.getResults();
@@ -123,6 +157,12 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
 
     Env env;
     auto errors = env.merge(envJson);
+
+    //if we got a capnproto soil profile in the message, overwrite an existing profile by that one
+    if (envR.hasSoilProfile()) {
+      auto layers = fromCapnpSoilProfile(envR.getSoilProfile());
+      env.params.siteParameters.merge(J11Object{ {"SoilProfileParameters", layers} });
+    }
 
     EResult<DataAccessor> eda;
     if (da.isValid()) {
