@@ -404,6 +404,7 @@ void CultivarParameters::deserialize(mas::models::monica::CultivarParameters::Re
   pc_MinTempDev_WE = reader.getMinTempDevWE();
   pc_OptTempDev_WE = reader.getOptTempDevWE();
   pc_MaxTempDev_WE = reader.getMaxTempDevWE();
+  winterCrop = reader.getWinterCrop();
 }
 
 void CultivarParameters::serialize(mas::models::monica::CultivarParameters::Builder builder) const {
@@ -456,6 +457,7 @@ void CultivarParameters::serialize(mas::models::monica::CultivarParameters::Buil
   builder.setMinTempDevWE(pc_MinTempDev_WE);
   builder.setOptTempDevWE(pc_OptTempDev_WE);
   builder.setMaxTempDevWE(pc_MaxTempDev_WE);
+  builder.setWinterCrop(winterCrop);
 }
 
 Errors CultivarParameters::merge(json11::Json j)
@@ -506,6 +508,7 @@ Errors CultivarParameters::merge(json11::Json j)
   set_double_value(pc_LowTemperatureExposure, j, "LowTemperatureExposure");
   set_double_value(pc_RespiratoryStress, j, "RespiratoryStress");
   set_int_value(pc_LatestHarvestDoy, j, "LatestHarvestDoy");
+  set_bool_value(winterCrop, j, "WinterCrop");
 
 	if(j["AssimilatePartitioningCoeff"].is_array())
 	{
@@ -585,6 +588,7 @@ json11::Json CultivarParameters::to_json() const
   ,{ "MinTempDev_WE", pc_MinTempDev_WE }
   ,{ "OptTempDev_WE", pc_OptTempDev_WE }
   ,{ "MaxTempDev_WE", pc_MaxTempDev_WE }
+  ,{ "WinterCrop", winterCrop }
   };
 
   return cultivar;

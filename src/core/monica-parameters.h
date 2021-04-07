@@ -243,6 +243,8 @@ namespace Monica {
 		double pc_MinTempDev_WE{ 0.0 };
 		double pc_OptTempDev_WE{ 0.0 };
 		double pc_MaxTempDev_WE{ 0.0 };
+
+		bool winterCrop{ false };
 	};
 
 	typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;

@@ -240,10 +240,10 @@ bool Crop::isWinterCrop() const
 {
 	if(_isWinterCrop.isValue())
 		return _isWinterCrop.value();
-	else if(seedDate().isValid() && harvestDate().isValid())
-		return seedDate().dayOfYear() > harvestDate().dayOfYear();
-
-	return false;
+	return cropParameters().cultivarParams.winterCrop;
+	//else if(seedDate().isValid() && harvestDate().isValid())
+	//	return seedDate().dayOfYear() > harvestDate().dayOfYear();
+	//return false;
 }
 
 bool Crop::isPerennialCrop() const
