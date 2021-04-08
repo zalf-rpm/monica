@@ -153,10 +153,10 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 	}
 
 	_currentEvents.clear();
-	_currentEvents.insert(reader.getCurrentEvents().begin(), reader.getCurrentEvents().end());
+	for(auto s : reader.getCurrentEvents()) _currentEvents.insert(s);
 
 	_previousDaysEvents.clear();
-	_previousDaysEvents.insert(reader.getPreviousDaysEvents().begin(), reader.getPreviousDaysEvents().end());
+	for(auto s : reader.getPreviousDaysEvents()) _previousDaysEvents.insert(s);
 
 	_clearCropUponNextDay = reader.getClearCropUponNextDay();
 
