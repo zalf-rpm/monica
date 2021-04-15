@@ -28,16 +28,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica
 {
-class RunMonicaImpl final : public mas::rpc::Model::EnvInstance<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText>::Server {
+class RunMonicaImpl final : public mas::rpc::model::EnvInstance<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText>::Server {
   // Implementation of the Model::Instance Cap'n Proto interface
   bool _startedServerInDebugMode{ false };
-  mas::rpc::Common::Callback::Client unregister{ nullptr };
+  mas::rpc::common::Callback::Client unregister{ nullptr };
   int idCount{ 0 };
 
 public:
   RunMonicaImpl(bool startedServerInDebugMode = false) : _startedServerInDebugMode(startedServerInDebugMode) {}
 
-  void setUnregister(mas::rpc::Common::Callback::Client unreg) { unregister = unreg; }
+  void setUnregister(mas::rpc::common::Callback::Client unreg) { unregister = unreg; }
 
   kj::Promise<void> info(InfoContext context) override;
 

@@ -188,7 +188,7 @@ namespace Voc
       builder.setSla(sla);
 		}
 		void deserialize(mas::models::monica::Voc::SpeciesData::Reader reader) {
-			id = reader.getId();
+			id = (int)reader.getId();
 			EF_MONO = reader.getEfMonos();
 			EF_MONO = reader.getEfMono();
 			EF_ISO = reader.getEfIso();
@@ -340,7 +340,7 @@ namespace Voc
 	{
 		void serialize(mas::models::monica::Voc::Emissions::Builder builder) const {
 			{
-				auto isos = builder.initSpeciesIdToIsopreneEmission(speciesId_2_isoprene_emission.size());
+				auto isos = builder.initSpeciesIdToIsopreneEmission((uint)speciesId_2_isoprene_emission.size());
 				uint i = 0;
 				for (auto p : speciesId_2_isoprene_emission) {
 					isos[i].setSpeciesId(p.first);
@@ -348,7 +348,7 @@ namespace Voc
 				}
 			}
 			{
-				auto monos = builder.initSpeciesIdToMonoterpeneEmission(speciesId_2_monoterpene_emission.size());
+				auto monos = builder.initSpeciesIdToMonoterpeneEmission((uint)speciesId_2_monoterpene_emission.size());
 				uint i = 0;
 				for (auto p : speciesId_2_monoterpene_emission) {
 					monos[i].setSpeciesId(p.first);
@@ -361,10 +361,10 @@ namespace Voc
 
 		void deserialize(mas::models::monica::Voc::Emissions::Reader reader) {
       speciesId_2_isoprene_emission.clear();
-      for (auto e : reader.getSpeciesIdToIsopreneEmission()) speciesId_2_isoprene_emission[e.getSpeciesId()] = e.getEmission();
+      for (auto e : reader.getSpeciesIdToIsopreneEmission()) speciesId_2_isoprene_emission[(int)e.getSpeciesId()] = e.getEmission();
 
 			speciesId_2_monoterpene_emission.clear();
-			for (auto e : reader.getSpeciesIdToMonoterpeneEmission()) speciesId_2_monoterpene_emission[e.getSpeciesId()] = e.getEmission();
+			for (auto e : reader.getSpeciesIdToMonoterpeneEmission()) speciesId_2_monoterpene_emission[(int)e.getSpeciesId()] = e.getEmission();
 			
 			isoprene_emission = reader.getIsopreneEmission();
 			monoterpene_emission = reader.getMonoterpeneEmission();
@@ -450,7 +450,7 @@ namespace Voc
 	struct  leaf_emission_t
 	{
 		void serialize(mas::models::monica::Voc::LeafEmissionT::Builder builder) const {
-			builder.setFoliageLayer(foliage_layer);
+			builder.setFoliageLayer((uint16_t)foliage_layer);
 			pho.serialize(builder.initPho());
 			fol.serialize(builder.initFol());
 			enz_act.serialize(builder.initEnzAct());

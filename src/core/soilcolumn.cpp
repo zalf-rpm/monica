@@ -125,7 +125,7 @@ void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) 
 void SoilLayer::serialize(mas::models::monica::SoilLayerState::Builder builder) const {
 	builder.setLayerThickness(vs_LayerThickness);
 	builder.setSoilWaterFlux(vs_SoilWaterFlux);
-	setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool(vo_AOM_Pool.size()));
+	setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool((uint)vo_AOM_Pool.size()));
 	builder.setSomSlow(vs_SOM_Slow);
 	builder.setSomFast(vs_SOM_Fast);
 	builder.setSmbSlow(vs_SMB_Slow);
@@ -227,7 +227,7 @@ void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader
 	vt_SoilSurfaceTemperature = reader.getVtSoilSurfaceTemperature();
 	vm_SnowDepth = reader.getVmSnowDepth();
 	ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
-	_vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
+	_vs_NumberOfOrganicLayers = (int)reader.getVsNumberOfOrganicLayers();
 	_vf_TopDressing = reader.getVfTopDressing();
 	_vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
 	_vf_TopDressingDelay = reader.getVfTopDressingDelay();
@@ -239,7 +239,7 @@ void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader
 void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder) const {
 	builder.setVsSurfaceWaterStorage(vs_SurfaceWaterStorage);
 	builder.setVsInterceptionStorage(vs_InterceptionStorage);
-	builder.setVmGroundwaterTable(vm_GroundwaterTable);
+	builder.setVmGroundwaterTable((uint16_t)vm_GroundwaterTable);
 	builder.setVsFluxAtLowerBoundary(vs_FluxAtLowerBoundary);
 	builder.setVqCropNUptake(vq_CropNUptake);
 	builder.setVtSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
@@ -249,9 +249,9 @@ void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder
 	builder.setVfTopDressing(_vf_TopDressing);
 	_vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
 	builder.setVfTopDressingDelay(_vf_TopDressingDelay);
-	setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications(_delayedNMinApplications.size()));
+	setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications((uint)_delayedNMinApplications.size()));
 	builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
-	setComplexCapnpList(*this, builder.initLayers(size()));
+	setComplexCapnpList(*this, builder.initLayers((uint)size()));
 }
 
 
@@ -803,7 +803,7 @@ void SoilColumn::DelayedNMinApplicationParams::deserialize(mas::models::monica::
 	vf_CropNTarget30 = reader.getCropNTarget30();
 	vf_FertiliserMinApplication = reader.getFertiliserMinApplication();
 	vf_FertiliserMaxApplication = reader.getFertiliserMaxApplication();
-	vf_TopDressingDelay = reader.getTopDressingDelay();
+	vf_TopDressingDelay = (int)reader.getTopDressingDelay();
 }
 void SoilColumn::DelayedNMinApplicationParams::serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const {
 	fp.serialize(builder.initFp());

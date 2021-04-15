@@ -52,10 +52,10 @@ using namespace mas::infrastructure::common;
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
-typedef rpc::Model::EnvInstance<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText> MonicaEnvInstance;
+typedef rpc::model::EnvInstance<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText> MonicaEnvInstance;
 
 class RunMonicaProxy;
-class Unregister final : public rpc::Common::Callback::Server
+class Unregister final : public rpc::common::Callback::Server
 {
 public:
 	Unregister(RunMonicaProxy& proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
@@ -71,7 +71,7 @@ private:
 	size_t _monicaServerId;
 };
 
-class RunMonicaProxy final : public rpc::Model::EnvInstanceProxy< mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText>::Server
+class RunMonicaProxy final : public rpc::model::EnvInstanceProxy< mas::rpc::common::StructuredText, mas::rpc::common::StructuredText>::Server
 {
 	friend class Unregister;
 		

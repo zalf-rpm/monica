@@ -57,7 +57,7 @@ void FrostComponent::serialize(mas::models::monica::FrostModuleState::Builder bu
   builder.setNegativeDegreeDays(vm_NegativeDegreeDays);
   builder.setThawDepth(vm_ThawDepth);
   builder.setFrostDays(vm_FrostDays);
-  setCapnpList(vm_LambdaRedux, builder.initLambdaRedux(vm_LambdaRedux.size()));
+  setCapnpList(vm_LambdaRedux, builder.initLambdaRedux((uint)vm_LambdaRedux.size()));
   builder.setTemperatureUnderSnow(vm_TemperatureUnderSnow);
   builder.setHydraulicConductivityRedux(vm_HydraulicConductivityRedux);
   builder.setPtTimeStep(pt_TimeStep);

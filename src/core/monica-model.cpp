@@ -207,12 +207,12 @@ void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder build
 
 	auto cdSize = _climateData.size();
 	auto serMaxDays = min(size_t(_simPs.noOfPreviousDaysSerializedClimateData), cdSize);
-	auto buildCdList = builder.initClimateData(serMaxDays);
+	auto buildCdList = builder.initClimateData((uint)serMaxDays);
 	{
 		uint i = 0;
 		for (size_t j = cdSize - serMaxDays; j < cdSize; j++){
 			auto& map = _climateData[j];
-			auto buildList = buildCdList.init(i++, map.size());
+			auto buildList = buildCdList.init(i++, (uint)map.size());
 			uint k = 0;
 			for (auto& p : map) {
 				auto buildAcd2Val = buildList[k++];
@@ -222,7 +222,7 @@ void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder build
 		}
 	}
 
-	auto buildEvents = builder.initCurrentEvents(_currentEvents.size());
+	auto buildEvents = builder.initCurrentEvents((uint)_currentEvents.size());
 	{
 		uint i = 0;
 		for (auto& e : _currentEvents) {
@@ -230,7 +230,7 @@ void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder build
 		}
 	}
 
-	auto buildPrevEvents = builder.initPreviousDaysEvents(_previousDaysEvents.size());
+	auto buildPrevEvents = builder.initPreviousDaysEvents((uint)_previousDaysEvents.size());
 	{
 		uint i = 0;
 		for (auto& e : _previousDaysEvents) {

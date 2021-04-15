@@ -66,20 +66,20 @@ using namespace mas;
 DataAccessor fromCapnpData(
   const Tools::Date& startDate,
   const Tools::Date& endDate,
-  capnp::List<rpc::Climate::Element>::Reader header,
+  capnp::List<rpc::climate::Element>::Reader header,
   capnp::List<capnp::List<float>>::Reader data) {
-  typedef rpc::Climate::Element E;
+  typedef rpc::climate::Element E;
 
   if (data.size() == 0)
     return DataAccessor();
 
   DataAccessor da(startDate, endDate);
   //vector<double> d(data[0].size());
-  for (int i = 0; i < header.size(); i++) {
+  for (uint i = 0; i < header.size(); i++) {
     auto vs = data[i];
     std::vector<double> d(data[0].size());
     //transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
-    for (int k = 0; k < vs.size(); k++)
+    for (uint k = 0; k < vs.size(); k++)
       d[k] = vs[k];
     switch (header[i]) {
       case E::TMIN: da.addClimateData(ACD::tmin, std::move(d)); break;
@@ -96,33 +96,33 @@ DataAccessor fromCapnpData(
   return da;
 }
 
-J11Array fromCapnpSoilProfile(rpc::Soil::Profile::Reader profile) {
+J11Array fromCapnpSoilProfile(rpc::soil::Profile::Reader profile) {
   J11Array ls;
   for (const auto& layer : profile.getLayers()) {
     J11Object l;
     l["Thickness"] = layer.getSize();
     for (const auto& prop : layer.getProperties()) {
       switch (prop.getName()) {
-      case rpc::Soil::PropertyName::SAND: l["Sand"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::CLAY: l["Clay"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::SILT: l["Silt"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::ORGANIC_CARBON: l["SoilOrganicCarbon"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::ORGANIC_MATTER: l["SoilOrganicMatter"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::BULK_DENSITY: l["SoilBulkDensity"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::RAW_DENSITY: l["SoilRawDensity"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::P_H: l["pH"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::SOIL_TYPE: l["KA5TextureClass"] = prop.getType(); break;
-      case rpc::Soil::PropertyName::PERMANENT_WILTING_POINT: l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::FIELD_CAPACITY: l["FieldCapacity"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::SATURATION: l["PoreVolume"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT: l["Lambda"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::SCELETON: l["Sceleton"] = prop.getF32Value() / 100.0; break;
-      case rpc::Soil::PropertyName::AMMONIUM: l["SoilAmmonium"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::NITRATE: l["SoilNitrate"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::CN_RATIO: l["CN"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::SOIL_MOISTURE: l["SoilMoisturePercentFC"] = prop.getF32Value(); break;
-      case rpc::Soil::PropertyName::IN_GROUNDWATER: l["is_in_groundwater"] = prop.getBValue(); break;
-      case rpc::Soil::PropertyName::IMPENETRABLE: l["is_impenetrable"] = prop.getBValue(); break;
+      case rpc::soil::PropertyName::SAND: l["Sand"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::CLAY: l["Clay"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::SILT: l["Silt"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::ORGANIC_CARBON: l["SoilOrganicCarbon"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::ORGANIC_MATTER: l["SoilOrganicMatter"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::BULK_DENSITY: l["SoilBulkDensity"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::RAW_DENSITY: l["SoilRawDensity"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::P_H: l["pH"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::SOIL_TYPE: l["KA5TextureClass"] = prop.getType(); break;
+      case rpc::soil::PropertyName::PERMANENT_WILTING_POINT: l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::FIELD_CAPACITY: l["FieldCapacity"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::SATURATION: l["PoreVolume"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT: l["Lambda"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::SCELETON: l["Sceleton"] = prop.getF32Value() / 100.0; break;
+      case rpc::soil::PropertyName::AMMONIUM: l["SoilAmmonium"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::NITRATE: l["SoilNitrate"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::CN_RATIO: l["CN"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::SOIL_MOISTURE: l["SoilMoisturePercentFC"] = prop.getF32Value(); break;
+      case rpc::soil::PropertyName::IN_GROUNDWATER: l["is_in_groundwater"] = prop.getBValue(); break;
+      case rpc::soil::PropertyName::IMPENETRABLE: l["is_impenetrable"] = prop.getBValue(); break;
       }
     }
     ls.push_back(l);

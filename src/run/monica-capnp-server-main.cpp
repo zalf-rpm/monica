@@ -53,8 +53,8 @@ using namespace mas::infrastructure::common;
 string appName = "monica-capnp-server";
 string version = "1.0.0-beta";
 
-typedef rpc::Model::EnvInstance<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText> MonicaEnvInstance;
-typedef rpc::Model::EnvInstanceProxy<mas::rpc::Common::StructuredText, mas::rpc::Common::StructuredText> MonicaEnvInstanceProxy;
+typedef rpc::model::EnvInstance<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText> MonicaEnvInstance;
+typedef rpc::model::EnvInstanceProxy<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText> MonicaEnvInstanceProxy;
 
 int main(int argc, const char* argv[]) {
 
@@ -173,7 +173,7 @@ int main(int argc, const char* argv[]) {
     MonicaEnvInstance::Client runMonicaImplClient = kj::mv(runMonicaImpl_); // kj::heap<RunMonicaImpl>(startedServerInDebugMode);
     debug() << "created monica" << endl;
 
-    mas::rpc::Common::Callback::Client unregister(nullptr);
+    mas::rpc::common::Callback::Client unregister(nullptr);
 
     if (connectToProxy) {
       //create client connection to proxy
