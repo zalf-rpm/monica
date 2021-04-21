@@ -228,6 +228,11 @@ int main(int argc, char** argv)
 
 		auto env = createEnvFromJsonConfigFiles(ps);
 
+		env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+			[](string soilTexture, size_t distance) {
+			return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+		};
+
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
 
