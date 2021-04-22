@@ -17,7 +17,7 @@ WORKDIR ${WORK_DIR}
 RUN git clone https://github.com/zalf-rpm/build-pipeline.git
 RUN git clone https://github.com/zalf-rpm/monica.git
 RUN git clone https://github.com/zalf-rpm/util.git
-RUN git clone https://github.com/zalf-rpm/capnproto_schemas.git
+RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 
 WORKDIR ${WORK_DIR}/build-pipeline/buildscripts
 RUN sh linux-prepare-vcpkg.sh
