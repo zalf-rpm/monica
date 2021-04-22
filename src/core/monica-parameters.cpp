@@ -658,7 +658,7 @@ MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j)
   merge(j);
 }
 
-void MineralFertilizerParameters::deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader) {
+void MineralFertilizerParameters::deserialize(mas::rpc::management::Params::MineralFertilization::Parameters::Reader reader) {
   id = reader.getId();
   name = reader.getName();
   vo_Carbamid = reader.getCarbamid();
@@ -666,7 +666,7 @@ void MineralFertilizerParameters::deserialize(mas::models::monica::MineralFertil
   vo_NO3 = reader.getNo3();
 }
 
-void MineralFertilizerParameters::serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const {
+void MineralFertilizerParameters::serialize(mas::rpc::management::Params::MineralFertilization::Parameters::Builder builder) const {
   builder.setId(id);
   builder.setName(name);
   builder.setCarbamid(vo_Carbamid);
@@ -759,12 +759,12 @@ IrrigationParameters::IrrigationParameters(json11::Json j)
   merge(j);
 }
 
-void IrrigationParameters::deserialize(mas::models::monica::IrrigationParameters::Reader reader) {
+void IrrigationParameters::deserialize(mas::rpc::management::Params::Irrigation::Parameters::Reader reader) {
   nitrateConcentration = reader.getNitrateConcentration();
   sulfateConcentration = reader.getSulfateConcentration();
 }
 
-void IrrigationParameters::serialize(mas::models::monica::IrrigationParameters::Builder builder) const {
+void IrrigationParameters::serialize(mas::rpc::management::Params::Irrigation::Parameters::Builder builder) const {
   builder.setNitrateConcentration(nitrateConcentration);
   builder.setSulfateConcentration(sulfateConcentration);
 }
@@ -1147,7 +1147,7 @@ json11::Json NMinCropParameters::to_json() const
 
 //------------------------------------------------------------------------------
 
-void OrganicMatterParameters::deserialize(mas::models::monica::OrganicMatterParameters::Reader reader) {
+void OrganicMatterParameters::deserialize(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
   vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
   vo_AOM_NH4Content = reader.getAomNH4Content();
   vo_AOM_NO3Content = reader.getAomNO3Content();
@@ -1163,7 +1163,7 @@ void OrganicMatterParameters::deserialize(mas::models::monica::OrganicMatterPara
   vo_NConcentration = reader.getNConcentration();
 }
 
-void OrganicMatterParameters::serialize(mas::models::monica::OrganicMatterParameters::Builder builder) const {
+void OrganicMatterParameters::serialize(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
   builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
   builder.setAomNH4Content(vo_AOM_NH4Content);
   builder.setAomNO3Content(vo_AOM_NO3Content);
@@ -1227,13 +1227,13 @@ json11::Json OrganicMatterParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void OrganicFertilizerParameters::deserialize(mas::models::monica::OrganicFertilizerParameters::Reader reader) {
+void OrganicFertilizerParameters::deserialize(mas::rpc::management::Params::OrganicFertilization::Parameters::Reader reader) {
   OrganicMatterParameters::deserialize(reader.getParams());
   id = reader.getId();
   name = reader.getName();
 }
 
-void OrganicFertilizerParameters::serialize(mas::models::monica::OrganicFertilizerParameters::Builder builder) const {
+void OrganicFertilizerParameters::serialize(mas::rpc::management::Params::OrganicFertilization::Parameters::Builder builder) const {
   OrganicMatterParameters::serialize(builder.initParams());
   builder.setId(id);
   builder.setName(name);

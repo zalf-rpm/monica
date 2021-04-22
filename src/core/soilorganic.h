@@ -33,7 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 #include <list>
 
-#include "monica/monica_state.capnp.h"
+#include "models/monica/monica_state.capnp.h"
 #include "monica-parameters.h"
 
 namespace Monica

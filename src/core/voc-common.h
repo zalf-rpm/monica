@@ -35,7 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <limits>
 
 #include "common/common-typedefs.h"
-#include "monica/monica_params.capnp.h"
+#include "models/monica/monica_params.capnp.h"
 
 namespace Voc
 {

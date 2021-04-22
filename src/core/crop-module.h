@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <utility>
 
-#include "monica/monica_state.capnp.h"
+#include "models/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
 #include "soilcolumn.h"

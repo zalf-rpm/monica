@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/serialize.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
-#include "monica/monica_state.capnp.h"
+#include "models/monica/monica_state.capnp.h"
 
 #include "run-monica.h"
 #include "tools/debug.h"

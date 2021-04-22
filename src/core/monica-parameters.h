@@ -32,7 +32,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "monica/monica_params.capnp.h"
+#include "models/monica/monica_params.capnp.h"
+#include "management.capnp.h"
 
 #include "common/dll-exports.h"
 #include "climate/climate-common.h"
@@ -291,9 +292,9 @@ namespace Monica {
 	public:
 		MineralFertilizerParameters() {}
 
-		MineralFertilizerParameters(mas::models::monica::MineralFertilizerParameters::Reader reader) { deserialize(reader); }
+		MineralFertilizerParameters(mas::rpc::management::Params::MineralFertilization::Parameters::Reader reader) { deserialize(reader); }
 
-		void deserialize(mas::models::monica::MineralFertilizerParameters::Reader reader);
+		void deserialize(mas::rpc::management::Params::MineralFertilization::Parameters::Reader reader);
 
 		MineralFertilizerParameters(json11::Json object);
 
@@ -303,7 +304,7 @@ namespace Monica {
 			double no3,
 			double nh4);
 
-		void serialize(mas::models::monica::MineralFertilizerParameters::Builder builder) const;
+		void serialize(mas::rpc::management::Params::MineralFertilization::Parameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -378,13 +379,13 @@ namespace Monica {
 
 		IrrigationParameters(double nitrateConcentration, double sulfateConcentration);
 
-		IrrigationParameters(mas::models::monica::IrrigationParameters::Reader reader) { deserialize(reader); }
+		IrrigationParameters(mas::rpc::management::Params::Irrigation::Parameters::Reader reader) { deserialize(reader); }
 
-		void deserialize(mas::models::monica::IrrigationParameters::Reader reader);
+		void deserialize(mas::rpc::management::Params::Irrigation::Parameters::Reader reader);
 
 		IrrigationParameters(json11::Json object);
 
-		void serialize(mas::models::monica::IrrigationParameters::Builder builder) const;
+		void serialize(mas::rpc::management::Params::Irrigation::Parameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -555,13 +556,13 @@ namespace Monica {
 	struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
 		OrganicMatterParameters() {}
 
-		OrganicMatterParameters(mas::models::monica::OrganicMatterParameters::Reader reader) { deserialize(reader); }
+		OrganicMatterParameters(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) { deserialize(reader); }
 
-		void deserialize(mas::models::monica::OrganicMatterParameters::Reader reader);
+		void deserialize(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader);
 
 		OrganicMatterParameters(json11::Json object);
 
-		void serialize(mas::models::monica::OrganicMatterParameters::Builder builder) const;
+		void serialize(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
@@ -594,13 +595,13 @@ namespace Monica {
 	struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
 		OrganicFertilizerParameters() {}
 
-		OrganicFertilizerParameters(mas::models::monica::OrganicFertilizerParameters::Reader reader) { deserialize(reader); }
+		OrganicFertilizerParameters(mas::rpc::management::Params::OrganicFertilization::Parameters::Reader reader) { deserialize(reader); }
 
-		void deserialize(mas::models::monica::OrganicFertilizerParameters::Reader reader);
+		void deserialize(mas::rpc::management::Params::OrganicFertilization::Parameters::Reader reader);
 
 		OrganicFertilizerParameters(json11::Json object);
 
-		void serialize(mas::models::monica::OrganicFertilizerParameters::Builder builder) const;
+		void serialize(mas::rpc::management::Params::OrganicFertilization::Parameters::Builder builder) const;
 
 		virtual Tools::Errors merge(json11::Json j);
 
