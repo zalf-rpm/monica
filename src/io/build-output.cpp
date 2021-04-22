@@ -919,7 +919,7 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.get_AtmosphericO3Concentration(), 0);
 			});
 
-			build({ id++, "Groundw", "m", "" },
+			build({ id++, "Groundw", "m", "rounded according to interna usage" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.get_GroundwaterDepth(), 2);
@@ -1531,6 +1531,14 @@ BOTRes& Monica::buildOutputTable()
         [](const MonicaModel& monica, OId oid) {
           return monica.cropGrowth() ? monica.cropGrowth()->rootingZone() : 0.0;
         });
+			build({ id++, "WaterFlux", "mm/d", "waterflux in layer" },
+				[](const MonicaModel& monica, OId oid)
+				{
+					return getComplexValues<double>(oid, [&](int i)
+						{
+							return monica.soilMoisture().waterFlux(i);
+						}, 1);
+				});
 
 			tableBuilt = true;
 		}

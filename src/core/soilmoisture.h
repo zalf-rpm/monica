@@ -72,6 +72,9 @@ namespace Monica
     double get_CapillaryRise(int layer) const;
     double get_PercolationRate(int layer) const;
 
+    double waterFlux(int layer) const { return vm_WaterFlux.at(layer); }
+    double percolationRate(int layer) const { return vm_PercolationRate.at(layer); }
+
     double get_Infiltration() const { return vm_Infiltration; } // [mm]
 
     double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; } // [mm]
@@ -120,7 +123,7 @@ namespace Monica
 
     void fm_CapillaryRise();
 
-    void fm_PercolationWithGroundwater(double vs_GroundwaterDepth);
+    void fm_PercolationWithGroundwater(size_t oscillGroundwaterDepthLayer);
 
     void fm_GroundwaterReplenishment();
 
