@@ -37,7 +37,7 @@
 				"LAI", 
 				"Precip", 
 				["Mois", [1, 3]], 
-				["Mois", [1, 3], "AVG"], 
+				["Mois", [1, 3, "AVG"]], 
 				["SOC", [1, 3]], 
 				"Tavg", 
 				"Globrad"
