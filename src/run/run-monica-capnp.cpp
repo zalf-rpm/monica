@@ -218,14 +218,16 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
     }).then([context, runMonica](DataAccessor da) mutable {
       auto out = runMonica(da);
       auto rs = context.getResults();
-      rs.initResult();
-      rs.getResult().setValue(out.toString());
-            });
+      auto res = rs.initResult();
+      res.initStructure().setJson();
+      res.setValue(out.toString());
+      });
   } else {
     auto out = runMonica();
     auto rs = context.getResults();
-    rs.initResult();
-    rs.getResult().setValue(out.toString());
+    auto res = rs.initResult();
+    res.initStructure().setJson();
+    res.setValue(out.toString());
     return kj::READY_NOW;
   }
 }
