@@ -492,6 +492,7 @@ CropModule::CropModule(SoilColumn& sc,
 		_assimilatePartCoeffsReduced = reader.getAssimilatePartCoeffsReduced();
 		vc_KTkc = reader.getKtkc();
 		vc_KTko = reader.getKtko();
+		_stemElongationEventFired = reader.getStemElongationEventFired();
 	}
 
 	void CropModule::serialize(mas::models::monica::CropModuleState::Builder builder) const {
@@ -740,6 +741,7 @@ CropModule::CropModule(SoilColumn& sc,
     builder.setAssimilatePartCoeffsReduced(_assimilatePartCoeffsReduced);
     builder.setKtkc(vc_KTkc);
     builder.setKtko(vc_KTko);
+		builder.setStemElongationEventFired(_stemElongationEventFired);
 	}
 
 /**
@@ -803,17 +805,25 @@ void CropModule::step(double vw_MeanAirTemperature,
 	if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
 		if (_fireEvent) 
 			_fireEvent("emergence");
-	} else if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage))
-	{
+	} 
+  else if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage))
+  {
 		vc_AnthesisDay = vs_JulianDay;
 		if (_fireEvent)
 			_fireEvent("anthesis");
-	} else if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage))
+	} 
+  else if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage))
+  {
+    vc_MaturityDay = vs_JulianDay;
+    vc_MaturityReached = true;
+    if (_fireEvent)
+      _fireEvent("maturity");
+	}
+
+	if (!_stemElongationEventFired && vc_CurrentTotalTemperatureSum >= pc_StageTemperatureSum[2]*0.25 + pc_StageTemperatureSum[1])
 	{
-		vc_MaturityDay = vs_JulianDay;
-		vc_MaturityReached = true;
-		if (_fireEvent)
-			_fireEvent("maturity");
+		_fireEvent("stem-elongation");
+		_stemElongationEventFired = true;
 	}
 
 	// fire stage event on stage change or right after sowing

@@ -702,6 +702,8 @@ namespace Monica
 		bool _assimilatePartCoeffsReduced{ false };
 		double vc_KTkc{ 0 }; // old KTkc
 		double vc_KTko{ 0 }; // old KTkc
+
+    bool _stemElongationEventFired{ false };
 	};
 
 	//#define TEST_HOURLY_OUTPUT
