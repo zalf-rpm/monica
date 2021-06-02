@@ -822,7 +822,7 @@ void CropModule::step(double vw_MeanAirTemperature,
 
 	if (!_stemElongationEventFired && vc_CurrentTotalTemperatureSum >= pc_StageTemperatureSum[2]*0.25 + pc_StageTemperatureSum[1])
 	{
-		_fireEvent("stem-elongation");
+		_fireEvent("cereal-stem-elongation");
 		_stemElongationEventFired = true;
 	}
 
