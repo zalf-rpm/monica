@@ -862,11 +862,11 @@ MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11:
 
 Errors MeasuredGroundwaterTableInformation::merge(json11::Json j)
 {
-	Errors res;
+    Errors res;
 
-  set_bool_value(groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
+    set_bool_value(groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
 
-  string err;
+    string err = "";
 	if(j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
 		for(auto p : j["groundwaterInfo"].object_items())
 			groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
@@ -2292,7 +2292,10 @@ Errors CentralParameterProvider::merge(json11::Json j)
 	res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
 	res.append(simulationParameters.merge(j["simulationParameters"]));
 	res.append(siteParameters.merge(j["siteParameters"]));
-	//groundwaterInformation.merge(j["groundwaterInformation"]);
+    if (!j["groundwaterInformation"].is_null()) 
+    {
+        res.append(groundwaterInformation.merge(j["groundwaterInformation"]));
+    }
 
 	//set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
 

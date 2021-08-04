@@ -427,11 +427,11 @@ Json Monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> par
 Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params)
 {
 	vector<Json> cropSiteSim;
-	for(auto name : {"crop", "site", "sim"})
+	for (auto name : { "crop", "site", "sim" })
 		cropSiteSim.push_back(params[name]);
 
-	for(auto& j : cropSiteSim)
-		if(j.is_null())
+	for (auto& j : cropSiteSim)
+		if (j.is_null())
 			return Json();
 
 	string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
@@ -439,7 +439,7 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 	auto addBasePath = [&](Json& j, string basePath)
 	{
 		string err;
-		if(!j.has_shape({{"include-file-base-path", Json::STRING}}, err))
+		if (!j.has_shape({ {"include-file-base-path", Json::STRING} }, err))
 		{
 			auto m = j.object_items();
 			m["include-file-base-path"] = pathToParameters;
@@ -450,19 +450,19 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 	vector<Json> cropSiteSim2;
 	//collect all errors in all files and don't stop as early as possible
 	set<string> errors;
-	for(auto& j : cropSiteSim)
+	for (auto& j : cropSiteSim)
 	{
 		addBasePath(j, pathToParameters);
 		auto r = findAndReplaceReferences(j, j);
-		if(r.success())
+		if (r.success())
 			cropSiteSim2.push_back(r.result);
 		else
 			errors.insert(r.errors.begin(), r.errors.end());
 	}
 
-	if(!errors.empty())
+	if (!errors.empty())
 	{
-		for(auto e : errors)
+		for (auto e : errors)
 			cerr << e << endl;
 		return Json();
 	}
@@ -488,6 +488,10 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 		, {"simulationParameters", simj}
 		, {"siteParameters", sitej["SiteParameters"]}
 	};
+
+	if (!sitej["groundwaterInformation"].is_null()) {
+		cpp["groundwaterInformation"] = sitej["groundwaterInformation"];
+	}
 
 	env["params"] = cpp;
 	env["cropRotation"] = cropj["cropRotation"];
