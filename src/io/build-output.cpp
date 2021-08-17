@@ -505,7 +505,7 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_RelativeTotalDevelopment(), 2) : 0.0;
 			});
 
-			build({ id++, "LT50", "�C", "LT50" },
+			build({ id++, "LT50", "°C", "LT50" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_LT50(), 1) : 0.0;
