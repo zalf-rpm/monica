@@ -1204,6 +1204,8 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
 			vc_VernalisationFactor = (d_VernalisationDays - vc_VernalisationThreshold) / (d_VernalisationRequirement
 				- vc_VernalisationThreshold);
 
+			//vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0);
+
 			if (vc_VernalisationFactor < 0)
 			{
 				vc_VernalisationFactor = 0.0;
