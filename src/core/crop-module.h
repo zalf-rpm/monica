@@ -553,6 +553,7 @@ namespace Monica
 		double pc_LowTemperatureExposure;
 		double pc_LimitingTemperatureHeatStress;
 		double vc_LT50{ -3.0 };
+		double vc_LT502{ -3.0 };
 		double pc_LT50cultivar;
 		double pc_LuxuryNCoeff;
 		double vc_MaintenanceRespirationAS{ 0.0 };

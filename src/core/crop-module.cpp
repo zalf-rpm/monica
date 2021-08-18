@@ -3021,6 +3021,7 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 
 
 	double vc_LT50old = vc_LT50;
+	double vc_LT50old2 = vc_LT502;
 	double vc_NightTemperature = 0.0;
 	vc_NightTemperature = vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
 
@@ -3036,18 +3037,22 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 	}
 
 	double vc_FrostHardening = 0.0;
+	double vc_FrostHardening2 = 0.0;
 	double vc_ThresholdInductionTemperature = 3.72135 - 0.401124 * pc_LT50cultivar;
 
 	if ((vc_VernalisationFactor < 1.0) && (vc_CrownTemperature < vc_ThresholdInductionTemperature))
 	{
 		vc_FrostHardening = pc_FrostHardening * (vc_ThresholdInductionTemperature - vc_CrownTemperature)
 			* (vc_LT50old - pc_LT50cultivar);
+		vc_FrostHardening2 = pc_FrostHardening * (vc_ThresholdInductionTemperature - vc_CrownTemperature)
+			* (vc_LT50old2 - pc_LT50cultivar);
 	}
-	else
-	{
-		vc_FrostHardening = 0.0;
-	}
+	//else
+	//{
+	//	vc_FrostHardening = 0.0;
+	//}
 
+	//*
 	double vc_FrostDehardening = 0.0;
 	double vc_DoubleRidgeCounter = vc_CurrentTemperatureSum[1] / pc_StageTemperatureSum[1];
 	double vc_VRTFactor = 1 / (1 + (exp(80.0 * (vc_DoubleRidgeCounter - 0.9))));
@@ -3055,28 +3060,34 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 		|| vc_DoubleRidgeCounter >= 1.0)
   {
     vc_FrostDehardening = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
+		//cout << "1 ";
   }
 	else if(vc_DoubleRidgeCounter < 1.0 && -4.0 <= vc_CrownTemperature && vc_CrownTemperature < vc_ThresholdInductionTemperature)
 	{
 		vc_FrostDehardening = (1 - vc_VRTFactor) * pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
+		//cout << "2 ";
 	}
+	//*/
 	
-	/*
-	double vc_FrostDehardening = 0.0;
+	//*
+	double vc_FrostDehardening2 = 0.0;
 	if ((vc_VernalisationFactor < 1.0 && vc_CrownTemperature >= vc_ThresholdInductionTemperature)
     || (vc_VernalisationFactor >= 1.0 && vc_CrownTemperature >= -4.0))
 	{
 
-		vc_FrostDehardening = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
+		vc_FrostDehardening2 = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
 
 	}
-	*/
+	//*/
 
 	double vc_LowTemperatureExposure = 0.0;
+	double vc_LowTemperatureExposure2 = 0.0;
 	if (vc_CrownTemperature < -3.0 && (vc_LT50old - vc_CrownTemperature) > -12.0)
 	{
 		vc_LowTemperatureExposure = (vc_LT50old - vc_CrownTemperature) /
 			exp(pc_LowTemperatureExposure * (vc_LT50old - vc_CrownTemperature) - 3.74);
+		vc_LowTemperatureExposure2 = (vc_LT50old2 - vc_CrownTemperature) /
+			exp(pc_LowTemperatureExposure * (vc_LT50old2 - vc_CrownTemperature) - 3.74);
 	}
 	else
 	{
@@ -3097,10 +3108,12 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 
 	double vc_RespiratoryStress = pc_RespiratoryStress * vc_RespirationFactor * vc_SnowDepthFactor;
 
-	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening + vc_LowTemperatureExposure + vc_RespiratoryStress;
-	//cout << "LT50: " << vc_LT50 << " LT50old: " << vc_LT50old << " FH: " << vc_FrostHardening << " FDH: " << vc_FrostDehardening
-	//	<< " LTE: " << vc_LowTemperatureExposure << " RS: " << vc_RespiratoryStress << " LT50c: " << pc_LT50cultivar << endl;
+	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening /*+ vc_LowTemperatureExposure*/ + vc_RespiratoryStress;
+	vc_LT502 = vc_LT50old2 - vc_FrostHardening + vc_FrostDehardening2 + vc_LowTemperatureExposure2 + vc_RespiratoryStress;
+	//cout << "CrownT: " << vc_CrownTemperature << " LT50: " << vc_LT50 << " LT50-2: " << vc_LT502 << " LT50old: " << vc_LT50old << " LT50old-2: " << vc_LT50old2 << " FH: " << vc_FrostHardening << " FH-2: " << vc_FrostHardening2 << " FDH: " << vc_FrostDehardening << " FDH-2: " << vc_FrostDehardening2
+	//	<< " LTE: " << vc_LowTemperatureExposure << " LTE-2: " << vc_LowTemperatureExposure2 << " RS: " << vc_RespiratoryStress << " LT50c: " << pc_LT50cultivar << endl;
 
+	vc_LT502 = min(-3.0, vc_LT502);
 	if (vc_LT50 > -3.0)
 	{
 
