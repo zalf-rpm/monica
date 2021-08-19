@@ -3012,45 +3012,29 @@ void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
 void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 	vw_MinAirTemperature)
 {
-
 	// ************************************************************
 	// ** Fowler, D.B., B.M. Byrns, K.J. Greer. 2014. Overwinter **
 	// **	Low-Temperature Responses of Cereals: Analyses and     **
 	// **	Simulation. Crop Sci. 54:2395–2405.                    **
 	// ************************************************************
 
-
 	double vc_LT50old = vc_LT50;
-	double vc_LT50old2 = vc_LT502;
-	double vc_NightTemperature = 0.0;
-	vc_NightTemperature = vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
+	vc_LT50M = min(vc_LT50, vc_LT50M);
 
-	double vc_CrownTemperature = 0.0;
+	double vc_NightTemperature = vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
+	double vc_CrownTemperature = vc_NightTemperature * 0.8;
 	if (vc_DevelopmentalStage <= 1)
 	{
-		vc_CrownTemperature = (3.0 * soilColumn.vt_SoilSurfaceTemperature
-			+ 2.0 * soilColumn[0].get_Vs_SoilTemperature()) / 5.0;
-	}
-	else
-	{
-		vc_CrownTemperature = vc_NightTemperature * 0.8;
+		vc_CrownTemperature = (3.0 * soilColumn.vt_SoilSurfaceTemperature + 2.0 * soilColumn[0].get_Vs_SoilTemperature()) / 5.0;
 	}
 
 	double vc_FrostHardening = 0.0;
-	double vc_FrostHardening2 = 0.0;
 	double vc_ThresholdInductionTemperature = 3.72135 - 0.401124 * pc_LT50cultivar;
-
 	if ((vc_VernalisationFactor < 1.0) && (vc_CrownTemperature < vc_ThresholdInductionTemperature))
 	{
 		vc_FrostHardening = pc_FrostHardening * (vc_ThresholdInductionTemperature - vc_CrownTemperature)
 			* (vc_LT50old - pc_LT50cultivar);
-		vc_FrostHardening2 = pc_FrostHardening * (vc_ThresholdInductionTemperature - vc_CrownTemperature)
-			* (vc_LT50old2 - pc_LT50cultivar);
 	}
-	//else
-	//{
-	//	vc_FrostHardening = 0.0;
-	//}
 
 	//*
 	double vc_FrostDehardening = 0.0;
@@ -3060,74 +3044,44 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double
 		|| vc_DoubleRidgeCounter >= 1.0)
   {
     vc_FrostDehardening = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
-		//cout << "1 ";
   }
 	else if(vc_DoubleRidgeCounter < 1.0 && -4.0 <= vc_CrownTemperature && vc_CrownTemperature < vc_ThresholdInductionTemperature)
 	{
 		vc_FrostDehardening = (1 - vc_VRTFactor) * pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
-		//cout << "2 ";
 	}
 	//*/
 	
-	//*
-	double vc_FrostDehardening2 = 0.0;
+	/*
+	double vc_FrostDehardening = 0.0;
 	if ((vc_VernalisationFactor < 1.0 && vc_CrownTemperature >= vc_ThresholdInductionTemperature)
     || (vc_VernalisationFactor >= 1.0 && vc_CrownTemperature >= -4.0))
 	{
 
-		vc_FrostDehardening2 = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
-
+		vc_FrostDehardening = pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
 	}
 	//*/
 
 	double vc_LowTemperatureExposure = 0.0;
-	double vc_LowTemperatureExposure2 = 0.0;
-	if (vc_CrownTemperature < -3.0 && (vc_LT50old - vc_CrownTemperature) > -12.0)
+	if (vc_CrownTemperature < -3.0 && (vc_LT50M - vc_CrownTemperature) > -12.0)
 	{
-		vc_LowTemperatureExposure = (vc_LT50old - vc_CrownTemperature) /
-			exp(pc_LowTemperatureExposure * (vc_LT50old - vc_CrownTemperature) - 3.74);
-		vc_LowTemperatureExposure2 = (vc_LT50old2 - vc_CrownTemperature) /
-			exp(pc_LowTemperatureExposure * (vc_LT50old2 - vc_CrownTemperature) - 3.74);
+		vc_LowTemperatureExposure = -(vc_LT50M - vc_CrownTemperature) /
+			exp(-pc_LowTemperatureExposure * (vc_LT50M - vc_CrownTemperature) - 3.74);
 	}
-	else
-	{
-		vc_LowTemperatureExposure = 0.0;
-	}
+
+	double vc_SnowDepthFactor = 1.0;
+	if (soilColumn.vm_SnowDepth <= 125.0) vc_SnowDepthFactor = soilColumn.vm_SnowDepth / 125.0;
 
 	double vc_RespirationFactor = (exp(0.84 + 0.051 * vc_CrownTemperature) - 2.0) / 1.85;
-	double vc_SnowDepthFactor = 0.0;
-
-	if (soilColumn.vm_SnowDepth <= 125.0)
-	{
-		vc_SnowDepthFactor = soilColumn.vm_SnowDepth / 125.0;
-	}
-	else
-	{
-		vc_SnowDepthFactor = 1.0;
-	}
-
 	double vc_RespiratoryStress = pc_RespiratoryStress * vc_RespirationFactor * vc_SnowDepthFactor;
 
-	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening /*+ vc_LowTemperatureExposure*/ + vc_RespiratoryStress;
-	vc_LT502 = vc_LT50old2 - vc_FrostHardening + vc_FrostDehardening2 + vc_LowTemperatureExposure2 + vc_RespiratoryStress;
-	//cout << "CrownT: " << vc_CrownTemperature << " LT50: " << vc_LT50 << " LT50-2: " << vc_LT502 << " LT50old: " << vc_LT50old << " LT50old-2: " << vc_LT50old2 << " FH: " << vc_FrostHardening << " FH-2: " << vc_FrostHardening2 << " FDH: " << vc_FrostDehardening << " FDH-2: " << vc_FrostDehardening2
-	//	<< " LTE: " << vc_LowTemperatureExposure << " LTE-2: " << vc_LowTemperatureExposure2 << " RS: " << vc_RespiratoryStress << " LT50c: " << pc_LT50cultivar << endl;
+	vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening + vc_LowTemperatureExposure + vc_RespiratoryStress;
+	//cout << "CrownT: " << vc_CrownTemperature 
+	//	<< " LT50: " << vc_LT50 << " LT50old: " << vc_LT50old << " LT50M: " << vc_LT50M << " LT50c: " << pc_LT50cultivar
+	//	<< " FH: " << vc_FrostHardening << " FDH: " << vc_FrostDehardening 
+	//	<< " LTE: " << vc_LowTemperatureExposure << " RS: " << vc_RespiratoryStress << endl;
 
-	vc_LT502 = min(-3.0, vc_LT502);
-	if (vc_LT50 > -3.0)
-	{
-
-		vc_LT50 = -3.0;
-
-	}
-
-	if (vc_CrownTemperature < vc_LT50)
-	{
-
-		vc_CropFrostRedux *= 0.5;
-
-	}
-
+	if (vc_LT50 > -3.0) vc_LT50 = -3.0;
+	if (vc_CrownTemperature < vc_LT50) vc_CropFrostRedux *= 0.5;
 	return;
 }
 
