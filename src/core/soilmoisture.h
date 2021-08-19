@@ -107,6 +107,8 @@ namespace Monica
 
 		double getTemperatureUnderSnow() const;
 
+    std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const;
+
     double get_EReducer_1(int i_Layer,
                           double vm_PercentageSoilCoverage,
                           double vm_PotentialEvapotranspiration);

@@ -1432,3 +1432,8 @@ double SoilMoisture::getAccumulatedFrostDepth() const {
 double SoilMoisture::getTemperatureUnderSnow() const {
   return frostComponent->getTemperatureUnderSnow();
 }
+
+std::pair<double, double> SoilMoisture::getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const {
+  double snowDepth = snowComponent->getVm_SnowDepth();
+  return make_pair(snowDepth, frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
+}

@@ -93,7 +93,9 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 			this->_soilOrganic->addOrganicMatter(this->_currentCropModule->residueParameters(), layer2amount, nconc);
 		};
 		_currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _cropPs,
-			[this](string event) { this->addEvent(event); }, addOMFunc, reader.getCurrentCropModule());
+			[this](string event) { this->addEvent(event); }, addOMFunc, 
+			[this](double avgAirTemp) { return this->soilMoisture().getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp); },
+			reader.getCurrentCropModule());
 	}
   
 	_soilColumn->putCrop(_currentCropModule.get());
@@ -279,7 +281,8 @@ void MonicaModel::seedCrop(Crop* crop)
 		};
     auto cps = crop->cropParameters();
     _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), cps, crop->residueParameters(),
-			crop->isWinterCrop(), _sitePs, _cropPs, _simPs, [this](string event) { this->addEvent(event); }, addOMFunc);
+			crop->isWinterCrop(), _sitePs, _cropPs, _simPs, [this](string event) { this->addEvent(event); }, addOMFunc,
+			[this](double avgAirTemp) { return this->soilMoisture().getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp); });
 
     if (crop->separatePerennialCropParameters())
       _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());

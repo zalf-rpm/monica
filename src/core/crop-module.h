@@ -69,15 +69,17 @@ namespace Monica
 			const CropModuleParameters& cropPs,
 			const SimulationParameters& simPs,
 			std::function<void(std::string)> fireEvent,
-			std::function<void(std::map<size_t, double>, double)> addOrganicMatter);
+			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
+			std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow);
 
 		CropModule(SoilColumn& sc, 
 			const CropModuleParameters& cropPs, 
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
+			std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
 			mas::models::monica::CropModuleState::Reader reader)
 			: soilColumn(sc), cropPs(cropPs), _fireEvent(fireEvent), 
-			_addOrganicMatter(addOrganicMatter) { deserialize(reader); }
+			_addOrganicMatter(addOrganicMatter), _getSnowDepthAndCalcTempUnderSnow(getSnowDepthAndCalcTempUnderSnow) { deserialize(reader); }
 
 		void deserialize(mas::models::monica::CropModuleState::Reader reader);
 		void serialize(mas::models::monica::CropModuleState::Builder builder) const;
@@ -693,6 +695,7 @@ namespace Monica
 
 		std::function<void(std::string)> _fireEvent;
 		std::function<void(std::map<size_t, double>, double)> _addOrganicMatter;
+		std::function<std::pair<double, double>(double)> _getSnowDepthAndCalcTempUnderSnow;
 
 		double vc_O3_shortTermDamage{ 1.0 };
 		double vc_O3_longTermDamage{ 1.0 };

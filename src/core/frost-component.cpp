@@ -271,7 +271,7 @@ FrostComponent::calcFrostDepth(double mean_field_capacity, double heat_conductiv
  * @return
  */
 double
-FrostComponent::calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth) {
+FrostComponent::calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth) const {
   double temperature_under_snow = 0.0;
   if (snow_depth / 100.0 < 0.01) {
     temperature_under_snow = mean_air_temperature;

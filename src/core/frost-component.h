@@ -42,6 +42,7 @@ namespace Monica
       double getLambdaRedux(size_t layer) const { return vm_LambdaRedux[layer]; }
       double getAccumulatedFrostDepth() const { return vm_accumulatedFrostDepth; }
       double getTemperatureUnderSnow() const { return vm_TemperatureUnderSnow; }
+      double calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth) const;
 
     private:
       double getMeanBulkDensity();
@@ -50,7 +51,6 @@ namespace Monica
       double calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity);
       double calcSii(double mean_field_capacity);
       double calcThawDepth(double temperature_under_snow, double heat_conductivity_unfrozen, double mean_field_capacity);
-      double calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth);
       double calcFrostDepth(double mean_field_capacity, double heat_conductivity_frozen, double temperature_under_snow);
       void updateLambdaRedux();
 
