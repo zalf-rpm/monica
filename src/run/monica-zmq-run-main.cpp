@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "zeromq/zmq-helper.h"
 #include "tools/helper.h"
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "../run/run-monica.h"
 #include "../run/run-monica-zmq.h"

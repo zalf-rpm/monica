@@ -201,7 +201,6 @@ target_link_libraries(monica_lib
 	climate_common_lib
 	climate_file_io_lib
 	capnp_schemas_lib
-	#CapnProto::capnp-rpc
 )
 
 #------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "monica-model.h"
 #include "climate/climate-common.h"
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 #include "voc-common.h"
 #include "tools/algorithms.h"
 #include "crop.h"

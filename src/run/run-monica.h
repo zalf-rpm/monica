@@ -161,7 +161,7 @@ namespace Monica
 	//----------------------------------------------------------------------------
 
 	//! can be called initially to set alternative path for the MONICA dll/so to db-connections.ini
-	DLL_API void initPathToDB(const std::string& initialPathToIniFile = "db-connections.ini");
+	//DLL_API void initPathToDB(const std::string& initialPathToIniFile = "db-connections.ini");
 
   //std::pair<Tools::Date, std::map<Climate::ACD, double>>
   //climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);

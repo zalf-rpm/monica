@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"
 #include "tools/helper.h"
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "run-monica.h"
 #include "serve-monica-zmq.h"
@@ -147,14 +147,14 @@ int main(int argc, char** argv)
 	setlocale(LC_NUMERIC, "C");
 
 	//init path to db-connections.ini
-	if(auto monicaHome = getenv("MONICA_HOME"))
-	{
-		auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-		//init for dll/so
-		initPathToDB(pathToFile);
-		//init for monica-run
-		Db::dbConnectionParameters(pathToFile);
-	}
+	//if(auto monicaHome = getenv("MONICA_HOME"))
+	//{
+	//	auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
+	//	//init for dll/so
+	//	initPathToDB(pathToFile);
+	//	//init for monica-run
+	//	Db::dbConnectionParameters(pathToFile);
+	//}
 
 	//use a possibly non-default db-connections.ini
 	//Db::dbConnectionParameters("db-connections.ini");

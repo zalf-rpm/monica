@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "env-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 
 using namespace std;
 using namespace Monica;
@@ -47,14 +47,14 @@ int main(int argc, char** argv)
 	setlocale(LC_NUMERIC, "C");
 
 	//init path to db-connections.ini
-	if(auto monicaHome = getenv("MONICA_HOME"))
-	{
-		auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-		//init for dll/so
-		initPathToDB(pathToFile);
-		//init for monica-run
-		Db::dbConnectionParameters(pathToFile);
-	}
+	//if(auto monicaHome = getenv("MONICA_HOME"))
+	//{
+	//	auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
+	//	//init for dll/so
+	//	initPathToDB(pathToFile);
+	//	//init for monica-run
+	//	Db::dbConnectionParameters(pathToFile);
+	//}
 	
 	bool debug = false, debugSet = false;
 	string startDate, endDate;

@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/thread.h>
 
 #include "tools/helper.h"
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "../mas-infrastructure/src/cpp/common/rpc-connections.h"
 
@@ -77,11 +77,11 @@ int main(int argc, const char* argv[]) {
   bool startedServerInDebugMode = false;
 
   //init path to db-connections.ini
-  if (auto monicaHome = getenv("MONICA_HOME")) {
-    auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
+  //if (auto monicaHome = getenv("MONICA_HOME")) {
+  //  auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
     //init for monica-run
-    Db::dbConnectionParameters(pathToFile);
-  }
+  //  Db::dbConnectionParameters(pathToFile);
+  //}
 
   //use a possibly non-default db-connections.ini
   //Db::dbConnectionParameters("db-connections.ini");

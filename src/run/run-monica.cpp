@@ -36,7 +36,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica.h"
 #include "tools/debug.h"
 #include "climate/climate-common.h"
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 #include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../io/build-output.h"
@@ -640,10 +640,10 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 	return storeData;
 }
 
-void Monica::initPathToDB(const std::string& initialPathToIniFile)
-{
-	Db::dbConnectionParameters(initialPathToIniFile);
-}
+//void Monica::initPathToDB(const std::string& initialPathToIniFile)
+//{
+//	Db::dbConnectionParameters(initialPathToIniFile);
+//}
 
 struct DFSRes {
 	kj::Own<MonicaModel> monica;

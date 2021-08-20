@@ -32,7 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/string.h>
 #include "models/monica/monica_state.capnp.h"
 
-#include "db/abstract-db-connections.h"
+//#include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
 #include "tools/helper.h"
 #include "json11/json11-helper.h"
@@ -47,7 +47,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/crop-module.h"
 #include "../core/soiltemperature.h"
 
-using namespace Db;
+//using namespace Db;
 using namespace std;
 using namespace Monica;
 using namespace Soil;
