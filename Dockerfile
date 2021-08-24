@@ -18,6 +18,7 @@ RUN git clone https://github.com/zalf-rpm/build-pipeline.git
 RUN git clone https://github.com/zalf-rpm/monica.git
 RUN git clone https://github.com/zalf-rpm/util.git
 RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
+RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
 WORKDIR ${WORK_DIR}/build-pipeline/buildscripts
 RUN sh linux-prepare-vcpkg.sh
@@ -39,12 +40,14 @@ RUN apt-get update
 # install monica prerequisites
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y supervisor && \
     rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /run/monica/sqlite-db
+#RUN mkdir -p /run/monica/sqlite-db
+RUN mkdir -p /run/monica/soil
 ENV monica_dir /run/monica
 ENV supervisor_conf /etc/supervisor/supervisord.conf
 ENV monica_instances 3
 ENV MONICA_WORK /monica_data
 ENV MONICA_HOME ${monica_dir}
+ENV MONICA_PARAMETERS ${monica_dir}
 ENV monica_autostart_proxies=true
 ENV monica_autostart_worker=true
 ENV monica_auto_restart_proxies=true
@@ -68,22 +71,24 @@ RUN touch /var/log/supervisord.log
 RUN chmod 777 /var/log/supervisord.log
 
 # copy executables 
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica ${monica_dir}
+#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-run ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control-send ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-run ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control ${monica_dir}
+#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control-send ${monica_dir}
+#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-run ${monica_dir}
+#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
 
 # copy sqlite db
-COPY sqlite-db/ka5-soil-data.sqlite ${monica_dir}/sqlite-db/
-COPY sqlite-db/carbiocial.sqlite ${monica_dir}/sqlite-db/
-COPY sqlite-db/monica.sqlite ${monica_dir}/sqlite-db/
+#COPY sqlite-db/ka5-soil-data.sqlite ${monica_dir}/sqlite-db/
+#COPY sqlite-db/carbiocial.sqlite ${monica_dir}/sqlite-db/
+#COPY sqlite-db/monica.sqlite ${monica_dir}/sqlite-db/
 
-COPY db-connections-install.ini ${monica_dir}/db-connections.ini
+COPY --from=build-env ${WORK_DIR}/monica-parameters/soil/*.sercapnp ${MONICA_PARAMETERS}/soil
+
+#COPY db-connections-install.ini ${monica_dir}/db-connections.ini
 
 COPY docker/start_monica_supervisor.sh /start.sh
 
