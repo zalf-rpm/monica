@@ -86,9 +86,9 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
 #COPY sqlite-db/carbiocial.sqlite ${monica_dir}/sqlite-db/
 #COPY sqlite-db/monica.sqlite ${monica_dir}/sqlite-db/
 
-COPY --from=build-env ${WORK_DIR}/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil
-COPY --from=build-env ${WORK_DIR}/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil
-COPY --from=build-env ${WORK_DIR}/monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil
+COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil/
 
 #COPY db-connections-install.ini ${monica_dir}/db-connections.ini
 
