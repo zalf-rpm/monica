@@ -29,7 +29,7 @@ add_subdirectory(../util/tools/read-ini util/read-ini)
 add_subdirectory(../util/tools/debug util/debug)
 add_subdirectory(../util/climate/climate-file-io util/climate-file-io)
 add_subdirectory(../util/soil util/soil)
-add_subdirectory(../util/db/db util/db)
+#add_subdirectory(../util/db/db util/db)
 add_subdirectory(../util/zeromq util/zeromq)
 
 #define delete file from path
@@ -179,9 +179,6 @@ add_library(monica_lib
 
 	src/resource/version.h
 	src/resource/version_resource.rc
-
-	#${CAPNP_HDRS}
-	#${CAPNP_SRCS}
 )
 target_include_directories(monica_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
 if (MSVC)
@@ -194,10 +191,10 @@ target_link_libraries(monica_lib
 	debug_lib
 	helpers_lib
 	date_lib
-	db_lib
+	#db_lib
 	soil_lib
 	json11_lib
-	sqlite3_lib
+	#sqlite3_lib
 	climate_common_lib
 	climate_file_io_lib
 	capnp_schemas_lib
@@ -230,8 +227,8 @@ target_link_libraries(monica_run_lib
 #------------------------------------------------------------------------------
 
 # create monica cli starter 
-add_executable(monica src/run/monica-main.cpp)
-target_link_libraries(monica ${CMAKE_THREAD_LIBS_INIT})
+#add_executable(monica src/run/monica-main.cpp)
+#target_link_libraries(monica ${CMAKE_THREAD_LIBS_INIT})
 
 #------------------------------------------------------------------------------
 
@@ -244,36 +241,35 @@ target_link_libraries(monica-run
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
 	monica_run_lib
-	#CapnProto::capnp-rpc
 )
 
 #------------------------------------------------------------------------------
 
 # create monica-zmq-control executable for starting/stopping monica-zmq-server nodes
-add_executable(monica-zmq-control src/run/monica-zmq-control-main.cpp)
-if (MSVC)
-	target_compile_options(monica-zmq-control PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-endif()
-target_link_libraries(monica-zmq-control
-	${CMAKE_THREAD_LIBS_INIT}
-	json11_lib
-	debug_lib
-	zmq_lib
-)
+#add_executable(monica-zmq-control src/run/monica-zmq-control-main.cpp)
+#if (MSVC)
+#	target_compile_options(monica-zmq-control PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+#endif()
+#target_link_libraries(monica-zmq-control
+#	${CMAKE_THREAD_LIBS_INIT}
+#	json11_lib
+#	debug_lib
+#	zmq_lib
+#)
 
 #------------------------------------------------------------------------------
 
 # create monica-zmq-control-send executable for sending messages to monica-zmq-control
-add_executable(monica-zmq-control-send src/run/monica-zmq-control-send-main.cpp)
-if (MSVC)
-	target_compile_options(monica-zmq-control-send PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-endif()
-target_link_libraries(monica-zmq-control-send
-	${CMAKE_THREAD_LIBS_INIT}
-	json11_lib
-	debug_lib
-	zmq_lib
-)
+#add_executable(monica-zmq-control-send src/run/monica-zmq-control-send-main.cpp)
+#if (MSVC)
+#	target_compile_options(monica-zmq-control-send PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+#endif()
+#target_link_libraries(monica-zmq-control-send
+#	${CMAKE_THREAD_LIBS_INIT}
+#	json11_lib
+#	debug_lib
+#	zmq_lib
+#)
 
 #------------------------------------------------------------------------------
 
@@ -291,23 +287,23 @@ target_link_libraries(monica-zmq-proxy
 #------------------------------------------------------------------------------
 
 # create monica-zmq-run executable, the cli client to monica-zmq-server
-set(MONICA_ZMQ_RUN_SOURCE
-	src/run/run-monica-zmq.h
-	src/run/run-monica-zmq.cpp
-	src/run/monica-zmq-run-main.cpp
+#set(MONICA_ZMQ_RUN_SOURCE
+#	src/run/run-monica-zmq.h
+#	src/run/run-monica-zmq.cpp
+#	src/run/monica-zmq-run-main.cpp
 
-	${CAPNP_HDRS}
-)
-add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
-if (MSVC)
-	target_compile_options(monica-zmq-run PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-endif()
-target_link_libraries(monica-zmq-run
-	${CMAKE_THREAD_LIBS_INIT}
-	${CMAKE_DL_LIBS}
-	monica_run_lib
-	zmq_lib
-)
+#	${CAPNP_HDRS}
+#)
+#add_executable(monica-zmq-run ${MONICA_ZMQ_RUN_SOURCE})
+#if (MSVC)
+#	target_compile_options(monica-zmq-run PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+#endif()
+#target_link_libraries(monica-zmq-run
+#	${CMAKE_THREAD_LIBS_INIT}
+#	${CMAKE_DL_LIBS}
+#	monica_run_lib
+#	zmq_lib
+#)
 
 #------------------------------------------------------------------------------
 
@@ -384,7 +380,6 @@ add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE_FILES})
 target_link_libraries(monica-capnp-server
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
-	#CapnProto::capnp-rpc
 	monica_lib
 )
 target_include_directories(monica-capnp-server PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
@@ -408,7 +403,6 @@ add_executable(monica-capnp-proxy ${MONICA_CAPNP_PROXY_SOURCE_FILES})
 target_link_libraries(monica-capnp-proxy
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
-	#CapnProto::capnp-rpc
 	monica_lib
 )
 target_include_directories(monica-capnp-proxy PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
