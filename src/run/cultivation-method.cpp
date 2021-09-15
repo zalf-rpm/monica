@@ -71,6 +71,35 @@ std::pair<Date, bool> makeInitAbsDate(Date date, Date initDate, bool addYear, bo
 	return make_pair(absDate, addedYear);
 }
 
+int organIdFromName(const string& organName, Tools::Errors& err)
+{
+	string os = toLower(organName);
+	if (os == "root") return 0;
+	else if (os == "leaf") return 1;
+	else if (os == "shoot") return 2;
+	else if (os == "fruit") return 3;
+	else if (os == "struct") return 4;
+	else if (os == "sugar") return 5;
+	err.append(Errors(Errors::ERR, "organ id could not be resolved"));
+	return -1; // default error 
+};
+
+string organNameFromId(int organId)
+{
+	string res = "unknown";
+	switch (organId)
+	{
+	case 0: res = "Root"; break;
+	case 1: res = "Leaf"; break;
+	case 2: res = "Shoot"; break;
+	case 3: res = "Fruit"; break;
+	case 4: res = "Struct"; break;
+	case 5: res = "Sugar"; break;
+	default: "unknown";
+	}
+	return res;
+};
+
 //----------------------------------------------------------------------------
 
 Workstep::Workstep(const Tools::Date& d)
@@ -475,6 +504,20 @@ Errors Harvest::merge(json11::Json j)
 	set_double_value(_optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
 	set_double_value(_optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction");
 
+	for (const string& organName : { "leaf", "shoot", "fruit", "struct", "sugar" })
+	{
+		for (auto kv : j.object_items())
+		{
+			if (toLower(kv.first) == organName && kv.second.is_object())
+			{
+				Spec::Value sv;
+				set_double_value(sv.exportPercentage, kv.second, "export");
+				set_bool_value(sv.incorporate, kv.second, "incorporate");
+				_spec.organ2specVal[organIdFromName(kv.first, res)] = sv;
+			}
+		}
+	}
+
 	return res;
 }
 
@@ -500,7 +543,7 @@ bool Harvest::apply(MonicaModel* model)
 	Workstep::apply(model);
 
 	if (model->cropGrowth()) {
-		model->harvestCurrentCrop(_exported, _optCarbMgmtData);
+		model->harvestCurrentCrop(_exported, _spec, _optCarbMgmtData);
 		if(_sowing)
       debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
 		model->addEvent("Harvest");
@@ -618,31 +661,12 @@ Cutting::Cutting(json11::Json j)
 Errors Cutting::merge(json11::Json j)
 {
 	auto errors = Workstep::merge(j);
-
-	auto organId = [](string organName, Tools::Errors& err)
-	{
-		string os = toUpper(organName);
-		if (os == "ROOT")
-			return 0;
-		else if (os == "LEAF")
-			return 1;
-		else if (os == "SHOOT")
-			return 2;
-		else if (os == "FRUIT")
-			return 3;
-		else if (os == "STRUCT")
-			return 4;
-		else if (os == "SUGAR")
-			return 5;
-		err.append(Errors(Errors::ERR, "organ id could not be resolved"));
-		return -1; // default error 
-	};
-
+		
 	bool export_ = j["export"].is_bool() ? j["export"].bool_value() : true;
 
 	for (auto p : j["organs"].object_items())
 	{
-		int oid = organId(p.first, errors);
+		int oid = organIdFromName(p.first, errors);
 		if (oid == -1) continue;
 		Value v;
 		auto arr = p.second.array_items();
@@ -679,7 +703,7 @@ Errors Cutting::merge(json11::Json j)
 
 	for (auto p : j["export"].object_items())
 	{
-		int oid = organId(p.first, errors);
+		int oid = organIdFromName(p.first, errors);
 		if (oid == -1) continue;
 		_organId2exportFraction[oid] = int_valueD(p.second, 0) / 100.0;
 	}
@@ -691,25 +715,9 @@ Errors Cutting::merge(json11::Json j)
 
 json11::Json Cutting::to_json() const
 {
-	auto organName = [](int organId)
-	{
-		string res = "unknown";
-		switch (organId)
-		{
-		case 0: res = "Root"; break;
-		case 1: res = "Leaf"; break;
-		case 2: res = "Shoot"; break;
-		case 3: res = "Fruit"; break;
-		case 4: res = "Struct"; break;
-		case 5: res = "Sugar"; break;
-		default: "unknown";
-		}
-		return res;
-	};
-
 	J11Object organs;
 	for (auto p : _organId2cuttingSpec)
-		organs[organName(p.first)] = J11Array{
+		organs[organNameFromId(p.first)] = J11Array{
 		p.second.value * (p.second.unit == percentage ? 100.0 : 1.0),
 		p.second.unit == percentage ? "%" : (p.second.unit == biomass ? "kg ha-1" : "m2 m-2"),
 		p.second.cut_or_left == cut ? "cut" : "left"
@@ -717,11 +725,11 @@ json11::Json Cutting::to_json() const
 
 	J11Object organsBiomAfterCutting;
 	for (auto p : _organId2biomAfterCutting)
-		organsBiomAfterCutting[organName(p.first)] = J11Array{ int(p.second), "kg ha-1" };
+		organsBiomAfterCutting[organNameFromId(p.first)] = J11Array{ int(p.second), "kg ha-1" };
 
 	J11Object exports;
 	for (auto p : _organId2exportFraction)
-		exports[organName(p.first)] = J11Array{ int(p.second * 100.0), "%" };
+		exports[organNameFromId(p.first)] = J11Array{ int(p.second * 100.0), "%" };
 
 	return json11::Json::object
 	{ {"type", type()}

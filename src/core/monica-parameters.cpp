@@ -1455,6 +1455,7 @@ void CropModuleParameters::deserialize(mas::models::monica::CropModuleParameters
   __enable_hourly_FvCB_photosynthesis__ = reader.getExperimentalEnableHourlyFvCBPhotosynthesis();
   __enable_T_response_leaf_expansion__ = reader.getExperimentalEnableTResponseLeafExpansion();
   __disable_daily_root_biomass_to_soil__ = reader.getExperimentalDisableDailyRootBiomassToSoil();
+  __enable_vernalisation_factor_fix__ = reader.getEnableVernalisationFactorFix();
 }
 
 void CropModuleParameters::serialize(mas::models::monica::CropModuleParameters::Builder builder) const {
@@ -1480,6 +1481,7 @@ void CropModuleParameters::serialize(mas::models::monica::CropModuleParameters::
   builder.setExperimentalEnableHourlyFvCBPhotosynthesis(__enable_hourly_FvCB_photosynthesis__);
   builder.setExperimentalEnableTResponseLeafExpansion(__enable_T_response_leaf_expansion__);
   builder.setExperimentalDisableDailyRootBiomassToSoil(__disable_daily_root_biomass_to_soil__);
+  builder.setEnableVernalisationFactorFix(__enable_vernalisation_factor_fix__);
 }
 
 CropModuleParameters::CropModuleParameters(json11::Json j)
@@ -1513,6 +1515,7 @@ Errors CropModuleParameters::merge(json11::Json j)
 	set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
 	set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
 	set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
+  set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
 	
 	return res;
 }
@@ -1542,6 +1545,7 @@ json11::Json CropModuleParameters::to_json() const
 	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
 	,{"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__}
 	,{"__disable_daily_root_biomass_to_soil__", __disable_daily_root_biomass_to_soil__}
+  ,{"__enable_vernalisation_factor_fix__", __enable_vernalisation_factor_fix__}
   };
 }
 

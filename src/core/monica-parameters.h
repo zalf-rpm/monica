@@ -727,6 +727,7 @@ namespace Monica {
 		bool __enable_hourly_FvCB_photosynthesis__{ false };
 		bool __enable_T_response_leaf_expansion__{ false };
 		bool __disable_daily_root_biomass_to_soil__{ false };
+		bool __enable_vernalisation_factor_fix__{ false };
 	};
 
 	//----------------------------------------------------------------------------

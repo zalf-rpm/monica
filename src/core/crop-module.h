@@ -396,6 +396,8 @@ namespace Monica
 			pc_MaxAssimilationRate = modifier * pc_MaxAssimilationRate;
 		}
 
+		inline double totalBiomassNContent() const { return vc_TotalBiomassNContent; }
+
 		/*
 		* @brief Setter for organ biomass.
 		* @sets organ biomass
@@ -450,6 +452,14 @@ namespace Monica
 		const CropResidueParameters& residueParameters() const { return residuePs; }
 
 		bool isWinterCrop() const { return _isWinterCrop; }
+
+		double residueNRatio() const { return pc_ResidueNRatio; }
+
+		std::set<int> organIdsForPrimaryYield() const {
+			std::set<int> ids;
+			for (const auto& yc : pc_OrganIdsForPrimaryYield) ids.insert(yc.organId);
+			return ids;
+		}
 
 	private:
 		bool _frostKillOn{ true };

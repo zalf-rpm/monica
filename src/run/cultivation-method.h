@@ -238,6 +238,15 @@ namespace Monica
 			double residueHeq{0};
 			double organicFertilizerHeq{0};
 		};
+
+		struct Spec {
+			struct Value {
+				double exportPercentage{ 100.0 };
+				bool incorporate{ true };
+			};
+
+			std::map<int, Value> organ2specVal;
+		};
 		
 	public:
 		Harvest() {}
@@ -283,6 +292,7 @@ namespace Monica
   private:
     double _percentage{0};
     bool _exported{true};
+		Spec _spec;
 		OptCarbonManagementData _optCarbMgmtData;
 	};
 
