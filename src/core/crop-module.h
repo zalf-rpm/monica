@@ -302,13 +302,13 @@ namespace Monica
 		double get_FreshPrimaryCropYield() const;
 		double get_FreshSecondaryCropYield() const;
 		double get_FreshCropYieldAfterCutting() const;
-		double get_ResidueBiomass(bool useSecondaryCropYields = true) const;
-		double get_ResiduesNConcentration() const;
-		double get_PrimaryYieldNConcentration() const;
-		double get_ResiduesNContent(bool useSecondaryCropYields = true) const;
-		double get_PrimaryYieldNContent() const;
+		double get_ResidueBiomass(bool useSecondaryCropYields = true, double alternativeCropYield = -1) const;
+		double get_ResiduesNConcentration(double alternativePrimaryCropYield = -1) const;
+		double get_PrimaryYieldNConcentration(double alternativePrimaryCropYield = -1) const;
+		double get_ResiduesNContent(bool useSecondaryCropYields = true, double alternativePrimaryCropYield = -1, double alternativeCropYield = -1) const;
+		double get_PrimaryYieldNContent(double alternativePrimaryCropYield = -1) const;
 		double get_RawProteinConcentration() const;
-		double get_SecondaryYieldNContent() const;
+		double get_SecondaryYieldNContent(double alternativePrimaryCropYield = -1, double alternativeSecondaryCropYield = -1) const;
 		double get_SumTotalNUptake() const;
 		double get_ActNUptake() const;
 		double get_PotNUptake() const;
@@ -396,8 +396,6 @@ namespace Monica
 			pc_MaxAssimilationRate = modifier * pc_MaxAssimilationRate;
 		}
 
-		inline double totalBiomassNContent() const { return vc_TotalBiomassNContent; }
-
 		/*
 		* @brief Setter for organ biomass.
 		* @sets organ biomass
@@ -452,8 +450,6 @@ namespace Monica
 		const CropResidueParameters& residueParameters() const { return residuePs; }
 
 		bool isWinterCrop() const { return _isWinterCrop; }
-
-		double residueNRatio() const { return pc_ResidueNRatio; }
 
 		std::set<int> organIdsForPrimaryYield() const {
 			std::set<int> ids;

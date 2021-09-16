@@ -399,42 +399,48 @@ void MonicaModel::harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest:
 		}
 		else if (!spec.organ2specVal.empty())
 		{
-			auto primaryCropYieldOld = _currentCropModule->get_PrimaryCropYield();
-      auto secondaryCropYieldOld = _currentCropModule->get_SecondaryCropYield();
 			auto cropYield = 0.0;
 			auto primaryCropYield = 0.0;
+			auto sumOrganResidueBiomassAsOverlay = 0.0;
+			auto sumOrganResidueBiomassToIncorporate = 0.0;
 			auto organIdsForPrimaryYield = _currentCropModule->organIdsForPrimaryYield();
 			for (const auto& p : spec.organ2specVal)
 			{
-				// ignore root, is probably an error
+				// ignore root, is probably an error, when the user specified the root organ (0) as something to harvest
 				if (p.first == 0)
 					continue;
+				auto organBiomass = _currentCropModule->get_OrganBiomass(p.first);
+        auto organYield = organBiomass * p.second.exportPercentage / 100.0;
+        cropYield += organYield;
+        if (organIdsForPrimaryYield.find(p.first + 1) != organIdsForPrimaryYield.end())
+          primaryCropYield += organYield;
 				if (p.second.incorporate)
-				{
-					auto cy = _currentCropModule->get_OrganBiomass(p.first) * p.second.exportPercentage / 100.0;
-					cropYield += cy;
-					if (organIdsForPrimaryYield.find(p.first + 1) != organIdsForPrimaryYield.end())
-						primaryCropYield += cy;
-				}
+					sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
+				else
+					sumOrganResidueBiomassAsOverlay += organBiomass - organYield;
 			}
-			//assert(Tools::round(primaryCropYieldOld, 5) == Tools::round(primaryCropYield, 5));
+			auto totalResidueBiomass = _currentCropModule->get_ResidueBiomass(false, cropYield);
+			auto totalResidueBiomassToIncorporate = totalResidueBiomass - sumOrganResidueBiomassAsOverlay;
+			auto residuesNConcentration = _currentCropModule->get_ResiduesNConcentration(primaryCropYield);
+			_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(), totalResidueBiomassToIncorporate, residuesNConcentration);
 
-			auto totalBiomass = _currentCropModule->totalBiomass();
-			auto totalBiomassNContent = _currentCropModule->totalBiomassNContent();
-
-			auto rootBiomass = _currentCropModule->get_OrganBiomass(0);
-			auto rootNConcentration = _currentCropModule->get_RootNConcentration();
-
-			auto residueBiomassOld = _currentCropModule->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
-			auto residueBiomass = totalBiomass - rootBiomass - cropYield;
-			//assert(Tools::round(residueBiomassOld,5) == Tools::round(residueBiomass, 5));
-			auto residueNRatio = _currentCropModule->residueNRatio();
-			auto residuesNConcentrationOld = _currentCropModule->get_ResiduesNConcentration();
-      auto residuesNConcentration = 
-        (totalBiomassNContent - (rootBiomass * rootNConcentration))
-        / ((primaryCropYield / residueNRatio) + (totalBiomass - rootBiomass - primaryCropYield));
-			//assert(Tools::round(residuesNConcentrationOld, 5) == Tools::round(residuesNConcentration, 5));
-      _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(), residueBiomass, residuesNConcentration);
+			debug() 
+				<< "adding organic matter from residues to soilOrganic" 
+				<< endl
+        << "total residue biomass: " << totalResidueBiomass
+        << " residue biomass as overlay: " << sumOrganResidueBiomassAsOverlay
+        << " residue N concentration: " << residuesNConcentration
+        << endl
+        << "primary yield biomass: " << primaryCropYield
+        << " primary yield N concentration: " << _currentCropModule->get_PrimaryYieldNConcentration(primaryCropYield)
+				<< endl
+				<< "secondary yield biomass: " << (cropYield - primaryCropYield)
+				<< " secondary yield N concentration: " << _currentCropModule->get_PrimaryYieldNConcentration(primaryCropYield) 
+				<< endl
+        << "residues N content: " << _currentCropModule->get_ResiduesNContent(false, primaryCropYield, cropYield)
+				<< " primary yield N content: " << _currentCropModule->get_PrimaryYieldNContent(primaryCropYield)
+				<< " secondary yield N content: " << _currentCropModule->get_SecondaryYieldNContent(primaryCropYield, cropYield - primaryCropYield) 
+				<< endl;
     }
 		else
 		{
@@ -448,13 +454,6 @@ void MonicaModel::harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest:
 			_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
 																		abovegroundBiomass,
 																		abovegroundBiomassNConcentration);
-
-			//double rootBiomass = _currentCropModule->get_OrganBiomass(0);
-			//double rootNConcentration = _currentCropModule->get_RootNConcentration();
-			//debug() << "adding organic matter from root to soilOrganic" << endl;
-			//debug() << "root biomass: " << rootBiomass
-			//	<< " Root N concentration: " << rootNConcentration << endl;
-			//_currentCropModule->addAndDistributeRootBiomassInSoil(rootBiomass);
 		}
 	}
 

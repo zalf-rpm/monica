@@ -4988,19 +4988,21 @@ double CropModule::get_FreshCropYieldAfterCutting() const
  * @brief Returns residue biomass
  * @return residue biomass
  */
-double CropModule::get_ResidueBiomass(bool useSecondaryCropYields) const
+double CropModule::get_ResidueBiomass(bool useSecondaryCropYields, double alternativeCropYield) const
 {
-	return vc_TotalBiomass - get_OrganBiomass(0) - get_PrimaryCropYield()
-		- (useSecondaryCropYields ? get_SecondaryCropYield() : 0);
+	auto cropYield = alternativeCropYield >= 0 
+		? alternativeCropYield 
+		: get_PrimaryCropYield() + (useSecondaryCropYields ? get_SecondaryCropYield() : 0);
+	return vc_TotalBiomass - get_OrganBiomass(0) - cropYield;
 }
 
 /**
  * @brief Returns residue N concentration [kg kg-1]
  * @return residue N concentration
  */
-double CropModule::get_ResiduesNConcentration() const
+double CropModule::get_ResiduesNConcentration(double alternativePrimaryCropYield) const
 {
-	auto primaryCropYield = get_PrimaryCropYield();
+	auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
 	auto rootBiomass = get_OrganBiomass(0);
 
 	return (vc_TotalBiomassNContent - (rootBiomass * get_RootNConcentration()))
@@ -5012,23 +5014,24 @@ double CropModule::get_ResiduesNConcentration() const
  * @brief Returns primary yield N concentration [kg kg-1]
  * @return primary yield N concentration
  */
-double CropModule::get_PrimaryYieldNConcentration() const
+double CropModule::get_PrimaryYieldNConcentration(double alternativePrimaryCropYield) const
 {
-	auto primaryCropYield = get_PrimaryCropYield();
+	auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
 	auto rootBiomass = get_OrganBiomass(0);
 
 	return (vc_TotalBiomassNContent - (rootBiomass * get_RootNConcentration())) 
 		/ (primaryCropYield + (pc_ResidueNRatio * (vc_TotalBiomass - rootBiomass - primaryCropYield)));
 }
 
-double CropModule::get_ResiduesNContent(bool useSecondaryCropYields) const
+double CropModule::get_ResiduesNContent(bool useSecondaryCropYields, double alternativePrimaryCropYield, double alternativeCropYield) const
 {
-	return get_ResidueBiomass(useSecondaryCropYields) * get_ResiduesNConcentration();
+	return get_ResidueBiomass(useSecondaryCropYields, alternativeCropYield) * get_ResiduesNConcentration(alternativePrimaryCropYield);
 }
 
-double CropModule::get_PrimaryYieldNContent() const
+double CropModule::get_PrimaryYieldNContent(double alternativePrimaryCropYield) const
 {
-	return get_PrimaryCropYield() * get_PrimaryYieldNConcentration();
+	auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
+	return primaryCropYield * get_PrimaryYieldNConcentration(alternativePrimaryCropYield);
 }
 
 double CropModule::get_RawProteinConcentration() const
@@ -5037,9 +5040,10 @@ double CropModule::get_RawProteinConcentration() const
 	return get_PrimaryYieldNConcentration() * 6.25;
 }
 
-double CropModule::get_SecondaryYieldNContent() const
+double CropModule::get_SecondaryYieldNContent(double alternativePrimaryCropYield, double alternativeSecondaryCropYield) const
 {
-	return (get_SecondaryCropYield() * get_ResiduesNConcentration());
+	auto secondaryCropYield = alternativeSecondaryCropYield >= 0 ? alternativeSecondaryCropYield : get_SecondaryCropYield();
+	return secondaryCropYield * get_ResiduesNConcentration(alternativePrimaryCropYield);
 }
 
 /**
