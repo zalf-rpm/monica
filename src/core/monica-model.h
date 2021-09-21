@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <kj/memory.h>
 #include "models/monica/monica_state.capnp.h"
+#include "climate_data.capnp.h"
 
 #include "climate/climate-common.h"
 #include "tools/date.h"
@@ -67,8 +68,8 @@ namespace Monica {
 
 		void cropStep();
 
-		double CO2ForDate(double year, double julianDay, bool isLeapYear);
-		double CO2ForDate(Tools::Date);
+		double CO2ForDate(double year, double julianDay, bool isLeapYear, mas::rpc::climate::RCP rcp = mas::rpc::climate::RCP::RCP85);
+		double CO2ForDate(Tools::Date, mas::rpc::climate::RCP rcp = mas::rpc::climate::RCP::RCP85);
 		double GroundwaterDepthForDate(double maxGroundwaterDepth,
 			double minGroundwaterDepth,
 			int minGroundwaterDepthMonth,

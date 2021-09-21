@@ -752,6 +752,7 @@ namespace Monica {
 		virtual json11::Json to_json() const;
 
 		double p_Albedo{ 0.23 };
+		mas::rpc::climate::RCP rcp{ mas::rpc::climate::RCP::RCP85 };
 		double p_AtmosphericCO2{ 0.0 };
 		std::map<int, double> p_AtmosphericCO2s;
 		double p_AtmosphericO3{ 0.0 };

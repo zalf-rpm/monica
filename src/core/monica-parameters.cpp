@@ -22,6 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 #include <utility>
 #include <mutex>
+#include <string>
 
 #include "monica-parameters.h"
 //#include "db/abstract-db-connections.h"
@@ -32,6 +33,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/conversion.h"
 #include "soil/soil.h"
 
+#include "climate_data.capnp.h"
+
 //using namespace Db;
 using namespace std;
 using namespace Monica;
@@ -39,8 +42,6 @@ using namespace Soil;
 using namespace Tools;
 using namespace Climate;
 using namespace json11;
-
-
 
 /**
  * @brief Constructor
@@ -1568,6 +1569,8 @@ void EnvironmentParameters::deserialize(mas::models::monica::EnvironmentParamete
   p_MaxGroundwaterDepth = reader.getMaxGroundwaterDepth();
   p_MinGroundwaterDepth = reader.getMinGroundwaterDepth();
   p_MinGroundwaterDepthMonth = reader.getMinGroundwaterDepthMonth();
+
+  rcp = reader.getRcp();
 }
 
 void EnvironmentParameters::serialize(mas::models::monica::EnvironmentParameters::Builder builder) const {
@@ -1598,6 +1601,8 @@ void EnvironmentParameters::serialize(mas::models::monica::EnvironmentParameters
   builder.setMaxGroundwaterDepth(p_MaxGroundwaterDepth);
   builder.setMinGroundwaterDepth(p_MinGroundwaterDepth);
   builder.setMinGroundwaterDepthMonth(p_MinGroundwaterDepthMonth);
+
+  builder.setRcp(rcp);
 }
 
 EnvironmentParameters::EnvironmentParameters(json11::Json j)
@@ -1609,7 +1614,25 @@ Errors EnvironmentParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
+  using namespace mas::rpc::climate;
+  auto str2rcp = [](string str) {
+    switch (stoi(str.substr(3, 2)))
+    {
+    case 19: return RCP::RCP19; break;
+    case 26: return RCP::RCP26; break;
+    case 34: return RCP::RCP34; break;
+    case 45: return RCP::RCP45; break;
+    case 60: return RCP::RCP60; break;
+    case 70: return RCP::RCP70; break;
+    case 85: return RCP::RCP85; break;
+    }
+    return RCP::RCP85;
+  };
+
   set_double_value(p_Albedo, j, "Albedo");
+
+  if (j["rcp"].is_string()) rcp = str2rcp(j["rcp"].string_value());
+
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
 	if(j["AtmosphericCO2s"].is_object())
 	{
@@ -1644,13 +1667,29 @@ json11::Json EnvironmentParameters::to_json() const
 	for(auto p : p_AtmosphericO3s)
 		o3s[to_string(p.first)] = p.second;
 
-  return json11::Json::object 
-	{{"type", "EnvironmentParameters"}
+  auto rcp2str = [](auto rcp) {
+    using namespace mas::rpc::climate;
+    switch (rcp)
+    {
+    case RCP::RCP19: return "rcp19"; break;
+    case RCP::RCP26: return "rcp26"; break;
+    case RCP::RCP34: return "rcp34"; break;
+    case RCP::RCP45: return "rcp45"; break;
+    case RCP::RCP60: return "rcp60"; break;
+    case RCP::RCP70: return "rcp70"; break;
+    case RCP::RCP85: return "rcp85"; break;
+    }
+    return "rcp85";
+  };
+
+  return json11::Json::object
+  { {"type", "EnvironmentParameters"}
   ,{"Albedo", p_Albedo}
+  ,{"rcp", rcp2str(rcp)}
   ,{"AtmosphericCO2", p_AtmosphericCO2}
-	,{"AtmosphericCO2s", co2s}
-	,{"AtmosphericO3", p_AtmosphericO3}
-	,{"AtmosphericO3s", o3s}
+  ,{"AtmosphericCO2s", co2s}
+  ,{"AtmosphericO3", p_AtmosphericO3}
+  ,{"AtmosphericO3s", o3s}
   ,{"WindSpeedHeight", p_WindSpeedHeight}
   ,{"LeachingDepth", p_LeachingDepth}
   ,{"timeStep", p_timeStep}

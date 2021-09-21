@@ -687,7 +687,7 @@ void MonicaModel::generalStep()
 			vw_AtmosphericCO2Concentration = co2sit->second;
 		// potentially use MONICA algorithm to calculate CO2 concentration
 		else if(int(_envPs.p_AtmosphericCO2) <= 0)
-			vw_AtmosphericCO2Concentration = CO2ForDate(date);
+			vw_AtmosphericCO2Concentration = CO2ForDate(date, _envPs.rcp);
 		// if everything fails value in UserEnvironmentParameters for the whole simulation
 		else 
 			vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
@@ -863,17 +863,27 @@ void MonicaModel::cropStep()
 *
 * @return
 */
-double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear)
+double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear, mas::rpc::climate::RCP rcp)
 {
+	using namespace mas::rpc::climate;
   double decimalDate = year + julianDay/(leapYear ? 366.0 : 365);
 
-  //Atmospheric CO2 concentration according to RCP 8.5
-  return 222.0 + exp(0.01467*(decimalDate - 1650.0)) + 2.5*sin((decimalDate - 0.5)/0.1592);
+	//old value
+	double co2 = 0;
+	switch (rcp)
+	{
+  case RCP::RCP26: co2 = 306 + 100 / (1 + exp(-(0.05 * (decimalDate - 2000)))) + (2.5 * sin((decimalDate - 0.5) / 0.1592)); break;
+  case RCP::RCP45: co2 = 308 + 270 / (1 + exp(-(0.05 * (decimalDate - 2029)))) + (2.5 * sin((decimalDate - 0.5) / 0.1592)); break;
+  case RCP::RCP60: co2 = 244 + exp(0.013 * (decimalDate - 1625)) + (2.5 * sin((decimalDate - 0.5) / 0.1592)); break;
+	case RCP::RCP85: default: co2 = 294 + exp(0.026 * (decimalDate - 1836)) + (2.5 * sin((decimalDate - 0.5) / 0.1592)); break;
+  }
+
+	return co2;
 }
 
-double MonicaModel::CO2ForDate(Date d)
+double MonicaModel::CO2ForDate(Date d, mas::rpc::climate::RCP rcp)
 {
-	return CO2ForDate(d.year(), d.julianDay(), d.isLeapYear());
+	return CO2ForDate(d.year(), d.julianDay(), d.isLeapYear(), rcp);
 }
 
 

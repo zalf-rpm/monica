@@ -4993,6 +4993,7 @@ double CropModule::get_ResidueBiomass(bool useSecondaryCropYields, double altern
 	auto cropYield = alternativeCropYield >= 0 
 		? alternativeCropYield 
 		: get_PrimaryCropYield() + (useSecondaryCropYields ? get_SecondaryCropYield() : 0);
+
 	return vc_TotalBiomass - get_OrganBiomass(0) - cropYield;
 }
 
