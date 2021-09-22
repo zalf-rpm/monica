@@ -512,7 +512,7 @@ Errors Harvest::merge(json11::Json j)
 			{
 				Spec::Value sv;
 				set_double_value(sv.exportPercentage, kv.second, "export");
-				set_bool_value(sv.incorporate, kv.second, "incorporate");
+				//set_bool_value(sv.incorporate, kv.second, "incorporate");
 				_spec.organ2specVal[organIdFromName(kv.first, res)] = sv;
 			}
 		}
@@ -523,10 +523,9 @@ Errors Harvest::merge(json11::Json j)
 
 json11::Json Harvest::to_json(bool includeFullCropParameters) const
 {
-	return json11::Json::object
+	auto jo = json11::Json::object
 	{ {"type", type()}
 	,{"date", date().toIsoDateString()}
-	//,{"method", _method}
 	,{"percentage", _percentage}
 	,{"exported", _exported}
 	,{"opt-carbon-conservation", _optCarbMgmtData.optCarbonConservation}
@@ -536,6 +535,13 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const
 	,{"organic-fertilizer-heq", _optCarbMgmtData.organicFertilizerHeq}
 	,{"max-residue-recover-fraction", _optCarbMgmtData.maxResidueRecoverFraction }
 	};
+
+	for (const auto& p : _spec.organ2specVal)
+	{
+		jo[organNameFromId(p.first)] = J11Object { {"export", J11Array {p.second.exportPercentage, "%"}}, {"incorporate", p.second.incorporate} };
+	}
+	
+	return jo;
 }
 
 bool Harvest::apply(MonicaModel* model)
