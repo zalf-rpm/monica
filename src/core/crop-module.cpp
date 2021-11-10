@@ -5450,7 +5450,7 @@ void CropModule::fc_UpdateCropParametersForPerennial()
 bool CropModule::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage)
 {
 	if (pc_NumberOfDevelopmentalStages == 6)
-		return (old_dev_stage == 2 && new_dev_stage == 3);
+		return (old_dev_stage == 3 && new_dev_stage == 4);
 	else if (pc_NumberOfDevelopmentalStages == 7)
 		return (old_dev_stage == 4 && new_dev_stage == 5);
 
