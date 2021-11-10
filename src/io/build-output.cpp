@@ -876,24 +876,24 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.soilMoisture().get_ActualEvaporation(), 1);
 			});
 
-			build({ id++, "Pot_ET", "mm", "" }
+			build({ id++, "Pot_ET", "mm", "ET0 * Kc" }
 
 				, [](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.soilMoisture().get_PotentialEvapotranspiration(), 1);
 			});
 
-			build({ id++, "Act_ET", "mm", "" },
+			build({ id++, "Act_ET", "mm", "vm_ActualTranspiration + vm_ActualEvaporation + vc_EvaporatedFromIntercept + vm_EvaporatedFromSurface" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.soilMoisture().get_ActualEvapotranspiration(), 1);
 			});
 
-			build({ id++, "Act_ET2", "mm", "" },
-				[](const MonicaModel& monica, OId oid)
-			{
-				return round((monica.soilMoisture().get_ActualEvaporation() + monica.getTranspiration()), 2);
-			});
+			//build({ id++, "Act_ET2", "mm", "" },
+			//	[](const MonicaModel& monica, OId oid)
+			//{
+			//	return round((monica.soilMoisture().get_ActualEvaporation() + monica.getTranspiration()), 2);
+			//});
 
 			build({ id++, "ET0", "mm", "" },
 				[](const MonicaModel& monica, OId oid)
@@ -1318,13 +1318,13 @@ BOTRes& Monica::buildOutputTable()
 				return round(monica.getEvapotranspiration(), 1);
 			});
 
-			build({ id++, "Evaporation", "mm", "" },
+			build({ id++, "Evaporation", "mm", "evaporation from intercepted water" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				return round(monica.getEvaporation(), 1);
 			});
 
-			build({ id++, "ETa/ETc", "", "actual evapotranspiration / potential evapotranspiration" },
+			build({ id++, "ETa/ETc", "", "Act_ET / Pot_ET (actual evapotranspiration / potential evapotranspiration)" },
 				[](const MonicaModel& monica, OId oid)
 			{
 				auto potET = monica.soilMoisture().get_PotentialEvapotranspiration();
