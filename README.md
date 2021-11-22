@@ -23,7 +23,7 @@ Builds can be downloaded from the repository's [releases page](https://github.co
 
 # Building
 
-In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/capnproto_schemas and 
+In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/mas-infrastructure and 
 zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
 
 After cloning the repositories you should have this file structure:
@@ -32,7 +32,7 @@ After cloning the repositories you should have this file structure:
 		      |_ monica
 		      |_ util
 		      |_ monica-parameters
-		      |_ capnproto_schemas
+		      |_ mas-infrastructure
    
 
 Also install Python to run the minimal examples. 
@@ -61,25 +61,16 @@ Shell:
 
 # Usage
 
-MONICA consists right now of a number of tools/parts. Most of them can be called at the commandline like
-
-    monica command1 [command2] parameter1 parameter2 ....
-
-eg. to run MONICA locally with the standard Hohenfinow2 example under Windows using the standard installer, 
+To run MONICA locally with the standard Hohenfinow2 example under Windows using the standard installer, 
 go to the c:\users\USER_PROFILE\MONICA directory and execute in a Commandshell
 
-    monica run Examples/Hohenfinow2/sim.json > out.csv
+    monica-run Examples/Hohenfinow2/sim.json > out.csv
 
-Alternatively one can type always the full name of the tool, which are named monica-run, monica-zmq-run, monica-zmq-server etc, 
-monica is just a proxy program calling the actual tools. There are the following tools/versions of MONICA available.
+There are the following tools/versions of MONICA available.
 
 * libmonica ... the libmonica.dll/.so with the MONICA core functionality
-* monica ... the proxy tool, to call the other tools
 * monica-run ... the standalone MONICA commandline model (using libmonica)
-* monica-zmq-control ... a tool to run on the server and accepting ZeroMQ messages to spawn MONICA servers/ZMQ Proxies etc
-* monica-zmq-control-send ... a client side tool to send ZMQ messages to the server 
 * monica-zmq-proxy ... a tool to run serverside and forward/distribute jobs (ZMQ job messages) to MONICA workers (servers)
-* monica-zmq-run ... the ZMQ client to monica-zmq-server/the equivalent to monica-run, but sends work to a monica-zmq-server
 * monica-zmq-server ... a MONICA server accepting ZeroMQ messages and process them, usually to be used in connection with ZMQ proxy/proxies and a cloud of worker monica-zmq-servers
 
 
@@ -96,13 +87,12 @@ Contributions are welcome.
 
 ## Credits: Include a section for credits in order to highlight and link to the authors of your project.
 
-MONICA is model of the [Institue of Landscape Systems Analysis](http://www.zalf.de/en/institute_einrichtungen/lsa/Pages/default.aspx) at the [Leibniz Centre for Agricultural Landscape Research (ZALF)](http://www.zalf.de/en).
+MONICA is model of the [Research Platform "Data Analysis & Simulation"](https://www.zalf.de/en/struktur/fds/Pages/default.aspx) at the [Leibniz Centre for Agricultural Landscape Research (ZALF)](http://www.zalf.de/en).
 
 Authors
 * Claas Nendel (claas (dot) nendel [at] zalf (dot) de)
 * Xenia Specka (xenia (dot) specka [at] zalf (dot) de)
 * Michael Berg-Mohnicke (michael (dot) berg [at] zalf (dot) de)
-* Tommaso Stella (tommaso (dot) stella [at] zalf (dot) de)
 
 Maintainers:
 Currently maintained by the authors.
