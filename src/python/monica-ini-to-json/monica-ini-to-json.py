@@ -352,9 +352,9 @@ def main():
             ])
             climate_data.append([
                 "[]",
-                "[°C]",
-                "[°C]",
-                "[°C]",
+                "[degC]",
+                "[degC]",
+                "[degC]",
                 "[mm]",
                 "[MJ/m2]",
                 "[h]",
@@ -405,7 +405,7 @@ def main():
                     del row[5]
 
             # write climate data
-            with(open(dir_of_monica_ini + "/" + sim["climate.csv"], "w")) as _:
+            with(open(dir_of_monica_ini + "/" + sim["climate.csv"], "wt", newline='')) as _:
                 writer = csv.writer(_, delimiter=",")
                 writer.writerows(climate_data)
 
