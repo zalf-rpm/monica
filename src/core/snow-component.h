@@ -19,7 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <vector>
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 namespace Monica 
 {
@@ -31,9 +31,9 @@ namespace Monica
     SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps);
     ~SnowComponent() {}
 
-    SnowComponent(SoilColumn& sc, mas::models::monica::SnowModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
-    void deserialize(mas::models::monica::SnowModuleState::Reader reader);
-    void serialize(mas::models::monica::SnowModuleState::Builder builder) const;
+    SnowComponent(SoilColumn& sc, mas::schema::model::monica::SnowModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
+    void deserialize(mas::schema::model::monica::SnowModuleState::Reader reader);
+    void serialize(mas::schema::model::monica::SnowModuleState::Builder builder) const;
 
     void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
 

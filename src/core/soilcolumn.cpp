@@ -39,7 +39,7 @@ using namespace std;
 using namespace Soil;
 using namespace Tools;
 
-void AOM_Properties::deserialize(mas::models::monica::AOMProperties::Reader reader) {
+void AOM_Properties::deserialize(mas::schema::model::monica::AOMProperties::Reader reader) {
 	vo_AOM_Slow = reader.getAomSlow();
 	vo_AOM_Fast = reader.getAomFast();
 	vo_AOM_SlowDecRate_to_SMB_Slow = reader.getAomSlowDecRatetoSMBSlow();
@@ -63,7 +63,7 @@ void AOM_Properties::deserialize(mas::models::monica::AOMProperties::Reader read
 	noVolatilization = reader.getNoVolatilization();
 }
 
-void AOM_Properties::serialize(mas::models::monica::AOMProperties::Builder builder) const {
+void AOM_Properties::serialize(mas::schema::model::monica::AOMProperties::Builder builder) const {
 	builder.setAomSlow(vo_AOM_Slow);
 	builder.setAomFast(vo_AOM_Fast);
 	builder.setAomSlowDecRatetoSMBSlow(vo_AOM_SlowDecRate_to_SMB_Slow);
@@ -104,7 +104,7 @@ SoilLayer::SoilLayer(double vs_LayerThickness,
 {
 }
 
-void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) {
+void SoilLayer::deserialize(mas::schema::model::monica::SoilLayerState::Reader reader) {
 	vs_LayerThickness = reader.getLayerThickness();
 	vs_SoilWaterFlux = reader.getSoilWaterFlux();
 	setFromComplexCapnpList(vo_AOM_Pool, reader.getVoAOMPool());
@@ -122,7 +122,7 @@ void SoilLayer::deserialize(mas::models::monica::SoilLayerState::Reader reader) 
 	vs_SoilTemperature = reader.getSoilTemperature();
 }
 
-void SoilLayer::serialize(mas::models::monica::SoilLayerState::Builder builder) const {
+void SoilLayer::serialize(mas::schema::model::monica::SoilLayerState::Builder builder) const {
 	builder.setLayerThickness(vs_LayerThickness);
 	builder.setSoilWaterFlux(vs_SoilWaterFlux);
 	setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool((uint)vo_AOM_Pool.size()));
@@ -218,7 +218,7 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
 	_vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
 
-void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader) {
+void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader reader) {
 	vs_SurfaceWaterStorage = reader.getVsSurfaceWaterStorage();
 	vs_InterceptionStorage = reader.getVsInterceptionStorage();
 	vm_GroundwaterTable = reader.getVmGroundwaterTable();
@@ -236,7 +236,7 @@ void SoilColumn::deserialize(mas::models::monica::SoilColumnState::Reader reader
 	setFromComplexCapnpList(*this, reader.getLayers());
 }
 
-void SoilColumn::serialize(mas::models::monica::SoilColumnState::Builder builder) const {
+void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder builder) const {
 	builder.setVsSurfaceWaterStorage(vs_SurfaceWaterStorage);
 	builder.setVsInterceptionStorage(vs_InterceptionStorage);
 	builder.setVmGroundwaterTable((uint16_t)vm_GroundwaterTable);
@@ -796,7 +796,7 @@ double SoilColumn::sumSoilTemperature(int layers) const
 
 //------------------------------------------------------------------------------
 
-void SoilColumn::DelayedNMinApplicationParams::deserialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {
+void SoilColumn::DelayedNMinApplicationParams::deserialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {
 	fp.deserialize(reader.getFp());
 	vf_SamplingDepth = reader.getSamplingDepth();
 	vf_CropNTarget = reader.getCropNTarget();
@@ -805,7 +805,7 @@ void SoilColumn::DelayedNMinApplicationParams::deserialize(mas::models::monica::
 	vf_FertiliserMaxApplication = reader.getFertiliserMaxApplication();
 	vf_TopDressingDelay = (int)reader.getTopDressingDelay();
 }
-void SoilColumn::DelayedNMinApplicationParams::serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const {
+void SoilColumn::DelayedNMinApplicationParams::serialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const {
 	fp.serialize(builder.initFp());
 	builder.setSamplingDepth(vf_SamplingDepth);
 	builder.setCropNTarget(vf_CropNTarget);

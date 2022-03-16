@@ -56,9 +56,9 @@ namespace Monica
   public:
     SoilTemperature(MonicaModel& monica, const SoilTemperatureModuleParameters& params);
 
-    SoilTemperature(MonicaModel& monica, mas::models::monica::SoilTemperatureModuleState::Reader reader);
-    void deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader);
-    void serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const;
+    SoilTemperature(MonicaModel& monica, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+    void deserialize(mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+    void serialize(mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) const;
 
     void step(double tmin, double tmax, double globrad);
 

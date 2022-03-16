@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/serialize.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 #include "run-monica.h"
 #include "tools/debug.h"
@@ -654,7 +654,7 @@ DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
 	auto allBytes = file->readAllBytes();
 	kj::ArrayInputStream aios(allBytes);
 	capnp::InputStreamMessageReader message(aios);
-	auto runtimeState = message.getRoot<mas::models::monica::RuntimeState>();
+	auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
 	DFSRes res;
 	//res.critPos = runtimeState.getCritPos();
 	//res.cmitPos = runtimeState.getCmitPos();

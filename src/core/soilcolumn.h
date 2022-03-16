@@ -35,7 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iostream>
 #include <assert.h>
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
 
@@ -58,8 +58,8 @@ namespace Monica
    */
   struct AOM_Properties
   {
-    void deserialize(mas::models::monica::AOMProperties::Reader reader);
-    void serialize(mas::models::monica::AOMProperties::Builder builder) const;
+    void deserialize(mas::schema::model::monica::AOMProperties::Reader reader);
+    void serialize(mas::schema::model::monica::AOMProperties::Builder builder) const;
 
     double vo_AOM_Slow{0.0}; //!< C content in slowly decomposing added organic matter pool [kgC m-3]
     double vo_AOM_Fast{0.0}; //!< C content in rapidly decomposing added organic matter pool [kgC m-3]
@@ -114,9 +114,9 @@ namespace Monica
     SoilLayer(double vs_LayerThickness,
       const Soil::SoilParameters& soilParams);
 
-    SoilLayer(mas::models::monica::SoilLayerState::Reader reader) { deserialize(reader); }
-    void deserialize(mas::models::monica::SoilLayerState::Reader reader);
-    void serialize(mas::models::monica::SoilLayerState::Builder builder) const;
+    SoilLayer(mas::schema::model::monica::SoilLayerState::Reader reader) { deserialize(reader); }
+    void deserialize(mas::schema::model::monica::SoilLayerState::Reader reader);
+    void serialize(mas::schema::model::monica::SoilLayerState::Builder builder) const;
 
 		//!< Soil layer's organic matter content [kg OM kg-1]
 		double vs_SoilOrganicMatter() const { return _sps.vs_SoilOrganicMatter(); } 
@@ -224,10 +224,10 @@ namespace Monica
                const Soil::SoilPMs& soilParams,
                double pm_CriticalMoistureDepth);
 
-    SoilColumn(mas::models::monica::SoilColumnState::Reader reader, CropModule* cropModule = nullptr)
+    SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule* cropModule = nullptr)
     : cropModule(cropModule) { deserialize(reader); }
-    void deserialize(mas::models::monica::SoilColumnState::Reader reader);
-    void serialize(mas::models::monica::SoilColumnState::Builder builder) const;
+    void deserialize(mas::schema::model::monica::SoilColumnState::Reader reader);
+    void serialize(mas::schema::model::monica::SoilColumnState::Builder builder) const;
 
     void applyMineralFertiliser(MineralFertilizerParameters fertiliserPartition,
                                 double amount);
@@ -308,8 +308,8 @@ namespace Monica
     CropModule* cropModule{nullptr};
 
     struct DelayedNMinApplicationParams {
-      void deserialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader);
-      void serialize(mas::models::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const;
+      void deserialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader);
+      void serialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const;
 
       MineralFertilizerParameters fp;
       double vf_SamplingDepth;

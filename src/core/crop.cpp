@@ -92,7 +92,7 @@ Crop::Crop(json11::Json j)
 	merge(j);
 }
 
-void Crop::deserialize(mas::models::monica::CropState::Reader reader) {
+void Crop::deserialize(mas::schema::model::monica::CropState::Reader reader) {
 	_speciesName = reader.getSpeciesName();
 	_cultivarName = reader.getCultivarName();
 	_seedDate.deserialize(reader.getSeedDate());
@@ -112,7 +112,7 @@ void Crop::deserialize(mas::models::monica::CropState::Reader reader) {
 	_automaticHarvestParams.deserialize(reader.getAutomaticHarvestParams());
 }
 
-void Crop::serialize(mas::models::monica::CropState::Builder builder) const {
+void Crop::serialize(mas::schema::model::monica::CropState::Builder builder) const {
 	builder.setSpeciesName(_speciesName);
   builder.setCultivarName(_cultivarName);
   _seedDate.serialize(builder.initSeedDate());

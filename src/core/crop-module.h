@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <utility>
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
 #include "soilcolumn.h"
@@ -77,12 +77,12 @@ namespace Monica
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 			std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-			mas::models::monica::CropModuleState::Reader reader)
+			mas::schema::model::monica::CropModuleState::Reader reader)
 			: soilColumn(sc), cropPs(cropPs), _fireEvent(fireEvent), 
 			_addOrganicMatter(addOrganicMatter), _getSnowDepthAndCalcTempUnderSnow(getSnowDepthAndCalcTempUnderSnow) { deserialize(reader); }
 
-		void deserialize(mas::models::monica::CropModuleState::Reader reader);
-		void serialize(mas::models::monica::CropModuleState::Builder builder) const;
+		void deserialize(mas::schema::model::monica::CropModuleState::Reader reader);
+		void serialize(mas::schema::model::monica::CropModuleState::Builder builder) const;
 
 		void applyCutting(std::map<int, Cutting::Value>& organs,
 			std::map<int, double>& exports,

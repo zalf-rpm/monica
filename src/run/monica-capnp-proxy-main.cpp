@@ -44,25 +44,23 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace std;
 using namespace Monica;
 using namespace Tools;
-using namespace json11;
-using namespace Climate;
 using namespace mas;
 using namespace mas::infrastructure::common;
 
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
-typedef rpc::model::EnvInstance<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText> MonicaEnvInstance;
+typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
 
 class RunMonicaProxy;
-class Unregister final : public rpc::common::Callback::Server
+class Unregister final : public mas::schema::common::Action::Server
 {
 public:
 	Unregister(RunMonicaProxy& proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
 
 	~Unregister();
 
-	kj::Promise<void> call(CallContext context) override; //call @0 ();
+	kj::Promise<void> do_(DoContext context) override; //do @0 ();
 
 private:
 	void unreg();
@@ -71,7 +69,7 @@ private:
 	size_t _monicaServerId;
 };
 
-class RunMonicaProxy final : public rpc::model::EnvInstanceProxy< mas::rpc::common::StructuredText, mas::rpc::common::StructuredText>::Server
+class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy< mas::schema::common::StructuredText, mas::schema::common::StructuredText>::Server
 {
 	friend class Unregister;
 		
@@ -194,7 +192,7 @@ void Unregister::unreg() {
 	}
 }
 
-kj::Promise<void> Unregister::call(CallContext context) // call @0 ();
+kj::Promise<void> Unregister::do_(DoContext context) // do @0 ();
 {
 	unreg();
 	return kj::READY_NOW;
@@ -206,7 +204,7 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool 
 	return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
 		kj::AsyncIoProvider& ioProvider, kj::AsyncIoStream& stream, kj::WaitScope& waitScope) {
 			capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
-			auto server = makeRpcServer(network, kj::heap<RunMonicaImpl>(startMonicaThreadsInDebugMode));
+			auto server = makeRpcServer(network, kj::heap<RunMonica>(new rpc::common::Restorer(), startMonicaThreadsInDebugMode));
 			network.onDisconnect().wait(waitScope);
 		});
 }
@@ -375,8 +373,9 @@ int main(int argc, const char* argv[]) {
 
 		capnp::Capability::Client mainInterface = kj::heap<RunMonicaProxy>(clients);
 
-		ConnectionManager conman;
-		auto portPromise = conman.bind(ioContext, mainInterface, address, port < 0 ? 0U : kj::uint(port));
+		ConnectionManager conMan;
+		auto addrAndPortProms = conMan.bind(ioContext, mainInterface, address, port < 0 ? 0U : kj::uint(port));
+		auto portPromise = addrAndPortProms.second.fork().addBranch();
 		auto port = portPromise.wait(ioContext.waitScope);
 		
 		//port = portPromise.addBranch().wait(ioContext.waitScope);
@@ -386,7 +385,7 @@ int main(int argc, const char* argv[]) {
 		auto registratorCap = cap.castAs<rpc::registry::Registrator>();
 		auto regReq = registratorCap.registerRequest();
 		regReq.setCategoryId("abc");
-		regReq.setRef(mainInterface.castAs<rpc::Common::Identifiable>());
+		regReq.setRef(mainInterface.castAs<mas::schema::common::Identifiable>());
 //{
 			auto regResp = regReq.send().wait(ioContext.waitScope);
 			auto unreg = regResp.getUnreg();
@@ -400,7 +399,7 @@ int main(int argc, const char* argv[]) {
 		auto entriesRes = entriesReq.send().wait(ioContext.waitScope);
 		auto entries = entriesRes.getEntries();
 		auto fstEntry = entries[0];
-		//auto self = fstEntry.getRef().castAs<rpc::Model::EnvInstanceProxy<capnp::Text, capnp::Text>>();
+		//auto self = fstEntry.getRef().castAs<mas::schema::model::EnvInstanceProxy<capnp::Text, capnp::Text>>();
 		auto catId = fstEntry.getCategoryId();
 		cout << "catId: " << catId.cStr() << endl;
 		auto ref = fstEntry.getRef();

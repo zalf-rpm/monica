@@ -30,7 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/serialize.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 //#include "db/abstract-db-connections.h"
 #include "climate/climate-common.h"
@@ -1119,7 +1119,7 @@ bool SaveMonicaState::apply(MonicaModel* model) {
     : fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile), kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
 
 	capnp::MallocMessageBuilder message;
-	auto runtimeState = message.initRoot<mas::models::monica::RuntimeState>();
+	auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
 	//runtimeState.setCritPos(model->critPos);
 	//runtimeState.setCmitPos(model->cmitPos);
 	auto modelState = runtimeState.initModelState();

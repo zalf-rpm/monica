@@ -78,7 +78,7 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
 {
 }
 
-void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader reader) {
+void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
 	_sitePs.deserialize(reader.getSitePs());
 	_envPs.deserialize(reader.getEnvPs());
 	_cropPs.deserialize(reader.getCropPs());
@@ -175,7 +175,7 @@ void MonicaModel::deserialize(mas::models::monica::MonicaModelState::Reader read
 	_cultivationMethodCount = reader.getCultivationMethodCount();
 }
 
-void MonicaModel::serialize(mas::models::monica::MonicaModelState::Builder builder) {
+void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builder builder) {
 	_sitePs.serialize(builder.initSitePs());
 	_envPs.serialize(builder.initEnvPs());
 	_cropPs.serialize(builder.initCropPs());
@@ -863,9 +863,9 @@ void MonicaModel::cropStep()
 *
 * @return
 */
-double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear, mas::rpc::climate::RCP rcp)
+double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear, mas::schema::climate::RCP rcp)
 {
-	using namespace mas::rpc::climate;
+	using namespace mas::schema::climate;
   double decimalDate = year + julianDay/(leapYear ? 366.0 : 365);
 
 	//old value
@@ -881,7 +881,7 @@ double MonicaModel::CO2ForDate(double year, double julianDay, bool leapYear, mas
 	return co2;
 }
 
-double MonicaModel::CO2ForDate(Date d, mas::rpc::climate::RCP rcp)
+double MonicaModel::CO2ForDate(Date d, mas::schema::climate::RCP rcp)
 {
 	return CO2ForDate(d.year(), d.julianDay(), d.isLeapYear(), rcp);
 }

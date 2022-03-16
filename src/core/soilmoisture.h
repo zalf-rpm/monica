@@ -19,7 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <vector>
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 #include "monica-parameters.h"
 #include "frost-component.h"
 #include "snow-component.h"
@@ -47,9 +47,9 @@ namespace Monica
   public:
     SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
 
-    SoilMoisture(MonicaModel& monica, mas::models::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule = nullptr);
-    void deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader);
-    void serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const;
+    SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule = nullptr);
+    void deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
+    void serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const;
 
 	void step(double vs_DepthGroundwaterTable,
 		// Wetter Variablen

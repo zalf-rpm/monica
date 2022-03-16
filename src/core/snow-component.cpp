@@ -56,7 +56,7 @@ SnowComponent::SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters&
 //  cout << "Monica: vm_SnowMaxAdditionalDensity " << vm_SnowMaxAdditionalDensity << endl;
 }
 
-void SnowComponent::deserialize(mas::models::monica::SnowModuleState::Reader reader) {
+void SnowComponent::deserialize(mas::schema::model::monica::SnowModuleState::Reader reader) {
   vm_SnowDensity = reader.getSnowDensity();
   vm_SnowDepth = reader.getSnowDepth();
   vm_FrozenWaterInSnow = reader.getFrozenWaterInSnow();
@@ -79,7 +79,7 @@ void SnowComponent::deserialize(mas::models::monica::SnowModuleState::Reader rea
   vm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
 }
 
-void SnowComponent::serialize(mas::models::monica::SnowModuleState::Builder builder) const {
+void SnowComponent::serialize(mas::schema::model::monica::SnowModuleState::Builder builder) const {
   builder.setSnowDensity(vm_SnowDensity);
   builder.setSnowDepth(vm_SnowDepth);
   builder.setFrozenWaterInSnow(vm_FrozenWaterInSnow);

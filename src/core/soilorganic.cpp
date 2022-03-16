@@ -130,7 +130,7 @@ SoilOrganic::SoilOrganic(SoilColumn& sc, const SoilOrganicModuleParameters& user
   } // for
 }
 
-void SoilOrganic::deserialize(mas::models::monica::SoilOrganicModuleState::Reader reader) {
+void SoilOrganic::deserialize(mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
   _params.deserialize(reader.getModuleParams());
   vs_NumberOfLayers = reader.getVsNumberOfLayers();
   vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
@@ -174,7 +174,7 @@ void SoilOrganic::deserialize(mas::models::monica::SoilOrganicModuleState::Reade
   incorporation = reader.getIncorporation();
 }
 
-void SoilOrganic::serialize(mas::models::monica::SoilOrganicModuleState::Builder builder) const {
+void SoilOrganic::serialize(mas::schema::model::monica::SoilOrganicModuleState::Builder builder) const {
   _params.serialize(builder.initModuleParams());
   builder.setVsNumberOfLayers((uint16_t)vs_NumberOfLayers);
   builder.setVsNumberOfOrganicLayers((uint16_t)vs_NumberOfOrganicLayers);

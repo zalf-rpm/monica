@@ -31,9 +31,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/thread.h>
 
 #include "tools/helper.h"
-//#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "../mas-infrastructure/src/cpp/common/rpc-connections.h"
+#include "../mas-infrastructure/src/cpp/common/common.h"
 
 #include "run-monica-capnp.h"
 
@@ -41,50 +41,38 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common.capnp.h"
 #include "cluster_admin_service.capnp.h"
 #include "registry.capnp.h"
+#include "climate_data.capnp.h"
 
 using namespace std;
 using namespace Monica;
 using namespace Tools;
-using namespace json11;
-using namespace Climate;
+//using namespace json11;
+//using namespace Climate;
 using namespace mas;
-using namespace mas::infrastructure::common;
 
 string appName = "monica-capnp-server";
 string version = "1.0.0-beta";
 
-typedef rpc::model::EnvInstance<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText> MonicaEnvInstance;
-typedef rpc::model::EnvInstanceProxy<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText> MonicaEnvInstanceProxy;
+typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
+typedef schema::model::EnvInstanceProxy<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstanceProxy;
 
 int main(int argc, const char* argv[]) {
 
   setlocale(LC_ALL, "");
   setlocale(LC_NUMERIC, "C");
 
+  infrastructure::common::ConnectionManager _conMan;
+  auto ioContext = kj::setupAsyncIo();
   string proxyAddress = "localhost";
   int proxyPort = 6666;
   bool connectToProxy = false;
 
-  string factoryAddress = "localhost";
-  int factoryPort = 9999;
-  bool connectToFactory = false;
-  string registrationToken = "";
+  string registrarSR;
 
   string address = "*";
-  int port = -1;
+  int port = 0;
 
-  //bool hideServer = false;
   bool startedServerInDebugMode = false;
-
-  //init path to db-connections.ini
-  //if (auto monicaHome = getenv("MONICA_HOME")) {
-  //  auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-    //init for monica-run
-  //  Db::dbConnectionParameters(pathToFile);
-  //}
-
-  //use a possibly non-default db-connections.ini
-  //Db::dbConnectionParameters("db-connections.ini");
 
   auto printHelp = [=]() {
     cout
@@ -99,8 +87,6 @@ int main(int argc, const char* argv[]) {
       << endl
       << " -d | --debug "
       "... show debug outputs" << endl
-      //<< " -i | --hide "
-      //"... hide server (default: " << (hideServer ? "true" : "false") << " as service on give address and port" << endl
       << " -a | --address ... ADDRESS (default: " << address << ") "
       "... runs server bound to given address, may be '*' to bind to all local addresses" << endl
       << " -p | --port ... PORT (default: none) "
@@ -112,15 +98,8 @@ int main(int argc, const char* argv[]) {
       "... connects server to proxy running at given address" << endl
       << " -pp | --proxy-port ... PORT (default: " << proxyPort << ") "
       "... connects server to proxy running on given port." << endl
-      << " -cf | --connect-to-factory "
-      "... connect to factory given sturdy ref -sr" << endl
-      << " -sr | --sturdy-ref "
-      "... STURDY_REF "
-      "... connects server to factory running at given address" << endl
-      << " -fp | --factory-port ... PORT (default: " << factoryPort << ")] "
-      "... connects server to factory running on given port." << endl
-      << " -rt | --registration-token ... REGISTRATION_TOKEN (default: " << registrationToken << ")] "
-      "... a token proving the authority to register this MONICA instance at the factory." << endl;
+      << " -rsr | ----registrar-sturdy-ref ... REGISTAR_STURDY_REF "
+      "... register MONICA at the registrar" << endl;
   };
 
   if (argc >= 1) {
@@ -130,10 +109,6 @@ int main(int argc, const char* argv[]) {
         activateDebug = true;
         startedServerInDebugMode = true;
       }
-      //else if (arg == "-i" || arg == "--hide") 
-      //{
-      //	hideServer = true;
-      //}
       else if (arg == "-a" || arg == "--address") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           address = argv[++i];
@@ -148,17 +123,9 @@ int main(int argc, const char* argv[]) {
       } else if (arg == "-pp" || arg == "--proxy-port") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           proxyPort = stoi(argv[++i]);
-      } else if (arg == "-cf" || arg == "--connect-to-factory") {
-        connectToFactory = true;
-      } else if (arg == "-sr" || arg == "--sturdy-ref") {
+      } else if (arg == "-rsr" || arg == "--registrar-sturdy-ref") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
-          factoryAddress = argv[++i];
-      } else if (arg == "-fp" || arg == "--factory-port") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          factoryPort = stoi(argv[++i]);
-      } else if (arg == "-rt" || arg == "--registration-token") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          registrationToken = argv[++i];
+          registrarSR = argv[++i];
       } else if (arg == "-h" || arg == "--help")
         printHelp(), exit(0);
       else if (arg == "-v" || arg == "--version")
@@ -167,15 +134,20 @@ int main(int argc, const char* argv[]) {
 
     debug() << "starting Cap'n Proto MONICA server" << endl;
 
-    //create monica server implementation
-    auto runMonicaImpl_ = kj::heap<RunMonicaImpl>(startedServerInDebugMode);
-    auto& runMonicaImpl = *runMonicaImpl_;
-    MonicaEnvInstance::Client runMonicaImplClient = kj::mv(runMonicaImpl_); // kj::heap<RunMonicaImpl>(startedServerInDebugMode);
+    auto restorer = kj::heap<rpc::common::Restorer>();
+    auto& restorerRef = *restorer;
+    schema::persistence::Restorer::Client restorerClient = kj::mv(restorer);
+    auto runMonica = kj::heap<RunMonica>(restorer.get(), startedServerInDebugMode);
+    auto& runMonicaRef = *runMonica;
+    MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
+    runMonicaRef.setClient(runMonicaClient);
     debug() << "created monica" << endl;
 
-    mas::rpc::common::Callback::Client unregister(nullptr);
+    schema::common::Action::Client unregister(nullptr);
+    string reregSR;
 
     if (connectToProxy) {
+      /*
       //create client connection to proxy
       try {
         capnp::EzRpcClient client(proxyAddress, proxyPort);
@@ -198,33 +170,61 @@ int main(int argc, const char* argv[]) {
         cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl
           << "Exception: " << e.what() << endl;
       }
-    } else if (connectToFactory) {
+      */
+    } else {
       //create client connection to a factory
       try {
-        capnp::EzRpcClient client(factoryAddress, factoryPort);
 
-        auto& cWaitScope = client.getWaitScope();
+        if(!registrarSR.empty())
+        {
+          auto x = _conMan.connect(ioContext, "capnp://insecure@10.10.24.110:38437/a98d4543-fa24-492e-bc73-238aa4a2c21f").wait(ioContext.waitScope).castAs<schema::climate::Service>();
+          auto xreq = x.infoRequest();
+          auto xrsp = xreq.send().wait(ioContext.waitScope);
+          cout << xrsp.getName().cStr() << endl;
 
-        // Request the bootstrap capability from the server.
-        rpc::Cluster::ModelInstanceFactory::Client cap = client.getMain<rpc::Cluster::ModelInstanceFactory>();
-        debug() << "got factory cap" << endl;
+          auto registrar = _conMan.connect(ioContext, registrarSR).wait(ioContext.waitScope).castAs<schema::registry::Registrar>();
+          auto request = registrar.registerRequest();
+          request.setCap(runMonicaClient);
+          request.setRegName("monica");
+          request.setCategoryId("monica");
+          auto response = request.send().wait(ioContext.waitScope);
+          unregister = response.getUnreg();
+          reregSR = response.getReregSR().cStr();
+          runMonicaRef.setUnregister(unregister);
+          debug() << "registered at registrar" << endl;
+        }
 
-        // Make a call to the capability.
-        auto request = cap.registerModelInstanceRequest();
-        request.setInstance(runMonicaImplClient);
-        request.setRegistrationToken(registrationToken);
-        auto response = request.send().wait(cWaitScope);
-        unregister = response.getUnregister();
-        runMonicaImpl.setUnregister(unregister);
-        debug() << "registered at factory" << endl;
+        auto proms = _conMan.bind(ioContext, restorerClient, address, port);
+        auto addrPromise = proms.first.fork().addBranch();
+        auto addrStr = addrPromise.wait(ioContext.waitScope);
+        restorerRef.setHost("10.10.24.110");//addrStr);
+        auto portPromise = proms.second.fork().addBranch();
+        auto port = portPromise.wait(ioContext.waitScope);
+        restorerRef.setPort(port);
+        
+        auto restorerSR = restorerRef.sturdyRef();
+        auto monicaSRs = restorerRef.save(runMonicaClient);
+        cout << "monica_sr: " << monicaSRs.first << endl;
+        cout << "restorer_sr: " << restorerSR << endl;
 
-        //if (hideServer)
-        kj::NEVER_DONE.wait(cWaitScope);
+        if (port == 0) {
+          // The address format "unix:/path/to/socket" opens a unix domain socket,
+          // in which case the port will be zero.
+          std::cout << "Listening on Unix socket..." << std::endl;
+        }
+        else {
+          std::cout << "Listening on port " << port << "..." << std::endl;
+        }
+
+        // Run forever, accepting connections and handling requests.
+        kj::NEVER_DONE.wait(ioContext.waitScope);
       } catch (exception e) {
         cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl
           << "Exception: " << e.what() << endl;
       }
-    } else {
+    } 
+    /*
+    else {
       capnp::EzRpcServer server(runMonicaImplClient, address + (port < 0 ? "" : string(":") + to_string(port)));
 
       // Write the port number to stdout, in case it was chosen automatically.
@@ -241,6 +241,7 @@ int main(int argc, const char* argv[]) {
       // Run forever, accepting connections and handling requests.
       kj::NEVER_DONE.wait(waitScope);
     }
+    */
 
     debug() << "stopped Cap'n Proto MONICA server" << endl;
   }

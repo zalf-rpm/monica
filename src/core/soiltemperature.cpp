@@ -235,7 +235,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 	}
 }
 
-SoilTemperature::SoilTemperature(MonicaModel& mm, mas::models::monica::SoilTemperatureModuleState::Reader reader)
+SoilTemperature::SoilTemperature(MonicaModel& mm, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader)
   : _soilColumn(mm.soilColumnNC())
   , monica(mm)
   , soilColumn(_soilColumn,
@@ -245,7 +245,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, mas::models::monica::SoilTempe
 	deserialize(reader); 
 }
 
-void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleState::Reader reader) {
+void SoilTemperature::deserialize(mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
 	vt_SoilSurfaceTemperature = reader.getSoilSurfaceTemperature();
 	_soilColumn_vt_GroundLayer.deserialize(reader.getSoilColumnVtGroundLayer());
 	_soilColumn_vt_BottomLayer.deserialize(reader.getSoilColumnVtBottomLayer());
@@ -267,7 +267,7 @@ void SoilTemperature::deserialize(mas::models::monica::SoilTemperatureModuleStat
 	_dampingFactor = reader.getDampingFactor();
 }
 
-void SoilTemperature::serialize(mas::models::monica::SoilTemperatureModuleState::Builder builder) const {
+void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) const {
 	builder.setSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
 	_soilColumn_vt_GroundLayer.serialize(builder.initSoilColumnVtGroundLayer());
 	_soilColumn_vt_BottomLayer.serialize(builder.initSoilColumnVtBottomLayer());

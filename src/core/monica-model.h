@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <set>
 
 #include <kj/memory.h>
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 #include "climate_data.capnp.h"
 
 #include "climate/climate-common.h"
@@ -56,11 +56,11 @@ namespace Monica {
 	public:
 		MonicaModel(const CentralParameterProvider& cpp);
 
-		MonicaModel(mas::models::monica::MonicaModelState::Reader reader) { deserialize(reader); }
+		MonicaModel(mas::schema::model::monica::MonicaModelState::Reader reader) { deserialize(reader); }
 
-		void deserialize(mas::models::monica::MonicaModelState::Reader reader);
+		void deserialize(mas::schema::model::monica::MonicaModelState::Reader reader);
 
-		void serialize(mas::models::monica::MonicaModelState::Builder builder);
+		void serialize(mas::schema::model::monica::MonicaModelState::Builder builder);
 
 		void step();
 
@@ -68,8 +68,8 @@ namespace Monica {
 
 		void cropStep();
 
-		double CO2ForDate(double year, double julianDay, bool isLeapYear, mas::rpc::climate::RCP rcp = mas::rpc::climate::RCP::RCP85);
-		double CO2ForDate(Tools::Date, mas::rpc::climate::RCP rcp = mas::rpc::climate::RCP::RCP85);
+		double CO2ForDate(double year, double julianDay, bool isLeapYear, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
+		double CO2ForDate(Tools::Date, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
 		double GroundwaterDepthForDate(double maxGroundwaterDepth,
 			double minGroundwaterDepth,
 			int minGroundwaterDepthMonth,

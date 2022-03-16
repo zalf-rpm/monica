@@ -47,10 +47,10 @@ namespace Monica
                   double p_timeStep,
                   double pc_MinimumAvailableN);
 
-    SoilTransport(SoilColumn& soilColumn, mas::models::monica::SoilTransportModuleState::Reader reader, CropModule* cropModule = nullptr)
+    SoilTransport(SoilColumn& soilColumn, mas::schema::model::monica::SoilTransportModuleState::Reader reader, CropModule* cropModule = nullptr)
       : soilColumn(soilColumn), cropModule(cropModule) { deserialize(reader); }
-    void deserialize(mas::models::monica::SoilTransportModuleState::Reader reader);
-    void serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const;
+    void deserialize(mas::schema::model::monica::SoilTransportModuleState::Reader reader);
+    void serialize(mas::schema::model::monica::SoilTransportModuleState::Builder builder) const;
 
     void step();
 

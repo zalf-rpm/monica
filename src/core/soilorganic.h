@@ -33,7 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 #include <list>
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 #include "monica-parameters.h"
 
 namespace Monica
@@ -46,14 +46,14 @@ namespace Monica
   public:
     SoilOrganic(SoilColumn& soilColumn, const SoilOrganicModuleParameters& params);
 
-    SoilOrganic(SoilColumn& sc, mas::models::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
+    SoilOrganic(SoilColumn& sc, mas::schema::model::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
       : soilColumn(sc)
       , cropModule(cropModule) {
       deserialize(reader);
     }
 
-    void deserialize(mas::models::monica::SoilOrganicModuleState::Reader reader);
-    void serialize(mas::models::monica::SoilOrganicModuleState::Builder builder) const;
+    void deserialize(mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
+    void serialize(mas::schema::model::monica::SoilOrganicModuleState::Builder builder) const;
 
     void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 

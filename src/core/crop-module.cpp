@@ -245,7 +245,7 @@ CropModule::CropModule(SoilColumn& sc,
 		vc_MaxRootingDepth = min(vc_MaxRootingDepth, vs_ImpenetrableLayerDepth);
 }
 
-	void CropModule::deserialize(mas::models::monica::CropModuleState::Reader reader) {
+	void CropModule::deserialize(mas::schema::model::monica::CropModuleState::Reader reader) {
 		_frostKillOn = reader.getFrostKillOn();
 		speciesPs.deserialize(reader.getSpeciesParams());
 		cultivarPs.deserialize(reader.getCultivarParams());
@@ -498,7 +498,7 @@ CropModule::CropModule(SoilColumn& sc,
 		_stemElongationEventFired = reader.getStemElongationEventFired();
 	}
 
-	void CropModule::serialize(mas::models::monica::CropModuleState::Builder builder) const {
+	void CropModule::serialize(mas::schema::model::monica::CropModuleState::Builder builder) const {
 		builder.setFrostKillOn(_frostKillOn);
 		speciesPs.serialize(builder.initSpeciesParams());
 		cultivarPs.serialize(builder.initCultivarParams());

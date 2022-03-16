@@ -64,7 +64,7 @@ SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const So
   debug() << "!!! N Deposition: " << vs_NDeposition << endl;
 }
 
-void SoilTransport::deserialize(mas::models::monica::SoilTransportModuleState::Reader reader) {
+void SoilTransport::deserialize(mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
   _params.deserialize(reader.getModuleParams());
   setFromCapnpList(vq_Convection, reader.getConvection());
   vq_CropNUptake = reader.getCropNUptake();
@@ -85,7 +85,7 @@ void SoilTransport::deserialize(mas::models::monica::SoilTransportModuleState::R
   pc_MinimumAvailableN = reader.getPcMinimumAvailableN();
 }
 
-void SoilTransport::serialize(mas::models::monica::SoilTransportModuleState::Builder builder) const {
+void SoilTransport::serialize(mas::schema::model::monica::SoilTransportModuleState::Builder builder) const {
   _params.serialize(builder.initModuleParams());
   setCapnpList(vq_Convection, builder.initConvection((uint)vq_Convection.size()));
   builder.setCropNUptake(vq_CropNUptake);

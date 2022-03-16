@@ -19,7 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <vector>
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 namespace Monica 
 {
@@ -32,9 +32,9 @@ namespace Monica
                      double pm_HydraulicConductivityRedux,
                      double p_timeStep);
 
-      FrostComponent(SoilColumn& sc, mas::models::monica::FrostModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
-      void deserialize(mas::models::monica::FrostModuleState::Reader reader);
-      void serialize(mas::models::monica::FrostModuleState::Builder builder) const;
+      FrostComponent(SoilColumn& sc, mas::schema::model::monica::FrostModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
+      void deserialize(mas::schema::model::monica::FrostModuleState::Reader reader);
+      void serialize(mas::schema::model::monica::FrostModuleState::Builder builder) const;
 
       void calcSoilFrost(double mean_air_temperature, double snow_depth);
       double getFrostDepth() const { return vm_FrostDepth; }

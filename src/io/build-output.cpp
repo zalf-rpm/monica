@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <mutex>
 #include <numeric>
 #include <iterator>
+#include <climits>
 
 #include "build-output.h"
 

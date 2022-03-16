@@ -21,29 +21,42 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/rpc-twoparty.h>
 #include <kj/thread.h>
 
-#include "climate/climate-common.h"
+#include "../mas-infrastructure/src/cpp/common/common.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
+#include "persistence.capnp.h"
 
 namespace Monica
 {
-class RunMonicaImpl final : public mas::rpc::model::EnvInstance<mas::rpc::common::StructuredText, mas::rpc::common::StructuredText>::Server {
-  // Implementation of the Model::Instance Cap'n Proto interface
-  bool _startedServerInDebugMode{ false };
-  mas::rpc::common::Callback::Client unregister{ nullptr };
-  int idCount{ 0 };
 
-public:
-  RunMonicaImpl(bool startedServerInDebugMode = false) : _startedServerInDebugMode(startedServerInDebugMode) {}
+  typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
 
-  void setUnregister(mas::rpc::common::Callback::Client unreg) { unregister = unreg; }
+  class RunMonica final : public MonicaEnvInstance::Server
+  {
+  public:
+    RunMonica(mas::rpc::common::Restorer* restorer, bool startedServerInDebugMode = false); 
 
-  kj::Promise<void> info(InfoContext context) override;
+    void setClient(MonicaEnvInstance::Client c) { _client = c; }
 
-  kj::Promise<void> run(RunContext context) override;
+    void setUnregister(mas::schema::common::Action::Client unreg) { unregister = unreg; }
 
-  kj::Promise<void> stop(StopContext context) override;
-};
+    kj::Promise<void> info(InfoContext context) override;
+
+    kj::Promise<void> run(RunContext context) override;
+
+    kj::Promise<void> stop(StopContext context) override;
+
+    //save @0 () -> (sturdyRef :Text, unsaveSR :Text);
+    kj::Promise<void> save(SaveContext context) override;
+
+  private:
+    // Implementation of the Model::Instance Cap'n Proto interface
+    bool _startedServerInDebugMode{ false };
+    mas::schema::common::Action::Client unregister{ nullptr };
+    int idCount{ 0 };
+    mas::rpc::common::Restorer* _restorer{nullptr};
+    MonicaEnvInstance::Client _client{nullptr};
+  };
 
 }

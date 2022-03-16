@@ -38,7 +38,7 @@ FrostComponent::FrostComponent(SoilColumn& sc,
   pt_TimeStep(p_timeStep),
   pm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux) {}
 
-void FrostComponent::deserialize(mas::models::monica::FrostModuleState::Reader reader) {
+void FrostComponent::deserialize(mas::schema::model::monica::FrostModuleState::Reader reader) {
   vm_FrostDepth = reader.getFrostDepth();
   vm_accumulatedFrostDepth = reader.getAccumulatedFrostDepth();
   vm_NegativeDegreeDays = reader.getNegativeDegreeDays();
@@ -51,7 +51,7 @@ void FrostComponent::deserialize(mas::models::monica::FrostModuleState::Reader r
   pm_HydraulicConductivityRedux = reader.getPmHydraulicConductivityRedux();
 }
 
-void FrostComponent::serialize(mas::models::monica::FrostModuleState::Builder builder) const {
+void FrostComponent::serialize(mas::schema::model::monica::FrostModuleState::Builder builder) const {
   builder.setFrostDepth(vm_FrostDepth);
   builder.setAccumulatedFrostDepth(vm_accumulatedFrostDepth);
   builder.setNegativeDegreeDays(vm_NegativeDegreeDays);

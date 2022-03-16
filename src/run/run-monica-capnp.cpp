@@ -66,9 +66,9 @@ using namespace mas;
 DataAccessor fromCapnpData(
   const Tools::Date& startDate,
   const Tools::Date& endDate,
-  capnp::List<rpc::climate::Element>::Reader header,
+  capnp::List<mas::schema::climate::Element>::Reader header,
   capnp::List<capnp::List<float>>::Reader data) {
-  typedef rpc::climate::Element E;
+  typedef mas::schema::climate::Element E;
 
   if (data.size() == 0)
     return DataAccessor();
@@ -96,33 +96,33 @@ DataAccessor fromCapnpData(
   return da;
 }
 
-J11Array fromCapnpSoilProfile(rpc::soil::Profile::Reader profile) {
+J11Array fromCapnpSoilProfile(mas::schema::soil::Profile::Reader profile) {
   J11Array ls;
   for (const auto& layer : profile.getLayers()) {
     J11Object l;
     l["Thickness"] = layer.getSize();
     for (const auto& prop : layer.getProperties()) {
       switch (prop.getName()) {
-      case rpc::soil::PropertyName::SAND: l["Sand"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::CLAY: l["Clay"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::SILT: l["Silt"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::ORGANIC_CARBON: l["SoilOrganicCarbon"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::ORGANIC_MATTER: l["SoilOrganicMatter"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::BULK_DENSITY: l["SoilBulkDensity"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::RAW_DENSITY: l["SoilRawDensity"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::P_H: l["pH"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::SOIL_TYPE: l["KA5TextureClass"] = prop.getType(); break;
-      case rpc::soil::PropertyName::PERMANENT_WILTING_POINT: l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::FIELD_CAPACITY: l["FieldCapacity"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::SATURATION: l["PoreVolume"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT: l["Lambda"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::SCELETON: l["Sceleton"] = prop.getF32Value() / 100.0; break;
-      case rpc::soil::PropertyName::AMMONIUM: l["SoilAmmonium"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::NITRATE: l["SoilNitrate"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::CN_RATIO: l["CN"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::SOIL_MOISTURE: l["SoilMoisturePercentFC"] = prop.getF32Value(); break;
-      case rpc::soil::PropertyName::IN_GROUNDWATER: l["is_in_groundwater"] = prop.getBValue(); break;
-      case rpc::soil::PropertyName::IMPENETRABLE: l["is_impenetrable"] = prop.getBValue(); break;
+      case mas::schema::soil::PropertyName::SAND: l["Sand"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::CLAY: l["Clay"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::SILT: l["Silt"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::ORGANIC_CARBON: l["SoilOrganicCarbon"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::ORGANIC_MATTER: l["SoilOrganicMatter"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::BULK_DENSITY: l["SoilBulkDensity"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::RAW_DENSITY: l["SoilRawDensity"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::P_H: l["pH"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::SOIL_TYPE: l["KA5TextureClass"] = prop.getType().cStr(); break;
+      case mas::schema::soil::PropertyName::PERMANENT_WILTING_POINT: l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::FIELD_CAPACITY: l["FieldCapacity"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::SATURATION: l["PoreVolume"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT: l["Lambda"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::SCELETON: l["Sceleton"] = prop.getF32Value() / 100.0; break;
+      case mas::schema::soil::PropertyName::AMMONIUM: l["SoilAmmonium"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::NITRATE: l["SoilNitrate"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::CN_RATIO: l["CN"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::SOIL_MOISTURE: l["SoilMoisturePercentFC"] = prop.getF32Value(); break;
+      case mas::schema::soil::PropertyName::IN_GROUNDWATER: l["is_in_groundwater"] = prop.getBValue(); break;
+      case mas::schema::soil::PropertyName::IMPENETRABLE: l["is_impenetrable"] = prop.getBValue(); break;
       }
     }
     ls.push_back(l);
@@ -130,7 +130,13 @@ J11Array fromCapnpSoilProfile(rpc::soil::Profile::Reader profile) {
   return ls;
 }
 
-kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
+RunMonica::RunMonica(mas::rpc::common::Restorer* restorer, bool startedServerInDebugMode) 
+  : _restorer(restorer)
+  ,  _startedServerInDebugMode(startedServerInDebugMode) 
+{}
+
+
+kj::Promise<void> RunMonica::info(InfoContext context) //override
 {
   auto rs = context.getResults();
   rs.setId("monica_" + sole::uuid4().str());
@@ -139,7 +145,7 @@ kj::Promise<void> RunMonicaImpl::info(InfoContext context) //override
   return kj::READY_NOW;
 }
 
-kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
+kj::Promise<void> RunMonica::run(RunContext context) //override
 {
   debug() << ".";
 
@@ -232,12 +238,24 @@ kj::Promise<void> RunMonicaImpl::run(RunContext context) //override
   }
 }
 
-kj::Promise<void> RunMonicaImpl::stop(StopContext context) //override
+kj::Promise<void> RunMonica::stop(StopContext context) //override
 {
   std::cout << "Stop received. Exiting. cout" << std::endl;
   KJ_LOG(INFO, "Stop received. Exiting.");
-  return unregister.callRequest().send().then([](auto&&) { 
+  return unregister.doRequest().send().then([](auto&&) { 
     std::cout << "exit(0)" << std::endl;
     exit(0); 
-                                              });
+  });
 }
+
+//save @0 () -> (sturdyRef :Text, unsaveSR :Text);
+kj::Promise<void> RunMonica::save(SaveContext context) {
+  if(_restorer)
+  {
+    auto srs = _restorer->save(_client);
+    context.getResults().setSturdyRef(srs.first);
+    context.getResults().setUnsaveSR(srs.second);
+  }
+  return kj::READY_NOW;
+}
+

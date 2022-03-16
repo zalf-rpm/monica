@@ -35,7 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <limits>
 
 #include "common/common-typedefs.h"
-#include "models/monica/monica_params.capnp.h"
+#include "model/monica/monica_params.capnp.h"
 
 namespace Voc
 {
@@ -116,7 +116,7 @@ namespace Voc
 	//crop photosynthesis result variables
 	struct CPData 
 	{ 
-		void serialize(mas::models::monica::Voc::CPData::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::CPData::Builder builder) const {
 			builder.setKc(kc);
 			builder.setKo(ko);
 			builder.setOi(oi);
@@ -128,7 +128,7 @@ namespace Voc
 			builder.setJj1000(jj1000);
 			builder.setJv(jv);
 		}
-		void deserialize(mas::models::monica::Voc::CPData::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::CPData::Reader reader) {
 			kc = reader.getKc();
 			ko = reader.getKo();
 			oi = reader.getOi();
@@ -155,7 +155,7 @@ namespace Voc
 
 	struct SpeciesData
 	{
-		void serialize(mas::models::monica::Voc::SpeciesData::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::SpeciesData::Builder builder) const {
 			builder.setId(id);
 			builder.setEfMonos(EF_MONO);
 			builder.setEfMono(EF_MONO);
@@ -187,7 +187,7 @@ namespace Voc
       builder.setLai(lai);
       builder.setSla(sla);
 		}
-		void deserialize(mas::models::monica::Voc::SpeciesData::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::SpeciesData::Reader reader) {
 			id = (int)reader.getId();
 			EF_MONO = reader.getEfMonos();
 			EF_MONO = reader.getEfMono();
@@ -280,7 +280,7 @@ namespace Voc
 
 	struct MicroClimateData
 	{
-		void serialize(mas::models::monica::Voc::MicroClimateData::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::MicroClimateData::Builder builder) const {
 			builder.setRad(rad);
 			builder.setRad24(rad24);
 			builder.setRad240(rad240);
@@ -291,7 +291,7 @@ namespace Voc
 			builder.setSunlitfoliagefraction24(sunlitfoliagefraction24);
 			builder.setCo2concentration(co2concentration);
 		}
-		void deserialize(mas::models::monica::Voc::MicroClimateData::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::MicroClimateData::Reader reader) {
 			rad = reader.getRad();
 			rad24 = reader.getRad24();
 			rad240 = reader.getRad240();
@@ -338,7 +338,7 @@ namespace Voc
 
 	struct Emissions
 	{
-		void serialize(mas::models::monica::Voc::Emissions::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::Emissions::Builder builder) const {
 			{
 				auto isos = builder.initSpeciesIdToIsopreneEmission((uint)speciesId_2_isoprene_emission.size());
 				uint i = 0;
@@ -359,7 +359,7 @@ namespace Voc
 			builder.setMonoterpeneEmission(monoterpene_emission);
 		}
 
-		void deserialize(mas::models::monica::Voc::Emissions::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::Emissions::Reader reader) {
       speciesId_2_isoprene_emission.clear();
       for (auto e : reader.getSpeciesIdToIsopreneEmission()) speciesId_2_isoprene_emission[(int)e.getSpeciesId()] = e.getEmission();
 
@@ -392,12 +392,12 @@ namespace Voc
 
 	struct  photosynth_t
 	{
-		void serialize(mas::models::monica::Voc::PhotosynthT::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::PhotosynthT::Builder builder) const {
 			builder.setPar(par);
 			builder.setPar24(par24);
 			builder.setPar240(par240);
 		}
-		void deserialize(mas::models::monica::Voc::PhotosynthT::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::PhotosynthT::Reader reader) {
 			par = reader.getPar();
 			par24 = reader.getPar24();
 			par240 = reader.getPar240();
@@ -412,12 +412,12 @@ namespace Voc
 
 	struct  foliage_t
 	{
-		void serialize(mas::models::monica::Voc::FoliageT::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::FoliageT::Builder builder) const {
 			builder.setTempK(tempK);
 			builder.setTempK24(tempK24);
 			builder.setTempK240(tempK240);
 		}
-		void deserialize(mas::models::monica::Voc::FoliageT::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::FoliageT::Reader reader) {
 			tempK = reader.getTempK();
 			tempK24 = reader.getTempK24();
 			tempK240 = reader.getTempK240();
@@ -432,11 +432,11 @@ namespace Voc
 
 	struct  enzyme_activity_t
 	{
-		void serialize(mas::models::monica::Voc::EnzymeActivityT::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::EnzymeActivityT::Builder builder) const {
 			builder.setEfIso(ef_iso);
 			builder.setEfMono(ef_mono);
 		}
-		void deserialize(mas::models::monica::Voc::EnzymeActivityT::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::EnzymeActivityT::Reader reader) {
 			ef_iso = reader.getEfIso();
 			ef_mono = reader.getEfMono();
 		}
@@ -449,13 +449,13 @@ namespace Voc
 
 	struct  leaf_emission_t
 	{
-		void serialize(mas::models::monica::Voc::LeafEmissionT::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::LeafEmissionT::Builder builder) const {
 			builder.setFoliageLayer((uint16_t)foliage_layer);
 			pho.serialize(builder.initPho());
 			fol.serialize(builder.initFol());
 			enz_act.serialize(builder.initEnzAct());
 		}
-		void deserialize(mas::models::monica::Voc::LeafEmissionT::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::LeafEmissionT::Reader reader) {
 			foliage_layer = reader.getFoliageLayer();
 			pho.deserialize(reader.getPho());
 			fol.deserialize(reader.getFol());
@@ -476,11 +476,11 @@ namespace Voc
 		LeafEmissions() {}
 		LeafEmissions(double x, double y) : isoprene(x), monoterp(y) {}
 
-		void serialize(mas::models::monica::Voc::LeafEmissions::Builder builder) const {
+		void serialize(mas::schema::model::monica::Voc::LeafEmissions::Builder builder) const {
 			builder.setIsoprene(isoprene);
 			builder.setMonoterp(monoterp);
 		}
-		void deserialize(mas::models::monica::Voc::LeafEmissions::Reader reader) {
+		void deserialize(mas::schema::model::monica::Voc::LeafEmissions::Reader reader) {
 			isoprene = reader.getIsoprene();
 			monoterp = reader.getMonoterp();
 		}

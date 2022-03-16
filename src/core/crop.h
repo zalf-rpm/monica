@@ -25,7 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "models/monica/monica_state.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 
 #include "tools/date.h"
 #include "json11/json11-helper.h"
@@ -54,9 +54,9 @@ namespace Monica
     //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
     //     double crossCropAdaptionFactor = 1);
 
-    Crop(mas::models::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
-    void deserialize(mas::models::monica::CropState::Reader reader);
-    void serialize(mas::models::monica::CropState::Builder builder) const;
+    Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
+    void deserialize(mas::schema::model::monica::CropState::Reader reader);
+    void serialize(mas::schema::model::monica::CropState::Builder builder) const;
 
     Crop(json11::Json object);
 

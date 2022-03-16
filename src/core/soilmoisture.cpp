@@ -105,7 +105,7 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
   //  }
 }
 
-SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule)
+SoilMoisture::SoilMoisture(MonicaModel& mm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule)
   : soilColumn(mm.soilColumnNC())
   , siteParameters(mm.siteParameters())
   , monica(mm)
@@ -115,7 +115,7 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, mas::models::monica::SoilMoistureMod
   deserialize(reader);
 }
 
-void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Reader reader) {
+void SoilMoisture::deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
   _params.deserialize(reader.getModuleParams());
   vm_NumberOfLayers = reader.getNumberOfLayers();
   vs_NumberOfLayers = reader.getVsNumberOfLayers();
@@ -183,7 +183,7 @@ void SoilMoisture::deserialize(mas::models::monica::SoilMoistureModuleState::Rea
   if (reader.hasFrostComponent()) frostComponent = kj::heap<FrostComponent>(soilColumn, reader.getFrostComponent());
 }
 
-void SoilMoisture::serialize(mas::models::monica::SoilMoistureModuleState::Builder builder) const {
+void SoilMoisture::serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const {
   _params.serialize(builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t)vm_NumberOfLayers);
   builder.setVsNumberOfLayers((uint16_t)vs_NumberOfLayers);

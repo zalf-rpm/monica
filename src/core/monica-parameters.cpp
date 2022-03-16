@@ -59,13 +59,13 @@ YieldComponent::YieldComponent(json11::Json j)
   merge(j);
 }
 
-void YieldComponent::deserialize(mas::models::monica::YieldComponent::Reader reader) {
+void YieldComponent::deserialize(mas::schema::model::monica::YieldComponent::Reader reader) {
   organId = (int)reader.getOrganId();
   yieldPercentage = reader.getYieldPercentage();
   yieldDryMatter = reader.getYieldDryMatter();
 }
 
-void YieldComponent::serialize(mas::models::monica::YieldComponent::Builder builder) const {
+void YieldComponent::serialize(mas::schema::model::monica::YieldComponent::Builder builder) const {
   builder.setOrganId(organId);
   builder.setYieldPercentage(yieldPercentage);
   builder.setYieldDryMatter(yieldDryMatter);
@@ -97,7 +97,7 @@ SpeciesParameters::SpeciesParameters(json11::Json j)
   merge(j);
 }
 
-void SpeciesParameters::deserialize(mas::models::monica::SpeciesParameters::Reader reader) {
+void SpeciesParameters::deserialize(mas::schema::model::monica::SpeciesParameters::Reader reader) {
   pc_SpeciesId = reader.getSpeciesId();
   pc_CarboxylationPathway = reader.getCarboxylationPathway();
   pc_DefaultRadiationUseEfficiency = reader.getDefaultRadiationUseEfficiency();
@@ -155,7 +155,7 @@ void SpeciesParameters::deserialize(mas::models::monica::SpeciesParameters::Read
   pc_TransitionStageLeafExp = reader.getTransitionStageLeafExp();
 }
 
-void SpeciesParameters::serialize(mas::models::monica::SpeciesParameters::Builder builder) const {
+void SpeciesParameters::serialize(mas::schema::model::monica::SpeciesParameters::Builder builder) const {
   builder.setSpeciesId(pc_SpeciesId);
   builder.setCarboxylationPathway(pc_CarboxylationPathway);
   builder.setDefaultRadiationUseEfficiency(pc_DefaultRadiationUseEfficiency);
@@ -355,7 +355,7 @@ CultivarParameters::CultivarParameters(json11::Json j)
   merge(j);
 }
 
-void CultivarParameters::deserialize(mas::models::monica::CultivarParameters::Reader reader) {
+void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParameters::Reader reader) {
   pc_CultivarId = reader.getCultivarId();
   pc_Description = reader.getDescription();
   pc_Perennial = reader.getPerennial();
@@ -408,7 +408,7 @@ void CultivarParameters::deserialize(mas::models::monica::CultivarParameters::Re
   winterCrop = reader.getWinterCrop();
 }
 
-void CultivarParameters::serialize(mas::models::monica::CultivarParameters::Builder builder) const {
+void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameters::Builder builder) const {
   builder.setCultivarId(pc_CultivarId);
   builder.setDescription(pc_Description);
   builder.setPerennial(pc_Perennial);
@@ -607,12 +607,12 @@ CropParameters::CropParameters(json11::Json sj, json11::Json cj)
   merge(sj, cj);
 }
 
-void CropParameters::deserialize(mas::models::monica::CropParameters::Reader reader) {
+void CropParameters::deserialize(mas::schema::model::monica::CropParameters::Reader reader) {
   speciesParams.deserialize(reader.getSpeciesParams());
   cultivarParams.deserialize(reader.getCultivarParams());
 }
 
-void CropParameters::serialize(mas::models::monica::CropParameters::Builder builder) const {
+void CropParameters::serialize(mas::schema::model::monica::CropParameters::Builder builder) const {
   speciesParams.serialize(builder.initSpeciesParams());
   cultivarParams.serialize(builder.initCultivarParams());
 }
@@ -659,7 +659,7 @@ MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j)
   merge(j);
 }
 
-void MineralFertilizerParameters::deserialize(mas::rpc::management::Params::MineralFertilization::Parameters::Reader reader) {
+void MineralFertilizerParameters::deserialize(mas::schema::management::Params::MineralFertilization::Parameters::Reader reader) {
   id = reader.getId();
   name = reader.getName();
   vo_Carbamid = reader.getCarbamid();
@@ -667,7 +667,7 @@ void MineralFertilizerParameters::deserialize(mas::rpc::management::Params::Mine
   vo_NO3 = reader.getNo3();
 }
 
-void MineralFertilizerParameters::serialize(mas::rpc::management::Params::MineralFertilization::Parameters::Builder builder) const {
+void MineralFertilizerParameters::serialize(mas::schema::management::Params::MineralFertilization::Parameters::Builder builder) const {
   builder.setId(id);
   builder.setName(name);
   builder.setCarbamid(vo_Carbamid);
@@ -714,13 +714,13 @@ NMinApplicationParameters::NMinApplicationParameters(json11::Json j)
   merge(j);
 }
 
-void NMinApplicationParameters::deserialize(mas::models::monica::NMinApplicationParameters::Reader reader) {
+void NMinApplicationParameters::deserialize(mas::schema::model::monica::NMinApplicationParameters::Reader reader) {
   min = reader.getMin();
   max = reader.getMax();
   delayInDays = reader.getDelayInDays();
 }
 
-void NMinApplicationParameters::serialize(mas::models::monica::NMinApplicationParameters::Builder builder) const {
+void NMinApplicationParameters::serialize(mas::schema::model::monica::NMinApplicationParameters::Builder builder) const {
   builder.setMin(min);
   builder.setMax(max);
   builder.setDelayInDays(delayInDays);
@@ -760,12 +760,12 @@ IrrigationParameters::IrrigationParameters(json11::Json j)
   merge(j);
 }
 
-void IrrigationParameters::deserialize(mas::rpc::management::Params::Irrigation::Parameters::Reader reader) {
+void IrrigationParameters::deserialize(mas::schema::management::Params::Irrigation::Parameters::Reader reader) {
   nitrateConcentration = reader.getNitrateConcentration();
   sulfateConcentration = reader.getSulfateConcentration();
 }
 
-void IrrigationParameters::serialize(mas::rpc::management::Params::Irrigation::Parameters::Builder builder) const {
+void IrrigationParameters::serialize(mas::schema::management::Params::Irrigation::Parameters::Builder builder) const {
   builder.setNitrateConcentration(nitrateConcentration);
   builder.setSulfateConcentration(sulfateConcentration);
 }
@@ -805,13 +805,13 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
   merge(j);
 }
 
-void AutomaticIrrigationParameters::deserialize(mas::models::monica::AutomaticIrrigationParameters::Reader reader) {
+void AutomaticIrrigationParameters::deserialize(mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
   IrrigationParameters::deserialize(reader.getParams());
   amount = reader.getAmount();
   threshold = reader.getThreshold();
 }
 
-void AutomaticIrrigationParameters::serialize(mas::models::monica::AutomaticIrrigationParameters::Builder builder) const {
+void AutomaticIrrigationParameters::serialize(mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const {
   IrrigationParameters::serialize(builder.initParams());
   builder.setAmount(amount);
   builder.setThreshold(threshold);
@@ -840,13 +840,13 @@ json11::Json AutomaticIrrigationParameters::to_json() const
 
 //------------------------------------------------------------------------------
 
-void MeasuredGroundwaterTableInformation::deserialize(mas::models::monica::MeasuredGroundwaterTableInformation::Reader reader) {
+void MeasuredGroundwaterTableInformation::deserialize(mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
   groundwaterInformationAvailable = reader.getGroundwaterInformationAvailable();
   groundwaterInfo.clear();
   for (auto gi : reader.getGroundwaterInfo()) groundwaterInfo[Date(gi.getDate())] = gi.getValue();
 }
 
-void MeasuredGroundwaterTableInformation::serialize(mas::models::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
+void MeasuredGroundwaterTableInformation::serialize(mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
   builder.setGroundwaterInformationAvailable(groundwaterInformationAvailable);
   auto gis = builder.initGroundwaterInfo((uint)groundwaterInfo.size());
   uint i = 0;
@@ -938,7 +938,7 @@ double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Dat
 
 //------------------------------------------------------------------------------
 
-void SiteParameters::deserialize(mas::models::monica::SiteParameters::Reader reader) {
+void SiteParameters::deserialize(mas::schema::model::monica::SiteParameters::Reader reader) {
   vs_Latitude = reader.getLatitude();
   vs_Slope = reader.getSlope();
   vs_HeightNN = reader.getHeightNN();
@@ -952,7 +952,7 @@ void SiteParameters::deserialize(mas::models::monica::SiteParameters::Reader rea
   setFromComplexCapnpList(vs_SoilParameters, reader.getSoilParameters());
 }
 
-void SiteParameters::serialize(mas::models::monica::SiteParameters::Builder builder) const {
+void SiteParameters::serialize(mas::schema::model::monica::SiteParameters::Builder builder) const {
   builder.setLatitude(vs_Latitude);
   builder.setSlope(vs_Slope);
   builder.setHeightNN(vs_HeightNN);
@@ -1063,14 +1063,14 @@ AutomaticHarvestParameters::AutomaticHarvestParameters(HarvestTime yt)
   : _harvestTime(yt)
 {}
 
-void AutomaticHarvestParameters::deserialize(mas::models::monica::AutomaticHarvestParameters::Reader reader) {
-  typedef mas::models::monica::AutomaticHarvestParameters::HarvestTime HT;
+void AutomaticHarvestParameters::deserialize(mas::schema::model::monica::AutomaticHarvestParameters::Reader reader) {
+  typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
   _harvestTime = reader.getHarvestTime() == HT::MATURITY ? maturity : unknown;
   _latestHarvestDOY = reader.getLatestHarvestDOY();
 }
 
-void AutomaticHarvestParameters::serialize(mas::models::monica::AutomaticHarvestParameters::Builder builder) const {
-  typedef mas::models::monica::AutomaticHarvestParameters::HarvestTime HT;
+void AutomaticHarvestParameters::serialize(mas::schema::model::monica::AutomaticHarvestParameters::Builder builder) const {
+  typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
   builder.setHarvestTime(_harvestTime == maturity ? HT::MATURITY : HT::UNKNOWN);
   builder.setLatestHarvestDOY(_latestHarvestDOY);
 }
@@ -1108,13 +1108,13 @@ NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, dou
     nTarget(nTarget),
     nTarget30(nTarget30) {}
 
-void NMinCropParameters::deserialize(mas::models::monica::NMinCropParameters::Reader reader) {
+void NMinCropParameters::deserialize(mas::schema::model::monica::NMinCropParameters::Reader reader) {
   samplingDepth = reader.getSamplingDepth();
   nTarget = reader.getNTarget();
   nTarget30 = reader.getNTarget30();
 }
 
-void NMinCropParameters::serialize(mas::models::monica::NMinCropParameters::Builder builder) const {
+void NMinCropParameters::serialize(mas::schema::model::monica::NMinCropParameters::Builder builder) const {
   builder.setSamplingDepth(samplingDepth);
   builder.setNTarget(nTarget);
   builder.setNTarget30(nTarget30);
@@ -1148,7 +1148,7 @@ json11::Json NMinCropParameters::to_json() const
 
 //------------------------------------------------------------------------------
 
-void OrganicMatterParameters::deserialize(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
+void OrganicMatterParameters::deserialize(mas::schema::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
   vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
   vo_AOM_NH4Content = reader.getAomNH4Content();
   vo_AOM_NO3Content = reader.getAomNO3Content();
@@ -1164,7 +1164,7 @@ void OrganicMatterParameters::deserialize(mas::rpc::management::Params::OrganicF
   vo_NConcentration = reader.getNConcentration();
 }
 
-void OrganicMatterParameters::serialize(mas::rpc::management::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
+void OrganicMatterParameters::serialize(mas::schema::management::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
   builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
   builder.setAomNH4Content(vo_AOM_NH4Content);
   builder.setAomNO3Content(vo_AOM_NO3Content);
@@ -1228,13 +1228,13 @@ json11::Json OrganicMatterParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void OrganicFertilizerParameters::deserialize(mas::rpc::management::Params::OrganicFertilization::Parameters::Reader reader) {
+void OrganicFertilizerParameters::deserialize(mas::schema::management::Params::OrganicFertilization::Parameters::Reader reader) {
   OrganicMatterParameters::deserialize(reader.getParams());
   id = reader.getId();
   name = reader.getName();
 }
 
-void OrganicFertilizerParameters::serialize(mas::rpc::management::Params::OrganicFertilization::Parameters::Builder builder) const {
+void OrganicFertilizerParameters::serialize(mas::schema::management::Params::OrganicFertilization::Parameters::Builder builder) const {
   OrganicMatterParameters::serialize(builder.initParams());
   builder.setId(id);
   builder.setName(name);
@@ -1268,13 +1268,13 @@ json11::Json OrganicFertilizerParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void CropResidueParameters::deserialize(mas::models::monica::CropResidueParameters::Reader reader) {
+void CropResidueParameters::deserialize(mas::schema::model::monica::CropResidueParameters::Reader reader) {
   OrganicMatterParameters::deserialize(reader.getParams());
   species = reader.getSpecies();
   residueType = reader.getResidueType();
 }
 
-void CropResidueParameters::serialize(mas::models::monica::CropResidueParameters::Builder builder) const {
+void CropResidueParameters::serialize(mas::schema::model::monica::CropResidueParameters::Builder builder) const {
   OrganicMatterParameters::serialize(builder.initParams());
   builder.setSpecies(species);
   builder.setResidueType(residueType);
@@ -1307,7 +1307,7 @@ json11::Json CropResidueParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void SimulationParameters::deserialize(mas::models::monica::SimulationParameters::Reader reader) {
+void SimulationParameters::deserialize(mas::schema::model::monica::SimulationParameters::Reader reader) {
   startDate.deserialize(reader.getStartDate());
   endDate.deserialize(reader.getEndDate());
 
@@ -1334,7 +1334,7 @@ void SimulationParameters::deserialize(mas::models::monica::SimulationParameters
   p_JulianDayAutomaticFertilising = reader.getJulianDayAutomaticFertilising();
 }
 
-void SimulationParameters::serialize(mas::models::monica::SimulationParameters::Builder builder) const {
+void SimulationParameters::serialize(mas::schema::model::monica::SimulationParameters::Builder builder) const {
   startDate.serialize(builder.initStartDate());
   endDate.serialize(builder.initEndDate());
 
@@ -1433,7 +1433,7 @@ json11::Json SimulationParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void CropModuleParameters::deserialize(mas::models::monica::CropModuleParameters::Reader reader) {
+void CropModuleParameters::deserialize(mas::schema::model::monica::CropModuleParameters::Reader reader) {
   pc_CanopyReflectionCoefficient = reader.getCanopyReflectionCoefficient();
   pc_ReferenceMaxAssimilationRate = reader.getReferenceMaxAssimilationRate();
   pc_ReferenceLeafAreaIndex = reader.getReferenceLeafAreaIndex();
@@ -1459,7 +1459,7 @@ void CropModuleParameters::deserialize(mas::models::monica::CropModuleParameters
   __enable_vernalisation_factor_fix__ = reader.getEnableVernalisationFactorFix();
 }
 
-void CropModuleParameters::serialize(mas::models::monica::CropModuleParameters::Builder builder) const {
+void CropModuleParameters::serialize(mas::schema::model::monica::CropModuleParameters::Builder builder) const {
   builder.setCanopyReflectionCoefficient(pc_CanopyReflectionCoefficient);
   builder.setReferenceMaxAssimilationRate(pc_ReferenceMaxAssimilationRate);
   builder.setReferenceLeafAreaIndex(pc_ReferenceLeafAreaIndex);
@@ -1552,7 +1552,7 @@ json11::Json CropModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void EnvironmentParameters::deserialize(mas::models::monica::EnvironmentParameters::Reader reader) {
+void EnvironmentParameters::deserialize(mas::schema::model::monica::EnvironmentParameters::Reader reader) {
   p_Albedo = reader.getAlbedo();
   p_AtmosphericCO2 = reader.getAtmosphericCO2();
 
@@ -1573,7 +1573,7 @@ void EnvironmentParameters::deserialize(mas::models::monica::EnvironmentParamete
   rcp = reader.getRcp();
 }
 
-void EnvironmentParameters::serialize(mas::models::monica::EnvironmentParameters::Builder builder) const {
+void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentParameters::Builder builder) const {
   builder.setAlbedo(p_Albedo);
   builder.setAtmosphericCO2(p_AtmosphericCO2);
 
@@ -1614,7 +1614,7 @@ Errors EnvironmentParameters::merge(json11::Json j)
 {
 	Errors res = Json11Serializable::merge(j);
 
-  using namespace mas::rpc::climate;
+  using namespace mas::schema::climate;
   auto str2rcp = [](string str) {
     switch (stoi(str.substr(3, 2)))
     {
@@ -1668,7 +1668,7 @@ json11::Json EnvironmentParameters::to_json() const
 		o3s[to_string(p.first)] = p.second;
 
   auto rcp2str = [](auto rcp) {
-    using namespace mas::rpc::climate;
+    using namespace mas::schema::climate;
     switch (rcp)
     {
     case RCP::RCP19: return "rcp19"; break;
@@ -1706,7 +1706,7 @@ SoilMoistureModuleParameters::SoilMoistureModuleParameters()
 	getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
 }
 
-void SoilMoistureModuleParameters::deserialize(mas::models::monica::SoilMoistureModuleParameters::Reader reader) {
+void SoilMoistureModuleParameters::deserialize(mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
   pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
   pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
   pm_SurfaceRoughness = reader.getSurfaceRoughness();
@@ -1733,7 +1733,7 @@ void SoilMoistureModuleParameters::deserialize(mas::models::monica::SoilMoisture
   pm_MoistureInitValue = reader.getMoistureInitValue();
 }
 
-void SoilMoistureModuleParameters::serialize(mas::models::monica::SoilMoistureModuleParameters::Builder builder) const {
+void SoilMoistureModuleParameters::serialize(mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder) const {
   builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
   builder.setSaturatedHydraulicConductivity(pm_SaturatedHydraulicConductivity);
   builder.setSurfaceRoughness(pm_SurfaceRoughness);
@@ -1831,7 +1831,7 @@ json11::Json SoilMoistureModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void SoilTemperatureModuleParameters::deserialize(mas::models::monica::SoilTemperatureModuleParameters::Reader reader) {
+void SoilTemperatureModuleParameters::deserialize(mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
   pt_NTau = reader.getNTau();
   pt_InitialSurfaceTemperature = reader.getInitialSurfaceTemperature();
   pt_QuartzRawDensity = reader.getQuartzRawDensity();
@@ -1846,7 +1846,7 @@ void SoilTemperatureModuleParameters::deserialize(mas::models::monica::SoilTempe
   pt_SoilMoisture = reader.getSoilMoisture();
 }
 
-void SoilTemperatureModuleParameters::serialize(mas::models::monica::SoilTemperatureModuleParameters::Builder builder) const {
+void SoilTemperatureModuleParameters::serialize(mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder) const {
   builder.setNTau(pt_NTau);
   builder.setInitialSurfaceTemperature(pt_InitialSurfaceTemperature);
   builder.setBaseTemperature(pt_BaseTemperature);
@@ -1910,14 +1910,14 @@ json11::Json SoilTemperatureModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void SoilTransportModuleParameters::deserialize(mas::models::monica::SoilTransportModuleParameters::Reader reader) {
+void SoilTransportModuleParameters::deserialize(mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
   pq_DispersionLength = reader.getDispersionLength();
   pq_AD = reader.getAd();
   pq_DiffusionCoefficientStandard = reader.getDiffusionCoefficientStandard();
   pq_NDeposition = reader.getNDeposition();
 }
 
-void SoilTransportModuleParameters::serialize(mas::models::monica::SoilTransportModuleParameters::Builder builder) const {
+void SoilTransportModuleParameters::serialize(mas::schema::model::monica::SoilTransportModuleParameters::Builder builder) const {
   builder.setDispersionLength(pq_DispersionLength);
   builder.setAd(pq_AD);
   builder.setDiffusionCoefficientStandard(pq_DiffusionCoefficientStandard);
@@ -1954,7 +1954,7 @@ json11::Json SoilTransportModuleParameters::to_json() const
 
 //-----------------------------------------------------------------------------------------
 
-void SticsParameters::deserialize(mas::models::monica::SticsParameters::Reader reader) {
+void SticsParameters::deserialize(mas::schema::model::monica::SticsParameters::Reader reader) {
   use_n2o = reader.getUseN2O();
   use_nit = reader.getUseNit();
   use_denit = reader.getUseDenit();
@@ -1996,7 +1996,7 @@ void SticsParameters::deserialize(mas::models::monica::SticsParameters::Reader r
   vpotdenit = reader.getVpotdenit();
 }
 
-void SticsParameters::serialize(mas::models::monica::SticsParameters::Builder builder) const {
+void SticsParameters::serialize(mas::schema::model::monica::SticsParameters::Builder builder) const {
   builder.setUseN2O(use_n2o);
   builder.setUseNit(use_nit);
   builder.setUseDenit(use_denit);
@@ -2135,7 +2135,7 @@ json11::Json SticsParameters::to_json() const {
 
 //-----------------------------------------------------------------------------
 
-void SoilOrganicModuleParameters::deserialize(mas::models::monica::SoilOrganicModuleParameters::Reader reader) {
+void SoilOrganicModuleParameters::deserialize(mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader) {
   po_SOM_SlowDecCoeffStandard = reader.getSomSlowDecCoeffStandard();
   po_SOM_FastDecCoeffStandard = reader.getSomFastDecCoeffStandard();
   po_SMB_SlowMaintRateStandard = reader.getSmbSlowMaintRateStandard();
@@ -2175,7 +2175,7 @@ void SoilOrganicModuleParameters::deserialize(mas::models::monica::SoilOrganicMo
   sticsParams.deserialize(reader.getSticsParams());
 }
 
-void SoilOrganicModuleParameters::serialize(mas::models::monica::SoilOrganicModuleParameters::Builder builder) const {
+void SoilOrganicModuleParameters::serialize(mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder) const {
   builder.setSomSlowDecCoeffStandard(po_SOM_SlowDecCoeffStandard);
   builder.setSomFastDecCoeffStandard(po_SOM_FastDecCoeffStandard);
   builder.setSmbSlowMaintRateStandard(po_SMB_SlowMaintRateStandard);
