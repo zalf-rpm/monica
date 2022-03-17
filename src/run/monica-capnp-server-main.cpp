@@ -137,7 +137,7 @@ int main(int argc, const char* argv[]) {
     auto restorer = kj::heap<rpc::common::Restorer>();
     auto& restorerRef = *restorer;
     schema::persistence::Restorer::Client restorerClient = kj::mv(restorer);
-    auto runMonica = kj::heap<RunMonica>(restorer.get(), startedServerInDebugMode);
+    auto runMonica = kj::heap<RunMonica>(&restorerRef, startedServerInDebugMode);
     auto& runMonicaRef = *runMonica;
     MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
     runMonicaRef.setClient(runMonicaClient);
@@ -177,11 +177,17 @@ int main(int argc, const char* argv[]) {
 
         if(!registrarSR.empty())
         {
-          auto x = _conMan.connect(ioContext, "capnp://insecure@10.10.24.110:38437/a98d4543-fa24-492e-bc73-238aa4a2c21f").wait(ioContext.waitScope).castAs<schema::climate::Service>();
-          auto xreq = x.infoRequest();
-          auto xrsp = xreq.send().wait(ioContext.waitScope);
-          cout << xrsp.getName().cStr() << endl;
+          //auto r = _conMan.connect(ioContext, "capnp://insecure@10.10.24.210:37203").wait(ioContext.waitScope).castAs<schema::persistence::Restorer>();
+          //auto rreq = r.restoreRequest();
+          //rreq.setSrToken("6b57e75b-dee3-4882-90ae-731a679a3653");
+          //auto rresp = rreq.send().wait(ioContext.waitScope);
+          //auto xreq = rresp.getCap().castAs<schema::climate::Service>().infoRequest();
+          //auto x = _conMan.connect(ioContext, "capnp://insecure@10.10.24.210:37203/6b57e75b-dee3-4882-90ae-731a679a3653").wait(ioContext.waitScope).castAs<schema::climate::Service>();
+          //auto xreq = x.infoRequest();
+          //auto xrsp = xreq.send().wait(ioContext.waitScope);
+          //cout << xrsp.getName().cStr() << endl;
 
+          debug() << "trying to register at registrar: " << registrarSR << endl;          
           auto registrar = _conMan.connect(ioContext, registrarSR).wait(ioContext.waitScope).castAs<schema::registry::Registrar>();
           auto request = registrar.registerRequest();
           request.setCap(runMonicaClient);
@@ -191,17 +197,19 @@ int main(int argc, const char* argv[]) {
           unregister = response.getUnreg();
           reregSR = response.getReregSR().cStr();
           runMonicaRef.setUnregister(unregister);
-          debug() << "registered at registrar" << endl;
+          debug() << "registered at registrar: " << registrarSR << endl;
         }
 
+        debug() << "trying to bind to host: " << address << " port: " << port << endl;
         auto proms = _conMan.bind(ioContext, restorerClient, address, port);
         auto addrPromise = proms.first.fork().addBranch();
         auto addrStr = addrPromise.wait(ioContext.waitScope);
-        restorerRef.setHost("10.10.24.110");//addrStr);
+        restorerRef.setHost("10.10.24.210");//addrStr);
         auto portPromise = proms.second.fork().addBranch();
         auto port = portPromise.wait(ioContext.waitScope);
         restorerRef.setPort(port);
-        
+        cout << "bound to host: " << address << " port: " << port << endl;
+
         auto restorerSR = restorerRef.sturdyRef();
         auto monicaSRs = restorerRef.save(runMonicaClient);
         cout << "monica_sr: " << monicaSRs.first << endl;
@@ -219,8 +227,7 @@ int main(int argc, const char* argv[]) {
         // Run forever, accepting connections and handling requests.
         kj::NEVER_DONE.wait(ioContext.waitScope);
       } catch (exception e) {
-        cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl
-          << "Exception: " << e.what() << endl;
+        cerr << "Exception: " << e.what() << endl;
       }
     } 
     /*
