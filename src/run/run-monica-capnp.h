@@ -53,8 +53,8 @@ namespace Monica
   private:
     // Implementation of the Model::Instance Cap'n Proto interface
     bool _startedServerInDebugMode{ false };
+    std::string _id, _name, _description;
     mas::schema::common::Action::Client unregister{ nullptr };
-    int idCount{ 0 };
     mas::rpc::common::Restorer* _restorer{nullptr};
     MonicaEnvInstance::Client _client{nullptr};
   };

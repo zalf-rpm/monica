@@ -145,6 +145,7 @@ int main(int argc, const char* argv[]) {
 
     schema::common::Action::Client unregister(nullptr);
     string reregSR;
+    schema::registry::Registrar::Client registrar(nullptr);
 
     if (connectToProxy) {
       /*
@@ -172,35 +173,8 @@ int main(int argc, const char* argv[]) {
       }
       */
     } else {
-      //create client connection to a factory
       try {
-
-        if(!registrarSR.empty())
-        {
-          //auto r = _conMan.connect(ioContext, "capnp://insecure@10.10.24.210:37203").wait(ioContext.waitScope).castAs<schema::persistence::Restorer>();
-          //auto rreq = r.restoreRequest();
-          //rreq.setSrToken("6b57e75b-dee3-4882-90ae-731a679a3653");
-          //auto rresp = rreq.send().wait(ioContext.waitScope);
-          //auto xreq = rresp.getCap().castAs<schema::climate::Service>().infoRequest();
-          //auto x = _conMan.connect(ioContext, "capnp://insecure@10.10.24.210:37203/6b57e75b-dee3-4882-90ae-731a679a3653").wait(ioContext.waitScope).castAs<schema::climate::Service>();
-          //auto xreq = x.infoRequest();
-          //auto xrsp = xreq.send().wait(ioContext.waitScope);
-          //cout << xrsp.getName().cStr() << endl;
-
-          debug() << "trying to register at registrar: " << registrarSR << endl;          
-          auto registrar = _conMan.connect(ioContext, registrarSR).wait(ioContext.waitScope).castAs<schema::registry::Registrar>();
-          auto request = registrar.registerRequest();
-          request.setCap(runMonicaClient);
-          request.setRegName("monica");
-          request.setCategoryId("monica");
-          auto response = request.send().wait(ioContext.waitScope);
-          unregister = response.getUnreg();
-          reregSR = response.getReregSR().cStr();
-          runMonicaRef.setUnregister(unregister);
-          debug() << "registered at registrar: " << registrarSR << endl;
-        }
-
-        debug() << "trying to bind to host: " << address << " port: " << port << endl;
+        debug() << "monica: trying to bind to host: " << address << " port: " << port << endl;
         auto proms = _conMan.bind(ioContext, restorerClient, address, port);
         auto addrPromise = proms.first.fork().addBranch();
         auto addrStr = addrPromise.wait(ioContext.waitScope);
@@ -208,12 +182,12 @@ int main(int argc, const char* argv[]) {
         auto portPromise = proms.second.fork().addBranch();
         auto port = portPromise.wait(ioContext.waitScope);
         restorerRef.setPort(port);
-        cout << "bound to host: " << address << " port: " << port << endl;
+        cout << "monica: bound to host: " << address << " port: " << port << endl;
 
         auto restorerSR = restorerRef.sturdyRef();
         auto monicaSRs = restorerRef.save(runMonicaClient);
-        cout << "monica_sr: " << monicaSRs.first << endl;
-        cout << "restorer_sr: " << restorerSR << endl;
+        cout << "monica: monica_sr: " << monicaSRs.first << endl;
+        cout << "monica: restorer_sr: " << restorerSR << endl;
 
         if (port == 0) {
           // The address format "unix:/path/to/socket" opens a unix domain socket,
@@ -224,6 +198,50 @@ int main(int argc, const char* argv[]) {
           std::cout << "Listening on port " << port << "..." << std::endl;
         }
 
+        kj::Promise<void> regProm(nullptr);
+
+        if(!registrarSR.empty())
+        {
+          debug() << "monica: trying to register at registrar: " << registrarSR << endl;          
+          regProm = _conMan.tryConnect(ioContext, registrarSR).then([&](capnp::Capability::Client&& client){
+            registrar = client.castAs<schema::registry::Registrar>();
+            auto request = registrar.registerRequest();
+            request.setCap(runMonicaClient);
+            request.setRegName("monica");
+            request.setCategoryId("monica");
+            return request.send();
+          }).then([&](auto&& response){
+            if(response.hasUnreg()) { 
+              unregister = response.getUnreg();
+              runMonicaRef.setUnregister(unregister);
+            }
+            if(response.hasReregSR()) reregSR = response.getReregSR().cStr();
+            debug() << "monica: registered at registrar: " << registrarSR << endl;
+          });
+        }
+
+        /*
+        if(!registrarSR.empty())
+        {
+          debug() << "monica: trying to register at registrar: " << registrarSR << endl;          
+          //auto registrar = _conMan.tryConnect(ioContext, registrarSR).wait(ioContext.waitScope).castAs<schema::registry::Registrar>();
+          registrar = _conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
+          auto request = registrar.registerRequest();
+          request.setCap(runMonicaClient);
+          request.setRegName("monica");
+          request.setCategoryId("monica");
+          auto response = request.send().wait(ioContext.waitScope);
+          kj::NEVER_DONE.wait(ioContext.waitScope);
+          if(response.hasUnreg()) { 
+            unregister = response.getUnreg();
+            runMonicaRef.setUnregister(unregister);
+          }
+          if(response.hasReregSR()) reregSR = response.getReregSR().cStr();
+          debug() << "monica: registered at registrar: " << registrarSR << endl;
+        }
+        */
+
+        regProm.wait(ioContext.waitScope);
         // Run forever, accepting connections and handling requests.
         kj::NEVER_DONE.wait(ioContext.waitScope);
       } catch (exception e) {

@@ -133,15 +133,20 @@ J11Array fromCapnpSoilProfile(mas::schema::soil::Profile::Reader profile) {
 RunMonica::RunMonica(mas::rpc::common::Restorer* restorer, bool startedServerInDebugMode) 
   : _restorer(restorer)
   ,  _startedServerInDebugMode(startedServerInDebugMode) 
-{}
+{
+  _id = sole::uuid4().str();
+  _name = "Monica capnp server";
+  _description = "";
+}
 
 
 kj::Promise<void> RunMonica::info(InfoContext context) //override
 {
+  std::cout << "monica: RunMonica::info message received" << std::endl;
   auto rs = context.getResults();
-  rs.setId("monica_" + sole::uuid4().str());
-  rs.setName("Monica capnp server");
-  rs.setDescription("");
+  rs.setId(_id);
+  rs.setName(_name);
+  rs.setDescription(_description);
   return kj::READY_NOW;
 }
 
