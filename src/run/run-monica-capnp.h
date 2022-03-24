@@ -45,7 +45,7 @@ namespace Monica
 
     kj::Promise<void> run(RunContext context) override;
 
-    kj::Promise<void> stop(StopContext context) override;
+    //kj::Promise<void> stop(StopContext context) override;
 
     //save @0 () -> (sturdyRef :Text, unsaveSR :Text);
     kj::Promise<void> save(SaveContext context) override;

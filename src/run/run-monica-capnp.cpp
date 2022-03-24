@@ -243,6 +243,7 @@ kj::Promise<void> RunMonica::run(RunContext context) //override
   }
 }
 
+/*
 kj::Promise<void> RunMonica::stop(StopContext context) //override
 {
   std::cout << "Stop received. Exiting. cout" << std::endl;
@@ -252,9 +253,11 @@ kj::Promise<void> RunMonica::stop(StopContext context) //override
     exit(0); 
   });
 }
+*/
 
 //save @0 () -> (sturdyRef :Text, unsaveSR :Text);
 kj::Promise<void> RunMonica::save(SaveContext context) {
+  std::cout << "monica: RunMonica::save message received" << std::endl;
   if(_restorer)
   {
     auto srs = _restorer->save(_client);

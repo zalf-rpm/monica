@@ -46,15 +46,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace std;
 using namespace Monica;
 using namespace Tools;
-//using namespace json11;
-//using namespace Climate;
 using namespace mas;
 
 string appName = "monica-capnp-server";
 string version = "1.0.0-beta";
 
 typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
-typedef schema::model::EnvInstanceProxy<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstanceProxy;
 
 int main(int argc, const char* argv[]) {
 
@@ -91,13 +88,6 @@ int main(int argc, const char* argv[]) {
       "... runs server bound to given address, may be '*' to bind to all local addresses" << endl
       << " -p | --port ... PORT (default: none) "
       "... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
-      << " -cp | --connect-to-proxy "
-      "... connect to proxy at -pa and -pp" << endl
-      << " -pa | --proxy-address "
-      "... ADDRESS (default: " << proxyAddress << ") "
-      "... connects server to proxy running at given address" << endl
-      << " -pp | --proxy-port ... PORT (default: " << proxyPort << ") "
-      "... connects server to proxy running on given port." << endl
       << " -rsr | ----registrar-sturdy-ref ... REGISTAR_STURDY_REF "
       "... register MONICA at the registrar" << endl;
   };
@@ -115,14 +105,6 @@ int main(int argc, const char* argv[]) {
       } else if (arg == "-p" || arg == "--port") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           port = stoi(argv[++i]);
-      } else if (arg == "-cp" || arg == "--connect-to-proxy") {
-        connectToProxy = true;
-      } else if (arg == "-pa" || arg == "--proxy-address") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          proxyAddress = argv[++i];
-      } else if (arg == "-pp" || arg == "--proxy-port") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          proxyPort = stoi(argv[++i]);
       } else if (arg == "-rsr" || arg == "--registrar-sturdy-ref") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           registrarSR = argv[++i];
@@ -147,129 +129,57 @@ int main(int argc, const char* argv[]) {
     string reregSR;
     schema::registry::Registrar::Client registrar(nullptr);
 
-    if (connectToProxy) {
-      /*
-      //create client connection to proxy
-      try {
-        capnp::EzRpcClient client(proxyAddress, proxyPort);
+    debug() << "monica: trying to bind to host: " << address << " port: " << port << endl;
+    auto proms = _conMan.bind(ioContext, restorerClient, address, port);
+    auto addrPromise = proms.first.fork().addBranch();
+    auto addrStr = addrPromise.wait(ioContext.waitScope);
+    restorerRef.setHost("10.10.24.210");//addrStr);
+    auto portPromise = proms.second.fork().addBranch();
+    auto port = portPromise.wait(ioContext.waitScope);
+    restorerRef.setPort(port);
+    cout << "monica: bound to host: " << address << " port: " << port << endl;
 
-        auto& cWaitScope = client.getWaitScope();
+    auto restorerSR = restorerRef.sturdyRef();
+    auto monicaSRs = restorerRef.save(runMonicaClient);
+    cout << "monica: monica_sr: " << monicaSRs.first << endl;
+    cout << "monica: restorer_sr: " << restorerSR << endl;
 
-        // Request the bootstrap capability from the server.
-        MonicaEnvInstanceProxy::Client cap = client.getMain<MonicaEnvInstanceProxy>();
-
-        // Make a call to the capability.
-        auto request = cap.registerEnvInstanceRequest();
-        request.setInstance(runMonicaImplClient);
-        auto response = request.send().wait(cWaitScope);
-        unregister = response.getUnregister();
-        runMonicaImpl.setUnregister(unregister);
-
-        //if (hideServer)
-        kj::NEVER_DONE.wait(cWaitScope);
-      } catch (exception e) {
-        cerr << "Couldn't connect to proxy at address: " << proxyAddress << ":" << proxyPort << endl
-          << "Exception: " << e.what() << endl;
-      }
-      */
-    } else {
-      try {
-        debug() << "monica: trying to bind to host: " << address << " port: " << port << endl;
-        auto proms = _conMan.bind(ioContext, restorerClient, address, port);
-        auto addrPromise = proms.first.fork().addBranch();
-        auto addrStr = addrPromise.wait(ioContext.waitScope);
-        restorerRef.setHost("10.10.24.210");//addrStr);
-        auto portPromise = proms.second.fork().addBranch();
-        auto port = portPromise.wait(ioContext.waitScope);
-        restorerRef.setPort(port);
-        cout << "monica: bound to host: " << address << " port: " << port << endl;
-
-        auto restorerSR = restorerRef.sturdyRef();
-        auto monicaSRs = restorerRef.save(runMonicaClient);
-        cout << "monica: monica_sr: " << monicaSRs.first << endl;
-        cout << "monica: restorer_sr: " << restorerSR << endl;
-
-        if (port == 0) {
-          // The address format "unix:/path/to/socket" opens a unix domain socket,
-          // in which case the port will be zero.
-          std::cout << "Listening on Unix socket..." << std::endl;
-        }
-        else {
-          std::cout << "Listening on port " << port << "..." << std::endl;
-        }
-
-        kj::Promise<void> regProm(nullptr);
-
-        if(!registrarSR.empty())
-        {
-          debug() << "monica: trying to register at registrar: " << registrarSR << endl;          
-          regProm = _conMan.tryConnect(ioContext, registrarSR).then([&](capnp::Capability::Client&& client){
-            registrar = client.castAs<schema::registry::Registrar>();
-            auto request = registrar.registerRequest();
-            request.setCap(runMonicaClient);
-            request.setRegName("monica");
-            request.setCategoryId("monica");
-            return request.send();
-          }).then([&](auto&& response){
-            if(response.hasUnreg()) { 
-              unregister = response.getUnreg();
-              runMonicaRef.setUnregister(unregister);
-            }
-            if(response.hasReregSR()) reregSR = response.getReregSR().cStr();
-            debug() << "monica: registered at registrar: " << registrarSR << endl;
-          });
-        }
-
-        /*
-        if(!registrarSR.empty())
-        {
-          debug() << "monica: trying to register at registrar: " << registrarSR << endl;          
-          //auto registrar = _conMan.tryConnect(ioContext, registrarSR).wait(ioContext.waitScope).castAs<schema::registry::Registrar>();
-          registrar = _conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
-          auto request = registrar.registerRequest();
-          request.setCap(runMonicaClient);
-          request.setRegName("monica");
-          request.setCategoryId("monica");
-          auto response = request.send().wait(ioContext.waitScope);
-          kj::NEVER_DONE.wait(ioContext.waitScope);
-          if(response.hasUnreg()) { 
-            unregister = response.getUnreg();
-            runMonicaRef.setUnregister(unregister);
-          }
-          if(response.hasReregSR()) reregSR = response.getReregSR().cStr();
-          debug() << "monica: registered at registrar: " << registrarSR << endl;
-        }
-        */
-
-        regProm.wait(ioContext.waitScope);
-        // Run forever, accepting connections and handling requests.
-        kj::NEVER_DONE.wait(ioContext.waitScope);
-      } catch (exception e) {
-        cerr << "Exception: " << e.what() << endl;
-      }
-    } 
     /*
+    if (port == 0) {
+      // The address format "unix:/path/to/socket" opens a unix domain socket,
+      // in which case the port will be zero.
+      std::cout << "Listening on Unix socket..." << std::endl;
+    }
     else {
-      capnp::EzRpcServer server(runMonicaImplClient, address + (port < 0 ? "" : string(":") + to_string(port)));
-
-      // Write the port number to stdout, in case it was chosen automatically.
-      auto& waitScope = server.getWaitScope();
-      port = server.getPort().wait(waitScope);
-      if (port == 0) {
-        // The address format "unix:/path/to/socket" opens a unix domain socket,
-        // in which case the port will be zero.
-        std::cout << "Listening on Unix socket..." << std::endl;
-      } else {
-        std::cout << "Listening on port " << port << "..." << std::endl;
-      }
-
-      // Run forever, accepting connections and handling requests.
-      kj::NEVER_DONE.wait(waitScope);
+      std::cout << "Listening on port " << port << "..." << std::endl;
     }
     */
 
-    debug() << "stopped Cap'n Proto MONICA server" << endl;
+    if(!registrarSR.empty())
+    {
+      debug() << "monica: trying to register at registrar: " << registrarSR << endl;          
+      registrar = _conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
+      auto request = registrar.registerRequest();
+      request.setCap(runMonicaClient);
+      request.setRegName("monica");
+      request.setCategoryId("monica");
+      try {
+        auto response = request.send().wait(ioContext.waitScope);
+        if(response.hasUnreg()) { 
+          unregister = response.getUnreg();
+          runMonicaRef.setUnregister(unregister);
+        }
+        if(response.hasReregSR()) reregSR = response.getReregSR().cStr();
+        debug() << "monica: registered at registrar: " << registrarSR << endl;
+      } catch(kj::Exception e) {
+        cout << "monica-capnp-server-main.cpp: Error sending register message to Registrar! Error description: " << e.getDescription().cStr() << endl;
+      }
+    }
+
+    // Run forever, accepting connections and handling requests.
+    kj::NEVER_DONE.wait(ioContext.waitScope);
   }
 
+  debug() << "stopped Cap'n Proto MONICA server" << endl;
   return 0;
 }
