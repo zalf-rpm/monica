@@ -729,6 +729,9 @@ namespace Monica {
 		bool __enable_T_response_leaf_expansion__{ false };
 		bool __disable_daily_root_biomass_to_soil__{ false };
 		bool __enable_vernalisation_factor_fix__{ false };
+
+		double pc_intercropping_k {0.0};
+		std::vector<double> pc_intercropping_phRedux;
 	};
 
 	//----------------------------------------------------------------------------

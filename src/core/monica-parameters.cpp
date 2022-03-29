@@ -1518,6 +1518,8 @@ Errors CropModuleParameters::merge(json11::Json j)
 	set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
 	
+  set_double_value(pc_intercropping_k, j["intercropping"], "k");
+  set_double_vectorD(pc_intercropping_phRedux, j["intercropping"], "phRedux", vector<double>(7, 0.5));
 	return res;
 }
 

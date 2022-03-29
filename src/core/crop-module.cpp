@@ -2332,6 +2332,385 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	double PHCH = 0.95 * (PHCH1 + PHCH2) + 20.5; // = HERMES
 	double PHCHReference = 0.95 * (PHCH1Reference + PHCH2Reference) + 20.5;
 
+	// vc_OxygenDeficit separates drought stress (ETa/Etp) from saturation stress.
+	// old VSWELL
+	double vc_DroughtStressThreshold = vc_OxygenDeficit < 1.0 
+		? 0.0 
+		: pc_DroughtStressThreshold[vc_DevelopmentalStage];
+
+	// Calculation of time fraction for overcast sky situations by
+	// comparing clear day radiation and measured PAR in [J m-2].
+	// HERMES uses PAR as 50% of global radiation
+	// old FOV
+	double vc_OvercastSkyTimeFraction = 0;
+	if (vc_ClearDayRadiation != 0)
+		vc_OvercastSkyTimeFraction =
+		(vc_ClearDayRadiation - (1000000.0 * vc_GlobalRadiation * 0.50))
+		/ (0.8 * vc_ClearDayRadiation); // [J m-2]
+	vc_OvercastSkyTimeFraction = max(0.0, min(vc_OvercastSkyTimeFraction, 1.0));
+
+	//*
+	auto code = [&](std::function<double(double)> F, double LAI){
+		double PHC3 = PHCH * F(LAI);
+		double PHC3Reference = PHCHReference * F(pc_ReferenceLeafAreaIndex);
+
+		double PHC4 = vc_AstronomicDayLenght * LAI * vc_AssimilationRate;
+		double PHC4Reference = vc_AstronomicDayLenght * pc_ReferenceLeafAreaIndex * vc_AssimilationRateReference;
+		
+		double PHCL = PHC3 < PHC4 
+			? PHC3 * (1.0 - exp(-PHC4 / PHC3))
+			: PHC4 * (1.0 - exp(-PHC3 / PHC4));
+
+		double PHCLReference = PHC3Reference < PHC4Reference 
+			? PHC3Reference * (1.0 - exp(-PHC4Reference / PHC3Reference))
+			: PHC4Reference * (1.0 - exp(-PHC3Reference / PHC4Reference));
+
+		double Z = vc_OvercastDayRadiation / (vc_EffectiveDayLength * 3600.0)
+			* vc_NetRadiationUseEfficiency / (5.0 * vc_AssimilationRate);
+
+		double PHOH1 = 5.0 * vc_AssimilationRate * vc_EffectiveDayLength * Z / (1.0 + Z);
+		double PHOH = 0.9935 * PHOH1 + 1.1;
+		double PHO3 = PHOH * F(LAI);
+		double PHO3Reference = PHOH * F(pc_ReferenceLeafAreaIndex);
+
+		double PHOL = PHO3 < PHC4 
+			? PHO3 * (1.0 - exp(-PHC4 / PHO3))
+			: PHC4 * (1.0 - exp(-PHO3 / PHC4));
+
+		double PHOLReference = PHO3Reference < PHC4Reference 
+			? PHO3Reference * (1.0 - exp(-PHC4Reference / PHO3Reference))
+			: PHC4Reference * (1.0 - exp(-PHO3Reference / PHC4Reference));
+
+		double vc_ClearDayCO2Assimilation = LAI < 5.0 ? PHCL : PHCH; // [J m-2]
+		double vc_OvercastDayCO2Assimilation = LAI < 5.0 ? PHOL : PHOH; // [J m-2]
+
+		double vc_ClearDayCO2AssimilationReference = PHCLReference;
+		double vc_OvercastDayCO2AssimilationReference = PHOLReference;
+
+		// Calculation of gross CO2 assimilation in dependence of cloudiness
+		// old DTGA
+		double vc_GrossCO2Assimilation = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2Assimilation
+			+ (1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2Assimilation;
+
+		// used for ET0 calculation
+		double vc_GrossCO2AssimilationReference = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2AssimilationReference
+			+ (1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2AssimilationReference;
+
+		// Gross CO2 assimilation is used for reference evapotranspiration calculation.
+		// For this purpose it must not be affected by drought stress, as the grass
+		// reference is defined as being always well supplied with water. Water stress
+		// is acting at a later stage.
+		if (vc_TranspirationDeficit < vc_DroughtStressThreshold)
+		{
+			vc_GrossCO2Assimilation = vc_GrossCO2Assimilation; // *  vc_TranspirationDeficit;
+		}
+
+	#pragma region hourly FvCB code
+		int vs_JulianDay = currentDate.julianDay();
+		double dailyGP = 0;
+		if (cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1)
+		{
+			vector<double> hourlyGlobrads;
+			vector<double> hourlyExtrarad;
+			int sunriseH = 0;
+
+			for (int h = 0; h < 24; h++)
+			{
+				double hgr = hourlyRad(vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h);
+				if (hgr > 0 && hourlyGlobrads.back() == 0.0)
+					sunriseH = h;
+				hourlyGlobrads.push_back(hgr);
+
+				hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
+			}
+
+			using namespace FvCB;
+
+			_guentherEmissions = Voc::Emissions();
+			_jjvEmissions = Voc::Emissions();
+
+			for (int h = 0; h < 24; h++)
+			{
+	#ifdef TEST_FVCB_HOURLY_OUTPUT
+				FvCB::tout()
+					<< currentDate.toIsoDateString()
+					<< "," << h
+					<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+					<< "," << vw_AtmosphericCO2Concentration;
+	#endif
+				//hourly photosynthesis
+				FvCB_canopy_hourly_in FvCB_in;
+
+				double hourlyTemp = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
+				FvCB_in.leaf_temp = hourlyTemp;
+				FvCB_in.global_rad = hourlyGlobrads.at(h);
+				FvCB_in.extra_terr_rad = hourlyExtrarad.at(h);
+				FvCB_in.LAI = LAI;
+				FvCB_in.solar_el = solarElevation(h, vs_Latitude, vs_JulianDay);
+				FvCB_in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature, vw_MaxAirTemperature);
+				FvCB_in.Ca = vw_AtmosphericCO2Concentration;
+
+				FvCB_canopy_hourly_params hps;
+				hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage * vc_O3_senescence;
+
+				auto FvCB_res = FvCB_canopy_hourly_C3(FvCB_in, hps);
+
+				vc_sunlitLeafAreaIndex[h] = FvCB_res.sunlit.LAI;
+				vc_shadedLeafAreaIndex[h] = FvCB_res.shaded.LAI;
+
+				// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
+				dailyGP += FvCB_res.canopy_gross_photos * 44. / 100. / 1000.;
+
+				//hourly O3 uptake and damage
+				O3impact::O3_impact_in O3_in;
+				O3impact::O3_impact_params O3_par;
+				O3_par.gamma3 = 0.05; //TODO: calibrate and add to crop params
+				O3_par.gamma1 = 0.025; //TODO: calibrate and add to crop params
+
+				auto root_depth = get_RootingDepth();
+				if (root_depth >= 1) //the crop has emerged
+				{
+	#ifdef TEST_O3_HOURLY_OUTPUT
+					O3impact::tout()
+						<< currentDate.toIsoDateString()
+						<< "," << h
+						<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+						<< "," << vw_AtmosphericCO2Concentration
+						<< "," << vw_AtmosphericO3Concentration;
+	#endif
+					double FC = 0, WP = 0, SWC = 0;
+					for (int i = 0; i < root_depth; i++)
+					{
+						FC += soilColumn[i].vs_FieldCapacity();
+						WP += soilColumn[i].vs_PermanentWiltingPoint();
+						SWC += soilColumn[i].get_Vs_SoilMoisture_m3();
+					}
+
+					//weighted average gs and conversion from unit ground area to unit leaf area
+					double lai_sun_weight = FvCB_res.sunlit.LAI / (FvCB_res.sunlit.LAI + FvCB_res.shaded.LAI);
+					double lai_sh_weight = 1 - lai_sun_weight;
+					double avg_leaf_gs = lai_sh_weight * FvCB_res.shaded.gs / FvCB_res.shaded.LAI;
+					if (FvCB_res.sunlit.LAI > 0)
+					{
+						avg_leaf_gs += lai_sun_weight * FvCB_res.sunlit.gs / FvCB_res.sunlit.LAI;
+					}
+
+					O3_in.FC = FC / (root_depth + 1); //field capacity, m3 m-3, avg in the rooted zone
+					O3_in.WP = WP / (root_depth + 1); //wilting point, m3 m-3
+					O3_in.SWC = SWC / (root_depth + 1); //soil water content, m3 m-3
+					O3_in.ET0 = get_ReferenceEvapotranspiration();
+					O3_in.O3a = vw_AtmosphericO3Concentration; //ambient O3 partial pressure, nbar or nmol mol-1
+					O3_in.gs = avg_leaf_gs; //stomatal conductance mol m-2 s-1 bar-1 
+					O3_in.h = h; //hour of the day (0-23)
+					O3_in.reldev = vc_RelativeTotalDevelopment;
+					O3_in.GDD_flo = vc_TemperatureSumToFlowering; //GDD from emergence to flowering
+					O3_in.GDD_mat = vc_TotalTemperatureSum; //GDD from emergence to maturity
+					O3_in.fO3s_d_prev = vc_O3_shortTermDamage; //short term ozone induced reduction of Ac of the previous time step
+					O3_in.sum_O3_up = vc_O3_sumUptake; //cumulated O3 uptake, µmol m-2 (unit ground area)			
+
+					auto O3_res = O3impact::O3_impact_hourly(O3_in, O3_par, pc_WaterDeficitResponseOn);
+
+					vc_O3_shortTermDamage = O3_res.fO3s_d;
+					vc_O3_longTermDamage = O3_res.fO3l;
+					vc_O3_senescence = O3_res.fLS;
+					vc_O3_sumUptake += O3_res.hourly_O3_up;
+					vc_O3_WStomatalClosure = O3_res.WS_st_clos;
+				}
+
+				// calculate VOC emissions
+				double globradWm2 = FvCB_in.global_rad * 1000000.0 / 3600; //MJ m-2 h-1 -> W m-2
+				if (_index240 < _stepSize240 - 1)
+					_index240++;
+				else
+				{
+					_index240 = 0;
+					_full240 = true;
+				}
+				_rad240[_index240] = globradWm2;
+				_tfol240[_index240] = FvCB_in.leaf_temp;
+
+				if (_index24 < _stepSize24 - 1)
+					_index24++;
+				else
+				{
+					_index24 = 0;
+					_full24 = true;
+				}
+				_rad24[_index24] = globradWm2;
+				_tfol24[_index24] = FvCB_in.leaf_temp;
+
+				Voc::MicroClimateData mcd;
+				//hourly or time step average global radiation (in case of monica usually 24h)
+				mcd.rad = globradWm2;
+				mcd.rad24 = accumulate(_rad24.begin(), _rad24.end(), 0.0) / (_full24 ? _rad24.size() : _index24 + 1);
+				mcd.rad240 = accumulate(_rad240.begin(), _rad240.end(), 0.0) / (_full240 ? _rad240.size() : _index240 + 1);
+				mcd.tFol = FvCB_in.leaf_temp;
+				mcd.tFol24 = accumulate(_tfol24.begin(), _tfol24.end(), 0.0) / (_full24 ? _tfol24.size() : _index24 + 1);
+				mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
+				mcd.co2concentration = vw_AtmosphericCO2Concentration;
+
+				//auto sunShadeLaiAtZenith = laiSunShade(_sitePs.vs_Latitude, julday, 12, vc_LeafAreaIndex);
+				//mcd.sunlitfoliagefraction = sunShadeLaiAtZenith.first / lai;
+				//mcd.sunlitfoliagefraction24 = mcd.sunlitfoliagefraction;
+
+				Voc::SpeciesData species;
+				//species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
+				species.lai = LAI;
+				species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.); //kg/ha -> kg/m2
+				species.sla = species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+
+				species.EF_MONO = speciesPs.EF_MONO;
+				species.EF_MONOS = speciesPs.EF_MONOS;
+				species.EF_ISO = speciesPs.EF_ISO;
+				species.VCMAX25 = speciesPs.VCMAX25;
+				species.AEKC = speciesPs.AEKC;
+				species.AEKO = speciesPs.AEKO;
+				species.AEVC = speciesPs.AEVC;
+				species.KC25 = speciesPs.KC25;
+
+				auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1. / 24.);
+				//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
+				_guentherEmissions += ges;
+				//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
+
+	#ifdef TEST_HOURLY_OUTPUT
+				tout()
+					<< currentDate.toIsoDateString()
+					<< "," << h
+					<< "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+					<< "," << FvCB_in.global_rad
+					<< "," << FvCB_in.extra_terr_rad
+					<< "," << FvCB_in.solar_el
+					<< "," << mcd.rad
+					<< "," << FvCB_in.LAI
+					<< "," << species.mFol
+					<< "," << species.sla
+					<< "," << FvCB_in.leaf_temp
+					<< "," << FvCB_in.VPD
+					<< "," << FvCB_in.Ca
+					<< "," << FvCB_in.fO3
+					<< "," << FvCB_in.fls
+					<< "," << FvCB_res.canopy_net_photos
+					<< "," << FvCB_res.canopy_resp
+					<< "," << FvCB_res.canopy_gross_photos
+					<< "," << FvCB_res.jmax_c;
+				//<< "," << ges.isoprene_emission
+				//<< "," << ges.monoterpene_emission;
+	#endif
+				double sun_LAI = FvCB_res.sunlit.LAI;
+				double sh_LAI = FvCB_res.shaded.LAI;
+				//JJV
+				for (const auto& lf : { FvCB_res.sunlit, FvCB_res.shaded })
+				{
+					species.lai = lf.LAI;
+					species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.) * lf.LAI / (sun_LAI + sh_LAI); //kg/ha -> kg/m2
+					species.sla = species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; //ha/kg -> m2/kg
+
+					mcd.rad = lf.rad;//lf.rad; //W m-2 global incident
+
+					//auto ges = Voc::calculateGuentherVOCEmissions(species, mcd, 1. / 24.);
+					//cout << "G: C: " << ges.monoterpene_emission << " em: " << ges.isoprene_emission << endl;
+					//_guentherEmissions += ges;
+					//debug() << "guenther: isoprene: " << gems.isoprene_emission << " monoterpene: " << gems.monoterpene_emission << endl;
+
+					_cropPhotosynthesisResults.kc = lf.kc;
+					_cropPhotosynthesisResults.ko = lf.ko * 1000;
+					_cropPhotosynthesisResults.oi = lf.oi * 1000;
+					_cropPhotosynthesisResults.ci = lf.ci;
+					_cropPhotosynthesisResults.vcMax = FvCB::Vcmax_bernacchi_f(mcd.tFol, speciesPs.VCMAX25) * vc_CropNRedux * vc_TranspirationDeficit;//lf.vcMax;
+					_cropPhotosynthesisResults.jMax = FvCB::Jmax_bernacchi_f(mcd.tFol, 120)  * vc_CropNRedux * vc_TranspirationDeficit;//lf.jMax;
+					_cropPhotosynthesisResults.jj = lf.jj;
+					_cropPhotosynthesisResults.jj1000 = lf.jj1000;
+					_cropPhotosynthesisResults.jv = lf.jv;
+
+					auto jjves = Voc::calculateJJVVOCEmissions(species, mcd, _cropPhotosynthesisResults, 1. / 24., false);
+					//cout << "J: C: " << jjves.monoterpene_emission << " em: " << jjves.isoprene_emission << endl;
+					_jjvEmissions += jjves;
+					//debug() << "jjv: isoprene: " << jjvems.isoprene_emission << " monoterpene: " << jjvems.monoterpene_emission << endl;
+
+	#ifdef TEST_HOURLY_OUTPUT
+					tout()
+						<< "," << species.lai
+						<< "," << species.mFol
+						<< "," << species.sla
+						<< "," << lf.gs
+						<< "," << lf.kc
+						<< "," << lf.ko
+						<< "," << lf.oi
+						<< "," << lf.ci
+						<< "," << lf.comp
+						<< "," << lf.vcMax
+						<< "," << lf.jMax
+						<< "," << lf.rad
+						<< "," << lf.jj
+						<< "," << lf.jj1000
+						<< "," << lf.jv
+						<< "," << ges.isoprene_emission
+						<< "," << ges.monoterpene_emission
+						<< "," << jjves.isoprene_emission
+						<< "," << jjves.monoterpene_emission;
+	#endif
+				}
+	#ifdef TEST_HOURLY_OUTPUT
+				tout() << endl;
+	#endif
+			}
+		}
+	#pragma endregion hourly FvCB code
+
+		vc_GrossCO2Assimilation = cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1
+			? dailyGP
+			: vc_GrossCO2Assimilation;
+
+		return make_pair(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference);
+	};
+	//*/
+	
+	double vc_GrossCO2Assimilation = 0, vc_GrossCO2AssimilationReference = 0;
+	if (otherCropHeight < 0) {
+		auto F_t1 = [](double LAI, double){
+			return 1.0 - exp(-0.8*LAI);
+		};
+		tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);	
+	} else {
+		double otherCropHeight = -1;
+		double otherLAI = -1;
+		double other_k = -1;
+
+		if (vc_CropHeight < otherCropHeight) {
+			double k_s = cropPs.pc_intercropping_k;
+			double k_t = other_k;
+			double LAI_t2 = otherLAI;
+			// fraction of radiation intercepted for lower plant part
+			auto F_s = [k_s, k_t, LAI_t2](double LAI_s){
+				return (k_s*LAI_s)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
+			};
+			tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = 
+				code(F_t2_s, otherLAI, vc_LeafAreaIndex);
+		} else { // this crop is larger than the other
+			double k_t = cropPs.pc_intercropping_k;
+			double k_s = other_k;
+			// fraction of radiation intercepted for upper plant part
+			auto F_t1 = [k_t](double LAI_t1){
+				return 1.0 - exp(-k_t*LAI_t1);
+			};
+			double LAI_s = otherLAI;
+			// fraction of radiation intercepted for lower plant part
+			auto F_t2 = [k_s, k_t, LAI_s](double LAI_t2){
+				return (k_t*LAI_t2)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
+			};
+			double phRedux = cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage];
+			double phr = otherCropHeight * phRedux / vc_CropHeight;
+			double LAI_t2 = phr*vc_LeafAreaIndex;
+			double LAI_t1 = (1-phr)*vc_LeafAreaIndex;
+			auto t1 = code(F_t1, LAI_t1);
+			auto t2 = code(F_t2, LAI_t2);
+			vc_GrossCO2Assimilation = t1.first + t2.first;
+			vc_GrossCO2AssimilationReference = t1.second + t2.second;
+		}
+	}
+
+	/*
 	double PHC3 = PHCH * (1.0 - exp(-0.8 * vc_LeafAreaIndex));
 	double PHC3Reference = PHCHReference * (1.0 - exp(-0.8 * pc_ReferenceLeafAreaIndex));
 
@@ -2661,6 +3040,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	vc_GrossCO2Assimilation = cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1
 		? dailyGP
 		: vc_GrossCO2Assimilation;
+	//*/
 
 	// Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [kg CH2O ha-1 d-1]
 	vc_GrossPhotosynthesis = vc_GrossCO2Assimilation * 30.0 / 44.0;
@@ -2671,7 +3051,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 	// Converting photosynthesis rate from [kg CO2 ha leaf-1 d-1] to [kg CH2O ha-1  d-1]
 	vc_Assimilates = vc_GrossCO2Assimilation * 30.0 / 44.0;
-
+	
 	// reduction value for assimilate amount to simulate field conditions;
 	vc_Assimilates *= pc_FieldConditionModifier;
 
@@ -2682,7 +3062,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	{
 		//vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
 		vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit / vc_DroughtStressThreshold;
-
 	}
 
 	vc_GrossAssimilates = vc_Assimilates;
