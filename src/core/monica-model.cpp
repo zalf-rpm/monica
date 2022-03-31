@@ -632,8 +632,14 @@ void MonicaModel::applyTillage(double depth)
 
 void MonicaModel::step()
 {
-	if(isCropPlanted() && !_clearCropUponNextDay)
+	if(isCropPlanted() && !_clearCropUponNextDay) {
 		cropStep();
+	} else if(_cropPs._isIntercropping && ioContext() != nullptr) { 
+		// tell other side that there is currently no crop
+		auto req = _cropPs._writer.writeRequest();
+		req.setNoCrop(true);
+		req.send().wait(ioContext()->waitScope);
+	}
 
 	generalStep();
 }

@@ -21,6 +21,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 #include <string>
 
+#include <kj/exception.h>
+
 #include "crop-module.h"
 #include "tools/debug.h"
 #include "soilmoisture.h"
@@ -57,8 +59,10 @@ CropModule::CropModule(SoilColumn& sc,
 	const SimulationParameters& simPs,
 	std::function<void(std::string)> fireEvent,
 	std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-	std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow)
-	: _frostKillOn(simPs.pc_FrostKillOn)
+	std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
+	Intercropping& ic)
+	: _intercropping(ic)
+	, _frostKillOn(simPs.pc_FrostKillOn)
 	, soilColumn(sc)
 	, cropPs(cropPs)
 	, speciesPs(cps.speciesParams)
@@ -2350,9 +2354,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	vc_OvercastSkyTimeFraction = max(0.0, min(vc_OvercastSkyTimeFraction, 1.0));
 
 	//*
-	auto code = [&](std::function<double(double)> F, double LAI){
-		double PHC3 = PHCH * F(LAI);
-		double PHC3Reference = PHCHReference * F(pc_ReferenceLeafAreaIndex);
+	auto code = [&](std::function<double(double)> calcFractionOfInterceptedRadiation, double LAI){
+		double PHC3 = PHCH * calcFractionOfInterceptedRadiation(LAI);
+		double PHC3Reference = PHCHReference * calcFractionOfInterceptedRadiation(pc_ReferenceLeafAreaIndex);
 
 		double PHC4 = vc_AstronomicDayLenght * LAI * vc_AssimilationRate;
 		double PHC4Reference = vc_AstronomicDayLenght * pc_ReferenceLeafAreaIndex * vc_AssimilationRateReference;
@@ -2370,8 +2374,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 		double PHOH1 = 5.0 * vc_AssimilationRate * vc_EffectiveDayLength * Z / (1.0 + Z);
 		double PHOH = 0.9935 * PHOH1 + 1.1;
-		double PHO3 = PHOH * F(LAI);
-		double PHO3Reference = PHOH * F(pc_ReferenceLeafAreaIndex);
+		double PHO3 = PHOH * calcFractionOfInterceptedRadiation(LAI);
+		double PHO3Reference = PHOH * calcFractionOfInterceptedRadiation(pc_ReferenceLeafAreaIndex);
 
 		double PHOL = PHO3 < PHC4 
 			? PHO3 * (1.0 - exp(-PHC4 / PHO3))
@@ -2665,44 +2669,63 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 		return make_pair(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference);
 	};
 	//*/
+
+	double otherCropHeight = -1;
+	if(cropPs._isIntercropping && _intercropping.ioContext != nullptr) { 
+		//tell the other side our current crop height
+		auto wreq = _intercropping.writer.writeRequest();
+		wreq.setHeight(vc_CropHeight);
+		wreq.send();
+		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+		if(val.isHeight()) otherCropHeight = val.getHeight();
+	}
 	
 	double vc_GrossCO2Assimilation = 0, vc_GrossCO2AssimilationReference = 0;
 	if (otherCropHeight < 0) {
-		auto F_t1 = [](double LAI, double){
+		auto F_t1 = [](double LAI){
 			return 1.0 - exp(-0.8*LAI);
 		};
 		tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);	
 	} else {
-		double otherCropHeight = -1;
-		double otherLAI = -1;
-		double other_k = -1;
-
 		if (vc_CropHeight < otherCropHeight) {
-			double k_s = cropPs.pc_intercropping_k;
-			double k_t = other_k;
-			double LAI_t2 = otherLAI;
+			double k_s = cropPs.pc_intercropping_k_s;
+			double k_t = cropPs.pc_intercropping_k_t;
+
+			// send out LAI_s and wait for LAI_t2 from the larger plant 
+			auto wreq = _intercropping.writer.writeRequest();
+			wreq.setLait(vc_LeafAreaIndex);
+			wreq.send();
+			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+			double LAI_t2 = val.isLait() ? val.getLait() : throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
 			// fraction of radiation intercepted for lower plant part
 			auto F_s = [k_s, k_t, LAI_t2](double LAI_s){
 				return (k_s*LAI_s)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
 			};
-			tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = 
-				code(F_t2_s, otherLAI, vc_LeafAreaIndex);
+			tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_s, vc_LeafAreaIndex);
 		} else { // this crop is larger than the other
-			double k_t = cropPs.pc_intercropping_k;
-			double k_s = other_k;
-			// fraction of radiation intercepted for upper plant part
-			auto F_t1 = [k_t](double LAI_t1){
-				return 1.0 - exp(-k_t*LAI_t1);
-			};
-			double LAI_s = otherLAI;
-			// fraction of radiation intercepted for lower plant part
-			auto F_t2 = [k_s, k_t, LAI_s](double LAI_t2){
-				return (k_t*LAI_t2)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
-			};
+			double k_t = cropPs.pc_intercropping_k_t;
+			double k_s = cropPs.pc_intercropping_k_s;
 			double phRedux = cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage];
 			double phr = otherCropHeight * phRedux / vc_CropHeight;
 			double LAI_t2 = phr*vc_LeafAreaIndex;
 			double LAI_t1 = (1-phr)*vc_LeafAreaIndex;
+
+			//send out LAI_t2 and wait for LAI_s from the smaller plant
+			auto wreq = _intercropping.writer.writeRequest();
+			wreq.setLait(LAI_t2);
+			wreq.send();
+			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+			double LAI_s = val.isLait() ? val.getLait() : throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
+
+			// fraction of radiation intercepted for upper plant part
+			auto F_t1 = [k_t](double LAI_t1){
+				return 1.0 - exp(-k_t*LAI_t1);
+			};
+			// fraction of radiation intercepted for lower plant part
+			auto F_t2 = [k_s, k_t, LAI_s](double LAI_t2){
+				return (k_t*LAI_t2)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
+			};
+
 			auto t1 = code(F_t1, LAI_t1);
 			auto t2 = code(F_t2, LAI_t2);
 			vc_GrossCO2Assimilation = t1.first + t2.first;

@@ -179,6 +179,11 @@ add_library(monica_lib
 
 	src/resource/version.h
 	src/resource/version_resource.rc
+
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
 target_include_directories(monica_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
 if (MSVC)
@@ -371,10 +376,10 @@ set(MONICA_CAPNP_SERVER_SOURCE_FILES
 	src/run/monica-capnp-server-main.cpp
 	src/run/run-monica-capnp.h
 	src/run/run-monica-capnp.cpp
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
 add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE_FILES})
 target_link_libraries(monica-capnp-server
@@ -394,10 +399,10 @@ set(MONICA_CAPNP_PROXY_SOURCE_FILES
 	src/run/monica-capnp-proxy-main.cpp
 	src/run/run-monica-capnp.h
 	src/run/run-monica-capnp.cpp
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
-	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
+	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
 add_executable(monica-capnp-proxy ${MONICA_CAPNP_PROXY_SOURCE_FILES})
 target_link_libraries(monica-capnp-proxy

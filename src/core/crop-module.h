@@ -29,6 +29,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <utility>
 
+#include <kj/async-io.h>
+
 #include "model/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
@@ -70,15 +72,17 @@ namespace Monica
 			const SimulationParameters& simPs,
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-			std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow);
+			std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
+			Intercropping& ic);
 
 		CropModule(SoilColumn& sc, 
 			const CropModuleParameters& cropPs, 
 			std::function<void(std::string)> fireEvent,
 			std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
 			std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-			mas::schema::model::monica::CropModuleState::Reader reader)
-			: soilColumn(sc), cropPs(cropPs), _fireEvent(fireEvent), 
+			mas::schema::model::monica::CropModuleState::Reader reader,
+			Intercropping& ic)
+			: _intercropping(ic), soilColumn(sc), cropPs(cropPs), _fireEvent(fireEvent), 
 			_addOrganicMatter(addOrganicMatter), _getSnowDepthAndCalcTempUnderSnow(getSnowDepthAndCalcTempUnderSnow) { deserialize(reader); }
 
 		void deserialize(mas::schema::model::monica::CropModuleState::Reader reader);
@@ -458,6 +462,8 @@ namespace Monica
 		}
 
 	private:
+		Intercropping& _intercropping;
+
 		bool _frostKillOn{ true };
 
 		int pc_NumberOfAbovegroundOrgans() const;

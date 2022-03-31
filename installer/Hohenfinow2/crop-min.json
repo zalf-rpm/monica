@@ -19,5 +19,15 @@
 		}
 	],
 
-	"CropParameters": ["include-from-file", "general/crop.json"]
+	"CropParameters": {
+		"=": ["include-from-file", "general/crop.json"],
+		"intercropping": {
+			"is_intercropping": true,
+			"reader_sr": "capnp://insecure@10.10.24.210:44735/4d70eb5c-66c2-4c00-a306-543435532951",
+			"writer_sr": "capnp://insecure@10.10.24.210:44735/3aa942da-a0ee-41d1-baa9-1e0cbbf2db38",
+			"k_s": [0.8, "", "smaller crop canopy extinction coefficient"],
+			"k_t": [0.8, "", "taller crop canopy extinction coefficient"],
+			"PHredux": [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], "", "plant height reduction factor at dev stage"]
+		}
+	}
 }

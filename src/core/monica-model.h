@@ -31,6 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <set>
 
 #include <kj/memory.h>
+#include <kj/async-io.h>
 #include "model/monica/monica_state.capnp.h"
 #include "climate_data.capnp.h"
 
@@ -51,6 +52,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace Monica {
 	class Crop;
+	
 
 	class MonicaModel {
 	public:
@@ -228,6 +230,8 @@ namespace Monica {
 		double optCarbonReturnedResidues() const { return _optCarbonReturnedResidues; }
 		double humusBalanceCarryOver() const { return _humusBalanceCarryOver; }
 
+		Intercropping& intercropping() { return _intercropping; }
+
 	private:
 		SiteParameters _sitePs;
 		EnvironmentParameters _envPs;
@@ -278,6 +282,8 @@ namespace Monica {
 		double vs_GroundwaterDepth{ 0.0 };
 
 		int _cultivationMethodCount{ 0 };
+
+		Intercropping _intercropping;
 
 		//public:
 		//  uint critPos{ 0 };

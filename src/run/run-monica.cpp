@@ -680,6 +680,7 @@ Output Monica::runMonica(Env env)
 	debug() << "-----" << endl;
 
 	kj::Own<MonicaModel> monica;
+	
 	//uint critPos = 0;
 	//uint cmitPos = 0;
 	if (env.params.simulationParameters.loadSerializedMonicaStateAtStart) {
@@ -697,6 +698,18 @@ Output Monica::runMonica(Env env)
 		monica = kj::heap<MonicaModel>(env.params);
 		monica->simulationParametersNC().startDate = env.climateData.startDate();
 	}
+
+	auto ioContext = kj::setupAsyncIo();
+	monica->setIoContext(ioContext);
+	mas::infrastructure::common::ConnectionManager conMan;
+	typedef mas::schema::model::monica::ICData CDT;
+	typedef mas::schema::common::ChanReader<CDT> ChanR;
+	typedef mas::schema::common::ChanWriter<CDT> ChanW;
+	if(!env.params.userCropParameters._reader_sr.empty())
+		env.params.userCropParameters._reader = conMan.tryConnectB(ioContext, env.params.userCropParameters._reader_sr).castAs<ChanR>();
+	if(!env.params.userCropParameters._writer_sr.empty()) 
+		env.params.userCropParameters._writer = conMan.tryConnectB(ioContext, env.params.userCropParameters._writer_sr).castAs<ChanW>();
+
 
 	monica->simulationParametersNC().endDate = env.climateData.endDate();
 	monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;

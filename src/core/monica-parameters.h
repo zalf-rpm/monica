@@ -31,9 +31,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <assert.h>
 #include <climits>
 
+#include <kj/async-io.h>
+
 #include "json11/json11.hpp"
 
 #include "model/monica/monica_params.capnp.h"
+#include "model/monica/monica_state.capnp.h"
 #include "management.capnp.h"
 
 #include "common/dll-exports.h"
@@ -730,8 +733,12 @@ namespace Monica {
 		bool __disable_daily_root_biomass_to_soil__{ false };
 		bool __enable_vernalisation_factor_fix__{ false };
 
-		double pc_intercropping_k {0.0};
+		bool _isIntercropping { false };
+		double pc_intercropping_k_s {0.0};
+		double pc_intercropping_k_t {0.0};
 		std::vector<double> pc_intercropping_phRedux;
+		std::string _reader_sr;
+		std::string _writer_sr;
 	};
 
 	//----------------------------------------------------------------------------
@@ -1051,6 +1058,15 @@ namespace Monica {
 
 		std::vector<double> precipCorrectionValues;
 	};
+
+	//----------------------------------------------------------------------------
+
+	struct Intercropping {
+		kj::AsyncIoContext* ioContext {nullptr};
+		mas::schema::common::ChanReader<mas::schema::model::monica::ICData>::Client reader {nullptr};
+		mas::schema::common::ChanWriter<mas::schema::model::monica::ICData>::Client writer {nullptr};
+	};
+
 }
 
 #endif
