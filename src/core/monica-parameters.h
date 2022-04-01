@@ -1062,9 +1062,12 @@ namespace Monica {
 	//----------------------------------------------------------------------------
 
 	struct Intercropping {
+		typedef mas::schema::model::monica::ICData ICD;
+		typedef mas::schema::common::ChanReader<ICD> Reader;
+		typedef mas::schema::common::ChanWriter<ICD> Writer;
 		kj::AsyncIoContext* ioContext {nullptr};
-		mas::schema::common::ChanReader<mas::schema::model::monica::ICData>::Client reader {nullptr};
-		mas::schema::common::ChanWriter<mas::schema::model::monica::ICData>::Client writer {nullptr};
+		Reader::Client reader {nullptr};
+		Writer::Client writer {nullptr};
 	};
 
 }

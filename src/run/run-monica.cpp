@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
+#include "common/rpc-connections.h"
 
 #include "run-monica.h"
 #include "tools/debug.h"
@@ -700,16 +701,16 @@ Output Monica::runMonica(Env env)
 	}
 
 	auto ioContext = kj::setupAsyncIo();
-	monica->setIoContext(ioContext);
+	Intercropping ic;
 	mas::infrastructure::common::ConnectionManager conMan;
-	typedef mas::schema::model::monica::ICData CDT;
-	typedef mas::schema::common::ChanReader<CDT> ChanR;
-	typedef mas::schema::common::ChanWriter<CDT> ChanW;
-	if(!env.params.userCropParameters._reader_sr.empty())
-		env.params.userCropParameters._reader = conMan.tryConnectB(ioContext, env.params.userCropParameters._reader_sr).castAs<ChanR>();
-	if(!env.params.userCropParameters._writer_sr.empty()) 
-		env.params.userCropParameters._writer = conMan.tryConnectB(ioContext, env.params.userCropParameters._writer_sr).castAs<ChanW>();
-
+	if(env.params.userCropParameters._isIntercropping){
+		ic.ioContext = &ioContext;
+		if(!env.params.userCropParameters._reader_sr.empty())
+			ic.reader = conMan.tryConnectB(ioContext, env.params.userCropParameters._reader_sr).castAs<Intercropping::Reader>();
+		if(!env.params.userCropParameters._writer_sr.empty()) 
+			ic.writer = conMan.tryConnectB(ioContext, env.params.userCropParameters._writer_sr).castAs<Intercropping::Writer>();
+		monica->setIntercropping(ic);
+	}
 
 	monica->simulationParametersNC().endDate = env.climateData.endDate();
 	monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;

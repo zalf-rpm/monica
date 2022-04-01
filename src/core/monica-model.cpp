@@ -95,7 +95,8 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
 		_currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), _cropPs,
 			[this](string event) { this->addEvent(event); }, addOMFunc, 
 			[this](double avgAirTemp) { return this->soilMoisture().getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp); },
-			reader.getCurrentCropModule());
+			reader.getCurrentCropModule(),
+			_intercropping);
 	}
   
 	_soilColumn->putCrop(_currentCropModule.get());
@@ -282,7 +283,8 @@ void MonicaModel::seedCrop(Crop* crop)
     auto cps = crop->cropParameters();
     _currentCropModule = kj::heap<CropModule>(*_soilColumn.get(), cps, crop->residueParameters(),
 			crop->isWinterCrop(), _sitePs, _cropPs, _simPs, [this](string event) { this->addEvent(event); }, addOMFunc,
-			[this](double avgAirTemp) { return this->soilMoisture().getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp); });
+			[this](double avgAirTemp) { return this->soilMoisture().getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp); },
+			_intercropping);
 
     if (crop->separatePerennialCropParameters())
       _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
@@ -634,11 +636,16 @@ void MonicaModel::step()
 {
 	if(isCropPlanted() && !_clearCropUponNextDay) {
 		cropStep();
-	} else if(_cropPs._isIntercropping && ioContext() != nullptr) { 
+	} else if(_intercropping.ioContext != nullptr) { 
 		// tell other side that there is currently no crop
-		auto req = _cropPs._writer.writeRequest();
-		req.setNoCrop(true);
-		req.send().wait(ioContext()->waitScope);
+		auto wreq = _intercropping.writer.writeRequest();
+		auto wval = wreq.initValue();
+		wval.setNoCrop();
+		auto prom = wreq.send().wait(_intercropping.ioContext->waitScope);
+		//prom.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "MonicaModel::step write noCrop failed: " << ex.getDescription().cStr() << endl;});
+		// wait for other sides crop height or no crop info
+		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope);
+		cout << "val:" << (val.getValue().isHeight() ? to_string(val.getValue().getHeight()) : (val.getValue().isNoCrop() ? "no-crop": "error")) << endl;
 	}
 
 	generalStep();

@@ -21,7 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/rpc-twoparty.h>
 #include <kj/thread.h>
 
-#include "../mas-infrastructure/src/cpp/common/common.h"
+#include "common/common.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"

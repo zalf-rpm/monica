@@ -2668,54 +2668,59 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 		return make_pair(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference);
 	};
-	//*/
 
 	double otherCropHeight = -1;
+	bool noOtherCrop = !cropPs._isIntercropping;
 	if(cropPs._isIntercropping && _intercropping.ioContext != nullptr) { 
 		//tell the other side our current crop height
 		auto wreq = _intercropping.writer.writeRequest();
-		wreq.setHeight(vc_CropHeight);
-		wreq.send();
+		auto wval = wreq.initValue();
+		wval.setHeight(vc_CropHeight);
+		auto prom = wreq.send().wait(_intercropping.ioContext->waitScope);//.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write height failed: " << ex.getDescription().cStr() << endl;});
 		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
 		if(val.isHeight()) otherCropHeight = val.getHeight();
+		else if(val.isNoCrop()) noOtherCrop = true;
 	}
 	
 	double vc_GrossCO2Assimilation = 0, vc_GrossCO2AssimilationReference = 0;
-	if (otherCropHeight < 0) {
+	if (noOtherCrop) {
 		auto F_t1 = [](double LAI){
 			return 1.0 - exp(-0.8*LAI);
 		};
 		tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);	
 	} else {
+		assert(otherCropHeight >= 0.0);
 		if (vc_CropHeight < otherCropHeight) {
 			double k_s = cropPs.pc_intercropping_k_s;
 			double k_t = cropPs.pc_intercropping_k_t;
 
 			// send out LAI_s and wait for LAI_t2 from the larger plant 
 			auto wreq = _intercropping.writer.writeRequest();
-			wreq.setLait(vc_LeafAreaIndex);
-			wreq.send();
+			auto wval = wreq.initValue();
+			wval.setLait(vc_LeafAreaIndex);
+			auto prom = wreq.send().wait(_intercropping.ioContext->waitScope);//.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
 			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
 			double LAI_t2 = val.isLait() ? val.getLait() : throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
 			// fraction of radiation intercepted for lower plant part
 			auto F_s = [k_s, k_t, LAI_t2](double LAI_s){
-				return (k_s*LAI_s)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
+				return LAI_s > 0 ? (k_s*LAI_s)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s)) : 0.0;
 			};
 			tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_s, vc_LeafAreaIndex);
 		} else { // this crop is larger than the other
 			double k_t = cropPs.pc_intercropping_k_t;
 			double k_s = cropPs.pc_intercropping_k_s;
 			double phRedux = cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage];
-			double phr = otherCropHeight * phRedux / vc_CropHeight;
+			double phr = vc_CropHeight <= 0.0 ? 0.0 : otherCropHeight * phRedux / vc_CropHeight;
 			double LAI_t2 = phr*vc_LeafAreaIndex;
 			double LAI_t1 = (1-phr)*vc_LeafAreaIndex;
 
 			//send out LAI_t2 and wait for LAI_s from the smaller plant
 			auto wreq = _intercropping.writer.writeRequest();
-			wreq.setLait(LAI_t2);
-			wreq.send();
+			auto wval = wreq.initValue();
+			wval.setLait(LAI_t2);
+			auto prom = wreq.send().wait(_intercropping.ioContext->waitScope);//.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
 			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
-			double LAI_s = val.isLait() ? val.getLait() : throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
+			double LAI_s = val.isLait() ? val.getLait() : throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2724);
 
 			// fraction of radiation intercepted for upper plant part
 			auto F_t1 = [k_t](double LAI_t1){
@@ -2723,7 +2728,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			};
 			// fraction of radiation intercepted for lower plant part
 			auto F_t2 = [k_s, k_t, LAI_s](double LAI_t2){
-				return (k_t*LAI_t2)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s));
+				return LAI_t2 > 0 ? (k_t*LAI_t2)/(k_t*LAI_t2 + k_s*LAI_s)*(1-exp(-k_t*LAI_t2 - k_s*LAI_s)) : 0.0;
 			};
 
 			auto t1 = code(F_t1, LAI_t1);
@@ -2732,6 +2737,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			vc_GrossCO2AssimilationReference = t1.second + t2.second;
 		}
 	}
+	//*/
 
 	/*
 	double PHC3 = PHCH * (1.0 - exp(-0.8 * vc_LeafAreaIndex));
@@ -2770,18 +2776,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	double vc_ClearDayCO2AssimilationReference = PHCLReference;
 	double vc_OvercastDayCO2AssimilationReference = PHOLReference;
 
-	// Calculation of time fraction for overcast sky situations by
-	// comparing clear day radiation and measured PAR in [J m-2].
-	// HERMES uses PAR as 50% of global radiation
-
-	// old FOV
-	double vc_OvercastSkyTimeFraction = 0;
-	if (vc_ClearDayRadiation != 0)
-		vc_OvercastSkyTimeFraction =
-		(vc_ClearDayRadiation - (1000000.0 * vc_GlobalRadiation * 0.50))
-		/ (0.8 * vc_ClearDayRadiation); // [J m-2]
-	vc_OvercastSkyTimeFraction = max(0.0, min(vc_OvercastSkyTimeFraction, 1.0));
-
 	// Calculation of gross CO2 assimilation in dependence of cloudiness
 	// old DTGA
 	double vc_GrossCO2Assimilation = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2Assimilation
@@ -2790,12 +2784,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	// used for ET0 calculation
 	double vc_GrossCO2AssimilationReference = vc_OvercastSkyTimeFraction * vc_OvercastDayCO2AssimilationReference
 		+ (1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2AssimilationReference;
-
-	// vc_OxygenDeficit separates drought stress (ETa/Etp) from saturation stress.
-	// old VSWELL
-	double vc_DroughtStressThreshold = vc_OxygenDeficit < 1.0 
-		? 0.0 
-		: pc_DroughtStressThreshold[vc_DevelopmentalStage];
 
 	// Gross CO2 assimilation is used for reference evapotranspiration calculation.
 	// For this purpose it must not be affected by drought stress, as the grass

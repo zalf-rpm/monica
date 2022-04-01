@@ -231,6 +231,7 @@ namespace Monica {
 		double humusBalanceCarryOver() const { return _humusBalanceCarryOver; }
 
 		Intercropping& intercropping() { return _intercropping; }
+		void setIntercropping(Intercropping& ic) { _intercropping = ic; }
 
 	private:
 		SiteParameters _sitePs;

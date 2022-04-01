@@ -185,7 +185,12 @@ add_library(monica_lib
 	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
 	${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
-target_include_directories(monica_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
+target_include_directories(monica_lib PUBLIC 
+	${CMAKE_CURRENT_SOURCE_DIR}/src 
+	${CMAKE_CURRENT_BINARY_DIR} 
+	${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp
+)
 if (MSVC)
 	target_compile_options(monica_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
@@ -376,10 +381,6 @@ set(MONICA_CAPNP_SERVER_SOURCE_FILES
 	src/run/monica-capnp-server-main.cpp
 	src/run/run-monica-capnp.h
 	src/run/run-monica-capnp.cpp
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
 add_executable(monica-capnp-server ${MONICA_CAPNP_SERVER_SOURCE_FILES})
 target_link_libraries(monica-capnp-server
@@ -387,7 +388,10 @@ target_link_libraries(monica-capnp-server
 	${CMAKE_DL_LIBS}
 	monica_lib
 )
-target_include_directories(monica-capnp-server PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
+target_include_directories(monica-capnp-server PRIVATE 
+	${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp
+)
 if (MSVC)
 	target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
@@ -399,10 +403,6 @@ set(MONICA_CAPNP_PROXY_SOURCE_FILES
 	src/run/monica-capnp-proxy-main.cpp
 	src/run/run-monica-capnp.h
 	src/run/run-monica-capnp.cpp
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.h
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/rpc-connections.cpp
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.h
-	#${MAS_INFRASTRUCTURE_DIR}/src/cpp/common/common.cpp
 )
 add_executable(monica-capnp-proxy ${MONICA_CAPNP_PROXY_SOURCE_FILES})
 target_link_libraries(monica-capnp-proxy
@@ -410,7 +410,10 @@ target_link_libraries(monica-capnp-proxy
 	${CMAKE_DL_LIBS}
 	monica_lib
 )
-target_include_directories(monica-capnp-proxy PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas)
+target_include_directories(monica-capnp-proxy PRIVATE 
+	${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp
+)
 if (MSVC)
 	target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif()
