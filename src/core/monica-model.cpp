@@ -644,8 +644,11 @@ void MonicaModel::step()
 		auto prom = wreq.send().wait(_intercropping.ioContext->waitScope);
 		//prom.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "MonicaModel::step write noCrop failed: " << ex.getDescription().cStr() << endl;});
 		// wait for other sides crop height or no crop info
-		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope);
-		cout << "val:" << (val.getValue().isHeight() ? to_string(val.getValue().getHeight()) : (val.getValue().isNoCrop() ? "no-crop": "error")) << endl;
+		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+		cout << "MonicaModel::step -> sent no-crop, received ";
+		if(val.isHeight()) cout << " height: " << val.getHeight() << endl;
+		else if(val.isNoCrop()) cout << "no-crop" << endl;
+		else if(val.isLait()) cout << " LAI_t: " << val.getLait() << " ---> Error: shouldn't happen." << endl;
 	}
 
 	generalStep();

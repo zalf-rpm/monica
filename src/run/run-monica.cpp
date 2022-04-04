@@ -878,6 +878,7 @@ Output Monica::runMonica(Env env)
 	for(size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
+		cout << "currentDate: " << currentDate.toString() << endl;
 
 		if(checkAndInitShadowOfNextCropRotation(currentDate))
 		{

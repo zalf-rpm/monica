@@ -63,6 +63,8 @@ int main(int argc, char** argv)
 	bool writeOutputFile = false;
 	string pathToSimJson = "./sim.json", crop, site, climate;
 	string dailyOutputs;
+	string icReaderSr = "";
+	string icWriterSr = "";
 	
 	auto printHelp = [=]()
 	{
@@ -121,6 +123,12 @@ int main(int argc, char** argv)
 				printHelp(), exit(0);
 			else if(arg == "-v" || arg == "--version")
 				cout << appName << " version " << version << endl, exit(0);
+			else if((arg == "-icrsr" || arg == "--intercropping-reader-sr")
+				&& i + 1 < argc)
+				icReaderSr = argv[++i];
+			else if((arg == "-icwsr" || arg == "--intercropping-writer-sr")
+				&& i + 1 < argc)
+				icWriterSr = argv[++i];
 			else
 				pathToSimJson = argv[i];
 		}
@@ -227,6 +235,11 @@ int main(int argc, char** argv)
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
 		auto env = createEnvFromJsonConfigFiles(ps);
+
+		bool isIntercropping = !icReaderSr.empty() && !icWriterSr.empty();
+		env.params.userCropParameters._isIntercropping = isIntercropping;
+		if(!icReaderSr.empty()) env.params.userCropParameters._reader_sr = icReaderSr;
+		if(!icWriterSr.empty()) env.params.userCropParameters._writer_sr = icWriterSr;
 
 		env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 			[](string soilTexture, size_t distance) {

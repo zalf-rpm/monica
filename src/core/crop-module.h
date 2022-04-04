@@ -719,7 +719,11 @@ namespace Monica
 		double vc_KTkc{ 0 }; // old KTkc
 		double vc_KTko{ 0 }; // old KTkc
 
-    bool _stemElongationEventFired{ false };
+    	bool _stemElongationEventFired{ false };
+
+		//intercropping
+		double _intercroppingOtherCropHeight { -1 };
+		bool _intercroppingNoOtherCrop = { true };
 	};
 
 	//#define TEST_HOURLY_OUTPUT
