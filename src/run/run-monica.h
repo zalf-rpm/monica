@@ -50,10 +50,10 @@ namespace Monica
 	};
 
 	struct DLL_API Env : public Tools::Json11Serializable
-  {
-    Env() {}
-		
-    Env(CentralParameterProvider&& cpp);
+	{
+		Env() {}
+
+		Env(CentralParameterProvider&& cpp);
 
 		Env(json11::Json object);
 		// construct env from json object
@@ -67,8 +67,8 @@ namespace Monica
 		bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
 		// is the output as a list (e.g. days) of an object (holding all the requested data)
 
-    //! object holding the climate data
-    Climate::DataAccessor climateData;
+		//! object holding the climate data
+		Climate::DataAccessor climateData;
 		// 1. priority, object holding the climate data
 
 		std::string climateCSV;
@@ -76,48 +76,36 @@ namespace Monica
 
 		std::vector<std::string> pathsToClimateCSV;
 		// 3. priority, if climateCSV is empty, try to load climate data from vector of file paths
-				
+
 		json11::Json csvViaHeaderOptions;
 		// the csv options for reading/parsing csv data
 
-    std::vector<CultivationMethod> cropRotation;
+		std::vector<CultivationMethod> cropRotation, cropRotation2;
 		// vector of elements holding the data of the single crops in the rotation
 
-		std::vector<CropRotation> cropRotations;
-		// optionally 
+		std::vector<CropRotation> cropRotations, cropRotations2;
+		// optionally
 
-		json11::Json events;
+		json11::Json events, events2;
 		// the events section defining the requested outputs
 
 		json11::Json outputs;
 		// the whole outputs section
-		
-	  json11::Json customId;
+
+		json11::Json customId;
 		// id identifiying this particular run
 
 		std::string sharedId;
 		// shared id between runs belonging together
 
-    CentralParameterProvider params;
+		CentralParameterProvider params;
 
-    std::string toString() const;
+		std::string toString() const;
 
-    std::string berestRequestAddress;
-
-    //zeromq reply socket for datastream controlled MONICA run
-    //std::string inputDatastreamAddress;
-    //std::string inputDatastreamProtocol;
-//    std::string inputDatastreamHost;
-    //std::string inputDatastreamPort;
-
-    //zeromq publish socket for outputs of MONICA
-    //std::string outputDatastreamAddress;
-    //std::string outputDatastreamProtocol;
-//    std::string outputDatastreamHost;
-    //std::string outputDatastreamPort;
+		std::string berestRequestAddress;
 
 		bool debugMode{false};
-  };
+	};
 
   //------------------------------------------------------------------------------------------
 
@@ -169,6 +157,7 @@ namespace Monica
   //! main function for running monica under a given Env(ironment)
 	//! @param env the environment completely defining what the model needs and gets
 	//! @return a structure with all the Monica results
+  DLL_API std::pair<Output, Output> runMonicaIC(Env env, bool isIntercropping = true);
   DLL_API Output runMonica(Env env);
 }
 

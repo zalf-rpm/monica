@@ -733,12 +733,12 @@ namespace Monica {
 		bool __disable_daily_root_biomass_to_soil__{ false };
 		bool __enable_vernalisation_factor_fix__{ false };
 
-		bool _isIntercropping { false };
+		bool isIntercropping { false };
 		double pc_intercropping_k_s {0.0};
 		double pc_intercropping_k_t {0.0};
 		std::vector<double> pc_intercropping_phRedux;
-		std::string _reader_sr;
-		std::string _writer_sr;
+		std::string reader_sr;
+		std::string writer_sr;
 	};
 
 	//----------------------------------------------------------------------------

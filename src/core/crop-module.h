@@ -723,7 +723,6 @@ namespace Monica
 
 		//intercropping
 		double _intercroppingOtherCropHeight { -1 };
-		bool _intercroppingNoOtherCrop = { true };
 	};
 
 	//#define TEST_HOURLY_OUTPUT

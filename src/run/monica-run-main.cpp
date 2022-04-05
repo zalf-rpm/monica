@@ -46,23 +46,12 @@ int main(int argc, char** argv)
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 
-	//init path to db-connections.ini
-	//if(auto monicaHome = getenv("MONICA_HOME"))
-	//{
-	//	auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
-	//	//init for dll/so
-	//	initPathToDB(pathToFile);
-	//	//init for monica-run
-	//	Db::dbConnectionParameters(pathToFile);
-	//}
-	
 	bool debug = false, debugSet = false;
 	string startDate, endDate;
 	string pathToOutput;
-	string pathToOutputFile;
-	bool writeOutputFile = false;
+	string pathToOutputFile, pathToOutputFile2;
+	bool writeOutputFile = false, writeOutputFile2 = false;
 	string pathToSimJson = "./sim.json", crop, site, climate;
-	string dailyOutputs;
 	string icReaderSr = "";
 	string icWriterSr = "";
 	
@@ -82,7 +71,6 @@ int main(int argc, char** argv)
 			<< " -w   | --write-output-files ... write MONICA output files" << endl
 			<< " -op  | --path-to-output DIRECTORY (default: .) ... path to output directory" << endl
 			<< " -o   | --path-to-output-file FILE ... path to output file" << endl
-			//<< " -do  | --daily-outputs [LIST] (default: value of key 'sim.json:output.daily') ... list of daily output elements" << endl
 			<< " -c   | --path-to-crop FILE (default: ./crop.json) ... path to crop.json file" << endl
 			<< " -s   | --path-to-site FILE (default: ./site.json) ... path to site.json file" << endl
 			<< " -w   | --path-to-climate FILE (default: ./climate.csv) ... path to climate.csv" << endl;
@@ -90,44 +78,34 @@ int main(int argc, char** argv)
 	
 	if(argc > 1)
 	{
-		for(auto i = 1; i < argc; i++)
+		for (auto i = 1; i < argc; i++)
 		{
 			string arg = argv[i];
-			if(arg == "-d" || arg == "--debug")
+			if (arg == "-d" || arg == "--debug")
 				debug = debugSet = true;
-			else if((arg == "-sd" || arg == "--start-date")
-							&& i + 1 < argc)
+			else if ((arg == "-sd" || arg == "--start-date") && i + 1 < argc)
 				startDate = argv[++i];
-			else if((arg == "-ed" || arg == "--end-date")
-							&& i + 1 < argc)
+			else if ((arg == "-ed" || arg == "--end-date") && i + 1 < argc)
 				endDate = argv[++i];
-			else if((arg == "-op" || arg == "--path-to-output")
-			        && i+1 < argc)
+			else if ((arg == "-op" || arg == "--path-to-output") && i + 1 < argc)
 				pathToOutput = argv[++i];
-			else if((arg == "-o" || arg == "--path-to-output-file")
-							&& i + 1 < argc)
+			else if ((arg == "-o" || arg == "--path-to-output-file") && i + 1 < argc)
 				pathToOutputFile = argv[++i];
-			//else if((arg == "-do" || arg == "--daily-outputs")
-			//				&& i + 1 < argc)
-			//	dailyOutputs = argv[++i];
-			else if((arg == "-c" || arg == "--path-to-crop")
-			        && i+1 < argc)
+			else if ((arg == "-o2" || arg == "--path-to-output-file2") && i + 1 < argc)
+				pathToOutputFile2 = argv[++i];
+			else if ((arg == "-c" || arg == "--path-to-crop") && i + 1 < argc)
 				crop = argv[++i];
-			else if((arg == "-s" || arg == "--path-to-site")
-			        && i+1 < argc)
+			else if ((arg == "-s" || arg == "--path-to-site") && i + 1 < argc)
 				site = argv[++i];
-			else if((arg == "-w" || arg == "--path-to-climate")
-			        && i+1 < argc)
+			else if ((arg == "-w" || arg == "--path-to-climate") && i + 1 < argc)
 				climate = argv[++i];
-			else if(arg == "-h" || arg == "--help")
+			else if (arg == "-h" || arg == "--help")
 				printHelp(), exit(0);
-			else if(arg == "-v" || arg == "--version")
+			else if (arg == "-v" || arg == "--version")
 				cout << appName << " version " << version << endl, exit(0);
-			else if((arg == "-icrsr" || arg == "--intercropping-reader-sr")
-				&& i + 1 < argc)
+			else if ((arg == "-icrsr" || arg == "--intercropping-reader-sr") && i + 1 < argc)
 				icReaderSr = argv[++i];
-			else if((arg == "-icwsr" || arg == "--intercropping-writer-sr")
-				&& i + 1 < argc)
+			else if ((arg == "-icwsr" || arg == "--intercropping-writer-sr") && i + 1 < argc)
 				icWriterSr = argv[++i];
 			else
 				pathToSimJson = argv[i];
@@ -137,9 +115,7 @@ int main(int argc, char** argv)
 		tie(pathOfSimJson, simFileName) = splitPathToFile(pathToSimJson);
 
 		auto simj = readAndParseJsonFile(pathToSimJson);
-		if(simj.failure())
-			for(auto e : simj.errors)
-				cerr << e << endl;
+		if(simj.failure()) for(auto e : simj.errors) cerr << e << endl;
 		auto simm = simj.result.object_items();
 
 		auto csvos = simm["climate.csv-options"].object_items();
@@ -193,41 +169,6 @@ int main(int argc, char** argv)
 			simm["climate.csv"] = toPrimJsonArray(ps);
 		}
 
-		/*
-		if(!dailyOutputs.empty())
-		{
-			auto outm = simm["output"].object_items();
-			string err;
-			J11Array daily;
-
-			string trimmedDailyOutputs = trim(dailyOutputs);
-			if(trimmedDailyOutputs.front() == '[')
-				trimmedDailyOutputs.erase(0, 1);
-			if(trimmedDailyOutputs.back() == ']')
-				trimmedDailyOutputs.pop_back();
-
-			for(auto el : splitString(trimmedDailyOutputs, ",", make_pair("[", "]")))
-			{
-				if(trim(el).at(0) == '[')
-				{
-					J11Array a;
-					auto es = splitString(trim(el, "[]"), ",");
-					if(es.size() >= 1)
-						a.push_back(es.at(0));
-					if(es.size() >= 3)
-						a.push_back(stoi(es.at(1))), a.push_back(stoi(es.at(2)));
-					if(es.size() >= 4)
-						a.push_back(es.at(3));
-					daily.push_back(a);
-				}
-				else
-					daily.push_back(el);
-			}
-			outm["daily"] = daily;
-			simm["output"] = outm;
-		}
-		*/
-
 		map<string, string> ps;
 		ps["sim-json-str"] = json11::Json(simm).dump();
 		ps["crop-json-str"] = printPossibleErrors(readFile(simm["crop.json"].string_value()), activateDebug);
@@ -236,10 +177,8 @@ int main(int argc, char** argv)
 
 		auto env = createEnvFromJsonConfigFiles(ps);
 
-		bool isIntercropping = !icReaderSr.empty() && !icWriterSr.empty();
-		env.params.userCropParameters._isIntercropping = isIntercropping;
-		if(!icReaderSr.empty()) env.params.userCropParameters._reader_sr = icReaderSr;
-		if(!icWriterSr.empty()) env.params.userCropParameters._writer_sr = icWriterSr;
+		if(!icReaderSr.empty()) env.params.userCropParameters.reader_sr = icReaderSr;
+		if(!icWriterSr.empty()) env.params.userCropParameters.writer_sr = icWriterSr;
 
 		env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 			[](string soilTexture, size_t distance) {
@@ -249,14 +188,18 @@ int main(int argc, char** argv)
 		if(activateDebug)
 			cout << "starting MONICA with JSON input files" << endl;
 
-		Output output = runMonica(env);
+		bool isIC = env.params.userCropParameters.isIntercropping;
+		Output output, output2;
+		tie(output, output2) = runMonicaIC(env, isIC);
 
 		if(pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
 			pathToOutputFile = fixSystemSeparator(simm["output"]["path-to-output"].string_value() + "/"
-																						+ simm["output"]["file-name"].string_value());
+								+ simm["output"]["file-name"].string_value());
+		if(pathToOutputFile2.empty() && simm["output"]["write-file?"].bool_value())
+			pathToOutputFile2 = fixSystemSeparator(simm["output"]["path-to-output"].string_value() + "/"
+								+ simm["output"]["file-name2"].string_value());
 
 		writeOutputFile = !pathToOutputFile.empty();
-
 		ofstream fout;
 		if(writeOutputFile)
 		{
@@ -295,6 +238,48 @@ int main(int argc, char** argv)
 
 		if(writeOutputFile)
 			fout.close();
+
+		if(isIC){
+			writeOutputFile2 = !pathToOutputFile2.empty();
+			ofstream fout;
+			if(writeOutputFile2)
+			{
+				string path, filename;
+				tie(path, filename) = splitPathToFile(pathToOutputFile2);
+				if (!Tools::ensureDirExists(path))
+				{
+					cerr << "Error failed to create path: '" << path << "'." << endl;
+				}
+				fout.open(pathToOutputFile2);
+				if(fout.fail())
+				{
+					cerr << "Error while opening output file \"" << pathToOutputFile2 << "\"" << endl;
+					writeOutputFile2 = false;
+				}
+			}
+
+			ostream& out = writeOutputFile2 ? fout : cout;
+
+			string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+			bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+			bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+			bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
+
+			for(const auto& d : output2.data)
+			{
+				out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
+				writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+				if(env.returnObjOutputs())
+					writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
+				else
+					writeOutput(out, d.outputIds, d.results, csvSep);
+				out << endl;
+				
+			}
+
+			if(writeOutputFile2)
+				fout.close();
+		}
 
 		if(activateDebug)
 			cout << "finished MONICA" << endl;

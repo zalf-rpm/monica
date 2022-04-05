@@ -1,0 +1,50 @@
+  {
+	"cropRotation": [
+		{
+			"worksteps": [
+				{ 
+					"date": "0000-09-23", 
+					"type": "Sowing", 
+					"crop": {
+							"is-winter-crop": true,
+							"cropParams": {
+								"species": ["include-from-file", "crops/wheat.json"],
+								"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+						},
+						"residueParams": ["include-from-file", "crop-residues/wheat.json"]
+					} 
+				},
+				{ "date": "0001-07-27", "type": "Harvest" }
+			]
+		}
+	],
+	"cropRotation2": [
+		{
+			"worksteps": [
+				{ 
+					"date": "0001-04-15", 
+					"type": "Sowing", 
+					"crop": {
+							"is-winter-crop": true,
+							"cropParams": {
+								"species": ["include-from-file", "crops/soybean.json"],
+								"cultivar": ["include-from-file", "crops/soybean/0.json"]
+						},
+						"residueParams": ["include-from-file", "crop-residues/soybean.json"]
+					} 
+				},
+				{ "date": "0001-10-15", "type": "Harvest" }
+			]
+		}
+	],
+
+	"CropParameters": {
+		"=": ["include-from-file", "general/crop.json"],
+		"intercropping": {
+			"is_intercropping": true,
+			"k_s": [0.6, "", "smaller crop canopy extinction coefficient"],
+			"k_t": [0.8, "", "taller crop canopy extinction coefficient"],
+			"PHredux": [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], "", "plant height reduction factor at dev stage"]
+		}
+	}
+}

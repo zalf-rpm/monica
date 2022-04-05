@@ -1518,12 +1518,12 @@ Errors CropModuleParameters::merge(json11::Json j)
 	set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
 	
-  set_bool_value(_isIntercropping, j["intercropping"], "is_intercropping");
+  set_bool_value(isIntercropping, j["intercropping"], "is_intercropping");
   set_double_value(pc_intercropping_k_s, j["intercropping"], "k_s");
   set_double_value(pc_intercropping_k_t, j["intercropping"], "k_t");
   set_double_vectorD(pc_intercropping_phRedux, j["intercropping"], "phRedux", vector<double>(7, 0.5));
-  set_string_value(_reader_sr, j["intercropping"], "reader_sr");
-  set_string_value(_writer_sr, j["intercropping"], "writer_sr");
+  set_string_value(reader_sr, j["intercropping"], "reader_sr");
+  set_string_value(writer_sr, j["intercropping"], "writer_sr");
 	return res;
 }
 

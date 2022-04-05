@@ -478,7 +478,7 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 	env["debugMode"] = simj["debug?"].bool_value();
 
 	J11Object cpp = {
-			{"type", "CentralParameterProvider"}
+		  {"type", "CentralParameterProvider"}
 		, {"userCropParameters", cropj["CropParameters"]}
 		, {"userEnvironmentParameters", sitej["EnvironmentParameters"]}
 		, {"userSoilMoistureParameters", sitej["SoilMoistureParameters"]}
@@ -495,8 +495,11 @@ Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 
 	env["params"] = cpp;
 	env["cropRotation"] = cropj["cropRotation"];
+	if(cropj["cropRotation2"].is_array()) env["cropRotation2"] = cropj["cropRotation2"];
 	env["cropRotations"] = cropj["cropRotations"];
+	if(cropj["cropRotations2"].is_array()) env["cropRotations2"] = cropj["cropRotations2"];
 	env["events"] = simj["output"]["events"];
+	if(simj["output"]["events"].is_array()) env["events2"] = simj["output"]["events2"];
 	env["outputs"] = J11Object{ {"output", J11Object{ {"obj-outputs?", simj["output"]["obj-outputs"].bool_value() } } } };
 
 	env["pathToClimateCSV"] = simj["climate.csv"];

@@ -120,10 +120,13 @@ Errors Env::merge(json11::Json j)
 	es.append(climateData.merge(j["climateData"]));
 
 	events = j["events"];
+	events2 = j["events2"];
 	outputs = j["outputs"];
 
 	es.append(extractAndStore(j["cropRotation"], cropRotation));
 	es.append(extractAndStore(j["cropRotations"], cropRotations));
+	es.append(extractAndStore(j["cropRotation2"], cropRotation2));
+	es.append(extractAndStore(j["cropRotations2"], cropRotations2));
 	
 	set_bool_value(debugMode, j, "debugMode");
 	
@@ -152,27 +155,46 @@ json11::Json Env::to_json() const
 	J11Array cr;
 	for(const auto& cm : cropRotation)
 		cr.push_back(cm.to_json());
-	
+	J11Array cr2;
+	for(const auto& cm : cropRotation2)
+		cr2.push_back(cm.to_json());
+
 	J11Array crs;
-	for(const auto& c : cropRotations)
+	for (const auto &c : cropRotations)
 	{
 		J11Array cr;
-		for(const auto& cm : c.cropRotation)
+		for (const auto &cm : c.cropRotation)
 			cr.push_back(cm.to_json());
 
-		auto cro = J11Object
-		{{"from", c.start.toIsoDateString()}
-		,{"end", c.end.toIsoDateString()}
-    ,{"cropRotation", cr}
+		auto cro = J11Object{
+			{"from", c.start.toIsoDateString()}, 
+			{"end", c.end.toIsoDateString()}, 
+			{"cropRotation", cr}
 		};
 		crs.push_back(cro);
+	}
+	J11Array crs2;
+	for (const auto &c : cropRotations2)
+	{
+		J11Array cr;
+		for (const auto &cm : c.cropRotation)
+			cr.push_back(cm.to_json());
+
+		auto cro = J11Object{
+			{"from", c.start.toIsoDateString()}, 
+			{"end", c.end.toIsoDateString()}, 
+			{"cropRotation", cr}
+		};
+		crs2.push_back(cro);
 	}
 
 	return J11Object
 	{{"type", "Env"}
 	,{"params", params.to_json()}
 	,{"cropRotation", cr}
+	,{"cropRotation2", cr2}
 	,{"cropRotations", crs}
+	,{"cropRotations2", crs2}
 	,{"climateData", climateData.to_json()}
 	,{"debugMode", debugMode}
 	,{"climateCSV", climateCSV}
@@ -181,6 +203,7 @@ json11::Json Env::to_json() const
 	,{"customId", customId}
 	,{"sharedId", sharedId}
 	,{"events", events}
+	,{"events2", events2}
 	,{"outputs", outputs}
 	};
 }
@@ -663,24 +686,26 @@ DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
 	return res;
 }
 
-Output Monica::runMonica(Env env)
+std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 {
-	Output out;
+	Output out, out2;
 	bool returnObjOutputs = env.returnObjOutputs();
 	out.customId = env.customId;
 
 	activateDebug = env.debugMode;
-	if(activateDebug)	writeDebugInputs(env, "inputs.json");
+	if(activateDebug) writeDebugInputs(env, "inputs.json");
 
 	//prefer multiple crop rotations, but use a single rotation if there
 	if (env.cropRotations.empty() && !env.cropRotation.empty()) {
-    env.cropRotations.push_back(CropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation));
+    	env.cropRotations.push_back(CropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation));
+	}
+	if (isIC && env.cropRotations2.empty() && !env.cropRotation2.empty()) {
+    	env.cropRotations2.push_back(CropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation2));
 	}
 
 	debug() << "starting Monica" << endl;
 	debug() << "-----" << endl;
-
-	kj::Own<MonicaModel> monica;
+	kj::Own<MonicaModel> monica, monica2;
 	
 	//uint critPos = 0;
 	//uint cmitPos = 0;
@@ -699,49 +724,80 @@ Output Monica::runMonica(Env env)
 		monica = kj::heap<MonicaModel>(env.params);
 		monica->simulationParametersNC().startDate = env.climateData.startDate();
 	}
+	if(isIC){
+		monica2 = kj::heap<MonicaModel>(env.params);
+		monica2->simulationParametersNC().startDate = env.climateData.startDate();
+	}
 
 	auto ioContext = kj::setupAsyncIo();
 	Intercropping ic;
 	mas::infrastructure::common::ConnectionManager conMan;
-	if(env.params.userCropParameters._isIntercropping){
+	if(isIC){
 		ic.ioContext = &ioContext;
-		if(!env.params.userCropParameters._reader_sr.empty())
-			ic.reader = conMan.tryConnectB(ioContext, env.params.userCropParameters._reader_sr).castAs<Intercropping::Reader>();
-		if(!env.params.userCropParameters._writer_sr.empty()) 
-			ic.writer = conMan.tryConnectB(ioContext, env.params.userCropParameters._writer_sr).castAs<Intercropping::Writer>();
+		if(!env.params.userCropParameters.reader_sr.empty())
+			ic.reader = conMan.tryConnectB(ioContext, env.params.userCropParameters.reader_sr).castAs<Intercropping::Reader>();
+		if(!env.params.userCropParameters.writer_sr.empty()) 
+			ic.writer = conMan.tryConnectB(ioContext, env.params.userCropParameters.writer_sr).castAs<Intercropping::Writer>();
 		monica->setIntercropping(ic);
 	}
 
 	monica->simulationParametersNC().endDate = env.climateData.endDate();
 	monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
+	if(isIC){
+		monica2->simulationParametersNC().endDate = env.climateData.endDate();
+		monica2->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
+	}
 
 	debug() << "currentDate" << endl;
 	Date currentDate = env.climateData.startDate();
 	
 	// create a way for worksteps to let the runtime calculate at a daily basis things a workstep needs when being executed
 	// e.g. to actually accumulate values from days before the workstep (for calculating a moving window of past values)
-	int dailyFuncId = 0;
-	map<int, vector<double>> dailyValues;
-	vector<function<void()>> applyDailyFuncs;
+	int dailyFuncId = 0, dailyFuncId2 = 0;
+	map<int, vector<double>> dailyValues, dailyValues2;
+	vector<function<void()>> applyDailyFuncs, applyDailyFuncs2;
 
 	//iterate through all the worksteps in the croprotation(s) and check for functions which have to run daily
-	for (auto& cr : env.cropRotations) {
-		for (auto& cm : cr.cropRotation) {
-			for (auto wsptr : cm.getWorksteps()) {
-				auto df = wsptr->registerDailyFunction([&dailyValues, dailyFuncId]() -> vector<double> & {
-					return dailyValues[dailyFuncId];
-					});
-				if (df) {
-					applyDailyFuncs.push_back([&monica, df, dailyFuncId, &dailyValues] {
-						dailyValues[dailyFuncId].push_back(df(monica.get()));
-						});
+	for (auto &cr : env.cropRotations)
+	{
+		for (auto &cm : cr.cropRotation)
+		{
+			for (auto wsptr : cm.getWorksteps())
+			{
+				auto df = wsptr->registerDailyFunction([&dailyValues, dailyFuncId]() -> vector<double> &
+													   { return dailyValues[dailyFuncId]; });
+				if (df)
+				{
+					applyDailyFuncs.push_back([&monica, df, dailyFuncId, &dailyValues]
+											  { dailyValues[dailyFuncId].push_back(df(monica.get())); });
 				}
 				dailyFuncId++;
 			}
 		}
 	}
+	if (isIC)
+	{
+		for (auto &cr : env.cropRotations2)
+		{
+			for (auto &cm : cr.cropRotation)
+			{
+				for (auto wsptr : cm.getWorksteps())
+				{
+					auto df = wsptr->registerDailyFunction([&dailyValues2, dailyFuncId2]() -> vector<double> &
+														   { return dailyValues2[dailyFuncId2]; });
+					if (df)
+					{
+						applyDailyFuncs2.push_back([&monica2, df, dailyFuncId2, &dailyValues2]
+												  { dailyValues2[dailyFuncId2].push_back(df(monica2.get())); });
+					}
+					dailyFuncId2++;
+				}
+			}
+		}
+	}
 
 	auto crit = env.cropRotations.begin();
+	auto crit2 = env.cropRotations2.begin();
 	//after loading deserialized state, move the iterator to the previous position if possible
 	//!!! attention doesn't check currently if the env is the same as when the state had been serialized !!!
   //while (critPos-- > 0 && crit + 1 != env.cropRotations.end())
@@ -749,11 +805,11 @@ Output Monica::runMonica(Env env)
 
 	//cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
 	//if pure absolute CMs are finished
-	vector<CultivationMethod*> cropRotation;
+	vector<CultivationMethod*> cropRotation, cropRotation2;
 
-	auto checkAndInitShadowOfNextCropRotation = [&](Date currentDate)
+	auto checkAndInitShadowOfNextCropRotation_ = [](auto& envCropRotations, auto& crit, auto& cropRotation, Date currentDate)
 	{
-		if(crit != env.cropRotations.end())
+		if(crit != envCropRotations.end())
 		{
 			//if current cropRotation is finished, try to move to next
 			if(crit->end.isValid()
@@ -764,7 +820,7 @@ Output Monica::runMonica(Env env)
 			}
 
 			//check again, because we might have moved to next cropRotation
-			if(crit != env.cropRotations.end())
+			if(crit != envCropRotations.end())
 			{
 				//if a new cropRotation starts, copy the the pointers to the CMs to the shadow CR
 				if(crit->start.isValid() 
@@ -779,15 +835,27 @@ Output Monica::runMonica(Env env)
 		return false;
 	};
 
+	auto checkAndInitShadowOfNextCropRotation = [&](Date currentDate)
+	{
+		return checkAndInitShadowOfNextCropRotation_(env.cropRotations, crit, cropRotation, currentDate);
+	};
+	auto checkAndInitShadowOfNextCropRotation2 = [&](Date currentDate)
+	{
+		return checkAndInitShadowOfNextCropRotation_(env.cropRotations2, crit2, cropRotation2, currentDate);
+	};
+
 	//iterator through the crop rotation
 	auto cmit = cropRotation.begin();
+	auto cmit2 = cropRotation2.begin();
 	//after loading deserialized state, move the iterator to the previous position if possible
 	//!!! attention doesn't check currently if the env is the same as when the state had been serialized !!!
 	//while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
 	//	cmit++;
 
-	auto findNextCultivationMethod = [&](Date currentDate,
-																			 bool advanceToNextCM = true)
+	auto findNextCultivationMethod_ = [&](Date currentDate,
+										  auto& cropRotation,
+										  auto& cmit,
+										  bool advanceToNextCM = true)
 	{
 		CultivationMethod* currentCM = nullptr;
 		Date nextAbsoluteCMApplicationDate;
@@ -864,17 +932,31 @@ Output Monica::runMonica(Env env)
 		return make_pair(currentCM, nextAbsoluteCMApplicationDate);
 	};
 
+	auto findNextCultivationMethod = [&](Date currentDate, bool advanceToNextCM = true)
+	{
+		return findNextCultivationMethod_(currentDate, cropRotation, cmit, advanceToNextCM);
+	};
+	auto findNextCultivationMethod2 = [&](Date currentDate, bool advanceToNextCM = true)
+	{
+		return findNextCultivationMethod_(currentDate, cropRotation2, cmit2, advanceToNextCM);
+	};
+
 	//direct handle to current cultivation method
 	CultivationMethod* currentCM{ nullptr };
-	Date nextAbsoluteCMApplicationDate;
+	CultivationMethod* currentCM2{ nullptr };
+	Date nextAbsoluteCMApplicationDate, nextAbsoluteCMApplicationDate2;
 	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
+	if(isIC) tie(currentCM2, nextAbsoluteCMApplicationDate2) = findNextCultivationMethod2(currentDate, false);
 
 	//while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
 	//	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, true);;
 
 	vector<StoreData> store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
+	vector<StoreData> store2;
+	if(isIC) store2 = setupStorage(env.events2, env.climateData.startDate(), env.climateData.endDate());
 	
 	monica->addEvent("run-started");
+	if(isIC) monica2->addEvent("run-started");
 	for(size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
@@ -886,81 +968,96 @@ Output Monica::runMonica(Env env)
 			cmit = cropRotation.begin();
 			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
 		}
+		if(isIC && checkAndInitShadowOfNextCropRotation2(currentDate))
+		{
+			//cmit = cropRotation.empty() ? cropRotation.end() : cropRotation.begin();
+			cmit2 = cropRotation2.begin();
+			tie(currentCM2, nextAbsoluteCMApplicationDate2) = findNextCultivationMethod2(currentDate, false);
+		}
 		
 		monica->dailyReset();
+		if(isIC) monica2->dailyReset();
 
 		monica->setCurrentStepDate(currentDate);
+		if(isIC) monica2->setCurrentStepDate(currentDate);
 		monica->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
+		if(isIC) monica2->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
 
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil
 		if(monica->cropGrowth() && monica->cropGrowth()->isDying())
 			monica->incorporateCurrentCrop();
+		if(isIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying())
+			monica2->incorporateCurrentCrop();
 
 		//try to apply dynamic worksteps marked to run before everything else that day
-		if(currentCM)
-			currentCM->apply(monica.get(), true);
+		if(currentCM) currentCM->apply(monica.get(), true);
+		if(isIC && currentCM2) currentCM2->apply(monica2.get(), true);
 
 		//apply worksteps and cycle through crop rotation
 		if(currentCM && nextAbsoluteCMApplicationDate == currentDate)
 		{
-			debug() << "applying absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			debug() << "MONICA 1: applying absolute-at: " << nextAbsoluteCMApplicationDate.toString() << endl;
 			currentCM->absApply(nextAbsoluteCMApplicationDate, monica.get());
 
 			nextAbsoluteCMApplicationDate = currentCM->nextAbsDate(nextAbsoluteCMApplicationDate);
 						
-			debug() << " next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+			debug() << "MONICA 1: next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
+		}
+		if(isIC && currentCM2 && nextAbsoluteCMApplicationDate2 == currentDate)
+		{
+			debug() << "MONICA 2: applying absolute-at: " << nextAbsoluteCMApplicationDate2.toString() << endl;
+			currentCM2->absApply(nextAbsoluteCMApplicationDate2, monica2.get());
+
+			nextAbsoluteCMApplicationDate2 = currentCM2->nextAbsDate(nextAbsoluteCMApplicationDate2);
+						
+			debug() << "MONICA 2: next abs app-date: " << nextAbsoluteCMApplicationDate2.toString() << endl;
 		}
 
 		//monica main stepping method
 		monica->step();
+		if(isIC) monica2->step();
 
 		// call all daily functions, assuming it's better to do this after the steps, than before
 		// so the daily monica calculations will be taken into account
 		// but means also that a workstep which gets executed before the steps, can't take the
 		// values into account by applying a daily function
-		for (auto& f : applyDailyFuncs)
-			f();
+		for (auto& f : applyDailyFuncs) f();
+		if(isIC) for (auto& f : applyDailyFuncs2) f();
 
 		//try to apply dynamic worksteps marked to run AFTER everything else that day
-		if (currentCM)
-			currentCM->apply(monica.get(), false);
+		if (currentCM) currentCM->apply(monica.get(), false);
+		if (isIC && currentCM2) currentCM2->apply(monica2.get(), false);
 
 		//store results
-		for(auto& s : store)
-			s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
+		for(auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
+		if(isIC) for(auto& s : store2) s.storeResultsIfSpecApplies(*monica2, returnObjOutputs);
 
 		//if the next application date is not valid, we're at the end
 		//of the application list of this cultivation method
 		//and go to the next one in the crop rotation
-		if(currentCM 
-			 && currentCM->allDynamicWorkstepsFinished()
-			 && !nextAbsoluteCMApplicationDate.isValid())
+		if (currentCM && currentCM->allDynamicWorkstepsFinished() && !nextAbsoluteCMApplicationDate.isValid())
 		{
-			//to count the applied fertiliser for the next production process
+			// to count the applied fertiliser for the next production process
 			monica->resetFertiliserCounter();
-
 			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate + 1);
+		}
+		if (isIC && currentCM2 && currentCM2->allDynamicWorkstepsFinished() && !nextAbsoluteCMApplicationDate2.isValid())
+		{
+			// to count the applied fertiliser for the next production process
+			monica2->resetFertiliserCounter();
+			tie(currentCM2, nextAbsoluteCMApplicationDate2) = findNextCultivationMethod2(currentDate + 1);
 		}
 	}
 	
 	if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
 		SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationFile);
-		//uint critPos = 0;
-		//auto crit_ = env.cropRotations.begin();
-		//while (crit_ != env.cropRotations.end() && crit_ != crit)
-		//	crit_++, critPos++;
-
-		//uint cmitPos = 0;
-		//auto cmit_ = cropRotation.begin();
-		//while (cmit_ != cropRotation.end() && cmit_ != cmit)
-		//	cmit_++, cmitPos++;
-
-		//monica->critPos = crit_ == env.cropRotations.end() ? 0 : critPos;
-		//monica->cmitPos = cmit_ == cropRotation.end() ? 0 : cmitPos;
-
 		sms.apply(monica.get());
 	}
+	//if (isIC && env2.params.simulationParameters.serializeMonicaStateAtEnd) {
+	//	SaveMonicaState sms(currentDate, env2.params.simulationParameters.pathToSerializationFile);
+	//	sms.apply(monica2.get());
+	//}
 
 	for(auto& sd : store)
 	{
@@ -971,6 +1068,17 @@ Output Monica::runMonica(Env env)
 			sd.aggregateResults();
 		out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
 	}
+	if(isIC){
+		for(auto& sd : store2)
+		{
+			//aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
+			if(returnObjOutputs)
+				sd.aggregateResultsObj();
+			else
+				sd.aggregateResults();
+			out2.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
+		}
+	}
 
 	debug() << "returning from runMonica" << endl;
 
@@ -978,5 +1086,7 @@ Output Monica::runMonica(Env env)
 	tout(true);
 #endif
 
-	return out;
+	return make_pair(out, out2);
 }
+
+Output Monica::runMonica(Env env) { return runMonicaIC(env, false).first; }

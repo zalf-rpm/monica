@@ -1,5 +1,5 @@
 {
-	"crop.json": "crop-min.json",
+	"crop.json": "crop-min-ic.json",
 	"site.json": "site-min.json",
 	"climate.csv": "climate-min.csv",
 
@@ -14,8 +14,9 @@
 	"output": { 
 	  "write-file?": true,
 
-		"path-to-output": "/home/berg/GitHub/monica/",
+		"path-to-output": "./",
 		"file-name": "sim-min-out.csv",
+		"file-name2": "sim-min-out2.csv",
 	
 		"csv-options": {
 			"include-header-row": true,
@@ -57,6 +58,18 @@
 				["RunOff", "SUM"], 
 				["NLeach", "SUM"], 
 				["Recharge", "SUM"]
+			],
+
+			"run", [["Precip", "SUM"]]
+		],
+
+		"events2" : [
+			"crop", [
+				"CM-count",
+				"Crop",
+				["Yield", "LAST"],
+				["Date|sowing", "FIRST"],
+				["Date|harvest", "LAST"]
 			],
 
 			"run", [["Precip", "SUM"]]

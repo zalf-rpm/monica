@@ -15,49 +15,24 @@
 # Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import asyncio
-#import capnp
 import json
 import os
 from pathlib import Path
 import subprocess as sp
-import sys
 import tempfile
 import time
-from threading import Thread, Lock
-import uuid
-
-#PATH_TO_SCRIPT_DIR = Path(os.path.realpath(__file__)).parent
-#PATH_TO_REPO = PATH_TO_SCRIPT_DIR.parent.parent.parent
-#if str(PATH_TO_REPO) not in sys.path:
-#    sys.path.insert(1, str(PATH_TO_REPO))
-
-#PATH_TO_PYTHON_CODE = PATH_TO_REPO / "src/python"
-#if str(PATH_TO_PYTHON_CODE) not in sys.path:
-#    sys.path.insert(1, str(PATH_TO_PYTHON_CODE))
-
-#if str(PATH_TO_SCRIPT_DIR) in sys.path:
-#    import common as common
-#    import service as serv
-#    import capnp_async_helpers as async_helpers
-#else:
-#    import common.common as common
-#    import common.service as serv
-#    import common.capnp_async_helpers as async_helpers
-
-#PATH_TO_CAPNP_SCHEMAS = PATH_TO_REPO / "capnproto_schemas"
-#abs_imports = [str(PATH_TO_CAPNP_SCHEMAS)]
-#reg_capnp = capnp.load(str(PATH_TO_CAPNP_SCHEMAS / "registry.capnp"), imports=abs_imports)
-#config_capnp = capnp.load(str(PATH_TO_CAPNP_SCHEMAS / "config.capnp"), imports=abs_imports)
+from threading import Thread
 
 (fd, path) = tempfile.mkstemp(text=True)
 
 channel = Thread(
     target=sp.run, 
     args=(["python", "/home/berg/GitHub/mas-infrastructure/src/python/common/channel.py", 
-        "no_of_channels="+str(2), "buffer_size="+str(2), 
+        "no_of_channels="+str(2), 
+        "buffer_size="+str(2), 
+        "use_async=true",
         "type_1=/home/berg/GitHub/mas-infrastructure/capnproto_schemas/model/monica/monica_state.capnp:ICData",
-        "type_1=/home/berg/GitHub/mas-infrastructure/capnproto_schemas/model/monica/monica_state.capnp:ICData",
+        "type_2=/home/berg/GitHub/mas-infrastructure/capnproto_schemas/model/monica/monica_state.capnp:ICData",
         "store_srs_file="+str(path)],),
     daemon=True
 )
@@ -66,10 +41,13 @@ channel.start()
 # wait for file to be written
 time.sleep(2)
 
+# load the sturdy refs from the file written by the channel service
 srs = {}
 with os.fdopen(fd) as _:
     srs = json.load(_)
+print("read sturdy refs:", srs)
 
+# start MONICA 1
 mout_1 = open("out_1", "wt")
 monica_1 = Thread(
     target=sp.run, 
@@ -86,6 +64,7 @@ monica_1 = Thread(
 )
 monica_1.start()
 
+# start MONICA 2
 mout_2 = open("out_2", "wt")
 monica_2 = Thread(
     target=sp.run,
@@ -102,6 +81,7 @@ monica_2 = Thread(
 )
 monica_2.start()
 
+# wait for MONICAs to finish
 monica_1.join()
 mout_1.close()
 monica_2.join()
