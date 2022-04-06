@@ -636,7 +636,7 @@ void MonicaModel::step()
 {
 	if(isCropPlanted() && !_clearCropUponNextDay) {
 		cropStep();
-	} else if(_intercropping.ioContext != nullptr) { 
+	} else if(_intercropping.isAsync()) { 
 		// tell other side that there is currently no crop
 		auto wreq = _intercropping.writer.writeRequest();
 		auto wval = wreq.initValue();
@@ -1251,4 +1251,11 @@ void MonicaModel::clearEvents()
 { 
 	_previousDaysEvents = _currentEvents;
 	_currentEvents.clear(); 
+}
+
+void MonicaModel::setOtherCropHeightAndLAIt(double cropHeight, double lait) 
+{
+	if(_currentCropModule) {
+		_currentCropModule->setOtherCropHeightAndLAIt(cropHeight, lait);
+	}
 }

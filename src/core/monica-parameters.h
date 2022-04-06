@@ -1068,6 +1068,7 @@ namespace Monica {
 		kj::AsyncIoContext* ioContext {nullptr};
 		Reader::Client reader {nullptr};
 		Writer::Client writer {nullptr};
+		bool isAsync() const { return ioContext != nullptr; }
 	};
 
 }

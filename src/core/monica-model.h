@@ -233,6 +233,8 @@ namespace Monica {
 		Intercropping& intercropping() { return _intercropping; }
 		void setIntercropping(Intercropping& ic) { _intercropping = ic; }
 
+		void setOtherCropHeightAndLAIt(double cropHeight, double lait);
+
 	private:
 		SiteParameters _sitePs;
 		EnvironmentParameters _envPs;

@@ -882,10 +882,11 @@ void CropModule::step(double vw_MeanAirTemperature,
 								  pc_StageKcFactor[vc_DevelopmentalStage - 1]);
 	}
 
-	auto icSendRcv = [&]()
+	auto icSendRcv = [&](const string& outmsg)
 	{
-		if (cropPs.isIntercropping && _intercropping.ioContext != nullptr)
+		if (cropPs.isIntercropping && _intercropping.isAsync())
 		{
+			cout << outmsg;
 			// tell the other side our current crop height
 			auto wreq = _intercropping.writer.writeRequest();
 			auto wval = wreq.initValue();
@@ -923,8 +924,7 @@ void CropModule::step(double vw_MeanAirTemperature,
 					pc_CropHeightP1,
 					pc_CropHeightP2);
 
-		cout << "devstage > 0: ";
-		icSendRcv();
+		icSendRcv("devstage > 0: ");
 
 		fc_CropGreenArea(vw_MeanAirTemperature,
 						 vc_DevelopmentalStage,
@@ -1022,8 +1022,7 @@ void CropModule::step(double vw_MeanAirTemperature,
 	}
 	else
 	{
-		cout << "devstage 0: ";
-		icSendRcv();
+		icSendRcv("devstage 0: ");
 	}
 
 	_noOfCropSteps++;
@@ -2638,31 +2637,39 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	double zeroHeightEps = 0.00001;
 	if (_intercroppingOtherCropHeight <= zeroHeightEps || vc_CropHeight <= zeroHeightEps)
 	{
-		cout << "no-other-crop: ";
+		cout << "no-other-crop: dev-stage: " << (vc_DevelopmentalStage+1) 
+			<< " other-crop-height: " << _intercroppingOtherCropHeight 
+			<< " own-crop-height: " << vc_CropHeight << endl;
 		auto F_t1 = [](double LAI)
 		{
 			return 1.0 - exp(-0.8 * LAI);
 		};
 		tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);
-		cout << "assimilation calculations for only one crop: grossCO2Assim: " << vc_GrossCO2Assimilation << " ref: " << vc_GrossCO2AssimilationReference << endl;
+		cout << "assimilation calculations for only one crop: grossCO2Assim: " << vc_GrossCO2Assimilation 
+			<< " ref: " << vc_GrossCO2AssimilationReference << endl;
 	}
 	else
 	{
 		assert(_intercroppingOtherCropHeight > zeroHeightEps);
 		if (vc_CropHeight < _intercroppingOtherCropHeight)
 		{
-			cout << "smaller crop: ";
+			cout << "smaller crop: dev-stage: " << (vc_DevelopmentalStage+1) 
+				<< " other-crop-height: " << _intercroppingOtherCropHeight 
+				<< " own-crop-height: " << vc_CropHeight << endl;
 			double k_s = cropPs.pc_intercropping_k_s;
 			double k_t = cropPs.pc_intercropping_k_t;
 
 			// send out LAI_s and wait for LAI_t2 from the larger plant
-			auto wreq = _intercropping.writer.writeRequest();
-			auto wval = wreq.initValue();
-			wval.setLait(vc_LeafAreaIndex);
-			auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
-			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
-			double LAI_t2 = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
-			cout << "sent LAI_s: " << vc_LeafAreaIndex << " received LAI_t2: " << LAI_t2 << endl;
+			double LAI_t2 = _intercroppingOtherLAIt;
+			if(_intercropping.isAsync()){
+				auto wreq = _intercropping.writer.writeRequest();
+				auto wval = wreq.initValue();
+				wval.setLait(vc_LeafAreaIndex);
+				auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
+				auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+				LAI_t2 = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
+				cout << "sent LAI_s: " << vc_LeafAreaIndex << " received LAI_t2: " << LAI_t2 << endl;
+			}
 			// fraction of radiation intercepted for lower plant part
 			auto F_s = [k_s, k_t, LAI_t2](double LAI_s)
 			{
@@ -2670,11 +2677,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			};
 
 			tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_s, vc_LeafAreaIndex);
-			cout << "assimilation calculations for smaller crop: grossCO2Assim: " << vc_GrossCO2Assimilation << " ref: " << vc_GrossCO2AssimilationReference << endl;
+			cout << "assimilation calculations for smaller crop: grossCO2Assim: " << vc_GrossCO2Assimilation 
+				<< " ref: " << vc_GrossCO2AssimilationReference << endl;
 		}
 		else
 		{ 
-			cout << "taller crop: ";
+			cout << "taller crop: dev-stage: " << (vc_DevelopmentalStage+1) 
+				<< " other-crop-height: " << _intercroppingOtherCropHeight 
+				<< " own-crop-height: " << vc_CropHeight << endl;
 			// this crop is larger than the other
 			double k_t = cropPs.pc_intercropping_k_t;
 			double k_s = cropPs.pc_intercropping_k_s;
@@ -2684,13 +2694,16 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			double LAI_t1 = max(0.001, (1 - phr) * vc_LeafAreaIndex);
 
 			// send out LAI_t2 and wait for LAI_s from the smaller plant
-			auto wreq = _intercropping.writer.writeRequest();
-			auto wval = wreq.initValue();
-			wval.setLait(LAI_t2);
-			auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
-			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
-			double LAI_s = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2724);
-			cout << "sent LAI_t2: " << LAI_t2 << " received LAI_s: " << LAI_s << endl;
+			double LAI_s = _intercroppingOtherLAIt;
+			if(_intercropping.isAsync()){
+				auto wreq = _intercropping.writer.writeRequest();
+				auto wval = wreq.initValue();
+				wval.setLait(LAI_t2);
+				auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
+				auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+				LAI_s = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2724);
+				cout << "sent LAI_t2: " << LAI_t2 << " received LAI_s: " << LAI_s << endl;
+			}
 			// fraction of radiation intercepted for upper plant part
 			auto F_t1 = [k_t](double LAI_t1)
 			{
@@ -2706,7 +2719,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 			auto t2 = code(F_t2, LAI_t2);
 			vc_GrossCO2Assimilation = t1.first + t2.first;
 			vc_GrossCO2AssimilationReference = t1.second + t2.second;
-			cout << "assimilation calculations for taller crop: grossCO2Assim: " << vc_GrossCO2Assimilation << " ref: " << vc_GrossCO2AssimilationReference << endl;
+			cout << "assimilation calculations for taller crop: grossCO2Assim: " << vc_GrossCO2Assimilation 
+				<< " ref: " << vc_GrossCO2AssimilationReference << endl;
 		}
 	}
 	//*/

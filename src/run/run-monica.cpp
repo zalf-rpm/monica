@@ -733,11 +733,11 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 	Intercropping ic;
 	mas::infrastructure::common::ConnectionManager conMan;
 	if(isIC){
-		ic.ioContext = &ioContext;
-		if(!env.params.userCropParameters.reader_sr.empty())
+		if(!env.params.userCropParameters.reader_sr.empty() && !env.params.userCropParameters.writer_sr.empty()){
+			ic.ioContext = &ioContext;
 			ic.reader = conMan.tryConnectB(ioContext, env.params.userCropParameters.reader_sr).castAs<Intercropping::Reader>();
-		if(!env.params.userCropParameters.writer_sr.empty()) 
 			ic.writer = conMan.tryConnectB(ioContext, env.params.userCropParameters.writer_sr).castAs<Intercropping::Writer>();
+		}
 		monica->setIntercropping(ic);
 	}
 
@@ -985,10 +985,12 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil
-		if(monica->cropGrowth() && monica->cropGrowth()->isDying())
+		if(monica->cropGrowth() && monica->cropGrowth()->isDying()){
 			monica->incorporateCurrentCrop();
-		if(isIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying())
+		}
+		if(isIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying()){
 			monica2->incorporateCurrentCrop();
+		}
 
 		//try to apply dynamic worksteps marked to run before everything else that day
 		if(currentCM) currentCM->apply(monica.get(), true);
@@ -1015,8 +1017,25 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		}
 
 		//monica main stepping method
+		if(isIC){
+			if(monica2->cropGrowth()) {
+				monica->setOtherCropHeightAndLAIt(monica2->cropGrowth()->get_CropHeight(), monica2->cropGrowth()->get_LeafAreaIndex());
+			} else {
+				monica->setOtherCropHeightAndLAIt(-1, -1);
+			}
+		}
+		std::cout << "MONICA 1: ";
 		monica->step();
-		if(isIC) monica2->step();
+		if(isIC){ 
+			if(monica->cropGrowth()) {
+				monica2->setOtherCropHeightAndLAIt(monica->cropGrowth()->get_CropHeight(), monica->cropGrowth()->get_LeafAreaIndex());
+			} else {
+				monica2->setOtherCropHeightAndLAIt(-1, -1);
+			}
+			std::cout << "MONICA 2: ";
+			monica2->step();
+		}
+		cout << std::endl;
 
 		// call all daily functions, assuming it's better to do this after the steps, than before
 		// so the daily monica calculations will be taken into account

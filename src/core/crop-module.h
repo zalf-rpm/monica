@@ -461,6 +461,11 @@ namespace Monica
 			return ids;
 		}
 
+		void setOtherCropHeightAndLAIt(double cropHeight, double lait) {
+			_intercroppingOtherCropHeight = cropHeight;
+			_intercroppingOtherLAIt = lait;
+		}
+
 	private:
 		Intercropping& _intercropping;
 
@@ -723,6 +728,7 @@ namespace Monica
 
 		//intercropping
 		double _intercroppingOtherCropHeight { -1 };
+		double _intercroppingOtherLAIt { -1 };
 	};
 
 	//#define TEST_HOURLY_OUTPUT
