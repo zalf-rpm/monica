@@ -288,7 +288,7 @@ int main(int argc, const char* argv[]) {
 
 	string address = "*";
 	int port = -1;
-	uint no_of_threads = 0;
+	unsigned int no_of_threads = 0;
 	bool startMonicaThreadsInDebugMode = false;
 
 	//init path to db-connections.ini
@@ -365,7 +365,7 @@ int main(int argc, const char* argv[]) {
 		
 		vector<MonicaEnvInstance::Client> clients;
 		vector<kj::Promise<void>> proms;
-		for (uint i = 0; i < no_of_threads; i++) {
+		for (unsigned int i = 0; i < no_of_threads; i++) {
 			auto promAndClient = createMonicaEnvThread(*ioContext.provider, startMonicaThreadsInDebugMode);
 			proms.push_back(promAndClient.fp.addBranch());
 			clients.push_back(kj::mv(promAndClient.client));

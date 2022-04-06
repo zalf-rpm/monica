@@ -157,8 +157,10 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	;the json version files with name name convention
 	SetOutPath $PROFILE\MONICA\Examples\Hohenfinow2
 	File "Hohenfinow2\crop-min.json"
+	File "Hohenfinow2\crop-min-ic.json"
 	File "Hohenfinow2\site-min.json"
 	File "Hohenfinow2\sim-min.json"
+	File "Hohenfinow2\sim-min-ic.json"
 	File "Hohenfinow2\climate-min.csv"
 	File "Hohenfinow2\crop.json"
 	File "Hohenfinow2\site.json"
