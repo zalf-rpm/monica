@@ -914,8 +914,14 @@ void CropModule::step(double vw_MeanAirTemperature,
 
 	if (vc_DevelopmentalStage > 0)
 	{
+		auto maxCropHeight = cropPs.isIntercropping 
+			&& cropPs.pc_intercropping_phRedux.size() > vc_DevelopmentalStage 
+			&& _intercroppingOtherCropHeight > vc_CropHeight
+			? pc_MaxCropHeight * cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage]
+			: pc_MaxCropHeight;
+		cout << "original maxCropHeight: " << pc_MaxCropHeight << " -> new maxCropHeight: " << maxCropHeight << endl;
 
-		fc_CropSize(pc_MaxCropHeight,
+		fc_CropSize(maxCropHeight,
 					pc_MaxCropDiameter,
 					pc_StageAtMaxHeight,
 					pc_StageAtMaxDiameter,
