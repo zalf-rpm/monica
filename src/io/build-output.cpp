@@ -770,6 +770,18 @@ BOTRes& Monica::buildOutputTable()
 				return monica.cropGrowth() ? round(monica.cropGrowth()->get_GrossPrimaryProduction(), 5) : 0.0;
 			});
 
+			build({ id++, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop" },
+				[](const MonicaModel& monica, OId oid)
+				{
+					return monica.cropGrowth() ? round(monica.cropGrowth()->getFractionOfInterceptedRadiation1(), 5) : 0.0;
+				});
+
+			build({ id++, "LightInterception2", "", "LightInterception of lower layer of taller crop" },
+				[](const MonicaModel& monica, OId oid)
+				{
+					return monica.cropGrowth() ? round(monica.cropGrowth()->getFractionOfInterceptedRadiation2(), 5) : 0.0;
+				});
+
 			build({ id++, "Ra", "kgC ha-1", "autotrophic respiration" },
 				[](const MonicaModel& monica, OId oid)
 			{

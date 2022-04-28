@@ -466,6 +466,9 @@ namespace Monica
 			_intercroppingOtherLAIt = lait;
 		}
 
+		double getFractionOfInterceptedRadiation1() const { return fractionOfInterceptedRadiation1;  }
+		double getFractionOfInterceptedRadiation2() const { return fractionOfInterceptedRadiation2; }
+
 	private:
 		Intercropping& _intercropping;
 
@@ -729,6 +732,9 @@ namespace Monica
 		//intercropping
 		double _intercroppingOtherCropHeight { -1 };
 		double _intercroppingOtherLAIt { -1 };
+
+		double fractionOfInterceptedRadiation1{ 0.0 };
+		double fractionOfInterceptedRadiation2{ 0.0 };
 	};
 
 	//#define TEST_HOURLY_OUTPUT

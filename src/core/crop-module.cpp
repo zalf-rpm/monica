@@ -2328,7 +2328,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 	//*
 	auto code = [&](std::function<double(double)> calcFractionOfInterceptedRadiation, double LAI)
 	{
-		double PHC3 = PHCH * calcFractionOfInterceptedRadiation(LAI);
+		double fractionOfInterceptedRadiation = calcFractionOfInterceptedRadiation(LAI);
+
+		double PHC3 = PHCH * fractionOfInterceptedRadiation;
 		double PHC3Reference = PHCHReference * calcFractionOfInterceptedRadiation(pc_ReferenceLeafAreaIndex);
 
 		double PHC4 = vc_AstronomicDayLenght * LAI * vc_AssimilationRate;
@@ -2346,7 +2348,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 		double PHOH1 = 5.0 * vc_AssimilationRate * vc_EffectiveDayLength * Z / (1.0 + Z);
 		double PHOH = 0.9935 * PHOH1 + 1.1;
-		double PHO3 = PHOH * calcFractionOfInterceptedRadiation(LAI);
+		double PHO3 = PHOH * fractionOfInterceptedRadiation;
 		double PHO3Reference = PHOH * calcFractionOfInterceptedRadiation(pc_ReferenceLeafAreaIndex);
 
 		double PHOL = PHO3 < PHC4
@@ -2646,24 +2648,37 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 		cout << "no-other-crop: dev-stage: " << (vc_DevelopmentalStage+1) 
 			<< " other-crop-height: " << _intercroppingOtherCropHeight 
 			<< " own-crop-height: " << vc_CropHeight << endl;
+		cout << "vc_OvercastSkyTimeFraction: " << vc_OvercastSkyTimeFraction << endl;
 		auto F_t1 = [](double LAI)
 		{
 			return 1.0 - exp(-0.8 * LAI);
 		};
 		tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);
+		fractionOfInterceptedRadiation1 = F_t1(vc_LeafAreaIndex);
 		cout << "assimilation calculations for only one crop: grossCO2Assim: " << vc_GrossCO2Assimilation 
 			<< " ref: " << vc_GrossCO2AssimilationReference << endl;
 	}
 	else
 	{
+		// this crop is larger than the other
+		double k_t = cropPs.pc_intercropping_k_t;
+		double k_s = cropPs.pc_intercropping_k_s;
+		double phRedux = cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage];
+		double phr = vc_CropHeight <= 0.0 ? 0.0 : _intercroppingOtherCropHeight * phRedux / vc_CropHeight;
+		double LAI_t1 = max(0.001, (1 - phr) * vc_LeafAreaIndex);
+		// fraction of radiation intercepted for upper plant part
+		auto F_t1 = [k_t](double LAI_t1)
+		{
+			return 1.0 - exp(-k_t * LAI_t1);
+		};
+		double one_minus_F_t1_val = 1 - F_t1(LAI_t1);
+
 		assert(_intercroppingOtherCropHeight > zeroHeightEps);
 		if (vc_CropHeight < _intercroppingOtherCropHeight)
 		{
 			cout << "smaller crop: dev-stage: " << (vc_DevelopmentalStage+1) 
 				<< " other-crop-height: " << _intercroppingOtherCropHeight 
 				<< " own-crop-height: " << vc_CropHeight << endl;
-			double k_s = cropPs.pc_intercropping_k_s;
-			double k_t = cropPs.pc_intercropping_k_t;
 
 			// send out LAI_s and wait for LAI_t2 from the larger plant
 			double LAI_t2 = _intercroppingOtherLAIt;
@@ -2677,12 +2692,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				cout << "sent LAI_s: " << vc_LeafAreaIndex << " received LAI_t2: " << LAI_t2 << endl;
 			}
 			// fraction of radiation intercepted for lower plant part
-			auto F_s = [k_s, k_t, LAI_t2](double LAI_s)
+			
+			auto F_s = [k_s, k_t, LAI_t2, one_minus_F_t1_val](double LAI_s)
 			{
-				return (k_s * LAI_s) / (k_t * LAI_t2 + k_s * LAI_s) * (1 - exp(-k_t * LAI_t2 - k_s * LAI_s));
+				return (k_s * LAI_s) / (k_t * LAI_t2 + k_s * LAI_s) * (1 - exp(-k_t * LAI_t2 - k_s * LAI_s)) * one_minus_F_t1_val;
 			};
 
 			tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_s, vc_LeafAreaIndex);
+			fractionOfInterceptedRadiation1 = F_s(vc_LeafAreaIndex) / one_minus_F_t1_val;
 			cout << "assimilation calculations for smaller crop: grossCO2Assim: " << vc_GrossCO2Assimilation 
 				<< " ref: " << vc_GrossCO2AssimilationReference << endl;
 		}
@@ -2692,12 +2709,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				<< " other-crop-height: " << _intercroppingOtherCropHeight 
 				<< " own-crop-height: " << vc_CropHeight << endl;
 			// this crop is larger than the other
-			double k_t = cropPs.pc_intercropping_k_t;
-			double k_s = cropPs.pc_intercropping_k_s;
-			double phRedux = cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage];
-			double phr = vc_CropHeight <= 0.0 ? 0.0 : _intercroppingOtherCropHeight * phRedux / vc_CropHeight;
 			double LAI_t2 = max(0.001, phr * vc_LeafAreaIndex);
-			double LAI_t1 = max(0.001, (1 - phr) * vc_LeafAreaIndex);
 
 			// send out LAI_t2 and wait for LAI_s from the smaller plant
 			double LAI_s = _intercroppingOtherLAIt;
@@ -2710,20 +2722,17 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				LAI_s = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2724);
 				cout << "sent LAI_t2: " << LAI_t2 << " received LAI_s: " << LAI_s << endl;
 			}
-			// fraction of radiation intercepted for upper plant part
-			auto F_t1 = [k_t](double LAI_t1)
-			{
-				return 1.0 - exp(-k_t * LAI_t1);
-			};
 			// fraction of radiation intercepted for lower plant part
-			auto F_t2 = [k_s, k_t, LAI_s](double LAI_t2)
+			auto F_t2 = [k_s, k_t, LAI_s, one_minus_F_t1_val](double LAI_t2)
 			{
-				return (k_t * LAI_t2) / (k_t * LAI_t2 + k_s * LAI_s) * (1 - exp(-k_t * LAI_t2 - k_s * LAI_s));
+				return (k_t * LAI_t2) / (k_t * LAI_t2 + k_s * LAI_s) * (1 - exp(-k_t * LAI_t2 - k_s * LAI_s)) * one_minus_F_t1_val;
 			};
 
 			auto t1 = code(F_t1, LAI_t1);
 			auto t2 = code(F_t2, LAI_t2);
 			vc_GrossCO2Assimilation = t1.first + t2.first;
+			fractionOfInterceptedRadiation1 = F_t1(LAI_t1);
+			fractionOfInterceptedRadiation2 = F_t2(LAI_t2) / one_minus_F_t1_val;
 			vc_GrossCO2AssimilationReference = t1.second + t2.second;
 			cout << "assimilation calculations for taller crop: grossCO2Assim: " << vc_GrossCO2Assimilation 
 				<< " ref: " << vc_GrossCO2AssimilationReference << endl;
