@@ -4,10 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "../mas-infrastructure/src/cpp"
+			"path": "../util"
 		},
 		{
-			"path": "../mas-infrastructure/capnproto_schemas"
+			"path": "../mas-infrastructure"
 		}
 	],
 	"settings": {

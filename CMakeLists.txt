@@ -419,3 +419,26 @@ if (MSVC)
 endif()
 
 endif()
+
+#------------------------------------------------------------------------------
+
+# create monica-capnp-server executable, the server running monica via CapNProto RPC
+set(MONICA_CAPNP_FBP_SOURCE_FILES
+	src/run/monica-capnp-fbp-component-main.cpp
+	src/run/run-monica-capnp.h
+	src/run/run-monica-capnp.cpp
+)
+add_executable(monica-capnp-fbp-component ${MONICA_CAPNP_FBP_SOURCE_FILES})
+target_link_libraries(monica-capnp-fbp-component
+	${CMAKE_THREAD_LIBS_INIT}
+	${CMAKE_DL_LIBS}
+	monica_lib
+)
+target_include_directories(monica-capnp-fbp-component PRIVATE 
+	${CMAKE_CURRENT_BINARY_DIR}/mas-infrastructure/capnproto_schemas
+	${MAS_INFRASTRUCTURE_DIR}/src/cpp
+)
+if (MSVC)
+	target_compile_options(monica-capnp-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif()
+

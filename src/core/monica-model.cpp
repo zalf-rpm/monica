@@ -639,12 +639,12 @@ void MonicaModel::step()
 	} else if(_intercropping.isAsync()) { 
 		// tell other side that there is currently no crop
 		auto wreq = _intercropping.writer.writeRequest();
-		auto wval = wreq.initValue().initAs<Intercropping::ICD>();
+		auto wval = wreq.initValue();
 		wval.setNoCrop();
 		auto prom = wreq.send().wait(_intercropping.ioContext->waitScope);
 		//prom.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "MonicaModel::step write noCrop failed: " << ex.getDescription().cStr() << endl;});
 		// wait for other sides crop height or no crop info
-		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue().getAs<Intercropping::ICD>();
+		auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
 		cout << "MonicaModel::step -> sent no-crop, received ";
 		if(val.isHeight()) cout << " height: " << val.getHeight() << endl;
 		else if(val.isNoCrop()) cout << "no-crop" << endl;
