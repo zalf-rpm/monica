@@ -21,9 +21,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <algorithm>
 
 #include <kj/debug.h>
-
 #include <kj/common.h>
 #define KJ_MVCAP(var) var = kj::mv(var)
+#include <kj/main.h>
 
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
@@ -65,6 +65,7 @@ int main(int argc, const char* argv[]) {
   bool connectToProxy = false;
 
   string registrarSR;
+  string sr;
 
   string address = "*";
   int port = 0;
@@ -108,6 +109,9 @@ int main(int argc, const char* argv[]) {
       } else if (arg == "-rsr" || arg == "--registrar-sturdy-ref") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           registrarSR = argv[++i];
+      } else if (arg == "-sr" || arg == "--sturdy-ref") {
+        if (i + 1 < argc && argv[i + 1][0] != '-')
+          sr = argv[++i];
       } else if (arg == "-h" || arg == "--help")
         printHelp(), exit(0);
       else if (arg == "-v" || arg == "--version")
@@ -133,14 +137,14 @@ int main(int argc, const char* argv[]) {
     auto proms = _conMan.bind(ioContext, restorerClient, address, port);
     auto addrPromise = proms.first.fork().addBranch();
     auto addrStr = addrPromise.wait(ioContext.waitScope);
-    restorerRef.setHost("10.10.24.210");//addrStr);
+    restorerRef.setHost(address);//addrStr);
     auto portPromise = proms.second.fork().addBranch();
     auto port = portPromise.wait(ioContext.waitScope);
     restorerRef.setPort(port);
     cout << "monica: bound to host: " << address << " port: " << port << endl;
 
     auto restorerSR = restorerRef.sturdyRef();
-    auto monicaSRs = restorerRef.save(runMonicaClient);
+    auto monicaSRs = restorerRef.save(runMonicaClient, sr);
     cout << "monica: monica_sr: " << monicaSRs.first << endl;
     cout << "monica: restorer_sr: " << restorerSR << endl;
 

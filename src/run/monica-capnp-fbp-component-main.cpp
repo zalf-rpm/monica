@@ -21,15 +21,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <algorithm>
 
 #include <kj/debug.h>
-
 #include <kj/common.h>
 #define KJ_MVCAP(var) var = kj::mv(var)
-
-#include <capnp/ez-rpc.h>
-#include <capnp/message.h>
-#include <capnp/rpc-twoparty.h>
-#include <kj/thread.h>
-#include <capnp/orphan.h>
+#include <kj/main.h>
 
 #include "tools/helper.h"
 #include "tools/debug.h"
@@ -40,80 +34,35 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
-#include "climate_data.capnp.h"
-#include "persistence.capnp.h"
+//#include "climate_data.capnp.h"
+//#include "persistence.capnp.h"
 
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace mas;
 
-string appName = "monica-capnp-fbp-component";
-string version = "0.0.1-beta";
 
+class FBPMain
+{
+public:
+  FBPMain(kj::ProcessContext &context) : context(context) {}
 
-int main(int argc, const char* argv[]) {
+  kj::MainBuilder::Validity setName(kj::StringPtr n) { name = str(n); return true; }
 
-  setlocale(LC_ALL, "");
-  setlocale(LC_NUMERIC, "C");
+  kj::MainBuilder::Validity setFromAttr(kj::StringPtr name) { fromAttr = kj::str(name); return true; }
 
-  infrastructure::common::ConnectionManager _conMan;
-  auto ioContext = kj::setupAsyncIo();
+  kj::MainBuilder::Validity setToAttr(kj::StringPtr name) { toAttr = kj::str(name); return true; }
 
-  string in_sr;
-  string out_sr;
-  string fromAttr;
-  string toAttr;
+  kj::MainBuilder::Validity setInSr(kj::StringPtr name) { inSr = kj::str(name); return true; }
 
-  bool startedServerInDebugMode = false;
+  kj::MainBuilder::Validity setOutSr(kj::StringPtr name) { outSr = kj::str(name); return true; }
 
-  auto printHelp = [=]() {
-    cout
-      << appName << "[options]" << endl
-      << endl
-      << "options:" << endl
-      << endl
-      << " -h | --help "
-      "... this help output" << endl
-      << " -v | --version "
-      "... outputs " << appName << " version and ZeroMQ version being used" << endl
-      << endl
-      << " -d | --debug "
-      "... show debug outputs" << endl
-      << " -i | --in_sr ... input sturdy ref "
-      "... sturdy ref to input channel " << endl
-      << " -o | --out_sr ... output sturdy ref "
-      "... sturdy ref to ouput channel" << endl
-      << " -fa | --from_attr ... name of attribute to get env from" << endl
-      << " -ta | --to_attr ... name of attribute to set result to" << endl;
-  };
+  kj::MainBuilder::Validity startChannel()
+  {
+    auto ioContext = kj::setupAsyncIo();
 
-  if (argc >= 1) {
-    for (auto i = 1; i < argc; i++) {
-      string arg = argv[i];
-      if (arg == "-d" || arg == "--debug") {
-        activateDebug = true;
-        startedServerInDebugMode = true;
-      }
-      else if (arg == "-i" || arg == "--in_sr") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          in_sr = argv[++i];
-      } else if (arg == "-o" || arg == "--out_sr") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          out_sr = argv[++i];
-      } else if (arg == "-fa" || arg == "--from_attr") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          fromAttr = argv[++i];
-      } else if (arg == "-ta" || arg == "--to_attr") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          toAttr = argv[++i];
-      } else if (arg == "-h" || arg == "--help")
-        printHelp(), exit(0);
-      else if (arg == "-v" || arg == "--version")
-        cout << appName << " version " << version << endl, exit(0);
-    }
-
-    if (in_sr.empty() || out_sr.empty()) return 0;
+    bool startedServerInDebugMode = false;
 
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;   
     typedef schema::common::IP IP;
@@ -121,11 +70,12 @@ int main(int argc, const char* argv[]) {
     typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
     typedef schema::model::Env<schema::common::StructuredText> Env;
 
-    auto inp = _conMan.tryConnectB(ioContext, in_sr).castAs<Channel::ChanReader>();
-    auto outp = _conMan.tryConnectB(ioContext, out_sr).castAs<Channel::ChanWriter>();
+    auto inp = conMan.tryConnectB(ioContext, inSr.cStr()).castAs<Channel::ChanReader>();
+    auto outp = conMan.tryConnectB(ioContext, outSr.cStr()).castAs<Channel::ChanWriter>();
+    auto runMonicaClient = conMan.tryConnectB(ioContext, "capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
 
-    auto runMonica = kj::heap<RunMonica>(nullptr, startedServerInDebugMode);
-    MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
+    //auto runMonica = kj::heap<RunMonica>(nullptr, startedServerInDebugMode);
+    //MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
 
     try 
     {
@@ -149,7 +99,7 @@ int main(int argc, const char* argv[]) {
             auto outIp = wreq.initValue();
             
             // set content if not to be set as attribute
-            if (toAttr.empty()) outIp.initContent().setAs<capnp::Text>(resJsonStr);
+            if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
             // copy attributes, if any and set result as attribute, if requested
             auto toAttrBuilder = rpc::common::copyAndSetIPAttrs(inIp, outIp, toAttr);
             KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
@@ -170,6 +120,32 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  debug() << "MONICA: stopped MONICA Cap'n Proto FBP component" << endl;
-  return 0;
-}
+  kj::MainFunc getMain()
+  {
+    return kj::MainBuilder(context, "MONICA FBP Component v0.1", "Offers a MONICA service.")
+      .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
+                        "<component-name>", "Give this component a name.")
+      .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
+                        "<attr>", "Which attribute to read the MONICA env from.")
+      .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
+                        "<attr>", "Which attribute to write the MONICA result to.")
+      .addOptionWithArg({'i', "in_sr"}, KJ_BIND_METHOD(*this, setInSr),
+                        "<sturdy_ref>", "Sturdy ref to input channel.")
+      .addOptionWithArg({'o', "out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
+                        "<sturdy_ref>", "Sturdy ref to output channel.")      
+      .callAfterParsing(KJ_BIND_METHOD(*this, startChannel))
+      .build();
+  }
+
+private:
+  infrastructure::common::ConnectionManager conMan;
+  kj::String name;
+  kj::ProcessContext &context;
+  kj::String inSr;
+  kj::String outSr;
+  kj::String fromAttr;
+  kj::String toAttr;
+};
+
+KJ_MAIN(FBPMain)
+
