@@ -25,6 +25,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #define KJ_MVCAP(var) var = kj::mv(var)
 #include <kj/main.h>
 
+#include <capnp/any.h>
+
 #include "tools/helper.h"
 #include "tools/debug.h"
 #include "common/rpc-connections.h"
@@ -72,10 +74,10 @@ public:
 
     auto inp = conMan.tryConnectB(ioContext, inSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(ioContext, outSr.cStr()).castAs<Channel::ChanWriter>();
-    auto runMonicaClient = conMan.tryConnectB(ioContext, "capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
+    //auto runMonicaClient = conMan.tryConnectB(ioContext, "capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
 
-    //auto runMonica = kj::heap<RunMonica>(nullptr, startedServerInDebugMode);
-    //MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
+    auto runMonica = kj::heap<RunMonica>(nullptr, startedServerInDebugMode);
+    MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
 
     try 
     {
@@ -101,7 +103,7 @@ public:
             // set content if not to be set as attribute
             if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
             // copy attributes, if any and set result as attribute, if requested
-            auto toAttrBuilder = rpc::common::copyAndSetIPAttrs(inIp, outIp, toAttr);
+            auto toAttrBuilder = rpc::common::copyAndSetIPAttrs(inIp, outIp, toAttr);//, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
 
             wreq.send().wait(ioContext.waitScope);

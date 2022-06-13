@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
+#include "common.capnp.h"
 #include "common/dll-exports.h"
 #include "../core/monica-model.h"
 #include "cultivation-method.h"
@@ -48,6 +49,8 @@ namespace Monica
 		Tools::Date start, end;
 		std::vector<CultivationMethod> cropRotation;
 	};
+
+	//----------------------------------------------------------------------------
 
 	struct DLL_API Env : public Tools::Json11Serializable
 	{
@@ -105,6 +108,8 @@ namespace Monica
 		std::string berestRequestAddress;
 
 		bool debugMode{false};
+
+		Intercropping ic;
 	};
 
   //------------------------------------------------------------------------------------------

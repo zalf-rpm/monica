@@ -20,6 +20,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <tuple>
 
+#include <kj/async-io.h>
+
 #include <capnp/message.h>
 
 #include "json11/json11.hpp"
@@ -31,6 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "env-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
+#include "common/rpc-connections.h"
 //#include "db/abstract-db-connections.h"
 
 using namespace std;
@@ -45,6 +48,9 @@ int main(int argc, char** argv)
 {
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
+
+	mas::infrastructure::common::ConnectionManager conMan;
+  	auto ioContext = kj::setupAsyncIo();
 
 	bool debug = false, debugSet = false;
 	string startDate, endDate;
@@ -177,8 +183,9 @@ int main(int argc, char** argv)
 
 		auto env = createEnvFromJsonConfigFiles(ps);
 
-		if(!icReaderSr.empty()) env.params.userCropParameters.reader_sr = icReaderSr;
-		if(!icWriterSr.empty()) env.params.userCropParameters.writer_sr = icWriterSr;
+		if(!icReaderSr.empty()) env.ic.reader = conMan.tryConnectB(ioContext, icReaderSr).castAs<Intercropping::Reader>();
+		if(!icWriterSr.empty()) env.ic.writer = conMan.tryConnectB(ioContext, icWriterSr).castAs<Intercropping::Writer>();
+		if(!icReaderSr.empty() && !icWriterSr.empty()) env.ic.ioContext = &ioContext;
 
 		env.params.userSoilMoistureParameters.getCapillaryRiseRate =
 			[](string soilTexture, size_t distance) {

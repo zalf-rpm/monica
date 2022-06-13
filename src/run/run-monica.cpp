@@ -725,20 +725,9 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		monica->simulationParametersNC().startDate = env.climateData.startDate();
 	}
 	if(isIC){
+		monica->setIntercropping(env.ic);
 		monica2 = kj::heap<MonicaModel>(env.params);
 		monica2->simulationParametersNC().startDate = env.climateData.startDate();
-	}
-
-	auto ioContext = kj::setupAsyncIo();
-	Intercropping ic;
-	mas::infrastructure::common::ConnectionManager conMan;
-	if(isIC){
-		if(!env.params.userCropParameters.reader_sr.empty() && !env.params.userCropParameters.writer_sr.empty()){
-			ic.ioContext = &ioContext;
-			ic.reader = conMan.tryConnectB(ioContext, env.params.userCropParameters.reader_sr).castAs<Intercropping::Reader>();
-			ic.writer = conMan.tryConnectB(ioContext, env.params.userCropParameters.writer_sr).castAs<Intercropping::Writer>();
-		}
-		monica->setIntercropping(ic);
 	}
 
 	monica->simulationParametersNC().endDate = env.climateData.endDate();
@@ -960,7 +949,6 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 	for(size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
-		cout << "currentDate: " << currentDate.toString() << endl;
 
 		if(checkAndInitShadowOfNextCropRotation(currentDate))
 		{
@@ -1024,7 +1012,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 				monica->setOtherCropHeightAndLAIt(-1, -1);
 			}
 		}
-		std::cout << "MONICA 1: ";
+		debug() << "MONICA 1: ";
 		monica->step();
 		if(isIC){ 
 			if(monica->cropGrowth()) {
@@ -1032,10 +1020,10 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 			} else {
 				monica2->setOtherCropHeightAndLAIt(-1, -1);
 			}
-			std::cout << "MONICA 2: ";
+			debug() << "MONICA 2: ";
 			monica2->step();
 		}
-		cout << std::endl;
+		debug() << std::endl;
 
 		// call all daily functions, assuming it's better to do this after the steps, than before
 		// so the daily monica calculations will be taken into account

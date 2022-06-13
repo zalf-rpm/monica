@@ -1522,8 +1522,6 @@ Errors CropModuleParameters::merge(json11::Json j)
   set_double_value(pc_intercropping_k_s, j["intercropping"], "k_s");
   set_double_value(pc_intercropping_k_t, j["intercropping"], "k_t");
   set_double_vectorD(pc_intercropping_phRedux, j["intercropping"], "phRedux", vector<double>(7, 0.5));
-  set_string_value(reader_sr, j["intercropping"], "reader_sr");
-  set_string_value(writer_sr, j["intercropping"], "writer_sr");
 	return res;
 }
 

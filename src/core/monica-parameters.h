@@ -738,8 +738,6 @@ namespace Monica {
 		double pc_intercropping_k_s {0.0};
 		double pc_intercropping_k_t {0.0};
 		std::vector<double> pc_intercropping_phRedux;
-		std::string reader_sr;
-		std::string writer_sr;
 	};
 
 	//----------------------------------------------------------------------------
@@ -1071,7 +1069,6 @@ namespace Monica {
 		Writer::Client writer {nullptr};
 		bool isAsync() const { return ioContext != nullptr; }
 	};
-
 }
 
 #endif
