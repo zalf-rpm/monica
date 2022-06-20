@@ -526,7 +526,7 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
               Monica::Output out;
               if (eda.success()) {
-                env.climateData = eda.result;
+                if(!env.climateData.isValid()) env.climateData = eda.result;
                 
                 env.debugMode = startedServerInDebugMode && env.debugMode;
 
