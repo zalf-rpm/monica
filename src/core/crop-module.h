@@ -713,7 +713,8 @@ namespace Monica
 		double vc_KTkc{ 0 }; // old KTkc
 		double vc_KTko{ 0 }; // old KTkc
 
-    bool _stemElongationEventFired{ false };
+		bool _stemElongationEventFired{ false };
+		bool __enable_vernalisation_factor_fix__{ false };
 	};
 
 	//#define TEST_HOURLY_OUTPUT

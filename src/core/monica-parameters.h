@@ -31,6 +31,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <assert.h>
 #include <climits>
 
+#include <kj/common.h>
+
 #include "json11/json11.hpp"
 
 #include "model/monica/monica_params.capnp.h"
@@ -276,6 +278,7 @@ namespace Monica {
 
 		SpeciesParameters speciesParams;
 		CultivarParameters cultivarParams;
+		kj::Maybe<bool> __enable_vernalisation_factor_fix__;
 	};
 
 	typedef std::shared_ptr<CropParameters> CropParametersPtr;

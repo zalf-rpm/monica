@@ -171,6 +171,7 @@ CropModule::CropModule(SoilColumn& sc,
 	, _fireEvent(fireEvent)
 	, _addOrganicMatter(addOrganicMatter)
 	, _getSnowDepthAndCalcTempUnderSnow(getSnowDepthAndCalcTempUnderSnow)
+	, __enable_vernalisation_factor_fix__(cps.__enable_vernalisation_factor_fix__.orDefault(cropPs.__enable_vernalisation_factor_fix__))
 {
 	// Determining the total temperature sum of all developmental stages after
 	// emergence (that's why i_Stage starts with 1) until before senescence
@@ -1204,17 +1205,11 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
 
 		if (vc_VernalisationThreshold >= 1)
 		{
-
 			vc_VernalisationFactor = (d_VernalisationDays - vc_VernalisationThreshold) / (d_VernalisationRequirement
 				- vc_VernalisationThreshold);
 
-			if(cropPs.__enable_vernalisation_factor_fix__)
-        vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0);
-
-			if (vc_VernalisationFactor < 0)
-			{
-				vc_VernalisationFactor = 0.0;
-			}
+			if(__enable_vernalisation_factor_fix__)	vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0);
+			if (vc_VernalisationFactor < 0) vc_VernalisationFactor = 0.0; 
 		}
 		else
 		{
