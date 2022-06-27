@@ -6,6 +6,7 @@ RUN apt-get update
 # install monica prerequisites
 RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
 RUN apt-get install -y git python-pip python-dev build-essential
+RUN apt-get install -y curl zip unzip tar
 
 ARG  VERSION_MAYOR="false"
 ARG  VERSION_MINOR="false"
