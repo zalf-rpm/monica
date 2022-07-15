@@ -619,6 +619,8 @@ void CropParameters::serialize(mas::schema::model::monica::CropParameters::Build
 
 Errors CropParameters::merge(json11::Json j)
 {
+  auto evff = j["__enable_vernalisation_factor_fix__"];
+  if(!evff.is_null() && evff.is_bool()) __enable_vernalisation_factor_fix__ = evff.bool_value();
   return merge(j["species"], j["cultivar"]);
 }
 

@@ -1,3 +1,5 @@
+![Build Status](https://github.com/zalf-rpm/monica/actions/workflows/docker-image.yml/badge.svg)
+
 # MONICA - The Model for Nitrogen and Carbon in Agro-ecosystems
 
 MONICA is a dynamic, process-based simulation model which describes transport and bio-chemical turn-over of carbon, nitrogen and water in agro-ecosystems. On daily time steps the most important processes in soil and plant are modelled mechanistically. They are linked in such way that feed-back relations of the single processes are reproduced as close to nature as possible. MONICA works one dimensional and represents a space of 1 m² surface area and 2 m depth.

@@ -735,6 +735,8 @@ namespace Monica
 
 		double fractionOfInterceptedRadiation1{ 0.0 };
 		double fractionOfInterceptedRadiation2{ 0.0 };
+		
+		bool __enable_vernalisation_factor_fix__{ false };
 	};
 
 	//#define TEST_HOURLY_OUTPUT
