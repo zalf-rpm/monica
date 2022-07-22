@@ -23,8 +23,8 @@
 		"=": ["include-from-file", "general/crop.json"],
 		"intercropping": {
 			"is_intercropping": true,
-			"reader_sr": "capnp://insecure@10.10.24.210:46867/3bb2d09e-ce2f-4cb1-b00e-590b940b4da2",
-			"writer_sr": "capnp://insecure@10.10.24.210:46867/8d734654-aa61-4a72-9ab3-30cd68069ffc",
+			"reader_sr": "capnp://insecure@10.10.24.218:8888/r",
+			"writer_sr": "capnp://insecure@10.10.24.218:8889/w",
 			"k_s": [0.6, "", "smaller crop canopy extinction coefficient"],
 			"k_t": [0.8, "", "taller crop canopy extinction coefficient"],
 			"PHredux": [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], "", "plant height reduction factor at dev stage"]
