@@ -524,7 +524,8 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                                     eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
                             }
 
-                            Monica::Output out;
+                            Monica::Output out, out2;
+                            bool isIC = false;
                             if (eda.success()) {
                                 if(!env.climateData.isValid()) env.climateData = eda.result;
                                 
@@ -535,7 +536,8 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                                 return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
                                 };
 
-                                out = runMonica(env);
+                                isIC = env.params.userCropParameters.isIntercropping;
+                                std::tie(out, out2) = runMonicaIC(env, isIC);
                             }
                             
                             out.errors = eda.errors;
@@ -545,7 +547,13 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                             {
                                 if(!env.sharedId.empty())
                                     s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);
-                                s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
+                                
+                                if(isIC){
+                                    auto outs = json11::Json(J11Object({{"1", out.to_json()}, {"2", out2.to_json()}}));
+                                    s_send(distinctSendSocket ? sendSocket : socket, outs.dump());
+                                } else {
+                                    s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
+                                }
                             }
                             catch(zmq::error_t e)
                             {

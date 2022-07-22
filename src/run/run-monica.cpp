@@ -691,6 +691,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 	Output out, out2;
 	bool returnObjOutputs = env.returnObjOutputs();
 	out.customId = env.customId;
+	out2.customId = env.customId;
 
 	activateDebug = env.debugMode;
 	if(activateDebug) writeDebugInputs(env, "inputs.json");
@@ -724,15 +725,19 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		monica = kj::heap<MonicaModel>(env.params);
 		monica->simulationParametersNC().startDate = env.climateData.startDate();
 	}
+	bool isSyncIC = true;
 	if(isIC){
 		monica->setIntercropping(env.ic);
-		monica2 = kj::heap<MonicaModel>(env.params);
-		monica2->simulationParametersNC().startDate = env.climateData.startDate();
+		isSyncIC = !monica->intercropping().isAsync();
+		if(isSyncIC){
+			monica2 = kj::heap<MonicaModel>(env.params);
+			monica2->simulationParametersNC().startDate = env.climateData.startDate();
+		}
 	}
 
 	monica->simulationParametersNC().endDate = env.climateData.endDate();
 	monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
-	if(isIC){
+	if(isSyncIC){
 		monica2->simulationParametersNC().endDate = env.climateData.endDate();
 		monica2->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
 	}
@@ -764,7 +769,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 			}
 		}
 	}
-	if (isIC)
+	if (isSyncIC)
 	{
 		for (auto &cr : env.cropRotations2)
 		{
@@ -935,17 +940,17 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 	CultivationMethod* currentCM2{ nullptr };
 	Date nextAbsoluteCMApplicationDate, nextAbsoluteCMApplicationDate2;
 	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
-	if(isIC) tie(currentCM2, nextAbsoluteCMApplicationDate2) = findNextCultivationMethod2(currentDate, false);
+	if(isSyncIC) tie(currentCM2, nextAbsoluteCMApplicationDate2) = findNextCultivationMethod2(currentDate, false);
 
 	//while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
 	//	tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, true);;
 
 	vector<StoreData> store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
 	vector<StoreData> store2;
-	if(isIC) store2 = setupStorage(env.events2, env.climateData.startDate(), env.climateData.endDate());
+	if(isSyncIC) store2 = setupStorage(env.events2, env.climateData.startDate(), env.climateData.endDate());
 	
 	monica->addEvent("run-started");
-	if(isIC) monica2->addEvent("run-started");
+	if(isSyncIC) monica2->addEvent("run-started");
 	for(size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate)
 	{
 		debug() << "currentDate: " << currentDate.toString() << endl;
@@ -956,7 +961,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 			cmit = cropRotation.begin();
 			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
 		}
-		if(isIC && checkAndInitShadowOfNextCropRotation2(currentDate))
+		if(isSyncIC && checkAndInitShadowOfNextCropRotation2(currentDate))
 		{
 			//cmit = cropRotation.empty() ? cropRotation.end() : cropRotation.begin();
 			cmit2 = cropRotation2.begin();
@@ -964,25 +969,25 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		}
 		
 		monica->dailyReset();
-		if(isIC) monica2->dailyReset();
+		if(isSyncIC) monica2->dailyReset();
 
 		monica->setCurrentStepDate(currentDate);
-		if(isIC) monica2->setCurrentStepDate(currentDate);
+		if(isSyncIC) monica2->setCurrentStepDate(currentDate);
 		monica->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
-		if(isIC) monica2->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
+		if(isSyncIC) monica2->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
 
 		// test if monica's crop has been dying in previous step
 		// if yes, it will be incorporated into soil
 		if(monica->cropGrowth() && monica->cropGrowth()->isDying()){
 			monica->incorporateCurrentCrop();
 		}
-		if(isIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying()){
+		if(isSyncIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying()){
 			monica2->incorporateCurrentCrop();
 		}
 
 		//try to apply dynamic worksteps marked to run before everything else that day
 		if(currentCM) currentCM->apply(monica.get(), true);
-		if(isIC && currentCM2) currentCM2->apply(monica2.get(), true);
+		if(isSyncIC && currentCM2) currentCM2->apply(monica2.get(), true);
 
 		//apply worksteps and cycle through crop rotation
 		if(currentCM && nextAbsoluteCMApplicationDate == currentDate)
@@ -994,7 +999,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 						
 			debug() << "MONICA 1: next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
 		}
-		if(isIC && currentCM2 && nextAbsoluteCMApplicationDate2 == currentDate)
+		if(isSyncIC && currentCM2 && nextAbsoluteCMApplicationDate2 == currentDate)
 		{
 			debug() << "MONICA 2: applying absolute-at: " << nextAbsoluteCMApplicationDate2.toString() << endl;
 			currentCM2->absApply(nextAbsoluteCMApplicationDate2, monica2.get());
@@ -1005,7 +1010,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		}
 
 		//monica main stepping method
-		if(isIC){
+		if(isSyncIC){
 			if(monica2->cropGrowth()) {
 				monica->setOtherCropHeightAndLAIt(monica2->cropGrowth()->get_CropHeight(), monica2->cropGrowth()->get_LeafAreaIndex());
 			} else {
@@ -1014,7 +1019,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		}
 		debug() << "MONICA 1: ";
 		monica->step();
-		if(isIC){ 
+		if(isSyncIC){ 
 			if(monica->cropGrowth()) {
 				monica2->setOtherCropHeightAndLAIt(monica->cropGrowth()->get_CropHeight(), monica->cropGrowth()->get_LeafAreaIndex());
 			} else {
@@ -1030,15 +1035,15 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		// but means also that a workstep which gets executed before the steps, can't take the
 		// values into account by applying a daily function
 		for (auto& f : applyDailyFuncs) f();
-		if(isIC) for (auto& f : applyDailyFuncs2) f();
+		if(isSyncIC) for (auto& f : applyDailyFuncs2) f();
 
 		//try to apply dynamic worksteps marked to run AFTER everything else that day
 		if (currentCM) currentCM->apply(monica.get(), false);
-		if (isIC && currentCM2) currentCM2->apply(monica2.get(), false);
+		if (isSyncIC && currentCM2) currentCM2->apply(monica2.get(), false);
 
 		//store results
 		for(auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
-		if(isIC) for(auto& s : store2) s.storeResultsIfSpecApplies(*monica2, returnObjOutputs);
+		if(isSyncIC) for(auto& s : store2) s.storeResultsIfSpecApplies(*monica2, returnObjOutputs);
 
 		//if the next application date is not valid, we're at the end
 		//of the application list of this cultivation method
@@ -1049,7 +1054,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 			monica->resetFertiliserCounter();
 			tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate + 1);
 		}
-		if (isIC && currentCM2 && currentCM2->allDynamicWorkstepsFinished() && !nextAbsoluteCMApplicationDate2.isValid())
+		if (isSyncIC && currentCM2 && currentCM2->allDynamicWorkstepsFinished() && !nextAbsoluteCMApplicationDate2.isValid())
 		{
 			// to count the applied fertiliser for the next production process
 			monica2->resetFertiliserCounter();
@@ -1061,7 +1066,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationFile);
 		sms.apply(monica.get());
 	}
-	//if (isIC && env2.params.simulationParameters.serializeMonicaStateAtEnd) {
+	//if (isSyncIC && env2.params.simulationParameters.serializeMonicaStateAtEnd) {
 	//	SaveMonicaState sms(currentDate, env2.params.simulationParameters.pathToSerializationFile);
 	//	sms.apply(monica2.get());
 	//}
@@ -1075,7 +1080,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 			sd.aggregateResults();
 		out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
 	}
-	if(isIC){
+	if(isSyncIC){
 		for(auto& sd : store2)
 		{
 			//aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
