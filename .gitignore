@@ -1,6 +1,5 @@
-cluster2-release/
-cluster3-release/
-CMakeFiles/
+_cmake_debug
+_cmake_release
 
 # dot files
 .*
