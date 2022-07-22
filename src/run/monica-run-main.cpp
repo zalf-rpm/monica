@@ -182,6 +182,8 @@ int main(int argc, char** argv)
 		//ps["path-to-climate-csv"] = simm["climate.csv"].string_value();
 
 		auto env = createEnvFromJsonConfigFiles(ps);
+		if(icReaderSr.empty()) icReaderSr = env.params.userCropParameters.pc_intercropping_reader_sr;
+		if(icWriterSr.empty()) icWriterSr = env.params.userCropParameters.pc_intercropping_writer_sr;
 
 		if(!icReaderSr.empty()) env.ic.reader = conMan.tryConnectB(ioContext, icReaderSr).castAs<Intercropping::Reader>();
 		if(!icWriterSr.empty()) env.ic.writer = conMan.tryConnectB(ioContext, icWriterSr).castAs<Intercropping::Writer>();
@@ -246,7 +248,7 @@ int main(int argc, char** argv)
 		if(writeOutputFile)
 			fout.close();
 
-		if(isIC){
+		if(isIC && !env.ic.isAsync()){
 			writeOutputFile2 = !pathToOutputFile2.empty();
 			ofstream fout;
 			if(writeOutputFile2)

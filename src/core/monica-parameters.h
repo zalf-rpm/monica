@@ -740,6 +740,8 @@ namespace Monica {
 		double pc_intercropping_k_s {0.0};
 		double pc_intercropping_k_t {0.0};
 		std::vector<double> pc_intercropping_phRedux;
+		std::string pc_intercropping_reader_sr;
+		std::string pc_intercropping_writer_sr;
 	};
 
 	//----------------------------------------------------------------------------

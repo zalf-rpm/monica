@@ -892,7 +892,7 @@ void CropModule::step(double vw_MeanAirTemperature,
 			auto wreq = _intercropping.writer.writeRequest();
 			auto wval = wreq.initValue();
 			wval.setHeight(vc_CropHeight);
-			auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write height failed: " << ex.getDescription().cStr() << endl;});
+			auto prom = wreq.send();//.wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write height failed: " << ex.getDescription().cStr() << endl;});
 			auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
 			debug() << "sent height: " << vc_CropHeight << " and received ";
 			if (val.isHeight())
@@ -2681,7 +2681,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				auto wreq = _intercropping.writer.writeRequest();
 				auto wval = wreq.initValue();
 				wval.setLait(vc_LeafAreaIndex);
-				auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
+				auto prom = wreq.send();//.wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
 				auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
 				LAI_t2 = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
 				debug() << "sent LAI_s: " << vc_LeafAreaIndex << " received LAI_t2: " << LAI_t2 << endl;
@@ -2712,7 +2712,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 				auto wreq = _intercropping.writer.writeRequest();
 				auto wval = wreq.initValue();
 				wval.setLait(LAI_t2);
-				auto prom = wreq.send().wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
+				auto prom = wreq.send();//.wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
 				auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
 				LAI_s = val.isLait() ? val.getLait() : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2724);
 				debug() << "sent LAI_t2: " << LAI_t2 << " received LAI_s: " << LAI_s << endl;
