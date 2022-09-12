@@ -7,7 +7,7 @@
 			"path": "../util"
 		},
 		{
-			"path": "../mas-infrastructure"
+			"path": "../mas-infrastructure/capnproto_schemas"
 		}
 	],
 	"settings": {

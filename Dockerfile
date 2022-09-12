@@ -30,7 +30,7 @@ RUN python build-pipeline/buildscripts/incrementversion.py "monica/src/resource/
 WORKDIR ${WORK_DIR}/monica
 RUN sh update_linux_release.sh
 
-WORKDIR ${WORK_DIR}/monica/_cmake_linux
+WORKDIR ${WORK_DIR}/monica/_cmake_release
 RUN make
 
 FROM debian:10.3
