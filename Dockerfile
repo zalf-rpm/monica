@@ -61,7 +61,7 @@ ENV monica_intern_out_port=7788
 ENV monica_consumer_port=7777
 ENV monica_producer_port=6666
 
-ENV  EXECUTABLE_SOURCE /resource/monica/_cmake_linux
+ENV  EXECUTABLE_SOURCE /resource/monica/_cmake_release
 
 COPY docker/supervisord.conf ${supervisor_conf}
 
