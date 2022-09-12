@@ -33,7 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/conversion.h"
 #include "soil/soil.h"
 
-#include "climate_data.capnp.h"
+#include "climate.capnp.h"
 
 //using namespace Db;
 using namespace std;

@@ -260,9 +260,10 @@ kj::Promise<void> RunMonica::save(SaveContext context) {
   std::cout << "monica: RunMonica::save message received" << std::endl;
   if(_restorer)
   {
-    auto srs = _restorer->save(_client);
-    context.getResults().setSturdyRef(srs.first);
-    context.getResults().setUnsaveSR(srs.second);
+    //auto srs = 
+    _restorer->save(_client, context.getResults().initSturdyRef(), context.getResults().initUnsaveSR());
+    //context.getResults().setSturdyRef(srs.first);
+    //context.getResults().setUnsaveSR(srs.second);
   }
   return kj::READY_NOW;
 }

@@ -41,7 +41,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common.capnp.h"
 #include "cluster_admin_service.capnp.h"
 #include "registry.capnp.h"
-#include "climate_data.capnp.h"
+#include "climate.capnp.h"
 
 using namespace std;
 using namespace Monica;
@@ -130,7 +130,7 @@ int main(int argc, const char* argv[]) {
     debug() << "created monica" << endl;
 
     schema::common::Action::Client unregister(nullptr);
-    string reregSR;
+    //schema::persistence::SturdyRef::Reader reregSR(nullptr);
     schema::registry::Registrar::Client registrar(nullptr);
 
     debug() << "monica: trying to bind to host: " << address << " port: " << port << endl;
@@ -143,7 +143,7 @@ int main(int argc, const char* argv[]) {
     restorerRef.setPort(port);
     cout << "monica: bound to host: " << address << " port: " << port << endl;
 
-    auto restorerSR = restorerRef.sturdyRef();
+    auto restorerSR = restorerRef.sturdyRefStr();
     auto monicaSRs = restorerRef.save(runMonicaClient, sr);
     cout << "monica: monica_sr: " << monicaSRs.first << endl;
     cout << "monica: restorer_sr: " << restorerSR << endl;
@@ -173,7 +173,7 @@ int main(int argc, const char* argv[]) {
           unregister = response.getUnreg();
           runMonicaRef.setUnregister(unregister);
         }
-        if(response.hasReregSR()) reregSR = response.getReregSR().cStr();
+        //if(response.hasReregSR()) reregSR = response.getReregSR();
         debug() << "monica: registered at registrar: " << registrarSR << endl;
       } catch(kj::Exception e) {
         cout << "monica-capnp-server-main.cpp: Error sending register message to Registrar! Error description: " << e.getDescription().cStr() << endl;

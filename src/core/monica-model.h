@@ -33,7 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/memory.h>
 #include <kj/async-io.h>
 #include "model/monica/monica_state.capnp.h"
-#include "climate_data.capnp.h"
+#include "climate.capnp.h"
 
 #include "climate/climate-common.h"
 #include "tools/date.h"

@@ -36,8 +36,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
-//#include "climate_data.capnp.h"
-//#include "persistence.capnp.h"
 
 using namespace std;
 using namespace Monica;

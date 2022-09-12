@@ -725,7 +725,7 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 		monica = kj::heap<MonicaModel>(env.params);
 		monica->simulationParametersNC().startDate = env.climateData.startDate();
 	}
-	bool isSyncIC = true;
+	bool isSyncIC = false;
 	if(isIC){
 		monica->setIntercropping(env.ic);
 		isSyncIC = !monica->intercropping().isAsync();

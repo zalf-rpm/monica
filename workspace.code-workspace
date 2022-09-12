@@ -64,7 +64,14 @@
 			"type_traits": "cpp",
 			"tuple": "cpp",
 			"typeinfo": "cpp",
-			"utility": "cpp"
+			"utility": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"algorithm": "cpp",
+			"iterator": "cpp",
+			"memory_resource": "cpp",
+			"random": "cpp",
+			"cinttypes": "cpp"
 		}
 	}
 }
