@@ -1,1 +1,1 @@
-docker build --no-cache --build-arg VERSION_MAYOR=3 --build-arg VERSION_MINOR=4 --build-arg VERSION_PATCH=0 -t zalfrpm/monica-cluster:3.4.0.210 .
+docker build --no-cache --build-arg VERSION_MAYOR=3 --build-arg VERSION_MINOR=4 --build-arg VERSION_PATCH=0 -t zalfrpm/monica-cluster:3.4.0.211 .

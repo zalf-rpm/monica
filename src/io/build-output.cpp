@@ -874,13 +874,13 @@ BOTRes& Monica::buildOutputTable()
 			build({ id++, "SurfTemp", "�C", "" },
 				[](const MonicaModel& monica, OId oid)
 			{
-				return round(monica.soilTemperature().get_SoilSurfaceTemperature(), 1);
+				return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
 			});
 
 			build({ id++, "STemp", "�C", "" },
 				[](const MonicaModel& monica, OId oid)
 			{
-				return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().get_SoilTemperature(i); }, 1);
+				return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().getSoilTemperature(i); }, 1);
 			});
 
 			build({ id++, "Act_Ev", "mm", "" },
