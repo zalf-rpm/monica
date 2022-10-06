@@ -211,12 +211,18 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 }
 
 SoilTemperature::SoilTemperature(MonicaModel& mm, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader)
-  : _soilColumn(mm.soilColumnNC())
-  , _monica(mm)
-  , soilColumn(_soilColumn,
-    _soilColumnGroundLayer,
-    _soilColumnBottomLayer,
-    _soilColumn.vs_NumberOfLayers()) {
+  	: _soilColumn(mm.soilColumnNC())
+  	, _monica(mm)
+  	, soilColumn(_soilColumn,
+    	_soilColumnGroundLayer,
+    	_soilColumnBottomLayer,
+    	_soilColumn.vs_NumberOfLayers())
+	, _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2)
+	, _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
+	, _solution(_noOfTempLayers)
+	, _matrixDiagonal(_noOfTempLayers)
+	, _matrixLowerTriangle(_noOfTempLayers)
+	, _heatFlow(_noOfTempLayers, 0.0){
 	deserialize(reader); 
 }
 
