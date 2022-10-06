@@ -103,12 +103,17 @@ namespace Monica
     std::vector<double> _B;
     std::vector<double> _matrixPrimaryDiagonal;
     std::vector<double> _matrixSecondaryDiagonal;
-    double _heatFlow{ 0.0 };
     std::vector<double> _heatConductivity;
     std::vector<double> _heatConductivityMean;
     std::vector<double> _heatCapacity;
     double _dampingFactor{0.8};
     double _soilSurfaceTemperature {0.0};
+
+    // moved to instance level from step() to avoid reallocation
+    std::vector<double> _solution;
+    std::vector<double> _matrixDiagonal;
+    std::vector<double> _matrixLowerTriangle;
+    std::vector<double> _heatFlow;
   };
 }
 

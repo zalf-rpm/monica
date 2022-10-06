@@ -46,6 +46,10 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 	, _heatConductivity(_noOfTempLayers)
 	, _heatConductivityMean(_noOfTempLayers)
 	, _heatCapacity(_noOfTempLayers)
+	, _solution(_noOfTempLayers)
+	, _matrixDiagonal(_noOfTempLayers)
+	, _matrixLowerTriangle(_noOfTempLayers)
+	, _heatFlow(_noOfTempLayers, 0.0)
 {
 	debug() << "Constructor: SoilColumn" << endl;
 
@@ -67,7 +71,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 	double initialSurfaceTemp = _params.pt_InitialSurfaceTemperature; // Replace by Mean air temperature
 	auto soilNols = _noOfSoilLayers;
 
-	// Initialising the soil properties until a database feed is realised
+	// Initialising the soil properties 
 	for(size_t i = 0; i < soilNols; i++)
 	{
 		// Initialising the soil temperature
@@ -83,14 +87,13 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 
 	// Determination of the geometry parameters for soil temperature calculation
 	// with Cholesky-Method
-	auto groundLayer = _noOfTempLayers - 2;
-	auto bottomLayer = _noOfTempLayers - 1;
+	const size_t groundLayer = _noOfTempLayers - 2;
+	const size_t bottomLayer = _noOfTempLayers - 1;
 	soilColumn.at(groundLayer).vs_LayerThickness = 2.0 * soilColumn.at(groundLayer - 1).vs_LayerThickness;
 	soilColumn.at(bottomLayer).vs_LayerThickness = 1.0;
 	_soilTemperature[groundLayer] = (_soilTemperature[groundLayer - 1] + baseTemp) * 0.5;
 	_soilTemperature[bottomLayer] = baseTemp;
 
-	const auto& lay0 = soilColumn.at(0);
 	_V[0] = soilColumn.at(0).vs_LayerThickness;
 	_B[0] = 2.0 / soilColumn.at(0).vs_LayerThickness;
 	double Ntau = _params.pt_NTau;
@@ -103,15 +106,20 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 	}
 	// End determination of the geometry parameters for soil temperature calculation
 
-	double ts = _monica.environmentParameters().p_timeStep;  // schon in soil_moisture in DB extrahiert
-	const double cw = _params.pt_SpecificHeatCapacityWater; // [J kg-1 K-1]
-	const double cq = _params.pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
-	const double ca = _params.pt_SpecificHeatCapacityAir; // [J kg-1 K-1]
-	const double ch = _params.pt_SpecificHeatCapacityHumus; // [J kg-1 K-1]
+	double ts = _monica.environmentParameters().p_timeStep;  
+	
 	const double dw = _params.pt_DensityWater; // [kg m-3]
+	const double cw = _params.pt_SpecificHeatCapacityWater; // [J kg-1 K-1]
+	
 	const double dq = _params.pt_QuartzRawDensity; 
+	const double cq = _params.pt_SpecificHeatCapacityQuartz; // [J kg-1 K-1]
+	
 	const double da = _params.pt_DensityAir; // [kg m-3]
+	const double ca = _params.pt_SpecificHeatCapacityAir; // [J kg-1 K-1]
+	
 	const double dh = _params.pt_DensityHumus; // [kg m-3]
+	const double ch = _params.pt_SpecificHeatCapacityHumus; // [J kg-1 K-1]
+	
 	// initializing heat state variables
 	// iterates only over the standard soil number of layers, the other two layers
 	// will be assigned below that loop
@@ -126,7 +134,6 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 		///////////////////////////////////////////////////////////////////////////////////////
 		const double sbdi = soilColumn.at(i).vs_SoilBulkDensity();
 		const double smi = soilMoistureConst; //vs_SoilMoisture_const.at(i);
-
 		_heatConductivity[i] =
 			((3.0 * (sbdi / 1000.0) - 1.7) * 0.001)
 			/ (1.0 + (11.5 - 5.0 * (sbdi / 1000.0))
@@ -142,16 +149,14 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 		// Abrahamsen, P, and S. Hansen (2000): DAISY - An open soil-crop-atmosphere model
 		// system. Environmental Modelling and Software 15, 313-330
 		///////////////////////////////////////////////////////////////////////////////////////
-
 		const double sati = soilColumn.at(i).vs_Saturation();
 		const double somi = soilColumn.at(i).vs_SoilOrganicMatter() / da * sbdi; // Converting [kg kg-1] to [m3 m-3]
-
 		_heatCapacity[i] =
 			(smi * dw * cw)
 			+ ((sati - smi) * da * ca)
 			+ (somi * dh * ch)
 			+ ((1.0 - sati - somi) * dq * cq);
-		// --> [J m-3 K-1]
+			// --> [J m-3 K-1]
 	}
 
 	_heatCapacity[groundLayer] = _heatCapacity[groundLayer - 1];
@@ -189,7 +194,7 @@ SoilTemperature::SoilTemperature(MonicaModel& mm, const SoilTemperatureModulePar
 		// If initial entry, rearrengement of volume matrix
 		_volumeMatrixOld[i] = _volumeMatrix[i];
 
-		// Determination of the matrix secundary diagonal
+		// Determination of the matrix secondary diagonal
 		_matrixSecondaryDiagonal[i] = -_B[i] * _heatConductivityMean[i]; //[J K-1]
 	}
 
@@ -230,7 +235,7 @@ void SoilTemperature::deserialize(mas::schema::model::monica::SoilTemperatureMod
 	setFromCapnpList(_B, reader.getB());
 	setFromCapnpList(_matrixPrimaryDiagonal, reader.getMatrixPrimaryDiagonal());
 	setFromCapnpList(_matrixSecondaryDiagonal, reader.getMatrixSecundaryDiagonal());
-	_heatFlow = reader.getHeatFlow();
+	//_heatFlow = reader.getHeatFlow();
 	setFromCapnpList(_heatConductivity, reader.getHeatConductivity());
 	setFromCapnpList(_heatConductivityMean, reader.getHeatConductivityMean());
 	setFromCapnpList(_heatCapacity, reader.getHeatCapacity());
@@ -252,7 +257,7 @@ void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModul
 	setCapnpList(_B, builder.initB((uint)_B.size()));
 	setCapnpList(_matrixPrimaryDiagonal, builder.initMatrixPrimaryDiagonal((uint)_matrixPrimaryDiagonal.size()));
 	setCapnpList(_matrixSecondaryDiagonal, builder.initMatrixSecundaryDiagonal((uint)_matrixSecondaryDiagonal.size()));
-	builder.setHeatFlow(_heatFlow);
+	//builder.setHeatFlow(_heatFlow);
 	setCapnpList(_heatConductivity, builder.initHeatConductivity((uint)_heatConductivity.size()));
 	setCapnpList(_heatConductivityMean, builder.initHeatConductivityMean((uint)_heatConductivityMean.size()));
 	setCapnpList(_heatCapacity, builder.initHeatCapacity((uint)_heatCapacity.size()));
@@ -262,35 +267,24 @@ void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModul
 //! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad)
 {
-	size_t groundLayer = _noOfTempLayers - 2;
-	size_t bottomLayer = _noOfTempLayers - 1;
-
-	vector<double> solution(_noOfTempLayers);
-	vector<double> matrixDiagonal(_noOfTempLayers);
-	vector<double> matrixLowerTriangle(_noOfTempLayers);
+	const size_t groundLayer = _noOfTempLayers - 2;
+	const size_t bottomLayer = _noOfTempLayers - 1;
 
 	/////////////////////////////////////////////////////////////
 	// Internal Subroutine Numerical Solution - Suckow,F. (1986)
 	/////////////////////////////////////////////////////////////
-
 	_soilSurfaceTemperature = calcSoilSurfaceTemperature(_soilSurfaceTemperature, tmin, tmax, globrad);
 	_soilColumn.vt_SoilSurfaceTemperature = _soilSurfaceTemperature;
-	_heatFlow = _soilSurfaceTemperature * _B[0] * _heatConductivityMean[0]; //[J]
+	_heatFlow[0] = _soilSurfaceTemperature * _B[0] * _heatConductivityMean[0]; //[J]
+	//assert _heatFlow[i>0] == 0.0;
 
-	// Determination of the equation's right side
-	solution[0] = 
-		(_volumeMatrixOld[0] 
-			+ (_volumeMatrix[0] - _volumeMatrixOld[0])
-			/ soilColumn.at(0).vs_LayerThickness)
-		* _soilTemperature[0] + _heatFlow;
-
-	for(size_t i = 1; i < _noOfTempLayers; i++)
+	for(size_t i = 0; i < _noOfTempLayers; i++)
 	{
-		solution[i] = 
+		_solution[i] = 
 			(_volumeMatrixOld[i]
-			 + (_volumeMatrix[i] - _volumeMatrixOld[i])
-			 / soilColumn.at(i).vs_LayerThickness)
-			* _soilTemperature[i];
+			 	+ (_volumeMatrix[i] - _volumeMatrixOld[i])
+			 	/ soilColumn.at(i).vs_LayerThickness)
+			* _soilTemperature[i] + _heatFlow[i];
 	}
 	// end subroutine NumericalSolution
 
@@ -302,36 +296,36 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 	/////////////////////////////////////////////////////////////
 
 	// Determination of the lower matrix triangle L and the diagonal matrix D
-	matrixDiagonal[0] = _matrixPrimaryDiagonal[0];
-
+	_matrixDiagonal[0] = _matrixPrimaryDiagonal[0];
 	for(size_t i = 1; i < _noOfTempLayers; i++)
 	{
-		matrixLowerTriangle[i] = _matrixSecondaryDiagonal[i] / matrixDiagonal[i - 1];
-		matrixDiagonal[i] = _matrixPrimaryDiagonal[i]
-			- (matrixLowerTriangle[i] * _matrixSecondaryDiagonal[i]);
+		_matrixLowerTriangle[i] = _matrixSecondaryDiagonal[i] / _matrixDiagonal[i - 1];
+		_matrixDiagonal[i] = _matrixPrimaryDiagonal[i]
+			- (_matrixLowerTriangle[i] * _matrixSecondaryDiagonal[i]);
 	}
 
 	// Solution of LY=Z
-	for(size_t i = 1; i < _noOfTempLayers; i++)
+	for(size_t i = 1; i < _noOfTempLayers; i++)	
 	{
-		solution[i] = solution[i] - (matrixLowerTriangle[i] * solution[i - 1]);
+		_solution[i] = _solution[i] - (_matrixLowerTriangle[i] * _solution[i - 1]);
 	}
 
 	// Solution of L'X=D(-1)Y
-	solution[bottomLayer] = solution[bottomLayer] / matrixDiagonal[bottomLayer];
-
+	_solution[bottomLayer] = _solution[bottomLayer] / _matrixDiagonal[bottomLayer];
 	for(size_t i = 0; i < bottomLayer; i++)
 	{
-		auto j_Layer = (bottomLayer - 1) - i;
-		auto j_Layer1 = j_Layer + 1;
-		solution[j_Layer] = (solution[j_Layer] / matrixDiagonal[j_Layer])
-			- (matrixLowerTriangle[j_Layer1] * solution[j_Layer1]);
+		auto j = (bottomLayer - 1) - i;
+		auto j_1 = j + 1;
+		_solution[j] = (_solution[j] / _matrixDiagonal[j])
+			- (_matrixLowerTriangle[j_1] * _solution[j_1]);
 	}
 	// end subroutine CholeskyMethod
 
 	// Internal Subroutine Rearrangement
 	for(size_t i = 0; i < _noOfTempLayers; i++)
-		_soilTemperature[i] = solution[i];
+	{
+		_soilTemperature[i] = _solution[i];
+	}
 
 	for(size_t i = 0; i < _noOfSoilLayers; i++)
 	{
@@ -342,7 +336,6 @@ void SoilTemperature::step(double tmin, double tmax, double globrad)
 	_volumeMatrixOld[groundLayer] = _volumeMatrix[groundLayer];
 	_volumeMatrixOld[bottomLayer] = _volumeMatrix[bottomLayer];
 }
-
 
 /**
  * @brief  Soil surface temperature [B0C]
@@ -362,8 +355,7 @@ double SoilTemperature::calcSoilSurfaceTemperature(
 	globrad = max(8.33, globrad);
 
 	double soilCoverage = _monica.cropGrowth() ? _monica.cropGrowth()->get_SoilCoverage() : 0.0;
-	double shadingCoefficient = 0.1 + ((soilCoverage * _dampingFactor)
-		+ ((1 - soilCoverage) * (1 - _dampingFactor)));
+	double shadingCoefficient = 0.1 + ((soilCoverage * _dampingFactor) + ((1 - soilCoverage) * (1 - _dampingFactor)));
 
 	// Soil surface temperature caluclation following Williams 1984
 	double soilSurfaceTemperature = 
