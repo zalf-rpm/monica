@@ -118,6 +118,8 @@ public:
     {
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
     }
+
+    return true;
   }
 
   kj::MainFunc getMain()
