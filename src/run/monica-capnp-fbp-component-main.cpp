@@ -87,7 +87,7 @@ public:
         else 
         {
           auto inIp = msg.getValue();
-          auto attr = rpc::common::getIPAttr(inIp, fromAttr);
+          auto attr = infrastructure::common::getIPAttr(inIp, fromAttr);
           auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
           auto rreq = runMonicaClient.runRequest();
           rreq.setEnv(env);
@@ -101,7 +101,7 @@ public:
             // set content if not to be set as attribute
             if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
             // copy attributes, if any and set result as attribute, if requested
-            auto toAttrBuilder = rpc::common::copyAndSetIPAttrs(inIp, outIp, toAttr);//, capnp::toAny(resJsonStr));
+            auto toAttrBuilder = infrastructure::common::copyAndSetIPAttrs(inIp, outIp, toAttr);//, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
 
             wreq.send().wait(ioContext.waitScope);

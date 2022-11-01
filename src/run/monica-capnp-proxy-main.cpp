@@ -204,7 +204,7 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool 
 	return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
 		kj::AsyncIoProvider& ioProvider, kj::AsyncIoStream& stream, kj::WaitScope& waitScope) {
 			capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
-			auto server = makeRpcServer(network, kj::heap<RunMonica>(new rpc::common::Restorer(), startMonicaThreadsInDebugMode));
+			auto server = makeRpcServer(network, kj::heap<RunMonica>(new infrastructure::common::Restorer(), startMonicaThreadsInDebugMode));
 			network.onDisconnect().wait(waitScope);
 		});
 }

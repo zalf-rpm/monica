@@ -130,7 +130,7 @@ J11Array fromCapnpSoilProfile(mas::schema::soil::Profile::Reader profile) {
   return ls;
 }
 
-RunMonica::RunMonica(mas::rpc::common::Restorer* restorer, bool startedServerInDebugMode) 
+RunMonica::RunMonica(mas::infrastructure::common::Restorer* restorer, bool startedServerInDebugMode) 
   : _restorer(restorer)
   ,  _startedServerInDebugMode(startedServerInDebugMode) 
 {

@@ -120,7 +120,7 @@ int main(int argc, const char* argv[]) {
 
     debug() << "starting Cap'n Proto MONICA server" << endl;
 
-    auto restorer = kj::heap<rpc::common::Restorer>();
+    auto restorer = kj::heap<infrastructure::common::Restorer>();
     auto& restorerRef = *restorer;
     schema::persistence::Restorer::Client restorerClient = kj::mv(restorer);
     auto runMonica = kj::heap<RunMonica>(&restorerRef, startedServerInDebugMode);
@@ -144,9 +144,9 @@ int main(int argc, const char* argv[]) {
     cout << "monica: bound to host: " << address << " port: " << port << endl;
 
     auto restorerSR = restorerRef.sturdyRefStr();
-    auto monicaSRs = restorerRef.save(runMonicaClient, sr);
-    cout << "monica: monica_sr: " << monicaSRs.first << endl;
-    cout << "monica: restorer_sr: " << restorerSR << endl;
+    auto monicaSRs = restorerRef.saveStr(runMonicaClient, sr);
+    KJ_LOG(INFO, "monica: monica_sr:", kj::get<0>(monicaSRs));
+    KJ_LOG(INFO, "monica: restorer_sr:", restorerSR);
 
     /*
     if (port == 0) {

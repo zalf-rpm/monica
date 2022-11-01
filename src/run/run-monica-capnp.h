@@ -35,7 +35,7 @@ namespace Monica
   class RunMonica final : public MonicaEnvInstance::Server
   {
   public:
-    RunMonica(mas::rpc::common::Restorer* restorer, bool startedServerInDebugMode = false); 
+    RunMonica(mas::infrastructure::common::Restorer* restorer, bool startedServerInDebugMode = false); 
 
     void setClient(MonicaEnvInstance::Client c) { _client = c; }
 
@@ -55,7 +55,7 @@ namespace Monica
     bool _startedServerInDebugMode{ false };
     std::string _id, _name, _description;
     mas::schema::common::Action::Client unregister{ nullptr };
-    mas::rpc::common::Restorer* _restorer{nullptr};
+    mas::infrastructure::common::Restorer* _restorer{nullptr};
     MonicaEnvInstance::Client _client{nullptr};
   };
 
