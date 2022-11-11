@@ -142,7 +142,7 @@ RunMonica::RunMonica(mas::infrastructure::common::Restorer* restorer, bool start
 
 kj::Promise<void> RunMonica::info(InfoContext context) //override
 {
-  std::cout << "monica: RunMonica::info message received" << std::endl;
+  KJ_LOG(INFO, "info message received");
   auto rs = context.getResults();
   rs.setId(_id);
   rs.setName(_name);
@@ -152,8 +152,6 @@ kj::Promise<void> RunMonica::info(InfoContext context) //override
 
 kj::Promise<void> RunMonica::run(RunContext context) //override
 {
-  debug() << ".";
-
   auto envR = context.getParams().getEnv();
 
   auto runMonica = [context, envR, this](DataAccessor da = DataAccessor()) mutable {
@@ -255,15 +253,19 @@ kj::Promise<void> RunMonica::stop(StopContext context) //override
 }
 */
 
-//save @0 () -> (sturdyRef :Text, unsaveSR :Text);
+// struct SaveParams {
+//     sealFor @0 :SturdyRef.Owner;
+// }
+// struct SaveResults {
+//   sturdyRef @0 :SturdyRef;
+//   unsaveSR  @1 :SturdyRef;
+// }
+// save @0 SaveParams -> SaveResults;
 kj::Promise<void> RunMonica::save(SaveContext context) {
-  std::cout << "monica: RunMonica::save message received" << std::endl;
+  KJ_LOG(INFO, "save message received");
   if(_restorer)
   {
-    //auto srs = 
     _restorer->save(_client, context.getResults().initSturdyRef(), context.getResults().initUnsaveSR());
-    //context.getResults().setSturdyRef(srs.first);
-    //context.getResults().setUnsaveSR(srs.second);
   }
   return kj::READY_NOW;
 }

@@ -20,6 +20,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <algorithm>
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 #include <kj/debug.h>
 #include <kj/common.h>
 #define KJ_MVCAP(var) var = kj::mv(var)
@@ -31,7 +41,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/thread.h>
 
 #include "tools/helper.h"
-#include "tools/debug.h"
 #include "common/rpc-connections.h"
 #include "common/common.h"
 
@@ -39,86 +48,42 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
-#include "cluster_admin_service.capnp.h"
 #include "registry.capnp.h"
-#include "climate.capnp.h"
 
 using namespace std;
 using namespace Monica;
 using namespace Tools;
 using namespace mas;
 
-string appName = "monica-capnp-server";
-string version = "1.0.0-beta";
 
-typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
+class MonicaCapnpServerMain
+{
+public:
+  MonicaCapnpServerMain(kj::ProcessContext &context) : context(context) {}
 
-int main(int argc, const char* argv[]) {
+  kj::MainBuilder::Validity setName(kj::StringPtr n) { name = str(n); return true; }
 
-  setlocale(LC_ALL, "");
-  setlocale(LC_NUMERIC, "C");
+  kj::MainBuilder::Validity setPort(kj::StringPtr portStr) { port = portStr.parseAs<int>(); return true; }
 
-  infrastructure::common::ConnectionManager _conMan;
-  auto ioContext = kj::setupAsyncIo();
-  string proxyAddress = "localhost";
-  int proxyPort = 6666;
-  bool connectToProxy = false;
+  kj::MainBuilder::Validity setHost(kj::StringPtr h) { host = kj::str(h); return true; }
 
-  string registrarSR;
-  string sr;
+  kj::MainBuilder::Validity setLocalHost(kj::StringPtr h) { localHost = kj::str(h); return true; }
 
-  string address = "*";
-  int port = 0;
+  kj::MainBuilder::Validity setCheckPort(kj::StringPtr portStr) { checkPort = portStr.parseAs<int>(); return true; }
 
-  bool startedServerInDebugMode = false;
+  kj::MainBuilder::Validity setCheckIP(kj::StringPtr ip) { checkIP = kj::str(ip); return true; }
 
-  auto printHelp = [=]() {
-    cout
-      << appName << "[options]" << endl
-      << endl
-      << "options:" << endl
-      << endl
-      << " -h | --help "
-      "... this help output" << endl
-      << " -v | --version "
-      "... outputs " << appName << " version and ZeroMQ version being used" << endl
-      << endl
-      << " -d | --debug "
-      "... show debug outputs" << endl
-      << " -a | --address ... ADDRESS (default: " << address << ") "
-      "... runs server bound to given address, may be '*' to bind to all local addresses" << endl
-      << " -p | --port ... PORT (default: none) "
-      "... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
-      << " -rsr | ----registrar-sturdy-ref ... REGISTAR_STURDY_REF "
-      "... register MONICA at the registrar" << endl;
-  };
+  kj::MainBuilder::Validity setRegistrarSR(kj::StringPtr sr) { registrarSR = kj::str(sr); return true; }
 
-  if (argc >= 1) {
-    for (auto i = 1; i < argc; i++) {
-      string arg = argv[i];
-      if (arg == "-d" || arg == "--debug") {
-        activateDebug = true;
-        startedServerInDebugMode = true;
-      }
-      else if (arg == "-a" || arg == "--address") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          address = argv[++i];
-      } else if (arg == "-p" || arg == "--port") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          port = stoi(argv[++i]);
-      } else if (arg == "-rsr" || arg == "--registrar-sturdy-ref") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          registrarSR = argv[++i];
-      } else if (arg == "-sr" || arg == "--sturdy-ref") {
-        if (i + 1 < argc && argv[i + 1][0] != '-')
-          sr = argv[++i];
-      } else if (arg == "-h" || arg == "--help")
-        printHelp(), exit(0);
-      else if (arg == "-v" || arg == "--version")
-        cout << appName << " version " << version << endl, exit(0);
-    }
+  kj::MainBuilder::Validity setDebug() { startedServerInDebugMode = true; return true; }
 
-    debug() << "starting Cap'n Proto MONICA server" << endl;
+  kj::MainBuilder::Validity startService()
+  {
+    typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
+
+    auto ioContext = kj::setupAsyncIo();
+
+    KJ_LOG(INFO, "starting Cap'n Proto MONICA service");
 
     auto restorer = kj::heap<infrastructure::common::Restorer>();
     auto& restorerRef = *restorer;
@@ -127,26 +92,26 @@ int main(int argc, const char* argv[]) {
     auto& runMonicaRef = *runMonica;
     MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
     runMonicaRef.setClient(runMonicaClient);
-    debug() << "created monica" << endl;
+    KJ_LOG(INFO, "created monica");
 
     schema::common::Action::Client unregister(nullptr);
     //schema::persistence::SturdyRef::Reader reregSR(nullptr);
     schema::registry::Registrar::Client registrar(nullptr);
 
-    debug() << "monica: trying to bind to host: " << address << " port: " << port << endl;
-    auto proms = _conMan.bind(ioContext, restorerClient, address, port);
-    auto addrPromise = proms.first.fork().addBranch();
-    auto addrStr = addrPromise.wait(ioContext.waitScope);
-    restorerRef.setHost(address);//addrStr);
-    auto portPromise = proms.second.fork().addBranch();
+    KJ_LOG(INFO, "trying to bind to", host, port);
+    auto portPromise = conMan.bind(ioContext, restorerClient, host, port);
+    auto succAndIP = infrastructure::common::getLocalIP(checkIP, checkPort);
+    if(kj::get<0>(succAndIP)) restorerRef.setHost(kj::get<1>(succAndIP));
+    else restorerRef.setHost(localHost);
+    //auto portPromise = proms.fork().addBranch();
     auto port = portPromise.wait(ioContext.waitScope);
     restorerRef.setPort(port);
-    cout << "monica: bound to host: " << address << " port: " << port << endl;
+    KJ_LOG(INFO, "bound to", host, port);
 
     auto restorerSR = restorerRef.sturdyRefStr();
-    auto monicaSRs = restorerRef.saveStr(runMonicaClient, sr);
-    KJ_LOG(INFO, "monica: monica_sr:", kj::get<0>(monicaSRs));
-    KJ_LOG(INFO, "monica: restorer_sr:", restorerSR);
+    auto monicaSR = kj::get<0>(restorerRef.saveStr(runMonicaClient));
+    KJ_LOG(INFO, monicaSR);
+    KJ_LOG(INFO, restorerSR);
 
     /*
     if (port == 0) {
@@ -159,10 +124,10 @@ int main(int argc, const char* argv[]) {
     }
     */
 
-    if(!registrarSR.empty())
+    if(registrarSR.size() > 0)
     {
-      debug() << "monica: trying to register at registrar: " << registrarSR << endl;          
-      registrar = _conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
+      KJ_LOG(INFO, "trying to register at", registrarSR);
+      registrar = conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
       auto request = registrar.registerRequest();
       request.setCap(runMonicaClient);
       request.setRegName("monica");
@@ -174,16 +139,53 @@ int main(int argc, const char* argv[]) {
           runMonicaRef.setUnregister(unregister);
         }
         //if(response.hasReregSR()) reregSR = response.getReregSR();
-        debug() << "monica: registered at registrar: " << registrarSR << endl;
+        KJ_LOG(INFO, "registered at", registrarSR);
       } catch(kj::Exception e) {
-        cout << "monica-capnp-server-main.cpp: Error sending register message to Registrar! Error description: " << e.getDescription().cStr() << endl;
+        KJ_LOG(ERROR, "Error sending register message to Registrar! Error", e.getDescription().cStr());
       }
     }
 
     // Run forever, accepting connections and handling requests.
     kj::NEVER_DONE.wait(ioContext.waitScope);
+
+    KJ_LOG(INFO, "stopped Cap'n Proto MONICA server");
+    return true;
   }
 
-  debug() << "stopped Cap'n Proto MONICA server" << endl;
-  return 0;
-}
+  kj::MainFunc getMain()
+  {
+    return kj::MainBuilder(context, "MONICA Cap'n Proto Server v0.1", "Offers a MONICA as a Cap'n Proto service.")
+      .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug),
+                  "Activate debug output.")      
+      .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
+                        "<instance-name>", "Give this MONICA instance a name.")
+      .addOptionWithArg({'p', "port"}, KJ_BIND_METHOD(*this, setPort),
+                        "<port>", "Which port to listen on. If omitted, will assign a free port.")
+      .addOptionWithArg({'h', "host"}, KJ_BIND_METHOD(*this, setHost),
+                        "<host-address (default: *)>", "Which address to bind to. * binds to all network interfaces.")
+      .addOptionWithArg({'r', "registrar_sr"}, KJ_BIND_METHOD(*this, setRegistrarSR),
+                        "<sturdy_ref>", "Sturdy ref to registrar.")
+      .addOptionWithArg({"local_host (default: localhost)"}, KJ_BIND_METHOD(*this, setLocalHost),
+                        "<IP_or_host_address>", "Use this host for sturdy reference creation.")
+      .addOptionWithArg({"check_IP"}, KJ_BIND_METHOD(*this, setCheckIP),
+                        "<IPv4 (default: 8.8.8.8)>", "IP to connect to in order to find local outside IP.")
+      .addOptionWithArg({"check_port"}, KJ_BIND_METHOD(*this, setCheckPort),
+                        "<port (default: 53)>", "Port to connect to in order to find local outside IP.")
+      .callAfterParsing(KJ_BIND_METHOD(*this, startService))
+      .build();
+  }
+
+private:
+  infrastructure::common::ConnectionManager conMan;
+  kj::String name;
+  kj::ProcessContext &context;
+  int port{0};
+  kj::String host{kj::str("*")};
+  kj::String localHost{kj::str("localhost")};
+  int checkPort{0};
+  kj::String checkIP;
+  kj::String registrarSR;
+  bool startedServerInDebugMode{false};
+};
+
+KJ_MAIN(MonicaCapnpServerMain)
