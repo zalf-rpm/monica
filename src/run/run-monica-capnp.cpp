@@ -134,9 +134,8 @@ RunMonica::RunMonica(mas::infrastructure::common::Restorer* restorer, bool start
   : _restorer(restorer)
   ,  _startedServerInDebugMode(startedServerInDebugMode) 
 {
-  _id = sole::uuid4().str();
-  _name = "Monica capnp server";
-  _description = "";
+  _id = kj::str(sole::uuid4().str());
+  _name = kj::str("Monica capnp server");
 }
 
 

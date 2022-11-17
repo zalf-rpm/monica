@@ -17,9 +17,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <kj/debug.h>
 #include <kj/common.h>
-
-#include <capnp/rpc-twoparty.h>
+#include <kj/string.h>
 #include <kj/thread.h>
+
+//#include <capnp/rpc-twoparty.h>
 
 #include "common/common.h"
 
@@ -37,9 +38,20 @@ namespace Monica
   public:
     RunMonica(mas::infrastructure::common::Restorer* restorer, bool startedServerInDebugMode = false); 
 
+    kj::StringPtr getId() const { return _id; }
+    void setId(kj::StringPtr id) { _id = kj::str(id); }
+
+    kj::StringPtr getName() const { return _name; }
+    void setName(kj::StringPtr name) { _name = kj::str(name); }
+
+    kj::StringPtr getDescription() const { return _description; }
+    void setDescription(kj::StringPtr description) { _description = kj::str(description); }
+
+    MonicaEnvInstance::Client getClient() { return _client; }
     void setClient(MonicaEnvInstance::Client c) { _client = c; }
 
-    void setUnregister(mas::schema::common::Action::Client unreg) { unregister = unreg; }
+    mas::schema::common::Action::Client getUnregisterAction() { return _unregisterAction; }
+    void setUnregisterAction(mas::schema::common::Action::Client unreg) { _unregisterAction = unreg; }
 
     kj::Promise<void> info(InfoContext context) override;
 
@@ -53,8 +65,8 @@ namespace Monica
   private:
     // Implementation of the Model::Instance Cap'n Proto interface
     bool _startedServerInDebugMode{ false };
-    std::string _id, _name, _description;
-    mas::schema::common::Action::Client unregister{ nullptr };
+    kj::String _id, _name, _description;
+    mas::schema::common::Action::Client _unregisterAction{ nullptr };
     mas::infrastructure::common::Restorer* _restorer{nullptr};
     MonicaEnvInstance::Client _client{nullptr};
   };

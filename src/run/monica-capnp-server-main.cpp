@@ -90,6 +90,7 @@ public:
     schema::persistence::Restorer::Client restorerClient = kj::mv(restorer);
     auto runMonica = kj::heap<RunMonica>(&restorerRef, startedServerInDebugMode);
     auto& runMonicaRef = *runMonica;
+    if (name.size() > 0) runMonicaRef.setName(name);
     MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
     runMonicaRef.setClient(runMonicaClient);
     KJ_LOG(INFO, "created monica");
@@ -103,7 +104,6 @@ public:
     auto succAndIP = infrastructure::common::getLocalIP(checkIP, checkPort);
     if(kj::get<0>(succAndIP)) restorerRef.setHost(kj::get<1>(succAndIP));
     else restorerRef.setHost(localHost);
-    //auto portPromise = proms.fork().addBranch();
     auto port = portPromise.wait(ioContext.waitScope);
     restorerRef.setPort(port);
     KJ_LOG(INFO, "bound to", host, port);
@@ -130,13 +130,13 @@ public:
       registrar = conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
       auto request = registrar.registerRequest();
       request.setCap(runMonicaClient);
-      request.setRegName("monica");
-      request.setCategoryId("monica");
+      request.setRegName(name.size() == 0 ? kj::str(runMonicaRef.getName(), "(", runMonicaRef.getId(), ")") : name.asPtr());
+      request.setCategoryId(regCategory);
       try {
         auto response = request.send().wait(ioContext.waitScope);
         if(response.hasUnreg()) { 
           unregister = response.getUnreg();
-          runMonicaRef.setUnregister(unregister);
+          runMonicaRef.setUnregisterAction(unregister);
         }
         //if(response.hasReregSR()) reregSR = response.getReregSR();
         KJ_LOG(INFO, "registered at", registrarSR);
@@ -165,6 +165,8 @@ public:
                         "<host-address (default: *)>", "Which address to bind to. * binds to all network interfaces.")
       .addOptionWithArg({'r', "registrar_sr"}, KJ_BIND_METHOD(*this, setRegistrarSR),
                         "<sturdy_ref>", "Sturdy ref to registrar.")
+      .addOptionWithArg({"reg_category"}, KJ_BIND_METHOD(*this, setRegistrarSR),
+                        "<category (default: monica)>", "Name of the category to register at.")
       .addOptionWithArg({"local_host (default: localhost)"}, KJ_BIND_METHOD(*this, setLocalHost),
                         "<IP_or_host_address>", "Use this host for sturdy reference creation.")
       .addOptionWithArg({"check_IP"}, KJ_BIND_METHOD(*this, setCheckIP),
@@ -185,6 +187,7 @@ private:
   int checkPort{0};
   kj::String checkIP;
   kj::String registrarSR;
+  kj::String regCategory{kj::str("monica")};
   bool startedServerInDebugMode{false};
 };
 
