@@ -132,6 +132,9 @@ public:
       request.setCap(runMonicaClient);
       request.setRegName(name.size() == 0 ? kj::str(runMonicaRef.getName(), "(", runMonicaRef.getId(), ")") : name.asPtr());
       request.setCategoryId(regCategory);
+      auto xd = request.initXDomain();
+      restorerRef.setVatId(xd.initVatId());
+      xd.setRestorer(restorerClient);
       try {
         auto response = request.send().wait(ioContext.waitScope);
         if(response.hasUnreg()) { 
