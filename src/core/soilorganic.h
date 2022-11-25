@@ -36,7 +36,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_state.capnp.h"
 #include "monica-parameters.h"
 
-namespace Monica
+namespace monica
 {
   class SoilColumn;
   class CropModule;

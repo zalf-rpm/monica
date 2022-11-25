@@ -37,7 +37,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/crop.h"
 #include "../io/output.h"
 
-namespace Monica
+namespace monica
 {
   class MonicaModel;
 
@@ -542,7 +542,7 @@ namespace Monica
 	private:
 		OId _oid;
 		json11::Json _value;
-		std::function<json11::Json(const Monica::MonicaModel*)> _getValue;
+		std::function<json11::Json(const monica::MonicaModel*)> _getValue;
 	};
 
 	//----------------------------------------------------------------------------

@@ -65,7 +65,7 @@ double fWFPS(double wfps, double hminn, double hoptn, double fc, double sat) {
 } // namespace nit
 
 // nitrification
-double stics::vnit(const Monica::SticsParameters& ps,
+double stics::vnit(const monica::SticsParameters& ps,
                    double NH4,
                    double pH,
                    double soilT,
@@ -121,7 +121,7 @@ double fWFPS(double wfps, double wfpsc) {
 } // namespace denit
 
 // denitrification
-double stics::vdenit(const Monica::SticsParameters& ps,
+double stics::vdenit(const monica::SticsParameters& ps,
                      double corg,
                      double NO3,
                      double soilT,
@@ -162,7 +162,7 @@ double fNO3(double NO3) {
 
 }
 
-stics::NitDenitN2O stics::N2O(const Monica::SticsParameters& ps,
+stics::NitDenitN2O stics::N2O(const monica::SticsParameters& ps,
                   double NO3,
                   double wfps,
                   double pH,
@@ -193,7 +193,7 @@ stics::NitDenitN2O stics::N2O(const Monica::SticsParameters& ps,
   return std::make_pair(N2Onit, N2Odenit);
 }
 
-stics::NitDenitN2O stics::N2O(const Monica::SticsParameters& ps,
+stics::NitDenitN2O stics::N2O(const monica::SticsParameters& ps,
                   double corg,
                   double NO3,
                   double soilT,

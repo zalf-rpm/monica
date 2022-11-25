@@ -34,14 +34,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace Db;
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Soil;
 using namespace Tools;
 using namespace Climate;
 using namespace json11;
 
 /*
-const map<string, Result2>& Monica::result2()
+const map<string, Result2>& monica::result2()
 {
 	static map<string, Result2> res2 = 
 	{{"Date", {0, "Date", "", "Date"}},
@@ -237,7 +237,7 @@ const map<string, Result2>& Monica::result2()
 
 //------------------------------------------------------------------------------
 
-vector<ResultId> Monica::cropResultIds()
+vector<ResultId> monica::cropResultIds()
 {
   return {
     primaryYield, secondaryYield, sumFertiliser,
@@ -245,7 +245,7 @@ vector<ResultId> Monica::cropResultIds()
   };
 }
 
-pair<string, string> Monica::nameAndUnitForResultId(ResultId rid)
+pair<string, string> monica::nameAndUnitForResultId(ResultId rid)
 {
   switch(rid)
   {
@@ -259,7 +259,7 @@ pair<string, string> Monica::nameAndUnitForResultId(ResultId rid)
 
 //------------------------------------------------------------------------------
 
-vector<ResultId> Monica::monthlyResultIds()
+vector<ResultId> monica::monthlyResultIds()
 {
   return {
     avg10cmMonthlyAvgCorg, avg30cmMonthlyAvgCorg,
@@ -269,7 +269,7 @@ vector<ResultId> Monica::monthlyResultIds()
 
 //------------------------------------------------------------------------------
 
-vector<int> Monica::CCGermanyResultIds()
+vector<int> monica::CCGermanyResultIds()
 {
   return {
     primaryYield,                   // done
@@ -279,7 +279,7 @@ vector<int> Monica::CCGermanyResultIds()
 
 //------------------------------------------------------------------------------
 
-vector<int> Monica::eva2CropResultIds()
+vector<int> monica::eva2CropResultIds()
 {
   return {
     cropname,
@@ -298,7 +298,7 @@ vector<int> Monica::eva2CropResultIds()
 
 //------------------------------------------------------------------------------
 
-vector<int> Monica::eva2MonthlyResultIds()
+vector<int> monica::eva2MonthlyResultIds()
 {
 	return{ 
 		avg10cmMonthlyAvgCorg,
@@ -337,7 +337,7 @@ vector<int> Monica::eva2MonthlyResultIds()
  * @param rid ResultID of interest
  * @return ResultIdInfo Information object of result ids
  */
-ResultIdInfo Monica::resultIdInfo(ResultId rid)
+ResultIdInfo monica::resultIdInfo(ResultId rid)
 {
   switch(rid)
   {

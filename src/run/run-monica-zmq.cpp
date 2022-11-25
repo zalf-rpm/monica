@@ -34,14 +34,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace json11;
 using namespace Soil;
 
 //-----------------------------------------------------------------------------
 
-Json Monica::sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
+Json monica::sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
 																			string socketAddress,
 																			Json envJson)
 {

@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"
 
-namespace Monica
+namespace monica
 {
 	json11::Json sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
 																				std::string socketAddress,

@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "monica-eom.h"
 #include "tools/helper.h"
 
-using namespace Monica;
+using namespace monica;
 using namespace std;
 using namespace Tools;
 using namespace Eom;
@@ -97,13 +97,13 @@ namespace
 
 }
 
-EomPVPInfo Monica::eomPVPId2cropId(PVPId pvpId) 
+EomPVPInfo monica::eomPVPId2cropId(PVPId pvpId) 
 {
 	PVPId2CropIdMap::const_iterator ci = eomPVPId2cropIdMap().find(pvpId);
 	return ci != eomPVPId2cropIdMap().end() ? ci->second : EomPVPInfo();
 }
 
-string Monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
+string monica::eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId)
 {
   static mutex lockable;
 

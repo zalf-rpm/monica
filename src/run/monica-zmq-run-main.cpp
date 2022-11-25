@@ -36,7 +36,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-zmq-defaults.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace json11;
 

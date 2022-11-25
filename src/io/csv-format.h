@@ -25,7 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "../io/output.h"
 
-namespace Monica
+namespace monica
 {
 	void writeOutputHeaderRows(std::ostream& out,
 														 const std::vector<OId>& outputIds,

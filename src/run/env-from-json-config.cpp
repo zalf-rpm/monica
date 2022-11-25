@@ -29,12 +29,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../io/output.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace json11;
 using namespace Tools;
 using namespace Climate;
 
-Env Monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
+Env monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params)
 {
 	Env env;
 	if(!printPossibleErrors(env.merge(createEnvJsonFromJsonStrings(params)), activateDebug))

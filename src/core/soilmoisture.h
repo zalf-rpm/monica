@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "frost-component.h"
 #include "snow-component.h"
 
-namespace Monica 
+namespace monica 
 {
   class MonicaModel;
   class SoilColumn;
@@ -113,7 +113,7 @@ namespace Monica
                           double vm_PercentageSoilCoverage,
                           double vm_PotentialEvapotranspiration);
 
-    void putCrop(Monica::CropModule* cm) { cropModule = cm; }
+    void putCrop(monica::CropModule* cm) { cropModule = cm; }
     void removeCrop() { cropModule = nullptr; }
 
     void fm_Infiltration(double vm_WaterToInfiltrate,

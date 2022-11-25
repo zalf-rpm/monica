@@ -30,7 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-common.h"
 #include "../io/output.h"
 
-namespace Monica
+namespace monica
 {
 	struct CropRotation : public Tools::Json11Serializable
 	{

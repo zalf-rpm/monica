@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 
 /* embedded meta.xxx.json.o */
 // extern char _binary_meta_sim_json_start;
@@ -48,12 +48,12 @@ using namespace Monica;
 
 static int freeMetaCsonAndReturn(int x)
 {
-  if (Monica::Configuration::metaSim)
-    cson_value_free(const_cast<cson_value*>(Monica::Configuration::metaSim));
-  if (Monica::Configuration::metaSite)
-    cson_value_free(const_cast<cson_value*>(Monica::Configuration::metaSite));
-  if (Monica::Configuration::metaCrop)
-    cson_value_free(const_cast<cson_value*>(Monica::Configuration::metaCrop));
+  if (monica::Configuration::metaSim)
+    cson_value_free(const_cast<cson_value*>(monica::Configuration::metaSim));
+  if (monica::Configuration::metaSite)
+    cson_value_free(const_cast<cson_value*>(monica::Configuration::metaSite));
+  if (monica::Configuration::metaCrop)
+    cson_value_free(const_cast<cson_value*>(monica::Configuration::metaCrop));
 
   return x;
 }
@@ -71,7 +71,7 @@ static int initMetaCson()
     return 3;
   }
   else {
-    rc = Monica::Configuration::readJSON(metaSimFile, const_cast<cson_value**>(&Monica::Configuration::metaSim));
+    rc = monica::Configuration::readJSON(metaSimFile, const_cast<cson_value**>(&monica::Configuration::metaSim));
     fclose(metaSimFile);
     if (rc != 0) {
       std::cerr << "Error parsing meta.sim.json file [meta.json/meta.sim.json]!" << std::endl;
@@ -85,7 +85,7 @@ static int initMetaCson()
     return 3;
   }
   else {
-    rc = Monica::Configuration::readJSON(metaSiteFile, const_cast<cson_value**>(&Monica::Configuration::metaSite));
+    rc = monica::Configuration::readJSON(metaSiteFile, const_cast<cson_value**>(&monica::Configuration::metaSite));
     fclose(metaSiteFile);
     if (rc != 0) {
       std::cerr << "Error parsing meta.site.json file [meta.json/meta.site.json]!" << std::endl;
@@ -99,7 +99,7 @@ static int initMetaCson()
     return 3;
   }
   else {
-    rc = Monica::Configuration::readJSON(metaCropFile, const_cast<cson_value**>(&Monica::Configuration::metaCrop));
+    rc = monica::Configuration::readJSON(metaCropFile, const_cast<cson_value**>(&monica::Configuration::metaCrop));
     fclose(metaCropFile);
     if (rc != 0) {
       std::cerr << "Error parsing meta.crop.json file [meta.json/meta.crop.json]!" << std::endl;
@@ -253,7 +253,7 @@ int main(int argc, char** argv)
     }
     else if( 0 == strcmp("debug",arg) ) {
       Tools::activateDebug = true;
-      std::cout << "Monica::activateDebug: " << Tools::activateDebug << std::endl;
+      std::cout << "monica::activateDebug: " << Tools::activateDebug << std::endl;
       continue;
     }
     else if( (0 == strcmp("-?",arg)) || (0 == strcmp("--help",arg) ) ) {
@@ -323,12 +323,12 @@ int main(int argc, char** argv)
     return ret; 
 
   /* setup config & run monica */
-  Monica::Result res;
-  Monica::Configuration* cfg = new Monica::Configuration(std::string(outPath), std::string(dirNameMet), std::string(preMetFiles), std::string(dbIniName));
+  monica::Result res;
+  monica::Configuration* cfg = new monica::Configuration(std::string(outPath), std::string(dirNameMet), std::string(preMetFiles), std::string(dbIniName));
   Tools::debug() << outPath << "\t" << dirNameMet << "\t" << preMetFiles << "\t" << dbIniName << endl;
-  std::cout << "Monica::Configuration" << std::endl;
+  std::cout << "monica::Configuration" << std::endl;
   bool ok = cfg->setJSON(simFile, siteFile, cropFile);  
-  std::cout << "Monica::Configuration::setJSON" << std::endl;
+  std::cout << "monica::Configuration::setJSON" << std::endl;
   fclose(simFile);
   fclose(siteFile);
   fclose(cropFile);

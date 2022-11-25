@@ -49,7 +49,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 //using namespace Db;
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Soil;
 using namespace Tools;
 using namespace Climate;
@@ -1178,7 +1178,7 @@ bool Irrigation::apply(MonicaModel* model)
 
 //------------------------------------------------------------------------------
 
-WSPtr Monica::makeWorkstep(json11::Json j)
+WSPtr monica::makeWorkstep(json11::Json j)
 {
 	string type = string_value(j["type"]);
 	if (type == "Sowing"

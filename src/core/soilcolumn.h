@@ -39,7 +39,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "monica-parameters.h"
 
-namespace Monica
+namespace monica
 {
   class SoilLayer;
   class SoilColumn;

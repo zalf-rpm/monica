@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-parameters.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 
   /**
    * @brief Constructor

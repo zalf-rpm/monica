@@ -50,7 +50,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "crop-module.h"
 #include "soilcolumn.h"
 
-namespace Monica {
+namespace monica {
 	class Crop;
 	
 

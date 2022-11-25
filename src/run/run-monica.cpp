@@ -43,7 +43,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../io/build-output.h"
 #include "../core/crop-module.h"
 
-using namespace Monica;
+using namespace monica;
 using namespace std;
 using namespace Climate;
 using namespace Tools;
@@ -686,7 +686,7 @@ DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
 	return res;
 }
 
-std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
+std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC)
 {
 	Output out, out2;
 	bool returnObjOutputs = env.returnObjOutputs();
@@ -1101,4 +1101,4 @@ std::pair<Output, Output> Monica::runMonicaIC(Env env, bool isIC)
 	return make_pair(out, out2);
 }
 
-Output Monica::runMonica(Env env) { return runMonicaIC(env, false).first; }
+Output monica::runMonica(Env env) { return runMonicaIC(env, false).first; }

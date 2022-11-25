@@ -22,7 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace Tools;
 using namespace std;
-using namespace Monica;
+using namespace monica;
 
 string appName = "monica-zmq-proxy";
 string version = "0.0.1";

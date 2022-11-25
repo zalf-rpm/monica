@@ -42,7 +42,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common/sole.hpp"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace mas;
 using namespace mas::infrastructure::common;

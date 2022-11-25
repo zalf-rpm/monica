@@ -38,7 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 const double PI = 3.14159265358979323;
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 
 /**
@@ -1803,7 +1803,7 @@ double CropModule::fc_SoilCoverage(double vc_LeafAreaIndex)
 
 #ifdef TEST_HOURLY_OUTPUT
 #include <fstream>
-ostream &Monica::tout(bool closeFile)
+ostream &monica::tout(bool closeFile)
 {
 	static ofstream out;
 	static bool init = false;
@@ -4750,7 +4750,7 @@ int CropModule::pc_NumberOfAbovegroundOrgans() const
 namespace
 {
 
-	typedef vector<Monica::YieldComponent> VYC;
+	typedef vector<monica::YieldComponent> VYC;
 
 	/**
 	 * @brief Returns crop yield.

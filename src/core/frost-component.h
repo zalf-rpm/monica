@@ -21,7 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model/monica/monica_state.capnp.h"
 
-namespace Monica 
+namespace monica 
 {
   class SoilColumn;
 	

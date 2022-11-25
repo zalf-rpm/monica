@@ -34,8 +34,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-file-io.h"
 
 using namespace std;
-using namespace Monica;
-using namespace Monica::ZmqServer;
+using namespace monica;
+using namespace monica::ZmqServer;
 using namespace Tools;
 using namespace json11;
 using namespace Soil;
@@ -384,7 +384,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 
 //-----------------------------------------------------------------------------
 
-void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
+void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                                                                                      map<SocketRole, SocketConfig> socketAddresses)
 {
     bool startedServerInDebugMode = activateDebug;
@@ -524,7 +524,7 @@ void Monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                                     eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
                             }
 
-                            Monica::Output out, out2;
+                            monica::Output out, out2;
                             bool isIC = false;
                             if (eda.success()) {
                                 if(!env.climateData.isValid()) env.climateData = eda.result;

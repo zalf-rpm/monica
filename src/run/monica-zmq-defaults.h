@@ -18,7 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <string>
 
-namespace Monica
+namespace monica
 {
 	static const char* defaultProxyAddress = "localhost";
 	static const int defaultProxyFrontendPort = 5555;

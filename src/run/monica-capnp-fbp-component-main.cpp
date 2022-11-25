@@ -38,7 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common.capnp.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace mas;
 

@@ -13,32 +13,15 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <tuple>
-#include <vector>
-#include <algorithm>
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-
-#include <kj/debug.h>
 #include <kj/common.h>
-#define KJ_MVCAP(var) var = kj::mv(var)
+#include <kj/debug.h>
 #include <kj/main.h>
+#include <kj/thread.h>
+#define KJ_MVCAP(var) var = kj::mv(var)
 
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/rpc-twoparty.h>
-#include <kj/thread.h>
 
 #include "tools/helper.h"
 #include "common/rpc-connections.h"
@@ -50,18 +33,20 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common.capnp.h"
 #include "registry.capnp.h"
 
-using namespace std;
-using namespace Monica;
-using namespace Tools;
-using namespace mas;
 
+namespace monica {
 
 class MonicaCapnpServerMain
 {
 public:
-  MonicaCapnpServerMain(kj::ProcessContext &context) : context(context) {}
+  MonicaCapnpServerMain(kj::ProcessContext& context) 
+  : restorer(kj::heap<mas::infrastructure::common::Restorer>())
+  , conMan(restorer.get())
+  , context(context)
+  , ioContext(kj::setupAsyncIo()) 
+  {}
 
-  kj::MainBuilder::Validity setName(kj::StringPtr n) { name = str(n); return true; }
+  kj::MainBuilder::Validity setName(kj::StringPtr n) { name = kj::str(n); return true; }
 
   kj::MainBuilder::Validity setPort(kj::StringPtr portStr) { port = portStr.parseAs<int>(); return true; }
 
@@ -79,15 +64,12 @@ public:
 
   kj::MainBuilder::Validity startService()
   {
-    typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
-
-    auto ioContext = kj::setupAsyncIo();
+    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
 
     KJ_LOG(INFO, "starting Cap'n Proto MONICA service");
 
-    auto restorer = kj::heap<infrastructure::common::Restorer>();
     auto& restorerRef = *restorer;
-    schema::persistence::Restorer::Client restorerClient = kj::mv(restorer);
+    mas::schema::persistence::Restorer::Client restorerClient = kj::mv(restorer);
     auto runMonica = kj::heap<RunMonica>(&restorerRef, startedServerInDebugMode);
     auto& runMonicaRef = *runMonica;
     if (name.size() > 0) runMonicaRef.setName(name);
@@ -95,13 +77,13 @@ public:
     runMonicaRef.setClient(runMonicaClient);
     KJ_LOG(INFO, "created monica");
 
-    schema::common::Action::Client unregister(nullptr);
-    //schema::persistence::SturdyRef::Reader reregSR(nullptr);
-    schema::registry::Registrar::Client registrar(nullptr);
+    mas::schema::common::Action::Client unregister(nullptr);
+    //mas::schema::persistence::SturdyRef::Reader reregSR(nullptr);
+    mas::schema::registry::Registrar::Client registrar(nullptr);
 
     KJ_LOG(INFO, "trying to bind to", host, port);
     auto portPromise = conMan.bind(ioContext, restorerClient, host, port);
-    auto succAndIP = infrastructure::common::getLocalIP(checkIP, checkPort);
+    auto succAndIP = mas::infrastructure::common::getLocalIP(checkIP, checkPort);
     if(kj::get<0>(succAndIP)) restorerRef.setHost(kj::get<1>(succAndIP));
     else restorerRef.setHost(localHost);
     auto port = portPromise.wait(ioContext.waitScope);
@@ -127,7 +109,7 @@ public:
     if(registrarSR.size() > 0)
     {
       KJ_LOG(INFO, "trying to register at", registrarSR);
-      registrar = conMan.tryConnectB(ioContext, registrarSR).castAs<schema::registry::Registrar>();
+      registrar = conMan.tryConnectB(ioContext, registrarSR).castAs<mas::schema::registry::Registrar>();
       auto request = registrar.registerRequest();
       request.setCap(runMonicaClient);
       request.setRegName(name.size() == 0 ? kj::str(runMonicaRef.getName(), "(", runMonicaRef.getId(), ")") : name.asPtr());
@@ -181,17 +163,21 @@ public:
   }
 
 private:
-  infrastructure::common::ConnectionManager conMan;
+  kj::Own<mas::infrastructure::common::Restorer> restorer;
+  mas::infrastructure::common::ConnectionManager conMan;
+  kj::ProcessContext& context;
+  kj::AsyncIoContext ioContext;
   kj::String name;
-  kj::ProcessContext &context;
-  int port{0};
   kj::String host{kj::str("*")};
   kj::String localHost{kj::str("localhost")};
-  int checkPort{0};
+  int port{0};
   kj::String checkIP;
+  int checkPort{0};
   kj::String registrarSR;
   kj::String regCategory{kj::str("monica")};
   bool startedServerInDebugMode{false};
 };
 
-KJ_MAIN(MonicaCapnpServerMain)
+}
+
+KJ_MAIN(monica::MonicaCapnpServerMain)

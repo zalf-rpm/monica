@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica-model.h"
 #include "output.h"
 
-namespace Monica
+namespace monica
 {
 	struct OutputMetadata
 	{
@@ -65,7 +65,7 @@ namespace Monica
 
 	
 	template<typename OP_RT, typename APPLY_RT>
-	std::function<APPLY_RT(const Monica::MonicaModel&)>
+	std::function<APPLY_RT(const monica::MonicaModel&)>
 		buildExpression(Tools::J11Array a,
 										std::function<std::function<OP_RT(double, double)>(std::string)> getOp,
 										std::function<APPLY_RT(std::function<OP_RT(double, double)>, json11::Json, json11::Json)> applyOp)
@@ -83,7 +83,7 @@ namespace Monica
 
 			const auto& ofs = buildOutputTable().ofs;
 			typename decltype(buildOutputTable().ofs)::mapped_type lf, rf;
-			Monica::OId loid, roid;
+			monica::OId loid, roid;
 			if(!leftj.is_number())
 			{
 				auto loids = parseOutputIds({leftj});
@@ -109,36 +109,36 @@ namespace Monica
 
 			if(lf && rf && op)
 			{
-				return [=](const Monica::MonicaModel& m)
+				return [=](const monica::MonicaModel& m)
 				{
 					return applyOp(op, lf(m, loid), rf(m, roid));
 				};
 			}
 			else if(lf && rightj.is_number() && op)
 			{
-				return [=](const Monica::MonicaModel& m)
+				return [=](const monica::MonicaModel& m)
 				{
 					return applyOp(op, lf(m, loid), rightj);
 				};
 			}
 			else if(leftj.is_number() && rf && op)
 			{
-				return [=](const Monica::MonicaModel& m)
+				return [=](const monica::MonicaModel& m)
 				{
 					return applyOp(op, leftj, rf(m, roid));
 				};
 			}
 		}
 
-		return std::function<APPLY_RT(const Monica::MonicaModel&)>();
+		return std::function<APPLY_RT(const monica::MonicaModel&)>();
 	}
 
-	inline std::function<bool(const Monica::MonicaModel&)> buildCompareExpression(Tools::J11Array a)
+	inline std::function<bool(const monica::MonicaModel&)> buildCompareExpression(Tools::J11Array a)
 	{
 		return buildExpression<bool, bool>(a, getCompareOp, applyCompareOp);
 	}
 
-	inline std::function<json11::Json(const Monica::MonicaModel&)> buildPrimitiveCalcExpression(Tools::J11Array a)
+	inline std::function<json11::Json(const monica::MonicaModel&)> buildPrimitiveCalcExpression(Tools::J11Array a)
 	{
 		return buildExpression<double, json11::Json>(a, getPrimitiveCalcOp, applyPrimitiveCalcOp);
 	}

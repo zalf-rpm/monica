@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 //#include "../core/monica-model.h"
 
 
-namespace Monica
+namespace monica
 {
 	struct DLL_API OId : public Tools::Json11Serializable
 	{

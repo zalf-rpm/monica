@@ -38,7 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/soil.h"
 #include "soil/constants.h"
 
-namespace Monica
+namespace monica
 {
 	class CentralParameterProvider;
 

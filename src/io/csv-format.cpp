@@ -21,7 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "csv-format.h"
 
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace std;
 using namespace json11;
@@ -32,7 +32,7 @@ inline string operator "" _s(const char *_Str, size_t _Len)
 	return (string(_Str, _Len));
 }
 
-void Monica::writeOutputHeaderRows(ostream& out,
+void monica::writeOutputHeaderRows(ostream& out,
 																	 const vector<OId>& outputIds,
 																	 string csvSep,
 																	 bool includeHeaderRow,
@@ -89,7 +89,7 @@ void Monica::writeOutputHeaderRows(ostream& out,
 		<< oss4.str() << endl;
 }
 
-void Monica::writeOutput(ostream& out,
+void monica::writeOutput(ostream& out,
 												 const vector<OId>& outputIds,
 												 const vector<J11Array>& values,
 												 string csvSep)
@@ -152,7 +152,7 @@ void Monica::writeOutput(ostream& out,
 	out.flush();
 }
 
-void Monica::writeOutputObj(ostream& out,
+void monica::writeOutputObj(ostream& out,
 														const vector<OId>& outputIds,
 														const vector<J11Object>& values,
 														string csvSep)

@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "env-json-from-json-config.h"
 
-namespace Monica
+namespace monica
 {
 	Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 }

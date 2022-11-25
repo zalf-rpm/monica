@@ -37,7 +37,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 //using namespace Db;
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Soil;
 using namespace Tools;
 using namespace Climate;

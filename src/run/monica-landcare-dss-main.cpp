@@ -46,7 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace Db;
 using namespace Tools;
-using namespace Monica;
+using namespace monica;
 using namespace Soil;
 
 #ifdef RUN_LANDCARE_DSS
@@ -112,7 +112,7 @@ void runLandcareDSSMonica(E e)
 
         //input data
   CentralParameterProvider cpp =
-      readUserParameterFromDatabase(Monica::Env::MODE_LC_DSS);
+      readUserParameterFromDatabase(monica::Env::MODE_LC_DSS);
 
 
   AvailableClimateData acds[] = {tmin, tavg, tmax, globrad, relhumid, wind,
@@ -225,19 +225,19 @@ void runLandcareDSSMonica(E e)
     return;
   }
 
-  Monica::Env env(sps, cpp);
+  monica::Env env(sps, cpp);
   env.noOfLayers = e.noOfLayers;
   env.layerThickness = e.layerThickness; //[m]
   env.site.vs_Slope = double(e.slope) / 100.0;
   env.site.vs_HeightNN = e.heightNN;
   env.site.vs_Latitude = llc.lat;
   env.general = genps;
-  env.setMode(Monica::Env::MODE_LC_DSS);
+  env.setMode(monica::Env::MODE_LC_DSS);
   env.pathToOutputDir = e.pathToOutputDir;
   if(env.pathToOutputDir.at(env.pathToOutputDir.length()-1) != '/')
     env.pathToOutputDir.append("/");
   if(e.activateOutputFiles)
-    env.setMode(Monica::Env::MODE_ACTIVATE_OUTPUT_FILES);
+    env.setMode(monica::Env::MODE_ACTIVATE_OUTPUT_FILES);
 
   env.atmosphericCO2 = e.co2;
 
@@ -310,13 +310,13 @@ void runLandcareDSSMonica(E e)
   }
 
   typedef int Count;
-  typedef map<Monica::ResultId, vector<double> > CR;
+  typedef map<monica::ResultId, vector<double> > CR;
   typedef map<CropId, CR> CropResults;
   typedef map<Year, CropResults> YearlyCropResults;
   YearlyCropResults avgYearlyCropResults;
   CropResults avgCropResults;
 
-  typedef map<Monica::ResultId, vector<double> > GeneralResults;
+  typedef map<monica::ResultId, vector<double> > GeneralResults;
   typedef map<Year, GeneralResults> YearlyGeneralResults;
   YearlyGeneralResults avgYearlyGeneralResults;
   GeneralResults avgGeneralResults;
@@ -337,7 +337,7 @@ void runLandcareDSSMonica(E e)
                env.cropRotation.end());
       env.da = da;
 
-      Monica::Result res = runMonica(env);
+      monica::Result res = runMonica(env);
 
       cout << "realization: " << realizationName << " cropRotation: ";
       for_each(env.cropRotation.begin(), env.cropRotation.end(),
@@ -348,14 +348,14 @@ void runLandcareDSSMonica(E e)
       int year = start.year() + 1;
       cout << "noys: " << res.pvrs.size() << endl;
       //show crop results
-      for(Monica::PVResult pvr : res.pvrs)
+      for(monica::PVResult pvr : res.pvrs)
       {
         cout << "year: " << year++ << " cropId: " << pvr.id << endl;
         cout << "---------------------------" << endl;
-        typedef map<Monica::ResultId, double> M;
+        typedef map<monica::ResultId, double> M;
         for(M::value_type p : pvr.pvResults)
         {
-          Monica::ResultId rid = p.first;
+          monica::ResultId rid = p.first;
           ResultIdInfo info = resultIdInfo(rid);
           cout << rid << " " << info.name << " [" << info.unit << "]: " << p.second << endl;
 
@@ -370,9 +370,9 @@ void runLandcareDSSMonica(E e)
         cout << "general results (monthly and yearly values)" << endl;
         //show general results
         cout << "---------------------------" << endl;
-        for(Monica::Result::RId2Vector::value_type p : res.generalResults)
+        for(monica::Result::RId2Vector::value_type p : res.generalResults)
         {
-          Monica::ResultId rid = p.first;
+          monica::ResultId rid = p.first;
           ResultIdInfo info = resultIdInfo(rid);
           cout << rid << " " << info.name << " [" << info.unit << "]:" << endl;
 
@@ -416,7 +416,7 @@ void runLandcareDSSMonica(E e)
 
       for(CR::value_type p3 : p2.second)
       {
-        Monica::ResultId rid = p3.first;
+        monica::ResultId rid = p3.first;
         pair<double, double> p4 = standardDeviationAndAvg(p3.second);
 
         ResultIdInfo info = resultIdInfo(rid);
@@ -439,7 +439,7 @@ void runLandcareDSSMonica(E e)
 
       for(GeneralResults::value_type p2 : p.second)
       {
-        Monica::ResultId rid = p2.first;
+        monica::ResultId rid = p2.first;
         pair<double, double> p3 = standardDeviationAndAvg(p2.second);
 
         ResultIdInfo info = resultIdInfo(rid);
@@ -466,7 +466,7 @@ void runLandcareDSSMonica(E e)
 
     for(CR::value_type p2 : p.second)
     {
-      Monica::ResultId rid = p2.first;
+      monica::ResultId rid = p2.first;
       pair<double, double> p3 = standardDeviationAndAvg(p2.second);
 
       ResultIdInfo info = resultIdInfo(rid);
@@ -483,7 +483,7 @@ void runLandcareDSSMonica(E e)
 
     for(GeneralResults::value_type p : avgGeneralResults)
     {
-      Monica::ResultId rid = p.first;
+      monica::ResultId rid = p.first;
       pair<double, double> p2 = standardDeviationAndAvg(p.second);
 
       ResultIdInfo info = resultIdInfo(rid);
@@ -523,7 +523,7 @@ void testLandcareDSS(int argc, char** argv)
         << "\t| useAutomaticIrrigation: " << (e.useAutoIrrigation ? "true" : "false") << " [true | false]" << endl
         << "\t| noOfLayers: " << e.noOfLayers << endl
         << "\t| layerThickness: " << e.layerThickness << " in meters" << endl
-        << "\t| co2: " << e.co2 << " in ppm" << " [-1 means use Monica internal CO2-algorithm]" << endl
+        << "\t| co2: " << e.co2 << " in ppm" << " [-1 means use monica internal CO2-algorithm]" << endl
         << "\t| activateDebugOutput: " << (e.activateDebugOutput ? "true" : "false") << " [true | false]" << endl
         << "\t| showGeneralResultsOutput: " << (e.showGeneralResultsOutput ? "true" : "false") << " [true | false]" << endl
         << "\t| activateOutputFiles: " << (e.activateOutputFiles ? "true" : "false") << " [true | false]" << endl

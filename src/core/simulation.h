@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../run/run-monica.h"
 //#include "gis_simulation_methods.h"
 
-namespace Monica
+namespace monica
 {
 
 #ifdef RUN_EVA
@@ -205,7 +205,7 @@ namespace Monica
 		* @brief Setter for automatic yield parameters.
 		*
 		*/
-		void setAutomaticHarvestParameters(Monica::AutomaticHarvestParameters::HarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
+		void setAutomaticHarvestParameters(monica::AutomaticHarvestParameters::HarvestTime yt) { this->automaticHarvestParameters = AutomaticHarvestParameters(yt); }
 
 
 		void setNMinFertiliser(bool state) { this->NMinFertiliser = state; }
@@ -266,9 +266,9 @@ namespace Monica
 		bool useAutomaticIrrigation() { return this->automaticIrrigation; }
 		bool useAutomaticHarvest() { return this->automaticHarvest; }
 
-		Monica::NMinUserParameters getNMinUserParameters() const { return nMinUserParameters; }
-		Monica::AutomaticIrrigationParameters getAutomaticIrrigationParameters() const { return automaticIrrigationParameters; }
-		Monica::AutomaticHarvestParameters getAutomaticHarvestParameters() const { return automaticHarvestParameters; }
+		monica::NMinUserParameters getNMinUserParameters() const { return nMinUserParameters; }
+		monica::AutomaticIrrigationParameters getAutomaticIrrigationParameters() const { return automaticIrrigationParameters; }
+		monica::AutomaticHarvestParameters getAutomaticHarvestParameters() const { return automaticHarvestParameters; }
 
 
 		double getInitPercentageFC() { return this->initPercentageFC; }
@@ -333,9 +333,9 @@ namespace Monica
 		double initSoilAmmonium;    // Initial soil ammonium content [kg NH4-N m-3]
 
 
-		Monica::NMinUserParameters nMinUserParameters;
-		Monica::AutomaticIrrigationParameters automaticIrrigationParameters;
-		Monica::AutomaticHarvestParameters automaticHarvestParameters;
+		monica::NMinUserParameters nMinUserParameters;
+		monica::AutomaticIrrigationParameters automaticIrrigationParameters;
+		monica::AutomaticHarvestParameters automaticHarvestParameters;
 
 	};
 
@@ -453,7 +453,7 @@ namespace Monica
 	//Monica::Result runWithHermesData(const std::string& output_path, bool debug = true);
 
 	HermesSimulationConfiguration * getHermesConfigFromIni(std::string output_path);
-	Monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
+	monica::Env getHermesEnvFromConfiguration(HermesSimulationConfiguration*);
 
 	//void writeSoilPMsToFile(std::string path, const std::vector<SoilParameters> *soil_pms, int mode);
 	void activateDebugOutput(bool);

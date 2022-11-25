@@ -28,7 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace std;
 using namespace Tools;
 using namespace json11;
-using namespace Monica;
+using namespace monica;
 
 string appName = "monica-zmq-control-send";
 string version = "2.0.0-beta";

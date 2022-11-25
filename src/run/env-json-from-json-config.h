@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"
 
-namespace Monica
+namespace monica
 {
 	Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json& root, 
 																												const json11::Json& j);

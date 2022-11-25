@@ -34,12 +34,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/soiltransport.h"
 #include "../core/soilorganic.h"
 
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace std;
 using namespace json11;
 
-double Monica::applyOIdOP(OId::OP op, const vector<double>& vs)
+double monica::applyOIdOP(OId::OP op, const vector<double>& vs)
 {
 	double v = 0.0;
 	if (!vs.empty())
@@ -75,7 +75,7 @@ double Monica::applyOIdOP(OId::OP op, const vector<double>& vs)
 	return v;
 }
 
-Json Monica::applyOIdOP(OId::OP op, const vector<Json>& js)
+Json monica::applyOIdOP(OId::OP op, const vector<Json>& js)
 {
 	Json res;
 
@@ -111,7 +111,7 @@ Json Monica::applyOIdOP(OId::OP op, const vector<Json>& js)
 
 //-----------------------------------------------------------------------------
 
-vector<OId> Monica::parseOutputIds(const J11Array& oidArray)
+vector<OId> monica::parseOutputIds(const J11Array& oidArray)
 {
 	vector<OId> outputIds;
 
@@ -332,7 +332,7 @@ void setComplexValues(OId oid, function<void(int, json11::Json)> setValue, Json 
 	}
 }
 
-BOTRes& Monica::buildOutputTable()
+BOTRes& monica::buildOutputTable()
 {
 	static mutex lockable;
 
@@ -1562,7 +1562,7 @@ BOTRes& Monica::buildOutputTable()
 
 //-----------------------------------------------------------------------------
 
-std::function<bool(double, double)> Monica::getCompareOp(std::string ops)
+std::function<bool(double, double)> monica::getCompareOp(std::string ops)
 {
 	function<bool(double, double)> op = [](double, double) { return false; };
 
@@ -1582,7 +1582,7 @@ std::function<bool(double, double)> Monica::getCompareOp(std::string ops)
 	return op;
 }
 
-bool Monica::applyCompareOp(std::function<bool(double, double)> op, Json lj, Json rj)
+bool monica::applyCompareOp(std::function<bool(double, double)> op, Json lj, Json rj)
 {
 	if (lj.is_number() && rj.is_number())
 		return op(lj.number_value(), rj.number_value());
@@ -1619,7 +1619,7 @@ bool Monica::applyCompareOp(std::function<bool(double, double)> op, Json lj, Jso
 	return false;
 }
 
-std::function<double(double, double)> Monica::getPrimitiveCalcOp(std::string ops)
+std::function<double(double, double)> monica::getPrimitiveCalcOp(std::string ops)
 {
 	function<double(double, double)> op = [](double, double) { return 0.0; };
 
@@ -1635,7 +1635,7 @@ std::function<double(double, double)> Monica::getPrimitiveCalcOp(std::string ops
 	return op;
 }
 
-json11::Json Monica::applyPrimitiveCalcOp(std::function<double(double, double)> op, json11::Json lj, json11::Json rj)
+json11::Json monica::applyPrimitiveCalcOp(std::function<double(double, double)> op, json11::Json lj, json11::Json rj)
 {
 	if (lj.is_number() && rj.is_number())
 		return op(lj.number_value(), rj.number_value());

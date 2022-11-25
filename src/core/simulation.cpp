@@ -54,7 +54,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <io.h>
 #endif
 
-using namespace Monica;
+using namespace monica;
 using namespace std;
 using namespace Tools;
 using namespace Soil;
@@ -417,7 +417,7 @@ Monica::Result Monica::runWithHermesData(const std::string& output_path, bool de
 */
 
 
-Monica::HermesSimulationConfiguration* Monica::getHermesConfigFromIni(std::string output_path)
+monica::HermesSimulationConfiguration* monica::getHermesConfigFromIni(std::string output_path)
 {
 	HermesSimulationConfiguration *hermes_config = new HermesSimulationConfiguration();
 
@@ -566,8 +566,8 @@ const Monica::Result Monica::runWithHermesData(HermesSimulationConfiguration *he
 }
 */
 
-Monica::Env
-Monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_config)
+monica::Env
+monica::getHermesEnvFromConfiguration(HermesSimulationConfiguration *hermes_config)
 {
 
 	debug() << "Running hermes with configuration object" << endl;

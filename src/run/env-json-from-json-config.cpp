@@ -30,7 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../io/output.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace json11;
 using namespace Tools;
 using namespace Climate;
@@ -39,7 +39,7 @@ using namespace Climate;
 
 const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns();
 
-EResult<Json> Monica::findAndReplaceReferences(const Json& root, const Json& j)
+EResult<Json> monica::findAndReplaceReferences(const Json& root, const Json& j)
 {
 	auto sp = supportedPatterns();
 
@@ -415,7 +415,7 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 
 //-----------------------------------------------------------------------------
 
-Json Monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params)
+Json monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params)
 {
 	map<string, Json> ps;
 	for(const auto& p : map<string, string>({{"crop-json-str", "crop"}, {"site-json-str", "site"}, {"sim-json-str", "sim"}}))
@@ -424,7 +424,7 @@ Json Monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> par
 	return createEnvJsonFromJsonObjects(ps);
 }
 
-Json Monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params)
+Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params)
 {
 	vector<Json> cropSiteSim;
 	for (auto name : { "crop", "site", "sim" })

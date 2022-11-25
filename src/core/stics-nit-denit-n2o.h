@@ -23,12 +23,12 @@ namespace stics
 // NO3 [mg-NO3-N/kg-soil]
 // wfps = water-filled pore space [] = soil-water-content/saturation
 // soilWaterContent = gravimetric soil water content [kg-water/kg-soil]
-// soilT = soil temperature [°C]
+// soilT = soil temperature [ï¿½C]
 // fc = fieldcapacity [m3-water/m3-soil]
 // sat = saturation [m3-water/m3-soil]
 
 // nitrification [mg-N/kg-soil/day]
-double vnit(const Monica::SticsParameters& ps,
+double vnit(const monica::SticsParameters& ps,
             double NH4, 
             double pH,
             double soilT,
@@ -38,7 +38,7 @@ double vnit(const Monica::SticsParameters& ps,
             double sat);
 
 // denitrification [mg-N/kg-soil/day]
-double vdenit(const Monica::SticsParameters& ps,
+double vdenit(const monica::SticsParameters& ps,
               double corg,
               double NO3,
               double soilT,
@@ -49,7 +49,7 @@ double vdenit(const Monica::SticsParameters& ps,
 // vnit [mg-n/kg-soil/day]
 // vdenit [mg-N/kg-soil/day]
 typedef std::pair<double, double> NitDenitN2O;
-NitDenitN2O N2O(const Monica::SticsParameters& ps,
+NitDenitN2O N2O(const monica::SticsParameters& ps,
            double NO3,
            double wfps,
            double pH,
@@ -57,7 +57,7 @@ NitDenitN2O N2O(const Monica::SticsParameters& ps,
            double vdenit);
 
 // N2O emissions [mg-N2O-N/kg-soil/day]
-NitDenitN2O N2O(const Monica::SticsParameters& ps,
+NitDenitN2O N2O(const monica::SticsParameters& ps,
            double corg,
            double NO3,
            double soilT,

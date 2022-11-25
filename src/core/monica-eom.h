@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "eom/src/eom-typedefs.h"
 
-namespace Monica
+namespace monica
 {
   enum TillageType { plough = 1, conserving = 2, noTillage = 3 };
 

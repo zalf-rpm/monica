@@ -50,5 +50,5 @@ int main(int argc, char** argv)
 		Db::dbConnectionParameters("db-connections.ini");
 #endif
 				
-		Monica::runWithHermesData(argc == 2 ? string(argv[1]) + Monica::pathSeparator() : "");
+		monica::runWithHermesData(argc == 2 ? string(argv[1]) + monica::pathSeparator() : "");
 }

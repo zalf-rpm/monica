@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 
 FrostComponent::FrostComponent(SoilColumn& sc,

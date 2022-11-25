@@ -55,7 +55,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common/sole.hpp"
 
 //using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
@@ -157,7 +157,7 @@ kj::Promise<void> RunMonica::run(RunContext context) //override
     std::string err;
     auto rest = envR.getRest();
     if (!rest.getStructure().isJson()) {
-      return Monica::Output(std::string("Error: 'rest' field is not valid JSON!"));
+      return monica::Output(std::string("Error: 'rest' field is not valid JSON!"));
     }
 
     const Json& envJson = Json::parse(rest.getValue().cStr(), err);
@@ -183,7 +183,7 @@ kj::Promise<void> RunMonica::run(RunContext context) //override
       }
     }
 
-    Monica::Output out;
+    monica::Output out;
     if (eda.success()) {
       env.climateData = eda.result;
 
@@ -194,7 +194,7 @@ kj::Promise<void> RunMonica::run(RunContext context) //override
         return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
       };
 
-      out = Monica::runMonica(env);
+      out = monica::runMonica(env);
     }
 
     out.errors = eda.errors;

@@ -34,7 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "soil/constants.h"
 
-using namespace Monica;
+using namespace monica;
 using namespace std;
 using namespace Soil;
 using namespace Tools;

@@ -37,7 +37,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 //#include "db/abstract-db-connections.h"
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace json11;
 

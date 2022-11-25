@@ -25,7 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include "monica-parameters.h"
 
-namespace Monica 
+namespace monica 
 {
   // forward declarations
   class SoilColumn;

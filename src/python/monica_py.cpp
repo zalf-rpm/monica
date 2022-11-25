@@ -34,7 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace boost::python;
 
 using namespace std;
-using namespace Monica;
+using namespace monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
@@ -46,10 +46,10 @@ dict rm(dict params)
 	for_each(begin, end,
 	         [&](string key){ n2jos[key] = extract<string>(params[key]); });
 
-	auto env = Monica::createEnvFromJsonConfigFiles(n2jos);
+	auto env = monica::createEnvFromJsonConfigFiles(n2jos);
 	activateDebug = env.debugMode;
 		
-	auto out = Monica::runMonica(env);
+	auto out = monica::runMonica(env);
 	
 	dict d;
 	for(auto& p : out.to_json().object_items())
