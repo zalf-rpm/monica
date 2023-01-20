@@ -60,6 +60,8 @@ public:
 
   kj::MainBuilder::Validity setRegistrarSR(kj::StringPtr sr) { registrarSR = kj::str(sr); return true; }
 
+  kj::MainBuilder::Validity setRegCategory(kj::StringPtr cat) { regCategory = kj::str(cat); return true; }
+
   kj::MainBuilder::Validity setDebug() { startedServerInDebugMode = true; return true; }
 
   kj::MainBuilder::Validity startService()
@@ -77,9 +79,7 @@ public:
     runMonicaRef.setClient(runMonicaClient);
     KJ_LOG(INFO, "created monica");
 
-    mas::schema::common::Action::Client unregister(nullptr);
-    //mas::schema::persistence::SturdyRef::Reader reregSR(nullptr);
-    mas::schema::registry::Registrar::Client registrar(nullptr);
+    
 
     KJ_LOG(INFO, "trying to bind to", host, port);
     auto portPromise = conMan.bind(ioContext, restorerClient, host, port);
@@ -106,6 +106,9 @@ public:
     }
     */
 
+    mas::schema::common::Action::Client unregister(nullptr);
+    //mas::schema::persistence::SturdyRef::Reader reregSR(nullptr);
+    mas::schema::registry::Registrar::Client registrar(nullptr);
     if(registrarSR.size() > 0)
     {
       KJ_LOG(INFO, "trying to register at", registrarSR);
@@ -150,7 +153,7 @@ public:
                         "<host-address (default: *)>", "Which address to bind to. * binds to all network interfaces.")
       .addOptionWithArg({'r', "registrar_sr"}, KJ_BIND_METHOD(*this, setRegistrarSR),
                         "<sturdy_ref>", "Sturdy ref to registrar.")
-      .addOptionWithArg({"reg_category"}, KJ_BIND_METHOD(*this, setRegistrarSR),
+      .addOptionWithArg({"reg_category"}, KJ_BIND_METHOD(*this, setRegCategory),
                         "<category (default: monica)>", "Name of the category to register at.")
       .addOptionWithArg({"local_host (default: localhost)"}, KJ_BIND_METHOD(*this, setLocalHost),
                         "<IP_or_host_address>", "Use this host for sturdy reference creation.")
