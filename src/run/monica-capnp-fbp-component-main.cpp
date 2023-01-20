@@ -29,7 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "tools/helper.h"
 #include "tools/debug.h"
-#include "common/rpc-connections.h"
+#include "common/rpc-connection-manager.h"
 #include "common/common.h"
 
 #include "run-monica-capnp.h"
