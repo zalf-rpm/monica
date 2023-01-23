@@ -4,13 +4,13 @@
 			"path": "."
 		},
 		{
-			"path": "../util"
-		},
-		{
-			"path": "../mas-infrastructure"
-		},
-		{
 			"path": "../monica-parameters"
+		},
+		{
+			"path": "../mas-infrastructure/capnproto_schemas"
+		},
+		{
+			"path": "../mas-infrastructure/src/cpp"
 		}
 	],
 	"settings": {

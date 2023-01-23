@@ -74,7 +74,7 @@ public:
     auto outp = conMan.tryConnectB(ioContext, outSr.cStr()).castAs<Channel::ChanWriter>();
     //auto runMonicaClient = conMan.tryConnectB(ioContext, "capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
 
-    auto runMonica = kj::heap<RunMonica>(nullptr, startedServerInDebugMode);
+    auto runMonica = kj::heap<RunMonica>(startedServerInDebugMode);
     MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
 
     try 

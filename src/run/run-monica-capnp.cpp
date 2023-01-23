@@ -130,7 +130,7 @@ J11Array fromCapnpSoilProfile(mas::schema::soil::Profile::Reader profile) {
   return ls;
 }
 
-RunMonica::RunMonica(mas::infrastructure::common::Restorer* restorer, bool startedServerInDebugMode) 
+RunMonica::RunMonica(bool startedServerInDebugMode, mas::infrastructure::common::Restorer *restorer) 
   : _restorer(restorer)
   ,  _startedServerInDebugMode(startedServerInDebugMode) 
 {
@@ -262,8 +262,7 @@ kj::Promise<void> RunMonica::stop(StopContext context) //override
 // save @0 SaveParams -> SaveResults;
 kj::Promise<void> RunMonica::save(SaveContext context) {
   KJ_LOG(INFO, "save message received");
-  if(_restorer)
-  {
+  if(_restorer) {
     _restorer->save(_client, context.getResults().initSturdyRef(), context.getResults().initUnsaveSR());
   }
   return kj::READY_NOW;

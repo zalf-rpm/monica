@@ -32,7 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
-#include "common/rpc-connections.h"
+#include "common/rpc-connection-manager.h"
 
 #include "run-monica.h"
 #include "tools/debug.h"

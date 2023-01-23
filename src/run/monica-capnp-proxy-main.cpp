@@ -30,7 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "tools/debug.h"
 //#include "db/abstract-db-connections.h"
-#include "common/rpc-connections.h"
+#include "common/rpc-connection-manager.h"
 
 #include "run-monica-capnp.h"
 
@@ -204,7 +204,7 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool 
 	return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
 		kj::AsyncIoProvider& ioProvider, kj::AsyncIoStream& stream, kj::WaitScope& waitScope) {
 			capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
-			auto server = makeRpcServer(network, kj::heap<RunMonica>(new infrastructure::common::Restorer(), startMonicaThreadsInDebugMode));
+			auto server = makeRpcServer(network, kj::heap<RunMonica>(startMonicaThreadsInDebugMode, new mas::infrastructure::common::Restorer()));
 			network.onDisconnect().wait(waitScope);
 		});
 }

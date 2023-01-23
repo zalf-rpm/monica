@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "crop.h"
+
 #include <map>
 #include <sstream>
 #include <iostream>
@@ -29,8 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica-parameters.h"
 #include "tools/debug.h"
 //#include "../io/database-io.h"
-
-#include "crop.h"
 
 using namespace std;
 using namespace monica;

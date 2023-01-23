@@ -33,7 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "env-from-json-config.h"
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
-#include "common/rpc-connections.h"
+#include "common/rpc-connection-manager.h"
 //#include "db/abstract-db-connections.h"
 
 using namespace std;

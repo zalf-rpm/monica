@@ -20,9 +20,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/string.h>
 #include <kj/thread.h>
 
-//#include <capnp/rpc-twoparty.h>
-
 #include "common/common.h"
+#include "common/restorer.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
@@ -36,7 +35,7 @@ namespace monica
   class RunMonica final : public MonicaEnvInstance::Server
   {
   public:
-    RunMonica(mas::infrastructure::common::Restorer* restorer, bool startedServerInDebugMode = false); 
+    RunMonica(bool startedServerInDebugMode = false, mas::infrastructure::common::Restorer* restorer = nullptr); 
 
     kj::StringPtr getId() const { return _id; }
     void setId(kj::StringPtr id) { _id = kj::str(id); }
@@ -61,6 +60,8 @@ namespace monica
 
     //save @0 () -> (sturdyRef :Text, unsaveSR :Text);
     kj::Promise<void> save(SaveContext context) override;
+
+    void setRestorer(mas::infrastructure::common::Restorer* restorer){  _restorer = restorer; }
 
   private:
     // Implementation of the Model::Instance Cap'n Proto interface
