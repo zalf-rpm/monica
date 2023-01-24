@@ -28,10 +28,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "tools/date.h"
 #include "json11/json11-helper.h"
-#include "../core/monica-parameters.h"
+#include "monica-parameters.h"
 
 namespace monica
 {
+
 class Crop : public Tools::Json11Serializable
 {
 public:

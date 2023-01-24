@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "soiltransport.h"
+
 #include <algorithm> //for min, max
 #include <iostream>
 #include <cmath>
@@ -22,9 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "soilmoisture.h"
 #include "soilcolumn.h"
-#include "soiltransport.h"
 #include "crop-module.h"
-#include "tools/debug.h"
 #include "tools/debug.h"
 
 using namespace std;

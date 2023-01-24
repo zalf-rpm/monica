@@ -16,18 +16,17 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 //This code is based on kernels/mobile/modules/physiology/vocjjv/vocguenther.h
 /*!
  * @brief
- *    This gas exchange module calculates only
- *    emission of biogenetic volatile organic compounds.
+ *  This gas exchange module calculates only
+ *  emission of biogenetic volatile organic compounds.
  *
- *    implemented by: Ruediger Grote (RG), IMK-IFU Garmisch-Partenkirchen,
- *                    ruediger.grote@imk.fzk.de
+ *  implemented by: Ruediger Grote (RG), IMK-IFU Garmisch-Partenkirchen,
+ *          ruediger.grote@imk.fzk.de
  *
  * @author
- *    ruediger grote
+ *  ruediger grote
  */
 
-#ifndef  VOC_GUENTHER_H_
-#define  VOC_GUENTHER_H_
+#pragma once
 
 #include <map>
 #include <vector>
@@ -35,19 +34,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "voc-common.h"
 
-namespace Voc
-{
-	Emissions calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
-																												 const MicroClimateData& mc,
-																												 double dayFraction = 1.0);
+namespace Voc {
+  Emissions calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+                                                         const MicroClimateData& mc,
+                                                         double dayFraction = 1.0);
 
-	inline Emissions calculateGuentherVOCEmissions(const SpeciesData& species,
-																								 const MicroClimateData& mc,
-																								 double dayFraction = 1.0)
-	{
-		return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
-	}
+  inline Emissions calculateGuentherVOCEmissions(const SpeciesData& species,
+                                                 const MicroClimateData& mc,
+                                                 double dayFraction = 1.0)
+  {
+    return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
+  }
 }
-
-#endif
 

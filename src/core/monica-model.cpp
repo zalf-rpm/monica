@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "monica-model.h"
+
 #include <cstdlib>
 #include <iostream>
 #include <algorithm>
@@ -28,7 +30,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 
 #include "tools/debug.h"
-#include "monica-model.h"
 #include "climate/climate-common.h"
 //#include "db/abstract-db-connections.h"
 #include "voc-common.h"

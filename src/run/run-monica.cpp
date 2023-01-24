@@ -14,6 +14,7 @@ Currently maintained by the authors.
 This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
+#include "run-monica.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -34,10 +35,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_state.capnp.h"
 #include "common/rpc-connection-manager.h"
 
-#include "run-monica.h"
 #include "tools/debug.h"
 #include "climate/climate-common.h"
-//#include "db/abstract-db-connections.h"
 #include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "../io/build-output.h"

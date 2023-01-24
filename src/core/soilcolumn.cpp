@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "soilcolumn.h"
+
 #include <cmath>
 #include <algorithm>
 
@@ -30,7 +32,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  */
 
 #include "crop-module.h"
-#include "soilcolumn.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
 

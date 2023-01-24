@@ -15,13 +15,14 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "soilmoisture.h"
+
 #include <algorithm> //for min, max
 #include <iostream>
 #include <cmath>
 
 #include "frost-component.h"
 #include "snow-component.h"
-#include "soilmoisture.h"
 #include "soilcolumn.h"
 #include "crop-module.h"
 #include "monica-model.h"

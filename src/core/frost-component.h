@@ -23,54 +23,54 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica 
 {
-  class SoilColumn;
-	
-  class FrostComponent
-  {
-    public:
-      FrostComponent(SoilColumn& sc,
-                     double pm_HydraulicConductivityRedux,
-                     double p_timeStep);
+class SoilColumn;
 
-      FrostComponent(SoilColumn& sc, mas::schema::model::monica::FrostModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
-      void deserialize(mas::schema::model::monica::FrostModuleState::Reader reader);
-      void serialize(mas::schema::model::monica::FrostModuleState::Builder builder) const;
+class FrostComponent
+{
+  public:
+    FrostComponent(SoilColumn& sc,
+                    double pm_HydraulicConductivityRedux,
+                    double p_timeStep);
 
-      void calcSoilFrost(double mean_air_temperature, double snow_depth);
-      double getFrostDepth() const { return vm_FrostDepth; }
-      double getThawDepth() const { return vm_ThawDepth; }
-      double getLambdaRedux(size_t layer) const { return vm_LambdaRedux[layer]; }
-      double getAccumulatedFrostDepth() const { return vm_accumulatedFrostDepth; }
-      double getTemperatureUnderSnow() const { return vm_TemperatureUnderSnow; }
-      double calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth) const;
+    FrostComponent(SoilColumn& sc, mas::schema::model::monica::FrostModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
+    void deserialize(mas::schema::model::monica::FrostModuleState::Reader reader);
+    void serialize(mas::schema::model::monica::FrostModuleState::Builder builder) const;
 
-    private:
-      double getMeanBulkDensity();
-      double getMeanFieldCapacity();
-      double calcHeatConductivityFrozen(double mean_bulk_density, double sii);
-      double calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity);
-      double calcSii(double mean_field_capacity);
-      double calcThawDepth(double temperature_under_snow, double heat_conductivity_unfrozen, double mean_field_capacity);
-      double calcFrostDepth(double mean_field_capacity, double heat_conductivity_frozen, double temperature_under_snow);
-      void updateLambdaRedux();
+    void calcSoilFrost(double mean_air_temperature, double snow_depth);
+    double getFrostDepth() const { return vm_FrostDepth; }
+    double getThawDepth() const { return vm_ThawDepth; }
+    double getLambdaRedux(size_t layer) const { return vm_LambdaRedux[layer]; }
+    double getAccumulatedFrostDepth() const { return vm_accumulatedFrostDepth; }
+    double getTemperatureUnderSnow() const { return vm_TemperatureUnderSnow; }
+    double calcTemperatureUnderSnow(double mean_air_temperature, double snow_depth) const;
 
-      SoilColumn& soilColumn;
-      double vm_FrostDepth{0.0};
-      double vm_accumulatedFrostDepth{0.0};
-      double vm_NegativeDegreeDays{0.0}; //!< Counts negative degree-days under snow
-      double vm_ThawDepth{0.0};
-      int vm_FrostDays{0};
-      std::vector<double> vm_LambdaRedux; //!< Reduction factor for Lambda []
-      double vm_TemperatureUnderSnow{0.0};
+  private:
+    double getMeanBulkDensity();
+    double getMeanFieldCapacity();
+    double calcHeatConductivityFrozen(double mean_bulk_density, double sii);
+    double calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity);
+    double calcSii(double mean_field_capacity);
+    double calcThawDepth(double temperature_under_snow, double heat_conductivity_unfrozen, double mean_field_capacity);
+    double calcFrostDepth(double mean_field_capacity, double heat_conductivity_frozen, double temperature_under_snow);
+    void updateLambdaRedux();
+
+    SoilColumn& soilColumn;
+    double vm_FrostDepth{0.0};
+    double vm_accumulatedFrostDepth{0.0};
+    double vm_NegativeDegreeDays{0.0}; //!< Counts negative degree-days under snow
+    double vm_ThawDepth{0.0};
+    int vm_FrostDays{0};
+    std::vector<double> vm_LambdaRedux; //!< Reduction factor for Lambda []
+    double vm_TemperatureUnderSnow{0.0};
 
 
-      // user defined or data base parameter
-      double vm_HydraulicConductivityRedux{0.0};
-      double pt_TimeStep{0.0};
+    // user defined or data base parameter
+    double vm_HydraulicConductivityRedux{0.0};
+    double pt_TimeStep{0.0};
 
-      double pm_HydraulicConductivityRedux{0.0};
-  };
+    double pm_HydraulicConductivityRedux{0.0};
+};
 
-}
+} // namespace monica
 
 

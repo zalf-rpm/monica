@@ -17,43 +17,39 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 //original header
 /*!
  * @brief
- *    This gas exchange module calculates only
- *    emission of biogenic volatile organic compounds.
+ *  This gas exchange module calculates only
+ *  emission of biogenic volatile organic compounds.
  *
- *    implemented by: Felix Wiß (fw), IMK-IFU Garmisch-Partenkirchen, felix.wiss@kit.edu
- *                    edited from the original mobile2d vocjjv model implemented by
- *                    Ruediger Grote (rg), IMK-IFU Garmisch-Partenkirchen, ruediger.grote@kit.edu
+ *  implemented by: Felix Wiß (fw), IMK-IFU Garmisch-Partenkirchen, felix.wiss@kit.edu
+ *          edited from the original mobile2d vocjjv model implemented by
+ *          Ruediger Grote (rg), IMK-IFU Garmisch-Partenkirchen, ruediger.grote@kit.edu
  *
  * @date
- *    20.02.2015
+ *  20.02.2015
  *
  * @author
- *    ruediger grote (rg)
- *    felix wiß (fw)
+ *  ruediger grote (rg)
+ *  felix wiß (fw)
  */
 
-#ifndef  VOC_JJV_H_
-#define  VOC_JJV_H_
+#pragma once
 
 #include <vector>
 
 #include "voc-common.h"
 
-namespace Voc
-{
-	Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, CPData>> speciesData,
-																										const MicroClimateData& mcd,
-																										double dayFraction = 1.0,
-																										bool calculateParTempTerm = false);
+namespace Voc {
+  Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, CPData>> speciesData,
+                                                    const MicroClimateData& mcd,
+                                                    double dayFraction = 1.0,
+                                                    bool calculateParTempTerm = false);
 
-	inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
-																						const MicroClimateData& mcd,
-																						CPData cpdata,
-																						double dayFraction = 1.0,
-																						bool calculateParTempTerm = false)
-	{
-		return calculateJJVVOCEmissionsMultipleSpecies({std::make_pair(sd, cpdata)}, mcd, dayFraction, calculateParTempTerm);
-	}
+  inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
+                                            const MicroClimateData& mcd,
+                                            CPData cpdata,
+                                            double dayFraction = 1.0,
+                                            bool calculateParTempTerm = false)
+  {
+    return calculateJJVVOCEmissionsMultipleSpecies({std::make_pair(sd, cpdata)}, mcd, dayFraction, calculateParTempTerm);
+  }
 }
-
-#endif  

@@ -14,12 +14,12 @@ Currently maintained by the authors.
 This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
+#include "snow-component.h"
 
 #include <algorithm> //for min, max
 #include <iostream>
 #include <cmath>
 
-#include "snow-component.h"
 #include "soilcolumn.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"

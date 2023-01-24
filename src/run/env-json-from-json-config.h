@@ -13,8 +13,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef MONICA_ENV_JSON_FROM_JSON_CONFIG_H
-#define MONICA_ENV_JSON_FROM_JSON_CONFIG_H
+#pragma once
 
 #include <string>
 
@@ -23,8 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"
 
-namespace monica
-{
+namespace monica {
 	Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json& root, 
 																												const json11::Json& j);
 
@@ -32,5 +30,3 @@ namespace monica
 
   json11::Json createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
 }
-
-#endif //MONICA_ENV_FROM_JSON_H

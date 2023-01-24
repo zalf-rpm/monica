@@ -27,29 +27,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MONICA_EOM_H
-#define MONICA_EOM_H
+#pragma once
 
 #include "eom/src/eom-typedefs.h"
 
 namespace monica
 {
-  enum TillageType { plough = 1, conserving = 2, noTillage = 3 };
+  
+enum TillageType { plough = 1, conserving = 2, noTillage = 3 };
 
-  struct EomPVPInfo
-  {
-    EomPVPInfo()
-      : pvpId(-1), cropId(-1), tillageType(plough),
-      crossCropAdaptionFactor(0.0) {}
-    Eom::PVPId pvpId;
-		int cropId;
-    TillageType tillageType;
-    double crossCropAdaptionFactor;
-  };
+struct EomPVPInfo
+{
+  EomPVPInfo()
+    : pvpId(-1), cropId(-1), tillageType(plough),
+    crossCropAdaptionFactor(0.0) {}
+  Eom::PVPId pvpId;
+  int cropId;
+  TillageType tillageType;
+  double crossCropAdaptionFactor;
+};
 
-  EomPVPInfo eomPVPId2cropId(Eom::PVPId pvpId);
+EomPVPInfo eomPVPId2cropId(Eom::PVPId pvpId);
 
-  std::string eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
-}
+std::string eomOrganicFertilizerId2monicaOrganicFertilizerId(int eomId);
 
-#endif
+} // namespace monica

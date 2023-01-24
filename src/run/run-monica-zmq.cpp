@@ -15,6 +15,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "run-monica-zmq.h"
+
 #include <cstdlib>
 #include <iostream>
 #include <algorithm>
@@ -29,7 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "zeromq/zmq-helper.h"
 #include "json11/json11.hpp"
-#include "run-monica-zmq.h"
 #include "cultivation-method.h"
 #include "tools/debug.h"
 
@@ -42,52 +43,52 @@ using namespace Soil;
 //-----------------------------------------------------------------------------
 
 Json monica::sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
-																			string socketAddress,
-																			Json envJson)
+                                      string socketAddress,
+                                      Json envJson)
 {
-	Json res;
+  Json res;
 
-	zmq::socket_t socket(*zmqContext, ZMQ_REQ);// ZMQ_PUSH);
-	debug() << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
-	try
-	{
-		socket.connect(socketAddress);
-		//socket.bind(socketAddress);
-		debug() << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
+  zmq::socket_t socket(*zmqContext, ZMQ_REQ);// ZMQ_PUSH);
+  debug() << "MONICA: connecting monica zeromq request socket to address: " << socketAddress << endl;
+  try
+  {
+    socket.connect(socketAddress);
+    //socket.bind(socketAddress);
+    debug() << "MONICA: connected monica zeromq request socket to address: " << socketAddress << endl;
 
-		//string s = envJson.dump();
+    //string s = envJson.dump();
 
-		try
-		{
-			if(s_send(socket, envJson.dump()))
-			{
-				try
-				{
-					auto msg = receiveMsg(socket);
-					res = msg.json;
-				}
-				catch(zmq::error_t e)
-				{
-					cerr
-						<< "Exception on trying to receive reply message on zmq socket with address: "
-						<< socketAddress << "! Error: [" << e.what() << "]" << endl;
-				}
-			}
-		}
-		catch(zmq::error_t e)
-		{
-			cerr
-				<< "Exception on trying to request MONICA run with message on zmq socket with address: "
-				<< socketAddress << "! Error: [" << e.what() << "]" << endl;
-		}
-	}
-	catch(zmq::error_t e)
-	{
-		cerr << "Coulnd't connect socket to address: " << socketAddress << "! Error: " << e.what() << endl;
-	}
+    try
+    {
+      if(s_send(socket, envJson.dump()))
+      {
+        try
+        {
+          auto msg = receiveMsg(socket);
+          res = msg.json;
+        }
+        catch(zmq::error_t e)
+        {
+          cerr
+            << "Exception on trying to receive reply message on zmq socket with address: "
+            << socketAddress << "! Error: [" << e.what() << "]" << endl;
+        }
+      }
+    }
+    catch(zmq::error_t e)
+    {
+      cerr
+        << "Exception on trying to request MONICA run with message on zmq socket with address: "
+        << socketAddress << "! Error: [" << e.what() << "]" << endl;
+    }
+  }
+  catch(zmq::error_t e)
+  {
+    cerr << "Coulnd't connect socket to address: " << socketAddress << "! Error: " << e.what() << endl;
+  }
 
-	debug() << "exiting sendZmqRequestMonicaFull" << endl;
-	return res;
+  debug() << "exiting sendZmqRequestMonicaFull" << endl;
+  return res;
 }
 
 //-----------------------------------------------------------------------------

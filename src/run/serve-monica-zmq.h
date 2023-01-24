@@ -13,8 +13,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef SERVE_MONICA_ZMQ_H_
-#define SERVE_MONICA_ZMQ_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -33,25 +32,25 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica
 {
-	namespace ZmqServer
-	{
-		//void startZeroMQMonica(zmq::context_t* zmqContext,
-		//											 std::string inputSocketAddress,
-		//											 std::string outputSocketAddress,
-		//											 bool isInProcess = false);
+  namespace ZmqServer
+  {
+    //void startZeroMQMonica(zmq::context_t* zmqContext,
+    //											 std::string inputSocketAddress,
+    //											 std::string outputSocketAddress,
+    //											 bool isInProcess = false);
 
-		enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer };
-		enum SocketRole { ReceiveJob, SendResult, Control };
-		enum SocketOp { bind, connect };
-		struct SocketConfig
-		{
-			SocketType type;
-			std::vector<std::string> addresses;
-			SocketOp op;
-		};
-		void serveZmqMonicaFull(zmq::context_t* zmqContext,
-														std::map<SocketRole, SocketConfig> socketAddresses);
-	}
-}
+    enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer };
+    enum SocketRole { ReceiveJob, SendResult, Control };
+    enum SocketOp { bind, connect };
+    struct SocketConfig
+    {
+      SocketType type;
+      std::vector<std::string> addresses;
+      SocketOp op;
+    };
+    void serveZmqMonicaFull(zmq::context_t* zmqContext,
+                            std::map<SocketRole, SocketConfig> socketAddresses);
+  }
 
-#endif
+} // namespace monica
+

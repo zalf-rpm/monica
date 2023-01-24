@@ -13,8 +13,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef RUN_MONICA_ZMQ_H_
-#define RUN_MONICA_ZMQ_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -31,11 +30,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "json11/json11-helper.h"
 
-namespace monica
-{
-	json11::Json sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
-																				std::string socketAddress,
-																				json11::Json envJson);
+namespace monica {
+  json11::Json sendZmqRequestMonicaFull(zmq::context_t* zmqContext, 
+                                        std::string socketAddress,
+                                        json11::Json envJson);
 }
-
-#endif

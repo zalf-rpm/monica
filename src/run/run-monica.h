@@ -15,8 +15,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef RUN_MONICA_H_
-#define RUN_MONICA_H_
+#pragma once
 
 #include <ostream>
 #include <vector>
@@ -32,138 +31,137 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica
 {
-	struct CropRotation : public Tools::Json11Serializable
-	{
-		CropRotation() {}
+  struct CropRotation : public Tools::Json11Serializable
+  {
+    CropRotation() {}
 
-		CropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation)
-			: start(start), end(end), cropRotation(cropRotation)
-		{}
+    CropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation)
+      : start(start), end(end), cropRotation(cropRotation)
+    {}
 
-		CropRotation(json11::Json object);
+    CropRotation(json11::Json object);
 
-		virtual Tools::Errors merge(json11::Json j);
+    virtual Tools::Errors merge(json11::Json j);
 
-		virtual json11::Json to_json() const;
+    virtual json11::Json to_json() const;
 
-		Tools::Date start, end;
-		std::vector<CultivationMethod> cropRotation;
-	};
+    Tools::Date start, end;
+    std::vector<CultivationMethod> cropRotation;
+  };
 
-	//----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
 
-	struct DLL_API Env : public Tools::Json11Serializable
-	{
-		Env() {}
+  struct DLL_API Env : public Tools::Json11Serializable
+  {
+    Env() {}
 
-		Env(CentralParameterProvider&& cpp);
+    Env(CentralParameterProvider&& cpp);
 
-		Env(json11::Json object);
-		// construct env from json object
+    Env(json11::Json object);
+    // construct env from json object
 
-		virtual Tools::Errors merge(json11::Json j);
-		// merge a json file into Env
+    virtual Tools::Errors merge(json11::Json j);
+    // merge a json file into Env
 
-		virtual json11::Json to_json() const;
-		// serialize to json
+    virtual json11::Json to_json() const;
+    // serialize to json
 
-		bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
-		// is the output as a list (e.g. days) of an object (holding all the requested data)
+    bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
+    // is the output as a list (e.g. days) of an object (holding all the requested data)
 
-		//! object holding the climate data
-		Climate::DataAccessor climateData;
-		// 1. priority, object holding the climate data
+    //! object holding the climate data
+    Climate::DataAccessor climateData;
+    // 1. priority, object holding the climate data
 
-		std::string climateCSV;
-		// 2nd priority, if climateData not valid, try to read climate data from csv string
+    std::string climateCSV;
+    // 2nd priority, if climateData not valid, try to read climate data from csv string
 
-		std::vector<std::string> pathsToClimateCSV;
-		// 3. priority, if climateCSV is empty, try to load climate data from vector of file paths
+    std::vector<std::string> pathsToClimateCSV;
+    // 3. priority, if climateCSV is empty, try to load climate data from vector of file paths
 
-		json11::Json csvViaHeaderOptions;
-		// the csv options for reading/parsing csv data
+    json11::Json csvViaHeaderOptions;
+    // the csv options for reading/parsing csv data
 
-		std::vector<CultivationMethod> cropRotation, cropRotation2;
-		// vector of elements holding the data of the single crops in the rotation
+    std::vector<CultivationMethod> cropRotation, cropRotation2;
+    // vector of elements holding the data of the single crops in the rotation
 
-		std::vector<CropRotation> cropRotations, cropRotations2;
-		// optionally
+    std::vector<CropRotation> cropRotations, cropRotations2;
+    // optionally
 
-		json11::Json events, events2;
-		// the events section defining the requested outputs
+    json11::Json events, events2;
+    // the events section defining the requested outputs
 
-		json11::Json outputs;
-		// the whole outputs section
+    json11::Json outputs;
+    // the whole outputs section
 
-		json11::Json customId;
-		// id identifiying this particular run
+    json11::Json customId;
+    // id identifiying this particular run
 
-		std::string sharedId;
-		// shared id between runs belonging together
+    std::string sharedId;
+    // shared id between runs belonging together
 
-		CentralParameterProvider params;
+    CentralParameterProvider params;
 
-		std::string toString() const;
+    std::string toString() const;
 
-		std::string berestRequestAddress;
+    std::string berestRequestAddress;
 
-		bool debugMode{false};
+    bool debugMode{false};
 
-		Intercropping ic;
-	};
+    Intercropping ic;
+  };
 
   //------------------------------------------------------------------------------------------
 
-	struct Spec : public Tools::Json11Serializable
-	{
-		Spec() {}
+  struct Spec : public Tools::Json11Serializable
+  {
+    Spec() {}
 
-		Spec(json11::Json j) { merge(j); }
+    Spec(json11::Json j) { merge(j); }
 
-		virtual Tools::Errors merge(json11::Json j);
+    virtual Tools::Errors merge(json11::Json j);
 
-		std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
+    std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
 
-		virtual json11::Json to_json() const { return origSpec; }
+    virtual json11::Json to_json() const { return origSpec; }
 
-		json11::Json origSpec;
+    json11::Json origSpec;
 
-		std::function<bool(const MonicaModel&)> startf;
-		std::function<bool(const MonicaModel&)> endf;
-		std::function<bool(const MonicaModel&)> fromf;
-		std::function<bool(const MonicaModel&)> tof;
-		std::function<bool(const MonicaModel&)> atf;
-		std::function<bool(const MonicaModel&)> whilef;
-	};
+    std::function<bool(const MonicaModel&)> startf;
+    std::function<bool(const MonicaModel&)> endf;
+    std::function<bool(const MonicaModel&)> fromf;
+    std::function<bool(const MonicaModel&)> tof;
+    std::function<bool(const MonicaModel&)> atf;
+    std::function<bool(const MonicaModel&)> whilef;
+  };
 
-	struct StoreData
-	{
-		void aggregateResults();
-		void aggregateResultsObj();
-		void storeResultsIfSpecApplies(const MonicaModel& monica, bool storeObjOutputs = false);
+  struct StoreData
+  {
+    void aggregateResults();
+    void aggregateResultsObj();
+    void storeResultsIfSpecApplies(const MonicaModel& monica, bool storeObjOutputs = false);
 
-		Tools::Maybe<bool> withinEventStartEndRange;
-		Tools::Maybe<bool> withinEventFromToRange;
-		Spec spec;
-		std::vector<OId> outputIds;
-		std::vector<Tools::J11Array> intermediateResults;
-		std::vector<Tools::J11Array> results;
-		std::vector<Tools::J11Object> resultsObj;
-	};
+    Tools::Maybe<bool> withinEventStartEndRange;
+    Tools::Maybe<bool> withinEventFromToRange;
+    Spec spec;
+    std::vector<OId> outputIds;
+    std::vector<Tools::J11Array> intermediateResults;
+    std::vector<Tools::J11Array> results;
+    std::vector<Tools::J11Object> resultsObj;
+  };
 
-	//----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
 
-	//! can be called initially to set alternative path for the MONICA dll/so to db-connections.ini
-	//DLL_API void initPathToDB(const std::string& initialPathToIniFile = "db-connections.ini");
+  //! can be called initially to set alternative path for the MONICA dll/so to db-connections.ini
+  //DLL_API void initPathToDB(const std::string& initialPathToIniFile = "db-connections.ini");
 
   //std::pair<Tools::Date, std::map<Climate::ACD, double>>
   //climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);
 
   //! main function for running monica under a given Env(ironment)
-	//! @param env the environment completely defining what the model needs and gets
-	//! @return a structure with all the Monica results
+  //! @param env the environment completely defining what the model needs and gets
+  //! @return a structure with all the Monica results
   DLL_API std::pair<Output, Output> runMonicaIC(Env env, bool isIntercropping = true);
   DLL_API Output runMonica(Env env);
-}
-
-#endif
+  
+} // namespace monica

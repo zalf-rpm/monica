@@ -13,8 +13,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef MONICA_ENV_FROM_JSON_CONFIG_H
-#define MONICA_ENV_FROM_JSON_CONFIG_H
+#pragma once
 
 #include <string>
 
@@ -24,9 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "env-json-from-json-config.h"
 
-namespace monica
-{
+namespace monica {
 	Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 }
 
-#endif //MONICA_ENV_FROM_JSON_CONFIG_H

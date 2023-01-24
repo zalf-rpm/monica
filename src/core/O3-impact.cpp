@@ -15,6 +15,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include  "O3-impact.h"
+
 #include <tuple>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -84,7 +85,7 @@ double O3_recovery_factor_leaf_age(double reldev)
 
 double O3_senescence_factor(double gamma3, double O3_tot_up)
 {
-	//O3_tot_up µmol m - 2
+	//O3_tot_up ï¿½mol m - 2
 	//factor accounting for both onset and rate of senescence
 	double fO3l = std::max(0.5, 1.0 - gamma3 * O3_tot_up); //0.5 is arbitrary
 	return fO3l;
@@ -212,7 +213,7 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par, 
 	}
 	
 	double inst_O3_up = O3_uptake(in.O3a, in.gs, out.WS_st_clos); //nmol m-2 s-1
-	out.hourly_O3_up += inst_O3_up / 1000; //from nmol to µmol //* 3.6; //3.6 converts from nmol to µmol and from s-1 to h-1	
+	out.hourly_O3_up += inst_O3_up / 1000; //from nmol to ï¿½mol //* 3.6; //3.6 converts from nmol to ï¿½mol and from s-1 to h-1	
 	double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 	
 	//short term O3 effect on Ac	

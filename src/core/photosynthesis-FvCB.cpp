@@ -14,12 +14,13 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "photosynthesis-FvCB.h"
+
 #include <tuple>
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <iostream>
 
-#include  "photosynthesis-FvCB.h"
 #include "tools/helper.h"
 
 using namespace FvCB;
@@ -543,12 +544,12 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);	
 	double hourly_diffuse_rad = in.global_rad * diffuse_fraction;
 	double hourly_direct_rad = in.global_rad - hourly_diffuse_rad;
-	double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //µmol m - 2 s - 1 (unit ground area)
-	double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //1 W m-2 = 4.56 µmol m-2 s-1; PAR = 0.45 * global radiation 
+	double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //ï¿½mol m - 2 s - 1 (unit ground area)
+	double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //1 W m-2 = 4.56 ï¿½mol m-2 s-1; PAR = 0.45 * global radiation 
 	
 	//2. calculate Radiation absorbed by sunlit / shaded canopy
-	double Ic_sun = Ic_sun_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //µmol m - 2 s - 1 (unit ground area)
-	double Ic_sh = Ic_shade_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //µmol m - 2 s - 1 (unit ground area)
+	double Ic_sun = Ic_sun_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //ï¿½mol m - 2 s - 1 (unit ground area)
+	double Ic_sh = Ic_shade_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //ï¿½mol m - 2 s - 1 (unit ground area)
 
 	//2.1. calculate sunlit/shaded LAI
 	std::tuple<double, double> sun_shade_LAI = LAI_sunlit_shaded_f(in.LAI, in.solar_el);
@@ -568,12 +569,12 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	//-------------------
 	//3. canopy photosynthetic capacity
 	double Vcmax = Vcmax_bernacchi_f(in.leaf_temp, par.Vcmax_25);
-	double Vcmax_25 = Vcmax_bernacchi_f(25.0, par.Vcmax_25); //the value at 25°C calculated with bernacchi slightly deviates from par.Vcmax_25
+	double Vcmax_25 = Vcmax_bernacchi_f(25.0, par.Vcmax_25); //the value at 25ï¿½C calculated with bernacchi slightly deviates from par.Vcmax_25
 
 	//test
 	//Vcmax = 100.0;
 		
-	double Vc_25 = canopy_ps_capacity_f(in.LAI, Vcmax_25, par.kn); //µmol m - 2 s - 1 (unit ground area)
+	double Vc_25 = canopy_ps_capacity_f(in.LAI, Vcmax_25, par.kn); //ï¿½mol m - 2 s - 1 (unit ground area)
 	double Vc_sun_25 = canopy_ps_capacity_sunlit_f(in.LAI, in.solar_el, Vcmax_25, par.kn);
 	double Vc_sh_25 = Vc_25 - Vc_sun_25;
 	double Vc = canopy_ps_capacity_f(in.LAI, Vcmax, par.kn); 
@@ -582,20 +583,20 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	//cout << Vc << endl;
 
 	//4. canopy electron transport capacity
-	double Jmax_c_sun_25 = 1.6 * Vc_sun_25; // µmol m - 2 s - 1 (unit ground area)
+	double Jmax_c_sun_25 = 1.6 * Vc_sun_25; // ï¿½mol m - 2 s - 1 (unit ground area)
 	double Jmax_c_sh_25 = 1.6 * Vc_sh_25; 
 	
 	double Jmax_c_sun = Jmax_bernacchi_f(in.leaf_temp, Jmax_c_sun_25);
 	double Jmax_c_sh = Jmax_bernacchi_f(in.leaf_temp, Jmax_c_sh_25);
 	out.jmax_c = Jmax_c_sun + Jmax_c_sh;
 
-	double J_c_sun = J_bernacchi_f(Ic_sun, in.leaf_temp, Jmax_c_sun); //µmol m - 2 s - 1 (unit ground area)
+	double J_c_sun = J_bernacchi_f(Ic_sun, in.leaf_temp, Jmax_c_sun); //ï¿½mol m - 2 s - 1 (unit ground area)
 	double J_c_sh = J_bernacchi_f(Ic_sh, in.leaf_temp, Jmax_c_sh);
-	//double J_c_sun = J_grote_f(Ic_sun, Jmax_c_sun); //µmol m - 2 s - 1 (unit ground area)
+	//double J_c_sun = J_grote_f(Ic_sun, Jmax_c_sun); //ï¿½mol m - 2 s - 1 (unit ground area)
 	//double J_c_sh = J_grote_f(Ic_sh, Jmax_c_sh);
 	
 	//5. canopy respiration
-	double Rd_sun = Rd_bernacchi_f(in.leaf_temp)* out.sunlit.LAI; //µmol m - 2 s - 1 (unit ground area)
+	double Rd_sun = Rd_bernacchi_f(in.leaf_temp)* out.sunlit.LAI; //ï¿½mol m - 2 s - 1 (unit ground area)
 	double Rd_sh = Rd_bernacchi_f(in.leaf_temp)* out.shaded.LAI;
 
 	out.canopy_resp = (Rd_sun + Rd_sh) * 3600.0;
@@ -614,7 +615,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 	out.sunlit.oi = out.shaded.oi = Oi_f(in.leaf_temp);
 	out.sunlit.comp = gamma_sun; 
 	out.shaded.comp = gamma_sh;
-	//out.sunlit.rad = Ic_sun / 4.56 / 0.45 / 0.860; //W m - 2 (glob rad, 1 W m-2 = 4.56 µmol m-2 s-1; PAR = 0.45 * global radiation, 0.860 = adsorberd fraction in JJV model)
+	//out.sunlit.rad = Ic_sun / 4.56 / 0.45 / 0.860; //W m - 2 (glob rad, 1 W m-2 = 4.56 ï¿½mol m-2 s-1; PAR = 0.45 * global radiation, 0.860 = adsorberd fraction in JJV model)
 	//out.shaded.rad = Ic_sh / 4.56 / 0.45 / 0.860; //W m-2
 	double hourly_globrad = in.global_rad * pow(10, 6) / 3600.0; //W m - 2
 	out.sunlit.rad = hourly_globrad > 0 ? hourly_globrad * Ic_sun / (Ic_sun + Ic_sh): 0.0;
@@ -673,10 +674,10 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 		Lumped_Coeffs lumped_el_sh = calculate_lumped_coeffs(std::get<0>(x1_x2_el_sh), std::get<1>(x1_x2_el_sh), fVPD, in.Ca, gamma_sh, Rd_sh, g0_sh, gm_sh, gb_sh);
 
 		//6.3 calculate assimilation
-		double A_rub_sun = A1_f(lumped_rub_sun); //µmol CO2 m-2 s-1 (unit ground area)
+		double A_rub_sun = A1_f(lumped_rub_sun); //ï¿½mol CO2 m-2 s-1 (unit ground area)
 		double A_el_sun = A1_f(lumped_el_sun);
 
-		double A_rub_sh = A1_f(lumped_rub_sh); //µmol CO2 m-2 s-1 (unit ground area)
+		double A_rub_sh = A1_f(lumped_rub_sh); //ï¿½mol CO2 m-2 s-1 (unit ground area)
 		double A_el_sh = A1_f(lumped_el_sh);
 
 #ifdef TEST_FVCB_HOURLY_OUTPUT

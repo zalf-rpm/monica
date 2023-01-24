@@ -13,6 +13,8 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include "run-monica-capnp.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -34,8 +36,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "tools/helper.h"
-
-//#include "db/abstract-db-connections.h"
 #include "tools/debug.h"
 #include "run-monica.h"
 #include "../core/monica-model.h"
@@ -49,8 +49,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
-
-#include "run-monica-capnp.h"
 
 #include "common/sole.hpp"
 
