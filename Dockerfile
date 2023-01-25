@@ -27,7 +27,7 @@ WORKDIR ${WORK_DIR}
 RUN python build-pipeline/buildscripts/incrementversion.py "monica/src/resource/version.h" ${VERSION_MAYOR} ${VERSION_MINOR} ${VERSION_PATCH}
 
 WORKDIR ${WORK_DIR}/monica
-RUN sh update_linux_release.sh
+RUN sh create_cmake_release.sh
 
 WORKDIR ${WORK_DIR}/monica/_cmake_release
 RUN make
