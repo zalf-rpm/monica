@@ -38,35 +38,28 @@ using namespace Climate;
 
 const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns();
 
-EResult<Json> monica::findAndReplaceReferences(const Json& root, const Json& j)
-{
+EResult<Json> monica::findAndReplaceReferences(const Json& root, const Json& j) {
   auto sp = supportedPatterns();
 
   //auto jstr = j.dump();
   bool success = true;
   vector<string> errors;
 
-  if(j.is_array() && j.array_items().size() > 0)
-  {
+  if(j.is_array() && j.array_items().size() > 0) {
     J11Array arr;
 
     bool arrayIsReferenceFunction = false;
-    if(j[0].is_string())
-    {
+    if(j[0].is_string()) {
       auto p = sp.find(j[0].string_value());
-      if(p != sp.end())
-      {
+      if(p != sp.end()) {
         arrayIsReferenceFunction = true;
 
         //check for nested function invocations in the arguments
         J11Array funcArr;
-        for(auto i : j.array_items())
-        {
+        for(auto i : j.array_items()) {
           auto r = findAndReplaceReferences(root, i);
           success = success && r.success();
-          if(!r.success())
-            for(auto e : r.errors)
-              errors.push_back(e);
+          if(!r.success()) for(auto e : r.errors) errors.push_back(e);
           funcArr.push_back(r.result);
         }
 
@@ -74,49 +67,35 @@ EResult<Json> monica::findAndReplaceReferences(const Json& root, const Json& j)
         auto jaes = (p->second)(root, funcArr);
 
         success = success && jaes.success();
-        if(!jaes.success())
-          for(auto e : jaes.errors)
-            errors.push_back(e);
+        if(!jaes.success()) for(auto e : jaes.errors) errors.push_back(e);
 
         //if successful try to recurse into result for functions in result
-        if(jaes.success())
-        {
+        if(jaes.success()) {
           auto r = findAndReplaceReferences(root, jaes.result);
           success = success && r.success();
-          if(!r.success())
-            for(auto e : r.errors)
-              errors.push_back(e);
+          if(!r.success()) for(auto e : r.errors) errors.push_back(e);
           return{r.result, errors};
-        }
-        else
-          return{J11Object(), errors};
+        } else return{J11Object(), errors};
       }
     }
 
-    if(!arrayIsReferenceFunction)
-      for(auto jv : j.array_items())
-      {
+    if(!arrayIsReferenceFunction) {
+      for(auto jv : j.array_items()) {
         auto r = findAndReplaceReferences(root, jv);
         success = success && r.success();
-        if(!r.success())
-          for(auto e : r.errors)
-            errors.push_back(e);
+        if(!r.success()) for(auto e : r.errors) errors.push_back(e);
         arr.push_back(r.result);
       }
+    }
 
     return{arr, errors};
-  }
-  else if(j.is_object())
-  {
+  } else if(j.is_object()) {
     J11Object obj;
 
-    for(auto p : j.object_items())
-    {
+    for(auto p : j.object_items()) {
       auto r = findAndReplaceReferences(root, p.second);
       success = success && r.success();
-      if(!r.success())
-        for(auto e : r.errors)
-          errors.push_back(e);
+      if(!r.success()) for(auto e : r.errors) errors.push_back(e);
       obj[p.first] = r.result;
     }
 
@@ -128,21 +107,17 @@ EResult<Json> monica::findAndReplaceReferences(const Json& root, const Json& j)
 
 //-----------------------------------------------------------------------------
 
-const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns()
-{
-  auto ref = [](const Json& root, const Json& j) -> EResult<Json>
-  {
+const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns() {
+  auto ref = [](const Json& root, const Json& j) -> EResult<Json> {
     static map<pair<string, string>, EResult<Json>> cache;
     if(j.array_items().size() == 3
        && j[1].is_string()
-       && j[2].is_string())
-    {
+       && j[2].is_string()) {
       string key1 = j[1].string_value();
       string key2 = j[2].string_value();
 
       auto it = cache.find(make_pair(key1, key2));
-      if(it != cache.end())
-        return it->second;
+      if(it != cache.end()) return it->second;
       
       auto res = findAndReplaceReferences(root, root[key1][key2]);
       cache[make_pair(key1, key2)] = res;
@@ -297,22 +272,18 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
   };
   */
 
-  auto fromFile = [](const Json& root, const Json& j) -> EResult<Json>
-  {
+  auto fromFile = [](const Json& root, const Json& j) -> EResult<Json> {
     string error;
 
     if(j.array_items().size() == 2
-       && j[1].is_string())
-    {
+       && j[1].is_string()) {
       string basePath = string_valueD(root, "include-file-base-path", ".");
       string pathToFile = j[1].string_value();
-      if(!isAbsolutePath(pathToFile))
-        pathToFile = basePath + "/" + pathToFile;
+      if(!isAbsolutePath(pathToFile)) pathToFile = basePath + "/" + pathToFile;
       pathToFile = replaceEnvVars(pathToFile);
       pathToFile = fixSystemSeparator(pathToFile);
       auto jo = readAndParseJsonFile(pathToFile);
-      if(jo.success() && !jo.result.is_null())
-        return{jo.result};
+      if(jo.success() && !jo.result.is_null()) return{jo.result};
       
       return{j, string("Couldn't include file with path: '") + pathToFile + "'!"};
     }
@@ -320,77 +291,61 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
     return{j, string("Couldn't include file with function: ") + j.dump() + "!"};
   };
 
-  auto humus2corg = [](const Json&, const Json& j) -> EResult<Json>
-  {
+  auto humus2corg = [](const Json&, const Json& j) -> EResult<Json> {
     if(j.array_items().size() == 2
-       && j[1].is_number())
-    {
+       && j[1].is_number()) {
       auto ecorg = Soil::humusClass2corg(j[1].int_value());
-      if(ecorg.success())
-        return{ecorg.result};
-      else
-        return{j, ecorg.errors};
+      if(ecorg.success()) return{ecorg.result};
+      else return{j, ecorg.errors};
     }
     return{j, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
   };
 
-  auto bdc2rd = [](const Json&, const Json& j) -> EResult<Json>
-  {
+  auto bdc2rd = [](const Json&, const Json& j) -> EResult<Json> {
     if(j.array_items().size() == 3
        && j[1].is_number()
-       && j[2].is_number())
-    {
+       && j[2].is_number()) {
       auto erd = Soil::bulkDensityClass2rawDensity(j[1].int_value(), j[2].number_value());
-      if(erd.success())
-        return{erd.result};
-      else
-        return{j, erd.errors};
+      if(erd.success()) return{erd.result};
+      else return{j, erd.errors};
     }
     return{j, string("Couldn't convert bulk density class to raw density using function: ") + j.dump() + "!"};
   };
 
-  auto KA52clay = [](const Json&, const Json& j) -> EResult<Json>
-  {
+  auto KA52clay = [](const Json&, const Json& j) -> EResult<Json> {
     if(j.array_items().size() == 2
-       && j[1].is_string())
-    {
+       && j[1].is_string()) {
       auto ec = Soil::KA5texture2clay(j[1].string_value());
-      if(ec.success())
-        return{ec.result};
-      else 
-        return{j, ec.errors};
+      if(ec.success()) return{ec.result};
+      else return{j, ec.errors};
     }
     return{j, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
   };
 
-  auto KA52sand = [](const Json&, const Json& j) -> EResult<Json>
-  {
+  auto KA52sand = [](const Json&, const Json& j) -> EResult<Json> {
     if(j.array_items().size() == 2
-       && j[1].is_string())
-    {
+       && j[1].is_string()) {
       auto es = Soil::KA5texture2sand(j[1].string_value());
-      if(es.success())
-        return{es.result};
-      else
-        return{j, es.errors};
+      if(es.success()) return{es.result};
+      else return{j, es.errors};
     }
     return{j, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};;
   };
 
-  auto sandClay2lambda = [](const Json&, const Json& j) -> EResult<Json>
-  {
+  auto sandClay2lambda = [](const Json&, const Json& j) -> EResult<Json> {
     if(j.array_items().size() == 3
        && j[1].is_number()
-       && j[2].is_number())
+       && j[2].is_number()) {
       return{Soil::sandAndClay2lambda(j[1].number_value(), j[2].number_value())};
+    }
     return{j, string("Couldn't get lambda value from soil sand and clay content: ") + j.dump() + "!"};
   };
 
-  auto percent = [](const Json&, const Json& j) -> EResult<Json>
-  {
+  auto percent = [](const Json&, const Json& j) -> EResult<Json> {
     if(j.array_items().size() == 2
-       && j[1].is_number())
+       && j[1].is_number()) {
       return{j[1].number_value() / 100.0};
+    }
     return{j, string("Couldn't convert percent to decimal percent value: ") + j.dump() + "!"};
   };
 
@@ -414,32 +369,26 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
 
 //-----------------------------------------------------------------------------
 
-Json monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params)
-{
+Json monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params) {
   map<string, Json> ps;
-  for(const auto& p : map<string, string>({{"crop-json-str", "crop"}, {"site-json-str", "site"}, {"sim-json-str", "sim"}}))
+  for(const auto& p : map<string, string>({{"crop-json-str", "crop"}, {"site-json-str", "site"}, {"sim-json-str", "sim"}})) {
     ps[p.second] = printPossibleErrors(parseJsonString(params[p.first]));
+  }
 
   return createEnvJsonFromJsonObjects(ps);
 }
 
-Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params)
-{
+Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params) {
   vector<Json> cropSiteSim;
-  for (auto name : { "crop", "site", "sim" })
-    cropSiteSim.push_back(params[name]);
+  for (auto name : { "crop", "site", "sim" }) cropSiteSim.push_back(params[name]);
 
-  for (auto& j : cropSiteSim)
-    if (j.is_null())
-      return Json();
+  for (auto& j : cropSiteSim) if (j.is_null()) return Json();
 
   string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
 
-  auto addBasePath = [&](Json& j, string basePath)
-  {
+  auto addBasePath = [&](Json& j, string basePath) {
     string err;
-    if (!j.has_shape({ {"include-file-base-path", Json::STRING} }, err))
-    {
+    if (!j.has_shape({ {"include-file-base-path", Json::STRING} }, err)) {
       auto m = j.object_items();
       m["include-file-base-path"] = pathToParameters;
       j = m;
@@ -449,20 +398,15 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   vector<Json> cropSiteSim2;
   //collect all errors in all files and don't stop as early as possible
   set<string> errors;
-  for (auto& j : cropSiteSim)
-  {
+  for (auto& j : cropSiteSim) {
     addBasePath(j, pathToParameters);
     auto r = findAndReplaceReferences(j, j);
-    if (r.success())
-      cropSiteSim2.push_back(r.result);
-    else
-      errors.insert(r.errors.begin(), r.errors.end());
+    if (r.success()) cropSiteSim2.push_back(r.result);
+    else errors.insert(r.errors.begin(), r.errors.end());
   }
 
-  if (!errors.empty())
-  {
-    for (auto e : errors)
-      cerr << e << endl;
+  if (!errors.empty()) {
+    for (auto e : errors) cerr << e << endl;
     return Json();
   }
 
@@ -506,12 +450,13 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   csvos["latitude"] = double_valueD(sitej["SiteParameters"], "Latitude", 0.0);
   env["csvViaHeaderOptions"] = csvos;
     
-  if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty())
+  if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty()) {
     env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
                                                               env["csvViaHeaderOptions"]));
-  else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty())
+  } else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty()) {
     env["climateData"] = printPossibleErrors(readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
                                                                env["csvViaHeaderOptions"]));
+  }
 
   return env;
 }
