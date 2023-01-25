@@ -17,7 +17,6 @@ RUN mkdir ${WORK_DIR}
 WORKDIR ${WORK_DIR}
 RUN git clone https://github.com/zalf-rpm/build-pipeline.git
 RUN git clone https://github.com/zalf-rpm/monica.git
-RUN git clone https://github.com/zalf-rpm/util.git
 RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
