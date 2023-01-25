@@ -26,7 +26,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
-#include "soil/soil-from-db.h"
 #include "../io/output.h"
 
 using namespace std;
