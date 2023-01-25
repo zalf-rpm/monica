@@ -386,47 +386,37 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 //-----------------------------------------------------------------------------
 
 void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
-                                           map<SocketRole, SocketConfig> socketAddresses)
-{
+                                           map<SocketRole, SocketConfig> socketAddresses) {
   bool startedServerInDebugMode = activateDebug;
 
-  if(socketAddresses.empty())
-  {
+  if(socketAddresses.empty()) {
     cerr << "No supplied address for a receiving zmq socket! Exiting." << endl;
     return;
   }
-
   
   SocketConfig rconfig;
   auto rci = socketAddresses.find(ReceiveJob);
-  if(rci != socketAddresses.end())
-    rconfig = rci->second;
+  if(rci != socketAddresses.end()) rconfig = rci->second;
   vector<string> rAddresses = rconfig.addresses;
   int receiveSocketType = ZMQ_REP;
-  if(rconfig.type == Pull)
-    receiveSocketType = ZMQ_PULL;
+  if(rconfig.type == Pull) receiveSocketType = ZMQ_PULL;
   zmq::socket_t socket(*zmqContext, receiveSocketType);
 
-  try
-  {
+  try {
     debug() << "MONICA: " << (rconfig.op == bind ? "binding" : "connecting") << " monica zeromq receiving socket to address: ";
     int i = 0;
-    for(auto address : rAddresses)
-      debug() << (i > 0 ? "," : "") << address, ++i;
+    for(auto address : rAddresses) debug() << (i > 0 ? "," : "") << address, ++i;
     debug() << endl;
-    for(auto address : rAddresses)
-      rconfig.op == bind ? socket.bind(address) : socket.connect(address);
+    for(auto address : rAddresses) rconfig.op == bind ? socket.bind(address) : socket.connect(address);
     debug() << "MONICA: " << (rconfig.op == bind ? "bound" : "connected") << " monica zeromq receiving socket to address: ";
     i = 0;
-    for(auto address : rAddresses)
-      debug() << (i > 0 ? "," : "") << address, ++i;
+    for(auto address : rAddresses) debug() << (i > 0 ? "," : "") << address, ++i;
     debug() << endl;
 
     vector<string> sAddresses = rconfig.addresses;
     SocketConfig sconfig;
     auto sci = socketAddresses.find(SendResult);
-    if(sci != socketAddresses.end())
-      sconfig = sci->second, sAddresses = sconfig.addresses;
+    if(sci != socketAddresses.end()) sconfig = sci->second, sAddresses = sconfig.addresses;
     int sendSocketType = sconfig.type == Router ? ZMQ_ROUTER : ZMQ_PUSH;
     zmq::socket_t sendSocket(*zmqContext, sendSocketType);
     bool distinctSendSocket = sAddresses != rAddresses;
@@ -445,57 +435,44 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
     ,{(void*)controlSocket, 0, ZMQ_POLLIN, 0}
     };
 
-    try
-    {
-      if(distinctSendSocket)
-        for(auto address : sAddresses)
-          sconfig.op == bind ? sendSocket.bind(address) : sendSocket.connect(address);
+    try {
+      if(distinctSendSocket){
+        for(auto address : sAddresses) sconfig.op == bind ? sendSocket.bind(address) : sendSocket.connect(address);
+      }
 
-      try
-      {
+      try {
         int topicCharCount = 0;
-        if(distinctControlSocket)
-        {
+        if(distinctControlSocket) {
           auto topic = "finish";
           topicCharCount = sizeof(topic);
-          for(auto address : cAddresses)
-            cconfig.op == bind ? controlSocket.bind(address) : controlSocket.connect(address);
+          for(auto address : cAddresses) cconfig.op == bind ? controlSocket.bind(address) : controlSocket.connect(address);
           controlSocket.setsockopt(ZMQ_SUBSCRIBE, topic, topicCharCount);
         }
 
-        while(true)
-        {
-          try
-          {
+        while(true) {
+          try {
             Msg msg;
             zmq::poll(&items[0], distinctControlSocket ? 2 : 1, -1);
 
-            if(items[0].revents & ZMQ_POLLIN)
-              msg = receiveMsg(socket);
-            if(distinctControlSocket
-               && items[1].revents & ZMQ_POLLIN)
+            if(items[0].revents & ZMQ_POLLIN) msg = receiveMsg(socket);
+            if(distinctControlSocket && items[1].revents & ZMQ_POLLIN) {
               msg = receiveMsg(controlSocket, topicCharCount);
+            }
 
             //auto msg = receiveMsg(socket);
 
             string msgType = msg.type();
-            if(msgType == "finish")
-            {
+            if(msgType == "finish") {
               //only send reply when not in pipeline configuration
-              if(rconfig.type != Pull)
-              {
+              if(rconfig.type != Pull) {
                 J11Object resultMsg;
                 resultMsg["type"] = "ack";
-                try
-                {
+                try {
                   s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
-                }
-                catch(zmq::error_t e)
-                {
+                } catch(zmq::error_t e) {
                   cerr << "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address(es): ";
                   int i = 0;
-                  for(auto address : sAddresses)
-                    cerr << (i > 0 ? "," : "") << address, ++i;
+                  for(auto address : sAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
                   cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
                 }
               }
@@ -509,9 +486,7 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
               socket.close();
 
               break;
-            }
-            else if(msgType == "Env")
-            {
+            } else if(msgType == "Env") {
               Json& fullMsg = msg.json;
 
               Env env;
@@ -519,10 +494,11 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
               EResult<DataAccessor> eda;
               if (!env.climateData.isValid()) {
-                if (!env.climateCSV.empty())
+                if (!env.climateCSV.empty()) {
                   eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
-                else if (!env.pathsToClimateCSV.empty())
+                } else if (!env.pathsToClimateCSV.empty()) {
                   eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+                }
               }
 
               monica::Output out, out2;
@@ -534,7 +510,7 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
                 env.params.userSoilMoistureParameters.getCapillaryRiseRate =
                 [](string soilTexture, size_t distance) {
-                return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+                  return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
                 };
 
                 isIC = env.params.userCropParameters.isIntercropping;
@@ -544,10 +520,8 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
               out.errors = eda.errors;
               out.warnings = eda.warnings;
 
-              try
-              {
-                if(!env.sharedId.empty())
-                  s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);
+              try {
+                if(!env.sharedId.empty()) s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);
                 
                 if(isIC){
                   auto outs = json11::Json(J11Object({{"1", out.to_json()}, {"2", out2.to_json()}}));
@@ -555,84 +529,61 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                 } else {
                   s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
                 }
-              }
-              catch(zmq::error_t e)
-              {
+              } catch(zmq::error_t e) {
                 cerr << "Exception on trying to reply with result message on zmq socket with address: ";
                 int i = 0;
-                for(auto address : sAddresses)
-                  cerr << (i > 0 ? "," : "") << address, ++i;
+                for(auto address : sAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
                 cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
               }
-            }
-            else
-            {
+            } else {
               J11Object resultMsg;
               resultMsg["type"] = "error";
               debug() << "Error, original message was: " << msg.msg << endl;
 
-              try
-              {
+              try {
                 s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
-              }
-              catch(zmq::error_t e)
-              {
+              } catch(zmq::error_t e) {
                 cerr 
                   << "Exception on trying to reply to '" << msgType 
                   << "' request with 'error' message on zmq socket with address: ";
                 int i = 0;
-                for(auto address : sAddresses)
-                  cerr << (i > 0 ? "," : "") << address, ++i;
+                for(auto address : sAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
                 cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
               }
             }
-          }
-          catch(zmq::error_t e)
-          {
+          } catch(zmq::error_t e) {
             cerr << "Exception on trying to receive request message on zmq socket with address: ";
             int i = 0;
-            for(auto address : rAddresses)
-              cerr << (i > 0 ? "," : "") << address, ++i;
+            for(auto address : rAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
             cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
           }
         }
-      }
-      catch(zmq::error_t e)
-      {
+      } catch(zmq::error_t e) {
         cerr 
           << "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
           << " zmq subscribe socket to address: ";
         int i = 0;
-        for(auto address : cAddresses)
-          cerr << (i > 0 ? "," : "") << address, ++i; 
+        for(auto address : cAddresses) cerr << (i > 0 ? "," : "") << address, ++i; 
         cerr << "! Error: " << e.what() << endl;
       }
-    }
-    catch(zmq::error_t e)
-    {
+    } catch(zmq::error_t e) {
       cerr 
         << "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
         << " zmq push socket to address: ";
       int i = 0;
-      for(auto address : sAddresses)
-        cerr << (i > 0 ? "," : "") << address, ++i; 
+      for(auto address : sAddresses) cerr << (i > 0 ? "," : "") << address, ++i; 
       cerr << "! Error: " << e.what() << endl;
-    }
-  }
-  catch(zmq::error_t e)
-  {
+    } 
+  } catch(zmq::error_t e) {
     cerr
       << "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
       << " zmq socket to address: ";
     int i = 0;
-    for(auto address : rAddresses)
-      cerr << (i > 0 ? "," : "") << address, ++i;
+    for(auto address : rAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
     cerr << "! Error: " << e.what() << endl;
   }
 
   debug() << "exiting serveZmqMonicaFull" << endl;
 }
-
-//-----------------------------------------------------------------------------
 
 

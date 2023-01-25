@@ -27,9 +27,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  *  ruediger grote
  */
 
+#include "voc-guenther.h"
+
 #include <iostream>
 
-#include "voc-guenther.h"
 #include "tools/helper.h"
 
 using namespace Voc;

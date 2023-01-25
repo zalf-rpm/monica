@@ -17,8 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "core/monica-parameters.h"
 
-namespace stics
-{		
+namespace stics {		
 // NH4 [mg-NH4-N/kg-soil]
 // NO3 [mg-NO3-N/kg-soil]
 // wfps = water-filled pore space [] = soil-water-content/saturation

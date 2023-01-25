@@ -37,8 +37,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-common.h"
 #include "run/cultivation-method.h"
 
-namespace monica
-{
+namespace monica {
 
   enum {
     ROOT = 0,
@@ -59,8 +58,7 @@ namespace monica
  * 4 - Permanent structure <br>
  *
  */
-  class CropModule
-  {
+  class CropModule {
   public:
     CropModule(SoilColumn& soilColumn,
       const CropParameters& cropParams,

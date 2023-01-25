@@ -15,8 +15,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#ifndef CSV_FORMAT_H_
-#define CSV_FORMAT_H_
+#pragma once
 
 #include <string>
 #include <iostream>
@@ -25,23 +24,21 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "../io/output.h"
 
-namespace monica
-{
-	void writeOutputHeaderRows(std::ostream& out,
-														 const std::vector<OId>& outputIds,
-														 std::string csvSep,
-														 bool includeHeaderRow,
-														 bool includeUnitsRow,
-														 bool includeTimeAgg = true);
+namespace monica {
+  void writeOutputHeaderRows(std::ostream& out,
+                             const std::vector<OId>& outputIds,
+                             std::string csvSep,
+                             bool includeHeaderRow,
+                             bool includeUnitsRow,
+                             bool includeTimeAgg = true);
 
-	void writeOutput(std::ostream& out,
-									 const std::vector<OId>& outputIds,
-									 const std::vector<Tools::J11Array>& values,
-									 std::string csvSep);
-	void writeOutputObj(std::ostream& out,
-											const std::vector<OId>& outputIds,
-											const std::vector<Tools::J11Object>& values,
-											std::string csvSep);
-}  
+  void writeOutput(std::ostream& out,
+                   const std::vector<OId>& outputIds,
+                   const std::vector<Tools::J11Array>& values,
+                   std::string csvSep);
+  void writeOutputObj(std::ostream& out,
+                      const std::vector<OId>& outputIds,
+                      const std::vector<Tools::J11Object>& values,
+                      std::string csvSep);
+} // namespace monica
 
-#endif 

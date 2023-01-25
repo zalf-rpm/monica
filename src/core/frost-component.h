@@ -25,8 +25,7 @@ namespace monica
 {
 class SoilColumn;
 
-class FrostComponent
-{
+class FrostComponent {
   public:
     FrostComponent(SoilColumn& sc,
                     double pm_HydraulicConductivityRedux,

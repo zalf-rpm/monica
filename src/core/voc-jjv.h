@@ -39,17 +39,18 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-common.h"
 
 namespace Voc {
-  Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, CPData>> speciesData,
-                                                    const MicroClimateData& mcd,
-                                                    double dayFraction = 1.0,
-                                                    bool calculateParTempTerm = false);
 
-  inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
-                                            const MicroClimateData& mcd,
-                                            CPData cpdata,
-                                            double dayFraction = 1.0,
-                                            bool calculateParTempTerm = false)
-  {
-    return calculateJJVVOCEmissionsMultipleSpecies({std::make_pair(sd, cpdata)}, mcd, dayFraction, calculateParTempTerm);
-  }
+Emissions calculateJJVVOCEmissionsMultipleSpecies(std::vector<std::pair<SpeciesData, CPData>> speciesData,
+                                                  const MicroClimateData& mcd,
+                                                  double dayFraction = 1.0,
+                                                  bool calculateParTempTerm = false);
+
+inline Emissions calculateJJVVOCEmissions(SpeciesData sd,
+                                          const MicroClimateData& mcd,
+                                          CPData cpdata,
+                                          double dayFraction = 1.0,
+                                          bool calculateParTempTerm = false) {
+  return calculateJJVVOCEmissionsMultipleSpecies({std::make_pair(sd, cpdata)}, mcd, dayFraction, calculateParTempTerm);
 }
+
+} // namespace Voc

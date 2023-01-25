@@ -17,15 +17,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-/**
- * @file soiltransport.h
- */
-
 #include <vector>
 #include "monica-parameters.h"
 
-namespace monica 
-{
+namespace monica {
   
 // forward declarations
 class SoilColumn;
@@ -37,8 +32,7 @@ class CropModule;
 * @author Claas Nendel, Michael Berg
 *
 */
-class SoilTransport
-{
+class SoilTransport {
 public:
   SoilTransport(SoilColumn& soilColumn,
                 const SiteParameters& sps,

@@ -35,15 +35,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-common.h"
 
 namespace Voc {
-  Emissions calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
-                                                         const MicroClimateData& mc,
-                                                         double dayFraction = 1.0);
 
-  inline Emissions calculateGuentherVOCEmissions(const SpeciesData& species,
-                                                 const MicroClimateData& mc,
-                                                 double dayFraction = 1.0)
-  {
-    return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
-  }
+Emissions calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+                                                        const MicroClimateData& mc,
+                                                        double dayFraction = 1.0);
+
+inline Emissions calculateGuentherVOCEmissions(const SpeciesData& species,
+                                                const MicroClimateData& mc,
+                                                double dayFraction = 1.0) {
+  return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
 }
+
+} // namespace Voc
 

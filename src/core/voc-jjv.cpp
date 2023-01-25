@@ -33,12 +33,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  *  felix wiss (fw)
  */
 
+#include  "voc-jjv.h"
+
 #include <iostream>
 
 #include <algorithm>
 #include <cassert>
-
-#include  "voc-jjv.h"
 
 using namespace Voc;
 

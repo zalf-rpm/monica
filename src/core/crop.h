@@ -30,11 +30,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "monica-parameters.h"
 
-namespace monica
-{
+namespace monica {
 
-class Crop : public Tools::Json11Serializable
-{
+class Crop : public Tools::Json11Serializable {
 public:
   Crop() : _perennialCropParams(_cropParams) {}
 
@@ -108,8 +106,7 @@ public:
 
   std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
 
-  void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd)
-  {
+  void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd) {
     setSeedDate(sd);
     setHarvestDate(hd);
     
@@ -121,8 +118,7 @@ public:
 
   // Automatic yield trigger parameters
   bool useAutomaticHarvestTrigger() { return _automaticHarvest; }
-  void activateAutomaticHarvestTrigger(AutomaticHarvestParameters params)
-  {
+  void activateAutomaticHarvestTrigger(AutomaticHarvestParameters params) {
     _automaticHarvest = true;
     _automaticHarvestParams = params;
   }
