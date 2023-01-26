@@ -126,7 +126,7 @@ void SoilLayer::deserialize(mas::schema::model::monica::SoilLayerState::Reader r
 void SoilLayer::serialize(mas::schema::model::monica::SoilLayerState::Builder builder) const {
   builder.setLayerThickness(vs_LayerThickness);
   builder.setSoilWaterFlux(vs_SoilWaterFlux);
-  setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool((uint)vo_AOM_Pool.size()));
+  setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool((capnp::uint)vo_AOM_Pool.size()));
   builder.setSomSlow(vs_SOM_Slow);
   builder.setSomFast(vs_SOM_Fast);
   builder.setSmbSlow(vs_SMB_Slow);
@@ -250,9 +250,9 @@ void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder 
   builder.setVfTopDressing(_vf_TopDressing);
   _vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
   builder.setVfTopDressingDelay(_vf_TopDressingDelay);
-  setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications((uint)_delayedNMinApplications.size()));
+  setComplexCapnpList(_delayedNMinApplications, builder.initDelayedNMinApplications((capnp::uint)_delayedNMinApplications.size()));
   builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
-  setComplexCapnpList(*this, builder.initLayers((uint)size()));
+  setComplexCapnpList(*this, builder.initLayers((capnp::uint)size()));
 }
 
 

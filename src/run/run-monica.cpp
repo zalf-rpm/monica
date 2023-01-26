@@ -344,9 +344,9 @@ std::function<bool(const MonicaModel&)> Spec::createExpressionFunc(Json j) {
          && s[0].size() == 4
          && s[1].size() == 2
          && s[2].size() == 2) {
-        auto year = parseInt<uint>(s[0]);
-        auto month = parseInt<uint>(s[1]);
-        auto day = parseInt<uint>(s[2]);
+        auto year = parseInt<uint16_t>(s[0]);
+        auto month = parseInt<uint8_t>(s[1]);
+        auto day = parseInt<uint8_t>(s[2]);
 
         auto f = [day, month, year](const MonicaModel& monica){
           auto cd = monica.currentStepDate();
@@ -574,8 +574,8 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 
 struct DFSRes {
   kj::Own<MonicaModel> monica;
-  uint critPos{ 0 };
-  uint cmitPos{ 0 };
+  uint16_t critPos{ 0 };
+  uint16_t cmitPos{ 0 };
 };
 DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
   auto allBytes = file->readAllBytes();

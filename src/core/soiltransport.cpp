@@ -87,22 +87,22 @@ void SoilTransport::deserialize(mas::schema::model::monica::SoilTransportModuleS
 
 void SoilTransport::serialize(mas::schema::model::monica::SoilTransportModuleState::Builder builder) const {
   _params.serialize(builder.initModuleParams());
-  setCapnpList(vq_Convection, builder.initConvection((uint)vq_Convection.size()));
+  setCapnpList(vq_Convection, builder.initConvection((capnp::uint)vq_Convection.size()));
   builder.setCropNUptake(vq_CropNUptake);
-  setCapnpList(vq_DiffusionCoeff, builder.initDiffusionCoeff((uint)vq_DiffusionCoeff.size()));
-  setCapnpList(vq_Dispersion, builder.initDispersion((uint)vq_Dispersion.size()));
-  setCapnpList(vq_DispersionCoeff, builder.initDispersionCoeff((uint)vq_DispersionCoeff.size()));
+  setCapnpList(vq_DiffusionCoeff, builder.initDiffusionCoeff((capnp::uint)vq_DiffusionCoeff.size()));
+  setCapnpList(vq_Dispersion, builder.initDispersion((capnp::uint)vq_Dispersion.size()));
+  setCapnpList(vq_DispersionCoeff, builder.initDispersionCoeff((capnp::uint)vq_DispersionCoeff.size()));
   builder.setVsLeachingDepth(vs_LeachingDepth);
   builder.setLeachingAtBoundary(vq_LeachingAtBoundary);
   builder.setVsNDeposition(vs_NDeposition);
-  setCapnpList(vc_NUptakeFromLayer, builder.initVcNUptakeFromLayer((uint)vc_NUptakeFromLayer.size()));
-  setCapnpList(vq_PoreWaterVelocity, builder.initPoreWaterVelocity((uint)vq_PoreWaterVelocity.size()));
-  setCapnpList(vs_SoilMineralNContent, builder.initVsSoilMineralNContent((uint)vs_SoilMineralNContent.size()));
-  setCapnpList(vq_SoilNO3, builder.initSoilNO3((uint)vq_SoilNO3.size()));
-  setCapnpList(vq_SoilNO3_aq, builder.initSoilNO3aq((uint)vq_SoilNO3_aq.size()));
+  setCapnpList(vc_NUptakeFromLayer, builder.initVcNUptakeFromLayer((capnp::uint)vc_NUptakeFromLayer.size()));
+  setCapnpList(vq_PoreWaterVelocity, builder.initPoreWaterVelocity((capnp::uint)vq_PoreWaterVelocity.size()));
+  setCapnpList(vs_SoilMineralNContent, builder.initVsSoilMineralNContent((capnp::uint)vs_SoilMineralNContent.size()));
+  setCapnpList(vq_SoilNO3, builder.initSoilNO3((capnp::uint)vq_SoilNO3.size()));
+  setCapnpList(vq_SoilNO3_aq, builder.initSoilNO3aq((capnp::uint)vq_SoilNO3_aq.size()));
   builder.setTimeStep(vq_TimeStep);
-  setCapnpList(vq_TotalDispersion, builder.initTotalDispersion((uint)vq_TotalDispersion.size()));
-  setCapnpList(vq_PercolationRate, builder.initPercolationRate((uint)vq_PercolationRate.size()));
+  setCapnpList(vq_TotalDispersion, builder.initTotalDispersion((capnp::uint)vq_TotalDispersion.size()));
+  setCapnpList(vq_PercolationRate, builder.initPercolationRate((capnp::uint)vq_PercolationRate.size()));
   builder.setPcMinimumAvailableN(pc_MinimumAvailableN);
 }
 

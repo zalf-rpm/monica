@@ -73,11 +73,11 @@ DataAccessor fromCapnpData(
 
   DataAccessor da(startDate, endDate);
   //vector<double> d(data[0].size());
-  for (uint i = 0; i < header.size(); i++) {
+  for (capnp::uint i = 0; i < header.size(); i++) {
     auto vs = data[i];
     std::vector<double> d(data[0].size());
     //transform(vs.begin(), vs.end(), d.begin(), [](float f) { return f; });
-    for (uint k = 0; k < vs.size(); k++)
+    for (capnp::uint k = 0; k < vs.size(); k++)
       d[k] = vs[k];
     switch (header[i]) {
       case E::TMIN: da.addClimateData(ACD::tmin, std::move(d)); break;

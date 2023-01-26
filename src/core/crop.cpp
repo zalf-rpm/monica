@@ -117,7 +117,7 @@ void Crop::serialize(mas::schema::model::monica::CropState::Builder builder) con
 	_harvestDate.serialize(builder.initHarvestDate());
   if (_isWinterCrop.isValue()) builder.initIsWinterCrop().setValue(_isWinterCrop.value());
   if (_isPerennialCrop.isValue()) builder.initIsPerennialCrop().setValue(_isPerennialCrop.value());
-  setComplexCapnpList(_cuttingDates, builder.initCuttingDates((uint)_cuttingDates.size()));
+  setComplexCapnpList(_cuttingDates, builder.initCuttingDates((capnp::uint)_cuttingDates.size()));
   if (isValid()) _cropParams.serialize(builder.initCropParams());
 	if (_separatePerennialCropParams) _separatePerennialCropParams->serialize(builder.initPerennialCropParams());
   _residueParams.serialize(builder.initResidueParams());

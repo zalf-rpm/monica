@@ -256,18 +256,18 @@ void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModul
   _params.serialize(builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t)_noOfTempLayers);
   builder.setVsNumberOfLayers((uint16_t)_noOfSoilLayers);
-  //setCapnpList(vs_SoilMoisture_const, builder.initVsSoilMoistureConst((uint)vs_SoilMoisture_const.size()));
-  setCapnpList(_soilTemperature, builder.initSoilTemperature((uint)_soilTemperature.size()));
-  setCapnpList(_V, builder.initV((uint)_V.size()));
-  setCapnpList(_volumeMatrix, builder.initVolumeMatrix((uint)_volumeMatrix.size()));
-  setCapnpList(_volumeMatrixOld, builder.initVolumeMatrixOld((uint)_volumeMatrixOld.size()));
-  setCapnpList(_B, builder.initB((uint)_B.size()));
-  setCapnpList(_matrixPrimaryDiagonal, builder.initMatrixPrimaryDiagonal((uint)_matrixPrimaryDiagonal.size()));
-  setCapnpList(_matrixSecondaryDiagonal, builder.initMatrixSecundaryDiagonal((uint)_matrixSecondaryDiagonal.size()));
+  //setCapnpList(vs_SoilMoisture_const, builder.initVsSoilMoistureConst((capnp::uint)vs_SoilMoisture_const.size()));
+  setCapnpList(_soilTemperature, builder.initSoilTemperature((capnp::uint)_soilTemperature.size()));
+  setCapnpList(_V, builder.initV((capnp::uint)_V.size()));
+  setCapnpList(_volumeMatrix, builder.initVolumeMatrix((capnp::uint)_volumeMatrix.size()));
+  setCapnpList(_volumeMatrixOld, builder.initVolumeMatrixOld((capnp::uint)_volumeMatrixOld.size()));
+  setCapnpList(_B, builder.initB((capnp::uint)_B.size()));
+  setCapnpList(_matrixPrimaryDiagonal, builder.initMatrixPrimaryDiagonal((capnp::uint)_matrixPrimaryDiagonal.size()));
+  setCapnpList(_matrixSecondaryDiagonal, builder.initMatrixSecundaryDiagonal((capnp::uint)_matrixSecondaryDiagonal.size()));
   //builder.setHeatFlow(_heatFlow);
-  setCapnpList(_heatConductivity, builder.initHeatConductivity((uint)_heatConductivity.size()));
-  setCapnpList(_heatConductivityMean, builder.initHeatConductivityMean((uint)_heatConductivityMean.size()));
-  setCapnpList(_heatCapacity, builder.initHeatCapacity((uint)_heatCapacity.size()));
+  setCapnpList(_heatConductivity, builder.initHeatConductivity((capnp::uint)_heatConductivity.size()));
+  setCapnpList(_heatConductivityMean, builder.initHeatConductivityMean((capnp::uint)_heatConductivityMean.size()));
+  setCapnpList(_heatCapacity, builder.initHeatCapacity((capnp::uint)_heatCapacity.size()));
   builder.setDampingFactor(_dampingFactor);
 }
 

@@ -338,16 +338,16 @@ struct Emissions
 {
   void serialize(mas::schema::model::monica::Voc::Emissions::Builder builder) const {
     {
-      auto isos = builder.initSpeciesIdToIsopreneEmission((uint)speciesId_2_isoprene_emission.size());
-      uint i = 0;
+      auto isos = builder.initSpeciesIdToIsopreneEmission((capnp::uint)speciesId_2_isoprene_emission.size());
+      capnp::uint i = 0;
       for (auto p : speciesId_2_isoprene_emission) {
         isos[i].setSpeciesId(p.first);
         isos[i++].setEmission(p.second);;
       }
     }
     {
-      auto monos = builder.initSpeciesIdToMonoterpeneEmission((uint)speciesId_2_monoterpene_emission.size());
-      uint i = 0;
+      auto monos = builder.initSpeciesIdToMonoterpeneEmission((capnp::uint)speciesId_2_monoterpene_emission.size());
+      capnp::uint i = 0;
       for (auto p : speciesId_2_monoterpene_emission) {
         monos[i].setSpeciesId(p.first);
         monos[i++].setEmission(p.second);;

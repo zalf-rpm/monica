@@ -177,15 +177,15 @@ void SpeciesParameters::serialize(mas::schema::model::monica::SpeciesParameters:
   builder.setDevelopmentAccelerationByNitrogenStress(pc_DevelopmentAccelerationByNitrogenStress);
   builder.setFieldConditionModifier(pc_FieldConditionModifier);
   builder.setAssimilateReallocation(pc_AssimilateReallocation);
-  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature((uint)pc_BaseTemperature.size()));
-  setCapnpList(pc_OrganMaintenanceRespiration, builder.initOrganMaintenanceRespiration((uint)pc_OrganMaintenanceRespiration.size()));
-  setCapnpList(pc_OrganGrowthRespiration, builder.initOrganGrowthRespiration((uint)pc_OrganGrowthRespiration.size()));
-  setCapnpList(pc_StageMaxRootNConcentration, builder.initStageMaxRootNConcentration((uint)pc_StageMaxRootNConcentration.size()));
-  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass((uint)pc_InitialOrganBiomass.size()));
-  setCapnpList(pc_CriticalOxygenContent, builder.initCriticalOxygenContent((uint)pc_CriticalOxygenContent.size()));
-  setCapnpList(pc_StageMobilFromStorageCoeff, builder.initStageMobilFromStorageCoeff((uint)pc_StageMobilFromStorageCoeff.size()));
-  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan((uint)pc_AbovegroundOrgan.size()));
-  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan((uint)pc_StorageOrgan.size()));
+  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature((capnp::uint)pc_BaseTemperature.size()));
+  setCapnpList(pc_OrganMaintenanceRespiration, builder.initOrganMaintenanceRespiration((capnp::uint)pc_OrganMaintenanceRespiration.size()));
+  setCapnpList(pc_OrganGrowthRespiration, builder.initOrganGrowthRespiration((capnp::uint)pc_OrganGrowthRespiration.size()));
+  setCapnpList(pc_StageMaxRootNConcentration, builder.initStageMaxRootNConcentration((capnp::uint)pc_StageMaxRootNConcentration.size()));
+  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass((capnp::uint)pc_InitialOrganBiomass.size()));
+  setCapnpList(pc_CriticalOxygenContent, builder.initCriticalOxygenContent((capnp::uint)pc_CriticalOxygenContent.size()));
+  setCapnpList(pc_StageMobilFromStorageCoeff, builder.initStageMobilFromStorageCoeff((capnp::uint)pc_StageMobilFromStorageCoeff.size()));
+  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan((capnp::uint)pc_AbovegroundOrgan.size()));
+  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan((capnp::uint)pc_StorageOrgan.size()));
   builder.setSamplingDepth(pc_SamplingDepth);
   builder.setTargetNSamplingDepth(pc_TargetNSamplingDepth);
   builder.setTargetN30(pc_TargetN30);
@@ -370,13 +370,13 @@ void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParamet
 
   {
     auto listReader = reader.getAssimilatePartitioningCoeff();
-    uint i = 0;
+    capnp::uint i = 0;
     for (auto& v : pc_AssimilatePartitioningCoeff) setFromCapnpList(v, listReader[i++]);
   }
 
   {
     auto listReader = reader.getOrganSenescenceRate();
-    uint i = 0;
+    capnp::uint i = 0;
     for (auto& v : pc_OrganSenescenceRate) setFromCapnpList(v, listReader[i++]);
   }
 
@@ -422,25 +422,25 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
   builder.setCropSpecificMaxRootingDepth(pc_CropSpecificMaxRootingDepth);
 
   {
-    auto listBuilder = builder.initAssimilatePartitioningCoeff((uint)pc_AssimilatePartitioningCoeff.size());
-    uint i = 0;
-    for (const auto& v : pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, (uint)v.size()));
+    auto listBuilder = builder.initAssimilatePartitioningCoeff((capnp::uint)pc_AssimilatePartitioningCoeff.size());
+    capnp::uint i = 0;
+    for (const auto& v : pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
   }
 
   {
-    auto listBuilder = builder.initOrganSenescenceRate((uint)pc_OrganSenescenceRate.size());
-    uint i = 0;
-    for (const auto& v : pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, (uint)v.size()));
+    auto listBuilder = builder.initOrganSenescenceRate((capnp::uint)pc_OrganSenescenceRate.size());
+    capnp::uint i = 0;
+    for (const auto& v : pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
   }
 
-  setCapnpList(pc_BaseDaylength, builder.initBaseDaylength((uint)pc_BaseDaylength.size()));
-  setCapnpList(pc_OptimumTemperature, builder.initOptimumTemperature((uint)pc_OptimumTemperature.size()));
-  setCapnpList(pc_DaylengthRequirement, builder.initDaylengthRequirement((uint)pc_DaylengthRequirement.size()));
-  setCapnpList(pc_DroughtStressThreshold, builder.initDroughtStressThreshold((uint)pc_DroughtStressThreshold.size()));
-  setCapnpList(pc_SpecificLeafArea, builder.initSpecificLeafArea((uint)pc_SpecificLeafArea.size()));
-  setCapnpList(pc_StageKcFactor, builder.initStageKcFactor((uint)pc_StageKcFactor.size()));
-  setCapnpList(pc_StageTemperatureSum, builder.initStageTemperatureSum((uint)pc_StageTemperatureSum.size()));
-  setCapnpList(pc_VernalisationRequirement, builder.initVernalisationRequirement((uint)pc_VernalisationRequirement.size()));
+  setCapnpList(pc_BaseDaylength, builder.initBaseDaylength((capnp::uint)pc_BaseDaylength.size()));
+  setCapnpList(pc_OptimumTemperature, builder.initOptimumTemperature((capnp::uint)pc_OptimumTemperature.size()));
+  setCapnpList(pc_DaylengthRequirement, builder.initDaylengthRequirement((capnp::uint)pc_DaylengthRequirement.size()));
+  setCapnpList(pc_DroughtStressThreshold, builder.initDroughtStressThreshold((capnp::uint)pc_DroughtStressThreshold.size()));
+  setCapnpList(pc_SpecificLeafArea, builder.initSpecificLeafArea((capnp::uint)pc_SpecificLeafArea.size()));
+  setCapnpList(pc_StageKcFactor, builder.initStageKcFactor((capnp::uint)pc_StageKcFactor.size()));
+  setCapnpList(pc_StageTemperatureSum, builder.initStageTemperatureSum((capnp::uint)pc_StageTemperatureSum.size()));
+  setCapnpList(pc_VernalisationRequirement, builder.initVernalisationRequirement((capnp::uint)pc_VernalisationRequirement.size()));
   builder.setHeatSumIrrigationStart(pc_HeatSumIrrigationStart);
   builder.setHeatSumIrrigationEnd(pc_HeatSumIrrigationEnd);
   builder.setCriticalTemperatureHeatStress(pc_CriticalTemperatureHeatStress);
@@ -451,9 +451,9 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
   builder.setLowTemperatureExposure(pc_LowTemperatureExposure);
   builder.setRespiratoryStress(pc_RespiratoryStress);
   builder.setLatestHarvestDoy(pc_LatestHarvestDoy);
-  setComplexCapnpList(pc_OrganIdsForPrimaryYield, builder.initOrganIdsForPrimaryYield((uint)pc_OrganIdsForPrimaryYield.size()));
-  setComplexCapnpList(pc_OrganIdsForSecondaryYield, builder.initOrganIdsForSecondaryYield((uint)pc_OrganIdsForSecondaryYield.size()));
-  setComplexCapnpList(pc_OrganIdsForCutting, builder.initOrganIdsForCutting((uint)pc_OrganIdsForCutting.size()));
+  setComplexCapnpList(pc_OrganIdsForPrimaryYield, builder.initOrganIdsForPrimaryYield((capnp::uint)pc_OrganIdsForPrimaryYield.size()));
+  setComplexCapnpList(pc_OrganIdsForSecondaryYield, builder.initOrganIdsForSecondaryYield((capnp::uint)pc_OrganIdsForSecondaryYield.size()));
+  setComplexCapnpList(pc_OrganIdsForCutting, builder.initOrganIdsForCutting((capnp::uint)pc_OrganIdsForCutting.size()));
   builder.setEarlyRefLeafExp(pc_EarlyRefLeafExp);
   builder.setRefLeafExp(pc_RefLeafExp);
   builder.setMinTempDevWE(pc_MinTempDev_WE);
@@ -851,8 +851,8 @@ void MeasuredGroundwaterTableInformation::deserialize(mas::schema::model::monica
 
 void MeasuredGroundwaterTableInformation::serialize(mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
   builder.setGroundwaterInformationAvailable(groundwaterInformationAvailable);
-  auto gis = builder.initGroundwaterInfo((uint)groundwaterInfo.size());
-  uint i = 0;
+  auto gis = builder.initGroundwaterInfo((capnp::uint)groundwaterInfo.size());
+  capnp::uint i = 0;
   for (auto p : groundwaterInfo) {
     p.first.serialize(gis[i].initDate());
     gis[i].setValue(p.second);
@@ -966,7 +966,7 @@ void SiteParameters::serialize(mas::schema::model::monica::SiteParameters::Build
   builder.setMaxEffectiveRootingDepth(vs_MaxEffectiveRootingDepth);
   builder.setImpenetrableLayerDepth(vs_ImpenetrableLayerDepth);
   builder.setSoilSpecificHumusBalanceCorrection(vs_SoilSpecificHumusBalanceCorrection);
-  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters((uint)vs_SoilParameters.size()));
+  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters((capnp::uint)vs_SoilParameters.size()));
 }
 
 SiteParameters::SiteParameters(json11::Json j)
@@ -1587,8 +1587,8 @@ void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentPar
   builder.setAtmosphericCO2(p_AtmosphericCO2);
 
   {
-    auto co2s = builder.initAtmosphericCO2s((uint)p_AtmosphericCO2s.size());
-    uint i = 0;
+    auto co2s = builder.initAtmosphericCO2s((capnp::uint)p_AtmosphericCO2s.size());
+    capnp::uint i = 0;
     for (auto p : p_AtmosphericCO2s) {
       co2s[i].setYear(p.first);
       co2s[i].setValue(p.second);
@@ -1596,8 +1596,8 @@ void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentPar
   }
   builder.setAtmosphericO3(p_AtmosphericO3);
   {
-    auto o3s = builder.initAtmosphericO3s((uint)p_AtmosphericO3s.size());
-    uint i = 0;
+    auto o3s = builder.initAtmosphericO3s((capnp::uint)p_AtmosphericO3s.size());
+    capnp::uint i = 0;
     for (auto p : p_AtmosphericO3s) {
       o3s[i].setYear(p.first);
       o3s[i].setValue(p.second);

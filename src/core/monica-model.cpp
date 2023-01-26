@@ -146,7 +146,7 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
 
 	_climateData.resize(reader.getClimateData().size());
 	{
-		uint i = 0;
+		capnp::uint i = 0;
 		for (const auto& mapList : reader.getClimateData()) {
 			auto& acd2val = _climateData[i++];
 			acd2val.clear();
@@ -211,13 +211,13 @@ void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builde
 
 	auto cdSize = _climateData.size();
 	auto serMaxDays = min(size_t(_simPs.noOfPreviousDaysSerializedClimateData), cdSize);
-	auto buildCdList = builder.initClimateData((uint)serMaxDays);
+	auto buildCdList = builder.initClimateData((capnp::uint)serMaxDays);
 	{
-		uint i = 0;
+		capnp::uint i = 0;
 		for (size_t j = cdSize - serMaxDays; j < cdSize; j++){
 			auto& map = _climateData[j];
-			auto buildList = buildCdList.init(i++, (uint)map.size());
-			uint k = 0;
+			auto buildList = buildCdList.init(i++, (capnp::uint)map.size());
+			capnp::uint k = 0;
 			for (auto& p : map) {
 				auto buildAcd2Val = buildList[k++];
 				buildAcd2Val.setAcd(p.first);
@@ -226,17 +226,17 @@ void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builde
 		}
 	}
 
-	auto buildEvents = builder.initCurrentEvents((uint)_currentEvents.size());
+	auto buildEvents = builder.initCurrentEvents((capnp::uint)_currentEvents.size());
 	{
-		uint i = 0;
+		capnp::uint i = 0;
 		for (auto& e : _currentEvents) {
 			buildEvents.set(i++, e);
 		}
 	}
 
-	auto buildPrevEvents = builder.initPreviousDaysEvents((uint)_previousDaysEvents.size());
+	auto buildPrevEvents = builder.initPreviousDaysEvents((capnp::uint)_previousDaysEvents.size());
 	{
-		uint i = 0;
+		capnp::uint i = 0;
 		for (auto& e : _previousDaysEvents) {
 			buildPrevEvents.set(i++, e);
 		}
