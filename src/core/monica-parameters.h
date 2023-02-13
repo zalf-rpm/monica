@@ -295,9 +295,9 @@ class DLL_API MineralFertilizerParameters : public Tools::Json11Serializable {
 public:
   MineralFertilizerParameters() {}
 
-  MineralFertilizerParameters(mas::schema::management::Params::MineralFertilization::Parameters::Reader reader) { deserialize(reader); }
+  MineralFertilizerParameters(mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) { deserialize(reader); }
 
-  void deserialize(mas::schema::management::Params::MineralFertilization::Parameters::Reader reader);
+  void deserialize(mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader);
 
   MineralFertilizerParameters(json11::Json object);
 
@@ -307,7 +307,7 @@ public:
     double no3,
     double nh4);
 
-  void serialize(mas::schema::management::Params::MineralFertilization::Parameters::Builder builder) const;
+  void serialize(mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder) const;
 
   virtual Tools::Errors merge(json11::Json j);
 
@@ -382,13 +382,13 @@ struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
 
   IrrigationParameters(double nitrateConcentration, double sulfateConcentration);
 
-  IrrigationParameters(mas::schema::management::Params::Irrigation::Parameters::Reader reader) { deserialize(reader); }
+  IrrigationParameters(mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader) { deserialize(reader); }
 
-  void deserialize(mas::schema::management::Params::Irrigation::Parameters::Reader reader);
+  void deserialize(mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
 
   IrrigationParameters(json11::Json object);
 
-  void serialize(mas::schema::management::Params::Irrigation::Parameters::Builder builder) const;
+  void serialize(mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder) const;
 
   virtual Tools::Errors merge(json11::Json j);
 
@@ -559,13 +559,13 @@ struct DLL_API NMinCropParameters : public Tools::Json11Serializable {
 struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
   OrganicMatterParameters() {}
 
-  OrganicMatterParameters(mas::schema::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) { deserialize(reader); }
+  OrganicMatterParameters(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) { deserialize(reader); }
 
-  void deserialize(mas::schema::management::Params::OrganicFertilization::OrganicMatterParameters::Reader reader);
+  void deserialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader);
 
   OrganicMatterParameters(json11::Json object);
 
-  void serialize(mas::schema::management::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const;
+  void serialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const;
 
   virtual Tools::Errors merge(json11::Json j);
 
@@ -598,13 +598,13 @@ typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
 struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
   OrganicFertilizerParameters() {}
 
-  OrganicFertilizerParameters(mas::schema::management::Params::OrganicFertilization::Parameters::Reader reader) { deserialize(reader); }
+  OrganicFertilizerParameters(mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) { deserialize(reader); }
 
-  void deserialize(mas::schema::management::Params::OrganicFertilization::Parameters::Reader reader);
+  void deserialize(mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader);
 
   OrganicFertilizerParameters(json11::Json object);
 
-  void serialize(mas::schema::management::Params::OrganicFertilization::Parameters::Builder builder) const;
+  void serialize(mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder) const;
 
   virtual Tools::Errors merge(json11::Json j);
 
