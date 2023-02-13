@@ -278,215 +278,215 @@ void SoilOrganic::step(double vw_MeanAirTemperature, double vw_Precipitation,
 }
 
 void SoilOrganic::addOrganicMatter(const OrganicMatterParameters& params,
-																	 map<size_t, double> layer2addedOrganicMatterAmount,
-																	 double addedOrganicMatterNConcentration)
+                                   map<size_t, double> layer2addedOrganicMatterAmount,
+                                   double addedOrganicMatterNConcentration)
 {
-	debug() << "SoilOrganic: addOrganicMatter: " << params.toString() << endl;
+  debug() << "SoilOrganic: addOrganicMatter: " << params.toString() << endl;
 
-	auto nools = soilColumn.vs_NumberOfOrganicLayers();
-	double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers();
+  double layerThickness = soilColumn.at(0).vs_LayerThickness;
 
-	// check if the added organic matter is from crop residues
-	bool areCropResidueParams = int(params.vo_CN_Ratio_AOM_Fast * 10000.0) == 0;
-	bool areOrganicFertilizerParams = !areCropResidueParams;
+  // check if the added organic matter is from crop residues
+  bool areCropResidueParams = int(params.vo_CN_Ratio_AOM_Fast * 10000.0) == 0;
+  bool areOrganicFertilizerParams = !areCropResidueParams;
 
-	// calculate the CN AOM fast ratio and added organic carbon amount from the added organic matter and its N concentration
-	// used if we're talking about crop residues (where C/N is 0 in configuration) and not organic fertilizer
-	auto calc_CN_Ratio_AOM_Fast_and_added_Corg_amount =
-		[&params, layerThickness, this](double vo_AddedOrganicMatterAmount,
-																		double vo_AddedOrganicMatterNConcentration)
-	{
-		double CN_ratio_AOM_fast = 0;
+  // calculate the CN AOM fast ratio and added organic carbon amount from the added organic matter and its N concentration
+  // used if we're talking about crop residues (where C/N is 0 in configuration) and not organic fertilizer
+  auto calc_CN_Ratio_AOM_Fast_and_added_Corg_amount =
+    [&params, layerThickness, this](double vo_AddedOrganicMatterAmount,
+                                    double vo_AddedOrganicMatterNConcentration)
+  {
+    double CN_ratio_AOM_fast = 0;
 
-		double added_Corg_amount =
-			vo_AddedOrganicMatterAmount
-			* params.vo_AOM_DryMatterContent
-			* OrganicConstants::po_AOM_to_C
-			/ 10000.0
-			/ layerThickness;
+    double added_Corg_amount =
+      vo_AddedOrganicMatterAmount
+      * params.vo_AOM_DryMatterContent
+      * OrganicConstants::po_AOM_to_C
+      / 10000.0
+      / layerThickness;
 
-		// Converting AOM N content from kg N kg DM-1 to kg N m-3
-		double added_Norg_amount = vo_AddedOrganicMatterNConcentration <= 0.0 
-			? 0.01
-			: (vo_AddedOrganicMatterAmount
-				 * params.vo_AOM_DryMatterContent
-				 * vo_AddedOrganicMatterNConcentration
-				 / 10000.0
-				 / layerThickness);
+    // Converting AOM N content from kg N kg DM-1 to kg N m-3
+    double added_Norg_amount = vo_AddedOrganicMatterNConcentration <= 0.0 
+      ? 0.01
+      : (vo_AddedOrganicMatterAmount
+         * params.vo_AOM_DryMatterContent
+         * vo_AddedOrganicMatterNConcentration
+         / 10000.0
+         / layerThickness);
 
-		double added_CN_ratio = added_Corg_amount / added_Norg_amount;
+    double added_CN_ratio = added_Corg_amount / added_Norg_amount;
 
-		debug() << "Added organic matter N amount: " << added_Norg_amount << endl;
+    debug() << "Added organic matter N amount: " << added_Norg_amount << endl;
 
-		double N_for_AOM_slow = added_Corg_amount * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow;
+    double N_for_AOM_slow = added_Corg_amount * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow;
 
-		// Assigning the dynamic C/N ratio to the AOM_Fast pool
-		if(N_for_AOM_slow < added_Norg_amount)
-		{
-			double N_for_AOM_fast = added_Norg_amount - N_for_AOM_slow;
-			CN_ratio_AOM_fast = added_Corg_amount * params.vo_PartAOM_to_AOM_Fast / N_for_AOM_fast;
-		}
-		else
-			CN_ratio_AOM_fast = _params.po_AOM_FastMaxC_to_N;
+    // Assigning the dynamic C/N ratio to the AOM_Fast pool
+    if(N_for_AOM_slow < added_Norg_amount)
+    {
+      double N_for_AOM_fast = added_Norg_amount - N_for_AOM_slow;
+      CN_ratio_AOM_fast = added_Corg_amount * params.vo_PartAOM_to_AOM_Fast / N_for_AOM_fast;
+    }
+    else
+      CN_ratio_AOM_fast = _params.po_AOM_FastMaxC_to_N;
 
-		CN_ratio_AOM_fast = min(CN_ratio_AOM_fast, _params.po_AOM_FastMaxC_to_N);
+    CN_ratio_AOM_fast = min(CN_ratio_AOM_fast, _params.po_AOM_FastMaxC_to_N);
 
-		return make_tuple(CN_ratio_AOM_fast, added_Corg_amount, added_Norg_amount);
-	};
+    return make_tuple(CN_ratio_AOM_fast, added_Corg_amount, added_Norg_amount);
+  };
 
-	int rounded_AOM_SlowDecCoeffStandard = roundShiftedInt(params.vo_AOM_SlowDecCoeffStandard, 4);
-	int rounded_AOM_FastDecCoeffStandard = roundShiftedInt(params.vo_AOM_FastDecCoeffStandard, 4);
-	int rounded_PartAOM_Slow_to_SMB_Slow = roundShiftedInt(params.vo_PartAOM_Slow_to_SMB_Slow, 4);
-	int rounded_PartAOM_Slow_to_SMB_Fast = roundShiftedInt(params.vo_PartAOM_Slow_to_SMB_Fast, 4);
-	int rounded_CN_Ratio_AOM_Slow = roundShiftedInt(params.vo_CN_Ratio_AOM_Slow, 4);
+  int rounded_AOM_SlowDecCoeffStandard = roundShiftedInt(params.vo_AOM_SlowDecCoeffStandard, 4);
+  int rounded_AOM_FastDecCoeffStandard = roundShiftedInt(params.vo_AOM_FastDecCoeffStandard, 4);
+  int rounded_PartAOM_Slow_to_SMB_Slow = roundShiftedInt(params.vo_PartAOM_Slow_to_SMB_Slow, 4);
+  int rounded_PartAOM_Slow_to_SMB_Fast = roundShiftedInt(params.vo_PartAOM_Slow_to_SMB_Fast, 4);
+  int rounded_CN_Ratio_AOM_Slow = roundShiftedInt(params.vo_CN_Ratio_AOM_Slow, 4);
 
-	// compare the organic parameters against the give pool, to see if the parameters match
-	auto isSamePoolAsParams = [=](const AOM_Properties& pool)//, double addedOrganicMatterAmount)
-	{
-		//double CN_ratio_AOM_fast = params.CN_ratio_AOM_fast;
-		//if(areCropResidueParams)
-		//	CN_ratio_AOM_fast = calc_CN_Ratio_AOM_Fast_and_added_Corg_amount(
-		//		addedOrganicMatterAmount, addedOrganicMatterNConcentration).first;
+  // compare the organic parameters against the give pool, to see if the parameters match
+  auto isSamePoolAsParams = [=](const AOM_Properties& pool)//, double addedOrganicMatterAmount)
+  {
+    //double CN_ratio_AOM_fast = params.CN_ratio_AOM_fast;
+    //if(areCropResidueParams)
+    //	CN_ratio_AOM_fast = calc_CN_Ratio_AOM_Fast_and_added_Corg_amount(
+    //		addedOrganicMatterAmount, addedOrganicMatterNConcentration).first;
 
-		return
-			roundShiftedInt(pool.vo_AOM_SlowDecCoeffStandard, 4) == rounded_AOM_SlowDecCoeffStandard &&
-			roundShiftedInt(pool.vo_AOM_FastDecCoeffStandard, 4) == rounded_AOM_FastDecCoeffStandard &&
-			roundShiftedInt(pool.vo_PartAOM_Slow_to_SMB_Slow, 4) == rounded_PartAOM_Slow_to_SMB_Slow &&
-			roundShiftedInt(pool.vo_PartAOM_Slow_to_SMB_Fast, 4) == rounded_PartAOM_Slow_to_SMB_Fast &&
-			roundShiftedInt(pool.vo_CN_Ratio_AOM_Slow, 4) == rounded_CN_Ratio_AOM_Slow; //&&
-			//roundShiftedInt(pool.CN_ratio_AOM_fast, 0) == roundShiftedInt(CN_ratio_AOM_fast, 0);
-	};
+    return
+      roundShiftedInt(pool.vo_AOM_SlowDecCoeffStandard, 4) == rounded_AOM_SlowDecCoeffStandard &&
+      roundShiftedInt(pool.vo_AOM_FastDecCoeffStandard, 4) == rounded_AOM_FastDecCoeffStandard &&
+      roundShiftedInt(pool.vo_PartAOM_Slow_to_SMB_Slow, 4) == rounded_PartAOM_Slow_to_SMB_Slow &&
+      roundShiftedInt(pool.vo_PartAOM_Slow_to_SMB_Fast, 4) == rounded_PartAOM_Slow_to_SMB_Fast &&
+      roundShiftedInt(pool.vo_CN_Ratio_AOM_Slow, 4) == rounded_CN_Ratio_AOM_Slow; //&&
+      //roundShiftedInt(pool.CN_ratio_AOM_fast, 0) == roundShiftedInt(CN_ratio_AOM_fast, 0);
+  };
 
-	//urea
-	if(nools > 0)
-	{
-		for(const auto& p : layer2addedOrganicMatterAmount)
-		{
-			if(p.first < nools)
-			{
-				// kg N m-3 soil
-				soilColumn.at(p.first).vs_SoilCarbamid +=
-					p.second
-					* params.vo_AOM_DryMatterContent
-					* params.vo_AOM_CarbamidContent
-					/ 10000.0
-					/ layerThickness;
-			}
-		}
-	}
+  //urea
+  if(nools > 0)
+  {
+    for(const auto& p : layer2addedOrganicMatterAmount)
+    {
+      if(p.first < nools)
+      {
+        // kg N m-3 soil
+        soilColumn.at(p.first).vs_SoilCarbamid +=
+          p.second
+          * params.vo_AOM_DryMatterContent
+          * params.vo_AOM_CarbamidContent
+          / 10000.0
+          / layerThickness;
+      }
+    }
+  }
 
-	int poolSetIndex = -1;
-	if(areCropResidueParams)
-	{
-		int i = 0;
-		// find the index of an existing matching set of pools
-		for(const auto& pool : soilColumn.at(0).vo_AOM_Pool)
-		{
-			if(isSamePoolAsParams(pool))
-			{
-				poolSetIndex = i;
-				break;
-			}
-			i++;
-		}
-	}
-	
-	for(const auto& p : layer2addedOrganicMatterAmount)
-	{
-		auto intoLayerIndex = p.first;
-		double addedOrganicMatterAmount = p.second;
+  int poolSetIndex = -1;
+  if(areCropResidueParams)
+  {
+    int i = 0;
+    // find the index of an existing matching set of pools
+    for(const auto& pool : soilColumn.at(0).vo_AOM_Pool)
+    {
+      if(isSamePoolAsParams(pool))
+      {
+        poolSetIndex = i;
+        break;
+      }
+      i++;
+    }
+  }
+  
+  for(const auto& p : layer2addedOrganicMatterAmount)
+  {
+    auto intoLayerIndex = p.first;
+    double addedOrganicMatterAmount = p.second;
     auto& intoLayer = soilColumn.at(intoLayerIndex);
 
-		// calculate the CN ratio for AOM fast, if we're talking about crop residues and the
-	  // equivalent added organic carbon amount for the given added organic matter amount
-		double calced_CN_Ratio_AOM_Fast = 0, added_Corg_amount = 0, added_Norg_amount = 0;
-		std::tie(calced_CN_Ratio_AOM_Fast, added_Corg_amount, added_Norg_amount) =
-			calc_CN_Ratio_AOM_Fast_and_added_Corg_amount(addedOrganicMatterAmount,
-																									 addedOrganicMatterNConcentration);
+    // calculate the CN ratio for AOM fast, if we're talking about crop residues and the
+    // equivalent added organic carbon amount for the given added organic matter amount
+    double calced_CN_Ratio_AOM_Fast = 0, added_Corg_amount = 0, added_Norg_amount = 0;
+    std::tie(calced_CN_Ratio_AOM_Fast, added_Corg_amount, added_Norg_amount) =
+      calc_CN_Ratio_AOM_Fast_and_added_Corg_amount(addedOrganicMatterAmount,
+                                                   addedOrganicMatterNConcentration);
 
-		double AOM_slow_input = 0, AOM_fast_input = 0;
+    double AOM_slow_input = 0, AOM_fast_input = 0;
 
-		//if haven't found an existing pool with the same properties as params (or the params are from organic fertilizer)
-		//create a new one, appended to the existing lists
-		if(poolSetIndex < 0)
-		{
-			AOM_Properties pool;
-			pool.vo_AOM_SlowDecCoeffStandard = params.vo_AOM_SlowDecCoeffStandard;
-			pool.vo_AOM_FastDecCoeffStandard = params.vo_AOM_FastDecCoeffStandard;
-			pool.vo_CN_Ratio_AOM_Slow = params.vo_CN_Ratio_AOM_Slow;
-			pool.vo_CN_Ratio_AOM_Fast = areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast;
-			pool.vo_PartAOM_Slow_to_SMB_Slow = params.vo_PartAOM_Slow_to_SMB_Slow;
-			pool.vo_PartAOM_Slow_to_SMB_Fast = params.vo_PartAOM_Slow_to_SMB_Fast;
-			pool.incorporation = this->incorporation;
-			pool.noVolatilization = areCropResidueParams;
+    //if haven't found an existing pool with the same properties as params (or the params are from organic fertilizer)
+    //create a new one, appended to the existing lists
+    if(poolSetIndex < 0)
+    {
+      AOM_Properties pool;
+      pool.vo_AOM_SlowDecCoeffStandard = params.vo_AOM_SlowDecCoeffStandard;
+      pool.vo_AOM_FastDecCoeffStandard = params.vo_AOM_FastDecCoeffStandard;
+      pool.vo_CN_Ratio_AOM_Slow = params.vo_CN_Ratio_AOM_Slow;
+      pool.vo_CN_Ratio_AOM_Fast = areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast;
+      pool.vo_PartAOM_Slow_to_SMB_Slow = params.vo_PartAOM_Slow_to_SMB_Slow;
+      pool.vo_PartAOM_Slow_to_SMB_Fast = params.vo_PartAOM_Slow_to_SMB_Fast;
+      pool.incorporation = this->incorporation;
+      pool.noVolatilization = areCropResidueParams;
 
-			// append this pool (template) to each layers pool list
-			for(size_t i = 0; i < nools; i++)
-			{
-				soilColumn.at(i).vo_AOM_Pool.push_back(pool);
+      // append this pool (template) to each layers pool list
+      for(size_t i = 0; i < nools; i++)
+      {
+        soilColumn.at(i).vo_AOM_Pool.push_back(pool);
 
-				// update the pool where the organic matter will go into
-				if(i == intoLayerIndex)
-				{
-					auto& cpool = intoLayer.vo_AOM_Pool.back();
-					cpool.vo_DaysAfterApplication = 1; //start daily volatilization process
-					cpool.vo_AOM_DryMatterContent = params.vo_AOM_DryMatterContent;;
-					cpool.vo_AOM_NH4Content = params.vo_AOM_NH4Content;
-					cpool.vo_AOM_Slow = AOM_slow_input = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount;
-					cpool.vo_AOM_Fast = AOM_fast_input = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount;
-				}
-			}
+        // update the pool where the organic matter will go into
+        if(i == intoLayerIndex)
+        {
+          auto& cpool = intoLayer.vo_AOM_Pool.back();
+          cpool.vo_DaysAfterApplication = 1; //start daily volatilization process
+          cpool.vo_AOM_DryMatterContent = params.vo_AOM_DryMatterContent;;
+          cpool.vo_AOM_NH4Content = params.vo_AOM_NH4Content;
+          cpool.vo_AOM_Slow = AOM_slow_input = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount;
+          cpool.vo_AOM_Fast = AOM_fast_input = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount;
+        }
+      }
 
-			// pools are now created, so can be used in the other layers
-			poolSetIndex = int(soilColumn.at(0).vo_AOM_Pool.size() - 1);
-		}
-		else
-		{
-			auto& cpool = intoLayer.vo_AOM_Pool[poolSetIndex];
-			cpool.vo_AOM_Slow += AOM_slow_input = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount;
+      // pools are now created, so can be used in the other layers
+      poolSetIndex = int(soilColumn.at(0).vo_AOM_Pool.size() - 1);
+    }
+    else
+    {
+      auto& cpool = intoLayer.vo_AOM_Pool[poolSetIndex];
+      cpool.vo_AOM_Slow += AOM_slow_input = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount;
 
-			double added_CN_ratio_AOM_fast = areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast;
-			double pool_fast_N = cpool.vo_AOM_Fast / cpool.vo_CN_Ratio_AOM_Fast;
-			double added_fast_N = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount / added_CN_ratio_AOM_fast;
-			cpool.vo_AOM_Fast += AOM_fast_input = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount;
-			double new_CN_ratio_AOM_fast = cpool.vo_AOM_Fast / (pool_fast_N + added_fast_N);
+      double added_CN_ratio_AOM_fast = areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast;
+      double pool_fast_N = cpool.vo_AOM_Fast / cpool.vo_CN_Ratio_AOM_Fast;
+      double added_fast_N = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount / added_CN_ratio_AOM_fast;
+      cpool.vo_AOM_Fast += AOM_fast_input = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount;
+      double new_CN_ratio_AOM_fast = cpool.vo_AOM_Fast / (pool_fast_N + added_fast_N);
 
-			//if(new_CN_ratio_AOM_fast > 300)
-			//	cout << "bla" << endl;
+      //if(new_CN_ratio_AOM_fast > 300)
+      //	cout << "bla" << endl;
 
-			cpool.vo_CN_Ratio_AOM_Fast = new_CN_ratio_AOM_fast;
-		}
+      cpool.vo_CN_Ratio_AOM_Fast = new_CN_ratio_AOM_fast;
+    }
 
-		double soil_NH4_input =
-			params.vo_AOM_NH4Content
-			* addedOrganicMatterAmount
-			* params.vo_AOM_DryMatterContent
-			/ 10000.0
-			/ layerThickness;
+    double soil_NH4_input =
+      params.vo_AOM_NH4Content
+      * addedOrganicMatterAmount
+      * params.vo_AOM_DryMatterContent
+      / 10000.0
+      / layerThickness;
 
-		double soil_NO3_input =
-			params.vo_AOM_NO3Content
-			* addedOrganicMatterAmount
-			* params.vo_AOM_DryMatterContent
-			/ 10000.0
-			/ layerThickness;
+    double soil_NO3_input =
+      params.vo_AOM_NO3Content
+      * addedOrganicMatterAmount
+      * params.vo_AOM_DryMatterContent
+      / 10000.0
+      / layerThickness;
 
-		double SOM_FastInput =
-			max(0.0, (1.0 - (params.vo_PartAOM_to_AOM_Slow + params.vo_PartAOM_to_AOM_Fast)))
-			* added_Corg_amount;
+    double SOM_FastInput =
+      max(0.0, (1.0 - (params.vo_PartAOM_to_AOM_Slow + params.vo_PartAOM_to_AOM_Fast)))
+      * added_Corg_amount;
 
-		// immediate top layer pool update
+    // immediate top layer pool update
     intoLayer.vs_SoilNH4 += soil_NH4_input;
     intoLayer.vs_SoilNO3 += soil_NO3_input;
     intoLayer.vs_SOM_Fast += SOM_FastInput;
 
-		// store for further use
-		vo_AOM_SlowInput[intoLayerIndex] += AOM_slow_input;
-		vo_AOM_FastInput[intoLayerIndex] += AOM_fast_input;
-		vo_SOM_FastInput[intoLayerIndex] += SOM_FastInput;
-	}
+    // store for further use
+    vo_AOM_SlowInput[intoLayerIndex] += AOM_slow_input;
+    vo_AOM_FastInput[intoLayerIndex] += AOM_fast_input;
+    vo_SOM_FastInput[intoLayerIndex] += SOM_FastInput;
+  }
 
-	addedOrganicMatter = true;
+  addedOrganicMatter = true;
 }
 
 void SoilOrganic::addIrrigationWater(double amount) {
@@ -501,38 +501,38 @@ void SoilOrganic::addIrrigationWater(double amount) {
  /*
  void SoilOrganic::fo_OM_Input(bool vo_AOM_Addition) {
 
-	 //Allocation of AOM parameters
-	 if (vo_AOM_Addition) {
-		 assert(addedOrganicMatterParams != NULL);
+   //Allocation of AOM parameters
+   if (vo_AOM_Addition) {
+     assert(addedOrganicMatterParams != NULL);
 
-		 vo_AOM_DryMatterContent = addedOrganicMatterParams->getVo_AOM_DryMatterContent();
-		 vo_AOM_NH4Content = addedOrganicMatterParams->getVo_AOM_NH4Content();
-		 vo_AOM_NO3Content = addedOrganicMatterParams->getVo_AOM_NO3Content();
-		 vo_AOM_CarbamidContent = addedOrganicMatterParams->getVo_AOM_CarbamidContent();
-		 vo_AOM_SlowDecCoeffStandard = addedOrganicMatterParams->getVo_AOM_SlowDecCoeffStandard();
-		 vo_AOM_FastDecCoeffStandard = addedOrganicMatterParams->getVo_AOM_FastDecCoeffStandard();
-		 vo_PartAOM_to_AOM_Slow = addedOrganicMatterParams->getVo_PartAOM_to_AOM_Slow();
-		 vo_PartAOM_to_AOM_Fast = addedOrganicMatterParams->getVo_PartAOM_to_AOM_Fast();
-		 vo_CN_Ratio_AOM_Slow = addedOrganicMatterParams->getVo_CN_Ratio_AOM_Slow();
-		 CN_ratio_AOM_fast = addedOrganicMatterParams->getVo_CN_Ratio_AOM_Fast();
-		 vo_PartAOM_Slow_to_SMB_Slow = addedOrganicMatterParams->getVo_PartAOM_Slow_to_SMB_Slow();
-		 vo_PartAOM_Slow_to_SMB_Fast = addedOrganicMatterParams->getVo_PartAOM_Slow_to_SMB_Fast();
+     vo_AOM_DryMatterContent = addedOrganicMatterParams->getVo_AOM_DryMatterContent();
+     vo_AOM_NH4Content = addedOrganicMatterParams->getVo_AOM_NH4Content();
+     vo_AOM_NO3Content = addedOrganicMatterParams->getVo_AOM_NO3Content();
+     vo_AOM_CarbamidContent = addedOrganicMatterParams->getVo_AOM_CarbamidContent();
+     vo_AOM_SlowDecCoeffStandard = addedOrganicMatterParams->getVo_AOM_SlowDecCoeffStandard();
+     vo_AOM_FastDecCoeffStandard = addedOrganicMatterParams->getVo_AOM_FastDecCoeffStandard();
+     vo_PartAOM_to_AOM_Slow = addedOrganicMatterParams->getVo_PartAOM_to_AOM_Slow();
+     vo_PartAOM_to_AOM_Fast = addedOrganicMatterParams->getVo_PartAOM_to_AOM_Fast();
+     vo_CN_Ratio_AOM_Slow = addedOrganicMatterParams->getVo_CN_Ratio_AOM_Slow();
+     CN_ratio_AOM_fast = addedOrganicMatterParams->getVo_CN_Ratio_AOM_Fast();
+     vo_PartAOM_Slow_to_SMB_Slow = addedOrganicMatterParams->getVo_PartAOM_Slow_to_SMB_Slow();
+     vo_PartAOM_Slow_to_SMB_Fast = addedOrganicMatterParams->getVo_PartAOM_Slow_to_SMB_Fast();
 
-	 } else {
+   } else {
 
-		 vo_AOM_DryMatterContent = 0.0;
-		 vo_AOM_NH4Content = 0.0;
-		 vo_AOM_NO3Content = 0.0;
-		 vo_AOM_CarbamidContent = 0.0;
-		 vo_AOM_SlowDecCoeffStandard = 0.0;
-		 vo_AOM_FastDecCoeffStandard = 0.0;
-		 vo_PartAOM_to_AOM_Slow = 0.0;
-		 vo_PartAOM_to_AOM_Fast = 0.0;
-		 vo_CN_Ratio_AOM_Slow = 1.0;
-		 CN_ratio_AOM_fast = 1.0;
-		 vo_PartAOM_Slow_to_SMB_Slow = 0.0;
-		 vo_PartAOM_Slow_to_SMB_Fast = 0.0;
-	 }
+     vo_AOM_DryMatterContent = 0.0;
+     vo_AOM_NH4Content = 0.0;
+     vo_AOM_NO3Content = 0.0;
+     vo_AOM_CarbamidContent = 0.0;
+     vo_AOM_SlowDecCoeffStandard = 0.0;
+     vo_AOM_FastDecCoeffStandard = 0.0;
+     vo_PartAOM_to_AOM_Slow = 0.0;
+     vo_PartAOM_to_AOM_Fast = 0.0;
+     vo_CN_Ratio_AOM_Slow = 1.0;
+     CN_ratio_AOM_fast = 1.0;
+     vo_PartAOM_Slow_to_SMB_Slow = 0.0;
+     vo_PartAOM_Slow_to_SMB_Fast = 0.0;
+   }
  }
   */
 
@@ -1486,60 +1486,60 @@ SoilOrganic::NitDenitN2O SoilOrganic::fo_stics_N2OProduction() {
  */
 void SoilOrganic::fo_PoolUpdate()
 {
-	for(int i = 0; i < soilColumn.vs_NumberOfOrganicLayers(); i++)
-	{
+  for(int i = 0; i < soilColumn.vs_NumberOfOrganicLayers(); i++)
+  {
     auto& layi = soilColumn.at(i);
 
-		vo_AOM_SlowDeltaSum[i] = 0.0;
-		vo_AOM_FastDeltaSum[i] = 0.0;
-		vo_AOM_SlowSum[i] = 0.0;
-		vo_AOM_FastSum[i] = 0.0;
+    vo_AOM_SlowDeltaSum[i] = 0.0;
+    vo_AOM_FastDeltaSum[i] = 0.0;
+    vo_AOM_SlowSum[i] = 0.0;
+    vo_AOM_FastSum[i] = 0.0;
 
-		for(auto& pool : layi.vo_AOM_Pool)
-		{
-			pool.vo_AOM_Slow += pool.vo_AOM_SlowDelta;
-			pool.vo_AOM_Fast += pool.vo_AOM_FastDelta;
+    for(auto& pool : layi.vo_AOM_Pool)
+    {
+      pool.vo_AOM_Slow += pool.vo_AOM_SlowDelta;
+      pool.vo_AOM_Fast += pool.vo_AOM_FastDelta;
 
-			vo_AOM_SlowDeltaSum[i] += pool.vo_AOM_SlowDelta;
-			vo_AOM_FastDeltaSum[i] += pool.vo_AOM_FastDelta;
+      vo_AOM_SlowDeltaSum[i] += pool.vo_AOM_SlowDelta;
+      vo_AOM_FastDeltaSum[i] += pool.vo_AOM_FastDelta;
 
-			vo_AOM_SlowSum[i] += pool.vo_AOM_Slow;
-			vo_AOM_FastSum[i] += pool.vo_AOM_Fast;
-		}
+      vo_AOM_SlowSum[i] += pool.vo_AOM_Slow;
+      vo_AOM_FastSum[i] += pool.vo_AOM_Fast;
+    }
 
-		layi.vs_SOM_Slow += vo_SOM_SlowDelta[i];
-		layi.vs_SOM_Fast += vo_SOM_FastDelta[i];
-		layi.vs_SMB_Slow += vo_SMB_SlowDelta[i];
-		layi.vs_SMB_Fast += vo_SMB_FastDelta[i];
+    layi.vs_SOM_Slow += vo_SOM_SlowDelta[i];
+    layi.vs_SOM_Fast += vo_SOM_FastDelta[i];
+    layi.vs_SMB_Slow += vo_SMB_SlowDelta[i];
+    layi.vs_SMB_Fast += vo_SMB_FastDelta[i];
 
-		vo_CBalance[i] = 
-			vo_AOM_SlowInput[i]
-			+ vo_AOM_FastInput[i]
-			+ vo_AOM_SlowDeltaSum[i]
-			+ vo_AOM_FastDeltaSum[i] 
-			+ vo_SMB_SlowDelta[i]
-			+ vo_SMB_FastDelta[i] 
-			+ vo_SOM_SlowDelta[i]
-			+ vo_SOM_FastDelta[i] 
-			+ vo_SOM_FastInput[i];
+    vo_CBalance[i] = 
+      vo_AOM_SlowInput[i]
+      + vo_AOM_FastInput[i]
+      + vo_AOM_SlowDeltaSum[i]
+      + vo_AOM_FastDeltaSum[i] 
+      + vo_SMB_SlowDelta[i]
+      + vo_SMB_FastDelta[i] 
+      + vo_SOM_SlowDelta[i]
+      + vo_SOM_FastDelta[i] 
+      + vo_SOM_FastInput[i];
 
-		// ([kg C kg-1] * [kg m-3]) - [kg C m-3]
-		vo_SoilOrganicC[i] = 
-			(layi.vs_SoilOrganicCarbon()
-			 * layi.vs_SoilBulkDensity())
-			- vo_InertSoilOrganicC[i];
-		vo_SoilOrganicC[i] += vo_CBalance[i];
+    // ([kg C kg-1] * [kg m-3]) - [kg C m-3]
+    vo_SoilOrganicC[i] = 
+      (layi.vs_SoilOrganicCarbon()
+       * layi.vs_SoilBulkDensity())
+      - vo_InertSoilOrganicC[i];
+    vo_SoilOrganicC[i] += vo_CBalance[i];
 
-		// [kg C m-3] / [kg m-3] --> [kg C kg-1]
-		layi.set_SoilOrganicCarbon((vo_SoilOrganicC[i] + vo_InertSoilOrganicC[i])
-																				/ layi.vs_SoilBulkDensity());
+    // [kg C m-3] / [kg m-3] --> [kg C kg-1]
+    layi.set_SoilOrganicCarbon((vo_SoilOrganicC[i] + vo_InertSoilOrganicC[i])
+                                        / layi.vs_SoilBulkDensity());
 
-		// [kg C m-3] / [kg m-3] --> [kg C kg-1]
-		//layi.set_SoilOrganicMatter
-		//	((vo_SoilOrganicC[i] + vo_InertSoilOrganicC[i])
-		//	 / OrganicConstants::po_SOM_to_C
-		//	 / layi.vs_SoilBulkDensity());
-	} 
+    // [kg C m-3] / [kg m-3] --> [kg C kg-1]
+    //layi.set_SoilOrganicMatter
+    //	((vo_SoilOrganicC[i] + vo_InertSoilOrganicC[i])
+    //	 / OrganicConstants::po_SOM_to_C
+    //	 / layi.vs_SoilBulkDensity());
+  } 
 }
 
 /**
