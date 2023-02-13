@@ -21,14 +21,13 @@
 	!endif
 
 	!define ParamsRepoDir "..\..\monica-parameters"
-	!define SysLibsDir "..\..\sys-libs"
-	!define UtilDir "..\..\util"
+	!define MasInfrastructureRepoDir "..\..\mas-infrastructure"
 
 	!ifndef VersionNumber
-		!define VersionNumber "2.0.2"
+		!define VersionNumber "3.4.0"
 	!endif
 	!ifndef BuildNumber
-		!include "..\build-number.nsh"
+		!include "213"
 	!endif
 
 ;--------------------------------
@@ -101,38 +100,23 @@ Section "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems" SecDummy
 	SetOutPath "$INSTDIR"
 	
 	;ADD YOUR OWN FILES HERE...
-	;File /oname=monica.exe "..\${ExecutableFolder}\monica.exe"
 	File /oname=monica-run.exe "..\${ExecutableFolder}\monica-run.exe"
-	;File /oname=monica-zmq-run.exe "..\${ExecutableFolder}\monica-zmq-run.exe"
 	File /oname=monica-zmq-server.exe "..\${ExecutableFolder}\monica-zmq-server.exe"
-	;File /oname=monica-zmq-control.exe "..\${ExecutableFolder}\monica-zmq-control.exe"
-	;File /oname=monica-zmq-control-send.exe "..\${ExecutableFolder}\monica-zmq-control-send.exe"
 	File /oname=monica-zmq-proxy.exe "..\${ExecutableFolder}\monica-zmq-proxy.exe"
 	File /oname=monica-capnp-proxy.exe "..\${ExecutableFolder}\monica-capnp-proxy.exe"
 	File /oname=monica-capnp-server.exe "..\${ExecutableFolder}\monica-capnp-server.exe"
- 
-	;File /oname=monica_python.pyd "..\${ExecutableFolder}\monica_python.pyd"  
-	;File "${SysLibsDir}\binaries\windows\vc141\${Arch}\boost-python\boost_python-vc141-mt-${BoostBit}-1_66.dll"
+	File /oname=monica-capnp-fbp-component.exe "..\${ExecutableFolder}\monica-capnp-fbp-component.exe"
 	
 	File "..\LICENSE"
 	File "..\documentation\de_benutzerhandbuch_MONICA_windows.pdf"
 	File "..\documentation\en_user_manual_MONICA_windows.pdf"
 	File "..\src\python\monica_io3.py"
-	File "..\src\python\monica_io.py"
-	File "..\src\python\ascii_io.py"
-	File "${UtilDir}\soil\soil_io.py"
-	File "${UtilDir}\soil\soil_io3.py"
+	File "${MasInfrastructureRepoDir}\src\python\services\soil\soil_io3.py"
 
 	CreateDirectory "$PROFILE\MONICA"
 	SetOutPath $PROFILE\MONICA
-	File /oname=db-connections.ini "..\db-connections-install.ini"
 	File "..\LICENSE"
 		
-	;CreateDirectory "$PROFILE\MONICA\sqlite-db"
-	;SetOutPath "$PROFILE\MONICA\sqlite-db"
-	;File "..\sqlite-db\monica.sqlite"
-	;File "..\sqlite-db\ka5-soil-data.sqlite"
-
 	;create conversion script dir
 	CreateDirectory "$PROFILE\MONICA\monica-ini-to-json"
 	SetOutPath "$PROFILE\MONICA\monica-ini-to-json"
