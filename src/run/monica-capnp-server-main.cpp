@@ -65,7 +65,7 @@ public:
     runMonica->setRestorer(restorer);
 
     auto monicaSR = restorer->saveStr(runMonicaClient, nullptr, nullptr, false).wait(ioContext.waitScope).sturdyRef;
-    if(outputSturdyRefs && monicaSR.size() > 0) std::cout << "channelSR=" << monicaSR.cStr() << std::endl;
+    if(outputSturdyRefs && monicaSR.size() > 0) std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
 
     // Run forever, accepting connections and handling requests.
     kj::NEVER_DONE.wait(ioContext.waitScope);
