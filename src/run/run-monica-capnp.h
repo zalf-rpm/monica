@@ -49,8 +49,8 @@ public:
   MonicaEnvInstance::Client getClient() { return _client; }
   void setClient(MonicaEnvInstance::Client c) { _client = c; }
 
-  mas::schema::common::Action::Client getUnregisterAction() { return _unregisterAction; }
-  void setUnregisterAction(mas::schema::common::Action::Client unreg) { _unregisterAction = unreg; }
+  //mas::schema::common::Action::Client getUnregisterAction() { return _unregisterAction; }
+  //void setUnregisterAction(mas::schema::common::Action::Client unreg) { _unregisterAction = unreg; }
 
   kj::Promise<void> info(InfoContext context) override;
 
@@ -67,7 +67,7 @@ private:
   // Implementation of the Model::Instance Cap'n Proto interface
   bool _startedServerInDebugMode{ false };
   kj::String _id, _name, _description;
-  mas::schema::common::Action::Client _unregisterAction{ nullptr };
+  //mas::schema::common::Action::Client _unregisterAction{ nullptr };
   mas::infrastructure::common::Restorer* _restorer{nullptr};
   MonicaEnvInstance::Client _client{nullptr};
 };

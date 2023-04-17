@@ -51,27 +51,32 @@ string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
 typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
-
-class RunMonicaProxy;
-class Unregister final : public mas::schema::common::Action::Server
-{
-public:
-  Unregister(RunMonicaProxy& proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
-
-  ~Unregister();
-
-  kj::Promise<void> do_(DoContext context) override; //do @0 ();
-
-private:
-  void unreg();
-
-  RunMonicaProxy& _proxy;
-  size_t _monicaServerId;
-};
+typedef mas::schema::model::EnvInstanceProxy< mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstanceProxy;
 
 class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy< mas::schema::common::StructuredText, mas::schema::common::StructuredText>::Server
 {
-  friend class Unregister;
+  struct Unregister final : public MonicaEnvInstanceProxy::Unregister::Server
+  {
+    RunMonicaProxy& _proxy;
+    size_t _monicaServerId;
+
+    Unregister(RunMonicaProxy& proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
+    virtual ~Unregister() noexcept(false) { unreg(); }
+
+    //do @0 ();
+    kj::Promise<void> unregister(UnregisterContext context) override {
+      unreg();
+      context.getResults().setSuccess(true);
+      return kj::READY_NOW;
+    }
+
+    void unreg() {
+      cout << "unregistering id: " << _monicaServerId << endl;
+      if (_monicaServerId < _proxy._xs.size()) {
+        _proxy._xs[_monicaServerId].unset();
+      }
+    }
+  };
     
   struct X {
     MonicaEnvInstance::Client client{ nullptr };
@@ -180,25 +185,6 @@ public:
     return kj::READY_NOW;
   }
 };
-
-Unregister::~Unregister() {
-  unreg();
-}
-
-void Unregister::unreg() {
-  cout << "unregistering id: " << _monicaServerId << endl;
-  if (_monicaServerId < _proxy._xs.size()) {
-    _proxy._xs[_monicaServerId].unset();
-  }
-}
-
-kj::Promise<void> Unregister::do_(DoContext context) // do @0 ();
-{
-  unreg();
-  return kj::READY_NOW;
-}
-
-//capnp::Capability::Client mainInterface(nullptr);
 
 kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
   return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](

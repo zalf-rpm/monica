@@ -32,6 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common.capnp.h"
+#include "fbp.capnp.h"
 #include "model/monica/monica_params.capnp.h"
 #include "model/monica/monica_state.capnp.h"
 #include "management.capnp.h"
@@ -1062,8 +1063,8 @@ private:
 
 struct Intercropping {
   typedef mas::schema::model::monica::ICData ICD;
-  typedef mas::schema::common::Channel<ICD>::ChanReader Reader;
-  typedef mas::schema::common::Channel<ICD>::ChanWriter Writer;
+  typedef mas::schema::fbp::Channel<ICD>::ChanReader Reader;
+  typedef mas::schema::fbp::Channel<ICD>::ChanWriter Writer;
   kj::AsyncIoContext* ioContext {nullptr};
   Reader::Client reader {nullptr};
   Writer::Client writer {nullptr};

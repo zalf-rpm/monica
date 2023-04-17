@@ -36,12 +36,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
+#include "fbp.capnp.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
-using namespace mas;
-
 
 class FBPMain
 {
@@ -65,10 +64,10 @@ public:
     bool startedServerInDebugMode = false;
 
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;   
-    typedef schema::common::IP IP;
-    typedef schema::common::Channel<IP> Channel;
-    typedef schema::model::EnvInstance<schema::common::StructuredText, schema::common::StructuredText> MonicaEnvInstance;
-    typedef schema::model::Env<schema::common::StructuredText> Env;
+    typedef mas::schema::fbp::IP IP;
+    typedef mas::schema::fbp::Channel<IP> Channel;
+    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
+    typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
     auto inp = conMan.tryConnectB(ioContext, inSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(ioContext, outSr.cStr()).castAs<Channel::ChanWriter>();
@@ -87,7 +86,7 @@ public:
         else 
         {
           auto inIp = msg.getValue();
-          auto attr = infrastructure::common::getIPAttr(inIp, fromAttr);
+          auto attr = mas::infrastructure::common::getIPAttr(inIp, fromAttr);
           auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
           auto rreq = runMonicaClient.runRequest();
           rreq.setEnv(env);
@@ -101,7 +100,7 @@ public:
             // set content if not to be set as attribute
             if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
             // copy attributes, if any and set result as attribute, if requested
-            auto toAttrBuilder = infrastructure::common::copyAndSetIPAttrs(inIp, outIp, toAttr);//, capnp::toAny(resJsonStr));
+            auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp, toAttr);//, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
 
             wreq.send().wait(ioContext.waitScope);
@@ -140,7 +139,7 @@ public:
   }
 
 private:
-  infrastructure::common::ConnectionManager conMan;
+  mas::infrastructure::common::ConnectionManager conMan;
   kj::String name;
   kj::ProcessContext &context;
   kj::String inSr;
