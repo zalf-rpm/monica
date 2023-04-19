@@ -146,8 +146,9 @@ private:
   double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
   double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
   double fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect);
-  double fo_TempOnDecompostion(double d_SoilTemperature);
-  double fo_MoistOnDecompostion(double d_SoilMoisture_pF);
+  double fo_TempOnDecompostion(double d_SoilTemperature, double d_QTenFactor, double d_TempDecOptimal);
+  double fo_MoistOnDecompostion(double d_SoilMoisture_m3, double d_Saturation, double d_MoistureDecOptimal);
+  //double fo_MoistOnDecompostion(double d_SoilMoisture_pF, double d_MoistureDecOptimal);
   double fo_MoistOnHydrolysis(double d_SoilMoisture_pF);
   double fo_TempOnNitrification(double d_SoilTemperature);
   double fo_MoistOnNitrification(double d_SoilMoisture_pF);
@@ -175,6 +176,7 @@ private:
   double vo_DecomposerRespiration{0.0};
   std::string vo_ErrorMessage;
   std::vector<double> vo_InertSoilOrganicC;
+  std::vector<double> vo_InertSoilOrganicC_highCN;
   double vo_N2O_Produced{0.0}; // [kg-N2O-N/ha]
   double vo_N2O_Produced_Nit{ 0.0 }; // [kg-N2O-N/ha]
   double vo_N2O_Produced_Denit{ 0.0 }; // [kg-N2O-N/ha]
@@ -189,6 +191,7 @@ private:
   std::vector<double> vo_SMB_SlowDelta;
   std::vector<double> vs_SoilMineralNContent;
   std::vector<double> vo_SoilOrganicC;
+  std::vector<double> vo_SoilOrganicC_highCN;
   std::vector<double> vo_SOM_FastDelta;
   std::vector<double> vo_SOM_FastInput; //!< SOMfast pool change by direct input [kg C m-3]
   std::vector<double> vo_SOM_SlowDelta;

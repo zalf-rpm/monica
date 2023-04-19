@@ -1165,6 +1165,7 @@ void OrganicMatterParameters::deserialize(mas::schema::model::monica::Params::Or
   vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowToSMBSlow();
   vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowToSMBFast();
   vo_NConcentration = reader.getNConcentration();
+  //vo_CorgContent = reader.getCorgContent();
 }
 
 void OrganicMatterParameters::serialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
@@ -1181,6 +1182,7 @@ void OrganicMatterParameters::serialize(mas::schema::model::monica::Params::Orga
   builder.setPartAOMSlowToSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
   builder.setPartAOMSlowToSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
   builder.setNConcentration(vo_NConcentration);
+  //builder.setCorgContent(vo_CorgContent);
 }
 
 OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
@@ -1205,6 +1207,7 @@ Errors OrganicMatterParameters::merge(json11::Json j)
   set_double_value(vo_PartAOM_Slow_to_SMB_Slow, j, "PartAOM_Slow_to_SMB_Slow");
   set_double_value(vo_PartAOM_Slow_to_SMB_Fast, j, "PartAOM_Slow_to_SMB_Fast");
   set_double_value(vo_NConcentration, j, "NConcentration");
+  set_double_value(vo_CorgContent, j, "CorgContent");
 
 	return res;
 }
@@ -1225,7 +1228,8 @@ json11::Json OrganicMatterParameters::to_json() const
   ,{"CN_Ratio_AOM_Fast", J11Array {vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool"}}
   ,{"PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}}
   ,{"PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}}
-  ,{"NConcentration", vo_NConcentration}
+  ,{"NConcentration", J11Array {vo_NConcentration, "kg N kg DM-1", "Nitrogen content in added organic matter"}}
+  ,{"CorgContent", J11Array {vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter"}}
   };
 }
 
@@ -2164,6 +2168,9 @@ void SoilOrganicModuleParameters::deserialize(mas::schema::model::monica::SoilOr
   po_PartSOM_to_SMB_Fast = reader.getPartSOMToSMBFast();
   po_CN_Ratio_SMB = reader.getCnRatioSMB();
   po_LimitClayEffect = reader.getLimitClayEffect();
+  //po_QTenFactor = reader.getQTenFactor();
+  //po_TempDecOptimal = reader.getTempDecOptimal();
+  //po_MoistureDecOptimal = reader.getMoistureDecOptimal();
   po_AmmoniaOxidationRateCoeffStandard = reader.getAmmoniaOxidationRateCoeffStandard();
   po_NitriteOxidationRateCoeffStandard = reader.getNitriteOxidationRateCoeffStandard();
   po_TransportRateCoeff = reader.getTransportRateCoeff();
@@ -2204,6 +2211,9 @@ void SoilOrganicModuleParameters::serialize(mas::schema::model::monica::SoilOrga
   builder.setPartSOMToSMBFast(po_PartSOM_to_SMB_Fast);
   builder.setCnRatioSMB(po_CN_Ratio_SMB);
   builder.setLimitClayEffect(po_LimitClayEffect);
+  //builder.setQTenFactor(po_QTenFactor);
+  //builder.setTempDecOptimal(po_TempDecOptimal);
+  //builder.setMoistureDecOptimal(po_MoistureDecOptimal);
   builder.setAmmoniaOxidationRateCoeffStandard(po_AmmoniaOxidationRateCoeffStandard);
   builder.setNitriteOxidationRateCoeffStandard(po_NitriteOxidationRateCoeffStandard);
   builder.setTransportRateCoeff(po_TransportRateCoeff);
@@ -2252,6 +2262,9 @@ Errors SoilOrganicModuleParameters::merge(json11::Json j)
   set_double_value(po_PartSOM_to_SMB_Fast, j, "PartSOM_to_SMB_Fast");
   set_double_value(po_CN_Ratio_SMB, j, "CN_Ratio_SMB");
   set_double_value(po_LimitClayEffect, j, "LimitClayEffect");
+  set_double_value(po_QTenFactor, j, "QTenFactor");
+  set_double_value(po_TempDecOptimal, j, "TempDecOptimal");
+  set_double_value(po_MoistureDecOptimal, j, "MoistureDecOptimal");
   set_double_value(po_AmmoniaOxidationRateCoeffStandard, j, "AmmoniaOxidationRateCoeffStandard");
   set_double_value(po_NitriteOxidationRateCoeffStandard, j, "NitriteOxidationRateCoeffStandard");
   set_double_value(po_TransportRateCoeff, j, "TransportRateCoeff");
@@ -2298,6 +2311,9 @@ json11::Json SoilOrganicModuleParameters::to_json() const
   ,{"PartSOM_to_SMB_Fast", J11Array {po_PartSOM_to_SMB_Fast, ""}}
   ,{"CN_Ratio_SMB", J11Array {po_CN_Ratio_SMB, ""}}
   ,{"LimitClayEffect", J11Array {po_LimitClayEffect, "kg kg-1"}}
+  ,{"QTenFactor", J11Array {po_QTenFactor, ""}}
+  ,{"TempDecOptimal", J11Array {po_TempDecOptimal, "°C"}}
+  ,{"MoistureDecOptimal", J11Array {po_MoistureDecOptimal, "%"}}
   ,{"AmmoniaOxidationRateCoeffStandard", J11Array {po_AmmoniaOxidationRateCoeffStandard, "d-1"}}
   ,{"NitriteOxidationRateCoeffStandard", J11Array {po_NitriteOxidationRateCoeffStandard, "d-1"}}
   ,{"TransportRateCoeff", J11Array {po_TransportRateCoeff, "d-1"}}

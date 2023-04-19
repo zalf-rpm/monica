@@ -576,6 +576,7 @@ struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
   double vo_AOM_NH4Content{ 0.0 }; //!< Ammonium content in added organic matter [kg N kg DM-1]
   double vo_AOM_NO3Content{ 0.0 }; //!< Nitrate content in added organic matter [kg N kg DM-1]
   double vo_AOM_CarbamidContent{ 0.0 }; //!< Carbamide content in added organic matter [kg N kg DM-1]
+  double vo_CorgContent{ 0.0 }; //!< Carbon content in added organic matter [kg C kg DM-1]
 
   double vo_AOM_SlowDecCoeffStandard{ 0.0 }; //!< Decomposition rate coefficient of slow AOM at standard conditions [d-1]
   double vo_AOM_FastDecCoeffStandard{ 0.0 }; //!< Decomposition rate coefficient of fast AOM at standard conditions [d-1]
@@ -988,6 +989,9 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
   double po_PartSOM_to_SMB_Fast{ 0.0002 }; // 0.0002 [], optimised
   double po_CN_Ratio_SMB{ 6.70 }; // 6.70 [], from DAISY manual
   double po_LimitClayEffect{ 0.25 }; // 0.25 [kg kg-1], from DAISY manual
+  double po_QTenFactor{ 2.4 }; // 2.4 [] default value, analysis literature
+  double po_TempDecOptimal{ 42 }; // 42 [] default value, analysis literature
+  double po_MoistureDecOptimal{ 60 }; // 60 [] default value, analysis literature
   double po_AmmoniaOxidationRateCoeffStandard{ 1.0e-1 }; // 1.0e-1 [d-1], from DAISY manual
   double po_NitriteOxidationRateCoeffStandard{ 9.0e-1 }; // 9.0e-1 [d-1], fudged by Florian Stange
   double po_TransportRateCoeff{ 0.1 }; // 0.1 [d-1], from DAISY manual
