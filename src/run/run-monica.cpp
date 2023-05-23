@@ -616,8 +616,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     auto pathToSerFile = kj::str(env.params.simulationParameters.pathToSerializationFile);
     auto fs = kj::newDiskFilesystem();
     auto file = isAbsolutePath(pathToSerFile.cStr())
-      ? fs->getRoot().openFile(kj::Path::parse(pathToSerFile))
-      : fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile));
+      ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile))
+      : fs->getRoot().openFile(kj::Path::parse(pathToSerFile));
 
     auto dserRes = deserializeFullState(kj::mv(file));
     monica = kj::mv(dserRes.monica);

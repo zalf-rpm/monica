@@ -595,8 +595,6 @@ struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
 
 typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
 
-//-------------------------------------------
-
 struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
   OrganicFertilizerParameters() {}
 
@@ -742,8 +740,6 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   std::string pc_intercropping_writer_sr;
 };
 
-//----------------------------------------------------------------------------
-
 /**
  * Class that holds information about user defined environment parameters.
  * @author Xenia Specka
@@ -778,8 +774,6 @@ struct DLL_API EnvironmentParameters : public Tools::Json11Serializable {
   int p_MinGroundwaterDepthMonth{ 3 };
 
 };
-
-//----------------------------------------------------------------------------
 
   /**
    * Class that holds information about user defined soil moisture parameters.
