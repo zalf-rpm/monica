@@ -20,21 +20,19 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "env-json-from-json-config.h"
 #include "tools/debug.h"
-//#include "../run/run-monica.h"
-//#include "../io/database-io.h"
 #include "json11/json11-helper.h"
 #include "tools/helper.h"
 #include "climate/climate-file-io.h"
 #include "soil/conversion.h"
 #include "../io/output.h"
+#include "capnp-helper.h"
+#include "common/rpc-connection-manager.h"
 
 using namespace std;
 using namespace monica;
 using namespace json11;
 using namespace Tools;
 using namespace Climate;
-
-//-----------------------------------------------------------------------------
 
 const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns();
 
@@ -104,8 +102,6 @@ EResult<Json> monica::findAndReplaceReferences(const Json& root, const Json& j) 
 
   return{j, errors};
 }
-
-//-----------------------------------------------------------------------------
 
 const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedPatterns() {
   auto ref = [](const Json& root, const Json& j) -> EResult<Json> {
@@ -367,8 +363,6 @@ const map<string, function<EResult<Json>(const Json&, const Json&)>>& supportedP
   return m;
 }
 
-//-----------------------------------------------------------------------------
-
 Json monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params) {
   map<string, Json> ps;
   for(const auto& p : map<string, string>({{"crop-json-str", "crop"}, {"site-json-str", "site"}, {"sim-json-str", "sim"}})) {
@@ -449,8 +443,21 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   auto csvos = simj["climate.csv-options"].object_items();
   csvos["latitude"] = double_valueD(sitej["SiteParameters"], "Latitude", 0.0);
   env["csvViaHeaderOptions"] = csvos;
-    
+
+  mas::infrastructure::common::ConnectionManager conMan;
+
   if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty()) {
+//    if (simj["climate.csv"].string_value().find("capnp") == 0) {
+//      conMan.connect()
+//      auto da = dataAccessorFromTimeSeries(simj["climate.csv"].string_value());
+//
+//      env["climateData"] = printPossibleErrors(readClimateDataFromCapnpFile(simj["climate.csv"].string_value()));
+//    } else {
+//      env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+//                                                              env["csvViaHeaderOptions"]));
+//    }
+
+
     env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
                                                               env["csvViaHeaderOptions"]));
   } else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty()) {

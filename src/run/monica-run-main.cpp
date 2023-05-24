@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   setlocale(LC_NUMERIC, "C");
 
   mas::infrastructure::common::ConnectionManager conMan;
-    auto ioContext = kj::setupAsyncIo();
+  auto ioContext = kj::setupAsyncIo();
 
   bool debug = false, debugSet = false;
   string startDate, endDate;

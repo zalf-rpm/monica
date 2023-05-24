@@ -186,7 +186,7 @@ add_library(monica_lib
 
     src/resource/version.h
     src/resource/version_resource.rc
-)
+        src/run/capnp-helper.h src/run/capnp-helper.cpp)
 target_link_libraries(monica_lib
     PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
