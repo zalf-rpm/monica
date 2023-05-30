@@ -50,17 +50,17 @@ struct CropRotation : public Tools::Json11Serializable {
 //----------------------------------------------------------------------------
 
 struct DLL_API Env : public Tools::Json11Serializable {
-  Env() {}
+  Env() = default;
 
-  Env(CentralParameterProvider&& cpp);
+  explicit Env(CentralParameterProvider&& cpp);
 
-  Env(json11::Json object);
+  explicit Env(json11::Json object);
   // construct env from json object
 
-  virtual Tools::Errors merge(json11::Json j);
+  Tools::Errors merge(json11::Json j) override;
   // merge a json file into Env
 
-  virtual json11::Json to_json() const;
+  json11::Json to_json() const override;
   // serialize to json
 
   bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
@@ -99,7 +99,7 @@ struct DLL_API Env : public Tools::Json11Serializable {
 
   CentralParameterProvider params;
 
-  std::string toString() const;
+  std::string toString() const override;
 
   std::string berestRequestAddress;
 

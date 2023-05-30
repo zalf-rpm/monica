@@ -359,8 +359,8 @@ int main(int argc, const char* argv[]) {
 
     capnp::Capability::Client mainInterface = kj::heap<RunMonicaProxy>(clients);
 
-    ConnectionManager conMan;
-    auto portPromise = conMan.bind(ioContext, mainInterface, address, port < 0 ? 0U : kj::uint(port));
+    ConnectionManager conMan(ioContext);
+    auto portPromise = conMan.bind(mainInterface, address, port < 0 ? 0U : kj::uint(port));
     auto port = portPromise.wait(ioContext.waitScope);
     
     //port = portPromise.addBranch().wait(ioContext.waitScope);

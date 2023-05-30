@@ -45,7 +45,8 @@ using namespace Tools;
 class FBPMain
 {
 public:
-  FBPMain(kj::ProcessContext &context) : context(context) {}
+  explicit FBPMain(kj::ProcessContext &context)
+  : ioContext(kj::setupAsyncIo()), conMan(ioContext), context(context) {}
 
   kj::MainBuilder::Validity setName(kj::StringPtr n) { name = str(n); return true; }
 
@@ -59,8 +60,6 @@ public:
 
   kj::MainBuilder::Validity startChannel()
   {
-    auto ioContext = kj::setupAsyncIo();
-
     bool startedServerInDebugMode = false;
 
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;   
@@ -69,9 +68,9 @@ public:
     typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
     typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
-    auto inp = conMan.tryConnectB(ioContext, inSr.cStr()).castAs<Channel::ChanReader>();
-    auto outp = conMan.tryConnectB(ioContext, outSr.cStr()).castAs<Channel::ChanWriter>();
-    //auto runMonicaClient = conMan.tryConnectB(ioContext, "capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
+    auto inp = conMan.tryConnectB(inSr.cStr()).castAs<Channel::ChanReader>();
+    auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
+    //auto runMonicaClient = conMan.tryConnectB("capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
 
     auto runMonica = kj::heap<RunMonica>(startedServerInDebugMode);
     MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
@@ -113,7 +112,7 @@ public:
       wreq.setDone();
       wreq.send().wait(ioContext.waitScope);
     } 
-    catch(kj::Exception e)
+    catch(const kj::Exception& e)
     {
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
     }
@@ -139,6 +138,7 @@ public:
   }
 
 private:
+  kj::AsyncIoContext ioContext;
   mas::infrastructure::common::ConnectionManager conMan;
   kj::String name;
   kj::ProcessContext &context;

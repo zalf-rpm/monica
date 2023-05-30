@@ -237,11 +237,8 @@ add_library(monica_run_lib
     src/io/csv-format.h
     src/io/csv-format.cpp
         
-    src/run/env-from-json-config.h
-    src/run/env-from-json-config.cpp
-
-    src/run/env-json-from-json-config.h
-    src/run/env-json-from-json-config.cpp
+    src/run/create-env-from-json-config.h
+    src/run/create-env-from-json-config.cpp
 )
 
 target_link_libraries(monica_run_lib monica_lib)

@@ -18,7 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <set>
 
-#include "env-json-from-json-config.h"
+#include "create-env-from-json-config.h"
 #include "tools/debug.h"
 #include "json11/json11-helper.h"
 #include "tools/helper.h"
@@ -376,11 +376,11 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   vector<Json> cropSiteSim;
   for (auto name : { "crop", "site", "sim" }) cropSiteSim.push_back(params[name]);
 
-  for (auto& j : cropSiteSim) if (j.is_null()) return Json();
+  for (auto& j : cropSiteSim) if (j.is_null()) return {};
 
   string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
 
-  auto addBasePath = [&](Json& j, string basePath) {
+  auto addBasePath = [&](Json& j, const string& basePath) {
     string err;
     if (!j.has_shape({ {"include-file-base-path", Json::STRING} }, err)) {
       auto m = j.object_items();
@@ -401,7 +401,7 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 
   if (!errors.empty()) {
     for (auto e : errors) cerr << e << endl;
-    return Json();
+    return {};
   }
 
   auto cropj = cropSiteSim2.at(0);
@@ -444,8 +444,6 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   csvos["latitude"] = double_valueD(sitej["SiteParameters"], "Latitude", 0.0);
   env["csvViaHeaderOptions"] = csvos;
 
-  mas::infrastructure::common::ConnectionManager conMan;
-
   if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty()) {
 //    if (simj["climate.csv"].string_value().find("capnp") == 0) {
 //      conMan.connect()
@@ -468,4 +466,10 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   return env;
 }
 
+Env monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params) {
+  Env env;
+  if(!Tools::printPossibleErrors(env.merge(createEnvJsonFromJsonStrings(kj::mv(params))), Tools::activateDebug))
+    return {};
+  return env;
+}
 

@@ -29,12 +29,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 #include "tools/debug.h"
 #include "../run/run-monica.h"
-#include "json11/json11-helper.h"
-#include "env-from-json-config.h"
-#include "tools/algorithms.h"
+#include "create-env-from-json-config.h"
 #include "../io/csv-format.h"
 #include "common/rpc-connection-manager.h"
-//#include "db/abstract-db-connections.h"
 
 using namespace std;
 using namespace monica;
@@ -49,8 +46,8 @@ int main(int argc, char** argv)
   setlocale(LC_ALL, "");
   setlocale(LC_NUMERIC, "C");
 
-  mas::infrastructure::common::ConnectionManager conMan;
   auto ioContext = kj::setupAsyncIo();
+  mas::infrastructure::common::ConnectionManager conMan(ioContext);
 
   bool debug = false, debugSet = false;
   string startDate, endDate;
@@ -58,8 +55,8 @@ int main(int argc, char** argv)
   string pathToOutputFile, pathToOutputFile2;
   bool writeOutputFile = false, writeOutputFile2 = false;
   string pathToSimJson = "./sim.json", crop, site, climate;
-  string icReaderSr = "";
-  string icWriterSr = "";
+  string icReaderSr;
+  string icWriterSr;
   
   auto printHelp = [=]()
   {
@@ -121,7 +118,7 @@ int main(int argc, char** argv)
     tie(pathOfSimJson, simFileName) = splitPathToFile(pathToSimJson);
 
     auto simj = readAndParseJsonFile(pathToSimJson);
-    if(simj.failure()) for(auto e : simj.errors) cerr << e << endl;
+    if(simj.failure()) for(const auto& e : simj.errors) cerr << e << endl;
     auto simm = simj.result.object_items();
 
     auto csvos = simm["climate.csv-options"].object_items();
@@ -168,7 +165,7 @@ int main(int argc, char** argv)
       vector<string> ps;
       for(auto j : simm["climate.csv"].array_items())
       {
-        auto pathToClimateCSV = j.string_value();
+        const auto& pathToClimateCSV = j.string_value();
         if(!isAbsolutePath(pathToClimateCSV))
           ps.push_back(pathOfSimJson + pathToClimateCSV);
       }
@@ -185,12 +182,12 @@ int main(int argc, char** argv)
     if(icReaderSr.empty()) icReaderSr = env.params.userCropParameters.pc_intercropping_reader_sr;
     if(icWriterSr.empty()) icWriterSr = env.params.userCropParameters.pc_intercropping_writer_sr;
 
-    if(!icReaderSr.empty()) env.ic.reader = conMan.tryConnectB(ioContext, icReaderSr).castAs<Intercropping::Reader>();
-    if(!icWriterSr.empty()) env.ic.writer = conMan.tryConnectB(ioContext, icWriterSr).castAs<Intercropping::Writer>();
+    if(!icReaderSr.empty()) env.ic.reader = conMan.tryConnectB(icReaderSr).castAs<Intercropping::Reader>();
+    if(!icWriterSr.empty()) env.ic.writer = conMan.tryConnectB(icWriterSr).castAs<Intercropping::Writer>();
     if(!icReaderSr.empty() && !icWriterSr.empty()) env.ic.ioContext = &ioContext;
 
     env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-      [](string soilTexture, size_t distance) {
+      [](const string& soilTexture, size_t distance) {
       return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
     };
 
