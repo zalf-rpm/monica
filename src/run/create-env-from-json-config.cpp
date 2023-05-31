@@ -445,19 +445,10 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   env["csvViaHeaderOptions"] = csvos;
 
   if(simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty()) {
-//    if (simj["climate.csv"].string_value().find("capnp") == 0) {
-//      conMan.connect()
-//      auto da = dataAccessorFromTimeSeries(simj["climate.csv"].string_value());
-//
-//      env["climateData"] = printPossibleErrors(readClimateDataFromCapnpFile(simj["climate.csv"].string_value()));
-//    } else {
-//      env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
-//                                                              env["csvViaHeaderOptions"]));
-//    }
-
-
-    env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
-                                                              env["csvViaHeaderOptions"]));
+    if (simj["climate.csv"].string_value().find("capnp://") == string::npos) {
+      env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(simj["climate.csv"].string_value(),
+                                                                                    env["csvViaHeaderOptions"]));
+    }
   } else if(simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty()) {
     env["climateData"] = printPossibleErrors(readClimateDataFromCSVFilesViaHeaders(toStringVector(simj["climate.csv"].array_items()),
                                                                env["csvViaHeaderOptions"]));
@@ -473,3 +464,9 @@ Env monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> para
   return env;
 }
 
+Env monica::createEnvFromJsonObjects(std::map<std::string, json11::Json> params) {
+  Env env;
+  if(!Tools::printPossibleErrors(env.merge(createEnvJsonFromJsonObjects(kj::mv(params))), Tools::activateDebug))
+    return {};
+  return env;
+}

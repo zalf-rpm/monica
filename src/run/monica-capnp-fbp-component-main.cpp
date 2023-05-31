@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <kj/debug.h>
 #include <kj/common.h>
-#define KJ_MVCAP(var) var = kj::mv(var)
 #include <kj/main.h>
 
 #include <capnp/any.h>
@@ -37,6 +36,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model.capnp.h"
 #include "common.capnp.h"
 #include "fbp.capnp.h"
+
+#define KJ_MVCAP(var) var = kj::mv(var)
 
 using namespace std;
 using namespace monica;

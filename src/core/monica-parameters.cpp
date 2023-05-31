@@ -50,18 +50,16 @@ using namespace json11;
  * @param yp Yield percentage
  */
 YieldComponent::YieldComponent(int oid, double yp, double ydm)
-  : organId(oid),
-    yieldPercentage(yp),
-    yieldDryMatter(ydm)
-{}
+    : organId(oid),
+      yieldPercentage(yp),
+      yieldDryMatter(ydm) {}
 
-YieldComponent::YieldComponent(json11::Json j)
-{
+YieldComponent::YieldComponent(json11::Json j) {
   merge(j);
 }
 
 void YieldComponent::deserialize(mas::schema::model::monica::YieldComponent::Reader reader) {
-  organId = (int)reader.getOrganId();
+  organId = (int) reader.getOrganId();
   yieldPercentage = reader.getYieldPercentage();
   yieldDryMatter = reader.getYieldDryMatter();
 }
@@ -72,29 +70,26 @@ void YieldComponent::serialize(mas::schema::model::monica::YieldComponent::Build
   builder.setYieldDryMatter(yieldDryMatter);
 }
 
-Errors YieldComponent::merge(json11::Json j)
-{
+Errors YieldComponent::merge(json11::Json j) {
   set_int_value(organId, j, "organId");
   set_double_value(yieldPercentage, j, "yieldPercentage");
   set_double_value(yieldDryMatter, j, "yieldDryMatter");
 
-	return{};
+  return {};
 }
 
-json11::Json YieldComponent::to_json() const
-{
+json11::Json YieldComponent::to_json() const {
   return json11::Json::object
-  {{"type", "YieldComponent"}
-  ,{"organId", organId}
-  ,{"yieldPercentage", yieldPercentage}
-  ,{"yieldDryMatter", yieldDryMatter}
-  };
+      {{"type",            "YieldComponent"},
+       {"organId",         organId},
+       {"yieldPercentage", yieldPercentage},
+       {"yieldDryMatter",  yieldDryMatter}
+      };
 }
 
 //------------------------------------------------------------------------------
 
-SpeciesParameters::SpeciesParameters(json11::Json j)
-{
+SpeciesParameters::SpeciesParameters(json11::Json j) {
   merge(j);
 }
 
@@ -177,15 +172,20 @@ void SpeciesParameters::serialize(mas::schema::model::monica::SpeciesParameters:
   builder.setDevelopmentAccelerationByNitrogenStress(pc_DevelopmentAccelerationByNitrogenStress);
   builder.setFieldConditionModifier(pc_FieldConditionModifier);
   builder.setAssimilateReallocation(pc_AssimilateReallocation);
-  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature((capnp::uint)pc_BaseTemperature.size()));
-  setCapnpList(pc_OrganMaintenanceRespiration, builder.initOrganMaintenanceRespiration((capnp::uint)pc_OrganMaintenanceRespiration.size()));
-  setCapnpList(pc_OrganGrowthRespiration, builder.initOrganGrowthRespiration((capnp::uint)pc_OrganGrowthRespiration.size()));
-  setCapnpList(pc_StageMaxRootNConcentration, builder.initStageMaxRootNConcentration((capnp::uint)pc_StageMaxRootNConcentration.size()));
-  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass((capnp::uint)pc_InitialOrganBiomass.size()));
-  setCapnpList(pc_CriticalOxygenContent, builder.initCriticalOxygenContent((capnp::uint)pc_CriticalOxygenContent.size()));
-  setCapnpList(pc_StageMobilFromStorageCoeff, builder.initStageMobilFromStorageCoeff((capnp::uint)pc_StageMobilFromStorageCoeff.size()));
-  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan((capnp::uint)pc_AbovegroundOrgan.size()));
-  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan((capnp::uint)pc_StorageOrgan.size()));
+  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature((capnp::uint) pc_BaseTemperature.size()));
+  setCapnpList(pc_OrganMaintenanceRespiration,
+               builder.initOrganMaintenanceRespiration((capnp::uint) pc_OrganMaintenanceRespiration.size()));
+  setCapnpList(pc_OrganGrowthRespiration,
+               builder.initOrganGrowthRespiration((capnp::uint) pc_OrganGrowthRespiration.size()));
+  setCapnpList(pc_StageMaxRootNConcentration,
+               builder.initStageMaxRootNConcentration((capnp::uint) pc_StageMaxRootNConcentration.size()));
+  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass((capnp::uint) pc_InitialOrganBiomass.size()));
+  setCapnpList(pc_CriticalOxygenContent,
+               builder.initCriticalOxygenContent((capnp::uint) pc_CriticalOxygenContent.size()));
+  setCapnpList(pc_StageMobilFromStorageCoeff,
+               builder.initStageMobilFromStorageCoeff((capnp::uint) pc_StageMobilFromStorageCoeff.size()));
+  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan((capnp::uint) pc_AbovegroundOrgan.size()));
+  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan((capnp::uint) pc_StorageOrgan.size()));
   builder.setSamplingDepth(pc_SamplingDepth);
   builder.setTargetNSamplingDepth(pc_TargetNSamplingDepth);
   builder.setTargetN30(pc_TargetN30);
@@ -214,9 +214,8 @@ void SpeciesParameters::serialize(mas::schema::model::monica::SpeciesParameters:
   builder.setTransitionStageLeafExp(pc_TransitionStageLeafExp);
 }
 
-Errors SpeciesParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SpeciesParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_string_value(pc_SpeciesId, j, "SpeciesName");
   set_int_value(pc_CarboxylationPathway, j, "CarboxylationPathway");
@@ -244,12 +243,12 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_double_vector(pc_StageMaxRootNConcentration, j, "StageMaxRootNConcentration");
   set_double_vector(pc_InitialOrganBiomass, j, "InitialOrganBiomass");
   set_double_vector(pc_CriticalOxygenContent, j, "CriticalOxygenContent");
-	
-	set_double_vector(pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
-	if (pc_StageMobilFromStorageCoeff.empty())
-		pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
-  
-	set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
+
+  set_double_vector(pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
+  if (pc_StageMobilFromStorageCoeff.empty())
+    pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+
+  set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
   set_bool_vector(pc_StorageOrgan, j, "StorageOrgan");
   set_double_value(pc_SamplingDepth, j, "SamplingDepth");
   set_double_value(pc_TargetNSamplingDepth, j, "TargetNSamplingDepth");
@@ -268,91 +267,87 @@ Errors SpeciesParameters::merge(json11::Json j)
   set_int_value(pc_CuttingDelayDays, j, "CuttingDelayDays");
   set_double_value(pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor");
 
-	set_double_value(EF_MONO, j, "EF_MONO");
-	set_double_value(EF_MONOS, j, "EF_MONOS");
-	set_double_value(EF_ISO, j, "EF_ISO");
-	set_double_value(VCMAX25, j, "VCMAX25");
-	set_double_value(AEKC, j, "AEKC");
-	set_double_value(AEVC, j, "AEVC");
-	set_double_value(AEKO, j, "AEKO");
-	set_double_value(KC25, j, "KC25");
-	set_double_value(KO25, j, "KO25");
+  set_double_value(EF_MONO, j, "EF_MONO");
+  set_double_value(EF_MONOS, j, "EF_MONOS");
+  set_double_value(EF_ISO, j, "EF_ISO");
+  set_double_value(VCMAX25, j, "VCMAX25");
+  set_double_value(AEKC, j, "AEKC");
+  set_double_value(AEVC, j, "AEVC");
+  set_double_value(AEKO, j, "AEKO");
+  set_double_value(KC25, j, "KC25");
+  set_double_value(KO25, j, "KO25");
 
-	set_int_value(pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
+  set_int_value(pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
 
-	return res;
+  return res;
 }
 
-json11::Json SpeciesParameters::to_json() const
-{
-  auto species = J11Object 
-	{{"type", "SpeciesParameters"}
-	,{"SpeciesName", pc_SpeciesId}
-  ,{"CarboxylationPathway", pc_CarboxylationPathway}
-	,{"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency}
-	,{"PartBiologicalNFixation", pc_PartBiologicalNFixation}
-  ,{"InitialKcFactor", pc_InitialKcFactor}
-  ,{"LuxuryNCoeff", pc_LuxuryNCoeff}
-  ,{"MaxCropDiameter", pc_MaxCropDiameter}
-  ,{"StageAtMaxHeight", pc_StageAtMaxHeight}
-  ,{"StageAtMaxDiameter", pc_StageAtMaxDiameter}
-  ,{"MinimumNConcentration", pc_MinimumNConcentration}
-  ,{"MinimumTemperatureForAssimilation", pc_MinimumTemperatureForAssimilation}
-  ,{"OptimumTemperatureForAssimilation", pc_OptimumTemperatureForAssimilation}
-  ,{"MaximumTemperatureForAssimilation", pc_MaximumTemperatureForAssimilation}
-  ,{"NConcentrationAbovegroundBiomass", pc_NConcentrationAbovegroundBiomass}
-  ,{"NConcentrationB0", pc_NConcentrationB0}
-  ,{"NConcentrationPN", pc_NConcentrationPN}
-  ,{"NConcentrationRoot", pc_NConcentrationRoot}
-  ,{"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress}
-  ,{"FieldConditionModifier", pc_FieldConditionModifier}
-  ,{"AssimilateReallocation", pc_AssimilateReallocation}
-  ,{"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)}
-  ,{"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)}
-  ,{"OrganGrowthRespiration", toPrimJsonArray(pc_OrganGrowthRespiration)}
-  ,{"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)}
-  ,{"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)}
-  ,{"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)}
-	,{"StageMobilFromStorageCoeff", toPrimJsonArray(pc_StageMobilFromStorageCoeff)}
-  ,{"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)}
-  ,{"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)}
-  ,{"SamplingDepth", pc_SamplingDepth}
-  ,{"TargetNSamplingDepth", pc_TargetNSamplingDepth}
-  ,{"TargetN30", pc_TargetN30}
-  ,{"MaxNUptakeParam", pc_MaxNUptakeParam}
-  ,{"RootDistributionParam", pc_RootDistributionParam}
-	,{"PlantDensity", J11Array{pc_PlantDensity, "plants m-2"}}
-  ,{"RootGrowthLag", pc_RootGrowthLag}
-  ,{"MinimumTemperatureRootGrowth", pc_MinimumTemperatureRootGrowth}
-  ,{"InitialRootingDepth", pc_InitialRootingDepth}
-  ,{"RootPenetrationRate", pc_RootPenetrationRate}
-  ,{"RootFormFactor", pc_RootFormFactor}
-  ,{"SpecificRootLength", pc_SpecificRootLength}
-  ,{"StageAfterCut", pc_StageAfterCut}
-  ,{"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress}
-  ,{"CuttingDelayDays", pc_CuttingDelayDays}
-  ,{"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor}
-
-	,{"EF_MONO", J11Array{EF_MONO, "ug gDW-1 h-1"}}
-	,{"EF_MONOS", J11Array{EF_MONOS, "ug gDW-1 h-1"}}
-	,{"EF_ISO", J11Array{EF_ISO, "ug gDW-1 h-1"}}
-	,{"VCMAX25", J11Array{VCMAX25, "umol m-2 s-1"}}
-	,{"AEKC", J11Array{AEKC, "J mol-1"}}
-	,{"AEKO", J11Array{AEKO, "J mol-1"}}
-	,{"AEVC", J11Array{AEVC, "J mol-1"}}
-	,{"KC25", J11Array{KC25, "umol mol-1 ubar-1"}}
-	,{"KO25", J11Array{KO25, "mmol mol-1 mbar-1"}}
-
-	,{ "TransitionStageLeafExp", J11Array{ pc_TransitionStageLeafExp, "1-7"}}
-	};
+json11::Json SpeciesParameters::to_json() const {
+  auto species = J11Object
+      {{"type",                                    "SpeciesParameters"},
+       {"SpeciesName",                             pc_SpeciesId},
+       {"CarboxylationPathway",                    pc_CarboxylationPathway},
+       {"DefaultRadiationUseEfficiency",           pc_DefaultRadiationUseEfficiency},
+       {"PartBiologicalNFixation",                 pc_PartBiologicalNFixation},
+       {"InitialKcFactor",                         pc_InitialKcFactor},
+       {"LuxuryNCoeff",                            pc_LuxuryNCoeff},
+       {"MaxCropDiameter",                         pc_MaxCropDiameter},
+       {"StageAtMaxHeight",                        pc_StageAtMaxHeight},
+       {"StageAtMaxDiameter",                      pc_StageAtMaxDiameter},
+       {"MinimumNConcentration",                   pc_MinimumNConcentration},
+       {"MinimumTemperatureForAssimilation",       pc_MinimumTemperatureForAssimilation},
+       {"OptimumTemperatureForAssimilation",       pc_OptimumTemperatureForAssimilation},
+       {"MaximumTemperatureForAssimilation",       pc_MaximumTemperatureForAssimilation},
+       {"NConcentrationAbovegroundBiomass",        pc_NConcentrationAbovegroundBiomass},
+       {"NConcentrationB0",                        pc_NConcentrationB0},
+       {"NConcentrationPN",                        pc_NConcentrationPN},
+       {"NConcentrationRoot",                      pc_NConcentrationRoot},
+       {"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress},
+       {"FieldConditionModifier",                  pc_FieldConditionModifier},
+       {"AssimilateReallocation",                  pc_AssimilateReallocation},
+       {"BaseTemperature",                         toPrimJsonArray(pc_BaseTemperature)},
+       {"OrganMaintenanceRespiration",             toPrimJsonArray(pc_OrganMaintenanceRespiration)},
+       {"OrganGrowthRespiration",                  toPrimJsonArray(pc_OrganGrowthRespiration)},
+       {"StageMaxRootNConcentration",              toPrimJsonArray(pc_StageMaxRootNConcentration)},
+       {"InitialOrganBiomass",                     toPrimJsonArray(pc_InitialOrganBiomass)},
+       {"CriticalOxygenContent",                   toPrimJsonArray(pc_CriticalOxygenContent)},
+       {"StageMobilFromStorageCoeff",              toPrimJsonArray(pc_StageMobilFromStorageCoeff)},
+       {"AbovegroundOrgan",                        toPrimJsonArray(pc_AbovegroundOrgan)},
+       {"StorageOrgan",                            toPrimJsonArray(pc_StorageOrgan)},
+       {"SamplingDepth",                           pc_SamplingDepth},
+       {"TargetNSamplingDepth",                    pc_TargetNSamplingDepth},
+       {"TargetN30",                               pc_TargetN30},
+       {"MaxNUptakeParam",                         pc_MaxNUptakeParam},
+       {"RootDistributionParam",                   pc_RootDistributionParam},
+       {"PlantDensity",                            J11Array{pc_PlantDensity, "plants m-2"}},
+       {"RootGrowthLag",                           pc_RootGrowthLag},
+       {"MinimumTemperatureRootGrowth",            pc_MinimumTemperatureRootGrowth},
+       {"InitialRootingDepth",                     pc_InitialRootingDepth},
+       {"RootPenetrationRate",                     pc_RootPenetrationRate},
+       {"RootFormFactor",                          pc_RootFormFactor},
+       {"SpecificRootLength",                      pc_SpecificRootLength},
+       {"StageAfterCut",                           pc_StageAfterCut},
+       {"LimitingTemperatureHeatStress",           pc_LimitingTemperatureHeatStress},
+       {"CuttingDelayDays",                        pc_CuttingDelayDays},
+       {"DroughtImpactOnFertilityFactor",          pc_DroughtImpactOnFertilityFactor},
+       {"EF_MONO",                                 J11Array{EF_MONO, "ug gDW-1 h-1"}},
+       {"EF_MONOS",                                J11Array{EF_MONOS, "ug gDW-1 h-1"}},
+       {"EF_ISO",                                  J11Array{EF_ISO, "ug gDW-1 h-1"}},
+       {"VCMAX25",                                 J11Array{VCMAX25, "umol m-2 s-1"}},
+       {"AEKC",                                    J11Array{AEKC, "J mol-1"}},
+       {"AEKO",                                    J11Array{AEKO, "J mol-1"}},
+       {"AEVC",                                    J11Array{AEVC, "J mol-1"}},
+       {"KC25",                                    J11Array{KC25, "umol mol-1 ubar-1"}},
+       {"KO25",                                    J11Array{KO25, "mmol mol-1 mbar-1"}},
+       {"TransitionStageLeafExp",                  J11Array{pc_TransitionStageLeafExp, "1-7"}}
+      };
 
   return species;
 }
 
 //------------------------------------------------------------------------------
 
-CultivarParameters::CultivarParameters(json11::Json j)
-{
+CultivarParameters::CultivarParameters(json11::Json j) {
   merge(j);
 }
 
@@ -371,13 +366,13 @@ void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParamet
   {
     auto listReader = reader.getAssimilatePartitioningCoeff();
     capnp::uint i = 0;
-    for (auto& v : pc_AssimilatePartitioningCoeff) setFromCapnpList(v, listReader[i++]);
+    for (auto &v: pc_AssimilatePartitioningCoeff) setFromCapnpList(v, listReader[i++]);
   }
 
   {
     auto listReader = reader.getOrganSenescenceRate();
     capnp::uint i = 0;
-    for (auto& v : pc_OrganSenescenceRate) setFromCapnpList(v, listReader[i++]);
+    for (auto &v: pc_OrganSenescenceRate) setFromCapnpList(v, listReader[i++]);
   }
 
   setFromCapnpList(pc_BaseDaylength, reader.getBaseDaylength());
@@ -422,25 +417,27 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
   builder.setCropSpecificMaxRootingDepth(pc_CropSpecificMaxRootingDepth);
 
   {
-    auto listBuilder = builder.initAssimilatePartitioningCoeff((capnp::uint)pc_AssimilatePartitioningCoeff.size());
+    auto listBuilder = builder.initAssimilatePartitioningCoeff((capnp::uint) pc_AssimilatePartitioningCoeff.size());
     capnp::uint i = 0;
-    for (const auto& v : pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
+    for (const auto &v: pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, (capnp::uint) v.size()));
   }
 
   {
-    auto listBuilder = builder.initOrganSenescenceRate((capnp::uint)pc_OrganSenescenceRate.size());
+    auto listBuilder = builder.initOrganSenescenceRate((capnp::uint) pc_OrganSenescenceRate.size());
     capnp::uint i = 0;
-    for (const auto& v : pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
+    for (const auto &v: pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, (capnp::uint) v.size()));
   }
 
-  setCapnpList(pc_BaseDaylength, builder.initBaseDaylength((capnp::uint)pc_BaseDaylength.size()));
-  setCapnpList(pc_OptimumTemperature, builder.initOptimumTemperature((capnp::uint)pc_OptimumTemperature.size()));
-  setCapnpList(pc_DaylengthRequirement, builder.initDaylengthRequirement((capnp::uint)pc_DaylengthRequirement.size()));
-  setCapnpList(pc_DroughtStressThreshold, builder.initDroughtStressThreshold((capnp::uint)pc_DroughtStressThreshold.size()));
-  setCapnpList(pc_SpecificLeafArea, builder.initSpecificLeafArea((capnp::uint)pc_SpecificLeafArea.size()));
-  setCapnpList(pc_StageKcFactor, builder.initStageKcFactor((capnp::uint)pc_StageKcFactor.size()));
-  setCapnpList(pc_StageTemperatureSum, builder.initStageTemperatureSum((capnp::uint)pc_StageTemperatureSum.size()));
-  setCapnpList(pc_VernalisationRequirement, builder.initVernalisationRequirement((capnp::uint)pc_VernalisationRequirement.size()));
+  setCapnpList(pc_BaseDaylength, builder.initBaseDaylength((capnp::uint) pc_BaseDaylength.size()));
+  setCapnpList(pc_OptimumTemperature, builder.initOptimumTemperature((capnp::uint) pc_OptimumTemperature.size()));
+  setCapnpList(pc_DaylengthRequirement, builder.initDaylengthRequirement((capnp::uint) pc_DaylengthRequirement.size()));
+  setCapnpList(pc_DroughtStressThreshold,
+               builder.initDroughtStressThreshold((capnp::uint) pc_DroughtStressThreshold.size()));
+  setCapnpList(pc_SpecificLeafArea, builder.initSpecificLeafArea((capnp::uint) pc_SpecificLeafArea.size()));
+  setCapnpList(pc_StageKcFactor, builder.initStageKcFactor((capnp::uint) pc_StageKcFactor.size()));
+  setCapnpList(pc_StageTemperatureSum, builder.initStageTemperatureSum((capnp::uint) pc_StageTemperatureSum.size()));
+  setCapnpList(pc_VernalisationRequirement,
+               builder.initVernalisationRequirement((capnp::uint) pc_VernalisationRequirement.size()));
   builder.setHeatSumIrrigationStart(pc_HeatSumIrrigationStart);
   builder.setHeatSumIrrigationEnd(pc_HeatSumIrrigationEnd);
   builder.setCriticalTemperatureHeatStress(pc_CriticalTemperatureHeatStress);
@@ -451,9 +448,12 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
   builder.setLowTemperatureExposure(pc_LowTemperatureExposure);
   builder.setRespiratoryStress(pc_RespiratoryStress);
   builder.setLatestHarvestDoy(pc_LatestHarvestDoy);
-  setComplexCapnpList(pc_OrganIdsForPrimaryYield, builder.initOrganIdsForPrimaryYield((capnp::uint)pc_OrganIdsForPrimaryYield.size()));
-  setComplexCapnpList(pc_OrganIdsForSecondaryYield, builder.initOrganIdsForSecondaryYield((capnp::uint)pc_OrganIdsForSecondaryYield.size()));
-  setComplexCapnpList(pc_OrganIdsForCutting, builder.initOrganIdsForCutting((capnp::uint)pc_OrganIdsForCutting.size()));
+  setComplexCapnpList(pc_OrganIdsForPrimaryYield,
+                      builder.initOrganIdsForPrimaryYield((capnp::uint) pc_OrganIdsForPrimaryYield.size()));
+  setComplexCapnpList(pc_OrganIdsForSecondaryYield,
+                      builder.initOrganIdsForSecondaryYield((capnp::uint) pc_OrganIdsForSecondaryYield.size()));
+  setComplexCapnpList(pc_OrganIdsForCutting,
+                      builder.initOrganIdsForCutting((capnp::uint) pc_OrganIdsForCutting.size()));
   builder.setEarlyRefLeafExp(pc_EarlyRefLeafExp);
   builder.setRefLeafExp(pc_RefLeafExp);
   builder.setMinTempDevWE(pc_MinTempDev_WE);
@@ -462,25 +462,24 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
   builder.setWinterCrop(winterCrop);
 }
 
-Errors CultivarParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
-	
-	string err;
-  if(j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForPrimaryYield = toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]);
-	else
-		res.errors.push_back(string("Couldn't read 'OrganIdsForPrimaryYield' key from JSON object:\n") + j.dump());
-  
-	if(j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForSecondaryYield = toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]);
-	else
-		res.errors.push_back(string("Couldn't read 'OrganIdsForSecondaryYield' key from JSON object:\n") + j.dump());
+Errors CultivarParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
-  if(j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
+  string err;
+  if (j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
+    pc_OrganIdsForPrimaryYield = toVector<YieldComponent>(j["OrganIdsForPrimaryYield"]);
+  else
+    res.errors.push_back(string("Couldn't read 'OrganIdsForPrimaryYield' key from JSON object:\n") + j.dump());
+
+  if (j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
+    pc_OrganIdsForSecondaryYield = toVector<YieldComponent>(j["OrganIdsForSecondaryYield"]);
+  else
+    res.errors.push_back(string("Couldn't read 'OrganIdsForSecondaryYield' key from JSON object:\n") + j.dump());
+
+  if (j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
     pc_OrganIdsForCutting = toVector<YieldComponent>(j["OrganIdsForCutting"]);
-	else
-		res.warnings.push_back(string("Couldn't read 'OrganIdsForCutting' key from JSON object:\n") + j.dump());
+  else
+    res.warnings.push_back(string("Couldn't read 'OrganIdsForCutting' key from JSON object:\n") + j.dump());
 
   set_string_value(pc_CultivarId, j, "CultivarName");
   set_string_value(pc_Description, j, "Description");
@@ -512,99 +511,94 @@ Errors CultivarParameters::merge(json11::Json j)
   set_int_value(pc_LatestHarvestDoy, j, "LatestHarvestDoy");
   set_bool_value(winterCrop, j, "WinterCrop");
 
-	if(j["AssimilatePartitioningCoeff"].is_array())
-	{
-		auto apcs = j["AssimilatePartitioningCoeff"].array_items();
-		int i = 0;
-		pc_AssimilatePartitioningCoeff.resize(apcs.size());
-		for(auto js : apcs)
-			pc_AssimilatePartitioningCoeff[i++] = double_vector(js);
-	}
-	if(j["OrganSenescenceRate"].is_array())
-	{
-		auto osrs = j["OrganSenescenceRate"].array_items();
-		int i = 0;
-		pc_OrganSenescenceRate.resize(osrs.size());
-		for(auto js : osrs)
-			pc_OrganSenescenceRate[i++] = double_vector(js);
-	}
-		
-	set_double_value(pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
-	set_double_value(pc_RefLeafExp, j, "RefLeafExp");
+  if (j["AssimilatePartitioningCoeff"].is_array()) {
+    auto apcs = j["AssimilatePartitioningCoeff"].array_items();
+    int i = 0;
+    pc_AssimilatePartitioningCoeff.resize(apcs.size());
+    for (auto js: apcs)
+      pc_AssimilatePartitioningCoeff[i++] = double_vector(js);
+  }
+  if (j["OrganSenescenceRate"].is_array()) {
+    auto osrs = j["OrganSenescenceRate"].array_items();
+    int i = 0;
+    pc_OrganSenescenceRate.resize(osrs.size());
+    for (auto js: osrs)
+      pc_OrganSenescenceRate[i++] = double_vector(js);
+  }
 
-	set_double_value(pc_MinTempDev_WE, j, "MinTempDev_WE");
-	set_double_value(pc_OptTempDev_WE, j, "OptTempDev_WE");
-	set_double_value(pc_MaxTempDev_WE, j, "MaxTempDev_WE");
-	
+  set_double_value(pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
+  set_double_value(pc_RefLeafExp, j, "RefLeafExp");
 
-	return res;
+  set_double_value(pc_MinTempDev_WE, j, "MinTempDev_WE");
+  set_double_value(pc_OptTempDev_WE, j, "OptTempDev_WE");
+  set_double_value(pc_MaxTempDev_WE, j, "MaxTempDev_WE");
+
+
+  return res;
 }
 
-json11::Json CultivarParameters::to_json() const
-{
+json11::Json CultivarParameters::to_json() const {
   J11Array apcs;
-  for(auto v : pc_AssimilatePartitioningCoeff)
+  for (auto v: pc_AssimilatePartitioningCoeff)
     apcs.push_back(toPrimJsonArray(v));
 
   J11Array osrs;
-  for(auto v : pc_OrganSenescenceRate)
+  for (auto v: pc_OrganSenescenceRate)
     osrs.push_back(toPrimJsonArray(v));
 
   auto cultivar = J11Object
-  {{"type", "CultivarParameters"}
-  ,{"CultivarName", pc_CultivarId}
-  ,{"Description", pc_Description}
-  ,{"Perennial", pc_Perennial}
-  ,{"MaxAssimilationRate", pc_MaxAssimilationRate}
-  ,{"MaxCropHeight", J11Array {pc_MaxCropHeight, "m"}}
-  ,{"ResidueNRatio", pc_ResidueNRatio}
-  ,{"LT50cultivar", pc_LT50cultivar}
-  ,{"CropHeightP1", pc_CropHeightP1}
-  ,{"CropHeightP2", pc_CropHeightP2}
-  ,{"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth}
-  ,{"AssimilatePartitioningCoeff", apcs}
-  ,{"OrganSenescenceRate", osrs}
-  ,{"BaseDaylength", J11Array {toPrimJsonArray(pc_BaseDaylength), "h"}}
-  ,{"OptimumTemperature", J11Array {toPrimJsonArray(pc_OptimumTemperature), "°C"}}
-  ,{"DaylengthRequirement", J11Array {toPrimJsonArray(pc_DaylengthRequirement), "h"}}
-  ,{"DroughtStressThreshold", toPrimJsonArray(pc_DroughtStressThreshold)}
-  ,{"SpecificLeafArea", J11Array {toPrimJsonArray(pc_SpecificLeafArea), "ha kg-1"}}
-  ,{"StageKcFactor", J11Array {toPrimJsonArray(pc_StageKcFactor), "1;0"}}
-  ,{"StageTemperatureSum", J11Array {toPrimJsonArray(pc_StageTemperatureSum), "°C d"}}
-  ,{"VernalisationRequirement", toPrimJsonArray(pc_VernalisationRequirement)}
-  ,{"HeatSumIrrigationStart", pc_HeatSumIrrigationStart}
-  ,{"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd}
-  ,{"CriticalTemperatureHeatStress", J11Array {pc_CriticalTemperatureHeatStress, "°C"}}
-  ,{"BeginSensitivePhaseHeatStress", J11Array {pc_BeginSensitivePhaseHeatStress, "°C d"}}
-  ,{"EndSensitivePhaseHeatStress", J11Array {pc_EndSensitivePhaseHeatStress, "°C d"}}
-  ,{"FrostHardening", pc_FrostHardening}
-  ,{"FrostDehardening", pc_FrostDehardening}
-  ,{"LowTemperatureExposure", pc_LowTemperatureExposure}
-  ,{"RespiratoryStress", pc_RespiratoryStress}
-  ,{"LatestHarvestDoy", pc_LatestHarvestDoy}
-  ,{"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)}
-  ,{"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)}
-  ,{"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)}
-  ,{ "EarlyRefLeafExp", pc_EarlyRefLeafExp }
-  ,{ "RefLeafExp", pc_RefLeafExp }
-  ,{ "MinTempDev_WE", pc_MinTempDev_WE }
-  ,{ "OptTempDev_WE", pc_OptTempDev_WE }
-  ,{ "MaxTempDev_WE", pc_MaxTempDev_WE }
-  ,{ "WinterCrop", winterCrop }
-  };
+      {{"type",                          "CultivarParameters"},
+       {"CultivarName",                  pc_CultivarId},
+       {"Description",                   pc_Description},
+       {"Perennial",                     pc_Perennial},
+       {"MaxAssimilationRate",           pc_MaxAssimilationRate},
+       {"MaxCropHeight",                 J11Array{pc_MaxCropHeight, "m"}},
+       {"ResidueNRatio",                 pc_ResidueNRatio},
+       {"LT50cultivar",                  pc_LT50cultivar},
+       {"CropHeightP1",                  pc_CropHeightP1},
+       {"CropHeightP2",                  pc_CropHeightP2},
+       {"CropSpecificMaxRootingDepth",   pc_CropSpecificMaxRootingDepth},
+       {"AssimilatePartitioningCoeff",   apcs},
+       {"OrganSenescenceRate",           osrs},
+       {"BaseDaylength",                 J11Array{toPrimJsonArray(pc_BaseDaylength), "h"}},
+       {"OptimumTemperature",            J11Array{toPrimJsonArray(pc_OptimumTemperature), "°C"}},
+       {"DaylengthRequirement",          J11Array{toPrimJsonArray(pc_DaylengthRequirement), "h"}},
+       {"DroughtStressThreshold",        toPrimJsonArray(pc_DroughtStressThreshold)},
+       {"SpecificLeafArea",              J11Array{toPrimJsonArray(pc_SpecificLeafArea), "ha kg-1"}},
+       {"StageKcFactor",                 J11Array{toPrimJsonArray(pc_StageKcFactor), "1;0"}},
+       {"StageTemperatureSum",           J11Array{toPrimJsonArray(pc_StageTemperatureSum), "°C d"}},
+       {"VernalisationRequirement",      toPrimJsonArray(pc_VernalisationRequirement)},
+       {"HeatSumIrrigationStart",        pc_HeatSumIrrigationStart},
+       {"HeatSumIrrigationEnd",          pc_HeatSumIrrigationEnd},
+       {"CriticalTemperatureHeatStress", J11Array{pc_CriticalTemperatureHeatStress, "°C"}},
+       {"BeginSensitivePhaseHeatStress", J11Array{pc_BeginSensitivePhaseHeatStress, "°C d"}},
+       {"EndSensitivePhaseHeatStress",   J11Array{pc_EndSensitivePhaseHeatStress, "°C d"}},
+       {"FrostHardening",                pc_FrostHardening},
+       {"FrostDehardening",              pc_FrostDehardening},
+       {"LowTemperatureExposure",        pc_LowTemperatureExposure},
+       {"RespiratoryStress",             pc_RespiratoryStress},
+       {"LatestHarvestDoy",              pc_LatestHarvestDoy},
+       {"OrganIdsForPrimaryYield",       toJsonArray(pc_OrganIdsForPrimaryYield)},
+       {"OrganIdsForSecondaryYield",     toJsonArray(pc_OrganIdsForSecondaryYield)},
+       {"OrganIdsForCutting",            toJsonArray(pc_OrganIdsForCutting)},
+       {"EarlyRefLeafExp",               pc_EarlyRefLeafExp},
+       {"RefLeafExp",                    pc_RefLeafExp},
+       {"MinTempDev_WE",                 pc_MinTempDev_WE},
+       {"OptTempDev_WE",                 pc_OptTempDev_WE},
+       {"MaxTempDev_WE",                 pc_MaxTempDev_WE},
+       {"WinterCrop",                    winterCrop}
+      };
 
   return cultivar;
 }
 
 //------------------------------------------------------------------------------
 
-CropParameters::CropParameters(json11::Json j)
-{
+CropParameters::CropParameters(json11::Json j) {
   merge(j["species"], j["cultivar"]);
 }
 
-CropParameters::CropParameters(json11::Json sj, json11::Json cj)
-{
+CropParameters::CropParameters(json11::Json sj, json11::Json cj) {
   merge(sj, cj);
 }
 
@@ -618,51 +612,47 @@ void CropParameters::serialize(mas::schema::model::monica::CropParameters::Build
   cultivarParams.serialize(builder.initCultivarParams());
 }
 
-Errors CropParameters::merge(json11::Json j)
-{
+Errors CropParameters::merge(json11::Json j) {
   auto evff = j["__enable_vernalisation_factor_fix__"];
-  if(!evff.is_null() && evff.is_bool()) __enable_vernalisation_factor_fix__ = evff.bool_value();
+  if (!evff.is_null() && evff.is_bool()) __enable_vernalisation_factor_fix__ = evff.bool_value();
   return merge(j["species"], j["cultivar"]);
 }
 
-Errors CropParameters::merge(json11::Json sj, json11::Json cj)
-{
-	Errors res;
-	res.append(speciesParams.merge(sj));
+Errors CropParameters::merge(json11::Json sj, json11::Json cj) {
+  Errors res;
+  res.append(speciesParams.merge(sj));
   res.append(cultivarParams.merge(cj));
-	return res;
+  return res;
 }
 
-json11::Json CropParameters::to_json() const
-{
-  return J11Object 
-  {{"type", "CropParameters"}
-  ,{"species", speciesParams.to_json()}
-  ,{"cultivar", cultivarParams.to_json()}
-  };
+json11::Json CropParameters::to_json() const {
+  return J11Object
+      {{"type",     "CropParameters"},
+       {"species",  speciesParams.to_json()},
+       {"cultivar", cultivarParams.to_json()}
+      };
 }
 
 
 //------------------------------------------------------------------------------
 
-MineralFertilizerParameters::MineralFertilizerParameters(const string& id,
-                                                         const std::string& name,
+MineralFertilizerParameters::MineralFertilizerParameters(const string &id,
+                                                         const std::string &name,
                                                          double carbamid,
                                                          double no3,
                                                          double nh4)
-  : id(id),
-    name(name),
-    vo_Carbamid(carbamid),
-    vo_NH4(nh4),
-    vo_NO3(no3)
-{}
+    : id(id),
+      name(name),
+      vo_Carbamid(carbamid),
+      vo_NH4(nh4),
+      vo_NO3(no3) {}
 
-MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j)
-{
+MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j) {
   merge(j);
 }
 
-void MineralFertilizerParameters::deserialize(mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) {
+void MineralFertilizerParameters::deserialize(
+    mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) {
   id = reader.getId();
   name = reader.getName();
   vo_Carbamid = reader.getCarbamid();
@@ -670,7 +660,8 @@ void MineralFertilizerParameters::deserialize(mas::schema::model::monica::Params
   vo_NO3 = reader.getNo3();
 }
 
-void MineralFertilizerParameters::serialize(mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder) const {
+void MineralFertilizerParameters::serialize(
+    mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder) const {
   builder.setId(id);
   builder.setName(name);
   builder.setCarbamid(vo_Carbamid);
@@ -678,9 +669,8 @@ void MineralFertilizerParameters::serialize(mas::schema::model::monica::Params::
   builder.setNo3(vo_NO3);
 }
 
-Errors MineralFertilizerParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors MineralFertilizerParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
@@ -688,32 +678,28 @@ Errors MineralFertilizerParameters::merge(json11::Json j)
   set_double_value(vo_NH4, j, "NH4");
   set_double_value(vo_NO3, j, "NO3");
 
-	return res;
+  return res;
 }
 
-json11::Json MineralFertilizerParameters::to_json() const
-{
-  return J11Object 
-  {{"type", "MineralFertilizerParameters"}
-  ,{"id", id}
-  ,{"name", name}
-  ,{"Carbamid", vo_Carbamid}
-  ,{"NH4", vo_NH4}
-  ,{"NO3", vo_NO3}
-  };
+json11::Json MineralFertilizerParameters::to_json() const {
+  return J11Object
+      {{"type",     "MineralFertilizerParameters"},
+       {"id",       id},
+       {"name",     name},
+       {"Carbamid", vo_Carbamid},
+       {"NH4",      vo_NH4},
+       {"NO3",      vo_NO3}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
 
 NMinApplicationParameters::NMinApplicationParameters(double min,
-                                       double max,
-                                       int delayInDays)
-  : min(min)
-  , max(max)
-  , delayInDays(delayInDays) { }
+                                                     double max,
+                                                     int delayInDays)
+    : min(min), max(max), delayInDays(delayInDays) {}
 
-NMinApplicationParameters::NMinApplicationParameters(json11::Json j)
-{
+NMinApplicationParameters::NMinApplicationParameters(json11::Json j) {
   merge(j);
 }
 
@@ -723,43 +709,40 @@ void NMinApplicationParameters::deserialize(mas::schema::model::monica::NMinAppl
   delayInDays = reader.getDelayInDays();
 }
 
-void NMinApplicationParameters::serialize(mas::schema::model::monica::NMinApplicationParameters::Builder builder) const {
+void
+NMinApplicationParameters::serialize(mas::schema::model::monica::NMinApplicationParameters::Builder builder) const {
   builder.setMin(min);
   builder.setMax(max);
   builder.setDelayInDays(delayInDays);
 }
 
-Errors NMinApplicationParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors NMinApplicationParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(min, j, "min");
   set_double_value(max, j, "max");
   set_int_value(delayInDays, j, "delayInDays");
 
-	return res;
+  return res;
 }
 
-json11::Json NMinApplicationParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "NMinApplicationParameters"}
-  ,{"min", min}
-  ,{"max", max}
-  ,{"delayInDays", delayInDays}
-  };
+json11::Json NMinApplicationParameters::to_json() const {
+  return json11::Json::object
+      {{"type",        "NMinApplicationParameters"},
+       {"min",         min},
+       {"max",         max},
+       {"delayInDays", delayInDays}
+      };
 }
 
 //------------------------------------------------------------------------------
 
 IrrigationParameters::IrrigationParameters(double nitrateConcentration,
                                            double sulfateConcentration)
-  : nitrateConcentration(nitrateConcentration),
-    sulfateConcentration(sulfateConcentration)
-{}
+    : nitrateConcentration(nitrateConcentration),
+      sulfateConcentration(sulfateConcentration) {}
 
-IrrigationParameters::IrrigationParameters(json11::Json j)
-{
+IrrigationParameters::IrrigationParameters(json11::Json j) {
   merge(j);
 }
 
@@ -768,172 +751,160 @@ void IrrigationParameters::deserialize(mas::schema::model::monica::Params::Irrig
   sulfateConcentration = reader.getSulfateConcentration();
 }
 
-void IrrigationParameters::serialize(mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder) const {
+void
+IrrigationParameters::serialize(mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder) const {
   builder.setNitrateConcentration(nitrateConcentration);
   builder.setSulfateConcentration(sulfateConcentration);
 }
 
-Errors IrrigationParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
-	
+Errors IrrigationParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
+
   set_double_value(nitrateConcentration, j, "nitrateConcentration");
   set_double_value(sulfateConcentration, j, "sulfateConcentration");
 
-	return res;
+  return res;
 }
 
-json11::Json IrrigationParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "IrrigationParameters"}
-	,{"nitrateConcentration", J11Array {nitrateConcentration, "mg dm-3"}}
-	,{"sulfateConcentration", J11Array {sulfateConcentration, "mg dm-3"}}
-  };
+json11::Json IrrigationParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                 "IrrigationParameters"},
+       {"nitrateConcentration", J11Array{nitrateConcentration, "mg dm-3"}},
+       {"sulfateConcentration", J11Array{sulfateConcentration, "mg dm-3"}}
+      };
 }
 
 //------------------------------------------------------------------------------
 
-AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a, 
-																														 double t, 
-																														 double nc, 
-																														 double sc)
-  : IrrigationParameters(nc, sc)
-  , amount(a)
-  , threshold(t)
-{}
+AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
+                                                             double t,
+                                                             double nc,
+                                                             double sc)
+    : IrrigationParameters(nc, sc), amount(a), threshold(t) {}
 
-AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j)
-{
+AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j) {
   merge(j);
 }
 
-void AutomaticIrrigationParameters::deserialize(mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
+void
+AutomaticIrrigationParameters::deserialize(mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
   IrrigationParameters::deserialize(reader.getParams());
   amount = reader.getAmount();
   threshold = reader.getThreshold();
 }
 
-void AutomaticIrrigationParameters::serialize(mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const {
+void AutomaticIrrigationParameters::serialize(
+    mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const {
   IrrigationParameters::serialize(builder.initParams());
   builder.setAmount(amount);
   builder.setThreshold(threshold);
 }
 
-Errors AutomaticIrrigationParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors AutomaticIrrigationParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
   set_double_value(amount, j, "amount");
   set_double_value(threshold, j, "threshold");
 
-	return res;
+  return res;
 }
 
-json11::Json AutomaticIrrigationParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "AutomaticIrrigationParameters"}
-  ,{"irrigationParameters", IrrigationParameters::to_json()}
-  ,{"amount", J11Array {amount, "mm"}}
-  ,{"threshold", threshold}
-  };
+json11::Json AutomaticIrrigationParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                 "AutomaticIrrigationParameters"},
+       {"irrigationParameters", IrrigationParameters::to_json()},
+       {"amount",               J11Array{amount, "mm"}},
+       {"threshold",            threshold}
+      };
 }
 
 //------------------------------------------------------------------------------
 
-void MeasuredGroundwaterTableInformation::deserialize(mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
+void MeasuredGroundwaterTableInformation::deserialize(
+    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
   groundwaterInformationAvailable = reader.getGroundwaterInformationAvailable();
   groundwaterInfo.clear();
-  for (auto gi : reader.getGroundwaterInfo()) groundwaterInfo[Date(gi.getDate())] = gi.getValue();
+  for (auto gi: reader.getGroundwaterInfo()) groundwaterInfo[Date(gi.getDate())] = gi.getValue();
 }
 
-void MeasuredGroundwaterTableInformation::serialize(mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
+void MeasuredGroundwaterTableInformation::serialize(
+    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
   builder.setGroundwaterInformationAvailable(groundwaterInformationAvailable);
-  auto gis = builder.initGroundwaterInfo((capnp::uint)groundwaterInfo.size());
+  auto gis = builder.initGroundwaterInfo((capnp::uint) groundwaterInfo.size());
   capnp::uint i = 0;
-  for (auto p : groundwaterInfo) {
+  for (auto p: groundwaterInfo) {
     p.first.serialize(gis[i].initDate());
     gis[i].setValue(p.second);
   }
 }
 
-MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j)
-{
+MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j) {
   merge(j);
 }
 
-Errors MeasuredGroundwaterTableInformation::merge(json11::Json j)
-{
-    Errors res;
+Errors MeasuredGroundwaterTableInformation::merge(json11::Json j) {
+  Errors res;
 
-    set_bool_value(groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
+  set_bool_value(groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
 
-    string err = "";
-	if(j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
-		for(auto p : j["groundwaterInfo"].object_items())
-			groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
-	else
-		res.errors.push_back(string("Couldn't read 'groundwaterInfo' key from JSON object:\n") + j.dump());
+  string err = "";
+  if (j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
+    for (auto p: j["groundwaterInfo"].object_items())
+      groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
+  else
+    res.errors.push_back(string("Couldn't read 'groundwaterInfo' key from JSON object:\n") + j.dump());
 
-	return res;
+  return res;
 }
 
-json11::Json MeasuredGroundwaterTableInformation::to_json() const
-{
+json11::Json MeasuredGroundwaterTableInformation::to_json() const {
   json11::Json::object gi;
-  for(auto p : groundwaterInfo)
+  for (auto p: groundwaterInfo)
     gi[p.first.toIsoDateString()] = p.second;
 
-  return json11::Json::object 
-  {{"type", "MeasuredGroundwaterTableInformation"}
-  ,{"groundwaterInformationAvailable", groundwaterInformationAvailable}
-  ,{"groundwaterInfo", gi}
-  };
+  return json11::Json::object
+      {{"type",                            "MeasuredGroundwaterTableInformation"},
+       {"groundwaterInformationAvailable", groundwaterInformationAvailable},
+       {"groundwaterInfo",                 gi}
+      };
 }
 
-void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path)
-{
+void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path) {
   ifstream ifs(path.c_str(), ios::in);
-   if (!ifs.is_open())
-   {
-     cout << "ERROR while opening file " << path.c_str() << endl;
-     return;
-   }
+  if (!ifs.is_open()) {
+    cout << "ERROR while opening file " << path.c_str() << endl;
+    return;
+  }
 
-   groundwaterInformationAvailable = true;
+  groundwaterInformationAvailable = true;
 
-   // read in information from groundwater table file
-   string s;
-   while (getline(ifs, s))
-   {
-     // date, value
-     std::string date_string;
-     double gw_cm;
+  // read in information from groundwater table file
+  string s;
+  while (getline(ifs, s)) {
+    // date, value
+    std::string date_string;
+    double gw_cm;
 
-     istringstream ss(s);
-     ss >> date_string >> gw_cm;
+    istringstream ss(s);
+    ss >> date_string >> gw_cm;
 
-     Date gw_date = Tools::fromMysqlString(date_string.c_str());
+    Date gw_date = Tools::fromMysqlString(date_string.c_str());
 
-     if (!gw_date.isValid())
-     {
-       debug() << "ERROR - Invalid date in \"" << path.c_str() << "\"" << endl;
-       debug() << "Line: " << s.c_str() << endl;
-       continue;
-     }
-     cout << "Added gw value\t" << gw_date.toString().c_str() << "\t" << gw_cm << endl;
-     groundwaterInfo[gw_date] = gw_cm;
-   }
+    if (!gw_date.isValid()) {
+      debug() << "ERROR - Invalid date in \"" << path.c_str() << "\"" << endl;
+      debug() << "Line: " << s.c_str() << endl;
+      continue;
+    }
+    cout << "Added gw value\t" << gw_date.toString().c_str() << "\t" << gw_cm << endl;
+    groundwaterInfo[gw_date] = gw_cm;
+  }
 }
 
-double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const
-{
-  if (groundwaterInformationAvailable && groundwaterInfo.size()>0)
-  {
+double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const {
+  if (groundwaterInformationAvailable && groundwaterInfo.size() > 0) {
     auto it = groundwaterInfo.find(gwDate);
-    if(it != groundwaterInfo.end())
+    if (it != groundwaterInfo.end())
       return it->second;
   }
   return -1;
@@ -966,11 +937,10 @@ void SiteParameters::serialize(mas::schema::model::monica::SiteParameters::Build
   builder.setMaxEffectiveRootingDepth(vs_MaxEffectiveRootingDepth);
   builder.setImpenetrableLayerDepth(vs_ImpenetrableLayerDepth);
   builder.setSoilSpecificHumusBalanceCorrection(vs_SoilSpecificHumusBalanceCorrection);
-  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters((capnp::uint)vs_SoilParameters.size()));
+  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters((capnp::uint) vs_SoilParameters.size()));
 }
 
-SiteParameters::SiteParameters(json11::Json j)
-{
+SiteParameters::SiteParameters(json11::Json j) {
   merge(j);
 }
 
@@ -1010,11 +980,10 @@ std::pair<kj::Own<SoilPMs>, Errors> createSoilPMs(const J11Array& jsonSoilPMs) {
 */
 
 
-Errors SiteParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SiteParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
-	string err = "";
+  string err;
   set_double_value(vs_Latitude, j, "Latitude");
   set_double_value(vs_Slope, j, "Slope");
   set_double_value(vs_HeightNN, j, "HeightNN");
@@ -1023,37 +992,34 @@ Errors SiteParameters::merge(json11::Json j)
   set_double_value(vs_DrainageCoeff, j, "DrainageCoeff");
   set_double_value(vq_NDeposition, j, "NDeposition");
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
-	set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
-	set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
+  set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
+  set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
 
-	if(j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err))
-	{
-		auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
-		vs_SoilParameters = kj::mv(p.first);
-		if(p.second.failure())
-			res.append(p.second);
-	}
-	else
-		res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
+  if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
+    auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
+    vs_SoilParameters = kj::mv(p.first);
+    if (p.second.failure())
+      res.append(p.second);
+  } else if(j["SoilProfileParameters"].is_string() && j["SoilProfileParameters"].string_value().find("capnp") != 0)
+    res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
 
-	return res;
+  return res;
 }
 
-json11::Json SiteParameters::to_json() const
-{
+json11::Json SiteParameters::to_json() const {
   auto sps = J11Object
-	{{"type", "SiteParameters"}
-  ,{"Latitude", J11Array {vs_Latitude, "", "latitude in decimal degrees"}}
-  ,{"Slope", J11Array {vs_Slope, "m m-1"}}
-  ,{"HeightNN", J11Array {vs_HeightNN, "m", "height above sea level"}}
-  ,{"GroundwaterDepth", J11Array {vs_GroundwaterDepth, "m"}}
-  ,{"Soil_CN_Ratio", vs_Soil_CN_Ratio}
-  ,{"DrainageCoeff", vs_DrainageCoeff}
-	,{"NDeposition", J11Array {vq_NDeposition, "kg N ha-1 y-1"}}
-	,{"MaxEffectiveRootingDepth", J11Array{vs_MaxEffectiveRootingDepth, "m"}}
-	,{"ImpenetrableLayerDepth", J11Array {vs_ImpenetrableLayerDepth, "m"}}
-	,{ "SoilSpecificHumusBalanceCorrection", J11Array{ vs_SoilSpecificHumusBalanceCorrection, "humus equivalents" } }
-	};
+      {{"type",                               "SiteParameters"},
+       {"Latitude",                           J11Array{vs_Latitude, "", "latitude in decimal degrees"}},
+       {"Slope",                              J11Array{vs_Slope, "m m-1"}},
+       {"HeightNN",                           J11Array{vs_HeightNN, "m", "height above sea level"}},
+       {"GroundwaterDepth",                   J11Array{vs_GroundwaterDepth, "m"}},
+       {"Soil_CN_Ratio",                      vs_Soil_CN_Ratio},
+       {"DrainageCoeff",                      vs_DrainageCoeff},
+       {"NDeposition",                        J11Array{vq_NDeposition, "kg N ha-1 y-1"}},
+       {"MaxEffectiveRootingDepth",           J11Array{vs_MaxEffectiveRootingDepth, "m"}},
+       {"ImpenetrableLayerDepth",             J11Array{vs_ImpenetrableLayerDepth, "m"}},
+       {"SoilSpecificHumusBalanceCorrection", J11Array{vs_SoilSpecificHumusBalanceCorrection, "humus equivalents"}}
+      };
 
   sps["SoilProfileParameters"] = toJsonArray(vs_SoilParameters);
 
@@ -1063,8 +1029,7 @@ json11::Json SiteParameters::to_json() const
 //------------------------------------------------------------------------------
 
 AutomaticHarvestParameters::AutomaticHarvestParameters(HarvestTime yt)
-  : _harvestTime(yt)
-{}
+    : _harvestTime(yt) {}
 
 void AutomaticHarvestParameters::deserialize(mas::schema::model::monica::AutomaticHarvestParameters::Reader reader) {
   typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
@@ -1072,44 +1037,42 @@ void AutomaticHarvestParameters::deserialize(mas::schema::model::monica::Automat
   _latestHarvestDOY = reader.getLatestHarvestDOY();
 }
 
-void AutomaticHarvestParameters::serialize(mas::schema::model::monica::AutomaticHarvestParameters::Builder builder) const {
+void
+AutomaticHarvestParameters::serialize(mas::schema::model::monica::AutomaticHarvestParameters::Builder builder) const {
   typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
   builder.setHarvestTime(_harvestTime == maturity ? HT::MATURITY : HT::UNKNOWN);
   builder.setLatestHarvestDOY(_latestHarvestDOY);
 }
 
-AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j)
-{
+AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j) {
   merge(j);
 }
 
-Errors AutomaticHarvestParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors AutomaticHarvestParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   int ht = -1;
   set_int_value(ht, j, "harvestTime");
-  if(ht > -1)
+  if (ht > -1)
     _harvestTime = HarvestTime(ht);
   set_int_value(_latestHarvestDOY, j, "latestHarvestDOY");
 
-	return res;
+  return res;
 }
 
-json11::Json AutomaticHarvestParameters::to_json() const
-{
-  return J11Object 
-  {{"harvestTime", int(_harvestTime)}
-  ,{"latestHavestDOY", _latestHarvestDOY}
-  };
+json11::Json AutomaticHarvestParameters::to_json() const {
+  return J11Object
+      {{"harvestTime",     int(_harvestTime)},
+       {"latestHavestDOY", _latestHarvestDOY}
+      };
 }
 
 //------------------------------------------------------------------------------
 
 NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, double nTarget30)
-  : samplingDepth(samplingDepth),
-    nTarget(nTarget),
-    nTarget30(nTarget30) {}
+    : samplingDepth(samplingDepth),
+      nTarget(nTarget),
+      nTarget30(nTarget30) {}
 
 void NMinCropParameters::deserialize(mas::schema::model::monica::NMinCropParameters::Reader reader) {
   samplingDepth = reader.getSamplingDepth();
@@ -1123,35 +1086,33 @@ void NMinCropParameters::serialize(mas::schema::model::monica::NMinCropParameter
   builder.setNTarget30(nTarget30);
 }
 
-NMinCropParameters::NMinCropParameters(json11::Json j)
-{
+NMinCropParameters::NMinCropParameters(json11::Json j) {
   merge(j);
 }
 
-Errors NMinCropParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors NMinCropParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(samplingDepth, j, "samplingDepth");
   set_double_value(nTarget, j, "nTarget");
   set_double_value(nTarget30, j, "nTarget30");
 
-	return res;
+  return res;
 }
 
-json11::Json NMinCropParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "NMinCropParameters"}
-  ,{"samplingDepth", samplingDepth}
-  ,{"nTarget", nTarget}
-  ,{"nTarget30", nTarget30}
-  };
+json11::Json NMinCropParameters::to_json() const {
+  return json11::Json::object
+      {{"type",          "NMinCropParameters"},
+       {"samplingDepth", samplingDepth},
+       {"nTarget",       nTarget},
+       {"nTarget30",     nTarget30}
+      };
 }
 
 //------------------------------------------------------------------------------
 
-void OrganicMatterParameters::deserialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
+void OrganicMatterParameters::deserialize(
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
   vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
   vo_AOM_NH4Content = reader.getAomNH4Content();
   vo_AOM_NO3Content = reader.getAomNO3Content();
@@ -1168,7 +1129,8 @@ void OrganicMatterParameters::deserialize(mas::schema::model::monica::Params::Or
   //vo_CorgContent = reader.getCorgContent();
 }
 
-void OrganicMatterParameters::serialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
+void OrganicMatterParameters::serialize(
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
   builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
   builder.setAomNH4Content(vo_AOM_NH4Content);
   builder.setAomNO3Content(vo_AOM_NO3Content);
@@ -1185,14 +1147,12 @@ void OrganicMatterParameters::serialize(mas::schema::model::monica::Params::Orga
   //builder.setCorgContent(vo_CorgContent);
 }
 
-OrganicMatterParameters::OrganicMatterParameters(json11::Json j)
-{
+OrganicMatterParameters::OrganicMatterParameters(json11::Json j) {
   merge(j);
 }
 
-Errors OrganicMatterParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors OrganicMatterParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(vo_AOM_DryMatterContent, j, "AOM_DryMatterContent");
   set_double_value(vo_AOM_NH4Content, j, "AOM_NH4Content");
@@ -1209,63 +1169,74 @@ Errors OrganicMatterParameters::merge(json11::Json j)
   set_double_value(vo_NConcentration, j, "NConcentration");
   set_double_value(vo_CorgContent, j, "CorgContent");
 
-	return res;
+  return res;
 }
 
-json11::Json OrganicMatterParameters::to_json() const
-{
-  return J11Object 
-  {{"type", "OrganicMatterParameters"}
-  ,{"AOM_DryMatterContent", J11Array {vo_AOM_DryMatterContent, "kg DM kg FM-1", "Dry matter content of added organic matter"}}
-  ,{"AOM_NH4Content", J11Array {vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter"}}
-  ,{"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter"}}
-  ,{"AOM_NO3Content", J11Array {vo_AOM_NO3Content, "kg N kg DM-1", "Carbamide content in added organic matter"}}
-  ,{"AOM_SlowDecCoeffStandard", J11Array {vo_AOM_SlowDecCoeffStandard, "d-1", "Decomposition rate coefficient of slow AOM at standard conditions"}}
-  ,{"AOM_FastDecCoeffStandard", J11Array {vo_AOM_FastDecCoeffStandard, "d-1", "Decomposition rate coefficient of fast AOM at standard conditions"}}
-  ,{"PartAOM_to_AOM_Slow", J11Array {vo_PartAOM_to_AOM_Slow, "kg kg-1", "Part of AOM that is assigned to the slowly decomposing pool"}}
-  ,{"PartAOM_to_AOM_Fast", J11Array {vo_PartAOM_to_AOM_Fast, "kg kg-1", "Part of AOM that is assigned to the rapidly decomposing pool"}}
-  ,{"CN_Ratio_AOM_Slow", J11Array {vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool"}}
-  ,{"CN_Ratio_AOM_Fast", J11Array {vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool"}}
-  ,{"PartAOM_Slow_to_SMB_Slow", J11Array {vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1", "Part of AOM slow consumed by slow soil microbial biomass"}}
-  ,{"PartAOM_Slow_to_SMB_Fast", J11Array {vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1", "Part of AOM slow consumed by fast soil microbial biomass"}}
-  ,{"NConcentration", J11Array {vo_NConcentration, "kg N kg DM-1", "Nitrogen content in added organic matter"}}
-  ,{"CorgContent", J11Array {vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter"}}
-  };
+json11::Json OrganicMatterParameters::to_json() const {
+  return J11Object
+      {{"type",                     "OrganicMatterParameters"},
+       {"AOM_DryMatterContent",     J11Array{vo_AOM_DryMatterContent, "kg DM kg FM-1",
+                                             "Dry matter content of added organic matter"}},
+       {"AOM_NH4Content",           J11Array{vo_AOM_NH4Content, "kg N kg DM-1",
+                                             "Ammonium content in added organic matter"}},
+       {"AOM_NO3Content",           J11Array{vo_AOM_NO3Content, "kg N kg DM-1",
+                                             "Nitrate content in added organic matter"}},
+       {"AOM_NO3Content",           J11Array{vo_AOM_NO3Content, "kg N kg DM-1",
+                                             "Carbamide content in added organic matter"}},
+       {"AOM_SlowDecCoeffStandard", J11Array{vo_AOM_SlowDecCoeffStandard, "d-1",
+                                             "Decomposition rate coefficient of slow AOM at standard conditions"}},
+       {"AOM_FastDecCoeffStandard", J11Array{vo_AOM_FastDecCoeffStandard, "d-1",
+                                             "Decomposition rate coefficient of fast AOM at standard conditions"}},
+       {"PartAOM_to_AOM_Slow",      J11Array{vo_PartAOM_to_AOM_Slow, "kg kg-1",
+                                             "Part of AOM that is assigned to the slowly decomposing pool"}},
+       {"PartAOM_to_AOM_Fast",      J11Array{vo_PartAOM_to_AOM_Fast, "kg kg-1",
+                                             "Part of AOM that is assigned to the rapidly decomposing pool"}},
+       {"CN_Ratio_AOM_Slow",        J11Array{vo_CN_Ratio_AOM_Slow, "",
+                                             "C to N ratio of the slowly decomposing AOM pool"}},
+       {"CN_Ratio_AOM_Fast",        J11Array{vo_CN_Ratio_AOM_Fast, "",
+                                             "C to N ratio of the rapidly decomposing AOM pool"}},
+       {"PartAOM_Slow_to_SMB_Slow", J11Array{vo_PartAOM_Slow_to_SMB_Slow, "kg kg-1",
+                                             "Part of AOM slow consumed by slow soil microbial biomass"}},
+       {"PartAOM_Slow_to_SMB_Fast", J11Array{vo_PartAOM_Slow_to_SMB_Fast, "kg kg-1",
+                                             "Part of AOM slow consumed by fast soil microbial biomass"}},
+       {"NConcentration",           J11Array{vo_NConcentration, "kg N kg DM-1",
+                                             "Nitrogen content in added organic matter"}},
+       {"CorgContent",              J11Array{vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter"}}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
 
-void OrganicFertilizerParameters::deserialize(mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) {
+void OrganicFertilizerParameters::deserialize(
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) {
   OrganicMatterParameters::deserialize(reader.getParams());
   id = reader.getId();
   name = reader.getName();
 }
 
-void OrganicFertilizerParameters::serialize(mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder) const {
+void OrganicFertilizerParameters::serialize(
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder) const {
   OrganicMatterParameters::serialize(builder.initParams());
   builder.setId(id);
   builder.setName(name);
 }
 
-OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j)
-{
+OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j) {
   merge(j);
 }
 
-Errors OrganicFertilizerParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors OrganicFertilizerParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   res.append(OrganicMatterParameters::merge(j));
 
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
 
-	return res;
+  return res;
 }
 
-json11::Json OrganicFertilizerParameters::to_json() const
-{
+json11::Json OrganicFertilizerParameters::to_json() const {
   auto omp = OrganicMatterParameters::to_json().object_items();
   omp["type"] = "OrganicFertilizerParameters";
   omp["id"] = id;
@@ -1287,24 +1258,21 @@ void CropResidueParameters::serialize(mas::schema::model::monica::CropResiduePar
   builder.setResidueType(residueType);
 }
 
-CropResidueParameters::CropResidueParameters(json11::Json j)
-{
+CropResidueParameters::CropResidueParameters(json11::Json j) {
   merge(j);
 }
 
-Errors CropResidueParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors CropResidueParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   res.append(OrganicMatterParameters::merge(j));
   set_string_value(species, j, "species");
   set_string_value(residueType, j, "residueType");
 
-	return res;
+  return res;
 }
 
-json11::Json CropResidueParameters::to_json() const
-{
+json11::Json CropResidueParameters::to_json() const {
   auto omp = OrganicMatterParameters::to_json().object_items();
   omp["type"] = "CropResidueParameters";
   omp["species"] = species;
@@ -1368,14 +1336,12 @@ void SimulationParameters::serialize(mas::schema::model::monica::SimulationParam
   builder.setJulianDayAutomaticFertilising(p_JulianDayAutomaticFertilising);
 }
 
-SimulationParameters::SimulationParameters(json11::Json j)
-{
+SimulationParameters::SimulationParameters(json11::Json j) {
   merge(j);
 }
 
-Errors SimulationParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SimulationParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_iso_date_value(startDate, j, "startDate");
   set_iso_date_value(endDate, j, "endDate");
@@ -1384,15 +1350,15 @@ Errors SimulationParameters::merge(json11::Json j)
   set_bool_value(pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn");
   set_bool_value(pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn");
   set_bool_value(pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn");
-	set_bool_value(pc_FrostKillOn, j, "FrostKillOn");
+  set_bool_value(pc_FrostKillOn, j, "FrostKillOn");
 
   set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
   p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
-	
+
   set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
   p_NMinFertiliserPartition.merge(j["NMinFertiliserPartition"]);
   p_NMinUserParams.merge(j["NMinUserParams"]);
-	set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
+  set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 
   set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
   set_bool_value(p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
@@ -1405,37 +1371,36 @@ Errors SimulationParameters::merge(json11::Json j)
   set_bool_value(loadSerializedMonicaStateAtStart, j, "loadSerializedMonicaStateAtStart");
   noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
   set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
-  
-	return res;
+
+  return res;
 }
 
-json11::Json SimulationParameters::to_json() const
-{
-  return json11::Json::object 
-	{{"type", "SimulationParameters"}
-	,{"startDate", startDate.toIsoDateString()}
-	,{"endDate", endDate.toIsoDateString()}
-	,{"NitrogenResponseOn", pc_NitrogenResponseOn}
-	,{"WaterDeficitResponseOn", pc_WaterDeficitResponseOn}
-	,{"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn}
-	,{"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn }
-	,{"FrostKillOn", pc_FrostKillOn}
-  ,{"UseAutomaticIrrigation", p_UseAutomaticIrrigation}
-  ,{"AutoIrrigationParams", p_AutoIrrigationParams}
-  ,{"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod}
-  ,{"NMinFertiliserPartition", p_NMinFertiliserPartition}
-  ,{"NMinUserParams", p_NMinUserParams}
-	,{"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising}
-  ,{"UseSecondaryYields", p_UseSecondaryYields}
-  ,{"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger}
-  ,{"NumberOfLayers", p_NumberOfLayers}
-  ,{"LayerThickness", p_LayerThickness}
-  ,{"StartPVIndex", p_StartPVIndex}
-  ,{"serializeMonicaStateAtEnd", serializeMonicaStateAtEnd}
-  ,{"loadSerializedMonicaStateAtStart", loadSerializedMonicaStateAtStart}
-  ,{"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)}
-  ,{"pathToSerializationFile", pathToSerializationFile}
-	};
+json11::Json SimulationParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                                  "SimulationParameters"},
+       {"startDate",                             startDate.toIsoDateString()},
+       {"endDate",                               endDate.toIsoDateString()},
+       {"NitrogenResponseOn",                    pc_NitrogenResponseOn},
+       {"WaterDeficitResponseOn",                pc_WaterDeficitResponseOn},
+       {"EmergenceFloodingControlOn",            pc_EmergenceFloodingControlOn},
+       {"EmergenceMoistureControlOn",            pc_EmergenceMoistureControlOn},
+       {"FrostKillOn",                           pc_FrostKillOn},
+       {"UseAutomaticIrrigation",                p_UseAutomaticIrrigation},
+       {"AutoIrrigationParams",                  p_AutoIrrigationParams},
+       {"UseNMinMineralFertilisingMethod",       p_UseNMinMineralFertilisingMethod},
+       {"NMinFertiliserPartition",               p_NMinFertiliserPartition},
+       {"NMinUserParams",                        p_NMinUserParams},
+       {"JulianDayAutomaticFertilising",         p_JulianDayAutomaticFertilising},
+       {"UseSecondaryYields",                    p_UseSecondaryYields},
+       {"UseAutomaticHarvestTrigger",            p_UseAutomaticHarvestTrigger},
+       {"NumberOfLayers",                        p_NumberOfLayers},
+       {"LayerThickness",                        p_LayerThickness},
+       {"StartPVIndex",                          p_StartPVIndex},
+       {"serializeMonicaStateAtEnd",             serializeMonicaStateAtEnd},
+       {"loadSerializedMonicaStateAtStart",      loadSerializedMonicaStateAtStart},
+       {"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)},
+       {"pathToSerializationFile",               pathToSerializationFile}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -1485,21 +1450,20 @@ void CropModuleParameters::serialize(mas::schema::model::monica::CropModuleParam
   builder.setAdjustRootDepthForSoilProps(pc_AdjustRootDepthForSoilProps);
 
   builder.setExperimentalEnablePhenologyWangEngelTemperatureResponse(__enable_Phenology_WangEngelTemperatureResponse__);
-  builder.setExperimentalEnablePhotosynthesisWangEngelTemperatureResponse(__enable_Photosynthesis_WangEngelTemperatureResponse__);
+  builder.setExperimentalEnablePhotosynthesisWangEngelTemperatureResponse(
+      __enable_Photosynthesis_WangEngelTemperatureResponse__);
   builder.setExperimentalEnableHourlyFvCBPhotosynthesis(__enable_hourly_FvCB_photosynthesis__);
   builder.setExperimentalEnableTResponseLeafExpansion(__enable_T_response_leaf_expansion__);
   builder.setExperimentalDisableDailyRootBiomassToSoil(__disable_daily_root_biomass_to_soil__);
   builder.setEnableVernalisationFactorFix(__enable_vernalisation_factor_fix__);
 }
 
-CropModuleParameters::CropModuleParameters(json11::Json j)
-{
+CropModuleParameters::CropModuleParameters(json11::Json j) {
   merge(j);
 }
 
-Errors CropModuleParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors CropModuleParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient");
   set_double_value(pc_ReferenceMaxAssimilationRate, j, "ReferenceMaxAssimilationRate");
@@ -1518,49 +1482,50 @@ Errors CropModuleParameters::merge(json11::Json j)
   set_double_value(pc_Tortuosity, j, "Tortuosity");
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
 
-	set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j, "__enable_Photosynthesis_WangEngelTemperatureResponse__");
-	set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j, "__enable_Phenology_WangEngelTemperatureResponse__");
-	set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
-	set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
-	set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
+  set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j,
+                 "__enable_Photosynthesis_WangEngelTemperatureResponse__");
+  set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j,
+                 "__enable_Phenology_WangEngelTemperatureResponse__");
+  set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
+  set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
+  set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
-	
+
   set_bool_value(isIntercropping, j["intercropping"], "is_intercropping");
   set_double_value(pc_intercropping_k_s, j["intercropping"], "k_s");
   set_double_value(pc_intercropping_k_t, j["intercropping"], "k_t");
   set_double_vectorD(pc_intercropping_phRedux, j["intercropping"], "phRedux", vector<double>(7, 0.5));
   set_string_value(pc_intercropping_reader_sr, j["intercropping"], "reader_sr");
   set_string_value(pc_intercropping_writer_sr, j["intercropping"], "writer_sr");
-	return res;
+  return res;
 }
 
-json11::Json CropModuleParameters::to_json() const
-{
-  return json11::Json::object 
-	{{"type", "CropModuleParameters"}
-  ,{"CanopyReflectionCoefficient", pc_CanopyReflectionCoefficient}
-	,{"ReferenceMaxAssimilationRate", pc_ReferenceMaxAssimilationRate}
-  ,{"ReferenceLeafAreaIndex", pc_ReferenceLeafAreaIndex}
-  ,{"MaintenanceRespirationParameter1", pc_MaintenanceRespirationParameter1}
-  ,{"MaintenanceRespirationParameter2", pc_MaintenanceRespirationParameter2}
-  ,{"MinimumNConcentrationRoot", pc_MinimumNConcentrationRoot}
-  ,{"MinimumAvailableN", pc_MinimumAvailableN}
-  ,{"ReferenceAlbedo", pc_ReferenceAlbedo}
-  ,{"StomataConductanceAlpha", pc_StomataConductanceAlpha}
-  ,{"SaturationBeta", pc_SaturationBeta}
-  ,{"GrowthRespirationRedux", pc_GrowthRespirationRedux}
-  ,{"MaxCropNDemand", pc_MaxCropNDemand}
-  ,{"GrowthRespirationParameter1", pc_GrowthRespirationParameter1}
-  ,{"GrowthRespirationParameter2", pc_GrowthRespirationParameter2}
-  ,{"Tortuosity", pc_Tortuosity}
-	,{"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps}
-	,{"__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__}
-	,{"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__}
-	,{"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__}
-	,{"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__}
-	,{"__disable_daily_root_biomass_to_soil__", __disable_daily_root_biomass_to_soil__}
-  ,{"__enable_vernalisation_factor_fix__", __enable_vernalisation_factor_fix__}
-  };
+json11::Json CropModuleParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                                                   "CropModuleParameters"},
+       {"CanopyReflectionCoefficient",                            pc_CanopyReflectionCoefficient},
+       {"ReferenceMaxAssimilationRate",                           pc_ReferenceMaxAssimilationRate},
+       {"ReferenceLeafAreaIndex",                                 pc_ReferenceLeafAreaIndex},
+       {"MaintenanceRespirationParameter1",                       pc_MaintenanceRespirationParameter1},
+       {"MaintenanceRespirationParameter2",                       pc_MaintenanceRespirationParameter2},
+       {"MinimumNConcentrationRoot",                              pc_MinimumNConcentrationRoot},
+       {"MinimumAvailableN",                                      pc_MinimumAvailableN},
+       {"ReferenceAlbedo",                                        pc_ReferenceAlbedo},
+       {"StomataConductanceAlpha",                                pc_StomataConductanceAlpha},
+       {"SaturationBeta",                                         pc_SaturationBeta},
+       {"GrowthRespirationRedux",                                 pc_GrowthRespirationRedux},
+       {"MaxCropNDemand",                                         pc_MaxCropNDemand},
+       {"GrowthRespirationParameter1",                            pc_GrowthRespirationParameter1},
+       {"GrowthRespirationParameter2",                            pc_GrowthRespirationParameter2},
+       {"Tortuosity",                                             pc_Tortuosity},
+       {"AdjustRootDepthForSoilProps",                            pc_AdjustRootDepthForSoilProps},
+       {"__enable_Phenology_WangEngelTemperatureResponse__",      __enable_Phenology_WangEngelTemperatureResponse__},
+       {"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__},
+       {"__enable_hourly_FvCB_photosynthesis__",                  __enable_hourly_FvCB_photosynthesis__},
+       {"__enable_T_response_leaf_expansion__",                   __enable_T_response_leaf_expansion__},
+       {"__disable_daily_root_biomass_to_soil__",                 __disable_daily_root_biomass_to_soil__},
+       {"__enable_vernalisation_factor_fix__",                    __enable_vernalisation_factor_fix__}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -1570,10 +1535,10 @@ void EnvironmentParameters::deserialize(mas::schema::model::monica::EnvironmentP
   p_AtmosphericCO2 = reader.getAtmosphericCO2();
 
   p_AtmosphericCO2s.clear();
-  for (auto co2 : reader.getAtmosphericCO2s()) p_AtmosphericCO2s[co2.getYear()] = co2.getValue();
+  for (auto co2: reader.getAtmosphericCO2s()) p_AtmosphericCO2s[co2.getYear()] = co2.getValue();
 
   p_AtmosphericO3s.clear();
-  for (auto o3 : reader.getAtmosphericO3s()) p_AtmosphericO3s[o3.getYear()] = o3.getValue();
+  for (auto o3: reader.getAtmosphericO3s()) p_AtmosphericO3s[o3.getYear()] = o3.getValue();
 
   p_WindSpeedHeight = reader.getWindSpeedHeight();
   p_LeachingDepth = reader.getLeachingDepth();
@@ -1591,18 +1556,18 @@ void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentPar
   builder.setAtmosphericCO2(p_AtmosphericCO2);
 
   {
-    auto co2s = builder.initAtmosphericCO2s((capnp::uint)p_AtmosphericCO2s.size());
+    auto co2s = builder.initAtmosphericCO2s((capnp::uint) p_AtmosphericCO2s.size());
     capnp::uint i = 0;
-    for (auto p : p_AtmosphericCO2s) {
+    for (auto p: p_AtmosphericCO2s) {
       co2s[i].setYear(p.first);
       co2s[i].setValue(p.second);
     }
   }
   builder.setAtmosphericO3(p_AtmosphericO3);
   {
-    auto o3s = builder.initAtmosphericO3s((capnp::uint)p_AtmosphericO3s.size());
+    auto o3s = builder.initAtmosphericO3s((capnp::uint) p_AtmosphericO3s.size());
     capnp::uint i = 0;
-    for (auto p : p_AtmosphericO3s) {
+    for (auto p: p_AtmosphericO3s) {
       o3s[i].setYear(p.first);
       o3s[i].setValue(p.second);
     }
@@ -1618,26 +1583,37 @@ void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentPar
   builder.setRcp(rcp);
 }
 
-EnvironmentParameters::EnvironmentParameters(json11::Json j)
-{
+EnvironmentParameters::EnvironmentParameters(json11::Json j) {
   merge(j);
 }
 
-Errors EnvironmentParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors EnvironmentParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   using namespace mas::schema::climate;
   auto str2rcp = [](string str) {
-    switch (stoi(str.substr(3, 2)))
-    {
-    case 19: return RCP::RCP19; break;
-    case 26: return RCP::RCP26; break;
-    case 34: return RCP::RCP34; break;
-    case 45: return RCP::RCP45; break;
-    case 60: return RCP::RCP60; break;
-    case 70: return RCP::RCP70; break;
-    case 85: return RCP::RCP85; break;
+    switch (stoi(str.substr(3, 2))) {
+      case 19:
+        return RCP::RCP19;
+        break;
+      case 26:
+        return RCP::RCP26;
+        break;
+      case 34:
+        return RCP::RCP34;
+        break;
+      case 45:
+        return RCP::RCP45;
+        break;
+      case 60:
+        return RCP::RCP60;
+        break;
+      case 70:
+        return RCP::RCP70;
+        break;
+      case 85:
+        return RCP::RCP85;
+        break;
     }
     return RCP::RCP85;
   };
@@ -1647,19 +1623,17 @@ Errors EnvironmentParameters::merge(json11::Json j)
   if (j["rcp"].is_string()) rcp = str2rcp(j["rcp"].string_value());
 
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
-	if(j["AtmosphericCO2s"].is_object())
-	{
-		p_AtmosphericCO2s.clear();
-		for(auto p : j["AtmosphericCO2s"].object_items())
-			p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
-	}
-	set_double_value(p_AtmosphericO3, j, "AtmosphericO3");
-	if(j["AtmosphericO3s"].is_object())
-	{
-		p_AtmosphericO3s.clear();
-		for(auto p : j["AtmosphericO3s"].object_items())
-			p_AtmosphericO3s[stoi(p.first)] = p.second.number_value();
-	}
+  if (j["AtmosphericCO2s"].is_object()) {
+    p_AtmosphericCO2s.clear();
+    for (auto p: j["AtmosphericCO2s"].object_items())
+      p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
+  }
+  set_double_value(p_AtmosphericO3, j, "AtmosphericO3");
+  if (j["AtmosphericO3s"].is_object()) {
+    p_AtmosphericO3s.clear();
+    for (auto p: j["AtmosphericO3s"].object_items())
+      p_AtmosphericO3s[stoi(p.first)] = p.second.number_value();
+  }
   set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
   set_double_value(p_LeachingDepth, j, "LeachingDepth");
   set_double_value(p_timeStep, j, "timeStep");
@@ -1667,59 +1641,71 @@ Errors EnvironmentParameters::merge(json11::Json j)
   set_double_value(p_MinGroundwaterDepth, j, "MinGroundwaterDepth");
   set_int_value(p_MinGroundwaterDepthMonth, j, "MinGroundwaterDepthMonth");
 
-	return res;
+  return res;
 }
 
-json11::Json EnvironmentParameters::to_json() const
-{
-	json11::Json::object co2s;
-	for(auto p : p_AtmosphericCO2s)
-		co2s[to_string(p.first)] = p.second;
+json11::Json EnvironmentParameters::to_json() const {
+  json11::Json::object co2s;
+  for (auto p: p_AtmosphericCO2s)
+    co2s[to_string(p.first)] = p.second;
 
-	json11::Json::object o3s;
-	for(auto p : p_AtmosphericO3s)
-		o3s[to_string(p.first)] = p.second;
+  json11::Json::object o3s;
+  for (auto p: p_AtmosphericO3s)
+    o3s[to_string(p.first)] = p.second;
 
   auto rcp2str = [](auto rcp) {
     using namespace mas::schema::climate;
-    switch (rcp)
-    {
-    case RCP::RCP19: return "rcp19"; break;
-    case RCP::RCP26: return "rcp26"; break;
-    case RCP::RCP34: return "rcp34"; break;
-    case RCP::RCP45: return "rcp45"; break;
-    case RCP::RCP60: return "rcp60"; break;
-    case RCP::RCP70: return "rcp70"; break;
-    case RCP::RCP85: return "rcp85"; break;
+    switch (rcp) {
+      case RCP::RCP19:
+        return "rcp19";
+        break;
+      case RCP::RCP26:
+        return "rcp26";
+        break;
+      case RCP::RCP34:
+        return "rcp34";
+        break;
+      case RCP::RCP45:
+        return "rcp45";
+        break;
+      case RCP::RCP60:
+        return "rcp60";
+        break;
+      case RCP::RCP70:
+        return "rcp70";
+        break;
+      case RCP::RCP85:
+        return "rcp85";
+        break;
     }
     return "rcp85";
   };
 
   return json11::Json::object
-  { {"type", "EnvironmentParameters"}
-  ,{"Albedo", p_Albedo}
-  ,{"rcp", rcp2str(rcp)}
-  ,{"AtmosphericCO2", p_AtmosphericCO2}
-  ,{"AtmosphericCO2s", co2s}
-  ,{"AtmosphericO3", p_AtmosphericO3}
-  ,{"AtmosphericO3s", o3s}
-  ,{"WindSpeedHeight", p_WindSpeedHeight}
-  ,{"LeachingDepth", p_LeachingDepth}
-  ,{"timeStep", p_timeStep}
-  ,{"MaxGroundwaterDepth", p_MaxGroundwaterDepth}
-  ,{"MinGroundwaterDepth", p_MinGroundwaterDepth}
-  ,{"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
-  };
+      {{"type",                     "EnvironmentParameters"},
+       {"Albedo",                   p_Albedo},
+       {"rcp",                      rcp2str(rcp)},
+       {"AtmosphericCO2",           p_AtmosphericCO2},
+       {"AtmosphericCO2s",          co2s},
+       {"AtmosphericO3",            p_AtmosphericO3},
+       {"AtmosphericO3s",           o3s},
+       {"WindSpeedHeight",          p_WindSpeedHeight},
+       {"LeachingDepth",            p_LeachingDepth},
+       {"timeStep",                 p_timeStep},
+       {"MaxGroundwaterDepth",      p_MaxGroundwaterDepth},
+       {"MinGroundwaterDepth",      p_MinGroundwaterDepth},
+       {"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
 
-SoilMoistureModuleParameters::SoilMoistureModuleParameters()
-{
-	getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
+SoilMoistureModuleParameters::SoilMoistureModuleParameters() {
+  getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
 }
 
-void SoilMoistureModuleParameters::deserialize(mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
+void
+SoilMoistureModuleParameters::deserialize(mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
   pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
   pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
   pm_SurfaceRoughness = reader.getSurfaceRoughness();
@@ -1746,7 +1732,8 @@ void SoilMoistureModuleParameters::deserialize(mas::schema::model::monica::SoilM
   pm_MoistureInitValue = reader.getMoistureInitValue();
 }
 
-void SoilMoistureModuleParameters::serialize(mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder) const {
+void SoilMoistureModuleParameters::serialize(
+    mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder) const {
   builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
   builder.setSaturatedHydraulicConductivity(pm_SaturatedHydraulicConductivity);
   builder.setSurfaceRoughness(pm_SurfaceRoughness);
@@ -1774,14 +1761,12 @@ void SoilMoistureModuleParameters::serialize(mas::schema::model::monica::SoilMoi
 }
 
 SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
-	: SoilMoistureModuleParameters()
-{
+    : SoilMoistureModuleParameters() {
   merge(j);
 }
 
-Errors SoilMoistureModuleParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SoilMoistureModuleParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
   set_double_value(pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity");
@@ -1808,43 +1793,43 @@ Errors SoilMoistureModuleParameters::merge(json11::Json j)
   set_double_value(pm_MaxPercolationRate, j, "MaxPercolationRate");
   set_double_value(pm_MoistureInitValue, j, "MoistureInitValue");
 
-	return res;
+  return res;
 }
 
-json11::Json SoilMoistureModuleParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "SoilMoistureModuleParameters"}
-  ,{"CriticalMoistureDepth", pm_CriticalMoistureDepth}
-  ,{"SaturatedHydraulicConductivity", pm_SaturatedHydraulicConductivity}
-  ,{"SurfaceRoughness", pm_SurfaceRoughness}
-  ,{"GroundwaterDischarge", pm_GroundwaterDischarge}
-  ,{"HydraulicConductivityRedux", pm_HydraulicConductivityRedux}
-  ,{"SnowAccumulationTresholdTemperature", pm_SnowAccumulationTresholdTemperature}
-  ,{"KcFactor", pm_KcFactor}
-  ,{"TemperatureLimitForLiquidWater", pm_TemperatureLimitForLiquidWater}
-  ,{"CorrectionSnow", pm_CorrectionSnow}
-  ,{"CorrectionRain", pm_CorrectionRain}
-  ,{"SnowMaxAdditionalDensity", pm_SnowMaxAdditionalDensity}
-  ,{"NewSnowDensityMin", pm_NewSnowDensityMin}
-  ,{"SnowRetentionCapacityMin", pm_SnowRetentionCapacityMin}
-  ,{"RefreezeParameter1", pm_RefreezeParameter1}
-  ,{"RefreezeParameter2", pm_RefreezeParameter2}
-  ,{"RefreezeTemperature", pm_RefreezeTemperature}
-  ,{"SnowMeltTemperature", pm_SnowMeltTemperature}
-  ,{"SnowPacking", pm_SnowPacking}
-  ,{"SnowRetentionCapacityMax", pm_SnowRetentionCapacityMax}
-  ,{"EvaporationZeta", pm_EvaporationZeta}
-  ,{"XSACriticalSoilMoisture", pm_XSACriticalSoilMoisture}
-  ,{"MaximumEvaporationImpactDepth", pm_MaximumEvaporationImpactDepth}
-  ,{"MaxPercolationRate", pm_MaxPercolationRate}
-  ,{"MoistureInitValue", pm_MoistureInitValue}
-  };
+json11::Json SoilMoistureModuleParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                                "SoilMoistureModuleParameters"},
+       {"CriticalMoistureDepth",               pm_CriticalMoistureDepth},
+       {"SaturatedHydraulicConductivity",      pm_SaturatedHydraulicConductivity},
+       {"SurfaceRoughness",                    pm_SurfaceRoughness},
+       {"GroundwaterDischarge",                pm_GroundwaterDischarge},
+       {"HydraulicConductivityRedux",          pm_HydraulicConductivityRedux},
+       {"SnowAccumulationTresholdTemperature", pm_SnowAccumulationTresholdTemperature},
+       {"KcFactor",                            pm_KcFactor},
+       {"TemperatureLimitForLiquidWater",      pm_TemperatureLimitForLiquidWater},
+       {"CorrectionSnow",                      pm_CorrectionSnow},
+       {"CorrectionRain",                      pm_CorrectionRain},
+       {"SnowMaxAdditionalDensity",            pm_SnowMaxAdditionalDensity},
+       {"NewSnowDensityMin",                   pm_NewSnowDensityMin},
+       {"SnowRetentionCapacityMin",            pm_SnowRetentionCapacityMin},
+       {"RefreezeParameter1",                  pm_RefreezeParameter1},
+       {"RefreezeParameter2",                  pm_RefreezeParameter2},
+       {"RefreezeTemperature",                 pm_RefreezeTemperature},
+       {"SnowMeltTemperature",                 pm_SnowMeltTemperature},
+       {"SnowPacking",                         pm_SnowPacking},
+       {"SnowRetentionCapacityMax",            pm_SnowRetentionCapacityMax},
+       {"EvaporationZeta",                     pm_EvaporationZeta},
+       {"XSACriticalSoilMoisture",             pm_XSACriticalSoilMoisture},
+       {"MaximumEvaporationImpactDepth",       pm_MaximumEvaporationImpactDepth},
+       {"MaxPercolationRate",                  pm_MaxPercolationRate},
+       {"MoistureInitValue",                   pm_MoistureInitValue}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
 
-void SoilTemperatureModuleParameters::deserialize(mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
+void SoilTemperatureModuleParameters::deserialize(
+    mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
   pt_NTau = reader.getNTau();
   pt_InitialSurfaceTemperature = reader.getInitialSurfaceTemperature();
   pt_QuartzRawDensity = reader.getQuartzRawDensity();
@@ -1859,7 +1844,8 @@ void SoilTemperatureModuleParameters::deserialize(mas::schema::model::monica::So
   pt_SoilMoisture = reader.getSoilMoisture();
 }
 
-void SoilTemperatureModuleParameters::serialize(mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder) const {
+void SoilTemperatureModuleParameters::serialize(
+    mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder) const {
   builder.setNTau(pt_NTau);
   builder.setInitialSurfaceTemperature(pt_InitialSurfaceTemperature);
   builder.setBaseTemperature(pt_BaseTemperature);
@@ -1875,14 +1861,12 @@ void SoilTemperatureModuleParameters::serialize(mas::schema::model::monica::Soil
   builder.setSoilMoisture(pt_SoilMoisture);
 }
 
-SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j)
-{
+SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j) {
   merge(j);
 }
 
-Errors SoilTemperatureModuleParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SoilTemperatureModuleParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(pt_NTau, j, "NTau");
   set_double_value(pt_InitialSurfaceTemperature, j, "InitialSurfaceTemperature");
@@ -1898,71 +1882,69 @@ Errors SoilTemperatureModuleParameters::merge(json11::Json j)
   set_double_value(pt_SoilAlbedo, j, "SoilAlbedo");
   set_double_value(pt_SoilMoisture, j, "SoilMoisture");
 
-	return res;
+  return res;
 }
 
-json11::Json SoilTemperatureModuleParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "SoilTemperatureModuleParameters"}
-  ,{"NTau", pt_NTau}
-  ,{"InitialSurfaceTemperature", pt_InitialSurfaceTemperature}
-  ,{"BaseTemperature", pt_BaseTemperature}
-  ,{"QuartzRawDensity", pt_QuartzRawDensity}
-  ,{"DensityAir", pt_DensityAir}
-  ,{"DensityWater", pt_DensityWater}
-  ,{"DensityHumus", pt_DensityHumus}
-  ,{"SpecificHeatCapacityAir", pt_SpecificHeatCapacityAir}
-  ,{"SpecificHeatCapacityQuartz", pt_SpecificHeatCapacityQuartz}
-  ,{"SpecificHeatCapacityWater", pt_SpecificHeatCapacityWater}
-  ,{"SpecificHeatCapacityHumus", pt_SpecificHeatCapacityHumus}
-  ,{"SoilAlbedo", pt_SoilAlbedo}
-  ,{"SoilMoisture", pt_SoilMoisture}
-  };
+json11::Json SoilTemperatureModuleParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                       "SoilTemperatureModuleParameters"},
+       {"NTau",                       pt_NTau},
+       {"InitialSurfaceTemperature",  pt_InitialSurfaceTemperature},
+       {"BaseTemperature",            pt_BaseTemperature},
+       {"QuartzRawDensity",           pt_QuartzRawDensity},
+       {"DensityAir",                 pt_DensityAir},
+       {"DensityWater",               pt_DensityWater},
+       {"DensityHumus",               pt_DensityHumus},
+       {"SpecificHeatCapacityAir",    pt_SpecificHeatCapacityAir},
+       {"SpecificHeatCapacityQuartz", pt_SpecificHeatCapacityQuartz},
+       {"SpecificHeatCapacityWater",  pt_SpecificHeatCapacityWater},
+       {"SpecificHeatCapacityHumus",  pt_SpecificHeatCapacityHumus},
+       {"SoilAlbedo",                 pt_SoilAlbedo},
+       {"SoilMoisture",               pt_SoilMoisture}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
 
-void SoilTransportModuleParameters::deserialize(mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
+void
+SoilTransportModuleParameters::deserialize(mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
   pq_DispersionLength = reader.getDispersionLength();
   pq_AD = reader.getAd();
   pq_DiffusionCoefficientStandard = reader.getDiffusionCoefficientStandard();
   pq_NDeposition = reader.getNDeposition();
 }
 
-void SoilTransportModuleParameters::serialize(mas::schema::model::monica::SoilTransportModuleParameters::Builder builder) const {
+void SoilTransportModuleParameters::serialize(
+    mas::schema::model::monica::SoilTransportModuleParameters::Builder builder) const {
   builder.setDispersionLength(pq_DispersionLength);
   builder.setAd(pq_AD);
   builder.setDiffusionCoefficientStandard(pq_DiffusionCoefficientStandard);
   builder.setNDeposition(pq_NDeposition);
 }
 
-SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j)
-{
+SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j) {
   merge(j);
 }
 
-Errors SoilTransportModuleParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SoilTransportModuleParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(pq_DispersionLength, j, "DispersionLength");
   set_double_value(pq_AD, j, "AD");
   set_double_value(pq_DiffusionCoefficientStandard, j, "DiffusionCoefficientStandard");
   set_double_value(pq_NDeposition, j, "NDeposition");
 
-	return res;
+  return res;
 }
 
-json11::Json SoilTransportModuleParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "SoilTransportModuleParameters"}
-  ,{"DispersionLength", pq_DispersionLength}
-  ,{"AD", pq_AD}
-  ,{"DiffusionCoefficientStandard", pq_DiffusionCoefficientStandard}
-  ,{"NDeposition", pq_NDeposition}
-  };
+json11::Json SoilTransportModuleParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                         "SoilTransportModuleParameters"},
+       {"DispersionLength",             pq_DispersionLength},
+       {"AD",                           pq_AD},
+       {"DiffusionCoefficientStandard", pq_DiffusionCoefficientStandard},
+       {"NDeposition",                  pq_NDeposition}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
@@ -2103,47 +2085,47 @@ Errors SticsParameters::merge(json11::Json j) {
 
 json11::Json SticsParameters::to_json() const {
   return json11::Json::object
-  {{"type", "SticsParameters"}
-  ,{"use_n2o", use_n2o}
-  ,{"use_nit", use_nit}
-  ,{"use_denit", use_denit}
-  ,{"code_vnit", J11Array {code_vnit, ""}}
-  ,{"code_tnit", J11Array {code_tnit, ""}}
-  ,{"code_rationit", J11Array {code_rationit, ""}}
-  ,{"code_hourly_wfps_nit", J11Array {code_hourly_wfps_nit, ""}}
-  ,{"code_pdenit", J11Array {code_pdenit, ""}}
-  ,{"code_ratiodenit", J11Array {code_ratiodenit, ""}}
-  ,{"code_hourly_wfps_denit", J11Array {code_hourly_wfps_denit, ""}}
-  ,{"hminn", J11Array {hminn, ""}}
-  ,{"hoptn", J11Array {hoptn, ""}}
-  ,{"pHminnit", J11Array {pHminnit, ""}}
-  ,{"pHmaxnit", J11Array {pHmaxnit, ""}}
-  ,{"nh4_min", J11Array {nh4_min, ""}}
-  ,{"pHminden", J11Array {pHminden, ""}}
-  ,{"pHmaxden", J11Array {pHmaxden, ""}}
-  ,{"wfpsc", J11Array {wfpsc, ""}}
-  ,{"tdenitopt_gauss", J11Array {tdenitopt_gauss, ""}}
-  ,{"scale_tdenitopt", J11Array {scale_tdenitopt, ""}}
-  ,{"Kd", J11Array {Kd, ""}}
-  ,{"k_desat", J11Array {k_desat, ""}}
-  ,{"fnx", J11Array {fnx, ""}}
-  ,{"vnitmax", J11Array {vnitmax, ""}}
-  ,{"Kamm", J11Array {Kamm, ""}}
-  ,{"tnitmin", J11Array {tnitmin, ""}}
-  ,{"tnitopt", J11Array {tnitopt, ""}}
-  ,{"tnitop2", J11Array {tnitop2, ""}}
-  ,{"tnitmax", J11Array {tnitmax, ""}}
-  ,{"tnitopt_gauss", J11Array {tnitopt_gauss, ""}}
-  ,{"scale_tnitopt", J11Array {scale_tnitopt, ""}}
-  ,{"rationit", J11Array {rationit, ""}}
-  ,{"cmin_pdenit", J11Array {cmin_pdenit, ""}}
-  ,{"cmax_pdenit", J11Array {cmax_pdenit, ""}}
-  ,{"min_pdenit", J11Array {min_pdenit, ""}}
-  ,{"max_pdenit", J11Array {max_pdenit, ""}}
-  ,{"ratiodenit", J11Array {ratiodenit, ""}}
-  ,{"profdenit", J11Array {profdenit, ""}}
-  ,{"vpotdenit", vpotdenit}
-  };
+      {{"type",                   "SticsParameters"},
+       {"use_n2o",                use_n2o},
+       {"use_nit",                use_nit},
+       {"use_denit",              use_denit},
+       {"code_vnit",              J11Array{code_vnit, ""}},
+       {"code_tnit",              J11Array{code_tnit, ""}},
+       {"code_rationit",          J11Array{code_rationit, ""}},
+       {"code_hourly_wfps_nit",   J11Array{code_hourly_wfps_nit, ""}},
+       {"code_pdenit",            J11Array{code_pdenit, ""}},
+       {"code_ratiodenit",        J11Array{code_ratiodenit, ""}},
+       {"code_hourly_wfps_denit", J11Array{code_hourly_wfps_denit, ""}},
+       {"hminn",                  J11Array{hminn, ""}},
+       {"hoptn",                  J11Array{hoptn, ""}},
+       {"pHminnit",               J11Array{pHminnit, ""}},
+       {"pHmaxnit",               J11Array{pHmaxnit, ""}},
+       {"nh4_min",                J11Array{nh4_min, ""}},
+       {"pHminden",               J11Array{pHminden, ""}},
+       {"pHmaxden",               J11Array{pHmaxden, ""}},
+       {"wfpsc",                  J11Array{wfpsc, ""}},
+       {"tdenitopt_gauss",        J11Array{tdenitopt_gauss, ""}},
+       {"scale_tdenitopt",        J11Array{scale_tdenitopt, ""}},
+       {"Kd",                     J11Array{Kd, ""}},
+       {"k_desat",                J11Array{k_desat, ""}},
+       {"fnx",                    J11Array{fnx, ""}},
+       {"vnitmax",                J11Array{vnitmax, ""}},
+       {"Kamm",                   J11Array{Kamm, ""}},
+       {"tnitmin",                J11Array{tnitmin, ""}},
+       {"tnitopt",                J11Array{tnitopt, ""}},
+       {"tnitop2",                J11Array{tnitop2, ""}},
+       {"tnitmax",                J11Array{tnitmax, ""}},
+       {"tnitopt_gauss",          J11Array{tnitopt_gauss, ""}},
+       {"scale_tnitopt",          J11Array{scale_tnitopt, ""}},
+       {"rationit",               J11Array{rationit, ""}},
+       {"cmin_pdenit",            J11Array{cmin_pdenit, ""}},
+       {"cmax_pdenit",            J11Array{cmax_pdenit, ""}},
+       {"min_pdenit",             J11Array{min_pdenit, ""}},
+       {"max_pdenit",             J11Array{max_pdenit, ""}},
+       {"ratiodenit",             J11Array{ratiodenit, ""}},
+       {"profdenit",              J11Array{profdenit, ""}},
+       {"vpotdenit",              vpotdenit}
+      };
 }
 
 //-----------------------------------------------------------------------------
@@ -2191,7 +2173,8 @@ void SoilOrganicModuleParameters::deserialize(mas::schema::model::monica::SoilOr
   sticsParams.deserialize(reader.getSticsParams());
 }
 
-void SoilOrganicModuleParameters::serialize(mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder) const {
+void
+SoilOrganicModuleParameters::serialize(mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder) const {
   builder.setSomSlowDecCoeffStandard(po_SOM_SlowDecCoeffStandard);
   builder.setSomFastDecCoeffStandard(po_SOM_FastDecCoeffStandard);
   builder.setSmbSlowMaintRateStandard(po_SMB_SlowMaintRateStandard);
@@ -2234,14 +2217,12 @@ void SoilOrganicModuleParameters::serialize(mas::schema::model::monica::SoilOrga
   sticsParams.serialize(builder.initSticsParams());
 }
 
-SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j)
-{
+SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j) {
   merge(j);
 }
 
-Errors SoilOrganicModuleParameters::merge(json11::Json j)
-{
-	Errors res = Json11Serializable::merge(j);
+Errors SoilOrganicModuleParameters::merge(json11::Json j) {
+  Errors res = Json11Serializable::merge(j);
 
   set_double_value(po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard");
   set_double_value(po_SOM_FastDecCoeffStandard, j, "SOM_FastDecCoeffStandard");
@@ -2285,106 +2266,99 @@ Errors SoilOrganicModuleParameters::merge(json11::Json j)
 
   if (j["stics"].is_object()) res.append(sticsParams.merge(j["stics"]));
 
-	return res;
+  return res;
 }
 
-json11::Json SoilOrganicModuleParameters::to_json() const
-{
-  return json11::Json::object 
-  {{"type", "SoilOrganicModuleParameters"}
-  ,{"SOM_SlowDecCoeffStandard", J11Array {po_SOM_SlowDecCoeffStandard, "d-1"}}
-  ,{"SOM_FastDecCoeffStandard", J11Array {po_SOM_FastDecCoeffStandard, "d-1"}}
-  ,{"SMB_SlowMaintRateStandard", J11Array {po_SMB_SlowMaintRateStandard, "d-1"}}
-  ,{"SMB_FastMaintRateStandard", J11Array {po_SMB_FastMaintRateStandard, "d-1"}}
-  ,{"SMB_SlowDeathRateStandard", J11Array {po_SMB_SlowDeathRateStandard, "d-1"}}
-  ,{"SMB_FastDeathRateStandard", J11Array {po_SMB_FastDeathRateStandard, "d-1"}}
-  ,{"SMB_UtilizationEfficiency", J11Array {po_SMB_UtilizationEfficiency, "d-1"}}
-  ,{"SOM_SlowUtilizationEfficiency", J11Array {po_SOM_SlowUtilizationEfficiency, ""}}
-  ,{"SOM_FastUtilizationEfficiency", J11Array {po_SOM_FastUtilizationEfficiency, ""}}
-  ,{"AOM_SlowUtilizationEfficiency", J11Array {po_AOM_SlowUtilizationEfficiency, ""}}
-  ,{"AOM_FastUtilizationEfficiency", J11Array {po_AOM_FastUtilizationEfficiency, ""}}
-  ,{"AOM_FastMaxC_to_N", J11Array {po_AOM_FastMaxC_to_N, ""}}
-  ,{"PartSOM_Fast_to_SOM_Slow", J11Array {po_PartSOM_Fast_to_SOM_Slow, ""}}
-  ,{"PartSMB_Slow_to_SOM_Fast", J11Array {po_PartSMB_Slow_to_SOM_Fast, ""}}
-  ,{"PartSMB_Fast_to_SOM_Fast", J11Array {po_PartSMB_Fast_to_SOM_Fast, ""}}
-  ,{"PartSOM_to_SMB_Slow", J11Array {po_PartSOM_to_SMB_Slow, ""}}
-  ,{"PartSOM_to_SMB_Fast", J11Array {po_PartSOM_to_SMB_Fast, ""}}
-  ,{"CN_Ratio_SMB", J11Array {po_CN_Ratio_SMB, ""}}
-  ,{"LimitClayEffect", J11Array {po_LimitClayEffect, "kg kg-1"}}
-  ,{"QTenFactor", J11Array {po_QTenFactor, ""}}
-  ,{"TempDecOptimal", J11Array {po_TempDecOptimal, "°C"}}
-  ,{"MoistureDecOptimal", J11Array {po_MoistureDecOptimal, "%"}}
-  ,{"AmmoniaOxidationRateCoeffStandard", J11Array {po_AmmoniaOxidationRateCoeffStandard, "d-1"}}
-  ,{"NitriteOxidationRateCoeffStandard", J11Array {po_NitriteOxidationRateCoeffStandard, "d-1"}}
-  ,{"TransportRateCoeff", J11Array {po_TransportRateCoeff, "d-1"}}
-  ,{"SpecAnaerobDenitrification", J11Array {po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1"}}
-  ,{"ImmobilisationRateCoeffNO3", J11Array {po_ImmobilisationRateCoeffNO3, "d-1"}}
-  ,{"ImmobilisationRateCoeffNH4", J11Array {po_ImmobilisationRateCoeffNH4, "d-1"}}
-  ,{"Denit1", J11Array {po_Denit1, ""}}
-  ,{"Denit2", J11Array {po_Denit2, ""}}
-  ,{"Denit3", J11Array {po_Denit3, ""}}
-  ,{"HydrolysisKM", J11Array {po_HydrolysisKM, ""}}
-  ,{"ActivationEnergy", J11Array {po_ActivationEnergy, ""}}
-  ,{"HydrolysisP1", J11Array {po_HydrolysisP1, ""}}
-  ,{"HydrolysisP2", J11Array {po_HydrolysisP2, ""}}
-  ,{"AtmosphericResistance", J11Array {po_AtmosphericResistance, "s m-1"}}
-  ,{"N2OProductionRate", J11Array {po_N2OProductionRate, "d-1"}}
-  ,{"Inhibitor_NH3", J11Array {po_Inhibitor_NH3, "kg N m-3"}}
-  ,{"MaxMineralisationDepth", ps_MaxMineralisationDepth}
-  };
+json11::Json SoilOrganicModuleParameters::to_json() const {
+  return json11::Json::object
+      {{"type",                              "SoilOrganicModuleParameters"},
+       {"SOM_SlowDecCoeffStandard",          J11Array{po_SOM_SlowDecCoeffStandard, "d-1"}},
+       {"SOM_FastDecCoeffStandard",          J11Array{po_SOM_FastDecCoeffStandard, "d-1"}},
+       {"SMB_SlowMaintRateStandard",         J11Array{po_SMB_SlowMaintRateStandard, "d-1"}},
+       {"SMB_FastMaintRateStandard",         J11Array{po_SMB_FastMaintRateStandard, "d-1"}},
+       {"SMB_SlowDeathRateStandard",         J11Array{po_SMB_SlowDeathRateStandard, "d-1"}},
+       {"SMB_FastDeathRateStandard",         J11Array{po_SMB_FastDeathRateStandard, "d-1"}},
+       {"SMB_UtilizationEfficiency",         J11Array{po_SMB_UtilizationEfficiency, "d-1"}},
+       {"SOM_SlowUtilizationEfficiency",     J11Array{po_SOM_SlowUtilizationEfficiency, ""}},
+       {"SOM_FastUtilizationEfficiency",     J11Array{po_SOM_FastUtilizationEfficiency, ""}},
+       {"AOM_SlowUtilizationEfficiency",     J11Array{po_AOM_SlowUtilizationEfficiency, ""}},
+       {"AOM_FastUtilizationEfficiency",     J11Array{po_AOM_FastUtilizationEfficiency, ""}},
+       {"AOM_FastMaxC_to_N",                 J11Array{po_AOM_FastMaxC_to_N, ""}},
+       {"PartSOM_Fast_to_SOM_Slow",          J11Array{po_PartSOM_Fast_to_SOM_Slow, ""}},
+       {"PartSMB_Slow_to_SOM_Fast",          J11Array{po_PartSMB_Slow_to_SOM_Fast, ""}},
+       {"PartSMB_Fast_to_SOM_Fast",          J11Array{po_PartSMB_Fast_to_SOM_Fast, ""}},
+       {"PartSOM_to_SMB_Slow",               J11Array{po_PartSOM_to_SMB_Slow, ""}},
+       {"PartSOM_to_SMB_Fast",               J11Array{po_PartSOM_to_SMB_Fast, ""}},
+       {"CN_Ratio_SMB",                      J11Array{po_CN_Ratio_SMB, ""}},
+       {"LimitClayEffect",                   J11Array{po_LimitClayEffect, "kg kg-1"}},
+       {"QTenFactor",                        J11Array{po_QTenFactor, ""}},
+       {"TempDecOptimal",                    J11Array{po_TempDecOptimal, "°C"}},
+       {"MoistureDecOptimal",                J11Array{po_MoistureDecOptimal, "%"}},
+       {"AmmoniaOxidationRateCoeffStandard", J11Array{po_AmmoniaOxidationRateCoeffStandard, "d-1"}},
+       {"NitriteOxidationRateCoeffStandard", J11Array{po_NitriteOxidationRateCoeffStandard, "d-1"}},
+       {"TransportRateCoeff",                J11Array{po_TransportRateCoeff, "d-1"}},
+       {"SpecAnaerobDenitrification",        J11Array{po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1"}},
+       {"ImmobilisationRateCoeffNO3",        J11Array{po_ImmobilisationRateCoeffNO3, "d-1"}},
+       {"ImmobilisationRateCoeffNH4",        J11Array{po_ImmobilisationRateCoeffNH4, "d-1"}},
+       {"Denit1",                            J11Array{po_Denit1, ""}},
+       {"Denit2",                            J11Array{po_Denit2, ""}},
+       {"Denit3",                            J11Array{po_Denit3, ""}},
+       {"HydrolysisKM",                      J11Array{po_HydrolysisKM, ""}},
+       {"ActivationEnergy",                  J11Array{po_ActivationEnergy, ""}},
+       {"HydrolysisP1",                      J11Array{po_HydrolysisP1, ""}},
+       {"HydrolysisP2",                      J11Array{po_HydrolysisP2, ""}},
+       {"AtmosphericResistance",             J11Array{po_AtmosphericResistance, "s m-1"}},
+       {"N2OProductionRate",                 J11Array{po_N2OProductionRate, "d-1"}},
+       {"Inhibitor_NH3",                     J11Array{po_Inhibitor_NH3, "kg N m-3"}},
+       {"MaxMineralisationDepth",            ps_MaxMineralisationDepth}
+      };
 }
 
 //-----------------------------------------------------------------------------------------
 
 CentralParameterProvider::CentralParameterProvider()
-  : _pathToOutputDir(".")
-  , precipCorrectionValues(12, 1.0)
-{
+    : _pathToOutputDir("."), precipCorrectionValues(12, 1.0) {
 
 }
 
-CentralParameterProvider::CentralParameterProvider(json11::Json j)
-{
-	merge(j);
+CentralParameterProvider::CentralParameterProvider(json11::Json j) {
+  merge(j);
 }
 
-Errors CentralParameterProvider::merge(json11::Json j)
-{
-	Errors res;
+Errors CentralParameterProvider::merge(json11::Json j) {
+  Errors res;
 
-	res.append(userCropParameters.merge(j["userCropParameters"]));
-	res.append(userEnvironmentParameters.merge(j["userEnvironmentParameters"]));
-	res.append(userSoilMoistureParameters.merge(j["userSoilMoistureParameters"]));
-	res.append(userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]));
-	res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
-	res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
-	res.append(simulationParameters.merge(j["simulationParameters"]));
-	res.append(siteParameters.merge(j["siteParameters"]));
-    if (!j["groundwaterInformation"].is_null()) 
-    {
-        res.append(groundwaterInformation.merge(j["groundwaterInformation"]));
-    }
+  res.append(userCropParameters.merge(j["userCropParameters"]));
+  res.append(userEnvironmentParameters.merge(j["userEnvironmentParameters"]));
+  res.append(userSoilMoistureParameters.merge(j["userSoilMoistureParameters"]));
+  res.append(userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]));
+  res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
+  res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
+  res.append(simulationParameters.merge(j["simulationParameters"]));
+  res.append(siteParameters.merge(j["siteParameters"]));
+  if (!j["groundwaterInformation"].is_null()) {
+    res.append(groundwaterInformation.merge(j["groundwaterInformation"]));
+  }
 
-	//set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
+  //set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
 
-	return res;
+  return res;
 }
 
-json11::Json CentralParameterProvider::to_json() const
-{
-	return json11::Json::object
-  {{"type", "CentralParameterProvider"}
-	,{"userCropParameters", userCropParameters.to_json()}
-	,{"userEnvironmentParameters", userEnvironmentParameters.to_json()}
-	,{"userSoilMoistureParameters", userSoilMoistureParameters.to_json()}
-	,{"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()}
-	,{"userSoilTransportParameters", userSoilTransportParameters.to_json()}
-	,{"userSoilOrganicParameters", userSoilOrganicParameters.to_json()}
-	,{"simulationParameters", simulationParameters.to_json()}
-	,{"siteParameters", siteParameters.to_json()}
-		//, {"groundwaterInformation", groundwaterInformation.to_json()}
-		//, {"writeOutputFiles", writeOutputFiles()}
-	};
+json11::Json CentralParameterProvider::to_json() const {
+  return json11::Json::object
+      {{"type",                          "CentralParameterProvider"},
+       {"userCropParameters",            userCropParameters.to_json()},
+       {"userEnvironmentParameters",     userEnvironmentParameters.to_json()},
+       {"userSoilMoistureParameters",    userSoilMoistureParameters.to_json()},
+       {"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()},
+       {"userSoilTransportParameters",   userSoilTransportParameters.to_json()},
+       {"userSoilOrganicParameters",     userSoilOrganicParameters.to_json()},
+       {"simulationParameters",          simulationParameters.to_json()},
+       {"siteParameters",                siteParameters.to_json()}
+          //, {"groundwaterInformation", groundwaterInformation.to_json()}
+          //, {"writeOutputFiles", writeOutputFiles()}
+      };
 }
 
 /**
@@ -2392,13 +2366,12 @@ json11::Json CentralParameterProvider::to_json() const
  * @param month Month
  * @return Correction value that should be applied to precipitation value read from database.
  */
-double CentralParameterProvider::getPrecipCorrectionValue(int month) const
-{
-  assert(month<12);
-  assert(month>=0);
+double CentralParameterProvider::getPrecipCorrectionValue(int month) const {
+  assert(month < 12);
+  assert(month >= 0);
 
-	return precipCorrectionValues.at(month);
-	//cerr << "Requested correction value for precipitation for an invalid month.\nMust be in range of 0<=value<12." << endl;
+  return precipCorrectionValues.at(month);
+  //cerr << "Requested correction value for precipitation for an invalid month.\nMust be in range of 0<=value<12." << endl;
   //return 1.0;
 }
 
@@ -2407,11 +2380,10 @@ double CentralParameterProvider::getPrecipCorrectionValue(int month) const
  * @param month Month the value should be used for.
  * @param value Correction value that should be added.
  */
-void CentralParameterProvider::setPrecipCorrectionValue(int month, double value)
-{
-  assert(month<12);
-  assert(month>=0);
-  precipCorrectionValues[month]=value;
+void CentralParameterProvider::setPrecipCorrectionValue(int month, double value) {
+  assert(month < 12);
+  assert(month >= 0);
+  precipCorrectionValues[month] = value;
 
   // debug
   //  cout << "Added precip correction value for month " << month << ":\t " << value << endl;

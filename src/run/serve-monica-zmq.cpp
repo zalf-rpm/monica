@@ -469,10 +469,10 @@ void monica::ZmqServer::serveZmqMonicaFull(zmq::context_t* zmqContext,
                 resultMsg["type"] = "ack";
                 try {
                   s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
-                } catch(zmq::error_t e) {
+                } catch(const zmq::error_t& e) {
                   cerr << "Exception on trying to reply to 'finish' request with 'ack' message on zmq socket with address(es): ";
                   int i = 0;
-                  for(auto address : sAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
+                  for(const auto& address : sAddresses) cerr << (i > 0 ? "," : "") << address, ++i;
                   cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
                 }
               }

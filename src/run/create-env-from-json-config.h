@@ -33,4 +33,6 @@ json11::Json createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 
 Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 
+Env createEnvFromJsonObjects(std::map<std::string, json11::Json> params);
+
 }

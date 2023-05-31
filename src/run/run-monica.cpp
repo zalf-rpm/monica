@@ -127,12 +127,13 @@ Errors Env::merge(json11::Json j) {
   
   set_string_value(climateCSV, j, "climateCSV");
 
-  // move pathToClimateCSV whatever it is into an vector as we support multiple climate files (merging)
+  // move pathToClimateCSV whatever it is into a vector as we support multiple climate files (merging)
   if(j["pathToClimateCSV"].is_string() && !j["pathToClimateCSV"].string_value().empty()) {
     pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
   } else if(j["pathToClimateCSV"].is_array()) {
-    auto paths = toStringVector(j["pathToClimateCSV"].array_items());
-    for(auto path : paths) if(!path.empty()) pathsToClimateCSV.push_back(path);
+    for(const auto& path : toStringVector(j["pathToClimateCSV"].array_items())) {
+      if(!path.empty()) pathsToClimateCSV.push_back(path);
+    }
   }
   csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
