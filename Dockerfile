@@ -71,26 +71,15 @@ RUN touch /var/log/supervisord.log
 RUN chmod 777 /var/log/supervisord.log
 
 # copy executables 
-#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-run ${monica_dir}
-#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control-send ${monica_dir}
-#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-run ${monica_dir}
-#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-control ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
 
-# copy sqlite db
-#COPY sqlite-db/ka5-soil-data.sqlite ${monica_dir}/sqlite-db/
-#COPY sqlite-db/carbiocial.sqlite ${monica_dir}/sqlite-db/
-#COPY sqlite-db/monica.sqlite ${monica_dir}/sqlite-db/
-
 COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
 COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
 COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil/
-
-#COPY db-connections-install.ini ${monica_dir}/db-connections.ini
 
 COPY docker/start_monica_supervisor.sh /start.sh
 

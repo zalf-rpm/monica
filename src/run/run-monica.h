@@ -32,22 +32,20 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 namespace monica
 {
 struct CropRotation : public Tools::Json11Serializable {
-  CropRotation() {}
+  CropRotation() = default;
 
   CropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation)
     : start(start), end(end), cropRotation(cropRotation) {}
 
-  CropRotation(json11::Json object);
+  explicit CropRotation(json11::Json object);
 
-  virtual Tools::Errors merge(json11::Json j);
+  Tools::Errors merge(json11::Json j) override;
 
-  virtual json11::Json to_json() const;
+  json11::Json to_json() const override;
 
   Tools::Date start, end;
   std::vector<CultivationMethod> cropRotation;
 };
-
-//----------------------------------------------------------------------------
 
 struct DLL_API Env : public Tools::Json11Serializable {
   Env() = default;
@@ -108,18 +106,17 @@ struct DLL_API Env : public Tools::Json11Serializable {
   Intercropping ic;
 };
 
-//------------------------------------------------------------------------------------------
 
 struct Spec : public Tools::Json11Serializable {
-  Spec() {}
+  Spec() = default;
 
-  Spec(json11::Json j) { merge(j); }
+  explicit Spec(json11::Json j) { merge(j); }
 
-  virtual Tools::Errors merge(json11::Json j);
+  Tools::Errors merge(json11::Json j) override;
 
   std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
 
-  virtual json11::Json to_json() const { return origSpec; }
+  json11::Json to_json() const override { return origSpec; }
 
   json11::Json origSpec;
 

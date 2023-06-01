@@ -20,10 +20,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 #include <sstream>
 #include <iostream>
-#include <fstream>
-#include <cmath>
 #include <utility>
-#include <mutex>
 #include <algorithm>
 
 #include <capnp/message.h>
@@ -31,23 +28,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
-
-//#include "db/abstract-db-connections.h"
-#include "climate/climate-common.h"
-#include "tools/helper.h"
-#include "json11/json11-helper.h"
 #include "tools/algorithms.h"
-#include "../core/monica-parameters.h"
 #include "../core/monica-model.h"
 #include "tools/debug.h"
 #include "soil/conversion.h"
-#include "soil/soil.h"
 #include "../io/build-output.h"
-#include "../core/soilcolumn.h"
-#include "../core/crop-module.h"
-#include "../core/soiltemperature.h"
 
-//using namespace Db;
 using namespace std;
 using namespace monica;
 using namespace Soil;
@@ -107,8 +93,6 @@ string organNameFromId(int organId) {
   }
   return res;
 };
-
-//----------------------------------------------------------------------------
 
 Workstep::Workstep(const Tools::Date &d)
     : _date(d) {}
@@ -191,8 +175,6 @@ bool Workstep::reinit(Tools::Date date, bool addYear, bool forceInitYear) {
   return addedYear;
 }
 
-//------------------------------------------------------------------------------
-
 //Sowing::Sowing(const Tools::Date& at, CropPtr crop)
 //	: Workstep(at)
 //	, _crop(crop)
@@ -238,8 +220,6 @@ bool Sowing::apply(MonicaModel *model) {
 
   return true;
 }
-
-//------------------------------------------------------------------------------
 
 AutomaticSowing::AutomaticSowing(json11::Json j) {
   merge(j);
@@ -450,9 +430,6 @@ bool AutomaticSowing::reinit(Tools::Date date, bool addYear, bool forceInitYear)
   return addedYear1;// || addedYear2;
 }
 
-
-//------------------------------------------------------------------------------
-
 //Harvest::Harvest(const Tools::Date& at,
 //	Crop* crop,
 //	std::string method)
@@ -530,8 +507,6 @@ bool Harvest::apply(MonicaModel *model) {
 
   return true;
 }
-
-//------------------------------------------------------------------------------
 
 AutomaticHarvest::AutomaticHarvest()
     : Harvest(), _harvestTime("maturity") {}
@@ -617,8 +592,6 @@ bool AutomaticHarvest::reinit(Tools::Date date, bool addYear, bool forceInitYear
   return addedYear;
 }
 
-
-//------------------------------------------------------------------------------
 
 Cutting::Cutting(const Tools::Date &at)
     : Workstep(at) {}
@@ -719,7 +692,6 @@ bool Cutting::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 MineralFertilization::
 MineralFertilization(const Tools::Date &at,
@@ -757,7 +729,6 @@ bool MineralFertilization::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 NDemandFertilization::
 NDemandFertilization(int stage,
@@ -842,7 +813,6 @@ bool NDemandFertilization::reinit(Tools::Date date, bool addYear, bool forceInit
   return false;
 }
 
-//------------------------------------------------------------------------------
 
 OrganicFertilization::
 OrganicFertilization(const Tools::Date &at,
@@ -882,7 +852,6 @@ bool OrganicFertilization::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 Tillage::Tillage(const Tools::Date &at,
                  double depth)
@@ -915,7 +884,6 @@ bool Tillage::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 SetValue::SetValue(const Tools::Date &at,
                    OId oid,
@@ -989,7 +957,6 @@ bool SetValue::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 SaveMonicaState::SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile)
     : Workstep(at), _pathToSerializedStateFile(pathToSerializedStateFile) {
@@ -1039,7 +1006,6 @@ bool SaveMonicaState::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 Irrigation::Irrigation(const Tools::Date &at,
                        double amount,
@@ -1076,7 +1042,6 @@ bool Irrigation::apply(MonicaModel *model) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 
 WSPtr monica::makeWorkstep(json11::Json j) {
   string type = string_value(j["type"]);

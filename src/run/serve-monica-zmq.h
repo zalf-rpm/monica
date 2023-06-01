@@ -31,25 +31,29 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 
 namespace monica {
-namespace ZmqServer {
 
 //void startZeroMQMonica(zmq::context_t* zmqContext,
 //											 std::string inputSocketAddress,
 //											 std::string outputSocketAddress,
 //											 bool isInProcess = false);
 
-enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer };
-enum SocketRole { ReceiveJob, SendResult, Control };
-enum SocketOp { bind, connect };
-struct SocketConfig
-{
+enum SocketType {
+  Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer
+};
+enum SocketRole {
+  ReceiveJob, SendResult, Control
+};
+enum SocketOp {
+  bind, connect
+};
+struct SocketConfig {
   SocketType type;
   std::vector<std::string> addresses;
   SocketOp op;
 };
-void serveZmqMonicaFull(zmq::context_t* zmqContext,
+
+void serveZmqMonicaFull(zmq::context_t *zmqContext,
                         std::map<SocketRole, SocketConfig> socketAddresses);
 
-} // namespace ZmqServer
 } // namespace monica
 

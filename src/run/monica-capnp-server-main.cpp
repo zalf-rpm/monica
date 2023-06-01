@@ -18,22 +18,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/common.h>
 #include <kj/debug.h>
 #include <kj/main.h>
-#include <kj/thread.h>
-#define KJ_MVCAP(var) var = kj::mv(var)
-
 #include <capnp/ez-rpc.h>
-#include <capnp/message.h>
-#include <capnp/rpc-twoparty.h>
 
-#include "common/common.h"
 #include "common/restorable-service-main.h"
-#include "common/rpc-connection-manager.h"
-#include "tools/helper.h"
 
 #include "run-monica-capnp.h"
 #include "model.capnp.h"
 #include "common.capnp.h"
-#include "registry.capnp.h"
+
+#define KJ_MVCAP(var) var = kj::mv(var)
 
 namespace monica {
 
@@ -42,7 +35,7 @@ using RSM = mas::infrastructure::common::RestorableServiceMain;
 class MonicaCapnpServerMain : public RSM
 {
 public:
-  MonicaCapnpServerMain(kj::ProcessContext& context) 
+  explicit MonicaCapnpServerMain(kj::ProcessContext& context)
   : RSM(context, "MONICA Cap'n Proto Server v0.1", "Offers a MONICA as a Cap'n Proto service.")
   {}
 

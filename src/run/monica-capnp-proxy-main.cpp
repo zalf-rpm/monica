@@ -15,31 +15,26 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <iostream>
 #include <string>
-#include <tuple>
 #include <vector>
 #include <algorithm>
 
 #include <kj/debug.h>
 #include <kj/common.h>
-#define KJ_MVCAP(var) var = kj::mv(var)
-
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/rpc-twoparty.h>
-#include <kj/thread.h>
 
 #include "tools/debug.h"
-//#include "db/abstract-db-connections.h"
 #include "common/rpc-connection-manager.h"
 
 #include "run-monica-capnp.h"
 
-#include <capnp/persistent.capnp.h>
 #include "model.capnp.h"
 #include "common.capnp.h"
-#include "registry.capnp.h"
 
 #include "common/sole.hpp"
+
+#define KJ_MVCAP(var) var = kj::mv(var)
 
 using namespace std;
 using namespace monica;
@@ -51,16 +46,16 @@ string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
 typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
-typedef mas::schema::model::EnvInstanceProxy< mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstanceProxy;
+typedef mas::schema::model::EnvInstanceProxy<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstanceProxy;
 
-class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy< mas::schema::common::StructuredText, mas::schema::common::StructuredText>::Server
-{
-  struct Unregister final : public MonicaEnvInstanceProxy::Unregister::Server
-  {
-    RunMonicaProxy& _proxy;
+class RunMonicaProxy final
+    : public mas::schema::model::EnvInstanceProxy<mas::schema::common::StructuredText, mas::schema::common::StructuredText>::Server {
+  struct Unregister final : public MonicaEnvInstanceProxy::Unregister::Server {
+    RunMonicaProxy &_proxy;
     size_t _monicaServerId;
 
-    Unregister(RunMonicaProxy& proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
+    Unregister(RunMonicaProxy &proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
+
     virtual ~Unregister() noexcept(false) { unreg(); }
 
     //do @0 ();
@@ -77,14 +72,21 @@ class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy< mas::s
       }
     }
   };
-    
-  struct X {
-    MonicaEnvInstance::Client client{ nullptr };
-    size_t id{ 0 };
-    int jobs{ 0 };
 
-    void unset() { jobs = -1; client = nullptr; }
-    void reset(MonicaEnvInstance::Client&& client) { jobs = 0; this->client = client; }
+  struct X {
+    MonicaEnvInstance::Client client{nullptr};
+    size_t id{0};
+    int jobs{0};
+
+    void unset() {
+      jobs = -1;
+      client = nullptr;
+    }
+
+    void reset(MonicaEnvInstance::Client &&client) {
+      jobs = 0;
+      this->client = client;
+    }
   };
 
   std::vector<X> _xs;
@@ -93,10 +95,10 @@ class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy< mas::s
 public:
   RunMonicaProxy() : _uuid(sole::uuid4().str()) {}
 
-  RunMonicaProxy(vector<MonicaEnvInstance::Client>& monicas) : _uuid(sole::uuid4().str()) {
+  RunMonicaProxy(vector<MonicaEnvInstance::Client> &monicas) : _uuid(sole::uuid4().str()) {
     size_t id = 0;
-    for (auto&& client : monicas) {
-      _xs.push_back({ kj::mv(client), id++, 0 });
+    for (auto &&client: monicas) {
+      _xs.push_back({kj::mv(client), id++, 0});
     }
   }
 
@@ -115,10 +117,10 @@ public:
     if (_xs.empty())
       return kj::READY_NOW;
 
-    X* min = &_xs.front();
+    X *min = &_xs.front();
     if (min->jobs > 0 || min->jobs < 0) {
       for (size_t i = 0, size = _xs.size(); i < size; i++) {
-        auto& x = _xs[i];
+        auto &x = _xs[i];
         if (x.jobs < 0) //skip empty storage places
           continue;
         if (x.jobs < min->jobs) {
@@ -136,29 +138,30 @@ public:
     min->jobs++;
     auto id = min->id;
     cout << "added job to worker: " << id << " now " << min->jobs << " in worker queue" << endl;
-    return req.send().then([context, id, this](auto&& res) mutable {
+    return req.send().then([context, id, this](auto &&res) mutable {
       if (id < this->_xs.size()) {
-        X& x = _xs[id];
+        X &x = _xs[id];
         x.jobs--;
         cout << "finished job of worker: " << id << " now " << x.jobs << " in worker queue" << endl;
         context.setResults(res);
       }
-      }, [context, id, this](kj::Exception&& exception) {
-        cout << "job for worker with id: " << id << " failed" << endl;
-        cout << "Exception: " << exception.getDescription().cStr() << endl;
-        //try to erase id from map, so it can't be used anymore
-        if (id < this->_xs.size()) {
-          _xs[id].unset();
-        }
-      });
+    }, [context, id, this](kj::Exception &&exception) {
+      cout << "job for worker with id: " << id << " failed" << endl;
+      cout << "Exception: " << exception.getDescription().cStr() << endl;
+      //try to erase id from map, so it can't be used anymore
+      if (id < this->_xs.size()) {
+        _xs[id].unset();
+      }
+    });
   }
 
-  kj::Promise<void> registerEnvInstance(RegisterEnvInstanceContext context) override  // registerEnvInstance @0 (instance :EnvInstance) -> (unregister :Common.Callback);
+  kj::Promise<void> registerEnvInstance(
+      RegisterEnvInstanceContext context) override  // registerEnvInstance @0 (instance :EnvInstance) -> (unregister :Common.Callback);
   {
     auto instance = context.getParams().getInstance();
     bool filledEmptySlot = false;
     size_t registeredAsId = 0;
-    for (X& x : _xs) {
+    for (X &x: _xs) {
       if (x.jobs < 0) {
         //x = { kj::mv(instance), x.id, 0 };
         x.reset(kj::mv(instance));
@@ -168,17 +171,18 @@ public:
       }
     }
     if (!filledEmptySlot) {
-      _xs.push_back({ kj::mv(instance), _xs.size(), 0 });
+      _xs.push_back({kj::mv(instance), _xs.size(), 0});
       registeredAsId = _xs.back().id;
     }
 
     int count = 0;
-    for (X& x : _xs) {
+    for (X &x: _xs) {
       if (x.jobs >= 0)
         count++;
     }
-        
-    cout << "added service to proxy: service-id: " << registeredAsId << " -> " << count << " services registered now" << endl;
+
+    cout << "added service to proxy: service-id: " << registeredAsId << " -> " << count << " services registered now"
+         << endl;
 
     context.getResults().setUnregister(kj::heap<Unregister>(*this, registeredAsId));
 
@@ -186,13 +190,14 @@ public:
   }
 };
 
-kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
+kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider, bool startMonicaThreadsInDebugMode) {
   return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
-    kj::AsyncIoProvider& ioProvider, kj::AsyncIoStream& stream, kj::WaitScope& waitScope) {
-      capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
-      auto server = makeRpcServer(network, kj::heap<RunMonica>(startMonicaThreadsInDebugMode, new mas::infrastructure::common::Restorer()));
-      network.onDisconnect().wait(waitScope);
-    });
+      kj::AsyncIoProvider &ioProvider, kj::AsyncIoStream &stream, kj::WaitScope &waitScope) {
+    capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
+    auto server = makeRpcServer(network, kj::heap<RunMonica>(startMonicaThreadsInDebugMode,
+                                                             new mas::infrastructure::common::Restorer()));
+    network.onDisconnect().wait(waitScope);
+  });
 }
 
 //kj::Promise<kj::Own<kj::AsyncIoStream>> connectAttach(kj::Own<kj::NetworkAddress>&& addr) {
@@ -230,8 +235,8 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider& ioProvider, bool 
 //				cout << "connection from client" << endl;
 //				auto server = kj::heap<ServerContext>(kj::mv(connection), readerOpts);
 
-        // Arrange to destroy the server context when all references are gone, or when the
-        // EzRpcServer is destroyed (which will destroy the TaskSet).
+// Arrange to destroy the server context when all references are gone, or when the
+// EzRpcServer is destroyed (which will destroy the TaskSet).
 //				tasks.add(server->network.onDisconnect().attach(kj::mv(server)));
 //		})));
 //}
@@ -241,10 +246,9 @@ struct ThreadContext {
   capnp::TwoPartyVatNetwork network;
   capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
 
-  ThreadContext(kj::AsyncIoProvider::PipeThread&& serverThread)
-    : serverThread(kj::mv(serverThread))
-    , network(*this->serverThread.pipe, capnp::rpc::twoparty::Side::SERVER)
-    , rpcSystem(makeRpcClient(network)) {
+  ThreadContext(kj::AsyncIoProvider::PipeThread &&serverThread)
+      : serverThread(kj::mv(serverThread)), network(*this->serverThread.pipe, capnp::rpc::twoparty::Side::SERVER),
+        rpcSystem(makeRpcClient(network)) {
   }
 };
 
@@ -254,7 +258,7 @@ struct CMETRes {
 };
 
 CMETRes
-createMonicaEnvThread(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsInDebugMode) {
+createMonicaEnvThread(kj::AsyncIoProvider &ioProvider, bool startMonicaThreadsInDebugMode) {
   auto serverThread = runServer(ioProvider, startMonicaThreadsInDebugMode);
   auto tc = kj::heap<ThreadContext>(kj::mv(serverThread));
 
@@ -264,10 +268,10 @@ createMonicaEnvThread(kj::AsyncIoProvider& ioProvider, bool startMonicaThreadsIn
   auto client = tc->rpcSystem.bootstrap(vatId).castAs<MonicaEnvInstance>();
 
   auto prom = tc->network.onDisconnect().attach(kj::mv(tc));
-  return CMETRes{ prom.fork(), kj::mv(client) };
+  return CMETRes{prom.fork(), kj::mv(client)};
 }
 
-int main(int argc, const char* argv[]) {
+int main(int argc, const char *argv[]) {
 
   setlocale(LC_ALL, "");
   setlocale(LC_NUMERIC, "C");
@@ -284,47 +288,40 @@ int main(int argc, const char* argv[]) {
   //	//init for monica-run
   //	Db::dbConnectionParameters(pathToFile);
   //}
-    
+
   //use a possibly non-default db-connections.ini
   //Db::dbConnectionParameters("db-connections.ini");
 
-  auto printHelp = [=]()
-  {
+  auto printHelp = [=]() {
     cout
-      << appName << "[options]" << endl
-      << endl
-      << "options:" << endl
-      << endl
-      << " -h | --help ... this help output" << endl
-      << " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
-      << endl
-      << " -d | --debug "
-      "... show debug outputs" << endl
-      << " -p | --port ... PORT (default: none)] "
-      "... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
-      << " -t | --monica-threads ... NUMBER (default: " << no_of_threads << ")] "
-      "... starts additionally to the proxy NUMBER of MONICA threads which can be served via the proxy." << endl;
+        << appName << "[options]" << endl
+        << endl
+        << "options:" << endl
+        << endl
+        << " -h | --help ... this help output" << endl
+        << " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
+        << endl
+        << " -d | --debug "
+           "... show debug outputs" << endl
+        << " -p | --port ... PORT (default: none)] "
+           "... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
+        << " -t | --monica-threads ... NUMBER (default: " << no_of_threads << ")] "
+                                                                              "... starts additionally to the proxy NUMBER of MONICA threads which can be served via the proxy."
+        << endl;
   };
 
-  if (argc >= 1)
-  {
-    for (auto i = 1; i < argc; i++)
-    {
+  if (argc >= 1) {
+    for (auto i = 1; i < argc; i++) {
       string arg = argv[i];
       if (arg == "-d" || arg == "--debug") {
         startMonicaThreadsInDebugMode = true;
-      }
-      else if (arg == "-p" || arg == "--port")
-      {
+      } else if (arg == "-p" || arg == "--port") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           port = stoi(argv[++i]);
-      }
-      else if (arg == "-t" || arg == "--monica-threads")
-      {
+      } else if (arg == "-t" || arg == "--monica-threads") {
         if (i + 1 < argc && argv[i + 1][0] != '-')
           no_of_threads = stoi(argv[++i]);
-      }
-      else if (arg == "-h" || arg == "--help")
+      } else if (arg == "-h" || arg == "--help")
         printHelp(), exit(0);
       else if (arg == "-v" || arg == "--version")
         cout << appName << " version " << version << endl, exit(0);
@@ -348,7 +345,7 @@ int main(int argc, const char* argv[]) {
     //  portFulfiller->fulfill(listener->getPort());
     //  acceptLoop(kj::mv(listener), capnp::ReaderOptions());
     //}));
-    
+
     vector<MonicaEnvInstance::Client> clients;
     vector<kj::Promise<void>> proms;
     for (unsigned int i = 0; i < no_of_threads; i++) {
@@ -362,9 +359,9 @@ int main(int argc, const char* argv[]) {
     ConnectionManager conMan(ioContext);
     auto portPromise = conMan.bind(mainInterface, address, port < 0 ? 0U : kj::uint(port));
     auto port = portPromise.wait(ioContext.waitScope);
-    
+
     //port = portPromise.addBranch().wait(ioContext.waitScope);
-    
+
     /*
     auto cap = conman.connect(ioContext, "capnp://insecure@localhost:10001/abcd").wait(ioContext.waitScope);
     auto registratorCap = cap.castAs<rpc::registry::Registrator>();
@@ -406,8 +403,7 @@ int main(int argc, const char* argv[]) {
       // The address format "unix:/path/to/socket" opens a unix domain socket,
       // in which case the port will be zero.
       std::cout << "Listening on Unix socket..." << std::endl;
-    }
-    else {
+    } else {
       std::cout << "Listening on port " << port << "..." << std::endl;
     }
 

@@ -15,20 +15,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "run-monica-capnp.h"
 
-#include <iostream>
-#include <fstream>
 #include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
-#include <algorithm>
 
 #include <kj/debug.h>
 #include <kj/common.h>
-
-#define KJ_MVCAP(var) var = kj::mv(var)
-
-#include <capnp/message.h>
 
 #include "json11/json11.hpp"
 
@@ -36,11 +27,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica.h"
 #include "climate/climate-file-io.h"
 #include "capnp-helper.h"
+#include "common/sole.hpp"
 
-#include "model.capnp.h"
 #include "common.capnp.h"
 
-#include "common/sole.hpp"
+#define KJ_MVCAP(var) var = kj::mv(var)
 
 using namespace monica;
 using namespace Tools;
