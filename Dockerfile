@@ -1,5 +1,5 @@
 #Download base image debian 9.5
-FROM debian:10.3 AS build-env
+FROM debian:10.13 AS build-env
 
 # Update Ubuntu Software repository
 RUN apt-get update
@@ -32,7 +32,7 @@ RUN sh create_cmake_release.sh
 WORKDIR ${WORK_DIR}/monica/_cmake_release
 RUN make
 
-FROM debian:10.3
+FROM debian:10.13
 
 ENV DEBIAN_FRONTED noninteractive
 # Update Ubuntu Software repository
