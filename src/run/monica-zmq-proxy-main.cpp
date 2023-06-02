@@ -19,13 +19,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "monica-zmq-defaults.h"
 #include "tools/helper.h"
+#include "resource/version.h"
 
 using namespace Tools;
 using namespace std;
 using namespace monica;
 
 string appName = "monica-zmq-proxy";
-string version = "0.0.1";
+string version = VER_FILE_VERSION_STR;;
 
 int main(int argc,
          char **argv) {

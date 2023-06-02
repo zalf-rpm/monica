@@ -33,6 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/algorithms.h"
 #include "../io/csv-format.h"
 #include "monica-zmq-defaults.h"
+#include "resource/version.h"
 
 using namespace std;
 using namespace monica;
@@ -40,7 +41,7 @@ using namespace Tools;
 using namespace json11;
 
 string appName = "monica-zmq-server";
-string version = "2.0.0-beta";
+string version = VER_FILE_VERSION_STR;;
 
 /*
 int main_(int argc, char** argv)

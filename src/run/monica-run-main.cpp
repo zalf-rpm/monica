@@ -14,7 +14,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include <cstdlib>
-#include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -34,7 +33,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common/rpc-connection-manager.h"
 #include "capnp-helper.h"
 #include "climate/climate-file-io.h"
-#include "soil/soil.h"
+#include "resource/version.h"
 
 #include "climate.capnp.h"
 #include "soil.capnp.h"
@@ -45,7 +44,7 @@ using namespace Tools;
 using namespace json11;
 
 string appName = "monica-run";
-string version = "2.0.0-beta";
+string version = VER_FILE_VERSION_STR;
 
 int main(int argc, char **argv) {
   setlocale(LC_ALL, "");

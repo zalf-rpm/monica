@@ -21,6 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/ez-rpc.h>
 
 #include "common/restorable-service-main.h"
+#include "resource/version.h"
 
 #include "run-monica-capnp.h"
 #include "model.capnp.h"
@@ -36,7 +37,7 @@ class MonicaCapnpServerMain : public RSM
 {
 public:
   explicit MonicaCapnpServerMain(kj::ProcessContext& context)
-  : RSM(context, "MONICA Cap'n Proto Server v0.1", "Offers a MONICA as a Cap'n Proto service.")
+  : RSM(context, kj::str("MONICA Cap'n Proto Server v", VER_FILE_VERSION_STR), "Offers a MONICA as a Cap'n Proto service.")
   {}
 
   kj::MainBuilder::Validity setDebug() { startedServerInDebugMode = true; return true; }

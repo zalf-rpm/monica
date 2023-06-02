@@ -24,6 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "common/rpc-connection-manager.h"
 #include "common/common.h"
+#include "resource/version.h"
 
 #include "run-monica-capnp.h"
 
@@ -125,7 +126,7 @@ public:
   }
 
   kj::MainFunc getMain() {
-    return kj::MainBuilder(context, "MONICA FBP Component v0.1", "Offers a MONICA service.")
+    return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR), "Offers a MONICA service.")
         .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
                           "<component-name>", "Give this component a name.")
         .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
