@@ -7,10 +7,7 @@
 			"path": "../monica-parameters"
 		},
 		{
-			"path": "../mas-infrastructure/capnproto_schemas"
-		},
-		{
-			"path": "../mas-infrastructure/src/cpp"
+			"path": "../mas-infrastructure"
 		}
 	],
 	"settings": {
@@ -84,7 +81,7 @@
 		"vcpkg.general.enable": true,
 		"vcpkg.target.defaultTriplet": "",
 		"cmake.configureSettings": {
-			"CMAKE_TOOLCHAIN_FILE": "C:/Users/sschulz/go/src/github.com/zalf-rpm/vcpkg/scripts/buildsystems/vcpkg.cmake"
+			"CMAKE_TOOLCHAIN_FILE": "../vcpkg/scripts/buildsystems/vcpkg.cmake"
 		},
 		"vcpkg.target.installDependencies": true,
 		"vcpkg.target.preferSystemLibs": false,
