@@ -75,6 +75,21 @@
 			"memory_resource": "cpp",
 			"random": "cpp",
 			"cinttypes": "cpp"
-		}
+		},
+		"cmake.configureArgs": [
+			"-DVCPKG_TARGET_TRIPLET=",
+			"-DVCPKG_APPLOCAL_DEPS=ON",
+			"-DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON"
+		],
+		"vcpkg.general.enable": true,
+		"vcpkg.target.defaultTriplet": "",
+		"cmake.configureSettings": {
+			"CMAKE_TOOLCHAIN_FILE": "C:/Users/sschulz/go/src/github.com/zalf-rpm/vcpkg/scripts/buildsystems/vcpkg.cmake"
+		},
+		"vcpkg.target.installDependencies": true,
+		"vcpkg.target.preferSystemLibs": false,
+		"vcpkg.target.useManifest": false,
+		"vcpkg.target.hostTriplet": "x64-windows",
+		"vcpkg.target.useStaticLib": false
 	}
 }
