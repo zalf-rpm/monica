@@ -86,7 +86,7 @@ if [ ! -z "$EXTRA" ] ; then
 fi
 
 # create a git tag with the version number
-echo "TAG: v${NEW_VERSION}"
-git tag -a v${NEW_VERSION} -m "version ${NEW_VERSION}"
+echo "TAG: ${NEW_VERSION}"
+git tag -a ${NEW_VERSION} -m "version ${NEW_VERSION}"
 # push the tag to the remote repository
-git push origin v${NEW_VERSION}
+git push origin ${NEW_VERSION}
