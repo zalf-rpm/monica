@@ -19,12 +19,12 @@ import json
 import sys
 import zmq
 import os
-import monica_io
+import monica_io3
 import errno
 
-#print sys.path
+#print(sys.path)
 
-#print "pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version()
+#print("pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version())
 PATH_TO_CLIMATE_FILE = "/monica_data/climate-data/climate-min.csv"
 
 def run_producer(server = {"server": None, "port": None}, shared_id = None):
@@ -53,7 +53,7 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
                 else :
                     config[k] = v
 
-    print "config:", config
+    print("config:", config)
     
     socket.connect("tcp://" + config["server"] + ":" + config["port"])
 
@@ -66,19 +66,19 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
     with open(config["crop.json"]) as _:
         crop_json = json.load(_)
 
-    # with open(config["climate.csv"]) as _:
-    #   climate_csv = _.read()
+    #with open(config["climate.csv"]) as _:
+    #  climate_csv = _.read()
 
-    env = monica_io.create_env_json_from_json_config({
+    env = monica_io3.create_env_json_from_json_config({
         "crop": crop_json,
         "site": site_json,
         "sim": sim_json,
-        "climate": ""
+        "climate": "" #climate_csv
     })
     env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
     env["pathToClimateCSV"] = config["climate.csv"]
 
-    #print env
+    #print(env)
 
     # add shared ID if env to be sent to routable monicas
     if config["shared_id"]:
@@ -87,10 +87,11 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
     if config["writenv"] :
         filename = "/out/generated_env.json"
         WriteEnv(filename, env) 
+
     socket.send_json(env)
 
-    print "done"
-  
+    print("done")
+
 def WriteEnv(filename, env) :
     if not os.path.exists(os.path.dirname(filename)):
         try:
