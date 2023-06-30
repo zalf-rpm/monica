@@ -14,7 +14,7 @@
 	"output": { 
 	  "write-file?": true,
 
-		"path-to-output": "/home/berg/GitHub/monica/",
+		"path-to-output": "./",
 		"file-name": "sim-min-out.csv",
 	
 		"csv-options": {

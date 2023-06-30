@@ -21,10 +21,10 @@ import os
 import json
 
 import zmq
-#print "pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version()
+#print("pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version())
 
-import monica_io
-#print "path to monica_io: ", monica_io.__file__
+import monica_io3
+#print("path to monica_io: ", monica_io.__file__)
 
 def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, server = {"server": None, "port": None}, shared_id = None):
     "collect data from workers"
@@ -33,7 +33,7 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
         "port": server["port"] if server["port"] else "7777",
         "server": server["server"] if server["server"] else "localhost", 
         "shared_id": shared_id,
-        "out": path_to_output_dir if path_to_output_dir else os.path.join(os.path.dirname(__file__), 'out/'),
+        "out": path_to_output_dir if path_to_output_dir else os.path.join(os.path.dirname(__file__), './'),
         "leave_after_finished_run": leave_after_finished_run
     }
     if len(sys.argv) > 1 and __name__ == "__main__":
@@ -48,7 +48,7 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
                 else:
                     config[k] = v
 
-    print "consumer config:", config
+    print("consumer config:", config)
 
     context = zmq.Context()
     if config["shared_id"]:
@@ -70,16 +70,16 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
         leave = False
 
         if msg["type"] == "finish":
-            print "c: received finish message"
+            print("c: received finish message")
             leave = True
 
         else:
-            print "c: received work result ", process_message.received_env_count, " customId: ", str(msg.get("customId", ""))
+            print("c: received work result ", process_message.received_env_count, " customId: ", str(msg.get("customId", "")))
 
             process_message.received_env_count += 1
 
             #with open("out/out-" + str(i) + ".csv", 'wb') as _:
-            with open(config["out"] + str(process_message.received_env_count) + ".csv", 'wb') as _:
+            with open(config["out"] + str(process_message.received_env_count) + ".csv", 'w', newline='') as _:
                 writer = csv.writer(_, delimiter=",")
 
                 for data_ in msg.get("data", []):
@@ -89,13 +89,13 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
 
                     if len(results) > 0:
                         writer.writerow([orig_spec.replace("\"", "")])
-                        for row in monica_io.write_output_header_rows(output_ids,
+                        for row in monica_io3.write_output_header_rows(output_ids,
                                                                       include_header_row=True,
                                                                       include_units_row=True,
                                                                       include_time_agg=False):
                             writer.writerow(row)
 
-                        for row in monica_io.write_output(output_ids, results):
+                        for row in monica_io3.write_output(output_ids, results):
                             writer.writerow(row)
 
                     writer.writerow([])
@@ -109,9 +109,10 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
             msg = socket.recv_json(encoding="latin-1")
             leave = process_message(msg)
         except:
+            print(sys.exc_info())
             continue
 
-    print "c: exiting run_consumer()"
+    print("c: exiting run_consumer()")
     #debug_file.close()
 
 if __name__ == "__main__":

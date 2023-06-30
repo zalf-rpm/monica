@@ -5,7 +5,6 @@
     "HeightNN": [0 , "m"],
     "NDeposition": [30, "kg N ha-1 y-1"],
 
-	"_SoilProfileParameters": "capnp://HvQI253JOzL1nNVvf3IvHLl2HN6qjv86aGgFxXiT1ds=@10.10.24.24:42851/0c23f90b-5df5-4905-8f8b-e0dff0a4fdfa",
     "SoilProfileParameters": [
 			{
 				"Thickness": [0.3, "m"],
