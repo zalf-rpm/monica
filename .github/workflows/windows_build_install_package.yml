@@ -13,6 +13,8 @@ jobs:
       # main repository monica
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          path: main
 
       # dependent repository mas-infrastructure
       - name: Checkout dependent repository
@@ -20,14 +22,21 @@ jobs:
         with:
           repository: zalf-rpm/mas-infrastructure
           ref: master
-          path: ""
+          path: "mas-infrastructure"
 
       - name: Checkout dependent repository
         uses: actions/checkout@v3
         with:
           repository: zalf-rpm/monica-parameters
           ref: master 
-          path: ""
+          path: "monica-parameters"
+
+      - name: Checkout vcpkg
+        uses: actions/checkout@v3
+        with:
+          repository: microsoft/vcpkg
+          ref: master 
+          path: "vcpkg"
 
       - name: Set up MSVC compiler
         uses: microsoft/setup-msbuild@v1.1
@@ -38,13 +47,11 @@ jobs:
       - name: Install vcpkg dependencies
         working-directory: /
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
           .\vcpkg\bootstrap-vcpkg.bat
           .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static
           .\vcpkg\vcpkg integrate install
 
       - name: Create build folder and Configure CMake
-        working-directory: /monica
         run: |
           mkdir _cmake_win64
           cd _cmake_win64

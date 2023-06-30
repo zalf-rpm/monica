@@ -2,7 +2,7 @@ _cmake_debug
 _cmake_release
 
 # dot files
-.*
+#.*
 
 #################
 ## Eclipse
