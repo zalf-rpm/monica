@@ -51,16 +51,18 @@ jobs:
           .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static
           .\vcpkg\vcpkg integrate install
 
-      - name: Create build folder and Configure CMake
+      - name: Create build folder 
         run: |
-          mkdir _cmake_win64
-          cd _cmake_win64
-          cmake -G "Visual Studio 17 2022" .. -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
-      
+            mkdir _cmake_win64
+      - name: Configure CMake
+        working-directory: /monica/_cmake_win64
+        run: |
+            cmake -G "Visual Studio 17 2022" .. -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
+        
       - name: Build Monica
         working-directory: /monica/_cmake_win64
         run: |
-          msbuild _cmake_win64/Monica.sln /p:Configuration=Release /p:Platform=\"x64\"
+            msbuild _cmake_win64/Monica.sln /p:Configuration=Release /p:Platform=\"x64\"
 
       - name: package Monica  
         working-directory: /
