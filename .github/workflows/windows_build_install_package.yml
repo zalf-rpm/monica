@@ -56,33 +56,30 @@ jobs:
           msbuild-architecture: 'x64'
 
       - name: Install vcpkg dependencies
-        working-directory: /
         run: |
-          echo ${{ github.workspace }}
           pwd
           .\vcpkg\bootstrap-vcpkg.bat
           .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static
           .\vcpkg\vcpkg integrate install
 
       - name: Create build folder 
+        working-directory: ./monica
         run: |
             pwd
             mkdir _cmake_win64
 
       - name: Configure CMake
-        working-directory: ./_cmake_win64
+        working-directory: ./monica/_cmake_win64
         run: |
-            echo ${{ github.workspace }}
             pwd
             cmake -G "Visual Studio 17 2022" .. -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
         
       - name: Build Monica
-        working-directory: ./_cmake_win64
+        working-directory: ./monica/_cmake_win64
         run: |
             msbuild _cmake_win64/Monica.sln /p:Configuration=Release /p:Platform=\"x64\"
 
       - name: package Monica  
-        working-directory: /
         run: |
           mkdir monica_${{ github.ref_name }}
           mkdir monica_${{ github.ref_name }}/bin
