@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          path: "monica"
+          path: "/monica"
 
       # dependent repository mas-infrastructure
       - name: Checkout dependent repository
@@ -37,6 +37,17 @@ jobs:
           repository: microsoft/vcpkg
           ref: master 
           path: "vcpkg"
+
+      - name: Debug directory structure
+        run: |
+          echo ${{ github.workspace }}
+          pwd
+          ls -la
+          ls -la monica
+          ls -la mas-infrastructure
+          ls -la monica-parameters
+          ls -la vcpkg
+
 
       - name: Set up MSVC compiler
         uses: microsoft/setup-msbuild@v1.1
