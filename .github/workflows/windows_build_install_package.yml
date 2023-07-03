@@ -42,11 +42,11 @@ jobs:
         run: |
           echo ${{ github.workspace }}
           pwd
-          ls -la
-          ls -la monica
-          ls -la mas-infrastructure
-          ls -la monica-parameters
-          ls -la vcpkg
+          ls
+          ls monica
+          ls mas-infrastructure
+          ls monica-parameters
+          ls vcpkg
 
 
       - name: Set up MSVC compiler
