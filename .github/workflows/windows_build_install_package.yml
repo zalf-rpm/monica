@@ -76,7 +76,7 @@ jobs:
       - name: Build Monica
         working-directory: ./monica/_cmake_win64
         run: |
-            msbuild Monica.sln /p:Configuration=Release /p:Platform=\"x64\"
+            msbuild Monica.sln /p:Configuration=Release /p:Platform=x64
 
       - name: package Monica  
         run: |
