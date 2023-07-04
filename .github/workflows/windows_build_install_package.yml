@@ -130,4 +130,4 @@ jobs:
           cp monica/installer/Hohenfinow2/sim+.json monica_${{ github.ref_name }}/MONICA/Examples/Hohenfinow2/
           cp monica/installer/Hohenfinow2/climate.csv monica_${{ github.ref_name }}/MONICA/Examples/Hohenfinow2/
 
-          zip -r monica_${{ github.ref_name }}.zip monica_${{ github.ref_name }}
+          tar -c -z -f monica_win64_${{ github.ref_name }}.zip monica_${{ github.ref_name }}
