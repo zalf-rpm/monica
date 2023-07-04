@@ -149,6 +149,7 @@ jobs:
           tar -c -z -f monica_win64_${{ github.ref_name }}.tar.gz monica_${{ github.ref_name }}
   
       - name: Create release
+        working-directory: ./monica
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
@@ -156,9 +157,10 @@ jobs:
           gh release create ${{ github.ref_name }} --draft --title="Monica ${{ github.ref_name }}" 
  
       - name: Upload executable
+        working-directory: ./monica
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release upload ${{ github.ref_name }} monica_win64_${{ github.ref_name }}.tar.gz
+          gh release upload ${{ github.ref_name }} ${{ github.workspace }}/monica_win64_${{ github.ref_name }}.tar.gz
  
