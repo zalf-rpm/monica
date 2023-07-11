@@ -102,8 +102,10 @@ jobs:
           mkdir monica_${{ github.ref_name }}/bin/soil
           mkdir monica_${{ github.ref_name }}/monica-parameters
           mkdir monica_${{ github.ref_name }}/bin/monica-ini-to-json
-          mkdir monica_${{ github.ref_name }}/Examples
-          mkdir monica_${{ github.ref_name }}/Examples/Hohenfinow2
+          mkdir monica_${{ github.ref_name }}/projects
+          mkdir monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer
+          mkdir monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python
+          mkdir monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run
           cp monica-parameters/soil/CapillaryRiseRates.sercapnp monica_${{ github.ref_name }}/bin/soil/
           cp monica-parameters/soil/SoilCharacteristicData.sercapnp monica_${{ github.ref_name }}/bin/soil/
           cp monica-parameters/soil/SoilCharacteristicModifier.sercapnp monica_${{ github.ref_name }}/bin/soil/
@@ -132,21 +134,28 @@ jobs:
           cp -r monica-parameters/general monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/soil monica_${{ github.ref_name }}/monica-parameters/
   
-          cp monica/installer/Hohenfinow2/crop-min.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/crop-min-ic.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/site-min.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/sim-min.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/sim-min-ic.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/climate-min.csv monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/crop.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/site.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/sim.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/crop+.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/site+.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/sim+.json monica_${{ github.ref_name }}/Examples/Hohenfinow2/
-          cp monica/installer/Hohenfinow2/climate.csv monica_${{ github.ref_name }}/Examples/Hohenfinow2/
+          cp monica/installer/Hohenfinow2/crop-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
+          cp monica/installer/Hohenfinow2/site-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
+          cp monica/installer/Hohenfinow2/sim-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
+          cp monica/installer/Hohenfinow2/climate-min.csv monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
+          cp monica/installer/Hohenfinow2/python/run-producer.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/installer/Hohenfinow2/python/run-consumer.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/installer/Hohenfinow2/python/start_monica_server.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/installer/Hohenfinow2/python/start_consumer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/installer/Hohenfinow2/python/start_producer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/installer/Hohenfinow2/python/start_producer_consumer_pipeline.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp mas-infrastructure/src/python/services/soil/soil_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/src/python/monica_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp monica/installer/Hohenfinow2/python/README_pipeline.md monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/README.md
   
-          tar -c -z -f monica_win64_${{ github.ref_name }}.tar.gz monica_${{ github.ref_name }}
+          cp monica/installer/Hohenfinow2/crop.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
+          cp monica/installer/Hohenfinow2/site.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
+          cp monica/installer/Hohenfinow2/sim.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
+          cp monica/installer/Hohenfinow2/climate.csv monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
+          cp monica/installer/Hohenfinow2/python/run_monica.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
+          cp monica/installer/Hohenfinow2/python/README_single.md monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/README.md
+
+          Compress-Archive -Path monica_${{ github.ref_name }}/* -Destination monica_win64_${{ github.ref_name }}.zip
   
       - name: Create release
         working-directory: ./monica
@@ -162,5 +171,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release upload ${{ github.ref_name }} ${{ github.workspace }}/monica_win64_${{ github.ref_name }}.tar.gz
+          gh release upload ${{ github.ref_name }} ${{ github.workspace }}/monica_win64_${{ github.ref_name }}.zip
  

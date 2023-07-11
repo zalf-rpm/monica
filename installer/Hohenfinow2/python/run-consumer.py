@@ -26,7 +26,7 @@ import zmq
 import monica_io3
 #print("path to monica_io: ", monica_io.__file__)
 
-def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, server = {"server": None, "port": None}, shared_id = None):
+def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, server = {"server": None, "port": None}, shared_id = None):
     "collect data from workers"
 
     config = {
@@ -56,7 +56,6 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
         socket.setsockopt(zmq.IDENTITY, config["shared_id"])
     else:
         socket = context.socket(zmq.PULL)
-
     socket.connect("tcp://" + config["server"] + ":" + config["port"])
 
     #socket.RCVTIMEO = 1000
@@ -77,6 +76,11 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
             print("c: received work result ", process_message.received_env_count, " customId: ", str(msg.get("customId", "")))
 
             process_message.received_env_count += 1
+
+            # check if message has errors
+            if msg.get("errors", []):
+                print("c: received errors: ", msg["errors"])
+
 
             #with open("out/out-" + str(i) + ".csv", 'wb') as _:
             with open(config["out"] + str(process_message.received_env_count) + ".csv", 'w', newline='') as _:
@@ -106,7 +110,7 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = False, se
 
     while not leave:
         try:
-            msg = socket.recv_json(encoding="latin-1")
+            msg = socket.recv_json()
             leave = process_message(msg)
         except:
             print(sys.exc_info())
