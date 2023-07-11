@@ -917,7 +917,7 @@ void CropModule::step(double vw_MeanAirTemperature,
   if (vc_DevelopmentalStage > 0)
   {
     auto maxCropHeight = cropPs.isIntercropping 
-      && cropPs.pc_intercropping_phRedux.size() > vc_DevelopmentalStage 
+      && cropPs.pc_intercropping_phRedux.size() > vc_DevelopmentalStage
       && _intercroppingOtherCropHeight > vc_CropHeight
       ? pc_MaxCropHeight * cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage]
       : pc_MaxCropHeight;
@@ -2660,8 +2660,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     double k_t = cropPs.pc_intercropping_k_t;
     double k_s = cropPs.pc_intercropping_k_s;
     double phRedux = cropPs.pc_intercropping_phRedux[vc_DevelopmentalStage];
-    double phr = vc_CropHeight <= 0.0 ? 0.0 : _intercroppingOtherCropHeight * phRedux / vc_CropHeight;
-    double LAI_t1 = max(0.001, (1 - phr) * vc_LeafAreaIndex);
+    //double phr = vc_CropHeight <= 0.0 ? 0.0 : _intercroppingOtherCropHeight * phRedux / vc_CropHeight;
+    double ph_s = min(_intercroppingOtherCropHeight, vc_CropHeight);
+    double ph_t = max(_intercroppingOtherCropHeight, vc_CropHeight);
+    double phr = vc_CropHeight <= 0.0 ? 0.0 : ph_s * phRedux / ph_t;
+    std::cout << "phRedux: " << phRedux << " phr: " << phr << " CropHeight: " << vc_CropHeight << " otherCropHeight: " << _intercroppingOtherCropHeight << " /: " << phRedux / vc_CropHeight << std::endl;
+    double LAI_t = _intercroppingOtherCropHeight < vc_CropHeight ? vc_LeafAreaIndex : _intercroppingOtherLAIt;
+    double LAI_t1 = max(0.001, (1 - phr) * LAI_t);
     // fraction of radiation intercepted for upper plant part
     auto F_t1 = [k_t](double LAI_t1)
     {
@@ -2677,7 +2682,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         << " own-crop-height: " << vc_CropHeight << endl;
 
       // send out LAI_s and wait for LAI_t2 from the larger plant
-      double LAI_t2 = _intercroppingOtherLAIt;
+      double LAI_t2 = phr * _intercroppingOtherLAIt;
       if(_intercropping.isAsync()){
         auto wreq = _intercropping.writer.writeRequest();
         auto wval = wreq.initValue();
