@@ -543,6 +543,9 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
                 isIC = env.params.userCropParameters.isIntercropping;
                 std::tie(out, out2) = runMonicaIC(env, isIC);
+              } else {
+                out.customId = env.customId;
+                out2.customId = env.customId;
               }
 
               out.errors = eda.errors;

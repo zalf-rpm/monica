@@ -5,6 +5,8 @@ message(STATUS "-> Monica")
 
 add_compile_definitions(CAPNPROTO_SERIALIZATION_SUPPORT)
 set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
+#add_compile_definitions(INCLUDE_SR_SUPPORT)
+#set(INCLUDE_SR_SUPPORT 1)
 add_compile_definitions(NO_MYSQL)
 set(MT_RUNTIME_LIB 1)
 

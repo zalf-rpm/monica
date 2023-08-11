@@ -101,6 +101,8 @@ kj::Promise<void> RunMonica::run(RunContext context)
           };
 
       out = monica::runMonica(env);
+    } else {
+      out.customId = env.customId;
     }
 
     out.errors = eda.errors;
