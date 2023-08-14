@@ -1494,7 +1494,9 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(isIntercropping, j["intercropping"], "is_intercropping");
   set_double_value(pc_intercropping_k_s, j["intercropping"], "k_s");
   set_double_value(pc_intercropping_k_t, j["intercropping"], "k_t");
-  set_double_vectorD(pc_intercropping_phRedux, j["intercropping"], "phRedux", vector<double>(7, 0.5));
+  set_double_value(pc_intercropping_phRedux, j["intercropping"], "PHredux");
+  set_double_value(pc_intercropping_dvs_phr, j["intercropping"], "DVS_PHr");
+  set_bool_value(pc_intercropping_autoPhRedux, j["intercropping"], "auto_PHredux");
   set_string_value(pc_intercropping_reader_sr, j["intercropping"], "reader_sr");
   set_string_value(pc_intercropping_writer_sr, j["intercropping"], "writer_sr");
   return res;
@@ -1527,8 +1529,6 @@ json11::Json CropModuleParameters::to_json() const {
        {"__enable_vernalisation_factor_fix__",                    __enable_vernalisation_factor_fix__}
       };
 }
-
-//-----------------------------------------------------------------------------------------
 
 void EnvironmentParameters::deserialize(mas::schema::model::monica::EnvironmentParameters::Reader reader) {
   p_Albedo = reader.getAlbedo();

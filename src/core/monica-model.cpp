@@ -490,55 +490,6 @@ void MonicaModel::incorporateCurrentCrop()
 }
 
 /**
- * @brief Simulating cutting of crop.
- *
- * Only removes some biomass of crop but not harvesting the crop.
- */
-
-/*
-void MonicaModel::cuttingCurrentCrop(double percentage, bool exported)
-{
-	//could be just a fallow, so there might be no CropModule object
-	if (_currentCrop && _currentCrop->isValid())
-	{
-		//prepare to remove tips
-		double currentLeafBiomass = _currentCropModule->get_OrganBiomass(1);
-		double currentShootBiomass = _currentCropModule->get_OrganBiomass(2);
-		double currentFruitBiomass = _currentCropModule->get_OrganBiomass(3);
-		double leavesToRemove = percentage * currentLeafBiomass;
-		double shootsToRemove = percentage * currentShootBiomass;
-		double fruitsToRemove = currentFruitBiomass;
-		double leavesToRemain = (1.0 - percentage) * currentLeafBiomass;
-		double shootsToRemain = (1.0 - percentage) * currentShootBiomass;
-		int stageAfterCut = _currentCropModule->get_StageAfterCut();
-		_currentCropModule->accumulatePrimaryCropYield(_currentCropModule->get_CropYieldAfterCutting());
-		_currentCropModule->set_OrganBiomass(1, leavesToRemain);
-		_currentCropModule->set_OrganBiomass(2, shootsToRemain);
-		_currentCropModule->set_OrganBiomass(3, 0.0); // fruit is not present after cutting
-		_currentCropModule->set_OrganBiomass(5, 0.0); // sugar is not present after cutting
-		_currentCropModule->setLeafAreaIndex(_currentCropModule->get_OrganBiomass(1) * _currentCropModule->getSpecificLeafArea(_currentCropModule->get_DevelopmentalStage()));
-		_currentCropModule->set_DevelopmentalStage(stageAfterCut); // sets developmentag stage according to crop database
-		_currentCropModule->set_CuttingDelayDays(); // sets delay after cutting according to crop database
-		_currentCropModule->set_MaxAssimilationRate(0.9); // Reduces maximum assimilation rate by 10%
-
-    if (!exported)
-    {
-			//prepare to add crop residues to soilorganic (AOMs)
-			double residues = leavesToRemove + shootsToRemove + fruitsToRemove;
-			double residueNConcentration = _currentCropModule->get_AbovegroundBiomassNConcentration();
-			debug() << "adding organic matter from cut residues to soilOrganic" << endl;
-			debug() << "Residue biomass: " << residues
-				<< " Residue N concentration: " << residueNConcentration << endl;
-
-			_soilOrganic->addOrganicMatter(_currentCrop->residueParameters(),
-                                    residues,
-                                    residueNConcentration);
-		}
-	}
-}
-*/
-
-/**
  * @brief Applying of fertilizer.
  *
  * @todo Nothing implemented yet.

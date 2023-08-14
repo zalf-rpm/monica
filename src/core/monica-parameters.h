@@ -555,16 +555,14 @@ struct DLL_API NMinCropParameters : public Tools::Json11Serializable {
   double nTarget30{ 0.0 };
 };
 
-//----------------------------------------------------------------------------
-
 struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
-  OrganicMatterParameters() {}
+  OrganicMatterParameters() = default;
 
-  OrganicMatterParameters(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) { deserialize(reader); }
+  explicit OrganicMatterParameters(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) { deserialize(reader); }
 
   void deserialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader);
 
-  OrganicMatterParameters(json11::Json object);
+  explicit OrganicMatterParameters(json11::Json object);
 
   void serialize(mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const;
 
@@ -615,8 +613,6 @@ struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
 };
 
 typedef std::shared_ptr<OrganicFertilizerParameters> OrganicFertiliserParametersPtr;
-
-//-------------------------------------------
 
 struct DLL_API CropResidueParameters : public OrganicMatterParameters {
   CropResidueParameters() {}
@@ -735,7 +731,9 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool isIntercropping { false };
   double pc_intercropping_k_s {0.0};
   double pc_intercropping_k_t {0.0};
-  std::vector<double> pc_intercropping_phRedux;
+  double pc_intercropping_phRedux {0.5};
+  double pc_intercropping_dvs_phr {5.791262};
+  bool pc_intercropping_autoPhRedux { true };
   std::string pc_intercropping_reader_sr;
   std::string pc_intercropping_writer_sr;
 };

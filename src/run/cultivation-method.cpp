@@ -1171,22 +1171,20 @@ json11::Json CultivationMethod::to_json() const {
 
 void CultivationMethod::apply(const Date &date,
                               MonicaModel *model) const {
-  for (auto ws: workstepsAt(date))
-    ws->apply(model);
+  for (auto ws: workstepsAt(date)) ws->apply(model);
 }
 
 void CultivationMethod::absApply(const Date &date,
                                  MonicaModel *model) const {
-  for (auto ws: absWorkstepsAt(date))
-    ws->apply(model);
+  for (auto ws: absWorkstepsAt(date)) ws->apply(model);
 }
 
 void CultivationMethod::apply(MonicaModel *model, bool runOnlyAtStartOfDayWorksteps) {
   auto &udws = _unfinishedDynamicWorksteps;
   udws.erase(remove_if(udws.begin(), udws.end(),
                        [model, runOnlyAtStartOfDayWorksteps](WSPtr wsp) {
-                         return runOnlyAtStartOfDayWorksteps == wsp->runAtStartOfDay()
-                                ? wsp->applyWithPossibleCondition(model) : false;
+                         return runOnlyAtStartOfDayWorksteps == wsp->runAtStartOfDay() &&
+                                wsp->applyWithPossibleCondition(model);
                        }), udws.end());
 }
 

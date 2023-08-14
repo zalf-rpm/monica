@@ -205,6 +205,7 @@ public:
   const SiteParameters& siteParameters() const { return _sitePs; }
   const EnvironmentParameters& environmentParameters() const { return _envPs; }
   const CropModuleParameters& cropParameters() const { return _cropPs; }
+  CropModuleParameters& cropParametersNC() { return _cropPs; }
   const SimulationParameters& simulationParameters() const { return _simPs; }
   SimulationParameters& simulationParametersNC() { return _simPs; }
 

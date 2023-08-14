@@ -27,7 +27,9 @@
 			"writer_sr": "capnp://insecure@10.10.24.218:8888/w",
 			"k_s": [0.6, "", "smaller crop canopy extinction coefficient"],
 			"k_t": [0.8, "", "taller crop canopy extinction coefficient"],
-			"PHredux": [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], "", "plant height reduction factor at dev stage"]
+			"PHredux": [0.5, "", "plant height reduction factor at dev stage"],
+			"DVS_PHr":[5.791262, "", "a variable derived from the field experiment for automatic PHredux calculation"],
+			"auto_PHredux": [true, "","calculating the PHredux automatically according to the equation or use fixed PHredux above"]
 		}
 	}
 }

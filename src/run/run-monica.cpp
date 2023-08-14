@@ -876,6 +876,29 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
       nextAbsoluteCMApplicationDate2 = currentCM2->nextAbsDate(nextAbsoluteCMApplicationDate2);
 
       debug() << "MONICA 2: next abs app-date: " << nextAbsoluteCMApplicationDate2.toString() << endl;
+
+      // calculate phRedux if set to automatic
+      if (monica2->cropParameters().pc_intercropping_autoPhRedux &&
+          monica2->currentEvents().find("Sowing") != monica2->currentEvents().end() &&
+          monica->cropGrowth() != nullptr) {
+        auto cg1 = monica->cropGrowth();
+        // crop 1 (wheat) has not yet reached anthesis, use first part of curve
+        auto anthesisStage = kj::get<1>(cg1->anthesisBetweenStages());
+        auto dvsPhr = monica2->cropParameters().pc_intercropping_dvs_phr;
+        if(cg1->get_DevelopmentalStage() < anthesisStage) {
+          monica->cropParametersNC().pc_intercropping_phRedux =
+          monica2->cropParametersNC().pc_intercropping_phRedux = log10(cg1->getCurrentTotalTemperatureSum()) / dvsPhr;
+        } else {
+          auto tempSumAtAnthesis = cg1->sumStageTemperatureSums(0, anthesisStage);
+          auto totTempSum = cg1->sumStageTemperatureSums(0, -1);
+          monica->cropParametersNC().pc_intercropping_phRedux =
+          monica2->cropParametersNC().pc_intercropping_phRedux = (log10(tempSumAtAnthesis) / dvsPhr)
+                                                                 - (log10(tempSumAtAnthesis) / dvsPhr /
+                                                                    (totTempSum - tempSumAtAnthesis)
+                                                                    * (cg1->getCurrentTotalTemperatureSum() -
+                                                                       tempSumAtAnthesis));
+        }
+      }
     }
 
     //monica main stepping method
