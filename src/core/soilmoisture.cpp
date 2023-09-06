@@ -327,7 +327,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   //  }
   //}
 
-  auto i = vs_NumberOfLayers - 1;
+  int i = int(vs_NumberOfLayers - 1);
   while (i >= 0 && vm_SoilMoisture[i] == vm_SoilPoreVolume[i])
     vm_GroundwaterTable = i--;
 
@@ -727,7 +727,7 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
     vm_StartLayer = vm_NumberOfLayers - 2;
   }
 
-  for (auto i = vm_StartLayer; i >= 0; i--) {
+  for (int i = int(vm_StartLayer); i >= 0; i--) {
     vm_SoilMoisture[i] += vm_GroundwaterAdded / 1000.0 / vm_LayerThickness[i + 1];
 
     if (i == vm_StartLayer) {
@@ -831,7 +831,7 @@ void SoilMoisture::fm_BackwaterReplenishment() {
     return;
 
   // Backwater replenishment upwards
-  for (long i = int(vm_StartLayer); i >= 0; i--) {
+  for (int i = int(vm_StartLayer); i >= 0; i--) {
 
     //!TODO check loop and whether it really should be i_Layer + 1 or the loop should start one layer higher ????!!!!
     vm_SoilMoisture[i] += vm_BackwaterAdded / 1000.0 / vm_LayerThickness[i];// + 1];
