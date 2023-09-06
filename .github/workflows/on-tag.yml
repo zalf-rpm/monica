@@ -119,8 +119,8 @@ jobs:
           cp monica/LICENSE monica_${{ github.ref_name }}/bin/
           cp monica/documentation/de_benutzerhandbuch_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
           cp monica/documentation/en_user_manual_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
-          cp monica/src/python/monica_io3.py monica_${{ github.ref_name }}/bin/
-          cp mas-infrastructure/src/python/services/soil/soil_io3.py monica_${{ github.ref_name }}/bin/
+          cp mas-infrastructure/src/python/pkgs/model/monica_io3.py monica_${{ github.ref_name }}/bin/
+          cp mas-infrastructure/src/python/pkgs/soil/soil_io3.py monica_${{ github.ref_name }}/bin/
   
           cp monica/src/python/monica-ini-to-json/monica-ini-to-json.py monica_${{ github.ref_name }}/bin/monica-ini-to-json/
           cp monica/src/python/monica-ini-to-json/conversion-template-sim.json monica_${{ github.ref_name }}/bin/monica-ini-to-json/
@@ -144,8 +144,8 @@ jobs:
           cp monica/installer/Hohenfinow2/python/start_consumer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/start_producer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/start_producer_consumer_pipeline.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
-          cp mas-infrastructure/src/python/services/soil/soil_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
-          cp monica/src/python/monica_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp mas-infrastructure/src/python/pkgs/soil/soil_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
+          cp mas-infrastructure/src/python/pkgs/model/monica_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/README_pipeline.md monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/README.md
   
           cp monica/installer/Hohenfinow2/crop.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
