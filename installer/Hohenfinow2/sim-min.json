@@ -9,10 +9,10 @@
 	},
 	
 	"debug?": false,
-	"include-file-base-path": "${MONICA_PARAMETERS}/",
+	"include-file-base-path": "/home/berg/GitHub/monica-parameters/",
 
 	"output": { 
-	  "write-file?": true,
+	  	"write-file?": true,
 
 		"path-to-output": "./",
 		"file-name": "sim-min-out.csv",
@@ -25,7 +25,19 @@
 		},
 		
 		"events" : [
-			
+
+			{"start": "1993-01-01", "end": "1996-12-31", "at": "xxxx-03-01"},
+			["Year", "DOY", ["Mois", [1, 3, "AVG"]]],
+
+			{"start": "1993-01-01", "end": "1996-12-31", "from": "Sowing", "to": "Harvest"},
+			[["Year", "AVG"], ["DOY|Sowing-DOY", "FIRST"], ["DOY|Harvest-DOY", "LAST"], ["Mois", [1, 3, "AVG"]]],
+
+			"Sowing", ["Year","DOY"],
+			"Harvest", ["Year","DOY"],
+
+			{"start": "Sowing", "end": "Harvest"},
+			["Year", "DOY", ["Mois", [1, 3, "AVG"]]],
+
 			"daily", [
 				"Date", 
 				"Crop", 
@@ -36,7 +48,7 @@
 				"Yield", 
 				"LAI", 
 				"Precip", 
-				["Mois", [1, 3]], 
+				["Mois", [1, 3]],
 				["Mois", [1, 3, "AVG"]], 
 				["SOC", [1, 3]], 
 				"Tavg", 
@@ -53,13 +65,15 @@
 
 			"yearly", [
 				"Year", 
-				["N", [1, 3]], 
+				["N", [1, 3, "AVG"], "SUM"],
 				["RunOff", "SUM"], 
 				["NLeach", "SUM"], 
 				["Recharge", "SUM"]
 			],
 
-			"run", [["Precip", "SUM"]]
+			"run", [
+				["Precip", "SUM"]
+			]
 		]
 	},
 
@@ -72,5 +86,15 @@
 	"UseNMinMineralFertilisingMethod": true,
 	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
 	"NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
-	"JulianDayAutomaticFertilising": 89
+	"JulianDayAutomaticFertilising": 89,
+
+	"UseAutomaticIrrigation": false,
+	"AutoIrrigationParams": {
+		"irrigationParameters": {
+			"nitrateConcentration": [0, "mg dm-3"],
+			"sulfateConcentration": [0, "mg dm-3"]
+		},
+		"amount": [17, "mm"],
+		"threshold": 0.35
+	}
 }
