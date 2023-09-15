@@ -180,7 +180,6 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
 
 typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
 
-//----------------------------------------------------------------------------
 
 struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   CultivarParameters() {}
@@ -253,7 +252,6 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
 
 typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 
-//----------------------------------------------------------------------------
 
 struct DLL_API CropParameters : public Tools::Json11Serializable {
   CropParameters() {}
@@ -283,7 +281,6 @@ struct DLL_API CropParameters : public Tools::Json11Serializable {
 
 typedef std::shared_ptr<CropParameters> CropParametersPtr;
 
-//----------------------------------------------------------------------------
 
 enum FertiliserType { mineral, organic, undefined };
 
@@ -352,7 +349,6 @@ private:
   double vo_NO3{ 0.0 }; //!< [%]
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable {
   NMinApplicationParameters() {}
@@ -376,7 +372,6 @@ struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable {
   int delayInDays{ 0 };
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
   IrrigationParameters() {}
@@ -399,7 +394,6 @@ struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
   double sulfateConcentration{ 0.0 }; //!< sulfate concentration [mg dm-3]
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   AutomaticIrrigationParameters() {}
@@ -422,7 +416,6 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   double threshold{ 0.35 };
 };
 
-//----------------------------------------------------------------------------
 
 class DLL_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable {
 public:
@@ -442,7 +435,7 @@ public:
 
   void readInGroundwaterInformation(std::string path);
 
-  double getGroundwaterInformation(Tools::Date gwDate) const;
+		std::pair<bool, double> getGroundwaterInformation(Tools::Date gwDate) const;
 
   bool isGroundwaterInformationAvailable() const { return groundwaterInformationAvailable; }
 
@@ -451,7 +444,6 @@ private:
   std::map<Tools::Date, double> groundwaterInfo;
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API SiteParameters : public Tools::Json11Serializable {
   SiteParameters() {}
@@ -480,9 +472,9 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
   double vs_SoilSpecificHumusBalanceCorrection{ 0.0 }; //humus equivalents
 
   Soil::SoilPMs vs_SoilParameters;
+  //MeasuredGroundwaterTableInformation groundwaterInformation;
 };
 
-//----------------------------------------------------------------------------
 
 /**
 * @brief Data structure that containts all relevant parameters for the automatic yield trigger.
@@ -531,7 +523,6 @@ private:
   int _latestHarvestDOY{ -1 }; //!< Fallback day for latest harvest of the crop
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API NMinCropParameters : public Tools::Json11Serializable {
   NMinCropParameters() {}
@@ -635,7 +626,6 @@ struct DLL_API CropResidueParameters : public OrganicMatterParameters {
 
 typedef std::shared_ptr<CropResidueParameters> CropResidueParametersPtr;
 
-//----------------------------------------------------------------------------
 
 struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   SimulationParameters() {}
@@ -683,7 +673,6 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   std::string pathToSerializationFile;
 };
 
-//----------------------------------------------------------------------------
 
   /**
    * Class that holds information of crop defined by user.
@@ -820,7 +809,6 @@ struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
   double pm_MoistureInitValue{ 0.0 };
 };
 
-//----------------------------------------------------------------------------
 
 /**
  * Class that holds information about user defined soil temperature parameters.
@@ -856,7 +844,6 @@ struct DLL_API SoilTemperatureModuleParameters : public Tools::Json11Serializabl
   double pt_SoilMoisture{ 0.25 };
 };
 
-//----------------------------------------------------------------------------
 
 /**
  * Class that holds information about user defined soil transport parameters.
@@ -883,7 +870,6 @@ struct DLL_API SoilTransportModuleParameters : public Tools::Json11Serializable 
   double pq_NDeposition{ 0.0 };
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API SticsParameters : public Tools::Json11Serializable {
   SticsParameters() {}
@@ -941,7 +927,6 @@ struct DLL_API SticsParameters : public Tools::Json11Serializable {
   double vpotdenit{ 2.0 }; // [kg N/ha/day]
 };
 
-//----------------------------------------------------------------------------
 
 /**
  * Class that holds information about user-defined soil organic parameters.
@@ -1005,7 +990,6 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
   SticsParameters sticsParams;
 };
 
-//----------------------------------------------------------------------------
 
 /**
  * @brief Central data distribution class.
@@ -1055,7 +1039,6 @@ private:
   std::vector<double> precipCorrectionValues;
 };
 
-//----------------------------------------------------------------------------
 
 struct Intercropping {
   typedef mas::schema::model::monica::ICData ICD;

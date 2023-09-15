@@ -9,7 +9,7 @@
 	},
 	
 	"debug?": false,
-	"include-file-base-path": "/home/berg/GitHub/monica-parameters/",
+	"include-file-base-path": "${MONICA_PARAMETERS}/",
 
 	"output": { 
 	  	"write-file?": true,

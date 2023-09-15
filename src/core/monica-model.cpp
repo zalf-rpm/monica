@@ -60,7 +60,6 @@ namespace
 
 }
 
-//------------------------------------------------------------------------------
 
 MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
   : _sitePs(kj::mv(cpp.siteParameters))
@@ -631,16 +630,16 @@ void MonicaModel::generalStep()
 		: climateData[Climate::relhumid];
 
 
-  // test if simulated gw or measured values should be used
-  double gw_value = _groundwaterInformation.getGroundwaterInformation(date);
-  //  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
-  vs_GroundwaterDepth = gw_value < 0
-                        ? GroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
-                                                  _envPs.p_MinGroundwaterDepth,
-                                                  _envPs.p_MinGroundwaterDepthMonth,
-                                                  julday,
-                                                  leapYear)
-                        : gw_value / 100.0; // [cm] --> [m]
+	// test if simulated gw or measured values should be used
+	auto gw_value_p = _groundwaterInformation.getGroundwaterInformation(date);
+	//  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
+	vs_GroundwaterDepth = gw_value_p.first
+		? max(0.0, gw_value_p.second)
+		: GroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
+			_envPs.p_MinGroundwaterDepth,
+			_envPs.p_MinGroundwaterDepthMonth,
+			julday,
+			leapYear);
 
 	// first try to get CO2 concentration from climate data
 	auto co2it = climateData.find(Climate::co2);
@@ -888,7 +887,6 @@ double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
   return groundwaterDepth;
 }
 
-//----------------------------------------------------------------------------
 
 /**
  * @brief Returns mean soil organic C.

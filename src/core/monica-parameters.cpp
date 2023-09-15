@@ -87,7 +87,7 @@ json11::Json YieldComponent::to_json() const {
       };
 }
 
-//------------------------------------------------------------------------------
+
 
 SpeciesParameters::SpeciesParameters(json11::Json j) {
   merge(j);
@@ -345,7 +345,7 @@ json11::Json SpeciesParameters::to_json() const {
   return species;
 }
 
-//------------------------------------------------------------------------------
+
 
 CultivarParameters::CultivarParameters(json11::Json j) {
   merge(j);
@@ -592,7 +592,7 @@ json11::Json CultivarParameters::to_json() const {
   return cultivar;
 }
 
-//------------------------------------------------------------------------------
+
 
 CropParameters::CropParameters(json11::Json j) {
   merge(j["species"], j["cultivar"]);
@@ -634,7 +634,7 @@ json11::Json CropParameters::to_json() const {
 }
 
 
-//------------------------------------------------------------------------------
+
 
 MineralFertilizerParameters::MineralFertilizerParameters(const string &id,
                                                          const std::string &name,
@@ -692,8 +692,6 @@ json11::Json MineralFertilizerParameters::to_json() const {
       };
 }
 
-//-----------------------------------------------------------------------------------------
-
 NMinApplicationParameters::NMinApplicationParameters(double min,
                                                      double max,
                                                      int delayInDays)
@@ -735,7 +733,7 @@ json11::Json NMinApplicationParameters::to_json() const {
       };
 }
 
-//------------------------------------------------------------------------------
+
 
 IrrigationParameters::IrrigationParameters(double nitrateConcentration,
                                            double sulfateConcentration)
@@ -774,7 +772,7 @@ json11::Json IrrigationParameters::to_json() const {
       };
 }
 
-//------------------------------------------------------------------------------
+
 
 AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
                                                              double t,
@@ -819,7 +817,7 @@ json11::Json AutomaticIrrigationParameters::to_json() const {
       };
 }
 
-//------------------------------------------------------------------------------
+
 
 void MeasuredGroundwaterTableInformation::deserialize(
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
@@ -901,16 +899,16 @@ void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::stri
   }
 }
 
-double MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const {
-  if (groundwaterInformationAvailable && groundwaterInfo.size() > 0) {
+std::pair<bool, double> MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const
+{
+  if (groundwaterInformationAvailable && !groundwaterInfo.empty())
+  {
     auto it = groundwaterInfo.find(gwDate);
     if (it != groundwaterInfo.end())
-      return it->second;
+      return make_pair(true, it->second);
   }
-  return -1;
+  return make_pair(false, 0);
 }
-
-//------------------------------------------------------------------------------
 
 void SiteParameters::deserialize(mas::schema::model::monica::SiteParameters::Reader reader) {
   vs_Latitude = reader.getLatitude();
@@ -944,42 +942,6 @@ SiteParameters::SiteParameters(json11::Json j) {
   merge(j);
 }
 
-/*
-std::pair<kj::Own<SoilPMs>, Errors> createSoilPMs(const J11Array& jsonSoilPMs) {
-  Errors errors;
-
-  auto soilPMs = kj::heap<SoilPMs>();
-  int layerCount = 0;
-  for (size_t spi = 0, spsCount = jsonSoilPMs.size(); spi < spsCount; spi++) {
-    Json sp = jsonSoilPMs.at(spi);
-
-    //repeat layers if there is an associated Thickness parameter
-    string err;
-    int repeatLayer = 1;
-    if (!sp["Thickness"].is_null())
-      repeatLayer = min(20 - layerCount,
-        max(1, Tools::roundRT<int>(double_valueD(sp, "Thickness", 0.1) * 10.0, 0)));
-
-    //simply repeat the last layer as often as necessary to fill the 20 layers
-    if (spi + 1 == spsCount)
-      repeatLayer = 20 - layerCount;
-
-    for (int i = 1; i <= repeatLayer; i++) {
-      SoilParameters sps;
-      auto es = sps.merge(sp);
-      soilPMs->push_back(sps);
-      if (es.failure())
-        errors.append(es);
-    }
-
-    layerCount += repeatLayer;
-  }
-
-  return make_pair(kj::mv(soilPMs), errors);
-}
-*/
-
-
 Errors SiteParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
@@ -998,10 +960,14 @@ Errors SiteParameters::merge(json11::Json j) {
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
     auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
     vs_SoilParameters = kj::mv(p.first);
-    if (p.second.failure())
-      res.append(p.second);
-  } else if(j["SoilProfileParameters"].is_string() && j["SoilProfileParameters"].string_value().find("capnp") != 0)
+    if (p.second.failure()) res.append(p.second);
+  } else if(j["SoilProfileParameters"].is_string() && j["SoilProfileParameters"].string_value().find("capnp") != 0) {
     res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
+  }
+
+  //if (!j["groundwaterInformation"].is_null()) {
+  //  res.append(groundwaterInformation.merge(j["groundwaterInformation"]));
+  //}
 
   return res;
 }
@@ -1026,7 +992,6 @@ json11::Json SiteParameters::to_json() const {
   return sps;
 }
 
-//------------------------------------------------------------------------------
 
 AutomaticHarvestParameters::AutomaticHarvestParameters(HarvestTime yt)
     : _harvestTime(yt) {}
@@ -1067,7 +1032,7 @@ json11::Json AutomaticHarvestParameters::to_json() const {
       };
 }
 
-//------------------------------------------------------------------------------
+
 
 NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, double nTarget30)
     : samplingDepth(samplingDepth),
@@ -1109,7 +1074,7 @@ json11::Json NMinCropParameters::to_json() const {
       };
 }
 
-//------------------------------------------------------------------------------
+
 
 void OrganicMatterParameters::deserialize(
     mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
@@ -1205,8 +1170,6 @@ json11::Json OrganicMatterParameters::to_json() const {
       };
 }
 
-//-----------------------------------------------------------------------------------------
-
 void OrganicFertilizerParameters::deserialize(
     mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) {
   OrganicMatterParameters::deserialize(reader.getParams());
@@ -1244,8 +1207,6 @@ json11::Json OrganicFertilizerParameters::to_json() const {
   return omp;
 }
 
-//-----------------------------------------------------------------------------------------
-
 void CropResidueParameters::deserialize(mas::schema::model::monica::CropResidueParameters::Reader reader) {
   OrganicMatterParameters::deserialize(reader.getParams());
   species = reader.getSpecies();
@@ -1279,8 +1240,6 @@ json11::Json CropResidueParameters::to_json() const {
   omp["residueType"] = residueType;
   return omp;
 }
-
-//-----------------------------------------------------------------------------------------
 
 void SimulationParameters::deserialize(mas::schema::model::monica::SimulationParameters::Reader reader) {
   startDate.deserialize(reader.getStartDate());
@@ -1402,8 +1361,6 @@ json11::Json SimulationParameters::to_json() const {
        {"pathToSerializationFile",               pathToSerializationFile}
       };
 }
-
-//-----------------------------------------------------------------------------------------
 
 void CropModuleParameters::deserialize(mas::schema::model::monica::CropModuleParameters::Reader reader) {
   pc_CanopyReflectionCoefficient = reader.getCanopyReflectionCoefficient();
@@ -1698,8 +1655,6 @@ json11::Json EnvironmentParameters::to_json() const {
       };
 }
 
-//-----------------------------------------------------------------------------------------
-
 SoilMoistureModuleParameters::SoilMoistureModuleParameters() {
   getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
 }
@@ -1826,8 +1781,6 @@ json11::Json SoilMoistureModuleParameters::to_json() const {
       };
 }
 
-//-----------------------------------------------------------------------------------------
-
 void SoilTemperatureModuleParameters::deserialize(
     mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
   pt_NTau = reader.getNTau();
@@ -1904,8 +1857,6 @@ json11::Json SoilTemperatureModuleParameters::to_json() const {
       };
 }
 
-//-----------------------------------------------------------------------------------------
-
 void
 SoilTransportModuleParameters::deserialize(mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
   pq_DispersionLength = reader.getDispersionLength();
@@ -1946,8 +1897,6 @@ json11::Json SoilTransportModuleParameters::to_json() const {
        {"NDeposition",                  pq_NDeposition}
       };
 }
-
-//-----------------------------------------------------------------------------------------
 
 void SticsParameters::deserialize(mas::schema::model::monica::SticsParameters::Reader reader) {
   use_n2o = reader.getUseN2O();
@@ -2313,8 +2262,6 @@ json11::Json SoilOrganicModuleParameters::to_json() const {
        {"MaxMineralisationDepth",            ps_MaxMineralisationDepth}
       };
 }
-
-//-----------------------------------------------------------------------------------------
 
 CentralParameterProvider::CentralParameterProvider()
     : _pathToOutputDir("."), precipCorrectionValues(12, 1.0) {
