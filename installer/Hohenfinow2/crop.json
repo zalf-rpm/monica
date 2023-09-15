@@ -96,74 +96,82 @@
 	],
 
 	"__example using automatic sowing and harvesting": "",
-	"cropRotations": [
-		{
-			"start": "1991-02-01",
-			"end": "1994-12-31",
-			"cropRotation": [
-				{
-					"worksteps": [
-						{ 
-							"type": "AutomaticSowing", 
-							"crop": ["ref", "crops", "WW"],
-							"earliest-date": "0000-02-11",
-							"latest-date": "0000-11-08",
-							"min-temp": 18.5,
-							"days-in-temp-window": 14,
-							"min-%-asw": 0,
-							"max-%-asw": 100,
-							"max-3d-precip-sum": 2,
-							"max-curr-day-precip": 0.1,
-							"temp-sum-above-base-temp": 0,
-							"base-temp": 0 
-						},
-						{ 
-							"type": "AutomaticHarvest", 
-							"latest-date": "0001-10-03",
-							"min-%-asw": 0,
-							"max-%-asw": 150,
-							"max-3d-precip-sum": 999,
-							"max-curr-day-precip": 999,
-							"harvest-time": "maturity"
-						}
-					]
-				}
-			]
-		},
-		{
-			"start": "1995-03-01",
-			"end": "1997-12-31",
-			"cropRotation": [
-				{
-					"worksteps": [
-					 	{ 
-							"type": "AutomaticSowing", 
-							"crop": ["ref", "crops", "WR"],
-							"earliest-date": "0000-02-11",
-							"latest-date": "0000-11-08",
-							"min-temp": 18.5,
-							"days-in-temp-window": 14,
-							"min-%-asw": 0,
-							"max-%-asw": 100,
-							"max-3d-precip-sum": 2,
-							"max-curr-day-precip": 0.1,
-							"temp-sum-above-base-temp": 0,
-							"base-temp": 0 
-						},
-						{ 
-							"type": "AutomaticHarvest", 
-							"latest-date": "0001-10-03",
-							"min-%-asw": 0,
-							"max-%-asw": 150,
-							"max-3d-precip-sum": 999,
-							"max-curr-day-precip": 999,
-							"harvest-time": "maturity"
-						}
-					]
-				}
-			]	
-		}
-	],
+	  "cropRotations": [
+		  {
+			  "start": "1991-02-01",
+			  "end": "1994-12-31",
+			  "cropRotation": [
+				  {
+					  "worksteps": [
+						  {
+							  "type": "AutomaticSowing",
+							  "crop": [
+								  "ref",
+								  "crops",
+								  "WW"
+							  ],
+							  "earliest-date": "0000-02-11",
+							  "latest-date": "0000-11-08",
+							  "min-temp": 18.5,
+							  "days-in-temp-window": 14,
+							  "min-%-asw": 0,
+							  "max-%-asw": 100,
+							  "max-3d-precip-sum": 2,
+							  "max-curr-day-precip": 0.1,
+							  "temp-sum-above-base-temp": 0,
+							  "base-temp": 0
+						  },
+						  {
+							  "type": "AutomaticHarvest",
+							  "latest-date": "0001-10-03",
+							  "min-%-asw": 0,
+							  "max-%-asw": 150,
+							  "max-3d-precip-sum": 999,
+							  "max-curr-day-precip": 999,
+							  "harvest-time": "maturity"
+						  }
+					  ]
+				  }
+			  ]
+		  },
+		  {
+			  "start": "1995-03-01",
+			  "end": "1997-12-31",
+			  "cropRotation": [
+				  {
+					  "worksteps": [
+						  {
+							  "type": "AutomaticSowing",
+							  "crop": [
+								  "ref",
+								  "crops",
+								  "WR"
+							  ],
+							  "earliest-date": "0000-02-11",
+							  "latest-date": "0000-11-08",
+							  "min-temp": 18.5,
+							  "days-in-temp-window": 14,
+							  "min-%-asw": 0,
+							  "max-%-asw": 100,
+							  "max-3d-precip-sum": 2,
+							  "max-curr-day-precip": 0.1,
+							  "temp-sum-above-base-temp": 0,
+							  "base-temp": 0
+						  },
+						  {
+							  "type": "AutomaticHarvest",
+							  "latest-date": "0001-10-03",
+							  "min-%-asw": 0,
+							  "max-%-asw": 150,
+							  "max-3d-precip-sum": 999,
+							  "max-curr-day-precip": 999,
+							  "harvest-time": "maturity"
+						  }
+					  ]
+				  }
+			  ]
+		  }
+	  ],
 
 	"cropRotation": [
 		{
