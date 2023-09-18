@@ -345,7 +345,12 @@ json11::Json SpeciesParameters::to_json() const {
   return species;
 }
 
-
+size_t SpeciesParameters::pc_NumberOfDevelopmentalStages() const {
+  return pc_BaseTemperature.size();
+}
+size_t SpeciesParameters::pc_NumberOfOrgans() const {
+  return pc_OrganGrowthRespiration.size();
+}
 
 CultivarParameters::CultivarParameters(json11::Json j) {
   merge(j);

@@ -621,8 +621,8 @@ private:
   double vc_NConcentrationRoot{0.0};    //! old WUGEH
   double vc_NConcentrationRootOld{0.0};    //! old
   bool pc_NitrogenResponseOn{};
-  int pc_NumberOfDevelopmentalStages{};
-  int pc_NumberOfOrgans{};              //! old NRKOM
+  size_t pc_NumberOfDevelopmentalStages{0};
+  size_t pc_NumberOfOrgans{0};              //! old NRKOM
   std::vector<double> vc_NUptakeFromLayer; //! old PE
   std::vector<double> pc_OptimumTemperature;
   std::vector<double> vc_OrganBiomass;  //! old WORG
