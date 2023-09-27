@@ -34,6 +34,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilcolumn.h"
 #include "monica-parameters.h"
 
+#ifdef AMEI
+#include "SoilTemperatureCompComponent.h"
+#endif
+
 namespace monica
 {
 class MonicaModel;
@@ -50,21 +54,26 @@ public:
 
   void step(double tmin, double tmax, double globrad);
 
-  double calcSoilSurfaceTemperature(double prevSoilSurfaceTemperature, double tmin, double tmax, double globrad) const;
-
   double getSoilSurfaceTemperature() const { return _soilSurfaceTemperature; }
   double getSoilTemperature(int layer) const { return soilColumn.at(layer).get_Vs_SoilTemperature();}
-  //double getHeatConductivity(int layer) const { return _heatConductivity.at(layer);}
-  //double getAvgTopSoilTemperature(double sumUpLayerThickness = 0.3) const;
-  //double dampingFactor() const { return _dampingFactor; }
-  //void setDampingFactor(double factor) { _dampingFactor = factor; }
-  
+
 private:
+  double calcSoilSurfaceTemperature(double prevSoilSurfaceTemperature, double tmin, double tmax, double globrad) const;
+
   SoilColumn& _soilColumn;
   MonicaModel& _monica;
   SoilLayer _soilColumnGroundLayer;
   SoilLayer _soilColumnBottomLayer;
   SoilTemperatureModuleParameters _params;
+
+#ifdef AMEI
+  Monica_SoilTemp::SoilTemperatureCompComponent _soilTempComp;
+  Monica_SoilTemp::SoilTemperatureCompState _soilTempState;
+  Monica_SoilTemp::SoilTemperatureCompState _soilTempState1;
+  Monica_SoilTemp::SoilTemperatureCompExogenous _soilTempExo;
+  Monica_SoilTemp::SoilTemperatureCompRate _soilTempRate;
+  Monica_SoilTemp::SoilTemperatureCompAuxiliary _soilTempAux;
+#endif
 
   struct SC {
     SoilColumn& sc;

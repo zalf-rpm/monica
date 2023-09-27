@@ -4,6 +4,7 @@ project(Monica)
 message(STATUS "-> Monica")
 
 add_compile_definitions(CAPNPROTO_SERIALIZATION_SUPPORT)
+add_compile_definitions(AMEI)
 set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 #add_compile_definitions(INCLUDE_SR_SUPPORT)
 #set(INCLUDE_SR_SUPPORT 1)
@@ -18,6 +19,12 @@ endmacro(set_absolute_path)
 
 set_absolute_path(MAS_INFRASTRUCTURE_DIR ../mas-infrastructure)
 set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/capnproto_schemas)
+set_absolute_path(AMEI_COMPONENTS_DIR ../SoilTemperatureModels/Models)
+
+if (NOT TARGET Monica_SoilTemp_lib)
+    message(STATUS "target: Monica_SoilTemp_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/cpp/Monica_SoilTemp amei-components/Monica_SoilTemp)
+endif ()
 
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
@@ -201,6 +208,7 @@ target_link_libraries(monica_lib
         json11_lib
         common_lib
         climate_file_io_lib
+        Monica_SoilTemp_lib
         )
 
 #message(STATUS "json11_lib_interface_includes:")
