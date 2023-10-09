@@ -229,7 +229,7 @@ CropModule::CropModule(SoilColumn &sc,
 
     vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
 
-    debug() << "old mrd: " << vc_MaxRootingDepth << " -> ";
+    std::cout << "old mrd: " << vc_MaxRootingDepth << " -> ";
 
     auto R_P_max = pc_CropSpecificMaxRootingDepth;
     double f_S = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
@@ -243,7 +243,7 @@ CropModule::CropModule(SoilColumn &sc,
         * ((R_P_max + (R_P_max * R_S)) / R_P_max)
         * ((R_P_max + (R_P_max * R_D)) / R_P_max);
 
-    debug() << vc_MaxRootingDepth << " :new mrd" << endl;
+    std::cout << vc_MaxRootingDepth << " :new mrd" << endl;
 
   } else {
     vc_MaxRootingDepth = pc_CropSpecificMaxRootingDepth; //[m]
@@ -3105,8 +3105,10 @@ void CropModule::fc_CropDryMatter(size_t vc_DevelopmentalStage,
   }
 
   // In case of drought stress the root will grow deeper
-  if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage]) &&
-      vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
+  if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage])
+    && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
+    && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
+    && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
     vc_MaxRootingDepth += 0.005;
   }
 
