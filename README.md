@@ -25,22 +25,18 @@ Builds can be downloaded from the repository's [releases page](https://github.co
 
 # Building
 
-In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/util (non core MONICA code), zalf-rpm/mas-infrastructure and 
+In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/mas-infrastructure and 
 zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
 
 After cloning the repositories you should have this file structure:
 
     monica-master
 		      |_ monica
-		      |_ util
 		      |_ monica-parameters
 		      |_ mas-infrastructure
    
 
 Also install Python to run the minimal examples. 
-
-In order to run the examples, copy the file db-connections.ini.template and rename it to db-connections.ini. 
-This file is used to configure access to SQLite and MySQL databases (access to the later is not being compiled into MONICA by default).
 
 ## Windows
  see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Windows) for installation and build instructions
@@ -49,7 +45,7 @@ monica-run will execute a local MONICA with the example Hohenfinow2 in the insta
 installer\Hohenfinow2\out.csv.
 
     cd monica/_cmake_win64
-    ./monica run installer/Hohenfinow2/sim.json > out.csv
+    ./monica-run -o out.csv installer/Hohenfinow2/sim-min.json
     
 ## Linux
 
@@ -59,14 +55,14 @@ Run the standard example and write the results into out.csv
 Shell:
 
     cd monica/_cmake_linux
-    ./monica run installer/Hohenfinow2/sim.json > out.csv
+    ./monica-run -o out.csv installer/Hohenfinow2/sim-min.json
 
 # Usage
 
 To run MONICA locally with the standard Hohenfinow2 example under Windows using the standard installer, 
 go to the c:\users\USER_PROFILE\MONICA directory and execute in a Commandshell
 
-    monica-run Examples/Hohenfinow2/sim.json > out.csv
+    monica-run -o out.csv Examples/Hohenfinow2/sim-min.json
 
 There are the following tools/versions of MONICA available.
 
