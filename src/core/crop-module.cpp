@@ -228,6 +228,23 @@ CropModule::CropModule(SoilColumn &sc,
                                         (vc_BulkDensity * vc_BulkDensity / 40000000.0)); // [m]
 
     vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
+
+    debug() << "old mrd: " << vc_MaxRootingDepth << " -> ";
+
+    auto R_P_max = pc_CropSpecificMaxRootingDepth;
+    double f_S = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
+    auto R_S = (f_S - 0.5) * -0.6;
+
+    double rho_B = soilColumn[0].vs_SoilBulkDensity(); // [kg m-3]
+    auto R_D = (rho_B/1000.0 - 1) * -0.3;
+
+    vc_MaxRootingDepth =
+        R_P_max
+        * ((R_P_max + (R_P_max * R_S)) / R_P_max)
+        * ((R_P_max + (R_P_max * R_D)) / R_P_max);
+
+    debug() << vc_MaxRootingDepth << " :new mrd" << endl;
+
   } else {
     vc_MaxRootingDepth = pc_CropSpecificMaxRootingDepth; //[m]
   }
