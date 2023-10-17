@@ -492,7 +492,8 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
               auto errors = env.merge(msg.json);
 
               EResult<DataAccessor> eda;
-              if (!env.climateData.isValid()) {
+              bool isNoDataPassThrough = env.customId.is_object() && env.customId["nodata"].bool_value();
+              if (!isNoDataPassThrough && !env.climateData.isValid()) {
                 if (!env.climateCSV.empty()) {
                   eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
                 } else if (!env.pathsToClimateCSV.empty()) {
@@ -531,7 +532,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
               monica::Output out, out2;
               bool isIC = false;
-              if (eda.success()) {
+              if (!isNoDataPassThrough && eda.success()) {
                 if (!env.climateData.isValid()) env.climateData = kj::mv(eda.result);
 
                 env.debugMode = startedServerInDebugMode && env.debugMode;
@@ -544,8 +545,9 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                 isIC = env.params.userCropParameters.isIntercropping;
                 std::tie(out, out2) = runMonicaIC(env, isIC);
                 cout << "customId: " << env.customId.dump() << endl;
-                cout << "out: " << out.to_json().dump() << endl;
+                //cout << "out: " << out.to_json().dump() << endl;
               } else {
+                cout << "nodata pass through -> customId: " << env.customId.dump() << endl;
                 out.customId = env.customId;
                 out2.customId = env.customId;
               }
