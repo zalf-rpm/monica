@@ -30,7 +30,8 @@
 			"daily", [
 				"Date", 
 				"Crop", 
-				"Stage", 
+				"Stage",
+				"ETa/ETc",
 				"AbBiom", 
 				["OrgBiom", "Leaf"], 
 				["OrgBiom", "Fruit"], 

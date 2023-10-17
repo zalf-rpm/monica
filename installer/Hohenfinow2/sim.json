@@ -48,7 +48,8 @@
 		"events" : [
 			"daily", [
 				"Date", 
-				"Crop", 
+				"Crop",
+				"ETa/ETc",
 				"TraDef", 
 				"Tra", 
 				"NDef", 

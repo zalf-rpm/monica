@@ -229,7 +229,7 @@ CropModule::CropModule(SoilColumn &sc,
 
     vc_MaxRootingDepth = (vc_SoilSpecificMaxRootingDepth + (pc_CropSpecificMaxRootingDepth * 2.0)) / 3.0; //[m]
 
-    std::cout << "old mrd: " << vc_MaxRootingDepth << " -> ";
+    //std::cout << "old mrd: " << vc_MaxRootingDepth << " -> ";
 
     auto R_P_max = pc_CropSpecificMaxRootingDepth;
     double f_S = soilColumn[0].vs_SoilSandContent(); // [kg kg-1]
@@ -243,7 +243,7 @@ CropModule::CropModule(SoilColumn &sc,
         * ((R_P_max + (R_P_max * R_S)) / R_P_max)
         * ((R_P_max + (R_P_max * R_D)) / R_P_max);
 
-    std::cout << vc_MaxRootingDepth << " :new mrd" << endl;
+    //std::cout << vc_MaxRootingDepth << " :new mrd" << endl;
 
   } else {
     vc_MaxRootingDepth = pc_CropSpecificMaxRootingDepth; //[m]
