@@ -334,7 +334,9 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters &params,
                                       double vo_AddedOrganicMatterNConcentration) {
         double CN_ratio_AOM_fast = 0;
 
-        double added_Corg_amount = (params.vo_CorgContent <= 0.0 ? 0.45 : params.vo_CorgContent)
+        double added_Corg_amount = (params.vo_CorgContent <= 0.0
+                                    ? OrganicConstants::po_AOM_to_C
+                                    : params.vo_CorgContent)
                                    * vo_AddedOrganicMatterAmount
                                    * params.vo_AOM_DryMatterContent
                                    / 10000.0
@@ -354,7 +356,6 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters &params,
         debug() << "Added organic matter N amount: " << added_Norg_amount << endl;
 
         double N_for_AOM_slow = added_Corg_amount * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow;
-
         // Assigning the dynamic C/N ratio to the AOM_Fast pool
         if (N_for_AOM_slow < added_Norg_amount) {
           double N_for_AOM_fast = added_Norg_amount - N_for_AOM_slow;
