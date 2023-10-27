@@ -3,6 +3,9 @@ project(Monica)
 
 message(STATUS "-> Monica")
 
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+
 add_compile_definitions(CAPNPROTO_SERIALIZATION_SUPPORT)
 set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 #add_compile_definitions(INCLUDE_SR_SUPPORT)

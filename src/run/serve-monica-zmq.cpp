@@ -543,8 +543,9 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                     };
 
                 isIC = env.params.userCropParameters.isIntercropping;
+                cout << "running             -> customId: " << env.customId.dump() << endl;
+                auto str = msg.json.dump();
                 std::tie(out, out2) = runMonicaIC(env, isIC);
-                cout << "customId: " << env.customId.dump() << endl;
                 //cout << "out: " << out.to_json().dump() << endl;
               } else {
                 cout << "nodata pass through -> customId: " << env.customId.dump() << endl;

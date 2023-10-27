@@ -108,7 +108,6 @@ public:
   //void get_CropParameters();
 
   void fc_Radiation(double vs_JulianDay,
-                    double vs_Latitude,
                     double vw_GlobalRadiation,
                     double vw_SunshineHours);
 
@@ -155,21 +154,8 @@ public:
   void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                              double vw_MaxAirTemperature,
                              double vw_MinAirTemperature,
-                             double vw_GlobalRadiation,
                              double vw_AtmosphericCO2Concentration,
                              double vw_AtmosphericO3Concentration,
-                             double vs_Latitude,
-                             double vc_LeafAreaIndex,
-                             double pc_DefaultRadiationUseEfficiency,
-                             double pc_MaxAssimilationRate,
-                             double pc_MinimumTemperatureForAssimilation,
-                             double pc_OptimumTemperatureForAssimilation,
-                             double pc_MaximumTemperatureForAssimilation,
-                             double vc_AstronomicDayLenght,
-                             double vc_Declination,
-                             double vc_ClearDayRadiation,
-                             double vc_EffectiveDayLength,
-                             double vc_OvercastDayRadiation,
                              Tools::Date currentDate);
 
   void fc_HeatStressImpact(double vw_MeanAirTemperature,
@@ -178,43 +164,32 @@ public:
   void fc_FrostKill(double vw_MeanAirTemperature,
                     double vw_MaxAirTemperature);
 
-  void fc_DroughtImpactOnFertility(double transpirationDeficit);
+  void fc_DroughtImpactOnFertility();
 
   void fc_CropNitrogen();
 
-  void fc_CropDryMatter(size_t vc_DevelopmentalStage,
-                        double vc_GrossPhotosynthesis, double, double,
-                        double vc_NetMaintenanceRespiration,
-                        double vw_MeanAirTemperature);
+  void fc_CropDryMatter(double vw_MeanAirTemperature);
 
-  double fc_ReferenceEvapotranspiration(double vs_HeightNN,
-                                        double vw_MaxAirTemperature,
+  double fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
                                         double vw_MinAirTemperature,
                                         double vw_RelativeHumidity,
                                         double vw_MeanAirTemperature,
                                         double vw_WindSpeed,
                                         double vw_WindSpeedHeight,
-                                        double vw_GlobalRadiation,
-                                        double vw_AtmosphericCO2Concentration,
-                                        double vc_GrossPhotosynthesisReference_mol);
+                                        double vw_AtmosphericCO2Concentration);
 
-  void fc_CropWaterUptake(double vc_SoilCoverage,
-                          size_t vc_RootingDepth,
-                          size_t vm_GroundwaterTable,
-                          double vc_ReferenceEvapotranspiration,
+  void fc_CropWaterUptake(size_t vm_GroundwaterTable,
                           double vw_GrossPrecipitation,
                           double vc_CurrentTotalTemperatureSum,
                           double vc_TotalTemperatureSum);
 
-  void fc_CropNUptake(size_t vc_RootingDepth,
-                      size_t vm_GroundwaterTable,
-                      double vc_CurrentTotalTemperatureSum,
-                      double vc_TotalTemperatureSum);
+  void fc_CropNUptake(size_t vm_GroundwaterTable,
+                      double /*vc_CurrentTotalTemperatureSum*/,
+                      double /*vc_TotalTemperatureSum*/);
 
-  double fc_GrossPrimaryProduction(double vc_Assimilates);
+  double fc_GrossPrimaryProduction();
 
-  double fc_NetPrimaryProduction(double vc_GrossPrimaryProduction,
-                                 double vc_TotalRespired);
+  double fc_NetPrimaryProduction(double vc_TotalRespired);
 
   void calculateVOCEmissions(const Voc::MicroClimateData &mcd);
 
