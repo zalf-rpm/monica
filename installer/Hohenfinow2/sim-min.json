@@ -4,7 +4,6 @@
 	"climate.csv": "climate-min.csv",
 
 	"climate.csv-options": {
-		"end-date": "1993-01-31",
 		"no-of-climate-file-header-lines": 2,
 		"csv-separator": ","
 	},
