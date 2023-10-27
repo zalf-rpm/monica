@@ -39,7 +39,7 @@ class CropModule;
 class SoilOrganic
 {
 public:
-  SoilOrganic(SoilColumn& soilColumn, const SoilOrganicModuleParameters& params);
+  SoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters  params);
 
   SoilOrganic(SoilColumn& sc, mas::schema::model::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
     : soilColumn(sc)
@@ -52,18 +52,14 @@ public:
 
   void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
 
-  void addOrganicMatter(const OrganicMatterParameters& addedOrganicMatter,
-                        std::map<size_t, double> layer2amount,
+  void addOrganicMatter(const OrganicMatterParameters& props,
+                        const std::map<size_t, double> &layer2amount,
                         double nConcentration = 0);
 
-  void addOrganicMatter(const OrganicMatterParameters& addedOrganicMatter,
+  void addOrganicMatter(const OrganicMatterParameters &organicMatterParams,
                         double amount,
                         double nConcentration = 0,
-                        size_t intoLayerIndex = 0)
-  {
-    addOrganicMatter(addedOrganicMatter, {{intoLayerIndex, amount}}, nConcentration);
-  }
-
+                        size_t intoLayerIndex = 0);
 
   void addIrrigationWater(double amount);
 
