@@ -963,12 +963,12 @@ void CropModule::step(double vw_MeanAirTemperature,
       // use reference evapotranspiration from climate file
       vc_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }
-    fc_CropWaterUptake(soilColumn.vm_GroundwaterTable,
+    fc_CropWaterUptake(soilColumn.vm_GroundwaterTableLayer,
                        vw_GrossPrecipitation,
                        vc_CurrentTotalTemperatureSum,
                        vc_TotalTemperatureSum);
 
-    fc_CropNUptake(soilColumn.vm_GroundwaterTable,
+    fc_CropNUptake(soilColumn.vm_GroundwaterTableLayer,
                    vc_CurrentTotalTemperatureSum,
                    vc_TotalTemperatureSum);
 

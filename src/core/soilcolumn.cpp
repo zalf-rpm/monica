@@ -208,7 +208,7 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
                        double pm_CriticalMoistureDepth)
     : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth), pm_CriticalMoistureDepth(pm_CriticalMoistureDepth) {
   debug() << "Constructor: SoilColumn " << soilParams.size() << endl;
-  for (auto sp: soilParams) push_back(SoilLayer(ps_LayerThickness, sp));
+  for (const auto& sp: soilParams) push_back(SoilLayer(ps_LayerThickness, sp));
 
   _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
@@ -216,7 +216,7 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
 void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader reader) {
   vs_SurfaceWaterStorage = reader.getVsSurfaceWaterStorage();
   vs_InterceptionStorage = reader.getVsInterceptionStorage();
-  vm_GroundwaterTable = reader.getVmGroundwaterTable();
+  vm_GroundwaterTableLayer = reader.getVmGroundwaterTable();
   vs_FluxAtLowerBoundary = reader.getVsFluxAtLowerBoundary();
   vq_CropNUptake = reader.getVqCropNUptake();
   vt_SoilSurfaceTemperature = reader.getVtSoilSurfaceTemperature();
@@ -234,7 +234,7 @@ void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader
 void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder builder) const {
   builder.setVsSurfaceWaterStorage(vs_SurfaceWaterStorage);
   builder.setVsInterceptionStorage(vs_InterceptionStorage);
-  builder.setVmGroundwaterTable((uint16_t) vm_GroundwaterTable);
+  builder.setVmGroundwaterTable((uint16_t) vm_GroundwaterTableLayer);
   builder.setVsFluxAtLowerBoundary(vs_FluxAtLowerBoundary);
   builder.setVqCropNUptake(vq_CropNUptake);
   builder.setVtSoilSurfaceTemperature(vt_SoilSurfaceTemperature);

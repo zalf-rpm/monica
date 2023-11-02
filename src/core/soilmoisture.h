@@ -116,16 +116,14 @@ void step(double vs_DepthGroundwaterTable,
   void putCrop(monica::CropModule* cm) { cropModule = cm; }
   void removeCrop() { cropModule = nullptr; }
 
-  void fm_Infiltration(double vm_WaterToInfiltrate,
-                        double vc_PercentageSoilCoverage,
-                        size_t vm_GroundwaterTable);
+  void fm_Infiltration(double vm_WaterToInfiltrate);
 
   double get_DeprivationFactor(int layerNo, double deprivationDepth,
                                 double zeta, double vs_LayerThickness);
 
   void fm_CapillaryRise();
 
-  void fm_PercolationWithGroundwater(size_t oscillGroundwaterDepthLayer);
+  void fm_PercolationWithGroundwater(size_t oscillGroundwaterLayer);
 
   void fm_GroundwaterReplenishment();
 
@@ -177,8 +175,8 @@ private:
   SoilMoistureModuleParameters _params;
   const EnvironmentParameters& envPs;
   const CropModuleParameters& cropPs;
-  size_t vm_NumberOfLayers{0};
-  size_t vs_NumberOfLayers{0};
+  size_t numberOfMoistureLayers{0};
+  size_t numberOfSoilLayers{0};
 
   double vm_ActualEvaporation{0.0}; //!< Sum of evaporation of all layers [mm]
   double vm_ActualEvapotranspiration{0.0}; //!< Sum of evaporation and transpiration of all layers [mm]
@@ -199,31 +197,25 @@ private:
   double vm_GroundwaterAdded{0.0};
   double vm_GroundwaterDischarge{0.0};
   //std::vector<int> vm_GroundwaterDistance; /**< Distance between groundwater table and eff. rooting depth [m] */
-  size_t vm_GroundwaterTable{0}; //!< Layer of groundwater table []
+  size_t vm_GroundwaterTableLayer{0}; //!< Layer of groundwater table []
   std::vector<double> vm_HeatConductivity; //!< Heat conductivity of layer [J m-1 d-1]
   double vm_HydraulicConductivityRedux{0.0}; //!< Reduction factor for hydraulic conductivity [0.1 - 9.9]
   double vm_Infiltration{0.0}; //!< Amount of water that infiltrates into top soil layer [mm]
   double vm_Interception{0.0}; //!< [mm], water that is intercepted by the crop and evaporates from it's surface; not accountable for soil water budget
   double vc_KcFactor{0.6};
   std::vector<double> vm_Lambda; //!< Empirical soil water conductivity parameter []
-  double vm_LambdaReduced{0.0};
   double vs_Latitude{0.0};
   std::vector<double> vm_LayerThickness;
   double pm_LayerThickness{0.0};
   double pm_LeachingDepth{0.0};
   int pm_LeachingDepthLayer{0};
-  double vw_MaxAirTemperature{0.0}; //!< [°C]
   double pm_MaxPercolationRate{0.0}; //!< [mm d-1]
-  double vw_MeanAirTemperature{0.0}; //!< [°C]
-  double vw_MinAirTemperature{0.0}; //!< [°C]
   double vc_NetPrecipitation{0.0}; //!< Precipitation amount that is not intercepted by vegetation [mm]
   double vw_NetRadiation{0.0}; //!< [MJ m-2]
   std::vector<double> vm_PermanentWiltingPoint; //!< Soil water content at permanent wilting point [m3 m-3]
   double vc_PercentageSoilCoverage{0.0}; //!< [m2 m-2]
   std::vector<double> vm_PercolationRate; //!< Percolation rate per layer [mm d-1]
-  double vw_Precipitation{0.0}; //!< Precipition taken from weather data [mm]
   double vm_ReferenceEvapotranspiration{6.0}; //!< Evapotranspiration of a 12mm cut grass crop at sufficient water supply [mm]
-  double vw_RelativeHumidity{0.0}; //!< [m3 m-3]
   std::vector<double> vm_ResidualEvapotranspiration; //!< Residual evapotranspiration in [mm]
   std::vector<double> vm_SaturatedHydraulicConductivity; //!< Saturated hydraulic conductivity [mm d-1]
 
@@ -241,8 +233,6 @@ private:
   std::vector<double> vm_Transpiration; //!< Transpiration of layer [mm]
   double vm_TranspirationDeficit{0.0};
   std::vector<double> vm_WaterFlux; //!< Soil water flux at the layer's upper boundary[mm d-1]
-  double vw_WindSpeed{0.0}; //!< [m s-1]
-  double vw_WindSpeedHeight{0.0}; //!< [m]
   double vm_XSACriticalSoilMoisture{0.0};
 
   kj::Own<SnowComponent> snowComponent;

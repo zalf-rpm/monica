@@ -297,7 +297,7 @@ public:
 
   double vs_SurfaceWaterStorage{0.0}; //!< Content of above-ground water storage [mm]
   double vs_InterceptionStorage{0.0}; //!< Amount of intercepted water on crop surface [mm]
-  size_t vm_GroundwaterTable{0}; //!< Layer of current groundwater table
+  size_t vm_GroundwaterTableLayer{0}; //!< Layer of current groundwater table
   double vs_FluxAtLowerBoundary{0.0}; //!< Water flux out of bottom layer
   double vq_CropNUptake{0.0}; //!< Daily amount of N taken up by the crop [kg m-2]
   double vt_SoilSurfaceTemperature{0.0};
