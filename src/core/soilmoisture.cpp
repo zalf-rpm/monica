@@ -784,16 +784,14 @@ void SoilMoisture::fm_BackwaterReplenishment() {
   }
 
   // if there is no such thing nothing will happen
-  if (vm_BackwaterTable == 0)
-    return;
+  if (vm_BackwaterTable == 0) return;
 
   // Backwater replenishment upwards
   for (int i = int(vm_StartLayer); i >= 0; i--) {
 
     //!TODO check loop and whether it really should be i_Layer + 1 or the loop should start one layer higher ????!!!!
     vm_SoilMoisture[i] += vm_BackwaterAdded / 1000.0 / vm_LayerThickness[i];// + 1];
-    if (i > 0) 
-      vm_WaterFlux[i - 1] -= vm_BackwaterAdded;
+    if (i > 0) vm_WaterFlux[i - 1] -= vm_BackwaterAdded;
 
     if (vm_SoilMoisture[i] > vm_SoilPoreVolume[i]) {
 
