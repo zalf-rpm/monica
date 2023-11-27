@@ -27,17 +27,30 @@ using namespace Tools;
 
 //! Create soil column giving a the number of layers it consists of
 SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModuleParameters &params)
-    : _soilColumn(mm.soilColumnNC()), _monica(mm), soilColumn(_soilColumn,
-                                                              _soilColumnGroundLayer,
-                                                              _soilColumnBottomLayer,
-                                                              _soilColumn.vs_NumberOfLayers()), _params(params),
-      _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2), _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
+    : _soilColumn(mm.soilColumnNC())
+      , _monica(mm)
+      , soilColumn(_soilColumn,
+                   _soilColumnGroundLayer,
+                   _soilColumnBottomLayer,
+                   _soilColumn.vs_NumberOfLayers())
+      , _params(params)
+      , _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2)
+      , _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
 //	, vs_SoilMoisture_const(_noOfTempLayers)
-    , _soilTemperature(_noOfTempLayers), _V(_noOfTempLayers), _volumeMatrix(_noOfTempLayers),
-      _volumeMatrixOld(_noOfTempLayers), _B(_noOfTempLayers), _matrixPrimaryDiagonal(_noOfTempLayers),
-      _matrixSecondaryDiagonal(_noOfTempLayers + 1), _heatConductivity(_noOfTempLayers),
-      _heatConductivityMean(_noOfTempLayers), _heatCapacity(_noOfTempLayers), _solution(_noOfTempLayers),
-      _matrixDiagonal(_noOfTempLayers), _matrixLowerTriangle(_noOfTempLayers), _heatFlow(_noOfTempLayers, 0.0) {
+      , _soilTemperature(_noOfTempLayers)
+      , _V(_noOfTempLayers)
+      , _volumeMatrix(_noOfTempLayers)
+      , _volumeMatrixOld(_noOfTempLayers)
+      , _B(_noOfTempLayers)
+      , _matrixPrimaryDiagonal(_noOfTempLayers)
+      , _matrixSecondaryDiagonal(_noOfTempLayers + 1)
+      , _heatConductivity(_noOfTempLayers)
+      , _heatConductivityMean(_noOfTempLayers)
+      , _heatCapacity(_noOfTempLayers)
+      , _solution(_noOfTempLayers)
+      , _matrixDiagonal(_noOfTempLayers)
+      , _matrixLowerTriangle(_noOfTempLayers)
+      , _heatFlow(_noOfTempLayers, 0.0) {
   debug() << "Constructor: SoilColumn" << endl;
 
 #ifdef AMEI
@@ -80,7 +93,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
                                       _soilTempRate, _soilTempAux, _soilTempExo);
 #endif
 
-  //initialize the two additional layers to the same values 
+  //initialize the two additional layers to the same values
   //as the bottom most standard soil layer
   //even though this hadn't been done before it was ok, 
   //as these two layers seam to be used only for 
@@ -233,13 +246,18 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
 }
 
 SoilTemperature::SoilTemperature(MonicaModel &mm, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader)
-    : _soilColumn(mm.soilColumnNC()), _monica(mm), soilColumn(_soilColumn,
-                                                              _soilColumnGroundLayer,
-                                                              _soilColumnBottomLayer,
-                                                              _soilColumn.vs_NumberOfLayers()),
-      _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2), _noOfSoilLayers(_soilColumn.vs_NumberOfLayers()),
-      _solution(_noOfTempLayers), _matrixDiagonal(_noOfTempLayers), _matrixLowerTriangle(_noOfTempLayers),
-      _heatFlow(_noOfTempLayers, 0.0) {
+    : _soilColumn(mm.soilColumnNC())
+      , _monica(mm)
+      , soilColumn(_soilColumn,
+                   _soilColumnGroundLayer,
+                   _soilColumnBottomLayer,
+                   _soilColumn.vs_NumberOfLayers())
+      , _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2)
+      , _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
+      , _solution(_noOfTempLayers)
+      , _matrixDiagonal(_noOfTempLayers)
+      , _matrixLowerTriangle(_noOfTempLayers)
+      , _heatFlow(_noOfTempLayers, 0.0) {
   deserialize(reader);
 }
 

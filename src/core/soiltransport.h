@@ -49,7 +49,7 @@ public:
   void step();
 
   //! calculates daily N deposition
-  void fq_NDeposition(double vs_NDeposition);
+  void fq_NDeposition();
 
   //! puts crop N uptake into effect
   void fq_NUptake();
@@ -74,7 +74,6 @@ private:
   SoilTransportModuleParameters _params;
   //const size_t vs_NumberOfLayers;
   std::vector<double> vq_Convection;
-  double vq_CropNUptake{ 0.0 };
   std::vector<double> vq_DiffusionCoeff;
   std::vector<double> vq_Dispersion;
   std::vector<double> vq_DispersionCoeff;

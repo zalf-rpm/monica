@@ -105,14 +105,9 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
 
   virtual json11::Json to_json() const;
 
-  int pc_NumberOfDevelopmentalStages() const {
-    assert(pc_BaseTemperature.size() <= INT_MAX);
-    return (int)pc_BaseTemperature.size();
-  }
-  int pc_NumberOfOrgans() const {
-    assert(pc_OrganGrowthRespiration.size() <= INT_MAX);
-    return (int)pc_OrganGrowthRespiration.size();
-  }
+  size_t pc_NumberOfDevelopmentalStages() const;
+
+  size_t pc_NumberOfOrgans() const;
 
   // members
   std::string pc_SpeciesId;

@@ -489,69 +489,75 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
               break;
             } else if (msgType == "Env") {
               Env env;
-              auto errors = env.merge(msg.json);
-
-              EResult<DataAccessor> eda;
-              if (!env.climateData.isValid()) {
-                if (!env.climateCSV.empty()) {
-                  eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
-                } else if (!env.pathsToClimateCSV.empty()) {
-                  eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+              monica::Output out, out2;
+              auto customId = msg.json["customId"];
+              out.customId = customId;
+              out2.customId = customId;
+              bool isNoDataPassThrough = customId.is_object() && customId["nodata"].bool_value();
+              bool isIC = msg.json["params"]["userCropParameters"]["intercropping"]["is_intercropping"].bool_value();
+              if (isNoDataPassThrough) {
+                debug() << "nodata pass through -> customId: " << customId.dump() << endl;
+              } else {
+                auto errors = env.merge(msg.json);
+                if(errors.success()) {
+                  EResult<DataAccessor> eda;
+                  if (!env.climateData.isValid()) {
+                    if (!env.climateCSV.empty()) {
+                      eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+                    } else if (!env.pathsToClimateCSV.empty()) {
+                      eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
 #ifdef INCLUDE_SR_SUPPORT
-                  Climate::DataAccessor finalDA = kj::mv(eda.result);
-                  for (const auto &sr: env.pathsToClimateCSV) {
-                    if (sr.find("capnp://") == 0) {
-                      auto ts = conMan.tryConnectB(sr).castAs<mas::schema::climate::TimeSeries>();
-                      auto da = dataAccessorFromTimeSeries(ts).wait(ioContext.waitScope);
-                      if (!finalDA.isValid()) {
-                        finalDA = kj::mv(da);
-                      } else {
-                        finalDA.mergeClimateData(kj::mv(da), true);
+                      Climate::DataAccessor finalDA = kj::mv(eda.result);
+                      for (const auto &sr: env.pathsToClimateCSV) {
+                        if (sr.find("capnp://") == 0) {
+                          auto ts = conMan.tryConnectB(sr).castAs<mas::schema::climate::TimeSeries>();
+                          auto da = dataAccessorFromTimeSeries(ts).wait(ioContext.waitScope);
+                          if (!finalDA.isValid()) {
+                            finalDA = kj::mv(da);
+                          } else {
+                            finalDA.mergeClimateData(kj::mv(da), true);
+                          }
+                        }
                       }
+                      eda.result = kj::mv(finalDA);
+#endif
                     }
                   }
-                  eda.result = kj::mv(finalDA);
+#ifdef INCLUDE_SR_SUPPORT
+                  //no soil data have been loaded, but there might be a capnp sturdy ref
+                  string soilSR;
+                  if (msg.json["params"]["siteParameters"]["SoilProfileParameters"].is_string()) {
+                    soilSR = msg.json["params"]["siteParameters"]["SoilProfileParameters"].string_value();
+                  }
+                  if (!soilSR.empty()) {
+                    auto sp = conMan.tryConnectB(soilSR).castAs<mas::schema::soil::Profile>();
+                    auto soilpsj = fromCapnpSoilProfile(sp).wait(ioContext.waitScope);
+                    auto soilps = Soil::createSoilPMs(soilpsj);
+                    if (soilps.second.failure()) printPossibleErrors(soilps.second, activateDebug);
+                    else env.params.siteParameters.vs_SoilParameters = soilps.first;
+                  }
 #endif
+
+                  if (eda.success()) {
+                    if (!env.climateData.isValid()) env.climateData = kj::mv(eda.result);
+
+                    env.debugMode = startedServerInDebugMode && env.debugMode;
+
+                    env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+                        [](const string &soilTexture, size_t distance) {
+                          return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+                        };
+
+                    //isIC = env.params.userCropParameters.isIntercropping;
+                    debug() << "running             -> customId: " << env.customId.dump() << endl;
+                    auto str = msg.json.dump();
+                    std::tie(out, out2) = runMonicaIC(env, isIC);
+                    //cout << "out: " << out.to_json().dump() << endl;
+                  }
+                  out.errors = eda.errors;
+                  out.warnings = eda.warnings;
                 }
               }
-#ifdef INCLUDE_SR_SUPPORT
-              //no soil data have been loaded, but there might be a capnp sturdy ref
-              string soilSR;
-              if (msg.json["params"]["siteParameters"]["SoilProfileParameters"].is_string()) {
-                soilSR = msg.json["params"]["siteParameters"]["SoilProfileParameters"].string_value();
-              }
-              if (!soilSR.empty()) {
-                auto sp = conMan.tryConnectB(soilSR).castAs<mas::schema::soil::Profile>();
-                auto soilpsj = fromCapnpSoilProfile(sp).wait(ioContext.waitScope);
-                auto soilps = Soil::createSoilPMs(soilpsj);
-                if (soilps.second.failure()) printPossibleErrors(soilps.second, activateDebug);
-                else env.params.siteParameters.vs_SoilParameters = soilps.first;
-              }
-#endif
-
-              monica::Output out, out2;
-              bool isIC = false;
-              if (eda.success()) {
-                if (!env.climateData.isValid()) env.climateData = kj::mv(eda.result);
-
-                env.debugMode = startedServerInDebugMode && env.debugMode;
-
-                env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-                    [](const string &soilTexture, size_t distance) {
-                      return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-                    };
-
-                isIC = env.params.userCropParameters.isIntercropping;
-                std::tie(out, out2) = runMonicaIC(env, isIC);
-                cout << "customId: " << env.customId.dump() << endl;
-                cout << "out: " << out.to_json().dump() << endl;
-              } else {
-                out.customId = env.customId;
-                out2.customId = env.customId;
-              }
-
-              out.errors = eda.errors;
-              out.warnings = eda.warnings;
 
               try {
                 if (!env.sharedId.empty()) s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);

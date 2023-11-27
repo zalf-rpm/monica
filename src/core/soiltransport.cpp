@@ -67,7 +67,6 @@ SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const So
 void SoilTransport::deserialize(mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
   _params.deserialize(reader.getModuleParams());
   setFromCapnpList(vq_Convection, reader.getConvection());
-  vq_CropNUptake = reader.getCropNUptake();
   setFromCapnpList(vq_DiffusionCoeff, reader.getDiffusionCoeff());
   setFromCapnpList(vq_Dispersion, reader.getDispersion());
   setFromCapnpList(vq_DispersionCoeff, reader.getDispersionCoeff());
@@ -88,7 +87,6 @@ void SoilTransport::deserialize(mas::schema::model::monica::SoilTransportModuleS
 void SoilTransport::serialize(mas::schema::model::monica::SoilTransportModuleState::Builder builder) const {
   _params.serialize(builder.initModuleParams());
   setCapnpList(vq_Convection, builder.initConvection((capnp::uint)vq_Convection.size()));
-  builder.setCropNUptake(vq_CropNUptake);
   setCapnpList(vq_DiffusionCoeff, builder.initDiffusionCoeff((capnp::uint)vq_DiffusionCoeff.size()));
   setCapnpList(vq_Dispersion, builder.initDispersion((capnp::uint)vq_Dispersion.size()));
   setCapnpList(vq_DispersionCoeff, builder.initDispersionCoeff((capnp::uint)vq_DispersionCoeff.size()));
@@ -140,7 +138,7 @@ void SoilTransport::step() {
     minTimeStepFactor = min(minTimeStepFactor, timeStepFactorCurrentLayer);
   }
 
-  fq_NDeposition(vs_NDeposition);
+  fq_NDeposition();
   fq_NUptake();
 
   // Nitrate transport is called according to the set time step
@@ -166,16 +164,14 @@ void SoilTransport::step() {
  * that can be used in MONICAs calculations. Addition of this
  * transformed N deposition to ammonium pool of top soil layer.
  *
- * @param vs_NDeposition
- *
  * Kersebaum 1989
  */
-void SoilTransport::fq_NDeposition(double vs_NDeposition) {
+void SoilTransport::fq_NDeposition() {
   //Daily N deposition in [kg N ha-1 d-1]
-  double vq_DailyNDeposition = vs_NDeposition / 365.0;
+  double dailyNDeposition = vs_NDeposition / 365.0;
 
   // Addition of N deposition to top layer [kg N m-3]
-  vq_SoilNO3[0] += vq_DailyNDeposition / (10000.0 * soilColumn[0].vs_LayerThickness);
+  vq_SoilNO3[0] += dailyNDeposition / (10000.0 * soilColumn[0].vs_LayerThickness);
 }
 
 /**
@@ -186,20 +182,19 @@ void SoilTransport::fq_NDeposition(double vs_NDeposition) {
  */
 void SoilTransport::fq_NUptake() {
   const auto nols = soilColumn.vs_NumberOfLayers();
-  double vq_CropNUptake = 0.0;
-  for (int i = 0; i < nols; i++)
-  {
+  double cropNUptake = 0.0;
+  for (size_t i = 0; i < nols; i++) {
     const auto lti = soilColumn[i].vs_LayerThickness;
     const auto smi = soilColumn[i].get_Vs_SoilMoisture_m3();
 
     // Lower boundary for N exploitation per layer
-    if (vc_NUptakeFromLayer[i] > ((vq_SoilNO3[i] * lti) - pc_MinimumAvailableN))
-      vc_NUptakeFromLayer[i] = ((vq_SoilNO3[i] * lti) - pc_MinimumAvailableN); // Crop N uptake from layer i [kg N m-2]
+    if (vc_NUptakeFromLayer[i] > ((vq_SoilNO3[i] * lti) - pc_MinimumAvailableN)) {
+      vc_NUptakeFromLayer[i] = ((vq_SoilNO3[i] * lti) - pc_MinimumAvailableN);
+    } // Crop N uptake from layer i [kg N m-2]
 
-    if (vc_NUptakeFromLayer[i] < 0) 
-      vc_NUptakeFromLayer[i] = 0;
+    if (vc_NUptakeFromLayer[i] < 0) vc_NUptakeFromLayer[i] = 0;
 
-    vq_CropNUptake += vc_NUptakeFromLayer[i];
+    cropNUptake += vc_NUptakeFromLayer[i];
 
     // Subtracting crop N uptake
     vq_SoilNO3[i] -= vc_NUptakeFromLayer[i] / lti;
@@ -207,9 +202,9 @@ void SoilTransport::fq_NUptake() {
     // Calculation of solute NO3 concentration on the basis of the soil moisture
     // content before movement of current time step (kg m soil-3 --> kg m solute-3)
     vq_SoilNO3_aq[i] = vq_SoilNO3[i] / smi;
-  } 
+  }
 
-  soilColumn.vq_CropNUptake = vq_CropNUptake; // [kg m-2]
+  soilColumn.vq_CropNUptake = cropNUptake; // [kg m-2]
 }
 
 /**

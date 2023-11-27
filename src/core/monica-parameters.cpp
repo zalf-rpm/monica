@@ -345,7 +345,12 @@ json11::Json SpeciesParameters::to_json() const {
   return species;
 }
 
-
+size_t SpeciesParameters::pc_NumberOfDevelopmentalStages() const {
+  return pc_BaseTemperature.size();
+}
+size_t SpeciesParameters::pc_NumberOfOrgans() const {
+  return pc_OrganGrowthRespiration.size();
+}
 
 CultivarParameters::CultivarParameters(json11::Json j) {
   merge(j);
@@ -960,6 +965,7 @@ Errors SiteParameters::merge(json11::Json j) {
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
     auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
     vs_SoilParameters = kj::mv(p.first);
+    if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
     if (p.second.failure()) res.append(p.second);
   } else if(j["SoilProfileParameters"].is_string() && j["SoilProfileParameters"].string_value().find("capnp") != 0) {
     res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());

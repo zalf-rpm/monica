@@ -1,20 +1,71 @@
   {
-	"cropRotation": [
+	  "crops": {
+		  "maize": {
+			  "is-winter-crop": true,
+			  "cropParams": {
+				  "species": {
+					  "=": ["include-from-file", "crops/maize.json"]
+				  },
+				  "cultivar": {
+					  "=": ["include-from-file", "crops/maize/grain-maize.json"]
+				  }
+			  },
+			  "residueParams": ["include-from-file", "crop-residues/maize.json"]
+		  },
+		  "sorghum": {
+			  "is-winter-crop": true,
+			  "cropParams": {
+				  "species": {
+					  "=": ["include-from-file", "crops/sorghum.json"]
+				  },
+				  "cultivar": {
+					  "=": ["include-from-file", "crops/sorghum/.json"]
+				  }
+			  },
+			  "residueParams": ["include-from-file", "crop-residues/sorghum.json"]
+		  }
+	  },
+
+	  "cropRotation": [
+		  {
+			  "worksteps": [
+				  {
+					  "date": "0000-10-13",
+					  "type": "Sowing",
+					  "crop": ["ref", "crops", "maize"]
+				  },
+				  {
+					  "type": "Harvest",
+					  "date": "0001-05-21"
+				  }
+			  ]
+		  }
+	  ],
+
+	"_cropRotation": [
 		{
 			"worksteps": [
 				{ 
-					"date": "2023-09-23",
+					"date": "0000-05-04",
 					"type": "Sowing", 
 					"crop": {
 						"is-winter-crop": true,
 						"cropParams": {
 							"species": ["include-from-file", "crops/wheat.json"],
-							"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+							"_species": ["include-from-file", "/home/berg/GitHub/monica_africa/data/params/crops/species/sorghum.json"],
+							"cultivar": {
+								"=": [
+									"include-from-file",
+									"crops/wheat/winter-wheat.json"
+								],
+								"CropSpecificMaxRootingDepth": 0.1
+							},
+							"_cultivar": ["include-from-file", "/home/berg/GitHub/monica_africa/data/params/crops/cultivars/sorghum.json"]
 						},
 						"residueParams": ["include-from-file", "crop-residues/wheat.json"]
 					} 
 				},
-				{ "date": "0001-07-27", "type": "Harvest" }
+				{ "date": "0000-09-23", "type": "Harvest" }
 			]
 		}
 	],

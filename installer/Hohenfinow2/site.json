@@ -85,10 +85,12 @@
 	
 	"__all kinds of more general monica parameters": "",
   "SoilTemperatureParameters": ["include-from-file", "general/soil-temperature.json"],
-	"EnvironmentParameters": {
+  "EnvironmentParameters": {
     "=": ["include-from-file", "general/environment.json"],
     "LeachingDepth": 2.0,
-    "WindSpeedHeight": 2.5
+    "WindSpeedHeight": 2.5,
+	  "rcp": 8.5
+
   },
   "SoilOrganicParameters": ["include-from-file", "general/soil-organic.json"],
   "SoilTransportParameters": ["include-from-file", "general/soil-transport.json"],

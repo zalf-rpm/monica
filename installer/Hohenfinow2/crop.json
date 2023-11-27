@@ -96,7 +96,7 @@
 	],
 
 	"__example using automatic sowing and harvesting": "",
-	  "cropRotations": [
+	  "_cropRotations": [
 		  {
 			  "start": "1991-02-01",
 			  "end": "1994-12-31",
@@ -173,7 +173,7 @@
 		  }
 	  ],
 
-	"cropRotation": [
+	"__cropRotation": [
 		{
 			"worksteps": [
 				 { 
@@ -236,7 +236,7 @@
 	],
 
 	"__absolute date crop rotation example": "",
-  "3 cropRotation": [
+  "cropRotation": [
 		{
 			"worksteps": [
 				{ "date": "1991-09-23", "type": "Sowing", "crop": ["ref", "crops", "WR"] },
