@@ -666,6 +666,8 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   bool loadSerializedMonicaStateAtStart{ false };
   uint64_t noOfPreviousDaysSerializedClimateData{ 20 };
   std::string pathToSerializationFile;
+
+  json11::Json customData;
 };
 
 

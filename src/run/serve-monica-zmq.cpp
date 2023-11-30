@@ -554,9 +554,11 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                     std::tie(out, out2) = runMonicaIC(env, isIC);
                     //cout << "out: " << out.to_json().dump() << endl;
                   }
-                  out.errors = eda.errors;
-                  out.warnings = eda.warnings;
+                  out.errors.insert(out.errors.end(), eda.errors.begin(), eda.errors.end());
+                  out.warnings.insert(out.warnings.end(), eda.warnings.begin(), eda.warnings.end());
                 }
+                out.errors.insert(out.errors.end(), errors.errors.begin(), errors.errors.end());
+                out.warnings.insert(out.warnings.end(), errors.warnings.begin(), errors.warnings.end());
               }
 
               try {

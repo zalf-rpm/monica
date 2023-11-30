@@ -312,6 +312,25 @@ void SoilTemperature::step(double tmin, double tmax, double globrad) {
   _soilTempExo.settmin(tmin);
   _soilTempExo.settmax(tmax);
   _soilTempExo.setglobrad(globrad);
+  if (_monica.cropGrowth()) _soilTempExo.setsoilCoverage(_monica.cropGrowth()->get_SoilCoverage());
+  else {
+    if (_monica.simulationParameters().customData["LAI"].is_null()) _soilTempExo.setsoilCoverage(0);
+    else {
+      auto lai = _monica.simulationParameters().customData["LAI"].number_value();
+      _soilTempExo.setsoilCoverage(1.0 - (exp(-0.5 * lai)));
+    }
+  }
+  if (_monica.soilMoisture().get_SnowDepth() > 0.0) {
+    _soilTempExo.sethasSnowCover(true);
+    _soilTempExo.setsoilSurfaceTemperatureBelowSnow(_monica.soilMoisture().getTemperatureUnderSnow());
+  }
+  else {
+    _soilTempExo.sethasSnowCover(false);
+  }
+  if (!_monica.simulationParameters().customData["AWC"].is_null()) {
+    auto awc = _monica.simulationParameters().customData["AWC"].number_value();
+    _soilTempComp.setsoilMoistureConst(awc);
+  }
 
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 

@@ -1337,6 +1337,8 @@ Errors SimulationParameters::merge(json11::Json j) {
   noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
   set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
 
+  if (!j["customData"].is_null()) customData = j["customData"];
+
   return res;
 }
 

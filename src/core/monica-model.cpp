@@ -42,6 +42,8 @@ using namespace Climate;
 using namespace Tools;
 using namespace Soil;
 
+#define SKIP_MODULES 1
+
 namespace {
 //! simple functor for use in fertiliser trigger
 struct AddFertiliserAmountsCallback {
@@ -61,18 +63,17 @@ struct AddFertiliserAmountsCallback {
 
 
 MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
-    : _sitePs(kj::mv(cpp.siteParameters)), _envPs(kj::mv(cpp.userEnvironmentParameters)),
-      _cropPs(kj::mv(cpp.userCropParameters)), _simPs(kj::mv(cpp.simulationParameters)),
-      _groundwaterInformation(kj::mv(cpp.groundwaterInformation)),
-      _soilColumn(kj::heap<SoilColumn>(_simPs.p_LayerThickness,
-                                       cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-                                       _sitePs.vs_SoilParameters,
-                                       cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth)),
-      _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters)),
-      _soilMoisture(kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters)),
-      _soilOrganic(kj::heap<SoilOrganic>(*_soilColumn.get(), cpp.userSoilOrganicParameters)),
-      _soilTransport(kj::heap<SoilTransport>(*_soilColumn.get(), _sitePs, cpp.userSoilTransportParameters,
-                                             _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {
+    : _sitePs(kj::mv(cpp.siteParameters)), _envPs(kj::mv(cpp.userEnvironmentParameters)), _cropPs(
+    kj::mv(cpp.userCropParameters)), _simPs(kj::mv(cpp.simulationParameters)), _groundwaterInformation(
+    kj::mv(cpp.groundwaterInformation)), _soilColumn(kj::heap<SoilColumn>(_simPs.p_LayerThickness,
+                                                                          cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
+                                                                          _sitePs.vs_SoilParameters,
+                                                                          cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth))
+      , _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters)), _soilMoisture(
+        kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters)), _soilOrganic(
+        kj::heap<SoilOrganic>(*_soilColumn.get(), cpp.userSoilOrganicParameters)), _soilTransport(
+        kj::heap<SoilTransport>(*_soilColumn.get(), _sitePs, cpp.userSoilTransportParameters,
+                                _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {
 }
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
@@ -82,11 +83,11 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
   _simPs.deserialize(reader.getSimPs());
   _groundwaterInformation.deserialize(reader.getGroundwaterInformation());
 
-  if (_soilColumn) _soilColumn->deserialize(reader.getSoilColumn());
-  else _soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn());
+  if (_soilColumn) { _soilColumn->deserialize(reader.getSoilColumn()); }
+  else { _soilColumn = kj::heap<SoilColumn>(reader.getSoilColumn()); }
 
   if (reader.hasCurrentCropModule()) {
-    auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nconc) {
+    auto addOMFunc = [this](const std::map<size_t, double> &layer2amount, double nconc) {
       this->_soilOrganic->addOrganicMatter(this->_currentCropModule->residueParameters(),
                                            layer2amount,
                                            nconc);
@@ -103,8 +104,8 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
 
   _soilColumn->putCrop(_currentCropModule.get());
 
-  if (_soilTemperature) _soilTemperature->deserialize(reader.getSoilTemperature());
-  else _soilTemperature = kj::heap<SoilTemperature>(*this, reader.getSoilTemperature());
+  if (_soilTemperature) { _soilTemperature->deserialize(reader.getSoilTemperature()); }
+  else { _soilTemperature = kj::heap<SoilTemperature>(*this, reader.getSoilTemperature()); }
 
   if (_soilMoisture) {
     _soilMoisture->deserialize(reader.getSoilMoisture());
@@ -275,7 +276,7 @@ void MonicaModel::seedCrop(Crop *crop) {
   if (crop->isValid()) {
     _cultivationMethodCount++;
 
-    auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nconc) {
+    auto addOMFunc = [this](const std::map<size_t, double> &layer2amount, double nconc) {
       this->_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
                                            layer2amount,
                                            nconc);
@@ -290,8 +291,9 @@ void MonicaModel::seedCrop(Crop *crop) {
                                               },
                                               _intercropping);
 
-    if (crop->separatePerennialCropParameters())
+    if (crop->separatePerennialCropParameters()) {
       _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
+    }
 
     _soilTransport->putCrop(_currentCropModule.get());
     _soilColumn->putCrop(_currentCropModule.get());
@@ -355,9 +357,10 @@ MonicaModel::harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest::OptC
           }
         }
 
-        if (optCarbMgmtData.cropUsage == Harvest::greenManure)
+        if (optCarbMgmtData.cropUsage == Harvest::greenManure) {
           //if the crop is used as green manure, all the residues are incorporated regardless the humus balance
           fractionToBeLeftOnField = 1.0;
+        }
 
         //calculate theoretical residue removal
         _optCarbonReturnedResidues = residueBiomass * fractionToBeLeftOnField;
@@ -404,17 +407,20 @@ MonicaModel::harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest::OptC
       auto organIdsForPrimaryYield = _currentCropModule->organIdsForPrimaryYield();
       for (const auto &p: spec.organ2specVal) {
         // ignore root, is probably an error, when the user specified the root organ (0) as something to harvest
-        if (p.first == 0)
+        if (p.first == 0) {
           continue;
+        }
         auto organBiomass = _currentCropModule->get_OrganBiomass(p.first);
         auto organYield = organBiomass * p.second.exportPercentage / 100.0;
         cropYield += organYield;
-        if (organIdsForPrimaryYield.find(p.first + 1) != organIdsForPrimaryYield.end())
+        if (organIdsForPrimaryYield.find(p.first + 1) != organIdsForPrimaryYield.end()) {
           primaryCropYield += organYield;
-        if (p.second.incorporate)
+        }
+        if (p.second.incorporate) {
           sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
-        else
+        } else {
           sumOrganResidueBiomassAsOverlay += organBiomass - organYield;
+        }
       }
       auto totalResidueBiomass = _currentCropModule->get_ResidueBiomass(false, cropYield);
       auto totalResidueBiomassToIncorporate = totalResidueBiomass - sumOrganResidueBiomassAsOverlay;
@@ -586,8 +592,8 @@ void MonicaModel::step() {
     // wait for other sides crop height or no crop info
     auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
     debug() << "MonicaModel::step -> sent no-crop, received ";
-    if (val.isHeight()) cout << " height: " << val.getHeight() << endl;
-    else if (val.isNoCrop()) cout << "no-crop" << endl;
+    if (val.isHeight()) { cout << " height: " << val.getHeight() << endl; }
+    else if (val.isNoCrop()) { cout << "no-crop" << endl; }
     else if (val.isLait()) cout << " LAI_t: " << val.getLait() << " ---> Error: shouldn't happen." << endl;
   }
 
@@ -608,15 +614,13 @@ void MonicaModel::generalStep() {
   double tavg = climateData[Climate::tavg];
   double tmax = climateData[Climate::tmax];
   double precip = climateData[Climate::precip];
-  double wind = climateData[Climate::wind];
   double globrad = climateData[Climate::globrad];
 
   // test if data for relhumid are available; if not, value is set to -1.0
   double relhumid = climateData.find(Climate::relhumid) == climateData.end()
                     ? -1.0
                     : climateData[Climate::relhumid];
-
-
+#ifndef SKIP_MODULES
   // test if simulated gw or measured values should be used
   auto gw_value_p = _groundwaterInformation.getGroundwaterInformation(date);
   //  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
@@ -635,14 +639,15 @@ void MonicaModel::generalStep() {
   } else {
     // try to get yearly values from UserEnvironmentParameters
     auto co2sit = _envPs.p_AtmosphericCO2s.find(date.year());
-    if (co2sit != _envPs.p_AtmosphericCO2s.end())
+    if (co2sit != _envPs.p_AtmosphericCO2s.end()) {
       vw_AtmosphericCO2Concentration = co2sit->second;
       // potentially use MONICA algorithm to calculate CO2 concentration
-    else if (int(_envPs.p_AtmosphericCO2) <= 0)
+    } else if (int(_envPs.p_AtmosphericCO2) <= 0) {
       vw_AtmosphericCO2Concentration = CO2ForDate(date, _envPs.rcp);
       // if everything fails value in UserEnvironmentParameters for the whole simulation
-    else
+    } else {
       vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
+    }
   }
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;
@@ -666,19 +671,24 @@ void MonicaModel::generalStep() {
          NMinCropParameters(sps.pc_SamplingDepth, sps.pc_TargetNSamplingDepth, sps.pc_TargetN30));
     addDailySumFertiliser(fertilizerAmount);
   }
+#endif
 
   _soilTemperature->step(tmin, tmax, globrad);
 
+#ifndef SKIP_MODULES
   // first try to get ReferenceEvapotranspiration from climate data
   auto et0_it = climateData.find(Climate::et0);
   double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;
 
-  _soilMoisture->step(vs_GroundwaterDepth, precip, tmax, tmin,
-                      (relhumid / 100.0), tavg, wind, _envPs.p_WindSpeedHeight, globrad,
+  double wind = climateData.find(Climate::wind) == climateData.end() ? 0.0 : climateData[Climate::wind];
+  _soilMoisture->step(vs_GroundwaterDepth, precip,
+                      tmax, tmin,
+                      (relhumid / 100.0), tavg,
+                      wind, _envPs.p_WindSpeedHeight, globrad,
                       julday, et0);
-
   _soilOrganic->step(tavg, precip, wind);
   _soilTransport->step();
+#endif
 }
 
 pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai) {
@@ -703,8 +713,9 @@ void MonicaModel::cropStep() {
   auto date = _currentStepDate;
   auto climateData = currentStepClimateData();
   // do nothing if there is no crop
-  if (!_currentCropModule)
+  if (!_currentCropModule) {
     return;
+  }
 
   p_daysWithCrop++;
 
@@ -722,11 +733,12 @@ void MonicaModel::cropStep() {
   } else {
     // try to get yearly values from UserEnvironmentParameters
     auto o3sit = _envPs.p_AtmosphericO3s.find(date.year());
-    if (o3sit != _envPs.p_AtmosphericO3s.end())
+    if (o3sit != _envPs.p_AtmosphericO3s.end()) {
       vw_AtmosphericO3Concentration = o3sit->second;
       // if everything fails value in UserEnvironmentParameters for the whole simulation
-    else
+    } else {
       vw_AtmosphericO3Concentration = _envPs.p_AtmosphericO3;
+    }
   }
 
   // test if data for sunhours are available; if not, value is set to -1.0
@@ -860,8 +872,9 @@ double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
                                             double julianday,
                                             bool leapYear) {
   double days = 365;
-  if (leapYear)
+  if (leapYear) {
     days = 366.0;
+  }
 
   double meanGroundwaterDepth = (maxGroundwaterDepth + minGroundwaterDepth) / 2.0;
   double groundwaterAmplitude = (maxGroundwaterDepth - minGroundwaterDepth) / 2.0;
@@ -872,8 +885,9 @@ double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
 
   double groundwaterDepth = meanGroundwaterDepth + (sinus * groundwaterAmplitude);
 
-  if (groundwaterDepth < 0.0)
+  if (groundwaterDepth < 0.0) {
     groundwaterDepth = 20.0;
+  }
 
   return groundwaterDepth;
 }
@@ -892,8 +906,9 @@ double MonicaModel::avgCorg(double depth_m) const {
     count++;
     sum += _soilColumn->at(i).vs_SoilOrganicCarbon(); //[kg C / kg Boden]
     lsum += _soilColumn->at(i).vs_LayerThickness;
-    if (lsum >= depth_m)
+    if (lsum >= depth_m) {
       break;
+    }
   }
 
   return sum / double(count) * 100.0;
@@ -929,8 +944,9 @@ double MonicaModel::sumNmin(double depth_m) const {
     count++;
     sum += _soilColumn->at(i).get_SoilNmin(); //[kg N m-3]
     lsum += _soilColumn->at(i).vs_LayerThickness;
-    if (lsum >= depth_m)
+    if (lsum >= depth_m) {
       break;
+    }
   }
 
   return sum / double(count) * lsum * 10000;
@@ -950,8 +966,9 @@ MonicaModel::sumNO3AtDay(double depth_m) const {
     count++;
     sum += _soilColumn->at(i).get_SoilNO3(); //[kg m-3]
     lsum += _soilColumn->at(i).vs_LayerThickness;
-    if (lsum >= depth_m)
+    if (lsum >= depth_m) {
       break;
+    }
   }
 
   return sum;
@@ -1083,8 +1100,9 @@ double MonicaModel::surfaceRunoff() const {
  * @return
  */
 double MonicaModel::getEvapotranspiration() const {
-  if (_currentCropModule)
+  if (_currentCropModule) {
     return _currentCropModule->get_RemainingEvapotranspiration();
+  }
 
   return 0.0;
 }
@@ -1094,8 +1112,9 @@ double MonicaModel::getEvapotranspiration() const {
  * @return
  */
 double MonicaModel::getTranspiration() const {
-  if (_currentCropModule)
+  if (_currentCropModule) {
     return _currentCropModule->get_ActualTranspiration();
+  }
 
   return 0.0;
 }
@@ -1105,8 +1124,9 @@ double MonicaModel::getTranspiration() const {
  * @return
  */
 double MonicaModel::getEvaporation() const {
-  if (_currentCropModule)
+  if (_currentCropModule) {
     return _currentCropModule->get_EvaporatedFromIntercept();
+  }
 
   return 0.0;
 }
