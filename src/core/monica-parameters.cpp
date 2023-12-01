@@ -962,8 +962,11 @@ Errors SiteParameters::merge(json11::Json j) {
   set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
   set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
 
+  set_int_value(numberOfLayers, j, "NumberOfLayers");
+  set_double_value(layerThickness, j, "LayerThickness");
+
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
-    auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
+    auto p = createSoilPMs(j["SoilProfileParameters"].array_items(), layerThickness, numberOfLayers);
     vs_SoilParameters = kj::mv(p.first);
     if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
     if (p.second.failure()) res.append(p.second);
@@ -990,7 +993,9 @@ json11::Json SiteParameters::to_json() const {
        {"NDeposition",                        J11Array{vq_NDeposition, "kg N ha-1 y-1"}},
        {"MaxEffectiveRootingDepth",           J11Array{vs_MaxEffectiveRootingDepth, "m"}},
        {"ImpenetrableLayerDepth",             J11Array{vs_ImpenetrableLayerDepth, "m"}},
-       {"SoilSpecificHumusBalanceCorrection", J11Array{vs_SoilSpecificHumusBalanceCorrection, "humus equivalents"}}
+       {"SoilSpecificHumusBalanceCorrection", J11Array{vs_SoilSpecificHumusBalanceCorrection, "humus equivalents"}},
+       {"NumberOfLayers",                     numberOfLayers},
+       {"LayerThickness",                     J11Array{layerThickness, "m"}},
       };
 
   sps["SoilProfileParameters"] = toJsonArray(vs_SoilParameters);
@@ -1267,8 +1272,8 @@ void SimulationParameters::deserialize(mas::schema::model::monica::SimulationPar
   p_UseSecondaryYields = reader.getUseSecondaryYields();
   p_UseAutomaticHarvestTrigger = reader.getUseAutomaticHarvestTrigger();
 
-  p_NumberOfLayers = reader.getNumberOfLayers();
-  p_LayerThickness = reader.getLayerThickness();
+  //p_NumberOfLayers = reader.getNumberOfLayers();
+  //p_LayerThickness = reader.getLayerThickness();
 
   p_StartPVIndex = reader.getStartPVIndex();
   p_JulianDayAutomaticFertilising = reader.getJulianDayAutomaticFertilising();
@@ -1294,8 +1299,8 @@ void SimulationParameters::serialize(mas::schema::model::monica::SimulationParam
   builder.setUseSecondaryYields(p_UseSecondaryYields);
   builder.setUseAutomaticHarvestTrigger(p_UseAutomaticHarvestTrigger);
 
-  builder.setNumberOfLayers(p_NumberOfLayers);
-  builder.setLayerThickness(p_LayerThickness);
+  //builder.setNumberOfLayers(p_NumberOfLayers);
+  //builder.setLayerThickness(p_LayerThickness);
 
   builder.setStartPVIndex(p_StartPVIndex);
   builder.setJulianDayAutomaticFertilising(p_JulianDayAutomaticFertilising);
@@ -1327,8 +1332,8 @@ Errors SimulationParameters::merge(json11::Json j) {
 
   set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
   set_bool_value(p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
-  set_int_value(p_NumberOfLayers, j, "NumberOfLayers");
-  set_double_value(p_LayerThickness, j, "LayerThickness");
+  //set_int_value(p_NumberOfLayers, j, "NumberOfLayers");
+  //set_double_value(p_LayerThickness, j, "LayerThickness");
 
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
 
@@ -1360,8 +1365,8 @@ json11::Json SimulationParameters::to_json() const {
        {"JulianDayAutomaticFertilising",         p_JulianDayAutomaticFertilising},
        {"UseSecondaryYields",                    p_UseSecondaryYields},
        {"UseAutomaticHarvestTrigger",            p_UseAutomaticHarvestTrigger},
-       {"NumberOfLayers",                        p_NumberOfLayers},
-       {"LayerThickness",                        p_LayerThickness},
+       //{"NumberOfLayers",                        p_NumberOfLayers},
+       //{"LayerThickness",                        p_LayerThickness},
        {"StartPVIndex",                          p_StartPVIndex},
        {"serializeMonicaStateAtEnd",             serializeMonicaStateAtEnd},
        {"loadSerializedMonicaStateAtStart",      loadSerializedMonicaStateAtStart},

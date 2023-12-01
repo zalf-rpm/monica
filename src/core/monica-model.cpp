@@ -63,12 +63,15 @@ struct AddFertiliserAmountsCallback {
 
 
 MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
-    : _sitePs(kj::mv(cpp.siteParameters)), _envPs(kj::mv(cpp.userEnvironmentParameters)), _cropPs(
-    kj::mv(cpp.userCropParameters)), _simPs(kj::mv(cpp.simulationParameters)), _groundwaterInformation(
-    kj::mv(cpp.groundwaterInformation)), _soilColumn(kj::heap<SoilColumn>(_simPs.p_LayerThickness,
-                                                                          cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-                                                                          _sitePs.vs_SoilParameters,
-                                                                          cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth))
+    : _sitePs(kj::mv(cpp.siteParameters)),
+    _envPs(kj::mv(cpp.userEnvironmentParameters)),
+    _cropPs(kj::mv(cpp.userCropParameters)),
+    _simPs(kj::mv(cpp.simulationParameters)),
+    _groundwaterInformation(kj::mv(cpp.groundwaterInformation)), _soilColumn(
+        kj::heap<SoilColumn>(_sitePs.layerThickness,
+                             cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
+                             _sitePs.vs_SoilParameters,
+                             cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth))
       , _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters)), _soilMoisture(
         kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters)), _soilOrganic(
         kj::heap<SoilOrganic>(*_soilColumn.get(), cpp.userSoilOrganicParameters)), _soilTransport(
@@ -902,7 +905,7 @@ double MonicaModel::avgCorg(double depth_m) const {
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for (int i = 0, nols = _simPs.p_NumberOfLayers; i < nols; i++) {
+  for (int i = 0, nols = _sitePs.numberOfLayers; i < nols; i++) {
     count++;
     sum += _soilColumn->at(i).vs_SoilOrganicCarbon(); //[kg C / kg Boden]
     lsum += _soilColumn->at(i).vs_LayerThickness;
@@ -940,7 +943,7 @@ double MonicaModel::sumNmin(double depth_m) const {
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for (int i = 0, nols = _simPs.p_NumberOfLayers; i < nols; i++) {
+  for (int i = 0, nols = _sitePs.numberOfLayers; i < nols; i++) {
     count++;
     sum += _soilColumn->at(i).get_SoilNmin(); //[kg N m-3]
     lsum += _soilColumn->at(i).vs_LayerThickness;
@@ -962,7 +965,7 @@ MonicaModel::sumNO3AtDay(double depth_m) const {
   double lsum = 0, sum = 0;
   int count = 0;
 
-  for (int i = 0, nols = _simPs.p_NumberOfLayers; i < nols; i++) {
+  for (int i = 0, nols = _sitePs.numberOfLayers; i < nols; i++) {
     count++;
     sum += _soilColumn->at(i).get_SoilNO3(); //[kg m-3]
     lsum += _soilColumn->at(i).vs_LayerThickness;

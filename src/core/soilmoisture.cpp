@@ -81,7 +81,7 @@ SoilMoisture::SoilMoisture(MonicaModel &mm, const SoilMoistureModuleParameters &
   pm_LeachingDepth = envPs.p_LeachingDepth;
 
   //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
-  pm_LayerThickness = mm.simulationParameters().p_LayerThickness;
+  pm_LayerThickness = mm.siteParameters().layerThickness;
 
   pm_LeachingDepthLayer = int(std::floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
 

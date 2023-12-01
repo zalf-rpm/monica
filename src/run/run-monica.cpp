@@ -190,8 +190,8 @@ json11::Json Env::to_json() const {
 
 string Env::toString() const {
   ostringstream s;
-  s << " noOfLayers: " << params.simulationParameters.p_NumberOfLayers
-    << " layerThickness: " << params.simulationParameters.p_LayerThickness
+  s << " noOfLayers: " << params.siteParameters.numberOfLayers
+    << " layerThickness: " << params.siteParameters.layerThickness
     << endl;
   s << "ClimateData: from: " << climateData.startDate().toString()
     << " to: " << climateData.endDate().toString() << endl;

@@ -466,6 +466,9 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
   double vs_ImpenetrableLayerDepth{ -1 }; //!< [m]
   double vs_SoilSpecificHumusBalanceCorrection{ 0.0 }; //humus equivalents
 
+  int numberOfLayers{ 20 };
+  double layerThickness{ 0.1 };
+
   Soil::SoilPMs vs_SoilParameters;
   //MeasuredGroundwaterTableInformation groundwaterInformation;
 };
@@ -656,8 +659,8 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   bool p_UseSecondaryYields{ true };
   bool p_UseAutomaticHarvestTrigger{ false };
 
-  int p_NumberOfLayers{ 20 };
-  double p_LayerThickness{ 0.1 };
+  //int p_NumberOfLayers{ 20 };
+  //double p_LayerThickness{ 0.1 };
 
   int p_StartPVIndex{ 0 };
   int p_JulianDayAutomaticFertilising{ 0 };
