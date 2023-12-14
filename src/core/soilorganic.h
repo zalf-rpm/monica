@@ -141,9 +141,14 @@ private:
   void fo_PoolUpdate();
   double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
   double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
+
+  double fo_ClayOnDecompostion_kaiteew(double d_SoilClayContent, double d_LimitClayEffect);
+  double fo_TempOnDecompostion_kaiteew(double d_SoilTemperature, double d_QTenFactor, double d_TempDecOptimal);
+  double fo_MoistOnDecompostion_kaiteew(double d_SoilMoisture_m3, double d_Saturation, double d_MoistureDecOptimal);
   double fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect);
-  double fo_TempOnDecompostion(double d_SoilTemperature, double d_QTenFactor, double d_TempDecOptimal);
-  double fo_MoistOnDecompostion(double d_SoilMoisture_m3, double d_Saturation, double d_MoistureDecOptimal);
+  double fo_TempOnDecompostion(double d_SoilTemperature);
+  double fo_MoistOnDecompostion(double d_SoilMoisture_pF);
+
   //double fo_MoistOnDecompostion(double d_SoilMoisture_pF, double d_MoistureDecOptimal);
   double fo_MoistOnHydrolysis(double d_SoilMoisture_pF);
   double fo_TempOnNitrification(double d_SoilTemperature);

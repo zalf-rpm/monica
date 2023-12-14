@@ -129,17 +129,13 @@ SoilOrganic::SoilOrganic(SoilColumn &sc, SoilOrganicModuleParameters userParams)
 
     // Initialisation of pool SMB_Slow [kg C m-3], changed by konstantin.aiteew@thuenen.de
     layer.vs_SMB_Slow = po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i];
-
     // Initialisation of pool SMB_Slow [kg C m-3]
-    //layer.vs_SMB_Slow = po_SOM_SlowUtilizationEfficiency
-    //  * po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i];
+    //layer.vs_SMB_Slow = po_SOM_SlowUtilizationEfficiency * po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i];
 
     // Initialisation of pool SMB_Fast [kg C m-3], changed by konstantin.aiteew@thuenen.de
     layer.vs_SMB_Fast = po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i];
-
     // Initialisation of pool SMB_Fast [kg C m-3]
-    //layer.vs_SMB_Fast = po_SOM_FastUtilizationEfficiency
-    //  * po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i];
+    //layer.vs_SMB_Fast = po_SOM_FastUtilizationEfficiency * po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i];
 
     // Initialisation of pool SOM_Slow [kg C m-3]
     layer.vs_SOM_Slow = vo_SoilOrganicC[i] / (1.0 + po_SOM_SlowDecCoeffStandard
@@ -341,6 +337,12 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters &params,
                                    * params.vo_AOM_DryMatterContent
                                    / 10000.0
                                    / layerThickness;
+        //added_Corg_amount =                             // prev code
+        //    vo_AddedOrganicMatterAmount
+        //    * params.vo_AOM_DryMatterContent
+        //    * OrganicConstants::po_AOM_to_C
+        //    / 10000.0
+        //    / layerThickness;
 
         // Converting AOM N content from kg N kg DM-1 to kg N m-3
         double added_Norg_amount = vo_AddedOrganicMatterNConcentration <= 0.0
@@ -845,15 +847,19 @@ void SoilOrganic::fo_MIT() {
   // Calculation of decay rate coefficients
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
-    double tod = fo_TempOnDecompostion(layi.get_Vs_SoilTemperature(),
+    double tod = fo_TempOnDecompostion_kaiteew(layi.get_Vs_SoilTemperature(),
                                        po_QTenFactor,
                                        po_TempDecOptimal);
-    //double mod = fo_MoistOnDecomposition(layi.vs_SoilMoisture_pF());
-    double mod = fo_MoistOnDecompostion(layi.get_Vs_SoilMoisture_m3(),
+    //tod = fo_TempOnDecompostion(layi.get_Vs_SoilTemperature()); // prev code
+
+    double mod = fo_MoistOnDecompostion_kaiteew(layi.get_Vs_SoilMoisture_m3(),
                                         layi.vs_Saturation(),
                                         po_MoistureDecOptimal);
-    double cod = fo_ClayOnDecompostion(layi.vs_SoilClayContent(),
+    //mod = fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF());  // prev code
+
+    double cod = fo_ClayOnDecompostion_kaiteew(layi.vs_SoilClayContent(),
                                        po_LimitClayEffect);
+    //cod = fo_ClayOnDecompostion(layi.vs_SoilClayContent(), po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
@@ -862,8 +868,8 @@ void SoilOrganic::fo_MIT() {
 
     vo_SMB_SlowMaintRateCoeff[i] = po_SMB_SlowMaintRateStandard * cod * tod * mod;
 
-    //vo_SMB_FastMaintRateCoeff[i] = po_SMB_FastMaintRateStandard * tod * mod;
     vo_SMB_FastMaintRateCoeff[i] = po_SMB_FastMaintRateStandard * cod * tod * mod;
+    //vo_SMB_FastMaintRateCoeff[i] = po_SMB_FastMaintRateStandard * tod * mod; // prev code
 
     vo_SMB_SlowMaintRate[i] = vo_SMB_SlowMaintRateCoeff[i] * layi.vs_SMB_Slow;
     vo_SMB_FastMaintRate[i] = vo_SMB_FastMaintRateCoeff[i] * layi.vs_SMB_Fast;
@@ -1542,15 +1548,19 @@ void SoilOrganic::fo_PoolUpdate() {
  * @author: konstantin.aiteew@thuenen.de
  * @return clayOnDecomposition
  */
-double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect) {
+double SoilOrganic::fo_ClayOnDecompostion_kaiteew(double d_SoilClayContent, double d_LimitClayEffect) {
   double clayOnDecomposition = 0.0;
 
   if (d_SoilClayContent >= 0.0 && d_SoilClayContent <= 1.0) {
     clayOnDecomposition =
-        (1.0 - d_LimitClayEffect) / (1.0 + exp(-3.14 + d_SoilClayContent * 16)) + (d_LimitClayEffect);
+        (1.0 - d_LimitClayEffect)
+        / (1.0 + exp(-3.14 + d_SoilClayContent * 16))
+        + d_LimitClayEffect;
   } else {
     vo_ErrorMessage = "irregular clay content";
   }
+
+  //cout << "clayOnDecomposition_kaiteew: " << clayOnDecomposition << endl;
   return clayOnDecomposition;
 }
 
@@ -1560,18 +1570,20 @@ double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_Lim
  * @param d_LimitClayEffect
  * @return
  */
-//double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect) {
-//  double fo_ClayOnDecompostion = 0.0;
-//
-//  if (d_SoilClayContent >= 0.0 && d_SoilClayContent <= d_LimitClayEffect) {
-//    fo_ClayOnDecompostion = 1.0 - 2.0 * d_SoilClayContent;
-//  } else if (d_SoilClayContent > d_LimitClayEffect && d_SoilClayContent <= 1.0) {
-//    fo_ClayOnDecompostion = 1.0 - 2.0 * d_LimitClayEffect;
-//  } else {
-//    vo_ErrorMessage = "irregular clay content";
-//  }
-//  return fo_ClayOnDecompostion;
-//}
+double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect) {
+  double fo_ClayOnDecompostion = 0.0;
+
+  if (d_SoilClayContent >= 0.0 && d_SoilClayContent <= d_LimitClayEffect) {
+    fo_ClayOnDecompostion = 1.0 - 2.0 * d_SoilClayContent;
+  } else if (d_SoilClayContent > d_LimitClayEffect && d_SoilClayContent <= 1.0) {
+    fo_ClayOnDecompostion = 1.0 - 2.0 * d_LimitClayEffect;
+  } else {
+    vo_ErrorMessage = "irregular clay content";
+  }
+
+  //cout << "clayOnDecomposition: " << fo_ClayOnDecompostion << endl;
+  return fo_ClayOnDecompostion;
+}
 
 /**
  * @brief Internal Function Temperature effect on SOM decomposition
@@ -1579,7 +1591,7 @@ double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_Lim
  * @author konstantin.aiteew@thuenen.de
  * @return tempOnDecomposition
  */
-double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature, double d_QTenFactor, double d_TempDecOptimal) {
+double SoilOrganic::fo_TempOnDecompostion_kaiteew(double d_SoilTemperature, double d_QTenFactor, double d_TempDecOptimal) {
   double tempOnDecomposition = 0.0;
 
   if (d_SoilTemperature > 0.0 && d_SoilTemperature <= 100.0) {
@@ -1591,32 +1603,33 @@ double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature, double d_QTe
   } else {
     vo_ErrorMessage = "irregular soil temperature";
   }
+
+  //cout << "tempOnDecomposition_kaiteew: " << tempOnDecomposition << endl;
   return tempOnDecomposition;
 }
 
-/**
- * @brief Internal Function Temperature effect on SOM decompostion
- * @param d_SoilTemperature
- * @return
- */
-// if (d_SoilTemperature <= 0.0 && d_SoilTemperature > -40.0) {
+double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature) {
+  double fo_TempOnDecompostion = 0.0;
 
-//
-//   fo_TempOnDecompostion = 0.0;
+  if (d_SoilTemperature <= 0.0 && d_SoilTemperature > -40.0) {
 
-// } else if (d_SoilTemperature > 0.0 && d_SoilTemperature <= 20.0) {
+    //
+    fo_TempOnDecompostion = 0.0;
 
-//   fo_TempOnDecompostion = 0.1 * d_SoilTemperature;
+  } else if (d_SoilTemperature > 0.0 && d_SoilTemperature <= 20.0) {
 
-// } else if (d_SoilTemperature > 20.0 && d_SoilTemperature <= 70.0) {
+    fo_TempOnDecompostion = 0.1 * d_SoilTemperature;
 
-//   fo_TempOnDecompostion = exp(0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature));
-// } else {
-//   vo_ErrorMessage = "irregular soil temperature";
-// }
+  } else if (d_SoilTemperature > 20.0 && d_SoilTemperature <= 70.0) {
 
-//  return fo_TempOnDecompostion;
-//}
+    fo_TempOnDecompostion = exp(0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature));
+  } else {
+    vo_ErrorMessage = "irregular soil temperature";
+  }
+
+  //cout << "tempOnDecomposition: " << fo_TempOnDecompostion << endl;
+  return fo_TempOnDecompostion;
+}
 
 /**
  * @brief Internal Function Moisture effect on SOM decompostion
@@ -1624,15 +1637,17 @@ double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature, double d_QTe
  * @author konstantin.aiteew@thuenen.de
  * @return soil moisture on decomposition
  */
-double SoilOrganic::fo_MoistOnDecompostion(double d_SoilMoisture_m3, double d_Saturation,
+double SoilOrganic::fo_MoistOnDecompostion_kaiteew(double d_SoilMoisture_m3, double d_Saturation,
                                            double d_MoistureDecOptimal) {
   double moistOnDecomposition = 0.0;
 
-  if ((d_SoilMoisture_m3 / d_Saturation) >= 0.0 && (d_SoilMoisture_m3 / d_Saturation) <= 1.0) {
-    moistOnDecomposition = exp(-18 * pow(((d_SoilMoisture_m3 / d_Saturation) - d_MoistureDecOptimal), 2));
+  if (d_SoilMoisture_m3 / d_Saturation >= 0.0 && d_SoilMoisture_m3 / d_Saturation <= 1.0) {
+    moistOnDecomposition = exp(-18 * pow((d_SoilMoisture_m3 / d_Saturation - d_MoistureDecOptimal / 100.), 2));
   } else {
     vo_ErrorMessage = "irregular soil water content";
   }
+
+  //cout << "moistOnDecomposition_kaiteew: " << moistOnDecomposition << endl;
   return moistOnDecomposition;
 }
 
@@ -1641,35 +1656,36 @@ double SoilOrganic::fo_MoistOnDecompostion(double d_SoilMoisture_m3, double d_Sa
  * @param d_SoilMoisture_pF
  * @return
  */
-//double SoilOrganic::fo_MoistOnDecompostion(double d_SoilMoisture_pF) {
-//  double fo_MoistOnDecompostion = 0.0;
+double SoilOrganic::fo_MoistOnDecompostion(double d_SoilMoisture_pF) {
+  double fo_MoistOnDecompostion = 0.0;
 
-//  if (fabs(d_SoilMoisture_pF) <= 1.0E-7) {
+  if (fabs(d_SoilMoisture_pF) <= 1.0E-7) {
 
-//   fo_MoistOnDecompostion = 0.6;
+   fo_MoistOnDecompostion = 0.6;
 
-//  } else if (d_SoilMoisture_pF > 0.0 && d_SoilMoisture_pF <= 1.5) {
+  } else if (d_SoilMoisture_pF > 0.0 && d_SoilMoisture_pF <= 1.5) {
 
-//    fo_MoistOnDecompostion = 0.6 + 0.4 * (d_SoilMoisture_pF / 1.5);
+    fo_MoistOnDecompostion = 0.6 + 0.4 * (d_SoilMoisture_pF / 1.5);
 
-//  } else if (d_SoilMoisture_pF > 1.5 && d_SoilMoisture_pF <= 2.5) {
+  } else if (d_SoilMoisture_pF > 1.5 && d_SoilMoisture_pF <= 2.5) {
 
-//    fo_MoistOnDecompostion = 1.0;
+    fo_MoistOnDecompostion = 1.0;
 
-//  } else if (d_SoilMoisture_pF > 2.5 && d_SoilMoisture_pF <= 6.5) {
+  } else if (d_SoilMoisture_pF > 2.5 && d_SoilMoisture_pF <= 6.5) {
 
-//    fo_MoistOnDecompostion = 1.0 - ((d_SoilMoisture_pF - 2.5) / 4.0);
+    fo_MoistOnDecompostion = 1.0 - ((d_SoilMoisture_pF - 2.5) / 4.0);
 
-// } else if (d_SoilMoisture_pF > 6.5) {
+ } else if (d_SoilMoisture_pF > 6.5) {
 
-//    fo_MoistOnDecompostion = 0.0;
+    fo_MoistOnDecompostion = 0.0;
 
-//  } else {
-//    vo_ErrorMessage = "irregular soil water content";
-//  }
+  } else {
+    vo_ErrorMessage = "irregular soil water content";
+  }
 
-//  return fo_MoistOnDecompostion;
-//}
+  //cout << "moistOnDecomposition: " << fo_MoistOnDecompostion << endl;
+  return fo_MoistOnDecompostion;
+}
 
 /**
  * @brief Internal Function Moisture effect on urea hydrolysis
