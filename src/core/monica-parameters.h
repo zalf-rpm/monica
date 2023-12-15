@@ -982,6 +982,9 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
   double po_Inhibitor_NH3{ 1.0 }; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
   double ps_MaxMineralisationDepth{ 0.4 };
 
+  bool __enable_kaiteew_TempOnDecompostion__{ false };
+  bool __enable_kaiteew_MoistOnDecompostion__{ true };
+  bool __enable_kaiteew_ClayOnDecompostion__{ true };
   SticsParameters sticsParams;
 };
 

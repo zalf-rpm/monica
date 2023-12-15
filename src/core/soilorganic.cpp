@@ -847,19 +847,22 @@ void SoilOrganic::fo_MIT() {
   // Calculation of decay rate coefficients
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
-    double tod = fo_TempOnDecompostion_kaiteew(layi.get_Vs_SoilTemperature(),
-                                       po_QTenFactor,
-                                       po_TempDecOptimal);
-    //tod = fo_TempOnDecompostion(layi.get_Vs_SoilTemperature()); // prev code
+    double tod = _params.__enable_kaiteew_TempOnDecompostion__
+                 ? fo_TempOnDecompostion_kaiteew(layi.get_Vs_SoilTemperature(),
+                                                 po_QTenFactor,
+                                                 po_TempDecOptimal)
+                 : fo_TempOnDecompostion(layi.get_Vs_SoilTemperature()); // prev code
 
-    double mod = fo_MoistOnDecompostion_kaiteew(layi.get_Vs_SoilMoisture_m3(),
-                                        layi.vs_Saturation(),
-                                        po_MoistureDecOptimal);
-    //mod = fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF());  // prev code
+    double mod = _params.__enable_kaiteew_MoistOnDecompostion__
+                 ? fo_MoistOnDecompostion_kaiteew(layi.get_Vs_SoilMoisture_m3(),
+                                                 layi.vs_Saturation(),
+                                                 po_MoistureDecOptimal)
+                 : fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF()); // prev code
 
-    double cod = fo_ClayOnDecompostion_kaiteew(layi.vs_SoilClayContent(),
-                                       po_LimitClayEffect);
-    //cod = fo_ClayOnDecompostion(layi.vs_SoilClayContent(), po_LimitClayEffect); // prev code
+    double cod = _params.__enable_kaiteew_ClayOnDecompostion__
+                 ? fo_ClayOnDecompostion_kaiteew(layi.vs_SoilClayContent(),
+                                                 po_LimitClayEffect)
+                 : fo_ClayOnDecompostion(layi.vs_SoilClayContent(), po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
