@@ -1590,18 +1590,18 @@ double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_Lim
 
 /**
  * @brief Internal Function Temperature effect on SOM decomposition
- * @param d_SoilTemperature, d_QTenFactor, d_TempDecOptimal
+ * @param soilTemperature, QTenFactor, tempDecOptimal
  * @author konstantin.aiteew@thuenen.de
  * @return tempOnDecomposition
  */
-double SoilOrganic::fo_TempOnDecompostion_kaiteew(double d_SoilTemperature, double d_QTenFactor, double d_TempDecOptimal) {
+double SoilOrganic::fo_TempOnDecompostion_kaiteew(double soilTemperature, double QTenFactor, double tempDecOptimal) {
   double tempOnDecomposition = 0.0;
 
-  if (d_SoilTemperature > 0.0 && d_SoilTemperature <= 100.0) {
-    tempOnDecomposition = 1.0 / pow((1.0 + exp(d_SoilTemperature - (2.72 + d_TempDecOptimal))),
-                                    (d_QTenFactor / (d_TempDecOptimal / 3.14))) *
-                          pow((-1.0 + d_QTenFactor), (d_SoilTemperature / 15.76));
-  } else if (d_SoilTemperature <= 0.0 && d_SoilTemperature > -50.0) {
+  if (soilTemperature > 0.0 && soilTemperature <= 100.0) {
+    tempOnDecomposition = 1.0 / pow(1.0 + exp(soilTemperature - 2.72 + tempDecOptimal),
+                                    QTenFactor / (tempDecOptimal / 3.14))
+                          * (-1.0 + pow(QTenFactor, soilTemperature / 15.76));
+  } else if (soilTemperature <= 0.0 && soilTemperature > -50.0) {
     tempOnDecomposition = 0.0;
   } else {
     vo_ErrorMessage = "irregular soil temperature";
