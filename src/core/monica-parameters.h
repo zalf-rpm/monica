@@ -961,9 +961,9 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
   double po_PartSOM_to_SMB_Fast{ 0.0002 }; // 0.0002 [], optimised
   double po_CN_Ratio_SMB{ 6.70 }; // 6.70 [], from DAISY manual
   double po_LimitClayEffect{ 0.25 }; // 0.25 [kg kg-1], from DAISY manual
-  double po_QTenFactor{ 2.4 }; // 2.4 [] default value, analysis literature
-  double po_TempDecOptimal{ 38 }; // 38 [] default value, analysis literature
-  double po_MoistureDecOptimal{ 0.45 }; // 0.45 [] default value, analysis literature
+  double po_QTenFactor{ 2.9 }; // 2.4 [] default value, analysis literature
+  double po_TempDecOptimal{ 38 }; // 38 [°C] default value, analysis literature
+  double po_MoistureDecOptimal{ 0.45 }; // 0.45 [fraction] default value, analysis literature
   double po_AmmoniaOxidationRateCoeffStandard{ 1.0e-1 }; // 1.0e-1 [d-1], from DAISY manual
   double po_NitriteOxidationRateCoeffStandard{ 9.0e-1 }; // 9.0e-1 [d-1], fudged by Florian Stange
   double po_TransportRateCoeff{ 0.1 }; // 0.1 [d-1], from DAISY manual
@@ -982,7 +982,7 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
   double po_Inhibitor_NH3{ 1.0 }; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
   double ps_MaxMineralisationDepth{ 0.4 };
 
-  bool __enable_kaiteew_TempOnDecompostion__{ false };
+  bool __enable_kaiteew_TempOnDecompostion__{ true };
   bool __enable_kaiteew_MoistOnDecompostion__{ true };
   bool __enable_kaiteew_ClayOnDecompostion__{ true };
   SticsParameters sticsParams;
