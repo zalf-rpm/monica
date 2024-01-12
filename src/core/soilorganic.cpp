@@ -731,10 +731,6 @@ void SoilOrganic::fo_MIT() {
   double po_SMB_SlowMaintRateStandard = _params.po_SMB_SlowMaintRateStandard;
   double po_SMB_FastDeathRateStandard = _params.po_SMB_FastDeathRateStandard;
   double po_SMB_FastMaintRateStandard = _params.po_SMB_FastMaintRateStandard;
-  double po_LimitClayEffect = _params.po_LimitClayEffect;
-  double po_QTenFactor = _params.po_QTenFactor;
-  double po_TempDecOptimal = _params.po_TempDecOptimal;
-  double po_MoistureDecOptimal = _params.po_MoistureDecOptimal;
   double po_SOM_SlowUtilizationEfficiency = _params.po_SOM_SlowUtilizationEfficiency;
   double po_SOM_FastUtilizationEfficiency = _params.po_SOM_FastUtilizationEfficiency;
   double po_PartSOM_Fast_to_SOM_Slow = _params.po_PartSOM_Fast_to_SOM_Slow;
@@ -849,20 +845,20 @@ void SoilOrganic::fo_MIT() {
     auto &layi = soilColumn.at(i);
     double tod = _params.__enable_kaiteew_TempOnDecompostion__
                  ? fo_TempOnDecompostion_kaiteew(layi.get_Vs_SoilTemperature(),
-                                                 po_QTenFactor,
-                                                 po_TempDecOptimal)
+                                                 _params.po_QTenFactor,
+                                                 _params.po_TempDecOptimal)
                  : fo_TempOnDecompostion(layi.get_Vs_SoilTemperature()); // prev code
 
     double mod = _params.__enable_kaiteew_MoistOnDecompostion__
                  ? fo_MoistOnDecompostion_kaiteew(layi.get_Vs_SoilMoisture_m3(),
                                                  layi.vs_Saturation(),
-                                                 po_MoistureDecOptimal)
+                                                 _params.po_MoistureDecOptimal)
                  : fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF()); // prev code
 
     double cod = _params.__enable_kaiteew_ClayOnDecompostion__
                  ? fo_ClayOnDecompostion_kaiteew(layi.vs_SoilClayContent(),
-                                                 po_LimitClayEffect)
-                 : fo_ClayOnDecompostion(layi.vs_SoilClayContent(), po_LimitClayEffect); // prev code
+                                                 _params.po_LimitClayEffect)
+                 : fo_ClayOnDecompostion(layi.vs_SoilClayContent(), _params.po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
@@ -1598,7 +1594,7 @@ double SoilOrganic::fo_TempOnDecompostion_kaiteew(double soilTemperature, double
   double tempOnDecomposition = 0.0;
 
   if (soilTemperature > 0.0 && soilTemperature <= 100.0) {
-    tempOnDecomposition = 1.0 / pow(1.0 + exp(soilTemperature - 2.72 + tempDecOptimal),
+    tempOnDecomposition = 1.0 / pow(1.0 + exp(soilTemperature - (2.72 + tempDecOptimal)),
                                     QTenFactor / (tempDecOptimal / 3.14))
                           * (-1.0 + pow(QTenFactor, soilTemperature / 15.76));
   } else if (soilTemperature <= 0.0 && soilTemperature > -50.0) {
@@ -1641,11 +1637,11 @@ double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature) {
  * @return soil moisture on decomposition
  */
 double SoilOrganic::fo_MoistOnDecompostion_kaiteew(double d_SoilMoisture_m3, double d_Saturation,
-                                           double d_MoistureDecOptimal) {
+                                                   double d_MoistureDecOptimal) {
   double moistOnDecomposition = 0.0;
 
   if (d_SoilMoisture_m3 / d_Saturation >= 0.0 && d_SoilMoisture_m3 / d_Saturation <= 1.0) {
-    moistOnDecomposition = exp(-18 * pow((d_SoilMoisture_m3 / d_Saturation - d_MoistureDecOptimal / 100.), 2));
+    moistOnDecomposition = exp(-18 * pow((d_SoilMoisture_m3 / d_Saturation - d_MoistureDecOptimal), 2));
   } else {
     vo_ErrorMessage = "irregular soil water content";
   }
