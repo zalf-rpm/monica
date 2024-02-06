@@ -133,9 +133,9 @@ public:
                           "<attr>", "Which attribute to read the MONICA env from.")
         .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
                           "<attr>", "Which attribute to write the MONICA result to.")
-        .addOptionWithArg({'i', "in_sr"}, KJ_BIND_METHOD(*this, setInSr),
+        .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
                           "<sturdy_ref>", "Sturdy ref to input channel.")
-        .addOptionWithArg({'o', "out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
+        .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
                           "<sturdy_ref>", "Sturdy ref to output channel.")
         .callAfterParsing(KJ_BIND_METHOD(*this, startChannel))
         .build();
