@@ -77,6 +77,8 @@ public:
     typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
     typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
+    //std::cout << "inSr: " << inSr.cStr() << std::endl;
+    //std::cout << "outSr: " << outSr.cStr() << std::endl;
     auto inp = conMan.tryConnectB(inSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
     //auto runMonicaClient = conMan.tryConnectB("capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
@@ -88,8 +90,10 @@ public:
       while (true) {
         auto msg = inp.readRequest().send().wait(ioContext.waitScope);
         // check for end of data from in port
-        if (msg.isDone()) break;
-        else {
+        if (msg.isDone()) {
+          //cout << "monica-capnp-fbp-component-main: received done message" << endl;
+          break;
+        } else {
           auto inIp = msg.getValue();
           auto attr = mas::infrastructure::common::getIPAttr(inIp, fromAttr);
           auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
@@ -114,12 +118,12 @@ public:
 
       }
 
-      auto wreq = outp.writeRequest();
-      wreq.setDone();
-      wreq.send().wait(ioContext.waitScope);
+      outp.closeRequest().send().wait(ioContext.waitScope);
+      //cout << "monica-capnp-fbp-component-main: closed result out port" << endl;
     }
     catch (const kj::Exception &e) {
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
+      //std::cout << "Exception: " << e.getDescription().cStr() << endl;
     }
 
     return true;
