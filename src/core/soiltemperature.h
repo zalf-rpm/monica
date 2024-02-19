@@ -36,6 +36,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #ifdef AMEI
 #include "SoilTemperatureCompComponent.h"
+#include "STEMP_Component.h"
 #endif
 
 namespace monica
@@ -67,12 +68,23 @@ private:
   SoilTemperatureModuleParameters _params;
 
 #ifdef AMEI
-  Monica_SoilTemp::SoilTemperatureCompComponent _soilTempComp;
-  Monica_SoilTemp::SoilTemperatureCompState _soilTempState;
-  Monica_SoilTemp::SoilTemperatureCompState _soilTempState1;
-  Monica_SoilTemp::SoilTemperatureCompExogenous _soilTempExo;
-  Monica_SoilTemp::SoilTemperatureCompRate _soilTempRate;
-  Monica_SoilTemp::SoilTemperatureCompAuxiliary _soilTempAux;
+  struct Monica_SoilTemp_T {
+    Monica_SoilTemp::SoilTemperatureCompComponent soilTempComp;
+    Monica_SoilTemp::SoilTemperatureCompState soilTempState;
+    Monica_SoilTemp::SoilTemperatureCompState soilTempState1;
+    Monica_SoilTemp::SoilTemperatureCompExogenous soilTempExo;
+    Monica_SoilTemp::SoilTemperatureCompRate soilTempRate;
+    Monica_SoilTemp::SoilTemperatureCompAuxiliary soilTempAux;
+  } _instance_Monica_SoilTemp;
+
+  struct DSSAT_ST_standalone_T {
+    DSSAT_ST_standalone::STEMP_Component soilTempComp;
+    DSSAT_ST_standalone::STEMP_State soilTempState;
+    DSSAT_ST_standalone::STEMP_State soilTempState1;
+    DSSAT_ST_standalone::STEMP_Exogenous soilTempExo;
+    DSSAT_ST_standalone::STEMP_Rate soilTempRate;
+    DSSAT_ST_standalone::STEMP_Auxiliary soilTempAux;
+  } _instance_DSSAT_ST_standalone;
 #endif
 
   struct SC {

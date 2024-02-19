@@ -54,7 +54,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
   debug() << "Constructor: SoilColumn" << endl;
 
 #ifdef AMEI
-  auto &st = _soilTempComp;
+  auto &st = _instance_Monica_SoilTemp.soilTempComp;
   st.settimeStep(_monica.environmentParameters().p_timeStep);
   st.setsoilMoistureConst(_params.pt_SoilMoisture);
   st.setbaseTemp(_params.pt_BaseTemperature);
@@ -89,8 +89,25 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
   st.setdampingFactor(_dampingFactor);
 
   //init soil temp component
-  _soilTempComp._SoilTemperature.Init(_soilTempState, _soilTempState1,
-                                      _soilTempRate, _soilTempAux, _soilTempExo);
+  _instance_Monica_SoilTemp.soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp.soilTempState,
+                                                               _instance_Monica_SoilTemp.soilTempState1,
+                                                               _instance_Monica_SoilTemp.soilTempRate,
+                                                               _instance_Monica_SoilTemp.soilTempAux,
+                                                               _instance_Monica_SoilTemp.soilTempExo);
+
+//  auto &st2 = _instance_DSSAT_ST_standalone.soilTempComp;
+//  st2.setISWWAT("Y");
+//  st2.setNLAYR(int(_noOfSoilLayers));
+//  for (const auto &sc: soilColumn.sc) {
+//    st2.set
+//    lts.push_back(sc.vs_LayerThickness);
+//    bds.push_back(sc.vs_SoilBulkDensity());
+//    sats.push_back(sc.vs_Saturation());
+//    oms.push_back(sc.vs_SoilOrganicMatter());
+//  }
+
+
+
 #endif
 
   //initialize the two additional layers to the same values
@@ -309,35 +326,39 @@ void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModul
 //! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad) {
 #ifdef AMEI
-  _soilTempExo.settmin(tmin);
-  _soilTempExo.settmax(tmax);
-  _soilTempExo.setglobrad(globrad);
-  if (_monica.cropGrowth()) _soilTempExo.setsoilCoverage(_monica.cropGrowth()->get_SoilCoverage());
+  _instance_Monica_SoilTemp.soilTempExo.settmin(tmin);
+  _instance_Monica_SoilTemp.soilTempExo.settmax(tmax);
+  _instance_Monica_SoilTemp.soilTempExo.setglobrad(globrad);
+  if (_monica.cropGrowth()) _instance_Monica_SoilTemp.soilTempExo.setsoilCoverage(_monica.cropGrowth()->get_SoilCoverage());
   else {
-    if (_monica.simulationParameters().customData["LAI"].is_null()) _soilTempExo.setsoilCoverage(0);
+    if (_monica.simulationParameters().customData["LAI"].is_null()) _instance_Monica_SoilTemp.soilTempExo.setsoilCoverage(0);
     else {
       auto lai = _monica.simulationParameters().customData["LAI"].number_value();
-      _soilTempExo.setsoilCoverage(1.0 - (exp(-0.5 * lai)));
+      _instance_Monica_SoilTemp.soilTempExo.setsoilCoverage(1.0 - (exp(-0.5 * lai)));
     }
   }
   if (_monica.soilMoisture().get_SnowDepth() > 0.0) {
-    _soilTempExo.sethasSnowCover(true);
-    _soilTempExo.setsoilSurfaceTemperatureBelowSnow(_monica.soilMoisture().getTemperatureUnderSnow());
+    _instance_Monica_SoilTemp.soilTempExo.sethasSnowCover(true);
+    _instance_Monica_SoilTemp.soilTempExo.setsoilSurfaceTemperatureBelowSnow(_monica.soilMoisture().getTemperatureUnderSnow());
   }
   else {
-    _soilTempExo.sethasSnowCover(false);
+    _instance_Monica_SoilTemp.soilTempExo.sethasSnowCover(false);
   }
   if (!_monica.simulationParameters().customData["AWC"].is_null()) {
     auto awc = _monica.simulationParameters().customData["AWC"].number_value();
-    _soilTempComp.setsoilMoistureConst(awc);
+    _instance_Monica_SoilTemp.soilTempComp.setsoilMoistureConst(awc);
   }
 
-  _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+  _instance_Monica_SoilTemp.soilTempComp.Calculate_Model(_instance_Monica_SoilTemp.soilTempState,
+                                                         _instance_Monica_SoilTemp.soilTempState1,
+                                                         _instance_Monica_SoilTemp.soilTempRate,
+                                                         _instance_Monica_SoilTemp.soilTempAux,
+                                                         _instance_Monica_SoilTemp.soilTempExo);
 
   for (size_t i = 0; i < _noOfSoilLayers; i++) {
-    soilColumn.at(i).set_Vs_SoilTemperature(_soilTempState.getsoilTemperature().at(i));
+    soilColumn.at(i).set_Vs_SoilTemperature(_instance_Monica_SoilTemp.soilTempState.getsoilTemperature().at(i));
   }
-  _soilSurfaceTemperature = _soilTempState.getsoilSurfaceTemperature();
+  _soilSurfaceTemperature = _instance_Monica_SoilTemp.soilTempState.getsoilSurfaceTemperature();
 #elif
   const size_t groundLayer = _noOfTempLayers - 2;
   const size_t bottomLayer = _noOfTempLayers - 1;

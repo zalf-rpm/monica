@@ -29,6 +29,11 @@ if (NOT TARGET Monica_SoilTemp_lib)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/cpp/Monica_SoilTemp amei-components/Monica_SoilTemp)
 endif ()
 
+if (NOT TARGET DSSAT_ST_standalone_lib)
+    message(STATUS "target: DSSAT_ST_standalone_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_ST_standalone/src/cpp/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)
+endif ()
+
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
     add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/capnproto_schemas)
@@ -212,6 +217,7 @@ target_link_libraries(monica_lib
         common_lib
         climate_file_io_lib
         Monica_SoilTemp_lib
+        DSSAT_ST_standalone_lib
         )
 
 #message(STATUS "json11_lib_interface_includes:")
