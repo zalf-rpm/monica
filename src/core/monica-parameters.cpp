@@ -966,7 +966,8 @@ Errors SiteParameters::merge(json11::Json j) {
   set_double_value(layerThickness, j, "LayerThickness");
 
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
-    auto p = createSoilPMs(j["SoilProfileParameters"].array_items(), layerThickness, numberOfLayers);
+    initSoilProfileSpec = j["SoilProfileParameters"].array_items();
+    auto p = createEqualSizedSoilPMs(initSoilProfileSpec, layerThickness, numberOfLayers);
     vs_SoilParameters = kj::mv(p.first);
     if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
     if (p.second.failure()) res.append(p.second);
@@ -1847,26 +1848,28 @@ Errors SoilTemperatureModuleParameters::merge(json11::Json j) {
   set_double_value(pt_SpecificHeatCapacityHumus, j, "SpecificHeatCapacityHumus");
   set_double_value(pt_SoilAlbedo, j, "SoilAlbedo");
   set_double_value(pt_SoilMoisture, j, "SoilMoisture");
+  set_double_value(dampingFactor, j, "DampingFactor");
 
   return res;
 }
 
 json11::Json SoilTemperatureModuleParameters::to_json() const {
   return json11::Json::object
-      {{"type",                       "SoilTemperatureModuleParameters"},
-       {"NTau",                       pt_NTau},
-       {"InitialSurfaceTemperature",  pt_InitialSurfaceTemperature},
-       {"BaseTemperature",            pt_BaseTemperature},
-       {"QuartzRawDensity",           pt_QuartzRawDensity},
-       {"DensityAir",                 pt_DensityAir},
-       {"DensityWater",               pt_DensityWater},
-       {"DensityHumus",               pt_DensityHumus},
-       {"SpecificHeatCapacityAir",    pt_SpecificHeatCapacityAir},
+      {{"type", "SoilTemperatureModuleParameters"},
+       {"NTau", pt_NTau},
+       {"InitialSurfaceTemperature", pt_InitialSurfaceTemperature},
+       {"BaseTemperature", pt_BaseTemperature},
+       {"QuartzRawDensity", pt_QuartzRawDensity},
+       {"DensityAir", pt_DensityAir},
+       {"DensityWater", pt_DensityWater},
+       {"DensityHumus", pt_DensityHumus},
+       {"SpecificHeatCapacityAir", pt_SpecificHeatCapacityAir},
        {"SpecificHeatCapacityQuartz", pt_SpecificHeatCapacityQuartz},
-       {"SpecificHeatCapacityWater",  pt_SpecificHeatCapacityWater},
-       {"SpecificHeatCapacityHumus",  pt_SpecificHeatCapacityHumus},
-       {"SoilAlbedo",                 pt_SoilAlbedo},
-       {"SoilMoisture",               pt_SoilMoisture}
+       {"SpecificHeatCapacityWater", pt_SpecificHeatCapacityWater},
+       {"SpecificHeatCapacityHumus", pt_SpecificHeatCapacityHumus},
+       {"SoilAlbedo", pt_SoilAlbedo},
+       {"SoilMoisture", pt_SoilMoisture},
+       {"DampingFactor", dampingFactor}
       };
 }
 

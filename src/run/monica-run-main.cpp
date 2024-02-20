@@ -213,8 +213,8 @@ int main(int argc, char **argv) {
     if (!soilSR.empty()) {
       auto sp = conMan.tryConnectB(soilSR).castAs<mas::schema::soil::Profile>();
       auto soilpsj = fromCapnpSoilProfile(sp).wait(ioContext.waitScope);
-      auto soilps = Soil::createSoilPMs(soilpsj, env.params.siteParameters.layerThickness,
-                                        env.params.siteParameters.numberOfLayers);
+      auto soilps = Soil::createEqualSizedSoilPMs(soilpsj, env.params.siteParameters.layerThickness,
+                                                  env.params.siteParameters.numberOfLayers);
       if (soilps.second.failure()) printPossibleErrors(soilps.second, activateDebug);
       else env.params.siteParameters.vs_SoilParameters = soilps.first;
     }

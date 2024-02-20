@@ -53,63 +53,6 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
       , _heatFlow(_noOfTempLayers, 0.0) {
   debug() << "Constructor: SoilColumn" << endl;
 
-#ifdef AMEI
-  auto &st = _instance_Monica_SoilTemp.soilTempComp;
-  st.settimeStep(_monica.environmentParameters().p_timeStep);
-  st.setsoilMoistureConst(_params.pt_SoilMoisture);
-  st.setbaseTemp(_params.pt_BaseTemperature);
-  st.setinitialSurfaceTemp(_params.pt_InitialSurfaceTemperature);
-  st.setdensityAir(_params.pt_DensityAir);
-  st.setspecificHeatCapacityAir(_params.pt_SpecificHeatCapacityAir);
-  st.setdensityHumus(_params.pt_DensityHumus);
-  st.setspecificHeatCapacityHumus(_params.pt_SpecificHeatCapacityHumus);
-  st.setdensityWater(_params.pt_DensityWater);
-  st.setspecificHeatCapacityWater(_params.pt_SpecificHeatCapacityWater);
-  st.setquartzRawDensity(_params.pt_QuartzRawDensity);
-  st.setspecificHeatCapacityQuartz(_params.pt_SpecificHeatCapacityQuartz);
-  st.setnTau(_params.pt_NTau);
-  st.setnoOfTempLayers(int(_noOfTempLayers));
-  st.setnoOfSoilLayers(int(_noOfSoilLayers));
-  std::vector<double> lts;
-  std::vector<double> bds;
-  std::vector<double> sats;
-  std::vector<double> oms;
-  for (const auto &sc: soilColumn.sc) {
-    lts.push_back(sc.vs_LayerThickness);
-    bds.push_back(sc.vs_SoilBulkDensity());
-    sats.push_back(sc.vs_Saturation());
-    oms.push_back(sc.vs_SoilOrganicMatter());
-  }
-  lts.push_back(soilColumn.sc.back().vs_LayerThickness);
-  lts.push_back(soilColumn.sc.back().vs_LayerThickness);
-  st.setlayerThickness(lts);
-  st.setsoilBulkDensity(bds);
-  st.setsaturation(sats);
-  st.setsoilOrganicMatter(oms);
-  st.setdampingFactor(_dampingFactor);
-
-  //init soil temp component
-  _instance_Monica_SoilTemp.soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp.soilTempState,
-                                                               _instance_Monica_SoilTemp.soilTempState1,
-                                                               _instance_Monica_SoilTemp.soilTempRate,
-                                                               _instance_Monica_SoilTemp.soilTempAux,
-                                                               _instance_Monica_SoilTemp.soilTempExo);
-
-//  auto &st2 = _instance_DSSAT_ST_standalone.soilTempComp;
-//  st2.setISWWAT("Y");
-//  st2.setNLAYR(int(_noOfSoilLayers));
-//  for (const auto &sc: soilColumn.sc) {
-//    st2.set
-//    lts.push_back(sc.vs_LayerThickness);
-//    bds.push_back(sc.vs_SoilBulkDensity());
-//    sats.push_back(sc.vs_Saturation());
-//    oms.push_back(sc.vs_SoilOrganicMatter());
-//  }
-
-
-
-#endif
-
   //initialize the two additional layers to the same values
   //as the bottom most standard soil layer
   //even though this hadn't been done before it was ok, 
@@ -325,41 +268,6 @@ void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModul
 
 //! Single calculation step
 void SoilTemperature::step(double tmin, double tmax, double globrad) {
-#ifdef AMEI
-  _instance_Monica_SoilTemp.soilTempExo.settmin(tmin);
-  _instance_Monica_SoilTemp.soilTempExo.settmax(tmax);
-  _instance_Monica_SoilTemp.soilTempExo.setglobrad(globrad);
-  if (_monica.cropGrowth()) _instance_Monica_SoilTemp.soilTempExo.setsoilCoverage(_monica.cropGrowth()->get_SoilCoverage());
-  else {
-    if (_monica.simulationParameters().customData["LAI"].is_null()) _instance_Monica_SoilTemp.soilTempExo.setsoilCoverage(0);
-    else {
-      auto lai = _monica.simulationParameters().customData["LAI"].number_value();
-      _instance_Monica_SoilTemp.soilTempExo.setsoilCoverage(1.0 - (exp(-0.5 * lai)));
-    }
-  }
-  if (_monica.soilMoisture().get_SnowDepth() > 0.0) {
-    _instance_Monica_SoilTemp.soilTempExo.sethasSnowCover(true);
-    _instance_Monica_SoilTemp.soilTempExo.setsoilSurfaceTemperatureBelowSnow(_monica.soilMoisture().getTemperatureUnderSnow());
-  }
-  else {
-    _instance_Monica_SoilTemp.soilTempExo.sethasSnowCover(false);
-  }
-  if (!_monica.simulationParameters().customData["AWC"].is_null()) {
-    auto awc = _monica.simulationParameters().customData["AWC"].number_value();
-    _instance_Monica_SoilTemp.soilTempComp.setsoilMoistureConst(awc);
-  }
-
-  _instance_Monica_SoilTemp.soilTempComp.Calculate_Model(_instance_Monica_SoilTemp.soilTempState,
-                                                         _instance_Monica_SoilTemp.soilTempState1,
-                                                         _instance_Monica_SoilTemp.soilTempRate,
-                                                         _instance_Monica_SoilTemp.soilTempAux,
-                                                         _instance_Monica_SoilTemp.soilTempExo);
-
-  for (size_t i = 0; i < _noOfSoilLayers; i++) {
-    soilColumn.at(i).set_Vs_SoilTemperature(_instance_Monica_SoilTemp.soilTempState.getsoilTemperature().at(i));
-  }
-  _soilSurfaceTemperature = _instance_Monica_SoilTemp.soilTempState.getsoilSurfaceTemperature();
-#elif
   const size_t groundLayer = _noOfTempLayers - 2;
   const size_t bottomLayer = _noOfTempLayers - 1;
 
@@ -422,7 +330,6 @@ void SoilTemperature::step(double tmin, double tmax, double globrad) {
 
   _volumeMatrixOld[groundLayer] = _volumeMatrix[groundLayer];
   _volumeMatrixOld[bottomLayer] = _volumeMatrix[bottomLayer];
-#endif
 }
 
 /**

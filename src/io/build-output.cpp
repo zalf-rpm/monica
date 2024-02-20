@@ -871,13 +871,13 @@ BOTRes& monica::buildOutputTable()
         }, 3);
       });
 
-      build({ id++, "SurfTemp", "�C", "" },
+      build({ id++, "SurfTemp", "°C", "" },
         [](const MonicaModel& monica, OId oid)
       {
         return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
       });
 
-      build({ id++, "STemp", "�C", "" },
+      build({ id++, "STemp", "°C", "" },
         [](const MonicaModel& monica, OId oid)
       {
         return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().getSoilTemperature(i); }, 1);
@@ -1552,6 +1552,26 @@ BOTRes& monica::buildOutputTable()
               return monica.soilMoisture().waterFlux(i);
             }, 1);
         });
+
+      build({ id++, "AMEI_Monica_SurfTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+                return round(const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature(), 1);
+            });
+
+      build({ id++, "AMEI_Monica_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilTemperature().at(i); }, 1);
+            });
+
+      build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.getSRFTEMP(), 1);
+            });
+
+      build({ id++, "AMEI_DSSAT_ST_standalone_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.getST().at(i); }, 1);
+            });
 
       tableBuilt = true;
     }

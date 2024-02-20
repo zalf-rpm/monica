@@ -49,6 +49,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "crop-module.h"
 #include "soilcolumn.h"
 
+#ifdef AMEI
+#include "SoilTemperatureCompComponent.h"
+#include "STEMP_Component.h"
+#endif
+
+
 namespace monica {
   
 class Crop;
@@ -62,6 +68,8 @@ public:
   void deserialize(mas::schema::model::monica::MonicaModelState::Reader reader);
 
   void serialize(mas::schema::model::monica::MonicaModelState::Builder builder);
+
+  void initComponents(const CentralParameterProvider &cpp);
 
   void step();
 
@@ -235,6 +243,31 @@ public:
 
   void setOtherCropHeightAndLAIt(double cropHeight, double lait);
 
+#ifdef AMEI
+  struct Monica_SoilTemp_T {
+      Monica_SoilTemp::SoilTemperatureCompComponent soilTempComp;
+      Monica_SoilTemp::SoilTemperatureCompState soilTempState;
+      Monica_SoilTemp::SoilTemperatureCompState soilTempState1;
+      Monica_SoilTemp::SoilTemperatureCompExogenous soilTempExo;
+      Monica_SoilTemp::SoilTemperatureCompRate soilTempRate;
+      Monica_SoilTemp::SoilTemperatureCompAuxiliary soilTempAux;
+  };
+  kj::Own<Monica_SoilTemp_T> _instance_Monica_SoilTemp;
+
+  struct DSSAT_ST_standalone_T {
+      DSSAT_ST_standalone::STEMP_Component soilTempComp;
+      DSSAT_ST_standalone::STEMP_State soilTempState;
+      DSSAT_ST_standalone::STEMP_State soilTempState1;
+      DSSAT_ST_standalone::STEMP_Exogenous soilTempExo;
+      DSSAT_ST_standalone::STEMP_Rate soilTempRate;
+      DSSAT_ST_standalone::STEMP_Auxiliary soilTempAux;
+  };
+  kj::Own<DSSAT_ST_standalone_T> _instance_DSSAT_ST_standalone;
+
+  kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
+  kj::Function<double()> _getSoilSurfaceTemperature;
+#endif
+
 private:
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;
@@ -248,6 +281,8 @@ private:
   kj::Own<SoilOrganic> _soilOrganic; //!< organic code
   kj::Own<SoilTransport> _soilTransport; //!< transport code
   kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
+
+
 
   //! store applied fertiliser during one production process
   double _sumFertiliser{ 0.0 }; //mineral N

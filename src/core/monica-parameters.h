@@ -470,6 +470,7 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
   double layerThickness{ 0.1 };
 
   Soil::SoilPMs vs_SoilParameters;
+  Tools::J11Array initSoilProfileSpec;
   //MeasuredGroundwaterTableInformation groundwaterInformation;
 };
 
@@ -842,6 +843,7 @@ struct DLL_API SoilTemperatureModuleParameters : public Tools::Json11Serializabl
   double pt_SpecificHeatCapacityHumus{ 0.0 };
   double pt_SoilAlbedo{ 0.0 };
   double pt_SoilMoisture{ 0.25 };
+  double dampingFactor{ 0.8 };
 };
 
 

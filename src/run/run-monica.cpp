@@ -633,6 +633,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     //cmitPos = dserRes.cmitPos;
   } else {
     monica = kj::heap<MonicaModel>(env.params);
+    monica->initComponents(env.params);
     monica->simulationParametersNC().startDate = env.climateData.startDate();
   }
   bool isSyncIC = false;
@@ -641,6 +642,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     isSyncIC = !monica->intercropping().isAsync();
     if (isSyncIC) {
       monica2 = kj::heap<MonicaModel>(env.params);
+      monica->initComponents(env.params);
       monica2->simulationParametersNC().startDate = env.climateData.startDate();
     }
   }

@@ -31,7 +31,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "tools/debug.h"
 #include "climate/climate-common.h"
-//#include "db/abstract-db-connections.h"
 #include "voc-common.h"
 #include "tools/algorithms.h"
 #include "crop.h"
@@ -63,20 +62,104 @@ struct AddFertiliserAmountsCallback {
 
 
 MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
-    : _sitePs(kj::mv(cpp.siteParameters)),
-    _envPs(kj::mv(cpp.userEnvironmentParameters)),
-    _cropPs(kj::mv(cpp.userCropParameters)),
-    _simPs(kj::mv(cpp.simulationParameters)),
-    _groundwaterInformation(kj::mv(cpp.groundwaterInformation)), _soilColumn(
-        kj::heap<SoilColumn>(_sitePs.layerThickness,
-                             cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-                             _sitePs.vs_SoilParameters,
-                             cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth))
-      , _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters)), _soilMoisture(
-        kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters)), _soilOrganic(
-        kj::heap<SoilOrganic>(*_soilColumn.get(), cpp.userSoilOrganicParameters)), _soilTransport(
-        kj::heap<SoilTransport>(*_soilColumn.get(), _sitePs, cpp.userSoilTransportParameters,
-                                _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {
+  : _sitePs(cpp.siteParameters)
+  , _envPs(cpp.userEnvironmentParameters)
+  , _cropPs(cpp.userCropParameters)
+  , _simPs(cpp.simulationParameters)
+  , _groundwaterInformation(cpp.groundwaterInformation) {
+}
+
+void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
+#ifndef SKIP_MODULES
+  _soilColumn = kj::heap<SoilColumn>(_sitePs.layerThickness,
+                                   cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
+                                   _sitePs.vs_SoilParameters,
+                                   cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
+  _soilTemperature = kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters);
+  _soilMoisture = kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters);
+  _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters);
+  _soilTransport = kj::heap<SoilTransport>(*_soilColumn,
+                                         _sitePs, cpp.userSoilTransportParameters,
+                                         _envPs.p_LeachingDepth, _envPs.p_timeStep,
+                                         _cropPs.pc_MinimumAvailableN);
+#endif
+#ifdef AMEI
+  const auto &stParams = cpp.userSoilTemperatureParameters;
+  _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp_T>();
+  auto &st = _instance_Monica_SoilTemp->soilTempComp;
+  st.settimeStep(_envPs.p_timeStep);
+  st.setsoilMoistureConst(stParams.pt_SoilMoisture);
+  st.setbaseTemp(stParams.pt_BaseTemperature);
+  st.setinitialSurfaceTemp(stParams.pt_InitialSurfaceTemperature);
+  st.setdensityAir(stParams.pt_DensityAir);
+  st.setspecificHeatCapacityAir(stParams.pt_SpecificHeatCapacityAir);
+  st.setdensityHumus(stParams.pt_DensityHumus);
+  st.setspecificHeatCapacityHumus(stParams.pt_SpecificHeatCapacityHumus);
+  st.setdensityWater(stParams.pt_DensityWater);
+  st.setspecificHeatCapacityWater(stParams.pt_SpecificHeatCapacityWater);
+  st.setquartzRawDensity(stParams.pt_QuartzRawDensity);
+  st.setspecificHeatCapacityQuartz(stParams.pt_SpecificHeatCapacityQuartz);
+  st.setnTau(stParams.pt_NTau);
+  st.setnoOfTempLayers(_sitePs.numberOfLayers + 2);
+  st.setnoOfSoilLayers(_sitePs.numberOfLayers);
+  for (const auto &sps: _sitePs.vs_SoilParameters) {
+    st.getlayerThickness().push_back(_sitePs.layerThickness);
+    st.getsoilBulkDensity().push_back(sps.vs_SoilBulkDensity());
+    st.getsaturation().push_back(sps.vs_Saturation);
+    st.getsoilOrganicMatter().push_back(sps.vs_SoilOrganicMatter());
+  }
+  // add the two temperature layers
+  st.getlayerThickness().push_back(_sitePs.layerThickness);
+  st.getlayerThickness().push_back(_sitePs.layerThickness);
+  st.setdampingFactor(stParams.dampingFactor);
+
+  //init soil temp component
+  _instance_Monica_SoilTemp->soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp->soilTempState,
+                                                               _instance_Monica_SoilTemp->soilTempState1,
+                                                               _instance_Monica_SoilTemp->soilTempRate,
+                                                               _instance_Monica_SoilTemp->soilTempAux,
+                                                               _instance_Monica_SoilTemp->soilTempExo);
+
+  _getSoilSurfaceTemperature = [this]() {
+      return _instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature();
+  };
+  _getSoilTemperatureAtDepthCm = [this](int depthCm) {
+      const auto &sts = _instance_Monica_SoilTemp->soilTempState.getsoilTemperature();
+      const auto &lts = _instance_Monica_SoilTemp->soilTempComp.getlayerThickness();
+      int currentDepthCm = 0;
+      size_t i = 0;
+      while(depthCm > currentDepthCm){
+        currentDepthCm += int(lts[i]*100);  // m -> cm
+        i++;
+      }
+      if (i < sts.size()) return sts[i];
+      return sts.back();
+  };
+
+  _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone_T>();
+  auto &st2 = _instance_DSSAT_ST_standalone->soilTempComp;
+  st2.setISWWAT("Y");
+  st2.setNLAYR(int(_sitePs.initSoilProfileSpec.size()));
+  st2.setXLAT(_simPs.customData["XLAT"].number_value());
+  auto soilPs = createSoilPMs(_sitePs.initSoilProfileSpec);
+  auto awc = _simPs.customData["AWC"].number_value();
+  int currentDepthCm = 0;
+  for (const auto& j : _sitePs.initSoilProfileSpec){
+    int layerSizeCm = int(double_value(j["Thickness"])*100);  // m -> cm
+    currentDepthCm += layerSizeCm;
+    SoilParameters sps;
+    auto es = sps.merge(j);
+    st2.getLL().push_back(sps.vs_PermanentWiltingPoint);
+    st2.getDUL().push_back(sps.vs_FieldCapacity);
+    st2.getDS().push_back(currentDepthCm);
+    st2.getDLAYR().push_back(layerSizeCm);
+    st2.getBD().push_back(sps.vs_SoilBulkDensity());
+    st2.getSW().push_back(awc);
+  }
+  st2.setMSALB(_simPs.customData["SALB"].number_value());
+  _instance_DSSAT_ST_standalone->soilTempExo.setTAV(_simPs.customData["TAV"].number_value());
+  _instance_DSSAT_ST_standalone->soilTempExo.setTAMP(_simPs.customData["TAMP"].number_value());
+#endif
 }
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
@@ -121,14 +204,14 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
     _soilOrganic->deserialize(reader.getSoilOrganic());
     _soilOrganic->putCrop(_currentCropModule.get());
   } else {
-    _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn.get(), reader.getSoilOrganic(), _currentCropModule.get());
+    _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, reader.getSoilOrganic(), _currentCropModule.get());
   }
 
   if (_soilTransport) {
     _soilTransport->deserialize(reader.getSoilTransport());
     _soilTransport->putCrop(_currentCropModule.get());
   } else {
-    _soilTransport = kj::heap<SoilTransport>(*_soilColumn.get(), reader.getSoilTransport(), _currentCropModule.get());
+    _soilTransport = kj::heap<SoilTransport>(*_soilColumn, reader.getSoilTransport(), _currentCropModule.get());
   }
 
   _sumFertiliser = reader.getSumFertiliser();
@@ -676,7 +759,49 @@ void MonicaModel::generalStep() {
   }
 #endif
 
+#if AMEI
+  _instance_Monica_SoilTemp->soilTempExo.settmin(tmin);
+  _instance_Monica_SoilTemp->soilTempExo.settmax(tmax);
+  _instance_Monica_SoilTemp->soilTempExo.setglobrad(globrad);
+  if (cropGrowth()) _instance_Monica_SoilTemp->soilTempExo.setsoilCoverage(cropGrowth()->get_SoilCoverage());
+  else {
+    if (_simPs.customData["LAI"].is_null()) _instance_Monica_SoilTemp->soilTempExo.setsoilCoverage(0);
+    else {
+      auto lai = _simPs.customData["LAI"].number_value();
+      _instance_Monica_SoilTemp->soilTempExo.setsoilCoverage(1.0 - (exp(-0.5 * lai)));
+    }
+  }
+  if (soilMoisture().get_SnowDepth() > 0.0) {
+    _instance_Monica_SoilTemp->soilTempExo.sethasSnowCover(true);
+    _instance_Monica_SoilTemp->soilTempExo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
+  } else {
+    _instance_Monica_SoilTemp->soilTempExo.sethasSnowCover(false);
+  }
+  if (!_simPs.customData["AWC"].is_null()) {
+    auto awc = _simPs.customData["AWC"].number_value();
+    _instance_Monica_SoilTemp->soilTempComp.setsoilMoistureConst(awc);
+  }
+
+  _instance_Monica_SoilTemp->soilTempComp.Calculate_Model(_instance_Monica_SoilTemp->soilTempState,
+                                                         _instance_Monica_SoilTemp->soilTempState1,
+                                                         _instance_Monica_SoilTemp->soilTempRate,
+                                                         _instance_Monica_SoilTemp->soilTempAux,
+                                                         _instance_Monica_SoilTemp->soilTempExo);
+
+  // DSSAT_ST_standalone
+  auto& exo = _instance_DSSAT_ST_standalone->soilTempExo;
+  exo.setDOY(date.dayOfYear());
+  exo.setSRAD(globrad);
+  exo.setTAVG(tavg);
+  exo.setTMAX(tmax);
+  _instance_DSSAT_ST_standalone->soilTempComp.Calculate_Model(_instance_DSSAT_ST_standalone->soilTempState,
+                                                              _instance_DSSAT_ST_standalone->soilTempState1,
+                                                              _instance_DSSAT_ST_standalone->soilTempRate,
+                                                              _instance_DSSAT_ST_standalone->soilTempAux,
+                                                              _instance_DSSAT_ST_standalone->soilTempExo);
+#else
   _soilTemperature->step(tmin, tmax, globrad);
+#endif
 
 #ifndef SKIP_MODULES
   // first try to get ReferenceEvapotranspiration from climate data
