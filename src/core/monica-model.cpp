@@ -19,18 +19,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <cstdlib>
 #include <iostream>
-#include <algorithm>
-#include <set>
-#include <sstream>
 #include <mutex>
-#include <memory>
-#include <chrono>
-#include <thread>
 #include <numeric>
-#include <cmath>
 
 #include "tools/debug.h"
-#include "climate/climate-common.h"
 #include "voc-common.h"
 #include "tools/algorithms.h"
 #include "crop.h"
@@ -84,6 +76,8 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                          _cropPs.pc_MinimumAvailableN);
 #endif
 #ifdef AMEI
+  // Monica_SoilTemp
+  //---------------------------------------------------------------------------
   const auto &stParams = cpp.userSoilTemperatureParameters;
   _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp_T>();
   auto &st = _instance_Monica_SoilTemp->soilTempComp;
@@ -102,24 +96,36 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st.setnTau(stParams.pt_NTau);
   st.setnoOfTempLayers(_sitePs.numberOfLayers + 2);
   st.setnoOfSoilLayers(_sitePs.numberOfLayers);
+  vector<double> lts;
+  vector<double> bds;
+  vector<double> sats;
+  vector<double> oms;
   for (const auto &sps: _sitePs.vs_SoilParameters) {
-    st.getlayerThickness().push_back(_sitePs.layerThickness);
-    st.getsoilBulkDensity().push_back(sps.vs_SoilBulkDensity());
-    st.getsaturation().push_back(sps.vs_Saturation);
-    st.getsoilOrganicMatter().push_back(sps.vs_SoilOrganicMatter());
+    //st.getlayerThickness().push_back(_sitePs.layerThickness);
+    //st.getsoilBulkDensity().push_back(sps.vs_SoilBulkDensity());
+    //st.getsaturation().push_back(sps.vs_Saturation);
+    //st.getsoilOrganicMatter().push_back(sps.vs_SoilOrganicMatter());
+    lts.push_back(_sitePs.layerThickness);
+    bds.push_back(sps.vs_SoilBulkDensity());
+    sats.push_back(sps.vs_Saturation);
+    oms.push_back(sps.vs_SoilOrganicMatter());
   }
   // add the two temperature layers
-  st.getlayerThickness().push_back(_sitePs.layerThickness);
-  st.getlayerThickness().push_back(_sitePs.layerThickness);
+  //st.getlayerThickness().push_back(_sitePs.layerThickness);
+  //st.getlayerThickness().push_back(_sitePs.layerThickness);
+  lts.push_back(_sitePs.layerThickness);
+  lts.push_back(_sitePs.layerThickness);
+  st.setlayerThickness(lts);
+  st.setsoilBulkDensity(bds);
+  st.setsaturation(sats);
+  st.setsoilOrganicMatter(oms);
   st.setdampingFactor(stParams.dampingFactor);
-
   //init soil temp component
   _instance_Monica_SoilTemp->soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp->soilTempState,
                                                                _instance_Monica_SoilTemp->soilTempState1,
                                                                _instance_Monica_SoilTemp->soilTempRate,
                                                                _instance_Monica_SoilTemp->soilTempAux,
                                                                _instance_Monica_SoilTemp->soilTempExo);
-
   _getSoilSurfaceTemperature = [this]() {
       return _instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature();
   };
@@ -136,29 +142,140 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
       return sts.back();
   };
 
+  // DSSAT_ST_standalone
+  //---------------------------------------------------------------------------
   _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone_T>();
   auto &st2 = _instance_DSSAT_ST_standalone->soilTempComp;
   st2.setISWWAT("Y");
+  st2.setNL(20);
   st2.setNLAYR(int(_sitePs.initSoilProfileSpec.size()));
   st2.setXLAT(_simPs.customData["XLAT"].number_value());
   auto soilPs = createSoilPMs(_sitePs.initSoilProfileSpec);
   auto awc = _simPs.customData["AWC"].number_value();
   int currentDepthCm = 0;
+  vector<double> lls;
+  vector<double> duls;
+  vector<double> dss;
+  vector<double> dlayrs;
+  bds.clear();
+  vector<double> sws;
   for (const auto& j : _sitePs.initSoilProfileSpec){
     int layerSizeCm = int(double_value(j["Thickness"])*100);  // m -> cm
     currentDepthCm += layerSizeCm;
     SoilParameters sps;
     auto es = sps.merge(j);
-    st2.getLL().push_back(sps.vs_PermanentWiltingPoint);
-    st2.getDUL().push_back(sps.vs_FieldCapacity);
-    st2.getDS().push_back(currentDepthCm);
-    st2.getDLAYR().push_back(layerSizeCm);
-    st2.getBD().push_back(sps.vs_SoilBulkDensity());
-    st2.getSW().push_back(awc);
+    //st2.getLL().push_back(sps.vs_PermanentWiltingPoint);
+    //st2.getDUL().push_back(sps.vs_FieldCapacity);
+    //st2.getDS().push_back(currentDepthCm);
+    //st2.getDLAYR().push_back(layerSizeCm);
+    //st2.getBD().push_back(sps.vs_SoilBulkDensity());
+    //st2.getSW().push_back(awc);
+    lls.push_back(sps.vs_PermanentWiltingPoint);
+    duls.push_back(sps.vs_FieldCapacity);
+    dss.push_back(currentDepthCm);
+    dlayrs.push_back(layerSizeCm);
+    bds.push_back(sps.vs_SoilBulkDensity());
+    sws.push_back(awc);
   }
+  st2.setLL(lls);
+  st2.setDUL(duls);
+  st2.setDS(dss);
+  st2.setDLAYR(dlayrs);
+  st2.setBD(bds);
+  st2.setSW(sws);
   st2.setMSALB(_simPs.customData["SALB"].number_value());
-  _instance_DSSAT_ST_standalone->soilTempExo.setTAV(_simPs.customData["TAV"].number_value());
-  _instance_DSSAT_ST_standalone->soilTempExo.setTAMP(_simPs.customData["TAMP"].number_value());
+  _instance_DSSAT_ST_standalone->soilTempComp._STEMP.Init(_instance_DSSAT_ST_standalone->soilTempState,
+                                                          _instance_DSSAT_ST_standalone->soilTempState1,
+                                                          _instance_DSSAT_ST_standalone->soilTempRate,
+                                                          _instance_DSSAT_ST_standalone->soilTempAux,
+                                                          _instance_DSSAT_ST_standalone->soilTempExo);
+
+  // DSSAT_EPICST_standalone
+  //---------------------------------------------------------------------------
+  _instance_DSSAT_EPICST_standalone = kj::heap<DSSAT_EPICST_standalone_T>();
+  auto &st3 = _instance_DSSAT_EPICST_standalone->soilTempComp;
+  st3.setISWWAT("Y");
+  st3.setNL(20);
+  st3.setNLAYR(int(_sitePs.initSoilProfileSpec.size()));
+  //auto soilPs = createSoilPMs(_sitePs.initSoilProfileSpec);
+  //auto awc = _simPs.customData["AWC"].number_value();
+  currentDepthCm = 0;
+  lls.clear();
+  duls.clear();
+  dss.clear();
+  dlayrs.clear();
+  bds.clear();
+  sws.clear();
+  for (const auto& j : _sitePs.initSoilProfileSpec){
+    int layerSizeCm = int(double_value(j["Thickness"])*100);  // m -> cm
+    currentDepthCm += layerSizeCm;
+    SoilParameters sps;
+    auto es = sps.merge(j);
+    //st3.getLL().push_back(sps.vs_PermanentWiltingPoint);
+    //st3.getDUL().push_back(sps.vs_FieldCapacity);
+    //st3.getDS().push_back(currentDepthCm);
+    //st3.getDLAYR().push_back(layerSizeCm);
+    //st3.getBD().push_back(sps.vs_SoilBulkDensity());
+    //st3.getSW().push_back(awc);
+    lls.push_back(sps.vs_PermanentWiltingPoint);
+    duls.push_back(sps.vs_FieldCapacity);
+    dss.push_back(currentDepthCm);
+    dlayrs.push_back(layerSizeCm);
+    bds.push_back(sps.vs_SoilBulkDensity());
+    sws.push_back(awc);
+  }
+  st3.setLL(lls);
+  st3.setDUL(duls);
+  st3.setDS(dss);
+  st3.setDLAYR(dlayrs);
+  st3.setBD(bds);
+  st3.setSW(sws);
+  _instance_DSSAT_EPICST_standalone->soilTempComp._STEMP_EPIC.Init(_instance_DSSAT_EPICST_standalone->soilTempState,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempState1,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempRate,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempAux,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempExo);
+
+  // Simplace_Soil_Temperature
+  //---------------------------------------------------------------------------
+  _instance_Simplace_Soil_Temperature = kj::heap<Simplace_Soil_Temperature_T>();
+  auto &st4 = _instance_Simplace_Soil_Temperature->soilTempComp;
+  st4.setcAlbedo(_simPs.customData["SALB"].number_value());
+  st4.setcDampingDepth(6);
+  st4.setcCarbonContent(0.5);
+  st4.setcFirstDayMeanTemp(_simPs.customData["TAV"].number_value());
+  st4.setcAverageGroundTemperature(_simPs.customData["TAV"].number_value());
+  st4.setcAverageBulkDensity(_simPs.customData["SABDM"].number_value());
+  double currentDepthM = 0;
+  vector<double> slds;
+  double initialWCSum = 0;
+  for (const auto& j : _sitePs.initSoilProfileSpec){
+    double lt_m = double_value(j["Thickness"]);
+    currentDepthM += lt_m;
+    slds.push_back(currentDepthM);
+    SoilParameters sps;
+    auto es = sps.merge(j);
+    double usableFC = sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint;
+    double availableFC = usableFC * awc;
+    double initialWC = availableFC + sps.vs_PermanentWiltingPoint;
+    double lt_dm = lt_m * 10;
+    double initialWCInLayer = initialWC * 100 * lt_dm;
+    initialWCSum += initialWCInLayer;
+  }
+  _instance_Simplace_Soil_Temperature->soilTempExo.setiSoilWaterContent(initialWCSum);
+  st4.setcSoilLayerDepth(slds);
+  _instance_Simplace_Soil_Temperature->soilTempComp._STMPsimCalculator.Init(
+      _instance_Simplace_Soil_Temperature->soilTempState,
+      _instance_Simplace_Soil_Temperature->soilTempState1,
+      _instance_Simplace_Soil_Temperature->soilTempRate,
+      _instance_Simplace_Soil_Temperature->soilTempAux,
+      _instance_Simplace_Soil_Temperature->soilTempExo);
+  _instance_Simplace_Soil_Temperature->soilTempComp._SnowCoverCalculator.Init(
+      _instance_Simplace_Soil_Temperature->soilTempState,
+      _instance_Simplace_Soil_Temperature->soilTempState1,
+      _instance_Simplace_Soil_Temperature->soilTempRate,
+      _instance_Simplace_Soil_Temperature->soilTempAux,
+      _instance_Simplace_Soil_Temperature->soilTempExo);
 #endif
 }
 
@@ -760,22 +877,25 @@ void MonicaModel::generalStep() {
 #endif
 
 #if AMEI
-  _instance_Monica_SoilTemp->soilTempExo.settmin(tmin);
-  _instance_Monica_SoilTemp->soilTempExo.settmax(tmax);
-  _instance_Monica_SoilTemp->soilTempExo.setglobrad(globrad);
-  if (cropGrowth()) _instance_Monica_SoilTemp->soilTempExo.setsoilCoverage(cropGrowth()->get_SoilCoverage());
+  // Monica_SoilTemp
+  //---------------------------------------------------------------------------
+  auto& exo = _instance_Monica_SoilTemp->soilTempExo;
+  exo.settmin(tmin);
+  exo.settmax(tmax);
+  exo.setglobrad(globrad);
+  if (cropGrowth()) exo.setsoilCoverage(cropGrowth()->get_SoilCoverage());
   else {
-    if (_simPs.customData["LAI"].is_null()) _instance_Monica_SoilTemp->soilTempExo.setsoilCoverage(0);
+    if (_simPs.customData["LAI"].is_null()) exo.setsoilCoverage(0);
     else {
       auto lai = _simPs.customData["LAI"].number_value();
-      _instance_Monica_SoilTemp->soilTempExo.setsoilCoverage(1.0 - (exp(-0.5 * lai)));
+      exo.setsoilCoverage(1.0 - exp(-0.5 * lai));
     }
   }
-  if (soilMoisture().get_SnowDepth() > 0.0) {
-    _instance_Monica_SoilTemp->soilTempExo.sethasSnowCover(true);
-    _instance_Monica_SoilTemp->soilTempExo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
+  if (_soilMoisture && _soilMoisture->get_SnowDepth() > 0.0) {
+    exo.sethasSnowCover(true);
+    exo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
   } else {
-    _instance_Monica_SoilTemp->soilTempExo.sethasSnowCover(false);
+    exo.sethasSnowCover(false);
   }
   if (!_simPs.customData["AWC"].is_null()) {
     auto awc = _simPs.customData["AWC"].number_value();
@@ -789,16 +909,55 @@ void MonicaModel::generalStep() {
                                                          _instance_Monica_SoilTemp->soilTempExo);
 
   // DSSAT_ST_standalone
-  auto& exo = _instance_DSSAT_ST_standalone->soilTempExo;
-  exo.setDOY(date.dayOfYear());
-  exo.setSRAD(globrad);
-  exo.setTAVG(tavg);
-  exo.setTMAX(tmax);
+  //---------------------------------------------------------------------------
+  auto& exo2 = _instance_DSSAT_ST_standalone->soilTempExo;
+  exo2.setDOY(date.dayOfYear());
+  exo2.setSRAD(globrad);
+  exo2.setTAVG(tavg);
+  exo2.setTMAX(tmax);
+  exo2.setTAV(_simPs.customData["TAV"].number_value());
+  exo2.setTAMP(_simPs.customData["TAMP"].number_value());
   _instance_DSSAT_ST_standalone->soilTempComp.Calculate_Model(_instance_DSSAT_ST_standalone->soilTempState,
                                                               _instance_DSSAT_ST_standalone->soilTempState1,
                                                               _instance_DSSAT_ST_standalone->soilTempRate,
                                                               _instance_DSSAT_ST_standalone->soilTempAux,
                                                               _instance_DSSAT_ST_standalone->soilTempExo);
+
+  // DSSAT_EPICST_standalone
+  //---------------------------------------------------------------------------
+  auto& exo3 = _instance_DSSAT_EPICST_standalone->soilTempExo;
+  exo3.setTMIN(tmin);
+  exo3.setTAVG(tavg);
+  exo3.setTMAX(tmax);
+  exo3.setRAIN(precip);
+  exo3.setSNOW(0);
+  exo3.setDEPIR(0);//_simPs.customData["IRVAL"].number_value());
+  exo3.setMULCHMASS(_simPs.customData["MLTHK"].number_value());
+  exo3.setBIOMAS(_simPs.customData["CAWD"].number_value());
+  exo3.setTAV(_simPs.customData["TAV"].number_value());
+  exo3.setTAMP(_simPs.customData["TAMP"].number_value());
+  _instance_DSSAT_EPICST_standalone->soilTempComp.Calculate_Model(_instance_DSSAT_EPICST_standalone->soilTempState,
+                                                                  _instance_DSSAT_EPICST_standalone->soilTempState1,
+                                                                  _instance_DSSAT_EPICST_standalone->soilTempRate,
+                                                                  _instance_DSSAT_EPICST_standalone->soilTempAux,
+                                                                  _instance_DSSAT_EPICST_standalone->soilTempExo);
+
+  // DSSAT_EPICST_standalone
+  //---------------------------------------------------------------------------
+  auto& exo4 = _instance_Simplace_Soil_Temperature->soilTempExo;
+  exo4.setiAirTemperatureMin(tmin);
+  exo4.setiAirTemperatureMax(tmax);
+  exo4.setiGlobalSolarRadiation(globrad);
+  exo4.setiRAIN(0); // so that no snowcover will build up
+  exo4.setiLeafAreaIndex(_simPs.customData["LAI"].number_value());
+  exo4.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
+  exo4.setiCropResidues(0);
+  _instance_Simplace_Soil_Temperature->soilTempComp.Calculate_Model(_instance_Simplace_Soil_Temperature->soilTempState,
+                                                                    _instance_Simplace_Soil_Temperature->soilTempState1,
+                                                                    _instance_Simplace_Soil_Temperature->soilTempRate,
+                                                                    _instance_Simplace_Soil_Temperature->soilTempAux,
+                                                                    _instance_Simplace_Soil_Temperature->soilTempExo);
+
 #else
   _soilTemperature->step(tmin, tmax, globrad);
 #endif

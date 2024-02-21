@@ -1573,6 +1573,16 @@ BOTRes& monica::buildOutputTable()
                 return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.getST().at(i); }, 1);
             });
 
+      build({ id++, "AMEI_DSSAT_EPICST_standalone_SurfTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->soilTempState.getSRFTEMP(), 1);
+            });
+
+      build({ id++, "AMEI_DSSAT_EPICST_standalone_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->soilTempState.getST().at(i); }, 1);
+            });
+
       tableBuilt = true;
     }
   }

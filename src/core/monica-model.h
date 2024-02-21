@@ -51,7 +51,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #ifdef AMEI
 #include "SoilTemperatureCompComponent.h"
-#include "STEMP_Component.h"
+#include "DSSAT_ST_standalone/STEMP_Component.h"
+#include "DSSAT_EPICST_standalone/STEMP_EPIC_Component.h"
+#include "Simplace_Soil_Temperature/SoilTemperatureComponent.h"
 #endif
 
 
@@ -263,6 +265,26 @@ public:
       DSSAT_ST_standalone::STEMP_Auxiliary soilTempAux;
   };
   kj::Own<DSSAT_ST_standalone_T> _instance_DSSAT_ST_standalone;
+
+  struct DSSAT_EPICST_standalone_T {
+      DSSAT_EPICST_standalone::STEMP_EPIC_Component soilTempComp;
+      DSSAT_EPICST_standalone::STEMP_EPIC_State soilTempState;
+      DSSAT_EPICST_standalone::STEMP_EPIC_State soilTempState1;
+      DSSAT_EPICST_standalone::STEMP_EPIC_Exogenous soilTempExo;
+      DSSAT_EPICST_standalone::STEMP_EPIC_Rate soilTempRate;
+      DSSAT_EPICST_standalone::STEMP_EPIC_Auxiliary soilTempAux;
+  };
+  kj::Own<DSSAT_EPICST_standalone_T> _instance_DSSAT_EPICST_standalone;
+
+  struct Simplace_Soil_Temperature_T {
+      Simplace_Soil_Temperature::SoilTemperatureComponent soilTempComp;
+      Simplace_Soil_Temperature::SoilTemperatureState soilTempState;
+      Simplace_Soil_Temperature::SoilTemperatureState soilTempState1;
+      Simplace_Soil_Temperature::SoilTemperatureExogenous soilTempExo;
+      Simplace_Soil_Temperature::SoilTemperatureRate soilTempRate;
+      Simplace_Soil_Temperature::SoilTemperatureAuxiliary soilTempAux;
+  };
+  kj::Own<Simplace_Soil_Temperature_T> _instance_Simplace_Soil_Temperature;
 
   kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
   kj::Function<double()> _getSoilSurfaceTemperature;

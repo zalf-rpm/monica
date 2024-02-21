@@ -34,6 +34,16 @@ if (NOT TARGET DSSAT_ST_standalone_lib)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_ST_standalone/src/cpp/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)
 endif ()
 
+if (NOT TARGET DSSAT_EPICST_standalone_lib)
+    message(STATUS "target: DSSAT_EPICST_standalone_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_EPICST_standalone/src/cpp/DSSAT_EPICST_standalone amei-components/DSSAT_EPICST_standalone)
+endif ()
+
+if (NOT TARGET Simplace_Soil_Temperature_lib)
+    message(STATUS "target: Simplace_Soil_Temperature_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/Simplace_Soil_Temperature/src/cpp/Simplace_Soil_Temperature amei-components/Simplace_Soil_Temperature)
+endif ()
+
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
     add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/capnproto_schemas)
@@ -218,6 +228,8 @@ target_link_libraries(monica_lib
         climate_file_io_lib
         Monica_SoilTemp_lib
         DSSAT_ST_standalone_lib
+        DSSAT_EPICST_standalone_lib
+        Simplace_Soil_Temperature_lib
         )
 
 #message(STATUS "json11_lib_interface_includes:")
