@@ -253,6 +253,7 @@ public:
       Monica_SoilTemp::SoilTemperatureCompExogenous soilTempExo;
       Monica_SoilTemp::SoilTemperatureCompRate soilTempRate;
       Monica_SoilTemp::SoilTemperatureCompAuxiliary soilTempAux;
+      bool doInit{true};
   };
   kj::Own<Monica_SoilTemp_T> _instance_Monica_SoilTemp;
 
@@ -263,6 +264,7 @@ public:
       DSSAT_ST_standalone::STEMP_Exogenous soilTempExo;
       DSSAT_ST_standalone::STEMP_Rate soilTempRate;
       DSSAT_ST_standalone::STEMP_Auxiliary soilTempAux;
+      bool doInit{true};
   };
   kj::Own<DSSAT_ST_standalone_T> _instance_DSSAT_ST_standalone;
 
@@ -273,6 +275,7 @@ public:
       DSSAT_EPICST_standalone::STEMP_EPIC_Exogenous soilTempExo;
       DSSAT_EPICST_standalone::STEMP_EPIC_Rate soilTempRate;
       DSSAT_EPICST_standalone::STEMP_EPIC_Auxiliary soilTempAux;
+      bool doInit{true};
   };
   kj::Own<DSSAT_EPICST_standalone_T> _instance_DSSAT_EPICST_standalone;
 
@@ -283,6 +286,7 @@ public:
       Simplace_Soil_Temperature::SoilTemperatureExogenous soilTempExo;
       Simplace_Soil_Temperature::SoilTemperatureRate soilTempRate;
       Simplace_Soil_Temperature::SoilTemperatureAuxiliary soilTempAux;
+      bool doInit{true};
   };
   kj::Own<Simplace_Soil_Temperature_T> _instance_Simplace_Soil_Temperature;
 

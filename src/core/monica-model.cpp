@@ -121,11 +121,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st.setsoilOrganicMatter(oms);
   st.setdampingFactor(stParams.dampingFactor);
   //init soil temp component
-  _instance_Monica_SoilTemp->soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp->soilTempState,
-                                                               _instance_Monica_SoilTemp->soilTempState1,
-                                                               _instance_Monica_SoilTemp->soilTempRate,
-                                                               _instance_Monica_SoilTemp->soilTempAux,
-                                                               _instance_Monica_SoilTemp->soilTempExo);
+
   _getSoilSurfaceTemperature = [this]() {
       return _instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature();
   };
@@ -174,7 +170,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     duls.push_back(sps.vs_FieldCapacity);
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
-    bds.push_back(sps.vs_SoilBulkDensity());
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
     sws.push_back(awc);
   }
   st2.setLL(lls);
@@ -184,11 +180,6 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st2.setBD(bds);
   st2.setSW(sws);
   st2.setMSALB(_simPs.customData["SALB"].number_value());
-  _instance_DSSAT_ST_standalone->soilTempComp._STEMP.Init(_instance_DSSAT_ST_standalone->soilTempState,
-                                                          _instance_DSSAT_ST_standalone->soilTempState1,
-                                                          _instance_DSSAT_ST_standalone->soilTempRate,
-                                                          _instance_DSSAT_ST_standalone->soilTempAux,
-                                                          _instance_DSSAT_ST_standalone->soilTempExo);
 
   // DSSAT_EPICST_standalone
   //---------------------------------------------------------------------------
@@ -221,7 +212,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     duls.push_back(sps.vs_FieldCapacity);
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
-    bds.push_back(sps.vs_SoilBulkDensity());
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
     sws.push_back(awc);
   }
   st3.setLL(lls);
@@ -230,11 +221,6 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st3.setDLAYR(dlayrs);
   st3.setBD(bds);
   st3.setSW(sws);
-  _instance_DSSAT_EPICST_standalone->soilTempComp._STEMP_EPIC.Init(_instance_DSSAT_EPICST_standalone->soilTempState,
-                                                                   _instance_DSSAT_EPICST_standalone->soilTempState1,
-                                                                   _instance_DSSAT_EPICST_standalone->soilTempRate,
-                                                                   _instance_DSSAT_EPICST_standalone->soilTempAux,
-                                                                   _instance_DSSAT_EPICST_standalone->soilTempExo);
 
   // Simplace_Soil_Temperature
   //---------------------------------------------------------------------------
@@ -264,18 +250,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   }
   _instance_Simplace_Soil_Temperature->soilTempExo.setiSoilWaterContent(initialWCSum);
   st4.setcSoilLayerDepth(slds);
-  _instance_Simplace_Soil_Temperature->soilTempComp._STMPsimCalculator.Init(
-      _instance_Simplace_Soil_Temperature->soilTempState,
-      _instance_Simplace_Soil_Temperature->soilTempState1,
-      _instance_Simplace_Soil_Temperature->soilTempRate,
-      _instance_Simplace_Soil_Temperature->soilTempAux,
-      _instance_Simplace_Soil_Temperature->soilTempExo);
-  _instance_Simplace_Soil_Temperature->soilTempComp._SnowCoverCalculator.Init(
-      _instance_Simplace_Soil_Temperature->soilTempState,
-      _instance_Simplace_Soil_Temperature->soilTempState1,
-      _instance_Simplace_Soil_Temperature->soilTempRate,
-      _instance_Simplace_Soil_Temperature->soilTempAux,
-      _instance_Simplace_Soil_Temperature->soilTempExo);
+
 #endif
 }
 
@@ -901,12 +876,19 @@ void MonicaModel::generalStep() {
     auto awc = _simPs.customData["AWC"].number_value();
     _instance_Monica_SoilTemp->soilTempComp.setsoilMoistureConst(awc);
   }
-
+  if(_instance_Monica_SoilTemp->doInit){
+    _instance_Monica_SoilTemp->soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp->soilTempState,
+                                                                  _instance_Monica_SoilTemp->soilTempState1,
+                                                                  _instance_Monica_SoilTemp->soilTempRate,
+                                                                  _instance_Monica_SoilTemp->soilTempAux,
+                                                                  _instance_Monica_SoilTemp->soilTempExo);
+    _instance_Monica_SoilTemp->doInit = false;
+  }
   _instance_Monica_SoilTemp->soilTempComp.Calculate_Model(_instance_Monica_SoilTemp->soilTempState,
-                                                         _instance_Monica_SoilTemp->soilTempState1,
-                                                         _instance_Monica_SoilTemp->soilTempRate,
-                                                         _instance_Monica_SoilTemp->soilTempAux,
-                                                         _instance_Monica_SoilTemp->soilTempExo);
+                                                          _instance_Monica_SoilTemp->soilTempState1,
+                                                          _instance_Monica_SoilTemp->soilTempRate,
+                                                          _instance_Monica_SoilTemp->soilTempAux,
+                                                          _instance_Monica_SoilTemp->soilTempExo);
 
   // DSSAT_ST_standalone
   //---------------------------------------------------------------------------
@@ -917,6 +899,14 @@ void MonicaModel::generalStep() {
   exo2.setTMAX(tmax);
   exo2.setTAV(_simPs.customData["TAV"].number_value());
   exo2.setTAMP(_simPs.customData["TAMP"].number_value());
+  if(_instance_DSSAT_ST_standalone->doInit){
+    _instance_DSSAT_ST_standalone->soilTempComp._STEMP.Init(_instance_DSSAT_ST_standalone->soilTempState,
+                                                          _instance_DSSAT_ST_standalone->soilTempState1,
+                                                          _instance_DSSAT_ST_standalone->soilTempRate,
+                                                          _instance_DSSAT_ST_standalone->soilTempAux,
+                                                          _instance_DSSAT_ST_standalone->soilTempExo);
+    _instance_DSSAT_ST_standalone->doInit = false;
+  }
   _instance_DSSAT_ST_standalone->soilTempComp.Calculate_Model(_instance_DSSAT_ST_standalone->soilTempState,
                                                               _instance_DSSAT_ST_standalone->soilTempState1,
                                                               _instance_DSSAT_ST_standalone->soilTempRate,
@@ -933,16 +923,24 @@ void MonicaModel::generalStep() {
   exo3.setSNOW(0);
   exo3.setDEPIR(0);//_simPs.customData["IRVAL"].number_value());
   exo3.setMULCHMASS(_simPs.customData["MLTHK"].number_value());
-  exo3.setBIOMAS(_simPs.customData["CAWD"].number_value());
+  exo3.setBIOMAS(_simPs.customData["CWAD"].number_value());
   exo3.setTAV(_simPs.customData["TAV"].number_value());
   exo3.setTAMP(_simPs.customData["TAMP"].number_value());
+  if(_instance_DSSAT_EPICST_standalone->doInit){
+  _instance_DSSAT_EPICST_standalone->soilTempComp._STEMP_EPIC.Init(_instance_DSSAT_EPICST_standalone->soilTempState,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempState1,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempRate,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempAux,
+                                                                   _instance_DSSAT_EPICST_standalone->soilTempExo);
+    _instance_DSSAT_EPICST_standalone->doInit = false;
+  }
   _instance_DSSAT_EPICST_standalone->soilTempComp.Calculate_Model(_instance_DSSAT_EPICST_standalone->soilTempState,
                                                                   _instance_DSSAT_EPICST_standalone->soilTempState1,
                                                                   _instance_DSSAT_EPICST_standalone->soilTempRate,
                                                                   _instance_DSSAT_EPICST_standalone->soilTempAux,
                                                                   _instance_DSSAT_EPICST_standalone->soilTempExo);
 
-  // DSSAT_EPICST_standalone
+  // Simplace_Soil_Temperature
   //---------------------------------------------------------------------------
   auto& exo4 = _instance_Simplace_Soil_Temperature->soilTempExo;
   exo4.setiAirTemperatureMin(tmin);
@@ -952,12 +950,26 @@ void MonicaModel::generalStep() {
   exo4.setiLeafAreaIndex(_simPs.customData["LAI"].number_value());
   exo4.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
   exo4.setiCropResidues(0);
+  if(_instance_Simplace_Soil_Temperature->doInit){
+    _instance_Simplace_Soil_Temperature->soilTempComp._STMPsimCalculator.Init(
+        _instance_Simplace_Soil_Temperature->soilTempState,
+        _instance_Simplace_Soil_Temperature->soilTempState1,
+        _instance_Simplace_Soil_Temperature->soilTempRate,
+        _instance_Simplace_Soil_Temperature->soilTempAux,
+        _instance_Simplace_Soil_Temperature->soilTempExo);
+    _instance_Simplace_Soil_Temperature->soilTempComp._SnowCoverCalculator.Init(
+        _instance_Simplace_Soil_Temperature->soilTempState,
+        _instance_Simplace_Soil_Temperature->soilTempState1,
+        _instance_Simplace_Soil_Temperature->soilTempRate,
+        _instance_Simplace_Soil_Temperature->soilTempAux,
+        _instance_Simplace_Soil_Temperature->soilTempExo);
+    _instance_Simplace_Soil_Temperature->doInit = false;
+  }
   _instance_Simplace_Soil_Temperature->soilTempComp.Calculate_Model(_instance_Simplace_Soil_Temperature->soilTempState,
                                                                     _instance_Simplace_Soil_Temperature->soilTempState1,
                                                                     _instance_Simplace_Soil_Temperature->soilTempRate,
                                                                     _instance_Simplace_Soil_Temperature->soilTempAux,
                                                                     _instance_Simplace_Soil_Temperature->soilTempExo);
-
 #else
   _soilTemperature->step(tmin, tmax, globrad);
 #endif
