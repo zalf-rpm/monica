@@ -51,11 +51,17 @@ installer\Hohenfinow2\out.csv.
 
 see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Linux) for installation and build instructions.
 
+Create a folder for the output files:
+Shell:
+    mkdir output_csv
+
+Assign the path to the monica-parameters directory:
+Shell:
+    export MONICA_PARAMETERS=`pwd`/monica-parameters
 Run the standard example and write the results into out.csv
 Shell:
-
-    cd monica/_cmake_linux
-    ./monica-run -o out.csv installer/Hohenfinow2/sim-min.json
+    cd monica/_cmake_release
+    ./monica-run -o ../../output_csv/out.csv ../installer/Hohenfinow2/sim-min.json
 
 # Usage
 
