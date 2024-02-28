@@ -62,12 +62,13 @@ MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
 }
 
 void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
-#ifndef SKIP_MODULES
   _soilColumn = kj::heap<SoilColumn>(_sitePs.layerThickness,
-                                   cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-                                   _sitePs.vs_SoilParameters,
-                                   cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
+                                     cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
+                                     _sitePs.vs_SoilParameters,
+                                     cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
   _soilTemperature = kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters);
+#ifndef SKIP_MODULES
+
   _soilMoisture = kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters);
   _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters);
   _soilTransport = kj::heap<SoilTransport>(*_soilColumn,
@@ -851,6 +852,10 @@ void MonicaModel::generalStep() {
   }
 #endif
 
+  // Monica build in soil temperature
+  //---------------------------------------------------------------------------
+  _soilTemperature->step(tmin, tmax, globrad);
+
 #if AMEI
   // Monica_SoilTemp
   //---------------------------------------------------------------------------
@@ -970,8 +975,6 @@ void MonicaModel::generalStep() {
                                                                     _instance_Simplace_Soil_Temperature->soilTempRate,
                                                                     _instance_Simplace_Soil_Temperature->soilTempAux,
                                                                     _instance_Simplace_Soil_Temperature->soilTempExo);
-#else
-  _soilTemperature->step(tmin, tmax, globrad);
 #endif
 
 #ifndef SKIP_MODULES

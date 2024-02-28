@@ -360,7 +360,7 @@ double SoilTemperature::calcSoilSurfaceTemperature(
   // damping negative temperatures due to heat loss for freezing water
   if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
 
-  if (_monica.soilMoisture().get_SnowDepth() > 0.0) {
+  if (_monica.soilMoisturePtr() && _monica.soilMoisture().get_SnowDepth() > 0.0) {
     soilSurfaceTemperature = _monica.soilMoisture().getTemperatureUnderSnow();
   }
 

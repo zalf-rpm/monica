@@ -189,6 +189,7 @@ public:
   const SoilTemperature& soilTemperature() const { return *_soilTemperature; }
   SoilTemperature& soilTemperatureNC() { return *_soilTemperature; }
 
+  const SoilMoisture* soilMoisturePtr() const { return _soilMoisture.get(); }
   const SoilMoisture& soilMoisture() const { return *_soilMoisture; }
   SoilMoisture& soilMoistureNC() { return *_soilMoisture; }
 
