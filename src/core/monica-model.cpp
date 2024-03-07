@@ -97,6 +97,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st.setnTau(stParams.pt_NTau);
   st.setnoOfTempLayers(_sitePs.numberOfLayers + 2);
   st.setnoOfSoilLayers(_sitePs.numberOfLayers);
+  st.setnoOfTempLayersPlus1(_sitePs.numberOfLayers + 3);
   vector<double> lts;
   vector<double> bds;
   vector<double> sats;
@@ -251,6 +252,17 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   }
   _instance_Simplace_Soil_Temperature->soilTempExo.setiSoilWaterContent(initialWCSum);
   st4.setcSoilLayerDepth(slds);
+
+  // Stics_soil_temperature
+  //---------------------------------------------------------------------------
+  _instance_Stics_soil_temperature = kj::heap<Stics_soil_temperature_T>();
+  auto &st5 = _instance_Stics_soil_temperature->soilTempComp;
+  vector<int> layerThicknessCm;
+  for (const auto& j : _sitePs.initSoilProfileSpec){
+    int layerSizeCm = int(double_value(j["Thickness"])*100);  // m -> cm
+    layerThicknessCm.push_back(layerSizeCm);
+  }
+  st5.setlayer_thick(layerThicknessCm);
 
 #endif
 }
@@ -975,6 +987,31 @@ void MonicaModel::generalStep() {
                                                                     _instance_Simplace_Soil_Temperature->soilTempRate,
                                                                     _instance_Simplace_Soil_Temperature->soilTempAux,
                                                                     _instance_Simplace_Soil_Temperature->soilTempExo);
+
+  // Stics_soil_temperature
+  //---------------------------------------------------------------------------
+  auto& exo5 = _instance_Stics_soil_temperature->soilTempExo;
+  exo5.setmin_temp(tmin);
+  exo5.setmax_temp(tmax);
+  exo5.setmin_canopy_temp(tmin);
+  exo5.setmax_canopy_temp(tmax);
+  exo5.setmin_air_temp(tmin);
+  if(_instance_Stics_soil_temperature->doInit){
+    _instance_Stics_soil_temperature->soilTempComp.setair_temp_day1(tavg);
+    _instance_Stics_soil_temperature->soilTempComp._Temp_profile.Init(
+        _instance_Stics_soil_temperature->soilTempState,
+        _instance_Stics_soil_temperature->soilTempState1,
+        _instance_Stics_soil_temperature->soilTempRate,
+        _instance_Stics_soil_temperature->soilTempAux,
+        _instance_Stics_soil_temperature->soilTempExo);
+    _instance_Stics_soil_temperature->doInit = false;
+  }
+  _instance_Stics_soil_temperature->soilTempComp.Calculate_Model(_instance_Stics_soil_temperature->soilTempState,
+                                                                 _instance_Stics_soil_temperature->soilTempState1,
+                                                                 _instance_Stics_soil_temperature->soilTempRate,
+                                                                 _instance_Stics_soil_temperature->soilTempAux,
+                                                                 _instance_Stics_soil_temperature->soilTempExo);
+
 #endif
 
 #ifndef SKIP_MODULES

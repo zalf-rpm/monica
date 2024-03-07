@@ -1593,6 +1593,17 @@ BOTRes& monica::buildOutputTable()
                 return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->soilTempState.getSoilTempArray().at(i); }, 1);
             });
 
+      build({ id++, "AMEI_Stics_soil_temperature_SurfTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getcanopy_temp_avg(), 1);
+            });
+
+      build({ id++, "AMEI_Stics_soil_temperature_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getlayer_temp().at(i); }, 1);
+            });
+
+
       tableBuilt = true;
     }
   }

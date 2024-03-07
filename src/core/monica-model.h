@@ -54,8 +54,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "DSSAT_ST_standalone/STEMP_Component.h"
 #include "DSSAT_EPICST_standalone/STEMP_EPIC_Component.h"
 #include "Simplace_Soil_Temperature/SoilTemperatureComponent.h"
+#include "Stics_soil_temperature/soil_tempComponent.h"
 #endif
-
 
 namespace monica {
   
@@ -290,6 +290,17 @@ public:
       bool doInit{true};
   };
   kj::Own<Simplace_Soil_Temperature_T> _instance_Simplace_Soil_Temperature;
+
+  struct Stics_soil_temperature_T {
+    Stics_soil_temperature::soil_tempComponent soilTempComp;
+    Stics_soil_temperature::soil_tempState soilTempState;
+    Stics_soil_temperature::soil_tempState soilTempState1;
+    Stics_soil_temperature::soil_tempExogenous soilTempExo;
+    Stics_soil_temperature::soil_tempRate soilTempRate;
+    Stics_soil_temperature::soil_tempAuxiliary soilTempAux;
+    bool doInit{true};
+  };
+  kj::Own<Stics_soil_temperature_T> _instance_Stics_soil_temperature;
 
   kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
   kj::Function<double()> _getSoilSurfaceTemperature;
