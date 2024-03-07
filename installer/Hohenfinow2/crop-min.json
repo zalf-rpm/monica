@@ -11,18 +11,6 @@
 				  }
 			  },
 			  "residueParams": ["include-from-file", "crop-residues/maize.json"]
-		  },
-		  "sorghum": {
-			  "is-winter-crop": true,
-			  "cropParams": {
-				  "species": {
-					  "=": ["include-from-file", "crops/sorghum.json"]
-				  },
-				  "cultivar": {
-					  "=": ["include-from-file", "crops/sorghum/.json"]
-				  }
-			  },
-			  "residueParams": ["include-from-file", "crop-residues/sorghum.json"]
 		  }
 	  },
 
@@ -52,15 +40,13 @@
 						"is-winter-crop": true,
 						"cropParams": {
 							"species": ["include-from-file", "crops/wheat.json"],
-							"_species": ["include-from-file", "/home/berg/GitHub/monica_africa/data/params/crops/species/sorghum.json"],
 							"cultivar": {
 								"=": [
 									"include-from-file",
 									"crops/wheat/winter-wheat.json"
 								],
 								"CropSpecificMaxRootingDepth": 0.1
-							},
-							"_cultivar": ["include-from-file", "/home/berg/GitHub/monica_africa/data/params/crops/cultivars/sorghum.json"]
+							}
 						},
 						"residueParams": ["include-from-file", "crop-residues/wheat.json"]
 					} 

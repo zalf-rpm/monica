@@ -2229,6 +2229,10 @@ Errors SoilOrganicModuleParameters::merge(json11::Json j) {
   set_double_value(po_Inhibitor_NH3, j, "Inhibitor_NH3");
   set_double_value(ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
 
+  set_bool_value(__enable_kaiteew_TempOnDecompostion__, j, "__enable_kaiteew_TempOnDecompostion__");
+  set_bool_value(__enable_kaiteew_MoistOnDecompostion__, j, "__enable_kaiteew_MoistOnDecompostion__");
+  set_bool_value(__enable_kaiteew_ClayOnDecompostion__, j, "__enable_kaiteew_ClayOnDecompostion__");
+
   if (j["stics"].is_object()) res.append(sticsParams.merge(j["stics"]));
 
   return res;
