@@ -372,8 +372,8 @@ bool AutomaticSowing::condition(MonicaModel *model) {
   auto currentCd = cd.back();
 
   auto avg = [&](Climate::ACD acd) {
-    return accumulate(cd.rbegin(), cd.rbegin() + _daysInTempWindow, 0.0,
-                      [acd](double acc, const map<ACD, double> &d) {
+    return accumulate(cd.rbegin(), cd.rbegin() + std::min(int(cd.size()), _daysInTempWindow),
+                      0.0, [acd](double acc, const map<ACD, double> &d) {
                         auto it = d.find(acd);
                         return acc + (it == d.end() ? 0 : it->second);
                       }) / min(int(cd.size()), _daysInTempWindow);
