@@ -1455,6 +1455,8 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
 
   set_bool_value(isIntercropping, j["intercropping"], "is_intercropping");
+  set_bool_value(sequentialWaterUse, j["intercropping"], "sequential_water_use");
+  set_bool_value(twoWaySync, j["intercropping"], "two_way_sync");
   set_double_value(pc_intercropping_k_s, j["intercropping"], "k_s");
   set_double_value(pc_intercropping_k_t, j["intercropping"], "k_t");
   set_double_value(pc_intercropping_phRedux, j["intercropping"], "PHredux");
