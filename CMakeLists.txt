@@ -49,6 +49,11 @@ if (NOT TARGET Stics_soil_temperature_lib)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Stics_soil_temperature/src/cpp/Stics_soil_temperature amei-components/Stics_soil_temperature)
 endif ()
 
+if (NOT TARGET SQ_Soil_Temperature_lib)
+    message(STATUS "target: SQ_Soil_Temperature_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/SQ_Soil_Temperature/src/cpp/SQ_Soil_Temperature amei-components/SQ_Soil_Temperature)
+endif ()
+
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
     add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/capnproto_schemas)
@@ -236,6 +241,7 @@ target_link_libraries(monica_lib
         DSSAT_EPICST_standalone_lib
         Simplace_Soil_Temperature_lib
         Stics_soil_temperature_lib
+        SQ_Soil_Temperature_lib
         )
 
 #message(STATUS "json11_lib_interface_includes:")
