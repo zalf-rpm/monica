@@ -719,6 +719,8 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool __enable_vernalisation_factor_fix__{ false };
 
   bool isIntercropping { false };
+  bool sequentialWaterUse { false };
+  bool twoWaySync { true };
   double pc_intercropping_k_s {0.0};
   double pc_intercropping_k_t {0.0};
   double pc_intercropping_phRedux {0.5};

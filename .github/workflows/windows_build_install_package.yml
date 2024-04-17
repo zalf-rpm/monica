@@ -12,27 +12,27 @@ jobs:
     steps:
       # main repository monica
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: "monica"
 
       # dependent repository mas-infrastructure
       - name: Checkout dependent repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: zalf-rpm/mas-infrastructure
           ref: master
           path: "mas-infrastructure"
 
       - name: Checkout dependent repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: zalf-rpm/monica-parameters
           ref: master 
           path: "monica-parameters"
 
       - name: Checkout vcpkg
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: microsoft/vcpkg
           ref: master 
@@ -52,7 +52,7 @@ jobs:
       - name: Set up MSVC compiler
         uses: microsoft/setup-msbuild@v1.1
         with:
-          vs-version: '17.5'
+          vs-version: '17.9'
           msbuild-architecture: 'x64'
 
       - name: Install vcpkg dependencies

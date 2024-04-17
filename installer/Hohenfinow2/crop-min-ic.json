@@ -42,6 +42,8 @@
 		"=": ["include-from-file", "general/crop.json"],
 		"intercropping": {
 			"is_intercropping": true,
+			"sequental_water_use": true,
+			"two_way_sync": true,
 			"k_s": [0.6, "", "smaller crop canopy extinction coefficient"],
 			"k_t": [0.8, "", "taller crop canopy extinction coefficient"],
 			"PHredux": [0.5, "", "plant height reduction factor at dev stage"],

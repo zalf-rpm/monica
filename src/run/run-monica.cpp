@@ -843,11 +843,27 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     monica->dailyReset();
     if (isSyncIC) monica2->dailyReset();
 
+    //set the soil moisture of the monica1's soil column to monica2's soil column (from previous day)
+    if (isSyncIC) {
+      const auto& cps = monica->cropParameters();
+      if (cps.twoWaySync && cps.sequentialWaterUse) {
+        auto nols = monica->soilColumnNC().size();
+        KJ_ASSERT((nols == monica2->soilColumnNC().size()));
+        for (size_t i = 0; i < nols; i++) {
+          monica->soilColumnNC()[i].set_Vs_SoilMoisture_m3(monica2->soilColumn()[i].get_Vs_SoilMoisture_m3());
+        }
+      }
+    }
+
     monica->setCurrentStepDate(currentDate);
     if (isSyncIC) monica2->setCurrentStepDate(currentDate);
     monica->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
-    if (isSyncIC)
-      monica2->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
+    if (isSyncIC) {
+      auto cd = env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude);
+      // in case of sequential water use activated, set the precipitation for the second monica to 0
+      if (monica->cropParameters().sequentialWaterUse) cd[Climate::precip] = 0;
+      monica2->setCurrentStepClimateData(cd);
+    }
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
@@ -922,6 +938,14 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         monica2->setOtherCropHeightAndLAIt(-1, -1);
       }
       debug() << "MONICA 2: ";
+      //set the soil moisture of monica2's soil column to monica1's soil column (after running for current day)
+      if (monica->cropParameters().sequentialWaterUse) {
+        auto nols = monica->soilColumnNC().size();
+        KJ_ASSERT((nols == monica2->soilColumnNC().size()));
+        for (size_t i = 0; i < nols; i++) {
+          monica2->soilColumnNC()[i].set_Vs_SoilMoisture_m3(monica->soilColumn()[i].get_Vs_SoilMoisture_m3());
+        }
+      }
       monica2->step();
     }
     debug() << std::endl;
