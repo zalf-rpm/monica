@@ -962,8 +962,12 @@ Errors SiteParameters::merge(json11::Json j) {
   set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
   set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
 
+  set_int_value(numberOfLayers, j, "NumberOfLayers");
+  set_double_value(layerThickness, j, "LayerThickness");
+
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
-    auto p = createSoilPMs(j["SoilProfileParameters"].array_items());
+    initSoilProfileSpec = j["SoilProfileParameters"].array_items();
+    auto p = createEqualSizedSoilPMs(initSoilProfileSpec, layerThickness, numberOfLayers);
     vs_SoilParameters = kj::mv(p.first);
     if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
     if (p.second.failure()) res.append(p.second);

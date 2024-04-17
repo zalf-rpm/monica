@@ -466,7 +466,11 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
   double vs_ImpenetrableLayerDepth{ -1 }; //!< [m]
   double vs_SoilSpecificHumusBalanceCorrection{ 0.0 }; //humus equivalents
 
+  int numberOfLayers{ 20 };
+  double layerThickness{ 0.1 };
+
   Soil::SoilPMs vs_SoilParameters;
+  Tools::J11Array initSoilProfileSpec;
   //MeasuredGroundwaterTableInformation groundwaterInformation;
 };
 
