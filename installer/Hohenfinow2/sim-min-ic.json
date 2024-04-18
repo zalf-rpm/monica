@@ -24,8 +24,37 @@
 			"include-aggregation-rows": false,
 			"csv-separator": ","
 		},
-		
+
 		"events" : [
+			"daily", [
+				"Date",
+				"Crop",
+				"Stage",
+				"AbBiom",
+				"Yield",
+				"LAI",
+				"Precip",
+				["Mois", [1, 10]],
+				"Tavg"
+			]
+		],
+
+		"events2" : [
+			"daily", [
+				"Date",
+				"Crop",
+				"Stage",
+				"AbBiom",
+				"Yield",
+				"LAI",
+				"Precip",
+				["Mois", [1, 10]],
+				"Tavg"
+			]
+		],
+
+
+		"_events" : [
 			
 			"daily", [
 				"Date", 
@@ -63,7 +92,7 @@
 			"run", [["Precip", "SUM"]]
 		],
 
-		"events2" : [
+		"_events2" : [
 			"crop", [
 				"CM-count",
 				"Crop",
