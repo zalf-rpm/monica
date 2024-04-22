@@ -1603,6 +1603,19 @@ BOTRes& monica::buildOutputTable()
               return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getlayer_temp().at(i); }, 1);
             });
 
+      build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_deep", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getdeepLayerT(), 1);
+            });
+      build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_min", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getminTSoil(), 1);
+            });
+      build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_max", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getmaxTSoil(), 1);
+            });
+
 
       tableBuilt = true;
     }

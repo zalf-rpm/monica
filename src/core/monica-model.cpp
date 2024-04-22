@@ -264,6 +264,15 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   }
   st5.setlayer_thick(layerThicknessCm);
 
+  // SQ_Soil_Temperature
+  //---------------------------------------------------------------------------
+  _instance_SQ_Soil_Temperature = kj::heap<SQ_Soil_Temperature_T>();
+  auto &st6 = _instance_SQ_Soil_Temperature->soilTempComp;
+  st6.seta(0.5);
+  st6.setb(1.81);
+  st6.setc(0.49);
+  st6.setlambda_(2.454);
+
 #endif
 }
 
@@ -1011,6 +1020,29 @@ void MonicaModel::generalStep() {
                                                                  _instance_Stics_soil_temperature->soilTempRate,
                                                                  _instance_Stics_soil_temperature->soilTempAux,
                                                                  _instance_Stics_soil_temperature->soilTempExo);
+
+  // SQ_Soil_Temperature
+  //---------------------------------------------------------------------------
+  auto& exo6 = _instance_SQ_Soil_Temperature->soilTempExo;
+  exo6.setmaxTAir(tmax);
+  exo6.setminTAir(tmin);
+  exo6.setmeanTAir(tavg);
+  exo6.setmeanAnnualAirTemp(_simPs.customData["TAV"].number_value());
+  _instance_SQ_Soil_Temperature->soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
+  if(_instance_SQ_Soil_Temperature->doInit){
+    _instance_SQ_Soil_Temperature->soilTempComp._CalculateSoilTemperature.Init(
+        _instance_SQ_Soil_Temperature->soilTempState,
+        _instance_SQ_Soil_Temperature->soilTempState1,
+        _instance_SQ_Soil_Temperature->soilTempRate,
+        _instance_SQ_Soil_Temperature->soilTempAux,
+        _instance_SQ_Soil_Temperature->soilTempExo);
+    _instance_SQ_Soil_Temperature->doInit = false;
+  }
+  _instance_SQ_Soil_Temperature->soilTempComp.Calculate_Model(_instance_SQ_Soil_Temperature->soilTempState,
+                                                              _instance_SQ_Soil_Temperature->soilTempState1,
+                                                              _instance_SQ_Soil_Temperature->soilTempRate,
+                                                              _instance_SQ_Soil_Temperature->soilTempAux,
+                                                              _instance_SQ_Soil_Temperature->soilTempExo);
 
 #endif
 
