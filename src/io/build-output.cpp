@@ -1616,6 +1616,37 @@ BOTRes& monica::buildOutputTable()
               return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getmaxTSoil(), 1);
             });
 
+      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceSoilTemperature(), 1);
+            });
+
+      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp_min", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceTemperatureMinimum(), 1);
+            });
+
+      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp_max", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceTemperatureMaximum(), 1);
+            });
+
+
+      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempState.getSoilTemperatureByLayers().at(i); }, 1);
+            });
+
+      build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SurfTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->soilTempAux.getSurfaceSoilTemperature(), 1);
+            });
+
+      build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, OId oid){
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->soilTempState.getSoilTemperatureByLayers().at(i); }, 1);
+            });
+
 
       tableBuilt = true;
     }

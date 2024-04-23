@@ -56,6 +56,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "Simplace_Soil_Temperature/SoilTemperatureComponent.h"
 #include "Stics_soil_temperature/soil_tempComponent.h"
 #include "SQ_Soil_Temperature/SoilTemperatureComponent.h"
+#include "BiomaSurfacePartonSoilSWATC/SurfacePartonSoilSWATCComponent.h"
+#include "BiomaSurfaceSWATSoilSWATC/SurfaceSWATSoilSWATCComponent.h"
 #endif
 
 namespace monica {
@@ -313,6 +315,28 @@ public:
     bool doInit{true};
   };
   kj::Own<SQ_Soil_Temperature_T> _instance_SQ_Soil_Temperature;
+
+  struct BiomaSurfacePartonSoilSWATC_T {
+    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCComponent soilTempComp;
+    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCState soilTempState;
+    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCState soilTempState1;
+    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCExogenous soilTempExo;
+    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCRate soilTempRate;
+    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCAuxiliary soilTempAux;
+    bool doInit{true};
+  };
+  kj::Own<BiomaSurfacePartonSoilSWATC_T> _instance_BiomaSurfacePartonSoilSWATC;
+
+  struct BiomaSurfaceSWATSoilSWATC_T {
+    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCComponent soilTempComp;
+    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCState soilTempState;
+    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCState soilTempState1;
+    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCExogenous soilTempExo;
+    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCRate soilTempRate;
+    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCAuxiliary soilTempAux;
+    bool doInit{true};
+  };
+  kj::Own<BiomaSurfaceSWATSoilSWATC_T> _instance_BiomaSurfaceSWATSoilSWATC;
 
   kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
   kj::Function<double()> _getSoilSurfaceTemperature;

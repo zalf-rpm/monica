@@ -273,6 +273,36 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st6.setc(0.49);
   st6.setlambda_(2.454);
 
+  // BiomaSurfacePartonSoilSWATC
+  //---------------------------------------------------------------------------
+  _instance_BiomaSurfacePartonSoilSWATC = kj::heap<BiomaSurfacePartonSoilSWATC_T>();
+  // shouldn't be an exogenous variable
+  _instance_BiomaSurfacePartonSoilSWATC->soilTempExo.setVolumetricWaterContent(sws);
+  auto &st7 = _instance_BiomaSurfacePartonSoilSWATC->soilTempComp;
+  vector<double> layerThicknessM;
+  for (const auto& j : _sitePs.initSoilProfileSpec){
+    layerThicknessM.push_back(double_value(j["Thickness"]));
+  }
+  st7.setLayerThickness(layerThicknessM);
+  st7.setBulkDensity(bds);
+  st7.setLagCoefficient(0.8);
+  st7.setAirTemperatureAnnualAverage(_simPs.customData["TAV"].number_value());
+  st7.setSoilProfileDepth(_simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+
+  // BiomaSurfaceSWATSoilSWATC
+  //---------------------------------------------------------------------------
+  _instance_BiomaSurfaceSWATSoilSWATC = kj::heap<BiomaSurfaceSWATSoilSWATC_T>();
+  // shouldn't be an exogenous variable
+  _instance_BiomaSurfaceSWATSoilSWATC->soilTempAux.setAboveGroundBiomass(0);
+  _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo.setVolumetricWaterContent(sws);
+  _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo.setAlbedo(_simPs.customData["SALB"].number_value());
+  auto &st8 = _instance_BiomaSurfaceSWATSoilSWATC->soilTempComp;
+  st8.setLayerThickness(layerThicknessM);
+  st8.setBulkDensity(bds);
+  st8.setLagCoefficient(0.8);
+  st8.setAirTemperatureAnnualAverage(_simPs.customData["TAV"].number_value());
+  st8.setSoilProfileDepth(_simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+
 #endif
 }
 
@@ -1025,6 +1055,7 @@ void MonicaModel::generalStep() {
   //---------------------------------------------------------------------------
   auto& exo6 = _instance_SQ_Soil_Temperature->soilTempExo;
   exo6.setmaxTAir(tmax);
+  exo6.setdayLength(climateData[Climate::sunhours]);
   exo6.setminTAir(tmin);
   exo6.setmeanTAir(tavg);
   exo6.setmeanAnnualAirTemp(_simPs.customData["TAV"].number_value());
@@ -1043,6 +1074,51 @@ void MonicaModel::generalStep() {
                                                               _instance_SQ_Soil_Temperature->soilTempRate,
                                                               _instance_SQ_Soil_Temperature->soilTempAux,
                                                               _instance_SQ_Soil_Temperature->soilTempExo);
+
+  // BiomaSurfacePartonSoilSWATC
+  //---------------------------------------------------------------------------
+  auto& exo7 = _instance_BiomaSurfacePartonSoilSWATC->soilTempExo;
+  exo7.setAboveGroundBiomass(0);
+  exo7.setAirTemperatureMinimum(tmin);
+  exo7.setAirTemperatureMaximum(tmax);
+  exo7.setDayLength(climateData[Climate::sunhours]);
+  exo7.setGlobalSolarRadiation(globrad);
+  if(_instance_BiomaSurfacePartonSoilSWATC->doInit){
+    _instance_BiomaSurfacePartonSoilSWATC->soilTempComp._SoilTemperatureSWAT.Init(
+        _instance_BiomaSurfacePartonSoilSWATC->soilTempState,
+        _instance_BiomaSurfacePartonSoilSWATC->soilTempState1,
+        _instance_BiomaSurfacePartonSoilSWATC->soilTempRate,
+        _instance_BiomaSurfacePartonSoilSWATC->soilTempAux,
+        _instance_BiomaSurfacePartonSoilSWATC->soilTempExo);
+    _instance_BiomaSurfacePartonSoilSWATC->doInit = false;
+  }
+  _instance_BiomaSurfacePartonSoilSWATC->soilTempComp.Calculate_Model(_instance_BiomaSurfacePartonSoilSWATC->soilTempState,
+                                                                      _instance_BiomaSurfacePartonSoilSWATC->soilTempState1,
+                                                                      _instance_BiomaSurfacePartonSoilSWATC->soilTempRate,
+                                                                      _instance_BiomaSurfacePartonSoilSWATC->soilTempAux,
+                                                                      _instance_BiomaSurfacePartonSoilSWATC->soilTempExo);
+
+  // BiomaSurfaceSWATSoilSWATC
+  //---------------------------------------------------------------------------
+  auto& exo8 = _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo;
+  exo8.setAirTemperatureMinimum(tmin);
+  exo8.setAirTemperatureMaximum(tmax);
+  exo8.setGlobalSolarRadiation(globrad);
+  exo8.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
+  if(_instance_BiomaSurfaceSWATSoilSWATC->doInit){
+    _instance_BiomaSurfaceSWATSoilSWATC->soilTempComp._SoilTemperatureSWAT.Init(
+        _instance_BiomaSurfaceSWATSoilSWATC->soilTempState,
+        _instance_BiomaSurfaceSWATSoilSWATC->soilTempState1,
+        _instance_BiomaSurfaceSWATSoilSWATC->soilTempRate,
+        _instance_BiomaSurfaceSWATSoilSWATC->soilTempAux,
+        _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo);
+    _instance_BiomaSurfaceSWATSoilSWATC->doInit = false;
+  }
+  _instance_BiomaSurfaceSWATSoilSWATC->soilTempComp.Calculate_Model(_instance_BiomaSurfaceSWATSoilSWATC->soilTempState,
+                                                                    _instance_BiomaSurfaceSWATSoilSWATC->soilTempState1,
+                                                                    _instance_BiomaSurfaceSWATSoilSWATC->soilTempRate,
+                                                                    _instance_BiomaSurfaceSWATSoilSWATC->soilTempAux,
+                                                                    _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo);
 
 #endif
 

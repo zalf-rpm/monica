@@ -54,6 +54,16 @@ if (NOT TARGET SQ_Soil_Temperature_lib)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/SQ_Soil_Temperature/src/cpp/SQ_Soil_Temperature amei-components/SQ_Soil_Temperature)
 endif ()
 
+if (NOT TARGET BiomaSurfacePartonSoilSWATC_lib)
+    message(STATUS "target: BiomaSurfacePartonSoilSWATC_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfacePartonSoilSWATC/src/cpp/BiomaSurfacePartonSoilSWATC amei-components/BiomaSurfacePartonSoilSWATC)
+endif ()
+
+if (NOT TARGET BiomaSurfaceSWATSoilSWATC_lib)
+    message(STATUS "target: BiomaSurfaceSWATSoilSWATC_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfaceSWATSoilSWATC/src/cpp/BiomaSurfaceSWATSoilSWATC amei-components/BiomaSurfaceSWATSoilSWATC)
+endif ()
+
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
     add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/capnproto_schemas)
@@ -242,6 +252,8 @@ target_link_libraries(monica_lib
         Simplace_Soil_Temperature_lib
         Stics_soil_temperature_lib
         SQ_Soil_Temperature_lib
+        BiomaSurfacePartonSoilSWATC_lib
+        BiomaSurfaceSWATSoilSWATC_lib
         )
 
 #message(STATUS "json11_lib_interface_includes:")
