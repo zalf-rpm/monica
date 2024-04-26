@@ -1850,6 +1850,7 @@ Errors SoilTemperatureModuleParameters::merge(json11::Json j) {
   set_double_value(pt_SpecificHeatCapacityHumus, j, "SpecificHeatCapacityHumus");
   set_double_value(pt_SoilAlbedo, j, "SoilAlbedo");
   set_double_value(pt_SoilMoisture, j, "SoilMoisture");
+  set_double_value(pt_PlantAvailableWaterContentConst, j, "PlantAvailableWaterContentConst");
   set_double_value(dampingFactor, j, "DampingFactor");
 
   return res;
@@ -1871,6 +1872,7 @@ json11::Json SoilTemperatureModuleParameters::to_json() const {
        {"SpecificHeatCapacityHumus", pt_SpecificHeatCapacityHumus},
        {"SoilAlbedo", pt_SoilAlbedo},
        {"SoilMoisture", pt_SoilMoisture},
+       {"PlantAvailableWaterContentConst", pt_PlantAvailableWaterContentConst},
        {"DampingFactor", dampingFactor}
       };
 }

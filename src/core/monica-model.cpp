@@ -77,13 +77,13 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                          _cropPs.pc_MinimumAvailableN);
 #endif
 #ifdef AMEI
+  auto awc = _simPs.customData["AWC"].number_value();
   // Monica_SoilTemp
   //---------------------------------------------------------------------------
   const auto &stParams = cpp.userSoilTemperatureParameters;
   _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp_T>();
   auto &st = _instance_Monica_SoilTemp->soilTempComp;
   st.settimeStep(_envPs.p_timeStep);
-  st.setsoilMoistureConst(stParams.pt_SoilMoisture);
   st.setbaseTemp(stParams.pt_BaseTemperature);
   st.setinitialSurfaceTemp(stParams.pt_InitialSurfaceTemperature);
   st.setdensityAir(stParams.pt_DensityAir);
@@ -102,6 +102,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   vector<double> bds;
   vector<double> sats;
   vector<double> oms;
+  vector<double> smcs; //soil moisture const
   for (const auto &sps: _sitePs.vs_SoilParameters) {
     //st.getlayerThickness().push_back(_sitePs.layerThickness);
     //st.getsoilBulkDensity().push_back(sps.vs_SoilBulkDensity());
@@ -111,7 +112,9 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     bds.push_back(sps.vs_SoilBulkDensity());
     sats.push_back(sps.vs_Saturation);
     oms.push_back(sps.vs_SoilOrganicMatter());
+    smcs.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
   }
+  st.setsoilMoistureConst(smcs);
   // add the two temperature layers
   //st.getlayerThickness().push_back(_sitePs.layerThickness);
   //st.getlayerThickness().push_back(_sitePs.layerThickness);
@@ -149,7 +152,6 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st2.setNLAYR(int(_sitePs.initSoilProfileSpec.size()));
   st2.setXLAT(_simPs.customData["XLAT"].number_value());
   auto soilPs = createSoilPMs(_sitePs.initSoilProfileSpec);
-  auto awc = _simPs.customData["AWC"].number_value();
   int currentDepthCm = 0;
   vector<double> lls;
   vector<double> duls;
@@ -922,16 +924,12 @@ void MonicaModel::generalStep() {
       exo.setsoilCoverage(1.0 - exp(-0.5 * lai));
     }
   }
-  if (_soilMoisture && _soilMoisture->get_SnowDepth() > 0.0) {
-    exo.sethasSnowCover(true);
-    exo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
-  } else {
-    exo.sethasSnowCover(false);
-  }
-  if (!_simPs.customData["AWC"].is_null()) {
-    auto awc = _simPs.customData["AWC"].number_value();
-    _instance_Monica_SoilTemp->soilTempComp.setsoilMoistureConst(awc);
-  }
+  //if (_soilMoisture && _soilMoisture->get_SnowDepth() > 0.0) {
+  //  exo.sethasSnowCover(true);
+  //  exo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
+  //} else {
+  exo.sethasSnowCover(false);
+  //}
   if(_instance_Monica_SoilTemp->doInit){
     _instance_Monica_SoilTemp->soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp->soilTempState,
                                                                   _instance_Monica_SoilTemp->soilTempState1,

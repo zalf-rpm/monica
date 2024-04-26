@@ -36,7 +36,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
       , _params(params)
       , _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2)
       , _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
-//	, vs_SoilMoisture_const(_noOfTempLayers)
+    	, _soilMoistureConst(_noOfTempLayers)
       , _soilTemperature(_noOfTempLayers)
       , _V(_noOfTempLayers)
       , _volumeMatrix(_noOfTempLayers)
@@ -62,11 +62,6 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
   //shouldn't hurt
   if (!_soilColumn.empty()) _soilColumnGroundLayer = _soilColumnBottomLayer = _soilColumn.back();
 
-  // according to sensitivity tests, soil moisture has minor
-  // influence to the temperature and thus can be set as constant
-  // by xenia
-  const double soilMoistureConst = _params.pt_SoilMoisture;
-
   double baseTemp = _params.pt_BaseTemperature;  // temperature for lowest layer (avg yearly air temp)
   double initialSurfaceTemp = _params.pt_InitialSurfaceTemperature; // Replace by Mean air temperature
   auto soilNols = _noOfSoilLayers;
@@ -81,7 +76,16 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
     // Soil moisture content is held constant for numeric stability.
     // If dynamic soil moisture should be used, the energy balance
     // must be extended by latent heat flow.
-    //vs_SoilMoisture_const[i] = soilMoistureConst;
+    // according to sensitivity tests, soil moisture has minor
+    // influence to the temperature and thus can be set as constant
+    // by xenia
+    // added an option to set the plant available water content, if old pt_SoilMoisture is set to < 0
+    if (_params.pt_SoilMoisture >= 0) _soilMoistureConst[i] = _params.pt_SoilMoisture;
+    else {
+      auto pwpi = soilColumn.at(i).vs_PermanentWiltingPoint();
+      auto fci = soilColumn.at(i).vs_FieldCapacity();
+      _soilMoistureConst[i] = pwpi + _params.pt_PlantAvailableWaterContentConst*(fci - pwpi);
+    }
   }
 
   // Determination of the geometry parameters for soil temperature calculation
@@ -130,7 +134,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
     // Note: in this original publication lambda is calculated in cal cm-1 s-1 K-1!
     ///////////////////////////////////////////////////////////////////////////////////////
     const double sbdi = soilColumn.at(i).vs_SoilBulkDensity();
-    const double smi = soilMoistureConst; //vs_SoilMoisture_const.at(i);
+    const double smi = _soilMoistureConst.at(i);
     _heatConductivity[i] =
         ((3.0 * (sbdi / 1000.0) - 1.7) * 0.001)
         / (1.0 + (11.5 - 5.0 * (sbdi / 1000.0))
@@ -228,7 +232,7 @@ void SoilTemperature::deserialize(mas::schema::model::monica::SoilTemperatureMod
   _params.deserialize(reader.getModuleParams());
   _noOfTempLayers = reader.getNumberOfLayers();
   _noOfSoilLayers = reader.getVsNumberOfLayers();
-  //setFromCapnpList(vs_SoilMoisture_const, reader.getVsSoilMoistureConst());
+  setFromCapnpList(_soilMoistureConst, reader.getVsSoilMoistureConst());
   setFromCapnpList(_soilTemperature, reader.getSoilTemperature());
   setFromCapnpList(_V, reader.getV());
   setFromCapnpList(_volumeMatrix, reader.getVolumeMatrix());
@@ -250,7 +254,7 @@ void SoilTemperature::serialize(mas::schema::model::monica::SoilTemperatureModul
   _params.serialize(builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t) _noOfTempLayers);
   builder.setVsNumberOfLayers((uint16_t) _noOfSoilLayers);
-  //setCapnpList(vs_SoilMoisture_const, builder.initVsSoilMoistureConst((capnp::uint)vs_SoilMoisture_const.size()));
+  setCapnpList(_soilMoistureConst, builder.initVsSoilMoistureConst((capnp::uint)_soilMoistureConst.size()));
   setCapnpList(_soilTemperature, builder.initSoilTemperature((capnp::uint) _soilTemperature.size()));
   setCapnpList(_V, builder.initV((capnp::uint) _V.size()));
   setCapnpList(_volumeMatrix, builder.initVolumeMatrix((capnp::uint) _volumeMatrix.size()));

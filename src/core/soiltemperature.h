@@ -91,7 +91,7 @@ private:
 
   std::size_t _noOfTempLayers;
   std::size_t _noOfSoilLayers;
-  //std::vector<double> vs_SoilMoisture_const;
+  std::vector<double> _soilMoistureConst;
   std::vector<double> _soilTemperature;
   std::vector<double> _V;
   std::vector<double> _volumeMatrix;

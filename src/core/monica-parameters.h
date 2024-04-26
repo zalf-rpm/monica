@@ -844,7 +844,8 @@ struct DLL_API SoilTemperatureModuleParameters : public Tools::Json11Serializabl
   double pt_SpecificHeatCapacityWater{ 0.0 };
   double pt_SpecificHeatCapacityHumus{ 0.0 };
   double pt_SoilAlbedo{ 0.0 };
-  double pt_SoilMoisture{ 0.25 };
+  double pt_SoilMoisture{ 0.25 }; // [m3 m-3]
+  double pt_PlantAvailableWaterContentConst { 0.25 }; // [m3 m-3]
   double dampingFactor{ 0.8 };
 };
 
