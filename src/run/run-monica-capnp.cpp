@@ -78,33 +78,33 @@ kj::Promise<void> RunMonica::run(RunContext context)
 
     if (!soilLayers.empty()) env.params.siteParameters.merge(J11Object{{"SoilProfileParameters", soilLayers}});
 
-    EResult<DataAccessor> eda;
-    if (da.isValid()) {
-      eda.result = da;
-    } else if (!env.climateData.isValid()) {
-      if (!env.climateCSV.empty()) {
-        eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
-      } else if (!env.pathsToClimateCSV.empty()) {
-        eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
-      }
-    }
-
     monica::Output out;
-    if (eda.success()) {
-      env.climateData = eda.result;
+    EResult<DataAccessor> eda;
+    try {
+      if (da.isValid()) {
+        eda.result = da;
+      } else if (!env.climateData.isValid()) {
+        if (!env.climateCSV.empty()) {
+          eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+        } else if (!env.pathsToClimateCSV.empty()) {
+          eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+        }
+      }
 
-      env.debugMode = _startedServerInDebugMode && env.debugMode;
-
-      env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-          [](std::string soilTexture, size_t distance) {
-            return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture), distance);
-          };
-
-      out = monica::runMonica(env);
-    } else {
-      out.customId = env.customId;
+      if (eda.success()) {
+        env.climateData = eda.result;
+        env.debugMode = _startedServerInDebugMode && env.debugMode;
+        env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+            [](std::string soilTexture, size_t distance) {
+              return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture), distance);
+            };
+        out = monica::runMonica(env);
+      } else {
+        out.customId = env.customId;
+      }
+    } catch(std::exception &e) {
+      eda.appendError(kj::str("Error running MONICA: ", e.what()).cStr());
     }
-
     out.errors = eda.errors;
     out.warnings = eda.warnings;
     return out;
