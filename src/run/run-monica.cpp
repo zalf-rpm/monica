@@ -715,7 +715,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
       //check again, because we might have moved to next cropRotation
       if (crit != envCropRotations.end()) {
-        //if a new cropRotation starts, copy the the pointers to the CMs to the shadow CR
+        //if a new cropRotation starts, copy the pointers to the CMs to the shadow CR
         if (crit->start.isValid() && currentDate == crit->start) {
           for (auto &cm: crit->cropRotation) cropRotation.push_back(&cm);
           return true;

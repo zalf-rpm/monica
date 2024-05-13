@@ -611,7 +611,7 @@ public:
 
   std::vector<WSPtr> unfinishedDynamicWorksteps() const { return _unfinishedDynamicWorksteps; }
 
-  bool allDynamicWorkstepsFinished() const { return _unfinishedDynamicWorksteps.empty(); }
+  bool allDynamicWorkstepsFinished() const;
 
   std::string name() const { return _name; }
 

@@ -1264,6 +1264,15 @@ vector<WSPtr> CultivationMethod::allDynamicWorksteps() const {
   return workstepsAt(Date());
 }
 
+bool CultivationMethod::allDynamicWorkstepsFinished() const {
+  if (_unfinishedDynamicWorksteps.empty()) return true;
+  else {
+    return all_of(_unfinishedDynamicWorksteps.begin(), _unfinishedDynamicWorksteps.end(),
+                  [](const WSPtr &wsp) {
+                    return wsp->type() == "NDemandFertilization";
+                  });
+  }
+}
 
 Date CultivationMethod::startDate() const {
   if (_allWorksteps.empty())
