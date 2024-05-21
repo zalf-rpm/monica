@@ -101,7 +101,7 @@ Workstep::Workstep(int noOfDaysAfterEvent, const std::string &afterEvent)
     : _applyNoOfDaysAfterEvent(noOfDaysAfterEvent), _afterEvent(afterEvent) {}
 
 Workstep::Workstep(json11::Json j) {
-  merge(j);
+  _errors.append(Workstep::merge(kj::mv(j)));
 }
 
 Errors Workstep::merge(json11::Json j) {
@@ -184,13 +184,14 @@ bool Workstep::reinit(Tools::Date date, bool addYear, bool forceInitYear) {
 //}
 
 Sowing::Sowing(json11::Json j) {
-  merge(j);
+  _errors.append(Sowing::merge(kj::mv(j)));
 }
 
 Errors Sowing::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   //set_shared_ptr_value(_crop, j, "crop");
-  _cropToPlant = kj::heap<Crop>(j["crop"]);
+  _cropToPlant = kj::heap<Crop>();
+  res.append(_cropToPlant->merge(j["crop"]));
   _crop = _cropToPlant.get();
   _crop->setSeedDate(date());
   set_int_value(_plantDensity, j, "PlantDensity");
@@ -222,7 +223,7 @@ bool Sowing::apply(MonicaModel *model) {
 }
 
 AutomaticSowing::AutomaticSowing(json11::Json j) {
-  merge(j);
+  _errors.append(AutomaticSowing::merge(kj::mv(j)));
 }
 
 Errors AutomaticSowing::merge(json11::Json j) {
@@ -441,6 +442,10 @@ bool AutomaticSowing::reinit(Tools::Date date, bool addYear, bool forceInitYear)
 //		_crop->setHarvestDate(at);
 //}
 
+Harvest::Harvest(json11::Json j) {
+  _errors.append(Harvest::merge(kj::mv(j)));
+}
+
 Errors Harvest::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
 
@@ -521,8 +526,8 @@ AutomaticHarvest::AutomaticHarvest()
 //{}
 
 AutomaticHarvest::AutomaticHarvest(json11::Json j)
-    : Harvest(j), _harvestTime("maturity") {
-  merge(j);
+    : _harvestTime("maturity") {
+  _errors.append(AutomaticHarvest::merge(kj::mv(j)));
 }
 
 Errors AutomaticHarvest::merge(json11::Json j) {
@@ -596,9 +601,8 @@ bool AutomaticHarvest::reinit(Tools::Date date, bool addYear, bool forceInitYear
 Cutting::Cutting(const Tools::Date &at)
     : Workstep(at) {}
 
-Cutting::Cutting(json11::Json j)
-    : Workstep(j) {
-  merge(j);
+Cutting::Cutting(json11::Json j) {
+  _errors.append(Cutting::merge(kj::mv(j)));
 }
 
 Errors Cutting::merge(json11::Json j) {
@@ -700,7 +704,7 @@ MineralFertilization(const Tools::Date &at,
     : Workstep(at), _partition(partition), _amount(amount) {}
 
 MineralFertilization::MineralFertilization(json11::Json j) {
-  merge(j);
+  _errors.append(MineralFertilization::merge(kj::mv(j)));
 }
 
 Errors MineralFertilization::merge(json11::Json j) {
@@ -744,7 +748,7 @@ NDemandFertilization::NDemandFertilization(Tools::Date date,
     : Workstep(date), _initialDate(date), _partition(partition), _Ndemand(Ndemand), _depth(depth) {}
 
 NDemandFertilization::NDemandFertilization(json11::Json j) {
-  merge(j);
+  _errors.append(NDemandFertilization::merge(kj::mv(j)));
 }
 
 Errors NDemandFertilization::merge(json11::Json j) {
@@ -822,7 +826,7 @@ OrganicFertilization(const Tools::Date &at,
     : Workstep(at), _params(params), _amount(amount), _incorporation(incorp) {}
 
 OrganicFertilization::OrganicFertilization(json11::Json j) {
-  merge(j);
+  _errors.append(OrganicFertilization::merge(kj::mv(j)));
 }
 
 Errors OrganicFertilization::merge(json11::Json j) {
@@ -858,7 +862,7 @@ Tillage::Tillage(const Tools::Date &at,
     : Workstep(at), _depth(depth) {}
 
 Tillage::Tillage(json11::Json j) {
-  merge(j);
+  _errors.append(Tillage::merge(kj::mv(j)));
 }
 
 Errors Tillage::merge(json11::Json j) {
@@ -891,7 +895,7 @@ SetValue::SetValue(const Tools::Date &at,
     : Workstep(at), _oid(oid), _value(value) {}
 
 SetValue::SetValue(json11::Json j) {
-  merge(j);
+  _errors.append(SetValue::merge(kj::mv(j)));
 }
 
 Errors SetValue::merge(json11::Json j) {
@@ -964,7 +968,7 @@ SaveMonicaState::SaveMonicaState(const Tools::Date &at, std::string pathToSerial
 }
 
 SaveMonicaState::SaveMonicaState(json11::Json j) {
-  merge(j);
+  _errors.append(SaveMonicaState::merge(kj::mv(j)));
 }
 
 Errors SaveMonicaState::merge(json11::Json j) {
@@ -1013,7 +1017,7 @@ Irrigation::Irrigation(const Tools::Date &at,
     : Workstep(at), _amount(amount), _params(params) {}
 
 Irrigation::Irrigation(json11::Json j) {
-  merge(j);
+  _errors.append(Irrigation::merge(kj::mv(j)));
 }
 
 Errors Irrigation::merge(json11::Json j) {
@@ -1046,36 +1050,48 @@ bool Irrigation::apply(MonicaModel *model) {
 WSPtr monica::makeWorkstep(json11::Json j) {
   string type = string_value(j["type"]);
   if (type == "Sowing"
-      || type == "Seed") //deprecated name
+      || type == "Seed") { //deprecated name
     return make_shared<Sowing>(j);
-  else if (type == "AutomaticSowing")
+  }
+  else if (type == "AutomaticSowing") {
     return make_shared<AutomaticSowing>(j);
-  else if (type == "Harvest")
+  }
+  else if (type == "Harvest") {
     return make_shared<Harvest>(j);
-  else if (type == "AutomaticHarvest")
+  }
+  else if (type == "AutomaticHarvest") {
     return make_shared<AutomaticHarvest>(j);
-  else if (type == "Cutting")
+  }
+  else if (type == "Cutting") {
     return make_shared<Cutting>(j);
+  }
   else if (type == "MineralFertilization"
-           || type == "MineralFertiliserApplication") //deprecated name
+           || type == "MineralFertiliserApplication") { //deprecated name
     return make_shared<MineralFertilization>(j);
-  else if (type == "NDemandFertilization")
+  }
+  else if (type == "NDemandFertilization") {
     return make_shared<NDemandFertilization>(j);
+  }
   else if (type == "OrganicFertilization"
-           || type == "OrganicFertiliserApplication") //deprecated name
+           || type == "OrganicFertiliserApplication") { //deprecated name
     return make_shared<OrganicFertilization>(j);
+  }
   else if (type == "Tillage"
-           || type == "TillageApplication") //deprecated name
+           || type == "TillageApplication") { //deprecated name
     return make_shared<Tillage>(j);
+  }
   else if (type == "Irrigation"
-           || type == "IrrigationApplication") //deprecated name
+           || type == "IrrigationApplication") { //deprecated name
     return make_shared<Irrigation>(j);
-  else if (type == "SetValue")
+  }
+  else if (type == "SetValue") {
     return make_shared<SetValue>(j);
-  else if (type == "SaveMonicaState")
+  }
+  else if (type == "SaveMonicaState") {
     return make_shared<SaveMonicaState>(j);
+  }
 
-  return WSPtr();
+  return {};
 }
 
 CultivationMethod::CultivationMethod(const string &name)
@@ -1125,6 +1141,7 @@ Errors CultivationMethod::merge(json11::Json j) {
     auto ws = makeWorkstep(wsj);
     if (!ws)
       continue;
+    res.append(ws->errors());
     _allWorksteps.push_back(ws);
     //_allWorksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
     string wsType = ws->type();
