@@ -656,6 +656,7 @@ private:
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0}; //! old dt
   int vc_TimeUnderAnoxia{0};
+  int vc_TimeUnderAnoxiaThreshold{4};
   double vs_Tortuosity{};              //! old AD
   double vc_TotalBiomass{0.0};
   double vc_TotalBiomassNContent{0.0}; //! old PESUM

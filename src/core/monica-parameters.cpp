@@ -1448,6 +1448,7 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
+  set_int_value(pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
 
   set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j,
                  "__enable_Photosynthesis_WangEngelTemperatureResponse__");
@@ -1490,6 +1491,7 @@ json11::Json CropModuleParameters::to_json() const {
        {"GrowthRespirationParameter2",                            pc_GrowthRespirationParameter2},
        {"Tortuosity",                                             pc_Tortuosity},
        {"AdjustRootDepthForSoilProps",                            pc_AdjustRootDepthForSoilProps},
+       {"TimeUnderAnoxiaThreshold", pc_TimeUnderAnoxiaThreshold},
        {"__enable_Phenology_WangEngelTemperatureResponse__",      __enable_Phenology_WangEngelTemperatureResponse__},
        {"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__},
        {"__enable_hourly_FvCB_photosynthesis__",                  __enable_hourly_FvCB_photosynthesis__},

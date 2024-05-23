@@ -169,7 +169,9 @@ CropModule::CropModule(SoilColumn &sc,
         cps.speciesParams.pc_StageAtMaxHeight), pc_StageMaxRootNConcentration(
         cps.speciesParams.pc_StageMaxRootNConcentration), pc_StageKcFactor(cps.cultivarParams.pc_StageKcFactor)
       , pc_StageTemperatureSum(cps.cultivarParams.pc_StageTemperatureSum), pc_StorageOrgan(
-        cps.speciesParams.pc_StorageOrgan), vs_Tortuosity(cropPs.pc_Tortuosity), vc_Transpiration(
+        cps.speciesParams.pc_StorageOrgan)
+        , vc_TimeUnderAnoxiaThreshold(cropPs.pc_TimeUnderAnoxiaThreshold)
+        , vs_Tortuosity(cropPs.pc_Tortuosity), vc_Transpiration(
         soilColumn.vs_NumberOfLayers(), 0.0), vc_TranspirationRedux(soilColumn.vs_NumberOfLayers(), 1.0)
       , pc_VernalisationRequirement(cps.cultivarParams.pc_VernalisationRequirement), pc_WaterDeficitResponseOn(
         simPs.pc_WaterDeficitResponseOn), vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
@@ -467,6 +469,7 @@ void CropModule::deserialize(mas::schema::model::monica::CropModuleState::Reader
   vc_TargetNConcentration = reader.getTargetNConcentration();
   vc_TimeStep = reader.getTimeStep();
   vc_TimeUnderAnoxia = (int) reader.getTimeUnderAnoxia();
+  //vc_TimeUnderAnoxiaThreshold = (int) reader.getTimeUnderAnoxiaThreshold();
   vs_Tortuosity = reader.getVsTortuosity();
   vc_TotalBiomass = reader.getTotalBiomass();
   vc_TotalBiomassNContent = reader.getTotalBiomassNContent();
@@ -731,6 +734,7 @@ void CropModule::serialize(mas::schema::model::monica::CropModuleState::Builder 
   builder.setTargetNConcentration(vc_TargetNConcentration);
   builder.setTimeStep(vc_TimeStep);
   builder.setTimeUnderAnoxia(vc_TimeUnderAnoxia);
+  //builder.setTimeUnderAnoxiaThreshold(vc_TimeUnderAnoxiaTheshold);
   builder.setVsTortuosity(vs_Tortuosity);
   builder.setTotalBiomass(vc_TotalBiomass);
   builder.setTotalBiomassNContent(vc_TotalBiomassNContent);
@@ -1182,14 +1186,14 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
         soilColumn[2].get_Vs_SoilMoisture_m3())) / 3.0;
   if (vc_AirFilledPoreVolume < d_CriticalOxygenContent) {
     vc_TimeUnderAnoxia += int(vc_TimeStep);
-    if (vc_TimeUnderAnoxia > 4) {
-      vc_TimeUnderAnoxia = 4;
+    if (vc_TimeUnderAnoxia > vc_TimeUnderAnoxiaThreshold) {
+      vc_TimeUnderAnoxia = vc_TimeUnderAnoxiaThreshold;
     }
     if (vc_AirFilledPoreVolume < 0.0) {
       vc_AirFilledPoreVolume = 0.0;
     }
     vc_MaxOxygenDeficit = vc_AirFilledPoreVolume / d_CriticalOxygenContent;
-    vc_OxygenDeficit = 1.0 - double(vc_TimeUnderAnoxia / 4) * (1.0 - vc_MaxOxygenDeficit);
+    vc_OxygenDeficit = 1.0 - double(vc_TimeUnderAnoxia / vc_TimeUnderAnoxiaThreshold) * (1.0 - vc_MaxOxygenDeficit);
   } else {
     vc_TimeUnderAnoxia = 0;
     vc_OxygenDeficit = 1.0;
