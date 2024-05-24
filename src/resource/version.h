@@ -6,7 +6,7 @@
 
 #define VERSION_MAJOR               3
 #define VERSION_MINOR               6
-#define VERSION_REVISION            16
+#define VERSION_REVISION            17
 #define VERSION_BUILD               214
 
 #define VER_FILE_VERSION            VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, VERSION_BUILD
