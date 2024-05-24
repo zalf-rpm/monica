@@ -407,8 +407,10 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
 
   virtual json11::Json to_json() const;
 
-  double amount{ 17.0 };
-  double threshold{ 0.35 };
+  double amount{ 0.0 };
+  double percentNFC{ -1.0 };
+  double threshold{ -1.0 };
+  double criticalMoistureDepthM{ 0.3 };
 };
 
 
@@ -785,7 +787,7 @@ struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
 
   std::function<double(std::string, size_t)> getCapillaryRiseRate;
 
-  double pm_CriticalMoistureDepth{ 0.0 };
+  //double pm_CriticalMoistureDepth{ 0.0 };
   double pm_SaturatedHydraulicConductivity{ 0.0 };
   double pm_SurfaceRoughness{ 0.0 };
   double pm_GroundwaterDischarge{ 0.0 };

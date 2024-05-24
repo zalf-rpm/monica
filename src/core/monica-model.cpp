@@ -66,12 +66,12 @@ MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
       _groundwaterInformation(kj::mv(cpp.groundwaterInformation)),
       _soilColumn(kj::heap<SoilColumn>(_simPs.p_LayerThickness,
                                        cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-                                       _sitePs.vs_SoilParameters,
-                                       cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth)),
+                                       _sitePs.vs_SoilParameters)),
+                                       //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth)),
       _soilTemperature(kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters)),
       _soilMoisture(kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters)),
-      _soilOrganic(kj::heap<SoilOrganic>(*_soilColumn.get(), cpp.userSoilOrganicParameters)),
-      _soilTransport(kj::heap<SoilTransport>(*_soilColumn.get(), _sitePs, cpp.userSoilTransportParameters,
+      _soilOrganic(kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters)),
+      _soilTransport(kj::heap<SoilTransport>(*_soilColumn, _sitePs, cpp.userSoilTransportParameters,
                                              _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {
 }
 
@@ -117,14 +117,14 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
     _soilOrganic->deserialize(reader.getSoilOrganic());
     _soilOrganic->putCrop(_currentCropModule.get());
   } else {
-    _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn.get(), reader.getSoilOrganic(), _currentCropModule.get());
+    _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, reader.getSoilOrganic(), _currentCropModule.get());
   }
 
   if (_soilTransport) {
     _soilTransport->deserialize(reader.getSoilTransport());
     _soilTransport->putCrop(_currentCropModule.get());
   } else {
-    _soilTransport = kj::heap<SoilTransport>(*_soilColumn.get(), reader.getSoilTransport(), _currentCropModule.get());
+    _soilTransport = kj::heap<SoilTransport>(*_soilColumn, reader.getSoilTransport(), _currentCropModule.get());
   }
 
   _sumFertiliser = reader.getSumFertiliser();
@@ -557,8 +557,8 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/) {
   //if the production process has still some defined manual irrigation dates
   if (!_simPs.p_UseAutomaticIrrigation) {
-    _soilOrganic->addIrrigationWater(amount);
     _soilColumn->applyIrrigation(amount, nitrateConcentration);
+    _soilOrganic->addIrrigationWater(amount);
     addDailySumIrrigationWater(amount);
   }
 }
@@ -702,9 +702,9 @@ pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai)
 void MonicaModel::cropStep() {
   auto date = _currentStepDate;
   auto climateData = currentStepClimateData();
+
   // do nothing if there is no crop
-  if (!_currentCropModule)
-    return;
+  if (!_currentCropModule) return;
 
   p_daysWithCrop++;
 
@@ -722,11 +722,13 @@ void MonicaModel::cropStep() {
   } else {
     // try to get yearly values from UserEnvironmentParameters
     auto o3sit = _envPs.p_AtmosphericO3s.find(date.year());
-    if (o3sit != _envPs.p_AtmosphericO3s.end())
+    if (o3sit != _envPs.p_AtmosphericO3s.end()) {
       vw_AtmosphericO3Concentration = o3sit->second;
       // if everything fails value in UserEnvironmentParameters for the whole simulation
-    else
+    }
+    else {
       vw_AtmosphericO3Concentration = _envPs.p_AtmosphericO3;
+    }
   }
 
   // test if data for sunhours are available; if not, value is set to -1.0
@@ -763,10 +765,12 @@ void MonicaModel::cropStep() {
                            et0);
   if (_simPs.p_UseAutomaticIrrigation) {
     const AutomaticIrrigationParameters &aips = _simPs.p_AutoIrrigationParams;
-    if (_soilColumn->applyIrrigationViaTrigger(aips.threshold, aips.amount,
-                                               aips.nitrateConcentration)) {
-      _soilOrganic->addIrrigationWater(aips.amount);
-      addDailySumIrrigationWater(aips.amount);
+    bool irrigationTriggered = false;
+    double irrigationAmount = 0.0;
+    tie(irrigationTriggered, irrigationAmount) = _soilColumn->applyIrrigationViaTrigger(aips);
+    if (irrigationTriggered) {
+      _soilOrganic->addIrrigationWater(irrigationAmount);
+      addDailySumIrrigationWater(irrigationAmount);
     }
   }
 

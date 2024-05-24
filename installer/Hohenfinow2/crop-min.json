@@ -1,52 +1,15 @@
   {
-	  "crops": {
-		  "maize": {
-			  "is-winter-crop": true,
-			  "cropParams": {
-				  "species": {
-					  "=": ["include-from-file", "crops/maize.json"]
-				  },
-				  "cultivar": {
-					  "=": ["include-from-file", "crops/maize/grain-maize.json"]
-				  }
-			  },
-			  "residueParams": ["include-from-file", "crop-residues/maize.json"]
-		  }
-	  },
-
-	  "cropRotation": [
-		  {
-			  "worksteps": [
-				  {
-					  "date": "0000-10-13",
-					  "type": "Sowing",
-					  "crop": ["ref", "crops", "maize"]
-				  },
-				  {
-					  "type": "Harvest",
-					  "date": "0001-05-21"
-				  }
-			  ]
-		  }
-	  ],
-
-	"_cropRotation": [
+	"cropRotation": [
 		{
 			"worksteps": [
 				{ 
-					"date": "0000-05-04",
+					"date": "0000-10-11",
 					"type": "Sowing", 
 					"crop": {
 						"is-winter-crop": true,
 						"cropParams": {
 							"species": ["include-from-file", "crops/wheat.json"],
-							"cultivar": {
-								"=": [
-									"include-from-file",
-									"crops/wheat/winter-wheat.json"
-								],
-								"CropSpecificMaxRootingDepth": 0.1
-							}
+							"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
 						},
 						"residueParams": ["include-from-file", "crop-residues/wheat.json"]
 					} 

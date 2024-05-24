@@ -823,7 +823,7 @@ BOTRes& monica::buildOutputTable()
       build({id++, "Irrig", "mm", "Irrigation"},
             [](const MonicaModel& monica, OId oid)
       {
-        return round(monica.dailySumIrrigationWater(), 1);
+        return round(monica.dailySumIrrigationWater(), 3);
       });
 
       build({ id++, "Infilt", "mm", "Infiltration" },
