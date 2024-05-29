@@ -81,7 +81,7 @@ public:
 
   bool isCropPlanted() const { return _currentCropModule; }
 
-  void harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
+  void harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
 
   void incorporateCurrentCrop();
 

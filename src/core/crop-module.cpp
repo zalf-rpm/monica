@@ -35,6 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-common.h"
 #include "photosynthesis-FvCB.h"
 #include "O3-impact.h"
+#include "io/output.h"
 
 const double PI = 3.14159265358979323;
 
@@ -492,7 +493,6 @@ void CropModule::deserialize(mas::schema::model::monica::CropModuleState::Reader
   dyingOut = reader.getDyingOut();
   vc_AccumulatedETa = reader.getAccumulatedETa();
   vc_AccumulatedTranspiration = reader.getAccumulatedTranspiration();
-  vc_AccumulatedPrimaryCropYield = reader.getAccumulatedPrimaryCropYield();
   vc_sumExportedCutBiomass = reader.getSumExportedCutBiomass();
   vc_exportedCutBiomass = reader.getExportedCutBiomass();
   vc_sumResidueCutBiomass = reader.getSumResidueCutBiomass();
@@ -758,7 +758,6 @@ void CropModule::serialize(mas::schema::model::monica::CropModuleState::Builder 
   builder.setDyingOut(dyingOut);
   builder.setAccumulatedETa(vc_AccumulatedETa);
   builder.setAccumulatedTranspiration(vc_AccumulatedTranspiration);
-  builder.setAccumulatedPrimaryCropYield(vc_AccumulatedPrimaryCropYield);
   builder.setSumExportedCutBiomass(vc_sumExportedCutBiomass);
   builder.setExportedCutBiomass(vc_exportedCutBiomass);
   builder.setSumResidueCutBiomass(vc_sumResidueCutBiomass);
@@ -1176,32 +1175,27 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
  * @author Claas Nendel
  */
 double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
-  double vc_AirFilledPoreVolume = 0.0;
-  double vc_MaxOxygenDeficit = 0.0;
-
+  int timeUnderAnoxiaThresholdAtStage = vc_DevelopmentalStage < vc_TimeUnderAnoxiaThreshold.size()
+      ? vc_TimeUnderAnoxiaThreshold.at(vc_DevelopmentalStage) : TimeUnderAnoxiaThresholdDefault;
   // Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
-  vc_AirFilledPoreVolume =
-      ((soilColumn[0].vs_Saturation() + soilColumn[1].vs_Saturation() + soilColumn[2].vs_Saturation()) -
-       (soilColumn[0].get_Vs_SoilMoisture_m3() + soilColumn[1].get_Vs_SoilMoisture_m3() +
-        soilColumn[2].get_Vs_SoilMoisture_m3())) / 3.0;
-  if (vc_AirFilledPoreVolume < d_CriticalOxygenContent) {
-    vc_TimeUnderAnoxia += int(vc_TimeStep);
-    if (vc_TimeUnderAnoxia > vc_TimeUnderAnoxiaThreshold) {
-      vc_TimeUnderAnoxia = vc_TimeUnderAnoxiaThreshold;
-    }
-    if (vc_AirFilledPoreVolume < 0.0) {
-      vc_AirFilledPoreVolume = 0.0;
-    }
-    vc_MaxOxygenDeficit = vc_AirFilledPoreVolume / d_CriticalOxygenContent;
-    vc_OxygenDeficit = 1.0 - double(vc_TimeUnderAnoxia / vc_TimeUnderAnoxiaThreshold) * (1.0 - vc_MaxOxygenDeficit);
+  double sumSaturation = 0, sumSoilMoisture = 0;
+  int sumLayers = 0;
+  auto nols = std::min(std::max(3UL, vc_RootingDepth), soilColumn.vs_NumberOfLayers());
+  for(size_t i = 0; i < nols; i++) {
+    sumSaturation += soilColumn[i].vs_Saturation();
+    sumSoilMoisture += soilColumn[i].get_Vs_SoilMoisture_m3();
+    sumLayers++;
+  }
+  double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
+  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) {
+    vc_TimeUnderAnoxia = std::min(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
+    avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume);
+    double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
+    vc_OxygenDeficit = 1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
   } else {
     vc_TimeUnderAnoxia = 0;
     vc_OxygenDeficit = 1.0;
   }
-  if (vc_OxygenDeficit > 1.0) {
-    vc_OxygenDeficit = 1.0;
-  }
-
   return vc_OxygenDeficit;
 }
 
@@ -2242,7 +2236,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         Voc::SpeciesData species;
         // species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
         species.lai = LAI;
-        species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.);                                // kg/ha -> kg/m2
+        species.mFol = get_OrganGreenBiomass(OId::LEAF) / (100. * 100.);                                // kg/ha -> kg/m2
         species.sla =
             species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. *
                                                             100.; // ha/kg -> m2/kg
@@ -2290,7 +2284,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         // JJV
         for (const auto &lf: {FvCB_res.sunlit, FvCB_res.shaded}) {
           species.lai = lf.LAI;
-          species.mFol = get_OrganGreenBiomass(LEAF) / (100. * 100.) * lf.LAI /
+          species.mFol = get_OrganGreenBiomass(OId::LEAF) / (100. * 100.) * lf.LAI /
                          (sun_LAI + sh_LAI);                // kg/ha -> kg/m2
           species.sla =
               species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. *
@@ -2885,7 +2879,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
         //! TODO: hard coded organ ids; must be more generalized because in database organ_ids can be mixed
         // vc_OrganBiomass[i_Organ];
 
-        if (i_Organ == LEAF) { // leaf
+        if (i_Organ == OId::LEAF) { // leaf
 
           double incr = assimilate_partition_leaf * vc_NetPhotosynthesis;
           if (fabs(incr) <= vc_OrganBiomass[i_Organ]) {
@@ -2908,7 +2902,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
             //            vc_OrganGrowthIncrement[i_Organ] = incr;
             //            debug() << "LEAF - Reducing organ by " << incr << " (" << vc_OrganBiomass[i_Organ] + vc_OrganGrowthIncrement[i_Organ] << ")"<< endl;
           }
-        } else if (i_Organ == SHOOT) { // shoot
+        } else if (i_Organ == OId::SHOOT) { // shoot
 
           double incr = assimilate_partition_leaf * vc_NetPhotosynthesis; // should be negative
 
@@ -2996,10 +2990,10 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
 
       // update the root biomass and dead root biomass vars
       // root dead biomass will be transfered to proper AOM pools
-      if (i_Organ == ROOT) {
-        vc_OrganBiomass[ROOT] -= dailyDeadBiomassIncrement[ROOT];
-        vc_OrganDeadBiomass[ROOT] -= dailyDeadBiomassIncrement[ROOT];
-        vc_TotalBiomassNContent -= dailyDeadBiomassIncrement[ROOT] * vc_NConcentrationRoot;
+      if (i_Organ == OId::ROOT) {
+        vc_OrganBiomass[OId::ROOT] -= dailyDeadBiomassIncrement[OId::ROOT];
+        vc_OrganDeadBiomass[OId::ROOT] -= dailyDeadBiomassIncrement[OId::ROOT];
+        vc_TotalBiomassNContent -= dailyDeadBiomassIncrement[OId::ROOT] * vc_NConcentrationRoot;
       }
     } else {
       vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep);    // [kg CH2O ha-1]
@@ -3100,10 +3094,11 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
 
   // Determining root penetration rate according to soil clay content [m °C-1 d-1]
   double vc_RootPenetrationRate = 0.0; // [m °C-1 d-1]
-  if (soilColumn[vc_RootingDepth].vs_SoilClayContent() <= 0.02) {
+  auto layerIndexBelowRootingDepth = std::min(vc_RootingDepth, nols - 1);
+  if (soilColumn[layerIndexBelowRootingDepth].vs_SoilClayContent() <= 0.02) {
     vc_RootPenetrationRate = 0.5 * pc_RootPenetrationRate;
-  } else if (soilColumn[vc_RootingDepth].vs_SoilClayContent() <= 0.08) {
-    vc_RootPenetrationRate = ((1.0 / 3.0) + (0.5 / 0.06 * soilColumn[vc_RootingDepth].vs_SoilClayContent())) *
+  } else if (soilColumn[layerIndexBelowRootingDepth].vs_SoilClayContent() <= 0.08) {
+    vc_RootPenetrationRate = ((1.0 / 3.0) + (0.5 / 0.06 * soilColumn[layerIndexBelowRootingDepth].vs_SoilClayContent())) *
                              pc_RootPenetrationRate; // [m °C-1 d-1]
   } else {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
@@ -3121,28 +3116,12 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     vc_RootingDepth_m += (vc_DailyTemperatureRoot * vc_RootPenetrationRate); // [m]
   }
 
-  if (vc_RootingDepth_m <= pc_InitialRootingDepth) {
-    vc_RootingDepth_m = pc_InitialRootingDepth;
-  }
+  if (vc_RootingDepth_m <= pc_InitialRootingDepth) vc_RootingDepth_m = pc_InitialRootingDepth;
+  if (vc_RootingDepth_m > vc_MaxRootingDepth) vc_RootingDepth_m = vc_MaxRootingDepth; // [m]
+  if (vc_RootingDepth_m > vs_MaxEffectiveRootingDepth) vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
 
-  if (vc_RootingDepth_m > vc_MaxRootingDepth) {
-    vc_RootingDepth_m = vc_MaxRootingDepth;
-  } // [m]
-
-  if (vc_RootingDepth_m > vs_MaxEffectiveRootingDepth) {
-    vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
-  }
-
-  // Calculating rooting depth layer []
-  vc_RootingDepth = int(std::floor(0.5 + (vc_RootingDepth_m / layerThickness))); // []
-  if (vc_RootingDepth > nols) {
-    vc_RootingDepth = nols;
-  }
-
-  vc_RootingZone = int(std::floor(0.5 + ((1.3 * vc_RootingDepth_m) / layerThickness))); // []
-  if (vc_RootingZone > nols) {
-    vc_RootingZone = nols;
-  }
+  vc_RootingDepth = std::min(int(std::round(vc_RootingDepth_m/layerThickness)), int(nols)); // layer no
+  vc_RootingZone = std::min(int(std::round(1.3 * vc_RootingDepth_m / layerThickness)), int(nols)); // layer no
 
   vc_TotalRootLength = vc_RootBiomass * pc_SpecificRootLength; //[m m-2]
 
@@ -3949,7 +3928,7 @@ void CropModule::calculateVOCEmissions(const Voc::MicroClimateData &mcd) {
   Voc::SpeciesData species;
   // species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
   species.lai = get_LeafAreaIndex();
-  species.mFol = get_OrganBiomass(LEAF) / (100. * 100.);          // kg/ha -> kg/m2
+  species.mFol = get_OrganBiomass(OId::LEAF) / (100. * 100.);          // kg/ha -> kg/m2
   species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; // ha/kg -> m2/kg
 
   species.EF_MONO = speciesPs.EF_MONO;
@@ -4653,10 +4632,6 @@ double CropModule::get_AccumulatedETa() const {
 
 double CropModule::get_AccumulatedTranspiration() const {
   return vc_AccumulatedTranspiration;
-}
-
-double CropModule::get_AccumulatedPrimaryCropYield() const {
-  return vc_AccumulatedPrimaryCropYield;
 }
 
 /**

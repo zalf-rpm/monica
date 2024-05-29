@@ -1456,7 +1456,12 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
-  set_int_value(pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
+  if (j["TimeUnderAnoxiaThreshold"].is_number()) {
+    std::fill(pc_TimeUnderAnoxiaThreshold.begin(), pc_TimeUnderAnoxiaThreshold.end(),
+              j["TimeUnderAnoxiaThreshold"].number_value());
+  } else if(j["TimeUnderAnoxiaThreshold"].is_array()) {
+    set_int_vector(pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
+  }
 
   set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j,
                  "__enable_Photosynthesis_WangEngelTemperatureResponse__");

@@ -464,7 +464,7 @@ Errors Harvest::merge(json11::Json j) {
   set_double_value(_optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction");
 
   for (const string &organName: {"leaf", "shoot", "fruit", "struct", "sugar"}) {
-    for (auto kv: j.object_items()) {
+    for (const auto& kv: j.object_items()) {
       if (toLower(kv.first) == organName && kv.second.is_object()) {
         Spec::Value sv;
         set_double_value(sv.exportPercentage, kv.second, "export");
@@ -493,8 +493,9 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const {
       };
 
   for (const auto &p: _spec.organ2specVal) {
-    jo[organNameFromId(p.first)] = J11Object{{"export",      J11Array{p.second.exportPercentage, "%"}},
-                                             {"incorporate", p.second.incorporate}};
+    jo[organNameFromId(p.first)] = J11Object
+        {{"export",      J11Array{p.second.exportPercentage, "%"}},
+         {"incorporate", p.second.incorporate}};
   }
 
   return jo;
@@ -505,8 +506,7 @@ bool Harvest::apply(MonicaModel *model) {
 
   if (model->cropGrowth()) {
     model->harvestCurrentCrop(_exported, _spec, _optCarbMgmtData);
-    if (_sowing)
-      debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
+    if (_sowing) debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
     model->addEvent("Harvest");
   }
 

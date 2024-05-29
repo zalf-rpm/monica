@@ -546,11 +546,10 @@ BOTRes& monica::buildOutputTable()
         return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryCropYield(), 1) : 0.0;
       });
 
-      build({ id++, "SumYield", "kgDM ha-1", "get_AccumulatedPrimaryCropYield" },
-        [](const MonicaModel& monica, OId oid)
-      {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_AccumulatedPrimaryCropYield(), 1) : 0.0;
-      });
+      build({id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield"},
+            [](const MonicaModel &monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_SecondaryCropYield(), 3) : 0.0;
+            });
 
       build({ id++, "sumExportedCutBiomass", "kgDM ha-1", "return sum (across cuts) of exported cut biomass for current crop" },
         [](const MonicaModel& monica, OId oid)
@@ -594,11 +593,6 @@ BOTRes& monica::buildOutputTable()
         return round(monica.humusBalanceCarryOver(), 1);
       });
 
-      build({ id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield" },
-        [](const MonicaModel& monica, OId oid)
-      {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_SecondaryCropYield(), 1) : 0.0;
-      });
 
       build({ id++, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate" },
         [](const MonicaModel& monica, OId oid)
@@ -729,11 +723,11 @@ BOTRes& monica::buildOutputTable()
         return Nstress;
       });
 
-      build({ id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration" },
-        [](const MonicaModel& monica, OId oid)
-      {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
-      });
+      build({id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"},
+            [](const MonicaModel &monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
+            });
+
 
       build({ id++, "YieldN", "kgN ha-1", "PrimaryYieldNContent" },
         [](const MonicaModel& monica, OId oid)
