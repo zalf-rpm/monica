@@ -411,6 +411,7 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   double percentNFC{ -1.0 };
   double threshold{ -1.0 };
   double criticalMoistureDepthM{ 0.3 };
+  int minDaysBetweenIrrigationEvents{ 0 };
 };
 
 

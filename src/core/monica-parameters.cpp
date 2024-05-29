@@ -816,6 +816,7 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
   set_double_value(threshold, j, "trigger_if_nFC_below_%", [](double v) { return v / 100.0; });
   set_double_value(criticalMoistureDepthM, j, "calc_nFC_until_depth_m",
                    transformIfNotMeters(j, "calc_nFC_until_depth_m"));
+  set_int_value(minDaysBetweenIrrigationEvents, j, "minDaysBetweenIrrigationEvents");
 
   return res;
 }
@@ -825,7 +826,8 @@ json11::Json AutomaticIrrigationParameters::to_json() const {
       {{"type",                 "AutomaticIrrigationParameters"},
        {"irrigationParameters", IrrigationParameters::to_json()},
        {"trigger_if_nFC_below_%",            J11Array{threshold*100.0, "%"}},
-       {"calc_nFC_until_depth_m",J11Array{criticalMoistureDepthM, "m"}}
+       {"calc_nFC_until_depth_m",J11Array{criticalMoistureDepthM, "m"}},
+       {"minDaysBetweenIrrigationEvents", J11Array{minDaysBetweenIrrigationEvents, "d"}}
       };
   if (amount > 0) o["amount"] = J11Array{amount, "mm"};
   else o["set_to_%nFC"] = J11Array{percentNFC, "%"};
