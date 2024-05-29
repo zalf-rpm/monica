@@ -1460,7 +1460,7 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
   if (j["TimeUnderAnoxiaThreshold"].is_number()) {
     std::fill(pc_TimeUnderAnoxiaThreshold.begin(), pc_TimeUnderAnoxiaThreshold.end(),
-              j["TimeUnderAnoxiaThreshold"].number_value());
+              int(j["TimeUnderAnoxiaThreshold"].number_value()));
   } else if(j["TimeUnderAnoxiaThreshold"].is_array()) {
     set_int_vector(pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
   }

@@ -1180,7 +1180,7 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   // Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
   double sumSaturation = 0, sumSoilMoisture = 0;
   int sumLayers = 0;
-  auto nols = std::min(std::max(3UL, vc_RootingDepth), soilColumn.vs_NumberOfLayers());
+  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn.vs_NumberOfLayers());
   for(size_t i = 0; i < nols; i++) {
     sumSaturation += soilColumn[i].vs_Saturation();
     sumSoilMoisture += soilColumn[i].get_Vs_SoilMoisture_m3();
