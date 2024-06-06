@@ -1188,7 +1188,7 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   }
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
   if (avgAirFilledPoreVolume < d_CriticalOxygenContent) {
-    vc_TimeUnderAnoxia = std::min(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
+    vc_TimeUnderAnoxia = std::max(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
     avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume);
     double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
     vc_OxygenDeficit = 1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
