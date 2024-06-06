@@ -112,7 +112,7 @@ kj::Promise<void> RunMonica::run(RunContext context)
 
   auto proms = kj::heapArrayBuilder<kj::Promise<void>>(2);
   DataAccessor da;
-  J11Array soilLayers;
+  //J11Array soilLayers;
 
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();
@@ -122,15 +122,16 @@ kj::Promise<void> RunMonica::run(RunContext context)
   }
 
   if (envR.hasSoilProfile()) {
-    proms.add(fromCapnpSoilProfile(envR.getSoilProfile()).then([&soilLayers](auto &&layers) {
-      soilLayers = layers;
+    auto layersProm = fromCapnpSoilProfile(envR.getSoilProfile());
+    proms.add(layersProm.then([this](auto &&layers) {
+      _soilLayers = layers;
     }));
   } else {
     proms.add(kj::READY_NOW);
   }
 
-  return kj::joinPromises(proms.finish()).then([context, runMonica, da, soilLayers]() mutable {
-    auto out = runMonica(da, soilLayers);
+  return kj::joinPromises(proms.finish()).then([context, runMonica, da, this]() mutable {
+    auto out = runMonica(da, _soilLayers);
     auto rs = context.getResults();
     auto res = rs.initResult();
     res.initStructure().setJson();

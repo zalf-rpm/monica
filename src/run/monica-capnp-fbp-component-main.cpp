@@ -68,7 +68,7 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity startChannel() {
+  kj::MainBuilder::Validity startComponent() {
     bool startedServerInDebugMode = false;
 
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;
@@ -141,7 +141,7 @@ public:
                           "<sturdy_ref>", "Sturdy ref to input channel.")
         .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
                           "<sturdy_ref>", "Sturdy ref to output channel.")
-        .callAfterParsing(KJ_BIND_METHOD(*this, startChannel))
+        .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
         .build();
   }
 

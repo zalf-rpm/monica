@@ -41,6 +41,7 @@ public:
   {}
 
   kj::MainBuilder::Validity setDebug() { startedServerInDebugMode = true; return true; }
+  kj::MainBuilder::Validity setSRT(kj::StringPtr name) { srt = kj::str(name); return true; }
 
   kj::MainBuilder::Validity startService()
   {
@@ -58,7 +59,7 @@ public:
     startRestorerSetup(runMonicaClient);
     runMonica->setRestorer(restorer);
 
-    auto monicaSR = restorer->saveStr(runMonicaClient, nullptr, nullptr, false).wait(ioContext.waitScope).sturdyRef;
+    auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false).wait(ioContext.waitScope).sturdyRef;
     if(outputSturdyRefs && monicaSR.size() > 0) std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
 
     // Run forever, accepting connections and handling requests.
@@ -71,13 +72,16 @@ public:
   kj::MainFunc getMain()
   {
     return addRestorableServiceOptions()
-      .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug), "Activate debug output.")      
+      .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug), "Activate debug output.")
+      .addOptionWithArg({'t', "srt"}, KJ_BIND_METHOD(*this, setSRT),
+                          "<sturdy-ref token>", "Set a fixed sturdy ref token.")
       .callAfterParsing(KJ_BIND_METHOD(*this, startService))
       .build();
   }
 
 private:
   bool startedServerInDebugMode{false};
+  kj::String srt;
 };
 
 }
