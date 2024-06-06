@@ -20,11 +20,11 @@ macro(set_absolute_path var_name path)
 endmacro(set_absolute_path)
 
 set_absolute_path(MAS_INFRASTRUCTURE_DIR ../mas-infrastructure)
-set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/capnproto_schemas)
+set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/zalfmas_capnpschemas)
 
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
-    add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/capnproto_schemas)
+    add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/zalfmas_capnpschemas)
 endif ()
 
 if (NOT TARGET common_lib)
