@@ -116,15 +116,21 @@ kj::Promise<void> RunMonica::run(RunContext context)
 
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();
-    proms.add(dataAccessorFromTimeSeries(ts).then([&da](const DataAccessor &da2) { da = da2; }));
+    proms.add(dataAccessorFromTimeSeries(ts).then([&da](const DataAccessor &da2) {
+      da = da2;
+    }, [](auto &&e) {
+      KJ_LOG(INFO, "Error while trying to get data accessor from time series: ", e);
+    }));
   } else {
     proms.add(kj::READY_NOW);
   }
 
   if (envR.hasSoilProfile()) {
     auto layersProm = fromCapnpSoilProfile(envR.getSoilProfile());
-    proms.add(layersProm.then([this](auto &&layers) {
+    proms.add(layersProm.then([this](auto &&layers) mutable {
       _soilLayers = layers;
+    }, [](auto &&e) {
+      KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
     }));
   } else {
     proms.add(kj::READY_NOW);
@@ -136,6 +142,12 @@ kj::Promise<void> RunMonica::run(RunContext context)
     auto res = rs.initResult();
     res.initStructure().setJson();
     res.setValue(out.toString());
+  }, [context](auto &&e) mutable {
+    KJ_LOG(INFO, "Error while trying to gather soil and/or time series data: ", e);
+    auto rs = context.getResults();
+    auto res = rs.initResult();
+    res.initStructure().setNone();
+    res.setValue(kj::str("Error while trying to gather soil and/or time series data: ", e));
   });
 }
 

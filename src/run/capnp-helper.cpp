@@ -97,8 +97,17 @@ kj::Promise<DataAccessor> monica::dataAccessorFromTimeSeries(mas::schema::climat
                         Tools::Date(sd.getDay(), sd.getMonth(), sd.getYear()),
                         Tools::Date(ed.getDay(), ed.getMonth(), ed.getYear()),
                         headerResponse.getHeader(), dataTResponse.getData());
+                  }, [](auto &&e) {
+                    KJ_LOG(ERROR, "Error while trying to get transposed time series data.", e);
+                    return DataAccessor();
                   });
+            }, [](auto &&e) {
+              KJ_LOG(ERROR, "Error while trying to get header data.", e);
+              return DataAccessor();
             });
+      }, [](auto &&e) {
+        KJ_LOG(ERROR, "Error while trying to get range data.", e);
+        return DataAccessor();
       });
 }
 
@@ -175,6 +184,9 @@ kj::Promise<J11Array> monica::fromCapnpSoilProfile(mas::schema::soil::Profile::C
       }
       ls.emplace_back(l);
     }
-    return ls;
+    return kj::mv(ls);
+  }, [](auto &&e) {
+    KJ_LOG(ERROR, "Error while trying to get soil profile data.", e);
+    return J11Array();
   });
 }
