@@ -1180,21 +1180,21 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   // Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
   double sumSaturation = 0, sumSoilMoisture = 0;
   int sumLayers = 0;
-  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn.vs_NumberOfLayers());
+  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn.vs_NumberOfLayers()); //MP: changed to consider rooting depth
   for(size_t i = 0; i < nols; i++) {
     sumSaturation += soilColumn[i].vs_Saturation();
     sumSoilMoisture += soilColumn[i].get_Vs_SoilMoisture_m3();
     sumLayers++;
   }
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
-  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) {
-    vc_TimeUnderAnoxia = std::max(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
+  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) { //MP: conditions changed for stage-dependent waterlogging
     avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume);
+    vc_TimeUnderAnoxia = std::min(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
     double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
     vc_OxygenDeficit = 1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
   } else {
-    vc_TimeUnderAnoxia = 0;
-    vc_OxygenDeficit = 1.0;
+     vc_TimeUnderAnoxia = 0;
+     vc_OxygenDeficit = 1.0;
   }
   return vc_OxygenDeficit;
 }
@@ -1301,12 +1301,19 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
       if (vc_OxygenDeficit >= 1.0) {
         vc_DevelopmentAccelerationByWaterStress =
             1.0 + ((1.0 - vc_TranspirationDeficit) * (1.0 - vc_TranspirationDeficit));
-      }
+      } 
     }
+
+    //MP: added development slowdown by waterlogging
+    //double vc_DevelopmentSlowdownByWaterlogging = 1;
+    //if (vc_OxygenDeficit < 1.0) {
+    //    vc_DevelopmentSlowdownByWaterlogging =
+    //        1.0 - ((1.0 - vc_OxygenDeficit) * (1.0 - vc_OxygenDeficit));
+    //}
 
     // old DEVPROG
     double vc_DevelopmentAccelerationByStress =
-        max(vc_DevelopmentAccelerationByNitrogenStress, vc_DevelopmentAccelerationByWaterStress);
+        max(vc_DevelopmentAccelerationByNitrogenStress, vc_DevelopmentAccelerationByWaterStress); // *vc_DevelopmentSlowdownByWaterlogging; //MP: this does not work?
 
     if (cropPs.__enable_Phenology_WangEngelTemperatureResponse__) {
       double devTresponse = max(0.0, WangEngelTemperatureResponse(meanAirTemperature,
@@ -2302,9 +2309,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           _cropPhotosynthesisResults.oi = lf.oi * 1000;
           _cropPhotosynthesisResults.ci = lf.ci;
           _cropPhotosynthesisResults.vcMax = FvCB::Vcmax_bernacchi_f(mcd.tFol, speciesPs.VCMAX25) * vc_CropNRedux *
-                                             vc_TranspirationDeficit; // lf.vcMax;
+                                             vc_TranspirationDeficit; // lf.vcMax; MP: do we have to include OxygenDeficit?
           _cropPhotosynthesisResults.jMax =
-              FvCB::Jmax_bernacchi_f(mcd.tFol, 120) * vc_CropNRedux * vc_TranspirationDeficit;           // lf.jMax;
+              FvCB::Jmax_bernacchi_f(mcd.tFol, 120) * vc_CropNRedux * vc_TranspirationDeficit;           // lf.jMax; MP: do we have to include OxygenDeficit?
           _cropPhotosynthesisResults.jj = lf.jj;
           _cropPhotosynthesisResults.jj1000 = lf.jj1000;
           _cropPhotosynthesisResults.jv = lf.jv;
@@ -2461,6 +2468,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
   // reduction value for assimilate amount to simulate frost damage;
   vc_Assimilates *= vc_CropFrostRedux;
+
+  //MP: added reduction value for assimilate amount to simulate waterlogging;
+  vc_Assimilates *= vc_OxygenDeficit;
 
   if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {
     // vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
@@ -3056,7 +3066,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     vc_RootNIncrement = 0;
   }
 
-  // In case of drought stress the root will grow deeper
+  // In case of drought stress the root will grow deeper //MP: this could be changed for waterlogging
   if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage])
       && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
       && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
@@ -3514,7 +3524,7 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
         vc_AvailableWaterPercentage = 0.0;
       }
 
-      if (vc_AvailableWaterPercentage < 0.15) {
+      if (vc_AvailableWaterPercentage < 0.15) {//MP: this could be extended for waterlogging
         vc_TranspirationRedux[i_Layer] = vc_AvailableWaterPercentage * 3.0;        // []
         vc_RootEffectivity[i_Layer] = 0.15 + 0.45 * vc_AvailableWaterPercentage / 0.15; // []
       } else if (vc_AvailableWaterPercentage < 0.3) {
@@ -3560,7 +3570,7 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
         vc_Transpiration[i_Layer] = vc_TotalRootEffectivity != 0.0
                                     ? vc_PotentialTranspiration *
                                       ((vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]) /
-                                       vc_TotalRootEffectivity) * vc_OxygenDeficit
+                                       vc_TotalRootEffectivity) * vc_OxygenDeficit //MP: why is this not changing anything?
                                     : 0;
 
         // std::cout << setprecision(11) << "vc_Transpiration[i_Layer]: " << i_Layer << ", " << vc_Transpiration[i_Layer] << std::endl;
