@@ -96,8 +96,9 @@ public:
     }
     try {
       while (true) {
+        KJ_LOG(INFO, "trying to read from IN port");
         auto msg = inp.readRequest().send().wait(ioContext.waitScope);
-        KJ_LOG(INFO, "received msg");
+        KJ_LOG(INFO, "received msg from IN port");
         // check for end of data from in port
         if (msg.isDone()) {
           KJ_LOG(INFO, "received done -> exiting main loop");
@@ -123,21 +124,18 @@ public:
             auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
                                                                                 toAttr);//, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
-            KJ_LOG(INFO, "sending result on out port");
+            KJ_LOG(INFO, "trying to send result on OUT port");
             wreq.send().wait(ioContext.waitScope);
-            KJ_LOG(INFO, "sent result on out port");
+            KJ_LOG(INFO, "sent result on OUT port");
           }
         }
-
       }
-      KJ_LOG(INFO, "closing out port");
+      KJ_LOG(INFO, "closing OUT port");
       outp.closeRequest().send().wait(ioContext.waitScope);
-      //cout << "monica-capnp-fbp-component-main: closed result out port" << endl;
     }
     catch (const kj::Exception &e) {
       KJ_LOG(INFO, "Exception: ", e.getDescription());
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
-      //std::cout << "Exception: " << e.getDescription().cStr() << endl;
     }
 
     return true;
