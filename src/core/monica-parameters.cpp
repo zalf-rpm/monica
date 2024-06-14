@@ -883,6 +883,7 @@ json11::Json MeasuredGroundwaterTableInformation::to_json() const {
       };
 }
 
+/*
 void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path) {
   ifstream ifs(path.c_str(), ios::in);
   if (!ifs.is_open()) {
@@ -913,6 +914,7 @@ void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::stri
     groundwaterInfo[gw_date] = gw_cm;
   }
 }
+ */
 
 std::pair<bool, double> MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const
 {

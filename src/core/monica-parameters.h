@@ -431,7 +431,7 @@ public:
 
   virtual json11::Json to_json() const;
 
-  void readInGroundwaterInformation(std::string path);
+  //void readInGroundwaterInformation(std::string path);
 
 		std::pair<bool, double> getGroundwaterInformation(Tools::Date gwDate) const;
 
