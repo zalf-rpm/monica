@@ -109,8 +109,6 @@ Json monica::applyOIdOP(OId::OP op, const vector<Json>& js)
   return res;
 }
 
-//-----------------------------------------------------------------------------
-
 vector<OId> monica::parseOutputIds(const J11Array& oidArray)
 {
   vector<OId> outputIds;
@@ -256,8 +254,6 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray)
 
   return outputIds;
 }
-
-//-----------------------------------------------------------------------------
 
 template<typename T, typename Vector>
 void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits = 0)
@@ -1553,8 +1549,6 @@ BOTRes& monica::buildOutputTable()
 
   return m;
 }
-
-//-----------------------------------------------------------------------------
 
 std::function<bool(double, double)> monica::getCompareOp(std::string ops)
 {
