@@ -558,8 +558,7 @@ json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const {
 
 bool AutomaticHarvest::apply(MonicaModel *model) {
   //setDate(model->currentStepDate()); //-> commented out, caused the detection as dynamic workstep to fail
-  if (_sowing)
-    _sowing->crop()->setHarvestDate(model->currentStepDate());
+  if (_sowing) _sowing->crop()->setHarvestDate(model->currentStepDate());
 
   Harvest::apply(model);
 
@@ -573,14 +572,13 @@ bool AutomaticHarvest::condition(MonicaModel *model) {
   bool conditionMet = false;
 
   auto cg = model->cropGrowth();
-  if (cg && !_cropHarvested) //got a crop and not yet harvested
-    conditionMet =
-        model->currentStepDate() >= _absLatestDate  //harvest after or at latested date
+  //got a crop and not yet harvested
+  if (cg && !_cropHarvested) conditionMet =
+        model->currentStepDate() >= _absLatestDate  //harvest after or at latest date
         || (_harvestTime == "maturity"
             && model->cropGrowth()->maturityReached() //has maturity been reached
             && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
-            &&
-            isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
+            && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
   return conditionMet;
 }
