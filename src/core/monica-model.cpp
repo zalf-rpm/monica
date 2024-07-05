@@ -64,8 +64,8 @@ MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
 void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   _soilColumn = kj::heap<SoilColumn>(_sitePs.layerThickness,
                                      cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-                                     _sitePs.vs_SoilParameters,
-                                     cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
+                                     _sitePs.vs_SoilParameters),
+                                     //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
   _soilTemperature = kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters);
 #ifndef SKIP_MODULES
 
