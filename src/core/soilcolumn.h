@@ -228,8 +228,8 @@ class SoilColumn : public std::vector<SoilLayer> {
 public:
   SoilColumn(double ps_LayerThickness,
              double ps_MaxMineralisationDepth,
-             const Soil::SoilPMs &soilParams,
-             double pm_CriticalMoistureDepth);
+             const Soil::SoilPMs &soilParams);//,
+             //double pm_CriticalMoistureDepth);
 
   SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule *cropModule = nullptr)
       : cropModule(cropModule) { deserialize(reader); }
@@ -259,12 +259,9 @@ public:
                                              double vf_FertiliserMinApplication,
                                              int vf_TopDressingDelay);
 
-  bool applyIrrigationViaTrigger(double vi_IrrigationThreshold,
-                                 double vi_IrrigationAmount,
-                                 double vi_IrrigationNConcentration);
+  std::pair<bool, double> applyIrrigationViaTrigger(const AutomaticIrrigationParameters &aips);
 
-  void applyIrrigation(double vi_IrrigationAmount,
-                       double vi_IrrigationNConcentration);
+  void applyIrrigation(double amount, double nitrateConcentration);
 
   void deleteAOMPool();
 
@@ -333,7 +330,7 @@ private:
 
   std::list<DelayedNMinApplicationParams> _delayedNMinApplications;
 
-  double pm_CriticalMoistureDepth{0};
+  //double pm_CriticalMoistureDepth{0};
 };
 
 } // namespace monica

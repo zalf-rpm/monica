@@ -44,6 +44,7 @@ using namespace Tools;
 using namespace Climate;
 using namespace json11;
 
+
 /**
  * @brief Constructor
  * @param oid organ ID
@@ -794,6 +795,7 @@ AutomaticIrrigationParameters::deserialize(mas::schema::model::monica::Automatic
   IrrigationParameters::deserialize(reader.getParams());
   amount = reader.getAmount();
   threshold = reader.getThreshold();
+  //percentNFC = reader.getPercentNfc();
 }
 
 void AutomaticIrrigationParameters::serialize(
@@ -801,6 +803,7 @@ void AutomaticIrrigationParameters::serialize(
   IrrigationParameters::serialize(builder.initParams());
   builder.setAmount(amount);
   builder.setThreshold(threshold);
+  //builder.setPercentNfc(percentNFC);
 }
 
 Errors AutomaticIrrigationParameters::merge(json11::Json j) {
@@ -808,21 +811,28 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
   set_double_value(amount, j, "amount");
-  set_double_value(threshold, j, "threshold");
+  set_double_value(percentNFC, j, "set_to_%nFC");
+  set_double_value(threshold, j, "threshold", transformIfPercent(j, "threshold"));
+  set_double_value(threshold, j, "trigger_if_nFC_below_%", [](double v) { return v / 100.0; });
+  set_double_value(criticalMoistureDepthM, j, "calc_nFC_until_depth_m",
+                   transformIfNotMeters(j, "calc_nFC_until_depth_m"));
+  set_int_value(minDaysBetweenIrrigationEvents, j, "minDaysBetweenIrrigationEvents");
 
   return res;
 }
 
 json11::Json AutomaticIrrigationParameters::to_json() const {
-  return json11::Json::object
+  auto o = json11::Json::object
       {{"type",                 "AutomaticIrrigationParameters"},
        {"irrigationParameters", IrrigationParameters::to_json()},
-       {"amount",               J11Array{amount, "mm"}},
-       {"threshold",            threshold}
+       {"trigger_if_nFC_below_%",            J11Array{threshold*100.0, "%"}},
+       {"calc_nFC_until_depth_m",J11Array{criticalMoistureDepthM, "m"}},
+       {"minDaysBetweenIrrigationEvents", J11Array{minDaysBetweenIrrigationEvents, "d"}}
       };
+  if (amount > 0) o["amount"] = J11Array{amount, "mm"};
+  else o["set_to_%nFC"] = J11Array{percentNFC, "%"};
+  return o;
 }
-
-
 
 void MeasuredGroundwaterTableInformation::deserialize(
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
@@ -873,6 +883,7 @@ json11::Json MeasuredGroundwaterTableInformation::to_json() const {
       };
 }
 
+/*
 void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::string path) {
   ifstream ifs(path.c_str(), ios::in);
   if (!ifs.is_open()) {
@@ -903,6 +914,7 @@ void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::stri
     groundwaterInfo[gw_date] = gw_cm;
   }
 }
+ */
 
 std::pair<bool, double> MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const
 {
@@ -1452,6 +1464,12 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
   set_double_value(pc_Tortuosity, j, "Tortuosity");
   set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
+  if (j["TimeUnderAnoxiaThreshold"].is_number()) {
+    std::fill(pc_TimeUnderAnoxiaThreshold.begin(), pc_TimeUnderAnoxiaThreshold.end(),
+              int(j["TimeUnderAnoxiaThreshold"].number_value()));
+  } else if(j["TimeUnderAnoxiaThreshold"].is_array()) {
+    set_int_vector(pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
+  }
 
   set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j,
                  "__enable_Photosynthesis_WangEngelTemperatureResponse__");
@@ -1494,6 +1512,7 @@ json11::Json CropModuleParameters::to_json() const {
        {"GrowthRespirationParameter2",                            pc_GrowthRespirationParameter2},
        {"Tortuosity",                                             pc_Tortuosity},
        {"AdjustRootDepthForSoilProps",                            pc_AdjustRootDepthForSoilProps},
+       {"TimeUnderAnoxiaThreshold", pc_TimeUnderAnoxiaThreshold},
        {"__enable_Phenology_WangEngelTemperatureResponse__",      __enable_Phenology_WangEngelTemperatureResponse__},
        {"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__},
        {"__enable_hourly_FvCB_photosynthesis__",                  __enable_hourly_FvCB_photosynthesis__},
@@ -1677,7 +1696,7 @@ SoilMoistureModuleParameters::SoilMoistureModuleParameters() {
 
 void
 SoilMoistureModuleParameters::deserialize(mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
-  pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
+  //pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
   pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
   pm_SurfaceRoughness = reader.getSurfaceRoughness();
   pm_GroundwaterDischarge = reader.getGroundwaterDischarge();
@@ -1705,7 +1724,7 @@ SoilMoistureModuleParameters::deserialize(mas::schema::model::monica::SoilMoistu
 
 void SoilMoistureModuleParameters::serialize(
     mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder) const {
-  builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
+  //builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
   builder.setSaturatedHydraulicConductivity(pm_SaturatedHydraulicConductivity);
   builder.setSurfaceRoughness(pm_SurfaceRoughness);
   builder.setGroundwaterDischarge(pm_GroundwaterDischarge);
@@ -1739,7 +1758,7 @@ SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
 Errors SoilMoistureModuleParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
-  set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
+  //set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
   set_double_value(pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity");
   set_double_value(pm_SurfaceRoughness, j, "SurfaceRoughness");
   set_double_value(pm_GroundwaterDischarge, j, "GroundwaterDischarge");
@@ -1770,7 +1789,7 @@ Errors SoilMoistureModuleParameters::merge(json11::Json j) {
 json11::Json SoilMoistureModuleParameters::to_json() const {
   return json11::Json::object
       {{"type",                                "SoilMoistureModuleParameters"},
-       {"CriticalMoistureDepth",               pm_CriticalMoistureDepth},
+       //{"CriticalMoistureDepth",               pm_CriticalMoistureDepth},
        {"SaturatedHydraulicConductivity",      pm_SaturatedHydraulicConductivity},
        {"SurfaceRoughness",                    pm_SurfaceRoughness},
        {"GroundwaterDischarge",                pm_GroundwaterDischarge},

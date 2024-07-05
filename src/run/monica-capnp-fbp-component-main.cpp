@@ -68,7 +68,13 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity startChannel() {
+  kj::MainBuilder::Validity setMonicaSr(kj::StringPtr name) {
+    monicaSr = kj::str(name);
+    return true;
+  }
+
+
+  kj::MainBuilder::Validity startComponent() {
     bool startedServerInDebugMode = false;
 
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;
@@ -81,26 +87,33 @@ public:
     //std::cout << "outSr: " << outSr.cStr() << std::endl;
     auto inp = conMan.tryConnectB(inSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
-    //auto runMonicaClient = conMan.tryConnectB("capnp://insecure@10.10.24.218:9999/monica_sr").castAs<MonicaEnvInstance>();
 
-    auto runMonica = kj::heap<RunMonica>(startedServerInDebugMode);
-    MonicaEnvInstance::Client runMonicaClient = kj::mv(runMonica);
-
+    MonicaEnvInstance::Client runMonicaClient(nullptr);
+    if (monicaSr.size() > 0) {
+      runMonicaClient = conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
+    } else {
+      runMonicaClient = kj::heap<RunMonica>(startedServerInDebugMode);
+    }
     try {
       while (true) {
+        KJ_LOG(INFO, "trying to read from IN port");
         auto msg = inp.readRequest().send().wait(ioContext.waitScope);
+        KJ_LOG(INFO, "received msg from IN port");
         // check for end of data from in port
         if (msg.isDone()) {
-          //cout << "monica-capnp-fbp-component-main: received done message" << endl;
+          KJ_LOG(INFO, "received done -> exiting main loop");
           break;
         } else {
           auto inIp = msg.getValue();
           auto attr = mas::infrastructure::common::getIPAttr(inIp, fromAttr);
           auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
+          KJ_LOG(INFO, "received env -> running MONICA");
           auto rreq = runMonicaClient.runRequest();
           rreq.setEnv(env);
           auto res = rreq.send().wait(ioContext.waitScope);
+          KJ_LOG(INFO, "received MONICA result");
           if (res.hasResult() && res.getResult().hasValue()) {
+            KJ_LOG(INFO, "result is not empty");
             auto resJsonStr = res.getResult().getValue();
             auto wreq = outp.writeRequest();
             auto outIp = wreq.initValue();
@@ -111,19 +124,18 @@ public:
             auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
                                                                                 toAttr);//, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
-
+            KJ_LOG(INFO, "trying to send result on OUT port");
             wreq.send().wait(ioContext.waitScope);
+            KJ_LOG(INFO, "sent result on OUT port");
           }
         }
-
       }
-
+      KJ_LOG(INFO, "closing OUT port");
       outp.closeRequest().send().wait(ioContext.waitScope);
-      //cout << "monica-capnp-fbp-component-main: closed result out port" << endl;
     }
     catch (const kj::Exception &e) {
+      KJ_LOG(INFO, "Exception: ", e.getDescription());
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
-      //std::cout << "Exception: " << e.getDescription().cStr() << endl;
     }
 
     return true;
@@ -141,7 +153,9 @@ public:
                           "<sturdy_ref>", "Sturdy ref to input channel.")
         .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
                           "<sturdy_ref>", "Sturdy ref to output channel.")
-        .callAfterParsing(KJ_BIND_METHOD(*this, startChannel))
+        .addOptionWithArg({'m', "monica_sr"}, KJ_BIND_METHOD(*this, setMonicaSr),
+                          "<sturdy_ref>", "Sturdy ref to MONICA instance.")
+        .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
         .build();
   }
 
@@ -152,6 +166,7 @@ private:
   kj::ProcessContext &context;
   kj::String inSr;
   kj::String outSr;
+  kj::String monicaSr;
   kj::String fromAttr;
   kj::String toAttr;
 };

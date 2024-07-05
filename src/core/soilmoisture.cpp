@@ -552,8 +552,6 @@ void SoilMoisture::fm_CapillaryRise() {
       vm_CapillaryWater70[i_Layer] = 0.7 * vm_CapillaryWater[i_Layer];
     }
 
-    //double vm_CapillaryRiseRate = 0.01; //[m d-1]
-    //double pm_CapillaryRiseRate = 0.01; //[m d-1]
     // Find first layer above groundwater with 70% available water
     auto vm_StartLayer = min(vm_GroundwaterTableLayer, (numberOfSoilLayers - 1));
     for (int i = int(vm_StartLayer); i >= 0; i--) {

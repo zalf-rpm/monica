@@ -30,6 +30,7 @@
 				"Date", 
 				"Crop", 
 				"Stage",
+				"Irrig",
 				"ETa/ETc",
 				"AbBiom", 
 				["OrgBiom", "Leaf"], 
@@ -80,10 +81,11 @@
 	"UseAutomaticIrrigation": false,
 	"AutoIrrigationParams": {
 		"irrigationParameters": {
-			"nitrateConcentration": [0, "mg dm-3"],
-			"sulfateConcentration": [0, "mg dm-3"]
+			"nitrateConcentration": [0, "mg dm-3"]
 		},
 		"amount": [17, "mm"],
-		"threshold": 0.35
+		"trigger_if_nFC_below_%": [50, "%"],
+		"_set_to_%nFC": [100, "%"],
+		"calc_nFC_until_depth_m": [0.3, "m"]
 	}
 }

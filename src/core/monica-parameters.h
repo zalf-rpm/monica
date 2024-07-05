@@ -407,8 +407,11 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
 
   virtual json11::Json to_json() const;
 
-  double amount{ 17.0 };
-  double threshold{ 0.35 };
+  double amount{ 0.0 };
+  double percentNFC{ -1.0 };
+  double threshold{ -1.0 };
+  double criticalMoistureDepthM{ 0.3 };
+  int minDaysBetweenIrrigationEvents{ 0 };
 };
 
 
@@ -428,7 +431,7 @@ public:
 
   virtual json11::Json to_json() const;
 
-  void readInGroundwaterInformation(std::string path);
+  //void readInGroundwaterInformation(std::string path);
 
 		std::pair<bool, double> getGroundwaterInformation(Tools::Date gwDate) const;
 
@@ -710,6 +713,7 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   double pc_GrowthRespirationParameter2{ 0.0 };
   double pc_Tortuosity{ 0.0 };
   bool pc_AdjustRootDepthForSoilProps{ true };
+  std::vector<int> pc_TimeUnderAnoxiaThreshold{ 4, 4, 4, 4, 4, 4, 4 };
 
   bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
   bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
@@ -786,7 +790,7 @@ struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
 
   std::function<double(std::string, size_t)> getCapillaryRiseRate;
 
-  double pm_CriticalMoistureDepth{ 0.0 };
+  //double pm_CriticalMoistureDepth{ 0.0 };
   double pm_SaturatedHydraulicConductivity{ 0.0 };
   double pm_SurfaceRoughness{ 0.0 };
   double pm_GroundwaterDischarge{ 0.0 };

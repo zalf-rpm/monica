@@ -109,8 +109,6 @@ Json monica::applyOIdOP(OId::OP op, const vector<Json>& js)
   return res;
 }
 
-//-----------------------------------------------------------------------------
-
 vector<OId> monica::parseOutputIds(const J11Array& oidArray)
 {
   vector<OId> outputIds;
@@ -256,8 +254,6 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray)
 
   return outputIds;
 }
-
-//-----------------------------------------------------------------------------
 
 template<typename T, typename Vector>
 void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits = 0)
@@ -546,11 +542,10 @@ BOTRes& monica::buildOutputTable()
         return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryCropYield(), 1) : 0.0;
       });
 
-      build({ id++, "SumYield", "kgDM ha-1", "get_AccumulatedPrimaryCropYield" },
-        [](const MonicaModel& monica, OId oid)
-      {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_AccumulatedPrimaryCropYield(), 1) : 0.0;
-      });
+      build({id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield"},
+            [](const MonicaModel &monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_SecondaryCropYield(), 3) : 0.0;
+            });
 
       build({ id++, "sumExportedCutBiomass", "kgDM ha-1", "return sum (across cuts) of exported cut biomass for current crop" },
         [](const MonicaModel& monica, OId oid)
@@ -594,11 +589,6 @@ BOTRes& monica::buildOutputTable()
         return round(monica.humusBalanceCarryOver(), 1);
       });
 
-      build({ id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield" },
-        [](const MonicaModel& monica, OId oid)
-      {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_SecondaryCropYield(), 1) : 0.0;
-      });
 
       build({ id++, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate" },
         [](const MonicaModel& monica, OId oid)
@@ -729,11 +719,11 @@ BOTRes& monica::buildOutputTable()
         return Nstress;
       });
 
-      build({ id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration" },
-        [](const MonicaModel& monica, OId oid)
-      {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
-      });
+      build({id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"},
+            [](const MonicaModel &monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
+            });
+
 
       build({ id++, "YieldN", "kgN ha-1", "PrimaryYieldNContent" },
         [](const MonicaModel& monica, OId oid)
@@ -823,7 +813,7 @@ BOTRes& monica::buildOutputTable()
       build({id++, "Irrig", "mm", "Irrigation"},
             [](const MonicaModel& monica, OId oid)
       {
-        return round(monica.dailySumIrrigationWater(), 1);
+        return round(monica.dailySumIrrigationWater(), 3);
       });
 
       build({ id++, "Infilt", "mm", "Infiltration" },
@@ -1654,8 +1644,6 @@ BOTRes& monica::buildOutputTable()
 
   return m;
 }
-
-//-----------------------------------------------------------------------------
 
 std::function<bool(double, double)> monica::getCompareOp(std::string ops)
 {

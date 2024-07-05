@@ -555,7 +555,7 @@ void MonicaModel::seedCrop(Crop *crop) {
  * Deletes the current crop.
  */
 void
-MonicaModel::harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest::OptCarbonManagementData optCarbMgmtData) {
+MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harvest::OptCarbonManagementData optCarbMgmtData) {
   if (_currentCropModule) {
     // prepare to add root and crop residues to soilorganic (AOMs)
     // dead root biomass has already been added daily, so just living root biomass is left
@@ -639,25 +639,21 @@ MonicaModel::harvestCurrentCrop(bool exported, Harvest::Spec spec, Harvest::OptC
       auto organIdsForPrimaryYield = _currentCropModule->organIdsForPrimaryYield();
       for (const auto &p: spec.organ2specVal) {
         // ignore root, is probably an error, when the user specified the root organ (0) as something to harvest
-        if (p.first == 0) {
-          continue;
-        }
+        if (p.first == 0) continue;
         auto organBiomass = _currentCropModule->get_OrganBiomass(p.first);
         auto organYield = organBiomass * p.second.exportPercentage / 100.0;
         cropYield += organYield;
         if (organIdsForPrimaryYield.find(p.first + 1) != organIdsForPrimaryYield.end()) {
           primaryCropYield += organYield;
         }
-        if (p.second.incorporate) {
-          sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
-        } else {
-          sumOrganResidueBiomassAsOverlay += organBiomass - organYield;
-        }
+        if (p.second.incorporate) sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
+        else sumOrganResidueBiomassAsOverlay += organBiomass - organYield;
       }
       auto totalResidueBiomass = _currentCropModule->get_ResidueBiomass(false, cropYield);
       auto totalResidueBiomassToIncorporate = totalResidueBiomass - sumOrganResidueBiomassAsOverlay;
       auto residuesNConcentration = _currentCropModule->get_ResiduesNConcentration(primaryCropYield);
-      _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(), totalResidueBiomassToIncorporate,
+      _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
+                                     totalResidueBiomassToIncorporate,
                                      residuesNConcentration);
 
       debug()
@@ -795,8 +791,8 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
                                   double /*sulfateConcentration*/) {
   //if the production process has still some defined manual irrigation dates
   if (!_simPs.p_UseAutomaticIrrigation) {
-    _soilOrganic->addIrrigationWater(amount);
     _soilColumn->applyIrrigation(amount, nitrateConcentration);
+    _soilOrganic->addIrrigationWater(amount);
     addDailySumIrrigationWater(amount);
   }
 }
@@ -1157,10 +1153,9 @@ pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai)
 void MonicaModel::cropStep() {
   auto date = _currentStepDate;
   auto climateData = currentStepClimateData();
+
   // do nothing if there is no crop
-  if (!_currentCropModule) {
-    return;
-  }
+  if (!_currentCropModule) return;
 
   p_daysWithCrop++;
 
@@ -1181,7 +1176,8 @@ void MonicaModel::cropStep() {
     if (o3sit != _envPs.p_AtmosphericO3s.end()) {
       vw_AtmosphericO3Concentration = o3sit->second;
       // if everything fails value in UserEnvironmentParameters for the whole simulation
-    } else {
+    }
+    else {
       vw_AtmosphericO3Concentration = _envPs.p_AtmosphericO3;
     }
   }
@@ -1220,10 +1216,12 @@ void MonicaModel::cropStep() {
                            et0);
   if (_simPs.p_UseAutomaticIrrigation) {
     const AutomaticIrrigationParameters &aips = _simPs.p_AutoIrrigationParams;
-    if (_soilColumn->applyIrrigationViaTrigger(aips.threshold, aips.amount,
-                                               aips.nitrateConcentration)) {
-      _soilOrganic->addIrrigationWater(aips.amount);
-      addDailySumIrrigationWater(aips.amount);
+    bool irrigationTriggered = false;
+    double irrigationAmount = 0.0;
+    tie(irrigationTriggered, irrigationAmount) = _soilColumn->applyIrrigationViaTrigger(aips);
+    if (irrigationTriggered) {
+      _soilOrganic->addIrrigationWater(irrigationAmount);
+      addDailySumIrrigationWater(irrigationAmount);
     }
   }
 

@@ -97,8 +97,17 @@ kj::Promise<DataAccessor> monica::dataAccessorFromTimeSeries(mas::schema::climat
                         Tools::Date(sd.getDay(), sd.getMonth(), sd.getYear()),
                         Tools::Date(ed.getDay(), ed.getMonth(), ed.getYear()),
                         headerResponse.getHeader(), dataTResponse.getData());
+                  }, [](auto &&e) {
+                    KJ_LOG(ERROR, "Error while trying to get transposed time series data.", e);
+                    return DataAccessor();
                   });
+            }, [](auto &&e) {
+              KJ_LOG(ERROR, "Error while trying to get header data.", e);
+              return DataAccessor();
             });
+      }, [](auto &&e) {
+        KJ_LOG(ERROR, "Error while trying to get range data.", e);
+        return DataAccessor();
       });
 }
 
@@ -112,69 +121,72 @@ kj::Promise<J11Array> monica::fromCapnpSoilProfile(mas::schema::soil::Profile::C
       for (const auto &prop: layer.getProperties()) {
         switch (prop.getName()) {
           case mas::schema::soil::PropertyName::SAND:
-            l["Sand"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["Sand"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::CLAY:
-            l["Clay"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["Clay"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::SILT:
-            l["Silt"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["Silt"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::ORGANIC_CARBON:
-            l["SoilOrganicCarbon"] = prop.getF32Value();
+            if (prop.isF32Value()) l["SoilOrganicCarbon"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::ORGANIC_MATTER:
-            l["SoilOrganicMatter"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["SoilOrganicMatter"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::BULK_DENSITY:
-            l["SoilBulkDensity"] = prop.getF32Value();
+            if (prop.isF32Value()) l["SoilBulkDensity"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::RAW_DENSITY:
-            l["SoilRawDensity"] = prop.getF32Value();
+            if (prop.isF32Value()) l["SoilRawDensity"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::P_H:
-            l["pH"] = prop.getF32Value();
+            if (prop.isF32Value()) l["pH"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::SOIL_TYPE:
-            l["KA5TextureClass"] = prop.getType().cStr();
+            if (prop.isType()) l["KA5TextureClass"] = prop.getType().cStr();
             break;
           case mas::schema::soil::PropertyName::PERMANENT_WILTING_POINT:
-            l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["PermanentWiltingPoint"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::FIELD_CAPACITY:
-            l["FieldCapacity"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["FieldCapacity"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::SATURATION:
-            l["PoreVolume"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["PoreVolume"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT:
-            l["Lambda"] = prop.getF32Value();
+            if (prop.isF32Value()) l["Lambda"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::SCELETON:
-            l["Sceleton"] = prop.getF32Value() / 100.0;
+            if (prop.isF32Value()) l["Sceleton"] = prop.getF32Value() / 100.0;
             break;
           case mas::schema::soil::PropertyName::AMMONIUM:
             l["SoilAmmonium"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::NITRATE:
-            l["SoilNitrate"] = prop.getF32Value();
+            if (prop.isF32Value()) l["SoilNitrate"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::CN_RATIO:
-            l["CN"] = prop.getF32Value();
+            if (prop.isF32Value()) l["CN"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::SOIL_MOISTURE:
             l["SoilMoisturePercentFC"] = prop.getF32Value();
             break;
           case mas::schema::soil::PropertyName::IN_GROUNDWATER:
-            l["is_in_groundwater"] = prop.getBValue();
+            if (prop.isBValue()) l["is_in_groundwater"] = prop.getBValue();
             break;
           case mas::schema::soil::PropertyName::IMPENETRABLE:
-            l["is_impenetrable"] = prop.getBValue();
+            if (prop.isBValue()) l["is_impenetrable"] = prop.getBValue();
             break;
         }
       }
       ls.emplace_back(l);
     }
-    return ls;
+    return kj::mv(ls);
+  }, [](auto &&e) {
+    KJ_LOG(ERROR, "Error while trying to get soil profile data.", e);
+    return J11Array();
   });
 }

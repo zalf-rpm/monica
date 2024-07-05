@@ -204,9 +204,10 @@ double SoilLayer::vs_SoilMoisture_pF() {
  */
 SoilColumn::SoilColumn(double ps_LayerThickness,
                        double ps_MaxMineralisationDepth,
-                       const SoilPMs &soilParams,
-                       double pm_CriticalMoistureDepth)
-    : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth), pm_CriticalMoistureDepth(pm_CriticalMoistureDepth) {
+                       const SoilPMs &soilParams)//,
+                       //double pm_CriticalMoistureDepth)
+    : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth) {
+    //, pm_CriticalMoistureDepth(pm_CriticalMoistureDepth) {
   debug() << "Constructor: SoilColumn " << soilParams.size() << endl;
   for (const auto& sp: soilParams) push_back(SoilLayer(ps_LayerThickness, sp));
 
@@ -227,7 +228,7 @@ void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader
   _vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
   _vf_TopDressingDelay = reader.getVfTopDressingDelay();
   setFromComplexCapnpList(_delayedNMinApplications, reader.getDelayedNMinApplications());
-  pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
+  //pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
   setFromComplexCapnpList(*this, reader.getLayers());
 }
 
@@ -246,7 +247,7 @@ void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder 
   builder.setVfTopDressingDelay(_vf_TopDressingDelay);
   setComplexCapnpList(_delayedNMinApplications,
                       builder.initDelayedNMinApplications((capnp::uint) _delayedNMinApplications.size()));
-  builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
+  //builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
   setComplexCapnpList(*this, builder.initLayers((capnp::uint) size()));
 }
 
@@ -501,54 +502,75 @@ void SoilColumn::deleteAOMPool() {
  * The trigger will be activated and deactivated according to crop parameters
  * (temperature sum)
  *
- * @param vi_IrrigationThreshold
- * @return could irrigation be applied
+ * @param automatic irrigation parameters
+ * @return could irrigation be applied and how much has been applied
  */
-bool SoilColumn::applyIrrigationViaTrigger(double vi_IrrigationThreshold,
-                                           double vi_IrrigationAmount,
-                                           double vi_IrrigationNConcentration) {
-  //is actually only called from cropStep and thus there should always
-  //be a crop
+std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrrigationParameters &aips) {
+  //is actually only called from cropStep and thus there should always be a crop
   assert(cropModule != nullptr);
 
   double s = cropModule->get_HeatSumIrrigationStart();
   double e = cropModule->get_HeatSumIrrigationEnd();
   double cts = cropModule->get_CurrentTemperatureSum();
+  if (cts < s || cts > e || aips.threshold < 0.0) return std::make_pair(false, 0);
 
-  if (cts < s || cts > e)
-    return false;
+  double actPAW = 0.0; // actualPlantAvailableWater
+  double maxPAW = 0.0; // maxPlantAvailableWater
+  double layerDepthM = 0;
+  for (int i = 0; i < size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
+    const auto& li = at(i);
+    auto smi = li.get_Vs_SoilMoisture_m3();
+    auto fci = li.vs_FieldCapacity();
+    auto pwpi = li.vs_PermanentWiltingPoint();
+    auto lti = li.vs_LayerThickness;
 
-  double vi_CriticalMoistureDepth = pm_CriticalMoistureDepth;
+    actPAW += (smi - pwpi) * lti * 1000.0; // [mm]
+    maxPAW += (fci - pwpi) * lti * 1000.0; // [mm]
 
-  // Initialisation
-  double vi_ActualPlantAvailableWater = 0.0;
-  double vi_MaxPlantAvailableWater = 0.0;
-  double vi_PlantAvailableWaterFraction = 0.0;
-
-  int vi_CriticalMoistureLayer = int(ceil(vi_CriticalMoistureDepth /
-                                          at(0).vs_LayerThickness));
-  for (int i_Layer = 0; i_Layer < vi_CriticalMoistureLayer; i_Layer++) {
-    vi_ActualPlantAvailableWater +=
-        (at(i_Layer).get_Vs_SoilMoisture_m3() - at(i_Layer).vs_PermanentWiltingPoint())
-        * vs_LayerThickness()
-        * 1000.0; // [mm]
-    vi_MaxPlantAvailableWater += (at(i_Layer).vs_FieldCapacity()
-                                  - at(i_Layer).vs_PermanentWiltingPoint())
-                                 * vs_LayerThickness() * 1000.0; // [mm]
-    vi_PlantAvailableWaterFraction = vi_ActualPlantAvailableWater
-                                     / vi_MaxPlantAvailableWater; // []
+    layerDepthM += lti;
   }
-  if (vi_PlantAvailableWaterFraction <= vi_IrrigationThreshold) {
-    applyIrrigation(vi_IrrigationAmount, vi_IrrigationNConcentration);
+  if (Tools::flt_equal_zero(maxPAW)) return std::make_pair(false, 0);
+  double fractPAW = actPAW / maxPAW;
+  double addedIrrigationWater = 0;
+  if (fractPAW <= aips.threshold) {
+    if (aips.amount > 0.0) {
+      applyIrrigation(aips.amount, aips.nitrateConcentration);
+      addedIrrigationWater = aips.amount;
+    }
+    else if(aips.percentNFC > 0.0) {
+      layerDepthM = 0;
+      for (int i = 0; i < size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
+        auto& li = at(i);
+        auto smi = li.get_Vs_SoilMoisture_m3();
+        auto fci = li.vs_FieldCapacity();
+        auto pwpi = li.vs_PermanentWiltingPoint();
+        auto lti = li.vs_LayerThickness;
 
-    debug() << "applying automatic irrigation treshold: " << vi_IrrigationThreshold
-            << " amount: " << vi_IrrigationAmount
-            << " N concentration: " << vi_IrrigationNConcentration << endl;
+        double percentNFCi = (fci - pwpi) * aips.percentNFC / 100.0;
+        double pawi = smi - pwpi;
+        double addedIrrigationWaterAtLayer = std::max(0.0, percentNFCi - pawi);
+        addedIrrigationWater += addedIrrigationWaterAtLayer;
+        li.set_Vs_SoilMoisture_m3(percentNFCi + pwpi);
+        double nitrateAddedViaIrrigation = // -> //[kg m-3]
+            aips.nitrateConcentration * // [mg dm-3]
+            addedIrrigationWaterAtLayer / //[dm3 m-2]
+            li.vs_LayerThickness / 1000000.0; // [m]
+        li.vs_SoilNO3 += nitrateAddedViaIrrigation;
 
-    return true;
+        layerDepthM += lti;
+      }
+    } else {
+      return make_pair(false, 0);
+    }
+
+    debug() << "applying automatic irrigation treshold: " << aips.threshold
+            << " amount: " << aips.amount
+            << " N concentration: " << aips.nitrateConcentration << endl;
+
+    return make_pair(true, addedIrrigationWater);
   }
 
-  return false;
+  return make_pair(false, 0);
 }
 
 
@@ -557,20 +579,16 @@ bool SoilColumn::applyIrrigationViaTrigger(double vi_IrrigationThreshold,
  *
  * @author: Claas Nendel
  */
-void SoilColumn::applyIrrigation(double vi_IrrigationAmount,
-                                 double vi_IrrigationNConcentration) {
-  double vi_NAddedViaIrrigation = 0.0; //[kg m-3]
-
+void SoilColumn::applyIrrigation(double amount, double nitrateConcentration) {
   // Adding irrigation water amount to surface water storage
-  vs_SurfaceWaterStorage += vi_IrrigationAmount; // [mm]
+  vs_SurfaceWaterStorage += amount; // [mm]
+  double nitrateAddedViaIrrigation = // -> //[kg m-3]
+      nitrateConcentration * // [mg dm-3]
+      amount / //[dm3 m-2]
+      at(0).vs_LayerThickness / 1000000.0; // [m]
 
-  vi_NAddedViaIrrigation = vi_IrrigationNConcentration * // [mg dm-3]
-                           vi_IrrigationAmount / //[dm3 m-2]
-                           at(0).vs_LayerThickness / 1000000.0; // [m]
-// [-> kg m-3]
-
-// Adding N from irrigation water to top soil nitrate pool
-  at(0).vs_SoilNO3 += vi_NAddedViaIrrigation;
+  // adding N from irrigation water to top soil nitrate pool
+  at(0).vs_SoilNO3 += nitrateAddedViaIrrigation;
 }
 
 

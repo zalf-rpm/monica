@@ -40,13 +40,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica {
 
-enum {
-  ROOT = 0,
-  LEAF = 1,
-  SHOOT = 2,
-  STORAGE_ORGAN = 3
-};
-
 /*
 * @brief  Crop part of model
 *
@@ -656,6 +649,8 @@ private:
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0}; //! old dt
   int vc_TimeUnderAnoxia{0};
+  int TimeUnderAnoxiaThresholdDefault = 4;
+  std::vector<int> vc_TimeUnderAnoxiaThreshold;
   double vs_Tortuosity{};              //! old AD
   double vc_TotalBiomass{0.0};
   double vc_TotalBiomassNContent{0.0}; //! old PESUM
@@ -679,7 +674,6 @@ private:
   bool dyingOut{false};
   double vc_AccumulatedETa{0.0};
   double vc_AccumulatedTranspiration{0.0};
-  double vc_AccumulatedPrimaryCropYield{0.0};
   double vc_sumExportedCutBiomass{0.0};
   double vc_exportedCutBiomass{0.0};
   double vc_sumResidueCutBiomass{0.0};

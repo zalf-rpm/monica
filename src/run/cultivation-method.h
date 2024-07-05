@@ -102,6 +102,8 @@ public:
 
   bool runAtStartOfDay() const { return _runAtStartOfDay; }
 
+  Tools::Errors& errors() { return _errors; }
+
 protected:
   Tools::Date _date;
   Tools::Date _absDate;
@@ -110,6 +112,7 @@ protected:
   int _daysAfterEventCount{0};
   bool _isActive{true};
   bool _runAtStartOfDay{true};
+  Tools::Errors _errors;
 };
 
 typedef std::shared_ptr<Workstep> WSPtr;
@@ -243,7 +246,7 @@ public:
 //    Crop* crop,
 //    std::string method = "total");
 
-  explicit Harvest(json11::Json j) { merge(j); }
+  explicit Harvest(json11::Json j);
 
   Harvest *clone() const override { return new Harvest(*this); }
 
@@ -611,7 +614,7 @@ public:
 
   std::vector<WSPtr> unfinishedDynamicWorksteps() const { return _unfinishedDynamicWorksteps; }
 
-  bool allDynamicWorkstepsFinished() const { return _unfinishedDynamicWorksteps.empty(); }
+  bool allDynamicWorkstepsFinished() const;
 
   std::string name() const { return _name; }
 
