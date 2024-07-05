@@ -24,42 +24,50 @@ set_absolute_path(MAS_INFRASTRUCTURE_DIR ../mas-infrastructure)
 set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/zalfmas_capnpschemas)
 set_absolute_path(AMEI_COMPONENTS_DIR ../SoilTemperatureModels/Models)
 
-if (NOT TARGET Monica_SoilTemp_lib)
+if (NOT TARGET Monica_SoilTemp_lib AND TRUE)
+    add_compile_definitions(MONICA_SOILTEMP)
     message(STATUS "target: Monica_SoilTemp_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/cpp/Monica_SoilTemp amei-components/Monica_SoilTemp)
 endif ()
 
-if (NOT TARGET DSSAT_ST_standalone_lib)
+if (NOT TARGET DSSAT_ST_standalone_lib AND FALSE)
+    add_compile_definitions(DSSAT_ST_STANDALONE)
     message(STATUS "target: DSSAT_ST_standalone_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_ST_standalone/src/cpp/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)
 endif ()
 
-if (NOT TARGET DSSAT_EPICST_standalone_lib)
+if (NOT TARGET DSSAT_EPICST_standalone_lib AND FALSE)
+    add_compile_definitions(DSSAT_EPICST_STANDALONE)
     message(STATUS "target: DSSAT_EPICST_standalone_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_EPICST_standalone/src/cpp/DSSAT_EPICST_standalone amei-components/DSSAT_EPICST_standalone)
 endif ()
 
-if (NOT TARGET Simplace_Soil_Temperature_lib)
+if (NOT TARGET Simplace_Soil_Temperature_lib AND FALSE)
+    add_compile_definitions(SIMPLACE_SOIL_TEMPERATURE)
     message(STATUS "target: Simplace_Soil_Temperature_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Simplace_Soil_Temperature/src/cpp/Simplace_Soil_Temperature amei-components/Simplace_Soil_Temperature)
 endif ()
 
-if (NOT TARGET Stics_soil_temperature_lib)
+if (NOT TARGET Stics_soil_temperature_lib AND FALSE)
+    add_compile_definitions(STICS_SOIL_TEMPERATURE)
     message(STATUS "target: Stics_soil_temperature_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Stics_soil_temperature/src/cpp/Stics_soil_temperature amei-components/Stics_soil_temperature)
 endif ()
 
-if (NOT TARGET SQ_Soil_Temperature_lib)
+if (NOT TARGET SQ_Soil_Temperature_lib AND FALSE)
+    add_compile_definitions(SQ_SOIL_TEMPERATURE)
     message(STATUS "target: SQ_Soil_Temperature_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/SQ_Soil_Temperature/src/cpp/SQ_Soil_Temperature amei-components/SQ_Soil_Temperature)
 endif ()
 
-if (NOT TARGET BiomaSurfacePartonSoilSWATC_lib)
+if (NOT TARGET BiomaSurfacePartonSoilSWATC_lib AND FALSE)
+    add_compile_definitions(BIOMASURFACEPARTONSOILSWATC)
     message(STATUS "target: BiomaSurfacePartonSoilSWATC_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfacePartonSoilSWATC/src/cpp/BiomaSurfacePartonSoilSWATC amei-components/BiomaSurfacePartonSoilSWATC)
 endif ()
 
-if (NOT TARGET BiomaSurfaceSWATSoilSWATC_lib)
+if (NOT TARGET BiomaSurfaceSWATSoilSWATC_lib AND FALSE)
+    add_compile_definitions(BIOMASURFACESWATSOILSWATC)
     message(STATUS "target: BiomaSurfaceSWATSoilSWATC_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfaceSWATSoilSWATC/src/cpp/BiomaSurfaceSWATSoilSWATC amei-components/BiomaSurfaceSWATSoilSWATC)
 endif ()
@@ -247,15 +255,31 @@ target_link_libraries(monica_lib
         json11_lib
         common_lib
         climate_file_io_lib
-        Monica_SoilTemp_lib
-        DSSAT_ST_standalone_lib
-        DSSAT_EPICST_standalone_lib
-        Simplace_Soil_Temperature_lib
-        Stics_soil_temperature_lib
-        SQ_Soil_Temperature_lib
-        BiomaSurfacePartonSoilSWATC_lib
-        BiomaSurfaceSWATSoilSWATC_lib
         )
+if (TARGET Monica_SoilTemp_lib)
+    target_link_libraries(monica_lib PUBLIC Monica_SoilTemp_lib)
+endif ()
+if (TARGET DSSAT_ST_standalone_lib)
+    target_link_libraries(monica_lib PUBLIC DSSAT_ST_standalone_lib)
+endif ()
+if (TARGET DSSAT_EPICST_standalone_lib)
+    target_link_libraries(monica_lib PUBLIC DSSAT_EPICST_standalone_lib)
+endif ()
+if (TARGET Simplace_Soil_Temperature_lib)
+    target_link_libraries(monica_lib PUBLIC Simplace_Soil_Temperature_lib)
+endif ()
+if (TARGET Stics_soil_temperature_lib)
+    target_link_libraries(monica_lib PUBLIC Stics_soil_temperature_lib)
+endif ()
+if (TARGET SQ_Soil_Temperature_lib)
+    target_link_libraries(monica_lib PUBLIC SQ_Soil_Temperature_lib)
+endif ()
+if (TARGET BiomaSurfacePartonSoilSWATC_lib)
+    target_link_libraries(monica_lib PUBLIC BiomaSurfacePartonSoilSWATC_lib)
+endif ()
+if (TARGET BiomaSurfaceSWATSoilSWATC_lib)
+    target_link_libraries(monica_lib PUBLIC BiomaSurfaceSWATSoilSWATC_lib)
+endif ()
 
 #message(STATUS "json11_lib_interface_includes:")
 #foreach(X ${json11_lib_interface_includes})

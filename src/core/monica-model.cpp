@@ -76,10 +76,9 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                          _envPs.p_LeachingDepth, _envPs.p_timeStep,
                                          _cropPs.pc_MinimumAvailableN);
 #endif
-#ifdef AMEI
+
+#ifdef MONICA_SOILTEMP
   auto awc = _simPs.customData["AWC"].number_value();
-  // Monica_SoilTemp
-  //---------------------------------------------------------------------------
   const auto &stParams = cpp.userSoilTemperatureParameters;
   _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp_T>();
   auto &st = _instance_Monica_SoilTemp->soilTempComp;
@@ -125,7 +124,6 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st.setsaturation(sats);
   st.setsoilOrganicMatter(oms);
   st.setdampingFactor(stParams.dampingFactor);
-  //init soil temp component
 
   _getSoilSurfaceTemperature = [this]() {
       return _instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature();
@@ -142,9 +140,10 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
       if (i < sts.size()) return sts[i];
       return sts.back();
   };
+#endif
 
-  // DSSAT_ST_standalone
-  //---------------------------------------------------------------------------
+#if DSSAT_ST_STANDALONE
+  auto awc2 = _simPs.customData["AWC"].number_value();
   _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone_T>();
   auto &st2 = _instance_DSSAT_ST_standalone->soilTempComp;
   st2.setISWWAT("Y");
@@ -157,7 +156,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   vector<double> duls;
   vector<double> dss;
   vector<double> dlayrs;
-  bds.clear();
+  vector<double> bds2;
   vector<double> sws;
   for (const auto& j : _sitePs.initSoilProfileSpec){
     int layerSizeCm = int(double_value(j["Thickness"])*100);  // m -> cm
@@ -174,19 +173,20 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     duls.push_back(sps.vs_FieldCapacity);
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
-    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
-    sws.push_back(awc);
+    bds2.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    sws.push_back(awc2);
   }
   st2.setLL(lls);
   st2.setDUL(duls);
   st2.setDS(dss);
   st2.setDLAYR(dlayrs);
-  st2.setBD(bds);
+  st2.setBD(bds2);
   st2.setSW(sws);
   st2.setMSALB(_simPs.customData["SALB"].number_value());
+#endif
 
-  // DSSAT_EPICST_standalone
-  //---------------------------------------------------------------------------
+#if DSSAT_EPICST_STANDALONE
+  auto awc3 = _simPs.customData["AWC"].number_value();
   _instance_DSSAT_EPICST_standalone = kj::heap<DSSAT_EPICST_standalone_T>();
   auto &st3 = _instance_DSSAT_EPICST_standalone->soilTempComp;
   st3.setISWWAT("Y");
@@ -194,16 +194,16 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   st3.setNLAYR(int(_sitePs.initSoilProfileSpec.size()));
   //auto soilPs = createSoilPMs(_sitePs.initSoilProfileSpec);
   //auto awc = _simPs.customData["AWC"].number_value();
-  currentDepthCm = 0;
-  lls.clear();
-  duls.clear();
-  dss.clear();
-  dlayrs.clear();
-  bds.clear();
-  sws.clear();
+  int currentDepthCm2 = 0;
+  vector<double> lls2;
+  vector<double> duls2;
+  vector<double> dss2;
+  vector<double> dlayrs2;
+  vector<double> bds3;
+  vector<double> sws2;
   for (const auto& j : _sitePs.initSoilProfileSpec){
     int layerSizeCm = int(double_value(j["Thickness"])*100);  // m -> cm
-    currentDepthCm += layerSizeCm;
+    currentDepthCm2 += layerSizeCm;
     SoilParameters sps;
     auto es = sps.merge(j);
     //st3.getLL().push_back(sps.vs_PermanentWiltingPoint);
@@ -212,22 +212,23 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     //st3.getDLAYR().push_back(layerSizeCm);
     //st3.getBD().push_back(sps.vs_SoilBulkDensity());
     //st3.getSW().push_back(awc);
-    lls.push_back(sps.vs_PermanentWiltingPoint);
-    duls.push_back(sps.vs_FieldCapacity);
-    dss.push_back(currentDepthCm);
-    dlayrs.push_back(layerSizeCm);
-    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
-    sws.push_back(awc);
+    lls2.push_back(sps.vs_PermanentWiltingPoint);
+    duls2.push_back(sps.vs_FieldCapacity);
+    dss2.push_back(currentDepthCm2);
+    dlayrs2.push_back(layerSizeCm);
+    bds3.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    sws2.push_back(awc3);
   }
-  st3.setLL(lls);
-  st3.setDUL(duls);
-  st3.setDS(dss);
-  st3.setDLAYR(dlayrs);
-  st3.setBD(bds);
-  st3.setSW(sws);
+  st3.setLL(lls2);
+  st3.setDUL(duls2);
+  st3.setDS(dss2);
+  st3.setDLAYR(dlayrs2);
+  st3.setBD(bds3);
+  st3.setSW(sws2);
+#endif
 
-  // Simplace_Soil_Temperature
-  //---------------------------------------------------------------------------
+#if SIMPLACE_SOIL_TEMPERATURE
+  auto awc4 = _simPs.customData["AWC"].number_value();
   _instance_Simplace_Soil_Temperature = kj::heap<Simplace_Soil_Temperature_T>();
   auto &st4 = _instance_Simplace_Soil_Temperature->soilTempComp;
   st4.setcAlbedo(_simPs.customData["SALB"].number_value());
@@ -246,7 +247,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     SoilParameters sps;
     auto es = sps.merge(j);
     double usableFC = sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint;
-    double availableFC = usableFC * awc;
+    double availableFC = usableFC * awc4;
     double initialWC = availableFC + sps.vs_PermanentWiltingPoint;
     double lt_dm = lt_m * 10;
     double initialWCInLayer = initialWC * 100 * lt_dm;
@@ -254,9 +255,9 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   }
   _instance_Simplace_Soil_Temperature->soilTempExo.setiSoilWaterContent(initialWCSum);
   st4.setcSoilLayerDepth(slds);
+#endif
 
-  // Stics_soil_temperature
-  //---------------------------------------------------------------------------
+#if STICS_SOIL_TEMPERATURE
   _instance_Stics_soil_temperature = kj::heap<Stics_soil_temperature_T>();
   auto &st5 = _instance_Stics_soil_temperature->soilTempComp;
   vector<int> layerThicknessCm;
@@ -265,46 +266,63 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     layerThicknessCm.push_back(layerSizeCm);
   }
   st5.setlayer_thick(layerThicknessCm);
+#endif
 
-  // SQ_Soil_Temperature
-  //---------------------------------------------------------------------------
+#if SQ_SOIL_TEMPERATURE
   _instance_SQ_Soil_Temperature = kj::heap<SQ_Soil_Temperature_T>();
   auto &st6 = _instance_SQ_Soil_Temperature->soilTempComp;
   st6.seta(0.5);
   st6.setb(1.81);
   st6.setc(0.49);
   st6.setlambda_(2.454);
+#endif
 
-  // BiomaSurfacePartonSoilSWATC
-  //---------------------------------------------------------------------------
+#if BIOMASURFACEPARTONSOILSWATC
+  auto awc5 = _simPs.customData["AWC"].number_value();
   _instance_BiomaSurfacePartonSoilSWATC = kj::heap<BiomaSurfacePartonSoilSWATC_T>();
   // shouldn't be an exogenous variable
-  _instance_BiomaSurfacePartonSoilSWATC->soilTempExo.setVolumetricWaterContent(sws);
   auto &st7 = _instance_BiomaSurfacePartonSoilSWATC->soilTempComp;
   vector<double> layerThicknessM;
+  vector<double> bds4;
+  vector<double> sws3;
   for (const auto& j : _sitePs.initSoilProfileSpec){
     layerThicknessM.push_back(double_value(j["Thickness"]));
+    sws3.push_back(awc5);
+    SoilParameters sps;
+    auto es = sps.merge(j);
+    bds4.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
   }
+  _instance_BiomaSurfacePartonSoilSWATC->soilTempExo.setVolumetricWaterContent(sws3);
   st7.setLayerThickness(layerThicknessM);
-  st7.setBulkDensity(bds);
+  st7.setBulkDensity(bds4);
   st7.setLagCoefficient(0.8);
   st7.setAirTemperatureAnnualAverage(_simPs.customData["TAV"].number_value());
   st7.setSoilProfileDepth(_simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+#endif
 
-  // BiomaSurfaceSWATSoilSWATC
-  //---------------------------------------------------------------------------
+#if BIOMASURFACESWATSOILSWATC
+  auto awc6 = _simPs.customData["AWC"].number_value();
   _instance_BiomaSurfaceSWATSoilSWATC = kj::heap<BiomaSurfaceSWATSoilSWATC_T>();
   // shouldn't be an exogenous variable
   _instance_BiomaSurfaceSWATSoilSWATC->soilTempAux.setAboveGroundBiomass(0);
-  _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo.setVolumetricWaterContent(sws);
+  vector<double> layerThicknessM2;
+  vector<double> bds5;
+  vector<double> sws4;
+  for (const auto& j : _sitePs.initSoilProfileSpec){
+    layerThicknessM2.push_back(double_value(j["Thickness"]));
+    sws4.push_back(awc6);
+    SoilParameters sps;
+    auto es = sps.merge(j);
+    bds5.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+  }
+  _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo.setVolumetricWaterContent(sws4);
   _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo.setAlbedo(_simPs.customData["SALB"].number_value());
   auto &st8 = _instance_BiomaSurfaceSWATSoilSWATC->soilTempComp;
-  st8.setLayerThickness(layerThicknessM);
-  st8.setBulkDensity(bds);
+  st8.setLayerThickness(layerThicknessM2);
+  st8.setBulkDensity(bds5);
   st8.setLagCoefficient(0.8);
   st8.setAirTemperatureAnnualAverage(_simPs.customData["TAV"].number_value());
   st8.setSoilProfileDepth(_simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
-
 #endif
 }
 
@@ -905,9 +923,7 @@ void MonicaModel::generalStep() {
   //---------------------------------------------------------------------------
   _soilTemperature->step(tmin, tmax, globrad);
 
-#if AMEI
-  // Monica_SoilTemp
-  //---------------------------------------------------------------------------
+#if MONICA_SOILTEMP
   auto& exo = _instance_Monica_SoilTemp->soilTempExo;
   exo.settmin(tmin);
   exo.settmax(tmax);
@@ -939,9 +955,8 @@ void MonicaModel::generalStep() {
                                                           _instance_Monica_SoilTemp->soilTempRate,
                                                           _instance_Monica_SoilTemp->soilTempAux,
                                                           _instance_Monica_SoilTemp->soilTempExo);
-
-  // DSSAT_ST_standalone
-  //---------------------------------------------------------------------------
+#endif
+#if DSSAT_ST_STANDALONE
   auto& exo2 = _instance_DSSAT_ST_standalone->soilTempExo;
   exo2.setDOY(date.dayOfYear());
   exo2.setSRAD(globrad);
@@ -962,9 +977,8 @@ void MonicaModel::generalStep() {
                                                               _instance_DSSAT_ST_standalone->soilTempRate,
                                                               _instance_DSSAT_ST_standalone->soilTempAux,
                                                               _instance_DSSAT_ST_standalone->soilTempExo);
-
-  // DSSAT_EPICST_standalone
-  //---------------------------------------------------------------------------
+#endif
+#if DSSAT_EPICST_STANDALONE
   auto& exo3 = _instance_DSSAT_EPICST_standalone->soilTempExo;
   exo3.setTMIN(tmin);
   exo3.setTAVG(tavg);
@@ -989,9 +1003,8 @@ void MonicaModel::generalStep() {
                                                                   _instance_DSSAT_EPICST_standalone->soilTempRate,
                                                                   _instance_DSSAT_EPICST_standalone->soilTempAux,
                                                                   _instance_DSSAT_EPICST_standalone->soilTempExo);
-
-  // Simplace_Soil_Temperature
-  //---------------------------------------------------------------------------
+#endif
+#if SIMPLACE_SOIL_TEMPERATURE
   auto& exo4 = _instance_Simplace_Soil_Temperature->soilTempExo;
   exo4.setiAirTemperatureMin(tmin);
   exo4.setiAirTemperatureMax(tmax);
@@ -1020,9 +1033,8 @@ void MonicaModel::generalStep() {
                                                                     _instance_Simplace_Soil_Temperature->soilTempRate,
                                                                     _instance_Simplace_Soil_Temperature->soilTempAux,
                                                                     _instance_Simplace_Soil_Temperature->soilTempExo);
-
-  // Stics_soil_temperature
-  //---------------------------------------------------------------------------
+#endif
+#if STICS_SOIL_TEMPERATURE
   auto& exo5 = _instance_Stics_soil_temperature->soilTempExo;
   exo5.setmin_temp(tmin);
   exo5.setmax_temp(tmax);
@@ -1044,9 +1056,8 @@ void MonicaModel::generalStep() {
                                                                  _instance_Stics_soil_temperature->soilTempRate,
                                                                  _instance_Stics_soil_temperature->soilTempAux,
                                                                  _instance_Stics_soil_temperature->soilTempExo);
-
-  // SQ_Soil_Temperature
-  //---------------------------------------------------------------------------
+#endif
+#if SQ_SOIL_TEMPERATURE
   auto& exo6 = _instance_SQ_Soil_Temperature->soilTempExo;
   exo6.setmaxTAir(tmax);
   exo6.setdayLength(climateData[Climate::sunhours]);
@@ -1068,9 +1079,8 @@ void MonicaModel::generalStep() {
                                                               _instance_SQ_Soil_Temperature->soilTempRate,
                                                               _instance_SQ_Soil_Temperature->soilTempAux,
                                                               _instance_SQ_Soil_Temperature->soilTempExo);
-
-  // BiomaSurfacePartonSoilSWATC
-  //---------------------------------------------------------------------------
+#endif
+#if BIOMASURFACEPARTONSOILSWATC
   auto& exo7 = _instance_BiomaSurfacePartonSoilSWATC->soilTempExo;
   exo7.setAboveGroundBiomass(0);
   exo7.setAirTemperatureMinimum(tmin);
@@ -1091,9 +1101,8 @@ void MonicaModel::generalStep() {
                                                                       _instance_BiomaSurfacePartonSoilSWATC->soilTempRate,
                                                                       _instance_BiomaSurfacePartonSoilSWATC->soilTempAux,
                                                                       _instance_BiomaSurfacePartonSoilSWATC->soilTempExo);
-
-  // BiomaSurfaceSWATSoilSWATC
-  //---------------------------------------------------------------------------
+#endif
+#if BIOMASURFACESWATSOILSWATC
   auto& exo8 = _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo;
   exo8.setAirTemperatureMinimum(tmin);
   exo8.setAirTemperatureMaximum(tmax);
@@ -1113,7 +1122,6 @@ void MonicaModel::generalStep() {
                                                                     _instance_BiomaSurfaceSWATSoilSWATC->soilTempRate,
                                                                     _instance_BiomaSurfaceSWATSoilSWATC->soilTempAux,
                                                                     _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo);
-
 #endif
 
 #ifndef SKIP_MODULES

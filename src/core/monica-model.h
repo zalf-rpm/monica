@@ -49,14 +49,28 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "crop-module.h"
 #include "soilcolumn.h"
 
-#ifdef AMEI
+#if MONICA_SOILTEMP
 #include "SoilTemperatureCompComponent.h"
+#endif
+#if DSSAT_ST_STANDALONE
 #include "DSSAT_ST_standalone/STEMP_Component.h"
+#endif
+#if DSSAT_EPICST_STANDALONE
 #include "DSSAT_EPICST_standalone/STEMP_EPIC_Component.h"
+#endif
+#if SIMPLACE_SOIL_TEMPERATURE
 #include "Simplace_Soil_Temperature/SoilTemperatureComponent.h"
+#endif
+#if STICS_SOIL_TEMPERATURE
 #include "Stics_soil_temperature/soil_tempComponent.h"
+#endif
+#if SQ_SOIL_TEMPERATURE
 #include "SQ_Soil_Temperature/SoilTemperatureComponent.h"
+#endif
+#if BIOMASURFACEPARTONSOILSWATC
 #include "BiomaSurfacePartonSoilSWATC/SurfacePartonSoilSWATCComponent.h"
+#endif
+#if BIOMASURFACESWATSOILSWATC
 #include "BiomaSurfaceSWATSoilSWATC/SurfaceSWATSoilSWATCComponent.h"
 #endif
 
@@ -249,7 +263,7 @@ public:
 
   void setOtherCropHeightAndLAIt(double cropHeight, double lait);
 
-#ifdef AMEI
+#ifdef MONICA_SOILTEMP
   struct Monica_SoilTemp_T {
       Monica_SoilTemp::SoilTemperatureCompComponent soilTempComp;
       Monica_SoilTemp::SoilTemperatureCompState soilTempState;
@@ -260,7 +274,9 @@ public:
       bool doInit{true};
   };
   kj::Own<Monica_SoilTemp_T> _instance_Monica_SoilTemp;
+#endif
 
+#if DSSAT_ST_STANDALONE
   struct DSSAT_ST_standalone_T {
       DSSAT_ST_standalone::STEMP_Component soilTempComp;
       DSSAT_ST_standalone::STEMP_State soilTempState;
@@ -271,7 +287,9 @@ public:
       bool doInit{true};
   };
   kj::Own<DSSAT_ST_standalone_T> _instance_DSSAT_ST_standalone;
+#endif
 
+#if DSSAT_EPICST_STANDALONE
   struct DSSAT_EPICST_standalone_T {
       DSSAT_EPICST_standalone::STEMP_EPIC_Component soilTempComp;
       DSSAT_EPICST_standalone::STEMP_EPIC_State soilTempState;
@@ -282,7 +300,9 @@ public:
       bool doInit{true};
   };
   kj::Own<DSSAT_EPICST_standalone_T> _instance_DSSAT_EPICST_standalone;
+#endif
 
+#if SIMPLACE_SOIL_TEMPERATURE
   struct Simplace_Soil_Temperature_T {
       Simplace_Soil_Temperature::SoilTemperatureComponent soilTempComp;
       Simplace_Soil_Temperature::SoilTemperatureState soilTempState;
@@ -293,7 +313,9 @@ public:
       bool doInit{true};
   };
   kj::Own<Simplace_Soil_Temperature_T> _instance_Simplace_Soil_Temperature;
+#endif
 
+#if STICS_SOIL_TEMPERATURE
   struct Stics_soil_temperature_T {
     Stics_soil_temperature::soil_tempComponent soilTempComp;
     Stics_soil_temperature::soil_tempState soilTempState;
@@ -304,7 +326,9 @@ public:
     bool doInit{true};
   };
   kj::Own<Stics_soil_temperature_T> _instance_Stics_soil_temperature;
+#endif
 
+#if SQ_SOIL_TEMPERATURE
   struct SQ_Soil_Temperature_T {
     SQ_Soil_Temperature::SoilTemperatureComponent soilTempComp;
     SQ_Soil_Temperature::SoilTemperatureState soilTempState;
@@ -315,7 +339,9 @@ public:
     bool doInit{true};
   };
   kj::Own<SQ_Soil_Temperature_T> _instance_SQ_Soil_Temperature;
+#endif
 
+#if BIOMASURFACEPARTONSOILSWATC
   struct BiomaSurfacePartonSoilSWATC_T {
     BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCComponent soilTempComp;
     BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCState soilTempState;
@@ -326,7 +352,9 @@ public:
     bool doInit{true};
   };
   kj::Own<BiomaSurfacePartonSoilSWATC_T> _instance_BiomaSurfacePartonSoilSWATC;
+#endif
 
+#if BIOMASURFACESWATSOILSWATC
   struct BiomaSurfaceSWATSoilSWATC_T {
     BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCComponent soilTempComp;
     BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCState soilTempState;
@@ -337,10 +365,9 @@ public:
     bool doInit{true};
   };
   kj::Own<BiomaSurfaceSWATSoilSWATC_T> _instance_BiomaSurfaceSWATSoilSWATC;
-
-  kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
-  kj::Function<double()> _getSoilSurfaceTemperature;
 #endif
+    kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
+    kj::Function<double()> _getSoilSurfaceTemperature;
 
 private:
   SiteParameters _sitePs;
@@ -355,8 +382,6 @@ private:
   kj::Own<SoilOrganic> _soilOrganic; //!< organic code
   kj::Own<SoilTransport> _soilTransport; //!< transport code
   kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
-
-
 
   //! store applied fertiliser during one production process
   double _sumFertiliser{ 0.0 }; //mineral N
