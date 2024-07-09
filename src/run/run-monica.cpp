@@ -824,6 +824,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   vector<StoreData> store2;
   if (isSyncIC) store2 = setupStorage(env.events2, env.climateData.startDate(), env.climateData.endDate());
 
+  auto tampTav = env.climateData.dssatTAMPandTAV();
+  monica->setDssatTAMPandTAV(tampTav);
+  if (isSyncIC) monica2->setDssatTAMPandTAV(tampTav);
+
   monica->addEvent("run-started");
   if (isSyncIC) monica2->addEvent("run-started");
   for (size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate) {

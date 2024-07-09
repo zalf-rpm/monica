@@ -33,8 +33,6 @@ using namespace Climate;
 using namespace Tools;
 using namespace Soil;
 
-#define SKIP_MODULES 1
-
 namespace {
 //! simple functor for use in fertiliser trigger
 struct AddFertiliserAmountsCallback {
@@ -67,8 +65,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                      _sitePs.vs_SoilParameters),
                                      //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
   _soilTemperature = kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters);
-#ifndef SKIP_MODULES
-
+#ifndef SKIP_BUILD_IN_MODULES
   _soilMoisture = kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters);
   _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters);
   _soilTransport = kj::heap<SoilTransport>(*_soilColumn,
@@ -147,9 +144,13 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
   _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone_T>();
   auto &st2 = _instance_DSSAT_ST_standalone->soilTempComp;
   st2.setISWWAT("Y");
-  st2.setNL(20);
+  st2.setNL(int(_sitePs.initSoilProfileSpec.size()));
   st2.setNLAYR(int(_sitePs.initSoilProfileSpec.size()));
+#ifndef SKIP_BUILD_IN_MODULES
+  st2.setXLAT(_sitePs.vs_Latitude);
+#else
   st2.setXLAT(_simPs.customData["XLAT"].number_value());
+#endif
   auto soilPs = createSoilPMs(_sitePs.initSoilProfileSpec);
   int currentDepthCm = 0;
   vector<double> lls;
@@ -174,15 +175,20 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
     bds2.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+#ifdef SKIP_BUILD_IN_MODULES
     sws.push_back(awc2);
+#endif
   }
   st2.setLL(lls);
   st2.setDUL(duls);
   st2.setDS(dss);
   st2.setDLAYR(dlayrs);
   st2.setBD(bds2);
+#ifdef SKIP_BUILD_IN_MODULES
   st2.setSW(sws);
-  st2.setMSALB(_simPs.customData["SALB"].number_value());
+#endif
+  //st2.setMSALB(_simPs.customData["SALB"].number_value());
+  st2.setMSALB(_envPs.p_Albedo);
 #endif
 
 #if DSSAT_EPICST_STANDALONE
@@ -919,9 +925,10 @@ void MonicaModel::generalStep() {
   }
 #endif
 
-  // Monica build in soil temperature
-  //---------------------------------------------------------------------------
+#if MONICA_SOILTEMP || DSSAT_ST_STANDALONE || DSSAT_EPICST_STANDALONE || SIMPLACE_SOIL_TEMPERATURE || STICS_SOIL_TEMPERATURE || BIOMASURFACEPARTONSOILSWATC || BIOMASURFACESWATSOILSWATC
+#else
   _soilTemperature->step(tmin, tmax, globrad);
+#endif
 
 #if MONICA_SOILTEMP
   auto& exo = _instance_Monica_SoilTemp->soilTempExo;
@@ -936,12 +943,12 @@ void MonicaModel::generalStep() {
       exo.setsoilCoverage(1.0 - exp(-0.5 * lai));
     }
   }
-  //if (_soilMoisture && _soilMoisture->get_SnowDepth() > 0.0) {
-  //  exo.sethasSnowCover(true);
-  //  exo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
-  //} else {
-  exo.sethasSnowCover(false);
-  //}
+  if (_soilMoisture && _soilMoisture->get_SnowDepth() > 0.0) {
+    exo.sethasSnowCover(true);
+    exo.setsoilSurfaceTemperatureBelowSnow(soilMoisture().getTemperatureUnderSnow());
+  } else {
+    exo.sethasSnowCover(false);
+  }
   if(_instance_Monica_SoilTemp->doInit){
     _instance_Monica_SoilTemp->soilTempComp._SoilTemperature.Init(_instance_Monica_SoilTemp->soilTempState,
                                                                   _instance_Monica_SoilTemp->soilTempState1,
@@ -955,6 +962,11 @@ void MonicaModel::generalStep() {
                                                           _instance_Monica_SoilTemp->soilTempRate,
                                                           _instance_Monica_SoilTemp->soilTempAux,
                                                           _instance_Monica_SoilTemp->soilTempExo);
+  _soilTemperature->setSoilSurfaceTemperature(_instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature());
+  for(size_t layer = 0; layer < _soilColumn->size(); layer++) {
+    _soilColumn->at(layer).set_Vs_SoilTemperature(
+        _instance_Monica_SoilTemp->soilTempState.getsoilTemperature().at(layer));
+  }
 #endif
 #if DSSAT_ST_STANDALONE
   auto& exo2 = _instance_DSSAT_ST_standalone->soilTempExo;
@@ -962,9 +974,14 @@ void MonicaModel::generalStep() {
   exo2.setSRAD(globrad);
   exo2.setTAVG(tavg);
   exo2.setTMAX(tmax);
-  exo2.setTAV(_simPs.customData["TAV"].number_value());
-  exo2.setTAMP(_simPs.customData["TAMP"].number_value());
   if(_instance_DSSAT_ST_standalone->doInit){
+#if SKIP_BUILD_IN_MODULES
+    exo2.setTAV(_simPs.customData["TAV"].number_value());
+    exo2.setTAMP(_simPs.customData["TAMP"].number_value());
+#else
+    exo2.setTAV(_dssatTAV);
+    exo2.setTAMP(_dssatTAMP);
+#endif
     _instance_DSSAT_ST_standalone->soilTempComp._STEMP.Init(_instance_DSSAT_ST_standalone->soilTempState,
                                                           _instance_DSSAT_ST_standalone->soilTempState1,
                                                           _instance_DSSAT_ST_standalone->soilTempRate,
@@ -972,11 +989,42 @@ void MonicaModel::generalStep() {
                                                           _instance_DSSAT_ST_standalone->soilTempExo);
     _instance_DSSAT_ST_standalone->doInit = false;
   }
+  auto &st2 = _instance_DSSAT_ST_standalone->soilTempComp;
+  vector<double> sws;
+  int currentDepthCm = 0;
+  auto scLayerSizeCm = int(_soilColumn->at(0).vs_LayerThickness*100);
+  for(size_t sci = 0, ispsk = 0; sci < _soilColumn->size() && ispsk < _sitePs.initSoilProfileSpec.size(); ispsk++) {
+    const auto& j = _sitePs.initSoilProfileSpec.at(ispsk);
+    currentDepthCm += int(double_value(j["Thickness"])*100);  // m -> cm;
+    double awc = 0;
+    int count = 0;
+    while (sci*scLayerSizeCm <= currentDepthCm && sci < _soilColumn->size()) {
+      auto& sl = _soilColumn->at(sci);
+      awc += sl.get_Vs_SoilMoisture_m3();
+      count += 1;
+      sci++;
+    }
+    sws.push_back(awc/count);
+  }
+  st2.setSW(sws);
   _instance_DSSAT_ST_standalone->soilTempComp.Calculate_Model(_instance_DSSAT_ST_standalone->soilTempState,
                                                               _instance_DSSAT_ST_standalone->soilTempState1,
                                                               _instance_DSSAT_ST_standalone->soilTempRate,
                                                               _instance_DSSAT_ST_standalone->soilTempAux,
                                                               _instance_DSSAT_ST_standalone->soilTempExo);
+  _soilTemperature->setSoilSurfaceTemperature(_instance_DSSAT_ST_standalone->soilTempState.getSRFTEMP());
+  currentDepthCm = 0;
+  scLayerSizeCm = int(_soilColumn->at(0).vs_LayerThickness*100);
+  for(size_t sci = 0, ispsk = 0; sci < _soilColumn->size() && ispsk < _sitePs.initSoilProfileSpec.size(); ispsk++) {
+    const auto& j = _sitePs.initSoilProfileSpec.at(ispsk);
+    currentDepthCm += int(double_value(j["Thickness"])*100);  // m -> cm;
+    while (sci*scLayerSizeCm <= currentDepthCm && sci < _soilColumn->size()) {
+      auto& sl = _soilColumn->at(sci);
+      sl.set_Vs_SoilTemperature(_instance_DSSAT_ST_standalone->soilTempState.getST().at(ispsk));
+      sci++;
+    }
+  }
+
 #endif
 #if DSSAT_EPICST_STANDALONE
   auto& exo3 = _instance_DSSAT_EPICST_standalone->soilTempExo;
@@ -1124,7 +1172,7 @@ void MonicaModel::generalStep() {
                                                                     _instance_BiomaSurfaceSWATSoilSWATC->soilTempExo);
 #endif
 
-#ifndef SKIP_MODULES
+#ifndef SKIP_BUILD_IN_MODULES
   // first try to get ReferenceEvapotranspiration from climate data
   auto et0_it = climateData.find(Climate::et0);
   double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;

@@ -51,6 +51,7 @@ public:
   void step(double tmin, double tmax, double globrad);
 
   double getSoilSurfaceTemperature() const { return _soilSurfaceTemperature; }
+  void setSoilSurfaceTemperature(double temp) { _soilSurfaceTemperature = temp; }
   double getSoilTemperature(int layer) const { return soilColumn.at(layer).get_Vs_SoilTemperature();}
 
 private:

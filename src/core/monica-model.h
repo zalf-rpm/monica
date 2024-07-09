@@ -366,9 +366,11 @@ public:
   };
   kj::Own<BiomaSurfaceSWATSoilSWATC_T> _instance_BiomaSurfaceSWATSoilSWATC;
 #endif
-    kj::Function<double(int)> _getSoilTemperatureAtDepthCm;
-    kj::Function<double()> _getSoilSurfaceTemperature;
 
+  void setDssatTAMPandTAV(std::pair<double, double> tampTav) {
+    _dssatTAMP = tampTav.first;
+    _dssatTAV = tampTav.second;
+  }
 private:
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;
@@ -422,6 +424,8 @@ private:
 
   Intercropping _intercropping;
 
+  double _dssatTAMP{ -1 };
+  double _dssatTAV{ -1 };
   //public:
   //  uint critPos{ 0 };
   //  uint cmitPos{ 0 };
