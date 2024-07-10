@@ -59,10 +59,6 @@ enum Eva2_Nutzung {
 const double UNDEFINED = -9999.9;
 const int UNDEFINED_INT = -9999;
 
-//enum { MONTH=12 };
-
-//----------------------------------------------------------------------------
-
 /**
  * @brief
  */
@@ -87,8 +83,6 @@ struct DLL_API YieldComponent : public Tools::Json11Serializable {
   double yieldPercentage{ 0.0 };
   double yieldDryMatter{ 0.0 };
 };
-
-//----------------------------------------------------------------------------
 
 struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   SpeciesParameters() {}

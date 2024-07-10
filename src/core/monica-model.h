@@ -50,16 +50,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilcolumn.h"
 
 #if MONICA_SOILTEMP
-#include "SoilTemperatureCompComponent.h"
+#include "modules/soil_temperature/Monica_SoilTemp_monica_interface.h"
 #endif
 #if DSSAT_ST_STANDALONE
-#include "DSSAT_ST_standalone/STEMP_Component.h"
+#include "modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h"
 #endif
 #if DSSAT_EPICST_STANDALONE
-#include "DSSAT_EPICST_standalone/STEMP_EPIC_Component.h"
+#include "modules/soil_temperature/DSSAT_EPICST_standalone_monica_interface.h"
 #endif
 #if SIMPLACE_SOIL_TEMPERATURE
-#include "Simplace_Soil_Temperature/SoilTemperatureComponent.h"
+#include "modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.h"
 #endif
 #if STICS_SOIL_TEMPERATURE
 #include "Stics_soil_temperature/soil_tempComponent.h"
@@ -264,55 +264,16 @@ public:
   void setOtherCropHeightAndLAIt(double cropHeight, double lait);
 
 #ifdef MONICA_SOILTEMP
-  struct Monica_SoilTemp_T {
-      Monica_SoilTemp::SoilTemperatureCompComponent soilTempComp;
-      Monica_SoilTemp::SoilTemperatureCompState soilTempState;
-      Monica_SoilTemp::SoilTemperatureCompState soilTempState1;
-      Monica_SoilTemp::SoilTemperatureCompExogenous soilTempExo;
-      Monica_SoilTemp::SoilTemperatureCompRate soilTempRate;
-      Monica_SoilTemp::SoilTemperatureCompAuxiliary soilTempAux;
-      bool doInit{true};
-  };
-  kj::Own<Monica_SoilTemp_T> _instance_Monica_SoilTemp;
+  kj::Own<Monica_SoilTemp::MonicaInterface> _instance_Monica_SoilTemp;
 #endif
-
 #if DSSAT_ST_STANDALONE
-  struct DSSAT_ST_standalone_T {
-      DSSAT_ST_standalone::STEMP_Component soilTempComp;
-      DSSAT_ST_standalone::STEMP_State soilTempState;
-      DSSAT_ST_standalone::STEMP_State soilTempState1;
-      DSSAT_ST_standalone::STEMP_Exogenous soilTempExo;
-      DSSAT_ST_standalone::STEMP_Rate soilTempRate;
-      DSSAT_ST_standalone::STEMP_Auxiliary soilTempAux;
-      bool doInit{true};
-  };
-  kj::Own<DSSAT_ST_standalone_T> _instance_DSSAT_ST_standalone;
+  kj::Own<DSSAT_ST_standalone::MonicaInterface> _instance_DSSAT_ST_standalone;
 #endif
-
 #if DSSAT_EPICST_STANDALONE
-  struct DSSAT_EPICST_standalone_T {
-      DSSAT_EPICST_standalone::STEMP_EPIC_Component soilTempComp;
-      DSSAT_EPICST_standalone::STEMP_EPIC_State soilTempState;
-      DSSAT_EPICST_standalone::STEMP_EPIC_State soilTempState1;
-      DSSAT_EPICST_standalone::STEMP_EPIC_Exogenous soilTempExo;
-      DSSAT_EPICST_standalone::STEMP_EPIC_Rate soilTempRate;
-      DSSAT_EPICST_standalone::STEMP_EPIC_Auxiliary soilTempAux;
-      bool doInit{true};
-  };
-  kj::Own<DSSAT_EPICST_standalone_T> _instance_DSSAT_EPICST_standalone;
+  kj::Own<DSSAT_EPICST_standalone::MonicaInterface> _instance_DSSAT_EPICST_standalone;
 #endif
-
 #if SIMPLACE_SOIL_TEMPERATURE
-  struct Simplace_Soil_Temperature_T {
-      Simplace_Soil_Temperature::SoilTemperatureComponent soilTempComp;
-      Simplace_Soil_Temperature::SoilTemperatureState soilTempState;
-      Simplace_Soil_Temperature::SoilTemperatureState soilTempState1;
-      Simplace_Soil_Temperature::SoilTemperatureExogenous soilTempExo;
-      Simplace_Soil_Temperature::SoilTemperatureRate soilTempRate;
-      Simplace_Soil_Temperature::SoilTemperatureAuxiliary soilTempAux;
-      bool doInit{true};
-  };
-  kj::Own<Simplace_Soil_Temperature_T> _instance_Simplace_Soil_Temperature;
+  kj::Own<Simplace_Soil_Temperature::MonicaInterface> _instance_Simplace_Soil_Temperature;
 #endif
 
 #if STICS_SOIL_TEMPERATURE
@@ -367,6 +328,9 @@ public:
   kj::Own<BiomaSurfaceSWATSoilSWATC_T> _instance_BiomaSurfaceSWATSoilSWATC;
 #endif
 
+  std::pair<double, double> dssatTAMPandTAV() {
+    return std::make_pair(_dssatTAMP, _dssatTAV);
+  }
   void setDssatTAMPandTAV(std::pair<double, double> tampTav) {
     _dssatTAMP = tampTav.first;
     _dssatTAV = tampTav.second;

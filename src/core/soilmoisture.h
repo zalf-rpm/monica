@@ -65,7 +65,7 @@ void step(double vs_DepthGroundwaterTable,
   double vw_ReferenceEvapotranspiration);
 
   //void fm_SoilMoistureUpdate();
-  double get_SnowDepth() const;
+  double getSnowDepth() const;
 
   // Getter
   double get_SoilMoisture(int layer) const;
@@ -83,7 +83,7 @@ void step(double vs_DepthGroundwaterTable,
 
   double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; } // [mm]
 
-  double get_PotentialEvapotranspiration() const { return get_ET0() * get_KcFactor(); }
+  double get_PotentialEvapotranspiration() const { return get_ET0() * getKcFactor(); }
 
   double get_ActualEvaporation() const { return vm_ActualEvaporation; } // [mm]
 
@@ -165,8 +165,8 @@ void step(double vs_DepthGroundwaterTable,
 
   double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
 
-  double get_KcFactor() const;
-  double get_TranspirationDeficit() const;
+  double getKcFactor() const;
+  double getTranspirationDeficit() const;
 
 private:
   SoilColumn& soilColumn;

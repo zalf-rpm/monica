@@ -837,7 +837,7 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "SnowD", "mm", "Snow depth" },
         [](const MonicaModel& monica, OId oid)
       {
-        return round(monica.soilMoisture().get_SnowDepth(), 1);
+        return round(monica.soilMoisture().getSnowDepth(), 1);
       });
 
       build({ id++, "FrostD", "m", "Frost front depth in soil" },
@@ -907,7 +907,7 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "Kc", "", "" },
         [](const MonicaModel& monica, OId oid)
       {
-        return round(monica.soilMoisture().get_KcFactor(), 1);
+        return round(monica.soilMoisture().getKcFactor(), 1);
       });
 
       build({ id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration" },
@@ -1557,11 +1557,11 @@ BOTRes& monica::buildOutputTable()
 #if DSSAT_ST_STANDALONE
       build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.getSRFTEMP(), 1);
+                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getSRFTEMP(), 1);
             });
       build({ id++, "AMEI_DSSAT_ST_standalone_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.getST().at(i); }, 1);
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getST().at(i); }, 1);
             });
 #endif
 

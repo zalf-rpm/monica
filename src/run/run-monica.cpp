@@ -291,9 +291,6 @@ void writeDebugInputs(const Env &env, string fileName = "inputs.json") {
   } else cerr << "Error failed to create path: '" << path << "'." << endl;
 }
 
-
-//-----------------------------------------------------------------------------
-
 template<typename T = int>
 Maybe<T> parseInt(const string &s) {
   Maybe<T> res;

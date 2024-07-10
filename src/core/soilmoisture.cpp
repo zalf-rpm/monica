@@ -324,7 +324,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   double vm_WaterToInfiltrate = snowComponent->getWaterToInfiltrate();
 
   // Calculates frost and thaw depth and switches lambda
-  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getVm_SnowDepth());
+  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getSnowDepth());
 
   // calculates infiltration of water from surface
   fm_Infiltration(vm_WaterToInfiltrate);
@@ -852,7 +852,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   double vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
 
-  double vm_SnowDepth = snowComponent->getVm_SnowDepth();
+  double vm_SnowDepth = snowComponent->getSnowDepth();
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
   pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
@@ -1374,7 +1374,7 @@ double SoilMoisture::meanWaterContent(int layer, int number_of_layers) const {
  * @brief Returns Kc factor
  * @return Kc factor
  */
-double SoilMoisture::get_KcFactor() const {
+double SoilMoisture::getKcFactor() const {
   return vc_KcFactor;
 }
 
@@ -1382,7 +1382,7 @@ double SoilMoisture::get_KcFactor() const {
  * @brief Returns drought stress factor []
  * @return drought stress factor
  */
-double SoilMoisture::get_TranspirationDeficit() const {
+double SoilMoisture::getTranspirationDeficit() const {
   return vm_TranspirationDeficit;
 }
 
@@ -1390,8 +1390,8 @@ double SoilMoisture::get_TranspirationDeficit() const {
  * @brief Returns snow depth [mm]
  * @return Value for snow depth
  */
-double SoilMoisture::get_SnowDepth() const {
-  return snowComponent->getVm_SnowDepth();
+double SoilMoisture::getSnowDepth() const {
+  return snowComponent->getSnowDepth();
 }
 
 double SoilMoisture::getMaxSnowDepth() const {
@@ -1415,6 +1415,6 @@ double SoilMoisture::getTemperatureUnderSnow() const {
 }
 
 std::pair<double, double> SoilMoisture::getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const {
-  double snowDepth = snowComponent->getVm_SnowDepth();
+  double snowDepth = snowComponent->getSnowDepth();
   return make_pair(snowDepth, frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
 }

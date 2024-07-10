@@ -37,7 +37,7 @@ public:
 
   void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
 
-  double getVm_SnowDepth() const { return this->vm_SnowDepth; }
+  double getSnowDepth() const { return this->vm_SnowDepth; }
   double getWaterToInfiltrate() const { return this->vm_WaterToInfiltrate; }
   double getMaxSnowDepth() const { return this->vm_maxSnowDepth; }
   double getAccumulatedSnowDepth() const { return this->vm_AccumulatedSnowDepth; }

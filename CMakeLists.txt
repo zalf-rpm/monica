@@ -32,7 +32,7 @@ if (NOT TARGET Monica_SoilTemp_lib AND FALSE)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/cpp/Monica_SoilTemp amei-components/Monica_SoilTemp)
 endif ()
 
-if (NOT TARGET DSSAT_ST_standalone_lib AND TRUE)
+if (NOT TARGET DSSAT_ST_standalone_lib AND FALSE)
     add_compile_definitions(DSSAT_ST_STANDALONE)
     message(STATUS "target: DSSAT_ST_standalone_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_ST_standalone/src/cpp/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)
@@ -44,7 +44,7 @@ if (NOT TARGET DSSAT_EPICST_standalone_lib AND FALSE)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_EPICST_standalone/src/cpp/DSSAT_EPICST_standalone amei-components/DSSAT_EPICST_standalone)
 endif ()
 
-if (NOT TARGET Simplace_Soil_Temperature_lib AND FALSE)
+if (NOT TARGET Simplace_Soil_Temperature_lib AND TRUE)
     add_compile_definitions(SIMPLACE_SOIL_TEMPERATURE)
     message(STATUS "target: Simplace_Soil_Temperature_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Simplace_Soil_Temperature/src/cpp/Simplace_Soil_Temperature amei-components/Simplace_Soil_Temperature)
@@ -244,7 +244,18 @@ add_library(monica_lib
 
         src/resource/version.h
         src/resource/version_resource.rc
-        src/run/capnp-helper.h src/run/capnp-helper.cpp)
+        src/run/capnp-helper.h src/run/capnp-helper.cpp
+
+        src/modules/soil_temperature/DSSAT_ST_standalone_monica_interface.cpp
+        src/modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h
+        src/modules/soil_temperature/DSSAT_EPICST_standalone_monica_interface.cpp
+        src/modules/soil_temperature/DSSAT_EPICST_standalone_monica_interface.h
+        src/modules/soil_temperature/Monica_SoilTemp_monica_interface.cpp
+        src/modules/soil_temperature/Monica_SoilTemp_monica_interface.h
+        src/modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.cpp
+        src/modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.h
+)
+
 target_link_libraries(monica_lib
         PUBLIC
         ${CMAKE_THREAD_LIBS_INIT}
