@@ -34,7 +34,7 @@ FrostComponent::FrostComponent(SoilColumn& sc,
   double pm_HydraulicConductivityRedux,
   double p_timeStep)
   : soilColumn(sc),
-  vm_LambdaRedux(sc.vs_NumberOfLayers() + 1, 1.0),
+  vm_LambdaRedux(sc.numberOfLayers() + 1, 1.0),
   vm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux),
   pt_TimeStep(p_timeStep),
   pm_HydraulicConductivityRedux(pm_HydraulicConductivityRedux) {}
@@ -104,7 +104,7 @@ void FrostComponent::calcSoilFrost(double mean_air_temperature, double snow_dept
  */
 double
 FrostComponent::getMeanBulkDensity() {
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.numberOfLayers();
   double bulk_density_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     bulk_density_accu += soilColumn[i_Layer].vs_SoilBulkDensity();
@@ -118,7 +118,7 @@ FrostComponent::getMeanBulkDensity() {
  */
 double
 FrostComponent::getMeanFieldCapacity() {
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.numberOfLayers();
   double mean_field_capacity_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     mean_field_capacity_accu += soilColumn[i_Layer].vs_FieldCapacity();
@@ -286,7 +286,7 @@ FrostComponent::calcTemperatureUnderSnow(double mean_air_temperature, double sno
  */
 void
 FrostComponent::updateLambdaRedux() {
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumn.numberOfLayers();
 
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
 

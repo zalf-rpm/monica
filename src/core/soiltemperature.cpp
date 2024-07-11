@@ -32,10 +32,10 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
       , soilColumn(_soilColumn,
                    _soilColumnGroundLayer,
                    _soilColumnBottomLayer,
-                   _soilColumn.vs_NumberOfLayers())
+                   _soilColumn.numberOfLayers())
       , _params(params)
-      , _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2)
-      , _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
+      , _noOfTempLayers(_soilColumn.numberOfLayers() + 2)
+      , _noOfSoilLayers(_soilColumn.numberOfLayers())
     	, _soilMoistureConst(_noOfTempLayers)
       , _soilTemperature(_noOfTempLayers)
       , _V(_noOfTempLayers)
@@ -215,9 +215,9 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, mas::schema::model::monica::So
       , soilColumn(_soilColumn,
                    _soilColumnGroundLayer,
                    _soilColumnBottomLayer,
-                   _soilColumn.vs_NumberOfLayers())
-      , _noOfTempLayers(_soilColumn.vs_NumberOfLayers() + 2)
-      , _noOfSoilLayers(_soilColumn.vs_NumberOfLayers())
+                   _soilColumn.numberOfLayers())
+      , _noOfTempLayers(_soilColumn.numberOfLayers() + 2)
+      , _noOfSoilLayers(_soilColumn.numberOfLayers())
       , _solution(_noOfTempLayers)
       , _matrixDiagonal(_noOfTempLayers)
       , _matrixLowerTriangle(_noOfTempLayers)

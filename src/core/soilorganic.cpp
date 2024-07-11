@@ -51,7 +51,7 @@ using namespace Soil;
 SoilOrganic::SoilOrganic(SoilColumn &sc, SoilOrganicModuleParameters userParams)
     : soilColumn(sc),
       _params(std::move(userParams)),
-      vs_NumberOfLayers(sc.vs_NumberOfLayers()),
+      vs_NumberOfLayers(sc.numberOfLayers()),
       vs_NumberOfOrganicLayers(sc.vs_NumberOfOrganicLayers()),
       vo_ActAmmoniaOxidationRate(sc.vs_NumberOfOrganicLayers()),
       vo_ActNitrificationRate(sc.vs_NumberOfOrganicLayers()),
@@ -317,7 +317,7 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters &params,
   debug() << "SoilOrganic: addOrganicMatter: " << params.toString() << endl;
 
   auto nools = soilColumn.vs_NumberOfOrganicLayers();
-  double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  double layerThickness = soilColumn.vs_LayerThickness();
 
   // check if the added organic matter is from crop residues
   bool areCropResidueParams = int(params.vo_CN_Ratio_AOM_Fast * 10000.0) == 0;

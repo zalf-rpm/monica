@@ -96,9 +96,11 @@ void AOM_Properties::serialize(mas::schema::model::monica::AOMProperties::Builde
  */
 SoilLayer::SoilLayer(double vs_LayerThickness,
                      const SoilParameters &sps)
-    : vs_LayerThickness(vs_LayerThickness), vs_SoilNH4(sps.vs_SoilAmmonium), vs_SoilNO3(sps.vs_SoilNitrate), _sps(sps),
-      vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
-//, vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
+    : vs_LayerThickness(vs_LayerThickness)
+    , vs_SoilNH4(sps.vs_SoilAmmonium)
+    , vs_SoilNO3(sps.vs_SoilNitrate)
+    , _sps(sps)
+    , vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
 {
 }
 
@@ -190,28 +192,23 @@ double SoilLayer::vs_SoilMoisture_pF() {
   //  debug() << "vs_SoilMoisture_pF: " << soilMoisture_pF << std::endl;
 }
 
-
-//------------------------------------------------------------------------------
-
 /**
  * @brief Constructor
  *
  * Constructor with parameter initialization. Initializes every layer
  * in vector with the layer-thickness and special soil parameter in this layer.
- *
- * @param gps General Parameters
- * @param soilParams Soil Parameter
  */
-SoilColumn::SoilColumn(double ps_LayerThickness,
-                       double ps_MaxMineralisationDepth,
-                       const SoilPMs &soilParams)//,
-                       //double pm_CriticalMoistureDepth)
-    : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth) {
-    //, pm_CriticalMoistureDepth(pm_CriticalMoistureDepth) {
-  debug() << "Constructor: SoilColumn " << soilParams.size() << endl;
-  for (const auto& sp: soilParams) push_back(SoilLayer(ps_LayerThickness, sp));
+SoilColumn::SoilColumn(double layerThickness,
+                       double maxMineralisationDepth,
+                       const SoilPMs &soilParams)
+    : ps_MaxMineralisationDepth(maxMineralisationDepth) {
+  for (const auto& sp: soilParams) push_back(SoilLayer(layerThickness, sp));
+  _numberOfOrganicLayers = calculateNumberOfOrganicLayers();
+}
 
-  _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
+SoilColumn::SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule *cropModule)
+: cropModule(cropModule) {
+  deserialize(reader);
 }
 
 void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader reader) {
@@ -223,7 +220,7 @@ void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader
   vt_SoilSurfaceTemperature = reader.getVtSoilSurfaceTemperature();
   vm_SnowDepth = reader.getVmSnowDepth();
   ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
-  _vs_NumberOfOrganicLayers = (int) reader.getVsNumberOfOrganicLayers();
+  _numberOfOrganicLayers = (int) reader.getVsNumberOfOrganicLayers();
   _vf_TopDressing = reader.getVfTopDressing();
   _vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
   _vf_TopDressingDelay = reader.getVfTopDressingDelay();
@@ -241,7 +238,7 @@ void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder 
   builder.setVtSoilSurfaceTemperature(vt_SoilSurfaceTemperature);
   builder.setVmSnowDepth(vm_SnowDepth);
   builder.setPsMaxMineralisationDepth(ps_MaxMineralisationDepth);
-  builder.setVsNumberOfOrganicLayers(_vs_NumberOfOrganicLayers);
+  builder.setVsNumberOfOrganicLayers(_numberOfOrganicLayers);
   builder.setVfTopDressing(_vf_TopDressing);
   _vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
   builder.setVfTopDressingDelay(_vf_TopDressingDelay);
@@ -260,15 +257,12 @@ void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder 
  * in private member variable _vs_NumberOfOrganicLayers.
  */
 int SoilColumn::calculateNumberOfOrganicLayers() {
-  //std::cout << "--------- set_vs_NumberOfOrganicLayers -----------" << std::endl;
-  double lsum = 0;
+  double ltSumM = 0;
   int count = 0;
-  for (int i = 0; i < vs_NumberOfLayers(); i++) {
+  for (int i = 0; i < numberOfLayers(); i++) {
     count++;
-    lsum += at(i).vs_LayerThickness;
-
-    if (lsum >= ps_MaxMineralisationDepth)
-      break;
+    ltSumM += at(i).vs_LayerThickness;
+    if (ltSumM >= ps_MaxMineralisationDepth) break;
   }
 
   //std::cout << vs_NumberOfLayers() << std::endl;
@@ -287,13 +281,9 @@ double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertilizerParameters 
   for (const auto &layer: *this) {
     double layerSize = layer.vs_LayerThickness;
     depthCm += int(layerSize * 100.0);
-
     //convert [kg N m-3] to [kg N ha-1]
     sumSoilNkgHa += (at(i).vs_SoilNO3 + at(i).vs_SoilNH4) * 10000.0 * layerSize;
-
-    if (depthCm >= int(demandDepth * 100))
-      break;
-
+    if (depthCm >= int(demandDepth * 100)) break;
     i++;
   }
 
@@ -431,7 +421,7 @@ double SoilColumn::applyPossibleTopDressing() {
  * Calls function for applying delayed fertilizer and
  * then removes the first fertilizer item in list.
  */
-double SoilColumn::applyPossibleDelayedFerilizer() {
+double SoilColumn::applyPossibleDelayedFertilizer() {
   auto delayedApps = _delayedNMinApplications;
   double n_amount = 0.0;
   while (!delayedApps.empty()) {
@@ -477,7 +467,7 @@ void SoilColumn::deleteAOMPool() {
     double vo_SumAOM_Slow = 0.0;
     double vo_SumAOM_Fast = 0.0;
 
-    for (int i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++) {
+    for (int i_Layer = 0; i_Layer < _numberOfOrganicLayers; i_Layer++) {
       vo_SumAOM_Slow += at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Slow;
       vo_SumAOM_Fast += at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Fast;
     }
@@ -485,7 +475,7 @@ void SoilColumn::deleteAOMPool() {
     //cout << "Pool " << i_AOMPool << " -> Slow: " << vo_SumAOM_Slow << "; Fast: " << vo_SumAOM_Fast << endl;
 
     if ((vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001) {
-      for (int i_Layer = 0; i_Layer < _vs_NumberOfOrganicLayers; i_Layer++) {
+      for (int i_Layer = 0; i_Layer < _numberOfOrganicLayers; i_Layer++) {
         auto it_AOMPool = at(i_Layer).vo_AOM_Pool.begin();
         it_AOMPool += i_AOMPool;
         at(i_Layer).vo_AOM_Pool.erase(it_AOMPool);

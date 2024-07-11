@@ -26,7 +26,7 @@ set_absolute_path(AMEI_COMPONENTS_DIR ../SoilTemperatureModels/Models)
 
 #add_compile_definitions(SKIP_BUILD_IN_MODULES)
 
-if (NOT TARGET Monica_SoilTemp_lib AND FALSE)
+if (NOT TARGET Monica_SoilTemp_lib AND TRUE)
     add_compile_definitions(MONICA_SOILTEMP)
     message(STATUS "target: Monica_SoilTemp_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/cpp/Monica_SoilTemp amei-components/Monica_SoilTemp)
@@ -44,7 +44,7 @@ if (NOT TARGET DSSAT_EPICST_standalone_lib AND FALSE)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_EPICST_standalone/src/cpp/DSSAT_EPICST_standalone amei-components/DSSAT_EPICST_standalone)
 endif ()
 
-if (NOT TARGET Simplace_Soil_Temperature_lib AND TRUE)
+if (NOT TARGET Simplace_Soil_Temperature_lib AND FALSE)
     add_compile_definitions(SIMPLACE_SOIL_TEMPERATURE)
     message(STATUS "target: Simplace_Soil_Temperature_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Simplace_Soil_Temperature/src/cpp/Simplace_Soil_Temperature amei-components/Simplace_Soil_Temperature)
@@ -254,6 +254,14 @@ add_library(monica_lib
         src/modules/soil_temperature/Monica_SoilTemp_monica_interface.h
         src/modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.cpp
         src/modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.h
+        src/modules/soil_temperature/Stics_soil_temperature_monica_interface.cpp
+        src/modules/soil_temperature/Stics_soil_temperature_monica_interface.h
+        src/modules/soil_temperature/SQ_Soil_Temperature_monica_interface.cpp
+        src/modules/soil_temperature/SQ_Soil_Temperature_monica_interface.h
+        src/modules/soil_temperature/BiomaSurfacePartonSoilSWATC_monica_interface.cpp
+        src/modules/soil_temperature/BiomaSurfacePartonSoilSWATC_monica_interface.h
+        src/modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.cpp
+        src/modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.h
 )
 
 target_link_libraries(monica_lib

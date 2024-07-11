@@ -47,8 +47,8 @@ SoilMoisture::SoilMoisture(MonicaModel &mm, const SoilMoistureModuleParameters &
       , _params(smPs)
       , envPs(mm.environmentParameters())
       , cropPs(mm.cropParameters())
-      , numberOfMoistureLayers(soilColumn.vs_NumberOfLayers() + 1)
-      , numberOfSoilLayers(soilColumn.vs_NumberOfLayers()) //extern
+      , numberOfMoistureLayers(soilColumn.numberOfLayers() + 1)
+      , numberOfSoilLayers(soilColumn.numberOfLayers()) //extern
       , vm_AvailableWater(numberOfMoistureLayers, 0.0) // Soil available water in [mm]
       , pm_CapillaryRiseRate(numberOfMoistureLayers, 0.0)
       , vm_CapillaryWater(numberOfMoistureLayers, 0.0) // soil capillary water in [mm]

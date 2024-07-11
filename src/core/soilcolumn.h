@@ -32,7 +32,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <vector>
 #include <list>
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 
 #include "model/monica/monica_state.capnp.h"
 
@@ -107,14 +107,12 @@ struct AOM_Properties {
  */
 class SoilLayer {
 public:
-  SoilLayer() {}
-
-//    SoilLayer(const UserInitialValues* initParams);
+  SoilLayer() = default;
 
   SoilLayer(double vs_LayerThickness,
             const Soil::SoilParameters &soilParams);
 
-  SoilLayer(mas::schema::model::monica::SoilLayerState::Reader reader) { deserialize(reader); }
+  explicit SoilLayer(mas::schema::model::monica::SoilLayerState::Reader reader) { deserialize(reader); }
 
   void deserialize(mas::schema::model::monica::SoilLayerState::Reader reader);
 
@@ -164,15 +162,13 @@ public:
 
   void set_Vs_SoilTemperature(double st) { vs_SoilTemperature = st; }
 
-  double vs_SoilSandContent() const { return _sps.vs_SoilSandContent; } //!< Soil layer's sand content [kg kg-1]
-  double vs_SoilClayContent() const { return _sps.vs_SoilClayContent; } //!< Soil layer's clay content [kg kg-1] (Ton)
-  double
-  vs_SoilStoneContent() const { return _sps.vs_SoilStoneContent; } //!< Soil layer's stone content in soil [kg kg-1]
-  double
-  vs_SoilSiltContent() const { return _sps.vs_SoilSiltContent(); } //!< Soil layer's silt content [kg kg-1] (Schluff)
+  double vs_SoilSandContent() const { return _sps.vs_SoilSandContent; } //!< [kg kg-1]
+  double vs_SoilClayContent() const { return _sps.vs_SoilClayContent; } //!< [kg kg-1]
+  double vs_SoilStoneContent() const { return _sps.vs_SoilStoneContent; } //!< [kg kg-1]
+  double vs_SoilSiltContent() const { return _sps.vs_SoilSiltContent(); } //!< [kg kg-1]
   std::string vs_SoilTexture() const { return _sps.vs_SoilTexture; }
 
-  double vs_SoilpH() const { return _sps.vs_SoilpH; } //!< Soil pH value []
+  double vs_SoilpH() const { return _sps.vs_SoilpH; } //!< []
 
   double vs_Lambda() const { return _sps.vs_Lambda; }  //!< Soil water conductivity coefficient []
   double vs_FieldCapacity() const { return _sps.vs_FieldCapacity; }
@@ -183,10 +179,7 @@ public:
 
   double vs_Soil_CN_Ratio() const { return _sps.vs_Soil_CN_Ratio; }
 
-  // members ------------------------------------------------------------
-
   double vs_LayerThickness{0.1}; //!< Soil layer's vertical extension [m]
-  //double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
   double vs_SoilWaterFlux{0.0}; //!< Water flux at the upper boundary of the soil layer [l m-2]
 
   std::vector<AOM_Properties> vo_AOM_Pool; //!< List of different added organic matter pools in soil layer
@@ -210,8 +203,6 @@ private:
   double vs_SoilTemperature{0.0}; //!< Soil layer's temperature [°C]
 };
 
-//----------------------------------------------------------------------------
-
 /**
  * @author Claas Nendel, Michael Berg
  *
@@ -226,13 +217,11 @@ private:
   */
 class SoilColumn : public std::vector<SoilLayer> {
 public:
-  SoilColumn(double ps_LayerThickness,
-             double ps_MaxMineralisationDepth,
-             const Soil::SoilPMs &soilParams);//,
-             //double pm_CriticalMoistureDepth);
+  SoilColumn(double layerThickness,
+             double maxMineralisationDepth,
+             const Soil::SoilPMs &soilParams);
 
-  SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule *cropModule = nullptr)
-      : cropModule(cropModule) { deserialize(reader); }
+  explicit SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule *cropModule = nullptr);
 
   void deserialize(mas::schema::model::monica::SoilColumnState::Reader reader);
 
@@ -245,7 +234,7 @@ public:
   double applyPossibleTopDressing();
 
   //! apply delayed fertiliser application again (yielding possible top dressing)
-  double applyPossibleDelayedFerilizer();
+  double applyPossibleDelayedFertilizer();
 
   double applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
                                           double demandDepth,
@@ -265,7 +254,7 @@ public:
 
   void deleteAOMPool();
 
-  inline size_t vs_NumberOfLayers() const { return size(); }
+  [[nodiscard]] size_t numberOfLayers() const { return size(); }
 
   void applyTillage(double depth);
 
@@ -274,7 +263,7 @@ public:
    * of layers in the first 30 cm depth of soil.
    * @return Number of organic layers
    */
-  inline size_t vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
+  inline size_t vs_NumberOfOrganicLayers() const { return _numberOfOrganicLayers; }
 
   //! Returns the thickness of a layer.
   //! Right now by definition all layers have the same size,
@@ -305,9 +294,9 @@ public:
 private:
   int calculateNumberOfOrganicLayers();
 
-  double ps_MaxMineralisationDepth{0.4};
+  double ps_MaxMineralisationDepth{0.4}; //!< Maximum depth for mineralisation [m]
 
-  int _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
+  int _numberOfOrganicLayers{0}; //!< Number of organic layers.
   double _vf_TopDressing{0.0};
   MineralFertilizerParameters _vf_TopDressingPartition;
   int _vf_TopDressingDelay{0};
@@ -316,9 +305,7 @@ private:
 
   struct DelayedNMinApplicationParams {
     void deserialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader);
-
     void serialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const;
-
     MineralFertilizerParameters fp;
     double vf_SamplingDepth;
     double vf_CropNTarget;
@@ -327,11 +314,8 @@ private:
     double vf_FertiliserMaxApplication;
     int vf_TopDressingDelay;
   };
-
   std::list<DelayedNMinApplicationParams> _delayedNMinApplications;
-
-  //double pm_CriticalMoistureDepth{0};
 };
 
-} // namespace monica
+}
 

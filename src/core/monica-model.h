@@ -62,16 +62,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.h"
 #endif
 #if STICS_SOIL_TEMPERATURE
-#include "Stics_soil_temperature/soil_tempComponent.h"
+#include "modules/soil_temperature/Stics_soil_temperature_monica_interface.h"
 #endif
 #if SQ_SOIL_TEMPERATURE
-#include "SQ_Soil_Temperature/SoilTemperatureComponent.h"
+#include "modules/soil_temperature/SQ_Soil_Temperature_monica_interface.h"
 #endif
 #if BIOMASURFACEPARTONSOILSWATC
-#include "BiomaSurfacePartonSoilSWATC/SurfacePartonSoilSWATCComponent.h"
+#include "modules/soil_temperature/BiomaSurfacePartonSoilSWATC_monica_interface.h"
 #endif
 #if BIOMASURFACESWATSOILSWATC
-#include "BiomaSurfaceSWATSoilSWATC/SurfaceSWATSoilSWATCComponent.h"
+#include "modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.h"
 #endif
 
 namespace monica {
@@ -277,55 +277,19 @@ public:
 #endif
 
 #if STICS_SOIL_TEMPERATURE
-  struct Stics_soil_temperature_T {
-    Stics_soil_temperature::soil_tempComponent soilTempComp;
-    Stics_soil_temperature::soil_tempState soilTempState;
-    Stics_soil_temperature::soil_tempState soilTempState1;
-    Stics_soil_temperature::soil_tempExogenous soilTempExo;
-    Stics_soil_temperature::soil_tempRate soilTempRate;
-    Stics_soil_temperature::soil_tempAuxiliary soilTempAux;
-    bool doInit{true};
-  };
-  kj::Own<Stics_soil_temperature_T> _instance_Stics_soil_temperature;
+  kj::Own<Stics_soil_temperature::MonicaInterface> _instance_Stics_soil_temperature;
 #endif
 
 #if SQ_SOIL_TEMPERATURE
-  struct SQ_Soil_Temperature_T {
-    SQ_Soil_Temperature::SoilTemperatureComponent soilTempComp;
-    SQ_Soil_Temperature::SoilTemperatureState soilTempState;
-    SQ_Soil_Temperature::SoilTemperatureState soilTempState1;
-    SQ_Soil_Temperature::SoilTemperatureExogenous soilTempExo;
-    SQ_Soil_Temperature::SoilTemperatureRate soilTempRate;
-    SQ_Soil_Temperature::SoilTemperatureAuxiliary soilTempAux;
-    bool doInit{true};
-  };
-  kj::Own<SQ_Soil_Temperature_T> _instance_SQ_Soil_Temperature;
+  kj::Own<SQ_Soil_Temperature::MonicaInterface> _instance_SQ_Soil_Temperature;
 #endif
 
 #if BIOMASURFACEPARTONSOILSWATC
-  struct BiomaSurfacePartonSoilSWATC_T {
-    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCComponent soilTempComp;
-    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCState soilTempState;
-    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCState soilTempState1;
-    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCExogenous soilTempExo;
-    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCRate soilTempRate;
-    BiomaSurfacePartonSoilSWATC::SurfacePartonSoilSWATCAuxiliary soilTempAux;
-    bool doInit{true};
-  };
-  kj::Own<BiomaSurfacePartonSoilSWATC_T> _instance_BiomaSurfacePartonSoilSWATC;
+  kj::Own<BiomaSurfacePartonSoilSWATC::MonicaInterface> _instance_BiomaSurfacePartonSoilSWATC;
 #endif
 
 #if BIOMASURFACESWATSOILSWATC
-  struct BiomaSurfaceSWATSoilSWATC_T {
-    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCComponent soilTempComp;
-    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCState soilTempState;
-    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCState soilTempState1;
-    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCExogenous soilTempExo;
-    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCRate soilTempRate;
-    BiomaSurfaceSWATSoilSWATC::SurfaceSWATSoilSWATCAuxiliary soilTempAux;
-    bool doInit{true};
-  };
-  kj::Own<BiomaSurfaceSWATSoilSWATC_T> _instance_BiomaSurfaceSWATSoilSWATC;
+  kj::Own<BiomaSurfaceSWATSoilSWATC::MonicaInterface> _instance_BiomaSurfaceSWATSoilSWATC;
 #endif
 
   std::pair<double, double> dssatTAMPandTAV() {

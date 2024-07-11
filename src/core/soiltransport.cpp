@@ -44,21 +44,21 @@ SoilTransport::SoilTransport(SoilColumn& sc, const SiteParameters& sps, const So
   : soilColumn(sc)
   , _params(params)
   //, vs_NumberOfLayers(sc.vs_NumberOfLayers()) //extern
-  , vq_Convection(sc.vs_NumberOfLayers(), 0.0)
-  , vq_DiffusionCoeff(sc.vs_NumberOfLayers(), 0.0)
-  , vq_Dispersion(sc.vs_NumberOfLayers(), 0.0)
-  , vq_DispersionCoeff(sc.vs_NumberOfLayers(), 1.0)
+  , vq_Convection(sc.numberOfLayers(), 0.0)
+  , vq_DiffusionCoeff(sc.numberOfLayers(), 0.0)
+  , vq_Dispersion(sc.numberOfLayers(), 0.0)
+  , vq_DispersionCoeff(sc.numberOfLayers(), 1.0)
   //, vq_FieldCapacity(sc.vs_NumberOfLayers(), 0.0)
   , vs_LeachingDepth(p_LeachingDepth)
   , vs_NDeposition(sps.vq_NDeposition)
-  , vc_NUptakeFromLayer(sc.vs_NumberOfLayers(), 0.0)
-  , vq_PoreWaterVelocity(sc.vs_NumberOfLayers(), 0.0)
+  , vc_NUptakeFromLayer(sc.numberOfLayers(), 0.0)
+  , vq_PoreWaterVelocity(sc.numberOfLayers(), 0.0)
   //, vq_SoilMoisture(sc.vs_NumberOfLayers(), 0.2)
-  , vq_SoilNO3(sc.vs_NumberOfLayers(), 0.0)
-  , vq_SoilNO3_aq(sc.vs_NumberOfLayers(), 0.0)
+  , vq_SoilNO3(sc.numberOfLayers(), 0.0)
+  , vq_SoilNO3_aq(sc.numberOfLayers(), 0.0)
   , vq_TimeStep(p_timeStep)
-  , vq_TotalDispersion(sc.vs_NumberOfLayers(), 0.0)
-  , vq_PercolationRate(sc.vs_NumberOfLayers(), 0.0)
+  , vq_TotalDispersion(sc.numberOfLayers(), 0.0)
+  , vq_PercolationRate(sc.numberOfLayers(), 0.0)
   , pc_MinimumAvailableN(pc_MinimumAvailableN)
 {
   debug() << "!!! N Deposition: " << vs_NDeposition << endl;
@@ -110,7 +110,7 @@ void SoilTransport::serialize(mas::schema::model::monica::SoilTransportModuleSta
  */
 void SoilTransport::step() {
   double minTimeStepFactor = 1.0; // [t t-1]
-  const auto nols = soilColumn.vs_NumberOfLayers();
+  const auto nols = soilColumn.numberOfLayers();
 
   for (size_t i = 0; i < nols; i++) {
     //vq_FieldCapacity[i] = soilColumn[i].vs_FieldCapacity();
@@ -181,7 +181,7 @@ void SoilTransport::fq_NDeposition() {
  * Kersebaum 1989
  */
 void SoilTransport::fq_NUptake() {
-  const auto nols = soilColumn.vs_NumberOfLayers();
+  const auto nols = soilColumn.numberOfLayers();
   double cropNUptake = 0.0;
   for (size_t i = 0; i < nols; i++) {
     const auto lti = soilColumn[i].vs_LayerThickness;
@@ -219,7 +219,7 @@ void SoilTransport::fq_NTransport(double leachingDepth, double timeStepFactor) {
   double dispersionLength = _params.pq_DispersionLength; // [m]
   double soilProfile = 0.0;
   size_t leachingDepthLayerIndex = 0;
-  const auto nols = soilColumn.vs_NumberOfLayers();
+  const auto nols = soilColumn.numberOfLayers();
   std::vector<double> soilMoistureGradient(nols, 0.0);
 
   for (size_t i = 0; i < nols; i++) {
