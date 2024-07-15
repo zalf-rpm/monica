@@ -17,6 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <vector>
 #include <kj/debug.h>
+#include <numeric>
 
 #include "core/monica-model.h"
 
@@ -29,26 +30,38 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
       KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
-  auto awc6 = simPs.customData["AWC"].number_value();
-  // shouldn't be an exogenous variable
-  soilTempAux.setAboveGroundBiomass(0);
-  std::vector<double> layerThicknessM2;
-  std::vector<double> bds5;
-  std::vector<double> sws4;
+#ifdef SKIP_BUILD_IN_MODULES
+  auto awc = simPs.customData["AWC"].number_value();
+  soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
+  soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+  std::vector<double> layerThicknessM;
+  std::vector<double> bds;
+  std::vector<double> sws;
   for (const auto& j : sitePs.initSoilProfileSpec){
-    layerThicknessM2.push_back(Tools::double_value(j["Thickness"]));
-    sws4.push_back(awc6);
+    layerThicknessM.push_back(Tools::double_value(j["Thickness"]));
+    sws.push_back(awc);
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
-    bds5.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
   }
-  soilTempExo.setVolumetricWaterContent(sws4);
-  soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
-  soilTempComp.setLayerThickness(layerThicknessM2);
-  soilTempComp.setBulkDensity(bds5);
+  soilTempExo.setVolumetricWaterContent(sws);
+  soilTempComp.setLayerThickness(layerThicknessM);
+  soilTempComp.setBulkDensity(bds);
+#else
+  soilTempExo.setAlbedo(_monica->environmentParameters().p_Albedo);
+  std::vector<double> layerThicknessM;
+  std::vector<double> bds;
+  double profileDepth = 0;
+  for (const auto& sl : _monica->soilColumn()){
+    layerThicknessM.push_back(sl.vs_LayerThickness);
+    profileDepth += sl.vs_LayerThickness;
+    bds.push_back(sl.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+  }
+  soilTempComp.setLayerThickness(layerThicknessM);
+  soilTempComp.setBulkDensity(bds);
+  soilTempComp.setSoilProfileDepth(profileDepth);  // m
+#endif
   soilTempComp.setLagCoefficient(0.8);
-  soilTempComp.setAirTemperatureAnnualAverage(simPs.customData["TAV"].number_value());
-  soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
 #endif
 }
 
@@ -60,11 +73,33 @@ void MonicaInterface::run() {
   soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
   soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
   soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
+  soilTempAux.setAboveGroundBiomass(_monica->cropGrowth()->get_AbovegroundBiomass());
+#ifdef SKIP_BUILD_IN_MODULES
+  soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
+  soilTempAux.setAboveGroundBiomass(0);
+#else
+  auto tampNtav = _monica->dssatTAMPandTAV();
+  soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
+  if (_monica->cropGrowth()) soilTempAux.setAboveGroundBiomass(_monica->cropGrowth()->get_AbovegroundBiomass());
+  else soilTempAux.setAboveGroundBiomass(0);
+#endif
   if(_doInit){
     soilTempComp._SoilTemperatureSWAT.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
+#ifndef SKIP_BUILD_IN_MODULES
+  std::vector<double> sws;
+  for (const auto& sl : _monica->soilColumn()){
+    sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
+  }
+  soilTempExo.setVolumetricWaterContent(sws);
+#endif
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
+  int i = 0;
+  KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTemperatureByLayers().size());
+  for (auto& sl : _monica->soilColumnNC()){
+    sl.set_Vs_SoilTemperature(soilTempState.getSoilTemperatureByLayers().at(i++));
+  }
 #endif
 }

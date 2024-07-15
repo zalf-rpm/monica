@@ -24,7 +24,7 @@ namespace monica { class MonicaModel;}
 
 namespace DSSAT_EPICST_standalone {
 
-class MonicaInterface {
+struct MonicaInterface {
 public:
   explicit MonicaInterface(monica::MonicaModel *monica);
 

@@ -29,6 +29,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
       KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
+  double currentDepthM = 0;
+  std::vector<double> slds;
 #ifdef SKIP_BUILD_IN_MODULES
   auto awc4 = simPs.customData["AWC"].number_value();
   soilTempComp.setcAlbedo(simPs.customData["SALB"].number_value());
@@ -37,19 +39,11 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   soilTempComp.setcFirstDayMeanTemp(simPs.customData["TAV"].number_value());
   soilTempComp.setcAverageGroundTemperature(simPs.customData["TAV"].number_value());
   soilTempComp.setcAverageBulkDensity(simPs.customData["SABDM"].number_value());
-#else
-  soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
-  soilTempComp.setcDampingDepth(6);
-  soilTempComp.setcCarbonContent(0.5);
-#endif
-  double currentDepthM = 0;
-  std::vector<double> slds;
   double initialWCSum = 0;
   for (const auto& j : sitePs.initSoilProfileSpec){
     double lt_m = Tools::double_value(j["Thickness"]);
     currentDepthM += lt_m;
     slds.push_back(currentDepthM);
-#ifdef SKIP_BUILD_IN_MODULES
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
     double usableFC = sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint;
@@ -58,10 +52,16 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     double lt_dm = lt_m * 10;
     double initialWCInLayer = initialWC * 100 * lt_dm;
     initialWCSum += initialWCInLayer;
-#endif
   }
-#ifdef SKIP_BUILD_IN_MODULES
   soilTempExo.setiSoilWaterContent(initialWCSum);
+#else
+  soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
+  soilTempComp.setcDampingDepth(6);
+  soilTempComp.setcCarbonContent(0.5);
+  for (const auto& sl : _monica->soilColumn()){
+    currentDepthM += sl.vs_LayerThickness;
+    slds.push_back(currentDepthM);
+  }
 #endif
   soilTempComp.setcSoilLayerDepth(slds);
 #endif
@@ -69,7 +69,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 
 void MonicaInterface::run() {
 #if SIMPLACE_SOIL_TEMPERATURE
-      KJ_ASSERT(_monica != nullptr);
+  KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
   soilTempExo.setiAirTemperatureMin(climateData.at(Climate::tmin));
   soilTempExo.setiAirTemperatureMax(climateData.at(Climate::tmax));
@@ -90,27 +90,19 @@ void MonicaInterface::run() {
     soilTempComp._SnowCoverCalculator.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
+#ifndef SKIP_BUILD_IN_MODULES
   double wcSum = 0;
-  for(const auto & i : _monica->soilColumnNC()) wcSum += i.get_Vs_SoilMoisture_m3();
+  for (const auto& sl : _monica->soilColumn()){
+    wcSum += sl.get_Vs_SoilMoisture_m3();
+  }
   soilTempExo.setiSoilWaterContent(wcSum);
+#endif
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSoilSurfaceTemperature());
-  auto &sc = _monica->soilColumnNC();
-  const auto &isps = _monica->siteParameters().initSoilProfileSpec;
-  auto noOfProfileLayers = isps.size();
-  auto noOfSoilLayers = sc.size();
-  int currentDepthCm = 0;
-  auto scLayerSizeCm = int(sc.at(0).vs_LayerThickness * 100);
-  scLayerSizeCm = int(sc.at(0).vs_LayerThickness * 100);
-  for(size_t sci = 0, ispsk = 0; sci < noOfSoilLayers && ispsk < noOfProfileLayers; ispsk++) {
-    const auto& j = isps.at(ispsk);
-    currentDepthCm += int(Tools::double_value(j["Thickness"])*100);  // m -> cm;
-    while (sci * scLayerSizeCm <= currentDepthCm && sci < noOfSoilLayers) {
-      auto& sl = sc.at(sci);
-      sl.set_Vs_SoilTemperature(soilTempState.getSoilTempArray().at(ispsk));
-      sci++;
-    }
+  int i = 0;
+  KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTempArray().size());
+  for (auto& sl : _monica->soilColumnNC()){
+    sl.set_Vs_SoilTemperature(soilTempState.getSoilTempArray().at(i++));
   }
 #endif
 }

@@ -29,24 +29,36 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
       KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
-  auto awc5 = simPs.customData["AWC"].number_value();
-  // shouldn't be an exogenous variable
+#ifdef SKIP_BUILD_IN_MODULES
+  auto awc = simPs.customData["AWC"].number_value();
   std::vector<double> layerThicknessM;
-  std::vector<double> bds4;
-  std::vector<double> sws3;
+  std::vector<double> bds;
+  std::vector<double> sws;
   for (const auto& j : sitePs.initSoilProfileSpec){
     layerThicknessM.push_back(Tools::double_value(j["Thickness"]));
-    sws3.push_back(awc5);
+    sws.push_back(awc);
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
-    bds4.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
   }
-  soilTempExo.setVolumetricWaterContent(sws3);
+  soilTempExo.setVolumetricWaterContent(sws);
   soilTempComp.setLayerThickness(layerThicknessM);
-  soilTempComp.setBulkDensity(bds4);
-  soilTempComp.setLagCoefficient(0.8);
-  soilTempComp.setAirTemperatureAnnualAverage(simPs.customData["TAV"].number_value());
+  soilTempComp.setBulkDensity(bds);
   soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+#else
+  std::vector<double> layerThicknessM;
+  std::vector<double> bds;
+  double profileDepth = 0;
+  for (const auto& sl : _monica->soilColumn()){
+    layerThicknessM.push_back(sl.vs_LayerThickness);
+    profileDepth += sl.vs_LayerThickness;
+    bds.push_back(sl.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+  }
+  soilTempComp.setLayerThickness(layerThicknessM);
+  soilTempComp.setBulkDensity(bds);
+  soilTempComp.setSoilProfileDepth(profileDepth);
+#endif
+  soilTempComp.setLagCoefficient(0.8);
 #endif
 }
 
@@ -54,16 +66,36 @@ void MonicaInterface::run() {
 #if BIOMASURFACEPARTONSOILSWATC
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-  soilTempExo.setAboveGroundBiomass(0);
   soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
   soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
   soilTempExo.setDayLength(climateData[Climate::sunhours]);
   soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
+#ifdef SKIP_BUILD_IN_MODULES
+  soilTempExo.setAboveGroundBiomass(0);
+  soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
+#else
+  auto tampNtav = _monica->dssatTAMPandTAV();
+  soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
+  if (_monica->cropGrowth()) soilTempExo.setAboveGroundBiomass(_monica->cropGrowth()->get_AbovegroundBiomass());
+  else soilTempExo.setAboveGroundBiomass(0);
+#endif
   if(_doInit){
     soilTempComp._SoilTemperatureSWAT.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
+#ifndef SKIP_BUILD_IN_MODULES
+  std::vector<double> sws;
+  for (const auto& sl : _monica->soilColumn()){
+    sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
+  }
+  soilTempExo.setVolumetricWaterContent(sws);
+#endif
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
+  int i = 0;
+  KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTemperatureByLayers().size());
+  for (auto& sl : _monica->soilColumnNC()){
+    sl.set_Vs_SoilTemperature(soilTempState.getSoilTemperatureByLayers().at(i++));
+  }
 #endif
 }

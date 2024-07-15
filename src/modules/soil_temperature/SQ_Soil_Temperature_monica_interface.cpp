@@ -27,9 +27,6 @@ MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 #if SQ_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
-  auto simPs = _monica->simulationParameters();
-  auto sitePs = _monica->siteParameters();
-
   soilTempComp.seta(0.5);
   soilTempComp.setb(1.81);
   soilTempComp.setc(0.49);
@@ -45,13 +42,23 @@ void MonicaInterface::run() {
   soilTempExo.setdayLength(climateData[Climate::sunhours]);
   soilTempExo.setminTAir(climateData.at(Climate::tmin));
   soilTempExo.setmeanTAir(climateData.at(Climate::tavg));
+#ifdef SKIP_BUILD_IN_MODULES
   soilTempExo.setmeanAnnualAirTemp(_monica->simulationParameters().customData["TAV"].number_value());
   soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
+#else
+  auto tampNtav = _monica->dssatTAMPandTAV();
+  soilTempExo.setmeanAnnualAirTemp(tampNtav.first);
+  soilTempRate.setheatFlux(0);
+#endif
   if(_doInit){
     soilTempComp._CalculateSoilTemperature.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-  //_monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSoilSurfaceTemperature());
+  auto stMin = soilTempState.getminTSoil();
+  auto stMax = soilTempState.getmaxTSoil();
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature((stMin + stMax)/2.0);
+  auto deep = soilTempState.getdeepLayerT();
+  for (auto& sl : _monica->soilColumnNC()) sl.set_Vs_SoilTemperature(deep);
 #endif
 }
