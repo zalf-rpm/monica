@@ -30,6 +30,7 @@
 				"Date", 
 				"Crop", 
 				"Stage",
+				["STemp", [1, 10]],
 				"Irrig",
 				"ETa/ETc",
 				"AbBiom", 

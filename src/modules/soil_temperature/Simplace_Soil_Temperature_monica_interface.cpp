@@ -56,12 +56,20 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   soilTempExo.setiSoilWaterContent(initialWCSum);
 #else
   soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
-  soilTempComp.setcDampingDepth(6);
-  soilTempComp.setcCarbonContent(0.5);
+  soilTempComp.setcDampingDepth(6); // is also default
+  double abd = 0;
+  bool firstLayer = false;
   for (const auto& sl : _monica->soilColumn()){
     currentDepthM += sl.vs_LayerThickness;
     slds.push_back(currentDepthM);
+    abd += sl.vs_SoilBulkDensity() / 1000.0; // kg/m3 -> g/cm3
+    if (!firstLayer){
+      soilTempComp.setcCarbonContent(sl.vs_SoilOrganicCarbon());
+      firstLayer = true;
+    }
   }
+
+  soilTempComp.setcAverageBulkDensity(abd);
 #endif
   soilTempComp.setcSoilLayerDepth(slds);
 #endif
@@ -83,24 +91,25 @@ void MonicaInterface::run() {
   if (_monica->cropGrowth()) soilTempExo.setiLeafAreaIndex(_monica->cropGrowth()->getLeafAreaIndex());
   else soilTempExo.setiLeafAreaIndex(0);
   soilTempExo.setiPotentialSoilEvaporation(_monica->soilMoisture().get_PotentialEvapotranspiration());
-#endif
-  soilTempExo.setiCropResidues(0);
-  if(_doInit){
-    soilTempComp._STMPsimCalculator.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-    soilTempComp._SnowCoverCalculator.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-    _doInit = false;
-  }
-#ifndef SKIP_BUILD_IN_MODULES
   double wcSum = 0;
   for (const auto& sl : _monica->soilColumn()){
     wcSum += sl.get_Vs_SoilMoisture_m3();
   }
   soilTempExo.setiSoilWaterContent(wcSum);
 #endif
+  soilTempExo.setiCropResidues(0);
+  if(_doInit){
+    soilTempComp.setcFirstDayMeanTemp(climateData.at(Climate::tavg));
+    auto tampNtav = _monica->dssatTAMPandTAV();
+    soilTempComp.setcAverageGroundTemperature(tampNtav.first);
+    soilTempComp._SnowCoverCalculator.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+    soilTempComp._STMPsimCalculator.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+    _doInit = false;
+  }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSoilSurfaceTemperature());
   int i = 0;
-  KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTempArray().size());
+  KJ_ASSERT(soilTempState.getSoilTempArray().size() >= _monica->soilColumnNC().size());
   for (auto& sl : _monica->soilColumnNC()){
     sl.set_Vs_SoilTemperature(soilTempState.getSoilTempArray().at(i++));
   }

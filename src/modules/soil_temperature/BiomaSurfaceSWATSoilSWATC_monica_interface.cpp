@@ -73,7 +73,6 @@ void MonicaInterface::run() {
   soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
   soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
   soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
-  soilTempAux.setAboveGroundBiomass(_monica->cropGrowth()->get_AbovegroundBiomass());
 #ifdef SKIP_BUILD_IN_MODULES
   soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
   soilTempAux.setAboveGroundBiomass(0);

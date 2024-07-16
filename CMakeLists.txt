@@ -32,7 +32,7 @@ if (NOT TARGET Monica_SoilTemp_lib AND FALSE)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/cpp/Monica_SoilTemp amei-components/Monica_SoilTemp)
 endif ()
 
-if (NOT TARGET DSSAT_ST_standalone_lib AND TRUE)
+if (NOT TARGET DSSAT_ST_standalone_lib AND FALSE)
     add_compile_definitions(DSSAT_ST_STANDALONE)
     message(STATUS "target: DSSAT_ST_standalone_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_ST_standalone/src/cpp/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)

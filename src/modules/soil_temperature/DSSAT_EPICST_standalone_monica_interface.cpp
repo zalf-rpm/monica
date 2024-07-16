@@ -43,6 +43,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   std::vector<double> dlayrs;
   std::vector<double> bds;
 #ifdef SKIP_BUILD_IN_MODULES
+  soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
+  soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
   vector<double> sws;
   for (const auto& j : sitePs.initSoilProfileSpec){
     int layerSizeCm = int(Tools::double_value(j["Thickness"])*100);  // m -> cm
@@ -63,6 +65,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   }
   sws.push_back(awc);
 #else
+  soilTempComp.setNL(int(_monica->soilColumn().size()));
+  soilTempComp.setNLAYR(int(_monica->soilColumn().size()));
   for (const auto& sl : _monica->soilColumn()){
     int layerSizeCm = int(sl.vs_LayerThickness*100);  // m -> cm
     currentDepthCm += layerSizeCm;
