@@ -864,13 +864,13 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "SurfTemp", "°C", "" },
         [](const MonicaModel& monica, OId oid)
       {
-        return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
+        return round(monica.soilTemperature().getSoilSurfaceTemperature(), 6);
       });
 
       build({ id++, "STemp", "°C", "" },
         [](const MonicaModel& monica, OId oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().getSoilTemperature(i); }, 1);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().getSoilTemperature(i); }, 6);
       });
 
       build({ id++, "Act_Ev", "mm", "" },
@@ -1546,101 +1546,101 @@ BOTRes& monica::buildOutputTable()
 #if MONICA_SOILTEMP
       build({ id++, "AMEI_Monica_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return round(const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature(), 1);
+                return round(const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature(), 6);
             });
       build({ id++, "AMEI_Monica_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilTemperature().at(i); }, 1);
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilTemperature().at(i); }, 6);
             });
 #endif
 
 #if DSSAT_ST_STANDALONE
       build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getSRFTEMP(), 1);
+                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getSRFTEMP(), 6);
             });
       build({ id++, "AMEI_DSSAT_ST_standalone_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getST().at(i); }, 1);
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getST().at(i); }, 6);
             });
 #endif
 
 #if DSSAT_EPICST_STANDALONE
       build({ id++, "AMEI_DSSAT_EPICST_standalone_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->soilTempState.getSRFTEMP(), 1);
+                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->soilTempState.getSRFTEMP(), 6);
             });
       build({ id++, "AMEI_DSSAT_EPICST_standalone_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->soilTempState.getST().at(i); }, 1);
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->soilTempState.getST().at(i); }, 6);
             });
 #endif
 
 #if SIMPLACE_SOIL_TEMPERATURE
       build({ id++, "AMEI_Simplace_Soil_Temperature_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return round(const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->soilTempState.getSoilSurfaceTemperature(), 1);
+                return round(const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->soilTempState.getSoilSurfaceTemperature(), 6);
             });
       build({ id++, "AMEI_Simplace_Soil_Temperature_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->soilTempState.getSoilTempArray().at(i); }, 1);
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->soilTempState.getSoilTempArray().at(i); }, 6);
             });
 #endif
 
 #if STICS_SOIL_TEMPERATURE
       build({ id++, "AMEI_Stics_soil_temperature_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getcanopy_temp_avg(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getcanopy_temp_avg(), 6);
             });
       build({ id++, "AMEI_Stics_soil_temperature_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getlayer_temp().at(i); }, 1);
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getlayer_temp().at(i); }, 6);
             });
 #endif
 
 #if SQ_SOIL_TEMPERATURE
       build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_deep", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getdeepLayerT(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getdeepLayerT(), 6);
             });
       build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_min", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getminTSoil(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getminTSoil(), 6);
             });
       build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_max", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getmaxTSoil(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->soilTempState.getmaxTSoil(), 6);
             });
 #endif
 
 #if BIOMASURFACEPARTONSOILSWATC
       build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceSoilTemperature(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceSoilTemperature(), 6);
             });
       build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp_min", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceTemperatureMinimum(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceTemperatureMinimum(), 6);
             });
       build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp_max", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceTemperatureMaximum(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempAux.getSurfaceTemperatureMaximum(), 6);
             });
       build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempState.getSoilTemperatureByLayers().at(i); }, 1);
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->soilTempState.getSoilTemperatureByLayers().at(i); }, 6);
             });
 #endif
 
 #if BIOMASURFACESWATSOILSWATC
       build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->soilTempAux.getSurfaceSoilTemperature(), 1);
+              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->soilTempAux.getSurfaceSoilTemperature(), 6);
             });
 
       build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->soilTempState.getSoilTemperatureByLayers().at(i); }, 1);
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->soilTempState.getSoilTemperatureByLayers().at(i); }, 6);
             });
 #endif
 
