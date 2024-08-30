@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common/common.h"
 #include "common/restorer.h"
 #include "json11/json11-helper.h"
+#include "climate/climate-common.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
@@ -74,6 +75,7 @@ private:
   mas::infrastructure::common::Restorer *_restorer{nullptr};
   MonicaEnvInstance::Client _client{nullptr};
   Tools::J11Array _soilLayers;
+  Climate::DataAccessor _da;
 };
 
 } // namespace monica
