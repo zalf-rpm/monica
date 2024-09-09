@@ -57,7 +57,8 @@ int main(int argc, char **argv) {
   string startDate, endDate;
   string pathToOutput;
   string pathToOutputFile, pathToOutputFile2;
-  bool writeOutputFile = false, writeOutputFile2 = false;
+  string pathToOutputDir, pathToOutputDir2;
+  bool writeMultipleOutputFiles = false, writeMultipleOutputFiles2 = false;
   string pathToSimJson = "./sim.json", crop, site, climate;
   string icReaderSr;
   string icWriterSr;
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
         << endl
         << " -ed  | --end-date ISO-DATE (default: end of given climate data) ... date in iso-date-format yyyy-mm-dd"
         << endl
-        << " -w   | --write-output-files ... write MONICA output files" << endl
+        << " -m   | --write-multiple-output-files ... write one output file per output section " << endl
         << " -op  | --path-to-output DIRECTORY (default: .) ... path to output directory" << endl
         << " -o   | --path-to-output-file FILE ... path to output file" << endl
         << " -c   | --path-to-crop FILE (default: ./crop.json) ... path to crop.json file" << endl
@@ -99,6 +100,8 @@ int main(int argc, char **argv) {
         pathToOutputFile = argv[++i];
       else if ((arg == "-o2" || arg == "--path-to-output-file2") && i + 1 < argc)
         pathToOutputFile2 = argv[++i];
+      else if ((arg == "-m" || arg == "--write-multiple-output-files") && i + 1 < argc)
+        writeMultipleOutputFiles = writeMultipleOutputFiles2 = true;
       else if ((arg == "-c" || arg == "--path-to-crop") && i + 1 < argc)
         crop = argv[++i];
       else if ((arg == "-s" || arg == "--path-to-site") && i + 1 < argc)
@@ -238,72 +241,83 @@ int main(int argc, char **argv) {
     tie(output, output2) = runMonicaIC(env, isIC);
 
     if (pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value())
-      pathToOutputFile = fixSystemSeparator(simm["output"]["path-to-output"].string_value() + "/"
+    {
+      pathToOutputDir = fixSystemSeparator(simm["output"]["path-to-output"].string_value());
+      pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/"
                                             + simm["output"]["file-name"].string_value());
+    }
     if (pathToOutputFile2.empty() && simm["output"]["write-file?"].bool_value())
-      pathToOutputFile2 = fixSystemSeparator(simm["output"]["path-to-output"].string_value() + "/"
+    {
+      pathToOutputDir2 = fixSystemSeparator(simm["output"]["path-to-output"].string_value());
+      pathToOutputFile2 = fixSystemSeparator(pathToOutputDir2 + "/"
                                              + simm["output"]["file-name2"].string_value());
+    }
 
-    writeOutputFile = !pathToOutputFile.empty();
-    ofstream fout;
-    if (writeOutputFile) {
-      string path, filename;
-      tie(path, filename) = splitPathToFile(pathToOutputFile);
-      if (!Tools::ensureDirExists(path)) {
-        cerr << "Error failed to create path: '" << path << "'." << endl;
-      }
-      fout.open(pathToOutputFile);
-      if (fout.fail()) {
-        cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
+    if (writeMultipleOutputFiles)
+    {
+      ofstream fout;
+      bool writeOutputFile = true;
+      if (!ensureDirExists(pathToOutputDir)) {
+        cerr << "Error failed to create path: '" << pathToOutputDir << "'." << endl;
         writeOutputFile = false;
       }
-    }
-
-    ostream &out = writeOutputFile ? fout : cout;
-
-    string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
-    bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
-    bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
-    bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
-
-    for (const auto &d: output.data) {
-      out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
-      writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
-      if (env.returnObjOutputs())
-        writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
-      else
-        writeOutput(out, d.outputIds, d.results, csvSep);
-      out << endl;
-
-    }
-
-    if (writeOutputFile)
-      fout.close();
-
-    if (isIC && !env.ic.isAsync()) {
-      writeOutputFile2 = !pathToOutputFile2.empty();
-      ofstream fout;
-      if (writeOutputFile2) {
-        string path, filename;
-        tie(path, filename) = splitPathToFile(pathToOutputFile2);
-        if (!Tools::ensureDirExists(path)) {
-          cerr << "Error failed to create path: '" << path << "'." << endl;
-        }
-        fout.open(pathToOutputFile2);
-        if (fout.fail()) {
-          cerr << "Error while opening output file \"" << pathToOutputFile2 << "\"" << endl;
-          writeOutputFile2 = false;
-        }
-      }
-
-      ostream &out = writeOutputFile2 ? fout : cout;
 
       string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
       bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
       bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
       bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
-      for (const auto &d: output2.data) {
+      for (const auto &d: output.data) {
+        if (writeOutputFile)
+        {
+          auto sanitizedFileName = replace(d.origSpec, "\"", "");
+          sanitizedFileName = replace(sanitizedFileName, "*", "_star_");
+          sanitizedFileName = replace(sanitizedFileName, "?", "_qm_");
+          sanitizedFileName = replace(sanitizedFileName, "|", "_bar_");
+          sanitizedFileName = replace(sanitizedFileName, "<", "_lb_");
+          sanitizedFileName = replace(sanitizedFileName, ">", "_rb_");
+          sanitizedFileName = replace(sanitizedFileName, ":", "_colon_");
+          pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/section_" + sanitizedFileName + ".csv");
+          fout.open(pathToOutputFile);
+          if (fout.fail()) {
+            cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
+            writeOutputFile = false;
+          }
+        }
+        ostream &out = writeOutputFile ? fout : cout;
+        if (!writeOutputFile) out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
+        writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+        if (env.returnObjOutputs()) writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
+        else writeOutput(out, d.outputIds, d.results, csvSep);
+
+        if (writeOutputFile) fout.close();
+      }
+    }
+    else
+    {
+      bool writeOutputFile = !pathToOutputFile.empty();
+      ofstream fout;
+      if (writeOutputFile) {
+        string path, filename;
+        tie(path, filename) = splitPathToFile(pathToOutputFile);
+        if (!Tools::ensureDirExists(path)) {
+          cerr << "Error failed to create path: '" << path << "'." << endl;
+        }
+        fout.open(pathToOutputFile);
+        if (fout.fail()) {
+          cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
+          writeOutputFile = false;
+        }
+      }
+
+      ostream &out = writeOutputFile ? fout : cout;
+
+      string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+      bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+      bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+      bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
+
+      for (const auto &d: output.data) {
         out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
         writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
         if (env.returnObjOutputs())
@@ -314,15 +328,95 @@ int main(int argc, char **argv) {
 
       }
 
-      if (writeOutputFile2)
-        fout.close();
+      if (writeOutputFile) fout.close();
     }
 
-    if (activateDebug)
-      cout << "finished MONICA" << endl;
-  } else
-    printHelp();
+    if (isIC && !env.ic.isAsync())
+    {
+      if (writeMultipleOutputFiles)
+      {
+        ofstream fout;
+        bool writeOutputFile = true;
+        if (!ensureDirExists(pathToOutputDir2)) {
+          cerr << "Error failed to create path: '" << pathToOutputDir2 << "'." << endl;
+          writeOutputFile = false;
+        }
 
+        string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+        bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+        bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+        bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
+
+        for (const auto &d: output2.data) {
+          if (writeOutputFile)
+          {
+            auto sanitizedFileName = replace(d.origSpec, "\"", "");
+            sanitizedFileName = replace(sanitizedFileName, "*", "_star_");
+            sanitizedFileName = replace(sanitizedFileName, "?", "_qm_");
+            sanitizedFileName = replace(sanitizedFileName, "|", "_bar_");
+            sanitizedFileName = replace(sanitizedFileName, "<", "_lb_");
+            sanitizedFileName = replace(sanitizedFileName, ">", "_rb_");
+            sanitizedFileName = replace(sanitizedFileName, ":", "_colon_");
+            pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/2_section_" + sanitizedFileName + ".csv");
+            fout.open(pathToOutputFile);
+            if (fout.fail()) {
+              cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
+              writeOutputFile = false;
+            }
+          }
+          ostream &out = writeOutputFile ? fout : cout;
+          if (!writeOutputFile) out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
+          writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+          if (env.returnObjOutputs()) writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
+          else writeOutput(out, d.outputIds, d.results, csvSep);
+
+          if (writeOutputFile) fout.close();
+        }
+      }
+      else
+      {
+        bool writeOutputFile2 = !pathToOutputFile2.empty();
+        ofstream fout;
+        if (writeOutputFile2) {
+          string path, filename;
+          tie(path, filename) = splitPathToFile(pathToOutputFile2);
+          if (!Tools::ensureDirExists(path)) {
+            cerr << "Error failed to create path: '" << path << "'." << endl;
+          }
+          fout.open(pathToOutputFile2);
+          if (fout.fail()) {
+            cerr << "Error while opening output file \"" << pathToOutputFile2 << "\"" << endl;
+            writeOutputFile2 = false;
+          }
+        }
+
+        ostream &out = writeOutputFile2 ? fout : cout;
+
+        string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+        bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+        bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+        bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
+
+        for (const auto &d: output2.data) {
+          out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
+          writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow, includeAggRows);
+          if (env.returnObjOutputs())
+            writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
+          else
+            writeOutput(out, d.outputIds, d.results, csvSep);
+          out << endl;
+        }
+
+        if (writeOutputFile2) fout.close();
+      }
+    }
+
+    if (activateDebug) cout << "finished MONICA" << endl;
+  }
+  else
+  {
+    printHelp();
+  }
 
   return 0;
 }
