@@ -468,6 +468,7 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
   double vs_MaxEffectiveRootingDepth{ 2.0 }; //!< [m]
   double vs_ImpenetrableLayerDepth{ -1 }; //!< [m]
   double vs_SoilSpecificHumusBalanceCorrection{ 0.0 }; //humus equivalents
+  double bareSoilKcFactor{ 0.4 };
 
   int numberOfLayers{ 20 };
   double layerThickness{ 0.1 };

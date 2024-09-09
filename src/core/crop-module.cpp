@@ -71,6 +71,7 @@ CropModule::CropModule(SoilColumn &sc,
       , cultivarPs(cps.cultivarParams)
       , residuePs(kj::mv(rps))
       , _isWinterCrop(isWinterCrop)
+      , _bareSoilKcFactor(stps.bareSoilKcFactor)
       , vs_Latitude(stps.vs_Latitude)
       , pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
       , pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
@@ -879,7 +880,7 @@ void CropModule::step(double vw_MeanAirTemperature,
   }
 
   if (vc_DevelopmentalStage == 0) {
-    vc_KcFactor = 0.4; /** @todo Claas: muss hier etwas Genaueres hin, siehe FAO? */
+    vc_KcFactor = _bareSoilKcFactor; /** @todo Claas: muss hier etwas Genaueres hin, siehe FAO? */
   } else {
     vc_KcFactor = fc_KcFactor(pc_StageTemperatureSum[vc_DevelopmentalStage],
                               vc_CurrentTemperatureSum[vc_DevelopmentalStage],
