@@ -31,7 +31,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto sitePs = _monica->siteParameters();
   double currentDepthM = 0;
   std::vector<double> slds;
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc4 = simPs.customData["AWC"].number_value();
   soilTempComp.setcAlbedo(simPs.customData["SALB"].number_value());
   soilTempComp.setcDampingDepth(6);
@@ -82,7 +82,7 @@ void MonicaInterface::run() {
   soilTempExo.setiAirTemperatureMin(climateData.at(Climate::tmin));
   soilTempExo.setiAirTemperatureMax(climateData.at(Climate::tmax));
   soilTempExo.setiGlobalSolarRadiation(climateData.at(Climate::globrad));
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   soilTempExo.setiRAIN(0); // so that no snowcover will build up
   soilTempExo.setiLeafAreaIndex(_monica->simulationParameters().customData["LAI"].number_value());
   soilTempExo.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
@@ -107,7 +107,7 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSoilSurfaceTemperature());
   int i = 0;
   KJ_ASSERT(soilTempState.getSoilTempArray().size() >= _monica->soilColumnNC().size());

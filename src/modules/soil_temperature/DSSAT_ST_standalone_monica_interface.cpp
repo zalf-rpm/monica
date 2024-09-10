@@ -37,7 +37,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   std::vector<double> dss;
   std::vector<double> dlayrs;
   std::vector<double> bds;
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
   _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
   auto awc = _monica->simulationParameters().customData["AWC"].number_value();
@@ -94,7 +94,7 @@ void MonicaInterface::run() {
   _soilTempExo.setTAVG(climateData.at(Climate::tavg));
   _soilTempExo.setTMAX(climateData.at(Climate::tmax));
   if (_doInit) {
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempExo.setTAV(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempExo.setTAMP(_monica->simulationParameters().customData["TAMP"].number_value());
 #else
@@ -105,7 +105,7 @@ void MonicaInterface::run() {
     _soilTempComp._STEMP.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
   }
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   std::vector<double> sws;
   for (const auto& sl : _monica->soilColumn()){
     sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
@@ -113,8 +113,8 @@ void MonicaInterface::run() {
   _soilTempComp.setSW(sws);
 #endif
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.getSRFTEMP());
-#ifndef SKIP_BUILD_IN_MODULES
   int i = 0;
       KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.getST().size());
   for (auto& sl : _monica->soilColumnNC()){

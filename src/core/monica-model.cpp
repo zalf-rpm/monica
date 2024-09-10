@@ -65,7 +65,7 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                      _sitePs.vs_SoilParameters),
                                      //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
   _soilTemperature = kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _soilMoisture = kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters);
   _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters);
   _soilTransport = kj::heap<SoilTransport>(*_soilColumn,
@@ -655,6 +655,11 @@ void MonicaModel::generalStep() {
   double relhumid = climateData.find(Climate::relhumid) == climateData.end()
                     ? -1.0
                     : climateData[Climate::relhumid];
+  // test if data for vapor pressure are available; if not, value is set to -1.0
+  double vaporPressure = climateData.find(Climate::vaporpress) == climateData.end()
+                    ? -1.0
+                    : climateData[Climate::vaporpress];
+
 #ifndef SKIP_MODULES
   // test if simulated gw or measured values should be used
   auto gw_value_p = _groundwaterInformation.getGroundwaterInformation(date);
@@ -748,7 +753,7 @@ void MonicaModel::generalStep() {
   _instance_BiomaSurfaceSWATSoilSWATC->run();
 #endif
 
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   // first try to get ReferenceEvapotranspiration from climate data
   auto et0_it = climateData.find(Climate::et0);
   double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;
@@ -758,7 +763,7 @@ void MonicaModel::generalStep() {
                       tmax, tmin,
                       (relhumid / 100.0), tavg,
                       wind, _envPs.p_WindSpeedHeight, globrad,
-                      julday, et0);
+                      julday, et0, vaporPressure);
   _soilOrganic->step(tavg, precip, wind);
   _soilTransport->step();
 #endif

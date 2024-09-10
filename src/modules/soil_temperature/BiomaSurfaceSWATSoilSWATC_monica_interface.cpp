@@ -30,7 +30,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
       KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
   soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
   soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
@@ -73,7 +73,7 @@ void MonicaInterface::run() {
   soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
   soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
   soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
   soilTempAux.setAboveGroundBiomass(0);
 #else
@@ -86,7 +86,7 @@ void MonicaInterface::run() {
     soilTempComp._SoilTemperatureSWAT.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   std::vector<double> sws;
   for (const auto& sl : _monica->soilColumn()){
     sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
@@ -94,7 +94,7 @@ void MonicaInterface::run() {
   soilTempExo.setVolumetricWaterContent(sws);
 #endif
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
   int i = 0;
   KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTemperatureByLayers().size());

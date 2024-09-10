@@ -30,7 +30,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
 
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
 #endif
   _soilTempComp.setISWWAT("Y");
@@ -42,7 +42,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   std::vector<double> dss;
   std::vector<double> dlayrs;
   std::vector<double> bds;
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
   _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
   std::vector<double> sws;
@@ -94,7 +94,7 @@ void MonicaInterface::run() {
   soilTempExo.setTAVG(climateData.at(Climate::tavg));
   soilTempExo.setTMAX(climateData.at(Climate::tmax));
   soilTempExo.setRAIN(climateData.at(Climate::precip));
-#if SKIP_BUILD_IN_MODULES
+#if AMEI_SENSITIVITY_ANALYSIS
   soilTempExo.setSNOW(0);
   soilTempExo.setDEPIR(_monica->simulationParameters().customData["IRVAL"].number_value());
   soilTempExo.setMULCHMASS(_monica->simulationParameters().customData["MLTHK"].number_value());
@@ -115,7 +115,7 @@ void MonicaInterface::run() {
     _soilTempComp._STEMP_EPIC.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   std::vector<double> sws;
   for (const auto& sl : _monica->soilColumn()){
     sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
@@ -123,7 +123,7 @@ void MonicaInterface::run() {
   soilTempComp.setSW(sws);
 #endif
   _soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSRFTEMP());
   int i = 0;
   KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getST().size());

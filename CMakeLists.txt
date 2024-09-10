@@ -24,7 +24,7 @@ set_absolute_path(MAS_INFRASTRUCTURE_DIR ../mas-infrastructure)
 set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/zalfmas_capnpschemas)
 set_absolute_path(AMEI_COMPONENTS_DIR ../SoilTemperatureModels/Models)
 
-add_compile_definitions(SKIP_BUILD_IN_MODULES)
+add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
 add_compile_definitions(MONICA_ORIG_SOILTEMP)
 
 if (NOT TARGET Monica_SoilTemp_lib AND TRUE)

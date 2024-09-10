@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm> //for min, max
 #include <iostream>
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include "frost-component.h"
@@ -262,7 +263,10 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
                         double vw_WindSpeedHeight,
                         double vw_GlobalRadiation,
                         int vs_JulianDay,
-                        double vw_ReferenceEvapotranspiration) {
+                        double vw_ReferenceEvapotranspiration,
+                        double vaporPressure) {
+  _vaporPressure = vaporPressure;
+
   for (int i = 0; i < numberOfSoilLayers; i++) {
     // initialization with moisture values stored in the layer
     vm_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
@@ -1052,104 +1056,93 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
                                                  double vw_MeanAirTemperature, double vw_WindSpeed,
                                                  double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay,
                                                  double vs_Latitude) {
-
-  double vc_Declination;
-  double vc_DeclinationSinus; // old SINLD
-  double vc_DeclinationCosinus; // old COSLD
-  double vc_AstronomicDayLenght;
   double vc_EffectiveDayLenght;
   double vc_PhotoperiodicDaylength;
-  double vc_PhotActRadiationMean;
-  double vc_ClearDayRadiation;
   double vc_OvercastDayRadiation;
-
-  double vm_AtmosphericPressure; //[kPA]
-  double vm_PsycrometerConstant; //[kPA °C-1]
-  double vm_SaturatedVapourPressureMax; //[kPA]
-  double vm_SaturatedVapourPressureMin; //[kPA]
-  double vm_SaturatedVapourPressure; //[kPA]
-  double vm_VapourPressure; //[kPA]
-  double vm_SaturationDeficit; //[kPA]
-  double vm_SaturatedVapourPressureSlope; //[kPA °C-1]
-  double vm_WindSpeed_2m; //[m s-1]
   double vm_AerodynamicResistance; //[s m-1]
-  double vm_SurfaceResistance; //[s m-1]
-  double vc_ExtraterrestrialRadiation;
-  double vm_ReferenceEvapotranspiration; //[mm]
-  double pc_ReferenceAlbedo = cropPs.pc_ReferenceAlbedo; // FAO Green gras reference albedo from Allen et al. (1998)
-  double PI = 3.14159265358979323;
 
-  vc_Declination = -23.4 * cos(2.0 * PI * ((vs_JulianDay + 10.0) / 365.0));
-  vc_DeclinationSinus = sin(vc_Declination * PI / 180.0) * sin(vs_Latitude * PI / 180.0);
-  vc_DeclinationCosinus = cos(vc_Declination * PI / 180.0) * cos(vs_Latitude * PI / 180.0);
+  double vc_Declination = -23.4 * cos(2.0 * M_PI * ((vs_JulianDay + 10.0) / 365.0));
+  // old SINLD
+  double vc_DeclinationSinus = sin(vc_Declination * M_PI / 180.0) * sin(vs_Latitude * M_PI / 180.0);
+  // old COSLD
+  double vc_DeclinationCosinus = cos(vc_Declination * M_PI / 180.0) * cos(vs_Latitude * M_PI / 180.0);
 
   double arg_AstroDayLength = vc_DeclinationSinus / vc_DeclinationCosinus;
   arg_AstroDayLength = bound(-1.0, arg_AstroDayLength, 1.0); //The argument of asin must be in the range of -1 to 1  
-  vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(arg_AstroDayLength)) / PI;
+  double vc_AstronomicDayLenght = 12.0 * (M_PI + 2.0 * asin(arg_AstroDayLength)) / M_PI;
 
-  double arg_EffectiveDayLength = (-sin(8.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+  double arg_EffectiveDayLength = (-sin(8.0 * M_PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
   arg_EffectiveDayLength = bound(-1.0, arg_EffectiveDayLength,
                                  1.0); //The argument of asin must be in the range of -1 to 1
-  vc_EffectiveDayLenght = 12.0 * (PI + 2.0 * asin(arg_EffectiveDayLength)) / PI;
+  vc_EffectiveDayLenght = 12.0 * (M_PI + 2.0 * asin(arg_EffectiveDayLength)) / M_PI;
 
-  double arg_PhotoDayLength = (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+  double arg_PhotoDayLength = (-sin(-6.0 * M_PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
   arg_PhotoDayLength = bound(-1.0, arg_PhotoDayLength, 1.0); //The argument of asin must be in the range of -1 to 1
-  vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(arg_PhotoDayLength)) / PI;
+  vc_PhotoperiodicDaylength = 12.0 * (M_PI + 2.0 * asin(arg_PhotoDayLength)) / M_PI;
 
   double arg_PhotAct = min(1.0, ((vc_DeclinationSinus / vc_DeclinationCosinus) *
                                  (vc_DeclinationSinus / vc_DeclinationCosinus))); //The argument of sqrt must be >= 0
-  vc_PhotActRadiationMean = 3600.0 * (vc_DeclinationSinus * vc_AstronomicDayLenght + 24.0 / PI * vc_DeclinationCosinus
-                                                                                     * sqrt(1.0 - arg_PhotAct));
+  double vc_PhotActRadiationMean = 3600.0 * (vc_DeclinationSinus * vc_AstronomicDayLenght + 24.0 / M_PI *
+    vc_DeclinationCosinus
+    * sqrt(1.0 - arg_PhotAct));
 
 
-  vc_ClearDayRadiation = 0;
+  double vc_ClearDayRadiation = 0;
   if (vc_PhotActRadiationMean > 0 && vc_AstronomicDayLenght > 0) {
     vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean * exp(-0.14 / (vc_PhotActRadiationMean
                                                                                  / (vc_AstronomicDayLenght * 3600.0)));
   }
 
   vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
-  double SC = 24.0 * 60.0 / PI * 8.20 * (1.0 + 0.033 * cos(2.0 * PI * vs_JulianDay / 365.0));
-  double arg_SHA = bound(-1.0, -tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0),
+  double SC = 24.0 * 60.0 / M_PI * 8.20 * (1.0 + 0.033 * cos(2.0 * M_PI * vs_JulianDay / 365.0));
+  double arg_SHA = bound(-1.0, -tan(vs_Latitude * M_PI / 180.0) * tan(vc_Declination * M_PI / 180.0),
                          1.0); //The argument of acos must be in the range of -1 to 1
   double SHA = acos(arg_SHA);
 
-  vc_ExtraterrestrialRadiation =
-      SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * sin(SHA)) / 100.0; // [J cm-2] --> [MJ m-2]
+  double vc_ExtraterrestrialRadiation = SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * sin(SHA)) / 100.0; // [J cm-2] --> [MJ m-2]
 
-  // Calculation of atmospheric pressure
-  vm_AtmosphericPressure = 101.3 * pow(((293.0 - (0.0065 * vs_HeightNN)) / 293.0), 5.26);
+  // Calculation of atmospheric pressure //[kPA]
+  double vm_AtmosphericPressure = 101.3 * pow(((293.0 - (0.0065 * vs_HeightNN)) / 293.0), 5.26);
 
-  // Calculation of psychrometer constant - Luchtfeuchtigkeit
-  vm_PsycrometerConstant = 0.000665 * vm_AtmosphericPressure;
+  // Calculation of psychrometer constant //[kPA °C-1] - Luchtfeuchtigkeit
+  double vm_PsycrometerConstant = 0.000665 * vm_AtmosphericPressure;
 
   // Calc. of saturated water vapour pressure at daily max temperature
-  vm_SaturatedVapourPressureMax = 0.6108 * exp((17.27 * vw_MaxAirTemperature) / (237.3 + vw_MaxAirTemperature));
+  //[kPA]
+  double vm_SaturatedVapourPressureMax = 0.6108 *
+    exp((17.27 * vw_MaxAirTemperature) / (237.3 + vw_MaxAirTemperature));
 
   // Calc. of saturated water vapour pressure at daily min temperature
-  vm_SaturatedVapourPressureMin = 0.6108 * exp((17.27 * vw_MinAirTemperature) / (237.3 + vw_MinAirTemperature));
+  //[kPA]
+  double vm_SaturatedVapourPressureMin = 0.6108 *
+    exp((17.27 * vw_MinAirTemperature) / (237.3 + vw_MinAirTemperature));
 
-  // Calculation of the saturated water vapour pressure
-  vm_SaturatedVapourPressure = (vm_SaturatedVapourPressureMax + vm_SaturatedVapourPressureMin) / 2.0;
+  // Calculation of the saturated water vapour pressure //[kPA]
+  double vm_SaturatedVapourPressure = (vm_SaturatedVapourPressureMax + vm_SaturatedVapourPressureMin) / 2.0;
 
-  // Calculation of the water vapour pressure
-  if (vw_RelativeHumidity <= 0.0) {
-    // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
-    vm_VapourPressure = vm_SaturatedVapourPressureMin;
-  } else {
-    vm_VapourPressure = vw_RelativeHumidity * vm_SaturatedVapourPressure;
+  if (_vaporPressure < 0)
+  {
+    // Calculation of the water vapour pressure
+    if (vw_RelativeHumidity <= 0.0) {
+      // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
+      _vaporPressure = vm_SaturatedVapourPressureMin;
+    } else {
+      _vaporPressure = vw_RelativeHumidity * vm_SaturatedVapourPressure;
+    }
   }
 
-  // Calculation of the air saturation deficit
-  vm_SaturationDeficit = vm_SaturatedVapourPressure - vm_VapourPressure;
+  // Calculation of the air saturation deficit //[kPA]
+  double vm_SaturationDeficit = vm_SaturatedVapourPressure - _vaporPressure;
 
   // Slope of saturation water vapour pressure-to-temperature relation
-  vm_SaturatedVapourPressureSlope = (4098.0 * (0.6108 * exp((17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature
-                                                                                               + 237.3)))) /
-                                    ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
+  //[kPA °C-1]
+  double vm_SaturatedVapourPressureSlope = (4098.0 * (0.6108 * exp(
+      (17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature
+        + 237.3)))) /
+    ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
 
-  // Calculation of wind speed in 2m height
-  vm_WindSpeed_2m = max(0.5, vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42))));
+  // Calculation of wind speed in 2m height //[m s-1]
+  double vm_WindSpeed_2m = max(0.5, vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42))));
   // 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
 
   // Calculation of the aerodynamic resistance
@@ -1157,29 +1150,31 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
 
   vc_StomataResistance = 100; // FAO default value [s m-1]
 
-  vm_SurfaceResistance = vc_StomataResistance / 1.44;
+  double vm_SurfaceResistance = vc_StomataResistance / 1.44; //[s m-1]
 
   double vc_ClearSkySolarRadiation = (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation;
   double vc_RelativeShortwaveRadiation =
       vc_ClearSkySolarRadiation > 0 ? min(vw_GlobalRadiation / vc_ClearSkySolarRadiation, 1.0) : 1.0;
 
   double pc_BolzmannConstant = 0.0000000049;
-  double vc_ShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vw_GlobalRadiation;
+  // FAO Green gras reference albedo from Allen et al. (1998)
+  double vc_ShortwaveRadiation = (1.0 - cropPs.pc_ReferenceAlbedo) * vw_GlobalRadiation;
   double vc_LongwaveRadiation = pc_BolzmannConstant
                                 * ((pow((vw_MinAirTemperature + 273.16), 4.0)
                                     + pow((vw_MaxAirTemperature + 273.16), 4.0)) / 2.0)
                                 * (1.35 * vc_RelativeShortwaveRadiation - 0.35)
-                                * (0.34 - 0.14 * sqrt(vm_VapourPressure));
+                                * (0.34 - 0.14 * sqrt(_vaporPressure));
   vw_NetRadiation = vc_ShortwaveRadiation - vc_LongwaveRadiation;
 
   // Calculation of the reference evapotranspiration
   // Penman-Monteith-Methode FAO
-  vm_ReferenceEvapotranspiration = ((0.408 * vm_SaturatedVapourPressureSlope * vw_NetRadiation)
-                                    + (vm_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0))
-                                       * vm_WindSpeed_2m * vm_SaturationDeficit))
-                                   / (vm_SaturatedVapourPressureSlope + vm_PsycrometerConstant
-                                                                        * (1.0 + (vm_SurfaceResistance / 208.0) *
-                                                                                 vm_WindSpeed_2m));
+  //[mm]
+  double vm_ReferenceEvapotranspiration = ((0.408 * vm_SaturatedVapourPressureSlope * vw_NetRadiation)
+      + (vm_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0))
+        * vm_WindSpeed_2m * vm_SaturationDeficit))
+    / (vm_SaturatedVapourPressureSlope + vm_PsycrometerConstant
+      * (1.0 + (vm_SurfaceResistance / 208.0) *
+        vm_WindSpeed_2m));
 
   if (vm_ReferenceEvapotranspiration < 0.0) {
     vm_ReferenceEvapotranspiration = 0.0;

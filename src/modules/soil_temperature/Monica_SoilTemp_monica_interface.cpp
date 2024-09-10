@@ -29,7 +29,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
 #else
   double awc = 0.25;
@@ -82,18 +82,18 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 
 void MonicaInterface::run() {
 #if MONICA_SOILTEMP
-      KJ_ASSERT(_monica != nullptr);
+  KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
   soilTempExo.settmin(climateData.at(Climate::tmin));
   soilTempExo.settmax(climateData.at(Climate::tmax));
   soilTempExo.setglobrad(climateData.at(Climate::globrad));
   auto simPs = _monica->simulationParameters();
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   if (simPs.customData["LAI"].is_null()) soilTempExo.setsoilCoverage(0);
-    else {
-      auto lai = simPs.customData["LAI"].number_value();
-      soilTempExo.setsoilCoverage(1.0 - exp(-0.5 * lai));
-    }
+  else {
+    auto lai = simPs.customData["LAI"].number_value();
+    soilTempExo.setsoilCoverage(1.0 - exp(-0.5 * lai));
+  }
 #else
   if (_monica->cropGrowth()) soilTempExo.setsoilCoverage(_monica->cropGrowth()->get_SoilCoverage());
 #endif
@@ -108,7 +108,7 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getsoilSurfaceTemperature());
   auto& sc = _monica->soilColumnNC();
   for(size_t layer = 0; layer < sc.size(); layer++) {

@@ -28,7 +28,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 #if STICS_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
   std::vector<int> layerThicknessCm;
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   for (const auto& j : _monica->siteParameters().initSoilProfileSpec){
     int layerSizeCm = int(Tools::double_value(j["Thickness"])*100);  // m -> cm
     layerThicknessCm.push_back(layerSizeCm);
@@ -61,7 +61,7 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getcanopy_temp_avg());
   const auto& soilTemp = soilTempState.gettemp_profile();
   auto& sc = _monica->soilColumnNC();

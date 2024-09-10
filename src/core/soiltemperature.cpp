@@ -352,7 +352,15 @@ double SoilTemperature::calcSoilSurfaceTemperature(
   // corrected for very low radiation in winter
   globrad = max(8.33, globrad);
 
-  double soilCoverage = _monica.cropGrowth() ? _monica.cropGrowth()->get_SoilCoverage() : 0.0;
+  double soilCoverage = 0.0;
+#if AMEI_SENSITIVITY_ANALYSIS
+  if (!_monica.simulationParameters().customData["LAI"].is_null()) {
+    auto lai = _monica.simulationParameters().customData["LAI"].number_value();
+    soilCoverage = 1.0 - exp(-0.5 * lai);
+  }
+#else
+  soilCoverage = _monica.cropGrowth() ? _monica.cropGrowth()->get_SoilCoverage() : 0.0;
+#endif
   double shadingCoefficient = 0.1 + ((soilCoverage * _dampingFactor) + ((1 - soilCoverage) * (1 - _dampingFactor)));
 
   // Soil surface temperature caluclation following Williams 1984

@@ -42,7 +42,7 @@ void MonicaInterface::run() {
   soilTempExo.setdayLength(climateData[Climate::sunhours]);
   soilTempExo.setminTAir(climateData.at(Climate::tmin));
   soilTempExo.setmeanTAir(climateData.at(Climate::tavg));
-#ifdef SKIP_BUILD_IN_MODULES
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   soilTempExo.setmeanAnnualAirTemp(_monica->simulationParameters().customData["TAV"].number_value());
   soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
 #else
@@ -55,7 +55,7 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
-#ifndef SKIP_BUILD_IN_MODULES
+#ifndef AMEI_SENSITIVITY_ANALYSIS
   auto stMin = soilTempState.getminTSoil();
   auto stMax = soilTempState.getmaxTSoil();
   _monica->soilTemperatureNC().setSoilSurfaceTemperature((stMin + stMax)/2.0);

@@ -62,7 +62,8 @@ void step(double vs_DepthGroundwaterTable,
   double vw_WindSpeedHeight,
   double vw_NetRadiation,
   int vs_JulianDay,
-  double vw_ReferenceEvapotranspiration);
+  double vw_ReferenceEvapotranspiration,
+  double vaporPressure);
 
   //void fm_SoilMoistureUpdate();
   double getSnowDepth() const;
@@ -238,6 +239,8 @@ private:
   kj::Own<SnowComponent> snowComponent;
   kj::Own<FrostComponent> frostComponent;
   CropModule* cropModule{nullptr};
+
+  double _vaporPressure{-1.0}; //[kPA]
 }; 
 
 } // namespace monica
