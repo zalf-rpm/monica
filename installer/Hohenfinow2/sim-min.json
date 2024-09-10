@@ -30,6 +30,7 @@
 				"Date", 
 				"Crop", 
 				"Stage",
+				"Kc",
 				"Irrig",
 				"ETa/ETc",
 				"AbBiom", 

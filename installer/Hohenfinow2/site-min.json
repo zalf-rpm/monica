@@ -4,7 +4,7 @@
     "Slope": 0,
     "HeightNN": [0 , "m"],
     "NDeposition": [30, "kg N ha-1 y-1"],
-	  "Bare_soil_KC_factor": 0.888,
+	  "Bare_soil_KC_factor": 0.2,
 
     "SoilProfileParameters": [
 			{
