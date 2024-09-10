@@ -43,6 +43,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 #endif
 }
 
+
 void MonicaInterface::run() {
 #if STICS_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
@@ -60,6 +61,7 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+#ifndef SKIP_BUILD_IN_MODULES
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getcanopy_temp_avg());
   const auto& soilTemp = soilTempState.gettemp_profile();
   auto& sc = _monica->soilColumnNC();
@@ -76,5 +78,6 @@ void MonicaInterface::run() {
     sumT += soilTemp.at(i);
     ++count;
   }
+#endif
 #endif
 }

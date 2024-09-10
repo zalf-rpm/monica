@@ -55,10 +55,12 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+#ifndef SKIP_BUILD_IN_MODULES
   auto stMin = soilTempState.getminTSoil();
   auto stMax = soilTempState.getmaxTSoil();
   _monica->soilTemperatureNC().setSoilSurfaceTemperature((stMin + stMax)/2.0);
   auto deep = soilTempState.getdeepLayerT();
   for (auto& sl : _monica->soilColumnNC()) sl.set_Vs_SoilTemperature(deep);
+#endif
 #endif
 }

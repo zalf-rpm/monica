@@ -60,8 +60,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
     sws.push_back(awc);
   }
-  soilTempComp.setSW(sws);
-  soilTempComp.setMSALB(_simPs.customData["SALB"].number_value());
+  _soilTempComp.setSW(sws);
+  _soilTempComp.setMSALB(_monica->simulationParameters().customData["SALB"].number_value());
 #else
   _soilTempComp.setNL(int(_monica->soilColumn().size()));
   _soilTempComp.setNLAYR(int(_monica->soilColumn().size()));
@@ -87,7 +87,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 
 void MonicaInterface::run() {
 #if DSSAT_ST_STANDALONE
-      KJ_ASSERT(_monica != nullptr);
+  KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
   _soilTempExo.setDOY(_monica->currentStepDate().dayOfYear());
   _soilTempExo.setSRAD(climateData.at(Climate::globrad));
@@ -95,8 +95,8 @@ void MonicaInterface::run() {
   _soilTempExo.setTMAX(climateData.at(Climate::tmax));
   if (_doInit) {
 #ifdef SKIP_BUILD_IN_MODULES
-  soilTempExo.setTAV(simPs.customData["TAV"].number_value());
-  soilTempExo.setTAMP(simPs.customData["TAMP"].number_value());
+  _soilTempExo.setTAV(_monica->simulationParameters().customData["TAV"].number_value());
+  _soilTempExo.setTAMP(_monica->simulationParameters().customData["TAMP"].number_value());
 #else
     auto tampNtav = _monica->dssatTAMPandTAV();
     _soilTempExo.setTAV(tampNtav.first);
@@ -114,10 +114,12 @@ void MonicaInterface::run() {
 #endif
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.getSRFTEMP());
+#ifndef SKIP_BUILD_IN_MODULES
   int i = 0;
       KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.getST().size());
   for (auto& sl : _monica->soilColumnNC()){
     sl.set_Vs_SoilTemperature(_soilTempState.getST().at(i++));
   }
+#endif
 #endif
 }

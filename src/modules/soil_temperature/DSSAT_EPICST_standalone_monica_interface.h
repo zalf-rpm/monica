@@ -33,7 +33,7 @@ public:
   void run();
 
 #if DSSAT_EPICST_STANDALONE
-  STEMP_EPIC_Component soilTempComp;
+  STEMP_EPIC_Component _soilTempComp;
   STEMP_EPIC_State soilTempState;
   STEMP_EPIC_State soilTempState1;
   STEMP_EPIC_Exogenous soilTempExo;

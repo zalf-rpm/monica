@@ -709,6 +709,9 @@ void MonicaModel::generalStep() {
 #endif
 
 #if MONICA_SOILTEMP || DSSAT_ST_STANDALONE || DSSAT_EPICST_STANDALONE || SIMPLACE_SOIL_TEMPERATURE || STICS_SOIL_TEMPERATURE || BIOMASURFACEPARTONSOILSWATC || BIOMASURFACESWATSOILSWATC
+#if MONICA_ORIG_SOILTEMP
+  _soilTemperature->step(tmin, tmax, globrad);
+#endif
 #else
   _soilTemperature->step(tmin, tmax, globrad);
 #endif

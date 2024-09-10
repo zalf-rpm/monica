@@ -84,7 +84,7 @@ void MonicaInterface::run() {
   soilTempExo.setiGlobalSolarRadiation(climateData.at(Climate::globrad));
 #ifdef SKIP_BUILD_IN_MODULES
   soilTempExo.setiRAIN(0); // so that no snowcover will build up
-  soilTempExo.setiLeafAreaIndex(_simPs.customData["LAI"].number_value());
+  soilTempExo.setiLeafAreaIndex(_monica->simulationParameters().customData["LAI"].number_value());
   soilTempExo.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
 #else
   soilTempExo.setiRAIN(climateData.at(Climate::precip)); // so that no snowcover will build up
@@ -107,11 +107,13 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+#ifndef SKIP_BUILD_IN_MODULES
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSoilSurfaceTemperature());
   int i = 0;
   KJ_ASSERT(soilTempState.getSoilTempArray().size() >= _monica->soilColumnNC().size());
   for (auto& sl : _monica->soilColumnNC()){
     sl.set_Vs_SoilTemperature(soilTempState.getSoilTempArray().at(i++));
   }
+#endif
 #endif
 }

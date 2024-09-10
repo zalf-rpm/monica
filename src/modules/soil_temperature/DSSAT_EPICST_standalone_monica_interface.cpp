@@ -33,9 +33,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 #ifdef SKIP_BUILD_IN_MODULES
   auto awc = simPs.customData["AWC"].number_value();
 #endif
-  soilTempComp.setISWWAT("Y");
-  soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
-  soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
+  _soilTempComp.setISWWAT("Y");
+  _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
+  _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
   int currentDepthCm = 0;
   std::vector<double> lls;
   std::vector<double> duls;
@@ -43,9 +43,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   std::vector<double> dlayrs;
   std::vector<double> bds;
 #ifdef SKIP_BUILD_IN_MODULES
-  soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
-  soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
-  vector<double> sws;
+  _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
+  _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
+  std::vector<double> sws;
   for (const auto& j : sitePs.initSoilProfileSpec){
     int layerSizeCm = int(Tools::double_value(j["Thickness"])*100);  // m -> cm
     currentDepthCm += layerSizeCm;
@@ -62,8 +62,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    sws.push_back(awc);
   }
-  sws.push_back(awc);
+  _soilTempComp.setSW(sws);
 #else
   soilTempComp.setNL(int(_monica->soilColumn().size()));
   soilTempComp.setNLAYR(int(_monica->soilColumn().size()));
@@ -77,11 +78,11 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     bds.push_back(sl.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
   }
 #endif
-  soilTempComp.setLL(lls);
-  soilTempComp.setDUL(duls);
-  soilTempComp.setDS(dss);
-  soilTempComp.setDLAYR(dlayrs);
-  soilTempComp.setBD(bds);
+  _soilTempComp.setLL(lls);
+  _soilTempComp.setDUL(duls);
+  _soilTempComp.setDS(dss);
+  _soilTempComp.setDLAYR(dlayrs);
+  _soilTempComp.setBD(bds);
 #endif
 }
 
@@ -93,14 +94,15 @@ void MonicaInterface::run() {
   soilTempExo.setTAVG(climateData.at(Climate::tavg));
   soilTempExo.setTMAX(climateData.at(Climate::tmax));
   soilTempExo.setRAIN(climateData.at(Climate::precip));
-  soilTempExo.setSNOW(_monica->soilMoisture().getSnowDepth());
 #if SKIP_BUILD_IN_MODULES
-  soilTempExo.setDEPIR(_simPs.customData["IRVAL"].number_value());
-  soilTempExo.setMULCHMASS(_simPs.customData["MLTHK"].number_value());
-  soilTempExo.setBIOMAS(_simPs.customData["CWAD"].number_value());
-  soilTempExo.setTAV(_simPs.customData["TAV"].number_value());
-  soilTempExo.setTAMP(_simPs.customData["TAMP"].number_value());
+  soilTempExo.setSNOW(0);
+  soilTempExo.setDEPIR(_monica->simulationParameters().customData["IRVAL"].number_value());
+  soilTempExo.setMULCHMASS(_monica->simulationParameters().customData["MLTHK"].number_value());
+  soilTempExo.setBIOMAS(_monica->simulationParameters().customData["CWAD"].number_value());
+  soilTempExo.setTAV(_monica->simulationParameters().customData["TAV"].number_value());
+  soilTempExo.setTAMP(_monica->simulationParameters().customData["TAMP"].number_value());
 #else
+  soilTempExo.setSNOW(_monica->soilMoisture().getSnowDepth());
   soilTempExo.setDEPIR(_monica->dailySumIrrigationWater());
   soilTempExo.setMULCHMASS(0);
   if (_monica->cropGrowth()) soilTempExo.setBIOMAS(_monica->cropGrowth()->get_AbovegroundBiomass());
@@ -110,7 +112,7 @@ void MonicaInterface::run() {
   soilTempExo.setTAMP(tampNtav.second);
 #endif
   if(_doInit){
-    soilTempComp._STEMP_EPIC.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+    _soilTempComp._STEMP_EPIC.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
 #ifndef SKIP_BUILD_IN_MODULES
@@ -120,12 +122,14 @@ void MonicaInterface::run() {
   }
   soilTempComp.setSW(sws);
 #endif
-  soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+  _soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+#ifndef SKIP_BUILD_IN_MODULES
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSRFTEMP());
   int i = 0;
   KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getST().size());
   for (auto& sl : _monica->soilColumnNC()){
     sl.set_Vs_SoilTemperature(soilTempState.getST().at(i++));
   }
+#endif
 #endif
 }

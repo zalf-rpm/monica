@@ -108,10 +108,12 @@ void MonicaInterface::run() {
     _doInit = false;
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+#ifndef SKIP_BUILD_IN_MODULES
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getsoilSurfaceTemperature());
   auto& sc = _monica->soilColumnNC();
   for(size_t layer = 0; layer < sc.size(); layer++) {
     sc.at(layer).set_Vs_SoilTemperature(soilTempState.getsoilTemperature().at(layer));
   }
+#endif
 #endif
 }

@@ -94,11 +94,13 @@ void MonicaInterface::run() {
   soilTempExo.setVolumetricWaterContent(sws);
 #endif
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+#ifndef SKIP_BUILD_IN_MODULES
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
   int i = 0;
   KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTemperatureByLayers().size());
   for (auto& sl : _monica->soilColumnNC()){
     sl.set_Vs_SoilTemperature(soilTempState.getSoilTemperatureByLayers().at(i++));
   }
+#endif
 #endif
 }
