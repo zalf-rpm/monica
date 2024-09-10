@@ -973,6 +973,7 @@ Errors SiteParameters::merge(json11::Json j) {
   set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
   set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
   set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
+  set_double_value(bareSoilKcFactor, j, "Bare_soil_KC_factor");
 
   set_int_value(numberOfLayers, j, "NumberOfLayers");
   set_double_value(layerThickness, j, "LayerThickness");
@@ -1009,6 +1010,7 @@ json11::Json SiteParameters::to_json() const {
        {"SoilSpecificHumusBalanceCorrection", J11Array{vs_SoilSpecificHumusBalanceCorrection, "humus equivalents"}},
        {"NumberOfLayers",                     numberOfLayers},
        {"LayerThickness",                     J11Array{layerThickness, "m"}},
+       {"Bare_soil_KC_factor", bareSoilKcFactor}
       };
 
   sps["SoilProfileParameters"] = toJsonArray(vs_SoilParameters);

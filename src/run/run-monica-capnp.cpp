@@ -111,17 +111,18 @@ kj::Promise<void> RunMonica::run(RunContext context)
   };
 
   auto proms = kj::heapArrayBuilder<kj::Promise<void>>(2);
-  DataAccessor da;
+  //DataAccessor da;
   //J11Array soilLayers;
 
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();
-    proms.add(dataAccessorFromTimeSeries(ts).then([&da](const DataAccessor &da2) {
-      da = da2;
+    proms.add(dataAccessorFromTimeSeries(ts).then([this](const DataAccessor &da2) {
+      _da = da2;
     }, [](auto &&e) {
       KJ_LOG(INFO, "Error while trying to get data accessor from time series: ", e);
     }));
   } else {
+    _da = DataAccessor();
     proms.add(kj::READY_NOW);
   }
 
@@ -133,11 +134,12 @@ kj::Promise<void> RunMonica::run(RunContext context)
       KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
     }));
   } else {
+    _soilLayers =  J11Array();
     proms.add(kj::READY_NOW);
   }
 
-  return kj::joinPromises(proms.finish()).then([context, runMonica, da, this]() mutable {
-    auto out = runMonica(da, _soilLayers);
+  return kj::joinPromises(proms.finish()).then([context, runMonica, this]() mutable {
+    auto out = runMonica(_da, _soilLayers);
     auto rs = context.getResults();
     auto res = rs.initResult();
     res.initStructure().setJson();

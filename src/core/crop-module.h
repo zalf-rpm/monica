@@ -472,6 +472,7 @@ private:
   CultivarParameters cultivarPs;
   CropResidueParameters residuePs;
   bool _isWinterCrop{false};
+  double _bareSoilKcFactor{0.4};
 
   //! old N
   //  static const double vw_AtmosphericCO2Concentration;
