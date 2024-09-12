@@ -437,4 +437,8 @@ endif ()
 
 #------------------------------------------------------------------------------
 
+#message( "   CXX FLAGS        ${CMAKE_CXX_FLAGS}" )
+#message( "   CXX RELEASE      ${CMAKE_CXX_FLAGS_RELEASE}" )
+#message( "   CXX DEBUG        ${CMAKE_CXX_FLAGS_DEBUG}" )
+
 message(STATUS "<- Monica")
