@@ -27,10 +27,10 @@ MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 #if SQ_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
-  soilTempComp.seta(0.5);
-  soilTempComp.setb(1.81);
-  soilTempComp.setc(0.49);
-  soilTempComp.setlambda_(2.454);
+  _soilTempComp.seta(0.5);
+  _soilTempComp.setb(1.81);
+  _soilTempComp.setc(0.49);
+  _soilTempComp.setlambda_(2.454);
 #endif
 }
 
@@ -38,23 +38,23 @@ void MonicaInterface::run() {
 #if SQ_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-  soilTempExo.setmaxTAir(climateData.at(Climate::tmax));
-  soilTempExo.setdayLength(climateData[Climate::sunhours]);
-  soilTempExo.setminTAir(climateData.at(Climate::tmin));
-  soilTempExo.setmeanTAir(climateData.at(Climate::tavg));
+  _soilTempExo.setmaxTAir(climateData.at(Climate::tmax));
+  _soilTempExo.setdayLength(climateData[Climate::sunhours]);
+  _soilTempExo.setminTAir(climateData.at(Climate::tmin));
+  _soilTempExo.setmeanTAir(climateData.at(Climate::tavg));
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  soilTempExo.setmeanAnnualAirTemp(_monica->simulationParameters().customData["TAV"].number_value());
-  soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
+  _soilTempExo.setmeanAnnualAirTemp(_monica->simulationParameters().customData["TAV"].number_value());
+  _soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
   soilTempExo.setmeanAnnualAirTemp(tampNtav.first);
   soilTempRate.setheatFlux(0);
 #endif
   if(_doInit){
-    soilTempComp._CalculateSoilTemperature.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+    _soilTempComp._CalculateSoilTemperature.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
   }
-  soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+  _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   auto stMin = soilTempState.getminTSoil();
   auto stMax = soilTempState.getmaxTSoil();

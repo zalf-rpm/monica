@@ -34,11 +34,11 @@ public:
 
 #if BIOMASURFACEPARTONSOILSWATC
   SurfacePartonSoilSWATCComponent soilTempComp;
-  SurfacePartonSoilSWATCState soilTempState;
-  SurfacePartonSoilSWATCState soilTempState1;
-  SurfacePartonSoilSWATCExogenous soilTempExo;
-  SurfacePartonSoilSWATCRate soilTempRate;
-  SurfacePartonSoilSWATCAuxiliary soilTempAux;
+  SurfacePartonSoilSWATCState _soilTempState;
+  SurfacePartonSoilSWATCState _soilTempState1;
+  SurfacePartonSoilSWATCExogenous _soilTempExo;
+  SurfacePartonSoilSWATCRate _soilTempRate;
+  SurfacePartonSoilSWATCAuxiliary _soilTempAux;
 #endif
 
 private:

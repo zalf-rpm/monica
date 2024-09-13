@@ -34,11 +34,11 @@ public:
 
 #if DSSAT_EPICST_STANDALONE
   STEMP_EPIC_Component _soilTempComp;
-  STEMP_EPIC_State soilTempState;
-  STEMP_EPIC_State soilTempState1;
-  STEMP_EPIC_Exogenous soilTempExo;
-  STEMP_EPIC_Rate soilTempRate;
-  STEMP_EPIC_Auxiliary soilTempAux;
+  STEMP_EPIC_State _soilTempState;
+  STEMP_EPIC_State _soilTempState1;
+  STEMP_EPIC_Exogenous _soilTempExo;
+  STEMP_EPIC_Rate _soilTempRate;
+  STEMP_EPIC_Auxiliary _soilTempAux;
 #endif
 
 private:

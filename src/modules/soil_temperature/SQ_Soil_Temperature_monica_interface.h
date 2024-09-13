@@ -33,12 +33,12 @@ public:
   void run();
 
 #if SQ_SOIL_TEMPERATURE
-  SoilTemperatureComponent soilTempComp;
-  SoilTemperatureState soilTempState;
-  SoilTemperatureState soilTempState1;
-  SoilTemperatureExogenous soilTempExo;
-  SoilTemperatureRate soilTempRate;
-  SoilTemperatureAuxiliary soilTempAux;
+  SoilTemperatureComponent _soilTempComp;
+  SoilTemperatureState _soilTempState;
+  SoilTemperatureState _soilTempState1;
+  SoilTemperatureExogenous _soilTempExo;
+  SoilTemperatureRate _soilTempRate;
+  SoilTemperatureAuxiliary _soilTempAux;
 #endif
 
 private:

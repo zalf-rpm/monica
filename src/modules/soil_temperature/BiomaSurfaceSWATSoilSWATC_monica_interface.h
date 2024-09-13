@@ -33,12 +33,12 @@ public:
   void run();
 
 #if BIOMASURFACESWATSOILSWATC
-  SurfaceSWATSoilSWATCComponent soilTempComp;
-  SurfaceSWATSoilSWATCState soilTempState;
-  SurfaceSWATSoilSWATCState soilTempState1;
-  SurfaceSWATSoilSWATCExogenous soilTempExo;
-  SurfaceSWATSoilSWATCRate soilTempRate;
-  SurfaceSWATSoilSWATCAuxiliary soilTempAux;
+  SurfaceSWATSoilSWATCComponent _soilTempComp;
+  SurfaceSWATSoilSWATCState _soilTempState;
+  SurfaceSWATSoilSWATCState _soilTempState1;
+  SurfaceSWATSoilSWATCExogenous _soilTempExo;
+  SurfaceSWATSoilSWATCRate _soilTempRate;
+  SurfaceSWATSoilSWATCAuxiliary _soilTempAux;
 #endif
 
 private:

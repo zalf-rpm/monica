@@ -30,7 +30,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
   _soilTempComp.setISWWAT("Y");
-
+  _soilTempComp.setXLAT(_monica->simulationParameters().customData["XLAT"].number_value());
   int currentDepthCm = 0;
   std::vector<double> lls;
   std::vector<double> duls;
@@ -58,7 +58,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
-    sws.push_back(awc);
+    sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
   }
   _soilTempComp.setSW(sws);
   _soilTempComp.setMSALB(_monica->simulationParameters().customData["SALB"].number_value());
@@ -108,7 +108,7 @@ void MonicaInterface::run() {
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   std::vector<double> sws;
   for (const auto& sl : _monica->soilColumn()){
-    sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
+    sws.push_back(sl.get_Vs_SoilMoisture_m3());
   }
   _soilTempComp.setSW(sws);
 #endif

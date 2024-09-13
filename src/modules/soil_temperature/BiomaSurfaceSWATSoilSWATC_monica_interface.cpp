@@ -32,21 +32,21 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto sitePs = _monica->siteParameters();
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
-  soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
-  soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+  _soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
+  _soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
   std::vector<double> layerThicknessM;
   std::vector<double> bds;
   std::vector<double> sws;
   for (const auto& j : sitePs.initSoilProfileSpec){
     layerThicknessM.push_back(Tools::double_value(j["Thickness"]));
-    sws.push_back(awc);
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
+    sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
   }
-  soilTempExo.setVolumetricWaterContent(sws);
-  soilTempComp.setLayerThickness(layerThicknessM);
-  soilTempComp.setBulkDensity(bds);
+  _soilTempExo.setVolumetricWaterContent(sws);
+  _soilTempComp.setLayerThickness(layerThicknessM);
+  _soilTempComp.setBulkDensity(bds);
 #else
   soilTempExo.setAlbedo(_monica->environmentParameters().p_Albedo);
   std::vector<double> layerThicknessM;
@@ -61,7 +61,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   soilTempComp.setBulkDensity(bds);
   soilTempComp.setSoilProfileDepth(profileDepth);  // m
 #endif
-  soilTempComp.setLagCoefficient(0.8);
+  _soilTempComp.setLagCoefficient(0.8);
 #endif
 }
 
@@ -69,13 +69,13 @@ void MonicaInterface::run() {
 #if BIOMASURFACESWATSOILSWATC
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-  soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
-  soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
-  soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
-  soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
+  _soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
+  _soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
+  _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
+  _soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
-  soilTempAux.setAboveGroundBiomass(0);
+  _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
+  _soilTempAux.setAboveGroundBiomass(0);
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
   soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
@@ -83,7 +83,7 @@ void MonicaInterface::run() {
   else soilTempAux.setAboveGroundBiomass(0);
 #endif
   if(_doInit){
-    soilTempComp._SoilTemperatureSWAT.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+    _soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
   }
 #ifndef AMEI_SENSITIVITY_ANALYSIS
@@ -93,7 +93,7 @@ void MonicaInterface::run() {
   }
   soilTempExo.setVolumetricWaterContent(sws);
 #endif
-  soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+  _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
   int i = 0;
