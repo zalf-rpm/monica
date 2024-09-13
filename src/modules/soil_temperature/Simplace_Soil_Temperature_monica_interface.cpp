@@ -32,6 +32,10 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   double currentDepthM = 0;
   std::vector<double> slds;
 #ifdef AMEI_SENSITIVITY_ANALYSIS
+  // is not correct right now in the generated code
+  _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorA(0.47);
+  _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorB(0.62);
+
   const auto awc = simPs.customData["AWC"].number_value();
   _soilTempComp.setcAlbedo(simPs.customData["SALB"].number_value());
   _soilTempComp.setcDampingDepth(6);
