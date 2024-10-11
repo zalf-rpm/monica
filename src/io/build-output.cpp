@@ -907,7 +907,7 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "Kc", "", "" },
         [](const MonicaModel& monica, OId oid)
       {
-        return round(monica.soilMoisture().get_KcFactor(), 3);
+        return round(monica.soilMoisture().getKcFactor(), 3);
       });
 
       build({ id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration" },
