@@ -24,7 +24,7 @@ set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/capnproto_schemas)
 
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
-    add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/capnproto_schemas)
+    add_subdirectory(${CAPNP_SCHEMAS_DIR}/gen/c++ mas-infrastructure/capnproto_schemas)
 endif ()
 
 if (NOT TARGET common_lib)
