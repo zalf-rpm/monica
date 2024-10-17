@@ -8,23 +8,30 @@ RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
 RUN apt-get install -y git python-pip python-dev build-essential
 RUN apt-get install -y curl zip unzip tar autoconf libtool automake
 
-ARG  VERSION_MAYOR="false"
-ARG  VERSION_MINOR="false"
-ARG  VERSION_PATCH="false"
+#ARG  VERSION_MAYOR="false"
+#ARG  VERSION_MINOR="false"
+#ARG  VERSION_PATCH="false"
 ENV WORK_DIR /resource
 
 RUN mkdir ${WORK_DIR}
 WORKDIR ${WORK_DIR}
-RUN git clone https://github.com/zalf-rpm/build-pipeline.git
+#RUN git clone https://github.com/zalf-rpm/build-pipeline.git
 RUN git clone https://github.com/zalf-rpm/monica.git
 RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
-WORKDIR ${WORK_DIR}/build-pipeline/buildscripts
-RUN sh linux-prepare-vcpkg.sh
+RUN git clone -b 2024.09.30 https://github.com/Microsoft/vcpkg.git
+WORKDIR ${WORK_DIR}/vcpkg
+RUN ./bootstrap-vcpkg.sh
+RUN ./vcpkg install zeromq:x64-linux
+RUN ./vcpkg install capnproto:x64-linux
+RUN ./vcpkg install libsodium:x64-linux
 
-WORKDIR ${WORK_DIR}
-RUN python build-pipeline/buildscripts/incrementversion.py "monica/src/resource/version.h" ${VERSION_MAYOR} ${VERSION_MINOR} ${VERSION_PATCH}
+#WORKDIR ${WORK_DIR}/build-pipeline/buildscripts
+#RUN sh linux-prepare-vcpkg.sh
+
+#WORKDIR ${WORK_DIR}
+#RUN python build-pipeline/buildscripts/incrementversion.py "monica/src/resource/version.h" ${VERSION_MAYOR} ${VERSION_MINOR} ${VERSION_PATCH}
 
 WORKDIR ${WORK_DIR}/monica
 RUN sh create_cmake_release.sh
