@@ -21,7 +21,7 @@ RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
 ENV VCPKG_TAG $(cat ${WORK_DIR}/monica/vcpkg-tag.txt)
-RUN git clone -b ${VCPKG_TAG} https://github.com/Microsoft/vcpkg.git
+RUN git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
 WORKDIR ${WORK_DIR}/vcpkg
 RUN ./bootstrap-vcpkg.sh
 RUN ./vcpkg install zeromq:x64-linux
