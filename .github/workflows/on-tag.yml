@@ -63,7 +63,7 @@ jobs:
       - name: Read vcpkg tag to use
         id: vcpkg_tag
         run: |
-          echo "vcpkg_tag=$(cat vcpkg_tag.txt)" >> $GITHUB_OUTPUT
+          echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $GITHUB_OUTPUT
 
       - name: Checkout vcpkg
         uses: actions/checkout@v3
