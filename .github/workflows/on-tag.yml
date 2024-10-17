@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: microsoft/vcpkg
-          ref: master 
+          ref: 2024.09.30
           path: "vcpkg"
   
       - name: Set up MSVC compiler
@@ -101,7 +101,6 @@ jobs:
           mkdir monica_${{ github.ref_name }}/documentation
           mkdir monica_${{ github.ref_name }}/bin/soil
           mkdir monica_${{ github.ref_name }}/monica-parameters
-          mkdir monica_${{ github.ref_name }}/bin/monica-ini-to-json
           mkdir monica_${{ github.ref_name }}/projects
           mkdir monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer
           mkdir monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python
@@ -113,20 +112,14 @@ jobs:
           cp monica/_cmake_win64/Release/monica-zmq-proxy.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/monica-zmq-server.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/monica-capnp-server.exe monica_${{ github.ref_name }}/bin/
-          cp monica/_cmake_win64/Release/monica-capnp-proxy.exe monica_${{ github.ref_name }}/bin/
+          cp monica/_cmake_win64/Release/monica-capnp-fbp-component.exe monica_${{ github.ref_name }}/bin/
+          cp monica/_cmake_win64/Release/channel.exe monica_${{ github.ref_name }}/bin/
           cp -r monica-parameters monica_${{ github.ref_name }}/monica-parameters/          
   
           cp monica/LICENSE monica_${{ github.ref_name }}/bin/
           cp monica/documentation/de_benutzerhandbuch_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
           cp monica/documentation/en_user_manual_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
-          cp mas-infrastructure/src/python/pkgs/model/monica_io3.py monica_${{ github.ref_name }}/bin/
-          cp mas-infrastructure/src/python/pkgs/soil/soil_io3.py monica_${{ github.ref_name }}/bin/
-  
-          cp monica/src/python/monica-ini-to-json/monica-ini-to-json.py monica_${{ github.ref_name }}/bin/monica-ini-to-json/
-          cp monica/src/python/monica-ini-to-json/conversion-template-sim.json monica_${{ github.ref_name }}/bin/monica-ini-to-json/
-          cp monica/src/python/monica-ini-to-json/conversion-template-site.json monica_${{ github.ref_name }}/bin/monica-ini-to-json/
-          cp monica/src/python/monica-ini-to-json/conversion-template-crop.json monica_${{ github.ref_name }}/bin/monica-ini-to-json/
-  
+                    
           cp -r monica-parameters/crop-residues monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/crops monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/mineral-fertilisers monica_${{ github.ref_name }}/monica-parameters/
@@ -144,8 +137,6 @@ jobs:
           cp monica/installer/Hohenfinow2/python/start_consumer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/start_producer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/start_producer_consumer_pipeline.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
-          cp mas-infrastructure/src/python/pkgs/soil/soil_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
-          cp mas-infrastructure/src/python/pkgs/model/monica_io3.py monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/README_pipeline.md monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/README.md
   
           cp monica/installer/Hohenfinow2/crop.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
