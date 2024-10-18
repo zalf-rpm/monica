@@ -21,6 +21,8 @@ RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
 #ENV VCPKG_TAG $(cat ${WORK_DIR}/monica/vcpkg-tag.txt)
+RUN ls ${WORK_DIR}
+RUN echo $(cat ${WORK_DIR}/monica/vcpkg-tag.txt)
 RUN VCPKG_TAG=$(cat ${WORK_DIR}/monica/vcpkg-tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
 #RUN git clone -b 2024.09.30 https://github.com/Microsoft/vcpkg.git
 WORKDIR ${WORK_DIR}/vcpkg
