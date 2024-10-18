@@ -8,34 +8,20 @@ RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
 RUN apt-get install -y git python-pip python-dev build-essential
 RUN apt-get install -y curl zip unzip tar autoconf libtool automake
 
-#ARG  VERSION_MAYOR="false"
-#ARG  VERSION_MINOR="false"
-#ARG  VERSION_PATCH="false"
 ENV WORK_DIR /resource
 
 RUN mkdir ${WORK_DIR}
 WORKDIR ${WORK_DIR}
-#RUN git clone https://github.com/zalf-rpm/build-pipeline.git
 RUN git clone https://github.com/zalf-rpm/monica.git
 RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
-#ENV VCPKG_TAG $(cat ${WORK_DIR}/monica/vcpkg-tag.txt)
-RUN ls .
-RUN echo $(cat ./monica/vcpkg-tag.txt)
 RUN VCPKG_TAG=$(cat ./monica/vcpkg_tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
-#RUN git clone -b 2024.09.30 https://github.com/Microsoft/vcpkg.git
 WORKDIR ${WORK_DIR}/vcpkg
 RUN ./bootstrap-vcpkg.sh
 RUN ./vcpkg install zeromq:x64-linux
 RUN ./vcpkg install capnproto:x64-linux
 RUN ./vcpkg install libsodium:x64-linux
-
-#WORKDIR ${WORK_DIR}/build-pipeline/buildscripts
-#RUN sh linux-prepare-vcpkg.sh
-
-#WORKDIR ${WORK_DIR}
-#RUN python build-pipeline/buildscripts/incrementversion.py "monica/src/resource/version.h" ${VERSION_MAYOR} ${VERSION_MINOR} ${VERSION_PATCH}
 
 WORKDIR ${WORK_DIR}/monica
 RUN sh create_cmake_release.sh
@@ -86,7 +72,9 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-run ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
+#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-fbp-component ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/mas-infrastructure/common/channel ${monica_dir}
 
 COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
 COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
