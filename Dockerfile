@@ -23,7 +23,7 @@ RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 #ENV VCPKG_TAG $(cat ${WORK_DIR}/monica/vcpkg-tag.txt)
 RUN ls .
 RUN echo $(cat ./monica/vcpkg-tag.txt)
-RUN VCPKG_TAG=$(cat ./monica/vcpkg-tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
+RUN VCPKG_TAG=$(cat ./monica/vcpkg_tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
 #RUN git clone -b 2024.09.30 https://github.com/Microsoft/vcpkg.git
 WORKDIR ${WORK_DIR}/vcpkg
 RUN ./bootstrap-vcpkg.sh
