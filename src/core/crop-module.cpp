@@ -4627,14 +4627,6 @@ void CropModule::applyCutting(std::map<int, Cutting::Value> &organs,
   }
 }
 
-double CropModule::get_AccumulatedETa() const {
-  return vc_AccumulatedETa;
-}
-
-double CropModule::get_AccumulatedTranspiration() const {
-  return vc_AccumulatedTranspiration;
-}
-
 /**
  * Returns the depth of the maximum active and effective root.
  * [m]

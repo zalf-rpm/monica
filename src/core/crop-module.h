@@ -354,10 +354,6 @@ public:
 
   bool maturityReached() const;
 
-  inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa; }
-
-  inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
-
   /**
   * @brief Returns short term O3 damage
   */
