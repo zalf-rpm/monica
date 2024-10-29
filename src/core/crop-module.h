@@ -449,6 +449,7 @@ public:
   // endAtInclStage < 0 -> count from end
   double sumStageTemperatureSums(int startAtStage, int endAtInclStage) const;
 
+  double rootNRedux{0.0}; //! old REDWU
 private:
   Intercropping &_intercropping;
 
