@@ -166,7 +166,7 @@ void step(double vs_DepthGroundwaterTable,
 
   double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
 
-  double get_KcFactor() const;
+  double getKcFactor() const;
 
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
 

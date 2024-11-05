@@ -63,88 +63,124 @@ CropModule::CropModule(SoilColumn &sc,
                        std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                        std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
                        Intercropping &ic)
-    : _intercropping(ic), _frostKillOn(simPs.pc_FrostKillOn), soilColumn(sc), cropPs(cropPs),
-      speciesPs(cps.speciesParams), cultivarPs(cps.cultivarParams), residuePs(kj::mv(rps)), _isWinterCrop(isWinterCrop),
-      _bareSoilKcFactor(stps.bareSoilKcFactor), vs_Latitude(stps.vs_Latitude),
-      pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan),
-      pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff),
-      pc_AssimilateReallocation(cps.speciesParams.pc_AssimilateReallocation),
-      pc_BaseDaylength(cps.cultivarParams.pc_BaseDaylength), pc_BaseTemperature(cps.speciesParams.pc_BaseTemperature),
-      pc_BeginSensitivePhaseHeatStress(cps.cultivarParams.pc_BeginSensitivePhaseHeatStress),
-      pc_CarboxylationPathway(cps.speciesParams.pc_CarboxylationPathway)
+    : _intercropping(ic)
+    , _frostKillOn(simPs.pc_FrostKillOn)
+    , soilColumn(sc)
+    , cropPs(cropPs)
+    , speciesPs(cps.speciesParams)
+    , cultivarPs(cps.cultivarParams)
+    , residuePs(kj::mv(rps))
+    , _isWinterCrop(isWinterCrop)
+    , _bareSoilKcFactor(stps.bareSoilKcFactor)
+    , vs_Latitude(stps.vs_Latitude)
+    , pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
+    , pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
+    , pc_AssimilateReallocation(cps.speciesParams.pc_AssimilateReallocation)
+    , pc_BaseDaylength(cps.cultivarParams.pc_BaseDaylength)
+    , pc_BaseTemperature(cps.speciesParams.pc_BaseTemperature)
+    , pc_BeginSensitivePhaseHeatStress(cps.cultivarParams.pc_BeginSensitivePhaseHeatStress)
+    , pc_CarboxylationPathway(cps.speciesParams.pc_CarboxylationPathway)
 //  , pc_CO2Method(cps.pc_CO2Method)
-    , pc_CriticalOxygenContent(cps.speciesParams.pc_CriticalOxygenContent),
-      pc_CriticalTemperatureHeatStress(cps.cultivarParams.pc_CriticalTemperatureHeatStress),
-      pc_CropHeightP1(cps.cultivarParams.pc_CropHeightP1), pc_CropHeightP2(cps.cultivarParams.pc_CropHeightP2),
-      pc_CropName(cps.pc_CropName()), pc_CropSpecificMaxRootingDepth(cps.cultivarParams.pc_CropSpecificMaxRootingDepth),
-      vc_CurrentTemperatureSum(
-          cps.speciesParams.pc_NumberOfDevelopmentalStages(), 0.0),
-      pc_CuttingDelayDays(cps.speciesParams.pc_CuttingDelayDays),
-      pc_DaylengthRequirement(cps.cultivarParams.pc_DaylengthRequirement),
-      pc_DefaultRadiationUseEfficiency(cps.speciesParams.pc_DefaultRadiationUseEfficiency),
-      pc_DevelopmentAccelerationByNitrogenStress(cps.speciesParams.pc_DevelopmentAccelerationByNitrogenStress),
-      pc_DroughtStressThreshold(cps.cultivarParams.pc_DroughtStressThreshold), pc_DroughtImpactOnFertilityFactor(
-        cps.speciesParams.pc_DroughtImpactOnFertilityFactor), pc_EmergenceFloodingControlOn(
-        simPs.pc_EmergenceFloodingControlOn), pc_EmergenceMoistureControlOn(simPs.pc_EmergenceMoistureControlOn),
-      pc_EndSensitivePhaseHeatStress(cps.cultivarParams.pc_EndSensitivePhaseHeatStress), pc_FieldConditionModifier(
-        cps.speciesParams.pc_FieldConditionModifier)
+    , pc_CriticalOxygenContent(cps.speciesParams.pc_CriticalOxygenContent)
+    , pc_CriticalTemperatureHeatStress(cps.cultivarParams.pc_CriticalTemperatureHeatStress)
+    , pc_CropHeightP1(cps.cultivarParams.pc_CropHeightP1)
+    , pc_CropHeightP2(cps.cultivarParams.pc_CropHeightP2)
+    , pc_CropName(cps.pc_CropName())
+    , pc_CropSpecificMaxRootingDepth(cps.cultivarParams.pc_CropSpecificMaxRootingDepth)
+    , vc_CurrentTemperatureSum(cps.speciesParams.pc_NumberOfDevelopmentalStages(), 0.0)
+    , pc_CuttingDelayDays(cps.speciesParams.pc_CuttingDelayDays)
+    , pc_DaylengthRequirement(cps.cultivarParams.pc_DaylengthRequirement)
+    , pc_DefaultRadiationUseEfficiency(cps.speciesParams.pc_DefaultRadiationUseEfficiency)
+    , pc_DevelopmentAccelerationByNitrogenStress(cps.speciesParams.pc_DevelopmentAccelerationByNitrogenStress)
+    , pc_DroughtStressThreshold(cps.cultivarParams.pc_DroughtStressThreshold)
+    , pc_DroughtImpactOnFertilityFactor(cps.speciesParams.pc_DroughtImpactOnFertilityFactor)
+    , pc_EmergenceFloodingControlOn(simPs.pc_EmergenceFloodingControlOn)
+    , pc_EmergenceMoistureControlOn(simPs.pc_EmergenceMoistureControlOn)
+    , pc_EndSensitivePhaseHeatStress(cps.cultivarParams.pc_EndSensitivePhaseHeatStress)
+    , pc_FieldConditionModifier(cps.speciesParams.pc_FieldConditionModifier)
     //, vo_FreshSoilOrganicMatter(soilColumn.vs_NumberOfLayers(), 0.0)
-    , pc_FrostDehardening(cps.cultivarParams.pc_FrostDehardening), pc_FrostHardening(
-        cps.cultivarParams.pc_FrostHardening), pc_HeatSumIrrigationStart(cps.cultivarParams.pc_HeatSumIrrigationStart),
-      pc_HeatSumIrrigationEnd(cps.cultivarParams.pc_HeatSumIrrigationEnd), vs_HeightNN(stps.vs_HeightNN),
-      pc_InitialKcFactor(cps.speciesParams.pc_InitialKcFactor),
-      pc_InitialOrganBiomass(cps.speciesParams.pc_InitialOrganBiomass),
-      pc_InitialRootingDepth(cps.speciesParams.pc_InitialRootingDepth), vc_sunlitLeafAreaIndex(24),
-      vc_shadedLeafAreaIndex(24), pc_LowTemperatureExposure(cps.cultivarParams.pc_LowTemperatureExposure),
-      pc_LimitingTemperatureHeatStress(cps.speciesParams.pc_LimitingTemperatureHeatStress),
-      pc_LT50cultivar(cps.cultivarParams.pc_LT50cultivar), pc_LuxuryNCoeff(cps.speciesParams.pc_LuxuryNCoeff),
-      pc_MaxAssimilationRate(cps.cultivarParams.pc_MaxAssimilationRate),
-      pc_MaxCropDiameter(cps.speciesParams.pc_MaxCropDiameter), pc_MaxCropHeight(cps.cultivarParams.pc_MaxCropHeight),
-      pc_MaxNUptakeParam(cps.speciesParams.pc_MaxNUptakeParam),
-      pc_MinimumNConcentration(cps.speciesParams.pc_MinimumNConcentration), pc_MinimumTemperatureForAssimilation(
-        cps.speciesParams.pc_MinimumTemperatureForAssimilation), pc_MaximumTemperatureForAssimilation(
-        cps.speciesParams.pc_MaximumTemperatureForAssimilation), pc_OptimumTemperatureForAssimilation(
-        cps.speciesParams.pc_OptimumTemperatureForAssimilation), pc_MinimumTemperatureRootGrowth(
-        cps.speciesParams.pc_MinimumTemperatureRootGrowth), pc_NConcentrationAbovegroundBiomass(
-        cps.speciesParams.pc_NConcentrationAbovegroundBiomass), pc_NConcentrationB0(
-        cps.speciesParams.pc_NConcentrationB0), pc_NConcentrationPN(cps.speciesParams.pc_NConcentrationPN),
-      pc_NConcentrationRoot(cps.speciesParams.pc_NConcentrationRoot), pc_NitrogenResponseOn(
-        simPs.pc_NitrogenResponseOn),
-      pc_NumberOfDevelopmentalStages(cps.speciesParams.pc_NumberOfDevelopmentalStages()),
-      pc_NumberOfOrgans(cps.speciesParams.pc_NumberOfOrgans()),
-      vc_NUptakeFromLayer(soilColumn.vs_NumberOfLayers(), 0.0), pc_OptimumTemperature(
-        cps.cultivarParams.pc_OptimumTemperature), vc_OrganBiomass(pc_NumberOfOrgans, 0.0), vc_OrganDeadBiomass(
-        cps.speciesParams.pc_NumberOfOrgans(), 0.0), vc_OrganGreenBiomass(cps.speciesParams.pc_NumberOfOrgans(), 0.0),
-      vc_OrganGrowthIncrement(pc_NumberOfOrgans, 0.0), pc_OrganGrowthRespiration(
-        cps.speciesParams.pc_OrganGrowthRespiration), pc_OrganIdsForPrimaryYield(
-        cps.cultivarParams.pc_OrganIdsForPrimaryYield), pc_OrganIdsForSecondaryYield(
-        cps.cultivarParams.pc_OrganIdsForSecondaryYield), pc_OrganIdsForCutting(
-        cps.cultivarParams.pc_OrganIdsForCutting), pc_OrganMaintenanceRespiration(
-        cps.speciesParams.pc_OrganMaintenanceRespiration), vc_OrganSenescenceIncrement(pc_NumberOfOrgans, 0.0),
-      pc_OrganSenescenceRate(cps.cultivarParams.pc_OrganSenescenceRate), pc_PartBiologicalNFixation(
-        cps.speciesParams.pc_PartBiologicalNFixation), pc_Perennial(cps.cultivarParams.pc_Perennial), pc_PlantDensity(
-        cps.speciesParams.pc_PlantDensity), pc_ResidueNRatio(cps.cultivarParams.pc_ResidueNRatio), pc_RespiratoryStress(
-        cps.cultivarParams.pc_RespiratoryStress), vc_RootDensity(soilColumn.vs_NumberOfLayers(), 0.0), vc_RootDiameter(
-        soilColumn.vs_NumberOfLayers(), 0.0), pc_RootDistributionParam(cps.speciesParams.pc_RootDistributionParam),
-      vc_RootEffectivity(soilColumn.vs_NumberOfLayers(), 0.0), pc_RootFormFactor(cps.speciesParams.pc_RootFormFactor),
-      pc_RootGrowthLag(cps.speciesParams.pc_RootGrowthLag), pc_RootPenetrationRate(
-        cps.speciesParams.pc_RootPenetrationRate), vs_SoilMineralNContent(soilColumn.vs_NumberOfLayers(), 0.0),
-      pc_SpecificLeafArea(cps.cultivarParams.pc_SpecificLeafArea), pc_SpecificRootLength(
-        cps.speciesParams.pc_SpecificRootLength), pc_StageAfterCut(cps.speciesParams.pc_StageAfterCut - 1),
-      pc_StageAtMaxDiameter(cps.speciesParams.pc_StageAtMaxDiameter), pc_StageAtMaxHeight(
-        cps.speciesParams.pc_StageAtMaxHeight), pc_StageMaxRootNConcentration(
-        cps.speciesParams.pc_StageMaxRootNConcentration), pc_StageKcFactor(cps.cultivarParams.pc_StageKcFactor),
-      pc_StageTemperatureSum(cps.cultivarParams.pc_StageTemperatureSum), pc_StorageOrgan(
-        cps.speciesParams.pc_StorageOrgan), vc_TimeUnderAnoxiaThreshold(cropPs.pc_TimeUnderAnoxiaThreshold),
-      vs_Tortuosity(cropPs.pc_Tortuosity), vc_Transpiration(
-        soilColumn.vs_NumberOfLayers(), 0.0), vc_TranspirationRedux(soilColumn.vs_NumberOfLayers(), 1.0),
-      pc_VernalisationRequirement(cps.cultivarParams.pc_VernalisationRequirement), pc_WaterDeficitResponseOn(
-        simPs.pc_WaterDeficitResponseOn), vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth),
-      vs_ImpenetrableLayerDepth(stps.vs_ImpenetrableLayerDepth), _rad24(_stepSize24), _rad240(_stepSize240), _tfol24(
-        _stepSize24), _tfol240(_stepSize240), _fireEvent(kj::mv(fireEvent)),
-      _addOrganicMatter(kj::mv(addOrganicMatter)),
-      _getSnowDepthAndCalcTempUnderSnow(kj::mv(getSnowDepthAndCalcTempUnderSnow)), __enable_vernalisation_factor_fix__(
-        cps.__enable_vernalisation_factor_fix__.orDefault(cropPs.__enable_vernalisation_factor_fix__)) {
+    , pc_FrostDehardening(cps.cultivarParams.pc_FrostDehardening)
+    , pc_FrostHardening(cps.cultivarParams.pc_FrostHardening)
+    , pc_HeatSumIrrigationStart(cps.cultivarParams.pc_HeatSumIrrigationStart)
+    , pc_HeatSumIrrigationEnd(cps.cultivarParams.pc_HeatSumIrrigationEnd)
+    , vs_HeightNN(stps.vs_HeightNN)
+    , pc_InitialKcFactor(cps.speciesParams.pc_InitialKcFactor)
+    , pc_InitialOrganBiomass(cps.speciesParams.pc_InitialOrganBiomass)
+    , pc_InitialRootingDepth(cps.speciesParams.pc_InitialRootingDepth)
+    , vc_sunlitLeafAreaIndex(24)
+    , vc_shadedLeafAreaIndex(24)
+    , pc_LowTemperatureExposure(cps.cultivarParams.pc_LowTemperatureExposure)
+    , pc_LimitingTemperatureHeatStress(cps.speciesParams.pc_LimitingTemperatureHeatStress)
+    , pc_LT50cultivar(cps.cultivarParams.pc_LT50cultivar)
+    , pc_LuxuryNCoeff(cps.speciesParams.pc_LuxuryNCoeff)
+    , pc_MaxAssimilationRate(cps.cultivarParams.pc_MaxAssimilationRate)
+    , pc_MaxCropDiameter(cps.speciesParams.pc_MaxCropDiameter)
+    , pc_MaxCropHeight(cps.cultivarParams.pc_MaxCropHeight)
+    , pc_MaxNUptakeParam(cps.speciesParams.pc_MaxNUptakeParam)
+    , pc_MinimumNConcentration(cps.speciesParams.pc_MinimumNConcentration)
+    , pc_MinimumTemperatureForAssimilation(cps.speciesParams.pc_MinimumTemperatureForAssimilation)
+    , pc_MaximumTemperatureForAssimilation(cps.speciesParams.pc_MaximumTemperatureForAssimilation)
+    , pc_OptimumTemperatureForAssimilation(cps.speciesParams.pc_OptimumTemperatureForAssimilation)
+    , pc_MinimumTemperatureRootGrowth(cps.speciesParams.pc_MinimumTemperatureRootGrowth)
+    , pc_NConcentrationAbovegroundBiomass(cps.speciesParams.pc_NConcentrationAbovegroundBiomass)
+    , pc_NConcentrationB0(cps.speciesParams.pc_NConcentrationB0)
+    , pc_NConcentrationPN(cps.speciesParams.pc_NConcentrationPN)
+    , pc_NConcentrationRoot(cps.speciesParams.pc_NConcentrationRoot)
+    , pc_NitrogenResponseOn(simPs.pc_NitrogenResponseOn)
+    , pc_NumberOfDevelopmentalStages(cps.speciesParams.pc_NumberOfDevelopmentalStages())
+    , pc_NumberOfOrgans(cps.speciesParams.pc_NumberOfOrgans())
+    , vc_NUptakeFromLayer(soilColumn.numberOfLayers(), 0.0)
+    , pc_OptimumTemperature(cps.cultivarParams.pc_OptimumTemperature)
+    , vc_OrganBiomass(pc_NumberOfOrgans, 0.0)
+    , vc_OrganDeadBiomass(cps.speciesParams.pc_NumberOfOrgans(), 0.0)
+    , vc_OrganGreenBiomass(cps.speciesParams.pc_NumberOfOrgans(), 0.0)
+    , vc_OrganGrowthIncrement(pc_NumberOfOrgans, 0.0)
+    , pc_OrganGrowthRespiration(cps.speciesParams.pc_OrganGrowthRespiration)
+    , pc_OrganIdsForPrimaryYield(cps.cultivarParams.pc_OrganIdsForPrimaryYield)
+    , pc_OrganIdsForSecondaryYield(cps.cultivarParams.pc_OrganIdsForSecondaryYield)
+    , pc_OrganIdsForCutting(cps.cultivarParams.pc_OrganIdsForCutting)
+    , pc_OrganMaintenanceRespiration(cps.speciesParams.pc_OrganMaintenanceRespiration)
+    , vc_OrganSenescenceIncrement(pc_NumberOfOrgans, 0.0)
+    , pc_OrganSenescenceRate(cps.cultivarParams.pc_OrganSenescenceRate)
+    , pc_PartBiologicalNFixation(cps.speciesParams.pc_PartBiologicalNFixation)
+    , pc_Perennial(cps.cultivarParams.pc_Perennial)
+    , pc_PlantDensity(cps.speciesParams.pc_PlantDensity)
+    , pc_ResidueNRatio(cps.cultivarParams.pc_ResidueNRatio)
+    , pc_RespiratoryStress(cps.cultivarParams.pc_RespiratoryStress)
+    , vc_RootDensity(soilColumn.numberOfLayers(), 0.0)
+    , vc_RootDiameter(soilColumn.numberOfLayers(), 0.0)
+    , pc_RootDistributionParam(cps.speciesParams.pc_RootDistributionParam)
+    , vc_RootEffectivity(soilColumn.numberOfLayers(), 0.0)
+    , pc_RootFormFactor(cps.speciesParams.pc_RootFormFactor)
+    , pc_RootGrowthLag(cps.speciesParams.pc_RootGrowthLag)
+    , pc_RootPenetrationRate(cps.speciesParams.pc_RootPenetrationRate)
+    , vs_SoilMineralNContent(soilColumn.numberOfLayers(), 0.0)
+    , pc_SpecificLeafArea(cps.cultivarParams.pc_SpecificLeafArea)
+    , pc_SpecificRootLength(cps.speciesParams.pc_SpecificRootLength)
+    , pc_StageAfterCut(cps.speciesParams.pc_StageAfterCut - 1)
+    , pc_StageAtMaxDiameter(cps.speciesParams.pc_StageAtMaxDiameter)
+    , pc_StageAtMaxHeight(cps.speciesParams.pc_StageAtMaxHeight)
+    , pc_StageMaxRootNConcentration(cps.speciesParams.pc_StageMaxRootNConcentration)
+    , pc_StageKcFactor(cps.cultivarParams.pc_StageKcFactor)
+    , pc_StageTemperatureSum(cps.cultivarParams.pc_StageTemperatureSum)
+    , pc_StorageOrgan(cps.speciesParams.pc_StorageOrgan)
+    , vc_TimeUnderAnoxiaThreshold(cropPs.pc_TimeUnderAnoxiaThreshold)
+    , vs_Tortuosity(cropPs.pc_Tortuosity)
+    , vc_Transpiration(soilColumn.numberOfLayers(), 0.0)
+    , vc_TranspirationRedux(soilColumn.numberOfLayers(), 1.0)
+    , pc_VernalisationRequirement(cps.cultivarParams.pc_VernalisationRequirement)
+    , pc_WaterDeficitResponseOn(simPs.pc_WaterDeficitResponseOn)
+    , vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
+    , vs_ImpenetrableLayerDepth(stps.vs_ImpenetrableLayerDepth)
+    , _rad24(_stepSize24)
+    , _rad240(_stepSize240)
+    , _tfol24(_stepSize24)
+    , _tfol240(_stepSize240)
+    , _fireEvent(kj::mv(fireEvent))
+    , _addOrganicMatter(kj::mv(addOrganicMatter))
+    , _getSnowDepthAndCalcTempUnderSnow(kj::mv(getSnowDepthAndCalcTempUnderSnow))
+    , __enable_vernalisation_factor_fix__(cps.__enable_vernalisation_factor_fix__.orDefault(cropPs.__enable_vernalisation_factor_fix__))
+    {
   // Determining the total temperature sum of all developmental stages after
   // emergence (that's why i_Stage starts with 1) until before senescence
   for (int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++) {
