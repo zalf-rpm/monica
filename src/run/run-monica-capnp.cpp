@@ -111,8 +111,6 @@ kj::Promise<void> RunMonica::run(RunContext context)
   };
 
   auto proms = kj::heapArrayBuilder<kj::Promise<void>>(2);
-  //DataAccessor da;
-  //J11Array soilLayers;
 
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();

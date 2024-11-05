@@ -11,20 +11,14 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file has been created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 import sys
 import csv
 import os
 import json
-
 import zmq
-#print("pyzmq version: ", zmq.pyzmq_version(), " zmq version: ", zmq.zmq_version())
-
-import monica_io3
-#print("path to monica_io: ", monica_io.__file__)
+from zalfmas_common.model import monica_io
 
 def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, server = {"server": None, "port": None}, shared_id = None):
     "collect data from workers"
@@ -99,7 +93,7 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
                                                                       include_time_agg=False):
                             writer.writerow(row)
 
-                        for row in monica_io3.write_output(output_ids, results):
+                        for row in monica_io.write_output(output_ids, results):
                             writer.writerow(row)
 
                     writer.writerow([])

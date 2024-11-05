@@ -166,8 +166,9 @@ void step(double vs_DepthGroundwaterTable,
 
   double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
 
-  double getKcFactor() const;
-  double getTranspirationDeficit() const;
+  double get_KcFactor() const;
+
+  double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
 
 private:
   SoilColumn& soilColumn;
@@ -232,7 +233,6 @@ private:
   double pt_TimeStep{0.0};
   double vm_TotalWaterRemoval{0.0}; //!< Total water removal of layer [m3]
   std::vector<double> vm_Transpiration; //!< Transpiration of layer [mm]
-  double vm_TranspirationDeficit{0.0};
   std::vector<double> vm_WaterFlux; //!< Soil water flux at the layer's upper boundary[mm d-1]
   double vm_XSACriticalSoilMoisture{0.0};
 

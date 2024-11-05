@@ -354,10 +354,6 @@ public:
 
   bool maturityReached() const;
 
-  inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa; }
-
-  inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
-
   /**
   * @brief Returns short term O3 damage
   */
@@ -453,6 +449,7 @@ public:
   // endAtInclStage < 0 -> count from end
   double sumStageTemperatureSums(int startAtStage, int endAtInclStage) const;
 
+  double rootNRedux{0.0}; //! old REDWU
 private:
   Intercropping &_intercropping;
 
