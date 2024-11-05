@@ -111,8 +111,6 @@ kj::Promise<void> RunMonica::run(RunContext context)
   };
 
   auto proms = kj::heapArrayBuilder<kj::Promise<void>>(2);
-  //DataAccessor da;
-  //J11Array soilLayers;
 
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();
@@ -143,11 +141,7 @@ kj::Promise<void> RunMonica::run(RunContext context)
     auto rs = context.getResults();
     auto res = rs.initResult();
     res.initStructure().setJson();
-    //auto v = res.initValue(8120);
-    std::cout << out.toString() << std::endl;
-    std::stringstream oss;
-    for(int i = 0; i < 8104; i++) oss << '.'; //v[i] = '.';
-    res.setValue(oss.str());//out.toString());
+    res.setValue(out.toString());
   }, [context](auto &&e) mutable {
     KJ_LOG(INFO, "Error while trying to gather soil and/or time series data: ", e);
     auto rs = context.getResults();
