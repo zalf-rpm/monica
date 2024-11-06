@@ -33,7 +33,7 @@ public:
   void run();
 
 #if BIOMASURFACEPARTONSOILSWATC
-  SurfacePartonSoilSWATCComponent soilTempComp;
+  SurfacePartonSoilSWATCComponent _soilTempComp;
   SurfacePartonSoilSWATCState _soilTempState;
   SurfacePartonSoilSWATCState _soilTempState1;
   SurfacePartonSoilSWATCExogenous _soilTempExo;

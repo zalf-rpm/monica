@@ -31,6 +31,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto sitePs = _monica->siteParameters();
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
+  _soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
   std::vector<double> layerThicknessM;
   std::vector<double> bds;
   std::vector<double> sws;
@@ -39,12 +40,11 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
-    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> t/m3
   }
   _soilTempExo.setVolumetricWaterContent(sws);
-  soilTempComp.setLayerThickness(layerThicknessM);
-  soilTempComp.setBulkDensity(bds);
-  soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+  _soilTempComp.setLayerThickness(layerThicknessM);
+  _soilTempComp.setBulkDensity(bds);
 #else
   std::vector<double> layerThicknessM;
   std::vector<double> bds;
@@ -58,7 +58,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   soilTempComp.setBulkDensity(bds);
   soilTempComp.setSoilProfileDepth(profileDepth);
 #endif
-  soilTempComp.setLagCoefficient(0.8);
+  _soilTempComp.setLagCoefficient(0.8);
 #endif
 }
 
@@ -72,7 +72,7 @@ void MonicaInterface::run() {
   _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempExo.setAboveGroundBiomass(0);
-  soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
+  _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
   soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
@@ -80,7 +80,7 @@ void MonicaInterface::run() {
   else soilTempExo.setAboveGroundBiomass(0);
 #endif
   if(_doInit){
-    soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+    _soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
   }
 #ifndef AMEI_SENSITIVITY_ANALYSIS
@@ -90,7 +90,7 @@ void MonicaInterface::run() {
   }
   soilTempExo.setVolumetricWaterContent(sws);
 #endif
-  soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+  _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
   int i = 0;

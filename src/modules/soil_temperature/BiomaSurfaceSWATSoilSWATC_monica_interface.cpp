@@ -32,8 +32,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto sitePs = _monica->siteParameters();
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
-  _soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
   _soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
+  _soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
   std::vector<double> layerThicknessM;
   std::vector<double> bds;
   std::vector<double> sws;
@@ -42,7 +42,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
-    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> t/m3
   }
   _soilTempExo.setVolumetricWaterContent(sws);
   _soilTempComp.setLayerThickness(layerThicknessM);
@@ -74,8 +74,8 @@ void MonicaInterface::run() {
   _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
   _soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempAux.setAboveGroundBiomass(0);
+  _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
   soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
