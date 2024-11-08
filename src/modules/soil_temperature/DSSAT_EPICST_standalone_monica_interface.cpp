@@ -95,7 +95,8 @@ void MonicaInterface::run() {
   _soilTempExo.setTMAX(climateData.at(Climate::tmax));
   _soilTempExo.setRAIN(climateData.at(Climate::precip));
 #if AMEI_SENSITIVITY_ANALYSIS
-  _soilTempExo.setSNOW(0);
+  //_soilTempExo.setSNOW(0);
+  _soilTempExo.setSNOW(climateData[Climate::precipOrig]); //snow in mm
   _soilTempExo.setDEPIR(_monica->simulationParameters().customData["IRVAL"].number_value());
   _soilTempExo.setMULCHMASS(_monica->simulationParameters().customData["MLTHK"].number_value());
   _soilTempExo.setBIOMAS(_monica->simulationParameters().customData["CWAD"].number_value());

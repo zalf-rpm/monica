@@ -72,9 +72,10 @@ void MonicaInterface::run() {
   _soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
   _soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
   _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
-  _soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]);
+  _soilTempExo.setWaterEquivalentOfSnowPack(0); // snow in mm
+  //_soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]); // snow in mm
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  _soilTempAux.setAboveGroundBiomass(0);
+  _soilTempAux.setAboveGroundBiomass(_monica->simulationParameters().customData["CWAD"].number_value());
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();

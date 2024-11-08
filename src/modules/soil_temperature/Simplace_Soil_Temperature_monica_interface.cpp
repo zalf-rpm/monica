@@ -32,41 +32,49 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   double currentDepthM = 0;
   std::vector<double> slds;
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  // is not correct right now in the generated code
-  _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorA(0.47);
-  _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorB(0.62);
+  // these are the default values
+  _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorA(2.3);
+  _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorB(0.22);
+  // from Andi?
+  //_soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorA(0.47);
+  //_soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorB(0.62);
+  _soilTempComp.setcInitialAgeOfSnow(0);
+  //AgeOfSnow will in snow calculator init function be set to cInitialAgeOfSnow
+  _soilTempComp.setcInitialSnowWaterContent(0);
+  //SnowWaterContent will in snow calculator init function be set to cInitialSnowWaterContent
+  //rSoilTempArrayRate will be initialized in sim calculator (to 0s)
+  //pSoilLayerDepth will be initialized in sim calculator
 
   const auto awc = simPs.customData["AWC"].number_value();
   _soilTempComp.setcAlbedo(simPs.customData["SALB"].number_value());
+  //pInternalAlbedo gets set by init function of snow calculator
+  //SoilSurfaceTemperature is a state and will also be initialized in snow calculator
   _soilTempComp.setcDampingDepth(6);
-  //_soilTempComp.setcCarbonContent(0.5);
+  _soilTempComp.setcCarbonContent(0.5);
   _soilTempComp.setcFirstDayMeanTemp(simPs.customData["TAV"].number_value());
   _soilTempComp.setcAverageGroundTemperature(simPs.customData["TAV"].number_value());
   _soilTempComp.setcAverageBulkDensity(simPs.customData["SABDM"].number_value());
-  double initialWCSum = 0;
+  double mmInitialWCSum = 0;
   double initialWCSum2 = 0;
-  bool gotSLOCOfFirstLayer = false;
+  //bool gotSLOCOfFirstLayer = false;
   for (const auto& j : sitePs.initSoilProfileSpec){
     const double lt_m = Tools::double_value(j["Thickness"]);
     currentDepthM += lt_m;
     slds.push_back(currentDepthM);
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
-    if (!gotSLOCOfFirstLayer){
-      _soilTempComp.setcCarbonContent(sps.vs_SoilOrganicCarbon()*100);
-      gotSLOCOfFirstLayer = true;
-    }
+    //if (!gotSLOCOfFirstLayer){
+    //  _soilTempComp.setcCarbonContent(sps.vs_SoilOrganicCarbon()*100);
+    //  gotSLOCOfFirstLayer = true;
+    //}
     const double usableFC = sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint;
     const double availableFC = usableFC * awc;
     const double initialWC = availableFC + sps.vs_PermanentWiltingPoint;
-    //const double initialWCTotal = initialWC * lt_m * 100;
     const double lt_dm = lt_m * 10;
-    const double initialWCInLayer = initialWC * 100 * lt_dm;
-    initialWCSum += initialWCInLayer;
-    //initialWCSum2 += initialWCTotal;
+    const double mmInitialWCInLayer = initialWC * 100 * lt_dm;
+    mmInitialWCSum += mmInitialWCInLayer;
   }
-  //_soilTempExo.setiSoilWaterContent(initialWCSum2 * 10); //mm
-  _soilTempExo.setiSoilWaterContent(initialWCSum);
+  _soilTempExo.setiSoilWaterContent(mmInitialWCSum);
 #else
   soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
   soilTempComp.setcDampingDepth(6); // is also default
@@ -75,9 +83,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   for (const auto& sl : _monica->soilColumn()){
     currentDepthM += sl.vs_LayerThickness;
     slds.push_back(currentDepthM);
-    abd += sl.vs_SoilBulkDensity() / 1000.0; // kg/m3 -> g/cm3
+    abd += sl.vs_SoilBulkDensity() / 1000.0; // kg/m3 -> t/m3
     if (!firstLayer){
-      soilTempComp.setcCarbonContent(sl.vs_SoilOrganicCarbon());
+      soilTempComp.setcCarbonContent(sl.vs_SoilOrganicCarbon()*100.0);
       firstLayer = true;
     }
   }
@@ -95,7 +103,8 @@ void MonicaInterface::run() {
   _soilTempExo.setiAirTemperatureMax(climateData.at(Climate::tmax));
   _soilTempExo.setiGlobalSolarRadiation(climateData.at(Climate::globrad));
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  _soilTempExo.setiRAIN(climateData.at(Climate::precip));
+  //_soilTempExo.setiRAIN(climateData.at(Climate::precip));
+  _soilTempExo.setiRAIN(0);
   _soilTempComp.setcAverageGroundTemperature(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempComp.setcFirstDayMeanTemp(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempExo.setiLeafAreaIndex(_monica->simulationParameters().customData["LAI"].number_value());
@@ -112,6 +121,7 @@ void MonicaInterface::run() {
   soilTempExo.setiSoilWaterContent(wcSum);
 #endif
   _soilTempExo.setiCropResidues(0);
+  _soilTempAux.setiSoilTempArray(_soilTempState.getSoilTempArray()); // set last days temperatures array
   if(_doInit){
     _soilTempExo.setiTempMin(climateData.at(Climate::tmin));
     _soilTempExo.setiTempMax(climateData.at(Climate::tmax));

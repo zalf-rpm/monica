@@ -71,7 +71,7 @@ void MonicaInterface::run() {
   _soilTempExo.setDayLength(climateData[Climate::sunhours]);
   _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  _soilTempExo.setAboveGroundBiomass(0);
+  _soilTempExo.setAboveGroundBiomass(_monica->simulationParameters().customData["CWAD"].number_value());
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
