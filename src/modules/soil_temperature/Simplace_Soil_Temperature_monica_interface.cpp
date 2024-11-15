@@ -74,7 +74,11 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     const double mmInitialWCInLayer = initialWC * 100 * lt_dm;
     mmInitialWCSum += mmInitialWCInLayer;
   }
+#ifdef CPP2
+  _soilTempExo.iSoilWaterContent = mmInitialWCSum;
+#else
   _soilTempExo.setiSoilWaterContent(mmInitialWCSum);
+#endif
 #else
   soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
   soilTempComp.setcDampingDepth(6); // is also default
@@ -99,16 +103,29 @@ void MonicaInterface::run() {
 #if SIMPLACE_SOIL_TEMPERATURE
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
+#ifdef CPP2
+  _soilTempExo.iAirTemperatureMin = climateData.at(Climate::tmin);
+  _soilTempExo.iAirTemperatureMax = climateData.at(Climate::tmax);
+  _soilTempExo.iGlobalSolarRadiation = climateData.at(Climate::globrad);
+#else
   _soilTempExo.setiAirTemperatureMin(climateData.at(Climate::tmin));
   _soilTempExo.setiAirTemperatureMax(climateData.at(Climate::tmax));
   _soilTempExo.setiGlobalSolarRadiation(climateData.at(Climate::globrad));
+#endif
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  //_soilTempExo.setiRAIN(climateData.at(Climate::precip));
-  _soilTempExo.setiRAIN(0);
   _soilTempComp.setcAverageGroundTemperature(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempComp.setcFirstDayMeanTemp(_monica->simulationParameters().customData["TAV"].number_value());
+#ifdef CPP2
+  //_soilTempExo.iRAIN = climateData.at(Climate::precip);
+  _soilTempExo.iRAIN = 0;
+  _soilTempExo.iLeafAreaIndex = _monica->simulationParameters().customData["LAI"].number_value();
+  _soilTempExo.iPotentialSoilEvaporation = climateData[Climate::et0]; //use et0 as ETPot
+#else
+  //_soilTempExo.setiRAIN(climateData.at(Climate::precip));
+  _soilTempExo.setiRAIN(0);
   _soilTempExo.setiLeafAreaIndex(_monica->simulationParameters().customData["LAI"].number_value());
   _soilTempExo.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
+#endif
 #else
   soilTempExo.setiRAIN(climateData.at(Climate::precip)); // so that no snowcover will build up
   if (_monica->cropGrowth()) soilTempExo.setiLeafAreaIndex(_monica->cropGrowth()->getLeafAreaIndex());
@@ -120,12 +137,23 @@ void MonicaInterface::run() {
   }
   soilTempExo.setiSoilWaterContent(wcSum);
 #endif
+#ifdef CPP2
+  _soilTempExo.iCropResidues = 0;
+  _soilTempAux.iSoilTempArray = _soilTempState.SoilTempArray; // set last days temperatures array
+#else
   _soilTempExo.setiCropResidues(0);
   _soilTempAux.setiSoilTempArray(_soilTempState.getSoilTempArray()); // set last days temperatures array
+#endif
   if(_doInit){
+#ifdef CPP2
+    _soilTempExo.iTempMin = climateData.at(Climate::tmin);
+    _soilTempExo.iTempMax = climateData.at(Climate::tmax);
+    _soilTempExo.iRadiation = climateData.at(Climate::globrad);
+#else
     _soilTempExo.setiTempMin(climateData.at(Climate::tmin));
     _soilTempExo.setiTempMax(climateData.at(Climate::tmax));
     _soilTempExo.setiRadiation(climateData.at(Climate::globrad));
+#endif
 #ifndef AMEI_SENSITIVITY_ANALYSIS
     auto [fst, snd] = _monica->dssatTAMPandTAV();
     _soilTempComp.setcAverageGroundTemperature(fst);

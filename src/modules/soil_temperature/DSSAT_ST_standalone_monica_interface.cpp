@@ -89,14 +89,26 @@ void MonicaInterface::run() {
 #if DSSAT_ST_STANDALONE
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
+#ifdef CPP2
+  _soilTempExo.DOY = _monica->currentStepDate().dayOfYear();
+  _soilTempExo.SRAD = climateData.at(Climate::globrad);
+  _soilTempExo.TAVG = climateData.at(Climate::tavg);
+  _soilTempExo.TMAX = climateData.at(Climate::tmax);
+#else
   _soilTempExo.setDOY(_monica->currentStepDate().dayOfYear());
   _soilTempExo.setSRAD(climateData.at(Climate::globrad));
   _soilTempExo.setTAVG(climateData.at(Climate::tavg));
   _soilTempExo.setTMAX(climateData.at(Climate::tmax));
+#endif
   if (_doInit) {
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-  _soilTempExo.setTAV(_monica->simulationParameters().customData["TAV"].number_value());
+#ifdef CPP2
+  _soilTempExo.TAV = _monica->simulationParameters().customData["TAV"].number_value();
+  _soilTempExo.TAMP = _monica->simulationParameters().customData["TAMP"].number_value();
+#else
+    _soilTempExo.setTAV(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempExo.setTAMP(_monica->simulationParameters().customData["TAMP"].number_value());
+#endif
 #else
     auto tampNtav = _monica->dssatTAMPandTAV();
     _soilTempExo.setTAV(tampNtav.first);

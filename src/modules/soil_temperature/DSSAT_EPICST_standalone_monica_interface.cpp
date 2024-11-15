@@ -90,11 +90,27 @@ void MonicaInterface::run() {
 #if DSSAT_EPICST_STANDALONE
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
+#ifdef CPP2
+  _soilTempExo.TMIN = climateData.at(Climate::tmin);
+  _soilTempExo.TAVG = climateData.at(Climate::tavg);
+  _soilTempExo.TMAX = climateData.at(Climate::tmax);
+  _soilTempExo.RAIN = climateData.at(Climate::precip);
+#else
   _soilTempExo.setTMIN(climateData.at(Climate::tmin));
   _soilTempExo.setTAVG(climateData.at(Climate::tavg));
   _soilTempExo.setTMAX(climateData.at(Climate::tmax));
   _soilTempExo.setRAIN(climateData.at(Climate::precip));
+#endif
 #if AMEI_SENSITIVITY_ANALYSIS
+#ifdef CPP2
+  //_soilTempExo.SNOW = 0;
+  _soilTempExo.SNOW = climateData[Climate::precipOrig]; //snow in mm
+  _soilTempExo.DEPIR = _monica->simulationParameters().customData["IRVAL"].number_value();
+  _soilTempExo.MULCHMASS = _monica->simulationParameters().customData["MLTHK"].number_value();
+  _soilTempExo.BIOMAS = _monica->simulationParameters().customData["CWAD"].number_value();
+  _soilTempExo.TAV = _monica->simulationParameters().customData["TAV"].number_value();
+  _soilTempExo.TAMP = _monica->simulationParameters().customData["TAMP"].number_value();
+#else
   //_soilTempExo.setSNOW(0);
   _soilTempExo.setSNOW(climateData[Climate::precipOrig]); //snow in mm
   _soilTempExo.setDEPIR(_monica->simulationParameters().customData["IRVAL"].number_value());
@@ -102,6 +118,7 @@ void MonicaInterface::run() {
   _soilTempExo.setBIOMAS(_monica->simulationParameters().customData["CWAD"].number_value());
   _soilTempExo.setTAV(_monica->simulationParameters().customData["TAV"].number_value());
   _soilTempExo.setTAMP(_monica->simulationParameters().customData["TAMP"].number_value());
+#endif
 #else
   soilTempExo.setSNOW(_monica->soilMoisture().getSnowDepth());
   soilTempExo.setDEPIR(_monica->dailySumIrrigationWater());
