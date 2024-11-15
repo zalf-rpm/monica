@@ -25,7 +25,6 @@ using namespace Monica_SoilTemp;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-#ifdef MONICA_SOILTEMP
   KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
@@ -77,11 +76,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   soilTempComp.setsaturation(sats);
   soilTempComp.setsoilOrganicMatter(oms);
   soilTempComp.setdampingFactor(stParams.dampingFactor);
-#endif
 }
 
 void MonicaInterface::run() {
-#if MONICA_SOILTEMP
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
 #ifdef CPP2
@@ -110,7 +107,7 @@ void MonicaInterface::run() {
 #endif
   }
 #else
-  if (_monica->cropGrowth()) soilTempExo.setsoilCoverage(_monica->cropGrowth()->get_SoilCoverage());
+  if (_monica->cropGrowth()) soilTempExo.soilCoverage = _monica->cropGrowth()->get_SoilCoverage();
 #endif
   if (_monica->soilMoisturePtr() && _monica->soilMoisture().getSnowDepth() > 0.0) {
 #ifdef CPP2
@@ -133,11 +130,10 @@ void MonicaInterface::run() {
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getsoilSurfaceTemperature());
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.soilSurfaceTemperature);
   auto& sc = _monica->soilColumnNC();
   for(size_t layer = 0; layer < sc.size(); layer++) {
-    sc.at(layer).set_Vs_SoilTemperature(soilTempState.getsoilTemperature().at(layer));
+    sc.at(layer).set_Vs_SoilTemperature(soilTempState.soilTemperature.at(layer));
   }
-#endif
 #endif
 }

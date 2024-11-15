@@ -46,6 +46,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica {
 
+class Run {
+public:
+  virtual void run() = 0;
+};
+
 class CentralParameterProvider;
 
 enum Eva2_Nutzung {
@@ -670,6 +675,8 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   std::string pathToSerializationFile;
 
   json11::Json customData;
+
+  std::string soilTempModel{"internal"};
 };
 
 

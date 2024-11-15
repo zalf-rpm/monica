@@ -15,31 +15,27 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#if MONICA_SOILTEMP
 #include "Monica_SoilTemp/SoilTemperatureCompComponent.h"
-#endif
 #include "core/monica-parameters.h"
 
-namespace monica { class MonicaModel;}
+namespace monica { class MonicaModel; }
 
 namespace Monica_SoilTemp {
 
-class MonicaInterface {
+class MonicaInterface : public monica::Run {
 public:
   explicit MonicaInterface(monica::MonicaModel *monica);
 
   void init(const monica::CentralParameterProvider &cpp);
 
-  void run();
+  void run() override;
 
-#if MONICA_SOILTEMP
   SoilTemperatureCompComponent soilTempComp;
   SoilTemperatureCompState soilTempState;
   SoilTemperatureCompState soilTempState1;
   SoilTemperatureCompExogenous soilTempExo;
   SoilTemperatureCompRate soilTempRate;
   SoilTemperatureCompAuxiliary soilTempAux;
-#endif
 
 private:
   monica::MonicaModel *_monica;

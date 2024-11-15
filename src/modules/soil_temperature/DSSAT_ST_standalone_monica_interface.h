@@ -15,31 +15,27 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#if DSSAT_ST_STANDALONE
 #include "DSSAT_ST_standalone/STEMP_Component.h"
-#endif
 #include "core/monica-parameters.h"
 
 namespace monica { class MonicaModel;}
 
 namespace DSSAT_ST_standalone {
 
-class MonicaInterface {
+class MonicaInterface : public monica::Run {
 public:
   explicit MonicaInterface(monica::MonicaModel *monica);
 
   void init(const monica::CentralParameterProvider &cpp);
 
-  void run();
+  void run() override;
 
-#if DSSAT_ST_STANDALONE
   STEMP_Component _soilTempComp;
   STEMP_State _soilTempState;
   STEMP_State _soilTempState1;
   STEMP_Exogenous _soilTempExo;
   STEMP_Rate _soilTempRate;
   STEMP_Auxiliary _soilTempAux;
-#endif
 
 private:
   monica::MonicaModel *_monica;

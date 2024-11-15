@@ -25,7 +25,6 @@ using namespace Simplace_Soil_Temperature;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-#if SIMPLACE_SOIL_TEMPERATURE
   KJ_ASSERT(_monica != nullptr);
   const auto simPs = _monica->simulationParameters();
   const auto sitePs = _monica->siteParameters();
@@ -80,8 +79,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempExo.setiSoilWaterContent(mmInitialWCSum);
 #endif
 #else
-  soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
-  soilTempComp.setcDampingDepth(6); // is also default
+  _soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
+  _soilTempComp.setcDampingDepth(6); // is also default
   double abd = 0;
   bool firstLayer = false;
   for (const auto& sl : _monica->soilColumn()){
@@ -89,18 +88,16 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     slds.push_back(currentDepthM);
     abd += sl.vs_SoilBulkDensity() / 1000.0; // kg/m3 -> t/m3
     if (!firstLayer){
-      soilTempComp.setcCarbonContent(sl.vs_SoilOrganicCarbon()*100.0);
+      _soilTempComp.setcCarbonContent(sl.vs_SoilOrganicCarbon()*100.0);
       firstLayer = true;
     }
   }
-  soilTempComp.setcAverageBulkDensity(abd);
+  _soilTempComp.setcAverageBulkDensity(abd);
 #endif
   _soilTempComp.setcSoilLayerDepth(slds);
-#endif
 }
 
 void MonicaInterface::run() {
-#if SIMPLACE_SOIL_TEMPERATURE
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
 #ifdef CPP2
@@ -127,15 +124,15 @@ void MonicaInterface::run() {
   _soilTempExo.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
 #endif
 #else
-  soilTempExo.setiRAIN(climateData.at(Climate::precip)); // so that no snowcover will build up
-  if (_monica->cropGrowth()) soilTempExo.setiLeafAreaIndex(_monica->cropGrowth()->getLeafAreaIndex());
-  else soilTempExo.setiLeafAreaIndex(0);
-  soilTempExo.setiPotentialSoilEvaporation(_monica->soilMoisture().get_PotentialEvapotranspiration());
+  _soilTempExo.iRAIN = climateData.at(Climate::precip); // so that no snowcover will build up
+  if (_monica->cropGrowth()) _soilTempExo.iLeafAreaIndex = _monica->cropGrowth()->getLeafAreaIndex();
+  else _soilTempExo.iLeafAreaIndex = 0;
+  _soilTempExo.iPotentialSoilEvaporation = _monica->soilMoisture().get_PotentialEvapotranspiration();
   double wcSum = 0;
   for (const auto& sl : _monica->soilColumn()){
     wcSum += sl.get_Vs_SoilMoisture_m3();
   }
-  soilTempExo.setiSoilWaterContent(wcSum);
+  _soilTempExo.iSoilWaterContent = wcSum;
 #endif
 #ifdef CPP2
   _soilTempExo.iCropResidues = 0;
@@ -165,12 +162,11 @@ void MonicaInterface::run() {
   }
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getSoilSurfaceTemperature());
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.SoilSurfaceTemperature);
   int i = 0;
-  KJ_ASSERT(soilTempState.getSoilTempArray().size() >= _monica->soilColumnNC().size());
+  KJ_ASSERT(_soilTempState.SoilTempArray.size() >= _monica->soilColumnNC().size());
   for (auto& sl : _monica->soilColumnNC()){
-    sl.set_Vs_SoilTemperature(soilTempState.getSoilTempArray().at(i++));
+    sl.set_Vs_SoilTemperature(_soilTempState.SoilTempArray.at(i++));
   }
-#endif
 #endif
 }

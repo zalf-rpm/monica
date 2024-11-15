@@ -49,30 +49,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "crop-module.h"
 #include "soilcolumn.h"
 
-#if MONICA_SOILTEMP
 #include "modules/soil_temperature/Monica_SoilTemp_monica_interface.h"
-#endif
-#if DSSAT_ST_STANDALONE
 #include "modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h"
-#endif
-#if DSSAT_EPICST_STANDALONE
 #include "modules/soil_temperature/DSSAT_EPICST_standalone_monica_interface.h"
-#endif
-#if SIMPLACE_SOIL_TEMPERATURE
 #include "modules/soil_temperature/Simplace_Soil_Temperature_monica_interface.h"
-#endif
-#if STICS_SOIL_TEMPERATURE
 #include "modules/soil_temperature/Stics_soil_temperature_monica_interface.h"
-#endif
-#if SQ_SOIL_TEMPERATURE
 #include "modules/soil_temperature/SQ_Soil_Temperature_monica_interface.h"
-#endif
-#if BIOMASURFACEPARTONSOILSWATC
 #include "modules/soil_temperature/BiomaSurfacePartonSoilSWATC_monica_interface.h"
-#endif
-#if BIOMASURFACESWATSOILSWATC
 #include "modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.h"
-#endif
 
 namespace monica {
   
@@ -220,34 +204,15 @@ public:
 
   void setOtherCropHeightAndLAIt(double cropHeight, double lait);
 
-#ifdef MONICA_SOILTEMP
+  Run* _soilTempInstance{ nullptr };
   kj::Own<Monica_SoilTemp::MonicaInterface> _instance_Monica_SoilTemp;
-#endif
-#if DSSAT_ST_STANDALONE
   kj::Own<DSSAT_ST_standalone::MonicaInterface> _instance_DSSAT_ST_standalone;
-#endif
-#if DSSAT_EPICST_STANDALONE
   kj::Own<DSSAT_EPICST_standalone::MonicaInterface> _instance_DSSAT_EPICST_standalone;
-#endif
-#if SIMPLACE_SOIL_TEMPERATURE
   kj::Own<Simplace_Soil_Temperature::MonicaInterface> _instance_Simplace_Soil_Temperature;
-#endif
-
-#if STICS_SOIL_TEMPERATURE
   kj::Own<Stics_soil_temperature::MonicaInterface> _instance_Stics_soil_temperature;
-#endif
-
-#if SQ_SOIL_TEMPERATURE
   kj::Own<SQ_Soil_Temperature::MonicaInterface> _instance_SQ_Soil_Temperature;
-#endif
-
-#if BIOMASURFACEPARTONSOILSWATC
   kj::Own<BiomaSurfacePartonSoilSWATC::MonicaInterface> _instance_BiomaSurfacePartonSoilSWATC;
-#endif
-
-#if BIOMASURFACESWATSOILSWATC
   kj::Own<BiomaSurfaceSWATSoilSWATC::MonicaInterface> _instance_BiomaSurfaceSWATSoilSWATC;
-#endif
 
   std::pair<double, double> dssatTAMPandTAV() {
     return std::make_pair(_dssatTAMP, _dssatTAV);

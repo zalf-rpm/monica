@@ -25,12 +25,10 @@ using namespace DSSAT_ST_standalone;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-#if DSSAT_ST_STANDALONE
   KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
   _soilTempComp.setISWWAT("Y");
-  _soilTempComp.setXLAT(_monica->simulationParameters().customData["XLAT"].number_value());
   int currentDepthCm = 0;
   std::vector<double> lls;
   std::vector<double> duls;
@@ -40,6 +38,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
   _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
+  _soilTempComp.setXLAT(_monica->simulationParameters().customData["XLAT"].number_value());
   auto awc = _monica->simulationParameters().customData["AWC"].number_value();
   std::vector<double> sws;
   for (const auto &j: sitePs.initSoilProfileSpec) {
@@ -82,11 +81,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempComp.setDS(dss);
   _soilTempComp.setDLAYR(dlayrs);
   _soilTempComp.setBD(bds);
-#endif
 }
 
 void MonicaInterface::run() {
-#if DSSAT_ST_STANDALONE
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
 #ifdef CPP2
@@ -111,8 +108,8 @@ void MonicaInterface::run() {
 #endif
 #else
     auto tampNtav = _monica->dssatTAMPandTAV();
-    _soilTempExo.setTAV(tampNtav.first);
-    _soilTempExo.setTAMP(tampNtav.second);
+    _soilTempExo.TAV = tampNtav.first;
+    _soilTempExo.TAMP = tampNtav.second;
 #endif
     _soilTempComp._STEMP.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
@@ -126,12 +123,11 @@ void MonicaInterface::run() {
 #endif
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.getSRFTEMP());
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.SRFTEMP);
   int i = 0;
-      KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.getST().size());
+      KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.ST.size());
   for (auto& sl : _monica->soilColumnNC()){
-    sl.set_Vs_SoilTemperature(_soilTempState.getST().at(i++));
+    sl.set_Vs_SoilTemperature(_soilTempState.ST.at(i++));
   }
-#endif
 #endif
 }

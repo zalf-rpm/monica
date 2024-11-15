@@ -1357,7 +1357,10 @@ Errors SimulationParameters::merge(json11::Json j) {
   noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
   set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
 
+  set_string_value(soilTempModel, j, "SoilTempModel");
+
   if (!j["customData"].is_null()) customData = j["customData"];
+
 
   return res;
 }
@@ -1613,6 +1616,7 @@ Errors EnvironmentParameters::merge(json11::Json j) {
   };
 
   set_double_value(p_Albedo, j, "Albedo");
+
 
   if (j["rcp"].is_string()) rcp = str2rcp(j["rcp"].string_value());
 

@@ -25,7 +25,6 @@ using namespace BiomaSurfacePartonSoilSWATC;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-#if BIOMASURFACEPARTONSOILSWATC
       KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
@@ -58,16 +57,14 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     profileDepth += sl.vs_LayerThickness;
     bds.push_back(sl.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
   }
-  soilTempComp.setLayerThickness(layerThicknessM);
-  soilTempComp.setBulkDensity(bds);
-  soilTempComp.setSoilProfileDepth(profileDepth);
+  _soilTempComp.setLayerThickness(layerThicknessM);
+  _soilTempComp.setBulkDensity(bds);
+  _soilTempComp.setSoilProfileDepth(profileDepth);
 #endif
   _soilTempComp.setLagCoefficient(0.8);
-#endif
 }
 
 void MonicaInterface::run() {
-#if BIOMASURFACEPARTONSOILSWATC
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
 #ifdef CPP2
@@ -90,9 +87,9 @@ void MonicaInterface::run() {
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
-  soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
-  if (_monica->cropGrowth()) soilTempExo.setAboveGroundBiomass(_monica->cropGrowth()->get_AbovegroundBiomass());
-  else soilTempExo.setAboveGroundBiomass(0);
+  _soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
+  if (_monica->cropGrowth()) _soilTempExo.AboveGroundBiomass = _monica->cropGrowth()->get_AbovegroundBiomass();
+  else _soilTempExo.AboveGroundBiomass = 0;
 #endif
   if(_doInit){
     _soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
@@ -103,16 +100,15 @@ void MonicaInterface::run() {
   for (const auto& sl : _monica->soilColumn()){
     sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
   }
-  soilTempExo.setVolumetricWaterContent(sws);
+  _soilTempExo.VolumetricWaterContent = sws;
 #endif
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempAux.getSurfaceSoilTemperature());
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempAux.SurfaceSoilTemperature);
   int i = 0;
-  KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.getSoilTemperatureByLayers().size());
+  KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.SoilTemperatureByLayers.size());
   for (auto& sl : _monica->soilColumnNC()){
-    sl.set_Vs_SoilTemperature(soilTempState.getSoilTemperatureByLayers().at(i++));
+    sl.set_Vs_SoilTemperature(_soilTempState.SoilTemperatureByLayers.at(i++));
   }
-#endif
 #endif
 }

@@ -15,31 +15,27 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#if BIOMASURFACESWATSOILSWATC
 #include "BiomaSurfaceSWATSoilSWATC/SurfaceSWATSoilSWATCComponent.h"
-#endif
 #include "core/monica-parameters.h"
 
 namespace monica { class MonicaModel;}
 
 namespace BiomaSurfaceSWATSoilSWATC {
 
-class MonicaInterface {
+class MonicaInterface : public monica::Run {
 public:
   explicit MonicaInterface(monica::MonicaModel *monica);
 
   void init(const monica::CentralParameterProvider &cpp);
 
-  void run();
+  void run() override;
 
-#if BIOMASURFACESWATSOILSWATC
   SurfaceSWATSoilSWATCComponent _soilTempComp;
   SurfaceSWATSoilSWATCState _soilTempState;
   SurfaceSWATSoilSWATCState _soilTempState1;
   SurfaceSWATSoilSWATCExogenous _soilTempExo;
   SurfaceSWATSoilSWATCRate _soilTempRate;
   SurfaceSWATSoilSWATCAuxiliary _soilTempAux;
-#endif
 
 private:
   monica::MonicaModel *_monica;

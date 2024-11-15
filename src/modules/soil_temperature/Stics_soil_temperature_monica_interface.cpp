@@ -25,7 +25,6 @@ using namespace Stics_soil_temperature;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-#if STICS_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
   std::vector<int> layerThicknessCm;
 #ifdef AMEI_SENSITIVITY_ANALYSIS
@@ -40,13 +39,11 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   }
 #endif
   soilTempComp.setlayer_thick(layerThicknessCm);
-#endif
 }
 
 
 void MonicaInterface::run() {
-#if STICS_SOIL_TEMPERATURE
-      KJ_ASSERT(_monica != nullptr);
+  KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
   auto tmin = climateData.at(Climate::tmin);
   auto tmax = climateData.at(Climate::tmax);
@@ -70,8 +67,8 @@ void MonicaInterface::run() {
   }
   soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.getcanopy_temp_avg());
-  const auto& soilTemp = soilTempState.gettemp_profile();
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.canopy_temp_avg);
+  const auto& soilTemp = soilTempState.temp_profile;
   auto& sc = _monica->soilColumnNC();
   double sumT = 0;
   int count = 0;
@@ -86,6 +83,5 @@ void MonicaInterface::run() {
     sumT += soilTemp.at(i);
     ++count;
   }
-#endif
 #endif
 }

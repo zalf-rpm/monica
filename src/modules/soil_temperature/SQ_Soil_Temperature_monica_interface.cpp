@@ -25,18 +25,15 @@ using namespace SQ_Soil_Temperature;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-#if SQ_SOIL_TEMPERATURE
       KJ_ASSERT(_monica != nullptr);
   _soilTempComp.seta(0.5);
   _soilTempComp.setb(1.81);
   _soilTempComp.setc(0.49);
   _soilTempComp.setlambda_(2.454);
-#endif
 }
 
 void MonicaInterface::run() {
-#if SQ_SOIL_TEMPERATURE
-      KJ_ASSERT(_monica != nullptr);
+  KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
 #ifdef CPP2
   _soilTempExo.maxTAir = climateData.at(Climate::tmax);
@@ -59,8 +56,8 @@ void MonicaInterface::run() {
 #endif
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
-  soilTempExo.setmeanAnnualAirTemp(tampNtav.first);
-  soilTempRate.setheatFlux(0);
+  _soilTempExo.meanAnnualAirTemp = tampNtav.first;
+  _soilTempRate.heatFlux = 0;
 #endif
   if(_doInit){
     _soilTempComp._CalculateSoilTemperature.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
@@ -68,11 +65,10 @@ void MonicaInterface::run() {
   }
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  auto stMin = soilTempState.getminTSoil();
-  auto stMax = soilTempState.getmaxTSoil();
+  auto stMin = _soilTempState.minTSoil;
+  auto stMax = _soilTempState.maxTSoil;
   _monica->soilTemperatureNC().setSoilSurfaceTemperature((stMin + stMax)/2.0);
-  auto deep = soilTempState.getdeepLayerT();
+  auto deep = _soilTempState.deepLayerT;
   for (auto& sl : _monica->soilColumnNC()) sl.set_Vs_SoilTemperature(deep);
-#endif
 #endif
 }

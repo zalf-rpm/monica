@@ -15,31 +15,27 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#if STICS_SOIL_TEMPERATURE
 #include "Stics_soil_temperature/soil_tempComponent.h"
-#endif
 #include "core/monica-parameters.h"
 
 namespace monica { class MonicaModel;}
 
 namespace Stics_soil_temperature {
 
-class MonicaInterface {
+class MonicaInterface : public monica::Run {
 public:
   explicit MonicaInterface(monica::MonicaModel *monica);
 
   void init(const monica::CentralParameterProvider &cpp);
 
-  void run();
+  void run() override;
 
-#if STICS_SOIL_TEMPERATURE
   soil_tempComponent soilTempComp;
   soil_tempState soilTempState;
   soil_tempState soilTempState1;
   soil_tempExogenous soilTempExo;
   soil_tempRate soilTempRate;
   soil_tempAuxiliary soilTempAux;
-#endif
 
 private:
   monica::MonicaModel *_monica;

@@ -73,46 +73,40 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                          _envPs.p_LeachingDepth, _envPs.p_timeStep,
                                          _cropPs.pc_MinimumAvailableN);
 #endif
-
-#ifdef MONICA_SOILTEMP
-  _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp::MonicaInterface>(this);
-  _instance_Monica_SoilTemp->init(cpp);
-#endif
-
-#if DSSAT_ST_STANDALONE
-  _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone::MonicaInterface>(this);
-  _instance_DSSAT_ST_standalone->init(cpp);
-#endif
-
-#if DSSAT_EPICST_STANDALONE
-  _instance_DSSAT_EPICST_standalone = kj::heap<DSSAT_EPICST_standalone::MonicaInterface>(this);
-  _instance_DSSAT_EPICST_standalone->init(cpp);
-#endif
-
-#if SIMPLACE_SOIL_TEMPERATURE
+  auto stModelName = cpp.simulationParameters.soilTempModel;
+  if (stModelName == "Monica_SoilTemp") {
+    _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp::MonicaInterface>(this);
+    _instance_Monica_SoilTemp->init(cpp);
+    _soilTempInstance = _instance_Monica_SoilTemp.get();
+  } else if(stModelName == "DSSAT_ST_standalone") {
+    _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone::MonicaInterface>(this);
+    _instance_DSSAT_ST_standalone->init(cpp);
+    _soilTempInstance = _instance_DSSAT_ST_standalone.get();
+  } else if(stModelName == "DSSAT_EPICST_standalone") {
+    _instance_DSSAT_EPICST_standalone = kj::heap<DSSAT_EPICST_standalone::MonicaInterface>(this);
+    _instance_DSSAT_EPICST_standalone->init(cpp);
+    _soilTempInstance = _instance_DSSAT_EPICST_standalone.get();
+  } else if(stModelName == "Simplace_Soil_Temperature") {
   _instance_Simplace_Soil_Temperature = kj::heap<Simplace_Soil_Temperature::MonicaInterface>(this);
   _instance_Simplace_Soil_Temperature->init(cpp);
-#endif
-
-#if STICS_SOIL_TEMPERATURE
+    _soilTempInstance = _instance_Simplace_Soil_Temperature.get();
+  } else if(stModelName == "Stics_soil_temperature") {
   _instance_Stics_soil_temperature = kj::heap<Stics_soil_temperature::MonicaInterface>(this);
   _instance_Stics_soil_temperature->init(cpp);
-#endif
-
-#if SQ_SOIL_TEMPERATURE
-  _instance_SQ_Soil_Temperature = kj::heap<SQ_Soil_Temperature::MonicaInterface>(this);
+    _soilTempInstance = _instance_Stics_soil_temperature.get();
+  } else if(stModelName == "SQ_Soil_Temperature") {
+    _instance_SQ_Soil_Temperature = kj::heap<SQ_Soil_Temperature::MonicaInterface>(this);
   _instance_SQ_Soil_Temperature->init(cpp);
-#endif
-
-#if BIOMASURFACEPARTONSOILSWATC
+    _soilTempInstance = _instance_SQ_Soil_Temperature.get();
+  } else if(stModelName == "BiomaSurfacePartonSoilSWATC") {
   _instance_BiomaSurfacePartonSoilSWATC = kj::heap<BiomaSurfacePartonSoilSWATC::MonicaInterface>(this);
   _instance_BiomaSurfacePartonSoilSWATC->init(cpp);
-#endif
-
-#if BIOMASURFACESWATSOILSWATC
-  _instance_BiomaSurfaceSWATSoilSWATC = kj::heap<BiomaSurfaceSWATSoilSWATC::MonicaInterface>(this);
-  _instance_BiomaSurfaceSWATSoilSWATC->init(cpp);
-#endif
+    _soilTempInstance = _instance_BiomaSurfacePartonSoilSWATC.get();
+  } else if(stModelName == "BiomaSurfaceSWATSoilSWATC") {
+    _instance_BiomaSurfaceSWATSoilSWATC = kj::heap<BiomaSurfaceSWATSoilSWATC::MonicaInterface>(this);
+    _instance_BiomaSurfaceSWATSoilSWATC->init(cpp);
+    _soilTempInstance = _instance_BiomaSurfaceSWATSoilSWATC.get();
+  }
 }
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
@@ -713,47 +707,20 @@ void MonicaModel::generalStep() {
   }
 #endif
 
-#if MONICA_SOILTEMP || DSSAT_ST_STANDALONE || DSSAT_EPICST_STANDALONE || SIMPLACE_SOIL_TEMPERATURE || STICS_SOIL_TEMPERATURE || BIOMASURFACEPARTONSOILSWATC || BIOMASURFACESWATSOILSWATC
-#if MONICA_ORIG_SOILTEMP
+#ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTemperature->step(tmin, tmax, globrad);
-#endif
-#else
-  _soilTemperature->step(tmin, tmax, globrad);
-#endif
-
-#if MONICA_SOILTEMP
   _instance_Monica_SoilTemp->run();
-#endif
-
-#if DSSAT_ST_STANDALONE
   _instance_DSSAT_ST_standalone->run();
-#endif
-
-#if DSSAT_EPICST_STANDALONE
   _instance_DSSAT_EPICST_standalone->run();
-#endif
-
-#if SIMPLACE_SOIL_TEMPERATURE
   _instance_Simplace_Soil_Temperature->run();
-#endif
-
-#if STICS_SOIL_TEMPERATURE
   _instance_Stics_soil_temperature->run();
-#endif
-
-#if SQ_SOIL_TEMPERATURE
   _instance_SQ_Soil_Temperature->run();
-#endif
-
-#if BIOMASURFACEPARTONSOILSWATC
   _instance_BiomaSurfacePartonSoilSWATC->run();
-#endif
-
-#if BIOMASURFACESWATSOILSWATC
   _instance_BiomaSurfaceSWATSoilSWATC->run();
-#endif
+#else
+  if(!_soilTempInstance) _soilTemperature->step(tmin, tmax, globrad);
+  else _soilTempInstance->run();
 
-#ifndef AMEI_SENSITIVITY_ANALYSIS
   // first try to get ReferenceEvapotranspiration from climate data
   auto et0_it = climateData.find(Climate::et0);
   double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;
