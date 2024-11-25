@@ -170,7 +170,7 @@ void step(double vs_DepthGroundwaterTable,
 
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
 
-private:
+//private:
   SoilColumn& soilColumn;
   const SiteParameters& siteParameters;
   MonicaModel& monica;
