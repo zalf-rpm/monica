@@ -842,29 +842,22 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
                                          double vw_WindSpeed, double vw_WindSpeedHeight, double vw_GlobalRadiation,
                                          int vc_DevelopmentalStage, int vs_JulianDay,
                                          double vs_Latitude, double vw_ReferenceEvapotranspiration) {
-  double vm_EReducer_1 = 0.0;
-  double vm_EReducer_2 = 0.0;
-  double vm_EReducer_3 = 0.0;
-  double pm_EvaporationZeta = 0.0;
-  double pm_MaximumEvaporationImpactDepth = 0.0; // Das ist die Tiefe, bis zu der maximal die Evaporation vordringen kann
-  double vm_EReducer = 0.0;
   double vm_PotentialEvapotranspiration = 0.0;
   double vc_EvaporatedFromIntercept = 0.0;
   vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
-
   double vm_SnowDepth = snowComponent->getSnowDepth();
 
-  // Berechnung der Bodenevaporation bis max. 4dm Tiefe
-  pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
+  // calculate soil evaporation until max 0.4m depth
+  double pm_EvaporationZeta = _params.pm_EvaporationZeta;
 
-  // Das sind die Steuerungsparameter für die Steigung der Entzugsfunktion
+  // parameter for the slope of the deprivation function
   vm_XSACriticalSoilMoisture = _params.pm_XSACriticalSoilMoisture;
 
   /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
    * da muss was dran gemacht werden */
-  pm_MaximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
-
+  // this is the depth until which the evaporation can penetrate maximally
+  double pm_MaximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
 
   // If a crop grows, ETp is taken from crop module
   if (vc_DevelopmentalStage > 0) {
@@ -930,9 +923,10 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
     if (vm_PotentialEvapotranspiration > 0) { // Evaporation from soil
       for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-        vm_EReducer_1 = get_EReducer_1(i_Layer, vc_PercentageSoilCoverage,
+        double vm_EReducer_1 = get_EReducer_1(i_Layer, vc_PercentageSoilCoverage,
                                        vm_PotentialEvapotranspiration);
 
+        double vm_EReducer_2 = 0.0;
         if (i_Layer >= pm_MaximumEvaporationImpactDepth) {
           // layer is too deep for evaporation
           vm_EReducer_2 = 0.0;
@@ -943,6 +937,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
                                                 pm_EvaporationZeta, vm_LayerThickness[i_Layer]);
         }
 
+        double vm_EReducer_3 = 0;
         if (i_Layer > 0) {
           if (vm_SoilMoisture[i_Layer] < vm_SoilMoisture[i_Layer - 1]) {
             // 3rd factor to consider if above layer contains more water than
@@ -955,7 +950,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
           vm_EReducer_3 = 1.0;
         }
         // EReducer-> factor to reduce evaporation
-        vm_EReducer = vm_EReducer_1 * vm_EReducer_2 * vm_EReducer_3;
+        double vm_EReducer = vm_EReducer_1 * vm_EReducer_2 * vm_EReducer_3;
 
         if (vc_DevelopmentalStage > 0) {
           // vegetation is present
@@ -1037,11 +1032,6 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
                                                  double vw_MeanAirTemperature, double vw_WindSpeed,
                                                  double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay,
                                                  double vs_Latitude) {
-  double vc_EffectiveDayLenght;
-  double vc_PhotoperiodicDaylength;
-  double vc_OvercastDayRadiation;
-  double vm_AerodynamicResistance; //[s m-1]
-
   double vc_Declination = -23.4 * cos(2.0 * M_PI * ((vs_JulianDay + 10.0) / 365.0));
   // old SINLD
   double vc_DeclinationSinus = sin(vc_Declination * M_PI / 180.0) * sin(vs_Latitude * M_PI / 180.0);
@@ -1055,11 +1045,11 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   double arg_EffectiveDayLength = (-sin(8.0 * M_PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
   arg_EffectiveDayLength = bound(-1.0, arg_EffectiveDayLength,
                                  1.0); //The argument of asin must be in the range of -1 to 1
-  vc_EffectiveDayLenght = 12.0 * (M_PI + 2.0 * asin(arg_EffectiveDayLength)) / M_PI;
+  //double vc_EffectiveDayLenght = 12.0 * (M_PI + 2.0 * asin(arg_EffectiveDayLength)) / M_PI;
 
   double arg_PhotoDayLength = (-sin(-6.0 * M_PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
   arg_PhotoDayLength = bound(-1.0, arg_PhotoDayLength, 1.0); //The argument of asin must be in the range of -1 to 1
-  vc_PhotoperiodicDaylength = 12.0 * (M_PI + 2.0 * asin(arg_PhotoDayLength)) / M_PI;
+  //double vc_PhotoperiodicDaylength = 12.0 * (M_PI + 2.0 * asin(arg_PhotoDayLength)) / M_PI;
 
   double arg_PhotAct = min(1.0, ((vc_DeclinationSinus / vc_DeclinationCosinus) *
                                  (vc_DeclinationSinus / vc_DeclinationCosinus))); //The argument of sqrt must be >= 0
@@ -1074,7 +1064,7 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
                                                                                  / (vc_AstronomicDayLenght * 3600.0)));
   }
 
-  vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
+  //double vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
   double SC = 24.0 * 60.0 / M_PI * 8.20 * (1.0 + 0.033 * cos(2.0 * M_PI * vs_JulianDay / 365.0));
   double arg_SHA = bound(-1.0, -tan(vs_Latitude * M_PI / 180.0) * tan(vc_Declination * M_PI / 180.0),
                          1.0); //The argument of acos must be in the range of -1 to 1
@@ -1126,8 +1116,8 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   double vm_WindSpeed_2m = max(0.5, vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42))));
   // 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
 
-  // Calculation of the aerodynamic resistance
-  vm_AerodynamicResistance = 208.0 / vm_WindSpeed_2m;
+  // Calculation of the aerodynamic resistance [s m-1]
+  double vm_AerodynamicResistance = 208.0 / vm_WindSpeed_2m;
 
   vc_StomataResistance = 100; // FAO default value [s m-1]
 
