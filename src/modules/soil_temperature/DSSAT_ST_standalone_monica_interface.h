@@ -31,7 +31,7 @@ public:
   void run() override;
 
   STEMP_Component _soilTempComp;
-  STEMP_State _soilTempState;
+  STEMP_State soilTempState;
   STEMP_State _soilTempState1;
   STEMP_Exogenous _soilTempExo;
   STEMP_Rate _soilTempRate;

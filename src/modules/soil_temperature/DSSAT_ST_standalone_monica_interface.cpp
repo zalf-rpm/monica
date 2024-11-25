@@ -111,7 +111,7 @@ void MonicaInterface::run() {
     _soilTempExo.TAV = tampNtav.first;
     _soilTempExo.TAMP = tampNtav.second;
 #endif
-    _soilTempComp._STEMP.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+    _soilTempComp._STEMP.Init(soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
   }
 #ifndef AMEI_SENSITIVITY_ANALYSIS
@@ -121,13 +121,13 @@ void MonicaInterface::run() {
   }
   _soilTempComp.setSW(sws);
 #endif
-  _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+  _soilTempComp.Calculate_Model(soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.SRFTEMP);
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.SRFTEMP);
   int i = 0;
-      KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.ST.size());
+  KJ_ASSERT(_monica->soilColumnNC().size() == soilTempState.ST.size());
   for (auto& sl : _monica->soilColumnNC()){
-    sl.set_Vs_SoilTemperature(_soilTempState.ST.at(i++));
+    sl.set_Vs_SoilTemperature(soilTempState.ST.at(i++));
   }
 #endif
 }
