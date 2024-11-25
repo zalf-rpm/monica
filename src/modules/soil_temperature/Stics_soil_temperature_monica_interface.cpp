@@ -62,26 +62,16 @@ void MonicaInterface::run() {
 #endif
   if(_doInit){
     soilTempComp.setair_temp_day1(climateData.at(Climate::tavg));
-    soilTempComp._Temp_profile.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+    soilTempComp._Temp_profile.Init(_soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
     _doInit = false;
   }
-  soilTempComp.Calculate_Model(soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
+  soilTempComp.Calculate_Model(_soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(soilTempState.canopy_temp_avg);
-  const auto& soilTemp = soilTempState.temp_profile;
-  auto& sc = _monica->soilColumnNC();
-  double sumT = 0;
-  int count = 0;
-  int monicaLayer = 0;
-  for (size_t i = 0; i < soilTemp.size(); ++i){
-    if (i % 10 == 0 && i > 0 && monicaLayer < sc.size()) {
-      sc.at(monicaLayer).set_Vs_SoilTemperature(sumT / 10);
-      ++monicaLayer;
-      count = 0;
-      sumT = 0;
-    }
-    sumT += soilTemp.at(i);
-    ++count;
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.canopy_temp_avg);
+  int i = 0;
+  KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.layer_temp.size());
+  for (auto& sl : _monica->soilColumnNC()){
+    sl.set_Vs_SoilTemperature(_soilTempState.layer_temp.at(i++));
   }
 #endif
 }

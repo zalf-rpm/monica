@@ -31,7 +31,7 @@ public:
   void run() override;
 
   soil_tempComponent soilTempComp;
-  soil_tempState soilTempState;
+  soil_tempState _soilTempState;
   soil_tempState soilTempState1;
   soil_tempExogenous soilTempExo;
   soil_tempRate soilTempRate;

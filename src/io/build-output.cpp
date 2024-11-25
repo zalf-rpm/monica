@@ -760,6 +760,12 @@ BOTRes& monica::buildOutputTable()
         return monica.cropGrowth() ? round(monica.cropGrowth()->get_GrossPrimaryProduction(), 5) : 0.0;
       });
 
+      build({ id++, "net_radiation", "", "" },
+      [](const MonicaModel& monica, OId oid)
+      {
+        return monica.cropGrowth() ? round(monica.soilMoisture().vw_NetRadiation, 5) : 0.0;
+      });
+
       build({ id++, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop" },
         [](const MonicaModel& monica, OId oid)
         {
@@ -885,10 +891,16 @@ BOTRes& monica::buildOutputTable()
         return round(monica.soilMoisture().get_PotentialEvapotranspiration(), 1);
       });
 
-      build({ id++, "Evaporated_from_surface", "mm", "evaporated from surface" },
+      build({ id++, "Evaporated_from_surface", "mm", "evaporated from surface when water logging" },
       [](const MonicaModel& monica, OId oid)
       {
         return round(monica.soilMoisture().vm_EvaporatedFromSurface, 1);
+      });
+
+      build({ id++, "Act_soil_evaporation", "mm", "evaporation from soil" },
+      [](const MonicaModel& monica, OId oid)
+      {
+        return getComplexValues<double>(oid, [&](int i){ return monica.soilMoisture().vm_Evaporation.at(i); }, 2);
       });
 
       build({ id++, "Act_ET", "mm", "actual evapotranspiration = Act_Trans + Act_Ev + Evaporation_from_intercept + Evaporated_from_surface" },
@@ -1587,11 +1599,11 @@ BOTRes& monica::buildOutputTable()
 #ifdef CPP2
       build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.SRFTEMP, 6);
+                return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.SRFTEMP, 6);
             });
       build({ id++, "AMEI_DSSAT_ST_standalone_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.ST.at(i); }, 6);
+                return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.ST.at(i); }, 6);
             });
 #else
       build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
@@ -1647,11 +1659,11 @@ BOTRes& monica::buildOutputTable()
 #ifdef CPP2
       build({ id++, "AMEI_Stics_soil_temperature_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.canopy_temp_avg, 6);
+              return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->_soilTempState.canopy_temp_avg, 6);
             });
       build({ id++, "AMEI_Stics_soil_temperature_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, OId oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.layer_temp.at(i); }, 6);
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->_soilTempState.layer_temp.at(i); }, 6);
             });
 #else
       build({ id++, "AMEI_Stics_soil_temperature_SurfTemp", "°C", "" },
