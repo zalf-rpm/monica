@@ -718,8 +718,11 @@ void MonicaModel::generalStep() {
   _instance_BiomaSurfacePartonSoilSWATC->run();
   _instance_BiomaSurfaceSWATSoilSWATC->run();
 #else
-  if(!_soilTempInstance) _soilTemperature->step(tmin, tmax, globrad);
-  else _soilTempInstance->run();
+  if(_soilTempInstance) {
+    _soilTempInstance->run();
+  } else {
+    _soilTemperature->step(tmin, tmax, globrad);
+  }
 
   // first try to get ReferenceEvapotranspiration from climate data
   auto et0_it = climateData.find(Climate::et0);
