@@ -30,14 +30,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-parameters.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"
+#include "tools/date.h"
 #include "voc-guenther.h"
 #include "voc-jjv.h"
 #include "voc-common.h"
 #include "photosynthesis-FvCB.h"
 #include "O3-impact.h"
 #include "io/output.h"
-
-const double PI = 3.14159265358979323;
 
 using namespace std;
 using namespace monica;
@@ -215,7 +214,7 @@ CropModule::CropModule(SoilColumn &sc,
   vc_RootBiomass = vc_OrganBiomass[0];
 
   /** @todo Christian: Umrechnung korrekt wenn Biomasse in [kg m-2]? */
-  vc_TotalRootLength = (vc_RootBiomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * PI);
+  vc_TotalRootLength = (vc_RootBiomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * M_PI);
 
   vc_TotalBiomassNContent =
       (vc_AbovegroundBiomass * pc_NConcentrationAbovegroundBiomass) + (vc_RootBiomass * pc_NConcentrationRoot);
@@ -999,48 +998,26 @@ void CropModule::step(double vw_MeanAirTemperature,
 void CropModule::fc_Radiation(double vs_JulianDay,
                               double vw_GlobalRadiation,
                               double vw_SunshineHours) {
-
-  double vc_DeclinationSinus = 0.0;  // old SINLD
-  double vc_DeclinationCosinus = 0.0; // old COSLD
-
   // Calculation of declination - old DEC
-  vc_Declination = -23.4 * cos(2.0 * PI * ((vs_JulianDay + 10.0) / 365.0));
+  vc_Declination = -23.4 * cos(2.0 * M_PI * ((vs_JulianDay + 10.0) / 365.0));
 
-  vc_DeclinationSinus = sin(vc_Declination * PI / 180.0) * sin(vs_Latitude * PI / 180.0);
-  vc_DeclinationCosinus = cos(vc_Declination * PI / 180.0) * cos(vs_Latitude * PI / 180.0);
+  //old SINLD
+  double declSin = sin(vc_Declination * M_PI / 180.0) * sin(vs_Latitude * M_PI / 180.0);
+  //old COSLD
+  double declCos = cos(vc_Declination * M_PI / 180.0) * cos(vs_Latitude * M_PI / 180.0);
 
-  // Calculation of the atmospheric day lenght - old DL
-  double arg_AstroDayLength = vc_DeclinationSinus / vc_DeclinationCosinus;
-  arg_AstroDayLength = bound(-1.0, arg_AstroDayLength, 1.0); // The argument of asin must be in the range of -1 to 1
-  vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(arg_AstroDayLength)) / PI;
+  auto dls = Tools::dayLengths(vs_Latitude, vs_JulianDay);
 
-  // Calculation of the effective day length - old DLE
-
-  double EDLHelper = (-sin(8.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
-
-  if ((EDLHelper < -1.0) || (EDLHelper > 1.0)) {
-    vc_EffectiveDayLength = 0.01;
-  } else {
-    vc_EffectiveDayLength = 12.0 * (PI + 2.0 * asin(EDLHelper)) / PI;
-  }
-  /*EDLHelper = bound(-1.0, EDLHelper, 1.0);
-  vc_EffectiveDayLength = 12.0 * (PI + 2.0 * asin(EDLHelper)) / PI;*/
-
-  // old DLP
-  double arg_PhotoDayLength = (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
-  arg_PhotoDayLength = bound(-1.0, arg_PhotoDayLength, 1.0); // The argument of asin must be in the range of -1 to 1
-  vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(arg_PhotoDayLength)) / PI;
-
-  // Calculation of the mean photosynthetically active radiation [J m-2] - old RDN
-  double arg_PhotAct = min(1.0, ((vc_DeclinationSinus / vc_DeclinationCosinus) *
-                                 (vc_DeclinationSinus / vc_DeclinationCosinus))); // The argument of sqrt must be >= 0
-  vc_PhotActRadiationMean = 3600.0 * (vc_DeclinationSinus * vc_AstronomicDayLenght +
-                                      24.0 / PI * vc_DeclinationCosinus * sqrt(1.0 - arg_PhotAct));
+  // Calculation of the mean photosynthetically active radiation [J m-2] -> old RDN
+  // the argument of sqrt must be >= 0
+  double photActRad = min(1.0, ((declSin / declCos) * (declSin / declCos)));
+  vc_PhotActRadiationMean = 3600.0 * (declSin * dls.astronomicDayLenght +
+                                      24.0 / M_PI * declCos * sqrt(1.0 - photActRad));
 
   // Calculation of radiation on a clear day [J m-2] - old DRC
-  if (vc_PhotActRadiationMean > 0 && vc_AstronomicDayLenght > 0) {
+  if (vc_PhotActRadiationMean > 0 && dls.astronomicDayLenght > 0) {
     vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean *
-                           exp(-0.14 / (vc_PhotActRadiationMean / (vc_AstronomicDayLenght * 3600.0)));
+                           exp(-0.14 / (vc_PhotActRadiationMean / (dls.astronomicDayLenght * 3600.0)));
   } else {
     vc_ClearDayRadiation = 0;
   }
@@ -1050,19 +1027,19 @@ void CropModule::fc_Radiation(double vs_JulianDay,
 
   // Calculation of extraterrestrial radiation - old EXT
   double pc_SolarConstant = 0.082; //[MJ m-2 d-1] Note: Here is the difference to HERMES, which calculates in [J cm-2 d-1]!
-  double SC = 24.0 * 60.0 / PI * pc_SolarConstant * (1.0 + 0.033 * cos(2.0 * PI * vs_JulianDay / 365.0));
+  double SC = 24.0 * 60.0 / M_PI * pc_SolarConstant * (1.0 + 0.033 * cos(2.0 * M_PI * vs_JulianDay / 365.0));
 
-  double arg_SolarAngle = -tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0);
+  double arg_SolarAngle = -tan(vs_Latitude * M_PI / 180.0) * tan(vc_Declination * M_PI / 180.0);
   arg_SolarAngle = bound(-1.0, arg_SolarAngle, 1.0);
   double vc_SunsetSolarAngle = acos(arg_SolarAngle);
   vc_ExtraterrestrialRadiation =
-      SC * (vc_SunsetSolarAngle * vc_DeclinationSinus + vc_DeclinationCosinus * sin(vc_SunsetSolarAngle)); // [MJ m-2]
+      SC * (vc_SunsetSolarAngle * declSin + declCos * sin(vc_SunsetSolarAngle)); // [MJ m-2]
 
   if (vw_GlobalRadiation > 0.0) {
     vc_GlobalRadiation = vw_GlobalRadiation;
-  } else if (vc_AstronomicDayLenght > 0) {
+  } else if (dls.astronomicDayLenght > 0) {
     vc_GlobalRadiation = vc_ExtraterrestrialRadiation *
-                         (0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLenght);
+                         (0.19 + 0.55 * vw_SunshineHours / dls.astronomicDayLenght);
   } else {
     vc_GlobalRadiation = 0;
   }
@@ -1487,7 +1464,7 @@ void CropModule::fc_CropGreenArea(double vw_MeanAirTemperature,
                       (d_LeafBiomassDecrement * d_SpecificLeafAreaEarly * vc_TimeStep); // [ha ha-1]
 
   if (vc_LeafAreaIndex <= 0.0) vc_LeafAreaIndex = 0.001;
-  vc_GreenAreaIndex = vc_LeafAreaIndex + (vc_CropHeight * PI * vc_CropDiameter * pc_PlantDensity); // [m2 m-2]
+  vc_GreenAreaIndex = vc_LeafAreaIndex + (vc_CropHeight * M_PI * vc_CropDiameter * pc_PlantDensity); // [m2 m-2]
 }
 
 /**
@@ -1996,7 +1973,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double vc_NetRadiationUseEfficiency = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiency;
   double vc_NetRadiationUseEfficiencyReference = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiencyReference;
 
-  double SSLAE = sin((90.0 + vc_Declination - vs_Latitude) * PI / 180.0); // = HERMES
+  double SSLAE = sin((90.0 + vc_Declination - vs_Latitude) * M_PI / 180.0); // = HERMES
 
   double X = log(1.0 + 0.45 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency /
                        (SSLAE * vc_AssimilationRate)); // = HERMES
@@ -3194,11 +3171,11 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   //
   //  if (i_Layer > 1) {
   //    vc_RootLengthInLayer[i_Layer] = fabs(vc_RootLengthToLayer[i_Layer] - vc_RootLengthToLayer[i_Layer - 1])
-  //			    / (vc_RootDiameter[i_Layer] * vc_RootDiameter[i_Layer] * PI) / vs_LayerThickness;
+  //			    / (vc_RootDiameter[i_Layer] * vc_RootDiameter[i_Layer] * M_PI) / vs_LayerThickness;
   //    // [m m-3]
   //  } else {
   //    vc_RootLengthInLayer[i_Layer] = fabs(vc_RootLengthToLayer[i_Layer]) / (vc_RootDiameter[i_Layer]
-  //							    * vc_RootDiameter[i_Layer] * PI) / vs_LayerThickness;
+  //							    * vc_RootDiameter[i_Layer] * M_PI) / vs_LayerThickness;
   //    // [m m-3]
   //  }
   //
@@ -3206,7 +3183,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   //  vc_RootDensity[i_Layer] = vc_RootLengthInLayer[i_Layer];
   //
   //  // Root surface [m m-2]
-  //  vc_RootSurface[i_Layer] = vc_RootDensity[i_Layer] * vc_RootDiameter[i_Layer] * 2.0 * PI;
+  //  vc_RootSurface[i_Layer] = vc_RootDensity[i_Layer] * vc_RootDiameter[i_Layer] * 2.0 * M_PI;
   //  }
   //
   //  vc_TotalRootLength = 0;
@@ -3669,11 +3646,11 @@ void CropModule::fc_CropNUptake(size_t vc_GroundwaterTable,
 
       vc_DiffusiveNUptakeFromLayer[i_Layer] = (vc_DiffusionCoeff[i_Layer] *          // [m2 d-1]
                                                soilColumn[i_Layer].get_Vs_SoilMoisture_m3() * // [m3 m-3]
-                                               2.0 * PI * vc_RootDiameter[i_Layer] *      // [m]
+                                               2.0 * M_PI * vc_RootDiameter[i_Layer] *      // [m]
                                                (vs_SoilMineralNContent[i_Layer] / 1000.0 /  // [kg m-3]
                                                 soilColumn[i_Layer].get_Vs_SoilMoisture_m3() -
                                                 0.000014) *               // [m3 m-3]
-                                               sqrt(PI * vc_RootDensity[i_Layer])) * // [m m-3]
+                                               sqrt(M_PI * vc_RootDensity[i_Layer])) * // [m m-3]
                                               vc_RootDensity[i_Layer] *
                                               1000.0 * vc_TimeStep; // -->[kg m-2]
 

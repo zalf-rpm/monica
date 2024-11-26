@@ -25,7 +25,7 @@ using namespace SQ_Soil_Temperature;
 MonicaInterface::MonicaInterface(monica::MonicaModel *monica) : _monica(monica) {}
 
 void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
-      KJ_ASSERT(_monica != nullptr);
+  KJ_ASSERT(_monica != nullptr);
   _soilTempComp.seta(0.5);
   _soilTempComp.setb(1.81);
   _soilTempComp.setc(0.49);
@@ -37,7 +37,13 @@ void MonicaInterface::run() {
   auto climateData = _monica->currentStepClimateData();
 #ifdef CPP2
   _soilTempExo.maxTAir = climateData.at(Climate::tmax);
-  _soilTempExo.dayLength = climateData[Climate::sunhours];
+  if (climateData.find(Climate::sunhours) == climateData.end()) {
+    const auto& dls = Tools::dayLengths(_monica->siteParameters().vs_Latitude,
+      _monica->currentStepDate().julianDay());
+    _soilTempExo.dayLength = dls.astronomicDayLenght;
+  } else {
+    _soilTempExo.dayLength = climateData.at(Climate::sunhours);
+  }
   _soilTempExo.minTAir = climateData.at(Climate::tmin);
   _soilTempExo.meanTAir = climateData.at(Climate::tavg);
 #else
@@ -56,7 +62,7 @@ void MonicaInterface::run() {
 #endif
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
-  _soilTempExo.meanAnnualAirTemp = tampNtav.first;
+  _soilTempExo.meanAnnualAirTemp = tampNtav.second;
   _soilTempRate.heatFlux = 0;
 #endif
   if(_doInit){
