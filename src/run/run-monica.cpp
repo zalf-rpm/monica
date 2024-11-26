@@ -372,7 +372,7 @@ void storeResults(const vector<OId> &outputIds,
 
   size_t i = 0;
   results.resize(outputIds.size());
-  for (auto oid: outputIds) {
+  for (const auto& oid: outputIds) {
     auto ofi = ofs.find(oid.id);
     if (ofi != ofs.end()) results[i].push_back(ofi->second(monica, oid));
     ++i;
@@ -527,7 +527,7 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 
   vector<StoreData> storeData;
 
-  auto e2os = event2oids.array_items();
+  const auto& e2os = event2oids.array_items();
   for (size_t i = 0, size = e2os.size(); i < size; i += 2) {
     StoreData sd;
     sd.spec.origSpec = e2os[i];
@@ -541,8 +541,7 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
     } else if (spec.is_array()
                && spec.array_items().size() == 4
                && spec[0].is_string()
-               && (spec[0].string_value() == "while"
-                   ||
+               && (spec[0].string_value() == "while" ||
                    spec[0].string_value() == "at")) { //an array means it's an expression pattern to be stored at 'at'
       auto sa = spec.array_items();
       spec = J11Object{{spec[0].string_value(), J11Array(sa.begin() + 1, sa.end())}};

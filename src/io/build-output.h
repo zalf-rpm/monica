@@ -48,8 +48,8 @@ namespace monica
 
   struct DLL_API BOTRes
   {
-    std::map<int, std::function<json11::Json(const MonicaModel&, OId)>> ofs;
-    std::map<int, std::function<void(MonicaModel&, OId, json11::Json)>> setfs;
+    std::map<int, std::function<json11::Json(const MonicaModel&, const OId&)>> ofs;
+    std::map<int, std::function<void(MonicaModel&, const OId&, json11::Json)>> setfs;
     std::map<std::string, OutputMetadata> name2metadata;
   };
   DLL_API BOTRes& buildOutputTable();
