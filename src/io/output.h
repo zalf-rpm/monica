@@ -18,13 +18,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #pragma once
 
 #include <string>
-
+#include "kj/common.h"
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 #include "climate/climate-common.h"
-#include "tools/date.h"
 
 namespace monica {
   struct DLL_API OId : public Tools::Json11Serializable {
@@ -32,10 +31,10 @@ namespace monica {
 
     enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, _UNDEFINED_ORGAN_ };
 
-    OId() {}
+    OId() = default;
 
     //! just name 
-    OId(int id)
+    explicit OId(int id)
       : id(id)
     {}
 
@@ -90,9 +89,8 @@ namespace monica {
     OP timeAggOp{AVG}; //! aggregate values in a second time range (e.g. monthly)
     ORGAN organ{_UNDEFINED_ORGAN_};
     int fromLayer{-1}, toLayer{-1};
+    kj::Maybe<int> roundToDigits;
   };
-
-  //---------------------------------------------------------------------------
 
   struct DLL_API Output : public Tools::Json11Serializable
   {

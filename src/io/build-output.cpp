@@ -113,7 +113,7 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray)
 {
   vector<OId> outputIds;
 
-  auto getAggregationOp = [](J11Array arr, uint8_t index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
+  auto getAggregationOp = [](const J11Array& arr, uint8_t index, OId::OP def = OId::_UNDEFINED_OP_) -> OId::OP
   {
     if (arr.size() > index && arr[index].is_string())
     {
@@ -139,7 +139,7 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray)
   };
 
 
-  auto getOrgan = [](J11Array arr, uint8_t index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
+  auto getOrgan = [](const J11Array& arr, uint8_t index, OId::ORGAN def = OId::_UNDEFINED_ORGAN_) -> OId::ORGAN
   {
     if (arr.size() > index && arr[index].is_string())
     {
@@ -161,16 +161,13 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray)
   };
 
   const auto& name2metadata = buildOutputTable().name2metadata;
-  for (Json idj : oidArray)
-  {
-    if (idj.is_string())
-    {
-      string name = idj.string_value();
+  for (const Json& idj : oidArray) {
+    if (idj.is_string()) {
+      const string& name = idj.string_value();
       auto names = splitString(name, "|");
       names.resize(2);
       auto it = name2metadata.find(names[0]);
-      if (it != name2metadata.end())
-      {
+      if (it != name2metadata.end()) {
         auto data = it->second;
         OId oid(data.id);
         oid.name = data.name;
@@ -180,72 +177,59 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray)
         outputIds.push_back(oid);
       }
     }
-    else if (idj.is_array())
-    {
-      auto arr = idj.array_items();
-      if (arr.size() >= 1)
-      {
-        OId oid;
-
+    else if (idj.is_array()) {
+      const auto& arr = idj.array_items();
+      if (!arr.empty()) {
         string name = arr[0].string_value();
         auto names = splitString(name, "|");
         names.resize(2);
         auto it = name2metadata.find(names[0]);
-        if (it != name2metadata.end())
-        {
+        if (it != name2metadata.end()) {
+          OId oid;
           auto data = it->second;
           oid.id = data.id;
           oid.name = data.name;
           oid.displayName = names[1];
           oid.unit = data.unit;
           oid.jsonInput = Json(arr).dump();
-
-          if (arr.size() >= 2)
-          {
-            auto val1 = arr[1];
-            if (val1.is_number())
-            {
+          if (arr.size() >= 2) {
+            const auto& val1 = arr[1];
+            if (val1.is_number()) {
               oid.fromLayer = val1.int_value() - 1;
               oid.toLayer = oid.fromLayer;
-            }
-            else if (val1.is_string())
-            {
+            } else if (val1.is_string()) {
               auto op = getAggregationOp(arr, 1);
-              if (op != OId::_UNDEFINED_OP_)
-                oid.timeAggOp = op;
-              else
-                oid.organ = getOrgan(arr, 1, OId::_UNDEFINED_ORGAN_);
-            }
-            else if (val1.is_array())
-            {
+              if (op != OId::_UNDEFINED_OP_) oid.timeAggOp = op;
+              else oid.organ = getOrgan(arr, 1, OId::_UNDEFINED_ORGAN_);
+            } else if (val1.is_array()) {
               auto arr2 = arr[1].array_items();
-
-              if (arr2.size() >= 1)
-              {
-                auto val1_0 = arr2[0];
-                if (val1_0.is_number())
-                  oid.fromLayer = val1_0.int_value() - 1;
-                else if (val1_0.is_string())
-                  oid.organ = getOrgan(arr2, 0, OId::_UNDEFINED_ORGAN_);
+              if (!arr2.empty()) {
+                const auto& val1_0 = arr2[0];
+                if (val1_0.is_number()) oid.fromLayer = val1_0.int_value() - 1;
+                else if (val1_0.is_string()) oid.organ = getOrgan(arr2, 0, OId::_UNDEFINED_ORGAN_);
               }
-              if (arr2.size() >= 2)
-              {
-                auto val1_1 = arr2[1];
-                if (val1_1.is_number())
-                  oid.toLayer = val1_1.int_value() - 1;
-                else if (val1_1.is_string())
-                {
+              if (arr2.size() >= 2) {
+                const auto& val1_1 = arr2[1];
+                if (val1_1.is_number()) oid.toLayer = val1_1.int_value() - 1;
+                else if (val1_1.is_string()) {
                   oid.toLayer = oid.fromLayer;
                   oid.layerAggOp = getAggregationOp(arr2, 1, OId::AVG);
                 }
               }
-              if (arr2.size() >= 3)
-                oid.layerAggOp = getAggregationOp(arr2, 2, OId::AVG);
+              if (arr2.size() >= 3) oid.layerAggOp = getAggregationOp(arr2, 2, OId::AVG);
+            } else if (val1.is_object()) {
+              if (val1["round"].is_number()) oid.roundToDigits = val1["round"].int_value();
             }
           }
-          if (arr.size() >= 3)
-            oid.timeAggOp = getAggregationOp(arr, 2, OId::AVG);
-
+          if (arr.size() >= 3) {
+            if (arr[2].is_string()) oid.timeAggOp = getAggregationOp(arr, 2, OId::AVG);
+            else if (arr[2].is_object()) {
+              if (arr[2]["round"].is_number()) oid.roundToDigits = arr[2]["round"].int_value();
+            }
+          }
+          if (arr.size() == 4 && arr[3].is_object()) {
+            if (arr[3]["round"].is_number()) oid.roundToDigits = arr[3]["round"].int_value();
+          }
           outputIds.push_back(oid);
         }
       }
@@ -360,447 +344,453 @@ BOTRes& monica::buildOutputTable()
       int id = 0;
 
       build({ id++, "Count", "", "output 1 for counting things" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return 1;
       });
 
       build({ id++, "CM-count", "", "output the order number of the current cultivation method" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return monica.cultivationMethodCount();
       });
 
       build({ id++, "Date", "", "output current date" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return monica.currentStepDate().toIsoDateString();
       });
 
       build({ id++, "days-since-start", "", "output number of days since simulation start" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return monica.currentStepDate() - monica.simulationParameters().startDate;
       });
 
       build({ id++, "DOY", "", "output current day of year" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return int(monica.currentStepDate().dayOfYear());
       });
 
       build({ id++, "Month", "", "output current Month" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return int(monica.currentStepDate().month());
       });
 
       build({ id++, "Year", "", "output current Year" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return int(monica.currentStepDate().year());
       });
 
       build({ id++, "Crop", "", "crop name" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return monica.cropModule() ? monica.cropModule()->get_CropName() : "";
       });
 
       build({ id++, "TraDef", "0;1", "Transpiration deficit" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_TranspirationDeficit(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_TranspirationDeficit(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "NDef", "0;1", "Crop nitrogen deficit" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_CropNRedux(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_CropNRedux(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "RootNDef", "0;1", "Root nitrogen deficit" },
-      [](const MonicaModel& monica, OId oid)
+      [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->rootNRedux, 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->rootNRedux, oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "HeatRed", "0;1", " HeatStressRedux" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_HeatStressRedux(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_HeatStressRedux(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "FrostRed", "0;1", "FrostStressRedux" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_FrostStressRedux(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_FrostStressRedux(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "OxRed", "0;1", "OxygenDeficit" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_OxygenDeficit(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_OxygenDeficit(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "TimeUnderAnoxia", "0;1", "TimeUnderAnoxia" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->vc_TimeUnderAnoxia, 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->vc_TimeUnderAnoxia, oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "Stage", "1-6/7", "DevelopmentalStage" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return monica.cropModule() ? int(monica.cropModule()->get_DevelopmentalStage()) + 1 : 0;
       },
-        [](MonicaModel& monica, OId oid, Json value)
+        [](MonicaModel& monica, const OId& oid, Json value)
       {
         if (value.is_number() && monica.cropModule())
           monica.cropModule()->setStage(max(0, int(value.number_value()) - 1));
       });
 
       build({ id++, "TempSum", "�Cd", "CurrentTemperatureSum" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_CurrentTemperatureSum(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_CurrentTemperatureSum(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "VernF", "0;1", "VernalisationFactor" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_VernalisationFactor(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_VernalisationFactor(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "DaylF", "0;1", "DaylengthFactor" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_DaylengthFactor(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_DaylengthFactor(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "IncRoot", "kg ha-1", "OrganGrowthIncrement root" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::ROOT), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::ROOT), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "IncLeaf", "kg ha-1", "OrganGrowthIncrement leaf" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::LEAF), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::LEAF), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "IncShoot", "kg ha-1", "OrganGrowthIncrement shoot" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::SHOOT), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::SHOOT), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "IncFruit", "kg ha-1", "OrganGrowthIncrement fruit" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::FRUIT), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_OrganGrowthIncrement(OId::FRUIT), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "RelDev", "0;1", "RelativeTotalDevelopment" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_RelativeTotalDevelopment(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_RelativeTotalDevelopment(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "LT50", "°C", "LT50" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_LT50(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_LT50(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "AbBiom", "kgDM ha-1", "AbovegroundBiomass" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomass(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomass(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "OrgBiom", "kgDM ha-1", "get_OrganBiomass(i)" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         if (oid.isOrgan()
           && monica.cropModule()
           && monica.cropModule()->get_NumberOfOrgans() > oid.organ)
-          return round(monica.cropModule()->get_OrganBiomass(oid.organ), 1);
+          return round(monica.cropModule()->get_OrganBiomass(oid.organ), oid.roundToDigits.orDefault(1));
         else
           return 0.0;
       });
 
       build({ id++, "OrgGreenBiom", "kgDM ha-1", "get_OrganGreenBiomass(i)" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         if (oid.isOrgan()
           && monica.cropModule()
           && monica.cropModule()->get_NumberOfOrgans() > oid.organ)
-          return round(monica.cropModule()->get_OrganGreenBiomass(oid.organ), 1);
+          return round(monica.cropModule()->get_OrganGreenBiomass(oid.organ), oid.roundToDigits.orDefault(1));
         else
           return 0.0;
       });
 
       build({ id++, "Yield", "kgDM ha-1", "get_PrimaryCropYield" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_PrimaryCropYield(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_PrimaryCropYield(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield"},
-            [](const MonicaModel &monica, OId oid) {
-              return monica.cropModule() ? round(monica.cropModule()->get_SecondaryCropYield(), 3) : 0.0;
+            [](const MonicaModel &monica, const OId& oid) {
+              return monica.cropModule() ? round(monica.cropModule()->get_SecondaryCropYield(), oid.roundToDigits.orDefault(3)) : 0.0;
             });
 
       build({ id++, "sumExportedCutBiomass", "kgDM ha-1", "return sum (across cuts) of exported cut biomass for current crop" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->sumExportedCutBiomass(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->sumExportedCutBiomass(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "exportedCutBiomass", "kgDM ha-1", "return exported cut biomass for current crop and cut" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->exportedCutBiomass(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->exportedCutBiomass(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "sumResidueCutBiomass", "kgDM ha-1", "return sum (across cuts) of residue cut biomass for current crop" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->sumResidueCutBiomass(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->sumResidueCutBiomass(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "residueCutBiomass", "kgDM ha-1", "return residue cut biomass for current crop and cut" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->residueCutBiomass(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->residueCutBiomass(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "optCarbonExportedResidues", "kgDM ha-1", "return exported part of the residues according to optimal carbon balance" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.optCarbonExportedResidues(), 1);
+        return round(monica.optCarbonExportedResidues(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "optCarbonReturnedResidues", "kgDM ha-1", "return returned to soil part of the residues according to optimal carbon balance" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.optCarbonReturnedResidues(), 1);
+        return round(monica.optCarbonReturnedResidues(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "humusBalanceCarryOver", "Heq-NRW ha-1", "return humus balance carry over according to optimal carbon balance" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.humusBalanceCarryOver(), 1);
+        return round(monica.humusBalanceCarryOver(), oid.roundToDigits.orDefault(1));
       });
 
 
       build({ id++, "GroPhot", "kgCH2O ha-1", "GrossPhotosynthesisHaRate" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_GrossPhotosynthesisHaRate(), 4) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_GrossPhotosynthesisHaRate(), oid.roundToDigits.orDefault(4)) : 0.0;
       });
 
       build({ id++, "NetPhot", "kgCH2O ha-1", "NetPhotosynthesis" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_NetPhotosynthesis(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_NetPhotosynthesis(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "MaintR", "kgCH2O ha-1", "MaintenanceRespirationAS" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_MaintenanceRespirationAS(), 4) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_MaintenanceRespirationAS(), oid.roundToDigits.orDefault(4)) : 0.0;
       });
 
       build({ id++, "GrowthR", "kgCH2O ha-1", "GrowthRespirationAS" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_GrowthRespirationAS(), 4) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_GrowthRespirationAS(), oid.roundToDigits.orDefault(4)) : 0.0;
       });
 
       build({ id++, "StomRes", "s m-1", "StomataResistance" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_StomataResistance(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_StomataResistance(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "Height", "m", "CropHeight" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_CropHeight(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_CropHeight(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "LAI", "m2 m-2", "LeafAreaIndex" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_LeafAreaIndex(), 4) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_LeafAreaIndex(), oid.roundToDigits.orDefault(4)) : 0.0;
       });
 
       build({ id++, "RootDep", "layer#", "RootingDepth" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return monica.cropModule() ? int(monica.cropModule()->get_RootingDepth()) : 0;
       });
 
       build({ id++, "EffRootDep", "m", "Effective RootingDepth" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->getEffectiveRootingDepth(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->getEffectiveRootingDepth(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "TotBiomN", "kgN ha-1", "TotalBiomassNContent" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_TotalBiomassNContent(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_TotalBiomassNContent(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomassNContent(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomassNContent(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "SumNUp", "kgN ha-1", "SumTotalNUptake" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_SumTotalNUptake(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_SumTotalNUptake(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "ActNup", "kgN ha-1", "ActNUptake" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_ActNUptake(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_ActNUptake(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "RootWaUptak", "KgN ha-1", "RootWatUptakefromLayer" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.cropModule() ? monica.cropModule()->get_Transpiration(i) : 0.0; }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.cropModule() ? monica.cropModule()->get_Transpiration(i) : 0.0; }, oid.roundToDigits.orDefault(4));
       });
 
       build({id++, "PotNup", "kgN ha-1", "PotNUptake"},
-            [](const MonicaModel& monica, OId oid)
+            [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_PotNUptake(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_PotNUptake(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "NFixed", "kgN ha-1", "NFixed" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_BiologicalNFixation(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_BiologicalNFixation(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "Target", "kgN ha-1", "TargetNConcentration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_TargetNConcentration(), 3) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_TargetNConcentration(), oid.roundToDigits.orDefault(3)) : 0.0;
       });
 
       build({ id++, "CritN", "kgN ha-1", "CriticalNConcentration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_CriticalNConcentration(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_CriticalNConcentration(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "AbBiomNc", "kgN ha-1", "AbovegroundBiomassNConcentration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomassNConcentration(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomassNConcentration(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "Nstress", "-", "NitrogenStressIndex" }
 
-        , [](const MonicaModel& monica, OId oid)
+        , [](const MonicaModel& monica, const OId& oid)
       {
         double Nstress = 0;
-        double AbBiomNc = monica.cropModule() ? round(monica.cropModule()->get_AbovegroundBiomassNConcentration(), 5) : 0.0;
-        double CritN = monica.cropModule() ? round(monica.cropModule()->get_CriticalNConcentration(), 5) : 0.0;
+        double AbBiomNc = monica.cropModule() ? monica.cropModule()->get_AbovegroundBiomassNConcentration() : 0.0;
+        double CritN = monica.cropModule() ? monica.cropModule()->get_CriticalNConcentration(): 0.0;
 
         if (monica.cropModule())
         {
-          Nstress = AbBiomNc < CritN ? round((AbBiomNc / CritN), 5) : 1;
+          Nstress = AbBiomNc < CritN ? round((AbBiomNc / CritN), oid.roundToDigits.orDefault(5)) : 1;
         }
         return Nstress;
       });
 
       build({id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"},
-            [](const MonicaModel &monica, OId oid) {
-              return monica.cropModule() ? round(monica.cropModule()->get_PrimaryYieldNConcentration(), 3) : 0.0;
+            [](const MonicaModel &monica, const OId& oid) {
+              return monica.cropModule() ? round(monica.cropModule()->get_PrimaryYieldNConcentration(), oid.roundToDigits.orDefault(3)) : 0.0;
             });
 
 
       build({ id++, "YieldN", "kgN ha-1", "PrimaryYieldNContent" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_PrimaryYieldNContent(), 3) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_PrimaryYieldNContent(), oid.roundToDigits.orDefault(3)) : 0.0;
       });
 
       build({id++, "Protein", "kg kg-1", "RawProteinConcentration"},
-            [](const MonicaModel& monica, OId oid)
+            [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_RawProteinConcentration(), 3) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_RawProteinConcentration(), oid.roundToDigits.orDefault(3)) : 0.0;
       });
 
       build({ id++, "NPP", "kgC ha-1", "NPP" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_NetPrimaryProduction(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_NetPrimaryProduction(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "NPP-Organs", "kgC ha-1", "organ specific NPP" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         if (oid.isOrgan()
           && monica.cropModule()
           && monica.cropModule()->get_NumberOfOrgans() > oid.organ)
-          return round(monica.cropModule()->get_OrganSpecificNPP(oid.organ), 4);
+          return round(monica.cropModule()->get_OrganSpecificNPP(oid.organ), oid.roundToDigits.orDefault(4));
         else
           return 0.0;
       });
 
       build({ id++, "GPP", "kgC ha-1", "GPP" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_GrossPrimaryProduction(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_GrossPrimaryProduction(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
+      // build({ id++, "net_radiation", "", "" },
+      // [](const MonicaModel& monica, const OId& oid)
+      // {
+      //   return monica.cropModule() ? round(monica.soilMoisture().vw_NetRadiation, oid.roundToDigits.orDefault(3)) : 0.0;
+      // });
+
       build({ id++, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
         {
-          return monica.cropModule() ? round(monica.cropModule()->getFractionOfInterceptedRadiation1(), 5) : 0.0;
+          return monica.cropModule() ? round(monica.cropModule()->getFractionOfInterceptedRadiation1(), oid.roundToDigits.orDefault(5)) : 0.0;
         });
 
       build({ id++, "LightInterception2", "", "LightInterception of lower layer of taller crop" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
         {
-          return monica.cropModule() ? round(monica.cropModule()->getFractionOfInterceptedRadiation2(), 5) : 0.0;
+          return monica.cropModule() ? round(monica.cropModule()->getFractionOfInterceptedRadiation2(), oid.roundToDigits.orDefault(5)) : 0.0;
         });
 
       build({ id++, "Ra", "kgC ha-1", "autotrophic respiration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_AutotrophicRespiration(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_AutotrophicRespiration(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         if (oid.isOrgan()
           && monica.cropModule()
           && monica.cropModule()->get_NumberOfOrgans() > oid.organ)
-          return round(monica.cropModule()->get_OrganSpecificTotalRespired(oid.organ), 4);
+          return round(monica.cropModule()->get_OrganSpecificTotalRespired(oid.organ), oid.roundToDigits.orDefault(4));
         else
           return 0.0;
       });
 
       build({ id++, "Mois", "m3 m-3", "Soil moisture content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_SoilMoisture(i); }, 3);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_SoilMoisture(i); }, oid.roundToDigits.orDefault(4));
       },
-        [](MonicaModel& monica, OId oid, Json value)
+        [](MonicaModel& monica, const OId& oid, Json value)
       {
         setComplexValues(oid, [&](int i, Json j)
         {
@@ -810,153 +800,159 @@ BOTRes& monica::buildOutputTable()
       });
 
       build({ id++, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.cropModule() ? monica.cropModule()->get_NUptakeFromLayer(i) * 10000.0 : 0.0; }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.cropModule() ? monica.cropModule()->get_NUptakeFromLayer(i) * 10000.0 : 0.0; }, oid.roundToDigits.orDefault(4));
       });
 
 
       build({id++, "Irrig", "mm", "Irrigation"},
-            [](const MonicaModel& monica, OId oid)
+            [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.dailySumIrrigationWater(), 3);
+        return round(monica.dailySumIrrigationWater(), oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "Infilt", "mm", "Infiltration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_Infiltration(), 1);
+        return round(monica.soilMoisture().get_Infiltration(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "Surface", "mm", "Surface water storage" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_SurfaceWaterStorage(), 1);
+        return round(monica.soilMoisture().get_SurfaceWaterStorage(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "RunOff", "mm", "Surface runoff of current day" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_SurfaceRunOff(), 1);
+        return round(monica.soilMoisture().get_SurfaceRunOff(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "SnowD", "mm", "Snow depth" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_SnowDepth(), 1);
+        return round(monica.soilMoisture().get_SnowDepth(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "FrostD", "m", "Frost front depth in soil" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_FrostDepth(), 1);
+        return round(monica.soilMoisture().get_FrostDepth(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "ThawD", "m", "Thaw front depth in soil" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_ThawDepth(), 1);
+        return round(monica.soilMoisture().get_ThawDepth(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "PASW", "m3 m-3", "PASW" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return getComplexValues<double>(oid, [&](int i)
         {
           return monica.soilMoisture().get_SoilMoisture(i) - monica.soilColumn().at(i).vs_PermanentWiltingPoint();
-        }, 3);
+        }, oid.roundToDigits.orDefault(3));
       });
 
-      build({ id++, "SurfTemp", "�C", "" },
-        [](const MonicaModel& monica, OId oid)
+      build({ id++, "SurfTemp", "°C", "" },
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
+        return round(monica.soilTemperature().getSoilSurfaceTemperature(), oid.roundToDigits.orDefault(2));
       });
 
-      build({ id++, "STemp", "�C", "" },
-        [](const MonicaModel& monica, OId oid)
+      build({ id++, "STemp", "°C", "" },
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().getSoilTemperature(i); }, 1);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilTemperature().getSoilTemperature(i); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Act_Ev", "mm", "Actual evaporation" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_ActualEvaporation(), 1);
+        return round(monica.soilMoisture().get_ActualEvaporation(), oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Pot_ET", "mm", "potential evapotranspiration = ET0 * Kc = the plants water use" }
-        , [](const MonicaModel& monica, OId oid)
+        , [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_PotentialEvapotranspiration(), 1);
+        return round(monica.soilMoisture().get_PotentialEvapotranspiration(), oid.roundToDigits.orDefault(2));
       });
 
-      build({ id++, "Evaporated_from_surface", "mm", "evaporated from surface" },
-      [](const MonicaModel& monica, OId oid)
+      build({ id++, "Evaporated_from_surface", "mm", "evaporated from surface when water logging" },
+      [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().vm_EvaporatedFromSurface, 1);
+        return round(monica.soilMoisture().vm_EvaporatedFromSurface, oid.roundToDigits.orDefault(1));
       });
+
+      //build({ id++, "Act_soil_evaporation", "mm", "evaporation from soil" },
+      //[](const MonicaModel& monica, const OId& oid)
+      //{
+      //  return getComplexValues<double>(oid, [&](int i){ return monica.soilMoisture().vm_Evaporation.at(i); }, oid.roundToDigits.orDefault(2));
+      //});
 
       build({ id++, "Act_ET", "mm", "actual evapotranspiration = Act_Trans + Act_Ev + Evaporation_from_intercept + Evaporated_from_surface" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_ActualEvapotranspiration(), 1);
+        return round(monica.soilMoisture().get_ActualEvapotranspiration(), oid.roundToDigits.orDefault(2));
       });
 
       //build({ id++, "Act_ET2", "mm", "" },
-      //	[](const MonicaModel& monica, OId oid)
+      //	[](const MonicaModel& monica, const OId& oid)
       //{
-      //	return round((monica.soilMoisture().get_ActualEvaporation() + monica.getTranspiration()), 2);
+      //	return round((monica.soilMoisture().get_ActualEvaporation() + monica.getTranspiration()), oid.roundToDigits.orDefault(2));
       //});
 
       build({ id++, "ET0", "mm", "Reference evapotranspiration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_ET0(), 1);
+        return round(monica.soilMoisture().get_ET0(), oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Kc", "", "plant coefficient to calculate with ET0 the plants water use (ET0 * Kc)" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_KcFactor(), 3);
+        return round(monica.soilMoisture().get_KcFactor(), oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.get_AtmosphericCO2Concentration(), 0);
+        return round(monica.get_AtmosphericCO2Concentration(), oid.roundToDigits.orDefault(0));
       });
 
       build({ id++, "AtmO3", "ppb", "Atmospheric O3 concentration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.get_AtmosphericO3Concentration(), 0);
+        return round(monica.get_AtmosphericO3Concentration(), oid.roundToDigits.orDefault(0));
       });
 
       build({ id++, "Groundw", "m", "rounded according to interna usage" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.get_GroundwaterDepth(), 2);
+        return round(monica.get_GroundwaterDepth(), oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Recharge", "mm", "Groundwater recharge" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_GroundwaterRecharge(), 3);
+        return round(monica.soilMoisture().get_GroundwaterRecharge(), oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "NLeach", "kgN ha-1", "N leaching" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilTransport().get_NLeaching(), 3);
+        return round(monica.soilTransport().get_NLeaching(), oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "NO3", "kgN m-3", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNO3(); }, 6);
+        return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNO3(); }, oid.roundToDigits.orDefault(6));
       },
-        [](MonicaModel& monica, OId oid, Json value)
+        [](MonicaModel& monica, const OId& oid, Json value)
       {
         setComplexValues(oid, [&](int i, Json j)
         {
@@ -966,13 +962,13 @@ BOTRes& monica::buildOutputTable()
       });
 
       build({ id++, "Carb", "kgN m-3", "Soil Carbamid" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         //return round(monica.soilColumn().at(0).get_SoilCarbamid(), 4);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).get_SoilCarbamid(); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).get_SoilCarbamid(); }, oid.roundToDigits.orDefault(4));
 
       },
-        [](MonicaModel& monica, OId oid, Json value)
+        [](MonicaModel& monica, const OId& oid, Json value)
       {
         setComplexValues(oid, [&](int i, Json j)
         {
@@ -982,11 +978,11 @@ BOTRes& monica::buildOutputTable()
       });
 
       build({ id++, "NH4", "kgN m-3", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNH4(); }, 6);
+        return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNH4(); }, oid.roundToDigits.orDefault(6));
       },
-        [](MonicaModel& monica, OId oid, Json value)
+        [](MonicaModel& monica, const OId& oid, Json value)
       {
         setComplexValues(oid, [&](int i, Json j)
         {
@@ -996,11 +992,11 @@ BOTRes& monica::buildOutputTable()
       });
 
       build({ id++, "NO2", "kgN m-3", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNO2(); }, 6);
+        return getComplexValues<double>(oid, [&](int i){ return monica.soilColumn().at(i).get_SoilNO2(); }, oid.roundToDigits.orDefault(6));
       },
-        [](MonicaModel& monica, OId oid, Json value)
+        [](MonicaModel& monica, const OId& oid, Json value)
       {
         setComplexValues(oid, [&](int i, Json j)
         {
@@ -1010,13 +1006,13 @@ BOTRes& monica::buildOutputTable()
       });
 
       build({ id++, "SOC", "kgC kg-1", "get soil organic carbon content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilOrganicCarbon(); }, 6);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilOrganicCarbon(); }, oid.roundToDigits.orDefault(6));
       });
 
       build({ id++, "SOC-X-Y", "gC m-2", "SOC-X-Y" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return getComplexValues<double>(oid, [&](int i)
         {
@@ -1024,166 +1020,175 @@ BOTRes& monica::buildOutputTable()
             * monica.soilColumn().at(i).vs_SoilBulkDensity()
             * monica.soilColumn().at(i).vs_LayerThickness
             * 1000;
-        }, 4);
+        }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "OrgN", "kg N m-3", "get_Organic_N" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_Organic_N(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_Organic_N(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "AOMf", "kgC m-3", "get_AOM_FastSum" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_AOM_FastSum(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_AOM_FastSum(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "AOMs", "kgC m-3", "get_AOM_SlowSum" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_AOM_SlowSum(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_AOM_SlowSum(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "SMBf", "kgC m-3", "get_SMB_Fast" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_Fast(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_Fast(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "SMBs", "kgC m-3", "get_SMB_Slow" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_Slow(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_Slow(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "SOMf", "kgC m-3", "get_SOM_Fast" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SOM_Fast(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SOM_Fast(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "SOMs", "kgC m-3", "get_SOM_Slow" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SOM_Slow(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SOM_Slow(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "CBal", "kgC m-3", "get_CBalance" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_CBalance(i); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_CBalance(i); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Nmin", "kgN ha-1", "NetNMineralisationRate" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_NetNMineralisationRate(i); }, 6);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_NetNMineralisationRate(i); }, oid.roundToDigits.orDefault(6));
       });
 
       build({ id++, "NetNmin", "kgN ha-1", "NetNmin" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilOrganic().get_NetNMineralisation(), 5);
+        return round(monica.soilOrganic().get_NetNMineralisation(), oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "Denit", "kgN ha-1", "Denit" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilOrganic().get_Denitrification(), 5);
+        return round(monica.soilOrganic().get_Denitrification(), oid.roundToDigits.orDefault(5));
       });
 
     build({ id++, "N2O", "kgN ha-1", "N2O" },
-      [](const MonicaModel& monica, OId oid)
+      [](const MonicaModel& monica, const OId& oid)
       {
         return round(monica.soilOrganic().get_N2O_Produced(), 5);
       });
     build({ id++, "N2Onit", "kgN ha-1", "N2O from nitrification" },
-      [](const MonicaModel& monica, OId oid) {
-        return round(monica.soilOrganic().get_N2O_Produced_Nit(), 5);
+      [](const MonicaModel& monica, const OId& oid) {
+        return round(monica.soilOrganic().get_N2O_Produced_Nit(), oid.roundToDigits.orDefault(5));
       });
     build({ id++, "N2Odenit", "kgN ha-1", "N2O from denitrification" },
-      [](const MonicaModel& monica, OId oid) {
-        return round(monica.soilOrganic().get_N2O_Produced_Denit(), 5);
+      [](const MonicaModel& monica, const OId& oid) {
+        return round(monica.soilOrganic().get_N2O_Produced_Denit(), oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "SoilpH", "", "SoilpH" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilColumn().at(0).get_SoilpH(), 1);
+        return round(monica.soilColumn().at(0).get_SoilpH(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "NEP", "kgC ha-1", "NEP" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilOrganic().get_NetEcosystemProduction(), 5);
+        return round(monica.soilOrganic().get_NetEcosystemProduction(), oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "NEE", "kgC ha-", "NEE" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilOrganic().get_NetEcosystemExchange(), 5);
+        return round(monica.soilOrganic().get_NetEcosystemExchange(), oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "Rh", "kgC ha-", "Rh" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilOrganic().get_DecomposerRespiration(), 5);
+        return round(monica.soilOrganic().get_DecomposerRespiration(), oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "Tmin", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::tmin);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Tavg", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::tavg);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Tmax", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::tmax);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
-      build({ id++, "Tmax>=40", "0|1", "if Tmax >= 40�C then 1 else 0" },
-        [](const MonicaModel& monica, OId oid)
+      build({ id++, "Tmax>=40", "0|1", "if Tmax >= 40°C then 1 else 0" },
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::tmax);
@@ -1191,99 +1196,100 @@ BOTRes& monica::buildOutputTable()
       });
 
       build({ id++, "Precip", "mm", "Precipitation" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::precip);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Wind", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::wind);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Globrad", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::globrad);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Relhumid", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::relhumid);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Sunhours", "", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         const auto& cd = monica.currentStepClimateData();
         auto ci = cd.find(Climate::sunhours);
-        return ci == cd.end() ? 0.0 : round(ci->second, 4);
+        return ci == cd.end() ? 0.0 : round(ci->second, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "BedGrad", "0;1", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_PercentageSoilCoverage(), 3);
+        return round(monica.soilMoisture().get_PercentageSoilCoverage(), oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "N", "kgN m-3", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).get_SoilNmin(); }, 3);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).get_SoilNmin(); }, oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "Co", "kgC m-3", "" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SoilOrganicC(i); }, 2);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SoilOrganicC(i); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "NH3", "kgN ha-1", "NH3_Volatilised" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilOrganic().get_NH3_Volatilised(), 3);
+        return round(monica.soilOrganic().get_NH3_Volatilised(), oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "NFert", "kgN ha-1", "dailySumFertiliser" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.dailySumFertiliser(), 1);
+        return round(monica.dailySumFertiliser(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "SumNFert", "kgN ha-1", "sum of N fertilizer applied during cropping period" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.sumFertiliser(), 1);
+        return round(monica.sumFertiliser(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "NOrgFert", "kgN ha-1", "dailySumOrgFertiliser" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.dailySumOrgFertiliser(), 1);
+        return round(monica.dailySumOrgFertiliser(), oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "SumNOrgFert", "kgN ha-1", "sum of N of organic fertilizer applied during cropping period" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.sumOrgFertiliser(), 1);
+        return round(monica.sumOrgFertiliser(), oid.roundToDigits.orDefault(1));
       });
 
 
-      build({id++, "WaterContent", "fraction nFC", "soil water content in % of available soil water"},
-            [](const MonicaModel& monica, OId oid)
+      build({id++, "WaterContent", "%nFC", "soil water content in % of available soil water"},
+            [](const MonicaModel& monica, const OId& oid)
       {
         return getComplexValues<double>(oid, [&](int i)
         {
@@ -1291,283 +1297,287 @@ BOTRes& monica::buildOutputTable()
           double fc = monica.soilColumn().at(i).vs_FieldCapacity();
           double pwp = monica.soilColumn().at(i).vs_PermanentWiltingPoint();
           return (smm3 - pwp) / (fc - pwp); //[%nFK]
-        }, 4);
+        }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "AWC", "m3 m-3", "available water capacity" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
         {
           return getComplexValues<double>(oid, [&](int i)
             {
               double fc = monica.soilColumn().at(i).vs_FieldCapacity();
               double pwp = monica.soilColumn().at(i).vs_PermanentWiltingPoint();
               return fc - pwp; 
-            }, 4);
+            }, oid.roundToDigits.orDefault(4));
         });
 
       build({id++, "CapillaryRise", "mm", "capillary rise"},
-            [](const MonicaModel& monica, OId oid)
+            [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_CapillaryRise(i); }, 3);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_CapillaryRise(i); }, oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "PercolationRate", "mm", "percolation rate" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_PercolationRate(i); }, 3);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_PercolationRate(i); }, oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid_)
       {
+          OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_CO2EvolutionRate(i); }, 1);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_CO2EvolutionRate(i); }, oid.roundToDigits.orDefault(1));
       });
 
       build({ id++, "Evapotranspiration", "mm", "Remaining evapotranspiration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_RemainingEvapotranspiration(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_RemainingEvapotranspiration(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "Evaporation_from_intercept", "mm", "Evaporation from intercepted water" },
-      [](const MonicaModel& monica, OId oid)
+      [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_EvaporatedFromIntercept(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_EvaporatedFromIntercept(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "Evaporation", "mm", "Evaporation from intercepted water" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_EvaporatedFromIntercept(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_EvaporatedFromIntercept(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "ETa/ETc", "", "Act_ET / Pot_ET" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         auto potET = monica.soilMoisture().get_PotentialEvapotranspiration();
         auto actET = monica.soilMoisture().get_ActualEvapotranspiration();
-        return potET > 0 ? round(actET / potET, 2) : 1.0;
+        return potET > 0 ? round(actET / potET, oid.roundToDigits.orDefault(2)) : 1.0;
       });
 
       build({ id++, "Tra", "mm", "ActualTranspiration" },
-      [](const MonicaModel& monica, OId oid)
+      [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_ActualTranspiration(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_ActualTranspiration(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "Act_Trans", "mm", "actual transpiration" },
-      [](const MonicaModel& monica, OId oid)
+      [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_ActualTranspiration(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_ActualTranspiration(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "Transpiration", "mm", "actual transpiration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_ActualTranspiration(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_ActualTranspiration(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "GrainN", "kg ha-1", "get_FruitBiomassNContent" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_FruitBiomassNContent(), 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_FruitBiomassNContent(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "Fc", "m3 m-3", "field capacity" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_FieldCapacity(); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_FieldCapacity(); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Pwp", "m3 m-3", "permanent wilting point" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_PermanentWiltingPoint(); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_PermanentWiltingPoint(); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "Sat", "m3 m-3", "saturation" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_Saturation(); }, 4);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_Saturation(); }, oid.roundToDigits.orDefault(4));
       });
 
       build({ id++, "guenther-isoprene-emission", "umol m-2Ground d-1", "daily isoprene-emission of all species from Guenther model" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->guentherEmissions().isoprene_emission, 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->guentherEmissions().isoprene_emission, oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "guenther-monoterpene-emission", "umol m-2Ground d-1", "daily monoterpene emission of all species from Guenther model" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->guentherEmissions().monoterpene_emission, 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->guentherEmissions().monoterpene_emission, oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "jjv-isoprene-emission", "umol m-2Ground d-1", "daily isoprene-emission of all species from JJV model" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->jjvEmissions().isoprene_emission, 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->jjvEmissions().isoprene_emission, oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "jjv-monoterpene-emission", "umol m-2Ground d-1", "daily monoterpene emission of all species from JJV model" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->jjvEmissions().monoterpene_emission, 5) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->jjvEmissions().monoterpene_emission, oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
       build({ id++, "Nresid", "kg N ha-1", "Nitrogen content in crop residues" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_ResiduesNContent(), 1) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_ResiduesNContent(), oid.roundToDigits.orDefault(1)) : 0.0;
       });
 
       build({ id++, "Sand", "kg kg-1", "Soil sand content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilSandContent(); }, 2);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilSandContent(); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Clay", "kg kg-1", "Soil clay content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilClayContent(); }, 2);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilClayContent(); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Silt", "kg kg-1", "Soil silt content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilSiltContent(); }, 2);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilSiltContent(); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Stone", "kg kg-1", "Soil stone content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilStoneContent(); }, 2);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilStoneContent(); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "pH", "kg kg-1", "Soil pH content" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilpH(); }, 2);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilColumn().at(i).vs_SoilpH(); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "O3-short-damage", "unitless", "short term ozone induced reduction of Ac" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_O3_shortTermDamage(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_O3_shortTermDamage(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "O3-long-damage", "unitless", "long term ozone induced senescence" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_O3_longTermDamage(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_O3_longTermDamage(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "O3-WS-gs-reduction", "unitless", "water stress impact on stomatal conductance" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_O3_WStomatalClosure(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_O3_WStomatalClosure(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "O3-total-uptake", "�mol m-2", "total O3 uptake" }, //TODO units are not correct
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->get_O3_sumUptake(), 2) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->get_O3_sumUptake(), oid.roundToDigits.orDefault(2)) : 0.0;
       });
 
       build({ id++, "NO3conv", "", "get_vq_Convection" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Convection(i); }, 8);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Convection(i); }, oid.roundToDigits.orDefault(8));
       });
 
       build({ id++, "NO3disp", "", "get_vq_Dispersion" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Dispersion(i); }, 8);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Dispersion(i); }, oid.roundToDigits.orDefault(8));
       });
 
       build({ id++, "noOfAOMPools", "", "number of AOM pools in existence currently" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return int(monica.soilColumn().at(0).vo_AOM_Pool.size());
       });
 
       build({ id++, "CN_Ratio_AOM_Fast", "", "CN_Ratio_AOM_Fast" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return getComplexValues<double>(oid, [&](int i) {
           const auto& layer = monica.soilColumn().at(i);
           return layer.vo_AOM_Pool.empty() ? 0.0 : layer.vo_AOM_Pool.at(0).vo_CN_Ratio_AOM_Fast;
-        }, 5);
+        }, oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "AOM_Fast", "", "AOM_Fast" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return getComplexValues<double>(oid, [&](int i) {
           const auto& layer = monica.soilColumn().at(i);
           return layer.vo_AOM_Pool.empty() ? 0.0 : layer.vo_AOM_Pool.at(0).vo_AOM_Fast;
-        }, 5);
+        }, oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "AOM_Slow", "", "AOM_Slow" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
         return getComplexValues<double>(oid, [&](int i) {
           const auto& layer = monica.soilColumn().at(i);
           return layer.vo_AOM_Pool.empty() ? 0.0 : layer.vo_AOM_Pool.at(0).vo_AOM_Slow;
-        }, 5);
+        }, oid.roundToDigits.orDefault(5));
       });
 
       build({ id++, "rootNConcentration", "", "rootNConcentration" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropModule() ? round(monica.cropModule()->rootNConcentration(), 4) : 0.0;
+        return monica.cropModule() ? round(monica.cropModule()->rootNConcentration(), oid.roundToDigits.orDefault(4)) : 0.0;
       });
     build({ id++, "actammoxrate", "kgN/m3/d", "actual ammonia oxidation rate in layer" },
-      [](const MonicaModel& monica, OId oid) {
+      [](const MonicaModel& monica, const OId& oid_) {
+        OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actAmmoniaOxidationRate(i); }, 6);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actAmmoniaOxidationRate(i); }, oid.roundToDigits.orDefault(6));
       });
 
     build({ id++, "actnitrate", "kgN/m3/d", "actual nitrification rate in layer" },
-      [](const MonicaModel& monica, OId oid) {
+      [](const MonicaModel& monica, const OId& oid_) {
+        OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actNitrificationRate(i); }, 6);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actNitrificationRate(i); }, oid.roundToDigits.orDefault(6));
       });
 
     build({ id++, "actdenitrate", "kgN/m3/d", "actual denitrification rate in layer" },
-      [](const MonicaModel& monica, OId oid) {
+      [](const MonicaModel& monica, const OId& oid_) {
+        OId oid = oid_;
         auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
         oid.fromLayer = min(oid.fromLayer, nools - 1);
         oid.toLayer = min(oid.toLayer, nools - 1);
-        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actDenitrificationRate(i); }, 6);
+        return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actDenitrificationRate(i); }, oid.roundToDigits.orDefault(6));
       });
-      build({ id++, "rootDensity", "", "cropGrowth->vc_RootDensity" },
-    [](const MonicaModel& monica, OId oid) 
+      build({ id++, "rootDensity", "", "cropModule->vc_RootDensity" },
+    [](const MonicaModel& monica, const OId& oid)
         {
       return getComplexValues<double>(oid, [&](int i) {
-      return monica.cropModule() ? monica.cropModule()->getRootDensity(i) : 0.0; }, 4);
+      return monica.cropModule() ? monica.cropModule()->getRootDensity(i) : 0.0; }, oid.roundToDigits.orDefault(4));
     });
-    build({ id++, "rootingZone", "", "cropGrowth->vc_RootingZone" },
-    [](const MonicaModel& monica, OId oid) {
+    build({ id++, "rootingZone", "", "cropModule->vc_RootingZone" },
+    [](const MonicaModel& monica, const OId& oid) {
       return monica.cropModule() ? monica.cropModule()->rootingZone() : 0.0;
     });
       build({ id++, "WaterFlux", "mm/d", "waterflux in layer" },
-        [](const MonicaModel& monica, OId oid)
+        [](const MonicaModel& monica, const OId& oid)
         {
           return getComplexValues<double>(oid, [&](int i)
             {
               return monica.soilMoisture().waterFlux(i);
-            }, 1);
+            }, oid.roundToDigits.orDefault(1));
         });
 
       tableBuilt = true;
