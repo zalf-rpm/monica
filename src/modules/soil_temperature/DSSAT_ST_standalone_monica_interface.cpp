@@ -108,8 +108,8 @@ void MonicaInterface::run() {
 #endif
 #else
     auto tampNtav = _monica->dssatTAMPandTAV();
-    _soilTempExo.TAV = tampNtav.first;
-    _soilTempExo.TAMP = tampNtav.second;
+    _soilTempExo.TAV = tampNtav.second;
+    _soilTempExo.TAMP = tampNtav.first;
 #endif
     _soilTempComp._STEMP.Init(soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;

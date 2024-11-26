@@ -123,8 +123,8 @@ void MonicaInterface::run() {
   if (_monica->cropGrowth()) _soilTempExo.BIOMAS = _monica->cropGrowth()->get_AbovegroundBiomass();
   else _soilTempExo.BIOMAS = 0;
   auto tampNtav = _monica->dssatTAMPandTAV();
-  _soilTempExo.TAV = tampNtav.first;
-  _soilTempExo.TAMP = tampNtav.second;
+  _soilTempExo.TAV = tampNtav.second;
+  _soilTempExo.TAMP = tampNtav.first;
 #endif
   if(_doInit){
     _soilTempComp._STEMP_EPIC.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);

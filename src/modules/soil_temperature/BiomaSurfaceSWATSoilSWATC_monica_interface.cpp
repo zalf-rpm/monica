@@ -92,7 +92,7 @@ void MonicaInterface::run() {
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
-  _soilTempComp.setAirTemperatureAnnualAverage(tampNtav.first);
+  _soilTempComp.setAirTemperatureAnnualAverage(tampNtav.second);
   if (_monica->cropGrowth()) _soilTempAux.AboveGroundBiomass = _monica->cropGrowth()->get_AbovegroundBiomass();
   else _soilTempAux.AboveGroundBiomass = 0;
 #endif
