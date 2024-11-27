@@ -35,20 +35,22 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 void MonicaInterface::run() {
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-#ifdef CPP2
-  _soilTempExo.maxTAir = climateData.at(Climate::tmax);
+  double dayLength = 0;
   if (climateData.find(Climate::sunhours) == climateData.end()) {
     const auto& dls = Tools::dayLengths(_monica->siteParameters().vs_Latitude,
       _monica->currentStepDate().julianDay());
-    _soilTempExo.dayLength = dls.astronomicDayLenght;
+    dayLength = dls.astronomicDayLenght;
   } else {
-    _soilTempExo.dayLength = climateData.at(Climate::sunhours);
+    dayLength = climateData.at(Climate::sunhours);
   }
+#ifdef CPP2
+  _soilTempExo.maxTAir = climateData.at(Climate::tmax);
+  _soilTempExo.dayLength = dayLength;
   _soilTempExo.minTAir = climateData.at(Climate::tmin);
   _soilTempExo.meanTAir = climateData.at(Climate::tavg);
 #else
   _soilTempExo.setmaxTAir(climateData.at(Climate::tmax));
-  _soilTempExo.setdayLength(climateData[Climate::sunhours]);
+  _soilTempExo.setdayLength(dayLength);
   _soilTempExo.setminTAir(climateData.at(Climate::tmin));
   _soilTempExo.setmeanTAir(climateData.at(Climate::tavg));
 #endif
@@ -61,8 +63,8 @@ void MonicaInterface::run() {
   _soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
 #endif
 #else
-  auto tampNtav = _monica->dssatTAMPandTAV();
-  _soilTempExo.meanAnnualAirTemp = tampNtav.second;
+  auto [fst, snd] = _monica->dssatTAMPandTAV();
+  _soilTempExo.meanAnnualAirTemp = snd;
   _soilTempRate.heatFlux = 0;
 #endif
   if(_doInit){
@@ -71,10 +73,10 @@ void MonicaInterface::run() {
   }
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  auto stMin = _soilTempState.minTSoil;
-  auto stMax = _soilTempState.maxTSoil;
+  const auto stMin = _soilTempState.minTSoil;
+  const auto stMax = _soilTempState.maxTSoil;
   _monica->soilTemperatureNC().setSoilSurfaceTemperature((stMin + stMax)/2.0);
-  auto deep = _soilTempState.deepLayerT;
+  const auto deep = _soilTempState.deepLayerT;
   for (auto& sl : _monica->soilColumnNC()) sl.set_Vs_SoilTemperature(deep);
 #endif
 }
