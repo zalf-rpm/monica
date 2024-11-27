@@ -267,27 +267,22 @@ void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits =
 }
 
 template<typename T>
-Json getComplexValues(OId oid, function<T(int)> getValue, int roundToDigits = 0)
-{
+Json getComplexValues(OId oid, function<T(int)> getValue, int roundToDigits = 0) {
   J11Array multipleValues;
   vector<double> vs;
-  if (oid.isOrgan())
-    oid.toLayer = oid.fromLayer = int(oid.organ);
+  if (oid.isOrgan()) oid.toLayer = oid.fromLayer = int(oid.organ);
 
-  for (int i = oid.fromLayer; i <= oid.toLayer; i++)
-  {
+  for (int i = oid.fromLayer; i <= oid.toLayer; i++) {
     T v = 0;
-    if (i < 0)
-      debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Returning 0." << endl;
-    else
-      v = getValue(i);
-    if (oid.layerAggOp == OId::NONE)
-      multipleValues.push_back(Tools::round(v, roundToDigits));
-    else
-      vs.push_back(v);
+    if (i < 0) debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Returning 0." << endl;
+    else v = getValue(i);
+    if (oid.layerAggOp == OId::NONE) multipleValues.push_back(Tools::round(v, roundToDigits));
+    else vs.push_back(v);
   }
 
-  return oid.layerAggOp == OId::NONE ? Json(multipleValues) : Json(applyOIdOP(oid.layerAggOp, vs));
+  return oid.layerAggOp == OId::NONE
+           ? Json(multipleValues)
+           : Json(Tools::round(applyOIdOP(oid.layerAggOp, vs), roundToDigits));
 }
 
 void setComplexValues(OId oid, function<void(int, json11::Json)> setValue, Json value)
@@ -866,8 +861,15 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "Act_Ev", "mm", "Actual evaporation" },
         [](const MonicaModel& monica, const OId& oid)
       {
-        return round(monica.soilMoisture().get_ActualEvaporation(), oid.roundToDigits.orDefault(2));
+        return round(monica.soilMoisture().vm_ActualEvaporation, oid.roundToDigits.orDefault(2));
       });
+
+      build({ id++, "Act_Trans", "mm", "Actual transpiration" },
+        [](const MonicaModel& monica, const OId& oid)
+      {
+        return round(monica.soilMoisture().vm_ActualTranspiration, oid.roundToDigits.orDefault(2));
+      });
+
 
       build({ id++, "Pot_ET", "mm", "potential evapotranspiration = ET0 * Kc = the plants water use" }
         , [](const MonicaModel& monica, const OId& oid)
@@ -879,12 +881,6 @@ BOTRes& monica::buildOutputTable()
       [](const MonicaModel& monica, const OId& oid)
       {
         return round(monica.soilMoisture().vm_EvaporatedFromSurface, oid.roundToDigits.orDefault(1));
-      });
-
-      build({ id++, "Act_soil_evaporation", "mm", "evaporation from soil" },
-      [](const MonicaModel& monica, const OId& oid)
-      {
-        return getComplexValues<double>(oid, [&](int i){ return monica.soilMoisture().vm_Evaporation.at(i); }, oid.roundToDigits.orDefault(2));
       });
 
       build({ id++, "Act_ET", "mm", "actual evapotranspiration = Act_Trans + Act_Ev + Evaporation_from_intercept + Evaporated_from_surface" },

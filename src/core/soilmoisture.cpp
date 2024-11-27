@@ -285,15 +285,15 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   vm_SurfaceWaterStorage = soilColumn.vs_SurfaceWaterStorage;
 
-  bool vc_CropPlanted = false;
-  double vc_CropHeight = 0.0;
+  //bool vc_CropPlanted = false;
+  //double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
 
   if (monica.cropGrowth()) {
-    vc_CropPlanted = true;
+    //vc_CropPlanted = true;
     vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
     vc_KcFactor = monica.cropGrowth()->get_KcFactor();
-    vc_CropHeight = monica.cropGrowth()->get_CropHeight();
+    //vc_CropHeight = monica.cropGrowth()->get_CropHeight();
     vc_DevelopmentalStage = (int) monica.cropGrowth()->get_DevelopmentalStage();
     if (vc_DevelopmentalStage > 0) {
       vc_NetPrecipitation = monica.cropGrowth()->get_NetPrecipitation();
@@ -301,7 +301,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
       vc_NetPrecipitation = vw_Precipitation;
     }
   } else {
-    vc_CropPlanted = false;
+    //vc_CropPlanted = false;
     vc_KcFactor = _params.pm_KcFactor;
     vc_NetPrecipitation = vw_Precipitation;
     vc_PercentageSoilCoverage = 0.0;
@@ -310,9 +310,11 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   // Recalculates current depth of groundwater table
   vm_GroundwaterTableLayer = numberOfSoilLayers + 2;
   int i = int(numberOfSoilLayers - 1);
-  while (i >= 0 && int(vm_SoilMoisture[i] * 10000) == int(vm_SoilPoreVolume[i] * 10000)) vm_GroundwaterTableLayer = i--;
+  while (i >= 0 && int(vm_SoilMoisture[i] * 10000) == int(vm_SoilPoreVolume[i] * 10000)) {
+    vm_GroundwaterTableLayer = i--;
+  }
 
-  auto oscillGroundWaterLayer = size_t(vs_GroundwaterDepth / soilColumn[0].vs_LayerThickness);
+  auto oscillGroundWaterLayer = static_cast<size_t>(vs_GroundwaterDepth / soilColumn[0].vs_LayerThickness);
   if ((vm_GroundwaterTableLayer > oscillGroundWaterLayer && vm_GroundwaterTableLayer < numberOfSoilLayers + 2)
       || vm_GroundwaterTableLayer >= numberOfSoilLayers + 2) {
     vm_GroundwaterTableLayer = oscillGroundWaterLayer;
@@ -322,13 +324,13 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   // calculates snow layer water storage and release
   snowComponent->calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
-  double vm_WaterToInfiltrate = snowComponent->getWaterToInfiltrate();
+  double waterToInfiltrate = snowComponent->getWaterToInfiltrate();
 
   // Calculates frost and thaw depth and switches lambda
   frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getSnowDepth());
 
   // calculates infiltration of water from surface
-  fm_Infiltration(vm_WaterToInfiltrate);
+  fm_Infiltration(waterToInfiltrate);
 
   if (0.0 < vs_GroundwaterDepth && vs_GroundwaterDepth <= 10.0) {
     fm_PercolationWithGroundwater(oscillGroundWaterLayer);
@@ -338,7 +340,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
     fm_BackwaterReplenishment();
   }
 
-  fm_Evapotranspiration(vc_PercentageSoilCoverage, vc_KcFactor, siteParameters.vs_HeightNN, vw_MaxAirTemperature,
+  fm_Evapotranspiration(siteParameters.vs_HeightNN, vw_MaxAirTemperature,
                         vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature, vw_WindSpeed,
                         vw_WindSpeedHeight,
                         vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay, vs_Latitude,
@@ -836,177 +838,160 @@ void SoilMoisture::fm_BackwaterReplenishment() {
  * @param vw_GlobalRadiation Global radiaton
  * @param vc_DevelopmentalStage
  */
-void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, double vc_KcFactor, double vs_HeightNN,
+void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
                                          double vw_MaxAirTemperature, double vw_MinAirTemperature,
                                          double vw_RelativeHumidity, double vw_MeanAirTemperature,
                                          double vw_WindSpeed, double vw_WindSpeedHeight, double vw_GlobalRadiation,
                                          int vc_DevelopmentalStage, int vs_JulianDay,
-                                         double vs_Latitude, double vw_ReferenceEvapotranspiration) {
-  double vm_PotentialEvapotranspiration = 0.0;
-  double vc_EvaporatedFromIntercept = 0.0;
+                                         double vs_Latitude, double referenceEvapotranspiration) {
+  double potentialEvapotranspiration = 0.0;
+  double evaporatedFromIntercept = 0.0;
   vm_EvaporatedFromSurface = 0.0;
-  bool vm_EvaporationFromSurface = false;
-  double vm_SnowDepth = snowComponent->getSnowDepth();
+  const double snowDepth = snowComponent->getSnowDepth();
 
   // calculate soil evaporation until max 0.4m depth
-  double pm_EvaporationZeta = _params.pm_EvaporationZeta;
+  const double evaporationZeta = _params.pm_EvaporationZeta;
 
   // parameter for the slope of the deprivation function
   vm_XSACriticalSoilMoisture = _params.pm_XSACriticalSoilMoisture;
 
-  /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
-   * da muss was dran gemacht werden */
+  // @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth is dependent on soil type
+  // something has to be done there
   // this is the depth until which the evaporation can penetrate maximally
-  double pm_MaximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
+  const double maximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth;
 
   // If a crop grows, ETp is taken from crop module
   if (vc_DevelopmentalStage > 0) {
     // Reference evapotranspiration is only grabbed here for consistent
     // output in monica.cpp
-    if (vw_ReferenceEvapotranspiration < 0.0) {
+    if (referenceEvapotranspiration < 0.0) {
       vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
     } else {
-      vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+      vm_ReferenceEvapotranspiration = referenceEvapotranspiration;
     }
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
-    vm_PotentialEvapotranspiration = monica.cropGrowth()->get_RemainingEvapotranspiration();
-    vc_EvaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
-
+    potentialEvapotranspiration = monica.cropGrowth()->get_RemainingEvapotranspiration();
+    evaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
   } else { // if no crop grows ETp is calculated from ET0 * kc
-
     // calculate reference evapotranspiration if not provided via climate files
-    if (vw_ReferenceEvapotranspiration < 0.0) {
-      vm_ReferenceEvapotranspiration = ReferenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
-                                                                   vw_MinAirTemperature, vw_RelativeHumidity,
-                                                                   vw_MeanAirTemperature, vw_WindSpeed,
-                                                                   vw_WindSpeedHeight,
-                                                                   vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
+    if (referenceEvapotranspiration < 0.0) {
+      vm_ReferenceEvapotranspiration = this->referenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
+                                                                         vw_MinAirTemperature, vw_RelativeHumidity,
+                                                                         vw_MeanAirTemperature, vw_WindSpeed,
+                                                                         vw_WindSpeedHeight,
+                                                                         vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
     } else {
-      // use reference evapotranspiration from climate file		
-      vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+      // use reference evapotranspiration from climate file
+      vm_ReferenceEvapotranspiration = referenceEvapotranspiration;
     }
 
-    vm_PotentialEvapotranspiration = vm_ReferenceEvapotranspiration * vc_KcFactor; // - vm_InterceptionReference;
+    potentialEvapotranspiration = vm_ReferenceEvapotranspiration * vc_KcFactor; // - vm_InterceptionReference;
   }
 
   vm_ActualEvaporation = 0.0;
   vm_ActualTranspiration = 0.0;
 
   // from HERMES:
-  if (vm_PotentialEvapotranspiration > 6.5) vm_PotentialEvapotranspiration = 6.5;
+  if (potentialEvapotranspiration > 6.5) potentialEvapotranspiration = 6.5;
 
-  if (vm_PotentialEvapotranspiration > 0.0) {
+  if (potentialEvapotranspiration > 0.0) {
+    bool evaporationFromSurface = false;
     // If surface is water-logged, subsequent evaporation from surface water sources
     if (vm_SurfaceWaterStorage > 0.0) {
-      vm_EvaporationFromSurface = true;
+      evaporationFromSurface = true;
       // Water surface evaporates with Kc = 1.1.
-      vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (1.1 / vc_KcFactor);
+      potentialEvapotranspiration = potentialEvapotranspiration * (1.1 / vc_KcFactor);
 
       // If a snow layer is present no water evaporates from surface water sources
-      if (vm_SnowDepth > 0.0) {
+      if (snowDepth > 0.0) {
         vm_EvaporatedFromSurface = 0.0;
       } else {
-        if (vm_SurfaceWaterStorage < vm_PotentialEvapotranspiration) {
-          vm_PotentialEvapotranspiration -= vm_SurfaceWaterStorage;
+        if (vm_SurfaceWaterStorage < potentialEvapotranspiration) {
+          potentialEvapotranspiration -= vm_SurfaceWaterStorage;
           vm_EvaporatedFromSurface = vm_SurfaceWaterStorage;
           vm_SurfaceWaterStorage = 0.0;
         } else {
-          vm_SurfaceWaterStorage -= vm_PotentialEvapotranspiration;
-          vm_EvaporatedFromSurface = vm_PotentialEvapotranspiration;
-          vm_PotentialEvapotranspiration = 0.0;
+          vm_SurfaceWaterStorage -= potentialEvapotranspiration;
+          vm_EvaporatedFromSurface = potentialEvapotranspiration;
+          potentialEvapotranspiration = 0.0;
         }
       }
-      vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (vc_KcFactor / 1.1);
+      potentialEvapotranspiration = potentialEvapotranspiration * (vc_KcFactor / 1.1);
     }
 
-    if (vm_PotentialEvapotranspiration > 0) { // Evaporation from soil
-      for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-        double vm_EReducer_1 = get_EReducer_1(i_Layer, vc_PercentageSoilCoverage,
-                                       vm_PotentialEvapotranspiration);
-
-        double vm_EReducer_2 = 0.0;
-        if (i_Layer >= pm_MaximumEvaporationImpactDepth) {
+    if (potentialEvapotranspiration > 0) { // Evaporation from soil
+      for (auto i = 0; i < numberOfSoilLayers; i++) {
+        const auto eRed1 = eReducer1(i, vc_PercentageSoilCoverage, potentialEvapotranspiration);
+        auto eRed2 = 0.0;
+        if (i >= maximumEvaporationImpactDepth) {
           // layer is too deep for evaporation
-          vm_EReducer_2 = 0.0;
+          eRed2 = 0.0;
         } else {
           // 2nd factor to reduce actual evapotranspiration by
           // MaximumEvaporationImpactDepth and EvaporationZeta
-          vm_EReducer_2 = get_DeprivationFactor(i_Layer + 1, pm_MaximumEvaporationImpactDepth,
-                                                pm_EvaporationZeta, vm_LayerThickness[i_Layer]);
+          eRed2 = get_DeprivationFactor(i + 1, maximumEvaporationImpactDepth,
+                                        evaporationZeta, vm_LayerThickness[i]);
         }
 
-        double vm_EReducer_3 = 0;
-        if (i_Layer > 0) {
-          if (vm_SoilMoisture[i_Layer] < vm_SoilMoisture[i_Layer - 1]) {
+        auto eRed3 = 0.0;
+        if (i > 0) {
+          if (vm_SoilMoisture[i] < vm_SoilMoisture[i - 1]) {
             // 3rd factor to consider if above layer contains more water than
             // the adjacent layer below, evaporation will be significantly reduced
-            vm_EReducer_3 = 0.1;
+            eRed3 = 0.1;
           } else {
-            vm_EReducer_3 = 1.0;
+            eRed3 = 1.0;
           }
         } else {
-          vm_EReducer_3 = 1.0;
+          eRed3 = 1.0;
         }
         // EReducer-> factor to reduce evaporation
-        double vm_EReducer = vm_EReducer_1 * vm_EReducer_2 * vm_EReducer_3;
+        const double eReducer = eRed1 * eRed2 * eRed3;
 
         if (vc_DevelopmentalStage > 0) {
           // vegetation is present
 
           //Interpolation between [0,1]
           if (vc_PercentageSoilCoverage >= 0.0 && vc_PercentageSoilCoverage < 1.0) {
-            vm_Evaporation[i_Layer] = ((1.0 - vc_PercentageSoilCoverage) * vm_EReducer)
-                                      * vm_PotentialEvapotranspiration;
-          } else {
-            if (vc_PercentageSoilCoverage >= 1.0) {
-              vm_Evaporation[i_Layer] = 0.0;
-            }
+            vm_Evaporation[i] = (1.0 - vc_PercentageSoilCoverage) * eReducer * potentialEvapotranspiration;
+          } else if (vc_PercentageSoilCoverage >= 1.0) {
+             vm_Evaporation[i] = 0.0;
           }
 
-          if (vm_SnowDepth > 0.0) {
-            vm_Evaporation[i_Layer] = 0.0;
-          }
+          if (snowDepth > 0.0) vm_Evaporation[i] = 0.0;
 
           // Transpiration is derived from ET0; Soil coverage and Kc factors
           // already considered in crop part!
-          vm_Transpiration[i_Layer] = monica.cropGrowth()->get_Transpiration(i_Layer);
-
-          //std::cout << setprecision(11) << "vm_Transpiration[i_Layer]: " << i_Layer << ", " << vm_Transpiration[i_Layer] << std::endl;
+          vm_Transpiration[i] = monica.cropGrowth()->get_Transpiration(i);
 
           // Transpiration is capped in case potential ET after surface
           // and interception evaporation has occurred on same day
-          if (vm_EvaporationFromSurface) {
-            vm_Transpiration[i_Layer] = vc_PercentageSoilCoverage * vm_EReducer * vm_PotentialEvapotranspiration;
+          if (evaporationFromSurface) {
+            vm_Transpiration[i] = vc_PercentageSoilCoverage * eReducer * potentialEvapotranspiration;
           }
-
         } else {
           // no vegetation present
-          if (vm_SnowDepth > 0.0) {
-            vm_Evaporation[i_Layer] = 0.0;
-          } else {
-            vm_Evaporation[i_Layer] = vm_PotentialEvapotranspiration * vm_EReducer;
-          }
-          vm_Transpiration[i_Layer] = 0.0;
+          if (snowDepth > 0.0) vm_Evaporation[i] = 0.0;
+          else vm_Evaporation[i] = potentialEvapotranspiration * eReducer;
+          vm_Transpiration[i] = 0.0;
 
         } // if(vc_DevelopmentalStage > 0)
 
-        vm_Evapotranspiration[i_Layer] = vm_Evaporation[i_Layer] + vm_Transpiration[i_Layer];
-        vm_SoilMoisture[i_Layer] -= (vm_Evapotranspiration[i_Layer] / 1000.0 / vm_LayerThickness[i_Layer]);
+        vm_Evapotranspiration[i] = vm_Evaporation[i] + vm_Transpiration[i];
+        vm_SoilMoisture[i] -= vm_Evapotranspiration[i] / 1000.0 / vm_LayerThickness[i];
 
         //  Generelle Begrenzung des Evaporationsentzuges
-        if (vm_SoilMoisture[i_Layer] < 0.01) {
-          vm_SoilMoisture[i_Layer] = 0.01;
-        }
+        if (vm_SoilMoisture[i] < 0.01) vm_SoilMoisture[i] = 0.01;
 
-        vm_ActualTranspiration += vm_Transpiration[i_Layer];
-        vm_ActualEvaporation += vm_Evaporation[i_Layer];
+        vm_ActualTranspiration += vm_Transpiration[i];
+        vm_ActualEvaporation += vm_Evaporation[i];
       } // for
     } // vm_PotentialEvapotranspiration > 0
   } // vm_PotentialEvapotranspiration > 0.0
   vm_ActualEvapotranspiration = vm_ActualTranspiration + vm_ActualEvaporation
-      + vc_EvaporatedFromIntercept + vm_EvaporatedFromSurface;
+      + evaporatedFromIntercept + vm_EvaporatedFromSurface;
 }
 
 /**
@@ -1027,7 +1012,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
  * @param vw_GlobalRadiation
  * @return
  */
-double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_MaxAirTemperature,
+double SoilMoisture::referenceEvapotranspiration(double vs_HeightNN, double vw_MaxAirTemperature,
                                                  double vw_MinAirTemperature, double vw_RelativeHumidity,
                                                  double vw_MeanAirTemperature, double vw_WindSpeed,
                                                  double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay,
@@ -1173,78 +1158,68 @@ double SoilMoisture::get_CapillaryRise() {
 /*!
  * Calculation of evaporation reduction by soil moisture content
  *
- * @param i_Layer
- * @param vm_PercentageSoilCoverage
- * @param vm_ReferenceEvapotranspiration
+ * @param layerIndex
+ * @param percentageSoilCoverage
+ * @param referenceEvapotranspiration
  *
  * @return Value for evaporation reduction by soil moisture content
  */
-double SoilMoisture::get_EReducer_1(int i_Layer,
-                                    double vm_PercentageSoilCoverage,
-                                    double vm_ReferenceEvapotranspiration) {
-  double vm_EReductionFactor;
-  int vm_EvaporationReductionMethod = 1;
-  double vm_SoilMoisture_m3 = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
-  double vm_PWP = soilColumn[i_Layer].vs_PermanentWiltingPoint();
-  double vm_FK = soilColumn[i_Layer].vs_FieldCapacity();
-  double vm_RelativeEvaporableWater;
-  double vm_CriticalSoilMoisture;
-  double vm_XSA;
-  double vm_Reducer;
+double SoilMoisture::eReducer1(int layerIndex,
+                               double percentageSoilCoverage,
+                               double referenceEvapotranspiration,
+                               int evaporationReductionMethod) {
+  double eReductionFactor = 0;
+  double pwp = soilColumn[layerIndex].vs_PermanentWiltingPoint();
+  double fc = soilColumn[layerIndex].vs_FieldCapacity();
+  double sm = max(0.33*pwp, soilColumn[layerIndex].get_Vs_SoilMoisture_m3());
+  double relativeEvaporableWater = min(1.0, (sm - 0.33*pwp) / (fc - 0.33*pwp));
 
-  if (vm_SoilMoisture_m3 < (0.33 * vm_PWP)) vm_SoilMoisture_m3 = 0.33 * vm_PWP;
-
-  vm_RelativeEvaporableWater = (vm_SoilMoisture_m3 - (0.33 * vm_PWP))
-                               / (vm_FK - (0.33 * vm_PWP));
-
-  if (vm_RelativeEvaporableWater > 1.0) vm_RelativeEvaporableWater = 1.0;
-
-  if (vm_EvaporationReductionMethod == 0) {
-    // THESEUS
-    vm_CriticalSoilMoisture = 0.65 * vm_FK;
-    if (vm_PercentageSoilCoverage > 0) {
-      if (vm_ReferenceEvapotranspiration > 2.5) {
-        vm_XSA = (0.65 * vm_FK - vm_PWP) * (vm_FK - vm_PWP);
-        vm_Reducer = vm_XSA + (((1 - vm_XSA) / 17.5)
-                               * (vm_ReferenceEvapotranspiration - 2.5));
+  switch (evaporationReductionMethod) {
+  case 0: // THESEUS
+  {
+    double criticalSoilMoisture = 0.65 * fc;
+    if (percentageSoilCoverage > 0) {
+      double reducer = 1;
+      if (referenceEvapotranspiration > 2.5) {
+        double xsa = (0.65 * fc - pwp) * (fc - pwp);
+        reducer = xsa + (((1 - xsa) / 17.5) * (referenceEvapotranspiration - 2.5));
       } else {
-        vm_Reducer = vm_XSACriticalSoilMoisture / 2.5 * vm_ReferenceEvapotranspiration;
+        reducer = vm_XSACriticalSoilMoisture / 2.5 * referenceEvapotranspiration;
       }
-      vm_CriticalSoilMoisture = soilColumn[i_Layer].vs_FieldCapacity() * vm_Reducer;
+      criticalSoilMoisture = fc * reducer;
     }
 
     // Calculation of an evaporation-reducing factor in relation to soil water content
-    if (vm_SoilMoisture_m3 > vm_CriticalSoilMoisture) {
+    if (sm > criticalSoilMoisture) {
       // Moisture is higher than critical value so there is a
       // normal evaporation and nothing must be reduced
-      vm_EReductionFactor = 1.0;
-
+      eReductionFactor = 1.0;
     } else {
       // critical value is reached, actual evaporation is below potential
-
-      if (vm_SoilMoisture_m3 > (0.33 * vm_PWP)) {
+      if (sm > 0.33 * pwp) {
         // moisture is higher than 30% of permanent wilting point
-        vm_EReductionFactor = vm_RelativeEvaporableWater;
+        eReductionFactor = relativeEvaporableWater;
       } else {
         // if moisture is below 30% of wilting point nothing can be evaporated
-        vm_EReductionFactor = 0.0;
+        eReductionFactor = 0.0;
       }
     }
-
-  } else if (vm_EvaporationReductionMethod == 1) {
-    // HERMES
-    vm_EReductionFactor = 0.0;
-    if (vm_RelativeEvaporableWater > 0.33) {
-      vm_EReductionFactor = 1.0 - (0.1 * (1.0 - vm_RelativeEvaporableWater) / (1.0 - 0.33));
-    } else if (vm_RelativeEvaporableWater > 0.22) {
-      vm_EReductionFactor = 0.9 - (0.625 * (0.33 - vm_RelativeEvaporableWater) / (0.33 - 0.22));
-    } else if (vm_RelativeEvaporableWater > 0.2) {
-      vm_EReductionFactor = 0.275 - (0.225 * (0.22 - vm_RelativeEvaporableWater) / (0.22 - 0.2));
-    } else {
-      vm_EReductionFactor = 0.05 - (0.05 * (0.2 - vm_RelativeEvaporableWater) / 0.2);
-    } // end if
   }
-  return vm_EReductionFactor;
+  break;
+  case 1: // HERMES
+  default:
+    if (relativeEvaporableWater > 0.33) {
+      eReductionFactor = 1.0 - (0.1 * (1.0 - relativeEvaporableWater) / (1.0 - 0.33));
+    } else if (relativeEvaporableWater > 0.22) {
+      eReductionFactor = 0.9 - (0.625 * (0.33 - relativeEvaporableWater) / (0.33 - 0.22));
+    } else if (relativeEvaporableWater > 0.2) {
+      eReductionFactor = 0.275 - (0.225 * (0.22 - relativeEvaporableWater) / (0.22 - 0.2));
+    } else {
+      eReductionFactor = 0.05 - (0.05 * (0.2 - relativeEvaporableWater) / 0.2);
+    } // end if
+    break;
+  }
+  return eReductionFactor;
 }
 
 /*!

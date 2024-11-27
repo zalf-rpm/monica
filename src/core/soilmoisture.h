@@ -110,9 +110,10 @@ void step(double vs_DepthGroundwaterTable,
 
   std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const;
 
-  double get_EReducer_1(int i_Layer,
-                        double vm_PercentageSoilCoverage,
-                        double vm_PotentialEvapotranspiration);
+  double eReducer1(int layerIndex,
+                        double percentageSoilCoverage,
+                        double vm_PotentialEvapotranspiration,
+                        int evaporationReductionMethod = 1);
 
   void putCrop(monica::CropModule* cm) { cropModule = cm; }
   void removeCrop() { cropModule = nullptr; }
@@ -132,9 +133,7 @@ void step(double vs_DepthGroundwaterTable,
 
   void fm_BackwaterReplenishment();
 
-  void fm_Evapotranspiration(double vc_PercentageSoilCoverage,
-                              double vc_KcFactor,
-                              double vs_HeightNN,
+  void fm_Evapotranspiration(double vs_HeightNN,
                               double vw_MaxAirTemperature,
                               double vw_MinAirTemperature,
                               double vw_RelativeHumidity,
@@ -145,9 +144,9 @@ void step(double vs_DepthGroundwaterTable,
                               int vc_DevelopmentalStage,
                               int vs_JulianDay,
                               double vs_Latitude,
-                double vw_ReferenceEvapotranspiration);
+                double referenceEvapotranspiration);
 
-  double ReferenceEvapotranspiration(double vs_HeightNN,
+  double referenceEvapotranspiration(double vs_HeightNN,
                                       double vw_MaxAirTemperature,
                                       double vw_MinAirTemperature,
                                       double vw_RelativeHumidity,
