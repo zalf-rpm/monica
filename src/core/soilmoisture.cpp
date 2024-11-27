@@ -706,7 +706,6 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
   } else {
     vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   }
-  //cout << "groundwater recharge: " << vm_FluxAtLowerBoundary << endl;
 }
 
 /**
@@ -714,26 +713,25 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
  */
 void SoilMoisture::fm_PercolationWithoutGroundwater() {
   for (size_t i = 0; i < numberOfMoistureLayers - 1; i++) {
-
     auto indexOfLayerBelow = i + 1;
     vm_SoilMoisture[indexOfLayerBelow] += vm_PercolationRate[i] / 1000.0 / vm_LayerThickness[i];
 
     if (vm_SoilMoisture[indexOfLayerBelow] > vm_FieldCapacity[indexOfLayerBelow]) {
       // too much water for this layer so some water is released to layers below
       vm_GravitationalWater[indexOfLayerBelow] =
-          (vm_SoilMoisture[indexOfLayerBelow] - vm_FieldCapacity[indexOfLayerBelow]) * 1000.0 * vm_LayerThickness[0];
+        (vm_SoilMoisture[indexOfLayerBelow] - vm_FieldCapacity[indexOfLayerBelow]) * 1000.0 * vm_LayerThickness[0];
       auto vm_LambdaReduced = vm_Lambda[indexOfLayerBelow] * frostComponent->getLambdaRedux(indexOfLayerBelow);
       auto vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[indexOfLayerBelow]);
       vm_PercolationRate[indexOfLayerBelow] =
-          (vm_GravitationalWater[indexOfLayerBelow] * vm_GravitationalWater[indexOfLayerBelow]
-           * vm_LambdaReduced) / vm_PercolationFactor;
+      (vm_GravitationalWater[indexOfLayerBelow] * vm_GravitationalWater[indexOfLayerBelow]
+       * vm_LambdaReduced) / vm_PercolationFactor;
 
       if (vm_PercolationRate[indexOfLayerBelow] > pm_MaxPercolationRate) {
         vm_PercolationRate[indexOfLayerBelow] = pm_MaxPercolationRate;
       }
 
       vm_GravitationalWater[indexOfLayerBelow] =
-          vm_GravitationalWater[indexOfLayerBelow] - vm_PercolationRate[indexOfLayerBelow];
+        vm_GravitationalWater[indexOfLayerBelow] - vm_PercolationRate[indexOfLayerBelow];
 
       if (vm_GravitationalWater[indexOfLayerBelow] < 0.0) vm_GravitationalWater[indexOfLayerBelow] = 0.0;
 
@@ -750,7 +748,7 @@ void SoilMoisture::fm_PercolationWithoutGroundwater() {
     vm_GroundwaterAdded = vm_PercolationRate[indexOfLayerBelow];
   }
 
-  if ((pm_LeachingDepthLayer > 0) && (pm_LeachingDepthLayer < (numberOfMoistureLayers - 1))) {
+  if (pm_LeachingDepthLayer > 0 && pm_LeachingDepthLayer < numberOfMoistureLayers - 1) {
     vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   } else {
     vm_FluxAtLowerBoundary = vm_WaterFlux[numberOfMoistureLayers - 2];
