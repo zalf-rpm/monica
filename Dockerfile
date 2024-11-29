@@ -12,8 +12,8 @@ ENV WORK_DIR /resource
 
 RUN mkdir ${WORK_DIR}
 WORKDIR ${WORK_DIR}
-RUN git clone https://github.com/zalf-rpm/monica.git
-RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
+RUN git clone --recurse-submodules https://github.com/zalf-rpm/monica.git
+#RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
 RUN git clone https://github.com/zalf-rpm/monica-parameters.git
 
 RUN VCPKG_TAG=$(cat ./monica/vcpkg_tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
@@ -74,7 +74,7 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
 #COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-fbp-component ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/mas-infrastructure/common/channel ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/common/channel ${monica_dir}
 
 COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
 COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
