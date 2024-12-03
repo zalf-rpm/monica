@@ -28,7 +28,11 @@
   },
 	
   "SoilTemperatureParameters": ["include-from-file", "general/soil-temperature.json"],
-	"EnvironmentParameters": ["include-from-file", "general/environment.json"],
+"EnvironmentParameters": {
+	"=": ["include-from-file", "general/environment.json"],
+	"LeachingDepth": 2.0,
+	"WindSpeedHeight": 2.5
+},
   "SoilOrganicParameters": ["include-from-file", "general/soil-organic.json"],
   "SoilTransportParameters": ["include-from-file", "general/soil-transport.json"],
   "SoilMoistureParameters": ["include-from-file", "general/soil-moisture.json"]

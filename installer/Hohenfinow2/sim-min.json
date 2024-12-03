@@ -23,8 +23,29 @@
 			"include-aggregation-rows": false,
 			"csv-separator": ","
 		},
-		
-		"events" : [
+
+		"events": [
+			"crop", [
+				"CM-count",
+				"Crop",
+				["Yield", "LAST"],
+				["Date|sowing", "FIRST"],
+				["Date|harvest", "LAST"]
+			],
+			"daily", [
+				"Date",
+				"Crop",
+				"Stage",
+				"Yield",
+				"Act_ET",
+				"Pot_ET",
+				["Mois", [1, 6]],
+				"NFert",
+				["N", [1, 6]]
+			]
+		],
+
+		"_events" : [
 
 			"daily", [
 				"Date", 
@@ -71,10 +92,10 @@
 	"UseSecondaryYields": true,
 	"NitrogenResponseOn": true,
 	"WaterDeficitResponseOn": true,
-	"EmergenceMoistureControlOn": true,
-	"EmergenceFloodingControlOn": true,
+	"EmergenceMoistureControlOn": false,
+	"EmergenceFloodingControlOn": false,
 
-	"UseNMinMineralFertilisingMethod": true,
+	"UseNMinMineralFertilisingMethod": false,
 	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
 	"NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
 	"JulianDayAutomaticFertilising": 89,
