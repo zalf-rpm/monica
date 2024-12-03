@@ -2719,11 +2719,9 @@ void CropModule::fc_CropNitrogen() {
   }
 
   if (vc_NConcentrationAbovegroundBiomass < vc_CriticalNConcentration) {
-
     if (vc_NConcentrationAbovegroundBiomass <= pc_MinimumNConcentration) {
       vc_CropNRedux = 0.0;
     } else {
-
       double cropNReduxHelper = (vc_NConcentrationAbovegroundBiomass - pc_MinimumNConcentration) /
                                 (vc_CriticalNConcentration - pc_MinimumNConcentration);
 
@@ -2737,6 +2735,8 @@ void CropModule::fc_CropNitrogen() {
   } else {
     vc_CropNRedux = 1.0;
   }
+
+  if (pc_NitrogenResponseOn == false) vc_CropNRedux = 1.0;
 }
 
 /**
