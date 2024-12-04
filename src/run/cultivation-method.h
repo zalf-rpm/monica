@@ -538,6 +538,7 @@ public:
 
 private:
   std::string _pathToSerializedStateFile;
+  bool _serializeAsJson{false};
 };
 
 class DLL_API Irrigation : public Workstep {

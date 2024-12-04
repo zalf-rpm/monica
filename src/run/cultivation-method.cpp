@@ -25,6 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <capnp/message.h>
 #include <capnp/serialize.h>
+#include <capnp/compat/json.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
@@ -973,13 +974,15 @@ Errors SaveMonicaState::merge(json11::Json j) {
   _runAtStartOfDay = false; // by default run at the end of the day
   Errors res = Workstep::merge(j);
   set_string_value(_pathToSerializedStateFile, j, "pathToSerializedStateFile");
+  set_bool_value(_serializeAsJson, j, "serializeAsJson");
   return res;
 }
 
 json11::Json SaveMonicaState::to_json() const {
   return json11::Json::object
       {{"type",                      type()},
-       {"pathToSerializedStateFile", _pathToSerializedStateFile}
+       {"pathToSerializedStateFile", _pathToSerializedStateFile},
+        {"serializeAsJson",          _serializeAsJson}
       };
 }
 
@@ -996,15 +999,19 @@ bool SaveMonicaState::apply(MonicaModel *model) {
 
   capnp::MallocMessageBuilder message;
   auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
-  //runtimeState.setCritPos(model->critPos);
-  //runtimeState.setCmitPos(model->cmitPos);
-  auto modelState = runtimeState.initModelState();
+  const auto modelState = runtimeState.initModelState();
   model->serialize(modelState);
-  auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
-  file->writeAll(flatArray.asBytes());
+
+  if (_serializeAsJson) {
+    const capnp::JsonCodec json;
+    const auto jStr = json.encode(runtimeState);
+    file->writeAll(jStr);
+  } else {
+    auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
+    file->writeAll(flatArray.asBytes());
+  }
 
   model->addEvent("SaveMonicaState");
-
   return true;
 }
 

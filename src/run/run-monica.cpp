@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <capnp/message.h>
 #include <capnp/serialize.h>
+#include <capnp/compat/json.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
@@ -584,15 +585,22 @@ struct DFSRes {
   uint16_t cmitPos{0};
 };
 
-DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
-  auto allBytes = file->readAllBytes();
-  kj::ArrayInputStream aios(allBytes);
-  capnp::InputStreamMessageReader message(aios);
-  auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
+DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file, bool serializedMonicaStateIsJson) {
   DFSRes res;
-  //res.critPos = runtimeState.getCritPos();
-  //res.cmitPos = runtimeState.getCmitPos();
-  res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+  auto allBytes = file->readAllBytes();
+  if (serializedMonicaStateIsJson) {
+    const capnp::JsonCodec json;
+    capnp::MallocMessageBuilder msg;
+    auto runtimeStateBuilder = msg.initRoot<mas::schema::model::monica::RuntimeState>();
+    json.decode(allBytes.asChars(), runtimeStateBuilder);
+    auto runtimeState = runtimeStateBuilder.asReader();
+    res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+  } else {
+    kj::ArrayInputStream ais(allBytes);
+    capnp::InputStreamMessageReader message(ais);
+    auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
+    res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+  }
   return res;
 }
 
@@ -618,8 +626,6 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   debug() << "-----" << endl;
   kj::Own<MonicaModel> monica, monica2;
 
-  //uint critPos = 0;
-  //uint cmitPos = 0;
   if (env.params.simulationParameters.loadSerializedMonicaStateAtStart) {
     auto pathToSerFile = kj::str(env.params.simulationParameters.pathToSerializationFile);
     auto fs = kj::newDiskFilesystem();
@@ -627,10 +633,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
                 ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile))
                 : fs->getRoot().openFile(kj::Path::parse(pathToSerFile));
 
-    auto dserRes = deserializeFullState(kj::mv(file));
+    auto dserRes = deserializeFullState(kj::mv(file), env.params.simulationParameters.serializedMonicaStateIsJson);
     monica = kj::mv(dserRes.monica);
-    //critPos = dserRes.critPos;
-    //cmitPos = dserRes.cmitPos;
   } else {
     monica = kj::heap<MonicaModel>(env.params);
     monica->simulationParametersNC().startDate = env.climateData.startDate();
