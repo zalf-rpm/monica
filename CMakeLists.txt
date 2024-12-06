@@ -338,4 +338,16 @@ endif ()
 
 #------------------------------------------------------------------------------
 
+add_executable(daily-monica-fbp-component-main
+src/run/daily-monica-fbp-component-main.cpp
+)
+
+target_link_libraries(daily-monica-fbp-component-main monica_lib)
+
+if (MSVC)
+target_compile_options(daily-monica-fbp-component-main PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif ()
+
+#------------------------------------------------------------------------------
+
 message(STATUS "<- Monica")

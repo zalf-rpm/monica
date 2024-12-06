@@ -516,7 +516,7 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel &monica, bool storeO
   if (isCurrentlyEndEvent) withinEventStartEndRange = false;
 }
 
-vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date endDate) {
+vector<StoreData> monica::setupStorage(const json11::Json& event2oids, const Date& startDate, const Date& endDate) {
   map<string, Json> shortcuts =
       {{"daily",   J11Object{{"at", "xxxx-xx-xx"}}},
        {"monthly", J11Object{{"from", "xxxx-xx-01"},
@@ -531,7 +531,7 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 
   vector<StoreData> storeData;
 
-  auto e2os = event2oids.array_items();
+  const auto& e2os = event2oids.array_items();
   for (size_t i = 0, size = e2os.size(); i < size; i += 2) {
     StoreData sd;
     sd.spec.origSpec = e2os[i];
@@ -573,11 +573,6 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 
   return storeData;
 }
-
-//void Monica::initPathToDB(const std::string& initialPathToIniFile)
-//{
-//	Db::dbConnectionParameters(initialPathToIniFile);
-//}
 
 struct DFSRes {
   kj::Own<MonicaModel> monica;

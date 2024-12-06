@@ -142,13 +142,7 @@ struct StoreData {
   std::vector<Tools::J11Object> resultsObj;
 };
 
-//----------------------------------------------------------------------------
-
-//! can be called initially to set alternative path for the MONICA dll/so to db-connections.ini
-//DLL_API void initPathToDB(const std::string& initialPathToIniFile = "db-connections.ini");
-
-//std::pair<Tools::Date, std::map<Climate::ACD, double>>
-//climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);
+std::vector<StoreData> setupStorage(const json11::Json& event2oids, const Tools::Date& startDate, const Tools::Date& endDate);
 
 //! main function for running monica under a given Env(ironment)
 //! @param env the environment completely defining what the model needs and gets
