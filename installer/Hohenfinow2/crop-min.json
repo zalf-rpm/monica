@@ -16,6 +16,12 @@
 				"date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]
 			},
 			{
+				"date":  "0000-09-23",
+				"type": "SaveMonicaState",
+				"serializeAsJson": true,
+				"pathToSerializedStateFile": "/home/berg/GitHub/monica/test-ser.json"
+			},
+			{
 				"type": "NDemandFertilization",
 				"date": "0001-03-15",
 				"N-demand": [40.0, "kg"],

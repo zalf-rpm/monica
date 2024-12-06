@@ -109,5 +109,9 @@
 		"trigger_if_nFC_below_%": [50, "%"],
 		"_set_to_%nFC": [100, "%"],
 		"calc_nFC_until_depth_m": [0.3, "m"]
-	}
+	},
+
+	"loadSerializedMonicaStateAtStart": true,
+	"serializedMonicaStateIsJson": true,
+	"pathToSerializationFile": "/home/berg/GitHub/monica/test-ser.json"
 }
