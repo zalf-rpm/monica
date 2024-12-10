@@ -28,6 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "run-monica-capnp.h"
 #include "run-monica.h"
+#include "capnp-helper.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
@@ -61,8 +62,8 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity setInSr(kj::StringPtr name) {
-    inSr = kj::str(name);
+  kj::MainBuilder::Validity setEventsInSr(kj::StringPtr name) {
+    eventsInSr = kj::str(name);
     return true;
   }
 
@@ -312,7 +313,6 @@ public:
     typedef mas::schema::fbp::Channel<IP> Channel;
     typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText,
                                             mas::schema::common::StructuredText> MonicaEnvInstance;
-    typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
     //std::cout << "inSr: " << inSr.cStr() << std::endl;
     //std::cout << "outSr: " << outSr.cStr() << std::endl;
@@ -321,66 +321,90 @@ public:
                                 ? conMan.tryConnectB(serializedStateInSr.cStr()).castAs<Channel::ChanReader>()
                                 : nullptr;
     auto envp = conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>();
-    auto inp = conMan.tryConnectB(inSr.cStr()).castAs<Channel::ChanReader>();
+    auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
+
+    // read serialized state and create a monica instance with that state
+    if (!monica && serializedStateChannelConnected) {
+      if (auto msg = ssp.readRequest().send().wait(ioContext.waitScope); !msg.isDone()) {
+        auto ip = msg.getValue();
+        auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
+        monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+      }
+    }
+    // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
+    if (!monica) {
+      auto msg = envp.readRequest().send().wait(ioContext.waitScope);
+      if (msg.isDone()) {
+        KJ_LOG(INFO, "received done on env port -> exiting main loop");
+        return true;
+      }
+      auto ip = msg.getValue();
+      auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
+      std::string err;
+      const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
+      //cout << "runMonica: " << envJson["customId"].dump() << endl;
+      Env env;
+      auto errors = env.merge(envJson);
+      monica = kj::heap<MonicaModel>(env.params);
+      initMonica();
+    }
 
     try {
       while (true) {
-        // read serialized state
-        if (serializedStateChannelConnected) {
-          if (auto msg = ssp.readRequest().send().wait(ioContext.waitScope); !msg.isDone()) {
-            auto ip = msg.getValue();
-            auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-            monica = kj::heap<MonicaModel>(runtimeState.getModelState());
-          }
-        }
-        if (!monica) {
-          auto msg = envp.readRequest().send().wait(ioContext.waitScope);
-          if (msg.isDone()) {
-            KJ_LOG(INFO, "received done on env port -> exiting main loop");
-            return true;
-          }
-          auto ip = msg.getValue();
-          auto env = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-          monica = kj::heap<MonicaModel>(env.params);
 
-          initMonica();
-        }
-
-
-        KJ_LOG(INFO, "trying to read from IN port");
-        auto msg = inp.readRequest().send().wait(ioContext.waitScope);
-        KJ_LOG(INFO, "received msg from IN port");
+        // now wait for events
+        KJ_LOG(INFO, "trying to read from events IN port");
+        auto msg = eventsp.readRequest().send().wait(ioContext.waitScope);
+        KJ_LOG(INFO, "received msg from events IN port");
         // check for end of data from in port
         if (msg.isDone()) {
           KJ_LOG(INFO, "received done -> exiting main loop");
           break;
         } else {
-          auto inIp = msg.getValue();
-          auto attr = mas::infrastructure::common::getIPAttr(inIp, fromAttr);
-          auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
-          KJ_LOG(INFO, "received env -> running MONICA");
-          auto rreq = runMonicaClient.runRequest();
-          rreq.setEnv(env);
-          auto res = rreq.send().wait(ioContext.waitScope);
-          KJ_LOG(INFO, "received MONICA result");
-          if (res.hasResult() && res.getResult().hasValue()) {
-            KJ_LOG(INFO, "result is not empty");
-            auto resJsonStr = res.getResult().getValue();
-            auto wreq = outp.writeRequest();
-            auto outIp = wreq.initValue();
-
-            // set content if not to be set as attribute
-            if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
-            // copy attributes, if any and set result as attribute, if requested
-            auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
-                                                                                  toAttr);
-            //, capnp::toAny(resJsonStr));
-            KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
-            KJ_LOG(INFO, "trying to send result on OUT port");
-            wreq.send().wait(ioContext.waitScope);
-            KJ_LOG(INFO, "sent result on OUT port");
+          auto ip = msg.getValue();
+          typedef capnp::List<mas::schema::climate::Element> ListOfElements;
+          auto events = ip.getContent().getAs<capnp::List<mas::schema::model::monica::Event>>();
+          for (const auto& event : events) {
+            if (event.getType() == mas::schema::model::monica::Event::ExternalType::WEATHER) {
+              if (event.getParams().isNull() || !event.isAt()) continue;
+              auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
+              auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
+              auto d = event.getAt().getDate();
+              monica->setCurrentStepDate(Tools::Date(d.getDay(), d.getMonth(), d.getYear()));
+              monica->setCurrentStepClimateData(climateData);
+              runMonica(event.getFst(), event.getSnd(), dailyWorksteps);
+            }
           }
+
+
+          auto climateData = dailyClimateDataToDailyClimateMap(event.getFst(), event.getSnd());
+
+          monica->setCurrentStepClimateData(climateData);
+
+
+          KJ_LOG(INFO, "received env -> running MONICA");
+          //auto rreq = runMonicaClient.runRequest();
+          //rreq.setEnv(env);
+          //auto res = rreq.send().wait(ioContext.waitScope);
+          KJ_LOG(INFO, "received MONICA result");
+          //if (res.hasResult() && res.getResult().hasValue()) {
+            // KJ_LOG(INFO, "result is not empty");
+            // auto resJsonStr = res.getResult().getValue();
+            // auto wreq = outp.writeRequest();
+            // auto outIp = wreq.initValue();
+            //
+            // // set content if not to be set as attribute
+            // if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
+            // // copy attributes, if any and set result as attribute, if requested
+            // auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
+            //                                                                       toAttr);
+            // //, capnp::toAny(resJsonStr));
+            // KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
+            // KJ_LOG(INFO, "trying to send result on OUT port");
+            // wreq.send().wait(ioContext.waitScope);
+            // KJ_LOG(INFO, "sent result on OUT port");
+          //}
         }
       }
       KJ_LOG(INFO, "closing OUT port");
@@ -402,7 +426,7 @@ public:
                              "<attr>", "Which attribute to read the MONICA env from.")
            .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
                              "<attr>", "Which attribute to write the MONICA result to.")
-           .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
+           .addOptionWithArg({'i', "events_in_sr"}, KJ_BIND_METHOD(*this, setEventsInSr),
                              "<sturdy_ref>", "Sturdy ref to input channel.")
            .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
                              "<sturdy_ref>", "Sturdy ref to output channel.")
@@ -419,7 +443,7 @@ private:
   mas::infrastructure::common::ConnectionManager conMan;
   kj::String name;
   kj::ProcessContext& context;
-  kj::String inSr;
+  kj::String eventsInSr;
   kj::String outSr;
   kj::String fromAttr;
   kj::String toAttr;

@@ -58,8 +58,8 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity setInSr(kj::StringPtr name) {
-    inSr = kj::str(name);
+  kj::MainBuilder::Validity setEventsInSr(kj::StringPtr name) {
+    eventsInSr = kj::str(name);
     return true;
   }
 
@@ -85,7 +85,7 @@ public:
 
     //std::cout << "inSr: " << inSr.cStr() << std::endl;
     //std::cout << "outSr: " << outSr.cStr() << std::endl;
-    auto inp = conMan.tryConnectB(inSr.cStr()).castAs<Channel::ChanReader>();
+    auto inp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
 
     MonicaEnvInstance::Client runMonicaClient(nullptr);
@@ -164,7 +164,7 @@ private:
   mas::infrastructure::common::ConnectionManager conMan;
   kj::String name;
   kj::ProcessContext &context;
-  kj::String inSr;
+  kj::String eventsInSr;
   kj::String outSr;
   kj::String monicaSr;
   kj::String fromAttr;

@@ -27,15 +27,55 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model.capnp.h"
 #include "common.capnp.h"
+#include "monica_management.capnp.h"
 
 using namespace monica;
 using namespace Tools;
 using namespace json11;
 using namespace Climate;
 
-namespace {
+ACD monica::climateElementToACD(mas::schema::climate::Element e) {
+  switch (e) {
+    case mas::schema::climate::Element::TMIN:
+      return ACD::tmin;
+    case mas::schema::climate::Element::TAVG:
+      return ACD::tavg;
+    case mas::schema::climate::Element::TMAX:
+      return ACD::tmax;
+    case mas::schema::climate::Element::PRECIP:
+      return ACD::precip;
+    case mas::schema::climate::Element::RELHUMID:
+      return ACD::relhumid;
+    case mas::schema::climate::Element::WIND:
+      return ACD::wind;
+    case mas::schema::climate::Element::GLOBRAD:
+      return ACD::globrad;
+    default:
+      return ACD::skip;
+  }
+}
 
-DataAccessor fromCapnpData(
+std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(const capnp::List<mas::schema::climate::Element>::Reader& header,
+  const capnp::List<double>::Reader& data) {
+  std::map<ACD, double> res;
+  KJ_ASSERT(header.size() == data.size())
+  for (const auto i : kj::indices(header)){
+     res[climateElementToACD(header[i])] = data[i];
+   }
+   return res;
+ }
+
+std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
+  const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::Reader& dailyData) {
+  std::map<ACD, double> res;
+  for (const auto& kv : dailyData){
+    res[climateElementToACD(kv.getKey())] = kv.getValue();
+  }
+  return res;
+}
+
+
+DataAccessor monica::fromCapnpData(
     const Tools::Date &startDate,
     const Tools::Date &endDate,
     capnp::List<mas::schema::climate::Element>::Reader header,
@@ -48,8 +88,7 @@ DataAccessor fromCapnpData(
   for (capnp::uint i = 0; i < header.size(); i++) {
     auto vs = data[i];
     std::vector<double> d(data[0].size());
-    for (capnp::uint k = 0; k < vs.size(); k++)
-      d[k] = vs[k];
+    for (capnp::uint k = 0; k < vs.size(); k++) d[k] = vs[k];
     switch (header[i]) {
       case E::TMIN:
         da.addClimateData(ACD::tmin, kj::mv(d));
@@ -76,8 +115,6 @@ DataAccessor fromCapnpData(
     }
   }
   return da;
-}
-
 }
 
 kj::Promise<DataAccessor> monica::dataAccessorFromTimeSeries(mas::schema::climate::TimeSeries::Client ts) {
