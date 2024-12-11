@@ -36,6 +36,8 @@
 				"Date",
 				"Crop",
 				"Stage",
+				["Pwp", 1],
+				["Fc", 1],
 				"Yield",
 				"Act_ET",
 				"Pot_ET",
@@ -111,7 +113,8 @@
 		"calc_nFC_until_depth_m": [0.3, "m"]
 	},
 
-	"loadSerializedMonicaStateAtStart": true,
-	"serializedMonicaStateIsJson": true,
-	"pathToSerializationFile": "/home/berg/GitHub/monica/test-ser.json"
+	"_serializeMonicaStateAtEnd": true,
+	"_loadSerializedMonicaStateAtStart": true,
+	"_serializedMonicaStateIsJson": true,
+	"_pathToSerializationFile": "/home/berg/GitHub/monica/test-ser.json"
 }

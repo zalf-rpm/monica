@@ -52,15 +52,15 @@ public:
   //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
   //     double crossCropAdaptionFactor = 1);
 
-  Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
+  explicit Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
   void deserialize(mas::schema::model::monica::CropState::Reader reader);
   void serialize(mas::schema::model::monica::CropState::Builder builder) const;
 
-  Crop(json11::Json object);
+  explicit Crop(json11::Json object);
 
-  virtual Tools::Errors merge(json11::Json j);
+  Tools::Errors merge(json11::Json j) override;
 
-  virtual json11::Json to_json() const { return to_json(true); }
+  json11::Json to_json() const override { return to_json(true); }
 
   json11::Json to_json(bool includeFullCropParameters) const;
 

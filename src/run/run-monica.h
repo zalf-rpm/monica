@@ -37,7 +37,7 @@ struct CropRotation : public Tools::Json11Serializable {
   CropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation)
     : start(start), end(end), cropRotation(cropRotation) {}
 
-  explicit CropRotation(json11::Json object);
+//  explicit CropRotation(json11::Json object);
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -51,9 +51,6 @@ struct DLL_API Env : public Tools::Json11Serializable {
   Env() = default;
 
   explicit Env(CentralParameterProvider&& cpp);
-
-  explicit Env(json11::Json object);
-  // construct env from json object
 
   Tools::Errors merge(json11::Json j) override;
   // merge a json file into Env

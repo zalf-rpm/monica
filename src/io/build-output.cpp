@@ -1276,7 +1276,7 @@ BOTRes& monica::buildOutputTable()
       });
 
 
-      build({id++, "WaterContent", "%nFC", "soil water content in % of available soil water"},
+      build({id++, "WaterContent", "fraction nFC", "soil water content in % of available soil water"},
             [](const MonicaModel& monica, OId oid)
       {
         return getComplexValues<double>(oid, [&](int i)

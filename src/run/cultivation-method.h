@@ -324,9 +324,9 @@ private:
   Tools::Date _latestDate;
   Tools::Date _absLatestDate;
   double _minPercentASW{0};
-  double _maxPercentASW{100};
-  double _max3dayPrecipSum{0};
-  double _maxCurrentDayPrecipSum{0};
+  double _maxPercentASW{999};
+  double _max3dayPrecipSum{9999};
+  double _maxCurrentDayPrecipSum{9999};
   bool _cropHarvested{false};
 };
 

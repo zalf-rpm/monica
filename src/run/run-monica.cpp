@@ -68,9 +68,9 @@ Errors extractAndStore(const Json &jv, Vector &vec) {
 } // namespace _ (private)
 
 
-CropRotation::CropRotation(json11::Json j) {
-  merge(j);
-}
+//CropRotation::CropRotation(json11::Json j) {
+//  merge(j);
+//}
 
 Errors CropRotation::merge(json11::Json j) {
   Errors es;
@@ -97,10 +97,6 @@ json11::Json CropRotation::to_json() const {
 
 Env::Env(CentralParameterProvider &&cpp)
     : params(cpp) {}
-
-Env::Env(json11::Json j) {
-  merge(j);
-}
 
 Errors Env::merge(json11::Json j) {
   Errors es;
