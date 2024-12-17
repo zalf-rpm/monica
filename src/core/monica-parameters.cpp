@@ -1363,11 +1363,19 @@ Errors SimulationParameters::merge(json11::Json j) {
 
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
 
-  set_bool_value(serializeMonicaStateAtEnd, j, "serializeMonicaStateAtEnd");
-  set_bool_value(loadSerializedMonicaStateAtStart, j, "loadSerializedMonicaStateAtStart");
-  set_bool_value(serializedMonicaStateIsJson, j, "serializedMonicaStateIsJson");
-  noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
-  set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
+  if (auto serState = j["serializedMonicaState"].object_items(); !serState.empty()) {
+    if (const auto loadState = serState["load"]; loadState.is_object()) {
+      set_bool_value(loadSerializedMonicaStateAtStart, loadState, "atStart");
+      set_bool_value(deserializedMonicaStateFromJson, loadState, "fromJson");
+      set_string_value(pathToLoadSerializationFile, loadState, "path");
+    }
+    if (const auto saveState = serState["save"]; saveState.is_object()) {
+      set_bool_value(serializeMonicaStateAtEnd, saveState, "atEnd");
+      set_bool_value(serializeMonicaStateAtEndToJson, saveState, "toJson");
+      set_string_value(pathToSerializationAtEndFile, saveState, "path");
+      noOfPreviousDaysSerializedClimateData = max(0, int_value(saveState, "noOfPreviousDaysSerializedClimateData"));
+    }
+  }
 
   return res;
 }
@@ -1394,11 +1402,21 @@ json11::Json SimulationParameters::to_json() const {
        {"LayerThickness",                        p_LayerThickness},
        {"StartPVIndex",                          p_StartPVIndex},
        {"serializeMonicaStateAtEnd",             serializeMonicaStateAtEnd},
-       {"loadSerializedMonicaStateAtStart",      loadSerializedMonicaStateAtStart},
-       {"serializedMonicaStateIsJson",           serializedMonicaStateIsJson},
-       {"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)},
-       {"pathToSerializationFile",               pathToSerializationFile}
-      };
+       {"serializedMonicaState",                  Json::object {
+           {
+             "load", Json::object {
+             { "atStart", loadSerializedMonicaStateAtStart },
+             { "fromJson", deserializedMonicaStateFromJson },
+             { "path", pathToLoadSerializationFile } }
+           },
+           {
+             "save", Json::object {
+             { "atEnd", serializeMonicaStateAtEnd },
+             { "toJson", serializeMonicaStateAtEndToJson },
+             { "path", pathToSerializationAtEndFile },
+             { "noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData) } }
+           }}
+      }};
 }
 
 void CropModuleParameters::deserialize(mas::schema::model::monica::CropModuleParameters::Reader reader) {

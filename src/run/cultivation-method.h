@@ -520,7 +520,8 @@ private:
 
 class DLL_API SaveMonicaState : public Workstep {
 public:
-  SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile);
+  SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile, bool serializeAsJson = false,
+    int noOfPreviousDaysSerializedClimateData = 0);
 
   explicit SaveMonicaState(json11::Json object);
 
@@ -534,11 +535,12 @@ public:
 
   bool apply(MonicaModel *model) override;
 
-  std::string pathToSerializedStateFile() const { return _pathToSerializedStateFile; }
+  std::string pathToSerializedStateFile() const { return _pathToFile; }
 
 private:
-  std::string _pathToSerializedStateFile;
-  bool _serializeAsJson{false};
+  std::string _pathToFile;
+  bool _toJson{false};
+  int _noOfPreviousDaysSerializedClimateData{0};
 };
 
 class DLL_API Irrigation : public Workstep {

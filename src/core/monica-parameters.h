@@ -20,22 +20,18 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 #include <string>
 #include <vector>
-#include <iostream>
 #include <memory>
 #include <functional>
-#include <assert.h>
-#include <climits>
+#include <cassert>
 
 #include <kj/async-io.h>
 #include <kj/common.h>
 
 #include "json11/json11.hpp"
 
-#include "common.capnp.h"
 #include "fbp.capnp.h"
 #include "model/monica/monica_params.capnp.h"
 #include "model/monica/monica_state.capnp.h"
-#include "management.capnp.h"
 
 #include "common/dll-exports.h"
 #include "climate/climate-common.h"
@@ -55,13 +51,6 @@ enum Eva2_Nutzung {
   NUTZUNG_GRUENDUENGUNG = 7,
   NUTZUNG_CCM = 8
 };
-
-const double UNDEFINED = -9999.9;
-const int UNDEFINED_INT = -9999;
-
-//enum { MONTH=12 };
-
-//----------------------------------------------------------------------------
 
 /**
  * @brief
@@ -88,7 +77,6 @@ struct DLL_API YieldComponent : public Tools::Json11Serializable {
   double yieldDryMatter{ 0.0 };
 };
 
-//----------------------------------------------------------------------------
 
 struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   SpeciesParameters() {}
@@ -249,23 +237,23 @@ typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 
 
 struct DLL_API CropParameters : public Tools::Json11Serializable {
-  CropParameters() {}
+  CropParameters() = default;
 
-  CropParameters(mas::schema::model::monica::CropParameters::Reader reader) { deserialize(reader); }
+  explicit CropParameters(mas::schema::model::monica::CropParameters::Reader reader) { deserialize(reader); }
 
   void deserialize(mas::schema::model::monica::CropParameters::Reader reader);
 
   // CropParameters(json11::Json object);
 
-  CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
+  //CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
 
   void serialize(mas::schema::model::monica::CropParameters::Builder builder) const;
 
-  virtual Tools::Errors merge(json11::Json j);
+  Tools::Errors merge(json11::Json j) override;
 
   Tools::Errors merge(json11::Json sj, json11::Json cj);
 
-  virtual json11::Json to_json() const;
+  json11::Json to_json() const override;
 
   std::string pc_CropName() const { return speciesParams.pc_SpeciesId + "/" + cultivarParams.pc_CultivarId; }
 
@@ -673,10 +661,12 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   int p_JulianDayAutomaticFertilising{ 0 };
 
   bool serializeMonicaStateAtEnd{ false };
+  bool serializeMonicaStateAtEndToJson{ false };
+  std::string pathToSerializationAtEndFile;
   bool loadSerializedMonicaStateAtStart{ false };
-  bool serializedMonicaStateIsJson{ false };
+  bool deserializedMonicaStateFromJson{ false };
+  std::string pathToLoadSerializationFile;
   uint64_t noOfPreviousDaysSerializedClimateData{ 0 };
-  std::string pathToSerializationFile;
 };
 
 
