@@ -979,7 +979,7 @@ Errors SaveMonicaState::merge(json11::Json j) {
   set_bool_valueD(_runAtStartOfDay, j, "runAtStartOfDay", false);
   set_string_value(_pathToFile, j, "path");
   set_bool_value(_toJson, j, "toJson");
-  _noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
+  set_int_valueD(_noOfPreviousDaysSerializedClimateData, j, "noOfPreviousDaysSerializedClimateData", -1);
   return res;
 }
 
@@ -997,8 +997,11 @@ json11::Json SaveMonicaState::to_json() const {
 bool SaveMonicaState::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  int prevVal = model->simulationParameters().noOfPreviousDaysSerializedClimateData;
-  model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = _noOfPreviousDaysSerializedClimateData;
+  int prevVal = -1;
+  if (_noOfPreviousDaysSerializedClimateData > -1) {
+    prevVal = model->simulationParameters().noOfPreviousDaysSerializedClimateData;
+    model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = _noOfPreviousDaysSerializedClimateData;
+  }
 
   const auto pathToSerFile = kj::str(_pathToFile);
   auto fs = kj::newDiskFilesystem();
@@ -1022,7 +1025,7 @@ bool SaveMonicaState::apply(MonicaModel *model) {
     file->writeAll(flatArray.asBytes());
   }
 
-  model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = prevVal;
+  if (prevVal > -1) model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = prevVal;
   model->addEvent("SaveMonicaState");
   return true;
 }

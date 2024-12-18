@@ -217,3 +217,4 @@ _cmake_vs2019_win64
 /_cmake_linux_zig
 _cmake_linux_release
 /cmake-build-debug-coverage/
+/installer/Hohenfinow2/monica-parameters/
