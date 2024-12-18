@@ -68,9 +68,9 @@ Errors extractAndStore(const Json &jv, Vector &vec) {
 } // namespace _ (private)
 
 
-CropRotation::CropRotation(json11::Json j) {
-  merge(j);
-}
+//CropRotation::CropRotation(json11::Json j) {
+//  merge(j);
+//}
 
 Errors CropRotation::merge(json11::Json j) {
   Errors es;
@@ -97,10 +97,6 @@ json11::Json CropRotation::to_json() const {
 
 Env::Env(CentralParameterProvider &&cpp)
     : params(cpp) {}
-
-Env::Env(json11::Json j) {
-  merge(j);
-}
 
 Errors Env::merge(json11::Json j) {
   Errors es;
@@ -627,13 +623,13 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   kj::Own<MonicaModel> monica, monica2;
 
   if (env.params.simulationParameters.loadSerializedMonicaStateAtStart) {
-    auto pathToSerFile = kj::str(env.params.simulationParameters.pathToSerializationFile);
+    auto pathToSerFile = kj::str(env.params.simulationParameters.pathToLoadSerializationFile);
     auto fs = kj::newDiskFilesystem();
     auto file = isAbsolutePath(pathToSerFile.cStr())
                 ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile))
                 : fs->getRoot().openFile(kj::Path::parse(pathToSerFile));
 
-    auto dserRes = deserializeFullState(kj::mv(file), env.params.simulationParameters.serializedMonicaStateIsJson);
+    auto dserRes = deserializeFullState(kj::mv(file), env.params.simulationParameters.deserializedMonicaStateFromJson);
     monica = kj::mv(dserRes.monica);
   } else {
     monica = kj::heap<MonicaModel>(env.params);
@@ -984,7 +980,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   }
 
   if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
-    SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationFile);
+    SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationAtEndFile,
+                        env.params.simulationParameters.serializeMonicaStateAtEndToJson,
+                        env.params.simulationParameters.noOfPreviousDaysSerializedClimateData);
     sms.apply(monica.get());
   }
   //if (isSyncIC && env2.params.simulationParameters.serializeMonicaStateAtEnd) {
@@ -1016,4 +1014,4 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   return make_pair(out, out2);
 }
 
-Output monica::runMonica(Env env) { return runMonicaIC(env, false).first; }
+Output monica::runMonica(Env env) { return runMonicaIC(kj::mv(env), false).first; }

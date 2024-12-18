@@ -961,8 +961,12 @@ bool SetValue::apply(MonicaModel *model) {
 }
 
 
-SaveMonicaState::SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile)
-    : Workstep(at), _pathToSerializedStateFile(pathToSerializedStateFile) {
+SaveMonicaState::SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile,
+                                 bool serializeAsJson, int noOfPreviousDaysSerializedClimateData)
+: Workstep(at)
+, _pathToFile(std::move(pathToSerializedStateFile))
+, _toJson(serializeAsJson)
+, _noOfPreviousDaysSerializedClimateData(noOfPreviousDaysSerializedClimateData) {
   _runAtStartOfDay = false; // by default run at the end of the day
 }
 
@@ -971,25 +975,35 @@ SaveMonicaState::SaveMonicaState(json11::Json j) {
 }
 
 Errors SaveMonicaState::merge(json11::Json j) {
-  _runAtStartOfDay = false; // by default run at the end of the day
   Errors res = Workstep::merge(j);
-  set_string_value(_pathToSerializedStateFile, j, "pathToSerializedStateFile");
-  set_bool_value(_serializeAsJson, j, "serializeAsJson");
+  set_bool_valueD(_runAtStartOfDay, j, "runAtStartOfDay", false);
+  set_string_value(_pathToFile, j, "path");
+  set_bool_value(_toJson, j, "toJson");
+  set_int_valueD(_noOfPreviousDaysSerializedClimateData, j, "noOfPreviousDaysSerializedClimateData", -1);
   return res;
 }
 
 json11::Json SaveMonicaState::to_json() const {
   return json11::Json::object
-      {{"type",                      type()},
-       {"pathToSerializedStateFile", _pathToSerializedStateFile},
-        {"serializeAsJson",          _serializeAsJson}
-      };
+  {
+    {"type", type()},
+    {"path", _pathToFile},
+    {"toJson", _toJson},
+       {"noOfPreviousDaysSerializedClimateData", _noOfPreviousDaysSerializedClimateData},
+    {"runAtStartOfDay", _runAtStartOfDay}
+  };
 }
 
 bool SaveMonicaState::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  auto pathToSerFile = kj::str(_pathToSerializedStateFile);
+  int prevVal = -1;
+  if (_noOfPreviousDaysSerializedClimateData > -1) {
+    prevVal = model->simulationParameters().noOfPreviousDaysSerializedClimateData;
+    model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = _noOfPreviousDaysSerializedClimateData;
+  }
+
+  const auto pathToSerFile = kj::str(_pathToFile);
   auto fs = kj::newDiskFilesystem();
   auto file = isAbsolutePath(pathToSerFile.cStr())
               ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile),
@@ -1002,7 +1016,7 @@ bool SaveMonicaState::apply(MonicaModel *model) {
   const auto modelState = runtimeState.initModelState();
   model->serialize(modelState);
 
-  if (_serializeAsJson) {
+  if (_toJson) {
     const capnp::JsonCodec json;
     const auto jStr = json.encode(runtimeState);
     file->writeAll(jStr);
@@ -1011,6 +1025,7 @@ bool SaveMonicaState::apply(MonicaModel *model) {
     file->writeAll(flatArray.asBytes());
   }
 
+  if (prevVal > -1) model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = prevVal;
   model->addEvent("SaveMonicaState");
   return true;
 }

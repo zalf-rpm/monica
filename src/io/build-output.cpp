@@ -443,6 +443,12 @@ BOTRes& monica::buildOutputTable()
         return monica.cropGrowth() ? round(monica.cropGrowth()->get_OxygenDeficit(), 2) : 0.0;
       });
 
+      build({ id++, "TimeUnderAnoxia", "0;1", "TimeUnderAnoxia" },
+        [](const MonicaModel& monica, OId oid)
+      {
+        return monica.cropGrowth() ? round(monica.cropGrowth()->vc_TimeUnderAnoxia, 2) : 0.0;
+      });
+
       build({ id++, "Stage", "1-6/7", "DevelopmentalStage" },
         [](const MonicaModel& monica, OId oid)
       {
@@ -1276,7 +1282,7 @@ BOTRes& monica::buildOutputTable()
       });
 
 
-      build({id++, "WaterContent", "%nFC", "soil water content in % of available soil water"},
+      build({id++, "WaterContent", "fraction nFC", "soil water content in % of available soil water"},
             [](const MonicaModel& monica, OId oid)
       {
         return getComplexValues<double>(oid, [&](int i)

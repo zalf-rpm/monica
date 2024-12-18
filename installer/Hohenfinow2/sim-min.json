@@ -9,6 +9,7 @@
 	},
 	
 	"debug?": false,
+	"_include-file-base-path": "/hf2/monica-parameters/",
 	"include-file-base-path": "${MONICA_PARAMETERS}/",
 
 	"output": { 
@@ -24,7 +25,7 @@
 			"csv-separator": ","
 		},
 
-		"events": [
+		"_events": [
 			"crop", [
 				"CM-count",
 				"Crop",
@@ -36,6 +37,8 @@
 				"Date",
 				"Crop",
 				"Stage",
+				["Pwp", 1],
+				["Fc", 1],
 				"Yield",
 				"Act_ET",
 				"Pot_ET",
@@ -45,7 +48,7 @@
 			]
 		],
 
-		"_events" : [
+		"events" : [
 
 			"daily", [
 				"Date", 
@@ -111,7 +114,17 @@
 		"calc_nFC_until_depth_m": [0.3, "m"]
 	},
 
-	"loadSerializedMonicaStateAtStart": true,
-	"serializedMonicaStateIsJson": true,
-	"pathToSerializationFile": "/home/berg/GitHub/monica/test-ser.json"
+	"serializedMonicaState": {
+		"load": {
+			"atStart": false,
+			"fromJson": true,
+			"path": "/home/berg/GitHub/monica/test-ser.json"
+		},
+		"save": {
+			"atEnd": false,
+			"toJson": true,
+			"path": "/home/berg/GitHub/monica/test-ser.json",
+			"noOfPreviousDaysSerializedClimateData": 10
+		}
+	}
 }
