@@ -34,7 +34,7 @@ std::map<Climate::ACD, double> dailyClimateDataToDailyClimateMap(
 std::map<Climate::ACD, double> dailyClimateDataToDailyClimateMap(
   const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::Reader& dailyData);
 
-Climate::DataAccessor monica::fromCapnpData(
+Climate::DataAccessor fromCapnpData(
     const Tools::Date &startDate,
     const Tools::Date &endDate,
     capnp::List<mas::schema::climate::Element>::Reader header,

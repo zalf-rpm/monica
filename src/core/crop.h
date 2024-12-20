@@ -38,20 +38,6 @@ public:
 
   Crop(const Crop& other);
 
-  //Crop(const std::string& speciesName,
-  //     const std::string& cultivarName,
-  //     const CropParametersPtr cps = CropParametersPtr(),
-  //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
-  //     double crossCropAdaptionFactor = 1);
-
-  //Crop(const std::string& speciesName,
-  //     const std::string& cultivarName,
-  //     const Tools::Date& seedDate,
-  //     const Tools::Date& harvestDate,
-  //     const CropParametersPtr cps = CropParametersPtr(),
-  //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
-  //     double crossCropAdaptionFactor = 1);
-
   explicit Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
   void deserialize(mas::schema::model::monica::CropState::Reader reader);
   void serialize(mas::schema::model::monica::CropState::Builder builder) const;

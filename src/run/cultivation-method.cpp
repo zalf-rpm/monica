@@ -188,6 +188,16 @@ Sowing::Sowing(json11::Json j) {
   _errors.append(Sowing::merge(kj::mv(j)));
 }
 
+// void Sowing::deserialize(mas::schema::model::monica::Params::Sowing::Reader reader) {
+//   _cropToPlant = kj::heap<Crop>();
+//   _cropToPlant->deserialize(reader.getCrop());
+//   _plantDensity = reader.getPlantDensity();
+// }
+//
+// void Sowing::serialize(mas::schema::model::monica::Params::Sowing::Builder builder) const {
+//
+// }
+
 Errors Sowing::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   //set_shared_ptr_value(_crop, j, "crop");

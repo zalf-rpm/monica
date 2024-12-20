@@ -241,13 +241,10 @@ public:
   }
 
 
-  Output runMonica(int d, Date currentDate, vector<Workstep> dailyWorksteps) {
-      debug() << "currentDate: " << currentDate.toString() << endl;
+  void runMonica(){//vector<Workstep> dailyWorksteps) {
+      debug() << "currentDate: " << monica->currentStepDate().toString() << endl;
 
       monica->dailyReset();
-
-      monica->setCurrentStepDate(currentDate);
-      monica->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
 
       // test if monica's crop has been dying in previous step
       // if yes, it will be incorporated into soil
@@ -256,11 +253,11 @@ public:
       }
 
       //try to apply dynamic worksteps marked to run before everything else that day
-      for (auto& dws : list(dynamicWorksteps)) {
-        if (dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
-      }
+      // for (auto& dws : list(dynamicWorksteps)) {
+      //   if (dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
+      // }
 
-      for (auto& ws : dailyWorksteps) ws.apply(monica.get());
+      //for (auto& ws : dailyWorksteps) ws.apply(monica.get());
 
       //monica main stepping method
       monica->step();
@@ -273,9 +270,9 @@ public:
       for (auto& f : applyDailyFuncs) f();
 
       //try to apply dynamic worksteps marked to run AFTER everything else that day
-      for (auto& dws : list(dynamicWorksteps)) {
-        if (!dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
-      }
+      // for (auto& dws : list(dynamicWorksteps)) {
+      //   if (!dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
+      // }
 
       //store results
       for (auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
@@ -292,7 +289,9 @@ public:
 
   void finalizeMonica(Date currentDate) {
     if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
-      SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationFile);
+      SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationAtEndFile,
+        env.params.simulationParameters.serializeMonicaStateAtEndToJson,
+        env.params.simulationParameters.noOfPreviousDaysSerializedClimateData);
       sms.apply(monica.get());
     }
 
@@ -352,7 +351,6 @@ public:
 
     try {
       while (true) {
-
         // now wait for events
         KJ_LOG(INFO, "trying to read from events IN port");
         auto msg = eventsp.readRequest().send().wait(ioContext.waitScope);
@@ -362,51 +360,53 @@ public:
           KJ_LOG(INFO, "received done -> exiting main loop");
           break;
         } else {
+          KJ_LOG(INFO, "received env -> running MONICA");
           auto ip = msg.getValue();
           typedef capnp::List<mas::schema::climate::Element> ListOfElements;
           auto events = ip.getContent().getAs<capnp::List<mas::schema::model::monica::Event>>();
+          //vector<Workstep> dailyWorksteps;
           for (const auto& event : events) {
-            if (event.getType() == mas::schema::model::monica::Event::ExternalType::WEATHER) {
+            typedef mas::schema::model::monica::Event Event;
+            switch (event.getType()) {
+            case Event::ExternalType::WEATHER: {
+              KJ_LOG(INFO, "received weather data at: ", monica->currentStepDate().toString());
               if (event.getParams().isNull() || !event.isAt()) continue;
               auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
               auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
               auto d = event.getAt().getDate();
               monica->setCurrentStepDate(Tools::Date(d.getDay(), d.getMonth(), d.getYear()));
               monica->setCurrentStepClimateData(climateData);
-              runMonica(event.getFst(), event.getSnd(), dailyWorksteps);
+              break;
+            }
+            case Event::ExternalType::SOWING: {
+              auto sp = event.getParams().getAs<mas::schema::model::monica::Params::Sowing>();
+              //auto speciesName = sp.getCrop().speciesRequest().send().then([](auto &&res){ return res.getInfo().getName(); });
+              //auto cultivarName = sp.getCrop().cultivarRequest().send().then([](auto &&res){ return res.getInfo().getName(); });
+              auto snRes = sp.getCrop().speciesRequest().send().wait(ioContext.waitScope);
+              auto speciesName = snRes.getInfo().getName();
+              auto cnRes = sp.getCrop().cultivarRequest().send().wait(ioContext.waitScope);
+              auto cultivarName = cnRes.getInfo().getName();
+              auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
+              auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
+              KJ_LOG(INFO, "received sowing event for crop: ", speciesName, "/", cultivarName, " at: ", monica->currentStepDate().toString());
+              monica->seedCrop(cropParams);
+              monica->addEvent("Sowing");
+            }
+            case Event::ExternalType::HARVEST: {
+              auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
+              if (monica->isCropPlanted()){
+                Harvest::Spec spec;
+                monica->harvestCurrentCrop(hp.getExported(), spec);
+                KJ_LOG(INFO, "received harvest event at: ", monica->currentStepDate().toString());
+                monica->addEvent("Harvest");
+              }
+            }
             }
           }
-
-
-          auto climateData = dailyClimateDataToDailyClimateMap(event.getFst(), event.getSnd());
-
-          monica->setCurrentStepClimateData(climateData);
-
-
-          KJ_LOG(INFO, "received env -> running MONICA");
-          //auto rreq = runMonicaClient.runRequest();
-          //rreq.setEnv(env);
-          //auto res = rreq.send().wait(ioContext.waitScope);
-          KJ_LOG(INFO, "received MONICA result");
-          //if (res.hasResult() && res.getResult().hasValue()) {
-            // KJ_LOG(INFO, "result is not empty");
-            // auto resJsonStr = res.getResult().getValue();
-            // auto wreq = outp.writeRequest();
-            // auto outIp = wreq.initValue();
-            //
-            // // set content if not to be set as attribute
-            // if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
-            // // copy attributes, if any and set result as attribute, if requested
-            // auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
-            //                                                                       toAttr);
-            // //, capnp::toAny(resJsonStr));
-            // KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
-            // KJ_LOG(INFO, "trying to send result on OUT port");
-            // wreq.send().wait(ioContext.waitScope);
-            // KJ_LOG(INFO, "sent result on OUT port");
-          //}
+          runMonica();//dailyWorksteps);
         }
       }
+
       KJ_LOG(INFO, "closing OUT port");
       outp.closeRequest().send().wait(ioContext.waitScope);
     } catch (const kj::Exception& e) {
@@ -454,7 +454,7 @@ private:
   kj::Own<MonicaModel> monica;
   std::vector<StoreData> store;
   Output out;
-  std::list<Workstep> dynamicWorksteps;
+  //std::list<Workstep> dynamicWorksteps;
   std::map<int, std::vector<double>> dailyValues;
   std::vector<std::function<void()>> applyDailyFuncs;
 };

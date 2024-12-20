@@ -129,6 +129,10 @@ public:
 
   virtual Sowing *clone() const { return new Sowing(*this); }
 
+  // explicit Sowing(mas::schema::model::monica::Params::Sowing::Reader reader) { deserialize(reader); }
+  // void deserialize(mas::schema::model::monica::Params::Sowing::Reader reader);
+  // void serialize(mas::schema::model::monica::Params::Sowing::Builder builder) const;
+
   Tools::Errors merge(json11::Json j) override;
 
   json11::Json to_json() const override { return to_json(true); }

@@ -74,6 +74,7 @@ public:
   double GroundwaterDepthForDate(double maxGroundwaterDepth, double minGroundwaterDepth, int minGroundwaterDepthMonth,
     double julianday, bool leapYear);
 
+  void seedCrop(mas::schema::model::monica::CropSpec::Reader reader);
   void seedCrop(Crop* crop);
 
   bool isCropPlanted() const { return _currentCropModule; }

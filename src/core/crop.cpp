@@ -131,7 +131,7 @@ Errors Crop::merge(json11::Json j)
 	Errors res = Json11Serializable::merge(j);
 
 	set_iso_date_value(_seedDate, j, "seedDate");
-	set_iso_date_value(_harvestDate, j, "havestDate");
+	set_iso_date_value(_harvestDate, j, "harvestDate");
 	set_string_value(_speciesName, j, "species");
 	set_string_value(_cultivarName, j, "cultivar");
 

@@ -258,6 +258,58 @@ void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builde
   builder.setCultivationMethodCount(_cultivationMethodCount);
 }
 
+void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) {
+  debug() << "seedCrop" << endl;
+
+  p_daysWithCrop = 0;
+  p_accuNStress = 0.0;
+  p_accuWaterStress = 0.0;
+  p_accuHeatStress = 0.0;
+  p_accuOxygenStress = 0.0;
+
+  if (reader.hasCropParams() && reader.hasResidueParams()) {
+    auto cropParams = reader.getCropParams();
+    if (!cropParams.hasSpeciesParams() || !cropParams.hasCultivarParams()) return;
+
+    _cultivationMethodCount++;
+
+    auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nConcentration) {
+      this->_soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
+                                           layer2amount,
+                                           nConcentration);
+    };
+    CropParameters cps(reader.getCropParams());
+    _currentCropModule = kj::heap<CropModule>(*_soilColumn, cps, reader.getResidueParams(),
+                                              cps.cultivarParams.winterCrop, _sitePs, _cropPs, _simPs,
+                                              [this](const string& event) { this->addEvent(event); },
+                                              addOMFunc,
+                                              [this](double avgAirTemp) {
+                                                return this->soilMoisture().getSnowDepthAndCalcTemperatureUnderSnow(
+                                                    avgAirTemp);
+                                              },
+                                              _intercropping);
+
+    //if (crop->separatePerennialCropParameters())
+    //  _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
+
+    _soilTransport->putCrop(_currentCropModule.get());
+    _soilColumn->putCrop(_currentCropModule.get());
+    _soilMoisture->putCrop(_currentCropModule.get());
+    _soilOrganic->putCrop(_currentCropModule.get());
+
+    if (_simPs.p_UseNMinMineralFertilisingMethod
+        && !_currentCropModule->isWinterCrop()) {
+      _soilColumn->clearTopDressingParams();
+      debug() << "nMin fertilising summer crop" << endl;
+      double fertAmount = applyMineralFertiliserViaNMinMethod
+          (_simPs.p_NMinFertiliserPartition,
+           NMinCropParameters(cps.speciesParams.pc_SamplingDepth,
+                              cps.speciesParams.pc_TargetNSamplingDepth,
+                              cps.speciesParams.pc_TargetN30));
+      addDailySumFertiliser(fertAmount);
+    }
+  }
+}
 
 /**
  * @brief Simulation of crop seed.
