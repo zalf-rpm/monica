@@ -176,7 +176,8 @@ Errors Crop::merge(json11::Json j)
 			auto jcps = j["perennialCropParams"];
 			if (jcps.has_shape({ {"species", json11::Json::OBJECT} }, err)
 				&& jcps.has_shape({ {"cultivar", json11::Json::OBJECT} }, err)) {
-				_separatePerennialCropParams = kj::heap<CropParameters>(j["cropParams"]);
+				_separatePerennialCropParams = kj::heap<CropParameters>();
+				_separatePerennialCropParams->merge(j["cropParams"]);
 				_perennialCropParams = *_separatePerennialCropParams.get();
 			}
 		}

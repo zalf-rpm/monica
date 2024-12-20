@@ -4,6 +4,7 @@
     "Slope": 0,
     "HeightNN": [0 , "m"],
     "NDeposition": [30, "kg N ha-1 y-1"],
+    "pwpFcSatFunction": "Wessolek2009",
 
     "SoilProfileParameters": [
 			{
@@ -28,11 +29,11 @@
   },
 	
   "SoilTemperatureParameters": ["include-from-file", "general/soil-temperature.json"],
-"EnvironmentParameters": {
+  "EnvironmentParameters": {
 	"=": ["include-from-file", "general/environment.json"],
 	"LeachingDepth": 2.0,
 	"WindSpeedHeight": 2.5
-},
+  },
   "SoilOrganicParameters": ["include-from-file", "general/soil-organic.json"],
   "SoilTransportParameters": ["include-from-file", "general/soil-transport.json"],
   "SoilMoistureParameters": ["include-from-file", "general/soil-moisture.json"]
