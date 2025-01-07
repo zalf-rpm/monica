@@ -35,18 +35,18 @@ jobs:
       - name: Read vcpkg tag to use
         id: vcpkg_tag
         run: |
-          echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> "$GITHUB_ENV"
+          echo "vcpkg_tag=2024.09.30" >> "$GITHUB_ENV"
 
-      - name: outout tag
+      - name: output tag
         id: vcpkg_tag2
         run: |
-          echo "$vcpkg_tag"
+          echo "${{ env.vcpkg_tag }}"
 
       - name: Checkout vcpkg
         uses: actions/checkout@v4
         with:
           repository: microsoft/vcpkg
-          ref: "$vcpkg_tag"
+          ref: "${{ env.vcpkg_tag }}"
           path: "vcpkg"
 
       - name: Debug directory structure
