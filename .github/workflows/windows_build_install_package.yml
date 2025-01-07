@@ -38,7 +38,7 @@ jobs:
           echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $GITHUB_OUTPUT
 
       - name: Read vcpkg tag to use2
-        id: vcpkg_tag
+        id: vcpkg_tag2
         run: |
           cat ./monica/vcpkg_tag.txt
 
