@@ -37,7 +37,6 @@ jobs:
         run: |
           echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $GITHUB_OUTPUT
           cat ./monica/vcpkg_tag.txt
-          echo "GITHUB_OUTPUT=$GITHUB_OUTPUT"
           echo ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
 
       - name: Checkout vcpkg
