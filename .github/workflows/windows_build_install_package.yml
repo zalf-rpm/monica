@@ -36,8 +36,6 @@ jobs:
         id: vcpkg_tag
         run: |
           echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $GITHUB_OUTPUT
-          cat ./monica/vcpkg_tag.txt
-          echo ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
 
       - name: Checkout vcpkg
         uses: actions/checkout@v4
