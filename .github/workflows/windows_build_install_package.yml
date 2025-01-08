@@ -35,12 +35,11 @@ jobs:
       - name: Read vcpkg tag to use
         id: vcpkg_tag
         run: |
-          echo "vcpkg_tag=2024.09.30" >> $GITHUB_OUTPUT
+          echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $env:GITHUB_OUTPUT
 
       - name: output tag
         id: vcpkg_tag2
         run: |
-          echo $GITHUB_OUTPUT
           echo ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
 
       - name: Checkout vcpkg
