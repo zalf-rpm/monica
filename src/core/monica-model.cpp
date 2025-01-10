@@ -814,7 +814,7 @@ void MonicaModel::cropStep() {
                            vw_AtmosphericO3Concentration,
                            precip,
                            et0);
-  if (_simPs.p_UseAutomaticIrrigation) {
+  if (_simPs.p_UseAutomaticIrrigation && _simPs.p_AutoIrrigationParams.startDate <= date) {
     const AutomaticIrrigationParameters &aips = _simPs.p_AutoIrrigationParams;
     bool irrigationTriggered = false;
     double irrigationAmount = 0.0;

@@ -108,8 +108,9 @@
 		"irrigationParameters": {
 			"nitrateConcentration": [0, "mg dm-3"]
 		},
+		"startDate": "1992-05-01",
 		"amount": [17, "mm"],
-		"trigger_if_nFC_below_%": [50, "%"],
+		"trigger_if_nFC_below_%": [90, "%"],
 		"_set_to_%nFC": [100, "%"],
 		"calc_nFC_until_depth_m": [0.3, "m"]
 	},

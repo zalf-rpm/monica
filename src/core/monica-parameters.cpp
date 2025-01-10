@@ -810,6 +810,7 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
+  set_iso_date_value(startDate, j, "startDate");
   set_double_value(amount, j, "amount");
   set_double_value(percentNFC, j, "set_to_%nFC");
   set_double_value(threshold, j, "threshold", transformIfPercent(j, "threshold"));
@@ -824,6 +825,7 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
 json11::Json AutomaticIrrigationParameters::to_json() const {
   auto o = json11::Json::object
       {{"type",                 "AutomaticIrrigationParameters"},
+       {"startDate",            startDate.toIsoDateString()},
        {"irrigationParameters", IrrigationParameters::to_json()},
        {"trigger_if_nFC_below_%",            J11Array{threshold*100.0, "%"}},
        {"calc_nFC_until_depth_m",J11Array{criticalMoistureDepthM, "m"}},
