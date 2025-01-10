@@ -366,7 +366,7 @@ public:
           KJ_LOG(INFO, "received done -> exiting main loop");
           break;
         } else {
-          KJ_LOG(INFO, "received env -> running MONICA");
+          KJ_LOG(INFO, "received event");
           auto ip = msg.getValue();
           typedef capnp::List<mas::schema::climate::Element> ListOfElements;
           auto events = ip.getContent().getAs<capnp::List<mas::schema::model::monica::Event>>();
