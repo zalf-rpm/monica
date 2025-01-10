@@ -29,6 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica-capnp.h"
 #include "run-monica.h"
 #include "capnp-helper.h"
+#include "climate-file-io.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
@@ -101,8 +102,8 @@ public:
     monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.
       noOfPreviousDaysSerializedClimateData;
 
-    debug() << "currentDate" << endl;
-    Date currentDate = env.climateData.startDate();
+    //debug() << "currentDate" << endl;
+    //Date currentDate = env.climateData.startDate();
 
     // create a way for worksteps to let the runtime calculate at a daily basis things a workstep needs when being executed
     // e.g. to actually accumulate values from days before the workstep (for calculating a moving window of past values)
@@ -230,9 +231,9 @@ public:
     };
 
     //direct handle to current cultivation method
-    CultivationMethod* currentCM{nullptr};
-    Date nextAbsoluteCMApplicationDate;
-    tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
+    //CultivationMethod* currentCM{nullptr};
+    //Date nextAbsoluteCMApplicationDate;
+    //tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
 
     store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
 
@@ -342,8 +343,13 @@ public:
       auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
       std::string err;
       const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
+      auto envJsonStr = envJson.dump();
       //cout << "runMonica: " << envJson["customId"].dump() << endl;
       Env env;
+      auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+      env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+      env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
+      env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
       auto errors = env.merge(envJson);
       monica = kj::heap<MonicaModel>(env.params);
       initMonica();
