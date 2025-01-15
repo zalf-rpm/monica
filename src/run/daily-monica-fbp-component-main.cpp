@@ -375,37 +375,39 @@ public:
             typedef mas::schema::model::monica::Event Event;
             switch (event.getType()) {
             case Event::ExternalType::WEATHER: {
-              KJ_LOG(INFO, "received weather data at: ", monica->currentStepDate().toString());
               if (event.getParams().isNull() || !event.isAt()) continue;
               auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
               auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
               auto d = event.getAt().getDate();
               monica->setCurrentStepDate(Tools::Date(d.getDay(), d.getMonth(), d.getYear()));
+              KJ_LOG(INFO, "received weather data at: ", monica->currentStepDate().toIsoDateString());
               monica->setCurrentStepClimateData(climateData);
               break;
             }
             case Event::ExternalType::SOWING: {
               auto sp = event.getParams().getAs<mas::schema::model::monica::Params::Sowing>();
-              //auto speciesName = sp.getCrop().speciesRequest().send().then([](auto &&res){ return res.getInfo().getName(); });
-              //auto cultivarName = sp.getCrop().cultivarRequest().send().then([](auto &&res){ return res.getInfo().getName(); });
-              auto snRes = sp.getCrop().speciesRequest().send().wait(ioContext.waitScope);
-              auto speciesName = snRes.getInfo().getName();
-              auto cnRes = sp.getCrop().cultivarRequest().send().wait(ioContext.waitScope);
-              auto cultivarName = cnRes.getInfo().getName();
-              auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
-              auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
-              KJ_LOG(INFO, "received sowing event for crop: ", speciesName, "/", cultivarName, " at: ", monica->currentStepDate().toString());
-              monica->seedCrop(cropParams);
-              monica->addEvent("Sowing");
+              if (sp.hasCrop()) {
+                auto snRes = sp.getCrop().speciesRequest().send().wait(ioContext.waitScope);
+                auto speciesName = snRes.getInfo().getName();
+                auto cnRes = sp.getCrop().cultivarRequest().send().wait(ioContext.waitScope);
+                auto cultivarName = cnRes.getInfo().getName();
+                auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
+                auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
+                KJ_LOG(INFO, "received sowing event for crop: ", speciesName, "/", cultivarName, " at: ", monica->currentStepDate().toString().c_str());
+                monica->seedCrop(cropParams);
+                monica->addEvent("Sowing");
+              }
+              break;
             }
             case Event::ExternalType::HARVEST: {
               auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
               if (monica->isCropPlanted()){
                 Harvest::Spec spec;
                 monica->harvestCurrentCrop(hp.getExported(), spec);
-                KJ_LOG(INFO, "received harvest event at: ", monica->currentStepDate().toString());
+                KJ_LOG(INFO, "received harvest event at: ", monica->currentStepDate().toString().c_str());
                 monica->addEvent("Harvest");
               }
+              break;
             }
             }
           }
