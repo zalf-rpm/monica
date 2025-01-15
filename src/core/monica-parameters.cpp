@@ -122,6 +122,9 @@ void SpeciesParameters::deserialize(mas::schema::model::monica::SpeciesParameter
   setFromCapnpList(pc_InitialOrganBiomass, reader.getInitialOrganBiomass());
   setFromCapnpList(pc_CriticalOxygenContent, reader.getCriticalOxygenContent());
   setFromCapnpList(pc_StageMobilFromStorageCoeff, reader.getStageMobilFromStorageCoeff());
+  if (pc_StageMobilFromStorageCoeff.empty()) {
+    pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+  }
   setFromCapnpList(pc_AbovegroundOrgan, reader.getAbovegroundOrgan());
   setFromCapnpList(pc_StorageOrgan, reader.getStorageOrgan());
   pc_SamplingDepth = reader.getSamplingDepth();
@@ -246,8 +249,9 @@ Errors SpeciesParameters::merge(json11::Json j) {
   set_double_vector(pc_CriticalOxygenContent, j, "CriticalOxygenContent");
 
   set_double_vector(pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
-  if (pc_StageMobilFromStorageCoeff.empty())
+  if (pc_StageMobilFromStorageCoeff.empty()) {
     pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+  }
 
   set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
   set_bool_vector(pc_StorageOrgan, j, "StorageOrgan");
@@ -370,15 +374,21 @@ void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParamet
   pc_CropSpecificMaxRootingDepth = reader.getCropSpecificMaxRootingDepth();
 
   {
-    auto listReader = reader.getAssimilatePartitioningCoeff();
-    capnp::uint i = 0;
-    for (auto &v: pc_AssimilatePartitioningCoeff) setFromCapnpList(v, listReader[i++]);
+    const auto listReader = reader.getAssimilatePartitioningCoeff();
+    for (const auto lr : listReader) {
+      vector<double> v;
+      setFromCapnpList(v, lr);
+      pc_AssimilatePartitioningCoeff.emplace_back(v);
+    }
   }
 
   {
-    auto listReader = reader.getOrganSenescenceRate();
-    capnp::uint i = 0;
-    for (auto &v: pc_OrganSenescenceRate) setFromCapnpList(v, listReader[i++]);
+    const auto listReader = reader.getOrganSenescenceRate();
+    for (const auto lr : listReader) {
+      vector<double> v;
+      setFromCapnpList(v, lr);
+      pc_OrganSenescenceRate.emplace_back(v);
+    }
   }
 
   setFromCapnpList(pc_BaseDaylength, reader.getBaseDaylength());
