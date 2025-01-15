@@ -363,7 +363,15 @@ public:
         KJ_LOG(INFO, "received msg from events IN port");
         // check for end of data from in port
         if (msg.isDone()) {
-          KJ_LOG(INFO, "received done -> exiting main loop");
+          KJ_LOG(INFO, "received done -> finalizing monica run");
+          finalizeMonica(monica->currentStepDate());
+          // send results to out port
+          auto wrq = outp.writeRequest();
+          auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
+          st.getStructure().setJson();
+          KJ_LOG(INFO, out.to_json().dump());
+          st.setValue(out.to_json().dump().c_str());
+          wrq.send().wait(ioContext.waitScope);
           break;
         } else {
           KJ_LOG(INFO, "received event");
