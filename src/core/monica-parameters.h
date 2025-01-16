@@ -396,7 +396,7 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   virtual json11::Json to_json() const;
 
   Tools::Date startDate;
-  double amount{ 0.0 };
+  double amount{ -1.0 };
   double percentNFC{ -1.0 };
   double threshold{ -1.0 };
   double criticalMoistureDepthM{ 0.3 };

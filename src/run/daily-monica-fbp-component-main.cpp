@@ -324,39 +324,49 @@ public:
     auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
 
-    // read serialized state and create a monica instance with that state
-    if (!monica && serializedStateChannelConnected) {
-      if (auto msg = ssp.readRequest().send().wait(ioContext.waitScope); !msg.isDone()) {
+    auto waitForMoreEnvs = true;
+    while (waitForMoreEnvs) {
+      // read serialized state and create a monica instance with that state
+      if (!monica && serializedStateChannelConnected) {
+        auto msg = ssp.readRequest().send().wait(ioContext.waitScope);
+        if (msg.isDone()) {
+
+        } else {
+          auto ip = msg.getValue();
+          auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
+          monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+        }
+      }
+      // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
+      if (!monica) {
+        auto msg = envp.readRequest().send().wait(ioContext.waitScope);
+        if (msg.isDone()) {
+          KJ_LOG(INFO, "received done on env port -> exiting main loop");
+          waitForMoreEnvs = false;
+        }
         auto ip = msg.getValue();
-        auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-        monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+        auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
+        std::string err;
+        const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
+        auto envJsonStr = envJson.dump();
+        //cout << "runMonica: " << envJson["customId"].dump() << endl;
+        auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+        env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+        env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
+        env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
+        auto errors = env.merge(envJson);
+        monica = kj::heap<MonicaModel>(env.params);
+        initMonica();
       }
-    }
-    // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
-    if (!monica) {
-      auto msg = envp.readRequest().send().wait(ioContext.waitScope);
-      if (msg.isDone()) {
-        KJ_LOG(INFO, "received done on env port -> exiting main loop");
-        return true;
-      }
-      auto ip = msg.getValue();
-      auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
-      std::string err;
-      const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
-      auto envJsonStr = envJson.dump();
-      //cout << "runMonica: " << envJson["customId"].dump() << endl;
-      Env env;
-      auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
-      env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
-      env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
-      env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
-      auto errors = env.merge(envJson);
-      monica = kj::heap<MonicaModel>(env.params);
-      initMonica();
+
+
     }
 
+
+
     try {
-      while (true) {
+      auto waitForMoreEvents = true;
+      while (waitForMoreEvents) {
         // now wait for events
         KJ_LOG(INFO, "trying to read from events IN port");
         auto msg = eventsp.readRequest().send().wait(ioContext.waitScope);
@@ -367,18 +377,18 @@ public:
           finalizeMonica(monica->currentStepDate());
           // send results to out port
           auto wrq = outp.writeRequest();
+          //auto v = wrq.initValue();
           auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
           st.getStructure().setJson();
-          KJ_LOG(INFO, out.to_json().dump());
-          st.setValue(out.to_json().dump().c_str());
+          //KJ_LOG(INFO, out.to_json().dump());
+          st.setValue(out.to_json().dump());
           wrq.send().wait(ioContext.waitScope);
-          break;
+          waitForMoreEvents = false;
         } else {
           KJ_LOG(INFO, "received event");
           auto ip = msg.getValue();
           typedef capnp::List<mas::schema::climate::Element> ListOfElements;
           auto events = ip.getContent().getAs<capnp::List<mas::schema::model::monica::Event>>();
-          //vector<Workstep> dailyWorksteps;
           for (const auto& event : events) {
             typedef mas::schema::model::monica::Event Event;
             switch (event.getType()) {
@@ -417,6 +427,16 @@ public:
               }
               break;
             }
+            case Event::ExternalType::AUTOMATIC_SOWING: break;
+            case Event::ExternalType::AUTOMATIC_HARVEST: break;
+            case Event::ExternalType::IRRIGATION: break;
+            case Event::ExternalType::TILLAGE: break;
+            case Event::ExternalType::ORGANIC_FERTILIZATION: break;
+            case Event::ExternalType::MINERAL_FERTILIZATION: break;
+            case Event::ExternalType::N_DEMAND_FERTILIZATION: break;
+            case Event::ExternalType::CUTTING: break;
+            case Event::ExternalType::SET_VALUE: break;
+            case Event::ExternalType::SAVE_STATE: break;
             }
           }
           runMonica();//dailyWorksteps);
