@@ -320,135 +320,154 @@ public:
     auto ssp = serializedStateChannelConnected
                                 ? conMan.tryConnectB(serializedStateInSr.cStr()).castAs<Channel::ChanReader>()
                                 : nullptr;
-    auto envp = conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>();
+    bool envChannelConnected = envInSr.size() > 0;
+    auto envp = envChannelConnected
+                  ? conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>()
+                  : nullptr;
     auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
 
-    auto waitForMoreEnvs = true;
-    while (waitForMoreEnvs) {
+    while (serializedStateChannelConnected || envChannelConnected) {
       // read serialized state and create a monica instance with that state
-      if (!monica && serializedStateChannelConnected) {
-        auto msg = ssp.readRequest().send().wait(ioContext.waitScope);
-        if (msg.isDone()) {
-
-        } else {
+      if (serializedStateChannelConnected) {
+        try {
+          auto msg = ssp.readRequest().send().wait(ioContext.waitScope);
+          if (msg.isDone()) {
+            KJ_LOG(INFO, "received done on serialized state port");
+            // treat state channel as disconnected and possibly leaf outer loop
+            serializedStateChannelConnected = false;
+            continue;
+          } else {
+            auto ip = msg.getValue();
+            auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
+            monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+          }
+        } catch (kj::Exception &e) {
+          KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
+          // treat state channel as disconnected and possibly leaf outer loop
+          serializedStateChannelConnected = false;
+          continue;
+        }
+      } else {
+        try {
+          // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
+          auto msg = envp.readRequest().send().wait(ioContext.waitScope);
+          if (msg.isDone()) {
+            KJ_LOG(INFO, "received done on env port");
+            // treat env channel as disconnected and possibly leaf outer loop
+            envChannelConnected = false;
+            continue;
+          }
           auto ip = msg.getValue();
-          auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-          monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+          auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
+          std::string err;
+          const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
+          auto envJsonStr = envJson.dump();
+          //cout << "runMonica: " << envJson["customId"].dump() << endl;
+          auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+          env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+          env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
+          env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
+          auto errors = env.merge(envJson);
+          monica = kj::heap<MonicaModel>(env.params);
+          initMonica();
+        } catch (kj::Exception& e) {
+          KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
+          // treat env channel as disconnected and possibly leaf outer loop
+          envChannelConnected = false;
+          continue;
         }
       }
-      // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
-      if (!monica) {
-        auto msg = envp.readRequest().send().wait(ioContext.waitScope);
-        if (msg.isDone()) {
-          KJ_LOG(INFO, "received done on env port -> exiting main loop");
-          waitForMoreEnvs = false;
-        }
-        auto ip = msg.getValue();
-        auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
-        std::string err;
-        const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
-        auto envJsonStr = envJson.dump();
-        //cout << "runMonica: " << envJson["customId"].dump() << endl;
-        auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
-        env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
-        env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
-        env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
-        auto errors = env.merge(envJson);
-        monica = kj::heap<MonicaModel>(env.params);
-        initMonica();
-      }
 
-
-    }
-
-
-
-    try {
-      auto waitForMoreEvents = true;
-      while (waitForMoreEvents) {
-        // now wait for events
-        KJ_LOG(INFO, "trying to read from events IN port");
-        auto msg = eventsp.readRequest().send().wait(ioContext.waitScope);
-        KJ_LOG(INFO, "received msg from events IN port");
-        // check for end of data from in port
-        if (msg.isDone()) {
-          KJ_LOG(INFO, "received done -> finalizing monica run");
-          finalizeMonica(monica->currentStepDate());
-          // send results to out port
-          auto wrq = outp.writeRequest();
-          //auto v = wrq.initValue();
-          auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
-          st.getStructure().setJson();
-          //KJ_LOG(INFO, out.to_json().dump());
-          st.setValue(out.to_json().dump());
-          wrq.send().wait(ioContext.waitScope);
-          waitForMoreEvents = false;
-        } else {
-          KJ_LOG(INFO, "received event");
-          auto ip = msg.getValue();
-          typedef capnp::List<mas::schema::climate::Element> ListOfElements;
-          auto events = ip.getContent().getAs<capnp::List<mas::schema::model::monica::Event>>();
-          for (const auto& event : events) {
-            typedef mas::schema::model::monica::Event Event;
-            switch (event.getType()) {
-            case Event::ExternalType::WEATHER: {
-              if (event.getParams().isNull() || !event.isAt()) continue;
-              auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
-              auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
-              auto d = event.getAt().getDate();
-              monica->setCurrentStepDate(Tools::Date(d.getDay(), d.getMonth(), d.getYear()));
-              KJ_LOG(INFO, "received weather data at: ", monica->currentStepDate().toIsoDateString());
-              monica->setCurrentStepClimateData(climateData);
-              break;
-            }
-            case Event::ExternalType::SOWING: {
-              auto sp = event.getParams().getAs<mas::schema::model::monica::Params::Sowing>();
-              if (sp.hasCrop()) {
-                auto snRes = sp.getCrop().speciesRequest().send().wait(ioContext.waitScope);
-                auto speciesName = snRes.getInfo().getName();
-                auto cnRes = sp.getCrop().cultivarRequest().send().wait(ioContext.waitScope);
-                auto cultivarName = cnRes.getInfo().getName();
-                auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
-                auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
-                KJ_LOG(INFO, "received sowing event for crop: ", speciesName, "/", cultivarName, " at: ", monica->currentStepDate().toString().c_str());
-                monica->seedCrop(cropParams);
-                monica->addEvent("Sowing");
+      try {
+        auto waitForMoreEvents = true;
+        auto bracketOpened = false;
+        while (waitForMoreEvents) {
+          // now wait for events
+          KJ_LOG(INFO, "trying to read from events IN port");
+          auto msg = eventsp.readRequest().send().wait(ioContext.waitScope);
+          KJ_LOG(INFO, "received msg from events IN port");
+          // check for end of data from in port
+          if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
+            KJ_LOG(INFO, "received done -> finalizing monica run");
+            finalizeMonica(monica->currentStepDate());
+            // send results to out port
+            auto wrq = outp.writeRequest();
+            auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
+            st.getStructure().setJson();
+            st.setValue(out.to_json().dump());
+            wrq.send().wait(ioContext.waitScope);
+            waitForMoreEvents = false;
+          } else {
+            auto ip = msg.getValue();
+            if (ip.getType() == IP::Type::OPEN_BRACKET) {
+              KJ_LOG(INFO, "received open bracket IP");
+              bracketOpened = true;
+            } else { // IP::Type::STANDARD
+              KJ_LOG(INFO, "received standard event IP");
+              typedef mas::schema::model::monica::Event Event;
+              auto event = ip.getContent().getAs<Event>();
+              switch (event.getType()) {
+              case Event::ExternalType::WEATHER: {
+                if (event.getParams().isNull() || !event.isAt()) continue;
+                auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
+                auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
+                auto d = event.getAt().getDate();
+                monica->setCurrentStepDate(Tools::Date(d.getDay(), d.getMonth(), d.getYear()));
+                KJ_LOG(INFO, "received weather data at: ", monica->currentStepDate().toIsoDateString());
+                monica->setCurrentStepClimateData(climateData);
+                runMonica();
+                break;
               }
-              break;
-            }
-            case Event::ExternalType::HARVEST: {
-              auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
-              if (monica->isCropPlanted()){
-                Harvest::Spec spec;
-                monica->harvestCurrentCrop(hp.getExported(), spec);
-                KJ_LOG(INFO, "received harvest event at: ", monica->currentStepDate().toString().c_str());
-                monica->addEvent("Harvest");
+              case Event::ExternalType::SOWING: {
+                auto sp = event.getParams().getAs<mas::schema::model::monica::Params::Sowing>();
+                if (sp.hasCrop()) {
+                  auto snRes = sp.getCrop().speciesRequest().send().wait(ioContext.waitScope);
+                  auto speciesName = snRes.getInfo().getName();
+                  auto cnRes = sp.getCrop().cultivarRequest().send().wait(ioContext.waitScope);
+                  auto cultivarName = cnRes.getInfo().getName();
+                  auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
+                  auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
+                  KJ_LOG(INFO, "received sowing event for crop: ", speciesName, "/", cultivarName, " at: ",
+                         monica->currentStepDate().toString().c_str());
+                  monica->seedCrop(cropParams);
+                  monica->addEvent("Sowing");
+                }
+                break;
               }
-              break;
-            }
-            case Event::ExternalType::AUTOMATIC_SOWING: break;
-            case Event::ExternalType::AUTOMATIC_HARVEST: break;
-            case Event::ExternalType::IRRIGATION: break;
-            case Event::ExternalType::TILLAGE: break;
-            case Event::ExternalType::ORGANIC_FERTILIZATION: break;
-            case Event::ExternalType::MINERAL_FERTILIZATION: break;
-            case Event::ExternalType::N_DEMAND_FERTILIZATION: break;
-            case Event::ExternalType::CUTTING: break;
-            case Event::ExternalType::SET_VALUE: break;
-            case Event::ExternalType::SAVE_STATE: break;
+              case Event::ExternalType::HARVEST: {
+                auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
+                if (monica->isCropPlanted()) {
+                  Harvest::Spec spec;
+                  monica->harvestCurrentCrop(hp.getExported(), spec);
+                  KJ_LOG(INFO, "received harvest event at: ", monica->currentStepDate().toString().c_str());
+                  monica->addEvent("Harvest");
+                }
+                break;
+              }
+              case Event::ExternalType::AUTOMATIC_SOWING: break;
+              case Event::ExternalType::AUTOMATIC_HARVEST: break;
+              case Event::ExternalType::IRRIGATION: break;
+              case Event::ExternalType::TILLAGE: break;
+              case Event::ExternalType::ORGANIC_FERTILIZATION: break;
+              case Event::ExternalType::MINERAL_FERTILIZATION: break;
+              case Event::ExternalType::N_DEMAND_FERTILIZATION: break;
+              case Event::ExternalType::CUTTING: break;
+              case Event::ExternalType::SET_VALUE: break;
+              case Event::ExternalType::SAVE_STATE: break;
+              }
             }
           }
-          runMonica();//dailyWorksteps);
         }
-      }
 
-      KJ_LOG(INFO, "closing OUT port");
-      outp.closeRequest().send().wait(ioContext.waitScope);
-    } catch (const kj::Exception& e) {
-      KJ_LOG(INFO, "Exception: ", e.getDescription());
-      std::cerr << "Exception: " << e.getDescription().cStr() << endl;
+
+      } catch (const kj::Exception& e) {
+        KJ_LOG(INFO, "Exception: ", e.getDescription());
+      }
     }
+
+    KJ_LOG(INFO, "closing OUT port");
+    outp.closeRequest().send().wait(ioContext.waitScope);
 
     return true;
   }
@@ -463,7 +482,7 @@ public:
            .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
                              "<attr>", "Which attribute to write the MONICA result to.")
            .addOptionWithArg({'i', "events_in_sr"}, KJ_BIND_METHOD(*this, setEventsInSr),
-                             "<sturdy_ref>", "Sturdy ref to input channel.")
+                             "<sturdy_ref>", "Sturdy ref to events channel.")
            .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
                              "<sturdy_ref>", "Sturdy ref to output channel.")
            .addOptionWithArg({'s', "serialized_state_in_sr"}, KJ_BIND_METHOD(*this, setSerializedStateInSr),
