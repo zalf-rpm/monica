@@ -137,10 +137,6 @@ std::string OId::outputName() const
   return outName;
 }
 
-//-----------------------------------------------------------------------------
-
-
-
 Output::Output(json11::Json j)
 {
   merge(j);
@@ -216,6 +212,3 @@ json11::Json Output::to_json() const
   ,{"warnings", toPrimJsonArray(warnings)}
   };
 }
-
-//-----------------------------------------------------------------------------
-

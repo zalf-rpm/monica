@@ -361,7 +361,7 @@ std::function<bool(const MonicaModel &)> Spec::createExpressionFunc(Json j) {
     }
   }
 
-  return std::function<bool(const MonicaModel &)>();
+  return {};
 }
 
 

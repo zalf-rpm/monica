@@ -111,7 +111,7 @@ struct Spec : public Tools::Json11Serializable {
 
   Tools::Errors merge(json11::Json j) override;
 
-  std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
+  static std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
 
   json11::Json to_json() const override { return origSpec; }
 
