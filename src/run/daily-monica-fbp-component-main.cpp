@@ -20,6 +20,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/main.h>
 
 #include <capnp/any.h>
+#include <capnp/compat/json.h>
 
 #include "tools/debug.h"
 #include "common/rpc-connection-manager.h"
@@ -77,6 +78,12 @@ public:
     serializedStateInSr = kj::str(name);
     return true;
   }
+
+  kj::MainBuilder::Validity setSerializedStateOutSr(kj::StringPtr name) {
+    serializedStateOutSr = kj::str(name);
+    return true;
+  }
+
 
   kj::MainBuilder::Validity setEnvInSr(kj::StringPtr name) {
     envInSr = kj::str(name);
@@ -316,9 +323,13 @@ public:
 
     //std::cout << "inSr: " << inSr.cStr() << std::endl;
     //std::cout << "outSr: " << outSr.cStr() << std::endl;
-    bool serializedStateChannelConnected = serializedStateInSr.size() > 0;
-    auto ssp = serializedStateChannelConnected
+    bool serializedStateInChannelConnected = serializedStateInSr.size() > 0;
+    auto ssip = serializedStateInChannelConnected
                                 ? conMan.tryConnectB(serializedStateInSr.cStr()).castAs<Channel::ChanReader>()
+                                : nullptr;
+    bool serializedStateOutChannelConnected = serializedStateOutSr.size() > 0;
+    auto ssop = serializedStateOutChannelConnected
+                                ? conMan.tryConnectB(serializedStateOutSr.cStr()).castAs<Channel::ChanWriter>()
                                 : nullptr;
     bool envChannelConnected = envInSr.size() > 0;
     auto envp = envChannelConnected
@@ -327,15 +338,15 @@ public:
     auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
     auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
 
-    while (serializedStateChannelConnected || envChannelConnected) {
+    while (serializedStateInChannelConnected || envChannelConnected) {
       // read serialized state and create a monica instance with that state
-      if (serializedStateChannelConnected) {
+      if (serializedStateInChannelConnected) {
         try {
-          auto msg = ssp.readRequest().send().wait(ioContext.waitScope);
+          auto msg = ssip.readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on serialized state port");
             // treat state channel as disconnected and possibly leaf outer loop
-            serializedStateChannelConnected = false;
+            serializedStateInChannelConnected = false;
             continue;
           } else {
             auto ip = msg.getValue();
@@ -345,7 +356,7 @@ public:
         } catch (kj::Exception &e) {
           KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
           // treat state channel as disconnected and possibly leaf outer loop
-          serializedStateChannelConnected = false;
+          serializedStateInChannelConnected = false;
           continue;
         }
       } else {
@@ -397,6 +408,7 @@ public:
             st.getStructure().setJson();
             st.setValue(out.to_json().dump());
             wrq.send().wait(ioContext.waitScope);
+            KJ_LOG(INFO, "sent MONICA result on output channel");
             waitForMoreEvents = false;
           } else {
             auto ip = msg.getValue();
@@ -407,14 +419,15 @@ public:
               KJ_LOG(INFO, "received standard event IP");
               typedef mas::schema::model::monica::Event Event;
               auto event = ip.getContent().getAs<Event>();
+              auto d = event.getAt().getDate();
+              auto eventDate = Date(d.getDay(), d.getMonth(), d.getYear());
               switch (event.getType()) {
               case Event::ExternalType::WEATHER: {
                 if (event.getParams().isNull() || !event.isAt()) continue;
+                KJ_LOG(INFO, "received weather data at", eventDate.toIsoDateString());
                 auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
                 auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
-                auto d = event.getAt().getDate();
-                monica->setCurrentStepDate(Tools::Date(d.getDay(), d.getMonth(), d.getYear()));
-                KJ_LOG(INFO, "received weather data at: ", monica->currentStepDate().toIsoDateString());
+                monica->setCurrentStepDate(eventDate);
                 monica->setCurrentStepClimateData(climateData);
                 runMonica();
                 break;
@@ -428,8 +441,8 @@ public:
                   auto cultivarName = cnRes.getInfo().getName();
                   auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
                   auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
-                  KJ_LOG(INFO, "received sowing event for crop: ", speciesName, "/", cultivarName, " at: ",
-                         monica->currentStepDate().toString().c_str());
+                  KJ_LOG(INFO, "received sowing event for crop", speciesName, "/", cultivarName, " at",
+                         eventDate.toIsoDateString());
                   monica->seedCrop(cropParams);
                   monica->addEvent("Sowing");
                 }
@@ -438,31 +451,128 @@ public:
               case Event::ExternalType::HARVEST: {
                 auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
                 if (monica->isCropPlanted()) {
+                  KJ_LOG(INFO, "received harvest event at", eventDate.toIsoDateString());
                   Harvest::Spec spec;
                   monica->harvestCurrentCrop(hp.getExported(), spec);
-                  KJ_LOG(INFO, "received harvest event at: ", monica->currentStepDate().toString().c_str());
                   monica->addEvent("Harvest");
                 }
                 break;
               }
               case Event::ExternalType::AUTOMATIC_SOWING: break;
               case Event::ExternalType::AUTOMATIC_HARVEST: break;
-              case Event::ExternalType::IRRIGATION: break;
-              case Event::ExternalType::TILLAGE: break;
-              case Event::ExternalType::ORGANIC_FERTILIZATION: break;
-              case Event::ExternalType::MINERAL_FERTILIZATION: break;
+              case Event::ExternalType::IRRIGATION: {
+                KJ_LOG(INFO, "received irrigation event at", eventDate.toIsoDateString());
+                auto irr = event.getParams().getAs<mas::schema::model::monica::Params::Irrigation>();
+                monica->applyIrrigation(irr.getAmount(), irr.hasParams()
+                  ? irr.getParams().getNitrateConcentration() : 0.0);
+                monica->addEvent("Irrigation");
+                break;
+              }
+              case Event::ExternalType::TILLAGE: {
+                KJ_LOG(INFO, "received tillage event at", eventDate.toIsoDateString());
+                auto till = event.getParams().getAs<mas::schema::model::monica::Params::Tillage>();
+                monica->applyTillage(till.getDepth());
+                monica->addEvent("Tillage");
+                break;
+              }
+              case Event::ExternalType::ORGANIC_FERTILIZATION: {
+                auto of = event.getParams().getAs<mas::schema::model::monica::Params::OrganicFertilization>();
+                if (of.hasParams() && of.getParams().hasParams()) {
+                  KJ_LOG(INFO, "received organic fertilization event at", eventDate.toIsoDateString());
+                  monica->applyOrganicFertiliser(OrganicMatterParameters(of.getParams().getParams()),
+                    of.getAmount(), of.getIncorporation());
+                  monica->addEvent("OrganicFertilization");
+                }
+                break;
+              }
+              case Event::ExternalType::MINERAL_FERTILIZATION: {
+                auto mf = event.getParams().getAs<mas::schema::model::monica::Params::MineralFertilization>();
+                if (mf.hasPartition()) {
+                  KJ_LOG(INFO, "received mineral fertilization event at", eventDate.toIsoDateString());
+                  monica->applyMineralFertiliser(mf.getPartition(), mf.getAmount());
+                  monica->addEvent("MineralFertilization");
+                }
+                break;
+              }
               case Event::ExternalType::N_DEMAND_FERTILIZATION: break;
-              case Event::ExternalType::CUTTING: break;
+              case Event::ExternalType::CUTTING: {
+                auto c = event.getParams().getAs<mas::schema::model::monica::Params::Cutting>();
+                if (c.hasCuttingSpec() && c.getCuttingSpec().size() > 0) {
+                  KJ_LOG(INFO, "received cutting event at", eventDate.toIsoDateString());
+                  std::map<int, Cutting::Value> organId2cuttingSpec;
+                  std::map<int, double> organId2exportFraction;
+                  for (auto cs : c.getCuttingSpec()) {
+                    int organId = -1;
+                    typedef mas::schema::model::monica::PlantOrgan PA;
+                    switch (cs.getOrgan()) {
+                    case PA::ROOT: organId = static_cast<int>(OId::ROOT); break;
+                    case PA::LEAF: static_cast<int>(OId::LEAF); break;
+                    case PA::SHOOT: static_cast<int>(OId::SHOOT); break;
+                    case PA::FRUIT: static_cast<int>(OId::FRUIT); break;
+                    case PA::STRUKT: static_cast<int>(OId::STRUCT); break;
+                    case PA::SUGAR: static_cast<int>(OId::SUGAR); break;
+                    }
+                    typedef mas::schema::model::monica::Params::Cutting C;
+                    Cutting::CL cl = Cutting::none;
+                    switch (cs.getCutOrLeft()) {
+                    case C::CL::CUT: cl = Cutting::cut; break;
+                    case C::CL::LEFT: cl = Cutting::left; break;
+                    }
+                    Cutting::Unit unit = Cutting::percentage;
+                    switch (cs.getUnit()) {
+                    case C::Unit::PERCENTAGE: unit = Cutting::percentage; break;
+                    case C::Unit::BIOMASS: unit = Cutting::biomass; break;
+                    case C::Unit::LAI: unit = Cutting::LAI; break;
+                    }
+                    if (organId >= 0) {
+                      organId2cuttingSpec[organId] = {cs.getValue(), unit, cl};
+                      organId2exportFraction[organId] = cs.getExportPercentage() / 100.0;
+                    }
+                  }
+                  monica->cropGrowth()->applyCutting(organId2cuttingSpec, organId2exportFraction,
+                    c.getCutMaxAssimilationRatePercentage() / 100.0);
+                  monica->addEvent("Cutting");
+                }
+                break;
+              }
               case Event::ExternalType::SET_VALUE: break;
-              case Event::ExternalType::SAVE_STATE: break;
+              case Event::ExternalType::SAVE_STATE: {
+                if (serializedStateOutChannelConnected) {
+                  try {
+                    auto ss = event.getParams().getAs<mas::schema::model::monica::Params::SaveState>();
+                    KJ_LOG(INFO, "received save state event at", eventDate.toIsoDateString());
+
+                    monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = ss.getNoOfPreviousDaysSerializedClimateData();
+
+                    capnp::MallocMessageBuilder message;
+                    auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
+                    const auto modelState = runtimeState.initModelState();
+                    monica->serialize(modelState);
+
+                    auto wrq = ssop.writeRequest();
+                    if (ss.getAsJson()) {
+                      const capnp::JsonCodec json;
+                      const auto jStr = json.encode(runtimeState);
+                      wrq.initValue().initContent().setAs<capnp::Text>(jStr);
+                    } else {
+                      wrq.initValue().initContent().setAs<mas::schema::model::monica::RuntimeState>(runtimeState);
+                    }
+
+                    wrq.send().wait(ioContext.waitScope);
+                    KJ_LOG(INFO, "sent serialized MONICA state on output channel", ss.getAsJson() ? "as JSON" : "as capnp binary");
+                  } catch (kj::Exception &e) {
+                    KJ_LOG(INFO, "Exception on attempt to serialize MONICA state:", e.getDescription());
+                  }
+                }
+                break;
+              }
               }
             }
           }
         }
 
-
       } catch (const kj::Exception& e) {
-        KJ_LOG(INFO, "Exception: ", e.getDescription());
+        KJ_LOG(INFO, "Exception:", e.getDescription());
       }
     }
 
@@ -489,7 +599,9 @@ public:
                              "<sturdy_ref>", "Sturdy ref to serialized state channel.")
            .addOptionWithArg({'e', "env_in_sr"}, KJ_BIND_METHOD(*this, setEnvInSr),
                              "<sturdy_ref>", "Sturdy ref to env channel (IIP).")
-           .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
+           .addOptionWithArg({'x', "serialized_state_out_sr"}, KJ_BIND_METHOD(*this, setSerializedStateOutSr),
+                      "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
+    .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
            .build();
   }
 
@@ -503,6 +615,7 @@ private:
   kj::String fromAttr;
   kj::String toAttr;
   kj::String serializedStateInSr;
+  kj::String serializedStateOutSr;
   kj::String envInSr;
   Env env;
   bool returnObjOutputs{false};
