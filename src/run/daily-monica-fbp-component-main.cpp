@@ -30,6 +30,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica-capnp.h"
 #include "run-monica.h"
 #include "capnp-helper.h"
+#include "channel.h"
+#include "ports.h"
 #include "climate-file-io.h"
 
 #include "model.capnp.h"
@@ -87,6 +89,11 @@ public:
 
   kj::MainBuilder::Validity setEnvInSr(kj::StringPtr name) {
     envInSr = kj::str(name);
+    return true;
+  }
+
+  kj::MainBuilder::Validity setInteractive() {
+    interactive = true;
     return true;
   }
 
@@ -313,40 +320,55 @@ public:
 
 
   kj::MainBuilder::Validity startComponent() {
-    bool startedServerInDebugMode = false;
-
-    debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;
+    debug() << "MONICA: starting daily MONICA Cap'n Proto FBP component" << endl;
     typedef mas::schema::fbp::IP IP;
     typedef mas::schema::fbp::Channel<IP> Channel;
-    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText,
-                                            mas::schema::common::StructuredText> MonicaEnvInstance;
+    typedef std::initializer_list<std::tuple<int, kj::StringPtr, kj::StringPtr>> PortDesc;
+
+    enum IN_PORTS { STATE_IN, ENV_IN, EVENT_IN };
+    enum OUT_PORTS { STATE_OUT, RESULT_OUT };
+
+    PortDesc inPortsDesc = {
+      {STATE_IN, "state_in", serializedStateInSr},
+      {ENV_IN, "env_in", envInSr},
+      {EVENT_IN, "event_in", eventsInSr}
+    };
+    PortDesc outPortsDesc = {
+      {STATE_OUT, "state_out", serializedStateOutSr},
+      {RESULT_OUT, "out", outSr}
+    };
+
+    mas::infrastructure::common::Ports ports(conMan, inPortsDesc, outPortsDesc, interactive);
+    ports.connect();
+
 
     //std::cout << "inSr: " << inSr.cStr() << std::endl;
     //std::cout << "outSr: " << outSr.cStr() << std::endl;
-    bool serializedStateInChannelConnected = serializedStateInSr.size() > 0;
-    auto ssip = serializedStateInChannelConnected
-                                ? conMan.tryConnectB(serializedStateInSr.cStr()).castAs<Channel::ChanReader>()
-                                : nullptr;
-    bool serializedStateOutChannelConnected = serializedStateOutSr.size() > 0;
-    auto ssop = serializedStateOutChannelConnected
-                                ? conMan.tryConnectB(serializedStateOutSr.cStr()).castAs<Channel::ChanWriter>()
-                                : nullptr;
-    bool envChannelConnected = envInSr.size() > 0;
-    auto envp = envChannelConnected
-                  ? conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>()
-                  : nullptr;
-    auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
-    auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
+    // bool serializedStateInChannelConnected = serializedStateInSr.size() > 0;
+    // auto ssip = serializedStateInChannelConnected
+    //                             ? conMan.tryConnectB(serializedStateInSr.cStr()).castAs<Channel::ChanReader>()
+    //                             : nullptr;
+    // bool serializedStateOutChannelConnected = serializedStateOutSr.size() > 0;
+    // auto ssop = serializedStateOutChannelConnected
+    //                             ? conMan.tryConnectB(serializedStateOutSr.cStr()).castAs<Channel::ChanWriter>()
+    //                             : nullptr;
+    // bool envChannelConnected = envInSr.size() > 0;
+    // auto envp = envChannelConnected
+    //               ? conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>()
+    //               : nullptr;
+    // auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
+    // auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
 
-    while (serializedStateInChannelConnected || envChannelConnected) {
+    //while (serializedStateInChannelConnected || envChannelConnected) {
+    while (ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV_IN)) {
       // read serialized state and create a monica instance with that state
-      if (serializedStateInChannelConnected) {
+      if (ports.inIsConnected(STATE_IN)) {
         try {
-          auto msg = ssip.readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(STATE_IN).readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on serialized state port");
             // treat state channel as disconnected and possibly leaf outer loop
-            serializedStateInChannelConnected = false;
+            ports.inSetDisconnected(STATE_IN);
             continue;
           } else {
             auto ip = msg.getValue();
@@ -356,17 +378,17 @@ public:
         } catch (kj::Exception &e) {
           KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
           // treat state channel as disconnected and possibly leaf outer loop
-          serializedStateInChannelConnected = false;
+          ports.inSetDisconnected(STATE_IN);
           continue;
         }
       } else {
         try {
           // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
-          auto msg = envp.readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(ENV_IN).readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on env port");
             // treat env channel as disconnected and possibly leaf outer loop
-            envChannelConnected = false;
+            ports.inSetDisconnected(ENV_IN);
             continue;
           }
           auto ip = msg.getValue();
@@ -385,7 +407,7 @@ public:
         } catch (kj::Exception& e) {
           KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
           // treat env channel as disconnected and possibly leaf outer loop
-          envChannelConnected = false;
+          ports.inSetDisconnected(ENV_IN);
           continue;
         }
       }
@@ -396,14 +418,14 @@ public:
         while (waitForMoreEvents) {
           // now wait for events
           KJ_LOG(INFO, "trying to read from events IN port");
-          auto msg = eventsp.readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(EVENT_IN).readRequest().send().wait(ioContext.waitScope);
           KJ_LOG(INFO, "received msg from events IN port");
           // check for end of data from in port
           if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
             KJ_LOG(INFO, "received done -> finalizing monica run");
             finalizeMonica(monica->currentStepDate());
             // send results to out port
-            auto wrq = outp.writeRequest();
+            auto wrq = ports.out(RESULT_OUT).writeRequest();
             auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
             st.getStructure().setJson();
             st.setValue(out.to_json().dump());
@@ -537,7 +559,7 @@ public:
               }
               case Event::ExternalType::SET_VALUE: break;
               case Event::ExternalType::SAVE_STATE: {
-                if (serializedStateOutChannelConnected) {
+                if (ports.outIsConnected(STATE_OUT)) {
                   try {
                     auto ss = event.getParams().getAs<mas::schema::model::monica::Params::SaveState>();
                     KJ_LOG(INFO, "received save state event at", eventDate.toIsoDateString());
@@ -549,7 +571,7 @@ public:
                     const auto modelState = runtimeState.initModelState();
                     monica->serialize(modelState);
 
-                    auto wrq = ssop.writeRequest();
+                    auto wrq = ports.out(STATE_OUT).writeRequest();
                     if (ss.getAsJson()) {
                       const capnp::JsonCodec json;
                       const auto jStr = json.encode(runtimeState);
@@ -570,14 +592,17 @@ public:
             }
           }
         }
-
       } catch (const kj::Exception& e) {
         KJ_LOG(INFO, "Exception:", e.getDescription());
       }
     }
 
     KJ_LOG(INFO, "closing OUT port");
-    outp.closeRequest().send().wait(ioContext.waitScope);
+    ports.out(RESULT_OUT).closeRequest().send().wait(ioContext.waitScope);
+    if (ports.outIsConnected(STATE_OUT)) {
+      KJ_LOG(INFO, "closing STATE OUT port");
+      ports.out(STATE_OUT).closeRequest().send().wait(ioContext.waitScope);
+    }
 
     return true;
   }
@@ -591,7 +616,7 @@ public:
                              "<attr>", "Which attribute to read the MONICA env from.")
            .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
                              "<attr>", "Which attribute to write the MONICA result to.")
-           .addOptionWithArg({'i', "events_in_sr"}, KJ_BIND_METHOD(*this, setEventsInSr),
+           .addOptionWithArg({"events_in_sr"}, KJ_BIND_METHOD(*this, setEventsInSr),
                              "<sturdy_ref>", "Sturdy ref to events channel.")
            .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
                              "<sturdy_ref>", "Sturdy ref to output channel.")
@@ -601,6 +626,8 @@ public:
                              "<sturdy_ref>", "Sturdy ref to env channel (IIP).")
            .addOptionWithArg({'x', "serialized_state_out_sr"}, KJ_BIND_METHOD(*this, setSerializedStateOutSr),
                       "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
+            .addOption({'i', "interactive"}, KJ_BIND_METHOD(*this, setInteractive),
+              "Run in interactive mode. Ports will be connected via callback.")
     .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
            .build();
   }
@@ -625,6 +652,7 @@ private:
   //std::list<Workstep> dynamicWorksteps;
   std::map<int, std::vector<double>> dailyValues;
   std::vector<std::function<void()>> applyDailyFuncs;
+  bool interactive{false};
 };
 
 KJ_MAIN(FBPMain)
