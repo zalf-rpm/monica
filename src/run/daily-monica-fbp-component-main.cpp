@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica.h"
 #include "capnp-helper.h"
 #include "channel.h"
-#include "ports.h"
+#include "PortConnector.h"
 #include "climate-file-io.h"
 
 #include "model.capnp.h"
@@ -89,6 +89,11 @@ public:
 
   kj::MainBuilder::Validity setEnvInSr(kj::StringPtr name) {
     envInSr = kj::str(name);
+    return true;
+  }
+
+  kj::MainBuilder::Validity setPortCallbackRegistrarSr(kj::StringPtr name) {
+    portCallbackRegistrarSr = kj::str(name);
     return true;
   }
 
@@ -325,9 +330,7 @@ public:
     typedef mas::schema::fbp::Channel<IP> Channel;
     typedef std::initializer_list<std::tuple<int, kj::StringPtr, kj::StringPtr>> PortDesc;
 
-    enum IN_PORTS { STATE_IN, ENV_IN, EVENT_IN };
-    enum OUT_PORTS { STATE_OUT, RESULT_OUT };
-
+    enum PORTS { STATE_IN, ENV_IN, EVENT_IN, STATE_OUT, RESULT_OUT };
     PortDesc inPortsDesc = {
       {STATE_IN, "state_in", serializedStateInSr},
       {ENV_IN, "env_in", envInSr},
@@ -338,26 +341,12 @@ public:
       {RESULT_OUT, "out", outSr}
     };
 
-    mas::infrastructure::common::Ports ports(conMan, inPortsDesc, outPortsDesc, interactive);
-    ports.connect();
+    mas::infrastructure::common::PortConnector ports(conMan, inPortsDesc, outPortsDesc, interactive);
+    if (interactive && portCallbackRegistrarSr.size() > 0) {
+      ports.connectInteractively(portCallbackRegistrarSr, {{ENV_IN, STATE_IN}, {EVENT_IN}, {RESULT_OUT}});
+    }
+    else ports.connect();
 
-
-    //std::cout << "inSr: " << inSr.cStr() << std::endl;
-    //std::cout << "outSr: " << outSr.cStr() << std::endl;
-    // bool serializedStateInChannelConnected = serializedStateInSr.size() > 0;
-    // auto ssip = serializedStateInChannelConnected
-    //                             ? conMan.tryConnectB(serializedStateInSr.cStr()).castAs<Channel::ChanReader>()
-    //                             : nullptr;
-    // bool serializedStateOutChannelConnected = serializedStateOutSr.size() > 0;
-    // auto ssop = serializedStateOutChannelConnected
-    //                             ? conMan.tryConnectB(serializedStateOutSr.cStr()).castAs<Channel::ChanWriter>()
-    //                             : nullptr;
-    // bool envChannelConnected = envInSr.size() > 0;
-    // auto envp = envChannelConnected
-    //               ? conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>()
-    //               : nullptr;
-    // auto eventsp = conMan.tryConnectB(eventsInSr.cStr()).castAs<Channel::ChanReader>();
-    // auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
 
     //while (serializedStateInChannelConnected || envChannelConnected) {
     while (ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV_IN)) {
@@ -626,6 +615,8 @@ public:
                              "<sturdy_ref>", "Sturdy ref to env channel (IIP).")
            .addOptionWithArg({'x', "serialized_state_out_sr"}, KJ_BIND_METHOD(*this, setSerializedStateOutSr),
                       "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
+          .addOptionWithArg({"port_callback_registrar_sr"}, KJ_BIND_METHOD(*this, setPortCallbackRegistrarSr),
+                      "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
             .addOption({'i', "interactive"}, KJ_BIND_METHOD(*this, setInteractive),
               "Run in interactive mode. Ports will be connected via callback.")
     .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
@@ -644,6 +635,7 @@ private:
   kj::String serializedStateInSr;
   kj::String serializedStateOutSr;
   kj::String envInSr;
+  kj::String portCallbackRegistrarSr;
   Env env;
   bool returnObjOutputs{false};
   kj::Own<MonicaModel> monica;
