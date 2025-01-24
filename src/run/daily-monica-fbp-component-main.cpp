@@ -92,8 +92,8 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity setPortCallbackRegistrarSr(kj::StringPtr name) {
-    portCallbackRegistrarSr = kj::str(name);
+  kj::MainBuilder::Validity setNewPortInfoReaderSr(kj::StringPtr name) {
+    newPortInfoReaderSr = kj::str(name);
     return true;
   }
 
@@ -342,8 +342,8 @@ public:
     };
 
     mas::infrastructure::common::PortConnector ports(conMan, inPortsDesc, outPortsDesc, interactive);
-    if (interactive && portCallbackRegistrarSr.size() > 0) {
-      ports.connectInteractively(portCallbackRegistrarSr, {{ENV_IN, STATE_IN}, {EVENT_IN}, {RESULT_OUT}});
+    if (interactive && newPortInfoReaderSr.size() > 0) {
+      ports.connectInteractively(newPortInfoReaderSr, {{ENV_IN, STATE_IN}, {EVENT_IN}, {RESULT_OUT}});
     }
     else ports.connect();
 
@@ -615,8 +615,8 @@ public:
                              "<sturdy_ref>", "Sturdy ref to env channel (IIP).")
            .addOptionWithArg({'x', "serialized_state_out_sr"}, KJ_BIND_METHOD(*this, setSerializedStateOutSr),
                       "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
-          .addOptionWithArg({"port_callback_registrar_sr"}, KJ_BIND_METHOD(*this, setPortCallbackRegistrarSr),
-                      "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
+          .addOptionWithArg({"new_port_info_reader_sr"}, KJ_BIND_METHOD(*this, setNewPortInfoReaderSr),
+                      "<sturdy_ref>", "Sturdy ref to reader of an port info channel.")
             .addOption({'i', "interactive"}, KJ_BIND_METHOD(*this, setInteractive),
               "Run in interactive mode. Ports will be connected via callback.")
     .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
@@ -635,7 +635,7 @@ private:
   kj::String serializedStateInSr;
   kj::String serializedStateOutSr;
   kj::String envInSr;
-  kj::String portCallbackRegistrarSr;
+  kj::String newPortInfoReaderSr;
   Env env;
   bool returnObjOutputs{false};
   kj::Own<MonicaModel> monica;
