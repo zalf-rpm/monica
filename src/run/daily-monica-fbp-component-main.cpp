@@ -340,15 +340,12 @@ public:
       {STATE_OUT, "state_out", serializedStateOutSr},
       {RESULT_OUT, "out", outSr}
     };
-
     mas::infrastructure::common::PortConnector ports(conMan, inPortsDesc, outPortsDesc, interactive);
     if (interactive && newPortInfoReaderSr.size() > 0) {
       ports.connectInteractively(newPortInfoReaderSr, {{ENV_IN, STATE_IN}, {EVENT_IN}, {RESULT_OUT}});
     }
     else ports.connect();
 
-
-    //while (serializedStateInChannelConnected || envChannelConnected) {
     while (ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV_IN)) {
       // read serialized state and create a monica instance with that state
       if (ports.inIsConnected(STATE_IN)) {
@@ -615,10 +612,10 @@ public:
                              "<sturdy_ref>", "Sturdy ref to env channel (IIP).")
            .addOptionWithArg({'x', "serialized_state_out_sr"}, KJ_BIND_METHOD(*this, setSerializedStateOutSr),
                       "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
-          .addOptionWithArg({"new_port_info_reader_sr"}, KJ_BIND_METHOD(*this, setNewPortInfoReaderSr),
-                      "<sturdy_ref>", "Sturdy ref to reader of an port info channel.")
-            .addOption({'i', "interactive"}, KJ_BIND_METHOD(*this, setInteractive),
-              "Run in interactive mode. Ports will be connected via callback.")
+          //.addOptionWithArg({"new_port_info_reader_sr"}, KJ_BIND_METHOD(*this, setNewPortInfoReaderSr),
+          //            "<sturdy_ref>", "Sturdy ref to reader of an port info channel.")
+          //  .addOption({'i', "interactive"}, KJ_BIND_METHOD(*this, setInteractive),
+          //    "Run in interactive mode. Ports will be connected via callback.")
     .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
            .build();
   }
