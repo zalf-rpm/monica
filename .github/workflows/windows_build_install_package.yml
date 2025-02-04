@@ -69,7 +69,7 @@ jobs:
         run: |
           pwd
           .\vcpkg\bootstrap-vcpkg.bat
-          .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static tomlplusplus:x64-windows-static
+          .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static
 
       - name: Create build folder 
         working-directory: ./monica

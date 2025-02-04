@@ -23,12 +23,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/any.h>
 #include <capnp/compat/json.h>
 
-#include <toml++/toml.hpp>
-
 #include "tools/debug.h"
 #include "common/rpc-connection-manager.h"
 #include "common/common.h"
 #include "resource/version.h"
+#include "toml/toml.hpp"
 
 #include "run-monica-capnp.h"
 #include "run-monica.h"
@@ -136,8 +135,8 @@ public:
       auto file = isAbsolutePath(configIIPReaderSr.cStr())
                   ? fs->getRoot().openFile(fs->getCurrentPath().eval(configIIPReaderSr),
                                            kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
-                  : fs->getRoot().openFile(kj::Path::parse(configIIPReaderSr),
-                                           kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
+                  : fs->getCurrent().openFile(kj::Path::parse(configIIPReaderSr),
+                                              kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
       ostringstream ss;
       ss << toml << endl;
       file->writeAll(ss.str());
