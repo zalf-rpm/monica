@@ -18,9 +18,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/debug.h>
 #include <kj/common.h>
 #include <kj/main.h>
+#include <kj/filesystem.h>
 
 #include <capnp/any.h>
 #include <capnp/compat/json.h>
+
+#include <toml++/toml.hpp>
 
 #include "tools/debug.h"
 #include "common/rpc-connection-manager.h"
@@ -38,7 +41,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "common.capnp.h"
 #include "fbp.capnp.h"
 
-#define KJ_MVCAP(var) var = kj::mv(var)
+//#define KJ_MVCAP(var) var = kj::mv(var)
 
 using namespace std;
 using namespace monica;
@@ -46,9 +49,21 @@ using namespace Tools;
 
 class FBPMain {
 public:
-  explicit FBPMain(kj::ProcessContext& context)
+  enum PORTS { STATE_IN, ENV, EVENT, STATE_OUT, RESULT };
+  std::map<int, kj::StringPtr> inPortNames = {
+    {STATE_IN, "serialized_state"},
+    {ENV, "env"},
+    {EVENT, "event"},
+  };
+  std::map<int, kj::StringPtr> outPortNames = {
+    std::pair{STATE_OUT, "serialized_state"},
+    std::pair{RESULT, "result"},
+  };
+
+  explicit FBPMain(kj::ProcessContext &context)
   : ioContext(kj::setupAsyncIo())
   , conMan(ioContext)
+  , ports(conMan, inPortNames, outPortNames)
   , context(context) {}
 
   kj::MainBuilder::Validity setName(kj::StringPtr n) {
@@ -66,40 +81,79 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity setEventsInSr(kj::StringPtr name) {
-    eventsInSr = kj::str(name);
+  kj::MainBuilder::Validity setGenerateTOMLConfig() {
+    doGenerateTOMLConfig = true;
     return true;
   }
 
-  kj::MainBuilder::Validity setOutSr(kj::StringPtr name) {
-    outSr = kj::str(name);
+  kj::MainBuilder::Validity setConfigIipReaderSr(kj::StringPtr name) {
+    configIIPReaderSr = kj::str(name);
     return true;
   }
 
-  kj::MainBuilder::Validity setSerializedStateInSr(kj::StringPtr name) {
-    serializedStateInSr = kj::str(name);
-    return true;
+  // generate a TOML configuration file
+  void generateTOMLConfig() {
+    auto toml = toml::table{
+      {"id", "de.zalf.cdp.mas.monica.fbp.daily"},
+      {"name", "Daily MONICA FBP component"},
+      {"params", toml::table{}},
+      {"ports", toml::table{
+        {"in", toml::table{
+          {inPortNames[ENV], toml::table{
+            {"sr", ""},
+            {"type", "common.capnp::StructuredText::json"},
+            {"description", "json data representing the monica env"}
+          }},
+          {inPortNames[STATE_IN], toml::table{
+            {"sr", ""},
+            {"type", "model/monica/monica_state.capnp::RuntimeState"},
+            {"description", "serialized MONICA state"}
+          }},
+          {inPortNames[EVENT], toml::table{
+            {"sr", ""},
+            {"type", "model/monica/monica_management.capnp::Event"},
+            {"description", "MONICA events"}
+          }}
+        }},
+        {"out", toml::table{
+          {outPortNames[RESULT], toml::table{
+            {"sr", ""},
+            {"type", "common.capnp::StructuredText::json"},
+            {"description", "results of a MONICA simulation"}
+          }},
+          {outPortNames[STATE_OUT], toml::table{
+            {"sr", ""},
+            {"type", "model/monica/monica_state.capnp::RuntimeState"},
+            {"description", "serialized MONICA state after current day"}
+          }}
+        }}
+      }}
+    };
+
+    if (configIIPReaderSr.size() > 0) {
+      // write a file and treat the reader sr as a file name
+      auto fs = kj::newDiskFilesystem();
+      auto file = isAbsolutePath(configIIPReaderSr.cStr())
+                  ? fs->getRoot().openFile(fs->getCurrentPath().eval(configIIPReaderSr),
+                                           kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
+                  : fs->getRoot().openFile(kj::Path::parse(configIIPReaderSr),
+                                           kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
+      ostringstream ss;
+      ss << toml << endl;
+      file->writeAll(ss.str());
+    } else { // output to std::out
+      std::cout << toml << endl;
+    }
   }
 
-  kj::MainBuilder::Validity setSerializedStateOutSr(kj::StringPtr name) {
-    serializedStateOutSr = kj::str(name);
-    return true;
-  }
-
-
-  kj::MainBuilder::Validity setEnvInSr(kj::StringPtr name) {
-    envInSr = kj::str(name);
-    return true;
-  }
-
-  kj::MainBuilder::Validity setNewPortInfoReaderSr(kj::StringPtr name) {
-    newPortInfoReaderSr = kj::str(name);
-    return true;
-  }
-
-  kj::MainBuilder::Validity setInteractive() {
-    interactive = true;
-    return true;
+  toml::table parseTomlConfig(string_view toml) {
+    try {
+        return toml::parse(toml);
+    }
+    catch (const toml::parse_error& err) {
+      KJ_LOG(INFO, "Parsing TOML configuration failed. Error:\n", err.what(), "\nTOML:\n", string(toml));
+    }
+    return toml::table();
   }
 
   void initMonica() {
@@ -113,8 +167,7 @@ public:
       env.cropRotations.emplace_back(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation);
     }
 
-    debug() << "starting Monica" << endl;
-    debug() << "-----" << endl;
+    KJ_LOG(INFO, "starting Monica");
 
     monica->simulationParametersNC().startDate = env.climateData.startDate();
     monica->simulationParametersNC().endDate = env.climateData.endDate();
@@ -325,28 +378,17 @@ public:
 
 
   kj::MainBuilder::Validity startComponent() {
-    debug() << "MONICA: starting daily MONICA Cap'n Proto FBP component" << endl;
+    KJ_LOG(INFO, "MONICA: starting daily MONICA Cap'n Proto FBP component");
     typedef mas::schema::fbp::IP IP;
-    typedef mas::schema::fbp::Channel<IP> Channel;
-    typedef std::initializer_list<std::tuple<int, kj::StringPtr, kj::StringPtr>> PortDesc;
 
-    enum PORTS { STATE_IN, ENV_IN, EVENT_IN, STATE_OUT, RESULT_OUT };
-    PortDesc inPortsDesc = {
-      {STATE_IN, "state_in", serializedStateInSr},
-      {ENV_IN, "env_in", envInSr},
-      {EVENT_IN, "event_in", eventsInSr}
-    };
-    PortDesc outPortsDesc = {
-      {STATE_OUT, "state_out", serializedStateOutSr},
-      {RESULT_OUT, "out", outSr}
-    };
-    mas::infrastructure::common::PortConnector ports(conMan, inPortsDesc, outPortsDesc, interactive);
-    if (interactive && newPortInfoReaderSr.size() > 0) {
-      ports.connectInteractively(newPortInfoReaderSr, {{ENV_IN, STATE_IN}, {EVENT_IN}, {RESULT_OUT}});
+    if (doGenerateTOMLConfig) {
+      generateTOMLConfig();
+      return true;
     }
-    else ports.connect();
 
-    while (ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV_IN)) {
+    ports.connectFromConfig(configIIPReaderSr);
+
+    while (ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV)) {
       // read serialized state and create a monica instance with that state
       if (ports.inIsConnected(STATE_IN)) {
         try {
@@ -370,11 +412,11 @@ public:
       } else {
         try {
           // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
-          auto msg = ports.in(ENV_IN).readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(ENV).readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on env port");
             // treat env channel as disconnected and possibly leaf outer loop
-            ports.inSetDisconnected(ENV_IN);
+            ports.inSetDisconnected(ENV);
             continue;
           }
           auto ip = msg.getValue();
@@ -393,7 +435,7 @@ public:
         } catch (kj::Exception& e) {
           KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
           // treat env channel as disconnected and possibly leaf outer loop
-          ports.inSetDisconnected(ENV_IN);
+          ports.inSetDisconnected(ENV);
           continue;
         }
       }
@@ -404,14 +446,14 @@ public:
         while (waitForMoreEvents) {
           // now wait for events
           KJ_LOG(INFO, "trying to read from events IN port");
-          auto msg = ports.in(EVENT_IN).readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(EVENT).readRequest().send().wait(ioContext.waitScope);
           KJ_LOG(INFO, "received msg from events IN port");
           // check for end of data from in port
           if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
             KJ_LOG(INFO, "received done -> finalizing monica run");
             finalizeMonica(monica->currentStepDate());
             // send results to out port
-            auto wrq = ports.out(RESULT_OUT).writeRequest();
+            auto wrq = ports.out(RESULT).writeRequest();
             auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
             st.getStructure().setJson();
             st.setValue(out.to_json().dump());
@@ -584,7 +626,7 @@ public:
     }
 
     KJ_LOG(INFO, "closing OUT port");
-    ports.out(RESULT_OUT).closeRequest().send().wait(ioContext.waitScope);
+    ports.out(RESULT).closeRequest().send().wait(ioContext.waitScope);
     if (ports.outIsConnected(STATE_OUT)) {
       KJ_LOG(INFO, "closing STATE OUT port");
       ports.out(STATE_OUT).closeRequest().send().wait(ioContext.waitScope);
@@ -596,26 +638,13 @@ public:
   kj::MainFunc getMain() {
     return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
                            "Offers a MONICA service.")
-           .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
-                             "<component-name>", "Give this component a name.")
-           .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
-                             "<attr>", "Which attribute to read the MONICA env from.")
-           .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
-                             "<attr>", "Which attribute to write the MONICA result to.")
-           .addOptionWithArg({"events_in_sr"}, KJ_BIND_METHOD(*this, setEventsInSr),
-                             "<sturdy_ref>", "Sturdy ref to events channel.")
-           .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
-                             "<sturdy_ref>", "Sturdy ref to output channel.")
-           .addOptionWithArg({'s', "serialized_state_in_sr"}, KJ_BIND_METHOD(*this, setSerializedStateInSr),
-                             "<sturdy_ref>", "Sturdy ref to serialized state channel.")
-           .addOptionWithArg({'e', "env_in_sr"}, KJ_BIND_METHOD(*this, setEnvInSr),
-                             "<sturdy_ref>", "Sturdy ref to env channel (IIP).")
-           .addOptionWithArg({'x', "serialized_state_out_sr"}, KJ_BIND_METHOD(*this, setSerializedStateOutSr),
-                      "<sturdy_ref>", "Sturdy ref to serialized state output channel.")
-          //.addOptionWithArg({"new_port_info_reader_sr"}, KJ_BIND_METHOD(*this, setNewPortInfoReaderSr),
-          //            "<sturdy_ref>", "Sturdy ref to reader of an port info channel.")
-          //  .addOption({'i', "interactive"}, KJ_BIND_METHOD(*this, setInteractive),
-          //    "Run in interactive mode. Ports will be connected via callback.")
+          .addOption({'g', "generate_toml_config"}, KJ_BIND_METHOD(*this, setGenerateTOMLConfig)
+            , "Give this component a name.")
+          .expectOptionalArg("config_IIP_reader_SR", KJ_BIND_METHOD(*this, setConfigIipReaderSr))
+           // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
+           //                   "<attr>", "Which attribute to read the MONICA env from.")
+           // .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
+           //                   "<attr>", "Which attribute to write the MONICA result to.")
     .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
            .build();
   }
@@ -623,16 +652,13 @@ public:
 private:
   kj::AsyncIoContext ioContext;
   mas::infrastructure::common::ConnectionManager conMan;
+  mas::infrastructure::common::PortConnector ports;
   kj::String name;
   kj::ProcessContext& context;
-  kj::String eventsInSr;
-  kj::String outSr;
   kj::String fromAttr;
   kj::String toAttr;
-  kj::String serializedStateInSr;
-  kj::String serializedStateOutSr;
-  kj::String envInSr;
-  kj::String newPortInfoReaderSr;
+  bool doGenerateTOMLConfig{false};
+  kj::String configIIPReaderSr;
   Env env;
   bool returnObjOutputs{false};
   kj::Own<MonicaModel> monica;
@@ -641,7 +667,6 @@ private:
   //std::list<Workstep> dynamicWorksteps;
   std::map<int, std::vector<double>> dailyValues;
   std::vector<std::function<void()>> applyDailyFuncs;
-  bool interactive{false};
 };
 
 KJ_MAIN(FBPMain)
