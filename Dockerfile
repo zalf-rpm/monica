@@ -22,6 +22,7 @@ RUN ./bootstrap-vcpkg.sh
 RUN ./vcpkg install zeromq:x64-linux
 RUN ./vcpkg install capnproto:x64-linux
 RUN ./vcpkg install libsodium:x64-linux
+RUN ./vcpkg install tomlplusplus:x64-linux
 
 WORKDIR ${WORK_DIR}/monica
 RUN sh create_cmake_release.sh
