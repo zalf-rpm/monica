@@ -48,11 +48,11 @@ using namespace Tools;
 
 class FBPMain {
 public:
-  enum PORTS { STATE_IN, ENV, EVENT, STATE_OUT, RESULT };
+  enum PORTS { STATE_IN, ENV, EVENTS, STATE_OUT, RESULT };
   std::map<int, kj::StringPtr> inPortNames = {
     {STATE_IN, "serialized_state"},
     {ENV, "env"},
-    {EVENT, "event"},
+    {EVENTS, "events"},
   };
   std::map<int, kj::StringPtr> outPortNames = {
     std::pair{STATE_OUT, "serialized_state"},
@@ -93,7 +93,8 @@ public:
   // generate a TOML configuration file
   void generateTOMLConfig() {
     auto toml = toml::table{
-      {"id", "de.zalf.cdp.mas.monica.fbp.daily"},
+      {"id", "e.g UUID4 3cd47d38-eec7-4df5-a52b-8ca11d41a9a4"},
+      {"component_id", "de.zalf.cdp.mas.fbp.monica.daily"},
       {"name", "Daily MONICA FBP component"},
       {"params", toml::table{}},
       {"ports", toml::table{
@@ -108,7 +109,7 @@ public:
             {"type", "model/monica/monica_state.capnp::RuntimeState"},
             {"description", "serialized MONICA state"}
           }},
-          {inPortNames[EVENT], toml::table{
+          {inPortNames[EVENTS], toml::table{
             {"sr", ""},
             {"type", "model/monica/monica_management.capnp::Event"},
             {"description", "MONICA events"}
@@ -387,10 +388,12 @@ public:
 
     ports.connectFromConfig(configIIPReaderSr);
 
-    while (ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV)) {
+    while ((ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV))
+      && (ports.outIsConnected(RESULT) || ports.outIsConnected(STATE_OUT))) {
       // read serialized state and create a monica instance with that state
       if (ports.inIsConnected(STATE_IN)) {
         try {
+          KJ_LOG(INFO, "trying to read from serialized_state IN port");
           auto msg = ports.in(STATE_IN).readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on serialized state port");
@@ -411,6 +414,7 @@ public:
       } else {
         try {
           // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
+          KJ_LOG(INFO, "trying to read from env IN port");
           auto msg = ports.in(ENV).readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on env port");
@@ -445,7 +449,7 @@ public:
         while (waitForMoreEvents) {
           // now wait for events
           KJ_LOG(INFO, "trying to read from events IN port");
-          auto msg = ports.in(EVENT).readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(EVENTS).readRequest().send().wait(ioContext.waitScope);
           KJ_LOG(INFO, "received msg from events IN port");
           // check for end of data from in port
           if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
@@ -624,10 +628,12 @@ public:
       }
     }
 
-    KJ_LOG(INFO, "closing OUT port");
-    ports.out(RESULT).closeRequest().send().wait(ioContext.waitScope);
+    if (ports.outIsConnected(RESULT)) {
+      KJ_LOG(INFO, "closing result OUT port");
+      ports.out(RESULT).closeRequest().send().wait(ioContext.waitScope);
+    }
     if (ports.outIsConnected(STATE_OUT)) {
-      KJ_LOG(INFO, "closing STATE OUT port");
+      KJ_LOG(INFO, "closing serialized_state OUT port");
       ports.out(STATE_OUT).closeRequest().send().wait(ioContext.waitScope);
     }
 
