@@ -388,17 +388,17 @@ public:
 
     ports.connectFromConfig(configIIPReaderSr);
 
-    while ((ports.inIsConnected(STATE_IN) || ports.inIsConnected(ENV))
-      && (ports.outIsConnected(RESULT) || ports.outIsConnected(STATE_OUT))) {
+    while ((ports.isInConnected(STATE_IN) || ports.isInConnected(ENV))
+      && (ports.isOutConnected(RESULT) || ports.isOutConnected(STATE_OUT))) {
       // read serialized state and create a monica instance with that state
-      if (ports.inIsConnected(STATE_IN)) {
+      if (ports.isInConnected(STATE_IN)) {
         try {
           KJ_LOG(INFO, "trying to read from serialized_state IN port");
           auto msg = ports.in(STATE_IN).readRequest().send().wait(ioContext.waitScope);
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on serialized state port");
             // treat state channel as disconnected and possibly leaf outer loop
-            ports.inSetDisconnected(STATE_IN);
+            ports.setInDisconnected(STATE_IN);
             continue;
           } else {
             auto ip = msg.getValue();
@@ -408,7 +408,7 @@ public:
         } catch (kj::Exception &e) {
           KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
           // treat state channel as disconnected and possibly leaf outer loop
-          ports.inSetDisconnected(STATE_IN);
+          ports.setInDisconnected(STATE_IN);
           continue;
         }
       } else {
@@ -419,7 +419,7 @@ public:
           if (msg.isDone()) {
             KJ_LOG(INFO, "received done on env port");
             // treat env channel as disconnected and possibly leaf outer loop
-            ports.inSetDisconnected(ENV);
+            ports.setInDisconnected(ENV);
             continue;
           }
           auto ip = msg.getValue();
@@ -438,7 +438,7 @@ public:
         } catch (kj::Exception& e) {
           KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
           // treat env channel as disconnected and possibly leaf outer loop
-          ports.inSetDisconnected(ENV);
+          ports.setInDisconnected(ENV);
           continue;
         }
       }
@@ -590,7 +590,7 @@ public:
               }
               case Event::ExternalType::SET_VALUE: break;
               case Event::ExternalType::SAVE_STATE: {
-                if (ports.outIsConnected(STATE_OUT)) {
+                if (ports.isOutConnected(STATE_OUT)) {
                   try {
                     auto ss = event.getParams().getAs<mas::schema::model::monica::Params::SaveState>();
                     KJ_LOG(INFO, "received save state event at", eventDate.toIsoDateString());
@@ -628,14 +628,7 @@ public:
       }
     }
 
-    if (ports.outIsConnected(RESULT)) {
-      KJ_LOG(INFO, "closing result OUT port");
-      ports.out(RESULT).closeRequest().send().wait(ioContext.waitScope);
-    }
-    if (ports.outIsConnected(STATE_OUT)) {
-      KJ_LOG(INFO, "closing serialized_state OUT port");
-      ports.out(STATE_OUT).closeRequest().send().wait(ioContext.waitScope);
-    }
+    ports.closeOutPorts();
 
     return true;
   }
