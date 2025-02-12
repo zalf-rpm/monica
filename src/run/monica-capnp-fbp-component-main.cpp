@@ -27,6 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "resource/version.h"
 
 #include "run-monica-capnp.h"
+#include "PortConnector.h"
 
 #include "model.capnp.h"
 #include "common.capnp.h"
@@ -40,8 +41,20 @@ using namespace Tools;
 
 class FBPMain {
 public:
+  enum PORTS { CONFIG, ENV, RESULT };
+  std::map<int, kj::StringPtr> inPortNames = {
+    {CONFIG, "config"},
+    {ENV, "env"},
+  };
+  std::map<int, kj::StringPtr> outPortNames = {
+    {RESULT, "result"},
+  };
+
   explicit FBPMain(kj::ProcessContext &context)
-      : ioContext(kj::setupAsyncIo()), conMan(ioContext), context(context) {}
+  : ioContext(kj::setupAsyncIo())
+  , conMan(ioContext)
+  , ports(conMan, inPortNames, outPortNames)
+  , context(context) {}
 
   kj::MainBuilder::Validity setName(kj::StringPtr n) {
     name = str(n);
@@ -58,21 +71,10 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity setInSr(kj::StringPtr name) {
-    envInSr = kj::str(name);
+  kj::MainBuilder::Validity setPortInfosReaderSr(kj::StringPtr name) {
+    portInfosReaderSr = kj::str(name);
     return true;
   }
-
-  kj::MainBuilder::Validity setOutSr(kj::StringPtr name) {
-    outSr = kj::str(name);
-    return true;
-  }
-
-  kj::MainBuilder::Validity setMonicaSr(kj::StringPtr name) {
-    monicaSr = kj::str(name);
-    return true;
-  }
-
 
   kj::MainBuilder::Validity startComponent() {
     bool startedServerInDebugMode = false;
@@ -83,10 +85,7 @@ public:
     typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
     typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
-    //std::cout << "inSr: " << inSr.cStr() << std::endl;
-    //std::cout << "outSr: " << outSr.cStr() << std::endl;
-    auto inp = conMan.tryConnectB(envInSr.cStr()).castAs<Channel::ChanReader>();
-    auto outp = conMan.tryConnectB(outSr.cStr()).castAs<Channel::ChanWriter>();
+    ports.connectFromPortInfos(portInfosReaderSr);
 
     MonicaEnvInstance::Client runMonicaClient(nullptr);
     if (monicaSr.size() > 0) {
@@ -95,9 +94,9 @@ public:
       runMonicaClient = kj::heap<RunMonica>(startedServerInDebugMode);
     }
     try {
-      while (true) {
+      while (ports.isInConnected(ENV) && ports.isOutConnected(RESULT)) {
         KJ_LOG(INFO, "trying to read from IN port");
-        auto msg = inp.readRequest().send().wait(ioContext.waitScope);
+        auto msg = ports.in(ENV).readRequest().send().wait(ioContext.waitScope);
         KJ_LOG(INFO, "received msg from IN port");
         // check for end of data from in port
         if (msg.isDone()) {
@@ -115,46 +114,55 @@ public:
           if (res.hasResult() && res.getResult().hasValue()) {
             KJ_LOG(INFO, "result is not empty");
             auto resJsonStr = res.getResult().getValue();
-            auto wreq = outp.writeRequest();
+            auto wreq = ports.out(RESULT).writeRequest();
             auto outIp = wreq.initValue();
 
             // set content if not to be set as attribute
-            if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
+            if (kj::size(toAttr) == 0) {
+              auto st = outIp.initContent().initAs<mas::schema::common::StructuredText>();
+              st.setValue(resJsonStr);
+              st.initStructure().setJson();
+            }
             // copy attributes, if any and set result as attribute, if requested
             auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
                                                                                 toAttr);//, capnp::toAny(resJsonStr));
-            KJ_IF_MAYBE(builder, toAttrBuilder) builder->setAs<capnp::Text>(resJsonStr);
+            KJ_IF_MAYBE(builder, toAttrBuilder) {
+              auto st = builder->initAs<mas::schema::common::StructuredText>();
+              st.setValue(resJsonStr);
+              st.initStructure().setJson();
+            }
             KJ_LOG(INFO, "trying to send result on OUT port");
             wreq.send().wait(ioContext.waitScope);
             KJ_LOG(INFO, "sent result on OUT port");
           }
         }
       }
-      KJ_LOG(INFO, "closing OUT port");
-      outp.closeRequest().send().wait(ioContext.waitScope);
     }
     catch (const kj::Exception &e) {
       KJ_LOG(INFO, "Exception: ", e.getDescription());
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
     }
 
+    ports.closeOutPorts();
+
     return true;
   }
 
   kj::MainFunc getMain() {
     return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR), "Offers a MONICA service.")
-        .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
-                          "<component-name>", "Give this component a name.")
-        .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
-                          "<attr>", "Which attribute to read the MONICA env from.")
-        .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
-                          "<attr>", "Which attribute to write the MONICA result to.")
-        .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
-                          "<sturdy_ref>", "Sturdy ref to input channel.")
-        .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
-                          "<sturdy_ref>", "Sturdy ref to output channel.")
-        .addOptionWithArg({'m', "monica_sr"}, KJ_BIND_METHOD(*this, setMonicaSr),
-                          "<sturdy_ref>", "Sturdy ref to MONICA instance.")
+        // .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
+        //                   "<component-name>", "Give this component a name.")
+        .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
+        // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
+        //                   "<attr>", "Which attribute to read the MONICA env from.")
+        // .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
+        //                   "<attr>", "Which attribute to write the MONICA result to.")
+        // .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
+        //                   "<sturdy_ref>", "Sturdy ref to input channel.")
+        // .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
+        //                   "<sturdy_ref>", "Sturdy ref to output channel.")
+        // .addOptionWithArg({'m', "monica_sr"}, KJ_BIND_METHOD(*this, setMonicaSr),
+        //                   "<sturdy_ref>", "Sturdy ref to MONICA instance.")
         .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
         .build();
   }
@@ -162,10 +170,10 @@ public:
 private:
   kj::AsyncIoContext ioContext;
   mas::infrastructure::common::ConnectionManager conMan;
+  mas::infrastructure::common::PortConnector ports;
   kj::String name;
   kj::ProcessContext &context;
-  kj::String envInSr;
-  kj::String outSr;
+  kj::String portInfosReaderSr;
   kj::String monicaSr;
   kj::String fromAttr;
   kj::String toAttr;
