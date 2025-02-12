@@ -104,7 +104,8 @@ kj::Promise<void> RunMonica::run(RunContext context)
       }
 
       if (eda.success()) {
-        env.climateData = eda.result;
+        if (eda.result.isValid()) env.climateData = eda.result;
+        else assert(env.climateData.isValid());
         env.debugMode = _startedServerInDebugMode && env.debugMode;
         env.params.userSoilMoistureParameters.getCapillaryRiseRate =
           [](std::string soilTexture, size_t distance) {
