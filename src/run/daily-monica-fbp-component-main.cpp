@@ -55,8 +55,8 @@ public:
     {EVENTS, "events"},
   };
   std::map<int, kj::StringPtr> outPortNames = {
-    std::pair{STATE_OUT, "serialized_state"},
-    std::pair{RESULT, "result"},
+    {STATE_OUT, "serialized_state"},
+    {RESULT, "result"},
   };
 
   explicit FBPMain(kj::ProcessContext &context)
@@ -85,8 +85,8 @@ public:
     return true;
   }
 
-  kj::MainBuilder::Validity setConfigIipReaderSr(kj::StringPtr name) {
-    configIIPReaderSr = kj::str(name);
+  kj::MainBuilder::Validity setPortInfosReaderSr(kj::StringPtr name) {
+    portInfosReaderSr = kj::str(name);
     return true;
   }
 
@@ -130,13 +130,13 @@ public:
       }}
     };
 
-    if (configIIPReaderSr.size() > 0) {
+    if (portInfosReaderSr.size() > 0) {
       // write a file and treat the reader sr as a file name
       auto fs = kj::newDiskFilesystem();
-      auto file = isAbsolutePath(configIIPReaderSr.cStr())
-                  ? fs->getRoot().openFile(fs->getCurrentPath().eval(configIIPReaderSr),
+      auto file = isAbsolutePath(portInfosReaderSr.cStr())
+                  ? fs->getRoot().openFile(fs->getCurrentPath().eval(portInfosReaderSr),
                                            kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
-                  : fs->getCurrent().openFile(kj::Path::parse(configIIPReaderSr),
+                  : fs->getCurrent().openFile(kj::Path::parse(portInfosReaderSr),
                                               kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
       ostringstream ss;
       ss << toml << endl;
@@ -386,7 +386,7 @@ public:
       return true;
     }
 
-    ports.connectFromConfig(configIIPReaderSr);
+    ports.connectFromPortInfos(portInfosReaderSr);
 
     while ((ports.isInConnected(STATE_IN) || ports.isInConnected(ENV))
       && (ports.isOutConnected(RESULT) || ports.isOutConnected(STATE_OUT))) {
@@ -638,7 +638,7 @@ public:
                            "Offers a MONICA service.")
           .addOption({'g', "generate_toml_config"}, KJ_BIND_METHOD(*this, setGenerateTOMLConfig)
             , "Give this component a name.")
-          .expectOptionalArg("config_IIP_reader_SR", KJ_BIND_METHOD(*this, setConfigIipReaderSr))
+          .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
            // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
            //                   "<attr>", "Which attribute to read the MONICA env from.")
            // .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
@@ -656,7 +656,7 @@ private:
   kj::String fromAttr;
   kj::String toAttr;
   bool doGenerateTOMLConfig{false};
-  kj::String configIIPReaderSr;
+  kj::String portInfosReaderSr;
   Env env;
   bool returnObjOutputs{false};
   kj::Own<MonicaModel> monica;
