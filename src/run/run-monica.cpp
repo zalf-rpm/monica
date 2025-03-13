@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <capnp/message.h>
 #include <capnp/serialize.h>
+#include <capnp/compat/json.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
@@ -67,9 +68,9 @@ Errors extractAndStore(const Json &jv, Vector &vec) {
 } // namespace _ (private)
 
 
-CropRotation::CropRotation(json11::Json j) {
-  merge(j);
-}
+//CropRotation::CropRotation(json11::Json j) {
+//  merge(j);
+//}
 
 Errors CropRotation::merge(json11::Json j) {
   Errors es;
@@ -96,10 +97,6 @@ json11::Json CropRotation::to_json() const {
 
 Env::Env(CentralParameterProvider &&cpp)
     : params(cpp) {}
-
-Env::Env(json11::Json j) {
-  merge(j);
-}
 
 Errors Env::merge(json11::Json j) {
   Errors es;
@@ -364,7 +361,7 @@ std::function<bool(const MonicaModel &)> Spec::createExpressionFunc(Json j) {
     }
   }
 
-  return std::function<bool(const MonicaModel &)>();
+  return {};
 }
 
 
@@ -515,7 +512,7 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel &monica, bool storeO
   if (isCurrentlyEndEvent) withinEventStartEndRange = false;
 }
 
-vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date endDate) {
+vector<StoreData> monica::setupStorage(const json11::Json& event2oids, const Date& startDate, const Date& endDate) {
   map<string, Json> shortcuts =
       {{"daily",   J11Object{{"at", "xxxx-xx-xx"}}},
        {"monthly", J11Object{{"from", "xxxx-xx-01"},
@@ -530,7 +527,7 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
 
   vector<StoreData> storeData;
 
-  auto e2os = event2oids.array_items();
+  const auto& e2os = event2oids.array_items();
   for (size_t i = 0, size = e2os.size(); i < size; i += 2) {
     StoreData sd;
     sd.spec.origSpec = e2os[i];
@@ -573,26 +570,28 @@ vector<StoreData> setupStorage(json11::Json event2oids, Date startDate, Date end
   return storeData;
 }
 
-//void Monica::initPathToDB(const std::string& initialPathToIniFile)
-//{
-//	Db::dbConnectionParameters(initialPathToIniFile);
-//}
-
 struct DFSRes {
   kj::Own<MonicaModel> monica;
   uint16_t critPos{0};
   uint16_t cmitPos{0};
 };
 
-DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file) {
-  auto allBytes = file->readAllBytes();
-  kj::ArrayInputStream aios(allBytes);
-  capnp::InputStreamMessageReader message(aios);
-  auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
+DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file, bool serializedMonicaStateIsJson) {
   DFSRes res;
-  //res.critPos = runtimeState.getCritPos();
-  //res.cmitPos = runtimeState.getCmitPos();
-  res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+  auto allBytes = file->readAllBytes();
+  if (serializedMonicaStateIsJson) {
+    const capnp::JsonCodec json;
+    capnp::MallocMessageBuilder msg;
+    auto runtimeStateBuilder = msg.initRoot<mas::schema::model::monica::RuntimeState>();
+    json.decode(allBytes.asChars(), runtimeStateBuilder);
+    auto runtimeState = runtimeStateBuilder.asReader();
+    res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+  } else {
+    kj::ArrayInputStream ais(allBytes);
+    capnp::InputStreamMessageReader message(ais);
+    auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
+    res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+  }
   return res;
 }
 
@@ -618,19 +617,15 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   debug() << "-----" << endl;
   kj::Own<MonicaModel> monica, monica2;
 
-  //uint critPos = 0;
-  //uint cmitPos = 0;
   if (env.params.simulationParameters.loadSerializedMonicaStateAtStart) {
-    auto pathToSerFile = kj::str(env.params.simulationParameters.pathToSerializationFile);
+    auto pathToSerFile = kj::str(env.params.simulationParameters.pathToLoadSerializationFile);
     auto fs = kj::newDiskFilesystem();
     auto file = isAbsolutePath(pathToSerFile.cStr())
                 ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile))
                 : fs->getRoot().openFile(kj::Path::parse(pathToSerFile));
 
-    auto dserRes = deserializeFullState(kj::mv(file));
+    auto dserRes = deserializeFullState(kj::mv(file), env.params.simulationParameters.deserializedMonicaStateFromJson);
     monica = kj::mv(dserRes.monica);
-    //critPos = dserRes.critPos;
-    //cmitPos = dserRes.cmitPos;
   } else {
     monica = kj::heap<MonicaModel>(env.params);
     monica->simulationParametersNC().startDate = env.climateData.startDate();
@@ -980,7 +975,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   }
 
   if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
-    SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationFile);
+    SaveMonicaState sms(currentDate, env.params.simulationParameters.pathToSerializationAtEndFile,
+                        env.params.simulationParameters.serializeMonicaStateAtEndToJson,
+                        env.params.simulationParameters.noOfPreviousDaysSerializedClimateData);
     sms.apply(monica.get());
   }
   //if (isSyncIC && env2.params.simulationParameters.serializeMonicaStateAtEnd) {
@@ -1012,4 +1009,4 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   return make_pair(out, out2);
 }
 
-Output monica::runMonica(Env env) { return runMonicaIC(env, false).first; }
+Output monica::runMonica(Env env) { return runMonicaIC(kj::mv(env), false).first; }

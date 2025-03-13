@@ -55,9 +55,9 @@ class Crop;
 
 class MonicaModel {
 public:
-  MonicaModel(const CentralParameterProvider& cpp);
+  explicit MonicaModel(const CentralParameterProvider& cpp);
 
-  MonicaModel(mas::schema::model::monica::MonicaModelState::Reader reader) { deserialize(reader); }
+  explicit MonicaModel(mas::schema::model::monica::MonicaModelState::Reader reader) { deserialize(reader); }
 
   void deserialize(mas::schema::model::monica::MonicaModelState::Reader reader);
 
@@ -71,12 +71,10 @@ public:
 
   double CO2ForDate(double year, double julianDay, bool isLeapYear, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
   double CO2ForDate(Tools::Date, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
-  double GroundwaterDepthForDate(double maxGroundwaterDepth,
-    double minGroundwaterDepth,
-    int minGroundwaterDepthMonth,
-    double julianday,
-    bool leapYear);
+  double GroundwaterDepthForDate(double maxGroundwaterDepth, double minGroundwaterDepth, int minGroundwaterDepthMonth,
+    double julianday, bool leapYear);
 
+  void seedCrop(mas::schema::model::monica::CropSpec::Reader reader);
   void seedCrop(Crop* crop);
 
   bool isCropPlanted() const { return _currentCropModule; }
@@ -85,19 +83,13 @@ public:
 
   void incorporateCurrentCrop();
 
-  void applyMineralFertiliser(MineralFertilizerParameters partition,
-    double amount);
+  void applyMineralFertiliser(MineralFertilizerParameters partition, double amount);
 
-  void applyOrganicFertiliser(const OrganicMatterParameters& omps,
-    double amountFM,
-    bool incorporation);
+  void applyOrganicFertiliser(const OrganicMatterParameters& omps, double amountFM, bool incorporation);
 
-  bool useNMinMineralFertilisingMethod() const {
-    return _simPs.p_UseNMinMineralFertilisingMethod;
-  }
+  bool useNMinMineralFertilisingMethod() const { return _simPs.p_UseNMinMineralFertilisingMethod; }
 
-  double applyMineralFertiliserViaNMinMethod
-  (MineralFertilizerParameters partition, NMinCropParameters cropParams);
+  double applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters partition, NMinCropParameters cropParams);
 
   double dailySumFertiliser() const { return _dailySumFertiliser; }
 
@@ -135,46 +127,14 @@ public:
 
   void dailyReset();
 
-  void applyIrrigation(double amount,
-    double nitrateConcentration = 0,
-    double sulfateConcentration = 0);
+  void applyIrrigation(double amount, double nitrateConcentration = 0, double sulfateConcentration = 0);
 
   void applyTillage(double depth);
 
-  double get_AtmosphericCO2Concentration() const {
-    return vw_AtmosphericCO2Concentration;
-  }
-  double get_AtmosphericO3Concentration() const {
-    return vw_AtmosphericO3Concentration;
-  }
+  double get_AtmosphericCO2Concentration() const { return vw_AtmosphericCO2Concentration; }
+  double get_AtmosphericO3Concentration() const { return vw_AtmosphericO3Concentration; }
 
   double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
-
-  double avgCorg(double depth_m) const;
-  double mean90cmWaterContent() const;
-  double meanWaterContent(int layer, int number_of_layers) const;
-  double sumNmin(double depth_m) const;
-  double groundWaterRecharge() const;
-  double nLeaching() const;
-  double sumSoilTemperature(int layers) const;
-  double sumNO3AtDay(double depth) const;
-  double maxSnowDepth() const;
-  double getAccumulatedSnowDepth() const;
-  double getAccumulatedFrostDepth() const;
-  double avg30cmSoilTemperature() const;
-  double avgSoilMoisture(size_t startLayer, size_t endLayerInclusive) const;
-  double avgCapillaryRise(int start_layer, int end_layer) const;
-  double avgPercolationRate(int start_layer, int end_layer) const;
-  double sumSurfaceRunOff() const;
-  double surfaceRunoff() const;
-  double getEvapotranspiration() const;
-  double getTranspiration() const;
-  double getEvaporation() const;
-  double get_sum30cmSMB_CO2EvolutionRate() const;
-  double getNH3Volatilised() const;
-  double getSumNH3Volatilised() const;
-  double getsum30cmActDenitrificationRate() const;
-  double getETa() const;
 
   const SoilTemperature& soilTemperature() const { return *_soilTemperature; }
   SoilTemperature& soilTemperatureNC() { return *_soilTemperature; }
@@ -212,9 +172,7 @@ public:
   Tools::Date currentStepDate() const { return _currentStepDate; }
   void setCurrentStepDate(Tools::Date d) { _currentStepDate = d; }
 
-  const std::map<Climate::ACD, double>& currentStepClimateData() const {
-    return _climateData.back();
-  }
+  const std::map<Climate::ACD, double>& currentStepClimateData() const { return _climateData.back(); }
   void setCurrentStepClimateData(const std::map<Climate::ACD, double>& cd) { _climateData.push_back(cd); }
 
   const std::vector<std::map<Climate::ACD, double>>& climateData() const { return _climateData; }

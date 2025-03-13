@@ -354,10 +354,6 @@ public:
 
   bool maturityReached() const;
 
-  inline void accumulateEvapotranspiration(double ETa) { vc_AccumulatedETa += ETa; }
-
-  inline void accumulateTranspiration(double transp) { vc_AccumulatedTranspiration += transp; }
-
   /**
   * @brief Returns short term O3 damage
   */
@@ -457,6 +453,8 @@ public:
   double vc_PotentialTranspirationDeficit{ 0.0 };
   double vc_ActualTranspirationDeficit{ 0.0 };
   double vc_TranspirationReduced{ 0.0 };
+  double rootNRedux{0.0}; //! old REDWU
+  int vc_TimeUnderAnoxia{0};
 private:
   Intercropping &_intercropping;
 
@@ -476,6 +474,7 @@ private:
   CultivarParameters cultivarPs;
   CropResidueParameters residuePs;
   bool _isWinterCrop{false};
+  double _bareSoilKcFactor{0.4};
 
   //! old N
   //  static const double vw_AtmosphericCO2Concentration;
@@ -652,7 +651,6 @@ private:
   int vc_StorageOrgan{4};
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0}; //! old dt
-  int vc_TimeUnderAnoxia{0};
   int TimeUnderAnoxiaThresholdDefault = 4;
   std::vector<int> vc_TimeUnderAnoxiaThreshold;
   double vs_Tortuosity{};              //! old AD

@@ -49,21 +49,21 @@ public:
 
     KJ_LOG(INFO, "Starting Cap'n Proto MONICA service");
 
-    auto ownedRunMonica = kj::heap<RunMonica>(startedServerInDebugMode);
-    auto runMonica = ownedRunMonica.get();
-    if (name.size() > 0) runMonica->setName(name);
-    MonicaEnvInstance::Client runMonicaClient = kj::mv(ownedRunMonica);
-    runMonica->setClient(runMonicaClient);
-    KJ_LOG(INFO, "created MONICA service");
-    
-    startRestorerSetup(runMonicaClient);
-    runMonica->setRestorer(restorer);
+      auto ownedRunMonica = kj::heap<RunMonica>(startedServerInDebugMode);
+      auto runMonica = ownedRunMonica.get();
+      if (name.size() > 0) runMonica->setName(name);
+      MonicaEnvInstance::Client runMonicaClient = kj::mv(ownedRunMonica);
+      runMonica->setClient(runMonicaClient);
+      KJ_LOG(INFO, "created MONICA service");
 
-    auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false).wait(ioContext.waitScope).sturdyRef;
-    if(outputSturdyRefs && monicaSR.size() > 0) std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
+      startRestorerSetup(runMonicaClient);
+      runMonica->setRestorer(restorer);
 
-    // Run forever, accepting connections and handling requests.
-    kj::NEVER_DONE.wait(ioContext.waitScope);
+      auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false).wait(ioContext.waitScope).sturdyRef;
+      if (outputSturdyRefs && monicaSR.size() > 0) std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
+
+      // Run forever, accepting connections and handling requests.
+      kj::NEVER_DONE.wait(ioContext.waitScope);
 
     KJ_LOG(INFO, "stopped Cap'n Proto MONICA server");
     return true;

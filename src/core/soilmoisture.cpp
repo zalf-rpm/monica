@@ -169,7 +169,6 @@ void SoilMoisture::deserialize(mas::schema::model::monica::SoilMoistureModuleSta
   pt_TimeStep = reader.getPtTimeStep();
   vm_TotalWaterRemoval = reader.getTotalWaterRemoval();
   setFromCapnpList(vm_Transpiration, reader.getTranspiration());
-  vm_TranspirationDeficit = reader.getTranspirationDeficit();
   setFromCapnpList(vm_WaterFlux, reader.getWaterFlux());
   vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
   if(reader.hasSnowComponent()) snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
@@ -229,7 +228,6 @@ void SoilMoisture::serialize(mas::schema::model::monica::SoilMoistureModuleState
   builder.setPtTimeStep(pt_TimeStep);
   builder.setTotalWaterRemoval(vm_TotalWaterRemoval);
   setCapnpList(vm_Transpiration, builder.initTranspiration((capnp::uint)vm_Transpiration.size()));
-  builder.setTranspirationDeficit(vm_TranspirationDeficit);
   setCapnpList(vm_WaterFlux, builder.initWaterFlux((capnp::uint)vm_WaterFlux.size()));
   builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
   if (snowComponent) snowComponent->serialize(builder.initSnowComponent());
@@ -293,7 +291,6 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
     } else {
       vc_NetPrecipitation = vw_Precipitation;
     }
-
   } else {
     vc_CropPlanted = false;
     vc_KcFactor = _params.pm_KcFactor;
@@ -543,18 +540,12 @@ void SoilMoisture::fm_CapillaryRise() {
       vm_CapillaryWater70[i_Layer] = 0.7 * vm_CapillaryWater[i_Layer];
     }
 
-    //double vm_CapillaryRiseRate = 0.01; //[m d-1]
-    //double pm_CapillaryRiseRate = 0.01; //[m d-1]
     // Find first layer above groundwater with 70% available water
     auto vm_StartLayer = min(vm_GroundwaterTableLayer, (numberOfSoilLayers - 1));
     for (int i = int(vm_StartLayer); i >= 0; i--) {
       std::string vs_SoilTexture = soilColumn[i].vs_SoilTexture();
       assert(!vs_SoilTexture.empty());
       double vm_CapillaryRiseRate = min(0.01, _params.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance)); // [m d-1]
-
-      //if (pm_CapillaryRiseRate < vm_CapillaryRiseRate)
-      //  vm_CapillaryRiseRate = pm_CapillaryRiseRate;
-
       if (vm_AvailableWater[i] < vm_CapillaryWater70[i]) {
         auto vm_WaterAddedFromCapillaryRise = vm_CapillaryRiseRate ; // [m d-1]
         vm_SoilMoisture[i] += vm_WaterAddedFromCapillaryRise / vm_LayerThickness[i]; // [m3 per 10cm layer d-1]
@@ -715,7 +706,6 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
   } else {
     vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   }
-  //cout << "groundwater recharge: " << vm_FluxAtLowerBoundary << endl;
 }
 
 /**
@@ -723,26 +713,25 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
  */
 void SoilMoisture::fm_PercolationWithoutGroundwater() {
   for (size_t i = 0; i < numberOfMoistureLayers - 1; i++) {
-
     auto indexOfLayerBelow = i + 1;
     vm_SoilMoisture[indexOfLayerBelow] += vm_PercolationRate[i] / 1000.0 / vm_LayerThickness[i];
 
     if (vm_SoilMoisture[indexOfLayerBelow] > vm_FieldCapacity[indexOfLayerBelow]) {
       // too much water for this layer so some water is released to layers below
       vm_GravitationalWater[indexOfLayerBelow] =
-          (vm_SoilMoisture[indexOfLayerBelow] - vm_FieldCapacity[indexOfLayerBelow]) * 1000.0 * vm_LayerThickness[0];
+        (vm_SoilMoisture[indexOfLayerBelow] - vm_FieldCapacity[indexOfLayerBelow]) * 1000.0 * vm_LayerThickness[0];
       auto vm_LambdaReduced = vm_Lambda[indexOfLayerBelow] * frostComponent->getLambdaRedux(indexOfLayerBelow);
       auto vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[indexOfLayerBelow]);
       vm_PercolationRate[indexOfLayerBelow] =
-          (vm_GravitationalWater[indexOfLayerBelow] * vm_GravitationalWater[indexOfLayerBelow]
-           * vm_LambdaReduced) / vm_PercolationFactor;
+      (vm_GravitationalWater[indexOfLayerBelow] * vm_GravitationalWater[indexOfLayerBelow]
+       * vm_LambdaReduced) / vm_PercolationFactor;
 
       if (vm_PercolationRate[indexOfLayerBelow] > pm_MaxPercolationRate) {
         vm_PercolationRate[indexOfLayerBelow] = pm_MaxPercolationRate;
       }
 
       vm_GravitationalWater[indexOfLayerBelow] =
-          vm_GravitationalWater[indexOfLayerBelow] - vm_PercolationRate[indexOfLayerBelow];
+        vm_GravitationalWater[indexOfLayerBelow] - vm_PercolationRate[indexOfLayerBelow];
 
       if (vm_GravitationalWater[indexOfLayerBelow] < 0.0) vm_GravitationalWater[indexOfLayerBelow] = 0.0;
 
@@ -759,7 +748,7 @@ void SoilMoisture::fm_PercolationWithoutGroundwater() {
     vm_GroundwaterAdded = vm_PercolationRate[indexOfLayerBelow];
   }
 
-  if ((pm_LeachingDepthLayer > 0) && (pm_LeachingDepthLayer < (numberOfMoistureLayers - 1))) {
+  if (pm_LeachingDepthLayer > 0 && pm_LeachingDepthLayer < numberOfMoistureLayers - 1) {
     vm_FluxAtLowerBoundary = vm_WaterFlux[pm_LeachingDepthLayer];
   } else {
     vm_FluxAtLowerBoundary = vm_WaterFlux[numberOfMoistureLayers - 2];
@@ -839,7 +828,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   double vm_EReducer = 0.0;
   double vm_PotentialEvapotranspiration = 0.0;
   double vc_EvaporatedFromIntercept = 0.0;
-  double vm_EvaporatedFromSurface = 0.0;
+  vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
 
   double vm_SnowDepth = snowComponent->getVm_SnowDepth();
@@ -915,14 +904,10 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
       vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (vc_KcFactor / 1.1);
     }
 
-
     if (vm_PotentialEvapotranspiration > 0) { // Evaporation from soil
-
       for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-
         vm_EReducer_1 = get_EReducer_1(i_Layer, vc_PercentageSoilCoverage,
           vm_PotentialEvapotranspiration);
-
 
         if (i_Layer >= pm_MaximumEvaporationImpactDepth) {
           // layer is too deep for evaporation
@@ -1000,22 +985,9 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
       } // for
     } // vm_PotentialEvapotranspiration > 0
   } // vm_PotentialEvapotranspiration > 0.0
-  vm_ActualEvapotranspiration = vm_ActualTranspiration + vm_ActualEvaporation + vc_EvaporatedFromIntercept
-    + vm_EvaporatedFromSurface;
-
-
-  //std::cout << setprecision(11) << "vm_ActualTranspiration: " << vm_ActualTranspiration << std::endl;
-  //std::cout << setprecision(11) << "vm_ActualEvaporation: " << vm_ActualEvaporation << std::endl;
-  //std::cout << setprecision(11) << "vc_EvaporatedFromIntercept: " << vc_EvaporatedFromIntercept << std::endl;
-  //std::cout << setprecision(11) << "vm_EvaporatedFromSurface: " << vm_EvaporatedFromSurface << std::endl;
-
-  if (cropModule) {
-    cropModule->accumulateEvapotranspiration(vm_ActualEvapotranspiration);
-    cropModule->accumulateTranspiration(vm_ActualTranspiration);
-  }
+  vm_ActualEvapotranspiration = vm_ActualTranspiration + vm_ActualEvaporation
+      + vc_EvaporatedFromIntercept + vm_EvaporatedFromSurface;
 }
-
-
 
 /**
  * @brief Reference evapotranspiration
@@ -1351,14 +1323,6 @@ double SoilMoisture::meanWaterContent(int layer, int number_of_layers) const {
  */
 double SoilMoisture::get_KcFactor() const {
   return vc_KcFactor;
-}
-
-/**
- * @brief Returns drought stress factor []
- * @return drought stress factor
- */
-double SoilMoisture::get_TranspirationDeficit() const {
-  return vm_TranspirationDeficit;
 }
 
 /**

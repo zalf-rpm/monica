@@ -11,6 +11,7 @@ set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 #add_compile_definitions(INCLUDE_SR_SUPPORT)
 #set(INCLUDE_SR_SUPPORT 1)
 add_compile_definitions(NO_MYSQL)
+add_compile_definitions(_USE_MATH_DEFINES)
 set(MT_RUNTIME_LIB 1)
 
 #set absolute filenames (to resolve .. in paths)
@@ -19,58 +20,54 @@ macro(set_absolute_path var_name path)
     set(${var_name} ${toAbsPath})
 endmacro(set_absolute_path)
 
-set_absolute_path(MAS_INFRASTRUCTURE_DIR ../mas-infrastructure)
-set_absolute_path(CAPNP_SCHEMAS_DIR ${MAS_INFRASTRUCTURE_DIR}/zalfmas_capnpschemas)
-
 if (NOT TARGET capnp_schemas_lib)
     message(STATUS "target: capnp_schemas_lib")
-    add_subdirectory(${CAPNP_SCHEMAS_DIR} mas-infrastructure/zalfmas_capnpschemas)
+    add_subdirectory(mas_cpp_misc/mas_capnproto_schemas/gen/c++ mas-infrastructure/capnproto_schemas)
 endif ()
 
 if (NOT TARGET common_lib)
     message(STATUS "target: common_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/common mas-infrastructure/common)
+    add_subdirectory(mas_cpp_misc/common common)
 endif ()
 
 if (NOT TARGET date_lib)
     message(STATUS "target: date_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/tools/date mas-infrastructure/tools/date)
+    add_subdirectory(mas_cpp_misc/tools/date tools/date)
 endif ()
 
 if (NOT TARGET helpers_lib)
     message(STATUS "target: helpers_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/tools/helpers mas-infrastructure/tools/helpers)
+    add_subdirectory(mas_cpp_misc/tools/helpers tools/helpers)
 endif ()
 
 if (NOT TARGET json11_lib)
     message(STATUS "target: json11_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/json11 mas-infrastructure/json11)
+    add_subdirectory(mas_cpp_misc/json11 json11)
 endif ()
 
-#if(NOT TARGET read_ini_lib)
-#	message(STATUS "target: read_ini_lib")
-#	add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/tools/read-ini mas-infrastructure/tools/read-ini)
-#endif()
-#get_target_property(read_ini_interface_includes read_ini_lib INTERFACE_INCLUDE_DIRECTORIES)
+#if (NOT TARGET toml_lib)
+#    message(STATUS "target: toml_lib")
+#    add_subdirectory(mas_cpp_misc/toml toml)
+#endif ()
 
 if (NOT TARGET debug_lib)
     message(STATUS "target: debug_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/tools/debug mas-infrastructure/tools/debug)
+    add_subdirectory(mas_cpp_misc/tools/debug tools/debug)
 endif ()
 
 if (NOT TARGET climate_file_io_lib)
     message(STATUS "target: climate_file_io_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/climate/climate-file-io mas-infrastructure/climate/climate-file-io)
+    add_subdirectory(mas_cpp_misc/climate/climate-file-io climate/climate-file-io)
 endif ()
 
 if (NOT TARGET soil_lib)
     message(STATUS "target: soil_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/soil mas-infrastructure/soil)
+    add_subdirectory(mas_cpp_misc/soil soil)
 endif ()
 
 if (NOT TARGET zeromq_lib)
     message(STATUS "target: zeromq_lib")
-    add_subdirectory(${MAS_INFRASTRUCTURE_DIR}/src/cpp/zeromq mas-infrastructure/zeromq)
+    add_subdirectory(mas_cpp_misc/zeromq zeromq)
 endif ()
 
 #define delete file from path
@@ -136,6 +133,9 @@ link_directories($ENV{HOME}/lib)
 
 find_package(Threads REQUIRED)
 #find_package(unofficial-sodium CONFIG REQUIRED)
+
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(tomlplusplus REQUIRED IMPORTED_TARGET tomlplusplus)
 
 #define folder structure in vs solution corresponding to real folder structure
 GroupSources("src" ${PROJECT_SOURCE_DIR})
@@ -336,6 +336,21 @@ target_link_libraries(monica-capnp-fbp-component monica_lib)
 
 if (MSVC)
     target_compile_options(monica-capnp-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif ()
+
+#------------------------------------------------------------------------------
+
+add_executable(daily-monica-fbp-component-main
+src/run/daily-monica-fbp-component-main.cpp
+)
+
+target_link_libraries(daily-monica-fbp-component-main
+        monica_lib
+        #PkgConfig::tomlplusplus
+)
+
+if (MSVC)
+target_compile_options(daily-monica-fbp-component-main PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------

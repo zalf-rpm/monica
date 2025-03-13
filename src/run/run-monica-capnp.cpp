@@ -63,23 +63,35 @@ kj::Promise<void> RunMonica::run(RunContext context)
   auto envR = context.getParams().getEnv();
 
   auto runMonica =
-      [envR, this](const DataAccessor& da = DataAccessor(), J11Array soilLayers = J11Array()) mutable {
+    [envR, this](const DataAccessor& da = DataAccessor(), J11Array soilLayers = J11Array()) mutable {
     std::string err;
     auto rest = envR.getRest();
     if (!rest.getStructure().isJson()) {
       return monica::Output(std::string("Error: 'rest' field is not valid JSON!"));
     }
 
-    const Json &envJson = Json::parse(rest.getValue().cStr(), err);
+    const Json& envJson = Json::parse(rest.getValue().cStr(), err);
     //cout << "runMonica: " << envJson["customId"].dump() << endl;
 
     Env env;
+
+    // set available functions to calculate pwp, fc and sat before env creation
+    auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
+      Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
+      Soil::updateUnsetPwpFcSatFromVanGenuchten;
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
+
     auto errors = env.merge(envJson);
 
-    if (!soilLayers.empty()) env.params.siteParameters.merge(J11Object{{"SoilProfileParameters", soilLayers}});
+    if (!soilLayers.empty()) {
+      errors.append(env.params.siteParameters.merge(J11Object{{"SoilProfileParameters", soilLayers}}));
+    }
 
-    monica::Output out;
+    Output out;
     EResult<DataAccessor> eda;
+    eda.append(errors);
     try {
       if (da.isValid()) {
         eda.result = da;
@@ -92,17 +104,19 @@ kj::Promise<void> RunMonica::run(RunContext context)
       }
 
       if (eda.success()) {
-        env.climateData = eda.result;
+        if (eda.result.isValid()) env.climateData = eda.result;
+        else assert(env.climateData.isValid());
         env.debugMode = _startedServerInDebugMode && env.debugMode;
         env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-            [](std::string soilTexture, size_t distance) {
-              return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture), distance);
-            };
-        out = monica::runMonica(env);
+          [](std::string soilTexture, size_t distance) {
+            return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture), distance);
+          };
+
+        out = monica::runMonica(kj::mv(env));
       } else {
         out.customId = env.customId;
       }
-    } catch(std::exception &e) {
+    } catch (std::exception& e) {
       eda.appendError(kj::str("Error running MONICA: ", e.what()).cStr());
     }
     out.errors = eda.errors;
@@ -111,33 +125,36 @@ kj::Promise<void> RunMonica::run(RunContext context)
   };
 
   auto proms = kj::heapArrayBuilder<kj::Promise<void>>(2);
-  DataAccessor da;
-  //J11Array soilLayers;
 
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();
-    proms.add(dataAccessorFromTimeSeries(ts).then([&da](const DataAccessor &da2) {
-      da = da2;
-    }, [](auto &&e) {
-      KJ_LOG(INFO, "Error while trying to get data accessor from time series: ", e);
-    }));
+    proms.add(dataAccessorFromTimeSeries(kj::mv(ts))
+              .then([this](const DataAccessor& da2) {
+                      _da = da2;
+                    }, [](auto&& e) {
+                      KJ_LOG(INFO,
+                             "Error while trying to get data accessor from time series: ",
+                             e);
+                    }));
   } else {
+    _da = DataAccessor();
     proms.add(kj::READY_NOW);
   }
 
   if (envR.hasSoilProfile()) {
     auto layersProm = fromCapnpSoilProfile(envR.getSoilProfile());
-    proms.add(layersProm.then([this](auto &&layers) mutable {
-      _soilLayers = layers;
-    }, [](auto &&e) {
-      KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
-    }));
+    proms.add(layersProm.then([this](auto&& layers) mutable {
+                                _soilLayers = layers;
+                              }, [](auto&& e) {
+                                KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
+                              }));
   } else {
+    _soilLayers = J11Array();
     proms.add(kj::READY_NOW);
   }
 
-  return kj::joinPromises(proms.finish()).then([context, runMonica, da, this]() mutable {
-    auto out = runMonica(da, _soilLayers);
+  return kj::joinPromises(proms.finish()).then([context, runMonica, this]() mutable {
+    auto out = runMonica(_da, _soilLayers);
     auto rs = context.getResults();
     auto res = rs.initResult();
     res.initStructure().setJson();

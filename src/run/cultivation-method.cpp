@@ -25,6 +25,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <capnp/message.h>
 #include <capnp/serialize.h>
+#include <capnp/compat/json.h>
 #include <kj/filesystem.h>
 #include <kj/string.h>
 #include "model/monica/monica_state.capnp.h"
@@ -187,6 +188,16 @@ Sowing::Sowing(json11::Json j) {
   _errors.append(Sowing::merge(kj::mv(j)));
 }
 
+// void Sowing::deserialize(mas::schema::model::monica::Params::Sowing::Reader reader) {
+//   _cropToPlant = kj::heap<Crop>();
+//   _cropToPlant->deserialize(reader.getCrop());
+//   _plantDensity = reader.getPlantDensity();
+// }
+//
+// void Sowing::serialize(mas::schema::model::monica::Params::Sowing::Builder builder) const {
+//
+// }
+
 Errors Sowing::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   //set_shared_ptr_value(_crop, j, "crop");
@@ -343,8 +354,9 @@ AutomaticSowing::registerDailyFunction(std::function<std::vector<double> &()> ge
   return [this](MonicaModel *model) -> double {
     double avgSoilTemp = 0;
     size_t i = 0;
-    for (auto size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++)
+    for (auto size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++) {
       avgSoilTemp += model->soilTemperature().getSoilTemperature(int(i));
+    }
     return avgSoilTemp / double(i);
   };
 }
@@ -558,8 +570,7 @@ json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const {
 
 bool AutomaticHarvest::apply(MonicaModel *model) {
   //setDate(model->currentStepDate()); //-> commented out, caused the detection as dynamic workstep to fail
-  if (_sowing)
-    _sowing->crop()->setHarvestDate(model->currentStepDate());
+  if (_sowing) _sowing->crop()->setHarvestDate(model->currentStepDate());
 
   Harvest::apply(model);
 
@@ -573,14 +584,13 @@ bool AutomaticHarvest::condition(MonicaModel *model) {
   bool conditionMet = false;
 
   auto cg = model->cropGrowth();
-  if (cg && !_cropHarvested) //got a crop and not yet harvested
-    conditionMet =
-        model->currentStepDate() >= _absLatestDate  //harvest after or at latested date
+  //got a crop and not yet harvested
+  if (cg && !_cropHarvested) conditionMet =
+        model->currentStepDate() >= _absLatestDate  //harvest after or at latest date
         || (_harvestTime == "maturity"
             && model->cropGrowth()->maturityReached() //has maturity been reached
             && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
-            &&
-            isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
+            && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
   return conditionMet;
 }
@@ -962,8 +972,12 @@ bool SetValue::apply(MonicaModel *model) {
 }
 
 
-SaveMonicaState::SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile)
-    : Workstep(at), _pathToSerializedStateFile(pathToSerializedStateFile) {
+SaveMonicaState::SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile,
+                                 bool serializeAsJson, int noOfPreviousDaysSerializedClimateData)
+: Workstep(at)
+, _pathToFile(std::move(pathToSerializedStateFile))
+, _toJson(serializeAsJson)
+, _noOfPreviousDaysSerializedClimateData(noOfPreviousDaysSerializedClimateData) {
   _runAtStartOfDay = false; // by default run at the end of the day
 }
 
@@ -972,23 +986,35 @@ SaveMonicaState::SaveMonicaState(json11::Json j) {
 }
 
 Errors SaveMonicaState::merge(json11::Json j) {
-  _runAtStartOfDay = false; // by default run at the end of the day
   Errors res = Workstep::merge(j);
-  set_string_value(_pathToSerializedStateFile, j, "pathToSerializedStateFile");
+  set_bool_valueD(_runAtStartOfDay, j, "runAtStartOfDay", false);
+  set_string_value(_pathToFile, j, "path");
+  set_bool_value(_toJson, j, "toJson");
+  set_int_valueD(_noOfPreviousDaysSerializedClimateData, j, "noOfPreviousDaysSerializedClimateData", -1);
   return res;
 }
 
 json11::Json SaveMonicaState::to_json() const {
   return json11::Json::object
-      {{"type",                      type()},
-       {"pathToSerializedStateFile", _pathToSerializedStateFile}
-      };
+  {
+    {"type", type()},
+    {"path", _pathToFile},
+    {"toJson", _toJson},
+       {"noOfPreviousDaysSerializedClimateData", _noOfPreviousDaysSerializedClimateData},
+    {"runAtStartOfDay", _runAtStartOfDay}
+  };
 }
 
 bool SaveMonicaState::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  auto pathToSerFile = kj::str(_pathToSerializedStateFile);
+  int prevVal = -1;
+  if (_noOfPreviousDaysSerializedClimateData > -1) {
+    prevVal = model->simulationParameters().noOfPreviousDaysSerializedClimateData;
+    model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = _noOfPreviousDaysSerializedClimateData;
+  }
+
+  const auto pathToSerFile = kj::str(_pathToFile);
   auto fs = kj::newDiskFilesystem();
   auto file = isAbsolutePath(pathToSerFile.cStr())
               ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile),
@@ -998,15 +1024,20 @@ bool SaveMonicaState::apply(MonicaModel *model) {
 
   capnp::MallocMessageBuilder message;
   auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
-  //runtimeState.setCritPos(model->critPos);
-  //runtimeState.setCmitPos(model->cmitPos);
-  auto modelState = runtimeState.initModelState();
+  const auto modelState = runtimeState.initModelState();
   model->serialize(modelState);
-  auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
-  file->writeAll(flatArray.asBytes());
 
+  if (_toJson) {
+    const capnp::JsonCodec json;
+    const auto jStr = json.encode(runtimeState);
+    file->writeAll(jStr);
+  } else {
+    auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
+    file->writeAll(flatArray.asBytes());
+  }
+
+  if (prevVal > -1) model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = prevVal;
   model->addEvent("SaveMonicaState");
-
   return true;
 }
 

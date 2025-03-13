@@ -129,6 +129,10 @@ public:
 
   virtual Sowing *clone() const { return new Sowing(*this); }
 
+  // explicit Sowing(mas::schema::model::monica::Params::Sowing::Reader reader) { deserialize(reader); }
+  // void deserialize(mas::schema::model::monica::Params::Sowing::Reader reader);
+  // void serialize(mas::schema::model::monica::Params::Sowing::Builder builder) const;
+
   Tools::Errors merge(json11::Json j) override;
 
   json11::Json to_json() const override { return to_json(true); }
@@ -324,9 +328,9 @@ private:
   Tools::Date _latestDate;
   Tools::Date _absLatestDate;
   double _minPercentASW{0};
-  double _maxPercentASW{100};
-  double _max3dayPrecipSum{0};
-  double _maxCurrentDayPrecipSum{0};
+  double _maxPercentASW{999};
+  double _max3dayPrecipSum{9999};
+  double _maxCurrentDayPrecipSum{9999};
   bool _cropHarvested{false};
 };
 
@@ -520,7 +524,8 @@ private:
 
 class DLL_API SaveMonicaState : public Workstep {
 public:
-  SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile);
+  SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile, bool serializeAsJson = false,
+    int noOfPreviousDaysSerializedClimateData = -1);
 
   explicit SaveMonicaState(json11::Json object);
 
@@ -534,10 +539,12 @@ public:
 
   bool apply(MonicaModel *model) override;
 
-  std::string pathToSerializedStateFile() const { return _pathToSerializedStateFile; }
+  std::string pathToSerializedStateFile() const { return _pathToFile; }
 
 private:
-  std::string _pathToSerializedStateFile;
+  std::string _pathToFile;
+  bool _toJson{false};
+  int _noOfPreviousDaysSerializedClimateData{-1};
 };
 
 class DLL_API Irrigation : public Workstep {
