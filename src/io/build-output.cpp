@@ -414,14 +414,38 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "TraDef", "0;1", "TranspirationDeficit" },
         [](const MonicaModel& monica, OId oid)
       {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_TranspirationDeficit(), 2) : 0.0;
+        return monica.cropGrowth() ? round(monica.cropGrowth()->vc_TranspirationDeficit, 2) : 0.0;
       });
+
+      build({ id++, "PotTraDef", "0;1", "PotentialTranspirationDeficit" },
+          [](const MonicaModel& monica, OId oid)
+          {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_PotentialTranspirationDeficit, 2) : 0.0;
+          });
+
+      build({ id++, "ActTraDef", "0;1", "ActualTranspirationDeficit" },
+          [](const MonicaModel& monica, OId oid)
+          {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_ActualTranspirationDeficit, 2) : 0.0;
+          });
 
       build({ id++, "Tra", "mm", "ActualTranspiration" },
         [](const MonicaModel& monica, OId oid)
       {
         return round(monica.getTranspiration(), 2);
       });
+
+      build({ id++, "TraRed", "mm", "TranspirationReduced" },
+          [](const MonicaModel& monica, OId oid)
+          {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_TranspirationReduced, 2) : 0.0;
+          });
+
+      build({ id++, "Ass", "kgDM ha-1", "Assimilates" },
+          [](const MonicaModel& monica, OId oid)
+          {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_Assimilates(), 2) : 0.0;
+          });
 
       build({ id++, "NDef", "0;1", "CropNRedux" },
         [](const MonicaModel& monica, OId oid)

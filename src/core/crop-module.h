@@ -453,6 +453,10 @@ public:
   // endAtInclStage < 0 -> count from end
   double sumStageTemperatureSums(int startAtStage, int endAtInclStage) const;
 
+  double vc_TranspirationDeficit{ 1.0 };          //! old TRREL
+  double vc_PotentialTranspirationDeficit{ 0.0 };
+  double vc_ActualTranspirationDeficit{ 0.0 };
+  double vc_TranspirationReduced{ 0.0 };
 private:
   Intercropping &_intercropping;
 
@@ -665,7 +669,6 @@ private:
   double vc_TemperatureSumToFlowering{0.0};
   std::vector<double> vc_Transpiration;      //! old TP
   std::vector<double> vc_TranspirationRedux;   //! old TRRED
-  double vc_TranspirationDeficit{1.0};          //! old TRREL
   double vc_VernalisationDays{0.0}; //
   double vc_VernalisationFactor{0.0};          //! old FV
   std::vector<double> pc_VernalisationRequirement;  //! old VSCHWELL
