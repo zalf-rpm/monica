@@ -51,6 +51,7 @@ ENV monica_auto_restart_proxies=true
 ENV monica_auto_restart_worker=true
 ENV monica_proxy_in_host=localhost
 ENV monica_proxy_out_host=localhost
+ENV monica_proxy_out_mode=-pps
 
 ENV monica_intern_in_port=6677
 ENV monica_intern_out_port=7788
