@@ -488,8 +488,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
               break;
             } else if (msgType == "Env") {
-              Env env;
-              auto sharedId = env.sharedId;
+              auto sharedId = msg.json["sharedId"].is_null() ? "" : msg.json["sharedId"].string_value();
               monica::Output out, out2;
               auto customId = msg.json["customId"];
               out.customId = customId;
@@ -499,6 +498,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
               if (isNoDataPassThrough) {
                 debug() << "nodata pass through -> customId: " << customId.dump() << endl;
               } else {
+                Env env;
                 auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
                 env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
                 env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
@@ -568,6 +568,9 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                   }
                   out.errors = eda.errors;
                   out.warnings = eda.warnings;
+                } else {
+                  out.errors = errors.errors;
+                  out.warnings = errors.warnings;
                 }
               }
 
