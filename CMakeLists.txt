@@ -59,6 +59,12 @@ if (NOT TARGET SQ_Soil_Temperature_lib)
     add_subdirectory(${AMEI_COMPONENTS_DIR}/SQ_Soil_Temperature/src/${CPP_FOLDER_NAME}/SQ_Soil_Temperature amei-components/SQ_Soil_Temperature)
 endif ()
 
+if (NOT TARGET ApsimCampbell_lib)
+    message(STATUS "target: ApsimCampbell_lib")
+    add_subdirectory(${AMEI_COMPONENTS_DIR}/ApsimCampbell/src/${CPP_FOLDER_NAME}/ApsimCampbell amei-components/ApsimCampbell)
+endif ()
+
+
 if (NOT TARGET BiomaSurfacePartonSoilSWATC_lib)
     message(STATUS "target: BiomaSurfacePartonSoilSWATC_lib")
     add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfacePartonSoilSWATC/src/${CPP_FOLDER_NAME}/BiomaSurfacePartonSoilSWATC amei-components/BiomaSurfacePartonSoilSWATC)
@@ -256,6 +262,8 @@ add_library(monica_lib
         src/modules/soil_temperature/BiomaSurfacePartonSoilSWATC_monica_interface.h
         src/modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.cpp
         src/modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.h
+        src/modules/soil_temperature/ApsimCampbell_monica_interface.h
+        src/modules/soil_temperature/ApsimCampbell_monica_interface.cpp
 )
 
 target_link_libraries(monica_lib
@@ -291,6 +299,9 @@ if (TARGET SQ_Soil_Temperature_lib)
 endif ()
 if (TARGET BiomaSurfacePartonSoilSWATC_lib)
     target_link_libraries(monica_lib PUBLIC BiomaSurfacePartonSoilSWATC_lib)
+endif ()
+if (TARGET ApsimCampbell_lib)
+    target_link_libraries(monica_lib PUBLIC ApsimCampbell_lib)
 endif ()
 if (TARGET BiomaSurfaceSWATSoilSWATC_lib)
     target_link_libraries(monica_lib PUBLIC BiomaSurfaceSWATSoilSWATC_lib)
