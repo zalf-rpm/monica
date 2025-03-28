@@ -1570,7 +1570,6 @@ BOTRes& monica::buildOutputTable()
             }, oid.roundToDigits.orDefault(1));
         });
 
-#ifdef CPP2
       build({ id++, "AMEI_Monica_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
                 return round(const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.soilSurfaceTemperature, oid.roundToDigits.orDefault(6));
@@ -1579,18 +1578,7 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
                 return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.soilTemperature.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_Monica_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilSurfaceTemperature(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_Monica_SoilTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Monica_SoilTemp->soilTempState.getsoilTemperature().at(i); }, oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
                 return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.SRFTEMP, oid.roundToDigits.orDefault(6));
@@ -1599,18 +1587,7 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
                 return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->soilTempState.ST.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_DSSAT_ST_standalone_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getSRFTEMP(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_DSSAT_ST_standalone_SoilTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_ST_standalone->_soilTempState.getST().at(i); }, oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_DSSAT_EPICST_standalone_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
                 return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->_soilTempState.SRFTEMP, oid.roundToDigits.orDefault(6));
@@ -1619,18 +1596,7 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
                 return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->_soilTempState.ST.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_DSSAT_EPICST_standalone_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->_soilTempState.getSRFTEMP(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_DSSAT_EPICST_standalone_SoilTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_DSSAT_EPICST_standalone->_soilTempState.getST().at(i); }, oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_Simplace_Soil_Temperature_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
                 return round(const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->_soilTempState.SoilSurfaceTemperature, oid.roundToDigits.orDefault(6));
@@ -1639,18 +1605,7 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
                 return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->_soilTempState.SoilTempArray.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_Simplace_Soil_Temperature_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->_soilTempState.getSoilSurfaceTemperature(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_Simplace_Soil_Temperature_SoilTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Simplace_Soil_Temperature->_soilTempState.getSoilTempArray().at(i); }, oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_Stics_soil_temperature_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
               return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->_soilTempState.canopy_temp_avg, oid.roundToDigits.orDefault(6));
@@ -1659,18 +1614,7 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
               return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->_soilTempState.layer_temp.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_Stics_soil_temperature_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getcanopy_temp_avg(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_Stics_soil_temperature_SoilTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_Stics_soil_temperature->soilTempState.getlayer_temp().at(i); }, oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_deep", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
               return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->_soilTempState.deepLayerT, oid.roundToDigits.orDefault(6));
@@ -1683,22 +1627,7 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
               return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->_soilTempState.maxTSoil, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_deep", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->_soilTempState.getdeepLayerT(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_min", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->_soilTempState.getminTSoil(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_SQ_Soil_Temperature_SoilTemp_max", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_SQ_Soil_Temperature->_soilTempState.getmaxTSoil(), oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
               return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->_soilTempAux.SurfaceSoilTemperature, oid.roundToDigits.orDefault(6));
@@ -1715,46 +1644,24 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
               return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->_soilTempState.SoilTemperatureByLayers.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->_soilTempAux.getSurfaceSoilTemperature(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp_min", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->_soilTempAux.getSurfaceTemperatureMinimum(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SurfTemp_max", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->_soilTempAux.getSurfaceTemperatureMaximum(), oid.roundToDigits.orDefault(6));
-            });
-      build({ id++, "AMEI_BiomaSurfacePartonSoilSWATC_SoilTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfacePartonSoilSWATC->_soilTempState.getSoilTemperatureByLayers().at(i); }, oid.roundToDigits.orDefault(6));
-            });
-#endif
 
-#ifdef CPP2
       build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
               return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->_soilTempAux.SurfaceSoilTemperature, oid.roundToDigits.orDefault(6));
             });
-
       build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
               return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->_soilTempState.SoilTemperatureByLayers.at(i); }, oid.roundToDigits.orDefault(6));
             });
-#else
-      build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SurfTemp", "°C", "" },
-            [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->_soilTempAux.getSurfaceSoilTemperature(), oid.roundToDigits.orDefault(6));
-            });
 
-      build({ id++, "AMEI_BiomaSurfaceSWATSoilSWATC_SoilTemp", "°C", "" },
+      build({ id++, "AMEI_ApsimCampbell_SurfTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
-              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_BiomaSurfaceSWATSoilSWATC->_soilTempState.getSoilTemperatureByLayers().at(i); }, oid.roundToDigits.orDefault(6));
+              return round(const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.soilTemp.at(0), oid.roundToDigits.orDefault(6));
             });
-#endif
+      build({ id++, "AMEI_ApsimCampbell_SoilTemp", "°C", "" },
+            [](const MonicaModel& monica, const OId& oid){
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.soilTemp.at(i); }, oid.roundToDigits.orDefault(6));
+            });
 
       tableBuilt = true;
     }

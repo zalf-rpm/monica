@@ -36,12 +36,12 @@ void MonicaInterface::run() {
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
   double dayLength = 0;
-  if (climateData.find(Climate::sunhours) == climateData.end()) {
+  if (climateData.find(Climate::x4) == climateData.end()) {
     const auto& dls = Tools::dayLengths(_monica->siteParameters().vs_Latitude,
       _monica->currentStepDate().julianDay());
     dayLength = dls.astronomicDayLenght;
   } else {
-    dayLength = climateData.at(Climate::sunhours);
+    dayLength = climateData.at(Climate::x4);
   }
 #ifdef CPP2
   _soilTempExo.maxTAir = climateData.at(Climate::tmax);
@@ -57,10 +57,10 @@ void MonicaInterface::run() {
 #ifdef AMEI_SENSITIVITY_ANALYSIS
 #ifdef CPP2
   _soilTempExo.meanAnnualAirTemp = _monica->simulationParameters().customData["TAV"].number_value();
-  _soilTempRate.heatFlux = climateData[Climate::o3]; //o3 is used as heat flux
+  _soilTempRate.heatFlux = climateData[Climate::x5]; //o3 is used as heat flux
 #else
   _soilTempExo.setmeanAnnualAirTemp(_monica->simulationParameters().customData["TAV"].number_value());
-  _soilTempRate.setheatFlux(climateData[Climate::o3]); //o3 is used as heat flux
+  _soilTempRate.setheatFlux(climateData[Climate::x5]); //o3 is used as heat flux
 #endif
 #else
   auto [fst, snd] = _monica->dssatTAMPandTAV();

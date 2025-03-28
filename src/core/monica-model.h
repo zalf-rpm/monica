@@ -48,6 +48,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilmoisture.h"
 #include "crop-module.h"
 #include "soilcolumn.h"
+#include "modules/soil_temperature/ApsimCampbell_monica_interface.h"
 
 #include "modules/soil_temperature/Monica_SoilTemp_monica_interface.h"
 #include "modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h"
@@ -213,6 +214,7 @@ public:
   kj::Own<SQ_Soil_Temperature::MonicaInterface> _instance_SQ_Soil_Temperature;
   kj::Own<BiomaSurfacePartonSoilSWATC::MonicaInterface> _instance_BiomaSurfacePartonSoilSWATC;
   kj::Own<BiomaSurfaceSWATSoilSWATC::MonicaInterface> _instance_BiomaSurfaceSWATSoilSWATC;
+  kj::Own<ApsimCampbell::MonicaInterface> _instance_ApsimCampbell;
 
   std::pair<double, double> dssatTAMPandTAV() {
     return std::make_pair(_dssatTAMP, _dssatTAV);

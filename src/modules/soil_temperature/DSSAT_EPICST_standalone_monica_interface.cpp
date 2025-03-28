@@ -101,7 +101,7 @@ void MonicaInterface::run() {
 #if AMEI_SENSITIVITY_ANALYSIS
 #ifdef CPP2
   //_soilTempExo.SNOW = 0;
-  _soilTempExo.SNOW = climateData[Climate::precipOrig]; //snow in mm
+  _soilTempExo.SNOW = climateData[Climate::x6]; //snow in mm
   _soilTempExo.DEPIR = _monica->simulationParameters().customData["IRVAL"].number_value();
   _soilTempExo.MULCHMASS = _monica->simulationParameters().customData["MLTHK"].number_value();
   _soilTempExo.BIOMAS = _monica->simulationParameters().customData["CWAD"].number_value();
@@ -109,7 +109,7 @@ void MonicaInterface::run() {
   _soilTempExo.TAMP = _monica->simulationParameters().customData["TAMP"].number_value();
 #else
   //_soilTempExo.setSNOW(0);
-  _soilTempExo.setSNOW(climateData[Climate::precipOrig]); //snow in mm
+  _soilTempExo.setSNOW(climateData[Climate::x6]); //snow in mm
   _soilTempExo.setDEPIR(_monica->simulationParameters().customData["IRVAL"].number_value());
   _soilTempExo.setMULCHMASS(_monica->simulationParameters().customData["MLTHK"].number_value());
   _soilTempExo.setBIOMAS(_monica->simulationParameters().customData["CWAD"].number_value());

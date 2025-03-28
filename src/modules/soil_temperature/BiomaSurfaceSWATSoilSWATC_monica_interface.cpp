@@ -82,7 +82,7 @@ void MonicaInterface::run() {
   _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
   _soilTempExo.setWaterEquivalentOfSnowPack(0); // snow in mm
 #endif
-  //_soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::precipOrig]); // snow in mm
+  //_soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::x6]); // snow in mm
 #ifdef AMEI_SENSITIVITY_ANALYSIS
 #ifdef CPP2
   _soilTempAux.AboveGroundBiomass = _monica->simulationParameters().customData["CWAD"].number_value();

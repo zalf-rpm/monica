@@ -70,12 +70,12 @@ void MonicaInterface::run() {
 #ifdef CPP2
   _soilTempExo.AirTemperatureMinimum = climateData.at(Climate::tmin);
   _soilTempExo.AirTemperatureMaximum = climateData.at(Climate::tmax);
-  _soilTempExo.DayLength = climateData[Climate::sunhours];
+  _soilTempExo.DayLength = climateData[Climate::x4];
   _soilTempExo.GlobalSolarRadiation = climateData.at(Climate::globrad);
 #else
   _soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
   _soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
-  _soilTempExo.setDayLength(climateData[Climate::sunhours]);
+  _soilTempExo.setDayLength(climateData[Climate::x4]);
   _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
 #endif
 #ifdef AMEI_SENSITIVITY_ANALYSIS

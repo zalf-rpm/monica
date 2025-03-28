@@ -106,7 +106,11 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     _instance_BiomaSurfaceSWATSoilSWATC = kj::heap<BiomaSurfaceSWATSoilSWATC::MonicaInterface>(this);
     _instance_BiomaSurfaceSWATSoilSWATC->init(cpp);
     _soilTempInstance = _instance_BiomaSurfaceSWATSoilSWATC.get();
-  }
+  } else if(stModelName == "ApsimCampbell") {
+  _instance_ApsimCampbell = kj::heap<ApsimCampbell::MonicaInterface>(this);
+  _instance_ApsimCampbell->init(cpp);
+  _soilTempInstance = _instance_ApsimCampbell.get();
+}
 }
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
@@ -717,6 +721,7 @@ void MonicaModel::generalStep() {
   _instance_SQ_Soil_Temperature->run();
   _instance_BiomaSurfacePartonSoilSWATC->run();
   _instance_BiomaSurfaceSWATSoilSWATC->run();
+  _instance_ApsimCampbell->run();
 #else
   if(_soilTempInstance) {
     _soilTempInstance->run();

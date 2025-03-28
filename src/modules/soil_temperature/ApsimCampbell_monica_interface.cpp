@@ -28,26 +28,38 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
       KJ_ASSERT(_monica != nullptr);
   auto simPs = _monica->simulationParameters();
   auto sitePs = _monica->siteParameters();
+  _soilTempComp.setps(2.63);
+  _soilTempComp.setpom(1.3);
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
-  _soilTempComp.setSoilProfileDepth(simPs.customData["SLDP"].number_value() / 100.0);  // cm -> m
-  std::vector<double> layerThicknessM;
+  std::vector<double> layerThicknessMM;
+  std::vector<double> sands;
+  std::vector<double> clays;
+  std::vector<double> silts;
   std::vector<double> bds;
   std::vector<double> sws;
+  std::vector<double> corgs;
+  std::vector<double> rocks;
   for (const auto& j : sitePs.initSoilProfileSpec){
-    layerThicknessM.push_back(Tools::double_value(j["Thickness"]));
+    layerThicknessMM.push_back(Tools::double_value(j["Thickness"])*1000.0);  // m -> mm
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
+    sands.push_back(sps.vs_SoilSandContent * 100.0);
+    clays.push_back(sps.vs_SoilClayContent * 100.0);
+    silts.push_back(sps.vs_SoilSiltContent() * 100.0);
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
-    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> t/m3
+    bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    corgs.push_back(sps.vs_SoilOrganicCarbon() * 100.0);
+    rocks.push_back(sps.vs_SoilStoneContent * 100.0);
   }
-#ifdef CPP2
-  _soilTempExo.VolumetricWaterContent = sws;
-#else
-  _soilTempExo.setVolumetricWaterContent(sws);
-#endif
-  _soilTempComp.setLayerThickness(layerThicknessM);
-  _soilTempComp.setBulkDensity(bds);
+  _soilTempExo.physical_ParticleSizeClay = clays;
+  _soilTempExo.physical_ParticleSizeSand = sands;
+  _soilTempExo.physical_ParticleSizeSilt = silts;
+  _soilTempExo.physical_Rocks = rocks;
+  _soilTempExo.organic_Carbon = corgs;
+  _soilTempExo.waterBalance_SW = sws;
+  _soilTempComp.setphysical_Thickness(layerThicknessMM);
+  _soilTempComp.setphysical_BD(bds);
 #else
   std::vector<double> layerThicknessM;
   std::vector<double> bds;
@@ -67,48 +79,48 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 void MonicaInterface::run() {
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-#ifdef CPP2
-  // _soilTempExo.AirTemperatureMinimum = climateData.at(Climate::tmin);
-  // _soilTempExo.AirTemperatureMaximum = climateData.at(Climate::tmax);
-  // _soilTempExo.DayLength = climateData[Climate::sunhours];
-  // _soilTempExo.GlobalSolarRadiation = climateData.at(Climate::globrad);
-#else
-  _soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
-  _soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
-  _soilTempExo.setDayLength(climateData[Climate::sunhours]);
-  _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
-#endif
+  _soilTempExo.weather_MinT = climateData.at(Climate::tmin);
+  _soilTempExo.weather_MaxT = climateData.at(Climate::tmax);
+  _soilTempExo.weather_MeanT = climateData.at(Climate::tavg);
+  _soilTempExo.weather_Wind = climateData.at(Climate::wind);
+  _soilTempExo.weather_AirPressure = 0;//climateData.at(Climate::airpress);
+  _soilTempExo.weather_Radn = climateData.at(Climate::globrad);
+  _soilTempExo.clock_Today_DayOfYear = _monica->currentStepDate().dayOfYear();
+  _soilTempExo.waterBalance_Eo = climateData.at(Climate::x1);
+  _soilTempExo.waterBalance_Eos = climateData.at(Climate::x3);
+  _soilTempExo.waterBalance_Es = climateData.at(Climate::x2);
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-#ifdef CPP2
-  _soilTempExo.AboveGroundBiomass = _monica->simulationParameters().customData["CWAD"].number_value();
-#else
-  _soilTempExo.setAboveGroundBiomass(_monica->simulationParameters().customData["CWAD"].number_value());
-#endif
-  _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
+  auto simPs = _monica->simulationParameters();
+  _soilTempExo.microClimate_CanopyHeight = 0;
+  _soilTempExo.waterBalance_Salb = simPs.customData["SALB"].number_value();
+  //_soilTempExo.AboveGroundBiomass = simPs.customData["CWAD"].number_value();
+  _soilTempComp.setweather_Latitude(simPs.customData["XLAT"].number_value());
+  _soilTempExo.weather_Tav = simPs.customData["TAV"].number_value();
+  _soilTempExo.weather_Amp = simPs.customData["TAMP"].number_value();
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();
   // _soilTempComp.setAirTemperatureAnnualAverage(tampNtav.second);
   // if (_monica->cropGrowth()) _soilTempExo.AboveGroundBiomass = _monica->cropGrowth()->get_AbovegroundBiomass();
   // else _soilTempExo.AboveGroundBiomass = 0;
 #endif
-  // if(_doInit){
-  //   _soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
-  //   _doInit = false;
-  // }
+  if(_doInit){
+    _soilTempComp._SoilTemperature.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
+    _doInit = false;
+  }
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   std::vector<double> sws;
   for (const auto& sl : _monica->soilColumn()){
     sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
   }
-  // _soilTempExo.VolumetricWaterContent = sws;
+  _soilTempExo.waterBalance_SW = sws;
 #endif
   _soilTempComp.Calculate_Model(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  // _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempAux.SurfaceSoilTemperature);
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.soilTemp.at(0));
   int i = 0;
-  // KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.SoilTemperatureByLayers.size());
-  // for (auto& sl : _monica->soilColumnNC()){
-  //   sl.set_Vs_SoilTemperature(_soilTempState.SoilTemperatureByLayers.at(i++));
-  // }
+  KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.soilTemp.size());
+  for (auto& sl : _monica->soilColumnNC()){
+    sl.set_Vs_SoilTemperature(_soilTempState.soilTemp.at(i++));
+  }
 #endif
 }

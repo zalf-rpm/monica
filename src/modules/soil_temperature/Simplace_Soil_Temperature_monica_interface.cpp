@@ -115,12 +115,12 @@ void MonicaInterface::run() {
   //_soilTempExo.iRAIN = climateData.at(Climate::precip);
   _soilTempExo.iRAIN = 0;
   _soilTempExo.iLeafAreaIndex = _monica->simulationParameters().customData["LAI"].number_value();
-  _soilTempExo.iPotentialSoilEvaporation = climateData[Climate::et0]; //use et0 as ETPot
+  _soilTempExo.iPotentialSoilEvaporation = climateData[Climate::x3]; //use et0 as ETPot
 #else
   //_soilTempExo.setiRAIN(climateData.at(Climate::precip));
   _soilTempExo.setiRAIN(0);
   _soilTempExo.setiLeafAreaIndex(_monica->simulationParameters().customData["LAI"].number_value());
-  _soilTempExo.setiPotentialSoilEvaporation(climateData[Climate::et0]); //use et0 as ETPot
+  _soilTempExo.setiPotentialSoilEvaporation(climateData[Climate::x3]); //use et0 as ETPot
 #endif
 #else
   _soilTempExo.iRAIN = climateData.at(Climate::precip); // so that no snowcover will build up
