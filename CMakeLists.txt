@@ -12,7 +12,7 @@ set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 #add_compile_definitions(INCLUDE_SR_SUPPORT)
 #set(INCLUDE_SR_SUPPORT 1)
 add_compile_definitions(NO_MYSQL)
-add_compile_definitions(_USE_MATH_DEFINES)
+#add_compile_definitions(_USE_MATH_DEFINES)
 set(MT_RUNTIME_LIB 1)
 
 #set absolute filenames (to resolve .. in paths)
