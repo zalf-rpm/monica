@@ -450,6 +450,7 @@ public:
   double sumStageTemperatureSums(int startAtStage, int endAtInclStage) const;
 
   double rootNRedux{0.0}; //! old REDWU
+  int vc_TimeUnderAnoxia{0};
 private:
   Intercropping &_intercropping;
 
@@ -646,7 +647,6 @@ private:
   int vc_StorageOrgan{4};
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0}; //! old dt
-  int vc_TimeUnderAnoxia{0};
   int TimeUnderAnoxiaThresholdDefault = 4;
   std::vector<int> vc_TimeUnderAnoxiaThreshold;
   double vs_Tortuosity{};              //! old AD

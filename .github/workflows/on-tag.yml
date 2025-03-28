@@ -14,6 +14,8 @@ jobs:
 
         - name: Checkout repository
           uses: actions/checkout@v3
+          with:
+            submodules: recursive
 
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v2
@@ -41,20 +43,21 @@ jobs:
     steps:
       # main repository monica
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
+          submodules: recursive
           path: "monica"
 
       # dependent repository mas-infrastructure
-      - name: Checkout dependent repository
-        uses: actions/checkout@v3
-        with:
-          repository: zalf-rpm/mas-infrastructure
-          ref: master
-          path: "mas-infrastructure"
+      #- name: Checkout dependent repository
+      #  uses: actions/checkout@v4
+      #  with:
+      #    repository: zalf-rpm/mas-infrastructure
+      #    ref: master
+      #    path: "mas-infrastructure"
   
       - name: Checkout dependent repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: zalf-rpm/monica-parameters
           ref: master 
@@ -63,19 +66,34 @@ jobs:
       - name: Read vcpkg tag to use
         id: vcpkg_tag
         run: |
-          echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $GITHUB_OUTPUT
+          echo "vcpkg_tag=$(cat ./monica/vcpkg_tag.txt)" >> $env:GITHUB_OUTPUT
+
+      - name: output tag
+        id: vcpkg_tag2
+        run: |
+          echo ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
 
       - name: Checkout vcpkg
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
           path: "vcpkg"
   
+      - name: Debug directory structure
+        run: |
+          echo ${{ github.workspace }}
+          pwd
+          ls
+          ls monica
+          ls monica-parameters
+          ls vcpkg
+
+
       - name: Set up MSVC compiler
         uses: microsoft/setup-msbuild@v1.1
         with:
-          vs-version: '17.5'
+          vs-version: '17.9'
           msbuild-architecture: 'x64'
   
       - name: Install vcpkg dependencies
@@ -87,11 +105,13 @@ jobs:
       - name: Create build folder 
         working-directory: ./monica
         run: |
+            pwd
             mkdir _cmake_win64
   
       - name: Configure CMake
         working-directory: ./monica/_cmake_win64
         run: |
+            pwd
             cmake -G "Visual Studio 17 2022" .. -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
         
       - name: Build Monica
@@ -118,7 +138,7 @@ jobs:
           cp monica/_cmake_win64/Release/monica-zmq-server.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/monica-capnp-server.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/monica-capnp-fbp-component.exe monica_${{ github.ref_name }}/bin/
-          cp monica/_cmake_win64/mas-infrastructure/common/Release/channel.exe monica_${{ github.ref_name }}/bin/
+          cp monica/_cmake_win64/common/Release/channel.exe monica_${{ github.ref_name }}/bin/
           cp -r monica-parameters monica_${{ github.ref_name }}/monica-parameters/
   
           cp monica/LICENSE monica_${{ github.ref_name }}/bin/

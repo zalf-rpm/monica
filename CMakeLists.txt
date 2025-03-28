@@ -12,6 +12,7 @@ set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 #add_compile_definitions(INCLUDE_SR_SUPPORT)
 #set(INCLUDE_SR_SUPPORT 1)
 add_compile_definitions(NO_MYSQL)
+add_compile_definitions(_USE_MATH_DEFINES)
 set(MT_RUNTIME_LIB 1)
 
 #set absolute filenames (to resolve .. in paths)
@@ -103,6 +104,10 @@ endif ()
 #	add_subdirectory(mas_cpp_misc/tools/read-ini tools/read-ini)
 #endif()
 #get_target_property(read_ini_interface_includes read_ini_lib INTERFACE_INCLUDE_DIRECTORIES)
+#if (NOT TARGET toml_lib)
+#    message(STATUS "target: toml_lib")
+#    add_subdirectory(mas_cpp_misc/toml toml)
+#endif ()
 
 if (NOT TARGET debug_lib)
     message(STATUS "target: debug_lib")
@@ -187,6 +192,9 @@ link_directories($ENV{HOME}/lib)
 
 find_package(Threads REQUIRED)
 #find_package(unofficial-sodium CONFIG REQUIRED)
+
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(tomlplusplus REQUIRED IMPORTED_TARGET tomlplusplus)
 
 #define folder structure in vs solution corresponding to real folder structure
 GroupSources("src" ${PROJECT_SOURCE_DIR})
@@ -439,8 +447,19 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-#message( "   CXX FLAGS        ${CMAKE_CXX_FLAGS}" )
-#message( "   CXX RELEASE      ${CMAKE_CXX_FLAGS_RELEASE}" )
-#message( "   CXX DEBUG        ${CMAKE_CXX_FLAGS_DEBUG}" )
+add_executable(daily-monica-fbp-component-main
+src/run/daily-monica-fbp-component-main.cpp
+)
+
+target_link_libraries(daily-monica-fbp-component-main
+        monica_lib
+        #PkgConfig::tomlplusplus
+)
+
+if (MSVC)
+target_compile_options(daily-monica-fbp-component-main PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+endif ()
+
+#------------------------------------------------------------------------------
 
 message(STATUS "<- Monica")

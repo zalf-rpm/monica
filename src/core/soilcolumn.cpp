@@ -520,9 +520,9 @@ std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrr
     layerDepthM += lti;
   }
   if (Tools::flt_equal_zero(maxPAW)) return std::make_pair(false, 0);
-  double fractPAW = actPAW / maxPAW;
-  double addedIrrigationWater = 0;
+  const double fractPAW = actPAW / maxPAW;
   if (fractPAW <= aips.threshold) {
+    double addedIrrigationWater = 0;
     if (aips.amount > 0.0) {
       applyIrrigation(aips.amount, aips.nitrateConcentration);
       addedIrrigationWater = aips.amount;

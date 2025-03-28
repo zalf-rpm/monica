@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "model/monica/monica_state.capnp.h"
+//#include "model/monica/monica_state.capnp.h"
 
 #include "tools/date.h"
 #include "json11/json11-helper.h"
@@ -38,29 +38,15 @@ public:
 
   Crop(const Crop& other);
 
-  //Crop(const std::string& speciesName,
-  //     const std::string& cultivarName,
-  //     const CropParametersPtr cps = CropParametersPtr(),
-  //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
-  //     double crossCropAdaptionFactor = 1);
-
-  //Crop(const std::string& speciesName,
-  //     const std::string& cultivarName,
-  //     const Tools::Date& seedDate,
-  //     const Tools::Date& harvestDate,
-  //     const CropParametersPtr cps = CropParametersPtr(),
-  //     const CropResidueParametersPtr rps = CropResidueParametersPtr(),
-  //     double crossCropAdaptionFactor = 1);
-
-  Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
+  explicit Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
   void deserialize(mas::schema::model::monica::CropState::Reader reader);
   void serialize(mas::schema::model::monica::CropState::Builder builder) const;
 
-  Crop(json11::Json object);
+  explicit Crop(json11::Json object);
 
-  virtual Tools::Errors merge(json11::Json j);
+  Tools::Errors merge(json11::Json j) override;
 
-  virtual json11::Json to_json() const { return to_json(true); }
+  json11::Json to_json() const override { return to_json(true); }
 
   json11::Json to_json(bool includeFullCropParameters) const;
 

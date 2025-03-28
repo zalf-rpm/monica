@@ -488,7 +488,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
               break;
             } else if (msgType == "Env") {
-              Env env;
+              auto sharedId = msg.json["sharedId"].is_null() ? "" : msg.json["sharedId"].string_value();
               monica::Output out, out2;
               auto customId = msg.json["customId"];
               out.customId = customId;
@@ -498,6 +498,12 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
               if (isNoDataPassThrough) {
                 debug() << "nodata pass through -> customId: " << customId.dump() << endl;
               } else {
+                Env env;
+                auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] = Soil::updateUnsetPwpFcSatFromVanGenuchten;
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
+
                 auto errors = env.merge(msg.json);
                 if(errors.success()) {
                   EResult<DataAccessor> eda;
@@ -554,21 +560,24 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                       //isIC = env.params.userCropParameters.isIntercropping;
                       debug() << "running             -> customId: " << env.customId.dump() << endl;
                       auto str = msg.json.dump();
-                      std::tie(out, out2) = runMonicaIC(env, isIC);
+                      std::tie(out, out2) = runMonicaIC(kj::mv(env), isIC);
                       //cout << "out: " << out.to_json().dump() << endl;
                     }
                   } catch(std::exception& e) {
                     eda.appendError(kj::str("Error while running MONICA: ", e.what()).cStr());
                   }
-                  out.errors.insert(out.errors.end(), eda.errors.begin(), eda.errors.end());
-                  out.warnings.insert(out.warnings.end(), eda.warnings.begin(), eda.warnings.end());
+                  out.errors = eda.errors;
+                  out.warnings = eda.warnings;
+                } else {
+                  out.errors = errors.errors;
+                  out.warnings = errors.warnings;
                 }
                 out.errors.insert(out.errors.end(), errors.errors.begin(), errors.errors.end());
                 out.warnings.insert(out.warnings.end(), errors.warnings.begin(), errors.warnings.end());
               }
 
               try {
-                if (!env.sharedId.empty()) s_sendmore(distinctSendSocket ? sendSocket : socket, env.sharedId);
+                if (!sharedId.empty()) s_sendmore(distinctSendSocket ? sendSocket : socket, sharedId);
 
                 if (isIC) {
                   auto outs = json11::Json(J11Object({{"1", out.to_json()},

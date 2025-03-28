@@ -37,7 +37,7 @@ struct CropRotation : public Tools::Json11Serializable {
   CropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation)
     : start(start), end(end), cropRotation(cropRotation) {}
 
-  explicit CropRotation(json11::Json object);
+//  explicit CropRotation(json11::Json object);
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -51,9 +51,6 @@ struct DLL_API Env : public Tools::Json11Serializable {
   Env() = default;
 
   explicit Env(CentralParameterProvider&& cpp);
-
-  explicit Env(json11::Json object);
-  // construct env from json object
 
   Tools::Errors merge(json11::Json j) override;
   // merge a json file into Env
@@ -114,7 +111,7 @@ struct Spec : public Tools::Json11Serializable {
 
   Tools::Errors merge(json11::Json j) override;
 
-  std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
+  static std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
 
   json11::Json to_json() const override { return origSpec; }
 
@@ -142,13 +139,7 @@ struct StoreData {
   std::vector<Tools::J11Object> resultsObj;
 };
 
-//----------------------------------------------------------------------------
-
-//! can be called initially to set alternative path for the MONICA dll/so to db-connections.ini
-//DLL_API void initPathToDB(const std::string& initialPathToIniFile = "db-connections.ini");
-
-//std::pair<Tools::Date, std::map<Climate::ACD, double>>
-//climateDataForStep(const Climate::DataAccessor& da, std::size_t stepNo);
+std::vector<StoreData> setupStorage(const json11::Json& event2oids, const Tools::Date& startDate, const Tools::Date& endDate);
 
 //! main function for running monica under a given Env(ironment)
 //! @param env the environment completely defining what the model needs and gets

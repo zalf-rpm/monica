@@ -55,9 +55,9 @@ YieldComponent::YieldComponent(int oid, double yp, double ydm)
       yieldPercentage(yp),
       yieldDryMatter(ydm) {}
 
-YieldComponent::YieldComponent(json11::Json j) {
-  merge(j);
-}
+// YieldComponent::YieldComponent(json11::Json j) {
+//   merge(j);
+// }
 
 void YieldComponent::deserialize(mas::schema::model::monica::YieldComponent::Reader reader) {
   organId = (int) reader.getOrganId();
@@ -90,9 +90,9 @@ json11::Json YieldComponent::to_json() const {
 
 
 
-SpeciesParameters::SpeciesParameters(json11::Json j) {
-  merge(j);
-}
+// SpeciesParameters::SpeciesParameters(json11::Json j) {
+//   merge(j);
+// }
 
 void SpeciesParameters::deserialize(mas::schema::model::monica::SpeciesParameters::Reader reader) {
   pc_SpeciesId = reader.getSpeciesId();
@@ -122,6 +122,9 @@ void SpeciesParameters::deserialize(mas::schema::model::monica::SpeciesParameter
   setFromCapnpList(pc_InitialOrganBiomass, reader.getInitialOrganBiomass());
   setFromCapnpList(pc_CriticalOxygenContent, reader.getCriticalOxygenContent());
   setFromCapnpList(pc_StageMobilFromStorageCoeff, reader.getStageMobilFromStorageCoeff());
+  if (pc_StageMobilFromStorageCoeff.empty()) {
+    pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+  }
   setFromCapnpList(pc_AbovegroundOrgan, reader.getAbovegroundOrgan());
   setFromCapnpList(pc_StorageOrgan, reader.getStorageOrgan());
   pc_SamplingDepth = reader.getSamplingDepth();
@@ -246,8 +249,9 @@ Errors SpeciesParameters::merge(json11::Json j) {
   set_double_vector(pc_CriticalOxygenContent, j, "CriticalOxygenContent");
 
   set_double_vector(pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
-  if (pc_StageMobilFromStorageCoeff.empty())
+  if (pc_StageMobilFromStorageCoeff.empty()) {
     pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+  }
 
   set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
   set_bool_vector(pc_StorageOrgan, j, "StorageOrgan");
@@ -353,9 +357,9 @@ size_t SpeciesParameters::pc_NumberOfOrgans() const {
   return pc_OrganGrowthRespiration.size();
 }
 
-CultivarParameters::CultivarParameters(json11::Json j) {
-  merge(j);
-}
+// CultivarParameters::CultivarParameters(json11::Json j) {
+//   merge(j);
+// }
 
 void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParameters::Reader reader) {
   pc_CultivarId = reader.getCultivarId();
@@ -370,15 +374,21 @@ void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParamet
   pc_CropSpecificMaxRootingDepth = reader.getCropSpecificMaxRootingDepth();
 
   {
-    auto listReader = reader.getAssimilatePartitioningCoeff();
-    capnp::uint i = 0;
-    for (auto &v: pc_AssimilatePartitioningCoeff) setFromCapnpList(v, listReader[i++]);
+    const auto listReader = reader.getAssimilatePartitioningCoeff();
+    for (const auto lr : listReader) {
+      vector<double> v;
+      setFromCapnpList(v, lr);
+      pc_AssimilatePartitioningCoeff.emplace_back(v);
+    }
   }
 
   {
-    auto listReader = reader.getOrganSenescenceRate();
-    capnp::uint i = 0;
-    for (auto &v: pc_OrganSenescenceRate) setFromCapnpList(v, listReader[i++]);
+    const auto listReader = reader.getOrganSenescenceRate();
+    for (const auto lr : listReader) {
+      vector<double> v;
+      setFromCapnpList(v, lr);
+      pc_OrganSenescenceRate.emplace_back(v);
+    }
   }
 
   setFromCapnpList(pc_BaseDaylength, reader.getBaseDaylength());
@@ -600,13 +610,13 @@ json11::Json CultivarParameters::to_json() const {
 
 
 
-CropParameters::CropParameters(json11::Json j) {
-  merge(j["species"], j["cultivar"]);
-}
+// CropParameters::CropParameters(json11::Json j) {
+//   merge(j["species"], j["cultivar"]);
+// }
 
-CropParameters::CropParameters(json11::Json sj, json11::Json cj) {
-  merge(sj, cj);
-}
+// CropParameters::CropParameters(json11::Json sj, json11::Json cj) {
+//   merge(sj, cj);
+// }
 
 void CropParameters::deserialize(mas::schema::model::monica::CropParameters::Reader reader) {
   speciesParams.deserialize(reader.getSpeciesParams());
@@ -653,9 +663,9 @@ MineralFertilizerParameters::MineralFertilizerParameters(const string &id,
       vo_NH4(nh4),
       vo_NO3(no3) {}
 
-MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j) {
-  merge(j);
-}
+// MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j) {
+//   merge(j);
+// }
 
 void MineralFertilizerParameters::deserialize(
     mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) {
@@ -703,9 +713,9 @@ NMinApplicationParameters::NMinApplicationParameters(double min,
                                                      int delayInDays)
     : min(min), max(max), delayInDays(delayInDays) {}
 
-NMinApplicationParameters::NMinApplicationParameters(json11::Json j) {
-  merge(j);
-}
+// NMinApplicationParameters::NMinApplicationParameters(json11::Json j) {
+//   merge(j);
+// }
 
 void NMinApplicationParameters::deserialize(mas::schema::model::monica::NMinApplicationParameters::Reader reader) {
   min = reader.getMin();
@@ -746,9 +756,9 @@ IrrigationParameters::IrrigationParameters(double nitrateConcentration,
     : nitrateConcentration(nitrateConcentration),
       sulfateConcentration(sulfateConcentration) {}
 
-IrrigationParameters::IrrigationParameters(json11::Json j) {
-  merge(j);
-}
+// IrrigationParameters::IrrigationParameters(json11::Json j) {
+//   merge(j);
+// }
 
 void IrrigationParameters::deserialize(mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader) {
   nitrateConcentration = reader.getNitrateConcentration();
@@ -786,9 +796,9 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
                                                              double sc)
     : IrrigationParameters(nc, sc), amount(a), threshold(t) {}
 
-AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j) {
-  merge(j);
-}
+// AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j) {
+//   merge(j);
+// }
 
 void
 AutomaticIrrigationParameters::deserialize(mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
@@ -810,6 +820,7 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
+  set_iso_date_value(startDate, j, "startDate");
   set_double_value(amount, j, "amount");
   set_double_value(percentNFC, j, "set_to_%nFC");
   set_double_value(threshold, j, "threshold", transformIfPercent(j, "threshold"));
@@ -824,6 +835,7 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
 json11::Json AutomaticIrrigationParameters::to_json() const {
   auto o = json11::Json::object
       {{"type",                 "AutomaticIrrigationParameters"},
+       {"startDate",            startDate.toIsoDateString()},
        {"irrigationParameters", IrrigationParameters::to_json()},
        {"trigger_if_nFC_below_%",            J11Array{threshold*100.0, "%"}},
        {"calc_nFC_until_depth_m",J11Array{criticalMoistureDepthM, "m"}},
@@ -852,9 +864,9 @@ void MeasuredGroundwaterTableInformation::serialize(
   }
 }
 
-MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j) {
-  merge(j);
-}
+// MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j) {
+//   merge(j);
+// }
 
 Errors MeasuredGroundwaterTableInformation::merge(json11::Json j) {
   Errors res;
@@ -927,6 +939,9 @@ std::pair<bool, double> MeasuredGroundwaterTableInformation::getGroundwaterInfor
   return make_pair(false, 0);
 }
 
+//std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters*)>>
+//SiteParameters::calculateAndSetPwpFcSatFunctions = std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters*)>>();
+
 void SiteParameters::deserialize(mas::schema::model::monica::SiteParameters::Reader reader) {
   vs_Latitude = reader.getLatitude();
   vs_Slope = reader.getSlope();
@@ -955,9 +970,9 @@ void SiteParameters::serialize(mas::schema::model::monica::SiteParameters::Build
   setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters((capnp::uint) vs_SoilParameters.size()));
 }
 
-SiteParameters::SiteParameters(json11::Json j) {
-  merge(j);
-}
+// SiteParameters::SiteParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors SiteParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -974,16 +989,26 @@ Errors SiteParameters::merge(json11::Json j) {
   set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
   set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
   set_double_value(bareSoilKcFactor, j, "Bare_soil_KC_factor");
+  set_string_value(pwpFcSatFunction, j, "pwpFcSatFunction");
 
   set_int_value(numberOfLayers, j, "NumberOfLayers");
   set_double_value(layerThickness, j, "LayerThickness");
 
+  std::function selectedSetPwpFcSatFunction = noSetPwpFcSat;
+  if (const auto it = calculateAndSetPwpFcSatFunctions.find(pwpFcSatFunction);
+    it != calculateAndSetPwpFcSatFunctions.end()) {
+    selectedSetPwpFcSatFunction = it->second;
+  } else {
+    res.warnings.push_back("Couldn't find pwpFcSatFunction: " + pwpFcSatFunction);
+  }
+
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
     initSoilProfileSpec = j["SoilProfileParameters"].array_items();
-    auto p = createEqualSizedSoilPMs(initSoilProfileSpec, layerThickness, numberOfLayers);
-    vs_SoilParameters = kj::mv(p.first);
-    if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
-    if (p.second.failure()) res.append(p.second);
+    auto r = createEqualSizedSoilPMs(selectedSetPwpFcSatFunction, initSoilProfileSpec, layerThickness, numberOfLayers);
+    if (r.success()) {
+      vs_SoilParameters = kj::mv(r.result);
+      if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
+    } else res.append(r.errors);
   } else if(j["SoilProfileParameters"].is_string() && j["SoilProfileParameters"].string_value().find("capnp") != 0) {
     res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
   }
@@ -1035,9 +1060,9 @@ AutomaticHarvestParameters::serialize(mas::schema::model::monica::AutomaticHarve
   builder.setLatestHarvestDOY(_latestHarvestDOY);
 }
 
-AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j) {
-  merge(j);
-}
+// AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors AutomaticHarvestParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1077,9 +1102,9 @@ void NMinCropParameters::serialize(mas::schema::model::monica::NMinCropParameter
   builder.setNTarget30(nTarget30);
 }
 
-NMinCropParameters::NMinCropParameters(json11::Json j) {
-  merge(j);
-}
+// NMinCropParameters::NMinCropParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors NMinCropParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1138,9 +1163,9 @@ void OrganicMatterParameters::serialize(
   //builder.setCorgContent(vo_CorgContent);
 }
 
-OrganicMatterParameters::OrganicMatterParameters(json11::Json j) {
-  merge(j);
-}
+// OrganicMatterParameters::OrganicMatterParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors OrganicMatterParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1210,9 +1235,9 @@ void OrganicFertilizerParameters::serialize(
   builder.setName(name);
 }
 
-OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j) {
-  merge(j);
-}
+// OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors OrganicFertilizerParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1245,9 +1270,9 @@ void CropResidueParameters::serialize(mas::schema::model::monica::CropResiduePar
   builder.setResidueType(residueType);
 }
 
-CropResidueParameters::CropResidueParameters(json11::Json j) {
-  merge(j);
-}
+// CropResidueParameters::CropResidueParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors CropResidueParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1321,9 +1346,9 @@ void SimulationParameters::serialize(mas::schema::model::monica::SimulationParam
   builder.setJulianDayAutomaticFertilising(p_JulianDayAutomaticFertilising);
 }
 
-SimulationParameters::SimulationParameters(json11::Json j) {
-  merge(j);
-}
+// SimulationParameters::SimulationParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors SimulationParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1352,10 +1377,19 @@ Errors SimulationParameters::merge(json11::Json j) {
 
   set_int_value(p_StartPVIndex, j, "StartPVIndex");
 
-  set_bool_value(serializeMonicaStateAtEnd, j, "serializeMonicaStateAtEnd");
-  set_bool_value(loadSerializedMonicaStateAtStart, j, "loadSerializedMonicaStateAtStart");
-  noOfPreviousDaysSerializedClimateData = max(0, int_value(j, "noOfPreviousDaysSerializedClimateData"));
-  set_string_value(pathToSerializationFile, j, "pathToSerializationFile");
+  if (auto serState = j["serializedMonicaState"].object_items(); !serState.empty()) {
+    if (const auto loadState = serState["load"]; loadState.is_object()) {
+      set_bool_value(loadSerializedMonicaStateAtStart, loadState, "atStart");
+      set_bool_value(deserializedMonicaStateFromJson, loadState, "fromJson");
+      set_string_value(pathToLoadSerializationFile, loadState, "path");
+    }
+    if (const auto saveState = serState["save"]; saveState.is_object()) {
+      set_bool_value(serializeMonicaStateAtEnd, saveState, "atEnd");
+      set_bool_value(serializeMonicaStateAtEndToJson, saveState, "toJson");
+      set_string_value(pathToSerializationAtEndFile, saveState, "path");
+      noOfPreviousDaysSerializedClimateData = max(0, int_value(saveState, "noOfPreviousDaysSerializedClimateData"));
+    }
+  }
 
   set_string_value(soilTempModel, j, "SoilTempModel");
 
@@ -1387,10 +1421,21 @@ json11::Json SimulationParameters::to_json() const {
        //{"LayerThickness",                        p_LayerThickness},
        {"StartPVIndex",                          p_StartPVIndex},
        {"serializeMonicaStateAtEnd",             serializeMonicaStateAtEnd},
-       {"loadSerializedMonicaStateAtStart",      loadSerializedMonicaStateAtStart},
-       {"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)},
-       {"pathToSerializationFile",               pathToSerializationFile}
-      };
+       {"serializedMonicaState",                  Json::object {
+           {
+             "load", Json::object {
+             { "atStart", loadSerializedMonicaStateAtStart },
+             { "fromJson", deserializedMonicaStateFromJson },
+             { "path", pathToLoadSerializationFile } }
+           },
+           {
+             "save", Json::object {
+             { "atEnd", serializeMonicaStateAtEnd },
+             { "toJson", serializeMonicaStateAtEndToJson },
+             { "path", pathToSerializationAtEndFile },
+             { "noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData) } }
+           }}
+      }};
 }
 
 void CropModuleParameters::deserialize(mas::schema::model::monica::CropModuleParameters::Reader reader) {
@@ -1446,9 +1491,9 @@ void CropModuleParameters::serialize(mas::schema::model::monica::CropModuleParam
   builder.setEnableVernalisationFactorFix(__enable_vernalisation_factor_fix__);
 }
 
-CropModuleParameters::CropModuleParameters(json11::Json j) {
-  merge(j);
-}
+//CropModuleParameters::CropModuleParameters(json11::Json j) {
+//  merge(j);
+//}
 
 Errors CropModuleParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1580,9 +1625,9 @@ void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentPar
   builder.setRcp(rcp);
 }
 
-EnvironmentParameters::EnvironmentParameters(json11::Json j) {
-  merge(j);
-}
+//EnvironmentParameters::EnvironmentParameters(json11::Json j) {
+//  merge(j);
+//}
 
 Errors EnvironmentParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1756,10 +1801,10 @@ void SoilMoistureModuleParameters::serialize(
   builder.setMoistureInitValue(pm_MoistureInitValue);
 }
 
-SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
-    : SoilMoistureModuleParameters() {
-  merge(j);
-}
+// SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
+//     : SoilMoistureModuleParameters() {
+//   merge(j);
+// }
 
 Errors SoilMoistureModuleParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1855,9 +1900,9 @@ void SoilTemperatureModuleParameters::serialize(
   builder.setSoilMoisture(pt_SoilMoisture);
 }
 
-SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j) {
-  merge(j);
-}
+// SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors SoilTemperatureModuleParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -1918,9 +1963,9 @@ void SoilTransportModuleParameters::serialize(
   builder.setNDeposition(pq_NDeposition);
 }
 
-SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j) {
-  merge(j);
-}
+// SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors SoilTransportModuleParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -2027,9 +2072,9 @@ void SticsParameters::serialize(mas::schema::model::monica::SticsParameters::Bui
   builder.setVpotdenit(vpotdenit);
 }
 
-SticsParameters::SticsParameters(json11::Json j) {
-  merge(j);
-}
+// SticsParameters::SticsParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors SticsParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -2211,9 +2256,9 @@ SoilOrganicModuleParameters::serialize(mas::schema::model::monica::SoilOrganicMo
   sticsParams.serialize(builder.initSticsParams());
 }
 
-SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j) {
-  merge(j);
-}
+// SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j) {
+//   merge(j);
+// }
 
 Errors SoilOrganicModuleParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
@@ -2317,9 +2362,9 @@ CentralParameterProvider::CentralParameterProvider()
 
 }
 
-CentralParameterProvider::CentralParameterProvider(json11::Json j) {
-  merge(j);
-}
+// CentralParameterProvider::CentralParameterProvider(json11::Json j) {
+//   merge(j);
+// }
 
 Errors CentralParameterProvider::merge(json11::Json j) {
   Errors res;

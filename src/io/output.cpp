@@ -131,16 +131,11 @@ std::string OId::toString(OId::ORGAN organ) const
 std::string OId::outputName() const 
 {
   string outName = name;
-  if(isOrgan())
-    outName = outName + "/" + toString(organ);
+  if(isOrgan()) outName = outName + "/" + toString(organ);
   if(!displayName.empty())
     outName = displayName;
   return outName;
 }
-
-//-----------------------------------------------------------------------------
-
-
 
 Output::Output(json11::Json j)
 {
@@ -217,6 +212,3 @@ json11::Json Output::to_json() const
   ,{"warnings", toPrimJsonArray(warnings)}
   };
 }
-
-//-----------------------------------------------------------------------------
-

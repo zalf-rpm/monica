@@ -1,23 +1,63 @@
   {
-	"cropRotation": [
-		{
-			"worksteps": [
-				{ 
-					"date": "0000-10-11",
-					"type": "Sowing", 
-					"crop": {
-						"is-winter-crop": true,
-						"cropParams": {
-							"species": ["include-from-file", "crops/wheat.json"],
-							"cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
-						},
-						"residueParams": ["include-from-file", "crop-residues/wheat.json"]
-					} 
-				},
-				{ "date": "0000-09-23", "type": "Harvest" }
-			]
-		}
-	],
+	  "crops": {
+		  "WW_dwd": {
+			  "is-winter-crop": true,
+			  "cropParams": {
+				  "species": ["include-from-file", "crops/wheat.json"],
+				  "cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+			  },
+			  "residueParams": ["include-from-file", "crop-residues/wheat.json"]
+		  }
+	  },
 
-	"CropParameters": ["include-from-file", "general/crop.json"]
+	"cropRotation": [{
+		"worksteps": [
+			{
+				"date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]
+			},
+			{
+				"type": "NDemandFertilization",
+				"date": "0001-03-15",
+				"N-demand": [40.0, "kg"],
+				"depth": [0.3, "m"],
+				"partition": ["include-from-file", "mineral-fertilisers/AN.json"]
+			},
+			{
+				"type": "NDemandFertilization",
+				"date": "0001-04-15",
+				"N-demand": [80.0, "kg"],
+				"depth": [0.3, "m"],
+				"partition": ["include-from-file", "mineral-fertilisers/AN.json"]
+			},
+			{
+				"type": "NDemandFertilization",
+				"date": "0001-05-15",
+				"N-demand": [40.0, "kg"],
+				"depth": [0.3, "m"],
+				"partition": ["include-from-file", "mineral-fertilisers/AN.json"]
+			},
+			{
+				"type": "AutomaticHarvest",
+				"latest-date": "0001-09-05",
+				"min-%-asw": 10,
+				"max-%-asw": 99.0,
+				"max-3d-precip-sum": 2,
+				"max-curr-day-precip": 0.1,
+				"harvest-time": "maturity"
+			},
+			{
+				"type": "OrganicFertilization",
+				"days": 1,
+				"after": "Harvest",
+				"amount": [15000, "kg N"],
+				"parameters": ["include-from-file", "organic-fertilisers/CAM.json"],
+				"incorporation": true
+			}
+		]
+	}],
+
+	  "CropParameters": {
+		  "=": ["include-from-file", "general/crop.json"],
+		  "__enable_vernalisation_factor_fix__": true
+	  }
 }

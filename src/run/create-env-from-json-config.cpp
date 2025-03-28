@@ -470,3 +470,7 @@ Env monica::createEnvFromJsonObjects(std::map<std::string, json11::Json> params)
     return {};
   return env;
 }
+
+Errors monica::updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params) {
+  return env.merge(createEnvJsonFromJsonObjects(kj::mv(params)));
+}

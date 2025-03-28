@@ -9,6 +9,7 @@
 	},
 	
 	"debug?": false,
+	"_include-file-base-path": "/hf2/monica-parameters/",
 	"include-file-base-path": "${MONICA_PARAMETERS}/",
 
 	"output": { 
@@ -23,7 +24,30 @@
 			"include-aggregation-rows": false,
 			"csv-separator": ","
 		},
-		
+
+		"_events": [
+			"crop", [
+				"CM-count",
+				"Crop",
+				["Yield", "LAST"],
+				["Date|sowing", "FIRST"],
+				["Date|harvest", "LAST"]
+			],
+			"daily", [
+				"Date",
+				"Crop",
+				"Stage",
+				["Pwp", 1],
+				["Fc", 1],
+				"Yield",
+				"Act_ET",
+				"Pot_ET",
+				["Mois", [1, 6]],
+				"NFert",
+				["N", [1, 6]]
+			]
+		],
+
 		"events" : [
 
 			"daily", [
@@ -72,10 +96,10 @@
 	"UseSecondaryYields": true,
 	"NitrogenResponseOn": true,
 	"WaterDeficitResponseOn": true,
-	"EmergenceMoistureControlOn": true,
-	"EmergenceFloodingControlOn": true,
+	"EmergenceMoistureControlOn": false,
+	"EmergenceFloodingControlOn": false,
 
-	"UseNMinMineralFertilisingMethod": true,
+	"UseNMinMineralFertilisingMethod": false,
 	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
 	"NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
 	"JulianDayAutomaticFertilising": 89,
@@ -85,9 +109,24 @@
 		"irrigationParameters": {
 			"nitrateConcentration": [0, "mg dm-3"]
 		},
+		"startDate": "1992-05-01",
 		"amount": [17, "mm"],
-		"trigger_if_nFC_below_%": [50, "%"],
+		"trigger_if_nFC_below_%": [90, "%"],
 		"_set_to_%nFC": [100, "%"],
 		"calc_nFC_until_depth_m": [0.3, "m"]
+	},
+
+	"serializedMonicaState": {
+		"load": {
+			"atStart": false,
+			"fromJson": true,
+			"path": "/home/berg/GitHub/monica/test-ser.json"
+		},
+		"save": {
+			"atEnd": false,
+			"toJson": true,
+			"path": "/home/berg/GitHub/monica/test-ser.json",
+			"noOfPreviousDaysSerializedClimateData": 10
+		}
 	}
 }

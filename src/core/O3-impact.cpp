@@ -16,8 +16,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include  "O3-impact.h"
 
-#include <tuple>
-#define _USE_MATH_DEFINES
 #include <math.h>
 #include <algorithm>
 #include <iostream>
