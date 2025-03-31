@@ -65,14 +65,42 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
                                      _sitePs.vs_SoilParameters),
                                      //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth);
   _soilTemperature = kj::heap<SoilTemperature>(*this, cpp.userSoilTemperatureParameters);
-#ifndef AMEI_SENSITIVITY_ANALYSIS
+
+#ifdef AMEI_SENSITIVITY_ANALYSIS
+  _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp::MonicaInterface>(this);
+  _instance_Monica_SoilTemp->init(cpp);
+  _soilTempInstance = _instance_Monica_SoilTemp.get();
+  _instance_DSSAT_ST_standalone = kj::heap<DSSAT_ST_standalone::MonicaInterface>(this);
+  _instance_DSSAT_ST_standalone->init(cpp);
+  _soilTempInstance = _instance_DSSAT_ST_standalone.get();
+  _instance_DSSAT_EPICST_standalone = kj::heap<DSSAT_EPICST_standalone::MonicaInterface>(this);
+  _instance_DSSAT_EPICST_standalone->init(cpp);
+  _soilTempInstance = _instance_DSSAT_EPICST_standalone.get();
+  _instance_Simplace_Soil_Temperature = kj::heap<Simplace_Soil_Temperature::MonicaInterface>(this);
+  _instance_Simplace_Soil_Temperature->init(cpp);
+  _soilTempInstance = _instance_Simplace_Soil_Temperature.get();
+  _instance_Stics_soil_temperature = kj::heap<Stics_soil_temperature::MonicaInterface>(this);
+  _instance_Stics_soil_temperature->init(cpp);
+  _soilTempInstance = _instance_Stics_soil_temperature.get();
+  _instance_SQ_Soil_Temperature = kj::heap<SQ_Soil_Temperature::MonicaInterface>(this);
+  _instance_SQ_Soil_Temperature->init(cpp);
+  _soilTempInstance = _instance_SQ_Soil_Temperature.get();
+  _instance_BiomaSurfacePartonSoilSWATC = kj::heap<BiomaSurfacePartonSoilSWATC::MonicaInterface>(this);
+  _instance_BiomaSurfacePartonSoilSWATC->init(cpp);
+  _soilTempInstance = _instance_BiomaSurfacePartonSoilSWATC.get();
+  _instance_BiomaSurfaceSWATSoilSWATC = kj::heap<BiomaSurfaceSWATSoilSWATC::MonicaInterface>(this);
+  _instance_BiomaSurfaceSWATSoilSWATC->init(cpp);
+  _soilTempInstance = _instance_BiomaSurfaceSWATSoilSWATC.get();
+  _instance_ApsimCampbell = kj::heap<ApsimCampbell::MonicaInterface>(this);
+  _instance_ApsimCampbell->init(cpp);
+  _soilTempInstance = _instance_ApsimCampbell.get();
+#else
   _soilMoisture = kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters);
   _soilOrganic = kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters);
   _soilTransport = kj::heap<SoilTransport>(*_soilColumn,
                                          _sitePs, cpp.userSoilTransportParameters,
                                          _envPs.p_LeachingDepth, _envPs.p_timeStep,
                                          _cropPs.pc_MinimumAvailableN);
-#endif
   auto stModelName = cpp.simulationParameters.soilTempModel;
   if (stModelName == "Monica_SoilTemp") {
     _instance_Monica_SoilTemp = kj::heap<Monica_SoilTemp::MonicaInterface>(this);
@@ -107,10 +135,11 @@ void MonicaModel::initComponents(const CentralParameterProvider &cpp) {
     _instance_BiomaSurfaceSWATSoilSWATC->init(cpp);
     _soilTempInstance = _instance_BiomaSurfaceSWATSoilSWATC.get();
   } else if(stModelName == "ApsimCampbell") {
-  _instance_ApsimCampbell = kj::heap<ApsimCampbell::MonicaInterface>(this);
-  _instance_ApsimCampbell->init(cpp);
-  _soilTempInstance = _instance_ApsimCampbell.get();
-}
+    _instance_ApsimCampbell = kj::heap<ApsimCampbell::MonicaInterface>(this);
+    _instance_ApsimCampbell->init(cpp);
+    _soilTempInstance = _instance_ApsimCampbell.get();
+  }
+#endif
 }
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {

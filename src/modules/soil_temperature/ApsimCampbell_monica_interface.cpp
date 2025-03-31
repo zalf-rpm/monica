@@ -82,7 +82,7 @@ void MonicaInterface::run() {
   _soilTempExo.weather_MinT = climateData.at(Climate::tmin);
   _soilTempExo.weather_MaxT = climateData.at(Climate::tmax);
   _soilTempExo.weather_MeanT = climateData.at(Climate::tavg);
-  _soilTempExo.weather_Wind = climateData.at(Climate::wind);
+  _soilTempExo.weather_Wind = 0;//climateData.at(Climate::wind);
   _soilTempExo.weather_AirPressure = 0;//climateData.at(Climate::airpress);
   _soilTempExo.weather_Radn = climateData.at(Climate::globrad);
   _soilTempExo.clock_Today_DayOfYear = _monica->currentStepDate().dayOfYear();

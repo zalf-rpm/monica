@@ -1668,6 +1668,14 @@ BOTRes& monica::buildOutputTable()
             [](const MonicaModel& monica, const OId& oid){
               return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.soilTemp.at(i); }, oid.roundToDigits.orDefault(6));
             });
+      build({ id++, "AMEI_ApsimCampbell_SoilTemp_min", "°C", "" },
+            [](const MonicaModel& monica, const OId& oid){
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.minSoilTemp.at(i); }, oid.roundToDigits.orDefault(6));
+            });
+      build({ id++, "AMEI_ApsimCampbell_SoilTemp_max", "°C", "" },
+            [](const MonicaModel& monica, const OId& oid){
+              return getComplexValues<double>(oid, [&](int i) { return const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.maxSoilTemp.at(i); }, oid.roundToDigits.orDefault(6));
+            });
 
       tableBuilt = true;
     }
