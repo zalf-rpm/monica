@@ -45,13 +45,13 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     layerThicknessMM.push_back(Tools::double_value(j["Thickness"])*1000.0);  // m -> mm
     Soil::SoilParameters sps;
     auto es = sps.merge(j);
-    sands.push_back(sps.vs_SoilSandContent * 100.0);
-    clays.push_back(sps.vs_SoilClayContent * 100.0);
-    silts.push_back(sps.vs_SoilSiltContent() * 100.0);
+    sands.push_back(sps.vs_SoilSandContent * 100.0); // %
+    clays.push_back(sps.vs_SoilClayContent * 100.0); // %
+    silts.push_back(sps.vs_SoilSiltContent() * 100.0); // %
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
-    corgs.push_back(sps.vs_SoilOrganicCarbon() * 100.0);
-    rocks.push_back(sps.vs_SoilStoneContent * 100.0);
+    corgs.push_back(sps.vs_SoilOrganicCarbon() * 100.0); // %
+    rocks.push_back(sps.vs_SoilStoneContent * 100.0); // %
   }
   _soilTempExo.physical_ParticleSizeClay = clays;
   _soilTempExo.physical_ParticleSizeSand = sands;
@@ -84,7 +84,7 @@ void MonicaInterface::run() {
   _soilTempExo.weather_MaxT = climateData.at(Climate::tmax);
   _soilTempExo.weather_MeanT = climateData.at(Climate::tavg);
   _soilTempExo.weather_Wind = 0;//climateData.at(Climate::wind);
-  _soilTempExo.weather_AirPressure = 0;//climateData.at(Climate::airpress);
+  _soilTempExo.weather_AirPressure = 1013.25;//climateData.at(Climate::airpress);
   _soilTempExo.weather_Radn = climateData.at(Climate::globrad);
   _soilTempExo.clock_Today_DayOfYear = _monica->currentStepDate().dayOfYear();
   _soilTempExo.waterBalance_Eo = climateData.at(Climate::x1);
