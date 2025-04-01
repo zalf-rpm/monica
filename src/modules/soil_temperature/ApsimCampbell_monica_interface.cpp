@@ -30,6 +30,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   auto sitePs = _monica->siteParameters();
   _soilTempComp.setps(2.63);
   _soilTempComp.setpom(1.3);
+  _soilTempComp.setsoilConstituentNames({"Rocks", "OrganicMatter", "Sand", "Silt", "Clay", "Water", "Ice", "Air"});
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
   std::vector<double> layerThicknessMM;
