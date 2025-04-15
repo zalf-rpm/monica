@@ -1666,11 +1666,11 @@ BOTRes& monica::buildOutputTable()
             });
       build({ id++, "AMEI_ApsimCampbell_SurfTemp_min", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.soilTemp.at(1), oid.roundToDigits.orDefault(6));
+              return round(const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.minSoilTemp.at(1), oid.roundToDigits.orDefault(6));
             });
       build({ id++, "AMEI_ApsimCampbell_SurfTemp_max", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){
-              return round(const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.soilTemp.at(1), oid.roundToDigits.orDefault(6));
+              return round(const_cast<MonicaModel&>(monica)._instance_ApsimCampbell->_soilTempState.maxSoilTemp.at(1), oid.roundToDigits.orDefault(6));
             });
       build({ id++, "AMEI_ApsimCampbell_SoilTemp", "°C", "" },
             [](const MonicaModel& monica, const OId& oid){

@@ -31,6 +31,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempComp.setps(2.63);
   _soilTempComp.setpom(1.3);
   _soilTempComp.setsoilConstituentNames({"Rocks", "OrganicMatter", "Sand", "Silt", "Clay", "Water", "Ice", "Air"});
+  //_soilTempComp.setboundarLayerConductanceSource("constant");
+  //_soilTempComp.setnumIterationsForBoundaryLayerConductance(10);
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto awc = simPs.customData["AWC"].number_value();
   std::vector<double> layerThicknessMM;
@@ -105,13 +107,14 @@ void MonicaInterface::run() {
   // else _soilTempExo.AboveGroundBiomass = 0;
 #endif
   if(_doInit){
+    //_soilTempComp.setpInitialValues(std::vector<double>(_soilTempExo.physical_ParticleSizeClay.size(), _soilTempExo.weather_Tav));
     _soilTempComp._SoilTemperature.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);
     _doInit = false;
   }
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   std::vector<double> sws;
   for (const auto& sl : _monica->soilColumn()){
-    sws.push_back(sl.get_Vs_SoilMoisture_m3() - sl.vs_PermanentWiltingPoint());
+    sws.push_back(sl.get_Vs_SoilMoisture_m3());
   }
   _soilTempExo.waterBalance_SW = sws;
 #endif
