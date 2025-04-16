@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/common.h>
 #include <kj/main.h>
 #include <kj/filesystem.h>
+#include <kj/timer.h>
 
 #include <capnp/any.h>
 #include <capnp/compat/json.h>
@@ -387,69 +388,77 @@ public:
     }
 
     ports.connectFromPortInfos(portInfosReaderSr);
+    auto &timer = ioContext.provider->getTimer();
 
     while ((ports.isInConnected(STATE_IN) || ports.isInConnected(ENV))
       && (ports.isOutConnected(RESULT) || ports.isOutConnected(STATE_OUT))) {
+
       // read serialized state and create a monica instance with that state
-      cout << (ports.isInConnected(STATE_IN) ? "connected" : "disconnected") << endl;
-      auto stateProm =
-        !ports.isInConnected(STATE_IN) ? kj::NEVER_DONE
-          : ports.in(STATE_IN).readRequest().send().then([this](auto&& msg) {
-            try {
-              KJ_LOG(INFO, "trying to read from serialized_state IN port");
-              //auto msg = ports.in(STATE_IN).readRequest().send().wait(ioContext.waitScope);
-              if (msg.isDone()) {
-                KJ_LOG(INFO, "received done on serialized state port");
-                // treat state channel as disconnected and possibly leaf outer loop
-                ports.setInDisconnected(STATE_IN);
-              } else {
-                auto ip = msg.getValue();
-                auto runtimeState = ip.getContent().template getAs<
-                  mas::schema::model::monica::RuntimeState>();
-                monica = kj::heap<MonicaModel>(runtimeState.getModelState());
-              }
-            } catch (kj::Exception& e) {
-              KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
-              // treat state channel as disconnected and possibly leaf outer loop
-              ports.setInDisconnected(STATE_IN);
-            }
-          });
-      auto envProm =
-        !ports.isInConnected(ENV)
-          ? kj::NEVER_DONE
-          : ports.in(ENV).readRequest().send().then([this](auto&& msg) {
-            try {
-              // if we didn't get a monica from the serialized state, we have to create a new one from the supplied env
-              KJ_LOG(INFO, "trying to read from env IN port");
-              if (msg.isDone()) {
-                KJ_LOG(INFO, "received done on env port");
-                // treat env channel as disconnected and possibly leaf outer loop
-                ports.setInDisconnected(ENV);
-              }
-              auto ip = msg.getValue();
-              auto stEnv = ip.getContent().template getAs<mas::schema::common::StructuredText>();
-              std::string err;
-              const json11::Json& envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
-              auto envJsonStr = envJson.dump();
-              //cout << "runMonica: " << envJson["customId"].dump() << endl;
-              auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
-              env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
-                Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
-              env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
-                Soil::updateUnsetPwpFcSatFromVanGenuchten;
-              env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
-                Soil::updateUnsetPwpFcSatFromToth;
-              auto errors = env.merge(envJson);
-              monica = kj::heap<MonicaModel>(env.params);
-              monica->initComponents(env.params);
-              initMonica();
-            } catch (kj::Exception& e) {
-              KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
-              // treat env channel as disconnected and possibly leaf outer loop
-              ports.setInDisconnected(ENV);
-            }
-          });
-      envProm.exclusiveJoin(kj::mv(stateProm)).wait(ioContext.waitScope);
+      if (ports.isInConnected(ENV)) {
+        KJ_LOG(INFO, "trying to read from env IN port");
+        auto msg = ports.in(ENV).readIfMsgRequest().send().wait(ioContext.waitScope);
+        switch (msg.which()) {
+        case mas::schema::fbp::Channel<IP>::Msg::NO_MSG: break;
+        case mas::schema::fbp::Channel<IP>::Msg::DONE:
+          KJ_LOG(INFO, "received done on env port");
+          ports.setInDisconnected(ENV);
+          continue;
+        case mas::schema::fbp::Channel<IP>::Msg::VALUE:
+          try {
+            auto ip = msg.getValue();
+            auto stEnv = ip.getContent().template getAs<mas::schema::common::StructuredText>();
+            std::string err;
+            const json11::Json& envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
+            auto envJsonStr = envJson.dump();
+            //cout << "runMonica: " << envJson["customId"].dump() << endl;
+            auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+            env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
+              Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+            env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
+              Soil::updateUnsetPwpFcSatFromVanGenuchten;
+            env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
+              Soil::updateUnsetPwpFcSatFromToth;
+            auto errors = env.merge(envJson);
+            monica = kj::heap<MonicaModel>(env.params);
+            monica->initComponents(env.params);
+            initMonica();
+            break;
+          } catch (kj::Exception& e) {
+            KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
+            // treat env channel as disconnected and possibly leaf outer loop
+            ports.setInDisconnected(ENV);
+            continue;
+          }
+        }
+      }
+      // no env could be read
+      if (monica.get() == nullptr && ports.isInConnected(STATE_IN)) {
+        KJ_LOG(INFO, "trying to read from serialized_state IN port");
+        auto msg = ports.in(STATE_IN).readIfMsgRequest().send().wait(ioContext.waitScope);
+        switch (msg.which()) {
+        case mas::schema::fbp::Channel<IP>::Msg::NO_MSG: break;
+        case mas::schema::fbp::Channel<IP>::Msg::DONE:
+          KJ_LOG(INFO, "received done on serialized_state port");
+          ports.setInDisconnected(STATE_IN);
+          continue;
+        case mas::schema::fbp::Channel<IP>::Msg::VALUE: try {
+            auto ip = msg.getValue();
+            auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
+            monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+            break;
+          } catch (kj::Exception& e) {
+            KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
+            // treat state channel as disconnected and possibly leaf outer loop
+            ports.setInDisconnected(STATE_IN);
+            continue;
+          }
+        }
+      }
+      if (monica.get() == nullptr) {
+        // wait for a second before trying again to read an env or state, thus create a monica instance
+        timer.afterDelay(1*kj::SECONDS).wait(ioContext.waitScope);
+        continue;
+      }
 
       try {
         auto waitForMoreEvents = true;
@@ -634,10 +643,12 @@ public:
       } catch (const kj::Exception& e) {
         KJ_LOG(INFO, "Exception:", e.getDescription());
       }
+
+      // free monica instance
+      monica = nullptr;
     }
 
     ports.closeOutPorts();
-
     return true;
   }
 
