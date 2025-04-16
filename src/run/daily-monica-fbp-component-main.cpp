@@ -394,6 +394,7 @@ public:
     while ((ports.isInConnected(STATE_IN) || ports.isInConnected(ENV))
       && (ports.isOutConnected(RESULT) || ports.isOutConnected(STATE_OUT))) {
 
+      bool envOrStateReceived = false;
       // read serialized state and create a monica instance with that state
       if (ports.isInConnected(ENV)) {
         KJ_LOG(INFO, "trying to read from env IN port");
@@ -407,7 +408,7 @@ public:
         case mas::schema::fbp::Channel<IP>::Msg::VALUE:
           try {
             auto ip = msg.getValue();
-            auto stEnv = ip.getContent().template getAs<mas::schema::common::StructuredText>();
+            auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
             std::string err;
             const json11::Json& envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
             auto envJsonStr = envJson.dump();
@@ -423,6 +424,7 @@ public:
             monica = kj::heap<MonicaModel>(env.params);
             //monica->initComponents(env.params);
             initMonica();
+            envOrStateReceived = true;
             break;
           } catch (kj::Exception& e) {
             KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
@@ -433,7 +435,7 @@ public:
         }
       }
       // no env could be read
-      if (monica.get() == nullptr && ports.isInConnected(STATE_IN)) {
+      if (!envOrStateReceived && ports.isInConnected(STATE_IN)) {
         KJ_LOG(INFO, "trying to read from serialized_state IN port");
         auto msg = ports.in(STATE_IN).readIfMsgRequest().send().wait(ioContext.waitScope);
         switch (msg.which()) {
@@ -442,10 +444,25 @@ public:
           KJ_LOG(INFO, "received done on serialized_state port");
           ports.setInDisconnected(STATE_IN);
           continue;
-        case mas::schema::fbp::Channel<IP>::Msg::VALUE: try {
+        case mas::schema::fbp::Channel<IP>::Msg::VALUE:
+          try {
             auto ip = msg.getValue();
-            auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-            monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+            try {
+              auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
+              if (monica.get() == nullptr) monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+              else monica->deserialize(runtimeState.getModelState());
+              envOrStateReceived = true;
+            } catch (kj::Exception& e) {
+              auto jsonState = ip.getContent().getAs<capnp::Text>();
+              const capnp::JsonCodec json;
+              capnp::MallocMessageBuilder mmb;
+              auto runtimeStateBuilder = mmb.initRoot<mas::schema::model::monica::RuntimeState>();
+              json.decode(jsonState.asBytes().asChars(), runtimeStateBuilder);
+              auto runtimeState = runtimeStateBuilder.asReader();
+              if (monica.get() == nullptr) monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+              else monica->deserialize(runtimeState.getModelState());
+              envOrStateReceived = true;
+            }
             break;
           } catch (kj::Exception& e) {
             KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
@@ -455,7 +472,7 @@ public:
           }
         }
       }
-      if (monica.get() == nullptr) {
+      if (!envOrStateReceived) {
         // wait for a second before trying again to read an env or state, thus create a monica instance
         timer.afterDelay(1*kj::SECONDS).wait(ioContext.waitScope);
         continue;
@@ -474,12 +491,14 @@ public:
             KJ_LOG(INFO, "received done -> finalizing monica run");
             finalizeMonica(monica->currentStepDate());
             // send results to out port
-            auto wrq = ports.out(RESULT).writeRequest();
-            auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
-            st.getStructure().setJson();
-            st.setValue(out.to_json().dump());
-            wrq.send().wait(ioContext.waitScope);
-            KJ_LOG(INFO, "sent MONICA result on output channel");
+            if (ports.isOutConnected(RESULT)) {
+              auto wrq = ports.out(RESULT).writeRequest();
+              auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
+              st.getStructure().setJson();
+              st.setValue(out.to_json().dump());
+              wrq.send().wait(ioContext.waitScope);
+              KJ_LOG(INFO, "sent MONICA result on output channel");
+            }
             waitForMoreEvents = false;
           } else {
             auto ip = msg.getValue();
@@ -630,7 +649,8 @@ public:
                     }
 
                     wrq.send().wait(ioContext.waitScope);
-                    KJ_LOG(INFO, "sent serialized MONICA state on output channel", ss.getAsJson() ? "as JSON" : "as capnp binary");
+                    auto asWhat = ss.getAsJson() ? "as JSON" : "as capnp binary";
+                    KJ_LOG(INFO, "sent serialized MONICA state on output channel", asWhat);
                   } catch (kj::Exception &e) {
                     KJ_LOG(INFO, "Exception on attempt to serialize MONICA state:", e.getDescription());
                   }
@@ -644,9 +664,6 @@ public:
       } catch (const kj::Exception& e) {
         KJ_LOG(INFO, "Exception:", e.getDescription());
       }
-
-      // free monica instance
-      monica = nullptr;
     }
 
     ports.closeOutPorts();
