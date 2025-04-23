@@ -75,6 +75,7 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
 #COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-fbp-component ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/daily-monica-fbp-component ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/common/channel ${monica_dir}
 
 COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
