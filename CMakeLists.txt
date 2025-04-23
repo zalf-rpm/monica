@@ -340,17 +340,16 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-add_executable(daily-monica-fbp-component-main
+add_executable(daily-monica-fbp-component
 src/run/daily-monica-fbp-component-main.cpp
 )
 
-target_link_libraries(daily-monica-fbp-component-main
+target_link_libraries(daily-monica-fbp-component
         monica_lib
-        #PkgConfig::tomlplusplus
 )
 
 if (MSVC)
-target_compile_options(daily-monica-fbp-component-main PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
