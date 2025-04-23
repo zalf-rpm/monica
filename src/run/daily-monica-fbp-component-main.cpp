@@ -161,6 +161,7 @@ public:
   void initMonica() {
     returnObjOutputs = env.returnObjOutputs();
     out.customId = env.customId;
+    dailyOut.customId = env.customId;
 
     activateDebug = env.debugMode;
 
@@ -378,6 +379,21 @@ public:
     }
   }
 
+  void finalizeDaily() {
+    for (auto& sd : store) {
+      Output::Data d;
+      d.origSpec = sd.spec.origSpec.dump();
+      d.outputIds = sd.outputIds;
+      if (returnObjOutputs) {
+        sd.aggregateResultsObj();
+        d.resultsObj.push_back(sd.resultsObj.back());
+      } else {
+        sd.aggregateResults();
+        d.results.push_back(sd.results.back());
+      }
+      dailyOut.data.emplace_back(d);;
+    }
+  }
 
   kj::MainBuilder::Validity startComponent() {
     KJ_LOG(INFO, "MONICA: starting daily MONICA Cap'n Proto FBP component");
@@ -491,13 +507,16 @@ public:
             KJ_LOG(INFO, "received done -> finalizing monica run");
             finalizeMonica(monica->currentStepDate());
             // send results to out port
-            if (ports.isOutConnected(RESULT)) {
+            if (false && ports.isOutConnected(RESULT)) {
               auto wrq = ports.out(RESULT).writeRequest();
               auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
               st.getStructure().setJson();
               st.setValue(out.to_json().dump());
               wrq.send().wait(ioContext.waitScope);
               KJ_LOG(INFO, "sent MONICA result on output channel");
+              out.data.clear();
+              out.warnings.clear();
+              out.errors.clear();
             }
             waitForMoreEvents = false;
           } else {
@@ -520,6 +539,20 @@ public:
                 monica->setCurrentStepDate(eventDate);
                 monica->setCurrentStepClimateData(climateData);
                 runMonica();
+                //create daily output
+                finalizeDaily();
+                // send results to out port
+                if (ports.isOutConnected(RESULT)) {
+                  auto wrq = ports.out(RESULT).writeRequest();
+                  auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
+                  st.getStructure().setJson();
+                  st.setValue(dailyOut.to_json().dump());
+                  wrq.send().wait(ioContext.waitScope);
+                  KJ_LOG(INFO, "sent MONICA daily result on output channel");
+                  dailyOut.data.clear();
+                  dailyOut.warnings.clear();
+                  dailyOut.errors.clear();
+                }
                 break;
               }
               case Event::ExternalType::SOWING: {
@@ -699,6 +732,7 @@ private:
   kj::Own<MonicaModel> monica;
   std::vector<StoreData> store;
   Output out;
+  Output dailyOut;
   //std::list<Workstep> dynamicWorksteps;
   std::map<int, std::vector<double>> dailyValues;
   std::vector<std::function<void()>> applyDailyFuncs;
