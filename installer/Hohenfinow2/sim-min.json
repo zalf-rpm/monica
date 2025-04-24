@@ -89,6 +89,12 @@
 			"run", [
 				["Precip", "SUM"]
 			]
+		],
+
+		"__events" : [
+			"run", [
+				["Precip", "SUM"]
+			]
 		]
 	},
 
