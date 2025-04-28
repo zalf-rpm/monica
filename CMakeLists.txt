@@ -23,7 +23,7 @@ endmacro(set_absolute_path)
 
 set_absolute_path(AMEI_COMPONENTS_DIR ../SoilTemperatureModels/Models)
 
-add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
+#add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
 
 set(CPP_FOLDER_NAME "cpp2")
 add_compile_definitions(CPP2)
