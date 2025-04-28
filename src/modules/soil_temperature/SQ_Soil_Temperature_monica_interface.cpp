@@ -43,25 +43,13 @@ void MonicaInterface::run() {
   } else {
     dayLength = climateData.at(Climate::x4);
   }
-#ifdef CPP2
   _soilTempExo.maxTAir = climateData.at(Climate::tmax);
   _soilTempExo.dayLength = dayLength;
   _soilTempExo.minTAir = climateData.at(Climate::tmin);
   _soilTempExo.meanTAir = climateData.at(Climate::tavg);
-#else
-  _soilTempExo.setmaxTAir(climateData.at(Climate::tmax));
-  _soilTempExo.setdayLength(dayLength);
-  _soilTempExo.setminTAir(climateData.at(Climate::tmin));
-  _soilTempExo.setmeanTAir(climateData.at(Climate::tavg));
-#endif
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-#ifdef CPP2
   _soilTempExo.meanAnnualAirTemp = _monica->simulationParameters().customData["TAV"].number_value();
   _soilTempRate.heatFlux = climateData[Climate::x5]; //o3 is used as heat flux
-#else
-  _soilTempExo.setmeanAnnualAirTemp(_monica->simulationParameters().customData["TAV"].number_value());
-  _soilTempRate.setheatFlux(climateData[Climate::x5]); //o3 is used as heat flux
-#endif
 #else
   auto [fst, snd] = _monica->dssatTAMPandTAV();
   _soilTempExo.meanAnnualAirTemp = snd;

@@ -42,13 +42,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> t/m3
   }
-#ifdef CPP2
   _soilTempExo.Albedo = simPs.customData["SALB"].number_value();
   _soilTempExo.VolumetricWaterContent = sws;
-#else
-  _soilTempExo.setAlbedo(simPs.customData["SALB"].number_value());
-  _soilTempExo.setVolumetricWaterContent(sws);
-#endif
   _soilTempComp.setLayerThickness(layerThicknessM);
   _soilTempComp.setBulkDensity(bds);
 #else
@@ -71,24 +66,13 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 void MonicaInterface::run() {
       KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-#ifdef CPP2
   _soilTempExo.AirTemperatureMinimum = climateData.at(Climate::tmin);
   _soilTempExo.AirTemperatureMaximum = climateData.at(Climate::tmax);
   _soilTempExo.GlobalSolarRadiation = climateData.at(Climate::globrad);
   _soilTempExo.WaterEquivalentOfSnowPack = 0; // snow in mm
-#else
-  _soilTempExo.setAirTemperatureMinimum(climateData.at(Climate::tmin));
-  _soilTempExo.setAirTemperatureMaximum(climateData.at(Climate::tmax));
-  _soilTempExo.setGlobalSolarRadiation(climateData.at(Climate::globrad));
-  _soilTempExo.setWaterEquivalentOfSnowPack(0); // snow in mm
-#endif
   //_soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::x6]); // snow in mm
 #ifdef AMEI_SENSITIVITY_ANALYSIS
-#ifdef CPP2
   _soilTempAux.AboveGroundBiomass = _monica->simulationParameters().customData["CWAD"].number_value();
-#else
-  _soilTempAux.setAboveGroundBiomass(_monica->simulationParameters().customData["CWAD"].number_value());
-#endif
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
   auto tampNtav = _monica->dssatTAMPandTAV();

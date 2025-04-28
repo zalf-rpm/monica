@@ -81,48 +81,25 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 void MonicaInterface::run() {
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-#ifdef CPP2
   soilTempExo.tmin = climateData.at(Climate::tmin);
   soilTempExo.tmax = climateData.at(Climate::tmax);
   soilTempExo.globrad = climateData.at(Climate::globrad);
-#else
-  soilTempExo.settmin(climateData.at(Climate::tmin));
-  soilTempExo.settmax(climateData.at(Climate::tmax));
-  soilTempExo.setglobrad(climateData.at(Climate::globrad));
-#endif
   auto simPs = _monica->simulationParameters();
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   if (simPs.customData["LAI"].is_null()){
-#ifdef CPP2
     soilTempExo.soilCoverage = 0;
-#else
-    soilTempExo.setsoilCoverage(0);
-#endif
   } else {
     auto lai = simPs.customData["LAI"].number_value();
-#ifdef CPP2
     soilTempExo.soilCoverage = 1.0 - exp(-0.5 * lai);
-#else
-    soilTempExo.setsoilCoverage(1.0 - exp(-0.5 * lai));
-#endif
   }
 #else
   if (_monica->cropGrowth()) soilTempExo.soilCoverage = _monica->cropGrowth()->get_SoilCoverage();
 #endif
   if (_monica->soilMoisturePtr() && _monica->soilMoisture().getSnowDepth() > 0.0) {
-#ifdef CPP2
     soilTempExo.hasSnowCover = true;
     soilTempExo.soilSurfaceTemperatureBelowSnow = _monica->soilMoisture().getTemperatureUnderSnow();
-#else
-    soilTempExo.sethasSnowCover(true);
-    soilTempExo.setsoilSurfaceTemperatureBelowSnow(_monica->soilMoisture().getTemperatureUnderSnow());
-#endif
   } else {
-#ifdef CPP2
     soilTempExo.hasSnowCover = false;
-#else
-    soilTempExo.sethasSnowCover(false);
-#endif
   }
   if(_doInit){
     soilTempComp._SoilTemperature.Init(soilTempState, soilTempState1, soilTempRate, soilTempAux,         soilTempExo);

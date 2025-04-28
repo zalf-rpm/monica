@@ -47,19 +47,11 @@ void MonicaInterface::run() {
   auto climateData = _monica->currentStepClimateData();
   auto tmin = climateData.at(Climate::tmin);
   auto tmax = climateData.at(Climate::tmax);
-#ifdef CPP2
   soilTempExo.min_temp = tmin;
   soilTempExo.max_temp = tmax;
   soilTempExo.min_canopy_temp = tmin;
   soilTempExo.max_canopy_temp = tmax;
   soilTempExo.min_air_temp = tmin;
-#else
-  soilTempExo.setmin_temp(tmin);
-  soilTempExo.setmax_temp(tmax);
-  soilTempExo.setmin_canopy_temp(tmin);
-  soilTempExo.setmax_canopy_temp(tmax);
-  soilTempExo.setmin_air_temp(tmin);
-#endif
   if(_doInit){
     soilTempComp.setair_temp_day1(climateData.at(Climate::tavg));
     soilTempComp._Temp_profile.Init(_soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
