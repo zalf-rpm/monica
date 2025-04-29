@@ -85,12 +85,12 @@ void MonicaInterface::run() {
   _soilTempExo.clock_Today_DayOfYear = _monica->currentStepDate().dayOfYear();
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   auto simPs = _monica->simulationParameters();
-  _soilTempExo.weather_Wind = 3.0023;
-  _soilTempExo.weather_AirPressure = 1013.25; // @(20°C 0m) 970.7716 @(20°C, 336m)
+  _soilTempExo.weather_Wind = 3.0;
+  _soilTempExo.weather_AirPressure = 1010; // 1013.25 @(20°C 0m) 970.7716 @(20°C, 336m)
   _soilTempExo.waterBalance_Eo = climateData.at(Climate::x1);
   _soilTempExo.waterBalance_Eos = climateData.at(Climate::x3);
   _soilTempExo.waterBalance_Es = climateData.at(Climate::x2);
-  _soilTempExo.microClimate_CanopyHeight = 0;
+  _soilTempExo.microClimate_CanopyHeight = 0.0;
   _soilTempExo.waterBalance_Salb = simPs.customData["SALB"].number_value();
   _soilTempComp.setweather_Latitude(simPs.customData["XLAT"].number_value());
   _soilTempExo.weather_Tav = simPs.customData["TAV"].number_value();
@@ -122,7 +122,7 @@ void MonicaInterface::run() {
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.aveSoilTemp.at(1));
   int i = 0;
-  KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.soilTemp.size());
+  KJ_ASSERT(_soilTempState.soilTemp.size() >= 2+_monica->soilColumnNC().size());
   for (auto& sl : _monica->soilColumnNC()){
     sl.set_Vs_SoilTemperature(_soilTempState.aveSoilTemp.at(2+(i++)));
   }
