@@ -748,7 +748,7 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "net_radiation", "", "" },
       [](const MonicaModel& monica, const OId& oid)
       {
-        return monica.cropGrowth() ? round(monica.soilMoisture().vw_NetRadiation, oid.roundToDigits.orDefault(3)) : 0.0;
+        return round(monica.soilMoisture().vw_NetRadiation, oid.roundToDigits.orDefault(3));
       });
 
       build({ id++, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop" },
@@ -1303,7 +1303,7 @@ BOTRes& monica::buildOutputTable()
             {
               double fc = monica.soilColumn().at(i).vs_FieldCapacity();
               double pwp = monica.soilColumn().at(i).vs_PermanentWiltingPoint();
-              return fc - pwp; 
+              return fc - pwp;
             }, oid.roundToDigits.orDefault(4));
         });
 
