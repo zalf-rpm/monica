@@ -585,11 +585,13 @@ DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file, bool serialize
     auto runtimeStateBuilder = msg.initRoot<mas::schema::model::monica::RuntimeState>();
     json.decode(allBytes.asChars(), runtimeStateBuilder);
     auto runtimeState = runtimeStateBuilder.asReader();
+    res.monica = nullptr;
     res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
   } else {
     kj::ArrayInputStream ais(allBytes);
     capnp::InputStreamMessageReader message(ais);
     auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
+    res.monica = nullptr;
     res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
   }
   return res;

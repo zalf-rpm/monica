@@ -171,8 +171,14 @@ void SoilMoisture::deserialize(mas::schema::model::monica::SoilMoistureModuleSta
   setFromCapnpList(vm_Transpiration, reader.getTranspiration());
   setFromCapnpList(vm_WaterFlux, reader.getWaterFlux());
   vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
-  if(reader.hasSnowComponent()) snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
-  if (reader.hasFrostComponent()) frostComponent = kj::heap<FrostComponent>(soilColumn, reader.getFrostComponent());
+  if(reader.hasSnowComponent()) {
+    snowComponent = nullptr;
+    snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
+  }
+  if (reader.hasFrostComponent()) {
+    frostComponent = nullptr;
+    frostComponent = kj::heap<FrostComponent>(soilColumn, reader.getFrostComponent());
+  }
 }
 
 void SoilMoisture::serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const {

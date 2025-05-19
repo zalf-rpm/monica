@@ -101,6 +101,7 @@ void Crop::deserialize(mas::schema::model::monica::CropState::Reader reader) {
 	if (!reader.hasCropParams()) _isValid = false;
 	else _cropParams.deserialize(reader.getCropParams());
 	if (reader.hasPerennialCropParams()) {
+		_separatePerennialCropParams = nullptr;
 		_separatePerennialCropParams = kj::heap<CropParameters>(reader.getPerennialCropParams());
 		_perennialCropParams = *_separatePerennialCropParams.get();
 	}
@@ -176,6 +177,7 @@ Errors Crop::merge(json11::Json j)
 			auto jcps = j["perennialCropParams"];
 			if (jcps.has_shape({ {"species", json11::Json::OBJECT} }, err)
 				&& jcps.has_shape({ {"cultivar", json11::Json::OBJECT} }, err)) {
+				_separatePerennialCropParams = nullptr;
 				_separatePerennialCropParams = kj::heap<CropParameters>();
 				_separatePerennialCropParams->merge(j["cropParams"]);
 				_perennialCropParams = *_separatePerennialCropParams.get();
