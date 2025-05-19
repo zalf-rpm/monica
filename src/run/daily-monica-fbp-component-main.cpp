@@ -165,11 +165,6 @@ public:
 
     activateDebug = env.debugMode;
 
-    //prefer multiple crop rotations, but use a single rotation if there
-    if (env.cropRotations.empty() && !env.cropRotation.empty()) {
-      env.cropRotations.emplace_back(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation);
-    }
-
     KJ_LOG(INFO, "starting Monica");
 
     monica->simulationParametersNC().startDate = env.climateData.startDate();
@@ -177,143 +172,8 @@ public:
     monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.
       noOfPreviousDaysSerializedClimateData;
 
-    //debug() << "currentDate" << endl;
-    //Date currentDate = env.climateData.startDate();
-
-    // create a way for worksteps to let the runtime calculate at a daily basis things a workstep needs when being executed
-    // e.g. to actually accumulate values from days before the workstep (for calculating a moving window of past values)
-    int dailyFuncId = 0;
-
-
-    //iterate through all the worksteps in the croprotation(s) and check for functions which have to run daily
-    for (auto& cr : env.cropRotations) {
-      for (auto& cm : cr.cropRotation) {
-        for (const auto& wsptr : cm.getWorksteps()) {
-          auto df = wsptr->registerDailyFunction(
-                                                 [this, dailyFuncId]() -> vector<double>& {
-                                                   return dailyValues[dailyFuncId];
-                                                 });
-          if (df) {
-            applyDailyFuncs.emplace_back([this, df, dailyFuncId] {
-              dailyValues[dailyFuncId].push_back(df(monica.get()));
-            });
-          }
-          dailyFuncId++;
-        }
-      }
-    }
-
-    auto crit = env.cropRotations.begin();
-
-    //cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
-    //if pure absolute CMs are finished
-    vector<CultivationMethod*> cropRotation;
-
-    auto checkAndInitShadowOfNextCropRotation_ = [](auto& envCropRotations, auto& crit, auto& cropRotation,
-                                                    Date currentDate) {
-      if (crit != envCropRotations.end()) {
-        //if current cropRotation is finished, try to move to next
-        if (crit->end.isValid() && currentDate == crit->end + 1) {
-          crit++;
-          cropRotation.clear();
-        }
-
-        //check again, because we might have moved to next cropRotation
-        if (crit != envCropRotations.end()) {
-          //if a new cropRotation starts, copy the pointers to the CMs to the shadow CR
-          if (crit->start.isValid() && currentDate == crit->start) {
-            for (auto& cm : crit->cropRotation) cropRotation.push_back(&cm);
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    auto checkAndInitShadowOfNextCropRotation = [&](Date currentDate) {
-      return checkAndInitShadowOfNextCropRotation_(env.cropRotations, crit, cropRotation, currentDate);
-    };
-
-    //iterator through the crop rotation
-    auto cmit = cropRotation.begin();
-
-    auto findNextCultivationMethod_ = [&](Date currentDate,
-                                          auto& cropRotation,
-                                          auto& cmit,
-                                          bool advanceToNextCM = true) {
-      CultivationMethod* currentCM = nullptr;
-      Date nextAbsoluteCMApplicationDate;
-
-      //it might be possible that the next cultivation method has to be skipped (if cover/catch crop)
-      bool notFoundNextCM = true;
-      while (notFoundNextCM) {
-        if (advanceToNextCM) {
-          //delete fully cultivation methods with only absolute worksteps,
-          //because they won't participate in a new run when wrapping the crop rotation
-          if ((*cmit)->areOnlyAbsoluteWorksteps() || !(*cmit)->repeat()) cmit = cropRotation.erase(cmit);
-          else cmit++;
-
-          //start anew if we reached the end of the crop rotation
-          if (cmit == cropRotation.end()) cmit = cropRotation.begin();
-        }
-
-        //check if there's at least a cultivation method left in cropRotation
-        if (cmit != cropRotation.end()) {
-          advanceToNextCM = true;
-          currentCM = *cmit;
-
-          //addedYear tells that the start of the cultivation method was before currentDate and thus the whole
-          //CM had to be moved into the next year
-          //is possible for relative dates
-          bool addedYear = currentCM->reinit(currentDate);
-          if (addedYear) {
-            //current CM is a cover crop, check if the latest sowing date would have been before current date,
-            //if so, skip current CM
-            if (currentCM->isCoverCrop()) {
-              //if current CM's latest sowing date is actually after current date, we have to
-              //reinit current CM again, but this time prevent shifting it to the next year
-              if (!(notFoundNextCM =
-                    currentCM->absLatestSowingDate().withYear(currentDate.year()) < currentDate)) {
-                currentCM->reinit(currentDate, true);
-              }
-            } else notFoundNextCM = currentCM->canBeSkipped(); //if current CM was marked skipable, skip it
-          } else { //not added year or CM was had also absolute dates
-            if (currentCM->isCoverCrop()) notFoundNextCM = currentCM->absLatestSowingDate() < currentDate;
-            else if (currentCM->canBeSkipped()) notFoundNextCM = currentCM->absStartDate() < currentDate;
-            else notFoundNextCM = false;
-          }
-
-          if (notFoundNextCM) nextAbsoluteCMApplicationDate = Date();
-          else {
-            nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty()
-                                              ? Date()
-                                              : currentCM->absStartDate(
-                                                                        false);
-            debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-          }
-        } else {
-          currentCM = nullptr;
-          nextAbsoluteCMApplicationDate = Date();
-          notFoundNextCM = false;
-        }
-      }
-
-      return make_pair(currentCM, nextAbsoluteCMApplicationDate);
-    };
-
-    auto findNextCultivationMethod = [&](Date currentDate, bool advanceToNextCM = true) {
-      return findNextCultivationMethod_(currentDate, cropRotation, cmit, advanceToNextCM);
-    };
-
-    //direct handle to current cultivation method
-    //CultivationMethod* currentCM{nullptr};
-    //Date nextAbsoluteCMApplicationDate;
-    //tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
-
     store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
-
     monica->addEvent("run-started");
-
   }
 
 
@@ -324,43 +184,13 @@ public:
 
       // test if monica's crop has been dying in previous step
       // if yes, it will be incorporated into soil
-      if (monica->cropGrowth() && monica->cropGrowth()->isDying()) {
-        monica->incorporateCurrentCrop();
-      }
-
-      //try to apply dynamic worksteps marked to run before everything else that day
-      // for (auto& dws : list(dynamicWorksteps)) {
-      //   if (dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
-      // }
-
-      //for (auto& ws : dailyWorksteps) ws.apply(monica.get());
+      if (monica->cropGrowth() && monica->cropGrowth()->isDying()) monica->incorporateCurrentCrop();
 
       //monica main stepping method
       monica->step();
-      debug() << std::endl;
-
-      // call all daily functions, assuming it's better to do this after the steps, than before
-      // so the daily monica calculations will be taken into account
-      // but means also that a workstep which gets executed before the steps, can't take the
-      // values into account by applying a daily function
-      for (auto& f : applyDailyFuncs) f();
-
-      //try to apply dynamic worksteps marked to run AFTER everything else that day
-      // for (auto& dws : list(dynamicWorksteps)) {
-      //   if (!dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
-      // }
 
       //store results
       for (auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
-
-      //if the next application date is not valid, we're at the end
-      //of the application list of this cultivation method
-      //and go to the next one in the crop rotation
-      //if (currentCM && currentCM->allDynamicWorkstepsFinished() && !nextAbsoluteCMApplicationDate.isValid()) {
-        // to count the applied fertiliser for the next production process
-//!!!!!!!        monica->resetFertiliserCounter();
-        //tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate + 1);
-      //}
   }
 
   void finalizeMonica(Date currentDate) {
@@ -437,6 +267,7 @@ public:
             env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
               Soil::updateUnsetPwpFcSatFromToth;
             auto errors = env.merge(envJson);
+            monica = nullptr;
             monica = kj::heap<MonicaModel>(env.params);
             //monica->initComponents(env.params);
             initMonica();
@@ -505,7 +336,7 @@ public:
           // check for end of data from in port
           if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
             KJ_LOG(INFO, "received done -> finalizing monica run");
-            finalizeMonica(monica->currentStepDate());
+            //finalizeMonica(monica->currentStepDate());
             // send results to out port
             if (false && ports.isOutConnected(RESULT)) {
               auto wrq = ports.out(RESULT).writeRequest();
