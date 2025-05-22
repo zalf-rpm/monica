@@ -3737,6 +3737,8 @@ void CropModule::fc_CropWaterUptake_step1(size_t vc_GroundwaterTable,
       vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
     }
 
+
+
     // std::cout << setprecision(11) << "vc_TotalRootEffectivity: " << vc_TotalRootEffectivity << std::endl;
     // std::cout << setprecision(11) << "vc_OxygenDeficit: " << vc_OxygenDeficit << std::endl;
 
