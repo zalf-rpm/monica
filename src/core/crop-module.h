@@ -176,6 +176,16 @@ public:
                           double vc_CurrentTotalTemperatureSum,
                           double vc_TotalTemperatureSum);
 
+  void fc_CropWaterUptake_step1(size_t vm_GroundwaterTable,
+                        double vw_GrossPrecipitation,
+                        double vc_CurrentTotalTemperatureSum,
+                        double vc_TotalTemperatureSum);
+
+  void fc_CropWaterUptake_step2(size_t vm_GroundwaterTable,
+                        double vw_GrossPrecipitation,
+                        double vc_CurrentTotalTemperatureSum,
+                        double vc_TotalTemperatureSum);
+
   void fc_CropNUptake(size_t vm_GroundwaterTable,
                       double /*vc_CurrentTotalTemperatureSum*/,
                       double /*vc_TotalTemperatureSum*/);
@@ -452,6 +462,7 @@ public:
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
 private:
+  CropModule* crop2{nullptr};
   Intercropping &_intercropping;
 
   bool _frostKillOn{true};
@@ -623,6 +634,7 @@ private:
   std::vector<double> vc_RootDiameter;        //! old WRAD
   double pc_RootDistributionParam{};
   std::vector<double> vc_RootEffectivity; //! old WUEFF
+  std::vector<double> vc_Rootshare; // root sharing between crops
   double pc_RootFormFactor{};
   double pc_RootGrowthLag{};
   size_t vc_RootingDepth{0};                      //! old WURZ

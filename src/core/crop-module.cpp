@@ -126,7 +126,7 @@ CropModule::CropModule(SoilColumn &sc,
         cps.speciesParams.pc_PlantDensity), pc_ResidueNRatio(cps.cultivarParams.pc_ResidueNRatio), pc_RespiratoryStress(
         cps.cultivarParams.pc_RespiratoryStress), vc_RootDensity(soilColumn.vs_NumberOfLayers(), 0.0), vc_RootDiameter(
         soilColumn.vs_NumberOfLayers(), 0.0), pc_RootDistributionParam(cps.speciesParams.pc_RootDistributionParam),
-      vc_RootEffectivity(soilColumn.vs_NumberOfLayers(), 0.0), pc_RootFormFactor(cps.speciesParams.pc_RootFormFactor),
+      vc_RootEffectivity(soilColumn.vs_NumberOfLayers(), 0.0),vc_Rootshare(soilColumn.vs_NumberOfLayers(), 0.0), pc_RootFormFactor(cps.speciesParams.pc_RootFormFactor),
       pc_RootGrowthLag(cps.speciesParams.pc_RootGrowthLag), pc_RootPenetrationRate(
         cps.speciesParams.pc_RootPenetrationRate), vs_SoilMineralNContent(soilColumn.vs_NumberOfLayers(), 0.0),
       pc_SpecificLeafArea(cps.cultivarParams.pc_SpecificLeafArea), pc_SpecificRootLength(
@@ -930,7 +930,18 @@ void CropModule::step(double vw_MeanAirTemperature,
       // use reference evapotranspiration from climate file
       vc_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }
-    fc_CropWaterUptake(soilColumn.vm_GroundwaterTableLayer,
+
+    // fc_CropWaterUptake(soilColumn.vm_GroundwaterTableLayer,
+    //                    vw_GrossPrecipitation,
+    //                    vc_CurrentTotalTemperatureSum,
+    //                    vc_TotalTemperatureSum);
+
+    fc_CropWaterUptake_step1(soilColumn.vm_GroundwaterTableLayer,
+                       vw_GrossPrecipitation,
+                       vc_CurrentTotalTemperatureSum,
+                       vc_TotalTemperatureSum);
+
+    fc_CropWaterUptake_step2(soilColumn.vm_GroundwaterTableLayer,
                        vw_GrossPrecipitation,
                        vc_CurrentTotalTemperatureSum,
                        vc_TotalTemperatureSum);
@@ -3366,21 +3377,6 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
   return vc_ReferenceEvapotranspiration;
 }
 
-/**
- * @brief  Water uptake by the crop
- *
- *  In this function the potential transpiration calcuated from potential
- *  evapotranspiration by soil cover fraction is reduced by water availability
- *  in the soil accoridng to actaul water contents, root distribution and
- *  root effectivity.
- *
- * @param vs_NumberOfLayers
- * @param vs_LayerThickness
- * @param vc_GroundwaterTable
- * @param vw_GrossPrecipitation
- *
- * @author Claas Nendel
- */
 void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
                                     double vw_GrossPrecipitation,
                                     double /*vc_CurrentTotalTemperatureSum*/,
@@ -3588,6 +3584,273 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
     if (!pc_WaterDeficitResponseOn) vc_TranspirationDeficit = 1.0;
   }
 }
+
+
+
+/**
+ * @brief  Water uptake by the crop
+ *
+ *  In this function the potential transpiration calculated from potential
+ *  evapotranspiration by soil cover fraction is reduced by water availability
+ *  in the soil according to actual water contents, root distribution and
+ *  root effectivity and the presence of the other crop's root. Potential transpiration is calculated for every layer.
+ *
+ * @param vs_NumberOfLayers
+ * @param vs_LayerThickness
+ * @param vc_GroundwaterTable
+ * @param vw_GrossPrecipitation
+ *
+ * @author Claas Nendel
+ */
+void CropModule::fc_CropWaterUptake_step1(size_t vc_GroundwaterTable,
+                                    double vw_GrossPrecipitation,
+                                    double /*vc_CurrentTotalTemperatureSum*/,
+                                    double /*vc_TotalTemperatureSum*/) {
+  size_t nols = soilColumn.vs_NumberOfLayers();
+  double layerThickness = soilColumn.vs_LayerThickness();
+  double vc_PotentialTranspirationDeficit = 0.0;  // [mm]
+  vc_PotentialTranspiration = 0.0;        // old TRAMAX [mm]
+  double vc_PotentialEvapotranspiration = 0.0;  // [mm]
+  double vc_TranspirationReduced = 0.0;      // old TDRED [mm]
+  vc_ActualTranspiration = 0.0;          // [mm]
+  double vc_RemainingTotalRootEffectivity = 0.0;  // old WEFFREST [m]
+  double vc_CropWaterUptakeFromGroundwater = 0.0; // old GAUF [mm]
+  double vc_TotalRootEffectivity = 0.0;      // old WEFF [m]
+  double vc_ActualTranspirationDeficit = 0.0;    // old TREST [mm]
+  double vc_Interception = 0.0;
+  vc_RemainingEvapotranspiration = 0.0;
+
+  for (size_t i_Layer = 0; i_Layer < nols; i_Layer++) {
+    vc_Transpiration[i_Layer] = 0.0;    // old TP [mm]
+    vc_TranspirationRedux[i_Layer] = 0.0; // old TRRED []
+    vc_RootEffectivity[i_Layer] = 0.0;    // old WUEFF [?]
+    vc_Rootshare[i_Layer] = 0.0;
+  }
+
+  // ################
+  // # Interception #
+  // ################
+
+  double vc_InterceptionStorageOld = vc_InterceptionStorage;
+
+  // Interception in [mm d-1];
+  vc_Interception = (2.5 * vc_CropHeight * vc_SoilCoverage) - vc_InterceptionStorage;
+
+  if (vc_Interception < 0) {
+    vc_Interception = 0.0;
+  }
+
+  // If no precipitation occurs, vm_Interception = 0
+  if (vw_GrossPrecipitation <= 0) {
+    vc_Interception = 0.0;
+  }
+
+  // Calculating net precipitation and adding to surface water
+  if (vw_GrossPrecipitation <= vc_Interception) {
+    vc_Interception = vw_GrossPrecipitation;
+    vc_NetPrecipitation = 0.0;
+  } else {
+    vc_NetPrecipitation = vw_GrossPrecipitation - vc_Interception;
+  }
+
+  // add intercepted precipitation to the virtual interception water storage
+  vc_InterceptionStorage = vc_InterceptionStorageOld + vc_Interception;
+
+  // #################
+  // # Transpiration #
+  // #################
+
+  vc_PotentialEvapotranspiration = vc_ReferenceEvapotranspiration * vc_KcFactor; // [mm]
+
+  // from HERMES:
+  if (vc_PotentialEvapotranspiration > 6.5) {
+    vc_PotentialEvapotranspiration = 6.5;
+  }
+
+  vc_RemainingEvapotranspiration = vc_PotentialEvapotranspiration; // [mm]
+
+  // If crop holds intercepted water, first evaporation from crop surface
+  if (vc_InterceptionStorage > 0.0) {
+    if (vc_RemainingEvapotranspiration >= vc_InterceptionStorage) {
+      vc_RemainingEvapotranspiration -= vc_InterceptionStorage;
+      vc_EvaporatedFromIntercept = vc_InterceptionStorage;
+      vc_InterceptionStorage = 0.0;
+    } else {
+      vc_InterceptionStorage -= vc_RemainingEvapotranspiration;
+      vc_EvaporatedFromIntercept = vc_RemainingEvapotranspiration;
+      vc_RemainingEvapotranspiration = 0.0;
+    }
+  } else {
+    vc_EvaporatedFromIntercept = 0.0;
+  }
+
+  // if the plant has matured, no transpiration occurs!
+  if (vc_DevelopmentalStage < vc_FinalDevelopmentalStage) {
+    // if ((vc_CurrentTotalTemperatureSum / vc_TotalTemperatureSum) < 1.0){
+
+    vc_PotentialTranspiration = vc_RemainingEvapotranspiration * vc_SoilCoverage; // [mm]
+
+    for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
+      double vc_AvailableWater =
+          soilColumn[i_Layer].vs_FieldCapacity() - soilColumn[i_Layer].vs_PermanentWiltingPoint();
+      double vc_AvailableWaterPercentage =
+          (soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].vs_PermanentWiltingPoint()) /
+          vc_AvailableWater;
+      if (vc_AvailableWaterPercentage < 0.0) {
+        vc_AvailableWaterPercentage = 0.0;
+      }
+
+      if (vc_AvailableWaterPercentage < 0.15) {
+        vc_TranspirationRedux[i_Layer] = vc_AvailableWaterPercentage * 3.0;        // []
+        vc_RootEffectivity[i_Layer] = 0.15 + 0.45 * vc_AvailableWaterPercentage / 0.15; // []
+      } else if (vc_AvailableWaterPercentage < 0.3) {
+        vc_TranspirationRedux[i_Layer] = 0.45 + (0.25 * (vc_AvailableWaterPercentage - 0.15) / 0.15);
+        vc_RootEffectivity[i_Layer] = 0.6 + (0.2 * (vc_AvailableWaterPercentage - 0.15) / 0.15);
+      } else if (vc_AvailableWaterPercentage < 0.5) {
+        vc_TranspirationRedux[i_Layer] = 0.7 + (0.275 * (vc_AvailableWaterPercentage - 0.3) / 0.2);
+        vc_RootEffectivity[i_Layer] = 0.8 + (0.2 * (vc_AvailableWaterPercentage - 0.3) / 0.2);
+      } else if (vc_AvailableWaterPercentage < 0.75) {
+        vc_TranspirationRedux[i_Layer] = 0.975 + (0.025 * (vc_AvailableWaterPercentage - 0.5) / 0.25);
+        vc_RootEffectivity[i_Layer] = 1.0;
+      } else {
+        vc_TranspirationRedux[i_Layer] = 1.0;
+        vc_RootEffectivity[i_Layer] = 1.0;
+      }
+      if (vc_TranspirationRedux[i_Layer] < 0) {
+        vc_TranspirationRedux[i_Layer] = 0.0;
+      }
+      if (vc_RootEffectivity[i_Layer] < 0) {
+        vc_RootEffectivity[i_Layer] = 0.0;
+      }
+      if (i_Layer == vc_GroundwaterTable) { // old GRW
+        vc_RootEffectivity[i_Layer] = 0.5;
+      }
+      if (i_Layer > vc_GroundwaterTable) { // old GRW
+        vc_RootEffectivity[i_Layer] = 0.0;
+      }
+      if (((i_Layer + 1) * layerThickness) >= vs_MaxEffectiveRootingDepth) {
+        vc_RootEffectivity[i_Layer] = 0.0;
+      }
+      double secondCropDensity = crop2 ? crop2->vc_RootDensity[i_Layer] : 0.0;
+      vc_Rootshare[i_Layer] = vc_RootDensity[i_Layer]/(vc_RootDensity[i_Layer]+secondCropDensity);
+      vc_TotalRootEffectivity += vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]*vc_Rootshare[i_Layer]; //[m m-3]
+      vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
+    }
+
+    // std::cout << setprecision(11) << "vc_TotalRootEffectivity: " << vc_TotalRootEffectivity << std::endl;
+    // std::cout << setprecision(11) << "vc_OxygenDeficit: " << vc_OxygenDeficit << std::endl;
+
+    for (size_t i_Layer = 0; i_Layer < nols; i_Layer++) {
+      if (i_Layer > min(vc_RootingZone, vc_GroundwaterTable + 1)) {
+        vc_Transpiration[i_Layer] = 0.0; //[mm]
+      } else {
+        vc_Transpiration[i_Layer] = vc_TotalRootEffectivity != 0.0
+                                    ? vc_PotentialTranspiration *
+                                      ((vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer] * vc_Rootshare[i_Layer]) /
+                                       vc_TotalRootEffectivity) * vc_OxygenDeficit
+                                    : 0;
+
+        // std::cout << setprecision(11) << "vc_Transpiration[i_Layer]: " << i_Layer << ", " << vc_Transpiration[i_Layer] << std::endl;
+        // std::cout << setprecision(11) << "vc_RootEffectivity[i_Layer]: " << i_Layer << ", " << vc_RootEffectivity[i_Layer] << std::endl;
+        // std::cout << setprecision(11) << "vc_RootDensity[i_Layer]: " << i_Layer << ", " << vc_RootDensity[i_Layer] << std::endl;
+
+        // [mm]
+      }
+    }
+  }
+}
+
+
+
+/**
+ * @brief  Water uptake by the crop
+ *
+ *  In this function the potential transpiration calcuated from potential
+ *  evapotranspiration by soil cover fraction is reduced by water availability
+ *  in the soil accoridng to actaul water contents, root distribution and
+ *  root effectivity.
+ *
+ * @param vs_NumberOfLayers
+ * @param vs_LayerThickness
+ * @param vc_GroundwaterTable
+ * @param vw_GrossPrecipitation
+ *
+ * @author Claas Nendel
+ */
+void CropModule::fc_CropWaterUptake_step2(size_t vc_GroundwaterTable,
+                                    double vw_GrossPrecipitation,
+                                    double /*vc_CurrentTotalTemperatureSum*/,
+                                    double /*vc_TotalTemperatureSum*/) {
+  double layerThickness = soilColumn.vs_LayerThickness();
+  double vc_PotentialTranspirationDeficit = 0.0;  // [mm]
+  double vc_RemainingTotalRootEffectivity = 0.0;  // old WEFFREST [m]
+  double vc_TranspirationReduced = 0.0;      // old TDRED [mm]
+  double vc_CropWaterUptakeFromGroundwater = 0.0; // old GAUF [mm]
+  double vc_ActualTranspirationDeficit = 0.0;    // old TREST [mm]
+
+
+  // if the plant has matured, no transpiration occurs!
+  if (vc_DevelopmentalStage < vc_FinalDevelopmentalStage) {
+    // if ((vc_CurrentTotalTemperatureSum / vc_TotalTemperatureSum) < 1.0){
+
+    for (size_t i_Layer = 0; i_Layer < min(vc_RootingZone, vc_GroundwaterTable + 1); i_Layer++) {
+
+      vc_RemainingTotalRootEffectivity -= vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]*vc_Rootshare[i_Layer]; // [m m-3]
+
+      if (vc_RemainingTotalRootEffectivity <= 0.0) {
+        vc_RemainingTotalRootEffectivity = 0.00001;
+      }
+      double secondCropTranspiration = crop2 ? crop2->vc_Transpiration[i_Layer] : 0.0;
+      double scalingSoilVolume = crop2 ? 2.0: 1.0;
+      double totalTra = vc_Transpiration[i_Layer] + secondCropTranspiration;
+      if (((totalTra / 1000.0) / layerThickness) >
+          scalingSoilVolume*((soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].vs_PermanentWiltingPoint()))) { // double the volume of water
+        vc_PotentialTranspirationDeficit = (vc_Transpiration[i_Layer]/totalTra) * (((totalTra/ 1000.0) / layerThickness) -
+                                            scalingSoilVolume*(soilColumn[i_Layer].get_Vs_SoilMoisture_m3() -
+                                             soilColumn[i_Layer].vs_PermanentWiltingPoint())) * layerThickness *
+                                           1000.0; // [mm]
+        if (vc_PotentialTranspirationDeficit < 0.0) {
+          vc_PotentialTranspirationDeficit = 0.0;
+        }
+        if (vc_PotentialTranspirationDeficit > vc_Transpiration[i_Layer]) {
+          vc_PotentialTranspirationDeficit = vc_Transpiration[i_Layer]; //[mm]
+        }
+      } else {
+        vc_PotentialTranspirationDeficit = 0.0;
+      }
+      vc_TranspirationReduced = vc_Transpiration[i_Layer] * (1.0 - vc_TranspirationRedux[i_Layer]);
+
+      //! @todo Claas: How can we lower the groundwater table if crop water uptake is restricted in that layer?
+      vc_ActualTranspirationDeficit = max(vc_TranspirationReduced, vc_PotentialTranspirationDeficit); //[mm]
+      if (vc_ActualTranspirationDeficit > 0.0) {
+        if (i_Layer < min(vc_RootingZone, vc_GroundwaterTable + 1)) {
+          for (size_t i_Layer2 = i_Layer + 1; i_Layer2 < min(vc_RootingZone, vc_GroundwaterTable + 1); i_Layer2++) {
+            vc_Transpiration[i_Layer2] += vc_ActualTranspirationDeficit *
+                                          (vc_RootEffectivity[i_Layer2] * vc_RootDensity[i_Layer2] * vc_Rootshare[i_Layer2]/
+                                           vc_RemainingTotalRootEffectivity);
+          }
+        }
+      }
+      vc_Transpiration[i_Layer] = vc_Transpiration[i_Layer] - vc_ActualTranspirationDeficit;
+      if (vc_Transpiration[i_Layer] < 0.0) {
+        vc_Transpiration[i_Layer] = 0.0;
+      }
+      vc_ActualTranspiration += vc_Transpiration[i_Layer];
+      if (i_Layer == vc_GroundwaterTable) {
+        vc_CropWaterUptakeFromGroundwater = (vc_Transpiration[i_Layer] / 1000.0) / layerThickness; //[m3 m-3]
+      }
+    }
+    if (vc_PotentialTranspiration > 0) { vc_TranspirationDeficit = vc_ActualTranspiration / vc_PotentialTranspiration; }
+    else { vc_TranspirationDeficit = 1.0; }
+
+    int vm_GroundwaterDistance = (int) vc_GroundwaterTable - (int) vc_RootingDepth;
+    // std::cout << "vm_GroundwaterDistance: " << vm_GroundwaterDistance << std::endl;
+    if (vm_GroundwaterDistance <= 1) vc_TranspirationDeficit = 1.0;
+    if (!pc_WaterDeficitResponseOn) vc_TranspirationDeficit = 1.0;
+  }
+}
+
+
 
 /**
  * @brief Nitrogen uptake by the crop
