@@ -171,10 +171,6 @@ public:
                                         double vw_WindSpeedHeight,
                                         double vw_AtmosphericCO2Concentration);
 
-  void fc_CropWaterUptake(size_t vm_GroundwaterTable,
-                          double vw_GrossPrecipitation,
-                          double vc_CurrentTotalTemperatureSum,
-                          double vc_TotalTemperatureSum);
 
   void fc_CropWaterUptake_step1(size_t vm_GroundwaterTable,
                         double vw_GrossPrecipitation,
@@ -257,6 +253,8 @@ public:
   double get_HeatStressRedux() const;
 
   double get_PotentialTranspiration() const;
+
+  double get_RemainingTotalRootEffectivity() const;
 
   double get_ActualTranspiration() const;
 
@@ -625,6 +623,7 @@ private:
   double vc_ReferenceEvapotranspiration{0.0};
   double vc_RelativeTotalDevelopment{0.0};
   double vc_RemainingEvapotranspiration{0.0};
+  double vc_RemainingTotalRootEffectivity{0.0};
   double vc_ReserveAssimilatePool{0.0};        //! old ASPOO
   double pc_ResidueNRatio{};
   double pc_RespiratoryStress{};
@@ -668,6 +667,7 @@ private:
   double vc_TotalNInput{0.0};
   double vc_TotalNUptake{0.0};      //! old SUMPE
   double vc_TotalRespired{0.0};
+  double vc_TotalRootEffectivity{0.0};
   double vc_Respiration{0.0};
   double vc_SumTotalNUptake{0.0};  //! summation of all calculated NUptake; needed for sensitivity analysis
   double vc_TotalRootLength{0.0};            //! old WULAEN
