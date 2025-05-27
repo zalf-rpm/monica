@@ -33,6 +33,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <list>
 #include <iostream>
 #include <assert.h>
+#include <kj/string.h>
+#include <kj/map.h>
+#include <kj/vector.h>
 
 #include "model/monica/monica_state.capnp.h"
 
@@ -231,8 +234,8 @@ public:
              const Soil::SoilPMs &soilParams);//,
              //double pm_CriticalMoistureDepth);
 
-  SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule *cropModule = nullptr)
-      : cropModule(cropModule) { deserialize(reader); }
+  SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader)
+  { deserialize(reader); }
 
   void deserialize(mas::schema::model::monica::SoilColumnState::Reader reader);
 
@@ -265,7 +268,7 @@ public:
 
   void deleteAOMPool();
 
-  inline size_t vs_NumberOfLayers() const { return size(); }
+  size_t vs_NumberOfLayers() const { return size(); }
 
   void applyTillage(double depth);
 
@@ -286,10 +289,6 @@ public:
 
   size_t getLayerNumberForDepth(double depth) const;
 
-  void putCrop(CropModule *cm) { cropModule = cm; }
-
-  void removeCrop() { cropModule = nullptr; }
-
   double sumSoilTemperature(int layers) const;
 
   double vs_SurfaceWaterStorage{0.0}; //!< Content of above-ground water storage [mm]
@@ -302,6 +301,9 @@ public:
 
   void clearTopDressingParams() { _vf_TopDressing = 0.0, _vf_TopDressingDelay = 0; }
 
+  kj::Vector<CropModule*> otherCropModules(kj::StringPtr meId) const;
+  kj::HashMap<kj::String, kj::Own<CropModule>> id2cropModules;
+  kj::String firstSownCropId;
 private:
   int calculateNumberOfOrganicLayers();
 
@@ -312,7 +314,7 @@ private:
   MineralFertilizerParameters _vf_TopDressingPartition;
   int _vf_TopDressingDelay{0};
 
-  CropModule *cropModule{nullptr};
+  //CropModule *cropModule{nullptr};
 
   struct DelayedNMinApplicationParams {
     void deserialize(mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader);
@@ -332,6 +334,8 @@ private:
 
   //double pm_CriticalMoistureDepth{0};
 };
+
+KJ_DECLARE_NON_POLYMORPHIC(CropModule)
 
 } // namespace monica
 

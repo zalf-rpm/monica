@@ -52,7 +52,8 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-CropModule::CropModule(SoilColumn &sc,
+CropModule::CropModule(kj::StringPtr id,
+  SoilColumn &sc,
                        const CropParameters &cps,
                        CropResidueParameters rps,
                        bool isWinterCrop,
@@ -63,7 +64,7 @@ CropModule::CropModule(SoilColumn &sc,
                        std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                        std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
                        Intercropping &ic)
-    : _intercropping(ic), _frostKillOn(simPs.pc_FrostKillOn), soilColumn(sc), cropPs(cropPs),
+    : _id(kj::str(id)), _intercropping(ic), _frostKillOn(simPs.pc_FrostKillOn), soilColumn(sc), cropPs(cropPs),
       speciesPs(cps.speciesParams), cultivarPs(cps.cultivarParams), residuePs(kj::mv(rps)), _isWinterCrop(isWinterCrop),
       _bareSoilKcFactor(stps.bareSoilKcFactor), vs_Latitude(stps.vs_Latitude),
       pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan),
@@ -219,14 +220,14 @@ CropModule::CropModule(SoilColumn &sc,
   if (vs_ImpenetrableLayerDepth > 0) vc_MaxRootingDepth = min(vc_MaxRootingDepth, vs_ImpenetrableLayerDepth);
 }
 
-CropModule::CropModule(SoilColumn &sc,
+CropModule::CropModule(kj::StringPtr id, SoilColumn &sc,
                        const CropModuleParameters &cropPs,
                        std::function<void(std::string)> fireEvent,
                        std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                        std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
                        mas::schema::model::monica::CropModuleState::Reader reader,
                        Intercropping &ic)
-    : _intercropping(ic), soilColumn(sc), cropPs(cropPs), _fireEvent(kj::mv(fireEvent)), _addOrganicMatter(
+    : _id(kj::str(id)), _intercropping(ic), soilColumn(sc), cropPs(cropPs), _fireEvent(kj::mv(fireEvent)), _addOrganicMatter(
     kj::mv(addOrganicMatter)), _getSnowDepthAndCalcTempUnderSnow(kj::mv(getSnowDepthAndCalcTempUnderSnow)) {
   deserialize(reader);
 }
@@ -3394,6 +3395,8 @@ void CropModule::fc_CropWaterUptake_step1(size_t vc_GroundwaterTable,
                                     double vw_GrossPrecipitation,
                                     double /*vc_CurrentTotalTemperatureSum*/,
                                     double /*vc_TotalTemperatureSum*/) {
+  auto crop2 = soilColumn.otherCropModules(_id)[0];
+
   size_t nols = soilColumn.vs_NumberOfLayers();
   double layerThickness = soilColumn.vs_LayerThickness();
   vc_PotentialTranspiration = 0.0;        // old TRAMAX [mm]
@@ -3567,6 +3570,8 @@ void CropModule::fc_CropWaterUptake_step2(size_t vc_GroundwaterTable,
                                     double vw_GrossPrecipitation,
                                     double /*vc_CurrentTotalTemperatureSum*/,
                                     double /*vc_TotalTemperatureSum*/) {
+  auto crop2 = soilColumn.otherCropModules(_id)[0];
+
   double layerThickness = soilColumn.vs_LayerThickness();
   double vc_PotentialTranspirationDeficit = 0.0;  // [mm]
   double vc_TranspirationReduced = 0.0;      // old TDRED [mm]

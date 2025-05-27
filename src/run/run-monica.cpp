@@ -862,11 +862,19 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica->cropGrowth() && monica->cropGrowth()->isDying()) {
-      monica->incorporateCurrentCrop();
+    //if (monica->cropModule() && monica->cropModule()->isDying()) {
+    //  monica->incorporateCurrentCrop();
+    //}
+    for (const auto &e : monica->soilColumn().id2cropModules) {
+      if (e.value->isDying()) monica->incorporateCurrentCrop(*e.value.get());
     }
-    if (isSyncIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying()) {
-      monica2->incorporateCurrentCrop();
+    //if (isSyncIC && monica2->cropModule() && monica2->cropModule()->isDying()) {
+    //  monica2->incorporateCurrentCrop();
+    //}
+    if (isSyncIC) {
+      for (const auto &e : monica2->soilColumn().id2cropModules) {
+        if (e.value->isDying()) monica2->incorporateCurrentCrop(*e.value.get());
+      }
     }
 
     //try to apply dynamic worksteps marked to run before everything else that day
@@ -893,8 +901,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
       // calculate phRedux if set to automatic
       if (monica2->cropParameters().pc_intercropping_autoPhRedux &&
           monica2->currentEvents().find("Sowing") != monica2->currentEvents().end() &&
-          monica->cropGrowth() != nullptr) {
-        auto cg1 = monica->cropGrowth();
+          monica->cropModule() != nullptr) {
+        auto cg1 = monica->cropModule();
         // crop 1 (wheat) has not yet reached anthesis, use first part of curve
         auto anthesisStage = kj::get<1>(cg1->anthesisBetweenStages());
         auto dvsPhr = monica2->cropParameters().pc_intercropping_dvs_phr;
@@ -916,9 +924,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
     //monica main stepping method
     if (isSyncIC) {
-      if (monica2->cropGrowth()) {
-        monica->setOtherCropHeightAndLAIt(monica2->cropGrowth()->get_CropHeight(),
-                                          monica2->cropGrowth()->get_LeafAreaIndex());
+      if (monica2->cropModule()) {
+        monica->setOtherCropHeightAndLAIt(monica2->cropModule()->get_CropHeight(),
+                                          monica2->cropModule()->get_LeafAreaIndex());
       } else {
         monica->setOtherCropHeightAndLAIt(-1, -1);
       }
@@ -926,9 +934,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     debug() << "MONICA 1: ";
     monica->step();
     if (isSyncIC) {
-      if (monica->cropGrowth()) {
-        monica2->setOtherCropHeightAndLAIt(monica->cropGrowth()->get_CropHeight(),
-                                           monica->cropGrowth()->get_LeafAreaIndex());
+      if (monica->cropModule()) {
+        monica2->setOtherCropHeightAndLAIt(monica->cropModule()->get_CropHeight(),
+                                           monica->cropModule()->get_LeafAreaIndex());
       } else {
         monica2->setOtherCropHeightAndLAIt(-1, -1);
       }

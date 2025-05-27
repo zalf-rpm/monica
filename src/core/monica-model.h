@@ -31,6 +31,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <kj/memory.h>
 #include <kj/async-io.h>
+#include <kj/map.h>
+
 #include "model/monica/monica_state.capnp.h"
 #include "climate.capnp.h"
 
@@ -74,14 +76,15 @@ public:
   double GroundwaterDepthForDate(double maxGroundwaterDepth, double minGroundwaterDepth, int minGroundwaterDepthMonth,
     double julianday, bool leapYear);
 
-  void seedCrop(mas::schema::model::monica::CropSpec::Reader reader);
-  void seedCrop(Crop* crop);
+  void seedCrop(mas::schema::model::monica::CropSpec::Reader reader, kj::StringPtr id);
+  void seedCrop(Crop* crop, kj::StringPtr id);
 
-  bool isCropPlanted() const { return _currentCropModule; }
+  bool isCropPlanted() const { return soilColumn().id2cropModules.size() > 0; }
 
-  void harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
+  void harvestCurrentCrop(bool exported, const Harvest::Spec& spec, kj::StringPtr id,
+    Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
 
-  void incorporateCurrentCrop();
+  void incorporateCurrentCrop(const CropModule& cropModule);
 
   void applyMineralFertiliser(MineralFertilizerParameters partition, double amount);
 
@@ -151,16 +154,10 @@ public:
   const SoilColumn& soilColumn() const { return *_soilColumn; }
   SoilColumn& soilColumnNC() { return *_soilColumn; }
 
-  CropModule* cropGrowth() { return _currentCropModule.get(); }
-  const CropModule* cropGrowth() const { return _currentCropModule.get(); }
+  CropModule* cropModule();
+  const CropModule* cropModule() const;
 
   double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
-
-  int daysWithCrop() const { return p_daysWithCrop; }
-  double getAccumulatedNStress() const { return p_accuNStress; }
-  double getAccumulatedWaterStress() const { return p_accuWaterStress; }
-  double getAccumulatedHeatStress() const { return p_accuHeatStress; }
-  double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
 
   const SiteParameters& siteParameters() const { return _sitePs; }
   const EnvironmentParameters& environmentParameters() const { return _envPs; }
@@ -205,7 +202,6 @@ private:
   kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
   kj::Own<SoilOrganic> _soilOrganic; //!< organic code
   kj::Own<SoilTransport> _soilTransport; //!< transport code
-  kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 
   //! store applied fertiliser during one production process
   double _sumFertiliser{ 0.0 }; //mineral N
@@ -230,13 +226,7 @@ private:
   std::set<std::string> _currentEvents;
   std::set<std::string> _previousDaysEvents;
 
-  bool _clearCropUponNextDay{ false };
-
-  int p_daysWithCrop{ 0 };
-  double p_accuNStress{ 0.0 };
-  double p_accuWaterStress{ 0.0 };
-  double p_accuHeatStress{ 0.0 };
-  double p_accuOxygenStress{ 0.0 };
+  kj::Vector<kj::String> _clearCropWithIdUponNextDay;
 
   double vw_AtmosphericCO2Concentration{ 0.0 };
   double vw_AtmosphericO3Concentration{ 0.0 };

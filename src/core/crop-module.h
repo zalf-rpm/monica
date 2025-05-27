@@ -55,7 +55,8 @@ namespace monica {
 */
 class CropModule {
 public:
-  CropModule(SoilColumn &soilColumn,
+  CropModule(kj::StringPtr id,
+             SoilColumn &soilColumn,
              const CropParameters &cropParams,
              CropResidueParameters rps,
              bool isWinterCrop,
@@ -67,7 +68,8 @@ public:
              std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
              Intercropping &ic);
 
-  CropModule(SoilColumn &sc,
+  CropModule(kj::StringPtr id,
+             SoilColumn &sc,
              const CropModuleParameters &cropPs,
              std::function<void(std::string)> fireEvent,
              std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
@@ -386,12 +388,12 @@ public:
  * @brief Getter for total biomass.
  * @return total biomass
  */
-  inline double totalBiomass() const { return vc_TotalBiomass; }
+  double totalBiomass() const { return vc_TotalBiomass; }
 
   /*
    * Returns state of plant
    */
-  inline bool isDying() const { return this->dyingOut; }
+  bool isDying() const { return this->dyingOut; }
 
   void setPerennialCropParameters(const CropParameters &cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
 
@@ -459,8 +461,10 @@ public:
 
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
+
+  kj::StringPtr id() const { return _id; }
 private:
-  CropModule* crop2{nullptr};
+  kj::String _id;
   Intercropping &_intercropping;
 
   bool _frostKillOn{true};

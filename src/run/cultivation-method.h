@@ -158,6 +158,7 @@ private:
   kj::Own<Crop> _cropToPlant;
   Crop *_crop{nullptr};
   int _plantDensity{-1}; //[plants m-2]
+  std::string _id;
 };
 
 class DLL_API AutomaticSowing : public Sowing {
@@ -288,6 +289,7 @@ private:
   bool _exported{true};
   Spec _spec;
   OptCarbonManagementData _optCarbMgmtData;
+  std::string _id;
 };
 
 class DLL_API AutomaticHarvest : public Harvest {

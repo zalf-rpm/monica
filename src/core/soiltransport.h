@@ -18,6 +18,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #pragma once
 
 #include <vector>
+#include <kj/string.h>
+#include <kj/map.h>
 #include "monica-parameters.h"
 
 namespace monica {
@@ -41,8 +43,8 @@ public:
                 double p_timeStep,
                 double pc_MinimumAvailableN);
 
-  SoilTransport(SoilColumn& soilColumn, mas::schema::model::monica::SoilTransportModuleState::Reader reader, CropModule* cropModule = nullptr)
-    : soilColumn(soilColumn), cropModule(cropModule) { deserialize(reader); }
+  SoilTransport(SoilColumn& soilColumn, mas::schema::model::monica::SoilTransportModuleState::Reader reader);
+
   void deserialize(mas::schema::model::monica::SoilTransportModuleState::Reader reader);
   void serialize(mas::schema::model::monica::SoilTransportModuleState::Builder builder) const;
 
@@ -56,10 +58,6 @@ public:
 
   //! calcuates N transport in soil
   void fq_NTransport (double vs_LeachingDepth, double vq_TimeStep);
-
-  void putCrop(CropModule* cm) { cropModule = cm; }
-
-  void removeCrop() { cropModule = nullptr; }
 
   double get_SoilNO3(int i_Layer) const;
 
@@ -92,8 +90,6 @@ private:
   std::vector<double> vq_PercolationRate; //!< Soil water flux from above [mm d-1]
 
   double pc_MinimumAvailableN{ 0.0 }; //! kg m-2
-
-  CropModule* cropModule{nullptr};
 };
 
 } // namespace monica

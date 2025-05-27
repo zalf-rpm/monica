@@ -47,7 +47,7 @@ class SoilMoisture
 public:
   SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
 
-  SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule = nullptr);
+  SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
   void deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
   void serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const;
 
@@ -112,9 +112,6 @@ void step(double vs_DepthGroundwaterTable,
   double get_EReducer_1(int i_Layer,
                         double vm_PercentageSoilCoverage,
                         double vm_PotentialEvapotranspiration);
-
-  void putCrop(monica::CropModule* cm) { cropModule = cm; }
-  void removeCrop() { cropModule = nullptr; }
 
   void fm_Infiltration(double vm_WaterToInfiltrate);
 
@@ -237,8 +234,7 @@ private:
 
   kj::Own<SnowComponent> snowComponent;
   kj::Own<FrostComponent> frostComponent;
-  CropModule* cropModule{nullptr};
-}; 
+};
 
 } // namespace monica
 

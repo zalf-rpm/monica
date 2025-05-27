@@ -348,7 +348,7 @@ double SoilTemperature::calcSoilSurfaceTemperature(
   // corrected for very low radiation in winter
   globrad = max(8.33, globrad);
 
-  double soilCoverage = _monica.cropGrowth() ? _monica.cropGrowth()->get_SoilCoverage() : 0.0;
+  double soilCoverage = _monica.cropModule() ? _monica.cropModule()->get_SoilCoverage() : 0.0;
   double shadingCoefficient = 0.1 + ((soilCoverage * _dampingFactor) + ((1 - soilCoverage) * (1 - _dampingFactor)));
 
   // Soil surface temperature caluclation following Williams 1984

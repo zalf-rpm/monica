@@ -207,6 +207,7 @@ Errors Sowing::merge(json11::Json j) {
   _crop = _cropToPlant.get();
   _crop->setSeedDate(date());
   set_int_value(_plantDensity, j, "PlantDensity");
+  set_string_value(_id, j, "id");
   if (_plantDensity > 0)
     _crop->cropParameters().speciesParams.pc_PlantDensity = _plantDensity;
   return res;
@@ -216,6 +217,7 @@ json11::Json Sowing::to_json(bool includeFullCropParameters) const {
   auto o = json11::Json::object
       {{"type", type()},
        {"date", date().toIsoDateString()},
+        { "id", _id },
        {"crop", _crop->to_json(includeFullCropParameters)}};
 
   if (_plantDensity > 0)
@@ -228,7 +230,7 @@ bool Sowing::apply(MonicaModel *model) {
   Workstep::apply(model);
 
   debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
-  model->seedCrop(_cropToPlant.get());
+  model->seedCrop(_cropToPlant.get(), _id);
   model->addEvent("Sowing");
 
   return true;
@@ -463,6 +465,7 @@ Errors Harvest::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
 
   //set_string_value(_method, j, "method");
+  set_string_value(_id, j, "id");
   set_double_value(_percentage, j, "percentage");
   set_bool_value(_exported, j, "exported");
   set_bool_value(_optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
@@ -494,6 +497,7 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const {
   auto jo = json11::Json::object
       {{"type",                         type()},
        {"date",                         date().toIsoDateString()},
+        {"id", _id },
        {"percentage",                   _percentage},
        {"exported",                     _exported},
        {"opt-carbon-conservation",      _optCarbMgmtData.optCarbonConservation},
@@ -517,8 +521,8 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const {
 bool Harvest::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  if (model->cropGrowth()) {
-    model->harvestCurrentCrop(_exported, _spec, _optCarbMgmtData);
+  if (model->cropModule()) {
+    model->harvestCurrentCrop(_exported, _spec, kj::str(_id), _optCarbMgmtData);
     if (_sowing) debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
     model->addEvent("Harvest");
   }
@@ -584,12 +588,12 @@ bool AutomaticHarvest::apply(MonicaModel *model) {
 bool AutomaticHarvest::condition(MonicaModel *model) {
   bool conditionMet = false;
 
-  auto cg = model->cropGrowth();
+  auto cg = model->cropModule();
   //got a crop and not yet harvested
   if (cg && !_cropHarvested) conditionMet =
         model->currentStepDate() >= _absLatestDate  //harvest after or at latest date
         || (_harvestTime == "maturity"
-            && model->cropGrowth()->maturityReached() //has maturity been reached
+            && model->cropModule()->maturityReached() //has maturity been reached
             && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
             && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
@@ -697,11 +701,11 @@ json11::Json Cutting::to_json() const {
 bool Cutting::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  assert(model->cropGrowth());
-  debug() << "Cutting crop: " << model->cropGrowth()->speciesParameters().pc_SpeciesId << " at: " << date().toString()
+  assert(model->cropModule());
+  debug() << "Cutting crop: " << model->cropModule()->speciesParameters().pc_SpeciesId << " at: " << date().toString()
           << endl;
 
-  model->cropGrowth()->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
+  model->cropModule()->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
   model->addEvent("Cutting");
 
   return true;
@@ -791,7 +795,7 @@ json11::Json NDemandFertilization::to_json() const {
 bool NDemandFertilization::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  double rd = model->cropGrowth()->get_RootingDepth_m();
+  double rd = model->cropModule()->get_RootingDepth_m();
   debug() << toString() << endl;
   double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth,
                                                                                 _Ndemand);
@@ -807,7 +811,7 @@ bool NDemandFertilization::apply(MonicaModel *model) {
 bool NDemandFertilization::condition(MonicaModel *model) {
   bool conditionMet = false;
 
-  auto cg = model->cropGrowth();
+  auto cg = model->cropModule();
   if (cg && !_appliedFertilizer) {
     auto currStage = cg->get_DevelopmentalStage() + 1;
     conditionMet =

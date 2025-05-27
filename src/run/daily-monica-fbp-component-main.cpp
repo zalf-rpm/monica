@@ -184,7 +184,10 @@ public:
 
       // test if monica's crop has been dying in previous step
       // if yes, it will be incorporated into soil
-      if (monica->cropGrowth() && monica->cropGrowth()->isDying()) monica->incorporateCurrentCrop();
+      for (const auto &e : monica->soilColumn().id2cropModules) {
+        if (e.value->isDying()) monica->incorporateCurrentCrop(*e.value.get());
+      }
+      //if (monica->cropModule() && monica->cropModule()->isDying()) monica->incorporateCurrentCrop();
 
       //monica main stepping method
       monica->step();
@@ -397,7 +400,7 @@ public:
                   auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
                   KJ_LOG(INFO, "received sowing event for crop", speciesName, "/", cultivarName, " at",
                          eventDate.toIsoDateString());
-                  monica->seedCrop(cropParams);
+                  monica->seedCrop(cropParams, "__id__");
                   monica->addEvent("Sowing");
                 }
                 break;
@@ -407,7 +410,7 @@ public:
                 if (monica->isCropPlanted()) {
                   KJ_LOG(INFO, "received harvest event at", eventDate.toIsoDateString());
                   Harvest::Spec spec;
-                  monica->harvestCurrentCrop(hp.getExported(), spec);
+                  monica->harvestCurrentCrop(hp.getExported(), spec, "__id__");
                   monica->addEvent("Harvest");
                 }
                 break;
@@ -483,7 +486,7 @@ public:
                       organId2exportFraction[organId] = cs.getExportPercentage() / 100.0;
                     }
                   }
-                  monica->cropGrowth()->applyCutting(organId2cuttingSpec, organId2exportFraction,
+                  monica->cropModule()->applyCutting(organId2cuttingSpec, organId2exportFraction,
                     c.getCutMaxAssimilationRatePercentage() / 100.0);
                   monica->addEvent("Cutting");
                 }

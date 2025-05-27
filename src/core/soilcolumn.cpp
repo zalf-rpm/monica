@@ -507,67 +507,69 @@ void SoilColumn::deleteAOMPool() {
  */
 std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrrigationParameters &aips) {
   //is actually only called from cropStep and thus there should always be a crop
-  assert(cropModule != nullptr);
+  KJ_IF_MAYBE(cm, id2cropModules.find(firstSownCropId)) {
+    auto cropModule = cm->get();
 
-  double s = cropModule->get_HeatSumIrrigationStart();
-  double e = cropModule->get_HeatSumIrrigationEnd();
-  double cts = cropModule->get_CurrentTemperatureSum();
-  if (cts < s || cts > e || aips.threshold < 0.0) return std::make_pair(false, 0);
+    double s = cropModule->get_HeatSumIrrigationStart();
+    double e = cropModule->get_HeatSumIrrigationEnd();
+    double cts = cropModule->get_CurrentTemperatureSum();
+    if (cts < s || cts > e || aips.threshold < 0.0) return std::make_pair(false, 0);
 
-  double actPAW = 0.0; // actualPlantAvailableWater
-  double maxPAW = 0.0; // maxPlantAvailableWater
-  double layerDepthM = 0;
-  for (int i = 0; i < size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
-    const auto& li = at(i);
-    auto smi = li.get_Vs_SoilMoisture_m3();
-    auto fci = li.vs_FieldCapacity();
-    auto pwpi = li.vs_PermanentWiltingPoint();
-    auto lti = li.vs_LayerThickness;
+    double actPAW = 0.0; // actualPlantAvailableWater
+    double maxPAW = 0.0; // maxPlantAvailableWater
+    double layerDepthM = 0;
+    for (int i = 0; i < size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
+      const auto& li = at(i);
+      auto smi = li.get_Vs_SoilMoisture_m3();
+      auto fci = li.vs_FieldCapacity();
+      auto pwpi = li.vs_PermanentWiltingPoint();
+      auto lti = li.vs_LayerThickness;
 
-    actPAW += (smi - pwpi) * lti * 1000.0; // [mm]
-    maxPAW += (fci - pwpi) * lti * 1000.0; // [mm]
+      actPAW += (smi - pwpi) * lti * 1000.0; // [mm]
+      maxPAW += (fci - pwpi) * lti * 1000.0; // [mm]
 
-    layerDepthM += lti;
-  }
-  if (Tools::flt_equal_zero(maxPAW)) return std::make_pair(false, 0);
-  const double fractPAW = actPAW / maxPAW;
-  if (fractPAW <= aips.threshold) {
-    double addedIrrigationWater = 0;
-    if (aips.amount > 0.0) {
-      applyIrrigation(aips.amount, aips.nitrateConcentration);
-      addedIrrigationWater = aips.amount;
+      layerDepthM += lti;
     }
-    else if(aips.percentNFC > 0.0) {
-      layerDepthM = 0;
-      for (int i = 0; i < size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
-        auto& li = at(i);
-        auto smi = li.get_Vs_SoilMoisture_m3();
-        auto fci = li.vs_FieldCapacity();
-        auto pwpi = li.vs_PermanentWiltingPoint();
-        auto lti = li.vs_LayerThickness;
-
-        double percentNFCi = (fci - pwpi) * aips.percentNFC / 100.0;
-        double pawi = smi - pwpi;
-        double addedIrrigationWaterAtLayer = std::max(0.0, percentNFCi - pawi);
-        addedIrrigationWater += addedIrrigationWaterAtLayer;
-        li.set_Vs_SoilMoisture_m3(percentNFCi + pwpi);
-        double nitrateAddedViaIrrigation = // -> //[kg m-3]
-            aips.nitrateConcentration * // [mg dm-3]
-            addedIrrigationWaterAtLayer / //[dm3 m-2]
-            li.vs_LayerThickness / 1000000.0; // [m]
-        li.vs_SoilNO3 += nitrateAddedViaIrrigation;
-
-        layerDepthM += lti;
+    if (Tools::flt_equal_zero(maxPAW)) return std::make_pair(false, 0);
+    const double fractPAW = actPAW / maxPAW;
+    if (fractPAW <= aips.threshold) {
+      double addedIrrigationWater = 0;
+      if (aips.amount > 0.0) {
+        applyIrrigation(aips.amount, aips.nitrateConcentration);
+        addedIrrigationWater = aips.amount;
       }
-    } else {
-      return make_pair(false, 0);
+      else if(aips.percentNFC > 0.0) {
+        layerDepthM = 0;
+        for (int i = 0; i < size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
+          auto& li = at(i);
+          auto smi = li.get_Vs_SoilMoisture_m3();
+          auto fci = li.vs_FieldCapacity();
+          auto pwpi = li.vs_PermanentWiltingPoint();
+          auto lti = li.vs_LayerThickness;
+
+          double percentNFCi = (fci - pwpi) * aips.percentNFC / 100.0;
+          double pawi = smi - pwpi;
+          double addedIrrigationWaterAtLayer = std::max(0.0, percentNFCi - pawi);
+          addedIrrigationWater += addedIrrigationWaterAtLayer;
+          li.set_Vs_SoilMoisture_m3(percentNFCi + pwpi);
+          double nitrateAddedViaIrrigation = // -> //[kg m-3]
+              aips.nitrateConcentration * // [mg dm-3]
+              addedIrrigationWaterAtLayer / //[dm3 m-2]
+              li.vs_LayerThickness / 1000000.0; // [m]
+          li.vs_SoilNO3 += nitrateAddedViaIrrigation;
+
+          layerDepthM += lti;
+        }
+      } else {
+        return make_pair(false, 0);
+      }
+
+      debug() << "applying automatic irrigation treshold: " << aips.threshold
+              << " amount: " << aips.amount
+              << " N concentration: " << aips.nitrateConcentration << endl;
+
+      return make_pair(true, addedIrrigationWater);
     }
-
-    debug() << "applying automatic irrigation treshold: " << aips.threshold
-            << " amount: " << aips.amount
-            << " N concentration: " << aips.nitrateConcentration << endl;
-
-    return make_pair(true, addedIrrigationWater);
   }
 
   return make_pair(false, 0);
@@ -775,7 +777,13 @@ double SoilColumn::sumSoilTemperature(int layers) const {
   return accu;
 }
 
-//------------------------------------------------------------------------------
+kj::Vector<CropModule*> SoilColumn::otherCropModules(kj::StringPtr meId) const {
+  kj::Vector<CropModule*> cms;
+  for (const auto &e : id2cropModules) {
+    if (e.key != meId) cms.add(e.value);
+  }
+  return kj::mv(cms);
+}
 
 void SoilColumn::DelayedNMinApplicationParams::deserialize(
     mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {

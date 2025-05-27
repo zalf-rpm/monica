@@ -41,9 +41,8 @@ class SoilOrganic
 public:
   SoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters  params);
 
-  SoilOrganic(SoilColumn& sc, mas::schema::model::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
-    : soilColumn(sc)
-    , cropModule(cropModule) {
+  SoilOrganic(SoilColumn& sc, mas::schema::model::monica::SoilOrganicModuleState::Reader reader)
+    : soilColumn(sc) {
     deserialize(reader);
   }
 
@@ -72,9 +71,6 @@ public:
    * @param incorporation TRUE/FALSE
    */
   void setIncorporation(bool incorp) { this->incorporation = incorp; }
-  void putCrop(CropModule* cm) { cropModule = cm; }
-  void removeCrop() { cropModule = nullptr; }
-
   double get_SoilOrganicC(int i_Layer) const;
   double get_AOM_FastSum(int i_Layer) const;
   double get_AOM_SlowSum(int i_Layer) const;

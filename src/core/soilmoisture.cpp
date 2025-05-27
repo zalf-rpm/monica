@@ -106,13 +106,13 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
   //  }
 }
 
-SoilMoisture::SoilMoisture(MonicaModel& mm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule)
+SoilMoisture::SoilMoisture(MonicaModel& mm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader)
   : soilColumn(mm.soilColumnNC())
   , siteParameters(mm.siteParameters())
   , monica(mm)
   , envPs(mm.environmentParameters())
   , cropPs(mm.cropParameters())
-  , cropModule(cropModule) {
+{
   deserialize(reader);
 }
 
@@ -286,14 +286,14 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
 
-  if (monica.cropGrowth()) {
+  if (monica.cropModule()) {
     vc_CropPlanted = true;
-    vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
-    vc_KcFactor = monica.cropGrowth()->get_KcFactor();
-    vc_CropHeight = monica.cropGrowth()->get_CropHeight();
-    vc_DevelopmentalStage = (int)monica.cropGrowth()->get_DevelopmentalStage();
+    vc_PercentageSoilCoverage = monica.cropModule()->get_SoilCoverage();
+    vc_KcFactor = monica.cropModule()->get_KcFactor();
+    vc_CropHeight = monica.cropModule()->get_CropHeight();
+    vc_DevelopmentalStage = (int)monica.cropModule()->get_DevelopmentalStage();
     if (vc_DevelopmentalStage > 0) {
-      vc_NetPrecipitation = monica.cropGrowth()->get_NetPrecipitation();
+      vc_NetPrecipitation = monica.cropModule()->get_NetPrecipitation();
     } else {
       vc_NetPrecipitation = vw_Precipitation;
     }
@@ -528,7 +528,11 @@ double SoilMoisture::get_PercolationRate(int layer) const {
  *
  */
 void SoilMoisture::fm_CapillaryRise() {
-  auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
+  size_t vc_RootingDepth = 0.0;
+  KJ_IF_MAYBE(cm, soilColumn.id2cropModules.find(soilColumn.firstSownCropId)) {
+    vc_RootingDepth = (*cm)->get_RootingDepth();
+  }
+  //auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
   auto vm_GroundwaterDistance = max(size_t(1), vm_GroundwaterTableLayer - vc_RootingDepth);// []
 
   if (double(vm_GroundwaterDistance) * vm_LayerThickness[0] <= 2.70) { // [m]
@@ -855,15 +859,15 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
     // Reference evapotranspiration is only grabbed here for consistent
     // output in monica.cpp
     if (vw_ReferenceEvapotranspiration < 0.0) {
-      vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
+      vm_ReferenceEvapotranspiration = monica.cropModule()->get_ReferenceEvapotranspiration();
     } else {
       vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
-    vm_PotentialEvapotranspiration = monica.cropGrowth()->get_RemainingEvapotranspiration();
-    vc_EvaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
+    vm_PotentialEvapotranspiration = monica.cropModule()->get_RemainingEvapotranspiration();
+    vc_EvaporatedFromIntercept = monica.cropModule()->get_EvaporatedFromIntercept();
 
   } else { // if no crop grows ETp is calculated from ET0 * kc
 
@@ -957,7 +961,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
           // Transpiration is derived from ET0; Soil coverage and Kc factors
           // already considered in crop part!
-          vm_Transpiration[i_Layer] = monica.cropGrowth()->get_Transpiration(i_Layer);
+          vm_Transpiration[i_Layer] = monica.cropModule()->get_Transpiration(i_Layer);
 
           //std::cout << setprecision(11) << "vm_Transpiration[i_Layer]: " << i_Layer << ", " << vm_Transpiration[i_Layer] << std::endl;
 
