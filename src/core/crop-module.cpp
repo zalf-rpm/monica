@@ -3384,18 +3384,14 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
  *  in the soil according to actual water contents, root distribution and
  *  root effectivity and the presence of the other crop's root. Potential transpiration is calculated for every layer.
  *
- * @param vs_NumberOfLayers
- * @param vs_LayerThickness
  * @param vc_GroundwaterTable
  * @param vw_GrossPrecipitation
  *
  * @author Claas Nendel
  */
 void CropModule::fc_CropWaterUptake_step1(size_t vc_GroundwaterTable,
-                                    double vw_GrossPrecipitation,
-                                    double /*vc_CurrentTotalTemperatureSum*/,
-                                    double /*vc_TotalTemperatureSum*/) {
-  auto crop2 = soilColumn.otherCropModules(_id)[0];
+                                    double vw_GrossPrecipitation) {
+  auto crop2 = soilColumn.id2cropModules.size() > 1 ? soilColumn.otherCropModules(_id)[0] : nullptr;
 
   size_t nols = soilColumn.vs_NumberOfLayers();
   double layerThickness = soilColumn.vs_LayerThickness();
@@ -3559,18 +3555,12 @@ void CropModule::fc_CropWaterUptake_step1(size_t vc_GroundwaterTable,
  *  in the soil accoridng to actaul water contents, root distribution and
  *  root effectivity.
  *
- * @param vs_NumberOfLayers
- * @param vs_LayerThickness
  * @param vc_GroundwaterTable
- * @param vw_GrossPrecipitation
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropWaterUptake_step2(size_t vc_GroundwaterTable,
-                                    double vw_GrossPrecipitation,
-                                    double /*vc_CurrentTotalTemperatureSum*/,
-                                    double /*vc_TotalTemperatureSum*/) {
-  auto crop2 = soilColumn.otherCropModules(_id)[0];
+void CropModule::fc_CropWaterUptake_step2(size_t vc_GroundwaterTable) {
+  auto crop2 = soilColumn.id2cropModules.size() > 1 ? soilColumn.otherCropModules(_id)[0] : nullptr;
 
   double layerThickness = soilColumn.vs_LayerThickness();
   double vc_PotentialTranspirationDeficit = 0.0;  // [mm]

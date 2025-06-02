@@ -301,7 +301,7 @@ public:
 
   void clearTopDressingParams() { _vf_TopDressing = 0.0, _vf_TopDressingDelay = 0; }
 
-  kj::Vector<CropModule*> otherCropModules(kj::StringPtr meId) const;
+  kj::Vector<CropModule*> otherCropModules(kj::StringPtr meId);
   kj::HashMap<kj::String, kj::Own<CropModule>> id2cropModules;
   kj::String firstSownCropId;
 private:

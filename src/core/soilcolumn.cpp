@@ -777,10 +777,10 @@ double SoilColumn::sumSoilTemperature(int layers) const {
   return accu;
 }
 
-kj::Vector<CropModule*> SoilColumn::otherCropModules(kj::StringPtr meId) const {
+kj::Vector<CropModule*> SoilColumn::otherCropModules(kj::StringPtr meId) {
   kj::Vector<CropModule*> cms;
-  for (const auto &e : id2cropModules) {
-    if (e.key != meId) cms.add(e.value);
+  for (auto &e : id2cropModules) {
+    if (e.key != meId) cms.add(e.value.get());
   }
   return kj::mv(cms);
 }

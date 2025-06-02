@@ -175,14 +175,9 @@ public:
 
 
   void fc_CropWaterUptake_step1(size_t vm_GroundwaterTable,
-                        double vw_GrossPrecipitation,
-                        double vc_CurrentTotalTemperatureSum,
-                        double vc_TotalTemperatureSum);
+                                double vw_GrossPrecipitation);
 
-  void fc_CropWaterUptake_step2(size_t vm_GroundwaterTable,
-                        double vw_GrossPrecipitation,
-                        double vc_CurrentTotalTemperatureSum,
-                        double vc_TotalTemperatureSum);
+  void fc_CropWaterUptake_step2(size_t vm_GroundwaterTable);
 
   void fc_CropNUptake(size_t vm_GroundwaterTable,
                       double /*vc_CurrentTotalTemperatureSum*/,
