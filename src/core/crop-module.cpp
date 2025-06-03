@@ -934,14 +934,9 @@ void CropModule::step(double vw_MeanAirTemperature,
 
 
     fc_CropWaterUptake_step1(soilColumn.vm_GroundwaterTableLayer,
-                       vw_GrossPrecipitation,
-                       vc_CurrentTotalTemperatureSum,
-                       vc_TotalTemperatureSum);
+                       vw_GrossPrecipitation);
 
-    fc_CropWaterUptake_step2(soilColumn.vm_GroundwaterTableLayer,
-                       vw_GrossPrecipitation,
-                       vc_CurrentTotalTemperatureSum,
-                       vc_TotalTemperatureSum);
+    fc_CropWaterUptake_step2(soilColumn.vm_GroundwaterTableLayer);
 
     fc_CropNUptake(soilColumn.vm_GroundwaterTableLayer,
                    vc_CurrentTotalTemperatureSum,
