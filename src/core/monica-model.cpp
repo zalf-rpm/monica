@@ -350,7 +350,8 @@ void MonicaModel::seedCrop(Crop *crop, kj::StringPtr id) {
 void
 MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, kj::StringPtr id,
   Harvest::OptCarbonManagementData optCarbMgmtData) {
-  KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(kj::str(id))) {
+  auto id_ = id.size() == 0 ? _soilColumn->firstSownCropId : id;
+  KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(kj::str(id_))) {
     auto cropModule = cm->get();
     // prepare to add root and crop residues to soilorganic (AOMs)
     // dead root biomass has already been added daily, so just living root biomass is left
@@ -483,7 +484,7 @@ MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, kj::St
     }
   }
 
-  _clearCropWithIdUponNextDay.add(kj::str(id));
+  _clearCropWithIdUponNextDay.add(kj::str(id_));
 }
 
 /**

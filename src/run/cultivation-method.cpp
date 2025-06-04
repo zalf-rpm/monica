@@ -208,6 +208,7 @@ Errors Sowing::merge(json11::Json j) {
   _crop->setSeedDate(date());
   set_int_value(_plantDensity, j, "PlantDensity");
   set_string_value(_id, j, "id");
+  if (_id.empty()) _id = _cropToPlant->id();
   if (_plantDensity > 0)
     _crop->cropParameters().speciesParams.pc_PlantDensity = _plantDensity;
   return res;
@@ -217,7 +218,7 @@ json11::Json Sowing::to_json(bool includeFullCropParameters) const {
   auto o = json11::Json::object
       {{"type", type()},
        {"date", date().toIsoDateString()},
-        { "id", _id },
+      { "id", _id },
        {"crop", _crop->to_json(includeFullCropParameters)}};
 
   if (_plantDensity > 0)

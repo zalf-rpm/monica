@@ -866,14 +866,14 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     //  monica->incorporateCurrentCrop();
     //}
     for (const auto &e : monica->soilColumn().id2cropModules) {
-      if (e.value->isDying()) monica->incorporateCurrentCrop(*e.value.get());
+      if (e.value->isDying()) monica->incorporateCurrentCrop(*e.value);
     }
     //if (isSyncIC && monica2->cropModule() && monica2->cropModule()->isDying()) {
     //  monica2->incorporateCurrentCrop();
     //}
     if (isSyncIC) {
       for (const auto &e : monica2->soilColumn().id2cropModules) {
-        if (e.value->isDying()) monica2->incorporateCurrentCrop(*e.value.get());
+        if (e.value->isDying()) monica2->incorporateCurrentCrop(*e.value);
       }
     }
 
