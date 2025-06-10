@@ -122,11 +122,12 @@ void SoilTransport::step() {
     //vq_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
     vq_SoilNO3[i] = soilColumn[i].vs_SoilNO3;
 
+    vc_NUptakeFromLayer[i] = 0;
     for (const auto& e : soilColumn.id2cropModules) {
       vc_NUptakeFromLayer[i] += e.value->get_NUptakeFromLayer(i);
     }
-    //vc_NUptakeFromLayer[i] = cropModule ? cropModule->get_NUptakeFromLayer(i) : 0;
-    if (i == nols - 1) 
+
+    if (i == nols - 1)
       vq_PercolationRate[i] = soilColumn.vs_FluxAtLowerBoundary; //[mm]
     else
       vq_PercolationRate[i] = soilColumn[i + 1].vs_SoilWaterFlux; //[mm]
