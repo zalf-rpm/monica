@@ -42,6 +42,7 @@ public:
   double getMaxSnowDepth() const { return this->vm_maxSnowDepth; }
   double getAccumulatedSnowDepth() const { return this->vm_AccumulatedSnowDepth; }
 
+  double vm_SnowWaterEquivalent{0.0};
 private:
   double calcSnowMelt(double vw_MeanAirTemperature);
   double calcNetPrecipitation(double mean_air_temperature, double net_precipitation, double& net_precipitation_water, double& net_precipitation_snow);
