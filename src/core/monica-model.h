@@ -217,10 +217,10 @@ public:
   kj::Own<BiomaSurfaceSWATSoilSWATC::MonicaInterface> _instance_BiomaSurfaceSWATSoilSWATC;
   kj::Own<ApsimCampbell::MonicaInterface> _instance_ApsimCampbell;
 
-  std::pair<double, double> dssatTAMPandTAV() {
+  std::pair<double, double> getTAMPandTAV() {
     return std::make_pair(_dssatTAMP, _dssatTAV);
   }
-  void setDssatTAMPandTAV(std::pair<double, double> tampTav) {
+  void setTAMPandTAV(std::pair<double, double> tampTav) {
     _dssatTAMP = tampTav.first;
     _dssatTAV = tampTav.second;
   }
