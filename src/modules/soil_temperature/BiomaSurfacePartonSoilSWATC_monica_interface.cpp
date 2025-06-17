@@ -65,16 +65,21 @@ void MonicaInterface::run() {
   auto climateData = _monica->currentStepClimateData();
   _soilTempExo.AirTemperatureMinimum = climateData.at(Climate::tmin);
   _soilTempExo.AirTemperatureMaximum = climateData.at(Climate::tmax);
-  _soilTempExo.DayLength = climateData[Climate::x4];
   _soilTempExo.GlobalSolarRadiation = climateData.at(Climate::globrad);
+  if (const auto dl = climateData.find(Climate::daylength); dl == climateData.end()) {
+    const auto& dls = Tools::dayLengths(_monica->siteParameters().vs_Latitude,
+      _monica->currentStepDate().julianDay());
+    _soilTempExo.DayLength = dls.astronomicDayLenght;
+  } else {
+    _soilTempExo.DayLength = dl->second;
+  }
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempExo.AboveGroundBiomass = _monica->simulationParameters().customData["CWAD"].number_value();
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
-  auto tampNtav = _monica->dssatTAMPandTAV();
+  auto tampNtav = _monica->getTAMPandTAV();
   _soilTempComp.setAirTemperatureAnnualAverage(tampNtav.second);
-  if (_monica->cropGrowth()) _soilTempExo.AboveGroundBiomass = _monica->cropGrowth()->get_AbovegroundBiomass();
-  else _soilTempExo.AboveGroundBiomass = 0;
+  _soilTempExo.AboveGroundBiomass = _monica->cropGrowth() ? _monica->cropGrowth()->get_AbovegroundBiomass() : 0.0;
 #endif
   if(_doInit){
     _soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);

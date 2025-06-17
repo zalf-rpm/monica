@@ -69,16 +69,16 @@ void MonicaInterface::run() {
   _soilTempExo.AirTemperatureMinimum = climateData.at(Climate::tmin);
   _soilTempExo.AirTemperatureMaximum = climateData.at(Climate::tmax);
   _soilTempExo.GlobalSolarRadiation = climateData.at(Climate::globrad);
-  _soilTempExo.WaterEquivalentOfSnowPack = 0; // snow in mm
-  //_soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::x6]); // snow in mm
 #ifdef AMEI_SENSITIVITY_ANALYSIS
+  _soilTempExo.WaterEquivalentOfSnowPack = 0; // snow in mm (???? = _monica->soilMoisture().getSnowDepth())
+  //_soilTempExo.setWaterEquivalentOfSnowPack(climateData[Climate::x6]); // snow in mm
   _soilTempAux.AboveGroundBiomass = _monica->simulationParameters().customData["CWAD"].number_value();
   _soilTempComp.setAirTemperatureAnnualAverage(_monica->simulationParameters().customData["TAV"].number_value());
 #else
-  auto tampNtav = _monica->dssatTAMPandTAV();
+  _soilTempExo.WaterEquivalentOfSnowPack = _monica->soilMoisture().snowComponent->vm_SnowWaterEquivalent;
+  auto tampNtav = _monica->getTAMPandTAV();
   _soilTempComp.setAirTemperatureAnnualAverage(tampNtav.second);
-  if (_monica->cropGrowth()) _soilTempAux.AboveGroundBiomass = _monica->cropGrowth()->get_AbovegroundBiomass();
-  else _soilTempAux.AboveGroundBiomass = 0;
+  _soilTempAux.AboveGroundBiomass = _monica->cropGrowth() ? _monica->cropGrowth()->get_AbovegroundBiomass() : 0.0;
 #endif
   if(_doInit){
     _soilTempComp._SoilTemperatureSWAT.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);

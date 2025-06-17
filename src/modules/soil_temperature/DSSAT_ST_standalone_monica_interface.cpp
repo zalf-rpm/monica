@@ -35,12 +35,12 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   std::vector<double> dss;
   std::vector<double> dlayrs;
   std::vector<double> bds;
+  std::vector<double> sws;
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
   _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
   _soilTempComp.setXLAT(_monica->simulationParameters().customData["XLAT"].number_value());
   auto awc = _monica->simulationParameters().customData["AWC"].number_value();
-  std::vector<double> sws;
   for (const auto &j: sitePs.initSoilProfileSpec) {
     int layerSizeCm = int(Tools::double_value(j["Thickness"]) * 100);  // m -> cm
     currentDepthCm += layerSizeCm;
@@ -59,7 +59,6 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
   }
-  _soilTempComp.setSW(sws);
   _soilTempComp.setMSALB(_monica->simulationParameters().customData["SALB"].number_value());
 #else
   _soilTempComp.setNL(int(_monica->soilColumn().size()));
@@ -73,6 +72,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
     bds.push_back(sl.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    sws.push_back(sl.get_Vs_SoilMoisture_m3());
   }
   _soilTempComp.setMSALB(_monica->environmentParameters().p_Albedo);
 #endif
@@ -81,6 +81,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempComp.setDS(dss);
   _soilTempComp.setDLAYR(dlayrs);
   _soilTempComp.setBD(bds);
+  _soilTempComp.setSW(sws);
 }
 
 void MonicaInterface::run() {
@@ -95,7 +96,7 @@ void MonicaInterface::run() {
   _soilTempExo.TAV = _monica->simulationParameters().customData["TAV"].number_value();
   _soilTempExo.TAMP = _monica->simulationParameters().customData["TAMP"].number_value();
 #else
-    auto tampNtav = _monica->dssatTAMPandTAV();
+    auto tampNtav = _monica->getTAMPandTAV();
     _soilTempExo.TAV = tampNtav.second;
     _soilTempExo.TAMP = tampNtav.first;
 #endif

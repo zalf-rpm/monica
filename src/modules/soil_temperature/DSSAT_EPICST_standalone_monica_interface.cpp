@@ -40,10 +40,10 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   std::vector<double> dss;
   std::vector<double> dlayrs;
   std::vector<double> bds;
+  std::vector<double> sws;
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempComp.setNL(int(sitePs.initSoilProfileSpec.size()));
   _soilTempComp.setNLAYR(int(sitePs.initSoilProfileSpec.size()));
-  std::vector<double> sws;
   for (const auto& j : sitePs.initSoilProfileSpec){
     int layerSizeCm = int(Tools::double_value(j["Thickness"])*100);  // m -> cm
     currentDepthCm += layerSizeCm;
@@ -62,7 +62,6 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     bds.push_back(sps.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
     sws.push_back(sps.vs_PermanentWiltingPoint + awc*(sps.vs_FieldCapacity - sps.vs_PermanentWiltingPoint));
   }
-  _soilTempComp.setSW(sws);
 #else
   _soilTempComp.setNL(int(_monica->soilColumn().size()));
   _soilTempComp.setNLAYR(int(_monica->soilColumn().size()));
@@ -74,6 +73,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
     dss.push_back(currentDepthCm);
     dlayrs.push_back(layerSizeCm);
     bds.push_back(sl.vs_SoilBulkDensity() / 1000.0);  // kg/m3 -> g/cm3
+    sws.push_back(sl.get_Vs_SoilMoisture_m3());
   }
 #endif
   _soilTempComp.setLL(lls);
@@ -81,6 +81,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempComp.setDS(dss);
   _soilTempComp.setDLAYR(dlayrs);
   _soilTempComp.setBD(bds);
+  _soilTempComp.setSW(sws);
 }
 
 void MonicaInterface::run() {
@@ -102,9 +103,8 @@ void MonicaInterface::run() {
   _soilTempExo.SNOW = _monica->soilMoisture().getSnowDepth();
   _soilTempExo.DEPIR = _monica->dailySumIrrigationWater();
   _soilTempExo.MULCHMASS = 0;
-  if (_monica->cropGrowth()) _soilTempExo.BIOMAS = _monica->cropGrowth()->get_AbovegroundBiomass();
-  else _soilTempExo.BIOMAS = 0;
-  auto tampNtav = _monica->dssatTAMPandTAV();
+  _soilTempExo.BIOMAS = _monica->cropGrowth() ? _monica->cropGrowth()->get_AbovegroundBiomass() : 0.0;
+  auto tampNtav = _monica->getTAMPandTAV();
   _soilTempExo.TAV = tampNtav.second;
   _soilTempExo.TAMP = tampNtav.first;
 #endif

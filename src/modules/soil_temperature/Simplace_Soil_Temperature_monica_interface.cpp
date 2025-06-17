@@ -73,7 +73,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempComp.setcInitialAgeOfSnow(0);
   _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorA(2.3);
   _soilTempComp._SnowCoverCalculator.setcSnowIsolationFactorB(0.22);
-  _soilTempComp.setcInitialSnowWaterContent(0);
+  //_soilTempComp.setcInitialSnowWaterContent(0);
+  _soilTempComp.setcInitialSnowWaterContent(_monica->soilMoisture().snowComponent->vm_SnowWaterEquivalent);
   _soilTempComp.setcAlbedo(_monica->environmentParameters().p_Albedo);
   _soilTempComp.setcDampingDepth(6); // is also default
   double abd = 0;
@@ -107,8 +108,7 @@ void MonicaInterface::run() {
   _soilTempExo.iPotentialSoilEvaporation = climateData[Climate::x3]; //use et0 as ETPot
 #else
   _soilTempExo.iRAIN = climateData.at(Climate::precip); // so that no snowcover will build up
-  if (_monica->cropGrowth()) _soilTempExo.iLeafAreaIndex = _monica->cropGrowth()->getLeafAreaIndex();
-  else _soilTempExo.iLeafAreaIndex = 0;
+  _soilTempExo.iLeafAreaIndex = _monica->cropGrowth() ? _monica->cropGrowth()->getLeafAreaIndex() : 0.0;
   _soilTempExo.iPotentialSoilEvaporation = _monica->soilMoisture().get_ET0() * _monica->soilMoisture()._params.pm_KcFactor;
   double mmWcSum = 0;
   for (const auto& sl : _monica->soilColumn()){
@@ -126,7 +126,7 @@ void MonicaInterface::run() {
     _soilTempComp.setcAverageGroundTemperature(_monica->simulationParameters().customData["TAV"].number_value());
     _soilTempComp.setcFirstDayMeanTemp(_monica->simulationParameters().customData["TAV"].number_value());
 #else
-    auto [fst, snd] = _monica->dssatTAMPandTAV();
+    auto [fst, snd] = _monica->getTAMPandTAV();
     _soilTempComp.setcAverageGroundTemperature(snd);
     _soilTempComp.setcFirstDayMeanTemp(climateData.at(Climate::tavg));
 #endif

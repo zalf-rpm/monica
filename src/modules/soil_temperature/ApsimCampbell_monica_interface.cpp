@@ -31,6 +31,7 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
   _soilTempComp.setps(2.63);
   _soilTempComp.setpom(1.3);
   _soilTempComp.setsoilConstituentNames({"Rocks", "OrganicMatter", "Sand", "Silt", "Clay", "Water", "Ice", "Air"});
+  //_soilTempComp.setboundarLayerConductanceSource("constant");
   std::vector<double> layerThicknessMM;
   std::vector<double> sands;
   std::vector<double> clays;
@@ -96,16 +97,21 @@ void MonicaInterface::run() {
   _soilTempExo.weather_Tav = simPs.customData["TAV"].number_value();
   _soilTempExo.weather_Amp = simPs.customData["TAMP"].number_value();
 #else
+  _soilTempComp.setweather_Latitude(_monica->siteParameters().vs_Latitude);
   _soilTempExo.weather_Wind = climateData.at(Climate::wind);
-  _soilTempExo.weather_AirPressure = 1013.25;//climateData.at(Climate::airpress); 970.7716 (20°C, 336m)
+  if (const auto ap = climateData.find(Climate::airpress); ap == climateData.end()) {
+    _soilTempExo.weather_AirPressure = 1010; //1013.25; // 970.7716 (20°C, 336m)
+  } else {
+    _soilTempExo.weather_AirPressure = ap->second;
+  }
   // !!! this seemingly should be just evaporation, or?
-  _soilTempExo.waterBalance_Eo =  _monica->soilMoisture().get_PotentialEvapotranspiration(); // daily potential evaporation
+  _soilTempExo.waterBalance_Eo = _monica->soilMoisture().get_PotentialEvapotranspiration(); // daily potential evaporation
   _soilTempExo.waterBalance_Eos = _monica->soilMoisture().get_PotentialEvapotranspiration(); //potential evaporation
   _soilTempExo.waterBalance_Es = _monica->soilMoisture().vm_ActualEvaporation; // actual evaporation
-  auto tampNtav = _monica->dssatTAMPandTAV();
+  auto tampNtav = _monica->getTAMPandTAV();
   _soilTempExo.weather_Tav = tampNtav.second;
   _soilTempExo.weather_Amp = tampNtav.first;
-  if (_monica->cropGrowth()) _soilTempExo.microClimate_CanopyHeight = _monica->cropGrowth()->get_CropHeight();
+  _soilTempExo.microClimate_CanopyHeight = _monica->cropGrowth() ? _monica->cropGrowth()->get_CropHeight() : 0.0;
 #endif
   if(_doInit){
     _soilTempComp._SoilTemperature.Init(_soilTempState, _soilTempState1, _soilTempRate, _soilTempAux, _soilTempExo);

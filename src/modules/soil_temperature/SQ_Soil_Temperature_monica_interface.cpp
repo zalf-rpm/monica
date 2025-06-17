@@ -35,23 +35,21 @@ void MonicaInterface::init(const monica::CentralParameterProvider &cpp) {
 void MonicaInterface::run() {
   KJ_ASSERT(_monica != nullptr);
   auto climateData = _monica->currentStepClimateData();
-  double dayLength = 0;
-  if (climateData.find(Climate::x4) == climateData.end()) {
+  if (const auto dl = climateData.find(Climate::daylength); dl == climateData.end()) {
     const auto& dls = Tools::dayLengths(_monica->siteParameters().vs_Latitude,
       _monica->currentStepDate().julianDay());
-    dayLength = dls.astronomicDayLenght;
+    _soilTempExo.dayLength = dls.astronomicDayLenght;
   } else {
-    dayLength = climateData.at(Climate::x4);
+    _soilTempExo.dayLength = dl->second;
   }
   _soilTempExo.maxTAir = climateData.at(Climate::tmax);
-  _soilTempExo.dayLength = dayLength;
   _soilTempExo.minTAir = climateData.at(Climate::tmin);
   _soilTempExo.meanTAir = climateData.at(Climate::tavg);
 #ifdef AMEI_SENSITIVITY_ANALYSIS
   _soilTempExo.meanAnnualAirTemp = _monica->simulationParameters().customData["TAV"].number_value();
   _soilTempRate.heatFlux = climateData[Climate::x5]; //o3 is used as heat flux
 #else
-  auto [fst, snd] = _monica->dssatTAMPandTAV();
+  auto [fst, snd] = _monica->getTAMPandTAV();
   _soilTempExo.meanAnnualAirTemp = snd;
   _soilTempRate.heatFlux = 0;
 #endif
@@ -63,8 +61,8 @@ void MonicaInterface::run() {
 #ifndef AMEI_SENSITIVITY_ANALYSIS
   const auto stMin = _soilTempState.minTSoil;
   const auto stMax = _soilTempState.maxTSoil;
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature((stMin + stMax)/2.0);
-  const auto deep = _soilTempState.deepLayerT;
-  for (auto& sl : _monica->soilColumnNC()) sl.set_Vs_SoilTemperature(deep);
+  const auto avg = (stMin + stMax)/2.0;
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(avg);
+  for (auto& sl : _monica->soilColumnNC()) sl.set_Vs_SoilTemperature(avg);
 #endif
 }

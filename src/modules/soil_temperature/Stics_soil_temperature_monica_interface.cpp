@@ -59,7 +59,7 @@ void MonicaInterface::run() {
   }
   soilTempComp.Calculate_Model(_soilTempState, soilTempState1, soilTempRate, soilTempAux, soilTempExo);
 #ifndef AMEI_SENSITIVITY_ANALYSIS
-  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.canopy_temp_avg);
+  _monica->soilTemperatureNC().setSoilSurfaceTemperature(_soilTempState.temp_profile[0]);
   int i = 0;
   KJ_ASSERT(_monica->soilColumnNC().size() == _soilTempState.layer_temp.size());
   for (auto& sl : _monica->soilColumnNC()){

@@ -93,7 +93,7 @@ void MonicaInterface::run() {
     soilTempExo.soilCoverage = 1.0 - exp(-0.5 * lai);
   }
 #else
-  if (_monica->cropGrowth()) soilTempExo.soilCoverage = _monica->cropGrowth()->get_SoilCoverage();
+  soilTempExo.soilCoverage = _monica->cropGrowth() ? soilTempExo.soilCoverage = _monica->cropGrowth()->get_SoilCoverage() : 0.0;
 #endif
   if (_monica->soilMoisturePtr() && _monica->soilMoisture().getSnowDepth() > 0.0) {
     soilTempExo.hasSnowCover = true;
