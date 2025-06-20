@@ -282,26 +282,19 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   vm_SoilPoreVolume[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_Saturation();
   vm_LayerThickness[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_LayerThickness;
   vm_Lambda[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_Lambda();
-
   vm_SurfaceWaterStorage = soilColumn.vs_SurfaceWaterStorage;
 
-  //bool vc_CropPlanted = false;
-  //double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
-
   if (monica.cropGrowth()) {
-    //vc_CropPlanted = true;
     vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
     vc_KcFactor = monica.cropGrowth()->get_KcFactor();
-    //vc_CropHeight = monica.cropGrowth()->get_CropHeight();
-    vc_DevelopmentalStage = (int) monica.cropGrowth()->get_DevelopmentalStage();
+    vc_DevelopmentalStage = static_cast<int>(monica.cropGrowth()->get_DevelopmentalStage());
     if (vc_DevelopmentalStage > 0) {
       vc_NetPrecipitation = monica.cropGrowth()->get_NetPrecipitation();
     } else {
       vc_NetPrecipitation = vw_Precipitation;
     }
   } else {
-    //vc_CropPlanted = false;
     vc_KcFactor = _params.pm_KcFactor;
     vc_NetPrecipitation = vw_Precipitation;
     vc_PercentageSoilCoverage = 0.0;
@@ -309,7 +302,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   // Recalculates current depth of groundwater table
   vm_GroundwaterTableLayer = numberOfSoilLayers + 2;
-  int i = int(numberOfSoilLayers - 1);
+  int i = static_cast<int>(numberOfSoilLayers - 1);
   while (i >= 0 && int(vm_SoilMoisture[i] * 10000) == int(vm_SoilPoreVolume[i] * 10000)) {
     vm_GroundwaterTableLayer = i--;
   }
@@ -841,7 +834,7 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
                                          double vw_RelativeHumidity, double vw_MeanAirTemperature,
                                          double vw_WindSpeed, double vw_WindSpeedHeight, double vw_GlobalRadiation,
                                          int vc_DevelopmentalStage, int vs_JulianDay,
-                                         double vs_Latitude, double referenceEvapotranspiration) {
+                                         double vs_Latitude, double externalReferenceEvapotranspiration) {
   double potentialEvapotranspiration = 0.0;
   double evaporatedFromIntercept = 0.0;
   vm_EvaporatedFromSurface = 0.0;
@@ -862,10 +855,10 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
   if (vc_DevelopmentalStage > 0) {
     // Reference evapotranspiration is only grabbed here for consistent
     // output in monica.cpp
-    if (referenceEvapotranspiration < 0.0) {
+    if (externalReferenceEvapotranspiration < 0.0) {
       vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
     } else {
-      vm_ReferenceEvapotranspiration = referenceEvapotranspiration;
+      vm_ReferenceEvapotranspiration = externalReferenceEvapotranspiration;
     }
 
     // Remaining ET from crop module already includes Kc factor and evaporation
@@ -873,16 +866,14 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
     potentialEvapotranspiration = monica.cropGrowth()->get_RemainingEvapotranspiration();
     evaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
   } else { // if no crop grows ETp is calculated from ET0 * kc
-    // calculate reference evapotranspiration if not provided via climate files
-    if (referenceEvapotranspiration < 0.0) {
-      vm_ReferenceEvapotranspiration = this->referenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
-                                                                         vw_MinAirTemperature, vw_RelativeHumidity,
-                                                                         vw_MeanAirTemperature, vw_WindSpeed,
-                                                                         vw_WindSpeedHeight,
-                                                                         vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
+    if (externalReferenceEvapotranspiration < 0.0) {
+      vm_ReferenceEvapotranspiration = referenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
+                                                                   vw_MinAirTemperature, vw_RelativeHumidity,
+                                                                   vw_MeanAirTemperature, vw_WindSpeed,
+                                                                   vw_WindSpeedHeight,
+                                                                   vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
     } else {
-      // use reference evapotranspiration from climate file
-      vm_ReferenceEvapotranspiration = referenceEvapotranspiration;
+      vm_ReferenceEvapotranspiration = externalReferenceEvapotranspiration;
     }
 
     potentialEvapotranspiration = vm_ReferenceEvapotranspiration * vc_KcFactor; // - vm_InterceptionReference;

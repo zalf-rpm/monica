@@ -144,7 +144,7 @@ void step(double vs_DepthGroundwaterTable,
                               int vc_DevelopmentalStage,
                               int vs_JulianDay,
                               double vs_Latitude,
-                double referenceEvapotranspiration);
+                double externalReferenceEvapotranspiration);
 
   double referenceEvapotranspiration(double vs_HeightNN,
                                       double vw_MaxAirTemperature,

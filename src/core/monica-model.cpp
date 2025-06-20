@@ -751,7 +751,7 @@ void MonicaModel::generalStep() {
                                                   julday,
                                                   leapYear);
 
-  // first try to get CO2 concentration from climate data
+  // first, try to get daily CO2 concentration from climate data
   auto co2it = climateData.find(Climate::co2);
   if (co2it != climateData.end()) {
     vw_AtmosphericCO2Concentration = co2it->second;
@@ -811,9 +811,7 @@ void MonicaModel::generalStep() {
   }
 
   // first try to get ReferenceEvapotranspiration from climate data
-  auto et0_it = climateData.find(Climate::et0);
-  double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;
-
+  double et0 = climateData.find(Climate::et0) == climateData.end() ? -1.0 : climateData[Climate::et0];
   double wind = climateData.find(Climate::wind) == climateData.end() ? 0.0 : climateData[Climate::wind];
   _soilMoisture->step(vs_GroundwaterDepth, precip,
                       tmax, tmin,
