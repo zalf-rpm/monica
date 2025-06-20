@@ -69,7 +69,7 @@ void MonicaInterface::run() {
   if (const auto dl = climateData.find(Climate::daylength); dl == climateData.end()) {
     const auto& dls = Tools::dayLengths(_monica->siteParameters().vs_Latitude,
       _monica->currentStepDate().julianDay());
-    _soilTempExo.DayLength = dls.astronomicDayLenght;
+    _soilTempExo.DayLength = dls.astronomicDayLength;
   } else {
     _soilTempExo.DayLength = dl->second;
   }

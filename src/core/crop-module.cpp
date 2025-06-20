@@ -296,7 +296,7 @@ void CropModule::deserialize(mas::schema::model::monica::CropModuleState::Reader
   pc_AssimilateReallocation = reader.getPcAssimilateReallocation();
   vc_Assimilates = reader.getAssimilates();
   vc_AssimilationRate = reader.getAssimilationRate();
-  vc_AstronomicDayLenght = reader.getAstronomicDayLenght();
+  vc_AstronomicDayLength = reader.getAstronomicDayLenght();
   setFromCapnpList(pc_BaseDaylength, reader.getPcBaseDaylength());
   setFromCapnpList(pc_BaseTemperature, reader.getPcBaseTemperature());
   pc_BeginSensitivePhaseHeatStress = reader.getPcBeginSensitivePhaseHeatStress();
@@ -550,7 +550,7 @@ void CropModule::serialize(mas::schema::model::monica::CropModuleState::Builder 
   builder.setPcAssimilateReallocation(pc_AssimilateReallocation);
   builder.setAssimilates(vc_Assimilates);
   builder.setAssimilationRate(vc_AssimilationRate);
-  builder.setAstronomicDayLenght(vc_AstronomicDayLenght);
+  builder.setAstronomicDayLenght(vc_AstronomicDayLength);
   setCapnpList(pc_BaseDaylength, builder.initPcBaseDaylength((capnp::uint) pc_BaseDaylength.size()));
   setCapnpList(pc_BaseTemperature, builder.initPcBaseTemperature((capnp::uint) pc_BaseTemperature.size()));
   builder.setPcBeginSensitivePhaseHeatStress(pc_BeginSensitivePhaseHeatStress);
@@ -1007,17 +1007,20 @@ void CropModule::fc_Radiation(double vs_JulianDay,
   double declCos = cos(vc_Declination * M_PI / 180.0) * cos(vs_Latitude * M_PI / 180.0);
 
   auto dls = Tools::dayLengths(vs_Latitude, vs_JulianDay);
+  vc_EffectiveDayLength = dls.effectiveDayLength;
+  vc_PhotoperiodicDaylength = dls.photoperiodicDaylength;
+  vc_AstronomicDayLength = dls.astronomicDayLength;
 
   // Calculation of the mean photosynthetically active radiation [J m-2] -> old RDN
   // the argument of sqrt must be >= 0
   double photActRad = min(1.0, ((declSin / declCos) * (declSin / declCos)));
-  vc_PhotActRadiationMean = 3600.0 * (declSin * dls.astronomicDayLenght +
+  vc_PhotActRadiationMean = 3600.0 * (declSin * vc_AstronomicDayLength +
                                       24.0 / M_PI * declCos * sqrt(1.0 - photActRad));
 
   // Calculation of radiation on a clear day [J m-2] - old DRC
-  if (vc_PhotActRadiationMean > 0 && dls.astronomicDayLenght > 0) {
+  if (vc_PhotActRadiationMean > 0 && vc_AstronomicDayLength > 0) {
     vc_ClearDayRadiation = 0.5 * 1300.0 * vc_PhotActRadiationMean *
-                           exp(-0.14 / (vc_PhotActRadiationMean / (dls.astronomicDayLenght * 3600.0)));
+                           exp(-0.14 / (vc_PhotActRadiationMean / (vc_AstronomicDayLength * 3600.0)));
   } else {
     vc_ClearDayRadiation = 0;
   }
@@ -1037,9 +1040,9 @@ void CropModule::fc_Radiation(double vs_JulianDay,
 
   if (vw_GlobalRadiation > 0.0) {
     vc_GlobalRadiation = vw_GlobalRadiation;
-  } else if (dls.astronomicDayLenght > 0) {
+  } else if (vc_AstronomicDayLength > 0) {
     vc_GlobalRadiation = vc_ExtraterrestrialRadiation *
-                         (0.19 + 0.55 * vw_SunshineHours / dls.astronomicDayLenght);
+                         (0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLength);
   } else {
     vc_GlobalRadiation = 0;
   }
@@ -2013,14 +2016,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   } // [J m-2]
   vc_OvercastSkyTimeFraction = max(0.0, min(vc_OvercastSkyTimeFraction, 1.0));
 
-  auto code = [&](std::function<double(double)> calcFractionOfInterceptedRadiation, double LAI) {
+  auto code = [&, this](std::function<double(double)> calcFractionOfInterceptedRadiation, double LAI) {
     double fractionOfInterceptedRadiation = calcFractionOfInterceptedRadiation(LAI);
 
     double PHC3 = PHCH * fractionOfInterceptedRadiation;
     double PHC3Reference = PHCHReference * calcFractionOfInterceptedRadiation(pc_ReferenceLeafAreaIndex);
 
-    double PHC4 = vc_AstronomicDayLenght * LAI * vc_AssimilationRate;
-    double PHC4Reference = vc_AstronomicDayLenght * pc_ReferenceLeafAreaIndex * vc_AssimilationRateReference;
+    double PHC4 = vc_AstronomicDayLength * LAI * vc_AssimilationRate;
+    double PHC4Reference = vc_AstronomicDayLength * pc_ReferenceLeafAreaIndex * vc_AssimilationRateReference;
 
     double PHCL = PHC3 < PHC4
                   ? PHC3 * (1.0 - exp(-PHC4 / PHC3))

@@ -483,7 +483,7 @@ private:
   double pc_AssimilateReallocation{};
   double vc_Assimilates{0.0};
   double vc_AssimilationRate{0.0}; //! old AMAX
-  double vc_AstronomicDayLenght{0.0};  //! old DL
+  double vc_AstronomicDayLength{0.0};  //! old DL
   std::vector<double> pc_BaseDaylength;  //! old DLBAS
   std::vector<double> pc_BaseTemperature;  //! old BAS
   double pc_BeginSensitivePhaseHeatStress{};
