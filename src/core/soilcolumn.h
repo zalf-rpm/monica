@@ -250,7 +250,7 @@ public:
 
   std::pair<bool, double> applyIrrigationViaTrigger(const AutomaticIrrigationParameters &aips);
 
-  void applyIrrigation(double amount, double nitrateConcentration);
+  void applyIrrigation(double amount, double nitrateConcentration, std::size_t atLayer = 0);
 
   void deleteAOMPool();
 

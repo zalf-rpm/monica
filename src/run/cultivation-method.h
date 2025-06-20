@@ -572,6 +572,7 @@ public:
 
 private:
   double _amount{0};
+  std::size_t _atLayer{0};
   IrrigationParameters _params;
 };
 

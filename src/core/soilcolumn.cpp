@@ -445,10 +445,10 @@ void SoilColumn::applyMineralFertiliser(MineralFertilizerParameters fp,
   debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
           << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
-  double kgHaTokgm3 = 10000.0 * at(0).vs_LayerThickness;
-  at(0).vs_SoilNO3 += amount * fp.getNO3() / kgHaTokgm3;
-  at(0).vs_SoilNH4 += amount * fp.getNH4() / kgHaTokgm3;
-  at(0).vs_SoilCarbamid += amount * fp.getCarbamid() / kgHaTokgm3;
+  double kg_per_ha_to_kg_per_m3 = 1.0 / (10000.0 * at(0).vs_LayerThickness);
+  at(0).vs_SoilNO3 += amount * fp.getNO3() * kg_per_ha_to_kg_per_m3;
+  at(0).vs_SoilNH4 += amount * fp.getNH4() * kg_per_ha_to_kg_per_m3;
+  at(0).vs_SoilCarbamid += amount * fp.getCarbamid() * kg_per_ha_to_kg_per_m3;
 }
 
 
@@ -569,16 +569,17 @@ std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrr
  *
  * @author: Claas Nendel
  */
-void SoilColumn::applyIrrigation(double amount, double nitrateConcentration) {
+void SoilColumn::applyIrrigation(double amount, double nitrateConcentration, std::size_t atLayer) {
+  assert(atLayer >= static_cast<std::size_t>(0) && atLayer < size());
   // Adding irrigation water amount to surface water storage
   vs_SurfaceWaterStorage += amount; // [mm]
   double nitrateAddedViaIrrigation = // -> //[kg m-3]
       nitrateConcentration * // [mg dm-3]
       amount / //[dm3 m-2]
-      at(0).vs_LayerThickness / 1000000.0; // [m]
+      at(atLayer).vs_LayerThickness / 1000000.0; // [m]
 
   // adding N from irrigation water to top soil nitrate pool
-  at(0).vs_SoilNO3 += nitrateAddedViaIrrigation;
+  at(atLayer).vs_SoilNO3 += nitrateAddedViaIrrigation;
 }
 
 

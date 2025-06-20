@@ -1054,8 +1054,10 @@ Irrigation::Irrigation(json11::Json j) {
 Errors Irrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   set_double_value(_amount, j, "amount");
-  if (j["parameters"].is_object())
-    set_value_obj_value(_params, j, "parameters");
+  int atLayer = 0;
+  set_int_value(atLayer, j, "atLayer");
+  if (atLayer > 0) _atLayer = static_cast<std::size_t>(atLayer);
+  if (j["parameters"].is_object()) set_value_obj_value(_params, j, "parameters");
   return res;
 }
 
@@ -1064,6 +1066,7 @@ json11::Json Irrigation::to_json() const {
       {"type",       type()},
       {"date",       date().toIsoDateString()},
       {"amount",     _amount},
+      {"atLayer", static_cast<int>(_atLayer)},
       {"parameters", _params}};
 }
 
@@ -1071,7 +1074,7 @@ bool Irrigation::apply(MonicaModel *model) {
   Workstep::apply(model);
 
   //cout << toString() << endl;
-  model->applyIrrigation(amount(), nitrateConcentration());
+  model->applyIrrigation(amount(), nitrateConcentration(), _atLayer-1);
   model->addEvent("Irrigation");
 
   return true;
