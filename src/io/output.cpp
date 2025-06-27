@@ -46,7 +46,7 @@ Errors OId::merge(json11::Json j)
   layerAggOp = OP(int_valueD(j, "layerAggOp", NONE));
   timeAggOp = OP(int_valueD(j, "timeAggOp", AVG));
 
-  organ = ORGAN(int_valueD(j, "organ", _UNDEFINED_ORGAN_));
+  organ = ORGAN(int_valueD(j, "organ", UNDEFINED_ORGAN_));
 
   set_int_value(fromLayer, j, "fromLayer");
   set_int_value(toLayer, j, "toLayer");
@@ -105,7 +105,7 @@ std::string OId::toString(OId::OP op) const
   case FIRST: res = "FIRST"; break;
   case LAST: res = "LAST"; break;
   case NONE: res = "NONE"; break;
-  case _UNDEFINED_OP_:
+  case UNDEFINED_OP_:
   default:;
   }
   return res;
@@ -122,7 +122,7 @@ std::string OId::toString(OId::ORGAN organ) const
   case FRUIT: res = "Fruit"; break;
   case STRUCT: res = "Struct"; break;
   case SUGAR: res = "Sugar"; break;
-  case _UNDEFINED_ORGAN_:
+  case UNDEFINED_ORGAN_:
   default:;
   }
   return res;

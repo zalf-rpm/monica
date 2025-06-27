@@ -32,6 +32,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/debug.h"
 #include "climate/climate-common.h"
 //#include "db/abstract-db-connections.h"
+#include <kj/debug.h>
+
 #include "voc-common.h"
 #include "tools/algorithms.h"
 #include "crop.h"
@@ -319,6 +321,11 @@ void MonicaModel::seedCrop(Crop *crop, kj::StringPtr id) {
                                               },
                                               _intercropping);
     auto ccm = ownedCM.get();
+    KJ_IF_MAYBE(_, soilColumnNC().id2cropModules.find(kj::str(id))) {
+      KJ_FAIL_REQUIRE("Error: Crop", id, "was already (or is still) sown.");
+      //std::cerr << "Error: Crop with id '" << id.cStr() << "' was already (or is still) sown. Removing this old crop silently." << endl;
+      //soilColumnNC().id2cropModules.erase(kj::str(id));
+    }
     soilColumnNC().id2cropModules.insert(kj::str(id), kj::mv(ownedCM));
     if (soilColumnNC().firstSownCropId.size() == 0) soilColumnNC().firstSownCropId = kj::str(id);
 
@@ -350,7 +357,7 @@ void MonicaModel::seedCrop(Crop *crop, kj::StringPtr id) {
 void
 MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, kj::StringPtr id,
   Harvest::OptCarbonManagementData optCarbMgmtData) {
-  auto id_ = id.size() == 0 ? _soilColumn->firstSownCropId : id;
+  auto id_ = id == nullptr || id.size() == 0 ? _soilColumn->firstSownCropId : id;
   KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(kj::str(id_))) {
     auto cropModule = cm->get();
     // prepare to add root and crop residues to soilorganic (AOMs)
@@ -594,14 +601,16 @@ void MonicaModel::applyTillage(double depth) {
   _soilColumn->applyTillage(depth);
 }
 
-CropModule* MonicaModel::cropModule() {
-  KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(_soilColumn->firstSownCropId)) {
+CropModule* MonicaModel::cropModule(kj::StringPtr cropId) {
+  KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(cropId == nullptr || cropId.size() == 0
+    ? _soilColumn->firstSownCropId.cStr() : cropId)) {
     return cm->get();
   }
   return nullptr;
 }
-const CropModule* MonicaModel::cropModule() const {
-  KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(_soilColumn->firstSownCropId)) {
+const CropModule* MonicaModel::cropModule(kj::StringPtr cropId) const {
+  KJ_IF_MAYBE(cm, _soilColumn->id2cropModules.find(cropId == nullptr || cropId.size() == 0
+    ? _soilColumn->firstSownCropId.cStr() : cropId)) {
     return cm->get();
   }
   return nullptr;

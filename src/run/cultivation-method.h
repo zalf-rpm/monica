@@ -154,6 +154,7 @@ public:
 
   void setCropForReplanting(kj::Own<Crop> c) { _cropToPlant = kj::mv(c); }
 
+  kj::StringPtr id() const { return _id; }
 private:
   kj::Own<Crop> _cropToPlant;
   Crop *_crop{nullptr};
@@ -181,7 +182,7 @@ public:
 
   bool condition(MonicaModel *model) override;
 
-  bool isActive() const override { return !_cropSeeded; }
+  bool isActive() const override { return !_cropSown; }
 
   bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false) override;
 
@@ -217,7 +218,7 @@ private:
   std::function<std::vector<double> &()> _getAvgSoilTemps;
 
   bool _inSowingRange{false};
-  bool _cropSeeded{false};
+  bool _cropSown{false};
 };
 
 class DLL_API Harvest : public Workstep {
@@ -280,6 +281,7 @@ public:
 
   void setSowing(Sowing *s) { _sowing = s; }
 
+  kj::StringPtr id() const { return _id; }
   //void setIsCoverCrop(bool isCoverCrop) { _optCarbMgmtData.isCoverCrop = isCoverCrop; }
 protected:
   Sowing *_sowing{nullptr};
@@ -352,6 +354,7 @@ public:
 
   bool apply(MonicaModel *model) override;
 
+  kj::StringPtr id() const { return _id; }
 
   enum CL {
     cut, left, none
@@ -370,6 +373,7 @@ private:
   std::map<int, double> _organId2biomAfterCutting;
   std::map<int, double> _organId2exportFraction;
   double _cutMaxAssimilationRateFraction{1.0};
+  std::string _id;
 };
 
 class DLL_API MineralFertilization : public Workstep {
@@ -435,6 +439,8 @@ public:
 
   bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false) override;
 
+  kj::StringPtr id() const { return _id; }
+
 private:
   Tools::Date _initialDate;
   MineralFertilizerParameters _partition;
@@ -442,6 +448,7 @@ private:
   double _depth{0.0};
   int _stage{1};
   bool _appliedFertilizer{false};
+  std::string _id;
 };
 
 class DLL_API OrganicFertilization : public Workstep {

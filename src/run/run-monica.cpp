@@ -288,9 +288,6 @@ void writeDebugInputs(const Env &env, string fileName = "inputs.json") {
   } else cerr << "Error failed to create path: '" << path << "'." << endl;
 }
 
-
-//-----------------------------------------------------------------------------
-
 template<typename T = int>
 Maybe<T> parseInt(const string &s) {
   Maybe<T> res;
@@ -326,9 +323,9 @@ std::function<bool(const MonicaModel &)> Spec::createExpressionFunc(Json j) {
   if (j.is_array()) {
     if (auto f = buildCompareExpression(j.array_items())) return f;
   } else if (j.is_string()) {
-    auto jts = j.string_value();
+    const auto& jts = j.string_value();
     if (!jts.empty()) {
-      auto s = splitString(jts, "-");
+      const auto s = splitString(jts, "-");
       //is date event
       if (jts.size() == 10
           && s.size() == 3
@@ -535,9 +532,15 @@ vector<StoreData> monica::setupStorage(const json11::Json& event2oids, const Dat
     //find shortcut for string or store string as 'at' pattern
     if (spec.is_string()) {
       auto ss = spec.string_value();
-      auto ci = shortcuts.find(ss);
-      if (ci != shortcuts.end()) spec = ci->second;
-      else spec = J11Object{{"at", ss}};
+      //check for a particular crop when doing multicropping
+      if (const auto pos = ss.find("crop|"); pos != std::string::npos) {
+        auto cropId = ss.substr(5);
+        spec = J11Object{{"from", kj::str("Sowing|", cropId).cStr()},
+                          {"to",   kj::str("Harvest|", cropId).cStr()}};
+      } else {
+        if (auto ci = shortcuts.find(ss); ci != shortcuts.end()) spec = ci->second;
+        else spec = J11Object{{"at", ss}};
+      }
     } else if (spec.is_array()
                && spec.array_items().size() == 4
                && spec[0].is_string()

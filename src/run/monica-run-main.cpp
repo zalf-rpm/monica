@@ -283,12 +283,14 @@ int main(int argc, char **argv) {
       for (const auto &d: output.data) {
         if (writeOutputFile) {
           auto sanitizedFileName = replace(d.origSpec, "\"", "");
-          sanitizedFileName = replace(sanitizedFileName, "*", "_star_");
+          sanitizedFileName = replace(sanitizedFileName, "*", "_st_");
           sanitizedFileName = replace(sanitizedFileName, "?", "_qm_");
-          sanitizedFileName = replace(sanitizedFileName, "|", "_bar_");
+          sanitizedFileName = replace(sanitizedFileName, "|", "_ba_");
           sanitizedFileName = replace(sanitizedFileName, "<", "_lb_");
           sanitizedFileName = replace(sanitizedFileName, ">", "_rb_");
-          sanitizedFileName = replace(sanitizedFileName, ":", "_colon_");
+          sanitizedFileName = replace(sanitizedFileName, ":", "_co_");
+          sanitizedFileName = replace(sanitizedFileName, "/", "_fs_");
+          sanitizedFileName = replace(sanitizedFileName, "\\", "_bs_");
           pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/" + filenameWithoutExt + "_section_" + sanitizedFileName + ".csv");
           fout.open(pathToOutputFile);
           if (fout.fail()) {
@@ -373,12 +375,14 @@ int main(int argc, char **argv) {
         for (const auto &d: output2.data) {
           if (writeOutputFile) {
             auto sanitizedFileName = replace(d.origSpec, "\"", "");
-            sanitizedFileName = replace(sanitizedFileName, "*", "_star_");
+            sanitizedFileName = replace(sanitizedFileName, "*", "_st_");
             sanitizedFileName = replace(sanitizedFileName, "?", "_qm_");
-            sanitizedFileName = replace(sanitizedFileName, "|", "_bar_");
+            sanitizedFileName = replace(sanitizedFileName, "|", "_ba_");
             sanitizedFileName = replace(sanitizedFileName, "<", "_lb_");
             sanitizedFileName = replace(sanitizedFileName, ">", "_rb_");
-            sanitizedFileName = replace(sanitizedFileName, ":", "_colon_");
+            sanitizedFileName = replace(sanitizedFileName, ":", "_co_");
+            sanitizedFileName = replace(sanitizedFileName, "/", "_fs_");
+            sanitizedFileName = replace(sanitizedFileName, "\\", "_bs_");
             pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/" + filenameWithoutExt2 + "_2_section_" + sanitizedFileName + ".csv");
             fout.open(pathToOutputFile);
             if (fout.fail()) {

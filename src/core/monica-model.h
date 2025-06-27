@@ -154,8 +154,8 @@ public:
   const SoilColumn& soilColumn() const { return *_soilColumn; }
   SoilColumn& soilColumnNC() { return *_soilColumn; }
 
-  CropModule* cropModule();
-  const CropModule* cropModule() const;
+  CropModule* cropModule(kj::StringPtr cropId = nullptr);
+  const CropModule* cropModule(kj::StringPtr cropId = nullptr) const;
 
   double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
 

@@ -233,6 +233,7 @@ bool Sowing::apply(MonicaModel *model) {
   debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
   model->seedCrop(_cropToPlant.get(), _id);
   model->addEvent("Sowing");
+  model->addEvent("Sowing|"+_id);
 
   return true;
 }
@@ -343,7 +344,8 @@ bool AutomaticSowing::apply(MonicaModel *model) {
 
   Sowing::apply(model);
   model->addEvent("AutomaticSowing");
-  _cropSeeded = true;
+  model->addEvent(kj::str("AutomaticSowing|", id()).cStr());
+  _cropSown = true;
   _inSowingRange = false;
 
   return true;
@@ -366,7 +368,7 @@ AutomaticSowing::registerDailyFunction(std::function<std::vector<double> &()> ge
 }
 
 bool AutomaticSowing::condition(MonicaModel *model) {
-  if (_cropSeeded)
+  if (_cropSown)
     return false;
 
   auto currentDate = model->currentStepDate();
@@ -435,7 +437,7 @@ bool AutomaticSowing::condition(MonicaModel *model) {
 bool AutomaticSowing::reinit(Tools::Date date, bool addYear, bool forceInitYear) {
   Workstep::reinit(date, addYear);
 
-  _cropSeeded = _inSowingRange = false;
+  _cropSown = _inSowingRange = false;
   setDate(Tools::Date());
 
   bool addedYear1, addedYear2;
@@ -522,10 +524,11 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const {
 bool Harvest::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  if (model->cropModule()) {
+  if (model->cropModule(_id)) {
     model->harvestCurrentCrop(_exported, _spec, kj::str(_id), _optCarbMgmtData);
     if (_sowing) debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
     model->addEvent("Harvest");
+    model->addEvent("Harvest|"+_id);
   }
 
   return true;
@@ -581,6 +584,7 @@ bool AutomaticHarvest::apply(MonicaModel *model) {
   Harvest::apply(model);
 
   model->addEvent("AutomaticHarvest");
+  model->addEvent(kj::str("AutomaticHarvest|", id()).cStr());
   _cropHarvested = true;
 
   return true;
@@ -589,12 +593,13 @@ bool AutomaticHarvest::apply(MonicaModel *model) {
 bool AutomaticHarvest::condition(MonicaModel *model) {
   bool conditionMet = false;
 
-  auto cg = model->cropModule();
+  string cid = id().cStr();
+  auto cg = model->cropModule(cid);
   //got a crop and not yet harvested
   if (cg && !_cropHarvested) conditionMet =
         model->currentStepDate() >= _absLatestDate  //harvest after or at latest date
         || (_harvestTime == "maturity"
-            && model->cropModule()->maturityReached() //has maturity been reached
+            && model->cropModule(cid)->maturityReached() //has maturity been reached
             && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW)  //check soil moisture
             && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
@@ -624,6 +629,7 @@ Cutting::Cutting(json11::Json j) {
 Errors Cutting::merge(json11::Json j) {
   auto errors = Workstep::merge(j);
 
+  set_string_value(_id, j, "id");
   bool export_ = j["export"].is_bool() ? j["export"].bool_value() : true;
 
   for (auto p: j["organs"].object_items()) {
@@ -691,23 +697,26 @@ json11::Json Cutting::to_json() const {
     exports[organNameFromId(p.first)] = J11Array{int(p.second * 100.0), "%"};
 
   return json11::Json::object
-      {{"type",                      type()},
-       {"date",                      date().toIsoDateString()},
-       {"organs",                    organs},
-       {"exports",                   exports},
-       {"cut-max-assimilation-rate", J11Array{int(_cutMaxAssimilationRateFraction * 100.0), "%"}}
-      };
+  {
+    {"type", type()},
+    {"id", _id},
+    {"date", date().toIsoDateString()},
+    {"organs", organs},
+    {"exports", exports},
+    {"cut-max-assimilation-rate", J11Array{int(_cutMaxAssimilationRateFraction * 100.0), "%"}}
+  };
 }
 
 bool Cutting::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  assert(model->cropModule());
-  debug() << "Cutting crop: " << model->cropModule()->speciesParameters().pc_SpeciesId << " at: " << date().toString()
+  assert(model->cropModule(_id));
+  debug() << "Cutting crop: " << model->cropModule(_id)->speciesParameters().pc_SpeciesId << " at: " << date().toString()
           << endl;
 
-  model->cropModule()->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
+  model->cropModule(_id)->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
   model->addEvent("Cutting");
+  model->addEvent(kj::str("Cutting|", _id).cStr());
 
   return true;
 }
@@ -770,6 +779,7 @@ NDemandFertilization::NDemandFertilization(json11::Json j) {
 Errors NDemandFertilization::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   _initialDate = date();
+  set_string_value(_id, j, "id");
   set_double_value(_Ndemand, j, "N-demand");
   set_value_obj_value(_partition, j, "partition");
   set_double_value(_depth, j, "depth");
@@ -781,6 +791,7 @@ Errors NDemandFertilization::merge(json11::Json j) {
 json11::Json NDemandFertilization::to_json() const {
   auto o = J11Object
       {{"type",      type()},
+        {"id", _id },
        {"N-demand",  _Ndemand},
        {"partition", _partition},
        {"depth",     J11Array{_depth, "m", "depth of Nmin measurement"}}
@@ -796,7 +807,7 @@ json11::Json NDemandFertilization::to_json() const {
 bool NDemandFertilization::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  double rd = model->cropModule()->get_RootingDepth_m();
+  double rd = model->cropModule(_id)->get_RootingDepth_m();
   debug() << toString() << endl;
   double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth,
                                                                                 _Ndemand);
@@ -805,6 +816,7 @@ bool NDemandFertilization::apply(MonicaModel *model) {
   //record date of application until next reinit
   setDate(model->currentStepDate());
   model->addEvent("NDemandFertilization");
+  model->addEvent(kj::str("NDemandFertilization|", _id).cStr());
 
   return true;
 }
@@ -812,7 +824,7 @@ bool NDemandFertilization::apply(MonicaModel *model) {
 bool NDemandFertilization::condition(MonicaModel *model) {
   bool conditionMet = false;
 
-  auto cg = model->cropModule();
+  auto cg = model->cropModule(_id);
   if (cg && !_appliedFertilizer) {
     auto currStage = cg->get_DevelopmentalStage() + 1;
     conditionMet =
@@ -918,10 +930,8 @@ Errors SetValue::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
 
   auto oids = parseOutputIds({j["var"]});
-  if (!oids.empty())
-    _oid = oids[0];
-  else
-    return res;
+  if (!oids.empty()) _oid = oids[0];
+  else return res;
 
   _value = j["value"];
   if (_value.is_array()) {
@@ -1171,10 +1181,10 @@ Errors CultivationMethod::merge(json11::Json j) {
   set_bool_value(_isCoverCrop, j, "is-cover-crop");
   set_bool_value(_repeat, j, "repeat");
 
-  // keep reference to sowing workstep for use with harvest workstep
-  Sowing *sowingWS = nullptr;
+  // keep reference to sowing worksteps for use with harvest workstep
+  kj::HashMap<kj::String, Sowing*> sowingWSs;
 
-  for (auto wsj: j["worksteps"].array_items()) {
+  for (const auto& wsj: j["worksteps"].array_items()) {
     auto ws = makeWorkstep(wsj);
     if (!ws)
       continue;
@@ -1182,20 +1192,21 @@ Errors CultivationMethod::merge(json11::Json j) {
     _allWorksteps.push_back(ws);
     //_allWorksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
     string wsType = ws->type();
-    if (wsType == "Sowing"
-        || wsType == "AutomaticSowing") {
-      if (Sowing *sowing = dynamic_cast<Sowing *>(ws.get())) {
-        sowingWS = sowing;
+    if (wsType == "Sowing" || wsType == "AutomaticSowing") {
+      if (auto *sowing = dynamic_cast<Sowing *>(ws.get())) {
+        KJ_IF_MAYBE(_, sowingWSs.find(kj::str(sowing->id()))) {
+          KJ_FAIL_REQUIRE("Error at workstep creation: Crop with", sowing->id(), "already exists.");
+        } else {
+          sowingWSs.insert(kj::str(sowing->id()), sowing);
+        }
         _crop = sowing->crop();
-        if ((_name.empty() || _name == "Fallow") && _crop)
-          _name = _crop->id();
+        if ((_name.empty() || _name == "Fallow") && _crop) _name = _crop->id();
       }
-    } else if (wsType == "Harvest"
-               || wsType == "AutomaticHarvest") {
-      if (Harvest *harvest = dynamic_cast<Harvest *>(ws.get())) {
-        if (sowingWS) {
-          harvest->setSowing(sowingWS);
-          sowingWS->crop()->setHarvestDate(harvest->date());
+    } else if (wsType == "Harvest" || wsType == "AutomaticHarvest") {
+      if (auto *harvest = dynamic_cast<Harvest *>(ws.get())) {
+        KJ_IF_MAYBE(sowingWS, sowingWSs.find(harvest->id())) {
+          harvest->setSowing(*sowingWS);
+          (*sowingWS)->crop()->setHarvestDate(harvest->date());
         }
       }
     }

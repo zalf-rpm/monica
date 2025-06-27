@@ -27,23 +27,20 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica {
   struct DLL_API OId : public Tools::Json11Serializable {
-    enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
+    enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, UNDEFINED_OP_ };
 
-    enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, _UNDEFINED_ORGAN_ };
+    enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, UNDEFINED_ORGAN_ };
 
     OId() = default;
 
-    //! just name 
     explicit OId(int id)
       : id(id)
     {}
 
-    //! id and organ
     OId(int id, ORGAN organ)
       : id(id), organ(organ)
     {}
 
-    //! id and layer aggregation
     OId(int id, OP layerAgg)
       : id(id), layerAggOp(layerAgg), fromLayer(0), toLayer(20)
     {}
@@ -63,7 +60,7 @@ namespace monica {
       : id(id), layerAggOp(layerAgg), timeAggOp(timeAgg), fromLayer(from), toLayer(to)
     {}
 
-    OId(json11::Json object);
+    explicit OId(json11::Json object);
 
     virtual Tools::Errors merge(json11::Json j);
 
@@ -71,7 +68,7 @@ namespace monica {
 
     bool isRange() const { return fromLayer >= 0 && toLayer >= 0; }// && fromLayer < toLayer; }
 
-    bool isOrgan() const { return organ != _UNDEFINED_ORGAN_; }
+    bool isOrgan() const { return organ != UNDEFINED_ORGAN_; }
 
     virtual std::string toString(bool includeTimeAgg = false) const;
 
@@ -87,18 +84,19 @@ namespace monica {
     std::string jsonInput;
     OP layerAggOp{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
     OP timeAggOp{AVG}; //! aggregate values in a second time range (e.g. monthly)
-    ORGAN organ{_UNDEFINED_ORGAN_};
+    ORGAN organ{UNDEFINED_ORGAN_};
     int fromLayer{-1}, toLayer{-1};
     kj::Maybe<int> roundToDigits;
+    kj::Maybe<std::string> cropId;
   };
 
   struct DLL_API Output : public Tools::Json11Serializable
   {
-    Output() {}
+    Output() = default;
 
-  Output(std::string error) { errors.push_back(error); }
+    explicit Output(std::string error) { errors.push_back(error); }
 
-    Output(json11::Json object);
+    explicit Output(json11::Json object);
 
     virtual Tools::Errors merge(json11::Json j);
 
@@ -116,8 +114,8 @@ namespace monica {
     };
     std::vector<Data> data;
 
-  std::vector<std::string> errors;
-  std::vector<std::string> warnings;
+    std::vector<std::string> errors;
+    std::vector<std::string> warnings;
   };
 
 }  // namespace monica
