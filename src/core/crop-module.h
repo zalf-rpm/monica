@@ -174,6 +174,11 @@ public:
                                         double vw_AtmosphericCO2Concentration);
 
 
+  void fc_CropWaterUptake(size_t vm_GroundwaterTable,
+                          double vw_GrossPrecipitation,
+                          double vc_CurrentTotalTemperatureSum,
+                          double vc_TotalTemperatureSum);
+
   void fc_CropWaterUptake_step1(size_t vm_GroundwaterTable,
                                 double vw_GrossPrecipitation);
 
@@ -445,6 +450,10 @@ public:
 
   double getFractionOfInterceptedRadiation2() const { return fractionOfInterceptedRadiation2; }
 
+  double getRelativePresence() const {return _relativePresence; }
+
+  void setRelativePresence(double relativePresence) { _relativePresence = relativePresence; }
+
   [[nodiscard]] double getCurrentTotalTemperatureSum() const { return vc_CurrentTotalTemperatureSum; }
 
   [[nodiscard]] double getTotalTemperatureSum() const { return vc_TotalTemperatureSum; }
@@ -479,6 +488,7 @@ private:
   CropResidueParameters residuePs;
   bool _isWinterCrop{false};
   double _bareSoilKcFactor{0.4};
+  double _relativePresence{0.0};
 
   //! old N
   //  static const double vw_AtmosphericCO2Concentration;

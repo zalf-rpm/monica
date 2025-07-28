@@ -347,8 +347,25 @@ double SoilTemperature::calcSoilSurfaceTemperature(
     double tmin, double tmax, double globrad) const {
   // corrected for very low radiation in winter
   globrad = max(8.33, globrad);
-
-  double soilCoverage = _monica.cropModule() ? _monica.cropModule()->get_SoilCoverage() : 0.0;
+  /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
+  * Hence, we sum the soil cover percentage of every crop module.
+  */
+  double soilCoverage = 0.0;
+  if (_soilColumn.id2cropModules.size() == 1)
+  {
+    soilCoverage = _monica.cropModule()->get_SoilCoverage();
+  } else
+  {
+    double comm_cover = 0.0;
+    for (const auto& e : _soilColumn.id2cropModules)
+    {
+      double cover = e.value -> get_SoilCoverage();
+      double weight = e.value -> getRelativePresence();
+      comm_cover += cover * weight;
+    }
+    soilCoverage = comm_cover;
+    // std::cout  << " Soil cover (%): " << soilCoverage << std::endl;
+  }
   double shadingCoefficient = 0.1 + ((soilCoverage * _dampingFactor) + ((1 - soilCoverage) * (1 - _dampingFactor)));
 
   // Soil surface temperature caluclation following Williams 1984

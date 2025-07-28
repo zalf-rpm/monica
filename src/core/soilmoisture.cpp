@@ -288,10 +288,35 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   if (monica.cropModule()) {
     vc_CropPlanted = true;
-    vc_PercentageSoilCoverage = monica.cropModule()->get_SoilCoverage();
-    vc_KcFactor = monica.cropModule()->get_KcFactor();
-    vc_CropHeight = monica.cropModule()->get_CropHeight();
+    /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
+    * I first calculate the relative presence
+    */
+    if (soilColumn.id2cropModules.size() == 1)
+    {
+      vc_PercentageSoilCoverage = monica.cropModule()->get_SoilCoverage();
+      vc_KcFactor = monica.cropModule()->get_KcFactor();
+      vc_CropHeight = monica.cropModule()->get_CropHeight();
+    } else
+    {
+      double comm_Kc = 0.0;
+      double comm_Height = 0.0;
+      double comm_SoilCoverage = 0.0;
+      for (const auto& e : soilColumn.id2cropModules)
+      {
+        double Kc = e.value -> get_KcFactor();
+        double Height = e.value -> get_CropHeight();
+        double soilcover = e.value -> get_SoilCoverage();
+        double weight = e.value -> getRelativePresence();
+        comm_Kc += Kc * weight;
+        comm_Height += Height * weight;
+        comm_SoilCoverage += soilcover * weight;
+      }
+      vc_KcFactor = comm_Kc;
+      vc_CropHeight = comm_Height;
+      vc_PercentageSoilCoverage = comm_SoilCoverage;
+    }
     vc_DevelopmentalStage = (int)monica.cropModule()->get_DevelopmentalStage();
+
     if (vc_DevelopmentalStage > 0) {
       vc_NetPrecipitation = monica.cropModule()->get_NetPrecipitation();
     } else {
@@ -528,13 +553,32 @@ double SoilMoisture::get_PercolationRate(int layer) const {
  *
  */
 void SoilMoisture::fm_CapillaryRise() {
-  size_t vc_RootingDepth = 0.0;
-  KJ_IF_MAYBE(cm, soilColumn.id2cropModules.find(soilColumn.firstSownCropId)) {
-    vc_RootingDepth = (*cm)->get_RootingDepth();
+  size_t vc_RootingDepth = 0;
+  /* INTERCROPPING modification: we consider here the presence of multiple crop modules,
+   * that may have different rooting depth. In this case the deepest root architecture
+   * would pump the water up for all of the crops. So we extract the highest rooting
+   * depth among the crop modules to use it in the capillary rise function.
+   */
+  if (soilColumn.id2cropModules.size() == 1)
+  {
+    vc_RootingDepth = monica.cropModule()->get_RootingDepth();
+    // std::cout  <<  ", Root depth: " << vc_RootingDepth << std::endl;
+  } else
+  {
+    size_t currentDepth = 0;
+    // Iterate through all crop modules to find the maximum rooting depth
+    for (const auto& e : soilColumn.id2cropModules) {
+      currentDepth = e.value->get_RootingDepth();
+      //std::cout  << " Crop ID: " << std::string(e.key.cStr()) << ", Root depth: " << currentDepth << std::endl;
+      if (currentDepth > vc_RootingDepth) {
+        vc_RootingDepth = currentDepth;
+      }
+    }
   }
+
   //auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
   auto vm_GroundwaterDistance = max(size_t(1), vm_GroundwaterTableLayer - vc_RootingDepth);// []
-
+  // std::cout  <<  "\n new Root depth: " << vc_RootingDepth << std::endl;
   if (double(vm_GroundwaterDistance) * vm_LayerThickness[0] <= 2.70) { // [m]
     // Capillary rise rates in table defined only until 2.70 m
 
@@ -866,8 +910,30 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
-    vm_PotentialEvapotranspiration = monica.cropModule()->get_RemainingEvapotranspiration();
-    vc_EvaporatedFromIntercept = monica.cropModule()->get_EvaporatedFromIntercept();
+    /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
+    * Hence, we sum the soil cover percentage of every crop module.
+    */
+    if (soilColumn.id2cropModules.size() == 1)
+    {
+      vm_PotentialEvapotranspiration = monica.cropModule()->get_RemainingEvapotranspiration();
+      vc_EvaporatedFromIntercept = monica.cropModule()->get_EvaporatedFromIntercept();
+      //  std::cout  << " Evaporated: " << vc_EvaporatedFromIntercept << std::endl;
+    } else
+    {
+      double comm_pET = 0.0;
+      double comm_intercept = 0.0;
+      for (const auto& e : soilColumn.id2cropModules)
+      {
+        double pET = e.value -> get_RemainingEvapotranspiration();
+        double inter = e.value -> get_EvaporatedFromIntercept();
+        double weight = e.value -> getRelativePresence();
+        comm_pET += pET * weight;
+        comm_intercept += inter * weight;
+      }
+      vm_PotentialEvapotranspiration = comm_pET;
+      vc_EvaporatedFromIntercept = comm_intercept;
+      // std::cout  << " Evaporated: " << vc_EvaporatedFromIntercept << std::endl;
+    }
 
   } else { // if no crop grows ETp is calculated from ET0 * kc
 
@@ -961,7 +1027,23 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
           // Transpiration is derived from ET0; Soil coverage and Kc factors
           // already considered in crop part!
-          vm_Transpiration[i_Layer] = monica.cropModule()->get_Transpiration(i_Layer);
+          /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
+          * Hence, we sum the soil cover percentage of every crop module.
+          */
+          if (soilColumn.id2cropModules.size() == 1)
+          {
+            vm_Transpiration[i_Layer] = monica.cropModule()->get_Transpiration(i_Layer);
+          } else
+          {
+            double comm_Tra = 0.0;
+            for (const auto& e : soilColumn.id2cropModules)
+            {
+              double Tra =e.value -> get_Transpiration(i_Layer);
+              double weight = e.value -> getRelativePresence();
+              comm_Tra += Tra * weight;
+            }
+            vm_Transpiration[i_Layer] = comm_Tra;
+          }
 
           //std::cout << setprecision(11) << "vm_Transpiration[i_Layer]: " << i_Layer << ", " << vm_Transpiration[i_Layer] << std::endl;
 

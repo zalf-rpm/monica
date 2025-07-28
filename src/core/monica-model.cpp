@@ -74,7 +74,21 @@ MonicaModel::MonicaModel(const CentralParameterProvider &cpp)
       _soilMoisture(kj::heap<SoilMoisture>(*this, cpp.userSoilMoistureParameters)),
       _soilOrganic(kj::heap<SoilOrganic>(*_soilColumn, cpp.userSoilOrganicParameters)),
       _soilTransport(kj::heap<SoilTransport>(*_soilColumn, _sitePs, cpp.userSoilTransportParameters,
-                                             _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {
+                                             _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)),
+    _suitabilitylogFile("crop_suitability.csv", std::ios::out)
+    {
+      if (_suitabilitylogFile.is_open())
+      {
+        _suitabilitylogFile << "Date,CropID,RelativePresence,LightSuitability,TempSuitability,"
+                            << "WaterSuitability,NitroSuitability,OverallSuitability\n";
+      }
+    }
+
+MonicaModel::~MonicaModel() {
+  if (_suitabilitylogFile.is_open()) {
+    _suitabilitylogFile.close();
+  }
+  // No need to manually clean up kj::Own members - they handle their own destruction
 }
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
@@ -635,7 +649,193 @@ void MonicaModel::step() {
     else if (val.isLait()) cout << " LAI_t: " << val.getLait() << " ---> Error: shouldn't happen." << endl;
   }
 
+  std::cout  <<  "\n Date:" << currentStepDate().toIsoDateString() << std::endl;
+  if (_soilColumn->id2cropModules.size() == 1)
+  {
+    cropModule()->setRelativePresence(1);
+    //std::cout  <<  "\n Relative presence:" << cropModule()->getRelativePresence() << std::endl;
+  } else
+  {
+    bool anycropEmerged = false;
+    for (auto& e : _soilColumn->id2cropModules)
+    {
+      double stage = e.value -> get_DevelopmentalStage();
+      if (stage>0)
+      {
+        anycropEmerged = true;
+      } else
+      {
+        e.value->setRelativePresence(0.5);
+      }
+    }
+
+    if (! initialRelativePresence && anycropEmerged)
+    {
+      double overallBiomass = 0.0;
+      for (const auto& e : _soilColumn->id2cropModules)
+      {
+        double value = e.value -> get_AbovegroundBiomass();
+        overallBiomass += value;
+      }
+      for (auto& e : _soilColumn->id2cropModules)
+      {
+        double value = e.value -> get_AbovegroundBiomass();
+        if (overallBiomass>0.0) e.value -> setRelativePresence(value/overallBiomass);
+        else e.value ->setRelativePresence(0.0);
+      }
+      initialRelativePresence = true;
+    }
+    if (anycropEmerged)
+    {
+      // Struct to store suitability data for logging
+      struct SuitabilityData {
+        double f_light;
+        double f_temp;
+        double f_water;
+        double f_nitro;
+        double suitability;
+      };
+      std::vector<SuitabilityData> suitabilityData;
+      double comm_lai = 0.0;
+      double comm_height = 0.0;
+      double comm_root_depth = 0.0;
+      for (auto& e : _soilColumn->id2cropModules)
+      {
+        double weight = e.value -> getRelativePresence();
+        comm_lai += e.value->get_LeafAreaIndex() * weight;
+        comm_height += e.value -> get_CropHeight() * weight;
+        comm_root_depth += e.value->get_RootingDepth_m() * weight;
+      }
+      const double lai_comm = comm_lai;
+      const double height_comm = comm_height;
+      double total_swc = 0.0;
+      for (auto& e : _soilColumn->id2cropModules) {
+        double weight = e.value->getRelativePresence();
+        double swc_sum = 0.0;
+        int layers_count = 0;
+        double max_root_depth = e.value->get_RootingDepth();
+        // Calculate average SWC across all layers within root zone
+        for (size_t i = 0; i < _soilColumn->size(); i++) {
+          if (i<= max_root_depth) {
+            double layer_swc = _soilMoisture->get_SoilMoisture(i) -
+                              _soilColumn->at(i).vs_PermanentWiltingPoint();
+            layer_swc = std::clamp(layer_swc, 0.0, 1.0);
+            swc_sum += layer_swc;
+            layers_count++;
+          }
+        }
+        double avg_swc = layers_count > 0 ? swc_sum / layers_count : 0.0;
+        total_swc += avg_swc * weight;
+      }
+      const double swc_comm = total_swc;
+      const double root_depth_comm = comm_root_depth;
+      auto climateData = currentStepClimateData();
+      double T_a = climateData[Climate::tavg];
+      std::vector<double> Sfs; // individual suitabilities
+      double CSf = 0.0; // community suitability
+      for (auto& e : _soilColumn->id2cropModules)
+      {
+        // light suitability
+        const double max_lai = 6; // e.value -> cultivarParameters().pc_MaxLAI;  I need to add these,for now I use a default file
+        const double max_height = e.value -> cultivarParameters().pc_MaxCropHeight;
+        double f_light = 0.5 + ((max_lai - lai_comm)/(max_lai + lai_comm) +
+                          2*(max_height - height_comm)/(max_height + height_comm))/6.0;
+        f_light = std::clamp(f_light, 0.0, 1.0);
+        // temperature suitability
+        const double T_min =  e.value -> speciesParameters().pc_MinimumTemperatureForAssimilation;
+        const double T_opt = e.value -> speciesParameters().pc_OptimumTemperatureForAssimilation;
+        const double T_max = e.value -> speciesParameters().pc_MaximumTemperatureForAssimilation;
+        double f_temp = 0.0;
+        if (T_min < T_a && T_a <= T_opt) {
+          f_temp = (T_a - T_min) / (T_opt - T_min);
+        } else if (T_opt < T_a && T_a <= T_max) {
+          f_temp = 1.0 - ((T_a - T_opt) / (T_max - T_opt));
+        }
+        f_temp = std::clamp(f_temp, 0.0, 1.0);
+        // water suitability
+        double stage = e.value -> get_DevelopmentalStage();
+        const double DT = e.value -> cultivarParameters().pc_DroughtStressThreshold[stage];
+        double f_paw = 0.0;
+        if (swc_comm >= 1.0 - DT) {
+          f_paw = (DT - 1.0) / DT + swc_comm / DT;
+        }
+        const double RD_max = e.value -> cultivarParameters().pc_CropSpecificMaxRootingDepth;
+        double f_roots = 0.0;
+        if (root_depth_comm <= RD_max) {
+          f_roots = 1.0 - (root_depth_comm / RD_max);
+        }
+        double f_water = 0.5 * (f_paw + f_roots);  // Average of two components
+        f_water = std::clamp(f_water, 0.0, 1.0);
+        // nitrogen suitability
+        const double critNc = e.value -> get_CriticalNConcentration();
+        const double AbBiomNc = e.value -> get_AbovegroundBiomassNConcentration();
+        double rapporto = AbBiomNc / critNc;
+        double f_nitro = (AbBiomNc < critNc) ? AbBiomNc / critNc : 1.0;
+        f_nitro = std::clamp(f_nitro, 0.0, 1.0);
+        std::vector<double> Sfi_values = {
+          f_nitro,  // Highest priority (q=0)
+          f_water,   // Second priority (q=1)
+          f_temp,    // Third priority (q=2)
+          f_light    // Lowest priority (q=3)
+        };
+        std::vector<double> HSf_values;
+        for (size_t q = 0; q < Sfi_values.size(); ++q) {
+          double HSf_q;
+          if (q == 0) {
+            HSf_q = Sfi_values[q];
+          }
+          else if (q == 1) {
+            HSf_q = Sfi_values[q] * std::sqrt(Sfi_values[q - 1]);
+          }
+          else {
+            HSf_q = std::sqrt(HSf_values[q - 1]) *
+                    std::sqrt(Sfi_values[q - 1]) *
+                    Sfi_values[q];
+          }
+          HSf_values.push_back(HSf_q);
+        }
+        double suitability = 0.0;
+        for (double hs : HSf_values) {
+          suitability += hs;  // this is Sfs(t), the overall suitability of each species
+        }
+        // Store data for logging
+        suitabilityData.push_back({f_light, f_temp, f_water, f_nitro, suitability});
+        Sfs.push_back(suitability);
+        CSf += suitability;
+      }
+      const double I = 40.0; // Competition intensity parameter (adjust as needed)
+      size_t idx = 0;
+      for (auto& e : _soilColumn->id2cropModules)
+      {
+        double current_presence = e.value->getRelativePresence();
+        double Sf = Sfs[idx];
+        double new_rel_presence = current_presence + (Sf - CSf/2.0)/(4.0*I);
+        new_rel_presence = std::clamp(new_rel_presence, 0.0, 1.0);
+        e.value->setRelativePresence(new_rel_presence);
+        // Log the data
+        if (_suitabilitylogFile.is_open()) {
+          const auto& sd = suitabilityData[idx];
+          _suitabilitylogFile << _currentStepDate.toIsoDateString() << ","
+                            << e.key.cStr() << ","
+                            << new_rel_presence << ","
+                            << sd.f_light << ","
+                            << sd.f_temp << ","
+                            << sd.f_water << ","
+                            << sd.f_nitro << ","
+                            << sd.suitability << "\n";
+        }
+        idx++;
+        //std::cout  <<  "\n Relative presence:" << new_rel_presence << std::endl;
+      }
+      if (_suitabilitylogFile.is_open()) {
+        _suitabilitylogFile.flush();
+      }
+    }
+  }
+
+
   generalStep();
+
 }
 
 /**
@@ -659,6 +859,7 @@ void MonicaModel::generalStep() {
   double relhumid = climateData.find(Climate::relhumid) == climateData.end()
                     ? -1.0
                     : climateData[Climate::relhumid];
+
 
 
   // test if simulated gw or measured values should be used

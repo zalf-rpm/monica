@@ -16,7 +16,7 @@
 	  	"write-file?": true,
 
 		"path-to-output": "./",
-		"file-name": "sim-min-out.csv",
+		"file-name": "output_standard.csv",
 	
 		"csv-options": {
 			"include-header-row": true,
@@ -37,32 +37,35 @@
 				"Date",
 				"Crop",
 				"Stage",
-				["Pwp", 1],
-				["Fc", 1],
 				"Yield",
+				"Evapotranspiration",
+				"Evaporation",
+				"Tra",
+				"Transpiration",
 				"Act_ET",
-				"Pot_ET",
+				"ETa/ETc",
 				["Mois", [1, 6]],
-				"NFert",
-				["N", [1, 6]]
+				["N", [1, 6]],
+				["rootDensity",[1,6]]
 			]
 		],
 
 		"events" : [
 
 			"daily", [
-				"Date", 
-				"Crop", 
+				"Date",
+				"Crop",
 				"Stage",
+				"AbBiom",
+				"Yield",
+				"Evapotranspiration",
+				"Evaporation",
+				"Tra",
 				"Act_ET",
 				"ETa/ETc",
-				"Tra",
-				"Yield", 
-				"LAI", 
-				"Precip", 
-				["Mois", [1, 3]],
-				["Mois", [1, 3, "AVG"]], 
-				["SOC", [1, 3]]
+				["Mois", [1, 6]],
+				["N", [1, 6]],
+				["rootDensity",[1,6]]
 			],
 
 			"crop", [

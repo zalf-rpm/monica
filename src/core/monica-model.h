@@ -61,6 +61,8 @@ public:
 
   explicit MonicaModel(mas::schema::model::monica::MonicaModelState::Reader reader) { deserialize(reader); }
 
+  ~MonicaModel();
+
   void deserialize(mas::schema::model::monica::MonicaModelState::Reader reader);
 
   void serialize(mas::schema::model::monica::MonicaModelState::Builder builder);
@@ -234,6 +236,8 @@ private:
 
   int _cultivationMethodCount{ 0 };
 
+  bool initialRelativePresence{false};
+  std::ofstream _suitabilitylogFile;
   Intercropping _intercropping;
 
   //public:

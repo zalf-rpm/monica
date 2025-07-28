@@ -1,5 +1,5 @@
 {
-	"crop.json": "crop-min.json",
+	"crop.json": "crop-min-mc.json",
 	"site.json": "site-min.json",
 	"climate.csv": "climate-min.csv",
 
@@ -28,19 +28,26 @@
 			"daily", [
 				"Date",
 				["Crop|Crop1", {"cropId": "WW1"}],
-				["Crop|Crop2", {"cropId": "WW2"}],
 				["Stage|Stage1", {"cropId": "WW1"}],
-				["Stage|Stage2", {"cropId": "WW2"}],
-				"Act_ET",
-				"ETa/ETc",
-				"Tra",
+				["AbBiom|AbBiom1", {"cropId": "WW1"}],
 				["Yield|Yield1", {"cropId": "WW1"}],
+				["Evapotranspiration|Evapotranspiration1", {"cropId": "WW1"}],
+				["Evaporation|Evaporation1", {"cropId": "WW1"}],
+				["Tra|Tra1", {"cropId": "WW1"}],
+				["Act_ET|Act_ET1", {"cropId": "WW1"}],
+				["ETa/ETc|ETa/ETc1", {"cropId": "WW1"}],
+				["Crop|Crop2", {"cropId": "WW2"}],
+				["Stage|Stage2", {"cropId": "WW2"}],
+				["AbBiom|AbBiom2", {"cropId": "WW2"}],
 				["Yield|Yield2", {"cropId": "WW2"}],
-				"LAI", 
-				"Precip", 
-				["Mois", [1, 3]],
-				["Mois", [1, 3, "AVG"]], 
-				["SOC", [1, 3]]
+				["Evapotranspiration|Evapotranspiration2", {"cropId": "WW2"}],
+				["Evaporation|Evaporation2", {"cropId": "WW2"}],
+				["Tra|Tra2", {"cropId": "WW2"}],
+				["Act_ET|Act_ET2", {"cropId": "WW2"}],
+				["ETa/ETc|ETa/ETc2", {"cropId": "WW2"}],
+				["Mois", [1, 6]],
+				["N", [1, 6]],
+				["rootDensity",[1,6]]
 			],
 
 			"crop|WW1", [

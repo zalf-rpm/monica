@@ -121,12 +121,22 @@ void SoilTransport::step() {
     //vq_FieldCapacity[i] = soilColumn[i].vs_FieldCapacity();
     //vq_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
     vq_SoilNO3[i] = soilColumn[i].vs_SoilNO3;
-
+    /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
+    * Hence, we see the nitrogen uptake as a community
+    */
     vc_NUptakeFromLayer[i] = 0;
     for (const auto& e : soilColumn.id2cropModules) {
       vc_NUptakeFromLayer[i] += e.value->get_NUptakeFromLayer(i);
+      //std::cout  << " Layer: " << i << " Nitrogen: " << vc_NUptakeFromLayer[i] << std::endl;
     }
-
+    double comm_nitro = 0.0;
+    for (const auto& e : soilColumn.id2cropModules) {
+      double nitro = e.value -> get_NUptakeFromLayer(i);
+      double weight = e.value -> getRelativePresence();
+      comm_nitro += weight * nitro;
+      //std::cout  << " Layer: " << i << " Nitrogen: " << vc_NUptakeFromLayer[i] << std::endl;
+    }
+    vc_NUptakeFromLayer[i] = comm_nitro;
     if (i == nols - 1)
       vq_PercolationRate[i] = soilColumn.vs_FluxAtLowerBoundary; //[mm]
     else
