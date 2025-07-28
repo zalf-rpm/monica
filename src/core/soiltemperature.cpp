@@ -347,9 +347,10 @@ double SoilTemperature::calcSoilSurfaceTemperature(
     double tmin, double tmax, double globrad) const {
   // corrected for very low radiation in winter
   globrad = max(8.33, globrad);
-  /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
-  * Hence, we sum the soil cover percentage of every crop module.
-  */
+  /* MONICOSMO modification: we consider here the presence of multiple crop modules.
+    * What the soil sees is a community crop, whose variables are a weighted average of the variables
+    * of each single crop, weighted on their relative presence. In this case we correct for soil coverage.
+    */
   double soilCoverage = 0.0;
   if (_soilColumn.id2cropModules.size() == 1)
   {

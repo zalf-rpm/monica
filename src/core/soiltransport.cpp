@@ -121,8 +121,10 @@ void SoilTransport::step() {
     //vq_FieldCapacity[i] = soilColumn[i].vs_FieldCapacity();
     //vq_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
     vq_SoilNO3[i] = soilColumn[i].vs_SoilNO3;
-    /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
-    * Hence, we see the nitrogen uptake as a community
+    /* MONICOSMO modification: we consider here the presence of multiple crop modules.
+    * What the soil sees is a community crop, whose variables are a weighted average of the variables
+    * of each single crop, weighted on their relative presence. In this case we correct for the uptake of nitrogen
+    * in each layer.
     */
     vc_NUptakeFromLayer[i] = 0;
     for (const auto& e : soilColumn.id2cropModules) {

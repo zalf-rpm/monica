@@ -288,8 +288,10 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
 
   if (monica.cropModule()) {
     vc_CropPlanted = true;
-    /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
-    * I first calculate the relative presence
+    /* MONICOSMO modification: we consider here the presence of multiple crop modules.
+    * What the soil sees is a community crop, whose variables are a weighted average of the variables
+    * of each single crop, weighted on their relative presence. In this case we correct for Kc, crop height
+    * and percentage of soil cover.
     */
     if (soilColumn.id2cropModules.size() == 1)
     {
@@ -554,9 +556,9 @@ double SoilMoisture::get_PercolationRate(int layer) const {
  */
 void SoilMoisture::fm_CapillaryRise() {
   size_t vc_RootingDepth = 0;
-  /* INTERCROPPING modification: we consider here the presence of multiple crop modules,
+  /* MONICOSMO modification: we consider here the presence of multiple crop modules,
    * that may have different rooting depth. In this case the deepest root architecture
-   * would pump the water up for all of the crops. So we extract the highest rooting
+   * would pump the water up for all the crops. So we extract the deepest rooting
    * depth among the crop modules to use it in the capillary rise function.
    */
   if (soilColumn.id2cropModules.size() == 1)
@@ -910,8 +912,10 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
-    /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
-    * Hence, we sum the soil cover percentage of every crop module.
+    /* MONICOSMO modification: we consider here the presence of multiple crop modules.
+    * What the soil sees is a community crop, whose variables are a weighted average of the variables
+    * of each single crop, weighted on their relative presence. In this case we correct for potential
+    * evapotranspiration and evaporated from intercept.
     */
     if (soilColumn.id2cropModules.size() == 1)
     {
@@ -1027,8 +1031,9 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
           // Transpiration is derived from ET0; Soil coverage and Kc factors
           // already considered in crop part!
-          /* INTERCROPPING modification: we consider here the presence of multiple crop modules.
-          * Hence, we sum the soil cover percentage of every crop module.
+          /* MONICOSMO modification: we consider here the presence of multiple crop modules.
+          * What the soil sees is a community crop, whose variables are a weighted average of the variables
+          * of each single crop, weighted on their relative presence. In this case we correct for transpiration.
           */
           if (soilColumn.id2cropModules.size() == 1)
           {

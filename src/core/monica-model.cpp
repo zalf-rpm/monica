@@ -649,13 +649,24 @@ void MonicaModel::step() {
     else if (val.isLait()) cout << " LAI_t: " << val.getLait() << " ---> Error: shouldn't happen." << endl;
   }
 
-  std::cout  <<  "\n Date:" << currentStepDate().toIsoDateString() << std::endl;
+  /* MONICOSMO modification: we consider here the presence of multiple crop modules, using the approach created
+   in weedyCoSMo to simulate plant communities. This approach is based on two assumptions
+   allowing the use of a single instance of a generic crop model to simulate phytocoenosis dynamics and productivity.
+   The first is that community parameters can be derived at each time step from the relative presence of the different
+   species and from parameter values determined for the species in monoculture. The second is that inter-specific
+   competition and changes in species relative presence can be simulated as a function of species-specific responses
+   to hierarchically arranged drivers (triggered and continuous) representing the suitability of the different species to
+   the conditions explored at each time step.
+  */
+  /*
+    If only one crop module is present, there is only one crop in the community (rel pres = 1)
+  */
   if (_soilColumn->id2cropModules.size() == 1)
   {
     cropModule()->setRelativePresence(1);
     //std::cout  <<  "\n Relative presence:" << cropModule()->getRelativePresence() << std::endl;
   } else
-  {
+  { // Before one of the crop emerges, there is no competition, so crops are equally present and their rel pres remains constant
     bool anycropEmerged = false;
     for (auto& e : _soilColumn->id2cropModules)
     {
@@ -668,7 +679,10 @@ void MonicaModel::step() {
         e.value->setRelativePresence(0.5);
       }
     }
-
+    /*
+      When the first crop emerges, they start to interact and compete. So we calculate the initial relative presence
+      based on the aboveground biomass of each crop.
+    */
     if (! initialRelativePresence && anycropEmerged)
     {
       double overallBiomass = 0.0;
@@ -685,6 +699,12 @@ void MonicaModel::step() {
       }
       initialRelativePresence = true;
     }
+    /*
+      Once the initial relative presence is calculated, we calculate the suitability of each crop to the current
+      daily conditions, based onfour different drivers: light, water, temperature and nitrogen. Once the suitability
+      for each crop and each driver is calculated, we calculate the community suitability and we update the relative
+      presence based on a specific formula. We store the daily suitabilities and the relative presence in a csv file.
+    */
     if (anycropEmerged)
     {
       // Struct to store suitability data for logging
@@ -696,25 +716,27 @@ void MonicaModel::step() {
         double suitability;
       };
       std::vector<SuitabilityData> suitabilityData;
+      // Variables needed to calculate light suitability
       double comm_lai = 0.0;
       double comm_height = 0.0;
-      double comm_root_depth = 0.0;
       for (auto& e : _soilColumn->id2cropModules)
       {
         double weight = e.value -> getRelativePresence();
         comm_lai += e.value->get_LeafAreaIndex() * weight;
         comm_height += e.value -> get_CropHeight() * weight;
-        comm_root_depth += e.value->get_RootingDepth_m() * weight;
       }
-      const double lai_comm = comm_lai;
-      const double height_comm = comm_height;
+      const double lai_comm = comm_lai;  // LAI of the community as a whole
+      const double height_comm = comm_height;  // Height of the community as a whole
+      // Variables needed to calculate water suitability
       double total_swc = 0.0;
+      double comm_root_depth = 0.0;
       for (auto& e : _soilColumn->id2cropModules) {
         double weight = e.value->getRelativePresence();
         double swc_sum = 0.0;
         int layers_count = 0;
-        double max_root_depth = e.value->get_RootingDepth();
-        // Calculate average SWC across all layers within root zone
+        comm_root_depth += e.value->get_RootingDepth_m() * weight;
+        double max_root_depth = e.value->get_RootingDepth(); // layer at which the deepest roots arrive
+        // Calculate average PAW across all layers within root zone of a given crop
         for (size_t i = 0; i < _soilColumn->size(); i++) {
           if (i<= max_root_depth) {
             double layer_swc = _soilMoisture->get_SoilMoisture(i) -
@@ -727,21 +749,22 @@ void MonicaModel::step() {
         double avg_swc = layers_count > 0 ? swc_sum / layers_count : 0.0;
         total_swc += avg_swc * weight;
       }
-      const double swc_comm = total_swc;
-      const double root_depth_comm = comm_root_depth;
+      const double swc_comm = total_swc; // PAW to which the community is exposed
+      const double root_depth_comm = comm_root_depth; // Root depth of the community as a whole
+      // Variables needed to calculate temperature suitability
       auto climateData = currentStepClimateData();
       double T_a = climateData[Climate::tavg];
       std::vector<double> Sfs; // individual suitabilities
       double CSf = 0.0; // community suitability
       for (auto& e : _soilColumn->id2cropModules)
       {
-        // light suitability
-        const double max_lai = 6; // e.value -> cultivarParameters().pc_MaxLAI;  I need to add these,for now I use a default file
+        // Light suitability
+        const double max_lai = 6; // e.value -> cultivarParameters().pc_MaxLAI;  I need to add these,for now I use a default value
         const double max_height = e.value -> cultivarParameters().pc_MaxCropHeight;
         double f_light = 0.5 + ((max_lai - lai_comm)/(max_lai + lai_comm) +
                           2*(max_height - height_comm)/(max_height + height_comm))/6.0;
         f_light = std::clamp(f_light, 0.0, 1.0);
-        // temperature suitability
+        // Temperature suitability (triangular approach)
         const double T_min =  e.value -> speciesParameters().pc_MinimumTemperatureForAssimilation;
         const double T_opt = e.value -> speciesParameters().pc_OptimumTemperatureForAssimilation;
         const double T_max = e.value -> speciesParameters().pc_MaximumTemperatureForAssimilation;
@@ -752,9 +775,9 @@ void MonicaModel::step() {
           f_temp = 1.0 - ((T_a - T_opt) / (T_max - T_opt));
         }
         f_temp = std::clamp(f_temp, 0.0, 1.0);
-        // water suitability
+        // Water suitability (average of water availabilty, f_paw and deeping roots effect, f_roots)
         double stage = e.value -> get_DevelopmentalStage();
-        const double DT = e.value -> cultivarParameters().pc_DroughtStressThreshold[stage];
+        const double DT = e.value -> cultivarParameters().pc_DroughtStressThreshold[stage]; // get stage-dependent drought stress
         double f_paw = 0.0;
         if (swc_comm >= 1.0 - DT) {
           f_paw = (DT - 1.0) / DT + swc_comm / DT;
@@ -766,18 +789,19 @@ void MonicaModel::step() {
         }
         double f_water = 0.5 * (f_paw + f_roots);  // Average of two components
         f_water = std::clamp(f_water, 0.0, 1.0);
-        // nitrogen suitability
+        // Nitrogen suitability
         const double critNc = e.value -> get_CriticalNConcentration();
         const double AbBiomNc = e.value -> get_AbovegroundBiomassNConcentration();
-        double rapporto = AbBiomNc / critNc;
         double f_nitro = (AbBiomNc < critNc) ? AbBiomNc / critNc : 1.0;
         f_nitro = std::clamp(f_nitro, 0.0, 1.0);
+        // Here we set the hierarchy of the drivers, ordering the suitability factor in the Sfi_values vector.
         std::vector<double> Sfi_values = {
-          f_nitro,  // Highest priority (q=0)
+          f_light,  // Highest priority (q=0)
           f_water,   // Second priority (q=1)
           f_temp,    // Third priority (q=2)
-          f_light    // Lowest priority (q=3)
+          f_nitro    // Lowest priority (q=3)
         };
+        // We calculate the hierarchy-corrected suitability HSf
         std::vector<double> HSf_values;
         for (size_t q = 0; q < Sfi_values.size(); ++q) {
           double HSf_q;
@@ -801,8 +825,9 @@ void MonicaModel::step() {
         // Store data for logging
         suitabilityData.push_back({f_light, f_temp, f_water, f_nitro, suitability});
         Sfs.push_back(suitability);
-        CSf += suitability;
+        CSf += suitability; // this is the community suitability
       }
+      // Here we calculate the realtive presence update based on the suitabilities
       const double I = 40.0; // Competition intensity parameter (adjust as needed)
       size_t idx = 0;
       for (auto& e : _soilColumn->id2cropModules)
@@ -833,9 +858,7 @@ void MonicaModel::step() {
     }
   }
 
-
   generalStep();
-
 }
 
 /**
