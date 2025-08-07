@@ -7,6 +7,14 @@
 				  "cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
 			  },
 			  "residueParams": ["include-from-file", "crop-residues/wheat.json"]
+		  },
+		  "WW_alt": {
+			  "is-winter-crop": true,
+			  "cropParams": {
+				  "species": ["include-from-file", "crops/wheat_nit.json"],
+				  "cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+			  },
+			  "residueParams": ["include-from-file", "crop-residues/wheat.json"]
 		  }
 	  },
 
@@ -16,7 +24,7 @@
 				"id": "WW1", "date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]
 			},
 			{
-				"id": "WW2" ,"date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]
+				"id": "WW2" ,"date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_alt"]
 			},
 			{
 				"id": "WW1",

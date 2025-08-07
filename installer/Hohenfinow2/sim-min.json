@@ -25,31 +25,6 @@
 			"csv-separator": ","
 		},
 
-		"_events": [
-			"crop", [
-				"CM-count",
-				"Crop",
-				["Yield", "LAST"],
-				["Date|sowing", "FIRST"],
-				["Date|harvest", "LAST"]
-			],
-			"daily", [
-				"Date",
-				"Crop",
-				"Stage",
-				"Yield",
-				"Evapotranspiration",
-				"Evaporation",
-				"Tra",
-				"Transpiration",
-				"Act_ET",
-				"ETa/ETc",
-				["Mois", [1, 6]],
-				["N", [1, 6]],
-				["rootDensity",[1,6]]
-			]
-		],
-
 		"events" : [
 
 			"daily", [
@@ -63,9 +38,11 @@
 				"Tra",
 				"Act_ET",
 				"ETa/ETc",
-				["Mois", [1, 6]],
-				["N", [1, 6]],
-				["rootDensity",[1,6]]
+				"LAI",
+				"Height",
+				["Mois", [1, 8, "AVG"]],
+				["N", [1, 8, "AVG"]],
+				"EffRootDep"
 			],
 
 			"crop", [

@@ -36,6 +36,9 @@
 				["Tra|Tra1", {"cropId": "WW1"}],
 				["Act_ET|Act_ET1", {"cropId": "WW1"}],
 				["ETa/ETc|ETa/ETc1", {"cropId": "WW1"}],
+				["Height|Height1", {"cropId": "WW1"}],
+				["LAI|LAI1", {"cropId": "WW1"}],
+				["EffRootDep|EffRootDep1", {"cropId": "WW1"}],
 				["Crop|Crop2", {"cropId": "WW2"}],
 				["Stage|Stage2", {"cropId": "WW2"}],
 				["AbBiom|AbBiom2", {"cropId": "WW2"}],
@@ -45,9 +48,11 @@
 				["Tra|Tra2", {"cropId": "WW2"}],
 				["Act_ET|Act_ET2", {"cropId": "WW2"}],
 				["ETa/ETc|ETa/ETc2", {"cropId": "WW2"}],
-				["Mois", [1, 6]],
-				["N", [1, 6]],
-				["rootDensity",[1,6]]
+				["Height|Height2", {"cropId": "WW2"}],
+				["LAI|LAI2", {"cropId": "WW2"}],
+				["EffRootDep|EffRootDep2", {"cropId": "WW2"}],
+				["Mois", [1, 8, "AVG"]],
+				["N", [1, 8, "AVG"]]
 			],
 
 			"crop|WW1", [

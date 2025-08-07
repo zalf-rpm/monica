@@ -20,25 +20,19 @@ df1 = df1[(df1['Date'] >= start_date) & (df1['Date'] <= end_date)]
 df2 = df2[(df2['Date'] >= start_date) & (df2['Date'] <= end_date)]
 
 # Columns that SHOULD be numeric (adjust as needed)
-numeric_cols_df1 = ['Yield', 'Evapotranspiration', 'AbBiom']
-numeric_cols_df2 = ['Yield1', 'Evapotranspiration1', 'AbBiom1']
+numeric_cols_df1 = ['Yield', 'Evapotranspiration', 'AbBiom', 'N', 'Mois']
+numeric_cols_df2 = ['Yield1', 'Evapotranspiration1', 'AbBiom1', 'Yield2', 'Evapotranspiration2', 'AbBiom2', 'Mois', 'N']
 
 # Convert to numeric in df1
 for col in numeric_cols_df1:
-    df1[col] = pd.to_numeric(df1[col], errors='coerce')  # 'coerce' turns invalid values to NaN
+    df1[col] = pd.to_numeric(df1[col], errors='coerce')
 
 # Convert to numeric in df2
 for col in numeric_cols_df2:
     df2[col] = pd.to_numeric(df2[col], errors='coerce')
 
-# === Define variable groups ===
-scalar_vars = ['Stage', 'Evaporation', 'Evapotranspiration', 'Tra', 'Act_ET', 'AbBiom']
-layered_var_groups = {
-    'Mois': ['Mois_1', 'Mois_2', 'Mois_3'],
-    'N': ['N_1', 'N_2', 'N_3'],
-    'rootDensity': ['rootDensity_1', 'rootDensity_2', 'rootDensity_3']
-}
-variables = scalar_vars + list(layered_var_groups.keys())  # 6 scalars + 3 grouped = 9 plots
+# === Define variables to plot ===
+variables = ['Stage', 'Evapotranspiration', 'AbBiom', 'Yield', 'LAI', 'Height', 'EffRootDep', 'N', 'Mois']
 
 # === Styling ===
 dataset_colors = {
@@ -52,27 +46,35 @@ scalar_linestyles = {
     'C2': 'dotted'
 }
 
-layer_styles = {
-    1: {'linestyle': 'solid', 'label': 'Layer 1'},
-    2: {'linestyle': 'dashed', 'label': 'Layer 2'},
-    3: {'linestyle': 'dotted', 'label': 'Layer 3'}
-}
-
 # === Plotting ===
-fig, axes = plt.subplots(3, 3, figsize=(15, 12), sharex=True)
+n_rows = 3
+n_cols = 3
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 12), sharex=True)
 axes = axes.flatten()
 
 for i, var in enumerate(variables):
+    if i >= len(axes):
+        break
+
     ax = axes[i]
 
-    # --- Scalar variables (crop-specific) -
-    if var in scalar_vars:
-        if var in df1.columns:
-            ax.plot(df1['Date'], df1[var],
-                    color=dataset_colors['baseline'],
-                    linestyle=scalar_linestyles['baseline'],
-                    label=f'{var} (baseline)')
+    # --- Plot baseline data (df1) ---
+    if var in df1.columns:
+        ax.plot(df1['Date'], df1[var],
+                color=dataset_colors['baseline'],
+                linestyle=scalar_linestyles['baseline'],
+                label=f'{var} (baseline)')
 
+    # --- Plot intercropping data (df2) ---
+    # Special handling for Mois and N which don't have suffixes in df2
+    if var in ['Mois', 'N']:
+        if var in df2.columns:
+            ax.plot(df2['Date'], df2[var],
+                    color=dataset_colors['intercropping'],
+                    linestyle=scalar_linestyles['C1'],
+                    label=f'{var} (intercropping)')
+    else:
+        # Normal handling for other variables with suffixes
         if f"{var}1" in df2.columns:
             ax.plot(df2['Date'], df2[f"{var}1"],
                     color=dataset_colors['intercropping'],
@@ -85,26 +87,6 @@ for i, var in enumerate(variables):
                     linestyle=scalar_linestyles['C2'],
                     label=f'{var} (C2)')
 
-    # --- Layered/system-level variables grouped ---
-    elif var in layered_var_groups:
-        for j, layer_var in enumerate(layered_var_groups[var], start=1):
-            style = layer_styles[j]
-
-            if layer_var in df1.columns:
-                ax.plot(df1['Date'], df1[layer_var],
-                        color=dataset_colors['baseline'],
-                        linestyle=style['linestyle'],
-                        label=f'{layer_var} (baseline)')
-
-            if layer_var in df2.columns:
-                ax.plot(df2['Date'], df2[layer_var],
-                        color=dataset_colors['intercropping'],
-                        linestyle=style['linestyle'],
-                        label=f'{layer_var} (intercropping)')
-
-    else:
-        ax.text(0.5, 0.5, f"{var} not found", ha='center', va='center')
-
     ax.set_title(var)
     ax.grid(True)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%Y'))
@@ -114,6 +96,10 @@ for i, var in enumerate(variables):
     handles, labels = ax.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     ax.legend(by_label.values(), by_label.keys(), fontsize='small')
+
+# Hide any unused subplots
+for j in range(i+1, len(axes)):
+    axes[j].axis('off')
 
 # === Final layout ===
 plt.suptitle("Comparison: Single Crop vs. Intercropping (Daily Values)", fontsize=16)

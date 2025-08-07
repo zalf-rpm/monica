@@ -15,7 +15,7 @@ df2 = df2.dropna(subset=['Date'])
 
 # === Filter date window ===
 start_date = "1991-08-01"
-end_date = "1992-08-31"
+end_date = "1997-08-31"
 df1 = df1[(df1['Date'] >= start_date) & (df1['Date'] <= end_date)]
 df2 = df2[(df2['Date'] >= start_date) & (df2['Date'] <= end_date)]
 
