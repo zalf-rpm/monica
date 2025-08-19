@@ -607,7 +607,7 @@ private:
   double vc_OvercastDayRadiation{0.0};          //! old DRO
   double vc_OxygenDeficit{0.0};          //! old LURED
   double pc_PartBiologicalNFixation{};
-  bool pc_Perennial{};
+  bool pc_Perennial{false};
   double vc_PhotoperiodicDaylength{0.0};        //! old DLP
   double vc_PhotActRadiationMean{0.0};          //! old RDN
   double pc_PlantDensity{};
