@@ -118,7 +118,8 @@ public:
   void fc_CropDevelopmentalStage(double meanAirTemperature,
                                  double soilMoisture_m3,
                                  double fieldCapacity,
-                                 double permanentWiltingPoint);
+                                 double permanentWiltingPoint,
+                                 Tools::Date currentDate);
 
   double fc_KcFactor(double d_StageTemperatureSum,
                      double d_CurrentTemperatureSum,
@@ -721,6 +722,8 @@ private:
   double fractionOfInterceptedRadiation2{0.0};
 
   bool __enable_vernalisation_factor_fix__{false};
+
+  Tools::Date _perennialCropDormancyPeriodEndDate;
 };
 
 //#define TEST_HOURLY_OUTPUT

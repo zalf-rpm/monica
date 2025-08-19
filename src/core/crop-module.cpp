@@ -799,11 +799,16 @@ void CropModule::step(double vw_MeanAirTemperature,
   size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 
   // start accumulating temperature sums only after dormancy
-  if (vs_JulianDay >= speciesPs.dormancyUntilDoy) {
+  if (!_perennialCropDormancyPeriodEndDate.isValid()) {
+    _perennialCropDormancyPeriodEndDate = Date(1, 1, currentDate.year())
+    + (speciesPs.dormancyEndDoy - 1);
+  }
+  if (!pc_Perennial || currentDate >= _perennialCropDormancyPeriodEndDate) {
     fc_CropDevelopmentalStage(vw_MeanAirTemperature,
                               soilColumn[0].get_Vs_SoilMoisture_m3(),
                               soilColumn[0].vs_FieldCapacity(),
-                              soilColumn[0].vs_PermanentWiltingPoint());
+                              soilColumn[0].vs_PermanentWiltingPoint(),
+                              currentDate);
   }
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
@@ -1204,7 +1209,8 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
 void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
                                            double soilMoisture_m3,
                                            double fieldCapacity,
-                                           double permanentWiltingPoint) {
+                                           double permanentWiltingPoint,
+                                           Tools::Date currentDate) {
   if (vc_DevelopmentalStage == 0) {
     if (pc_Perennial) { // pc_Perennial == true
       if (meanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
@@ -1298,23 +1304,26 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
       }
     }
 
+    bool doResetPerennialCrop = pc_Perennial && currentDate.dayOfYear() >= speciesPs.dormancyStartDoy;
     if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
-      double vc_StageExcessTemperatureSum =
-          vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
-
       if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages - 1) {
         vc_DevelopmentalStage++;
+        double vc_StageExcessTemperatureSum =
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
         vc_CurrentTemperatureSum[vc_DevelopmentalStage] += vc_StageExcessTemperatureSum;
       } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) {
-        vc_StageExcessTemperatureSum = 0.0;
-        if (pc_Perennial && vc_GrowthCycleEnded) {
-          vc_DevelopmentalStage = 0;
-          fc_UpdateCropParametersForPerennial();
-          for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++) vc_CurrentTemperatureSum[stage] = 0.0;
-          vc_CurrentTotalTemperatureSum = 0.0;
-          vc_GrowthCycleEnded = false;
-        }
+        if (pc_Perennial && vc_GrowthCycleEnded) doResetPerennialCrop = true;
       }
+    }
+    if (doResetPerennialCrop) {
+      vc_DevelopmentalStage = 0;
+      fc_UpdateCropParametersForPerennial();
+      for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++) vc_CurrentTemperatureSum[stage] = 0.0;
+      vc_CurrentTotalTemperatureSum = 0.0;
+      vc_GrowthCycleEnded = false;
+      _perennialCropDormancyPeriodEndDate =
+        Date(1, 1, currentDate.year() + (currentDate.dayOfYear() > speciesPs.dormancyEndDoy ? 1 : 0))
+      + (speciesPs.dormancyEndDoy - 1);
     }
   } else {
     vc_ErrorStatus = true;
