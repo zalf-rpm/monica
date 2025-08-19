@@ -1,14 +1,14 @@
 #Download base image debian 9.5
-FROM debian:10.13 AS build-env
+FROM debian:13 AS build-env
 
 # Update Ubuntu Software repository
 RUN apt-get update
 # install monica prerequisites
 RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
-RUN apt-get install -y git python-pip python-dev build-essential
+RUN apt-get install -y git python3 build-essential
 RUN apt-get install -y curl zip unzip tar autoconf libtool automake
 
-ENV WORK_DIR /resource
+ENV WORK_DIR=/resource
 
 RUN mkdir ${WORK_DIR}
 WORKDIR ${WORK_DIR}
@@ -29,9 +29,9 @@ RUN sh create_cmake_release.sh
 WORKDIR ${WORK_DIR}/monica/_cmake_release
 RUN make
 
-FROM debian:10.13
+FROM debian:13
 
-ENV DEBIAN_FRONTED noninteractive
+ENV DEBIAN_FRONTED=noninteractive
 # Update Ubuntu Software repository
 RUN apt-get update
 # install monica prerequisites
@@ -39,12 +39,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y supervisor && \
     rm -rf /var/lib/apt/lists/*
 #RUN mkdir -p /run/monica/sqlite-db
 RUN mkdir -p /run/monica/soil
-ENV monica_dir /run/monica
-ENV supervisor_conf /etc/supervisor/supervisord.conf
-ENV monica_instances 3
-ENV MONICA_WORK /monica_data
-ENV MONICA_HOME ${monica_dir}
-ENV MONICA_PARAMETERS ${monica_dir}
+ENV monica_dir=/run/monica
+ENV supervisor_conf=/etc/supervisor/supervisord.conf
+ENV monica_instances=3
+ENV MONICA_WORK=/monica_data
+ENV MONICA_HOME=${monica_dir}
+ENV MONICA_PARAMETERS=${monica_dir}
 ENV monica_autostart_proxies=true
 ENV monica_autostart_worker=true
 ENV monica_auto_restart_proxies=true
@@ -58,7 +58,7 @@ ENV monica_intern_out_port=7788
 ENV monica_consumer_port=7777
 ENV monica_producer_port=6666
 
-ENV  EXECUTABLE_SOURCE /resource/monica/_cmake_release
+ENV  EXECUTABLE_SOURCE=/resource/monica/_cmake_release
 
 COPY docker/supervisord.conf ${supervisor_conf}
 
@@ -88,6 +88,6 @@ RUN useradd -ms /bin/bash myuser
 USER myuser
 
 CMD ["sh", "/start.sh"]
-ENV DEBIAN_FRONTED teletype
+ENV DEBIAN_FRONTED=teletype
 
 EXPOSE ${monica_producer_port} ${monica_consumer_port} ${monica_intern_in_port} ${monica_intern_out_port}
