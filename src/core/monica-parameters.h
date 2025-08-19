@@ -158,7 +158,7 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   double KO25{ 330.0 }; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
 
   int pc_TransitionStageLeafExp{ -1 }; //!< [1-7]
-
+  int dormancyUntilDoy {0}; //!< start accumulating temperature sums only after this DOY (is 0 if unset)
 };
 
 typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;

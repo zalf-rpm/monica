@@ -283,6 +283,7 @@ Errors SpeciesParameters::merge(json11::Json j) {
   set_double_value(KO25, j, "KO25");
 
   set_int_value(pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
+  set_int_value(dormancyUntilDoy, j, "DormancyUntilDoy");
 
   return res;
 }
@@ -344,7 +345,8 @@ json11::Json SpeciesParameters::to_json() const {
        {"AEVC",                                    J11Array{AEVC, "J mol-1"}},
        {"KC25",                                    J11Array{KC25, "umol mol-1 ubar-1"}},
        {"KO25",                                    J11Array{KO25, "mmol mol-1 mbar-1"}},
-       {"TransitionStageLeafExp",                  J11Array{pc_TransitionStageLeafExp, "1-7"}}
+       {"TransitionStageLeafExp",                  J11Array{pc_TransitionStageLeafExp, "1-7"}},
+        {"DormancyUntilDoy", dormancyUntilDoy}
       };
 
   return species;

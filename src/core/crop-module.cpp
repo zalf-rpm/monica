@@ -798,10 +798,13 @@ void CropModule::step(double vw_MeanAirTemperature,
 
   size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 
-  fc_CropDevelopmentalStage(vw_MeanAirTemperature,
-                            soilColumn[0].get_Vs_SoilMoisture_m3(),
-                            soilColumn[0].vs_FieldCapacity(),
-                            soilColumn[0].vs_PermanentWiltingPoint());
+  // start accumulating temperature sums only after dormancy
+  if (vs_JulianDay >= speciesPs.dormancyUntilDoy) {
+    fc_CropDevelopmentalStage(vw_MeanAirTemperature,
+                              soilColumn[0].get_Vs_SoilMoisture_m3(),
+                              soilColumn[0].vs_FieldCapacity(),
+                              soilColumn[0].vs_PermanentWiltingPoint());
+  }
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
     if (_fireEvent) _fireEvent("emergence");
