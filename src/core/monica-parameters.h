@@ -142,7 +142,7 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   double pc_RootPenetrationRate{ 0.0 };
   double pc_RootFormFactor{ 0.0 };
   double pc_SpecificRootLength{ 0.0 };
-  int pc_StageAfterCut{ 0 };
+  int pc_StageAfterCut{ 0 }; //!< stage number is zero-based
   double pc_LimitingTemperatureHeatStress{ 0.0 };
   int pc_CuttingDelayDays{ 0 };
   double pc_DroughtImpactOnFertilityFactor{ 0.0 };
