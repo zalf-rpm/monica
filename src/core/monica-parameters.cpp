@@ -505,6 +505,7 @@ Errors CultivarParameters::merge(json11::Json j) {
   set_string_value(pc_Description, j, "Description");
   set_bool_value(pc_Perennial, j, "Perennial");
   set_double_value(pc_MaxAssimilationRate, j, "MaxAssimilationRate");
+  set_double_value(pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient");
   set_double_value(pc_MaxCropHeight, j, "MaxCropHeight");
   set_double_value(pc_ResidueNRatio, j, "ResidueNRatio");
   set_double_value(pc_LT50cultivar, j, "LT50cultivar");
@@ -572,6 +573,7 @@ json11::Json CultivarParameters::to_json() const {
        {"Description",                   pc_Description},
        {"Perennial",                     pc_Perennial},
        {"MaxAssimilationRate",           pc_MaxAssimilationRate},
+        {"LightExtinctionCoefficient", pc_LightExtinctionCoefficient},
        {"MaxCropHeight",                 J11Array{pc_MaxCropHeight, "m"}},
        {"ResidueNRatio",                 pc_ResidueNRatio},
        {"LT50cultivar",                  pc_LT50cultivar},

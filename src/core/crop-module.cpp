@@ -2344,8 +2344,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
             << " other-crop-height: " << _intercroppingOtherCropHeight
             << " own-crop-height: " << vc_CropHeight << endl;
     debug() << "vc_OvercastSkyTimeFraction: " << vc_OvercastSkyTimeFraction << endl;
-    auto F_t1 = [](double LAI) {
-      return 1.0 - exp(-0.8 * LAI);
+    auto F_t1 = [this](double LAI) {
+      return 1.0 - exp(-cultivarPs.pc_LightExtinctionCoefficient * LAI);
     };
     tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);
     fractionOfInterceptedRadiation1 = F_t1(vc_LeafAreaIndex);

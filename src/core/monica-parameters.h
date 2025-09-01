@@ -188,6 +188,7 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   bool pc_Perennial{ false };
   //std::string pc_PermanentCultivarId;
   double pc_MaxAssimilationRate{ 0.0 };
+  double pc_LightExtinctionCoefficient{ 0.8 };
   double pc_MaxCropHeight{ 0.0 };
   double pc_ResidueNRatio{ 0.0 };
   double pc_LT50cultivar{ 0.0 };
