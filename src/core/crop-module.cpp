@@ -1312,10 +1312,10 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
       && currentDate.dayOfYear() >= speciesPs.dormancyStartDoy;
     if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
       if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages - 1) {
-        vc_DevelopmentalStage++;
-        double vc_StageExcessTemperatureSum =
+        double stageExcessTemperatureSum =
           vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
-        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += vc_StageExcessTemperatureSum;
+        vc_DevelopmentalStage++;
+        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += stageExcessTemperatureSum;
       } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) {
         if (pc_Perennial && vc_GrowthCycleEnded) doResetPerennialCrop = true;
       }
