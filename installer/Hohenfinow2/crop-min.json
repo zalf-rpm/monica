@@ -7,32 +7,13 @@
 				  "cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
 			  },
 			  "residueParams": ["include-from-file", "crop-residues/wheat.json"]
-		  },
-		  "GV": {
-			  "cropParams": {
-				  "species": ["include-from-file", "crops/grapevine.json"],
-				  "_species": {
-					  "=": ["include-from-file", "crops/grapevine.json"],
-					  "DormancyStartDoy": 350,
-					  "DormancyEndDoy": 31
-				  },
-				  "cultivar": ["include-from-file", "crops/grapevine/.json"]
-			  },
-			  "residueParams": ["include-from-file", "crop-residues/wheat.json"]
 		  }
 	  },
 
 	  "cropRotation": [{
-		  "worksteps": [
-			  {
-				  "date": "1991-01-01", "type": "Sowing", "crop": ["ref", "crops", "GV"]
-			  }
-		  ]
-	  }],
-	  "_cropRotation": [{
 		"worksteps": [
 			{
-				"date": "0000-01-01", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]
+				"date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]
 			},
 			{
 				"type": "NDemandFertilization",

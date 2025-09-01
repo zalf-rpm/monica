@@ -1,5 +1,5 @@
 {
-	"crop.json": "crop.json",
+	"crop.json": "crop-min.json",
 	"site.json": "site-min.json",
 	"climate.csv": "climate-min.csv",
 
@@ -9,8 +9,7 @@
 	},
 	
 	"debug?": false,
-	"_include-file-base-path": "/hf2/monica-parameters/",
-	"include-file-base-path": "/home/berg/GitHub/monica/installer/Hohenfinow2/params/",
+	"include-file-base-path": "${MONICA_PARAMETERS}",
 
 	"output": { 
 	  	"write-file?": true,
