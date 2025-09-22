@@ -185,7 +185,8 @@
 				"CM-count",
 				"Crop",
 				["Date|sowing", "FIRST"],
-				["Date|harvest", "LAST"]
+				["Date|harvest", "LAST"],
+				["Yield", "LAST"]
 			],
 
 			"xxxx-03-31", [
