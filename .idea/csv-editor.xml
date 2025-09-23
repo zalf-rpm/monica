@@ -87,6 +87,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/sim-out_section_xxxx-03-31.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/sim-out_section_yearly.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
