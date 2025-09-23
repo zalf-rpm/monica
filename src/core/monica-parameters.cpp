@@ -1632,8 +1632,8 @@ Errors EnvironmentParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
   using namespace mas::schema::climate;
-  auto str2rcp = [](string str) {
-    switch (stoi(str.substr(3, 2))) {
+  auto rcpNo2rcpEnum = [&](int rcpNo) {
+    switch (rcpNo) {
       case 19:
         return RCP::RCP19;
         break;
@@ -1641,6 +1641,7 @@ Errors EnvironmentParameters::merge(json11::Json j) {
         return RCP::RCP26;
         break;
       case 34:
+        res.appendWarning(kj::str("RCP", rcpNo, " currently not supported. Default RCP 8.5 is used.").cStr());
         return RCP::RCP34;
         break;
       case 45:
@@ -1650,18 +1651,32 @@ Errors EnvironmentParameters::merge(json11::Json j) {
         return RCP::RCP60;
         break;
       case 70:
+      res.appendWarning(kj::str("RCP", rcpNo, " currently not supported. Default RCP 8.5 is used.").cStr());
         return RCP::RCP70;
         break;
       case 85:
         return RCP::RCP85;
         break;
     }
+    res.appendWarning(kj::str("RCP", rcpNo, " unknown. Default RCP 8.5 used.").cStr());
     return RCP::RCP85;
   };
 
   set_double_value(p_Albedo, j, "Albedo");
 
-  if (j["rcp"].is_string()) rcp = str2rcp(j["rcp"].string_value());
+  if (j["rcp"].is_string()) {
+    try {
+      auto rcpNo = stoi(j["rcp"].string_value().substr(3, 2));
+      rcp = rcpNo2rcpEnum(rcpNo);
+    } catch (std::exception&) {
+      res.appendWarning(kj::str(j["rcp"].string_value(), " unknown. Default RCP 8.5 used.").cStr());
+    }
+  }
+  else if (j["rcp"].is_number()) {
+    auto rcpNo = j["rcp"].number_value();
+    if (rcpNo < 10) rcp = rcpNo2rcpEnum(int(rcpNo*10));
+    else rcp = rcpNo2rcpEnum(int(rcpNo));
+  }
 
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
   if (j["AtmosphericCO2s"].is_object()) {
