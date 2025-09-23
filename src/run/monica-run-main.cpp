@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 
     // merge the json objects into the env
     auto mergeResult = env.merge(createEnvJsonFromJsonObjects(ps));
-    printPossibleErrors(mergeResult);
+    printPossibleErrors(mergeResult, activateDebug);
     if (mergeResult.failure()) return 1;
 
     //check if there were sturdy refs to time-series

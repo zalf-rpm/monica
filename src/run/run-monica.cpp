@@ -289,8 +289,6 @@ void writeDebugInputs(const Env &env, string fileName = "inputs.json") {
 }
 
 
-//-----------------------------------------------------------------------------
-
 template<typename T = int>
 Maybe<T> parseInt(const string &s) {
   Maybe<T> res;
@@ -923,7 +921,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         monica->setOtherCropHeightAndLAIt(-1, -1);
       }
     }
-    debug() << "MONICA 1: ";
+
+    if (isSyncIC) debug() << "MONICA 1: ";
     monica->step();
     if (isSyncIC) {
       if (monica->cropGrowth()) {
