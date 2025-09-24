@@ -1,3 +1,4 @@
+
 /* This Source Code Form is subject to the terms of the Mozilla Public
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -160,13 +161,9 @@ public:
   void initMonica() {
     returnObjOutputs = env.returnObjOutputs();
     out.customId = env.customId;
+    dailyOut.customId = env.customId;
 
     activateDebug = env.debugMode;
-
-    //prefer multiple crop rotations, but use a single rotation if there
-    if (env.cropRotations.empty() && !env.cropRotation.empty()) {
-      env.cropRotations.emplace_back(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation);
-    }
 
     KJ_LOG(INFO, "starting Monica");
 
@@ -175,143 +172,8 @@ public:
     monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.
       noOfPreviousDaysSerializedClimateData;
 
-    //debug() << "currentDate" << endl;
-    //Date currentDate = env.climateData.startDate();
-
-    // create a way for worksteps to let the runtime calculate at a daily basis things a workstep needs when being executed
-    // e.g. to actually accumulate values from days before the workstep (for calculating a moving window of past values)
-    int dailyFuncId = 0;
-
-
-    //iterate through all the worksteps in the croprotation(s) and check for functions which have to run daily
-    for (auto& cr : env.cropRotations) {
-      for (auto& cm : cr.cropRotation) {
-        for (const auto& wsptr : cm.getWorksteps()) {
-          auto df = wsptr->registerDailyFunction(
-                                                 [this, dailyFuncId]() -> vector<double>& {
-                                                   return dailyValues[dailyFuncId];
-                                                 });
-          if (df) {
-            applyDailyFuncs.emplace_back([this, df, dailyFuncId] {
-              dailyValues[dailyFuncId].push_back(df(monica.get()));
-            });
-          }
-          dailyFuncId++;
-        }
-      }
-    }
-
-    auto crit = env.cropRotations.begin();
-
-    //cropRotation is a shadow of the env.cropRotation, which will hold pointers to CMs in env.cropRotation, but might shrink
-    //if pure absolute CMs are finished
-    vector<CultivationMethod*> cropRotation;
-
-    auto checkAndInitShadowOfNextCropRotation_ = [](auto& envCropRotations, auto& crit, auto& cropRotation,
-                                                    Date currentDate) {
-      if (crit != envCropRotations.end()) {
-        //if current cropRotation is finished, try to move to next
-        if (crit->end.isValid() && currentDate == crit->end + 1) {
-          crit++;
-          cropRotation.clear();
-        }
-
-        //check again, because we might have moved to next cropRotation
-        if (crit != envCropRotations.end()) {
-          //if a new cropRotation starts, copy the pointers to the CMs to the shadow CR
-          if (crit->start.isValid() && currentDate == crit->start) {
-            for (auto& cm : crit->cropRotation) cropRotation.push_back(&cm);
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    auto checkAndInitShadowOfNextCropRotation = [&](Date currentDate) {
-      return checkAndInitShadowOfNextCropRotation_(env.cropRotations, crit, cropRotation, currentDate);
-    };
-
-    //iterator through the crop rotation
-    auto cmit = cropRotation.begin();
-
-    auto findNextCultivationMethod_ = [&](Date currentDate,
-                                          auto& cropRotation,
-                                          auto& cmit,
-                                          bool advanceToNextCM = true) {
-      CultivationMethod* currentCM = nullptr;
-      Date nextAbsoluteCMApplicationDate;
-
-      //it might be possible that the next cultivation method has to be skipped (if cover/catch crop)
-      bool notFoundNextCM = true;
-      while (notFoundNextCM) {
-        if (advanceToNextCM) {
-          //delete fully cultivation methods with only absolute worksteps,
-          //because they won't participate in a new run when wrapping the crop rotation
-          if ((*cmit)->areOnlyAbsoluteWorksteps() || !(*cmit)->repeat()) cmit = cropRotation.erase(cmit);
-          else cmit++;
-
-          //start anew if we reached the end of the crop rotation
-          if (cmit == cropRotation.end()) cmit = cropRotation.begin();
-        }
-
-        //check if there's at least a cultivation method left in cropRotation
-        if (cmit != cropRotation.end()) {
-          advanceToNextCM = true;
-          currentCM = *cmit;
-
-          //addedYear tells that the start of the cultivation method was before currentDate and thus the whole
-          //CM had to be moved into the next year
-          //is possible for relative dates
-          bool addedYear = currentCM->reinit(currentDate);
-          if (addedYear) {
-            //current CM is a cover crop, check if the latest sowing date would have been before current date,
-            //if so, skip current CM
-            if (currentCM->isCoverCrop()) {
-              //if current CM's latest sowing date is actually after current date, we have to
-              //reinit current CM again, but this time prevent shifting it to the next year
-              if (!(notFoundNextCM =
-                    currentCM->absLatestSowingDate().withYear(currentDate.year()) < currentDate)) {
-                currentCM->reinit(currentDate, true);
-              }
-            } else notFoundNextCM = currentCM->canBeSkipped(); //if current CM was marked skipable, skip it
-          } else { //not added year or CM was had also absolute dates
-            if (currentCM->isCoverCrop()) notFoundNextCM = currentCM->absLatestSowingDate() < currentDate;
-            else if (currentCM->canBeSkipped()) notFoundNextCM = currentCM->absStartDate() < currentDate;
-            else notFoundNextCM = false;
-          }
-
-          if (notFoundNextCM) nextAbsoluteCMApplicationDate = Date();
-          else {
-            nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty()
-                                              ? Date()
-                                              : currentCM->absStartDate(
-                                                                        false);
-            debug() << "new valid next abs app-date: " << nextAbsoluteCMApplicationDate.toString() << endl;
-          }
-        } else {
-          currentCM = nullptr;
-          nextAbsoluteCMApplicationDate = Date();
-          notFoundNextCM = false;
-        }
-      }
-
-      return make_pair(currentCM, nextAbsoluteCMApplicationDate);
-    };
-
-    auto findNextCultivationMethod = [&](Date currentDate, bool advanceToNextCM = true) {
-      return findNextCultivationMethod_(currentDate, cropRotation, cmit, advanceToNextCM);
-    };
-
-    //direct handle to current cultivation method
-    //CultivationMethod* currentCM{nullptr};
-    //Date nextAbsoluteCMApplicationDate;
-    //tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
-
     store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
-
     monica->addEvent("run-started");
-
   }
 
 
@@ -322,43 +184,13 @@ public:
 
       // test if monica's crop has been dying in previous step
       // if yes, it will be incorporated into soil
-      if (monica->cropGrowth() && monica->cropGrowth()->isDying()) {
-        monica->incorporateCurrentCrop();
-      }
-
-      //try to apply dynamic worksteps marked to run before everything else that day
-      // for (auto& dws : list(dynamicWorksteps)) {
-      //   if (dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
-      // }
-
-      //for (auto& ws : dailyWorksteps) ws.apply(monica.get());
+      if (monica->cropGrowth() && monica->cropGrowth()->isDying()) monica->incorporateCurrentCrop();
 
       //monica main stepping method
       monica->step();
-      debug() << std::endl;
-
-      // call all daily functions, assuming it's better to do this after the steps, than before
-      // so the daily monica calculations will be taken into account
-      // but means also that a workstep which gets executed before the steps, can't take the
-      // values into account by applying a daily function
-      for (auto& f : applyDailyFuncs) f();
-
-      //try to apply dynamic worksteps marked to run AFTER everything else that day
-      // for (auto& dws : list(dynamicWorksteps)) {
-      //   if (!dws.runAtStartOfDay() && dws.applyWithPossibleCondition(monica.get())) dynamicWorksteps.remove(dws);
-      // }
 
       //store results
       for (auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
-
-      //if the next application date is not valid, we're at the end
-      //of the application list of this cultivation method
-      //and go to the next one in the crop rotation
-      //if (currentCM && currentCM->allDynamicWorkstepsFinished() && !nextAbsoluteCMApplicationDate.isValid()) {
-        // to count the applied fertiliser for the next production process
-//!!!!!!!        monica->resetFertiliserCounter();
-        //tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate + 1);
-      //}
   }
 
   void finalizeMonica(Date currentDate) {
@@ -377,6 +209,21 @@ public:
     }
   }
 
+  void finalizeDaily() {
+    for (auto& sd : store) {
+      Output::Data d;
+      d.origSpec = sd.spec.origSpec.dump();
+      d.outputIds = sd.outputIds;
+      if (returnObjOutputs) {
+        sd.aggregateResultsObj();
+        d.resultsObj.push_back(sd.resultsObj.back());
+      } else {
+        sd.aggregateResults();
+        d.results.push_back(sd.results.back());
+      }
+      dailyOut.data.emplace_back(d);;
+    }
+  }
 
   kj::MainBuilder::Validity startComponent() {
     KJ_LOG(INFO, "MONICA: starting daily MONICA Cap'n Proto FBP component");
@@ -393,6 +240,7 @@ public:
     while ((ports.isInConnected(STATE_IN) || ports.isInConnected(ENV))
       && (ports.isOutConnected(RESULT) || ports.isOutConnected(STATE_OUT))) {
 
+      bool envOrStateReceived = false;
       // read serialized state and create a monica instance with that state
       if (ports.isInConnected(ENV)) {
         KJ_LOG(INFO, "trying to read from env IN port");
@@ -406,7 +254,7 @@ public:
         case mas::schema::fbp::Channel<IP>::Msg::VALUE:
           try {
             auto ip = msg.getValue();
-            auto stEnv = ip.getContent().template getAs<mas::schema::common::StructuredText>();
+            auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
             std::string err;
             const json11::Json& envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
             auto envJsonStr = envJson.dump();
@@ -419,9 +267,11 @@ public:
             env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
               Soil::updateUnsetPwpFcSatFromToth;
             auto errors = env.merge(envJson);
+            monica = nullptr;
             monica = kj::heap<MonicaModel>(env.params);
-            monica->initComponents(env.params);
+            //monica->initComponents(env.params);
             initMonica();
+            envOrStateReceived = true;
             break;
           } catch (kj::Exception& e) {
             KJ_LOG(INFO, "Exception reading env: ", e.getDescription());
@@ -432,7 +282,7 @@ public:
         }
       }
       // no env could be read
-      if (monica.get() == nullptr && ports.isInConnected(STATE_IN)) {
+      if (!envOrStateReceived && ports.isInConnected(STATE_IN)) {
         KJ_LOG(INFO, "trying to read from serialized_state IN port");
         auto msg = ports.in(STATE_IN).readIfMsgRequest().send().wait(ioContext.waitScope);
         switch (msg.which()) {
@@ -441,10 +291,25 @@ public:
           KJ_LOG(INFO, "received done on serialized_state port");
           ports.setInDisconnected(STATE_IN);
           continue;
-        case mas::schema::fbp::Channel<IP>::Msg::VALUE: try {
+        case mas::schema::fbp::Channel<IP>::Msg::VALUE:
+          try {
             auto ip = msg.getValue();
-            auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-            monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+            try {
+              auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
+              if (monica.get() == nullptr) monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+              else monica->deserialize(runtimeState.getModelState());
+              envOrStateReceived = true;
+            } catch (kj::Exception& e) {
+              auto jsonState = ip.getContent().getAs<capnp::Text>();
+              const capnp::JsonCodec json;
+              capnp::MallocMessageBuilder mmb;
+              auto runtimeStateBuilder = mmb.initRoot<mas::schema::model::monica::RuntimeState>();
+              json.decode(jsonState.asBytes().asChars(), runtimeStateBuilder);
+              auto runtimeState = runtimeStateBuilder.asReader();
+              if (monica.get() == nullptr) monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+              else monica->deserialize(runtimeState.getModelState());
+              envOrStateReceived = true;
+            }
             break;
           } catch (kj::Exception& e) {
             KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
@@ -454,7 +319,7 @@ public:
           }
         }
       }
-      if (monica.get() == nullptr) {
+      if (!envOrStateReceived) {
         // wait for a second before trying again to read an env or state, thus create a monica instance
         timer.afterDelay(1*kj::SECONDS).wait(ioContext.waitScope);
         continue;
@@ -471,14 +336,19 @@ public:
           // check for end of data from in port
           if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
             KJ_LOG(INFO, "received done -> finalizing monica run");
-            finalizeMonica(monica->currentStepDate());
+            //finalizeMonica(monica->currentStepDate());
             // send results to out port
-            auto wrq = ports.out(RESULT).writeRequest();
-            auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
-            st.getStructure().setJson();
-            st.setValue(out.to_json().dump());
-            wrq.send().wait(ioContext.waitScope);
-            KJ_LOG(INFO, "sent MONICA result on output channel");
+            if (false && ports.isOutConnected(RESULT)) {
+              auto wrq = ports.out(RESULT).writeRequest();
+              auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
+              st.getStructure().setJson();
+              st.setValue(out.to_json().dump());
+              wrq.send().wait(ioContext.waitScope);
+              KJ_LOG(INFO, "sent MONICA result on output channel");
+              out.data.clear();
+              out.warnings.clear();
+              out.errors.clear();
+            }
             waitForMoreEvents = false;
           } else {
             auto ip = msg.getValue();
@@ -500,6 +370,20 @@ public:
                 monica->setCurrentStepDate(eventDate);
                 monica->setCurrentStepClimateData(climateData);
                 runMonica();
+                //create daily output
+                finalizeDaily();
+                // send results to out port
+                if (ports.isOutConnected(RESULT)) {
+                  auto wrq = ports.out(RESULT).writeRequest();
+                  auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
+                  st.getStructure().setJson();
+                  st.setValue(dailyOut.to_json().dump());
+                  wrq.send().wait(ioContext.waitScope);
+                  KJ_LOG(INFO, "sent MONICA daily result on output channel");
+                  dailyOut.data.clear();
+                  dailyOut.warnings.clear();
+                  dailyOut.errors.clear();
+                }
                 break;
               }
               case Event::ExternalType::SOWING: {
@@ -629,7 +513,8 @@ public:
                     }
 
                     wrq.send().wait(ioContext.waitScope);
-                    KJ_LOG(INFO, "sent serialized MONICA state on output channel", ss.getAsJson() ? "as JSON" : "as capnp binary");
+                    auto asWhat = ss.getAsJson() ? "as JSON" : "as capnp binary";
+                    KJ_LOG(INFO, "sent serialized MONICA state on output channel", asWhat);
                   } catch (kj::Exception &e) {
                     KJ_LOG(INFO, "Exception on attempt to serialize MONICA state:", e.getDescription());
                   }
@@ -681,6 +566,7 @@ private:
   kj::Own<MonicaModel> monica;
   std::vector<StoreData> store;
   Output out;
+  Output dailyOut;
   //std::list<Workstep> dynamicWorksteps;
   std::map<int, std::vector<double>> dailyValues;
   std::vector<std::function<void()>> applyDailyFuncs;

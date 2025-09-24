@@ -146,7 +146,7 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   double pc_RootPenetrationRate{ 0.0 };
   double pc_RootFormFactor{ 0.0 };
   double pc_SpecificRootLength{ 0.0 };
-  int pc_StageAfterCut{ 0 };
+  int pc_StageAfterCut{ 0 }; //!< stage number is zero-based
   double pc_LimitingTemperatureHeatStress{ 0.0 };
   int pc_CuttingDelayDays{ 0 };
   double pc_DroughtImpactOnFertilityFactor{ 0.0 };
@@ -162,6 +162,8 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   double KO25{ 330.0 }; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
 
   int pc_TransitionStageLeafExp{ -1 }; //!< [1-7]
+  int dormancyStartDoy {0}; //!< start dormancy of perennial crops at that DOY (0 = unset)
+  int dormancyEndDoy {0}; //!< end dormancy of perennial crops at that DOY, start accumulating temperature sums (0 = unset)
 
 };
 
@@ -190,6 +192,7 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   bool pc_Perennial{ false };
   //std::string pc_PermanentCultivarId;
   double pc_MaxAssimilationRate{ 0.0 };
+  double pc_LightExtinctionCoefficient{ 0.8 };
   double pc_MaxCropHeight{ 0.0 };
   double pc_ResidueNRatio{ 0.0 };
   double pc_LT50cultivar{ 0.0 };

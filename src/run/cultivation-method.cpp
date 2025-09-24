@@ -201,6 +201,7 @@ Sowing::Sowing(json11::Json j) {
 Errors Sowing::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   //set_shared_ptr_value(_crop, j, "crop");
+  _cropToPlant = nullptr;
   _cropToPlant = kj::heap<Crop>();
   res.append(_cropToPlant->merge(j["crop"]));
   _crop = _cropToPlant.get();

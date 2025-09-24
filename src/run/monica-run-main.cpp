@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
   string startDate, endDate;
   string pathToOutput;
   string pathToOutputFile, pathToOutputFile2;
-  string pathToOutputDir, pathToOutputDir2;
+  string pathToOutputDir = ".", pathToOutputDir2 = ".";
   bool writeMultipleOutputFiles = false, writeMultipleOutputFiles2 = false;
   string pathToSimJson = "./sim.json", crop, site, climate;
   string icReaderSr;
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 
     // merge the json objects into the env
     auto mergeResult = env.merge(createEnvJsonFromJsonObjects(ps));
-    printPossibleErrors(mergeResult);
+    printPossibleErrors(mergeResult, activateDebug);
     if (mergeResult.failure()) return 1;
 
     //check if there were sturdy refs to time-series
@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
 
       ofstream fout;
       bool writeOutputFile = true;
-      if (!ensureDirExists(pathToOutputDir)) {
+      if (!pathToOutputDir.empty() && !ensureDirExists(pathToOutputDir)) {
         cerr << "Error failed to create path: '" << pathToOutputDir << "'." << endl;
         writeOutputFile = false;
       }
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
 
         ofstream fout;
         bool writeOutputFile = true;
-        if (!ensureDirExists(pathToOutputDir2)) {
+        if (!pathToOutputDir2.empty() && !ensureDirExists(pathToOutputDir2)) {
           cerr << "Error failed to create path: '" << pathToOutputDir2 << "'." << endl;
           writeOutputFile = false;
         }

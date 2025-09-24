@@ -9,8 +9,7 @@
 	},
 	
 	"debug?": false,
-	"_include-file-base-path": "/hf2/monica-parameters/",
-	"include-file-base-path": "${MONICA_PARAMETERS}/",
+	"include-file-base-path": "${MONICA_PARAMETERS}",
 
 	"output": { 
 	  	"write-file?": true,
@@ -87,6 +86,12 @@
 				["Recharge", "SUM"]
 			],
 
+			"run", [
+				["Precip", "SUM"]
+			]
+		],
+
+		"__events" : [
 			"run", [
 				["Precip", "SUM"]
 			]

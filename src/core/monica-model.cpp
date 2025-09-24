@@ -158,6 +158,7 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
                                            layer2amount,
                                            nconc);
     };
+    _currentCropModule = nullptr;
     _currentCropModule = kj::heap<CropModule>(*_soilColumn, _cropPs,
                                               [this](string event) { this->addEvent(event); }, addOMFunc,
                                               [this](double avgAirTemp) {
@@ -346,6 +347,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
                                            nConcentration);
     };
     CropParameters cps(reader.getCropParams());
+    _currentCropModule = nullptr;
     _currentCropModule = kj::heap<CropModule>(*_soilColumn, cps, reader.getResidueParams(),
                                               cps.cultivarParams.winterCrop, _sitePs, _cropPs, _simPs,
                                               [this](const string& event) { this->addEvent(event); },
@@ -400,6 +402,7 @@ void MonicaModel::seedCrop(Crop *crop) {
                                            nconc);
     };
     auto cps = crop->cropParameters();
+    _currentCropModule = nullptr;
     _currentCropModule = kj::heap<CropModule>(*_soilColumn, cps, crop->residueParameters(),
                                               crop->isWinterCrop(), _sitePs, _cropPs, _simPs,
                                               [this](string event) { this->addEvent(event); }, addOMFunc,

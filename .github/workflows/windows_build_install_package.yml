@@ -107,8 +107,8 @@ jobs:
           cp monica/_cmake_win64/Release/monica-zmq-server.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/monica-capnp-server.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/monica-capnp-fbp-component.exe monica_${{ github.ref_name }}/bin/
+          cp monica/_cmake_win64/Release/daily-monica-fbp-component.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/common/Release/channel.exe monica_${{ github.ref_name }}/bin/
-          cp -r monica-parameters monica_${{ github.ref_name }}/monica-parameters/
           
           cp monica/LICENSE monica_${{ github.ref_name }}/bin/
           cp monica/documentation/de_benutzerhandbuch_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
@@ -120,6 +120,7 @@ jobs:
           cp -r monica-parameters/organic-fertilisers monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/general monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/soil monica_${{ github.ref_name }}/monica-parameters/
+          cp -r monica-parameters/projects monica_${{ github.ref_name }}/monica-parameters/
           
           cp monica/installer/Hohenfinow2/crop-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
           cp monica/installer/Hohenfinow2/site-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/

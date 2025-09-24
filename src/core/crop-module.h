@@ -118,7 +118,8 @@ public:
   void fc_CropDevelopmentalStage(double meanAirTemperature,
                                  double soilMoisture_m3,
                                  double fieldCapacity,
-                                 double permanentWiltingPoint);
+                                 double permanentWiltingPoint,
+                                 Tools::Date currentDate);
 
   double fc_KcFactor(double d_StageTemperatureSum,
                      double d_CurrentTemperatureSum,
@@ -606,7 +607,7 @@ private:
   double vc_OvercastDayRadiation{0.0};          //! old DRO
   double vc_OxygenDeficit{0.0};          //! old LURED
   double pc_PartBiologicalNFixation{};
-  bool pc_Perennial{};
+  bool pc_Perennial{false};
   double vc_PhotoperiodicDaylength{0.0};        //! old DLP
   double vc_PhotActRadiationMean{0.0};          //! old RDN
   double pc_PlantDensity{};
@@ -721,6 +722,8 @@ private:
   double fractionOfInterceptedRadiation2{0.0};
 
   bool __enable_vernalisation_factor_fix__{false};
+
+  Tools::Date _perennialCropDormancyPeriodEndDate;
 };
 
 //#define TEST_HOURLY_OUTPUT

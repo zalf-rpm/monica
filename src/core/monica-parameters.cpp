@@ -283,6 +283,8 @@ Errors SpeciesParameters::merge(json11::Json j) {
   set_double_value(KO25, j, "KO25");
 
   set_int_value(pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
+  set_int_value(dormancyStartDoy, j, "DormancyStartDoy");
+  set_int_value(dormancyEndDoy, j, "DormancyEndDoy");
 
   return res;
 }
@@ -344,7 +346,9 @@ json11::Json SpeciesParameters::to_json() const {
        {"AEVC",                                    J11Array{AEVC, "J mol-1"}},
        {"KC25",                                    J11Array{KC25, "umol mol-1 ubar-1"}},
        {"KO25",                                    J11Array{KO25, "mmol mol-1 mbar-1"}},
-       {"TransitionStageLeafExp",                  J11Array{pc_TransitionStageLeafExp, "1-7"}}
+       {"TransitionStageLeafExp",                  J11Array{pc_TransitionStageLeafExp, "1-7"}},
+        {"DormancyStartDoy", dormancyStartDoy},
+        {"DormancyEndDoy", dormancyEndDoy}
       };
 
   return species;
@@ -501,6 +505,7 @@ Errors CultivarParameters::merge(json11::Json j) {
   set_string_value(pc_Description, j, "Description");
   set_bool_value(pc_Perennial, j, "Perennial");
   set_double_value(pc_MaxAssimilationRate, j, "MaxAssimilationRate");
+  set_double_value(pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient");
   set_double_value(pc_MaxCropHeight, j, "MaxCropHeight");
   set_double_value(pc_ResidueNRatio, j, "ResidueNRatio");
   set_double_value(pc_LT50cultivar, j, "LT50cultivar");
@@ -568,6 +573,7 @@ json11::Json CultivarParameters::to_json() const {
        {"Description",                   pc_Description},
        {"Perennial",                     pc_Perennial},
        {"MaxAssimilationRate",           pc_MaxAssimilationRate},
+        {"LightExtinctionCoefficient", pc_LightExtinctionCoefficient},
        {"MaxCropHeight",                 J11Array{pc_MaxCropHeight, "m"}},
        {"ResidueNRatio",                 pc_ResidueNRatio},
        {"LT50cultivar",                  pc_LT50cultivar},
@@ -1633,8 +1639,8 @@ Errors EnvironmentParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
   using namespace mas::schema::climate;
-  auto str2rcp = [](string str) {
-    switch (stoi(str.substr(3, 2))) {
+  auto rcpNo2rcpEnum = [&](int rcpNo) {
+    switch (rcpNo) {
       case 19:
         return RCP::RCP19;
         break;
@@ -1642,6 +1648,7 @@ Errors EnvironmentParameters::merge(json11::Json j) {
         return RCP::RCP26;
         break;
       case 34:
+        res.appendWarning(kj::str("RCP", rcpNo, " currently not supported. Default RCP 8.5 is used.").cStr());
         return RCP::RCP34;
         break;
       case 45:
@@ -1651,19 +1658,32 @@ Errors EnvironmentParameters::merge(json11::Json j) {
         return RCP::RCP60;
         break;
       case 70:
+      res.appendWarning(kj::str("RCP", rcpNo, " currently not supported. Default RCP 8.5 is used.").cStr());
         return RCP::RCP70;
         break;
       case 85:
         return RCP::RCP85;
         break;
     }
+    res.appendWarning(kj::str("RCP", rcpNo, " unknown. Default RCP 8.5 used.").cStr());
     return RCP::RCP85;
   };
 
   set_double_value(p_Albedo, j, "Albedo");
 
-
-  if (j["rcp"].is_string()) rcp = str2rcp(j["rcp"].string_value());
+  if (j["rcp"].is_string()) {
+    try {
+      auto rcpNo = stoi(j["rcp"].string_value().substr(3, 2));
+      rcp = rcpNo2rcpEnum(rcpNo);
+    } catch (std::exception&) {
+      res.appendWarning(kj::str(j["rcp"].string_value(), " unknown. Default RCP 8.5 used.").cStr());
+    }
+  }
+  else if (j["rcp"].is_number()) {
+    auto rcpNo = j["rcp"].number_value();
+    if (rcpNo < 10) rcp = rcpNo2rcpEnum(int(rcpNo*10));
+    else rcp = rcpNo2rcpEnum(int(rcpNo));
+  }
 
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
   if (j["AtmosphericCO2s"].is_object()) {

@@ -10,7 +10,7 @@
 		  }
 	  },
 
-	"cropRotation": [{
+	  "cropRotation": [{
 		"worksteps": [
 			{
 				"date": "0000-09-22", "type": "Sowing", "crop": ["ref", "crops", "WW_dwd"]

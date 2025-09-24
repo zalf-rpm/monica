@@ -206,12 +206,12 @@ CropModule::CropModule(SoilColumn &sc,
   vc_RootBiomass = pc_InitialOrganBiomass[0]; // [kg ha-1]
 
   // Initialisisng the leaf area index
-  vc_LeafAreaIndex = vc_OrganBiomass[1] * pc_SpecificLeafArea[vc_DevelopmentalStage]; // [ha ha-1]
+  vc_LeafAreaIndex = vc_OrganBiomass[OId::LEAF] * pc_SpecificLeafArea[vc_DevelopmentalStage]; // [ha ha-1]
 
   if (vc_LeafAreaIndex <= 0.0) vc_LeafAreaIndex = 0.001;
 
   // Initialising the root
-  vc_RootBiomass = vc_OrganBiomass[0];
+  vc_RootBiomass = vc_OrganBiomass[OId::ROOT];
 
   /** @todo Christian: Umrechnung korrekt wenn Biomasse in [kg m-2]? */
   vc_TotalRootLength = (vc_RootBiomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * M_PI);
@@ -833,10 +833,20 @@ void CropModule::step(double vw_MeanAirTemperature,
 
   size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 
-  fc_CropDevelopmentalStage(vw_MeanAirTemperature,
-                            soilColumn[0].get_Vs_SoilMoisture_m3(),
-                            soilColumn[0].vs_FieldCapacity(),
-                            soilColumn[0].vs_PermanentWiltingPoint());
+  // start accumulating temperature sums only after dormancy
+  if (!_perennialCropDormancyPeriodEndDate.isValid()) {
+    _perennialCropDormancyPeriodEndDate =
+      speciesPs.dormancyEndDoy == 0
+        ? currentDate
+        : Date(1, 1, currentDate.year()) + (speciesPs.dormancyEndDoy - 1);
+  }
+  if (!pc_Perennial || currentDate >= _perennialCropDormancyPeriodEndDate) {
+    fc_CropDevelopmentalStage(vw_MeanAirTemperature,
+                              soilColumn[0].get_Vs_SoilMoisture_m3(),
+                              soilColumn[0].vs_FieldCapacity(),
+                              soilColumn[0].vs_PermanentWiltingPoint(),
+                              currentDate);
+  }
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
     if (_fireEvent) _fireEvent("emergence");
@@ -921,8 +931,8 @@ void CropModule::step(double vw_MeanAirTemperature,
     icSendRcv("devstage > 0: ");
 
     fc_CropGreenArea(vw_MeanAirTemperature,
-                     vc_OrganGrowthIncrement[1],
-                     vc_OrganSenescenceIncrement[1],
+                     vc_OrganGrowthIncrement[OId::LEAF],
+                     vc_OrganSenescenceIncrement[OId::LEAF],
                      pc_SpecificLeafArea[vc_DevelopmentalStage - 1],
                      pc_SpecificLeafArea[vc_DevelopmentalStage],
                      pc_SpecificLeafArea[1],
@@ -1217,7 +1227,8 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
 void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
                                            double soilMoisture_m3,
                                            double fieldCapacity,
-                                           double permanentWiltingPoint) {
+                                           double permanentWiltingPoint,
+                                           Tools::Date currentDate) {
   if (vc_DevelopmentalStage == 0) {
     if (pc_Perennial) { // pc_Perennial == true
       if (meanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
@@ -1311,23 +1322,31 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
       }
     }
 
+    bool doResetPerennialCrop =
+      pc_Perennial
+      && speciesPs.dormancyStartDoy > 0
+      && currentDate.dayOfYear() >= speciesPs.dormancyStartDoy;
     if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
-      double vc_StageExcessTemperatureSum =
-          vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
-
       if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages - 1) {
+        double stageExcessTemperatureSum =
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
         vc_DevelopmentalStage++;
-        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += vc_StageExcessTemperatureSum;
+        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += stageExcessTemperatureSum;
       } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) {
-        vc_StageExcessTemperatureSum = 0.0;
-        if (pc_Perennial && vc_GrowthCycleEnded) {
-          vc_DevelopmentalStage = 0;
-          fc_UpdateCropParametersForPerennial();
-          for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++) vc_CurrentTemperatureSum[stage] = 0.0;
-          vc_CurrentTotalTemperatureSum = 0.0;
-          vc_GrowthCycleEnded = false;
-        }
+        if (pc_Perennial && vc_GrowthCycleEnded) doResetPerennialCrop = true;
       }
+    }
+    if (doResetPerennialCrop) {
+      vc_DevelopmentalStage = 0;
+      fc_UpdateCropParametersForPerennial();
+      for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++) vc_CurrentTemperatureSum[stage] = 0.0;
+      vc_CurrentTotalTemperatureSum = 0.0;
+      vc_GrowthCycleEnded = false;
+      _perennialCropDormancyPeriodEndDate =
+        speciesPs.dormancyEndDoy == 0
+          ? currentDate
+          : Date(1, 1, currentDate.year() + (currentDate.dayOfYear() > speciesPs.dormancyEndDoy ? 1 : 0))
+            + (speciesPs.dormancyEndDoy - 1);
     }
   } else {
     vc_ErrorStatus = true;
@@ -2341,8 +2360,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
             << " other-crop-height: " << _intercroppingOtherCropHeight
             << " own-crop-height: " << vc_CropHeight << endl;
     debug() << "vc_OvercastSkyTimeFraction: " << vc_OvercastSkyTimeFraction << endl;
-    auto F_t1 = [](double LAI) {
-      return 1.0 - exp(-0.8 * LAI);
+    auto F_t1 = [this](double LAI) {
+      return 1.0 - exp(-cultivarPs.pc_LightExtinctionCoefficient * LAI);
     };
     tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);
     fractionOfInterceptedRadiation1 = F_t1(vc_LeafAreaIndex);
@@ -2822,7 +2841,8 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   // old NRKOM
   // double assimilate_partition_shoot = 0.7;
   double assimilate_partition_leaf = 0.05;
-  vector<double> dailyDeadBiomassIncrement(pc_NumberOfOrgans, 0.0);
+  //vector<double> dailyDeadBiomassIncrement(pc_NumberOfOrgans, 0.0);
+  double dailyDeadRootBiomassIncrement = 0.0;
   for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++) {
     vc_AssimilatePartitioningCoeffOld = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage - 1][i_Organ];
     vc_AssimilatePartitioningCoeff = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ];
@@ -2947,30 +2967,37 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
                                              pc_StageTemperatureSum[vc_DevelopmentalStage]))); // [kg CH2O ha-1]
     }
 
-    if (i_Organ != vc_StorageOrgan) {
-      // Wurzel, Sprossachse, Blatt
-      vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep);                // [kg CH2O ha-1]
-      double reallocationRate =
-          pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
-      vc_OrganBiomass[i_Organ] -= reallocationRate;
-      dailyDeadBiomassIncrement[i_Organ] = vc_OrganSenescenceIncrement[i_Organ] - reallocationRate;
-      vc_OrganDeadBiomass[i_Organ] += dailyDeadBiomassIncrement[i_Organ]; // [kg CH2O ha-1]
-      vc_OrganBiomass[vc_StorageOrgan] += reallocationRate;
-
-      // update the root biomass and dead root biomass vars
-      // root dead biomass will be transferred to proper AOM pools
-      if (i_Organ == OId::ROOT) {
-        vc_OrganBiomass[OId::ROOT] -= dailyDeadBiomassIncrement[OId::ROOT];
-        vc_OrganDeadBiomass[OId::ROOT] -= dailyDeadBiomassIncrement[OId::ROOT];
-        vc_TotalBiomassNContent -= dailyDeadBiomassIncrement[OId::ROOT] * vc_NConcentrationRoot;
-      }
-    } else {
-      vc_OrganBiomass[i_Organ] += (vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep);    // [kg CH2O ha-1]
+    vc_OrganBiomass[i_Organ] += vc_OrganGrowthIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
+    if (i_Organ == vc_StorageOrgan) {
       vc_OrganDeadBiomass[i_Organ] += vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
+    } else {
+      // root, shoot, leaf
+      const double reallocationRate = pc_AssimilateReallocation * vc_OrganSenescenceIncrement[i_Organ] * vc_TimeStep; // [kg CH2O ha-1]
+      vc_OrganBiomass[vc_StorageOrgan] += reallocationRate;
+      double dailyDeadBiomassIncrement = vc_OrganSenescenceIncrement[i_Organ] - reallocationRate;
+      //v me
+      //vc_OrganBiomass[i_Organ] -= reallocationRate;
+      //vc_OrganDeadBiomass[i_Organ] += dailyDeadBiomassIncrement; // [kg CH2O ha-1]
+      //^ me
+      if (i_Organ == OId::ROOT) {
+        vc_OrganBiomass[OId::ROOT] -= vc_OrganSenescenceIncrement[OId::ROOT];
+        //v me
+        //dailyDeadBiomassIncrement = vc_OrganSenescenceIncrement[i_Organ];
+        //vc_TotalBiomassNContent -= dailyDeadBiomassIncrement * vc_NConcentrationRoot;
+        //vc_OrganDeadBiomass[OId::ROOT] += dailyDeadBiomassIncrement;
+        //dailyDeadRootBiomassIncrement = dailyDeadBiomassIncrement;
+        //^ me
+        vc_TotalBiomassNContent -= dailyDeadBiomassIncrement * vc_NConcentrationRoot;
+        dailyDeadRootBiomassIncrement = dailyDeadBiomassIncrement;
+      } else {
+        // shoot or leaf
+        vc_OrganBiomass[i_Organ] -= reallocationRate;
+        vc_OrganDeadBiomass[i_Organ] += dailyDeadBiomassIncrement; // [kg CH2O ha-1]
+      }
     }
 
     vc_OrganGreenBiomass[i_Organ] = vc_OrganBiomass[i_Organ] - vc_OrganDeadBiomass[i_Organ]; // [kg CH2O ha-1]
-    if ((vc_OrganGreenBiomass[i_Organ]) < 0.0) {
+    if (vc_OrganGreenBiomass[i_Organ] < 0.0) {
       vc_OrganDeadBiomass[i_Organ] = vc_OrganBiomass[i_Organ];
       vc_OrganGreenBiomass[i_Organ] = 0.0;
     }
@@ -3102,7 +3129,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
 
   // calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
   if (!cropPs.__disable_daily_root_biomass_to_soil__) {
-    fc_MoveDeadRootBiomassToSoil(dailyDeadBiomassIncrement[0], vc_RootDensityFactorSum, vc_RootDensityFactor);
+    fc_MoveDeadRootBiomassToSoil(dailyDeadRootBiomassIncrement, vc_RootDensityFactorSum, vc_RootDensityFactor);
   }
 
   // Calculating root density per layer from total root length and
@@ -3115,7 +3142,9 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     // Root diameter [m]
     if (pc_AbovegroundOrgan[3]) {
       vc_RootDiameter[i_Layer] = 0.0002 - ((i_Layer + 1) * 0.00001); // [m]
-    } else { vc_RootDiameter[i_Layer] = 0.0001; } //[m]
+    } else {
+      vc_RootDiameter[i_Layer] = 0.0001;
+    } //[m]
 
     // Default root decay - 10 %
     // vo_FreshSoilOrganicMatter[i_Layer] += vc_RootNIncrement
@@ -4459,7 +4488,7 @@ void CropModule::applyCutting(std::map<int, Cutting::Value> &organs,
   double oldAbovegroundBiomass = vc_AbovegroundBiomass;
   double oldAgbNcontent = get_AbovegroundBiomassNContent();
   double sumCutBiomass = 0.0;
-  double currentSLA = get_LeafAreaIndex() / vc_OrganGreenBiomass[1];
+  double currentSLA = get_LeafAreaIndex() / vc_OrganGreenBiomass[OId::LEAF];
 
   Tools::debug() << "CropModule::applyCutting()" << endl;
 
@@ -4565,18 +4594,12 @@ void CropModule::applyCutting(std::map<int, Cutting::Value> &organs,
   }
 
   // update LAI
-  if (vc_OrganGreenBiomass[1] > 0) {
-    vc_LeafAreaIndex = vc_OrganGreenBiomass[1] * currentSLA;
+  if (vc_OrganGreenBiomass[OId::LEAF] > 0) {
+    vc_LeafAreaIndex = vc_OrganGreenBiomass[OId::LEAF] * currentSLA;
   }
 
   // reset stage and temperature some after cutting
   setStage(pc_StageAfterCut);
-
-  // int stageAfterCutting = pc_StageAfterCut;
-  // for(int stage = stageAfterCutting; stage < pc_NumberOfDevelopmentalStages; stage++)
-  //	vc_CurrentTemperatureSum[stage] = 0.0;
-  // vc_CurrentTotalTemperatureSum = 0.0;
-  // vc_DevelopmentalStage = stageAfterCutting;
 
   vc_CuttingDelayDays = pc_CuttingDelayDays;
   pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilationFraction;
