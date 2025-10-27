@@ -1121,10 +1121,10 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
       vc_VernalisationFactor = (d_VernalisationDays - vc_VernalisationThreshold) / (d_VernalisationRequirement
                                                                                     - vc_VernalisationThreshold);
 
-      if (__enable_vernalisation_factor_fix__) vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0);
-      if (vc_VernalisationFactor < 0) vc_VernalisationFactor = 0.0;
+      if (__enable_vernalisation_factor_fix__) vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0); 
+      if (vc_VernalisationFactor < 0) vc_VernalisationFactor = 0.0; //MP: Vernalisation kann nie negativ sein
     } else {
-      vc_VernalisationFactor = 1.0;
+      vc_VernalisationFactor = 1.0;//MP: Vernalisation hat keinen Effekt, wenn kein (bzw. 0 als) Threshold definiert ist.
     }
   }
 
@@ -1152,9 +1152,9 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
     sumLayers++;
   }
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
-  if (avgAirFilledPoreVolume < d_CriticalOxygenContent*2) { //MP: conditions changed for stage-dependent waterlogging
-    avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume);
-    vc_TimeUnderAnoxia = std::min(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
+  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) { //MP: conditions changed for stage-dependent waterlogging
+    avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume); //to quarantee for positive values
+    vc_TimeUnderAnoxia = std::max(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
     double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
     vc_OxygenDeficit =
         1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
@@ -1165,7 +1165,7 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   return vc_OxygenDeficit;
 }
 
-double WangEngelTemperatureResponse(double t, double tmin, double topt, double tmax, double betacoeff) {
+double WangEngelTemperatureResponse(double t, double tmin, double topt, double tmax, double betacoeff) {//MP: what is this beta coefficient?
   // prevent nan values with t < tmin
   if (t < tmin || t > tmax) return 0.0;
 
@@ -1173,7 +1173,7 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
   double numerator = 2 * pow(t - tmin, alfa) * pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
   double denominator = pow(topt - tmin, 2 * alfa);
 
-  return pow(numerator / denominator, betacoeff);
+  return pow(numerator / denominator, betacoeff);//MP: beta coefficient should be 2*alfa
 };
 
 /**
@@ -1217,15 +1217,15 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
         if (vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) vc_DevelopmentalStage++;
       }
     } else { // pc_Perennial == false
-      double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature();
+      double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature(); //MP: Bodentemperatur der ersten 10cm
       if (vc_SoilTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
 
         // @todo Claas: Schränkt trockener Boden das Aufsummieren der Wärmeeinheiten ein, oder
-        // sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian
+        // sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian //MP: das entspricht sich
 
         bool emergenceCondition = true;
         // Germination only if soil water content in top layer exceeds
-        // 20% of capillary water, but is not beyond field capacity
+        // 20% of capillary water, but is not beyond field capacity //MP: das kann an- oder ausgeschalten werden
         if (pc_EmergenceMoistureControlOn) {
           double vc_CapillaryWater = fieldCapacity - permanentWiltingPoint;
           emergenceCondition = emergenceCondition
@@ -1238,24 +1238,24 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
         }
 
         if (emergenceCondition) {
-          vc_CurrentTemperatureSum[vc_DevelopmentalStage] +=
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] += //MP: Wenn die Frucht noch nicht aufgegangen ist und die Auflaufbedingungen gegeben sind, wird begonnen die Bodentemperatur aufzusummieren.
               (vc_SoilTemperature - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
 
-          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
-            double vc_StageExcessTemperatureSum =
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) { //MP: wenn die Temperatursumme erreicht wird,
+            double vc_StageExcessTemperatureSum = //MP: wird ein Temperatur"bonus" gespeichert, der dann auf die neue Wärmesumme angerechnet wird
                 vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
             if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages - 1) {
-              vc_DevelopmentalStage++;
+              vc_DevelopmentalStage++; //MP: und erhöht sich die aktuelle Phase um eins, solange die Frucht nicht reif ist
               vc_CurrentTemperatureSum[vc_DevelopmentalStage] += vc_StageExcessTemperatureSum;
             }
           }
         }
       }
     }
-  } else if (vc_DevelopmentalStage > 0) {
+  } else if (vc_DevelopmentalStage > 0) { //MP: wenn die Frucht aufgegangen ist, können N- und Wasser-Stress zum Tragen kommen (nur während der Kornfüllungsphase --> schnelleres Abreifen)
     auto apc = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][vc_StorageOrgan];
 
-    // Development acceleration by N deficit in crop tissue
+    // Development acceleration by N deficit in crop tissue //MP: N-Stress als Beschläunigung nur während der Kornfüllungsphase
     double vc_DevelopmentAccelerationByNitrogenStress = 1; // old NPROG
     if (pc_DevelopmentAccelerationByNitrogenStress == 1 && apc > 0.9) {
       vc_DevelopmentAccelerationByNitrogenStress = 1.0 + ((1.0 - vc_CropNRedux) * (1.0 - vc_CropNRedux));
@@ -1287,7 +1287,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
                                                                   cultivarPs.pc_MinTempDev_WE,
                                                                   cultivarPs.pc_OptTempDev_WE,
                                                                   cultivarPs.pc_MaxTempDev_WE,
-                                                                  1.0));
+                                                                  1.0));//MP: warum steht hier 1?
       double tempIncr = devTresponse * meanAirTemperature * vc_VernalisationFactor * vc_DaylengthFactor *
                         vc_DevelopmentAccelerationByStress * vc_TimeStep;
       vc_CurrentTemperatureSum[vc_DevelopmentalStage] += tempIncr;
@@ -1298,7 +1298,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
                            - pc_BaseTemperature[vc_DevelopmentalStage])
                           * vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress *
                           vc_TimeStep;
-        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += tempIncr;
+        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += tempIncr; //MP: effektive Temperatur wird aufsummiert
         vc_CurrentTotalTemperatureSum += tempIncr;
       }
     }
@@ -1310,7 +1310,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
       if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages - 1) {
         vc_DevelopmentalStage++;
         vc_CurrentTemperatureSum[vc_DevelopmentalStage] += vc_StageExcessTemperatureSum;
-      } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) {
+      } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) {//MP: Frucht ist reif
         vc_StageExcessTemperatureSum = 0.0;
         if (pc_Perennial && vc_GrowthCycleEnded) {
           vc_DevelopmentalStage = 0;
@@ -1719,7 +1719,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
 
       if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
-        vc_AssimilationRate = 0.0;
+        vc_AssimilationRate = 0.0; //MP: warum gibt es für C3-Pflanzen keine maximale Temperatur
         vc_AssimilationRateReference = 0.0;
       }
     } else if (pc_CO2Method == 2) {
