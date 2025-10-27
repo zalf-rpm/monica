@@ -77,6 +77,8 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-fbp-component ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/daily-monica-fbp-component ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/common/channel ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/common/gateway-service ${monica_dir}
+COPY --from=build-env ${EXECUTABLE_SOURCE}/common/host-port-resolver-service ${monica_dir}
 
 COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
 COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
