@@ -3046,23 +3046,27 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     vc_RootNIncrement = 0;
   }
 
-  // In case of drought stress the root will grow deeper //MP: Access point for drought optimisation (this could be changed for waterlogging)
   auto layerIndexBelowRootingDepth = std::min(vc_RootingDepth, nols - 1);
-  double vc_AvailableWater =
-      soilColumn[layerIndexBelowRootingDepth].vs_FieldCapacity() - soilColumn[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint();
-  double vc_AvailableWaterPercentage =
-      (soilColumn[layerIndexBelowRootingDepth].get_Vs_SoilMoisture_m3() - soilColumn[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint()) /
-      vc_AvailableWater;
-  if (vc_AvailableWaterPercentage < 0.0) {
+  double vc_AvailableWaterPercentage = 0.0;
+  if (cropPs.__enable_PASW_root_penetration__) {
+    // In case of drought stress the root will grow deeper //MP: Access point for drought optimisation (this could be changed for waterlogging)
+    double vc_AvailableWater =
+        soilColumn[layerIndexBelowRootingDepth].vs_FieldCapacity() - soilColumn[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint();
+    vc_AvailableWaterPercentage =
+        (soilColumn[layerIndexBelowRootingDepth].get_Vs_SoilMoisture_m3() - soilColumn[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint()) /
+        vc_AvailableWater;
+    if (vc_AvailableWaterPercentage < 0.0) {
       vc_AvailableWaterPercentage = 0.0;
+    }
+  } else {
+    //MP:turn this off first
+    if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage]) //MP: vielleicht ist das Problem, dass hier der selbe Wert verwendet wird
+        && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
+        && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
+        && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
+      vc_MaxRootingDepth += 0.005;
+    }
   }
-  //MP:turn this off first
-  //if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage]) //MP: vielleicht ist das Problem, dass hier der selbe Wert verwendet wird
-  //    && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
-  //    && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
-  //    && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
-  //  vc_MaxRootingDepth += 0.005;
-  //}
 
   if (vc_MaxRootingDepth > (double(nols - 1) * layerThickness)) {
     vc_MaxRootingDepth = double(nols - 1) * layerThickness;
@@ -3105,12 +3109,14 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   } else {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
   }
-  //MP: add constraint for reduced root penetration rate when soil is dry
-  if (vc_AvailableWaterPercentage <= 0.25) {
+  if (cropPs.__enable_PASW_root_penetration__) {
+    //MP: add constraint for reduced root penetration rate when soil is dry
+    if (vc_AvailableWaterPercentage <= 0.25) {
       vc_RootPenetrationRate = std::min(1.0, (4 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate; //MP: APSIM method according to Jones et al (1991)
-  }
-  else {
+    }
+    else {
       vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
+    }
   }
 
   // Calculating rooting depth [m]

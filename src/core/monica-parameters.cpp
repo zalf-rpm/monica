@@ -1528,6 +1528,7 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
   set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
+  set_bool_value(__enable_PASW_root_penetration__, j, "__enable_PASW_root_penetration__");
 
   set_bool_value(isIntercropping, j["intercropping"], "is_intercropping");
   set_bool_value(sequentialWaterUse, j["intercropping"], "sequential_water_use");
