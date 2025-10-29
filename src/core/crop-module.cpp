@@ -1131,10 +1131,10 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
       vc_VernalisationFactor = (d_VernalisationDays - vc_VernalisationThreshold) / (d_VernalisationRequirement
                                                                                     - vc_VernalisationThreshold);
 
-      if (__enable_vernalisation_factor_fix__) vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0);
-      if (vc_VernalisationFactor < 0) vc_VernalisationFactor = 0.0;
+      if (__enable_vernalisation_factor_fix__) vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0); 
+      if (vc_VernalisationFactor < 0) vc_VernalisationFactor = 0.0; //MP: Vernalisation kann nie negativ sein
     } else {
-      vc_VernalisationFactor = 1.0;
+      vc_VernalisationFactor = 1.0;//MP: Vernalisation hat keinen Effekt, wenn kein (bzw. 0 als) Threshold definiert ist.
     }
   }
 
@@ -1155,27 +1155,27 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   // Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
   double sumSaturation = 0, sumSoilMoisture = 0;
   int sumLayers = 0;
-  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn.vs_NumberOfLayers());
-  for (size_t i = 0; i < nols; i++) {
+  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn.vs_NumberOfLayers()); //MP: changed to consider at least first 30 cm and then rooting depth
+  for(size_t i = 0; i < nols; i++) {
     sumSaturation += soilColumn[i].vs_Saturation();
     sumSoilMoisture += soilColumn[i].get_Vs_SoilMoisture_m3();
     sumLayers++;
   }
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
-  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) {
+  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) { //MP: conditions changed for stage-dependent waterlogging
+    avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume); //to quarantee for positive values
     vc_TimeUnderAnoxia = std::max(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
-    avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume);
     double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
     vc_OxygenDeficit =
         1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
   } else {
-    vc_TimeUnderAnoxia = 0;
-    vc_OxygenDeficit = 1.0;
+     vc_TimeUnderAnoxia = 0;
+     vc_OxygenDeficit = 1.0;
   }
   return vc_OxygenDeficit;
 }
 
-double WangEngelTemperatureResponse(double t, double tmin, double topt, double tmax, double betacoeff) {
+double WangEngelTemperatureResponse(double t, double tmin, double topt, double tmax, double betacoeff) {//MP: what is this beta coefficient?
   // prevent nan values with t < tmin
   if (t < tmin || t > tmax) return 0.0;
 
@@ -1183,7 +1183,7 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
   double numerator = 2 * pow(t - tmin, alfa) * pow(topt - tmin, alfa) - pow(t - tmin, 2 * alfa);
   double denominator = pow(topt - tmin, 2 * alfa);
 
-  return pow(numerator / denominator, betacoeff);
+  return pow(numerator / denominator, betacoeff);//MP: beta coefficient should be 2*alfa
 };
 
 /**
@@ -1228,15 +1228,15 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
         if (vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) vc_DevelopmentalStage++;
       }
     } else { // pc_Perennial == false
-      double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature();
+      double vc_SoilTemperature = soilColumn[0].get_Vs_SoilTemperature(); //MP: Bodentemperatur der ersten 10cm
       if (vc_SoilTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
 
         // @todo Claas: Schränkt trockener Boden das Aufsummieren der Wärmeeinheiten ein, oder
-        // sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian
+        // sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian //MP: das entspricht sich
 
         bool emergenceCondition = true;
         // Germination only if soil water content in top layer exceeds
-        // 20% of capillary water, but is not beyond field capacity
+        // 20% of capillary water, but is not beyond field capacity //MP: das kann an- oder ausgeschalten werden
         if (pc_EmergenceMoistureControlOn) {
           double vc_CapillaryWater = fieldCapacity - permanentWiltingPoint;
           emergenceCondition = emergenceCondition
@@ -1249,48 +1249,56 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
         }
 
         if (emergenceCondition) {
-          vc_CurrentTemperatureSum[vc_DevelopmentalStage] +=
+          vc_CurrentTemperatureSum[vc_DevelopmentalStage] += //MP: Wenn die Frucht noch nicht aufgegangen ist und die Auflaufbedingungen gegeben sind, wird begonnen die Bodentemperatur aufzusummieren.
               (vc_SoilTemperature - pc_BaseTemperature[vc_DevelopmentalStage]) * vc_TimeStep;
 
-          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) {
-            double vc_StageExcessTemperatureSum =
+          if (vc_CurrentTemperatureSum[vc_DevelopmentalStage] >= pc_StageTemperatureSum[vc_DevelopmentalStage]) { //MP: wenn die Temperatursumme erreicht wird,
+            double vc_StageExcessTemperatureSum = //MP: wird ein Temperatur"bonus" gespeichert, der dann auf die neue Wärmesumme angerechnet wird
                 vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
             if (vc_DevelopmentalStage < pc_NumberOfDevelopmentalStages - 1) {
-              vc_DevelopmentalStage++;
+              vc_DevelopmentalStage++; //MP: und erhöht sich die aktuelle Phase um eins, solange die Frucht nicht reif ist
               vc_CurrentTemperatureSum[vc_DevelopmentalStage] += vc_StageExcessTemperatureSum;
             }
           }
         }
       }
     }
-  } else if (vc_DevelopmentalStage > 0) {
+  } else if (vc_DevelopmentalStage > 0) { //MP: wenn die Frucht aufgegangen ist, können N- und Wasser-Stress zum Tragen kommen (nur während der Kornfüllungsphase --> schnelleres Abreifen)
     auto apc = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][vc_StorageOrgan];
 
-    // Development acceleration by N deficit in crop tissue
+    // Development acceleration by N deficit in crop tissue //MP: N-Stress als Beschläunigung nur während der Kornfüllungsphase
     double vc_DevelopmentAccelerationByNitrogenStress = 1; // old NPROG
     if (pc_DevelopmentAccelerationByNitrogenStress == 1 && apc > 0.9) {
       vc_DevelopmentAccelerationByNitrogenStress = 1.0 + ((1.0 - vc_CropNRedux) * (1.0 - vc_CropNRedux));
     }
 
-    // Development acceleration by water deficit
+
+    // Development acceleration by water deficit //MP: Access point for drought optimisation
     double vc_DevelopmentAccelerationByWaterStress = 1; // old WPROG
-    if (vc_TranspirationDeficit < pc_DroughtStressThreshold[vc_DevelopmentalStage] && apc > 0.9) {
+    if (vc_TranspirationDeficit < pc_DroughtStressThreshold[vc_DevelopmentalStage] && apc > 0.9) {//Das heißt, das betrifft nur die Kornfüllungsphase (acp>0.9).
       if (vc_OxygenDeficit >= 1.0) {
         vc_DevelopmentAccelerationByWaterStress =
             1.0 + ((1.0 - vc_TranspirationDeficit) * (1.0 - vc_TranspirationDeficit));
-      }
+      } 
     }
+
+    //MP: added development slowdown by waterlogging
+    //double vc_DevelopmentSlowdownByWaterlogging = 1;
+    //if (vc_OxygenDeficit < 1.0) {
+    //    vc_DevelopmentSlowdownByWaterlogging =
+    //        1.0 - ((1.0 - vc_OxygenDeficit) * (1.0 - vc_OxygenDeficit));
+    //}
 
     // old DEVPROG
     double vc_DevelopmentAccelerationByStress =
-        max(vc_DevelopmentAccelerationByNitrogenStress, vc_DevelopmentAccelerationByWaterStress);
+        max(vc_DevelopmentAccelerationByNitrogenStress, vc_DevelopmentAccelerationByWaterStress); // *vc_DevelopmentSlowdownByWaterlogging; //MP: this does not work?
 
     if (cropPs.__enable_Phenology_WangEngelTemperatureResponse__) {
       double devTresponse = max(0.0, WangEngelTemperatureResponse(meanAirTemperature,
                                                                   cultivarPs.pc_MinTempDev_WE,
                                                                   cultivarPs.pc_OptTempDev_WE,
                                                                   cultivarPs.pc_MaxTempDev_WE,
-                                                                  1.0));
+                                                                  1.0));//MP: warum steht hier 1?
       double tempIncr = devTresponse * meanAirTemperature * vc_VernalisationFactor * vc_DaylengthFactor *
                         vc_DevelopmentAccelerationByStress * vc_TimeStep;
       vc_CurrentTemperatureSum[vc_DevelopmentalStage] += tempIncr;
@@ -1301,7 +1309,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
                            - pc_BaseTemperature[vc_DevelopmentalStage])
                           * vc_VernalisationFactor * vc_DaylengthFactor * vc_DevelopmentAccelerationByStress *
                           vc_TimeStep;
-        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += tempIncr;
+        vc_CurrentTemperatureSum[vc_DevelopmentalStage] += tempIncr; //MP: effektive Temperatur wird aufsummiert
         vc_CurrentTotalTemperatureSum += tempIncr;
       }
     }
@@ -1316,7 +1324,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
           vc_CurrentTemperatureSum[vc_DevelopmentalStage] - pc_StageTemperatureSum[vc_DevelopmentalStage];
         vc_DevelopmentalStage++;
         vc_CurrentTemperatureSum[vc_DevelopmentalStage] += stageExcessTemperatureSum;
-      } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) {
+      } else if (vc_DevelopmentalStage == pc_NumberOfDevelopmentalStages - 1) { //MP: Frucht ist reif
         if (pc_Perennial && vc_GrowthCycleEnded) doResetPerennialCrop = true;
       }
     }
@@ -1352,7 +1360,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
  *
  * @return
  *
- * @author Claas Nendel
+ * @author Claas Nendel //MP: will this need refinement?
  */
 double CropModule::fc_KcFactor(double d_StageTemperatureSum,
                                double d_CurrentTemperatureSum,
@@ -1730,7 +1738,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
 
       if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
-        vc_AssimilationRate = 0.0;
+        vc_AssimilationRate = 0.0; //MP: warum gibt es für C3-Pflanzen keine maximale Temperatur
         vc_AssimilationRateReference = 0.0;
       }
     } else if (pc_CO2Method == 2) {
@@ -2071,8 +2079,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     // For this purpose it must not be affected by drought stress, as the grass
     // reference is defined as being always well supplied with water. Water stress
     // is acting at a later stage.
-    if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {
-      vc_GrossCO2Assimilation = vc_GrossCO2Assimilation; // *  vc_TranspirationDeficit;
+    if (vc_TranspirationDeficit < vc_DroughtStressThreshold) { //MP. what about conditions where vc_TranspirationDeficit > vc_DroughtStressThreshold
+      vc_GrossCO2Assimilation = vc_GrossCO2Assimilation; // *  vc_TranspirationDeficit; 
     }
 
 #pragma region hourly FvCB code
@@ -2288,9 +2296,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           _cropPhotosynthesisResults.oi = lf.oi * 1000;
           _cropPhotosynthesisResults.ci = lf.ci;
           _cropPhotosynthesisResults.vcMax = FvCB::Vcmax_bernacchi_f(mcd.tFol, speciesPs.VCMAX25) * vc_CropNRedux *
-                                             vc_TranspirationDeficit; // lf.vcMax;
+                                             vc_TranspirationDeficit; // lf.vcMax; MP: do we have to include OxygenDeficit?
           _cropPhotosynthesisResults.jMax =
-              FvCB::Jmax_bernacchi_f(mcd.tFol, 120) * vc_CropNRedux * vc_TranspirationDeficit;           // lf.jMax;
+              FvCB::Jmax_bernacchi_f(mcd.tFol, 120) * vc_CropNRedux * vc_TranspirationDeficit;           // lf.jMax; MP: do we have to include OxygenDeficit?
           _cropPhotosynthesisResults.jj = lf.jj;
           _cropPhotosynthesisResults.jj1000 = lf.jj1000;
           _cropPhotosynthesisResults.jv = lf.jv;
@@ -2448,9 +2456,11 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   // reduction value for assimilate amount to simulate frost damage;
   vc_Assimilates *= vc_CropFrostRedux;
 
-  if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {
-    // vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;
-    vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit / vc_DroughtStressThreshold;
+  //MP: added reduction value for assimilate amount to simulate waterlogging;
+  vc_Assimilates *= vc_OxygenDeficit;
+
+  if (vc_TranspirationDeficit < vc_DroughtStressThreshold) {//MP: Access point for drought optimisation
+      vc_Assimilates = vc_Assimilates * vc_TranspirationDeficit;  // vc_DroughtStressThreshold; // MP:changed to exclude division
   }
 
   vc_GrossAssimilates = vc_Assimilates;
@@ -2555,7 +2565,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 }
 
 /**
- * @brief Heat stress impact
+ * @brief Heat stress impact //MP: currently, heat affects flowering and therefore fertility
  *
  * @param vw_MaxAirTemperature
  * @param vw_MinAirTemperature
@@ -2831,7 +2841,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     vc_AssimilatePartitioningCoeffOld = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage - 1][i_Organ];
     vc_AssimilatePartitioningCoeff = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ];
 
-    // Identify storage organ and reduce assimilate flux in case of heat stress
+    // Identify storage organ and reduce assimilate flux in case of heat stress //MP: this might be extended for drougth stress (see suggestions for altered assimilate allocations)
     if (pc_StorageOrgan[i_Organ]) {
       vc_AssimilatePartitioningCoeffOld =
           vc_AssimilatePartitioningCoeffOld * vc_CropHeatRedux * vc_DroughtImpactOnFertility;
@@ -2848,7 +2858,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
       // if vc_NetPhotosynthesis is negative, the crop needs more for
       // maintenance than for building new biomass
       if (vc_NetPhotosynthesis < 0.0) {
-        // reduce biomass from leaf and shoot because of negative assimilate
+        // reduce biomass from leaf and shoot because of negative assimilate //MP: what is the effect on roots here?
         //! TODO: hard coded organ ids; must be more generalized because in database organ_ids can be mixed
         // vc_OrganBiomass[i_Organ];
 
@@ -2914,7 +2924,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
             //            }
           }
         } else {
-          // root or storage organ - do nothing in case of negative photosynthesis
+          // root or storage organ - do nothing in case of negative photosynthesis //MP: for roots, this appears to be questionable...
           vc_OrganGrowthIncrement[i_Organ] = 0;
         }
       } else { // if (vc_NetPhotosynthesis >= 0.0) {
@@ -3036,13 +3046,23 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     vc_RootNIncrement = 0;
   }
 
-  // In case of drought stress the root will grow deeper
-  if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage])
-      && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
-      && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
-      && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
-    vc_MaxRootingDepth += 0.005;
+  // In case of drought stress the root will grow deeper //MP: Access point for drought optimisation (this could be changed for waterlogging)
+  auto layerIndexBelowRootingDepth = std::min(vc_RootingDepth, nols - 1);
+  double vc_AvailableWater =
+      soilColumn[layerIndexBelowRootingDepth].vs_FieldCapacity() - soilColumn[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint();
+  double vc_AvailableWaterPercentage =
+      (soilColumn[layerIndexBelowRootingDepth].get_Vs_SoilMoisture_m3() - soilColumn[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint()) /
+      vc_AvailableWater;
+  if (vc_AvailableWaterPercentage < 0.0) {
+      vc_AvailableWaterPercentage = 0.0;
   }
+  //MP:turn this off first
+  //if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage]) //MP: vielleicht ist das Problem, dass hier der selbe Wert verwendet wird
+  //    && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
+  //    && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
+  //    && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
+  //  vc_MaxRootingDepth += 0.005;
+  //}
 
   if (vc_MaxRootingDepth > (double(nols - 1) * layerThickness)) {
     vc_MaxRootingDepth = double(nols - 1) * layerThickness;
@@ -3054,12 +3074,12 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   }
 
   // ***************************************************************************
-  // *** Taken from Pedersen et al. 2010: Modelling diverse root density   ***
+  // *** Taken from Pedersen et al. 2010: Modelling diverse root density   *** //MP: the paper is actually from 2010
   // *** dynamics and deep nitrogen uptake - a simple approach.        ***
   // *** Plant & Soil 326, 493 - 510                     ***
   // ***************************************************************************
 
-  // Determining temperature sum for root growth
+  // Determining temperature sum for root growth //MP: there is at least some effect of temperature on root growth (but soil temperature does not seem to be included so far)
   double pc_MaximumTemperatureRootGrowth = pc_MinimumTemperatureRootGrowth + 20.0;
   double vc_DailyTemperatureRoot = 0.0;
   if (vw_MeanAirTemperature >= pc_MaximumTemperatureRootGrowth) {
@@ -3072,9 +3092,10 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   }
   vc_CurrentTotalTemperatureSumRoot += vc_DailyTemperatureRoot;
 
-  // Determining root penetration rate according to soil clay content [m °C-1 d-1]
+  // Determining root penetration rate according to soil clay content [m °C-1 d-1] //MP: this might be extended for soil temperature, bulk density, and available water content
+  // This is not described in Pedersen et al. ... (source ??)
   double vc_RootPenetrationRate = 0.0; // [m °C-1 d-1]
-  auto layerIndexBelowRootingDepth = std::min(vc_RootingDepth, nols - 1);
+
   if (soilColumn[layerIndexBelowRootingDepth].vs_SoilClayContent() <= 0.02) {
     vc_RootPenetrationRate = 0.5 * pc_RootPenetrationRate;
   } else if (soilColumn[layerIndexBelowRootingDepth].vs_SoilClayContent() <= 0.08) {
@@ -3083,6 +3104,13 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
         pc_RootPenetrationRate; // [m °C-1 d-1]
   } else {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
+  }
+  //MP: add constraint for reduced root penetration rate when soil is dry
+  if (vc_AvailableWaterPercentage <= 0.25) {
+      vc_RootPenetrationRate = std::min(1.0, (4 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate; //MP: APSIM method according to Jones et al (1991)
+  }
+  else {
+      vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
   }
 
   // Calculating rooting depth [m]
@@ -3119,7 +3147,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   // Calculating root density per layer from total root length and
   // a relative root density distribution factor
   for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
-    vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum) * vc_TotalRootLength; // [m m-3]
+    vc_RootDensity[i_Layer] = (vc_RootDensityFactor[i_Layer] / vc_RootDensityFactorSum) * vc_TotalRootLength; // [m m-3]//MP: hier könnte man auch an einer layer-spezifischen density arbeiten
   }
 
   for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
@@ -3138,7 +3166,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   }
   // *****************************************************************************
 
-  // *** Original HERMES approach: ***
+  // *** Original HERMES approach: *** //MP: why is this not used?
   //  // Taken from Gerwitz & Page --> Parameter for e-function indicating the
   //  // depth above which 68% of the roots are present
   //  if (pc_AbovegroundOrgan[3] == 0) {
@@ -3233,7 +3261,7 @@ pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum() {
   std::vector<double> vc_RootDensityFactor(nols, 0.0);
   for (size_t i_Layer = 0; i_Layer < nols; i_Layer++) {
     if (i_Layer < vc_RootingDepth) {
-      vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness)); // []
+      vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness)); // [] //MP: hier könnte man was ändern, wenn man layer-spezifische densities haben will.
     } else if (i_Layer < vc_RootingZone) {
       vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness)) *
                                       (1.0 - ((i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth))); // []
@@ -3401,20 +3429,20 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
  * @author Claas Nendel
  */
 void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
-                                    double vw_GrossPrecipitation,
+                                    double vw_GrossPrecipitation,   
                                     double /*vc_CurrentTotalTemperatureSum*/,
                                     double /*vc_TotalTemperatureSum*/) {
   size_t nols = soilColumn.vs_NumberOfLayers();
   double layerThickness = soilColumn.vs_LayerThickness();
-  double vc_PotentialTranspirationDeficit = 0.0;  // [mm]
+  vc_PotentialTranspirationDeficit = 0.0;  // [mm]
   vc_PotentialTranspiration = 0.0;        // old TRAMAX [mm]
   double vc_PotentialEvapotranspiration = 0.0;  // [mm]
-  double vc_TranspirationReduced = 0.0;      // old TDRED [mm]
+  vc_TranspirationReduced = 0.0;      // old TDRED [mm]
   vc_ActualTranspiration = 0.0;          // [mm]
   double vc_RemainingTotalRootEffectivity = 0.0;  // old WEFFREST [m]
   double vc_CropWaterUptakeFromGroundwater = 0.0; // old GAUF [mm]
   double vc_TotalRootEffectivity = 0.0;      // old WEFF [m]
-  double vc_ActualTranspirationDeficit = 0.0;    // old TREST [mm]
+  vc_ActualTranspirationDeficit = 0.0;    // old TREST [mm]
   double vc_Interception = 0.0;
   vc_RemainingEvapotranspiration = 0.0;
 
@@ -3496,17 +3524,19 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
       if (vc_AvailableWaterPercentage < 0.0) {
         vc_AvailableWaterPercentage = 0.0;
       }
-
-      if (vc_AvailableWaterPercentage < 0.15) {
+      //MP: Where do all these numbers come from? Potential need for improvement of the numbers
+      //This would be the access point for considering compensatory effects of increased/decreased water uptake from layers that hold enough water.
+      //An alternative approach for considering compensatory effects is to go through a soil water-dependent root penetration rate.
+      if (vc_AvailableWaterPercentage < 0.15) {//MP: Access point for drought optimisation (this could be extended for waterlogging), this is for very dry condtions
         vc_TranspirationRedux[i_Layer] = vc_AvailableWaterPercentage * 3.0;        // []
-        vc_RootEffectivity[i_Layer] = 0.15 + 0.45 * vc_AvailableWaterPercentage / 0.15; // []
+        vc_RootEffectivity[i_Layer] = 0.15 + 0.45 * vc_AvailableWaterPercentage / 0.15; // [] MP: this is essentially *3
       } else if (vc_AvailableWaterPercentage < 0.3) {
         vc_TranspirationRedux[i_Layer] = 0.45 + (0.25 * (vc_AvailableWaterPercentage - 0.15) / 0.15);
         vc_RootEffectivity[i_Layer] = 0.6 + (0.2 * (vc_AvailableWaterPercentage - 0.15) / 0.15);
-      } else if (vc_AvailableWaterPercentage < 0.5) {
+      } else if (vc_AvailableWaterPercentage < 0.5) {//MP: ab hier hat das fast keinen Effekt mehr
         vc_TranspirationRedux[i_Layer] = 0.7 + (0.275 * (vc_AvailableWaterPercentage - 0.3) / 0.2);
         vc_RootEffectivity[i_Layer] = 0.8 + (0.2 * (vc_AvailableWaterPercentage - 0.3) / 0.2);
-      } else if (vc_AvailableWaterPercentage < 0.75) {
+      } else if (vc_AvailableWaterPercentage < 0.75) {//MP: ab hier ist nur mehr die Transpiration betroffen
         vc_TranspirationRedux[i_Layer] = 0.975 + (0.025 * (vc_AvailableWaterPercentage - 0.5) / 0.25);
         vc_RootEffectivity[i_Layer] = 1.0;
       } else {
@@ -3543,7 +3573,7 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
         vc_Transpiration[i_Layer] = vc_TotalRootEffectivity != 0.0
                                     ? vc_PotentialTranspiration *
                                       ((vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]) /
-                                       vc_TotalRootEffectivity) * vc_OxygenDeficit
+                                       vc_TotalRootEffectivity) * vc_OxygenDeficit //MP: why is this not changing anything? (I think it would only change something for too dry conditions).
                                     : 0;
 
         // std::cout << setprecision(11) << "vc_Transpiration[i_Layer]: " << i_Layer << ", " << vc_Transpiration[i_Layer] << std::endl;
@@ -3589,7 +3619,7 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
           }
         }
       }
-      vc_Transpiration[i_Layer] = vc_Transpiration[i_Layer] - vc_ActualTranspirationDeficit;
+      vc_Transpiration[i_Layer] = vc_Transpiration[i_Layer] - vc_ActualTranspirationDeficit;//MP: this is a key line for water stress response
       if (vc_Transpiration[i_Layer] < 0.0) {
         vc_Transpiration[i_Layer] = 0.0;
       }
