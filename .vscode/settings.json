@@ -1,0 +1,8 @@
+{
+  "cmake.generator": "Visual Studio 17 2022",
+  "cmake.configureArgs": [
+    "-DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake",
+    "-DVCPKG_TARGET_TRIPLET=x64-windows-static"
+  ],
+  "cmake.buildDirectory": "${workspaceFolder}/_cmake_win64"
+}
