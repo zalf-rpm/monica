@@ -1,0 +1,9 @@
+iso-date,hour,crop-name,co2,leaf_temp,in:LAI_sun,in:LAI_sh,out:Ic_sun,out:Ic_sh,out:A_rub_sun,out:A_el_sun,out:A_rub_sh,out:A_el_sh,out.sunlit.ci,out.sunlit.cc,out.shaded.ci,out.shaded.cc,gb_sun,gm_sun,gb_sh,gm_sh,out.sunlit.gs,out.shaded.gs,A_sun,Rd_sun,gamma_sun
+1991-10-01,0,wheat/winter wheat,349.075,11.1343,0,0.106,0,0
+1991-10-01,1,wheat/winter wheat,349.075,10.7471,0,0.106,0,0
+1991-10-01,2,wheat/winter wheat,349.075,10.3941,0,0.106,0,0
+1991-10-01,3,wheat/winter wheat,349.075,10.0872,0,0.106,0,0
+1991-10-01,4,wheat/winter wheat,349.075,9.83701,0,0.106,0,0
+1991-10-01,5,wheat/winter wheat,349.075,9.65194,0,0.106,0,0
+1991-10-01,6,wheat/winter wheat,349.075,9.53831,0,0.106,0,0
+1991-10-01,7,wheat/winter wheat,349.075,9.5,0.0820583,0.0239417,5.43069,1.27866,-0.0292899,-nan(ind),-0.00854573,-0.00854574,-230.311,-229.419,-0.892351,-0.892351,0.123088,0.0328233,0.0359125,0.00957666,0.01,0.10017,-0.0292899,0.0292899,0

@@ -4,5 +4,10 @@
     "-DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake",
     "-DVCPKG_TARGET_TRIPLET=x64-windows-static"
   ],
-  "cmake.buildDirectory": "${workspaceFolder}/_cmake_win64"
+  "cmake.buildDirectory": "${workspaceFolder}/_cmake_win64",
+  "files.associations": {
+    "iostream": "cpp",
+    "random": "cpp",
+    "cmath": "cpp"
+  }
 }
