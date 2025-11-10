@@ -8,6 +8,7 @@
   "files.associations": {
     "iostream": "cpp",
     "random": "cpp",
-    "cmath": "cpp"
+    "cmath": "cpp",
+    "stdexcept": "cpp"
   }
 }

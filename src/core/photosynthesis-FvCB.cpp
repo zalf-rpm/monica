@@ -41,8 +41,8 @@ std::map<FvCB_Model_Consts, double> FvCB::deltaH_bernacchi = {{Rd, 46.39},{Vcmax
  * Werktuigbouwkunde, Technische Hogeschool (Techn. Univ.), Eindhoven, Netherlands (1980), p. 97 + 67
  * 
  * (requires hourly inputs!)
- * @param globrad hourly global irradiance
- * @param extra_terr_rad hourly extra-terrestrial radiation
+ * @param globrad hourly global irradiance [W m-2]
+ * @param extra_terr_rad hourly extra-terrestrial radiation [W m-2]
  * @param solar_elev hourly solar elevation angle [rad]
  * @return hourly fraction of diffuse radiation 
  */
@@ -542,7 +542,17 @@ Lumped_Coeffs calculate_lumped_coeffs(double x1, double x2, double fVPD, double 
   lumped_coeffs.Q = (pow(lumped_coeffs.p, 2) - 3 * q) / 9;
 
   //psi
-  lumped_coeffs.psi = acos(U / sqrt(pow(lumped_coeffs.Q, 3)));
+  // lumped_coeffs.psi = acos(U / sqrt(pow(lumped_coeffs.Q, 3)));
+  double acos_arg = U / sqrt(pow(lumped_coeffs.Q, 3)); // FS: argument of acos should be in intervall [-1, 1]; otherwise undefined behaviour resulting in nan
+  if ((acos_arg < (-1. - FvCB::epsilon)) || (acos_arg > (1. + FvCB::epsilon))) // FS: stop in case of too small or too big values (something must have gone wrong before)
+  {
+    throw runtime_error("hourly FvCB C3 lumped coeffs psi calculation failed!");
+  }
+  else
+  {
+    acos_arg = min(max(acos_arg, -1.), 1.); // FS: clip to intervall [-1, 1]
+  }
+  lumped_coeffs.psi = acos(acos_arg);
 
   return lumped_coeffs;
 }
@@ -821,17 +831,19 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   out.shaded.jv = 0.0;
 
   //1. calculate diffuse and direct radiation
-  double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);	
+  double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);
   double hourly_diffuse_rad = in.global_rad * diffuse_fraction;
   double hourly_direct_rad = in.global_rad - hourly_diffuse_rad;
 
   /* FS: for agri-pv: test if adjusting hourly direct and diffuse radiation has any impact at all  !!! debug
-  hourly_diffuse_rad *= 0.7; // !!! debug
-  hourly_direct_rad *= 0.; // !!! debug
+  hourly_diffuse_rad *= 0.7;  // !!! debug
+  hourly_direct_rad *= 0.;    // !!! debug
   //*/
 
-  double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //�mol m - 2 s - 1 (unit ground area)
-  double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //1 W m-2 = 4.56 �mol m-2 s-1; PAR = 0.45 * global radiation 
+  // FS: convert [MJ m-2 h-1] -> [W m-2] -> [μmol m-2 s-1] -> [μmol m-2 s-1 PAR]
+  // 1 [MJ m-2 h-1] = pow(10, 6) / 3600.0 [W m-2]; 1 [W m-2] = 4.56 [μmol m-2 s-1]; PAR = 0.45 * global radiation 
+  double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45;  //[μmol m-2 s-1 PAR] (unit ground area)
+  double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45;    //[μmol m-2 s-1 PAR] (unit ground area)
   
   //2. calculate Radiation absorbed by sunlit / shaded canopy
   double Ic_sun = Ic_sun_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //�mol m - 2 s - 1 (unit ground area)
@@ -916,8 +928,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   }	
   if (out.shaded.LAI > 0)
   {
-    out.shaded.vcMax = Vc_sh / out.shaded.LAI;//Vcmax;
-    out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
+    out.shaded.vcMax = Vc_sh / out.shaded.LAI;    // Vcmax;
+    out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; // Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
     out.shaded.jj = J_c_sh / out.shaded.LAI;
     out.shaded.jj1000 = J_bernacchi_f(1000, in.leaf_temp, out.shaded.jMax);
   }
@@ -931,19 +943,19 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   std::tuple<double, double> x1_x2_el_sh = x_electron(J_c_sh, gamma_sh);
 
   // 6.1.3 g0, gm, gb
-  double gb_sun = par.gb * out.sunlit.LAI; //mol m-2 s-1 bar-1 per unit ground area
+  double gb_sun = par.gb * out.sunlit.LAI;  // mol m-2 s-1 bar-1 per unit ground area
   double gb_sh = par.gb * out.shaded.LAI;
   double g0_sun = par.g0 * out.sunlit.LAI;
   double g0_sh = par.g0 * out.shaded.LAI;
-  double gm_t = 0.4;// gm_bernacchi_f(in.leaf_temp, par.gm_25); //TODO: check correctness of gm_bernacchi_f
+  double gm_t = 0.4;                        // gm_bernacchi_f(in.leaf_temp, par.gm_25); //TODO: check correctness of gm_bernacchi_f
   double gm_sun = gm_t * out.sunlit.LAI;
   double gm_sh = gm_t * out.shaded.LAI;
 
   if (in.global_rad <= 0.0)
   {
     //handle cases where no photosynthesis can occur
-    out.canopy_gross_photos = 0.0;
-    out.canopy_net_photos = out.canopy_gross_photos - out.canopy_resp;
+    out.canopy_gross_photos = 0.0;                                      // [μmol CO2 m-2 h-1]
+    out.canopy_net_photos = out.canopy_gross_photos - out.canopy_resp;  // [μmol CO2 m-2 h-1]
     out.sunlit.gs = g0_sun;
     out.shaded.gs = g0_sh;
   }
@@ -980,8 +992,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
     double A_sun = std::fmin(A_rub_sun, A_el_sun);
     double A_sh = std::fmin(A_rub_sh, A_el_sh);
 
-    out.canopy_net_photos = (A_sun + A_sh) * 3600.0;
-    out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;
+    out.canopy_net_photos = (A_sun + A_sh) * 3600.0;                    // [μmol CO2 m-2 h-1]
+    out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;  // [μmol CO2 m-2 h-1]
 
     //6.4 derive stomatal conductance
     //6.4.1 determine whether photosynthesis is rubisco or electron limited
