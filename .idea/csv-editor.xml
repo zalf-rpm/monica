@@ -38,20 +38,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/sim-min-out_section_crop.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/sim-min-out_section_run.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
       </map>
     </option>
   </component>
