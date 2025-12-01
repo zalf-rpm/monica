@@ -343,7 +343,13 @@ double Ko_bernacchi_f(double leafT)
 
 /**
  * @brief 
+ * Appendix 1 eq 8 from Long, S.P. 1991. Modification of the response of photosynthetic productivity to rising temperature by atmospheric CO2
+ * concentrations - Has its importance been underestimated. Plant Cell Environ. 14(8): 729-739. https://doi.org/10.1111/j.1365-3040.1991.tb01439.x
+ *
+ * "The parameters of Farquhar et al. (1980) were for a leaf temperature of 25 °C. To examine the effects of variation in 
+ * temperature, rate constants and solubilities were recalculated here lelative to their values at 25°C (eqns 6-8)."
  * 
+ *
  * @param leafT 
  * @return double 
  */
