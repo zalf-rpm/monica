@@ -79,13 +79,16 @@ public:
 
   bool isCropPlanted() const { return _currentCropModule; }
 
-  void harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData());
+  void harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
+                          Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData(),
+                          int incorporateIntoLayerIndex = 0);
 
   void incorporateCurrentCrop();
 
   void applyMineralFertiliser(MineralFertilizerParameters partition, double amount);
 
-  void applyOrganicFertiliser(const OrganicMatterParameters& omps, double amountFM, bool incorporation);
+  void applyOrganicFertiliser(const OrganicMatterParameters& omps, double amountFM, bool incorporation,
+                              int incorporateIntoLayerIndex = 0);
 
   bool useNMinMineralFertilisingMethod() const { return _simPs.p_UseNMinMineralFertilisingMethod; }
 

@@ -269,7 +269,7 @@ public:
     _sowing->crop()->setHarvestDate(date);
   }
 
-  void setPercentage(double percentage) { _percentage = percentage; }
+  //void setPercentage(double percentage) { _percentage = percentage; }
 
   void setExported(bool exported) { _exported = exported; }
 
@@ -284,10 +284,11 @@ protected:
   Sowing *_sowing{nullptr};
 
 private:
-  double _percentage{0};
+  // double _percentage{0};
   bool _exported{true};
   Spec _spec;
   OptCarbonManagementData _optCarbMgmtData;
+  int _incorporateIntoLayerNo{1};
 };
 
 class DLL_API AutomaticHarvest : public Harvest {
@@ -474,6 +475,7 @@ private:
   OrganicMatterParameters _params;
   double _amount{0.0};
   bool _incorporation{false};
+  int _incorporateIntoLayerNo{1};
 };
 
 class DLL_API Tillage : public Workstep {

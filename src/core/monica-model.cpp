@@ -375,8 +375,9 @@ void MonicaModel::seedCrop(Crop *crop) {
  *
  * Deletes the current crop.
  */
-void
-MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harvest::OptCarbonManagementData optCarbMgmtData) {
+void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
+                                     Harvest::OptCarbonManagementData optCarbMgmtData,
+                                     int incorporateIntoLayerIndex) {
   if (_currentCropModule) {
     // prepare to add root and crop residues to soilorganic (AOMs)
     // dead root biomass has already been added daily, so just living root biomass is left
@@ -427,12 +428,12 @@ MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harves
 
         _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
                                        _optCarbonReturnedResidues,
-                                       _currentCropModule->get_ResiduesNConcentration());
+                                       _currentCropModule->get_ResiduesNConcentration(),
+                                       incorporateIntoLayerIndex);
 
         _humusBalanceCarryOver =
             intermediateHumusBalance + _optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq;
-      } else //normal case
-      {
+      } else { // old default behavior
         double residueBiomass = _currentCropModule->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
 
         //!@todo Claas: das hier noch berechnen
@@ -449,24 +450,25 @@ MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harves
                 << " Secondary yield N content: " << _currentCropModule->get_SecondaryYieldNContent() << endl;
         _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
                                        residueBiomass,
-                                       residueNConcentration);
+                                       residueNConcentration,
+                                       incorporateIntoLayerIndex);
       }
-    } else if (!spec.organ2specVal.empty()) {
+    } else if (!spec.organ2specVal.empty()) { // harvest with a more detailed specification
       auto cropYield = 0.0;
       auto primaryCropYield = 0.0;
       auto sumOrganResidueBiomassAsOverlay = 0.0;
       auto sumOrganResidueBiomassToIncorporate = 0.0;
       auto organIdsForPrimaryYield = _currentCropModule->organIdsForPrimaryYield();
-      for (const auto &p: spec.organ2specVal) {
+      for (const auto & [organId, specVal]: spec.organ2specVal) {
         // ignore root, is probably an error, when the user specified the root organ (0) as something to harvest
-        if (p.first == 0) continue;
-        auto organBiomass = _currentCropModule->get_OrganBiomass(p.first);
-        auto organYield = organBiomass * p.second.exportPercentage / 100.0;
+        if (organId == 0) continue;
+        auto organBiomass = _currentCropModule->get_OrganBiomass(organId);
+        auto organYield = organBiomass * specVal.exportPercentage / 100.0;
         cropYield += organYield;
-        if (organIdsForPrimaryYield.find(p.first + 1) != organIdsForPrimaryYield.end()) {
+        if (organIdsForPrimaryYield.find(organId + 1) != organIdsForPrimaryYield.end()) {
           primaryCropYield += organYield;
         }
-        if (p.second.incorporate) sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
+        if (specVal.incorporate) sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
         else sumOrganResidueBiomassAsOverlay += organBiomass - organYield;
       }
       auto totalResidueBiomass = _currentCropModule->get_ResidueBiomass(false, cropYield);
@@ -474,7 +476,8 @@ MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harves
       auto residuesNConcentration = _currentCropModule->get_ResiduesNConcentration(primaryCropYield);
       _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
                                      totalResidueBiomassToIncorporate,
-                                     residuesNConcentration);
+                                     residuesNConcentration,
+                                     incorporateIntoLayerIndex);
 
       debug()
           << "adding organic matter from residues to soilOrganic"
@@ -505,7 +508,8 @@ MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec, Harves
               << " Aboveground biomass N concentration: " << abovegroundBiomassNConcentration << endl;
       _soilOrganic->addOrganicMatter(_currentCropModule->residueParameters(),
                                      abovegroundBiomass,
-                                     abovegroundBiomassNConcentration);
+                                     abovegroundBiomassNConcentration,
+                                     incorporateIntoLayerIndex);
     }
   }
 
@@ -552,10 +556,11 @@ void MonicaModel::applyMineralFertiliser(MineralFertilizerParameters partition,
 
 void MonicaModel::applyOrganicFertiliser(const OrganicMatterParameters &params,
                                          double amountFM,
-                                         bool incorporation) {
+                                         bool incorporation,
+                                         int incorporateIntoLayerIndex) {
   debug() << "MONICA model: applyOrganicFertiliser:\t" << amountFM << "\t" << params.vo_NConcentration << endl;
   _soilOrganic->setIncorporation(incorporation);
-  _soilOrganic->addOrganicMatter(params, amountFM, params.vo_NConcentration);
+  _soilOrganic->addOrganicMatter(params, amountFM, params.vo_NConcentration, incorporateIntoLayerIndex);
   addDailySumOrgFertiliser(amountFM, params);
   addDailySumOrganicFertilizerDM(amountFM * params.vo_AOM_DryMatterContent);
 }
