@@ -25,10 +25,27 @@ using namespace FvCB;
 using namespace Tools;
 using namespace std;
 
+
+// FS: What is the source of these values?
 std::map<FvCB_Model_Consts, double> FvCB::c_bernacchi = {{Rd, 18.72},{Vcmax, 26.35},{Vomax, 22.98},{Gamma, 19.02},{Kc, 38.05},{Ko, 20.30},{Jmax, 17.57}}; //dimensionless
 std::map<FvCB_Model_Consts, double> FvCB::deltaH_bernacchi = {{Rd, 46.39},{Vcmax, 65.33},{Vomax, 60.11},{Gamma, 37.83},{Kc, 79.43},{Ko, 36.38},{Jmax, 43.54}}; //kJ mol - 1
 
-//estimate the fraction of diffuse radiation; it requires hourly input
+/**
+ * @brief estimate fraction of diffuse radiation (hourly)
+ * 
+ * Spitters et al. (1986) Separating the diffuse and direct component of global radiation and its implications for modeling canopy photosynthesis.
+ * Part I. Components of incoming radiation. https://doi.org/10.1016/0168-1923(86)90060-2
+ * 
+ * original source seems to be de Jong 1980 p.55 (in Dutch): Een karakterisering van de zonnestraling in Nederland
+ * Doctoraalverslag Vakgroep Fysische Aspecten van de Gebouwde Omgeving afd. Bouwkunde en Vakgroep Warmte- en Stromingstechnieken afd,
+ * Werktuigbouwkunde, Technische Hogeschool (Techn. Univ.), Eindhoven, Netherlands (1980), p. 97 + 67
+ * 
+ * (requires hourly inputs!)
+ * @param globrad hourly global irradiance [W m-2]
+ * @param extra_terr_rad hourly extra-terrestrial radiation [W m-2]
+ * @param solar_elev hourly solar elevation angle [rad]
+ * @return hourly fraction of diffuse radiation 
+ */
 double diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev)
 {
   double glob_extra_ratio = globrad / extra_terr_rad;
@@ -81,6 +98,9 @@ double abs_sunlit_direct_f(double I_dir_beam, double solar_elev, double LAI)
   return I_dir_beam * (1 - sigma) * (1 - exp(-kb * LAI));
 }
 
+
+// FS: Where are these eqautions from? Apparently not https://doi.org/10.1016/0168-1923(86)90061-4, but maybe something related? Multi-layer canopy model ???
+
 //diffuse radiation absorbed by sunlit leaves
 double abs_sunlit_diffuse_f(double I_dif, double solar_elev, double LAI)
 {
@@ -98,9 +118,9 @@ double abs_sunlit_diffuse_f(double I_dif, double solar_elev, double LAI)
   }
   else
   {
-    kb = 0.5 / sin(solar_elev);
+    kb = 0.5 / sin(solar_elev); // FS: https://doi.org/10.1016/0168-1923(86)90061-4 eq. 7; Goudriaan, 1977, 1982 ? https://edepot.wur.nl/166537 https://edepot.wur.nl/167315
   }
-  return I_dif * (1 - rho_cd) * (1 - exp(-(k1_d + kb)*LAI)) * k1_d / (k1_d + kb);
+  return I_dif * (1 - rho_cd) * (1 - exp(-(k1_d + kb)*LAI)) * k1_d / (k1_d + kb); // FS: is this similar to canopy model https://doi.org/10.1016/0168-1923(86)90061-4 eq. 25  ?
 }
 
 //scattered beam absorberd by sunlit leaves
@@ -208,24 +228,63 @@ std::tuple<double, double> LAI_sunlit_shaded_f(double LAI, double solar_elev)
 #pragma region 
 //FvCB model params
 
-//T response
+/**
+ * @brief generic temperature response function
+ * 
+ * source seems to be Bernachhi et al. 2003 https://doi.org/10.1046/j.0016-8025.2003.01050.x eq. 9 or https://doi.org/10.1111/j.1365-3040.2001.00668.x eq. 8
+ * 
+ * apply like this: Parameter = Parameter25 * Tresp_bernacchi_f(c, deltaH, T[°C])
+ * "Parameter25 is the absolute value of the parameter at 25 °C."
+ * "The terms c and ΔHa are fit to the values for each of the six parameters measured at a range of temperatures."
+ * "Use of this equation assumes that the activity will continue to increase exponentially with temperature."
+ * For parameters that decrease at higher temperatures, an adjusted equiation is needed instead (e.g https://doi.org/10.1046/j.0016-8025.2003.01050.x eq. 10).
+ * 
+ * @param c       scaling constant
+ * @param deltaH  energy of activation
+ * @param leafT   leaf Temperature [°C]
+ * @return Temperature response factor 
+ */
 double Tresp_bernacchi_f(double c, double deltaH, double leafT)
 {
-  double Tk = leafT + 273;
+  double Tk = leafT + 273; // FS: [°C] -> [K]
   double R = 8.314472 * pow(10, -3); //kJ K - 1 mol - 1
   return exp(c - deltaH / (R * Tk));
 }
 
+/**
+ * @brief maximum rate of carboxylation with Bernacchi temperature response
+ * 
+ * source seems to be https://doi.org/10.1046/j.0016-8025.2003.01050.x eq. 9 or https://doi.org/10.1111/j.1365-3040.2001.00668.x eq. 8
+ * 
+ * @param leafT     leaf Temperature [°C]
+ * @param Vcmax_25  maximum rate of carboxylation at 25°C
+ * @return maximum rate of carboxylation
+ */
 double FvCB::Vcmax_bernacchi_f(double leafT, double Vcmax_25)
 {
   return Vcmax_25 * Tresp_bernacchi_f(c_bernacchi[Vcmax], deltaH_bernacchi[Vcmax], leafT);
 }
 
+/**
+ * @brief maximum rate of electron transport with Bernacchi temperature response
+ * 
+ * @param leafT   leaf Temperature [°C]
+ * @param Jmax_25 maximum rate of electron transport that the leaf can support at 25°C
+ * @return maximum rate of electron transport
+ */
 double FvCB::Jmax_bernacchi_f(double leafT, double Jmax_25)
 {
   return Jmax_25 * Tresp_bernacchi_f(c_bernacchi[Jmax], deltaH_bernacchi[Jmax], leafT);
 }
 
+/**
+ * @brief 
+ * 
+ * @param Q 
+ * @param leafT leaf Temperature [°C]
+ * @param Jmax  actual electron transport capacity (unit leaf area) [J�mol m-2 s-1]
+ * @return double 
+ */
 double J_bernacchi_f(double Q, double leafT, double Jmax)
 {
   double alfa = 0.85; //total leaf absorbance 
@@ -239,13 +298,21 @@ double J_bernacchi_f(double Q, double leafT, double Jmax)
   return numerator / denominator;
 }
 
+/**
+ * @brief 
+ * 
+ * @param Q     :FS; What is Q? Maybe relation between maximum electron transport rate and Rubisco saturated rate of carboxylation?
+ * @param Jmax  actual electron transport capacity (unit leaf area) [�mol m-2 s-1]
+ * @return double 
+ */
 double J_grote_f(double Q, double Jmax)
 {
   double species_THETA = 0.85; //!< curvature parameter
   const double tmp_var = ((Q + Jmax) * (Q + Jmax)) - (4.0 * species_THETA * Q * Jmax);
-  // fw: In Grote et al. 2014 tmp_var is stated as the inverse sqrt even though it is only the sqrt 
+  // FS: fw seems to be Felix Wiss (=Felix Wiß, now Felix Havermann)
+  // fw: In Grote et al. 2014 tmp_var is stated as the inverse sqrt even though it is only the sqrt // FS: Which publication is this? Maybe this one https://doi.org/10.1111/pce.12326 ? If so, in which eq.?
   double  jj = tmp_var > 0.0 ? (Q + Jmax - sqrt(tmp_var)) / (2.0 * species_THETA) : 0.0;
-  return jj;
+  return jj; //FS: electron provision (unit leaf area) [umol m-2 s-1]
 }
   
 double Rd_bernacchi_f(double leafT)
@@ -263,11 +330,29 @@ double Kc_bernacchi_f(double leafT)
   return Tresp_bernacchi_f(c_bernacchi[Kc], deltaH_bernacchi[Kc], leafT);
 }
 
+/**
+ * @brief 
+ * 
+ * @param leafT 
+ * @return double 
+ */
 double Ko_bernacchi_f(double leafT)
 {
   return Tresp_bernacchi_f(c_bernacchi[Ko], deltaH_bernacchi[Ko], leafT);
 }
 
+/**
+ * @brief 
+ * Appendix 1 eq 8 from Long, S.P. 1991. Modification of the response of photosynthetic productivity to rising temperature by atmospheric CO2
+ * concentrations - Has its importance been underestimated. Plant Cell Environ. 14(8): 729-739. https://doi.org/10.1111/j.1365-3040.1991.tb01439.x
+ *
+ * "The parameters of Farquhar et al. (1980) were for a leaf temperature of 25 °C. To examine the effects of variation in 
+ * temperature, rate constants and solubilities were recalculated here lelative to their values at 25°C (eqns 6-8)."
+ * 
+ *
+ * @param leafT 
+ * @return double 
+ */
 double Oi_f(double leafT)
 {
   double T1 = 1.3087 * pow(10, -3) * leafT;
@@ -276,6 +361,14 @@ double Oi_f(double leafT)
   return 210 * (4.7 * pow(10, -2) - T1 + T2 - T3) / (2.6934 * pow(10, -2));
 }
 
+/**
+ * @brief 
+ * 
+ * @param leafT 
+ * @param Vcmax maximum rate of carboxylation
+ * @param Vomax 
+ * @return double 
+ */
 double Gamma_bernacchi_f(double leafT, double Vcmax, double Vomax)
 {
   double numerator = 0.5 * Vomax * Kc_bernacchi_f(leafT) * Oi_f(leafT);
@@ -320,7 +413,15 @@ double canopy_ps_capacity_shaded_f(double LAI, double solar_elev, double Vcmax, 
 #pragma endregion canopy photosynthetic capacity
 
 #pragma region
-//conductance functions
+// conductance functions
+
+/**
+ * @brief 
+ * 
+ * @param leafT leaf temperature [°C]
+ * @param gm_25 
+ * @return double 
+ */
 double gm_bernacchi_f(double leafT, double gm_25)
 {
   double c = 20.0; //it should be put into constants data struct.
@@ -329,7 +430,7 @@ double gm_bernacchi_f(double leafT, double gm_25)
   double deltaS = 1.4;//  ||
   double R = 0.008314;//  || kJ J - 1 mol - 1
     
-  double Tk = leafT + 273.15;
+  double Tk = leafT + 273.15; // FS: [°C] -> [K]
 
   double numerator = exp(c - deltaHa / (R * Tk));
   double denominator = 1 + exp((deltaS * Tk - deltaHd) / (R * Tk));
@@ -344,9 +445,17 @@ double gm_bernacchi_f(double leafT, double gm_25)
 //Coupled photosynthesis-stomatal conductance
 //Yin, Struik, 2009. NJAS 57 (2009) 27-38
 
+/**
+ * @brief empirical function for the effect of leaf-to-air vapour pressure difference (VPD)
+ * 
+ * Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) eq. 15a
+ * 
+ * @param VPD leaf-to-air vapour pressure difference [kPa]
+ * @return Factor for describing the effect of leaf-to-air vapour difference on gs
+ */
 double fVPD_f(double VPD)
 {
-  //VPD in KPa
+  // FS: a1 and b1 are empirical constants
   double a1 = 0.9;
   double b1 = 0.15; //kPa - 1
   return 1 / (1 / (a1 - b1*VPD) - 1);
@@ -374,12 +483,31 @@ std::tuple<double, double> x_electron(double J, double gamma)
   return std::make_tuple(x1, x2);
 }
 
+// coefficients from Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix B. Lumped coefficients in Eq. (19) for the coupled
+// C3 photosynthesis and diffusional conductance model
 struct Lumped_Coeffs {
   double p{ 0.0 };
   double Q{ 0.0 };
   double psi{ 0.0 };
 };
 
+/**
+ * @brief 
+ * 
+ * Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix B. Lumped coefficients in Eq. (19) for the coupled 
+ * C3 photosynthesis and diffusional conductance model
+ * 
+ * @param x1 
+ * @param x2 
+ * @param fVPD  Factor for describing the effect of leaf-to-air vapour difference on gs [-]
+ * @param Ca    ambient CO2 partial pressure, [μbar or μmol mol-1]
+ * @param gamma Cc-based CO2 compensation point in the absence of Rd [μbar]
+ * @param Rd    Day respiration (respiratory CO2 release other than by photorespiration) [μmol CO2 m−2 s−1]
+ * @param g0    Residual stomatal conductance when irradiance approaches zero [mol m-2 s-1 bar-1]
+ * @param gm_C3 Mesophyll diffusion conductance (C3) [mol m−2 s−1 bar−1]
+ * @param gb    boundary layer conductance, [mol m-2 s-1 bar-1]
+ * @return Lumped_Coeffs 
+ */
 Lumped_Coeffs calculate_lumped_coeffs(double x1, double x2, double fVPD, double Ca, double gamma, double Rd, double g0, double gm_C3, double gb)
 {	
   Lumped_Coeffs lumped_coeffs;
@@ -420,24 +548,185 @@ Lumped_Coeffs calculate_lumped_coeffs(double x1, double x2, double fVPD, double 
   lumped_coeffs.Q = (pow(lumped_coeffs.p, 2) - 3 * q) / 9;
 
   //psi
-  lumped_coeffs.psi = acos(U / sqrt(pow(lumped_coeffs.Q, 3)));
+  // lumped_coeffs.psi = acos(U / sqrt(pow(lumped_coeffs.Q, 3)));
+  double acos_arg = U / sqrt(pow(lumped_coeffs.Q, 3)); // FS: argument of acos should be in intervall [-1, 1]; otherwise undefined behaviour resulting in nan
+  if ((acos_arg < (-1. - FvCB::epsilon)) || (acos_arg > (1. + FvCB::epsilon))) // FS: stop in case of too small or too big values (something must have gone wrong before)
+  {
+    throw runtime_error("hourly FvCB C3 lumped coeffs psi calculation failed!");
+  }
+  else
+  {
+    acos_arg = min(max(acos_arg, -1.), 1.); // FS: clip to intervall [-1, 1]
+  }
+  lumped_coeffs.psi = acos(acos_arg);
 
   return lumped_coeffs;
 }
 #pragma endregion Lumped coefficients C3
 
+
+#pragma region
+// Lumped Coefficients C4
+
+
+// coefficients from Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix C. Lumped coefficients in Eq. (19) for the coupled
+// C4 photosynthesis and diffusional conductance model
+struct Lumped_Coeffs_C4 {
+  double p{ 0.0 };
+  double Q{ 0.0 };
+  double psi{ 0.0 };};
+
+/**
+ * @brief 
+ * 
+ * Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix C. Lumped coefficients in Eq. (19) for the coupled 
+ * C4 photosynthesis and diffusional conductance model
+ * 
+ * @param x1 
+ * @param x2 
+ * @param x3 
+ * @param fVPD        Factor for describing the effect of leaf-to-air vapour difference on gs [-]
+ * 
+ * @param Cs_s        Cs-based CO2 compensation point in the absence of Rd (=Table 1 Cs*) [μbar]
+ * 
+ * @param Ca          Ambient air CO2 partial pressure [μbar or μmol mol−1]
+ * @param gamma_lc_s  Half of the reciprocal of Sc/o [bar bar−1] (Sc/o Relative CO2/O2 specificity factor for Rubisco [bar bar−1])
+ * according to Table 2: Sc/o25 [bar bar−1] = 2800 for C3 (orig. source: https://doi.org/10.1104/pp.008250) and 2590 for C4 (orig. source: https://doi.org/10.1071/9780643103405)
+ * With Bernachhi T response this could maybe be used to calculate Sc/o, and then gamma_lc_s?
+ * 
+ * @param Rd          Day respiration (respiratory CO2 release other than by photorespiration) [μmol CO2 m−2 s−1]
+ * 
+ * @param g0          Residual stomatal conductance when irradiance approaches zero [mol m−2 s−1 bar−1]
+ * @param gb          Boundary-layer conductance [mol m−2 s−1 bar−1]
+ * 
+ * @param gbs         Bundle-sheath conductance [mol m−2 s−1 bar−1]
+ * 
+ * @param kp          Initial carboxylation efficiency of the PEP carboxylase [mol m−2 s−1 bar−1]
+ * @param Vpmax       Maximum PEP carboxylation rate [μmol CO2 m−2 s−1]
+ * @param Ci          Intercellular CO2 partial pressure [μbar]
+ * @param Oi          Intercellular oxygen partial pressure [μbar]
+ * @param Rm          Day respiration in the mesophyll [μmol CO2 m−2 s−1]
+ * @param alpha       fraction of O2 evolution occurring in the bundle sheath. See text on p.34 after eq. 24: "For maize and sorghum, alpha will be zero whereas it will approach or
+ * even exceed 0.5 in other cases"
+ * 
+ * @return Lumped_Coeffs_C4 
+ */
+Lumped_Coeffs_C4 calculate_lumped_coeffs_C4(double x1, double x2, double x3, double fVPD, double Cs_s, double Ca, double gamma_lc_s, double Rd, double g0, double gb,
+double kp, double Vpmax, double Ci, double gbs, double Oi, double Rm, double alpha) {
+  Lumped_Coeffs_C4 lumped_coeffs_C4;
+  // throw runtime_error("Not implemented yet");
+
+  // Appendix C: ... x1, x2 and x3 are defined in the texts following Eq. (23),
+  // a and b are defined in the equations below Eq. (22)
+
+  double Vp = min(kp*Ci, Vpmax);
+  //a, b
+  double a;
+  double b;
+  if (Vp>=Vpmax) {
+    a = 1;
+    b = 0;
+  }
+  else {
+    a = 1+(kp/gbs);
+    b = Vpmax;
+  }
+  // alternative way of calculating a and b if Vp is calculated using eq. 20d
+  // double a = 1;
+  // double b = VpJ2;
+
+
+  //d
+  double d = g0 * Ca - g0 * Cs_s + fVPD * Rd;
+
+  //m
+  double m = fVPD - (g0/gb);
+
+
+
+  //f
+  double f = (b - Rm - gamma_lc_s * Oi* gbs) * x1 * d + a * gbs*x1*Ca*d;
+
+  //g
+  double g = (b - Rm - gamma_lc_s * Oi* gbs) * x1 * m - (((alpha * gamma_lc_s) / 0.047) +1) * x1 * d
+  + a* gbs*x1* (Ca*m - (d/gb) - (Ca - Cs_s));
+
+  //h
+  double h = - ((((alpha * gamma_lc_s) / 0.047) +1) * x1 * m + ((a*gbs*x1*(m-1))/gb));
+
+  //i
+  double i = (b - Rm + gbs*x3 + x2*gbs*Oi) * d + a*gbs*Ca * d;
+
+  //j
+  double j = (b - Rm + gbs*x3 + x2*gbs*Oi) * m + (((alpha * x2) / 0.047) -1) * d
+  + a* gbs* (Ca*m - (d/gb) - (Ca - Cs_s));
+
+  //l
+  double l = (((alpha * x2) / 0.047) -1) * m - ((a*gbs*(m-1))/gb);
+
+
+  //q
+  double q = (i + j*Rd - g) / l;
+
+  //p
+  lumped_coeffs_C4.p = (j - (h - l*Rd)) / l;
+
+    //r
+  double r = - (f - i*Rd) / l;
+
+
+  //U
+  double U = (2 * pow(lumped_coeffs_C4.p, 3) - 9 * lumped_coeffs_C4.p*q + 27 * r) / 54;
+
+  //Q
+  lumped_coeffs_C4.Q = (pow(lumped_coeffs_C4.p, 2) - 3 * q) / 9;
+
+  //psi
+  lumped_coeffs_C4.psi = acos(U / sqrt(pow(lumped_coeffs_C4.Q, 3)));
+
+  return lumped_coeffs_C4;
+}
+
+#pragma endregion Lumped coefficients C4
+
+
 #pragma region
 //Cubic equation solutions
+
+/**
+ * @brief Analytical solution of a cubic equation A1
+ * 
+ * Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix A. Analytical solution of a cubic equation—Eq. (19)
+ * 
+ * @param lumped_coeffs 
+ * @return double 
+ */
 double A1_f(Lumped_Coeffs lumped_coeffs)
 {
   return -2 * sqrt(lumped_coeffs.Q) * cos(lumped_coeffs.psi / 3) - lumped_coeffs.p / 3;
 }
 
+/**
+ * @brief Analytical solution of a cubic equation A2
+ * 
+ * Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix A. Analytical solution of a cubic equation—Eq. (19)
+ * 
+ * @param lumped_coeffs 
+ * @return double 
+ */
 double A2_f(Lumped_Coeffs lumped_coeffs)
 {
   return -2 * sqrt(lumped_coeffs.Q) * cos((lumped_coeffs.psi + 2 * M_PI) / 3) - lumped_coeffs.p / 3;
 }
 
+/**
+ * @brief Analytical solution of a cubic equation A3
+ * 
+ * Yin, Struik, 2009. NJAS 57 (2009) 27-38 (https://doi.org/10.1016/j.njas.2009.07.001) Appendix A. Analytical solution of a cubic equation—Eq. (19)
+ * 
+ * @param lumped_coeffs 
+ * @return double 
+ */
 double A3_f(Lumped_Coeffs lumped_coeffs)
 {
   return -2 * sqrt(lumped_coeffs.Q) * cos((lumped_coeffs.psi + 4 * M_PI) / 3) - lumped_coeffs.p / 3;
@@ -455,6 +744,15 @@ std::tuple<double, double, double> derive_ci_cc_gs_f(double A, double x1, double
   return std::make_tuple(Ci, Cc, gs);
 }
 
+/**
+ * @brief 
+ * 
+ * @param A 
+ * @param Rd 
+ * @param gamma CO2 compensation point ... ?
+ * @param Cc Chloroplast CO2 partial pressure
+ * @return double 
+ */
 double derive_jv_f(double A, double Rd, double gamma, double Cc)
 {
   double numerator = (A + Rd)*(Cc + 10.5 / 4.5 * gamma)*4.5;
@@ -539,11 +837,19 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   out.shaded.jv = 0.0;
 
   //1. calculate diffuse and direct radiation
-  double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);	
+  double diffuse_fraction = diffuse_fraction_hourly_f(in.global_rad, in.extra_terr_rad, in.solar_el);
   double hourly_diffuse_rad = in.global_rad * diffuse_fraction;
   double hourly_direct_rad = in.global_rad - hourly_diffuse_rad;
-  double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //�mol m - 2 s - 1 (unit ground area)
-  double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; //1 W m-2 = 4.56 �mol m-2 s-1; PAR = 0.45 * global radiation 
+
+  /* FS: for agri-pv: test if adjusting hourly direct and diffuse radiation has any impact at all  !!! debug
+  hourly_diffuse_rad *= 0.7;  // !!! debug
+  hourly_direct_rad *= 0.;    // !!! debug
+  //*/
+
+  // FS: convert [MJ m-2 h-1] -> [W m-2] -> [μmol m-2 s-1] -> [μmol m-2 s-1 PAR]
+  // 1 [MJ m-2 h-1] = pow(10, 6) / 3600.0 [W m-2]; 1 [W m-2] = 4.56 [μmol m-2 s-1]; PAR = 0.45 * global radiation 
+  double inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45;  //[μmol m-2 s-1 PAR] (unit ground area)
+  double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45;    //[μmol m-2 s-1 PAR] (unit ground area)
   
   //2. calculate Radiation absorbed by sunlit / shaded canopy
   double Ic_sun = Ic_sun_f(inst_dir_rad, inst_diff_rad, in.solar_el, in.LAI); //�mol m - 2 s - 1 (unit ground area)
@@ -567,7 +873,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   //-------------------
   //3. canopy photosynthetic capacity
   double Vcmax = Vcmax_bernacchi_f(in.leaf_temp, par.Vcmax_25);
-  double Vcmax_25 = Vcmax_bernacchi_f(25.0, par.Vcmax_25); //the value at 25�C calculated with bernacchi slightly deviates from par.Vcmax_25
+  double Vcmax_25 = Vcmax_bernacchi_f(25.0, par.Vcmax_25); //the value at 25°C calculated with bernacchi slightly deviates from par.Vcmax_25
 
   //test
   //Vcmax = 100.0;
@@ -628,8 +934,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   }	
   if (out.shaded.LAI > 0)
   {
-    out.shaded.vcMax = Vc_sh / out.shaded.LAI;//Vcmax;
-    out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; //Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
+    out.shaded.vcMax = Vc_sh / out.shaded.LAI;    // Vcmax;
+    out.shaded.jMax = Jmax_c_sh / out.shaded.LAI; // Jmax_bernacchi_f(in.leaf_temp, Vcmax_25*2.1);
     out.shaded.jj = J_c_sh / out.shaded.LAI;
     out.shaded.jj1000 = J_bernacchi_f(1000, in.leaf_temp, out.shaded.jMax);
   }
@@ -643,19 +949,19 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
   std::tuple<double, double> x1_x2_el_sh = x_electron(J_c_sh, gamma_sh);
 
   // 6.1.3 g0, gm, gb
-  double gb_sun = par.gb * out.sunlit.LAI; //mol m-2 s-1 bar-1 per unit ground area
+  double gb_sun = par.gb * out.sunlit.LAI;  // mol m-2 s-1 bar-1 per unit ground area
   double gb_sh = par.gb * out.shaded.LAI;
   double g0_sun = par.g0 * out.sunlit.LAI;
   double g0_sh = par.g0 * out.shaded.LAI;
-  double gm_t = 0.4;// gm_bernacchi_f(in.leaf_temp, par.gm_25); //TODO: check correctness of gm_bernacchi_f
+  double gm_t = 0.4;                        // gm_bernacchi_f(in.leaf_temp, par.gm_25); //TODO: check correctness of gm_bernacchi_f
   double gm_sun = gm_t * out.sunlit.LAI;
   double gm_sh = gm_t * out.shaded.LAI;
 
   if (in.global_rad <= 0.0)
   {
     //handle cases where no photosynthesis can occur
-    out.canopy_gross_photos = 0.0;
-    out.canopy_net_photos = out.canopy_gross_photos - out.canopy_resp;
+    out.canopy_gross_photos = 0.0;                                      // [μmol CO2 m-2 h-1]
+    out.canopy_net_photos = out.canopy_gross_photos - out.canopy_resp;  // [μmol CO2 m-2 h-1]
     out.sunlit.gs = g0_sun;
     out.shaded.gs = g0_sh;
   }
@@ -692,8 +998,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
     double A_sun = std::fmin(A_rub_sun, A_el_sun);
     double A_sh = std::fmin(A_rub_sh, A_el_sh);
 
-    out.canopy_net_photos = (A_sun + A_sh) * 3600.0;
-    out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;
+    out.canopy_net_photos = (A_sun + A_sh) * 3600.0;                    // [μmol CO2 m-2 h-1]
+    out.canopy_gross_photos = out.canopy_net_photos + out.canopy_resp;  // [μmol CO2 m-2 h-1]
 
     //6.4 derive stomatal conductance
     //6.4.1 determine whether photosynthesis is rubisco or electron limited
@@ -768,5 +1074,3 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in, FvC
 }
 
 #pragma endregion Model composition
-  
-  
