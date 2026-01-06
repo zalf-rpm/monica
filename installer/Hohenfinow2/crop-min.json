@@ -43,7 +43,8 @@
 				"max-%-asw": 99.0,
 				"max-3d-precip-sum": 2,
 				"max-curr-day-precip": 0.1,
-				"harvest-time": "maturity"
+				"harvest-time": "maturity",
+                "incorporateIntoLayerNo": 2
 			},
 			{
 				"type": "OrganicFertilization",
@@ -51,7 +52,8 @@
 				"after": "Harvest",
 				"amount": [15000, "kg N"],
 				"parameters": ["include-from-file", "organic-fertilisers/CAM.json"],
-				"incorporation": true
+				"incorporation": true,
+                "incorporateIntoLayerNo": 2
 			}
 		]
 	}],

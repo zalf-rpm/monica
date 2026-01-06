@@ -140,6 +140,7 @@ jobs:
           cp monica/_cmake_win64/Release/monica-capnp-fbp-component.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/Release/daily-monica-fbp-component.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/common/Release/channel.exe monica_${{ github.ref_name }}/bin/
+          cp monica/_cmake_win64/common/Release/gateway-service.exe monica_${{ github.ref_name }}/bin/
   
           cp monica/LICENSE monica_${{ github.ref_name }}/bin/
           cp monica/documentation/de_benutzerhandbuch_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/

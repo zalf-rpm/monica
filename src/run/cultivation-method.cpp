@@ -463,7 +463,9 @@ Errors Harvest::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
 
   //set_string_value(_method, j, "method");
-  set_double_value(_percentage, j, "percentage");
+  //set_double_value(_percentage, j, "percentage");
+  set_int_value(_incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
+  _incorporateIntoLayerNo = max(1, _incorporateIntoLayerNo);
   set_bool_value(_exported, j, "exported");
   set_bool_value(_optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
   set_double_value(_optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
@@ -494,7 +496,8 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const {
   auto jo = json11::Json::object
       {{"type",                         type()},
        {"date",                         date().toIsoDateString()},
-       {"percentage",                   _percentage},
+       //{"percentage",                   _percentage},
+        {"incorporateIntoLayerNo", _incorporateIntoLayerNo},
        {"exported",                     _exported},
        {"opt-carbon-conservation",      _optCarbMgmtData.optCarbonConservation},
        {"crop-impact-on-humus-balance", _optCarbMgmtData.cropImpactOnHumusBalance},
@@ -518,7 +521,7 @@ bool Harvest::apply(MonicaModel *model) {
   Workstep::apply(model);
 
   if (model->cropGrowth()) {
-    model->harvestCurrentCrop(_exported, _spec, _optCarbMgmtData);
+    model->harvestCurrentCrop(_exported, _spec, _optCarbMgmtData, _incorporateIntoLayerNo - 1);
     if (_sowing) debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
     model->addEvent("Harvest");
   }
@@ -844,6 +847,8 @@ Errors OrganicFertilization::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   _params.merge(j["parameters"]);
   set_double_value(_amount, j, "amount");
+  set_int_value(_incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
+  _incorporateIntoLayerNo = max(1, _incorporateIntoLayerNo);
   set_bool_value(_incorporation, j, "incorporation");
   return res;
 }
@@ -854,6 +859,7 @@ json11::Json OrganicFertilization::to_json() const {
       {"date",          date().toIsoDateString()},
       {"amount",        _amount},
       {"parameters",    _params.to_json()},
+      {"incorporateIntoLayerNo", _incorporateIntoLayerNo},
       {"incorporation", _incorporation}};
 }
 
@@ -861,7 +867,7 @@ bool OrganicFertilization::apply(MonicaModel *model) {
   Workstep::apply(model);
 
   debug() << toString() << endl;
-  model->applyOrganicFertiliser(_params, _amount, _incorporation);
+  model->applyOrganicFertiliser(_params, _amount, _incorporation, _incorporateIntoLayerNo - 1);
   model->addEvent("OrganicFertilization");
 
   return true;
