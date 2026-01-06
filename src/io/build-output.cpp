@@ -428,7 +428,7 @@ BOTRes& monica::buildOutputTable()
       build({ id++, "Tra", "mm", "ActualTranspiration" },
         [](const MonicaModel& monica, OId oid)
       {
-        return monica.cropGrowth() ? round(monica.cropGrowth()->get_CropNRedux(), 5) : 0.0;
+        return monica.cropGrowth() ? round(monica.cropGrowth()->get_ActualTranspiration(), 2) : 0.0;
       });
 
       build({ id++, "TraRed", "mm", "TranspirationReduced" },
@@ -444,6 +444,12 @@ BOTRes& monica::buildOutputTable()
           });
 
       build({ id++, "NDef", "0;1", "CropNRedux" },
+        [](const MonicaModel& monica, OId oid)
+      {
+          return monica.cropGrowth() ? round(monica.cropGrowth()->get_CropNRedux(), 5) : 0.0;
+      });
+
+      build({ id++, "RootNDef", "0;1", "Root nitrogen deficit" },
         [](const MonicaModel& monica, OId oid)
       {
         return monica.cropGrowth() ? round(monica.cropGrowth()->rootNRedux, 2) : 0.0;
