@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../ETModels" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../SoilTemperatureModels" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/mas_cpp_misc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/mas_cpp_misc/mas_capnproto_schemas" vcs="Git" />

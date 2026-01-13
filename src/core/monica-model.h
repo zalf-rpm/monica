@@ -48,8 +48,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilmoisture.h"
 #include "crop-module.h"
 #include "soilcolumn.h"
+#include "modules/evapotranspiration/Monica_Evapotranspiration_monica_interface.h"
 #include "modules/soil_temperature/ApsimCampbell_monica_interface.h"
-
 #include "modules/soil_temperature/Monica_SoilTemp_monica_interface.h"
 #include "modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h"
 #include "modules/soil_temperature/DSSAT_EPICST_standalone_monica_interface.h"
@@ -60,7 +60,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "modules/soil_temperature/BiomaSurfaceSWATSoilSWATC_monica_interface.h"
 
 namespace monica {
-  
 class Crop;
 
 class MonicaModel {
@@ -73,7 +72,7 @@ public:
 
   void serialize(mas::schema::model::monica::MonicaModelState::Builder builder);
 
-  void initComponents(const CentralParameterProvider &cpp);
+  void initComponents(const CentralParameterProvider& cpp);
 
   void step();
 
@@ -81,10 +80,11 @@ public:
 
   void cropStep();
 
-  double CO2ForDate(double year, double julianDay, bool isLeapYear, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
+  double CO2ForDate(double year, double julianDay, bool isLeapYear,
+                    mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
   double CO2ForDate(Tools::Date, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
   double GroundwaterDepthForDate(double maxGroundwaterDepth, double minGroundwaterDepth, int minGroundwaterDepthMonth,
-    double julianday, bool leapYear);
+                                 double julianday, bool leapYear);
 
   void seedCrop(mas::schema::model::monica::CropSpec::Reader reader);
   void seedCrop(Crop* crop);
@@ -209,7 +209,10 @@ public:
 
   void setOtherCropHeightAndLAIt(double cropHeight, double lait);
 
-  Run* _soilTempInstance{ nullptr };
+  Run* _evapotranspirationInstance{nullptr};
+  kj::Own<Monica_Evapotranspiration::MonicaInterface> _instance_Monica_Evapotranspiration;
+
+  Run* _soilTempInstance{nullptr};
   kj::Own<Monica_SoilTemp::MonicaInterface> _instance_Monica_SoilTemp;
   kj::Own<DSSAT_ST_standalone::MonicaInterface> _instance_DSSAT_ST_standalone;
   kj::Own<DSSAT_EPICST_standalone::MonicaInterface> _instance_DSSAT_EPICST_standalone;
@@ -223,10 +226,12 @@ public:
   std::pair<double, double> getTAMPandTAV() {
     return std::make_pair(_dssatTAMP, _dssatTAV);
   }
+
   void setTAMPandTAV(std::pair<double, double> tampTav) {
     _dssatTAMP = tampTav.first;
     _dssatTAV = tampTav.second;
   }
+
 private:
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;
@@ -242,49 +247,48 @@ private:
   kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 
   //! store applied fertiliser during one production process
-  double _sumFertiliser{ 0.0 }; //mineral N
-  double _sumOrgFertiliser{ 0.0 }; //organic N
+  double _sumFertiliser{0.0}; //mineral N
+  double _sumOrgFertiliser{0.0}; //organic N
 
   //! stores the daily sum of applied fertiliser
-  double _dailySumFertiliser{ 0.0 }; //mineral N
-  double _dailySumOrgFertiliser{ 0.0 }; //organic N
+  double _dailySumFertiliser{0.0}; //mineral N
+  double _dailySumOrgFertiliser{0.0}; //organic N
 
-  double _dailySumOrganicFertilizerDM{ 0.0 };
-  double _sumOrganicFertilizerDM{ 0.0 };
+  double _dailySumOrganicFertilizerDM{0.0};
+  double _sumOrganicFertilizerDM{0.0};
 
-  double _humusBalanceCarryOver{ 0.0 };
+  double _humusBalanceCarryOver{0.0};
 
-  double _dailySumIrrigationWater{ 0.0 };
+  double _dailySumIrrigationWater{0.0};
 
-  double _optCarbonExportedResidues{ 0.0 };
-  double _optCarbonReturnedResidues{ 0.0 };
+  double _optCarbonExportedResidues{0.0};
+  double _optCarbonReturnedResidues{0.0};
 
   Tools::Date _currentStepDate;
   std::vector<std::map<Climate::ACD, double>> _climateData;
   std::set<std::string> _currentEvents;
   std::set<std::string> _previousDaysEvents;
 
-  bool _clearCropUponNextDay{ false };
+  bool _clearCropUponNextDay{false};
 
-  int p_daysWithCrop{ 0 };
-  double p_accuNStress{ 0.0 };
-  double p_accuWaterStress{ 0.0 };
-  double p_accuHeatStress{ 0.0 };
-  double p_accuOxygenStress{ 0.0 };
+  int p_daysWithCrop{0};
+  double p_accuNStress{0.0};
+  double p_accuWaterStress{0.0};
+  double p_accuHeatStress{0.0};
+  double p_accuOxygenStress{0.0};
 
-  double vw_AtmosphericCO2Concentration{ 0.0 };
-  double vw_AtmosphericO3Concentration{ 0.0 };
-  double vs_GroundwaterDepth{ 0.0 };
+  double vw_AtmosphericCO2Concentration{0.0};
+  double vw_AtmosphericO3Concentration{0.0};
+  double vs_GroundwaterDepth{0.0};
 
-  int _cultivationMethodCount{ 0 };
+  int _cultivationMethodCount{0};
 
   Intercropping _intercropping;
 
-  double _dssatTAMP{ -1 };
-  double _dssatTAV{ -1 };
+  double _dssatTAMP{-1};
+  double _dssatTAV{-1};
   //public:
   //  uint critPos{ 0 };
   //  uint cmitPos{ 0 };
 };
-
 } // namespace monica

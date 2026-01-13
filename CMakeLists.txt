@@ -24,57 +24,63 @@ macro(set_absolute_path var_name path)
     set(${var_name} ${toAbsPath})
 endmacro(set_absolute_path)
 
-set_absolute_path(AMEI_COMPONENTS_DIR ../SoilTemperatureModels/Models)
+set_absolute_path(AMEI_ST_COMPONENTS_DIR ../SoilTemperatureModels/Models)
+set_absolute_path(AMEI_ET_COMPONENTS_DIR ../ETModels/Models)
 
 #add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
 
 set(CPP_FOLDER_NAME "cpp2")
-add_compile_definitions(CPP2)
+#add_compile_definitions(CPP2)
+
+if (NOT TARGET Monica_Evapotranspiration_lib)
+    message(STATUS "target: Monica_Evapotranspiration_lib")
+    add_subdirectory(${AMEI_ET_COMPONENTS_DIR}/Monica_Evapotranspiration/src/${CPP_FOLDER_NAME}/Monica_Evapotranspiration amei-components/Monica_Evapotranspiration)
+endif ()
 
 if (NOT TARGET Monica_SoilTemp_lib)
     message(STATUS "target: Monica_SoilTemp_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/Monica_SoilTemp/src/${CPP_FOLDER_NAME}/Monica_SoilTemp amei-components/Monica_SoilTemp)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/Monica_SoilTemp/src/${CPP_FOLDER_NAME}/Monica_SoilTemp amei-components/Monica_SoilTemp)
 endif ()
 
 if (NOT TARGET DSSAT_ST_standalone_lib)
     message(STATUS "target: DSSAT_ST_standalone_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_ST_standalone/src/${CPP_FOLDER_NAME}/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/DSSAT_ST_standalone/src/${CPP_FOLDER_NAME}/DSSAT_ST_standalone amei-components/DSSAT_ST_standalone)
 endif ()
 
 if (NOT TARGET DSSAT_EPICST_standalone_lib)
     message(STATUS "target: DSSAT_EPICST_standalone_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/DSSAT_EPICST_standalone/src/${CPP_FOLDER_NAME}/DSSAT_EPICST_standalone amei-components/DSSAT_EPICST_standalone)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/DSSAT_EPICST_standalone/src/${CPP_FOLDER_NAME}/DSSAT_EPICST_standalone amei-components/DSSAT_EPICST_standalone)
 endif ()
 
 if (NOT TARGET Simplace_Soil_Temperature_lib)
     message(STATUS "target: Simplace_Soil_Temperature_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/Simplace_Soil_Temperature/src/${CPP_FOLDER_NAME}/Simplace_Soil_Temperature amei-components/Simplace_Soil_Temperature)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/Simplace_Soil_Temperature/src/${CPP_FOLDER_NAME}/Simplace_Soil_Temperature amei-components/Simplace_Soil_Temperature)
 endif ()
 
 if (NOT TARGET Stics_soil_temperature_lib)
     message(STATUS "target: Stics_soil_temperature_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/Stics_soil_temperature/src/${CPP_FOLDER_NAME}/Stics_soil_temperature amei-components/Stics_soil_temperature)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/Stics_soil_temperature/src/${CPP_FOLDER_NAME}/Stics_soil_temperature amei-components/Stics_soil_temperature)
 endif ()
 
 if (NOT TARGET SQ_Soil_Temperature_lib)
     message(STATUS "target: SQ_Soil_Temperature_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/SQ_Soil_Temperature/src/${CPP_FOLDER_NAME}/SQ_Soil_Temperature amei-components/SQ_Soil_Temperature)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/SQ_Soil_Temperature/src/${CPP_FOLDER_NAME}/SQ_Soil_Temperature amei-components/SQ_Soil_Temperature)
 endif ()
 
 if (NOT TARGET ApsimCampbell_lib)
     message(STATUS "target: ApsimCampbell_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/ApsimCampbell/src/${CPP_FOLDER_NAME}/ApsimCampbell amei-components/ApsimCampbell)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/ApsimCampbell/src/${CPP_FOLDER_NAME}/ApsimCampbell amei-components/ApsimCampbell)
 endif ()
 
 
 if (NOT TARGET BiomaSurfacePartonSoilSWATC_lib)
     message(STATUS "target: BiomaSurfacePartonSoilSWATC_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfacePartonSoilSWATC/src/${CPP_FOLDER_NAME}/BiomaSurfacePartonSoilSWATC amei-components/BiomaSurfacePartonSoilSWATC)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/BiomaSurfacePartonSoilSWATC/src/${CPP_FOLDER_NAME}/BiomaSurfacePartonSoilSWATC amei-components/BiomaSurfacePartonSoilSWATC)
 endif ()
 
 if (NOT TARGET BiomaSurfaceSWATSoilSWATC_lib)
     message(STATUS "target: BiomaSurfaceSWATSoilSWATC_lib")
-    add_subdirectory(${AMEI_COMPONENTS_DIR}/BiomaSurfaceSWATSoilSWATC/src/${CPP_FOLDER_NAME}/BiomaSurfaceSWATSoilSWATC amei-components/BiomaSurfaceSWATSoilSWATC)
+    add_subdirectory(${AMEI_ST_COMPONENTS_DIR}/BiomaSurfaceSWATSoilSWATC/src/${CPP_FOLDER_NAME}/BiomaSurfaceSWATSoilSWATC amei-components/BiomaSurfaceSWATSoilSWATC)
 endif ()
 
 if (NOT TARGET capnp_schemas_lib)
@@ -255,6 +261,9 @@ add_library(monica_lib
         src/resource/version_resource.rc
         src/run/capnp-helper.h src/run/capnp-helper.cpp
 
+        src/modules/evapotranspiration/Monica_Evapotranspiration_monica_interface.cpp
+        src/modules/evapotranspiration/Monica_Evapotranspiration_monica_interface.h
+
         src/modules/soil_temperature/DSSAT_ST_standalone_monica_interface.cpp
         src/modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h
         src/modules/soil_temperature/DSSAT_EPICST_standalone_monica_interface.cpp
@@ -287,7 +296,10 @@ target_link_libraries(monica_lib
         json11_lib
         common_lib
         climate_file_io_lib
-        )
+)
+if (TARGET Monica_Evapotranspiration_lib)
+    target_link_libraries(monica_lib PUBLIC Monica_Evapotranspiration_lib)
+endif ()
 if (TARGET Monica_SoilTemp_lib)
     target_link_libraries(monica_lib PUBLIC Monica_SoilTemp_lib)
 endif ()
@@ -324,7 +336,7 @@ endif ()
 target_include_directories(monica_lib
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        )
+)
 #message(STATUS "monica_lib_interface_includes:")
 #get_target_property(monica_lib_interface_includes monica_lib INTERFACE_INCLUDE_DIRECTORIES)
 #foreach(X ${monica_lib_interface_includes})
@@ -351,7 +363,7 @@ add_library(monica_run_lib
 
         src/run/create-env-from-json-config.h
         src/run/create-env-from-json-config.cpp
-        )
+)
 
 target_link_libraries(monica_run_lib monica_lib)
 
@@ -379,7 +391,7 @@ add_executable(monica-zmq-proxy src/run/monica-zmq-proxy-main.cpp)
 target_link_libraries(monica-zmq-proxy
         debug_lib
         zeromq_lib
-        )
+)
 
 if (MSVC)
     target_compile_options(monica-zmq-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
@@ -392,12 +404,12 @@ add_executable(monica-zmq-server
         src/run/serve-monica-zmq.h
         src/run/serve-monica-zmq.cpp
         src/run/monica-zmq-server-main.cpp
-        )
+)
 
 target_link_libraries(monica-zmq-server
         monica_lib
         zeromq_lib
-        )
+)
 
 if (MSVC)
     target_compile_options(monica-zmq-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
@@ -410,7 +422,7 @@ add_executable(monica-capnp-server
         src/run/monica-capnp-server-main.cpp
         src/run/run-monica-capnp.h
         src/run/run-monica-capnp.cpp
-        )
+)
 
 target_link_libraries(monica-capnp-server monica_lib)
 
@@ -425,7 +437,7 @@ add_executable(monica-capnp-proxy
         src/run/monica-capnp-proxy-main.cpp
         src/run/run-monica-capnp.h
         src/run/run-monica-capnp.cpp
-        )
+)
 
 target_link_libraries(monica-capnp-proxy monica_lib)
 
@@ -440,7 +452,7 @@ add_executable(monica-capnp-fbp-component
         src/run/monica-capnp-fbp-component-main.cpp
         src/run/run-monica-capnp.h
         src/run/run-monica-capnp.cpp
-        )
+)
 
 target_link_libraries(monica-capnp-fbp-component monica_lib)
 
@@ -451,7 +463,7 @@ endif ()
 #------------------------------------------------------------------------------
 
 add_executable(daily-monica-fbp-component
-src/run/daily-monica-fbp-component-main.cpp
+        src/run/daily-monica-fbp-component-main.cpp
 )
 
 target_link_libraries(daily-monica-fbp-component
@@ -459,7 +471,7 @@ target_link_libraries(daily-monica-fbp-component
 )
 
 if (MSVC)
-target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+    target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
