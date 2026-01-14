@@ -37,24 +37,24 @@ void MonicaInterface::init(const monica::CentralParameterProvider& cpp) {
   etComp.setheight_nn(sitePs.vs_HeightNN);
   etComp.setno_of_soil_layers(sitePs.numberOfLayers);
   etComp.setno_of_soil_moisture_layers(sitePs.numberOfLayers + 1);
-  etComp.setlayer_thickness(_monica->soilMoisture().vm_LayerThickness);
-  etComp.setpermanent_wilting_point(_monica->soilMoisture().vm_PermanentWiltingPoint);
-  etComp.setfield_capacity(_monica->soilMoisture().vm_FieldCapacity);
-  // std::vector<double> lts;
-  // std::vector<double> pwps;
-  // std::vector<double> fcs;
-  // KJ_ASSERT(sitePs.vs_SoilParameters.size() == sitePs.numberOfLayers);
-  // for (const auto& sps : sitePs.vs_SoilParameters) {
-  //   lts.push_back(sitePs.layerThickness);
-  //   pwps.push_back(sps.vs_PermanentWiltingPoint);
-  //   fcs.push_back(sps.vs_FieldCapacity);
-  // }
-  // lts.push_back(lts.back());
-  // pwps.push_back(pwps.back());
-  // fcs.push_back(fcs.back());
-  // etComp.setlayer_thickness(lts);
-  // etComp.setpermanent_wilting_point(pwps);
-  // etComp.setfield_capacity(fcs);
+  // etComp.setlayer_thickness(_monica->soilMoisture().vm_LayerThickness);
+  // etComp.setpermanent_wilting_point(_monica->soilMoisture().vm_PermanentWiltingPoint);
+  // etComp.setfield_capacity(_monica->soilMoisture().vm_FieldCapacity);
+  std::vector<double> lts;
+  std::vector<double> pwps;
+  std::vector<double> fcs;
+  KJ_ASSERT(sitePs.vs_SoilParameters.size() == sitePs.numberOfLayers);
+  for (const auto& sps : sitePs.vs_SoilParameters) {
+    lts.push_back(sitePs.layerThickness);
+    pwps.push_back(sps.vs_PermanentWiltingPoint);
+    fcs.push_back(sps.vs_FieldCapacity);
+  }
+  lts.push_back(lts.back());
+  pwps.push_back(pwps.back());
+  fcs.push_back(fcs.back());
+  etComp.setlayer_thickness(lts);
+  etComp.setpermanent_wilting_point(pwps);
+  etComp.setfield_capacity(fcs);
 }
 
 void MonicaInterface::run() {
@@ -69,36 +69,39 @@ void MonicaInterface::run() {
   }
   etExo.relative_humidity = climateData.at(Climate::relhumid) / 100.0;
   etExo.wind_speed = climateData.at(Climate::wind);
-  etExo.wind_speed_height = 2;
+  etExo.wind_speed_height = _monica->environmentParameters().p_WindSpeedHeight;
   etExo.julian_day = _monica->currentStepDate().julianDay();
 
   if (_monica->cropGrowth()) {
-    etState.developmental_stage = static_cast<int>(_monica->cropGrowth()->get_DevelopmentalStage());
-    if (etExo.external_reference_evapotranspiration > 0) {
-      etState.crop_reference_evapotranspiration = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
+    etExo.developmental_stage = static_cast<int>(_monica->cropGrowth()->get_DevelopmentalStage());
+    if (etExo.external_reference_evapotranspiration < 0) {
+      etExo.crop_reference_evapotranspiration = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
     }
-    etState.crop_remaining_evapotranspiration = _monica->cropGrowth()->get_RemainingEvapotranspiration();
-    etState.crop_evaporated_from_intercepted = _monica->cropGrowth()->get_EvaporatedFromIntercept();
+    etExo.crop_transpiration = _monica->cropGrowth()->get_Transpiration();
+    etExo.crop_remaining_evapotranspiration = _monica->cropGrowth()->get_RemainingEvapotranspiration();
+    etExo.crop_evaporated_from_intercepted = _monica->cropGrowth()->get_EvaporatedFromIntercept();
+    etExo.kc_factor = _monica->soilMoisture().vc_KcFactor;
+    etExo.percentage_soil_coverage = _monica->soilMoisture().vc_PercentageSoilCoverage;
   }
   if (_doInit) {
     etComp._Evapotranspiration.Init(etState, etState1, etRate, etAux, etExo);
     _doInit = false;
   }
   if (_monica->soilMoisturePtr()) {
-    etState.snow_depth = _monica->soilMoisture().getSnowDepth();
-    // auto noOfSoilLayers = _monica->siteParameters().numberOfLayers;
-    // auto sc = _monica->soilColumn();
-    // for (auto i = 0; i < noOfSoilLayers; i++) {
-    //   etState.soil_moisture[i] = sc[i].get_Vs_SoilMoisture_m3();
-    // }
-    // etState.soil_moisture[noOfSoilLayers] = etState.soil_moisture[noOfSoilLayers - 1];
+    etExo.has_snow_cover = _monica->soilMoisture().getSnowDepth() > 0;
+    etExo.vapor_pressure = _monica->soilMoisture()._vaporPressure;
+    // soil_moisture and surface water storage, even though state
+    // have to be synchronized with MONICA due to other uses and updates
+    // maybe should be also defined as exogenous, even though are actually more state like?
     etState.soil_moisture = _monica->soilMoisture().vm_SoilMoisture;
-    etState.actual_transpiration = _monica->soilMoisture().vm_ActualTranspiration;
+    //etState.actual_transpiration = _monica->soilMoisture().vm_ActualTranspiration;
     etState.surface_water_storage = _monica->soilMoisture().vm_SurfaceWaterStorage;
-    etState.vapor_pressure = _monica->soilMoisture()._vaporPressure;
   }
   etComp.Calculate_Model(etState, etState1, etRate, etAux, etExo);
   if (_monica->soilMoisturePtr()) {
+    std::cout << "ETa/ETc: " << etState.actual_evapotranspiration << "/" << (
+      etState.reference_evapotranspiration * etExo.kc_factor) << " = " << (
+      etState.actual_evapotranspiration / (etState.reference_evapotranspiration * etExo.kc_factor)) << std::endl;
     _monica->soilMoistureNC().vm_ReferenceEvapotranspiration = etState.reference_evapotranspiration;
     _monica->soilMoistureNC().vm_EvaporatedFromSurface = etState.evaporated_from_surface;
     _monica->soilMoistureNC().vm_ActualEvapotranspiration = etState.actual_evapotranspiration;
@@ -106,7 +109,18 @@ void MonicaInterface::run() {
     _monica->soilMoistureNC().vm_ActualTranspiration = etState.actual_transpiration;
     _monica->soilMoistureNC().vm_SurfaceWaterStorage = etState.surface_water_storage;
     _monica->soilMoistureNC().vm_SoilMoisture = etState.soil_moisture;
-    _monica->soilMoistureNC()._vaporPressure = etState.vapor_pressure;
     _monica->soilMoistureNC().vw_NetRadiation = etState.net_radiation;
   }
+  // if (_monica->soilMoisturePtr()) {
+  //   std::cout << "et0: " << etState.reference_evapotranspiration << std::endl;
+  //   std::cout << "evaporated_from_surface: " << etState.evaporated_from_surface << std::endl;
+  //   std::cout << "actual_evapotranspiration: " << etState.actual_evapotranspiration << std::endl;
+  //   std::cout << "actual_evaporation: " << etState.actual_evaporation << std::endl;
+  //   std::cout << "actual_transpiration: " << etState.actual_transpiration << std::endl;
+  //   std::cout << "surface_water_storage: " << etState.surface_water_storage << std::endl;
+  //   std::cout << "soil_moisture: [";
+  //   for (auto sm : etState.soil_moisture) std::cout << sm << ", ";
+  //   std::cout << std::endl;
+  //   std::cout << "net_radiation: " << etState.net_radiation << std::endl;
+  // }
 }

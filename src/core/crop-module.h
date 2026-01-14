@@ -39,7 +39,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run/cultivation-method.h"
 
 namespace monica {
-
 /*
 * @brief  Crop part of model
 *
@@ -55,32 +54,32 @@ namespace monica {
 */
 class CropModule {
 public:
-  CropModule(SoilColumn &soilColumn,
-             const CropParameters &cropParams,
+  CropModule(SoilColumn& soilColumn,
+             const CropParameters& cropParams,
              CropResidueParameters rps,
              bool isWinterCrop,
-             const SiteParameters &siteParams,
-             const CropModuleParameters &cropPs,
-             const SimulationParameters &simPs,
+             const SiteParameters& siteParams,
+             const CropModuleParameters& cropPs,
+             const SimulationParameters& simPs,
              std::function<void(std::string)> fireEvent,
              std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
              std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-             Intercropping &ic);
+             Intercropping& ic);
 
-  CropModule(SoilColumn &sc,
-             const CropModuleParameters &cropPs,
+  CropModule(SoilColumn& sc,
+             const CropModuleParameters& cropPs,
              std::function<void(std::string)> fireEvent,
              std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
              std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
              mas::schema::model::monica::CropModuleState::Reader reader,
-             Intercropping &ic);
+             Intercropping& ic);
 
   void deserialize(mas::schema::model::monica::CropModuleState::Reader reader);
 
   void serialize(mas::schema::model::monica::CropModuleState::Builder builder) const;
 
-  void applyCutting(std::map<int, Cutting::Value> &organs,
-                    std::map<int, double> &exports,
+  void applyCutting(std::map<int, Cutting::Value>& organs,
+                    std::map<int, double>& exports,
                     double cutMaxAssimilateFraction);
 
   void step(double vw_MeanAirTemperature,
@@ -141,7 +140,7 @@ public:
 
   void fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
                                     double vc_RootDensityFactorSum,
-                                    const std::vector<double> &vc_RootDensityFactor);
+                                    const std::vector<double>& vc_RootDensityFactor);
 
   void addAndDistributeRootBiomassInSoil(double rootBiomass);
 
@@ -185,7 +184,7 @@ public:
 
   double fc_NetPrimaryProduction(double vc_TotalRespired);
 
-  void calculateVOCEmissions(const Voc::MicroClimateData &mcd);
+  void calculateVOCEmissions(const Voc::MicroClimateData& mcd);
 
   Voc::Emissions guentherEmissions() const { return _guentherEmissions; }
 
@@ -238,6 +237,7 @@ public:
   double get_StomataResistance() const;
 
   double get_Transpiration(int i_Layer) const;
+  std::vector<double> get_Transpiration() const { return vc_Transpiration; };
 
   double get_TranspirationDeficit() const;
 
@@ -316,8 +316,8 @@ public:
 
   double get_RawProteinConcentration() const;
 
-  double
-  get_SecondaryYieldNContent(double alternativePrimaryCropYield = -1, double alternativeSecondaryCropYield = -1) const;
+  double get_SecondaryYieldNContent(double alternativePrimaryCropYield = -1,
+                                    double alternativeSecondaryCropYield = -1) const;
 
   double get_SumTotalNUptake() const;
 
@@ -386,11 +386,11 @@ public:
    */
   inline bool isDying() const { return this->dyingOut; }
 
-  void setPerennialCropParameters(const CropParameters &cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
+  void setPerennialCropParameters(const CropParameters& cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
 
   void fc_UpdateCropParametersForPerennial();
 
-  std::pair<const std::vector<double> &, const std::vector<double> &> sunlitAndShadedLAI() const {
+  std::pair<const std::vector<double>&, const std::vector<double>&> sunlitAndShadedLAI() const {
     return make_pair(vc_sunlitLeafAreaIndex, vc_shadedLeafAreaIndex);
   }
 
@@ -418,17 +418,17 @@ public:
 
   size_t rootingZone() const { return vc_RootingZone; };
 
-  const SpeciesParameters &speciesParameters() const { return speciesPs; }
+  const SpeciesParameters& speciesParameters() const { return speciesPs; }
 
-  const CultivarParameters &cultivarParameters() const { return cultivarPs; }
+  const CultivarParameters& cultivarParameters() const { return cultivarPs; }
 
-  const CropResidueParameters &residueParameters() const { return residuePs; }
+  const CropResidueParameters& residueParameters() const { return residuePs; }
 
   bool isWinterCrop() const { return _isWinterCrop; }
 
   std::set<int> organIdsForPrimaryYield() const {
     std::set<int> ids;
-    for (const auto &yc: pc_OrganIdsForPrimaryYield) ids.insert(yc.organId);
+    for (const auto& yc : pc_OrganIdsForPrimaryYield) ids.insert(yc.organId);
     return ids;
   }
 
@@ -450,14 +450,15 @@ public:
   // endAtInclStage < 0 -> count from end
   double sumStageTemperatureSums(int startAtStage, int endAtInclStage) const;
 
-  double vc_TranspirationDeficit{ 1.0 };          //! old TRREL
-  double vc_PotentialTranspirationDeficit{ 0.0 };
-  double vc_ActualTranspirationDeficit{ 0.0 };
-  double vc_TranspirationReduced{ 0.0 };
+  double vc_TranspirationDeficit{1.0}; //! old TRREL
+  double vc_PotentialTranspirationDeficit{0.0};
+  double vc_ActualTranspirationDeficit{0.0};
+  double vc_TranspirationReduced{0.0};
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
+
 private:
-  Intercropping &_intercropping;
+  Intercropping& _intercropping;
 
   bool _frostKillOn{true};
 
@@ -468,9 +469,9 @@ private:
   bool isMaturityDay(size_t old_dev_stage, size_t new_dev_stage);
 
   // members
-  SoilColumn &soilColumn;
+  SoilColumn& soilColumn;
   kj::Own<CropParameters> perennialCropParams;
-  const CropModuleParameters &cropPs;
+  const CropModuleParameters& cropPs;
   SpeciesParameters speciesPs;
   CultivarParameters cultivarPs;
   CropResidueParameters residuePs;
@@ -480,22 +481,22 @@ private:
   //! old N
   //  static const double vw_AtmosphericCO2Concentration;
   double vs_Latitude{};
-  double vc_AbovegroundBiomass{0.0};//! old OBMAS
+  double vc_AbovegroundBiomass{0.0}; //! old OBMAS
   double vc_AbovegroundBiomassOld{0.0}; //! old OBALT
-  std::vector<bool> pc_AbovegroundOrgan;  //! old KOMP
+  std::vector<bool> pc_AbovegroundOrgan; //! old KOMP
   double vc_ActualTranspiration{0.0};
   std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff; //! old PRO
   double pc_AssimilateReallocation{};
   double vc_Assimilates{0.0};
   double vc_AssimilationRate{0.0}; //! old AMAX
-  double vc_AstronomicDayLength{0.0};  //! old DL
-  std::vector<double> pc_BaseDaylength;  //! old DLBAS
-  std::vector<double> pc_BaseTemperature;  //! old BAS
+  double vc_AstronomicDayLength{0.0}; //! old DL
+  std::vector<double> pc_BaseDaylength; //! old DLBAS
+  std::vector<double> pc_BaseTemperature; //! old BAS
   double pc_BeginSensitivePhaseHeatStress{};
   double vc_BelowgroundBiomass{0.0};
   double vc_BelowgroundBiomassOld{0.0};
-  int pc_CarboxylationPathway{};    //! old TEMPTYP
-  double vc_ClearDayRadiation{0.0};    //! old DRC
+  int pc_CarboxylationPathway{}; //! old TEMPTYP
+  double vc_ClearDayRadiation{0.0}; //! old DRC
   int pc_CO2Method{3};
   double vc_CriticalNConcentration{0.0}; //! old GEHMIN
   std::vector<double> pc_CriticalOxygenContent; //! old LUKRIT
@@ -506,31 +507,31 @@ private:
   double vc_CropHeight{0.0};
   double pc_CropHeightP1{};
   double pc_CropHeightP2{};
-  std::string pc_CropName;      //! old FRUCHT$(AKF)
+  std::string pc_CropName; //! old FRUCHT$(AKF)
   double vc_CropNDemand{0.0}; //! old DTGESN
-  double vc_CropNRedux{1.0};              //! old REDUK
-  double pc_CropSpecificMaxRootingDepth{};      //! old WUMAXPF [m]
+  double vc_CropNRedux{1.0}; //! old REDUK
+  double pc_CropSpecificMaxRootingDepth{}; //! old WUMAXPF [m]
   std::vector<double> vc_CropWaterUptake; //! old TP
-  std::vector<double> vc_CurrentTemperatureSum;  //! old SUM
-  double vc_CurrentTotalTemperatureSum{0.0};      //! old FP
+  std::vector<double> vc_CurrentTemperatureSum; //! old SUM
+  double vc_CurrentTotalTemperatureSum{0.0}; //! old FP
   double vc_CurrentTotalTemperatureSumRoot{0.0};
   int pc_CuttingDelayDays{0};
-  double vc_DaylengthFactor{0.0};            //! old DAYL
-  std::vector<double> pc_DaylengthRequirement;    //! old DEC
+  double vc_DaylengthFactor{0.0}; //! old DAYL
+  std::vector<double> pc_DaylengthRequirement; //! old DEC
   int vc_DaysAfterBeginFlowering{0};
-  double vc_Declination{0.0};              //! old EFF0
+  double vc_Declination{0.0}; //! old EFF0
   double pc_DefaultRadiationUseEfficiency{};
-  int vm_DepthGroundwaterTable{0};    //! old GRW
+  int vm_DepthGroundwaterTable{0}; //! old GRW
   int pc_DevelopmentAccelerationByNitrogenStress{};
-  size_t vc_DevelopmentalStage{0};      //! old INTWICK
+  size_t vc_DevelopmentalStage{0}; //! old INTWICK
   int _noOfCropSteps{0};
   double vc_DroughtImpactOnFertility{1.0};
   double pc_DroughtImpactOnFertilityFactor{};
-  std::vector<double> pc_DroughtStressThreshold;  //! old DRYswell
+  std::vector<double> pc_DroughtStressThreshold; //! old DRYswell
   bool pc_EmergenceFloodingControlOn{};
   bool pc_EmergenceMoistureControlOn{};
   double pc_EndSensitivePhaseHeatStress{};
-  double vc_EffectiveDayLength{0.0};    //! old DLE
+  double vc_EffectiveDayLength{0.0}; //! old DLE
   bool vc_ErrorStatus{false};
   std::string vc_ErrorMessage;
   double vc_EvaporatedFromIntercept{0.0};
@@ -544,7 +545,7 @@ private:
   double vc_GlobalRadiation{0.0};
   double vc_GreenAreaIndex{0.0};
   double vc_GrossAssimilates{0.0};
-  double vc_GrossPhotosynthesis{0.0};          //! old GPHOT
+  double vc_GrossPhotosynthesis{0.0}; //! old GPHOT
   double vc_GrossPhotosynthesis_mol{0.0};
   double vc_GrossPhotosynthesisReference_mol{0.0};
   double vc_GrossPrimaryProduction{0.0};
@@ -553,12 +554,12 @@ private:
   double pc_HeatSumIrrigationStart{};
   double pc_HeatSumIrrigationEnd{};
   double vs_HeightNN{};
-  double pc_InitialKcFactor{};            //! old Kcini
+  double pc_InitialKcFactor{}; //! old Kcini
   std::vector<double> pc_InitialOrganBiomass;
   double pc_InitialRootingDepth{};
   double vc_InterceptionStorage{0.0};
-  double vc_KcFactor{0.6};      //! old FKc
-  double vc_LeafAreaIndex{0.0};  //! old LAI
+  double vc_KcFactor{0.6}; //! old FKc
+  double vc_LeafAreaIndex{0.0}; //! old LAI
   std::vector<double> vc_sunlitLeafAreaIndex;
   std::vector<double> vc_shadedLeafAreaIndex;
   double pc_LowTemperatureExposure{};
@@ -568,18 +569,18 @@ private:
   double pc_LT50cultivar{};
   double pc_LuxuryNCoeff{};
   double vc_MaintenanceRespirationAS{0.0};
-  double pc_MaxAssimilationRate{};  //! old MAXAMAX
+  double pc_MaxAssimilationRate{}; //! old MAXAMAX
   double pc_MaxCropDiameter{};
   double pc_MaxCropHeight{};
   double vc_MaxNUptake{0.0}; //! old MAXUP
   double pc_MaxNUptakeParam{};
   double vc_MaxRootingDepth{0.0}; //! old WURM
   double pc_MinimumNConcentration{};
-  double pc_MinimumTemperatureForAssimilation{};  //! old MINTMP
+  double pc_MinimumTemperatureForAssimilation{}; //! old MINTMP
   double pc_OptimumTemperatureForAssimilation{};
   double pc_MaximumTemperatureForAssimilation{};
   double pc_MinimumTemperatureRootGrowth{};
-  double vc_NetMaintenanceRespiration{0.0};      //! old MAINT
+  double vc_NetMaintenanceRespiration{0.0}; //! old MAINT
   double vc_NetPhotosynthesis{0.0}; //! old GTW
   double vc_NetPrecipitation{0.0};
   double vc_NetPrimaryProduction{0.0};
@@ -589,88 +590,88 @@ private:
   double pc_NConcentrationB0{};
   double vc_NContentDeficit{};
   double pc_NConcentrationPN{};
-  double pc_NConcentrationRoot{};      //! initial value to WUGEH
-  double vc_NConcentrationRoot{0.0};    //! old WUGEH
-  double vc_NConcentrationRootOld{0.0};    //! old
+  double pc_NConcentrationRoot{}; //! initial value to WUGEH
+  double vc_NConcentrationRoot{0.0}; //! old WUGEH
+  double vc_NConcentrationRootOld{0.0}; //! old
   bool pc_NitrogenResponseOn{};
   size_t pc_NumberOfDevelopmentalStages{0};
-  size_t pc_NumberOfOrgans{0};              //! old NRKOM
+  size_t pc_NumberOfOrgans{0}; //! old NRKOM
   std::vector<double> vc_NUptakeFromLayer; //! old PE
   std::vector<double> pc_OptimumTemperature;
-  std::vector<double> vc_OrganBiomass;  //! old WORG
-  std::vector<double> vc_OrganDeadBiomass;  //! old WDORG
+  std::vector<double> vc_OrganBiomass; //! old WORG
+  std::vector<double> vc_OrganDeadBiomass; //! old WDORG
   std::vector<double> vc_OrganGreenBiomass;
-  std::vector<double> vc_OrganGrowthIncrement;      //! old GORG
-  std::vector<double> pc_OrganGrowthRespiration;  //! old MAIRT
+  std::vector<double> vc_OrganGrowthIncrement; //! old GORG
+  std::vector<double> pc_OrganGrowthRespiration; //! old MAIRT
   std::vector<YieldComponent> pc_OrganIdsForPrimaryYield;
   std::vector<YieldComponent> pc_OrganIdsForSecondaryYield;
   std::vector<YieldComponent> pc_OrganIdsForCutting;
-  std::vector<double> pc_OrganMaintenanceRespiration;  //! old MAIRT
+  std::vector<double> pc_OrganMaintenanceRespiration; //! old MAIRT
   std::vector<double> vc_OrganSenescenceIncrement; //! old DGORG
-  std::vector<std::vector<double>> pc_OrganSenescenceRate;  //! old DEAD
-  double vc_OvercastDayRadiation{0.0};          //! old DRO
-  double vc_OxygenDeficit{0.0};          //! old LURED
+  std::vector<std::vector<double>> pc_OrganSenescenceRate; //! old DEAD
+  double vc_OvercastDayRadiation{0.0}; //! old DRO
+  double vc_OxygenDeficit{0.0}; //! old LURED
   double pc_PartBiologicalNFixation{};
   bool pc_Perennial{false};
-  double vc_PhotoperiodicDaylength{0.0};        //! old DLP
-  double vc_PhotActRadiationMean{0.0};          //! old RDN
+  double vc_PhotoperiodicDaylength{0.0}; //! old DLP
+  double vc_PhotActRadiationMean{0.0}; //! old RDN
   double pc_PlantDensity{};
   double vc_PotentialTranspiration{0.0};
   double vc_ReferenceEvapotranspiration{0.0};
   double vc_RelativeTotalDevelopment{0.0};
   double vc_RemainingEvapotranspiration{0.0};
-  double vc_ReserveAssimilatePool{0.0};        //! old ASPOO
+  double vc_ReserveAssimilatePool{0.0}; //! old ASPOO
   double pc_ResidueNRatio{};
   double pc_RespiratoryStress{};
-  double vc_RootBiomass{0.0};              //! old WUMAS
-  double vc_RootBiomassOld{0.0};            //! old WUMALT
-  std::vector<double> vc_RootDensity;        //! old WUDICH
-  std::vector<double> vc_RootDiameter;        //! old WRAD
+  double vc_RootBiomass{0.0}; //! old WUMAS
+  double vc_RootBiomassOld{0.0}; //! old WUMALT
+  std::vector<double> vc_RootDensity; //! old WUDICH
+  std::vector<double> vc_RootDiameter; //! old WRAD
   double pc_RootDistributionParam{};
   std::vector<double> vc_RootEffectivity; //! old WUEFF
   double pc_RootFormFactor{};
   double pc_RootGrowthLag{};
-  size_t vc_RootingDepth{0};                      //! old WURZ
+  size_t vc_RootingDepth{0}; //! old WURZ
   double vc_RootingDepth_m{0.0};
   size_t vc_RootingZone{0};
   double pc_RootPenetrationRate{};
   double vm_SaturationDeficit{0.0};
   double vc_SoilCoverage{0.0};
-  std::vector<double> vs_SoilMineralNContent;    //! old C1
-  double vc_SoilSpecificMaxRootingDepth{0.0};        //! old WURZMAX [m]
+  std::vector<double> vs_SoilMineralNContent; //! old C1
+  double vc_SoilSpecificMaxRootingDepth{0.0}; //! old WURZMAX [m]
   double vs_SoilSpecificMaxRootingDepth{0.0};
-  std::vector<double> pc_SpecificLeafArea;    //! old LAIFKT [ha kg-1]
+  std::vector<double> pc_SpecificLeafArea; //! old LAIFKT [ha kg-1]
   double pc_SpecificRootLength{};
   int pc_StageAfterCut{0}; //0-indexed
   double pc_StageAtMaxDiameter{};
   double pc_StageAtMaxHeight{};
-  std::vector<double> pc_StageMaxRootNConcentration;  //! old WGMAX
-  std::vector<double> pc_StageKcFactor;    //! old Kc
-  std::vector<double> pc_StageTemperatureSum;  //! old TSUM
-  double vc_StomataResistance{0.0};          //! old RSTOM
+  std::vector<double> pc_StageMaxRootNConcentration; //! old WGMAX
+  std::vector<double> pc_StageKcFactor; //! old Kc
+  std::vector<double> pc_StageTemperatureSum; //! old TSUM
+  double vc_StomataResistance{0.0}; //! old RSTOM
   std::vector<bool> pc_StorageOrgan;
   int vc_StorageOrgan{4};
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0}; //! old dt
   int TimeUnderAnoxiaThresholdDefault = 4;
   std::vector<int> vc_TimeUnderAnoxiaThreshold;
-  double vs_Tortuosity{};              //! old AD
+  double vs_Tortuosity{}; //! old AD
   double vc_TotalBiomass{0.0};
   double vc_TotalBiomassNContent{0.0}; //! old PESUM
   double vc_TotalCropHeatImpact{0.0};
   double vc_TotalNInput{0.0};
-  double vc_TotalNUptake{0.0};      //! old SUMPE
+  double vc_TotalNUptake{0.0}; //! old SUMPE
   double vc_TotalRespired{0.0};
   double vc_Respiration{0.0};
-  double vc_SumTotalNUptake{0.0};  //! summation of all calculated NUptake; needed for sensitivity analysis
-  double vc_TotalRootLength{0.0};            //! old WULAEN
+  double vc_SumTotalNUptake{0.0}; //! summation of all calculated NUptake; needed for sensitivity analysis
+  double vc_TotalRootLength{0.0}; //! old WULAEN
   double vc_TotalTemperatureSum{0.0};
   double vc_TemperatureSumToFlowering{0.0};
-  std::vector<double> vc_Transpiration;      //! old TP
-  std::vector<double> vc_TranspirationRedux;   //! old TRRED
+  std::vector<double> vc_Transpiration; //! old TP
+  std::vector<double> vc_TranspirationRedux; //! old TRRED
   double vc_VernalisationDays{0.0}; //
-  double vc_VernalisationFactor{0.0};          //! old FV
-  std::vector<double> pc_VernalisationRequirement;  //! old VSCHWELL
+  double vc_VernalisationFactor{0.0}; //! old FV
+  std::vector<double> pc_VernalisationRequirement; //! old VSCHWELL
   bool pc_WaterDeficitResponseOn{};
 
   bool dyingOut{false};
@@ -733,7 +734,6 @@ private:
 #ifdef TEST_HOURLY_OUTPUT
 std::ostream& tout(bool closeFile = false);
 #endif
-
 } // namespace monica
 
 

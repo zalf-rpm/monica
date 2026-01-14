@@ -956,6 +956,10 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
           //Interpolation between [0,1]
           if (vc_PercentageSoilCoverage >= 0.0 && vc_PercentageSoilCoverage < 1.0) {
             vm_Evaporation[i] = (1.0 - vc_PercentageSoilCoverage) * eReducer * potentialEvapotranspiration;
+            if (i == 0)
+              std::cout << "inter evap: " << vm_Evaporation[i] << " soilcover: " << vc_PercentageSoilCoverage <<
+                " eRed1: " << eRed1 << " eRed2: " << eRed2 << " eRed3: " <<
+                eRed3 << " eReducer: " << eReducer << " potET: " << potentialEvapotranspiration << std::endl;
           } else if (vc_PercentageSoilCoverage >= 1.0) {
             vm_Evaporation[i] = 0.0;
           }
@@ -1063,21 +1067,21 @@ double SoilMoisture::referenceEvapotranspiration(double vs_HeightNN, double vw_M
   // Calculation of psychrometer constant //[kPA °C-1] - Luchtfeuchtigkeit
   double vm_PsycrometerConstant = 0.000665 * vm_AtmosphericPressure;
 
-  // Calc. of saturated water vapour pressure at daily max temperature
+  // Calc. of saturated water vapor pressure at daily max temperature
   //[kPA]
   double vm_SaturatedVapourPressureMax = 0.6108 *
                                          exp((17.27 * vw_MaxAirTemperature) / (237.3 + vw_MaxAirTemperature));
 
-  // Calc. of saturated water vapour pressure at daily min temperature
+  // Calc. of saturated water vapor pressure at daily min temperature
   //[kPA]
   double vm_SaturatedVapourPressureMin = 0.6108 *
                                          exp((17.27 * vw_MinAirTemperature) / (237.3 + vw_MinAirTemperature));
 
-  // Calculation of the saturated water vapour pressure //[kPA]
+  // Calculation of the saturated water vapor pressure //[kPA]
   double vm_SaturatedVapourPressure = (vm_SaturatedVapourPressureMax + vm_SaturatedVapourPressureMin) / 2.0;
 
   if (_vaporPressure < 0) {
-    // Calculation of the water vapour pressure
+    // Calculation of the water vapor pressure
     if (vw_RelativeHumidity <= 0.0) {
       // Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
       _vaporPressure = vm_SaturatedVapourPressureMin;
@@ -1171,7 +1175,9 @@ double SoilMoisture::eReducer1(int layerIndex,
   double eReductionFactor = 0;
   double pwp = soilColumn[layerIndex].vs_PermanentWiltingPoint();
   double fc = soilColumn[layerIndex].vs_FieldCapacity();
-  double sm = max(0.33 * pwp, soilColumn[layerIndex].get_Vs_SoilMoisture_m3());
+  double sm = max(0.33 * pwp, vm_SoilMoisture[layerIndex]);
+  //soilColumn[layerIndex].get_Vs_SoilMoisture_m3());
+  //-> was wrong as within soil moisture vm_SoilMoisture got already updated
   double relativeEvaporableWater = min(1.0, (sm - 0.33 * pwp) / (fc - 0.33 * pwp));
 
   switch (evaporationReductionMethod) {
