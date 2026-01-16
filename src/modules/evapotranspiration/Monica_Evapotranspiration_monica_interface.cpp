@@ -80,28 +80,32 @@ void MonicaInterface::run() {
     etExo.crop_transpiration = _monica->cropGrowth()->get_Transpiration();
     etExo.crop_remaining_evapotranspiration = _monica->cropGrowth()->get_RemainingEvapotranspiration();
     etExo.crop_evaporated_from_intercepted = _monica->cropGrowth()->get_EvaporatedFromIntercept();
-    etExo.kc_factor = _monica->soilMoisture().vc_KcFactor;
-    etExo.percentage_soil_coverage = _monica->soilMoisture().vc_PercentageSoilCoverage;
+  } else {
+    etExo.developmental_stage = 0;
+    if (etExo.external_reference_evapotranspiration < 0) {
+      etExo.crop_reference_evapotranspiration = 0;
+    }
+    etExo.crop_transpiration = std::vector<double>();
+    etExo.crop_remaining_evapotranspiration = 0;
+    etExo.crop_evaporated_from_intercepted = 0;
   }
   if (_doInit) {
     etComp._Evapotranspiration.Init(etState, etState1, etRate, etAux, etExo);
     _doInit = false;
   }
   if (_monica->soilMoisturePtr()) {
+    etExo.percentage_soil_coverage = _monica->soilMoisture().vc_PercentageSoilCoverage;
+    etExo.kc_factor = _monica->soilMoisture().vc_KcFactor;
     etExo.has_snow_cover = _monica->soilMoisture().getSnowDepth() > 0;
     etExo.vapor_pressure = _monica->soilMoisture()._vaporPressure;
     // soil_moisture and surface water storage, even though state
     // have to be synchronized with MONICA due to other uses and updates
     // maybe should be also defined as exogenous, even though are actually more state like?
     etState.soil_moisture = _monica->soilMoisture().vm_SoilMoisture;
-    //etState.actual_transpiration = _monica->soilMoisture().vm_ActualTranspiration;
     etState.surface_water_storage = _monica->soilMoisture().vm_SurfaceWaterStorage;
   }
   etComp.Calculate_Model(etState, etState1, etRate, etAux, etExo);
   if (_monica->soilMoisturePtr()) {
-    std::cout << "ETa/ETc: " << etState.actual_evapotranspiration << "/" << (
-      etState.reference_evapotranspiration * etExo.kc_factor) << " = " << (
-      etState.actual_evapotranspiration / (etState.reference_evapotranspiration * etExo.kc_factor)) << std::endl;
     _monica->soilMoistureNC().vm_ReferenceEvapotranspiration = etState.reference_evapotranspiration;
     _monica->soilMoistureNC().vm_EvaporatedFromSurface = etState.evaporated_from_surface;
     _monica->soilMoistureNC().vm_ActualEvapotranspiration = etState.actual_evapotranspiration;
@@ -111,16 +115,4 @@ void MonicaInterface::run() {
     _monica->soilMoistureNC().vm_SoilMoisture = etState.soil_moisture;
     _monica->soilMoistureNC().vw_NetRadiation = etState.net_radiation;
   }
-  // if (_monica->soilMoisturePtr()) {
-  //   std::cout << "et0: " << etState.reference_evapotranspiration << std::endl;
-  //   std::cout << "evaporated_from_surface: " << etState.evaporated_from_surface << std::endl;
-  //   std::cout << "actual_evapotranspiration: " << etState.actual_evapotranspiration << std::endl;
-  //   std::cout << "actual_evaporation: " << etState.actual_evaporation << std::endl;
-  //   std::cout << "actual_transpiration: " << etState.actual_transpiration << std::endl;
-  //   std::cout << "surface_water_storage: " << etState.surface_water_storage << std::endl;
-  //   std::cout << "soil_moisture: [";
-  //   for (auto sm : etState.soil_moisture) std::cout << sm << ", ";
-  //   std::cout << std::endl;
-  //   std::cout << "net_radiation: " << etState.net_radiation << std::endl;
-  // }
 }

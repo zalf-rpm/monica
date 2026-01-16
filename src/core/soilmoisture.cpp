@@ -956,10 +956,6 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
           //Interpolation between [0,1]
           if (vc_PercentageSoilCoverage >= 0.0 && vc_PercentageSoilCoverage < 1.0) {
             vm_Evaporation[i] = (1.0 - vc_PercentageSoilCoverage) * eReducer * potentialEvapotranspiration;
-            if (i == 0)
-              std::cout << "inter evap: " << vm_Evaporation[i] << " soilcover: " << vc_PercentageSoilCoverage <<
-                " eRed1: " << eRed1 << " eRed2: " << eRed2 << " eRed3: " <<
-                eRed3 << " eReducer: " << eReducer << " potET: " << potentialEvapotranspiration << std::endl;
           } else if (vc_PercentageSoilCoverage >= 1.0) {
             vm_Evaporation[i] = 0.0;
           }

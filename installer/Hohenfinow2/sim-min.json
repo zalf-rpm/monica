@@ -1,137 +1,127 @@
 {
-	"crop.json": "crop-min.json",
-	"site.json": "site-min.json",
-	"climate.csv": "climate-min.csv",
-
-	"climate.csv-options": {
-		"no-of-climate-file-header-lines": 2,
-		"csv-separator": ","
-	},
-	
-	"debug?": false,
-	"include-file-base-path": "${MONICA_PARAMETERS}",
-
-	"output": { 
-	  	"write-file?": true,
-
-		"path-to-output": "./",
-		"file-name": "sim-min-out.csv",
-	
-		"csv-options": {
-			"include-header-row": true,
-			"include-units-row": true,
-			"include-aggregation-rows": false,
-			"csv-separator": ","
-		},
-
-		"_events": [
-			"crop", [
-				"CM-count",
-				"Crop",
-				["Yield", "LAST"],
-				["Date|sowing", "FIRST"],
-				["Date|harvest", "LAST"]
-			],
-			"daily", [
-				"Date",
-				"Crop",
-				"Stage",
-				["Pwp", 1],
-				["Fc", 1],
-				"Yield",
-				"Act_ET",
-				"Pot_ET",
-				["Mois", [1, 6]],
-				"NFert",
-				["N", [1, 6]]
-			]
-		],
-
-		"events" : [
-
-			"daily", [
-				"Date", 
-				"Crop", 
-				"Stage",
-				["STemp", [1, 10]],
-				"Kc",
-				"Irrig",
-				"ETa/ETc",
-				"AbBiom", 
-				["OrgBiom", "Leaf"], 
-				["OrgBiom", "Fruit"], 
-				"Yield", 
-				"LAI", 
-				"Precip", 
-				["Mois", [1, 3]],
-				["Mois", [1, 3, "AVG"]], 
-				["SOC", [1, 3]], 
-				"Tavg", 
-				"Globrad"
-			],
-
-			"crop", [
-				"CM-count",
-				"Crop",
-				["Yield", "LAST"],
-				["Date|sowing", "FIRST"],
-				["Date|harvest", "LAST"]
-			],
-
-			"yearly", [
-				"Year", 
-				["N", [1, 3, "AVG"], "SUM"],
-				["RunOff", "SUM"], 
-				["NLeach", "SUM"], 
-				["Recharge", "SUM"]
-			],
-
-			"run", [
-				["Precip", "SUM"]
-			]
-		],
-
-		"__events" : [
-			"run", [
-				["Precip", "SUM"]
-			]
-		]
-	},
-
-	"UseSecondaryYields": true,
-	"NitrogenResponseOn": true,
-	"WaterDeficitResponseOn": true,
-	"EmergenceMoistureControlOn": false,
-	"EmergenceFloodingControlOn": false,
-
-	"UseNMinMineralFertilisingMethod": false,
-	"NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
-	"NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
-	"JulianDayAutomaticFertilising": 89,
-
-	"UseAutomaticIrrigation": false,
-	"AutoIrrigationParams": {
-		"irrigationParameters": {
-			"nitrateConcentration": [0, "mg dm-3"]
-		},
-		"startDate": "1992-05-01",
-		"amount": [17, "mm"],
-		"trigger_if_nFC_below_%": [90, "%"],
-		"_set_to_%nFC": [100, "%"],
-		"calc_nFC_until_depth_m": [0.3, "m"]
-	},
-
-	"serializedMonicaState": {
-		"load": {
-			"atStart": false,
-			"fromJson": true,
-			"path": "/home/berg/GitHub/monica/test-ser.json"
-		},
-		"save": {
-			"atEnd": false,
-			"toJson": true,
-			"path": "/home/berg/GitHub/monica/test-ser.json",
-			"noOfPreviousDaysSerializedClimateData": 10
-		}
-	}
+    "crop.json": "crop-min.json",
+    "site.json": "site-min.json",
+    "climate.csv": "climate-min.csv",
+    "EvapotranspirationModel": "Monica_Evapotranspiration",
+    "_EvapotranspirationModel": "internal",
+    "climate.csv-options": {
+        "no-of-climate-file-header-lines": 2,
+        "csv-separator": ","
+    },
+    "debug?": false,
+    "include-file-base-path": "${MONICA_PARAMETERS}",
+    "output": {
+        "write-file?": true,
+        "path-to-output": "./",
+        "file-name": "sim-min-out.csv",
+        "csv-options": {
+            "include-header-row": true,
+            "include-units-row": true,
+            "include-aggregation-rows": false,
+            "csv-separator": ","
+        },
+        "_events": [
+            "crop", [
+                "CM-count",
+                "Crop",
+                ["Yield", "LAST"],
+                ["Date|sowing", "FIRST"],
+                ["Date|harvest", "LAST"]
+            ],
+            "daily", [
+                "Date",
+                "Crop",
+                "Stage",
+                ["Pwp", 1],
+                ["Fc", 1],
+                "Yield",
+                "Act_ET",
+                "Pot_ET",
+                ["Mois", [1, 6]],
+                "NFert",
+                ["N", [1, 6]]
+            ]
+        ],
+        "events": [
+            "daily", [
+                "Date",
+                "Crop",
+                "Stage",
+                ["STemp", [1, 10]],
+                "Kc",
+                "Irrig",
+                "ETa/ETc",
+                "AbBiom",
+                ["OrgBiom", "Leaf"],
+                ["OrgBiom", "Fruit"],
+                "Yield",
+                "LAI",
+                "Precip",
+                ["Mois", [1, 3]],
+                ["Mois", [1, 3, "AVG"]],
+                ["SOC", [1, 3]],
+                "Tavg",
+                "Globrad"
+            ],
+            "crop", [
+                "CM-count",
+                "Crop",
+                ["Yield", "LAST"],
+                ["Date|sowing", "FIRST"],
+                ["Date|harvest", "LAST"]
+            ],
+            "yearly", [
+                "Year",
+                ["N", [1, 3, "AVG"], "SUM"],
+                ["RunOff", "SUM"],
+                ["NLeach", "SUM"],
+                ["Recharge", "SUM"]
+            ],
+            "run", [
+                ["Precip", "SUM"]
+            ]
+        ],
+        "__events": [
+            "run", [
+                ["Precip", "SUM"]
+            ]
+        ]
+    },
+    "UseSecondaryYields": true,
+    "NitrogenResponseOn": true,
+    "WaterDeficitResponseOn": true,
+    "EmergenceMoistureControlOn": false,
+    "EmergenceFloodingControlOn": false,
+    "UseNMinMineralFertilisingMethod": false,
+    "NMinUserParams": {
+        "min": 40,
+        "max": 120,
+        "delayInDays": 10
+    },
+    "NMinFertiliserPartition": ["include-from-file", "mineral-fertilisers/AN.json"],
+    "JulianDayAutomaticFertilising": 89,
+    "UseAutomaticIrrigation": false,
+    "AutoIrrigationParams": {
+        "irrigationParameters": {
+            "nitrateConcentration": [0, "mg dm-3"]
+        },
+        "startDate": "1992-05-01",
+        "amount": [17, "mm"],
+        "trigger_if_nFC_below_%": [90, "%"],
+        "_set_to_%nFC": [100, "%"],
+        "calc_nFC_until_depth_m": [0.3, "m"]
+    },
+    "serializedMonicaState": {
+        "load": {
+            "atStart": false,
+            "fromJson": true,
+            "path": "/home/berg/GitHub/monica/test-ser.json"
+        },
+        "save": {
+            "atEnd": false,
+            "toJson": true,
+            "path": "/home/berg/GitHub/monica/test-ser.json",
+            "noOfPreviousDaysSerializedClimateData": 10
+        }
+    }
 }
