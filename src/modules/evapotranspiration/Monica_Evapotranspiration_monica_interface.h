@@ -15,7 +15,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include "Monica_Evapotranspiration/EvapotranspirationCompComponent.h"
+#include "Monica_Evapotranspiration/ETComponent.h"
 #include "core/monica-parameters.h"
 
 namespace monica {
@@ -31,12 +31,12 @@ public:
 
   void run() override;
 
-  EvapotranspirationCompComponent etComp;
-  EvapotranspirationCompState etState;
-  EvapotranspirationCompState etState1;
-  EvapotranspirationCompExogenous etExo;
-  EvapotranspirationCompRate etRate;
-  EvapotranspirationCompAuxiliary etAux;
+  ETComponent etComp;
+  ETState etState;
+  ETState etState1;
+  ETExogenous etExo;
+  ETRate etRate;
+  ETAuxiliary etAux;
 
 private:
   monica::MonicaModel* _monica;
