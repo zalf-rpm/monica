@@ -25,12 +25,26 @@ macro(set_absolute_path var_name path)
 endmacro(set_absolute_path)
 
 set_absolute_path(AMEI_ST_COMPONENTS_DIR ../SoilTemperatureModels/Models)
-set_absolute_path(AMEI_ET_COMPONENTS_DIR ../ETModels/Models)
+set_absolute_path(AMEI_ET_COMPONENTS_DIR ../EvapoTranspirationModels/Monica)
 
 #add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
 
 set(CPP_FOLDER_NAME "cpp2")
 #add_compile_definitions(CPP2)
+
+
+set_absolute_path(AMEI_ST_COMPONENTS_DIR ../SoilTemperatureModels/Models)
+set_absolute_path(AMEI_ET_COMPONENTS_DIR ../EvapoTranspirationModels/Monica)
+
+#add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
+
+set(CPP_FOLDER_NAME "cpp2")
+#add_compile_definitions(CPP2)
+
+if (NOT TARGET Monica_AMEI_potential_Evapotranspiration_lib)
+    message(STATUS "target: Monica_AMEI_potential_Evapotranspiration_lib")
+    add_subdirectory(${AMEI_ET_COMPONENTS_DIR}/Monica_AMEI_potential_Evapotranspiration/src/${CPP_FOLDER_NAME}/Monica_AMEI_potential_Evapotranspiration amei-components/Monica_AMEI_potential_Evapotranspiration)
+endif ()
 
 if (NOT TARGET Monica_Evapotranspiration_lib)
     message(STATUS "target: Monica_Evapotranspiration_lib")
@@ -263,6 +277,8 @@ add_library(monica_lib
 
         src/modules/evapotranspiration/Monica_Evapotranspiration_monica_interface.cpp
         src/modules/evapotranspiration/Monica_Evapotranspiration_monica_interface.h
+        src/modules/evapotranspiration/Monica_AMEI_potential_Evapotranspiration_monica_interface.cpp
+        src/modules/evapotranspiration/Monica_AMEI_potential_Evapotranspiration_monica_interface.h
 
         src/modules/soil_temperature/DSSAT_ST_standalone_monica_interface.cpp
         src/modules/soil_temperature/DSSAT_ST_standalone_monica_interface.h
@@ -297,6 +313,9 @@ target_link_libraries(monica_lib
         common_lib
         climate_file_io_lib
 )
+if (TARGET Monica_AMEI_potential_Evapotranspiration_lib)
+    target_link_libraries(monica_lib PUBLIC Monica_AMEI_potential_Evapotranspiration_lib)
+endif ()
 if (TARGET Monica_Evapotranspiration_lib)
     target_link_libraries(monica_lib PUBLIC Monica_Evapotranspiration_lib)
 endif ()

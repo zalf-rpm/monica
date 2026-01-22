@@ -48,6 +48,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilmoisture.h"
 #include "crop-module.h"
 #include "soilcolumn.h"
+#include "modules/evapotranspiration/Monica_AMEI_potential_Evapotranspiration_monica_interface.h"
 #include "modules/evapotranspiration/Monica_Evapotranspiration_monica_interface.h"
 #include "modules/soil_temperature/ApsimCampbell_monica_interface.h"
 #include "modules/soil_temperature/Monica_SoilTemp_monica_interface.h"
@@ -211,6 +212,7 @@ public:
 
   Run* _evapotranspirationInstance{nullptr};
   kj::Own<Monica_Evapotranspiration::MonicaInterface> _instance_Monica_Evapotranspiration;
+  kj::Own<Monica_AMEI_potential_Evapotranspiration::MonicaInterface> _instance_Monica_AMEI_potential_Evapotranspiration;
 
   Run* _soilTempInstance{nullptr};
   kj::Own<Monica_SoilTemp::MonicaInterface> _instance_Monica_SoilTemp;

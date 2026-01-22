@@ -64,8 +64,9 @@ void MonicaInterface::run() {
   etExo.mean_air_temperature = climateData.at(Climate::tavg);
   etExo.max_air_temperature = climateData.at(Climate::tmax);
   etExo.global_radiation = climateData.at(Climate::globrad);
-  if (climateData.find(Climate::et0) != climateData.end()) {
-    etExo.external_reference_evapotranspiration = climateData.at(Climate::et0);
+  bool externalET0 = climateData.find(Climate::et0) != climateData.end();
+  if (externalET0) {
+    etAux.reference_evapotranspiration = climateData.at(Climate::et0);
   }
   etExo.relative_humidity = climateData.at(Climate::relhumid) / 100.0;
   etExo.wind_speed = climateData.at(Climate::wind);
@@ -74,8 +75,8 @@ void MonicaInterface::run() {
 
   if (_monica->cropGrowth()) {
     etExo.developmental_stage = static_cast<int>(_monica->cropGrowth()->get_DevelopmentalStage());
-    if (etExo.external_reference_evapotranspiration < 0) {
-      etExo.crop_reference_evapotranspiration = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
+    if (externalET0) {
+      etAux.reference_evapotranspiration = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
     }
     etExo.crop_transpiration = _monica->cropGrowth()->get_Transpiration();
     etExo.crop_remaining_evapotranspiration = _monica->cropGrowth()->get_RemainingEvapotranspiration();
@@ -106,13 +107,13 @@ void MonicaInterface::run() {
   }
   etComp.Calculate_Model(etState, etState1, etRate, etAux, etExo);
   if (_monica->soilMoisturePtr()) {
-    _monica->soilMoistureNC().vm_ReferenceEvapotranspiration = etState.reference_evapotranspiration;
+    _monica->soilMoistureNC().vm_ReferenceEvapotranspiration = etAux.reference_evapotranspiration;
     _monica->soilMoistureNC().vm_EvaporatedFromSurface = etState.evaporated_from_surface;
     _monica->soilMoistureNC().vm_ActualEvapotranspiration = etState.actual_evapotranspiration;
     _monica->soilMoistureNC().vm_ActualEvaporation = etState.actual_evaporation;
     _monica->soilMoistureNC().vm_ActualTranspiration = etState.actual_transpiration;
     _monica->soilMoistureNC().vm_SurfaceWaterStorage = etState.surface_water_storage;
     _monica->soilMoistureNC().vm_SoilMoisture = etState.soil_moisture;
-    _monica->soilMoistureNC().vw_NetRadiation = etState.net_radiation;
+    _monica->soilMoistureNC().vw_NetRadiation = etAux.net_radiation;
   }
 }

@@ -107,6 +107,12 @@ void MonicaModel::initComponents(const CentralParameterProvider& cpp) {
     _instance_Monica_Evapotranspiration->init(cpp);
     _evapotranspirationInstance = _instance_Monica_Evapotranspiration.get();
   }
+  if (etModelName == "Monica_AMEI_potential_Evapotranspiration") {
+    _instance_Monica_AMEI_potential_Evapotranspiration = kj::heap<Monica_AMEI_potential_Evapotranspiration::MonicaInterface>(this);
+    _instance_Monica_AMEI_potential_Evapotranspiration->init(cpp);
+    _evapotranspirationInstance = _instance_Monica_AMEI_potential_Evapotranspiration.get();
+  }
+
 
   auto stModelName = cpp.simulationParameters.soilTempModel;
   if (stModelName == "Monica_SoilTemp") {
