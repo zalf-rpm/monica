@@ -59,7 +59,7 @@ void MonicaInterface::run() {
   }
   if (_monica->soilMoisturePtr()) {
     etExo.kc_factor = _monica->soilMoisture().vc_KcFactor;
-    etExo.vapor_pressure = _monica->soilMoisture()._vaporPressure;
+    etAux.vapor_pressure = _monica->soilMoisture()._vaporPressure;
   }
   etComp.Calculate_Model(etState, etState1, etRate, etAux, etExo);
   if (_monica->soilMoisturePtr()) {

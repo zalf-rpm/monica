@@ -64,9 +64,14 @@ void MonicaInterface::run() {
   etExo.mean_air_temperature = climateData.at(Climate::tavg);
   etExo.max_air_temperature = climateData.at(Climate::tmax);
   etExo.global_radiation = climateData.at(Climate::globrad);
-  bool externalET0 = climateData.find(Climate::et0) != climateData.end();
-  if (externalET0) {
-    etAux.reference_evapotranspiration = climateData.at(Climate::et0);
+  etAux.use_external_et0 = false;
+  if (climateData.find(Climate::et0) != climateData.end()) {
+    etAux.external_et0 = climateData.at(Climate::et0);
+    etAux.use_external_et0 = true;
+  }
+  etAux.use_external_vapor_pressure = climateData.find(Climate::vaporpress) != climateData.end();
+  if (etAux.use_external_vapor_pressure) {
+    etAux.external_vapor_pressure = climateData.at(Climate::vaporpress);
   }
   etExo.relative_humidity = climateData.at(Climate::relhumid) / 100.0;
   etExo.wind_speed = climateData.at(Climate::wind);
@@ -75,17 +80,13 @@ void MonicaInterface::run() {
 
   if (_monica->cropGrowth()) {
     etExo.developmental_stage = static_cast<int>(_monica->cropGrowth()->get_DevelopmentalStage());
-    if (externalET0) {
-      etAux.reference_evapotranspiration = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
-    }
+    etAux.external_et0 = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
+    etAux.use_external_et0 = true;
     etExo.crop_transpiration = _monica->cropGrowth()->get_Transpiration();
     etExo.crop_remaining_evapotranspiration = _monica->cropGrowth()->get_RemainingEvapotranspiration();
     etExo.crop_evaporated_from_intercepted = _monica->cropGrowth()->get_EvaporatedFromIntercept();
   } else {
     etExo.developmental_stage = 0;
-    if (etExo.external_reference_evapotranspiration < 0) {
-      etExo.crop_reference_evapotranspiration = 0;
-    }
     etExo.crop_transpiration = std::vector<double>();
     etExo.crop_remaining_evapotranspiration = 0;
     etExo.crop_evaporated_from_intercepted = 0;
@@ -98,7 +99,6 @@ void MonicaInterface::run() {
     etExo.percentage_soil_coverage = _monica->soilMoisture().vc_PercentageSoilCoverage;
     etExo.kc_factor = _monica->soilMoisture().vc_KcFactor;
     etExo.has_snow_cover = _monica->soilMoisture().getSnowDepth() > 0;
-    etExo.vapor_pressure = _monica->soilMoisture()._vaporPressure;
     // soil_moisture and surface water storage, even though state
     // have to be synchronized with MONICA due to other uses and updates
     // maybe should be also defined as exogenous, even though are actually more state like?

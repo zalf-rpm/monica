@@ -2,8 +2,8 @@
     "crop.json": "crop-min.json",
     "site.json": "site-min.json",
     "climate.csv": "climate-min.csv",
-    "__EvapotranspirationModel": "Monica_Evapotranspiration",
-    "EvapotranspirationModel": "Monica_AMEI_potential_Evapotranspiration",
+    "EvapotranspirationModel": "Monica_Evapotranspiration",
+    "__EvapotranspirationModel": "Monica_AMEI_potential_Evapotranspiration",
     "_EvapotranspirationModel": "internal",
     "climate.csv-options": {
         "no-of-climate-file-header-lines": 2,
