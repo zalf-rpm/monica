@@ -64,10 +64,9 @@ void MonicaInterface::run() {
   etExo.mean_air_temperature = climateData.at(Climate::tavg);
   etExo.max_air_temperature = climateData.at(Climate::tmax);
   etExo.global_radiation = climateData.at(Climate::globrad);
-  etAux.use_external_et0 = false;
-  if (climateData.find(Climate::et0) != climateData.end()) {
+  etAux.use_external_et0 = climateData.find(Climate::et0) != climateData.end();
+  if (etAux.use_external_et0) {
     etAux.external_et0 = climateData.at(Climate::et0);
-    etAux.use_external_et0 = true;
   }
   etAux.use_external_vapor_pressure = climateData.find(Climate::vaporpress) != climateData.end();
   if (etAux.use_external_vapor_pressure) {
@@ -79,13 +78,14 @@ void MonicaInterface::run() {
   etExo.julian_day = _monica->currentStepDate().julianDay();
 
   if (_monica->cropGrowth()) {
-    etExo.developmental_stage = static_cast<int>(_monica->cropGrowth()->get_DevelopmentalStage());
-    etAux.external_et0 = _monica->cropGrowth()->get_ReferenceEvapotranspiration();
-    etAux.use_external_et0 = true;
+    const auto devStage = _monica->cropGrowth()->get_DevelopmentalStage();
+    etAux.calc_stomata_resistance = _monica->cropGrowth() && devStage > 0;
+    etExo.developmental_stage = static_cast<int>(devStage);
     etExo.crop_transpiration = _monica->cropGrowth()->get_Transpiration();
     etExo.crop_remaining_evapotranspiration = _monica->cropGrowth()->get_RemainingEvapotranspiration();
     etExo.crop_evaporated_from_intercepted = _monica->cropGrowth()->get_EvaporatedFromIntercept();
   } else {
+    etAux.calc_stomata_resistance = false;
     etExo.developmental_stage = 0;
     etExo.crop_transpiration = std::vector<double>();
     etExo.crop_remaining_evapotranspiration = 0;
