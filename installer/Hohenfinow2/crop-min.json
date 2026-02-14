@@ -60,6 +60,7 @@
 
 	  "CropParameters": {
 		  "=": ["include-from-file", "general/crop.json"],
-		  "__enable_vernalisation_factor_fix__": true
+		  "__enable_vernalisation_factor_fix__": true,
+		  "__enable_hourly_FvCB_photosynthesis__": true
 	  }
 }
