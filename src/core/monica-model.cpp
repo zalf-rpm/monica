@@ -881,41 +881,46 @@ void MonicaModel::cropStep() {
 * @brief Returns atmospheric CO2 concentration for date [ppm]
 *
 * @param year, julianDay, isLeapYear
+* @param rcp
 *
 * @return
 */
-double MonicaModel::CO2ForDate(double year, double julianDay, bool isLeapYear, mas::schema::climate::RCP rcp) {
+double MonicaModel::CO2ForDate(const double year, const double julianDay, const bool isLeapYear,
+                               const mas::schema::climate::RCP rcp) {
   using namespace mas::schema::climate;
-  double decimalDate = year + julianDay / (isLeapYear ? 366.0 : 365);
+  const double decimalDate = year + julianDay / (isLeapYear ? 366.0 : 365);
 
   //old value
   double co2 = 0;
   switch (rcp) {
-  case RCP::RCP19: co2 = 305 + 110 / (1 + exp(-(0.055 * (decimalDate - 2032)))) + (
+  case RCP::RCP19: co2 = 309.61 + 110.21 / (1 + exp(-(0.0819 * (decimalDate - 1995.41)))) + (
                            2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP26: co2 = 306 + 100 / (1 + exp(-(0.05 * (decimalDate - 2000)))) + (
+  case RCP::RCP26: co2 = 306.23 + 158.52 / (1 + exp(-(0.0601 * (decimalDate - 2005.77)))) + (
                            2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP34: co2 = 307 + 200 / (1 + exp(-(0.05 * (decimalDate - 2040)))) + (
+  case RCP::RCP34: co2 = 302.24 + 185.07 / (1 + exp(-(0.0512 * (decimalDate - 2010.26)))) + (
                            2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP45: co2 = 308 + 270 / (1 + exp(-(0.05 * (decimalDate - 2029)))) + (
+  case RCP::RCP45: co2 = 292.83 + 348.08 / (1 + exp(-(0.0349 * (decimalDate - 2036.46)))) + (
                            2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP60: co2 = 244 + exp(0.013 * (decimalDate - 1625)) + (2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP60: co2 = 287.56 + 474.21 / (1 + exp(-(0.0301 * (decimalDate - 2052.37)))) + (
+                           2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP70: co2 = 295 + exp(0.022 * (decimalDate - 1850)) + (2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP70: co2 = 277.25 + 1338.47 / (1 + exp(-(0.0237 * (decimalDate - 2110.06)))) + (
+                           2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
   case RCP::RCP85:
-  default: co2 = 294 + exp(0.026 * (decimalDate - 1836)) + (2.5 * sin((decimalDate - 0.5) / 0.1592));
+  default: co2 = 294.27 + 2361.06 / (1 + exp(-(0.0287 * (decimalDate - 2120.53)))) + (
+                   2.5 * sin((decimalDate - 0.5) / 0.1592));
     break;
   }
 
   return co2;
 }
 
-double MonicaModel::CO2ForDate(Date d, mas::schema::climate::RCP rcp) {
+double MonicaModel::CO2ForDate(const Date& d, const mas::schema::climate::RCP rcp) {
   return CO2ForDate(d.year(), d.julianDay(), d.isLeapYear(), rcp);
 }
 
@@ -930,15 +935,15 @@ double MonicaModel::CO2ForDate(Date d, mas::schema::climate::RCP rcp) {
 double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
                                             double minGroundwaterDepth,
                                             int minGroundwaterDepthMonth,
-                                            double julianday,
-                                            bool leapYear) {
+                                            double julianDay,
+                                            bool isLeapYear) {
   double days = 365;
-  if (leapYear) days = 366.0;
+  if (isLeapYear) days = 366.0;
 
   double meanGroundwaterDepth = (maxGroundwaterDepth + minGroundwaterDepth) / 2.0;
   double groundwaterAmplitude = (maxGroundwaterDepth - minGroundwaterDepth) / 2.0;
 
-  double sinus = sin(((julianday / days * 360.0) - 90.0 -
+  double sinus = sin(((julianDay / days * 360.0) - 90.0 -
                       ((double(minGroundwaterDepthMonth) * 30.0) - 15.0)) *
                      3.14159265358979 / 180.0);
 

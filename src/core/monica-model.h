@@ -50,7 +50,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilcolumn.h"
 
 namespace monica {
-  
 class Crop;
 
 class MonicaModel {
@@ -69,10 +68,11 @@ public:
 
   void cropStep();
 
-  double CO2ForDate(double year, double julianDay, bool isLeapYear, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
-  double CO2ForDate(Tools::Date, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
+  static double CO2ForDate(double year, double julianDay, bool isLeapYear,
+                           mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
+  static double CO2ForDate(const Tools::Date&, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
   double GroundwaterDepthForDate(double maxGroundwaterDepth, double minGroundwaterDepth, int minGroundwaterDepthMonth,
-    double julianday, bool leapYear);
+                                 double julianDay, bool isLeapYear);
 
   void seedCrop(mas::schema::model::monica::CropSpec::Reader reader);
   void seedCrop(Crop* crop);
@@ -211,41 +211,41 @@ private:
   kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
 
   //! store applied fertiliser during one production process
-  double _sumFertiliser{ 0.0 }; //mineral N
-  double _sumOrgFertiliser{ 0.0 }; //organic N
+  double _sumFertiliser{0.0}; //mineral N
+  double _sumOrgFertiliser{0.0}; //organic N
 
   //! stores the daily sum of applied fertiliser
-  double _dailySumFertiliser{ 0.0 }; //mineral N
-  double _dailySumOrgFertiliser{ 0.0 }; //organic N
+  double _dailySumFertiliser{0.0}; //mineral N
+  double _dailySumOrgFertiliser{0.0}; //organic N
 
-  double _dailySumOrganicFertilizerDM{ 0.0 };
-  double _sumOrganicFertilizerDM{ 0.0 };
+  double _dailySumOrganicFertilizerDM{0.0};
+  double _sumOrganicFertilizerDM{0.0};
 
-  double _humusBalanceCarryOver{ 0.0 };
+  double _humusBalanceCarryOver{0.0};
 
-  double _dailySumIrrigationWater{ 0.0 };
+  double _dailySumIrrigationWater{0.0};
 
-  double _optCarbonExportedResidues{ 0.0 };
-  double _optCarbonReturnedResidues{ 0.0 };
+  double _optCarbonExportedResidues{0.0};
+  double _optCarbonReturnedResidues{0.0};
 
   Tools::Date _currentStepDate;
   std::vector<std::map<Climate::ACD, double>> _climateData;
   std::set<std::string> _currentEvents;
   std::set<std::string> _previousDaysEvents;
 
-  bool _clearCropUponNextDay{ false };
+  bool _clearCropUponNextDay{false};
 
-  int p_daysWithCrop{ 0 };
-  double p_accuNStress{ 0.0 };
-  double p_accuWaterStress{ 0.0 };
-  double p_accuHeatStress{ 0.0 };
-  double p_accuOxygenStress{ 0.0 };
+  int p_daysWithCrop{0};
+  double p_accuNStress{0.0};
+  double p_accuWaterStress{0.0};
+  double p_accuHeatStress{0.0};
+  double p_accuOxygenStress{0.0};
 
-  double vw_AtmosphericCO2Concentration{ 0.0 };
-  double vw_AtmosphericO3Concentration{ 0.0 };
-  double vs_GroundwaterDepth{ 0.0 };
+  double vw_AtmosphericCO2Concentration{0.0};
+  double vw_AtmosphericO3Concentration{0.0};
+  double vs_GroundwaterDepth{0.0};
 
-  int _cultivationMethodCount{ 0 };
+  int _cultivationMethodCount{0};
 
   Intercropping _intercropping;
 
@@ -253,5 +253,4 @@ private:
   //  uint critPos{ 0 };
   //  uint cmitPos{ 0 };
 };
-
 } // namespace monica

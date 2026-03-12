@@ -1750,54 +1750,26 @@ Errors EnvironmentParameters::merge(json11::Json j) {
 
   set_double_value(p_Albedo, j, "Albedo");
 
-  if (!j["ssp"].is_null()) {
-    auto ssp = -1;
-    if (j["ssp"].is_number()) {
-      ssp = int(j["ssp"].number_value());
-      if (ssp > 4) ssp = int(ssp / 100.0);
-    } else if (j["ssp"].is_string()) {
-      auto ssps = j["ssp"].string_value();
-      try {
-        switch (ssps.size()) {
-        case 1: ssp = stoi(ssps);
-          break;
-        case 3: ssp = stoi(ssps.substr(0, 1));
-          break;
-        case 4: ssp = stoi(ssps.substr(3, 1));
-          break;
-        case 6: ssp = stoi(ssps.substr(3, 1));
-          break;
-        default: ;
-        }
-      } catch (std::exception&) {}
-    }
-    if (ssp > 0) {
-      switch (ssp) {
-      case 1: rcp = RCP::RCP26;
-        break;
-      case 2: rcp = RCP::RCP45;
-        break;
-      case 3: rcp = RCP::RCP70;
-        break;
-      case 4: rcp = RCP::RCP85;
-        break;
-      default: ;
-      }
-    }
-  }
-
-
   if (j["rcp"].is_string()) {
     try {
-      auto rcpNo = stoi(j["rcp"].string_value().substr(3, 2));
-      rcp = rcpNo2rcpEnum(rcpNo);
+      switch (const auto rcpStr = j["rcp"].string_value(); rcpStr.size()) {
+      case 2: rcp = rcpNo2rcpEnum(stoi(rcpStr));
+        break;
+      case 3: rcp = rcpNo2rcpEnum(static_cast<int>(stod(rcpStr) * 10));
+        break;
+      case 5: rcp = rcpNo2rcpEnum(stoi(rcpStr.substr(3)));
+        break;
+      case 6: rcp = rcpNo2rcpEnum(static_cast<int>(stod(rcpStr.substr(3)) * 10));
+        break;
+      default: rcp = RCP::RCP85;
+      }
     } catch (std::exception&) {
       res.appendWarning(kj::str(j["rcp"].string_value(), " unknown. Default RCP 8.5 used.").cStr());
     }
   } else if (j["rcp"].is_number()) {
-    auto rcpNo = j["rcp"].number_value();
-    if (rcpNo < 10) rcp = rcpNo2rcpEnum(int(rcpNo * 10));
-    else rcp = rcpNo2rcpEnum(int(rcpNo));
+    if (const auto rcpNo = j["rcp"].number_value(); rcpNo < 10) {
+      rcp = rcpNo2rcpEnum(static_cast<int>(rcpNo * 10));
+    } else rcp = rcpNo2rcpEnum(static_cast<int>(rcpNo));
   }
 
   set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
