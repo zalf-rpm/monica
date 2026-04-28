@@ -161,6 +161,8 @@ add_library(monica_lib
         src/core/O3-impact.cpp
         src/core/photosynthesis-FvCB.h
         src/core/photosynthesis-FvCB.cpp
+        src/core/photosynthesis-hourly.h
+        src/core/photosynthesis-hourly.cpp
         src/core/soilcolumn.h
         src/core/soilcolumn.cpp
         src/core/soilmoisture.h
