@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(Monica)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 message(STATUS "-> Monica")
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
