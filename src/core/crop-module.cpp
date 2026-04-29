@@ -2629,7 +2629,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     using namespace hPhoto;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-    double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
+    double kdf = 0.6; // = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
     double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
 
     vector<double> hourlyGlobrads;
