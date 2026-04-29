@@ -2757,16 +2757,17 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hp_in.leafT = hourlyLeafT.at(h);
       }
 
-      assert(inst_diff_rad > 0);
-      assert(inst_dir_rad > 0);
+      assert(inst_diff_rad >= 0);
+      assert(inst_dir_rad >= 0);
       if ((inst_diff_rad <= 0) && (inst_dir_rad <= 0)) {
         hourlyPhoto = 0.;
         hourlyPhotoRef = 0.;
       } else {
         /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
         if (...__agripv__) {
-        inst_diff_rad *= ...;  // !!! debug
-        inst_dir_rad *= ...;    // !!! debug
+        auto [dir_rad_factor, diff_rad_factor] AgriPV_shading(...);
+        inst_diff_rad *= diff_rad_factor;  // !!! debug
+        inst_dir_rad *= dir_rad_factor;    // !!! debug
         }
         */
         hourlyPhoto = Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2);

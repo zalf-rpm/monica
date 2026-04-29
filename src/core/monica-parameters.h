@@ -715,7 +715,7 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
   bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
   bool __enable_hourly_FvCB_photosynthesis__{ false };
-  bool __enable_hourly_photosynthesis__{ false };
+  bool __enable_hourly_photosynthesis__{ true }; //FS: just for DEBUG; should be false by default
   bool __enable_T_response_leaf_expansion__{ false };
   bool __disable_daily_root_biomass_to_soil__{ false };
   bool __enable_vernalisation_factor_fix__{ false };
