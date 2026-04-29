@@ -2153,6 +2153,16 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   vc_AssimilationRate = max(0.1, vc_AssimilationRate);
   vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
 
+/* for easier comparison to current MONICA SUCROS82-style crop photosynthesis: daily vs. daily
+#pragma region canopy photosynthesis
+  ///////////////////////////////////////////////////////////////////////////
+  // crop photosynthesis SUCROS87-style, but daily
+  ///////////////////////////////////////////////////////////////////////////
+  
+  //...
+#pragma endregion canopy photosynthesis
+*/
+
   ///////////////////////////////////////////////////////////////////////////
   // Calculation of light interception in the crop
   //
@@ -2737,14 +2747,33 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       double inst_diff_rad, inst_dir_rad, hourlyPhoto, hourlyPhotoRef;
       if (false) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
         throw exception("Hourly inputs from file not implemented yet!");
-        /*
+        /* two irradiance components as inputs from hourly weather file
+        double hourly_direct_rad, hourly_diffuse_rad, hourly_global_rad;
+        if (direct && diffuse) {
+          hourly_diffuse_rad = ;
+          hourly_direct_rad = ;
+        } else if (global && diffuse) {
+          hourly_global_rad = ;
+          hourly_diffuse_rad = ;
+          hourly_direct_rad = hourly_global_rad - hourly_diffuse_rad;
+        } else if (global && diffuse) {
+          hourly_global_rad = ;
+          hourly_direct_rad = ;
+          hourly_diffuse_rad = hourly_global_rad - hourly_direct_rad;
+        }
         // convert [MJ m-2 h-1] -> [W m-2] -> [μmol m-2 s-1] -> [μmol m-2 s-1 PAR]
         // 1 [MJ m-2 h-1] = pow(10, 6) / 3600.0 [W m-2]; 1 [W m-2] = 4.56 [μmol m-2 s-1]; PAR = parfac * global radiation 
         inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * parfrac;
         inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * parfrac;
         */
       } else {
-        hp_in.globalRad = hourlyGlobrads.at(h);
+        if (false) { //__hourly_inputs_file__ // only hourly global irradiance input from file
+          throw exception("Hourly inputs from file not implemented yet!");
+          // hp_in.globalRad = ;
+        } else {
+          hp_in.globalRad = hourlyGlobrads.at(h);
+        }
+        
         if (hp_in.globalRad <= 0) {
           inst_diff_rad = 0.;
           inst_dir_rad = 0.;
@@ -2838,7 +2867,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature, vc_NightTemperature;
-  if (cropPs.__enable_hourly_photosynthesis__) {
+  // if (cropPs.__enable_hourly_photosynthesis__) { //FS: TODO activate again later !!!
+  if (false) { //FS: DEBUG !!! deactivate for now, in order to make comparisons easier by not changing multiple things at once
     vc_PhotoTemperature = vc_PhotoTemperature_;
     vc_NightTemperature = vc_NightTemperature_;
     vc_PhotoperiodicDaylength = vc_PhotoperiodicDaylength_;
