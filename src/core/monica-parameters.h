@@ -189,6 +189,7 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   //std::string pc_PermanentCultivarId;
   double pc_MaxAssimilationRate{ 0.0 };
   double pc_LightExtinctionCoefficient{ 0.8 };
+  double pc_EmpiricalExtinctionCoeffDiffuse{ 0.0 }; //param for hourly SUCROS87-style photosynthesis model //FS: maybe as growth stage dependent vector<double> pc_EmpiricalExtinctionCoeffDiffuse{ 0., 0., 0., 0., 0., 0., 0. } in the future
   double pc_MaxCropHeight{ 0.0 };
   double pc_ResidueNRatio{ 0.0 };
   double pc_LT50cultivar{ 0.0 };
@@ -714,6 +715,7 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
   bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
   bool __enable_hourly_FvCB_photosynthesis__{ false };
+  bool __enable_hourly_photosynthesis__{ false };
   bool __enable_T_response_leaf_expansion__{ false };
   bool __disable_daily_root_biomass_to_soil__{ false };
   bool __enable_vernalisation_factor_fix__{ false };

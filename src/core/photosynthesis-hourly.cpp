@@ -10,6 +10,7 @@ using namespace std;
 double hPhoto::diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev)
 {
   // check this again !!!
+  assert(extra_terr_rad > eps);
   double glob_extra_ratio = globrad / extra_terr_rad;
   double R = (0.847 - 1.61 * sin(solar_elev) + 1.04 * pow(sin(solar_elev), 2));
   double K = (1.47 - R) / 1.66;

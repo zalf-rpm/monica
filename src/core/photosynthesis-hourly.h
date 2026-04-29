@@ -11,7 +11,7 @@ using namespace std;
 constexpr double M_PI = 3.14159265358979323846;
 #endif
 
-const double eps{1e-6}; // machine epsilon
+const double eps = 1e-6; // machine epsilon
 
 namespace hPhoto {
 
@@ -25,7 +25,9 @@ namespace hPhoto {
  * 
  * - Spitters CJT, Toussaint HAJM & Goudriaan J (1986). Separating the diffuse and direct component of global radiation and its implications for modeling canopy photosynthesis. Part I. Components of incoming radiation. Agricultural and Forest Meteorology, 38(1-3), 217-229.
  *   https://doi.org/10.1016/0168-1923(86)90060-2
+ * 
  * - de Jong JBRM (1980). Een karakterisering van de zonnestraling in Nederland. Doctoraalverslag Vakgroep Fysische Aspecten van de Gebouwde Omgeving afd. Bouwkunde en Vakgroep Warmte- en Stromingstechnieken afd, Werktuigbouwkunde, Technische Hogeschool (Techn. Univ.), Eindhoven, Netherlands (1980), p. 97 + 67 [in Dutch].
+ * 
  * - Ma Lu S, Zainali S, Stridh B, Avelin A, Amaducci S, Colauzzi M & Campana PE (2022). Photosynthetically active radiation decomposition models for agrivoltaic systems applications. Solar Energy, 244, 536-549.
  * https://doi.org/10.1016/j.solener.2022.05.046
  * 

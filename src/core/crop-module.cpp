@@ -1863,6 +1863,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     // initial guess: e.g. Ci = vw_AtmosphericCO2Concentration * 0.7
     // for ...
     //   ... A(Ci) <-> gs coupling ... using a stomatal conductance model
+    //   ... take into account MONICA pc_StomataConductanceAlpha and vc_StomataResistance variables? ...
     //_cropPhotosynthesisResults.ci = Ci;
     // also check lumped coefficients and stomatal conductanc coupling in photosynthesis-FvcB.cpp for an approach using an analytical solution for C3 crops and FvCB photosynthesis
     // -> check if using only the RuBisCO limited part is possible. If so, this should be sufficient, since our photosynthesis model uses the RuBisCO-limitation BEFORE applying the light limitation.
@@ -2625,12 +2626,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 #pragma region hourly photosynthesis
 
-  double dailyGP = 0;
+  double dailyGP;
   if (__enable_hourly_photosynthesis__) {  // (cropPs.__enable_hourly_photosynthesis__)
     using namespace hPhoto;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-    double kdf = 0.6; // DEBUG only !!! ; assumed value for wheat
+    double kdf = cropPs.pc_EmpiricalExtinctionCoeffDiffuse;
+    double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
 
     vector<double> hourlyGlobrads;
     vector<double> hourlyExtrarad;
@@ -2638,8 +2640,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
     int vs_JulianDay = currentDate.julianDay();
 
-    int sunriseH = 0, sunsetH = 23; // defined in a way that both sunset and sunrise hours are included in daytime (sun_el > 0)
-    for (int h = 0; h < 24; h++) {
+    int sunriseH = 0, sunsetH = 23; //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
+    for (int h = 0; h < 24; ++h) {
       double sun_el = solarElevation(h, vs_Latitude, vs_JulianDay);
       sun_el = (sun_el > 0) ? sun_el : 0.;
       sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
@@ -2657,11 +2659,19 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
       hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
     }
-    
-    vector<double> hourlyGrossCO2Assimilation;
-    vector<double> hourlyGrossCO2AssimilationReference;
+
     vector<double> hourlyLeafT;
-    for (int h = 0; h < 24; h++) {
+    if (false) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
+      throw exception("Hourly inputs from file not implemented yet!");
+    } else {
+      for (int h = 0; h < 24; ++h) {
+        hourlyLeafT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
+      }
+    }
+
+    vector<double> hourlyGrossCO2Assimilation, hourlyGrossCO2AssimilationReference;
+    dailyGP = 0;
+    for (int h = sunriseH; h < sunsetH; ++h) {  //FS: <= sunsetH might lead to overestimation?
 #ifdef TEST_FVCB_HOURLY_OUTPUT
       FvCB::tout()
         << currentDate.toIsoDateString()
@@ -2684,18 +2694,11 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       };
       
       hp hp_in;
-      hp_in.leafT = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
-      hourlyLeafT.push_back(hp_in.leafT);
-      hp_in.solarEl = hourlySolarEl.at(h);
-      hp_in.globalRad = hourlyGlobrads.at(h);
-      hp_in.extraRad = hourlyExtrarad.at(h);
-
-
       // is this related to sigma and epsilon?
       // can sigma be expressed through pc_CanopyReflectionCoeff?
       // double vc_NetRadiationUseEfficiency = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiency;
       // hp_in.epsilon = vc_RadiationUseEfficiency; // DEBUG !!! ; call function instead to account for hourly temperature dependency?
-
+      hp_in.solarEl = hourlySolarEl.at(h);
 
       // hourly photosynthesis
       double Amax, AmaxRef, epsilon, epsilonRef;
@@ -2732,22 +2735,62 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         epsilonRef = pc_DefaultRadiationUseEfficiency;  //vc_RadiationUseEfficiencyReference;
       }
 
-      double hourlyPhoto, hourlyPhotoRef;
-      hourlyPhoto = gross_photo_hourly(hp_in.leafT, hp_in.globalRad, hp_in.extraRad, hp_in.solarEl, vc_LeafAreaIndex,
-                                        Amax, epsilon, 0.2, kdf, 0.45);
-      hourlyPhotoRef = gross_photo_hourly(hp_in.leafT, hp_in.globalRad, hp_in.extraRad, hp_in.solarEl, vc_LeafAreaIndex,
-                                          AmaxRef, epsilonRef, 0.2, kdf, 0.45);
+      double parfrac = 0.45;
+      double inst_diff_rad, inst_dir_rad, hourlyPhoto, hourlyPhotoRef;
+      if (false) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
+        throw exception("Hourly inputs from file not implemented yet!");
+        /*
+        // convert [MJ m-2 h-1] -> [W m-2] -> [μmol m-2 s-1] -> [μmol m-2 s-1 PAR]
+        // 1 [MJ m-2 h-1] = pow(10, 6) / 3600.0 [W m-2]; 1 [W m-2] = 4.56 [μmol m-2 s-1]; PAR = parfac * global radiation 
+        inst_diff_rad = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * parfrac;
+        inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * parfrac;
+        */
+      } else {
+        hp_in.globalRad = hourlyGlobrads.at(h);
+        if (hp_in.globalRad <= 0) {
+          inst_diff_rad = 0.;
+          inst_dir_rad = 0.;
+        } else {
+          hp_in.extraRad = hourlyExtrarad.at(h);
+          auto PAR_rad = PAR_radiation(hp_in.globalRad, hp_in.extraRad, hp_in.solarEl, parfrac);
+          inst_diff_rad = PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
+          inst_dir_rad = PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
+        }
+        hp_in.leafT = hourlyLeafT.at(h);
+      }
 
+      assert(inst_diff_rad > 0);
+      assert(inst_dir_rad > 0);
+      if ((inst_diff_rad <= 0) && (inst_dir_rad <= 0)) {
+        hourlyPhoto = 0.;
+        hourlyPhotoRef = 0.;
+      } else {
+        /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
+        if (...__agripv__) {
+        inst_diff_rad *= ...;  // !!! debug
+        inst_dir_rad *= ...;    // !!! debug
+        }
+        */
+        hourlyPhoto = Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2);
+        hourlyPhotoRef = Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2);
+        /*
+        hourlyPhoto = gross_photo_hourly(hp_in.leafT, hp_in.globalRad, hp_in.extraRad, hp_in.solarEl, vc_LeafAreaIndex,
+                                          Amax, epsilon, 0.2, kdf, parfrac);
+        hourlyPhotoRef = gross_photo_hourly(hp_in.leafT, hp_in.globalRad, hp_in.extraRad, hp_in.solarEl, vc_LeafAreaIndex,
+                                            AmaxRef, epsilonRef, 0.2, kdfRef, parfrac);
+        */
+      }
       hourlyGrossCO2Assimilation.push_back(hourlyPhoto); // hourlyPhoto.GrossCO2Assimilation
       hourlyGrossCO2AssimilationReference.push_back(hourlyPhotoRef); // hourlyPhoto.GrossCO2AssimilationReference
 
       dailyGP += hourlyPhoto;
+      // what about hourlyPhotoRef? // !!! TODO
     }
 
     // calculate variables needed for respiration AGROSIM
-    vector<double> hourlyLeafT_day = vector<double>(hourlyLeafT.begin()+sunriseH, hourlyLeafT.begin()+1+sunsetH);
+    vector<double> hourlyLeafT_day = vector<double>(hourlyLeafT.begin()+sunriseH, hourlyLeafT.begin()+sunsetH);  //FS: consistency: hourlyLeafT.begin()+sunsetH+1 if using h <=sunsetH
     vector<double> hourlyLeafT_night = vector<double>(hourlyLeafT.begin(), hourlyLeafT.begin()+sunriseH);
-    hourlyLeafT_night.insert(hourlyLeafT_night.end(), hourlyLeafT.begin()+1+sunsetH, hourlyLeafT.end());
+    hourlyLeafT_night.insert(hourlyLeafT_night.end(), hourlyLeafT.begin()+sunsetH, hourlyLeafT.end()); //FS: consistency: hourlyLeafT.begin()+sunsetH+1 if using h <=sunsetH
     vc_PhotoTemperature_ = accumulate(hourlyLeafT_day.begin(), hourlyLeafT_day.end(), 0.) / hourlyLeafT_day.size();
     vc_NightTemperature_ = accumulate(hourlyLeafT_night.begin(), hourlyLeafT_night.end(), 0.) / hourlyLeafT_night.size();
     vc_PhotoperiodicDaylength_ = hourlyLeafT_day.size(); //FS: what is the difference between the daylenght variables? e.g. vc_PhotoperiodicDaylength, vc_AstronomicDayLenght, ...
