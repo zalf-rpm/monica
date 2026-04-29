@@ -44,8 +44,6 @@ using namespace std;
 using namespace monica;
 using namespace Tools;
 
-bool __enable_hourly_photosynthesis__ = true;  // DEBUG
-
 /**
  * @brief Constructor
  * @param sc Soil column
@@ -2627,11 +2625,11 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 #pragma region hourly photosynthesis
 
   double dailyGP;
-  if (__enable_hourly_photosynthesis__) {  // (cropPs.__enable_hourly_photosynthesis__)
+  if (cropPs.__enable_hourly_photosynthesis__) {
     using namespace hPhoto;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-    double kdf = cropPs.pc_EmpiricalExtinctionCoeffDiffuse;
+    double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
     double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
 
     vector<double> hourlyGlobrads;
@@ -2797,7 +2795,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
   }
 #pragma endregion hourly photosynthesis
-  vc_GrossCO2Assimilation = __enable_hourly_photosynthesis__  // cropPs.__enable_hourly_photosynthesis__
+  vc_GrossCO2Assimilation = cropPs.__enable_hourly_photosynthesis__
                             ? dailyGP
                             : vc_GrossCO2Assimilation;
 
@@ -2839,7 +2837,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature, vc_NightTemperature;
-  if (__enable_hourly_photosynthesis__) {  // (cropPs.__enable_hourly_photosynthesis__)
+  if (cropPs.__enable_hourly_photosynthesis__) {
     vc_PhotoTemperature = vc_PhotoTemperature_;
     vc_NightTemperature = vc_NightTemperature_;
     vc_PhotoperiodicDaylength = vc_PhotoperiodicDaylength_;
