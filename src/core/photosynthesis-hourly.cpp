@@ -262,7 +262,7 @@ hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage * vc_O3_senescence;
 */
 
 
-hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac)
+hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac, hPhoto::unit out_unit)
 {
   PAR_radiation_result result;
 
@@ -283,51 +283,58 @@ hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double ext
   hourly_diffuse_rad = global_rad * diffuse_fraction;
   hourly_direct_rad = global_rad - hourly_diffuse_rad;
 
-  // convert [MJ m-2 h-1] -> [W m-2] -> [μmol m-2 s-1] -> [μmol m-2 s-1 PAR]
-  // 1 [MJ m-2 h-1] = pow(10, 6) / 3600.0 [W m-2]; 1 [W m-2] = 4.56 [μmol m-2 s-1]; PAR = parfac * global radiation 
-  result.diffuse = hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * parfrac;
-  result.direct = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 * parfrac;
+  // PAR fraction
+  hourly_diffuse_rad *= parfrac;
+  hourly_direct_rad  *= parfrac;
+
+  switch (out_unit) {
+  case hPhoto::unit::umolpm2ps:
+      // W m-2 -> µmol m-2 s-1
+      hourly_diffuse_rad *= 4.56;
+      hourly_direct_rad  *= 4.56;
+      [[fallthrough]];
+
+  case hPhoto::unit::Wpm2ps:
+      // J m-2 h-1 -> W m-2
+      hourly_diffuse_rad /= 3600.0;
+      hourly_direct_rad  /= 3600.0;
+      [[fallthrough]];
+
+  case hPhoto::unit::Jpm2ps:
+      // MJ m-2 h-1 -> J m-2 h-1
+      hourly_diffuse_rad *= 1e6;
+      hourly_direct_rad  *= 1e6;
+      [[fallthrough]];
+
+  case hPhoto::unit::MJpm2ps:
+      // base unit — no conversion
+      break;
+  }
+
+  result.diffuse = hourly_diffuse_rad;
+  result.direct = hourly_direct_rad;
   return result;
 }
 
 
-double hPhoto::gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma, double parfrac)
-{
-  if (global_rad < eps) {
-    return 0.;
-  }
+// double hPhoto::gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma, double parfrac)
+// {
+//   if (global_rad < eps) {
+//     return 0.;
+//   }
 
-  auto PAR_rad = PAR_radiation(global_rad, extra_terr_rad, solar_el, parfrac);
-  double inst_diff_rad = PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
-  double inst_dir_rad = PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
+//   auto PAR_rad = PAR_radiation(global_rad, extra_terr_rad, solar_el, parfrac);
+//   double inst_diff_rad = PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
+//   double inst_dir_rad = PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
 
-  /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
-  inst_diff_rad *= ...;  // !!! debug
-  inst_dir_rad *= ...;    // !!! debug
-  */
+//   /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
+//   inst_diff_rad *= ...;  // !!! debug
+//   inst_dir_rad *= ...;    // !!! debug
+//   */
 
-  // canopy photosynthesis
-  double A = Spitters_canop_photo_3p(solar_el, LAI, inst_dir_rad, inst_diff_rad, Amax, epsilon, k_df, sigma);
-  return A;
+//   // canopy photosynthesis
+//   double A = Spitters_canop_photo_3p(solar_el, LAI, inst_dir_rad, inst_diff_rad, Amax, epsilon, k_df, sigma);
+//   return A;
 
-  // maybe create an optimized function that calculates for crop and reference in one go, since up to canopy photosynthesis the steps should be similar !!! TODO
-}
-
-
-// leaf_T, leaf_TRef, LAI, LAIRef, Amax, AmaxRef, exsilon, epsilonRef, k_df, k_dfRef, sigma, sigmaRef
-
-  // auto [AssimilationRate, AssimilationRateReference] = ...;
-
-  // gross_photo_hourly_result result;
-  //result.GrossCO2Assimilation = Spitters_canop_photo_3p(solar_el, LAI, inst_dir_rad, inst_diff_rad, vc_AssimilationRate, epsilon, scp, kdf);
-  // result.GrossCO2AssimilationReference = Spitters_canop_photo_3p(solar_el, pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRateReference, epsilon, scp, kdf);
-  // return make_tuple(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference);
-
-
-
-/*
-// [µmol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
-dailyGP += FvCB_res.canopy_gross_photos * 44. / 100. / 1000.;
-
-vc_GrossCO2Assimilation = cropPs.__enable_hourly_photosynthesis__  ? dailyGP : vc_GrossCO2Assimilation;
-*/
+//   // maybe create an optimized function that calculates for crop and reference in one go, since up to canopy photosynthesis the steps should be similar !!! TODO
+// }

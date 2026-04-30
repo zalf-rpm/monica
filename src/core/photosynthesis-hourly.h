@@ -224,6 +224,20 @@ double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, do
 double Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int leaf_angle_integration_style=1);
 
 
+enum class unit {// supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps
+    MJpm2ps = 0,     // MJ   m-2 h-1 PAR
+    Jpm2ps,          // J    m-2 h-1 PAR
+    Wpm2ps,          // W    m-2     PAR
+    umolpm2ps        // µmol m-2 s-1 PAR
+};
+static_assert(
+    static_cast<int>(unit::MJpm2ps)  == 0 &&
+    static_cast<int>(unit::Jpm2ps)   == 1 &&
+    static_cast<int>(unit::Wpm2ps)   == 2 &&
+    static_cast<int>(unit::umolpm2ps)== 3,
+    "out_unit order must match conversion pipeline"
+);
+
 struct PAR_radiation_result {
        double direct;       //[μmol m-2 s-1 PAR] (unit ground area)
        double diffuse;      //[μmol m-2 s-1 PAR] (unit ground area)
@@ -236,9 +250,10 @@ struct PAR_radiation_result {
  * @param extra_terr_rad extra-terrestrial radiation [MJ m-2 h-1]
  * @param solar_el       solar elevation angle [rad]
  * @param parfrac        photosynthetically active fraction of the light spectrum. ... according to Spitters ???; 0.48 according to BF5 Sunshine sensor manual? Default is 0.45.
- * @return hPhoto::PAR_radiation_result direct [μmol m-2 s-1 PAR], diffuse [μmol m-2 s-1 PAR]
+ * @param out_unit       output unit (supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps). Default is hPhoto::unit::MJpm2ps.
+ * @return hPhoto::PAR_radiation_result direct [out_unit PAR], diffuse [out_unit PAR]
  */
-PAR_radiation_result PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac=0.45);
+PAR_radiation_result PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac=0.45, unit out_unit=unit::MJpm2ps);
 
 
 struct gross_photo_hourly_result {
@@ -246,30 +261,30 @@ struct gross_photo_hourly_result {
        double GrossCO2AssimilationReference;
 };
 
-/**
- * @brief 
- * 
- * @param leaf_T         leaf temperature [K]
- * @param global_rad     global radiation [W m-1]
- * @param extra_terr_rad extra-terrestrial radiation [W m-1]
- * @param solar_el       solar elevation angle [rad]
- * @param LAI            leaf area index [m2 leaf m-2 ground]
- * @param Amax           assimilation rate at light saturation [g CO2 m-2 leaf h-1] (=asymptote of light response curve).
- * @param epsilon        light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve).
- *                          arcwheat1: "dA/dI at I = 0".
- *                          monica: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
- * @param k_df           empirical extinction coefficient fo diffuse radiation. Default is 0.6.
- *                          0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
- *                          See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
- *                          "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
- *                           The extinction coefficient can be estimated from measurements of PAR above and below a canopy with a known LAI (Equation 62 [I_L = (1 - rho) * I_0 *exp(-k * L)]),
- *                           making sure that PAR is measured rather than total global radiation. The extinction coefficient for total radiation is about 2/3 that of PAR.
- *                           The extinction coefficient is best measured under a uniform overcast sky; then all radiation is diffuse so that the extinction coefficient is not affected by solar elevation."
- * @param sigma          scattering coefficient of single leaves and for visible radiation [-]. Default is 0.2.
- *                          See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
- * @param parfrac        Photosynthetically active wavelength fraction (in relation to global radiation). Default is 0.45
- * @return GrossCO2Assimilation, GrossCO2AssimilationReference
- */
-double gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma=0.2, double parfrac=0.45);
+// /**
+//  * @brief 
+//  * 
+//  * @param leaf_T         leaf temperature [K]
+//  * @param global_rad     global radiation [W m-1]
+//  * @param extra_terr_rad extra-terrestrial radiation [W m-1]
+//  * @param solar_el       solar elevation angle [rad]
+//  * @param LAI            leaf area index [m2 leaf m-2 ground]
+//  * @param Amax           assimilation rate at light saturation [g CO2 m-2 leaf h-1] (=asymptote of light response curve).
+//  * @param epsilon        light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve).
+//  *                          arcwheat1: "dA/dI at I = 0".
+//  *                          monica: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
+//  * @param k_df           empirical extinction coefficient fo diffuse radiation. Default is 0.6.
+//  *                          0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
+//  *                          See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
+//  *                          "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
+//  *                           The extinction coefficient can be estimated from measurements of PAR above and below a canopy with a known LAI (Equation 62 [I_L = (1 - rho) * I_0 *exp(-k * L)]),
+//  *                           making sure that PAR is measured rather than total global radiation. The extinction coefficient for total radiation is about 2/3 that of PAR.
+//  *                           The extinction coefficient is best measured under a uniform overcast sky; then all radiation is diffuse so that the extinction coefficient is not affected by solar elevation."
+//  * @param sigma          scattering coefficient of single leaves and for visible radiation [-]. Default is 0.2.
+//  *                          See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
+//  * @param parfrac        Photosynthetically active wavelength fraction (in relation to global radiation). Default is 0.45
+//  * @return GrossCO2Assimilation, GrossCO2AssimilationReference
+//  */
+// double gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma=0.2, double parfrac=0.45);
 
 }
