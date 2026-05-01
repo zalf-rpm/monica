@@ -2189,13 +2189,16 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     }
 
     if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 d-1] //FS: DEBUG !!! look this up again!
-      //;                           // [kg CO2 ha-1 d-1]
-      //;                           // [kg CO2 ha-1 d-1]
-      dailyPhoto *= 1e1;         //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
-      dailyPhotoRef *= 1e1;      //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+      //;                           //[kg CO2 ha-1 d-1]
+      //;                           //[kg CO2 ha-1 d-1]
+      dailyPhoto *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+      dailyPhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+    } else if (out_unit == hPhoto::unit::Jpm2ps) {
+      hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+      hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
     } else if (out_unit == hPhoto::unit::umolpm2ps) {
-      dailyPhoto *= 44 * 1e5;    // [µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
-      dailyPhotoRef *= 44 * 1e5; // [µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
+      dailyPhoto *= 44 * 1e5;     //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
+      dailyPhotoRef *= 44 * 1e5;  //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
     }
 
   }
@@ -2885,21 +2888,24 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       ////////////////
       // convert units
       if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 h-1] //FS: DEBUG !!! look this up again!
-        //;                           // [kg CO2 ha-1 h-1]
-        //;                           // [kg CO2 ha-1 h-1]
-        hourlyPhoto *= 1e1;         //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-        hourlyPhotoRef *= 1e1;      //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        //;                           //[kg CO2 ha-1 h-1]
+        //;                           //[kg CO2 ha-1 h-1]
+        hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+      } else if (out_unit == hPhoto::unit::Jpm2ps) {
+        hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
       } else if (out_unit == hPhoto::unit::umolpm2ps) {
-        hourlyPhoto *= 44 * 1e5;    // [µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
-        hourlyPhotoRef *= 44 * 1e5; // [µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
+        hourlyPhoto *= 44 * 1e5;    //[µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
+        hourlyPhotoRef *= 44 * 1e5; //[µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
       }
 
       //FS: Maybe some further unit conversions are needed?
       // implement the rest first:
       // cultivar-dependent kdf from file: kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse
       // daily SUCROS87-style approach for comparison
-      hourlyPhoto *= 8.2;     //FS: DEBUG !!! correction factor 8.2x
-      hourlyPhotoRef *= 8.2;  //FS: DEBUG !!! correction factor 8.2x
+      //hourlyPhoto *= 8.2;     //FS: DEBUG !!! correction factor 8.2x
+      //hourlyPhotoRef *= 8.2;  //FS: DEBUG !!! correction factor 8.2x
       ////////////////
 
       dailyGP += hourlyPhoto;
