@@ -153,21 +153,18 @@ double hPhoto::Spitters_canop_photo_dL(double beta, double L, double I0_dr, doub
     // FS: This is crucial, since photosynthesis is not linear. It is not sufficient to average irradiances over leaf angles beforehand - instead, photosynthesis should be averaged by integrating over leaf angles.
     // eq. 16, eq. 17
     double Ia_sldr = (1 - sigma) * I0_dr / sinbeta; // direct flux is absorbed by a leaf perpendicular to the direct beam
-    if (leaf_angle_integration_style == 1) {        // Spitters 1986, custom implementation;
+    if (leaf_angle_integration_style == 1) {        // Spitters 1986, custom implementation including Wageningen school implementations-inspired numerical safeguards;
+      const double A_m_nsmin = 0.2; // 0.2 [g CO2 m-2 leaf h-1]; Wageningen school-style numerical safeguard;
+                                    // see e.g. WOFOST (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for)
+                                    // or python crop smulation environment (pcse = WOFOST pure python implementation, https://github.com/ajwdewit/pcse/blob/4d9f0e4f542e9062db338aaf1a227a75f1b03949/pcse/crop/assimilation.py),
+                                    // which both use 2.0 [kg CO2 ha-1 leaf h-1]
       if (Ia_sldr <= 0.) {
         A_sl = A_sh;  // this is the limit of eq. 17 when Ia_sldr -> 0
       } else {
         // eq. 17
-        A_sl = A_m * (1 - (A_m - A_sh) * (1 - exp(-epsilon * Ia_sldr / A_m)) / (epsilon * Ia_sldr));            // corrected version of A_sl, integrating over leaf angles (assuming spherical distribution)
+        A_sl = A_m * (1 - (A_m - A_sh) * (1 - exp(-epsilon * Ia_sldr / max(A_m_nsmin, A_m))) / (epsilon * Ia_sldr));  // corrected version of A_sl, integrating over leaf angles (assuming spherical distribution)
       }
-    } else if (leaf_angle_integration_style == 2) {                                                             // WOFOST (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for) as well as python crop smulation environment (pcse = WOFOST pure python implementation, see https://github.com/ajwdewit/pcse/blob/4d9f0e4f542e9062db338aaf1a227a75f1b03949/pcse/crop/assimilation.py) seem to do this instead:
-      if (Ia_sldr <= 0.) {
-        A_sl = A_sh;
-      } else {
-        // eq. 17
-        A_sl = A_m * (1 - (A_m - A_sh) * (1 - exp(-epsilon * Ia_sldr / max(2.0, A_m))) / (epsilon * Ia_sldr));  // corrected version of A_sl, integrating over leaf angles (assuming spherical distribution)
-      }
-    } else if (leaf_angle_integration_style == 3) { // SUCROS87 Subroutine ASS (Spitters et al. 1989) integration over leaf angle distribution
+    } else if (leaf_angle_integration_style == 2) { // SUCROS87 Subroutine ASS (Spitters et al. 1989) integration over leaf angle distribution
       vector<double> gaussian_distances = {0.112702, 0.5, 0.887298};
       vector<double> gaussian_weights = {0.277778, 0.444444, 0.277778};
       //selection of canopy depths (LAIC from top)
@@ -240,27 +237,6 @@ double hPhoto::Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, do
   return A_canop * LAI;
 }
 
-/*
-double hourlyTemp = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
-hPhoto_in.leaf_T = hourlyTemp;
-
-    // hourly photosynthesis
-FvCB_canopy_hourly_in FvCB_in;
-
-double hourlyTemp = hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH);
-FvCB_in.leaf_temp = hourlyTemp;
-FvCB_in.global_rad = hourlyGlobrads.at(h);
-FvCB_in.extra_terr_rad = hourlyExtrarad.at(h);
-FvCB_in.LAI = LAI;
-FvCB_in.solar_el = solarElevation(h, vs_Latitude, vs_JulianDay);
-FvCB_in.VPD = hourlyVaporPressureDeficit(hourlyTemp, vw_MinAirTemperature, vw_MeanAirTemperature,
-                                            vw_MaxAirTemperature);
-FvCB_in.Ca = vw_AtmosphericCO2Concentration;
-
-FvCB_canopy_hourly_params hps;
-hps.Vcmax_25 = speciesPs.VCMAX25 * vc_O3_shortTermDamage * vc_O3_senescence;
-*/
-
 
 hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac, hPhoto::unit out_unit)
 {
@@ -316,25 +292,3 @@ hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double ext
   return result;
 }
 
-
-// double hPhoto::gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma, double parfrac)
-// {
-//   if (global_rad < eps) {
-//     return 0.;
-//   }
-
-//   auto PAR_rad = PAR_radiation(global_rad, extra_terr_rad, solar_el, parfrac);
-//   double inst_diff_rad = PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
-//   double inst_dir_rad = PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
-
-//   /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
-//   inst_diff_rad *= ...;  // !!! debug
-//   inst_dir_rad *= ...;    // !!! debug
-//   */
-
-//   // canopy photosynthesis
-//   double A = Spitters_canop_photo_3p(solar_el, LAI, inst_dir_rad, inst_diff_rad, Amax, epsilon, k_df, sigma);
-//   return A;
-
-//   // maybe create an optimized function that calculates for crop and reference in one go, since up to canopy photosynthesis the steps should be similar !!! TODO
-// }

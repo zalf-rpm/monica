@@ -2153,57 +2153,106 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   vc_AssimilationRate = max(0.1, vc_AssimilationRate);
   vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
 
-/* for easier comparison to current MONICA SUCROS82-style crop photosynthesis: daily vs. daily
+//* // for easier comparison to current MONICA SUCROS82-style crop photosynthesis: daily vs. daily
 #pragma region canopy photosynthesis
   ///////////////////////////////////////////////////////////////////////////
   // crop photosynthesis SUCROS87-style, but daily
   ///////////////////////////////////////////////////////////////////////////
-  if (true) { //FS: DEBUG !!! switch SUCROS87-style daily crop photosynthesis calculation on/off
+  double gdailyGP = 0.;
+  double gdailyGPRef = 0.;
+  if (cropPs.__enable_canopy_photosynthesis__) { //FS: DEBUG !!! switch SUCROS87-style daily crop photosynthesis calculation on/off
     const double parfrac = 0.45;
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
-    for () { // ... 3 point integration daily
-      auto PAR_rad = PAR_radiation_daily(vc_GlobalRadiation, vc_ExtraterrestrialRadiation, hp_in.solarEl, parfrac, out_unit);
-      inst_diff_rad = PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
-      inst_dir_rad = PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
+
+    //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
+    double kdf = 0.6; // = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
+    double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
+
+    double gdaily_Amax, gdaily_AmaxRef, gdaily_epsilon, gdaily_epsilonRef;
+    gdaily_Amax = vc_AssimilationRate;
+    gdaily_AmaxRef = vc_AssimilationRateReference;
+    gdaily_epsilon = vc_RadiationUseEfficiency;
+    gdaily_epsilonRef = vc_RadiationUseEfficiencyReference;
+    //convert units
+    // [kg CO2 ha-1 leaf h-1?] -> [g CO2 m-2 leaf h-1]
+    gdaily_Amax *= 0.1;        // 1000 / (100 * 100)
+    gdaily_AmaxRef *= 0.1;
+    // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
+    gdaily_epsilon *= 0.1;     // 1000 / (100 * 100)
+    gdaily_epsilonRef *= 0.1;
+
+    double ghour, ghourly_solarEl, ghourly_inst_diff_rad, ghourly_inst_dir_rad, ghourly_Photo, ghourly_PhotoRef;
+    gdailyGP = 0.;
+    gdailyGPRef = 0.;
+
+    int vs_JulianDay = currentDate.julianDay();
+    double _dayl = vc_PhotoperiodicDaylength; //FS: DEBUG only !!!
+    double dayl = vc_AstronomicDayLenght;     //FS: what is the difference to vc_PhotoperiodicDaylength?
+
+    vector<double> gaussian_hours = {0.112702, 0.5, 0.887298};
+    vector<double> gaussian_weights = {0.277778, 0.444444, 0.277778};
+    for (int h = 0; h < gaussian_hours.size(); ++h) { // 3 point gaussian integration daily
+      ghour = 12.0 + 0.5 * dayl * gaussian_hours[h];
+
+      // ghourly_solarEl = solarElevation(h, vs_Latitude, vs_JulianDay); //FS: this function does only support h as int at the moment!
+      /////////////////////////////////
+      // borrowed form Tools::cloudAmount2globalRadiation. but with declination from Tools::solarElevation
+      double phi, delta, theta0, th, ctheta, theta;
+      phi = vs_Latitude * M_PI / 180.0;  // latitude [rad]
+      delta = (-0.4093 * cos(2.0 * M_PI * (double(vs_JulianDay) + 10.0) / 365.0));  //FS: declination
+      /*
+      theta0 = 2.0 * pi * doy / 365.0;
+      delta = 0.006918 - 0.3999912 * cos(theta0) +
+              0.070257 * sin(theta0) - 0.006758 * cos(2 * theta0) +
+              0.000907 * sin(2 * theta0) - 0.002697 * cos(3 * theta0) +
+              0.00148 * sin(theta0 * 3);
+      */
+      th = M_PI * (ghour - 12.0) / 12.0;  // hour angle
+      ctheta = sin(delta) * sin(phi) + cos(delta) * cos(phi) * cos(th);
+      theta = acos(bound(-1., ctheta, 1.));  //FS: added bound to ensure numerical safety
+      ghourly_solarEl = M_PI / 2.0 - theta;
+      /////////////////////////////////
+
+      auto ghourly_PAR_rad = PAR_radiation(vc_GlobalRadiation, vc_ExtraterrestrialRadiation, ghourly_solarEl, parfrac, out_unit);
+      ghourly_inst_diff_rad = ghourly_PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
+      ghourly_inst_dir_rad = ghourly_PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
 
       //convert units
-      // [kg CO2 ha-1 h-1?] -> [g CO2 m-2 leaf h-1]
-      Amax *= 0.1;        // 1000 / (100 * 100)
-      AmaxRef *= 0.1;
-      // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
-      epsilon *= 0.1;     // 1000 / (100 * 100)
-      epsilonRef *= 0.1;
       // [J m-2 h-1] -> [J m-2 s-1]
-      inst_diff_rad /= 3600;
-      inst_dir_rad /= 3600;
+      ghourly_inst_diff_rad /= 3600;
+      ghourly_inst_dir_rad /= 3600;
 
-      assert(inst_diff_rad >= 0);
-      assert(inst_dir_rad >= 0);
+      assert(ghourly_inst_diff_rad >= 0);
+      assert(ghourly_inst_dir_rad >= 0);
       int style = 1;  // style of the integration over all leaf angles. Default is 1.
                 // 0 = None (leads to overestimation according to Spitters 1986!)
-                // 1 = Spitters 1986, custom implementation;
-                // 2 = Spitters 1986, WOFOST implementation (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for)
-                // 3 = Spitters 1989, SUCROS87 implementation
-      dailyPhoto = Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2, style);
-      dailyPhotoRef = Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2, style);
-    }
+                // 1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
+                // 2 = Spitters 1989, SUCROS87 implementation
+      ghourly_Photo = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, vc_LeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, gdaily_Amax, gdaily_epsilon, kdf, 0.2, style);
+      ghourly_PhotoRef = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, cropPs.pc_ReferenceLeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, gdaily_AmaxRef, gdaily_epsilonRef, kdfRef, 0.2, style);
 
-    if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 d-1] //FS: DEBUG !!! look this up again!
-      //;                           //[kg CO2 ha-1 d-1]
-      //;                           //[kg CO2 ha-1 d-1]
-      dailyPhoto *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
-      dailyPhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
-    } else if (out_unit == hPhoto::unit::Jpm2ps) {
-      hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-      hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-    } else if (out_unit == hPhoto::unit::umolpm2ps) {
-      dailyPhoto *= 44 * 1e5;     //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
-      dailyPhotoRef *= 44 * 1e5;  //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
-    }
+      if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 d-1] //FS: DEBUG !!! look this up again!
+        //;                           //[kg CO2 ha-1 d-1]
+        //;                           //[kg CO2 ha-1 d-1]
+        ghourly_Photo *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+        ghourly_PhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+      } else if (out_unit == hPhoto::unit::Jpm2ps) {
+        ghourly_Photo *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        ghourly_PhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+      } else if (out_unit == hPhoto::unit::umolpm2ps) {
+        ghourly_Photo *= 44 * 1e5;     //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
+        ghourly_PhotoRef *= 44 * 1e5;  //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
+      }
 
+      gdailyGP += ghourly_Photo * gaussian_weights[h]; // 3-point gaussian integration
+      gdailyGPRef += ghourly_PhotoRef * gaussian_weights[h]; // 3-point gaussian integration
+    }
+    gdailyGP *= dayl;
+    gdailyGPRef *= dayl;
   }
 #pragma endregion canopy photosynthesis
-*/
+
+//*/
 
   ///////////////////////////////////////////////////////////////////////////
   // Calculation of light interception in the crop
@@ -2679,7 +2728,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   if (cropPs.__enable_hourly_photosynthesis__) {
     const double parfrac = 0.45;
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
-    using namespace hPhoto;
+    //using namespace hPhoto;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
     double kdf = 0.6; // = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
@@ -2695,12 +2744,29 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     // vector<double> hourlyDirrad;
 
     int vs_JulianDay = currentDate.julianDay();
-    int sunriseH = 0, sunsetH = 23; //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
+    int sunriseH = 0, sunsetH = 0;  //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
     for (int h = 0; h < 24; ++h) {
+    /*FS: maybe add sub-hourly option in the future
+    //    taken from algorithms::cloudAmount2globalRadiation
+    for (int hs = 1; hs <= 48; hs++) {
+    double t = 24.0 * (double(hs) - 1.0) / 48.0;    // (24.0/48.0) is 0.5h, so iterate hs from 1 to int(24.0/0.5)? also check with my agrivoltaics simulation time step
+    //double zeit = t;
+    //FS: start of solar elevation calculation
+    //    delta is dDecl, phi is lat_rad, th is dHa
+    double th = pi * (t - 12.0) / 12.0;
+    double ctheta = sin(delta) * sin(phi) + cos(delta) * cos(phi) * cos(th);
+    double theta = acos(ctheta);
+    //double hsonne = pi / 2.0 - theta;
+    double hdeg = 90.0 - (theta * 180.0 / pi);
+    ...
+    */
       double sun_el = solarElevation(h, vs_Latitude, vs_JulianDay);
-      sun_el = (sun_el > 0) ? sun_el : 0.;
+      sun_el = (sun_el > hPhoto::eps) ? sun_el : 0.;
       sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
-      sunsetH = ((sun_el > 0) && (sunsetH < sunsetH)) ? h : sunsetH;
+      sunsetH = ((!hourlySolarEl.empty()) &&
+                 (sun_el <= hPhoto::eps) &&
+                 (hourlySolarEl.back() > hPhoto::eps)
+                ) ? h : sunsetH;
       
       double hgr = hourlyRad(vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h); // adjust hourlyRad function in the future; harmonize with solarElevation function
       if (hgr > 0) assert(sun_el > 0);
@@ -2722,6 +2788,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
       }
     }
+
+    double _mean_of_hourlyAirT = accumulate(hourlyAirT.begin(), hourlyAirT.end(), 0.) / hourlyAirT.size();  //FS: DEBUG only !!!
 
     vector<double> hourlyGrossCO2Assimilation, hourlyGrossCO2AssimilationReference;
     dailyGP = 0.;
@@ -2863,7 +2931,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         */
         
         //convert units
-        // [kg CO2 ha-1 h-1?] -> [g CO2 m-2 leaf h-1]
+        // [kg CO2 ha-1 leaf h-1] -> [g CO2 m-2 leaf h-1]
         Amax *= 0.1;        // 1000 / (100 * 100)
         AmaxRef *= 0.1;
         // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
@@ -2875,11 +2943,10 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
         int style = 1;  // style of the integration over all leaf angles. Default is 1.
                         // 0 = None (leads to overestimation according to Spitters 1986!)
-                        // 1 = Spitters 1986, custom implementation;
-                        // 2 = Spitters 1986, WOFOST implementation (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for)
-                        // 3 = Spitters 1989, SUCROS87 implementation
-        hourlyPhoto = Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2, style);
-        hourlyPhotoRef = Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2, style);
+                        // 1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
+                        // 2 = Spitters 1989, SUCROS87 implementation
+        hourlyPhoto = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2, style);
+        hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2, style);
       }
 
       hourlyGrossCO2Assimilation.push_back(hourlyPhoto); // hourlyPhoto.GrossCO2Assimilation
@@ -2925,8 +2992,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     vector<double> hourlyAirT_day = vector<double>(hourlyAirT.begin()+sunriseH, hourlyAirT.begin()+sunsetH);  //FS: consistency: hourlyAirT.begin()+sunsetH+1 if using h <=sunsetH
     vector<double> hourlyAirT_night = vector<double>(hourlyAirT.begin(), hourlyAirT.begin()+sunriseH);
     hourlyAirT_night.insert(hourlyAirT_night.end(), hourlyAirT.begin()+sunsetH, hourlyAirT.end()); //FS: consistency: hourlyAirT.begin()+sunsetH+1 if using h <=sunsetH
-    vc_PhotoTemperature_ = accumulate(hourlyAirT_day.begin(), hourlyAirT_day.end(), 0.) / hourlyAirT_day.size();
     vc_NightTemperature_ = accumulate(hourlyAirT_night.begin(), hourlyAirT_night.end(), 0.) / hourlyAirT_night.size();
+    if (!hourlyAirT_day.empty()) {
+      vc_PhotoTemperature_ = accumulate(hourlyAirT_day.begin(), hourlyAirT_day.end(), 0.) / hourlyAirT_day.size();
+    } else {
+      vc_PhotoTemperature_ = vc_NightTemperature_;
+    }
     vc_PhotoperiodicDaylength_ = hourlyAirT_day.size(); //FS: what is the difference between the daylenght variables? e.g. vc_PhotoperiodicDaylength, vc_AstronomicDayLenght, ...
 
   }
@@ -2938,10 +3009,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                                      ? dailyGPRef
                                      : vc_GrossCO2AssimilationReference;
 
-
-
-
-
+  //FS: for comparison only: daily canopy photosynthesis
+  vc_GrossCO2Assimilation = cropPs.__enable_canopy_photosynthesis__
+                            ? gdailyGP
+                            : vc_GrossCO2Assimilation;
+  vc_GrossCO2AssimilationReference = cropPs.__enable_canopy_photosynthesis__
+                                     ? gdailyGPRef
+                                     : vc_GrossCO2AssimilationReference;
 
 
 
@@ -2974,10 +3048,15 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   // #                AGROSIM                 #
   // ########################################################################
 
+  //FS: !!! TODO: Adjust vc_PhotoTemperature in
+  // void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
+  //                                      double vw_MinAirTemperature)
+  // and vc_NightTemperature in
+  // void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTemperature) {
+
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature, vc_NightTemperature;
-  // if (cropPs.__enable_hourly_photosynthesis__) { //FS: TODO activate again later !!!
-  if (true) { //FS: DEBUG !!! deactivate in order to make comparisons easier by not changing multiple things at once
+  if (cropPs.__enable_hourly_photosynthesis__ && true) { //FS: DEBUG !!! deactivate in order to make comparisons easier by not changing multiple things at once
     vc_PhotoTemperature = vc_PhotoTemperature_;
     vc_NightTemperature = vc_NightTemperature_;
     vc_PhotoperiodicDaylength = vc_PhotoperiodicDaylength_;
@@ -3038,7 +3117,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double vc_DarkGrowthRespiration = 0.0;
   if (vc_Assimilates > 0.0) {
     vc_DarkGrowthRespiration = vc_GrowthRespirationSum * pow(2.0, (pc_GrowthRespirationParameter_1 *
-                                                                   (vc_PhotoTemperature -
+                                                                   (vc_PhotoTemperature -                 //FS: Why is vc_PhotoTemperature (= daytime temperature) used here? Is this intended?
                                                                     pc_GrowthRespirationParameter_2))) *
                                vc_NormalisedDayLength; // [kg CH2O ha-1]
 

@@ -8,12 +8,12 @@
 using namespace std;
 
 #ifndef M_PI
-constexpr double M_PI = 3.14159265358979323846;
+constexpr double M_PI = 3.14159265358979323846;  // M_PI = 4 * atan(1.)
 #endif
 
-const double eps = 1e-6; // machine epsilon
-
 namespace hPhoto {
+
+const double eps = 1e-6; // machine epsilon
 
 /**
  * @brief estimate fraction of diffuse radiation (hourly)
@@ -137,9 +137,8 @@ Spitters_Idir_Idiff_result Spitters_Idir_Idiff(double globrad, double extraterrr
  *                  See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
  *                  0 = None (leads to overestimation according to Spitters 1986!);
- *                  1 = Spitters 1986, custom implementation;
- *                  2 = Spitters 1986, WOFOST implementation (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for);
- *                  3 = Spitters 1989, SUCROS87 implementation
+ *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
+ *                  2 = Spitters 1989, SUCROS87 implementation
  * @return hourly photosynthesis of the canopy layer dL [g CO2 m-2 ground h-1].
  */
 double Spitters_canop_photo_dL(double beta, double L, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int leaf_angle_integration_style=1);
@@ -177,9 +176,8 @@ double Spitters_canop_photo_dL(double beta, double L, double I0_dr, double I0_df
         Usually in the order of 10 to 20 (accuracy/computation time trade-off).
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
  *                  0 = None (leads to overestimation according to Spitters 1986!);
- *                  1 = Spitters 1986, custom implementation;
- *                  2 = Spitters 1986, WOFOST implementation (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for);
- *                  3 = Spitters 1989, SUCROS87 implementation
+ *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
+ *                  2 = Spitters 1989, SUCROS87 implementation
  * @return hourly photosynthesis of the canopy [g CO2 m-2 ground h-1].
  */
 double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int n_canopy_layers=10, int leaf_angle_integration_style=1);
@@ -216,10 +214,9 @@ double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, do
  *                  See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
  *                  0 = None (leads to overestimation according to Spitters 1986!);
- *                  1 = Spitters 1986, custom implementation;
- *                  2 = Spitters 1986, WOFOST implementation (https://github.com/ajwdewit/WOFOST/blob/deac197d3c74741832b815581699a6c825894758/sources/w60lib/assim.for);
- *                  3 = Spitters 1989, SUCROS87 implementation
- * @return hourly photosynthesis of the canopy (FGROS, kg C02/ha/h)  [g CO2 m-2 ground h-1]???.
+ *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
+ *                  2 = Spitters 1989, SUCROS87 implementation
+ * @return hourly photosynthesis of the canopy [g CO2 m-2 ground h-1].
  */
 double Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int leaf_angle_integration_style=1);
 
