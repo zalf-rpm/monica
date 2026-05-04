@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 #include <assert.h>
@@ -135,13 +136,14 @@ Spitters_Idir_Idiff_result Spitters_Idir_Idiff(double globrad, double extraterrr
  *                  In WOFOST, this seems to be development-stage dependent, (https://github.com/ajwdewit/WOFOST_crop_parameters/blob/ec57fc0ddd3f0924b707ec4482e46fa987e8ee0a/wheat.yaml#L202).
  * @param sigma   scattering coefficient of single leaves and for visible radiation [-]. Default is 0.2.
  *                  See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
+ * @param kgpha   input (A_m, epsilon) and output unit in [kg ha-1] instead of [g m-2]. Default is false.
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
  *                  0 = None (leads to overestimation according to Spitters 1986!);
  *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
  *                  2 = Spitters 1989, SUCROS87 implementation
  * @return hourly photosynthesis of the canopy layer dL [g CO2 m-2 ground h-1].
  */
-double Spitters_canop_photo_dL(double beta, double L, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int leaf_angle_integration_style=1);
+double Spitters_canop_photo_dL(double beta, double L, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, bool kgpha=false, int leaf_angle_integration_style=1);
 
 
 /**
@@ -172,15 +174,16 @@ double Spitters_canop_photo_dL(double beta, double L, double I0_dr, double I0_df
  *                   The extinction coefficient is best measured under a uniform overcast sky; then all radiation is diffuse so that the extinction coefficient is not affected by solar elevation."
  * @param sigma   scattering coefficient of single leaves and for visible radiation [-]. Default is 0.2.
  *                  See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
- * @param n_canopy_layers number of canopy layers. Used for midpoint-integrtion over the photosynthesis per layer (non-linear, exponential). Default is 10.
-        Usually in the order of 10 to 20 (accuracy/computation time trade-off).
+ * @param kgpha   input (A_m, epsilon) and output unit in [kg ha-1] instead of [g m-2]. Default is false.
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
  *                  0 = None (leads to overestimation according to Spitters 1986!);
  *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
  *                  2 = Spitters 1989, SUCROS87 implementation
+ * @param n_canopy_layers number of canopy layers. Used for midpoint-integrtion over the photosynthesis per layer (non-linear, exponential). Default is 10.
+        Usually in the order of 10 to 20 (accuracy/computation time trade-off).
  * @return hourly photosynthesis of the canopy [g CO2 m-2 ground h-1].
  */
-double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int n_canopy_layers=10, int leaf_angle_integration_style=1);
+double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, bool kgpha=false, int leaf_angle_integration_style=1, int n_canopy_layers=10);
 
 
 
@@ -212,13 +215,14 @@ double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, do
  *                   The extinction coefficient is best measured under a uniform overcast sky; then all radiation is diffuse so that the extinction coefficient is not affected by solar elevation."
  * @param sigma   scattering coefficient of single leaves and for visible radiation [-]. Default is 0.2.
  *                  See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
+ * @param kgpha   input (A_m, epsilon) and output unit in [kg ha-1] instead of [g m-2]. Default is false.
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
  *                  0 = None (leads to overestimation according to Spitters 1986!);
  *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
  *                  2 = Spitters 1989, SUCROS87 implementation
  * @return hourly photosynthesis of the canopy [g CO2 m-2 ground h-1].
  */
-double Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, int leaf_angle_integration_style=1);
+double Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, bool kgpha=false, int leaf_angle_integration_style=1);
 
 
 enum class unit {// supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps
@@ -284,4 +288,23 @@ struct gross_photo_hourly_result {
 //  */
 // double gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma=0.2, double parfrac=0.45);
 
+
+/**
+ * @brief ported from SUCROS87/WOFOST
+ * 
+ * @param AMAX 
+ * @param EFF 
+ * @param LAI 
+ * @param KDIF 
+ * @param SINB 
+ * @param PARDIR 
+ * @param PARDIF 
+ * @return double FGROS
+ */
+double ASSIM(double AMAX, double EFF, double LAI, double KDIF, double SINB, double PARDIR, double PARDIF);
+
 }
+
+
+
+

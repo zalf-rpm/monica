@@ -2163,6 +2163,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   if (cropPs.__enable_canopy_photosynthesis__) { //FS: DEBUG !!! switch SUCROS87-style daily crop photosynthesis calculation on/off
     const double parfrac = 0.45;
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
+    const bool kgpha = true;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
     double kdf = 0.6; // = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
@@ -2174,12 +2175,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     gdaily_epsilon = vc_RadiationUseEfficiency;
     gdaily_epsilonRef = vc_RadiationUseEfficiencyReference;
     //convert units
-    // [kg CO2 ha-1 leaf h-1?] -> [g CO2 m-2 leaf h-1]
-    gdaily_Amax *= 0.1;        // 1000 / (100 * 100)
-    gdaily_AmaxRef *= 0.1;
-    // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
-    gdaily_epsilon *= 0.1;     // 1000 / (100 * 100)
-    gdaily_epsilonRef *= 0.1;
+    if (kgpha == false) {
+      // [kg CO2 ha-1 leaf h-1?] -> [g CO2 m-2 leaf h-1]
+      gdaily_Amax *= 0.1;        // 1000 / (100 * 100)
+      gdaily_AmaxRef *= 0.1;
+      // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
+      gdaily_epsilon *= 0.1;     // 1000 / (100 * 100)
+      gdaily_epsilonRef *= 0.1;
+    }
 
     double ghour, ghourly_solarEl, ghourly_inst_diff_rad, ghourly_inst_dir_rad, ghourly_Photo, ghourly_PhotoRef;
     gdailyGP = 0.;
@@ -2189,9 +2192,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     double _dayl = vc_PhotoperiodicDaylength; //FS: DEBUG only !!!
     double dayl = vc_AstronomicDayLenght;     //FS: what is the difference to vc_PhotoperiodicDaylength?
 
-    vector<double> gaussian_hours = {0.112702, 0.5, 0.887298};
-    vector<double> gaussian_weights = {0.277778, 0.444444, 0.277778};
-    for (int h = 0; h < gaussian_hours.size(); ++h) { // 3 point gaussian integration daily
+    static const double gaussian_hours[3] = {0.112702, 0.5, 0.887298};
+    static const double gaussian_weights[3] = {0.277778, 0.444444, 0.277778};
+    for (int h = 0; h < 3; ++h) { // 3 point gaussian integration daily
       ghour = 12.0 + 0.5 * dayl * gaussian_hours[h];
 
       // ghourly_solarEl = solarElevation(h, vs_Latitude, vs_JulianDay); //FS: this function does only support h as int at the moment!
@@ -2211,6 +2214,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       ctheta = sin(delta) * sin(phi) + cos(delta) * cos(phi) * cos(th);
       theta = acos(bound(-1., ctheta, 1.));  //FS: added bound to ensure numerical safety
       ghourly_solarEl = M_PI / 2.0 - theta;
+
       /////////////////////////////////
 
       auto ghourly_PAR_rad = PAR_radiation(vc_GlobalRadiation, vc_ExtraterrestrialRadiation, ghourly_solarEl, parfrac, out_unit);
@@ -2228,17 +2232,28 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                 // 0 = None (leads to overestimation according to Spitters 1986!)
                 // 1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
                 // 2 = Spitters 1989, SUCROS87 implementation
-      ghourly_Photo = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, vc_LeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, gdaily_Amax, gdaily_epsilon, kdf, 0.2, style);
-      ghourly_PhotoRef = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, cropPs.pc_ReferenceLeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, gdaily_AmaxRef, gdaily_epsilonRef, kdfRef, 0.2, style);
+      ghourly_Photo = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, vc_LeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, gdaily_Amax, gdaily_epsilon, kdf, 0.2, kgpha, style);
+      ghourly_PhotoRef = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, cropPs.pc_ReferenceLeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, gdaily_AmaxRef, gdaily_epsilonRef, kdfRef, 0.2, kgpha, style);
+
+      // /* for comparison only
+      double ghourly_Photo_ = hPhoto::ASSIM(gdaily_Amax, gdaily_epsilon, vc_LeafAreaIndex, kdf, max(0.0, ctheta), ghourly_inst_dir_rad, ghourly_inst_diff_rad);
+      double ghourly_PhotoRef_ = hPhoto::ASSIM(gdaily_AmaxRef, gdaily_epsilonRef, cropPs.pc_ReferenceLeafAreaIndex, kdfRef, max(0.0, ctheta), ghourly_inst_dir_rad, ghourly_inst_diff_rad);
+      // */
 
       if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 d-1] //FS: DEBUG !!! look this up again!
-        //;                           //[kg CO2 ha-1 d-1]
-        //;                           //[kg CO2 ha-1 d-1]
-        ghourly_Photo *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
-        ghourly_PhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+        if (kgpha == false) {
+          ghourly_Photo *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+          ghourly_PhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
+        }
+        // else {
+        //   ;                           //[kg CO2 ha-1 d-1]
+        //   ;                           //[kg CO2 ha-1 d-1]
+        // }
       } else if (out_unit == hPhoto::unit::Jpm2ps) {
-        ghourly_Photo *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-        ghourly_PhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        if (kgpha == false) {
+          ghourly_Photo *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+          ghourly_PhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        }
       } else if (out_unit == hPhoto::unit::umolpm2ps) {
         ghourly_Photo *= 44 * 1e5;     //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
         ghourly_PhotoRef *= 44 * 1e5;  //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
@@ -2728,6 +2743,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   if (cropPs.__enable_hourly_photosynthesis__) {
     const double parfrac = 0.45;
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
+    const bool kgpha = true;
     //using namespace hPhoto;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
@@ -2824,6 +2840,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
       // hourly weather data
       double inst_diff_rad, inst_dir_rad, hourlyPhoto, hourlyPhotoRef;
+      double hourlyPhoto_, hourlyPhotoRef_;  // FS: DEBUG only !!!
       if (false) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
         throw exception("Hourly inputs from file not implemented yet!");
         /* two irradiance components as inputs from hourly weather file
@@ -2897,6 +2914,10 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         // no need to calculate anything
         hourlyPhoto = 0.;
         hourlyPhotoRef = 0.;
+        // /* FS: DEBUG only !!!
+        hourlyPhoto_ = 0.;
+        hourlyPhotoRef_ = 0.;
+        // */
       } else {
         double Amax, AmaxRef, epsilon, epsilonRef;
         if (pc_CarboxylationPathway == 1) {
@@ -2931,12 +2952,15 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         */
         
         //convert units
-        // [kg CO2 ha-1 leaf h-1] -> [g CO2 m-2 leaf h-1]
-        Amax *= 0.1;        // 1000 / (100 * 100)
-        AmaxRef *= 0.1;
-        // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
-        epsilon *= 0.1;     // 1000 / (100 * 100)
-        epsilonRef *= 0.1;
+        if (kgpha == false) {
+          // [kg CO2 ha-1 leaf h-1] -> [g CO2 m-2 leaf h-1]
+          Amax *= 0.1;        // 1000 / (100 * 100)
+          AmaxRef *= 0.1;
+          // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
+          epsilon *= 0.1;     // 1000 / (100 * 100)
+          epsilonRef *= 0.1;
+        }
+        
         // J m-2 h-1 in [J m-2 s-1]
         inst_diff_rad /= 3600;
         inst_dir_rad /= 3600;
@@ -2945,8 +2969,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                         // 0 = None (leads to overestimation according to Spitters 1986!)
                         // 1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
                         // 2 = Spitters 1989, SUCROS87 implementation
-        hourlyPhoto = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2, style);
-        hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2, style);
+        hourlyPhoto = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2, kgpha, style);
+        hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2, kgpha, style);
+      
+        // /* for comparison only
+        hourlyPhoto_ = hPhoto::ASSIM(Amax, epsilon, vc_LeafAreaIndex, kdf, max(0.0, hp_in.solarEl), inst_dir_rad, inst_diff_rad);
+        hourlyPhotoRef_ = hPhoto::ASSIM(AmaxRef, epsilonRef, cropPs.pc_ReferenceLeafAreaIndex, kdfRef, max(0.0, hp_in.solarEl), inst_dir_rad, inst_diff_rad);
+        // */
       }
 
       hourlyGrossCO2Assimilation.push_back(hourlyPhoto); // hourlyPhoto.GrossCO2Assimilation
@@ -2954,18 +2983,26 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
       ////////////////
       // convert units
+      //*
       if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 h-1] //FS: DEBUG !!! look this up again!
-        //;                           //[kg CO2 ha-1 h-1]
-        //;                           //[kg CO2 ha-1 h-1]
-        hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-        hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        if (kgpha == false) {
+          hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+          hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        }
+        // else {
+        //   ;                           //[kg CO2 ha-1 h-1]
+        //   ;                           //[kg CO2 ha-1 h-1]
+        // }
       } else if (out_unit == hPhoto::unit::Jpm2ps) {
-        hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-        hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        if (kgpha == false) {
+          hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+          hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
+        }
       } else if (out_unit == hPhoto::unit::umolpm2ps) {
         hourlyPhoto *= 44 * 1e5;    //[µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
         hourlyPhotoRef *= 44 * 1e5; //[µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
       }
+      //*/
 
       //FS: Maybe some further unit conversions are needed?
       // implement the rest first:
