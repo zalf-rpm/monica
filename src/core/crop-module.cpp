@@ -2165,10 +2165,16 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
     const bool kgpha = true;
 
-    //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-    double kdf = 0.6; // = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
-    double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
-
+    if (cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse < 0) {
+      debug() << "Detected negative value for parameter EmpiricalExtinctionCoeffDiffuse. "
+              << "This is most likely due to no value or an incorrect value in the crop specific value for EmpiricalExtinctionCoeffDiffuse in the json files monica-parameter directory. "
+              << "The user has to specify this parameter for each crop in the corresponding json file!" << endl;
+      throw runtime_error ("Negative value for parameter EmpiricalExtinctionCoeffDiffuse not allowed!");
+    } else {
+      //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
+      double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
+      double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
+    }
     double gdaily_Amax, gdaily_AmaxRef, gdaily_epsilon, gdaily_epsilonRef;
     gdaily_Amax = vc_AssimilationRate;
     gdaily_AmaxRef = vc_AssimilationRateReference;

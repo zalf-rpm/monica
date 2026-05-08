@@ -189,7 +189,8 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   //std::string pc_PermanentCultivarId;
   double pc_MaxAssimilationRate{ 0.0 };
   double pc_LightExtinctionCoefficient{ 0.8 };
-  double pc_EmpiricalExtinctionCoeffDiffuse{ 0.0 }; //param for hourly SUCROS87-style photosynthesis model //FS: maybe as growth stage dependent vector<double> pc_EmpiricalExtinctionCoeffDiffuse{ 0., 0., 0., 0., 0., 0., 0. } in the future
+  double pc_EmpiricalExtinctionCoeffDiffuse{ -1.0 };  //FS: The default value -1.0 does not make sense and should cause an error in the model if no crop-specific value is provided in the json (this parameter has to be specified by the user in the file, no default allowed).
+  // double pc_EmpiricalExtinctionCoeffDiffuse{ 0.0 }; //param for hourly SUCROS87-style photosynthesis model //FS: maybe as growth stage dependent vector<double> pc_EmpiricalExtinctionCoeffDiffuse{ 0., 0., 0., 0., 0., 0., 0. } in the future
   double pc_MaxCropHeight{ 0.0 };
   double pc_ResidueNRatio{ 0.0 };
   double pc_LT50cultivar{ 0.0 };
@@ -235,7 +236,6 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   double pc_MaxTempDev_WE{ 0.0 };
 
   bool winterCrop{ false };
-  double pc_EmpiricalExtinctionCoeffDiffuse{ 0.6 };  //FS: does it even make sense to use a default value, or should there be an error that this value has to be specified by th euser in the file
 };
 
 typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
