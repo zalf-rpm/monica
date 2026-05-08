@@ -365,5 +365,13 @@
     ],
 
     "__general crop parameters for the monica model": "",
-    "CropParameters": ["include-from-file", "general/crop.json"]
+    "CropParameters": {
+    "=": ["include-from-file", "general/crop.json"],
+    "__enable_vernalisation_factor_fix__": true,
+    "__enable_hourly_photosynthesis__": true,
+    "__enable_canopy_photosynthesis__": true,
+    "__//Tair, Idir, Idif": "",
+    "__hourly_data__": ["include-from-file", "C:/Users/hswt906fel/Documents/GitHub/zalf-rpm/monica/installer/Hohenfinow2/hourly_data.json"],
+    "__//    {1993-01-01_0: [0.0, 0.0, 0.0], }": ""
+    }
 }

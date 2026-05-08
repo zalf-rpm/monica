@@ -2747,7 +2747,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     //using namespace hPhoto;
 
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-    double kdf = 0.6; // = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
+    // double kdf = 0.6;
+    double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
     double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
 
     vector<double> hourlyGlobrad;
@@ -2760,6 +2761,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     // vector<double> hourlyDirrad;
 
     int vs_JulianDay = currentDate.julianDay();
+
+    auto current_isodate = currentDate.toIsoDateString();  // generate idsodate string
+
     int sunriseH = 0, sunsetH = 0;  //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
     for (int h = 0; h < 24; ++h) {
     /*FS: maybe add sub-hourly option in the future
@@ -2795,10 +2799,25 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       hourlyGlobrad.push_back(hgr);
 
       hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
+
+
     }
 
-    if (false) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
-      throw exception("Hourly inputs from file not implemented yet!");
+    if (!cropPs.__hourly_data__.empty()) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
+      // throw exception("Hourly inputs from file not implemented yet!");
+      for (int h = 0; h < 24; ++h) {
+        auto current_isodatetime = current_isodate + "_" + to_string(h); // TODO: modidfy to actual idodate format
+        auto hourly_data_in = cropPs.__hourly_data__.at(current_isodatetime).array_items();
+        double Idir_in = hourly_data_in.at(2).number_value(); // json object dictionary isodate_hour value
+        double Idif_in = hourly_data_in.at(1).number_value();
+        double Tair_in = hourly_data_in.at(0).number_value();
+        hourlyAirT.push_back(Tair_in);
+
+        // .push_back(Idir_in);
+        // .push_back(Idif_in);
+
+      }
+
     } else {
       for (int h = 0; h < 24; ++h) {
         hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));

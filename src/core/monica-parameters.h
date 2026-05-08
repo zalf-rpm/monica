@@ -235,6 +235,7 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   double pc_MaxTempDev_WE{ 0.0 };
 
   bool winterCrop{ false };
+  double pc_EmpiricalExtinctionCoeffDiffuse{ 0.6 };  //FS: does it even make sense to use a default value, or should there be an error that this value has to be specified by th euser in the file
 };
 
 typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
@@ -715,8 +716,9 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
   bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
   bool __enable_hourly_FvCB_photosynthesis__{ false };
-  bool __enable_hourly_photosynthesis__{ true }; //FS: just for DEBUG !!! ; should be false by default
+  bool __enable_hourly_photosynthesis__{ false }; //FS: just for DEBUG !!! ; should be false by default
   bool __enable_canopy_photosynthesis__{ false }; //FS: just for DEBUG !!! ; should be false by default
+  json11::Json::object __hourly_data__;
   bool __enable_T_response_leaf_expansion__{ false };
   bool __disable_daily_root_biomass_to_soil__{ false };
   bool __enable_vernalisation_factor_fix__{ false };

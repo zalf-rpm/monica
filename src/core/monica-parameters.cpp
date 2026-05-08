@@ -535,6 +535,7 @@ Errors CultivarParameters::merge(json11::Json j) {
   set_double_value(pc_RespiratoryStress, j, "RespiratoryStress");
   set_int_value(pc_LatestHarvestDoy, j, "LatestHarvestDoy");
   set_bool_value(winterCrop, j, "WinterCrop");
+  set_double_value(pc_EmpiricalExtinctionCoeffDiffuse, j, "EmpiricalExtinctionCoeffDiffuse");
 
   if (j["AssimilatePartitioningCoeff"].is_array()) {
     auto apcs = j["AssimilatePartitioningCoeff"].array_items();
@@ -1617,6 +1618,11 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j,
                  "__enable_Phenology_WangEngelTemperatureResponse__");
   set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
+  set_bool_value(__enable_hourly_photosynthesis__, j, "__enable_hourly_photosynthesis__");
+  set_bool_value(__enable_canopy_photosynthesis__, j, "__enable_canopy_photosynthesis__");
+  if (!j["__hourly_data__"].is_null()) {
+    __hourly_data__ = j["__hourly_data__"].object_items();
+    }
   set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
   set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
@@ -1659,6 +1665,9 @@ json11::Json CropModuleParameters::to_json() const {
     {"__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__},
     {"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__},
     {"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__},
+    {"__enable_hourly_photosynthesis__", __enable_hourly_photosynthesis__},
+    {"__enable_canopy_photosynthesis__", __enable_canopy_photosynthesis__},
+    {"__hourly_data__", __hourly_data__},
     {"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__},
     {"__disable_daily_root_biomass_to_soil__", __disable_daily_root_biomass_to_soil__},
     {"__enable_vernalisation_factor_fix__", __enable_vernalisation_factor_fix__}
