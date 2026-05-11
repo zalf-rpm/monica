@@ -2767,6 +2767,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     vector<double> hourlyGlobrad;
     vector<double> hourlyExtrarad;
     vector<double> hourlySolarEl;
+    vector<double> hourlySolarEl_deg; // FS: DEBUG !!!
     vector<double> hourlyAirT;
     //FS: maybe already have vectors of read in data from file here as an alternative?
     //    does this make code easier downstream?
@@ -2809,6 +2810,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       }
       */
       hourlySolarEl.push_back(sun_el);
+      hourlySolarEl_deg.push_back(sun_el * 180. / M_PI);  // FS: DEBUG !!!
+
       hourlyGlobrad.push_back(hgr);
 
       hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
@@ -2819,7 +2822,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     if (!cropPs.__hourly_data__.empty()) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
       // throw exception("Hourly inputs from file not implemented yet!");
       for (int h = 0; h < 24; ++h) {
-        auto current_isodatetime = current_isodate + "_" + to_string(h); // TODO: modidfy to actual idodate format
+        auto sep = h < 9 ? "T0" : "T";
+        auto current_isodatetime = current_isodate + sep + to_string(h); // TODO: modidfy to actual isodate format
         auto hourly_data_in = cropPs.__hourly_data__.at(current_isodatetime).array_items();
         double Idir_in = hourly_data_in.at(2).number_value(); // json object dictionary isodate_hour value
         double Idif_in = hourly_data_in.at(1).number_value();
@@ -2977,7 +2981,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
         /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
         if (...__agripv__) {
-        auto [dir_rad_factor, diff_rad_factor] AgriPV_shading(...);
+        auto [dir_rad_factor, diff_rad_factor] AgriPV_shading(..., cropheight);
         inst_diff_rad *= diff_rad_factor;  // !!! debug
         inst_dir_rad *= dir_rad_factor;    // !!! debug
         }
@@ -3035,14 +3039,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hourlyPhotoRef *= 44 * 1e5; //[µmol CO2 m-2 h-1] -> [kg CO2 ha-1 h-1]
       }
       //*/
-
-      //FS: Maybe some further unit conversions are needed?
-      // implement the rest first:
-      // cultivar-dependent kdf from file: kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse
-      // daily SUCROS87-style approach for comparison
-      //hourlyPhoto *= 8.2;     //FS: DEBUG !!! correction factor 8.2x
-      //hourlyPhotoRef *= 8.2;  //FS: DEBUG !!! correction factor 8.2x
-      ////////////////
 
       dailyGP += hourlyPhoto;
       dailyGPRef += hourlyPhotoRef;
