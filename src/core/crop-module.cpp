@@ -2170,11 +2170,11 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
               << "This is most likely due to no value or an incorrect value in the crop specific value for EmpiricalExtinctionCoeffDiffuse in the json files monica-parameter directory. "
               << "The user has to specify this parameter for each crop in the corresponding json file!" << endl;
       throw runtime_error ("Negative value for parameter EmpiricalExtinctionCoeffDiffuse not allowed!");
-    } else {
-      //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-      double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
-      double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
     }
+    //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
+    double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;  //DEBUG only; implementation missing to actually read from e.g. winter-wheat.json file
+    double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
+
     double gdaily_Amax, gdaily_AmaxRef, gdaily_epsilon, gdaily_epsilonRef;
     gdaily_Amax = vc_AssimilationRate;
     gdaily_AmaxRef = vc_AssimilationRateReference;
@@ -2283,8 +2283,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   // Netherlands, p. 87-97.
   ///////////////////////////////////////////////////////////////////////////
 
-  // old EFFE
-  double vc_NetRadiationUseEfficiency = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiency;
+  // old EFFE                                                                                         // FS: According to the SUCROS82 paper (van Keulen, H., Penning de Vries, F. W. T., & Drees, E. M., 1982, Table 10): EFFE [KG(C02)/J/HA/H M2S] is "EFF BASED ON INCIDENT RADIATION", 
+                                                                                                      //     EFF [KG(C02)/J/HA/H M2S] is "EFFICIENCY OF USE OF ABSORBED VISIBLE RADIATION FOR C02 ASSIMILATION AT LOW LIGHT LEVELS", and REFL [FRACTION] is "REFLECTION COEFFICIENT OF THE CANOPY".
+  double vc_NetRadiationUseEfficiency = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiency; //     Table 9: EFFE = (1.-REFLC) * EFF
   double vc_NetRadiationUseEfficiencyReference = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiencyReference;
 
   double SSLAE = sin((90.0 + vc_Declination - vs_Latitude) * PI / 180.0); // = HERMES
@@ -2752,6 +2753,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     const bool kgpha = true;
     //using namespace hPhoto;
 
+    if (cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse < 0) {
+      debug() << "Detected negative value for parameter EmpiricalExtinctionCoeffDiffuse. "
+              << "This is most likely due to no value or an incorrect value in the crop specific value for EmpiricalExtinctionCoeffDiffuse in the json files monica-parameter directory. "
+              << "The user has to specify this parameter for each crop in the corresponding json file!" << endl;
+      throw runtime_error ("Negative value for parameter EmpiricalExtinctionCoeffDiffuse not allowed!");
+    }
     //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
     // double kdf = 0.6;
     double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;

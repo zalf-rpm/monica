@@ -510,6 +510,7 @@ Errors CultivarParameters::merge(json11::Json j) {
   set_bool_value(pc_Perennial, j, "Perennial");
   set_double_value(pc_MaxAssimilationRate, j, "MaxAssimilationRate");
   set_double_value(pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient");
+  set_double_value(pc_EmpiricalExtinctionCoeffDiffuse, j, "EmpiricalExtinctionCoeffDiffuse");
   set_double_value(pc_MaxCropHeight, j, "MaxCropHeight");
   set_double_value(pc_ResidueNRatio, j, "ResidueNRatio");
   set_double_value(pc_LT50cultivar, j, "LT50cultivar");
@@ -535,7 +536,6 @@ Errors CultivarParameters::merge(json11::Json j) {
   set_double_value(pc_RespiratoryStress, j, "RespiratoryStress");
   set_int_value(pc_LatestHarvestDoy, j, "LatestHarvestDoy");
   set_bool_value(winterCrop, j, "WinterCrop");
-  set_double_value(pc_EmpiricalExtinctionCoeffDiffuse, j, "EmpiricalExtinctionCoeffDiffuse");
 
   if (j["AssimilatePartitioningCoeff"].is_array()) {
     auto apcs = j["AssimilatePartitioningCoeff"].array_items();
@@ -576,6 +576,7 @@ json11::Json CultivarParameters::to_json() const {
     {"Perennial", pc_Perennial},
     {"MaxAssimilationRate", pc_MaxAssimilationRate},
     {"LightExtinctionCoefficient", pc_LightExtinctionCoefficient},
+    {"EmpiricalExtinctionCoeffDiffuse", pc_EmpiricalExtinctionCoeffDiffuse},
     {"MaxCropHeight", J11Array{pc_MaxCropHeight, "m"}},
     {"ResidueNRatio", pc_ResidueNRatio},
     {"LT50cultivar", pc_LT50cultivar},

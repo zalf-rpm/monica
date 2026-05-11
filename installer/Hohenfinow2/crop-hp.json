@@ -11,7 +11,7 @@
             "is-winter-crop": false,
             "cropParams": {
                 "species": ["include-from-file", "crops/clover-grass-ley.json"],
-                "cultivar": ["include-from-file", "crops/clover-grass-ley/.json"]
+                "cultivar": ["include-from-file", "crops/clover-grass-ley/hp.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/clover-grass-ley.json"]
         },
@@ -19,7 +19,7 @@
             "is-winter-crop": true,
             "cropParams": {
                 "species": ["include-from-file", "crops/rye.json"],
-                "cultivar": ["include-from-file", "crops/rye/winter-rye.json"]
+                "cultivar": ["include-from-file", "crops/rye/hp-winter-rye.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/rye.json"]
         },
@@ -27,7 +27,7 @@
             "is-winter-crop": false,
             "cropParams": {
                 "species": ["include-from-file", "crops/maize.json"],
-                "cultivar": ["include-from-file", "crops/maize/silage-maize.json"]
+                "cultivar": ["include-from-file", "crops/maize/hp-silage-maize.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/maize.json"]
         },
@@ -35,7 +35,7 @@
             "is-winter-crop": false,
             "cropParams": {
                 "species": ["include-from-file", "crops/potato.json"],
-                "cultivar": ["include-from-file", "crops/potato/moderately-early-potato.json"]
+                "cultivar": ["include-from-file", "crops/potato/hp-moderately-early-potato.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/potato.json"]
         },
@@ -43,7 +43,7 @@
             "is-winter-crop": true,
             "cropParams": {
                 "species": ["include-from-file", "crops/wheat.json"],
-                "cultivar": ["include-from-file", "crops/wheat/winter-wheat.json"]
+                "cultivar": ["include-from-file", "crops/wheat/hp-winter-wheat.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/wheat.json"]
         },
@@ -51,7 +51,7 @@
             "is-winter-crop": true,
             "cropParams": {
                 "species": ["include-from-file", "crops/barley.json"],
-                "cultivar": ["include-from-file", "crops/barley/winter-barley.json"]
+                "cultivar": ["include-from-file", "crops/barley/hp-winter-barley.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/barley.json"]
         },
@@ -59,7 +59,7 @@
             "is-winter-crop": false,
             "cropParams": {
                 "species": ["include-from-file", "crops/barley.json"],
-                "cultivar": ["include-from-file", "crops/barley/spring-barley.json"]
+                "cultivar": ["include-from-file", "crops/barley/hp-spring-barley.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/barley.json"]
         },
@@ -67,7 +67,7 @@
             "is-winter-crop": true,
             "cropParams": {
                 "species": ["include-from-file", "crops/rape.json"],
-                "cultivar": ["include-from-file", "crops/rape/winter-rape.json"]
+                "cultivar": ["include-from-file", "crops/rape/hp-winter-rape.json"]
             },
             "residueParams": ["include-from-file", "crop-residues/rape.json"]
         }
@@ -365,5 +365,13 @@
     ],
 
     "__general crop parameters for the monica model": "",
-    "CropParameters": ["include-from-file", "general/crop.json"]
+    "CropParameters": {
+    "=": ["include-from-file", "general/crop.json"],
+    "__enable_vernalisation_factor_fix__": true,
+    "__enable_hourly_photosynthesis__": true,
+    "__enable_canopy_photosynthesis__": true,
+    "__//Tair, Idir, Idif": "",
+    "__hourly_data__": ["include-from-file", "C:/Users/hswt906fel/Documents/GitHub/zalf-rpm/monica/installer/Hohenfinow2/hourly_data.json"],
+    "__//    {1993-01-01_0: [0.0, 0.0, 0.0], }": ""
+    }
 }

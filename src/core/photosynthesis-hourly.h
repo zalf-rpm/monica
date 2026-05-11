@@ -126,7 +126,7 @@ Spitters_Idir_Idiff_result Spitters_Idir_Idiff(double globrad, double extraterrr
  * @param epsilon light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve). Temperature-dependent.
  *                  ARCWHEAT1: "dA/dI at I = 0".
  *                  MONICA: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
- * @param k_df    empirical extinction coefficient fo diffuse radiation. Default is 0.6.
+ * @param k_df    empirical extinction coefficient for diffuse radiation. Default is 0.6.
  *                  0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
  *                  See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
  *                  "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
@@ -165,7 +165,7 @@ double Spitters_canop_photo_dL(double beta, double L, double I0_dr, double I0_df
  * @param epsilon light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve).
  *                  arcwheat1: "dA/dI at I = 0".
  *                  monica: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
- * @param k_df    empirical extinction coefficient fo diffuse radiation. Default is 0.6.
+ * @param k_df    empirical extinction coefficient for diffuse radiation. Default is 0.6.
  *                  0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
  *                  See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
  *                  "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
@@ -206,7 +206,7 @@ double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, do
  * @param epsilon light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve).
  *                  arcwheat1: "dA/dI at I = 0".
  *                  monica: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
- * @param k_df    empirical extinction coefficient fo diffuse radiation. Default is 0.6.
+ * @param k_df    empirical extinction coefficient for diffuse radiation. Default is 0.6.
  *                  0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
  *                  See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
  *                  "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
@@ -274,7 +274,7 @@ struct gross_photo_hourly_result {
 //  * @param epsilon        light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve).
 //  *                          arcwheat1: "dA/dI at I = 0".
 //  *                          monica: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
-//  * @param k_df           empirical extinction coefficient fo diffuse radiation. Default is 0.6.
+//  * @param k_df           empirical extinction coefficient for diffuse radiation. Default is 0.6.
 //  *                          0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
 //  *                          See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
 //  *                          "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
