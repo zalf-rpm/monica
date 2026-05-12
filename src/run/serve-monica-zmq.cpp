@@ -508,7 +508,11 @@ void monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
                 env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
                   Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
                 env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
-                  Soil::updateUnsetPwpFcSatFromVanGenuchten;
+                  Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+                  Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+                  Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
                 env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
 
                 auto errors = env.merge(msg.json);

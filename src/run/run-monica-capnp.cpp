@@ -41,8 +41,9 @@ using namespace mas;
 
 //std::map<std::string, DataAccessor> daCache;
 
-RunMonica::RunMonica(bool startedServerInDebugMode, mas::infrastructure::common::Restorer *restorer)
-    : _restorer(restorer), _startedServerInDebugMode(startedServerInDebugMode) {
+RunMonica::RunMonica(bool startedServerInDebugMode, mas::infrastructure::common::Restorer* restorer)
+: _restorer(restorer)
+, _startedServerInDebugMode(startedServerInDebugMode) {
   _id = kj::str(sole::uuid4().str());
   _name = kj::str("Monica capnp server");
 }
@@ -58,8 +59,7 @@ kj::Promise<void> RunMonica::info(InfoContext context) //override
   return kj::READY_NOW;
 }
 
-kj::Promise<void> RunMonica::run(RunContext context)
-{
+kj::Promise<void> RunMonica::run(RunContext context) {
   auto envR = context.getParams().getEnv();
 
   auto runMonica =
@@ -80,7 +80,11 @@ kj::Promise<void> RunMonica::run(RunContext context)
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
       Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
-      Soil::updateUnsetPwpFcSatFromVanGenuchten;
+      Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+      Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+      Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
 
     auto errors = env.merge(envJson);
@@ -105,7 +109,8 @@ kj::Promise<void> RunMonica::run(RunContext context)
 
       if (eda.success()) {
         if (eda.result.isValid()) env.climateData = eda.result;
-        else assert(env.climateData.isValid());
+        else
+          assert(env.climateData.isValid());
         env.debugMode = _startedServerInDebugMode && env.debugMode;
         env.params.userSoilMoistureParameters.getCapillaryRiseRate =
           [](std::string soilTexture, size_t distance) {
@@ -154,18 +159,22 @@ kj::Promise<void> RunMonica::run(RunContext context)
   }
 
   return kj::joinPromises(proms.finish()).then([context, runMonica, this]() mutable {
-    auto out = runMonica(_da, _soilLayers);
-    auto rs = context.getResults();
-    auto res = rs.initResult();
-    res.initStructure().setJson();
-    res.setValue(out.toString());
-  }, [context](auto &&e) mutable {
-    KJ_LOG(INFO, "Error while trying to gather soil and/or time series data: ", e);
-    auto rs = context.getResults();
-    auto res = rs.initResult();
-    res.initStructure().setNone();
-    res.setValue(kj::str("Error while trying to gather soil and/or time series data: ", e));
-  });
+                                                 auto out = runMonica(_da, _soilLayers);
+                                                 auto rs = context.getResults();
+                                                 auto res = rs.initResult();
+                                                 res.initStructure().setJson();
+                                                 res.setValue(out.toString());
+                                               }, [context](auto&& e) mutable {
+                                                 KJ_LOG(INFO,
+                                                        "Error while trying to gather soil and/or time series data: ",
+                                                        e);
+                                                 auto rs = context.getResults();
+                                                 auto res = rs.initResult();
+                                                 res.initStructure().setNone();
+                                                 res.
+                                                   setValue(kj::str("Error while trying to gather soil and/or time series data: ",
+                                                                    e));
+                                               });
 }
 
 /*
