@@ -41,6 +41,25 @@ double diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double s
 
 
 /**
+ * @brief estimate fraction of diffuse radiation (daily)
+ * (requires daily inputs!)
+ * 
+ * Source: Spitters et al. 1986; original source seems to be de Jong 1980, p.79 (according to Spitters et al. 1986).
+ * 
+ * - Spitters CJT, Toussaint HAJM & Goudriaan J (1986). Separating the diffuse and direct component of global radiation and its implications for modeling canopy photosynthesis. Part I. Components of incoming radiation. Agricultural and Forest Meteorology, 38(1-3), 217-229.
+ *   https://doi.org/10.1016/0168-1923(86)90060-2
+ * 
+ * - de Jong JBRM (1980). Een karakterisering van de zonnestraling in Nederland. Doctoraalverslag Vakgroep Fysische Aspecten van de Gebouwde Omgeving afd. Bouwkunde en Vakgroep Warmte- en Stromingstechnieken afd, Werktuigbouwkunde, Technische Hogeschool (Techn. Univ.), Eindhoven, Netherlands (1980), p. 97 + 67 [in Dutch].
+ * 
+ * @param globrad        daily global irradiance [W m-2]
+ * @param extra_terr_rad daily extra-terrestrial radiation [W m-2]
+ * @param solar_elev     daily solar elevation angle [rad]
+ * @return daily fraction of diffuse radiation 
+ */
+double diffuse_fraction_daily_f(double globrad, double extra_terr_rad, double solar_elev);
+
+
+/**
  * @brief Circumsolar correction
  * 
  * Diffuse irradiance can only be assumed to be isotropic for uniform overcast sky conditions. For clear-sky conditions,
@@ -238,6 +257,16 @@ static_assert(
     static_cast<int>(unit::umolpm2ps)== 3,
     "out_unit order must match conversion pipeline"
 );
+
+/**
+ * @brief 
+ * 
+ * @param value    input value to be converted [MJ m-2 h-1]
+ * @param out_unit output unit (supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps). Default is hPhoto::unit::MJpm2ps.
+ * @return double converted value
+ */
+double convert_MJpm2ps_to_unit(double value, hPhoto::unit out_unit);
+
 
 struct PAR_radiation_result {
        double direct;       //[μmol m-2 s-1 PAR] (unit ground area)

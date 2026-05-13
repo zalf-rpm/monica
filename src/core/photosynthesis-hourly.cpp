@@ -9,27 +9,52 @@ using namespace std;
 
 double hPhoto::diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev)
 {
-  // check this again !!!
+  // Spitters et al. 1986 eq. 20 (hourly)
   assert(extra_terr_rad > eps);
   double glob_extra_ratio = globrad / extra_terr_rad;
   double R = (0.847 - 1.61 * sin(solar_elev) + 1.04 * pow(sin(solar_elev), 2));
   double K = (1.47 - R) / 1.66;
 
-  if (glob_extra_ratio <= 0.22)
+  if (glob_extra_ratio <= 0.22)       // eq. 20a
   {
     return 1.;
   }
-  else if (glob_extra_ratio <= 0.35)
+  else if (glob_extra_ratio <= 0.35)  // eq. 20b
   {
     return 1. - 6.4 * pow((glob_extra_ratio - 0.22), 2);
   }
-  else if (glob_extra_ratio <= K)
+  else if (glob_extra_ratio <= K)     // eq. 20c
   {
     return 1.47 - 1.66 * glob_extra_ratio;
   }
-  else
+  else                                // eq. 20d
   {
     return R;
+  }
+}
+
+
+double hPhoto::diffuse_fraction_daily_f(double globrad, double extra_terr_rad, double solar_elev)
+{
+  // Spitters et al. 1986 eq. 2 (daily)
+  assert(extra_terr_rad > eps);
+  double glob_extra_ratio = globrad / extra_terr_rad;
+
+  if (glob_extra_ratio < 0.07)        // eq. 2a
+  {
+    return 1.;
+  }
+  else if (glob_extra_ratio < 0.35)   // eq. 2b
+  {
+    return 1. - 2.3 * pow((glob_extra_ratio - 0.07), 2);
+  }
+  else if (glob_extra_ratio < 0.75)   // eq. 2c
+  {
+    return 1.33 - 1.46 * glob_extra_ratio;
+  }
+  else                                // eq. 2d
+  {
+    return 0.23;
   }
 }
 
@@ -240,6 +265,29 @@ double hPhoto::Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, do
 }
 
 
+double hPhoto::convert_MJpm2ps_to_unit(double value, hPhoto::unit out_unit)
+{
+  switch (out_unit) {
+  case hPhoto::unit::umolpm2ps:
+      // W m-2 -> µmol m-2 s-1
+      value *= 4.56;
+      [[fallthrough]];
+  case hPhoto::unit::Wpm2ps:
+      // J m-2 h-1 -> W m-2
+      value /= 3600.0;
+      [[fallthrough]];
+  case hPhoto::unit::Jpm2ps:
+      // MJ m-2 h-1 -> J m-2 h-1
+      value *= 1e6;
+      [[fallthrough]];
+  case hPhoto::unit::MJpm2ps:
+      // base unit — no conversion
+      break;
+  }
+  return value;
+}
+
+
 hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac, hPhoto::unit out_unit)
 {
   PAR_radiation_result result;
@@ -265,32 +313,8 @@ hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double ext
   hourly_diffuse_rad *= parfrac;
   hourly_direct_rad  *= parfrac;
 
-  switch (out_unit) {
-  case hPhoto::unit::umolpm2ps:
-      // W m-2 -> µmol m-2 s-1
-      hourly_diffuse_rad *= 4.56;
-      hourly_direct_rad  *= 4.56;
-      [[fallthrough]];
-
-  case hPhoto::unit::Wpm2ps:
-      // J m-2 h-1 -> W m-2
-      hourly_diffuse_rad /= 3600.0;
-      hourly_direct_rad  /= 3600.0;
-      [[fallthrough]];
-
-  case hPhoto::unit::Jpm2ps:
-      // MJ m-2 h-1 -> J m-2 h-1
-      hourly_diffuse_rad *= 1e6;
-      hourly_direct_rad  *= 1e6;
-      [[fallthrough]];
-
-  case hPhoto::unit::MJpm2ps:
-      // base unit — no conversion
-      break;
-  }
-
-  result.diffuse = hourly_diffuse_rad;
-  result.direct = hourly_direct_rad;
+  result.diffuse = convert_MJpm2ps_to_unit(hourly_diffuse_rad, out_unit);
+  result.direct = convert_MJpm2ps_to_unit(hourly_direct_rad, out_unit);
   return result;
 }
 

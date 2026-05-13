@@ -672,7 +672,7 @@ void MonicaModel::generalStep() {
   double tmax = climateData[Climate::tmax];
   double precip = climateData[Climate::precip];
   double wind = climateData[Climate::wind];
-  double globrad = climateData[Climate::globrad];
+  double globrad = climateData[Climate::globrad]; // FS: @todo: globrad = (__enable_agripv_addon__) ? climateData[Climate::globrad] * glob_rad_factor : climateData[Climate::globrad];  // in case of Agri-PV (shading), use reduced global radiation
 
   // test if data for relhumid are available; if not, value is set to -1.0
   double relhumid = climateData.find(Climate::relhumid) == climateData.end()

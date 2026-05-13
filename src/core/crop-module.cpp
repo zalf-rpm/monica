@@ -2181,7 +2181,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     gdaily_epsilon = vc_RadiationUseEfficiency;
     gdaily_epsilonRef = vc_RadiationUseEfficiencyReference;
     //convert units
-    if (kgpha == false) {
+    if (!kgpha) {
       // [kg CO2 ha-1 leaf h-1?] -> [g CO2 m-2 leaf h-1]
       gdaily_Amax *= 0.1;        // 1000 / (100 * 100)
       gdaily_AmaxRef *= 0.1;
@@ -2247,7 +2247,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       // */
 
       if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 d-1] //FS: DEBUG !!! look this up again!
-        if (kgpha == false) {
+        if (!kgpha) {
           ghourly_Photo *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
           ghourly_PhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
         }
@@ -2256,7 +2256,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         //   ;                           //[kg CO2 ha-1 d-1]
         // }
       } else if (out_unit == hPhoto::unit::Jpm2ps) {
-        if (kgpha == false) {
+        if (!kgpha) {
           ghourly_Photo *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
           ghourly_PhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
         }
@@ -2748,6 +2748,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 #pragma region hourly photosynthesis
   double dailyGP, dailyGPRef;
   if (cropPs.__enable_hourly_photosynthesis__) {
+    const hPhoto::unit hourly_data_in_unit = hPhoto::unit::umolpm2ps; // FS: depends on input data
     const double parfrac = 0.45;
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
     const bool kgpha = true;
@@ -2769,10 +2770,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     vector<double> hourlySolarEl;
     vector<double> hourlySolarEl_deg; // FS: DEBUG !!!
     vector<double> hourlyAirT;
-    //FS: maybe already have vectors of read in data from file here as an alternative?
-    //    does this make code easier downstream?
-    // vector<double> hourlyDiffrad; 
-    // vector<double> hourlyDirrad;
+    vector<double> hourlyIdif; 
+    vector<double> hourlyIdir;
 
     int vs_JulianDay = currentDate.julianDay();
 
@@ -2811,12 +2810,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       */
       hourlySolarEl.push_back(sun_el);
       hourlySolarEl_deg.push_back(sun_el * 180. / M_PI);  // FS: DEBUG !!!
-
       hourlyGlobrad.push_back(hgr);
-
       hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
-
-
     }
 
     if (!cropPs.__hourly_data__.empty()) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
@@ -2829,10 +2824,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         double Idif_in = hourly_data_in.at(1).number_value();
         double Tair_in = hourly_data_in.at(0).number_value();
         hourlyAirT.push_back(Tair_in);
-
-        // .push_back(Idir_in);
-        // .push_back(Idif_in);
-
+        hourlyIdif.push_back(Idif_in);
+        hourlyIdir.push_back(Idir_in);
       }
 
     } else {
@@ -2876,60 +2869,25 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
       // hourly weather data
       double inst_diff_rad, inst_dir_rad, hourlyPhoto, hourlyPhotoRef;
+      // double inst_glob_rad;
       double hourlyPhoto_, hourlyPhotoRef_;  // FS: DEBUG only !!!
-      if (false) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
-        throw exception("Hourly inputs from file not implemented yet!");
-        /* two irradiance components as inputs from hourly weather file
-        double hourly_direct_rad, hourly_diffuse_rad, hourly_global_rad;
-        if (direct && diffuse) {
-          hourly_diffuse_rad = ;
-          hourly_direct_rad = ;
-        } else if (global && diffuse) {
-          hourly_global_rad = ;
-          hourly_diffuse_rad = ;
-          hourly_direct_rad = hourly_global_rad - hourly_diffuse_rad;
-        } else if (global && diffuse) {
-          hourly_global_rad = ;
-          hourly_direct_rad = ;
-          hourly_diffuse_rad = hourly_global_rad - hourly_direct_rad;
-        }
+      if (!cropPs.__hourly_data__.empty()) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
+        //direct && diffuse
+        inst_diff_rad = hourlyIdif.at(h);
+        inst_dir_rad = hourlyIdir.at(h);
+        inst_diff_rad = (inst_diff_rad <= 0) ? 0. : hPhoto::convert_MJpm2ps_to_unit(inst_diff_rad, out_unit);
+        inst_dir_rad = (inst_dir_rad <= 0) ? 0. : hPhoto::convert_MJpm2ps_to_unit(inst_dir_rad, out_unit);
+        // inst_glob_rad = inst_diff_rad + inst_dir_rad;
 
         // PAR fraction
-        hourly_diffuse_rad *= parfrac;
-        hourly_direct_rad *= parfrac;
-
-        switch (out_unit) {
-        case hPhoto::unit::umolpm2ps:
-            // W m-2 -> µmol m-2 s-1
-            hourly_diffuse_rad *= 4.56;
-            hourly_direct_rad  *= 4.56;
-            [[fallthrough]];
-        case hPhoto::unit::Wpm2ps:
-            // J m-2 h-1 -> W m-2
-            hourly_diffuse_rad /= 3600.0;
-            hourly_direct_rad  /= 3600.0;
-            [[fallthrough]];
-        case hPhoto::unit::Jpm2ps:
-            // MJ m-2 h-1 -> J m-2 h-1
-            hourly_diffuse_rad *= 1e6;
-            hourly_direct_rad  *= 1e6;
-            [[fallthrough]];
-        case hPhoto::unit::MJpm2ps:
-            // base unit — no conversion
-            inst_diff_rad = hourly_diffuse_rad;
-            inst_dir_rad = hourly_direct_rad;
-            break;
+        if (hourly_data_in_unit != hPhoto::unit::umolpm2ps)
+        {
+          inst_diff_rad *= parfrac;
+          inst_dir_rad *= parfrac;
+          // inst_glob_rad *= parfrac;
         }
-
-        */
       } else {
-        if (false) { //__hourly_inputs_file__ // only hourly global irradiance input from file
-          throw exception("Hourly inputs from file not implemented yet!");
-          // hp_in.globalRad = ;
-        } else {
-          hp_in.globalRad = hourlyGlobrad.at(h);
-        }
-        
+        hp_in.globalRad = hourlyGlobrad.at(h);
         if (hp_in.globalRad <= 0) {
           inst_diff_rad = 0.;
           inst_dir_rad = 0.;
@@ -2939,9 +2897,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           inst_diff_rad = PAR_rad.diffuse; // (unit ground area)
           inst_dir_rad = PAR_rad.direct;   // (unit ground area)
         }
-        hp_in.leafT = hourlyAirT.at(h); // FS: using air temperature for now !!!
       }
-
+      hp_in.leafT = hourlyAirT.at(h); // FS: using air temperature for now !!!
 
       // hourly photosynthesis
       assert(inst_diff_rad >= 0);
@@ -2980,15 +2937,24 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         }
 
         /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
-        if (...__agripv__) {
-        auto [dir_rad_factor, diff_rad_factor] AgriPV_shading(..., cropheight);
-        inst_diff_rad *= diff_rad_factor;  // !!! debug
-        inst_dir_rad *= dir_rad_factor;    // !!! debug
+        if (__enable_agripv_addon__) {
+          auto inst_glob_rad = inst_diff_rad + inst_dir_rad;
+          auto [dir_rad_factor, diff_rad_factor] AgriPV_shading(..., cropheight);
+          inst_diff_rad *= diff_rad_factor;
+          inst_dir_rad *= dir_rad_factor;
+
+          auto glob_rad_factor = (inst_diff_rad + inst_dir_rad) / inst_glob_rad   // implicitly weighted with diffuse fraction of irradiance
+          // FS: @todo: glob_rad_factor should also be made available outside the photosyntheisis in order to allow e.g. for shading the soil as well to ensure reduced soil ET
+          assert(abs((inst_glob_rad * glob_rad_factor) - (inst_diff_rad + inst_dir_rad)) < hPhoto::eps)
+
+          inst_glob_rad = inst_diff_rad + inst_dir_rad;                           // inst_glob_rad with Agri-PV (now using reduced irradiances)
+          
+          
         }
         */
-        
+
         //convert units
-        if (kgpha == false) {
+        if (!kgpha) {
           // [kg CO2 ha-1 leaf h-1] -> [g CO2 m-2 leaf h-1]
           Amax *= 0.1;        // 1000 / (100 * 100)
           AmaxRef *= 0.1;
@@ -3021,7 +2987,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       // convert units
       //*
       if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 h-1] //FS: DEBUG !!! look this up again!
-        if (kgpha == false) {
+        if (!kgpha) {
           hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
           hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
         }
@@ -3030,7 +2996,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         //   ;                           //[kg CO2 ha-1 h-1]
         // }
       } else if (out_unit == hPhoto::unit::Jpm2ps) {
-        if (kgpha == false) {
+        if (!kgpha) {
           hourlyPhoto *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
           hourlyPhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
         }
