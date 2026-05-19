@@ -852,6 +852,7 @@ void CropModule::step(double vw_MeanAirTemperature,
     vc_RelativeTotalDevelopment = vc_CurrentTotalTemperatureSum / vc_TotalTemperatureSum;
   }
 
+
   if (vc_DevelopmentalStage == 0) {
     vc_KcFactor = _bareSoilKcFactor; /** @todo Claas: muss hier etwas Genaueres hin, siehe FAO? */
   } else {
