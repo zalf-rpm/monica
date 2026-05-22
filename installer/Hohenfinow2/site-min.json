@@ -4,6 +4,10 @@
         "Slope": 0,
         "HeightNN": [0, "m"],
         "NDeposition": [30, "kg N ha-1 y-1"],
+        "1_pwpFcSatFunction": "VanGenuchten",
+        "2_pwpFcSatFunction": "VanGenuchtenVereecken",
+        "3_pwpFcSatFunction": "VanGenuchtenToth",
+        "4_pwpFcSatFunction": "Toth",
         "pwpFcSatFunction": "Wessolek2009",
         "SoilProfileParameters": [
             {

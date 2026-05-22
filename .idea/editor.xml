@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BackendCodeEditorSettings">
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Aasync_002Dinl_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fasync_002Dinl_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Aasync_002Dio_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fasync_002Dio_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Aasync_002Dprelude_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fasync_002Dprelude_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Aasync_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fasync_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Acapability_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fcapnp_003Fcapability_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Acommon_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fcommon_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Adebug_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fdebug_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Aexception_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Fexception_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Anumeric_002Fl_003A_002E_002E_003F_002E_002E_003F_002E_002E_003F_002E_002E_003Fusr_003Finclude_003Fc_002B_002B_003F11_003Fnumeric/@EntryIndexedValue" value="ForceIncluded" type="string" />
+    <option name="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003Atimer_002Eh_002Fl_003A_002E_002E_003Fvcpkg_003Finstalled_003Fx64_002Dlinux_003Finclude_003Fkj_003Ftimer_002Eh/@EntryIndexedValue" value="ForceIncluded" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CDeclarationWithImplicitIntType/@EntryIndexedValue" value="WARNING" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CommentTypo/@EntryIndexedValue" value="DO_NOT_SHOW" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=ConstevalIfIsAlwaysConstant/@EntryIndexedValue" value="WARNING" type="string" />
@@ -139,6 +149,7 @@
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppNotAllPathsReturnValue/@EntryIndexedValue" value="WARNING" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppObjectMemberMightNotBeInitialized/@EntryIndexedValue" value="WARNING" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppOutParameterMustBeWritten/@EntryIndexedValue" value="WARNING" type="string" />
+    <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppOverrideWithDifferentVisibility/@EntryIndexedValue" value="WARNING" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppParameterMayBeConst/@EntryIndexedValue" value="HINT" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppParameterMayBeConstPtrOrRef/@EntryIndexedValue" value="SUGGESTION" type="string" />
     <option name="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppParameterNamesMismatch/@EntryIndexedValue" value="HINT" type="string" />
