@@ -364,7 +364,7 @@ public:
             if (false && ports.isOutConnected(RESULT)) {
               auto wrq = ports.out(RESULT).writeRequest();
               auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
-              st.getStructure().setJson();
+              st.setType(mas::schema::common::StructuredText::Type::JSON);
               st.setValue(out.to_json().dump());
               wrq.send().wait(ioContext.waitScope);
               KJ_LOG(INFO, "sent MONICA result on output channel");
@@ -399,7 +399,7 @@ public:
                 if (ports.isOutConnected(RESULT)) {
                   auto wrq = ports.out(RESULT).writeRequest();
                   auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
-                  st.getStructure().setJson();
+                  st.setType(mas::schema::common::StructuredText::Type::JSON);
                   st.setValue(dailyOut.to_json().dump());
                   wrq.send().wait(ioContext.waitScope);
                   KJ_LOG(INFO, "sent MONICA daily result on output channel");

@@ -42,6 +42,7 @@ using namespace Tools;
 class FBPMain {
 public:
   enum PORTS { CONFIG, ENV, RESULT };
+
   std::map<int, kj::StringPtr> inPortNames = {
     {CONFIG, "config"},
     {ENV, "env"},
@@ -50,7 +51,7 @@ public:
     {RESULT, "result"},
   };
 
-  explicit FBPMain(kj::ProcessContext &context)
+  explicit FBPMain(kj::ProcessContext& context)
   : ioContext(kj::setupAsyncIo())
   , conMan(ioContext)
   , ports(conMan, inPortNames, outPortNames)
@@ -82,7 +83,8 @@ public:
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;
     typedef mas::schema::fbp::IP IP;
     typedef mas::schema::fbp::Channel<IP> Channel;
-    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
+    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText>
+      MonicaEnvInstance;
     typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
     ports.connectFromPortInfos(portInfosReaderSr);
@@ -121,15 +123,16 @@ public:
             if (kj::size(toAttr) == 0) {
               auto st = outIp.initContent().initAs<mas::schema::common::StructuredText>();
               st.setValue(resJsonStr);
-              st.initStructure().setJson();
+              st.setType(mas::schema::common::StructuredText::Type::JSON);
             }
             // copy attributes, if any and set result as attribute, if requested
             auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp,
-                                                                                toAttr);//, capnp::toAny(resJsonStr));
+                                                                                  toAttr);
+            //, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) {
               auto st = builder->initAs<mas::schema::common::StructuredText>();
               st.setValue(resJsonStr);
-              st.initStructure().setJson();
+              st.setType(mas::schema::common::StructuredText::Type::JSON);
             }
             KJ_LOG(INFO, "trying to send result on OUT port");
             wreq.send().wait(ioContext.waitScope);
@@ -137,8 +140,7 @@ public:
           }
         }
       }
-    }
-    catch (const kj::Exception &e) {
+    } catch (const kj::Exception& e) {
       KJ_LOG(INFO, "Exception: ", e.getDescription());
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
     }
@@ -150,21 +152,21 @@ public:
 
   kj::MainFunc getMain() {
     return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR), "Offers a MONICA service.")
-        // .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
-        //                   "<component-name>", "Give this component a name.")
-        .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
-        // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
-        //                   "<attr>", "Which attribute to read the MONICA env from.")
-        // .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
-        //                   "<attr>", "Which attribute to write the MONICA result to.")
-        // .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
-        //                   "<sturdy_ref>", "Sturdy ref to input channel.")
-        // .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
-        //                   "<sturdy_ref>", "Sturdy ref to output channel.")
-        // .addOptionWithArg({'m', "monica_sr"}, KJ_BIND_METHOD(*this, setMonicaSr),
-        //                   "<sturdy_ref>", "Sturdy ref to MONICA instance.")
-        .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
-        .build();
+           // .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
+           //                   "<component-name>", "Give this component a name.")
+           .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
+           // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
+           //                   "<attr>", "Which attribute to read the MONICA env from.")
+           // .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
+           //                   "<attr>", "Which attribute to write the MONICA result to.")
+           // .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
+           //                   "<sturdy_ref>", "Sturdy ref to input channel.")
+           // .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
+           //                   "<sturdy_ref>", "Sturdy ref to output channel.")
+           // .addOptionWithArg({'m', "monica_sr"}, KJ_BIND_METHOD(*this, setMonicaSr),
+           //                   "<sturdy_ref>", "Sturdy ref to MONICA instance.")
+           .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
+           .build();
   }
 
 private:
@@ -172,7 +174,7 @@ private:
   mas::infrastructure::common::ConnectionManager conMan;
   mas::infrastructure::common::PortConnector ports;
   kj::String name;
-  kj::ProcessContext &context;
+  kj::ProcessContext& context;
   kj::String portInfosReaderSr;
   kj::String monicaSr;
   kj::String fromAttr;
