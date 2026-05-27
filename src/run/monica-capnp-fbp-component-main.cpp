@@ -22,6 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <capnp/any.h>
 
 #include "tools/debug.h"
+#include "json11/json11-helper.h"
 #include "common/rpc-connection-manager.h"
 #include "common/common.h"
 #include "resource/version.h"
@@ -38,6 +39,54 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace std;
 using namespace monica;
 using namespace Tools;
+
+const std::string DEFAULT_CONFIG = R"delim(
+{
+  "category": {
+    "id": "models/monica",
+    "name": "Models/MONICA"
+  },
+  "info": {
+    "id": "66f86dbb-efb1-4b16-8837-3a2aa1eca30e",
+    "name": "MONICA",
+    "description": "MONICA FBP component"
+  },
+  "type": "standard",
+  "inPorts": [
+    {
+      "name": "config",
+      "contentType": "common.capnp:StructuredText[JSON | TOML]"
+    },
+    {
+      "name": "env",
+      "contentType": "model.capnp:Env[common.capnp:StructuredText[JSON]]"
+    }
+  ],
+  "outPorts": [
+    {
+      "name": "result",
+      "contentType": "common.capnp:StructuredText[JSON]"
+    }
+  ],
+  "defaultConfig": {
+    "from_attr": {
+      "value": null,
+      "type": "string",
+      "desc": "Get Env from this attribute instead of content of env IP."
+    },
+    "to_attr": {
+      "value": null,
+      "type": "string",
+      "desc": "Send content instead in 'to_attr'"
+    },
+    "monica_sr": {
+      "value": null,
+      "type": "string (sturdy ref)",
+      "desc": "Use this sturdy ref to connect to an external MONICA, else a MONICA instance will be created."
+    }
+  }
+}
+)delim";
 
 class FBPMain {
 public:
@@ -57,18 +106,8 @@ public:
   , ports(conMan, inPortNames, outPortNames)
   , context(context) {}
 
-  kj::MainBuilder::Validity setName(kj::StringPtr n) {
-    name = str(n);
-    return true;
-  }
-
-  kj::MainBuilder::Validity setFromAttr(kj::StringPtr name) {
-    fromAttr = kj::str(name);
-    return true;
-  }
-
-  kj::MainBuilder::Validity setToAttr(kj::StringPtr name) {
-    toAttr = kj::str(name);
+  kj::MainBuilder::Validity setOutputJsonDefaultConfig() {
+    outputJsonDefaultConfig = true;
     return true;
   }
 
@@ -78,7 +117,13 @@ public:
   }
 
   kj::MainBuilder::Validity startComponent() {
+    if (outputJsonDefaultConfig) {
+      std::cout << DEFAULT_CONFIG << std::endl;
+      return true;
+    }
+
     bool startedServerInDebugMode = false;
+    json11::Json config;
 
     debug() << "MONICA: starting MONICA Cap'n Proto FBP component" << endl;
     typedef mas::schema::fbp::IP IP;
@@ -89,13 +134,38 @@ public:
 
     ports.connectFromPortInfos(portInfosReaderSr);
 
-    MonicaEnvInstance::Client runMonicaClient(nullptr);
-    if (monicaSr.size() > 0) {
-      runMonicaClient = conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
-    } else {
-      runMonicaClient = kj::heap<RunMonica>(startedServerInDebugMode);
-    }
     try {
+      if (ports.isInConnected(CONFIG)) {
+        auto configMsg = ports.in(CONFIG).readRequest().send().wait(ioContext.waitScope);
+        KJ_LOG(INFO, "received msg from CONFIG port");
+        // check for end of data from in port
+        if (!configMsg.isDone()) {
+          auto configIp = configMsg.getValue();
+          auto configStr = configIp.getContent().getAs<capnp::Text>();
+          auto configJson = parseJsonString(configStr.cStr());
+          if (configJson.success()) config = configJson.result;
+          else {
+            auto defaultConfigJson = parseJsonString(DEFAULT_CONFIG);
+            if (defaultConfigJson.success()) config = defaultConfigJson.result;
+            else {
+              KJ_LOG(ERROR, "Couldn't parse config JSON string from CONFIG port or DEFAULT_CONFIG: ", configStr);
+              return false;
+            }
+          }
+        }
+      }
+
+      if (config["fromAttr"].is_string()) fromAttr = kj::str(config["fromAttr"].string_value());
+      if (config["toAttr"].is_string()) toAttr = kj::str(config["toAttr"].string_value());
+      if (config["monica_sr"].is_string()) monicaSr = kj::str(config["monica_sr"].string_value());
+
+      MonicaEnvInstance::Client runMonicaClient(nullptr);
+      if (monicaSr.size() > 0) {
+        runMonicaClient = conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
+      } else {
+        runMonicaClient = kj::heap<RunMonica>(startedServerInDebugMode);
+      }
+
       while (ports.isInConnected(ENV) && ports.isOutConnected(RESULT)) {
         KJ_LOG(INFO, "trying to read from IN port");
         auto msg = ports.in(ENV).readRequest().send().wait(ioContext.waitScope);
@@ -152,19 +222,9 @@ public:
 
   kj::MainFunc getMain() {
     return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR), "Offers a MONICA service.")
-           // .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
-           //                   "<component-name>", "Give this component a name.")
            .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
-           // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this, setFromAttr),
-           //                   "<attr>", "Which attribute to read the MONICA env from.")
-           // .addOptionWithArg({'t', "to_attr"}, KJ_BIND_METHOD(*this, setToAttr),
-           //                   "<attr>", "Which attribute to write the MONICA result to.")
-           // .addOptionWithArg({'i', "env_in_sr"}, KJ_BIND_METHOD(*this, setInSr),
-           //                   "<sturdy_ref>", "Sturdy ref to input channel.")
-           // .addOptionWithArg({'o', "result_out_sr"}, KJ_BIND_METHOD(*this, setOutSr),
-           //                   "<sturdy_ref>", "Sturdy ref to output channel.")
-           // .addOptionWithArg({'m', "monica_sr"}, KJ_BIND_METHOD(*this, setMonicaSr),
-           //                   "<sturdy_ref>", "Sturdy ref to MONICA instance.")
+           .addOption({'O', "output_json_default_config"}, KJ_BIND_METHOD(*this, setOutputJsonDefaultConfig),
+                      "Output JSON configuration file with default settings at commandline. To be used with IIP at 'conf' port.")
            .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
            .build();
   }
@@ -173,12 +233,12 @@ private:
   kj::AsyncIoContext ioContext;
   mas::infrastructure::common::ConnectionManager conMan;
   mas::infrastructure::common::PortConnector ports;
-  kj::String name;
   kj::ProcessContext& context;
   kj::String portInfosReaderSr;
   kj::String monicaSr;
   kj::String fromAttr;
   kj::String toAttr;
+  bool outputJsonDefaultConfig = false;
 };
 
 KJ_MAIN(FBPMain)
