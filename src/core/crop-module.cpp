@@ -2013,6 +2013,15 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       vc_AssimilationRate = 0.0; //MP: warum gibt es für C3-Pflanzen keine maximale Temperatur
       vc_AssimilationRateReference = 0.0;
     }
+
+    /* independently of pc_CarboxylationPathway, this has to be ensured after calculation of vc_AssimilationRate (and vc_AssimilationRateReference)
+    if (vc_CuttingDelayDays > 0) {
+      vc_AssimilationRate = 0.1;
+
+    vc_AssimilationRate = max(0.1, vc_AssimilationRate);
+    vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
+    */
+
     return A_rubisco_results{vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference};
   };
   
@@ -3086,6 +3095,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           
         }
         */
+
+        if (vc_CuttingDelayDays > 0) {
+          Amax = 0.1;
+
+        Amax = max(0.1, Amax);
+        AmaxRef = max(0.1, AmaxRef);
 
         //convert units
         if (!kgpha) {

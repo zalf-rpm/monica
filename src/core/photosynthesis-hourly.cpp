@@ -167,8 +167,9 @@ double hPhoto::Spitters_canop_photo_dL(double beta, double L, double I0_dr, doub
   double Ia_sh = Ia_df + (Ia_dr - Ia_drdr);           // absorbed light energy shaded leaf area (absorbs the diffuse flux and the diffused component of the direct flux) [J m-2 leaf s-1]
 
   // eq. 15
-  // A_m * (1. - exp(-epsilon * Ia_sh / A_m))
-  double A_sh = (A_m < eps) ? 0. : A_m * (1. - exp(-epsilon * Ia_sh / A_m));  // added safeguard for A_m, since MONICA has this: if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation_) {vc_AssimilationRate = 0.0;}
+  assert(A_m > 0.); // this should usually be true, since MONICA does something like this: A_m = max(0.1, A_m);
+  double A_sh = A_m * (1. - exp(-epsilon * Ia_sh / A_m));
+  // double A_sh = (A_m < eps) ? 0. : A_m * (1. - exp(-epsilon * Ia_sh / A_m));  // added safeguard for A_m, since MONICA has this: if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation_) {vc_AssimilationRate = 0.0;}
 
   double A_sl = 0.;
   if (leaf_angle_integration_style == 0) {  // None
