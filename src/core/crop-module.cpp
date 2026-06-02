@@ -860,6 +860,17 @@ void CropModule::step(double vw_MeanAirTemperature,
 
   if (vc_CuttingDelayDays > 0) vc_CuttingDelayDays--;
 
+  // [TRANSPLANT SHOCK] Daily stress recovery calculation.
+  // The daily transplant efficiency factors in transplant shock, increasing linearly
+  // from a baseline of 0.2 (80% initial stress) to 1.0 (no stress) over the post-transplant delay duration.
+  vc_TransplantEfficiency = 1.0;
+  if (vc_DaysSinceTransplant >= 0 && vc_DaysSinceTransplant < vc_TransplantShockDuration) {
+      vc_TransplantEfficiency = 0.2 + 0.8 * (double(vc_DaysSinceTransplant) / vc_TransplantShockDuration);
+      vc_DaysSinceTransplant++;
+  } else if (vc_DaysSinceTransplant >= vc_TransplantShockDuration) {
+      vc_DaysSinceTransplant = -1; // Recovery period has successfully concluded
+  }
+
   //  cout << "Cropstep: " << vw_MinAirTemperature << "\t" << vw_MaxAirTemperature << "\t" << vw_MeanAirTemperature << endl;
   fc_Radiation(vs_JulianDay, vw_GlobalRadiation, vw_SunshineHours);
 
@@ -2528,6 +2539,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     }
   }
 
+  // [TRANSPLANT SHOCK] Photosynthesis Limitation.
+  // Reduces the daily gross CO2 assimilation rate according to the shock recovery efficiency factor.
+  if (vc_TransplantEfficiency < 1.0) {
+      vc_GrossCO2Assimilation *= vc_TransplantEfficiency;
+  }
+
   // Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [kg CH2O ha-1 d-1]
   vc_GrossPhotosynthesis = vc_GrossCO2Assimilation * 30.0 / 44.0;
 
@@ -2925,7 +2942,10 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   //vector<double> dailyDeadBiomassIncrement(pc_NumberOfOrgans, 0.0);
   double dailyDeadRootBiomassIncrement = 0.0;
   for (int i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++) {
-    vc_AssimilatePartitioningCoeffOld = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage - 1][i_Organ];
+    // Prevent out-of-bounds array access on developmental stage indices during early phases.
+    // If vc_DevelopmentalStage is 0, we fall back to index 0 as the previous stage index.
+    size_t prevStage = (vc_DevelopmentalStage > 0) ? (vc_DevelopmentalStage - 1) : 0;
+    vc_AssimilatePartitioningCoeffOld = pc_AssimilatePartitioningCoeff[prevStage][i_Organ];
     vc_AssimilatePartitioningCoeff = pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][i_Organ];
 
     // Identify storage organ and reduce assimilate flux in case of heat stress //MP: this might be extended for drougth stress (see suggestions for altered assimilate allocations)
@@ -3041,9 +3061,9 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
         }
       }
       vc_OrganSenescenceIncrement[i_Organ] =
-        vc_OrganGreenBiomass[i_Organ] * (pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ] +
+        vc_OrganGreenBiomass[i_Organ] * (pc_OrganSenescenceRate[prevStage][i_Organ] +
                                          ((pc_OrganSenescenceRate[vc_DevelopmentalStage][i_Organ] -
-                                           pc_OrganSenescenceRate[vc_DevelopmentalStage - 1][i_Organ]) *
+                                           pc_OrganSenescenceRate[prevStage][i_Organ]) *
                                           (vc_CurrentTemperatureSum[vc_DevelopmentalStage] /
                                            pc_StageTemperatureSum[vc_DevelopmentalStage]))); // [kg CH2O ha-1]
     }
@@ -3660,6 +3680,13 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
 
       vc_TotalRootEffectivity += vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]; //[m m-3]
       vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
+    }
+
+    // [TRANSPLANT SHOCK] Water Uptake Limitation.
+    // Limits the total active root water uptake effectivity proportional to the shock recovery efficiency factor.
+    if (vc_TransplantEfficiency < 1.0) {
+        vc_TotalRootEffectivity *= vc_TransplantEfficiency;
+        vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
     }
 
     // std::cout << setprecision(11) << "vc_TotalRootEffectivity: " << vc_TotalRootEffectivity << std::endl;
@@ -4874,3 +4901,90 @@ void CropModule::setStage(size_t newStage) {
 
   vc_DevelopmentalStage = newStage;
 }
+
+
+// --- BEGIN TRANSPLANT MODIFICATION ---
+/**
+ * @brief Overrides normal seed-germination processes to force a custom crop state at transplanting.
+ *
+ * Biophysical & Design Rationale for Core MONICA Developers:
+ * 
+ * 1. GDD Nursery Subtraction Arithmetic:
+ *    A seedling is transplanted with an accumulated thermal sum (GDD) from the nursery. To integrate
+ *    this into the stage-based MONICA architecture:
+ *      a. All stages fully completed in the nursery (i < stage) are pre-filled to their target 
+ *         thresholds (`pc_StageTemperatureSum[i]`).
+ *      b. The remainder is allocated to the active transplant stage's bucket (`vc_CurrentTemperatureSum[stage]`).
+ *      c. Total running sum `vc_CurrentTotalTemperatureSum` is forced to `temperatureSum`.
+ *      d. Crucially, `vc_TotalTemperatureSum` (representing the cumulative requirement for the whole cycle)
+ *         is kept unmodified to preserve phenological targets.
+ *
+ * 2. Rooting Depth Initialization:
+ *    At transplanting, the active roots are forced to `pc_InitialRootingDepth` parameter (retrieved from 
+ *    species parameters), and the active layers are synchronized immediately to avoid a 1-day step lag 
+ *    where soil interactions would be uninitialized.
+ *
+ * 3. Nitrogen Starvation bugfix:
+ *    Seedlings forced directly into late stages start with zero internal Nitrogen pools, causing 
+ *    immediate lethal Nitrogen stress and negative photosynthesis. We explicitly initialize the 
+ *    biomass nitrogen concentration pools (`vc_NConcentrationAbovegroundBiomass`, `vc_NConcentrationRoot`, 
+ *    `vc_TotalBiomassNContent`) using standard optimal species concentration parameters.
+ */
+void CropModule::forceTransplantState(double temperatureSum, double lai, size_t stage,
+                                      double rootMass, double leafMass, double shootMass, int postTransplantDelay) {
+    // Initialize transplant shock duration parameters
+    vc_TransplantShockDuration = postTransplantDelay;
+    vc_DaysSinceTransplant = 0;
+
+    // --- Step 1: Force developmental stage and LAI via native setters ---
+    this->setStage(stage);
+    this->setLeafAreaIndex(lai);
+
+    // --- Step 2: Force cumulative and stage-specific GDD temperature sums ---
+    this->vc_CurrentTotalTemperatureSum = temperatureSum;
+    
+    double remainingGDD = temperatureSum;
+    for (size_t i = 0; i < vc_CurrentTemperatureSum.size(); i++) {
+        if (i < stage) {
+            double threshold = pc_StageTemperatureSum[i];
+            this->vc_CurrentTemperatureSum[i] = threshold;
+            remainingGDD -= threshold;
+        } else if (i == stage) {
+            this->vc_CurrentTemperatureSum[i] = std::max(0.0, remainingGDD);
+        } else {
+            this->vc_CurrentTemperatureSum[i] = 0.0;
+        }
+    }
+    
+    // --- Step 3: Initialize organ biomass pools ---
+    if (this->vc_OrganBiomass.size() > 2) {
+        this->vc_OrganBiomass[0] = rootMass;
+        this->vc_OrganBiomass[1] = leafMass;
+        this->vc_OrganBiomass[2] = shootMass;
+        this->vc_OrganGreenBiomass[0] = rootMass;
+        this->vc_OrganGreenBiomass[1] = leafMass;
+        this->vc_OrganGreenBiomass[2] = shootMass;
+    }
+
+    // --- Step 4: Update carbon balance and rooting depth state variables ---
+    this->vc_RootBiomass        = rootMass;
+    this->vc_AbovegroundBiomass = leafMass + shootMass;
+    this->vc_TotalBiomass       = rootMass + leafMass + shootMass;
+
+    // Settle rooting zone and layers based on standard species parameters
+    auto nols = soilColumn.vs_NumberOfLayers();
+    double layerThickness = soilColumn.vs_LayerThickness();
+    this->vc_RootingDepth_m = pc_InitialRootingDepth;
+    this->vc_RootingDepth = std::min(int(std::round(this->vc_RootingDepth_m / layerThickness)), int(nols));
+    this->vc_RootingZone = std::min(int(std::round(1.3 * this->vc_RootingDepth_m / layerThickness)), int(nols));
+
+    // Force total root length based on physical constants
+    this->vc_TotalRootLength = (this->vc_RootBiomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * 3.14159265358979323);
+
+    // Force nitrogen pools to prevent severe immediate starvation stress in new seedlings
+    this->vc_NConcentrationAbovegroundBiomass = pc_NConcentrationAbovegroundBiomass;
+    this->vc_NConcentrationRoot = pc_NConcentrationRoot;
+    this->vc_TotalBiomassNContent = (this->vc_AbovegroundBiomass * pc_NConcentrationAbovegroundBiomass) + 
+                                    (this->vc_RootBiomass * pc_NConcentrationRoot);
+}
+// --- END TRANSPLANT MODIFICATION ---

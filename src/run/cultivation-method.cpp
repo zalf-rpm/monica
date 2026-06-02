@@ -1087,10 +1087,18 @@ bool Irrigation::apply(MonicaModel *model) {
 
 WSPtr monica::makeWorkstep(json11::Json j) {
   string type = string_value(j["type"]);
-  if (type == "Sowing"
-      || type == "Seed") { //deprecated name
-    return make_shared<Sowing>(j);
+  
+  if (type == "Sowing" || type == "Seed") {
+      return make_shared<Sowing>(j);
   }
+
+  // --- BEGIN TRANSPLANT WORKSTEP FACTORY REGISTRATION ---
+  else if (type == "Transplant") {
+      return make_shared<Transplant>(j);
+  }
+  // --- END TRANSPLANT WORKSTEP FACTORY REGISTRATION ---
+
+
   else if (type == "AutomaticSowing") {
     return make_shared<AutomaticSowing>(j);
   }
@@ -1528,3 +1536,74 @@ bool CultivationMethod::reinit(Tools::Date date, bool forceInitYear) {
 
   return addedYear;
 }
+
+
+// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION (PARSING) ---
+Transplant::Transplant(json11::Json object) {
+    // Mirror Sowing's constructor exactly: do NOT pass json to Workstep() base
+    // (that would call Workstep::merge once, then our merge() would call it again).
+    _errors.append(Transplant::merge(kj::mv(object)));
+}
+
+Transplant::Transplant(const Transplant& other) : Workstep(other) {
+    if (other._cropToPlant) {
+        _cropToPlant = kj::heap<Crop>(*other._cropToPlant);
+    }
+}
+
+json11::Json Transplant::to_json(bool includeFullCropParameters) const {
+    return json11::Json::object{ { "type", type() } };
+}
+
+Tools::Errors Transplant::merge(json11::Json j) {
+    // --- Step 1: Parse date and base Workstep fields (mirrors Sowing::merge) ---
+    Errors res = Workstep::merge(j);
+
+    // --- Step 2: Allocate Crop and call merge exactly like Sowing does ---
+    _cropToPlant = nullptr;
+    _cropToPlant = kj::heap<Crop>();
+    res.append(_cropToPlant->merge(j["crop"]));   // identical to Sowing::merge line 206
+
+    // Set seed date on the crop object exactly like Sowing::merge line 208
+    _cropToPlant->setSeedDate(date());
+
+    // --- Step 3: Parse transplant-specific numerical parameters ---
+    if (!j["initialStage"].is_null())          { _initialStage = static_cast<size_t>(j["initialStage"].int_value()); }
+    if (!j["initialTemperatureSum"].is_null())  { _initialGDD   = j["initialTemperatureSum"].number_value(); }
+    if (!j["initialRootBiomass"].is_null())     { _initRootMass  = j["initialRootBiomass"].number_value(); }
+    if (!j["initialLeafBiomass"].is_null())     { _initLeafMass  = j["initialLeafBiomass"].number_value(); }
+    if (!j["initialShootBiomass"].is_null())    { _initShootMass = j["initialShootBiomass"].number_value(); }
+    if (!j["initialLAI"].is_null())             { _initLAI       = j["initialLAI"].number_value(); }
+    if (!j["postTransplantDelay"].is_null())    { _postTransplantDelay = j["postTransplantDelay"].int_value(); }
+
+    return res;   // propagates ALL sub-errors (crop parse errors included)
+}
+// --- END TRANSPLANT WORKSTEP IMPLEMENTATION (PARSING) ---
+
+// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION (EXECUTION) ---
+bool Transplant::apply(MonicaModel* model) {
+    // Step 1: Call base Workstep::apply (required by event system - mirrors Sowing::apply line 228)
+    Workstep::apply(model);
+
+    if (!model) return false;
+
+    // Guard: _cropToPlant must exist and be valid
+    if (!_cropToPlant || !_cropToPlant->isValid()) return false;
+
+    // Step 2: Seed crop - identical to Sowing::apply line 231
+    model->seedCrop(_cropToPlant.get());
+
+    // Step 3: Get the crop engine created by seedCrop
+    CropModule* cropModule = model->cropGrowth();
+    if (!cropModule) return false;
+
+    // Step 4: Force the transplant initial state (overrides germination defaults)
+    cropModule->forceTransplantState(_initialGDD, _initLAI, _initialStage,
+                                     _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
+
+    // Step 5: Register the event
+    model->addEvent("Transplant");
+
+    return true;
+}
+// --- END TRANSPLANT WORKSTEP IMPLEMENTATION (EXECUTION) ---

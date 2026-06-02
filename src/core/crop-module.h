@@ -414,6 +414,16 @@ public:
 
   void setStage(size_t newStage);
 
+  // --- BEGIN TRANSPLANT MODIFICATION ---
+  // Forces the initial crop state by bypassing normal germination and synchronizing biomass pools.
+  void forceTransplantState(double temperatureSum, double lai, size_t stage,
+      double rootMass, double leafMass, double shootMass, int postTransplantDelay);
+      
+  int vc_TransplantShockDuration{0};
+  int vc_DaysSinceTransplant{-1};
+  double vc_TransplantEfficiency{1.0};
+  // --- END TRANSPLANT MODIFICATION ---
+
   double getRootDensity(int layer) const { return vc_RootDensity.at(layer); }
 
   size_t rootingZone() const { return vc_RootingZone; };
@@ -442,6 +452,13 @@ public:
   double getFractionOfInterceptedRadiation2() const { return fractionOfInterceptedRadiation2; }
 
   [[nodiscard]] double getCurrentTotalTemperatureSum() const { return vc_CurrentTotalTemperatureSum; }
+
+  [[nodiscard]] double getCurrentStageTemperatureSum() const {
+    if (vc_DevelopmentalStage < vc_CurrentTemperatureSum.size()) {
+      return vc_CurrentTemperatureSum[vc_DevelopmentalStage];
+    }
+    return 0.0;
+  }
 
   [[nodiscard]] double getTotalTemperatureSum() const { return vc_TotalTemperatureSum; }
 
