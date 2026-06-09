@@ -209,6 +209,9 @@ Errors Sowing::merge(json11::Json j) {
   set_int_value(_plantDensity, j, "PlantDensity");
   if (_plantDensity > 0)
     _crop->cropParameters().speciesParams.pc_PlantDensity = _plantDensity;
+  // FAO-56 Dual Kc: optional initial Kcb at sowing (default 0.15 = bare soil)
+  if (j["initialKcb"].is_number())
+    _initialKcb = j["initialKcb"].number_value();
   return res;
 }
 
@@ -229,6 +232,9 @@ bool Sowing::apply(MonicaModel *model) {
 
   debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
   model->seedCrop(_cropToPlant.get());
+  // FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
+  if (model->simulationParameters().dualKcMethod && model->cropGrowth())
+    model->cropGrowth()->setInitialKcb(_initialKcb);
   model->addEvent("Sowing");
 
   return true;
@@ -1061,8 +1067,15 @@ Irrigation::Irrigation(json11::Json j) {
 Errors Irrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   set_double_value(_amount, j, "amount");
-  if (j["parameters"].is_object())
+  if (j["parameters"].is_object()) {
     set_value_obj_value(_params, j, "parameters");
+    // FAO-56 Dual Kc: event-level irrigation physical params
+    const auto& params = j["parameters"];
+    if (params["isDripIrrigation"].is_bool())
+      _isDripIrrigation = params["isDripIrrigation"].bool_value();
+    if (params["fw"].is_number())
+      _fw = std::max(0.0, std::min(1.0, params["fw"].number_value()));
+  }
   return res;
 }
 
@@ -1079,6 +1092,12 @@ bool Irrigation::apply(MonicaModel *model) {
 
   //cout << toString() << endl;
   model->applyIrrigation(amount(), nitrateConcentration());
+  // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
+  // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
+  if (model->simulationParameters().dualKcMethod) {
+    model->soilMoistureNC().set_irrigFwEvent(_fw);
+    model->soilMoistureNC().set_irrigIsDripEvent(_isDripIrrigation);
+  }
   model->addEvent("Irrigation");
 
   return true;
@@ -1575,6 +1594,8 @@ Tools::Errors Transplant::merge(json11::Json j) {
     if (!j["initialShootBiomass"].is_null())    { _initShootMass = j["initialShootBiomass"].number_value(); }
     if (!j["initialLAI"].is_null())             { _initLAI       = j["initialLAI"].number_value(); }
     if (!j["postTransplantDelay"].is_null())    { _postTransplantDelay = j["postTransplantDelay"].int_value(); }
+    // FAO-56 Dual Kc: optional initial Kcb at transplanting (default 0.15 = bare soil)
+    if (!j["initialKcb"].is_null())             { _initialKcb = j["initialKcb"].number_value(); }
 
     return res;   // propagates ALL sub-errors (crop parse errors included)
 }
@@ -1601,7 +1622,11 @@ bool Transplant::apply(MonicaModel* model) {
     cropModule->forceTransplantState(_initialGDD, _initLAI, _initialStage,
                                      _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
 
-    // Step 5: Register the event
+    // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
+    if (model->simulationParameters().dualKcMethod)
+      cropModule->setInitialKcb(_initialKcb);
+
+    // Step 6: Register the event
     model->addEvent("Transplant");
 
     return true;

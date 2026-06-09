@@ -335,6 +335,9 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
     fm_BackwaterReplenishment();
   }
 
+  // Cache gross precipitation for Dual Kc fw logic (accessible in fm_Evapotranspiration)
+  vm_GrossPrecipitation = vw_Precipitation;
+
   fm_Evapotranspiration(vc_PercentageSoilCoverage, vc_KcFactor, siteParameters.vs_HeightNN, vw_MaxAirTemperature,
     vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature, vw_WindSpeed, vw_WindSpeedHeight,
     vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay, vs_Latitude, vw_ReferenceEvapotranspiration);
@@ -911,6 +914,149 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
     }
 
     if (vm_PotentialEvapotranspiration > 0) { // Evaporation from soil
+
+      // -----------------------------------------------------------------------
+      // FAO-56 Dual Kc pathway — precompute potential soil evaporation (E_pot)
+      // using the Ke coefficient.  This block runs ONLY when:
+      //   • dualKcMethod is enabled in sim.json
+      //   • A crop is actually present (vc_DevelopmentalStage > 0)
+      // If either condition is false the existing Single Kc loop runs unchanged.
+      // -----------------------------------------------------------------------
+      const auto& simPs = monica.simulationParameters();
+      double vm_E_pot_dualKc = 0.0;      // [mm d-1] replaces (1-beta)*PET per layer
+      bool useDualKc = (simPs.dualKcMethod && vc_DevelopmentalStage > 0
+                        && cropModule != nullptr);
+
+      if (useDualKc) {
+        // ET0 is already in vm_ReferenceEvapotranspiration [mm d-1]
+        const double ET0 = vm_ReferenceEvapotranspiration;
+
+        // --- Kcb: basal crop coefficient (interpolated in crop module) ---
+        const double Kcb = cropModule->get_KcbFactor();
+
+        // --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
+        // Uses only the top soil layer (layer 0, typically 0-10 cm)
+        const double FC0  = vm_FieldCapacity[0];         // [m3 m-3]
+        const double WP0  = vm_PermanentWiltingPoint[0]; // [m3 m-3]
+        const double SWC0 = vm_SoilMoisture[0];          // [m3 m-3]
+        const double Ze   = 0.1;  // evaporation depth [m], FAO-56 typical top layer
+        // TEW: total evaporable water [mm] from top layer
+        const double TEW  = 1000.0 * (FC0 - 0.5 * WP0) * Ze;
+        
+        // A. Dynamic REW (FAO-56 Table 19 Mapping via Pedology)
+        double REW = 0.0;
+        std::string ka5Texture = soilColumn[0].vs_SoilTexture();
+        
+        if (ka5Texture == "Ss") REW = 2.5;
+        else if (ka5Texture == "Su2" || ka5Texture == "Sl2") REW = 3.5;
+        else if (ka5Texture == "Su3" || ka5Texture == "Sl3") REW = 4.5;
+        else if (ka5Texture == "Su4" || ka5Texture == "Sl4" || ka5Texture == "St2") REW = 5.5;
+        else if (ka5Texture == "St3" || ka5Texture == "Ls2" || ka5Texture == "Us2") REW = 8.0;
+        else if (ka5Texture == "Uu" || ka5Texture == "Us3" || ka5Texture == "Us4" || 
+                 ka5Texture == "Ul2" || ka5Texture == "Ul3" || ka5Texture == "Ul4") REW = 8.5;
+        else if (ka5Texture == "Ls3" || ka5Texture == "Ls4" || 
+                 ka5Texture == "Lu2" || ka5Texture == "Lu3" || ka5Texture == "Lu4") REW = 9.0;
+        else if (ka5Texture == "Ut2" || ka5Texture == "Ut3") REW = 9.5;
+        else if (ka5Texture == "Ut4" || ka5Texture == "Lt2" || ka5Texture == "Lt3" || ka5Texture == "Lts") REW = 10.5;
+        else if (ka5Texture == "Ts2" || ka5Texture == "Ts3" || ka5Texture == "Ts4" || 
+                 ka5Texture == "Tu2" || ka5Texture == "Tu3" || ka5Texture == "Tu4" || ka5Texture == "Tl") REW = 11.5;
+        else if (ka5Texture == "Tt") REW = 12.0;
+
+        // Fallback if KA5 lookup is unavailable or fails:
+        if (REW == 0.0) {
+            if (FC0 < 0.18) {
+            // Coarse soils (Sand, Sandy Loams): REW ranges from 2.0 to 7.0 mm
+                REW = 2.5 + 25.0 * (FC0 - 0.05);
+                REW = std::max(2.0, std::min(REW, 7.0));
+            } else if (FC0 >= 0.28) {
+            // Fine soils (Clays): REW ranges from 8.0 to 12.0 mm
+                REW = 8.0 + 20.0 * (FC0 - 0.28);
+                REW = std::max(8.0, std::min(REW, 12.0));
+            } else {
+                REW = 8.0;
+            }
+        }
+        REW = std::min(REW, TEW); // Hard boundary safety clamp
+
+        // Current depletion De [mm] = what the top layer is missing compared to FC
+        const double De   = 1000.0 * std::max(0.0, FC0 - SWC0) * Ze;
+
+        // --- Memory state update for wetting events ---
+        const double precip = vm_GrossPrecipitation;
+        const double irrigApplied = monica.dailySumIrrigationWater();
+        if (precip > 0.0) {
+          vm_LastWettingWasRain = true;
+        } else if (irrigApplied > 0.0) {
+          vm_LastWettingWasRain = false;
+        }
+
+        // --- fw: fraction of wetted soil surface (event-level, FAO-56 §8.3) ---
+        // Priority: rain today > persistent rain drying (Stage 1) > irrigation event fw.
+        // LIMITATION: Auto-irrigation uses defaults (fw=1.0, isDrip=false).
+        double fw_today;
+        if (precip > 0.0) {
+          fw_today = 1.0; // rain wets the full surface
+        } else if (De <= REW && vm_LastWettingWasRain) {
+          fw_today = 1.0; // still in Stage 1 drying from recent rain
+        } else {
+          fw_today = vm_irrigFwEvent; // carry/use the last Irrigation workstep fw
+        }
+        fw_today = std::max(0.0, std::min(fw_today, 1.0));
+
+        // Drip irrigation shading adjustment (FAO-56 §8.3):
+        //   fw_adj = fw * (1 - (2/3) * fc), where fc = fractional ground cover
+        // Applied if the current active wetting event was drip AND no rain today.
+        double fw_adj = fw_today;
+        if (vm_irrigIsDripEvent && !vm_LastWettingWasRain && precip == 0.0) {
+          fw_adj = fw_today * (1.0 - (2.0 / 3.0) * vc_PercentageSoilCoverage);
+          fw_adj = std::max(0.0, std::min(fw_adj, 1.0));
+        }
+
+        // --- Kr: evaporation reduction coefficient (FAO-56 §8.3) ---
+        double Kr = 1.0;
+        if (De > REW) {
+          if ((TEW - REW) > 0.0) {
+            Kr = (TEW - De) / (TEW - REW);
+          } else {
+            Kr = 0.0;
+          }
+        }
+        Kr = std::max(0.0, std::min(Kr, 1.0));
+
+        // B. Rigorous Climatic Kc_max (FAO-56 Equation 72)
+        // Uses native simulated crop height via get_CropHeight() — no hardcoded per-stage values.
+        double u2 = (vw_WindSpeed > 0.0) ? vw_WindSpeed : 2.0;
+        double eo_Tmax = 0.6108 * std::exp((17.27 * vw_MaxAirTemperature) / (vw_MaxAirTemperature + 237.3));
+        double eo_Tmin = 0.6108 * std::exp((17.27 * vw_MinAirTemperature) / (vw_MinAirTemperature + 237.3));
+        double RHmin = std::max(5.0, std::min(100.0, (eo_Tmin / eo_Tmax) * 100.0));
+        const double baseline = 1.2; // FAO-56 §6 default for most crops
+        double h = std::max(0.01, cropModule->get_CropHeight()); // native simulated height [m]
+        double Kc_max = baseline + (0.04 * (u2 - 2.0) - 0.004 * (RHmin - 45.0)) * std::pow(h / 3.0, 0.3);
+        Kc_max = std::max(Kc_max, Kcb + 0.05);
+
+        // C. few: fraction of exposed and wetted soil (FAO-56 Eq. 74)
+        double fc = std::max(0.0, std::min(vc_PercentageSoilCoverage, 0.99));
+        double few = std::min(1.0 - fc, fw_adj);
+        few = std::max(0.001, few); // guard against zero denominator
+
+        // --- Ke: soil evaporation coefficient (FAO-56 eq. 71) ---
+        double Ke = Kr * (Kc_max - Kcb);
+        Ke = std::min(Ke, few * Kc_max);
+        Ke = std::max(0.0, Ke);
+
+        // Potential soil evaporation [mm d-1]
+        vm_E_pot_dualKc = ET0 * Ke;
+        // Respect the hard cap from HERMES (6.5 mm/day applies to total, cap E too)
+        vm_E_pot_dualKc = std::min(vm_E_pot_dualKc, 6.5);
+
+        vm_Ke = Ke;
+      } else {
+        vm_Ke = 0.0;
+      }
+      // -----------------------------------------------------------------------
+      // End of Dual Kc precomputation
+      // -----------------------------------------------------------------------
+
       for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
         vm_EReducer_1 = get_EReducer_1(i_Layer, vc_PercentageSoilCoverage,
           vm_PotentialEvapotranspiration);
@@ -942,13 +1088,23 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
         if (vc_DevelopmentalStage > 0) {
           // vegetation is present
 
-          //Interpolation between [0,1]
-          if (vc_PercentageSoilCoverage >= 0.0 && vc_PercentageSoilCoverage < 1.0) {
-            vm_Evaporation[i_Layer] = ((1.0 - vc_PercentageSoilCoverage) * vm_EReducer)
-              * vm_PotentialEvapotranspiration;
+          if (useDualKc) {
+            // ---------------------------------------------------------------
+            // FAO-56 Dual Kc: soil evaporation = Kr * (Kc_max - Kcb) * ET0
+            // The EReducer chain still applies (soil moisture, depth limits).
+            // Bypasses the Single Kc (1 - beta) * PET partitioning.
+            // ---------------------------------------------------------------
+            vm_Evaporation[i_Layer] = vm_EReducer * vm_E_pot_dualKc;
           } else {
-            if (vc_PercentageSoilCoverage >= 1.0) {
-              vm_Evaporation[i_Layer] = 0.0;
+            // Single Kc: original (1 - beta) * EReducer * PET partitioning
+            //Interpolation between [0,1]
+            if (vc_PercentageSoilCoverage >= 0.0 && vc_PercentageSoilCoverage < 1.0) {
+              vm_Evaporation[i_Layer] = ((1.0 - vc_PercentageSoilCoverage) * vm_EReducer)
+                * vm_PotentialEvapotranspiration;
+            } else {
+              if (vc_PercentageSoilCoverage >= 1.0) {
+                vm_Evaporation[i_Layer] = 0.0;
+              }
             }
           }
 
@@ -968,7 +1124,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
           }
 
         } else {
-          // no vegetation present
+          // no vegetation present — Single Kc / bare soil, always unchanged
           if (vm_SnowDepth > 0.0) {
             vm_Evaporation[i_Layer] = 0.0;
           } else {

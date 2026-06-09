@@ -235,6 +235,8 @@ public:
 
   double get_KcFactor() const;
 
+  double get_KcbFactor() const; //!< FAO-56 Dual Kc: returns the daily basal crop coefficient Kcb
+
   double get_StomataResistance() const;
 
   double get_Transpiration(int i_Layer) const;
@@ -418,7 +420,10 @@ public:
   // Forces the initial crop state by bypassing normal germination and synchronizing biomass pools.
   void forceTransplantState(double temperatureSum, double lai, size_t stage,
       double rootMass, double leafMass, double shootMass, int postTransplantDelay);
-      
+
+  //! FAO-56 Dual Kc: override the initial Kcb value (called from Sowing/Transplant workstep)
+  void setInitialKcb(double kcb) { vc_Kcb_ini = kcb; }
+
   int vc_TransplantShockDuration{0};
   int vc_DaysSinceTransplant{-1};
   double vc_TransplantEfficiency{1.0};
@@ -663,6 +668,14 @@ private:
   double pc_StageAtMaxHeight{};
   std::vector<double> pc_StageMaxRootNConcentration;  //! old WGMAX
   std::vector<double> pc_StageKcFactor;    //! old Kc
+  // FAO-56 Dual Kc: GDD-based trapezoidal Kcb curve state.
+  // vc_KcbFactor is the current daily interpolated Kcb returned by get_KcbFactor().
+  // vc_Kcb_ini/mid/end define the trapezoidal shape initialized in the constructor.
+  double vc_KcbFactor{0.15};  //!< Current daily Kcb (output of GDD-based 4-phase interpolation)
+  double vc_Kcb_ini{0.15};    //!< Initial/germination phase Kcb (flat, Phase 1)
+  double vc_Kcb_mid{0.0};     //!< Mid-season plateau Kcb (Phase 3)
+  double vc_Kcb_end{0.0};     //!< End of late-season Kcb target (Phase 4)
+  double vc_TheoreticalGDDAccumulated{0.0}; //!< Total GDD accumulated since crop start (for phase tracking)
   std::vector<double> pc_StageTemperatureSum;  //! old TSUM
   double vc_StomataResistance{0.0};          //! old RSTOM
   std::vector<bool> pc_StorageOrgan;

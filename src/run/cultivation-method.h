@@ -158,6 +158,7 @@ private:
   kj::Own<Crop> _cropToPlant;
   Crop *_crop{nullptr};
   int _plantDensity{-1}; //[plants m-2]
+  double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
 };
 
 class DLL_API AutomaticSowing : public Sowing {
@@ -255,6 +256,7 @@ private:
     double _initShootMass{ 0.0 };
     double _initLAI{ 0.0 };
     int _postTransplantDelay{ 0 };
+    double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
 };
 // --- END TRANSPLANT WORKSTEP IMPLEMENTATION ---
 
@@ -615,6 +617,9 @@ public:
 private:
   double _amount{0};
   IrrigationParameters _params;
+  // FAO-56 Dual Kc: event-level irrigation physical parameters
+  bool   _isDripIrrigation{false}; //!< true = drip irrigation (shading adjustment applied)
+  double _fw{1.0};                 //!< fraction of wetted soil surface [0-1]
 };
 
 DLL_API WSPtr makeWorkstep(json11::Json object);

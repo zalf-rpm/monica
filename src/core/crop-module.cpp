@@ -285,6 +285,19 @@ CropModule::CropModule(SoilColumn& sc,
   }
 
   if (vs_ImpenetrableLayerDepth > 0) vc_MaxRootingDepth = min(vc_MaxRootingDepth, vs_ImpenetrableLayerDepth);
+
+  // FAO-56 Dual Kc: Initialize GDD-based trapezoidal Kcb curve from pc_StageKcFactor.
+  // vc_Kcb_ini defaults to 0.15 (FAO-56 Table 17 bare soil); setInitialKcb() may override it.
+  if (!pc_StageKcFactor.empty()) {
+    double max_Kc = *std::max_element(pc_StageKcFactor.begin(), pc_StageKcFactor.end());
+    if (max_Kc >= 1.0) {
+      vc_Kcb_mid = std::max(0.15, max_Kc - 0.05); // high-coverage crop (FAO-56 §7)
+    } else {
+      vc_Kcb_mid = std::max(0.15, max_Kc - 0.10); // low-coverage crop (FAO-56 §7)
+    }
+    vc_Kcb_end = std::max(0.0, pc_StageKcFactor.back() - 0.05);
+  }
+  vc_KcbFactor = vc_Kcb_ini; // start at initial value
 }
 
 CropModule::CropModule(SoilColumn& sc,
@@ -939,6 +952,65 @@ void CropModule::step(double vw_MeanAirTemperature,
                               vc_CurrentTemperatureSum[vc_DevelopmentalStage],
                               pc_StageKcFactor[vc_DevelopmentalStage],
                               pc_StageKcFactor[vc_DevelopmentalStage - 1]);
+  }
+
+  // FAO-56 Dual Kc: GDD-based 4-phase trapezoidal Kcb curve (replaces static per-stage arrays).
+  // Phase 1 (flat initial) | Phase 2 (linear ascent) | Phase 3 (mid-season) | Phase 4 (descent)
+  {
+    const int nStages = (int)pc_StageKcFactor.size();
+    if (nStages > 0) {
+      // Accumulate theoretical GDD (tracks total progress since crop start)
+      vc_TheoreticalGDDAccumulated += vc_CurrentTemperatureSum[vc_DevelopmentalStage] > 0.0
+          ? 0.0  // already counted; use stage sums for phase detection
+          : 0.0;
+      // Compute total elapsed GDD as sum of all completed stages + current stage progress
+      double elapsed_GDD = 0.0;
+      for (int s = 0; s < nStages; ++s)
+        elapsed_GDD += vc_CurrentTemperatureSum[s];
+
+      // Identify mid-season start: first stage where Kc equals the maximum
+      double max_Kc = *std::max_element(pc_StageKcFactor.begin(), pc_StageKcFactor.end());
+      int mid_stage_start = nStages - 1;
+      for (int i = 1; i < nStages; ++i) {
+        if (pc_StageKcFactor[i] >= max_Kc - 1e-6) { mid_stage_start = i; break; }
+      }
+      // Identify late-season start: first stage after plateau where Kc drops
+      int late_stage_start = nStages - 1;
+      for (int i = mid_stage_start + 1; i < nStages; ++i) {
+        if (pc_StageKcFactor[i] < max_Kc - 1e-6) { late_stage_start = i; break; }
+      }
+
+      // GDD boundaries
+      double gdd_phase1_end = pc_StageTemperatureSum[0]; // end of germination/initial phase
+      double gdd_to_mid = 0.0;
+      for (int i = 0; i < mid_stage_start; ++i) gdd_to_mid += pc_StageTemperatureSum[i];
+      double gdd_late_start = 0.0;
+      for (int i = 0; i < late_stage_start; ++i) gdd_late_start += pc_StageTemperatureSum[i];
+      double gdd_late_total = 0.0;
+      for (int i = late_stage_start; i < nStages; ++i) gdd_late_total += pc_StageTemperatureSum[i];
+
+      // Phase 1: flat initial
+      if (elapsed_GDD <= gdd_phase1_end) {
+        vc_KcbFactor = vc_Kcb_ini;
+      }
+      // Phase 2: linear development ascent
+      else if ((int)vc_DevelopmentalStage < mid_stage_start) {
+        double denom = gdd_to_mid - gdd_phase1_end;
+        double frac = (denom > 0.0) ? std::min(1.0, (elapsed_GDD - gdd_phase1_end) / denom) : 1.0;
+        vc_KcbFactor = vc_Kcb_ini + frac * (vc_Kcb_mid - vc_Kcb_ini);
+      }
+      // Phase 3: mid-season plateau
+      else if ((int)vc_DevelopmentalStage < late_stage_start) {
+        vc_KcbFactor = vc_Kcb_mid;
+      }
+      // Phase 4: late-season linear descent
+      else {
+        double gdd_since_late = elapsed_GDD - gdd_late_start;
+        double frac = (gdd_late_total > 0.0) ? std::min(1.0, gdd_since_late / gdd_late_total) : 1.0;
+        vc_KcbFactor = vc_Kcb_mid + frac * (vc_Kcb_end - vc_Kcb_mid);
+      }
+      vc_KcbFactor = std::max(0.0, vc_KcbFactor);
+    }
   }
 
   auto icSendRcv = [&](const string& outmsg) {
@@ -4148,6 +4220,14 @@ double CropModule::get_SoilCoverage() const {
  */
 double CropModule::get_KcFactor() const {
   return vc_KcFactor;
+}
+
+/**
+ * @brief Returns the FAO-56 Dual Kc basal crop coefficient Kcb [-]
+ * @return Kcb factor (interpolated per developmental stage, analogous to get_KcFactor)
+ */
+double CropModule::get_KcbFactor() const {
+  return vc_KcbFactor;
 }
 
 /**

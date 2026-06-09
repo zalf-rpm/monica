@@ -214,6 +214,9 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   std::vector<double> pc_StageTemperatureSum;
   std::vector<double> pc_VernalisationRequirement;
 
+  // FAO-56 Dual Kc: GDD-based trapezoidal curve is initialised in CropModule constructor.
+  // Per-stage arrays removed; use vc_Kcb_ini/vc_Kcb_mid/vc_Kcb_end in CropModule instead.
+
   double pc_HeatSumIrrigationStart{0.0};
   double pc_HeatSumIrrigationEnd{0.0};
 
@@ -695,6 +698,10 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   bool deserializedMonicaStateFromJson{false};
   std::string pathToLoadSerializationFile;
   uint64_t noOfPreviousDaysSerializedClimateData{0};
+
+  // FAO-56 Dual Kc: global method switch (read from sim.json "evapotranspiration-method": "FAO-56-Dual")
+  // Irrigation physical params (isDripIrrigation, fw) are now set at the Irrigation workstep event level.
+  bool dualKcMethod{false};      //!< Use FAO-56 Dual Kc evaporation partitioning
 };
 
 
