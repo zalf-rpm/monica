@@ -1158,6 +1158,7 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
     double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
     vc_OxygenDeficit =
         1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
+    vc_OxygenDeficit = std::max(0.0, vc_OxygenDeficit);
   } else {
      vc_TimeUnderAnoxia = 0;
      vc_OxygenDeficit = 1.0;
@@ -1264,7 +1265,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
 
     // Development acceleration by water deficit //MP: Access point for drought optimisation
     double vc_DevelopmentAccelerationByWaterStress = 1; // old WPROG
-    if (vc_TranspirationDeficit < pc_DroughtStressThreshold[vc_DevelopmentalStage] && apc > 0.9) {//Das heißt, das betrifft nur die Kornfüllungsphase (acp>0.9).
+    if (vc_TranspirationDeficit < pc_DroughtStressThreshold[vc_DevelopmentalStage] && apc > 0.9) {//MP: Das heißt, das betrifft nur die Kornfüllungsphase (acp>0.9).
       if (vc_OxygenDeficit >= 1.0) {
         vc_DevelopmentAccelerationByWaterStress =
             1.0 + ((1.0 - vc_TranspirationDeficit) * (1.0 - vc_TranspirationDeficit));
@@ -3030,12 +3031,11 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
       vc_AvailableWaterPercentage = 0.0;
   }
   //MP:turn this off first
-  //if (vc_TranspirationDeficit < (0.95 * pc_DroughtStressThreshold[vc_DevelopmentalStage]) //MP: vielleicht ist das Problem, dass hier der selbe Wert verwendet wird
-  //    && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
-  //    && vc_RootingDepth_m > 0.95 * vc_MaxRootingDepth
-  //    && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
-  //  vc_MaxRootingDepth += 0.005;
-  //}
+  if (vc_TranspirationDeficit < (pc_DroughtStressThreshold[vc_DevelopmentalStage]) //MP: vielleicht ist das Problem, dass hier der selbe Wert verwendet wird, nein, das pa
+      && pc_CropSpecificMaxRootingDepth >= 0.8 // only if the crop specific max rooting depth is deeper than 80 cm
+      && vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) {
+    vc_MaxRootingDepth += 0.005; //MP: maybe this needs to go deeper
+  }
 
   if (vc_MaxRootingDepth > (double(nols - 1) * layerThickness)) {
     vc_MaxRootingDepth = double(nols - 1) * layerThickness;
@@ -3079,12 +3079,68 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
   }
   //MP: add constraint for reduced root penetration rate when soil is dry
-  if (vc_AvailableWaterPercentage <= 0.25) {
-      vc_RootPenetrationRate = std::min(1.0, (4 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate; //MP: APSIM method according to Jones et al (1991)
+  if (vc_AvailableWaterPercentage <= 0.1) {
+      //vc_RootPenetrationRate = std::min(1.0, (10 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate; //MP: APSIM method according to Jones et al (1991)
+      vc_RootPenetrationRate = std::max(0.0, (vc_AvailableWaterPercentage * (vc_RootPenetrationRate/2)/0.1 + vc_RootPenetrationRate / 2)); //MP: change slopes and intercept
+      //vc_RootPenetrationRate = std::min(1.0, (4 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate; //MP: APSIM method according to Jones et al (1991)
   }
   else {
       vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
   }
+
+
+  // MP: Introducing Pablo's restricted root growth// I think this is where it needs to go
+
+  double vc_TopSoil = 0.0;
+  if (vc_RootingDepth_m < 0.3) {
+      vc_TopSoil = 1;
+  }
+  else {
+      vc_TopSoil = 0;
+  }
+
+  double vc_Seidel_n = pow(10.0, 0.22236 -
+      0.30189 * soilColumn[vc_RootingDepth].vs_SoilBulkDensity() -
+      0.5558 * vc_TopSoil -
+      0.005306 * soilColumn[vc_RootingDepth].vs_SoilClayContent() * 100.0 -
+      0.003084 * soilColumn[vc_RootingDepth].vs_SoilSiltContent() * 100.0 -
+      0.01072 * soilColumn[vc_RootingDepth].vs_SoilOrganicCarbon() * 100.0) + 1.0;
+
+  double vc_Seidel_m = 1.0 - (1.0 / vc_Seidel_n);
+
+  double vc_Seidel_thetaS = 0.8308 -
+      0.28217 * soilColumn[vc_RootingDepth].vs_SoilBulkDensity() +
+      0.0002728 * soilColumn[vc_RootingDepth].vs_SoilClayContent() * 100.0 +
+      0.000187 * soilColumn[vc_RootingDepth].vs_SoilSiltContent() * 100.0;
+
+  double vc_AlphaVG = pow(10.0, -0.43348 -
+      0.41729 * soilColumn[vc_RootingDepth].vs_SoilBulkDensity() -
+      0.04762 * soilColumn[vc_RootingDepth].vs_SoilOrganicCarbon() * 100.0 +
+      0.2181 * vc_TopSoil -
+      0.01581 * soilColumn[vc_RootingDepth].vs_SoilClayContent() * 100.0 -
+      0.01207 * soilColumn[vc_RootingDepth].vs_SoilSiltContent() * 100.0);
+
+  double vc_Seidel_thetaH = (1.0 / vc_AlphaVG) * pow(pow((vc_Seidel_thetaS - 0.041) / (soilColumn[vc_RootingDepth].get_Vs_SoilMoisture_m3() - 0.041), 1.0 / vc_Seidel_m) - 1.0, 1.0 / vc_Seidel_n);
+
+  double vc_Seidel_AlphaH = 0;
+  if (vc_Seidel_thetaH > -10) {
+      vc_Seidel_AlphaH = 0;
+  }
+  else if (vc_Seidel_thetaH > -40) {
+      vc_Seidel_AlphaH = 0 + (1 / 30 * (vc_Seidel_AlphaH - 10));
+  }
+  else if (vc_Seidel_thetaH > -700) {
+      vc_Seidel_AlphaH = 1;
+  }
+  else if (vc_Seidel_thetaH > -15000) {
+      vc_Seidel_AlphaH = 1 + ((0 - 1) / 800 * (vc_Seidel_AlphaH - 700));
+  }
+
+  double vc_Qp = 0.00587 * pow(soilColumn[vc_RootingDepth].vs_SoilBulkDensity(), 5) * pow(soilColumn[vc_RootingDepth].get_Vs_SoilMoisture_m3(), -4.65);
+
+  double vc_Alpha_Qp = max(exp(-0.25 * vc_Qp), 0.05);
+
+  vc_RootPenetrationRate = vc_RootPenetrationRate * vc_Seidel_AlphaH * vc_Alpha_Qp;
 
   // Calculating rooting depth [m]
   if (vc_CurrentTotalTemperatureSumRoot <= pc_RootGrowthLag) {
@@ -3102,8 +3158,13 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   if (vc_RootingDepth_m > vc_MaxRootingDepth) vc_RootingDepth_m = vc_MaxRootingDepth; // [m]
   if (vc_RootingDepth_m > vs_MaxEffectiveRootingDepth) vc_RootingDepth_m = vs_MaxEffectiveRootingDepth;
 
-  vc_RootingDepth = std::min(int(std::round(vc_RootingDepth_m / layerThickness)), int(nols)); // layer no
-  vc_RootingZone = std::min(int(std::round(1.3 * vc_RootingDepth_m / layerThickness)), int(nols)); // layer no
+  vc_RootingDepth = std::min(int(std::round(vc_RootingDepth_m / layerThickness)), int(nols)-1); // layer no
+  
+  //MP: Rooting zone for Pablo
+  vc_RootingZone = std::round((vc_CurrentTotalTemperatureSumRoot <= pc_RootGrowthLag) ? pc_RootGrowthLag
+      : std::max(int(1.3 * vc_RootingDepth_m / 0.1), int(nols)));
+
+  // vc_RootingZone = std::min(int(std::round(1.3 * vc_RootingDepth_m / layerThickness)), int(nols)); // layer no
 
   vc_TotalRootLength = vc_RootBiomass * pc_SpecificRootLength; //[m m-2]
 
@@ -3562,7 +3623,7 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
       if (vc_RemainingTotalRootEffectivity <= 0.0) {
         vc_RemainingTotalRootEffectivity = 0.00001;
       }
-      if (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) >
+      if (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) > //MP: haut mir die if Schleife einen Hund rein?
           ((soilColumn[i_Layer].get_Vs_SoilMoisture_m3() - soilColumn[i_Layer].vs_PermanentWiltingPoint()))) {
         vc_PotentialTranspirationDeficit = (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) -
                                             (soilColumn[i_Layer].get_Vs_SoilMoisture_m3() -
