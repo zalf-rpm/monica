@@ -8,6 +8,8 @@ message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_compile_definitions(CAPNPROTO_SERIALIZATION_SUPPORT)
 set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 #add_compile_definitions(INCLUDE_SR_SUPPORT)
@@ -18,33 +20,33 @@ set(MT_RUNTIME_LIB 1)
 
 #set absolute filenames (to resolve .. in paths)
 macro(set_absolute_path var_name path)
-    get_filename_component(toAbsPath ${path} ABSOLUTE)
-    set(${var_name} ${toAbsPath})
+  get_filename_component(toAbsPath ${path} ABSOLUTE)
+  set(${var_name} ${toAbsPath})
 endmacro(set_absolute_path)
 
 if (NOT TARGET capnp_schemas_lib)
-    message(STATUS "target: capnp_schemas_lib")
-    add_subdirectory(mas_cpp_misc/mas_capnproto_schemas/gen/c++ mas-infrastructure/capnproto_schemas)
+  message(STATUS "target: capnp_schemas_lib")
+  add_subdirectory(mas_cpp_misc/mas_capnproto_schemas/gen/c++ mas-infrastructure/capnproto_schemas)
 endif ()
 
 if (NOT TARGET common_lib)
-    message(STATUS "target: common_lib")
-    add_subdirectory(mas_cpp_misc/common common)
+  message(STATUS "target: common_lib")
+  add_subdirectory(mas_cpp_misc/common common)
 endif ()
 
 if (NOT TARGET date_lib)
-    message(STATUS "target: date_lib")
-    add_subdirectory(mas_cpp_misc/tools/date tools/date)
+  message(STATUS "target: date_lib")
+  add_subdirectory(mas_cpp_misc/tools/date tools/date)
 endif ()
 
 if (NOT TARGET helpers_lib)
-    message(STATUS "target: helpers_lib")
-    add_subdirectory(mas_cpp_misc/tools/helpers tools/helpers)
+  message(STATUS "target: helpers_lib")
+  add_subdirectory(mas_cpp_misc/tools/helpers tools/helpers)
 endif ()
 
 if (NOT TARGET json11_lib)
-    message(STATUS "target: json11_lib")
-    add_subdirectory(mas_cpp_misc/json11 json11)
+  message(STATUS "target: json11_lib")
+  add_subdirectory(mas_cpp_misc/json11 json11)
 endif ()
 
 #if (NOT TARGET toml_lib)
@@ -53,62 +55,62 @@ endif ()
 #endif ()
 
 if (NOT TARGET debug_lib)
-    message(STATUS "target: debug_lib")
-    add_subdirectory(mas_cpp_misc/tools/debug tools/debug)
+  message(STATUS "target: debug_lib")
+  add_subdirectory(mas_cpp_misc/tools/debug tools/debug)
 endif ()
 
 if (NOT TARGET climate_file_io_lib)
-    message(STATUS "target: climate_file_io_lib")
-    add_subdirectory(mas_cpp_misc/climate/climate-file-io climate/climate-file-io)
+  message(STATUS "target: climate_file_io_lib")
+  add_subdirectory(mas_cpp_misc/climate/climate-file-io climate/climate-file-io)
 endif ()
 
 if (NOT TARGET soil_lib)
-    message(STATUS "target: soil_lib")
-    add_subdirectory(mas_cpp_misc/soil soil)
+  message(STATUS "target: soil_lib")
+  add_subdirectory(mas_cpp_misc/soil soil)
 endif ()
 
 if (NOT TARGET zeromq_lib)
-    message(STATUS "target: zeromq_lib")
-    add_subdirectory(mas_cpp_misc/zeromq zeromq)
+  message(STATUS "target: zeromq_lib")
+  add_subdirectory(mas_cpp_misc/zeromq zeromq)
 endif ()
 
 #define delete file from path
 macro(remove_file list_name file_name)
-    get_filename_component(toAbsPath ${file_name} ABSOLUTE)
-    list(REMOVE_ITEM ${list_name} "${toAbsPath}")
+  get_filename_component(toAbsPath ${file_name} ABSOLUTE)
+  list(REMOVE_ITEM ${list_name} "${toAbsPath}")
 endmacro(remove_file)
 
-#define source_groups 
+#define source_groups
 macro(GroupSources curdir baseDir)
-    file(GLOB children RELATIVE ${baseDir}/${curdir} ${baseDir}/${curdir}/*)
-    foreach (child ${children})
-        if (IS_DIRECTORY ${baseDir}/${curdir}/${child})
-            GroupSources(${curdir}/${child} ${baseDir})
-        else ()
-            string(REPLACE "/" "\\" groupname ${curdir})
-            source_group(${groupname} FILES ${baseDir}/${curdir}/${child})
-        endif ()
-    endforeach ()
+  file(GLOB children RELATIVE ${baseDir}/${curdir} ${baseDir}/${curdir}/*)
+  foreach (child ${children})
+    if (IS_DIRECTORY ${baseDir}/${curdir}/${child})
+      GroupSources(${curdir}/${child} ${baseDir})
+    else ()
+      string(REPLACE "/" "\\" groupname ${curdir})
+      source_group(${groupname} FILES ${baseDir}/${curdir}/${child})
+    endif ()
+  endforeach ()
 endmacro()
 
 if (MSVC)
-    # disable security warnings in windows
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+  # disable security warnings in windows
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
-    # define MS Visual Studio toolset version
-    if (NOT DEFINED MSVC_TOOLSET_VERSION)
-        if (MSVC_VERSION GREATER_EQUAL 1930)
-            set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
-        elseif (MSVC_VERSION GREATER_EQUAL 1920)
-            set(MSVC_TOOLSET_VERSION 142) # VS 2019
-        elseif (MSVC_VERSION GREATER_EQUAL 1910)
-            set(MSVC_TOOLSET_VERSION 141) # VS 2017
-        elseif (MSVC_VERSION EQUAL 1900)
-            set(MSVC_TOOLSET_VERSION 14) # VS 2015
-        else ()
-            # we do not support older version
-        endif ()
+  # define MS Visual Studio toolset version
+  if (NOT DEFINED MSVC_TOOLSET_VERSION)
+    if (MSVC_VERSION GREATER_EQUAL 1930)
+      set(MSVC_TOOLSET_VERSION "") # leave unknown for future versions
+    elseif (MSVC_VERSION GREATER_EQUAL 1920)
+      set(MSVC_TOOLSET_VERSION 142) # VS 2019
+    elseif (MSVC_VERSION GREATER_EQUAL 1910)
+      set(MSVC_TOOLSET_VERSION 141) # VS 2017
+    elseif (MSVC_VERSION EQUAL 1900)
+      set(MSVC_TOOLSET_VERSION 14) # VS 2015
+    else ()
+      # we do not support older version
     endif ()
+  endif ()
 endif ()
 
 # https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
@@ -126,9 +128,9 @@ include_directories("src")
 message(STATUS "cmake_generator = ${CMAKE_GENERATOR}")
 message(STATUS "size_of_void =  ${CMAKE_SIZEOF_VOID_P}")
 if (${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
-    set(ARCH "x86")
+  set(ARCH "x86")
 elseif (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
-    set(ARCH "x64")
+  set(ARCH "x64")
 endif ()
 
 link_directories($ENV{HOME}/lib)
@@ -230,7 +232,7 @@ target_include_directories(monica_lib
 #endforeach()
 
 if (MSVC)
-    target_compile_options(monica_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -249,7 +251,7 @@ target_link_libraries(monica_run_lib monica_lib)
 
 #target_include_directories(monica_run_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 if (MSVC)
-    target_compile_options(monica_run_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica_run_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -260,12 +262,12 @@ add_executable(monica-run src/run/monica-run-main.cpp)
 target_link_libraries(monica-run monica_run_lib)
 
 if (MSVC)
-    target_compile_options(monica-run PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-run PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
 
-# create monica zmq proxy executable for forwarding jobs to monica-zmq-server 
+# create monica zmq proxy executable for forwarding jobs to monica-zmq-server
 add_executable(monica-zmq-proxy src/run/monica-zmq-proxy-main.cpp)
 
 target_link_libraries(monica-zmq-proxy
@@ -274,7 +276,7 @@ target_link_libraries(monica-zmq-proxy
         )
 
 if (MSVC)
-    target_compile_options(monica-zmq-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-zmq-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -292,7 +294,7 @@ target_link_libraries(monica-zmq-server
         )
 
 if (MSVC)
-    target_compile_options(monica-zmq-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-zmq-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -307,7 +309,7 @@ add_executable(monica-capnp-server
 target_link_libraries(monica-capnp-server monica_lib)
 
 if (MSVC)
-    target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-capnp-server PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -322,7 +324,7 @@ add_executable(monica-capnp-proxy
 target_link_libraries(monica-capnp-proxy monica_lib)
 
 if (MSVC)
-    target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-capnp-proxy PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -337,7 +339,7 @@ add_executable(monica-capnp-fbp-component
 target_link_libraries(monica-capnp-fbp-component monica_lib)
 
 if (MSVC)
-    target_compile_options(monica-capnp-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-capnp-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -351,7 +353,7 @@ target_link_libraries(daily-monica-fbp-component
 )
 
 if (MSVC)
-target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
