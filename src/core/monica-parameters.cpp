@@ -1476,6 +1476,14 @@ Errors SimulationParameters::merge(json11::Json j) {
     }
   }
 
+  // FAO-56 Dual Kc: method switch.
+  // "evapotranspiration-method": "FAO-56-Dual" activates the Dual Kc pathway.
+  // All other values (or absent key) keep the native Single-Kc method.
+  if (j["evapotranspiration-method"].string_value() == "FAO-56-Dual")
+    dualKcMethod = true;
+  set_bool_value(dualKcMethod, j, "dualKcMethod");
+  // Note: isDripIrrigation and fw are now parsed at the Irrigation workstep event level.
+
   return res;
 }
 
@@ -1523,7 +1531,10 @@ json11::Json SimulationParameters::to_json() const {
           }
         }
       }
-    }
+    },
+    // FAO-56 Dual Kc: method switch only; event-level fw/isDrip are not stored here
+    {"evapotranspiration-method", dualKcMethod ? std::string("FAO-56-Dual") : std::string("Penman-Monteith")},
+    {"dualKcMethod",    dualKcMethod}
   };
 }
 

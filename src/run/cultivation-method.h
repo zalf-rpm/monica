@@ -158,6 +158,7 @@ private:
   kj::Own<Crop> _cropToPlant;
   Crop *_crop{nullptr};
   int _plantDensity{-1}; //[plants m-2]
+  double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
 };
 
 class DLL_API AutomaticSowing : public Sowing {
@@ -218,6 +219,47 @@ private:
   bool _inSowingRange{false};
   bool _cropSeeded{false};
 };
+
+
+// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION ---
+class DLL_API Transplant : public Workstep {
+public:
+    Transplant() = default;
+    explicit Transplant(json11::Json object);
+    Transplant(const Transplant& other);
+
+    virtual Transplant* clone() const override { return new Transplant(*this); }
+
+    // Parse parameters from JSON
+    Tools::Errors merge(json11::Json j) override;
+    json11::Json to_json() const override { return to_json(true); }
+    json11::Json to_json(bool includeFullCropParameters) const;
+
+    virtual std::string type() const override { return "Transplant"; }
+
+    // Execution/application inside MONICA runner
+    bool apply(MonicaModel* model) override;
+
+    void setDate(Tools::Date date) override {
+        this->_date = date;
+        if (_cropToPlant) _cropToPlant->setSeedDate(date);
+    }
+
+private:
+    kj::Own<Crop> _cropToPlant; // Manages the genetic characteristics of the crop to plant
+
+    // Seedling initial parameters forced at transplanting
+    size_t _initialStage{ 2 };
+    double _initialGDD{ 0.0 };
+    double _initRootMass{ 0.0 };
+    double _initLeafMass{ 0.0 };
+    double _initShootMass{ 0.0 };
+    double _initLAI{ 0.0 };
+    int _postTransplantDelay{ 0 };
+    double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
+};
+// --- END TRANSPLANT WORKSTEP IMPLEMENTATION ---
+
 
 class DLL_API Harvest : public Workstep {
 public:
@@ -575,6 +617,9 @@ public:
 private:
   double _amount{0};
   IrrigationParameters _params;
+  // FAO-56 Dual Kc: event-level irrigation physical parameters
+  bool   _isDripIrrigation{false}; //!< true = drip irrigation (shading adjustment applied)
+  double _fw{1.0};                 //!< fraction of wetted soil surface [0-1]
 };
 
 DLL_API WSPtr makeWorkstep(json11::Json object);

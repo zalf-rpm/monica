@@ -209,6 +209,9 @@ Errors Sowing::merge(json11::Json j) {
   set_int_value(_plantDensity, j, "PlantDensity");
   if (_plantDensity > 0)
     _crop->cropParameters().speciesParams.pc_PlantDensity = _plantDensity;
+  // FAO-56 Dual Kc: optional initial Kcb at sowing (default 0.15 = bare soil)
+  if (j["initialKcb"].is_number())
+    _initialKcb = j["initialKcb"].number_value();
   return res;
 }
 
@@ -229,6 +232,9 @@ bool Sowing::apply(MonicaModel *model) {
 
   debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
   model->seedCrop(_cropToPlant.get());
+  // FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
+  if (model->simulationParameters().dualKcMethod && model->cropGrowth())
+    model->cropGrowth()->setInitialKcb(_initialKcb);
   model->addEvent("Sowing");
 
   return true;
@@ -1061,8 +1067,15 @@ Irrigation::Irrigation(json11::Json j) {
 Errors Irrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   set_double_value(_amount, j, "amount");
-  if (j["parameters"].is_object())
+  if (j["parameters"].is_object()) {
     set_value_obj_value(_params, j, "parameters");
+    // FAO-56 Dual Kc: event-level irrigation physical params
+    const auto& params = j["parameters"];
+    if (params["isDripIrrigation"].is_bool())
+      _isDripIrrigation = params["isDripIrrigation"].bool_value();
+    if (params["fw"].is_number())
+      _fw = std::max(0.0, std::min(1.0, params["fw"].number_value()));
+  }
   return res;
 }
 
@@ -1079,6 +1092,12 @@ bool Irrigation::apply(MonicaModel *model) {
 
   //cout << toString() << endl;
   model->applyIrrigation(amount(), nitrateConcentration());
+  // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
+  // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
+  if (model->simulationParameters().dualKcMethod) {
+    model->soilMoistureNC().set_irrigFwEvent(_fw);
+    model->soilMoistureNC().set_irrigIsDripEvent(_isDripIrrigation);
+  }
   model->addEvent("Irrigation");
 
   return true;
@@ -1087,10 +1106,18 @@ bool Irrigation::apply(MonicaModel *model) {
 
 WSPtr monica::makeWorkstep(json11::Json j) {
   string type = string_value(j["type"]);
-  if (type == "Sowing"
-      || type == "Seed") { //deprecated name
-    return make_shared<Sowing>(j);
+  
+  if (type == "Sowing" || type == "Seed") {
+      return make_shared<Sowing>(j);
   }
+
+  // --- BEGIN TRANSPLANT WORKSTEP FACTORY REGISTRATION ---
+  else if (type == "Transplant") {
+      return make_shared<Transplant>(j);
+  }
+  // --- END TRANSPLANT WORKSTEP FACTORY REGISTRATION ---
+
+
   else if (type == "AutomaticSowing") {
     return make_shared<AutomaticSowing>(j);
   }
@@ -1528,3 +1555,80 @@ bool CultivationMethod::reinit(Tools::Date date, bool forceInitYear) {
 
   return addedYear;
 }
+
+
+// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION (PARSING) ---
+Transplant::Transplant(json11::Json object) {
+    // Mirror Sowing's constructor exactly: do NOT pass json to Workstep() base
+    // (that would call Workstep::merge once, then our merge() would call it again).
+    _errors.append(Transplant::merge(kj::mv(object)));
+}
+
+Transplant::Transplant(const Transplant& other) : Workstep(other) {
+    if (other._cropToPlant) {
+        _cropToPlant = kj::heap<Crop>(*other._cropToPlant);
+    }
+}
+
+json11::Json Transplant::to_json(bool includeFullCropParameters) const {
+    return json11::Json::object{ { "type", type() } };
+}
+
+Tools::Errors Transplant::merge(json11::Json j) {
+    // --- Step 1: Parse date and base Workstep fields (mirrors Sowing::merge) ---
+    Errors res = Workstep::merge(j);
+
+    // --- Step 2: Allocate Crop and call merge exactly like Sowing does ---
+    _cropToPlant = nullptr;
+    _cropToPlant = kj::heap<Crop>();
+    res.append(_cropToPlant->merge(j["crop"]));   // identical to Sowing::merge line 206
+
+    // Set seed date on the crop object exactly like Sowing::merge line 208
+    _cropToPlant->setSeedDate(date());
+
+    // --- Step 3: Parse transplant-specific numerical parameters ---
+    if (!j["initialStage"].is_null())          { _initialStage = static_cast<size_t>(j["initialStage"].int_value()); }
+    if (!j["initialTemperatureSum"].is_null())  { _initialGDD   = j["initialTemperatureSum"].number_value(); }
+    if (!j["initialRootBiomass"].is_null())     { _initRootMass  = j["initialRootBiomass"].number_value(); }
+    if (!j["initialLeafBiomass"].is_null())     { _initLeafMass  = j["initialLeafBiomass"].number_value(); }
+    if (!j["initialShootBiomass"].is_null())    { _initShootMass = j["initialShootBiomass"].number_value(); }
+    if (!j["initialLAI"].is_null())             { _initLAI       = j["initialLAI"].number_value(); }
+    if (!j["postTransplantDelay"].is_null())    { _postTransplantDelay = j["postTransplantDelay"].int_value(); }
+    // FAO-56 Dual Kc: optional initial Kcb at transplanting (default 0.15 = bare soil)
+    if (!j["initialKcb"].is_null())             { _initialKcb = j["initialKcb"].number_value(); }
+
+    return res;   // propagates ALL sub-errors (crop parse errors included)
+}
+// --- END TRANSPLANT WORKSTEP IMPLEMENTATION (PARSING) ---
+
+// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION (EXECUTION) ---
+bool Transplant::apply(MonicaModel* model) {
+    // Step 1: Call base Workstep::apply (required by event system - mirrors Sowing::apply line 228)
+    Workstep::apply(model);
+
+    if (!model) return false;
+
+    // Guard: _cropToPlant must exist and be valid
+    if (!_cropToPlant || !_cropToPlant->isValid()) return false;
+
+    // Step 2: Seed crop - identical to Sowing::apply line 231
+    model->seedCrop(_cropToPlant.get());
+
+    // Step 3: Get the crop engine created by seedCrop
+    CropModule* cropModule = model->cropGrowth();
+    if (!cropModule) return false;
+
+    // Step 4: Force the transplant initial state (overrides germination defaults)
+    cropModule->forceTransplantState(_initialGDD, _initLAI, _initialStage,
+                                     _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
+
+    // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
+    if (model->simulationParameters().dualKcMethod)
+      cropModule->setInitialKcb(_initialKcb);
+
+    // Step 6: Register the event
+    model->addEvent("Transplant");
+
+    return true;
+}
+// --- END TRANSPLANT WORKSTEP IMPLEMENTATION (EXECUTION) ---

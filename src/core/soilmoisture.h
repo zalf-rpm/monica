@@ -166,6 +166,11 @@ void step(double vs_DepthGroundwaterTable,
   double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
 
   double get_KcFactor() const;
+  double get_KeFactor() const { return vm_Ke; }
+
+  //! FAO-56 Dual Kc: allow Irrigation workstep to push event-level physical params into this module
+  void set_irrigFwEvent(double fw)       { vm_irrigFwEvent = fw; }
+  void set_irrigIsDripEvent(bool isDrip) { vm_irrigIsDripEvent = isDrip; }
 
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
 
@@ -212,6 +217,12 @@ private:
   int pm_LeachingDepthLayer{0};
   double pm_MaxPercolationRate{0.0}; //!< [mm d-1]
   double vc_NetPrecipitation{0.0}; //!< Precipitation amount that is not intercepted by vegetation [mm]
+  bool vm_LastWettingWasRain{false}; //!< True if the most recent surface wetting was rain (for FAO-56 Dual Kc)
+  double vm_Ke{0.0};                 //!< Soil evaporation coefficient (FAO-56 Dual Kc)
+  // FAO-56 Dual Kc: event-level irrigation physical parameters (written by Irrigation::apply).
+  // These replace the old global simPs.fw / simPs.isDripIrrigation.
+  double vm_irrigFwEvent{1.0};       //!< fw from the most recent Irrigation workstep [0-1]
+  bool   vm_irrigIsDripEvent{false}; //!< true if most recent Irrigation event was drip
   double vw_NetRadiation{0.0}; //!< [MJ m-2]
   std::vector<double> vm_PermanentWiltingPoint; //!< Soil water content at permanent wilting point [m3 m-3]
   double vc_PercentageSoilCoverage{0.0}; //!< [m2 m-2]
