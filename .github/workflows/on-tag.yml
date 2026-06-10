@@ -12,34 +12,34 @@ jobs:
 
     steps:
 
-        - name: Checkout repository
-          uses: actions/checkout@v3
-          with:
-            submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-        # login to docker hub
-        - name: Login to DockerHub
-          uses: docker/login-action@v2
-          with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
-            
-        - name: Build and push Docker image
-          uses: docker/build-push-action@v4
-          with:
-              context: .
-              push: true
-              # push with just the tag
-              tags: zalfrpm/monica-cluster:${{ github.ref_name }}    
+      # login to docker hub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          # push with just the tag
+          tags: zalfrpm/monica-cluster:${{ github.ref_name }}
 
 
   # create a follow up job to build on windows
   windows:
     runs-on: windows-latest
-  
+
     steps:
       # main repository monica
       - name: Checkout repository
@@ -55,12 +55,12 @@ jobs:
       #    repository: zalf-rpm/mas-infrastructure
       #    ref: master
       #    path: "mas-infrastructure"
-  
+
       - name: Checkout dependent repository
         uses: actions/checkout@v4
         with:
           repository: zalf-rpm/monica-parameters
-          ref: master 
+          ref: master
           path: "monica-parameters"
 
       - name: Read vcpkg tag to use
@@ -79,7 +79,7 @@ jobs:
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
           path: "vcpkg"
-  
+
       - name: Debug directory structure
         run: |
           echo ${{ github.workspace }}
@@ -91,35 +91,35 @@ jobs:
 
 
       - name: Set up MSVC compiler
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v3
         with:
-          vs-version: '17.9'
+          vs-version: '18.0'
           msbuild-architecture: 'x64'
-  
+
       - name: Install vcpkg dependencies
         run: |
           pwd
           .\vcpkg\bootstrap-vcpkg.bat
           .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static
-  
-      - name: Create build folder 
+
+      - name: Create build folder
         working-directory: ./monica
         run: |
-            pwd
-            mkdir _cmake_win64
-  
+          pwd
+          mkdir _cmake_win64
+
       - name: Configure CMake
         working-directory: ./monica/_cmake_win64
         run: |
-            pwd
-            cmake -G "Visual Studio 17 2022" .. -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
-        
+          pwd
+          cmake -G "Visual Studio 18 2026" .. -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
+
       - name: Build Monica
         working-directory: ./monica/_cmake_win64
         run: |
-            msbuild Monica.sln /p:Configuration=Release /p:Platform=x64
-  
-      - name: package Monica  
+          msbuild Monica.sln /p:Configuration=Release /p:Platform=x64
+
+      - name: package Monica
         run: |
           mkdir monica_${{ github.ref_name }}
           mkdir monica_${{ github.ref_name }}/bin
@@ -141,11 +141,11 @@ jobs:
           cp monica/_cmake_win64/Release/daily-monica-fbp-component.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/common/Release/channel.exe monica_${{ github.ref_name }}/bin/
           cp monica/_cmake_win64/common/Release/gateway-service.exe monica_${{ github.ref_name }}/bin/
-  
+          
           cp monica/LICENSE monica_${{ github.ref_name }}/bin/
           cp monica/documentation/de_benutzerhandbuch_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
           cp monica/documentation/en_user_manual_MONICA_windows.pdf monica_${{ github.ref_name }}/documentation/
-                    
+          
           cp -r monica-parameters/crop-residues monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/crops monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/mineral-fertilisers monica_${{ github.ref_name }}/monica-parameters/
@@ -153,7 +153,7 @@ jobs:
           cp -r monica-parameters/general monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/soil monica_${{ github.ref_name }}/monica-parameters/
           cp -r monica-parameters/projects monica_${{ github.ref_name }}/monica-parameters/
-  
+          
           cp monica/installer/Hohenfinow2/crop-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
           cp monica/installer/Hohenfinow2/site-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
           cp monica/installer/Hohenfinow2/sim-min.json monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/
@@ -165,7 +165,7 @@ jobs:
           cp monica/installer/Hohenfinow2/python/start_producer.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/start_producer_consumer_pipeline.cmd monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/python/
           cp monica/installer/Hohenfinow2/python/README_pipeline.md monica_${{ github.ref_name }}/projects/Hohenfinow2-producer-consumer/README.md
-  
+          
           cp monica/installer/Hohenfinow2/crop.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
           cp monica/installer/Hohenfinow2/site.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
           cp monica/installer/Hohenfinow2/sim.json monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/
@@ -174,7 +174,7 @@ jobs:
           cp monica/installer/Hohenfinow2/python/README_single.md monica_${{ github.ref_name }}/projects/Hohenfinow2-single-run/README.md
 
           Compress-Archive -Path monica_${{ github.ref_name }}/* -Destination monica_win64_${{ github.ref_name }}.zip
-  
+
       - name: Create release
         working-directory: ./monica
         env:
@@ -182,7 +182,7 @@ jobs:
           tag: ${{ github.ref_name }}
         run: |
           gh release create ${{ github.ref_name }} --draft --title="Monica ${{ github.ref_name }}" 
- 
+
       - name: Upload executable
         working-directory: ./monica
         env:

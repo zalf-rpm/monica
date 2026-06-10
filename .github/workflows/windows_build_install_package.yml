@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: zalf-rpm/monica-parameters
-          ref: master 
+          ref: master
           path: "monica-parameters"
 
       - name: Read vcpkg tag to use
@@ -60,9 +60,9 @@ jobs:
 
 
       - name: Set up MSVC compiler
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v3
         with:
-          vs-version: '17.9'
+          vs-version: '18.0'
           msbuild-architecture: 'x64'
 
       - name: Install vcpkg dependencies
@@ -71,24 +71,24 @@ jobs:
           .\vcpkg\bootstrap-vcpkg.bat
           .\vcpkg\vcpkg install zeromq:x64-windows-static capnproto:x64-windows-static libsodium:x64-windows-static
 
-      - name: Create build folder 
+      - name: Create build folder
         working-directory: ./monica
         run: |
-            pwd
-            mkdir _cmake_win64
+          pwd
+          mkdir _cmake_win64
 
       - name: Configure CMake
         working-directory: ./monica/_cmake_win64
         run: |
-            pwd
-            cmake -G "Visual Studio 17 2022" .. -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
-        
+          pwd
+          cmake -G "Visual Studio 18 2026" .. -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static 
+
       - name: Build Monica
         working-directory: ./monica/_cmake_win64
         run: |
-            msbuild Monica.sln /p:Configuration=Release /p:Platform=x64
+          msbuild Monica.sln /p:Configuration=Release /p:Platform=x64
 
-      - name: package Monica  
+      - name: package Monica
         run: |
           mkdir monica_${{ github.ref_name }}
           mkdir monica_${{ github.ref_name }}/bin
