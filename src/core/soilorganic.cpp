@@ -416,9 +416,8 @@ void SoilOrganic::addOrganicMatter(const OrganicMatterParameters &params,
     }
   }
 
-  for (const auto &p: layer2addedOrganicMatterAmount) {
-    auto intoLayerIndex = p.first;
-    double addedOrganicMatterAmount = p.second;
+  for (const auto & [intoLayerIndex, addedOrganicMatterAmount]: layer2addedOrganicMatterAmount) {
+    if (intoLayerIndex >= soilColumn.size()) continue; // skip invalid layer indizes
     auto &intoLayer = soilColumn.at(intoLayerIndex);
 
     // calculate the CN ratio for AOM fast, if we're talking about crop residues and the

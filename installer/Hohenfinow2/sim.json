@@ -124,7 +124,7 @@
 				"Recharge", 
 				"NLeach",
 				["NO3", [1, 20]], 
-				"Carb", 
+				["Carb", [1, 20]],
 				["NH4", [1, 20]], 
 				["NO2", [1, 4]], 
 				["SOC", [1, 6]], 
@@ -185,7 +185,8 @@
 				"CM-count",
 				"Crop",
 				["Date|sowing", "FIRST"],
-				["Date|harvest", "LAST"]
+				["Date|harvest", "LAST"],
+				["Yield", "LAST"]
 			],
 
 			"xxxx-03-31", [

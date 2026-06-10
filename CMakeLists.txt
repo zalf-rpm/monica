@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.22)
 project(Monica)
 
 message(STATUS "-> Monica")
+
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
@@ -340,17 +342,16 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-add_executable(daily-monica-fbp-component-main
+add_executable(daily-monica-fbp-component
 src/run/daily-monica-fbp-component-main.cpp
 )
 
-target_link_libraries(daily-monica-fbp-component-main
+target_link_libraries(daily-monica-fbp-component
         monica_lib
-        #PkgConfig::tomlplusplus
 )
 
 if (MSVC)
-target_compile_options(daily-monica-fbp-component-main PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
