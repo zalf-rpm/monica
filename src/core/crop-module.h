@@ -456,6 +456,8 @@ public:
   double vc_TranspirationReduced{ 0.0 };
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
+  double vc_SeidelAlpha_H{ 0 };
+  double vc_Alpha_Qp{ 0 };
 private:
   Intercropping &_intercropping;
 

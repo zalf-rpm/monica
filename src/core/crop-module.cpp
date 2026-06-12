@@ -3212,10 +3212,9 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
       //vc_RootPenetrationRate = std::min(1.0, (4 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate; //MP: APSIM method according to Jones et al (1991)
   }
   else {
-      vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
-    }
+    vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
   }
-
+  
 
   // MP: Introducing Pablo's restricted root growth// I think this is where it needs to go
 
@@ -3226,6 +3225,55 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   else {
       vc_TopSoil = 0;
   }
+
+  //auto bd_rd = soilColumn[vc_RootingDepth].vs_SoilBulkDensity();
+//auto clay_rd = soilColumn[vc_RootingDepth].vs_SoilClayContent();
+//auto silt_rd = soilColumn[vc_RootingDepth].vs_SoilSiltContent();
+//auto corg_rd = soilColumn[vc_RootingDepth].vs_SoilOrganicCarbon();
+//auto sm_rd = soilColumn[vc_RootingDepth].get_Vs_SoilMoisture_m3();
+
+//double vc_Seidel_n = pow(10.0, 0.22236 -
+//    0.30189 * bd_rd -
+//    0.5558 * vc_TopSoil -
+//    0.005306 * clay_rd * 100.0 -
+//    0.003084 * silt_rd * 100.0 -
+//    0.01072 * corg_rd * 100.0) + 1.0;
+
+//double vc_Seidel_m = 1.0 - (1.0 / vc_Seidel_n);
+
+//double vc_SeidelTheta_S = 0.8308 -
+//    0.28217 * bd_rd +
+//    0.0002728 * clay_rd * 100.0 +
+//    0.000187 * silt_rd * 100.0;
+
+//double vc_AlphaVG = pow(10.0, -0.43348 -
+//    0.41729 * bd_rd -
+//    0.04762 * corg_rd * 100.0 +
+//    0.2181 * vc_TopSoil -
+//    0.01581 * clay_rd * 100.0 -
+//    0.01207 * silt_rd * 100.0);
+
+//double vc_SeidelTheta_H = (1.0 / vc_AlphaVG) * pow(pow((vc_SeidelTheta_S - 0.041) / (sm_rd - 0.041), 1.0 / vc_Seidel_m) - 1.0, 1.0 / vc_Seidel_n);
+
+//vc_SeidelAlpha_H = 0;
+//if (vc_SeidelTheta_H > -10) {
+//    vc_SeidelAlpha_H = 0;
+//}
+//else if (vc_SeidelTheta_H > -40) {
+//    vc_SeidelAlpha_H = 0 + (1 / 30 * (vc_SeidelAlpha_H - 10));
+//}
+//else if (vc_SeidelTheta_H > -700) {
+//    vc_SeidelAlpha_H = 1;
+//}
+//else if (vc_SeidelTheta_H > -15000) {
+//    vc_SeidelAlpha_H = 1 + ((0 - 1) / 800 * (vc_SeidelAlpha_H - 700));
+//}
+
+//double vc_Qp = 0.00587 * pow(bd_rd, 5) * pow(sm_rd, -4.65);
+
+//vc_Alpha_Qp = max(exp(-0.25 * vc_Qp), 0.05);
+
+//vc_RootPenetrationRate = vc_RootPenetrationRate * vc_SeidelAlpha_H * vc_Alpha_Qp;
 
   double vc_Seidel_n = pow(10.0, 0.22236 -
       0.30189 * soilColumn[vc_RootingDepth].vs_SoilBulkDensity() -

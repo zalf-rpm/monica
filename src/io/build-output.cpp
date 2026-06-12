@@ -1411,6 +1411,15 @@ BOTRes& monica::buildOutputTable() {
               }, 1);
             });
 
+      build({ id++, "SeidelAlpha_H", "", "monica.cropGrowth()->vc_SeidelAlpha_H" },
+          [](const MonicaModel& monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_SeidelAlpha_H, 3) : 0.0;
+          });
+      build({ id++, "Alpha_Qp", "", "monica.cropGrowth()->vc_Alpha_Qp" },
+          [](const MonicaModel& monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_Alpha_Qp, 3) : 0.0;
+          });
+
       tableBuilt = true;
     }
   }
