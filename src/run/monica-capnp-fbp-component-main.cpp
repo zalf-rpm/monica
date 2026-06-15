@@ -55,18 +55,18 @@ const std::string DEFAULT_CONFIG = R"delim(
   "type": "standard",
   "inPorts": [
     {
-      "name": "config",
-      "contentType": "common.capnp:StructuredText[JSON | TOML]"
+      "name": "conf",
+      "contentType": "@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON | TOML]"
     },
     {
       "name": "env",
-      "contentType": "model.capnp:Env[common.capnp:StructuredText[JSON]]"
+      "contentType": "@0xb7fc866ef1127f7c = model/model.capnp:Env[@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON]]"
     }
   ],
   "outPorts": [
     {
       "name": "result",
-      "contentType": "common.capnp:StructuredText[JSON]"
+      "contentType": "@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON]"
     }
   ],
   "defaultConfig": {
