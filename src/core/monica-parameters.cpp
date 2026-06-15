@@ -784,6 +784,8 @@ Errors IrrigationParameters::merge(json11::Json j) {
 
   set_double_value(nitrateConcentration, j, "nitrateConcentration");
   set_double_value(sulfateConcentration, j, "sulfateConcentration");
+  set_bool_value(isDripIrrigation, j, "isDripIrrigation");
+  if (j["fw"].is_number()) fw = std::max(0.0, std::min(1.0, j["fw"].number_value()));
 
   return res;
 }
@@ -793,7 +795,9 @@ json11::Json IrrigationParameters::to_json() const {
   {
     {"type", "IrrigationParameters"},
     {"nitrateConcentration", J11Array{nitrateConcentration, "mg dm-3"}},
-    {"sulfateConcentration", J11Array{sulfateConcentration, "mg dm-3"}}
+    {"sulfateConcentration", J11Array{sulfateConcentration, "mg dm-3"}},
+    {"isDripIrrigation", isDripIrrigation},
+    {"fw", fw}
   };
 }
 
@@ -1479,9 +1483,7 @@ Errors SimulationParameters::merge(json11::Json j) {
   // FAO-56 Dual Kc: method switch.
   // "evapotranspiration-method": "FAO-56-Dual" activates the Dual Kc pathway.
   // All other values (or absent key) keep the native Single-Kc method.
-  if (j["evapotranspiration-method"].string_value() == "FAO-56-Dual")
-    dualKcMethod = true;
-  set_bool_value(dualKcMethod, j, "dualKcMethod");
+  if (j["evapotranspiration-method"].string_value() == "FAO-56-Dual") dualKcMethod = true;
   // Note: isDripIrrigation and fw are now parsed at the Irrigation workstep event level.
 
   return res;
@@ -1534,7 +1536,6 @@ json11::Json SimulationParameters::to_json() const {
     },
     // FAO-56 Dual Kc: method switch only; event-level fw/isDrip are not stored here
     {"evapotranspiration-method", dualKcMethod ? std::string("FAO-56-Dual") : std::string("Penman-Monteith")},
-    {"dualKcMethod",    dualKcMethod}
   };
 }
 

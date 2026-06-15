@@ -392,6 +392,10 @@ struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
 
   double nitrateConcentration{0.0}; //!< nitrate concentration [mg dm-3]
   double sulfateConcentration{0.0}; //!< sulfate concentration [mg dm-3]
+
+  // FAO-56 Dual Kc: event-level irrigation physical parameters
+  bool isDripIrrigation{false}; //!< true = drip irrigation (shading adjustment applied)
+  double fw{1.0}; //!< fraction of wetted soil surface [0-1]
 };
 
 
@@ -701,7 +705,7 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
 
   // FAO-56 Dual Kc: global method switch (read from sim.json "evapotranspiration-method": "FAO-56-Dual")
   // Irrigation physical params (isDripIrrigation, fw) are now set at the Irrigation workstep event level.
-  bool dualKcMethod{false};      //!< Use FAO-56 Dual Kc evaporation partitioning
+  bool dualKcMethod{false}; //!< Use FAO-56 Dual Kc evaporation partitioning
 };
 
 

@@ -37,20 +37,19 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../io/output.h"
 
 namespace monica {
-
 class MonicaModel;
 
 class DLL_API Workstep : public Tools::Json11Serializable {
 public:
   Workstep() = default;
 
-  explicit Workstep(const Tools::Date &d);
+  explicit Workstep(const Tools::Date& d);
 
-  Workstep(int noOfDaysAfterEvent, const std::string &afterEvent);
+  Workstep(int noOfDaysAfterEvent, const std::string& afterEvent);
 
   explicit Workstep(json11::Json object);
 
-  virtual Workstep *clone() const = 0;
+  virtual Workstep* clone() const = 0;
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -78,16 +77,16 @@ public:
 
   //! do whatever the workstep has to do
   //! returns true if workstep is finished (dynamic worksteps might need to be applied again)
-  virtual bool apply(MonicaModel *model);
+  virtual bool apply(MonicaModel* model);
 
   //! apply only if condition() is met (is used for dynamicWorksteps)
-  virtual bool applyWithPossibleCondition(MonicaModel *model);
+  virtual bool applyWithPossibleCondition(MonicaModel* model);
 
-  virtual bool condition(MonicaModel *model);
+  virtual bool condition(MonicaModel* model);
 
   virtual bool isDynamicWorkstep() const { return !_date.isValid(); }
 
-  //! tell if this workstep is active and can be used 
+  //! tell if this workstep is active and can be used
   //! a workstep might temporarily be deactivated, eg a dynamic sowing workstep
   //! which has to be checked for sowing every day, but not anymore after sowing
   virtual bool isActive() const { return _isActive; }
@@ -95,9 +94,9 @@ public:
   //! reinit potential state of workstep
   virtual bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false);
 
-  virtual std::function<double(MonicaModel *)>
-  registerDailyFunction(std::function<std::vector<double> &()> getDailyValues) {
-    return std::function<double(MonicaModel *)>();
+  virtual std::function<double(MonicaModel*)> registerDailyFunction(
+    std::function<std::vector<double> &()> getDailyValues) {
+    return std::function<double(MonicaModel*)>();
   };
 
   bool runAtStartOfDay() const { return _runAtStartOfDay; }
@@ -123,11 +122,12 @@ public:
 
   Sowing(json11::Json object);
 
-  Sowing(const Sowing &other)
-      : _cropToPlant(other._cropToPlant ? kj::heap<Crop>(*other._cropToPlant.get()) : kj::Own<Crop>()),
-        _crop(_cropToPlant.get()), _plantDensity(other._plantDensity) {}
+  Sowing(const Sowing& other)
+  : _cropToPlant(other._cropToPlant ? kj::heap<Crop>(*other._cropToPlant.get()) : kj::Own<Crop>())
+  , _crop(_cropToPlant.get())
+  , _plantDensity(other._plantDensity) {}
 
-  virtual Sowing *clone() const { return new Sowing(*this); }
+  virtual Sowing* clone() const { return new Sowing(*this); }
 
   // explicit Sowing(mas::schema::model::monica::Params::Sowing::Reader reader) { deserialize(reader); }
   // void deserialize(mas::schema::model::monica::Params::Sowing::Reader reader);
@@ -141,22 +141,22 @@ public:
 
   virtual std::string type() const { return "Sowing"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   void setDate(Tools::Date date) override {
     this->_date = date;
     _crop->setSeedDate(date);
   }
 
-  const Crop *crop() const { return _crop; }
+  const Crop* crop() const { return _crop; }
 
-  Crop *crop() { return _crop; }
+  Crop* crop() { return _crop; }
 
   void setCropForReplanting(kj::Own<Crop> c) { _cropToPlant = kj::mv(c); }
 
 private:
   kj::Own<Crop> _cropToPlant;
-  Crop *_crop{nullptr};
+  Crop* _crop{nullptr};
   int _plantDensity{-1}; //[plants m-2]
   double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
 };
@@ -167,7 +167,7 @@ public:
 
   explicit AutomaticSowing(json11::Json object);
 
-  AutomaticSowing *clone() const override { return new AutomaticSowing(*this); }
+  AutomaticSowing* clone() const override { return new AutomaticSowing(*this); }
 
   virtual Tools::Errors merge(json11::Json j);
 
@@ -177,9 +177,9 @@ public:
 
   std::string type() const override { return "AutomaticSowing"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
-  bool condition(MonicaModel *model) override;
+  bool condition(MonicaModel* model) override;
 
   bool isActive() const override { return !_cropSeeded; }
 
@@ -193,7 +193,7 @@ public:
 
   Tools::Date absLatestDate() const override { return _absLatestDate; }
 
-  std::function<double(MonicaModel *)>
+  std::function<double(MonicaModel*)>
   registerDailyFunction(std::function<std::vector<double> &()> getDailyValues) override;
 
 private:
@@ -224,40 +224,41 @@ private:
 // --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION ---
 class DLL_API Transplant : public Workstep {
 public:
-    Transplant() = default;
-    explicit Transplant(json11::Json object);
-    Transplant(const Transplant& other);
+  Transplant() = default;
+  explicit Transplant(json11::Json object);
+  Transplant(const Transplant& other);
 
-    virtual Transplant* clone() const override { return new Transplant(*this); }
+  virtual Transplant* clone() const override { return new Transplant(*this); }
 
-    // Parse parameters from JSON
-    Tools::Errors merge(json11::Json j) override;
-    json11::Json to_json() const override { return to_json(true); }
-    json11::Json to_json(bool includeFullCropParameters) const;
+  // Parse parameters from JSON
+  Tools::Errors merge(json11::Json j) override;
+  json11::Json to_json() const override { return to_json(true); }
+  json11::Json to_json(bool includeFullCropParameters) const;
 
-    virtual std::string type() const override { return "Transplant"; }
+  virtual std::string type() const override { return "Transplant"; }
 
-    // Execution/application inside MONICA runner
-    bool apply(MonicaModel* model) override;
+  // Execution/application inside MONICA runner
+  bool apply(MonicaModel* model) override;
 
-    void setDate(Tools::Date date) override {
-        this->_date = date;
-        if (_cropToPlant) _cropToPlant->setSeedDate(date);
-    }
+  void setDate(Tools::Date date) override {
+    this->_date = date;
+    if (_cropToPlant) _cropToPlant->setSeedDate(date);
+  }
 
 private:
-    kj::Own<Crop> _cropToPlant; // Manages the genetic characteristics of the crop to plant
+  kj::Own<Crop> _cropToPlant; // Manages the genetic characteristics of the crop to plant
 
-    // Seedling initial parameters forced at transplanting
-    size_t _initialStage{ 2 };
-    double _initialGDD{ 0.0 };
-    double _initRootMass{ 0.0 };
-    double _initLeafMass{ 0.0 };
-    double _initShootMass{ 0.0 };
-    double _initLAI{ 0.0 };
-    int _postTransplantDelay{ 0 };
-    double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
+  // Seedling initial parameters forced at transplanting
+  size_t _initialStage{2};
+  double _initialGDD{0.0};
+  double _initRootMass{0.0};
+  double _initLeafMass{0.0};
+  double _initShootMass{0.0};
+  double _initLAI{0.0};
+  int _postTransplantDelay{0};
+  double _initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
 };
+
 // --- END TRANSPLANT WORKSTEP IMPLEMENTATION ---
 
 
@@ -288,13 +289,13 @@ public:
 public:
   Harvest() = default;
 
-//Harvest(const Tools::Date& at,
-//    Crop* crop,
-//    std::string method = "total");
+  //Harvest(const Tools::Date& at,
+  //    Crop* crop,
+  //    std::string method = "total");
 
   explicit Harvest(json11::Json j);
 
-  Harvest *clone() const override { return new Harvest(*this); }
+  Harvest* clone() const override { return new Harvest(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -304,7 +305,7 @@ public:
 
   std::string type() const override { return "Harvest"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   void setDate(Tools::Date date) override {
     this->_date = date;
@@ -315,15 +316,15 @@ public:
 
   void setExported(bool exported) { _exported = exported; }
 
-  const Crop &crop() const { return *_sowing->crop(); }
+  const Crop& crop() const { return *_sowing->crop(); }
 
-  Sowing *sowing() { return _sowing; }
+  Sowing* sowing() { return _sowing; }
 
-  void setSowing(Sowing *s) { _sowing = s; }
+  void setSowing(Sowing* s) { _sowing = s; }
 
   //void setIsCoverCrop(bool isCoverCrop) { _optCarbMgmtData.isCoverCrop = isCoverCrop; }
 protected:
-  Sowing *_sowing{nullptr};
+  Sowing* _sowing{nullptr};
 
 private:
   // double _percentage{0};
@@ -344,7 +345,7 @@ public:
 
   explicit AutomaticHarvest(json11::Json object);
 
-  AutomaticHarvest *clone() const override { return new AutomaticHarvest(*this); }
+  AutomaticHarvest* clone() const override { return new AutomaticHarvest(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -354,9 +355,9 @@ public:
 
   std::string type() const override { return "AutomaticHarvest"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
-  bool condition(MonicaModel *model) override;
+  bool condition(MonicaModel* model) override;
 
   bool isActive() const override { return !_cropHarvested; }
 
@@ -379,11 +380,11 @@ private:
 
 class DLL_API Cutting : public Workstep {
 public:
-  explicit Cutting(const Tools::Date &at);
+  explicit Cutting(const Tools::Date& at);
 
   explicit Cutting(json11::Json object);
 
-  Cutting *clone() const override { return new Cutting(*this); }
+  Cutting* clone() const override { return new Cutting(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -391,15 +392,17 @@ public:
 
   std::string type() const override { return "Cutting"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
 
   enum CL {
     cut, left, none
   };
+
   enum Unit {
     percentage, biomass, LAI
   };
+
   struct Value {
     double value{0.0};
     Unit unit{percentage};
@@ -417,13 +420,13 @@ class DLL_API MineralFertilization : public Workstep {
 public:
   MineralFertilization() = default;
 
-  MineralFertilization(const Tools::Date &at,
+  MineralFertilization(const Tools::Date& at,
                        MineralFertilizerParameters partition,
                        double amount);
 
   explicit MineralFertilization(json11::Json object);
 
-  MineralFertilization *clone() const override { return new MineralFertilization(*this); }
+  MineralFertilization* clone() const override { return new MineralFertilization(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -431,7 +434,7 @@ public:
 
   std::string type() const override { return "MineralFertilization"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   MineralFertilizerParameters partition() const { return _partition; }
 
@@ -458,7 +461,7 @@ public:
 
   explicit NDemandFertilization(json11::Json object);
 
-  NDemandFertilization *clone() const override { return new NDemandFertilization(*this); }
+  NDemandFertilization* clone() const override { return new NDemandFertilization(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -466,9 +469,9 @@ public:
 
   std::string type() const override { return "NDemandFertilization"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
-  bool condition(MonicaModel *model) override;
+  bool condition(MonicaModel* model) override;
 
   MineralFertilizerParameters partition() const { return _partition; }
 
@@ -487,14 +490,14 @@ private:
 
 class DLL_API OrganicFertilization : public Workstep {
 public:
-  OrganicFertilization(const Tools::Date &at,
-                       const OrganicMatterParameters &params,
+  OrganicFertilization(const Tools::Date& at,
+                       const OrganicMatterParameters& params,
                        double amount,
                        bool incorp = true);
 
   explicit OrganicFertilization(json11::Json j);
 
-  OrganicFertilization *clone() const override { return new OrganicFertilization(*this); }
+  OrganicFertilization* clone() const override { return new OrganicFertilization(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -502,10 +505,10 @@ public:
 
   std::string type() const override { return "OrganicFertilization"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   //! Returns parameter for organic fertilizer
-  const OrganicMatterParameters &parameters() const { return _params; }
+  const OrganicMatterParameters& parameters() const { return _params; }
 
   //! Returns fertilization amount
   double amount() const { return _amount; }
@@ -522,11 +525,11 @@ private:
 
 class DLL_API Tillage : public Workstep {
 public:
-  Tillage(const Tools::Date &at, double depth);
+  Tillage(const Tools::Date& at, double depth);
 
   explicit Tillage(json11::Json object);
 
-  Tillage *clone() const override { return new Tillage(*this); }
+  Tillage* clone() const override { return new Tillage(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -534,7 +537,7 @@ public:
 
   std::string type() const override { return "Tillage"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   double depth() const { return _depth; }
 
@@ -544,11 +547,11 @@ private:
 
 class DLL_API SetValue : public Workstep {
 public:
-  SetValue(const Tools::Date &at, OId oid, json11::Json value);
+  SetValue(const Tools::Date& at, OId oid, json11::Json value);
 
   explicit SetValue(json11::Json object);
 
-  SetValue *clone() const override { return new SetValue(*this); }
+  SetValue* clone() const override { return new SetValue(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -556,24 +559,24 @@ public:
 
   std::string type() const override { return "SetValue"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   json11::Json value() const { return _value; }
 
 private:
   OId _oid;
   json11::Json _value;
-  std::function<json11::Json(const monica::MonicaModel *)> _getValue;
+  std::function<json11::Json(const monica::MonicaModel*)> _getValue;
 };
 
 class DLL_API SaveMonicaState : public Workstep {
 public:
-  SaveMonicaState(const Tools::Date &at, std::string pathToSerializedStateFile, bool serializeAsJson = false,
-    int noOfPreviousDaysSerializedClimateData = -1);
+  SaveMonicaState(const Tools::Date& at, std::string pathToSerializedStateFile, bool serializeAsJson = false,
+                  int noOfPreviousDaysSerializedClimateData = -1);
 
   explicit SaveMonicaState(json11::Json object);
 
-  SaveMonicaState *clone() const override { return new SaveMonicaState(*this); }
+  SaveMonicaState* clone() const override { return new SaveMonicaState(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -581,7 +584,7 @@ public:
 
   std::string type() const override { return "SaveMonicaState"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   std::string pathToSerializedStateFile() const { return _pathToFile; }
 
@@ -593,12 +596,12 @@ private:
 
 class DLL_API Irrigation : public Workstep {
 public:
-  Irrigation(const Tools::Date &at, double amount,
+  Irrigation(const Tools::Date& at, double amount,
              IrrigationParameters params = IrrigationParameters());
 
   explicit Irrigation(json11::Json object);
 
-  Irrigation *clone() const override { return new Irrigation(*this); }
+  Irrigation* clone() const override { return new Irrigation(*this); }
 
   Tools::Errors merge(json11::Json j) override;
 
@@ -606,7 +609,7 @@ public:
 
   std::string type() const override { return "Irrigation"; }
 
-  bool apply(MonicaModel *model) override;
+  bool apply(MonicaModel* model) override;
 
   double amount() const { return _amount; }
 
@@ -617,19 +620,16 @@ public:
 private:
   double _amount{0};
   IrrigationParameters _params;
-  // FAO-56 Dual Kc: event-level irrigation physical parameters
-  bool   _isDripIrrigation{false}; //!< true = drip irrigation (shading adjustment applied)
-  double _fw{1.0};                 //!< fraction of wetted soil surface [0-1]
 };
 
 DLL_API WSPtr makeWorkstep(json11::Json object);
 
 class DLL_API CultivationMethod
-    : public Tools::Json11Serializable
+  : public Tools::Json11Serializable
   //, public std::multimap<Tools::Date, WSPtr>
 {
 public:
-  explicit CultivationMethod(const std::string &name = std::string("Fallow"));
+  explicit CultivationMethod(const std::string& name = std::string("Fallow"));
 
   //! is semantically the equivalent to creating an empty CM and adding Sowing, Harvest and Cutting applications
   //CultivationMethod(CropPtr crop, const std::string& name = std::string());
@@ -640,25 +640,25 @@ public:
 
   json11::Json to_json() const override;
 
-  template<class Application>
-  void addApplication(const Application &a) {
+  template <class Application>
+  void addApplication(const Application& a) {
     //_allWorksteps.insert(std::make_pair(a.date(), std::make_shared<Application>(a)));
     _allWorksteps.push_back(std::make_shared<Application>(a));
   }
 
-  void apply(const Tools::Date &date, MonicaModel *model) const;
+  void apply(const Tools::Date& date, MonicaModel* model) const;
 
-  void absApply(const Tools::Date &date, MonicaModel *model) const;
+  void absApply(const Tools::Date& date, MonicaModel* model) const;
 
-  void apply(MonicaModel *model, bool runOnlyAtStartOfDayWorksteps);
+  void apply(MonicaModel* model, bool runOnlyAtStartOfDayWorksteps);
 
-  Tools::Date nextDate(const Tools::Date &date) const;
+  Tools::Date nextDate(const Tools::Date& date) const;
 
-  Tools::Date nextAbsDate(const Tools::Date &date) const;
+  Tools::Date nextAbsDate(const Tools::Date& date) const;
 
-  std::vector<WSPtr> workstepsAt(const Tools::Date &date) const;
+  std::vector<WSPtr> workstepsAt(const Tools::Date& date) const;
 
-  std::vector<WSPtr> absWorkstepsAt(const Tools::Date &date) const;
+  std::vector<WSPtr> absWorkstepsAt(const Tools::Date& date) const;
 
   bool areOnlyAbsoluteWorksteps() const;
 
@@ -672,7 +672,7 @@ public:
 
   std::string name() const { return _name; }
 
-  const Crop &crop() const { return *_crop; }
+  const Crop& crop() const { return *_crop; }
 
   bool isFallow() const { return !_crop || !_crop->isValid(); }
 
@@ -688,8 +688,8 @@ public:
 
   Tools::Date absEndDate() const;
 
-//const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _allWorksteps; }
-  const std::vector<WSPtr> &getWorksteps() const { return _allWorksteps; }
+  //const std::multimap<Tools::Date, WSPtr>& getWorksteps() const { return _allWorksteps; }
+  const std::vector<WSPtr>& getWorksteps() const { return _allWorksteps; }
 
   void clearWorksteps() { _allWorksteps.clear(); }
 
@@ -722,23 +722,24 @@ private:
   std::vector<WSPtr> _unfinishedDynamicWorksteps;
   int _customId{0};
   std::string _name;
-  const Crop *_crop{nullptr};
+  const Crop* _crop{nullptr};
   bool _irrigateCrop{false};
   bool _canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
   bool _isCoverCrop{
-      false}; //! is like canBeSkipped (and implies it), but different rule for when cultivation methods will be skipped
+    false
+  }; //! is like canBeSkipped (and implies it), but different rule for when cultivation methods will be skipped
   bool _repeat{true}; //! if false the cultivation method won't participate in wrapping at the end of the crop rotation
 };
 
-template<>
-DLL_API inline void CultivationMethod::addApplication<Sowing>(const Sowing &s) {
-//_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Sowing>(s)));
+template <>
+DLL_API inline void CultivationMethod::addApplication<Sowing>(const Sowing& s) {
+  //_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<Sowing>(s)));
   _allWorksteps.push_back(std::make_shared<Sowing>(s));
   _crop = s.crop();
 }
 
-template<>
-DLL_API inline void CultivationMethod::addApplication<AutomaticSowing>(const AutomaticSowing &s) {
+template <>
+DLL_API inline void CultivationMethod::addApplication<AutomaticSowing>(const AutomaticSowing& s) {
   //_allWorksteps.insert(std::make_pair(s.date(), std::make_shared<AutomaticSowing>(s)));
   _allWorksteps.push_back(std::make_shared<AutomaticSowing>(s));
   _crop = s.crop();
@@ -749,5 +750,4 @@ DLL_API inline void CultivationMethod::addApplication<AutomaticSowing>(const Aut
 //{
 //  _allWorksteps.insert(std::make_pair(h.date(), std::make_shared<Harvest>(h)));
 //}
-
 } // namespace monica
