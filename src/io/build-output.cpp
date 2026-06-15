@@ -811,6 +811,16 @@ BOTRes& monica::buildOutputTable() {
               return round(monica.soilMoisture().get_KcFactor(), 3);
             });
 
+      build({id++, "Kcb", "", "Basal crop coefficient (FAO-56 Dual Kc)"},
+            [](const MonicaModel& monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_KcbFactor(), 3) : 0.0;
+            });
+
+      build({id++, "Ke", "", "Soil evaporation coefficient (FAO-56 Dual Kc)"},
+            [](const MonicaModel& monica, OId oid) {
+              return round(monica.soilMoisture().get_KeFactor(), 3);
+            });
+
       build({id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration"},
             [](const MonicaModel& monica, OId oid) {
               return round(monica.get_AtmosphericCO2Concentration(), 0);
