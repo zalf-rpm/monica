@@ -94,7 +94,7 @@ public:
   enum PORTS { CONFIG, ENV, RESULT };
 
   std::map<int, kj::StringPtr> inPortNames = {
-    {CONFIG, "config"},
+    {CONFIG, "conf"},
     {ENV, "env"},
   };
   std::map<int, kj::StringPtr> outPortNames = {
@@ -184,20 +184,9 @@ public:
         // check for end of data from in port
         if (!configMsg.isDone()) {
           auto configIp = configMsg.getValue();
-          auto configStr = configIp.getContent().getAs<capnp::Text>();
-          auto configJson = parseJsonString(configStr.cStr());
+          auto configST = configIp.getContent().getAs<mas::schema::common::StructuredText>();
+          auto configJson = parseJsonString(configST.getValue().cStr());
           if (configJson.success()) config = configJson.result;
-          else {
-            auto defaultConfigJson = parseJsonString(DEFAULT_CONFIG);
-            if (defaultConfigJson.success()) config = defaultConfigJson.result;
-            else {
-              KJ_LOG(ERROR,
-                     "Couldn't parse config JSON string from CONFIG port or "
-                     "DEFAULT_CONFIG: ",
-                     configStr);
-              return false;
-            }
-          }
         }
       }
 
