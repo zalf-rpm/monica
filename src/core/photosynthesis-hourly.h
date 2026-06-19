@@ -319,7 +319,7 @@ struct gross_photo_hourly_result {
 
 
 /**
- * @brief ported from SUCROS87/WOFOST
+ * @brief ported from SUCROS87/WOFOST; for testing putposes and compariosn only
  * 
  * @param AMAX 
  * @param EFF 

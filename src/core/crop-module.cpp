@@ -1611,6 +1611,127 @@ void CropModule::addAndDistributeRootBiomassInSoil(double rootBiomass) {
   fc_MoveDeadRootBiomassToSoil(rootBiomass, p.second, p.first);
 }
 
+
+#pragma region rubisco limitation function
+
+double CropModule::Oi_empirical(double vw_MeanAirTemperature) const {
+// Oi = 210.0 + (0.047
+  return 210.0 * (0.047 - 0.0013087 * vw_MeanAirTemperature +
+                  0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
+                  0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
+                  0.026934; // [mmol mol-1]
+};
+
+double CropModule::Ci_empirical(double vw_MeanAirTemperature, double vw_AtmosphericCO2Concentration) const {
+  
+  return vw_AtmosphericCO2Concentration * 0.7 * (1.674 - 0.061294 * vw_MeanAirTemperature +
+                                                  0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
+                                                  0.0000088741 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
+                                                  0.73547; // [µmol mol-1]
+};
+
+
+
+tuple<double, double, double, double> CropModule::vc_KTkc_vc_KTko(double vw_MeanAirTemperature) const {
+  using namespace Voc;
+  double tempK = vw_MeanAirTemperature + D_IN_K;
+  double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
+  double term2 = sqrt(tempK / TK25);
+  double vc_KTkc = exp(speciesPs.AEKC * term1) * term2;
+  double vc_KTko = exp(speciesPs.AEKO * term1) * term2;
+  return {vc_KTkc, vc_KTko, term1, term2};
+}
+
+
+CropModule::A_rubisco_results CropModule::A_rubisco(double vw_MeanAirTemperature, double Cc, double O, Voc::CPData &_cropPhotosynthesisResults) const {
+  auto [KTkc, KTko, term1, term2] = vc_KTkc_vc_KTko(vw_MeanAirTemperature); // std::tie(KTkc, KTko, term1, term2) = vc_KTkc_vc_KTko(vw_MeanAirTemperature);
+
+  double Mkc = speciesPs.KC25 * KTkc; //[µmol mol-1]
+  _cropPhotosynthesisResults.kc = Mkc;
+  //_cropPhotosynthesisResults.kc = Mkc;            //FS: why does this line of code exist twice?
+  double Mko = speciesPs.KO25 * KTko;      //[mmol mol-1]
+  _cropPhotosynthesisResults.ko = Mko * 1000.0; // mmol -> umol
+
+  // OLD exponential response
+  double KTvmax = cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__
+                  ? max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
+                                                              pc_MinimumTemperatureForAssimilation,
+                                                              pc_OptimumTemperatureForAssimilation,
+                                                              pc_MaximumTemperatureForAssimilation,
+                                                              1.0))
+                  : exp(speciesPs.AEVC * term1) * term2;
+
+  // Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
+  // old fakamax
+  double vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
+  double vc_AmaxFactorReference = cropPs.pc_ReferenceMaxAssimilationRate / 34.668;
+  // old vcmax
+  double vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
+  _cropPhotosynthesisResults.vcMax = vc_Vcmax;
+  double vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
+
+  // similar to LDNDC::jarvis.cpp:217
+  //  old COcomp
+  double vc_CO2CompensationPoint =
+      0.5 * 0.21 * vc_Vcmax * Mkc * O / (vc_Vcmax * Mko);               // [µmol mol-1]      // FS: Why ... * vc_Vcmax ... / vc_Vcmax?
+  double vc_CO2CompensationPointReference =
+      0.5 * 0.21 * vc_VcmaxReference * Mkc * O / (vc_VcmaxReference * Mko); // [µmol mol-1]  // FS: Why ... * vc_VcmaxReference ... / vc_VcmaxReference?
+  _cropPhotosynthesisResults.comp = vc_CO2CompensationPoint;
+
+  // Mitchell et al. 1995:
+  // old EFF
+  double vc_RadiationUseEfficiency = max(0.0, min(0.77 / 2.1 * (Cc - vc_CO2CompensationPoint) /
+                                          (4.5 * Cc + 10.5 * vc_CO2CompensationPoint) * 8.3769, 0.5));  //FS: bound(0.0, ..., 0.5); What is the factor 8.3769 (not in the documentation?)?
+  double vc_RadiationUseEfficiencyReference = max(0.0, min(0.77 / 2.1 * (Cc - vc_CO2CompensationPointReference) /
+                                                    (4.5 * Cc + 10.5 * vc_CO2CompensationPointReference) * 8.3769,
+                                                    0.5));                                              //FS: bound(0.0, ..., 0.5); What is the factor 8.3769 (not in the documentation?)?
+
+  double vc_AssimilationRate = (Cc - vc_CO2CompensationPoint) * vc_Vcmax / (Cc + Mkc * (1.0 + O / Mko)) * 1.656;  // FS: What is the factor 1.656 (not in the documentation?)?
+  double vc_AssimilationRateReference =
+      (Cc - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Cc + Mkc * (1.0 + O / Mko)) * 1.656;         // FS: What is the factor 1.656 (not in the documentation?)?
+
+  if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
+    vc_AssimilationRate = 0.0; //MP: warum gibt es für C3-Pflanzen keine maximale Temperatur
+    vc_AssimilationRateReference = 0.0;
+  }
+
+  /* independently of pc_CarboxylationPathway, this has to be ensured after calculation of vc_AssimilationRate (and vc_AssimilationRateReference)
+  if (vc_CuttingDelayDays > 0) {
+    vc_AssimilationRate = 0.1;
+
+  vc_AssimilationRate = max(0.1, vc_AssimilationRate);
+  vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
+  */
+
+  return A_rubisco_results{vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference};
+};
+
+  /*FS: maybe add a stomatal conductance coupled approach later?
+
+  -> using only the RuBisCO limited part should be sufficient, since our photosynthesis model uses the RuBisCO-limitation BEFORE applying the light limitation
+     (limitations are applied in sequence here, so applying stomatal conductance in the 1st step should automatically affect the 2nd step; in contrast, FvCB uses the both limitations in parallel and takes the minimum)
+  gb gs gm (boundary layer conductance, stomatal conductance, mesophyll conductance)
+
+  A(Ci) <-> gs coupling ... using a diffusional conductance model
+
+  iterative solution (e.g. with Medlyn model)
+  double Ci = Ci_empirical(temperature, vw_AtmosphericCO2Concentration); // initial guess: e.g. Ci = 0.7 * vw_AtmosphericCO2Concentration
+  for ...
+    auto A_rub_res = A_rubisco(temperature, Ci, O, CPData &_cropPhotosynthesisResults);
+    A = A_rub_res.vc_AssimilationRate;
+    Ci = ...
+    gs = ...
+    
+    ... take into account MONICA pc_StomataConductanceAlpha and vc_StomataResistance variables? ...
+  _cropPhotosynthesisResults.ci = Ci;
+
+  analytical solution (not always possible; depents on type of stomatal conductance model)
+  also check lumped coefficients and stomatal conductanc coupling in photosynthesis-FvcB.cpp for an approach using an analytical solution for C3 crops and FvCB photosynthesis
+  */
+  
+#pragma endregion rubisco limitation function
+
+
 /**
  * @brief Calculation of photosynthesis
  *
@@ -1659,374 +1780,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
   double vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
 
-#pragma region rubisco limitation function
-  struct A_rubisco_results {
-        double vc_AssimilationRate;
-        double vc_AssimilationRateReference;
-        double vc_RadiationUseEfficiency;
-        double vc_RadiationUseEfficiencyReference;
-  };
-  
-  /*
-  /**
-   * @brief rubisco limitation code as a function
-   * 
-   * kept very close to the original monica daily photosyntheisis code for now
-   * 
-   * @param vw_MeanAirTemperature                Temperature used for temperature-dependency of FvCB RuBisCO limitation. For daily photosynthesis, daily mean air temperature is used for now.
-   *                                             For hourly photosynthesis, hourly mean air temperature is used for now (no canopy temperature implemented yet).
-   * @param Cc                                   Chloroplast CO2 partial pressure (=CO2 partial pressure at the carboxylating sites of Rubisco).
-   * @param O                                    Oxygen partial pressure.
-   * // @param vw_AtmosphericCO2Concentration       CO2 concentration in the atmosphere. Approach used to derive intercellular CO2 concentration Ci seens to be very simplified (no stomatal conductance coupling model).
-   * @param speciesPs                            MONICA species parameters
-   * @param cropPs                               MONICA crop prarmeters
-   * @param pc_MinimumTemperatureForAssimilation parameter
-   * @param pc_OptimumTemperatureForAssimilation parameter
-   * @param pc_MaximumTemperatureForAssimilation parameter
-   * @param pc_MaxAssimilationRate               parameter
-   * @param pc_ReferenceMaxAssimilationRate      parameter
-   * @param vc_KTkc                              Factor to account for temperature-dependency of Michaelis-Menten constant for CO2. Default monica::CropModule::vc_KTkc input to be altered by the function. Currently only used as an output (input value does not matter here).
-   * @param vc_KTko                              Factor to account for temperature-dependency of Michaelis-Menten constant for O2. Default monica::CropModule::vc_KTko input to be altered by the function. Currently only used as an output (input value does not matter here).
-   * @param _cropPhotosynthesisResults           Default Voc::CPData monica::CropModule::_cropPhotosynthesisResults to be altered by the function. Seems to be a helper struct used for debugging?
-   * @return A_rubisco_results (vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference)
-   */
-  /*
-  A_rubisco_results A_rubisco(double vw_MeanAirTemperature, double Cc, double O,                                                                                        //double vw_AtmosphericCO2Concentration,
-                              const monica::SpeciesParameters &speciesPs, const monica::CropParameters &cropPs, 
-                              double pc_MinimumTemperatureForAssimilation, double pc_OptimumTemperatureForAssimilation, double pc_MaximumTemperatureForAssimilation,
-                              double pc_MaxAssimilationRate, double pc_ReferenceMaxAssimilationRate,
-                              double &vc_KTkc, double &vc_KTko, Voc::CPData &_cropPhotosynthesisResults) {
-    double tempK = vw_MeanAirTemperature + D_IN_K;
-    double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
-    double term2 = sqrt(tempK / TK25);
-    vc_KTkc = exp(speciesPs.AEKC * term1) * term2; //FS: Is it necessary to modify monica::CropModule::vc_KTkc, or would it be sufficient to define vc_KTkc locally inside the function here?
-                                                    //    Seems to also be used in void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature), but it might be easier to calculate it locally there?
-    vc_KTko = exp(speciesPs.AEKO * term1) * term2; //FS: Is it necessary to modify monica::CropModule::vc_KTko, or would it be sufficient to define vc_KTko locally inside the function here?
-                                                    //    Is this even used outside the rubisco photosynthesis code?
-    double Mkc = speciesPs.KC25 * vc_KTkc; //[µmol mol-1]
-    _cropPhotosynthesisResults.kc = Mkc;
-    //_cropPhotosynthesisResults.kc = Mkc;            //FS: why does this line of code exist twice?
-    double Mko = speciesPs.KO25 * vc_KTko;      //[mmol mol-1]
-    _cropPhotosynthesisResults.ko = Mko * 1000.0; // mmol -> umol
-
-    // OLD exponential response
-    double KTvmax = cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__
-                    ? max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
-                                                                pc_MinimumTemperatureForAssimilation,
-                                                                pc_OptimumTemperatureForAssimilation,
-                                                                pc_MaximumTemperatureForAssimilation,
-                                                                1.0))
-                    : exp(speciesPs.AEVC * term1) * term2;
-
-    // Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
-    // old fakamax
-    double vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
-    double vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
-    // old vcmax
-    double vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
-    _cropPhotosynthesisResults.vcMax = vc_Vcmax;
-    double vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
-
-    // Oi = 210.0 + (0.047
-    double Oi = 210.0 * (0.047 - 0.0013087 * vw_MeanAirTemperature +
-                        0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
-                        0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
-                0.026934; // [mmol mol-1]
-    _cropPhotosynthesisResults.oi = Oi *
-                                    1000.0;                                                                                              // mmol -> umol
-
-    double Ci = vw_AtmosphericCO2Concentration * 0.7 * (1.674 - 0.061294 * vw_MeanAirTemperature +
-                                                        0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
-                                                        0.0000088741 *
-                                                        (vw_MeanAirTemperature * vw_MeanAirTemperature *
-                                                        vw_MeanAirTemperature)) / 0.73547; // [µmol mol-1]
-    _cropPhotosynthesisResults.ci = Ci;
-
-    // similar to LDNDC::jarvis.cpp:217
-    //  old COcomp
-    double vc_CO2CompensationPoint =
-        0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko);               // [µmol mol-1]      // FS: Why ... * vc_Vcmax ... / vc_Vcmax?
-    double vc_CO2CompensationPointReference =
-        0.5 * 0.21 * vc_VcmaxReference * Mkc * Oi / (vc_VcmaxReference * Mko); // [µmol mol-1]  // FS: Why ... * vc_VcmaxReference ... / vc_VcmaxReference?
-    _cropPhotosynthesisResults.comp = vc_CO2CompensationPoint;
-
-    // Mitchell et al. 1995:
-    // old EFF
-    double vc_RadiationUseEfficiency = max(0.0, min(0.77 / 2.1 * (Ci - vc_CO2CompensationPoint) /
-                                            (4.5 * Ci + 10.5 * vc_CO2CompensationPoint) * 8.3769, 0.5));  //FS: bound(0.0, ..., 0.5);
-    double vc_RadiationUseEfficiencyReference = max(0.0, min(0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference) /
-                                                      (4.5 * Ci + 10.5 * vc_CO2CompensationPointReference) * 8.3769,
-                                                      0.5));                                              //FS: bound(0.0, ..., 0.5);
-
-    double vc_AssimilationRate = (Ci - vc_CO2CompensationPoint) * vc_Vcmax / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
-    double vc_AssimilationRateReference =
-        (Ci - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656;
-
-    if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation) {
-      vc_AssimilationRate = 0.0; //MP: warum gibt es für C3-Pflanzen keine maximale Temperatur
-      vc_AssimilationRateReference = 0.0;
-    }
-    return A_rubisco_results{vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference};
-  }
-  */
-
-
-  /**
-   * @brief intercellular oxygen partial pressure
-   * 
-   * @param vw_MeanAirTemperature
-   * @return Oi
-   */
-  auto Oi_empirical = [] (double vw_MeanAirTemperature) -> double {
-  // Oi = 210.0 + (0.047
-    return 210.0 * (0.047 - 0.0013087 * vw_MeanAirTemperature +
-                    0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
-                    0.00000021441 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
-                    0.026934; // [mmol mol-1]
-  };
-
-  /**
-   * @brief intercellular CO2 partial pressure
-   * 
-   * approach to derive intercellular CO2 concentration Ci from Ca seems to be simplified (no stomatal conductance coupling model).
-   * 
-   * @param vw_MeanAirTemperature
-   * @param vw_AtmosphericCO2Concentration
-   * @return Ci
-   */
-  auto Ci_empirical = [] (double vw_MeanAirTemperature, double vw_AtmosphericCO2Concentration) -> double {
-    
-    return vw_AtmosphericCO2Concentration * 0.7 * (1.674 - 0.061294 * vw_MeanAirTemperature +
-                                                   0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
-                                                   0.0000088741 * (vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
-                                                   0.73547; // [µmol mol-1]
-  };
-  /*FS: maybe add a stomatal conductance coupled approach later?
-
-  -> using only the RuBisCO limited part should be sufficient, since our photosynthesis model uses the RuBisCO-limitation BEFORE applying the light limitation
-     (limitations are applied in sequence here, so applying stomatal conductance in the 1st step should automatically affect the 2nd step; in contrast, FvCB uses the both limitations in parallel and takes the minimum)
-  gb gs gm (boundary layer conductance, stomatal conductance, mesophyll conductance)
-
-  A(Ci) <-> gs coupling ... using a diffusional conductance model
-
-  iterative solution (e.g. with Medlyn model)
-  double Ci = Ci_empirical(temperature, vw_AtmosphericCO2Concentration); // initial guess: e.g. Ci = 0.7 * vw_AtmosphericCO2Concentration
-  for ...
-    auto A_rub_res = A_rubisco(temperature, Ci, O, &vc_KTkc, double &vc_KTko, CPData &_cropPhotosynthesisResults);
-    A = A_rub_res.vc_AssimilationRate;
-    Ci = ...
-    gs = ...
-    
-    ... take into account MONICA pc_StomataConductanceAlpha and vc_StomataResistance variables? ...
-  _cropPhotosynthesisResults.ci = Ci;
-
-  analytical solution (not always possible; depents on type of stomatal conductance model)
-  also check lumped coefficients and stomatal conductanc coupling in photosynthesis-FvcB.cpp for an approach using an analytical solution for C3 crops and FvCB photosynthesis
-
-  // example using the Ball-Berry stomatal model, taken from e.g. Yin & Struik 2004 https://doi.org/10.1016/j.njas.2009.07.001)
-
-  // calculate x1 and x2 for RuBisCO limitation
-  double O = Oi_empirical(vw_MeanAirTemperature);
-
-  double tempK = vw_MeanAirTemperature + D_IN_K;
-  double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
-  double term2 = sqrt(tempK / TK25);
-  vc_KTkc = exp(speciesPs.AEKC * term1) * term2; //FS: Is it necessary to modify monica::CropModule::vc_KTkc, or would it be sufficient to define vc_KTkc locally inside the function here?
-                                                  //    Seems to also be used in void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature), but it might be easier to calculate it locally there?
-  vc_KTko = exp(speciesPs.AEKO * term1) * term2; //FS: Is it necessary to modify monica::CropModule::vc_KTko, or would it be sufficient to define vc_KTko locally inside the function here?
-                                                  //    Is this even used outside the rubisco photosynthesis code?
-  double Mkc = speciesPs.KC25 * vc_KTkc; //[µmol mol-1]
-  _cropPhotosynthesisResults.kc = Mkc;
-  //_cropPhotosynthesisResults.kc = Mkc;            //FS: why does this line of code exist twice?
-  double Mko = speciesPs.KO25 * vc_KTko;      //[mmol mol-1]
-  _cropPhotosynthesisResults.ko = Mko * 1000.0; // mmol -> umol
-
-    // OLD exponential response
-  double KTvmax = cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__
-                  ? max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
-                                                              pc_MinimumTemperatureForAssimilation,
-                                                              pc_OptimumTemperatureForAssimilation,
-                                                              pc_MaximumTemperatureForAssimilation,
-                                                              1.0))
-                  : exp(speciesPs.AEVC * term1) * term2;
-
-  // Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
-  // old fakamax
-  double vc_AmaxFactor = pc_MaxAssimilationRate / 34.668;
-  double vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate / 34.668;
-  // old vcmax
-  double vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
-  _cropPhotosynthesisResults.vcMax = vc_Vcmax;
-  double vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
-
-  // similar to LDNDC::jarvis.cpp:217
-  //  old COcomp
-  double vc_CO2CompensationPoint =
-      0.5 * 0.21 * vc_Vcmax * Mkc * O / (vc_Vcmax * Mko);               // [µmol mol-1]      // FS: Why ... * vc_Vcmax ... / vc_Vcmax?
-  double vc_CO2CompensationPointReference =
-      0.5 * 0.21 * vc_VcmaxReference * Mkc * O / (vc_VcmaxReference * Mko); // [µmol mol-1]  // FS: Why ... * vc_VcmaxReference ... / vc_VcmaxReference?
-  _cropPhotosynthesisResults.comp = vc_CO2CompensationPoint;
-
-
-  ///// values not final - fore code testing only
-  FvCB::FvCB_canopy_hourly_params params;
-  double gb = params.gb;
-  //double gb = f(windspeed, LAI?);
-  double g0 = params.g0;
-  double gm_25 = params.gm_25;
-  auto gm = 0.3;
-  auto R_day = 0.015 * vc_Vcmax;  // Rd_bernacchi_f(vw_MeanAirTemperature) * vc_LeafAreaIndex;
-  // adjust this later for consistency with ET code?
-  /////
-
-  double x1 = vc_Vcmax;
-  double x2 = Mkc*(1 + O / Mko);
-
-  // solve coupled Photosynthesis & conductance
-  auto A_coupled = [g0, gm, gb, vc_SaturationDeficit, R_day,
-                    vc_CO2CompensationPoint, vw_AtmosphericCO2Concentration]
-                    (double x1, double x2) -> double {
-
-    // effect of leaf-to-air vapour pressure difference
-    // FS: a1 and b1 are empirical constants
-    double a1 = 0.9;
-    double b1 = 0.15; //kPa - 1
-    double f_VPD = 1 / (1 / (a1 - b1*vc_SaturationDeficit) - 1);
-
-    // lumped coefficients
-    double a = g0 * (x2 + vc_CO2CompensationPoint) + (g0/gm + f_VPD) * (x1 - R_day);
-    double b = vw_AtmosphericCO2Concentration * (x1 - R_day) - (vc_CO2CompensationPoint * x1) - R_day * x2;
-    double c = vw_AtmosphericCO2Concentration + x2 + (1/gm + 1/gb) * (x1 - R_day);
-    double d = x2 + vc_CO2CompensationPoint + (x1 - R_day)/gm;
-    double m = 1/gm + (g0/gm + f_VPD) * (1/gm + 1/gb);
-    double p = -1 * (d + (x1 - R_day)/gm + a * (1/gm + 1/gb) + (g0/gm + f_VPD) * c) / m;
-    double q = (d * (x1 - R_day) + a * c + (g0/gm + f_VPD) * b) / m;
-    double r = -a * b / m;
-    double Q = (p*p - 3 * q) / 9;
-    double U = (2*p*p*p - 9*p*q + 27*r) / 54;
-    double psi = acos(max(-1.0, min(U / sqrt(max(Q*Q*Q, hPhoto::eps)) , 1.0)));
-
-    // roots of th equbic equation
-    double sqrtQ =  sqrt(max(0.0, Q));
-    double pthirds = p/3;
-    double A1 = -2 * sqrtQ * cos(psi/3) - pthirds;
-    // double A2 = -2 * sqrtQ * cos((psi + 2*M_PI)/3) - pthirds;
-    // double A3 = -2 * sqrtQ * cos((psi + 4*M_PI)/3) - pthirds;
-    return A1;    // "The root A1 in Appendix A was found to be suitable for calculating either Ac or Aj under any combinations of Ca, Iinc, temperature, and VPD."
-  };
-  */
-
-  // define as lambda-function
-
-  /* either pass all required parameters to the function as copy or as const type & ...
-  auto A_rubisco = [] (double vw_MeanAirTemperature, double vw_AtmosphericCO2Concentration,
-                       const monica::SpeciesParameters &speciesPs, const monica::CropParameters &cropPs, 
-                       double pc_MinimumTemperatureForAssimilation, double pc_OptimumTemperatureForAssimilation, double pc_MaximumTemperatureForAssimilation,
-                       double pc_MaxAssimilationRate, double pc_ReferenceMaxAssimilationRate,
-                       double &vc_KTkc, double &vc_KTko, Voc::CPData &_cropPhotosynthesisResults) -> A_rubisco_results {
-    //...
-  };
-  */
-
-  // ... or make sure these parameters are not altered by the lambda-function capture
-  const auto &speciesPs_ = as_const(speciesPs);
-  const auto &cropPs_ = as_const(cropPs);
-  const double &pc_MinimumTemperatureForAssimilation_ = as_const(pc_MinimumTemperatureForAssimilation);
-  const double &pc_OptimumTemperatureForAssimilation_ = as_const(pc_OptimumTemperatureForAssimilation);
-  const double &pc_MaximumTemperatureForAssimilation_ = as_const(pc_MaximumTemperatureForAssimilation);
-  const double &pc_MaxAssimilationRate_ = as_const(pc_MaxAssimilationRate);
-  const double &pc_ReferenceMaxAssimilationRate_ = as_const(pc_ReferenceMaxAssimilationRate);
-
-  /**
-   * @brief Rubisco-limited rate of CO2 assimilation (MONICA Rubisco limitation code as a function)
-   * 
-   * kept very close to the original monica daily photosyntheisis code for now
-   * 
-   * @param vw_MeanAirTemperature                Temperature used for temperature-dependency of FvCB RuBisCO limitation. For daily photosynthesis, daily mean air temperature is used for now.
-   *                                             For hourly photosynthesis, hourly mean air temperature is used for now (no canopy temperature implemented yet).
-   * @param Cc                                   Chloroplast CO2 partial pressure (=CO2 partial pressure at the carboxylating sites of Rubisco).
-   * @param O                                    Oxygen partial pressure.
-   * @param vc_KTkc                              Factor to account for temperature-dependency of Michaelis-Menten constant for CO2. Default monica::CropModule::vc_KTkc input to be altered by the function. Currently only used as an output (input value does not matter here).
-   * @param vc_KTko                              Factor to account for temperature-dependency of Michaelis-Menten constant for O2. Default monica::CropModule::vc_KTko input to be altered by the function. Currently only used as an output (input value does not matter here).
-   * @param _cropPhotosynthesisResults           Default Voc::CPData monica::CropModule::_cropPhotosynthesisResults to be altered by the function. Seems to be a helper struct used for debugging?
-   * @return A_rubisco_results (vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference)
-  */
-  auto A_rubisco = [&speciesPs_, &cropPs_, 
-                    &pc_MinimumTemperatureForAssimilation_, &pc_OptimumTemperatureForAssimilation_, &pc_MaximumTemperatureForAssimilation_,
-                    &pc_MaxAssimilationRate_, &pc_ReferenceMaxAssimilationRate_]          // lambda capture; not altered by function when defined above as const
-                    (double vw_MeanAirTemperature, double Cc, double O,                   // not altered by function
-                    double &vc_KTkc, double &vc_KTko, CPData &_cropPhotosynthesisResults) // altered by function
-                    -> A_rubisco_results {
-
-    double tempK = vw_MeanAirTemperature + D_IN_K;
-    double term1 = (tempK - TK25) / (TK25 * tempK * RGAS);
-    double term2 = sqrt(tempK / TK25);
-    vc_KTkc = exp(speciesPs_.AEKC * term1) * term2; //FS: Is it necessary to modify monica::CropModule::vc_KTkc, or would it be sufficient to define vc_KTkc locally inside the function here?
-                                                    //    Seems to also be used in void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature), but it might be easier to calculate it locally there?
-    vc_KTko = exp(speciesPs_.AEKO * term1) * term2; //FS: Is it necessary to modify monica::CropModule::vc_KTko, or would it be sufficient to define vc_KTko locally inside the function here?
-                                                    //    Is this even used outside the rubisco photosynthesis code?
-    double Mkc = speciesPs_.KC25 * vc_KTkc; //[µmol mol-1]
-    _cropPhotosynthesisResults.kc = Mkc;
-    //_cropPhotosynthesisResults.kc = Mkc;            //FS: why does this line of code exist twice?
-    double Mko = speciesPs_.KO25 * vc_KTko;      //[mmol mol-1]
-    _cropPhotosynthesisResults.ko = Mko * 1000.0; // mmol -> umol
-
-    // OLD exponential response
-    double KTvmax = cropPs_.__enable_Photosynthesis_WangEngelTemperatureResponse__
-                    ? max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
-                                                                pc_MinimumTemperatureForAssimilation_,
-                                                                pc_OptimumTemperatureForAssimilation_,
-                                                                pc_MaximumTemperatureForAssimilation_,
-                                                                1.0))
-                    : exp(speciesPs_.AEVC * term1) * term2;
-
-    // Berechnung des Transformationsfaktors für pflanzenspez. AMAX bei 25 grad
-    // old fakamax
-    double vc_AmaxFactor = pc_MaxAssimilationRate_ / 34.668;
-    double vc_AmaxFactorReference = pc_ReferenceMaxAssimilationRate_ / 34.668;
-    // old vcmax
-    double vc_Vcmax = 98.0 * vc_AmaxFactor * KTvmax;
-    _cropPhotosynthesisResults.vcMax = vc_Vcmax;
-    double vc_VcmaxReference = 98.0 * vc_AmaxFactorReference * KTvmax;
-
-    // similar to LDNDC::jarvis.cpp:217
-    //  old COcomp
-    double vc_CO2CompensationPoint =
-        0.5 * 0.21 * vc_Vcmax * Mkc * O / (vc_Vcmax * Mko);               // [µmol mol-1]      // FS: Why ... * vc_Vcmax ... / vc_Vcmax?
-    double vc_CO2CompensationPointReference =
-        0.5 * 0.21 * vc_VcmaxReference * Mkc * O / (vc_VcmaxReference * Mko); // [µmol mol-1]  // FS: Why ... * vc_VcmaxReference ... / vc_VcmaxReference?
-    _cropPhotosynthesisResults.comp = vc_CO2CompensationPoint;
-
-    // Mitchell et al. 1995:
-    // old EFF
-    double vc_RadiationUseEfficiency = max(0.0, min(0.77 / 2.1 * (Cc - vc_CO2CompensationPoint) /
-                                            (4.5 * Cc + 10.5 * vc_CO2CompensationPoint) * 8.3769, 0.5));  //FS: bound(0.0, ..., 0.5); What is the factor 8.3769 (not in the documentation?)?
-    double vc_RadiationUseEfficiencyReference = max(0.0, min(0.77 / 2.1 * (Cc - vc_CO2CompensationPointReference) /
-                                                      (4.5 * Cc + 10.5 * vc_CO2CompensationPointReference) * 8.3769,
-                                                      0.5));                                              //FS: bound(0.0, ..., 0.5); What is the factor 8.3769 (not in the documentation?)?
-
-    double vc_AssimilationRate = (Cc - vc_CO2CompensationPoint) * vc_Vcmax / (Cc + Mkc * (1.0 + O / Mko)) * 1.656;  // FS: What is the factor 1.656 (not in the documentation?)?
-    double vc_AssimilationRateReference =
-        (Cc - vc_CO2CompensationPointReference) * vc_VcmaxReference / (Cc + Mkc * (1.0 + O / Mko)) * 1.656;         // FS: What is the factor 1.656 (not in the documentation?)?
-
-    if (vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation_) {
-      vc_AssimilationRate = 0.0; //MP: warum gibt es für C3-Pflanzen keine maximale Temperatur
-      vc_AssimilationRateReference = 0.0;
-    }
-
-    /* independently of pc_CarboxylationPathway, this has to be ensured after calculation of vc_AssimilationRate (and vc_AssimilationRateReference)
-    if (vc_CuttingDelayDays > 0) {
-      vc_AssimilationRate = 0.1;
-
-    vc_AssimilationRate = max(0.1, vc_AssimilationRate);
-    vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
-    */
-
-    return A_rubisco_results{vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference};
-  };
-  
-#pragma endregion rubisco limitation function
-
   if (pc_CarboxylationPathway == 1) {
     // Calculation of CO2 impact on crop growth
     if (pc_CO2Method == 3) {
@@ -2043,6 +1796,11 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       // of ARCWHEAT1 simulation model. Plant Cell Environ. 18(7):736-748.
       //////////////////////////////////////////////////////////////////////////
 
+
+      auto vc_KTkc_vc_KTko_term1_term2 = CropModule::vc_KTkc_vc_KTko(vw_MeanAirTemperature);
+      vc_KTkc = get<0>(vc_KTkc_vc_KTko_term1_term2);  // seems to also be used in void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature)
+      vc_KTko = get<1>(vc_KTkc_vc_KTko_term1_term2); // is this even used outside the photosynthesis method?
+
       double Ci = Ci_empirical(vw_MeanAirTemperature, vw_AtmosphericCO2Concentration);
       _cropPhotosynthesisResults.ci = Ci;
 
@@ -2050,7 +1808,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       _cropPhotosynthesisResults.oi = Oi * 1000.0;  // mmol -> umol
 
       // call rubisco limitation code for daily monica photosynthesis
-      auto A_rub_res = A_rubisco(vw_MeanAirTemperature, Ci, Oi, vc_KTkc, vc_KTko, _cropPhotosynthesisResults);
+      auto A_rub_res = A_rubisco(vw_MeanAirTemperature, Ci, Oi, _cropPhotosynthesisResults);
       vc_AssimilationRate = A_rub_res.vc_AssimilationRate;
       vc_AssimilationRateReference = A_rub_res.vc_AssimilationRateReference;
       vc_RadiationUseEfficiency = A_rub_res.vc_RadiationUseEfficiency;
@@ -3052,12 +2810,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         double Amax, AmaxRef, epsilon, epsilonRef;
         if (pc_CarboxylationPathway == 1) {
           double Ci = Ci_empirical(hp_in.leafT, vw_AtmosphericCO2Concentration);
-          _cropPhotosynthesisResults.ci = Ci;
+          // _cropPhotosynthesisResults.ci = Ci;
 
           double Oi = Oi_empirical(hp_in.leafT);
-          _cropPhotosynthesisResults.oi = Oi * 1000.0;  // mmol -> umol
+          // _cropPhotosynthesisResults.oi = Oi * 1000.0;  // mmol -> umol
 
-          auto A_rub_res = A_rubisco(hp_in.leafT, Ci, Oi, vc_KTkc, vc_KTko, _cropPhotosynthesisResults);
+          auto A_rub_res = A_rubisco(hp_in.leafT, Ci, Oi, _cropPhotosynthesisResults);
           // vc_AssimilationRate = A_rub_res.vc_AssimilationRate;
           // vc_AssimilationRateReference = A_rub_res.vc_AssimilationRateReference;
           // vc_RadiationUseEfficiency = A_rub_res.vc_RadiationUseEfficiency;
