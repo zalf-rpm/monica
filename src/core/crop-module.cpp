@@ -2775,8 +2775,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         // inst_glob_rad = inst_diff_rad + inst_dir_rad;
 
         // PAR fraction
-        if (hourly_data_in_unit != hPhoto::unit::umolpm2ps)
-        {
+        if (hourly_data_in_unit != hPhoto::unit::umolpm2ps) {
           inst_diff_rad *= parfrac;
           inst_dir_rad *= parfrac;
           // inst_glob_rad *= parfrac;
@@ -2856,6 +2855,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
         if (vc_CuttingDelayDays > 0) {
           Amax = 0.1;
+        }
 
         Amax = max(0.1, Amax);
         AmaxRef = max(0.1, AmaxRef);
