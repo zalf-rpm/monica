@@ -2874,10 +2874,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         inst_diff_rad /= 3600;
         inst_dir_rad /= 3600;
 
-        int style = 1;  // style of the integration over all leaf angles. Default is 1.
-                        // 0 = None (leads to overestimation according to Spitters 1986!)
-                        // 1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
-                        // 2 = Spitters 1989, SUCROS87 implementation
+        int style = 11;  // style of the integration over all leaf angles. Default is 1.
+                        // 0  = exponential light response curve, no leaf angle integration (leads to overestimation according to Spitters 1986!)
+                        // 1  = exponential light response curve, Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards
+                        // 2  = exponential light response curve, Spitters 1989, SUCROS87 implementation (using 3pt gauss integration over leaf angles)
+                        // 10 = rectangular hyperbola light response curve, no leaf angle integration (overestimation should not as bad as with exponential light response curve accoring to Spitters 1986; inspired by 0)
+                        // 11 = rectangular hyperbola light response curve, custom implementation with custom leaf angle integration and numerical safeguards (inspired by 1)
+                        // 12 = rectangular hyperbola light response curve, using 3pt gauss integration over leaf angles (inspired by 2)
         hourlyPhoto = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, Amax, epsilon, kdf, 0.2, kgpha, style);
         hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, AmaxRef, epsilonRef, kdfRef, 0.2, kgpha, style);
       

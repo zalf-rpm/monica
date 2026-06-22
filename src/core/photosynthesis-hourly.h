@@ -236,9 +236,12 @@ double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, do
  *                  See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
  * @param kgpha   input (A_m, epsilon) and output unit in [kg ha-1] instead of [g m-2]. Default is false.
  * @param leaf_angle_integration_style style of the integration over all leaf angles. Default is 1.
- *                  0 = None (leads to overestimation according to Spitters 1986!);
- *                  1 = Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards;
- *                  2 = Spitters 1989, SUCROS87 implementation
+ *                   0  = exponential light response curve, no leaf angle integration (leads to overestimation according to Spitters 1986!)
+ *                   1  = exponential light response curve, Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards
+ *                   2  = exponential light response curve, Spitters 1989, SUCROS87 implementation (using 3pt gauss integration over leaf angles)
+ *                   10 = rectangular hyperbola light response curve, no leaf angle integration (overestimation should not as bad as with exponential light response curve accoring to Spitters 1986; inspired by 0)
+ *                   11 = rectangular hyperbola light response curve, custom implementation with custom leaf angle integration and numerical safeguards (inspired by 1)
+ *                   12 = rectangular hyperbola light response curve, using 3pt gauss integration over leaf angles (inspired by 2)
  * @return hourly photosynthesis of the canopy [g CO2 m-2 ground h-1].
  */
 double Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, bool kgpha=false, int leaf_angle_integration_style=1);
