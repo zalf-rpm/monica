@@ -182,9 +182,9 @@ public:
       double vc_RadiationUseEfficiencyReference;
   };
   /**
-   * @brief Rubisco-limited rate of CO2 assimilation (MONICA Rubisco limitation code as a function)
+   * @brief Rubisco-controlled rate of CO2 assimilation (=carboxylation-limited FvCB assimilation rate)
    * 
-   * kept very close to the original monica daily photosyntheisis code for now
+   * kept very close to the original MONICA daily photosyntheisis code for now
    * 
    * @param vw_MeanAirTemperature                Temperature used for temperature-dependency of FvCB RuBisCO limitation. For daily photosynthesis, daily mean air temperature is used for now.
    *                                             For hourly photosynthesis, hourly mean air temperature is used for now (no canopy temperature implemented yet).

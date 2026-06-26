@@ -7,30 +7,26 @@ using namespace Tools;
 using namespace std;
 
 
-double hPhoto::diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev)
+double hPhoto::convert_MJpm2ps_to_unit(double value, hPhoto::unit out_unit)
 {
-  // Spitters et al. 1986 eq. 20 (hourly)
-  assert(extra_terr_rad > eps);
-  double glob_extra_ratio = globrad / extra_terr_rad;
-  double R = (0.847 - 1.61 * sin(solar_elev) + 1.04 * pow(sin(solar_elev), 2));
-  double K = (1.47 - R) / 1.66;
-
-  if (glob_extra_ratio <= 0.22)       // eq. 20a
-  {
-    return 1.;
+  switch (out_unit) {
+  case hPhoto::unit::umolpm2ps:
+      // W m-2 -> µmol m-2 s-1
+      value *= 4.56;
+      [[fallthrough]];
+  case hPhoto::unit::Wpm2ps:
+      // J m-2 h-1 -> W m-2
+      value /= 3600.0;
+      [[fallthrough]];
+  case hPhoto::unit::Jpm2ps:
+      // MJ m-2 h-1 -> J m-2 h-1
+      value *= 1e6;
+      [[fallthrough]];
+  case hPhoto::unit::MJpm2ps:
+      // base unit — no conversion
+      break;
   }
-  else if (glob_extra_ratio <= 0.35)  // eq. 20b
-  {
-    return 1. - 6.4 * pow((glob_extra_ratio - 0.22), 2);
-  }
-  else if (glob_extra_ratio <= K)     // eq. 20c
-  {
-    return 1.47 - 1.66 * glob_extra_ratio;
-  }
-  else                                // eq. 20d
-  {
-    return R;
-  }
+  return value;
 }
 
 
@@ -59,6 +55,32 @@ double hPhoto::diffuse_fraction_daily_f(double globrad, double extra_terr_rad, d
 }
 
 
+double hPhoto::diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev)
+{
+  // Spitters et al. 1986 eq. 20 (hourly)
+  assert(extra_terr_rad > eps);
+  double glob_extra_ratio = globrad / extra_terr_rad;
+  double R = (0.847 - 1.61 * sin(solar_elev) + 1.04 * pow(sin(solar_elev), 2));
+  double K = (1.47 - R) / 1.66;
+
+  if (glob_extra_ratio <= 0.22)       // eq. 20a
+  {
+    return 1.;
+  }
+  else if (glob_extra_ratio <= 0.35)  // eq. 20b
+  {
+    return 1. - 6.4 * pow((glob_extra_ratio - 0.22), 2);
+  }
+  else if (glob_extra_ratio <= K)     // eq. 20c
+  {
+    return 1.47 - 1.66 * glob_extra_ratio;
+  }
+  else                                // eq. 20d
+  {
+    return R;
+  }
+}
+
 double hPhoto::diffuse_fraction_cscor(double diffuse_fraction, double solar_elevation)
 {
   assert((diffuse_fraction >= 0.) && (diffuse_fraction <= 1.)); // 0 <= diffuse_fraction <= 1 required!
@@ -74,8 +96,7 @@ double hPhoto::diffuse_fraction_cscor(double diffuse_fraction, double solar_elev
   return 1. / (1. + (1. - pow(diffuse_fraction, 2)) * pow(cos(0.5 * M_PI - solar_elevation), 2) * pow(cos(solar_elevation), 3)); // Spitters eq. 9
 }
 
-
-double hPhoto::diffuse_fraction_pwcor(double diffuse_fraction)
+double hPhoto::diffuse_fraction_parcor(double diffuse_fraction)
 {
   assert((diffuse_fraction >= 0.) && (diffuse_fraction <= 1.)); // 0 <= diffuse_fraction <= 1 required!
   /*if ((diffuse_fraction < 0) || (diffuse_fraction > 1))  // ((diffuse_fraction < 0 - epsilon) || (diffuse_fraction > 1 + epsilon))
@@ -85,28 +106,47 @@ double hPhoto::diffuse_fraction_pwcor(double diffuse_fraction)
   return 1. + 0.3 * (1. - pow(diffuse_fraction, 2)); // Spitters eq. 10
 }
 
-
-Spitters_Idir_Idiff_result hPhoto::Spitters_Idir_Idiff(double globrad, double extraterrrad, double sun_el, bool cscor, bool pwcor)
+hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, bool cscor, bool parcor, double parfrac, hPhoto::unit out_unit)
 {
-  Spitters_Idir_Idiff_result result;
-  auto diffuseFractionHourly = diffuse_fraction_hourly_f(globrad, extraterrrad, sun_el);
+  PAR_radiation_result result;
+
+  double diffuse_fraction, hourly_diffuse_rad, hourly_direct_rad;
+
+  if (global_rad < eps) {
+    result.diffuse = 0.;
+    result.direct = 0.;
+    return result;
+  }
+
+  if (solar_el < eps) {
+    diffuse_fraction = 1.;
+  } else {
+    diffuse_fraction = diffuse_fraction_hourly_f(global_rad, extra_terr_rad, solar_el);
+  }
+
+  double diffuse_fraction_nocor = diffuse_fraction; //store value of diffuse_fraction without the corrections
 
   // circumsolar correction
   if (cscor) {
-    double f_cscor = diffuse_fraction_cscor(diffuseFractionHourly, sun_el);
-    diffuseFractionHourly *= f_cscor;
+    double f_cscor = diffuse_fraction_cscor(diffuse_fraction_nocor, solar_el);
+    diffuse_fraction *= f_cscor;
   }
-
   // PAR wavelengths correction
-  if (pwcor) {
-    double f_pwcor = diffuse_fraction_pwcor(diffuseFractionHourly);
-    diffuseFractionHourly *= f_pwcor;
+  if (parcor) {
+    double f_parcor = diffuse_fraction_parcor(diffuse_fraction_nocor);
+    diffuse_fraction *= f_parcor;
   }
 
-  // irradiances
-  result.Idiff = globrad * diffuseFractionHourly; // diffuse irradiance I0_df
-  result.Idir  = globrad - result.Idiff;          // direct irradiance I0_dr
-  return result;  // make_tuple(I0_dr, I0_df);
+  hourly_diffuse_rad = global_rad * diffuse_fraction;
+  hourly_direct_rad = global_rad - hourly_diffuse_rad;
+
+  // PAR fraction
+  hourly_diffuse_rad *= parfrac;
+  hourly_direct_rad  *= parfrac;
+
+  result.diffuse = convert_MJpm2ps_to_unit(hourly_diffuse_rad, out_unit);
+  result.direct = convert_MJpm2ps_to_unit(hourly_direct_rad, out_unit);
+  return result;
 }
 
 
@@ -296,64 +336,6 @@ double hPhoto::Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, do
   }
   return A_canop * LAI;
 }
-
-
-double hPhoto::convert_MJpm2ps_to_unit(double value, hPhoto::unit out_unit)
-{
-  switch (out_unit) {
-  case hPhoto::unit::umolpm2ps:
-      // W m-2 -> µmol m-2 s-1
-      value *= 4.56;
-      [[fallthrough]];
-  case hPhoto::unit::Wpm2ps:
-      // J m-2 h-1 -> W m-2
-      value /= 3600.0;
-      [[fallthrough]];
-  case hPhoto::unit::Jpm2ps:
-      // MJ m-2 h-1 -> J m-2 h-1
-      value *= 1e6;
-      [[fallthrough]];
-  case hPhoto::unit::MJpm2ps:
-      // base unit — no conversion
-      break;
-  }
-  return value;
-}
-
-
-hPhoto::PAR_radiation_result hPhoto::PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac, hPhoto::unit out_unit)
-{
-  PAR_radiation_result result;
-
-  double diffuse_fraction, hourly_diffuse_rad, hourly_direct_rad;
-
-  if (global_rad < eps) {
-    result.diffuse = 0.;
-    result.direct = 0.;
-    return result;
-  }
-
-  if (solar_el < eps) {
-    diffuse_fraction = 1.;
-  } else {
-    diffuse_fraction = diffuse_fraction_hourly_f(global_rad, extra_terr_rad, solar_el);
-  }
-
-  hourly_diffuse_rad = global_rad * diffuse_fraction;
-  hourly_direct_rad = global_rad - hourly_diffuse_rad;
-
-  // PAR fraction
-  hourly_diffuse_rad *= parfrac;
-  hourly_direct_rad  *= parfrac;
-
-  result.diffuse = convert_MJpm2ps_to_unit(hourly_diffuse_rad, out_unit);
-  result.direct = convert_MJpm2ps_to_unit(hourly_direct_rad, out_unit);
-  return result;
-}
-
-
-
-
 
 
 double hPhoto::ASSIM(double AMAX, double EFF, double LAI, double KDIF, double SINB, double PARDIR, double PARDIF) {

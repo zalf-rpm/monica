@@ -16,6 +16,50 @@ namespace hPhoto {
 
 const double eps = 1e-6; // machine epsilon
 
+
+enum class unit {// supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps
+    MJpm2ps = 0,     // MJ   m-2 h-1 PAR
+    Jpm2ps,          // J    m-2 h-1 PAR
+    Wpm2ps,          // W    m-2     PAR
+    umolpm2ps        // µmol m-2 s-1 PAR
+};
+static_assert(
+    static_cast<int>(unit::MJpm2ps)  == 0 &&
+    static_cast<int>(unit::Jpm2ps)   == 1 &&
+    static_cast<int>(unit::Wpm2ps)   == 2 &&
+    static_cast<int>(unit::umolpm2ps)== 3,
+    "out_unit order must match conversion pipeline"
+);
+
+/**
+ * @brief 
+ * 
+ * @param value    input value to be converted [MJ m-2 h-1]
+ * @param out_unit output unit (supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps). Default is hPhoto::unit::MJpm2ps.
+ * @return double converted value
+ */
+double convert_MJpm2ps_to_unit(double value, hPhoto::unit out_unit);
+
+
+/**
+ * @brief estimate fraction of diffuse radiation (daily)
+ * (requires daily inputs!)
+ * 
+ * Source: Spitters et al. 1986; original source seems to be de Jong 1980, p.79 (according to Spitters et al. 1986).
+ * 
+ * - Spitters CJT, Toussaint HAJM & Goudriaan J (1986). Separating the diffuse and direct component of global radiation and its implications for modeling canopy photosynthesis. Part I. Components of incoming radiation. Agricultural and Forest Meteorology, 38(1-3), 217-229.
+ *   https://doi.org/10.1016/0168-1923(86)90060-2
+ * 
+ * - de Jong JBRM (1980). Een karakterisering van de zonnestraling in Nederland. Doctoraalverslag Vakgroep Fysische Aspecten van de Gebouwde Omgeving afd. Bouwkunde en Vakgroep Warmte- en Stromingstechnieken afd, Werktuigbouwkunde, Technische Hogeschool (Techn. Univ.), Eindhoven, Netherlands (1980), p. 97 + 67 [in Dutch].
+ * 
+ * @param globrad        daily global irradiance [W m-2]
+ * @param extra_terr_rad daily extra-terrestrial radiation [W m-2]
+ * @param solar_elev     daily solar elevation angle [rad]
+ * @return daily fraction of diffuse radiation 
+ */
+double diffuse_fraction_daily_f(double globrad, double extra_terr_rad, double solar_elev);
+
+
 /**
  * @brief estimate fraction of diffuse radiation (hourly)
  * (requires hourly inputs!)
@@ -38,26 +82,6 @@ const double eps = 1e-6; // machine epsilon
  * @return hourly fraction of diffuse radiation 
  */
 double diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev);
-
-
-/**
- * @brief estimate fraction of diffuse radiation (daily)
- * (requires daily inputs!)
- * 
- * Source: Spitters et al. 1986; original source seems to be de Jong 1980, p.79 (according to Spitters et al. 1986).
- * 
- * - Spitters CJT, Toussaint HAJM & Goudriaan J (1986). Separating the diffuse and direct component of global radiation and its implications for modeling canopy photosynthesis. Part I. Components of incoming radiation. Agricultural and Forest Meteorology, 38(1-3), 217-229.
- *   https://doi.org/10.1016/0168-1923(86)90060-2
- * 
- * - de Jong JBRM (1980). Een karakterisering van de zonnestraling in Nederland. Doctoraalverslag Vakgroep Fysische Aspecten van de Gebouwde Omgeving afd. Bouwkunde en Vakgroep Warmte- en Stromingstechnieken afd, Werktuigbouwkunde, Technische Hogeschool (Techn. Univ.), Eindhoven, Netherlands (1980), p. 97 + 67 [in Dutch].
- * 
- * @param globrad        daily global irradiance [W m-2]
- * @param extra_terr_rad daily extra-terrestrial radiation [W m-2]
- * @param solar_elev     daily solar elevation angle [rad]
- * @return daily fraction of diffuse radiation 
- */
-double diffuse_fraction_daily_f(double globrad, double extra_terr_rad, double solar_elev);
-
 
 /**
  * @brief Circumsolar correction
@@ -93,16 +117,15 @@ double diffuse_fraction_cscor(double diffuse_fraction, double solar_elevation);
  * @param diffuse fraction (= diffuse irradiance / global radiation) [-]
  * @return PAR wavelengths correction factor
  */
-double diffuse_fraction_pwcor(double diffuse_fraction);
+double diffuse_fraction_parcor(double diffuse_fraction);
 
 
-struct Spitters_Idir_Idiff_result {
-       double Idir;  // direct irradiance I0_df
-       double Idiff; // diffuse irradiance I0_df
+struct PAR_radiation_result {
+       double direct;       // direct irradiance [μmol m-2 s-1 PAR] (unit ground area)
+       double diffuse;      // diffuse irradiance [μmol m-2 s-1 PAR] (unit ground area)
 };
-
 /**
- * @brief estimation of top of canopy direct and diffuse irradiances
+ * @brief PAR radiation estimation (top of canopy direct and diffuse)
  * 
  * Optional corrections (cscor, pwcor) are often neglectes, as Spitters et al. 1986 suggest that they cancel out (if both are used).
  * However, in the Agrivoltaics context, these might be useful (FS personal insights while reading the original literature; the Ma Lu et al. 2022 paper suggests the same?)
@@ -114,14 +137,16 @@ struct Spitters_Idir_Idiff_result {
  * - Ma Lu S, Zainali S, Stridh B, Avelin A, Amaducci S, Colauzzi M & Campana, PE (2022). Photosynthetically active radiation decomposition models for agrivoltaic systems applications. Solar Energy, 244, 536-549.
  *   https://doi.org/10.1016/j.solener.2022.05.046
  * 
- * @param globrad      global radiation [W m-2]
- * @param extraterrrad extra-terrestrial radiation [W m-2]
- * @param sun_el       sun elevation angle [rad]
- * @param cscor        circumsolar correction. Default is true (active).
- * @param pwcor        PAR wavelength correction. Default is true (active).
- * @return direct irradiance Idir, diffuse irradiance Idiff
+ * @param global_rad     global radiation [MJ m-2 h-1]
+ * @param extra_terr_rad extra-terrestrial radiation [MJ m-2 h-1]
+ * @param solar_el       solar elevation angle [rad]
+ * @param cscor          circumsolar correction. Default is true (active).
+ * @param parcor         PAR wavelength correction. Default is true (active).
+ * @param parfrac        photosynthetically active fraction of the light spectrum. 0.5 according to Spitters 1986; 0.48 according to BF5 Sunshine sensor manual? Default is 0.45.
+ * @param out_unit       output unit (supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps). Default is hPhoto::unit::MJpm2ps.
+ * @return hPhoto::PAR_radiation_result direct [out_unit PAR], diffuse [out_unit PAR]
  */
-Spitters_Idir_Idiff_result Spitters_Idir_Idiff(double globrad, double extraterrrad, double sun_el, bool cscor = true, bool pwcor = true);
+PAR_radiation_result PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, bool cscor=true, bool parcor=true, double parfrac=0.45, unit out_unit=unit::MJpm2ps);
 
 
 /**
@@ -239,98 +264,26 @@ double Spitters_canop_photo_multilayer(double beta, double LAI, double I0_dr, do
  *                   0  = exponential light response curve, no leaf angle integration (leads to overestimation according to Spitters 1986!)
  *                   1  = exponential light response curve, Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards
  *                   2  = exponential light response curve, Spitters 1989, SUCROS87 implementation (using 3pt gauss integration over leaf angles)
- *                   10 = rectangular hyperbola light response curve, no leaf angle integration (overestimation should not as bad as with exponential light response curve accoring to Spitters 1986; inspired by 0)
- *                   11 = rectangular hyperbola light response curve, custom implementation with custom leaf angle integration and numerical safeguards (inspired by 1)
- *                   12 = rectangular hyperbola light response curve, using 3pt gauss integration over leaf angles (inspired by 2)
+ *                   10 = rectangular hyperbola light response curve, no leaf angle integration (overestimation should not as bad as with exponential light response curve accoring to Spitters 1986; inspired by style 0)
+ *                   11 = rectangular hyperbola light response curve, custom implementation with custom leaf angle integration and numerical safeguards (inspired by style 1)
+ *                   12 = rectangular hyperbola light response curve, using 3pt gauss integration over leaf angles (inspired by style 2)
  * @return hourly photosynthesis of the canopy [g CO2 m-2 ground h-1].
  */
 double Spitters_canop_photo_3p(double beta, double LAI, double I0_dr, double I0_df, double A_m, double epsilon, double k_df=0.6, double sigma=0.2, bool kgpha=false, int leaf_angle_integration_style=1);
 
 
-enum class unit {// supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps
-    MJpm2ps = 0,     // MJ   m-2 h-1 PAR
-    Jpm2ps,          // J    m-2 h-1 PAR
-    Wpm2ps,          // W    m-2     PAR
-    umolpm2ps        // µmol m-2 s-1 PAR
-};
-static_assert(
-    static_cast<int>(unit::MJpm2ps)  == 0 &&
-    static_cast<int>(unit::Jpm2ps)   == 1 &&
-    static_cast<int>(unit::Wpm2ps)   == 2 &&
-    static_cast<int>(unit::umolpm2ps)== 3,
-    "out_unit order must match conversion pipeline"
-);
-
 /**
- * @brief 
+ * @brief Gross assimilation ported from SUCROS87/WOFOST; for testing purposes and compariosn only
  * 
- * @param value    input value to be converted [MJ m-2 h-1]
- * @param out_unit output unit (supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps). Default is hPhoto::unit::MJpm2ps.
- * @return double converted value
- */
-double convert_MJpm2ps_to_unit(double value, hPhoto::unit out_unit);
-
-
-struct PAR_radiation_result {
-       double direct;       //[μmol m-2 s-1 PAR] (unit ground area)
-       double diffuse;      //[μmol m-2 s-1 PAR] (unit ground area)
-};
-
-/**
- * @brief PAR radiation calculation.
+ * using a negative exponential light response curve with negative exponent
  * 
- * @param global_rad     global radiation [MJ m-2 h-1]
- * @param extra_terr_rad extra-terrestrial radiation [MJ m-2 h-1]
- * @param solar_el       solar elevation angle [rad]
- * @param parfrac        photosynthetically active fraction of the light spectrum. ... according to Spitters ???; 0.48 according to BF5 Sunshine sensor manual? Default is 0.45.
- * @param out_unit       output unit (supported units: MJpm2ps, Jpm2ps, Wpm2ps, umolpm2ps). Default is hPhoto::unit::MJpm2ps.
- * @return hPhoto::PAR_radiation_result direct [out_unit PAR], diffuse [out_unit PAR]
- */
-PAR_radiation_result PAR_radiation(double global_rad, double extra_terr_rad, double solar_el, double parfrac=0.45, unit out_unit=unit::MJpm2ps);
-
-
-struct gross_photo_hourly_result {
-       double GrossCO2Assimilation;
-       double GrossCO2AssimilationReference;
-};
-
-// /**
-//  * @brief 
-//  * 
-//  * @param leaf_T         leaf temperature [K]
-//  * @param global_rad     global radiation [W m-1]
-//  * @param extra_terr_rad extra-terrestrial radiation [W m-1]
-//  * @param solar_el       solar elevation angle [rad]
-//  * @param LAI            leaf area index [m2 leaf m-2 ground]
-//  * @param Amax           assimilation rate at light saturation [g CO2 m-2 leaf h-1] (=asymptote of light response curve).
-//  * @param epsilon        light-use efficiency [g CO2 J-1 absorbed] (=initial slope of light response curve).
-//  *                          arcwheat1: "dA/dI at I = 0".
-//  *                          monica: "transition between photosynthetic quantum use efficiency and light saturated photosynthesis".
-//  * @param k_df           empirical extinction coefficient for diffuse radiation. Default is 0.6.
-//  *                          0.60 for spring wheat, 0.65 for maize, 1.00 for potato and 0.69 for sugar beet, according to Spitters et al. (1989), p. 151 and pp. 178-180.
-//  *                          See Spitters et al. (1989), Chapter 4.1.4 "Crop species and site characteristics", pp. 171-172:
-//  *                          "Typical values of k are 0.4 to 0.7 for monocotyledons and 0.65 to 1.1 for broadleaved dicotyledons (Monteith, 1969).
-//  *                           The extinction coefficient can be estimated from measurements of PAR above and below a canopy with a known LAI (Equation 62 [I_L = (1 - rho) * I_0 *exp(-k * L)]),
-//  *                           making sure that PAR is measured rather than total global radiation. The extinction coefficient for total radiation is about 2/3 that of PAR.
-//  *                           The extinction coefficient is best measured under a uniform overcast sky; then all radiation is diffuse so that the extinction coefficient is not affected by solar elevation."
-//  * @param sigma          scattering coefficient of single leaves and for visible radiation [-]. Default is 0.2.
-//  *                          See Spitters et al. (1989). In the order of 0.20. 0.20 for spring wheat, maize, potato, sugar beet.
-//  * @param parfrac        Photosynthetically active wavelength fraction (in relation to global radiation). Default is 0.45
-//  * @return GrossCO2Assimilation, GrossCO2AssimilationReference
-//  */
-// double gross_photo_hourly(double leaf_T, double global_rad, double extra_terr_rad, double solar_el, double LAI, double Amax, double epsilon, double k_df, double sigma=0.2, double parfrac=0.45);
-
-
-/**
- * @brief ported from SUCROS87/WOFOST; for testing putposes and compariosn only
- * 
- * @param AMAX 
- * @param EFF 
- * @param LAI 
- * @param KDIF 
- * @param SINB 
- * @param PARDIR 
- * @param PARDIF 
+ * @param AMAX   (=A_m) maximum assimilation rate at light saturation (asymptote)
+ * @param EFF    (=epsilon) light use efficiency
+ * @param LAI    leaf area index
+ * @param KDIF   (=kdf) empirical extinction coefficient for diffuse radiation
+ * @param SINB   sin(solar_elevation_angle)
+ * @param PARDIR (=I0_dr) direct PAR top of the canopy
+ * @param PARDIF (=I0_df) diffuse PAR top of the canopy
  * @return double FGROS
  */
 double ASSIM(double AMAX, double EFF, double LAI, double KDIF, double SINB, double PARDIR, double PARDIF);
