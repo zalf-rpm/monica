@@ -1798,8 +1798,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 
       auto vc_KTkc_vc_KTko_term1_term2 = CropModule::vc_KTkc_vc_KTko(vw_MeanAirTemperature);
-      vc_KTkc = get<0>(vc_KTkc_vc_KTko_term1_term2);  // seems to also be used in void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature)
-      vc_KTko = get<1>(vc_KTkc_vc_KTko_term1_term2); // is this even used outside the photosynthesis method?
+      vc_KTkc = get<0>(vc_KTkc_vc_KTko_term1_term2);  // FS: vc_KTkc seems to also be used in void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature)
+      vc_KTko = get<1>(vc_KTkc_vc_KTko_term1_term2);  // FS: is vc_KTko even used outside the photosynthesis method?
 
       double Ci = Ci_empirical(vw_MeanAirTemperature, vw_AtmosphericCO2Concentration);
       _cropPhotosynthesisResults.ci = Ci;
@@ -2048,143 +2048,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   vc_AssimilationRate = max(0.1, vc_AssimilationRate);
   vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
 
-// for easier comparison to current MONICA SUCROS82-style crop photosynthesis: daily vs. daily
-// CURRENTLY BROKEN!
-#pragma region canopy photosynthesis
-//   ///////////////////////////////////////////////////////////////////////////
-//   // crop photosynthesis SUCROS87-style, daily
-//   ///////////////////////////////////////////////////////////////////////////
-//   double gdailyGP = 0.;
-//   double gdailyGPRef = 0.;
-//   if (cropPs.__enable_canopy_photosynthesis__) { //FS: switch SUCROS87-style daily crop photosynthesis calculation on/off
-//     const double parfrac = 0.45;
-//     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
-//     const bool kgpha = true;
-
-//     if (cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse < 0) {
-//       debug() << "Detected negative value for parameter EmpiricalExtinctionCoeffDiffuse. "
-//               << "This is most likely due to no value or an incorrect value in the crop specific value for EmpiricalExtinctionCoeffDiffuse in the json files monica-parameter directory. "
-//               << "The user has to specify this parameter for each crop in the corresponding json file!" << endl;
-//       throw runtime_error ("Negative value for parameter EmpiricalExtinctionCoeffDiffuse not allowed!");
-//     }
-//     //double kdf = ...; // empirical extinction coefficient for diffuse radiation. crop-dependent (and development stage dependent -> not implemented for now)
-//     double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
-//     double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
-
-//     double vc_AssimilationRate_canopy, vc_AssimilationRateReference_canopy, vc_RadiationUseEfficiency_canopy, vc_RadiationUseEfficiencyReference_canopy;
-//     vc_AssimilationRate_canopy = vc_AssimilationRate;                               // A_m daily
-//     vc_AssimilationRateReference_canopy = vc_AssimilationRateReference;             // A_mRef daily
-//     vc_RadiationUseEfficiency_canopy = vc_RadiationUseEfficiency;                   // epsilon daily
-//     vc_RadiationUseEfficiencyReference_canopy = vc_RadiationUseEfficiencyReference; // epsilonRef daily
-//     /*convert units
-//     if (!kgpha) {
-//       // [kg CO2 ha-1 leaf h-1?] -> [g CO2 m-2 leaf h-1]
-//       vc_AssimilationRate_canopy *= 0.1;        // 1000 / (100 * 100)
-//       vc_AssimilationRateReference_canopy *= 0.1;
-//       // [kg CO2 J-1 ha-1 h-1] -> [g CO2 J-1 absorbed m-1?]
-//       vc_RadiationUseEfficiency_canopy *= 0.1;     // 1000 / (100 * 100)
-//       vc_RadiationUseEfficiencyReference_canopy *= 0.1;
-//     }*/
-
-//     double ghour, ghourly_solarEl, ghourly_inst_diff_rad, ghourly_inst_dir_rad, ghourly_Photo, ghourly_PhotoRef;
-//     gdailyGP = 0.;
-//     gdailyGPRef = 0.;
-
-//     int vs_JulianDay = currentDate.julianDay();
-//     double dayl = vc_AstronomicDayLenght;     //FS: what is the difference to vc_PhotoperiodicDaylength?
-
-//     static const double gaussian_hours[3] = {0.112702, 0.5, 0.887298};
-//     static const double gaussian_weights[3] = {0.277778, 0.444444, 0.277778};
-//     for (int h = 0; h < 3; ++h) { // 3 point gaussian integration daily
-//       ghour = 12.0 + 0.5 * dayl * gaussian_hours[h];
-
-//       // ghourly_solarEl = solarElevation(h, vs_Latitude, vs_JulianDay); //FS: this function does only support h as int at the moment!
-//       /////////////////////////////////
-//       // borrowed form Tools::cloudAmount2globalRadiation. but with declination from Tools::solarElevation
-//       double phi, delta, theta0, th, ctheta, theta;
-//       phi = vs_Latitude * M_PI / 180.0;  // latitude [rad]
-//       delta = (-0.4093 * cos(2.0 * M_PI * (double(vs_JulianDay) + 10.0) / 365.0));  //FS: declination
-//       /*
-//       theta0 = 2.0 * pi * doy / 365.0;
-//       delta = 0.006918 - 0.3999912 * cos(theta0) +
-//               0.070257 * sin(theta0) - 0.006758 * cos(2 * theta0) +
-//               0.000907 * sin(2 * theta0) - 0.002697 * cos(3 * theta0) +
-//               0.00148 * sin(theta0 * 3);
-//       */
-//       th = M_PI * (ghour - 12.0) / 12.0;  // hour angle
-//       ctheta = sin(delta) * sin(phi) + cos(delta) * cos(phi) * cos(th);
-//       theta = acos(bound(-1., ctheta, 1.));  //FS: added bound to ensure numerical safety
-//       ghourly_solarEl = M_PI / 2.0 - theta;
-
-//       /////////////////////////////////
-
-//       bool cscor = true;   // circumsolar correction for fraction diffuse
-//       bool parcor = true;  // PAR wavelenghts correction for fraction diffuse
-//       // FS: with active agri-pv shading addon, enforce the use PAR direct and PAR diffuse based on corrected fraction diffuse
-//       //     otherwise, since both often mostly cancel out, they can also be set to false to save computation time
-//       // if (__enable_agripv_addon__) { // !!! ToDo
-//       //   cscor = true;   
-//       //   parcor = true;  
-//       // }
-
-//       auto ghourly_PAR_rad = PAR_radiation(vc_GlobalRadiation, vc_ExtraterrestrialRadiation, ghourly_solarEl, cscor, parcor, parfrac, out_unit);
-//       ghourly_inst_diff_rad = ghourly_PAR_rad.diffuse; //[μmol m-2 s-1 PAR] (unit ground area)
-//       ghourly_inst_dir_rad = ghourly_PAR_rad.direct;   //[μmol m-2 s-1 PAR] (unit ground area)
-
-//       //convert units
-//       // [J m-2 h-1] -> [J m-2 s-1]
-//       ghourly_inst_diff_rad /= 3600;
-//       ghourly_inst_dir_rad /= 3600;
-
-//       assert(ghourly_inst_diff_rad >= 0);
-//       assert(ghourly_inst_dir_rad >= 0);
-//       int style = 11; // style of the integration over all leaf angles. Default is 1.
-//                       // 0  = exponential light response curve, no leaf angle integration (leads to overestimation according to Spitters 1986!)
-//                       // 1  = exponential light response curve, Spitters 1986, custom implementation, including Wageningen school implementations-inspired numerical safeguards
-//                       // 2  = exponential light response curve, Spitters 1989, SUCROS87 implementation (using 3pt gauss integration over leaf angles)
-//                       // 10 = rectangular hyperbola light response curve, no leaf angle integration (overestimation should not as bad as with exponential light response curve accoring to Spitters 1986; inspired by style 0)
-//                       // 11 = rectangular hyperbola light response curve, custom implementation with custom leaf angle integration and numerical safeguards (inspired by style 1)
-//                       // 12 = rectangular hyperbola light response curve, using 3pt gauss integration over leaf angles (inspired by style 2)
-//       ghourly_Photo = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, vc_LeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, vc_AssimilationRate_canopy, vc_RadiationUseEfficiency_canopy, kdf, 0.2, kgpha, style);
-//       ghourly_PhotoRef = hPhoto::Spitters_canop_photo_3p(ghourly_solarEl, cropPs.pc_ReferenceLeafAreaIndex, ghourly_inst_dir_rad, ghourly_inst_diff_rad, vc_AssimilationRateReference_canopy, vc_RadiationUseEfficiencyReference_canopy, kdfRef, 0.2, kgpha, style);
-
-//       /* for comparison only
-//       double ghourly_Photo_ = hPhoto::ASSIM(vc_AssimilationRate_canopy, vc_RadiationUseEfficiency_canopy, vc_LeafAreaIndex, kdf, max(0.0, ctheta), ghourly_inst_dir_rad, ghourly_inst_diff_rad);
-//       double ghourly_PhotoRef_ = hPhoto::ASSIM(vc_AssimilationRateReference_canopy, vc_RadiationUseEfficiencyReference_canopy, cropPs.pc_ReferenceLeafAreaIndex, kdfRef, max(0.0, ctheta), ghourly_inst_dir_rad, ghourly_inst_diff_rad);
-//       */
-
-//       /*
-//       if (out_unit == hPhoto::unit::MJpm2ps) { // ??? -> [kg CO2 ha-1 d-1] //FS: DEBUG !!! look this up again!
-//         if (!kgpha) {
-//           ghourly_Photo *= 10;           //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
-//           ghourly_PhotoRef *= 10;        //[g CO2 m-2 ground d-1] -> [kg CO2 ha-1 d-1]
-//         }
-//         // else {
-//         //   ;                           //[kg CO2 ha-1 d-1]
-//         //   ;                           //[kg CO2 ha-1 d-1]
-//         // }
-//       } else if (out_unit == hPhoto::unit::Jpm2ps) {
-//         if (!kgpha) {
-//           ghourly_Photo *= 10;          //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-//           ghourly_PhotoRef *= 10;       //[g CO2 m-2 ground h-1] -> [kg CO2 ha-1 h-1]
-//         }
-//         // else {
-//         //   ;                           //[kg CO2 ha-1 d-1]
-//         //   ;                           //[kg CO2 ha-1 d-1]
-//         // }
-//       } else if (out_unit == hPhoto::unit::umolpm2ps) {
-//         ghourly_Photo *= 44 * 1e5;     //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
-//         ghourly_PhotoRef *= 44 * 1e5;  //[µmol CO2 m-2 d-1] -> [kg CO2 ha-1 d-1]
-//       } */
-
-//       gdailyGP += ghourly_Photo * gaussian_weights[h]; // 3-point gaussian integration
-//       gdailyGPRef += ghourly_PhotoRef * gaussian_weights[h]; // 3-point gaussian integration
-//     }
-//     gdailyGP *= dayl;
-//     gdailyGPRef *= dayl;
-//   }
-#pragma endregion canopy photosynthesis
-
   ///////////////////////////////////////////////////////////////////////////
   // Calculation of light interception in the crop
   //
@@ -2204,7 +2067,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double XReference = log(1.0 + 0.45 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0) *
                                 vc_NetRadiationUseEfficiencyReference / (SSLAE * vc_AssimilationRateReference));
 
-  double PHCH1 = SSLAE * vc_AssimilationRate * vc_EffectiveDayLength * X / (1.0 + X); // = HERMES
+  double PHCH1 = SSLAE * vc_AssimilationRate * vc_EffectiveDayLength * X / (1.0 + X); // = HERMES // FS: X / (1.0 + X) is a rectangular hyperbola light response curve; most light response curve approaches nowadays seem to use an exponential version (1.0-exp(-x)) instead (see photosynthesis-hourly.h/.cpp for more details)
   double PHCH1Reference =
       SSLAE * vc_AssimilationRateReference * vc_EffectiveDayLength * XReference / (1.0 + XReference);
 
@@ -2213,7 +2076,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double YReference = log(1.0 + 0.55 * vc_ClearDayRadiation / (vc_EffectiveDayLength * 3600.0) *
                                 vc_NetRadiationUseEfficiency / ((5.0 - SSLAE) * vc_AssimilationRateReference));
 
-  double PHCH2 = (5.0 - SSLAE) * vc_AssimilationRate * vc_EffectiveDayLength * Y / (1.0 + Y); // = HERMES
+  double PHCH2 = (5.0 - SSLAE) * vc_AssimilationRate * vc_EffectiveDayLength * Y / (1.0 + Y); // = HERMES // FS: Y / (1.0 + Y) is also a rectangular hyperbola light response curve
   double PHCH2Reference =
       (5.0 - SSLAE) * vc_AssimilationRateReference * vc_EffectiveDayLength * YReference / (1.0 + YReference);
 
@@ -2889,15 +2752,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   }
 #pragma endregion hourly photosynthesis
 
-  // CURRENTLY BROKEN!
-  // // Use daily canopy photosynthesis results? // FS: for comparison only; if __enable_hourly_photosynthesis__ is enabled, it has priority over __enable_canopy_photosynthesis__
-  // vc_GrossCO2Assimilation = cropPs.__enable_canopy_photosynthesis__
-  //                           ? gdailyGP
-  //                           : vc_GrossCO2Assimilation;
-  // vc_GrossCO2AssimilationReference = cropPs.__enable_canopy_photosynthesis__
-  //                                    ? gdailyGPRef
-  //                                    : vc_GrossCO2AssimilationReference;
-
   // Use aggregated daily canopy photosynthesis results?
   vc_GrossCO2Assimilation = cropPs.__enable_hourly_photosynthesis__
                             ? dailyGP
@@ -2944,7 +2798,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature, vc_NightTemperature;
-  if (cropPs.__enable_hourly_photosynthesis__ && false) { //FS: DEBUG !!! deactivate in order to make comparisons easier by not changing multiple things at once
+  if (cropPs.__enable_hourly_photosynthesis__ && cropPs.__enable_hourly_respiration__) { //FS: DEBUG !!! deactivate in order to make comparisons easier by not changing multiple things at once
     vc_PhotoTemperature = vc_PhotoTemperature_;
     vc_NightTemperature = vc_NightTemperature_;
     vc_PhotoperiodicDaylength = vc_PhotoperiodicDaylength_;
