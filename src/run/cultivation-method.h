@@ -87,7 +87,7 @@ public:
   virtual bool isDynamicWorkstep() const { return !_date.isValid(); }
 
   //! tell if this workstep is active and can be used
-  //! a workstep might temporarily be deactivated, eg a dynamic sowing workstep
+  //! a workstep might temporarily be deactivated, e.g. a dynamic sowing workstep,
   //! which has to be checked for sowing every day, but not anymore after sowing
   virtual bool isActive() const { return _isActive; }
 
@@ -620,6 +620,40 @@ public:
 private:
   double _amount{0};
   IrrigationParameters _params;
+};
+
+
+class DLL_API AutomaticIrrigation : public Workstep {
+public:
+  AutomaticIrrigation();
+
+  explicit AutomaticIrrigation(json11::Json object);
+
+  AutomaticIrrigation* clone() const override { return new AutomaticIrrigation(*this); }
+
+  Tools::Errors merge(json11::Json j) override;
+
+  json11::Json to_json() const override;
+
+  std::string type() const override { return "AutomaticIrrigation"; }
+
+  bool apply(MonicaModel* model) override;
+
+  bool condition(MonicaModel* model) override;
+
+  // bool isActive() const override { return !done; }
+
+  bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false) override;
+
+private:
+  Tools::Date absStartDate;
+  Tools::Date absStopDate;
+  bool irrigateWhenCrop{false};
+  int startStage{-1};
+  int stopStage{-1};
+  AutomaticIrrigationParameters params;
+  bool done{false};
+  bool cropPlanted{false};
 };
 
 DLL_API WSPtr makeWorkstep(json11::Json object);

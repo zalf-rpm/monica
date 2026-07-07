@@ -142,7 +142,7 @@ bool Workstep::applyWithPossibleCondition(MonicaModel* model) {
 }
 
 bool Workstep::condition(MonicaModel* model) {
-  if (_afterEvent == "" || _applyNoOfDaysAfterEvent <= 0) return false;
+  if (_afterEvent.empty() || _applyNoOfDaysAfterEvent <= 0) return false;
 
   const auto& currEvents = model->currentEvents();
   const auto& prevEvents = model->previousDaysEvents();
@@ -1206,6 +1206,109 @@ bool Irrigation::apply(MonicaModel* model) {
 }
 
 
+AutomaticIrrigation::AutomaticIrrigation()
+: Workstep() {}
+
+AutomaticIrrigation::AutomaticIrrigation(json11::Json j)
+: Workstep() {
+  _errors.append(AutomaticIrrigation::merge(kj::mv(j)));
+}
+
+Errors AutomaticIrrigation::merge(json11::Json j) {
+  Errors res = Workstep::merge(j);
+
+  set_int_value(startStage, j, "start-stage");
+  set_int_value(stopStage, j, "start-stage");
+  set_bool_value(irrigateWhenCrop, j, "irrigate-when-crop");
+  if (startStage > -1 || stopStage > -1) irrigateWhenCrop = true;
+  if (j["parameters"].is_object()) {
+    set_value_obj_value(params, j, "parameters");
+  }
+
+  return res;
+}
+
+json11::Json AutomaticIrrigation::to_json() const {
+  return json11::Json::object
+  {
+    {"type", type()},
+    {"start-stage", startStage},
+    {"stop-stage", stopStage},
+    {"irrigate-when-crop", irrigateWhenCrop},
+    {"parameters", params.to_json()}
+  };
+}
+
+bool AutomaticIrrigation::apply(MonicaModel* model) {
+  if (done) {
+    return true;
+  }
+
+  auto irrigationTriggered = false;
+  auto irrigationAmount = 0.0;
+  tie(irrigationTriggered, irrigationAmount) = model->soilColumnNC().applyIrrigationViaTrigger(params);
+  if (irrigationTriggered) {
+    model->addEvent("AutomaticIrrigation");
+    model->soilOrganicNC().addIrrigationWater(irrigationAmount);
+    model->addDailySumIrrigationWater(irrigationAmount);
+  }
+
+  return false;
+}
+
+bool AutomaticIrrigation::condition(MonicaModel* model) {
+  if (done) return false;
+
+  // meet the correct date range
+  auto dateConditionMet = true;
+  const auto date = model->currentStepDate();
+  if (absStartDate.isValid() && absStopDate.isValid()) {
+    dateConditionMet = date >= absStartDate && date <= absStopDate;
+    if (date > absStopDate) {
+      done = true;
+    }
+  } else if (absStartDate.isValid()) {
+    dateConditionMet = date >= absStartDate;
+  } else if (absStopDate.isValid()) {
+    dateConditionMet = date <= absStopDate;
+    if (date > absStopDate) done = true;
+  }
+  if (!dateConditionMet) return done; //false;
+
+  // meet the correct crop stage
+  auto cropConditionMet = dateConditionMet;
+  if (const auto cg = model->cropGrowth(); cg && irrigateWhenCrop) {
+    cropPlanted = true;
+    const auto stage = cg->get_DevelopmentalStage();
+    if (startStage > -1 && stopStage > -1) {
+      cropConditionMet = stage >= startStage && stage <= stopStage;
+      if (stage > stopStage) done = true;
+    } else if (startStage > -1) {
+      cropConditionMet = stage >= startStage;
+    } else if (stopStage > -1) {
+      cropConditionMet = stage <= stopStage;
+      if (stage > stopStage) done = true;
+    }
+  } else if (cropPlanted) {
+    done = true;
+    cropPlanted = false;
+  }
+  return done || cropConditionMet;
+}
+
+bool AutomaticIrrigation::reinit(Tools::Date date, bool addYear, bool forceInitYear) {
+  Workstep::reinit(date, addYear);
+  setDate(Tools::Date());
+
+  bool startAddedYear, stopAddedYear;
+  tie(absStartDate, startAddedYear) = makeInitAbsDate(params.startDate, date, addYear, forceInitYear);
+  tie(absStopDate, stopAddedYear) = makeInitAbsDate(params.stopDate, date, addYear, forceInitYear);
+  done = false;
+
+  return startAddedYear;
+}
+
+
 WSPtr monica::makeWorkstep(json11::Json j) {
   string type = string_value(j["type"]);
 
@@ -1213,38 +1316,47 @@ WSPtr monica::makeWorkstep(json11::Json j) {
     return make_shared<Sowing>(j);
   }
 
-  // --- BEGIN TRANSPLANT WORKSTEP FACTORY REGISTRATION ---
-  else if (type == "Transplant") {
+  if (type == "Transplant") {
     return make_shared<Transplant>(j);
   }
-  // --- END TRANSPLANT WORKSTEP FACTORY REGISTRATION ---
-
-
-  else if (type == "AutomaticSowing") {
+  if (type == "AutomaticSowing") {
     return make_shared<AutomaticSowing>(j);
-  } else if (type == "Harvest") {
+  }
+  if (type == "Harvest") {
     return make_shared<Harvest>(j);
-  } else if (type == "AutomaticHarvest") {
+  }
+  if (type == "AutomaticHarvest") {
     return make_shared<AutomaticHarvest>(j);
-  } else if (type == "Cutting") {
+  }
+  if (type == "Cutting") {
     return make_shared<Cutting>(j);
-  } else if (type == "MineralFertilization"
-             || type == "MineralFertiliserApplication") { //deprecated name
+  }
+  if (type == "MineralFertilization"
+      || type == "MineralFertiliserApplication") { //deprecated name
     return make_shared<MineralFertilization>(j);
-  } else if (type == "NDemandFertilization") {
+  }
+  if (type == "NDemandFertilization") {
     return make_shared<NDemandFertilization>(j);
-  } else if (type == "OrganicFertilization"
-             || type == "OrganicFertiliserApplication") { //deprecated name
+  }
+  if (type == "OrganicFertilization"
+      || type == "OrganicFertiliserApplication") { //deprecated name
     return make_shared<OrganicFertilization>(j);
-  } else if (type == "Tillage"
-             || type == "TillageApplication") { //deprecated name
+  }
+  if (type == "Tillage"
+      || type == "TillageApplication") { //deprecated name
     return make_shared<Tillage>(j);
-  } else if (type == "Irrigation"
-             || type == "IrrigationApplication") { //deprecated name
+  }
+  if (type == "Irrigation"
+      || type == "IrrigationApplication") { //deprecated name
     return make_shared<Irrigation>(j);
-  } else if (type == "SetValue") {
+  }
+  if (type == "AutomaticIrrigation") {
+    return make_shared<AutomaticIrrigation>(j);
+  }
+  if (type == "SetValue") {
     return make_shared<SetValue>(j);
-  } else if (type == "SaveMonicaState") {
+  }
+  if (type == "SaveMonicaState") {
     return make_shared<SaveMonicaState>(j);
   }
 

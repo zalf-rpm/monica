@@ -410,8 +410,6 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
 
   void deserialize(mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
 
-  // AutomaticIrrigationParameters(json11::Json object);
-
   void serialize(mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const;
 
   virtual Tools::Errors merge(json11::Json j);
@@ -419,6 +417,7 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   virtual json11::Json to_json() const;
 
   Tools::Date startDate;
+  Tools::Date stopDate;
   double amount{-1.0};
   double percentNFC{-1.0};
   double threshold{-1.0};
