@@ -2101,7 +2101,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   vc_OvercastSkyTimeFraction = max(0.0, min(vc_OvercastSkyTimeFraction, 1.0));
 
 
-  double vc_PhotoTemperature_, vc_NightTemperature_, vc_PhotoperiodicDaylength_; // FS: temporary variables defined outside of code lambda function, which are to be filled inside
+  // double vc_PhotoTemperature_, vc_NightTemperature_, vc_PhotoperiodicDaylength_; // FS: temporary variables defined outside of code lambda function, which are to be filled inside
 
 
   auto code = [&](std::function<double(double)> calcFractionOfInterceptedRadiation, double LAI) {
@@ -2790,15 +2790,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   // #                AGROSIM                 #
   // ########################################################################
 
-  //FS: !!! TODO: Adjust vc_PhotoTemperature in
-  // void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
-  //                                      double vw_MinAirTemperature)
-  // and vc_NightTemperature in
-  // void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTemperature) {
-
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature, vc_NightTemperature;
-  if (cropPs.__enable_hourly_photosynthesis__ && cropPs.__enable_hourly_respiration__) { //FS: DEBUG !!! deactivate in order to make comparisons easier by not changing multiple things at once
+  if (cropPs.__enable_hourly_photosynthesis__ && cropPs.__enable_hourly_respiration__) {
     vc_PhotoTemperature = vc_PhotoTemperature_;
     vc_NightTemperature = vc_NightTemperature_;
     vc_PhotoperiodicDaylength = vc_PhotoperiodicDaylength_;
@@ -2908,7 +2902,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
                                      double vw_MinAirTemperature) {
   // AGROSIM night and day temperatures
-  double vc_PhotoTemperature = vw_MaxAirTemperature - ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
+  double vc_PhotoTemperature = (cropPs.__enable_hourly_photosynthesis__ && cropPs.__enable_hourly_respiration__) ? vc_PhotoTemperature_ : vw_MaxAirTemperature - ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0); // FS: added option to use the PhotoTemperature aggregated from the hourly photosynthesis model
   double vc_FractionOpenFlowers = 0.0;
   double vc_YesterdaysFractionOpenFlowers = 0.0;
 
@@ -2979,7 +2973,7 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTempe
   double vc_LT50old = vc_LT50;
   vc_LT50M = min(vc_LT50, vc_LT50M);
 
-  double vc_NightTemperature = vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
+  double vc_NightTemperature = (cropPs.__enable_hourly_photosynthesis__ && cropPs.__enable_hourly_respiration__) ? vc_NightTemperature_ : vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0); // FS: added option to use the NightTemperature aggregated from the hourly photosynthesis model
   double vc_CrownTemperature = vc_NightTemperature * 0.8;
   auto snowDepthAndTempUnderSnow = _getSnowDepthAndCalcTempUnderSnow(vc_CrownTemperature);
   if (vc_DevelopmentalStage <= 1) {

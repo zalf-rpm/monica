@@ -777,6 +777,12 @@ private:
   bool __enable_vernalisation_factor_fix__{false};
 
   Tools::Date _perennialCropDormancyPeriodEndDate;
+
+  // FS: variables to be filled based on disaggregated data within photosynthesis method
+  //     used here to make these variables available within the AGROSIM respiration algorithms and within the CropModule::fc_HeatStressImpact and CropModule::fc_FrostKill methods (outside the photosynthesis method)
+  double vc_PhotoTemperature_{0.0};
+  double vc_NightTemperature_{0.0};
+  double vc_PhotoperiodicDaylength_{0.0};
 };
 
 //#define TEST_HOURLY_OUTPUT
