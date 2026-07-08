@@ -14,13 +14,15 @@
             "worksteps": [
                 {
                     "type": "AutomaticIrrigation",
-                    "irrigate-when-crop": true,
+                    "irrigateCrop": true,
+                    "startStage": 4,
+                    "endStage": 4,
                     "parameters": {
                         "irrigationParameters": {
                             "nitrateConcentration": [0, "mg dm-3"]
                         },
-                        "startDate": "0000-09-23",
-                        "stopDate": "0001-08-25",
+                        "_startDate": "0000-09-23",
+                        "_endDate": "0001-08-25",
                         "amount": [17, "mm"],
                         "trigger_if_nFC_below_%": [90, "%"],
                         "_set_to_%nFC": [100, "%"],
