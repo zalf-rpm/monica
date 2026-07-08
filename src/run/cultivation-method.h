@@ -109,6 +109,7 @@ protected:
   int _applyNoOfDaysAfterEvent{0};
   std::string _afterEvent;
   int _daysAfterEventCount{0};
+  bool _daysAfterEventCountActivated{false};
   bool _isActive{true};
   bool _runAtStartOfDay{true};
   Tools::Errors _errors;

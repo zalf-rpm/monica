@@ -142,14 +142,19 @@ bool Workstep::applyWithPossibleCondition(MonicaModel* model) {
 }
 
 bool Workstep::condition(MonicaModel* model) {
-  if (_afterEvent.empty() || _applyNoOfDaysAfterEvent <= 0) return false;
+  if (_afterEvent.empty() || _applyNoOfDaysAfterEvent <= 0) {
+    return false;
+  }
 
   const auto& currEvents = model->currentEvents();
   const auto& prevEvents = model->previousDaysEvents();
 
   auto ceit = currEvents.find(_afterEvent);
-  if (_daysAfterEventCount > 0) _daysAfterEventCount++;
-  else if (ceit != currEvents.end() || prevEvents.find(_afterEvent) != prevEvents.end()) _daysAfterEventCount = 1;
+  if (_daysAfterEventCountActivated) {
+    _daysAfterEventCount++;
+  } else if (ceit != currEvents.end() || prevEvents.find(_afterEvent) != prevEvents.end()) {
+    _daysAfterEventCountActivated = true;
+  }
 
   return _daysAfterEventCount == _applyNoOfDaysAfterEvent;
 }
@@ -157,11 +162,15 @@ bool Workstep::condition(MonicaModel* model) {
 bool Workstep::reinit(Tools::Date date, bool addYear, bool forceInitYear) {
   bool addedYear = false;
 
-  if (_date.isValid()) tie(_absDate, addedYear) = makeInitAbsDate(_date, date, addYear, forceInitYear);
-  else _absDate = Date();
+  if (_date.isValid()) {
+    tie(_absDate, addedYear) = makeInitAbsDate(_date, date, addYear, forceInitYear);
+  } else {
+    _absDate = Date();
+  }
 
   _isActive = true;
   _daysAfterEventCount = 0;
+  _daysAfterEventCountActivated = false;
 
   return addedYear;
 }
