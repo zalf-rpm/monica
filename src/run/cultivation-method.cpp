@@ -1226,10 +1226,17 @@ AutomaticIrrigation::AutomaticIrrigation(json11::Json j)
 Errors AutomaticIrrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
 
-  set_int_value(startStage, j, "start-stage");
-  set_int_value(stopStage, j, "start-stage");
-  set_bool_value(irrigateWhenCrop, j, "irrigate-when-crop");
-  if (startStage > -1 || stopStage > -1) irrigateWhenCrop = true;
+  set_int_value(startStage, j, "startStage");
+  // 1-based stages (user side) -> 0-based stages (model side)
+  if (startStage > -1) startStage = std::max(0, startStage--);
+
+  set_int_value(endStage, j, "endStage");
+  // 1-based stages (user side) -> 0-based stages (model side)
+  if (endStage > -1) endStage = std::min(7, endStage--);
+
+  set_bool_value(irrigateCrop, j, "irrigateCrop");
+  if (startStage > -1 || endStage > -1) irrigateCrop = true;
+
   if (j["parameters"].is_object()) {
     set_value_obj_value(params, j, "parameters");
   }
@@ -1238,14 +1245,14 @@ Errors AutomaticIrrigation::merge(json11::Json j) {
 }
 
 json11::Json AutomaticIrrigation::to_json() const {
-  return json11::Json::object
-  {
+  auto o = json11::Json::object{
     {"type", type()},
-    {"start-stage", startStage},
-    {"stop-stage", stopStage},
-    {"irrigate-when-crop", irrigateWhenCrop},
+    {"irrigateCrop", irrigateCrop},
     {"parameters", params.to_json()}
   };
+  if (startStage > -1) o["startStage"] = startStage + 1;
+  if (endStage > -1) o["endStage"] = endStage + 1;
+  return o;
 }
 
 bool AutomaticIrrigation::apply(MonicaModel* model) {
@@ -1271,36 +1278,39 @@ bool AutomaticIrrigation::condition(MonicaModel* model) {
   // meet the correct date range
   auto dateConditionMet = true;
   const auto date = model->currentStepDate();
-  if (absStartDate.isValid() && absStopDate.isValid()) {
-    dateConditionMet = date >= absStartDate && date <= absStopDate;
-    if (date > absStopDate) {
+  if (absStartDate.isValid() && absEndDate.isValid()) {
+    dateConditionMet = date >= absStartDate && date <= absEndDate;
+    if (date > absEndDate) {
       done = true;
     }
   } else if (absStartDate.isValid()) {
     dateConditionMet = date >= absStartDate;
-  } else if (absStopDate.isValid()) {
-    dateConditionMet = date <= absStopDate;
-    if (date > absStopDate) done = true;
+  } else if (absEndDate.isValid()) {
+    dateConditionMet = date <= absEndDate;
+    if (date > absEndDate) done = true;
   }
-  if (!dateConditionMet) return done; //false;
+  if (!dateConditionMet) return done;
 
   // meet the correct crop stage
   auto cropConditionMet = dateConditionMet;
-  if (const auto cg = model->cropGrowth(); cg && irrigateWhenCrop) {
+  if (const auto cg = model->cropGrowth(); cg && irrigateCrop) {
     cropPlanted = true;
     const auto stage = cg->get_DevelopmentalStage();
-    if (startStage > -1 && stopStage > -1) {
-      cropConditionMet = stage >= startStage && stage <= stopStage;
-      if (stage > stopStage) done = true;
+    if (startStage > -1 && endStage > -1) {
+      cropConditionMet = stage >= startStage && stage <= endStage;
+      if (stage > endStage) done = true;
     } else if (startStage > -1) {
       cropConditionMet = stage >= startStage;
-    } else if (stopStage > -1) {
-      cropConditionMet = stage <= stopStage;
-      if (stage > stopStage) done = true;
+    } else if (endStage > -1) {
+      cropConditionMet = stage <= endStage;
+      if (stage > endStage) done = true;
     }
   } else if (cropPlanted) {
     done = true;
     cropPlanted = false;
+    cropConditionMet = false;
+  } else {
+    cropConditionMet = false;
   }
   return done || cropConditionMet;
 }
@@ -1311,7 +1321,7 @@ bool AutomaticIrrigation::reinit(Tools::Date date, bool addYear, bool forceInitY
 
   bool startAddedYear, stopAddedYear;
   tie(absStartDate, startAddedYear) = makeInitAbsDate(params.startDate, date, addYear, forceInitYear);
-  tie(absStopDate, stopAddedYear) = makeInitAbsDate(params.stopDate, date, addYear, forceInitYear);
+  tie(absEndDate, stopAddedYear) = makeInitAbsDate(params.endDate, date, addYear, forceInitYear);
   done = false;
 
   return startAddedYear;
@@ -1407,7 +1417,7 @@ Errors CultivationMethod::merge(json11::Json j) {
 
   set_int_value(_customId, j, "customId");
   set_string_value(_name, j, "name");
-  set_bool_value(_irrigateCrop, j, "irrigateCrop");
+  // set_bool_value(_irrigateCrop, j, "irrigateCrop");
   set_bool_value(_canBeSkipped, j, "can-be-skipped");
   set_bool_value(_isCoverCrop, j, "is-cover-crop");
   set_bool_value(_repeat, j, "repeat");
@@ -1454,7 +1464,7 @@ json11::Json CultivationMethod::to_json() const {
     {"type", "CultivationMethod"},
     {"customId", _customId},
     {"name", _name},
-    {"irrigateCrop", _irrigateCrop},
+    // {"irrigateCrop", _irrigateCrop},
     {"can-be-skipped", _canBeSkipped},
     {"is-cover-crop", _isCoverCrop},
     {"repeat", _repeat},

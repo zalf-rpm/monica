@@ -642,16 +642,14 @@ public:
 
   bool condition(MonicaModel* model) override;
 
-  // bool isActive() const override { return !done; }
-
   bool reinit(Tools::Date date, bool addYear = false, bool forceInitYear = false) override;
 
 private:
   Tools::Date absStartDate;
-  Tools::Date absStopDate;
-  bool irrigateWhenCrop{false};
+  Tools::Date absEndDate;
+  bool irrigateCrop{false};
   int startStage{-1};
-  int stopStage{-1};
+  int endStage{-1};
   AutomaticIrrigationParameters params;
   bool done{false};
   bool cropPlanted{false};
@@ -737,9 +735,9 @@ public:
 
   int customId() const { return _customId; }
 
-  void setIrrigateCrop(bool irr) { _irrigateCrop = irr; }
+  // void setIrrigateCrop(bool irr) { _irrigateCrop = irr; }
 
-  bool irrigateCrop() const { return _irrigateCrop; }
+  // bool irrigateCrop() const { return _irrigateCrop; }
 
   //! reinit cultivation method to initial state, if it will be reused (eg in a crop rotation)
   //! returns if it was necessary to add a year to shift relative dates after date
@@ -758,7 +756,7 @@ private:
   int _customId{0};
   std::string _name;
   const Crop* _crop{nullptr};
-  bool _irrigateCrop{false};
+  // bool _irrigateCrop{false};
   bool _canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
   bool _isCoverCrop{
     false

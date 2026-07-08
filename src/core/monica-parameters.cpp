@@ -835,7 +835,7 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
   set_iso_date_value(startDate, j, "startDate");
-  set_iso_date_value(stopDate, j, "stopDate");
+  set_iso_date_value(endDate, j, "stopDate");
   set_double_value(amount, j, "amount");
   set_double_value(percentNFC, j, "set_to_%nFC");
   set_double_value(threshold, j, "threshold", transformIfPercent(j, "threshold"));
