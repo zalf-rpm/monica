@@ -2549,7 +2549,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     vector<double> hourlyGlobrad;
     vector<double> hourlyExtrarad;
     vector<double> hourlySolarEl;
-    vector<double> hourlySolarEl_deg; // FS: DEBUG !!!
+    // vector<double> hourlySolarEl_deg; // FS: DEBUG !!!
     vector<double> hourlyAirT;
     vector<double> hourlyIdif; 
     vector<double> hourlyIdir;
@@ -2558,48 +2558,32 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
     auto current_isodate = currentDate.toIsoDateString();  // generate idsodate string
 
-    int sunriseH = 0, sunsetH = 0;  //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
-    for (int h = 0; h < 24; ++h) {
     /*FS: maybe even add sub-hourly option in the future
     //    taken from algorithms::cloudAmount2globalRadiation
     for (int hs = 1; hs <= 48; hs++) {
     double t = 24.0 * (double(hs) - 1.0) / 48.0;    // (24.0/48.0) is 0.5h, so iterate hs from 1 to int(24.0/0.5)? also check with agri-pv simulation time step
+    // double step = 24.0 / double(48);
+    // for (int hs = 0; hs < 48; ++hs) {
+    //   double t = step * (double(hs));
     //double zeit = t;
     //FS: start of solar elevation calculation
     //    delta is dDecl, phi is lat_rad, th is dHa
-    double th = pi * (t - 12.0) / 12.0;
+    double th = M_PI * (t - 12.0) / 12.0;
     double ctheta = sin(delta) * sin(phi) + cos(delta) * cos(phi) * cos(th);
     double theta = acos(ctheta);
-    //double hsonne = pi / 2.0 - theta;
-    double hdeg = 90.0 - (theta * 180.0 / pi);
+    double hsun = M_PI / 2.0 - theta;
+    //double hsun_deg = 90.0 - (theta * 180.0 / M_PI);
     ...
     */
-      double sun_el = solarElevation(h, vs_Latitude, vs_JulianDay);
-      sun_el = (sun_el > hPhoto::eps) ? sun_el : 0.;
-      sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
-      sunsetH = ((!hourlySolarEl.empty()) &&
-                 (sun_el <= hPhoto::eps) &&
-                 (hourlySolarEl.back() > hPhoto::eps)
-                ) ? h : sunsetH;
-      
-      double hgr = hourlyRad(vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h); // adjust hourlyRad function in the future; harmonize with solarElevation function
-      if (hgr > 0) assert(sun_el > 0);
-      /*
-      if (hgr > 0 && hourlyGlobrads.back() == 0.0) {
-        sunriseH = h;
-      }
-      */
-      hourlySolarEl.push_back(sun_el);
-      hourlySolarEl_deg.push_back(sun_el * 180. / M_PI);  // FS: DEBUG !!!
-      hourlyGlobrad.push_back(hgr);
-      hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
-    }
 
-    if (!cropPs.__hourly_data__.empty()) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
-      // throw exception("Hourly inputs from file not implemented yet!");
-      for (int h = 0; h < 24; ++h) {
-        auto sep = h < 9 ? "T0" : "T";
+    int sunriseH = 0, sunsetH = 0;  //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
+    for (int h = 0; h < 24; ++h) {
+      if (!cropPs.__hourly_data__.empty()) {  //__hourly_inputs_file__ // hourly air temperature and diffuse and direct irradiance input from file
+        // generate isodate string
+        auto sep = h < 10 ? "T0" : "T";
         auto current_isodatetime = current_isodate + sep + to_string(h); // TODO: modidfy to actual isodate format
+
+        // read hourly data
         auto hourly_data_in = cropPs.__hourly_data__.at(current_isodatetime).array_items();
         double Idir_in = hourly_data_in.at(2).number_value(); // json object dictionary isodate_hour value
         double Idif_in = hourly_data_in.at(1).number_value();
@@ -2607,19 +2591,52 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hourlyAirT.push_back(Tair_in);
         hourlyIdif.push_back(Idif_in);
         hourlyIdir.push_back(Idir_in);
-      }
-    } else {
-      for (int h = 0; h < 24; ++h) {
-        hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
+
+        // calculate solar position based on actual time (isodate string)
+        double vs_Longitude = cropPs.__longitude__;
+        assert((vs_Longitude > -180.) && (vs_Longitude < 180.));
+        int UTC_offset = ((cropPs.__UTC_offset__ > -13) && (cropPs.__UTC_offset__ < 15)) 
+          ? cropPs.__UTC_offset__
+          : static_cast<int>(std::floor(vs_Longitude / 15.0 + 0.5));  // theoretical time zone central meridian local time fallback (in case cropPs.__UTC_offset__ contains unexpected values)
+        assert((UTC_offset > -13) && (UTC_offset < 15));
+        double t = double(h); // +/- 0.5;  // FS: this actually depends on the timestamp labeling definition used for the read in hourly data:
+                                           //     +0.0 for instantaneous or centered interval
+                                           //     -0.5 for previous-hour accumulation [t-1h, t]; however, this would also require using vs_JulianDay - 1
+                                           //     +0.5 for next-hour accumulation [t, t+1h]
+        solar_position_result sunpos = solar_position(vs_Latitude, vs_Longitude, vs_JulianDay, t, UTC_offset, true);
+        double sun_el = sunpos.el_rad;
+        sun_el = (sun_el > hPhoto::eps) ? sun_el : 0.;
+        sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
+        sunsetH = ((!hourlySolarEl.empty()) &&
+                  (sun_el <= hPhoto::eps) &&
+                  (hourlySolarEl.back() > hPhoto::eps)
+                  ) ? h : sunsetH;
+      } else {
+        double sun_el = solarElevation(h, vs_Latitude, vs_JulianDay);
+        sun_el = (sun_el > hPhoto::eps) ? sun_el : 0.;
+        sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
+        sunsetH = ((!hourlySolarEl.empty()) &&
+                  (sun_el <= hPhoto::eps) &&
+                  (hourlySolarEl.back() > hPhoto::eps)
+                  ) ? h : sunsetH;
+        
+        double hgr = hourlyRad(vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h); // FS: adjust hourlyRad function in the future; harmonize with solarElevation function?
+        if (hgr > 0) assert(sun_el > 0);
+        hourlySolarEl.push_back(sun_el);
+        // hourlySolarEl_deg.push_back(sun_el * 180. / M_PI);  // FS: DEBUG !!!
+        hourlyGlobrad.push_back(hgr);
+        hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
       }
     }
 
-    double _mean_of_hourlyAirT = accumulate(hourlyAirT.begin(), hourlyAirT.end(), 0.) / hourlyAirT.size();  //FS: DEBUG only !!!
+    for (int h = 0; h < 24; ++h) {
+      hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
+    }
 
     // vector<double> hourlyGrossCO2Assimilation, hourlyGrossCO2AssimilationReference;
     dailyGP = 0.;
     dailyGPRef = 0.;
-    for (int h = sunriseH; h < sunsetH; ++h) {  //FS: <= sunsetH might lead to overestimation?
+    for (int h = sunriseH; h < sunsetH; ++h) {  // hourly overclocked photosynthesis loop
       // hourly inputs needed for photosynthesis
       struct hp {
         double leafT;
@@ -2629,7 +2646,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       };
       
       hp hp_in;
-      // is this related to sigma and epsilon (vc_RadiationUseEfficiency)?
       // can sigma be expressed through pc_CanopyReflectionCoeff?
       // double vc_NetRadiationUseEfficiency = (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiency;
       hp_in.solarEl = hourlySolarEl.at(h);
@@ -2737,10 +2753,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       dailyGPRef += hourlyPhotoRef;
     }
 
+    double _mean_of_hourlyAirT = accumulate(hourlyAirT.begin(), hourlyAirT.end(), 0.) / hourlyAirT.size();  //FS: DEBUG only so far; when hourly data is being read in, should something like this maybe replace vw_MeanAirTemperature ???
+    auto [_min_of_hourlyAirT, _max_of_hourlyAirT] = minmax_element(hourlyAirT.begin(), hourlyAirT.end());   //FS: DEBUG only so far; when hourly data is being read in, should something like this maybe replace vw_MinAirTemperature an vw_MaxAirTemperature ???
+
     // calculate variables needed for respiration AGROSIM
-    vector<double> hourlyAirT_day = vector<double>(hourlyAirT.begin()+sunriseH, hourlyAirT.begin()+sunsetH);  //FS: consistency: hourlyAirT.begin()+sunsetH+1 if using h <=sunsetH
+    vector<double> hourlyAirT_day = vector<double>(hourlyAirT.begin()+sunriseH, hourlyAirT.begin()+sunsetH);  //FS: consistency: hourlyAirT.begin()+sunsetH+1 if including sunsetH
     vector<double> hourlyAirT_night = vector<double>(hourlyAirT.begin(), hourlyAirT.begin()+sunriseH);
-    hourlyAirT_night.insert(hourlyAirT_night.end(), hourlyAirT.begin()+sunsetH, hourlyAirT.end()); //FS: consistency: hourlyAirT.begin()+sunsetH+1 if using h <=sunsetH
+    hourlyAirT_night.insert(hourlyAirT_night.end(), hourlyAirT.begin()+sunsetH, hourlyAirT.end());            //FS: consistency: hourlyAirT.begin()+sunsetH+1 if including sunsetH
     vc_NightTemperature_ = accumulate(hourlyAirT_night.begin(), hourlyAirT_night.end(), 0.) / hourlyAirT_night.size();
     if (!hourlyAirT_day.empty()) {
       vc_PhotoTemperature_ = accumulate(hourlyAirT_day.begin(), hourlyAirT_day.end(), 0.) / hourlyAirT_day.size();

@@ -716,9 +716,11 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
   bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
   bool __enable_hourly_FvCB_photosynthesis__{ false };
-  bool __enable_hourly_photosynthesis__{ false }; //FS: just for DEBUG !!! ; should be false by default
-  bool __enable_hourly_respiration__{ false }; //FS: just for DEBUG !!! ; should be false by default
-  json11::Json::object __hourly_data__;
+  bool __enable_hourly_photosynthesis__{ false }; //FS: should be false by default
+  bool __enable_hourly_respiration__{ false };    //FS: should be false by default
+  json11::Json::object __hourly_data__;           //FS: quick & dirty option to read in hourly irradiance and temperature data dictionary style
+  double __longitude__{ 0.0 };                    //FS: longitude required for hourly solar position calculations using real world time (required e.g. for consistency if real world hourly data is read in)
+  double __UTC_offset__{ 0.0 };                   //FS: UTC offset required for hourly solar position calculations using real world time (required e.g. for consistency if real world hourly data is read in)
   bool __enable_T_response_leaf_expansion__{ false };
   bool __disable_daily_root_biomass_to_soil__{ false };
   bool __enable_vernalisation_factor_fix__{ false };
