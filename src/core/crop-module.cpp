@@ -1502,6 +1502,47 @@ double CropModule::fc_SoilCoverage() const {
   return 1.0 - (exp(-0.5 * vc_LeafAreaIndex));
 }
 
+
+#ifdef HOURLY_OUTPUT // @ToDO FS: test this
+if (!cropPs.__hourly_data__.empty()) {
+  #include <fstream>
+  ostream &monica::tout(bool closeFile)
+  {
+    static ofstream out;
+    static bool init = false;
+    static bool failed = false;
+    if (closeFile)
+    {
+      init = false;
+      failed = false;
+      out.close();
+      return out;
+    }
+
+    if (!init)
+    {
+      out.open("hourly-data.csv");
+      failed = out.fail();
+      (failed ? cout : out) << "iso-date"
+                  ",hour"
+                  ",crop-name"
+                  ",in:leafT"
+                  ",in:diff_rad"
+                  ",in:inst_dir_rad"
+                  ",out:sun_el"
+                  ",out:GPhoto"
+                  ",out:GPhotoRef"
+                  << endl;
+
+      init = true;
+    }
+
+    return failed ? cout : out;
+  }
+}
+#endif
+
+
 #ifdef TEST_HOURLY_OUTPUT
 #include <fstream>
 ostream &monica::tout(bool closeFile)
@@ -2520,7 +2561,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 #pragma region hourly photosynthesis
   double dailyGP, dailyGPRef;
   if (cropPs.__enable_hourly_photosynthesis__) {
-    const hPhoto::unit hourly_data_in_unit = hPhoto::unit::umolpm2ps; // FS: depends on input data
+    // const hPhoto::unit hourly_data_in_unit = hPhoto::unit::umolpm2ps; // FS: depends on input data
     const double parfrac = 0.45;
     const hPhoto::unit out_unit = hPhoto::unit::Jpm2ps; // hPhoto::unit::MJpm2ps;
     const bool kgpha = true;
@@ -2528,12 +2569,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
     bool cscor = true;   // circumsolar correction for fraction diffuse
     bool parcor = true;  // PAR wavelenghts correction for fraction diffuse
-    // FS: with active agri-pv shading addon, enforce using PAR direct and PAR diffuse based on corrected fraction diffuse
+    /*@ToDo FS: With active Agri-PV shading addon, enforce using PAR direct and PAR diffuse based on corrected fraction diffuse
     //     otherwise, since both often mostly cancel out, they can also be set to false to save computation time
-    // if (__enable_agripv_addon__) { // !!! ToDo
-    //   cscor = true;   
-    //   parcor = true;  
-    // }
+    if (__enable_agripv_addon__) {
+      cscor = true;   
+      parcor = true;  
+    }
+    */
 
     if (cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse < 0) {
       debug() << "Detected negative value for parameter EmpiricalExtinctionCoeffDiffuse. "
@@ -2541,15 +2583,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
               << "The user has to specify this parameter for each crop in the corresponding json file!" << endl;
       throw runtime_error ("Negative value for parameter EmpiricalExtinctionCoeffDiffuse not allowed!");
     }
-    //double kdf = Afgen(); // empirical extinction coefficient fo diffuse radiation. crop-dependent (and development stage dependent?)
-    // double kdf = 0.6;
+
+    // empirical extinction coefficient fo diffuse radiation, crop-dependent (and maybe even development stage dependent in some cases)
     double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
-    double kdfRef = kdf;  // check if there is kdf for grassland & also check how daily Reference photosynthesis params are set in coparison to daily photosyntheis params !!! TODO
+    double kdfRef = kdf;  // @ ToDo FS: Check what to use for kdf for grassland (how are daily reference photosynthesis crop params set in coparison to daily photosyntheis params?)
 
     vector<double> hourlyGlobrad;
     vector<double> hourlyExtrarad;
     vector<double> hourlySolarEl;
-    // vector<double> hourlySolarEl_deg; // FS: DEBUG !!!
     vector<double> hourlyAirT;
     vector<double> hourlyIdif; 
     vector<double> hourlyIdir;
@@ -2558,39 +2599,30 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
     auto current_isodate = currentDate.toIsoDateString();  // generate idsodate string
 
-    /*FS: maybe even add sub-hourly option in the future
-    //    taken from algorithms::cloudAmount2globalRadiation
+    /*FS: Maybe even add sub-hourly option in the future if needed?
+    //    implementation idea see algorithms::cloudAmount2globalRadiation
     for (int hs = 1; hs <= 48; hs++) {
-    double t = 24.0 * (double(hs) - 1.0) / 48.0;    // (24.0/48.0) is 0.5h, so iterate hs from 1 to int(24.0/0.5)? also check with agri-pv simulation time step
+    double t = 24.0 * (double(hs) - 1.0) / 48.0;    // (24.0/48.0) is 0.5h, so iterate hs from 1 to std::floor(24.0, 0.5)? Also check with agri-pv simulation time step
     // double step = 24.0 / double(48);
     // for (int hs = 0; hs < 48; ++hs) {
     //   double t = step * (double(hs));
-    //double zeit = t;
-    //FS: start of solar elevation calculation
-    //    delta is dDecl, phi is lat_rad, th is dHa
-    double th = M_PI * (t - 12.0) / 12.0;
-    double ctheta = sin(delta) * sin(phi) + cos(delta) * cos(phi) * cos(th);
-    double theta = acos(ctheta);
-    double hsun = M_PI / 2.0 - theta;
-    //double hsun_deg = 90.0 - (theta * 180.0 / M_PI);
     ...
     */
 
     int sunriseH = 0, sunsetH = 0;  //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
     for (int h = 0; h < 24; ++h) {
+      double sun_el;
       if (!cropPs.__hourly_data__.empty()) {  //__hourly_inputs_file__ // hourly air temperature and diffuse and direct irradiance input from file
         // generate isodate string
         auto sep = h < 10 ? "T0" : "T";
-        auto current_isodatetime = current_isodate + sep + to_string(h); // TODO: modidfy to actual isodate format
+        auto isodateformat_end = ":00:00";
+        auto current_isodatetime = current_isodate + sep + to_string(h) + isodateformat_end;
 
-        // read hourly data
+        // read hourly data from json object dictionary __hourly_data__
         auto hourly_data_in = cropPs.__hourly_data__.at(current_isodatetime).array_items();
-        double Idir_in = hourly_data_in.at(2).number_value(); // json object dictionary isodate_hour value
-        double Idif_in = hourly_data_in.at(1).number_value();
-        double Tair_in = hourly_data_in.at(0).number_value();
-        hourlyAirT.push_back(Tair_in);
-        hourlyIdif.push_back(Idif_in);
-        hourlyIdir.push_back(Idir_in);
+        hourlyAirT.push_back(hourly_data_in.at(0).number_value());
+        hourlyIdif.push_back(hourly_data_in.at(1).number_value());
+        hourlyIdir.push_back(hourly_data_in.at(2).number_value());
 
         // calculate solar position based on actual time (isodate string)
         double vs_Longitude = cropPs.__longitude__;
@@ -2604,29 +2636,23 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                                            //     -0.5 for previous-hour accumulation [t-1h, t]; however, this would also require using vs_JulianDay - 1
                                            //     +0.5 for next-hour accumulation [t, t+1h]
         solar_position_result sunpos = solar_position(vs_Latitude, vs_Longitude, vs_JulianDay, t, UTC_offset, true);
-        double sun_el = sunpos.el_rad;
-        sun_el = (sun_el > hPhoto::eps) ? sun_el : 0.;
-        sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
-        sunsetH = ((!hourlySolarEl.empty()) &&
-                  (sun_el <= hPhoto::eps) &&
-                  (hourlySolarEl.back() > hPhoto::eps)
-                  ) ? h : sunsetH;
+        sun_el = (sunpos.el_rad > hPhoto::eps) ? sunpos.el_rad : 0.;
       } else {
-        double sun_el = solarElevation(h, vs_Latitude, vs_JulianDay);
+        sun_el = solarElevation(h, vs_Latitude, vs_JulianDay);
         sun_el = (sun_el > hPhoto::eps) ? sun_el : 0.;
-        sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
-        sunsetH = ((!hourlySolarEl.empty()) &&
-                  (sun_el <= hPhoto::eps) &&
-                  (hourlySolarEl.back() > hPhoto::eps)
-                  ) ? h : sunsetH;
-        
         double hgr = hourlyRad(vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h); // FS: adjust hourlyRad function in the future; harmonize with solarElevation function?
+
         if (hgr > 0) assert(sun_el > 0);
-        hourlySolarEl.push_back(sun_el);
-        // hourlySolarEl_deg.push_back(sun_el * 180. / M_PI);  // FS: DEBUG !!!
+
         hourlyGlobrad.push_back(hgr);
         hourlyExtrarad.push_back(hourlyRad(vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h));
       }
+      sunriseH = ((sun_el > 0) && (sunriseH == 0)) ? h : sunriseH;
+      sunsetH = ((!hourlySolarEl.empty()) &&
+                (sun_el <= hPhoto::eps) &&
+                (hourlySolarEl.back() > hPhoto::eps)
+                ) ? h : sunsetH;
+      hourlySolarEl.push_back(sun_el);
     }
 
     for (int h = 0; h < 24; ++h) {
@@ -2662,12 +2688,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         inst_dir_rad = (inst_dir_rad <= 0) ? 0. : hPhoto::convert_MJpm2ps_to_unit(inst_dir_rad, out_unit);
         // inst_glob_rad = inst_diff_rad + inst_dir_rad;
 
-        // PAR fraction
-        if (hourly_data_in_unit != hPhoto::unit::umolpm2ps) {
-          inst_diff_rad *= parfrac;
-          inst_dir_rad *= parfrac;
-          // inst_glob_rad *= parfrac;
-        }
+        // // PAR fraction
+        // if (hourly_data_in_unit != hPhoto::unit::umolpm2ps) {
+        //   inst_diff_rad *= parfrac;
+        //   inst_dir_rad *= parfrac;
+        //   // inst_glob_rad *= parfrac;
+        // }
+
       } else {
         hp_in.globalRad = hourlyGlobrad.at(h);
         if (hp_in.globalRad <= 0) {
@@ -2715,18 +2742,16 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           vc_RadiationUseEfficiencyReference_hourly = pc_DefaultRadiationUseEfficiency;             // epsilonRef
         }
 
-        /* FS: for agri-pv: adjusting hourly direct and diffuse radiation based on factors from agri-pv shading model
+        /* @ToDo FS: for Agri-PV, adjust hourly direct and diffuse radiation based on factors from Agri-PV shading model
         if (__enable_agripv_addon__) {
-          auto inst_glob_rad = inst_diff_rad + inst_dir_rad;
+          auto inst_glob_rad = inst_diff_rad + inst_dir_rad;  // inst_glob_rad without Agri-PV influence
           auto [dir_rad_factor, diff_rad_factor] AgriPV_shading(..., cropheight);
           inst_diff_rad *= diff_rad_factor;
           inst_dir_rad *= dir_rad_factor;
-
-          auto glob_rad_factor = (inst_diff_rad + inst_dir_rad) / inst_glob_rad   // implicitly weighted with diffuse fraction of irradiance
-          // FS: @todo: glob_rad_factor should also be made available outside the photosyntheisis in order to allow e.g. for shading the soil as well to ensure reduced soil ET
+          auto glob_rad_factor = (inst_diff_rad + inst_dir_rad) / inst_glob_rad // (inst_glob_rad with Agri-PV) / (inst_glob_rad without Agri-PV)
+          // @ToDo FS: glob_rad_factor should then also be made available outside the photosyntheisis in order to allow e.g. for shading the soil as well to ensure reduced soil ET; check order of processes in step to ensure that glob_rad_factor can be applied to all
           assert(abs((inst_glob_rad * glob_rad_factor) - (inst_diff_rad + inst_dir_rad)) < hPhoto::eps)
 
-          inst_glob_rad = inst_diff_rad + inst_dir_rad;                           // inst_glob_rad with Agri-PV (now using reduced irradiances)
         }
         */
 
@@ -2746,6 +2771,23 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                         // 12 = rectangular hyperbola light response curve, using 3pt gauss integration over leaf angles (inspired by style 2)
         hourlyPhoto = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRate_hourly, vc_RadiationUseEfficiency_hourly, kdf, 0.2, kgpha, style);
         hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRateReference_hourly, vc_RadiationUseEfficiencyReference_hourly, kdfRef, 0.2, kgpha, style);
+      
+#ifdef HOURLY_OUTPUT // @ToDo FS: test this
+        if (!cropPs.__hourly_data__.empty()) {
+          tout()
+            << currentDate.toIsoDateString()
+            << "," << h
+            << "," << speciesPs.pc_SpeciesId << "/" << cultivarPs.pc_CultivarId
+            << "," << hp_in.leafT
+            << "," << inst_diff_rad
+            << "," << inst_dir_rad
+            << "," << hp_in.solarEl * 180. / M_PI
+            << "," << hourlyPhoto
+            << "," << hourlyPhotoRef
+            << endl;
+        }
+#endif
+
       }
       // hourlyGrossCO2Assimilation.push_back(hourlyPhoto);
       // hourlyGrossCO2AssimilationReference.push_back(hourlyPhotoRef);
