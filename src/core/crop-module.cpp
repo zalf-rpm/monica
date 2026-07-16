@@ -2586,7 +2586,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
     // empirical extinction coefficient fo diffuse radiation, crop-dependent (and maybe even development stage dependent in some cases)
     double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
-    double kdfRef = kdf;  // @ ToDo FS: Check what to use for kdf for grassland (how are daily reference photosynthesis crop params set in coparison to daily photosyntheis params?)
+    double kdfRef = 0.6;  // FS: using default kdf of 0.6 for grassland for now
+                          //     also tested 0.7, since ET0 is only 12cm high grass by definition, which should be a bit more planophile; however, this didn't make any noticable difference
 
     vector<double> hourlyGlobrad;
     vector<double> hourlyExtrarad;
