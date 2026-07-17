@@ -60,14 +60,14 @@ const std::string DEFAULT_CONFIG = R"delim(
     },
     {
       "name": "env",
-      "contentType": "@0xb7fc866ef1127f7c = model/model.capnp:Env[@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON]]"
+      "contentType": "@0xb7fc866ef1127f7c = model/model.capnp:Env[@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON]]",
       "desc": "Env IP content will be used as MONICA input. Forwards open/close brackets downstream."
     }
   ],
   "outPorts": [
     {
       "name": "result",
-      "contentType": "Text (JSON object)"
+      "contentType": "Text (JSON object)",
       "desc": "MONICA output."
     }
   ],
