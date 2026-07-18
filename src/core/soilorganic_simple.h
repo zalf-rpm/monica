@@ -46,9 +46,6 @@ public:
 
   typedef std::pair<double, double> NitDenitN2O;
 
-  double fo_ClayOnDecompostion_kaiteew(double d_SoilClayContent, double d_LimitClayEffect);
-  double fo_TempOnDecompostion_kaiteew(double soilTemperature, double QTenFactor, double tempDecOptimal);
-  double fo_MoistOnDecompostion_kaiteew(double d_SoilMoisture_m3, double d_Saturation, double d_MoistureDecOptimal);
   double fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect);
   double fo_TempOnDecompostion(double d_SoilTemperature);
   double fo_MoistOnDecompostion(double d_SoilMoisture_pF);
@@ -131,6 +128,9 @@ SoilOrganic::NitDenitN2O soilOrganicFoSticsN2OProduction(SoilOrganic* so);
 void soilOrganicFoPoolUpdate(SoilOrganic* so);
 double soilOrganicFoNetEcosystemProduction(SoilOrganic* so, double netPrimaryProduction, double decomposerRespiration);
 double soilOrganicFoNetEcosystemExchange(SoilOrganic* so, double netPrimaryProduction, double decomposerRespiration);
+double soilOrganicFoClayOnDecompostionKaiteew(SoilOrganic* so, double soilClayContent, double limitClayEffect);
+double soilOrganicFoTempOnDecompostionKaiteew(SoilOrganic* so, double soilTemperature, double qTenFactor, double tempDecOptimal);
+double soilOrganicFoMoistOnDecompostionKaiteew(SoilOrganic* so, double soilMoisture_m3, double saturation, double moistureDecOptimal);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);
