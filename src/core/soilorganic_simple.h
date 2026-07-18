@@ -42,7 +42,6 @@ struct SoilOrganic
 public:
   //void fo_OM_Input(bool vo_AOM_Addition);
   void fo_MIT();
-  void fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTemperature, double vw_WindSpeed);
   
   // MONICA nitrification code
   void fo_Nitrification();
@@ -141,6 +140,7 @@ void soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrg
 void soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder);
 void soilOrganicInitializeFromParams(SoilOrganic* so);
 void soilOrganicFoUrea(SoilOrganic* so);
+void soilOrganicFoVolatilisation(SoilOrganic* so, bool aomAddition, double meanAirTemperature, double windSpeed);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);

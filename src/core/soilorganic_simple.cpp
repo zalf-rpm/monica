@@ -193,7 +193,7 @@ void monica::soilOrganicStep(SoilOrganic* so,
 
   soilOrganicFoUrea(so);
   so->fo_MIT();
-  so->fo_Volatilisation(so->addedOrganicMatter, meanAirTemperature, windSpeed);
+  soilOrganicFoVolatilisation(so, so->addedOrganicMatter, meanAirTemperature, windSpeed);
 
   if (so->_params.sticsParams.use_nit) so->fo_stics_Nitrification();
   else so->fo_Nitrification();
@@ -973,7 +973,10 @@ void SoilOrganic::fo_MIT() {
  * @param vw_MeanAirTemperature
  * @param vw_WindSpeed
  */
-void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTemperature, double vw_WindSpeed) {
+void monica::soilOrganicFoVolatilisation(SoilOrganic* so,
+                                         bool vo_AOM_Addition,
+                                         double vw_MeanAirTemperature,
+                                         double vw_WindSpeed) {
   double vo_SoilWet;
 
   double vo_AOM_TAN_Content; // added organic matter total ammonium content [g N kg FM OM-1]
@@ -986,7 +989,7 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
 
   int vo_DaysAfterApplicationSum = 0;
 
-  auto lay0 = soilColumn.at(0);
+  auto lay0 = so->soilColumn.at(0);
 
   if (lay0.vs_SoilMoisture_pF() > 2.5) {
     vo_SoilWet = 0.0;
@@ -1063,7 +1066,7 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
   }
 
   // NH3 volatilised from top layer NH4 pool. See Urea section
-  vo_Total_NH3_Volatilised = (vo_N_ActVolatilised + vo_NH3_Volatilised); // [kg N m-2]
+  so->vo_Total_NH3_Volatilised = (vo_N_ActVolatilised + so->vo_NH3_Volatilised); // [kg N m-2]
   /** @todo <b>Claas: </b>Zusammenfassung für output. Wohin damit??? */
 
   for (auto &props: AOM_Pool) {
