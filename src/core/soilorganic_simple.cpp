@@ -202,8 +202,8 @@ void monica::soilOrganicStep(SoilOrganic* so,
   else soilOrganicFoDenitrification(so);
 
   auto n2OProducedNitDenit = so->_params.sticsParams.use_n2o
-                             ? so->fo_stics_N2OProduction()
-                             : make_pair(so->fo_N2OProduction(), 0.0);
+                             ? soilOrganicFoSticsN2OProduction(so)
+                             : make_pair(soilOrganicFoN2OProduction(so), 0.0);
   so->vo_N2O_Produced_Nit = n2OProducedNitDenit.first;
   so->vo_N2O_Produced_Denit = n2OProducedNitDenit.second;
   so->vo_N2O_Produced = so->vo_N2O_Produced_Nit + so->vo_N2O_Produced_Denit;
@@ -1285,7 +1285,10 @@ void monica::soilOrganicFoSticsDenitrification(SoilOrganic* so) {
 /**
  * @brief N2O production
  */
-double SoilOrganic::fo_N2OProduction() {
+double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   double N2OProductionRate = _params.po_N2OProductionRate;
   double pKaHNO2 = OrganicConstants::po_pKaHNO2;
@@ -1303,7 +1306,7 @@ double SoilOrganic::fo_N2OProduction() {
 
     double N2OProductionAtLayer =
         NO2i
-        * fo_TempOnNitrification(tempi)
+        * so->fo_TempOnNitrification(tempi)
         * N2OProductionRate
         * pH_response
         * lti * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
@@ -1314,7 +1317,12 @@ double SoilOrganic::fo_N2OProduction() {
   return sumN2OProduced;
 }
 
-SoilOrganic::NitDenitN2O SoilOrganic::fo_stics_N2OProduction() {
+SoilOrganic::NitDenitN2O monica::soilOrganicFoSticsN2OProduction(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+  auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
+  auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   double sumN2OProducedNit = 0.0, sumN2OProducedDenit = 0.0;
   auto sticsParams = _params.sticsParams;

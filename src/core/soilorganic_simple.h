@@ -44,12 +44,7 @@ public:
   
   // MONICA dentrification code
 
-  // MONICA N2O production code
-  double fo_N2OProduction();
-
   typedef std::pair<double, double> NitDenitN2O;
-  // use STICS N2O production code
-  NitDenitN2O fo_stics_N2OProduction();
 
   void fo_PoolUpdate();
   double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
@@ -135,6 +130,8 @@ void soilOrganicFoNitrification(SoilOrganic* so);
 void soilOrganicFoSticsNitrification(SoilOrganic* so);
 void soilOrganicFoDenitrification(SoilOrganic* so);
 void soilOrganicFoSticsDenitrification(SoilOrganic* so);
+double soilOrganicFoN2OProduction(SoilOrganic* so);
+SoilOrganic::NitDenitN2O soilOrganicFoSticsN2OProduction(SoilOrganic* so);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);
