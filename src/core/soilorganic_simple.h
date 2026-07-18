@@ -50,69 +50,6 @@ struct SoilOrganic
   void deserialize(mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
   void serialize(mas::schema::model::monica::SoilOrganicModuleState::Builder builder) const;
 
-  void step(double vw_Precipitation, double vw_MeanAirTemperature, double vw_WindSpeed);
-
-  void addOrganicMatter(const OrganicMatterParameters& props,
-                        const std::map<size_t, double> &layer2amount,
-                        double nConcentration = 0);
-
-  void addOrganicMatter(const OrganicMatterParameters &organicMatterParams,
-                        double amount,
-                        double nConcentration = 0,
-                        size_t intoLayerIndex = 0);
-
-  void addIrrigationWater(double amount);
-
-  /**
-   * @brief TRUE, if organic fertilizer is added with a following corporation.
-   *
-   * Because such a corporation only affects the first layer, no tillage
-   * is done for incorporation.
-   *
-   * @param incorporation TRUE/FALSE
-   */
-  void setIncorporation(bool incorp) { this->incorporation = incorp; }
-  void putCrop(CropModule* cm) { cropModule = cm; }
-  void removeCrop() { cropModule = nullptr; }
-
-  double get_SoilOrganicC(int i_Layer) const;
-  double get_AOM_FastSum(int i_Layer) const;
-  double get_AOM_SlowSum(int i_Layer) const;
-  double get_SMB_Fast(int i_Layer) const;
-  double get_SMB_Slow(int i_Layer) const;
-  double get_SOM_Fast(int i_Layer) const;
-  double get_SOM_Slow(int i_Layer) const;
-  double get_CBalance(int i_Layer) const;
-  double get_SMB_CO2EvolutionRate(int i_layer) const;
-  double get_ActDenitrificationRate(int i_Layer) const;
-  double get_NetNMineralisationRate(int i_Layer) const;
-  double get_NH3_Volatilised() const;
-  double get_SumNH3_Volatilised() const;
-  double get_N2O_Produced() const;
-  double get_N2O_Produced_Nit() const { return vo_N2O_Produced_Nit; }
-  double get_N2O_Produced_Denit() const { return vo_N2O_Produced_Denit; }
-  double get_SumN2O_Produced() const;
-  double get_NetNMineralisation() const;
-  double get_SumNetNMineralisation() const;
-  double get_SumDenitrification() const;
-  double get_Denitrification() const;
-  double get_DecomposerRespiration() const;
-  double get_NetEcosystemProduction() const;
-  double get_NetEcosystemExchange() const;
-
-  double get_Organic_N(int i_Layer) const;
-
-  double actAmmoniaOxidationRate(int i) const {
-    return vo_ActAmmoniaOxidationRate.at(i);
-  }
-
-  double actNitrificationRate(int i) const {
-    return vo_ActNitrificationRate.at(i);
-  }
-  double actDenitrificationRate(int i) const {
-    return vo_ActDenitrificationRate.at(i);
-  }
-
 public:
   //void fo_OM_Input(bool vo_AOM_Addition);
   void fo_Urea(double vo_RainIrrigation);
@@ -214,10 +151,13 @@ kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn,
                                      CropModule* cropModule = nullptr);
 void soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
 void soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder);
-void soilOrganicStep(SoilOrganic* so, double precipitation, double meanAirTemperature, double windSpeed);
+void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);
 void soilOrganicSetIncorporation(SoilOrganic* so, bool incorp);
+void soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
+                                 const std::map<size_t, double>& layer2amount,
+                                 double nConcentration = 0);
 void soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                  double amount, double nConcentration = 0, size_t intoLayerIndex = 0);
 void soilOrganicAddIrrigationWater(SoilOrganic* so, double amount);

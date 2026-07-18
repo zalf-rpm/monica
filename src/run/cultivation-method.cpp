@@ -1265,7 +1265,7 @@ bool AutomaticIrrigation::apply(MonicaModel* model) {
   tie(irrigationTriggered, irrigationAmount) = model->soilColumnNC().applyIrrigationViaTrigger(params);
   if (irrigationTriggered) {
     model->addEvent("AutomaticIrrigation");
-    model->soilOrganicNC().addIrrigationWater(irrigationAmount);
+    soilOrganicAddIrrigationWater(&model->soilOrganicNC(), irrigationAmount);
     model->addDailySumIrrigationWater(irrigationAmount);
   }
 
@@ -1759,5 +1759,4 @@ bool CultivationMethod::reinit(Tools::Date date, bool forceInitYear) {
 
   return addedYear;
 }
-
 
