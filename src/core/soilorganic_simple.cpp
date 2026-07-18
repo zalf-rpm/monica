@@ -1827,53 +1827,133 @@ kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn& soilColumn,
 }
 
 void monica::soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
-  so->deserialize(reader);
+  so->_params.deserialize(reader.getModuleParams());
+  so->vs_NumberOfLayers = reader.getVsNumberOfLayers();
+  so->vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
+  so->addedOrganicMatter = reader.getAddedOrganicMatter();
+  so->irrigationAmount = reader.getIrrigationAmount();
+  setFromCapnpList(so->vo_ActAmmoniaOxidationRate, reader.getActAmmoniaOxidationRate());
+  setFromCapnpList(so->vo_ActNitrificationRate, reader.getActNitrificationRate());
+  setFromCapnpList(so->vo_ActDenitrificationRate, reader.getActDenitrificationRate());
+  setFromCapnpList(so->vo_AOM_FastDeltaSum, reader.getAomFastDeltaSum());
+  setFromCapnpList(so->vo_AOM_FastInput, reader.getAomFastInput());
+  setFromCapnpList(so->vo_AOM_FastSum, reader.getAomFastSum());
+  setFromCapnpList(so->vo_AOM_SlowDeltaSum, reader.getAomSlowDeltaSum());
+  setFromCapnpList(so->vo_AOM_SlowInput, reader.getAomSlowInput());
+  setFromCapnpList(so->vo_AOM_SlowSum, reader.getAomSlowSum());
+  setFromCapnpList(so->vo_CBalance, reader.getCBalance());
+  so->vo_DecomposerRespiration = reader.getDecomposerRespiration();
+  so->vo_ErrorMessage = reader.getErrorMessage();
+  setFromCapnpList(so->vo_InertSoilOrganicC, reader.getInertSoilOrganicC());
+  so->vo_N2O_Produced = reader.getN2oProduced();
+  so->vo_N2O_Produced_Nit = reader.getN2oProducedNit();
+  so->vo_N2O_Produced_Denit = reader.getN2oProducedDenit();
+  so->vo_NetEcosystemExchange = reader.getNetEcosystemExchange();
+  so->vo_NetEcosystemProduction = reader.getNetEcosystemProduction();
+  so->vo_NetNMineralisation = reader.getNetNMineralisation();
+  setFromCapnpList(so->vo_NetNMineralisationRate, reader.getNetNMineralisationRate());
+  so->vo_Total_NH3_Volatilised = reader.getTotalNH3Volatilised();
+  so->vo_NH3_Volatilised = reader.getNh3Volatilised();
+  setFromCapnpList(so->vo_SMB_CO2EvolutionRate, reader.getSmbCO2EvolutionRate());
+  setFromCapnpList(so->vo_SMB_FastDelta, reader.getSmbFastDelta());
+  setFromCapnpList(so->vo_SMB_SlowDelta, reader.getSmbSlowDelta());
+  setFromCapnpList(so->vs_SoilMineralNContent, reader.getVsSoilMineralNContent());
+  setFromCapnpList(so->vo_SoilOrganicC, reader.getSoilOrganicC());
+  setFromCapnpList(so->vo_SOM_FastDelta, reader.getSomFastDelta());
+  setFromCapnpList(so->vo_SOM_FastInput, reader.getSomFastInput());
+  setFromCapnpList(so->vo_SOM_SlowDelta, reader.getSomSlowDelta());
+  so->vo_SumDenitrification = reader.getSumDenitrification();
+  so->vo_SumNetNMineralisation = reader.getSumNetNMineralisation();
+  so->vo_SumN2O_Produced = reader.getSumN2OProduced();
+  so->vo_SumNH3_Volatilised = reader.getSumNH3Volatilised();
+  so->vo_TotalDenitrification = reader.getTotalDenitrification();
+  so->incorporation = reader.getIncorporation();
 }
 
 void monica::soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder) {
-  so->serialize(builder);
+  so->_params.serialize(builder.initModuleParams());
+  builder.setVsNumberOfLayers((uint16_t) so->vs_NumberOfLayers);
+  builder.setVsNumberOfOrganicLayers((uint16_t) so->vs_NumberOfOrganicLayers);
+  builder.setAddedOrganicMatter(so->addedOrganicMatter);
+  builder.setIrrigationAmount(so->irrigationAmount);
+  setCapnpList(so->vo_ActAmmoniaOxidationRate, builder.initActAmmoniaOxidationRate((capnp::uint) so->vo_ActAmmoniaOxidationRate.size()));
+  setCapnpList(so->vo_ActNitrificationRate, builder.initActNitrificationRate((capnp::uint) so->vo_ActNitrificationRate.size()));
+  setCapnpList(so->vo_ActDenitrificationRate, builder.initActDenitrificationRate((capnp::uint) so->vo_ActDenitrificationRate.size()));
+  setCapnpList(so->vo_AOM_FastDeltaSum, builder.initAomFastDeltaSum((capnp::uint) so->vo_AOM_FastDeltaSum.size()));
+  setCapnpList(so->vo_AOM_FastInput, builder.initAomFastInput((capnp::uint) so->vo_AOM_FastInput.size()));
+  setCapnpList(so->vo_AOM_FastSum, builder.initAomFastSum((capnp::uint) so->vo_AOM_FastSum.size()));
+  setCapnpList(so->vo_AOM_SlowDeltaSum, builder.initAomSlowDeltaSum((capnp::uint) so->vo_AOM_SlowDeltaSum.size()));
+  setCapnpList(so->vo_AOM_SlowInput, builder.initAomSlowInput((capnp::uint) so->vo_AOM_SlowInput.size()));
+  setCapnpList(so->vo_AOM_SlowSum, builder.initAomSlowSum((capnp::uint) so->vo_AOM_SlowSum.size()));
+  setCapnpList(so->vo_CBalance, builder.initCBalance((capnp::uint) so->vo_CBalance.size()));
+  builder.setDecomposerRespiration(so->vo_DecomposerRespiration);
+  builder.setErrorMessage(so->vo_ErrorMessage);
+  setCapnpList(so->vo_InertSoilOrganicC, builder.initInertSoilOrganicC((capnp::uint) so->vo_InertSoilOrganicC.size()));
+  builder.setN2oProduced(so->vo_N2O_Produced);
+  builder.setN2oProducedNit(so->vo_N2O_Produced_Nit);
+  builder.setN2oProducedDenit(so->vo_N2O_Produced_Denit);
+  builder.setNetEcosystemExchange(so->vo_NetEcosystemExchange);
+  builder.setNetEcosystemProduction(so->vo_NetEcosystemProduction);
+  builder.setNetNMineralisation(so->vo_NetNMineralisation);
+  setCapnpList(so->vo_NetNMineralisationRate, builder.initNetNMineralisationRate((capnp::uint) so->vo_NetNMineralisationRate.size()));
+  builder.setTotalNH3Volatilised(so->vo_Total_NH3_Volatilised);
+  builder.setNh3Volatilised(so->vo_NH3_Volatilised);
+  setCapnpList(so->vo_SMB_CO2EvolutionRate, builder.initSmbCO2EvolutionRate((capnp::uint) so->vo_SMB_CO2EvolutionRate.size()));
+  setCapnpList(so->vo_SMB_FastDelta, builder.initSmbFastDelta((capnp::uint) so->vo_SMB_FastDelta.size()));
+  setCapnpList(so->vo_SMB_SlowDelta, builder.initSmbSlowDelta((capnp::uint) so->vo_SMB_SlowDelta.size()));
+  setCapnpList(so->vs_SoilMineralNContent, builder.initVsSoilMineralNContent((capnp::uint) so->vs_SoilMineralNContent.size()));
+  setCapnpList(so->vo_SoilOrganicC, builder.initSoilOrganicC((capnp::uint) so->vo_SoilOrganicC.size()));
+  setCapnpList(so->vo_SOM_FastDelta, builder.initSomFastDelta((capnp::uint) so->vo_SOM_FastDelta.size()));
+  setCapnpList(so->vo_SOM_FastInput, builder.initSomFastInput((capnp::uint) so->vo_SOM_FastInput.size()));
+  setCapnpList(so->vo_SOM_SlowDelta, builder.initSomSlowDelta((capnp::uint) so->vo_SOM_SlowDelta.size()));
+  builder.setSumDenitrification(so->vo_SumDenitrification);
+  builder.setSumNetNMineralisation(so->vo_SumNetNMineralisation);
+  builder.setSumN2OProduced(so->vo_SumN2O_Produced);
+  builder.setSumNH3Volatilised(so->vo_SumNH3_Volatilised);
+  builder.setTotalDenitrification(so->vo_TotalDenitrification);
+  builder.setIncorporation(so->incorporation);
 }
 
 void monica::soilOrganicStep(SoilOrganic* so, double precipitation, double meanAirTemperature, double windSpeed) {
   so->step(precipitation, meanAirTemperature, windSpeed);
 }
 
-void monica::soilOrganicPutCrop(SoilOrganic* so, CropModule* cm) { so->putCrop(cm); }
-void monica::soilOrganicRemoveCrop(SoilOrganic* so) { so->removeCrop(); }
-void monica::soilOrganicSetIncorporation(SoilOrganic* so, bool incorp) { so->setIncorporation(incorp); }
+void monica::soilOrganicPutCrop(SoilOrganic* so, CropModule* cm) { so->cropModule = cm; }
+void monica::soilOrganicRemoveCrop(SoilOrganic* so) { so->cropModule = nullptr; }
+void monica::soilOrganicSetIncorporation(SoilOrganic* so, bool incorp) { so->incorporation = incorp; }
 void monica::soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                          double amount, double nConcentration, size_t intoLayerIndex) {
   so->addOrganicMatter(params, amount, nConcentration, intoLayerIndex);
 }
-void monica::soilOrganicAddIrrigationWater(SoilOrganic* so, double amount) { so->addIrrigationWater(amount); }
+void monica::soilOrganicAddIrrigationWater(SoilOrganic* so, double amount) { so->irrigationAmount += amount; }
 
-double monica::soilOrganicGetSoilOrganicC(const SoilOrganic* so, int iLayer) { return so->get_SoilOrganicC(iLayer); }
-double monica::soilOrganicGetAOM_FastSum(const SoilOrganic* so, int iLayer) { return so->get_AOM_FastSum(iLayer); }
-double monica::soilOrganicGetAOM_SlowSum(const SoilOrganic* so, int iLayer) { return so->get_AOM_SlowSum(iLayer); }
-double monica::soilOrganicGetSMB_Fast(const SoilOrganic* so, int iLayer) { return so->get_SMB_Fast(iLayer); }
-double monica::soilOrganicGetSMB_Slow(const SoilOrganic* so, int iLayer) { return so->get_SMB_Slow(iLayer); }
-double monica::soilOrganicGetSOM_Fast(const SoilOrganic* so, int iLayer) { return so->get_SOM_Fast(iLayer); }
-double monica::soilOrganicGetSOM_Slow(const SoilOrganic* so, int iLayer) { return so->get_SOM_Slow(iLayer); }
-double monica::soilOrganicGetCBalance(const SoilOrganic* so, int iLayer) { return so->get_CBalance(iLayer); }
-double monica::soilOrganicGetSMB_CO2EvolutionRate(const SoilOrganic* so, int iLayer) { return so->get_SMB_CO2EvolutionRate(iLayer); }
-double monica::soilOrganicGetActDenitrificationRate(const SoilOrganic* so, int iLayer) { return so->get_ActDenitrificationRate(iLayer); }
-double monica::soilOrganicGetNetNMineralisationRate(const SoilOrganic* so, int iLayer) { return so->get_NetNMineralisationRate(iLayer); }
-double monica::soilOrganicGetNH3_Volatilised(const SoilOrganic* so) { return so->get_NH3_Volatilised(); }
-double monica::soilOrganicGetSumNH3_Volatilised(const SoilOrganic* so) { return so->get_SumNH3_Volatilised(); }
-double monica::soilOrganicGetN2O_Produced(const SoilOrganic* so) { return so->get_N2O_Produced(); }
-double monica::soilOrganicGetN2O_ProducedNit(const SoilOrganic* so) { return so->get_N2O_Produced_Nit(); }
-double monica::soilOrganicGetN2O_ProducedDenit(const SoilOrganic* so) { return so->get_N2O_Produced_Denit(); }
-double monica::soilOrganicGetSumN2O_Produced(const SoilOrganic* so) { return so->get_SumN2O_Produced(); }
-double monica::soilOrganicGetNetNMineralisation(const SoilOrganic* so) { return so->get_NetNMineralisation(); }
-double monica::soilOrganicGetSumNetNMineralisation(const SoilOrganic* so) { return so->get_SumNetNMineralisation(); }
-double monica::soilOrganicGetSumDenitrification(const SoilOrganic* so) { return so->get_SumDenitrification(); }
-double monica::soilOrganicGetDenitrification(const SoilOrganic* so) { return so->get_Denitrification(); }
-double monica::soilOrganicGetDecomposerRespiration(const SoilOrganic* so) { return so->get_DecomposerRespiration(); }
-double monica::soilOrganicGetNetEcosystemProduction(const SoilOrganic* so) { return so->get_NetEcosystemProduction(); }
-double monica::soilOrganicGetNetEcosystemExchange(const SoilOrganic* so) { return so->get_NetEcosystemExchange(); }
-double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int iLayer) { return so->get_Organic_N(iLayer); }
-double monica::soilOrganicGetActAmmoniaOxidationRate(const SoilOrganic* so, int i) { return so->actAmmoniaOxidationRate(i); }
-double monica::soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i) { return so->actNitrificationRate(i); }
+double monica::soilOrganicGetSoilOrganicC(const SoilOrganic* so, int iLayer) { return so->vo_SoilOrganicC[iLayer] / so->soilColumn.at(iLayer)._sps.vs_SoilBulkDensity(); }
+double monica::soilOrganicGetAOM_FastSum(const SoilOrganic* so, int iLayer) { return so->vo_AOM_FastSum[iLayer]; }
+double monica::soilOrganicGetAOM_SlowSum(const SoilOrganic* so, int iLayer) { return so->vo_AOM_SlowSum[iLayer]; }
+double monica::soilOrganicGetSMB_Fast(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SMB_Fast; }
+double monica::soilOrganicGetSMB_Slow(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SMB_Slow; }
+double monica::soilOrganicGetSOM_Fast(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SOM_Fast; }
+double monica::soilOrganicGetSOM_Slow(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SOM_Slow; }
+double monica::soilOrganicGetCBalance(const SoilOrganic* so, int iLayer) { return so->vo_CBalance[iLayer]; }
+double monica::soilOrganicGetSMB_CO2EvolutionRate(const SoilOrganic* so, int iLayer) { return so->vo_SMB_CO2EvolutionRate[iLayer]; }
+double monica::soilOrganicGetActDenitrificationRate(const SoilOrganic* so, int iLayer) { return so->vo_ActDenitrificationRate[iLayer]; }
+double monica::soilOrganicGetNetNMineralisationRate(const SoilOrganic* so, int iLayer) { return so->vo_NetNMineralisationRate[iLayer]; }
+double monica::soilOrganicGetNH3_Volatilised(const SoilOrganic* so) { return so->vo_NH3_Volatilised; }
+double monica::soilOrganicGetSumNH3_Volatilised(const SoilOrganic* so) { return so->vo_SumNH3_Volatilised; }
+double monica::soilOrganicGetN2O_Produced(const SoilOrganic* so) { return so->vo_N2O_Produced; }
+double monica::soilOrganicGetN2O_ProducedNit(const SoilOrganic* so) { return so->vo_N2O_Produced_Nit; }
+double monica::soilOrganicGetN2O_ProducedDenit(const SoilOrganic* so) { return so->vo_N2O_Produced_Denit; }
+double monica::soilOrganicGetSumN2O_Produced(const SoilOrganic* so) { return so->vo_SumN2O_Produced; }
+double monica::soilOrganicGetNetNMineralisation(const SoilOrganic* so) { return so->vo_NetNMineralisation; }
+double monica::soilOrganicGetSumNetNMineralisation(const SoilOrganic* so) { return so->vo_SumNetNMineralisation; }
+double monica::soilOrganicGetSumDenitrification(const SoilOrganic* so) { return so->vo_SumDenitrification; }
+double monica::soilOrganicGetDenitrification(const SoilOrganic* so) { return so->vo_TotalDenitrification; }
+double monica::soilOrganicGetDecomposerRespiration(const SoilOrganic* so) { return so->vo_DecomposerRespiration; }
+double monica::soilOrganicGetNetEcosystemProduction(const SoilOrganic* so) { return so->vo_NetEcosystemProduction; }
+double monica::soilOrganicGetNetEcosystemExchange(const SoilOrganic* so) { return so->vo_NetEcosystemExchange; }
+double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int iLayer) { return so->vs_SoilMineralNContent[iLayer]; }
+double monica::soilOrganicGetActAmmoniaOxidationRate(const SoilOrganic* so, int i) { return so->vo_ActAmmoniaOxidationRate[i]; }
+double monica::soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i) { return so->vo_ActNitrificationRate[i]; }
 
 /**
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
@@ -2108,4 +2188,3 @@ double SoilOrganic::get_Organic_N(int i) const {
 
   return orgN;
 }
-
