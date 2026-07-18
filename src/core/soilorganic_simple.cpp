@@ -192,11 +192,11 @@ void monica::soilOrganicStep(SoilOrganic* so,
   double netPrimaryProduction = so->cropModule ? so->cropModule->get_NetPrimaryProduction() : 0;
 
   soilOrganicFoUrea(so);
-  so->fo_MIT();
+  soilOrganicFoMIT(so);
   soilOrganicFoVolatilisation(so, so->addedOrganicMatter, meanAirTemperature, windSpeed);
 
-  if (so->_params.sticsParams.use_nit) so->fo_stics_Nitrification();
-  else so->fo_Nitrification();
+  if (so->_params.sticsParams.use_nit) soilOrganicFoSticsNitrification(so);
+  else soilOrganicFoNitrification(so);
 
   if (so->_params.sticsParams.use_denit) so->fo_stics_Denitrification();
   else so->fo_Denitrification();
@@ -549,7 +549,24 @@ void SoilOrganic::fo_OM_Input(bool vo_AOM_Addition) {
  * @param vo_AddedOrganicMatterNConcentration
  *
  */
-void SoilOrganic::fo_MIT() {
+void monica::soilOrganicFoMIT(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+  auto& vo_CBalance = so->vo_CBalance;
+  auto& vo_SMB_FastDelta = so->vo_SMB_FastDelta;
+  auto& vo_SMB_SlowDelta = so->vo_SMB_SlowDelta;
+  auto& vo_SOM_FastDelta = so->vo_SOM_FastDelta;
+  auto& vo_SOM_SlowDelta = so->vo_SOM_SlowDelta;
+  auto& vo_AOM_SlowInput = so->vo_AOM_SlowInput;
+  auto& vo_AOM_FastInput = so->vo_AOM_FastInput;
+  auto& vo_SOM_FastInput = so->vo_SOM_FastInput;
+  auto& vo_AOM_SlowSum = so->vo_AOM_SlowSum;
+  auto& vo_AOM_FastSum = so->vo_AOM_FastSum;
+  auto& vo_NetNMineralisationRate = so->vo_NetNMineralisationRate;
+  auto& vo_NetNMineralisation = so->vo_NetNMineralisation;
+  auto& vo_SumNetNMineralisation = so->vo_SumNetNMineralisation;
+  auto& vo_SMB_CO2EvolutionRate = so->vo_SMB_CO2EvolutionRate;
+  auto& vo_DecomposerRespiration = so->vo_DecomposerRespiration;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   double po_SOM_SlowDecCoeffStandard = _params.po_SOM_SlowDecCoeffStandard;
@@ -671,21 +688,21 @@ void SoilOrganic::fo_MIT() {
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
     double tod = _params.__enable_kaiteew_TempOnDecompostion__
-                 ? fo_TempOnDecompostion_kaiteew(layi.vs_SoilTemperature,
-                                                 _params.po_QTenFactor,
-                                                 _params.po_TempDecOptimal)
-                 : fo_TempOnDecompostion(layi.vs_SoilTemperature); // prev code
+                 ? so->fo_TempOnDecompostion_kaiteew(layi.vs_SoilTemperature,
+                                                     _params.po_QTenFactor,
+                                                     _params.po_TempDecOptimal)
+                 : so->fo_TempOnDecompostion(layi.vs_SoilTemperature); // prev code
 
     double mod = _params.__enable_kaiteew_MoistOnDecompostion__
-                 ? fo_MoistOnDecompostion_kaiteew(layi.vs_SoilMoisture_m3,
-                                                 layi._sps.vs_Saturation,
-                                                 _params.po_MoistureDecOptimal)
-                 : fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF()); // prev code
+                 ? so->fo_MoistOnDecompostion_kaiteew(layi.vs_SoilMoisture_m3,
+                                                      layi._sps.vs_Saturation,
+                                                      _params.po_MoistureDecOptimal)
+                 : so->fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF()); // prev code
 
     double cod = _params.__enable_kaiteew_ClayOnDecompostion__
-                 ? fo_ClayOnDecompostion_kaiteew(layi._sps.vs_SoilClayContent,
-                                                 _params.po_LimitClayEffect)
-                 : fo_ClayOnDecompostion(layi._sps.vs_SoilClayContent, _params.po_LimitClayEffect); // prev code
+                 ? so->fo_ClayOnDecompostion_kaiteew(layi._sps.vs_SoilClayContent,
+                                                     _params.po_LimitClayEffect)
+                 : so->fo_ClayOnDecompostion(layi._sps.vs_SoilClayContent, _params.po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
@@ -1079,7 +1096,12 @@ void monica::soilOrganicFoVolatilisation(SoilOrganic* so,
 /**
  * @brief Internal Subroutine Nitrification
  */
-void SoilOrganic::fo_Nitrification() {
+void monica::soilOrganicFoNitrification(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+  auto& vo_ActAmmoniaOxidationRate = so->vo_ActAmmoniaOxidationRate;
+  auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   double po_AmmoniaOxidationRateCoeffStandard = _params.po_AmmoniaOxidationRateCoeffStandard;
   double po_NitriteOxidationRateCoeffStandard = _params.po_NitriteOxidationRateCoeffStandard;
@@ -1100,16 +1122,16 @@ void SoilOrganic::fo_Nitrification() {
     //  cout << "SO-2:\t" << layi.vs_SoilMoisture_pF() << endl;
     vo_AmmoniaOxidationRateCoeff[i] =
         po_AmmoniaOxidationRateCoeffStandard
-        * fo_TempOnNitrification(layi.vs_SoilTemperature)
-        * fo_MoistOnNitrification(layi.vs_SoilMoisture_pF());
+        * so->fo_TempOnNitrification(layi.vs_SoilTemperature)
+        * so->fo_MoistOnNitrification(layi.vs_SoilMoisture_pF());
 
     vo_ActAmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4i;
 
     vo_NitriteOxidationRateCoeff[i] =
         po_NitriteOxidationRateCoeffStandard
-        * fo_TempOnNitrification(layi.vs_SoilTemperature)
-        * fo_MoistOnNitrification(layi.vs_SoilMoisture_pF())
-        * fo_NH3onNitriteOxidation(NH4i, layi._sps.vs_SoilpH);
+        * so->fo_TempOnNitrification(layi.vs_SoilTemperature)
+        * so->fo_MoistOnNitrification(layi.vs_SoilMoisture_pF())
+        * so->fo_NH3onNitriteOxidation(NH4i, layi._sps.vs_SoilpH);
 
     vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2;
 
@@ -1133,7 +1155,11 @@ void SoilOrganic::fo_Nitrification() {
   }
 }
 
-void SoilOrganic::fo_stics_Nitrification() {
+void monica::soilOrganicFoSticsNitrification(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+  auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   auto sticsParams = _params.sticsParams;
 
