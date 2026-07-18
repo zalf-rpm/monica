@@ -1847,6 +1847,34 @@ void monica::soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterPar
 }
 void monica::soilOrganicAddIrrigationWater(SoilOrganic* so, double amount) { so->addIrrigationWater(amount); }
 
+double monica::soilOrganicGetSoilOrganicC(const SoilOrganic* so, int iLayer) { return so->get_SoilOrganicC(iLayer); }
+double monica::soilOrganicGetAOM_FastSum(const SoilOrganic* so, int iLayer) { return so->get_AOM_FastSum(iLayer); }
+double monica::soilOrganicGetAOM_SlowSum(const SoilOrganic* so, int iLayer) { return so->get_AOM_SlowSum(iLayer); }
+double monica::soilOrganicGetSMB_Fast(const SoilOrganic* so, int iLayer) { return so->get_SMB_Fast(iLayer); }
+double monica::soilOrganicGetSMB_Slow(const SoilOrganic* so, int iLayer) { return so->get_SMB_Slow(iLayer); }
+double monica::soilOrganicGetSOM_Fast(const SoilOrganic* so, int iLayer) { return so->get_SOM_Fast(iLayer); }
+double monica::soilOrganicGetSOM_Slow(const SoilOrganic* so, int iLayer) { return so->get_SOM_Slow(iLayer); }
+double monica::soilOrganicGetCBalance(const SoilOrganic* so, int iLayer) { return so->get_CBalance(iLayer); }
+double monica::soilOrganicGetSMB_CO2EvolutionRate(const SoilOrganic* so, int iLayer) { return so->get_SMB_CO2EvolutionRate(iLayer); }
+double monica::soilOrganicGetActDenitrificationRate(const SoilOrganic* so, int iLayer) { return so->get_ActDenitrificationRate(iLayer); }
+double monica::soilOrganicGetNetNMineralisationRate(const SoilOrganic* so, int iLayer) { return so->get_NetNMineralisationRate(iLayer); }
+double monica::soilOrganicGetNH3_Volatilised(const SoilOrganic* so) { return so->get_NH3_Volatilised(); }
+double monica::soilOrganicGetSumNH3_Volatilised(const SoilOrganic* so) { return so->get_SumNH3_Volatilised(); }
+double monica::soilOrganicGetN2O_Produced(const SoilOrganic* so) { return so->get_N2O_Produced(); }
+double monica::soilOrganicGetN2O_ProducedNit(const SoilOrganic* so) { return so->get_N2O_Produced_Nit(); }
+double monica::soilOrganicGetN2O_ProducedDenit(const SoilOrganic* so) { return so->get_N2O_Produced_Denit(); }
+double monica::soilOrganicGetSumN2O_Produced(const SoilOrganic* so) { return so->get_SumN2O_Produced(); }
+double monica::soilOrganicGetNetNMineralisation(const SoilOrganic* so) { return so->get_NetNMineralisation(); }
+double monica::soilOrganicGetSumNetNMineralisation(const SoilOrganic* so) { return so->get_SumNetNMineralisation(); }
+double monica::soilOrganicGetSumDenitrification(const SoilOrganic* so) { return so->get_SumDenitrification(); }
+double monica::soilOrganicGetDenitrification(const SoilOrganic* so) { return so->get_Denitrification(); }
+double monica::soilOrganicGetDecomposerRespiration(const SoilOrganic* so) { return so->get_DecomposerRespiration(); }
+double monica::soilOrganicGetNetEcosystemProduction(const SoilOrganic* so) { return so->get_NetEcosystemProduction(); }
+double monica::soilOrganicGetNetEcosystemExchange(const SoilOrganic* so) { return so->get_NetEcosystemExchange(); }
+double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int iLayer) { return so->get_Organic_N(iLayer); }
+double monica::soilOrganicGetActAmmoniaOxidationRate(const SoilOrganic* so, int i) { return so->actAmmoniaOxidationRate(i); }
+double monica::soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i) { return so->actNitrificationRate(i); }
+
 /**
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
@@ -2080,6 +2108,4 @@ double SoilOrganic::get_Organic_N(int i) const {
 
   return orgN;
 }
-
-
 

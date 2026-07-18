@@ -910,7 +910,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_Organic_N(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetOrganicN(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "AOMf", "kgC m-3", "get_AOM_FastSum"},
@@ -918,7 +918,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_AOM_FastSum(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetAOM_FastSum(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "AOMs", "kgC m-3", "get_AOM_SlowSum"},
@@ -926,7 +926,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_AOM_SlowSum(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetAOM_SlowSum(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "SMBf", "kgC m-3", "get_SMB_Fast"},
@@ -934,7 +934,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_Fast(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetSMB_Fast(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "SMBs", "kgC m-3", "get_SMB_Slow"},
@@ -942,7 +942,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SMB_Slow(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetSMB_Slow(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "SOMf", "kgC m-3", "get_SOM_Fast"},
@@ -950,7 +950,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SOM_Fast(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetSOM_Fast(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "SOMs", "kgC m-3", "get_SOM_Slow"},
@@ -958,7 +958,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SOM_Slow(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetSOM_Slow(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "CBal", "kgC m-3", "get_CBalance"},
@@ -966,7 +966,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_CBalance(i); }, 4);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetCBalance(&monica.soilOrganic(), i); }, 4);
             });
 
       build({id++, "Nmin", "kgN ha-1", "NetNMineralisationRate"},
@@ -975,31 +975,31 @@ BOTRes& monica::buildOutputTable() {
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilOrganic().get_NetNMineralisationRate(i);
+                return soilOrganicGetNetNMineralisationRate(&monica.soilOrganic(), i);
               }, 6);
             });
 
       build({id++, "NetNmin", "kgN ha-1", "NetNmin"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_NetNMineralisation(), 5);
+              return round(soilOrganicGetNetNMineralisation(&monica.soilOrganic()), 5);
             });
 
       build({id++, "Denit", "kgN ha-1", "Denit"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_Denitrification(), 5);
+              return round(soilOrganicGetDenitrification(&monica.soilOrganic()), 5);
             });
 
       build({id++, "N2O", "kgN ha-1", "N2O"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_N2O_Produced(), 5);
+              return round(soilOrganicGetN2O_Produced(&monica.soilOrganic()), 5);
             });
       build({id++, "N2Onit", "kgN ha-1", "N2O from nitrification"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_N2O_Produced_Nit(), 5);
+              return round(soilOrganicGetN2O_ProducedNit(&monica.soilOrganic()), 5);
             });
       build({id++, "N2Odenit", "kgN ha-1", "N2O from denitrification"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_N2O_Produced_Denit(), 5);
+              return round(soilOrganicGetN2O_ProducedDenit(&monica.soilOrganic()), 5);
             });
 
       build({id++, "SoilpH", "", "SoilpH"},
@@ -1009,17 +1009,17 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NEP", "kgC ha-1", "NEP"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_NetEcosystemProduction(), 5);
+              return round(soilOrganicGetNetEcosystemProduction(&monica.soilOrganic()), 5);
             });
 
       build({id++, "NEE", "kgC ha-", "NEE"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_NetEcosystemExchange(), 5);
+              return round(soilOrganicGetNetEcosystemExchange(&monica.soilOrganic()), 5);
             });
 
       build({id++, "Rh", "kgC ha-", "Rh"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_DecomposerRespiration(), 5);
+              return round(soilOrganicGetDecomposerRespiration(&monica.soilOrganic()), 5);
             });
 
       build({id++, "Tmin", "", ""},
@@ -1100,12 +1100,12 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().get_SoilOrganicC(i); }, 2);
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetSoilOrganicC(&monica.soilOrganic(), i); }, 2);
             });
 
       build({id++, "NH3", "kgN ha-1", "NH3_Volatilised"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilOrganic().get_NH3_Volatilised(), 3);
+              return round(soilOrganicGetNH3_Volatilised(&monica.soilOrganic()), 3);
             });
 
       build({id++, "NFert", "kgN ha-1", "dailySumFertiliser"},
@@ -1167,7 +1167,7 @@ BOTRes& monica::buildOutputTable() {
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilOrganic().get_SMB_CO2EvolutionRate(i);
+                return soilOrganicGetSMB_CO2EvolutionRate(&monica.soilOrganic(), i);
               }, 1);
             });
 
@@ -1382,7 +1382,7 @@ BOTRes& monica::buildOutputTable() {
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilOrganic().actAmmoniaOxidationRate(i);
+                return soilOrganicGetActAmmoniaOxidationRate(&monica.soilOrganic(), i);
               }, 6);
             });
 
@@ -1391,7 +1391,7 @@ BOTRes& monica::buildOutputTable() {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilOrganic().actNitrificationRate(i); },
+              return getComplexValues<double>(oid, [&](int i) { return soilOrganicGetActNitrificationRate(&monica.soilOrganic(), i); },
                                               6);
             });
 
@@ -1401,7 +1401,7 @@ BOTRes& monica::buildOutputTable() {
               oid.fromLayer = min(oid.fromLayer, nools - 1);
               oid.toLayer = min(oid.toLayer, nools - 1);
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilOrganic().actDenitrificationRate(i);
+                return soilOrganicGetActDenitrificationRate(&monica.soilOrganic(), i);
               }, 6);
             });
       build({id++, "rootDensity", "", "cropGrowth->vc_RootDensity"},
