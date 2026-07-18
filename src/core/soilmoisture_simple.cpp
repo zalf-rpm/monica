@@ -191,10 +191,10 @@ void monica::soilMoistureStep(SoilMoisture* sm,
 
   if (0.0 < vs_GroundwaterDepth && vs_GroundwaterDepth <= 10.0) {
     soilMoistureFmPercolationWithGroundwater(sm, oscillGroundWaterLayer);
-    sm->fm_GroundwaterReplenishment();
+    soilMoistureFmGroundwaterReplenishment(sm);
   } else {
-    sm->fm_PercolationWithoutGroundwater();
-    sm->fm_BackwaterReplenishment();
+    soilMoistureFmPercolationWithoutGroundwater(sm);
+    soilMoistureFmBackwaterReplenishment(sm);
   }
 
   // Cache gross precipitation for Dual Kc fw logic (accessible in fm_Evapotranspiration)
@@ -589,7 +589,20 @@ void monica::soilMoistureFmPercolationWithGroundwater(SoilMoisture* sm, size_t o
  * @brief Calculation of groundwater replenishment
  *
  */
-void SoilMoisture::fm_GroundwaterReplenishment() {
+void monica::soilMoistureFmGroundwaterReplenishment(SoilMoisture* sm) {
+  auto& vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
+  auto& numberOfMoistureLayers = sm->numberOfMoistureLayers;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_GroundwaterAdded = sm->vm_GroundwaterAdded;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& vm_PercolationRate = sm->vm_PercolationRate;
+  auto& vm_GroundwaterDischarge = sm->vm_GroundwaterDischarge;
+  auto& vm_WaterFlux = sm->vm_WaterFlux;
+  auto& vm_SoilPoreVolume = sm->vm_SoilPoreVolume;
+  auto& vm_SurfaceWaterStorage = sm->vm_SurfaceWaterStorage;
+  auto& pm_LeachingDepthLayer = sm->pm_LeachingDepthLayer;
+  auto& vm_FluxAtLowerBoundary = sm->vm_FluxAtLowerBoundary;
+
   // Auffuellschleife von GW-Oberflaeche in Richtung Oberflaeche
   auto vm_StartLayer = vm_GroundwaterTableLayer;
 
@@ -637,7 +650,21 @@ void SoilMoisture::fm_GroundwaterReplenishment() {
 /**
  * @brief Calculation of percolation without groundwater influence
  */
-void SoilMoisture::fm_PercolationWithoutGroundwater() {
+void monica::soilMoistureFmPercolationWithoutGroundwater(SoilMoisture* sm) {
+  auto& numberOfMoistureLayers = sm->numberOfMoistureLayers;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_PercolationRate = sm->vm_PercolationRate;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& vm_FieldCapacity = sm->vm_FieldCapacity;
+  auto& vm_GravitationalWater = sm->vm_GravitationalWater;
+  auto& vm_Lambda = sm->vm_Lambda;
+  auto& frostComponent = sm->frostComponent;
+  auto& pm_MaxPercolationRate = sm->pm_MaxPercolationRate;
+  auto& vm_WaterFlux = sm->vm_WaterFlux;
+  auto& vm_GroundwaterAdded = sm->vm_GroundwaterAdded;
+  auto& pm_LeachingDepthLayer = sm->pm_LeachingDepthLayer;
+  auto& vm_FluxAtLowerBoundary = sm->vm_FluxAtLowerBoundary;
+
   for (size_t i = 0; i < numberOfMoistureLayers - 1; i++) {
     auto indexOfLayerBelow = i + 1;
     vm_SoilMoisture[indexOfLayerBelow] += vm_PercolationRate[i] / 1000.0 / vm_LayerThickness[i];
@@ -685,7 +712,14 @@ void SoilMoisture::fm_PercolationWithoutGroundwater() {
  * @brief Calculation of backwater replenishment
  *
  */
-void SoilMoisture::fm_BackwaterReplenishment() {
+void monica::soilMoistureFmBackwaterReplenishment(SoilMoisture* sm) {
+  auto& numberOfMoistureLayers = sm->numberOfMoistureLayers;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_SoilPoreVolume = sm->vm_SoilPoreVolume;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& vm_WaterFlux = sm->vm_WaterFlux;
+  auto& vm_SurfaceWaterStorage = sm->vm_SurfaceWaterStorage;
+
   auto vm_StartLayer = numberOfMoistureLayers - 1;
   auto vm_BackwaterTable = numberOfMoistureLayers - 1;
   double vm_BackwaterAdded = 0.0;

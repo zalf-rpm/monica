@@ -85,12 +85,6 @@ struct SoilMoisture {
 
   double getTemperatureUnderSnow() const;
 
-  void fm_GroundwaterReplenishment();
-
-  void fm_PercolationWithoutGroundwater();
-
-  void fm_BackwaterReplenishment();
-
   void fm_Evapotranspiration(double vc_PercentageSoilCoverage,
                              double vc_KcFactor,
                              double vs_HeightNN,
@@ -231,6 +225,9 @@ double soilMoistureGetDeprivationFactor(int layerNo,
                                         double layerThickness);
 void soilMoistureFmCapillaryRise(SoilMoisture* sm);
 void soilMoistureFmPercolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer);
+void soilMoistureFmGroundwaterReplenishment(SoilMoisture* sm);
+void soilMoistureFmPercolationWithoutGroundwater(SoilMoisture* sm);
+void soilMoistureFmBackwaterReplenishment(SoilMoisture* sm);
 double soilMoistureGetEReducer1(const SoilMoisture* sm,
                                 int layer,
                                 double percentageSoilCoverage,
