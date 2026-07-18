@@ -1131,7 +1131,7 @@ void monica::soilOrganicFoNitrification(SoilOrganic* so) {
         po_NitriteOxidationRateCoeffStandard
         * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
         * soilOrganicFoMoistOnNitrification(so, layi.vs_SoilMoisture_pF())
-        * so->fo_NH3onNitriteOxidation(NH4i, layi._sps.vs_SoilpH);
+        * soilOrganicFoNH3onNitriteOxidation(so, NH4i, layi._sps.vs_SoilpH);
 
     vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2;
 
@@ -1220,8 +1220,8 @@ void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
                                    * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature);
 
     vo_ActDenitrificationRate[i] =
-        min(vo_PotDenitrificationRate[i] * so->fo_MoistOnDenitrification(layi.vs_SoilMoisture_m3,
-                                                                          layi._sps.vs_Saturation),
+        min(vo_PotDenitrificationRate[i] * soilOrganicFoMoistOnDenitrification(so, layi.vs_SoilMoisture_m3,
+                                                                                layi._sps.vs_Saturation),
             po_TransportRateCoeff * NO3i);
 
     // update NO3 content of soil layer with denitrification balance [kg N m-3]
@@ -1675,11 +1675,13 @@ double monica::soilOrganicFoMoistOnNitrification(SoilOrganic* so, double d_SoilM
  * @param d_Saturation
  * @return
  */
-double SoilOrganic::fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation) {
+double monica::soilOrganicFoMoistOnDenitrification(SoilOrganic* so,
+                                                   double d_SoilMoisture_m3,
+                                                   double d_Saturation) {
 
-  double po_Denit1 = _params.po_Denit1;
-  double po_Denit2 = _params.po_Denit2;
-  double po_Denit3 = _params.po_Denit3;
+  double po_Denit1 = so->_params.po_Denit1;
+  double po_Denit2 = so->_params.po_Denit2;
+  double po_Denit3 = so->_params.po_Denit3;
   double fo_MoistOnDenitrification = 0.0;
 
   if ((d_SoilMoisture_m3 / d_Saturation) <= 0.8) {
@@ -1695,7 +1697,7 @@ double SoilOrganic::fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d
     fo_MoistOnDenitrification = po_Denit1 + (1.0 - po_Denit1)
                                             * ((d_SoilMoisture_m3 / d_Saturation) - po_Denit3) / (1.0 - po_Denit3);
   } else {
-    vo_ErrorMessage = "irregular soil water content";
+    so->vo_ErrorMessage = "irregular soil water content";
   }
 
   return fo_MoistOnDenitrification;
@@ -1708,9 +1710,11 @@ double SoilOrganic::fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d
  * @param d_SoilpH
  * @return
  */
-double SoilOrganic::fo_NH3onNitriteOxidation(double d_SoilNH4, double d_SoilpH) {
+double monica::soilOrganicFoNH3onNitriteOxidation(SoilOrganic* so,
+                                                  double d_SoilNH4,
+                                                  double d_SoilpH) {
 
-  double po_Inhibitor_NH3 = _params.po_Inhibitor_NH3;
+  double po_Inhibitor_NH3 = so->_params.po_Inhibitor_NH3;
   double fo_NH3onNitriteOxidation = 0.0;
 
   fo_NH3onNitriteOxidation = po_Inhibitor_NH3 / (po_Inhibitor_NH3 + d_SoilNH4 * (1 - 1 / (1.0 + pow(10.0, d_SoilpH -
