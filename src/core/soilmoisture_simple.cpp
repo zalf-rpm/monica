@@ -187,7 +187,7 @@ void monica::soilMoistureStep(SoilMoisture* sm,
   sm->frostComponent->calcSoilFrost(vw_MeanAirTemperature, sm->snowComponent->getVm_SnowDepth());
 
   // calculates infiltration of water from surface
-  sm->fm_Infiltration(vm_WaterToInfiltrate);
+  soilMoistureFmInfiltration(sm, vm_WaterToInfiltrate);
 
   if (0.0 < vs_GroundwaterDepth && vs_GroundwaterDepth <= 10.0) {
     sm->fm_PercolationWithGroundwater(oscillGroundWaterLayer);
@@ -205,7 +205,7 @@ void monica::soilMoistureStep(SoilMoisture* sm,
                             vw_WindSpeed, vw_WindSpeedHeight, vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay,
                             sm->vs_Latitude, vw_ReferenceEvapotranspiration);
 
-  sm->fm_CapillaryRise();
+  soilMoistureFmCapillaryRise(sm);
 
   for (int i_Layer = 0; i_Layer < sm->numberOfSoilLayers; i_Layer++) {
     sm->soilColumn[i_Layer].vs_SoilMoisture_m3 = sm->vm_SoilMoisture[i_Layer];
@@ -227,7 +227,34 @@ void monica::soilMoistureStep(SoilMoisture* sm,
  *
  * @param vm_WaterToInfiltrate
  */
-void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate) {
+void monica::soilMoistureFmInfiltration(SoilMoisture* sm, double vm_WaterToInfiltrate) {
+  auto& vm_Infiltration = sm->vm_Infiltration;
+  auto& vm_Interception = sm->vm_Interception;
+  auto& vm_SurfaceRunOff = sm->vm_SurfaceRunOff;
+  auto& vm_CapillaryRise = sm->vm_CapillaryRise;
+  auto& vm_GroundwaterAdded = sm->vm_GroundwaterAdded;
+  auto& vm_ActualTranspiration = sm->vm_ActualTranspiration;
+  auto& vm_SurfaceWaterStorage = sm->vm_SurfaceWaterStorage;
+  auto& vm_SoilMoistureDeficit = sm->vm_SoilMoistureDeficit;
+  auto& vm_SoilPoreVolume = sm->vm_SoilPoreVolume;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_SaturatedHydraulicConductivity = sm->vm_SaturatedHydraulicConductivity;
+  auto& vm_HydraulicConductivityRedux = sm->vm_HydraulicConductivityRedux;
+  auto& soilColumn = sm->soilColumn;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& vm_WaterFlux = sm->vm_WaterFlux;
+  auto& vm_FieldCapacity = sm->vm_FieldCapacity;
+  auto& vm_GravitationalWater = sm->vm_GravitationalWater;
+  auto& frostComponent = sm->frostComponent;
+  auto& vm_PercolationRate = sm->vm_PercolationRate;
+  auto& pm_MaxPercolationRate = sm->pm_MaxPercolationRate;
+  auto& vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
+  auto& siteParameters = sm->siteParameters;
+  auto& vc_PercentageSoilCoverage = sm->vc_PercentageSoilCoverage;
+  auto& vm_SumSurfaceRunOff = sm->vm_SumSurfaceRunOff;
+  auto& vm_Lambda = sm->vm_Lambda;
+  auto& vm_SurfaceRoughness = sm->vm_SurfaceRoughness;
+
   // For receiving daily precipitation data all variables have to be reset
   vm_Infiltration = 0.0;
   vm_Interception = 0.0;
@@ -392,7 +419,21 @@ double SoilMoisture::get_PercolationRate(int layer) const {
  * @param vm_GroundwaterTable First layer that contains groundwater
  *
  */
-void SoilMoisture::fm_CapillaryRise() {
+void monica::soilMoistureFmCapillaryRise(SoilMoisture* sm) {
+  auto& cropModule = sm->cropModule;
+  auto& vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& numberOfSoilLayers = sm->numberOfSoilLayers;
+  auto& vm_CapillaryWater = sm->vm_CapillaryWater;
+  auto& vm_FieldCapacity = sm->vm_FieldCapacity;
+  auto& vm_PermanentWiltingPoint = sm->vm_PermanentWiltingPoint;
+  auto& vm_AvailableWater = sm->vm_AvailableWater;
+  auto& vm_CapillaryWater70 = sm->vm_CapillaryWater70;
+  auto& soilColumn = sm->soilColumn;
+  auto& _params = sm->_params;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_WaterFlux = sm->vm_WaterFlux;
+
   auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
   auto vm_GroundwaterDistance = max(size_t(1), vm_GroundwaterTableLayer - vc_RootingDepth); // []
 
@@ -941,8 +982,10 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
         } else {
           // 2nd factor to reduce actual evapotranspiration by
           // MaximumEvaporationImpactDepth and EvaporationZeta
-          vm_EReducer_2 = get_DeprivationFactor(i_Layer + 1, pm_MaximumEvaporationImpactDepth,
-                                                pm_EvaporationZeta, vm_LayerThickness[i_Layer]);
+          vm_EReducer_2 = soilMoistureGetDeprivationFactor(i_Layer + 1,
+                                                           pm_MaximumEvaporationImpactDepth,
+                                                           pm_EvaporationZeta,
+                                                           vm_LayerThickness[i_Layer]);
         }
 
         if (i_Layer > 0) {
@@ -1285,8 +1328,10 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
  * @param zeta [0..40] shape factor
  * @param vs_LayerThickness
  */
-double SoilMoisture::get_DeprivationFactor(int layerNo, double deprivationDepth, double zeta,
-                                           double vs_LayerThickness) {
+double monica::soilMoistureGetDeprivationFactor(int layerNo,
+                                                double deprivationDepth,
+                                                double zeta,
+                                                double vs_LayerThickness) {
   // factor (f(depth)) to distribute the PET along the soil profil/rooting zone
 
   double deprivationFactor;

@@ -91,13 +91,6 @@ struct SoilMoisture {
                         double vm_PercentageSoilCoverage,
                         double vm_PotentialEvapotranspiration);
 
-  void fm_Infiltration(double vm_WaterToInfiltrate);
-
-  double get_DeprivationFactor(int layerNo, double deprivationDepth,
-                               double zeta, double vs_LayerThickness);
-
-  void fm_CapillaryRise();
-
   void fm_PercolationWithGroundwater(size_t oscillGroundwaterLayer);
 
   void fm_GroundwaterReplenishment();
@@ -239,6 +232,12 @@ void soilMoistureInitializeFromParams(SoilMoisture* sm);
 void soilMoistureDeserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
 void soilMoistureSerialize(const SoilMoisture* sm,
                            mas::schema::model::monica::SoilMoistureModuleState::Builder builder);
+void soilMoistureFmInfiltration(SoilMoisture* sm, double waterToInfiltrate);
+double soilMoistureGetDeprivationFactor(int layerNo,
+                                        double deprivationDepth,
+                                        double zeta,
+                                        double layerThickness);
+void soilMoistureFmCapillaryRise(SoilMoisture* sm);
 void soilMoistureStep(SoilMoisture* sm,
                       double depthGroundwaterTable,
                       double precipitation,
