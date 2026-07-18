@@ -46,10 +46,6 @@ public:
 
   typedef std::pair<double, double> NitDenitN2O;
 
-  void fo_PoolUpdate();
-  double fo_NetEcosystemProduction(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
-  double fo_NetEcosystemExchange(double vc_NetPrimaryProduction, double vo_DecomposerRespiration);
-
   double fo_ClayOnDecompostion_kaiteew(double d_SoilClayContent, double d_LimitClayEffect);
   double fo_TempOnDecompostion_kaiteew(double soilTemperature, double QTenFactor, double tempDecOptimal);
   double fo_MoistOnDecompostion_kaiteew(double d_SoilMoisture_m3, double d_Saturation, double d_MoistureDecOptimal);
@@ -132,6 +128,9 @@ void soilOrganicFoDenitrification(SoilOrganic* so);
 void soilOrganicFoSticsDenitrification(SoilOrganic* so);
 double soilOrganicFoN2OProduction(SoilOrganic* so);
 SoilOrganic::NitDenitN2O soilOrganicFoSticsN2OProduction(SoilOrganic* so);
+void soilOrganicFoPoolUpdate(SoilOrganic* so);
+double soilOrganicFoNetEcosystemProduction(SoilOrganic* so, double netPrimaryProduction, double decomposerRespiration);
+double soilOrganicFoNetEcosystemExchange(SoilOrganic* so, double netPrimaryProduction, double decomposerRespiration);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);

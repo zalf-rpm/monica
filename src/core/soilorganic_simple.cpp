@@ -208,12 +208,12 @@ void monica::soilOrganicStep(SoilOrganic* so,
   so->vo_N2O_Produced_Denit = n2OProducedNitDenit.second;
   so->vo_N2O_Produced = so->vo_N2O_Produced_Nit + so->vo_N2O_Produced_Denit;
 
-  so->fo_PoolUpdate();
+  soilOrganicFoPoolUpdate(so);
 
   so->vo_NetEcosystemProduction =
-      so->fo_NetEcosystemProduction(netPrimaryProduction, so->vo_DecomposerRespiration);
+      soilOrganicFoNetEcosystemProduction(so, netPrimaryProduction, so->vo_DecomposerRespiration);
   so->vo_NetEcosystemExchange =
-      so->fo_NetEcosystemExchange(netPrimaryProduction, so->vo_DecomposerRespiration);
+      soilOrganicFoNetEcosystemExchange(so, netPrimaryProduction, so->vo_DecomposerRespiration);
 
   so->vo_SumNH3_Volatilised += so->vo_NH3_Volatilised;
   so->vo_SumN2O_Produced += so->vo_N2O_Produced;
@@ -1361,7 +1361,23 @@ SoilOrganic::NitDenitN2O monica::soilOrganicFoSticsN2OProduction(SoilOrganic* so
 /**
  * @brief Internal Subroutine Pool update
  */
-void SoilOrganic::fo_PoolUpdate() {
+void monica::soilOrganicFoPoolUpdate(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& vo_AOM_SlowDeltaSum = so->vo_AOM_SlowDeltaSum;
+  auto& vo_AOM_FastDeltaSum = so->vo_AOM_FastDeltaSum;
+  auto& vo_AOM_SlowSum = so->vo_AOM_SlowSum;
+  auto& vo_AOM_FastSum = so->vo_AOM_FastSum;
+  auto& vo_SOM_SlowDelta = so->vo_SOM_SlowDelta;
+  auto& vo_SOM_FastDelta = so->vo_SOM_FastDelta;
+  auto& vo_SMB_SlowDelta = so->vo_SMB_SlowDelta;
+  auto& vo_SMB_FastDelta = so->vo_SMB_FastDelta;
+  auto& vo_CBalance = so->vo_CBalance;
+  auto& vo_AOM_SlowInput = so->vo_AOM_SlowInput;
+  auto& vo_AOM_FastInput = so->vo_AOM_FastInput;
+  auto& vo_SOM_FastInput = so->vo_SOM_FastInput;
+  auto& vo_SoilOrganicC = so->vo_SoilOrganicC;
+  auto& vo_InertSoilOrganicC = so->vo_InertSoilOrganicC;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
@@ -1837,7 +1853,10 @@ double monica::soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i) 
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
-double SoilOrganic::fo_NetEcosystemProduction(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
+double monica::soilOrganicFoNetEcosystemProduction(SoilOrganic* so,
+                                                   double d_NetPrimaryProduction,
+                                                   double d_DecomposerRespiration) {
+  (void)so;
 
   double vo_NEP = 0.0;
 
@@ -1851,7 +1870,10 @@ double SoilOrganic::fo_NetEcosystemProduction(double d_NetPrimaryProduction, dou
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
-double SoilOrganic::fo_NetEcosystemExchange(double d_NetPrimaryProduction, double d_DecomposerRespiration) {
+double monica::soilOrganicFoNetEcosystemExchange(SoilOrganic* so,
+                                                 double d_NetPrimaryProduction,
+                                                 double d_DecomposerRespiration) {
+  (void)so;
 
   // NEE = NEP (M.U.F. Kirschbaum and R. Mueller (2001): Net Ecosystem Exchange. Workshop Proceedings CRC for greenhouse accounting.
   // Per definition: NPP is negative and respiration is positive
