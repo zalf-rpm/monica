@@ -119,7 +119,7 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
 
   if (_soilOrganic) {
     soilOrganicDeserialize(_soilOrganic.get(), reader.getSoilOrganic());
-    soilOrganicPutCrop(_soilOrganic.get(), _currentCropModule.get());
+    _soilOrganic->cropModule = _currentCropModule.get();
   } else {
     _soilOrganic = makeSoilOrganic(*_soilColumn, reader.getSoilOrganic(), _currentCropModule.get());
   }
@@ -301,7 +301,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
     soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
     soilMoisturePutCrop(_soilMoisture.get(), _currentCropModule.get());
-    soilOrganicPutCrop(_soilOrganic.get(), _currentCropModule.get());
+    _soilOrganic->cropModule = _currentCropModule.get();
 
     if (_simPs.p_UseNMinMineralFertilisingMethod
         && !_currentCropModule->isWinterCrop()) {
@@ -357,7 +357,7 @@ void MonicaModel::seedCrop(Crop* crop) {
     soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
     soilMoisturePutCrop(_soilMoisture.get(), _currentCropModule.get());
-    soilOrganicPutCrop(_soilOrganic.get(), _currentCropModule.get());
+    _soilOrganic->cropModule = _currentCropModule.get();
 
     //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
     //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
@@ -566,7 +566,7 @@ void MonicaModel::applyOrganicFertiliser(const OrganicMatterParameters& params,
                                          bool incorporation,
                                          int incorporateIntoLayerIndex) {
   debug() << "MONICA model: applyOrganicFertiliser:\t" << amountFM << "\t" << params.vo_NConcentration << endl;
-  soilOrganicSetIncorporation(_soilOrganic.get(), incorporation);
+  _soilOrganic->incorporation = incorporation;
   soilOrganicAddOrganicMatter(_soilOrganic.get(), params, amountFM, params.vo_NConcentration, incorporateIntoLayerIndex);
   addDailySumOrgFertiliser(amountFM, params);
   addDailySumOrganicFertilizerDM(amountFM * params.vo_AOM_DryMatterContent);
@@ -613,7 +613,7 @@ void MonicaModel::dailyReset() {
     soilTransportRemoveCrop(_soilTransport.get());
     soilColumnRemoveCrop(_soilColumn.get());
     soilMoistureRemoveCrop(_soilMoisture.get());
-    soilOrganicRemoveCrop(_soilOrganic.get());
+    _soilOrganic->cropModule = nullptr;
     _currentCropModule = kj::Own<CropModule>();
 
     _clearCropUponNextDay = false;
@@ -625,7 +625,7 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
   //if the production process has still some defined manual irrigation dates
   if (!_simPs.p_UseAutomaticIrrigation) {
     soilColumnApplyIrrigation(_soilColumn.get(), amount, nitrateConcentration);
-    soilOrganicAddIrrigationWater(_soilOrganic.get(), amount);
+    _soilOrganic->irrigationAmount += amount;
     addDailySumIrrigationWater(amount);
   }
 }
@@ -839,7 +839,7 @@ void MonicaModel::cropStep() {
     double irrigationAmount = 0.0;
     tie(irrigationTriggered, irrigationAmount) = soilColumnApplyIrrigationViaTrigger(_soilColumn.get(), aips);
     if (irrigationTriggered) {
-      soilOrganicAddIrrigationWater(_soilOrganic.get(), irrigationAmount);
+      _soilOrganic->irrigationAmount += irrigationAmount;
       addDailySumIrrigationWater(irrigationAmount);
     }
   }

@@ -1265,7 +1265,7 @@ bool AutomaticIrrigation::apply(MonicaModel* model) {
   tie(irrigationTriggered, irrigationAmount) = model->soilColumnNC().applyIrrigationViaTrigger(params);
   if (irrigationTriggered) {
     model->addEvent("AutomaticIrrigation");
-    soilOrganicAddIrrigationWater(&model->soilOrganicNC(), irrigationAmount);
+    model->soilOrganicNC().irrigationAmount += irrigationAmount;
     model->addDailySumIrrigationWater(irrigationAmount);
   }
 

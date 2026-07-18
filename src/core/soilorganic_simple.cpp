@@ -1826,41 +1826,21 @@ void monica::soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::mon
   builder.setIncorporation(so->incorporation);
 }
 
-void monica::soilOrganicPutCrop(SoilOrganic* so, CropModule* cm) { so->cropModule = cm; }
-void monica::soilOrganicRemoveCrop(SoilOrganic* so) { so->cropModule = nullptr; }
-void monica::soilOrganicSetIncorporation(SoilOrganic* so, bool incorp) { so->incorporation = incorp; }
 void monica::soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                          double amount, double nConcentration, size_t intoLayerIndex) {
   soilOrganicAddOrganicMatter(so, params, std::map<size_t, double>{{intoLayerIndex, amount}}, nConcentration);
 }
-void monica::soilOrganicAddIrrigationWater(SoilOrganic* so, double amount) { so->irrigationAmount += amount; }
 
 double monica::soilOrganicGetSoilOrganicC(const SoilOrganic* so, int iLayer) { return so->vo_SoilOrganicC[iLayer] / so->soilColumn.at(iLayer)._sps.vs_SoilBulkDensity(); }
-double monica::soilOrganicGetAOM_FastSum(const SoilOrganic* so, int iLayer) { return so->vo_AOM_FastSum[iLayer]; }
-double monica::soilOrganicGetAOM_SlowSum(const SoilOrganic* so, int iLayer) { return so->vo_AOM_SlowSum[iLayer]; }
-double monica::soilOrganicGetSMB_Fast(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SMB_Fast; }
-double monica::soilOrganicGetSMB_Slow(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SMB_Slow; }
-double monica::soilOrganicGetSOM_Fast(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SOM_Fast; }
-double monica::soilOrganicGetSOM_Slow(const SoilOrganic* so, int iLayer) { return so->soilColumn.at(iLayer).vs_SOM_Slow; }
-double monica::soilOrganicGetCBalance(const SoilOrganic* so, int iLayer) { return so->vo_CBalance[iLayer]; }
-double monica::soilOrganicGetSMB_CO2EvolutionRate(const SoilOrganic* so, int iLayer) { return so->vo_SMB_CO2EvolutionRate[iLayer]; }
-double monica::soilOrganicGetActDenitrificationRate(const SoilOrganic* so, int iLayer) { return so->vo_ActDenitrificationRate[iLayer]; }
 double monica::soilOrganicGetNetNMineralisationRate(const SoilOrganic* so, int iLayer) { return so->vo_NetNMineralisationRate[iLayer] * 10000.0; }
 double monica::soilOrganicGetNH3_Volatilised(const SoilOrganic* so) { return so->vo_Total_NH3_Volatilised * 10000.0; }
 double monica::soilOrganicGetSumNH3_Volatilised(const SoilOrganic* so) { return so->vo_SumNH3_Volatilised * 10000.0; }
-double monica::soilOrganicGetN2O_Produced(const SoilOrganic* so) { return so->vo_N2O_Produced; }
-double monica::soilOrganicGetN2O_ProducedNit(const SoilOrganic* so) { return so->vo_N2O_Produced_Nit; }
-double monica::soilOrganicGetN2O_ProducedDenit(const SoilOrganic* so) { return so->vo_N2O_Produced_Denit; }
 double monica::soilOrganicGetSumN2O_Produced(const SoilOrganic* so) { return so->vo_SumN2O_Produced; }
 double monica::soilOrganicGetNetNMineralisation(const SoilOrganic* so) { return so->vo_NetNMineralisation * 10000.0; }
 double monica::soilOrganicGetSumNetNMineralisation(const SoilOrganic* so) { return so->vo_SumNetNMineralisation * 10000.0; }
 double monica::soilOrganicGetSumDenitrification(const SoilOrganic* so) { return so->vo_SumDenitrification * 10000.0; }
 double monica::soilOrganicGetDenitrification(const SoilOrganic* so) { return so->vo_TotalDenitrification * 10000.0; }
 double monica::soilOrganicGetDecomposerRespiration(const SoilOrganic* so) { return so->vo_DecomposerRespiration * 10000.0; }
-double monica::soilOrganicGetNetEcosystemProduction(const SoilOrganic* so) { return so->vo_NetEcosystemProduction; }
-double monica::soilOrganicGetNetEcosystemExchange(const SoilOrganic* so) { return so->vo_NetEcosystemExchange; }
-double monica::soilOrganicGetActAmmoniaOxidationRate(const SoilOrganic* so, int i) { return so->vo_ActAmmoniaOxidationRate[i]; }
-double monica::soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i) { return so->vo_ActNitrificationRate[i]; }
 
 /**
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].

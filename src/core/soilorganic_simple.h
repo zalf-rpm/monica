@@ -130,42 +130,21 @@ double soilOrganicFoMoistOnNitrification(SoilOrganic* so, double soilMoisture_pF
 double soilOrganicFoMoistOnDenitrification(SoilOrganic* so, double soilMoisture_m3, double saturation);
 double soilOrganicFoNH3onNitriteOxidation(SoilOrganic* so, double soilNH4, double soilpH);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
-void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
-void soilOrganicRemoveCrop(SoilOrganic* so);
-void soilOrganicSetIncorporation(SoilOrganic* so, bool incorp);
 void soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                  const std::map<size_t, double>& layer2amount,
                                  double nConcentration = 0);
 void soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                  double amount, double nConcentration = 0, size_t intoLayerIndex = 0);
-void soilOrganicAddIrrigationWater(SoilOrganic* so, double amount);
 double soilOrganicGetSoilOrganicC(const SoilOrganic* so, int iLayer);
-double soilOrganicGetAOM_FastSum(const SoilOrganic* so, int iLayer);
-double soilOrganicGetAOM_SlowSum(const SoilOrganic* so, int iLayer);
-double soilOrganicGetSMB_Fast(const SoilOrganic* so, int iLayer);
-double soilOrganicGetSMB_Slow(const SoilOrganic* so, int iLayer);
-double soilOrganicGetSOM_Fast(const SoilOrganic* so, int iLayer);
-double soilOrganicGetSOM_Slow(const SoilOrganic* so, int iLayer);
-double soilOrganicGetCBalance(const SoilOrganic* so, int iLayer);
-double soilOrganicGetSMB_CO2EvolutionRate(const SoilOrganic* so, int iLayer);
-double soilOrganicGetActDenitrificationRate(const SoilOrganic* so, int iLayer);
 double soilOrganicGetNetNMineralisationRate(const SoilOrganic* so, int iLayer);
 double soilOrganicGetNH3_Volatilised(const SoilOrganic* so);
 double soilOrganicGetSumNH3_Volatilised(const SoilOrganic* so);
-double soilOrganicGetN2O_Produced(const SoilOrganic* so);
-double soilOrganicGetN2O_ProducedNit(const SoilOrganic* so);
-double soilOrganicGetN2O_ProducedDenit(const SoilOrganic* so);
 double soilOrganicGetSumN2O_Produced(const SoilOrganic* so);
 double soilOrganicGetNetNMineralisation(const SoilOrganic* so);
 double soilOrganicGetSumNetNMineralisation(const SoilOrganic* so);
 double soilOrganicGetSumDenitrification(const SoilOrganic* so);
 double soilOrganicGetDenitrification(const SoilOrganic* so);
 double soilOrganicGetDecomposerRespiration(const SoilOrganic* so);
-double soilOrganicGetNetEcosystemProduction(const SoilOrganic* so);
-double soilOrganicGetNetEcosystemExchange(const SoilOrganic* so);
 double soilOrganicGetOrganicN(const SoilOrganic* so, int iLayer);
-double soilOrganicGetActAmmoniaOxidationRate(const SoilOrganic* so, int i);
-double soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i);
-double soilOrganicGetActDenitrificationRate(const SoilOrganic* so, int i);
 
 } // namespace Monica
