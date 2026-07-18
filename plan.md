@@ -15,5 +15,11 @@
    - Rewired `MonicaModel` orchestration path to those procedural APIs.
    - Began method-removal pass; currently still incomplete for large internal method sets, especially in `crop-module_simple`, `soilmoisture_simple`, `soilorganic_simple`, and parts of `soilcolumn_simple`/`soiltransport_simple`.
    - Soil-organic wrapper procedures now read/write the struct directly for serialization, crop wiring, irrigation, incorporation, and getters.
+   - Refactoring goal clarification:
+     - Prefer explicit procedural interfaces declared in the corresponding `_simple.h` files, even when currently only used internally.
+     - Avoid hidden anonymous-namespace orchestration for converted behavior where possible; prefer direct, named interface procedures for readability.
+     - Optimize for simple structure and understandability over encapsulation at this stage.
+     - Keep the path open for future modular calls and finer-grained testing of individual procedures.
+     - Continue conversion stepwise (one procedure/method at a time) while preserving behavior.
    - Build remains green (`monica_lib`).
    - **In progress**
