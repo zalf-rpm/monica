@@ -691,18 +691,18 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
                  ? soilOrganicFoTempOnDecompostionKaiteew(so, layi.vs_SoilTemperature,
                                                           _params.po_QTenFactor,
                                                           _params.po_TempDecOptimal)
-                 : so->fo_TempOnDecompostion(layi.vs_SoilTemperature); // prev code
+                 : soilOrganicFoTempOnDecompostion(so, layi.vs_SoilTemperature); // prev code
 
     double mod = _params.__enable_kaiteew_MoistOnDecompostion__
                  ? soilOrganicFoMoistOnDecompostionKaiteew(so, layi.vs_SoilMoisture_m3,
                                                            layi._sps.vs_Saturation,
                                                            _params.po_MoistureDecOptimal)
-                 : so->fo_MoistOnDecompostion(layi.vs_SoilMoisture_pF()); // prev code
+                 : soilOrganicFoMoistOnDecompostion(so, layi.vs_SoilMoisture_pF()); // prev code
 
     double cod = _params.__enable_kaiteew_ClayOnDecompostion__
                  ? soilOrganicFoClayOnDecompostionKaiteew(so, layi._sps.vs_SoilClayContent,
                                                           _params.po_LimitClayEffect)
-                 : so->fo_ClayOnDecompostion(layi._sps.vs_SoilClayContent, _params.po_LimitClayEffect); // prev code
+                 : soilOrganicFoClayOnDecompostion(so, layi._sps.vs_SoilClayContent, _params.po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
@@ -1464,7 +1464,9 @@ double monica::soilOrganicFoClayOnDecompostionKaiteew(SoilOrganic* so,
  * @param d_LimitClayEffect
  * @return
  */
-double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_LimitClayEffect) {
+double monica::soilOrganicFoClayOnDecompostion(SoilOrganic* so,
+                                               double d_SoilClayContent,
+                                               double d_LimitClayEffect) {
   double fo_ClayOnDecompostion = 0.0;
 
   if (d_SoilClayContent >= 0.0 && d_SoilClayContent <= d_LimitClayEffect) {
@@ -1472,7 +1474,7 @@ double SoilOrganic::fo_ClayOnDecompostion(double d_SoilClayContent, double d_Lim
   } else if (d_SoilClayContent > d_LimitClayEffect && d_SoilClayContent <= 1.0) {
     fo_ClayOnDecompostion = 1.0 - 2.0 * d_LimitClayEffect;
   } else {
-    vo_ErrorMessage = "irregular clay content";
+    so->vo_ErrorMessage = "irregular clay content";
   }
 
   //cout << "clayOnDecomposition: " << fo_ClayOnDecompostion << endl;
@@ -1505,7 +1507,7 @@ double monica::soilOrganicFoTempOnDecompostionKaiteew(SoilOrganic* so,
   return tempOnDecomposition;
 }
 
-double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature) {
+double monica::soilOrganicFoTempOnDecompostion(SoilOrganic* so, double d_SoilTemperature) {
   double fo_TempOnDecompostion = 0.0;
 
   if (d_SoilTemperature <= 0.0 && d_SoilTemperature > -40.0) {
@@ -1521,7 +1523,7 @@ double SoilOrganic::fo_TempOnDecompostion(double d_SoilTemperature) {
 
     fo_TempOnDecompostion = exp(0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature));
   } else {
-    vo_ErrorMessage = "irregular soil temperature";
+    so->vo_ErrorMessage = "irregular soil temperature";
   }
 
   //cout << "tempOnDecomposition: " << fo_TempOnDecompostion << endl;
@@ -1555,7 +1557,7 @@ double monica::soilOrganicFoMoistOnDecompostionKaiteew(SoilOrganic* so,
  * @param d_SoilMoisture_pF
  * @return
  */
-double SoilOrganic::fo_MoistOnDecompostion(double d_SoilMoisture_pF) {
+double monica::soilOrganicFoMoistOnDecompostion(SoilOrganic* so, double d_SoilMoisture_pF) {
   double fo_MoistOnDecompostion = 0.0;
 
   if (fabs(d_SoilMoisture_pF) <= 1.0E-7) {
@@ -1579,7 +1581,7 @@ double SoilOrganic::fo_MoistOnDecompostion(double d_SoilMoisture_pF) {
     fo_MoistOnDecompostion = 0.0;
 
   } else {
-    vo_ErrorMessage = "irregular soil water content";
+    so->vo_ErrorMessage = "irregular soil water content";
   }
 
   //cout << "moistOnDecomposition: " << fo_MoistOnDecompostion << endl;
