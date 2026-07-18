@@ -738,7 +738,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "SnowD", "mm", "Snow depth"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_SnowDepth(), 1);
+              return round(monica.soilMoisture().snowComponent->getVm_SnowDepth(), 1);
             });
 
       build({id++, "FrostD", "m", "Frost front depth in soil"},

@@ -43,21 +43,7 @@ struct CropModule;
   * <img src="../images/boden_wasser_schema.png">
   */
 struct SoilMoisture {
-  void step(double vs_DepthGroundwaterTable,
-            // Wetter Variablen
-            double vw_Precipitation,
-            double vw_MaxAirTemperature,
-            double vw_MinAirTemperature,
-            double vw_RelativeHumidity,
-            double vw_MeanAirTemperature,
-            double vw_WindSpeed,
-            double vw_WindSpeedHeight,
-            double vw_NetRadiation,
-            int vs_JulianDay,
-            double vw_ReferenceEvapotranspiration);
-
   //void fm_SoilMoistureUpdate();
-  double get_SnowDepth() const;
 
   // Getter
   double get_SoilMoisture(int layer) const;
@@ -104,9 +90,6 @@ struct SoilMoisture {
   double get_EReducer_1(int i_Layer,
                         double vm_PercentageSoilCoverage,
                         double vm_PotentialEvapotranspiration);
-
-  void putCrop(monica::CropModule* cm) { cropModule = cm; }
-  void removeCrop() { cropModule = nullptr; }
 
   void fm_Infiltration(double vm_WaterToInfiltrate);
 
@@ -268,9 +251,6 @@ void soilMoistureStep(SoilMoisture* sm,
                       double netRadiation,
                       int julianDay,
                       double referenceEvapotranspiration);
-void soilMoisturePutCrop(SoilMoisture* sm, CropModule* cm);
-void soilMoistureRemoveCrop(SoilMoisture* sm);
-double soilMoistureGetSnowDepth(const SoilMoisture* sm);
 double soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm);
 std::pair<double, double> soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp);
 } // namespace monica

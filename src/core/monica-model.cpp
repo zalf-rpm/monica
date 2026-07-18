@@ -112,7 +112,7 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
 
   if (_soilMoisture) {
     soilMoistureDeserialize(_soilMoisture.get(), reader.getSoilMoisture());
-    soilMoisturePutCrop(_soilMoisture.get(), _currentCropModule.get());
+    _soilMoisture->cropModule = _currentCropModule.get();
   } else {
     _soilMoisture = makeSoilMoisture(*this, reader.getSoilMoisture(), _currentCropModule.get());
   }
@@ -300,7 +300,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
 
     soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
-    soilMoisturePutCrop(_soilMoisture.get(), _currentCropModule.get());
+    _soilMoisture->cropModule = _currentCropModule.get();
     _soilOrganic->cropModule = _currentCropModule.get();
 
     if (_simPs.p_UseNMinMineralFertilisingMethod
@@ -356,7 +356,7 @@ void MonicaModel::seedCrop(Crop* crop) {
 
     soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
-    soilMoisturePutCrop(_soilMoisture.get(), _currentCropModule.get());
+    _soilMoisture->cropModule = _currentCropModule.get();
     _soilOrganic->cropModule = _currentCropModule.get();
 
     //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
@@ -612,7 +612,7 @@ void MonicaModel::dailyReset() {
   if (_clearCropUponNextDay) {
     soilTransportRemoveCrop(_soilTransport.get());
     soilColumnRemoveCrop(_soilColumn.get());
-    soilMoistureRemoveCrop(_soilMoisture.get());
+    _soilMoisture->cropModule = nullptr;
     _soilOrganic->cropModule = nullptr;
     _currentCropModule = kj::Own<CropModule>();
 

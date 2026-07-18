@@ -112,109 +112,109 @@ void monica::soilMoistureInitializeFromParams(SoilMoisture* sm) {
  * @param vw_WindSpeedHeight Height for the measurement of the wind speed
  * @param vw_GlobalRadiation Global radiation
  */
-void SoilMoisture::step(double vs_GroundwaterDepth,
-                        double vw_Precipitation,
-                        double vw_MaxAirTemperature,
-                        double vw_MinAirTemperature,
-                        double vw_RelativeHumidity,
-                        double vw_MeanAirTemperature,
-                        double vw_WindSpeed,
-                        double vw_WindSpeedHeight,
-                        double vw_GlobalRadiation,
-                        int vs_JulianDay,
-                        double vw_ReferenceEvapotranspiration) {
-  for (int i = 0; i < numberOfSoilLayers; i++) {
+void monica::soilMoistureStep(SoilMoisture* sm,
+                              double vs_GroundwaterDepth,
+                              double vw_Precipitation,
+                              double vw_MaxAirTemperature,
+                              double vw_MinAirTemperature,
+                              double vw_RelativeHumidity,
+                              double vw_MeanAirTemperature,
+                              double vw_WindSpeed,
+                              double vw_WindSpeedHeight,
+                              double vw_GlobalRadiation,
+                              int vs_JulianDay,
+                              double vw_ReferenceEvapotranspiration) {
+  for (int i = 0; i < sm->numberOfSoilLayers; i++) {
     // initialization with moisture values stored in the layer
-    vm_SoilMoisture[i] = soilColumn[i].vs_SoilMoisture_m3;
-    vm_WaterFlux[i] = 0.0;
-    vm_FieldCapacity[i] = soilColumn[i]._sps.vs_FieldCapacity;
-    vm_SoilPoreVolume[i] = soilColumn[i]._sps.vs_Saturation;
-    vm_PermanentWiltingPoint[i] = soilColumn[i]._sps.vs_PermanentWiltingPoint;
-    vm_LayerThickness[i] = soilColumn[i].vs_LayerThickness;
-    vm_Lambda[i] = soilColumn[i].vs_Lambda();
+    sm->vm_SoilMoisture[i] = sm->soilColumn[i].vs_SoilMoisture_m3;
+    sm->vm_WaterFlux[i] = 0.0;
+    sm->vm_FieldCapacity[i] = sm->soilColumn[i]._sps.vs_FieldCapacity;
+    sm->vm_SoilPoreVolume[i] = sm->soilColumn[i]._sps.vs_Saturation;
+    sm->vm_PermanentWiltingPoint[i] = sm->soilColumn[i]._sps.vs_PermanentWiltingPoint;
+    sm->vm_LayerThickness[i] = sm->soilColumn[i].vs_LayerThickness;
+    sm->vm_Lambda[i] = sm->soilColumn[i].vs_Lambda();
   }
 
-  vm_SoilMoisture[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_SoilMoisture_m3;
-  vm_WaterFlux[numberOfMoistureLayers - 1] = 0.0;
-  vm_FieldCapacity[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2]._sps.vs_FieldCapacity;
-  vm_SoilPoreVolume[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2]._sps.vs_Saturation;
-  vm_LayerThickness[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_LayerThickness;
-  vm_Lambda[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_Lambda();
+  sm->vm_SoilMoisture[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_SoilMoisture_m3;
+  sm->vm_WaterFlux[sm->numberOfMoistureLayers - 1] = 0.0;
+  sm->vm_FieldCapacity[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2]._sps.vs_FieldCapacity;
+  sm->vm_SoilPoreVolume[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2]._sps.vs_Saturation;
+  sm->vm_LayerThickness[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_LayerThickness;
+  sm->vm_Lambda[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_Lambda();
 
-  vm_SurfaceWaterStorage = soilColumn.vs_SurfaceWaterStorage;
+  sm->vm_SurfaceWaterStorage = sm->soilColumn.vs_SurfaceWaterStorage;
 
   bool vc_CropPlanted = false;
   double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
 
-  if (monica.cropGrowth()) {
+  if (sm->monica.cropGrowth()) {
     vc_CropPlanted = true;
-    vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
-    vc_KcFactor = monica.cropGrowth()->get_KcFactor();
-    vc_CropHeight = monica.cropGrowth()->get_CropHeight();
-    vc_DevelopmentalStage = (int)monica.cropGrowth()->get_DevelopmentalStage();
+    sm->vc_PercentageSoilCoverage = sm->monica.cropGrowth()->get_SoilCoverage();
+    sm->vc_KcFactor = sm->monica.cropGrowth()->get_KcFactor();
+    vc_CropHeight = sm->monica.cropGrowth()->get_CropHeight();
+    vc_DevelopmentalStage = (int)sm->monica.cropGrowth()->get_DevelopmentalStage();
     if (vc_DevelopmentalStage > 0) {
-      vc_NetPrecipitation = monica.cropGrowth()->get_NetPrecipitation();
+      sm->vc_NetPrecipitation = sm->monica.cropGrowth()->get_NetPrecipitation();
     } else {
-      vc_NetPrecipitation = vw_Precipitation;
+      sm->vc_NetPrecipitation = vw_Precipitation;
     }
   } else {
     vc_CropPlanted = false;
-    vc_KcFactor = _params.pm_KcFactor;
-    vc_NetPrecipitation = vw_Precipitation;
-    vc_PercentageSoilCoverage = 0.0;
+    sm->vc_KcFactor = sm->_params.pm_KcFactor;
+    sm->vc_NetPrecipitation = vw_Precipitation;
+    sm->vc_PercentageSoilCoverage = 0.0;
   }
 
   // Recalculates current depth of groundwater table
-  vm_GroundwaterTableLayer = numberOfSoilLayers + 2;
-  int i = int(numberOfSoilLayers - 1);
-  while (i >= 0 && int(vm_SoilMoisture[i] * 10000) == int(vm_SoilPoreVolume[i] * 10000)) vm_GroundwaterTableLayer = i--;
+  sm->vm_GroundwaterTableLayer = sm->numberOfSoilLayers + 2;
+  int i = int(sm->numberOfSoilLayers - 1);
+  while (i >= 0 && int(sm->vm_SoilMoisture[i] * 10000) == int(sm->vm_SoilPoreVolume[i] * 10000)) sm->vm_GroundwaterTableLayer = i--;
 
-  auto oscillGroundWaterLayer = size_t(vs_GroundwaterDepth / soilColumn[0].vs_LayerThickness);
-  if ((vm_GroundwaterTableLayer > oscillGroundWaterLayer && vm_GroundwaterTableLayer < numberOfSoilLayers + 2)
-      || vm_GroundwaterTableLayer >= numberOfSoilLayers + 2) {
-    vm_GroundwaterTableLayer = oscillGroundWaterLayer;
+  auto oscillGroundWaterLayer = size_t(vs_GroundwaterDepth / sm->soilColumn[0].vs_LayerThickness);
+  if ((sm->vm_GroundwaterTableLayer > oscillGroundWaterLayer && sm->vm_GroundwaterTableLayer < sm->numberOfSoilLayers + 2)
+      || sm->vm_GroundwaterTableLayer >= sm->numberOfSoilLayers + 2) {
+    sm->vm_GroundwaterTableLayer = oscillGroundWaterLayer;
   }
 
-  soilColumn.vm_GroundwaterTableLayer = vm_GroundwaterTableLayer;
+  sm->soilColumn.vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
 
   // calculates snow layer water storage and release
-  snowComponent->calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
-  double vm_WaterToInfiltrate = snowComponent->getWaterToInfiltrate();
+  sm->snowComponent->calcSnowLayer(vw_MeanAirTemperature, sm->vc_NetPrecipitation);
+  double vm_WaterToInfiltrate = sm->snowComponent->getWaterToInfiltrate();
 
   // Calculates frost and thaw depth and switches lambda
-  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getVm_SnowDepth());
+  sm->frostComponent->calcSoilFrost(vw_MeanAirTemperature, sm->snowComponent->getVm_SnowDepth());
 
   // calculates infiltration of water from surface
-  fm_Infiltration(vm_WaterToInfiltrate);
+  sm->fm_Infiltration(vm_WaterToInfiltrate);
 
   if (0.0 < vs_GroundwaterDepth && vs_GroundwaterDepth <= 10.0) {
-    fm_PercolationWithGroundwater(oscillGroundWaterLayer);
-    fm_GroundwaterReplenishment();
+    sm->fm_PercolationWithGroundwater(oscillGroundWaterLayer);
+    sm->fm_GroundwaterReplenishment();
   } else {
-    fm_PercolationWithoutGroundwater();
-    fm_BackwaterReplenishment();
+    sm->fm_PercolationWithoutGroundwater();
+    sm->fm_BackwaterReplenishment();
   }
 
   // Cache gross precipitation for Dual Kc fw logic (accessible in fm_Evapotranspiration)
-  vm_GrossPrecipitation = vw_Precipitation;
+  sm->vm_GrossPrecipitation = vw_Precipitation;
 
-  fm_Evapotranspiration(vc_PercentageSoilCoverage, vc_KcFactor, siteParameters.vs_HeightNN, vw_MaxAirTemperature,
-                        vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature, vw_WindSpeed,
-                        vw_WindSpeedHeight,
-                        vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay, vs_Latitude,
-                        vw_ReferenceEvapotranspiration);
+  sm->fm_Evapotranspiration(sm->vc_PercentageSoilCoverage, sm->vc_KcFactor, sm->siteParameters.vs_HeightNN,
+                            vw_MaxAirTemperature, vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature,
+                            vw_WindSpeed, vw_WindSpeedHeight, vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay,
+                            sm->vs_Latitude, vw_ReferenceEvapotranspiration);
 
-  fm_CapillaryRise();
+  sm->fm_CapillaryRise();
 
-  for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-    soilColumn[i_Layer].vs_SoilMoisture_m3 = vm_SoilMoisture[i_Layer];
-    soilColumn[i_Layer].vs_SoilWaterFlux = vm_WaterFlux[i_Layer];
+  for (int i_Layer = 0; i_Layer < sm->numberOfSoilLayers; i_Layer++) {
+    sm->soilColumn[i_Layer].vs_SoilMoisture_m3 = sm->vm_SoilMoisture[i_Layer];
+    sm->soilColumn[i_Layer].vs_SoilWaterFlux = sm->vm_WaterFlux[i_Layer];
     //commented out because old calc_vs_SoilMoisture_pF algorithm is calcualted every time vs_SoilMoisture_pF is accessed
     //    soilColumn[i_Layer].calc_vs_SoilMoisture_pF();
   }
-  soilColumn.vs_SurfaceWaterStorage = vm_SurfaceWaterStorage;
-  soilColumn.vs_FluxAtLowerBoundary = vm_FluxAtLowerBoundary;
+  sm->soilColumn.vs_SurfaceWaterStorage = sm->vm_SurfaceWaterStorage;
+  sm->soilColumn.vs_FluxAtLowerBoundary = sm->vm_FluxAtLowerBoundary;
 }
 
 /*!
@@ -1362,14 +1362,6 @@ double SoilMoisture::get_KcFactor() const {
   return vc_KcFactor;
 }
 
-/**
- * @brief Returns snow depth [mm]
- * @return Value for snow depth
- */
-double SoilMoisture::get_SnowDepth() const {
-  return snowComponent->getVm_SnowDepth();
-}
-
 double SoilMoisture::getMaxSnowDepth() const {
   return snowComponent->getMaxSnowDepth();
 }
@@ -1553,25 +1545,6 @@ void monica::soilMoistureSerialize(const SoilMoisture* sm,
   if (sm->frostComponent) sm->frostComponent->serialize(builder.initFrostComponent());
 }
 
-void monica::soilMoistureStep(SoilMoisture* sm,
-                              double depthGroundwaterTable,
-                              double precipitation,
-                              double maxAirTemperature,
-                              double minAirTemperature,
-                              double relativeHumidity,
-                              double meanAirTemperature,
-                              double windSpeed,
-                              double windSpeedHeight,
-                              double netRadiation,
-                              int julianDay,
-                              double referenceEvapotranspiration) {
-  sm->step(depthGroundwaterTable, precipitation, maxAirTemperature, minAirTemperature, relativeHumidity,
-           meanAirTemperature, windSpeed, windSpeedHeight, netRadiation, julianDay, referenceEvapotranspiration);
-}
-
-void monica::soilMoisturePutCrop(SoilMoisture* sm, CropModule* cm) { sm->putCrop(cm); }
-void monica::soilMoistureRemoveCrop(SoilMoisture* sm) { sm->removeCrop(); }
-double monica::soilMoistureGetSnowDepth(const SoilMoisture* sm) { return sm->get_SnowDepth(); }
 double monica::soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm) { return sm->getTemperatureUnderSnow(); }
 std::pair<double, double> monica::soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm,
                                                                                         double avgAirTemp) {
