@@ -85,32 +85,6 @@ struct SoilMoisture {
 
   double getTemperatureUnderSnow() const;
 
-  void fm_Evapotranspiration(double vc_PercentageSoilCoverage,
-                             double vc_KcFactor,
-                             double vs_HeightNN,
-                             double vw_MaxAirTemperature,
-                             double vw_MinAirTemperature,
-                             double vw_RelativeHumidity,
-                             double vw_MeanAirTemperature,
-                             double vw_WindSpeed,
-                             double vw_WindSpeedHeight,
-                             double vw_NetRadiation,
-                             int vc_DevelopmentalStage,
-                             int vs_JulianDay,
-                             double vs_Latitude,
-                             double vw_ReferenceEvapotranspiration);
-
-  double ReferenceEvapotranspiration(double vs_HeightNN,
-                                     double vw_MaxAirTemperature,
-                                     double vw_MinAirTemperature,
-                                     double vw_RelativeHumidity,
-                                     double vw_MeanAirTemperature,
-                                     double vw_WindSpeed,
-                                     double vw_WindSpeedHeight,
-                                     double vw_NetRadiation,
-                                     int vs_JulianDay,
-                                     double vs_Latitude);
-
   double meanWaterContent(double depth_m) const;
   double meanWaterContent(int layer, int number_of_layers) const;
 
@@ -127,8 +101,6 @@ struct SoilMoisture {
   void set_irrigIsDripEvent(bool isDrip) { vm_irrigIsDripEvent = isDrip; }
 
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
-
-  double dual_kc_precomputation(double windSpeed, double tmin, double tmax);
 
 public:
   SoilColumn& soilColumn;
@@ -228,6 +200,33 @@ void soilMoistureFmPercolationWithGroundwater(SoilMoisture* sm, size_t oscillGro
 void soilMoistureFmGroundwaterReplenishment(SoilMoisture* sm);
 void soilMoistureFmPercolationWithoutGroundwater(SoilMoisture* sm);
 void soilMoistureFmBackwaterReplenishment(SoilMoisture* sm);
+double soilMoistureDualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, double tmax);
+void soilMoistureFmEvapotranspiration(SoilMoisture* sm,
+                                      double percentageSoilCoverage,
+                                      double kcFactor,
+                                      double heightNN,
+                                      double maxAirTemperature,
+                                      double minAirTemperature,
+                                      double relativeHumidity,
+                                      double meanAirTemperature,
+                                      double windSpeed,
+                                      double windSpeedHeight,
+                                      double globalRadiation,
+                                      int developmentalStage,
+                                      int julianDay,
+                                      double latitude,
+                                      double referenceEvapotranspiration);
+double soilMoistureReferenceEvapotranspiration(SoilMoisture* sm,
+                                               double heightNN,
+                                               double maxAirTemperature,
+                                               double minAirTemperature,
+                                               double relativeHumidity,
+                                               double meanAirTemperature,
+                                               double windSpeed,
+                                               double windSpeedHeight,
+                                               double globalRadiation,
+                                               int julianDay,
+                                               double latitude);
 double soilMoistureGetEReducer1(const SoilMoisture* sm,
                                 int layer,
                                 double percentageSoilCoverage,

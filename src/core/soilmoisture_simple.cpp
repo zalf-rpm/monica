@@ -200,10 +200,21 @@ void monica::soilMoistureStep(SoilMoisture* sm,
   // Cache gross precipitation for Dual Kc fw logic (accessible in fm_Evapotranspiration)
   sm->vm_GrossPrecipitation = vw_Precipitation;
 
-  sm->fm_Evapotranspiration(sm->vc_PercentageSoilCoverage, sm->vc_KcFactor, sm->siteParameters.vs_HeightNN,
-                            vw_MaxAirTemperature, vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature,
-                            vw_WindSpeed, vw_WindSpeedHeight, vw_GlobalRadiation, vc_DevelopmentalStage, vs_JulianDay,
-                            sm->vs_Latitude, vw_ReferenceEvapotranspiration);
+  soilMoistureFmEvapotranspiration(sm,
+                                   sm->vc_PercentageSoilCoverage,
+                                   sm->vc_KcFactor,
+                                   sm->siteParameters.vs_HeightNN,
+                                   vw_MaxAirTemperature,
+                                   vw_MinAirTemperature,
+                                   vw_RelativeHumidity,
+                                   vw_MeanAirTemperature,
+                                   vw_WindSpeed,
+                                   vw_WindSpeedHeight,
+                                   vw_GlobalRadiation,
+                                   vc_DevelopmentalStage,
+                                   vs_JulianDay,
+                                   sm->vs_Latitude,
+                                   vw_ReferenceEvapotranspiration);
 
   soilMoistureFmCapillaryRise(sm);
 
@@ -759,7 +770,21 @@ void monica::soilMoistureFmBackwaterReplenishment(SoilMoisture* sm) {
 }
 
 // FAO-56 Dual Kc pathway — precompute potential soil evaporation (E_pot)
-double SoilMoisture::dual_kc_precomputation(double windSpeed, double tmin, double tmax) {
+double monica::soilMoistureDualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, double tmax) {
+  auto& vm_ReferenceEvapotranspiration = sm->vm_ReferenceEvapotranspiration;
+  auto& cropModule = sm->cropModule;
+  auto& vm_FieldCapacity = sm->vm_FieldCapacity;
+  auto& vm_PermanentWiltingPoint = sm->vm_PermanentWiltingPoint;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& soilColumn = sm->soilColumn;
+  auto& vm_GrossPrecipitation = sm->vm_GrossPrecipitation;
+  auto& monica = sm->monica;
+  auto& vm_LastWettingWasRain = sm->vm_LastWettingWasRain;
+  auto& vm_irrigFwEvent = sm->vm_irrigFwEvent;
+  auto& vm_irrigIsDripEvent = sm->vm_irrigIsDripEvent;
+  auto& vc_PercentageSoilCoverage = sm->vc_PercentageSoilCoverage;
+  auto& vm_Ke = sm->vm_Ke;
+
   double E_pot_dualKc = 0.0; // [mm d-1] replaces (1-beta)*PET per layer
 
   // ET0 is already in vm_ReferenceEvapotranspiration [mm d-1]
@@ -908,12 +933,40 @@ double SoilMoisture::dual_kc_precomputation(double windSpeed, double tmin, doubl
  * @param vw_GlobalRadiation Global radiaton
  * @param vc_DevelopmentalStage
  */
-void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, double vc_KcFactor, double vs_HeightNN,
-                                         double vw_MaxAirTemperature, double vw_MinAirTemperature,
-                                         double vw_RelativeHumidity, double vw_MeanAirTemperature,
-                                         double vw_WindSpeed, double vw_WindSpeedHeight, double vw_GlobalRadiation,
-                                         int vc_DevelopmentalStage, int vs_JulianDay,
-                                         double vs_Latitude, double vw_ReferenceEvapotranspiration) {
+void monica::soilMoistureFmEvapotranspiration(SoilMoisture* sm,
+                                              double vc_PercentageSoilCoverage,
+                                              double vc_KcFactor,
+                                              double vs_HeightNN,
+                                              double vw_MaxAirTemperature,
+                                              double vw_MinAirTemperature,
+                                              double vw_RelativeHumidity,
+                                              double vw_MeanAirTemperature,
+                                              double vw_WindSpeed,
+                                              double vw_WindSpeedHeight,
+                                              double vw_GlobalRadiation,
+                                              int vc_DevelopmentalStage,
+                                              int vs_JulianDay,
+                                              double vs_Latitude,
+                                              double vw_ReferenceEvapotranspiration) {
+  auto& vm_EvaporatedFromSurface = sm->vm_EvaporatedFromSurface;
+  auto& snowComponent = sm->snowComponent;
+  auto& _params = sm->_params;
+  auto& vm_XSACriticalSoilMoisture = sm->vm_XSACriticalSoilMoisture;
+  auto& monica = sm->monica;
+  auto& cropModule = sm->cropModule;
+  auto& vm_ReferenceEvapotranspiration = sm->vm_ReferenceEvapotranspiration;
+  auto& vm_SurfaceWaterStorage = sm->vm_SurfaceWaterStorage;
+  auto& vm_Ke = sm->vm_Ke;
+  auto& numberOfSoilLayers = sm->numberOfSoilLayers;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_Evaporation = sm->vm_Evaporation;
+  auto& vm_Transpiration = sm->vm_Transpiration;
+  auto& vm_Evapotranspiration = sm->vm_Evapotranspiration;
+  auto& vm_ActualTranspiration = sm->vm_ActualTranspiration;
+  auto& vm_ActualEvaporation = sm->vm_ActualEvaporation;
+  auto& vm_ActualEvapotranspiration = sm->vm_ActualEvapotranspiration;
+
   double vm_EReducer_1 = 0.0;
   double vm_EReducer_2 = 0.0;
   double vm_EReducer_3 = 0.0;
@@ -957,11 +1010,17 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
 
     // calculate reference evapotranspiration if not provided via climate files
     if (vw_ReferenceEvapotranspiration < 0.0) {
-      vm_ReferenceEvapotranspiration = ReferenceEvapotranspiration(vs_HeightNN, vw_MaxAirTemperature,
-                                                                   vw_MinAirTemperature, vw_RelativeHumidity,
-                                                                   vw_MeanAirTemperature, vw_WindSpeed,
-                                                                   vw_WindSpeedHeight,
-                                                                   vw_GlobalRadiation, vs_JulianDay, vs_Latitude);
+      vm_ReferenceEvapotranspiration = soilMoistureReferenceEvapotranspiration(sm,
+                                                                                vs_HeightNN,
+                                                                                vw_MaxAirTemperature,
+                                                                                vw_MinAirTemperature,
+                                                                                vw_RelativeHumidity,
+                                                                                vw_MeanAirTemperature,
+                                                                                vw_WindSpeed,
+                                                                                vw_WindSpeedHeight,
+                                                                                vw_GlobalRadiation,
+                                                                                vs_JulianDay,
+                                                                                vs_Latitude);
     } else {
       // use reference evapotranspiration from climate file
       vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
@@ -1014,7 +1073,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
                         && vc_DevelopmentalStage > 0
                         && cropModule != nullptr);
       if (useDualKc) {
-        E_pot_dualKc = dual_kc_precomputation(vw_WindSpeed, vw_MinAirTemperature, vw_MaxAirTemperature);
+        E_pot_dualKc = soilMoistureDualKcPrecomputation(sm, vw_WindSpeed, vw_MinAirTemperature, vw_MaxAirTemperature);
       } else {
         vm_Ke = 0.0;
       }
@@ -1023,7 +1082,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
       // -----------------------------------------------------------------------
 
       for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-        vm_EReducer_1 = soilMoistureGetEReducer1(this,
+        vm_EReducer_1 = soilMoistureGetEReducer1(sm,
                                                  i_Layer,
                                                  vc_PercentageSoilCoverage,
                                                  vm_PotentialEvapotranspiration);
@@ -1135,11 +1194,21 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
  * @param vw_GlobalRadiation
  * @return
  */
-double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_MaxAirTemperature,
-                                                 double vw_MinAirTemperature, double vw_RelativeHumidity,
-                                                 double vw_MeanAirTemperature, double vw_WindSpeed,
-                                                 double vw_WindSpeedHeight, double vw_GlobalRadiation, int vs_JulianDay,
-                                                 double vs_Latitude) {
+double monica::soilMoistureReferenceEvapotranspiration(SoilMoisture* sm,
+                                                       double vs_HeightNN,
+                                                       double vw_MaxAirTemperature,
+                                                       double vw_MinAirTemperature,
+                                                       double vw_RelativeHumidity,
+                                                       double vw_MeanAirTemperature,
+                                                       double vw_WindSpeed,
+                                                       double vw_WindSpeedHeight,
+                                                       double vw_GlobalRadiation,
+                                                       int vs_JulianDay,
+                                                       double vs_Latitude) {
+  auto& cropPs = sm->cropPs;
+  auto& vc_StomataResistance = sm->vc_StomataResistance;
+  auto& vw_NetRadiation = sm->vw_NetRadiation;
+
   double vc_Declination;
   double vc_DeclinationSinus; // old SINLD
   double vc_DeclinationCosinus; // old COSLD
