@@ -43,13 +43,6 @@ struct CropModule;
   * <img src="../images/boden_wasser_schema.png">
   */
 struct SoilMoisture {
-  SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
-
-  SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
-               CropModule* cropModule = nullptr);
-  void deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
-  void serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const;
-
   void step(double vs_DepthGroundwaterTable,
             // Wetter Variablen
             double vw_Precipitation,
@@ -259,6 +252,7 @@ kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica, const SoilMoistureMo
 kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica,
                                        mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
                                        CropModule* cropModule = nullptr);
+void soilMoistureInitializeFromParams(SoilMoisture* sm);
 void soilMoistureDeserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
 void soilMoistureSerialize(const SoilMoisture* sm,
                            mas::schema::model::monica::SoilMoistureModuleState::Builder builder);

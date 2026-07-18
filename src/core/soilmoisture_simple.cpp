@@ -34,61 +34,55 @@ using namespace std;
 using namespace monica;
 using namespace Tools;
 
-/*!
- * @brief Constructor
- * @param sc Soil Column the moisture is calculated
- * @param stps Site parameters
- * @param mm Monica model
- */
-SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& smPs)
-: soilColumn(mm.soilColumnNC())
-, siteParameters(mm.siteParameters())
-, monica(mm)
-, _params(smPs)
-, envPs(mm.environmentParameters())
-, cropPs(mm.cropParameters())
-, numberOfMoistureLayers(soilColumn.size() + 1)
-, numberOfSoilLayers(soilColumn.size()) //extern
-, vm_AvailableWater(numberOfMoistureLayers, 0.0) // Soil available water in [mm]
-, pm_CapillaryRiseRate(numberOfMoistureLayers, 0.0)
-, vm_CapillaryWater(numberOfMoistureLayers, 0.0) // soil capillary water in [mm]
-, vm_CapillaryWater70(numberOfMoistureLayers, 0.0) // 70% of soil capillary water in [mm]
-, vm_Evaporation(numberOfMoistureLayers, 0.0) //intern
-, vm_Evapotranspiration(numberOfMoistureLayers, 0.0) //intern
-, vm_FieldCapacity(numberOfMoistureLayers, 0.0)
-, vm_GravitationalWater(numberOfMoistureLayers, 0.0) // Gravitational water in [mm d-1] //intern
-//, vm_GroundwaterDistance(vm_NumberOfLayers, 0), // map (joachim)
-, vm_HeatConductivity(numberOfMoistureLayers, 0)
-, vm_Lambda(numberOfMoistureLayers, 0.0)
-, vs_Latitude(siteParameters.vs_Latitude)
-, vm_LayerThickness(numberOfMoistureLayers, 0.01)
-, vm_PermanentWiltingPoint(numberOfMoistureLayers, 0.0)
-, vm_PercolationRate(numberOfMoistureLayers, 0.0) // Percolation rate in [mm d-1] //intern
-, vm_ResidualEvapotranspiration(numberOfMoistureLayers, 0.0)
-, vm_SoilMoisture(numberOfMoistureLayers, 0.20) //result
-, vm_SoilPoreVolume(numberOfMoistureLayers, 0.0)
-, vm_Transpiration(numberOfMoistureLayers, 0.0) //intern
-, vm_WaterFlux(numberOfMoistureLayers, 0.0)
-, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
-, frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
+void monica::soilMoistureInitializeFromParams(SoilMoisture* sm) {
+  auto& soilColumn = sm->soilColumn;
+  auto& smPs = sm->_params;
+  auto& envPs = sm->envPs;
+  auto& mm = sm->monica;
   debug() << "Constructor: SoilMoisture" << endl;
 
-  vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
-  pt_TimeStep = envPs.p_timeStep;
-  vm_SurfaceRoughness = smPs.pm_SurfaceRoughness;
-  vm_GroundwaterDischarge = smPs.pm_GroundwaterDischarge;
-  pm_MaxPercolationRate = smPs.pm_MaxPercolationRate;
-  pm_LeachingDepth = envPs.p_LeachingDepth;
+  sm->numberOfMoistureLayers = soilColumn.size() + 1;
+  sm->numberOfSoilLayers = soilColumn.size();
+
+  sm->vm_AvailableWater.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->pm_CapillaryRiseRate.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_CapillaryWater.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_CapillaryWater70.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_Evaporation.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_Evapotranspiration.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_FieldCapacity.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_GravitationalWater.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_HeatConductivity.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_Lambda.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_LayerThickness.assign(sm->numberOfMoistureLayers, 0.01);
+  sm->vm_PermanentWiltingPoint.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_PercolationRate.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_ResidualEvapotranspiration.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_SoilMoisture.assign(sm->numberOfMoistureLayers, 0.20);
+  sm->vm_SoilPoreVolume.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_Transpiration.assign(sm->numberOfMoistureLayers, 0.0);
+  sm->vm_WaterFlux.assign(sm->numberOfMoistureLayers, 0.0);
+
+  sm->vs_Latitude = sm->siteParameters.vs_Latitude;
+  sm->vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
+  sm->pt_TimeStep = envPs.p_timeStep;
+  sm->vm_SurfaceRoughness = smPs.pm_SurfaceRoughness;
+  sm->vm_GroundwaterDischarge = smPs.pm_GroundwaterDischarge;
+  sm->pm_MaxPercolationRate = smPs.pm_MaxPercolationRate;
+  sm->pm_LeachingDepth = envPs.p_LeachingDepth;
 
   //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
-  pm_LayerThickness = mm.simulationParameters().p_LayerThickness;
+  sm->pm_LayerThickness = mm.simulationParameters().p_LayerThickness;
 
-  pm_LeachingDepthLayer = int(std::floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
+  sm->pm_LeachingDepthLayer = int(std::floor(0.5 + (sm->pm_LeachingDepth / sm->pm_LayerThickness))) - 1;
 
-  for (int i = 0; i < numberOfMoistureLayers; i++) {
-    vm_SaturatedHydraulicConductivity.resize(numberOfMoistureLayers, smPs.pm_SaturatedHydraulicConductivity);
+  for (int i = 0; i < sm->numberOfMoistureLayers; i++) {
+    sm->vm_SaturatedHydraulicConductivity.resize(sm->numberOfMoistureLayers, smPs.pm_SaturatedHydraulicConductivity);
     // original [8640 mm d-1]
   }
+
+  sm->snowComponent = kj::heap<SnowComponent>(soilColumn, smPs);
+  sm->frostComponent = kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep);
 
   //  double vm_GroundwaterDepth = 0.0;
   //  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
@@ -105,144 +99,6 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
   //  for (int i_Layer = vm_NumberOfLayers - 1; i_Layer >= vm_GroundwaterTable; i_Layer--) {
   //    soilColumn[i_Layer].set_Vs_SoilMoisture_m3(soilColumn[i_Layer].get_Saturation());
   //  }
-}
-
-SoilMoisture::SoilMoisture(MonicaModel& mm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
-                           CropModule* cropModule)
-: soilColumn(mm.soilColumnNC())
-, siteParameters(mm.siteParameters())
-, monica(mm)
-, envPs(mm.environmentParameters())
-, cropPs(mm.cropParameters())
-, cropModule(cropModule) {
-  deserialize(reader);
-}
-
-void SoilMoisture::deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
-  _params.deserialize(reader.getModuleParams());
-  numberOfMoistureLayers = reader.getNumberOfLayers();
-  numberOfSoilLayers = reader.getVsNumberOfLayers();
-  vm_ActualEvaporation = reader.getActualEvaporation();
-  vm_ActualEvapotranspiration = reader.getActualEvapotranspiration();
-  vm_ActualTranspiration = reader.getActualTranspiration();
-  setFromCapnpList(vm_AvailableWater, reader.getAvailableWater());
-  vm_CapillaryRise = reader.getCapillaryRise();
-  setFromCapnpList(pm_CapillaryRiseRate, reader.getCapillaryRiseRate());
-  setFromCapnpList(vm_CapillaryWater, reader.getCapillaryWater());
-  setFromCapnpList(vm_CapillaryWater70, reader.getCapillaryWater70());
-  setFromCapnpList(vm_Evaporation, reader.getEvaporation());
-  setFromCapnpList(vm_Evapotranspiration, reader.getEvapotranspiration());
-  setFromCapnpList(vm_FieldCapacity, reader.getFieldCapacity());
-  vm_FluxAtLowerBoundary = reader.getFluxAtLowerBoundary();
-  setFromCapnpList(vm_GravitationalWater, reader.getGravitationalWater());
-  vm_GrossPrecipitation = reader.getGrossPrecipitation();
-  vm_GroundwaterAdded = reader.getGroundwaterAdded();
-  vm_GroundwaterDischarge = reader.getGroundwaterDischarge();
-  vm_GroundwaterTableLayer = reader.getGroundwaterTable();
-  setFromCapnpList(vm_HeatConductivity, reader.getHeatConductivity());
-  vm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
-  vm_Infiltration = reader.getInfiltration();
-  vm_Interception = reader.getInterception();
-  vc_KcFactor = reader.getVcKcFactor();
-  setFromCapnpList(vm_Lambda, reader.getLambda());
-  vs_Latitude = reader.getVsLatitude();
-  setFromCapnpList(vm_LayerThickness, reader.getLayerThickness());
-  pm_LayerThickness = reader.getPmLayerThickness();
-  pm_LeachingDepth = reader.getPmLeachingDepth();
-  pm_LeachingDepthLayer = reader.getPmLeachingDepthLayer();
-  pm_MaxPercolationRate = reader.getPmMaxPercolationRate();
-  vc_NetPrecipitation = reader.getVcNetPrecipitation();
-  vw_NetRadiation = reader.getVwNetRadiation();
-  setFromCapnpList(vm_PermanentWiltingPoint, reader.getPermanentWiltingPoint());
-  vc_PercentageSoilCoverage = reader.getVcPercentageSoilCoverage();
-  setFromCapnpList(vm_PercolationRate, reader.getPercolationRate());
-  vm_ReferenceEvapotranspiration = reader.getReferenceEvapotranspiration();
-  setFromCapnpList(vm_ResidualEvapotranspiration, reader.getResidualEvapotranspiration());
-  setFromCapnpList(vm_SaturatedHydraulicConductivity, reader.getSaturatedHydraulicConductivity());
-  setFromCapnpList(vm_SoilMoisture, reader.getSoilMoisture());
-  vm_SoilMoisture_crit = reader.getSoilMoisturecrit();
-  vm_SoilMoistureDeficit = reader.getSoilMoistureDeficit();
-  setFromCapnpList(vm_SoilPoreVolume, reader.getSoilPoreVolume());
-  vc_StomataResistance = reader.getVcStomataResistance();
-  vm_SurfaceRoughness = reader.getSurfaceRoughness();
-  vm_SurfaceRunOff = reader.getSurfaceRunOff();
-  vm_SumSurfaceRunOff = reader.getSumSurfaceRunOff();
-  vm_SurfaceWaterStorage = reader.getSurfaceWaterStorage();
-  pt_TimeStep = reader.getPtTimeStep();
-  vm_TotalWaterRemoval = reader.getTotalWaterRemoval();
-  setFromCapnpList(vm_Transpiration, reader.getTranspiration());
-  setFromCapnpList(vm_WaterFlux, reader.getWaterFlux());
-  vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
-  if (reader.hasSnowComponent()) {
-    snowComponent = nullptr;
-    snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
-  }
-  if (reader.hasFrostComponent()) {
-    frostComponent = nullptr;
-    frostComponent = kj::heap<FrostComponent>(soilColumn, reader.getFrostComponent());
-  }
-}
-
-void SoilMoisture::serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const {
-  _params.serialize(builder.initModuleParams());
-  builder.setNumberOfLayers((uint16_t)numberOfMoistureLayers);
-  builder.setVsNumberOfLayers((uint16_t)numberOfSoilLayers);
-  builder.setActualEvaporation(vm_ActualEvaporation);
-  builder.setActualEvapotranspiration(vm_ActualEvapotranspiration);
-  builder.setActualTranspiration(vm_ActualTranspiration);
-  setCapnpList(vm_AvailableWater, builder.initAvailableWater((capnp::uint)vm_AvailableWater.size()));
-  builder.setCapillaryRise(vm_CapillaryRise);
-  setCapnpList(pm_CapillaryRiseRate, builder.initCapillaryRiseRate((capnp::uint)pm_CapillaryRiseRate.size()));
-  setCapnpList(vm_CapillaryWater, builder.initCapillaryWater((capnp::uint)vm_CapillaryWater.size()));
-  setCapnpList(vm_CapillaryWater70, builder.initCapillaryWater70((capnp::uint)vm_CapillaryWater70.size()));
-  setCapnpList(vm_Evaporation, builder.initEvaporation((capnp::uint)vm_Evaporation.size()));
-  setCapnpList(vm_Evapotranspiration, builder.initEvapotranspiration((capnp::uint)vm_Evapotranspiration.size()));
-  setCapnpList(vm_FieldCapacity, builder.initFieldCapacity((capnp::uint)vm_FieldCapacity.size()));
-  builder.setFluxAtLowerBoundary(vm_FluxAtLowerBoundary);
-  setCapnpList(vm_GravitationalWater, builder.initGravitationalWater((capnp::uint)vm_GravitationalWater.size()));
-  builder.setGrossPrecipitation(vm_GrossPrecipitation);
-  builder.setGroundwaterAdded(vm_GroundwaterAdded);
-  builder.setGroundwaterDischarge(vm_GroundwaterDischarge);
-  builder.setGroundwaterTable((uint16_t)vm_GroundwaterTableLayer);
-  setCapnpList(vm_HeatConductivity, builder.initHeatConductivity((capnp::uint)vm_HeatConductivity.size()));
-  builder.setHydraulicConductivityRedux(vm_HydraulicConductivityRedux);
-  builder.setInfiltration(vm_Infiltration);
-  builder.setInterception(vm_Interception);
-  builder.setVcKcFactor(vc_KcFactor);
-  setCapnpList(vm_Lambda, builder.initLambda((capnp::uint)vm_Lambda.size()));
-  builder.setVsLatitude(vs_Latitude);
-  setCapnpList(vm_LayerThickness, builder.initLayerThickness((capnp::uint)vm_LayerThickness.size()));
-  builder.setPmLayerThickness(pm_LayerThickness);
-  builder.setPmLeachingDepth(pm_LeachingDepth);
-  builder.setPmLeachingDepthLayer(pm_LeachingDepthLayer);
-  builder.setPmMaxPercolationRate(pm_MaxPercolationRate);
-  builder.setVcNetPrecipitation(vc_NetPrecipitation);
-  builder.setVwNetRadiation(vw_NetRadiation);
-  setCapnpList(vm_PermanentWiltingPoint,
-               builder.initPermanentWiltingPoint((capnp::uint)vm_PermanentWiltingPoint.size()));
-  builder.setVcPercentageSoilCoverage(vc_PercentageSoilCoverage);
-  setCapnpList(vm_PercolationRate, builder.initPercolationRate((capnp::uint)vm_PercolationRate.size()));
-  builder.setReferenceEvapotranspiration(vm_ReferenceEvapotranspiration);
-  setCapnpList(vm_ResidualEvapotranspiration,
-               builder.initResidualEvapotranspiration((capnp::uint)vm_ResidualEvapotranspiration.size()));
-  setCapnpList(vm_SaturatedHydraulicConductivity,
-               builder.initSaturatedHydraulicConductivity((capnp::uint)vm_SaturatedHydraulicConductivity.size()));
-  setCapnpList(vm_SoilMoisture, builder.initSoilMoisture((capnp::uint)vm_SoilMoisture.size()));
-  builder.setSoilMoisturecrit(vm_SoilMoisture_crit);
-  builder.setSoilMoistureDeficit(vm_SoilMoistureDeficit);
-  setCapnpList(vm_SoilPoreVolume, builder.initSoilPoreVolume((capnp::uint)vm_SoilPoreVolume.size()));
-  builder.setVcStomataResistance(vc_StomataResistance);
-  builder.setSurfaceRoughness(vm_SurfaceRoughness);
-  builder.setSurfaceRunOff(vm_SurfaceRunOff);
-  builder.setSumSurfaceRunOff(vm_SumSurfaceRunOff);
-  builder.setSurfaceWaterStorage(vm_SurfaceWaterStorage);
-  builder.setPtTimeStep(pt_TimeStep);
-  builder.setTotalWaterRemoval(vm_TotalWaterRemoval);
-  setCapnpList(vm_Transpiration, builder.initTranspiration((capnp::uint)vm_Transpiration.size()));
-  setCapnpList(vm_WaterFlux, builder.initWaterFlux((capnp::uint)vm_WaterFlux.size()));
-  builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
-  if (snowComponent) snowComponent->serialize(builder.initSnowComponent());
-  if (frostComponent) frostComponent->serialize(builder.initFrostComponent());
 }
 
 /*!
@@ -1540,23 +1396,161 @@ std::pair<double, double> SoilMoisture::getSnowDepthAndCalcTemperatureUnderSnow(
 }
 
 kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
-  return kj::heap<SoilMoisture>(monica, params);
+  auto sm = kj::heap<SoilMoisture>(SoilMoisture{
+      0.0,
+      monica.soilColumnNC(),
+      monica.siteParameters(),
+      monica,
+      params,
+      monica.environmentParameters(),
+      monica.cropParameters()});
+  soilMoistureInitializeFromParams(sm.get());
+  return sm;
 }
 
 kj::Own<SoilMoisture> monica::makeSoilMoisture(
   MonicaModel& monica,
   mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
   CropModule* cropModule) {
-  return kj::heap<SoilMoisture>(monica, reader, cropModule);
+  auto sm = kj::heap<SoilMoisture>(SoilMoisture{
+      0.0,
+      monica.soilColumnNC(),
+      monica.siteParameters(),
+      monica,
+      {},
+      monica.environmentParameters(),
+      monica.cropParameters()});
+  sm->cropModule = cropModule;
+  soilMoistureDeserialize(sm.get(), reader);
+  return sm;
 }
 
 void monica::soilMoistureDeserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
-  sm->deserialize(reader);
+  sm->_params.deserialize(reader.getModuleParams());
+  sm->numberOfMoistureLayers = reader.getNumberOfLayers();
+  sm->numberOfSoilLayers = reader.getVsNumberOfLayers();
+  sm->vm_ActualEvaporation = reader.getActualEvaporation();
+  sm->vm_ActualEvapotranspiration = reader.getActualEvapotranspiration();
+  sm->vm_ActualTranspiration = reader.getActualTranspiration();
+  setFromCapnpList(sm->vm_AvailableWater, reader.getAvailableWater());
+  sm->vm_CapillaryRise = reader.getCapillaryRise();
+  setFromCapnpList(sm->pm_CapillaryRiseRate, reader.getCapillaryRiseRate());
+  setFromCapnpList(sm->vm_CapillaryWater, reader.getCapillaryWater());
+  setFromCapnpList(sm->vm_CapillaryWater70, reader.getCapillaryWater70());
+  setFromCapnpList(sm->vm_Evaporation, reader.getEvaporation());
+  setFromCapnpList(sm->vm_Evapotranspiration, reader.getEvapotranspiration());
+  setFromCapnpList(sm->vm_FieldCapacity, reader.getFieldCapacity());
+  sm->vm_FluxAtLowerBoundary = reader.getFluxAtLowerBoundary();
+  setFromCapnpList(sm->vm_GravitationalWater, reader.getGravitationalWater());
+  sm->vm_GrossPrecipitation = reader.getGrossPrecipitation();
+  sm->vm_GroundwaterAdded = reader.getGroundwaterAdded();
+  sm->vm_GroundwaterDischarge = reader.getGroundwaterDischarge();
+  sm->vm_GroundwaterTableLayer = reader.getGroundwaterTable();
+  setFromCapnpList(sm->vm_HeatConductivity, reader.getHeatConductivity());
+  sm->vm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
+  sm->vm_Infiltration = reader.getInfiltration();
+  sm->vm_Interception = reader.getInterception();
+  sm->vc_KcFactor = reader.getVcKcFactor();
+  setFromCapnpList(sm->vm_Lambda, reader.getLambda());
+  sm->vs_Latitude = reader.getVsLatitude();
+  setFromCapnpList(sm->vm_LayerThickness, reader.getLayerThickness());
+  sm->pm_LayerThickness = reader.getPmLayerThickness();
+  sm->pm_LeachingDepth = reader.getPmLeachingDepth();
+  sm->pm_LeachingDepthLayer = reader.getPmLeachingDepthLayer();
+  sm->pm_MaxPercolationRate = reader.getPmMaxPercolationRate();
+  sm->vc_NetPrecipitation = reader.getVcNetPrecipitation();
+  sm->vw_NetRadiation = reader.getVwNetRadiation();
+  setFromCapnpList(sm->vm_PermanentWiltingPoint, reader.getPermanentWiltingPoint());
+  sm->vc_PercentageSoilCoverage = reader.getVcPercentageSoilCoverage();
+  setFromCapnpList(sm->vm_PercolationRate, reader.getPercolationRate());
+  sm->vm_ReferenceEvapotranspiration = reader.getReferenceEvapotranspiration();
+  setFromCapnpList(sm->vm_ResidualEvapotranspiration, reader.getResidualEvapotranspiration());
+  setFromCapnpList(sm->vm_SaturatedHydraulicConductivity, reader.getSaturatedHydraulicConductivity());
+  setFromCapnpList(sm->vm_SoilMoisture, reader.getSoilMoisture());
+  sm->vm_SoilMoisture_crit = reader.getSoilMoisturecrit();
+  sm->vm_SoilMoistureDeficit = reader.getSoilMoistureDeficit();
+  setFromCapnpList(sm->vm_SoilPoreVolume, reader.getSoilPoreVolume());
+  sm->vc_StomataResistance = reader.getVcStomataResistance();
+  sm->vm_SurfaceRoughness = reader.getSurfaceRoughness();
+  sm->vm_SurfaceRunOff = reader.getSurfaceRunOff();
+  sm->vm_SumSurfaceRunOff = reader.getSumSurfaceRunOff();
+  sm->vm_SurfaceWaterStorage = reader.getSurfaceWaterStorage();
+  sm->pt_TimeStep = reader.getPtTimeStep();
+  sm->vm_TotalWaterRemoval = reader.getTotalWaterRemoval();
+  setFromCapnpList(sm->vm_Transpiration, reader.getTranspiration());
+  setFromCapnpList(sm->vm_WaterFlux, reader.getWaterFlux());
+  sm->vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
+  if (reader.hasSnowComponent()) {
+    sm->snowComponent = nullptr;
+    sm->snowComponent = kj::heap<SnowComponent>(sm->soilColumn, reader.getSnowComponent());
+  }
+  if (reader.hasFrostComponent()) {
+    sm->frostComponent = nullptr;
+    sm->frostComponent = kj::heap<FrostComponent>(sm->soilColumn, reader.getFrostComponent());
+  }
 }
 
 void monica::soilMoistureSerialize(const SoilMoisture* sm,
                                    mas::schema::model::monica::SoilMoistureModuleState::Builder builder) {
-  sm->serialize(builder);
+  sm->_params.serialize(builder.initModuleParams());
+  builder.setNumberOfLayers((uint16_t)sm->numberOfMoistureLayers);
+  builder.setVsNumberOfLayers((uint16_t)sm->numberOfSoilLayers);
+  builder.setActualEvaporation(sm->vm_ActualEvaporation);
+  builder.setActualEvapotranspiration(sm->vm_ActualEvapotranspiration);
+  builder.setActualTranspiration(sm->vm_ActualTranspiration);
+  setCapnpList(sm->vm_AvailableWater, builder.initAvailableWater((capnp::uint)sm->vm_AvailableWater.size()));
+  builder.setCapillaryRise(sm->vm_CapillaryRise);
+  setCapnpList(sm->pm_CapillaryRiseRate, builder.initCapillaryRiseRate((capnp::uint)sm->pm_CapillaryRiseRate.size()));
+  setCapnpList(sm->vm_CapillaryWater, builder.initCapillaryWater((capnp::uint)sm->vm_CapillaryWater.size()));
+  setCapnpList(sm->vm_CapillaryWater70, builder.initCapillaryWater70((capnp::uint)sm->vm_CapillaryWater70.size()));
+  setCapnpList(sm->vm_Evaporation, builder.initEvaporation((capnp::uint)sm->vm_Evaporation.size()));
+  setCapnpList(sm->vm_Evapotranspiration, builder.initEvapotranspiration((capnp::uint)sm->vm_Evapotranspiration.size()));
+  setCapnpList(sm->vm_FieldCapacity, builder.initFieldCapacity((capnp::uint)sm->vm_FieldCapacity.size()));
+  builder.setFluxAtLowerBoundary(sm->vm_FluxAtLowerBoundary);
+  setCapnpList(sm->vm_GravitationalWater, builder.initGravitationalWater((capnp::uint)sm->vm_GravitationalWater.size()));
+  builder.setGrossPrecipitation(sm->vm_GrossPrecipitation);
+  builder.setGroundwaterAdded(sm->vm_GroundwaterAdded);
+  builder.setGroundwaterDischarge(sm->vm_GroundwaterDischarge);
+  builder.setGroundwaterTable((uint16_t)sm->vm_GroundwaterTableLayer);
+  setCapnpList(sm->vm_HeatConductivity, builder.initHeatConductivity((capnp::uint)sm->vm_HeatConductivity.size()));
+  builder.setHydraulicConductivityRedux(sm->vm_HydraulicConductivityRedux);
+  builder.setInfiltration(sm->vm_Infiltration);
+  builder.setInterception(sm->vm_Interception);
+  builder.setVcKcFactor(sm->vc_KcFactor);
+  setCapnpList(sm->vm_Lambda, builder.initLambda((capnp::uint)sm->vm_Lambda.size()));
+  builder.setVsLatitude(sm->vs_Latitude);
+  setCapnpList(sm->vm_LayerThickness, builder.initLayerThickness((capnp::uint)sm->vm_LayerThickness.size()));
+  builder.setPmLayerThickness(sm->pm_LayerThickness);
+  builder.setPmLeachingDepth(sm->pm_LeachingDepth);
+  builder.setPmLeachingDepthLayer(sm->pm_LeachingDepthLayer);
+  builder.setPmMaxPercolationRate(sm->pm_MaxPercolationRate);
+  builder.setVcNetPrecipitation(sm->vc_NetPrecipitation);
+  builder.setVwNetRadiation(sm->vw_NetRadiation);
+  setCapnpList(sm->vm_PermanentWiltingPoint,
+               builder.initPermanentWiltingPoint((capnp::uint)sm->vm_PermanentWiltingPoint.size()));
+  builder.setVcPercentageSoilCoverage(sm->vc_PercentageSoilCoverage);
+  setCapnpList(sm->vm_PercolationRate, builder.initPercolationRate((capnp::uint)sm->vm_PercolationRate.size()));
+  builder.setReferenceEvapotranspiration(sm->vm_ReferenceEvapotranspiration);
+  setCapnpList(sm->vm_ResidualEvapotranspiration,
+               builder.initResidualEvapotranspiration((capnp::uint)sm->vm_ResidualEvapotranspiration.size()));
+  setCapnpList(sm->vm_SaturatedHydraulicConductivity,
+               builder.initSaturatedHydraulicConductivity((capnp::uint)sm->vm_SaturatedHydraulicConductivity.size()));
+  setCapnpList(sm->vm_SoilMoisture, builder.initSoilMoisture((capnp::uint)sm->vm_SoilMoisture.size()));
+  builder.setSoilMoisturecrit(sm->vm_SoilMoisture_crit);
+  builder.setSoilMoistureDeficit(sm->vm_SoilMoistureDeficit);
+  setCapnpList(sm->vm_SoilPoreVolume, builder.initSoilPoreVolume((capnp::uint)sm->vm_SoilPoreVolume.size()));
+  builder.setVcStomataResistance(sm->vc_StomataResistance);
+  builder.setSurfaceRoughness(sm->vm_SurfaceRoughness);
+  builder.setSurfaceRunOff(sm->vm_SurfaceRunOff);
+  builder.setSumSurfaceRunOff(sm->vm_SumSurfaceRunOff);
+  builder.setSurfaceWaterStorage(sm->vm_SurfaceWaterStorage);
+  builder.setPtTimeStep(sm->pt_TimeStep);
+  builder.setTotalWaterRemoval(sm->vm_TotalWaterRemoval);
+  setCapnpList(sm->vm_Transpiration, builder.initTranspiration((capnp::uint)sm->vm_Transpiration.size()));
+  setCapnpList(sm->vm_WaterFlux, builder.initWaterFlux((capnp::uint)sm->vm_WaterFlux.size()));
+  builder.setXSACriticalSoilMoisture(sm->vm_XSACriticalSoilMoisture);
+  if (sm->snowComponent) sm->snowComponent->serialize(builder.initSnowComponent());
+  if (sm->frostComponent) sm->frostComponent->serialize(builder.initFrostComponent());
 }
 
 void monica::soilMoistureStep(SoilMoisture* sm,
@@ -1583,6 +1577,3 @@ std::pair<double, double> monica::soilMoistureGetSnowDepthAndCalcTemperatureUnde
                                                                                         double avgAirTemp) {
   return sm->getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp);
 }
-
-
-
