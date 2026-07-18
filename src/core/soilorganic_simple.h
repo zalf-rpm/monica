@@ -46,9 +46,6 @@ public:
 
   typedef std::pair<double, double> NitDenitN2O;
 
-  double fo_MoistOnHydrolysis(double d_SoilMoisture_pF);
-  double fo_TempOnNitrification(double d_SoilTemperature);
-  double fo_MoistOnNitrification(double d_SoilMoisture_pF);
   double fo_MoistOnDenitrification(double d_SoilMoisture_m3, double d_Saturation);
   double fo_NH3onNitriteOxidation (double d_SoilNH4, double d_SoilpH);
   //void fo_distributeDeadRootBiomass();
@@ -129,6 +126,9 @@ double soilOrganicFoMoistOnDecompostionKaiteew(SoilOrganic* so, double soilMoist
 double soilOrganicFoClayOnDecompostion(SoilOrganic* so, double soilClayContent, double limitClayEffect);
 double soilOrganicFoTempOnDecompostion(SoilOrganic* so, double soilTemperature);
 double soilOrganicFoMoistOnDecompostion(SoilOrganic* so, double soilMoisture_pF);
+double soilOrganicFoMoistOnHydrolysis(SoilOrganic* so, double soilMoisture_pF);
+double soilOrganicFoTempOnNitrification(SoilOrganic* so, double soilTemperature);
+double soilOrganicFoMoistOnNitrification(SoilOrganic* so, double soilMoisture_pF);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);

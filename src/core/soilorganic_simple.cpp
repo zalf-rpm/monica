@@ -113,7 +113,7 @@ void monica::soilOrganicFoUrea(SoilOrganic* so) {
 
     // kmol urea kg soil-1 s-1
     vo_HydrolysisRate[i] = vo_HydrolysisRateMax[i] *
-                           so->fo_MoistOnHydrolysis(layer.vs_SoilMoisture_pF()) *
+                           soilOrganicFoMoistOnHydrolysis(so, layer.vs_SoilMoisture_pF()) *
                            vo_Hydrolysis_pH_Effect[i] * vo_SoilCarbamid_aq[i] /
                            (po_HydrolysisKM + vo_SoilCarbamid_aq[i]);
 
@@ -1122,15 +1122,15 @@ void monica::soilOrganicFoNitrification(SoilOrganic* so) {
     //  cout << "SO-2:\t" << layi.vs_SoilMoisture_pF() << endl;
     vo_AmmoniaOxidationRateCoeff[i] =
         po_AmmoniaOxidationRateCoeffStandard
-        * so->fo_TempOnNitrification(layi.vs_SoilTemperature)
-        * so->fo_MoistOnNitrification(layi.vs_SoilMoisture_pF());
+        * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
+        * soilOrganicFoMoistOnNitrification(so, layi.vs_SoilMoisture_pF());
 
     vo_ActAmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4i;
 
     vo_NitriteOxidationRateCoeff[i] =
         po_NitriteOxidationRateCoeffStandard
-        * so->fo_TempOnNitrification(layi.vs_SoilTemperature)
-        * so->fo_MoistOnNitrification(layi.vs_SoilMoisture_pF())
+        * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
+        * soilOrganicFoMoistOnNitrification(so, layi.vs_SoilMoisture_pF())
         * so->fo_NH3onNitriteOxidation(NH4i, layi._sps.vs_SoilpH);
 
     vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2;
@@ -1217,7 +1217,7 @@ void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
     //Temperature function is the same as in Nitrification subroutine
     vo_PotDenitrificationRate[i] = po_SpecAnaerobDenitrification
                                    * vo_SMB_CO2EvolutionRate[i]
-                                   * so->fo_TempOnNitrification(layi.vs_SoilTemperature);
+                                   * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature);
 
     vo_ActDenitrificationRate[i] =
         min(vo_PotDenitrificationRate[i] * so->fo_MoistOnDenitrification(layi.vs_SoilMoisture_m3,
@@ -1306,7 +1306,7 @@ double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
 
     double N2OProductionAtLayer =
         NO2i
-        * so->fo_TempOnNitrification(tempi)
+        * soilOrganicFoTempOnNitrification(so, tempi)
         * N2OProductionRate
         * pH_response
         * lti * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
@@ -1593,7 +1593,7 @@ double monica::soilOrganicFoMoistOnDecompostion(SoilOrganic* so, double d_SoilMo
  * @param d_SoilMoisture_pF
  * @return
  */
-double SoilOrganic::fo_MoistOnHydrolysis(double d_SoilMoisture_pF) {
+double monica::soilOrganicFoMoistOnHydrolysis(SoilOrganic* so, double d_SoilMoisture_pF) {
   double fo_MoistOnHydrolysis = 0.0;
 
   if (d_SoilMoisture_pF > 0.0 && d_SoilMoisture_pF <= 1.1) {
@@ -1612,7 +1612,7 @@ double SoilOrganic::fo_MoistOnHydrolysis(double d_SoilMoisture_pF) {
     fo_MoistOnHydrolysis = 0.0;
 
   } else {
-    vo_ErrorMessage = "irregular soil water content";
+    so->vo_ErrorMessage = "irregular soil water content";
   }
 
   return fo_MoistOnHydrolysis;
@@ -1623,7 +1623,7 @@ double SoilOrganic::fo_MoistOnHydrolysis(double d_SoilMoisture_pF) {
  * @param d_SoilTemperature
  * @return
  */
-double SoilOrganic::fo_TempOnNitrification(double soilTemp) {
+double monica::soilOrganicFoTempOnNitrification(SoilOrganic* so, double soilTemp) {
   double result = 0.0;
 
   if (soilTemp <= 2.0 && soilTemp > -40.0)
@@ -1635,7 +1635,7 @@ double SoilOrganic::fo_TempOnNitrification(double soilTemp) {
   else if (soilTemp > 20.0 && soilTemp <= 70.0)
     result = exp(0.47 - (0.027 * soilTemp) + (0.00193 * soilTemp * soilTemp));
   else
-    vo_ErrorMessage = "irregular soil temperature";
+    so->vo_ErrorMessage = "irregular soil temperature";
 
   return result;
 }
@@ -1645,7 +1645,7 @@ double SoilOrganic::fo_TempOnNitrification(double soilTemp) {
  * @param d_SoilMoisture_pF
  * @return
  */
-double SoilOrganic::fo_MoistOnNitrification(double d_SoilMoisture_pF) {
+double monica::soilOrganicFoMoistOnNitrification(SoilOrganic* so, double d_SoilMoisture_pF) {
   double fo_MoistOnNitrification = 0.0;
 
   if (fabs(d_SoilMoisture_pF) <= 1.0E-7) {
@@ -1664,7 +1664,7 @@ double SoilOrganic::fo_MoistOnNitrification(double d_SoilMoisture_pF) {
     fo_MoistOnNitrification = 0.0;
 
   } else {
-    vo_ErrorMessage = "irregular soil water content";
+    so->vo_ErrorMessage = "irregular soil water content";
   }
   return fo_MoistOnNitrification;
 }
