@@ -198,8 +198,8 @@ void monica::soilOrganicStep(SoilOrganic* so,
   if (so->_params.sticsParams.use_nit) soilOrganicFoSticsNitrification(so);
   else soilOrganicFoNitrification(so);
 
-  if (so->_params.sticsParams.use_denit) so->fo_stics_Denitrification();
-  else so->fo_Denitrification();
+  if (so->_params.sticsParams.use_denit) soilOrganicFoSticsDenitrification(so);
+  else soilOrganicFoDenitrification(so);
 
   auto n2OProducedNitDenit = so->_params.sticsParams.use_n2o
                              ? so->fo_stics_N2OProduction()
@@ -1196,7 +1196,14 @@ void monica::soilOrganicFoSticsNitrification(SoilOrganic* so) {
 /**
  * @brief Denitrification
  */
-void SoilOrganic::fo_Denitrification() {
+void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+  auto& vo_SMB_CO2EvolutionRate = so->vo_SMB_CO2EvolutionRate;
+  auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
+  auto& vo_TotalDenitrification = so->vo_TotalDenitrification;
+  auto& vo_SumDenitrification = so->vo_SumDenitrification;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   std::vector<double> vo_PotDenitrificationRate(nools, 0.0);
   double po_SpecAnaerobDenitrification = _params.po_SpecAnaerobDenitrification;
@@ -1210,11 +1217,11 @@ void SoilOrganic::fo_Denitrification() {
     //Temperature function is the same as in Nitrification subroutine
     vo_PotDenitrificationRate[i] = po_SpecAnaerobDenitrification
                                    * vo_SMB_CO2EvolutionRate[i]
-                                   * fo_TempOnNitrification(layi.vs_SoilTemperature);
+                                   * so->fo_TempOnNitrification(layi.vs_SoilTemperature);
 
     vo_ActDenitrificationRate[i] =
-        min(vo_PotDenitrificationRate[i] * fo_MoistOnDenitrification(layi.vs_SoilMoisture_m3,
-                                                                     layi._sps.vs_Saturation),
+        min(vo_PotDenitrificationRate[i] * so->fo_MoistOnDenitrification(layi.vs_SoilMoisture_m3,
+                                                                          layi._sps.vs_Saturation),
             po_TransportRateCoeff * NO3i);
 
     // update NO3 content of soil layer with denitrification balance [kg N m-3]
@@ -1231,7 +1238,13 @@ void SoilOrganic::fo_Denitrification() {
   vo_SumDenitrification += vo_TotalDenitrification; // [kg N m-2]
 }
 
-void SoilOrganic::fo_stics_Denitrification() {
+void monica::soilOrganicFoSticsDenitrification(SoilOrganic* so) {
+  auto& soilColumn = so->soilColumn;
+  auto& _params = so->_params;
+  auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
+  auto& vo_TotalDenitrification = so->vo_TotalDenitrification;
+  auto& vo_SumDenitrification = so->vo_SumDenitrification;
+
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   auto sticsParams = _params.sticsParams;
   vo_TotalDenitrification = 0.0;

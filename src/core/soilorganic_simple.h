@@ -42,12 +42,7 @@ struct SoilOrganic
 public:
   //void fo_OM_Input(bool vo_AOM_Addition);
   
-  // MONICA nitrification code
   // MONICA dentrification code
-  void fo_Denitrification();
-
-  // use STICS denitrification code
-  void fo_stics_Denitrification();
 
   // MONICA N2O production code
   double fo_N2OProduction();
@@ -138,6 +133,8 @@ void soilOrganicFoMIT(SoilOrganic* so);
 void soilOrganicFoVolatilisation(SoilOrganic* so, bool aomAddition, double meanAirTemperature, double windSpeed);
 void soilOrganicFoNitrification(SoilOrganic* so);
 void soilOrganicFoSticsNitrification(SoilOrganic* so);
+void soilOrganicFoDenitrification(SoilOrganic* so);
+void soilOrganicFoSticsDenitrification(SoilOrganic* so);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);
