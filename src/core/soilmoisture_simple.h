@@ -85,14 +85,6 @@ struct SoilMoisture {
 
   double getTemperatureUnderSnow() const;
 
-  std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const;
-
-  double get_EReducer_1(int i_Layer,
-                        double vm_PercentageSoilCoverage,
-                        double vm_PotentialEvapotranspiration);
-
-  void fm_PercolationWithGroundwater(size_t oscillGroundwaterLayer);
-
   void fm_GroundwaterReplenishment();
 
   void fm_PercolationWithoutGroundwater();
@@ -238,6 +230,11 @@ double soilMoistureGetDeprivationFactor(int layerNo,
                                         double zeta,
                                         double layerThickness);
 void soilMoistureFmCapillaryRise(SoilMoisture* sm);
+void soilMoistureFmPercolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer);
+double soilMoistureGetEReducer1(const SoilMoisture* sm,
+                                int layer,
+                                double percentageSoilCoverage,
+                                double referenceEvapotranspiration);
 void soilMoistureStep(SoilMoisture* sm,
                       double depthGroundwaterTable,
                       double precipitation,

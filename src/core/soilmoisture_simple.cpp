@@ -190,7 +190,7 @@ void monica::soilMoistureStep(SoilMoisture* sm,
   soilMoistureFmInfiltration(sm, vm_WaterToInfiltrate);
 
   if (0.0 < vs_GroundwaterDepth && vs_GroundwaterDepth <= 10.0) {
-    sm->fm_PercolationWithGroundwater(oscillGroundWaterLayer);
+    soilMoistureFmPercolationWithGroundwater(sm, oscillGroundWaterLayer);
     sm->fm_GroundwaterReplenishment();
   } else {
     sm->fm_PercolationWithoutGroundwater();
@@ -473,7 +473,23 @@ void monica::soilMoistureFmCapillaryRise(SoilMoisture* sm) {
 /**
  * @brief Calculation of percolation with groundwater influence
   */
-void SoilMoisture::fm_PercolationWithGroundwater(size_t oscillGroundwaterLayer) {
+void monica::soilMoistureFmPercolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer) {
+  auto& vm_GroundwaterAdded = sm->vm_GroundwaterAdded;
+  auto& numberOfMoistureLayers = sm->numberOfMoistureLayers;
+  auto& vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
+  auto& vm_SoilMoisture = sm->vm_SoilMoisture;
+  auto& vm_PercolationRate = sm->vm_PercolationRate;
+  auto& vm_LayerThickness = sm->vm_LayerThickness;
+  auto& vm_WaterFlux = sm->vm_WaterFlux;
+  auto& vm_FieldCapacity = sm->vm_FieldCapacity;
+  auto& vm_GravitationalWater = sm->vm_GravitationalWater;
+  auto& vm_Lambda = sm->vm_Lambda;
+  auto& frostComponent = sm->frostComponent;
+  auto& vm_SoilPoreVolume = sm->vm_SoilPoreVolume;
+  auto& vm_GroundwaterDischarge = sm->vm_GroundwaterDischarge;
+  auto& vm_FluxAtLowerBoundary = sm->vm_FluxAtLowerBoundary;
+  auto& pm_LeachingDepthLayer = sm->pm_LeachingDepthLayer;
+
   vm_GroundwaterAdded = 0.0;
 
   for (size_t i = 0; i < numberOfMoistureLayers - 1; i++) {
@@ -973,8 +989,10 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
       // -----------------------------------------------------------------------
 
       for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-        vm_EReducer_1 = get_EReducer_1(i_Layer, vc_PercentageSoilCoverage,
-                                       vm_PotentialEvapotranspiration);
+        vm_EReducer_1 = soilMoistureGetEReducer1(this,
+                                                 i_Layer,
+                                                 vc_PercentageSoilCoverage,
+                                                 vm_PotentialEvapotranspiration);
 
         if (i_Layer >= pm_MaximumEvaporationImpactDepth) {
           // layer is too deep for evaporation
@@ -1249,14 +1267,15 @@ double SoilMoisture::get_CapillaryRise() {
  *
  * @return Value for evaporation reduction by soil moisture content
  */
-double SoilMoisture::get_EReducer_1(int i_Layer,
-                                    double vm_PercentageSoilCoverage,
-                                    double vm_ReferenceEvapotranspiration) {
+double monica::soilMoistureGetEReducer1(const SoilMoisture* sm,
+                                        int i_Layer,
+                                        double vm_PercentageSoilCoverage,
+                                        double vm_ReferenceEvapotranspiration) {
   double vm_EReductionFactor;
   int vm_EvaporationReductionMethod = 1;
-  double vm_SoilMoisture_m3 = soilColumn[i_Layer].vs_SoilMoisture_m3;
-  double vm_PWP = soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint;
-  double vm_FK = soilColumn[i_Layer]._sps.vs_FieldCapacity;
+  double vm_SoilMoisture_m3 = sm->soilColumn[i_Layer].vs_SoilMoisture_m3;
+  double vm_PWP = sm->soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint;
+  double vm_FK = sm->soilColumn[i_Layer]._sps.vs_FieldCapacity;
   double vm_RelativeEvaporableWater;
   double vm_CriticalSoilMoisture;
   double vm_XSA;
@@ -1278,9 +1297,9 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
         vm_Reducer = vm_XSA + (((1 - vm_XSA) / 17.5)
                                * (vm_ReferenceEvapotranspiration - 2.5));
       } else {
-        vm_Reducer = vm_XSACriticalSoilMoisture / 2.5 * vm_ReferenceEvapotranspiration;
+        vm_Reducer = sm->vm_XSACriticalSoilMoisture / 2.5 * vm_ReferenceEvapotranspiration;
       }
-      vm_CriticalSoilMoisture = soilColumn[i_Layer]._sps.vs_FieldCapacity * vm_Reducer;
+      vm_CriticalSoilMoisture = sm->soilColumn[i_Layer]._sps.vs_FieldCapacity * vm_Reducer;
     }
 
     // Calculation of an evaporation-reducing factor in relation to soil water content
@@ -1425,11 +1444,6 @@ double SoilMoisture::getAccumulatedFrostDepth() const {
 */
 double SoilMoisture::getTemperatureUnderSnow() const {
   return frostComponent->getTemperatureUnderSnow();
-}
-
-std::pair<double, double> SoilMoisture::getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const {
-  double snowDepth = snowComponent->getVm_SnowDepth();
-  return make_pair(snowDepth, frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
 }
 
 kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
@@ -1593,5 +1607,6 @@ void monica::soilMoistureSerialize(const SoilMoisture* sm,
 double monica::soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm) { return sm->getTemperatureUnderSnow(); }
 std::pair<double, double> monica::soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm,
                                                                                         double avgAirTemp) {
-  return sm->getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp);
+  double snowDepth = sm->snowComponent->getVm_SnowDepth();
+  return make_pair(snowDepth, sm->frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
 }
