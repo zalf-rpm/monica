@@ -93,7 +93,7 @@ jobs:
       - name: Set up MSVC compiler
         uses: microsoft/setup-msbuild@v3
         with:
-          vs-version: '18.0'
+          vs-version: '[18.0, 19.0)'
           msbuild-architecture: 'x64'
 
       - name: Install vcpkg dependencies
@@ -117,7 +117,7 @@ jobs:
       - name: Build Monica
         working-directory: ./monica/_cmake_win64
         run: |
-          msbuild Monica.sln /p:Configuration=Release /p:Platform=x64
+          msbuild Monica.slnx /p:Configuration=Release /p:Platform=x64
 
       - name: package Monica
         run: |

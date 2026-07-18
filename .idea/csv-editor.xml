@@ -38,7 +38,28 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/sim-min-out_section_crop_toth.csv">
+        <entry key="/sim-min-out_section_OrganicFertilization.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/sim-min-out_section_crop.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/sim-min-out_section_crop_.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/sim-min-out_section_crop_crop.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -46,6 +67,13 @@
           </value>
         </entry>
         <entry key="/sim-min-out_section_daily.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/sim-min-out_section_run.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

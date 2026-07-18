@@ -479,8 +479,7 @@ void SoilColumn::deleteAOMPool() {
  * @return could irrigation be applied and how much has been applied
  */
 std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrrigationParameters& aips) {
-  //is actually only called from cropStep and thus there should always be a crop
-  assert(cropModule != nullptr);
+  if (!cropModule) return std::make_pair(false, 0);
 
   double s = cropModule->get_HeatSumIrrigationStart();
   double e = cropModule->get_HeatSumIrrigationEnd();
@@ -535,7 +534,7 @@ std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrr
       return make_pair(false, 0);
     }
 
-    debug() << "applying automatic irrigation treshold: " << aips.threshold
+    debug() << "applying automatic irrigation threshold: " << aips.threshold
       << " amount: " << aips.amount
       << " N concentration: " << aips.nitrateConcentration << endl;
 

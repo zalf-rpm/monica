@@ -55,18 +55,20 @@ const std::string DEFAULT_CONFIG = R"delim(
   "type": "standard",
   "inPorts": [
     {
-      "name": "config",
-      "contentType": "common.capnp:StructuredText[JSON | TOML]"
+      "name": "conf",
+      "contentType": "@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON | TOML]"
     },
     {
       "name": "env",
-      "contentType": "model.capnp:Env[common.capnp:StructuredText[JSON]]"
+      "contentType": "@0xb7fc866ef1127f7c = model/model.capnp:Env[@0xed6c098b67cad454 = common/common.capnp:StructuredText[JSON]]",
+      "desc": "Env IP content will be used as MONICA input. Forwards open/close brackets downstream."
     }
   ],
   "outPorts": [
     {
       "name": "result",
-      "contentType": "common.capnp:StructuredText[JSON]"
+      "contentType": "Text (JSON object)",
+      "desc": "MONICA output."
     }
   ],
   "defaultConfig": {
@@ -94,7 +96,7 @@ public:
   enum PORTS { CONFIG, ENV, RESULT };
 
   std::map<int, kj::StringPtr> inPortNames = {
-    {CONFIG, "config"},
+    {CONFIG, "conf"},
     {ENV, "env"},
   };
   std::map<int, kj::StringPtr> outPortNames = {
@@ -184,20 +186,9 @@ public:
         // check for end of data from in port
         if (!configMsg.isDone()) {
           auto configIp = configMsg.getValue();
-          auto configStr = configIp.getContent().getAs<capnp::Text>();
-          auto configJson = parseJsonString(configStr.cStr());
+          auto configST = configIp.getContent().getAs<mas::schema::common::StructuredText>();
+          auto configJson = parseJsonString(configST.getValue().cStr());
           if (configJson.success()) config = configJson.result;
-          else {
-            auto defaultConfigJson = parseJsonString(DEFAULT_CONFIG);
-            if (defaultConfigJson.success()) config = defaultConfigJson.result;
-            else {
-              KJ_LOG(ERROR,
-                     "Couldn't parse config JSON string from CONFIG port or "
-                     "DEFAULT_CONFIG: ",
-                     configStr);
-              return false;
-            }
-          }
         }
       }
 
@@ -224,6 +215,25 @@ public:
           break;
         } else {
           auto inIp = msg.getValue();
+
+          // simply forward open and close brackets downstream
+          if (inIp.getType() == mas::schema::fbp::IP::Type::OPEN_BRACKET
+              || inIp.getType() == mas::schema::fbp::IP::Type::CLOSE_BRACKET) {
+            auto wreq = ports.out(RESULT).writeRequest();
+            auto outIp = wreq.initValue();
+            outIp.setType(inIp.getType());
+            if (inIp.hasContent()) {
+              outIp.initContent().set(inIp.getContent());
+            }
+            if (inIp.hasAttributes()) {
+              mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp);
+            }
+            KJ_LOG(INFO, "trying to send", outIp.getType(), "IP on OUT port");
+            wreq.send().wait(ioContext.waitScope);
+            KJ_LOG(INFO, "sent", outIp.getType(), "IP on OUT port");
+            continue;
+          }
+
           auto attr = mas::infrastructure::common::getIPAttr(inIp, fromAttr);
           auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
           KJ_LOG(INFO, "received env -> running MONICA");
@@ -239,19 +249,14 @@ public:
 
             // set content if not to be set as attribute
             if (kj::size(toAttr) == 0) {
-              auto st = outIp.initContent()
-                             .initAs<mas::schema::common::StructuredText>();
-              st.setValue(resJsonStr);
-              st.setType(mas::schema::common::StructuredText::Type::JSON);
+              outIp.initContent().setAs<capnp::Text>(resJsonStr);
             }
             // copy attributes, if any and set result as attribute, if requested
             auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(
                                                                                 inIp, outIp, toAttr);
             //, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE(builder, toAttrBuilder) {
-              auto st = builder->initAs<mas::schema::common::StructuredText>();
-              st.setValue(resJsonStr);
-              st.setType(mas::schema::common::StructuredText::Type::JSON);
+              builder->setAs<capnp::Text>(resJsonStr);
             }
             KJ_LOG(INFO, "trying to send result on OUT port");
             wreq.send().wait(ioContext.waitScope);

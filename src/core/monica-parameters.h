@@ -214,6 +214,9 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   std::vector<double> pc_StageTemperatureSum;
   std::vector<double> pc_VernalisationRequirement;
 
+  // FAO-56 Dual Kc: GDD-based trapezoidal curve is initialised in CropModule constructor.
+  // Per-stage arrays removed; use vc_Kcb_ini/vc_Kcb_mid/vc_Kcb_end in CropModule instead.
+
   double pc_HeatSumIrrigationStart{0.0};
   double pc_HeatSumIrrigationEnd{0.0};
 
@@ -389,6 +392,10 @@ struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
 
   double nitrateConcentration{0.0}; //!< nitrate concentration [mg dm-3]
   double sulfateConcentration{0.0}; //!< sulfate concentration [mg dm-3]
+
+  // FAO-56 Dual Kc: event-level irrigation physical parameters
+  bool isDripIrrigation{false}; //!< true = drip irrigation (shading adjustment applied)
+  double fw{1.0}; //!< fraction of wetted soil surface [0-1]
 };
 
 
@@ -403,8 +410,6 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
 
   void deserialize(mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
 
-  // AutomaticIrrigationParameters(json11::Json object);
-
   void serialize(mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const;
 
   virtual Tools::Errors merge(json11::Json j);
@@ -412,6 +417,7 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   virtual json11::Json to_json() const;
 
   Tools::Date startDate;
+  Tools::Date endDate;
   double amount{-1.0};
   double percentNFC{-1.0};
   double threshold{-1.0};
@@ -695,6 +701,10 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   bool deserializedMonicaStateFromJson{false};
   std::string pathToLoadSerializationFile;
   uint64_t noOfPreviousDaysSerializedClimateData{0};
+
+  // FAO-56 Dual Kc: global method switch (read from sim.json "evapotranspiration-method": "FAO-56-Dual")
+  // Irrigation physical params (isDripIrrigation, fw) are now set at the Irrigation workstep event level.
+  bool dualKcMethod{false}; //!< Use FAO-56 Dual Kc evaporation partitioning
 };
 
 
