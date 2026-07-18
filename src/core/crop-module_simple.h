@@ -30,6 +30,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <kj/async-io.h>
 #include <kj/tuple.h>
+#include <kj/memory.h>
 
 #include "model/monica/monica_state.capnp.h"
 
@@ -52,8 +53,7 @@ namespace monica {
 * 4 - Permanent structure <br>
 *
 */
-class CropModule {
-public:
+struct CropModule {
   CropModule(SoilColumn& soilColumn,
              const CropParameters& cropParams,
              CropResidueParameters rps,
@@ -478,7 +478,7 @@ public:
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
 
-private:
+public:
   Intercropping& _intercropping;
 
   bool _frostKillOn{true};
@@ -759,10 +759,43 @@ private:
   Tools::Date _perennialCropDormancyPeriodEndDate;
 };
 
+kj::Own<CropModule> makeCropModule(SoilColumn& soilColumn,
+                                   const CropParameters& cropParams,
+                                   CropResidueParameters residueParams,
+                                   bool isWinterCrop,
+                                   const SiteParameters& siteParams,
+                                   const CropModuleParameters& cropModuleParams,
+                                   const SimulationParameters& simParams,
+                                   std::function<void(std::string)> fireEvent,
+                                   std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
+                                   std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
+                                   Intercropping& intercropping);
+kj::Own<CropModule> makeCropModule(SoilColumn& soilColumn,
+                                   const CropModuleParameters& cropModuleParams,
+                                   std::function<void(std::string)> fireEvent,
+                                   std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
+                                   std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
+                                   mas::schema::model::monica::CropModuleState::Reader reader,
+                                   Intercropping& intercropping);
+void cropModuleSerialize(const CropModule* cm, mas::schema::model::monica::CropModuleState::Builder builder);
+void cropModuleDeserialize(CropModule* cm, mas::schema::model::monica::CropModuleState::Reader reader);
+void cropModuleStep(CropModule* cm,
+                    double meanAirTemperature,
+                    double maxAirTemperature,
+                    double minAirTemperature,
+                    double globalRadiation,
+                    double sunshineHours,
+                    Tools::Date currentDate,
+                    double relativeHumidity,
+                    double windSpeed,
+                    double windSpeedHeight,
+                    double atmosphericCO2Concentration,
+                    double atmosphericO3Concentration,
+                    double grossPrecipitation,
+                    double referenceEvapotranspiration);
+
 //#define TEST_HOURLY_OUTPUT
 #ifdef TEST_HOURLY_OUTPUT
 std::ostream& tout(bool closeFile = false);
 #endif
 } // namespace monica
-
-

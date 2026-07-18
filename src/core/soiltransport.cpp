@@ -23,7 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <math.h>
 
 #include "soilmoisture.h"
-#include "soilcolumn.h"
+#include "soilcolumn_simple.h"
 #include "crop-module.h"
 #include "tools/debug.h"
 
@@ -414,4 +414,3 @@ double SoilTransport::get_vq_Convection(int i_Layer) const {
 double SoilTransport::get_NLeaching() const {
   return vq_LeachingAtBoundary;
 }
-

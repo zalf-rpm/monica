@@ -28,11 +28,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <iostream>
 
-#include "soilcolumn.h"
-#include "soiltemperature.h"
-#include "soilmoisture.h"
-#include "soilorganic.h"
-#include "soiltransport.h"
+#include "soilcolumn_simple.h"
+#include "soiltemperature_simple.h"
+#include "soilmoisture_simple.h"
+#include "soilorganic_simple.h"
+#include "soiltransport_simple.h"
 #include "crop.h"
 #include "../run/run-monica.h"
 #include "tools/debug.h"
@@ -941,4 +941,3 @@ Monica::runGISSimulation(const GISSimulationConfiguration *simulation_config)
 }
 
 #endif
-

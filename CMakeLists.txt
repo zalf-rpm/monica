@@ -152,8 +152,8 @@ GroupSources("util" ${PROJECT_SOURCE_DIR}/..)
 add_library(monica_lib
         src/core/crop.h
         src/core/crop.cpp
-        src/core/crop-module.h
-        src/core/crop-module.cpp
+        src/core/crop-module_simple.h
+        src/core/crop-module_simple.cpp
         src/core/monica-model.h
         src/core/monica-model.cpp
         src/core/monica-parameters.h
@@ -162,20 +162,20 @@ add_library(monica_lib
         src/core/O3-impact.cpp
         src/core/photosynthesis-FvCB.h
         src/core/photosynthesis-FvCB.cpp
-        src/core/soilcolumn.h
-        src/core/soilcolumn.cpp
-        src/core/soilmoisture.h
-        src/core/soilmoisture.cpp
+        src/core/soilcolumn_simple.h
+        src/core/soilcolumn_simple.cpp
+        src/core/soilmoisture_simple.h
+        src/core/soilmoisture_simple.cpp
         src/core/frost-component.h
         src/core/frost-component.cpp
         src/core/snow-component.h
         src/core/snow-component.cpp
-        src/core/soilorganic.h
-        src/core/soilorganic.cpp
-        src/core/soiltemperature.h
-        src/core/soiltemperature.cpp
-        src/core/soiltransport.h
-        src/core/soiltransport.cpp
+        src/core/soilorganic_simple.h
+        src/core/soilorganic_simple.cpp
+        src/core/soiltemperature_simple.h
+        src/core/soiltemperature_simple.cpp
+        src/core/soiltransport_simple.h
+        src/core/soiltransport_simple.cpp
         src/core/voc-common.h
         src/core/voc-guenther.h
         src/core/voc-guenther.cpp

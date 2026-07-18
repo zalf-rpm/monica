@@ -15,7 +15,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include "soilmoisture.h"
+#include "soilmoisture_simple.h"
 
 #include <algorithm> //for min, max
 #include <iostream>
@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "frost-component.h"
 #include "snow-component.h"
 #include "soilcolumn_simple.h"
-#include "crop-module.h"
+#include "crop-module_simple.h"
 #include "monica-model.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"
@@ -47,8 +47,8 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
 , _params(smPs)
 , envPs(mm.environmentParameters())
 , cropPs(mm.cropParameters())
-, numberOfMoistureLayers(soilColumn.vs_NumberOfLayers() + 1)
-, numberOfSoilLayers(soilColumn.vs_NumberOfLayers()) //extern
+, numberOfMoistureLayers(soilColumn.size() + 1)
+, numberOfSoilLayers(soilColumn.size()) //extern
 , vm_AvailableWater(numberOfMoistureLayers, 0.0) // Soil available water in [mm]
 , pm_CapillaryRiseRate(numberOfMoistureLayers, 0.0)
 , vm_CapillaryWater(numberOfMoistureLayers, 0.0) // soil capillary water in [mm]
@@ -269,19 +269,19 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
                         double vw_ReferenceEvapotranspiration) {
   for (int i = 0; i < numberOfSoilLayers; i++) {
     // initialization with moisture values stored in the layer
-    vm_SoilMoisture[i] = soilColumn[i].get_Vs_SoilMoisture_m3();
+    vm_SoilMoisture[i] = soilColumn[i].vs_SoilMoisture_m3;
     vm_WaterFlux[i] = 0.0;
-    vm_FieldCapacity[i] = soilColumn[i].vs_FieldCapacity();
-    vm_SoilPoreVolume[i] = soilColumn[i].vs_Saturation();
-    vm_PermanentWiltingPoint[i] = soilColumn[i].vs_PermanentWiltingPoint();
+    vm_FieldCapacity[i] = soilColumn[i]._sps.vs_FieldCapacity;
+    vm_SoilPoreVolume[i] = soilColumn[i]._sps.vs_Saturation;
+    vm_PermanentWiltingPoint[i] = soilColumn[i]._sps.vs_PermanentWiltingPoint;
     vm_LayerThickness[i] = soilColumn[i].vs_LayerThickness;
     vm_Lambda[i] = soilColumn[i].vs_Lambda();
   }
 
-  vm_SoilMoisture[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].get_Vs_SoilMoisture_m3();
+  vm_SoilMoisture[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_SoilMoisture_m3;
   vm_WaterFlux[numberOfMoistureLayers - 1] = 0.0;
-  vm_FieldCapacity[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_FieldCapacity();
-  vm_SoilPoreVolume[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_Saturation();
+  vm_FieldCapacity[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2]._sps.vs_FieldCapacity;
+  vm_SoilPoreVolume[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2]._sps.vs_Saturation;
   vm_LayerThickness[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_LayerThickness;
   vm_Lambda[numberOfMoistureLayers - 1] = soilColumn[numberOfMoistureLayers - 2].vs_Lambda();
 
@@ -352,7 +352,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   fm_CapillaryRise();
 
   for (int i_Layer = 0; i_Layer < numberOfSoilLayers; i_Layer++) {
-    soilColumn[i_Layer].set_Vs_SoilMoisture_m3(vm_SoilMoisture[i_Layer]);
+    soilColumn[i_Layer].vs_SoilMoisture_m3 = vm_SoilMoisture[i_Layer];
     soilColumn[i_Layer].vs_SoilWaterFlux = vm_WaterFlux[i_Layer];
     //commented out because old calc_vs_SoilMoisture_pF algorithm is calcualted every time vs_SoilMoisture_pF is accessed
     //    soilColumn[i_Layer].calc_vs_SoilMoisture_pF();
@@ -498,7 +498,7 @@ void SoilMoisture::fm_Infiltration(double vm_WaterToInfiltrate) {
  * @param layer Index of layer
  */
 double SoilMoisture::get_SoilMoisture(int layer) const {
-  return soilColumn[layer].get_Vs_SoilMoisture_m3();
+  return soilColumn[layer].vs_SoilMoisture_m3;
 }
 
 /**
@@ -1355,9 +1355,9 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
                                     double vm_ReferenceEvapotranspiration) {
   double vm_EReductionFactor;
   int vm_EvaporationReductionMethod = 1;
-  double vm_SoilMoisture_m3 = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
-  double vm_PWP = soilColumn[i_Layer].vs_PermanentWiltingPoint();
-  double vm_FK = soilColumn[i_Layer].vs_FieldCapacity();
+  double vm_SoilMoisture_m3 = soilColumn[i_Layer].vs_SoilMoisture_m3;
+  double vm_PWP = soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint;
+  double vm_FK = soilColumn[i_Layer]._sps.vs_FieldCapacity;
   double vm_RelativeEvaporableWater;
   double vm_CriticalSoilMoisture;
   double vm_XSA;
@@ -1381,7 +1381,7 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
       } else {
         vm_Reducer = vm_XSACriticalSoilMoisture / 2.5 * vm_ReferenceEvapotranspiration;
       }
-      vm_CriticalSoilMoisture = soilColumn[i_Layer].vs_FieldCapacity() * vm_Reducer;
+      vm_CriticalSoilMoisture = soilColumn[i_Layer]._sps.vs_FieldCapacity * vm_Reducer;
     }
 
     // Calculation of an evaporation-reducing factor in relation to soil water content
@@ -1466,9 +1466,9 @@ double SoilMoisture::meanWaterContent(double depth_m) const {
 
   for (int i = 0; i < numberOfSoilLayers; i++) {
     count++;
-    double smm3 = soilColumn[i].get_Vs_SoilMoisture_m3();
-    double fc = soilColumn[i].vs_FieldCapacity();
-    double pwp = soilColumn[i].vs_PermanentWiltingPoint();
+    double smm3 = soilColumn[i].vs_SoilMoisture_m3;
+    double fc = soilColumn[i]._sps.vs_FieldCapacity;
+    double pwp = soilColumn[i]._sps.vs_PermanentWiltingPoint;
     sum += smm3 / (fc - pwp); //[%nFK]
     lsum += soilColumn[i].vs_LayerThickness;
     if (lsum >= depth_m) break;
@@ -1488,9 +1488,9 @@ double SoilMoisture::meanWaterContent(int layer, int number_of_layers) const {
 
   for (int i = layer; i < layer + number_of_layers; i++) {
     count++;
-    double smm3 = soilColumn[i].get_Vs_SoilMoisture_m3();
-    double fc = soilColumn[i].vs_FieldCapacity();
-    double pwp = soilColumn[i].vs_PermanentWiltingPoint();
+    double smm3 = soilColumn[i].vs_SoilMoisture_m3;
+    double fc = soilColumn[i]._sps.vs_FieldCapacity;
+    double pwp = soilColumn[i]._sps.vs_PermanentWiltingPoint;
     sum += smm3 / (fc - pwp); //[%nFK]
   }
 
@@ -1538,3 +1538,51 @@ std::pair<double, double> SoilMoisture::getSnowDepthAndCalcTemperatureUnderSnow(
   double snowDepth = snowComponent->getVm_SnowDepth();
   return make_pair(snowDepth, frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
 }
+
+kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
+  return kj::heap<SoilMoisture>(monica, params);
+}
+
+kj::Own<SoilMoisture> monica::makeSoilMoisture(
+  MonicaModel& monica,
+  mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
+  CropModule* cropModule) {
+  return kj::heap<SoilMoisture>(monica, reader, cropModule);
+}
+
+void monica::soilMoistureDeserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
+  sm->deserialize(reader);
+}
+
+void monica::soilMoistureSerialize(const SoilMoisture* sm,
+                                   mas::schema::model::monica::SoilMoistureModuleState::Builder builder) {
+  sm->serialize(builder);
+}
+
+void monica::soilMoistureStep(SoilMoisture* sm,
+                              double depthGroundwaterTable,
+                              double precipitation,
+                              double maxAirTemperature,
+                              double minAirTemperature,
+                              double relativeHumidity,
+                              double meanAirTemperature,
+                              double windSpeed,
+                              double windSpeedHeight,
+                              double netRadiation,
+                              int julianDay,
+                              double referenceEvapotranspiration) {
+  sm->step(depthGroundwaterTable, precipitation, maxAirTemperature, minAirTemperature, relativeHumidity,
+           meanAirTemperature, windSpeed, windSpeedHeight, netRadiation, julianDay, referenceEvapotranspiration);
+}
+
+void monica::soilMoisturePutCrop(SoilMoisture* sm, CropModule* cm) { sm->putCrop(cm); }
+void monica::soilMoistureRemoveCrop(SoilMoisture* sm) { sm->removeCrop(); }
+double monica::soilMoistureGetSnowDepth(const SoilMoisture* sm) { return sm->get_SnowDepth(); }
+double monica::soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm) { return sm->getTemperatureUnderSnow(); }
+std::pair<double, double> monica::soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm,
+                                                                                        double avgAirTemp) {
+  return sm->getSnowDepthAndCalcTemperatureUnderSnow(avgAirTemp);
+}
+
+
+

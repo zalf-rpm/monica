@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <vector>
 
-#include "soilcolumn.h"
+#include "soilcolumn_simple.h"
 #include "monica-parameters.h"
 
 namespace monica
@@ -117,4 +117,3 @@ private:
 };
 
 } // namespace monica
-

@@ -20,7 +20,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <iostream>
 #include <cmath>
 
-#include "soilcolumn.h"
+#include "soilcolumn_simple.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"
 #include "monica-parameters.h"

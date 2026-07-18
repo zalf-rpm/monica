@@ -219,3 +219,4 @@ _cmake_linux_release
 /cmake-build-debug-coverage/
 /installer/Hohenfinow2/monica-parameters
 /_cmake_debug_
+_cmake_debug_ninja

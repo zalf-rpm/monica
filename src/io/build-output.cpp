@@ -28,11 +28,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 #include "tools/algorithms.h"
 #include "../core/monica-model.h"
-#include "../core/crop-module.h"
-#include "../core/soilmoisture.h"
-#include "../core/soiltemperature.h"
-#include "../core/soiltransport.h"
-#include "../core/soilorganic.h"
+#include "../core/crop-module_simple.h"
+#include "../core/soilmoisture_simple.h"
+#include "../core/soiltemperature_simple.h"
+#include "../core/soiltransport_simple.h"
+#include "../core/soilorganic_simple.h"
 
 using namespace monica;
 using namespace Tools;
@@ -760,13 +760,13 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "SurfTemp", "�C", ""},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
+              return round(soilTemperatureGetSoilSurfaceTemperature(&monica.soilTemperature()), 1);
             });
 
       build({id++, "STemp", "�C", ""},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilTemperature().getSoilTemperature(i);
+                return soilTemperatureGetSoilTemperature(&monica.soilTemperature(), i);
               }, 1);
             });
 
@@ -843,7 +843,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NLeach", "kgN ha-1", "N leaching"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilTransport().get_NLeaching(), 3);
+              return round(soilTransportGetNLeaching(&monica.soilTransport()), 3);
             });
 
       build({id++, "NO3", "kgN m-3", ""},
@@ -1333,13 +1333,13 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NO3conv", "", "get_vq_Convection"},
             [](const MonicaModel& monica, OId oid) {
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Convection(i); },
+              return getComplexValues<double>(oid, [&](int i) { return soilTransportGetVqConvection(&monica.soilTransport(), i); },
                                               8);
             });
 
       build({id++, "NO3disp", "", "get_vq_Dispersion"},
             [](const MonicaModel& monica, OId oid) {
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilTransport().get_vq_Dispersion(i); },
+              return getComplexValues<double>(oid, [&](int i) { return soilTransportGetVqDispersion(&monica.soilTransport(), i); },
                                               8);
             });
 
