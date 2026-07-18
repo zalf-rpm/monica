@@ -40,15 +40,158 @@ using namespace monica;
 using namespace Tools;
 using namespace Soil;
 
-namespace {
+void monica::soilOrganicFoUrea(SoilOrganic* so) {
+  auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
+  std::vector<double> vo_SoilCarbamid_solid(nools,
+                                            0.0); // Solid carbamide concentration in soil solution [kmol urea m-3]
+  std::vector<double> vo_SoilCarbamid_aq(nools,
+                                         0.0); // Dissolved carbamide concetzration in soil solution [kmol urea m-3]
+  std::vector<double> vo_HydrolysisRate1(nools, 0.0); // [kg N d-1]
+  std::vector<double> vo_HydrolysisRate2(nools, 0.0); // [kg N d-1]
+  std::vector<double> vo_HydrolysisRateMax(nools, 0.0); // [kg N d-1]
+  std::vector<double> vo_Hydrolysis_pH_Effect(nools, 0.0);// []
+  std::vector<double> vo_HydrolysisRate(nools, 0.0); // [kg N d-1]
+  double vo_H3OIonConcentration = 0.0; // Oxonium ion concentration in soil solution [kmol m-3]
+  double vo_NH3aq_EquilibriumConst = 0.0; // []
+  double vo_NH3_EquilibriumConst = 0.0; // []
+  double vs_SoilNH4aq = 0.0; // ammonium ion concentration in soil solution [kmol m-3}
+  double vo_NH3aq = 0.0;
+  double vo_NH3gas = 0.0;
+  double vo_NH3_Volatilising = 0.0;
 
-void soilOrganicStepImpl(SoilOrganic* so,
-                         double meanAirTemperature,
-                         double precipitation,
-                         double windSpeed) {
+  double po_HydrolysisKM = so->_params.po_HydrolysisKM;
+  double po_HydrolysisP1 = so->_params.po_HydrolysisP1;
+  double po_HydrolysisP2 = so->_params.po_HydrolysisP2;
+  double po_ActivationEnergy = so->_params.po_ActivationEnergy;
+
+  so->vo_NH3_Volatilised = 0.0;
+
+  for (int i = 0; i < so->soilColumn._vs_NumberOfOrganicLayers; i++) {
+    auto& layer = so->soilColumn.at(i);
+
+    // kmol urea m-3 soil
+    vo_SoilCarbamid_solid[i] = layer.vs_SoilCarbamid /
+                               OrganicConstants::po_UreaMolecularWeight /
+                               OrganicConstants::po_Urea_to_N / 1000.0;
+
+    // mol urea kg Solution-1
+    vo_SoilCarbamid_aq[i] = (-1258.9 + 13.2843 * (layer.vs_SoilTemperature + 273.15) -
+                             0.047381 * ((layer.vs_SoilTemperature + 273.15) *
+                                         (layer.vs_SoilTemperature + 273.15)) +
+                             5.77264e-5 * (pow((layer.vs_SoilTemperature + 273.15), 3.0)));
+
+    // kmol urea m-3 soil
+    vo_SoilCarbamid_aq[i] = (vo_SoilCarbamid_aq[i] / (1.0 +
+                                                      (vo_SoilCarbamid_aq[i] * 0.0453))) *
+                            layer.vs_SoilMoisture_m3;
+
+    if (vo_SoilCarbamid_aq[i] >= vo_SoilCarbamid_solid[i]) {
+
+      vo_SoilCarbamid_aq[i] = vo_SoilCarbamid_solid[i];
+      vo_SoilCarbamid_solid[i] = 0.0;
+
+    } else {
+      vo_SoilCarbamid_solid[i] -= vo_SoilCarbamid_aq[i];
+    }
+
+    // Calculate urea hydrolysis
+
+    vo_HydrolysisRate1[i] = (po_HydrolysisP1 *
+                             (layer.vs_SoilOrganicMatter() * 100.0) *
+                             OrganicConstants::po_SOM_to_C + po_HydrolysisP2) /
+                            OrganicConstants::po_UreaMolecularWeight;
+
+    vo_HydrolysisRate2[i] = vo_HydrolysisRate1[i] /
+                            (exp(-po_ActivationEnergy /
+                                 (8.314 * 310.0)));
+
+    vo_HydrolysisRateMax[i] = vo_HydrolysisRate2[i] * exp(-po_ActivationEnergy /
+                                                          (8.314 * (layer.vs_SoilTemperature + 273.15)));
+
+    vo_Hydrolysis_pH_Effect[i] = exp(-0.064 *
+                                     ((layer._sps.vs_SoilpH - 6.5) * (layer._sps.vs_SoilpH - 6.5)));
+
+    // kmol urea kg soil-1 s-1
+    vo_HydrolysisRate[i] = vo_HydrolysisRateMax[i] *
+                           so->fo_MoistOnHydrolysis(layer.vs_SoilMoisture_pF()) *
+                           vo_Hydrolysis_pH_Effect[i] * vo_SoilCarbamid_aq[i] /
+                           (po_HydrolysisKM + vo_SoilCarbamid_aq[i]);
+
+    // kmol urea m soil-3 d-1
+    vo_HydrolysisRate[i] = vo_HydrolysisRate[i] * 86400.0 *
+                           layer._sps.vs_SoilBulkDensity();
+
+    if (vo_HydrolysisRate[i] >= vo_SoilCarbamid_aq[i]) {
+
+      layer.vs_SoilNH4 += layer.vs_SoilCarbamid;
+      layer.vs_SoilCarbamid = 0.0;
+
+    } else {
+
+      // kg N m soil-3
+      layer.vs_SoilCarbamid -= vo_HydrolysisRate[i] *
+                               OrganicConstants::po_UreaMolecularWeight *
+                               OrganicConstants::po_Urea_to_N * 1000.0;
+
+      // kg N m soil-3
+      layer.vs_SoilNH4 += vo_HydrolysisRate[i] *
+                          OrganicConstants::po_UreaMolecularWeight *
+                          OrganicConstants::po_Urea_to_N * 1000.0;
+    }
+
+    // Calculate general volatilisation from NH4-Pool in top layer
+    if (i == 0) {
+      auto layer0 = so->soilColumn.at(0);
+
+      vo_H3OIonConcentration = pow(10.0, (-layer0._sps.vs_SoilpH)); // kmol m-3
+      vo_NH3aq_EquilibriumConst = pow(10.0, ((-2728.3 /
+                                              (layer0.vs_SoilTemperature + 273.15)) -
+                                             0.094219)); // K2 in Sadeghi's program
+
+      vo_NH3_EquilibriumConst = pow(10.0, ((1630.5 /
+                                            (layer0.vs_SoilTemperature + 273.15)) -
+                                           2.301));  // K1 in Sadeghi's program
+
+      // kmol m-3, assuming that all NH4 is solved
+      vs_SoilNH4aq = layer0.vs_SoilNH4 / (OrganicConstants::po_NH4MolecularWeight * 1000.0);
+
+      // kmol m-3
+      vo_NH3aq = vs_SoilNH4aq / (1.0 + (vo_H3OIonConcentration / vo_NH3aq_EquilibriumConst));
+
+      vo_NH3gas = vo_NH3aq;
+      //  vo_NH3gas = vo_NH3aq / vo_NH3_EquilibriumConst;
+
+      // kg N m-3 d-1
+      vo_NH3_Volatilising = vo_NH3gas * OrganicConstants::po_NH3MolecularWeight * 1000.0;
+
+      if (vo_NH3_Volatilising >= layer0.vs_SoilNH4) {
+        vo_NH3_Volatilising = layer0.vs_SoilNH4;
+        layer0.vs_SoilNH4 = 0.0;
+      } else {
+        layer0.vs_SoilNH4 -= vo_NH3_Volatilising;
+      }
+
+      // kg N m-2 d-1
+      so->vo_NH3_Volatilised = vo_NH3_Volatilising * layer0.vs_LayerThickness;
+
+    } // if (i == 0) {
+  } // for
+
+  // set incorporation to false, if carbamid part is falling below a treshold
+  // only, if organic matter was not recently added
+  if (!vo_SoilCarbamid_aq.empty() && vo_SoilCarbamid_aq[0] < 0.001 && !so->addedOrganicMatter) {
+    so->incorporation = false;
+  }
+
+}
+
+void monica::soilOrganicStep(SoilOrganic* so,
+                             double meanAirTemperature,
+                             double precipitation,
+                             double windSpeed) {
   double netPrimaryProduction = so->cropModule ? so->cropModule->get_NetPrimaryProduction() : 0;
 
-  so->fo_Urea(precipitation + so->irrigationAmount);
+  soilOrganicFoUrea(so);
   so->fo_MIT();
   so->fo_Volatilisation(so->addedOrganicMatter, meanAirTemperature, windSpeed);
 
@@ -86,10 +229,10 @@ void soilOrganicStepImpl(SoilOrganic* so,
   so->addedOrganicMatter = false;
 }
 
-void soilOrganicAddOrganicMatterImpl(SoilOrganic* so,
-                                     const OrganicMatterParameters& params,
-                                     const map<size_t, double>& layer2addedOrganicMatterAmount,
-                                     double addedOrganicMatterNConcentration) {
+void monica::soilOrganicAddOrganicMatter(SoilOrganic* so,
+                                         const OrganicMatterParameters& params,
+                                         const map<size_t, double>& layer2addedOrganicMatterAmount,
+                                         double addedOrganicMatterNConcentration) {
   debug() << "SoilOrganic: addOrganicMatter: " << params.toString() << endl;
 
   auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
@@ -248,7 +391,7 @@ void soilOrganicAddOrganicMatterImpl(SoilOrganic* so,
   so->addedOrganicMatter = true;
 }
 
-double soilOrganicGetOrganicNImpl(const SoilOrganic* so, int i) {
+double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int i) {
   double orgN = 0;
 
   orgN += so->soilColumn.at(i).vs_SMB_Fast / so->_params.po_CN_Ratio_SMB;
@@ -266,220 +409,95 @@ double soilOrganicGetOrganicNImpl(const SoilOrganic* so, int i) {
   return orgN;
 }
 
-} // namespace
+void monica::soilOrganicInitializeFromParams(SoilOrganic* so) {
+  auto& sc = so->soilColumn;
+  auto nools = sc._vs_NumberOfOrganicLayers;
 
-/**
- * @brief Constructor
- * @param sc Soil column
- * @param gps General parameters
- * @param ocs Organic constants
- * @param stps Site parameters
- * @param org_fert Parameter for organic fertiliser
- */
-SoilOrganic::SoilOrganic(SoilColumn &sc, SoilOrganicModuleParameters userParams)
-    : soilColumn(sc),
-      _params(std::move(userParams)),
-      vs_NumberOfLayers(sc.size()),
-      vs_NumberOfOrganicLayers(sc._vs_NumberOfOrganicLayers),
-      vo_ActAmmoniaOxidationRate(sc._vs_NumberOfOrganicLayers),
-      vo_ActNitrificationRate(sc._vs_NumberOfOrganicLayers),
-      vo_ActDenitrificationRate(sc._vs_NumberOfOrganicLayers),
-      vo_AOM_FastDeltaSum(sc._vs_NumberOfOrganicLayers),
-      vo_AOM_FastInput(sc._vs_NumberOfOrganicLayers),
-      vo_AOM_FastSum(sc._vs_NumberOfOrganicLayers),
-      vo_AOM_SlowDeltaSum(sc._vs_NumberOfOrganicLayers),
-      vo_AOM_SlowInput(sc._vs_NumberOfOrganicLayers),
-      vo_AOM_SlowSum(sc._vs_NumberOfOrganicLayers),
-      vo_CBalance(sc._vs_NumberOfOrganicLayers),
-      vo_InertSoilOrganicC(sc._vs_NumberOfOrganicLayers),
-      vo_InertSoilOrganicC_highCN(sc._vs_NumberOfOrganicLayers),
-      vo_NetNMineralisationRate(sc._vs_NumberOfOrganicLayers),
-      vo_SMB_CO2EvolutionRate(sc._vs_NumberOfOrganicLayers),
-      vo_SMB_FastDelta(sc._vs_NumberOfOrganicLayers),
-      vo_SMB_SlowDelta(sc._vs_NumberOfOrganicLayers),
-      vo_SoilOrganicC(sc._vs_NumberOfOrganicLayers),
-      vo_SoilOrganicC_highCN(sc._vs_NumberOfOrganicLayers),
-      vo_SOM_FastInput(sc._vs_NumberOfOrganicLayers),
-      vo_SOM_FastDelta(sc._vs_NumberOfOrganicLayers),
-      vo_SOM_SlowDelta(sc._vs_NumberOfOrganicLayers) {
-  // Subroutine Pool initialisation
-  double po_SOM_SlowUtilizationEfficiency = _params.po_SOM_SlowUtilizationEfficiency;
-  double po_PartSOM_to_SMB_Slow = _params.po_PartSOM_to_SMB_Slow;
-  double po_SOM_FastUtilizationEfficiency = _params.po_SOM_FastUtilizationEfficiency;
-  double po_PartSOM_to_SMB_Fast = _params.po_PartSOM_to_SMB_Fast;
-  double po_SOM_SlowDecCoeffStandard = _params.po_SOM_SlowDecCoeffStandard;
-  double po_SOM_FastDecCoeffStandard = _params.po_SOM_FastDecCoeffStandard;
-  double po_PartSOM_Fast_to_SOM_Slow = _params.po_PartSOM_Fast_to_SOM_Slow;
+  so->vs_NumberOfLayers = sc.size();
+  so->vs_NumberOfOrganicLayers = nools;
+  so->vo_ActAmmoniaOxidationRate.assign(nools, 0.0);
+  so->vo_ActNitrificationRate.assign(nools, 0.0);
+  so->vo_ActDenitrificationRate.assign(nools, 0.0);
+  so->vo_AOM_FastDeltaSum.assign(nools, 0.0);
+  so->vo_AOM_FastInput.assign(nools, 0.0);
+  so->vo_AOM_FastSum.assign(nools, 0.0);
+  so->vo_AOM_SlowDeltaSum.assign(nools, 0.0);
+  so->vo_AOM_SlowInput.assign(nools, 0.0);
+  so->vo_AOM_SlowSum.assign(nools, 0.0);
+  so->vo_CBalance.assign(nools, 0.0);
+  so->vo_InertSoilOrganicC.assign(nools, 0.0);
+  so->vo_InertSoilOrganicC_highCN.assign(nools, 0.0);
+  so->vo_NetNMineralisationRate.assign(nools, 0.0);
+  so->vo_SMB_CO2EvolutionRate.assign(nools, 0.0);
+  so->vo_SMB_FastDelta.assign(nools, 0.0);
+  so->vo_SMB_SlowDelta.assign(nools, 0.0);
+  so->vo_SoilOrganicC.assign(nools, 0.0);
+  so->vo_SoilOrganicC_highCN.assign(nools, 0.0);
+  so->vo_SOM_FastInput.assign(nools, 0.0);
+  so->vo_SOM_FastDelta.assign(nools, 0.0);
+  so->vo_SOM_SlowDelta.assign(nools, 0.0);
+
+  double po_PartSOM_to_SMB_Slow = so->_params.po_PartSOM_to_SMB_Slow;
+  double po_PartSOM_to_SMB_Fast = so->_params.po_PartSOM_to_SMB_Fast;
+  double po_SOM_SlowDecCoeffStandard = so->_params.po_SOM_SlowDecCoeffStandard;
+  double po_SOM_FastDecCoeffStandard = so->_params.po_SOM_FastDecCoeffStandard;
+  double po_PartSOM_Fast_to_SOM_Slow = so->_params.po_PartSOM_Fast_to_SOM_Slow;
   double po_inert_CN_lower_limit = 11;
   double po_inert_CN_upper_limit = 350;
 
-  //Conversion of soil organic carbon weight fraction to volume unit
-  for (size_t i = 0; i < vs_NumberOfOrganicLayers; i++) {
-    SoilLayer &layer = soilColumn[i];
-    auto &layi = soilColumn.at(i);
+  for (size_t i = 0; i < so->vs_NumberOfOrganicLayers; i++) {
+    SoilLayer& layer = so->soilColumn[i];
+    auto& layi = so->soilColumn.at(i);
 
-    vo_SoilOrganicC[i] =
-      layer._sps.vs_SoilOrganicCarbon() * layer._sps.vs_SoilBulkDensity(); //[kg C kg-1] * [kg m-3] --> [kg C m-3]
+    so->vo_SoilOrganicC[i] =
+      layer._sps.vs_SoilOrganicCarbon() * layer._sps.vs_SoilBulkDensity();
 
-    // Falloon et al. (1998): Estimating the size of the inert organic matter pool
-    // from total soil oragnic carbon content for use in the Rothamsted Carbon model.
-    // Soil Biol. Biochem. 30 (8/9), 1207-1211. for values in t C ha-1.
-    // vo_InertSoilOrganicC is calculated back to [kg C m-3].
-    // Springob and Kirchmann (2009): Estimating the size of the inert organic pool if CN > 11,
-    // modified by konstantin.aiteew@thuenen.de
     if (layi.vs_Soil_CN_Ratio() > 100) {
-      vo_InertSoilOrganicC_highCN[i] = (vo_SoilOrganicC[i] // [kg C m-3]
-                                        * layer.vs_LayerThickness // [kg C m-2]
-                                        / 1000 * 10000.0) // [t C ha-1]
-                                       / layi.vs_Soil_CN_Ratio() * (po_inert_CN_lower_limit - layi.vs_Soil_CN_Ratio())
-                                       / (po_inert_CN_lower_limit
-                                          / po_inert_CN_upper_limit - 1)
-                                       / 10000.0 * 1000.0 // [kg C m-2]
-                                       / layer.vs_LayerThickness; // [kg C m-3]
+      so->vo_InertSoilOrganicC_highCN[i] = (so->vo_SoilOrganicC[i]
+                                            * layer.vs_LayerThickness
+                                            / 1000 * 10000.0)
+                                           / layi.vs_Soil_CN_Ratio() * (po_inert_CN_lower_limit - layi.vs_Soil_CN_Ratio())
+                                           / (po_inert_CN_lower_limit
+                                              / po_inert_CN_upper_limit - 1)
+                                           / 10000.0 * 1000.0
+                                           / layer.vs_LayerThickness;
 
-      vo_SoilOrganicC_highCN[i] = vo_SoilOrganicC[i] - vo_InertSoilOrganicC_highCN[i];
+      so->vo_SoilOrganicC_highCN[i] = so->vo_SoilOrganicC[i] - so->vo_InertSoilOrganicC_highCN[i];
 
-      vo_InertSoilOrganicC[i] = (0.049 * pow((vo_SoilOrganicC_highCN[i] // [kg C m-3]
-                                              * layer.vs_LayerThickness // [kg C m-2]
-                                              / 1000 * 10000.0), 1.139)) // [t C ha-1]
-                                / 10000.0 * 1000.0 // [kg C m-2]
-                                / layer.vs_LayerThickness; // [kg C m-3]
+      so->vo_InertSoilOrganicC[i] = (0.049 * pow((so->vo_SoilOrganicC_highCN[i]
+                                                  * layer.vs_LayerThickness
+                                                  / 1000 * 10000.0), 1.139))
+                                    / 10000.0 * 1000.0
+                                    / layer.vs_LayerThickness;
 
-      vo_InertSoilOrganicC[i] = vo_InertSoilOrganicC[i] + vo_InertSoilOrganicC_highCN[i];
+      so->vo_InertSoilOrganicC[i] = so->vo_InertSoilOrganicC[i] + so->vo_InertSoilOrganicC_highCN[i];
     } else {
-      vo_InertSoilOrganicC[i] = (0.049 * pow((vo_SoilOrganicC[i] // [kg C m-3]
-                                              * layer.vs_LayerThickness // [kg C m-2]
-                                              / 1000 * 10000.0), 1.139)) // [t C ha-1]
-                                / 10000.0 * 1000.0 // [kg C m-2]
-                                / layer.vs_LayerThickness; // [kg C m-3]
+      so->vo_InertSoilOrganicC[i] = (0.049 * pow((so->vo_SoilOrganicC[i]
+                                                  * layer.vs_LayerThickness
+                                                  / 1000 * 10000.0), 1.139))
+                                    / 10000.0 * 1000.0
+                                    / layer.vs_LayerThickness;
     }
-    vo_SoilOrganicC[i] -= vo_InertSoilOrganicC[i]; // [kg C m-3]
+    so->vo_SoilOrganicC[i] -= so->vo_InertSoilOrganicC[i];
 
-    // Initialisation of pool SMB_Slow [kg C m-3], changed by konstantin.aiteew@thuenen.de
-    layer.vs_SMB_Slow = po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i];
-    // Initialisation of pool SMB_Slow [kg C m-3]
-    //layer.vs_SMB_Slow = po_SOM_SlowUtilizationEfficiency * po_PartSOM_to_SMB_Slow * vo_SoilOrganicC[i];
+    layer.vs_SMB_Slow = po_PartSOM_to_SMB_Slow * so->vo_SoilOrganicC[i];
+    layer.vs_SMB_Fast = po_PartSOM_to_SMB_Fast * so->vo_SoilOrganicC[i];
 
-    // Initialisation of pool SMB_Fast [kg C m-3], changed by konstantin.aiteew@thuenen.de
-    layer.vs_SMB_Fast = po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i];
-    // Initialisation of pool SMB_Fast [kg C m-3]
-    //layer.vs_SMB_Fast = po_SOM_FastUtilizationEfficiency * po_PartSOM_to_SMB_Fast * vo_SoilOrganicC[i];
+    layer.vs_SOM_Slow = so->vo_SoilOrganicC[i] / (1.0 + po_SOM_SlowDecCoeffStandard
+                                                   / (po_SOM_FastDecCoeffStandard * po_PartSOM_Fast_to_SOM_Slow));
+    layer.vs_SOM_Fast = so->vo_SoilOrganicC[i] - layer.vs_SOM_Slow;
+    so->vo_SoilOrganicC[i] -= layer.vs_SMB_Slow + layer.vs_SMB_Fast;
 
-    // Initialisation of pool SOM_Slow [kg C m-3]
-    layer.vs_SOM_Slow = vo_SoilOrganicC[i] / (1.0 + po_SOM_SlowDecCoeffStandard
-                                                    / (po_SOM_FastDecCoeffStandard * po_PartSOM_Fast_to_SOM_Slow));
+    layer.set_SoilOrganicCarbon((so->vo_SoilOrganicC[i] + so->vo_InertSoilOrganicC[i])
+                                / layer._sps.vs_SoilBulkDensity());
 
-    // Initialisation of pool SOM_Fast [kg C m-3]
-    layer.vs_SOM_Fast = vo_SoilOrganicC[i] - layer.vs_SOM_Slow;
-
-    // Soil Organic Matter pool update [kg C m-3]
-    vo_SoilOrganicC[i] -= layer.vs_SMB_Slow + layer.vs_SMB_Fast;
-
-    layer.set_SoilOrganicCarbon
-        ((vo_SoilOrganicC[i] + vo_InertSoilOrganicC[i])
-         / layer._sps.vs_SoilBulkDensity()); // [kg C m-3] / [kg m-3] --> [kg C kg-1]
-
-    //this is not needed as either one of organic carbon or organic matter is only be used
-//layer.set_SoilOrganicMatter
-//	((vo_SoilOrganicC[i] + vo_InertSoilOrganicC[i]) 
-//	 / OrganicConstants::po_SOM_to_C
-//	 / layer._sps.vs_SoilBulkDensity());  // [kg C m-3] / [kg m-3] --> [kg C kg-1]
-
-    vo_ActDenitrificationRate.at(i) = 0.0;
-  } // for
+    so->vo_ActDenitrificationRate.at(i) = 0.0;
+  }
 }
 
-void SoilOrganic::deserialize(mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
-  _params.deserialize(reader.getModuleParams());
-  vs_NumberOfLayers = reader.getVsNumberOfLayers();
-  vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
-  addedOrganicMatter = reader.getAddedOrganicMatter();
-  irrigationAmount = reader.getIrrigationAmount();
-  setFromCapnpList(vo_ActAmmoniaOxidationRate, reader.getActAmmoniaOxidationRate());
-  setFromCapnpList(vo_ActNitrificationRate, reader.getActNitrificationRate());
-  setFromCapnpList(vo_ActDenitrificationRate, reader.getActDenitrificationRate());
-  setFromCapnpList(vo_AOM_FastDeltaSum, reader.getAomFastDeltaSum());
-  setFromCapnpList(vo_AOM_FastInput, reader.getAomFastInput());
-  setFromCapnpList(vo_AOM_FastSum, reader.getAomFastSum());
-  setFromCapnpList(vo_AOM_SlowDeltaSum, reader.getAomSlowDeltaSum());
-  setFromCapnpList(vo_AOM_SlowInput, reader.getAomSlowInput());
-  setFromCapnpList(vo_AOM_SlowSum, reader.getAomSlowSum());
-  setFromCapnpList(vo_CBalance, reader.getCBalance());
-  vo_DecomposerRespiration = reader.getDecomposerRespiration();
-  vo_ErrorMessage = reader.getErrorMessage();
-  setFromCapnpList(vo_InertSoilOrganicC, reader.getInertSoilOrganicC());
-  vo_N2O_Produced = reader.getN2oProduced();
-  vo_N2O_Produced_Nit = reader.getN2oProducedNit();
-  vo_N2O_Produced_Denit = reader.getN2oProducedDenit();
-  vo_NetEcosystemExchange = reader.getNetEcosystemExchange();
-  vo_NetEcosystemProduction = reader.getNetEcosystemProduction();
-  vo_NetNMineralisation = reader.getNetNMineralisation();
-  setFromCapnpList(vo_NetNMineralisationRate, reader.getNetNMineralisationRate());
-  vo_Total_NH3_Volatilised = reader.getTotalNH3Volatilised();
-  vo_NH3_Volatilised = reader.getNh3Volatilised();
-  setFromCapnpList(vo_SMB_CO2EvolutionRate, reader.getSmbCO2EvolutionRate());
-  setFromCapnpList(vo_SMB_FastDelta, reader.getSmbFastDelta());
-  setFromCapnpList(vo_SMB_SlowDelta, reader.getSmbSlowDelta());
-  setFromCapnpList(vs_SoilMineralNContent, reader.getVsSoilMineralNContent());
-  setFromCapnpList(vo_SoilOrganicC, reader.getSoilOrganicC());
-  setFromCapnpList(vo_SOM_FastDelta, reader.getSomFastDelta());
-  setFromCapnpList(vo_SOM_FastInput, reader.getSomFastInput());
-  setFromCapnpList(vo_SOM_SlowDelta, reader.getSomSlowDelta());
-  vo_SumDenitrification = reader.getSumDenitrification();
-  vo_SumNetNMineralisation = reader.getSumNetNMineralisation();
-  vo_SumN2O_Produced = reader.getSumN2OProduced();
-  vo_SumNH3_Volatilised = reader.getSumNH3Volatilised();
-  vo_TotalDenitrification = reader.getTotalDenitrification();
-  incorporation = reader.getIncorporation();
-}
-
-void SoilOrganic::serialize(mas::schema::model::monica::SoilOrganicModuleState::Builder builder) const {
-  _params.serialize(builder.initModuleParams());
-  builder.setVsNumberOfLayers((uint16_t) vs_NumberOfLayers);
-  builder.setVsNumberOfOrganicLayers((uint16_t) vs_NumberOfOrganicLayers);
-  builder.setAddedOrganicMatter(addedOrganicMatter);
-  builder.setIrrigationAmount(irrigationAmount);
-  setCapnpList(vo_ActAmmoniaOxidationRate,
-               builder.initActAmmoniaOxidationRate((capnp::uint) vo_ActAmmoniaOxidationRate.size()));
-  setCapnpList(vo_ActNitrificationRate, builder.initActNitrificationRate((capnp::uint) vo_ActNitrificationRate.size()));
-  setCapnpList(vo_ActDenitrificationRate,
-               builder.initActDenitrificationRate((capnp::uint) vo_ActDenitrificationRate.size()));
-  setCapnpList(vo_AOM_FastDeltaSum, builder.initAomFastDeltaSum((capnp::uint) vo_AOM_FastDeltaSum.size()));
-  setCapnpList(vo_AOM_FastInput, builder.initAomFastInput((capnp::uint) vo_AOM_FastInput.size()));
-  setCapnpList(vo_AOM_FastSum, builder.initAomFastSum((capnp::uint) vo_AOM_FastSum.size()));
-  setCapnpList(vo_AOM_SlowDeltaSum, builder.initAomSlowDeltaSum((capnp::uint) vo_AOM_SlowDeltaSum.size()));
-  setCapnpList(vo_AOM_SlowInput, builder.initAomSlowInput((capnp::uint) vo_AOM_SlowInput.size()));
-  setCapnpList(vo_AOM_SlowSum, builder.initAomSlowSum((capnp::uint) vo_AOM_SlowSum.size()));
-  setCapnpList(vo_CBalance, builder.initCBalance((capnp::uint) vo_CBalance.size()));
-  builder.setDecomposerRespiration(vo_DecomposerRespiration);
-  builder.setErrorMessage(vo_ErrorMessage);
-  setCapnpList(vo_InertSoilOrganicC, builder.initInertSoilOrganicC((capnp::uint) vo_InertSoilOrganicC.size()));
-  builder.setN2oProduced(vo_N2O_Produced);
-  builder.setN2oProducedNit(vo_N2O_Produced_Nit);
-  builder.setN2oProducedDenit(vo_N2O_Produced_Denit);
-  builder.setNetEcosystemExchange(vo_NetEcosystemExchange);
-  builder.setNetEcosystemProduction(vo_NetEcosystemProduction);
-  builder.setNetNMineralisation(vo_NetNMineralisation);
-  setCapnpList(vo_NetNMineralisationRate,
-               builder.initNetNMineralisationRate((capnp::uint) vo_NetNMineralisationRate.size()));
-  builder.setTotalNH3Volatilised(vo_Total_NH3_Volatilised);
-  builder.setNh3Volatilised(vo_NH3_Volatilised);
-  setCapnpList(vo_SMB_CO2EvolutionRate, builder.initSmbCO2EvolutionRate((capnp::uint) vo_SMB_CO2EvolutionRate.size()));
-  setCapnpList(vo_SMB_FastDelta, builder.initSmbFastDelta((capnp::uint) vo_SMB_FastDelta.size()));
-  setCapnpList(vo_SMB_SlowDelta, builder.initSmbSlowDelta((capnp::uint) vo_SMB_SlowDelta.size()));
-  setCapnpList(vs_SoilMineralNContent, builder.initVsSoilMineralNContent((capnp::uint) vs_SoilMineralNContent.size()));
-  setCapnpList(vo_SoilOrganicC, builder.initSoilOrganicC((capnp::uint) vo_SoilOrganicC.size()));
-  setCapnpList(vo_SOM_FastDelta, builder.initSomFastDelta((capnp::uint) vo_SOM_FastDelta.size()));
-  setCapnpList(vo_SOM_FastInput, builder.initSomFastInput((capnp::uint) vo_SOM_FastInput.size()));
-  setCapnpList(vo_SOM_SlowDelta, builder.initSomSlowDelta((capnp::uint) vo_SOM_SlowDelta.size()));
-  builder.setSumDenitrification(vo_SumDenitrification);
-  builder.setSumNetNMineralisation(vo_SumNetNMineralisation);
-  builder.setSumN2OProduced(vo_SumN2O_Produced);
-  builder.setSumNH3Volatilised(vo_SumNH3_Volatilised);
-  builder.setTotalDenitrification(vo_TotalDenitrification);
-  builder.setIncorporation(incorporation);
-}
-
+/**
+ * @brief Initializing pools and state for a freshly created SoilOrganic struct.
+ */
 /**
  * @brief Supplying parameters of today's added organic matter (AOM)
  * @param residueParams Ernterückstände
@@ -522,159 +540,6 @@ void SoilOrganic::fo_OM_Input(bool vo_AOM_Addition) {
   }
 }
  */
-
-/**
- * Calculation of urea solution and hydrolysis as well as ammonia
- * volatilisation from top layer based on Sadeghi et al. 1988
- *
- * <img src="../images/urea_solution.png">
- *
- *
- * @param vo_AddedOrganicMatterAmount
- * @param vo_RainIrrigation
- */
-void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
-  std::vector<double> vo_SoilCarbamid_solid(nools,
-                                            0.0); // Solid carbamide concentration in soil solution [kmol urea m-3]
-  std::vector<double> vo_SoilCarbamid_aq(nools,
-                                         0.0); // Dissolved carbamide concetzration in soil solution [kmol urea m-3]
-  std::vector<double> vo_HydrolysisRate1(nools, 0.0); // [kg N d-1]
-  std::vector<double> vo_HydrolysisRate2(nools, 0.0); // [kg N d-1]
-  std::vector<double> vo_HydrolysisRateMax(nools, 0.0); // [kg N d-1]
-  std::vector<double> vo_Hydrolysis_pH_Effect(nools, 0.0);// []
-  std::vector<double> vo_HydrolysisRate(nools, 0.0); // [kg N d-1]
-  double vo_H3OIonConcentration = 0.0; // Oxonium ion concentration in soil solution [kmol m-3]
-  double vo_NH3aq_EquilibriumConst = 0.0; // []
-  double vo_NH3_EquilibriumConst = 0.0; // []
-  double vs_SoilNH4aq = 0.0; // ammonium ion concentration in soil solution [kmol m-3}
-  double vo_NH3aq = 0.0;
-  double vo_NH3gas = 0.0;
-  double vo_NH3_Volatilising = 0.0;
-
-  double po_HydrolysisKM = _params.po_HydrolysisKM;
-  double po_HydrolysisP1 = _params.po_HydrolysisP1;
-  double po_HydrolysisP2 = _params.po_HydrolysisP2;
-  double po_ActivationEnergy = _params.po_ActivationEnergy;
-
-  vo_NH3_Volatilised = 0.0;
-
-  for (int i = 0; i < soilColumn._vs_NumberOfOrganicLayers; i++) {
-    auto &layer = soilColumn.at(i);
-
-    // kmol urea m-3 soil
-    vo_SoilCarbamid_solid[i] = layer.vs_SoilCarbamid /
-                               OrganicConstants::po_UreaMolecularWeight /
-                               OrganicConstants::po_Urea_to_N / 1000.0;
-
-    // mol urea kg Solution-1
-    vo_SoilCarbamid_aq[i] = (-1258.9 + 13.2843 * (layer.vs_SoilTemperature + 273.15) -
-                             0.047381 * ((layer.vs_SoilTemperature + 273.15) *
-                                         (layer.vs_SoilTemperature + 273.15)) +
-                             5.77264e-5 * (pow((layer.vs_SoilTemperature + 273.15), 3.0)));
-
-    // kmol urea m-3 soil
-    vo_SoilCarbamid_aq[i] = (vo_SoilCarbamid_aq[i] / (1.0 +
-                                                      (vo_SoilCarbamid_aq[i] * 0.0453))) *
-                            layer.vs_SoilMoisture_m3;
-
-    if (vo_SoilCarbamid_aq[i] >= vo_SoilCarbamid_solid[i]) {
-
-      vo_SoilCarbamid_aq[i] = vo_SoilCarbamid_solid[i];
-      vo_SoilCarbamid_solid[i] = 0.0;
-
-    } else {
-      vo_SoilCarbamid_solid[i] -= vo_SoilCarbamid_aq[i];
-    }
-
-    // Calculate urea hydrolysis
-
-    vo_HydrolysisRate1[i] = (po_HydrolysisP1 *
-                             (layer.vs_SoilOrganicMatter() * 100.0) *
-                             OrganicConstants::po_SOM_to_C + po_HydrolysisP2) /
-                            OrganicConstants::po_UreaMolecularWeight;
-
-    vo_HydrolysisRate2[i] = vo_HydrolysisRate1[i] /
-                            (exp(-po_ActivationEnergy /
-                                 (8.314 * 310.0)));
-
-    vo_HydrolysisRateMax[i] = vo_HydrolysisRate2[i] * exp(-po_ActivationEnergy /
-                                                          (8.314 * (layer.vs_SoilTemperature + 273.15)));
-
-    vo_Hydrolysis_pH_Effect[i] = exp(-0.064 *
-                                     ((layer._sps.vs_SoilpH - 6.5) * (layer._sps.vs_SoilpH - 6.5)));
-
-    // kmol urea kg soil-1 s-1
-    vo_HydrolysisRate[i] = vo_HydrolysisRateMax[i] *
-                           fo_MoistOnHydrolysis(layer.vs_SoilMoisture_pF()) *
-                           vo_Hydrolysis_pH_Effect[i] * vo_SoilCarbamid_aq[i] /
-                           (po_HydrolysisKM + vo_SoilCarbamid_aq[i]);
-
-    // kmol urea m soil-3 d-1
-    vo_HydrolysisRate[i] = vo_HydrolysisRate[i] * 86400.0 *
-                           layer._sps.vs_SoilBulkDensity();
-
-    if (vo_HydrolysisRate[i] >= vo_SoilCarbamid_aq[i]) {
-
-      layer.vs_SoilNH4 += layer.vs_SoilCarbamid;
-      layer.vs_SoilCarbamid = 0.0;
-
-    } else {
-
-      // kg N m soil-3
-      layer.vs_SoilCarbamid -= vo_HydrolysisRate[i] *
-                               OrganicConstants::po_UreaMolecularWeight *
-                               OrganicConstants::po_Urea_to_N * 1000.0;
-
-      // kg N m soil-3
-      layer.vs_SoilNH4 += vo_HydrolysisRate[i] *
-                          OrganicConstants::po_UreaMolecularWeight *
-                          OrganicConstants::po_Urea_to_N * 1000.0;
-    }
-
-    // Calculate general volatilisation from NH4-Pool in top layer
-    if (i == 0) {
-      auto layer0 = soilColumn.at(0);
-
-      vo_H3OIonConcentration = pow(10.0, (-layer0._sps.vs_SoilpH)); // kmol m-3
-      vo_NH3aq_EquilibriumConst = pow(10.0, ((-2728.3 /
-                                              (layer0.vs_SoilTemperature + 273.15)) -
-                                             0.094219)); // K2 in Sadeghi's program
-
-      vo_NH3_EquilibriumConst = pow(10.0, ((1630.5 /
-                                            (layer0.vs_SoilTemperature + 273.15)) -
-                                           2.301));  // K1 in Sadeghi's program
-
-      // kmol m-3, assuming that all NH4 is solved
-      vs_SoilNH4aq = layer0.vs_SoilNH4 / (OrganicConstants::po_NH4MolecularWeight * 1000.0);
-
-      // kmol m-3
-      vo_NH3aq = vs_SoilNH4aq / (1.0 + (vo_H3OIonConcentration / vo_NH3aq_EquilibriumConst));
-
-      vo_NH3gas = vo_NH3aq;
-      //  vo_NH3gas = vo_NH3aq / vo_NH3_EquilibriumConst;
-
-      // kg N m-3 d-1
-      vo_NH3_Volatilising = vo_NH3gas * OrganicConstants::po_NH3MolecularWeight * 1000.0;
-
-      if (vo_NH3_Volatilising >= layer0.vs_SoilNH4) {
-        vo_NH3_Volatilising = layer0.vs_SoilNH4;
-        layer0.vs_SoilNH4 = 0.0;
-      } else {
-        layer0.vs_SoilNH4 -= vo_NH3_Volatilising;
-      }
-
-      // kg N m-2 d-1
-      vo_NH3_Volatilised = vo_NH3_Volatilising * layer0.vs_LayerThickness;
-
-    } // if (i == 0) {
-  } // for
-
-  // set incorporation to false, if carbamid part is falling below a treshold
-  // only, if organic matter was not recently added
-  if (vo_SoilCarbamid_aq[0] < 0.001 && !addedOrganicMatter) incorporation = false;
-
-}
 
 /**
  * @brief Internal Subroutine MIT - Mineralisation Immobilisitation Turn-Over
@@ -1780,13 +1645,18 @@ double SoilOrganic::fo_NH3onNitriteOxidation(double d_SoilNH4, double d_SoilpH) 
 }
 
 kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters params) {
-  return kj::heap<SoilOrganic>(soilColumn, kj::mv(params));
+  auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn, kj::mv(params)});
+  soilOrganicInitializeFromParams(so.get());
+  return so;
 }
 
 kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn& soilColumn,
                                              mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
                                              CropModule* cropModule) {
-  return kj::heap<SoilOrganic>(soilColumn, reader, cropModule);
+  auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn});
+  so->cropModule = cropModule;
+  soilOrganicDeserialize(so.get(), reader);
+  return so;
 }
 
 void monica::soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
@@ -1877,20 +1747,12 @@ void monica::soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::mon
   builder.setIncorporation(so->incorporation);
 }
 
-void monica::soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed) {
-  soilOrganicStepImpl(so, meanAirTemperature, precipitation, windSpeed);
-}
-
 void monica::soilOrganicPutCrop(SoilOrganic* so, CropModule* cm) { so->cropModule = cm; }
 void monica::soilOrganicRemoveCrop(SoilOrganic* so) { so->cropModule = nullptr; }
 void monica::soilOrganicSetIncorporation(SoilOrganic* so, bool incorp) { so->incorporation = incorp; }
 void monica::soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
-                                         const std::map<size_t, double>& layer2amount, double nConcentration) {
-  soilOrganicAddOrganicMatterImpl(so, params, layer2amount, nConcentration);
-}
-void monica::soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                          double amount, double nConcentration, size_t intoLayerIndex) {
-  soilOrganicAddOrganicMatterImpl(so, params, {{intoLayerIndex, amount}}, nConcentration);
+  soilOrganicAddOrganicMatter(so, params, std::map<size_t, double>{{intoLayerIndex, amount}}, nConcentration);
 }
 void monica::soilOrganicAddIrrigationWater(SoilOrganic* so, double amount) { so->irrigationAmount += amount; }
 
@@ -1918,7 +1780,6 @@ double monica::soilOrganicGetDenitrification(const SoilOrganic* so) { return so-
 double monica::soilOrganicGetDecomposerRespiration(const SoilOrganic* so) { return so->vo_DecomposerRespiration * 10000.0; }
 double monica::soilOrganicGetNetEcosystemProduction(const SoilOrganic* so) { return so->vo_NetEcosystemProduction; }
 double monica::soilOrganicGetNetEcosystemExchange(const SoilOrganic* so) { return so->vo_NetEcosystemExchange; }
-double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int iLayer) { return soilOrganicGetOrganicNImpl(so, iLayer); }
 double monica::soilOrganicGetActAmmoniaOxidationRate(const SoilOrganic* so, int i) { return so->vo_ActAmmoniaOxidationRate[i]; }
 double monica::soilOrganicGetActNitrificationRate(const SoilOrganic* so, int i) { return so->vo_ActNitrificationRate[i]; }
 

@@ -39,20 +39,8 @@ struct CropModule;
 
 struct SoilOrganic
 {
-  SoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters  params);
-
-  SoilOrganic(SoilColumn& sc, mas::schema::model::monica::SoilOrganicModuleState::Reader reader, CropModule* cropModule = nullptr)
-    : soilColumn(sc)
-    , cropModule(cropModule) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
-  void serialize(mas::schema::model::monica::SoilOrganicModuleState::Builder builder) const;
-
 public:
   //void fo_OM_Input(bool vo_AOM_Addition);
-  void fo_Urea(double vo_RainIrrigation);
   void fo_MIT();
   void fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTemperature, double vw_WindSpeed);
   
@@ -151,6 +139,8 @@ kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn,
                                      CropModule* cropModule = nullptr);
 void soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
 void soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder);
+void soilOrganicInitializeFromParams(SoilOrganic* so);
+void soilOrganicFoUrea(SoilOrganic* so);
 void soilOrganicStep(SoilOrganic* so, double meanAirTemperature, double precipitation, double windSpeed);
 void soilOrganicPutCrop(SoilOrganic* so, CropModule* cm);
 void soilOrganicRemoveCrop(SoilOrganic* so);
