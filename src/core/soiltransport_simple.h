@@ -27,6 +27,8 @@ namespace monica {
 struct SoilColumn;
 struct CropModule;
 
+namespace soiltransport {
+
 /**
 * @brief Soil matter transport part of model
 *
@@ -69,18 +71,22 @@ kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
 kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
                                          mas::schema::model::monica::SoilTransportModuleState::Reader reader,
                                          CropModule* cropModule = nullptr);
-void soilTransportDeserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader);
-void soilTransportSerialize(const SoilTransport* st,
-                            mas::schema::model::monica::SoilTransportModuleState::Builder builder);
-void soilTransportStep(SoilTransport* st);
-void soilTransportNDeposition(SoilTransport* st);
-void soilTransportNUptake(SoilTransport* st);
-void soilTransportNTransport(SoilTransport* st, double leachingDepth, double timeStepFactor);
-void soilTransportPutCrop(SoilTransport* st, CropModule* cm);
-void soilTransportRemoveCrop(SoilTransport* st);
-double soilTransportGetSoilNO3(const SoilTransport* st, int iLayer);
-double soilTransportGetNLeaching(const SoilTransport* st);
-double soilTransportGetVqDispersion(const SoilTransport* st, int iLayer);
-double soilTransportGetVqConvection(const SoilTransport* st, int iLayer);
+void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader);
+void serialize(const SoilTransport* st,
+               mas::schema::model::monica::SoilTransportModuleState::Builder builder);
+void step(SoilTransport* st);
+void nDeposition(SoilTransport* st);
+void nUptake(SoilTransport* st);
+void nTransport(SoilTransport* st, double leachingDepth, double timeStepFactor);
+void putCrop(SoilTransport* st, CropModule* cm);
+void removeCrop(SoilTransport* st);
+double getSoilNO3(const SoilTransport* st, int iLayer);
+double getNLeaching(const SoilTransport* st);
+double getVqDispersion(const SoilTransport* st, int iLayer);
+double getVqConvection(const SoilTransport* st, int iLayer);
+
+} // namespace soiltransport
+
+using SoilTransport = soiltransport::SoilTransport;
 
 } // namespace monica

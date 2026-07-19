@@ -843,7 +843,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NLeach", "kgN ha-1", "N leaching"},
             [](const MonicaModel& monica, OId oid) {
-              return round(soilTransportGetNLeaching(&monica.soilTransport()), 3);
+              return round(soiltransport::getNLeaching(&monica.soilTransport()), 3);
             });
 
       build({id++, "NO3", "kgN m-3", ""},
@@ -1333,13 +1333,13 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NO3conv", "", "get_vq_Convection"},
             [](const MonicaModel& monica, OId oid) {
-              return getComplexValues<double>(oid, [&](int i) { return soilTransportGetVqConvection(&monica.soilTransport(), i); },
+              return getComplexValues<double>(oid, [&](int i) { return soiltransport::getVqConvection(&monica.soilTransport(), i); },
                                               8);
             });
 
       build({id++, "NO3disp", "", "get_vq_Dispersion"},
             [](const MonicaModel& monica, OId oid) {
-              return getComplexValues<double>(oid, [&](int i) { return soilTransportGetVqDispersion(&monica.soilTransport(), i); },
+              return getComplexValues<double>(oid, [&](int i) { return soiltransport::getVqDispersion(&monica.soilTransport(), i); },
                                               8);
             });
 

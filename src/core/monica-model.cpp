@@ -74,7 +74,7 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
 _soilTemperature(makeSoilTemperature(*this, cpp.userSoilTemperatureParameters))
 , _soilMoisture(soilmoisture::makeSoilMoisture(*this, cpp.userSoilMoistureParameters))
 , _soilOrganic(makeSoilOrganic(*_soilColumn, cpp.userSoilOrganicParameters))
-, _soilTransport(makeSoilTransport(*_soilColumn, _sitePs, cpp.userSoilTransportParameters,
+, _soilTransport(soiltransport::makeSoilTransport(*_soilColumn, _sitePs, cpp.userSoilTransportParameters,
                                    _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {}
 
 void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Reader reader) {
@@ -125,10 +125,10 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
   }
 
   if (_soilTransport) {
-    soilTransportDeserialize(_soilTransport.get(), reader.getSoilTransport());
-    soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
+    soiltransport::deserialize(_soilTransport.get(), reader.getSoilTransport());
+    soiltransport::putCrop(_soilTransport.get(), _currentCropModule.get());
   } else {
-    _soilTransport = makeSoilTransport(*_soilColumn, reader.getSoilTransport(), _currentCropModule.get());
+    _soilTransport = soiltransport::makeSoilTransport(*_soilColumn, reader.getSoilTransport(), _currentCropModule.get());
   }
 
   _sumFertiliser = reader.getSumFertiliser();
@@ -192,7 +192,7 @@ void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builde
   soilTemperatureSerialize(_soilTemperature.get(), builder.initSoilTemperature());
   soilmoisture::serialize(_soilMoisture.get(), builder.initSoilMoisture());
   soilOrganicSerialize(_soilOrganic.get(), builder.initSoilOrganic());
-  soilTransportSerialize(_soilTransport.get(), builder.initSoilTransport());
+  soiltransport::serialize(_soilTransport.get(), builder.initSoilTransport());
 
   if (_currentCropModule) cropModuleSerialize(_currentCropModule.get(), builder.initCurrentCropModule());
 
@@ -298,7 +298,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
     //if (crop->separatePerennialCropParameters())
     //  _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
 
-    soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
+    soiltransport::putCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
     _soilMoisture->cropModule = _currentCropModule.get();
     _soilOrganic->cropModule = _currentCropModule.get();
@@ -354,7 +354,7 @@ void MonicaModel::seedCrop(Crop* crop) {
       _currentCropModule->
         setPerennialCropParameters(crop->perennialCropParameters());
 
-    soilTransportPutCrop(_soilTransport.get(), _currentCropModule.get());
+    soiltransport::putCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
     _soilMoisture->cropModule = _currentCropModule.get();
     _soilOrganic->cropModule = _currentCropModule.get();
@@ -610,7 +610,7 @@ void MonicaModel::dailyReset() {
   clearEvents();
 
   if (_clearCropUponNextDay) {
-    soilTransportRemoveCrop(_soilTransport.get());
+    soiltransport::removeCrop(_soilTransport.get());
     soilColumnRemoveCrop(_soilColumn.get());
     _soilMoisture->cropModule = nullptr;
     _soilOrganic->cropModule = nullptr;
@@ -746,7 +746,7 @@ void MonicaModel::generalStep() {
                    julday, et0);
 
   soilOrganicStep(_soilOrganic.get(), tavg, precip, wind);
-  soilTransportStep(_soilTransport.get());
+  soiltransport::step(_soilTransport.get());
 }
 
 pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai) {

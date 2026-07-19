@@ -31,7 +31,10 @@ using namespace std;
 using namespace monica;
 using namespace Tools;
 
-kj::Own<SoilTransport> monica::makeSoilTransport(SoilColumn& soilColumn,
+namespace monica {
+namespace soiltransport {
+
+kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
                                                  const SiteParameters& sps,
                                                  const SoilTransportModuleParameters& params,
                                                  double leachingDepth,
@@ -59,17 +62,17 @@ kj::Own<SoilTransport> monica::makeSoilTransport(SoilColumn& soilColumn,
   return st;
 }
 
-kj::Own<SoilTransport> monica::makeSoilTransport(SoilColumn& soilColumn,
+kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
                                                  mas::schema::model::monica::SoilTransportModuleState::Reader reader,
                                                  CropModule* cropModule) {
   auto st = kj::heap<SoilTransport>();
   st->soilColumn = &soilColumn;
   st->cropModule = cropModule;
-  soilTransportDeserialize(st.get(), reader);
+  deserialize(st.get(), reader);
   return st;
 }
 
-void monica::soilTransportDeserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
+void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
   st->_params.deserialize(reader.getModuleParams());
   setFromCapnpList(st->vq_Convection, reader.getConvection());
   setFromCapnpList(st->vq_DiffusionCoeff, reader.getDiffusionCoeff());
@@ -89,7 +92,7 @@ void monica::soilTransportDeserialize(SoilTransport* st, mas::schema::model::mon
   st->pc_MinimumAvailableN = reader.getPcMinimumAvailableN();
 }
 
-void monica::soilTransportSerialize(const SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Builder builder) {
+void serialize(const SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Builder builder) {
   st->_params.serialize(builder.initModuleParams());
   setCapnpList(st->vq_Convection, builder.initConvection((capnp::uint)st->vq_Convection.size()));
   setCapnpList(st->vq_DiffusionCoeff, builder.initDiffusionCoeff((capnp::uint)st->vq_DiffusionCoeff.size()));
@@ -113,7 +116,7 @@ void monica::soilTransportSerialize(const SoilTransport* st, mas::schema::model:
 /**
  * @brief Computes a soil transport step
  */
-void monica::soilTransportStep(SoilTransport* st) {
+void step(SoilTransport* st) {
   double minTimeStepFactor = 1.0; // [t t-1]
   const auto nols = st->soilColumn->size();
 
@@ -143,13 +146,13 @@ void monica::soilTransportStep(SoilTransport* st) {
     minTimeStepFactor = min(minTimeStepFactor, timeStepFactorCurrentLayer);
   }
 
-  soilTransportNDeposition(st);
-  soilTransportNUptake(st);
+  nDeposition(st);
+  nUptake(st);
 
   // Nitrate transport is called according to the set time step
   st->vq_LeachingAtBoundary = 0.0;
   for (int i_TimeStep = 0; i_TimeStep < (1.0 / minTimeStepFactor); i_TimeStep++) 
-    soilTransportNTransport(st, st->vs_LeachingDepth, minTimeStepFactor);
+    nTransport(st, st->vs_LeachingDepth, minTimeStepFactor);
 
   for (int i = 0; i < nols; i++) {
     st->vq_SoilNO3[i] = st->vq_SoilNO3_aq[i] * (*st->soilColumn)[i].vs_SoilMoisture_m3;
@@ -171,7 +174,7 @@ void monica::soilTransportStep(SoilTransport* st) {
  *
  * Kersebaum 1989
  */
-void monica::soilTransportNDeposition(SoilTransport* st) {
+void nDeposition(SoilTransport* st) {
   //Daily N deposition in [kg N ha-1 d-1]
   double dailyNDeposition = st->vs_NDeposition / 365.0;
 
@@ -185,7 +188,7 @@ void monica::soilTransportNDeposition(SoilTransport* st) {
  *
  * Kersebaum 1989
  */
-void monica::soilTransportNUptake(SoilTransport* st) {
+void nUptake(SoilTransport* st) {
   const auto nols = st->soilColumn->size();
   double cropNUptake = 0.0;
   for (size_t i = 0; i < nols; i++) {
@@ -218,7 +221,7 @@ void monica::soilTransportNUptake(SoilTransport* st) {
  *
  * Kersebaum 1989
  */
-void monica::soilTransportNTransport(SoilTransport* st, double leachingDepth, double timeStepFactor) {
+void nTransport(SoilTransport* st, double leachingDepth, double timeStepFactor) {
   double diffusionCoeffStandard = st->_params.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
   double AD = st->_params.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
   double dispersionLength = st->_params.pq_DispersionLength; // [m]
@@ -388,26 +391,29 @@ void monica::soilTransportNTransport(SoilTransport* st, double leachingDepth, do
   }
 }
 
-double monica::soilTransportGetSoilNO3(const SoilTransport* st, int iLayer) {
+double getSoilNO3(const SoilTransport* st, int iLayer) {
   return st->vq_SoilNO3[iLayer];
 }
 
-double monica::soilTransportGetVqDispersion(const SoilTransport* st, int iLayer) {
+double getVqDispersion(const SoilTransport* st, int iLayer) {
   return st->vq_Dispersion[iLayer];
 }
 
-double monica::soilTransportGetVqConvection(const SoilTransport* st, int iLayer) {
+double getVqConvection(const SoilTransport* st, int iLayer) {
   return st->vq_Convection[iLayer];
 }
 
-double monica::soilTransportGetNLeaching(const SoilTransport* st) {
+double getNLeaching(const SoilTransport* st) {
   return st->vq_LeachingAtBoundary;
 }
 
-void monica::soilTransportPutCrop(SoilTransport* st, CropModule* cm) {
+void putCrop(SoilTransport* st, CropModule* cm) {
   st->cropModule = cm;
 }
 
-void monica::soilTransportRemoveCrop(SoilTransport* st) {
+void removeCrop(SoilTransport* st) {
   st->cropModule = nullptr;
 }
+
+} // namespace soiltransport
+} // namespace monica
