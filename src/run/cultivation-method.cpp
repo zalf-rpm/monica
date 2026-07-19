@@ -372,7 +372,7 @@ std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(
     double avgSoilTemp = 0;
     size_t i = 0;
     for (auto size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++) {
-      avgSoilTemp += soilTemperatureGetSoilTemperature(&model->soilTemperature(), int(i));
+      avgSoilTemp += model->soilTemperature().soilColumn->at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
   };

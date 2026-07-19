@@ -42,6 +42,17 @@
 6. Remaining `SoilMoisture` member getters/setters were removed; direct field access or free procedures now cover the former API surface.
 7. The simple module is effectively complete from the refactor perspective; any future work should be behavior changes only.
 
+### `soiltransport_simple` (status: namespace cleanup done, trivial getters removed)
+
+1. The flat `soilTransport...` free procedures were moved under `monica::soiltransport`.
+2. Remaining trivial getters were removed and their call sites were inlined to direct field access.
+3. Build is green after the namespace cleanup.
+
+### `soiltemperature_simple` (status: namespace cleanup in progress)
+
+1. The module is being moved under `monica::soiltemperature`.
+2. Remaining trivial accessors should be inlined and removed after the namespace move.
+
 ## What to do next (if starting fresh)
 
 1. Continue in `src/core/soilmoisture_simple.h/.cpp` with the same pattern as soilorganic:

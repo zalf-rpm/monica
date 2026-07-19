@@ -28,7 +28,10 @@ const SoilLayer& soilTemperatureLayerAt(const SoilTemperature* st, size_t i) {
 
 } // namespace
 
-kj::Own<SoilTemperature> monica::makeSoilTemperature(MonicaModel& mm, const SoilTemperatureModuleParameters& params) {
+namespace monica {
+namespace soiltemperature {
+
+kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperatureModuleParameters& params) {
   auto st = kj::heap<SoilTemperature>();
   st->soilColumn = &mm.soilColumnNC();
   st->monica = &mm;
@@ -145,7 +148,7 @@ kj::Own<SoilTemperature> monica::makeSoilTemperature(MonicaModel& mm, const Soil
   return st;
 }
 
-kj::Own<SoilTemperature> monica::makeSoilTemperature(
+kj::Own<SoilTemperature> makeSoilTemperature(
   MonicaModel& mm,
   mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
   auto st = kj::heap<SoilTemperature>();
@@ -157,13 +160,11 @@ kj::Own<SoilTemperature> monica::makeSoilTemperature(
   st->matrixDiagonal.resize(st->noOfTempLayers);
   st->matrixLowerTriangle.resize(st->noOfTempLayers);
   st->heatFlow.assign(st->noOfTempLayers, 0.0);
-  soilTemperatureDeserialize(st.get(), reader);
+  deserialize(st.get(), reader);
   return st;
 }
 
-void monica::soilTemperatureDeserialize(
-  SoilTemperature* st,
-  mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
+void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
   st->soilSurfaceTemperature = reader.getSoilSurfaceTemperature();
   st->soilColumnGroundLayer.deserialize(reader.getSoilColumnVtGroundLayer());
   st->soilColumnBottomLayer.deserialize(reader.getSoilColumnVtBottomLayer());
@@ -187,9 +188,7 @@ void monica::soilTemperatureDeserialize(
   st->heatFlow.assign(st->noOfTempLayers, 0.0);
 }
 
-void monica::soilTemperatureSerialize(
-  const SoilTemperature* st,
-  mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) {
+void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) {
   builder.setSoilSurfaceTemperature(st->soilSurfaceTemperature);
   st->soilColumnGroundLayer.serialize(builder.initSoilColumnVtGroundLayer());
   st->soilColumnBottomLayer.serialize(builder.initSoilColumnVtBottomLayer());
@@ -210,12 +209,12 @@ void monica::soilTemperatureSerialize(
   builder.setDampingFactor(st->dampingFactor);
 }
 
-void monica::soilTemperatureStep(SoilTemperature* st, double tmin, double tmax, double globrad) {
+void step(SoilTemperature* st, double tmin, double tmax, double globrad) {
   const size_t groundLayer = st->noOfTempLayers - 2;
   const size_t bottomLayer = st->noOfTempLayers - 1;
 
   st->soilSurfaceTemperature =
-    soilTemperatureCalcSoilSurfaceTemperature(st, st->soilSurfaceTemperature, tmin, tmax, globrad);
+    calcSoilSurfaceTemperature(st, st->soilSurfaceTemperature, tmin, tmax, globrad);
   st->soilColumn->vt_SoilSurfaceTemperature = st->soilSurfaceTemperature;
   st->heatFlow[0] = st->soilSurfaceTemperature * st->B[0] * st->heatConductivityMean[0];
 
@@ -259,7 +258,7 @@ void monica::soilTemperatureStep(SoilTemperature* st, double tmin, double tmax, 
   st->volumeMatrixOld[bottomLayer] = st->volumeMatrix[bottomLayer];
 }
 
-double monica::soilTemperatureCalcSoilSurfaceTemperature(
+double calcSoilSurfaceTemperature(
   const SoilTemperature* st,
   double prevDaySoilSurfaceTemperature,
   double tmin,
@@ -285,10 +284,5 @@ double monica::soilTemperatureCalcSoilSurfaceTemperature(
   return soilSurfaceTemperature;
 }
 
-double monica::soilTemperatureGetSoilSurfaceTemperature(const SoilTemperature* st) {
-  return st->soilSurfaceTemperature;
-}
-
-double monica::soilTemperatureGetSoilTemperature(const SoilTemperature* st, int layer) {
-  return st->soilColumn->at(layer).vs_SoilTemperature;
-}
+} // namespace soiltemperature
+} // namespace monica

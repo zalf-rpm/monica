@@ -71,7 +71,7 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
                              _sitePs.vs_SoilParameters))
 ,
 //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth)),
-_soilTemperature(makeSoilTemperature(*this, cpp.userSoilTemperatureParameters))
+_soilTemperature(soiltemperature::makeSoilTemperature(*this, cpp.userSoilTemperatureParameters))
 , _soilMoisture(soilmoisture::makeSoilMoisture(*this, cpp.userSoilMoistureParameters))
 , _soilOrganic(makeSoilOrganic(*_soilColumn, cpp.userSoilOrganicParameters))
 , _soilTransport(soiltransport::makeSoilTransport(*_soilColumn, _sitePs, cpp.userSoilTransportParameters,
@@ -107,8 +107,8 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
 
   soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
 
-  if (_soilTemperature) soilTemperatureDeserialize(_soilTemperature.get(), reader.getSoilTemperature());
-  else _soilTemperature = makeSoilTemperature(*this, reader.getSoilTemperature());
+  if (_soilTemperature) soiltemperature::deserialize(_soilTemperature.get(), reader.getSoilTemperature());
+  else _soilTemperature = soiltemperature::makeSoilTemperature(*this, reader.getSoilTemperature());
 
   if (_soilMoisture) {
     soilmoisture::deserialize(_soilMoisture.get(), reader.getSoilMoisture());
@@ -189,7 +189,7 @@ void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builde
   _simPs.serialize(builder.initSimPs());
   _groundwaterInformation.serialize(builder.initGroundwaterInformation());
   soilColumnSerialize(_soilColumn.get(), builder.initSoilColumn());
-  soilTemperatureSerialize(_soilTemperature.get(), builder.initSoilTemperature());
+  soiltemperature::serialize(_soilTemperature.get(), builder.initSoilTemperature());
   soilmoisture::serialize(_soilMoisture.get(), builder.initSoilMoisture());
   soilOrganicSerialize(_soilOrganic.get(), builder.initSoilOrganic());
   soiltransport::serialize(_soilTransport.get(), builder.initSoilTransport());
@@ -735,7 +735,7 @@ void MonicaModel::generalStep() {
     addDailySumFertiliser(fertilizerAmount);
   }
 
-  soilTemperatureStep(_soilTemperature.get(), tmin, tmax, globrad);
+  soiltemperature::step(_soilTemperature.get(), tmin, tmax, globrad);
 
   // first try to get ReferenceEvapotranspiration from climate data
   auto et0_it = climateData.find(Climate::et0);

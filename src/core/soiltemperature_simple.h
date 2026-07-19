@@ -15,6 +15,8 @@ namespace monica {
 
 class MonicaModel;
 
+namespace soiltemperature {
+
 //! Calculation of soil temperature is based on a model developed by PIC
 struct SoilTemperature {
   SoilColumn* soilColumn{nullptr};
@@ -46,17 +48,18 @@ struct SoilTemperature {
 kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& monica, const SoilTemperatureModuleParameters& params);
 kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& monica,
                                              mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
-void soilTemperatureDeserialize(SoilTemperature* st,
-                                mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
-void soilTemperatureSerialize(const SoilTemperature* st,
-                              mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
-void soilTemperatureStep(SoilTemperature* st, double tmin, double tmax, double globrad);
-double soilTemperatureCalcSoilSurfaceTemperature(const SoilTemperature* st,
-                                                 double prevSoilSurfaceTemperature,
-                                                 double tmin,
-                                                 double tmax,
-                                                 double globrad);
-double soilTemperatureGetSoilSurfaceTemperature(const SoilTemperature* st);
-double soilTemperatureGetSoilTemperature(const SoilTemperature* st, int layer);
+
+void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
+void step(SoilTemperature* st, double tmin, double tmax, double globrad);
+double calcSoilSurfaceTemperature(const SoilTemperature* st,
+                                 double prevSoilSurfaceTemperature,
+                                 double tmin,
+                                 double tmax,
+                                 double globrad);
+
+} // namespace soiltemperature
+
+using SoilTemperature = soiltemperature::SoilTemperature;
 
 } // namespace monica

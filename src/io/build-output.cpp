@@ -760,13 +760,13 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "SurfTemp", "�C", ""},
             [](const MonicaModel& monica, OId oid) {
-              return round(soilTemperatureGetSoilSurfaceTemperature(&monica.soilTemperature()), 1);
+              return round(monica.soilTemperature().soilSurfaceTemperature, 1);
             });
 
       build({id++, "STemp", "�C", ""},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return soilTemperatureGetSoilTemperature(&monica.soilTemperature(), i);
+                return monica.soilTemperature().soilColumn->at(i).vs_SoilTemperature;
               }, 1);
             });
 
