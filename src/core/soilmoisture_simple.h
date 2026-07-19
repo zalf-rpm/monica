@@ -30,6 +30,8 @@ struct MonicaModel;
 struct SoilColumn;
 struct CropModule;
 
+namespace soilmoisture {
+
 /*!
   * @brief Calculation of the water model based on THESEUS.
   *
@@ -128,73 +130,70 @@ kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica, const SoilMoistureMo
 kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica,
                                        mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
                                        CropModule* cropModule = nullptr);
-void soilMoistureInitializeFromParams(SoilMoisture* sm);
-void soilMoistureDeserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
-void soilMoistureSerialize(const SoilMoisture* sm,
-                           mas::schema::model::monica::SoilMoistureModuleState::Builder builder);
-void soilMoistureFmInfiltration(SoilMoisture* sm, double waterToInfiltrate);
-double soilMoistureGetSoilMoisture(const SoilMoisture* sm, int layer);
-double soilMoistureGetCapillaryRise(const SoilMoisture* sm, int layer);
-double soilMoistureGetPercolationRate(const SoilMoisture* sm, int layer);
-double soilMoistureGetDeprivationFactor(int layerNo,
-                                        double deprivationDepth,
-                                        double zeta,
-                                        double layerThickness);
-void soilMoistureFmCapillaryRise(SoilMoisture* sm);
-void soilMoistureFmPercolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer);
-void soilMoistureFmGroundwaterReplenishment(SoilMoisture* sm);
-void soilMoistureFmPercolationWithoutGroundwater(SoilMoisture* sm);
-void soilMoistureFmBackwaterReplenishment(SoilMoisture* sm);
-double soilMoistureDualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, double tmax);
-void soilMoistureFmEvapotranspiration(SoilMoisture* sm,
-                                      double percentageSoilCoverage,
-                                      double kcFactor,
-                                      double heightNN,
-                                      double maxAirTemperature,
-                                      double minAirTemperature,
-                                      double relativeHumidity,
-                                      double meanAirTemperature,
-                                      double windSpeed,
-                                      double windSpeedHeight,
-                                      double globalRadiation,
-                                      int developmentalStage,
-                                      int julianDay,
-                                      double latitude,
-                                      double referenceEvapotranspiration);
-double soilMoistureReferenceEvapotranspiration(SoilMoisture* sm,
-                                               double heightNN,
-                                               double maxAirTemperature,
-                                               double minAirTemperature,
-                                               double relativeHumidity,
-                                               double meanAirTemperature,
-                                               double windSpeed,
-                                               double windSpeedHeight,
-                                               double globalRadiation,
-                                               int julianDay,
-                                               double latitude);
-double soilMoistureGetEReducer1(const SoilMoisture* sm,
-                                int layer,
-                                double percentageSoilCoverage,
-                                double referenceEvapotranspiration);
-void soilMoistureStep(SoilMoisture* sm,
-                      double depthGroundwaterTable,
-                      double precipitation,
-                      double maxAirTemperature,
-                      double minAirTemperature,
-                      double relativeHumidity,
-                      double meanAirTemperature,
-                      double windSpeed,
-                      double windSpeedHeight,
-                      double netRadiation,
-                      int julianDay,
-                      double referenceEvapotranspiration);
-double soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm);
-std::pair<double, double> soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp);
-double soilMoistureGetFrostDepth(const SoilMoisture* sm);
-double soilMoistureGetThawDepth(const SoilMoisture* sm);
-double soilMoistureGetMaxSnowDepth(const SoilMoisture* sm);
-double soilMoistureGetAccumulatedSnowDepth(const SoilMoisture* sm);
-double soilMoistureGetAccumulatedFrostDepth(const SoilMoisture* sm);
-double soilMoistureMeanWaterContent(const SoilMoisture* sm, double depth_m);
-double soilMoistureMeanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers);
+void initializeFromParams(SoilMoisture* sm);
+void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
+void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Builder builder);
+void infiltration(SoilMoisture* sm, double waterToInfiltrate);
+double getSoilMoisture(const SoilMoisture* sm, int layer);
+double getCapillaryRise(const SoilMoisture* sm, int layer);
+double getPercolationRate(const SoilMoisture* sm, int layer);
+double getDeprivationFactor(int layerNo, double deprivationDepth, double zeta, double layerThickness);
+void capillaryRise(SoilMoisture* sm);
+void percolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer);
+void groundwaterReplenishment(SoilMoisture* sm);
+void percolationWithoutGroundwater(SoilMoisture* sm);
+void backwaterReplenishment(SoilMoisture* sm);
+double dualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, double tmax);
+void evapotranspiration(SoilMoisture* sm,
+                        double percentageSoilCoverage,
+                        double kcFactor,
+                        double heightNN,
+                        double maxAirTemperature,
+                        double minAirTemperature,
+                        double relativeHumidity,
+                        double meanAirTemperature,
+                        double windSpeed,
+                        double windSpeedHeight,
+                        double globalRadiation,
+                        int developmentalStage,
+                        int julianDay,
+                        double latitude,
+                        double referenceEvapotranspiration);
+double referenceEvapotranspiration(SoilMoisture* sm,
+                                   double heightNN,
+                                   double maxAirTemperature,
+                                   double minAirTemperature,
+                                   double relativeHumidity,
+                                   double meanAirTemperature,
+                                   double windSpeed,
+                                   double windSpeedHeight,
+                                   double globalRadiation,
+                                   int julianDay,
+                                   double latitude);
+double getEReducer1(const SoilMoisture* sm, int layer, double percentageSoilCoverage, double referenceEvapotranspiration);
+void step(SoilMoisture* sm,
+          double depthGroundwaterTable,
+          double precipitation,
+          double maxAirTemperature,
+          double minAirTemperature,
+          double relativeHumidity,
+          double meanAirTemperature,
+          double windSpeed,
+          double windSpeedHeight,
+          double netRadiation,
+          int julianDay,
+          double referenceEvapotranspiration);
+double getTemperatureUnderSnow(const SoilMoisture* sm);
+std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp);
+double getFrostDepth(const SoilMoisture* sm);
+double getThawDepth(const SoilMoisture* sm);
+double getMaxSnowDepth(const SoilMoisture* sm);
+double getAccumulatedSnowDepth(const SoilMoisture* sm);
+double getAccumulatedFrostDepth(const SoilMoisture* sm);
+double meanWaterContent(const SoilMoisture* sm, double depth_m);
+double meanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers);
+} // namespace soilmoisture
+
+using SoilMoisture = soilmoisture::SoilMoisture;
+
 } // namespace monica

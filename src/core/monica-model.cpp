@@ -72,7 +72,7 @@ MonicaModel::MonicaModel(const CentralParameterProvider& cpp)
 ,
 //cpp.userSoilMoistureParameters.pm_CriticalMoistureDepth)),
 _soilTemperature(makeSoilTemperature(*this, cpp.userSoilTemperatureParameters))
-, _soilMoisture(makeSoilMoisture(*this, cpp.userSoilMoistureParameters))
+, _soilMoisture(soilmoisture::makeSoilMoisture(*this, cpp.userSoilMoistureParameters))
 , _soilOrganic(makeSoilOrganic(*_soilColumn, cpp.userSoilOrganicParameters))
 , _soilTransport(makeSoilTransport(*_soilColumn, _sitePs, cpp.userSoilTransportParameters,
                                    _envPs.p_LeachingDepth, _envPs.p_timeStep, _cropPs.pc_MinimumAvailableN)) {}
@@ -98,7 +98,7 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
     _currentCropModule = makeCropModule(*_soilColumn, _cropPs,
                                         [this](string event) { this->addEvent(event); }, addOMFunc,
                                         [this](double avgAirTemp) {
-                                          return soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(
+                                          return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
                                             &this->soilMoisture(), avgAirTemp);
                                         },
                                         reader.getCurrentCropModule(),
@@ -111,10 +111,10 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
   else _soilTemperature = makeSoilTemperature(*this, reader.getSoilTemperature());
 
   if (_soilMoisture) {
-    soilMoistureDeserialize(_soilMoisture.get(), reader.getSoilMoisture());
+    soilmoisture::deserialize(_soilMoisture.get(), reader.getSoilMoisture());
     _soilMoisture->cropModule = _currentCropModule.get();
   } else {
-    _soilMoisture = makeSoilMoisture(*this, reader.getSoilMoisture(), _currentCropModule.get());
+    _soilMoisture = soilmoisture::makeSoilMoisture(*this, reader.getSoilMoisture(), _currentCropModule.get());
   }
 
   if (_soilOrganic) {
@@ -190,7 +190,7 @@ void MonicaModel::serialize(mas::schema::model::monica::MonicaModelState::Builde
   _groundwaterInformation.serialize(builder.initGroundwaterInformation());
   soilColumnSerialize(_soilColumn.get(), builder.initSoilColumn());
   soilTemperatureSerialize(_soilTemperature.get(), builder.initSoilTemperature());
-  soilMoistureSerialize(_soilMoisture.get(), builder.initSoilMoisture());
+  soilmoisture::serialize(_soilMoisture.get(), builder.initSoilMoisture());
   soilOrganicSerialize(_soilOrganic.get(), builder.initSoilOrganic());
   soilTransportSerialize(_soilTransport.get(), builder.initSoilTransport());
 
@@ -290,7 +290,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
                                         [this](const string& event) { this->addEvent(event); },
                                         addOMFunc,
                                         [this](double avgAirTemp) {
-                                          return soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(
+                                          return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
                                             &this->soilMoisture(), avgAirTemp);
                                         },
                                         _intercropping);
@@ -345,7 +345,7 @@ void MonicaModel::seedCrop(Crop* crop) {
                                         crop->isWinterCrop(), _sitePs, _cropPs, _simPs,
                                         [this](string event) { this->addEvent(event); }, addOMFunc,
                                         [this](double avgAirTemp) {
-                                          return soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(
+                                          return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
                                             &this->soilMoisture(), avgAirTemp);
                                         },
                                         _intercropping);
@@ -741,7 +741,7 @@ void MonicaModel::generalStep() {
   auto et0_it = climateData.find(Climate::et0);
   double et0 = et0_it == climateData.end() ? -1.0 : et0_it->second;
 
-  soilMoistureStep(_soilMoisture.get(), vs_GroundwaterDepth, precip, tmax, tmin,
+  soilmoisture::step(_soilMoisture.get(), vs_GroundwaterDepth, precip, tmax, tmin,
                    (relhumid / 100.0), tavg, wind, _envPs.p_WindSpeedHeight, globrad,
                    julday, et0);
 
