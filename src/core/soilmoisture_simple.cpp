@@ -455,18 +455,6 @@ void capillaryRise(SoilMoisture* sm) {
   }
 }
 
-double getSoilMoisture(const SoilMoisture* sm, int layer) {
-  return sm->soilColumn[layer].vs_SoilMoisture_m3;
-}
-
-double getCapillaryRise(const SoilMoisture* sm, int layer) {
-  return sm->vm_CapillaryWater.at(layer);
-}
-
-double getPercolationRate(const SoilMoisture* sm, int layer) {
-  return sm->vm_PercolationRate.at(layer);
-}
-
 /**
  * @brief Calculation of percolation with groundwater influence
   */
@@ -1331,22 +1319,7 @@ double referenceEvapotranspiration(SoilMoisture* sm,
   return vm_ReferenceEvapotranspiration;
 }
 
-double getFrostDepth(const SoilMoisture* sm) { return sm->frostComponent->getFrostDepth(); }
-
-//! Returns thaw depth [m]
-double getThawDepth(const SoilMoisture* sm) { return sm->frostComponent->getThawDepth(); }
-
-double getMaxSnowDepth(const SoilMoisture* sm) { return sm->snowComponent->getMaxSnowDepth(); }
-
-double getAccumulatedSnowDepth(const SoilMoisture* sm) {
-  return sm->snowComponent->getAccumulatedSnowDepth();
-}
-
-double getAccumulatedFrostDepth(const SoilMoisture* sm) {
-  return sm->frostComponent->getAccumulatedFrostDepth();
-}
-
-/*!
+/*! 
  * Calculation of evaporation reduction by soil moisture content
  *
  * @param i_Layer
@@ -1510,10 +1483,6 @@ double meanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers)
  * @brief Returns Kc factor
  * @return Kc factor
  */
-double getTemperatureUnderSnow(const SoilMoisture* sm) {
-  return sm->frostComponent->getTemperatureUnderSnow();
-}
-
 kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
   auto sm = kj::heap<SoilMoisture>(SoilMoisture{
       0.0,

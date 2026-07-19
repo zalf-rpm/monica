@@ -279,7 +279,7 @@ double monica::soilTemperatureCalcSoilSurfaceTemperature(
   if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
 
   if (st->monica->soilMoisture().snowComponent->getVm_SnowDepth() > 0.0) {
-    soilSurfaceTemperature = soilmoisture::getTemperatureUnderSnow(&st->monica->soilMoisture());
+    soilSurfaceTemperature = st->monica->soilMoisture().frostComponent->getTemperatureUnderSnow();
   }
 
   return soilSurfaceTemperature;
@@ -292,4 +292,3 @@ double monica::soilTemperatureGetSoilSurfaceTemperature(const SoilTemperature* s
 double monica::soilTemperatureGetSoilTemperature(const SoilTemperature* st, int layer) {
   return st->soilColumn->at(layer).vs_SoilTemperature;
 }
-

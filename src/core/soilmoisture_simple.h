@@ -134,9 +134,6 @@ void initializeFromParams(SoilMoisture* sm);
 void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
 void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Builder builder);
 void infiltration(SoilMoisture* sm, double waterToInfiltrate);
-double getSoilMoisture(const SoilMoisture* sm, int layer);
-double getCapillaryRise(const SoilMoisture* sm, int layer);
-double getPercolationRate(const SoilMoisture* sm, int layer);
 double getDeprivationFactor(int layerNo, double deprivationDepth, double zeta, double layerThickness);
 void capillaryRise(SoilMoisture* sm);
 void percolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer);
@@ -183,13 +180,7 @@ void step(SoilMoisture* sm,
           double netRadiation,
           int julianDay,
           double referenceEvapotranspiration);
-double getTemperatureUnderSnow(const SoilMoisture* sm);
 std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp);
-double getFrostDepth(const SoilMoisture* sm);
-double getThawDepth(const SoilMoisture* sm);
-double getMaxSnowDepth(const SoilMoisture* sm);
-double getAccumulatedSnowDepth(const SoilMoisture* sm);
-double getAccumulatedFrostDepth(const SoilMoisture* sm);
 double meanWaterContent(const SoilMoisture* sm, double depth_m);
 double meanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers);
 } // namespace soilmoisture

@@ -743,12 +743,12 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "FrostD", "m", "Frost front depth in soil"},
             [](const MonicaModel& monica, OId oid) {
-              return round(soilmoisture::getFrostDepth(&monica.soilMoisture()), 1);
+              return round(monica.soilMoisture().frostComponent->getFrostDepth(), 1);
             });
 
       build({id++, "ThawD", "m", "Thaw front depth in soil"},
             [](const MonicaModel& monica, OId oid) {
-              return round(soilmoisture::getThawDepth(&monica.soilMoisture()), 1);
+              return round(monica.soilMoisture().frostComponent->getThawDepth(), 1);
             });
 
       build({id++, "PASW", "m3 m-3", "PASW"},
