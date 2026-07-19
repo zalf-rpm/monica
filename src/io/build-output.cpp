@@ -1417,7 +1417,7 @@ BOTRes& monica::buildOutputTable() {
       build({id++, "WaterFlux", "mm/d", "waterflux in layer"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilMoisture().waterFlux(i);
+                return monica.soilMoisture().vm_WaterFlux.at(i);
               }, 1);
             });
 

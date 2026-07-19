@@ -3,15 +3,15 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -44,14 +44,7 @@ struct CropModule;
   */
 struct SoilMoisture {
   //void fm_SoilMoistureUpdate();
-
-  //! Returns percolation rate.
-  double waterFlux(int layer) const { return vm_WaterFlux.at(layer); }
-  double percolationRate(int layer) const { return vm_PercolationRate.at(layer); }
-
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
-
-public:
   SoilColumn& soilColumn;
   const SiteParameters& siteParameters;
   MonicaModel& monica;
