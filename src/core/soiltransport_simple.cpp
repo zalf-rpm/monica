@@ -391,22 +391,6 @@ void nTransport(SoilTransport* st, double leachingDepth, double timeStepFactor) 
   }
 }
 
-double getSoilNO3(const SoilTransport* st, int iLayer) {
-  return st->vq_SoilNO3[iLayer];
-}
-
-double getVqDispersion(const SoilTransport* st, int iLayer) {
-  return st->vq_Dispersion[iLayer];
-}
-
-double getVqConvection(const SoilTransport* st, int iLayer) {
-  return st->vq_Convection[iLayer];
-}
-
-double getNLeaching(const SoilTransport* st) {
-  return st->vq_LeachingAtBoundary;
-}
-
 void putCrop(SoilTransport* st, CropModule* cm) {
   st->cropModule = cm;
 }

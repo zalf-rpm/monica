@@ -80,10 +80,6 @@ void nUptake(SoilTransport* st);
 void nTransport(SoilTransport* st, double leachingDepth, double timeStepFactor);
 void putCrop(SoilTransport* st, CropModule* cm);
 void removeCrop(SoilTransport* st);
-double getSoilNO3(const SoilTransport* st, int iLayer);
-double getNLeaching(const SoilTransport* st);
-double getVqDispersion(const SoilTransport* st, int iLayer);
-double getVqConvection(const SoilTransport* st, int iLayer);
 
 } // namespace soiltransport
 
