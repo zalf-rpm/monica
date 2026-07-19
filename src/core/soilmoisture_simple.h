@@ -85,9 +85,6 @@ struct SoilMoisture {
 
   double getTemperatureUnderSnow() const;
 
-  double meanWaterContent(double depth_m) const;
-  double meanWaterContent(int layer, int number_of_layers) const;
-
   //! Returns percolation rate.
   double get_GroundwaterRecharge() const { return vm_FluxAtLowerBoundary; }
 
@@ -245,4 +242,6 @@ void soilMoistureStep(SoilMoisture* sm,
                       double referenceEvapotranspiration);
 double soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm);
 std::pair<double, double> soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp);
+double soilMoistureMeanWaterContent(const SoilMoisture* sm, double depth_m);
+double soilMoistureMeanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers);
 } // namespace monica

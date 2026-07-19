@@ -1483,17 +1483,17 @@ double monica::soilMoistureGetDeprivationFactor(int layerNo,
  * Accumulates moisture values of soil layers until the given depth is reached.
  * The mean moisture value is returned.
  */
-double SoilMoisture::meanWaterContent(double depth_m) const {
+double monica::soilMoistureMeanWaterContent(const SoilMoisture* sm, double depth_m) {
   double lsum = 0.0, sum = 0.0;
   int count = 0;
 
-  for (int i = 0; i < numberOfSoilLayers; i++) {
+  for (int i = 0; i < sm->numberOfSoilLayers; i++) {
     count++;
-    double smm3 = soilColumn[i].vs_SoilMoisture_m3;
-    double fc = soilColumn[i]._sps.vs_FieldCapacity;
-    double pwp = soilColumn[i]._sps.vs_PermanentWiltingPoint;
+    double smm3 = sm->soilColumn[i].vs_SoilMoisture_m3;
+    double fc = sm->soilColumn[i]._sps.vs_FieldCapacity;
+    double pwp = sm->soilColumn[i]._sps.vs_PermanentWiltingPoint;
     sum += smm3 / (fc - pwp); //[%nFK]
-    lsum += soilColumn[i].vs_LayerThickness;
+    lsum += sm->soilColumn[i].vs_LayerThickness;
     if (lsum >= depth_m) break;
   }
 
@@ -1501,19 +1501,19 @@ double SoilMoisture::meanWaterContent(double depth_m) const {
 }
 
 
-double SoilMoisture::meanWaterContent(int layer, int number_of_layers) const {
+double monica::soilMoistureMeanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers) {
   double sum = 0.0;
   int count = 0;
 
-  if (layer + number_of_layers > numberOfSoilLayers) {
+  if (layer + number_of_layers > sm->numberOfSoilLayers) {
     return -1;
   }
 
   for (int i = layer; i < layer + number_of_layers; i++) {
     count++;
-    double smm3 = soilColumn[i].vs_SoilMoisture_m3;
-    double fc = soilColumn[i]._sps.vs_FieldCapacity;
-    double pwp = soilColumn[i]._sps.vs_PermanentWiltingPoint;
+    double smm3 = sm->soilColumn[i].vs_SoilMoisture_m3;
+    double fc = sm->soilColumn[i]._sps.vs_FieldCapacity;
+    double pwp = sm->soilColumn[i]._sps.vs_PermanentWiltingPoint;
     sum += smm3 / (fc - pwp); //[%nFK]
   }
 
