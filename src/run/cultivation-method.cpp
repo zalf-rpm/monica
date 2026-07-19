@@ -1206,8 +1206,8 @@ bool Irrigation::apply(MonicaModel* model) {
   // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
   // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
   if (model->simulationParameters().dualKcMethod) {
-    model->soilMoistureNC().set_irrigFwEvent(_params.fw);
-    model->soilMoistureNC().set_irrigIsDripEvent(_params.isDripIrrigation);
+    model->soilMoistureNC().vm_irrigFwEvent = _params.fw;
+    model->soilMoistureNC().vm_irrigIsDripEvent = _params.isDripIrrigation;
   }
   model->addEvent("Irrigation");
 
@@ -1759,4 +1759,3 @@ bool CultivationMethod::reinit(Tools::Date date, bool forceInitYear) {
 
   return addedYear;
 }
-

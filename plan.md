@@ -39,6 +39,8 @@
 3. `makeSoilMoisture(...)` now constructs the plain struct and initializes/deserializes procedurally.
 4. `soilMoistureDeserialize(...)` and `soilMoistureSerialize(...)` now contain full logic directly (no forwarding to removed members).
 5. Build is green after this conversion.
+6. Remaining `SoilMoisture` member getters/setters were removed; direct field access or free procedures now cover the former API surface.
+7. The simple module is effectively complete from the refactor perspective; any future work should be behavior changes only.
 
 ## What to do next (if starting fresh)
 
@@ -48,6 +50,7 @@
    - remove obsolete member declarations/definitions.
 2. Prioritize high-level methods first (`step` and its internal helper chain), then simple wrappers/getters/setters.
 3. After each conversion step, run build and fix regressions immediately.
+4. For the simple module, the remaining work should be documentation or bugfixes only; the procedural conversion target is done.
 
 ## Validation baseline
 

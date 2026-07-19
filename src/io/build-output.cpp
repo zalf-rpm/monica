@@ -700,7 +700,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Mois", "m3 m-3", "Soil moisture content"},
             [](const MonicaModel& monica, OId oid) {
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_SoilMoisture(i); }, 3);
+              return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().soilColumn.at(i).vs_SoilMoisture_m3; }, 3);
             },
             [](MonicaModel& monica, OId oid, Json value) {
               setComplexValues(oid, [&](int i, Json j) {
@@ -723,17 +723,17 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Infilt", "mm", "Infiltration"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_Infiltration(), 1);
+              return round(monica.soilMoisture().vm_Infiltration, 1);
             });
 
       build({id++, "Surface", "mm", "Surface water storage"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_SurfaceWaterStorage(), 1);
+              return round(monica.soilMoisture().vm_SurfaceWaterStorage, 1);
             });
 
       build({id++, "RunOff", "mm", "Surface runoff of current day"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_SurfaceRunOff(), 1);
+              return round(monica.soilMoisture().vm_SurfaceRunOff, 1);
             });
 
       build({id++, "SnowD", "mm", "Snow depth"},
@@ -743,18 +743,18 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "FrostD", "m", "Frost front depth in soil"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_FrostDepth(), 1);
+              return round(soilMoistureGetFrostDepth(&monica.soilMoisture()), 1);
             });
 
       build({id++, "ThawD", "m", "Thaw front depth in soil"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_ThawDepth(), 1);
+              return round(soilMoistureGetThawDepth(&monica.soilMoisture()), 1);
             });
 
       build({id++, "PASW", "m3 m-3", "PASW"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilMoisture().get_SoilMoisture(i) - monica.soilColumn().at(i).vs_PermanentWiltingPoint();
+                return monica.soilMoisture().soilColumn.at(i).vs_SoilMoisture_m3 - monica.soilColumn().at(i).vs_PermanentWiltingPoint();
               }, 3);
             });
 
@@ -772,12 +772,12 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Act_Ev", "mm", "Actual evaporation"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_ActualEvaporation(), 1);
+              return round(monica.soilMoisture().vm_ActualEvaporation, 1);
             });
 
       build({id++, "Pot_ET", "mm", "potential evapotranspiration = ET0 * Kc = the plants water use"}
             , [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_PotentialEvapotranspiration(), 1);
+              return round(monica.soilMoisture().vm_ReferenceEvapotranspiration * monica.soilMoisture().vc_KcFactor, 1);
             });
 
       build({id++, "Evaporated_from_surface", "mm", "evaporated from surface"},
@@ -792,7 +792,7 @@ BOTRes& monica::buildOutputTable() {
               "actual evapotranspiration = Act_Trans + Act_Ev + Evaporation_from_intercept + Evaporated_from_surface"
             },
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_ActualEvapotranspiration(), 1);
+              return round(monica.soilMoisture().vm_ActualEvapotranspiration, 1);
             });
 
       //build({ id++, "Act_ET2", "mm", "" },
@@ -803,12 +803,12 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "ET0", "mm", "Reference evapotranspiration"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_ET0(), 1);
+              return round(monica.soilMoisture().vm_ReferenceEvapotranspiration, 1);
             });
 
       build({id++, "Kc", "", "plant coefficient to calculate with ET0 the plants water use (ET0 * Kc)"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_KcFactor(), 3);
+              return round(monica.soilMoisture().vc_KcFactor, 3);
             });
 
       build({id++, "Kcb", "", "Basal crop coefficient (FAO-56 Dual Kc)"},
@@ -818,7 +818,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Ke", "", "Soil evaporation coefficient (FAO-56 Dual Kc)"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_KeFactor(), 3);
+              return round(monica.soilMoisture().vm_Ke, 3);
             });
 
       build({id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration"},
@@ -838,7 +838,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Recharge", "mm", "Groundwater recharge"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_GroundwaterRecharge(), 3);
+              return round(monica.soilMoisture().vm_FluxAtLowerBoundary, 3);
             });
 
       build({id++, "NLeach", "kgN ha-1", "N leaching"},
@@ -1087,7 +1087,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "BedGrad", "0;1", ""},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilMoisture().get_PercentageSoilCoverage(), 3);
+              return round(monica.soilMoisture().vc_PercentageSoilCoverage, 3);
             });
 
       build({id++, "N", "kgN m-3", ""},
@@ -1132,7 +1132,7 @@ BOTRes& monica::buildOutputTable() {
       build({id++, "WaterContent", "fraction nFC", "soil water content in % of available soil water"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                double smm3 = monica.soilMoisture().get_SoilMoisture(i);
+                double smm3 = monica.soilMoisture().soilColumn.at(i).vs_SoilMoisture_m3;
                 double fc = monica.soilColumn().at(i).vs_FieldCapacity();
                 double pwp = monica.soilColumn().at(i).vs_PermanentWiltingPoint();
                 return (smm3 - pwp) / (fc - pwp); //[%nFK]
@@ -1151,13 +1151,13 @@ BOTRes& monica::buildOutputTable() {
       build({id++, "CapillaryRise", "mm", "capillary rise"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.soilMoisture().get_CapillaryRise(i);
+                return monica.soilMoisture().vm_CapillaryWater.at(i);
               }, 3);
             });
 
       build({id++, "PercolationRate", "mm", "percolation rate"},
             [](const MonicaModel& monica, OId oid) {
-              return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().get_PercolationRate(i); },
+              return getComplexValues<double>(oid, [&](int i) { return monica.soilMoisture().vm_PercolationRate.at(i); },
                                               3);
             });
 
@@ -1188,8 +1188,8 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "ETa/ETc", "", "Act_ET / Pot_ET"},
             [](const MonicaModel& monica, OId oid) {
-              auto potET = monica.soilMoisture().get_PotentialEvapotranspiration();
-              auto actET = monica.soilMoisture().get_ActualEvapotranspiration();
+              auto potET = monica.soilMoisture().vm_ReferenceEvapotranspiration * monica.soilMoisture().vc_KcFactor;
+              auto actET = monica.soilMoisture().vm_ActualEvapotranspiration;
               return potET > 0 ? round(actET / potET, 2) : 1.0;
             });
 

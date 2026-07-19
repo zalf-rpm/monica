@@ -386,35 +386,6 @@ void monica::soilMoistureFmInfiltration(SoilMoisture* sm, double vm_WaterToInfil
 }
 
 /*!
- * Returns moisture of the layer specified by parameter.
- * @return moisture
- *
- * @param layer Index of layer
- */
-double SoilMoisture::get_SoilMoisture(int layer) const {
-  return soilColumn[layer].vs_SoilMoisture_m3;
-}
-
-/**
- * Returns flux of capillary rise in given layer.
- * @param layer
- * @return Capillary rise in [mm]
- */
-double SoilMoisture::get_CapillaryRise(int layer) const {
-  return vm_CapillaryWater.at(layer);
-}
-
-/**
- * Returns percolation rate at given layer.
- * @param layer
- * @return Percolation rate in [mm]
- */
-double SoilMoisture::get_PercolationRate(int layer) const {
-  return vm_PercolationRate.at(layer);
-}
-
-
-/*!
  * @brief Calculates capillary rise (flux), if no groundwater is within the profil
  *
  * Capillary rise only above groundwater table and within layer with a water content
@@ -479,6 +450,18 @@ void monica::soilMoistureFmCapillaryRise(SoilMoisture* sm) {
       }
     }
   }
+}
+
+double monica::soilMoistureGetSoilMoisture(const SoilMoisture* sm, int layer) {
+  return sm->soilColumn[layer].vs_SoilMoisture_m3;
+}
+
+double monica::soilMoistureGetCapillaryRise(const SoilMoisture* sm, int layer) {
+  return sm->vm_CapillaryWater.at(layer);
+}
+
+double monica::soilMoistureGetPercolationRate(const SoilMoisture* sm, int layer) {
+  return sm->vm_PercolationRate.at(layer);
 }
 
 /**
@@ -1345,20 +1328,19 @@ double monica::soilMoistureReferenceEvapotranspiration(SoilMoisture* sm,
   return vm_ReferenceEvapotranspiration;
 }
 
-double SoilMoisture::get_FrostDepth() const { return frostComponent->getFrostDepth(); }
+double monica::soilMoistureGetFrostDepth(const SoilMoisture* sm) { return sm->frostComponent->getFrostDepth(); }
 
 //! Returns thaw depth [m]
-double SoilMoisture::get_ThawDepth() const { return frostComponent->getThawDepth(); }
+double monica::soilMoistureGetThawDepth(const SoilMoisture* sm) { return sm->frostComponent->getThawDepth(); }
 
-/*!
- * Get capillary rise from KA4
- *
- * In german: berechnet kapilaren Aufstieg ueber Bodenart.
- *
- * @todo Implementierung des kapilaren Aufstiegs fehlt.
- */
-double SoilMoisture::get_CapillaryRise() {
-  return vm_CapillaryRise; //get_par(vm_SoilTextureClass,vm_GroundwaterDistance);
+double monica::soilMoistureGetMaxSnowDepth(const SoilMoisture* sm) { return sm->snowComponent->getMaxSnowDepth(); }
+
+double monica::soilMoistureGetAccumulatedSnowDepth(const SoilMoisture* sm) {
+  return sm->snowComponent->getAccumulatedSnowDepth();
+}
+
+double monica::soilMoistureGetAccumulatedFrostDepth(const SoilMoisture* sm) {
+  return sm->frostComponent->getAccumulatedFrostDepth();
 }
 
 /*!
@@ -1525,28 +1507,8 @@ double monica::soilMoistureMeanWaterContent(const SoilMoisture* sm, int layer, i
  * @brief Returns Kc factor
  * @return Kc factor
  */
-double SoilMoisture::get_KcFactor() const {
-  return vc_KcFactor;
-}
-
-double SoilMoisture::getMaxSnowDepth() const {
-  return snowComponent->getMaxSnowDepth();
-}
-
-double SoilMoisture::getAccumulatedSnowDepth() const {
-  return snowComponent->getAccumulatedSnowDepth();
-}
-
-double SoilMoisture::getAccumulatedFrostDepth() const {
-  return frostComponent->getAccumulatedFrostDepth();
-}
-
-/**
-* @brief Returns snow depth [mm]
-* @return Value for snow depth
-*/
-double SoilMoisture::getTemperatureUnderSnow() const {
-  return frostComponent->getTemperatureUnderSnow();
+double monica::soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm) {
+  return sm->frostComponent->getTemperatureUnderSnow();
 }
 
 kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
@@ -1707,7 +1669,6 @@ void monica::soilMoistureSerialize(const SoilMoisture* sm,
   if (sm->frostComponent) sm->frostComponent->serialize(builder.initFrostComponent());
 }
 
-double monica::soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm) { return sm->getTemperatureUnderSnow(); }
 std::pair<double, double> monica::soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm,
                                                                                         double avgAirTemp) {
   double snowDepth = sm->snowComponent->getVm_SnowDepth();

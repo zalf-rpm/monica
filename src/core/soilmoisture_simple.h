@@ -45,57 +45,9 @@ struct CropModule;
 struct SoilMoisture {
   //void fm_SoilMoistureUpdate();
 
-  // Getter
-  double get_SoilMoisture(int layer) const;
-  double get_CapillaryRise(int layer) const;
-  double get_PercolationRate(int layer) const;
-
+  //! Returns percolation rate.
   double waterFlux(int layer) const { return vm_WaterFlux.at(layer); }
   double percolationRate(int layer) const { return vm_PercolationRate.at(layer); }
-
-  double get_Infiltration() const { return vm_Infiltration; } // [mm]
-
-  double get_SurfaceWaterStorage() const { return vm_SurfaceWaterStorage; } // [mm]
-
-  double get_SurfaceRunOff() const { return vm_SurfaceRunOff; } // [mm]
-
-  double get_ActualEvapotranspiration() const { return vm_ActualEvapotranspiration; } // [mm]
-
-  double get_PotentialEvapotranspiration() const { return get_ET0() * get_KcFactor(); }
-
-  double get_ActualEvaporation() const { return vm_ActualEvaporation; } // [mm]
-
-  double get_ET0() const { return vm_ReferenceEvapotranspiration; } // [mm]
-
-  double get_PercentageSoilCoverage() const { return vc_PercentageSoilCoverage; }
-
-  double get_StomataResistance() const { return vc_StomataResistance; } // [s-1]
-
-  double get_FrostDepth() const; // [m]
-
-  double get_ThawDepth() const; // [m]
-
-  double get_CapillaryRise();
-
-  double getMaxSnowDepth() const;
-
-  double getAccumulatedSnowDepth() const;
-
-  double getAccumulatedFrostDepth() const;
-
-  double getTemperatureUnderSnow() const;
-
-  //! Returns percolation rate.
-  double get_GroundwaterRecharge() const { return vm_FluxAtLowerBoundary; }
-
-  double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
-
-  double get_KcFactor() const;
-  double get_KeFactor() const { return vm_Ke; }
-
-  //! FAO-56 Dual Kc: allow Irrigation workstep to push event-level physical params into this module
-  void set_irrigFwEvent(double fw) { vm_irrigFwEvent = fw; }
-  void set_irrigIsDripEvent(bool isDrip) { vm_irrigIsDripEvent = isDrip; }
 
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
 
@@ -188,6 +140,9 @@ void soilMoistureDeserialize(SoilMoisture* sm, mas::schema::model::monica::SoilM
 void soilMoistureSerialize(const SoilMoisture* sm,
                            mas::schema::model::monica::SoilMoistureModuleState::Builder builder);
 void soilMoistureFmInfiltration(SoilMoisture* sm, double waterToInfiltrate);
+double soilMoistureGetSoilMoisture(const SoilMoisture* sm, int layer);
+double soilMoistureGetCapillaryRise(const SoilMoisture* sm, int layer);
+double soilMoistureGetPercolationRate(const SoilMoisture* sm, int layer);
 double soilMoistureGetDeprivationFactor(int layerNo,
                                         double deprivationDepth,
                                         double zeta,
@@ -242,6 +197,11 @@ void soilMoistureStep(SoilMoisture* sm,
                       double referenceEvapotranspiration);
 double soilMoistureGetTemperatureUnderSnow(const SoilMoisture* sm);
 std::pair<double, double> soilMoistureGetSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp);
+double soilMoistureGetFrostDepth(const SoilMoisture* sm);
+double soilMoistureGetThawDepth(const SoilMoisture* sm);
+double soilMoistureGetMaxSnowDepth(const SoilMoisture* sm);
+double soilMoistureGetAccumulatedSnowDepth(const SoilMoisture* sm);
+double soilMoistureGetAccumulatedFrostDepth(const SoilMoisture* sm);
 double soilMoistureMeanWaterContent(const SoilMoisture* sm, double depth_m);
 double soilMoistureMeanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers);
 } // namespace monica
