@@ -78,3 +78,13 @@ Use the project build task equivalent command:
 Notes:
 - In this environment a transient `.ninja_lock`/PDB contention can appear; rerun (or serialize with `--parallel 1`) if needed.
 - Finish each step with a successful build before moving on.
+
+## Post-build behavior regression check (required)
+
+After a successful build, run the **"Run monica-run"** task from `tasks.json` (currently in `.zed/tasks.json`).
+
+Then compare:
+
+`sim-min-out_section_crop.csv` vs `sim-min-out_section_crop_orig.csv`
+
+The files must be **identical**. Treat any difference as a behavior regression from the refactor and investigate before continuing.
