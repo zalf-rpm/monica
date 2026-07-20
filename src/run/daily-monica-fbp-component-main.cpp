@@ -208,7 +208,7 @@ public:
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica->cropGrowth() && monica->cropGrowth()->isDying()) monica->incorporateCurrentCrop();
+    if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) monica->incorporateCurrentCrop();
 
     //monica main stepping method
     monica->step();

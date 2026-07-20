@@ -263,7 +263,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 
             // test if monica's crop has been dying in previous step
             // if yes, it will be incorporated into soil
-            if(monica.cropGrowth() && monica.cropGrowth()->isDying())
+            if(monica.cropGrowth() && monica.cropGrowth()->dyingOut)
               monica.incorporateCurrentCrop();
 
             auto dsm = msg.json["climateData"].object_items();

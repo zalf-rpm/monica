@@ -860,10 +860,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica->cropGrowth() && monica->cropGrowth()->isDying()) {
+    if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) {
       monica->incorporateCurrentCrop();
     }
-    if (isSyncIC && monica2->cropGrowth() && monica2->cropGrowth()->isDying()) {
+    if (isSyncIC && monica2->cropGrowth() && monica2->cropGrowth()->dyingOut) {
       monica2->incorporateCurrentCrop();
     }
 

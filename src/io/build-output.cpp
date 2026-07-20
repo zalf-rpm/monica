@@ -473,12 +473,12 @@ BOTRes& monica::buildOutputTable() {
               "return sum (across cuts) of exported cut biomass for current crop"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->sumExportedCutBiomass(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_sumExportedCutBiomass, 1) : 0.0;
             });
 
       build({id++, "exportedCutBiomass", "kgDM ha-1", "return exported cut biomass for current crop and cut"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->exportedCutBiomass(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_exportedCutBiomass, 1) : 0.0;
             });
 
       build({
@@ -488,12 +488,12 @@ BOTRes& monica::buildOutputTable() {
               "return sum (across cuts) of residue cut biomass for current crop"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->sumResidueCutBiomass(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_sumResidueCutBiomass, 1) : 0.0;
             });
 
       build({id++, "residueCutBiomass", "kgDM ha-1", "return residue cut biomass for current crop and cut"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->residueCutBiomass(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_residueCutBiomass, 1) : 0.0;
             });
 
       build({
@@ -1372,7 +1372,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "rootNConcentration", "", "rootNConcentration"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->rootNConcentration(), 4) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_NConcentrationRoot, 4) : 0.0;
             });
       build({id++, "actammoxrate", "kgN/m3/d", "actual ammonia oxidation rate in layer"},
             [](const MonicaModel& monica, OId oid) {

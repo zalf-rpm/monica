@@ -4679,7 +4679,7 @@ double monica::cropModuleGetAutotrophicRespiration(const CropModule* cm) {
  */
 double monica::cropModuleGetOrganSpecificTotalRespired(const CropModule* cm, int organ) {
   // get total amount of actual biomass
-  double total_biomass = cm->totalBiomass();
+  double total_biomass = cm->vc_TotalBiomass;
 
   // get biomass of specific organ and calculates ratio
   double organ_percentage = cm->vc_OrganBiomass[organ] / total_biomass;
@@ -4692,7 +4692,7 @@ double monica::cropModuleGetOrganSpecificTotalRespired(const CropModule* cm, int
  */
 double monica::cropModuleGetOrganSpecificNPP(const CropModule* cm, int organ) {
   // get total amount of actual biomass
-  double total_biomass = cm->totalBiomass();
+  double total_biomass = cm->vc_TotalBiomass;
 
   // get biomass of specific organ and calculates ratio
   double organ_percentage = cm->vc_OrganBiomass[organ] / total_biomass;
@@ -5080,9 +5080,9 @@ void monica::cropModuleForceTransplantState(CropModule* cm,
   vc_TransplantShockDuration = postTransplantDelay;
   vc_DaysSinceTransplant = 0;
 
-  // --- Step 1: Force developmental stage and LAI via native setters ---
+  // --- Step 1: Force developmental stage and LAI ---
   cm->setStage(stage);
-  cm->setLeafAreaIndex(lai);
+  cm->vc_LeafAreaIndex = lai;
 
   // --- Step 2: Force cumulative and stage-specific GDD temperature sums ---
   vc_CurrentTotalTemperatureSum = temperatureSum;

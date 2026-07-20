@@ -58,39 +58,12 @@ struct CropModule {
   //void get_CropParameters();
 
 
-  /*
- * @brief Getter for total biomass.
- * @return total biomass
- */
-  inline double totalBiomass() const { return vc_TotalBiomass; }
-
-  /*
-   * Returns state of plant
-   */
-  inline bool isDying() const { return this->dyingOut; }
-
   void setPerennialCropParameters(const CropParameters& cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
 
 
   std::pair<const std::vector<double>&, const std::vector<double>&> sunlitAndShadedLAI() const {
     return make_pair(vc_sunlitLeafAreaIndex, vc_shadedLeafAreaIndex);
   }
-
-  double getLeafAreaIndex() const { return vc_LeafAreaIndex; }
-
-  void setLeafAreaIndex(double lai) { vc_LeafAreaIndex = lai; }
-
-  double getSpecificLeafArea(int stage) const { return pc_SpecificLeafArea[stage]; }
-
-  double sumExportedCutBiomass() const { return vc_sumExportedCutBiomass; }
-
-  double exportedCutBiomass() const { return vc_exportedCutBiomass; }
-
-  double sumResidueCutBiomass() const { return vc_sumResidueCutBiomass; }
-
-  double residueCutBiomass() const { return vc_residueCutBiomass; }
-
-  double rootNConcentration() const { return vc_NConcentrationRoot; }
 
   std::pair<std::vector<double>, double> calcRootDensityFactorAndSum();
 
