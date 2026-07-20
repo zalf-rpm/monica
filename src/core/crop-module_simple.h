@@ -71,12 +71,7 @@ struct CropModule {
              std::function<void(std::string)> fireEvent,
              std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
              std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-             mas::schema::model::monica::CropModuleState::Reader reader,
              Intercropping& ic);
-
-  void deserialize(mas::schema::model::monica::CropModuleState::Reader reader);
-
-  void serialize(mas::schema::model::monica::CropModuleState::Builder builder) const;
 
   void applyCutting(std::map<int, Cutting::Value>& organs,
                     std::map<int, double>& exports,
@@ -799,3 +794,4 @@ void cropModuleStep(CropModule* cm,
 std::ostream& tout(bool closeFile = false);
 #endif
 } // namespace monica
+

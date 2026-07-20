@@ -53,6 +53,12 @@
 1. The module is being moved under `monica::soiltemperature`.
 2. Remaining trivial accessors should be inlined and removed after the namespace move.
 
+### `crop-module_simple` (status: conversion started)
+
+1. Deserialization construction no longer uses a dedicated reader constructor.
+2. `makeCropModule(..., reader, ...)` now creates a plain `CropModule` instance and then calls `cropModuleDeserialize(...)`.
+3. Next step is to remove the remaining constructor and move `serialize`/`deserialize` member logic into free procedures directly.
+
 ## What to do next (if starting fresh)
 
 1. Continue in `src/core/soilmoisture_simple.h/.cpp` with the same pattern as soilorganic:
