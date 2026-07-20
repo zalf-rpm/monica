@@ -58,17 +58,6 @@ struct CropModule {
   //void get_CropParameters();
 
 
-  void setPerennialCropParameters(const CropParameters& cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
-
-
-  std::pair<const std::vector<double>&, const std::vector<double>&> sunlitAndShadedLAI() const {
-    return make_pair(vc_sunlitLeafAreaIndex, vc_shadedLeafAreaIndex);
-  }
-
-  std::pair<std::vector<double>, double> calcRootDensityFactorAndSum();
-
-  void setStage(size_t newStage);
-
   // --- BEGIN TRANSPLANT MODIFICATION ---
   // Forces the initial crop state by bypassing normal germination and synchronizing biomass pools.
 
@@ -76,37 +65,6 @@ struct CropModule {
   int vc_DaysSinceTransplant{-1};
   double vc_TransplantEfficiency{1.0};
   // --- END TRANSPLANT MODIFICATION ---
-
-  std::set<int> organIdsForPrimaryYield() const {
-    std::set<int> ids;
-    for (const auto& yc : pc_OrganIdsForPrimaryYield) ids.insert(yc.organId);
-    return ids;
-  }
-
-  void setOtherCropHeightAndLAIt(double cropHeight, double lait) {
-    _intercroppingOtherCropHeight = cropHeight;
-    _intercroppingOtherLAIt = lait;
-  }
-
-  double getFractionOfInterceptedRadiation1() const { return fractionOfInterceptedRadiation1; }
-
-  double getFractionOfInterceptedRadiation2() const { return fractionOfInterceptedRadiation2; }
-
-  [[nodiscard]] double getCurrentTotalTemperatureSum() const { return vc_CurrentTotalTemperatureSum; }
-
-  [[nodiscard]] double getCurrentStageTemperatureSum() const {
-    if (vc_DevelopmentalStage < vc_CurrentTemperatureSum.size()) {
-      return vc_CurrentTemperatureSum[vc_DevelopmentalStage];
-    }
-    return 0.0;
-  }
-
-  [[nodiscard]] double getTotalTemperatureSum() const { return vc_TotalTemperatureSum; }
-
-  [[nodiscard]] kj::Tuple<int, int> anthesisBetweenStages() const;
-
-  // endAtInclStage < 0 -> count from end
-  double sumStageTemperatureSums(int startAtStage, int endAtInclStage) const;
 
   double vc_TranspirationDeficit{1.0}; //! old TRREL
   double vc_PotentialTranspirationDeficit{0.0};
@@ -119,12 +77,6 @@ public:
   Intercropping* _intercropping{nullptr};
 
   bool _frostKillOn{true};
-
-  int pc_NumberOfAbovegroundOrgans() const;
-
-  bool isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage);
-
-  bool isMaturityDay(size_t old_dev_stage, size_t new_dev_stage);
 
   // members
   SoilColumn* soilColumn{nullptr};
@@ -503,6 +455,22 @@ void cropModuleFcCropNUptake(CropModule* cm,
                              double totalTemperatureSum);
 double cropModuleFcGrossPrimaryProduction(const CropModule* cm);
 double cropModuleFcNetPrimaryProduction(CropModule* cm, double totalRespired);
+void cropModuleSetPerennialCropParameters(CropModule* cm, const CropParameters& cps);
+std::pair<const std::vector<double>&, const std::vector<double>&> cropModuleSunlitAndShadedLAI(const CropModule* cm);
+std::set<int> cropModuleOrganIdsForPrimaryYield(const CropModule* cm);
+void cropModuleSetOtherCropHeightAndLAIt(CropModule* cm, double cropHeight, double lait);
+double cropModuleGetFractionOfInterceptedRadiation1(const CropModule* cm);
+double cropModuleGetFractionOfInterceptedRadiation2(const CropModule* cm);
+double cropModuleGetCurrentTotalTemperatureSum(const CropModule* cm);
+double cropModuleGetCurrentStageTemperatureSum(const CropModule* cm);
+double cropModuleGetTotalTemperatureSum(const CropModule* cm);
+kj::Tuple<int, int> cropModuleAnthesisBetweenStages(const CropModule* cm);
+double cropModuleSumStageTemperatureSums(const CropModule* cm, int startAtStage, int endAtInclStage);
+std::pair<std::vector<double>, double> cropModuleCalcRootDensityFactorAndSum(const CropModule* cm);
+int cropModuleNumberOfAbovegroundOrgans(const CropModule* cm);
+bool cropModuleIsAnthesisDay(const CropModule* cm, size_t old_dev_stage, size_t new_dev_stage);
+bool cropModuleIsMaturityDay(const CropModule* cm, size_t old_dev_stage, size_t new_dev_stage);
+void cropModuleSetStage(CropModule* cm, size_t newStage);
 double cropModuleGetFruitBiomassNContent(const CropModule* cm);
 double cropModuleGetPrimaryCropYield(const CropModule* cm);
 double cropModuleGetSecondaryCropYield(const CropModule* cm);

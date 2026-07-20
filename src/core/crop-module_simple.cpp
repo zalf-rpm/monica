@@ -294,12 +294,54 @@ void monica::cropModuleInitializeFromCropParameters(CropModule* cm,
   vc_KcbFactor = vc_Kcb_ini; // start at initial value
 }
 
+void monica::cropModuleSetPerennialCropParameters(CropModule* cm, const CropParameters& cps) {
+  cm->perennialCropParams = kj::heap<CropParameters>(cps);
+}
 
+std::pair<const std::vector<double>&, const std::vector<double>&> monica::cropModuleSunlitAndShadedLAI(
+  const CropModule* cm) {
+  return {cm->vc_sunlitLeafAreaIndex, cm->vc_shadedLeafAreaIndex};
+}
 
-double CropModule::sumStageTemperatureSums(int startAtStage, int endAtInclStage) const {
+std::set<int> monica::cropModuleOrganIdsForPrimaryYield(const CropModule* cm) {
+  std::set<int> ids;
+  for (const auto& yc : cm->pc_OrganIdsForPrimaryYield) ids.insert(yc.organId);
+  return ids;
+}
+
+void monica::cropModuleSetOtherCropHeightAndLAIt(CropModule* cm, double cropHeight, double lait) {
+  cm->_intercroppingOtherCropHeight = cropHeight;
+  cm->_intercroppingOtherLAIt = lait;
+}
+
+double monica::cropModuleGetFractionOfInterceptedRadiation1(const CropModule* cm) {
+  return cm->fractionOfInterceptedRadiation1;
+}
+
+double monica::cropModuleGetFractionOfInterceptedRadiation2(const CropModule* cm) {
+  return cm->fractionOfInterceptedRadiation2;
+}
+
+double monica::cropModuleGetCurrentTotalTemperatureSum(const CropModule* cm) {
+  return cm->vc_CurrentTotalTemperatureSum;
+}
+
+double monica::cropModuleGetCurrentStageTemperatureSum(const CropModule* cm) {
+  if (cm->vc_DevelopmentalStage < cm->vc_CurrentTemperatureSum.size()) {
+    return cm->vc_CurrentTemperatureSum[cm->vc_DevelopmentalStage];
+  }
+  return 0.0;
+}
+
+double monica::cropModuleGetTotalTemperatureSum(const CropModule* cm) {
+  return cm->vc_TotalTemperatureSum;
+}
+
+double monica::cropModuleSumStageTemperatureSums(const CropModule* cm, int startAtStage, int endAtInclStage) {
   double ts = 0;
-  double endAtInclStage2 = endAtInclStage < 0 ? pc_NumberOfDevelopmentalStages + endAtInclStage + 1 : endAtInclStage;
-  for (int s = startAtStage; s < endAtInclStage2; s++) ts += pc_StageTemperatureSum[s];
+  double endAtInclStage2 =
+    endAtInclStage < 0 ? cm->pc_NumberOfDevelopmentalStages + endAtInclStage + 1 : endAtInclStage;
+  for (int s = startAtStage; s < endAtInclStage2; s++) ts += cm->pc_StageTemperatureSum[s];
   return ts;
 }
 
@@ -941,10 +983,10 @@ void monica::cropModuleStep(CropModule* cm,
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
     if (_fireEvent) _fireEvent("emergence");
-  } else if (cm->isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+  } else if (cropModuleIsAnthesisDay(cm, old_DevelopmentalStage, vc_DevelopmentalStage)) {
     vc_AnthesisDay = vs_JulianDay;
     if (_fireEvent) _fireEvent("anthesis");
-  } else if (cm->isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+  } else if (cropModuleIsMaturityDay(cm, old_DevelopmentalStage, vc_DevelopmentalStage)) {
     vc_MaturityDay = vs_JulianDay;
     vc_MaturityReached = true;
     if (_fireEvent) _fireEvent("maturity");
@@ -1899,7 +1941,7 @@ void monica::cropModuleFcMoveDeadRootBiomassToSoil(CropModule* cm,
 }
 
 void monica::cropModuleAddAndDistributeRootBiomassInSoil(CropModule* cm, double rootBiomass) {
-  auto p = cm->calcRootDensityFactorAndSum();
+  auto p = cropModuleCalcRootDensityFactorAndSum(cm);
   cropModuleFcMoveDeadRootBiomassToSoil(cm, rootBiomass, p.second, p.first);
 }
 
@@ -3702,7 +3744,7 @@ void monica::cropModuleFcCropDryMatter(CropModule* cm, double vw_MeanAirTemperat
   // Calculating a root density distribution factor []
   std::vector<double> vc_RootDensityFactor;
   double vc_RootDensityFactorSum = 0.0;
-  tie(vc_RootDensityFactor, vc_RootDensityFactorSum) = cm->calcRootDensityFactorAndSum();
+  tie(vc_RootDensityFactor, vc_RootDensityFactorSum) = cropModuleCalcRootDensityFactorAndSum(cm);
 
   // calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
   if (!cropPs->__disable_daily_root_biomass_to_soil__) {
@@ -3819,19 +3861,19 @@ void monica::cropModuleFcCropDryMatter(CropModule* cm, double vw_MeanAirTemperat
   }
 }
 
-pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum() {
-  auto nols = soilColumn->size();
-  double layerThickness = soilColumn->at(0).vs_LayerThickness;
+pair<vector<double>, double> monica::cropModuleCalcRootDensityFactorAndSum(const CropModule* cm) {
+  auto nols = cm->soilColumn->size();
+  double layerThickness = cm->soilColumn->at(0).vs_LayerThickness;
 
   // Calculating a root density distribution factor []
   std::vector<double> vc_RootDensityFactor(nols, 0.0);
   for (size_t i_Layer = 0; i_Layer < nols; i_Layer++) {
-    if (i_Layer < vc_RootingDepth) {
-      vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness));
+    if (i_Layer < cm->vc_RootingDepth) {
+      vc_RootDensityFactor[i_Layer] = exp(-cm->pc_RootFormFactor * (i_Layer * layerThickness));
       // [] //MP: hier könnte man was ändern, wenn man layer-spezifische densities haben will.
-    } else if (i_Layer < vc_RootingZone) {
-      vc_RootDensityFactor[i_Layer] = exp(-pc_RootFormFactor * (i_Layer * layerThickness)) *
-                                      (1.0 - ((i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth))); // []
+    } else if (i_Layer < cm->vc_RootingZone) {
+      vc_RootDensityFactor[i_Layer] = exp(-cm->pc_RootFormFactor * (i_Layer * layerThickness)) *
+                                      (1.0 - ((i_Layer - cm->vc_RootingDepth) / (cm->vc_RootingZone - cm->vc_RootingDepth))); // []
     } else {
       vc_RootDensityFactor[i_Layer] = 0.0;
     } // []
@@ -3839,7 +3881,7 @@ pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum() {
 
   // Summing up all factors to scale to a relative factor between [0;1]
   double vc_RootDensityFactorSum = 0.0;
-  for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer
+  for (size_t i_Layer = 0; i_Layer < cm->vc_RootingZone; i_Layer
        ++)
     vc_RootDensityFactorSum += vc_RootDensityFactor[i_Layer]; // []
 
@@ -4532,10 +4574,10 @@ double monica::cropModuleGetFruitBiomassNContent(const CropModule* cm) {
  * @brief Returns number of above ground organs
  * @return number of above ground organs
  */
-int CropModule::pc_NumberOfAbovegroundOrgans() const {
+int monica::cropModuleNumberOfAbovegroundOrgans(const CropModule* cm) {
   int count = 0;
-  for (size_t i = 0, size = pc_AbovegroundOrgan.size(); i < size; i++) {
-    if (pc_AbovegroundOrgan[i]) {
+  for (size_t i = 0, size = cm->pc_AbovegroundOrgan.size(); i < size; i++) {
+    if (cm->pc_AbovegroundOrgan[i]) {
       count++;
     }
   }
@@ -4837,7 +4879,7 @@ void monica::cropModuleApplyCutting(CropModule* cm,
   }
 
   // reset stage and temperature some after cutting
-  cm->setStage(pc_StageAfterCut);
+  cropModuleSetStage(cm, pc_StageAfterCut);
 
   vc_CuttingDelayDays = pc_CuttingDelayDays;
   pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilationFraction;
@@ -4945,14 +4987,14 @@ void monica::cropModuleFcUpdateCropParametersForPerennial(CropModule* cm) {
  *
  * Method is called after calculation of the developmental stage.
  */
-bool CropModule::isAnthesisDay(size_t old_dev_stage, size_t new_dev_stage) {
-  auto abs = anthesisBetweenStages();
+bool monica::cropModuleIsAnthesisDay(const CropModule* cm, size_t old_dev_stage, size_t new_dev_stage) {
+  auto abs = cropModuleAnthesisBetweenStages(cm);
   return kj::get<0>(abs) == old_dev_stage && kj::get<1>(abs) == new_dev_stage;
 }
 
-kj::Tuple<int, int> CropModule::anthesisBetweenStages() const {
-  if (pc_NumberOfDevelopmentalStages == 6) { return kj::tuple(3, 4); } else if (
-    pc_NumberOfDevelopmentalStages == 7)
+kj::Tuple<int, int> monica::cropModuleAnthesisBetweenStages(const CropModule* cm) {
+  if (cm->pc_NumberOfDevelopmentalStages == 6) { return kj::tuple(3, 4); } else if (
+    cm->pc_NumberOfDevelopmentalStages == 7)
     return kj::tuple(4, 5);
   return kj::tuple(-1, -1);
 }
@@ -4963,12 +5005,12 @@ kj::Tuple<int, int> CropModule::anthesisBetweenStages() const {
  *
  * Method is called after calculation of the developmental stage.
  */
-bool CropModule::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage) {
+bool monica::cropModuleIsMaturityDay(const CropModule* cm, size_t old_dev_stage, size_t new_dev_stage) {
   // corn crops
-  if (pc_NumberOfDevelopmentalStages == 6) {
+  if (cm->pc_NumberOfDevelopmentalStages == 6) {
     return (old_dev_stage == 4 && new_dev_stage == 5);
     // maize, sorghum and other crops with 7 developmental stages
-  } else if (pc_NumberOfDevelopmentalStages == 7) {
+  } else if (cm->pc_NumberOfDevelopmentalStages == 7) {
     return (old_dev_stage == 5 && new_dev_stage == 6);
   }
 
@@ -5006,16 +5048,16 @@ double monica::cropModuleGetAccumulatedTranspiration(const CropModule* cm) {
   return cm->vc_AccumulatedTranspiration;
 }
 
-void CropModule::setStage(size_t newStage) {
-  vc_CurrentTotalTemperatureSum = 0.0;
-  for (size_t stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++)
+void monica::cropModuleSetStage(CropModule* cm, size_t newStage) {
+  cm->vc_CurrentTotalTemperatureSum = 0.0;
+  for (size_t stage = 0; stage < cm->pc_NumberOfDevelopmentalStages; stage++)
     if (stage < newStage) {
-      vc_CurrentTotalTemperatureSum += vc_CurrentTemperatureSum[stage];
+      cm->vc_CurrentTotalTemperatureSum += cm->vc_CurrentTemperatureSum[stage];
     } else {
-      vc_CurrentTemperatureSum[stage] = 0.0;
+      cm->vc_CurrentTemperatureSum[stage] = 0.0;
     }
 
-  vc_DevelopmentalStage = newStage;
+  cm->vc_DevelopmentalStage = newStage;
 }
 
 
@@ -5081,7 +5123,7 @@ void monica::cropModuleForceTransplantState(CropModule* cm,
   vc_DaysSinceTransplant = 0;
 
   // --- Step 1: Force developmental stage and LAI ---
-  cm->setStage(stage);
+  cropModuleSetStage(cm, stage);
   cm->vc_LeafAreaIndex = lai;
 
   // --- Step 2: Force cumulative and stage-specific GDD temperature sums ---

@@ -384,8 +384,7 @@ BOTRes& monica::buildOutputTable() {
             },
             [](MonicaModel& monica, OId oid, Json value) {
               if (value.is_number() && monica.cropGrowth())
-                monica.cropGrowth()->
-                       setStage(max(0, int(value.number_value()) - 1));
+                cropModuleSetStage(monica.cropGrowth(), max(0, int(value.number_value()) - 1));
             });
 
       build({id++, "TempSum", "�Cd", "CurrentTemperatureSum"},
@@ -676,12 +675,12 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->getFractionOfInterceptedRadiation1(), 5) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetFractionOfInterceptedRadiation1(monica.cropGrowth()), 5) : 0.0;
             });
 
       build({id++, "LightInterception2", "", "LightInterception of lower layer of taller crop"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->getFractionOfInterceptedRadiation2(), 5) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetFractionOfInterceptedRadiation2(monica.cropGrowth()), 5) : 0.0;
             });
 
       build({id++, "Ra", "kgC ha-1", "autotrophic respiration"},

@@ -351,8 +351,7 @@ void MonicaModel::seedCrop(Crop* crop) {
                                         &_intercropping);
 
     if (crop->separatePerennialCropParameters())
-      _currentCropModule->
-        setPerennialCropParameters(crop->perennialCropParameters());
+      cropModuleSetPerennialCropParameters(_currentCropModule.get(), crop->perennialCropParameters());
 
     soiltransport::putCrop(_soilTransport.get(), _currentCropModule.get());
     soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
@@ -465,7 +464,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
       auto primaryCropYield = 0.0;
       auto sumOrganResidueBiomassAsOverlay = 0.0;
       auto sumOrganResidueBiomassToIncorporate = 0.0;
-      auto organIdsForPrimaryYield = _currentCropModule->organIdsForPrimaryYield();
+      auto organIdsForPrimaryYield = cropModuleOrganIdsForPrimaryYield(_currentCropModule.get());
       for (const auto& [organId, specVal] : spec.organ2specVal) {
         // ignore root, is probably an error, when the user specified the root organ (0) as something to harvest
         if (organId == 0) continue;
@@ -968,6 +967,6 @@ void MonicaModel::clearEvents() {
 
 void MonicaModel::setOtherCropHeightAndLAIt(double cropHeight, double lait) {
   if (_currentCropModule) {
-    _currentCropModule->setOtherCropHeightAndLAIt(cropHeight, lait);
+    cropModuleSetOtherCropHeightAndLAIt(_currentCropModule.get(), cropHeight, lait);
   }
 }
