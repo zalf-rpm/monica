@@ -4998,6 +4998,14 @@ bool monica::cropModuleMaturityReached(const CropModule* cm) {
   return cm->vc_MaturityReached;
 }
 
+double monica::cropModuleGetAccumulatedETa(const CropModule* cm) {
+  return cm->vc_AccumulatedETa;
+}
+
+double monica::cropModuleGetAccumulatedTranspiration(const CropModule* cm) {
+  return cm->vc_AccumulatedTranspiration;
+}
+
 void CropModule::setStage(size_t newStage) {
   vc_CurrentTotalTemperatureSum = 0.0;
   for (size_t stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++)

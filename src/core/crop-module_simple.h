@@ -58,12 +58,6 @@ struct CropModule {
   //void get_CropParameters();
 
 
-  double get_AccumulatedETa() const;
-
-  double get_AccumulatedTranspiration() const;
-
-  double get_AccumulatedPrimaryCropYield() const;
-
   /*
  * @brief Getter for total biomass.
  * @return total biomass
@@ -576,6 +570,8 @@ double cropModuleGetEffectiveRootingDepth(const CropModule* cm);
 int cropModuleGetAnthesisDay(const CropModule* cm);
 int cropModuleGetMaturityDay(const CropModule* cm);
 bool cropModuleMaturityReached(const CropModule* cm);
+double cropModuleGetAccumulatedETa(const CropModule* cm);
+double cropModuleGetAccumulatedTranspiration(const CropModule* cm);
 void cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroClimateData& mcd);
 void cropModuleFcUpdateCropParametersForPerennial(CropModule* cm);
 void cropModuleForceTransplantState(CropModule* cm,
