@@ -232,7 +232,7 @@ bool Sowing::apply(MonicaModel* model) {
   model->seedCrop(_cropToPlant.get());
   // FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
   if (model->simulationParameters().dualKcMethod && model->cropGrowth()) {
-    model->cropGrowth()->setInitialKcb(_initialKcb);
+    model->cropGrowth()->vc_Kcb_ini = _initialKcb;
   }
   model->addEvent("Sowing");
 
@@ -532,7 +532,7 @@ bool Transplant::apply(MonicaModel* model) {
                                  _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
 
   // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
-  if (model->simulationParameters().dualKcMethod) cropModule->setInitialKcb(_initialKcb);
+  if (model->simulationParameters().dualKcMethod) cropModule->vc_Kcb_ini = _initialKcb;
 
   // Step 6: Register the event
   model->addEvent("Transplant");
@@ -806,7 +806,7 @@ bool Cutting::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   assert(model->cropGrowth());
-  debug() << "Cutting crop: " << model->cropGrowth()->speciesParameters().pc_SpeciesId << " at: " << date().toString()
+  debug() << "Cutting crop: " << model->cropGrowth()->speciesPs.pc_SpeciesId << " at: " << date().toString()
     << endl;
 
   cropModuleApplyCutting(model->cropGrowth(), _organId2cuttingSpec, _organId2exportFraction,

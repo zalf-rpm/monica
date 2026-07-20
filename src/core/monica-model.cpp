@@ -90,7 +90,7 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
   if (reader.hasCurrentCropModule()) {
     auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nconc) {
       soilOrganicAddOrganicMatter(this->_soilOrganic.get(),
-                                  this->_currentCropModule->residueParameters(),
+                                  this->_currentCropModule->residuePs,
                                   layer2amount,
                                   nconc);
     };
@@ -279,7 +279,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
 
     auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nConcentration) {
       soilOrganicAddOrganicMatter(this->_soilOrganic.get(),
-                                  _currentCropModule->residueParameters(),
+                                  _currentCropModule->residuePs,
                                   layer2amount,
                                   nConcentration);
     };
@@ -304,7 +304,7 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
     _soilOrganic->cropModule = _currentCropModule.get();
 
     if (_simPs.p_UseNMinMineralFertilisingMethod
-        && !_currentCropModule->isWinterCrop()) {
+        && !_currentCropModule->_isWinterCrop) {
       soilColumnClearTopDressingParams(_soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
       double fertAmount = applyMineralFertiliserViaNMinMethod
@@ -335,7 +335,7 @@ void MonicaModel::seedCrop(Crop* crop) {
 
     auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nconc) {
       soilOrganicAddOrganicMatter(this->_soilOrganic.get(),
-                                  _currentCropModule->residueParameters(),
+                                  _currentCropModule->residuePs,
                                   layer2amount,
                                   nconc);
     };
@@ -363,7 +363,7 @@ void MonicaModel::seedCrop(Crop* crop) {
     //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
     if (_simPs.p_UseNMinMineralFertilisingMethod
-        && !_currentCropModule->isWinterCrop()) {
+        && !_currentCropModule->_isWinterCrop) {
       soilColumnClearTopDressingParams(_soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = applyMineralFertiliserViaNMinMethod
@@ -433,7 +433,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
           _optCarbonReturnedResidues = residueBiomass - _optCarbonExportedResidues;
         }
 
-        soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
+        soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residuePs,
                                     _optCarbonReturnedResidues,
                                     cropModuleGetResiduesNConcentration(_currentCropModule.get()),
                                     incorporateIntoLayerIndex);
@@ -455,7 +455,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
         debug() << "Residues N content: " << cropModuleGetResiduesNContent(_currentCropModule.get())
           << " Primary yield N content: " << cropModuleGetPrimaryYieldNContent(_currentCropModule.get())
           << " Secondary yield N content: " << cropModuleGetSecondaryYieldNContent(_currentCropModule.get()) << endl;
-        soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
+        soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residuePs,
                                     residueBiomass,
                                     residueNConcentration,
                                     incorporateIntoLayerIndex);
@@ -481,7 +481,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
       auto totalResidueBiomass = cropModuleGetResidueBiomass(_currentCropModule.get(), false, cropYield);
       auto totalResidueBiomassToIncorporate = totalResidueBiomass - sumOrganResidueBiomassAsOverlay;
       auto residuesNConcentration = cropModuleGetResiduesNConcentration(_currentCropModule.get(), primaryCropYield);
-      soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
+      soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residuePs,
                                   totalResidueBiomassToIncorporate,
                                   residuesNConcentration,
                                   incorporateIntoLayerIndex);
@@ -513,7 +513,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
       debug() << "adding organic matter from aboveground biomass to soilOrganic" << endl;
       debug() << "aboveground biomass: " << abovegroundBiomass
         << " Aboveground biomass N concentration: " << abovegroundBiomassNConcentration << endl;
-      soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
+      soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residuePs,
                                   abovegroundBiomass,
                                   abovegroundBiomassNConcentration,
                                   incorporateIntoLayerIndex);
@@ -540,7 +540,7 @@ void MonicaModel::incorporateCurrentCrop() {
     debug() << "Total biomass: " << total_biomass << endl
       << " Total N concentration: " << totalNConcentration << endl;
 
-    soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
+    soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residuePs,
                                 total_biomass,
                                 totalNConcentration);
   }
@@ -724,11 +724,11 @@ void MonicaModel::generalStep() {
 
   if (_currentCropModule
       && _simPs.p_UseNMinMineralFertilisingMethod
-      && _currentCropModule->isWinterCrop()
+      && _currentCropModule->_isWinterCrop
       && julday == _simPs.p_JulianDayAutomaticFertilising) {
     soilColumnClearTopDressingParams(_soilColumn.get());
     debug() << "nMin fertilising winter crop" << endl;
-    auto sps = _currentCropModule->speciesParameters();
+    auto sps = _currentCropModule->speciesPs;
     double fertilizerAmount = applyMineralFertiliserViaNMinMethod
       (_simPs.p_NMinFertiliserPartition,
        NMinCropParameters(sps.pc_SamplingDepth, sps.pc_TargetNSamplingDepth, sps.pc_TargetN30));

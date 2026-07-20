@@ -1405,12 +1405,12 @@ BOTRes& monica::buildOutputTable() {
       build({id++, "rootDensity", "", "cropGrowth->vc_RootDensity"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.cropGrowth() ? monica.cropGrowth()->getRootDensity(i) : 0.0;
+                return monica.cropGrowth() ? monica.cropGrowth()->vc_RootDensity.at(i) : 0.0;
               }, 4);
             });
       build({id++, "rootingZone", "", "cropGrowth->vc_RootingZone"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? monica.cropGrowth()->rootingZone() : 0.0;
+              return monica.cropGrowth() ? monica.cropGrowth()->vc_RootingZone : 0.0;
             });
       build({id++, "WaterFlux", "mm/d", "waterflux in layer"},
             [](const MonicaModel& monica, OId oid) {

@@ -72,25 +72,10 @@ struct CropModule {
   // --- BEGIN TRANSPLANT MODIFICATION ---
   // Forces the initial crop state by bypassing normal germination and synchronizing biomass pools.
 
-  //! FAO-56 Dual Kc: override the initial Kcb value (called from Sowing/Transplant workstep)
-  void setInitialKcb(double kcb) { vc_Kcb_ini = kcb; }
-
   int vc_TransplantShockDuration{0};
   int vc_DaysSinceTransplant{-1};
   double vc_TransplantEfficiency{1.0};
   // --- END TRANSPLANT MODIFICATION ---
-
-  double getRootDensity(int layer) const { return vc_RootDensity.at(layer); }
-
-  size_t rootingZone() const { return vc_RootingZone; };
-
-  const SpeciesParameters& speciesParameters() const { return speciesPs; }
-
-  const CultivarParameters& cultivarParameters() const { return cultivarPs; }
-
-  const CropResidueParameters& residueParameters() const { return residuePs; }
-
-  bool isWinterCrop() const { return _isWinterCrop; }
 
   std::set<int> organIdsForPrimaryYield() const {
     std::set<int> ids;
