@@ -532,7 +532,7 @@ void MonicaModel::incorporateCurrentCrop() {
   if (_currentCropModule) {
     //prepare to add root and crop residues to soilorganic (AOMs)
     double total_biomass = _currentCropModule->totalBiomass();
-    double totalNContent = _currentCropModule->get_AbovegroundBiomassNContent() +
+    double totalNContent = cropModuleGetAbovegroundBiomassNContent(_currentCropModule.get()) +
                            _currentCropModule->vc_NConcentrationRoot * _currentCropModule->vc_OrganBiomass[0];
     double totalNConcentration = totalNContent / total_biomass;
 

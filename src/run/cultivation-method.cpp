@@ -701,7 +701,7 @@ bool AutomaticHarvest::condition(MonicaModel* model) {
     conditionMet =
       model->currentStepDate() >= _absLatestDate //harvest after or at latest date
       || (_harvestTime == "maturity"
-          && model->cropGrowth()->maturityReached() //has maturity been reached
+          && cropModuleMaturityReached(model->cropGrowth()) //has maturity been reached
           && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW) //check soil moisture
           && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 

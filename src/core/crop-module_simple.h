@@ -58,27 +58,11 @@ struct CropModule {
   //void get_CropParameters();
 
 
-  double get_AbovegroundBiomassNContent() const;
-
-  double get_AutotrophicRespiration() const;
-
-  double get_OrganSpecificTotalRespired(int organ) const;
-
-  double get_OrganSpecificNPP(int organ) const;
-
   double get_AccumulatedETa() const;
 
   double get_AccumulatedTranspiration() const;
 
   double get_AccumulatedPrimaryCropYield() const;
-
-  double getEffectiveRootingDepth() const;
-
-  int getAnthesisDay() const;
-
-  int getMaturityDay() const;
-
-  bool maturityReached() const;
 
   /*
  * @brief Getter for total biomass.
@@ -584,6 +568,14 @@ double cropModuleGetRawProteinConcentration(const CropModule* cm);
 double cropModuleGetSecondaryYieldNContent(const CropModule* cm,
                                            double alternativePrimaryCropYield = -1,
                                            double alternativeSecondaryCropYield = -1);
+double cropModuleGetAbovegroundBiomassNContent(const CropModule* cm);
+double cropModuleGetAutotrophicRespiration(const CropModule* cm);
+double cropModuleGetOrganSpecificTotalRespired(const CropModule* cm, int organ);
+double cropModuleGetOrganSpecificNPP(const CropModule* cm, int organ);
+double cropModuleGetEffectiveRootingDepth(const CropModule* cm);
+int cropModuleGetAnthesisDay(const CropModule* cm);
+int cropModuleGetMaturityDay(const CropModule* cm);
+bool cropModuleMaturityReached(const CropModule* cm);
 void cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroClimateData& mcd);
 void cropModuleFcUpdateCropParametersForPerennial(CropModule* cm);
 void cropModuleForceTransplantState(CropModule* cm,

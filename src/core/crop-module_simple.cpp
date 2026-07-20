@@ -4661,45 +4661,45 @@ double monica::cropModuleGetSecondaryYieldNContent(const CropModule* cm,
  * @brief Returns aboveground biomass N content [kg N ha-1]
  * @return organ biomass
  */
-double CropModule::get_AbovegroundBiomassNContent() const {
-  return vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass;
+double monica::cropModuleGetAbovegroundBiomassNContent(const CropModule* cm) {
+  return cm->vc_AbovegroundBiomass * cm->vc_NConcentrationAbovegroundBiomass;
 }
 
 /**
  * @brief Returns the respiration [kg C ha-1 d-1]
  * @return Net primary production
  */
-double CropModule::get_AutotrophicRespiration() const {
-  return vc_TotalRespired / 30.0 * 12.0; // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
+double monica::cropModuleGetAutotrophicRespiration(const CropModule* cm) {
+  return cm->vc_TotalRespired / 30.0 * 12.0; // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
 }
 
 /**
  * Returns the individual respiration of the organs [kg C ha-1 d-1]
  * based on the current ratio of the crop's biomass.
  */
-double CropModule::get_OrganSpecificTotalRespired(int organ) const {
+double monica::cropModuleGetOrganSpecificTotalRespired(const CropModule* cm, int organ) {
   // get total amount of actual biomass
-  double total_biomass = totalBiomass();
+  double total_biomass = cm->totalBiomass();
 
   // get biomass of specific organ and calculates ratio
-  double organ_percentage = vc_OrganBiomass[organ] / total_biomass;
-  return (get_AutotrophicRespiration() * organ_percentage);
+  double organ_percentage = cm->vc_OrganBiomass[organ] / total_biomass;
+  return (cropModuleGetAutotrophicRespiration(cm) * organ_percentage);
 }
 
 /**
  * @brief Returns the organ-specific net primary production [kg C ha-1 d-1]
  * @return Organ-specific net primary production
  */
-double CropModule::get_OrganSpecificNPP(int organ) const {
+double monica::cropModuleGetOrganSpecificNPP(const CropModule* cm, int organ) {
   // get total amount of actual biomass
-  double total_biomass = totalBiomass();
+  double total_biomass = cm->totalBiomass();
 
   // get biomass of specific organ and calculates ratio
-  double organ_percentage = vc_OrganBiomass[organ] / total_biomass;
+  double organ_percentage = cm->vc_OrganBiomass[organ] / total_biomass;
 
   // cout << "get_OrganBiomass(organ) : " << organ << ", " << organ_percentage << std::endl; // JV!
   // cout << "total_biomass : " << total_biomass << std::endl; // JV!
-  return (vc_NetPrimaryProduction * organ_percentage);
+  return (cm->vc_NetPrimaryProduction * organ_percentage);
 }
 
 void monica::cropModuleApplyCutting(CropModule* cm,
@@ -4858,11 +4858,11 @@ void monica::cropModuleApplyCutting(CropModule* cm,
  * Returns the depth of the maximum active and effective root.
  * [m]
  */
-double CropModule::getEffectiveRootingDepth() const {
-  size_t nols = soilColumn->size();
+double monica::cropModuleGetEffectiveRootingDepth(const CropModule* cm) {
+  size_t nols = cm->soilColumn->size();
 
   for (size_t i_Layer = 0; i_Layer < nols; i_Layer++)
-    if (vc_RootEffectivity[i_Layer] == 0.0) {
+    if (cm->vc_RootEffectivity[i_Layer] == 0.0) {
       return (i_Layer + 1) / 10.0;
     }
 
@@ -4979,23 +4979,23 @@ bool CropModule::isMaturityDay(size_t old_dev_stage, size_t new_dev_stage) {
  * @brief Getter for anthesis day.
  * @return Julian day of crop's anthesis
  */
-int CropModule::getAnthesisDay() const {
+int monica::cropModuleGetAnthesisDay(const CropModule* cm) {
   // cout << "Getter anthesis " << vc_AnthesisDay << endl;
-  return vc_AnthesisDay;
+  return cm->vc_AnthesisDay;
 }
 
 /**
  * @brief Getter for maturity day.
  * @return Julian day of crop's maturity.
  */
-int CropModule::getMaturityDay() const {
+int monica::cropModuleGetMaturityDay(const CropModule* cm) {
   // cout << "Getter maturity " << vc_MaturityDay << endl;
-  return vc_MaturityDay;
+  return cm->vc_MaturityDay;
 }
 
-bool CropModule::maturityReached() const {
-  debug() << "vc_MaturityReached: " << vc_MaturityReached << endl;
-  return vc_MaturityReached;
+bool monica::cropModuleMaturityReached(const CropModule* cm) {
+  debug() << "vc_MaturityReached: " << cm->vc_MaturityReached << endl;
+  return cm->vc_MaturityReached;
 }
 
 void CropModule::setStage(size_t newStage) {

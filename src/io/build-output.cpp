@@ -569,7 +569,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "EffRootDep", "m", "Effective RootingDepth"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->getEffectiveRootingDepth(), 2) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetEffectiveRootingDepth(monica.cropGrowth()), 2) : 0.0;
             });
 
       build({id++, "TotBiomN", "kgN ha-1", "TotalBiomassNContent"},
@@ -579,7 +579,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_AbovegroundBiomassNContent(), 1) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetAbovegroundBiomassNContent(monica.cropGrowth()), 1) : 0.0;
             });
 
       build({id++, "SumNUp", "kgN ha-1", "SumTotalNUptake"},
@@ -665,7 +665,7 @@ BOTRes& monica::buildOutputTable() {
               if (oid.isOrgan()
                   && monica.cropGrowth()
                   && monica.cropGrowth()->pc_NumberOfOrgans > oid.organ)
-                return round(monica.cropGrowth()->get_OrganSpecificNPP(oid.organ), 4);
+                return round(cropModuleGetOrganSpecificNPP(monica.cropGrowth(), oid.organ), 4);
               else return 0.0;
             });
 
@@ -686,7 +686,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Ra", "kgC ha-1", "autotrophic respiration"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_AutotrophicRespiration(), 5) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetAutotrophicRespiration(monica.cropGrowth()), 5) : 0.0;
             });
 
       build({id++, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration"},
@@ -694,7 +694,7 @@ BOTRes& monica::buildOutputTable() {
               if (oid.isOrgan()
                   && monica.cropGrowth()
                   && monica.cropGrowth()->pc_NumberOfOrgans > oid.organ)
-                return round(monica.cropGrowth()->get_OrganSpecificTotalRespired(oid.organ), 4);
+                return round(cropModuleGetOrganSpecificTotalRespired(monica.cropGrowth(), oid.organ), 4);
               else return 0.0;
             });
 
