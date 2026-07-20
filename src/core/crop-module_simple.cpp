@@ -1596,7 +1596,7 @@ void monica::cropModuleFcCropDevelopmentalStage(CropModule* cm,
     }
     if (doResetPerennialCrop) {
       vc_DevelopmentalStage = 0;
-      cm->fc_UpdateCropParametersForPerennial();
+      cropModuleFcUpdateCropParametersForPerennial(cm);
       for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++) vc_CurrentTemperatureSum[stage] = 0.0;
       vc_CurrentTotalTemperatureSum = 0.0;
       vc_GrowthCycleEnded = false;
@@ -4578,11 +4578,18 @@ double CropModule::get_NetPhotosynthesis() const {
   return vc_NetPhotosynthesis;
 }
 
-void CropModule::calculateVOCEmissions(const Voc::MicroClimateData& mcd) {
+void monica::cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroClimateData& mcd) {
+  auto& pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& speciesPs = cm->speciesPs;
+  auto& _cropPhotosynthesisResults = cm->_cropPhotosynthesisResults;
+  auto& _guentherEmissions = cm->_guentherEmissions;
+  auto& _jjvEmissions = cm->_jjvEmissions;
+
   Voc::SpeciesData species;
   // species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
-  species.lai = get_LeafAreaIndex();
-  species.mFol = get_OrganBiomass(OId::LEAF) / (100. * 100.); // kg/ha -> kg/m2
+  species.lai = cm->get_LeafAreaIndex();
+  species.mFol = cm->get_OrganBiomass(OId::LEAF) / (100. * 100.); // kg/ha -> kg/m2
   species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; // ha/kg -> m2/kg
 
   species.EF_MONO = speciesPs.EF_MONO;
@@ -5320,70 +5327,70 @@ double CropModule::getEffectiveRootingDepth() const {
  * @brief Setter for crop parameters of perennial crops after the transplant season.
  * @sets crop parameters of perennial crops after the transplant season
  */
-void CropModule::fc_UpdateCropParametersForPerennial() {
-  if (!perennialCropParams) {
+void monica::cropModuleFcUpdateCropParametersForPerennial(CropModule* cm) {
+  if (!cm->perennialCropParams) {
     return;
   }
 
-  pc_AbovegroundOrgan = perennialCropParams->speciesParams.pc_AbovegroundOrgan;
-  pc_AssimilatePartitioningCoeff = perennialCropParams->cultivarParams.pc_AssimilatePartitioningCoeff;
-  pc_AssimilateReallocation = perennialCropParams->speciesParams.pc_AssimilateReallocation;
-  pc_BaseDaylength = perennialCropParams->cultivarParams.pc_BaseDaylength;
-  pc_BaseTemperature = perennialCropParams->speciesParams.pc_BaseTemperature;
-  pc_BeginSensitivePhaseHeatStress = perennialCropParams->cultivarParams.pc_BeginSensitivePhaseHeatStress;
-  pc_CarboxylationPathway = perennialCropParams->speciesParams.pc_CarboxylationPathway;
-  pc_CriticalOxygenContent = perennialCropParams->speciesParams.pc_CriticalOxygenContent;
-  pc_CriticalTemperatureHeatStress = perennialCropParams->cultivarParams.pc_CriticalTemperatureHeatStress;
-  pc_CropHeightP1 = perennialCropParams->cultivarParams.pc_CropHeightP1;
-  pc_CropHeightP2 = perennialCropParams->cultivarParams.pc_CropHeightP2;
-  pc_CropName = perennialCropParams->pc_CropName();
-  pc_CropSpecificMaxRootingDepth = perennialCropParams->cultivarParams.pc_CropSpecificMaxRootingDepth;
-  pc_DaylengthRequirement = perennialCropParams->cultivarParams.pc_DaylengthRequirement;
-  pc_DefaultRadiationUseEfficiency = perennialCropParams->speciesParams.pc_DefaultRadiationUseEfficiency;
-  pc_DevelopmentAccelerationByNitrogenStress = perennialCropParams->speciesParams.
-                                                                    pc_DevelopmentAccelerationByNitrogenStress;
-  pc_DroughtStressThreshold = perennialCropParams->cultivarParams.pc_DroughtStressThreshold;
-  pc_DroughtImpactOnFertilityFactor = perennialCropParams->speciesParams.pc_DroughtImpactOnFertilityFactor;
-  pc_EndSensitivePhaseHeatStress = perennialCropParams->cultivarParams.pc_EndSensitivePhaseHeatStress;
-  pc_PartBiologicalNFixation = perennialCropParams->speciesParams.pc_PartBiologicalNFixation;
-  pc_InitialKcFactor = perennialCropParams->speciesParams.pc_InitialKcFactor;
-  pc_InitialOrganBiomass = perennialCropParams->speciesParams.pc_InitialOrganBiomass;
-  pc_InitialRootingDepth = perennialCropParams->speciesParams.pc_InitialRootingDepth;
-  pc_LimitingTemperatureHeatStress = perennialCropParams->speciesParams.pc_LimitingTemperatureHeatStress;
-  pc_LuxuryNCoeff = perennialCropParams->speciesParams.pc_LuxuryNCoeff;
-  pc_MaxAssimilationRate = perennialCropParams->cultivarParams.pc_MaxAssimilationRate;
-  pc_MaxCropDiameter = perennialCropParams->speciesParams.pc_MaxCropDiameter;
-  pc_MaxCropHeight = perennialCropParams->cultivarParams.pc_MaxCropHeight;
-  pc_MaxNUptakeParam = perennialCropParams->speciesParams.pc_MaxNUptakeParam;
-  pc_MinimumNConcentration = perennialCropParams->speciesParams.pc_MinimumNConcentration;
-  pc_MinimumTemperatureForAssimilation = perennialCropParams->speciesParams.pc_MinimumTemperatureForAssimilation;
-  pc_MinimumTemperatureRootGrowth = perennialCropParams->speciesParams.pc_MinimumTemperatureRootGrowth;
-  pc_NConcentrationAbovegroundBiomass = perennialCropParams->speciesParams.pc_NConcentrationAbovegroundBiomass;
-  pc_NConcentrationB0 = perennialCropParams->speciesParams.pc_NConcentrationB0;
-  pc_NConcentrationPN = perennialCropParams->speciesParams.pc_NConcentrationPN;
-  pc_NConcentrationRoot = perennialCropParams->speciesParams.pc_NConcentrationRoot;
-  pc_NumberOfDevelopmentalStages = perennialCropParams->speciesParams.pc_NumberOfDevelopmentalStages();
-  pc_NumberOfOrgans = perennialCropParams->speciesParams.pc_NumberOfOrgans();
-  pc_OptimumTemperature = perennialCropParams->cultivarParams.pc_OptimumTemperature;
-  pc_OrganGrowthRespiration = perennialCropParams->speciesParams.pc_OrganGrowthRespiration;
-  pc_OrganMaintenanceRespiration = perennialCropParams->speciesParams.pc_OrganMaintenanceRespiration;
-  pc_OrganSenescenceRate = perennialCropParams->cultivarParams.pc_OrganSenescenceRate;
-  pc_Perennial = perennialCropParams->cultivarParams.pc_Perennial;
-  pc_PlantDensity = perennialCropParams->speciesParams.pc_PlantDensity;
-  pc_ResidueNRatio = perennialCropParams->cultivarParams.pc_ResidueNRatio;
-  pc_RootDistributionParam = perennialCropParams->speciesParams.pc_RootDistributionParam;
-  pc_RootFormFactor = perennialCropParams->speciesParams.pc_RootFormFactor;
-  pc_RootGrowthLag = perennialCropParams->speciesParams.pc_RootGrowthLag;
-  pc_RootPenetrationRate = perennialCropParams->speciesParams.pc_RootPenetrationRate;
-  pc_SpecificLeafArea = perennialCropParams->cultivarParams.pc_SpecificLeafArea;
-  pc_SpecificRootLength = perennialCropParams->speciesParams.pc_SpecificRootLength;
-  pc_StageAtMaxDiameter = perennialCropParams->speciesParams.pc_StageAtMaxDiameter;
-  pc_StageAtMaxHeight = perennialCropParams->speciesParams.pc_StageAtMaxHeight;
-  pc_StageMaxRootNConcentration = perennialCropParams->speciesParams.pc_StageMaxRootNConcentration;
-  pc_StageKcFactor = perennialCropParams->cultivarParams.pc_StageKcFactor;
-  pc_StageTemperatureSum = perennialCropParams->cultivarParams.pc_StageTemperatureSum;
-  pc_StorageOrgan = perennialCropParams->speciesParams.pc_StorageOrgan;
-  pc_VernalisationRequirement = perennialCropParams->cultivarParams.pc_VernalisationRequirement;
+  cm->pc_AbovegroundOrgan = cm->perennialCropParams->speciesParams.pc_AbovegroundOrgan;
+  cm->pc_AssimilatePartitioningCoeff = cm->perennialCropParams->cultivarParams.pc_AssimilatePartitioningCoeff;
+  cm->pc_AssimilateReallocation = cm->perennialCropParams->speciesParams.pc_AssimilateReallocation;
+  cm->pc_BaseDaylength = cm->perennialCropParams->cultivarParams.pc_BaseDaylength;
+  cm->pc_BaseTemperature = cm->perennialCropParams->speciesParams.pc_BaseTemperature;
+  cm->pc_BeginSensitivePhaseHeatStress = cm->perennialCropParams->cultivarParams.pc_BeginSensitivePhaseHeatStress;
+  cm->pc_CarboxylationPathway = cm->perennialCropParams->speciesParams.pc_CarboxylationPathway;
+  cm->pc_CriticalOxygenContent = cm->perennialCropParams->speciesParams.pc_CriticalOxygenContent;
+  cm->pc_CriticalTemperatureHeatStress = cm->perennialCropParams->cultivarParams.pc_CriticalTemperatureHeatStress;
+  cm->pc_CropHeightP1 = cm->perennialCropParams->cultivarParams.pc_CropHeightP1;
+  cm->pc_CropHeightP2 = cm->perennialCropParams->cultivarParams.pc_CropHeightP2;
+  cm->pc_CropName = cm->perennialCropParams->pc_CropName();
+  cm->pc_CropSpecificMaxRootingDepth = cm->perennialCropParams->cultivarParams.pc_CropSpecificMaxRootingDepth;
+  cm->pc_DaylengthRequirement = cm->perennialCropParams->cultivarParams.pc_DaylengthRequirement;
+  cm->pc_DefaultRadiationUseEfficiency = cm->perennialCropParams->speciesParams.pc_DefaultRadiationUseEfficiency;
+  cm->pc_DevelopmentAccelerationByNitrogenStress =
+    cm->perennialCropParams->speciesParams.pc_DevelopmentAccelerationByNitrogenStress;
+  cm->pc_DroughtStressThreshold = cm->perennialCropParams->cultivarParams.pc_DroughtStressThreshold;
+  cm->pc_DroughtImpactOnFertilityFactor = cm->perennialCropParams->speciesParams.pc_DroughtImpactOnFertilityFactor;
+  cm->pc_EndSensitivePhaseHeatStress = cm->perennialCropParams->cultivarParams.pc_EndSensitivePhaseHeatStress;
+  cm->pc_PartBiologicalNFixation = cm->perennialCropParams->speciesParams.pc_PartBiologicalNFixation;
+  cm->pc_InitialKcFactor = cm->perennialCropParams->speciesParams.pc_InitialKcFactor;
+  cm->pc_InitialOrganBiomass = cm->perennialCropParams->speciesParams.pc_InitialOrganBiomass;
+  cm->pc_InitialRootingDepth = cm->perennialCropParams->speciesParams.pc_InitialRootingDepth;
+  cm->pc_LimitingTemperatureHeatStress = cm->perennialCropParams->speciesParams.pc_LimitingTemperatureHeatStress;
+  cm->pc_LuxuryNCoeff = cm->perennialCropParams->speciesParams.pc_LuxuryNCoeff;
+  cm->pc_MaxAssimilationRate = cm->perennialCropParams->cultivarParams.pc_MaxAssimilationRate;
+  cm->pc_MaxCropDiameter = cm->perennialCropParams->speciesParams.pc_MaxCropDiameter;
+  cm->pc_MaxCropHeight = cm->perennialCropParams->cultivarParams.pc_MaxCropHeight;
+  cm->pc_MaxNUptakeParam = cm->perennialCropParams->speciesParams.pc_MaxNUptakeParam;
+  cm->pc_MinimumNConcentration = cm->perennialCropParams->speciesParams.pc_MinimumNConcentration;
+  cm->pc_MinimumTemperatureForAssimilation = cm->perennialCropParams->speciesParams.pc_MinimumTemperatureForAssimilation;
+  cm->pc_MinimumTemperatureRootGrowth = cm->perennialCropParams->speciesParams.pc_MinimumTemperatureRootGrowth;
+  cm->pc_NConcentrationAbovegroundBiomass = cm->perennialCropParams->speciesParams.pc_NConcentrationAbovegroundBiomass;
+  cm->pc_NConcentrationB0 = cm->perennialCropParams->speciesParams.pc_NConcentrationB0;
+  cm->pc_NConcentrationPN = cm->perennialCropParams->speciesParams.pc_NConcentrationPN;
+  cm->pc_NConcentrationRoot = cm->perennialCropParams->speciesParams.pc_NConcentrationRoot;
+  cm->pc_NumberOfDevelopmentalStages = cm->perennialCropParams->speciesParams.pc_NumberOfDevelopmentalStages();
+  cm->pc_NumberOfOrgans = cm->perennialCropParams->speciesParams.pc_NumberOfOrgans();
+  cm->pc_OptimumTemperature = cm->perennialCropParams->cultivarParams.pc_OptimumTemperature;
+  cm->pc_OrganGrowthRespiration = cm->perennialCropParams->speciesParams.pc_OrganGrowthRespiration;
+  cm->pc_OrganMaintenanceRespiration = cm->perennialCropParams->speciesParams.pc_OrganMaintenanceRespiration;
+  cm->pc_OrganSenescenceRate = cm->perennialCropParams->cultivarParams.pc_OrganSenescenceRate;
+  cm->pc_Perennial = cm->perennialCropParams->cultivarParams.pc_Perennial;
+  cm->pc_PlantDensity = cm->perennialCropParams->speciesParams.pc_PlantDensity;
+  cm->pc_ResidueNRatio = cm->perennialCropParams->cultivarParams.pc_ResidueNRatio;
+  cm->pc_RootDistributionParam = cm->perennialCropParams->speciesParams.pc_RootDistributionParam;
+  cm->pc_RootFormFactor = cm->perennialCropParams->speciesParams.pc_RootFormFactor;
+  cm->pc_RootGrowthLag = cm->perennialCropParams->speciesParams.pc_RootGrowthLag;
+  cm->pc_RootPenetrationRate = cm->perennialCropParams->speciesParams.pc_RootPenetrationRate;
+  cm->pc_SpecificLeafArea = cm->perennialCropParams->cultivarParams.pc_SpecificLeafArea;
+  cm->pc_SpecificRootLength = cm->perennialCropParams->speciesParams.pc_SpecificRootLength;
+  cm->pc_StageAtMaxDiameter = cm->perennialCropParams->speciesParams.pc_StageAtMaxDiameter;
+  cm->pc_StageAtMaxHeight = cm->perennialCropParams->speciesParams.pc_StageAtMaxHeight;
+  cm->pc_StageMaxRootNConcentration = cm->perennialCropParams->speciesParams.pc_StageMaxRootNConcentration;
+  cm->pc_StageKcFactor = cm->perennialCropParams->cultivarParams.pc_StageKcFactor;
+  cm->pc_StageTemperatureSum = cm->perennialCropParams->cultivarParams.pc_StageTemperatureSum;
+  cm->pc_StorageOrgan = cm->perennialCropParams->speciesParams.pc_StorageOrgan;
+  cm->pc_VernalisationRequirement = cm->perennialCropParams->cultivarParams.pc_VernalisationRequirement;
 }
 
 /**
@@ -5485,15 +5492,43 @@ void CropModule::setStage(size_t newStage) {
  *    biomass nitrogen concentration pools (`vc_NConcentrationAbovegroundBiomass`, `vc_NConcentrationRoot`,
  *    `vc_TotalBiomassNContent`) using standard optimal species concentration parameters.
  */
-void CropModule::forceTransplantState(double temperatureSum, double lai, size_t stage,
-                                      double rootMass, double leafMass, double shootMass, int postTransplantDelay) {
+void monica::cropModuleForceTransplantState(CropModule* cm,
+                                            double temperatureSum,
+                                            double lai,
+                                            size_t stage,
+                                            double rootMass,
+                                            double leafMass,
+                                            double shootMass,
+                                            int postTransplantDelay) {
+  auto* soilColumn = cm->soilColumn;
+  auto& pc_InitialRootingDepth = cm->pc_InitialRootingDepth;
+  auto& pc_NConcentrationAbovegroundBiomass = cm->pc_NConcentrationAbovegroundBiomass;
+  auto& pc_NConcentrationRoot = cm->pc_NConcentrationRoot;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
+  auto& vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& vc_DaysSinceTransplant = cm->vc_DaysSinceTransplant;
+  auto& vc_NConcentrationAbovegroundBiomass = cm->vc_NConcentrationAbovegroundBiomass;
+  auto& vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
+  auto& vc_OrganBiomass = cm->vc_OrganBiomass;
+  auto& vc_OrganGreenBiomass = cm->vc_OrganGreenBiomass;
+  auto& vc_RootBiomass = cm->vc_RootBiomass;
+  auto& vc_RootingDepth = cm->vc_RootingDepth;
+  auto& vc_RootingDepth_m = cm->vc_RootingDepth_m;
+  auto& vc_RootingZone = cm->vc_RootingZone;
+  auto& vc_TotalBiomass = cm->vc_TotalBiomass;
+  auto& vc_TotalBiomassNContent = cm->vc_TotalBiomassNContent;
+  auto& vc_TotalRootLength = cm->vc_TotalRootLength;
+  auto& vc_TransplantShockDuration = cm->vc_TransplantShockDuration;
+
   // Initialize transplant shock duration parameters
   vc_TransplantShockDuration = postTransplantDelay;
   vc_DaysSinceTransplant = 0;
 
   // --- Step 1: Force developmental stage and LAI via native setters ---
-  setStage(stage);
-  setLeafAreaIndex(lai);
+  cm->setStage(stage);
+  cm->setLeafAreaIndex(lai);
 
   // --- Step 2: Force cumulative and stage-specific GDD temperature sums ---
   vc_CurrentTotalTemperatureSum = temperatureSum;

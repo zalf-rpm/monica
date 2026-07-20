@@ -528,8 +528,8 @@ bool Transplant::apply(MonicaModel* model) {
   if (!cropModule) return false;
 
   // Step 4: Force the transplant initial state (overrides germination defaults)
-  cropModule->forceTransplantState(_initialGDD, _initLAI, _initialStage,
-                                   _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
+  cropModuleForceTransplantState(cropModule, _initialGDD, _initLAI, _initialStage,
+                                 _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
 
   // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
   if (model->simulationParameters().dualKcMethod) cropModule->setInitialKcb(_initialKcb);

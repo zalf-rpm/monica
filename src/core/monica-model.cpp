@@ -880,7 +880,7 @@ void MonicaModel::cropStep() {
   mcd.sunlitfoliagefraction24 = mcd.sunlitfoliagefraction;
 
   //debug() << "calculating voc emissions at " << date.toIsoDateString() << endl;
-  _currentCropModule->calculateVOCEmissions(mcd);
+  cropModuleCalculateVOCEmissions(_currentCropModule.get(), mcd);
   */
 }
 

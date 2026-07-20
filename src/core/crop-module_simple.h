@@ -57,7 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  void calculateVOCEmissions(const Voc::MicroClimateData& mcd);
 
   Voc::Emissions guentherEmissions() const { return _guentherEmissions; }
 
@@ -262,7 +261,6 @@ struct CropModule {
 
   void setPerennialCropParameters(const CropParameters& cps) { perennialCropParams = kj::heap<CropParameters>(cps); }
 
-  void fc_UpdateCropParametersForPerennial();
 
   std::pair<const std::vector<double>&, const std::vector<double>&> sunlitAndShadedLAI() const {
     return make_pair(vc_sunlitLeafAreaIndex, vc_shadedLeafAreaIndex);
@@ -290,8 +288,6 @@ struct CropModule {
 
   // --- BEGIN TRANSPLANT MODIFICATION ---
   // Forces the initial crop state by bypassing normal germination and synchronizing biomass pools.
-  void forceTransplantState(double temperatureSum, double lai, size_t stage,
-                            double rootMass, double leafMass, double shootMass, int postTransplantDelay);
 
   //! FAO-56 Dual Kc: override the initial Kcb value (called from Sowing/Transplant workstep)
   void setInitialKcb(double kcb) { vc_Kcb_ini = kcb; }
@@ -739,6 +735,16 @@ void cropModuleFcCropNUptake(CropModule* cm,
                              double totalTemperatureSum);
 double cropModuleFcGrossPrimaryProduction(const CropModule* cm);
 double cropModuleFcNetPrimaryProduction(CropModule* cm, double totalRespired);
+void cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroClimateData& mcd);
+void cropModuleFcUpdateCropParametersForPerennial(CropModule* cm);
+void cropModuleForceTransplantState(CropModule* cm,
+                                    double temperatureSum,
+                                    double lai,
+                                    size_t stage,
+                                    double rootMass,
+                                    double leafMass,
+                                    double shootMass,
+                                    int postTransplantDelay);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,
