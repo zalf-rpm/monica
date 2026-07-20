@@ -17,6 +17,7 @@ set(CAPNPROTO_SERIALIZATION_SUPPORT 1)
 add_compile_definitions(NO_MYSQL)
 add_compile_definitions(_USE_MATH_DEFINES)
 set(MT_RUNTIME_LIB 1)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #set absolute filenames (to resolve .. in paths)
 macro(set_absolute_path var_name path)
