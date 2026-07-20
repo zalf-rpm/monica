@@ -57,21 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  void fc_CropDryMatter(double vw_MeanAirTemperature);
-
-  double fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
-                                        double vw_MinAirTemperature,
-                                        double vw_RelativeHumidity,
-                                        double vw_MeanAirTemperature,
-                                        double vw_WindSpeed,
-                                        double vw_WindSpeedHeight,
-                                        double vw_AtmosphericCO2Concentration);
-
-  void fc_CropWaterUptake(size_t vm_GroundwaterTable,
-                          double vw_GrossPrecipitation,
-                          double vc_CurrentTotalTemperatureSum,
-                          double vc_TotalTemperatureSum);
-
   void fc_CropNUptake(size_t vm_GroundwaterTable,
                       double /*vc_CurrentTotalTemperatureSum*/,
                       double /*vc_TotalTemperatureSum*/);
@@ -742,6 +727,20 @@ void cropModuleFcHeatStressImpact(CropModule* cm,
 void cropModuleFcFrostKill(CropModule* cm, double maxAirTemperature, double minAirTemperature);
 void cropModuleFcDroughtImpactOnFertility(CropModule* cm);
 void cropModuleFcCropNitrogen(CropModule* cm);
+void cropModuleFcCropDryMatter(CropModule* cm, double meanAirTemperature);
+double cropModuleFcReferenceEvapotranspiration(CropModule* cm,
+                                               double maxAirTemperature,
+                                               double minAirTemperature,
+                                               double relativeHumidity,
+                                               double meanAirTemperature,
+                                               double windSpeed,
+                                               double windSpeedHeight,
+                                               double atmosphericCO2Concentration);
+void cropModuleFcCropWaterUptake(CropModule* cm,
+                                 size_t groundwaterTable,
+                                 double grossPrecipitation,
+                                 double currentTotalTemperatureSum,
+                                 double totalTemperatureSum);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,

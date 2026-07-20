@@ -1119,25 +1119,27 @@ void monica::cropModuleStep(CropModule* cm,
 
     cropModuleFcCropNitrogen(cm);
 
-    cm->fc_CropDryMatter(meanAirTemperature);
+    cropModuleFcCropDryMatter(cm, meanAirTemperature);
 
     // calculate reference evapotranspiration if not provided directly via climate files
     if (referenceEvapotranspiration < 0) {
-      vc_ReferenceEvapotranspiration = cm->fc_ReferenceEvapotranspiration(maxAirTemperature,
-                                                                      minAirTemperature,
-                                                                      relativeHumidity,
-                                                                      meanAirTemperature,
-                                                                      windSpeed,
-                                                                      windSpeedHeight,
-                                                                      atmosphericCO2Concentration);
+      vc_ReferenceEvapotranspiration = cropModuleFcReferenceEvapotranspiration(cm,
+                                                                                maxAirTemperature,
+                                                                                minAirTemperature,
+                                                                                relativeHumidity,
+                                                                                meanAirTemperature,
+                                                                                windSpeed,
+                                                                                windSpeedHeight,
+                                                                                atmosphericCO2Concentration);
     } else {
       // use reference evapotranspiration from climate file
       vc_ReferenceEvapotranspiration = referenceEvapotranspiration;
     }
-    cm->fc_CropWaterUptake(soilColumn->vm_GroundwaterTableLayer,
-                       grossPrecipitation,
-                       vc_CurrentTotalTemperatureSum,
-                       vc_TotalTemperatureSum);
+    cropModuleFcCropWaterUptake(cm,
+                                soilColumn->vm_GroundwaterTableLayer,
+                                grossPrecipitation,
+                                vc_CurrentTotalTemperatureSum,
+                                vc_TotalTemperatureSum);
 
     cm->fc_CropNUptake(soilColumn->vm_GroundwaterTableLayer,
                    vc_CurrentTotalTemperatureSum,
@@ -3271,7 +3273,73 @@ void monica::cropModuleFcCropNitrogen(CropModule* cm) {
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
+void monica::cropModuleFcCropDryMatter(CropModule* cm, double vw_MeanAirTemperature) {
+  const auto* cropPs = cm->cropPs;
+  auto* soilColumn = cm->soilColumn;
+  auto& speciesPs = cm->speciesPs;
+  auto& pc_AbovegroundOrgan = cm->pc_AbovegroundOrgan;
+  auto& pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
+  auto& pc_AssimilateReallocation = cm->pc_AssimilateReallocation;
+  auto& pc_CropSpecificMaxRootingDepth = cm->pc_CropSpecificMaxRootingDepth;
+  auto& pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+  auto& pc_InitialRootingDepth = cm->pc_InitialRootingDepth;
+  auto& pc_MaxNUptakeParam = cm->pc_MaxNUptakeParam;
+  auto& pc_MinimumTemperatureRootGrowth = cm->pc_MinimumTemperatureRootGrowth;
+  auto& pc_NumberOfDevelopmentalStages = cm->pc_NumberOfDevelopmentalStages;
+  auto& pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
+  auto& pc_OrganSenescenceRate = cm->pc_OrganSenescenceRate;
+  auto& pc_Perennial = cm->pc_Perennial;
+  auto& pc_ResidueNRatio = cm->pc_ResidueNRatio;
+  auto& pc_RootGrowthLag = cm->pc_RootGrowthLag;
+  auto& pc_RootPenetrationRate = cm->pc_RootPenetrationRate;
+  auto& pc_SpecificRootLength = cm->pc_SpecificRootLength;
+  auto& pc_StageMaxRootNConcentration = cm->pc_StageMaxRootNConcentration;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& pc_StorageOrgan = cm->pc_StorageOrgan;
+  auto& vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
+  auto& vc_AbovegroundBiomassOld = cm->vc_AbovegroundBiomassOld;
+  auto& vc_Assimilates = cm->vc_Assimilates;
+  auto& vc_BelowgroundBiomass = cm->vc_BelowgroundBiomass;
+  auto& vc_BelowgroundBiomassOld = cm->vc_BelowgroundBiomassOld;
+  auto& vc_CriticalNConcentration = cm->vc_CriticalNConcentration;
+  auto& vc_CropHeatRedux = cm->vc_CropHeatRedux;
+  auto& vc_CropNDemand = cm->vc_CropNDemand;
+  auto& vc_CropNRedux = cm->vc_CropNRedux;
+  auto& vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSumRoot = cm->vc_CurrentTotalTemperatureSumRoot;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_DroughtImpactOnFertility = cm->vc_DroughtImpactOnFertility;
+  auto& vc_GrowthCycleEnded = cm->vc_GrowthCycleEnded;
+  auto& vc_KTkc = cm->vc_KTkc;
+  auto& vc_MaxNUptake = cm->vc_MaxNUptake;
+  auto& vc_MaxRootingDepth = cm->vc_MaxRootingDepth;
+  auto& vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
+  auto& vc_NetPhotosynthesis = cm->vc_NetPhotosynthesis;
+  auto& vc_OrganBiomass = cm->vc_OrganBiomass;
+  auto& vc_OrganDeadBiomass = cm->vc_OrganDeadBiomass;
+  auto& vc_OrganGreenBiomass = cm->vc_OrganGreenBiomass;
+  auto& vc_OrganGrowthIncrement = cm->vc_OrganGrowthIncrement;
+  auto& vc_OrganSenescenceIncrement = cm->vc_OrganSenescenceIncrement;
+  auto& vc_ReserveAssimilatePool = cm->vc_ReserveAssimilatePool;
+  auto& vc_RootBiomass = cm->vc_RootBiomass;
+  auto& vc_RootBiomassOld = cm->vc_RootBiomassOld;
+  auto& vc_RootDensity = cm->vc_RootDensity;
+  auto& vc_RootDiameter = cm->vc_RootDiameter;
+  auto& vc_RootingDepth = cm->vc_RootingDepth;
+  auto& vc_RootingDepth_m = cm->vc_RootingDepth_m;
+  auto& vc_RootingZone = cm->vc_RootingZone;
+  auto& vc_StorageOrgan = cm->vc_StorageOrgan;
+  auto& vc_TargetNConcentration = cm->vc_TargetNConcentration;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_TotalBiomass = cm->vc_TotalBiomass;
+  auto& vc_TotalBiomassNContent = cm->vc_TotalBiomassNContent;
+  auto& vc_TotalRootLength = cm->vc_TotalRootLength;
+  auto& vc_TotalTemperatureSum = cm->vc_TotalTemperatureSum;
+  auto& vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+  auto& vs_ImpenetrableLayerDepth = cm->vs_ImpenetrableLayerDepth;
+  auto& vs_MaxEffectiveRootingDepth = cm->vs_MaxEffectiveRootingDepth;
+
   assert(soilColumn->size() >= 0);
   auto nols = soilColumn->size();
   double layerThickness = soilColumn->at(0).vs_LayerThickness;
@@ -3633,11 +3701,11 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   // Calculating a root density distribution factor []
   std::vector<double> vc_RootDensityFactor;
   double vc_RootDensityFactorSum = 0.0;
-  tie(vc_RootDensityFactor, vc_RootDensityFactorSum) = calcRootDensityFactorAndSum();
+  tie(vc_RootDensityFactor, vc_RootDensityFactorSum) = cm->calcRootDensityFactorAndSum();
 
   // calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
   if (!cropPs->__disable_daily_root_biomass_to_soil__) {
-    cropModuleFcMoveDeadRootBiomassToSoil(this, dailyDeadRootBiomassIncrement, vc_RootDensityFactorSum, vc_RootDensityFactor);
+    cropModuleFcMoveDeadRootBiomassToSoil(cm, dailyDeadRootBiomassIncrement, vc_RootDensityFactorSum, vc_RootDensityFactor);
   }
 
   // Calculating root density per layer from total root length and
@@ -3797,13 +3865,22 @@ pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum() {
  * @param vc_GrossPhotosynthesisReference_mol under well watered conditions
  * @return Reference evapotranspiration
  */
-double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
-                                                  double vw_MinAirTemperature,
-                                                  double vw_RelativeHumidity,
-                                                  double vw_MeanAirTemperature,
-                                                  double vw_WindSpeed,
-                                                  double vw_WindSpeedHeight,
-                                                  double vw_AtmosphericCO2Concentration) {
+double monica::cropModuleFcReferenceEvapotranspiration(CropModule* cm,
+                                                       double vw_MaxAirTemperature,
+                                                       double vw_MinAirTemperature,
+                                                       double vw_RelativeHumidity,
+                                                       double vw_MeanAirTemperature,
+                                                       double vw_WindSpeed,
+                                                       double vw_WindSpeedHeight,
+                                                       double vw_AtmosphericCO2Concentration) {
+  const auto* cropPs = cm->cropPs;
+  auto& pc_CarboxylationPathway = cm->pc_CarboxylationPathway;
+  auto& vc_ExtraterrestrialRadiation = cm->vc_ExtraterrestrialRadiation;
+  auto& vc_GlobalRadiation = cm->vc_GlobalRadiation;
+  auto& vc_GrossPhotosynthesisReference_mol = cm->vc_GrossPhotosynthesisReference_mol;
+  auto& vc_StomataResistance = cm->vc_StomataResistance;
+  auto& vs_HeightNN = cm->vs_HeightNN;
+
   double vc_AtmosphericPressure; //[kPA]
   double vc_PsycrometerConstant; //[kPA °C-1]
   double vc_SaturatedVapourPressureMax; //[kPA]
@@ -3926,10 +4003,40 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
-                                    double vw_GrossPrecipitation,
-                                    double /*vc_CurrentTotalTemperatureSum*/,
-                                    double /*vc_TotalTemperatureSum*/) {
+void monica::cropModuleFcCropWaterUptake(CropModule* cm,
+                                         size_t vc_GroundwaterTable,
+                                         double vw_GrossPrecipitation,
+                                         double /*vc_CurrentTotalTemperatureSum*/,
+                                         double /*vc_TotalTemperatureSum*/) {
+  const auto* cropPs = cm->cropPs;
+  auto* soilColumn = cm->soilColumn;
+  auto& pc_WaterDeficitResponseOn = cm->pc_WaterDeficitResponseOn;
+  auto& vc_ActualTranspiration = cm->vc_ActualTranspiration;
+  auto& vc_ActualTranspirationDeficit = cm->vc_ActualTranspirationDeficit;
+  auto& vc_CropHeight = cm->vc_CropHeight;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_EvaporatedFromIntercept = cm->vc_EvaporatedFromIntercept;
+  auto& vc_FinalDevelopmentalStage = cm->vc_FinalDevelopmentalStage;
+  auto& vc_InterceptionStorage = cm->vc_InterceptionStorage;
+  auto& vc_KcFactor = cm->vc_KcFactor;
+  auto& vc_NetPrecipitation = cm->vc_NetPrecipitation;
+  auto& vc_OxygenDeficit = cm->vc_OxygenDeficit;
+  auto& vc_PotentialTranspiration = cm->vc_PotentialTranspiration;
+  auto& vc_PotentialTranspirationDeficit = cm->vc_PotentialTranspirationDeficit;
+  auto& vc_ReferenceEvapotranspiration = cm->vc_ReferenceEvapotranspiration;
+  auto& vc_RemainingEvapotranspiration = cm->vc_RemainingEvapotranspiration;
+  auto& vc_RootDensity = cm->vc_RootDensity;
+  auto& vc_RootEffectivity = cm->vc_RootEffectivity;
+  auto& vc_RootingDepth = cm->vc_RootingDepth;
+  auto& vc_RootingZone = cm->vc_RootingZone;
+  auto& vc_SoilCoverage = cm->vc_SoilCoverage;
+  auto& vc_Transpiration = cm->vc_Transpiration;
+  auto& vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+  auto& vc_TranspirationRedux = cm->vc_TranspirationRedux;
+  auto& vc_TranspirationReduced = cm->vc_TranspirationReduced;
+  auto& vc_TransplantEfficiency = cm->vc_TransplantEfficiency;
+  auto& vs_MaxEffectiveRootingDepth = cm->vs_MaxEffectiveRootingDepth;
+
   size_t nols = soilColumn->size();
   double layerThickness = soilColumn->at(0).vs_LayerThickness;
   vc_PotentialTranspirationDeficit = 0.0; // [mm]
