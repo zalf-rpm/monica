@@ -2517,7 +2517,7 @@ void monica::cropModuleFcCropPhotosynthesis(CropModule* cm,
         O3_par.gamma3 = 0.05; // TODO: calibrate and add to crop params
         O3_par.gamma1 = 0.025; // TODO: calibrate and add to crop params
 
-        auto root_depth = cm->get_RootingDepth();
+        auto root_depth = cm->vc_RootingDepth;
         if (root_depth >= 1) // the crop has emerged
         {
 #ifdef TEST_O3_HOURLY_OUTPUT
@@ -2546,7 +2546,7 @@ void monica::cropModuleFcCropPhotosynthesis(CropModule* cm,
           O3_in.FC = FC / (root_depth + 1); // field capacity, m3 m-3, avg in the rooted zone
           O3_in.WP = WP / (root_depth + 1); // wilting point, m3 m-3
           O3_in.SWC = SWC / (root_depth + 1); // soil water content, m3 m-3
-          O3_in.ET0 = cm->get_ReferenceEvapotranspiration();
+          O3_in.ET0 = cm->vc_ReferenceEvapotranspiration;
           O3_in.O3a = vw_AtmosphericO3Concentration; // ambient O3 partial pressure, nbar or nmol mol-1
           O3_in.gs = avg_leaf_gs; // stomatal conductance mol m-2 s-1 bar-1
           O3_in.h = h; // hour of the day (0-23)
@@ -2604,7 +2604,7 @@ void monica::cropModuleFcCropPhotosynthesis(CropModule* cm,
         // species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
         species.lai = LAI;
         species.mFol =
-          cm->get_OrganGreenBiomass(OId::LEAF) / (100. * 100.); // kg/ha -> kg/m2
+          cm->vc_OrganGreenBiomass[OId::LEAF] / (100. * 100.); // kg/ha -> kg/m2
         species.sla =
           species.mFol > 0
             ? species.lai / species.mFol
@@ -2654,7 +2654,7 @@ void monica::cropModuleFcCropPhotosynthesis(CropModule* cm,
         // JJV
         for (const auto& lf : {FvCB_res.sunlit, FvCB_res.shaded}) {
           species.lai = lf.LAI;
-          species.mFol = cm->get_OrganGreenBiomass(OId::LEAF) / (100. * 100.) * lf.LAI /
+          species.mFol = cm->vc_OrganGreenBiomass[OId::LEAF] / (100. * 100.) * lf.LAI /
                          (sun_LAI + sh_LAI); // kg/ha -> kg/m2
           species.sla =
             species.mFol > 0
@@ -4495,14 +4495,6 @@ std::string CropModule::get_CropName() const {
 }
 
 /**
- * @brief Returns gross photosynthesis rate [mol m-2 s-1]
- * @return photosynthesis rate
- */
-double CropModule::get_GrossPhotosynthesisRate() const {
-  return vc_GrossPhotosynthesis_mol;
-}
-
-/**
  * @brief Returns gross photosynthesis rate [kg ha-1]
  * @return photosynthesis rate
  */
@@ -4511,27 +4503,11 @@ double CropModule::get_GrossPhotosynthesisHaRate() const {
 }
 
 /**
- * @brief Returns assimilation rate [kg CO2 ha leaf-1]
- * @return Assimilation rate
- */
-double CropModule::get_AssimilationRate() const {
-  return vc_AssimilationRate;
-}
-
-/**
  * @brief Returns assimilates [kg CO2 ha-1]
  * @return Assimilates
  */
 double CropModule::get_Assimilates() const {
   return vc_Assimilates;
-}
-
-/**
- * @brief Returns net maintenance respiration rate [kg CO2 ha-1]
- * @return Net maintenance respiration rate
- */
-double CropModule::get_NetMaintenanceRespiration() const {
-  return vc_NetMaintenanceRespiration;
 }
 
 /**
@@ -4588,8 +4564,8 @@ void monica::cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroCli
 
   Voc::SpeciesData species;
   // species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
-  species.lai = cm->get_LeafAreaIndex();
-  species.mFol = cm->get_OrganBiomass(OId::LEAF) / (100. * 100.); // kg/ha -> kg/m2
+  species.lai = cm->vc_LeafAreaIndex;
+  species.mFol = cm->vc_OrganBiomass[OId::LEAF] / (100. * 100.); // kg/ha -> kg/m2
   species.sla = pc_SpecificLeafArea[vc_DevelopmentalStage] * 100. * 100.; // ha/kg -> m2/kg
 
   species.EF_MONO = speciesPs.EF_MONO;
@@ -4694,14 +4670,6 @@ double CropModule::get_KcbFactor() const {
  */
 double CropModule::get_StomataResistance() const {
   return vc_StomataResistance;
-}
-
-/**
- * @brief Returns transpiration per layer[mm]
- * @return transpiration per layer
- */
-double CropModule::get_PotentialTranspiration() const {
-  return vc_PotentialTranspiration;
 }
 
 /**
@@ -4829,14 +4797,6 @@ double CropModule::get_NUptakeFromLayer(size_t i_Layer) const {
 }
 
 /**
- * @brief Returns total crop biomass [kg ha-1]
- * @return Total crop biomass
- */
-double CropModule::get_TotalBiomass() const {
-  return vc_TotalBiomass;
-}
-
-/**
  * @brief Returns total crop N content [kg N ha-1]
  * @return Total crop N uptake
  */
@@ -4853,21 +4813,15 @@ double CropModule::get_AbovegroundBiomassNContent() const {
 }
 
 /**
- * @brief Returns fruit biomass N concentration [kg N kg DM]
- * @return organ biomass
- */
-double CropModule::get_FruitBiomassNConcentration() const {
-  return (vc_TotalBiomassNContent - (get_OrganBiomass(0) * get_RootNConcentration()))
-         / (get_OrganBiomass(3)
-            + (pc_ResidueNRatio * (vc_TotalBiomass - get_OrganBiomass(0) - get_OrganBiomass(3))));
-}
-
-/**
  * @brief Returns fruit biomass N content [kg N ha-1]
  * @return organ biomass
  */
 double CropModule::get_FruitBiomassNContent() const {
-  return (get_OrganBiomass(3) * get_FruitBiomassNConcentration());
+  auto rootBiomass = vc_OrganBiomass.at(0);
+  auto fruitBiomass = vc_OrganBiomass.at(3);
+  auto fruitNConcentration = (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
+                             / (fruitBiomass + (pc_ResidueNRatio * (vc_TotalBiomass - rootBiomass - fruitBiomass)));
+  return fruitBiomass * fruitNConcentration;
 }
 
 /**
@@ -4974,38 +4928,6 @@ double CropModule::get_PrimaryCropYield() const {
  */
 double CropModule::get_SecondaryCropYield() const {
   return calculateCropYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
-}
-
-/**
- * @brief Returns crop yield after cutting
- * @return crop yield after cutting
- */
-double CropModule::get_CropYieldAfterCutting() const {
-  return calculateCropYield(pc_OrganIdsForCutting, vc_OrganBiomass);
-}
-
-/**
- * @brief Returns primary crop yield fresh matter
- * @return primary yield
- */
-double CropModule::get_FreshPrimaryCropYield() const {
-  return calculateCropFreshMatterYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
-}
-
-/**
- * @brief Returns secondary crop yield fresh matter
- * @return crop yield
- */
-double CropModule::get_FreshSecondaryCropYield() const {
-  return calculateCropFreshMatterYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
-}
-
-/**
- * @brief Returns fresh matter crop yield after cutting
- * @return fresh crop yield after cutting
- */
-double CropModule::get_FreshCropYieldAfterCutting() const {
-  return calculateCropFreshMatterYield(pc_OrganIdsForCutting, vc_OrganBiomass);
 }
 
 /**
@@ -5152,10 +5074,6 @@ double CropModule::get_OrganSpecificNPP(int organ) const {
   return (get_NetPrimaryProduction() * organ_percentage);
 }
 
-int CropModule::get_StageAfterCut() const {
-  return pc_StageAfterCut;
-}
-
 void monica::cropModuleApplyCutting(CropModule* cm,
                                      std::map<int, Cutting::Value>& organs,
                                      std::map<int, double>& exports,
@@ -5178,9 +5096,9 @@ void monica::cropModuleApplyCutting(CropModule* cm,
   auto& vc_sumResidueCutBiomass = cm->vc_sumResidueCutBiomass;
 
   double oldAbovegroundBiomass = vc_AbovegroundBiomass;
-  double oldAgbNcontent = cm->get_AbovegroundBiomassNContent();
+  double oldAgbNcontent = cm->vc_AbovegroundBiomass * cm->vc_NConcentrationAbovegroundBiomass;
   double sumCutBiomass = 0.0;
-  double currentSLA = cm->get_LeafAreaIndex() / vc_OrganGreenBiomass[OId::LEAF];
+  double currentSLA = cm->vc_LeafAreaIndex / vc_OrganGreenBiomass[OId::LEAF];
 
   Tools::debug() << "CropModule::applyCutting()" << endl;
 
@@ -5235,7 +5153,7 @@ void monica::cropModuleApplyCutting(CropModule* cm,
       }
     } else if (organSpec.unit == Cutting::LAI) {
       // only "left" is supported for LAI
-      double currentLAI = cm->get_LeafAreaIndex();
+      double currentLAI = cm->vc_LeafAreaIndex;
       if (organSpec.value > currentLAI) {
         newOrganBiomass = oldOrganGreenBiomass;
         cutOrganBiomass = oldOrganDeadBiomass;
@@ -5278,7 +5196,7 @@ void monica::cropModuleApplyCutting(CropModule* cm,
 
   if (sumResidueBiomass > 0) {
     // prepare to add crop residues to soilorganic (AOMs)
-    double residueNConcentration = cm->get_AbovegroundBiomassNConcentration();
+    double residueNConcentration = cm->vc_NConcentrationAbovegroundBiomass;
     debug() << "adding organic matter from cut residues to soilOrganic" << endl;
     debug() << "Residue biomass: " << sumResidueBiomass
       << " Residue N concentration: " << residueNConcentration << endl;

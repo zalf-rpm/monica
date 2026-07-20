@@ -72,15 +72,9 @@ struct CropModule {
 
   std::string get_CropName() const;
 
-  double get_GrossPhotosynthesisRate() const;
-
   double get_GrossPhotosynthesisHaRate() const;
 
-  double get_AssimilationRate() const;
-
   double get_Assimilates() const;
-
-  double get_NetMaintenanceRespiration() const;
 
   double get_MaintenanceRespirationAS() const;
 
@@ -120,8 +114,6 @@ struct CropModule {
 
   double get_HeatStressRedux() const;
 
-  double get_PotentialTranspiration() const;
-
   double get_ActualTranspiration() const;
 
   double get_OxygenDeficit() const;
@@ -142,8 +134,6 @@ struct CropModule {
 
   double get_AbovegroundBiomassNContent() const;
 
-  double get_FruitBiomassNConcentration() const;
-
   double get_FruitBiomassNContent() const;
 
   double get_HeatSumIrrigationStart() const;
@@ -151,8 +141,6 @@ struct CropModule {
   double get_HeatSumIrrigationEnd() const;
 
   double get_NUptakeFromLayer(size_t i_Layer) const;
-
-  double get_TotalBiomass() const;
 
   double get_TotalBiomassNContent() const;
 
@@ -168,13 +156,6 @@ struct CropModule {
 
   double get_SecondaryCropYield() const;
 
-  double get_CropYieldAfterCutting() const;
-
-  double get_FreshPrimaryCropYield() const;
-
-  double get_FreshSecondaryCropYield() const;
-
-  double get_FreshCropYieldAfterCutting() const;
 
   double get_ResidueBiomass(bool useSecondaryCropYields = true, double alternativeCropYield = -1) const;
 
@@ -220,7 +201,6 @@ struct CropModule {
 
   int get_NumberOfOrgans() const;
 
-  int get_StageAfterCut() const;
 
   int getAnthesisDay() const;
 
