@@ -57,27 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  void fc_Radiation(double vs_JulianDay,
-                    double vw_GlobalRadiation,
-                    double vw_SunshineHours);
-
-  double fc_DaylengthFactor(double d_DaylengthRequirement,
-                            double vc_EffectiveDayLength,
-                            double vc_PhotoperiodicDaylength,
-                            double d_BaseDaylength);
-
-  std::pair<double, double> fc_VernalisationFactor(double vw_MeanAirTemperature,
-                                                   double pc_VernalisationRequirement,
-                                                   double vc_VernalisationDays);
-
-  double fc_OxygenDeficiency(double pc_CriticalOxygenContent);
-
-  void fc_CropDevelopmentalStage(double meanAirTemperature,
-                                 double soilMoisture_m3,
-                                 double fieldCapacity,
-                                 double permanentWiltingPoint,
-                                 Tools::Date currentDate);
-
   double fc_KcFactor(double d_StageTemperatureSum,
                      double d_CurrentTemperatureSum,
                      double d_StageKcFactor,
@@ -750,6 +729,26 @@ void cropModuleInitializeFromCropParameters(CropModule* cm,
                                             bool isWinterCrop,
                                             const SiteParameters* siteParams,
                                             const SimulationParameters& simParams);
+void cropModuleFcRadiation(CropModule* cm,
+                           double julianDay,
+                           double globalRadiation,
+                           double sunshineHours);
+double cropModuleFcDaylengthFactor(CropModule* cm,
+                                   double daylengthRequirement,
+                                   double effectiveDayLength,
+                                   double photoperiodicDayLength,
+                                   double baseDaylength);
+std::pair<double, double> cropModuleFcVernalisationFactor(CropModule* cm,
+                                                          double meanAirTemperature,
+                                                          double vernalisationRequirement,
+                                                          double vernalisationDays);
+double cropModuleFcOxygenDeficiency(CropModule* cm, double criticalOxygenContent);
+void cropModuleFcCropDevelopmentalStage(CropModule* cm,
+                                        double meanAirTemperature,
+                                        double soilMoisture_m3,
+                                        double fieldCapacity,
+                                        double permanentWiltingPoint,
+                                        Tools::Date currentDate);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,

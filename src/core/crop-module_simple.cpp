@@ -917,9 +917,9 @@ void monica::cropModuleStep(CropModule* cm,
   }
 
   //  cout << "Cropstep: " << minAirTemperature << "\t" << maxAirTemperature << "\t" << meanAirTemperature << endl;
-  cm->fc_Radiation(vs_JulianDay, globalRadiation, sunshineHours);
+  cropModuleFcRadiation(cm, vs_JulianDay, globalRadiation, sunshineHours);
 
-  vc_OxygenDeficit = cm->fc_OxygenDeficiency(pc_CriticalOxygenContent[vc_DevelopmentalStage]);
+  vc_OxygenDeficit = cropModuleFcOxygenDeficiency(cm, pc_CriticalOxygenContent[vc_DevelopmentalStage]);
 
   size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 
@@ -931,11 +931,12 @@ void monica::cropModuleStep(CropModule* cm,
         : Date(1, 1, currentDate.year()) + (speciesPs.dormancyEndDoy - 1);
   }
   if (!pc_Perennial || currentDate >= _perennialCropDormancyPeriodEndDate) {
-    cm->fc_CropDevelopmentalStage(meanAirTemperature,
-                              (*soilColumn)[0].vs_SoilMoisture_m3,
-                              (*soilColumn)[0]._sps.vs_FieldCapacity,
-                              (*soilColumn)[0]._sps.vs_PermanentWiltingPoint,
-                              currentDate);
+    cropModuleFcCropDevelopmentalStage(cm,
+                                       meanAirTemperature,
+                                       (*soilColumn)[0].vs_SoilMoisture_m3,
+                                       (*soilColumn)[0]._sps.vs_FieldCapacity,
+                                       (*soilColumn)[0]._sps.vs_PermanentWiltingPoint,
+                                       currentDate);
   }
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
@@ -961,15 +962,17 @@ void monica::cropModuleStep(CropModule* cm,
   }
 
   vc_DaylengthFactor =
-    cm->fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
-                       vc_EffectiveDayLength,
-                       vc_PhotoperiodicDaylength,
-                       pc_BaseDaylength[vc_DevelopmentalStage]);
+    cropModuleFcDaylengthFactor(cm,
+                                pc_DaylengthRequirement[vc_DevelopmentalStage],
+                                vc_EffectiveDayLength,
+                                vc_PhotoperiodicDaylength,
+                                pc_BaseDaylength[vc_DevelopmentalStage]);
 
   tie(vc_VernalisationFactor, vc_VernalisationDays) =
-    cm->fc_VernalisationFactor(meanAirTemperature,
-                           pc_VernalisationRequirement[vc_DevelopmentalStage],
-                           vc_VernalisationDays);
+    cropModuleFcVernalisationFactor(cm,
+                                    meanAirTemperature,
+                                    pc_VernalisationRequirement[vc_DevelopmentalStage],
+                                    vc_VernalisationDays);
 
   if (vc_TotalTemperatureSum == 0.0) {
     vc_RelativeTotalDevelopment = 0.0;
@@ -1165,14 +1168,23 @@ void monica::cropModuleStep(CropModule* cm,
  *
  * @author Claas Nendel
  */
-void CropModule::fc_Radiation(double vs_JulianDay,
-                              double vw_GlobalRadiation,
-                              double vw_SunshineHours) {
+void monica::cropModuleFcRadiation(CropModule* cm, double julianDay, double globalRadiation, double sunshineHours) {
+  auto& vc_Declination = cm->vc_Declination;
+  auto& vs_Latitude = cm->vs_Latitude;
+  auto& vc_AstronomicDayLenght = cm->vc_AstronomicDayLenght;
+  auto& vc_EffectiveDayLength = cm->vc_EffectiveDayLength;
+  auto& vc_PhotoperiodicDaylength = cm->vc_PhotoperiodicDaylength;
+  auto& vc_PhotActRadiationMean = cm->vc_PhotActRadiationMean;
+  auto& vc_ClearDayRadiation = cm->vc_ClearDayRadiation;
+  auto& vc_OvercastDayRadiation = cm->vc_OvercastDayRadiation;
+  auto& vc_ExtraterrestrialRadiation = cm->vc_ExtraterrestrialRadiation;
+  auto& vc_GlobalRadiation = cm->vc_GlobalRadiation;
+
   double vc_DeclinationSinus = 0.0; // old SINLD
   double vc_DeclinationCosinus = 0.0; // old COSLD
 
   // Calculation of declination - old DEC
-  vc_Declination = -23.4 * cos(2.0 * PI * ((vs_JulianDay + 10.0) / 365.0));
+  vc_Declination = -23.4 * cos(2.0 * PI * ((julianDay + 10.0) / 365.0));
 
   vc_DeclinationSinus = sin(vc_Declination * PI / 180.0) * sin(vs_Latitude * PI / 180.0);
   vc_DeclinationCosinus = cos(vc_Declination * PI / 180.0) * cos(vs_Latitude * PI / 180.0);
@@ -1219,7 +1231,7 @@ void CropModule::fc_Radiation(double vs_JulianDay,
   // Calculation of extraterrestrial radiation - old EXT
   double pc_SolarConstant = 0.082;
   //[MJ m-2 d-1] Note: Here is the difference to HERMES, which calculates in [J cm-2 d-1]!
-  double SC = 24.0 * 60.0 / PI * pc_SolarConstant * (1.0 + 0.033 * cos(2.0 * PI * vs_JulianDay / 365.0));
+  double SC = 24.0 * 60.0 / PI * pc_SolarConstant * (1.0 + 0.033 * cos(2.0 * PI * julianDay / 365.0));
 
   double arg_SolarAngle = -tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0);
   arg_SolarAngle = bound(-1.0, arg_SolarAngle, 1.0);
@@ -1227,11 +1239,11 @@ void CropModule::fc_Radiation(double vs_JulianDay,
   vc_ExtraterrestrialRadiation =
     SC * (vc_SunsetSolarAngle * vc_DeclinationSinus + vc_DeclinationCosinus * sin(vc_SunsetSolarAngle)); // [MJ m-2]
 
-  if (vw_GlobalRadiation > 0.0) {
-    vc_GlobalRadiation = vw_GlobalRadiation;
+  if (globalRadiation > 0.0) {
+    vc_GlobalRadiation = globalRadiation;
   } else if (vc_AstronomicDayLenght > 0) {
     vc_GlobalRadiation = vc_ExtraterrestrialRadiation *
-                         (0.19 + 0.55 * vw_SunshineHours / vc_AstronomicDayLenght);
+                         (0.19 + 0.55 * sunshineHours / vc_AstronomicDayLenght);
   } else {
     vc_GlobalRadiation = 0;
   }
@@ -1247,28 +1259,33 @@ void CropModule::fc_Radiation(double vs_JulianDay,
  *
  * @author Claas Nendel
  */
-double CropModule::fc_DaylengthFactor(double d_DaylengthRequirement, double vc_EffectiveDayLength,
-                                      double vc_PhotoperiodicDayLength, double d_BaseDaylength) {
-  if (d_DaylengthRequirement > 0.0) {
+double monica::cropModuleFcDaylengthFactor(CropModule* cm,
+                                           double daylengthRequirement,
+                                           double effectiveDayLength,
+                                           double photoperiodicDayLength,
+                                           double baseDaylength) {
+  auto& vc_DaylengthFactor = cm->vc_DaylengthFactor;
+
+  if (daylengthRequirement > 0.0) {
     // ************ Long-day plants **************
     // * Development acceleration by day length. *
     // *  (Day lenght requirement is positive.)  *
     // *******************************************
 
-    vc_DaylengthFactor = (vc_PhotoperiodicDaylength - d_BaseDaylength) / (d_DaylengthRequirement - d_BaseDaylength);
-  } else if (d_DaylengthRequirement < 0.0) {
+    vc_DaylengthFactor = (photoperiodicDayLength - baseDaylength) / (daylengthRequirement - baseDaylength);
+  } else if (daylengthRequirement < 0.0) {
     // ************* Short-day plants **************
     // * Development acceleration by night lenght. *
     // *  (Day lenght requirement is negative and  *
     // *    represents critical day length.)   *
     // *********************************************
 
-    double vc_CriticalDayLenght = -d_DaylengthRequirement;
-    double vc_MaximumDayLength = -d_BaseDaylength;
-    if (vc_EffectiveDayLength <= vc_CriticalDayLenght) {
+    double vc_CriticalDayLenght = -daylengthRequirement;
+    double vc_MaximumDayLength = -baseDaylength;
+    if (effectiveDayLength <= vc_CriticalDayLenght) {
       vc_DaylengthFactor = 1.0;
     } else {
-      vc_DaylengthFactor = (vc_EffectiveDayLength - vc_MaximumDayLength) / (vc_CriticalDayLenght - vc_MaximumDayLength);
+      vc_DaylengthFactor = (effectiveDayLength - vc_MaximumDayLength) / (vc_CriticalDayLenght - vc_MaximumDayLength);
     }
   } else {
     vc_DaylengthFactor = 1.0;
@@ -1290,38 +1307,42 @@ double CropModule::fc_DaylengthFactor(double d_DaylengthRequirement, double vc_E
  *
  * @author Claas Nendel
  */
-pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTemperature,
-                                                        double d_VernalisationRequirement,
-                                                        double d_VernalisationDays) {
+pair<double, double> monica::cropModuleFcVernalisationFactor(CropModule* cm,
+                                                             double meanAirTemperature,
+                                                             double vernalisationRequirement,
+                                                             double vernalisationDays) {
+  auto& __enable_vernalisation_factor_fix__ = cm->__enable_vernalisation_factor_fix__;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_VernalisationFactor = cm->vc_VernalisationFactor;
   double vc_EffectiveVernalisation;
 
-  if (d_VernalisationRequirement == 0.0) {
+  if (vernalisationRequirement == 0.0) {
     vc_VernalisationFactor = 1.0;
   } else {
-    if ((vw_MeanAirTemperature > -4.0) && (vw_MeanAirTemperature <= 0.0)) {
-      vc_EffectiveVernalisation = (vw_MeanAirTemperature + 4.0) / 4.0;
-    } else if ((vw_MeanAirTemperature > 0.0) && (vw_MeanAirTemperature <= 3.0)) {
+    if ((meanAirTemperature > -4.0) && (meanAirTemperature <= 0.0)) {
+      vc_EffectiveVernalisation = (meanAirTemperature + 4.0) / 4.0;
+    } else if ((meanAirTemperature > 0.0) && (meanAirTemperature <= 3.0)) {
       vc_EffectiveVernalisation = 1.0;
-    } else if ((vw_MeanAirTemperature > 3.0) && (vw_MeanAirTemperature <= 7.0)) {
-      vc_EffectiveVernalisation = 1.0 - (0.2 * (vw_MeanAirTemperature - 3.0) / 4.0);
-    } else if ((vw_MeanAirTemperature > 7.0) && (vw_MeanAirTemperature <= 9.0)) {
-      vc_EffectiveVernalisation = 0.8 - (0.4 * (vw_MeanAirTemperature - 7.0) / 2.0);
-    } else if ((vw_MeanAirTemperature > 9.0) && (vw_MeanAirTemperature <= 18.0)) {
-      vc_EffectiveVernalisation = 0.4 - (0.4 * (vw_MeanAirTemperature - 9.0) / 9.0);
-    } else if ((vw_MeanAirTemperature <= -4.0) || (vw_MeanAirTemperature > 18.0)) {
+    } else if ((meanAirTemperature > 3.0) && (meanAirTemperature <= 7.0)) {
+      vc_EffectiveVernalisation = 1.0 - (0.2 * (meanAirTemperature - 3.0) / 4.0);
+    } else if ((meanAirTemperature > 7.0) && (meanAirTemperature <= 9.0)) {
+      vc_EffectiveVernalisation = 0.8 - (0.4 * (meanAirTemperature - 7.0) / 2.0);
+    } else if ((meanAirTemperature > 9.0) && (meanAirTemperature <= 18.0)) {
+      vc_EffectiveVernalisation = 0.4 - (0.4 * (meanAirTemperature - 9.0) / 9.0);
+    } else if ((meanAirTemperature <= -4.0) || (meanAirTemperature > 18.0)) {
       vc_EffectiveVernalisation = 0.0;
     } else {
       vc_EffectiveVernalisation = 1.0;
     }
 
     // old VERNTAGE
-    d_VernalisationDays += vc_EffectiveVernalisation * vc_TimeStep;
+    vernalisationDays += vc_EffectiveVernalisation * vc_TimeStep;
 
     // old VERSCHWELL
-    double vc_VernalisationThreshold = min(d_VernalisationRequirement, 9.0) - 1.0;
+    double vc_VernalisationThreshold = min(vernalisationRequirement, 9.0) - 1.0;
 
     if (vc_VernalisationThreshold >= 1) {
-      vc_VernalisationFactor = (d_VernalisationDays - vc_VernalisationThreshold) / (d_VernalisationRequirement
+      vc_VernalisationFactor = (vernalisationDays - vc_VernalisationThreshold) / (vernalisationRequirement
                                  - vc_VernalisationThreshold);
 
       if (__enable_vernalisation_factor_fix__) vc_VernalisationFactor = min(max(0.0, vc_VernalisationFactor), 1.0);
@@ -1332,7 +1353,7 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
     }
   }
 
-  return make_pair(vc_VernalisationFactor, d_VernalisationDays);
+  return make_pair(vc_VernalisationFactor, vernalisationDays);
 }
 
 /*!
@@ -1342,7 +1363,15 @@ pair<double, double> CropModule::fc_VernalisationFactor(double vw_MeanAirTempera
  *
  * @author Claas Nendel
  */
-double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
+double monica::cropModuleFcOxygenDeficiency(CropModule* cm, double criticalOxygenContent) {
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_TimeUnderAnoxiaThreshold = cm->vc_TimeUnderAnoxiaThreshold;
+  auto& TimeUnderAnoxiaThresholdDefault = cm->TimeUnderAnoxiaThresholdDefault;
+  auto& vc_RootingDepth = cm->vc_RootingDepth;
+  auto* soilColumn = cm->soilColumn;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_TimeUnderAnoxia = cm->vc_TimeUnderAnoxia;
+  auto& vc_OxygenDeficit = cm->vc_OxygenDeficit;
   int timeUnderAnoxiaThresholdAtStage = vc_DevelopmentalStage < vc_TimeUnderAnoxiaThreshold.size()
                                           ? vc_TimeUnderAnoxiaThreshold.at(vc_DevelopmentalStage)
                                           : TimeUnderAnoxiaThresholdDefault;
@@ -1357,10 +1386,10 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
     sumLayers++;
   }
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
-  if (avgAirFilledPoreVolume < d_CriticalOxygenContent) { //MP: conditions changed for stage-dependent waterlogging
+  if (avgAirFilledPoreVolume < criticalOxygenContent) { //MP: conditions changed for stage-dependent waterlogging
     avgAirFilledPoreVolume = std::max(0.0, avgAirFilledPoreVolume); //to quarantee for positive values
     vc_TimeUnderAnoxia = std::max(vc_TimeUnderAnoxia + int(vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
-    double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
+    double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / criticalOxygenContent;
     vc_OxygenDeficit =
       1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
     vc_OxygenDeficit = std::max(0.0, vc_OxygenDeficit);
@@ -1405,11 +1434,41 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
  * @author Claas Nendel
  * @author Michael Berg-Mohnicke (refactoring)
  */
-void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
-                                           double soilMoisture_m3,
-                                           double fieldCapacity,
-                                           double permanentWiltingPoint,
-                                           Tools::Date currentDate) {
+void monica::cropModuleFcCropDevelopmentalStage(CropModule* cm,
+                                                double meanAirTemperature,
+                                                double soilMoisture_m3,
+                                                double fieldCapacity,
+                                                double permanentWiltingPoint,
+                                                Tools::Date currentDate) {
+  auto& _perennialCropDormancyPeriodEndDate = cm->_perennialCropDormancyPeriodEndDate;
+  const auto* cropPs = cm->cropPs;
+  auto& cultivarPs = cm->cultivarPs;
+  auto& speciesPs = cm->speciesPs;
+  auto* soilColumn = cm->soilColumn;
+  auto& pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
+  auto& pc_BaseTemperature = cm->pc_BaseTemperature;
+  auto& pc_DevelopmentAccelerationByNitrogenStress = cm->pc_DevelopmentAccelerationByNitrogenStress;
+  auto& pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+  auto& pc_EmergenceFloodingControlOn = cm->pc_EmergenceFloodingControlOn;
+  auto& pc_EmergenceMoistureControlOn = cm->pc_EmergenceMoistureControlOn;
+  auto& pc_NumberOfDevelopmentalStages = cm->pc_NumberOfDevelopmentalStages;
+  auto& pc_OptimumTemperature = cm->pc_OptimumTemperature;
+  auto& pc_Perennial = cm->pc_Perennial;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& vc_CropNRedux = cm->vc_CropNRedux;
+  auto& vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& vc_DaylengthFactor = cm->vc_DaylengthFactor;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_ErrorMessage = cm->vc_ErrorMessage;
+  auto& vc_ErrorStatus = cm->vc_ErrorStatus;
+  auto& vc_GrowthCycleEnded = cm->vc_GrowthCycleEnded;
+  auto& vc_OxygenDeficit = cm->vc_OxygenDeficit;
+  auto& vc_StorageOrgan = cm->vc_StorageOrgan;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+  auto& vc_VernalisationFactor = cm->vc_VernalisationFactor;
+
   if (vc_DevelopmentalStage == 0) {
     if (pc_Perennial) { // pc_Perennial == true
       if (meanAirTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
@@ -1533,7 +1592,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
     }
     if (doResetPerennialCrop) {
       vc_DevelopmentalStage = 0;
-      fc_UpdateCropParametersForPerennial();
+      cm->fc_UpdateCropParametersForPerennial();
       for (int stage = 0; stage < pc_NumberOfDevelopmentalStages; stage++) vc_CurrentTemperatureSum[stage] = 0.0;
       vc_CurrentTotalTemperatureSum = 0.0;
       vc_GrowthCycleEnded = false;
@@ -5166,4 +5225,3 @@ kj::Own<CropModule> monica::makeCropModule(SoilColumn* soilColumn,
   cropModuleDeserialize(cm.get(), reader);
   return cm;
 }
-
