@@ -189,7 +189,7 @@ void monica::soilOrganicStep(SoilOrganic* so,
                              double meanAirTemperature,
                              double precipitation,
                              double windSpeed) {
-  double netPrimaryProduction = so->cropModule ? so->cropModule->get_NetPrimaryProduction() : 0;
+  double netPrimaryProduction = so->cropModule ? so->cropModule->vc_NetPrimaryProduction : 0;
 
   soilOrganicFoUrea(so);
   soilOrganicFoMIT(so);

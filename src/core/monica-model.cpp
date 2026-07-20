@@ -532,7 +532,7 @@ void MonicaModel::incorporateCurrentCrop() {
   if (_currentCropModule) {
     //prepare to add root and crop residues to soilorganic (AOMs)
     double total_biomass = _currentCropModule->totalBiomass();
-    double totalNContent = _currentCropModule->get_AbovegroundBiomassNContent() +
+    double totalNContent = (_currentCropModule->vc_AbovegroundBiomass * _currentCropModule->vc_NConcentrationAbovegroundBiomass) +
                            _currentCropModule->vc_NConcentrationRoot * _currentCropModule->vc_OrganBiomass[0];
     double totalNConcentration = totalNContent / total_biomass;
 
@@ -845,7 +845,7 @@ void MonicaModel::cropStep() {
   }
 
   p_accuNStress += _currentCropModule->vc_CropNRedux;
-  p_accuWaterStress += _currentCropModule->get_TranspirationDeficit();
+  p_accuWaterStress += _currentCropModule->vc_TranspirationDeficit;
   p_accuHeatStress += _currentCropModule->vc_CropHeatRedux;
   p_accuOxygenStress += _currentCropModule->vc_OxygenDeficit;
 

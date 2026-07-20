@@ -66,20 +66,6 @@ struct CropModule {
   double get_RootingDepth_m() const { return vc_RootingDepth_m; }
 
 
-  double get_TranspirationDeficit() const;
-
-
-
-
-
-
-
-
-
-
-
-  double get_AbovegroundBiomassNContent() const;
-
   double get_FruitBiomassNContent() const;
 
 
@@ -105,18 +91,11 @@ struct CropModule {
   double get_SecondaryYieldNContent(double alternativePrimaryCropYield = -1,
                                     double alternativeSecondaryCropYield = -1) const;
 
-  double get_SumTotalNUptake() const;
-
-
   double get_AccumulatedETa() const;
 
   double get_AccumulatedTranspiration() const;
 
   double get_AccumulatedPrimaryCropYield() const;
-
-  double get_GrossPrimaryProduction() const;
-
-  double get_NetPrimaryProduction() const;
 
   double get_AutotrophicRespiration() const;
 

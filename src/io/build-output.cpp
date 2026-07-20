@@ -579,12 +579,12 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_AbovegroundBiomassNContent(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_AbovegroundBiomass * monica.cropGrowth()->vc_NConcentrationAbovegroundBiomass, 1) : 0.0;
             });
 
       build({id++, "SumNUp", "kgN ha-1", "SumTotalNUptake"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_SumTotalNUptake(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_SumTotalNUptake, 2) : 0.0;
             });
 
       build({id++, "ActNup", "kgN ha-1", "ActNUptake"},
@@ -657,7 +657,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NPP", "kgC ha-1", "NPP"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_NetPrimaryProduction(), 5) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_NetPrimaryProduction, 5) : 0.0;
             });
 
       build({id++, "NPP-Organs", "kgC ha-1", "organ specific NPP"},
@@ -671,7 +671,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "GPP", "kgC ha-1", "GPP"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_GrossPrimaryProduction(), 5) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_GrossPrimaryProduction, 5) : 0.0;
             });
 
       build({id++, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop"},

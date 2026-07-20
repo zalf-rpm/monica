@@ -4517,22 +4517,6 @@ void monica::cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroCli
 }
 
 /**
- * @brief Returns transpiration deficit [0;1]
- * @return transpiration deficit
- */
-double CropModule::get_TranspirationDeficit() const {
-  return vc_TranspirationDeficit;
-}
-
-/**
- * @brief Returns aboveground biomass N content [kg N ha-1]
- * @return organ biomass
- */
-double CropModule::get_AbovegroundBiomassNContent() const {
-  return vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass;
-}
-
-/**
  * @brief Returns fruit biomass N content [kg N ha-1]
  * @return organ biomass
  */
@@ -4662,30 +4646,6 @@ double CropModule::get_SecondaryYieldNContent(double alternativePrimaryCropYield
 }
 
 /**
- * @brief Returns the accumulated crop's actual N uptake [kg N ha-1]
- * @return Sum crop actual N uptake
- */
-double CropModule::get_SumTotalNUptake() const {
-  return vc_SumTotalNUptake;
-}
-
-/**
- * @brief Returns the gross primary production [kg C ha-1 d-1]
- * @return Gross primary production
- */
-double CropModule::get_GrossPrimaryProduction() const {
-  return vc_GrossPrimaryProduction;
-}
-
-/**
- * @brief Returns the net primary production [kg C ha-1 d-1]
- * @return Net primary production
- */
-double CropModule::get_NetPrimaryProduction() const {
-  return vc_NetPrimaryProduction;
-}
-
-/**
  * @brief Returns the respiration [kg C ha-1 d-1]
  * @return Net primary production
  */
@@ -4719,7 +4679,7 @@ double CropModule::get_OrganSpecificNPP(int organ) const {
 
   // cout << "get_OrganBiomass(organ) : " << organ << ", " << organ_percentage << std::endl; // JV!
   // cout << "total_biomass : " << total_biomass << std::endl; // JV!
-  return (get_NetPrimaryProduction() * organ_percentage);
+  return (vc_NetPrimaryProduction * organ_percentage);
 }
 
 void monica::cropModuleApplyCutting(CropModule* cm,
