@@ -57,16 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  void fc_HeatStressImpact(double vw_MeanAirTemperature,
-                           double vw_MaxAirTemperature);
-
-  void fc_FrostKill(double vw_MeanAirTemperature,
-                    double vw_MaxAirTemperature);
-
-  void fc_DroughtImpactOnFertility();
-
-  void fc_CropNitrogen();
-
   void fc_CropDryMatter(double vw_MeanAirTemperature);
 
   double fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
@@ -746,6 +736,12 @@ void cropModuleFcCropPhotosynthesis(CropModule* cm,
                                     double atmosphericCO2Concentration,
                                     double atmosphericO3Concentration,
                                     Tools::Date currentDate);
+void cropModuleFcHeatStressImpact(CropModule* cm,
+                                  double maxAirTemperature,
+                                  double minAirTemperature);
+void cropModuleFcFrostKill(CropModule* cm, double maxAirTemperature, double minAirTemperature);
+void cropModuleFcDroughtImpactOnFertility(CropModule* cm);
+void cropModuleFcCropNitrogen(CropModule* cm);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,

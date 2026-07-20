@@ -1109,17 +1109,15 @@ void monica::cropModuleStep(CropModule* cm,
                                    atmosphericO3Concentration,
                                    currentDate);
 
-    cm->fc_HeatStressImpact(maxAirTemperature,
-                        minAirTemperature);
+    cropModuleFcHeatStressImpact(cm, maxAirTemperature, minAirTemperature);
 
     if (_frostKillOn) {
-      cm->fc_FrostKill(maxAirTemperature,
-                   minAirTemperature);
+      cropModuleFcFrostKill(cm, maxAirTemperature, minAirTemperature);
     }
 
-    cm->fc_DroughtImpactOnFertility();
+    cropModuleFcDroughtImpactOnFertility(cm);
 
-    cm->fc_CropNitrogen();
+    cropModuleFcCropNitrogen(cm);
 
     cm->fc_CropDryMatter(meanAirTemperature);
 
@@ -2962,8 +2960,18 @@ void monica::cropModuleFcCropPhotosynthesis(CropModule* cm,
  * @param vw_MinAirTemperature
  * @param vc_CurrentTotalTemperatureSum
  */
-void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
-                                     double vw_MinAirTemperature) {
+void monica::cropModuleFcHeatStressImpact(CropModule* cm,
+                                          double vw_MaxAirTemperature,
+                                          double vw_MinAirTemperature) {
+  auto& pc_BeginSensitivePhaseHeatStress = cm->pc_BeginSensitivePhaseHeatStress;
+  auto& pc_CriticalTemperatureHeatStress = cm->pc_CriticalTemperatureHeatStress;
+  auto& pc_EndSensitivePhaseHeatStress = cm->pc_EndSensitivePhaseHeatStress;
+  auto& pc_LimitingTemperatureHeatStress = cm->pc_LimitingTemperatureHeatStress;
+  auto& vc_CropHeatRedux = cm->vc_CropHeatRedux;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& vc_DaysAfterBeginFlowering = cm->vc_DaysAfterBeginFlowering;
+  auto& vc_TotalCropHeatImpact = cm->vc_TotalCropHeatImpact;
+
   // AGROSIM night and day temperatures
   double vc_PhotoTemperature = vw_MaxAirTemperature - ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
   double vc_FractionOpenFlowers = 0.0;
@@ -3025,7 +3033,21 @@ void CropModule::fc_HeatStressImpact(double vw_MaxAirTemperature,
  * @param vw_MinAirTemperature
  */
 
-void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTemperature) {
+void monica::cropModuleFcFrostKill(CropModule* cm, double vw_MaxAirTemperature, double vw_MinAirTemperature) {
+  auto* soilColumn = cm->soilColumn;
+  auto& pc_FrostDehardening = cm->pc_FrostDehardening;
+  auto& pc_FrostHardening = cm->pc_FrostHardening;
+  auto& pc_LT50cultivar = cm->pc_LT50cultivar;
+  auto& pc_RespiratoryStress = cm->pc_RespiratoryStress;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& vc_CropFrostRedux = cm->vc_CropFrostRedux;
+  auto& vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_LT50 = cm->vc_LT50;
+  auto& vc_LT50M = cm->vc_LT50M;
+  auto& vc_VernalisationFactor = cm->vc_VernalisationFactor;
+  auto& _getSnowDepthAndCalcTempUnderSnow = cm->_getSnowDepthAndCalcTempUnderSnow;
+
   // ************************************************************
   // ** Fowler, D.B., B.M. Byrns, K.J. Greer. 2014. Overwinter **
   // **	Low-Temperature Responses of Cereals: Analyses and   **
@@ -3090,7 +3112,16 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTempe
 /**
  * @brief Drought impact on crop fertility
  */
-void CropModule::fc_DroughtImpactOnFertility() {
+void monica::cropModuleFcDroughtImpactOnFertility(CropModule* cm) {
+  auto& pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
+  auto& pc_DroughtImpactOnFertilityFactor = cm->pc_DroughtImpactOnFertilityFactor;
+  auto& pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_DroughtImpactOnFertility = cm->vc_DroughtImpactOnFertility;
+  auto& vc_OxygenDeficit = cm->vc_OxygenDeficit;
+  auto& vc_StorageOrgan = cm->vc_StorageOrgan;
+  auto& vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+
   if (vc_TranspirationDeficit < 0.0) vc_TranspirationDeficit = 0.0;
 
   // Fertility of the crop is reduced in cases of severe drought during bloom
@@ -3115,7 +3146,72 @@ void CropModule::fc_DroughtImpactOnFertility() {
 /**
  * @brief Crop Nitrogen
  */
-void CropModule::fc_CropNitrogen() {
+void monica::cropModuleFcCropNitrogen(CropModule* cm) {
+  const auto* cropPs = cm->cropPs;
+  auto* soilColumn = cm->soilColumn;
+  auto& pc_AbovegroundOrgan = cm->pc_AbovegroundOrgan;
+  auto& pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
+  auto& pc_CropSpecificMaxRootingDepth = cm->pc_CropSpecificMaxRootingDepth;
+  auto& pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+  auto& pc_DevelopmentAccelerationByNitrogenStress = cm->pc_DevelopmentAccelerationByNitrogenStress;
+  auto& pc_InitialRootingDepth = cm->pc_InitialRootingDepth;
+  auto& pc_LuxuryNCoeff = cm->pc_LuxuryNCoeff;
+  auto& pc_MaxNUptakeParam = cm->pc_MaxNUptakeParam;
+  auto& pc_MinimumNConcentration = cm->pc_MinimumNConcentration;
+  auto& pc_MinimumTemperatureRootGrowth = cm->pc_MinimumTemperatureRootGrowth;
+  auto& pc_NConcentrationB0 = cm->pc_NConcentrationB0;
+  auto& pc_NConcentrationPN = cm->pc_NConcentrationPN;
+  auto& pc_NitrogenResponseOn = cm->pc_NitrogenResponseOn;
+  auto& pc_NumberOfDevelopmentalStages = cm->pc_NumberOfDevelopmentalStages;
+  auto& pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
+  auto& pc_RootGrowthLag = cm->pc_RootGrowthLag;
+  auto& pc_RootPenetrationRate = cm->pc_RootPenetrationRate;
+  auto& pc_StageMaxRootNConcentration = cm->pc_StageMaxRootNConcentration;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& pc_StorageOrgan = cm->pc_StorageOrgan;
+  auto& pc_SpecificRootLength = cm->pc_SpecificRootLength;
+  auto& pc_ResidueNRatio = cm->pc_ResidueNRatio;
+  auto& rootNRedux = cm->rootNRedux;
+  auto& vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
+  auto& vc_BelowgroundBiomass = cm->vc_BelowgroundBiomass;
+  auto& vc_CriticalNConcentration = cm->vc_CriticalNConcentration;
+  auto& vc_CropNDemand = cm->vc_CropNDemand;
+  auto& vc_CropNRedux = cm->vc_CropNRedux;
+  auto& vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSumRoot = cm->vc_CurrentTotalTemperatureSumRoot;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_FixedN = cm->vc_FixedN;
+  auto& vc_MaxNUptake = cm->vc_MaxNUptake;
+  auto& vc_MaxRootingDepth = cm->vc_MaxRootingDepth;
+  auto& vc_NConcentrationAbovegroundBiomass = cm->vc_NConcentrationAbovegroundBiomass;
+  auto& vc_NConcentrationAbovegroundBiomassOld = cm->vc_NConcentrationAbovegroundBiomassOld;
+  auto& vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
+  auto& vc_NConcentrationRootOld = cm->vc_NConcentrationRootOld;
+  auto& vc_NUptakeFromLayer = cm->vc_NUptakeFromLayer;
+  auto& vc_OrganBiomass = cm->vc_OrganBiomass;
+  auto& vc_OrganGreenBiomass = cm->vc_OrganGreenBiomass;
+  auto& vc_OrganGrowthIncrement = cm->vc_OrganGrowthIncrement;
+  auto& vc_OrganSenescenceIncrement = cm->vc_OrganSenescenceIncrement;
+  auto& vc_RootBiomass = cm->vc_RootBiomass;
+  auto& vc_RootBiomassOld = cm->vc_RootBiomassOld;
+  auto& vc_RootDensity = cm->vc_RootDensity;
+  auto& vc_RootDiameter = cm->vc_RootDiameter;
+  auto& vc_RootingDepth = cm->vc_RootingDepth;
+  auto& vc_RootingDepth_m = cm->vc_RootingDepth_m;
+  auto& vc_RootingZone = cm->vc_RootingZone;
+  auto& vc_TargetNConcentration = cm->vc_TargetNConcentration;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_TotalBiomass = cm->vc_TotalBiomass;
+  auto& vc_TotalBiomassNContent = cm->vc_TotalBiomassNContent;
+  auto& vc_TotalNInput = cm->vc_TotalNInput;
+  auto& vc_TotalNUptake = cm->vc_TotalNUptake;
+  auto& vc_TotalRootLength = cm->vc_TotalRootLength;
+  auto& vc_TotalTemperatureSum = cm->vc_TotalTemperatureSum;
+  auto& vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+  auto& vs_ImpenetrableLayerDepth = cm->vs_ImpenetrableLayerDepth;
+  auto& vs_MaxEffectiveRootingDepth = cm->vs_MaxEffectiveRootingDepth;
+
   vc_CriticalNConcentration = pc_NConcentrationPN *
                               (1.0 + (pc_NConcentrationB0 *
                                       exp(-0.26 * (vc_AbovegroundBiomass + vc_BelowgroundBiomass) / 1000.0))) /
