@@ -58,11 +58,6 @@ struct CropModule {
   //void get_CropParameters();
 
 
-  Voc::Emissions guentherEmissions() const { return _guentherEmissions; }
-
-  Voc::Emissions jjvEmissions() const { return _jjvEmissions; }
-
-
   double get_AbovegroundBiomassNContent() const;
 
   double get_AutotrophicRespiration() const;

@@ -1238,7 +1238,7 @@ BOTRes& monica::buildOutputTable() {
               "daily isoprene-emission of all species from Guenther model"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->guentherEmissions().isoprene_emission, 5) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->_guentherEmissions.isoprene_emission, 5) : 0.0;
             });
 
       build({
@@ -1249,7 +1249,7 @@ BOTRes& monica::buildOutputTable() {
             },
             [](const MonicaModel& monica, OId oid) {
               return monica.cropGrowth()
-                       ? round(monica.cropGrowth()->guentherEmissions().monoterpene_emission, 5)
+                       ? round(monica.cropGrowth()->_guentherEmissions.monoterpene_emission, 5)
                        : 0.0;
             });
 
@@ -1260,7 +1260,7 @@ BOTRes& monica::buildOutputTable() {
               "daily isoprene-emission of all species from JJV model"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->jjvEmissions().isoprene_emission, 5) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->_jjvEmissions.isoprene_emission, 5) : 0.0;
             });
 
       build({
@@ -1270,7 +1270,7 @@ BOTRes& monica::buildOutputTable() {
               "daily monoterpene emission of all species from JJV model"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->jjvEmissions().monoterpene_emission, 5) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->_jjvEmissions.monoterpene_emission, 5) : 0.0;
             });
 
       build({id++, "Nresid", "kg N ha-1", "Nitrogen content in crop residues"},
