@@ -387,8 +387,8 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
   if (_currentCropModule) {
     // prepare to add root and crop residues to soilorganic (AOMs)
     // dead root biomass has already been added daily, so just living root biomass is left
-    double rootBiomass = _currentCropModule->get_OrganGreenBiomass(0);
-    double rootNConcentration = _currentCropModule->get_RootNConcentration();
+    double rootBiomass = _currentCropModule->vc_OrganGreenBiomass[0];
+    double rootNConcentration = _currentCropModule->vc_NConcentrationRoot;
     debug() << "adding organic matter from root to soilOrganic" << endl;
     debug() << "root biomass: " << rootBiomass
       << " Root N concentration: " << rootNConcentration << endl;
@@ -469,7 +469,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
       for (const auto& [organId, specVal] : spec.organ2specVal) {
         // ignore root, is probably an error, when the user specified the root organ (0) as something to harvest
         if (organId == 0) continue;
-        auto organBiomass = _currentCropModule->get_OrganBiomass(organId);
+        auto organBiomass = _currentCropModule->vc_OrganBiomass[organId];
         auto organYield = organBiomass * specVal.exportPercentage / 100.0;
         cropYield += organYield;
         if (organIdsForPrimaryYield.find(organId + 1) != organIdsForPrimaryYield.end()) {
@@ -507,9 +507,9 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
         << endl;
     } else {
       //prepare to add the total plant to soilorganic (AOMs)
-      double abovegroundBiomass = _currentCropModule->get_AbovegroundBiomass();
+      double abovegroundBiomass = _currentCropModule->vc_AbovegroundBiomass;
       double abovegroundBiomassNConcentration =
-        _currentCropModule->get_AbovegroundBiomassNConcentration();
+        _currentCropModule->vc_NConcentrationAbovegroundBiomass;
       debug() << "adding organic matter from aboveground biomass to soilOrganic" << endl;
       debug() << "aboveground biomass: " << abovegroundBiomass
         << " Aboveground biomass N concentration: " << abovegroundBiomassNConcentration << endl;
@@ -533,7 +533,7 @@ void MonicaModel::incorporateCurrentCrop() {
     //prepare to add root and crop residues to soilorganic (AOMs)
     double total_biomass = _currentCropModule->totalBiomass();
     double totalNContent = _currentCropModule->get_AbovegroundBiomassNContent() +
-                           _currentCropModule->get_RootNConcentration() * _currentCropModule->get_OrganBiomass(0);
+                           _currentCropModule->vc_NConcentrationRoot * _currentCropModule->vc_OrganBiomass[0];
     double totalNConcentration = totalNContent / total_biomass;
 
     debug() << "Adding organic matter from total biomass of crop to soilOrganic" << endl;

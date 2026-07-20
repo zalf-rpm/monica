@@ -125,7 +125,7 @@ void step(SoilTransport* st) {
     //vq_SoilMoisture[i] = soilColumn[i].vs_SoilMoisture_m3;
     st->vq_SoilNO3[i] = (*st->soilColumn)[i].vs_SoilNO3;
 
-    st->vc_NUptakeFromLayer[i] = st->cropModule ? st->cropModule->get_NUptakeFromLayer(i) : 0;
+    st->vc_NUptakeFromLayer[i] = st->cropModule ? st->cropModule->vc_NUptakeFromLayer[i] : 0;
     if (i == nols - 1) 
       st->vq_PercolationRate[i] = st->soilColumn->vs_FluxAtLowerBoundary; //[mm]
     else

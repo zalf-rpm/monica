@@ -4486,22 +4486,6 @@ double monica::cropModuleFcNetPrimaryProduction(CropModule* cm, double vc_TotalR
   return vc_NPP;
 }
 
-/**
- * @brief Returns growth increment of organ i [kg CH2O ha-1 d-1]
- * @return Organ growth increment
- */
-double CropModule::get_OrganGrowthIncrement(int i_Organ) const {
-  return vc_OrganGrowthIncrement[i_Organ];
-}
-
-/**
- * @brief Returns net photosynthesis [kg CH2O ha-1]
- * @return net photosynthesis
- */
-double CropModule::get_NetPhotosynthesis() const {
-  return vc_NetPhotosynthesis;
-}
-
 void monica::cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroClimateData& mcd) {
   auto& pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
   auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
@@ -4541,54 +4525,6 @@ double CropModule::get_TranspirationDeficit() const {
 }
 
 /**
- * @brief Returns total number of organs[]
- * @return total number of organs
- */
-int CropModule::get_NumberOfOrgans() const {
-  return pc_NumberOfOrgans;
-}
-
-/**
- * @brief Returns current biomass of organ i [kg ha-1]
- * @return organ biomass
- */
-double CropModule::get_OrganBiomass(int i_Organ) const {
-  return vc_OrganBiomass[i_Organ];
-}
-
-/**
- * @brief Returns current green biomass of organ i [kg ha-1]
- * @return organ biomass
- */
-double CropModule::get_OrganGreenBiomass(int i_Organ) const {
-  return vc_OrganGreenBiomass[i_Organ];
-}
-
-/**
- * @brief Returns aboveground biomass [kg ha-1]
- * @return organ biomass
- */
-double CropModule::get_AbovegroundBiomass() const {
-  return vc_AbovegroundBiomass;
-}
-
-/**
- * @brief Returns crop N uptake from layer i [kg N ha-1]
- * @return Crop N uptake
- */
-double CropModule::get_NUptakeFromLayer(size_t i_Layer) const {
-  return vc_NUptakeFromLayer[i_Layer];
-}
-
-/**
- * @brief Returns total crop N content [kg N ha-1]
- * @return Total crop N uptake
- */
-double CropModule::get_TotalBiomassNContent() const {
-  return vc_TotalBiomassNContent;
-}
-
-/**
  * @brief Returns aboveground biomass N content [kg N ha-1]
  * @return organ biomass
  */
@@ -4606,38 +4542,6 @@ double CropModule::get_FruitBiomassNContent() const {
   auto fruitNConcentration = (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
                              / (fruitBiomass + (pc_ResidueNRatio * (vc_TotalBiomass - rootBiomass - fruitBiomass)));
   return fruitBiomass * fruitNConcentration;
-}
-
-/**
- * @brief Returns root N content [kg N kg-1]
- * @return Root N content
- */
-double CropModule::get_RootNConcentration() const {
-  return vc_NConcentrationRoot;
-}
-
-/**
- * @brief Returns target N content [kg N kg-1]
- * @return Target N content
- */
-double CropModule::get_TargetNConcentration() const {
-  return vc_TargetNConcentration;
-}
-
-/**
- * @brief Returns critical N Content [kg N kg-1]
- * @return Critical N content
- */
-double CropModule::get_CriticalNConcentration() const {
-  return vc_CriticalNConcentration;
-}
-
-/**
- * @brief Returns above-ground biomass N concentration [kg N kg-1]
- * @return Above-ground biomass N concentration
- */
-double CropModule::get_AbovegroundBiomassNConcentration() const {
-  return vc_NConcentrationAbovegroundBiomass;
 }
 
 /**
@@ -4707,7 +4611,7 @@ double CropModule::get_ResidueBiomass(bool useSecondaryCropYields, double altern
                      ? alternativeCropYield
                      : get_PrimaryCropYield() + (useSecondaryCropYields ? get_SecondaryCropYield() : 0);
 
-  return vc_TotalBiomass - get_OrganBiomass(0) - cropYield;
+  return vc_TotalBiomass - vc_OrganBiomass.at(0) - cropYield;
 }
 
 /**
@@ -4716,9 +4620,9 @@ double CropModule::get_ResidueBiomass(bool useSecondaryCropYields, double altern
  */
 double CropModule::get_ResiduesNConcentration(double alternativePrimaryCropYield) const {
   auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
-  auto rootBiomass = get_OrganBiomass(0);
+  auto rootBiomass = vc_OrganBiomass.at(0);
 
-  return (vc_TotalBiomassNContent - (rootBiomass * get_RootNConcentration()))
+  return (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
          / ((primaryCropYield / pc_ResidueNRatio) + (vc_TotalBiomass - rootBiomass - primaryCropYield));
 }
 
@@ -4728,9 +4632,9 @@ double CropModule::get_ResiduesNConcentration(double alternativePrimaryCropYield
  */
 double CropModule::get_PrimaryYieldNConcentration(double alternativePrimaryCropYield) const {
   auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
-  auto rootBiomass = get_OrganBiomass(0);
+  auto rootBiomass = vc_OrganBiomass.at(0);
 
-  return (vc_TotalBiomassNContent - (rootBiomass * get_RootNConcentration()))
+  return (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
          / (primaryCropYield + (pc_ResidueNRatio * (vc_TotalBiomass - rootBiomass - primaryCropYield)));
 }
 
@@ -4798,7 +4702,7 @@ double CropModule::get_OrganSpecificTotalRespired(int organ) const {
   double total_biomass = totalBiomass();
 
   // get biomass of specific organ and calculates ratio
-  double organ_percentage = get_OrganBiomass(organ) / total_biomass;
+  double organ_percentage = vc_OrganBiomass[organ] / total_biomass;
   return (get_AutotrophicRespiration() * organ_percentage);
 }
 
@@ -4811,7 +4715,7 @@ double CropModule::get_OrganSpecificNPP(int organ) const {
   double total_biomass = totalBiomass();
 
   // get biomass of specific organ and calculates ratio
-  double organ_percentage = get_OrganBiomass(organ) / total_biomass;
+  double organ_percentage = vc_OrganBiomass[organ] / total_biomass;
 
   // cout << "get_OrganBiomass(organ) : " << organ << ", " << organ_percentage << std::endl; // JV!
   // cout << "total_biomass : " << total_biomass << std::endl; // JV!

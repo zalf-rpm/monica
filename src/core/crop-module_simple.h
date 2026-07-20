@@ -62,9 +62,6 @@ struct CropModule {
 
   Voc::Emissions jjvEmissions() const { return _jjvEmissions; }
 
-  double get_OrganGrowthIncrement(int i_Organ) const;
-
-  double get_NetPhotosynthesis() const;
 
   double get_RootingDepth_m() const { return vc_RootingDepth_m; }
 
@@ -79,11 +76,6 @@ struct CropModule {
 
 
 
-  double get_OrganBiomass(int i_Organ) const;
-
-  double get_OrganGreenBiomass(int i_Organ) const;
-
-  double get_AbovegroundBiomass() const;
 
 
   double get_AbovegroundBiomassNContent() const;
@@ -91,17 +83,6 @@ struct CropModule {
   double get_FruitBiomassNContent() const;
 
 
-  double get_NUptakeFromLayer(size_t i_Layer) const;
-
-  double get_TotalBiomassNContent() const;
-
-  double get_RootNConcentration() const;
-
-  double get_TargetNConcentration() const;
-
-  double get_CriticalNConcentration() const;
-
-  double get_AbovegroundBiomassNConcentration() const;
 
   double get_PrimaryCropYield() const;
 
@@ -144,9 +125,6 @@ struct CropModule {
   double get_OrganSpecificNPP(int organ) const;
 
   double getEffectiveRootingDepth() const;
-
-  int get_NumberOfOrgans() const;
-
 
   int getAnthesisDay() const;
 
