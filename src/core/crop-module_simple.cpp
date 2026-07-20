@@ -52,156 +52,156 @@ using namespace Tools;
  *
  * @author Claas Nendel
  */
-CropModule::CropModule(SoilColumn& sc,
-                       const CropParameters& cps,
+CropModule::CropModule(SoilColumn* sc,
+                       const CropParameters* cps,
                        CropResidueParameters rps,
                        bool isWinterCrop,
-                       const SiteParameters& stps,
-                       const CropModuleParameters& cropPs,
+                       const SiteParameters* stps,
+                       const CropModuleParameters* cropPs,
                        const SimulationParameters& simPs,
                        std::function<void(std::string)> fireEvent,
                        std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                        std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-                       Intercropping& ic)
+                       Intercropping* ic)
 : _intercropping(ic)
 , _frostKillOn(simPs.pc_FrostKillOn)
 , soilColumn(sc)
 , cropPs(cropPs)
-, speciesPs(cps.speciesParams)
-, cultivarPs(cps.cultivarParams)
+, speciesPs(cps->speciesParams)
+, cultivarPs(cps->cultivarParams)
 , residuePs(kj::mv(rps))
 , _isWinterCrop(isWinterCrop)
-, _bareSoilKcFactor(stps.bareSoilKcFactor)
-, vs_Latitude(stps.vs_Latitude)
-, pc_AbovegroundOrgan(cps.speciesParams.pc_AbovegroundOrgan)
-, pc_AssimilatePartitioningCoeff(cps.cultivarParams.pc_AssimilatePartitioningCoeff)
-, pc_AssimilateReallocation(cps.speciesParams.pc_AssimilateReallocation)
-, pc_BaseDaylength(cps.cultivarParams.pc_BaseDaylength)
-, pc_BaseTemperature(cps.speciesParams.pc_BaseTemperature)
-, pc_BeginSensitivePhaseHeatStress(cps.cultivarParams.pc_BeginSensitivePhaseHeatStress)
-, pc_CarboxylationPathway(cps.speciesParams.pc_CarboxylationPathway)
-//  , pc_CO2Method(cps.pc_CO2Method)
-, pc_CriticalOxygenContent(cps.speciesParams.pc_CriticalOxygenContent)
-, pc_CriticalTemperatureHeatStress(cps.cultivarParams.pc_CriticalTemperatureHeatStress)
-, pc_CropHeightP1(cps.cultivarParams.pc_CropHeightP1)
-, pc_CropHeightP2(cps.cultivarParams.pc_CropHeightP2)
-, pc_CropName(cps.pc_CropName())
-, pc_CropSpecificMaxRootingDepth(cps.cultivarParams.pc_CropSpecificMaxRootingDepth)
+, _bareSoilKcFactor(stps->bareSoilKcFactor)
+, vs_Latitude(stps->vs_Latitude)
+, pc_AbovegroundOrgan(cps->speciesParams.pc_AbovegroundOrgan)
+, pc_AssimilatePartitioningCoeff(cps->cultivarParams.pc_AssimilatePartitioningCoeff)
+, pc_AssimilateReallocation(cps->speciesParams.pc_AssimilateReallocation)
+, pc_BaseDaylength(cps->cultivarParams.pc_BaseDaylength)
+, pc_BaseTemperature(cps->speciesParams.pc_BaseTemperature)
+, pc_BeginSensitivePhaseHeatStress(cps->cultivarParams.pc_BeginSensitivePhaseHeatStress)
+, pc_CarboxylationPathway(cps->speciesParams.pc_CarboxylationPathway)
+//  , pc_CO2Method(cps->pc_CO2Method)
+, pc_CriticalOxygenContent(cps->speciesParams.pc_CriticalOxygenContent)
+, pc_CriticalTemperatureHeatStress(cps->cultivarParams.pc_CriticalTemperatureHeatStress)
+, pc_CropHeightP1(cps->cultivarParams.pc_CropHeightP1)
+, pc_CropHeightP2(cps->cultivarParams.pc_CropHeightP2)
+, pc_CropName(cps->pc_CropName())
+, pc_CropSpecificMaxRootingDepth(cps->cultivarParams.pc_CropSpecificMaxRootingDepth)
 , vc_CurrentTemperatureSum(
-                           cps.speciesParams.pc_NumberOfDevelopmentalStages(), 0.0)
-, pc_CuttingDelayDays(cps.speciesParams.pc_CuttingDelayDays)
-, pc_DaylengthRequirement(cps.cultivarParams.pc_DaylengthRequirement)
-, pc_DefaultRadiationUseEfficiency(cps.speciesParams.pc_DefaultRadiationUseEfficiency)
-, pc_DevelopmentAccelerationByNitrogenStress(cps.speciesParams.pc_DevelopmentAccelerationByNitrogenStress)
-, pc_DroughtStressThreshold(cps.cultivarParams.pc_DroughtStressThreshold)
+                           cps->speciesParams.pc_NumberOfDevelopmentalStages(), 0.0)
+, pc_CuttingDelayDays(cps->speciesParams.pc_CuttingDelayDays)
+, pc_DaylengthRequirement(cps->cultivarParams.pc_DaylengthRequirement)
+, pc_DefaultRadiationUseEfficiency(cps->speciesParams.pc_DefaultRadiationUseEfficiency)
+, pc_DevelopmentAccelerationByNitrogenStress(cps->speciesParams.pc_DevelopmentAccelerationByNitrogenStress)
+, pc_DroughtStressThreshold(cps->cultivarParams.pc_DroughtStressThreshold)
 , pc_DroughtImpactOnFertilityFactor(
-                                    cps.speciesParams.pc_DroughtImpactOnFertilityFactor)
+                                    cps->speciesParams.pc_DroughtImpactOnFertilityFactor)
 , pc_EmergenceFloodingControlOn(
                                 simPs.pc_EmergenceFloodingControlOn)
 , pc_EmergenceMoistureControlOn(simPs.pc_EmergenceMoistureControlOn)
-, pc_EndSensitivePhaseHeatStress(cps.cultivarParams.pc_EndSensitivePhaseHeatStress)
+, pc_EndSensitivePhaseHeatStress(cps->cultivarParams.pc_EndSensitivePhaseHeatStress)
 , pc_FieldConditionModifier(
-                            cps.speciesParams.pc_FieldConditionModifier)
-//, vo_FreshSoilOrganicMatter(soilColumn.size(), 0.0)
-, pc_FrostDehardening(cps.cultivarParams.pc_FrostDehardening)
+                            cps->speciesParams.pc_FieldConditionModifier)
+//, vo_FreshSoilOrganicMatter(soilColumn->size(), 0.0)
+, pc_FrostDehardening(cps->cultivarParams.pc_FrostDehardening)
 , pc_FrostHardening(
-                    cps.cultivarParams.pc_FrostHardening)
-, pc_HeatSumIrrigationStart(cps.cultivarParams.pc_HeatSumIrrigationStart)
-, pc_HeatSumIrrigationEnd(cps.cultivarParams.pc_HeatSumIrrigationEnd)
-, vs_HeightNN(stps.vs_HeightNN)
-, pc_InitialKcFactor(cps.speciesParams.pc_InitialKcFactor)
-, pc_InitialOrganBiomass(cps.speciesParams.pc_InitialOrganBiomass)
-, pc_InitialRootingDepth(cps.speciesParams.pc_InitialRootingDepth)
+                    cps->cultivarParams.pc_FrostHardening)
+, pc_HeatSumIrrigationStart(cps->cultivarParams.pc_HeatSumIrrigationStart)
+, pc_HeatSumIrrigationEnd(cps->cultivarParams.pc_HeatSumIrrigationEnd)
+, vs_HeightNN(stps->vs_HeightNN)
+, pc_InitialKcFactor(cps->speciesParams.pc_InitialKcFactor)
+, pc_InitialOrganBiomass(cps->speciesParams.pc_InitialOrganBiomass)
+, pc_InitialRootingDepth(cps->speciesParams.pc_InitialRootingDepth)
 , vc_sunlitLeafAreaIndex(24)
 , vc_shadedLeafAreaIndex(24)
-, pc_LowTemperatureExposure(cps.cultivarParams.pc_LowTemperatureExposure)
-, pc_LimitingTemperatureHeatStress(cps.speciesParams.pc_LimitingTemperatureHeatStress)
-, pc_LT50cultivar(cps.cultivarParams.pc_LT50cultivar)
-, pc_LuxuryNCoeff(cps.speciesParams.pc_LuxuryNCoeff)
-, pc_MaxAssimilationRate(cps.cultivarParams.pc_MaxAssimilationRate)
-, pc_MaxCropDiameter(cps.speciesParams.pc_MaxCropDiameter)
-, pc_MaxCropHeight(cps.cultivarParams.pc_MaxCropHeight)
-, pc_MaxNUptakeParam(cps.speciesParams.pc_MaxNUptakeParam)
-, pc_MinimumNConcentration(cps.speciesParams.pc_MinimumNConcentration)
+, pc_LowTemperatureExposure(cps->cultivarParams.pc_LowTemperatureExposure)
+, pc_LimitingTemperatureHeatStress(cps->speciesParams.pc_LimitingTemperatureHeatStress)
+, pc_LT50cultivar(cps->cultivarParams.pc_LT50cultivar)
+, pc_LuxuryNCoeff(cps->speciesParams.pc_LuxuryNCoeff)
+, pc_MaxAssimilationRate(cps->cultivarParams.pc_MaxAssimilationRate)
+, pc_MaxCropDiameter(cps->speciesParams.pc_MaxCropDiameter)
+, pc_MaxCropHeight(cps->cultivarParams.pc_MaxCropHeight)
+, pc_MaxNUptakeParam(cps->speciesParams.pc_MaxNUptakeParam)
+, pc_MinimumNConcentration(cps->speciesParams.pc_MinimumNConcentration)
 , pc_MinimumTemperatureForAssimilation(
-                                       cps.speciesParams.pc_MinimumTemperatureForAssimilation)
+                                       cps->speciesParams.pc_MinimumTemperatureForAssimilation)
 , pc_MaximumTemperatureForAssimilation(
-                                       cps.speciesParams.pc_MaximumTemperatureForAssimilation)
+                                       cps->speciesParams.pc_MaximumTemperatureForAssimilation)
 , pc_OptimumTemperatureForAssimilation(
-                                       cps.speciesParams.pc_OptimumTemperatureForAssimilation)
+                                       cps->speciesParams.pc_OptimumTemperatureForAssimilation)
 , pc_MinimumTemperatureRootGrowth(
-                                  cps.speciesParams.pc_MinimumTemperatureRootGrowth)
+                                  cps->speciesParams.pc_MinimumTemperatureRootGrowth)
 , pc_NConcentrationAbovegroundBiomass(
-                                      cps.speciesParams.pc_NConcentrationAbovegroundBiomass)
+                                      cps->speciesParams.pc_NConcentrationAbovegroundBiomass)
 , pc_NConcentrationB0(
-                      cps.speciesParams.pc_NConcentrationB0)
-, pc_NConcentrationPN(cps.speciesParams.pc_NConcentrationPN)
-, pc_NConcentrationRoot(cps.speciesParams.pc_NConcentrationRoot)
+                      cps->speciesParams.pc_NConcentrationB0)
+, pc_NConcentrationPN(cps->speciesParams.pc_NConcentrationPN)
+, pc_NConcentrationRoot(cps->speciesParams.pc_NConcentrationRoot)
 , pc_NitrogenResponseOn(
                         simPs.pc_NitrogenResponseOn)
-, pc_NumberOfDevelopmentalStages(cps.speciesParams.pc_NumberOfDevelopmentalStages())
-, pc_NumberOfOrgans(cps.speciesParams.pc_NumberOfOrgans())
-, vc_NUptakeFromLayer(soilColumn.size(), 0.0)
+, pc_NumberOfDevelopmentalStages(cps->speciesParams.pc_NumberOfDevelopmentalStages())
+, pc_NumberOfOrgans(cps->speciesParams.pc_NumberOfOrgans())
+, vc_NUptakeFromLayer(soilColumn->size(), 0.0)
 , pc_OptimumTemperature(
-                        cps.cultivarParams.pc_OptimumTemperature)
+                        cps->cultivarParams.pc_OptimumTemperature)
 , vc_OrganBiomass(pc_NumberOfOrgans, 0.0)
 , vc_OrganDeadBiomass(
-                      cps.speciesParams.pc_NumberOfOrgans(), 0.0)
-, vc_OrganGreenBiomass(cps.speciesParams.pc_NumberOfOrgans(), 0.0)
+                      cps->speciesParams.pc_NumberOfOrgans(), 0.0)
+, vc_OrganGreenBiomass(cps->speciesParams.pc_NumberOfOrgans(), 0.0)
 , vc_OrganGrowthIncrement(pc_NumberOfOrgans, 0.0)
 , pc_OrganGrowthRespiration(
-                            cps.speciesParams.pc_OrganGrowthRespiration)
+                            cps->speciesParams.pc_OrganGrowthRespiration)
 , pc_OrganIdsForPrimaryYield(
-                             cps.cultivarParams.pc_OrganIdsForPrimaryYield)
+                             cps->cultivarParams.pc_OrganIdsForPrimaryYield)
 , pc_OrganIdsForSecondaryYield(
-                               cps.cultivarParams.pc_OrganIdsForSecondaryYield)
+                               cps->cultivarParams.pc_OrganIdsForSecondaryYield)
 , pc_OrganIdsForCutting(
-                        cps.cultivarParams.pc_OrganIdsForCutting)
+                        cps->cultivarParams.pc_OrganIdsForCutting)
 , pc_OrganMaintenanceRespiration(
-                                 cps.speciesParams.pc_OrganMaintenanceRespiration)
+                                 cps->speciesParams.pc_OrganMaintenanceRespiration)
 , vc_OrganSenescenceIncrement(pc_NumberOfOrgans, 0.0)
-, pc_OrganSenescenceRate(cps.cultivarParams.pc_OrganSenescenceRate)
+, pc_OrganSenescenceRate(cps->cultivarParams.pc_OrganSenescenceRate)
 , pc_PartBiologicalNFixation(
-                             cps.speciesParams.pc_PartBiologicalNFixation)
-, pc_Perennial(cps.cultivarParams.pc_Perennial)
+                             cps->speciesParams.pc_PartBiologicalNFixation)
+, pc_Perennial(cps->cultivarParams.pc_Perennial)
 , pc_PlantDensity(
-                  cps.speciesParams.pc_PlantDensity)
-, pc_ResidueNRatio(cps.cultivarParams.pc_ResidueNRatio)
+                  cps->speciesParams.pc_PlantDensity)
+, pc_ResidueNRatio(cps->cultivarParams.pc_ResidueNRatio)
 , pc_RespiratoryStress(
-                       cps.cultivarParams.pc_RespiratoryStress)
-, vc_RootDensity(soilColumn.size(), 0.0)
+                       cps->cultivarParams.pc_RespiratoryStress)
+, vc_RootDensity(soilColumn->size(), 0.0)
 , vc_RootDiameter(
-                  soilColumn.size(), 0.0)
-, pc_RootDistributionParam(cps.speciesParams.pc_RootDistributionParam)
-, vc_RootEffectivity(soilColumn.size(), 0.0)
-, pc_RootFormFactor(cps.speciesParams.pc_RootFormFactor)
-, pc_RootGrowthLag(cps.speciesParams.pc_RootGrowthLag)
+                  soilColumn->size(), 0.0)
+, pc_RootDistributionParam(cps->speciesParams.pc_RootDistributionParam)
+, vc_RootEffectivity(soilColumn->size(), 0.0)
+, pc_RootFormFactor(cps->speciesParams.pc_RootFormFactor)
+, pc_RootGrowthLag(cps->speciesParams.pc_RootGrowthLag)
 , pc_RootPenetrationRate(
-                         cps.speciesParams.pc_RootPenetrationRate)
-, vs_SoilMineralNContent(soilColumn.size(), 0.0)
-, pc_SpecificLeafArea(cps.cultivarParams.pc_SpecificLeafArea)
+                         cps->speciesParams.pc_RootPenetrationRate)
+, vs_SoilMineralNContent(soilColumn->size(), 0.0)
+, pc_SpecificLeafArea(cps->cultivarParams.pc_SpecificLeafArea)
 , pc_SpecificRootLength(
-                        cps.speciesParams.pc_SpecificRootLength)
-, pc_StageAfterCut(cps.speciesParams.pc_StageAfterCut - 1)
-, pc_StageAtMaxDiameter(cps.speciesParams.pc_StageAtMaxDiameter)
+                        cps->speciesParams.pc_SpecificRootLength)
+, pc_StageAfterCut(cps->speciesParams.pc_StageAfterCut - 1)
+, pc_StageAtMaxDiameter(cps->speciesParams.pc_StageAtMaxDiameter)
 , pc_StageAtMaxHeight(
-                      cps.speciesParams.pc_StageAtMaxHeight)
+                      cps->speciesParams.pc_StageAtMaxHeight)
 , pc_StageMaxRootNConcentration(
-                                cps.speciesParams.pc_StageMaxRootNConcentration)
-, pc_StageKcFactor(cps.cultivarParams.pc_StageKcFactor)
-, pc_StageTemperatureSum(cps.cultivarParams.pc_StageTemperatureSum)
+                                cps->speciesParams.pc_StageMaxRootNConcentration)
+, pc_StageKcFactor(cps->cultivarParams.pc_StageKcFactor)
+, pc_StageTemperatureSum(cps->cultivarParams.pc_StageTemperatureSum)
 , pc_StorageOrgan(
-                  cps.speciesParams.pc_StorageOrgan)
-, vc_TimeUnderAnoxiaThreshold(cropPs.pc_TimeUnderAnoxiaThreshold)
-, vs_Tortuosity(cropPs.pc_Tortuosity)
+                  cps->speciesParams.pc_StorageOrgan)
+, vc_TimeUnderAnoxiaThreshold(cropPs->pc_TimeUnderAnoxiaThreshold)
+, vs_Tortuosity(cropPs->pc_Tortuosity)
 , vc_Transpiration(
-                   soilColumn.size(), 0.0)
-, vc_TranspirationRedux(soilColumn.size(), 1.0)
-, pc_VernalisationRequirement(cps.cultivarParams.pc_VernalisationRequirement)
+                   soilColumn->size(), 0.0)
+, vc_TranspirationRedux(soilColumn->size(), 1.0)
+, pc_VernalisationRequirement(cps->cultivarParams.pc_VernalisationRequirement)
 , pc_WaterDeficitResponseOn(
                             simPs.pc_WaterDeficitResponseOn)
-, vs_MaxEffectiveRootingDepth(stps.vs_MaxEffectiveRootingDepth)
-, vs_ImpenetrableLayerDepth(stps.vs_ImpenetrableLayerDepth)
+, vs_MaxEffectiveRootingDepth(stps->vs_MaxEffectiveRootingDepth)
+, vs_ImpenetrableLayerDepth(stps->vs_ImpenetrableLayerDepth)
 , _rad24(_stepSize24)
 , _rad240(_stepSize240)
 , _tfol24(
@@ -211,8 +211,8 @@ CropModule::CropModule(SoilColumn& sc,
 , _addOrganicMatter(kj::mv(addOrganicMatter))
 , _getSnowDepthAndCalcTempUnderSnow(kj::mv(getSnowDepthAndCalcTempUnderSnow))
 , __enable_vernalisation_factor_fix__(
-                                      cps.__enable_vernalisation_factor_fix__.
-                                          orDefault(cropPs.__enable_vernalisation_factor_fix__)) {
+                                      cps->__enable_vernalisation_factor_fix__.
+                                          orDefault(cropPs->__enable_vernalisation_factor_fix__)) {
   // Determining the total temperature sum of all developmental stages after
   // emergence (that's why i_Stage starts with 1) until before senescence
   for (int i_Stage = 1; i_Stage < pc_NumberOfDevelopmentalStages - 1; i_Stage++) {
@@ -255,9 +255,9 @@ CropModule::CropModule(SoilColumn& sc,
   vc_NConcentrationRoot = pc_NConcentrationRoot;
 
   // Initialising the initial maximum rooting depth
-  if (cropPs.pc_AdjustRootDepthForSoilProps) {
-    //    double vc_SandContent = soilColumn[0]._sps.vs_SoilSandContent; // [kg kg-1]
-    //    double vc_BulkDensity = soilColumn[0]._sps.vs_SoilBulkDensity(); // [kg m-3]
+  if (cropPs->pc_AdjustRootDepthForSoilProps) {
+    //    double vc_SandContent = (*soilColumn)[0]._sps.vs_SoilSandContent; // [kg kg-1]
+    //    double vc_BulkDensity = (*soilColumn)[0]._sps.vs_SoilBulkDensity(); // [kg m-3]
     //    if (vc_SandContent < 0.55) vc_SandContent = 0.55;
     //
     //    vc_SoilSpecificMaxRootingDepth = vs_SoilSpecificMaxRootingDepth > 0.0
@@ -269,10 +269,10 @@ CropModule::CropModule(SoilColumn& sc,
     //
     // std::cout << "old mrd: " << vc_MaxRootingDepth << " -> ";
     auto R_P_max = pc_CropSpecificMaxRootingDepth;
-    double f_S = soilColumn[0]._sps.vs_SoilSandContent; // [kg kg-1]
+    double f_S = (*soilColumn)[0]._sps.vs_SoilSandContent; // [kg kg-1]
     auto R_S = (f_S - 0.5) * -0.6;
 
-    double rho_B = soilColumn[0]._sps.vs_SoilBulkDensity(); // [kg m-3]
+    double rho_B = (*soilColumn)[0]._sps.vs_SoilBulkDensity(); // [kg m-3]
     auto R_D = (rho_B / 1000.0 - 1) * -0.3;
 
     vc_MaxRootingDepth =
@@ -300,12 +300,12 @@ CropModule::CropModule(SoilColumn& sc,
   vc_KcbFactor = vc_Kcb_ini; // start at initial value
 }
 
-CropModule::CropModule(SoilColumn& sc,
-                      const CropModuleParameters& cropPs,
+CropModule::CropModule(SoilColumn* sc,
+                      const CropModuleParameters* cropPs,
                       std::function<void(std::string)> fireEvent,
                       std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                       std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-                      Intercropping& ic)
+                      Intercropping* ic)
 : _intercropping(ic)
 , soilColumn(sc)
 , cropPs(cropPs)
@@ -897,9 +897,9 @@ void CropModule::step(double vw_MeanAirTemperature,
   }
   if (!pc_Perennial || currentDate >= _perennialCropDormancyPeriodEndDate) {
     fc_CropDevelopmentalStage(vw_MeanAirTemperature,
-                              soilColumn[0].vs_SoilMoisture_m3,
-                              soilColumn[0]._sps.vs_FieldCapacity,
-                              soilColumn[0]._sps.vs_PermanentWiltingPoint,
+                              (*soilColumn)[0].vs_SoilMoisture_m3,
+                              (*soilColumn)[0]._sps.vs_FieldCapacity,
+                              (*soilColumn)[0]._sps.vs_PermanentWiltingPoint,
                               currentDate);
   }
 
@@ -1016,15 +1016,15 @@ void CropModule::step(double vw_MeanAirTemperature,
   }
 
   auto icSendRcv = [&](const string& outmsg) {
-    if (cropPs.isIntercropping && _intercropping.isAsync()) {
+    if (cropPs->isIntercropping && _intercropping->isAsync()) {
       debug() << outmsg;
       // tell the other side our current crop height
-      auto wreq = _intercropping.writer.writeRequest();
+      auto wreq = _intercropping->writer.writeRequest();
       auto wval = wreq.initValue();
       wval.setHeight(vc_CropHeight);
       auto prom = wreq.send();
-      //.wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write height failed: " << ex.getDescription().cStr() << endl;});
-      auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+      //.wait(_intercropping->ioContext->waitScope); //.eagerlyEvaluate(nullptr); //[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write height failed: " << ex.getDescription().cStr() << endl;});
+      auto val = _intercropping->reader.readRequest().send().wait(_intercropping->ioContext->waitScope).getValue();
       debug() << "sent height: " << vc_CropHeight << " and received ";
       if (val.isHeight()) {
         _intercroppingOtherCropHeight = val.getHeight();
@@ -1040,9 +1040,9 @@ void CropModule::step(double vw_MeanAirTemperature,
   };
 
   if (vc_DevelopmentalStage > 0) {
-    auto maxCropHeight = cropPs.isIntercropping
+    auto maxCropHeight = cropPs->isIntercropping
                          && _intercroppingOtherCropHeight > vc_CropHeight
-                           ? pc_MaxCropHeight * cropPs.pc_intercropping_phRedux
+                           ? pc_MaxCropHeight * cropPs->pc_intercropping_phRedux
                            : pc_MaxCropHeight;
     debug() << "original maxCropHeight: " << pc_MaxCropHeight << " -> new maxCropHeight: " << maxCropHeight << endl;
 
@@ -1095,12 +1095,12 @@ void CropModule::step(double vw_MeanAirTemperature,
       // use reference evapotranspiration from climate file
       vc_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }
-    fc_CropWaterUptake(soilColumn.vm_GroundwaterTableLayer,
+    fc_CropWaterUptake(soilColumn->vm_GroundwaterTableLayer,
                        vw_GrossPrecipitation,
                        vc_CurrentTotalTemperatureSum,
                        vc_TotalTemperatureSum);
 
-    fc_CropNUptake(soilColumn.vm_GroundwaterTableLayer,
+    fc_CropNUptake(soilColumn->vm_GroundwaterTableLayer,
                    vc_CurrentTotalTemperatureSum,
                    vc_TotalTemperatureSum);
 
@@ -1309,11 +1309,11 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
   // Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
   double sumSaturation = 0, sumSoilMoisture = 0;
   int sumLayers = 0;
-  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn.size());
+  auto nols = std::min(std::max(size_t(3), vc_RootingDepth), soilColumn->size());
   //MP: changed to consider at least first 30 cm and then rooting depth
   for (size_t i = 0; i < nols; i++) {
-    sumSaturation += soilColumn[i]._sps.vs_Saturation;
-    sumSoilMoisture += soilColumn[i].vs_SoilMoisture_m3;
+    sumSaturation += (*soilColumn)[i]._sps.vs_Saturation;
+    sumSoilMoisture += (*soilColumn)[i].vs_SoilMoisture_m3;
     sumLayers++;
   }
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
@@ -1385,7 +1385,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
         if (vc_DevelopmentalStage < (pc_NumberOfDevelopmentalStages - 1)) vc_DevelopmentalStage++;
       }
     } else { // pc_Perennial == false
-      double vc_SoilTemperature = soilColumn[0].vs_SoilTemperature; //MP: Bodentemperatur der ersten 10cm
+      double vc_SoilTemperature = (*soilColumn)[0].vs_SoilTemperature; //MP: Bodentemperatur der ersten 10cm
       if (vc_SoilTemperature > pc_BaseTemperature[vc_DevelopmentalStage]) {
         // @todo Claas: Schränkt trockener Boden das Aufsummieren der Wärmeeinheiten ein, oder
         // sollte nicht eher nur der Wechsel in das Stadium 1 davon abhängen? --> Christian //MP: das entspricht sich
@@ -1401,7 +1401,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
         }
         // Germination only if no water is stored on the soil surface.
         if (pc_EmergenceFloodingControlOn) {
-          emergenceCondition = emergenceCondition && soilColumn.vs_SurfaceWaterStorage < 0.001;
+          emergenceCondition = emergenceCondition && soilColumn->vs_SurfaceWaterStorage < 0.001;
         }
 
         if (emergenceCondition) {
@@ -1456,7 +1456,7 @@ void CropModule::fc_CropDevelopmentalStage(double meanAirTemperature,
       max(vc_DevelopmentAccelerationByNitrogenStress, vc_DevelopmentAccelerationByWaterStress);
     // *vc_DevelopmentSlowdownByWaterlogging; //MP: this does not work?
 
-    if (cropPs.__enable_Phenology_WangEngelTemperatureResponse__) {
+    if (cropPs->__enable_Phenology_WangEngelTemperatureResponse__) {
       double devTresponse = max(0.0, WangEngelTemperatureResponse(meanAirTemperature,
                                                                   cultivarPs.pc_MinTempDev_WE,
                                                                   cultivarPs.pc_OptTempDev_WE,
@@ -1617,7 +1617,7 @@ void CropModule::fc_CropGreenArea(double vw_MeanAirTemperature,
                                   double d_StageTemperatureSum,
                                   double d_CurrentTemperatureSum) {
   double TempResponseExpansion = 1.0;
-  if (cropPs.__enable_T_response_leaf_expansion__) {
+  if (cropPs->__enable_T_response_leaf_expansion__) {
     // Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
     if (vc_DevelopmentalStage + 1 <= speciesPs.pc_TransitionStageLeafExp) {
       // Early stages leaf expansion T response
@@ -1753,7 +1753,7 @@ ostream& monica::tout(bool closeFile) {
 void CropModule::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
                                               double vc_RootDensityFactorSum,
                                               const vector<double>& vc_RootDensityFactor) {
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn->_vs_NumberOfOrganicLayers;
 
   map<size_t, double> layer2deadRootBiomassAtLayer;
   for (size_t i = 0; i < vc_RootingZone; i++) {
@@ -1808,14 +1808,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
   double vc_AssimilationRateReference = 0.0;
 
-  double pc_ReferenceLeafAreaIndex = cropPs.pc_ReferenceLeafAreaIndex;
-  double pc_ReferenceMaxAssimilationRate = cropPs.pc_ReferenceMaxAssimilationRate;
-  double pc_MaintenanceRespirationParameter_1 = cropPs.pc_MaintenanceRespirationParameter1;
-  double pc_MaintenanceRespirationParameter_2 = cropPs.pc_MaintenanceRespirationParameter2;
+  double pc_ReferenceLeafAreaIndex = cropPs->pc_ReferenceLeafAreaIndex;
+  double pc_ReferenceMaxAssimilationRate = cropPs->pc_ReferenceMaxAssimilationRate;
+  double pc_MaintenanceRespirationParameter_1 = cropPs->pc_MaintenanceRespirationParameter1;
+  double pc_MaintenanceRespirationParameter_2 = cropPs->pc_MaintenanceRespirationParameter2;
 
-  double pc_GrowthRespirationParameter_1 = cropPs.pc_GrowthRespirationParameter1;
-  double pc_GrowthRespirationParameter_2 = cropPs.pc_GrowthRespirationParameter2;
-  double pc_CanopyReflectionCoeff = cropPs.pc_CanopyReflectionCoefficient; // old REFLC;
+  double pc_GrowthRespirationParameter_1 = cropPs->pc_GrowthRespirationParameter1;
+  double pc_GrowthRespirationParameter_2 = cropPs->pc_GrowthRespirationParameter2;
+  double pc_CanopyReflectionCoeff = cropPs->pc_CanopyReflectionCoefficient; // old REFLC;
 
   double vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
   double vc_RadiationUseEfficiencyReference = pc_DefaultRadiationUseEfficiency;
@@ -1847,7 +1847,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       _cropPhotosynthesisResults.ko = Mko * 1000.0; // mmol -> umol
 
       // OLD exponential response
-      double KTvmax = cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__
+      double KTvmax = cropPs->__enable_Photosynthesis_WangEngelTemperatureResponse__
                         ? max(0.00001, WangEngelTemperatureResponse(vw_MeanAirTemperature,
                                                                     pc_MinimumTemperatureForAssimilation,
                                                                     pc_OptimumTemperatureForAssimilation,
@@ -2248,7 +2248,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 #pragma region hourly FvCB code
     int vs_JulianDay = currentDate.julianDay();
     double dailyGP = 0;
-    if (cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1) {
+    if (cropPs->__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1) {
       vector<double> hourlyGlobrads;
       vector<double> hourlyExtrarad;
       int sunriseH = 0;
@@ -2319,9 +2319,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 #endif
           double FC = 0, WP = 0, SWC = 0;
           for (int i = 0; i < root_depth; i++) {
-            FC += soilColumn[i]._sps.vs_FieldCapacity;
-            WP += soilColumn[i]._sps.vs_PermanentWiltingPoint;
-            SWC += soilColumn[i].vs_SoilMoisture_m3;
+            FC += (*soilColumn)[i]._sps.vs_FieldCapacity;
+            WP += (*soilColumn)[i]._sps.vs_PermanentWiltingPoint;
+            SWC += (*soilColumn)[i].vs_SoilMoisture_m3;
           }
 
           // weighted average gs and conversion from unit ground area to unit leaf area
@@ -2507,7 +2507,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     }
 #pragma endregion hourly FvCB code
 
-    vc_GrossCO2Assimilation = cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1
+    vc_GrossCO2Assimilation = cropPs->__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1
                                 ? dailyGP
                                 : vc_GrossCO2Assimilation;
 
@@ -2529,9 +2529,9 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     debug() << "assimilation calculations for only one crop: grossCO2Assim: " << vc_GrossCO2Assimilation
       << " ref: " << vc_GrossCO2AssimilationReference << endl;
   } else {
-    double k_t = cropPs.pc_intercropping_k_t;
-    double k_s = cropPs.pc_intercropping_k_s;
-    double phRedux = cropPs.pc_intercropping_phRedux;
+    double k_t = cropPs->pc_intercropping_k_t;
+    double k_s = cropPs->pc_intercropping_k_s;
+    double phRedux = cropPs->pc_intercropping_phRedux;
     double ph_s = min(_intercroppingOtherCropHeight, vc_CropHeight);
     double ph_t = max(_intercroppingOtherCropHeight, vc_CropHeight);
     double phr = vc_CropHeight <= zeroHeightEps ? 0.0 : ph_s * phRedux / ph_t;
@@ -2552,13 +2552,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
       // send out LAI_s and wait for LAI_t2 from the larger plant
       double LAI_t2 = phr * _intercroppingOtherLAIt;
-      if (_intercropping.isAsync()) {
-        auto wreq = _intercropping.writer.writeRequest();
+      if (_intercropping->isAsync()) {
+        auto wreq = _intercropping->writer.writeRequest();
         auto wval = wreq.initValue();
         wval.setLait(vc_LeafAreaIndex);
         auto prom = wreq.send();
-        //.wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
-        auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+        //.wait(_intercropping->ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
+        auto val = _intercropping->reader.readRequest().send().wait(_intercropping->ioContext->waitScope).getValue();
         LAI_t2 = val.isLait()
                    ? val.getLait()
                    : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2718);
@@ -2584,13 +2584,13 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
       // send out LAI_t2 and wait for LAI_s from the smaller plant
       double LAI_s = _intercroppingOtherLAIt;
-      if (_intercropping.isAsync()) {
-        auto wreq = _intercropping.writer.writeRequest();
+      if (_intercropping->isAsync()) {
+        auto wreq = _intercropping->writer.writeRequest();
         auto wval = wreq.initValue();
         wval.setLait(LAI_t2);
         auto prom = wreq.send();
-        //.wait(_intercropping.ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
-        auto val = _intercropping.reader.readRequest().send().wait(_intercropping.ioContext->waitScope).getValue();
+        //.wait(_intercropping->ioContext->waitScope); //.eagerlyEvaluate(nullptr);//[](kj::Exception&& ex){ cout << "crop-module: CropModule::fc_CropPhotosynthesis: write LAI failed: " << ex.getDescription().cStr() << endl;});
+        auto val = _intercropping->reader.readRequest().send().wait(_intercropping->ioContext->waitScope).getValue();
         LAI_s = val.isLait()
                   ? val.getLait()
                   : -9999; // throw kj::Exception(kj::Exception::Type::FAILED, "crop-module.cpp", 2724);
@@ -2829,7 +2829,7 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTempe
   auto snowDepthAndTempUnderSnow = _getSnowDepthAndCalcTempUnderSnow(vc_CrownTemperature);
   if (vc_DevelopmentalStage <= 1) {
     vc_CrownTemperature =
-      (3.0 * soilColumn.vt_SoilSurfaceTemperature + 2.0 * soilColumn[0].vs_SoilTemperature) / 5.0;
+      (3.0 * soilColumn->vt_SoilSurfaceTemperature + 2.0 * (*soilColumn)[0].vs_SoilTemperature) / 5.0;
   } else if (snowDepthAndTempUnderSnow.first > 0.0) {
     vc_CrownTemperature = snowDepthAndTempUnderSnow.second;
   }
@@ -2860,7 +2860,7 @@ void CropModule::fc_FrostKill(double vw_MaxAirTemperature, double vw_MinAirTempe
   // }
 
   double vc_SnowDepthFactor = 1.0;
-  if (soilColumn.vm_SnowDepth <= 125.0) vc_SnowDepthFactor = soilColumn.vm_SnowDepth / 125.0;
+  if (soilColumn->vm_SnowDepth <= 125.0) vc_SnowDepthFactor = soilColumn->vm_SnowDepth / 125.0;
 
   double vc_RespirationFactor = (exp(0.84 + 0.051 * vc_CrownTemperature) - 2.0) / 1.85;
   double vc_RespiratoryStress = pc_RespiratoryStress * vc_RespirationFactor * vc_SnowDepthFactor;
@@ -2965,9 +2965,9 @@ void CropModule::fc_CropNitrogen() {
  * @author Claas Nendel
  */
 void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
-  assert(soilColumn.size() >= 0);
-  auto nols = soilColumn.size();
-  double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  assert(soilColumn->size() >= 0);
+  auto nols = soilColumn->size();
+  double layerThickness = soilColumn->at(0).vs_LayerThickness;
 
   double vc_MaxRootNConcentration = 0.0; // old WGM
   double vc_NConcentrationOptimum = 0.0; // old DTOPTN
@@ -2981,7 +2981,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   //   std::vector<double> vc_CapillaryWater(nols, 0.0);
   // std::vector<double> vc_RootSurface(nols, 0.0); // old FL
 
-  const CropModuleParameters& user_crops = cropPs;
+  const CropModuleParameters& user_crops = *cropPs;
   double pc_MaxCropNDemand = user_crops.pc_MaxCropNDemand;
 
   // double pc_GrowthRespirationRedux = user_crops->getPc_GrowthRespirationRedux();
@@ -3007,7 +3007,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   vc_TotalBiomass = 0.0;
 
   // old PESUM [kg m-2 --> kg ha-1]
-  // vc_TotalBiomassNContent += (soilColumn.vq_CropNUptake * 10000.0) + vc_FixedN;
+  // vc_TotalBiomassNContent += (soilColumn->vq_CropNUptake * 10000.0) + vc_FixedN;
 
   // Dry matter production
   // old NRKOM
@@ -3230,12 +3230,12 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
 
   auto layerIndexBelowRootingDepth = std::min(vc_RootingDepth, nols - 1);
   double vc_AvailableWaterPercentage = 0.0;
-  if (cropPs.__enable_PASW_root_penetration__) {
+  if (cropPs->__enable_PASW_root_penetration__) {
     // In case of drought stress the root will grow deeper //MP: Access point for drought optimisation (this could be changed for waterlogging)
     double vc_AvailableWater =
-      soilColumn[layerIndexBelowRootingDepth]._sps.vs_FieldCapacity - soilColumn[layerIndexBelowRootingDepth]._sps.vs_PermanentWiltingPoint;
+      (*soilColumn)[layerIndexBelowRootingDepth]._sps.vs_FieldCapacity - (*soilColumn)[layerIndexBelowRootingDepth]._sps.vs_PermanentWiltingPoint;
     vc_AvailableWaterPercentage =
-      (soilColumn[layerIndexBelowRootingDepth].vs_SoilMoisture_m3 - soilColumn[layerIndexBelowRootingDepth]._sps.vs_PermanentWiltingPoint) /
+      ((*soilColumn)[layerIndexBelowRootingDepth].vs_SoilMoisture_m3 - (*soilColumn)[layerIndexBelowRootingDepth]._sps.vs_PermanentWiltingPoint) /
       vc_AvailableWater;
     if (vc_AvailableWaterPercentage < 0.0) {
       vc_AvailableWaterPercentage = 0.0;
@@ -3283,16 +3283,16 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   // This is not described in Pedersen et al. ... (source ??)
   double vc_RootPenetrationRate = 0.0; // [m °C-1 d-1]
 
-  if (soilColumn[layerIndexBelowRootingDepth]._sps.vs_SoilClayContent <= 0.02) {
+  if ((*soilColumn)[layerIndexBelowRootingDepth]._sps.vs_SoilClayContent <= 0.02) {
     vc_RootPenetrationRate = 0.5 * pc_RootPenetrationRate;
-  } else if (soilColumn[layerIndexBelowRootingDepth]._sps.vs_SoilClayContent <= 0.08) {
+  } else if ((*soilColumn)[layerIndexBelowRootingDepth]._sps.vs_SoilClayContent <= 0.08) {
     vc_RootPenetrationRate =
-      ((1.0 / 3.0) + (0.5 / 0.06 * soilColumn[layerIndexBelowRootingDepth]._sps.vs_SoilClayContent)) *
+      ((1.0 / 3.0) + (0.5 / 0.06 * (*soilColumn)[layerIndexBelowRootingDepth]._sps.vs_SoilClayContent)) *
       pc_RootPenetrationRate; // [m °C-1 d-1]
   } else {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
   }
-  if (cropPs.__enable_PASW_root_penetration__) {
+  if (cropPs->__enable_PASW_root_penetration__) {
     //MP: add constraint for reduced root penetration rate when soil is dry
     if (vc_AvailableWaterPercentage <= 0.25) {
       vc_RootPenetrationRate = std::min(1.0, (4 * vc_AvailableWaterPercentage)) * vc_RootPenetrationRate;
@@ -3329,7 +3329,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
   tie(vc_RootDensityFactor, vc_RootDensityFactorSum) = calcRootDensityFactorAndSum();
 
   // calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
-  if (!cropPs.__disable_daily_root_biomass_to_soil__) {
+  if (!cropPs->__disable_daily_root_biomass_to_soil__) {
     fc_MoveDeadRootBiomassToSoil(dailyDeadRootBiomassIncrement, vc_RootDensityFactorSum, vc_RootDensityFactor);
   }
 
@@ -3444,8 +3444,8 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
 }
 
 pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum() {
-  auto nols = soilColumn.size();
-  double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  auto nols = soilColumn->size();
+  double layerThickness = soilColumn->at(0).vs_LayerThickness;
 
   // Calculating a root density distribution factor []
   std::vector<double> vc_RootDensityFactor(nols, 0.0);
@@ -3511,7 +3511,7 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
   double vc_ReferenceEvapotranspiration; //[mm]
   double vw_NetRadiation; //[MJ m-2]
 
-  const CropModuleParameters& user_crops = cropPs;
+  const CropModuleParameters& user_crops = *cropPs;
   double pc_SaturationBeta = user_crops.pc_SaturationBeta; // Original: Yu et al. 2001; beta = 3.5
   double pc_StomataConductanceAlpha = user_crops.pc_StomataConductanceAlpha; // Original: Yu et al. 2001; alpha = 0.06
   double pc_ReferenceAlbedo = user_crops.pc_ReferenceAlbedo; // FAO Green gras reference albedo from Allen et al. (1998)
@@ -3623,8 +3623,8 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
                                     double vw_GrossPrecipitation,
                                     double /*vc_CurrentTotalTemperatureSum*/,
                                     double /*vc_TotalTemperatureSum*/) {
-  size_t nols = soilColumn.size();
-  double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  size_t nols = soilColumn->size();
+  double layerThickness = soilColumn->at(0).vs_LayerThickness;
   vc_PotentialTranspirationDeficit = 0.0; // [mm]
   vc_PotentialTranspiration = 0.0; // old TRAMAX [mm]
   double vc_PotentialEvapotranspiration = 0.0; // [mm]
@@ -3708,9 +3708,9 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
 
     for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
       double vc_AvailableWater =
-        soilColumn[i_Layer]._sps.vs_FieldCapacity - soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint;
+        (*soilColumn)[i_Layer]._sps.vs_FieldCapacity - (*soilColumn)[i_Layer]._sps.vs_PermanentWiltingPoint;
       double vc_AvailableWaterPercentage =
-        (soilColumn[i_Layer].vs_SoilMoisture_m3 - soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint) /
+        ((*soilColumn)[i_Layer].vs_SoilMoisture_m3 - (*soilColumn)[i_Layer]._sps.vs_PermanentWiltingPoint) /
         vc_AvailableWater;
       if (vc_AvailableWaterPercentage < 0.0) {
         vc_AvailableWaterPercentage = 0.0;
@@ -3791,10 +3791,10 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
         vc_RemainingTotalRootEffectivity = 0.00001;
       }
       if (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) >
-          ((soilColumn[i_Layer].vs_SoilMoisture_m3 - soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint))) {
+          (((*soilColumn)[i_Layer].vs_SoilMoisture_m3 - (*soilColumn)[i_Layer]._sps.vs_PermanentWiltingPoint))) {
         vc_PotentialTranspirationDeficit = (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) -
-                                            (soilColumn[i_Layer].vs_SoilMoisture_m3 -
-                                             soilColumn[i_Layer]._sps.vs_PermanentWiltingPoint)) * layerThickness *
+                                            ((*soilColumn)[i_Layer].vs_SoilMoisture_m3 -
+                                             (*soilColumn)[i_Layer]._sps.vs_PermanentWiltingPoint)) * layerThickness *
                                            1000.0; // [mm]
         if (vc_PotentialTranspirationDeficit < 0.0) {
           vc_PotentialTranspirationDeficit = 0.0;
@@ -3851,8 +3851,8 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
 void CropModule::fc_CropNUptake(size_t vc_GroundwaterTable,
                                 double /*vc_CurrentTotalTemperatureSum*/,
                                 double /*vc_TotalTemperatureSum*/) {
-  auto nols = soilColumn.size();
-  double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  auto nols = soilColumn->size();
+  double layerThickness = soilColumn->at(0).vs_LayerThickness;
 
   double vc_ConvectiveNUptake = 0.0; // old TRNSUM
   double vc_DiffusiveNUptake = 0.0; // old SUMDIFF
@@ -3862,9 +3862,9 @@ void CropModule::fc_CropNUptake(size_t vc_GroundwaterTable,
   std::vector<double> vc_DiffusiveNUptakeFromLayer(nols, 0.0); // old DIFF
   double vc_ConvectiveNUptake_1 = 0.0; // old MASSUM
   double vc_DiffusiveNUptake_1 = 0.0; // old DIFFSUM
-  double pc_MinimumAvailableN = cropPs.pc_MinimumAvailableN; // kg m-3
-  double pc_MinimumNConcentrationRoot = cropPs.pc_MinimumNConcentrationRoot; // kg kg-1
-  double pc_MaxCropNDemand = cropPs.pc_MaxCropNDemand;
+  double pc_MinimumAvailableN = cropPs->pc_MinimumAvailableN; // kg m-3
+  double pc_MinimumNConcentrationRoot = cropPs->pc_MinimumNConcentrationRoot; // kg kg-1
+  double pc_MaxCropNDemand = cropPs->pc_MaxCropNDemand;
 
   vc_TotalNUptake = 0.0;
   vc_TotalNInput = 0.0;
@@ -3876,26 +3876,26 @@ void CropModule::fc_CropNUptake(size_t vc_GroundwaterTable,
     // if ((vc_CurrentTotalTemperatureSum / vc_TotalTemperatureSum) < 1.0){
 
     for (int i_Layer = 0; i_Layer < (min(vc_RootingZone, vc_GroundwaterTable)); i_Layer++) {
-      vs_SoilMineralNContent[i_Layer] = soilColumn[i_Layer].vs_SoilNO3; // [kg m-3]
+      vs_SoilMineralNContent[i_Layer] = (*soilColumn)[i_Layer].vs_SoilNO3; // [kg m-3]
 
       // Convective N uptake per layer
       vc_ConvectiveNUptakeFromLayer[i_Layer] = (vc_Transpiration[i_Layer] / 1000.0) * //[mm --> m]
                                                (vs_SoilMineralNContent[i_Layer] / // [kg m-3]
-                                                (soilColumn[i_Layer].vs_SoilMoisture_m3)) * // old WG [m3 m-3]
+                                                ((*soilColumn)[i_Layer].vs_SoilMoisture_m3)) * // old WG [m3 m-3]
                                                vc_TimeStep; // -->[kg m-2]
 
       vc_ConvectiveNUptake += vc_ConvectiveNUptakeFromLayer[i_Layer]; // [kg m-2]
 
       /** @todo Claas: Woher kommt der Wert für vs_Tortuosity? */
       /** @todo Claas: Prüfen ob Umstellung auf [m] die folgenden Gleichungen beeinflusst */
-      vc_DiffusionCoeff[i_Layer] = 0.000214 * (vs_Tortuosity * exp(soilColumn[i_Layer].vs_SoilMoisture_m3 * 10)) /
-                                   soilColumn[i_Layer].vs_SoilMoisture_m3; //[m2 d-1]
+      vc_DiffusionCoeff[i_Layer] = 0.000214 * (vs_Tortuosity * exp((*soilColumn)[i_Layer].vs_SoilMoisture_m3 * 10)) /
+                                   (*soilColumn)[i_Layer].vs_SoilMoisture_m3; //[m2 d-1]
 
       vc_DiffusiveNUptakeFromLayer[i_Layer] = (vc_DiffusionCoeff[i_Layer] * // [m2 d-1]
-                                               soilColumn[i_Layer].vs_SoilMoisture_m3 * // [m3 m-3]
+                                               (*soilColumn)[i_Layer].vs_SoilMoisture_m3 * // [m3 m-3]
                                                2.0 * PI * vc_RootDiameter[i_Layer] * // [m]
                                                (vs_SoilMineralNContent[i_Layer] / 1000.0 / // [kg m-3]
-                                                soilColumn[i_Layer].vs_SoilMoisture_m3 -
+                                                (*soilColumn)[i_Layer].vs_SoilMoisture_m3 -
                                                 0.000014) * // [m3 m-3]
                                                sqrt(PI * vc_RootDensity[i_Layer])) * // [m m-3]
                                               vc_RootDensity[i_Layer] *
@@ -4833,7 +4833,7 @@ void CropModule::applyCutting(std::map<int, Cutting::Value>& organs,
  * [m]
  */
 double CropModule::getEffectiveRootingDepth() const {
-  size_t nols = soilColumn.size();
+  size_t nols = soilColumn->size();
 
   for (size_t i_Layer = 0; i_Layer < nols; i_Layer++)
     if (vc_RootEffectivity[i_Layer] == 0.0) {
@@ -5054,8 +5054,8 @@ void CropModule::forceTransplantState(double temperatureSum, double lai, size_t 
   vc_TotalBiomass = rootMass + leafMass + shootMass;
 
   // Settle rooting zone and layers based on standard species parameters
-  auto nols = soilColumn.size();
-  double layerThickness = soilColumn.at(0).vs_LayerThickness;
+  auto nols = soilColumn->size();
+  double layerThickness = soilColumn->at(0).vs_LayerThickness;
   vc_RootingDepth_m = pc_InitialRootingDepth;
   vc_RootingDepth = std::min(int(std::round(vc_RootingDepth_m / layerThickness)), int(nols));
   vc_RootingZone = std::min(int(std::round(1.3 * vc_RootingDepth_m / layerThickness)), int(nols));
@@ -5072,29 +5072,29 @@ void CropModule::forceTransplantState(double temperatureSum, double lai, size_t 
 
 // --- END TRANSPLANT MODIFICATION ---
 
-kj::Own<CropModule> monica::makeCropModule(SoilColumn& soilColumn,
-                                           const CropParameters& cropParams,
+kj::Own<CropModule> monica::makeCropModule(SoilColumn* soilColumn,
+                                           const CropParameters* cropParams,
                                            CropResidueParameters residueParams,
                                            bool isWinterCrop,
-                                           const SiteParameters& siteParams,
-                                           const CropModuleParameters& cropModuleParams,
+                                           const SiteParameters* siteParams,
+                                           const CropModuleParameters* cropModuleParams,
                                            const SimulationParameters& simParams,
                                            std::function<void(std::string)> fireEvent,
                                            std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                                            std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-                                           Intercropping& intercropping) {
+                                           Intercropping* intercropping) {
   return kj::heap<CropModule>(soilColumn, cropParams, kj::mv(residueParams), isWinterCrop, siteParams, cropModuleParams,
                               simParams, kj::mv(fireEvent), kj::mv(addOrganicMatter),
                               kj::mv(getSnowDepthAndCalcTempUnderSnow), intercropping);
 }
 
-kj::Own<CropModule> monica::makeCropModule(SoilColumn& soilColumn,
-                                           const CropModuleParameters& cropModuleParams,
+kj::Own<CropModule> monica::makeCropModule(SoilColumn* soilColumn,
+                                           const CropModuleParameters* cropModuleParams,
                                            std::function<void(std::string)> fireEvent,
                                            std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                                            std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
                                            mas::schema::model::monica::CropModuleState::Reader reader,
-                                           Intercropping& intercropping) {
+                                           Intercropping* intercropping) {
   auto cm = kj::heap<CropModule>(soilColumn, cropModuleParams, kj::mv(fireEvent), kj::mv(addOrganicMatter),
                                  kj::mv(getSnowDepthAndCalcTempUnderSnow), intercropping);
   cropModuleDeserialize(cm.get(), reader);
@@ -5119,3 +5119,4 @@ void monica::cropModuleStep(CropModule* cm,
            relativeHumidity, windSpeed, windSpeedHeight, atmosphericCO2Concentration, atmosphericO3Concentration,
            grossPrecipitation, referenceEvapotranspiration);
 }
+

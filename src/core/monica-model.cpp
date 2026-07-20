@@ -95,14 +95,14 @@ void MonicaModel::deserialize(mas::schema::model::monica::MonicaModelState::Read
                                   nconc);
     };
     _currentCropModule = nullptr;
-    _currentCropModule = makeCropModule(*_soilColumn, _cropPs,
+    _currentCropModule = makeCropModule(_soilColumn.get(), &_cropPs,
                                         [this](string event) { this->addEvent(event); }, addOMFunc,
                                         [this](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
                                             &this->soilMoisture(), avgAirTemp);
                                         },
                                         reader.getCurrentCropModule(),
-                                        _intercropping);
+                                        &_intercropping);
   }
 
   soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
@@ -285,15 +285,15 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
     };
     CropParameters cps(reader.getCropParams());
     _currentCropModule = nullptr;
-    _currentCropModule = makeCropModule(*_soilColumn, cps, reader.getResidueParams(),
-                                        cps.cultivarParams.winterCrop, _sitePs, _cropPs, _simPs,
+    _currentCropModule = makeCropModule(_soilColumn.get(), &cps, reader.getResidueParams(),
+                                        cps.cultivarParams.winterCrop, &_sitePs, &_cropPs, _simPs,
                                         [this](const string& event) { this->addEvent(event); },
                                         addOMFunc,
                                         [this](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
                                             &this->soilMoisture(), avgAirTemp);
                                         },
-                                        _intercropping);
+                                        &_intercropping);
 
     //if (crop->separatePerennialCropParameters())
     //  _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
@@ -341,14 +341,14 @@ void MonicaModel::seedCrop(Crop* crop) {
     };
     auto cps = crop->cropParameters();
     _currentCropModule = nullptr;
-    _currentCropModule = makeCropModule(*_soilColumn, cps, crop->residueParameters(),
-                                        crop->isWinterCrop(), _sitePs, _cropPs, _simPs,
+    _currentCropModule = makeCropModule(_soilColumn.get(), &cps, crop->residueParameters(),
+                                        crop->isWinterCrop(), &_sitePs, &_cropPs, _simPs,
                                         [this](string event) { this->addEvent(event); }, addOMFunc,
                                         [this](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
                                             &this->soilMoisture(), avgAirTemp);
                                         },
-                                        _intercropping);
+                                        &_intercropping);
 
     if (crop->separatePerennialCropParameters())
       _currentCropModule->

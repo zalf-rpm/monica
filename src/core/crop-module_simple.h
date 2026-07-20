@@ -54,24 +54,24 @@ namespace monica {
 *
 */
 struct CropModule {
-  CropModule(SoilColumn& soilColumn,
-             const CropParameters& cropParams,
+  CropModule(SoilColumn* soilColumn,
+             const CropParameters* cropParams,
              CropResidueParameters rps,
              bool isWinterCrop,
-             const SiteParameters& siteParams,
-             const CropModuleParameters& cropPs,
+             const SiteParameters* siteParams,
+             const CropModuleParameters* cropPs,
              const SimulationParameters& simPs,
              std::function<void(std::string)> fireEvent,
              std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
              std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-             Intercropping& ic);
+             Intercropping* ic);
 
-  CropModule(SoilColumn& sc,
-             const CropModuleParameters& cropPs,
+  CropModule(SoilColumn* sc,
+             const CropModuleParameters* cropPs,
              std::function<void(std::string)> fireEvent,
              std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
              std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-             Intercropping& ic);
+             Intercropping* ic);
 
   void applyCutting(std::map<int, Cutting::Value>& organs,
                     std::map<int, double>& exports,
@@ -474,7 +474,7 @@ struct CropModule {
   int vc_TimeUnderAnoxia{0};
 
 public:
-  Intercropping& _intercropping;
+  Intercropping* _intercropping{nullptr};
 
   bool _frostKillOn{true};
 
@@ -485,9 +485,9 @@ public:
   bool isMaturityDay(size_t old_dev_stage, size_t new_dev_stage);
 
   // members
-  SoilColumn& soilColumn;
+  SoilColumn* soilColumn{nullptr};
   kj::Own<CropParameters> perennialCropParams;
-  const CropModuleParameters& cropPs;
+  const CropModuleParameters* cropPs{nullptr};
   SpeciesParameters speciesPs;
   CultivarParameters cultivarPs;
   CropResidueParameters residuePs;
@@ -754,24 +754,24 @@ public:
   Tools::Date _perennialCropDormancyPeriodEndDate;
 };
 
-kj::Own<CropModule> makeCropModule(SoilColumn& soilColumn,
-                                   const CropParameters& cropParams,
+kj::Own<CropModule> makeCropModule(SoilColumn* soilColumn,
+                                   const CropParameters* cropParams,
                                    CropResidueParameters residueParams,
                                    bool isWinterCrop,
-                                   const SiteParameters& siteParams,
-                                   const CropModuleParameters& cropModuleParams,
+                                   const SiteParameters* siteParams,
+                                   const CropModuleParameters* cropModuleParams,
                                    const SimulationParameters& simParams,
                                    std::function<void(std::string)> fireEvent,
                                    std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                                    std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
-                                   Intercropping& intercropping);
-kj::Own<CropModule> makeCropModule(SoilColumn& soilColumn,
-                                   const CropModuleParameters& cropModuleParams,
+                                   Intercropping* intercropping);
+kj::Own<CropModule> makeCropModule(SoilColumn* soilColumn,
+                                   const CropModuleParameters* cropModuleParams,
                                    std::function<void(std::string)> fireEvent,
                                    std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
                                    std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
                                    mas::schema::model::monica::CropModuleState::Reader reader,
-                                   Intercropping& intercropping);
+                                   Intercropping* intercropping);
 void cropModuleSerialize(const CropModule* cm, mas::schema::model::monica::CropModuleState::Builder builder);
 void cropModuleDeserialize(CropModule* cm, mas::schema::model::monica::CropModuleState::Reader reader);
 void cropModuleStep(CropModule* cm,
@@ -794,4 +794,3 @@ void cropModuleStep(CropModule* cm,
 std::ostream& tout(bool closeFile = false);
 #endif
 } // namespace monica
-
