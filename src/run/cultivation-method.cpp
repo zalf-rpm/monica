@@ -528,7 +528,7 @@ bool Transplant::apply(MonicaModel* model) {
   if (!cropModule) return false;
 
   // Step 4: Force the transplant initial state (overrides germination defaults)
-  cropModuleForceTransplantState(cropModule, _initialGDD, _initLAI, _initialStage,
+  cropmodule::forceTransplantState(cropModule, _initialGDD, _initLAI, _initialStage,
                                  _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
 
   // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
@@ -701,7 +701,7 @@ bool AutomaticHarvest::condition(MonicaModel* model) {
     conditionMet =
       model->currentStepDate() >= _absLatestDate //harvest after or at latest date
       || (_harvestTime == "maturity"
-          && cropModuleMaturityReached(model->cropGrowth()) //has maturity been reached
+          && cropmodule::maturityReached(model->cropGrowth()) //has maturity been reached
           && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW) //check soil moisture
           && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
@@ -809,7 +809,7 @@ bool Cutting::apply(MonicaModel* model) {
   debug() << "Cutting crop: " << model->cropGrowth()->speciesPs.pc_SpeciesId << " at: " << date().toString()
     << endl;
 
-  cropModuleApplyCutting(model->cropGrowth(), _organId2cuttingSpec, _organId2exportFraction,
+  cropmodule::applyCutting(model->cropGrowth(), _organId2cuttingSpec, _organId2exportFraction,
                          _cutMaxAssimilationRateFraction);
   model->addEvent("Cutting");
 

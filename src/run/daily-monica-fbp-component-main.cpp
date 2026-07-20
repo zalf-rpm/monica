@@ -518,7 +518,7 @@ public:
                       organId2exportFraction[organId] = cs.getExportPercentage() / 100.0;
                     }
                   }
-                  cropModuleApplyCutting(monica->cropGrowth(), organId2cuttingSpec, organId2exportFraction,
+                  cropmodule::applyCutting(monica->cropGrowth(), organId2cuttingSpec, organId2exportFraction,
                                          c.getCutMaxAssimilationRatePercentage() / 100.0);
                   monica->addEvent("Cutting");
                 }

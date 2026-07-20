@@ -894,19 +894,19 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
           monica->cropGrowth() != nullptr) {
         auto cg1 = monica->cropGrowth();
         // crop 1 (wheat) has not yet reached anthesis, use first part of curve
-        auto anthesisStage = kj::get<1>(cropModuleAnthesisBetweenStages(cg1));
+        auto anthesisStage = kj::get<1>(cropmodule::anthesisBetweenStages(cg1));
         auto dvsPhr = monica2->cropParameters().pc_intercropping_dvs_phr;
         if(cg1->vc_DevelopmentalStage < anthesisStage) {
           monica->cropParametersNC().pc_intercropping_phRedux =
-          monica2->cropParametersNC().pc_intercropping_phRedux = log10(cropModuleGetCurrentTotalTemperatureSum(cg1)) / dvsPhr;
+          monica2->cropParametersNC().pc_intercropping_phRedux = log10(cropmodule::getCurrentTotalTemperatureSum(cg1)) / dvsPhr;
         } else {
-          auto tempSumAtAnthesis = cropModuleSumStageTemperatureSums(cg1, 0, anthesisStage);
-          auto totTempSum = cropModuleSumStageTemperatureSums(cg1, 0, -1);
+          auto tempSumAtAnthesis = cropmodule::sumStageTemperatureSums(cg1, 0, anthesisStage);
+          auto totTempSum = cropmodule::sumStageTemperatureSums(cg1, 0, -1);
           monica->cropParametersNC().pc_intercropping_phRedux =
           monica2->cropParametersNC().pc_intercropping_phRedux = (log10(tempSumAtAnthesis) / dvsPhr)
                                                                  - (log10(tempSumAtAnthesis) / dvsPhr /
                                                                     (totTempSum - tempSumAtAnthesis)
-                                                                    * (cropModuleGetCurrentTotalTemperatureSum(cg1) -
+                                                                    * (cropmodule::getCurrentTotalTemperatureSum(cg1) -
                                                                        tempSumAtAnthesis));
         }
       }
