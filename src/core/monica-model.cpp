@@ -392,7 +392,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
     debug() << "adding organic matter from root to soilOrganic" << endl;
     debug() << "root biomass: " << rootBiomass
       << " Root N concentration: " << rootNConcentration << endl;
-    _currentCropModule->addAndDistributeRootBiomassInSoil(rootBiomass);
+    cropModuleAddAndDistributeRootBiomassInSoil(_currentCropModule.get(), rootBiomass);
 
     if (exported && spec.organ2specVal.empty()) {
       if (optCarbMgmtData.optCarbonConservation) {

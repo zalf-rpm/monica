@@ -57,19 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  void fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
-                                    double vc_RootDensityFactorSum,
-                                    const std::vector<double>& vc_RootDensityFactor);
-
-  void addAndDistributeRootBiomassInSoil(double rootBiomass);
-
-  void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
-                             double vw_MaxAirTemperature,
-                             double vw_MinAirTemperature,
-                             double vw_AtmosphericCO2Concentration,
-                             double vw_AtmosphericO3Concentration,
-                             Tools::Date currentDate);
-
   void fc_HeatStressImpact(double vw_MeanAirTemperature,
                            double vw_MaxAirTemperature);
 
@@ -747,6 +734,18 @@ void cropModuleFcCropGreenArea(CropModule* cm,
                                double stageTemperatureSum,
                                double currentTemperatureSum);
 double cropModuleFcSoilCoverage(const CropModule* cm);
+void cropModuleFcMoveDeadRootBiomassToSoil(CropModule* cm,
+                                           double deadRootBiomass,
+                                           double rootDensityFactorSum,
+                                           const std::vector<double>& rootDensityFactor);
+void cropModuleAddAndDistributeRootBiomassInSoil(CropModule* cm, double rootBiomass);
+void cropModuleFcCropPhotosynthesis(CropModule* cm,
+                                    double meanAirTemperature,
+                                    double maxAirTemperature,
+                                    double minAirTemperature,
+                                    double atmosphericCO2Concentration,
+                                    double atmosphericO3Concentration,
+                                    Tools::Date currentDate);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,

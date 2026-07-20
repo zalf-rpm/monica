@@ -1101,12 +1101,13 @@ void monica::cropModuleStep(CropModule* cm,
 
     vc_SoilCoverage = cropModuleFcSoilCoverage(cm);
 
-    cm->fc_CropPhotosynthesis(meanAirTemperature,
-                          maxAirTemperature,
-                          minAirTemperature,
-                          atmosphericCO2Concentration,
-                          atmosphericO3Concentration,
-                          currentDate);
+    cropModuleFcCropPhotosynthesis(cm,
+                                   meanAirTemperature,
+                                   maxAirTemperature,
+                                   minAirTemperature,
+                                   atmosphericCO2Concentration,
+                                   atmosphericO3Concentration,
+                                   currentDate);
 
     cm->fc_HeatStressImpact(maxAirTemperature,
                         minAirTemperature);
@@ -1874,14 +1875,19 @@ ostream& monica::tout(bool closeFile) {
 }
 #endif
 
-void CropModule::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
-                                              double vc_RootDensityFactorSum,
-                                              const vector<double>& vc_RootDensityFactor) {
+void monica::cropModuleFcMoveDeadRootBiomassToSoil(CropModule* cm,
+                                                   double deadRootBiomass,
+                                                   double rootDensityFactorSum,
+                                                   const vector<double>& rootDensityFactor) {
+  auto* soilColumn = cm->soilColumn;
+  auto& vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
+  auto& vc_RootingZone = cm->vc_RootingZone;
+  auto& _addOrganicMatter = cm->_addOrganicMatter;
   auto nools = soilColumn->_vs_NumberOfOrganicLayers;
 
   map<size_t, double> layer2deadRootBiomassAtLayer;
   for (size_t i = 0; i < vc_RootingZone; i++) {
-    double deadRootBiomassAtLayer = vc_RootDensityFactor.at(i) / vc_RootDensityFactorSum * deadRootBiomass;
+    double deadRootBiomassAtLayer = rootDensityFactor.at(i) / rootDensityFactorSum * deadRootBiomass;
     // just add organica matter if > 0.0001
     if (int(deadRootBiomassAtLayer * 10000) > 0) {
       layer2deadRootBiomassAtLayer[i < nools ? i : nools - 1] += deadRootBiomassAtLayer;
@@ -1891,9 +1897,9 @@ void CropModule::fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
   if (!layer2deadRootBiomassAtLayer.empty()) _addOrganicMatter(layer2deadRootBiomassAtLayer, vc_NConcentrationRoot);
 }
 
-void CropModule::addAndDistributeRootBiomassInSoil(double rootBiomass) {
-  auto p = calcRootDensityFactorAndSum();
-  fc_MoveDeadRootBiomassToSoil(rootBiomass, p.second, p.first);
+void monica::cropModuleAddAndDistributeRootBiomassInSoil(CropModule* cm, double rootBiomass) {
+  auto p = cm->calcRootDensityFactorAndSum();
+  cropModuleFcMoveDeadRootBiomassToSoil(cm, rootBiomass, p.second, p.first);
 }
 
 /**
@@ -1922,13 +1928,94 @@ void CropModule::addAndDistributeRootBiomassInSoil(double rootBiomass) {
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
-                                       double vw_MaxAirTemperature,
-                                       double vw_MinAirTemperature,
-                                       double vw_AtmosphericCO2Concentration,
-                                       double vw_AtmosphericO3Concentration,
-                                       Date currentDate) {
+void monica::cropModuleFcCropPhotosynthesis(CropModule* cm,
+                                            double vw_MeanAirTemperature,
+                                            double vw_MaxAirTemperature,
+                                            double vw_MinAirTemperature,
+                                            double vw_AtmosphericCO2Concentration,
+                                            double vw_AtmosphericO3Concentration,
+                                            Date currentDate) {
   using namespace Voc;
+
+  const auto* cropPs = cm->cropPs;
+  auto* soilColumn = cm->soilColumn;
+  auto* _intercropping = cm->_intercropping;
+  auto& speciesPs = cm->speciesPs;
+  auto& cultivarPs = cm->cultivarPs;
+  auto& pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
+  auto& pc_CarboxylationPathway = cm->pc_CarboxylationPathway;
+  auto& pc_CO2Method = cm->pc_CO2Method;
+  auto& pc_DefaultRadiationUseEfficiency = cm->pc_DefaultRadiationUseEfficiency;
+  auto& pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+  auto& pc_FieldConditionModifier = cm->pc_FieldConditionModifier;
+  auto& pc_GrowthRespirationParameter_2 = cm->cropPs->pc_GrowthRespirationParameter2;
+  auto& pc_MaxAssimilationRate = cm->pc_MaxAssimilationRate;
+  auto& pc_MinimumTemperatureForAssimilation = cm->pc_MinimumTemperatureForAssimilation;
+  auto& pc_MaximumTemperatureForAssimilation = cm->pc_MaximumTemperatureForAssimilation;
+  auto& pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
+  auto& pc_OrganGrowthRespiration = cm->pc_OrganGrowthRespiration;
+  auto& pc_OrganMaintenanceRespiration = cm->pc_OrganMaintenanceRespiration;
+  auto& pc_OptimumTemperatureForAssimilation = cm->pc_OptimumTemperatureForAssimilation;
+  auto& pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
+  auto& pc_WaterDeficitResponseOn = cm->pc_WaterDeficitResponseOn;
+  auto& vc_Assimilates = cm->vc_Assimilates;
+  auto& vc_AssimilationRate = cm->vc_AssimilationRate;
+  auto& vc_AstronomicDayLenght = cm->vc_AstronomicDayLenght;
+  auto& vc_ClearDayRadiation = cm->vc_ClearDayRadiation;
+  auto& vc_CropFrostRedux = cm->vc_CropFrostRedux;
+  auto& vc_CropHeight = cm->vc_CropHeight;
+  auto& vc_CropNRedux = cm->vc_CropNRedux;
+  auto& vc_CuttingDelayDays = cm->vc_CuttingDelayDays;
+  auto& vc_Declination = cm->vc_Declination;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_EffectiveDayLength = cm->vc_EffectiveDayLength;
+  auto& vc_ExtraterrestrialRadiation = cm->vc_ExtraterrestrialRadiation;
+  auto& vc_GlobalRadiation = cm->vc_GlobalRadiation;
+  auto& vc_GrossAssimilates = cm->vc_GrossAssimilates;
+  auto& vc_GrossPhotosynthesis = cm->vc_GrossPhotosynthesis;
+  auto& vc_GrossPhotosynthesis_mol = cm->vc_GrossPhotosynthesis_mol;
+  auto& vc_GrossPhotosynthesisReference_mol = cm->vc_GrossPhotosynthesisReference_mol;
+  auto& vc_GrowthRespirationAS = cm->vc_GrowthRespirationAS;
+  auto& vc_KTkc = cm->vc_KTkc;
+  auto& vc_KTko = cm->vc_KTko;
+  auto& vc_LeafAreaIndex = cm->vc_LeafAreaIndex;
+  auto& vc_MaintenanceRespirationAS = cm->vc_MaintenanceRespirationAS;
+  auto& vc_NetMaintenanceRespiration = cm->vc_NetMaintenanceRespiration;
+  auto& vc_O3_longTermDamage = cm->vc_O3_longTermDamage;
+  auto& vc_O3_senescence = cm->vc_O3_senescence;
+  auto& vc_O3_shortTermDamage = cm->vc_O3_shortTermDamage;
+  auto& vc_O3_sumUptake = cm->vc_O3_sumUptake;
+  auto& vc_O3_WStomatalClosure = cm->vc_O3_WStomatalClosure;
+  auto& vc_OrganGreenBiomass = cm->vc_OrganGreenBiomass;
+  auto& vc_OvercastDayRadiation = cm->vc_OvercastDayRadiation;
+  auto& vc_OxygenDeficit = cm->vc_OxygenDeficit;
+  auto& vc_PhotoperiodicDaylength = cm->vc_PhotoperiodicDaylength;
+  auto& vc_RelativeTotalDevelopment = cm->vc_RelativeTotalDevelopment;
+  auto& vc_shadedLeafAreaIndex = cm->vc_shadedLeafAreaIndex;
+  auto& vc_sunlitLeafAreaIndex = cm->vc_sunlitLeafAreaIndex;
+  auto& vc_TemperatureSumToFlowering = cm->vc_TemperatureSumToFlowering;
+  auto& vc_TotalRespired = cm->vc_TotalRespired;
+  auto& vc_TotalTemperatureSum = cm->vc_TotalTemperatureSum;
+  auto& vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+  auto& vc_TransplantEfficiency = cm->vc_TransplantEfficiency;
+  auto& _cropPhotosynthesisResults = cm->_cropPhotosynthesisResults;
+  auto& _full24 = cm->_full24;
+  auto& _full240 = cm->_full240;
+  auto& _guentherEmissions = cm->_guentherEmissions;
+  auto& _index24 = cm->_index24;
+  auto& _index240 = cm->_index240;
+  auto& _intercroppingOtherCropHeight = cm->_intercroppingOtherCropHeight;
+  auto& _intercroppingOtherLAIt = cm->_intercroppingOtherLAIt;
+  auto& _jjvEmissions = cm->_jjvEmissions;
+  auto& _rad24 = cm->_rad24;
+  auto& _rad240 = cm->_rad240;
+  auto& _stepSize24 = cm->_stepSize24;
+  auto& _stepSize240 = cm->_stepSize240;
+  auto& _tfol24 = cm->_tfol24;
+  auto& _tfol240 = cm->_tfol240;
+  auto& fractionOfInterceptedRadiation1 = cm->fractionOfInterceptedRadiation1;
+  auto& fractionOfInterceptedRadiation2 = cm->fractionOfInterceptedRadiation2;
+  auto& vs_Latitude = cm->vs_Latitude;
 
   double vc_AssimilationRateReference = 0.0;
 
@@ -1938,7 +2025,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
   double pc_MaintenanceRespirationParameter_2 = cropPs->pc_MaintenanceRespirationParameter2;
 
   double pc_GrowthRespirationParameter_1 = cropPs->pc_GrowthRespirationParameter1;
-  double pc_GrowthRespirationParameter_2 = cropPs->pc_GrowthRespirationParameter2;
   double pc_CanopyReflectionCoeff = cropPs->pc_CanopyReflectionCoefficient; // old REFLC;
 
   double vc_RadiationUseEfficiency = pc_DefaultRadiationUseEfficiency;
@@ -2430,7 +2516,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         O3_par.gamma3 = 0.05; // TODO: calibrate and add to crop params
         O3_par.gamma1 = 0.025; // TODO: calibrate and add to crop params
 
-        auto root_depth = get_RootingDepth();
+        auto root_depth = cm->get_RootingDepth();
         if (root_depth >= 1) // the crop has emerged
         {
 #ifdef TEST_O3_HOURLY_OUTPUT
@@ -2459,7 +2545,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
           O3_in.FC = FC / (root_depth + 1); // field capacity, m3 m-3, avg in the rooted zone
           O3_in.WP = WP / (root_depth + 1); // wilting point, m3 m-3
           O3_in.SWC = SWC / (root_depth + 1); // soil water content, m3 m-3
-          O3_in.ET0 = get_ReferenceEvapotranspiration();
+          O3_in.ET0 = cm->get_ReferenceEvapotranspiration();
           O3_in.O3a = vw_AtmosphericO3Concentration; // ambient O3 partial pressure, nbar or nmol mol-1
           O3_in.gs = avg_leaf_gs; // stomatal conductance mol m-2 s-1 bar-1
           O3_in.h = h; // hour of the day (0-23)
@@ -2517,7 +2603,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         // species.id = 0; // right now we just have one crop at a time, so no need to distinguish multiple crops
         species.lai = LAI;
         species.mFol =
-          get_OrganGreenBiomass(OId::LEAF) / (100. * 100.); // kg/ha -> kg/m2
+          cm->get_OrganGreenBiomass(OId::LEAF) / (100. * 100.); // kg/ha -> kg/m2
         species.sla =
           species.mFol > 0
             ? species.lai / species.mFol
@@ -2567,7 +2653,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         // JJV
         for (const auto& lf : {FvCB_res.sunlit, FvCB_res.shaded}) {
           species.lai = lf.LAI;
-          species.mFol = get_OrganGreenBiomass(OId::LEAF) / (100. * 100.) * lf.LAI /
+          species.mFol = cm->get_OrganGreenBiomass(OId::LEAF) / (100. * 100.) * lf.LAI /
                          (sun_LAI + sh_LAI); // kg/ha -> kg/m2
           species.sla =
             species.mFol > 0
@@ -2645,7 +2731,8 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       << " other-crop-height: " << _intercroppingOtherCropHeight
       << " own-crop-height: " << vc_CropHeight << endl;
     debug() << "vc_OvercastSkyTimeFraction: " << vc_OvercastSkyTimeFraction << endl;
-    auto F_t1 = [this](double LAI) {
+    auto F_t1 = [cm](double LAI) {
+      const auto& cultivarPs = cm->cultivarPs;
       return 1.0 - exp(-cultivarPs.pc_LightExtinctionCoefficient * LAI);
     };
     tie(vc_GrossCO2Assimilation, vc_GrossCO2AssimilationReference) = code(F_t1, vc_LeafAreaIndex);
@@ -3454,7 +3541,7 @@ void CropModule::fc_CropDryMatter(double vw_MeanAirTemperature) {
 
   // calculate the distribution of dead root biomass (for later addition into AOM pools (in soil-organic))
   if (!cropPs->__disable_daily_root_biomass_to_soil__) {
-    fc_MoveDeadRootBiomassToSoil(dailyDeadRootBiomassIncrement, vc_RootDensityFactorSum, vc_RootDensityFactor);
+    cropModuleFcMoveDeadRootBiomassToSoil(this, dailyDeadRootBiomassIncrement, vc_RootDensityFactorSum, vc_RootDensityFactor);
   }
 
   // Calculating root density per layer from total root length and
