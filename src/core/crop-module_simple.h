@@ -70,19 +70,6 @@ struct CropModule {
 
   double get_NetPrecipitation() const;
 
-  std::string get_CropName() const;
-
-  double get_GrossPhotosynthesisHaRate() const;
-
-  double get_Assimilates() const;
-
-  double get_MaintenanceRespirationAS() const;
-
-  double get_GrowthRespirationAS() const;
-
-  double get_VernalisationFactor() const;
-
-  double get_DaylengthFactor() const;
 
   double get_OrganGrowthIncrement(int i_Organ) const;
 
@@ -108,21 +95,13 @@ struct CropModule {
 
   double get_TranspirationDeficit() const;
 
-  double get_CropNRedux() const;
 
-  double get_FrostStressRedux() const;
 
-  double get_HeatStressRedux() const;
 
-  double get_ActualTranspiration() const;
 
-  double get_OxygenDeficit() const;
 
-  double get_CurrentTemperatureSum() const;
 
-  size_t get_DevelopmentalStage() const;
 
-  double get_RelativeTotalDevelopment() const;
 
   double get_OrganBiomass(int i_Organ) const;
 
@@ -130,7 +109,6 @@ struct CropModule {
 
   double get_AbovegroundBiomass() const;
 
-  double get_LT50() const;
 
   double get_AbovegroundBiomassNContent() const;
 
@@ -175,11 +153,6 @@ struct CropModule {
 
   double get_SumTotalNUptake() const;
 
-  double get_ActNUptake() const;
-
-  double get_PotNUptake() const;
-
-  double get_BiologicalNFixation() const;
 
   double get_AccumulatedETa() const;
 

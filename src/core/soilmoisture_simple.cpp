@@ -156,7 +156,7 @@ void step(SoilMoisture* sm,
     sm->vc_PercentageSoilCoverage = sm->monica.cropGrowth()->get_SoilCoverage();
     sm->vc_KcFactor = sm->monica.cropGrowth()->get_KcFactor();
     vc_CropHeight = sm->monica.cropGrowth()->get_CropHeight();
-    vc_DevelopmentalStage = (int)sm->monica.cropGrowth()->get_DevelopmentalStage();
+    vc_DevelopmentalStage = (int)sm->monica.cropGrowth()->vc_DevelopmentalStage;
     if (vc_DevelopmentalStage > 0) {
       sm->vc_NetPrecipitation = sm->monica.cropGrowth()->get_NetPrecipitation();
     } else {

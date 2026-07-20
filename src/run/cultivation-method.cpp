@@ -928,7 +928,7 @@ bool NDemandFertilization::condition(MonicaModel* model) {
 
   auto cg = model->cropGrowth();
   if (cg && !_appliedFertilizer) {
-    auto currStage = cg->get_DevelopmentalStage() + 1;
+    auto currStage = cg->vc_DevelopmentalStage + 1;
     conditionMet =
       date().isValid() //is timed application
       || currStage == _stage; //reached the requested stage
@@ -1296,7 +1296,7 @@ bool AutomaticIrrigation::condition(MonicaModel* model) {
   auto cropConditionMet = dateConditionMet;
   if (const auto cg = model->cropGrowth(); cg && irrigateCrop) {
     cropPlanted = true;
-    const auto stage = cg->get_DevelopmentalStage();
+    const auto stage = cg->vc_DevelopmentalStage;
     if (startStage > -1 && endStage > -1) {
       cropConditionMet = stage >= startStage && stage <= endStage;
       if (stage > endStage) done = true;

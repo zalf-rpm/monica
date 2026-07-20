@@ -483,7 +483,7 @@ std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrr
 
   double s = cropModule->get_HeatSumIrrigationStart();
   double e = cropModule->get_HeatSumIrrigationEnd();
-  double cts = cropModule->get_CurrentTemperatureSum();
+  double cts = cropModule->vc_CurrentTotalTemperatureSum;
   if (cts < s || cts > e || aips.threshold < 0.0) return std::make_pair(false, 0);
 
   double actPAW = 0.0; // actualPlantAvailableWater
@@ -858,4 +858,3 @@ void monica::soilColumnApplyIrrigation(SoilColumn* sc, double amount, double nit
   sc->applyIrrigation(amount, nitrateConcentration);
 }
 void monica::soilColumnApplyTillage(SoilColumn* sc, double depth) { sc->applyTillage(depth); }
-

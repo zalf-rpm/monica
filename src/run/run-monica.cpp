@@ -896,7 +896,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         // crop 1 (wheat) has not yet reached anthesis, use first part of curve
         auto anthesisStage = kj::get<1>(cg1->anthesisBetweenStages());
         auto dvsPhr = monica2->cropParameters().pc_intercropping_dvs_phr;
-        if(cg1->get_DevelopmentalStage() < anthesisStage) {
+        if(cg1->vc_DevelopmentalStage < anthesisStage) {
           monica->cropParametersNC().pc_intercropping_phRedux =
           monica2->cropParametersNC().pc_intercropping_phRedux = log10(cg1->getCurrentTotalTemperatureSum()) / dvsPhr;
         } else {

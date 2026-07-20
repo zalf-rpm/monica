@@ -4487,58 +4487,6 @@ double monica::cropModuleFcNetPrimaryProduction(CropModule* cm, double vc_TotalR
 }
 
 /**
- * @brief Returns crop name [ ]
- * @return crop name
- */
-std::string CropModule::get_CropName() const {
-  return pc_CropName;
-}
-
-/**
- * @brief Returns gross photosynthesis rate [kg ha-1]
- * @return photosynthesis rate
- */
-double CropModule::get_GrossPhotosynthesisHaRate() const {
-  return vc_GrossPhotosynthesis;
-}
-
-/**
- * @brief Returns assimilates [kg CO2 ha-1]
- * @return Assimilates
- */
-double CropModule::get_Assimilates() const {
-  return vc_Assimilates;
-}
-
-/**
- * @brief Returns maintenance respiration rate from AGROSIM [kg CO2 ha-1]
- * @return Maintenance respiration rate
- */
-double CropModule::get_MaintenanceRespirationAS() const {
-  return vc_MaintenanceRespirationAS;
-}
-
-/**
- * @brief Returns growth respiration rate from AGROSIM [kg CO2 ha-1]
- * @return GRowth respiration rate
- */
-double CropModule::get_GrowthRespirationAS() const {
-  return vc_GrowthRespirationAS;
-}
-
-/**
- */
-double CropModule::get_VernalisationFactor() const {
-  return vc_VernalisationFactor;
-}
-
-/**
- */
-double CropModule::get_DaylengthFactor() const {
-  return vc_DaylengthFactor;
-}
-
-/**
  * @brief Returns growth increment of organ i [kg CH2O ha-1 d-1]
  * @return Organ growth increment
  */
@@ -4676,14 +4624,6 @@ double CropModule::get_StomataResistance() const {
  * @brief Returns transpiration per layer[mm]
  * @return transpiration per layer
  */
-double CropModule::get_ActualTranspiration() const {
-  return vc_ActualTranspiration;
-}
-
-/**
- * @brief Returns transpiration per layer[mm]
- * @return transpiration per layer
- */
 double CropModule::get_Transpiration(int i_Layer) const {
   return vc_Transpiration[i_Layer];
 }
@@ -4694,58 +4634,6 @@ double CropModule::get_Transpiration(int i_Layer) const {
  */
 double CropModule::get_TranspirationDeficit() const {
   return vc_TranspirationDeficit;
-}
-
-/**
- * @brief Returns oxygen deficit [0;1]
- * @return oxygen deficit
- */
-double CropModule::get_OxygenDeficit() const {
-  return vc_OxygenDeficit;
-}
-
-/**
- * @brief Returns Nitrogen deficit [0;1]
- * @return nitrogen deficit
- */
-double CropModule::get_CropNRedux() const {
-  return vc_CropNRedux;
-}
-
-/**
- * @brief Returns Heat stress reductor [0;1]
- * @return heat stress reductor
- */
-double CropModule::get_HeatStressRedux() const {
-  return vc_CropHeatRedux;
-}
-
-double CropModule::get_FrostStressRedux() const {
-  return vc_CropFrostRedux;
-}
-
-/**
- * @brief Returns current total temperature sum [°Cd]
- * @return Current temperature sum
- */
-double CropModule::get_CurrentTemperatureSum() const {
-  return vc_CurrentTotalTemperatureSum;
-}
-
-/**
- * @brief Returns developmental stage[]
- * @return deveklopmental stage
- */
-size_t CropModule::get_DevelopmentalStage() const {
-  return vc_DevelopmentalStage;
-}
-
-/**
- * @brief Returns Relative total development []
- * @return Relative total development
- */
-double CropModule::get_RelativeTotalDevelopment() const {
-  return vc_RelativeTotalDevelopment;
 }
 
 /**
@@ -4778,14 +4666,6 @@ double CropModule::get_OrganGreenBiomass(int i_Organ) const {
  */
 double CropModule::get_AbovegroundBiomass() const {
   return vc_AbovegroundBiomass;
-}
-
-/**
- * @brief Returns crop's lethal temperature LT50 [°C]
- * @return LT50
- */
-double CropModule::get_LT50() const {
-  return vc_LT50;
 }
 
 /**
@@ -4995,30 +4875,6 @@ double CropModule::get_SecondaryYieldNContent(double alternativePrimaryCropYield
  */
 double CropModule::get_SumTotalNUptake() const {
   return vc_SumTotalNUptake;
-}
-
-/**
- * @brief Returns the crop's actual N uptake [kg N ha-1]
- * @return Actual N uptake
- */
-double CropModule::get_ActNUptake() const {
-  return vc_TotalNUptake;
-}
-
-/**
- * @brief Returns the crop's potential N uptake [kg N ha-1]
- * @return Potential N uptake
- */
-double CropModule::get_PotNUptake() const {
-  return vc_CropNDemand * 10000.0;
-}
-
-/**
- * @brief Returns the crop's N input via atmospheric fixation [kg N ha-1]
- * @return Biological N fixation
- */
-double CropModule::get_BiologicalNFixation() const {
-  return vc_FixedN;
 }
 
 /**

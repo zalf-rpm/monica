@@ -844,10 +844,10 @@ void MonicaModel::cropStep() {
     }
   }
 
-  p_accuNStress += _currentCropModule->get_CropNRedux();
+  p_accuNStress += _currentCropModule->vc_CropNRedux;
   p_accuWaterStress += _currentCropModule->get_TranspirationDeficit();
-  p_accuHeatStress += _currentCropModule->get_HeatStressRedux();
-  p_accuOxygenStress += _currentCropModule->get_OxygenDeficit();
+  p_accuHeatStress += _currentCropModule->vc_CropHeatRedux;
+  p_accuOxygenStress += _currentCropModule->vc_OxygenDeficit;
 
   /*
   //prepare VOC calculations

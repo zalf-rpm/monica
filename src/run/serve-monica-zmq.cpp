@@ -341,7 +341,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
             if(date == Date(31, 12, date.year()))
               dailyStepResultMsg["yearly"] = createYearlyResultsMessage(aggregatedValues);
 
-            int devStage = monica.cropGrowth() ? monica.cropGrowth()->get_DevelopmentalStage() + 1 : 0;
+            int devStage = monica.cropGrowth() ? monica.cropGrowth()->vc_DevelopmentalStage + 1 : 0;
             if(prevDevStage < devStage)
             {
               prevDevStage = devStage;
@@ -647,5 +647,4 @@ void monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
   debug() << "exiting serveZmqMonicaFull" << endl;
 }
-
 
