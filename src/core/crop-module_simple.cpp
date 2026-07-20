@@ -1141,13 +1141,14 @@ void monica::cropModuleStep(CropModule* cm,
                                 vc_CurrentTotalTemperatureSum,
                                 vc_TotalTemperatureSum);
 
-    cm->fc_CropNUptake(soilColumn->vm_GroundwaterTableLayer,
-                   vc_CurrentTotalTemperatureSum,
-                   vc_TotalTemperatureSum);
+    cropModuleFcCropNUptake(cm,
+                            soilColumn->vm_GroundwaterTableLayer,
+                            vc_CurrentTotalTemperatureSum,
+                            vc_TotalTemperatureSum);
 
-    vc_GrossPrimaryProduction = cm->fc_GrossPrimaryProduction();
+    vc_GrossPrimaryProduction = cropModuleFcGrossPrimaryProduction(cm);
 
-    vc_NetPrimaryProduction = cm->fc_NetPrimaryProduction(vc_TotalRespired);
+    vc_NetPrimaryProduction = cropModuleFcNetPrimaryProduction(cm, vc_TotalRespired);
   } else {
     icSendRcv("devstage 0: ");
   }
@@ -4262,9 +4263,41 @@ void monica::cropModuleFcCropWaterUptake(CropModule* cm,
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropNUptake(size_t vc_GroundwaterTable,
-                                double /*vc_CurrentTotalTemperatureSum*/,
-                                double /*vc_TotalTemperatureSum*/) {
+void monica::cropModuleFcCropNUptake(CropModule* cm,
+                                     size_t vc_GroundwaterTable,
+                                     double /*vc_CurrentTotalTemperatureSum*/,
+                                     double /*vc_TotalTemperatureSum*/) {
+  const auto* cropPs = cm->cropPs;
+  auto* soilColumn = cm->soilColumn;
+  auto& pc_PartBiologicalNFixation = cm->pc_PartBiologicalNFixation;
+  auto& pc_ResidueNRatio = cm->pc_ResidueNRatio;
+  auto& pc_StageMaxRootNConcentration = cm->pc_StageMaxRootNConcentration;
+  auto& vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
+  auto& vc_AbovegroundBiomassOld = cm->vc_AbovegroundBiomassOld;
+  auto& vc_BelowgroundBiomass = cm->vc_BelowgroundBiomass;
+  auto& vc_BelowgroundBiomassOld = cm->vc_BelowgroundBiomassOld;
+  auto& vc_CropNDemand = cm->vc_CropNDemand;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_FinalDevelopmentalStage = cm->vc_FinalDevelopmentalStage;
+  auto& vc_FixedN = cm->vc_FixedN;
+  auto& vc_NConcentrationAbovegroundBiomass = cm->vc_NConcentrationAbovegroundBiomass;
+  auto& vc_NConcentrationAbovegroundBiomassOld = cm->vc_NConcentrationAbovegroundBiomassOld;
+  auto& vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
+  auto& vc_NUptakeFromLayer = cm->vc_NUptakeFromLayer;
+  auto& vc_RootBiomass = cm->vc_RootBiomass;
+  auto& vc_RootBiomassOld = cm->vc_RootBiomassOld;
+  auto& vc_RootDensity = cm->vc_RootDensity;
+  auto& vc_RootDiameter = cm->vc_RootDiameter;
+  auto& vc_RootingZone = cm->vc_RootingZone;
+  auto& vc_SumTotalNUptake = cm->vc_SumTotalNUptake;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_TotalBiomassNContent = cm->vc_TotalBiomassNContent;
+  auto& vc_TotalNInput = cm->vc_TotalNInput;
+  auto& vc_TotalNUptake = cm->vc_TotalNUptake;
+  auto& vc_Transpiration = cm->vc_Transpiration;
+  auto& vs_SoilMineralNContent = cm->vs_SoilMineralNContent;
+  auto& vs_Tortuosity = cm->vs_Tortuosity;
+
   auto nols = soilColumn->size();
   double layerThickness = soilColumn->at(0).vs_LayerThickness;
 
@@ -4423,7 +4456,8 @@ void CropModule::fc_CropNUptake(size_t vc_GroundwaterTable,
  *
  * @author Claas Nendel
  */
-double CropModule::fc_GrossPrimaryProduction() {
+double monica::cropModuleFcGrossPrimaryProduction(const CropModule* cm) {
+  auto& vc_GrossAssimilates = cm->vc_GrossAssimilates;
   double vc_GPP = 0.0;
   // Converting photosynthesis rate from [kg CH2O ha-1 d-1] back to
   // [kg C ha-1 d-1]
@@ -4441,7 +4475,9 @@ double CropModule::fc_GrossPrimaryProduction() {
  *
  * @author Claas Nendel
  */
-double CropModule::fc_NetPrimaryProduction(double vc_TotalRespired) {
+double monica::cropModuleFcNetPrimaryProduction(CropModule* cm, double vc_TotalRespired) {
+  auto& vc_GrossPrimaryProduction = cm->vc_GrossPrimaryProduction;
+  auto& vc_Respiration = cm->vc_Respiration;
   double vc_NPP = 0.0;
   // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
   vc_Respiration = vc_TotalRespired / 30.0 * 12.0;

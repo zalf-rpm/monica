@@ -57,14 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  void fc_CropNUptake(size_t vm_GroundwaterTable,
-                      double /*vc_CurrentTotalTemperatureSum*/,
-                      double /*vc_TotalTemperatureSum*/);
-
-  double fc_GrossPrimaryProduction();
-
-  double fc_NetPrimaryProduction(double vc_TotalRespired);
-
   void calculateVOCEmissions(const Voc::MicroClimateData& mcd);
 
   Voc::Emissions guentherEmissions() const { return _guentherEmissions; }
@@ -741,6 +733,12 @@ void cropModuleFcCropWaterUptake(CropModule* cm,
                                  double grossPrecipitation,
                                  double currentTotalTemperatureSum,
                                  double totalTemperatureSum);
+void cropModuleFcCropNUptake(CropModule* cm,
+                             size_t groundwaterTable,
+                             double currentTotalTemperatureSum,
+                             double totalTemperatureSum);
+double cropModuleFcGrossPrimaryProduction(const CropModule* cm);
+double cropModuleFcNetPrimaryProduction(CropModule* cm, double totalRespired);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,
