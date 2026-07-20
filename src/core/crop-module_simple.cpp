@@ -4533,102 +4533,6 @@ void monica::cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroCli
 }
 
 /**
- * @brief Returns reference evapotranspiration [mm]
- * @return Reference evapotranspiration
- */
-double CropModule::get_ReferenceEvapotranspiration() const {
-  return vc_ReferenceEvapotranspiration;
-}
-
-/**
- * @brief Returns evapotranspiration remaining after evaporation of intercepted water [mm]
- * @return Remaning evapotranspirationn
- */
-double CropModule::get_RemainingEvapotranspiration() const {
-  return vc_RemainingEvapotranspiration;
-}
-
-/**
- * @brief Returns evaporation from intercepted water [mm]
- * @return evaporated from intercept
- */
-double CropModule::get_EvaporatedFromIntercept() const {
-  return vc_EvaporatedFromIntercept;
-}
-
-/**
- * @brief Returns precipitation after interception on crop surface [mm]
- * @return Remaning net precipitation
- */
-double CropModule::get_NetPrecipitation() const {
-  return vc_NetPrecipitation;
-}
-
-/**
- * @brief Returns leaf area index [m2 m-2]
- * @return Leaf area index
- */
-double CropModule::get_LeafAreaIndex() const {
-  return vc_LeafAreaIndex;
-}
-
-/**
- * @brief Returns crop height [m]
- * @return crop height
- */
-double CropModule::get_CropHeight() const {
-  return vc_CropHeight;
-}
-
-/**
- * @brief Returns rooting depth [layer]
- * @return rooting depth
- */
-size_t CropModule::get_RootingDepth() const {
-  return vc_RootingDepth;
-}
-
-/**
- * @brief Returns soil coverage [0;1]
- * @return soil coverage
- */
-double CropModule::get_SoilCoverage() const {
-  return vc_SoilCoverage;
-}
-
-/**
- * @brief Returns current Kc factor []
- * @return Kc factor
- */
-double CropModule::get_KcFactor() const {
-  return vc_KcFactor;
-}
-
-/**
- * @brief Returns the FAO-56 Dual Kc basal crop coefficient Kcb [-]
- * @return Kcb factor (interpolated per developmental stage, analogous to get_KcFactor)
- */
-double CropModule::get_KcbFactor() const {
-  return vc_KcbFactor;
-}
-
-/**
- * @brief Returns Stomata resistance [s m-1]
- * @return Stomata resistance
- */
-double CropModule::get_StomataResistance() const {
-  return vc_StomataResistance;
-}
-
-/**
- * @brief Returns transpiration per layer[mm]
- * @return transpiration per layer
- */
-double CropModule::get_Transpiration(int i_Layer) const {
-  return vc_Transpiration[i_Layer];
-}
-
-/**
  * @brief Returns transpiration deficit [0;1]
  * @return transpiration deficit
  */
@@ -4734,22 +4638,6 @@ double CropModule::get_CriticalNConcentration() const {
  */
 double CropModule::get_AbovegroundBiomassNConcentration() const {
   return vc_NConcentrationAbovegroundBiomass;
-}
-
-/**
- * @brief Returns heat sum for irrigation start [°C d]
- * @return heat sum for irrigation start
- */
-double CropModule::get_HeatSumIrrigationStart() const {
-  return pc_HeatSumIrrigationStart;
-}
-
-/**
- * @brief Returns heat sum for irrigation end [°C d]
- * @return heat sum for irrigation end
- */
-double CropModule::get_HeatSumIrrigationEnd() const {
-  return pc_HeatSumIrrigationEnd;
 }
 
 /**

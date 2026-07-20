@@ -915,8 +915,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     //monica main stepping method
     if (isSyncIC) {
       if (monica2->cropGrowth()) {
-        monica->setOtherCropHeightAndLAIt(monica2->cropGrowth()->get_CropHeight(),
-                                          monica2->cropGrowth()->get_LeafAreaIndex());
+        monica->setOtherCropHeightAndLAIt(monica2->cropGrowth()->vc_CropHeight,
+                                          monica2->cropGrowth()->vc_LeafAreaIndex);
       } else {
         monica->setOtherCropHeightAndLAIt(-1, -1);
       }
@@ -926,8 +926,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     monica->step();
     if (isSyncIC) {
       if (monica->cropGrowth()) {
-        monica2->setOtherCropHeightAndLAIt(monica->cropGrowth()->get_CropHeight(),
-                                           monica->cropGrowth()->get_LeafAreaIndex());
+        monica2->setOtherCropHeightAndLAIt(monica->cropGrowth()->vc_CropHeight,
+                                           monica->cropGrowth()->vc_LeafAreaIndex);
       } else {
         monica2->setOtherCropHeightAndLAIt(-1, -1);
       }

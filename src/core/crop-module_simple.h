@@ -62,36 +62,12 @@ struct CropModule {
 
   Voc::Emissions jjvEmissions() const { return _jjvEmissions; }
 
-  double get_ReferenceEvapotranspiration() const;
-
-  double get_RemainingEvapotranspiration() const;
-
-  double get_EvaporatedFromIntercept() const;
-
-  double get_NetPrecipitation() const;
-
-
   double get_OrganGrowthIncrement(int i_Organ) const;
 
   double get_NetPhotosynthesis() const;
 
-  double get_LeafAreaIndex() const;
-
-  double get_CropHeight() const;
-
-  size_t get_RootingDepth() const;
-
   double get_RootingDepth_m() const { return vc_RootingDepth_m; }
 
-  double get_SoilCoverage() const;
-
-  double get_KcFactor() const;
-
-  double get_KcbFactor() const; //!< FAO-56 Dual Kc: returns the daily basal crop coefficient Kcb
-
-  double get_StomataResistance() const;
-
-  double get_Transpiration(int i_Layer) const;
 
   double get_TranspirationDeficit() const;
 
@@ -114,9 +90,6 @@ struct CropModule {
 
   double get_FruitBiomassNContent() const;
 
-  double get_HeatSumIrrigationStart() const;
-
-  double get_HeatSumIrrigationEnd() const;
 
   double get_NUptakeFromLayer(size_t i_Layer) const;
 
@@ -491,7 +464,7 @@ public:
   std::vector<double> pc_StageMaxRootNConcentration; //! old WGMAX
   std::vector<double> pc_StageKcFactor; //! old Kc
   // FAO-56 Dual Kc: GDD-based trapezoidal Kcb curve state.
-  // vc_KcbFactor is the current daily interpolated Kcb returned by get_KcbFactor().
+  // vc_KcbFactor is the current daily interpolated Kcb.
   // vc_Kcb_ini/mid/end define the trapezoidal shape initialized in the constructor.
   double vc_KcbFactor{0.15}; //!< Current daily Kcb (output of GDD-based 4-phase interpolation)
   double vc_Kcb_ini{0.15}; //!< Initial/germination phase Kcb (flat, Phase 1)

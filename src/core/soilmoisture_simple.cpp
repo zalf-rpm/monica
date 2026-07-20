@@ -153,12 +153,12 @@ void step(SoilMoisture* sm,
 
   if (sm->monica.cropGrowth()) {
     vc_CropPlanted = true;
-    sm->vc_PercentageSoilCoverage = sm->monica.cropGrowth()->get_SoilCoverage();
-    sm->vc_KcFactor = sm->monica.cropGrowth()->get_KcFactor();
-    vc_CropHeight = sm->monica.cropGrowth()->get_CropHeight();
+    sm->vc_PercentageSoilCoverage = sm->monica.cropGrowth()->vc_SoilCoverage;
+    sm->vc_KcFactor = sm->monica.cropGrowth()->vc_KcFactor;
+    vc_CropHeight = sm->monica.cropGrowth()->vc_CropHeight;
     vc_DevelopmentalStage = (int)sm->monica.cropGrowth()->vc_DevelopmentalStage;
     if (vc_DevelopmentalStage > 0) {
-      sm->vc_NetPrecipitation = sm->monica.cropGrowth()->get_NetPrecipitation();
+      sm->vc_NetPrecipitation = sm->monica.cropGrowth()->vc_NetPrecipitation;
     } else {
       sm->vc_NetPrecipitation = vw_Precipitation;
     }
@@ -419,7 +419,7 @@ void capillaryRise(SoilMoisture* sm) {
   auto& vm_SoilMoisture = sm->vm_SoilMoisture;
   auto& vm_WaterFlux = sm->vm_WaterFlux;
 
-  auto vc_RootingDepth = cropModule ? cropModule->get_RootingDepth() : 0;
+  auto vc_RootingDepth = cropModule ? cropModule->vc_RootingDepth : 0;
   auto vm_GroundwaterDistance = max(size_t(1), vm_GroundwaterTableLayer - vc_RootingDepth); // []
 
   if (double(vm_GroundwaterDistance) * vm_LayerThickness[0] <= 2.70) { // [m]
@@ -765,7 +765,7 @@ double dualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, dou
   const double ET0 = vm_ReferenceEvapotranspiration;
 
   // --- Kcb: basal crop coefficient (interpolated in crop module) ---
-  const double Kcb = cropModule->get_KcbFactor();
+  const double Kcb = cropModule->vc_KcbFactor;
 
   // --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
   // Uses only the top soil layer (layer 0, typically 0-10 cm)
@@ -860,13 +860,13 @@ double dualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, dou
   Kr = std::max(0.0, std::min(Kr, 1.0));
 
   // B. Rigorous Climatic Kc_max (FAO-56 Equation 72)
-  // Uses native simulated crop height via get_CropHeight() — no hardcoded per-stage values.
+  // Uses native simulated crop height — no hardcoded per-stage values.
   double u2 = (windSpeed > 0.0) ? windSpeed : 2.0;
   double eo_Tmax = 0.6108 * std::exp((17.27 * tmax) / (tmax + 237.3));
   double eo_Tmin = 0.6108 * std::exp((17.27 * tmin) / (tmin + 237.3));
   double RHmin = std::max(5.0, std::min(100.0, (eo_Tmin / eo_Tmax) * 100.0));
   const double baseline = 1.2; // FAO-56 §6 default for most crops
-  double h = std::max(0.01, cropModule->get_CropHeight()); // native simulated height [m]
+  double h = std::max(0.01, cropModule->vc_CropHeight); // native simulated height [m]
   double Kc_max = baseline + (0.04 * (u2 - 2.0) - 0.004 * (RHmin - 45.0)) * std::pow(h / 3.0, 0.3);
   Kc_max = std::max(Kc_max, Kcb + 0.05);
 
@@ -971,15 +971,15 @@ void evapotranspiration(SoilMoisture* sm,
     // Reference evapotranspiration is only grabbed here for consistent
     // output in monica.cpp
     if (vw_ReferenceEvapotranspiration < 0.0) {
-      vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
+      vm_ReferenceEvapotranspiration = monica.cropGrowth()->vc_ReferenceEvapotranspiration;
     } else {
       vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }
 
     // Remaining ET from crop module already includes Kc factor and evaporation
     // from interception storage
-    vm_PotentialEvapotranspiration = monica.cropGrowth()->get_RemainingEvapotranspiration();
-    vc_EvaporatedFromIntercept = monica.cropGrowth()->get_EvaporatedFromIntercept();
+    vm_PotentialEvapotranspiration = monica.cropGrowth()->vc_RemainingEvapotranspiration;
+    vc_EvaporatedFromIntercept = monica.cropGrowth()->vc_EvaporatedFromIntercept;
   } else { // if no crop grows ETp is calculated from ET0 * kc
 
     // calculate reference evapotranspiration if not provided via climate files
@@ -1114,7 +1114,7 @@ void evapotranspiration(SoilMoisture* sm,
 
           // Transpiration is derived from ET0; Soil coverage and Kc factors
           // already considered in crop part!
-          vm_Transpiration[i_Layer] = monica.cropGrowth()->get_Transpiration(i_Layer);
+          vm_Transpiration[i_Layer] = monica.cropGrowth()->vc_Transpiration[i_Layer];
 
           //std::cout << setprecision(11) << "vm_Transpiration[i_Layer]: " << i_Layer << ", " << vm_Transpiration[i_Layer] << std::endl;
 

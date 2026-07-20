@@ -481,8 +481,8 @@ void SoilColumn::deleteAOMPool() {
 std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrrigationParameters& aips) {
   if (!cropModule) return std::make_pair(false, 0);
 
-  double s = cropModule->get_HeatSumIrrigationStart();
-  double e = cropModule->get_HeatSumIrrigationEnd();
+  double s = cropModule->pc_HeatSumIrrigationStart;
+  double e = cropModule->pc_HeatSumIrrigationEnd;
   double cts = cropModule->vc_CurrentTotalTemperatureSum;
   if (cts < s || cts > e || aips.threshold < 0.0) return std::make_pair(false, 0);
 

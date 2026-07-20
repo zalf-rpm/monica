@@ -549,22 +549,22 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "StomRes", "s m-1", "StomataResistance"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_StomataResistance(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_StomataResistance, 2) : 0.0;
             });
 
       build({id++, "Height", "m", "CropHeight"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_CropHeight(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_CropHeight, 2) : 0.0;
             });
 
       build({id++, "LAI", "m2 m-2", "LeafAreaIndex"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_LeafAreaIndex(), 4) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_LeafAreaIndex, 4) : 0.0;
             });
 
       build({id++, "RootDep", "layer#", "RootingDepth"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? int(monica.cropGrowth()->get_RootingDepth()) : 0;
+              return monica.cropGrowth() ? int(monica.cropGrowth()->vc_RootingDepth) : 0;
             });
 
       build({id++, "EffRootDep", "m", "Effective RootingDepth"},
@@ -595,7 +595,7 @@ BOTRes& monica::buildOutputTable() {
       build({id++, "RootWaUptak", "KgN ha-1", "RootWatUptakefromLayer"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
-                return monica.cropGrowth() ? monica.cropGrowth()->get_Transpiration(i) : 0.0;
+                return monica.cropGrowth() ? monica.cropGrowth()->vc_Transpiration[i] : 0.0;
               }, 4);
             });
 
@@ -813,7 +813,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Kcb", "", "Basal crop coefficient (FAO-56 Dual Kc)"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_KcbFactor(), 3) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_KcbFactor, 3) : 0.0;
             });
 
       build({id++, "Ke", "", "Soil evaporation coefficient (FAO-56 Dual Kc)"},
@@ -1173,17 +1173,17 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Evapotranspiration", "mm", "Remaining evapotranspiration"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_RemainingEvapotranspiration(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_RemainingEvapotranspiration, 1) : 0.0;
             });
 
       build({id++, "Evaporation_from_intercept", "mm", "Evaporation from intercepted water"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_EvaporatedFromIntercept(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_EvaporatedFromIntercept, 1) : 0.0;
             });
 
       build({id++, "Evaporation", "mm", "Evaporation from intercepted water"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_EvaporatedFromIntercept(), 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_EvaporatedFromIntercept, 1) : 0.0;
             });
 
       build({id++, "ETa/ETc", "", "Act_ET / Pot_ET"},

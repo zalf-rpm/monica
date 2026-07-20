@@ -266,7 +266,7 @@ double calcSoilSurfaceTemperature(
   double globrad) {
   globrad = max(8.33, globrad);
 
-  const double soilCoverage = st->monica->cropGrowth() ? st->monica->cropGrowth()->get_SoilCoverage() : 0.0;
+  const double soilCoverage = st->monica->cropGrowth() ? st->monica->cropGrowth()->vc_SoilCoverage : 0.0;
   const double shadingCoefficient =
     0.1 + ((soilCoverage * st->dampingFactor) + ((1 - soilCoverage) * (1 - st->dampingFactor)));
 

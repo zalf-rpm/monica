@@ -71,7 +71,7 @@ json11::Json createSoilResultsMessage(const MonicaModel& monica)
   {"soilmoistures", sms},
   {to_string(avg30_60cmSoilMoisture), monica.avgSoilMoisture(3,6)},
   {to_string(leachingNAtBoundary), monica.nLeaching()},
-  {"rootingDepth", mcg ? mcg->get_RootingDepth() : -1}};
+  {"rootingDepth", mcg ? int(mcg->vc_RootingDepth) : -1}};
 
   //  cout << "created soilmoisture msg: " << Json(soilMsg).dump() << endl;
   return soilMsg;
@@ -647,4 +647,3 @@ void monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
   debug() << "exiting serveZmqMonicaFull" << endl;
 }
-
