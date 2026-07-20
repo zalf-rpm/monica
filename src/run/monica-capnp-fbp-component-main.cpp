@@ -265,8 +265,9 @@ public:
         }
       }
     } catch (const kj::Exception& e) {
-      KJ_LOG(INFO, "Exception: ", e.getDescription());
-      std::cerr << "Exception: " << e.getDescription().cStr() << endl;
+      KJ_LOG(INFO, "Exception: ", e.getFile(), e.getLine(), e.getType(), e.getDescription(), e.getRemoteTrace());
+      std::cerr << "Exception: File: " << e.getFile() << " line: " << kj::str(e.getLine()).cStr() << " desc: " <<
+        e.getDescription().cStr() << " remTrace: " << e.getRemoteTrace().cStr() << endl;
     }
 
     ports.closeOutPorts();
