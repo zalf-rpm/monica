@@ -983,10 +983,11 @@ void monica::cropModuleStep(CropModule* cm,
   if (vc_DevelopmentalStage == 0) {
     vc_KcFactor = _bareSoilKcFactor; /** @todo Claas: muss hier etwas Genaueres hin, siehe FAO? */
   } else {
-    vc_KcFactor = cm->fc_KcFactor(pc_StageTemperatureSum[vc_DevelopmentalStage],
-                              vc_CurrentTemperatureSum[vc_DevelopmentalStage],
-                              pc_StageKcFactor[vc_DevelopmentalStage],
-                              pc_StageKcFactor[vc_DevelopmentalStage - 1]);
+    vc_KcFactor = cropModuleFcKcFactor(cm,
+                                       pc_StageTemperatureSum[vc_DevelopmentalStage],
+                                       vc_CurrentTemperatureSum[vc_DevelopmentalStage],
+                                       pc_StageKcFactor[vc_DevelopmentalStage],
+                                       pc_StageKcFactor[vc_DevelopmentalStage - 1]);
   }
 
   // FAO-56 Dual Kc: GDD-based 4-phase trapezoidal Kcb curve (replaces static per-stage arrays).
@@ -1084,20 +1085,21 @@ void monica::cropModuleStep(CropModule* cm,
                            : pc_MaxCropHeight;
     debug() << "original maxCropHeight: " << pc_MaxCropHeight << " -> new maxCropHeight: " << maxCropHeight << endl;
 
-    cm->fc_CropSize(maxCropHeight);
+    cropModuleFcCropSize(cm, maxCropHeight);
 
     icSendRcv("devstage > 0: ");
 
-    cm->fc_CropGreenArea(meanAirTemperature,
-                     vc_OrganGrowthIncrement[OId::LEAF],
-                     vc_OrganSenescenceIncrement[OId::LEAF],
-                     pc_SpecificLeafArea[vc_DevelopmentalStage - 1],
-                     pc_SpecificLeafArea[vc_DevelopmentalStage],
-                     pc_SpecificLeafArea[1],
-                     pc_StageTemperatureSum[vc_DevelopmentalStage],
-                     vc_CurrentTemperatureSum[vc_DevelopmentalStage]);
+    cropModuleFcCropGreenArea(cm,
+                              meanAirTemperature,
+                              vc_OrganGrowthIncrement[OId::LEAF],
+                              vc_OrganSenescenceIncrement[OId::LEAF],
+                              pc_SpecificLeafArea[vc_DevelopmentalStage - 1],
+                              pc_SpecificLeafArea[vc_DevelopmentalStage],
+                              pc_SpecificLeafArea[1],
+                              pc_StageTemperatureSum[vc_DevelopmentalStage],
+                              vc_CurrentTemperatureSum[vc_DevelopmentalStage]);
 
-    vc_SoilCoverage = cm->fc_SoilCoverage();
+    vc_SoilCoverage = cropModuleFcSoilCoverage(cm);
 
     cm->fc_CropPhotosynthesis(meanAirTemperature,
                           maxAirTemperature,
@@ -1624,11 +1626,14 @@ void monica::cropModuleFcCropDevelopmentalStage(CropModule* cm,
  *
  * @author Claas Nendel //MP: will this need refinement?
  */
-double CropModule::fc_KcFactor(double d_StageTemperatureSum,
-                               double d_CurrentTemperatureSum,
-                               double d_StageKcFactor, // DB
-                               double d_EarlierStageKcFactor) const // DB
+double monica::cropModuleFcKcFactor(const CropModule* cm,
+                                    double d_StageTemperatureSum,
+                                    double d_CurrentTemperatureSum,
+                                    double d_StageKcFactor, // DB
+                                    double d_EarlierStageKcFactor) // DB
 {
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& pc_InitialKcFactor = cm->pc_InitialKcFactor;
   double vc_RelativeDevelopment = 0.0;
   if (d_StageTemperatureSum > 0.0) {
     vc_RelativeDevelopment = min(d_CurrentTemperatureSum / d_StageTemperatureSum, 1.0); // old relint
@@ -1665,7 +1670,16 @@ double CropModule::fc_KcFactor(double d_StageTemperatureSum,
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropSize(double maxCropHeight) {
+void monica::cropModuleFcCropSize(CropModule* cm, double maxCropHeight) {
+  auto& pc_StageAtMaxHeight = cm->pc_StageAtMaxHeight;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& pc_CropHeightP1 = cm->pc_CropHeightP1;
+  auto& pc_CropHeightP2 = cm->pc_CropHeightP2;
+  auto& vc_CropHeight = cm->vc_CropHeight;
+  auto& pc_StageAtMaxDiameter = cm->pc_StageAtMaxDiameter;
+  auto& vc_CropDiameter = cm->vc_CropDiameter;
+  auto& pc_MaxCropDiameter = cm->pc_MaxCropDiameter;
   double vc_TotalTemperatureSumForHeight = 0.0;
   for (int stage = 1; stage < pc_StageAtMaxHeight + 1; stage++) {
     vc_TotalTemperatureSumForHeight += pc_StageTemperatureSum[stage];
@@ -1707,14 +1721,25 @@ void CropModule::fc_CropSize(double maxCropHeight) {
  *
  * @author Claas Nendel
  */
-void CropModule::fc_CropGreenArea(double vw_MeanAirTemperature,
-                                  double d_LeafBiomassIncrement,
-                                  double d_LeafBiomassDecrement,
-                                  double d_SpecificLeafAreaStart,
-                                  double d_SpecificLeafAreaEnd,
-                                  double d_SpecificLeafAreaEarly,
-                                  double d_StageTemperatureSum,
-                                  double d_CurrentTemperatureSum) {
+void monica::cropModuleFcCropGreenArea(CropModule* cm,
+                                       double vw_MeanAirTemperature,
+                                       double d_LeafBiomassIncrement,
+                                       double d_LeafBiomassDecrement,
+                                       double d_SpecificLeafAreaStart,
+                                       double d_SpecificLeafAreaEnd,
+                                       double d_SpecificLeafAreaEarly,
+                                       double d_StageTemperatureSum,
+                                       double d_CurrentTemperatureSum) {
+  const auto* cropPs = cm->cropPs;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& speciesPs = cm->speciesPs;
+  auto& cultivarPs = cm->cultivarPs;
+  auto& vc_TimeStep = cm->vc_TimeStep;
+  auto& vc_LeafAreaIndex = cm->vc_LeafAreaIndex;
+  auto& vc_GreenAreaIndex = cm->vc_GreenAreaIndex;
+  auto& vc_CropHeight = cm->vc_CropHeight;
+  auto& vc_CropDiameter = cm->vc_CropDiameter;
+  auto& pc_PlantDensity = cm->pc_PlantDensity;
   double TempResponseExpansion = 1.0;
   if (cropPs->__enable_T_response_leaf_expansion__) {
     // Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
@@ -1761,8 +1786,8 @@ void CropModule::fc_CropGreenArea(double vw_MeanAirTemperature,
  *
  * @author Claas Nendel
  */
-double CropModule::fc_SoilCoverage() const {
-  return 1.0 - (exp(-0.5 * vc_LeafAreaIndex));
+double monica::cropModuleFcSoilCoverage(const CropModule* cm) {
+  return 1.0 - (exp(-0.5 * cm->vc_LeafAreaIndex));
 }
 
 #ifdef TEST_HOURLY_OUTPUT

@@ -57,24 +57,6 @@ struct CropModule {
   //void get_CropIdentity();
   //void get_CropParameters();
 
-  double fc_KcFactor(double d_StageTemperatureSum,
-                     double d_CurrentTemperatureSum,
-                     double d_StageKcFactor,
-                     double d_EarlierStageKcFactor) const;
-
-  void fc_CropSize(double maxCropHeight);
-
-  void fc_CropGreenArea(double vw_MeanAirTemperature,
-                        double d_LeafBiomassIncrement,
-                        double d_LeafBiomassDecrement,
-                        double d_SpecificLeafAreaStart,
-                        double pc_SpecificLeafAreaEnd,
-                        double pc_SpecificLeafAreaEarly,
-                        double d_StageTemperatureSum,
-                        double d_CurrentTemperatureSum);
-
-  double fc_SoilCoverage() const;
-
   void fc_MoveDeadRootBiomassToSoil(double deadRootBiomass,
                                     double vc_RootDensityFactorSum,
                                     const std::vector<double>& vc_RootDensityFactor);
@@ -749,6 +731,22 @@ void cropModuleFcCropDevelopmentalStage(CropModule* cm,
                                         double fieldCapacity,
                                         double permanentWiltingPoint,
                                         Tools::Date currentDate);
+double cropModuleFcKcFactor(const CropModule* cm,
+                            double stageTemperatureSum,
+                            double currentTemperatureSum,
+                            double stageKcFactor,
+                            double earlierStageKcFactor);
+void cropModuleFcCropSize(CropModule* cm, double maxCropHeight);
+void cropModuleFcCropGreenArea(CropModule* cm,
+                               double meanAirTemperature,
+                               double leafBiomassIncrement,
+                               double leafBiomassDecrement,
+                               double specificLeafAreaStart,
+                               double specificLeafAreaEnd,
+                               double specificLeafAreaEarly,
+                               double stageTemperatureSum,
+                               double currentTemperatureSum);
+double cropModuleFcSoilCoverage(const CropModule* cm);
 void cropModuleApplyCutting(CropModule* cm,
                             std::map<int, Cutting::Value>& organs,
                             std::map<int, double>& exports,
