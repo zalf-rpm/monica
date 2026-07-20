@@ -910,7 +910,7 @@ json11::Json NDemandFertilization::to_json() const {
 bool NDemandFertilization::apply(MonicaModel* model) {
   Workstep::apply(model);
 
-  double rd = model->cropGrowth()->get_RootingDepth_m();
+  double rd = model->cropGrowth()->vc_RootingDepth_m;
   debug() << toString() << endl;
   double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth,
                                                                                   _Ndemand);

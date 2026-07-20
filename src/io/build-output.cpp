@@ -579,7 +579,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_AbovegroundBiomass * monica.cropGrowth()->vc_NConcentrationAbovegroundBiomass, 1) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_AbovegroundBiomassNContent(), 1) : 0.0;
             });
 
       build({id++, "SumNUp", "kgN ha-1", "SumTotalNUptake"},
@@ -1313,22 +1313,22 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "O3-short-damage", "unitless", "short term ozone induced reduction of Ac"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_shortTermDamage(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_O3_shortTermDamage, 2) : 0.0;
             });
 
       build({id++, "O3-long-damage", "unitless", "long term ozone induced senescence"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_longTermDamage(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_O3_longTermDamage, 2) : 0.0;
             });
 
       build({id++, "O3-WS-gs-reduction", "unitless", "water stress impact on stomatal conductance"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_WStomatalClosure(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_O3_WStomatalClosure, 2) : 0.0;
             });
 
       build({id++, "O3-total-uptake", "�mol m-2", "total O3 uptake"}, //TODO units are not correct
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_sumUptake(), 2) : 0.0;
+              return monica.cropGrowth() ? round(monica.cropGrowth()->vc_O3_sumUptake, 2) : 0.0;
             });
 
       build({id++, "NO3conv", "", "get_vq_Convection"},

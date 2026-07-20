@@ -63,9 +63,6 @@ struct CropModule {
   Voc::Emissions jjvEmissions() const { return _jjvEmissions; }
 
 
-  double get_RootingDepth_m() const { return vc_RootingDepth_m; }
-
-
   double get_FruitBiomassNContent() const;
 
 
@@ -91,17 +88,19 @@ struct CropModule {
   double get_SecondaryYieldNContent(double alternativePrimaryCropYield = -1,
                                     double alternativeSecondaryCropYield = -1) const;
 
-  double get_AccumulatedETa() const;
-
-  double get_AccumulatedTranspiration() const;
-
-  double get_AccumulatedPrimaryCropYield() const;
+  double get_AbovegroundBiomassNContent() const;
 
   double get_AutotrophicRespiration() const;
 
   double get_OrganSpecificTotalRespired(int organ) const;
 
   double get_OrganSpecificNPP(int organ) const;
+
+  double get_AccumulatedETa() const;
+
+  double get_AccumulatedTranspiration() const;
+
+  double get_AccumulatedPrimaryCropYield() const;
 
   double getEffectiveRootingDepth() const;
 
@@ -110,26 +109,6 @@ struct CropModule {
   int getMaturityDay() const;
 
   bool maturityReached() const;
-
-  /**
-  * @brief Returns short term O3 damage
-  */
-  double get_O3_shortTermDamage() const { return vc_O3_shortTermDamage; }
-
-  /**
-  * @brief Returns long term O3 damage
-  */
-  double get_O3_longTermDamage() const { return vc_O3_longTermDamage; }
-
-  /**
-  * @brief Returns reduction factor of O3 uptake due to stomatal closure
-  */
-  double get_O3_WStomatalClosure() const { return vc_O3_WStomatalClosure; }
-
-  /**
-  * @brief Returns O3 sum uptake
-  */
-  double get_O3_sumUptake() const { return vc_O3_sumUptake; }
 
   /*
  * @brief Getter for total biomass.

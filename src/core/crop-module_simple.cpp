@@ -4646,11 +4646,19 @@ double CropModule::get_SecondaryYieldNContent(double alternativePrimaryCropYield
 }
 
 /**
+ * @brief Returns aboveground biomass N content [kg N ha-1]
+ * @return organ biomass
+ */
+double CropModule::get_AbovegroundBiomassNContent() const {
+  return vc_AbovegroundBiomass * vc_NConcentrationAbovegroundBiomass;
+}
+
+/**
  * @brief Returns the respiration [kg C ha-1 d-1]
  * @return Net primary production
  */
 double CropModule::get_AutotrophicRespiration() const {
-  return vc_TotalRespired / 30.0 * 12.0;; // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
+  return vc_TotalRespired / 30.0 * 12.0; // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
 }
 
 /**
