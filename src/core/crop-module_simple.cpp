@@ -835,19 +835,72 @@ void monica::cropModuleSerialize(const CropModule* cm, mas::schema::model::monic
  *
  * @author Claas Nendel
  */
-void CropModule::step(double vw_MeanAirTemperature,
-                      double vw_MaxAirTemperature,
-                      double vw_MinAirTemperature,
-                      double vw_GlobalRadiation,
-                      double vw_SunshineHours,
-                      Date currentDate,
-                      double vw_RelativeHumidity,
-                      double vw_WindSpeed,
-                      double vw_WindSpeedHeight,
-                      double vw_AtmosphericCO2Concentration,
-                      double vw_AtmosphericO3Concentration,
-                      double vw_GrossPrecipitation,
-                      double vw_ReferenceEvapotranspiration) {
+void monica::cropModuleStep(CropModule* cm,
+                             double meanAirTemperature,
+                             double maxAirTemperature,
+                             double minAirTemperature,
+                             double globalRadiation,
+                             double sunshineHours,
+                             Tools::Date currentDate,
+                             double relativeHumidity,
+                             double windSpeed,
+                             double windSpeedHeight,
+                             double atmosphericCO2Concentration,
+                             double atmosphericO3Concentration,
+                             double grossPrecipitation,
+                             double referenceEvapotranspiration) {
+  auto& _bareSoilKcFactor = cm->_bareSoilKcFactor;
+  auto& _fireEvent = cm->_fireEvent;
+  auto& _frostKillOn = cm->_frostKillOn;
+  auto& _intercropping = cm->_intercropping;
+  auto& _intercroppingOtherCropHeight = cm->_intercroppingOtherCropHeight;
+  auto& _noOfCropSteps = cm->_noOfCropSteps;
+  auto& _perennialCropDormancyPeriodEndDate = cm->_perennialCropDormancyPeriodEndDate;
+  auto& _stemElongationEventFired = cm->_stemElongationEventFired;
+  const auto* cropPs = cm->cropPs;
+  auto& pc_BaseDaylength = cm->pc_BaseDaylength;
+  auto& pc_CriticalOxygenContent = cm->pc_CriticalOxygenContent;
+  auto& pc_DaylengthRequirement = cm->pc_DaylengthRequirement;
+  auto& pc_MaxCropHeight = cm->pc_MaxCropHeight;
+  auto& pc_Perennial = cm->pc_Perennial;
+  auto& pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
+  auto& pc_StageKcFactor = cm->pc_StageKcFactor;
+  auto& pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto& pc_VernalisationRequirement = cm->pc_VernalisationRequirement;
+  auto* soilColumn = cm->soilColumn;
+  auto& speciesPs = cm->speciesPs;
+  auto& vc_AnthesisDay = cm->vc_AnthesisDay;
+  auto& vc_CropHeight = cm->vc_CropHeight;
+  auto& vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+  auto& vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
+  auto& vc_CuttingDelayDays = cm->vc_CuttingDelayDays;
+  auto& vc_DaylengthFactor = cm->vc_DaylengthFactor;
+  auto& vc_DaysSinceTransplant = cm->vc_DaysSinceTransplant;
+  auto& vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
+  auto& vc_EffectiveDayLength = cm->vc_EffectiveDayLength;
+  auto& vc_GrossPrimaryProduction = cm->vc_GrossPrimaryProduction;
+  auto& vc_KcFactor = cm->vc_KcFactor;
+  auto& vc_KcbFactor = cm->vc_KcbFactor;
+  auto& vc_Kcb_end = cm->vc_Kcb_end;
+  auto& vc_Kcb_ini = cm->vc_Kcb_ini;
+  auto& vc_Kcb_mid = cm->vc_Kcb_mid;
+  auto& vc_MaturityDay = cm->vc_MaturityDay;
+  auto& vc_MaturityReached = cm->vc_MaturityReached;
+  auto& vc_NetPrimaryProduction = cm->vc_NetPrimaryProduction;
+  auto& vc_OrganGrowthIncrement = cm->vc_OrganGrowthIncrement;
+  auto& vc_OrganSenescenceIncrement = cm->vc_OrganSenescenceIncrement;
+  auto& vc_OxygenDeficit = cm->vc_OxygenDeficit;
+  auto& vc_PhotoperiodicDaylength = cm->vc_PhotoperiodicDaylength;
+  auto& vc_ReferenceEvapotranspiration = cm->vc_ReferenceEvapotranspiration;
+  auto& vc_RelativeTotalDevelopment = cm->vc_RelativeTotalDevelopment;
+  auto& vc_SoilCoverage = cm->vc_SoilCoverage;
+  auto& vc_TotalRespired = cm->vc_TotalRespired;
+  auto& vc_TotalTemperatureSum = cm->vc_TotalTemperatureSum;
+  auto& vc_TransplantEfficiency = cm->vc_TransplantEfficiency;
+  auto& vc_TransplantShockDuration = cm->vc_TransplantShockDuration;
+  auto& vc_VernalisationDays = cm->vc_VernalisationDays;
+  auto& vc_VernalisationFactor = cm->vc_VernalisationFactor;
+
   int vs_JulianDay = int(currentDate.julianDay());
 
   if (vc_CuttingDelayDays > 0) vc_CuttingDelayDays--;
@@ -863,10 +916,10 @@ void CropModule::step(double vw_MeanAirTemperature,
     vc_DaysSinceTransplant = -1; // Recovery period has successfully concluded
   }
 
-  //  cout << "Cropstep: " << vw_MinAirTemperature << "\t" << vw_MaxAirTemperature << "\t" << vw_MeanAirTemperature << endl;
-  fc_Radiation(vs_JulianDay, vw_GlobalRadiation, vw_SunshineHours);
+  //  cout << "Cropstep: " << minAirTemperature << "\t" << maxAirTemperature << "\t" << meanAirTemperature << endl;
+  cm->fc_Radiation(vs_JulianDay, globalRadiation, sunshineHours);
 
-  vc_OxygenDeficit = fc_OxygenDeficiency(pc_CriticalOxygenContent[vc_DevelopmentalStage]);
+  vc_OxygenDeficit = cm->fc_OxygenDeficiency(pc_CriticalOxygenContent[vc_DevelopmentalStage]);
 
   size_t old_DevelopmentalStage = vc_DevelopmentalStage;
 
@@ -878,7 +931,7 @@ void CropModule::step(double vw_MeanAirTemperature,
         : Date(1, 1, currentDate.year()) + (speciesPs.dormancyEndDoy - 1);
   }
   if (!pc_Perennial || currentDate >= _perennialCropDormancyPeriodEndDate) {
-    fc_CropDevelopmentalStage(vw_MeanAirTemperature,
+    cm->fc_CropDevelopmentalStage(meanAirTemperature,
                               (*soilColumn)[0].vs_SoilMoisture_m3,
                               (*soilColumn)[0]._sps.vs_FieldCapacity,
                               (*soilColumn)[0]._sps.vs_PermanentWiltingPoint,
@@ -887,10 +940,10 @@ void CropModule::step(double vw_MeanAirTemperature,
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
     if (_fireEvent) _fireEvent("emergence");
-  } else if (isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+  } else if (cm->isAnthesisDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
     vc_AnthesisDay = vs_JulianDay;
     if (_fireEvent) _fireEvent("anthesis");
-  } else if (isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
+  } else if (cm->isMaturityDay(old_DevelopmentalStage, vc_DevelopmentalStage)) {
     vc_MaturityDay = vs_JulianDay;
     vc_MaturityReached = true;
     if (_fireEvent) _fireEvent("maturity");
@@ -908,13 +961,13 @@ void CropModule::step(double vw_MeanAirTemperature,
   }
 
   vc_DaylengthFactor =
-    fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
+    cm->fc_DaylengthFactor(pc_DaylengthRequirement[vc_DevelopmentalStage],
                        vc_EffectiveDayLength,
                        vc_PhotoperiodicDaylength,
                        pc_BaseDaylength[vc_DevelopmentalStage]);
 
   tie(vc_VernalisationFactor, vc_VernalisationDays) =
-    fc_VernalisationFactor(vw_MeanAirTemperature,
+    cm->fc_VernalisationFactor(meanAirTemperature,
                            pc_VernalisationRequirement[vc_DevelopmentalStage],
                            vc_VernalisationDays);
 
@@ -927,7 +980,7 @@ void CropModule::step(double vw_MeanAirTemperature,
   if (vc_DevelopmentalStage == 0) {
     vc_KcFactor = _bareSoilKcFactor; /** @todo Claas: muss hier etwas Genaueres hin, siehe FAO? */
   } else {
-    vc_KcFactor = fc_KcFactor(pc_StageTemperatureSum[vc_DevelopmentalStage],
+    vc_KcFactor = cm->fc_KcFactor(pc_StageTemperatureSum[vc_DevelopmentalStage],
                               vc_CurrentTemperatureSum[vc_DevelopmentalStage],
                               pc_StageKcFactor[vc_DevelopmentalStage],
                               pc_StageKcFactor[vc_DevelopmentalStage - 1]);
@@ -1028,11 +1081,11 @@ void CropModule::step(double vw_MeanAirTemperature,
                            : pc_MaxCropHeight;
     debug() << "original maxCropHeight: " << pc_MaxCropHeight << " -> new maxCropHeight: " << maxCropHeight << endl;
 
-    fc_CropSize(maxCropHeight);
+    cm->fc_CropSize(maxCropHeight);
 
     icSendRcv("devstage > 0: ");
 
-    fc_CropGreenArea(vw_MeanAirTemperature,
+    cm->fc_CropGreenArea(meanAirTemperature,
                      vc_OrganGrowthIncrement[OId::LEAF],
                      vc_OrganSenescenceIncrement[OId::LEAF],
                      pc_SpecificLeafArea[vc_DevelopmentalStage - 1],
@@ -1041,60 +1094,65 @@ void CropModule::step(double vw_MeanAirTemperature,
                      pc_StageTemperatureSum[vc_DevelopmentalStage],
                      vc_CurrentTemperatureSum[vc_DevelopmentalStage]);
 
-    vc_SoilCoverage = fc_SoilCoverage();
+    vc_SoilCoverage = cm->fc_SoilCoverage();
 
-    fc_CropPhotosynthesis(vw_MeanAirTemperature,
-                          vw_MaxAirTemperature,
-                          vw_MinAirTemperature,
-                          vw_AtmosphericCO2Concentration,
-                          vw_AtmosphericO3Concentration,
+    cm->fc_CropPhotosynthesis(meanAirTemperature,
+                          maxAirTemperature,
+                          minAirTemperature,
+                          atmosphericCO2Concentration,
+                          atmosphericO3Concentration,
                           currentDate);
 
-    fc_HeatStressImpact(vw_MaxAirTemperature,
-                        vw_MinAirTemperature);
+    cm->fc_HeatStressImpact(maxAirTemperature,
+                        minAirTemperature);
 
     if (_frostKillOn) {
-      fc_FrostKill(vw_MaxAirTemperature,
-                   vw_MinAirTemperature);
+      cm->fc_FrostKill(maxAirTemperature,
+                   minAirTemperature);
     }
 
-    fc_DroughtImpactOnFertility();
+    cm->fc_DroughtImpactOnFertility();
 
-    fc_CropNitrogen();
+    cm->fc_CropNitrogen();
 
-    fc_CropDryMatter(vw_MeanAirTemperature);
+    cm->fc_CropDryMatter(meanAirTemperature);
 
     // calculate reference evapotranspiration if not provided directly via climate files
-    if (vw_ReferenceEvapotranspiration < 0) {
-      vc_ReferenceEvapotranspiration = fc_ReferenceEvapotranspiration(vw_MaxAirTemperature,
-                                                                      vw_MinAirTemperature,
-                                                                      vw_RelativeHumidity,
-                                                                      vw_MeanAirTemperature,
-                                                                      vw_WindSpeed,
-                                                                      vw_WindSpeedHeight,
-                                                                      vw_AtmosphericCO2Concentration);
+    if (referenceEvapotranspiration < 0) {
+      vc_ReferenceEvapotranspiration = cm->fc_ReferenceEvapotranspiration(maxAirTemperature,
+                                                                      minAirTemperature,
+                                                                      relativeHumidity,
+                                                                      meanAirTemperature,
+                                                                      windSpeed,
+                                                                      windSpeedHeight,
+                                                                      atmosphericCO2Concentration);
     } else {
       // use reference evapotranspiration from climate file
-      vc_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
+      vc_ReferenceEvapotranspiration = referenceEvapotranspiration;
     }
-    fc_CropWaterUptake(soilColumn->vm_GroundwaterTableLayer,
-                       vw_GrossPrecipitation,
+    cm->fc_CropWaterUptake(soilColumn->vm_GroundwaterTableLayer,
+                       grossPrecipitation,
                        vc_CurrentTotalTemperatureSum,
                        vc_TotalTemperatureSum);
 
-    fc_CropNUptake(soilColumn->vm_GroundwaterTableLayer,
+    cm->fc_CropNUptake(soilColumn->vm_GroundwaterTableLayer,
                    vc_CurrentTotalTemperatureSum,
                    vc_TotalTemperatureSum);
 
-    vc_GrossPrimaryProduction = fc_GrossPrimaryProduction();
+    vc_GrossPrimaryProduction = cm->fc_GrossPrimaryProduction();
 
-    vc_NetPrimaryProduction = fc_NetPrimaryProduction(vc_TotalRespired);
+    vc_NetPrimaryProduction = cm->fc_NetPrimaryProduction(vc_TotalRespired);
   } else {
     icSendRcv("devstage 0: ");
   }
 
   _noOfCropSteps++;
+
+
+
+
 }
+
 
 /**
  * @brief Calculation of daylength and radiation
@@ -4681,13 +4739,31 @@ int CropModule::get_StageAfterCut() const {
   return pc_StageAfterCut;
 }
 
-void CropModule::applyCutting(std::map<int, Cutting::Value>& organs,
-                              std::map<int, double>& exports,
-                              double cutMaxAssimilationFraction) {
+void monica::cropModuleApplyCutting(CropModule* cm,
+                                     std::map<int, Cutting::Value>& organs,
+                                     std::map<int, double>& exports,
+                                     double cutMaxAssimilationFraction) {
+  auto& _addOrganicMatter = cm->_addOrganicMatter;
+  auto& pc_CuttingDelayDays = cm->pc_CuttingDelayDays;
+  auto& pc_MaxAssimilationRate = cm->pc_MaxAssimilationRate;
+  auto& pc_OrganIdsForCutting = cm->pc_OrganIdsForCutting;
+  auto& pc_StageAfterCut = cm->pc_StageAfterCut;
+  auto& vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
+  auto& vc_CuttingDelayDays = cm->vc_CuttingDelayDays;
+  auto& vc_LeafAreaIndex = cm->vc_LeafAreaIndex;
+  auto& vc_OrganBiomass = cm->vc_OrganBiomass;
+  auto& vc_OrganDeadBiomass = cm->vc_OrganDeadBiomass;
+  auto& vc_OrganGreenBiomass = cm->vc_OrganGreenBiomass;
+  auto& vc_TotalBiomassNContent = cm->vc_TotalBiomassNContent;
+  auto& vc_exportedCutBiomass = cm->vc_exportedCutBiomass;
+  auto& vc_residueCutBiomass = cm->vc_residueCutBiomass;
+  auto& vc_sumExportedCutBiomass = cm->vc_sumExportedCutBiomass;
+  auto& vc_sumResidueCutBiomass = cm->vc_sumResidueCutBiomass;
+
   double oldAbovegroundBiomass = vc_AbovegroundBiomass;
-  double oldAgbNcontent = get_AbovegroundBiomassNContent();
+  double oldAgbNcontent = cm->get_AbovegroundBiomassNContent();
   double sumCutBiomass = 0.0;
-  double currentSLA = get_LeafAreaIndex() / vc_OrganGreenBiomass[OId::LEAF];
+  double currentSLA = cm->get_LeafAreaIndex() / vc_OrganGreenBiomass[OId::LEAF];
 
   Tools::debug() << "CropModule::applyCutting()" << endl;
 
@@ -4742,7 +4818,7 @@ void CropModule::applyCutting(std::map<int, Cutting::Value>& organs,
       }
     } else if (organSpec.unit == Cutting::LAI) {
       // only "left" is supported for LAI
-      double currentLAI = get_LeafAreaIndex();
+      double currentLAI = cm->get_LeafAreaIndex();
       if (organSpec.value > currentLAI) {
         newOrganBiomass = oldOrganGreenBiomass;
         cutOrganBiomass = oldOrganDeadBiomass;
@@ -4785,7 +4861,7 @@ void CropModule::applyCutting(std::map<int, Cutting::Value>& organs,
 
   if (sumResidueBiomass > 0) {
     // prepare to add crop residues to soilorganic (AOMs)
-    double residueNConcentration = get_AbovegroundBiomassNConcentration();
+    double residueNConcentration = cm->get_AbovegroundBiomassNConcentration();
     debug() << "adding organic matter from cut residues to soilOrganic" << endl;
     debug() << "Residue biomass: " << sumResidueBiomass
       << " Residue N concentration: " << residueNConcentration << endl;
@@ -4798,17 +4874,22 @@ void CropModule::applyCutting(std::map<int, Cutting::Value>& organs,
   }
 
   // reset stage and temperature some after cutting
-  setStage(pc_StageAfterCut);
+  cm->setStage(pc_StageAfterCut);
 
   vc_CuttingDelayDays = pc_CuttingDelayDays;
   pc_MaxAssimilationRate = pc_MaxAssimilationRate * cutMaxAssimilationFraction;
 
-  // double rootNcontent = vc_TotalBiomassNContent - get_AbovegroundBiomassNContent();
-  // vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * get_AbovegroundBiomassNContent() + rootNcontent;
+  // double rootNcontent = vc_TotalBiomassNContent - cm->get_AbovegroundBiomassNContent();
+  // vc_TotalBiomassNContent = (vc_AbovegroundBiomass / oldAbovegroundBiomass) * cm->get_AbovegroundBiomassNContent() + rootNcontent;
   if (oldAbovegroundBiomass > 0.0) {
     vc_TotalBiomassNContent -= (1 - vc_AbovegroundBiomass / oldAbovegroundBiomass) * oldAgbNcontent;
   }
+
+
+
+
 }
+
 
 /**
  * Returns the depth of the maximum active and effective root.
@@ -5086,21 +5167,3 @@ kj::Own<CropModule> monica::makeCropModule(SoilColumn* soilColumn,
   return cm;
 }
 
-void monica::cropModuleStep(CropModule* cm,
-                            double meanAirTemperature,
-                            double maxAirTemperature,
-                            double minAirTemperature,
-                            double globalRadiation,
-                            double sunshineHours,
-                            Tools::Date currentDate,
-                            double relativeHumidity,
-                            double windSpeed,
-                            double windSpeedHeight,
-                            double atmosphericCO2Concentration,
-                            double atmosphericO3Concentration,
-                            double grossPrecipitation,
-                            double referenceEvapotranspiration) {
-  cm->step(meanAirTemperature, maxAirTemperature, minAirTemperature, globalRadiation, sunshineHours, currentDate,
-           relativeHumidity, windSpeed, windSpeedHeight, atmosphericCO2Concentration, atmosphericO3Concentration,
-           grossPrecipitation, referenceEvapotranspiration);
-}

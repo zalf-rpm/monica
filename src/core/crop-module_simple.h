@@ -54,24 +54,6 @@ namespace monica {
 *
 */
 struct CropModule {
-  void applyCutting(std::map<int, Cutting::Value>& organs,
-                    std::map<int, double>& exports,
-                    double cutMaxAssimilateFraction);
-
-  void step(double vw_MeanAirTemperature,
-            double vw_MaxAirTemperature,
-            double vw_MinAirTemperature,
-            double vw_GlobalRadiation,
-            double vw_SunshineHours,
-            Tools::Date currentDate,
-            double vw_RelativeHumidity,
-            double vw_WindSpeed,
-            double vw_WindSpeedHeight,
-            double vw_AtmosphericCO2Concentration,
-            double vw_AtmosphericO3Concentration,
-            double vw_GrossPrecipitation,
-            double vw_ReferenceEvapotranspiration);
-
   //void get_CropIdentity();
   //void get_CropParameters();
 
@@ -768,6 +750,10 @@ void cropModuleInitializeFromCropParameters(CropModule* cm,
                                             bool isWinterCrop,
                                             const SiteParameters* siteParams,
                                             const SimulationParameters& simParams);
+void cropModuleApplyCutting(CropModule* cm,
+                            std::map<int, Cutting::Value>& organs,
+                            std::map<int, double>& exports,
+                            double cutMaxAssimilationFraction);
 void cropModuleStep(CropModule* cm,
                     double meanAirTemperature,
                     double maxAirTemperature,

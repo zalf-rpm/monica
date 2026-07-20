@@ -809,7 +809,8 @@ bool Cutting::apply(MonicaModel* model) {
   debug() << "Cutting crop: " << model->cropGrowth()->speciesParameters().pc_SpeciesId << " at: " << date().toString()
     << endl;
 
-  model->cropGrowth()->applyCutting(_organId2cuttingSpec, _organId2exportFraction, _cutMaxAssimilationRateFraction);
+  cropModuleApplyCutting(model->cropGrowth(), _organId2cuttingSpec, _organId2exportFraction,
+                         _cutMaxAssimilationRateFraction);
   model->addEvent("Cutting");
 
   return true;
