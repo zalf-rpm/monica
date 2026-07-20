@@ -63,31 +63,6 @@ struct CropModule {
   Voc::Emissions jjvEmissions() const { return _jjvEmissions; }
 
 
-  double get_FruitBiomassNContent() const;
-
-
-
-  double get_PrimaryCropYield() const;
-
-  double get_SecondaryCropYield() const;
-
-
-  double get_ResidueBiomass(bool useSecondaryCropYields = true, double alternativeCropYield = -1) const;
-
-  double get_ResiduesNConcentration(double alternativePrimaryCropYield = -1) const;
-
-  double get_PrimaryYieldNConcentration(double alternativePrimaryCropYield = -1) const;
-
-  double get_ResiduesNContent(bool useSecondaryCropYields = true, double alternativePrimaryCropYield = -1,
-                              double alternativeCropYield = -1) const;
-
-  double get_PrimaryYieldNContent(double alternativePrimaryCropYield = -1) const;
-
-  double get_RawProteinConcentration() const;
-
-  double get_SecondaryYieldNContent(double alternativePrimaryCropYield = -1,
-                                    double alternativeSecondaryCropYield = -1) const;
-
   double get_AbovegroundBiomassNContent() const;
 
   double get_AutotrophicRespiration() const;
@@ -597,6 +572,23 @@ void cropModuleFcCropNUptake(CropModule* cm,
                              double totalTemperatureSum);
 double cropModuleFcGrossPrimaryProduction(const CropModule* cm);
 double cropModuleFcNetPrimaryProduction(CropModule* cm, double totalRespired);
+double cropModuleGetFruitBiomassNContent(const CropModule* cm);
+double cropModuleGetPrimaryCropYield(const CropModule* cm);
+double cropModuleGetSecondaryCropYield(const CropModule* cm);
+double cropModuleGetResidueBiomass(const CropModule* cm,
+                                   bool useSecondaryCropYields = true,
+                                   double alternativeCropYield = -1);
+double cropModuleGetResiduesNConcentration(const CropModule* cm, double alternativePrimaryCropYield = -1);
+double cropModuleGetPrimaryYieldNConcentration(const CropModule* cm, double alternativePrimaryCropYield = -1);
+double cropModuleGetResiduesNContent(const CropModule* cm,
+                                     bool useSecondaryCropYields = true,
+                                     double alternativePrimaryCropYield = -1,
+                                     double alternativeCropYield = -1);
+double cropModuleGetPrimaryYieldNContent(const CropModule* cm, double alternativePrimaryCropYield = -1);
+double cropModuleGetRawProteinConcentration(const CropModule* cm);
+double cropModuleGetSecondaryYieldNContent(const CropModule* cm,
+                                           double alternativePrimaryCropYield = -1,
+                                           double alternativeSecondaryCropYield = -1);
 void cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroClimateData& mcd);
 void cropModuleFcUpdateCropParametersForPerennial(CropModule* cm);
 void cropModuleForceTransplantState(CropModule* cm,

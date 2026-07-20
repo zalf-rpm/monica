@@ -458,12 +458,12 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Yield", "kgDM ha-1", "get_PrimaryCropYield"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryCropYield(), 1) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetPrimaryCropYield(monica.cropGrowth()), 1) : 0.0;
             });
 
       build({id++, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_SecondaryCropYield(), 3) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetSecondaryCropYield(monica.cropGrowth()), 3) : 0.0;
             });
 
       build({
@@ -641,18 +641,18 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNConcentration(), 3) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetPrimaryYieldNConcentration(monica.cropGrowth()), 3) : 0.0;
             });
 
 
       build({id++, "YieldN", "kgN ha-1", "PrimaryYieldNContent"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_PrimaryYieldNContent(), 3) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetPrimaryYieldNContent(monica.cropGrowth()), 3) : 0.0;
             });
 
       build({id++, "Protein", "kg kg-1", "RawProteinConcentration"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_RawProteinConcentration(), 3) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetRawProteinConcentration(monica.cropGrowth()), 3) : 0.0;
             });
 
       build({id++, "NPP", "kgC ha-1", "NPP"},
@@ -1210,7 +1210,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "GrainN", "kg ha-1", "get_FruitBiomassNContent"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_FruitBiomassNContent(), 5) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetFruitBiomassNContent(monica.cropGrowth()), 5) : 0.0;
             });
 
       build({id++, "Fc", "m3 m-3", "field capacity"},
@@ -1275,7 +1275,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Nresid", "kg N ha-1", "Nitrogen content in crop residues"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cropGrowth() ? round(monica.cropGrowth()->get_ResiduesNContent(), 1) : 0.0;
+              return monica.cropGrowth() ? round(cropModuleGetResiduesNContent(monica.cropGrowth()), 1) : 0.0;
             });
 
       build({id++, "Sand", "kg kg-1", "Soil sand content"},

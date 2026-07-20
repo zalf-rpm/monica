@@ -4520,11 +4520,11 @@ void monica::cropModuleCalculateVOCEmissions(CropModule* cm, const Voc::MicroCli
  * @brief Returns fruit biomass N content [kg N ha-1]
  * @return organ biomass
  */
-double CropModule::get_FruitBiomassNContent() const {
-  auto rootBiomass = vc_OrganBiomass.at(0);
-  auto fruitBiomass = vc_OrganBiomass.at(3);
-  auto fruitNConcentration = (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
-                             / (fruitBiomass + (pc_ResidueNRatio * (vc_TotalBiomass - rootBiomass - fruitBiomass)));
+double monica::cropModuleGetFruitBiomassNContent(const CropModule* cm) {
+  auto rootBiomass = cm->vc_OrganBiomass.at(0);
+  auto fruitBiomass = cm->vc_OrganBiomass.at(3);
+  auto fruitNConcentration = (cm->vc_TotalBiomassNContent - (rootBiomass * cm->vc_NConcentrationRoot))
+                             / (fruitBiomass + (cm->pc_ResidueNRatio * (cm->vc_TotalBiomass - rootBiomass - fruitBiomass)));
   return fruitBiomass * fruitNConcentration;
 }
 
@@ -4574,75 +4574,87 @@ double calculateCropFreshMatterYield(const VYC& ycs, const vector<double>& bmv) 
  * @brief Returns primary crop yield
  * @return primary yield
  */
-double CropModule::get_PrimaryCropYield() const {
-  return calculateCropYield(pc_OrganIdsForPrimaryYield, vc_OrganBiomass);
+double monica::cropModuleGetPrimaryCropYield(const CropModule* cm) {
+  return calculateCropYield(cm->pc_OrganIdsForPrimaryYield, cm->vc_OrganBiomass);
 }
 
 /**
  * @brief Returns secondary crop yield
  * @return crop yield
  */
-double CropModule::get_SecondaryCropYield() const {
-  return calculateCropYield(pc_OrganIdsForSecondaryYield, vc_OrganBiomass);
+double monica::cropModuleGetSecondaryCropYield(const CropModule* cm) {
+  return calculateCropYield(cm->pc_OrganIdsForSecondaryYield, cm->vc_OrganBiomass);
 }
 
 /**
  * @brief Returns residue biomass
  * @return residue biomass
  */
-double CropModule::get_ResidueBiomass(bool useSecondaryCropYields, double alternativeCropYield) const {
+double monica::cropModuleGetResidueBiomass(const CropModule* cm,
+                                           bool useSecondaryCropYields,
+                                           double alternativeCropYield) {
   auto cropYield = alternativeCropYield >= 0
                      ? alternativeCropYield
-                     : get_PrimaryCropYield() + (useSecondaryCropYields ? get_SecondaryCropYield() : 0);
+                     : cropModuleGetPrimaryCropYield(cm)
+                       + (useSecondaryCropYields ? cropModuleGetSecondaryCropYield(cm) : 0);
 
-  return vc_TotalBiomass - vc_OrganBiomass.at(0) - cropYield;
+  return cm->vc_TotalBiomass - cm->vc_OrganBiomass.at(0) - cropYield;
 }
 
 /**
  * @brief Returns residue N concentration [kg kg-1]
  * @return residue N concentration
  */
-double CropModule::get_ResiduesNConcentration(double alternativePrimaryCropYield) const {
-  auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
-  auto rootBiomass = vc_OrganBiomass.at(0);
+double monica::cropModuleGetResiduesNConcentration(const CropModule* cm, double alternativePrimaryCropYield) {
+  auto primaryCropYield = alternativePrimaryCropYield >= 0
+                            ? alternativePrimaryCropYield
+                            : cropModuleGetPrimaryCropYield(cm);
+  auto rootBiomass = cm->vc_OrganBiomass.at(0);
 
-  return (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
-         / ((primaryCropYield / pc_ResidueNRatio) + (vc_TotalBiomass - rootBiomass - primaryCropYield));
+  return (cm->vc_TotalBiomassNContent - (rootBiomass * cm->vc_NConcentrationRoot))
+         / ((primaryCropYield / cm->pc_ResidueNRatio) + (cm->vc_TotalBiomass - rootBiomass - primaryCropYield));
 }
 
 /**
  * @brief Returns primary yield N concentration [kg kg-1]
  * @return primary yield N concentration
  */
-double CropModule::get_PrimaryYieldNConcentration(double alternativePrimaryCropYield) const {
-  auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
-  auto rootBiomass = vc_OrganBiomass.at(0);
+double monica::cropModuleGetPrimaryYieldNConcentration(const CropModule* cm, double alternativePrimaryCropYield) {
+  auto primaryCropYield = alternativePrimaryCropYield >= 0
+                            ? alternativePrimaryCropYield
+                            : cropModuleGetPrimaryCropYield(cm);
+  auto rootBiomass = cm->vc_OrganBiomass.at(0);
 
-  return (vc_TotalBiomassNContent - (rootBiomass * vc_NConcentrationRoot))
-         / (primaryCropYield + (pc_ResidueNRatio * (vc_TotalBiomass - rootBiomass - primaryCropYield)));
+  return (cm->vc_TotalBiomassNContent - (rootBiomass * cm->vc_NConcentrationRoot))
+         / (primaryCropYield + (cm->pc_ResidueNRatio * (cm->vc_TotalBiomass - rootBiomass - primaryCropYield)));
 }
 
-double CropModule::get_ResiduesNContent(bool useSecondaryCropYields, double alternativePrimaryCropYield,
-                                        double alternativeCropYield) const {
-  return get_ResidueBiomass(useSecondaryCropYields, alternativeCropYield) *
-         get_ResiduesNConcentration(alternativePrimaryCropYield);
+double monica::cropModuleGetResiduesNContent(const CropModule* cm,
+                                             bool useSecondaryCropYields,
+                                             double alternativePrimaryCropYield,
+                                             double alternativeCropYield) {
+  return cropModuleGetResidueBiomass(cm, useSecondaryCropYields, alternativeCropYield)
+         * cropModuleGetResiduesNConcentration(cm, alternativePrimaryCropYield);
 }
 
-double CropModule::get_PrimaryYieldNContent(double alternativePrimaryCropYield) const {
-  auto primaryCropYield = alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_PrimaryCropYield();
-  return primaryCropYield * get_PrimaryYieldNConcentration(alternativePrimaryCropYield);
+double monica::cropModuleGetPrimaryYieldNContent(const CropModule* cm, double alternativePrimaryCropYield) {
+  auto primaryCropYield = alternativePrimaryCropYield >= 0
+                            ? alternativePrimaryCropYield
+                            : cropModuleGetPrimaryCropYield(cm);
+  return primaryCropYield * cropModuleGetPrimaryYieldNConcentration(cm, alternativePrimaryCropYield);
 }
 
-double CropModule::get_RawProteinConcentration() const {
+double monica::cropModuleGetRawProteinConcentration(const CropModule* cm) {
   // Assuming an average N concentration of raw protein of 16%
-  return get_PrimaryYieldNConcentration() * 6.25;
+  return cropModuleGetPrimaryYieldNConcentration(cm) * 6.25;
 }
 
-double CropModule::get_SecondaryYieldNContent(double alternativePrimaryCropYield,
-                                              double alternativeSecondaryCropYield) const {
+double monica::cropModuleGetSecondaryYieldNContent(const CropModule* cm,
+                                                   double alternativePrimaryCropYield,
+                                                   double alternativeSecondaryCropYield) {
   auto secondaryCropYield =
-    alternativeSecondaryCropYield >= 0 ? alternativeSecondaryCropYield : get_SecondaryCropYield();
-  return secondaryCropYield * get_ResiduesNConcentration(alternativePrimaryCropYield);
+    alternativeSecondaryCropYield >= 0 ? alternativeSecondaryCropYield : cropModuleGetSecondaryCropYield(cm);
+  return secondaryCropYield * cropModuleGetResiduesNConcentration(cm, alternativePrimaryCropYield);
 }
 
 /**

@@ -396,7 +396,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
 
     if (exported && spec.organ2specVal.empty()) {
       if (optCarbMgmtData.optCarbonConservation) {
-        double residueBiomass = _currentCropModule->get_ResidueBiomass(
+        double residueBiomass = cropModuleGetResidueBiomass(_currentCropModule.get(),
                                                                        false);
         //kg ha-1, secondary yield is ignored with this approach
         double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
@@ -435,26 +435,26 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
 
         soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
                                     _optCarbonReturnedResidues,
-                                    _currentCropModule->get_ResiduesNConcentration(),
+                                    cropModuleGetResiduesNConcentration(_currentCropModule.get()),
                                     incorporateIntoLayerIndex);
 
         _humusBalanceCarryOver =
           intermediateHumusBalance + _optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq;
       } else { // old default behavior
-        double residueBiomass = _currentCropModule->get_ResidueBiomass(_simPs.p_UseSecondaryYields);
+        double residueBiomass = cropModuleGetResidueBiomass(_currentCropModule.get(), _simPs.p_UseSecondaryYields);
 
         //!@todo Claas: das hier noch berechnen
-        double residueNConcentration = _currentCropModule->get_ResiduesNConcentration();
+        double residueNConcentration = cropModuleGetResiduesNConcentration(_currentCropModule.get());
         debug() << "adding organic matter from residues to soilOrganic" << endl;
         debug() << "residue biomass: " << residueBiomass
           << " Residue N concentration: " << residueNConcentration << endl;
-        debug() << "primary yield biomass: " << _currentCropModule->get_PrimaryCropYield()
-          << " Primary yield N concentration: " << _currentCropModule->get_PrimaryYieldNConcentration() << endl;
-        debug() << "secondary yield biomass: " << _currentCropModule->get_SecondaryCropYield()
-          << " Secondary yield N concentration: " << _currentCropModule->get_PrimaryYieldNConcentration() << endl;
-        debug() << "Residues N content: " << _currentCropModule->get_ResiduesNContent()
-          << " Primary yield N content: " << _currentCropModule->get_PrimaryYieldNContent()
-          << " Secondary yield N content: " << _currentCropModule->get_SecondaryYieldNContent() << endl;
+        debug() << "primary yield biomass: " << cropModuleGetPrimaryCropYield(_currentCropModule.get())
+          << " Primary yield N concentration: " << cropModuleGetPrimaryYieldNConcentration(_currentCropModule.get()) << endl;
+        debug() << "secondary yield biomass: " << cropModuleGetSecondaryCropYield(_currentCropModule.get())
+          << " Secondary yield N concentration: " << cropModuleGetPrimaryYieldNConcentration(_currentCropModule.get()) << endl;
+        debug() << "Residues N content: " << cropModuleGetResiduesNContent(_currentCropModule.get())
+          << " Primary yield N content: " << cropModuleGetPrimaryYieldNContent(_currentCropModule.get())
+          << " Secondary yield N content: " << cropModuleGetSecondaryYieldNContent(_currentCropModule.get()) << endl;
         soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
                                     residueBiomass,
                                     residueNConcentration,
@@ -478,9 +478,9 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
         if (specVal.incorporate) sumOrganResidueBiomassToIncorporate += organBiomass - organYield;
         else sumOrganResidueBiomassAsOverlay += organBiomass - organYield;
       }
-      auto totalResidueBiomass = _currentCropModule->get_ResidueBiomass(false, cropYield);
+      auto totalResidueBiomass = cropModuleGetResidueBiomass(_currentCropModule.get(), false, cropYield);
       auto totalResidueBiomassToIncorporate = totalResidueBiomass - sumOrganResidueBiomassAsOverlay;
-      auto residuesNConcentration = _currentCropModule->get_ResiduesNConcentration(primaryCropYield);
+      auto residuesNConcentration = cropModuleGetResiduesNConcentration(_currentCropModule.get(), primaryCropYield);
       soilOrganicAddOrganicMatter(_soilOrganic.get(), _currentCropModule->residueParameters(),
                                   totalResidueBiomassToIncorporate,
                                   residuesNConcentration,
@@ -494,16 +494,16 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
         << " residue N concentration: " << residuesNConcentration
         << endl
         << "primary yield biomass: " << primaryCropYield
-        << " primary yield N concentration: " << _currentCropModule->get_PrimaryYieldNConcentration(primaryCropYield)
+        << " primary yield N concentration: " << cropModuleGetPrimaryYieldNConcentration(_currentCropModule.get(), primaryCropYield)
         << endl
         << "secondary yield biomass: " << (cropYield - primaryCropYield)
         << " secondary yield N concentration: "
-        << _currentCropModule->get_PrimaryYieldNConcentration(primaryCropYield)
+        << cropModuleGetPrimaryYieldNConcentration(_currentCropModule.get(), primaryCropYield)
         << endl
-        << "residues N content: " << _currentCropModule->get_ResiduesNContent(false, primaryCropYield, cropYield)
-        << " primary yield N content: " << _currentCropModule->get_PrimaryYieldNContent(primaryCropYield)
+        << "residues N content: " << cropModuleGetResiduesNContent(_currentCropModule.get(), false, primaryCropYield, cropYield)
+        << " primary yield N content: " << cropModuleGetPrimaryYieldNContent(_currentCropModule.get(), primaryCropYield)
         << " secondary yield N content: "
-        << _currentCropModule->get_SecondaryYieldNContent(primaryCropYield, cropYield - primaryCropYield)
+        << cropModuleGetSecondaryYieldNContent(_currentCropModule.get(), primaryCropYield, cropYield - primaryCropYield)
         << endl;
     } else {
       //prepare to add the total plant to soilorganic (AOMs)
