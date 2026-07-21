@@ -2656,9 +2656,16 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       hourlySolarEl.push_back(sun_el);
     }
 
-    for (int h = 0; h < 24; ++h) {
-      hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
+    if (cropPs.__hourly_data__.empty()) {
+      for (int h = 0; h < 24; ++h) {
+        hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
+      }
+    } else {
+      if (hourlyAirT.size() != 24) {
+        throw runtime_error("Expected 24 hourly temperature values in hourly input data!");
+      }
     }
+
 
     // vector<double> hourlyGrossCO2Assimilation, hourlyGrossCO2AssimilationReference;
     dailyGP = 0.;
