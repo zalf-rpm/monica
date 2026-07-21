@@ -584,13 +584,13 @@ DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file, bool serialize
     json.decode(allBytes.asChars(), runtimeStateBuilder);
     auto runtimeState = runtimeStateBuilder.asReader();
     res.monica = nullptr;
-    res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+    res.monica = makeMonicaModel(runtimeState.getModelState());
   } else {
     kj::ArrayInputStream ais(allBytes);
     capnp::InputStreamMessageReader message(ais);
     auto runtimeState = message.getRoot<mas::schema::model::monica::RuntimeState>();
     res.monica = nullptr;
-    res.monica = kj::heap<MonicaModel>(runtimeState.getModelState());
+    res.monica = makeMonicaModel(runtimeState.getModelState());
   }
   return res;
 }
@@ -627,7 +627,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     auto dserRes = deserializeFullState(kj::mv(file), env.params.simulationParameters.deserializedMonicaStateFromJson);
     monica = kj::mv(dserRes.monica);
   } else {
-    monica = kj::heap<MonicaModel>(env.params);
+    monica = makeMonicaModel(env.params);
     monica->simulationParametersNC().startDate = env.climateData.startDate();
   }
   bool isSyncIC = false;
@@ -635,7 +635,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     monica->setIntercropping(env.ic);
     isSyncIC = !monica->intercropping().isAsync();
     if (isSyncIC) {
-      monica2 = kj::heap<MonicaModel>(env.params);
+      monica2 = makeMonicaModel(env.params);
       monica2->simulationParametersNC().startDate = env.climateData.startDate();
     }
   }
@@ -833,8 +833,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
       tie(currentCM2, nextAbsoluteCMApplicationDate2) = findNextCultivationMethod2(currentDate, false);
     }
 
-    monica->dailyReset();
-    if (isSyncIC) monica2->dailyReset();
+    monicaModelDailyReset(monica.get());
+    if (isSyncIC) monicaModelDailyReset(monica2.get());
 
     //set the soil moisture of the monica1's soil column to monica2's soil column (from previous day)
     if (isSyncIC) {
@@ -861,10 +861,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
     if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) {
-      monica->incorporateCurrentCrop();
+      monicaModelIncorporateCurrentCrop(monica.get());
     }
     if (isSyncIC && monica2->cropGrowth() && monica2->cropGrowth()->dyingOut) {
-      monica2->incorporateCurrentCrop();
+      monicaModelIncorporateCurrentCrop(monica2.get());
     }
 
     //try to apply dynamic worksteps marked to run before everything else that day
@@ -915,21 +915,23 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     //monica main stepping method
     if (isSyncIC) {
       if (monica2->cropGrowth()) {
-        monica->setOtherCropHeightAndLAIt(monica2->cropGrowth()->vc_CropHeight,
-                                          monica2->cropGrowth()->vc_LeafAreaIndex);
+        monicaModelSetOtherCropHeightAndLAIt(monica.get(),
+                                             monica2->cropGrowth()->vc_CropHeight,
+                                             monica2->cropGrowth()->vc_LeafAreaIndex);
       } else {
-        monica->setOtherCropHeightAndLAIt(-1, -1);
+        monicaModelSetOtherCropHeightAndLAIt(monica.get(), -1, -1);
       }
     }
 
     if (isSyncIC) debug() << "MONICA 1: ";
-    monica->step();
+    monicaModelStep(monica.get());
     if (isSyncIC) {
       if (monica->cropGrowth()) {
-        monica2->setOtherCropHeightAndLAIt(monica->cropGrowth()->vc_CropHeight,
-                                           monica->cropGrowth()->vc_LeafAreaIndex);
+        monicaModelSetOtherCropHeightAndLAIt(monica2.get(),
+                                             monica->cropGrowth()->vc_CropHeight,
+                                             monica->cropGrowth()->vc_LeafAreaIndex);
       } else {
-        monica2->setOtherCropHeightAndLAIt(-1, -1);
+        monicaModelSetOtherCropHeightAndLAIt(monica2.get(), -1, -1);
       }
       debug() << "MONICA 2: ";
       //set the soil moisture of monica2's soil column to monica1's soil column (after running for current day)
@@ -940,7 +942,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
           monica2->soilColumnNC()[i].set_Vs_SoilMoisture_m3(monica->soilColumn()[i].get_Vs_SoilMoisture_m3());
         }
       }
-      monica2->step();
+      monicaModelStep(monica2.get());
     }
     debug() << std::endl;
 

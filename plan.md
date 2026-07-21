@@ -78,6 +78,13 @@
 4. The free-procedure API now lives in `monica::frostcomponent` with unprefixed names.
 5. Build + `monica-run` + `sim-min-out_section_crop.csv` vs `_orig` remained identical after each conversion step.
 
+### `monica-model` (status: started)
+
+1. Step 1 completed: construction + model state serialize/deserialize now run through free functions around a plain `MonicaModel` struct state container.
+2. Step 2 in progress: free-procedure entry points were added for behavioral methods and external call sites were rewired to free procedures (`run-monica`, `daily-monica-fbp-component-main`, `cultivation-method`).
+3. Next in step 2: migrate internal method implementations from member definitions to free-procedure bodies and remove remaining member API surface.
+4. Build + `monica-run` + crop-output identity check remained unchanged after the current conversion batch.
+
 ## What to do next (if starting fresh)
 
 1. Continue in `src/core/soilmoisture_simple.h/.cpp` with the same pattern as soilorganic:

@@ -229,7 +229,7 @@ bool Sowing::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
-  model->seedCrop(_cropToPlant.get());
+  monicaModelSeedCrop(model, _cropToPlant.get());
   // FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
   if (model->simulationParameters().dualKcMethod && model->cropGrowth()) {
     model->cropGrowth()->vc_Kcb_ini = _initialKcb;
@@ -521,7 +521,7 @@ bool Transplant::apply(MonicaModel* model) {
   if (!_cropToPlant || !_cropToPlant->isValid()) return false;
 
   // Step 2: Seed crop - identical to Sowing::apply line 231
-  model->seedCrop(_cropToPlant.get());
+  monicaModelSeedCrop(model, _cropToPlant.get());
 
   // Step 3: Get the crop engine created by seedCrop
   CropModule* cropModule = model->cropGrowth();
@@ -625,7 +625,7 @@ bool Harvest::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   if (model->cropGrowth()) {
-    model->harvestCurrentCrop(_exported, _spec, _optCarbMgmtData, _incorporateIntoLayerNo - 1);
+    monicaModelHarvestCurrentCrop(model, _exported, _spec, _optCarbMgmtData, _incorporateIntoLayerNo - 1);
     if (_sowing) debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
     model->addEvent("Harvest");
   }
@@ -850,7 +850,7 @@ bool MineralFertilization::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   debug() << toString() << endl;
-  model->applyMineralFertiliser(partition(), amount());
+  monicaModelApplyMineralFertiliser(model, partition(), amount());
   model->addEvent("MineralFertilization");
 
   return true;
@@ -987,7 +987,7 @@ bool OrganicFertilization::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   debug() << toString() << endl;
-  model->applyOrganicFertiliser(_params, _amount, _incorporation, _incorporateIntoLayerNo - 1);
+  monicaModelApplyOrganicFertiliser(model, _params, _amount, _incorporation, _incorporateIntoLayerNo - 1);
   model->addEvent("OrganicFertilization");
 
   return true;
@@ -1021,7 +1021,7 @@ bool Tillage::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   debug() << toString() << endl;
-  model->applyTillage(_depth);
+  monicaModelApplyTillage(model, _depth);
   model->addEvent("Tillage");
 
   return true;
@@ -1153,7 +1153,7 @@ bool SaveMonicaState::apply(MonicaModel* model) {
   capnp::MallocMessageBuilder message;
   auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
   const auto modelState = runtimeState.initModelState();
-  model->serialize(modelState);
+  monicaModelSerialize(model, modelState);
 
   if (_toJson) {
     const capnp::JsonCodec json;
@@ -1203,7 +1203,7 @@ bool Irrigation::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   //cout << toString() << endl;
-  model->applyIrrigation(amount(), nitrateConcentration());
+  monicaModelApplyIrrigation(model, amount(), nitrateConcentration());
   // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
   // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
   if (model->simulationParameters().dualKcMethod) {

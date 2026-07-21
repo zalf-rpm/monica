@@ -210,7 +210,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
       debug() << "MONICA: bound monica zeromq output socket to address: " << outputSocketAddress << endl;
     }
 
-    unique_ptr<MonicaModel> monicaUPtr;
+    kj::Own<MonicaModel> monicaUPtr;
     map<ResultId, double> aggregatedValues;
 
     //the possibly active crop
@@ -237,7 +237,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
           if(msgType == "initMonica")
           {
             if(monicaUPtr)
-              monicaUPtr.reset();
+              monicaUPtr = nullptr;
 
             Json& initMsg = msg.json;
 
@@ -245,7 +245,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
             SiteParameters site(initMsg["site"]);
             CentralParameterProvider cpp = readUserParameterFromDatabase(initMsg["centralParameterType"].int_value());
             cpp.siteParameters = site;
-            monicaUPtr = unique_ptr<MonicaModel>(new MonicaModel(cpp));//make_unique<MonicaModel>(cpp);
+            monicaUPtr = makeMonicaModel(cpp);//make_unique<MonicaModel>(cpp);
 
             aggregatedValues.clear();
           }

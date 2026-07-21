@@ -204,14 +204,14 @@ public:
   void runMonica() { //vector<Workstep> dailyWorksteps) {
     debug() << "currentDate: " << monica->currentStepDate().toString() << endl;
 
-    monica->dailyReset();
+    monicaModelDailyReset(monica.get());
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) monica->incorporateCurrentCrop();
+    if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) monicaModelIncorporateCurrentCrop(monica.get());
 
     //monica main stepping method
-    monica->step();
+    monicaModelStep(monica.get());
 
     //store results
     for (auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
@@ -292,7 +292,7 @@ public:
               Soil::updateUnsetPwpFcSatFromToth;
             auto errors = env.merge(envJson);
             monica = nullptr;
-            monica = kj::heap<MonicaModel>(env.params);
+            monica = makeMonicaModel(env.params);
             //monica->initComponents(env.params);
             initMonica();
             envOrStateReceived = true;
@@ -319,8 +319,8 @@ public:
             auto ip = msg.getValue();
             try {
               auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
-              if (monica.get() == nullptr) monica = kj::heap<MonicaModel>(runtimeState.getModelState());
-              else monica->deserialize(runtimeState.getModelState());
+              if (monica.get() == nullptr) monica = makeMonicaModel(runtimeState.getModelState());
+              else monicaModelDeserialize(monica.get(), runtimeState.getModelState());
               envOrStateReceived = true;
             } catch (kj::Exception& e) {
               auto jsonState = ip.getContent().getAs<capnp::Text>();
@@ -329,8 +329,8 @@ public:
               auto runtimeStateBuilder = mmb.initRoot<mas::schema::model::monica::RuntimeState>();
               json.decode(jsonState.asBytes().asChars(), runtimeStateBuilder);
               auto runtimeState = runtimeStateBuilder.asReader();
-              if (monica.get() == nullptr) monica = kj::heap<MonicaModel>(runtimeState.getModelState());
-              else monica->deserialize(runtimeState.getModelState());
+              if (monica.get() == nullptr) monica = makeMonicaModel(runtimeState.getModelState());
+              else monicaModelDeserialize(monica.get(), runtimeState.getModelState());
               envOrStateReceived = true;
             }
             break;
@@ -420,7 +420,7 @@ public:
                   auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
                   KJ_LOG(INFO, "received sowing event for crop", speciesName, "/", cultivarName, " at",
                          eventDate.toIsoDateString());
-                  monica->seedCrop(cropParams);
+                  monicaModelSeedCrop(monica.get(), cropParams);
                   monica->addEvent("Sowing");
                 }
                 break;
@@ -430,7 +430,7 @@ public:
                 if (monica->isCropPlanted()) {
                   KJ_LOG(INFO, "received harvest event at", eventDate.toIsoDateString());
                   Harvest::Spec spec;
-                  monica->harvestCurrentCrop(hp.getExported(), spec);
+                  monicaModelHarvestCurrentCrop(monica.get(), hp.getExported(), spec);
                   monica->addEvent("Harvest");
                 }
                 break;
@@ -440,16 +440,16 @@ public:
               case Event::ExternalType::IRRIGATION: {
                 KJ_LOG(INFO, "received irrigation event at", eventDate.toIsoDateString());
                 auto irr = event.getParams().getAs<mas::schema::model::monica::Params::Irrigation>();
-                monica->applyIrrigation(irr.getAmount(), irr.hasParams()
-                                                           ? irr.getParams().getNitrateConcentration()
-                                                           : 0.0);
+                monicaModelApplyIrrigation(monica.get(),
+                                           irr.getAmount(),
+                                           irr.hasParams() ? irr.getParams().getNitrateConcentration() : 0.0);
                 monica->addEvent("Irrigation");
                 break;
               }
               case Event::ExternalType::TILLAGE: {
                 KJ_LOG(INFO, "received tillage event at", eventDate.toIsoDateString());
                 auto till = event.getParams().getAs<mas::schema::model::monica::Params::Tillage>();
-                monica->applyTillage(till.getDepth());
+                monicaModelApplyTillage(monica.get(), till.getDepth());
                 monica->addEvent("Tillage");
                 break;
               }
@@ -457,8 +457,10 @@ public:
                 auto of = event.getParams().getAs<mas::schema::model::monica::Params::OrganicFertilization>();
                 if (of.hasParams() && of.getParams().hasParams()) {
                   KJ_LOG(INFO, "received organic fertilization event at", eventDate.toIsoDateString());
-                  monica->applyOrganicFertiliser(OrganicMatterParameters(of.getParams().getParams()),
-                                                 of.getAmount(), of.getIncorporation());
+                  monicaModelApplyOrganicFertiliser(monica.get(),
+                                                    OrganicMatterParameters(of.getParams().getParams()),
+                                                    of.getAmount(),
+                                                    of.getIncorporation());
                   monica->addEvent("OrganicFertilization");
                 }
                 break;
@@ -467,7 +469,7 @@ public:
                 auto mf = event.getParams().getAs<mas::schema::model::monica::Params::MineralFertilization>();
                 if (mf.hasPartition()) {
                   KJ_LOG(INFO, "received mineral fertilization event at", eventDate.toIsoDateString());
-                  monica->applyMineralFertiliser(mf.getPartition(), mf.getAmount());
+                  monicaModelApplyMineralFertiliser(monica.get(), mf.getPartition(), mf.getAmount());
                   monica->addEvent("MineralFertilization");
                 }
                 break;
@@ -537,7 +539,7 @@ public:
                     capnp::MallocMessageBuilder message;
                     auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
                     const auto modelState = runtimeState.initModelState();
-                    monica->serialize(modelState);
+                    monicaModelSerialize(monica.get(), modelState);
 
                     auto wrq = ports.out(STATE_OUT).writeRequest();
                     if (ss.getAsJson()) {
