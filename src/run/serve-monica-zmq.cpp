@@ -306,7 +306,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
                     createHarvestingMessage(*cropResult.get(), *monicaUPtr.get());
 
                   //to count the applied fertiliser for the next production process
-                  monica.resetFertiliserCounter();
+                  monicamodel::resetFertiliserCounter(&monica);
                   crop.reset();
                   prevDevStage = 0;
                 }
