@@ -277,7 +277,7 @@ double calcSoilSurfaceTemperature(
 
   if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
 
-  if (st->monica->soilMoisture().snowComponent->getVm_SnowDepth() > 0.0) {
+  if (st->monica->soilMoisture().snowComponent->vm_SnowDepth > 0.0) {
     soilSurfaceTemperature = st->monica->soilMoisture().frostComponent->getTemperatureUnderSnow();
   }
 

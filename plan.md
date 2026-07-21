@@ -53,11 +53,15 @@
 1. The module is being moved under `monica::soiltemperature`.
 2. Remaining trivial accessors should be inlined and removed after the namespace move.
 
-### `crop-module_simple` (status: conversion started)
+### `crop-module_simple` (status: proceduralization pass completed)
 
-1. Deserialization construction no longer uses a dedicated reader constructor.
-2. `makeCropModule(..., reader, ...)` now creates a plain `CropModule` instance and then calls `cropModuleDeserialize(...)`.
-3. Next step is to remove the remaining constructor and move `serialize`/`deserialize` member logic into free procedures directly.
+1. Class-style methods were removed from `CropModule` and replaced by free procedures.
+2. Remaining trivial accessors/setters were inlined to direct struct-member access at call sites.
+3. Non-trivial former methods were converted to free procedures and rewired (including crop growth, dry matter, N/C yield content, maturity/anthesis helpers, transplant and cutting flow, and VOC helpers).
+4. The free-procedure API now lives in `monica::cropmodule` and uses names without the old `cropModule` prefix.
+5. Wrapper layer was removed again: functions were directly renamed and moved, then call sites updated to `cropmodule::...`.
+6. Construction/serialization/deserialization use plain-struct flow via `makeCropModule(...)` plus procedural `cropmodule::serialize` / `cropmodule::deserialize`.
+7. Build and `sim-min-out_section_crop.csv` hash comparison against `_orig` remained unchanged after each conversion batch.
 
 ## What to do next (if starting fresh)
 

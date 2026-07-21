@@ -69,9 +69,10 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
 , vm_SoilPoreVolume(numberOfMoistureLayers, 0.0)
 , vm_Transpiration(numberOfMoistureLayers, 0.0) //intern
 , vm_WaterFlux(numberOfMoistureLayers, 0.0)
-, snowComponent(kj::heap<SnowComponent>(soilColumn, smPs))
+, snowComponent(kj::heap<SnowComponent>())
 , frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
   debug() << "Constructor: SoilMoisture" << endl;
+  snowComponentInitialize(snowComponent.get(), &soilColumn, smPs);
 
   vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
   pt_TimeStep = envPs.p_timeStep;
@@ -175,7 +176,9 @@ void SoilMoisture::deserialize(mas::schema::model::monica::SoilMoistureModuleSta
   vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
   if (reader.hasSnowComponent()) {
     snowComponent = nullptr;
-    snowComponent = kj::heap<SnowComponent>(soilColumn, reader.getSnowComponent());
+    snowComponent = kj::heap<SnowComponent>();
+    snowComponent->soilColumn = &soilColumn;
+    snowComponentDeserialize(snowComponent.get(), reader.getSnowComponent());
   }
   if (reader.hasFrostComponent()) {
     frostComponent = nullptr;
@@ -241,7 +244,7 @@ void SoilMoisture::serialize(mas::schema::model::monica::SoilMoistureModuleState
   setCapnpList(vm_Transpiration, builder.initTranspiration((capnp::uint)vm_Transpiration.size()));
   setCapnpList(vm_WaterFlux, builder.initWaterFlux((capnp::uint)vm_WaterFlux.size()));
   builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
-  if (snowComponent) snowComponent->serialize(builder.initSnowComponent());
+  if (snowComponent) snowComponentSerialize(snowComponent.get(), builder.initSnowComponent());
   if (frostComponent) frostComponent->serialize(builder.initFrostComponent());
 }
 
@@ -323,11 +326,11 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   soilColumn.vm_GroundwaterTableLayer = vm_GroundwaterTableLayer;
 
   // calculates snow layer water storage and release
-  snowComponent->calcSnowLayer(vw_MeanAirTemperature, vc_NetPrecipitation);
-  double vm_WaterToInfiltrate = snowComponent->getWaterToInfiltrate();
+  snowComponentCalcSnowLayer(snowComponent.get(), vw_MeanAirTemperature, vc_NetPrecipitation);
+  double vm_WaterToInfiltrate = snowComponent->vm_WaterToInfiltrate;
 
   // Calculates frost and thaw depth and switches lambda
-  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->getVm_SnowDepth());
+  frostComponent->calcSoilFrost(vw_MeanAirTemperature, snowComponent->vm_SnowDepth);
 
   // calculates infiltration of water from surface
   fm_Infiltration(vm_WaterToInfiltrate);
@@ -979,7 +982,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
 
-  double vm_SnowDepth = snowComponent->getVm_SnowDepth();
+  double vm_SnowDepth = snowComponent->vm_SnowDepth;
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
   pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
@@ -1511,15 +1514,15 @@ double SoilMoisture::get_KcFactor() const {
  * @return Value for snow depth
  */
 double SoilMoisture::get_SnowDepth() const {
-  return snowComponent->getVm_SnowDepth();
+  return snowComponent->vm_SnowDepth;
 }
 
 double SoilMoisture::getMaxSnowDepth() const {
-  return snowComponent->getMaxSnowDepth();
+  return snowComponent->vm_maxSnowDepth;
 }
 
 double SoilMoisture::getAccumulatedSnowDepth() const {
-  return snowComponent->getAccumulatedSnowDepth();
+  return snowComponent->vm_AccumulatedSnowDepth;
 }
 
 double SoilMoisture::getAccumulatedFrostDepth() const {
@@ -1535,6 +1538,6 @@ double SoilMoisture::getTemperatureUnderSnow() const {
 }
 
 std::pair<double, double> SoilMoisture::getSnowDepthAndCalcTemperatureUnderSnow(double avgAirTemp) const {
-  double snowDepth = snowComponent->getVm_SnowDepth();
+  double snowDepth = snowComponent->vm_SnowDepth;
   return make_pair(snowDepth, frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
 }

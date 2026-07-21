@@ -26,33 +26,8 @@ namespace monica
 class SoilColumn;
 struct SoilMoistureModuleParameters;
   
-class SnowComponent {
-public:
-  SnowComponent(SoilColumn& sc, const SoilMoistureModuleParameters& smps);
-  ~SnowComponent() {}
-
-  SnowComponent(SoilColumn& sc, mas::schema::model::monica::SnowModuleState::Reader reader) : soilColumn(sc) { deserialize(reader); }
-  void deserialize(mas::schema::model::monica::SnowModuleState::Reader reader);
-  void serialize(mas::schema::model::monica::SnowModuleState::Builder builder) const;
-
-  void calcSnowLayer(double vw_MeanAirTemperature, double vc_NetPrecipitation);
-
-  double getVm_SnowDepth() const { return this->vm_SnowDepth; }
-  double getWaterToInfiltrate() const { return this->vm_WaterToInfiltrate; }
-  double getMaxSnowDepth() const { return this->vm_maxSnowDepth; }
-  double getAccumulatedSnowDepth() const { return this->vm_AccumulatedSnowDepth; }
-
-private:
-  double calcSnowMelt(double vw_MeanAirTemperature);
-  double calcNetPrecipitation(double mean_air_temperature, double net_precipitation, double& net_precipitation_water, double& net_precipitation_snow);
-  double calcRefreeze(double mean_air_temperature);
-  double calcNewSnowDensity(double vw_MeanAirTemperature, double vm_NetPrecipitationSnow);
-  double calcAverageSnowDensity(double net_precipitation_snow, double new_snow_density);
-  double calcLiquidWaterRetainedInSnow(double frozen_water_in_snow, double snow_water_equivalent);
-  double calcPotentialInfiltration(double net_precipitation, double snow_layer_water_release, double snow_depth);
-  void calcSnowDepth(double snow_water_equivalent);
-
-  SoilColumn& soilColumn;
+struct SnowComponent {
+  SoilColumn* soilColumn{ nullptr };
 
   double vm_SnowDensity{ 0.0 }; //!< Snow density [kg dm-3]
   double vm_SnowDepth{ 0.0 }; //!< Snow depth [mm]
@@ -78,6 +53,22 @@ private:
   double vm_SnowRetentionCapacityMax;             //!< Maximum liquid water retention capacity in snow [mm]
 };
 
+void snowComponentInitialize(SnowComponent* sc, SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps);
+void snowComponentDeserialize(SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Reader reader);
+void snowComponentSerialize(const SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Builder builder);
+void snowComponentCalcSnowLayer(SnowComponent* sc, double meanAirTemperature, double netPrecipitation);
+double snowComponentCalcSnowMelt(const SnowComponent* sc, double meanAirTemperature);
+double snowComponentCalcNetPrecipitation(
+  const SnowComponent* sc,
+  double meanAirTemperature,
+  double netPrecipitation,
+  double& netPrecipitationWater,
+  double& netPrecipitationSnow);
+double snowComponentCalcRefreeze(const SnowComponent* sc, double meanAirTemperature);
+double snowComponentCalcNewSnowDensity(const SnowComponent* sc, double meanAirTemperature, double netPrecipitationSnow);
+double snowComponentCalcAverageSnowDensity(const SnowComponent* sc, double netPrecipitationSnow, double newSnowDensity);
+double snowComponentCalcLiquidWaterRetainedInSnow(const SnowComponent* sc, double frozenWaterInSnow, double snowWaterEquivalent);
+double snowComponentCalcPotentialInfiltration(SnowComponent* sc, double netPrecipitation, double snowLayerWaterRelease, double snowDepth);
+void snowComponentCalcSnowDepth(SnowComponent* sc, double snowWaterEquivalent);
+
 } // namespace monica
-
-

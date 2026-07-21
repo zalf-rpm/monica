@@ -84,7 +84,8 @@ void initializeFromParams(SoilMoisture* sm) {
     // original [8640 mm d-1]
   }
 
-  sm->snowComponent = kj::heap<SnowComponent>(soilColumn, smPs);
+  sm->snowComponent = kj::heap<SnowComponent>();
+  snowComponentInitialize(sm->snowComponent.get(), &soilColumn, smPs);
   sm->frostComponent = kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep);
 
   //  double vm_GroundwaterDepth = 0.0;
@@ -183,11 +184,11 @@ void step(SoilMoisture* sm,
   sm->soilColumn.vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
 
   // calculates snow layer water storage and release
-  sm->snowComponent->calcSnowLayer(vw_MeanAirTemperature, sm->vc_NetPrecipitation);
-  double vm_WaterToInfiltrate = sm->snowComponent->getWaterToInfiltrate();
+  snowComponentCalcSnowLayer(sm->snowComponent.get(), vw_MeanAirTemperature, sm->vc_NetPrecipitation);
+  double vm_WaterToInfiltrate = sm->snowComponent->vm_WaterToInfiltrate;
 
   // Calculates frost and thaw depth and switches lambda
-  sm->frostComponent->calcSoilFrost(vw_MeanAirTemperature, sm->snowComponent->getVm_SnowDepth());
+  sm->frostComponent->calcSoilFrost(vw_MeanAirTemperature, sm->snowComponent->vm_SnowDepth);
 
   // calculates infiltration of water from surface
   infiltration(sm, vm_WaterToInfiltrate);
@@ -953,7 +954,7 @@ void evapotranspiration(SoilMoisture* sm,
   vm_EvaporatedFromSurface = 0.0;
   bool vm_EvaporationFromSurface = false;
 
-  double vm_SnowDepth = snowComponent->getVm_SnowDepth();
+  double vm_SnowDepth = snowComponent->vm_SnowDepth;
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
   pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
@@ -1570,7 +1571,9 @@ void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModul
   sm->vm_XSACriticalSoilMoisture = reader.getXSACriticalSoilMoisture();
   if (reader.hasSnowComponent()) {
     sm->snowComponent = nullptr;
-    sm->snowComponent = kj::heap<SnowComponent>(sm->soilColumn, reader.getSnowComponent());
+    sm->snowComponent = kj::heap<SnowComponent>();
+    sm->snowComponent->soilColumn = &sm->soilColumn;
+    snowComponentDeserialize(sm->snowComponent.get(), reader.getSnowComponent());
   }
   if (reader.hasFrostComponent()) {
     sm->frostComponent = nullptr;
@@ -1636,12 +1639,12 @@ void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureM
   setCapnpList(sm->vm_Transpiration, builder.initTranspiration((capnp::uint)sm->vm_Transpiration.size()));
   setCapnpList(sm->vm_WaterFlux, builder.initWaterFlux((capnp::uint)sm->vm_WaterFlux.size()));
   builder.setXSACriticalSoilMoisture(sm->vm_XSACriticalSoilMoisture);
-  if (sm->snowComponent) sm->snowComponent->serialize(builder.initSnowComponent());
+  if (sm->snowComponent) snowComponentSerialize(sm->snowComponent.get(), builder.initSnowComponent());
   if (sm->frostComponent) sm->frostComponent->serialize(builder.initFrostComponent());
 }
 
 std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp) {
-  double snowDepth = sm->snowComponent->getVm_SnowDepth();
+  double snowDepth = sm->snowComponent->vm_SnowDepth;
   return make_pair(snowDepth, sm->frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
 }
 
