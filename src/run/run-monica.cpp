@@ -338,7 +338,7 @@ std::function<bool(const MonicaModel &)> Spec::createExpressionFunc(Json j) {
         auto day = parseInt<uint8_t>(s[2]);
 
         auto f = [day, month, year](const MonicaModel &monica) {
-          auto cd = monica.currentStepDate();
+          auto cd = monica._currentStepDate;
 
           // build date to compare against
           // apply min() for day, to allow for matching of the last day for each month by choosing 31st
@@ -352,7 +352,7 @@ std::function<bool(const MonicaModel &)> Spec::createExpressionFunc(Json j) {
         return f;
       } else { //treat all other strings as potential workstep event
         return [jts](const MonicaModel &monica) {
-          const auto &currentEvents = monica.currentEvents();
+          const auto &currentEvents = monica._currentEvents;
           return currentEvents.find(jts) != currentEvents.end();
         };
       }
@@ -628,23 +628,23 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     monica = kj::mv(dserRes.monica);
   } else {
     monica = makeMonicaModel(env.params);
-    monica->simulationParametersNC().startDate = env.climateData.startDate();
+    monica->_simPs.startDate = env.climateData.startDate();
   }
   bool isSyncIC = false;
   if (isIC) {
-    monica->setIntercropping(env.ic);
-    isSyncIC = !monica->intercropping().isAsync();
+    monica->_intercropping = env.ic;
+    isSyncIC = !monica->_intercropping.isAsync();
     if (isSyncIC) {
       monica2 = makeMonicaModel(env.params);
-      monica2->simulationParametersNC().startDate = env.climateData.startDate();
+      monica2->_simPs.startDate = env.climateData.startDate();
     }
   }
 
-  monica->simulationParametersNC().endDate = env.climateData.endDate();
-  monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
+  monica->_simPs.endDate = env.climateData.endDate();
+  monica->_simPs.noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
   if (isSyncIC) {
-    monica2->simulationParametersNC().endDate = env.climateData.endDate();
-    monica2->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
+    monica2->_simPs.endDate = env.climateData.endDate();
+    monica2->_simPs.noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
   }
 
   debug() << "currentDate" << endl;
@@ -817,8 +817,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   vector<StoreData> store2;
   if (isSyncIC) store2 = setupStorage(env.events2, env.climateData.startDate(), env.climateData.endDate());
 
-  monica->addEvent("run-started");
-  if (isSyncIC) monica2->addEvent("run-started");
+  monica->_currentEvents.insert("run-started");
+  if (isSyncIC) monica2->_currentEvents.insert("run-started");
   for (size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate) {
     debug() << "currentDate: " << currentDate.toString() << endl;
 
@@ -838,32 +838,32 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
     //set the soil moisture of the monica1's soil column to monica2's soil column (from previous day)
     if (isSyncIC) {
-      const auto& cps = monica->cropParameters();
+      const auto& cps = monica->_cropPs;
       if (cps.twoWaySync && cps.sequentialWaterUse) {
-        auto nols = monica->soilColumnNC().size();
-        KJ_ASSERT((nols == monica2->soilColumnNC().size()));
+        auto nols = monica->_soilColumn->size();
+        KJ_ASSERT((nols == monica2->_soilColumn->size()));
         for (size_t i = 0; i < nols; i++) {
-          monica->soilColumnNC()[i].set_Vs_SoilMoisture_m3(monica2->soilColumn()[i].get_Vs_SoilMoisture_m3());
+          (*(monica->_soilColumn))[i].set_Vs_SoilMoisture_m3((*(monica2->_soilColumn))[i].get_Vs_SoilMoisture_m3());
         }
       }
     }
 
-    monica->setCurrentStepDate(currentDate);
-    if (isSyncIC) monica2->setCurrentStepDate(currentDate);
-    monica->setCurrentStepClimateData(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
+    monica->_currentStepDate = currentDate;
+    if (isSyncIC) monica2->_currentStepDate = currentDate;
+    monica->_climateData.push_back(env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
     if (isSyncIC) {
       auto cd = env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude);
       // in case of sequential water use activated, set the precipitation for the second monica to 0
-      if (monica->cropParameters().sequentialWaterUse) cd[Climate::precip] = 0;
-      monica2->setCurrentStepClimateData(cd);
+      if (monica->_cropPs.sequentialWaterUse) cd[Climate::precip] = 0;
+      monica2->_climateData.push_back(cd);
     }
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) {
+    if (monica->_currentCropModule && monica->_currentCropModule->dyingOut) {
       monicaModelIncorporateCurrentCrop(monica.get());
     }
-    if (isSyncIC && monica2->cropGrowth() && monica2->cropGrowth()->dyingOut) {
+    if (isSyncIC && monica2->_currentCropModule && monica2->_currentCropModule->dyingOut) {
       monicaModelIncorporateCurrentCrop(monica2.get());
     }
 
@@ -889,21 +889,21 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
       debug() << "MONICA 2: next abs app-date: " << nextAbsoluteCMApplicationDate2.toString() << endl;
 
       // calculate phRedux if set to automatic
-      if (monica2->cropParameters().pc_intercropping_autoPhRedux &&
-          monica2->currentEvents().find("Sowing") != monica2->currentEvents().end() &&
-          monica->cropGrowth() != nullptr) {
-        auto cg1 = monica->cropGrowth();
+      if (monica2->_cropPs.pc_intercropping_autoPhRedux &&
+          monica2->_currentEvents.find("Sowing") != monica2->_currentEvents.end() &&
+          monica->_currentCropModule.get() != nullptr) {
+        auto cg1 = monica->_currentCropModule.get();
         // crop 1 (wheat) has not yet reached anthesis, use first part of curve
         auto anthesisStage = kj::get<1>(cropmodule::anthesisBetweenStages(cg1));
-        auto dvsPhr = monica2->cropParameters().pc_intercropping_dvs_phr;
+        auto dvsPhr = monica2->_cropPs.pc_intercropping_dvs_phr;
         if(cg1->vc_DevelopmentalStage < anthesisStage) {
-          monica->cropParametersNC().pc_intercropping_phRedux =
-          monica2->cropParametersNC().pc_intercropping_phRedux = log10(cropmodule::getCurrentTotalTemperatureSum(cg1)) / dvsPhr;
+          monica->_cropPs.pc_intercropping_phRedux =
+          monica2->_cropPs.pc_intercropping_phRedux = log10(cropmodule::getCurrentTotalTemperatureSum(cg1)) / dvsPhr;
         } else {
           auto tempSumAtAnthesis = cropmodule::sumStageTemperatureSums(cg1, 0, anthesisStage);
           auto totTempSum = cropmodule::sumStageTemperatureSums(cg1, 0, -1);
-          monica->cropParametersNC().pc_intercropping_phRedux =
-          monica2->cropParametersNC().pc_intercropping_phRedux = (log10(tempSumAtAnthesis) / dvsPhr)
+          monica->_cropPs.pc_intercropping_phRedux =
+          monica2->_cropPs.pc_intercropping_phRedux = (log10(tempSumAtAnthesis) / dvsPhr)
                                                                  - (log10(tempSumAtAnthesis) / dvsPhr /
                                                                     (totTempSum - tempSumAtAnthesis)
                                                                     * (cropmodule::getCurrentTotalTemperatureSum(cg1) -
@@ -914,10 +914,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
     //monica main stepping method
     if (isSyncIC) {
-      if (monica2->cropGrowth()) {
+      if (monica2->_currentCropModule) {
         monicaModelSetOtherCropHeightAndLAIt(monica.get(),
-                                             monica2->cropGrowth()->vc_CropHeight,
-                                             monica2->cropGrowth()->vc_LeafAreaIndex);
+                                             monica2->_currentCropModule->vc_CropHeight,
+                                             monica2->_currentCropModule->vc_LeafAreaIndex);
       } else {
         monicaModelSetOtherCropHeightAndLAIt(monica.get(), -1, -1);
       }
@@ -926,20 +926,20 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     if (isSyncIC) debug() << "MONICA 1: ";
     monicaModelStep(monica.get());
     if (isSyncIC) {
-      if (monica->cropGrowth()) {
+      if (monica->_currentCropModule) {
         monicaModelSetOtherCropHeightAndLAIt(monica2.get(),
-                                             monica->cropGrowth()->vc_CropHeight,
-                                             monica->cropGrowth()->vc_LeafAreaIndex);
+                                             monica->_currentCropModule->vc_CropHeight,
+                                             monica->_currentCropModule->vc_LeafAreaIndex);
       } else {
         monicaModelSetOtherCropHeightAndLAIt(monica2.get(), -1, -1);
       }
       debug() << "MONICA 2: ";
       //set the soil moisture of monica2's soil column to monica1's soil column (after running for current day)
-      if (monica->cropParameters().sequentialWaterUse) {
-        auto nols = monica->soilColumnNC().size();
-        KJ_ASSERT((nols == monica2->soilColumnNC().size()));
+      if (monica->_cropPs.sequentialWaterUse) {
+        auto nols = monica->_soilColumn->size();
+        KJ_ASSERT((nols == monica2->_soilColumn->size()));
         for (size_t i = 0; i < nols; i++) {
-          monica2->soilColumnNC()[i].set_Vs_SoilMoisture_m3(monica->soilColumn()[i].get_Vs_SoilMoisture_m3());
+          (*(monica2->_soilColumn))[i].set_Vs_SoilMoisture_m3((*(monica->_soilColumn))[i].get_Vs_SoilMoisture_m3());
         }
       }
       monicaModelStep(monica2.get());

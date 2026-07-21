@@ -191,24 +191,24 @@ public:
 
     KJ_LOG(INFO, "starting Monica");
 
-    monica->simulationParametersNC().startDate = env.climateData.startDate();
-    monica->simulationParametersNC().endDate = env.climateData.endDate();
-    monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.
+    monica->_simPs.startDate = env.climateData.startDate();
+    monica->_simPs.endDate = env.climateData.endDate();
+    monica->_simPs.noOfPreviousDaysSerializedClimateData = env.params.simulationParameters.
       noOfPreviousDaysSerializedClimateData;
 
     store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
-    monica->addEvent("run-started");
+    monica->_currentEvents.insert("run-started");
   }
 
 
   void runMonica() { //vector<Workstep> dailyWorksteps) {
-    debug() << "currentDate: " << monica->currentStepDate().toString() << endl;
+    debug() << "currentDate: " << monica->_currentStepDate.toString() << endl;
 
     monicaModelDailyReset(monica.get());
 
     // test if monica's crop has been dying in previous step
     // if yes, it will be incorporated into soil
-    if (monica->cropGrowth() && monica->cropGrowth()->dyingOut) monicaModelIncorporateCurrentCrop(monica.get());
+    if (monica->_currentCropModule && monica->_currentCropModule->dyingOut) monicaModelIncorporateCurrentCrop(monica.get());
 
     //monica main stepping method
     monicaModelStep(monica.get());
@@ -390,8 +390,8 @@ public:
                 KJ_LOG(INFO, "received weather data at", eventDate.toIsoDateString());
                 auto dw = event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
                 auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
-                monica->setCurrentStepDate(eventDate);
-                monica->setCurrentStepClimateData(climateData);
+                monica->_currentStepDate = eventDate;
+                monica->_climateData.push_back(climateData);
                 runMonica();
                 //create daily output
                 finalizeDaily();
@@ -421,17 +421,17 @@ public:
                   KJ_LOG(INFO, "received sowing event for crop", speciesName, "/", cultivarName, " at",
                          eventDate.toIsoDateString());
                   monicaModelSeedCrop(monica.get(), cropParams);
-                  monica->addEvent("Sowing");
+                  monica->_currentEvents.insert("Sowing");
                 }
                 break;
               }
               case Event::ExternalType::HARVEST: {
                 auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
-                if (monica->isCropPlanted()) {
+                if (monica->_currentCropModule) {
                   KJ_LOG(INFO, "received harvest event at", eventDate.toIsoDateString());
                   Harvest::Spec spec;
                   monicaModelHarvestCurrentCrop(monica.get(), hp.getExported(), spec);
-                  monica->addEvent("Harvest");
+                  monica->_currentEvents.insert("Harvest");
                 }
                 break;
               }
@@ -443,14 +443,14 @@ public:
                 monicaModelApplyIrrigation(monica.get(),
                                            irr.getAmount(),
                                            irr.hasParams() ? irr.getParams().getNitrateConcentration() : 0.0);
-                monica->addEvent("Irrigation");
+                monica->_currentEvents.insert("Irrigation");
                 break;
               }
               case Event::ExternalType::TILLAGE: {
                 KJ_LOG(INFO, "received tillage event at", eventDate.toIsoDateString());
                 auto till = event.getParams().getAs<mas::schema::model::monica::Params::Tillage>();
                 monicaModelApplyTillage(monica.get(), till.getDepth());
-                monica->addEvent("Tillage");
+                monica->_currentEvents.insert("Tillage");
                 break;
               }
               case Event::ExternalType::ORGANIC_FERTILIZATION: {
@@ -461,7 +461,7 @@ public:
                                                     OrganicMatterParameters(of.getParams().getParams()),
                                                     of.getAmount(),
                                                     of.getIncorporation());
-                  monica->addEvent("OrganicFertilization");
+                  monica->_currentEvents.insert("OrganicFertilization");
                 }
                 break;
               }
@@ -470,7 +470,7 @@ public:
                 if (mf.hasPartition()) {
                   KJ_LOG(INFO, "received mineral fertilization event at", eventDate.toIsoDateString());
                   monicaModelApplyMineralFertiliser(monica.get(), mf.getPartition(), mf.getAmount());
-                  monica->addEvent("MineralFertilization");
+                  monica->_currentEvents.insert("MineralFertilization");
                 }
                 break;
               }
@@ -520,9 +520,9 @@ public:
                       organId2exportFraction[organId] = cs.getExportPercentage() / 100.0;
                     }
                   }
-                  cropmodule::applyCutting(monica->cropGrowth(), organId2cuttingSpec, organId2exportFraction,
+                  cropmodule::applyCutting(monica->_currentCropModule.get(), organId2cuttingSpec, organId2exportFraction,
                                          c.getCutMaxAssimilationRatePercentage() / 100.0);
-                  monica->addEvent("Cutting");
+                  monica->_currentEvents.insert("Cutting");
                 }
                 break;
               }
@@ -533,7 +533,7 @@ public:
                     auto ss = event.getParams().getAs<mas::schema::model::monica::Params::SaveState>();
                     KJ_LOG(INFO, "received save state event at", eventDate.toIsoDateString());
 
-                    monica->simulationParametersNC().noOfPreviousDaysSerializedClimateData = ss.
+                    monica->_simPs.noOfPreviousDaysSerializedClimateData = ss.
                       getNoOfPreviousDaysSerializedClimateData();
 
                     capnp::MallocMessageBuilder message;

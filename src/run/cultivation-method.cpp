@@ -127,7 +127,7 @@ json11::Json Workstep::to_json() const {
 }
 
 bool Workstep::apply(MonicaModel* model) {
-  model->addEvent("Workstep");
+  model->_currentEvents.insert("Workstep");
   return true;
 }
 
@@ -146,8 +146,8 @@ bool Workstep::condition(MonicaModel* model) {
     return false;
   }
 
-  const auto& currEvents = model->currentEvents();
-  const auto& prevEvents = model->previousDaysEvents();
+  const auto& currEvents = model->_currentEvents;
+  const auto& prevEvents = model->_previousDaysEvents;
 
   auto ceit = currEvents.find(_afterEvent);
   if (_daysAfterEventCountActivated) {
@@ -231,10 +231,10 @@ bool Sowing::apply(MonicaModel* model) {
   debug() << "sowing crop: " << _crop->toString() << " at: " << _crop->seedDate().toString() << endl;
   monicaModelSeedCrop(model, _cropToPlant.get());
   // FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
-  if (model->simulationParameters().dualKcMethod && model->cropGrowth()) {
-    model->cropGrowth()->vc_Kcb_ini = _initialKcb;
+  if (model->_simPs.dualKcMethod && model->_currentCropModule) {
+    model->_currentCropModule->vc_Kcb_ini = _initialKcb;
   }
-  model->addEvent("Sowing");
+  model->_currentEvents.insert("Sowing");
 
   return true;
 }
@@ -310,9 +310,9 @@ bool isSoilMoistureOk(MonicaModel* model,
                       double minPercentASW,
                       double maxPercentASW) {
   bool soilMoistureOk = false;
-  double pwp = model->soilColumn().at(0).vs_PermanentWiltingPoint();
-  double sm = max(0.0, model->soilColumn().at(0).get_Vs_SoilMoisture_m3() - pwp);
-  double asw = model->soilColumn().at(0).vs_FieldCapacity() - pwp;
+  double pwp = model->_soilColumn->at(0).vs_PermanentWiltingPoint();
+  double sm = max(0.0, model->_soilColumn->at(0).get_Vs_SoilMoisture_m3() - pwp);
+  double asw = model->_soilColumn->at(0).vs_FieldCapacity() - pwp;
   double currentPercentASW = sm / asw * 100.0;
   soilMoistureOk = minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
 
@@ -350,13 +350,13 @@ bool isSoilTemperatureOk(
 
 
 bool AutomaticSowing::apply(MonicaModel* model) {
-  auto currentDate = model->currentStepDate();
+  auto currentDate = model->_currentStepDate;
 
   //setDate(currentDate); //-> commented out, causes the identification as dynamic workstep to fail
   crop()->setSeedDate(currentDate);
 
   Sowing::apply(model);
-  model->addEvent("AutomaticSowing");
+  model->_currentEvents.insert("AutomaticSowing");
   _cropSeeded = true;
   _inSowingRange = false;
 
@@ -371,7 +371,7 @@ std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(
   return [this](MonicaModel* model) -> double {
     double avgSoilTemp = 0;
     size_t i = 0;
-    for (auto size = model->soilColumn().getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++) {
+    for (auto size = model->_soilColumn->getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++) {
       avgSoilTemp += model->soilTemperature().soilColumn->at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
@@ -381,7 +381,7 @@ std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(
 bool AutomaticSowing::condition(MonicaModel* model) {
   if (_cropSeeded) return false;
 
-  auto currentDate = model->currentStepDate();
+  auto currentDate = model->_currentStepDate;
 
   if (!_inSowingRange && currentDate < _absEarliestDate) return false;
   else _inSowingRange = true;
@@ -393,7 +393,7 @@ bool AutomaticSowing::condition(MonicaModel* model) {
     if (!isSoilTemperatureOk(_getAvgSoilTemps(), _daysInSoilTempWindow, _sowingIfAboveAvgSoilTemp)) return false;
   }
 
-  const auto& cd = model->climateData();
+  const auto& cd = model->_climateData;
   auto currentCd = cd.back();
 
   auto avg = [&](Climate::ACD acd) {
@@ -524,7 +524,7 @@ bool Transplant::apply(MonicaModel* model) {
   monicaModelSeedCrop(model, _cropToPlant.get());
 
   // Step 3: Get the crop engine created by seedCrop
-  CropModule* cropModule = model->cropGrowth();
+  CropModule* cropModule = model->_currentCropModule;
   if (!cropModule) return false;
 
   // Step 4: Force the transplant initial state (overrides germination defaults)
@@ -532,10 +532,10 @@ bool Transplant::apply(MonicaModel* model) {
                                  _initRootMass, _initLeafMass, _initShootMass, _postTransplantDelay);
 
   // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
-  if (model->simulationParameters().dualKcMethod) cropModule->vc_Kcb_ini = _initialKcb;
+  if (model->_simPs.dualKcMethod) cropModule->vc_Kcb_ini = _initialKcb;
 
   // Step 6: Register the event
-  model->addEvent("Transplant");
+  model->_currentEvents.insert("Transplant");
 
   return true;
 }
@@ -624,10 +624,10 @@ json11::Json Harvest::to_json(bool includeFullCropParameters) const {
 bool Harvest::apply(MonicaModel* model) {
   Workstep::apply(model);
 
-  if (model->cropGrowth()) {
+  if (model->_currentCropModule) {
     monicaModelHarvestCurrentCrop(model, _exported, _spec, _optCarbMgmtData, _incorporateIntoLayerNo - 1);
     if (_sowing) debug() << "harvesting crop: " << _sowing->crop()->toString() << " at: " << date().toString() << endl;
-    model->addEvent("Harvest");
+    model->_currentEvents.insert("Harvest");
   }
 
   return true;
@@ -682,11 +682,11 @@ json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const {
 
 bool AutomaticHarvest::apply(MonicaModel* model) {
   //setDate(model->currentStepDate()); //-> commented out, caused the detection as dynamic workstep to fail
-  if (_sowing) _sowing->crop()->setHarvestDate(model->currentStepDate());
+  if (_sowing) _sowing->crop()->setHarvestDate(model->_currentStepDate);
 
   Harvest::apply(model);
 
-  model->addEvent("AutomaticHarvest");
+  model->_currentEvents.insert("AutomaticHarvest");
   _cropHarvested = true;
 
   return true;
@@ -695,15 +695,15 @@ bool AutomaticHarvest::apply(MonicaModel* model) {
 bool AutomaticHarvest::condition(MonicaModel* model) {
   bool conditionMet = false;
 
-  auto cg = model->cropGrowth();
+  auto* cg = model->_currentCropModule.get();
   //got a crop and not yet harvested
   if (cg && !_cropHarvested)
     conditionMet =
-      model->currentStepDate() >= _absLatestDate //harvest after or at latest date
+      model->_currentStepDate >= _absLatestDate //harvest after or at latest date
       || (_harvestTime == "maturity"
-          && cropmodule::maturityReached(model->cropGrowth()) //has maturity been reached
+          && cropmodule::maturityReached(model->_currentCropModule) //has maturity been reached
           && isSoilMoistureOk(model, _minPercentASW, _maxPercentASW) //check soil moisture
-          && isPrecipitationOk(model->climateData(), _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
+          && isPrecipitationOk(model->_climateData, _max3dayPrecipSum, _maxCurrentDayPrecipSum)); //check precipitation
 
   return conditionMet;
 }
@@ -805,13 +805,13 @@ json11::Json Cutting::to_json() const {
 bool Cutting::apply(MonicaModel* model) {
   Workstep::apply(model);
 
-  assert(model->cropGrowth());
-  debug() << "Cutting crop: " << model->cropGrowth()->speciesPs.pc_SpeciesId << " at: " << date().toString()
+  assert(model->_currentCropModule);
+  debug() << "Cutting crop: " << model->_currentCropModule->speciesPs.pc_SpeciesId << " at: " << date().toString()
     << endl;
 
-  cropmodule::applyCutting(model->cropGrowth(), _organId2cuttingSpec, _organId2exportFraction,
+  cropmodule::applyCutting(model->_currentCropModule, _organId2cuttingSpec, _organId2exportFraction,
                          _cutMaxAssimilationRateFraction);
-  model->addEvent("Cutting");
+  model->_currentEvents.insert("Cutting");
 
   return true;
 }
@@ -851,7 +851,7 @@ bool MineralFertilization::apply(MonicaModel* model) {
 
   debug() << toString() << endl;
   monicaModelApplyMineralFertiliser(model, partition(), amount());
-  model->addEvent("MineralFertilization");
+  model->_currentEvents.insert("MineralFertilization");
 
   return true;
 }
@@ -910,15 +910,15 @@ json11::Json NDemandFertilization::to_json() const {
 bool NDemandFertilization::apply(MonicaModel* model) {
   Workstep::apply(model);
 
-  double rd = model->cropGrowth()->vc_RootingDepth_m;
+  double rd = model->_currentCropModule->vc_RootingDepth_m;
   debug() << toString() << endl;
-  double appliedAmount = model->soilColumnNC().applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth,
-                                                                                  _Ndemand);
-  model->addDailySumFertiliser(appliedAmount);
+  double appliedAmount = model->_soilColumn->applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth,
+                                                                                _Ndemand);
+  model->_dailySumFertiliser += appliedAmount;
   _appliedFertilizer = true;
   //record date of application until next reinit
-  setDate(model->currentStepDate());
-  model->addEvent("NDemandFertilization");
+  setDate(model->_currentStepDate);
+  model->_currentEvents.insert("NDemandFertilization");
 
   return true;
 }
@@ -926,7 +926,7 @@ bool NDemandFertilization::apply(MonicaModel* model) {
 bool NDemandFertilization::condition(MonicaModel* model) {
   bool conditionMet = false;
 
-  auto cg = model->cropGrowth();
+  auto* cg = model->_currentCropModule.get();
   if (cg && !_appliedFertilizer) {
     auto currStage = cg->vc_DevelopmentalStage + 1;
     conditionMet =
@@ -988,7 +988,7 @@ bool OrganicFertilization::apply(MonicaModel* model) {
 
   debug() << toString() << endl;
   monicaModelApplyOrganicFertiliser(model, _params, _amount, _incorporation, _incorporateIntoLayerNo - 1);
-  model->addEvent("OrganicFertilization");
+  model->_currentEvents.insert("OrganicFertilization");
 
   return true;
 }
@@ -1022,7 +1022,7 @@ bool Tillage::apply(MonicaModel* model) {
 
   debug() << toString() << endl;
   monicaModelApplyTillage(model, _depth);
-  model->addEvent("Tillage");
+  model->_currentEvents.insert("Tillage");
 
   return true;
 }
@@ -1094,7 +1094,7 @@ bool SetValue::apply(MonicaModel* model) {
     ci->second(*model, _oid, v);
   }
 
-  model->addEvent("SetValue");
+  model->_currentEvents.insert("SetValue");
 
   return true;
 }
@@ -1138,8 +1138,8 @@ bool SaveMonicaState::apply(MonicaModel* model) {
 
   int prevVal = -1;
   if (_noOfPreviousDaysSerializedClimateData > -1) {
-    prevVal = model->simulationParameters().noOfPreviousDaysSerializedClimateData;
-    model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = _noOfPreviousDaysSerializedClimateData;
+    prevVal = model->_simPs.noOfPreviousDaysSerializedClimateData;
+    model->_simPs.noOfPreviousDaysSerializedClimateData = _noOfPreviousDaysSerializedClimateData;
   }
 
   const auto pathToSerFile = kj::str(_pathToFile);
@@ -1164,8 +1164,8 @@ bool SaveMonicaState::apply(MonicaModel* model) {
     file->writeAll(flatArray.asBytes());
   }
 
-  if (prevVal > -1) model->simulationParametersNC().noOfPreviousDaysSerializedClimateData = prevVal;
-  model->addEvent("SaveMonicaState");
+  if (prevVal > -1) model->_simPs.noOfPreviousDaysSerializedClimateData = prevVal;
+  model->_currentEvents.insert("SaveMonicaState");
   return true;
 }
 
@@ -1206,11 +1206,11 @@ bool Irrigation::apply(MonicaModel* model) {
   monicaModelApplyIrrigation(model, amount(), nitrateConcentration());
   // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
   // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
-  if (model->simulationParameters().dualKcMethod) {
+  if (model->_simPs.dualKcMethod) {
     model->soilMoistureNC().vm_irrigFwEvent = _params.fw;
     model->soilMoistureNC().vm_irrigIsDripEvent = _params.isDripIrrigation;
   }
-  model->addEvent("Irrigation");
+  model->_currentEvents.insert("Irrigation");
 
   return true;
 }
@@ -1263,9 +1263,9 @@ bool AutomaticIrrigation::apply(MonicaModel* model) {
 
   auto irrigationTriggered = false;
   auto irrigationAmount = 0.0;
-  tie(irrigationTriggered, irrigationAmount) = model->soilColumnNC().applyIrrigationViaTrigger(params);
+  tie(irrigationTriggered, irrigationAmount) = model->_soilColumn->applyIrrigationViaTrigger(params);
   if (irrigationTriggered) {
-    model->addEvent("AutomaticIrrigation");
+    model->_currentEvents.insert("AutomaticIrrigation");
     model->soilOrganicNC().irrigationAmount += irrigationAmount;
     model->addDailySumIrrigationWater(irrigationAmount);
   }
@@ -1278,7 +1278,7 @@ bool AutomaticIrrigation::condition(MonicaModel* model) {
 
   // meet the correct date range
   auto dateConditionMet = true;
-  const auto date = model->currentStepDate();
+  const auto date = model->_currentStepDate;
   if (absStartDate.isValid() && absEndDate.isValid()) {
     dateConditionMet = date >= absStartDate && date <= absEndDate;
     if (date > absEndDate) {
@@ -1294,7 +1294,7 @@ bool AutomaticIrrigation::condition(MonicaModel* model) {
 
   // meet the correct crop stage
   auto cropConditionMet = dateConditionMet;
-  if (const auto cg = model->cropGrowth(); cg && irrigateCrop) {
+  if (const auto* cg = model->_currentCropModule.get(); cg && irrigateCrop) {
     cropPlanted = true;
     const auto stage = cg->vc_DevelopmentalStage;
     if (startStage > -1 && endStage > -1) {

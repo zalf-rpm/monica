@@ -153,10 +153,10 @@ void monica::monicaModelDeserialize(MonicaModel* model, mas::schema::model::moni
     };
     _currentCropModule = nullptr;
     _currentCropModule = makeCropModule(_soilColumn.get(), &_cropPs,
-                                        [model](string event) { model->addEvent(event); }, addOMFunc,
+                                        [model](string event) { model->_currentEvents.insert(std::move(event)); }, addOMFunc,
                                         [model](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-                                            &model->soilMoisture(), avgAirTemp);
+                                            model->_soilMoisture.get(), avgAirTemp);
                                         },
                                         reader.getCurrentCropModule(),
                                         &_intercropping);
@@ -380,11 +380,11 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
     _currentCropModule = nullptr;
     _currentCropModule = makeCropModule(_soilColumn.get(), &cps, reader.getResidueParams(),
                                         cps.cultivarParams.winterCrop, &_sitePs, &_cropPs, _simPs,
-                                        [this](const string& event) { this->addEvent(event); },
+                                        [this](const string& event) { this->_currentEvents.insert(event); },
                                         addOMFunc,
                                         [this](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-                                            &this->soilMoisture(), avgAirTemp);
+                                            this->_soilMoisture.get(), avgAirTemp);
                                         },
                                         &_intercropping);
 
@@ -436,10 +436,10 @@ void MonicaModel::seedCrop(Crop* crop) {
     _currentCropModule = nullptr;
     _currentCropModule = makeCropModule(_soilColumn.get(), &cps, crop->residueParameters(),
                                         crop->isWinterCrop(), &_sitePs, &_cropPs, _simPs,
-                                        [this](string event) { this->addEvent(event); }, addOMFunc,
+                                        [this](string event) { this->_currentEvents.insert(std::move(event)); }, addOMFunc,
                                         [this](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-                                            &this->soilMoisture(), avgAirTemp);
+                                            this->_soilMoisture.get(), avgAirTemp);
                                         },
                                         &_intercropping);
 

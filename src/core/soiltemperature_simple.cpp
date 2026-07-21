@@ -266,7 +266,7 @@ double calcSoilSurfaceTemperature(
   double globrad) {
   globrad = max(8.33, globrad);
 
-  const double soilCoverage = st->monica->cropGrowth() ? st->monica->cropGrowth()->vc_SoilCoverage : 0.0;
+  const double soilCoverage = st->monica->_currentCropModule ? st->monica->_currentCropModule->vc_SoilCoverage : 0.0;
   const double shadingCoefficient =
     0.1 + ((soilCoverage * st->dampingFactor) + ((1 - soilCoverage) * (1 - st->dampingFactor)));
 
@@ -277,8 +277,8 @@ double calcSoilSurfaceTemperature(
 
   if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
 
-  if (st->monica->soilMoisture().snowComponent->vm_SnowDepth > 0.0) {
-    soilSurfaceTemperature = st->monica->soilMoisture().frostComponent->vm_TemperatureUnderSnow;
+  if (st->monica->_soilMoisture->snowComponent->vm_SnowDepth > 0.0) {
+    soilSurfaceTemperature = st->monica->_soilMoisture->frostComponent->vm_TemperatureUnderSnow;
   }
 
   return soilSurfaceTemperature;
