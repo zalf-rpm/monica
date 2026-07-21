@@ -85,7 +85,7 @@ void initializeFromParams(SoilMoisture* sm) {
   }
 
   sm->snowComponent = kj::heap<SnowComponent>();
-  snowComponentInitialize(sm->snowComponent.get(), &soilColumn, smPs);
+  snowcomponent::initialize(sm->snowComponent.get(), &soilColumn, smPs);
   sm->frostComponent = kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep);
 
   //  double vm_GroundwaterDepth = 0.0;
@@ -184,7 +184,7 @@ void step(SoilMoisture* sm,
   sm->soilColumn.vm_GroundwaterTableLayer = sm->vm_GroundwaterTableLayer;
 
   // calculates snow layer water storage and release
-  snowComponentCalcSnowLayer(sm->snowComponent.get(), vw_MeanAirTemperature, sm->vc_NetPrecipitation);
+  snowcomponent::calcSnowLayer(sm->snowComponent.get(), vw_MeanAirTemperature, sm->vc_NetPrecipitation);
   double vm_WaterToInfiltrate = sm->snowComponent->vm_WaterToInfiltrate;
 
   // Calculates frost and thaw depth and switches lambda
@@ -1573,7 +1573,7 @@ void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModul
     sm->snowComponent = nullptr;
     sm->snowComponent = kj::heap<SnowComponent>();
     sm->snowComponent->soilColumn = &sm->soilColumn;
-    snowComponentDeserialize(sm->snowComponent.get(), reader.getSnowComponent());
+    snowcomponent::deserialize(sm->snowComponent.get(), reader.getSnowComponent());
   }
   if (reader.hasFrostComponent()) {
     sm->frostComponent = nullptr;
@@ -1639,7 +1639,7 @@ void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureM
   setCapnpList(sm->vm_Transpiration, builder.initTranspiration((capnp::uint)sm->vm_Transpiration.size()));
   setCapnpList(sm->vm_WaterFlux, builder.initWaterFlux((capnp::uint)sm->vm_WaterFlux.size()));
   builder.setXSACriticalSoilMoisture(sm->vm_XSACriticalSoilMoisture);
-  if (sm->snowComponent) snowComponentSerialize(sm->snowComponent.get(), builder.initSnowComponent());
+  if (sm->snowComponent) snowcomponent::serialize(sm->snowComponent.get(), builder.initSnowComponent());
   if (sm->frostComponent) sm->frostComponent->serialize(builder.initFrostComponent());
 }
 

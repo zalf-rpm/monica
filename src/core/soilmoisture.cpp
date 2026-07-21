@@ -72,7 +72,7 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
 , snowComponent(kj::heap<SnowComponent>())
 , frostComponent(kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep)) {
   debug() << "Constructor: SoilMoisture" << endl;
-  snowComponentInitialize(snowComponent.get(), &soilColumn, smPs);
+  snowcomponent::initialize(snowComponent.get(), &soilColumn, smPs);
 
   vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux;
   pt_TimeStep = envPs.p_timeStep;
@@ -178,7 +178,7 @@ void SoilMoisture::deserialize(mas::schema::model::monica::SoilMoistureModuleSta
     snowComponent = nullptr;
     snowComponent = kj::heap<SnowComponent>();
     snowComponent->soilColumn = &soilColumn;
-    snowComponentDeserialize(snowComponent.get(), reader.getSnowComponent());
+    snowcomponent::deserialize(snowComponent.get(), reader.getSnowComponent());
   }
   if (reader.hasFrostComponent()) {
     frostComponent = nullptr;
@@ -244,7 +244,7 @@ void SoilMoisture::serialize(mas::schema::model::monica::SoilMoistureModuleState
   setCapnpList(vm_Transpiration, builder.initTranspiration((capnp::uint)vm_Transpiration.size()));
   setCapnpList(vm_WaterFlux, builder.initWaterFlux((capnp::uint)vm_WaterFlux.size()));
   builder.setXSACriticalSoilMoisture(vm_XSACriticalSoilMoisture);
-  if (snowComponent) snowComponentSerialize(snowComponent.get(), builder.initSnowComponent());
+  if (snowComponent) snowcomponent::serialize(snowComponent.get(), builder.initSnowComponent());
   if (frostComponent) frostComponent->serialize(builder.initFrostComponent());
 }
 
@@ -326,7 +326,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   soilColumn.vm_GroundwaterTableLayer = vm_GroundwaterTableLayer;
 
   // calculates snow layer water storage and release
-  snowComponentCalcSnowLayer(snowComponent.get(), vw_MeanAirTemperature, vc_NetPrecipitation);
+  snowcomponent::calcSnowLayer(snowComponent.get(), vw_MeanAirTemperature, vc_NetPrecipitation);
   double vm_WaterToInfiltrate = snowComponent->vm_WaterToInfiltrate;
 
   // Calculates frost and thaw depth and switches lambda

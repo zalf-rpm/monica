@@ -63,6 +63,13 @@
 6. Construction/serialization/deserialization use plain-struct flow via `makeCropModule(...)` plus procedural `cropmodule::serialize` / `cropmodule::deserialize`.
 7. Build and `sim-min-out_section_crop.csv` hash comparison against `_orig` remained unchanged after each conversion batch.
 
+### `snow-component` (status: proceduralized + namespaced)
+
+1. `SnowComponent` is a plain struct; former reference members were converted to pointers so it can stand alone.
+2. Constructors/member methods were replaced by free procedures.
+3. Free-procedure API now lives under `monica::snowcomponent` and no longer uses the `snowComponent...` prefix.
+4. `soilmoisture.cpp` and `soilmoisture_simple.cpp` call sites were rewired to `snowcomponent::...`.
+
 ## What to do next (if starting fresh)
 
 1. Continue in `src/core/soilmoisture_simple.h/.cpp` with the same pattern as soilorganic:

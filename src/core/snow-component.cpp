@@ -28,7 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace std;
 using namespace monica;
 
-void monica::snowComponentInitialize(SnowComponent* sc, SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps) {
+void monica::snowcomponent::initialize(SnowComponent* sc, SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps) {
   sc->soilColumn = soilColumn;
   sc->vm_SnowDensity = 0.0;
   sc->vm_SnowDepth = 0.0;
@@ -52,7 +52,7 @@ void monica::snowComponentInitialize(SnowComponent* sc, SoilColumn* soilColumn, 
   sc->vm_SnowRetentionCapacityMax = smps.pm_SnowRetentionCapacityMax;
 }
 
-void monica::snowComponentDeserialize(SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Reader reader) {
+void monica::snowcomponent::deserialize(SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Reader reader) {
   sc->vm_SnowDensity = reader.getSnowDensity();
   sc->vm_SnowDepth = reader.getSnowDepth();
   sc->vm_FrozenWaterInSnow = reader.getFrozenWaterInSnow();
@@ -75,7 +75,7 @@ void monica::snowComponentDeserialize(SnowComponent* sc, mas::schema::model::mon
   sc->vm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
 }
 
-void monica::snowComponentSerialize(const SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Builder builder) {
+void monica::snowcomponent::serialize(const SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Builder builder) {
   builder.setSnowDensity(sc->vm_SnowDensity);
   builder.setSnowDepth(sc->vm_SnowDepth);
   builder.setFrozenWaterInSnow(sc->vm_FrozenWaterInSnow);
@@ -107,27 +107,27 @@ void monica::snowComponentSerialize(const SnowComponent* sc, mas::schema::model:
  * @param vw_MeanAirTemperature
  * @param vc_NetPrecipitation
  */
-void monica::snowComponentCalcSnowLayer(SnowComponent* sc, double mean_air_temperature, double net_precipitation) {
+void monica::snowcomponent::calcSnowLayer(SnowComponent* sc, double mean_air_temperature, double net_precipitation) {
   // Calcs netto precipitation
   double net_precipitation_snow = 0.0;
   double net_precipitation_water = 0.0;
-  net_precipitation = snowComponentCalcNetPrecipitation(sc,
-                                                        mean_air_temperature,
-                                                        net_precipitation,
-                                                        net_precipitation_water,
-                                                        net_precipitation_snow);
+  net_precipitation = calcNetPrecipitation(sc,
+                                           mean_air_temperature,
+                                           net_precipitation,
+                                           net_precipitation_water,
+                                           net_precipitation_snow);
 
   // Calculate snowmelt
-  double vm_Snowmelt = snowComponentCalcSnowMelt(sc, mean_air_temperature);
+  double vm_Snowmelt = calcSnowMelt(sc, mean_air_temperature);
 
   // Calculate refreeze in snow
-  double vm_Refreeze = snowComponentCalcRefreeze(sc, mean_air_temperature);
+  double vm_Refreeze = calcRefreeze(sc, mean_air_temperature);
 
   // Calculate density of newly fallen snow
-  double vm_NewSnowDensity = snowComponentCalcNewSnowDensity(sc, mean_air_temperature, net_precipitation_snow);
+  double vm_NewSnowDensity = calcNewSnowDensity(sc, mean_air_temperature, net_precipitation_snow);
 
   // Calculate average density of whole snowpack
-  sc->vm_SnowDensity = snowComponentCalcAverageSnowDensity(sc, net_precipitation_snow, vm_NewSnowDensity);
+  sc->vm_SnowDensity = calcAverageSnowDensity(sc, net_precipitation_snow, vm_NewSnowDensity);
 
 
   // Calculate amounts of water in frozen snow and liquid form
@@ -137,7 +137,7 @@ void monica::snowComponentCalcSnowLayer(SnowComponent* sc, double mean_air_tempe
 
   // Calculate snow's capacity to retain liquid
   double vm_LiquidWaterRetainedInSnow =
-    snowComponentCalcLiquidWaterRetainedInSnow(sc, sc->vm_FrozenWaterInSnow, vm_SnowWaterEquivalent);
+    calcLiquidWaterRetainedInSnow(sc, sc->vm_FrozenWaterInSnow, vm_SnowWaterEquivalent);
 
   // Calculate water release from snow
   double vm_SnowLayerWaterRelease = 0.0;
@@ -152,11 +152,11 @@ void monica::snowComponentCalcSnowLayer(SnowComponent* sc, double mean_air_tempe
   }
 
   // Calculate snow depth from snow water equivalent
-  snowComponentCalcSnowDepth(sc, vm_SnowWaterEquivalent);
+  calcSnowDepth(sc, vm_SnowWaterEquivalent);
 
   // Calculate potential infiltration to soil
   sc->vm_WaterToInfiltrate =
-    snowComponentCalcPotentialInfiltration(sc, net_precipitation, vm_SnowLayerWaterRelease, sc->vm_SnowDepth);
+    calcPotentialInfiltration(sc, net_precipitation, vm_SnowLayerWaterRelease, sc->vm_SnowDepth);
 }
 
 /**
@@ -164,7 +164,7 @@ void monica::snowComponentCalcSnowLayer(SnowComponent* sc, double mean_air_tempe
  * @param vw_MeanAirTemperature
  * @return
  */
-double monica::snowComponentCalcSnowMelt(const SnowComponent* sc, double vw_MeanAirTemperature) {
+double monica::snowcomponent::calcSnowMelt(const SnowComponent* sc, double vw_MeanAirTemperature) {
   double vm_MeltingFactor = 1.4 * (sc->vm_SnowDensity / 0.1);
   double vm_Snowmelt = 0.0;
 
@@ -194,7 +194,7 @@ double monica::snowComponentCalcSnowMelt(const SnowComponent* sc, double vw_Mean
  * @param vm_NetPrecipitationSnow
  * @return
  */
-double monica::snowComponentCalcNetPrecipitation(
+double monica::snowcomponent::calcNetPrecipitation(
   const SnowComponent* sc,
   double mean_air_temperature,
   double net_precipitation,
@@ -227,7 +227,7 @@ double monica::snowComponentCalcNetPrecipitation(
  * @param vw_MeanAirTemperature
  * @return
  */
-double monica::snowComponentCalcRefreeze(const SnowComponent* sc, double mean_air_temperature) {
+double monica::snowcomponent::calcRefreeze(const SnowComponent* sc, double mean_air_temperature) {
   double refreeze = 0.0;
   double refreeze_helper = 0.0;
 
@@ -257,9 +257,9 @@ double monica::snowComponentCalcRefreeze(const SnowComponent* sc, double mean_ai
  * @param net_precipitation_snow
  * @return
  */
-double monica::snowComponentCalcNewSnowDensity(const SnowComponent* sc,
-                                               double mean_air_temperature,
-                                               double net_precipitation_snow) {
+double monica::snowcomponent::calcNewSnowDensity(const SnowComponent* sc,
+                                                 double mean_air_temperature,
+                                                 double net_precipitation_snow) {
   double new_snow_density = 0.0;
   double snow_density_factor = 0.0;
 
@@ -286,9 +286,9 @@ double monica::snowComponentCalcNewSnowDensity(const SnowComponent* sc,
  * @param vm_NetPrecipitationSnow
  * @return
  */
-double monica::snowComponentCalcAverageSnowDensity(const SnowComponent* sc,
-                                                   double net_precipitation_snow,
-                                                   double new_snow_density) {
+double monica::snowcomponent::calcAverageSnowDensity(const SnowComponent* sc,
+                                                     double net_precipitation_snow,
+                                                     double new_snow_density) {
   double snow_density = 0.0;
   if ((sc->vm_SnowDepth + net_precipitation_snow) <= 0.0) {
     // no snow
@@ -309,9 +309,9 @@ double monica::snowComponentCalcAverageSnowDensity(const SnowComponent* sc,
  * @param snow_water_equivalent
  * @return
  */
-double monica::snowComponentCalcLiquidWaterRetainedInSnow(const SnowComponent* sc,
-                                                          double frozen_water_in_snow,
-                                                          double snow_water_equivalent) {
+double monica::snowcomponent::calcLiquidWaterRetainedInSnow(const SnowComponent* sc,
+                                                            double frozen_water_in_snow,
+                                                            double snow_water_equivalent) {
   double snow_retention_capacity;
   double liquid_water_retained_in_snow;
 
@@ -337,10 +337,10 @@ double monica::snowComponentCalcLiquidWaterRetainedInSnow(const SnowComponent* s
  * @param snow_depth
  * @return
  */
-double monica::snowComponentCalcPotentialInfiltration(SnowComponent* sc,
-                                                      double net_precipitation,
-                                                      double snow_layer_water_release,
-                                                      double snow_depth) {
+double monica::snowcomponent::calcPotentialInfiltration(SnowComponent* sc,
+                                                        double net_precipitation,
+                                                        double snow_layer_water_release,
+                                                        double snow_depth) {
   double water_to_infiltrate = net_precipitation;
   if (snow_depth >= 0.01) {
     sc->vm_WaterToInfiltrate = snow_layer_water_release;
@@ -354,7 +354,7 @@ double monica::snowComponentCalcPotentialInfiltration(SnowComponent* sc,
  *
  * @param snow_water_equivalent
  */
-void monica::snowComponentCalcSnowDepth(SnowComponent* sc, double snow_water_equivalent) {
+void monica::snowcomponent::calcSnowDepth(SnowComponent* sc, double snow_water_equivalent) {
   double pm_WaterDensity = 1.0; // [kg dm-3]
   if (snow_water_equivalent <= 0.0) {
     sc->vm_SnowDepth = 0.0;

@@ -53,22 +53,24 @@ struct SnowComponent {
   double vm_SnowRetentionCapacityMax;             //!< Maximum liquid water retention capacity in snow [mm]
 };
 
-void snowComponentInitialize(SnowComponent* sc, SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps);
-void snowComponentDeserialize(SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Reader reader);
-void snowComponentSerialize(const SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Builder builder);
-void snowComponentCalcSnowLayer(SnowComponent* sc, double meanAirTemperature, double netPrecipitation);
-double snowComponentCalcSnowMelt(const SnowComponent* sc, double meanAirTemperature);
-double snowComponentCalcNetPrecipitation(
+namespace snowcomponent {
+void initialize(SnowComponent* sc, SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps);
+void deserialize(SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Reader reader);
+void serialize(const SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Builder builder);
+void calcSnowLayer(SnowComponent* sc, double meanAirTemperature, double netPrecipitation);
+double calcSnowMelt(const SnowComponent* sc, double meanAirTemperature);
+double calcNetPrecipitation(
   const SnowComponent* sc,
   double meanAirTemperature,
   double netPrecipitation,
   double& netPrecipitationWater,
   double& netPrecipitationSnow);
-double snowComponentCalcRefreeze(const SnowComponent* sc, double meanAirTemperature);
-double snowComponentCalcNewSnowDensity(const SnowComponent* sc, double meanAirTemperature, double netPrecipitationSnow);
-double snowComponentCalcAverageSnowDensity(const SnowComponent* sc, double netPrecipitationSnow, double newSnowDensity);
-double snowComponentCalcLiquidWaterRetainedInSnow(const SnowComponent* sc, double frozenWaterInSnow, double snowWaterEquivalent);
-double snowComponentCalcPotentialInfiltration(SnowComponent* sc, double netPrecipitation, double snowLayerWaterRelease, double snowDepth);
-void snowComponentCalcSnowDepth(SnowComponent* sc, double snowWaterEquivalent);
+double calcRefreeze(const SnowComponent* sc, double meanAirTemperature);
+double calcNewSnowDensity(const SnowComponent* sc, double meanAirTemperature, double netPrecipitationSnow);
+double calcAverageSnowDensity(const SnowComponent* sc, double netPrecipitationSnow, double newSnowDensity);
+double calcLiquidWaterRetainedInSnow(const SnowComponent* sc, double frozenWaterInSnow, double snowWaterEquivalent);
+double calcPotentialInfiltration(SnowComponent* sc, double netPrecipitation, double snowLayerWaterRelease, double snowDepth);
+void calcSnowDepth(SnowComponent* sc, double snowWaterEquivalent);
+} // namespace snowcomponent
 
 } // namespace monica
