@@ -70,6 +70,14 @@
 3. Free-procedure API now lives under `monica::snowcomponent` and no longer uses the `snowComponent...` prefix.
 4. `soilmoisture.cpp` and `soilmoisture_simple.cpp` call sites were rewired to `snowcomponent::...`.
 
+### `frost-component` (status: proceduralized + namespaced)
+
+1. `FrostComponent` is now a plain struct with pointer members (reference member replaced).
+2. Constructors/member serdes were converted to free procedures and wiring updated.
+3. All remaining class-style methods were converted to free procedures and call sites were rewired.
+4. The free-procedure API now lives in `monica::frostcomponent` with unprefixed names.
+5. Build + `monica-run` + `sim-min-out_section_crop.csv` vs `_orig` remained identical after each conversion step.
+
 ## What to do next (if starting fresh)
 
 1. Continue in `src/core/soilmoisture_simple.h/.cpp` with the same pattern as soilorganic:

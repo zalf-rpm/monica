@@ -86,7 +86,8 @@ void initializeFromParams(SoilMoisture* sm) {
 
   sm->snowComponent = kj::heap<SnowComponent>();
   snowcomponent::initialize(sm->snowComponent.get(), &soilColumn, smPs);
-  sm->frostComponent = kj::heap<FrostComponent>(soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep);
+  sm->frostComponent = kj::heap<FrostComponent>();
+  frostcomponent::initialize(sm->frostComponent.get(), &soilColumn, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep);
 
   //  double vm_GroundwaterDepth = 0.0;
   //  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
@@ -188,7 +189,7 @@ void step(SoilMoisture* sm,
   double vm_WaterToInfiltrate = sm->snowComponent->vm_WaterToInfiltrate;
 
   // Calculates frost and thaw depth and switches lambda
-  sm->frostComponent->calcSoilFrost(vw_MeanAirTemperature, sm->snowComponent->vm_SnowDepth);
+  frostcomponent::calcSoilFrost(sm->frostComponent.get(), vw_MeanAirTemperature, sm->snowComponent->vm_SnowDepth);
 
   // calculates infiltration of water from surface
   infiltration(sm, vm_WaterToInfiltrate);
@@ -347,7 +348,7 @@ void infiltration(SoilMoisture* sm, double vm_WaterToInfiltrate) {
   // Calculating excess soil moisture (water content exceeding field capacity) for percolation
   if (vm_SoilMoisture[0] > vm_FieldCapacity[0]) {
     vm_GravitationalWater[0] = (vm_SoilMoisture[0] - vm_FieldCapacity[0]) * 1000.0 * vm_LayerThickness[0];
-    auto vm_LambdaReduced = vm_Lambda[0] * frostComponent->getLambdaRedux(0);
+    auto vm_LambdaReduced = vm_Lambda[0] * frostComponent->vm_LambdaRedux[0];
     auto vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[0];
     vm_PercolationRate[0] = (vm_GravitationalWater[0] * vm_GravitationalWater[0] * vm_LambdaReduced)
                             / vm_PercolationFactor;
@@ -491,7 +492,7 @@ void percolationWithGroundwater(SoilMoisture* sm, size_t oscillGroundwaterLayer)
           (vm_SoilMoisture[indexOfLayerBelow] - vm_FieldCapacity[indexOfLayerBelow]) * 1000.0 *
           vm_LayerThickness[i + 1];
 
-        double vm_LambdaReduced = vm_Lambda[indexOfLayerBelow] * frostComponent->getLambdaRedux(indexOfLayerBelow);
+        double vm_LambdaReduced = vm_Lambda[indexOfLayerBelow] * frostComponent->vm_LambdaRedux[indexOfLayerBelow];
         double vm_PercolationFactor = 1 + vm_LambdaReduced * vm_GravitationalWater[indexOfLayerBelow];
         vm_PercolationRate[indexOfLayerBelow] = (
           (vm_GravitationalWater[indexOfLayerBelow] * vm_GravitationalWater[indexOfLayerBelow]
@@ -659,7 +660,7 @@ void percolationWithoutGroundwater(SoilMoisture* sm) {
       // too much water for this layer so some water is released to layers below
       vm_GravitationalWater[indexOfLayerBelow] =
         (vm_SoilMoisture[indexOfLayerBelow] - vm_FieldCapacity[indexOfLayerBelow]) * 1000.0 * vm_LayerThickness[0];
-      auto vm_LambdaReduced = vm_Lambda[indexOfLayerBelow] * frostComponent->getLambdaRedux(indexOfLayerBelow);
+      auto vm_LambdaReduced = vm_Lambda[indexOfLayerBelow] * frostComponent->vm_LambdaRedux[indexOfLayerBelow];
       auto vm_PercolationFactor = 1.0 + (vm_LambdaReduced * vm_GravitationalWater[indexOfLayerBelow]);
       vm_PercolationRate[indexOfLayerBelow] =
       (vm_GravitationalWater[indexOfLayerBelow] * vm_GravitationalWater[indexOfLayerBelow]
@@ -1577,7 +1578,9 @@ void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModul
   }
   if (reader.hasFrostComponent()) {
     sm->frostComponent = nullptr;
-    sm->frostComponent = kj::heap<FrostComponent>(sm->soilColumn, reader.getFrostComponent());
+    sm->frostComponent = kj::heap<FrostComponent>();
+    sm->frostComponent->soilColumn = &sm->soilColumn;
+    frostcomponent::deserialize(sm->frostComponent.get(), reader.getFrostComponent());
   }
 }
 
@@ -1640,12 +1643,12 @@ void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureM
   setCapnpList(sm->vm_WaterFlux, builder.initWaterFlux((capnp::uint)sm->vm_WaterFlux.size()));
   builder.setXSACriticalSoilMoisture(sm->vm_XSACriticalSoilMoisture);
   if (sm->snowComponent) snowcomponent::serialize(sm->snowComponent.get(), builder.initSnowComponent());
-  if (sm->frostComponent) sm->frostComponent->serialize(builder.initFrostComponent());
+  if (sm->frostComponent) frostcomponent::serialize(sm->frostComponent.get(), builder.initFrostComponent());
 }
 
 std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(const SoilMoisture* sm, double avgAirTemp) {
   double snowDepth = sm->snowComponent->vm_SnowDepth;
-  return make_pair(snowDepth, sm->frostComponent->calcTemperatureUnderSnow(avgAirTemp, snowDepth));
+  return make_pair(snowDepth, frostcomponent::calcTemperatureUnderSnow(sm->frostComponent.get(), avgAirTemp, snowDepth));
 }
 
 } // namespace soilmoisture
