@@ -42,12 +42,12 @@ using namespace Climate;
 /*
 json11::Json createHarvestingMessage(CMResult result, const MonicaModel& monica)
 {
-  result.results[sumFertiliser] = monica.sumFertiliser();
-  result.results[daysWithCrop] = monica.daysWithCrop();
-  result.results[NStress] = monica.getAccumulatedNStress();
-  result.results[WaterStress] = monica.getAccumulatedWaterStress();
-  result.results[HeatStress] = monica.getAccumulatedHeatStress();
-  result.results[OxygenStress] = monica.getAccumulatedOxygenStress();
+  result.results[sumFertiliser] = monica._sumFertiliser;
+  result.results[daysWithCrop] = monica.p_daysWithCrop;
+  result.results[NStress] = monica.p_accuNStress;
+  result.results[WaterStress] = monica.p_accuWaterStress;
+  result.results[HeatStress] = monica.p_accuHeatStress;
+  result.results[OxygenStress] = monica.p_accuOxygenStress;
 
   //  cout << "created harvesting msg: " << result.to_json().dump() << endl;
   return result.to_json();
@@ -323,7 +323,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
               }
             }
 
-            if(monica.isCropPlanted())
+            if(monica._currentCropModule)
               monica.cropStep(date, climateData);
 
             monica.generalStep(date, climateData);

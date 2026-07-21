@@ -372,7 +372,7 @@ std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(
     double avgSoilTemp = 0;
     size_t i = 0;
     for (auto size = model->_soilColumn->getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++) {
-      avgSoilTemp += model->soilTemperature().soilColumn->at(int(i)).vs_SoilTemperature;
+      avgSoilTemp += model->_soilTemperature->soilColumn->at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
   };
@@ -1207,8 +1207,8 @@ bool Irrigation::apply(MonicaModel* model) {
   // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
   // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
   if (model->_simPs.dualKcMethod) {
-    model->soilMoistureNC().vm_irrigFwEvent = _params.fw;
-    model->soilMoistureNC().vm_irrigIsDripEvent = _params.isDripIrrigation;
+    model->_soilMoisture->vm_irrigFwEvent = _params.fw;
+    model->_soilMoisture->vm_irrigIsDripEvent = _params.isDripIrrigation;
   }
   model->_currentEvents.insert("Irrigation");
 
@@ -1266,7 +1266,7 @@ bool AutomaticIrrigation::apply(MonicaModel* model) {
   tie(irrigationTriggered, irrigationAmount) = model->_soilColumn->applyIrrigationViaTrigger(params);
   if (irrigationTriggered) {
     model->_currentEvents.insert("AutomaticIrrigation");
-    model->soilOrganicNC().irrigationAmount += irrigationAmount;
+    model->_soilOrganic->irrigationAmount += irrigationAmount;
     model->addDailySumIrrigationWater(irrigationAmount);
   }
 

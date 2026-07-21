@@ -504,7 +504,7 @@ void monica::monicaModelHarvestCurrentCrop(MonicaModel* model,
                                                                        false);
         //kg ha-1, secondary yield is ignored with this approach
         double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
-        double appliedOrganicFertilizerDryMatter = model->sumOrganicFertilizerDM(); //kg ha-1
+        double appliedOrganicFertilizerDryMatter = model->_sumOrganicFertilizerDM; //kg ha-1
         double intermediateHumusBalance =
           _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter
           / 1000.0 * optCarbMgmtData.organicFertilizerHeq -
@@ -781,7 +781,7 @@ void monica::monicaModelApplyTillage(MonicaModel* model, double depth) {
 void monica::monicaModelStep(MonicaModel* model) {
   auto& _clearCropUponNextDay = model->_clearCropUponNextDay;
   auto& _intercropping = model->_intercropping;
-  if (model->isCropPlanted() && !_clearCropUponNextDay) {
+  if (model->_currentCropModule && !_clearCropUponNextDay) {
     monicaModelCropStep(model);
   } else if (_intercropping.isAsync()) {
     // tell other side that there is currently no crop

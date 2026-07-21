@@ -83,7 +83,7 @@ SoilMoisture::SoilMoisture(MonicaModel& mm, const SoilMoistureModuleParameters& 
   pm_LeachingDepth = envPs.p_LeachingDepth;
 
   //  cout << "pm_LeachingDepth:\t" << pm_LeachingDepth << endl;
-  pm_LayerThickness = mm.simulationParameters().p_LayerThickness;
+  pm_LayerThickness = mm._simPs.p_LayerThickness;
 
   pm_LeachingDepthLayer = int(std::floor(0.5 + (pm_LeachingDepth / pm_LayerThickness))) - 1;
 
@@ -879,7 +879,7 @@ double SoilMoisture::dual_kc_precomputation(double windSpeed, double tmin, doubl
 
   // --- Memory state update for wetting events ---
   const double precip = vm_GrossPrecipitation;
-  const double irrigApplied = monica.dailySumIrrigationWater();
+  const double irrigApplied = monica._dailySumIrrigationWater;
   if (precip > 0.0) {
     vm_LastWettingWasRain = true;
   } else if (irrigApplied > 0.0) {
@@ -1069,7 +1069,7 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
       // If either condition is false the existing Single Kc loop runs unchanged.
       // -----------------------------------------------------------------------
       double E_pot_dualKc = 0.0; // [mm d-1] replaces (1-beta)*PET per layer
-      bool useDualKc = (monica.simulationParameters().dualKcMethod
+      bool useDualKc = (monica._simPs.dualKcMethod
                         && vc_DevelopmentalStage > 0
                         && cropModule != nullptr);
       if (useDualKc) {

@@ -54,46 +54,25 @@ class Crop;
 
 struct MonicaModel {
 public:
-  bool isCropPlanted() const { return _currentCropModule; }
-
-  bool useNMinMineralFertilisingMethod() const { return _simPs.p_UseNMinMineralFertilisingMethod; }
-
-  double dailySumFertiliser() const { return _dailySumFertiliser; }
-
   void addDailySumFertiliser(double amount) {
     _dailySumFertiliser += amount;
     _sumFertiliser += amount;
   }
-
-  double dailySumOrgFertiliser() const { return _dailySumOrgFertiliser; }
-
-  double dailySumOrganicFertilizerDM() const { return _dailySumOrganicFertilizerDM; }
-  double sumOrganicFertilizerDM() const { return _sumOrganicFertilizerDM; }
 
   void addDailySumOrganicFertilizerDM(double amountDM) {
     _dailySumOrganicFertilizerDM += amountDM;
     _sumOrganicFertilizerDM += amountDM;
   }
 
-  double dailySumIrrigationWater() const { return _dailySumIrrigationWater; }
-
   void addDailySumIrrigationWater(double amount) {
     _dailySumIrrigationWater += amount;
   }
-
-  double sumFertiliser() const { return _sumFertiliser; }
-  double sumOrgFertiliser() const { return _sumOrgFertiliser; }
 
   void resetFertiliserCounter() {
     _sumFertiliser = 0;
     _sumOrgFertiliser = 0;
     _sumOrganicFertilizerDM = 0;
   }
-
-  double get_AtmosphericCO2Concentration() const { return vw_AtmosphericCO2Concentration; }
-  double get_AtmosphericO3Concentration() const { return vw_AtmosphericO3Concentration; }
-
-  double get_GroundwaterDepth() const { return vs_GroundwaterDepth; }
 
   const SoilTemperature& soilTemperature() const { return *_soilTemperature; }
   SoilTemperature& soilTemperatureNC() { return *_soilTemperature; }
@@ -113,41 +92,10 @@ public:
   CropModule* cropGrowth() { return _currentCropModule.get(); }
   const CropModule* cropGrowth() const { return _currentCropModule.get(); }
 
-  double netRadiation(double globrad) { return globrad * (1 - _envPs.p_Albedo); }
-
-  int daysWithCrop() const { return p_daysWithCrop; }
-  double getAccumulatedNStress() const { return p_accuNStress; }
-  double getAccumulatedWaterStress() const { return p_accuWaterStress; }
-  double getAccumulatedHeatStress() const { return p_accuHeatStress; }
-  double getAccumulatedOxygenStress() const { return p_accuOxygenStress; }
-
   const SiteParameters& siteParameters() const { return _sitePs; }
   const EnvironmentParameters& environmentParameters() const { return _envPs; }
   const CropModuleParameters& cropParameters() const { return _cropPs; }
   CropModuleParameters& cropParametersNC() { return _cropPs; }
-  const SimulationParameters& simulationParameters() const { return _simPs; }
-  SimulationParameters& simulationParametersNC() { return _simPs; }
-
-  Tools::Date currentStepDate() const { return _currentStepDate; }
-  void setCurrentStepDate(Tools::Date d) { _currentStepDate = d; }
-
-  const std::map<Climate::ACD, double>& currentStepClimateData() const { return _climateData.back(); }
-  void setCurrentStepClimateData(const std::map<Climate::ACD, double>& cd) { _climateData.push_back(cd); }
-
-  const std::vector<std::map<Climate::ACD, double>>& climateData() const { return _climateData; }
-
-  void addEvent(std::string e) { _currentEvents.insert(e); }
-  const std::set<std::string>& currentEvents() const { return _currentEvents; }
-  const std::set<std::string>& previousDaysEvents() const { return _previousDaysEvents; }
-
-  int cultivationMethodCount() const { return _cultivationMethodCount; }
-
-  double optCarbonExportedResidues() const { return _optCarbonExportedResidues; }
-  double optCarbonReturnedResidues() const { return _optCarbonReturnedResidues; }
-  double humusBalanceCarryOver() const { return _humusBalanceCarryOver; }
-
-  Intercropping& intercropping() { return _intercropping; }
-  void setIntercropping(Intercropping& ic) { _intercropping = ic; }
 
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;

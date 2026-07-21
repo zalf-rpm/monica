@@ -285,32 +285,32 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "CM-count", "", "output the order number of the current cultivation method"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.cultivationMethodCount();
+              return monica._cultivationMethodCount;
             });
 
       build({id++, "Date", "", "output current date"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.currentStepDate().toIsoDateString();
+              return monica._currentStepDate.toIsoDateString();
             });
 
       build({id++, "days-since-start", "", "output number of days since simulation start"},
             [](const MonicaModel& monica, OId oid) {
-              return monica.currentStepDate() - monica.simulationParameters().startDate;
+              return monica._currentStepDate - monica._simPs.startDate;
             });
 
       build({id++, "DOY", "", "output current day of year"},
             [](const MonicaModel& monica, OId oid) {
-              return int(monica.currentStepDate().dayOfYear());
+              return int(monica._currentStepDate.dayOfYear());
             });
 
       build({id++, "Month", "", "output current Month"},
             [](const MonicaModel& monica, OId oid) {
-              return int(monica.currentStepDate().month());
+              return int(monica._currentStepDate.month());
             });
 
       build({id++, "Year", "", "output current Year"},
             [](const MonicaModel& monica, OId oid) {
-              return int(monica.currentStepDate().year());
+              return int(monica._currentStepDate.year());
             });
 
       build({id++, "Crop", "", "crop name"},
@@ -502,7 +502,7 @@ BOTRes& monica::buildOutputTable() {
               "return exported part of the residues according to optimal carbon balance"
             },
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.optCarbonExportedResidues(), 1);
+              return round(monica._optCarbonExportedResidues, 1);
             });
 
       build({
@@ -512,7 +512,7 @@ BOTRes& monica::buildOutputTable() {
               "return returned to soil part of the residues according to optimal carbon balance"
             },
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.optCarbonReturnedResidues(), 1);
+              return round(monica._optCarbonReturnedResidues, 1);
             });
 
       build({
@@ -522,7 +522,7 @@ BOTRes& monica::buildOutputTable() {
               "return humus balance carry over according to optimal carbon balance"
             },
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.humusBalanceCarryOver(), 1);
+              return round(monica._humusBalanceCarryOver, 1);
             });
 
 
@@ -717,7 +717,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Irrig", "mm", "Irrigation"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.dailySumIrrigationWater(), 3);
+              return round(monica._dailySumIrrigationWater, 3);
             });
 
       build({id++, "Infilt", "mm", "Infiltration"},
@@ -822,17 +822,17 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.get_AtmosphericCO2Concentration(), 0);
+              return round(monica.vw_AtmosphericCO2Concentration, 0);
             });
 
       build({id++, "AtmO3", "ppb", "Atmospheric O3 concentration"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.get_AtmosphericO3Concentration(), 0);
+              return round(monica.vw_AtmosphericO3Concentration, 0);
             });
 
       build({id++, "Groundw", "m", "rounded according to interna usage"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.get_GroundwaterDepth(), 2);
+              return round(monica.vs_GroundwaterDepth, 2);
             });
 
       build({id++, "Recharge", "mm", "Groundwater recharge"},
@@ -1023,63 +1023,63 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Tmin", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::tmin);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Tavg", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::tavg);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Tmax", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::tmax);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Tmax>=40", "0|1", "if Tmax >= 40�C then 1 else 0"},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::tmax);
               return ci == cd.end() ? 0 : (ci->second >= 40 ? 1 : 0);
             });
 
       build({id++, "Precip", "mm", "Precipitation"},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::precip);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Wind", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::wind);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Globrad", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::globrad);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Relhumid", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::relhumid);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
       build({id++, "Sunhours", "", ""},
             [](const MonicaModel& monica, OId oid) {
-              const auto& cd = monica.currentStepClimateData();
+              const auto& cd = monica._climateData.back();
               auto ci = cd.find(Climate::sunhours);
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
@@ -1109,22 +1109,22 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NFert", "kgN ha-1", "dailySumFertiliser"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.dailySumFertiliser(), 1);
+              return round(monica._dailySumFertiliser, 1);
             });
 
       build({id++, "SumNFert", "kgN ha-1", "sum of N fertilizer applied during cropping period"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.sumFertiliser(), 1);
+              return round(monica._sumFertiliser, 1);
             });
 
       build({id++, "NOrgFert", "kgN ha-1", "dailySumOrgFertiliser"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.dailySumOrgFertiliser(), 1);
+              return round(monica._dailySumOrgFertiliser, 1);
             });
 
       build({id++, "SumNOrgFert", "kgN ha-1", "sum of N of organic fertilizer applied during cropping period"},
             [](const MonicaModel& monica, OId oid) {
-              return round(monica.sumOrgFertiliser(), 1);
+              return round(monica._sumOrgFertiliser, 1);
             });
 
 
