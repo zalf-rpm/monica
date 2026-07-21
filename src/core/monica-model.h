@@ -74,29 +74,6 @@ public:
     _sumOrganicFertilizerDM = 0;
   }
 
-  const SoilTemperature& soilTemperature() const { return *_soilTemperature; }
-  SoilTemperature& soilTemperatureNC() { return *_soilTemperature; }
-
-  const SoilMoisture& soilMoisture() const { return *_soilMoisture; }
-  SoilMoisture& soilMoistureNC() { return *_soilMoisture; }
-
-  const SoilOrganic& soilOrganic() const { return *_soilOrganic; }
-  SoilOrganic& soilOrganicNC() { return *_soilOrganic; }
-
-  const SoilTransport& soilTransport() const { return *_soilTransport; }
-  SoilTransport& soilTransportNC() { return *_soilTransport; }
-
-  const SoilColumn& soilColumn() const { return *_soilColumn; }
-  SoilColumn& soilColumnNC() { return *_soilColumn; }
-
-  CropModule* cropGrowth() { return _currentCropModule.get(); }
-  const CropModule* cropGrowth() const { return _currentCropModule.get(); }
-
-  const SiteParameters& siteParameters() const { return _sitePs; }
-  const EnvironmentParameters& environmentParameters() const { return _envPs; }
-  const CropModuleParameters& cropParameters() const { return _cropPs; }
-  CropModuleParameters& cropParametersNC() { return _cropPs; }
-
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;
   CropModuleParameters _cropPs;

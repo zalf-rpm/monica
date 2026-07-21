@@ -33,7 +33,7 @@ namespace soiltemperature {
 
 kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperatureModuleParameters& params) {
   auto st = kj::heap<SoilTemperature>();
-  st->soilColumn = &mm.soilColumnNC();
+  st->soilColumn = mm._soilColumn.get();
   st->monica = &mm;
   st->params = params;
   st->noOfTempLayers = st->soilColumn->size() + 2;
@@ -86,7 +86,7 @@ kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperat
     st->V[i] = lti * Ntau;
   }
 
-  const double ts = st->monica->environmentParameters().p_timeStep;
+  const double ts = st->monica->_envPs.p_timeStep;
   const double dw = st->params.pt_DensityWater;
   const double cw = st->params.pt_SpecificHeatCapacityWater;
   const double dq = st->params.pt_QuartzRawDensity;
@@ -152,7 +152,7 @@ kj::Own<SoilTemperature> makeSoilTemperature(
   MonicaModel& mm,
   mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
   auto st = kj::heap<SoilTemperature>();
-  st->soilColumn = &mm.soilColumnNC();
+  st->soilColumn = mm._soilColumn.get();
   st->monica = &mm;
   st->noOfTempLayers = st->soilColumn->size() + 2;
   st->noOfSoilLayers = st->soilColumn->size();

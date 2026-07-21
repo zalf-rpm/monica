@@ -27,7 +27,7 @@ using namespace Tools;
 
 //! Create soil column giving a the number of layers it consists of
 SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModuleParameters &params)
-    : _soilColumn(mm.soilColumnNC())
+    : _soilColumn(*mm._soilColumn)
       , _monica(mm)
       , soilColumn(_soilColumn,
                    _soilColumnGroundLayer,
@@ -104,7 +104,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
   }
   // End determination of the geometry parameters for soil temperature calculation
 
-  double ts = _monica.environmentParameters().p_timeStep;
+  double ts = _monica._envPs.p_timeStep;
 
   const double dw = _params.pt_DensityWater; // [kg m-3]
   const double cw = _params.pt_SpecificHeatCapacityWater; // [J kg-1 K-1]
@@ -206,7 +206,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
 }
 
 SoilTemperature::SoilTemperature(MonicaModel &mm, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader)
-    : _soilColumn(mm.soilColumnNC())
+    : _soilColumn(*mm._soilColumn)
       , _monica(mm)
       , soilColumn(_soilColumn,
                    _soilColumnGroundLayer,
@@ -348,7 +348,7 @@ double SoilTemperature::calcSoilSurfaceTemperature(
   // corrected for very low radiation in winter
   globrad = max(8.33, globrad);
 
-  double soilCoverage = _monica.cropGrowth() ? _monica.cropGrowth()->get_SoilCoverage() : 0.0;
+  double soilCoverage = _monica._currentCropModule.get() ? _monica._currentCropModule.get()->get_SoilCoverage() : 0.0;
   double shadingCoefficient = 0.1 + ((soilCoverage * _dampingFactor) + ((1 - soilCoverage) * (1 - _dampingFactor)));
 
   // Soil surface temperature caluclation following Williams 1984
@@ -360,8 +360,8 @@ double SoilTemperature::calcSoilSurfaceTemperature(
   // damping negative temperatures due to heat loss for freezing water
   if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
 
-  if (_monica.soilMoisture().get_SnowDepth() > 0.0) {
-    soilSurfaceTemperature = _monica.soilMoisture().getTemperatureUnderSnow();
+  if (_monica._soilMoisture->get_SnowDepth() > 0.0) {
+    soilSurfaceTemperature = _monica._soilMoisture->getTemperatureUnderSnow();
   }
 
   return soilSurfaceTemperature;
