@@ -355,57 +355,58 @@ void monica::monicaModelSerialize(MonicaModel* model, mas::schema::model::monica
   builder.setCultivationMethodCount(_cultivationMethodCount);
 }
 
-void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) {
+void monica::monicaModelSeedCrop(MonicaModel* model, mas::schema::model::monica::CropSpec::Reader reader) {
   debug() << "seedCrop" << endl;
 
-  p_daysWithCrop = 0;
-  p_accuNStress = 0.0;
-  p_accuWaterStress = 0.0;
-  p_accuHeatStress = 0.0;
-  p_accuOxygenStress = 0.0;
+  model->p_daysWithCrop = 0;
+  model->p_accuNStress = 0.0;
+  model->p_accuWaterStress = 0.0;
+  model->p_accuHeatStress = 0.0;
+  model->p_accuOxygenStress = 0.0;
 
   if (reader.hasCropParams() && reader.hasResidueParams()) {
     auto cropParams = reader.getCropParams();
     if (!cropParams.hasSpeciesParams() || !cropParams.hasCultivarParams()) return;
 
-    _cultivationMethodCount++;
+    model->_cultivationMethodCount++;
 
-    auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nConcentration) {
-      soilOrganicAddOrganicMatter(this->_soilOrganic.get(),
-                                  _currentCropModule->residuePs,
+    auto addOMFunc = [model](const std::map<size_t, double>& layer2amount, double nConcentration) {
+      soilOrganicAddOrganicMatter(model->_soilOrganic.get(),
+                                  model->_currentCropModule->residuePs,
                                   layer2amount,
                                   nConcentration);
     };
     CropParameters cps(reader.getCropParams());
-    _currentCropModule = nullptr;
-    _currentCropModule = makeCropModule(_soilColumn.get(), &cps, reader.getResidueParams(),
-                                        cps.cultivarParams.winterCrop, &_sitePs, &_cropPs, _simPs,
-                                        [this](const string& event) { this->_currentEvents.insert(event); },
+    model->_currentCropModule = nullptr;
+    model->_currentCropModule = makeCropModule(model->_soilColumn.get(), &cps, reader.getResidueParams(),
+                                               cps.cultivarParams.winterCrop, &model->_sitePs, &model->_cropPs,
+                                               model->_simPs,
+                                        [model](const string& event) { model->_currentEvents.insert(event); },
                                         addOMFunc,
-                                        [this](double avgAirTemp) {
+                                        [model](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-                                            this->_soilMoisture.get(), avgAirTemp);
+                                            model->_soilMoisture.get(), avgAirTemp);
                                         },
-                                        &_intercropping);
+                                        &model->_intercropping);
 
     //if (crop->separatePerennialCropParameters())
     //  _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
 
-    soiltransport::putCrop(_soilTransport.get(), _currentCropModule.get());
-    soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
-    _soilMoisture->cropModule = _currentCropModule.get();
-    _soilOrganic->cropModule = _currentCropModule.get();
+    soiltransport::putCrop(model->_soilTransport.get(), model->_currentCropModule.get());
+    soilColumnPutCrop(model->_soilColumn.get(), model->_currentCropModule.get());
+    model->_soilMoisture->cropModule = model->_currentCropModule.get();
+    model->_soilOrganic->cropModule = model->_currentCropModule.get();
 
-    if (_simPs.p_UseNMinMineralFertilisingMethod
-        && !_currentCropModule->_isWinterCrop) {
-      soilColumnClearTopDressingParams(_soilColumn.get());
+    if (model->_simPs.p_UseNMinMineralFertilisingMethod
+        && !model->_currentCropModule->_isWinterCrop) {
+      soilColumnClearTopDressingParams(model->_soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
-      double fertAmount = applyMineralFertiliserViaNMinMethod
-        (_simPs.p_NMinFertiliserPartition,
+      double fertAmount = monicaModelApplyMineralFertiliserViaNMinMethod
+        (model, model->_simPs.p_NMinFertiliserPartition,
          NMinCropParameters(cps.speciesParams.pc_SamplingDepth,
                             cps.speciesParams.pc_TargetNSamplingDepth,
                             cps.speciesParams.pc_TargetN30));
-      addDailySumFertiliser(fertAmount);
+      model->addDailySumFertiliser(fertAmount);
     }
   }
 }
@@ -414,56 +415,56 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
  * @brief Simulation of crop seed.
  * @param crop to be planted
  */
-void MonicaModel::seedCrop(Crop* crop) {
+void monica::monicaModelSeedCrop(MonicaModel* model, Crop* crop) {
   debug() << "seedCrop" << endl;
 
-  p_daysWithCrop = 0;
-  p_accuNStress = 0.0;
-  p_accuWaterStress = 0.0;
-  p_accuHeatStress = 0.0;
-  p_accuOxygenStress = 0.0;
+  model->p_daysWithCrop = 0;
+  model->p_accuNStress = 0.0;
+  model->p_accuWaterStress = 0.0;
+  model->p_accuHeatStress = 0.0;
+  model->p_accuOxygenStress = 0.0;
 
   if (crop->isValid()) {
-    _cultivationMethodCount++;
+    model->_cultivationMethodCount++;
 
-    auto addOMFunc = [this](const std::map<size_t, double>& layer2amount, double nconc) {
-      soilOrganicAddOrganicMatter(this->_soilOrganic.get(),
-                                  _currentCropModule->residuePs,
+    auto addOMFunc = [model](const std::map<size_t, double>& layer2amount, double nconc) {
+      soilOrganicAddOrganicMatter(model->_soilOrganic.get(),
+                                  model->_currentCropModule->residuePs,
                                   layer2amount,
                                   nconc);
     };
     auto cps = crop->cropParameters();
-    _currentCropModule = nullptr;
-    _currentCropModule = makeCropModule(_soilColumn.get(), &cps, crop->residueParameters(),
-                                        crop->isWinterCrop(), &_sitePs, &_cropPs, _simPs,
-                                        [this](string event) { this->_currentEvents.insert(std::move(event)); }, addOMFunc,
-                                        [this](double avgAirTemp) {
+    model->_currentCropModule = nullptr;
+    model->_currentCropModule = makeCropModule(model->_soilColumn.get(), &cps, crop->residueParameters(),
+                                        crop->isWinterCrop(), &model->_sitePs, &model->_cropPs, model->_simPs,
+                                        [model](string event) { model->_currentEvents.insert(std::move(event)); }, addOMFunc,
+                                        [model](double avgAirTemp) {
                                           return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-                                            this->_soilMoisture.get(), avgAirTemp);
+                                            model->_soilMoisture.get(), avgAirTemp);
                                         },
-                                        &_intercropping);
+                                        &model->_intercropping);
 
     if (crop->separatePerennialCropParameters())
-      cropmodule::setPerennialCropParameters(_currentCropModule.get(), crop->perennialCropParameters());
+      cropmodule::setPerennialCropParameters(model->_currentCropModule.get(), crop->perennialCropParameters());
 
-    soiltransport::putCrop(_soilTransport.get(), _currentCropModule.get());
-    soilColumnPutCrop(_soilColumn.get(), _currentCropModule.get());
-    _soilMoisture->cropModule = _currentCropModule.get();
-    _soilOrganic->cropModule = _currentCropModule.get();
+    soiltransport::putCrop(model->_soilTransport.get(), model->_currentCropModule.get());
+    soilColumnPutCrop(model->_soilColumn.get(), model->_currentCropModule.get());
+    model->_soilMoisture->cropModule = model->_currentCropModule.get();
+    model->_soilOrganic->cropModule = model->_currentCropModule.get();
 
     //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
     //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
-    if (_simPs.p_UseNMinMineralFertilisingMethod
-        && !_currentCropModule->_isWinterCrop) {
-      soilColumnClearTopDressingParams(_soilColumn.get());
+    if (model->_simPs.p_UseNMinMineralFertilisingMethod
+        && !model->_currentCropModule->_isWinterCrop) {
+      soilColumnClearTopDressingParams(model->_soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
-      double fert_amount = applyMineralFertiliserViaNMinMethod
-        (_simPs.p_NMinFertiliserPartition,
+      double fert_amount = monicaModelApplyMineralFertiliserViaNMinMethod
+        (model, model->_simPs.p_NMinFertiliserPartition,
          NMinCropParameters(cps.speciesParams.pc_SamplingDepth,
                             cps.speciesParams.pc_TargetNSamplingDepth,
                             cps.speciesParams.pc_TargetN30));
-      addDailySumFertiliser(fert_amount);
+      model->addDailySumFertiliser(fert_amount);
     }
   }
 }
@@ -473,9 +474,20 @@ void MonicaModel::seedCrop(Crop* crop) {
  *
  * Deletes the current crop.
  */
-void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
-                                     Harvest::OptCarbonManagementData optCarbMgmtData,
-                                     int incorporateIntoLayerIndex) {
+void monica::monicaModelHarvestCurrentCrop(MonicaModel* model,
+                                           bool exported,
+                                           const Harvest::Spec& spec,
+                                           Harvest::OptCarbonManagementData optCarbMgmtData,
+                                           int incorporateIntoLayerIndex) {
+  auto& _currentCropModule = model->_currentCropModule;
+  auto& _soilOrganic = model->_soilOrganic;
+  auto& _optCarbonExportedResidues = model->_optCarbonExportedResidues;
+  auto& _optCarbonReturnedResidues = model->_optCarbonReturnedResidues;
+  auto& _humusBalanceCarryOver = model->_humusBalanceCarryOver;
+  auto& _simPs = model->_simPs;
+  auto& _sitePs = model->_sitePs;
+  auto& _clearCropUponNextDay = model->_clearCropUponNextDay;
+
   if (_currentCropModule) {
     // prepare to add root and crop residues to soilorganic (AOMs)
     // dead root biomass has already been added daily, so just living root biomass is left
@@ -492,7 +504,7 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
                                                                        false);
         //kg ha-1, secondary yield is ignored with this approach
         double cropContribToHumus = optCarbMgmtData.cropImpactOnHumusBalance;
-        double appliedOrganicFertilizerDryMatter = sumOrganicFertilizerDM(); //kg ha-1
+        double appliedOrganicFertilizerDryMatter = model->sumOrganicFertilizerDM(); //kg ha-1
         double intermediateHumusBalance =
           _humusBalanceCarryOver + cropContribToHumus + appliedOrganicFertilizerDryMatter
           / 1000.0 * optCarbMgmtData.organicFertilizerHeq -
@@ -620,7 +632,11 @@ void MonicaModel::harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
  *
  * Deletes the current crop.
  */
-void MonicaModel::incorporateCurrentCrop() {
+void monica::monicaModelIncorporateCurrentCrop(MonicaModel* model) {
+  auto& _currentCropModule = model->_currentCropModule;
+  auto& _soilOrganic = model->_soilOrganic;
+  auto& _clearCropUponNextDay = model->_clearCropUponNextDay;
+
   if (_currentCropModule) {
     //prepare to add root and crop residues to soilorganic (AOMs)
     double total_biomass = _currentCropModule->vc_TotalBiomass;
@@ -645,27 +661,35 @@ void MonicaModel::incorporateCurrentCrop() {
  *
  * @todo Nothing implemented yet.
  */
-void MonicaModel::applyMineralFertiliser(MineralFertilizerParameters partition,
-                                         double amount) {
+void monica::monicaModelApplyMineralFertiliser(MonicaModel* model,
+                                               MineralFertilizerParameters partition,
+                                               double amount) {
+  auto& _simPs = model->_simPs;
+  auto& _soilColumn = model->_soilColumn;
   if (!_simPs.p_UseNMinMineralFertilisingMethod) {
     soilColumnApplyMineralFertiliser(_soilColumn.get(), partition, amount);
-    addDailySumFertiliser(amount);
+    model->addDailySumFertiliser(amount);
   }
 }
 
-void MonicaModel::applyOrganicFertiliser(const OrganicMatterParameters& params,
-                                         double amountFM,
-                                         bool incorporation,
-                                         int incorporateIntoLayerIndex) {
+void monica::monicaModelApplyOrganicFertiliser(MonicaModel* model,
+                                               const OrganicMatterParameters& params,
+                                               double amountFM,
+                                               bool incorporation,
+                                               int incorporateIntoLayerIndex) {
+  auto& _soilOrganic = model->_soilOrganic;
   debug() << "MONICA model: applyOrganicFertiliser:\t" << amountFM << "\t" << params.vo_NConcentration << endl;
   _soilOrganic->incorporation = incorporation;
   soilOrganicAddOrganicMatter(_soilOrganic.get(), params, amountFM, params.vo_NConcentration, incorporateIntoLayerIndex);
-  addDailySumOrgFertiliser(amountFM, params);
-  addDailySumOrganicFertilizerDM(amountFM * params.vo_AOM_DryMatterContent);
+  monicaModelAddDailySumOrgFertiliser(model, amountFM, params);
+  model->addDailySumOrganicFertilizerDM(amountFM * params.vo_AOM_DryMatterContent);
 }
 
-double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters partition,
-                                                        NMinCropParameters cps) {
+double monica::monicaModelApplyMineralFertiliserViaNMinMethod(MonicaModel* model,
+                                                              MineralFertilizerParameters partition,
+                                                              NMinCropParameters cps) {
+  auto& _simPs = model->_simPs;
+  auto& _soilColumn = model->_soilColumn;
   const NMinApplicationParameters& ups = _simPs.p_NMinUserParams;
   return soilColumnApplyMineralFertiliserViaNMinMethod(_soilColumn.get(),
                                                         partition,
@@ -677,13 +701,18 @@ double MonicaModel::applyMineralFertiliserViaNMinMethod(MineralFertilizerParamet
                                                         ups.delayInDays);
 }
 
-void MonicaModel::addDailySumOrgFertiliser(double amountFM, const OrganicMatterParameters& params) {
+void monica::monicaModelAddDailySumOrgFertiliser(MonicaModel* model,
+                                                 double amountFM,
+                                                 const OrganicMatterParameters& params) {
+  auto& _dailySumOrgFertiliser = model->_dailySumOrgFertiliser;
+  auto& _sumOrgFertiliser = model->_sumOrgFertiliser;
+  auto& _soilColumn = model->_soilColumn;
   using namespace Soil;
   double AOM_fast_factor = OrganicConstants::po_AOM_to_C * params.vo_PartAOM_to_AOM_Fast / params.vo_CN_Ratio_AOM_Fast;
   double AOM_slow_factor = OrganicConstants::po_AOM_to_C * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow;
   double SOM_Factor =
     (1 - (params.vo_PartAOM_to_AOM_Fast + params.vo_PartAOM_to_AOM_Slow)) * OrganicConstants::po_AOM_to_C /
-    soilColumn().at(0).vs_Soil_CN_Ratio(); // TODO ask CN for correctness
+    _soilColumn->at(0).vs_Soil_CN_Ratio(); // TODO ask CN for correctness
 
   double conversion =
     AOM_fast_factor + AOM_slow_factor + SOM_Factor + params.vo_AOM_NH4Content + params.vo_AOM_NO3Content;
@@ -692,14 +721,27 @@ void MonicaModel::addDailySumOrgFertiliser(double amountFM, const OrganicMatterP
   _sumOrgFertiliser += amountFM * params.vo_AOM_DryMatterContent * conversion;
 }
 
-void MonicaModel::dailyReset() {
+void monica::monicaModelDailyReset(MonicaModel* model) {
+  auto& _dailySumIrrigationWater = model->_dailySumIrrigationWater;
+  auto& _dailySumFertiliser = model->_dailySumFertiliser;
+  auto& _dailySumOrgFertiliser = model->_dailySumOrgFertiliser;
+  auto& _dailySumOrganicFertilizerDM = model->_dailySumOrganicFertilizerDM;
+  auto& _optCarbonExportedResidues = model->_optCarbonExportedResidues;
+  auto& _optCarbonReturnedResidues = model->_optCarbonReturnedResidues;
+  auto& _clearCropUponNextDay = model->_clearCropUponNextDay;
+  auto& _soilTransport = model->_soilTransport;
+  auto& _soilColumn = model->_soilColumn;
+  auto& _soilMoisture = model->_soilMoisture;
+  auto& _soilOrganic = model->_soilOrganic;
+  auto& _currentCropModule = model->_currentCropModule;
+
   _dailySumIrrigationWater = 0.0;
   _dailySumFertiliser = 0.0;
   _dailySumOrgFertiliser = 0.0;
   _dailySumOrganicFertilizerDM = 0.0;
   _optCarbonExportedResidues = 0.0;
   _optCarbonReturnedResidues = 0.0;
-  clearEvents();
+  monicaModelClearEvents(model);
 
   if (_clearCropUponNextDay) {
     soiltransport::removeCrop(_soilTransport.get());
@@ -712,13 +754,18 @@ void MonicaModel::dailyReset() {
   }
 }
 
-void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
-                                  double /*sulfateConcentration*/) {
+void monica::monicaModelApplyIrrigation(MonicaModel* model,
+                                        double amount,
+                                        double nitrateConcentration,
+                                        double /*sulfateConcentration*/) {
+  auto& _simPs = model->_simPs;
+  auto& _soilColumn = model->_soilColumn;
+  auto& _soilOrganic = model->_soilOrganic;
   //if the production process has still some defined manual irrigation dates
   if (!_simPs.p_UseAutomaticIrrigation) {
     soilColumnApplyIrrigation(_soilColumn.get(), amount, nitrateConcentration);
     _soilOrganic->irrigationAmount += amount;
-    addDailySumIrrigationWater(amount);
+    model->addDailySumIrrigationWater(amount);
   }
 }
 
@@ -727,13 +774,15 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
  * that for all effected soil layer the parameters are averaged.
  * @param depth Depth in meters
  */
-void MonicaModel::applyTillage(double depth) {
-  soilColumnApplyTillage(_soilColumn.get(), depth);
+void monica::monicaModelApplyTillage(MonicaModel* model, double depth) {
+  soilColumnApplyTillage(model->_soilColumn.get(), depth);
 }
 
-void MonicaModel::step() {
-  if (isCropPlanted() && !_clearCropUponNextDay) {
-    cropStep();
+void monica::monicaModelStep(MonicaModel* model) {
+  auto& _clearCropUponNextDay = model->_clearCropUponNextDay;
+  auto& _intercropping = model->_intercropping;
+  if (model->isCropPlanted() && !_clearCropUponNextDay) {
+    monicaModelCropStep(model);
   } else if (_intercropping.isAsync()) {
     // tell other side that there is currently no crop
     auto wreq = _intercropping.writer.writeRequest();
@@ -750,19 +799,33 @@ void MonicaModel::step() {
     else if (val.isLait()) cout << " LAI_t: " << val.getLait() << " ---> Error: shouldn't happen." << endl;
   }
 
-  generalStep();
+  monicaModelGeneralStep(model);
 }
 
 /**
  * @brief Simulating the soil processes for one time step.
  * @param stepNo Number of current processed step
  */
-void MonicaModel::generalStep() {
+void monica::monicaModelGeneralStep(MonicaModel* model) {
+  auto& _currentStepDate = model->_currentStepDate;
+  auto& _climateData = model->_climateData;
+  auto& _groundwaterInformation = model->_groundwaterInformation;
+  auto& _envPs = model->_envPs;
+  auto& _simPs = model->_simPs;
+  auto& _soilColumn = model->_soilColumn;
+  auto& _soilTemperature = model->_soilTemperature;
+  auto& _soilMoisture = model->_soilMoisture;
+  auto& _soilOrganic = model->_soilOrganic;
+  auto& _soilTransport = model->_soilTransport;
+  auto& _currentCropModule = model->_currentCropModule;
+  auto& vs_GroundwaterDepth = model->vs_GroundwaterDepth;
+  auto& vw_AtmosphericCO2Concentration = model->vw_AtmosphericCO2Concentration;
+
   auto date = _currentStepDate;
   unsigned int julday = date.julianDay();
   bool leapYear = date.isLeapYear();
 
-  auto climateData = currentStepClimateData();
+  auto climateData = _climateData.back();
   double tmin = climateData[Climate::tmin];
   double tavg = climateData[Climate::tavg];
   double tmax = climateData[Climate::tmax];
@@ -781,11 +844,11 @@ void MonicaModel::generalStep() {
   //  cout << "vs_GroundwaterDepth:\t" << _envPs.p_MinGroundwaterDepth << "\t" << _envPs.p_MaxGroundwaterDepth << endl;
   vs_GroundwaterDepth = gw_value_p.first
                           ? max(0.0, gw_value_p.second)
-                          : GroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
-                                                    _envPs.p_MinGroundwaterDepth,
-                                                    _envPs.p_MinGroundwaterDepthMonth,
-                                                    julday,
-                                                    leapYear);
+                          : monicaModelGroundwaterDepthForDate(_envPs.p_MaxGroundwaterDepth,
+                                                               _envPs.p_MinGroundwaterDepth,
+                                                               _envPs.p_MinGroundwaterDepthMonth,
+                                                               julday,
+                                                               leapYear);
 
   // first try to get CO2 concentration from climate data
   auto co2it = climateData.find(Climate::co2);
@@ -798,7 +861,7 @@ void MonicaModel::generalStep() {
       vw_AtmosphericCO2Concentration = co2sit->second;
       // potentially use MONICA algorithm to calculate CO2 concentration
     } else if (int(_envPs.p_AtmosphericCO2) <= 0) {
-      vw_AtmosphericCO2Concentration = CO2ForDate(date, _envPs.rcp);
+      vw_AtmosphericCO2Concentration = monicaModelCO2ForDate(date, _envPs.rcp);
       // if everything fails value in UserEnvironmentParameters for the whole simulation
     } else {
       vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
@@ -810,9 +873,9 @@ void MonicaModel::generalStep() {
   soilColumnDeleteAOMPool(_soilColumn.get());
 
   auto possibleDelayedFertilizerAmount = soilColumnApplyPossibleDelayedFerilizer(_soilColumn.get());
-  addDailySumFertiliser(possibleDelayedFertilizerAmount);
+  model->addDailySumFertiliser(possibleDelayedFertilizerAmount);
   double possibleTopDressingAmount = soilColumnApplyPossibleTopDressing(_soilColumn.get());
-  addDailySumFertiliser(possibleTopDressingAmount);
+  model->addDailySumFertiliser(possibleTopDressingAmount);
 
   if (_currentCropModule
       && _simPs.p_UseNMinMineralFertilisingMethod
@@ -821,10 +884,10 @@ void MonicaModel::generalStep() {
     soilColumnClearTopDressingParams(_soilColumn.get());
     debug() << "nMin fertilising winter crop" << endl;
     auto sps = _currentCropModule->speciesPs;
-    double fertilizerAmount = applyMineralFertiliserViaNMinMethod
-      (_simPs.p_NMinFertiliserPartition,
+    double fertilizerAmount = monicaModelApplyMineralFertiliserViaNMinMethod
+      (model, _simPs.p_NMinFertiliserPartition,
        NMinCropParameters(sps.pc_SamplingDepth, sps.pc_TargetNSamplingDepth, sps.pc_TargetN30));
-    addDailySumFertiliser(fertilizerAmount);
+    model->addDailySumFertiliser(fertilizerAmount);
   }
 
   soiltemperature::step(_soilTemperature.get(), tmin, tmax, globrad);
@@ -859,9 +922,24 @@ pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai)
   return make_pair(laiSun, lai - laiSun);
 }
 
-void MonicaModel::cropStep() {
+void monica::monicaModelCropStep(MonicaModel* model) {
+  auto& _currentStepDate = model->_currentStepDate;
+  auto& _climateData = model->_climateData;
+  auto& _currentCropModule = model->_currentCropModule;
+  auto& _envPs = model->_envPs;
+  auto& _simPs = model->_simPs;
+  auto& _soilColumn = model->_soilColumn;
+  auto& _soilOrganic = model->_soilOrganic;
+  auto& p_daysWithCrop = model->p_daysWithCrop;
+  auto& p_accuNStress = model->p_accuNStress;
+  auto& p_accuWaterStress = model->p_accuWaterStress;
+  auto& p_accuHeatStress = model->p_accuHeatStress;
+  auto& p_accuOxygenStress = model->p_accuOxygenStress;
+  auto& vw_AtmosphericCO2Concentration = model->vw_AtmosphericCO2Concentration;
+  auto& vw_AtmosphericO3Concentration = model->vw_AtmosphericO3Concentration;
+
   auto date = _currentStepDate;
-  auto climateData = currentStepClimateData();
+  auto climateData = _climateData.back();
 
   // do nothing if there is no crop
   if (!_currentCropModule) return;
@@ -932,7 +1010,7 @@ void MonicaModel::cropStep() {
     tie(irrigationTriggered, irrigationAmount) = soilColumnApplyIrrigationViaTrigger(_soilColumn.get(), aips);
     if (irrigationTriggered) {
       _soilOrganic->irrigationAmount += irrigationAmount;
-      addDailySumIrrigationWater(irrigationAmount);
+      model->addDailySumIrrigationWater(irrigationAmount);
     }
   }
 
@@ -984,8 +1062,10 @@ void MonicaModel::cropStep() {
 *
 * @return
 */
-double MonicaModel::CO2ForDate(const double year, const double julianDay, const bool isLeapYear,
-                               const mas::schema::climate::RCP rcp) {
+double monica::monicaModelCO2ForDate(const double year,
+                                     const double julianDay,
+                                     const bool isLeapYear,
+                                     const mas::schema::climate::RCP rcp) {
   using namespace mas::schema::climate;
   const double decimalDate = year + julianDay / (isLeapYear ? 366.0 : 365);
 
@@ -1019,8 +1099,8 @@ double MonicaModel::CO2ForDate(const double year, const double julianDay, const 
   return co2;
 }
 
-double MonicaModel::CO2ForDate(const Date& d, const mas::schema::climate::RCP rcp) {
-  return CO2ForDate(d.year(), d.julianDay(), d.isLeapYear(), rcp);
+double monica::monicaModelCO2ForDate(const Date& d, const mas::schema::climate::RCP rcp) {
+  return monicaModelCO2ForDate(d.year(), d.julianDay(), d.isLeapYear(), rcp);
 }
 
 
@@ -1031,59 +1111,6 @@ double MonicaModel::CO2ForDate(const Date& d, const mas::schema::climate::RCP rc
 *
 * @return
 */
-double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
-                                            double minGroundwaterDepth,
-                                            int minGroundwaterDepthMonth,
-                                            double julianDay,
-                                            bool isLeapYear) {
-  double days = 365;
-  if (isLeapYear) days = 366.0;
-
-  double meanGroundwaterDepth = (maxGroundwaterDepth + minGroundwaterDepth) / 2.0;
-  double groundwaterAmplitude = (maxGroundwaterDepth - minGroundwaterDepth) / 2.0;
-
-  double sinus = sin(((julianDay / days * 360.0) - 90.0 -
-                      ((double(minGroundwaterDepthMonth) * 30.0) - 15.0)) *
-                     3.14159265358979 / 180.0);
-
-  double groundwaterDepth = meanGroundwaterDepth + (sinus * groundwaterAmplitude);
-
-  if (groundwaterDepth < 0.0) groundwaterDepth = 20.0;
-
-  return groundwaterDepth;
-}
-
-void MonicaModel::clearEvents() {
-  _previousDaysEvents = _currentEvents;
-  _currentEvents.clear();
-}
-
-void MonicaModel::setOtherCropHeightAndLAIt(double cropHeight, double lait) {
-  if (_currentCropModule) {
-    cropmodule::setOtherCropHeightAndLAIt(_currentCropModule.get(), cropHeight, lait);
-  }
-}
-
-void monica::monicaModelStep(MonicaModel* model) {
-  model->step();
-}
-
-void monica::monicaModelGeneralStep(MonicaModel* model) {
-  model->generalStep();
-}
-
-void monica::monicaModelCropStep(MonicaModel* model) {
-  model->cropStep();
-}
-
-double monica::monicaModelCO2ForDate(double year, double julianDay, bool isLeapYear, mas::schema::climate::RCP rcp) {
-  return MonicaModel::CO2ForDate(year, julianDay, isLeapYear, rcp);
-}
-
-double monica::monicaModelCO2ForDate(const Tools::Date& d, mas::schema::climate::RCP rcp) {
-  return MonicaModel::CO2ForDate(d, rcp);
-}
-
 double monica::monicaModelGroundwaterDepthForDate(double maxGroundwaterDepth,
                                                   double minGroundwaterDepth,
                                                   int minGroundwaterDepthMonth,
@@ -1106,64 +1133,13 @@ double monica::monicaModelGroundwaterDepthForDate(double maxGroundwaterDepth,
   return groundwaterDepth;
 }
 
-void monica::monicaModelSeedCrop(MonicaModel* model, mas::schema::model::monica::CropSpec::Reader reader) {
-  model->seedCrop(reader);
-}
-
-void monica::monicaModelSeedCrop(MonicaModel* model, Crop* crop) {
-  model->seedCrop(crop);
-}
-
-void monica::monicaModelHarvestCurrentCrop(MonicaModel* model,
-                                           bool exported,
-                                           const Harvest::Spec& spec,
-                                           Harvest::OptCarbonManagementData optCarbMgmtData,
-                                           int incorporateIntoLayerIndex) {
-  model->harvestCurrentCrop(exported, spec, optCarbMgmtData, incorporateIntoLayerIndex);
-}
-
-void monica::monicaModelIncorporateCurrentCrop(MonicaModel* model) {
-  model->incorporateCurrentCrop();
-}
-
-void monica::monicaModelApplyMineralFertiliser(MonicaModel* model, MineralFertilizerParameters partition, double amount) {
-  model->applyMineralFertiliser(partition, amount);
-}
-
-void monica::monicaModelApplyOrganicFertiliser(MonicaModel* model,
-                                               const OrganicMatterParameters& omps,
-                                               double amountFM,
-                                               bool incorporation,
-                                               int incorporateIntoLayerIndex) {
-  model->applyOrganicFertiliser(omps, amountFM, incorporation, incorporateIntoLayerIndex);
-}
-
-double monica::monicaModelApplyMineralFertiliserViaNMinMethod(MonicaModel* model,
-                                                              MineralFertilizerParameters partition,
-                                                              NMinCropParameters cropParams) {
-  return model->applyMineralFertiliserViaNMinMethod(partition, cropParams);
-}
-
-void monica::monicaModelAddDailySumOrgFertiliser(MonicaModel* model, double amountFM, const OrganicMatterParameters& params) {
-  model->addDailySumOrgFertiliser(amountFM, params);
-}
-
-void monica::monicaModelDailyReset(MonicaModel* model) {
-  model->dailyReset();
-}
-
-void monica::monicaModelApplyIrrigation(MonicaModel* model, double amount, double nitrateConcentration, double sulfateConcentration) {
-  model->applyIrrigation(amount, nitrateConcentration, sulfateConcentration);
-}
-
-void monica::monicaModelApplyTillage(MonicaModel* model, double depth) {
-  model->applyTillage(depth);
-}
-
 void monica::monicaModelClearEvents(MonicaModel* model) {
-  model->clearEvents();
+  model->_previousDaysEvents = model->_currentEvents;
+  model->_currentEvents.clear();
 }
 
 void monica::monicaModelSetOtherCropHeightAndLAIt(MonicaModel* model, double cropHeight, double lait) {
-  model->setOtherCropHeightAndLAIt(cropHeight, lait);
+  if (model->_currentCropModule) {
+    cropmodule::setOtherCropHeightAndLAIt(model->_currentCropModule.get(), cropHeight, lait);
+  }
 }

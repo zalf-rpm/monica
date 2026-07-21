@@ -54,33 +54,6 @@ class Crop;
 
 struct MonicaModel {
 public:
-  void step();
-  void generalStep();
-  void cropStep();
-  static double CO2ForDate(double year,
-                           double julianDay,
-                           bool isLeapYear,
-                           mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
-  static double CO2ForDate(const Tools::Date&, mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
-  double GroundwaterDepthForDate(double maxGroundwaterDepth,
-                                 double minGroundwaterDepth,
-                                 int minGroundwaterDepthMonth,
-                                 double julianDay,
-                                 bool isLeapYear);
-  void seedCrop(mas::schema::model::monica::CropSpec::Reader reader);
-  void seedCrop(Crop* crop);
-  void harvestCurrentCrop(bool exported,
-                          const Harvest::Spec& spec,
-                          Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData(),
-                          int incorporateIntoLayerIndex = 0);
-  void incorporateCurrentCrop();
-  void applyMineralFertiliser(MineralFertilizerParameters partition, double amount);
-  void applyOrganicFertiliser(const OrganicMatterParameters& omps,
-                              double amountFM,
-                              bool incorporation,
-                              int incorporateIntoLayerIndex = 0);
-  double applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters partition, NMinCropParameters cropParams);
-
   bool isCropPlanted() const { return _currentCropModule; }
 
   bool useNMinMineralFertilisingMethod() const { return _simPs.p_UseNMinMineralFertilisingMethod; }
@@ -93,8 +66,6 @@ public:
   }
 
   double dailySumOrgFertiliser() const { return _dailySumOrgFertiliser; }
-
-  void addDailySumOrgFertiliser(double amountFM, const OrganicMatterParameters& params);
 
   double dailySumOrganicFertilizerDM() const { return _dailySumOrganicFertilizerDM; }
   double sumOrganicFertilizerDM() const { return _sumOrganicFertilizerDM; }
@@ -118,10 +89,6 @@ public:
     _sumOrgFertiliser = 0;
     _sumOrganicFertilizerDM = 0;
   }
-
-  void dailyReset();
-  void applyIrrigation(double amount, double nitrateConcentration = 0, double sulfateConcentration = 0);
-  void applyTillage(double depth);
 
   double get_AtmosphericCO2Concentration() const { return vw_AtmosphericCO2Concentration; }
   double get_AtmosphericO3Concentration() const { return vw_AtmosphericO3Concentration; }
@@ -170,7 +137,6 @@ public:
   const std::vector<std::map<Climate::ACD, double>>& climateData() const { return _climateData; }
 
   void addEvent(std::string e) { _currentEvents.insert(e); }
-  void clearEvents();
   const std::set<std::string>& currentEvents() const { return _currentEvents; }
   const std::set<std::string>& previousDaysEvents() const { return _previousDaysEvents; }
 
@@ -182,8 +148,6 @@ public:
 
   Intercropping& intercropping() { return _intercropping; }
   void setIntercropping(Intercropping& ic) { _intercropping = ic; }
-
-  void setOtherCropHeightAndLAIt(double cropHeight, double lait);
 
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;
