@@ -54,43 +54,43 @@ class Crop;
 
 struct MonicaModel {
 public:
-  SiteParameters _sitePs;
-  EnvironmentParameters _envPs;
-  CropModuleParameters _cropPs;
-  SimulationParameters _simPs;
-  MeasuredGroundwaterTableInformation _groundwaterInformation;
+  SiteParameters sitePs;
+  EnvironmentParameters envPs;
+  CropModuleParameters cropPs;
+  SimulationParameters simPs;
+  MeasuredGroundwaterTableInformation groundwaterInformation;
 
-  kj::Own<SoilColumn> _soilColumn; //!< main soil data structure
-  kj::Own<SoilTemperature> _soilTemperature; //!< temperature code
-  kj::Own<SoilMoisture> _soilMoisture; //!< moisture code
-  kj::Own<SoilOrganic> _soilOrganic; //!< organic code
-  kj::Own<SoilTransport> _soilTransport; //!< transport code
-  kj::Own<CropModule> _currentCropModule; //!< crop code for possibly planted crop
+  kj::Own<SoilColumn> soilColumn; //!< main soil data structure
+  kj::Own<SoilTemperature> soilTemperature; //!< temperature code
+  kj::Own<SoilMoisture> soilMoisture; //!< moisture code
+  kj::Own<SoilOrganic> soilOrganic; //!< organic code
+  kj::Own<SoilTransport> soilTransport; //!< transport code
+  kj::Own<CropModule> currentCropModule; //!< crop code for possibly planted crop
 
   //! store applied fertiliser during one production process
-  double _sumFertiliser{0.0}; //mineral N
-  double _sumOrgFertiliser{0.0}; //organic N
+  double sumFertiliser{0.0}; //mineral N
+  double sumOrgFertiliser{0.0}; //organic N
 
   //! stores the daily sum of applied fertiliser
-  double _dailySumFertiliser{0.0}; //mineral N
-  double _dailySumOrgFertiliser{0.0}; //organic N
+  double dailySumFertiliser{0.0}; //mineral N
+  double dailySumOrgFertiliser{0.0}; //organic N
 
-  double _dailySumOrganicFertilizerDM{0.0};
-  double _sumOrganicFertilizerDM{0.0};
+  double dailySumOrganicFertilizerDM{0.0};
+  double sumOrganicFertilizerDM{0.0};
 
-  double _humusBalanceCarryOver{0.0};
+  double humusBalanceCarryOver{0.0};
 
-  double _dailySumIrrigationWater{0.0};
+  double dailySumIrrigationWater{0.0};
 
-  double _optCarbonExportedResidues{0.0};
-  double _optCarbonReturnedResidues{0.0};
+  double optCarbonExportedResidues{0.0};
+  double optCarbonReturnedResidues{0.0};
 
-  Tools::Date _currentStepDate;
-  std::vector<std::map<Climate::ACD, double>> _climateData;
-  std::set<std::string> _currentEvents;
-  std::set<std::string> _previousDaysEvents;
+  Tools::Date currentStepDate;
+  std::vector<std::map<Climate::ACD, double>> climateData;
+  std::set<std::string> currentEvents;
+  std::set<std::string> previousDaysEvents;
 
-  bool _clearCropUponNextDay{false};
+  bool clearCropUponNextDay{false};
 
   int p_daysWithCrop{0};
   double p_accuNStress{0.0};
@@ -102,9 +102,9 @@ public:
   double vw_AtmosphericO3Concentration{0.0};
   double vs_GroundwaterDepth{0.0};
 
-  int _cultivationMethodCount{0};
+  int cultivationMethodCount{0};
 
-  Intercropping _intercropping;
+  Intercropping intercropping;
 
   //public:
   //  uint critPos{ 0 };

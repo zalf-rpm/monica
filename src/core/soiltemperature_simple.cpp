@@ -33,7 +33,7 @@ namespace soiltemperature {
 
 kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperatureModuleParameters& params) {
   auto st = kj::heap<SoilTemperature>();
-  st->soilColumn = mm._soilColumn.get();
+  st->soilColumn = mm.soilColumn.get();
   st->monica = &mm;
   st->params = params;
   st->noOfTempLayers = st->soilColumn->size() + 2;
@@ -86,7 +86,7 @@ kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperat
     st->V[i] = lti * Ntau;
   }
 
-  const double ts = st->monica->_envPs.p_timeStep;
+  const double ts = st->monica->envPs.p_timeStep;
   const double dw = st->params.pt_DensityWater;
   const double cw = st->params.pt_SpecificHeatCapacityWater;
   const double dq = st->params.pt_QuartzRawDensity;
@@ -152,7 +152,7 @@ kj::Own<SoilTemperature> makeSoilTemperature(
   MonicaModel& mm,
   mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
   auto st = kj::heap<SoilTemperature>();
-  st->soilColumn = mm._soilColumn.get();
+  st->soilColumn = mm.soilColumn.get();
   st->monica = &mm;
   st->noOfTempLayers = st->soilColumn->size() + 2;
   st->noOfSoilLayers = st->soilColumn->size();
@@ -266,7 +266,7 @@ double calcSoilSurfaceTemperature(
   double globrad) {
   globrad = max(8.33, globrad);
 
-  const double soilCoverage = st->monica->_currentCropModule ? st->monica->_currentCropModule->vc_SoilCoverage : 0.0;
+  const double soilCoverage = st->monica->currentCropModule ? st->monica->currentCropModule->vc_SoilCoverage : 0.0;
   const double shadingCoefficient =
     0.1 + ((soilCoverage * st->dampingFactor) + ((1 - soilCoverage) * (1 - st->dampingFactor)));
 
@@ -277,8 +277,8 @@ double calcSoilSurfaceTemperature(
 
   if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
 
-  if (st->monica->_soilMoisture->snowComponent->vm_SnowDepth > 0.0) {
-    soilSurfaceTemperature = st->monica->_soilMoisture->frostComponent->vm_TemperatureUnderSnow;
+  if (st->monica->soilMoisture->snowComponent->vm_SnowDepth > 0.0) {
+    soilSurfaceTemperature = st->monica->soilMoisture->frostComponent->vm_TemperatureUnderSnow;
   }
 
   return soilSurfaceTemperature;

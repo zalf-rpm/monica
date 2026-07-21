@@ -42,7 +42,7 @@ using namespace Climate;
 /*
 json11::Json createHarvestingMessage(CMResult result, const MonicaModel& monica)
 {
-  result.results[sumFertiliser] = monica._sumFertiliser;
+  result.results[sumFertiliser] = monica.sumFertiliser;
   result.results[daysWithCrop] = monica.p_daysWithCrop;
   result.results[NStress] = monica.p_accuNStress;
   result.results[WaterStress] = monica.p_accuWaterStress;
@@ -56,8 +56,8 @@ json11::Json createHarvestingMessage(CMResult result, const MonicaModel& monica)
 json11::Json createSoilResultsMessage(const MonicaModel& monica)
 {
   //  const SoilTemperature& mst = monica.soilTemperature();
-  const SoilMoisture& msm = *monica._soilMoisture;
-  auto mcg = ((MonicaModel&)monica)._currentCropModule.get();
+  const SoilMoisture& msm = *monica.soilMoisture;
+  auto mcg = ((MonicaModel&)monica).currentCropModule.get();
   //  const SoilOrganic& mso = monica.soilOrganic();
   //  const SoilColumn& msc = monica.soilColumn();
   //  const SoilTransport& msq = monica.soilTransport();
@@ -263,7 +263,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
 
             // test if monica's crop has been dying in previous step
             // if yes, it will be incorporated into soil
-            if(monica._currentCropModule && monica._currentCropModule->dyingOut)
+            if(monica.currentCropModule && monica.currentCropModule->dyingOut)
               monica.incorporateCurrentCrop();
 
             auto dsm = msg.json["climateData"].object_items();
@@ -323,7 +323,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
               }
             }
 
-            if(monica._currentCropModule)
+            if(monica.currentCropModule)
               monica.cropStep(date, climateData);
 
             monica.generalStep(date, climateData);
@@ -341,7 +341,7 @@ void Monica::ZmqServer::startZeroMQMonica(zmq::context_t* zmqContext,
             if(date == Date(31, 12, date.year()))
               dailyStepResultMsg["yearly"] = createYearlyResultsMessage(aggregatedValues);
 
-            int devStage = monica._currentCropModule ? monica._currentCropModule->vc_DevelopmentalStage + 1 : 0;
+            int devStage = monica.currentCropModule ? monica.currentCropModule->vc_DevelopmentalStage + 1 : 0;
             if(prevDevStage < devStage)
             {
               prevDevStage = devStage;
