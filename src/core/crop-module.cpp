@@ -18,7 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 /** @todo Christian: Strahlungskonzept. Welche Information wird wo verwendet? */
 
-#include "crop-module_simple.h"
+#include "crop-module.h"
 
 #include <cmath>
 #include <string>
@@ -26,7 +26,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/exception.h>
 
 #include "tools/debug.h"
-#include "soilmoisture_simple.h"
+#include "soilmoisture.h"
 #include "monica-parameters.h"
 #include "tools/helper.h"
 #include "tools/algorithms.h"

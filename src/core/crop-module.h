@@ -35,7 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
-#include "soilcolumn_simple.h"
+#include "soilcolumn.h"
 #include "voc-common.h"
 #include "run/cultivation-method.h"
 

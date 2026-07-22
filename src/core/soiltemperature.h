@@ -8,7 +8,7 @@
 
 #include <kj/memory.h>
 
-#include "soilcolumn_simple.h"
+#include "soilcolumn.h"
 #include "monica-parameters.h"
 
 namespace monica {

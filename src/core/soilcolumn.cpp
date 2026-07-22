@@ -15,13 +15,13 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include "soilcolumn_simple.h"
+#include "soilcolumn.h"
 
 #include <cmath>
 #include <algorithm>
 
 /**
- * @file soilcolumn_simple.cpp
+ * @file soilcolumn.cpp
  *
  * @brief This file contains the definition of classes AOM_Properties,  SoilLayer, SoilColumn
  *
@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  * @see Monica::FertilizerTriggerThunk
  */
 
-#include "crop-module_simple.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
 

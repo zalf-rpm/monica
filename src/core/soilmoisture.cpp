@@ -15,7 +15,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include "soilmoisture_simple.h"
+#include "soilmoisture.h"
 
 #include <algorithm> //for min, max
 #include <iostream>
@@ -23,8 +23,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "frost-component.h"
 #include "snow-component.h"
-#include "soilcolumn_simple.h"
-#include "crop-module_simple.h"
+#include "soilcolumn.h"
+#include "crop-module.h"
 #include "monica-model.h"
 #include "tools/debug.h"
 #include "tools/algorithms.h"

@@ -19,16 +19,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  * @file soilorganic.cpp
  */
 
-#include "soilorganic_simple.h"
+#include "soilorganic.h"
 
 #include <algorithm>
 #include <cmath>
 #include <tuple>
 #include <utility>
 
-#include "soilcolumn_simple.h"
+#include "soilcolumn.h"
 #include "monica-model.h"
-#include "crop-module_simple.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 #include "soil/constants.h"
 #include "tools/algorithms.h"

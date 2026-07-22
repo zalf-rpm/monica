@@ -22,9 +22,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 #include <math.h>
 
-#include "soilmoisture_simple.h"
-#include "soilcolumn_simple.h"
-#include "crop-module_simple.h"
+#include "soilmoisture.h"
+#include "soilcolumn.h"
+#include "crop-module.h"
 #include "tools/debug.h"
 
 using namespace std;

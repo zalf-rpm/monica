@@ -28,11 +28,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 #include "tools/algorithms.h"
 #include "../core/monica-model.h"
-#include "../core/crop-module_simple.h"
-#include "../core/soilmoisture_simple.h"
-#include "../core/soiltemperature_simple.h"
+#include "../core/crop-module.h"
+#include "../core/soilmoisture.h"
+#include "../core/soiltemperature.h"
 #include "../core/soiltransport_simple.h"
-#include "../core/soilorganic_simple.h"
+#include "../core/soilorganic.h"
 
 using namespace monica;
 using namespace Tools;

@@ -43,11 +43,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/constants.h"
 #include "../run/cultivation-method.h"
 #include "soiltransport_simple.h"
-#include "soilorganic_simple.h"
-#include "soiltemperature_simple.h"
-#include "soilmoisture_simple.h"
-#include "crop-module_simple.h"
-#include "soilcolumn_simple.h"
+#include "soilorganic.h"
+#include "soiltemperature.h"
+#include "soilmoisture.h"
+#include "crop-module.h"
+#include "soilcolumn.h"
 
 namespace monica {
 class Crop;

@@ -18,7 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #pragma once
 
 /**
- * @file soilcolumn_simple.h
+ * @file soilcolumn.h
  *
  * @brief This file contains the declaration of classes AOM_Properties,  SoilLayer, SoilColumn
  * and FertilizerTriggerThunk.
