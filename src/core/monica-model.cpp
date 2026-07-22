@@ -732,7 +732,7 @@ void monica::monicamodel::addDailySumOrgFertiliser(MonicaModel* model,
   double AOM_slow_factor = OrganicConstants::po_AOM_to_C * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow;
   double SOM_Factor =
     (1 - (params.vo_PartAOM_to_AOM_Fast + params.vo_PartAOM_to_AOM_Slow)) * OrganicConstants::po_AOM_to_C /
-    soilColumn->at(0).vs_Soil_CN_Ratio(); // TODO ask CN for correctness
+    soilColumn->at(0)._sps.vs_Soil_CN_Ratio; // TODO ask CN for correctness
 
   double conversion =
     AOM_fast_factor + AOM_slow_factor + SOM_Factor + params.vo_AOM_NH4Content + params.vo_AOM_NO3Content;

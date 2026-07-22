@@ -40,8 +40,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-parameters.h"
 
 namespace monica {
-struct SoilLayer;
-
 struct SoilColumn;
 
 struct CropModule;
@@ -96,10 +94,12 @@ struct AOM_Properties {
   bool noVolatilization{true}; //!< true means it's a crop residue and won't participate in vo_volatilisation()
 };
 
+namespace soillayer {
+
 /**
  * @author Claas Nendel, Michael Berg
  *
- * @brief class that stores information and properties about a soil layer.
+ * @brief stores information and properties about a soil layer.
  *
  * Storage class for soil layer properties e.g. saturation, field capacity, etc.
  * Right now all layers are expected to be from the same size, but this code
@@ -107,81 +107,6 @@ struct AOM_Properties {
  *
  */
 struct SoilLayer {
-  SoilLayer() {}
-
-//    SoilLayer(const UserInitialValues* initParams);
-
-  SoilLayer(double vs_LayerThickness,
-            const Soil::SoilParameters &soilParams);
-
-  SoilLayer(mas::schema::model::monica::SoilLayerState::Reader reader) { deserialize(reader); }
-
-  void deserialize(mas::schema::model::monica::SoilLayerState::Reader reader);
-
-  void serialize(mas::schema::model::monica::SoilLayerState::Builder builder) const;
-
-  //!< Soil layer's organic matter content [kg OM kg-1]
-  double vs_SoilOrganicMatter() const { return _sps.vs_SoilOrganicMatter(); }
-
-  //!< Soil layer's organic carbon content [kg C kg-1]
-  double vs_SoilOrganicCarbon() const { return _sps.vs_SoilOrganicCarbon(); }
-
-  //! Sets value for soil organic carbon.
-  void set_SoilOrganicCarbon(double soc) { _sps.set_vs_SoilOrganicCarbon(soc); }
-
-  //! Returns bulk density of soil layer [kg m-3]
-  double vs_SoilBulkDensity() const { return _sps.vs_SoilBulkDensity(); }
-
-  //! Returns pH value of soil layer
-  double get_SoilpH() const { return _sps.vs_SoilpH; }
-
-  //! Returns soil water pressure head as common logarithm pF.
-  double vs_SoilMoisture_pF();
-
-  //! soil ammonium content [kgN m-3]
-  double get_SoilNH4() const { return vs_SoilNH4; }
-
-  //! soil nitrite content [kgN m-3]
-  double get_SoilNO2() const { return vs_SoilNO2; }
-
-  //! soil nitrate content [kgN m-3]
-  double get_SoilNO3() const { return vs_SoilNO3; }
-
-  //! soil carbamide content [kgN m-3]
-  double get_SoilCarbamid() const { return vs_SoilCarbamid; }
-
-  //! soil mineral N content [kg m-3]
-  double get_SoilNmin() const { return vs_SoilNO3 + vs_SoilNO2 + vs_SoilNH4; }
-
-  double get_Vs_SoilMoisture_m3() const { return vs_SoilMoisture_m3; }
-
-  void set_Vs_SoilMoisture_m3(double ms) { vs_SoilMoisture_m3 = ms; }
-
-  double get_Vs_SoilTemperature() const { return vs_SoilTemperature; }
-
-  void set_Vs_SoilTemperature(double st) { vs_SoilTemperature = st; }
-
-  double vs_SoilSandContent() const { return _sps.vs_SoilSandContent; } //!< Soil layer's sand content [kg kg-1]
-  double vs_SoilClayContent() const { return _sps.vs_SoilClayContent; } //!< Soil layer's clay content [kg kg-1] (Ton)
-  double
-  vs_SoilStoneContent() const { return _sps.vs_SoilStoneContent; } //!< Soil layer's stone content in soil [kg kg-1]
-  double
-  vs_SoilSiltContent() const { return _sps.vs_SoilSiltContent(); } //!< Soil layer's silt content [kg kg-1] (Schluff)
-  std::string vs_SoilTexture() const { return _sps.vs_SoilTexture; }
-
-  double vs_SoilpH() const { return _sps.vs_SoilpH; } //!< Soil pH value []
-
-  double vs_Lambda() const { return _sps.vs_Lambda; }  //!< Soil water conductivity coefficient []
-  double vs_FieldCapacity() const { return _sps.vs_FieldCapacity; }
-
-  double vs_Saturation() const { return _sps.vs_Saturation; }
-
-  double vs_PermanentWiltingPoint() const { return _sps.vs_PermanentWiltingPoint; }
-
-  double vs_Soil_CN_Ratio() const { return _sps.vs_Soil_CN_Ratio; }
-
-  // members ------------------------------------------------------------
-
   double vs_LayerThickness{0.1}; //!< Soil layer's vertical extension [m]
   //double vs_SoilMoistureOld_m3{0.25}; //!< Soil layer's moisture content of previous day [m3 m-3]
   double vs_SoilWaterFlux{0.0}; //!< Water flux at the upper boundary of the soil layer [l m-2]
@@ -200,12 +125,26 @@ struct SoilLayer {
   double vs_SoilNO3{0.0001}; //!< Soil layer's NO3-N content [kg NO3-N m-3]
   bool vs_SoilFrozen{false};
 
-public:
   Soil::SoilParameters _sps;
 
   double vs_SoilMoisture_m3{0.25}; //!< Soil layer's moisture content [m3 m-3]
   double vs_SoilTemperature{0.0}; //!< Soil layer's temperature [°C]
 };
+
+SoilLayer makeSoilLayer(double vs_LayerThickness, const Soil::SoilParameters &soilParams);
+
+void deserialize(SoilLayer* sl, mas::schema::model::monica::SoilLayerState::Reader reader);
+void serialize(const SoilLayer* sl, mas::schema::model::monica::SoilLayerState::Builder builder);
+
+//! Returns soil water pressure head as common logarithm pF.
+double soilMoisturePF(const SoilLayer* sl);
+
+//! soil mineral N content [kg m-3]
+double soilNmin(const SoilLayer* sl);
+
+} // namespace soillayer
+
+using SoilLayer = soillayer::SoilLayer;
 
 //----------------------------------------------------------------------------
 

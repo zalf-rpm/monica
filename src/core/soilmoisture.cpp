@@ -137,7 +137,7 @@ void step(SoilMoisture* sm,
     sm->vm_SoilPoreVolume[i] = sm->soilColumn[i]._sps.vs_Saturation;
     sm->vm_PermanentWiltingPoint[i] = sm->soilColumn[i]._sps.vs_PermanentWiltingPoint;
     sm->vm_LayerThickness[i] = sm->soilColumn[i].vs_LayerThickness;
-    sm->vm_Lambda[i] = sm->soilColumn[i].vs_Lambda();
+    sm->vm_Lambda[i] = sm->soilColumn[i]._sps.vs_Lambda;
   }
 
   sm->vm_SoilMoisture[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_SoilMoisture_m3;
@@ -145,7 +145,7 @@ void step(SoilMoisture* sm,
   sm->vm_FieldCapacity[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2]._sps.vs_FieldCapacity;
   sm->vm_SoilPoreVolume[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2]._sps.vs_Saturation;
   sm->vm_LayerThickness[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_LayerThickness;
-  sm->vm_Lambda[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_Lambda();
+  sm->vm_Lambda[sm->numberOfMoistureLayers - 1] = sm->soilColumn[sm->numberOfMoistureLayers - 2]._sps.vs_Lambda;
 
   sm->vm_SurfaceWaterStorage = sm->soilColumn.vs_SurfaceWaterStorage;
 
@@ -441,7 +441,7 @@ void capillaryRise(SoilMoisture* sm) {
     // Find first layer above groundwater with 70% available water
     auto vm_StartLayer = min(vm_GroundwaterTableLayer, (numberOfSoilLayers - 1));
     for (int i = int(vm_StartLayer); i >= 0; i--) {
-      std::string vs_SoilTexture = soilColumn[i].vs_SoilTexture();
+      std::string vs_SoilTexture = soilColumn[i]._sps.vs_SoilTexture;
       assert(!vs_SoilTexture.empty());
       double vm_CapillaryRiseRate = min(0.01, _params.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance));
       // [m d-1]
@@ -780,7 +780,7 @@ double dualKcPrecomputation(SoilMoisture* sm, double windSpeed, double tmin, dou
 
   // A. Dynamic REW (FAO-56 Table 19 Mapping via Pedology)
   double REW = 0.0;
-  std::string ka5Texture = soilColumn[0].vs_SoilTexture();
+  std::string ka5Texture = soilColumn[0]._sps.vs_SoilTexture;
 
   if (ka5Texture == "Ss") REW = 2.5;
   else if (ka5Texture == "Su2" || ka5Texture == "Sl2") REW = 3.5;

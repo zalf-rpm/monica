@@ -109,7 +109,7 @@ kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperat
       * 4.184;
 
     const double sati = soilTemperatureLayerAt(st.get(), i)._sps.vs_Saturation;
-    const double somi = soilTemperatureLayerAt(st.get(), i).vs_SoilOrganicMatter() / da * sbdi;
+    const double somi = soilTemperatureLayerAt(st.get(), i)._sps.vs_SoilOrganicMatter() / da * sbdi;
     st->heatCapacity[i] =
       (smi * dw * cw)
       + ((sati - smi) * da * ca)
@@ -166,8 +166,8 @@ kj::Own<SoilTemperature> makeSoilTemperature(
 
 void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
   st->soilSurfaceTemperature = reader.getSoilSurfaceTemperature();
-  st->soilColumnGroundLayer.deserialize(reader.getSoilColumnVtGroundLayer());
-  st->soilColumnBottomLayer.deserialize(reader.getSoilColumnVtBottomLayer());
+  soillayer::deserialize(&st->soilColumnGroundLayer, reader.getSoilColumnVtGroundLayer());
+  soillayer::deserialize(&st->soilColumnBottomLayer, reader.getSoilColumnVtBottomLayer());
   st->params.deserialize(reader.getModuleParams());
   st->noOfTempLayers = reader.getNumberOfLayers();
   st->noOfSoilLayers = reader.getVsNumberOfLayers();
@@ -190,8 +190,8 @@ void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatur
 
 void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) {
   builder.setSoilSurfaceTemperature(st->soilSurfaceTemperature);
-  st->soilColumnGroundLayer.serialize(builder.initSoilColumnVtGroundLayer());
-  st->soilColumnBottomLayer.serialize(builder.initSoilColumnVtBottomLayer());
+  soillayer::serialize(&st->soilColumnGroundLayer, builder.initSoilColumnVtGroundLayer());
+  soillayer::serialize(&st->soilColumnBottomLayer, builder.initSoilColumnVtBottomLayer());
   st->params.serialize(builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t)st->noOfTempLayers);
   builder.setVsNumberOfLayers((uint16_t)st->noOfSoilLayers);

@@ -310,9 +310,9 @@ bool isSoilMoistureOk(MonicaModel* model,
                       double minPercentASW,
                       double maxPercentASW) {
   bool soilMoistureOk = false;
-  double pwp = model->soilColumn->at(0).vs_PermanentWiltingPoint();
-  double sm = max(0.0, model->soilColumn->at(0).get_Vs_SoilMoisture_m3() - pwp);
-  double asw = model->soilColumn->at(0).vs_FieldCapacity() - pwp;
+  double pwp = model->soilColumn->at(0)._sps.vs_PermanentWiltingPoint;
+  double sm = max(0.0, model->soilColumn->at(0).vs_SoilMoisture_m3 - pwp);
+  double asw = model->soilColumn->at(0)._sps.vs_FieldCapacity - pwp;
   double currentPercentASW = sm / asw * 100.0;
   soilMoistureOk = minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
 

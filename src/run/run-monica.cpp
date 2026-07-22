@@ -843,7 +843,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         auto nols = monica->soilColumn->size();
         KJ_ASSERT((nols == monica2->soilColumn->size()));
         for (size_t i = 0; i < nols; i++) {
-          (*(monica->soilColumn))[i].set_Vs_SoilMoisture_m3((*(monica2->soilColumn))[i].get_Vs_SoilMoisture_m3());
+          (*(monica->soilColumn))[i].vs_SoilMoisture_m3 = (*(monica2->soilColumn))[i].vs_SoilMoisture_m3;
         }
       }
     }
@@ -939,7 +939,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         auto nols = monica->soilColumn->size();
         KJ_ASSERT((nols == monica2->soilColumn->size()));
         for (size_t i = 0; i < nols; i++) {
-          (*(monica2->soilColumn))[i].set_Vs_SoilMoisture_m3((*(monica->soilColumn))[i].get_Vs_SoilMoisture_m3());
+          (*(monica2->soilColumn))[i].vs_SoilMoisture_m3 = (*(monica->soilColumn))[i].vs_SoilMoisture_m3;
         }
       }
       monicamodel::step(monica2.get());

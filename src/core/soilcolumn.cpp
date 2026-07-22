@@ -90,54 +90,53 @@ void AOM_Properties::serialize(mas::schema::model::monica::AOMProperties::Builde
 
 
 /**
- * Constructor
  * @param vs_LayerThickness Vertical expansion
  * @param sps Soil parameters
  */
-SoilLayer::SoilLayer(double vs_LayerThickness,
-                     const SoilParameters& sps)
-: vs_LayerThickness(vs_LayerThickness)
-, vs_SoilNH4(sps.vs_SoilAmmonium)
-, vs_SoilNO3(sps.vs_SoilNitrate)
-, _sps(sps)
-, vs_SoilMoisture_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
-//, vs_SoilMoistureOld_m3(sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0)
-{}
-
-void SoilLayer::deserialize(mas::schema::model::monica::SoilLayerState::Reader reader) {
-  vs_LayerThickness = reader.getLayerThickness();
-  vs_SoilWaterFlux = reader.getSoilWaterFlux();
-  setFromComplexCapnpList(vo_AOM_Pool, reader.getVoAOMPool());
-  vs_SOM_Slow = reader.getSomSlow();
-  vs_SOM_Fast = reader.getSomFast();
-  vs_SMB_Slow = reader.getSmbSlow();
-  vs_SMB_Fast = reader.getSmbFast();
-  vs_SoilCarbamid = reader.getSoilCarbamid();
-  vs_SoilNH4 = reader.getSoilNH4();
-  vs_SoilNO2 = reader.getSoilNO2();
-  vs_SoilNO3 = reader.getSoilNO3();
-  vs_SoilFrozen = reader.getSoilFrozen();
-  _sps.deserialize(reader.getSps());
-  vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
-  vs_SoilTemperature = reader.getSoilTemperature();
+SoilLayer soillayer::makeSoilLayer(double vs_LayerThickness, const SoilParameters& sps) {
+  SoilLayer sl;
+  sl.vs_LayerThickness = vs_LayerThickness;
+  sl.vs_SoilNH4 = sps.vs_SoilAmmonium;
+  sl.vs_SoilNO3 = sps.vs_SoilNitrate;
+  sl._sps = sps;
+  sl.vs_SoilMoisture_m3 = sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0;
+  return sl;
 }
 
-void SoilLayer::serialize(mas::schema::model::monica::SoilLayerState::Builder builder) const {
-  builder.setLayerThickness(vs_LayerThickness);
-  builder.setSoilWaterFlux(vs_SoilWaterFlux);
-  setComplexCapnpList(vo_AOM_Pool, builder.initVoAOMPool((capnp::uint)vo_AOM_Pool.size()));
-  builder.setSomSlow(vs_SOM_Slow);
-  builder.setSomFast(vs_SOM_Fast);
-  builder.setSmbSlow(vs_SMB_Slow);
-  builder.setSmbFast(vs_SMB_Fast);
-  builder.setSoilCarbamid(vs_SoilCarbamid);
-  builder.setSoilNH4(vs_SoilNH4);
-  builder.setSoilNO2(vs_SoilNO2);
-  builder.setSoilNO3(vs_SoilNO3);
-  builder.setSoilFrozen(vs_SoilFrozen);
-  _sps.serialize(builder.initSps());
-  builder.setSoilMoistureM3(vs_SoilMoisture_m3);
-  builder.setSoilTemperature(vs_SoilTemperature);
+void soillayer::deserialize(SoilLayer* sl, mas::schema::model::monica::SoilLayerState::Reader reader) {
+  sl->vs_LayerThickness = reader.getLayerThickness();
+  sl->vs_SoilWaterFlux = reader.getSoilWaterFlux();
+  setFromComplexCapnpList(sl->vo_AOM_Pool, reader.getVoAOMPool());
+  sl->vs_SOM_Slow = reader.getSomSlow();
+  sl->vs_SOM_Fast = reader.getSomFast();
+  sl->vs_SMB_Slow = reader.getSmbSlow();
+  sl->vs_SMB_Fast = reader.getSmbFast();
+  sl->vs_SoilCarbamid = reader.getSoilCarbamid();
+  sl->vs_SoilNH4 = reader.getSoilNH4();
+  sl->vs_SoilNO2 = reader.getSoilNO2();
+  sl->vs_SoilNO3 = reader.getSoilNO3();
+  sl->vs_SoilFrozen = reader.getSoilFrozen();
+  sl->_sps.deserialize(reader.getSps());
+  sl->vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
+  sl->vs_SoilTemperature = reader.getSoilTemperature();
+}
+
+void soillayer::serialize(const SoilLayer* sl, mas::schema::model::monica::SoilLayerState::Builder builder) {
+  builder.setLayerThickness(sl->vs_LayerThickness);
+  builder.setSoilWaterFlux(sl->vs_SoilWaterFlux);
+  setComplexCapnpList(sl->vo_AOM_Pool, builder.initVoAOMPool((capnp::uint)sl->vo_AOM_Pool.size()));
+  builder.setSomSlow(sl->vs_SOM_Slow);
+  builder.setSomFast(sl->vs_SOM_Fast);
+  builder.setSmbSlow(sl->vs_SMB_Slow);
+  builder.setSmbFast(sl->vs_SMB_Fast);
+  builder.setSoilCarbamid(sl->vs_SoilCarbamid);
+  builder.setSoilNH4(sl->vs_SoilNH4);
+  builder.setSoilNO2(sl->vs_SoilNO2);
+  builder.setSoilNO3(sl->vs_SoilNO3);
+  builder.setSoilFrozen(sl->vs_SoilFrozen);
+  sl->_sps.serialize(builder.initSps());
+  builder.setSoilMoistureM3(sl->vs_SoilMoisture_m3);
+  builder.setSoilTemperature(sl->vs_SoilTemperature);
 }
 
 /**
@@ -147,15 +146,15 @@ void SoilLayer::serialize(mas::schema::model::monica::SoilLayerState::Builder bu
  *
  * @todo Einheiten prüfen
  */
-double SoilLayer::vs_SoilMoisture_pF() {
+double soillayer::soilMoisturePF(const SoilLayer* sl) {
   // Derivation of Van Genuchten parameters (Vereecken at al. 1989)
 
-  auto ps = calcVanGenuchtenVereeckenParams(_sps.vs_PermanentWiltingPoint,
-                                            _sps.vs_Saturation, _sps.vs_SoilSandContent, _sps.vs_SoilClayContent,
-                                            _sps.vs_SoilBulkDensity(), _sps.vs_SoilOrganicCarbon());
+  auto ps = calcVanGenuchtenVereeckenParams(sl->_sps.vs_PermanentWiltingPoint,
+                                            sl->_sps.vs_Saturation, sl->_sps.vs_SoilSandContent, sl->_sps.vs_SoilClayContent,
+                                            sl->_sps.vs_SoilBulkDensity(), sl->_sps.vs_SoilOrganicCarbon());
 
   //Van Genuchten retention curve
-  auto sm = vs_SoilMoisture_m3;
+  auto sm = sl->vs_SoilMoisture_m3;
   double matricHead = sm <= ps.thetaR
                         ? 5.0E+7
                         : (1.0 / ps.alpha) * (pow(pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR),
@@ -166,6 +165,8 @@ double SoilLayer::vs_SoilMoisture_pF() {
   return soilMoisture_pF < 0.0 ? 5.0E-7 : soilMoisture_pF;
   //  debug() << "vs_SoilMoisture_pF: " << soilMoisture_pF << std::endl;
 }
+
+double soillayer::soilNmin(const SoilLayer* sl) { return sl->vs_SoilNO3 + sl->vs_SoilNO2 + sl->vs_SoilNH4; }
 
 //------------------------------------------------------------------------------
 
@@ -185,7 +186,7 @@ SoilColumn::SoilColumn(double ps_LayerThickness,
 : ps_MaxMineralisationDepth(ps_MaxMineralisationDepth) {
   //, pm_CriticalMoistureDepth(pm_CriticalMoistureDepth) {
   debug() << "Constructor: SoilColumn " << soilParams.size() << endl;
-  for (const auto& sp : soilParams) push_back(SoilLayer(ps_LayerThickness, sp));
+  for (const auto& sp : soilParams) push_back(soillayer::makeSoilLayer(ps_LayerThickness, sp));
 
   _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
 }
@@ -205,7 +206,10 @@ void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader
   _vf_TopDressingDelay = reader.getVfTopDressingDelay();
   setFromComplexCapnpList(_delayedNMinApplications, reader.getDelayedNMinApplications());
   //pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
-  setFromComplexCapnpList(*this, reader.getLayers());
+  auto layers = reader.getLayers();
+  resize(layers.size());
+  uint32_t i = 0;
+  for (auto& layer : *this) soillayer::deserialize(&layer, layers[i++]);
 }
 
 void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder builder) const {
@@ -224,7 +228,9 @@ void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder 
   setComplexCapnpList(_delayedNMinApplications,
                       builder.initDelayedNMinApplications((capnp::uint)_delayedNMinApplications.size()));
   //builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
-  setComplexCapnpList(*this, builder.initLayers((capnp::uint)size()));
+  auto layersBuilder = builder.initLayers((capnp::uint)size());
+  uint32_t i = 0;
+  for (const auto& layer : *this) soillayer::serialize(&layer, layersBuilder[i++]);
 }
 
 

@@ -115,7 +115,7 @@ double monica::frostcomponent::getMeanBulkDensity(const FrostComponent* fc) {
   auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double bulk_density_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    bulk_density_accu += soilColumn[i_Layer].vs_SoilBulkDensity();
+    bulk_density_accu += soilColumn[i_Layer]._sps.vs_SoilBulkDensity();
   }
   return (bulk_density_accu / double(vs_number_of_layers) / 1000.0); // [Mg m-3]
 }
@@ -129,7 +129,7 @@ double monica::frostcomponent::getMeanFieldCapacity(const FrostComponent* fc) {
   auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
   double mean_field_capacity_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    mean_field_capacity_accu += soilColumn[i_Layer].vs_FieldCapacity();
+    mean_field_capacity_accu += soilColumn[i_Layer]._sps.vs_FieldCapacity;
   }
   return (mean_field_capacity_accu / double(vs_number_of_layers));
 }

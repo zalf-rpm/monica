@@ -97,7 +97,7 @@ void monica::soilOrganicFoUrea(SoilOrganic* so) {
     // Calculate urea hydrolysis
 
     vo_HydrolysisRate1[i] = (po_HydrolysisP1 *
-                             (layer.vs_SoilOrganicMatter() * 100.0) *
+                             (layer._sps.vs_SoilOrganicMatter() * 100.0) *
                              OrganicConstants::po_SOM_to_C + po_HydrolysisP2) /
                             OrganicConstants::po_UreaMolecularWeight;
 
@@ -113,7 +113,7 @@ void monica::soilOrganicFoUrea(SoilOrganic* so) {
 
     // kmol urea kg soil-1 s-1
     vo_HydrolysisRate[i] = vo_HydrolysisRateMax[i] *
-                           soilOrganicFoMoistOnHydrolysis(so, layer.vs_SoilMoisture_pF()) *
+                           soilOrganicFoMoistOnHydrolysis(so, soillayer::soilMoisturePF(&layer)) *
                            vo_Hydrolysis_pH_Effect[i] * vo_SoilCarbamid_aq[i] /
                            (po_HydrolysisKM + vo_SoilCarbamid_aq[i]);
 
@@ -397,7 +397,7 @@ double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int i) {
   orgN += so->soilColumn.at(i).vs_SMB_Fast / so->_params.po_CN_Ratio_SMB;
   orgN += so->soilColumn.at(i).vs_SMB_Slow / so->_params.po_CN_Ratio_SMB;
 
-  double cn = so->soilColumn.at(i).vs_Soil_CN_Ratio();
+  double cn = so->soilColumn.at(i)._sps.vs_Soil_CN_Ratio;
   orgN += so->soilColumn.at(i).vs_SOM_Fast / cn;
   orgN += so->soilColumn.at(i).vs_SOM_Slow / cn;
 
@@ -452,11 +452,11 @@ void monica::soilOrganicInitializeFromParams(SoilOrganic* so) {
     so->vo_SoilOrganicC[i] =
       layer._sps.vs_SoilOrganicCarbon() * layer._sps.vs_SoilBulkDensity();
 
-    if (layi.vs_Soil_CN_Ratio() > 100) {
+    if (layi._sps.vs_Soil_CN_Ratio > 100) {
       so->vo_InertSoilOrganicC_highCN[i] = (so->vo_SoilOrganicC[i]
                                             * layer.vs_LayerThickness
                                             / 1000 * 10000.0)
-                                           / layi.vs_Soil_CN_Ratio() * (po_inert_CN_lower_limit - layi.vs_Soil_CN_Ratio())
+                                           / layi._sps.vs_Soil_CN_Ratio * (po_inert_CN_lower_limit - layi._sps.vs_Soil_CN_Ratio)
                                            / (po_inert_CN_lower_limit
                                               / po_inert_CN_upper_limit - 1)
                                            / 10000.0 * 1000.0
@@ -488,7 +488,7 @@ void monica::soilOrganicInitializeFromParams(SoilOrganic* so) {
     layer.vs_SOM_Fast = so->vo_SoilOrganicC[i] - layer.vs_SOM_Slow;
     so->vo_SoilOrganicC[i] -= layer.vs_SMB_Slow + layer.vs_SMB_Fast;
 
-    layer.set_SoilOrganicCarbon((so->vo_SoilOrganicC[i] + so->vo_InertSoilOrganicC[i])
+    layer._sps.set_vs_SoilOrganicCarbon((so->vo_SoilOrganicC[i] + so->vo_InertSoilOrganicC[i])
                                 / layer._sps.vs_SoilBulkDensity());
 
     so->vo_ActDenitrificationRate.at(i) = 0.0;
@@ -697,7 +697,7 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
                  ? soilOrganicFoMoistOnDecompostionKaiteew(so, layi.vs_SoilMoisture_m3,
                                                            layi._sps.vs_Saturation,
                                                            _params.po_MoistureDecOptimal)
-                 : soilOrganicFoMoistOnDecompostion(so, layi.vs_SoilMoisture_pF()); // prev code
+                 : soilOrganicFoMoistOnDecompostion(so, soillayer::soilMoisturePF(&layi)); // prev code
 
     double cod = _params.__enable_kaiteew_ClayOnDecompostion__
                  ? soilOrganicFoClayOnDecompostionKaiteew(so, layi._sps.vs_SoilClayContent,
@@ -826,7 +826,7 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
 
-    double CN_Ratio_SOM_Slow = layi.vs_Soil_CN_Ratio();
+    double CN_Ratio_SOM_Slow = layi._sps.vs_Soil_CN_Ratio;
     double CN_Ratio_SOM_Fast = CN_Ratio_SOM_Slow;
 
     vo_NBalance[i] = -(vo_SMB_SlowDelta[i] / po_CN_Ratio_SMB)
@@ -851,7 +851,7 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
 
-    double vo_CN_Ratio_SOM_Slow = layi.vs_Soil_CN_Ratio();
+    double vo_CN_Ratio_SOM_Slow = layi._sps.vs_Soil_CN_Ratio;
     double vo_CN_Ratio_SOM_Fast = vo_CN_Ratio_SOM_Slow;
 
     if (vo_NBalance[i] < 0.0) {
@@ -1008,7 +1008,7 @@ void monica::soilOrganicFoVolatilisation(SoilOrganic* so,
 
   auto lay0 = so->soilColumn.at(0);
 
-  if (lay0.vs_SoilMoisture_pF() > 2.5) {
+  if (soillayer::soilMoisturePF(&lay0) > 2.5) {
     vo_SoilWet = 0.0;
   } else {
     vo_SoilWet = 1.0;
@@ -1119,18 +1119,18 @@ void monica::soilOrganicFoNitrification(SoilOrganic* so) {
     auto NH4i = layi.vs_SoilNH4;
 
     // Calculate nitrification rate coefficients
-    //  cout << "SO-2:\t" << layi.vs_SoilMoisture_pF() << endl;
+    //  cout << "SO-2:\t" << soillayer::soilMoisturePF(&layi) << endl;
     vo_AmmoniaOxidationRateCoeff[i] =
         po_AmmoniaOxidationRateCoeffStandard
         * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
-        * soilOrganicFoMoistOnNitrification(so, layi.vs_SoilMoisture_pF());
+        * soilOrganicFoMoistOnNitrification(so, soillayer::soilMoisturePF(&layi));
 
     vo_ActAmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4i;
 
     vo_NitriteOxidationRateCoeff[i] =
         po_NitriteOxidationRateCoeffStandard
         * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
-        * soilOrganicFoMoistOnNitrification(so, layi.vs_SoilMoisture_pF())
+        * soilOrganicFoMoistOnNitrification(so, soillayer::soilMoisturePF(&layi))
         * soilOrganicFoNH3onNitriteOxidation(so, NH4i, layi._sps.vs_SoilpH);
 
     vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2;
