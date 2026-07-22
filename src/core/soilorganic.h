@@ -3,15 +3,15 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -41,7 +41,7 @@ struct SoilOrganic
 {
 public:
   //void fo_OM_Input(bool vo_AOM_Addition);
-  
+
   // MONICA dentrification code
 
   typedef std::pair<double, double> NitDenitN2O;
@@ -49,7 +49,7 @@ public:
   //void fo_distributeDeadRootBiomass();
 
   SoilColumn& soilColumn;
-  SoilOrganicModuleParameters _params;
+  SoilOrganicModuleParameters params;
 
   std::size_t vs_NumberOfLayers{0};
   std::size_t vs_NumberOfOrganicLayers{0};

@@ -418,7 +418,7 @@ void monica::monicamodel::seedCrop(MonicaModel* model, mas::schema::model::monic
     model->soilOrganic->cropModule = model->currentCropModule.get();
 
     if (model->simPs.p_UseNMinMineralFertilisingMethod
-        && !model->currentCropModule->_isWinterCrop) {
+        && !model->currentCropModule->isWinterCrop) {
       soilColumnClearTopDressingParams(model->soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
       double fertAmount = monicamodel::applyMineralFertiliserViaNMinMethod
@@ -476,7 +476,7 @@ void monica::monicamodel::seedCrop(MonicaModel* model, Crop* crop) {
     //            << " harvestDate: " << _currentCrop->harvestDate().toString() << endl;
 
     if (model->simPs.p_UseNMinMineralFertilisingMethod
-        && !model->currentCropModule->_isWinterCrop) {
+        && !model->currentCropModule->isWinterCrop) {
       soilColumnClearTopDressingParams(model->soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = monicamodel::applyMineralFertiliserViaNMinMethod
@@ -899,7 +899,7 @@ void monica::monicamodel::generalStep(MonicaModel* model) {
 
   if (currentCropModule
       && simPs.p_UseNMinMineralFertilisingMethod
-      && currentCropModule->_isWinterCrop
+      && currentCropModule->isWinterCrop
       && julday == simPs.p_JulianDayAutomaticFertilising) {
     soilColumnClearTopDressingParams(soilColumn.get());
     debug() << "nMin fertilising winter crop" << endl;
@@ -1043,26 +1043,26 @@ void monica::monicamodel::cropStep(MonicaModel* model) {
   //prepare VOC calculations
   //TODO: right now assumes that we have daily values and thus xxx24 is the same as xxx
   double globradWm2 = globrad * 1000000.0 / 86400.0; //MJ/m2/d (a sum) -> W/m2
-  if(_index240 < _stepSize240 - 1)
+  if(index240 < stepSize240 - 1)
   {
-    _index240++;
+    index240++;
   }
   else
   {
-    _index240 = 0;
-    _full240 = true;
+    index240 = 0;
+    full240 = true;
   }
-  _rad240[_index240] = globradWm2;
-  _tfol240[_index240] = tavg;
+  rad240[index240] = globradWm2;
+  tfol240[index240] = tavg;
 
   Voc::MicroClimateData mcd;
   //hourly or time step average global radiation (in case of monica usually 24h)
   mcd.rad = globradWm2;
   mcd.rad24 = mcd.rad; //just daily values, thus average over 24h is the same
-  mcd.rad240 = accumulate(_rad240.begin(), _rad240.end(), 0.0) / (_full240 ? _rad240.size() : _index240 + 1);
+  mcd.rad240 = accumulate(rad240.begin(), rad240.end(), 0.0) / (full240 ? rad240.size() : index240 + 1);
   mcd.tFol = tavg;
   mcd.tFol24 = mcd.tFol;
-  mcd.tFol240 = accumulate(_tfol240.begin(), _tfol240.end(), 0.0) / (_full240 ? _tfol240.size() : _index240 + 1);
+  mcd.tFol240 = accumulate(tfol240.begin(), tfol240.end(), 0.0) / (full240 ? tfol240.size() : index240 + 1);
 
   double lai = currentCropModule->get_LeafAreaIndex();
   auto sunShadeLaiAtZenith = laiSunShade(sitePs.vs_Latitude, julday, 12, lai);

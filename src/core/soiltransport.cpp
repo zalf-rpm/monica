@@ -42,7 +42,7 @@ kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
                                                  double minimumAvailableN) {
   auto st = kj::heap<SoilTransport>();
   st->soilColumn = &soilColumn;
-  st->_params = params;
+  st->params = params;
   st->vq_Convection.resize(soilColumn.size(), 0.0);
   st->vq_DiffusionCoeff.resize(soilColumn.size(), 0.0);
   st->vq_Dispersion.resize(soilColumn.size(), 0.0);
@@ -73,7 +73,7 @@ kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
 }
 
 void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
-  st->_params.deserialize(reader.getModuleParams());
+  st->params.deserialize(reader.getModuleParams());
   setFromCapnpList(st->vq_Convection, reader.getConvection());
   setFromCapnpList(st->vq_DiffusionCoeff, reader.getDiffusionCoeff());
   setFromCapnpList(st->vq_Dispersion, reader.getDispersion());
@@ -93,7 +93,7 @@ void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportMod
 }
 
 void serialize(const SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Builder builder) {
-  st->_params.serialize(builder.initModuleParams());
+  st->params.serialize(builder.initModuleParams());
   setCapnpList(st->vq_Convection, builder.initConvection((capnp::uint)st->vq_Convection.size()));
   setCapnpList(st->vq_DiffusionCoeff, builder.initDiffusionCoeff((capnp::uint)st->vq_DiffusionCoeff.size()));
   setCapnpList(st->vq_Dispersion, builder.initDispersion((capnp::uint)st->vq_Dispersion.size()));
@@ -222,9 +222,9 @@ void nUptake(SoilTransport* st) {
  * Kersebaum 1989
  */
 void nTransport(SoilTransport* st, double leachingDepth, double timeStepFactor) {
-  double diffusionCoeffStandard = st->_params.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
-  double AD = st->_params.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
-  double dispersionLength = st->_params.pq_DispersionLength; // [m]
+  double diffusionCoeffStandard = st->params.pq_DiffusionCoefficientStandard; // [m2 d-1]; old D0
+  double AD = st->params.pq_AD; // Factor a in Kersebaum 1989 p.24 for Loess soils
+  double dispersionLength = st->params.pq_DispersionLength; // [m]
   double soilProfile = 0.0;
   size_t leachingDepthLayerIndex = 0;
   const auto nols = st->soilColumn->size();

@@ -39,7 +39,7 @@ namespace soilmoisture {
 
 void initializeFromParams(SoilMoisture* sm) {
   auto& soilColumn = sm->soilColumn;
-  auto& smPs = sm->_params;
+  auto& smPs = sm->params;
   auto& envPs = sm->envPs;
   auto& mm = sm->monica;
   debug() << "Constructor: SoilMoisture" << endl;
@@ -166,7 +166,7 @@ void step(SoilMoisture* sm,
     }
   } else {
     vc_CropPlanted = false;
-    sm->vc_KcFactor = sm->_params.pm_KcFactor;
+    sm->vc_KcFactor = sm->params.pm_KcFactor;
     sm->vc_NetPrecipitation = vw_Precipitation;
     sm->vc_PercentageSoilCoverage = 0.0;
   }
@@ -417,7 +417,7 @@ void capillaryRise(SoilMoisture* sm) {
   auto& vm_AvailableWater = sm->vm_AvailableWater;
   auto& vm_CapillaryWater70 = sm->vm_CapillaryWater70;
   auto& soilColumn = sm->soilColumn;
-  auto& _params = sm->_params;
+  auto& params = sm->params;
   auto& vm_SoilMoisture = sm->vm_SoilMoisture;
   auto& vm_WaterFlux = sm->vm_WaterFlux;
 
@@ -443,7 +443,7 @@ void capillaryRise(SoilMoisture* sm) {
     for (int i = int(vm_StartLayer); i >= 0; i--) {
       std::string vs_SoilTexture = soilColumn[i]._sps.vs_SoilTexture;
       assert(!vs_SoilTexture.empty());
-      double vm_CapillaryRiseRate = min(0.01, _params.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance));
+      double vm_CapillaryRiseRate = min(0.01, params.getCapillaryRiseRate(vs_SoilTexture, vm_GroundwaterDistance));
       // [m d-1]
       if (vm_AvailableWater[i] < vm_CapillaryWater70[i]) {
         auto vm_WaterAddedFromCapillaryRise = vm_CapillaryRiseRate; // [m d-1]
@@ -926,7 +926,7 @@ void evapotranspiration(SoilMoisture* sm,
                                               double vw_ReferenceEvapotranspiration) {
   auto& vm_EvaporatedFromSurface = sm->vm_EvaporatedFromSurface;
   auto& snowComponent = sm->snowComponent;
-  auto& _params = sm->_params;
+  auto& params = sm->params;
   auto& vm_XSACriticalSoilMoisture = sm->vm_XSACriticalSoilMoisture;
   auto& monica = sm->monica;
   auto& cropModule = sm->cropModule;
@@ -958,14 +958,14 @@ void evapotranspiration(SoilMoisture* sm,
   double vm_SnowDepth = snowComponent->vm_SnowDepth;
 
   // Berechnung der Bodenevaporation bis max. 4dm Tiefe
-  pm_EvaporationZeta = _params.pm_EvaporationZeta; // Parameterdatei
+  pm_EvaporationZeta = params.pm_EvaporationZeta; // Parameterdatei
 
   // Das sind die Steuerungsparameter für die Steigung der Entzugsfunktion
-  vm_XSACriticalSoilMoisture = _params.pm_XSACriticalSoilMoisture;
+  vm_XSACriticalSoilMoisture = params.pm_XSACriticalSoilMoisture;
 
   /** @todo <b>Claas:</b> pm_MaximumEvaporationImpactDepth ist aber Abhängig von der Bodenart,
    * da muss was dran gemacht werden */
-  pm_MaximumEvaporationImpactDepth = _params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
+  pm_MaximumEvaporationImpactDepth = params.pm_MaximumEvaporationImpactDepth; // Parameterdatei
 
 
   // If a crop grows, ETp is taken from crop module
@@ -1321,7 +1321,7 @@ double referenceEvapotranspiration(SoilMoisture* sm,
   return vm_ReferenceEvapotranspiration;
 }
 
-/*! 
+/*!
  * Calculation of evaporation reduction by soil moisture content
  *
  * @param i_Layer
@@ -1516,7 +1516,7 @@ kj::Own<SoilMoisture> makeSoilMoisture(
 }
 
 void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
-  sm->_params.deserialize(reader.getModuleParams());
+  sm->params.deserialize(reader.getModuleParams());
   sm->numberOfMoistureLayers = reader.getNumberOfLayers();
   sm->numberOfSoilLayers = reader.getVsNumberOfLayers();
   sm->vm_ActualEvaporation = reader.getActualEvaporation();
@@ -1585,7 +1585,7 @@ void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModul
 }
 
 void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Builder builder) {
-  sm->_params.serialize(builder.initModuleParams());
+  sm->params.serialize(builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t)sm->numberOfMoistureLayers);
   builder.setVsNumberOfLayers((uint16_t)sm->numberOfSoilLayers);
   builder.setActualEvaporation(sm->vm_ActualEvaporation);

@@ -59,10 +59,10 @@ void monica::soilOrganicFoUrea(SoilOrganic* so) {
   double vo_NH3gas = 0.0;
   double vo_NH3_Volatilising = 0.0;
 
-  double po_HydrolysisKM = so->_params.po_HydrolysisKM;
-  double po_HydrolysisP1 = so->_params.po_HydrolysisP1;
-  double po_HydrolysisP2 = so->_params.po_HydrolysisP2;
-  double po_ActivationEnergy = so->_params.po_ActivationEnergy;
+  double po_HydrolysisKM = so->params.po_HydrolysisKM;
+  double po_HydrolysisP1 = so->params.po_HydrolysisP1;
+  double po_HydrolysisP2 = so->params.po_HydrolysisP2;
+  double po_ActivationEnergy = so->params.po_ActivationEnergy;
 
   so->vo_NH3_Volatilised = 0.0;
 
@@ -195,13 +195,13 @@ void monica::soilOrganicStep(SoilOrganic* so,
   soilOrganicFoMIT(so);
   soilOrganicFoVolatilisation(so, so->addedOrganicMatter, meanAirTemperature, windSpeed);
 
-  if (so->_params.sticsParams.use_nit) soilOrganicFoSticsNitrification(so);
+  if (so->params.sticsParams.use_nit) soilOrganicFoSticsNitrification(so);
   else soilOrganicFoNitrification(so);
 
-  if (so->_params.sticsParams.use_denit) soilOrganicFoSticsDenitrification(so);
+  if (so->params.sticsParams.use_denit) soilOrganicFoSticsDenitrification(so);
   else soilOrganicFoDenitrification(so);
 
-  auto n2OProducedNitDenit = so->_params.sticsParams.use_n2o
+  auto n2OProducedNitDenit = so->params.sticsParams.use_n2o
                              ? soilOrganicFoSticsN2OProduction(so)
                              : make_pair(soilOrganicFoN2OProduction(so), 0.0);
   so->vo_N2O_Produced_Nit = n2OProducedNitDenit.first;
@@ -268,10 +268,10 @@ void monica::soilOrganicAddOrganicMatter(SoilOrganic* so,
           double N_for_AOM_fast = added_Norg_amount - N_for_AOM_slow;
           CN_ratio_AOM_fast = added_Corg_amount * params.vo_PartAOM_to_AOM_Fast / N_for_AOM_fast;
         } else {
-          CN_ratio_AOM_fast = so->_params.po_AOM_FastMaxC_to_N;
+          CN_ratio_AOM_fast = so->params.po_AOM_FastMaxC_to_N;
         }
 
-        CN_ratio_AOM_fast = min(CN_ratio_AOM_fast, so->_params.po_AOM_FastMaxC_to_N);
+        CN_ratio_AOM_fast = min(CN_ratio_AOM_fast, so->params.po_AOM_FastMaxC_to_N);
         return make_tuple(CN_ratio_AOM_fast, added_Corg_amount, added_Norg_amount);
       };
 
@@ -394,8 +394,8 @@ void monica::soilOrganicAddOrganicMatter(SoilOrganic* so,
 double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int i) {
   double orgN = 0;
 
-  orgN += so->soilColumn.at(i).vs_SMB_Fast / so->_params.po_CN_Ratio_SMB;
-  orgN += so->soilColumn.at(i).vs_SMB_Slow / so->_params.po_CN_Ratio_SMB;
+  orgN += so->soilColumn.at(i).vs_SMB_Fast / so->params.po_CN_Ratio_SMB;
+  orgN += so->soilColumn.at(i).vs_SMB_Slow / so->params.po_CN_Ratio_SMB;
 
   double cn = so->soilColumn.at(i)._sps.vs_Soil_CN_Ratio;
   orgN += so->soilColumn.at(i).vs_SOM_Fast / cn;
@@ -437,11 +437,11 @@ void monica::soilOrganicInitializeFromParams(SoilOrganic* so) {
   so->vo_SOM_FastDelta.assign(nools, 0.0);
   so->vo_SOM_SlowDelta.assign(nools, 0.0);
 
-  double po_PartSOM_to_SMB_Slow = so->_params.po_PartSOM_to_SMB_Slow;
-  double po_PartSOM_to_SMB_Fast = so->_params.po_PartSOM_to_SMB_Fast;
-  double po_SOM_SlowDecCoeffStandard = so->_params.po_SOM_SlowDecCoeffStandard;
-  double po_SOM_FastDecCoeffStandard = so->_params.po_SOM_FastDecCoeffStandard;
-  double po_PartSOM_Fast_to_SOM_Slow = so->_params.po_PartSOM_Fast_to_SOM_Slow;
+  double po_PartSOM_to_SMB_Slow = so->params.po_PartSOM_to_SMB_Slow;
+  double po_PartSOM_to_SMB_Fast = so->params.po_PartSOM_to_SMB_Fast;
+  double po_SOM_SlowDecCoeffStandard = so->params.po_SOM_SlowDecCoeffStandard;
+  double po_SOM_FastDecCoeffStandard = so->params.po_SOM_FastDecCoeffStandard;
+  double po_PartSOM_Fast_to_SOM_Slow = so->params.po_PartSOM_Fast_to_SOM_Slow;
   double po_inert_CN_lower_limit = 11;
   double po_inert_CN_upper_limit = 350;
 
@@ -551,7 +551,7 @@ void SoilOrganic::fo_OM_Input(bool vo_AOM_Addition) {
  */
 void monica::soilOrganicFoMIT(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
   auto& vo_CBalance = so->vo_CBalance;
   auto& vo_SMB_FastDelta = so->vo_SMB_FastDelta;
   auto& vo_SMB_SlowDelta = so->vo_SMB_SlowDelta;
@@ -569,23 +569,23 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
   auto& vo_DecomposerRespiration = so->vo_DecomposerRespiration;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
-  double po_SOM_SlowDecCoeffStandard = _params.po_SOM_SlowDecCoeffStandard;
-  double po_SOM_FastDecCoeffStandard = _params.po_SOM_FastDecCoeffStandard;
-  double po_SMB_SlowDeathRateStandard = _params.po_SMB_SlowDeathRateStandard;
-  double po_SMB_SlowMaintRateStandard = _params.po_SMB_SlowMaintRateStandard;
-  double po_SMB_FastDeathRateStandard = _params.po_SMB_FastDeathRateStandard;
-  double po_SMB_FastMaintRateStandard = _params.po_SMB_FastMaintRateStandard;
-  double po_SOM_SlowUtilizationEfficiency = _params.po_SOM_SlowUtilizationEfficiency;
-  double po_SOM_FastUtilizationEfficiency = _params.po_SOM_FastUtilizationEfficiency;
-  double po_PartSOM_Fast_to_SOM_Slow = _params.po_PartSOM_Fast_to_SOM_Slow;
-  double po_PartSMB_Slow_to_SOM_Fast = _params.po_PartSMB_Slow_to_SOM_Fast;
-  double po_PartSMB_Fast_to_SOM_Fast = _params.po_PartSMB_Fast_to_SOM_Fast;
-  double po_SMB_UtilizationEfficiency = _params.po_SMB_UtilizationEfficiency;
-  double po_CN_Ratio_SMB = _params.po_CN_Ratio_SMB;
-  double po_AOM_SlowUtilizationEfficiency = _params.po_AOM_SlowUtilizationEfficiency;
-  double po_AOM_FastUtilizationEfficiency = _params.po_AOM_FastUtilizationEfficiency;
-  double po_ImmobilisationRateCoeffNH4 = _params.po_ImmobilisationRateCoeffNH4;
-  double po_ImmobilisationRateCoeffNO3 = _params.po_ImmobilisationRateCoeffNO3;
+  double po_SOM_SlowDecCoeffStandard = params.po_SOM_SlowDecCoeffStandard;
+  double po_SOM_FastDecCoeffStandard = params.po_SOM_FastDecCoeffStandard;
+  double po_SMB_SlowDeathRateStandard = params.po_SMB_SlowDeathRateStandard;
+  double po_SMB_SlowMaintRateStandard = params.po_SMB_SlowMaintRateStandard;
+  double po_SMB_FastDeathRateStandard = params.po_SMB_FastDeathRateStandard;
+  double po_SMB_FastMaintRateStandard = params.po_SMB_FastMaintRateStandard;
+  double po_SOM_SlowUtilizationEfficiency = params.po_SOM_SlowUtilizationEfficiency;
+  double po_SOM_FastUtilizationEfficiency = params.po_SOM_FastUtilizationEfficiency;
+  double po_PartSOM_Fast_to_SOM_Slow = params.po_PartSOM_Fast_to_SOM_Slow;
+  double po_PartSMB_Slow_to_SOM_Fast = params.po_PartSMB_Slow_to_SOM_Fast;
+  double po_PartSMB_Fast_to_SOM_Fast = params.po_PartSMB_Fast_to_SOM_Fast;
+  double po_SMB_UtilizationEfficiency = params.po_SMB_UtilizationEfficiency;
+  double po_CN_Ratio_SMB = params.po_CN_Ratio_SMB;
+  double po_AOM_SlowUtilizationEfficiency = params.po_AOM_SlowUtilizationEfficiency;
+  double po_AOM_FastUtilizationEfficiency = params.po_AOM_FastUtilizationEfficiency;
+  double po_ImmobilisationRateCoeffNH4 = params.po_ImmobilisationRateCoeffNH4;
+  double po_ImmobilisationRateCoeffNO3 = params.po_ImmobilisationRateCoeffNO3;
 
   std::vector<double> AOMslow_to_SMBfast(nools, 0.0);
   std::vector<double> AOMslow_to_SMBslow(nools, 0.0);
@@ -687,22 +687,22 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
   // Calculation of decay rate coefficients
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
-    double tod = _params.__enable_kaiteew_TempOnDecompostion__
+    double tod = params.__enable_kaiteew_TempOnDecompostion__
                  ? soilOrganicFoTempOnDecompostionKaiteew(so, layi.vs_SoilTemperature,
-                                                          _params.po_QTenFactor,
-                                                          _params.po_TempDecOptimal)
+                                                          params.po_QTenFactor,
+                                                          params.po_TempDecOptimal)
                  : soilOrganicFoTempOnDecompostion(so, layi.vs_SoilTemperature); // prev code
 
-    double mod = _params.__enable_kaiteew_MoistOnDecompostion__
+    double mod = params.__enable_kaiteew_MoistOnDecompostion__
                  ? soilOrganicFoMoistOnDecompostionKaiteew(so, layi.vs_SoilMoisture_m3,
                                                            layi._sps.vs_Saturation,
-                                                           _params.po_MoistureDecOptimal)
+                                                           params.po_MoistureDecOptimal)
                  : soilOrganicFoMoistOnDecompostion(so, soillayer::soilMoisturePF(&layi)); // prev code
 
-    double cod = _params.__enable_kaiteew_ClayOnDecompostion__
+    double cod = params.__enable_kaiteew_ClayOnDecompostion__
                  ? soilOrganicFoClayOnDecompostionKaiteew(so, layi._sps.vs_SoilClayContent,
-                                                          _params.po_LimitClayEffect)
-                 : soilOrganicFoClayOnDecompostion(so, layi._sps.vs_SoilClayContent, _params.po_LimitClayEffect); // prev code
+                                                          params.po_LimitClayEffect)
+                 : soilOrganicFoClayOnDecompostion(so, layi._sps.vs_SoilClayContent, params.po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
@@ -1098,13 +1098,13 @@ void monica::soilOrganicFoVolatilisation(SoilOrganic* so,
  */
 void monica::soilOrganicFoNitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
   auto& vo_ActAmmoniaOxidationRate = so->vo_ActAmmoniaOxidationRate;
   auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
-  double po_AmmoniaOxidationRateCoeffStandard = _params.po_AmmoniaOxidationRateCoeffStandard;
-  double po_NitriteOxidationRateCoeffStandard = _params.po_NitriteOxidationRateCoeffStandard;
+  double po_AmmoniaOxidationRateCoeffStandard = params.po_AmmoniaOxidationRateCoeffStandard;
+  double po_NitriteOxidationRateCoeffStandard = params.po_NitriteOxidationRateCoeffStandard;
 
   //! Nitrification rate coefficient [d-1]
   std::vector<double> vo_AmmoniaOxidationRateCoeff(nools, 0.0);
@@ -1157,11 +1157,11 @@ void monica::soilOrganicFoNitrification(SoilOrganic* so) {
 
 void monica::soilOrganicFoSticsNitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
   auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
-  auto sticsParams = _params.sticsParams;
+  auto sticsParams = params.sticsParams;
 
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
@@ -1198,7 +1198,7 @@ void monica::soilOrganicFoSticsNitrification(SoilOrganic* so) {
  */
 void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
   auto& vo_SMB_CO2EvolutionRate = so->vo_SMB_CO2EvolutionRate;
   auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
   auto& vo_TotalDenitrification = so->vo_TotalDenitrification;
@@ -1206,8 +1206,8 @@ void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   std::vector<double> vo_PotDenitrificationRate(nools, 0.0);
-  double po_SpecAnaerobDenitrification = _params.po_SpecAnaerobDenitrification;
-  double po_TransportRateCoeff = _params.po_TransportRateCoeff;
+  double po_SpecAnaerobDenitrification = params.po_SpecAnaerobDenitrification;
+  double po_TransportRateCoeff = params.po_TransportRateCoeff;
   vo_TotalDenitrification = 0.0;
 
   for (int i = 0; i < nools; i++) {
@@ -1240,13 +1240,13 @@ void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
 
 void monica::soilOrganicFoSticsDenitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
   auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
   auto& vo_TotalDenitrification = so->vo_TotalDenitrification;
   auto& vo_SumDenitrification = so->vo_SumDenitrification;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
-  auto sticsParams = _params.sticsParams;
+  auto sticsParams = params.sticsParams;
   vo_TotalDenitrification = 0.0;
 
   for (int i = 0; i < nools; i++) {
@@ -1287,10 +1287,10 @@ void monica::soilOrganicFoSticsDenitrification(SoilOrganic* so) {
  */
 double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
-  double N2OProductionRate = _params.po_N2OProductionRate;
+  double N2OProductionRate = params.po_N2OProductionRate;
   double pKaHNO2 = OrganicConstants::po_pKaHNO2;
   double sumN2OProduced = 0.0;
 
@@ -1319,13 +1319,13 @@ double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
 
 SoilOrganic::NitDenitN2O monica::soilOrganicFoSticsN2OProduction(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
-  auto& _params = so->_params;
+  auto& params = so->params;
   auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
   auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
 
   auto nools = soilColumn._vs_NumberOfOrganicLayers;
   double sumN2OProducedNit = 0.0, sumN2OProducedDenit = 0.0;
-  auto sticsParams = _params.sticsParams;
+  auto sticsParams = params.sticsParams;
 
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
@@ -1679,9 +1679,9 @@ double monica::soilOrganicFoMoistOnDenitrification(SoilOrganic* so,
                                                    double d_SoilMoisture_m3,
                                                    double d_Saturation) {
 
-  double po_Denit1 = so->_params.po_Denit1;
-  double po_Denit2 = so->_params.po_Denit2;
-  double po_Denit3 = so->_params.po_Denit3;
+  double po_Denit1 = so->params.po_Denit1;
+  double po_Denit2 = so->params.po_Denit2;
+  double po_Denit3 = so->params.po_Denit3;
   double fo_MoistOnDenitrification = 0.0;
 
   if ((d_SoilMoisture_m3 / d_Saturation) <= 0.8) {
@@ -1714,7 +1714,7 @@ double monica::soilOrganicFoNH3onNitriteOxidation(SoilOrganic* so,
                                                   double d_SoilNH4,
                                                   double d_SoilpH) {
 
-  double po_Inhibitor_NH3 = so->_params.po_Inhibitor_NH3;
+  double po_Inhibitor_NH3 = so->params.po_Inhibitor_NH3;
   double fo_NH3onNitriteOxidation = 0.0;
 
   fo_NH3onNitriteOxidation = po_Inhibitor_NH3 / (po_Inhibitor_NH3 + d_SoilNH4 * (1 - 1 / (1.0 + pow(10.0, d_SoilpH -
@@ -1739,7 +1739,7 @@ kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn& soilColumn,
 }
 
 void monica::soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
-  so->_params.deserialize(reader.getModuleParams());
+  so->params.deserialize(reader.getModuleParams());
   so->vs_NumberOfLayers = reader.getVsNumberOfLayers();
   so->vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
   so->addedOrganicMatter = reader.getAddedOrganicMatter();
@@ -1783,7 +1783,7 @@ void monica::soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica:
 }
 
 void monica::soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder) {
-  so->_params.serialize(builder.initModuleParams());
+  so->params.serialize(builder.initModuleParams());
   builder.setVsNumberOfLayers((uint16_t) so->vs_NumberOfLayers);
   builder.setVsNumberOfOrganicLayers((uint16_t) so->vs_NumberOfOrganicLayers);
   builder.setAddedOrganicMatter(so->addedOrganicMatter);

@@ -1237,7 +1237,7 @@ BOTRes& monica::buildOutputTable() {
               "daily isoprene-emission of all species from Guenther model"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.currentCropModule.get() ? round(monica.currentCropModule.get()->_guentherEmissions.isoprene_emission, 5) : 0.0;
+              return monica.currentCropModule.get() ? round(monica.currentCropModule.get()->guentherEmissions.isoprene_emission, 5) : 0.0;
             });
 
       build({
@@ -1248,7 +1248,7 @@ BOTRes& monica::buildOutputTable() {
             },
             [](const MonicaModel& monica, OId oid) {
               return monica.currentCropModule.get()
-                       ? round(monica.currentCropModule.get()->_guentherEmissions.monoterpene_emission, 5)
+                       ? round(monica.currentCropModule.get()->guentherEmissions.monoterpene_emission, 5)
                        : 0.0;
             });
 
@@ -1259,7 +1259,7 @@ BOTRes& monica::buildOutputTable() {
               "daily isoprene-emission of all species from JJV model"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.currentCropModule.get() ? round(monica.currentCropModule.get()->_jjvEmissions.isoprene_emission, 5) : 0.0;
+              return monica.currentCropModule.get() ? round(monica.currentCropModule.get()->jjvEmissions.isoprene_emission, 5) : 0.0;
             });
 
       build({
@@ -1269,7 +1269,7 @@ BOTRes& monica::buildOutputTable() {
               "daily monoterpene emission of all species from JJV model"
             },
             [](const MonicaModel& monica, OId oid) {
-              return monica.currentCropModule.get() ? round(monica.currentCropModule.get()->_jjvEmissions.monoterpene_emission, 5) : 0.0;
+              return monica.currentCropModule.get() ? round(monica.currentCropModule.get()->jjvEmissions.monoterpene_emission, 5) : 0.0;
             });
 
       build({id++, "Nresid", "kg N ha-1", "Nitrogen content in crop residues"},

@@ -73,10 +73,9 @@ struct CropModule {
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
 
-public:
-  Intercropping* _intercropping{nullptr};
+  Intercropping* intercropping{nullptr};
 
-  bool _frostKillOn{true};
+  bool frostKillOn{true};
 
   // members
   SoilColumn* soilColumn{nullptr};
@@ -85,8 +84,8 @@ public:
   SpeciesParameters speciesPs;
   CultivarParameters cultivarPs;
   CropResidueParameters residuePs;
-  bool _isWinterCrop{false};
-  double _bareSoilKcFactor{0.4};
+  bool isWinterCrop{false};
+  double bareSoilKcFactor{0.4};
 
   //! old N
   //  static const double vw_AtmosphericCO2Concentration;
@@ -134,7 +133,7 @@ public:
   int vm_DepthGroundwaterTable{0}; //! old GRW
   int pc_DevelopmentAccelerationByNitrogenStress{};
   size_t vc_DevelopmentalStage{0}; //! old INTWICK
-  int _noOfCropSteps{0};
+  int noOfCropSteps{0};
   double vc_DroughtImpactOnFertility{1.0};
   double pc_DroughtImpactOnFertilityFactor{};
   std::vector<double> pc_DroughtStressThreshold; //! old DRYswell
@@ -310,19 +309,19 @@ public:
   bool vc_MaturityReached{false};
 
   //VOC members
-  int _stepSize24{24}, _stepSize240{240};
-  std::vector<double> _rad24, _rad240, _tfol24, _tfol240;
-  int _index24{0}, _index240{0};
-  bool _full24{false}, _full240{false};
+  int stepSize24{24}, stepSize240{240};
+  std::vector<double> rad24, rad240, tfol24, tfol240;
+  int index24{0}, index240{0};
+  bool full24{false}, full240{false};
 
-  Voc::Emissions _guentherEmissions;
-  Voc::Emissions _jjvEmissions;
-  Voc::SpeciesData _vocSpecies;
-  Voc::CPData _cropPhotosynthesisResults;
+  Voc::Emissions guentherEmissions;
+  Voc::Emissions jjvEmissions;
+  Voc::SpeciesData vocSpecies;
+  Voc::CPData cropPhotosynthesisResults;
 
-  std::function<void(std::string)> _fireEvent;
-  std::function<void(std::map<size_t, double>, double)> _addOrganicMatter;
-  std::function<std::pair<double, double>(double)> _getSnowDepthAndCalcTempUnderSnow;
+  std::function<void(std::string)> fireEvent;
+  std::function<void(std::map<size_t, double>, double)> addOrganicMatter;
+  std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow;
 
   double vc_O3_shortTermDamage{1.0};
   double vc_O3_longTermDamage{1.0};
@@ -330,22 +329,22 @@ public:
   double vc_O3_sumUptake{0.0};
   double vc_O3_WStomatalClosure{1.0};
 
-  bool _assimilatePartCoeffsReduced{false};
+  bool assimilatePartCoeffsReduced{false};
   double vc_KTkc{0}; // old KTkc
   double vc_KTko{0}; // old KTkc
 
-  bool _stemElongationEventFired{false};
+  bool stemElongationEventFired{false};
 
   //intercropping
-  double _intercroppingOtherCropHeight{-1};
-  double _intercroppingOtherLAIt{-1};
+  double intercroppingOtherCropHeight{-1};
+  double intercroppingOtherLAIt{-1};
 
   double fractionOfInterceptedRadiation1{0.0};
   double fractionOfInterceptedRadiation2{0.0};
 
   bool __enable_vernalisation_factor_fix__{false};
 
-  Tools::Date _perennialCropDormancyPeriodEndDate;
+  Tools::Date perennialCropDormancyPeriodEndDate;
 };
 
 kj::Own<CropModule> makeCropModule(SoilColumn* soilColumn,

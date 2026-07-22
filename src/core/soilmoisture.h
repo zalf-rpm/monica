@@ -50,7 +50,7 @@ struct SoilMoisture {
   SoilColumn& soilColumn;
   const SiteParameters& siteParameters;
   MonicaModel& monica;
-  SoilMoistureModuleParameters _params;
+  SoilMoistureModuleParameters params;
   const EnvironmentParameters& envPs;
   const CropModuleParameters& cropPs;
   size_t numberOfMoistureLayers{0};

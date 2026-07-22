@@ -3,15 +3,15 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -22,7 +22,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-parameters.h"
 
 namespace monica {
-  
+
 // forward declarations
 struct SoilColumn;
 struct CropModule;
@@ -37,7 +37,7 @@ namespace soiltransport {
 */
 struct SoilTransport {
   SoilColumn* soilColumn{nullptr};
-  SoilTransportModuleParameters _params;
+  SoilTransportModuleParameters params;
   //const size_t vs_NumberOfLayers;
   std::vector<double> vq_Convection;
   std::vector<double> vq_DiffusionCoeff;
