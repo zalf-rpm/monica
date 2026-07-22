@@ -174,8 +174,8 @@ add_library(monica_lib
         src/core/soilorganic.cpp
         src/core/soiltemperature.h
         src/core/soiltemperature.cpp
-        src/core/soiltransport_simple.h
-        src/core/soiltransport_simple.cpp
+        src/core/soiltransport.h
+        src/core/soiltransport.cpp
         src/core/voc-common.h
         src/core/voc-guenther.h
         src/core/voc-guenther.cpp

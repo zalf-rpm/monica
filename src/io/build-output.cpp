@@ -31,7 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/crop-module.h"
 #include "../core/soilmoisture.h"
 #include "../core/soiltemperature.h"
-#include "../core/soiltransport_simple.h"
+#include "../core/soiltransport.h"
 #include "../core/soilorganic.h"
 
 using namespace monica;

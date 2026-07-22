@@ -42,7 +42,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soil/soil.h"
 #include "soil/constants.h"
 #include "../run/cultivation-method.h"
-#include "soiltransport_simple.h"
+#include "soiltransport.h"
 #include "soilorganic.h"
 #include "soiltemperature.h"
 #include "soilmoisture.h"

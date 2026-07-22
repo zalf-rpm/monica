@@ -15,7 +15,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include "soiltransport_simple.h"
+#include "soiltransport.h"
 
 #include <algorithm> //for min, max
 #include <iostream>
