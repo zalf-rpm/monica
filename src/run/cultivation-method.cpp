@@ -371,7 +371,7 @@ std::function<double(MonicaModel*)> AutomaticSowing::registerDailyFunction(
   return [this](MonicaModel* model) -> double {
     double avgSoilTemp = 0;
     size_t i = 0;
-    for (auto size = model->soilColumn->getLayerNumberForDepth(_soilDepthForAveraging) + 1; i < size; i++) {
+    for (auto size = soilColumnGetLayerNumberForDepth(model->soilColumn.get(), _soilDepthForAveraging) + 1; i < size; i++) {
       avgSoilTemp += model->soilTemperature->soilColumn->at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
@@ -912,7 +912,7 @@ bool NDemandFertilization::apply(MonicaModel* model) {
 
   double rd = model->currentCropModule->vc_RootingDepth_m;
   debug() << toString() << endl;
-  double appliedAmount = model->soilColumn->applyMineralFertiliserViaNDemand(partition(), rd < _depth ? rd : _depth,
+  double appliedAmount = soilColumnApplyMineralFertiliserViaNDemand(model->soilColumn.get(), partition(), rd < _depth ? rd : _depth,
                                                                                 _Ndemand);
   model->dailySumFertiliser += appliedAmount;
   _appliedFertilizer = true;
@@ -1263,7 +1263,7 @@ bool AutomaticIrrigation::apply(MonicaModel* model) {
 
   auto irrigationTriggered = false;
   auto irrigationAmount = 0.0;
-  tie(irrigationTriggered, irrigationAmount) = model->soilColumn->applyIrrigationViaTrigger(params);
+  tie(irrigationTriggered, irrigationAmount) = soilColumnApplyIrrigationViaTrigger(model->soilColumn.get(), params);
   if (irrigationTriggered) {
     model->currentEvents.insert("AutomaticIrrigation");
     model->soilOrganic->irrigationAmount += irrigationAmount;

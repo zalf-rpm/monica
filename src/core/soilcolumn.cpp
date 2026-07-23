@@ -170,170 +170,6 @@ double soillayer::soilNmin(const SoilLayer* sl) { return sl->vs_SoilNO3 + sl->vs
 
 //------------------------------------------------------------------------------
 
-/**
- * @brief Constructor
- *
- * Constructor with parameter initialization. Initializes every layer
- * in vector with the layer-thickness and special soil parameter in this layer.
- *
- * @param gps General Parameters
- * @param soilParams Soil Parameter
- */
-SoilColumn::SoilColumn(double ps_LayerThickness,
-                       double ps_MaxMineralisationDepth,
-                       const SoilPMs& soilParams) //,
-//double pm_CriticalMoistureDepth)
-: ps_MaxMineralisationDepth(ps_MaxMineralisationDepth) {
-  //, pm_CriticalMoistureDepth(pm_CriticalMoistureDepth) {
-  debug() << "Constructor: SoilColumn " << soilParams.size() << endl;
-  for (const auto& sp : soilParams) push_back(soillayer::makeSoilLayer(ps_LayerThickness, sp));
-
-  _vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers();
-}
-
-void SoilColumn::deserialize(mas::schema::model::monica::SoilColumnState::Reader reader) {
-  soilColumnDeserialize(this, reader);
-}
-
-void SoilColumn::serialize(mas::schema::model::monica::SoilColumnState::Builder builder) const {
-  soilColumnSerialize(this, builder);
-}
-
-
-/**
- * @brief Calculates number of organic layers.
- *
- * Calculates number of organic layers in dependency on
- * the layer depth and the ps_MaxMineralisationDepth. Result is saved
- * in private member variable _vs_NumberOfOrganicLayers.
- */
-int SoilColumn::calculateNumberOfOrganicLayers() {
-  //std::cout << "--------- set_vs_NumberOfOrganicLayers -----------" << std::endl;
-  double lsum = 0;
-  int count = 0;
-  for (int i = 0; i < size(); i++) {
-    count++;
-    lsum += at(i).vs_LayerThickness;
-
-    if (lsum >= ps_MaxMineralisationDepth) break;
-  }
-
-  //std::cout << vs_NumberOfLayers() << std::endl;
-  //std::cout << generalParams.ps_MaxMineralisationDepth << std::endl;
-  //std::cout << _vs_NumberOfOrganicLayers << std::endl;
-
-  return count;
-}
-
-double SoilColumn::applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
-                                                    double demandDepth,
-                                                    double NdemandKgHa) {
-  double sumSoilNkgHa = 0.0;
-  int depthCm = 0;
-  int i = 0;
-  for (const auto& layer : *this) {
-    double layerSize = layer.vs_LayerThickness;
-    depthCm += int(layerSize * 100.0);
-
-    //convert [kg N m-3] to [kg N ha-1]
-    sumSoilNkgHa += (at(i).vs_SoilNO3 + at(i).vs_SoilNH4) * 10000.0 * layerSize;
-
-    if (depthCm >= int(demandDepth * 100)) break;
-
-    i++;
-  }
-
-  double fertilizerRecommendation = max(0.0, NdemandKgHa - sumSoilNkgHa);
-  if (fertilizerRecommendation > 0) applyMineralFertiliser(fp, fertilizerRecommendation);
-
-  return fertilizerRecommendation;
-}
-
-double SoilColumn::
-applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fp,
-                                    double vf_SamplingDepth,
-                                    double vf_CropNTarget,
-                                    double vf_CropNTarget30,
-                                    double vf_FertiliserMinApplication,
-                                    double vf_FertiliserMaxApplication,
-                                    int vf_TopDressingDelay) {
-  return soilColumnApplyMineralFertiliserViaNMinMethod(this,
-                                                        fp,
-                                                        vf_SamplingDepth,
-                                                        vf_CropNTarget,
-                                                        vf_CropNTarget30,
-                                                        vf_FertiliserMinApplication,
-                                                        vf_FertiliserMaxApplication,
-                                                        vf_TopDressingDelay);
-}
-
-// prüft ob top-dressing angewendet werden sollte, ansonsten wird
-// zeitspanne nur reduziert
-
-double SoilColumn::applyPossibleTopDressing() {
-  return soilColumnApplyPossibleTopDressing(this);
-}
-
-double SoilColumn::applyPossibleDelayedFerilizer() {
-  return soilColumnApplyPossibleDelayedFerilizer(this);
-}
-
-void SoilColumn::applyMineralFertiliser(MineralFertilizerParameters fp, double amount) {
-  soilColumnApplyMineralFertiliser(this, fp, amount);
-}
-
-
-void SoilColumn::deleteAOMPool() {
-  soilColumnDeleteAOMPool(this);
-}
-
-std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrrigationParameters& aips) {
-  return soilColumnApplyIrrigationViaTrigger(this, aips);
-}
-
-
-void SoilColumn::applyIrrigation(double amount, double nitrateConcentration) {
-  soilColumnApplyIrrigation(this, amount, nitrateConcentration);
-}
-
-
-void SoilColumn::applyTillage(double depth) {
-  soilColumnApplyTillage(this, depth);
-}
-
-/**
- * @brief Returns index of layer that lays in the given depth.
- * @param depth Depth in meters
- * @return Index of layer
- */
-size_t SoilColumn::getLayerNumberForDepth(double depth) const {
-  size_t layer = 0;
-  double accu_depth = 0;
-  double layer_thickness = at(0).vs_LayerThickness;
-
-  // find number of layer that lay between the given depth
-  for (size_t i = 0, _size = size(); i < _size; i++) {
-    accu_depth += layer_thickness;
-    if (depth <= accu_depth) break;
-    layer++;
-  }
-
-  return layer;
-}
-
-/**
- * Returns sum of soiltemperature for several soil layers.
- * @param layers Number of layers that are of interest
- * @return Temperature sum
- */
-double SoilColumn::sumSoilTemperature(int layers) const {
-  double accu = 0.0;
-  for (int i = 0; i < layers; i++) accu += at(i).vs_SoilTemperature;
-  return accu;
-}
-
-//------------------------------------------------------------------------------
-
 void SoilColumn::DelayedNMinApplicationParams::deserialize(
   mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {
   fp.deserialize(reader.getFp());
@@ -395,15 +231,106 @@ _sc->nMinFertiliserTrigger(_fp, _sd, _cntv, _cntv30, _fmaxa, _fmina, _tdd);
 }
 */
 
+/**
+ * Constructs every layer in the vector with the layer-thickness and the
+ * matching soil parameters for that layer.
+ *
+ * @param layerThickness Vertical expansion
+ * @param maxMineralisationDepth
+ * @param soilParams Soil Parameter
+ */
 kj::Own<SoilColumn> monica::makeSoilColumn(double layerThickness,
                                            double maxMineralisationDepth,
                                            const Soil::SoilPMs& soilParams) {
-  return kj::heap<SoilColumn>(layerThickness, maxMineralisationDepth, soilParams);
+  auto sc = kj::heap<SoilColumn>();
+  sc->ps_MaxMineralisationDepth = maxMineralisationDepth;
+  debug() << "makeSoilColumn: " << soilParams.size() << endl;
+  for (const auto& sp : soilParams) sc->push_back(soillayer::makeSoilLayer(layerThickness, sp));
+  sc->_vs_NumberOfOrganicLayers = soilColumnCalculateNumberOfOrganicLayers(sc.get());
+  return sc;
 }
 
 kj::Own<SoilColumn> monica::makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
                                            CropModule* cropModule) {
-  return kj::heap<SoilColumn>(reader, cropModule);
+  auto sc = kj::heap<SoilColumn>();
+  sc->cropModule = cropModule;
+  soilColumnDeserialize(sc.get(), reader);
+  return sc;
+}
+
+/**
+ * @brief Calculates number of organic layers.
+ *
+ * Calculates number of organic layers in dependency on
+ * the layer depth and the ps_MaxMineralisationDepth.
+ */
+int monica::soilColumnCalculateNumberOfOrganicLayers(const SoilColumn* sc) {
+  double lsum = 0;
+  int count = 0;
+  for (int i = 0; i < sc->size(); i++) {
+    count++;
+    lsum += sc->at(i).vs_LayerThickness;
+
+    if (lsum >= sc->ps_MaxMineralisationDepth) break;
+  }
+
+  return count;
+}
+
+/**
+ * @brief Returns index of layer that lays in the given depth.
+ * @param depth Depth in meters
+ * @return Index of layer
+ */
+size_t monica::soilColumnGetLayerNumberForDepth(const SoilColumn* sc, double depth) {
+  size_t layer = 0;
+  double accu_depth = 0;
+  double layer_thickness = sc->at(0).vs_LayerThickness;
+
+  // find number of layer that lay between the given depth
+  for (size_t i = 0, _size = sc->size(); i < _size; i++) {
+    accu_depth += layer_thickness;
+    if (depth <= accu_depth) break;
+    layer++;
+  }
+
+  return layer;
+}
+
+/**
+ * Returns sum of soiltemperature for several soil layers.
+ * @param layers Number of layers that are of interest
+ * @return Temperature sum
+ */
+double monica::soilColumnSumSoilTemperature(const SoilColumn* sc, int layers) {
+  double accu = 0.0;
+  for (int i = 0; i < layers; i++) accu += sc->at(i).vs_SoilTemperature;
+  return accu;
+}
+
+double monica::soilColumnApplyMineralFertiliserViaNDemand(SoilColumn* sc,
+                                                           MineralFertilizerParameters fp,
+                                                           double demandDepth,
+                                                           double NdemandKgHa) {
+  double sumSoilNkgHa = 0.0;
+  int depthCm = 0;
+  int i = 0;
+  for (const auto& layer : *sc) {
+    double layerSize = layer.vs_LayerThickness;
+    depthCm += int(layerSize * 100.0);
+
+    //convert [kg N m-3] to [kg N ha-1]
+    sumSoilNkgHa += (sc->at(i).vs_SoilNO3 + sc->at(i).vs_SoilNH4) * 10000.0 * layerSize;
+
+    if (depthCm >= int(demandDepth * 100)) break;
+
+    i++;
+  }
+
+  double fertilizerRecommendation = max(0.0, NdemandKgHa - sumSoilNkgHa);
+  if (fertilizerRecommendation > 0) soilColumnApplyMineralFertiliser(sc, fp, fertilizerRecommendation);
+
+  return fertilizerRecommendation;
 }
 
 void monica::soilColumnDeserialize(SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Reader reader) {
@@ -572,8 +499,8 @@ double monica::soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
     return 0.0;
   }
 
-  auto vf_Layer30cm = sc->getLayerNumberForDepth(0.3);
-  auto layerSamplingDepth = sc->getLayerNumberForDepth(samplingDepth);
+  auto vf_Layer30cm = soilColumnGetLayerNumberForDepth(sc, 0.3);
+  auto layerSamplingDepth = soilColumnGetLayerNumberForDepth(sc, samplingDepth);
 
   double vf_SoilNO3Sum = 0.0;
   double vf_SoilNH4Sum = 0.0;
@@ -730,7 +657,7 @@ void monica::soilColumnApplyIrrigation(SoilColumn* sc, double amount, double nit
  * @param depth Depth of affected soil.
  */
 void monica::soilColumnApplyTillage(SoilColumn* sc, double depth) {
-  auto layer_index = sc->getLayerNumberForDepth(depth) + 1;
+  auto layer_index = soilColumnGetLayerNumberForDepth(sc, depth) + 1;
 
   double soil_organic_carbon = 0.0;
   double soil_organic_matter = 0.0;

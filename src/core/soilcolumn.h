@@ -161,72 +161,6 @@ using SoilLayer = soillayer::SoilLayer;
   *
   */
 struct SoilColumn : public std::vector<SoilLayer> {
-  SoilColumn(double ps_LayerThickness,
-             double ps_MaxMineralisationDepth,
-             const Soil::SoilPMs &soilParams);//,
-             //double pm_CriticalMoistureDepth);
-
-  SoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader, CropModule *cropModule = nullptr)
-      : cropModule(cropModule) { deserialize(reader); }
-
-  void deserialize(mas::schema::model::monica::SoilColumnState::Reader reader);
-
-  void serialize(mas::schema::model::monica::SoilColumnState::Builder builder) const;
-
-  void applyMineralFertiliser(MineralFertilizerParameters fertiliserPartition,
-                              double amount);
-
-  //! apply left over fertiliser after delay time
-  double applyPossibleTopDressing();
-
-  //! apply delayed fertiliser application again (yielding possible top dressing)
-  double applyPossibleDelayedFerilizer();
-
-  double applyMineralFertiliserViaNDemand(MineralFertilizerParameters fp,
-                                          double demandDepth,
-                                          double Ndemand);
-
-  double applyMineralFertiliserViaNMinMethod(MineralFertilizerParameters fertiliserPartition,
-                                             double vf_SamplingDepth,
-                                             double vf_CropNTargetValue,
-                                             double vf_CropNTargetValue30,
-                                             double vf_FertiliserMaxApplication,
-                                             double vf_FertiliserMinApplication,
-                                             int vf_TopDressingDelay);
-
-  std::pair<bool, double> applyIrrigationViaTrigger(const AutomaticIrrigationParameters &aips);
-
-  void applyIrrigation(double amount, double nitrateConcentration);
-
-  void deleteAOMPool();
-
-  inline size_t vs_NumberOfLayers() const { return size(); }
-
-  void applyTillage(double depth);
-
-  /**
-   * Returns number of organic layers. Usually the number
-   * of layers in the first 30 cm depth of soil.
-   * @return Number of organic layers
-   */
-  inline size_t vs_NumberOfOrganicLayers() const { return _vs_NumberOfOrganicLayers; }
-
-  //! Returns the thickness of a layer.
-  //! Right now by definition all layers have the same size,
-  //! therefor only the thickness of first layer is returned.
-  double vs_LayerThickness() const { return at(0).vs_LayerThickness; }
-
-  //! Returns daily crop N uptake [kg N ha-1 d-1]
-  double get_DailyCropNUptake() const { return vq_CropNUptake * 10000.0; }
-
-  size_t getLayerNumberForDepth(double depth) const;
-
-  void putCrop(CropModule *cm) { cropModule = cm; }
-
-  void removeCrop() { cropModule = nullptr; }
-
-  double sumSoilTemperature(int layers) const;
-
   double vs_SurfaceWaterStorage{0.0}; //!< Content of above-ground water storage [mm]
   double vs_InterceptionStorage{0.0}; //!< Amount of intercepted water on crop surface [mm]
   size_t vm_GroundwaterTableLayer{0}; //!< Layer of current groundwater table
@@ -234,11 +168,6 @@ struct SoilColumn : public std::vector<SoilLayer> {
   double vq_CropNUptake{0.0}; //!< Daily amount of N taken up by the crop [kg m-2]
   double vt_SoilSurfaceTemperature{0.0};
   double vm_SnowDepth{0.0};
-
-  void clearTopDressingParams() { _vf_TopDressing = 0.0, _vf_TopDressingDelay = 0; }
-
-public:
-  int calculateNumberOfOrganicLayers();
 
   double ps_MaxMineralisationDepth{0.4};
 
@@ -282,6 +211,24 @@ void soilColumnDeleteAOMPool(SoilColumn* sc);
 double soilColumnApplyPossibleDelayedFerilizer(SoilColumn* sc);
 double soilColumnApplyPossibleTopDressing(SoilColumn* sc);
 void soilColumnApplyMineralFertiliser(SoilColumn* sc, MineralFertilizerParameters fp, double amount);
+double soilColumnApplyMineralFertiliserViaNDemand(SoilColumn* sc,
+                                                  MineralFertilizerParameters fp,
+                                                  double demandDepth,
+                                                  double Ndemand);
+//! Calculates number of organic layers, usually the number of layers in the first 30 cm depth of soil.
+int soilColumnCalculateNumberOfOrganicLayers(const SoilColumn* sc);
+inline size_t soilColumnNumberOfLayers(const SoilColumn* sc) { return sc->size(); }
+inline size_t soilColumnNumberOfOrganicLayers(const SoilColumn* sc) { return sc->_vs_NumberOfOrganicLayers; }
+//! Returns the thickness of a layer.
+//! Right now by definition all layers have the same size,
+//! therefor only the thickness of first layer is returned.
+inline double soilColumnLayerThickness(const SoilColumn* sc) { return sc->at(0).vs_LayerThickness; }
+//! Returns daily crop N uptake [kg N ha-1 d-1]
+inline double soilColumnDailyCropNUptake(const SoilColumn* sc) { return sc->vq_CropNUptake * 10000.0; }
+//! Returns index of layer that lays in the given depth.
+size_t soilColumnGetLayerNumberForDepth(const SoilColumn* sc, double depth);
+//! Returns sum of soiltemperature for several soil layers.
+double soilColumnSumSoilTemperature(const SoilColumn* sc, int layers);
 double soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
                                                       MineralFertilizerParameters fertiliserPartition,
                                                       double samplingDepth,

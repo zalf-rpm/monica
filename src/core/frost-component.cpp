@@ -40,7 +40,7 @@ void monica::frostcomponent::initialize(FrostComponent* fc,
   fc->vm_NegativeDegreeDays = 0.0;
   fc->vm_ThawDepth = 0.0;
   fc->vm_FrostDays = 0;
-  fc->vm_LambdaRedux.assign(soilColumn->vs_NumberOfLayers() + 1, 1.0);
+  fc->vm_LambdaRedux.assign(soilColumnNumberOfLayers(soilColumn) + 1, 1.0);
   fc->vm_TemperatureUnderSnow = 0.0;
   fc->vm_HydraulicConductivityRedux = pm_HydraulicConductivityRedux;
   fc->pt_TimeStep = p_timeStep;
@@ -112,7 +112,7 @@ void monica::frostcomponent::calcSoilFrost(FrostComponent* fc, double mean_air_t
  */
 double monica::frostcomponent::getMeanBulkDensity(const FrostComponent* fc) {
   auto& soilColumn = *fc->soilColumn;
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumnNumberOfLayers(&soilColumn);
   double bulk_density_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     bulk_density_accu += soilColumn[i_Layer]._sps.vs_SoilBulkDensity();
@@ -126,7 +126,7 @@ double monica::frostcomponent::getMeanBulkDensity(const FrostComponent* fc) {
  */
 double monica::frostcomponent::getMeanFieldCapacity(const FrostComponent* fc) {
   auto& soilColumn = *fc->soilColumn;
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumnNumberOfLayers(&soilColumn);
   double mean_field_capacity_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
     mean_field_capacity_accu += soilColumn[i_Layer]._sps.vs_FieldCapacity;
@@ -302,7 +302,7 @@ double monica::frostcomponent::calcTemperatureUnderSnow(const FrostComponent* fc
  */
 void monica::frostcomponent::updateLambdaRedux(FrostComponent* fc) {
   auto& soilColumn = *fc->soilColumn;
-  auto vs_number_of_layers = soilColumn.vs_NumberOfLayers();
+  auto vs_number_of_layers = soilColumnNumberOfLayers(&soilColumn);
 
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
 
