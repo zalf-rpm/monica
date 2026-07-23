@@ -1,0 +1,93 @@
+%%{init: {"flowchart": {"curve": "basis"}} }%%
+graph LR
+    classDef ext fill:#eee,stroke:#999,stroke-dasharray: 5 5,color:#666;
+
+    %% ---- top-level / cross-cutting modules ----
+    monica_model["monica-model"]
+    monica_parameters["monica-parameters"]
+    crop_module["crop-module"]
+    crop["crop"]
+    photosynthesis_FvCB["photosynthesis-FvCB"]
+    O3_impact["O3-impact"]
+    stics["stics-nit-denit-n2o"]
+
+    subgraph soil["Soil system"]
+        soilcolumn["soilcolumn"]
+        soilmoisture["soilmoisture"]
+        soilorganic["soilorganic"]
+        soiltemperature["soiltemperature"]
+        soiltransport["soiltransport"]
+        frost_component["frost-component"]
+        snow_component["snow-component"]
+    end
+
+    subgraph voc["VOC emissions"]
+        voc_common["voc-common"]
+        voc_guenther["voc-guenther"]
+        voc_jjv["voc-jjv"]
+    end
+
+    subgraph external["outside src/core"]
+        cultivation_method["run/cultivation-method.h"]:::ext
+        io_output["io/output.h"]:::ext
+    end
+
+    %% ---- edges ----
+    crop_module --> monica_parameters
+    crop_module --> soilcolumn
+    crop_module --> voc_common
+    crop_module --> soilmoisture
+    crop_module --> voc_guenther
+    crop_module --> voc_jjv
+    crop_module --> photosynthesis_FvCB
+    crop_module --> O3_impact
+    crop_module --> cultivation_method
+    crop_module --> io_output
+
+    crop --> monica_parameters
+
+    frost_component --> soilcolumn
+
+    monica_model --> monica_parameters
+    monica_model --> soiltransport
+    monica_model --> soilorganic
+    monica_model --> soiltemperature
+    monica_model --> soilmoisture
+    monica_model --> crop_module
+    monica_model --> soilcolumn
+    monica_model --> voc_common
+    monica_model --> crop
+    monica_model --> cultivation_method
+
+    snow_component --> soilcolumn
+    snow_component --> monica_parameters
+
+    soilcolumn --> monica_parameters
+    soilcolumn --> crop_module
+
+    soilmoisture --> monica_parameters
+    soilmoisture --> frost_component
+    soilmoisture --> snow_component
+    soilmoisture --> soilcolumn
+    soilmoisture --> crop_module
+    soilmoisture --> monica_model
+
+    soilorganic --> monica_parameters
+    soilorganic --> soilcolumn
+    soilorganic --> monica_model
+    soilorganic --> crop_module
+    soilorganic --> stics
+
+    soiltemperature --> soilcolumn
+    soiltemperature --> monica_parameters
+    soiltemperature --> monica_model
+
+    soiltransport --> monica_parameters
+    soiltransport --> soilmoisture
+    soiltransport --> soilcolumn
+    soiltransport --> crop_module
+
+    stics --> monica_parameters
+
+    voc_guenther --> voc_common
+    voc_jjv --> voc_common
