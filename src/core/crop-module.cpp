@@ -1504,7 +1504,7 @@ double CropModule::fc_SoilCoverage() const {
 
 
 #ifdef HOURLY_OUTPUT // @ToDO FS: test this
-if (!cropPs.__hourly_data__.empty()) {
+if (cropPs.__enable_hourly_outputs) {
   #include <fstream>
   ostream &monica::tout(bool closeFile)
   {
@@ -2613,14 +2613,14 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
     int sunriseH = 0, sunsetH = 0;  //FS: defined in a way that sunrise is included in daytime (sun_el > 0) and sunset is excluded from daytime (including both time steps might otherwise lead to overestimation of irradiance)
     for (int h = 0; h < 24; ++h) {
       double sun_el;
-      if (!cropPs.__hourly_data__.empty()) {  //__hourly_inputs_file__ // hourly air temperature and diffuse and direct irradiance input from file
+      if (!cropPs.__hourly_in_data__.empty()) {  // hourly air temperature and diffuse and direct irradiance input from file
         // generate isodate string
         auto sep = h < 10 ? "T0" : "T";
         auto isodateformat_end = ":00:00";
         auto current_isodatetime = current_isodate + sep + to_string(h) + isodateformat_end;
 
-        // read hourly data from json object dictionary __hourly_data__
-        auto hourly_data_in = cropPs.__hourly_data__.at(current_isodatetime).array_items();
+        // read hourly data from json object dictionary __hourly_in_data__
+        auto hourly_data_in = cropPs.__hourly_in_data__.at(current_isodatetime).array_items();
         hourlyAirT.push_back(hourly_data_in.at(0).number_value());
         hourlyIdif.push_back(hourly_data_in.at(1).number_value());
         hourlyIdir.push_back(hourly_data_in.at(2).number_value());
@@ -2656,7 +2656,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       hourlySolarEl.push_back(sun_el);
     }
 
-    if (cropPs.__hourly_data__.empty()) {
+    if (cropPs.__hourly_in_data__.empty()) {
       for (int h = 0; h < 24; ++h) {
         hourlyAirT.push_back(hourlyT(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH));
       }
@@ -2688,7 +2688,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       double inst_diff_rad, inst_dir_rad, hourlyPhoto, hourlyPhotoRef;
       // double inst_glob_rad;
       double hourlyPhoto_, hourlyPhotoRef_;  // FS: DEBUG only !!!
-      if (!cropPs.__hourly_data__.empty()) { //__hourly_inputs_file__ // hourly diffuse and direct irradiance input from file
+      if (!cropPs.__hourly_in_data__.empty()) { // hourly diffuse and direct irradiance input from file
         //direct && diffuse
         inst_diff_rad = hourlyIdif.at(h);
         inst_dir_rad = hourlyIdir.at(h);
@@ -2781,7 +2781,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRateReference_hourly, vc_RadiationUseEfficiencyReference_hourly, kdfRef, 0.2, kgpha, style);
       
 #ifdef HOURLY_OUTPUT // @ToDo FS: test this
-        if (!cropPs.__hourly_data__.empty()) {
+        if (cropPs.__enable_hourly_outputs) {
           tout()
             << currentDate.toIsoDateString()
             << "," << h

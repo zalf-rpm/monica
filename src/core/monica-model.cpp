@@ -672,7 +672,7 @@ void MonicaModel::generalStep() {
   double tmax = climateData[Climate::tmax];
   double precip = climateData[Climate::precip];
   double wind = climateData[Climate::wind];
-  double globrad = climateData[Climate::globrad]; // FS: @todo: globrad = (__enable_agripv_addon__) ? climateData[Climate::globrad] * glob_rad_factor : climateData[Climate::globrad];  // in case of Agri-PV (shading), use reduced global radiation
+  double globrad = climateData[Climate::globrad]; // @ToDo FS: ensure that something like this happens somewhere (maybe not here, but in hourly photosynthesis instead): globrad = (__enable_agripv_addon__) ? climateData[Climate::globrad] * glob_rad_factor : climateData[Climate::globrad];  // in case of Agri-PV (shading), use reduced global radiation
 
   // test if data for relhumid are available; if not, value is set to -1.0
   double relhumid = climateData.find(Climate::relhumid) == climateData.end()
@@ -745,6 +745,9 @@ void MonicaModel::generalStep() {
   _soilTransport->step();
 }
 
+// FS: Is this even used anywhere? There seem to be multiple different places where more or less similar astronomy code
+//     is repeated: here, and multiple functions in mas-cpp-misc\tools\algorithm.cpp -> at some point, maybe check consistency
+//     and also check what is used for which task and where in the code
 pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai) {
   //taken from Astronomy.cs Astronomy::SolarDeclination and Astronomy::SolarElevation
   double PI = 3.1415926536;

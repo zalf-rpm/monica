@@ -1621,8 +1621,9 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
   set_bool_value(__enable_hourly_photosynthesis__, j, "__enable_hourly_photosynthesis__");
   set_bool_value(__enable_hourly_respiration__, j, "__enable_hourly_respiration__");
-  if (!j["__hourly_data__"].is_null()) {
-    __hourly_data__ = j["__hourly_data__"].object_items();
+  set_bool_value(__enable_hourly_outputs__, j, "__enable_hourly_outputs__");
+  if (!j["__hourly_in_data__"].is_null()) {
+    __hourly_in_data__ = j["__hourly_in_data__"].object_items();
   }
   set_double_value(__longitude__, j, "__longitude__");
   set_double_value(__UTC_offset__, j, "__UTC_offset__");
@@ -1670,7 +1671,8 @@ json11::Json CropModuleParameters::to_json() const {
     {"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__},
     {"__enable_hourly_photosynthesis__", __enable_hourly_photosynthesis__},
     {"__enable_hourly_respiration__", __enable_hourly_respiration__},
-    {"__hourly_data__", __hourly_data__},
+    {"__enable_hourly_outputs__", __enable_hourly_outputs__},
+    {"__hourly_in_data__", __hourly_in_data__},
     {"__longitude__", __longitude__},
     {"__UTC_offset__", __UTC_offset__},
     {"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__},
