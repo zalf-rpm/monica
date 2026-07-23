@@ -1504,7 +1504,7 @@ double CropModule::fc_SoilCoverage() const {
 
 
 #ifdef HOURLY_OUTPUT // @ToDO FS: test this
-if (cropPs.__enable_hourly_outputs) {
+if (cropPs.__enable_hourly_outputs__) {
   #include <fstream>
   ostream &monica::tout(bool closeFile)
   {
@@ -2781,7 +2781,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRateReference_hourly, vc_RadiationUseEfficiencyReference_hourly, kdfRef, 0.2, kgpha, style);
       
 #ifdef HOURLY_OUTPUT // @ToDo FS: test this
-        if (cropPs.__enable_hourly_outputs) {
+        if (cropPs.__enable_hourly_outputs__) {
           tout()
             << currentDate.toIsoDateString()
             << "," << h
