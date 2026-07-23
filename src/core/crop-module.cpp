@@ -1503,44 +1503,40 @@ double CropModule::fc_SoilCoverage() const {
 }
 
 
-#ifdef HOURLY_OUTPUT // @ToDO FS: test this
-if (cropPs.__enable_hourly_outputs__) {
-  #include <fstream>
-  ostream &monica::tout(bool closeFile)
+#include <fstream>
+ostream &monica::tout(bool closeFile) { // @ToDO FS: test this
+
+  static ofstream out;
+  static bool init = false;
+  static bool failed = false;
+  if (closeFile)
   {
-    static ofstream out;
-    static bool init = false;
-    static bool failed = false;
-    if (closeFile)
-    {
-      init = false;
-      failed = false;
-      out.close();
-      return out;
-    }
-
-    if (!init)
-    {
-      out.open("hourly-data.csv");
-      failed = out.fail();
-      (failed ? cout : out) << "iso-date"
-                  ",hour"
-                  ",crop-name"
-                  ",in:leafT"
-                  ",in:diff_rad"
-                  ",in:inst_dir_rad"
-                  ",out:sun_el"
-                  ",out:GPhoto"
-                  ",out:GPhotoRef"
-                  << endl;
-
-      init = true;
-    }
-
-    return failed ? cout : out;
+    init = false;
+    failed = false;
+    out.close();
+    return out;
   }
+
+  if (!init)
+  {
+    out.open("hourly-data.csv");
+    failed = out.fail();
+    (failed ? cout : out) << "iso-date"
+                ",hour"
+                ",crop-name"
+                ",in:leafT"
+                ",in:diff_rad"
+                ",in:inst_dir_rad"
+                ",out:sun_el"
+                ",out:GPhoto"
+                ",out:GPhotoRef"
+                << endl;
+
+    init = true;
+  }
+
+  return failed ? cout : out;
 }
-#endif
 
 
 #ifdef TEST_HOURLY_OUTPUT
@@ -2780,7 +2776,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
         hourlyPhoto = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRate_hourly, vc_RadiationUseEfficiency_hourly, kdf, 0.2, kgpha, style);
         hourlyPhotoRef = hPhoto::Spitters_canop_photo_3p(hp_in.solarEl, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRateReference_hourly, vc_RadiationUseEfficiencyReference_hourly, kdfRef, 0.2, kgpha, style);
       
-#ifdef HOURLY_OUTPUT // @ToDo FS: test this
+        // @ToDo FS: test this
         if (cropPs.__enable_hourly_outputs__) {
           tout()
             << currentDate.toIsoDateString()
@@ -2794,8 +2790,6 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
             << "," << hourlyPhotoRef
             << endl;
         }
-#endif
-
       }
       // hourlyGrossCO2Assimilation.push_back(hourlyPhoto);
       // hourlyGrossCO2AssimilationReference.push_back(hourlyPhotoRef);

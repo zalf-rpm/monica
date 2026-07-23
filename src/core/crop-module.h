@@ -790,6 +790,8 @@ private:
 std::ostream& tout(bool closeFile = false);
 #endif
 
+std::ostream& tout(bool closeFile = false); // FS: hourly output data
+
 } // namespace monica
 
 
