@@ -34,7 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica
 {
-struct SoilColumn;
+namespace soilcolumn { struct SoilColumn; }
 struct CropModule;
 
 struct SoilOrganic
@@ -48,7 +48,7 @@ public:
 
   //void fo_distributeDeadRootBiomass();
 
-  SoilColumn& soilColumn;
+  soilcolumn::SoilColumn& soilColumn;
   SoilOrganicModuleParameters params;
 
   std::size_t vs_NumberOfLayers{0};
@@ -99,8 +99,8 @@ public:
   CropModule* cropModule{nullptr};
 };
 
-kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters params);
-kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn,
+kj::Own<SoilOrganic> makeSoilOrganic(soilcolumn::SoilColumn& soilColumn, SoilOrganicModuleParameters params);
+kj::Own<SoilOrganic> makeSoilOrganic(soilcolumn::SoilColumn& soilColumn,
                                      mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
                                      CropModule* cropModule = nullptr);
 void soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader);

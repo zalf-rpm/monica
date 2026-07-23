@@ -24,7 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 namespace monica {
 
 // forward declarations
-struct SoilColumn;
+namespace soilcolumn { struct SoilColumn; }
 struct CropModule;
 
 namespace soiltransport {
@@ -36,7 +36,7 @@ namespace soiltransport {
 *
 */
 struct SoilTransport {
-  SoilColumn* soilColumn{nullptr};
+  soilcolumn::SoilColumn* soilColumn{nullptr};
   SoilTransportModuleParameters params;
   //const size_t vs_NumberOfLayers;
   std::vector<double> vq_Convection;
@@ -62,13 +62,13 @@ struct SoilTransport {
   CropModule* cropModule{nullptr};
 };
 
-kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
+kj::Own<SoilTransport> makeSoilTransport(soilcolumn::SoilColumn& soilColumn,
                                          const SiteParameters& sps,
                                          const SoilTransportModuleParameters& params,
                                          double leachingDepth,
                                          double timeStep,
                                          double minimumAvailableN);
-kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
+kj::Own<SoilTransport> makeSoilTransport(soilcolumn::SoilColumn& soilColumn,
                                          mas::schema::model::monica::SoilTransportModuleState::Reader reader,
                                          CropModule* cropModule = nullptr);
 void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader);

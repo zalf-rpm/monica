@@ -40,8 +40,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-parameters.h"
 
 namespace monica {
-struct SoilColumn;
-
 struct CropModule;
 
 /**
@@ -148,6 +146,8 @@ using SoilLayer = soillayer::SoilLayer;
 
 //----------------------------------------------------------------------------
 
+namespace soilcolumn {
+
 /**
  * @author Claas Nendel, Michael Berg
  *
@@ -202,44 +202,48 @@ kj::Own<SoilColumn> makeSoilColumn(double layerThickness,
                                    const Soil::SoilPMs& soilParams);
 kj::Own<SoilColumn> makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
                                    CropModule* cropModule = nullptr);
-void soilColumnDeserialize(SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Reader reader);
-void soilColumnSerialize(const SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Builder builder);
-void soilColumnPutCrop(SoilColumn* sc, CropModule* cm);
-void soilColumnRemoveCrop(SoilColumn* sc);
-void soilColumnClearTopDressingParams(SoilColumn* sc);
-void soilColumnDeleteAOMPool(SoilColumn* sc);
-double soilColumnApplyPossibleDelayedFerilizer(SoilColumn* sc);
-double soilColumnApplyPossibleTopDressing(SoilColumn* sc);
-void soilColumnApplyMineralFertiliser(SoilColumn* sc, MineralFertilizerParameters fp, double amount);
-double soilColumnApplyMineralFertiliserViaNDemand(SoilColumn* sc,
-                                                  MineralFertilizerParameters fp,
-                                                  double demandDepth,
-                                                  double Ndemand);
+void deserialize(SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Reader reader);
+void serialize(const SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Builder builder);
+void putCrop(SoilColumn* sc, CropModule* cm);
+void removeCrop(SoilColumn* sc);
+void clearTopDressingParams(SoilColumn* sc);
+void deleteAOMPool(SoilColumn* sc);
+double applyPossibleDelayedFerilizer(SoilColumn* sc);
+double applyPossibleTopDressing(SoilColumn* sc);
+void applyMineralFertiliser(SoilColumn* sc, MineralFertilizerParameters fp, double amount);
+double applyMineralFertiliserViaNDemand(SoilColumn* sc,
+                                        MineralFertilizerParameters fp,
+                                        double demandDepth,
+                                        double Ndemand);
 //! Calculates number of organic layers, usually the number of layers in the first 30 cm depth of soil.
-int soilColumnCalculateNumberOfOrganicLayers(const SoilColumn* sc);
-inline size_t soilColumnNumberOfLayers(const SoilColumn* sc) { return sc->size(); }
-inline size_t soilColumnNumberOfOrganicLayers(const SoilColumn* sc) { return sc->_vs_NumberOfOrganicLayers; }
+int calculateNumberOfOrganicLayers(const SoilColumn* sc);
+inline size_t numberOfLayers(const SoilColumn* sc) { return sc->size(); }
+inline size_t numberOfOrganicLayers(const SoilColumn* sc) { return sc->_vs_NumberOfOrganicLayers; }
 //! Returns the thickness of a layer.
 //! Right now by definition all layers have the same size,
 //! therefor only the thickness of first layer is returned.
-inline double soilColumnLayerThickness(const SoilColumn* sc) { return sc->at(0).vs_LayerThickness; }
+inline double layerThickness(const SoilColumn* sc) { return sc->at(0).vs_LayerThickness; }
 //! Returns daily crop N uptake [kg N ha-1 d-1]
-inline double soilColumnDailyCropNUptake(const SoilColumn* sc) { return sc->vq_CropNUptake * 10000.0; }
+inline double dailyCropNUptake(const SoilColumn* sc) { return sc->vq_CropNUptake * 10000.0; }
 //! Returns index of layer that lays in the given depth.
-size_t soilColumnGetLayerNumberForDepth(const SoilColumn* sc, double depth);
+size_t getLayerNumberForDepth(const SoilColumn* sc, double depth);
 //! Returns sum of soiltemperature for several soil layers.
-double soilColumnSumSoilTemperature(const SoilColumn* sc, int layers);
-double soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
-                                                      MineralFertilizerParameters fertiliserPartition,
-                                                      double samplingDepth,
-                                                      double cropNTargetValue,
-                                                      double cropNTargetValue30,
-                                                      double fertiliserMaxApplication,
-                                                      double fertiliserMinApplication,
-                                                      int topDressingDelay);
-std::pair<bool, double> soilColumnApplyIrrigationViaTrigger(SoilColumn* sc,
-                                                             const AutomaticIrrigationParameters& aips);
-void soilColumnApplyIrrigation(SoilColumn* sc, double amount, double nitrateConcentration);
-void soilColumnApplyTillage(SoilColumn* sc, double depth);
+double sumSoilTemperature(const SoilColumn* sc, int layers);
+double applyMineralFertiliserViaNMinMethod(SoilColumn* sc,
+                                           MineralFertilizerParameters fertiliserPartition,
+                                           double samplingDepth,
+                                           double cropNTargetValue,
+                                           double cropNTargetValue30,
+                                           double fertiliserMaxApplication,
+                                           double fertiliserMinApplication,
+                                           int topDressingDelay);
+std::pair<bool, double> applyIrrigationViaTrigger(SoilColumn* sc,
+                                                  const AutomaticIrrigationParameters& aips);
+void applyIrrigation(SoilColumn* sc, double amount, double nitrateConcentration);
+void applyTillage(SoilColumn* sc, double depth);
+
+} // namespace soilcolumn
+
+using SoilColumn = soilcolumn::SoilColumn;
 
 } // namespace monica

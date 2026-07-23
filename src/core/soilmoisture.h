@@ -27,7 +27,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica {
 struct MonicaModel;
-struct SoilColumn;
+namespace soilcolumn { struct SoilColumn; }
 struct CropModule;
 
 namespace soilmoisture {
@@ -47,7 +47,7 @@ namespace soilmoisture {
 struct SoilMoisture {
   //void fm_SoilMoistureUpdate();
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
-  SoilColumn& soilColumn;
+  soilcolumn::SoilColumn& soilColumn;
   const SiteParameters& siteParameters;
   MonicaModel& monica;
   SoilMoistureModuleParameters params;

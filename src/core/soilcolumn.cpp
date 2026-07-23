@@ -239,22 +239,22 @@ _sc->nMinFertiliserTrigger(_fp, _sd, _cntv, _cntv30, _fmaxa, _fmina, _tdd);
  * @param maxMineralisationDepth
  * @param soilParams Soil Parameter
  */
-kj::Own<SoilColumn> monica::makeSoilColumn(double layerThickness,
+kj::Own<SoilColumn> monica::soilcolumn::makeSoilColumn(double layerThickness,
                                            double maxMineralisationDepth,
                                            const Soil::SoilPMs& soilParams) {
   auto sc = kj::heap<SoilColumn>();
   sc->ps_MaxMineralisationDepth = maxMineralisationDepth;
   debug() << "makeSoilColumn: " << soilParams.size() << endl;
   for (const auto& sp : soilParams) sc->push_back(soillayer::makeSoilLayer(layerThickness, sp));
-  sc->_vs_NumberOfOrganicLayers = soilColumnCalculateNumberOfOrganicLayers(sc.get());
+  sc->_vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers(sc.get());
   return sc;
 }
 
-kj::Own<SoilColumn> monica::makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
+kj::Own<SoilColumn> monica::soilcolumn::makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
                                            CropModule* cropModule) {
   auto sc = kj::heap<SoilColumn>();
   sc->cropModule = cropModule;
-  soilColumnDeserialize(sc.get(), reader);
+  deserialize(sc.get(), reader);
   return sc;
 }
 
@@ -264,7 +264,7 @@ kj::Own<SoilColumn> monica::makeSoilColumn(mas::schema::model::monica::SoilColum
  * Calculates number of organic layers in dependency on
  * the layer depth and the ps_MaxMineralisationDepth.
  */
-int monica::soilColumnCalculateNumberOfOrganicLayers(const SoilColumn* sc) {
+int monica::soilcolumn::calculateNumberOfOrganicLayers(const SoilColumn* sc) {
   double lsum = 0;
   int count = 0;
   for (int i = 0; i < sc->size(); i++) {
@@ -282,7 +282,7 @@ int monica::soilColumnCalculateNumberOfOrganicLayers(const SoilColumn* sc) {
  * @param depth Depth in meters
  * @return Index of layer
  */
-size_t monica::soilColumnGetLayerNumberForDepth(const SoilColumn* sc, double depth) {
+size_t monica::soilcolumn::getLayerNumberForDepth(const SoilColumn* sc, double depth) {
   size_t layer = 0;
   double accu_depth = 0;
   double layer_thickness = sc->at(0).vs_LayerThickness;
@@ -302,13 +302,13 @@ size_t monica::soilColumnGetLayerNumberForDepth(const SoilColumn* sc, double dep
  * @param layers Number of layers that are of interest
  * @return Temperature sum
  */
-double monica::soilColumnSumSoilTemperature(const SoilColumn* sc, int layers) {
+double monica::soilcolumn::sumSoilTemperature(const SoilColumn* sc, int layers) {
   double accu = 0.0;
   for (int i = 0; i < layers; i++) accu += sc->at(i).vs_SoilTemperature;
   return accu;
 }
 
-double monica::soilColumnApplyMineralFertiliserViaNDemand(SoilColumn* sc,
+double monica::soilcolumn::applyMineralFertiliserViaNDemand(SoilColumn* sc,
                                                            MineralFertilizerParameters fp,
                                                            double demandDepth,
                                                            double NdemandKgHa) {
@@ -328,12 +328,12 @@ double monica::soilColumnApplyMineralFertiliserViaNDemand(SoilColumn* sc,
   }
 
   double fertilizerRecommendation = max(0.0, NdemandKgHa - sumSoilNkgHa);
-  if (fertilizerRecommendation > 0) soilColumnApplyMineralFertiliser(sc, fp, fertilizerRecommendation);
+  if (fertilizerRecommendation > 0) applyMineralFertiliser(sc, fp, fertilizerRecommendation);
 
   return fertilizerRecommendation;
 }
 
-void monica::soilColumnDeserialize(SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Reader reader) {
+void monica::soilcolumn::deserialize(SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Reader reader) {
   sc->vs_SurfaceWaterStorage = reader.getVsSurfaceWaterStorage();
   sc->vs_InterceptionStorage = reader.getVsInterceptionStorage();
   sc->vm_GroundwaterTableLayer = reader.getVmGroundwaterTable();
@@ -354,7 +354,7 @@ void monica::soilColumnDeserialize(SoilColumn* sc, mas::schema::model::monica::S
   for (auto& layer : *sc) soillayer::deserialize(&layer, layers[i++]);
 }
 
-void monica::soilColumnSerialize(const SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Builder builder) {
+void monica::soilcolumn::serialize(const SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Builder builder) {
   builder.setVsSurfaceWaterStorage(sc->vs_SurfaceWaterStorage);
   builder.setVsInterceptionStorage(sc->vs_InterceptionStorage);
   builder.setVmGroundwaterTable((uint16_t)sc->vm_GroundwaterTableLayer);
@@ -375,9 +375,9 @@ void monica::soilColumnSerialize(const SoilColumn* sc, mas::schema::model::monic
   for (const auto& layer : *sc) soillayer::serialize(&layer, layersBuilder[i++]);
 }
 
-void monica::soilColumnPutCrop(SoilColumn* sc, CropModule* cm) { sc->cropModule = cm; }
-void monica::soilColumnRemoveCrop(SoilColumn* sc) { sc->cropModule = nullptr; }
-void monica::soilColumnClearTopDressingParams(SoilColumn* sc) { sc->_vf_TopDressing = 0.0, sc->_vf_TopDressingDelay = 0; }
+void monica::soilcolumn::putCrop(SoilColumn* sc, CropModule* cm) { sc->cropModule = cm; }
+void monica::soilcolumn::removeCrop(SoilColumn* sc) { sc->cropModule = nullptr; }
+void monica::soilcolumn::clearTopDressingParams(SoilColumn* sc) { sc->_vf_TopDressing = 0.0, sc->_vf_TopDressingDelay = 0; }
 /**
  * @brief Checks and deletes AOM pool
  *
@@ -387,7 +387,7 @@ void monica::soilColumnClearTopDressingParams(SoilColumn* sc) { sc->_vf_TopDress
  *
  * @author: Claas Nendel
  */
-void monica::soilColumnDeleteAOMPool(SoilColumn* sc) {
+void monica::soilcolumn::deleteAOMPool(SoilColumn* sc) {
   for (unsigned int i_AOMPool = 0; i_AOMPool < sc->at(0).vo_AOM_Pool.size();) {
     double vo_SumAOM_Slow = 0.0;
     double vo_SumAOM_Fast = 0.0;
@@ -415,12 +415,12 @@ void monica::soilColumnDeleteAOMPool(SoilColumn* sc) {
  * Calls function for applying delayed fertilizer and
  * then removes the first fertilizer item in list.
  */
-double monica::soilColumnApplyPossibleDelayedFerilizer(SoilColumn* sc) {
+double monica::soilcolumn::applyPossibleDelayedFerilizer(SoilColumn* sc) {
   auto delayedApps = sc->_delayedNMinApplications;
   double n_amount = 0.0;
   while (!delayedApps.empty()) {
     const auto& da = delayedApps.front();
-    n_amount += soilColumnApplyMineralFertiliserViaNMinMethod(
+    n_amount += applyMineralFertiliserViaNMinMethod(
                                                     sc, da.fp, da.vf_SamplingDepth, da.vf_CropNTarget, da.vf_CropNTarget30,
                                                     da.vf_FertiliserMinApplication, da.vf_FertiliserMaxApplication,
                                                     da.vf_TopDressingDelay);
@@ -436,7 +436,7 @@ double monica::soilColumnApplyPossibleDelayedFerilizer(SoilColumn* sc) {
  *
  * @see ApplyFertiliser
  */
-double monica::soilColumnApplyPossibleTopDressing(SoilColumn* sc) {
+double monica::soilcolumn::applyPossibleTopDressing(SoilColumn* sc) {
   double amount = 0;
 
   if (sc->_vf_TopDressingDelay > 0) {
@@ -444,7 +444,7 @@ double monica::soilColumnApplyPossibleTopDressing(SoilColumn* sc) {
   } else if (sc->_vf_TopDressingDelay == 0
              && sc->_vf_TopDressing > 0.0) {
     amount = sc->_vf_TopDressing;
-    soilColumnApplyMineralFertiliser(sc, sc->_vf_TopDressingPartition, amount);
+    applyMineralFertiliser(sc, sc->_vf_TopDressingPartition, amount);
     sc->_vf_TopDressing = 0;
   }
   return amount;
@@ -454,7 +454,7 @@ double monica::soilColumnApplyPossibleTopDressing(SoilColumn* sc) {
  *
  * @author: Claas Nendel
  */
-void monica::soilColumnApplyMineralFertiliser(SoilColumn* sc, MineralFertilizerParameters fp, double amount) {
+void monica::soilcolumn::applyMineralFertiliser(SoilColumn* sc, MineralFertilizerParameters fp, double amount) {
   debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
     << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
@@ -475,7 +475,7 @@ void monica::soilColumnApplyMineralFertiliser(SoilColumn* sc, MineralFertilizerP
  * @param fertiliserMinApplication Threshold value for economically reasonable fertilizer application
  * @param topDressingDelay Number of days for which the application of surplus fertilizer is delayed
  */
-double monica::soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
+double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(SoilColumn* sc,
                                                               MineralFertilizerParameters fertiliserPartition,
                                                               double samplingDepth,
                                                               double cropNTargetValue,
@@ -499,8 +499,8 @@ double monica::soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
     return 0.0;
   }
 
-  auto vf_Layer30cm = soilColumnGetLayerNumberForDepth(sc, 0.3);
-  auto layerSamplingDepth = soilColumnGetLayerNumberForDepth(sc, samplingDepth);
+  auto vf_Layer30cm = getLayerNumberForDepth(sc, 0.3);
+  auto layerSamplingDepth = getLayerNumberForDepth(sc, samplingDepth);
 
   double vf_SoilNO3Sum = 0.0;
   double vf_SoilNH4Sum = 0.0;
@@ -550,7 +550,7 @@ double monica::soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
   }
 
   //Apply fertiliser
-  soilColumnApplyMineralFertiliser(sc, fertiliserPartition, vf_FertiliserRecommendation);
+  applyMineralFertiliser(sc, fertiliserPartition, vf_FertiliserRecommendation);
 
   debug() << "SoilColumn::applyMineralFertiliserViaNMinMethod:\t" << vf_FertiliserRecommendation << endl;
 
@@ -569,7 +569,7 @@ double monica::soilColumnApplyMineralFertiliserViaNMinMethod(SoilColumn* sc,
  * @param automatic irrigation parameters
  * @return could irrigation be applied and how much has been applied
  */
-std::pair<bool, double> monica::soilColumnApplyIrrigationViaTrigger(SoilColumn* sc,
+std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(SoilColumn* sc,
                                                                      const AutomaticIrrigationParameters& aips) {
   if (!sc->cropModule) return std::make_pair(false, 0);
 
@@ -598,7 +598,7 @@ std::pair<bool, double> monica::soilColumnApplyIrrigationViaTrigger(SoilColumn* 
   if (fractPAW <= aips.threshold) {
     double addedIrrigationWater = 0;
     if (aips.amount > 0.0) {
-      soilColumnApplyIrrigation(sc, aips.amount, aips.nitrateConcentration);
+      applyIrrigation(sc, aips.amount, aips.nitrateConcentration);
       addedIrrigationWater = aips.amount;
     } else if (aips.percentNFC > 0.0) {
       layerDepthM = 0;
@@ -640,7 +640,7 @@ std::pair<bool, double> monica::soilColumnApplyIrrigationViaTrigger(SoilColumn* 
  *
  * @author: Claas Nendel
  */
-void monica::soilColumnApplyIrrigation(SoilColumn* sc, double amount, double nitrateConcentration) {
+void monica::soilcolumn::applyIrrigation(SoilColumn* sc, double amount, double nitrateConcentration) {
   // Adding irrigation water amount to surface water storage
   sc->vs_SurfaceWaterStorage += amount; // [mm]
   double nitrateAddedViaIrrigation = // -> //[kg m-3]
@@ -656,8 +656,8 @@ void monica::soilColumnApplyIrrigation(SoilColumn* sc, double amount, double nit
  * are averaged.
  * @param depth Depth of affected soil.
  */
-void monica::soilColumnApplyTillage(SoilColumn* sc, double depth) {
-  auto layer_index = soilColumnGetLayerNumberForDepth(sc, depth) + 1;
+void monica::soilcolumn::applyTillage(SoilColumn* sc, double depth) {
+  auto layer_index = getLayerNumberForDepth(sc, depth) + 1;
 
   double soil_organic_carbon = 0.0;
   double soil_organic_matter = 0.0;

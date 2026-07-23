@@ -21,12 +21,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "model/monica/monica_state.capnp.h"
 
-namespace monica 
+namespace monica
 {
-class SoilColumn;
+namespace soilcolumn { struct SoilColumn; }
 
 struct FrostComponent {
-    SoilColumn* soilColumn{ nullptr };
+    soilcolumn::SoilColumn* soilColumn{ nullptr };
     double vm_FrostDepth{0.0};
     double vm_accumulatedFrostDepth{0.0};
     double vm_NegativeDegreeDays{0.0}; //!< Counts negative degree-days under snow
@@ -45,7 +45,7 @@ struct FrostComponent {
 
 namespace frostcomponent {
 void initialize(FrostComponent* fc,
-                SoilColumn* soilColumn,
+                soilcolumn::SoilColumn* soilColumn,
                 double pm_HydraulicConductivityRedux,
                 double p_timeStep);
 void deserialize(FrostComponent* fc, mas::schema::model::monica::FrostModuleState::Reader reader);
