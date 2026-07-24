@@ -251,14 +251,14 @@ Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
     acd = co2;
   else if (name == "et0")
     acd = et0;
-  
+
   climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
 }
 */
 
 
 /*
-pair<Date, map<Climate::ACD, double>> 
+pair<Date, map<Climate::ACD, double>>
 climateDataForStep(const Climate::DataAccessor& da,
                    size_t stepNo,
                    double latitude)
@@ -278,7 +278,7 @@ climateDataForStep(const Climate::DataAccessor& da,
                                          da.dataForTimestep(Climate::sunhours, stepNo),
                                          latitude, true)
        : -1.0);
-  
+
   map<Climate::ACD, double> m
   {{ Climate::tmin, da.dataForTimestep(Climate::tmin, stepNo)}
   ,{ Climate::tavg, da.dataForTimestep(Climate::tavg, stepNo)}
@@ -778,7 +778,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     while (notFoundNextCM) {
       if (advanceToNextCM) {
         //delete fully cultivation methods with only absolute worksteps,
-        //because they won't participate in a new run when wrapping the crop rotation 
+        //because they won't participate in a new run when wrapping the crop rotation
         if ((*cmit)->areOnlyAbsoluteWorksteps() || !(*cmit)->repeat()) cmit = cropRotation.erase(cmit);
         else cmit++;
 
@@ -791,15 +791,15 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         advanceToNextCM = true;
         currentCM = *cmit;
 
-        //addedYear tells that the start of the cultivation method was before currentDate and thus the whole 
+        //addedYear tells that the start of the cultivation method was before currentDate and thus the whole
         //CM had to be moved into the next year
         //is possible for relative dates
         bool addedYear = currentCM->reinit(currentDate);
         if (addedYear) {
-          //current CM is a cover crop, check if the latest sowing date would have been before current date, 
+          //current CM is a cover crop, check if the latest sowing date would have been before current date,
           //if so, skip current CM
           if (currentCM->isCoverCrop()) {
-            //if current CM's latest sowing date is actually after current date, we have to 
+            //if current CM's latest sowing date is actually after current date, we have to
             //reinit current CM again, but this time prevent shifting it to the next year
             if (!(notFoundNextCM = currentCM->absLatestSowingDate().withYear(currentDate.year()) < currentDate)) {
               currentCM->reinit(currentDate, true);

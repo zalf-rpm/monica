@@ -3,26 +3,24 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #pragma once
 
-#include <ostream>
 #include <vector>
 
 #include "json11/json11.hpp"
 
-#include "common.capnp.h"
 #include "common/dll-exports.h"
 #include "../core/monica-model.h"
 #include "cultivation-method.h"
@@ -139,5 +137,5 @@ std::vector<StoreData> setupStorage(const json11::Json& event2oids, const Tools:
 //! @return a structure with all the Monica results
 DLL_API std::pair<Output, Output> runMonicaIC(Env env, bool isIntercropping = true);
 DLL_API Output runMonica(Env env);
-  
+
 } // namespace monica
