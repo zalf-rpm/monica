@@ -459,9 +459,9 @@ void monica::soilcolumn::applyMineralFertiliser(SoilColumn* sc, MineralFertilize
     << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
   double kgHaTokgm3 = 10000.0 * sc->at(0).vs_LayerThickness;
-  sc->at(0).vs_SoilNO3 += amount * fp.getNO3() / kgHaTokgm3;
-  sc->at(0).vs_SoilNH4 += amount * fp.getNH4() / kgHaTokgm3;
-  sc->at(0).vs_SoilCarbamid += amount * fp.getCarbamid() / kgHaTokgm3;
+  sc->at(0).vs_SoilNO3 += amount * fp.vo_NO3 / kgHaTokgm3;
+  sc->at(0).vs_SoilNH4 += amount * fp.vo_NH4 / kgHaTokgm3;
+  sc->at(0).vs_SoilCarbamid += amount * fp.vo_Carbamid / kgHaTokgm3;
 }
 /**
  * Method for calculating fertilizer demand from crop demand and soil mineral

@@ -110,7 +110,7 @@ Each rename was followed by a full build + `monica-run` regression check against
 3. External call sites (`run-monica.cpp`, `daily-monica-fbp-component-main.cpp`, `cultivation-method.cpp`) are rewired to the free procedures.
 4. Build + `monica-run` + crop-output identity check remained unchanged after the current conversion batch.
 
-### `soilcolumn` / `SoilLayer` (status: `SoilLayer` complete, `SoilColumn` not started)
+### `soilcolumn` / `SoilLayer` (status: complete)
 
 1. `SoilLayer` was converted to a plain struct (data members only) inside a new
    `monica::soillayer` namespace, with `using SoilLayer = soillayer::SoilLayer;` in `monica` so
@@ -119,9 +119,6 @@ Each rename was followed by a full build + `monica-run` regression check against
    (the unused reader-constructor was dropped; the default constructor is now implicit since the
    struct is an aggregate).
 3. Member `deserialize`/`serialize` became free `soillayer::deserialize`/`soillayer::serialize`.
-   `SoilColumn::deserialize`/`serialize`, which relied on `setFromComplexCapnpList`/
-   `setComplexCapnpList` calling `.deserialize()`/`.serialize()` members, were switched to manual
-   loops calling the new free functions.
 4. `vs_SoilMoisture_pF()` became `soillayer::soilMoisturePF(const SoilLayer*)`; `get_SoilNmin()`
    became `soillayer::soilNmin(const SoilLayer*)` (both do real computation, unlike the getters below).
 5. All trivial getters/setters (pure field passthroughs, including simple one-line forwards to
@@ -131,40 +128,58 @@ Each rename was followed by a full build + `monica-run` regression check against
    `run-monica.cpp`.
 6. File renamed from `soilcolumn_simple.*` to `soilcolumn.*` (done in an earlier step, before the
    `SoilLayer` conversion).
-7. `SoilColumn` itself (also declared in `soilcolumn.h`) is **not** converted: it still has
-   constructors and member methods (`deserialize`, `serialize`, `applyMineralFertiliser`,
-   `applyTillage`, `applyIrrigationViaTrigger`, `calculateNumberOfOrganicLayers`, etc.). A layer of
-   thin free-function wrappers already exists in `monica` (`soilColumnApplyMineralFertiliser`,
-   `soilColumnApplyTillage`, `soilColumnDeserialize`, ...) that just forward to the members — this
-   predates the current namespaced-free-procedure pattern and satisfies goal #2 only superficially.
-8. `AOM_Properties` (also declared in `soilcolumn.h`) still has member `serialize`/`deserialize`;
-   untouched so far, low priority given its small size.
+7. `SoilColumn` was converted in three stages, each with its own build + regression check:
+   - Stage 1: the member methods that already had a thin free-function wrapper
+     (`soilColumnApplyMineralFertiliser`, `soilColumnApplyTillage`, `soilColumnDeserialize`, ...)
+     had their real implementation moved into the free function, turning the member method into the
+     thin forwarder instead (reversing the direction).
+   - Stage 2: the constructors and remaining member methods without a free-function counterpart
+     (`calculateNumberOfOrganicLayers`, `applyMineralFertiliserViaNDemand`, `vs_NumberOfLayers`,
+     `vs_NumberOfOrganicLayers`, `vs_LayerThickness`, `get_DailyCropNUptake`,
+     `getLayerNumberForDepth`, `sumSoilTemperature`) got new free functions, all member methods and
+     both constructors were removed, and `makeSoilColumn(...)` now builds the plain struct directly.
+     `SoilColumn` is now a genuine aggregate (public `std::vector<SoilLayer>` base, no user-declared
+     constructors).
+   - Stage 3: all `soilColumnXxx` free functions moved into a `monica::soilcolumn` namespace with the
+     prefix dropped (e.g. `soilColumnApplyIrrigation` -> `soilcolumn::applyIrrigation`), with a
+     `using SoilColumn = soilcolumn::SoilColumn;` alias in `monica`. Headers that only
+     forward-declared `SoilColumn` (`frost-component.h`, `snow-component.h`, `soilmoisture.h`,
+     `soilorganic.h`, `soiltransport.h`) had to forward-declare `monica::soilcolumn::SoilColumn`
+     instead and reference the qualified name in field/parameter types, since a type alias can't
+     itself be forward-declared.
+8. `DelayedNMinApplicationParams` (nested inside `SoilColumn`) and `AOM_Properties` (also declared in
+   `soilcolumn.h`) still have member `serialize`/`deserialize`; untouched so far, low priority given
+   their small size.
+
+### `MineralFertilizerParameters` (status: accessors inlined, real methods untouched)
+
+1. Converted from `class` (with an explicit `public:` section) to `struct`; the `private:` section
+   was removed and its fields (`id`, `name`, `vo_Carbamid`, `vo_NH4`, `vo_NO3`) are now public.
+2. The 10 trivial accessors (`getId`/`setId`, `getName`/`setName`, `getCarbamid`/`setCarbamid`,
+   `getNH4`/`setNH4`, `getNO3`/`setNO3`) were removed. Only 3 had any live caller in the whole
+   codebase (`fp.getNO3()`/`getNH4()`/`getCarbamid()` in `soilcolumn.cpp`'s `applyMineralFertiliser`),
+   inlined to direct field access; the rest were dead code.
+3. Constructors, `deserialize`, `serialize`, `merge`, `to_json` were intentionally left untouched
+   (per goal of doing this as a first, low-risk step) — they already read/wrote the fields directly,
+   never through the removed accessors.
 
 ## What to do next (if starting fresh)
 
-1. Convert `SoilColumn` in `src/core/soilcolumn.h/.cpp`, following the pattern used for `SoilLayer`/`CropModule`:
-   - Turn it into a plain struct (it currently also inherits from `std::vector<SoilLayer>`, which
-     should stay unless it complicates the conversion).
-   - Convert the constructors to a `makeSoilColumn(...)`-style factory (already exists as a
-     `kj::Own`-returning function alongside the member constructors it still calls internally).
-   - Convert `deserialize`/`serialize` and the `apply*`/`calculateNumberOfOrganicLayers`/
-     `getLayerNumberForDepth`/`sumSoilTemperature` methods to free procedures.
-   - Move the free procedures into a `monica::soilcolumn` namespace with unprefixed names, add a
-     `monica::SoilColumn` alias, and remove the now-redundant `soilColumnApply...`/
-     `soilColumnDeserialize`/... wrapper layer (replace their few call sites with direct calls into
-     the new namespace).
-2. Move `soilorganic`'s free procedures from flat `monica::soilOrganic...` into a
+1. Move `soilorganic`'s free procedures from flat `monica::soilOrganic...` into a
    `monica::soilorganic` namespace with unprefixed names (mirrors what was already done for
-   `soilmoisture`, `soiltemperature`, `soiltransport`, `cropmodule`, `soillayer`).
-3. Optionally convert the small `AOM_Properties` struct's member `serialize`/`deserialize` to free
-   procedures for consistency, once `SoilColumn` is done (it's declared in the same header).
+   `soilmoisture`, `soiltemperature`, `soiltransport`, `cropmodule`, `soillayer`, `soilcolumn`).
+2. Optionally convert `DelayedNMinApplicationParams` (nested in `SoilColumn`) and `AOM_Properties`
+   (both in `soilcolumn.h`) member `serialize`/`deserialize` to free procedures for consistency.
+3. `MineralFertilizerParameters` still has its constructors/`deserialize`/`serialize`/`merge`/
+   `to_json` as member methods (intentionally left for a later pass, see above) — could be
+   proceduralized following the same pattern as the other modules if desired.
 4. After each conversion step, run build and fix regressions immediately.
 
 ## Validation baseline
 
 Use the project build task equivalent command:
 
-`cmake --build _cmake_debug_ninja --parallel`
+`cmake --build build --parallel`
 
 Notes:
 - In this environment a transient `.ninja_lock`/PDB contention can appear; rerun (or serialize with `--parallel 1`) if needed.

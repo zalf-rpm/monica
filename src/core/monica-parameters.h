@@ -283,8 +283,7 @@ enum FertiliserType { mineral, organic, undefined };
  * Simple data structure that holds information about mineral fertiliser.
  * @author Xenia Holtmann, Claas Nendel
  */
-class DLL_API MineralFertilizerParameters : public Tools::Json11Serializable {
-public:
+struct DLL_API MineralFertilizerParameters : public Tools::Json11Serializable {
   MineralFertilizerParameters() {}
 
   MineralFertilizerParameters(mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) {
@@ -307,37 +306,6 @@ public:
 
   virtual json11::Json to_json() const;
 
-  std::string getId() const { return id; }
-  void setId(const std::string& id) { this->id = id; }
-
-  inline std::string getName() const { return name; }
-  inline void setName(const std::string& name) { this->name = name; }
-
-  //! @brief Returns carbamid part in percentage of fertiliser.
-  //! @return Carbamid in percent
-  inline double getCarbamid() const { return vo_Carbamid; }
-
-  //! Sets carbamid part of fertilisers
-  //! @param vo_Carbamid percent
-  inline void setCarbamid(double carbamid) { vo_Carbamid = carbamid; }
-
-  //! Returns ammonium part of fertiliser.
-  //! @return Ammonium in percent
-  inline double getNH4() const { return vo_NH4; }
-
-  //! Sets nitrat part of fertiliser.
-  //! @param vo_NH4
-  inline void setNH4(double NH4) { vo_NH4 = NH4; }
-
-  //! Returns nitrat part of fertiliser
-  //! @return Nitrat in percent
-  inline double getNO3() const { return vo_NO3; }
-
-  //! Sets nitrat part of fertiliser.
-  //! @param vo_NO3
-  inline void setNO3(double NO3) { vo_NO3 = NO3; }
-
-private:
   std::string id;
   std::string name;
   double vo_Carbamid{0.0}; //!< [%]
