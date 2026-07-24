@@ -1,38 +1,8 @@
-_cmake_debug
-_cmake_release
-
 # dot files
 #.*
 
-#################
-## Eclipse
-#################
-
-*.pydevproject
-.project
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.classpath
-.settings/
-.loadpath
-
 # External tool builders
 .externalToolBuilders/
-
-# Locally stored "Eclipse launch configurations"
-*.launch
-
-# CDT-specific
-.cproject
-
-# PDT-specific
-.buildpath
 
 
 #################
@@ -161,62 +131,4 @@ pip-log.txt
 .coverage
 .tox
 
-#Translations
-*.mo
-
-#Mr Developer
-.mr.developer.cfg
-
-# Mac crap
-.DS_Store
-
-/Makefile.Release
-/Makefile
-/Makefile.Debug
-
-# Python SWIG
-_monica.so
-monica.py
-monica
-monica_wrap.cxx
-monica-swig/monica_wrap.cxx
-monica-swig/_monica.pyd
-monica-swig/monica.lastbuildstate
-monica-swig/monica.py
-monica-swig/monica.log
-monica-swig/*.log
-monica-swig/UpgradeLog.htm
-
-installer/Hohenfinow2/crop_parameters*.txt
-installer/Hohenfinow2/monica_parameters.txt
-installer/Hohenfinow2/*.dat
-
-/db-connections.ini
-/monica-mpmas/BRA*
-/monica-mpmas/ReadCropActIds.txt
-/monica-mpmas/ReadCropYields.txt
-/monica-mpmas/DEF237
-
-*.pro
-HF2_automatic_yield
-src/run/production-process.h.autosave
-/installer/Hohenfinow2/smout.csv
-/installer/Hohenfinow2/rmout.csv
-/installer/Hohenfinow2/inputs.json
-*.autosave
-*.opendb
-project-files/monica.VC.db
-/inputs.json
-/project-files/monica-full/monica.VC.db
-*.exe
-/_cmake_win32
-/_cmake_win64
-_cmake_vs2019_win64
-/_cmake_linux
-/_cmake_linux_debug
-/_cmake_linux_zig
-_cmake_linux_release
-/cmake-build-debug-coverage/
-/installer/Hohenfinow2/monica-parameters
-/_cmake_debug_
-_cmake_debug_ninja
+build

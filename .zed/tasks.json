@@ -1,27 +1,27 @@
 [
   {
     "label": "CMake Configure",
-    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake -S . -B _cmake_debug_ninja -G Ninja -DCMAKE_MAKE_PROGRAM='C:/Users/berg/development/bin/ninja.exe' -DZ_VCPKG_POWERSHELL_PATH='C:/Users/berg/AppData/Local/Microsoft/WindowsApps/pwsh.exe' -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE='../../vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-windows-static; Copy-Item _cmake_debug_ninja/compile_commands.json .",
+    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake -S . -B build -G Ninja -DCMAKE_MAKE_PROGRAM='C:/Users/berg/development/bin/ninja.exe' -DZ_VCPKG_POWERSHELL_PATH='C:/Users/berg/AppData/Local/Microsoft/WindowsApps/pwsh.exe' -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE='../../vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-windows-static",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
     "label": "CMake Build",
-    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake --build _cmake_debug_ninja --parallel",
+    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake --build build --parallel",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
     "label": "CMake Configure + Build",
-    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake -S . -B _cmake_debug_ninja -G Ninja -DCMAKE_MAKE_PROGRAM='C:/Users/berg/development/bin/ninja.exe' -DZ_VCPKG_POWERSHELL_PATH='C:/Users/berg/AppData/Local/Microsoft/WindowsApps/pwsh.exe' -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE='../../vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-windows-static; Copy-Item _cmake_debug_ninja/compile_commands.json . && cmake --build _cmake_debug_ninja --parallel",
+    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake -S . -B build -G Ninja -DCMAKE_MAKE_PROGRAM='C:/Users/berg/development/bin/ninja.exe' -DZ_VCPKG_POWERSHELL_PATH='C:/Users/berg/AppData/Local/Microsoft/WindowsApps/pwsh.exe' -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE='../../vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-windows-static; cmake --build build --parallel",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
     "label": "CMake Clean",
-    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake --build _cmake_debug_ninja --target clean",
+    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake -S . -B  build --target clean",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
     "label": "Debug monica-run",
-    "command": "raddbg _cmake_debug_ninja/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
+    "command": "raddbg build/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
     "cwd": "$ZED_WORKTREE_ROOT",
     "env": {
       "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
@@ -29,7 +29,7 @@
   },
   {
     "label": "Run monica-run",
-    "command": "_cmake_debug_ninja/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
+    "command": "build/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
     "cwd": "$ZED_WORKTREE_ROOT",
     "env": {
       "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
