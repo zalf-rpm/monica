@@ -394,8 +394,7 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
 };
 
 
-class DLL_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable {
-public:
+struct DLL_API MeasuredGroundwaterTableInformation : public Tools::Json11Serializable {
   MeasuredGroundwaterTableInformation() {}
 
   MeasuredGroundwaterTableInformation(mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
@@ -416,9 +415,6 @@ public:
 
   std::pair<bool, double> getGroundwaterInformation(Tools::Date gwDate) const;
 
-  bool isGroundwaterInformationAvailable() const { return groundwaterInformationAvailable; }
-
-private:
   bool groundwaterInformationAvailable{false};
   std::map<Tools::Date, double> groundwaterInfo;
 };
@@ -465,8 +461,7 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
 /**
 * @brief Data structure that containts all relevant parameters for the automatic yield trigger.
 */
-class DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable {
-public:
+struct DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable {
   //! Enumeration for defining automatic harvesting times
 
   //! Definition of different harvest time definition for the automatic
@@ -476,7 +471,6 @@ public:
     unknown //!< default error value
   };
 
-public:
   AutomaticHarvestParameters() {}
 
   AutomaticHarvestParameters(HarvestTime yt);
@@ -495,19 +489,6 @@ public:
 
   virtual json11::Json to_json() const;
 
-  //! Setter for automatic harvest time
-  void setHarvestTime(HarvestTime time) { _harvestTime = time; }
-
-  //! Getter for automatic harvest time
-  HarvestTime getHarvestTime() const { return _harvestTime; }
-
-  //! Setter for fallback automatic harvest day
-  void setLatestHarvestDOY(int doy) { _latestHarvestDOY = doy; }
-
-  //! Getter for fallback automatic harvest day
-  int getLatestHarvestDOY() const { return _latestHarvestDOY; }
-
-private:
   HarvestTime _harvestTime{unknown}; //!< Harvest time parameter
   int _latestHarvestDOY{-1}; //!< Fallback day for latest harvest of the crop
 };
@@ -1014,8 +995,7 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
  *
  * @author Xenia Specka
  */
-class DLL_API CentralParameterProvider : public Tools::Json11Serializable {
-public:
+struct DLL_API CentralParameterProvider : public Tools::Json11Serializable {
   CentralParameterProvider();
 
   //  CentralParameterProvider(json11::Json object);
@@ -1047,9 +1027,6 @@ public:
     return _pathToOutputDir.empty() ? "./" : _pathToOutputDir;
   }
 
-  void setPathToOutputDir(std::string path) { _pathToOutputDir = path; }
-
-private:
   //bool _writeOutputFiles{false};
   std::string _pathToOutputDir;
 
