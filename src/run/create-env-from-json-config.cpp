@@ -459,18 +459,18 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
 
 Env monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params) {
   Env env;
-  if(!Tools::printPossibleErrors(env.merge(createEnvJsonFromJsonStrings(kj::mv(params))), Tools::activateDebug))
+  if(!Tools::printPossibleErrors(env_merge(&env, createEnvJsonFromJsonStrings(kj::mv(params))), Tools::activateDebug))
     return {};
   return env;
 }
 
 Env monica::createEnvFromJsonObjects(std::map<std::string, json11::Json> params) {
   Env env;
-  if(!Tools::printPossibleErrors(env.merge(createEnvJsonFromJsonObjects(kj::mv(params))), Tools::activateDebug))
+  if(!Tools::printPossibleErrors(env_merge(&env, createEnvJsonFromJsonObjects(kj::mv(params))), Tools::activateDebug))
     return {};
   return env;
 }
 
 Errors monica::updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params) {
-  return env.merge(createEnvJsonFromJsonObjects(kj::mv(params)));
+  return env_merge(&env, createEnvJsonFromJsonObjects(kj::mv(params)));
 }

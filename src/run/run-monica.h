@@ -42,20 +42,7 @@ Tools::Errors crop_rotation_merge(CropRotation* cr, json11::Json j);
 
 json11::Json crop_rotation_to_json(const CropRotation* cr);
 
-struct DLL_API Env : public Tools::Json11Serializable {
-  Env() = default;
-
-  explicit Env(CentralParameterProvider&& cpp);
-
-  Tools::Errors merge(json11::Json j) override;
-  // merge a json file into Env
-
-  json11::Json to_json() const override;
-  // serialize to json
-
-  bool returnObjOutputs() const { return outputs["obj-outputs?"].bool_value(); }
-  // is the output as a list (e.g. days) of an object (holding all the requested data)
-
+struct DLL_API Env {
   //! object holding the climate data
   Climate::DataAccessor climateData;
   // 1. priority, object holding the climate data
@@ -89,8 +76,6 @@ struct DLL_API Env : public Tools::Json11Serializable {
 
   CentralParameterProvider params;
 
-  std::string toString() const override;
-
   std::string berestRequestAddress;
 
   bool debugMode{false};
@@ -98,18 +83,21 @@ struct DLL_API Env : public Tools::Json11Serializable {
   Intercropping ic;
 };
 
+DLL_API Env makeEnv(CentralParameterProvider&& cpp);
 
-struct Spec : public Tools::Json11Serializable {
-  Spec() = default;
+DLL_API Tools::Errors env_merge(Env* env, json11::Json j);
+// merge a json file into Env
 
-  explicit Spec(json11::Json j) { merge(j); }
+DLL_API json11::Json env_to_json(const Env* env);
+// serialize to json
 
-  Tools::Errors merge(json11::Json j) override;
+DLL_API std::string env_to_string(const Env* env);
 
-  static std::function<bool(const MonicaModel&)> createExpressionFunc(json11::Json j);
+//! is the output as a list (e.g. days) of an object (holding all the requested data)
+DLL_API bool env_return_obj_outputs(const Env* env);
 
-  json11::Json to_json() const override { return origSpec; }
 
+struct Spec {
   json11::Json origSpec;
 
   std::function<bool(const MonicaModel&)> startf;
@@ -119,6 +107,14 @@ struct Spec : public Tools::Json11Serializable {
   std::function<bool(const MonicaModel&)> atf;
   std::function<bool(const MonicaModel&)> whilef;
 };
+
+Spec makeSpec(json11::Json j);
+
+Tools::Errors spec_merge(Spec* spec, json11::Json j);
+
+std::function<bool(const MonicaModel&)> spec_create_expression_func(json11::Json j);
+
+json11::Json spec_to_json(const Spec* spec);
 
 struct StoreData {
   void aggregateResults();

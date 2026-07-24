@@ -110,53 +110,56 @@ json11::Json monica::crop_rotation_to_json(const CropRotation* cr) {
       };
 }
 
-Env::Env(CentralParameterProvider &&cpp)
-    : params(cpp) {}
+Env monica::makeEnv(CentralParameterProvider &&cpp) {
+  Env env;
+  env.params = cpp;
+  return env;
+}
 
-Errors Env::merge(json11::Json j) {
+Errors monica::env_merge(Env* env, json11::Json j) {
   Errors es;
 
-  es.append(params.merge(j["params"]));
+  es.append(env->params.merge(j["params"]));
 
-  es.append(climateData.merge(j["climateData"]));
+  es.append(env->climateData.merge(j["climateData"]));
 
-  events = j["events"];
-  events2 = j["events2"];
-  outputs = j["outputs"];
+  env->events = j["events"];
+  env->events2 = j["events2"];
+  env->outputs = j["outputs"];
 
-  es.append(::extractAndStore(j["cropRotation"], cropRotation));
-  es.append(::extractAndStoreCropRotations(j["cropRotations"], cropRotations));
-  es.append(::extractAndStore(j["cropRotation2"], cropRotation2));
-  es.append(::extractAndStoreCropRotations(j["cropRotations2"], cropRotations2));
+  es.append(::extractAndStore(j["cropRotation"], env->cropRotation));
+  es.append(::extractAndStoreCropRotations(j["cropRotations"], env->cropRotations));
+  es.append(::extractAndStore(j["cropRotation2"], env->cropRotation2));
+  es.append(::extractAndStoreCropRotations(j["cropRotations2"], env->cropRotations2));
 
-  set_bool_value(debugMode, j, "debugMode");
+  set_bool_value(env->debugMode, j, "debugMode");
 
-  set_string_value(climateCSV, j, "climateCSV");
+  set_string_value(env->climateCSV, j, "climateCSV");
 
   // move pathToClimateCSV whatever it is into a vector as we support multiple climate files (merging)
   if (j["pathToClimateCSV"].is_string() && !j["pathToClimateCSV"].string_value().empty()) {
-    pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
+    env->pathsToClimateCSV.push_back(j["pathToClimateCSV"].string_value());
   } else if (j["pathToClimateCSV"].is_array()) {
     for (const auto &path: toStringVector(j["pathToClimateCSV"].array_items())) {
-      if (!path.empty()) pathsToClimateCSV.push_back(path);
+      if (!path.empty()) env->pathsToClimateCSV.push_back(path);
     }
   }
-  csvViaHeaderOptions = j["csvViaHeaderOptions"];
+  env->csvViaHeaderOptions = j["csvViaHeaderOptions"];
 
-  customId = j["customId"];
-  set_string_value(sharedId, j, "sharedId");
+  env->customId = j["customId"];
+  set_string_value(env->sharedId, j, "sharedId");
 
   return es;
 }
 
-json11::Json Env::to_json() const {
+json11::Json monica::env_to_json(const Env* env) {
   J11Array cr;
-  for (const auto &cm: cropRotation) cr.push_back(cm.to_json());
+  for (const auto &cm: env->cropRotation) cr.push_back(cm.to_json());
   J11Array cr2;
-  for (const auto &cm: cropRotation2) cr2.push_back(cm.to_json());
+  for (const auto &cm: env->cropRotation2) cr2.push_back(cm.to_json());
 
   J11Array crs;
-  for (const auto &c: cropRotations) {
+  for (const auto &c: env->cropRotations) {
     J11Array cr;
     for (const auto &cm: c.cropRotation) cr.push_back(cm.to_json());
 
@@ -168,7 +171,7 @@ json11::Json Env::to_json() const {
     crs.push_back(cro);
   }
   J11Array crs2;
-  for (const auto &c: cropRotations2) {
+  for (const auto &c: env->cropRotations2) {
     J11Array cr;
     for (const auto &cm: c.cropRotation) cr.push_back(cm.to_json());
 
@@ -182,34 +185,36 @@ json11::Json Env::to_json() const {
 
   return J11Object
       {{"type",                "Env"},
-       {"params",              params.to_json()},
+       {"params",              env->params.to_json()},
        {"cropRotation",        cr},
        {"cropRotation2",       cr2},
        {"cropRotations",       crs},
        {"cropRotations2",      crs2},
-       {"climateData",         climateData.to_json()},
-       {"debugMode",           debugMode},
-       {"climateCSV",          climateCSV},
-       {"pathsToClimateCSV",   toPrimJsonArray(pathsToClimateCSV)},
-       {"csvViaHeaderOptions", csvViaHeaderOptions},
-       {"customId",            customId},
-       {"sharedId",            sharedId},
-       {"events",              events},
-       {"events2",             events2},
-       {"outputs",             outputs}
+       {"climateData",         env->climateData.to_json()},
+       {"debugMode",           env->debugMode},
+       {"climateCSV",          env->climateCSV},
+       {"pathsToClimateCSV",   toPrimJsonArray(env->pathsToClimateCSV)},
+       {"csvViaHeaderOptions", env->csvViaHeaderOptions},
+       {"customId",            env->customId},
+       {"sharedId",            env->sharedId},
+       {"events",              env->events},
+       {"events2",             env->events2},
+       {"outputs",             env->outputs}
       };
 }
 
-string Env::toString() const {
+bool monica::env_return_obj_outputs(const Env* env) { return env->outputs["obj-outputs?"].bool_value(); }
+
+string monica::env_to_string(const Env* env) {
   ostringstream s;
-  s << " noOfLayers: " << params.simulationParameters.p_NumberOfLayers
-    << " layerThickness: " << params.simulationParameters.p_LayerThickness
+  s << " noOfLayers: " << env->params.simulationParameters.p_NumberOfLayers
+    << " layerThickness: " << env->params.simulationParameters.p_LayerThickness
     << endl;
-  s << "ClimateData: from: " << climateData.startDate().toString()
-    << " to: " << climateData.endDate().toString() << endl;
+  s << "ClimateData: from: " << env->climateData.startDate().toString()
+    << " to: " << env->climateData.endDate().toString() << endl;
   s << "Fruchtfolge: " << endl;
-  for (const CultivationMethod &cm: cropRotation) s << cm.toString() << endl;
-  s << "customId: " << customId.dump();
+  for (const CultivationMethod &cm: env->cropRotation) s << cm.toString() << endl;
+  s << "customId: " << env->customId.dump();
   return s.str();
 }
 
@@ -297,7 +302,7 @@ void writeDebugInputs(const Env &env, string fileName = "inputs.json") {
       cerr << "Error couldn't open file: '" << pathToFile << "'." << endl;
       return;
     }
-    pout << env.to_json().dump() << endl;
+    pout << env_to_json(&env).dump() << endl;
     pout.flush();
     pout.close();
   } else cerr << "Error failed to create path: '" << path << "'." << endl;
@@ -316,7 +321,13 @@ Maybe<T> parseInt(const string &s) {
 }
 
 
-Tools::Errors Spec::merge(json11::Json j) {
+Spec monica::makeSpec(json11::Json j) {
+  Spec spec;
+  spec_merge(&spec, j);
+  return spec;
+}
+
+Tools::Errors monica::spec_merge(Spec* spec, json11::Json j) {
   //init(start, j, "start");
   //init(end, j, "end");
   //init(at, j, "at");
@@ -324,17 +335,19 @@ Tools::Errors Spec::merge(json11::Json j) {
   //init(to, j, "to");
   //Maybe<DMY> dummy;
   //init(dummy, j, "while");
-  startf = createExpressionFunc(j["start"]);
-  endf = createExpressionFunc(j["end"]);
-  atf = createExpressionFunc(j["at"]);
-  fromf = createExpressionFunc(j["from"]);
-  tof = createExpressionFunc(j["to"]);
-  whilef = createExpressionFunc(j["while"]);
+  spec->startf = spec_create_expression_func(j["start"]);
+  spec->endf = spec_create_expression_func(j["end"]);
+  spec->atf = spec_create_expression_func(j["at"]);
+  spec->fromf = spec_create_expression_func(j["from"]);
+  spec->tof = spec_create_expression_func(j["to"]);
+  spec->whilef = spec_create_expression_func(j["while"]);
 
   return {};
 }
 
-std::function<bool(const MonicaModel &)> Spec::createExpressionFunc(Json j) {
+json11::Json monica::spec_to_json(const Spec* spec) { return spec->origSpec; }
+
+std::function<bool(const MonicaModel &)> monica::spec_create_expression_func(Json j) {
   //is an expression event
   if (j.is_array()) {
     if (auto f = buildCompareExpression(j.array_items())) return f;
@@ -574,7 +587,7 @@ vector<StoreData> monica::setupStorage(const json11::Json& event2oids, const Dat
       spec = o;
     }
 
-    sd.spec.merge(spec);
+    spec_merge(&sd.spec, spec);
     sd.outputIds = parseOutputIds(e2os[i + 1].array_items());
 
     storeData.push_back(sd);
@@ -612,7 +625,7 @@ DFSRes deserializeFullState(kj::Own<const kj::ReadableFile> file, bool serialize
 
 std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   Output out, out2;
-  bool returnObjOutputs = env.returnObjOutputs();
+  bool returnObjOutputs = env_return_obj_outputs(&env);
   out.customId = env.customId;
   out2.customId = env.customId;
 

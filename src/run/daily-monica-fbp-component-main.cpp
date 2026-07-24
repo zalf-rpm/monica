@@ -183,7 +183,7 @@ public:
   }
 
   void initMonica() {
-    returnObjOutputs = env.returnObjOutputs();
+    returnObjOutputs = env_return_obj_outputs(&env);
     out.customId = env.customId;
     dailyOut.customId = env.customId;
 
@@ -290,7 +290,7 @@ public:
               Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
             env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
               Soil::updateUnsetPwpFcSatFromToth;
-            auto errors = env.merge(envJson);
+            auto errors = env_merge(&env, envJson);
             monica = nullptr;
             monica = makeMonicaModel(env.params);
             //monica->initComponents(env.params);

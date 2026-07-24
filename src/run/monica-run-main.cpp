@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
 
 
     // merge the json objects into the env
-    auto mergeResult = env.merge(createEnvJsonFromJsonObjects(ps));
+    auto mergeResult = env_merge(&env, createEnvJsonFromJsonObjects(ps));
     printPossibleErrors(mergeResult, activateDebug);
     if (mergeResult.failure()) return 1;
 
@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
 
     bool isIC = env.params.userCropParameters.isIntercropping;
     bool isAsyncIC = env.ic.isAsync();
-    bool returnObjOutputs = env.returnObjOutputs();
+    bool returnObjOutputs = env_return_obj_outputs(&env);
     Output output, output2;
     tie(output, output2) = runMonicaIC(kj::mv(env), isIC);
 

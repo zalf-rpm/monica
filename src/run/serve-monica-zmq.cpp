@@ -515,7 +515,7 @@ void monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
                   Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
                 env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
 
-                auto errors = env.merge(msg.json);
+                auto errors = env_merge(&env, msg.json);
                 if (errors.success()) {
                   EResult<DataAccessor> eda;
                   try {

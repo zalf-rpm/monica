@@ -87,7 +87,7 @@ kj::Promise<void> RunMonica::run(RunContext context) {
       Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
 
-    auto errors = env.merge(envJson);
+    auto errors = env_merge(&env, envJson);
 
     if (!soilLayers.empty()) {
       if (auto it = std::find(errors.errors.begin(), errors.errors.end(), "Soil profile is empty!");
