@@ -31,21 +31,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica
 {
-struct CropRotation : public Tools::Json11Serializable {
-  CropRotation() = default;
-
-  CropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation)
-    : start(start), end(end), cropRotation(cropRotation) {}
-
-//  explicit CropRotation(json11::Json object);
-
-  Tools::Errors merge(json11::Json j) override;
-
-  json11::Json to_json() const override;
-
+struct CropRotation {
   Tools::Date start, end;
   std::vector<CultivationMethod> cropRotation;
 };
+
+CropRotation makeCropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation);
+
+Tools::Errors crop_rotation_merge(CropRotation* cr, json11::Json j);
+
+json11::Json crop_rotation_to_json(const CropRotation* cr);
 
 struct DLL_API Env : public Tools::Json11Serializable {
   Env() = default;

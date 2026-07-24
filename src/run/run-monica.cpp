@@ -65,33 +65,48 @@ Errors extractAndStore(const Json &jv, Vector &vec) {
   return es;
 }
 
+Errors extractAndStoreCropRotations(const Json &jv, std::vector<CropRotation> &vec) {
+  Errors es;
+  vec.clear();
+  for (const Json &cmj: jv.array_items()) {
+    CropRotation v;
+    es.append(crop_rotation_merge(&v, cmj));
+    vec.push_back(v);
+  }
+  return es;
+}
+
 } // namespace _ (private)
 
 
-//CropRotation::CropRotation(json11::Json j) {
-//  merge(j);
-//}
+CropRotation monica::makeCropRotation(Tools::Date start, Tools::Date end, std::vector<CultivationMethod> cropRotation) {
+  CropRotation cr;
+  cr.start = start;
+  cr.end = end;
+  cr.cropRotation = cropRotation;
+  return cr;
+}
 
-Errors CropRotation::merge(json11::Json j) {
+Errors monica::crop_rotation_merge(CropRotation* cr, json11::Json j) {
   Errors es;
 
-  set_iso_date_value(start, j, "start");
-  set_iso_date_value(end, j, "end");
-  es.append(::extractAndStore(j["cropRotation"], cropRotation));
+  set_iso_date_value(cr->start, j, "start");
+  set_iso_date_value(cr->end, j, "end");
+  es.append(::extractAndStore(j["cropRotation"], cr->cropRotation));
 
   return es;
 }
 
-json11::Json CropRotation::to_json() const {
-  J11Array cr;
-  for (const auto &c: cropRotation)
-    cr.push_back(c.to_json());
+json11::Json monica::crop_rotation_to_json(const CropRotation* cr) {
+  J11Array cra;
+  for (const auto &c: cr->cropRotation)
+    cra.push_back(c.to_json());
 
   return json11::Json::object
       {{"type",         "CropRotation"},
-       {"start",        start.toIsoDateString()},
-       {"end",          end.toIsoDateString()},
-       {"cropRotation", cr}
+       {"start",        cr->start.toIsoDateString()},
+       {"end",          cr->end.toIsoDateString()},
+       {"cropRotation", cra}
       };
 }
 
@@ -110,9 +125,9 @@ Errors Env::merge(json11::Json j) {
   outputs = j["outputs"];
 
   es.append(::extractAndStore(j["cropRotation"], cropRotation));
-  es.append(::extractAndStore(j["cropRotations"], cropRotations));
+  es.append(::extractAndStoreCropRotations(j["cropRotations"], cropRotations));
   es.append(::extractAndStore(j["cropRotation2"], cropRotation2));
-  es.append(::extractAndStore(j["cropRotations2"], cropRotations2));
+  es.append(::extractAndStoreCropRotations(j["cropRotations2"], cropRotations2));
 
   set_bool_value(debugMode, j, "debugMode");
 
@@ -606,11 +621,11 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
   //prefer multiple crop rotations, but use a single rotation if there
   if (env.cropRotations.empty() && !env.cropRotation.empty()) {
-    env.cropRotations.push_back(CropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation));
+    env.cropRotations.push_back(makeCropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation));
   }
   if (isIC && env.cropRotations2.empty() && !env.cropRotation2.empty()) {
     env.cropRotations2.push_back(
-        CropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation2));
+        makeCropRotation(env.climateData.startDate(), env.climateData.endDate(), env.cropRotation2));
   }
 
   debug() << "starting Monica" << endl;
