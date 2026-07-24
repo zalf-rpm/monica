@@ -214,7 +214,7 @@ public:
     monicamodel::step(monica.get());
 
     //store results
-    for (auto& s : store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
+    for (auto& s : store) store_data_store_results_if_spec_applies(&s, *monica, returnObjOutputs);
   }
 
   void finalizeMonica(Date currentDate) {
@@ -227,8 +227,8 @@ public:
 
     for (auto& sd : store) {
       //aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
-      if (returnObjOutputs) sd.aggregateResultsObj();
-      else sd.aggregateResults();
+      if (returnObjOutputs) store_data_aggregate_results_obj(&sd);
+      else store_data_aggregate_results(&sd);
       out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
     }
   }
@@ -239,10 +239,10 @@ public:
       d.origSpec = sd.spec.origSpec.dump();
       d.outputIds = sd.outputIds;
       if (returnObjOutputs) {
-        sd.aggregateResultsObj();
+        store_data_aggregate_results_obj(&sd);
         d.resultsObj.push_back(sd.resultsObj.back());
       } else {
-        sd.aggregateResults();
+        store_data_aggregate_results(&sd);
         d.results.push_back(sd.results.back());
       }
       dailyOut.data.emplace_back(d);;

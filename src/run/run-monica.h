@@ -117,10 +117,6 @@ std::function<bool(const MonicaModel&)> spec_create_expression_func(json11::Json
 json11::Json spec_to_json(const Spec* spec);
 
 struct StoreData {
-  void aggregateResults();
-  void aggregateResultsObj();
-  void storeResultsIfSpecApplies(const MonicaModel& monica, bool storeObjOutputs = false);
-
   Tools::Maybe<bool> withinEventStartEndRange;
   Tools::Maybe<bool> withinEventFromToRange;
   Spec spec;
@@ -129,6 +125,12 @@ struct StoreData {
   std::vector<Tools::J11Array> results;
   std::vector<Tools::J11Object> resultsObj;
 };
+
+void store_data_aggregate_results(StoreData* sd);
+
+void store_data_aggregate_results_obj(StoreData* sd);
+
+void store_data_store_results_if_spec_applies(StoreData* sd, const MonicaModel& monica, bool storeObjOutputs = false);
 
 std::vector<StoreData> setupStorage(const json11::Json& event2oids, const Tools::Date& startDate, const Tools::Date& endDate);
 

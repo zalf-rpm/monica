@@ -419,46 +419,46 @@ void storeResultsObj(const vector<OId> &outputIds,
 };
 
 
-void StoreData::aggregateResults() {
-  if (!intermediateResults.empty()) {
-    if (results.size() < intermediateResults.size()) {
-      results.resize(intermediateResults.size());
+void monica::store_data_aggregate_results(StoreData* sd) {
+  if (!sd->intermediateResults.empty()) {
+    if (sd->results.size() < sd->intermediateResults.size()) {
+      sd->results.resize(sd->intermediateResults.size());
     }
 
-    assert(intermediateResults.size() == outputIds.size());
+    assert(sd->intermediateResults.size() == sd->outputIds.size());
 
     size_t i = 0;
-    for (auto oid: outputIds) {
-      auto &ivs = intermediateResults.at(i);
+    for (auto oid: sd->outputIds) {
+      auto &ivs = sd->intermediateResults.at(i);
       if (!ivs.empty()) {
         if (ivs.front().is_string()) {
           switch (oid.timeAggOp) {
             case OId::FIRST:
-              results[i].push_back(ivs.front());
+              sd->results[i].push_back(ivs.front());
               break;
             case OId::LAST:
-              results[i].push_back(ivs.back());
+              sd->results[i].push_back(ivs.back());
               break;
             default:
-              results[i].push_back(ivs.front());
+              sd->results[i].push_back(ivs.front());
           }
-        } else results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
+        } else sd->results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
 
-        intermediateResults[i].clear();
+        sd->intermediateResults[i].clear();
       }
       ++i;
     }
   }
 }
 
-void StoreData::aggregateResultsObj() {
-  if (!intermediateResults.empty()) {
-    assert(intermediateResults.size() == outputIds.size());
+void monica::store_data_aggregate_results_obj(StoreData* sd) {
+  if (!sd->intermediateResults.empty()) {
+    assert(sd->intermediateResults.size() == sd->outputIds.size());
 
     J11Object result;
     size_t i = 0;
-    for (auto oid: outputIds) {
-      auto &ivs = intermediateResults.at(i);
+    for (auto oid: sd->outputIds) {
+      auto &ivs = sd->intermediateResults.at(i);
       if (!ivs.empty()) {
         if (ivs.front().is_string()) {
           switch (oid.timeAggOp) {
@@ -473,15 +473,18 @@ void StoreData::aggregateResultsObj() {
           }
         } else result[oid.outputName()] = applyOIdOP(oid.timeAggOp, ivs);
 
-        intermediateResults[i].clear();
+        sd->intermediateResults[i].clear();
       }
       ++i;
     }
-    resultsObj.push_back(result);
+    sd->resultsObj.push_back(result);
   }
 }
 
-void StoreData::storeResultsIfSpecApplies(const MonicaModel &monica, bool storeObjOutputs) {
+void monica::store_data_store_results_if_spec_applies(StoreData* sd, const MonicaModel &monica, bool storeObjOutputs) {
+  auto& spec = sd->spec;
+  auto& withinEventStartEndRange = sd->withinEventStartEndRange;
+  auto& withinEventFromToRange = sd->withinEventFromToRange;
   string os = spec.origSpec.dump();
   bool isCurrentlyEndEvent = false;
 
@@ -499,8 +502,8 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel &monica, bool storeO
   if (withinEventStartEndRange.isNothing() || withinEventStartEndRange.value()) {
     //check for at event
     if (spec.atf && spec.atf(monica)) {
-      if (storeObjOutputs) storeResultsObj(outputIds, resultsObj, monica);
-      else storeResults(outputIds, results, monica);
+      if (storeObjOutputs) storeResultsObj(sd->outputIds, sd->resultsObj, monica);
+      else storeResults(sd->outputIds, sd->results, monica);
     } else if (spec.fromf && spec.tof) { //or from/to range event
       bool isCurrentlyToEvent = false;
       if (withinEventFromToRange.isNothing() || !withinEventFromToRange.value()) {
@@ -514,23 +517,23 @@ void StoreData::storeResultsIfSpecApplies(const MonicaModel &monica, bool storeO
         // but aggregate only if the range is left
         // this means the range specifies the extend of recording
         if (spec.whilef) {
-          if (spec.whilef(monica)) storeResults(outputIds, intermediateResults, monica);
-        } else storeResults(outputIds, intermediateResults, monica);
+          if (spec.whilef(monica)) storeResults(sd->outputIds, sd->intermediateResults, monica);
+        } else storeResults(sd->outputIds, sd->intermediateResults, monica);
 
         if (isCurrentlyToEvent) {
-          if (storeObjOutputs) aggregateResultsObj();
-          else aggregateResults();
+          if (storeObjOutputs) store_data_aggregate_results_obj(sd);
+          else store_data_aggregate_results(sd);
           withinEventFromToRange = false;
         }
       }
     }
       //or a single while aggregating expression
     else if (spec.whilef) {
-      if (spec.whilef(monica)) storeResults(outputIds, intermediateResults, monica);
-      else if (!intermediateResults.empty() && !intermediateResults.front().empty()) {
+      if (spec.whilef(monica)) storeResults(sd->outputIds, sd->intermediateResults, monica);
+      else if (!sd->intermediateResults.empty() && !sd->intermediateResults.front().empty()) {
         //if while event was not successful but we got intermediate results, they should be aggregated
-        if (storeObjOutputs) aggregateResultsObj();
-        else aggregateResults();
+        if (storeObjOutputs) store_data_aggregate_results_obj(sd);
+        else store_data_aggregate_results(sd);
       }
     }
   }
@@ -986,8 +989,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     if (isSyncIC && currentCM2) currentCM2->apply(monica2.get(), false);
 
     //store results
-    for (auto &s: store) s.storeResultsIfSpecApplies(*monica, returnObjOutputs);
-    if (isSyncIC) for (auto &s: store2) s.storeResultsIfSpecApplies(*monica2, returnObjOutputs);
+    for (auto &s: store) store_data_store_results_if_spec_applies(&s, *monica, returnObjOutputs);
+    if (isSyncIC) for (auto &s: store2) store_data_store_results_if_spec_applies(&s, *monica2, returnObjOutputs);
 
     //if the next application date is not valid, we're at the end
     //of the application list of this cultivation method
@@ -1018,15 +1021,15 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
   for (auto &sd: store) {
     //aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
-    if (returnObjOutputs) sd.aggregateResultsObj();
-    else sd.aggregateResults();
+    if (returnObjOutputs) store_data_aggregate_results_obj(&sd);
+    else store_data_aggregate_results(&sd);
     out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
   }
   if (isSyncIC) {
     for (auto &sd: store2) {
       //aggregate results of while events or unfinished other from/to ranges (where to event didn't happen yet)
-      if (returnObjOutputs) sd.aggregateResultsObj();
-      else sd.aggregateResults();
+      if (returnObjOutputs) store_data_aggregate_results_obj(&sd);
+      else store_data_aggregate_results(&sd);
       out2.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
     }
   }
