@@ -165,12 +165,12 @@ public:
   bool isValid{false};
   Tools::Date _sowingDate;
   Tools::Date _harvestDate;
-  Tools::Maybe<bool> _isWinterCrop;
+  // Tools::Maybe<bool> _isWinterCrop;
   Tools::Maybe<bool> _isPerennialCrop;
   // std::vector<Tools::Date> _cuttingDates;
   CropParameters _cropParams;
   kj::Own<CropParameters> _separatePerennialCropParams;
-  CropParameters *_perennialCropParams;
+  // CropParameters *_perennialCropParams;
   CropResidueParameters _residueParams;
   // Crop* _crop{nullptr};
   int _plantDensity{-1}; //[plants m-2]

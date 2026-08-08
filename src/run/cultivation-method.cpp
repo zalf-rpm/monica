@@ -219,57 +219,61 @@ Errors Sowing::merge(json11::Json j) {
   set_iso_date_value(_sowingDate, j, "seedDate");
   set_iso_date_value(_harvestDate, j, "harvestDate");
 
-  if (j["is-winter-crop"].is_bool())
-    _isWinterCrop.setValue(j["is-winter-crop"].bool_value());
+  if (j["crop"].is_object()) {
+    auto jc = j["crop"];
+    // if (jc["is-winter-crop"].is_bool())
+    //   _isWinterCrop.setValue(jc["is-winter-crop"].bool_value());
 
-  if (j["is-perennial-crop"].is_bool())
-    _isPerennialCrop.setValue(j["is-perennial-crop"].bool_value());
+    if (jc["is-perennial-crop"].is_bool())
+      _isPerennialCrop.setValue(jc["is-perennial-crop"].bool_value());
 
-  string err;
-  if (j.has_shape({{"cropParams", json11::Json::OBJECT}}, err)) {
-    auto jcps = j["cropParams"];
-    if (jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
-        jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
-      _cropParams.merge(j["cropParams"]);
-    else
-      res.errors.push_back(string("Couldn't find 'species' or 'cultivar' key "
-                                  "in JSON object 'cropParams':\n") +
-                           j.dump());
-
-    if (_isPerennialCrop.isValue())
-      _cropParams.cultivarParams.pc_Perennial = _isPerennialCrop.value();
-    else
-      _isPerennialCrop.setValue(_cropParams.cultivarParams.pc_Perennial);
-
-    isValid = true;
-  } else {
-    res.errors.push_back(
-        string("Couldn't find 'cropParams' key in JSON object:\n") + j.dump());
-    isValid = false;
-  }
-
-  if (_isPerennialCrop.isValue() && _isPerennialCrop.value()) {
-    err = "";
-    if (j.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err)) {
-      auto jcps = j["perennialCropParams"];
+    string err;
+    if (jc.has_shape({{"cropParams", json11::Json::OBJECT}}, err)) {
+      auto jcps = jc["cropParams"];
       if (jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
-          jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err)) {
-        _separatePerennialCropParams = nullptr;
-        _separatePerennialCropParams = kj::heap<CropParameters>();
-        _separatePerennialCropParams->merge(j["cropParams"]);
-        _perennialCropParams = _separatePerennialCropParams.get();
+          jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
+        _cropParams.merge(jcps);
+      else
+        res.errors.push_back(string("Couldn't find 'species' or 'cultivar' key "
+                                    "in JSON object 'cropParams':\n") +
+                             jc.dump());
+
+      if (_isPerennialCrop.isValue())
+        _cropParams.cultivarParams.pc_Perennial = _isPerennialCrop.value();
+      else
+        _isPerennialCrop.setValue(_cropParams.cultivarParams.pc_Perennial);
+
+      isValid = true;
+    } else {
+      res.errors.push_back(
+          string("Couldn't find 'cropParams' key in JSON object:\n") +
+          jc.dump());
+      isValid = false;
+    }
+
+    if (_isPerennialCrop.isValue() && _isPerennialCrop.value()) {
+      err = "";
+      if (jc.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err)) {
+        auto jcps = jc["perennialCropParams"];
+        if (jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
+            jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err)) {
+          _separatePerennialCropParams = nullptr;
+          _separatePerennialCropParams = kj::heap<CropParameters>();
+          _separatePerennialCropParams->merge(jcps);
+          // _perennialCropParams = _separatePerennialCropParams.get();
+        }
       }
     }
-  }
 
-  err = "";
-  if (j.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
-    _residueParams.merge(j["residueParams"]);
-  } else {
-    res.errors.push_back(
-        string("Couldn't find 'residueParams' key in JSON object:\n") +
-        j.dump());
-    isValid = false;
+    err = "";
+    if (jc.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
+      _residueParams.merge(j["residueParams"]);
+    } else {
+      res.errors.push_back(
+          string("Couldn't find 'residueParams' key in JSON object:\n") +
+          jc.dump());
+      isValid = false;
+    }
   }
 
   set_int_value(_plantDensity, j, "PlantDensity");
