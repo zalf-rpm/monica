@@ -1,34 +1,34 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Claas Nendel <claas.nendel@zalf.de>
 Xenia Specka <xenia.specka@zalf.de>
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "json11/json11.hpp"
 
-//#include "model/monica/monica_state.capnp.h"
+// #include "model/monica/monica_state.capnp.h"
 
-#include "tools/date.h"
 #include "json11/json11-helper.h"
 #include "monica-parameters.h"
+#include "tools/date.h"
 
 namespace monica {
 
@@ -36,9 +36,12 @@ class Crop : public Tools::Json11Serializable {
 public:
   Crop() : _perennialCropParams(_cropParams) {}
 
-  Crop(const Crop& other);
+  Crop(const Crop &other);
 
-  explicit Crop(mas::schema::model::monica::CropState::Reader reader) : _perennialCropParams(_cropParams) { deserialize(reader); }
+  explicit Crop(mas::schema::model::monica::CropState::Reader reader)
+      : _perennialCropParams(_cropParams) {
+    deserialize(reader);
+  }
   void deserialize(mas::schema::model::monica::CropState::Reader reader);
   void serialize(mas::schema::model::monica::CropState::Builder builder) const;
 
@@ -58,29 +61,39 @@ public:
 
   bool isValid() const { return _isValid; }
 
-  const CropParameters& cropParameters() const { return _cropParams; }
+  const CropParameters &cropParameters() const { return _cropParams; }
 
-  CropParameters& cropParameters() { return _cropParams; }
+  CropParameters &cropParameters() { return _cropParams; }
 
-  void setCropParameters(CropParameters&& cps) { _cropParams = cps; }
+  void setCropParameters(CropParameters &&cps) { _cropParams = cps; }
 
-  bool separatePerennialCropParameters() const { return _separatePerennialCropParams; }
+  bool separatePerennialCropParameters() const {
+    return _separatePerennialCropParams;
+  }
 
-  const CropParameters& perennialCropParameters() const { return _perennialCropParams; }
+  const CropParameters &perennialCropParameters() const {
+    return _perennialCropParams;
+  }
 
-  void setPerennialCropParameters(CropParameters&& cps) { _perennialCropParams = cps; }
+  void setPerennialCropParameters(CropParameters &&cps) {
+    _perennialCropParams = cps;
+  }
 
-  const CropResidueParameters& residueParameters() const { return _residueParams; }
+  const CropResidueParameters &residueParameters() const {
+    return _residueParams;
+  }
 
-  void setResidueParameters(CropResidueParameters&& rps) { _residueParams = rps; }
+  void setResidueParameters(CropResidueParameters &&rps) {
+    _residueParams = rps;
+  }
 
   Tools::Date seedDate() const { return _seedDate; }
 
-  void setSeedDate(Tools::Date sd){ _seedDate = sd; }
+  void setSeedDate(Tools::Date sd) { _seedDate = sd; }
 
   Tools::Date harvestDate() const { return _harvestDate; }
 
-  void setHarvestDate(Tools::Date hd){ _harvestDate = hd; }
+  void setHarvestDate(Tools::Date hd) { _harvestDate = hd; }
 
   bool isWinterCrop() const;
 
@@ -90,15 +103,14 @@ public:
 
   void setIsPerennialCrop(bool isPC = true) { _isPerennialCrop = isPC; }
 
-  std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
+  // std::vector<Tools::Date> getCuttingDates() const { return _cuttingDates; }
 
-  void setSeedAndHarvestDate(const Tools::Date& sd, const Tools::Date& hd) {
+  void setSeedAndHarvestDate(const Tools::Date &sd, const Tools::Date &hd) {
     setSeedDate(sd);
     setHarvestDate(hd);
-    
   }
 
-  void addCuttingDate(const Tools::Date cd) { _cuttingDates.push_back(cd); }
+  // void addCuttingDate(const Tools::Date cd) { _cuttingDates.push_back(cd); }
 
   std::string toString(bool detailed = false) const;
 
@@ -108,10 +120,12 @@ public:
     _automaticHarvest = true;
     _automaticHarvestParams = params;
   }
-  AutomaticHarvestParameters getAutomaticHarvestParams() { return _automaticHarvestParams; }
+  AutomaticHarvestParameters getAutomaticHarvestParams() {
+    return _automaticHarvestParams;
+  }
 
 private:
-  bool _isValid{ false };
+  bool _isValid{false};
   std::string _speciesName;
   std::string _cultivarName;
   Tools::Date _seedDate;
@@ -121,7 +135,7 @@ private:
   std::vector<Tools::Date> _cuttingDates;
   CropParameters _cropParams;
   kj::Own<CropParameters> _separatePerennialCropParams;
-  CropParameters& _perennialCropParams;
+  CropParameters &_perennialCropParams;
   CropResidueParameters _residueParams;
 
   double _crossCropAdaptionFactor{1.0};
