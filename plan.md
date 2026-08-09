@@ -28,7 +28,7 @@ Each rename was followed by a full build + `monica-run` regression check against
 
 ## Current state summary
 
-### `soilorganic` (status: major conversion pass done, namespace move still open)
+### `soilorganic` (status: complete)
 
 1. Constructors and member `serialize`/`deserialize` are removed; `makeSoilOrganic(...)` + free
    `soilOrganicSerialize/Deserialize` are used.
@@ -49,9 +49,14 @@ Each rename was followed by a full build + `monica-run` regression check against
 3. Trivial setter/getter wrappers were inlined at call sites and removed where safe.
 4. External wiring updated (notably `monica-model.cpp`, `build-output.cpp`, `cultivation-method.cpp`).
 5. Remaining public getters in `soilorganic.h` intentionally kept where they still provide non-trivial conversions or are still used as interface.
-6. Unlike `soilmoisture`/`soiltemperature`/`soiltransport`/`cropmodule`/`soillayer`, this module's
-   free procedures still live flat in `monica` (prefixed `soilOrganic...`) rather than in a
-   `monica::soilorganic` namespace — that move is still open (see "What to do next").
+6. The free procedures were moved into a `monica::soilorganic` namespace with the `soilOrganic`
+   prefix dropped (e.g. `soilOrganicFoUrea` -> `soilorganic::foUrea`), mirroring
+   `soilmoisture`/`soiltemperature`/`soiltransport`/`cropmodule`/`soillayer`. `struct SoilOrganic`
+   itself moved into the namespace too, with a `using SoilOrganic = soilorganic::SoilOrganic;`
+   alias in `monica`. Call sites (`monica-model.cpp`, `cultivation-method.cpp`, `build-output.cpp`)
+   were rewired to the qualified `soilorganic::...` names. Build + `monica-run` output comparison
+   against `sim-min-out_section_crop_3.6.60.csv` and `sim-min-out_section_daily_3.6.60.csv`
+   (mainline MONICA without the refactorings) remained identical.
 
 ### `soilmoisture` (status: complete)
 
@@ -165,15 +170,12 @@ Each rename was followed by a full build + `monica-run` regression check against
 
 ## What to do next (if starting fresh)
 
-1. Move `soilorganic`'s free procedures from flat `monica::soilOrganic...` into a
-   `monica::soilorganic` namespace with unprefixed names (mirrors what was already done for
-   `soilmoisture`, `soiltemperature`, `soiltransport`, `cropmodule`, `soillayer`, `soilcolumn`).
-2. Optionally convert `DelayedNMinApplicationParams` (nested in `SoilColumn`) and `AOM_Properties`
+1. Optionally convert `DelayedNMinApplicationParams` (nested in `SoilColumn`) and `AOM_Properties`
    (both in `soilcolumn.h`) member `serialize`/`deserialize` to free procedures for consistency.
-3. `MineralFertilizerParameters` still has its constructors/`deserialize`/`serialize`/`merge`/
+2. `MineralFertilizerParameters` still has its constructors/`deserialize`/`serialize`/`merge`/
    `to_json` as member methods (intentionally left for a later pass, see above) — could be
    proceduralized following the same pattern as the other modules if desired.
-4. After each conversion step, run build and fix regressions immediately.
+3. After each conversion step, run build and fix regressions immediately.
 
 ## Validation baseline
 

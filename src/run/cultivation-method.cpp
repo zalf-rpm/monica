@@ -321,7 +321,7 @@ bool Sowing::apply(MonicaModel *model) {
 
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nconc) {
-      soilOrganicAddOrganicMatter(model->soilOrganic.get(),
+      soilorganic::addOrganicMatter(model->soilOrganic.get(),
                                   model->currentCropModule->residuePs,
                                   layer2amount, nconc);
     };

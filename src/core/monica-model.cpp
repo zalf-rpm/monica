@@ -78,7 +78,7 @@ void initializeMonicaModelFromParams(MonicaModel *model,
   model->soilMoisture =
       soilmoisture::makeSoilMoisture(*model, cpp.userSoilMoistureParameters);
   model->soilOrganic =
-      makeSoilOrganic(*model->soilColumn, cpp.userSoilOrganicParameters);
+      soilorganic::makeSoilOrganic(*model->soilColumn, cpp.userSoilOrganicParameters);
   model->soilTransport = soiltransport::makeSoilTransport(
       *model->soilColumn, model->sitePs, cpp.userSoilTransportParameters,
       model->envPs.p_LeachingDepth, model->envPs.p_timeStep,
@@ -155,7 +155,7 @@ void monica::monicamodel::deserialize(
   if (reader.hasCurrentCropModule()) {
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nconc) {
-      soilOrganicAddOrganicMatter(model->soilOrganic.get(),
+      soilorganic::addOrganicMatter(model->soilOrganic.get(),
                                   model->currentCropModule->residuePs,
                                   layer2amount, nconc);
     };
@@ -191,10 +191,10 @@ void monica::monicamodel::deserialize(
   }
 
   if (soilOrganic) {
-    soilOrganicDeserialize(soilOrganic.get(), reader.getSoilOrganic());
+    soilorganic::deserialize(soilOrganic.get(), reader.getSoilOrganic());
     soilOrganic->cropModule = currentCropModule.get();
   } else {
-    soilOrganic = makeSoilOrganic(*soilColumn, reader.getSoilOrganic(),
+    soilOrganic = soilorganic::makeSoilOrganic(*soilColumn, reader.getSoilOrganic(),
                                   currentCropModule.get());
   }
 
@@ -307,7 +307,7 @@ void monica::monicamodel::serialize(
   soiltemperature::serialize(soilTemperature.get(),
                              builder.initSoilTemperature());
   soilmoisture::serialize(soilMoisture.get(), builder.initSoilMoisture());
-  soilOrganicSerialize(soilOrganic.get(), builder.initSoilOrganic());
+  soilorganic::serialize(soilOrganic.get(), builder.initSoilOrganic());
   soiltransport::serialize(soilTransport.get(), builder.initSoilTransport());
 
   if (currentCropModule)
@@ -425,7 +425,7 @@ void monica::monicamodel::seedCrop(
 
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nConcentration) {
-      soilOrganicAddOrganicMatter(model->soilOrganic.get(),
+      soilorganic::addOrganicMatter(model->soilOrganic.get(),
                                   model->currentCropModule->residuePs,
                                   layer2amount, nConcentration);
     };
@@ -489,7 +489,7 @@ void monica::monicamodel::seedCrop(
 
 //     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
 //                              double nconc) {
-//       soilOrganicAddOrganicMatter(model->soilOrganic.get(),
+//       soilorganic::addOrganicMatter(model->soilOrganic.get(),
 //                                   model->currentCropModule->residuePs,
 //                                   layer2amount, nconc);
 //     };
@@ -614,7 +614,7 @@ void monica::monicamodel::harvestCurrentCrop(
               residueBiomass - optCarbonExportedResidues;
         }
 
-        soilOrganicAddOrganicMatter(
+        soilorganic::addOrganicMatter(
             soilOrganic.get(), currentCropModule->residuePs,
             optCarbonReturnedResidues,
             cropmodule::getResiduesNConcentration(currentCropModule.get()),
@@ -654,7 +654,7 @@ void monica::monicamodel::harvestCurrentCrop(
                 << cropmodule::getSecondaryYieldNContent(
                        currentCropModule.get())
                 << endl;
-        soilOrganicAddOrganicMatter(
+        soilorganic::addOrganicMatter(
             soilOrganic.get(), currentCropModule->residuePs, residueBiomass,
             residueNConcentration, incorporateIntoLayerIndex);
       }
@@ -689,7 +689,7 @@ void monica::monicamodel::harvestCurrentCrop(
           totalResidueBiomass - sumOrganResidueBiomassAsOverlay;
       auto residuesNConcentration = cropmodule::getResiduesNConcentration(
           currentCropModule.get(), primaryCropYield);
-      soilOrganicAddOrganicMatter(
+      soilorganic::addOrganicMatter(
           soilOrganic.get(), currentCropModule->residuePs,
           totalResidueBiomassToIncorporate, residuesNConcentration,
           incorporateIntoLayerIndex);
@@ -730,7 +730,7 @@ void monica::monicamodel::harvestCurrentCrop(
       debug() << "aboveground biomass: " << abovegroundBiomass
               << " Aboveground biomass N concentration: "
               << abovegroundBiomassNConcentration << endl;
-      soilOrganicAddOrganicMatter(
+      soilorganic::addOrganicMatter(
           soilOrganic.get(), currentCropModule->residuePs, abovegroundBiomass,
           abovegroundBiomassNConcentration, incorporateIntoLayerIndex);
     }
@@ -763,7 +763,7 @@ void monica::monicamodel::incorporateCurrentCrop(MonicaModel *model) {
     debug() << "Total biomass: " << total_biomass << endl
             << " Total N concentration: " << totalNConcentration << endl;
 
-    soilOrganicAddOrganicMatter(soilOrganic.get(), currentCropModule->residuePs,
+    soilorganic::addOrganicMatter(soilOrganic.get(), currentCropModule->residuePs,
                                 total_biomass, totalNConcentration);
   }
 
@@ -792,7 +792,7 @@ void monica::monicamodel::applyOrganicFertiliser(
   debug() << "MONICA model: applyOrganicFertiliser:\t" << amountFM << "\t"
           << params.vo_NConcentration << endl;
   soilOrganic->incorporation = incorporation;
-  soilOrganicAddOrganicMatter(soilOrganic.get(), params, amountFM,
+  soilorganic::addOrganicMatter(soilOrganic.get(), params, amountFM,
                               params.vo_NConcentration,
                               incorporateIntoLayerIndex);
   monicamodel::addDailySumOrgFertiliser(model, amountFM, params);
@@ -1027,7 +1027,7 @@ void monica::monicamodel::generalStep(MonicaModel *model) {
                      tmin, (relhumid / 100.0), tavg, wind,
                      envPs.p_WindSpeedHeight, globrad, julday, et0);
 
-  soilOrganicStep(soilOrganic.get(), tavg, precip, wind);
+  soilorganic::step(soilOrganic.get(), tavg, precip, wind);
   soiltransport::step(soilTransport.get());
 }
 

@@ -40,7 +40,10 @@ using namespace monica;
 using namespace Tools;
 using namespace Soil;
 
-void monica::soilOrganicFoUrea(SoilOrganic* so) {
+namespace monica {
+namespace soilorganic {
+
+void foUrea(SoilOrganic* so) {
   auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
   std::vector<double> vo_SoilCarbamid_solid(nools,
                                             0.0); // Solid carbamide concentration in soil solution [kmol urea m-3]
@@ -113,7 +116,7 @@ void monica::soilOrganicFoUrea(SoilOrganic* so) {
 
     // kmol urea kg soil-1 s-1
     vo_HydrolysisRate[i] = vo_HydrolysisRateMax[i] *
-                           soilOrganicFoMoistOnHydrolysis(so, soillayer::soilMoisturePF(&layer)) *
+                           foMoistOnHydrolysis(so, soillayer::soilMoisturePF(&layer)) *
                            vo_Hydrolysis_pH_Effect[i] * vo_SoilCarbamid_aq[i] /
                            (po_HydrolysisKM + vo_SoilCarbamid_aq[i]);
 
@@ -185,35 +188,35 @@ void monica::soilOrganicFoUrea(SoilOrganic* so) {
 
 }
 
-void monica::soilOrganicStep(SoilOrganic* so,
+void step(SoilOrganic* so,
                              double meanAirTemperature,
                              double precipitation,
                              double windSpeed) {
   double netPrimaryProduction = so->cropModule ? so->cropModule->vc_NetPrimaryProduction : 0;
 
-  soilOrganicFoUrea(so);
-  soilOrganicFoMIT(so);
-  soilOrganicFoVolatilisation(so, so->addedOrganicMatter, meanAirTemperature, windSpeed);
+  foUrea(so);
+  foMIT(so);
+  foVolatilisation(so, so->addedOrganicMatter, meanAirTemperature, windSpeed);
 
-  if (so->params.sticsParams.use_nit) soilOrganicFoSticsNitrification(so);
-  else soilOrganicFoNitrification(so);
+  if (so->params.sticsParams.use_nit) foSticsNitrification(so);
+  else foNitrification(so);
 
-  if (so->params.sticsParams.use_denit) soilOrganicFoSticsDenitrification(so);
-  else soilOrganicFoDenitrification(so);
+  if (so->params.sticsParams.use_denit) foSticsDenitrification(so);
+  else foDenitrification(so);
 
   auto n2OProducedNitDenit = so->params.sticsParams.use_n2o
-                             ? soilOrganicFoSticsN2OProduction(so)
-                             : make_pair(soilOrganicFoN2OProduction(so), 0.0);
+                             ? foSticsN2OProduction(so)
+                             : make_pair(foN2OProduction(so), 0.0);
   so->vo_N2O_Produced_Nit = n2OProducedNitDenit.first;
   so->vo_N2O_Produced_Denit = n2OProducedNitDenit.second;
   so->vo_N2O_Produced = so->vo_N2O_Produced_Nit + so->vo_N2O_Produced_Denit;
 
-  soilOrganicFoPoolUpdate(so);
+  foPoolUpdate(so);
 
   so->vo_NetEcosystemProduction =
-      soilOrganicFoNetEcosystemProduction(so, netPrimaryProduction, so->vo_DecomposerRespiration);
+      foNetEcosystemProduction(so, netPrimaryProduction, so->vo_DecomposerRespiration);
   so->vo_NetEcosystemExchange =
-      soilOrganicFoNetEcosystemExchange(so, netPrimaryProduction, so->vo_DecomposerRespiration);
+      foNetEcosystemExchange(so, netPrimaryProduction, so->vo_DecomposerRespiration);
 
   so->vo_SumNH3_Volatilised += so->vo_NH3_Volatilised;
   so->vo_SumN2O_Produced += so->vo_N2O_Produced;
@@ -229,7 +232,7 @@ void monica::soilOrganicStep(SoilOrganic* so,
   so->addedOrganicMatter = false;
 }
 
-void monica::soilOrganicAddOrganicMatter(SoilOrganic* so,
+void addOrganicMatter(SoilOrganic* so,
                                          const OrganicMatterParameters& params,
                                          const map<size_t, double>& layer2addedOrganicMatterAmount,
                                          double addedOrganicMatterNConcentration) {
@@ -391,7 +394,7 @@ void monica::soilOrganicAddOrganicMatter(SoilOrganic* so,
   so->addedOrganicMatter = true;
 }
 
-double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int i) {
+double getOrganicN(const SoilOrganic* so, int i) {
   double orgN = 0;
 
   orgN += so->soilColumn.at(i).vs_SMB_Fast / so->params.po_CN_Ratio_SMB;
@@ -409,7 +412,7 @@ double monica::soilOrganicGetOrganicN(const SoilOrganic* so, int i) {
   return orgN;
 }
 
-void monica::soilOrganicInitializeFromParams(SoilOrganic* so) {
+void initializeFromParams(SoilOrganic* so) {
   auto& sc = so->soilColumn;
   auto nools = sc._vs_NumberOfOrganicLayers;
 
@@ -549,7 +552,7 @@ void SoilOrganic::fo_OM_Input(bool vo_AOM_Addition) {
  * @param vo_AddedOrganicMatterNConcentration
  *
  */
-void monica::soilOrganicFoMIT(SoilOrganic* so) {
+void foMIT(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
   auto& vo_CBalance = so->vo_CBalance;
@@ -688,21 +691,21 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
     double tod = params.__enable_kaiteew_TempOnDecompostion__
-                 ? soilOrganicFoTempOnDecompostionKaiteew(so, layi.vs_SoilTemperature,
+                 ? foTempOnDecompostionKaiteew(so, layi.vs_SoilTemperature,
                                                           params.po_QTenFactor,
                                                           params.po_TempDecOptimal)
-                 : soilOrganicFoTempOnDecompostion(so, layi.vs_SoilTemperature); // prev code
+                 : foTempOnDecompostion(so, layi.vs_SoilTemperature); // prev code
 
     double mod = params.__enable_kaiteew_MoistOnDecompostion__
-                 ? soilOrganicFoMoistOnDecompostionKaiteew(so, layi.vs_SoilMoisture_m3,
+                 ? foMoistOnDecompostionKaiteew(so, layi.vs_SoilMoisture_m3,
                                                            layi._sps.vs_Saturation,
                                                            params.po_MoistureDecOptimal)
-                 : soilOrganicFoMoistOnDecompostion(so, soillayer::soilMoisturePF(&layi)); // prev code
+                 : foMoistOnDecompostion(so, soillayer::soilMoisturePF(&layi)); // prev code
 
     double cod = params.__enable_kaiteew_ClayOnDecompostion__
-                 ? soilOrganicFoClayOnDecompostionKaiteew(so, layi._sps.vs_SoilClayContent,
+                 ? foClayOnDecompostionKaiteew(so, layi._sps.vs_SoilClayContent,
                                                           params.po_LimitClayEffect)
-                 : soilOrganicFoClayOnDecompostion(so, layi._sps.vs_SoilClayContent, params.po_LimitClayEffect); // prev code
+                 : foClayOnDecompostion(so, layi._sps.vs_SoilClayContent, params.po_LimitClayEffect); // prev code
 
     vo_SOM_SlowDecCoeff[i] = po_SOM_SlowDecCoeffStandard * tod * mod;
     vo_SOM_FastDecCoeff[i] = po_SOM_FastDecCoeffStandard * tod * mod;
@@ -990,7 +993,7 @@ void monica::soilOrganicFoMIT(SoilOrganic* so) {
  * @param vw_MeanAirTemperature
  * @param vw_WindSpeed
  */
-void monica::soilOrganicFoVolatilisation(SoilOrganic* so,
+void foVolatilisation(SoilOrganic* so,
                                          bool vo_AOM_Addition,
                                          double vw_MeanAirTemperature,
                                          double vw_WindSpeed) {
@@ -1096,7 +1099,7 @@ void monica::soilOrganicFoVolatilisation(SoilOrganic* so,
 /**
  * @brief Internal Subroutine Nitrification
  */
-void monica::soilOrganicFoNitrification(SoilOrganic* so) {
+void foNitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
   auto& vo_ActAmmoniaOxidationRate = so->vo_ActAmmoniaOxidationRate;
@@ -1122,16 +1125,16 @@ void monica::soilOrganicFoNitrification(SoilOrganic* so) {
     //  cout << "SO-2:\t" << soillayer::soilMoisturePF(&layi) << endl;
     vo_AmmoniaOxidationRateCoeff[i] =
         po_AmmoniaOxidationRateCoeffStandard
-        * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
-        * soilOrganicFoMoistOnNitrification(so, soillayer::soilMoisturePF(&layi));
+        * foTempOnNitrification(so, layi.vs_SoilTemperature)
+        * foMoistOnNitrification(so, soillayer::soilMoisturePF(&layi));
 
     vo_ActAmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4i;
 
     vo_NitriteOxidationRateCoeff[i] =
         po_NitriteOxidationRateCoeffStandard
-        * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature)
-        * soilOrganicFoMoistOnNitrification(so, soillayer::soilMoisturePF(&layi))
-        * soilOrganicFoNH3onNitriteOxidation(so, NH4i, layi._sps.vs_SoilpH);
+        * foTempOnNitrification(so, layi.vs_SoilTemperature)
+        * foMoistOnNitrification(so, soillayer::soilMoisturePF(&layi))
+        * foNH3onNitriteOxidation(so, NH4i, layi._sps.vs_SoilpH);
 
     vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2;
 
@@ -1155,7 +1158,7 @@ void monica::soilOrganicFoNitrification(SoilOrganic* so) {
   }
 }
 
-void monica::soilOrganicFoSticsNitrification(SoilOrganic* so) {
+void foSticsNitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
   auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
@@ -1196,7 +1199,7 @@ void monica::soilOrganicFoSticsNitrification(SoilOrganic* so) {
 /**
  * @brief Denitrification
  */
-void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
+void foDenitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
   auto& vo_SMB_CO2EvolutionRate = so->vo_SMB_CO2EvolutionRate;
@@ -1217,10 +1220,10 @@ void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
     //Temperature function is the same as in Nitrification subroutine
     vo_PotDenitrificationRate[i] = po_SpecAnaerobDenitrification
                                    * vo_SMB_CO2EvolutionRate[i]
-                                   * soilOrganicFoTempOnNitrification(so, layi.vs_SoilTemperature);
+                                   * foTempOnNitrification(so, layi.vs_SoilTemperature);
 
     vo_ActDenitrificationRate[i] =
-        min(vo_PotDenitrificationRate[i] * soilOrganicFoMoistOnDenitrification(so, layi.vs_SoilMoisture_m3,
+        min(vo_PotDenitrificationRate[i] * foMoistOnDenitrification(so, layi.vs_SoilMoisture_m3,
                                                                                 layi._sps.vs_Saturation),
             po_TransportRateCoeff * NO3i);
 
@@ -1238,7 +1241,7 @@ void monica::soilOrganicFoDenitrification(SoilOrganic* so) {
   vo_SumDenitrification += vo_TotalDenitrification; // [kg N m-2]
 }
 
-void monica::soilOrganicFoSticsDenitrification(SoilOrganic* so) {
+void foSticsDenitrification(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
   auto& vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
@@ -1285,7 +1288,7 @@ void monica::soilOrganicFoSticsDenitrification(SoilOrganic* so) {
 /**
  * @brief N2O production
  */
-double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
+double foN2OProduction(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
 
@@ -1306,7 +1309,7 @@ double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
 
     double N2OProductionAtLayer =
         NO2i
-        * soilOrganicFoTempOnNitrification(so, tempi)
+        * foTempOnNitrification(so, tempi)
         * N2OProductionRate
         * pH_response
         * lti * 10000; //convert from kg N-N2O m-3 to kg N-N2O ha-1 (for each layer)
@@ -1317,7 +1320,7 @@ double monica::soilOrganicFoN2OProduction(SoilOrganic* so) {
   return sumN2OProduced;
 }
 
-SoilOrganic::NitDenitN2O monica::soilOrganicFoSticsN2OProduction(SoilOrganic* so) {
+SoilOrganic::NitDenitN2O foSticsN2OProduction(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& params = so->params;
   auto& vo_ActNitrificationRate = so->vo_ActNitrificationRate;
@@ -1361,7 +1364,7 @@ SoilOrganic::NitDenitN2O monica::soilOrganicFoSticsN2OProduction(SoilOrganic* so
 /**
  * @brief Internal Subroutine Pool update
  */
-void monica::soilOrganicFoPoolUpdate(SoilOrganic* so) {
+void foPoolUpdate(SoilOrganic* so) {
   auto& soilColumn = so->soilColumn;
   auto& vo_AOM_SlowDeltaSum = so->vo_AOM_SlowDeltaSum;
   auto& vo_AOM_FastDeltaSum = so->vo_AOM_FastDeltaSum;
@@ -1440,7 +1443,7 @@ void monica::soilOrganicFoPoolUpdate(SoilOrganic* so) {
  * @author: konstantin.aiteew@thuenen.de
  * @return clayOnDecomposition
  */
-double monica::soilOrganicFoClayOnDecompostionKaiteew(SoilOrganic* so,
+double foClayOnDecompostionKaiteew(SoilOrganic* so,
                                                       double d_SoilClayContent,
                                                       double d_LimitClayEffect) {
   double clayOnDecomposition = 0.0;
@@ -1464,7 +1467,7 @@ double monica::soilOrganicFoClayOnDecompostionKaiteew(SoilOrganic* so,
  * @param d_LimitClayEffect
  * @return
  */
-double monica::soilOrganicFoClayOnDecompostion(SoilOrganic* so,
+double foClayOnDecompostion(SoilOrganic* so,
                                                double d_SoilClayContent,
                                                double d_LimitClayEffect) {
   double fo_ClayOnDecompostion = 0.0;
@@ -1487,7 +1490,7 @@ double monica::soilOrganicFoClayOnDecompostion(SoilOrganic* so,
  * @author konstantin.aiteew@thuenen.de
  * @return tempOnDecomposition
  */
-double monica::soilOrganicFoTempOnDecompostionKaiteew(SoilOrganic* so,
+double foTempOnDecompostionKaiteew(SoilOrganic* so,
                                                       double soilTemperature,
                                                       double QTenFactor,
                                                       double tempDecOptimal) {
@@ -1507,7 +1510,7 @@ double monica::soilOrganicFoTempOnDecompostionKaiteew(SoilOrganic* so,
   return tempOnDecomposition;
 }
 
-double monica::soilOrganicFoTempOnDecompostion(SoilOrganic* so, double d_SoilTemperature) {
+double foTempOnDecompostion(SoilOrganic* so, double d_SoilTemperature) {
   double fo_TempOnDecompostion = 0.0;
 
   if (d_SoilTemperature <= 0.0 && d_SoilTemperature > -40.0) {
@@ -1536,7 +1539,7 @@ double monica::soilOrganicFoTempOnDecompostion(SoilOrganic* so, double d_SoilTem
  * @author konstantin.aiteew@thuenen.de
  * @return soil moisture on decomposition
  */
-double monica::soilOrganicFoMoistOnDecompostionKaiteew(SoilOrganic* so,
+double foMoistOnDecompostionKaiteew(SoilOrganic* so,
                                                        double d_SoilMoisture_m3,
                                                        double d_Saturation,
                                                        double d_MoistureDecOptimal) {
@@ -1557,7 +1560,7 @@ double monica::soilOrganicFoMoistOnDecompostionKaiteew(SoilOrganic* so,
  * @param d_SoilMoisture_pF
  * @return
  */
-double monica::soilOrganicFoMoistOnDecompostion(SoilOrganic* so, double d_SoilMoisture_pF) {
+double foMoistOnDecompostion(SoilOrganic* so, double d_SoilMoisture_pF) {
   double fo_MoistOnDecompostion = 0.0;
 
   if (fabs(d_SoilMoisture_pF) <= 1.0E-7) {
@@ -1593,7 +1596,7 @@ double monica::soilOrganicFoMoistOnDecompostion(SoilOrganic* so, double d_SoilMo
  * @param d_SoilMoisture_pF
  * @return
  */
-double monica::soilOrganicFoMoistOnHydrolysis(SoilOrganic* so, double d_SoilMoisture_pF) {
+double foMoistOnHydrolysis(SoilOrganic* so, double d_SoilMoisture_pF) {
   double fo_MoistOnHydrolysis = 0.0;
 
   if (d_SoilMoisture_pF > 0.0 && d_SoilMoisture_pF <= 1.1) {
@@ -1623,7 +1626,7 @@ double monica::soilOrganicFoMoistOnHydrolysis(SoilOrganic* so, double d_SoilMois
  * @param d_SoilTemperature
  * @return
  */
-double monica::soilOrganicFoTempOnNitrification(SoilOrganic* so, double soilTemp) {
+double foTempOnNitrification(SoilOrganic* so, double soilTemp) {
   double result = 0.0;
 
   if (soilTemp <= 2.0 && soilTemp > -40.0)
@@ -1645,7 +1648,7 @@ double monica::soilOrganicFoTempOnNitrification(SoilOrganic* so, double soilTemp
  * @param d_SoilMoisture_pF
  * @return
  */
-double monica::soilOrganicFoMoistOnNitrification(SoilOrganic* so, double d_SoilMoisture_pF) {
+double foMoistOnNitrification(SoilOrganic* so, double d_SoilMoisture_pF) {
   double fo_MoistOnNitrification = 0.0;
 
   if (fabs(d_SoilMoisture_pF) <= 1.0E-7) {
@@ -1675,7 +1678,7 @@ double monica::soilOrganicFoMoistOnNitrification(SoilOrganic* so, double d_SoilM
  * @param d_Saturation
  * @return
  */
-double monica::soilOrganicFoMoistOnDenitrification(SoilOrganic* so,
+double foMoistOnDenitrification(SoilOrganic* so,
                                                    double d_SoilMoisture_m3,
                                                    double d_Saturation) {
 
@@ -1710,7 +1713,7 @@ double monica::soilOrganicFoMoistOnDenitrification(SoilOrganic* so,
  * @param d_SoilpH
  * @return
  */
-double monica::soilOrganicFoNH3onNitriteOxidation(SoilOrganic* so,
+double foNH3onNitriteOxidation(SoilOrganic* so,
                                                   double d_SoilNH4,
                                                   double d_SoilpH) {
 
@@ -1723,22 +1726,22 @@ double monica::soilOrganicFoNH3onNitriteOxidation(SoilOrganic* so,
   return fo_NH3onNitriteOxidation;
 }
 
-kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters params) {
+kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters params) {
   auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn, kj::mv(params)});
-  soilOrganicInitializeFromParams(so.get());
+  initializeFromParams(so.get());
   return so;
 }
 
-kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn& soilColumn,
+kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn,
                                              mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
                                              CropModule* cropModule) {
   auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn});
   so->cropModule = cropModule;
-  soilOrganicDeserialize(so.get(), reader);
+  deserialize(so.get(), reader);
   return so;
 }
 
-void monica::soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
+void deserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
   so->params.deserialize(reader.getModuleParams());
   so->vs_NumberOfLayers = reader.getVsNumberOfLayers();
   so->vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
@@ -1782,7 +1785,7 @@ void monica::soilOrganicDeserialize(SoilOrganic* so, mas::schema::model::monica:
   so->incorporation = reader.getIncorporation();
 }
 
-void monica::soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder) {
+void serialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder) {
   so->params.serialize(builder.initModuleParams());
   builder.setVsNumberOfLayers((uint16_t) so->vs_NumberOfLayers);
   builder.setVsNumberOfOrganicLayers((uint16_t) so->vs_NumberOfOrganicLayers);
@@ -1826,27 +1829,27 @@ void monica::soilOrganicSerialize(const SoilOrganic* so, mas::schema::model::mon
   builder.setIncorporation(so->incorporation);
 }
 
-void monica::soilOrganicAddOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
+void addOrganicMatter(SoilOrganic* so, const OrganicMatterParameters& params,
                                          double amount, double nConcentration, size_t intoLayerIndex) {
-  soilOrganicAddOrganicMatter(so, params, std::map<size_t, double>{{intoLayerIndex, amount}}, nConcentration);
+  addOrganicMatter(so, params, std::map<size_t, double>{{intoLayerIndex, amount}}, nConcentration);
 }
 
-double monica::soilOrganicGetSoilOrganicC(const SoilOrganic* so, int iLayer) { return so->vo_SoilOrganicC[iLayer] / so->soilColumn.at(iLayer)._sps.vs_SoilBulkDensity(); }
-double monica::soilOrganicGetNetNMineralisationRate(const SoilOrganic* so, int iLayer) { return so->vo_NetNMineralisationRate[iLayer] * 10000.0; }
-double monica::soilOrganicGetNH3_Volatilised(const SoilOrganic* so) { return so->vo_Total_NH3_Volatilised * 10000.0; }
-double monica::soilOrganicGetSumNH3_Volatilised(const SoilOrganic* so) { return so->vo_SumNH3_Volatilised * 10000.0; }
-double monica::soilOrganicGetSumN2O_Produced(const SoilOrganic* so) { return so->vo_SumN2O_Produced; }
-double monica::soilOrganicGetNetNMineralisation(const SoilOrganic* so) { return so->vo_NetNMineralisation * 10000.0; }
-double monica::soilOrganicGetSumNetNMineralisation(const SoilOrganic* so) { return so->vo_SumNetNMineralisation * 10000.0; }
-double monica::soilOrganicGetSumDenitrification(const SoilOrganic* so) { return so->vo_SumDenitrification * 10000.0; }
-double monica::soilOrganicGetDenitrification(const SoilOrganic* so) { return so->vo_TotalDenitrification * 10000.0; }
-double monica::soilOrganicGetDecomposerRespiration(const SoilOrganic* so) { return so->vo_DecomposerRespiration * 10000.0; }
+double getSoilOrganicC(const SoilOrganic* so, int iLayer) { return so->vo_SoilOrganicC[iLayer] / so->soilColumn.at(iLayer)._sps.vs_SoilBulkDensity(); }
+double getNetNMineralisationRate(const SoilOrganic* so, int iLayer) { return so->vo_NetNMineralisationRate[iLayer] * 10000.0; }
+double getNH3_Volatilised(const SoilOrganic* so) { return so->vo_Total_NH3_Volatilised * 10000.0; }
+double getSumNH3_Volatilised(const SoilOrganic* so) { return so->vo_SumNH3_Volatilised * 10000.0; }
+double getSumN2O_Produced(const SoilOrganic* so) { return so->vo_SumN2O_Produced; }
+double getNetNMineralisation(const SoilOrganic* so) { return so->vo_NetNMineralisation * 10000.0; }
+double getSumNetNMineralisation(const SoilOrganic* so) { return so->vo_SumNetNMineralisation * 10000.0; }
+double getSumDenitrification(const SoilOrganic* so) { return so->vo_SumDenitrification * 10000.0; }
+double getDenitrification(const SoilOrganic* so) { return so->vo_TotalDenitrification * 10000.0; }
+double getDecomposerRespiration(const SoilOrganic* so) { return so->vo_DecomposerRespiration * 10000.0; }
 
 /**
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
-double monica::soilOrganicFoNetEcosystemProduction(SoilOrganic* so,
+double foNetEcosystemProduction(SoilOrganic* so,
                                                    double d_NetPrimaryProduction,
                                                    double d_DecomposerRespiration) {
   (void)so;
@@ -1863,7 +1866,7 @@ double monica::soilOrganicFoNetEcosystemProduction(SoilOrganic* so,
  * @brief Calculates Net ecosystem production [kg C ha-1 d-1].
  *
  */
-double monica::soilOrganicFoNetEcosystemExchange(SoilOrganic* so,
+double foNetEcosystemExchange(SoilOrganic* so,
                                                  double d_NetPrimaryProduction,
                                                  double d_DecomposerRespiration) {
   (void)so;
@@ -1877,3 +1880,6 @@ double monica::soilOrganicFoNetEcosystemExchange(SoilOrganic* so,
 
   return vo_NEE;
 }
+
+} // namespace soilorganic
+} // namespace monica
