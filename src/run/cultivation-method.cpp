@@ -267,7 +267,7 @@ Errors Sowing::merge(json11::Json j) {
 
     err = "";
     if (jc.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
-      _residueParams.merge(j["residueParams"]);
+      _residueParams.merge(jc["residueParams"]);
     } else {
       res.errors.push_back(
           string("Couldn't find 'residueParams' key in JSON object:\n") +
