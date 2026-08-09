@@ -144,7 +144,7 @@ void monica::monicamodel::deserialize(
   siteparameters::deserialize(&sitePs, reader.getSitePs());
   envPs.deserialize(reader.getEnvPs());
   cropPs.deserialize(reader.getCropPs());
-  simPs.deserialize(reader.getSimPs());
+  simulationparameters::deserialize(&simPs, reader.getSimPs());
   measuredgroundwatertableinformation::deserialize(&groundwaterInformation, reader.getGroundwaterInformation());
 
   if (soilColumn)
@@ -301,7 +301,7 @@ void monica::monicamodel::serialize(
   siteparameters::serialize(&sitePs, builder.initSitePs());
   envPs.serialize(builder.initEnvPs());
   cropPs.serialize(builder.initCropPs());
-  simPs.serialize(builder.initSimPs());
+  simulationparameters::serialize(&simPs, builder.initSimPs());
   measuredgroundwatertableinformation::serialize(&groundwaterInformation, builder.initGroundwaterInformation());
   soilcolumn::serialize(soilColumn.get(), builder.initSoilColumn());
   soiltemperature::serialize(soilTemperature.get(),

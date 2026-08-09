@@ -1463,161 +1463,167 @@ json11::Json cropresidueparameters::to_json(const CropResidueParameters* crp) {
   return omp;
 }
 
-void SimulationParameters::deserialize(mas::schema::model::monica::SimulationParameters::Reader reader) {
-  startDate.deserialize(reader.getStartDate());
-  endDate.deserialize(reader.getEndDate());
-
-  pc_NitrogenResponseOn = reader.getNitrogenResponseOn();
-  pc_WaterDeficitResponseOn = reader.getWaterDeficitResponseOn();
-  pc_EmergenceFloodingControlOn = reader.getEmergenceFloodingControlOn();
-  pc_EmergenceMoistureControlOn = reader.getEmergenceMoistureControlOn();
-  pc_FrostKillOn = reader.getFrostKillOn();
-
-  p_UseAutomaticIrrigation = reader.getUseAutomaticIrrigation();
-  automaticirrigationparameters::deserialize(&p_AutoIrrigationParams, reader.getAutoIrrigationParams());
-
-  p_UseNMinMineralFertilisingMethod = reader.getUseNMinMineralFertilisingMethod();
-  mineralfertilizerparameters::deserialize(&p_NMinFertiliserPartition, reader.getNMinFertiliserPartition());
-  nminapplicationparameters::deserialize(&p_NMinUserParams, reader.getNMinApplicationParams());
-
-  p_UseSecondaryYields = reader.getUseSecondaryYields();
-  p_UseAutomaticHarvestTrigger = reader.getUseAutomaticHarvestTrigger();
-
-  p_NumberOfLayers = reader.getNumberOfLayers();
-  p_LayerThickness = reader.getLayerThickness();
-
-  p_StartPVIndex = reader.getStartPVIndex();
-  p_JulianDayAutomaticFertilising = reader.getJulianDayAutomaticFertilising();
+SimulationParameters monica::makeSimulationParameters(mas::schema::model::monica::SimulationParameters::Reader reader) {
+  SimulationParameters sp;
+  simulationparameters::deserialize(&sp, reader);
+  return sp;
 }
 
-void SimulationParameters::serialize(mas::schema::model::monica::SimulationParameters::Builder builder) const {
-  startDate.serialize(builder.initStartDate());
-  endDate.serialize(builder.initEndDate());
+void simulationparameters::deserialize(SimulationParameters* sp, mas::schema::model::monica::SimulationParameters::Reader reader) {
+  sp->startDate.deserialize(reader.getStartDate());
+  sp->endDate.deserialize(reader.getEndDate());
 
-  builder.setNitrogenResponseOn(pc_NitrogenResponseOn);
-  builder.setWaterDeficitResponseOn(pc_WaterDeficitResponseOn);
-  builder.setEmergenceFloodingControlOn(pc_EmergenceFloodingControlOn);
-  builder.setEmergenceMoistureControlOn(pc_EmergenceMoistureControlOn);
-  builder.setFrostKillOn(pc_FrostKillOn);
+  sp->pc_NitrogenResponseOn = reader.getNitrogenResponseOn();
+  sp->pc_WaterDeficitResponseOn = reader.getWaterDeficitResponseOn();
+  sp->pc_EmergenceFloodingControlOn = reader.getEmergenceFloodingControlOn();
+  sp->pc_EmergenceMoistureControlOn = reader.getEmergenceMoistureControlOn();
+  sp->pc_FrostKillOn = reader.getFrostKillOn();
 
-  builder.setUseAutomaticIrrigation(p_UseAutomaticIrrigation);
-  automaticirrigationparameters::serialize(&p_AutoIrrigationParams, builder.initAutoIrrigationParams());
+  sp->p_UseAutomaticIrrigation = reader.getUseAutomaticIrrigation();
+  automaticirrigationparameters::deserialize(&sp->p_AutoIrrigationParams, reader.getAutoIrrigationParams());
 
-  builder.setUseNMinMineralFertilisingMethod(p_UseNMinMineralFertilisingMethod);
-  mineralfertilizerparameters::serialize(&p_NMinFertiliserPartition, builder.initNMinFertiliserPartition());
-  nminapplicationparameters::serialize(&p_NMinUserParams, builder.initNMinApplicationParams());
+  sp->p_UseNMinMineralFertilisingMethod = reader.getUseNMinMineralFertilisingMethod();
+  mineralfertilizerparameters::deserialize(&sp->p_NMinFertiliserPartition, reader.getNMinFertiliserPartition());
+  nminapplicationparameters::deserialize(&sp->p_NMinUserParams, reader.getNMinApplicationParams());
 
-  builder.setUseSecondaryYields(p_UseSecondaryYields);
-  builder.setUseAutomaticHarvestTrigger(p_UseAutomaticHarvestTrigger);
+  sp->p_UseSecondaryYields = reader.getUseSecondaryYields();
+  sp->p_UseAutomaticHarvestTrigger = reader.getUseAutomaticHarvestTrigger();
 
-  builder.setNumberOfLayers(p_NumberOfLayers);
-  builder.setLayerThickness(p_LayerThickness);
+  sp->p_NumberOfLayers = reader.getNumberOfLayers();
+  sp->p_LayerThickness = reader.getLayerThickness();
 
-  builder.setStartPVIndex(p_StartPVIndex);
-  builder.setJulianDayAutomaticFertilising(p_JulianDayAutomaticFertilising);
+  sp->p_StartPVIndex = reader.getStartPVIndex();
+  sp->p_JulianDayAutomaticFertilising = reader.getJulianDayAutomaticFertilising();
+}
+
+void simulationparameters::serialize(const SimulationParameters* sp, mas::schema::model::monica::SimulationParameters::Builder builder) {
+  sp->startDate.serialize(builder.initStartDate());
+  sp->endDate.serialize(builder.initEndDate());
+
+  builder.setNitrogenResponseOn(sp->pc_NitrogenResponseOn);
+  builder.setWaterDeficitResponseOn(sp->pc_WaterDeficitResponseOn);
+  builder.setEmergenceFloodingControlOn(sp->pc_EmergenceFloodingControlOn);
+  builder.setEmergenceMoistureControlOn(sp->pc_EmergenceMoistureControlOn);
+  builder.setFrostKillOn(sp->pc_FrostKillOn);
+
+  builder.setUseAutomaticIrrigation(sp->p_UseAutomaticIrrigation);
+  automaticirrigationparameters::serialize(&sp->p_AutoIrrigationParams, builder.initAutoIrrigationParams());
+
+  builder.setUseNMinMineralFertilisingMethod(sp->p_UseNMinMineralFertilisingMethod);
+  mineralfertilizerparameters::serialize(&sp->p_NMinFertiliserPartition, builder.initNMinFertiliserPartition());
+  nminapplicationparameters::serialize(&sp->p_NMinUserParams, builder.initNMinApplicationParams());
+
+  builder.setUseSecondaryYields(sp->p_UseSecondaryYields);
+  builder.setUseAutomaticHarvestTrigger(sp->p_UseAutomaticHarvestTrigger);
+
+  builder.setNumberOfLayers(sp->p_NumberOfLayers);
+  builder.setLayerThickness(sp->p_LayerThickness);
+
+  builder.setStartPVIndex(sp->p_StartPVIndex);
+  builder.setJulianDayAutomaticFertilising(sp->p_JulianDayAutomaticFertilising);
 }
 
 // SimulationParameters::SimulationParameters(json11::Json j) {
 //   merge(j);
 // }
 
-Errors SimulationParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors simulationparameters::merge(SimulationParameters* sp, json11::Json j) {
+  Errors res = defaultMerge(j, [sp](json11::Json j2) { return merge(sp, j2); });
 
-  set_iso_date_value(startDate, j, "startDate");
-  set_iso_date_value(endDate, j, "endDate");
+  set_iso_date_value(sp->startDate, j, "startDate");
+  set_iso_date_value(sp->endDate, j, "endDate");
 
-  set_bool_value(pc_NitrogenResponseOn, j, "NitrogenResponseOn");
-  set_bool_value(pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn");
-  set_bool_value(pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn");
-  set_bool_value(pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn");
-  set_bool_value(pc_FrostKillOn, j, "FrostKillOn");
+  set_bool_value(sp->pc_NitrogenResponseOn, j, "NitrogenResponseOn");
+  set_bool_value(sp->pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn");
+  set_bool_value(sp->pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn");
+  set_bool_value(sp->pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn");
+  set_bool_value(sp->pc_FrostKillOn, j, "FrostKillOn");
 
-  set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
-  automaticirrigationparameters::merge(&p_AutoIrrigationParams, j["AutoIrrigationParams"]);
+  set_bool_value(sp->p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
+  automaticirrigationparameters::merge(&sp->p_AutoIrrigationParams, j["AutoIrrigationParams"]);
 
-  set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
-  mineralfertilizerparameters::merge(&p_NMinFertiliserPartition, j["NMinFertiliserPartition"]);
-  nminapplicationparameters::merge(&p_NMinUserParams, j["NMinUserParams"]);
-  set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
+  set_bool_value(sp->p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
+  mineralfertilizerparameters::merge(&sp->p_NMinFertiliserPartition, j["NMinFertiliserPartition"]);
+  nminapplicationparameters::merge(&sp->p_NMinUserParams, j["NMinUserParams"]);
+  set_int_value(sp->p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 
-  set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
-  set_bool_value(p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
-  set_int_value(p_NumberOfLayers, j, "NumberOfLayers");
-  set_double_value(p_LayerThickness, j, "LayerThickness");
+  set_bool_value(sp->p_UseSecondaryYields, j, "UseSecondaryYields");
+  set_bool_value(sp->p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger");
+  set_int_value(sp->p_NumberOfLayers, j, "NumberOfLayers");
+  set_double_value(sp->p_LayerThickness, j, "LayerThickness");
 
-  set_int_value(p_StartPVIndex, j, "StartPVIndex");
+  set_int_value(sp->p_StartPVIndex, j, "StartPVIndex");
 
   if (auto serState = j["serializedMonicaState"].object_items(); !serState.empty()) {
     if (const auto loadState = serState["load"]; loadState.is_object()) {
-      set_bool_value(loadSerializedMonicaStateAtStart, loadState, "atStart");
-      set_bool_value(deserializedMonicaStateFromJson, loadState, "fromJson");
-      set_string_value(pathToLoadSerializationFile, loadState, "path");
+      set_bool_value(sp->loadSerializedMonicaStateAtStart, loadState, "atStart");
+      set_bool_value(sp->deserializedMonicaStateFromJson, loadState, "fromJson");
+      set_string_value(sp->pathToLoadSerializationFile, loadState, "path");
     }
     if (const auto saveState = serState["save"]; saveState.is_object()) {
-      set_bool_value(serializeMonicaStateAtEnd, saveState, "atEnd");
-      set_bool_value(serializeMonicaStateAtEndToJson, saveState, "toJson");
-      set_string_value(pathToSerializationAtEndFile, saveState, "path");
-      noOfPreviousDaysSerializedClimateData = max(0, int_value(saveState, "noOfPreviousDaysSerializedClimateData"));
+      set_bool_value(sp->serializeMonicaStateAtEnd, saveState, "atEnd");
+      set_bool_value(sp->serializeMonicaStateAtEndToJson, saveState, "toJson");
+      set_string_value(sp->pathToSerializationAtEndFile, saveState, "path");
+      sp->noOfPreviousDaysSerializedClimateData = max(0, int_value(saveState, "noOfPreviousDaysSerializedClimateData"));
     }
   }
 
   // FAO-56 Dual Kc: method switch.
   // "evapotranspiration-method": "FAO-56-Dual" activates the Dual Kc pathway.
   // All other values (or absent key) keep the native Single-Kc method.
-  if (j["evapotranspiration-method"].string_value() == "FAO-56-Dual") dualKcMethod = true;
+  if (j["evapotranspiration-method"].string_value() == "FAO-56-Dual") sp->dualKcMethod = true;
   // Note: isDripIrrigation and fw are now parsed at the Irrigation workstep event level.
 
   return res;
 }
 
-json11::Json SimulationParameters::to_json() const {
+json11::Json simulationparameters::to_json(const SimulationParameters* sp) {
   return json11::Json::object
   {
     {"type", "SimulationParameters"},
-    {"startDate", startDate.toIsoDateString()},
-    {"endDate", endDate.toIsoDateString()},
-    {"NitrogenResponseOn", pc_NitrogenResponseOn},
-    {"WaterDeficitResponseOn", pc_WaterDeficitResponseOn},
-    {"EmergenceFloodingControlOn", pc_EmergenceFloodingControlOn},
-    {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
-    {"FrostKillOn", pc_FrostKillOn},
-    {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
-    {"AutoIrrigationParams", automaticirrigationparameters::to_json(&p_AutoIrrigationParams)},
-    {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
-    {"NMinFertiliserPartition", mineralfertilizerparameters::to_json(&p_NMinFertiliserPartition)},
-    {"NMinUserParams", nminapplicationparameters::to_json(&p_NMinUserParams)},
-    {"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising},
-    {"UseSecondaryYields", p_UseSecondaryYields},
-    {"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger},
-    {"NumberOfLayers", p_NumberOfLayers},
-    {"LayerThickness", p_LayerThickness},
-    {"StartPVIndex", p_StartPVIndex},
-    {"serializeMonicaStateAtEnd", serializeMonicaStateAtEnd},
+    {"startDate", sp->startDate.toIsoDateString()},
+    {"endDate", sp->endDate.toIsoDateString()},
+    {"NitrogenResponseOn", sp->pc_NitrogenResponseOn},
+    {"WaterDeficitResponseOn", sp->pc_WaterDeficitResponseOn},
+    {"EmergenceFloodingControlOn", sp->pc_EmergenceFloodingControlOn},
+    {"EmergenceMoistureControlOn", sp->pc_EmergenceMoistureControlOn},
+    {"FrostKillOn", sp->pc_FrostKillOn},
+    {"UseAutomaticIrrigation", sp->p_UseAutomaticIrrigation},
+    {"AutoIrrigationParams", automaticirrigationparameters::to_json(&sp->p_AutoIrrigationParams)},
+    {"UseNMinMineralFertilisingMethod", sp->p_UseNMinMineralFertilisingMethod},
+    {"NMinFertiliserPartition", mineralfertilizerparameters::to_json(&sp->p_NMinFertiliserPartition)},
+    {"NMinUserParams", nminapplicationparameters::to_json(&sp->p_NMinUserParams)},
+    {"JulianDayAutomaticFertilising", sp->p_JulianDayAutomaticFertilising},
+    {"UseSecondaryYields", sp->p_UseSecondaryYields},
+    {"UseAutomaticHarvestTrigger", sp->p_UseAutomaticHarvestTrigger},
+    {"NumberOfLayers", sp->p_NumberOfLayers},
+    {"LayerThickness", sp->p_LayerThickness},
+    {"StartPVIndex", sp->p_StartPVIndex},
+    {"serializeMonicaStateAtEnd", sp->serializeMonicaStateAtEnd},
     {
       "serializedMonicaState",
       Json::object{
         {
           "load",
           Json::object{
-            {"atStart", loadSerializedMonicaStateAtStart},
-            {"fromJson", deserializedMonicaStateFromJson},
-            {"path", pathToLoadSerializationFile}
+            {"atStart", sp->loadSerializedMonicaStateAtStart},
+            {"fromJson", sp->deserializedMonicaStateFromJson},
+            {"path", sp->pathToLoadSerializationFile}
           }
         },
         {
           "save",
           Json::object{
-            {"atEnd", serializeMonicaStateAtEnd},
-            {"toJson", serializeMonicaStateAtEndToJson},
-            {"path", pathToSerializationAtEndFile},
-            {"noOfPreviousDaysSerializedClimateData", int(noOfPreviousDaysSerializedClimateData)}
+            {"atEnd", sp->serializeMonicaStateAtEnd},
+            {"toJson", sp->serializeMonicaStateAtEndToJson},
+            {"path", sp->pathToSerializationAtEndFile},
+            {"noOfPreviousDaysSerializedClimateData", int(sp->noOfPreviousDaysSerializedClimateData)}
           }
         }
       }
     },
     // FAO-56 Dual Kc: method switch only; event-level fw/isDrip are not stored here
-    {"evapotranspiration-method", dualKcMethod ? std::string("FAO-56-Dual") : std::string("Penman-Monteith")},
+    {"evapotranspiration-method", sp->dualKcMethod ? std::string("FAO-56-Dual") : std::string("Penman-Monteith")},
   };
 }
 
@@ -2566,7 +2572,7 @@ Errors CentralParameterProvider::merge(json11::Json j) {
   res.append(userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]));
   res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
   res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
-  res.append(simulationParameters.merge(j["simulationParameters"]));
+  res.append(simulationparameters::merge(&simulationParameters, j["simulationParameters"]));
   res.append(siteparameters::merge(&siteParameters, j["siteParameters"]));
   if (!j["groundwaterInformation"].is_null()) {
     res.append(measuredgroundwatertableinformation::merge(&groundwaterInformation, j["groundwaterInformation"]));
@@ -2587,7 +2593,7 @@ json11::Json CentralParameterProvider::to_json() const {
     {"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()},
     {"userSoilTransportParameters", userSoilTransportParameters.to_json()},
     {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
-    {"simulationParameters", simulationParameters.to_json()},
+    {"simulationParameters", simulationparameters::to_json(&simulationParameters)},
     {"siteParameters", siteparameters::to_json(&siteParameters)}
     //, {"groundwaterInformation", groundwaterInformation.to_json()}
     //, {"writeOutputFiles", writeOutputFiles()}

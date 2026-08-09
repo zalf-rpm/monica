@@ -220,8 +220,19 @@ those members. Check off each once it's built, regression-tested, committed, and
     `CropModule::residuePs` (`crop-module.cpp`); also a direct-init constructor call
     (`CropResidueParameters rps(reader.getResidueParams());`) in `monica-model.cpp` caught by the
     "also grep `Type varname(`" lesson from item 4.
-16. [ ] `SimulationParameters` — needs `AutomaticIrrigationParameters`,
-    `MineralFertilizerParameters`, `NMinApplicationParameters` done (holds all three by value).
+16. [x] `SimulationParameters` — needed `AutomaticIrrigationParameters`,
+    `MineralFertilizerParameters`, `NMinApplicationParameters` done (holds all three by value; those
+    three sub-members' calls were already rewired during items 8/11/12's leak-forward fixes, so this
+    step only had to convert the shell itself). Two field names collided with their own JSON key
+    strings (`{"startDate", startDate...}`, `{"serializeMonicaStateAtEnd", serializeMonicaStateAtEnd}`)
+    so the blind `pc_`/`p_`-prefix sed pass (safe, no collisions) was followed by careful manual
+    `sp->` edits for the handful of non-prefixed fields (`startDate`, `endDate`, `dualKcMethod`,
+    `serializeMonicaStateAtEnd`/`...ToJson`, `pathToSerializationAtEndFile`,
+    `loadSerializedMonicaStateAtStart`, `deserializedMonicaStateFromJson`,
+    `pathToLoadSerializationFile`, `noOfPreviousDaysSerializedClimateData`) rather than risk
+    corrupting a JSON string literal. Leak-forward fixed in `MonicaModel::simPs`
+    (`monica-model.cpp`) and `CentralParameterProvider::simulationParameters` (item 24, still
+    unconverted).
 17. [ ] `CropModuleParameters` — leaf.
 18. [ ] `EnvironmentParameters` — leaf.
 19. [ ] `SoilMoistureModuleParameters` — leaf. Its non-inline default constructor

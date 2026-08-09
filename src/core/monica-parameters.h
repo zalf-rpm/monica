@@ -575,26 +575,7 @@ DLL_API json11::Json to_json(const CropResidueParameters* crp);
 
 typedef std::shared_ptr<CropResidueParameters> CropResidueParametersPtr;
 
-struct DLL_API SimulationParameters : public Tools::Json11Serializable {
-  SimulationParameters() {}
-
-  SimulationParameters(
-      mas::schema::model::monica::SimulationParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::SimulationParameters::Reader reader);
-
-  // SimulationParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::SimulationParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API SimulationParameters {
   Tools::Date startDate;
   Tools::Date endDate;
 
@@ -633,6 +614,17 @@ struct DLL_API SimulationParameters : public Tools::Json11Serializable {
   // (isDripIrrigation, fw) are now set at the Irrigation workstep event level.
   bool dualKcMethod{false}; //!< Use FAO-56 Dual Kc evaporation partitioning
 };
+
+DLL_API SimulationParameters makeSimulationParameters(mas::schema::model::monica::SimulationParameters::Reader reader);
+
+namespace simulationparameters {
+
+DLL_API void deserialize(SimulationParameters* sp, mas::schema::model::monica::SimulationParameters::Reader reader);
+DLL_API void serialize(const SimulationParameters* sp, mas::schema::model::monica::SimulationParameters::Builder builder);
+DLL_API Tools::Errors merge(SimulationParameters* sp, json11::Json j);
+DLL_API json11::Json to_json(const SimulationParameters* sp);
+
+} // namespace simulationparameters
 
 /**
  * Class that holds information of crop defined by user.
