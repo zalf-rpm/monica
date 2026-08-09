@@ -1161,44 +1161,49 @@ json11::Json automaticharvestparameters::to_json(const AutomaticHarvestParameter
 }
 
 
-NMinCropParameters::NMinCropParameters(double samplingDepth, double nTarget, double nTarget30)
-: samplingDepth(samplingDepth)
-, nTarget(nTarget)
-, nTarget30(nTarget30) {}
-
-void NMinCropParameters::deserialize(mas::schema::model::monica::NMinCropParameters::Reader reader) {
-  samplingDepth = reader.getSamplingDepth();
-  nTarget = reader.getNTarget();
-  nTarget30 = reader.getNTarget30();
+NMinCropParameters monica::makeNMinCropParameters(double samplingDepth, double nTarget, double nTarget30) {
+  NMinCropParameters ncp;
+  ncp.samplingDepth = samplingDepth;
+  ncp.nTarget = nTarget;
+  ncp.nTarget30 = nTarget30;
+  return ncp;
 }
 
-void NMinCropParameters::serialize(mas::schema::model::monica::NMinCropParameters::Builder builder) const {
-  builder.setSamplingDepth(samplingDepth);
-  builder.setNTarget(nTarget);
-  builder.setNTarget30(nTarget30);
+NMinCropParameters monica::makeNMinCropParameters(mas::schema::model::monica::NMinCropParameters::Reader reader) {
+  NMinCropParameters ncp;
+  nmincropparameters::deserialize(&ncp, reader);
+  return ncp;
 }
 
-// NMinCropParameters::NMinCropParameters(json11::Json j) {
-//   merge(j);
-// }
+void nmincropparameters::deserialize(NMinCropParameters* ncp, mas::schema::model::monica::NMinCropParameters::Reader reader) {
+  ncp->samplingDepth = reader.getSamplingDepth();
+  ncp->nTarget = reader.getNTarget();
+  ncp->nTarget30 = reader.getNTarget30();
+}
 
-Errors NMinCropParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+void nmincropparameters::serialize(const NMinCropParameters* ncp, mas::schema::model::monica::NMinCropParameters::Builder builder) {
+  builder.setSamplingDepth(ncp->samplingDepth);
+  builder.setNTarget(ncp->nTarget);
+  builder.setNTarget30(ncp->nTarget30);
+}
 
-  set_double_value(samplingDepth, j, "samplingDepth");
-  set_double_value(nTarget, j, "nTarget");
-  set_double_value(nTarget30, j, "nTarget30");
+Errors nmincropparameters::merge(NMinCropParameters* ncp, json11::Json j) {
+  Errors res = defaultMerge(j, [ncp](json11::Json j2) { return merge(ncp, j2); });
+
+  set_double_value(ncp->samplingDepth, j, "samplingDepth");
+  set_double_value(ncp->nTarget, j, "nTarget");
+  set_double_value(ncp->nTarget30, j, "nTarget30");
 
   return res;
 }
 
-json11::Json NMinCropParameters::to_json() const {
+json11::Json nmincropparameters::to_json(const NMinCropParameters* ncp) {
   return json11::Json::object
   {
     {"type", "NMinCropParameters"},
-    {"samplingDepth", samplingDepth},
-    {"nTarget", nTarget},
-    {"nTarget30", nTarget30}
+    {"samplingDepth", ncp->samplingDepth},
+    {"nTarget", ncp->nTarget},
+    {"nTarget30", ncp->nTarget30}
   };
 }
 

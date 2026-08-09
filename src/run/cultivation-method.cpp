@@ -362,9 +362,9 @@ bool Sowing::apply(MonicaModel *model) {
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = monicamodel::applyMineralFertiliserViaNMinMethod(
           model, model->simPs.p_NMinFertiliserPartition,
-          NMinCropParameters(_cropParams.speciesParams.pc_SamplingDepth,
-                             _cropParams.speciesParams.pc_TargetNSamplingDepth,
-                             _cropParams.speciesParams.pc_TargetN30));
+          makeNMinCropParameters(_cropParams.speciesParams.pc_SamplingDepth,
+                                 _cropParams.speciesParams.pc_TargetNSamplingDepth,
+                                 _cropParams.speciesParams.pc_TargetN30));
       monicamodel::addDailySumFertiliser(model, fert_amount);
     }
   }

@@ -188,7 +188,10 @@ those members. Check off each once it's built, regression-tested, committed, and
     `Crop` (`crop.cpp`: `deserialize`/`serialize`/bare-in-`J11Object` `to_json`, goal #10); `Crop`
     doesn't actually call `.merge()` on this member in `Crop::merge` (pre-existing, unrelated to
     this conversion).
-12. [ ] `NMinCropParameters` — leaf.
+12. [x] `NMinCropParameters` — leaf; not held by any other struct in this file and no
+    `.merge`/`.to_json`/`.serialize`/`.deserialize` call sites anywhere. Only fix needed was three
+    field-based constructor call sites (`NMinCropParameters(a, b, c)` -> `makeNMinCropParameters(a,
+    b, c)`) in `monica-model.cpp` (x2) and `cultivation-method.cpp`.
 13. [ ] `OrganicMatterParameters` — leaf; base of `OrganicFertilizerParameters` and
     `CropResidueParameters`.
 14. [ ] `OrganicFertilizerParameters` — needs `OrganicMatterParameters` done (inherits it).

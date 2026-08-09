@@ -459,9 +459,9 @@ void monica::monicamodel::seedCrop(
       debug() << "nMin fertilising summer crop" << endl;
       double fertAmount = monicamodel::applyMineralFertiliserViaNMinMethod(
           model, model->simPs.p_NMinFertiliserPartition,
-          NMinCropParameters(cps.speciesParams.pc_SamplingDepth,
-                             cps.speciesParams.pc_TargetNSamplingDepth,
-                             cps.speciesParams.pc_TargetN30));
+          makeNMinCropParameters(cps.speciesParams.pc_SamplingDepth,
+                                 cps.speciesParams.pc_TargetNSamplingDepth,
+                                 cps.speciesParams.pc_TargetN30));
       monicamodel::addDailySumFertiliser(model, fertAmount);
     }
   }
@@ -1012,8 +1012,8 @@ void monica::monicamodel::generalStep(MonicaModel *model) {
     auto sps = currentCropModule->cropParams.speciesParams;
     double fertilizerAmount = monicamodel::applyMineralFertiliserViaNMinMethod(
         model, simPs.p_NMinFertiliserPartition,
-        NMinCropParameters(sps.pc_SamplingDepth, sps.pc_TargetNSamplingDepth,
-                           sps.pc_TargetN30));
+        makeNMinCropParameters(sps.pc_SamplingDepth, sps.pc_TargetNSamplingDepth,
+                               sps.pc_TargetN30));
     monicamodel::addDailySumFertiliser(model, fertilizerAmount);
   }
 

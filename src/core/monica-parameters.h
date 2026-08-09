@@ -459,32 +459,23 @@ DLL_API json11::Json to_json(const AutomaticHarvestParameters* ahp);
 
 } // namespace automaticharvestparameters
 
-struct DLL_API NMinCropParameters : public Tools::Json11Serializable {
-  NMinCropParameters() {}
-
-  NMinCropParameters(double samplingDepth, double nTarget, double nTarget30);
-
-  NMinCropParameters(
-      mas::schema::model::monica::NMinCropParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::NMinCropParameters::Reader reader);
-
-  // NMinCropParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::NMinCropParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API NMinCropParameters {
   double samplingDepth{0.0};
   double nTarget{0.0};
   double nTarget30{0.0};
 };
+
+DLL_API NMinCropParameters makeNMinCropParameters(double samplingDepth, double nTarget, double nTarget30);
+DLL_API NMinCropParameters makeNMinCropParameters(mas::schema::model::monica::NMinCropParameters::Reader reader);
+
+namespace nmincropparameters {
+
+DLL_API void deserialize(NMinCropParameters* ncp, mas::schema::model::monica::NMinCropParameters::Reader reader);
+DLL_API void serialize(const NMinCropParameters* ncp, mas::schema::model::monica::NMinCropParameters::Builder builder);
+DLL_API Tools::Errors merge(NMinCropParameters* ncp, json11::Json j);
+DLL_API json11::Json to_json(const NMinCropParameters* ncp);
+
+} // namespace nmincropparameters
 
 struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
   OrganicMatterParameters() = default;
