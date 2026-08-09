@@ -533,29 +533,23 @@ DLL_API json11::Json to_json(const OrganicMatterParameters* omp);
 typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
 
 struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
-  OrganicFertilizerParameters() {}
-
-  OrganicFertilizerParameters(
-      mas::schema::model::monica::Params::OrganicFertilization::Parameters::
-          Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::Params::OrganicFertilization::
-                       Parameters::Reader reader);
-
-  // OrganicFertilizerParameters(json11::Json object);
-
-  void serialize(mas::schema::model::monica::Params::OrganicFertilization::
-                     Parameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
   std::string id;
   std::string name;
 };
+
+DLL_API OrganicFertilizerParameters makeOrganicFertilizerParameters(
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader);
+
+namespace organicfertilizerparameters {
+
+DLL_API void deserialize(OrganicFertilizerParameters* ofp,
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader);
+DLL_API void serialize(const OrganicFertilizerParameters* ofp,
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder);
+DLL_API Tools::Errors merge(OrganicFertilizerParameters* ofp, json11::Json j);
+DLL_API json11::Json to_json(const OrganicFertilizerParameters* ofp);
+
+} // namespace organicfertilizerparameters
 
 typedef std::shared_ptr<OrganicFertilizerParameters>
     OrganicFertiliserParametersPtr;

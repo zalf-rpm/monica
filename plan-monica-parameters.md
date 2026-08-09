@@ -207,7 +207,11 @@ those members. Check off each once it's built, regression-tested, committed, and
     `.toString()`. Also fixed the known `soilorganic.cpp` `.toString()` site (goal #9) and
     leak-forward in `OrganicFertilization` (`cultivation-method.cpp`) plus a reader-based
     direct-construction site in `daily-monica-fbp-component-main.cpp`.
-14. [ ] `OrganicFertilizerParameters` — needs `OrganicMatterParameters` done (inherits it).
+14. [x] `OrganicFertilizerParameters` — needed `OrganicMatterParameters` done (inherits it, kept as
+    plain-struct inheritance). Not referenced anywhere outside `monica-parameters.h`/`.cpp` — item
+    13 had already rewired its internal base-class calls, so this step was purely mechanical
+    (constructors -> `makeOrganicFertilizerParameters(reader)`, `this->` becomes `ofp->`); no
+    external call sites to fix.
 15. [ ] `CropResidueParameters` — needs `OrganicMatterParameters` done (inherits it). Fix
     `.toString()` call site in `crop.cpp`.
 16. [ ] `SimulationParameters` — needs `AutomaticIrrigationParameters`,

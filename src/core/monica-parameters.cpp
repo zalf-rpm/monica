@@ -1384,40 +1384,43 @@ json11::Json organicmatterparameters::to_json(const OrganicMatterParameters* omp
   };
 }
 
-void OrganicFertilizerParameters::deserialize(
+OrganicFertilizerParameters monica::makeOrganicFertilizerParameters(
   mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) {
-  organicmatterparameters::deserialize(this, reader.getParams());
-  id = reader.getId();
-  name = reader.getName();
+  OrganicFertilizerParameters ofp;
+  organicfertilizerparameters::deserialize(&ofp, reader);
+  return ofp;
 }
 
-void OrganicFertilizerParameters::serialize(
-  mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder) const {
-  organicmatterparameters::serialize(this, builder.initParams());
-  builder.setId(id);
-  builder.setName(name);
+void organicfertilizerparameters::deserialize(OrganicFertilizerParameters* ofp,
+  mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) {
+  organicmatterparameters::deserialize(ofp, reader.getParams());
+  ofp->id = reader.getId();
+  ofp->name = reader.getName();
 }
 
-// OrganicFertilizerParameters::OrganicFertilizerParameters(json11::Json j) {
-//   merge(j);
-// }
+void organicfertilizerparameters::serialize(const OrganicFertilizerParameters* ofp,
+  mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder) {
+  organicmatterparameters::serialize(ofp, builder.initParams());
+  builder.setId(ofp->id);
+  builder.setName(ofp->name);
+}
 
-Errors OrganicFertilizerParameters::merge(json11::Json j) {
-  Errors res = defaultMerge(j, [this](json11::Json j2) { return merge(j2); });
+Errors organicfertilizerparameters::merge(OrganicFertilizerParameters* ofp, json11::Json j) {
+  Errors res = defaultMerge(j, [ofp](json11::Json j2) { return merge(ofp, j2); });
 
-  res.append(organicmatterparameters::merge(this, j));
+  res.append(organicmatterparameters::merge(ofp, j));
 
-  set_string_value(id, j, "id");
-  set_string_value(name, j, "name");
+  set_string_value(ofp->id, j, "id");
+  set_string_value(ofp->name, j, "name");
 
   return res;
 }
 
-json11::Json OrganicFertilizerParameters::to_json() const {
-  auto omp = organicmatterparameters::to_json(this).object_items();
+json11::Json organicfertilizerparameters::to_json(const OrganicFertilizerParameters* ofp) {
+  auto omp = organicmatterparameters::to_json(ofp).object_items();
   omp["type"] = "OrganicFertilizerParameters";
-  omp["id"] = id;
-  omp["name"] = name;
+  omp["id"] = ofp->id;
+  omp["name"] = ofp->name;
   return omp;
 }
 
