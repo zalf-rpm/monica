@@ -688,60 +688,66 @@ json11::Json cropparameters::to_json(const CropParameters* cp) {
 }
 
 
-MineralFertilizerParameters::MineralFertilizerParameters(const string& id,
-                                                         const std::string& name,
-                                                         double carbamid,
-                                                         double no3,
-                                                         double nh4)
-: id(id)
-, name(name)
-, vo_Carbamid(carbamid)
-, vo_NH4(nh4)
-, vo_NO3(no3) {}
+MineralFertilizerParameters monica::makeMineralFertilizerParameters(const string& id,
+                                                                    const std::string& name,
+                                                                    double carbamid,
+                                                                    double no3,
+                                                                    double nh4) {
+  MineralFertilizerParameters fp;
+  fp.id = id;
+  fp.name = name;
+  fp.vo_Carbamid = carbamid;
+  fp.vo_NH4 = nh4;
+  fp.vo_NO3 = no3;
+  return fp;
+}
 
-// MineralFertilizerParameters::MineralFertilizerParameters(json11::Json j) {
-//   merge(j);
-// }
-
-void MineralFertilizerParameters::deserialize(
+MineralFertilizerParameters monica::makeMineralFertilizerParameters(
   mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) {
-  id = reader.getId();
-  name = reader.getName();
-  vo_Carbamid = reader.getCarbamid();
-  vo_NH4 = reader.getNh4();
-  vo_NO3 = reader.getNo3();
+  MineralFertilizerParameters fp;
+  mineralfertilizerparameters::deserialize(&fp, reader);
+  return fp;
 }
 
-void MineralFertilizerParameters::serialize(
-  mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder) const {
-  builder.setId(id);
-  builder.setName(name);
-  builder.setCarbamid(vo_Carbamid);
-  builder.setNh4(vo_NH4);
-  builder.setNo3(vo_NO3);
+void mineralfertilizerparameters::deserialize(MineralFertilizerParameters* fp,
+  mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader) {
+  fp->id = reader.getId();
+  fp->name = reader.getName();
+  fp->vo_Carbamid = reader.getCarbamid();
+  fp->vo_NH4 = reader.getNh4();
+  fp->vo_NO3 = reader.getNo3();
 }
 
-Errors MineralFertilizerParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+void mineralfertilizerparameters::serialize(const MineralFertilizerParameters* fp,
+  mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder) {
+  builder.setId(fp->id);
+  builder.setName(fp->name);
+  builder.setCarbamid(fp->vo_Carbamid);
+  builder.setNh4(fp->vo_NH4);
+  builder.setNo3(fp->vo_NO3);
+}
 
-  set_string_value(id, j, "id");
-  set_string_value(name, j, "name");
-  set_double_value(vo_Carbamid, j, "Carbamid");
-  set_double_value(vo_NH4, j, "NH4");
-  set_double_value(vo_NO3, j, "NO3");
+Errors mineralfertilizerparameters::merge(MineralFertilizerParameters* fp, json11::Json j) {
+  Errors res = defaultMerge(j, [fp](json11::Json j2) { return merge(fp, j2); });
+
+  set_string_value(fp->id, j, "id");
+  set_string_value(fp->name, j, "name");
+  set_double_value(fp->vo_Carbamid, j, "Carbamid");
+  set_double_value(fp->vo_NH4, j, "NH4");
+  set_double_value(fp->vo_NO3, j, "NO3");
 
   return res;
 }
 
-json11::Json MineralFertilizerParameters::to_json() const {
+json11::Json mineralfertilizerparameters::to_json(const MineralFertilizerParameters* fp) {
   return J11Object
   {
     {"type", "MineralFertilizerParameters"},
-    {"id", id},
-    {"name", name},
-    {"Carbamid", vo_Carbamid},
-    {"NH4", vo_NH4},
-    {"NO3", vo_NO3}
+    {"id", fp->id},
+    {"name", fp->name},
+    {"Carbamid", fp->vo_Carbamid},
+    {"NH4", fp->vo_NH4},
+    {"NO3", fp->vo_NO3}
   };
 }
 
@@ -1427,7 +1433,7 @@ void SimulationParameters::deserialize(mas::schema::model::monica::SimulationPar
   p_AutoIrrigationParams.deserialize(reader.getAutoIrrigationParams());
 
   p_UseNMinMineralFertilisingMethod = reader.getUseNMinMineralFertilisingMethod();
-  p_NMinFertiliserPartition.deserialize(reader.getNMinFertiliserPartition());
+  mineralfertilizerparameters::deserialize(&p_NMinFertiliserPartition, reader.getNMinFertiliserPartition());
   p_NMinUserParams.deserialize(reader.getNMinApplicationParams());
 
   p_UseSecondaryYields = reader.getUseSecondaryYields();
@@ -1454,7 +1460,7 @@ void SimulationParameters::serialize(mas::schema::model::monica::SimulationParam
   p_AutoIrrigationParams.serialize(builder.initAutoIrrigationParams());
 
   builder.setUseNMinMineralFertilisingMethod(p_UseNMinMineralFertilisingMethod);
-  p_NMinFertiliserPartition.serialize(builder.initNMinFertiliserPartition());
+  mineralfertilizerparameters::serialize(&p_NMinFertiliserPartition, builder.initNMinFertiliserPartition());
   p_NMinUserParams.serialize(builder.initNMinApplicationParams());
 
   builder.setUseSecondaryYields(p_UseSecondaryYields);
@@ -1487,7 +1493,7 @@ Errors SimulationParameters::merge(json11::Json j) {
   p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
 
   set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
-  p_NMinFertiliserPartition.merge(j["NMinFertiliserPartition"]);
+  mineralfertilizerparameters::merge(&p_NMinFertiliserPartition, j["NMinFertiliserPartition"]);
   p_NMinUserParams.merge(j["NMinUserParams"]);
   set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 
@@ -1535,7 +1541,7 @@ json11::Json SimulationParameters::to_json() const {
     {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
     {"AutoIrrigationParams", p_AutoIrrigationParams},
     {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
-    {"NMinFertiliserPartition", p_NMinFertiliserPartition},
+    {"NMinFertiliserPartition", mineralfertilizerparameters::to_json(&p_NMinFertiliserPartition)},
     {"NMinUserParams", p_NMinUserParams},
     {"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising},
     {"UseSecondaryYields", p_UseSecondaryYields},

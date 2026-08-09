@@ -46,6 +46,21 @@ structs in `monica-parameters.h`:
    `soilorganic.cpp`, `CropParameters`/`CropResidueParameters` in `crop.cpp`). Since none of them
    need a real `toString` override, just inline those call sites to
    `namespacename::to_json(&x).dump()` instead of adding a `toString` free function nobody else needs.
+10. **(discovered during item 5, applies to every remaining item)** `json11::Json` has an implicit
+    `template<class T, class = decltype(&T::to_json)> Json(const T& t) : Json(t.to_json()) {}`
+    constructor (`mas_cpp_misc/json11/json11.hpp`), gated by SFINAE on `T::to_json` existing as a
+    *member*. Once a struct's `to_json` becomes a free function, any place that dropped a bare
+    struct instance into a `json11::Json`/`J11Object`/`Json::object` context relying on that
+    implicit conversion (e.g. `{"key", someStructInstance}`) stops compiling — fails loudly (no
+    viable conversion), so the build catches it, but it can be in a file far from the one just
+    converted. Same story for the generic `set_value_obj_value(var, j, key)` helper (same header),
+    which calls `var.merge(j[key])` as a member call — grep for `set_value_obj_value(<name>` too,
+    not just the four `.merge/.to_json/.serialize/.deserialize(` member-call patterns already
+    covered by goal-derived checks. Both `daily-monica-fbp-component-main.cpp` and
+    `cultivation-method.cpp`'s `MineralFertilization`/`NDemandFertilization` worksteps hit this for
+    `MineralFertilizerParameters` and only turned up on the *second* build attempt because the
+    first grep pass covered `.merge(`/`.to_json(` etc. but not bare-instance-in-JSON-literal or
+    `set_value_obj_value`.
 
 ## Not in scope
 
@@ -108,9 +123,17 @@ those members. Check off each once it's built, regression-tested, committed, and
    initial `CropParameters(` grep because the type name wasn't immediately followed by `(` — worth
    remembering for future items: also grep for `Type varname(` and `kj::heap<Type>(readerOrJson)`
    patterns, not just `Type(`.
-5. [ ] `MineralFertilizerParameters` — leaf; already had its trivial accessors inlined in an
-   earlier pass (see `plan.md`), constructors/merge/serialize/deserialize/to_json still pending.
-   Fix `.toString()` call site in `soilcolumn.cpp`.
+5. [x] `MineralFertilizerParameters` — leaf; already had its trivial accessors inlined in an
+   earlier pass (see `plan.md`). Fixed `.toString()` call site in `soilcolumn.cpp` (now
+   `mineralfertilizerparameters::to_json(&fp).dump()`). This is where the implicit-`json11::Json`-
+   conversion and `set_value_obj_value` gotchas (goal #10 above) were discovered: leak-forward
+   sites turned up in `SoilColumn::DelayedNMinApplicationParams`/`SoilColumn` (`.deserialize`/
+   `.serialize` on the `fp`/`_vf_TopDressingPartition` members), `SimulationParameters::to_json`
+   (`p_NMinFertiliserPartition` bare in a `J11Object`), and — only surfacing on rebuild —
+   `cultivation-method.cpp`'s `MineralFertilization`/`NDemandFertilization::merge`/`to_json`
+   (`set_value_obj_value(_partition, ...)` and bare `_partition` in JSON literals) and
+   `daily-monica-fbp-component-main.cpp` (`applyMineralFertiliser(monica.get(), mf.getPartition(),
+   ...)` relying on the now-removed implicit reader-constructor).
 6. [ ] `NMinApplicationParameters` — leaf.
 7. [ ] `IrrigationParameters` — leaf; base of `AutomaticIrrigationParameters`.
 8. [ ] `AutomaticIrrigationParameters` — needs `IrrigationParameters` done (inherits it).

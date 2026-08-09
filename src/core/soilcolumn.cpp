@@ -172,7 +172,7 @@ double soillayer::soilNmin(const SoilLayer* sl) { return sl->vs_SoilNO3 + sl->vs
 
 void SoilColumn::DelayedNMinApplicationParams::deserialize(
   mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Reader reader) {
-  fp.deserialize(reader.getFp());
+  mineralfertilizerparameters::deserialize(&fp, reader.getFp());
   vf_SamplingDepth = reader.getSamplingDepth();
   vf_CropNTarget = reader.getCropNTarget();
   vf_CropNTarget30 = reader.getCropNTarget30();
@@ -183,7 +183,7 @@ void SoilColumn::DelayedNMinApplicationParams::deserialize(
 
 void SoilColumn::DelayedNMinApplicationParams::serialize(
   mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::Builder builder) const {
-  fp.serialize(builder.initFp());
+  mineralfertilizerparameters::serialize(&fp, builder.initFp());
   builder.setSamplingDepth(vf_SamplingDepth);
   builder.setCropNTarget(vf_CropNTarget);
   builder.setCropNTarget30(vf_CropNTarget30);
@@ -344,7 +344,7 @@ void monica::soilcolumn::deserialize(SoilColumn* sc, mas::schema::model::monica:
   sc->ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
   sc->_vs_NumberOfOrganicLayers = (int)reader.getVsNumberOfOrganicLayers();
   sc->_vf_TopDressing = reader.getVfTopDressing();
-  sc->_vf_TopDressingPartition.deserialize(reader.getVfTopDressingPartition());
+  mineralfertilizerparameters::deserialize(&sc->_vf_TopDressingPartition, reader.getVfTopDressingPartition());
   sc->_vf_TopDressingDelay = reader.getVfTopDressingDelay();
   setFromComplexCapnpList(sc->_delayedNMinApplications, reader.getDelayedNMinApplications());
   //pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
@@ -365,7 +365,7 @@ void monica::soilcolumn::serialize(const SoilColumn* sc, mas::schema::model::mon
   builder.setPsMaxMineralisationDepth(sc->ps_MaxMineralisationDepth);
   builder.setVsNumberOfOrganicLayers(sc->_vs_NumberOfOrganicLayers);
   builder.setVfTopDressing(sc->_vf_TopDressing);
-  sc->_vf_TopDressingPartition.serialize(builder.initVfTopDressingPartition());
+  mineralfertilizerparameters::serialize(&sc->_vf_TopDressingPartition, builder.initVfTopDressingPartition());
   builder.setVfTopDressingDelay(sc->_vf_TopDressingDelay);
   setComplexCapnpList(sc->_delayedNMinApplications,
                       builder.initDelayedNMinApplications((capnp::uint)sc->_delayedNMinApplications.size()));
@@ -455,7 +455,7 @@ double monica::soilcolumn::applyPossibleTopDressing(SoilColumn* sc) {
  * @author: Claas Nendel
  */
 void monica::soilcolumn::applyMineralFertiliser(SoilColumn* sc, MineralFertilizerParameters fp, double amount) {
-  debug() << "SoilColumn::applyMineralFertilser: params: " << fp.toString()
+  debug() << "SoilColumn::applyMineralFertilser: params: " << mineralfertilizerparameters::to_json(&fp).dump()
     << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
   double kgHaTokgm3 = 10000.0 * sc->at(0).vs_LayerThickness;

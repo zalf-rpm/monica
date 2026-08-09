@@ -274,36 +274,29 @@ enum FertiliserType { mineral, organic, undefined };
  * Simple data structure that holds information about mineral fertiliser.
  * @author Xenia Holtmann, Claas Nendel
  */
-struct DLL_API MineralFertilizerParameters : public Tools::Json11Serializable {
-  MineralFertilizerParameters() {}
-
-  MineralFertilizerParameters(
-      mas::schema::model::monica::Params::MineralFertilization::Parameters::
-          Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::Params::MineralFertilization::
-                       Parameters::Reader reader);
-
-  // MineralFertilizerParameters(json11::Json object);
-
-  MineralFertilizerParameters(const std::string &id, const std::string &name,
-                              double carbamid, double no3, double nh4);
-
-  void serialize(mas::schema::model::monica::Params::MineralFertilization::
-                     Parameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API MineralFertilizerParameters {
   std::string id;
   std::string name;
   double vo_Carbamid{0.0}; //!< [%]
   double vo_NH4{0.0};      //!< [%]
   double vo_NO3{0.0};      //!< [%]
 };
+
+DLL_API MineralFertilizerParameters makeMineralFertilizerParameters(
+    mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader);
+DLL_API MineralFertilizerParameters makeMineralFertilizerParameters(
+    const std::string &id, const std::string &name, double carbamid, double no3, double nh4);
+
+namespace mineralfertilizerparameters {
+
+DLL_API void deserialize(MineralFertilizerParameters* fp,
+                         mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader);
+DLL_API void serialize(const MineralFertilizerParameters* fp,
+                       mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder);
+DLL_API Tools::Errors merge(MineralFertilizerParameters* fp, json11::Json j);
+DLL_API json11::Json to_json(const MineralFertilizerParameters* fp);
+
+} // namespace mineralfertilizerparameters
 
 struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable {
   NMinApplicationParameters() {}

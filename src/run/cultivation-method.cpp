@@ -1001,7 +1001,11 @@ MineralFertilization::MineralFertilization(json11::Json j) {
 
 Errors MineralFertilization::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
-  set_value_obj_value(_partition, j, "partition");
+  {
+    string err;
+    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err)) mineralfertilizerparameters::merge(&_partition, j["partition"]);
+    if (!err.empty()) cerr << "Error @ MineralFertilization::merge: " << err << endl;
+  }
   set_double_value(_amount, j, "amount");
   return res;
 }
@@ -1010,7 +1014,7 @@ json11::Json MineralFertilization::to_json() const {
   return json11::Json::object{{"type", type()},
                               {"date", date().toIsoDateString()},
                               {"amount", _amount},
-                              {"partition", _partition}};
+                              {"partition", mineralfertilizerparameters::to_json(&_partition)}};
 }
 
 bool MineralFertilization::apply(MonicaModel *model) {
@@ -1043,7 +1047,11 @@ Errors NDemandFertilization::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   _initialDate = date();
   set_double_value(_Ndemand, j, "N-demand");
-  set_value_obj_value(_partition, j, "partition");
+  {
+    string err;
+    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err)) mineralfertilizerparameters::merge(&_partition, j["partition"]);
+    if (!err.empty()) cerr << "Error @ NDemandFertilization::merge: " << err << endl;
+  }
   set_double_value(_depth, j, "depth");
   set_int_value(_stage, j, "stage");
 
@@ -1054,7 +1062,7 @@ json11::Json NDemandFertilization::to_json() const {
   auto o =
       J11Object{{"type", type()},
                 {"N-demand", _Ndemand},
-                {"partition", _partition},
+                {"partition", mineralfertilizerparameters::to_json(&_partition)},
                 {"depth", J11Array{_depth, "m", "depth of Nmin measurement"}}};
   if (_initialDate.isValid())
     o["date"] = _initialDate.toIsoDateString();

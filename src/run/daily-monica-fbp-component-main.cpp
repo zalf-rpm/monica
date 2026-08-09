@@ -469,7 +469,7 @@ public:
                 auto mf = event.getParams().getAs<mas::schema::model::monica::Params::MineralFertilization>();
                 if (mf.hasPartition()) {
                   KJ_LOG(INFO, "received mineral fertilization event at", eventDate.toIsoDateString());
-                  monicamodel::applyMineralFertiliser(monica.get(), mf.getPartition(), mf.getAmount());
+                  monicamodel::applyMineralFertiliser(monica.get(), makeMineralFertilizerParameters(mf.getPartition()), mf.getAmount());
                   monica->currentEvents.insert("MineralFertilization");
                 }
                 break;
