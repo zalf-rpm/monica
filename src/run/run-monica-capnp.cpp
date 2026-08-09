@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
 Authors:
@@ -18,16 +18,16 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <string>
 #include <vector>
 
-#include <kj/debug.h>
 #include <kj/common.h>
+#include <kj/debug.h>
 
 #include "json11/json11.hpp"
 
-#include "tools/helper.h"
-#include "run-monica.h"
-#include "climate/climate-file-io.h"
 #include "capnp-helper.h"
+#include "climate/climate-file-io.h"
 #include "common/sole.hpp"
+#include "run-monica.h"
+#include "tools/helper.h"
 
 #include "common.capnp.h"
 
@@ -39,17 +39,16 @@ using namespace json11;
 using namespace Climate;
 using namespace mas;
 
-//std::map<std::string, DataAccessor> daCache;
+// std::map<std::string, DataAccessor> daCache;
 
-RunMonica::RunMonica(bool startedServerInDebugMode, mas::infrastructure::common::Restorer* restorer)
-: _restorer(restorer)
-, _startedServerInDebugMode(startedServerInDebugMode) {
+RunMonica::RunMonica(bool startedServerInDebugMode,
+                     mas::infrastructure::common::Restorer *restorer)
+    : _restorer(restorer), _startedServerInDebugMode(startedServerInDebugMode) {
   _id = kj::str(sole::uuid4().str());
   _name = kj::str("Monica capnp server");
 }
 
-
-kj::Promise<void> RunMonica::info(InfoContext context) //override
+kj::Promise<void> RunMonica::info(InfoContext context) // override
 {
   KJ_LOG(INFO, "info message received");
   auto rs = context.getResults();
@@ -62,39 +61,48 @@ kj::Promise<void> RunMonica::info(InfoContext context) //override
 kj::Promise<void> RunMonica::run(RunContext context) {
   auto envR = context.getParams().getEnv();
 
-  auto runMonica =
-    [envR, this](const DataAccessor& da = DataAccessor(), J11Array soilLayers = J11Array()) mutable {
+  auto runMonica = [envR, this](const DataAccessor &da = DataAccessor(),
+                                J11Array soilLayers = J11Array()) mutable {
     std::string err;
     auto rest = envR.getRest();
     if (rest.getType() != mas::schema::common::StructuredText::Type::JSON) {
-      return monica::makeOutput(std::string("Error: 'rest' field is not valid JSON!"));
+      return monica::makeOutput(
+          std::string("Error: 'rest' field is not valid JSON!"));
     }
 
-    const Json& envJson = Json::parse(rest.getValue().cStr(), err);
-    //cout << "runMonica: " << envJson["customId"].dump() << endl;
+    const Json &envJson = Json::parse(rest.getValue().cStr(), err);
+    // cout << "runMonica: " << envJson["customId"].dump() << endl;
 
     Env env;
 
     // set available functions to calculate pwp, fc and sat before env creation
-    auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+    auto pathToSoilDir =
+        fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
-      Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+        Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
+            pathToSoilDir);
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
-      Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
-      Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
-      Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
-    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
+        Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+    env.params.siteParameters
+        .calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+        Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+    env.params.siteParameters
+        .calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+        Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
+        Soil::updateUnsetPwpFcSatFromToth;
 
     auto errors = env_merge(&env, envJson);
 
     if (!soilLayers.empty()) {
-      if (auto it = std::find(errors.errors.begin(), errors.errors.end(), "Soil profile is empty!");
-        it != errors.errors.end()) {
+      if (auto it = std::find(errors.errors.begin(), errors.errors.end(),
+                              "Soil profile is empty!");
+          it != errors.errors.end()) {
         errors.errors.erase(it);
       }
-      errors.append(siteparameters::merge(&env.params.siteParameters, J11Object{{"SoilProfileParameters", soilLayers}}));
+      errors.append(siteparameters::merge(
+          &env.params.siteParameters,
+          J11Object{{"SoilProfileParameters", soilLayers}}));
     }
 
     Output out;
@@ -105,27 +113,31 @@ kj::Promise<void> RunMonica::run(RunContext context) {
         eda.result = da;
       } else if (!env.climateData.isValid()) {
         if (!env.climateCSV.empty()) {
-          eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
+          eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV,
+                                                       env.csvViaHeaderOptions);
         } else if (!env.pathsToClimateCSV.empty()) {
-          eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
+          eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV,
+                                                      env.csvViaHeaderOptions);
         }
       }
 
       if (eda.success()) {
-        if (eda.result.isValid()) env.climateData = eda.result;
+        if (eda.result.isValid())
+          env.climateData = eda.result;
         else
           assert(env.climateData.isValid());
         env.debugMode = _startedServerInDebugMode && env.debugMode;
         env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-          [](std::string soilTexture, size_t distance) {
-            return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture), distance);
-          };
+            [](std::string soilTexture, size_t distance) {
+              return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture),
+                                                            distance);
+            };
 
         out = monica::runMonica(kj::mv(env));
       } else {
         out.customId = env.customId;
       }
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
       eda.appendError(kj::str("Error running MONICA: ", e.what()).cStr());
     }
     out.errors = eda.errors;
@@ -138,13 +150,13 @@ kj::Promise<void> RunMonica::run(RunContext context) {
   if (envR.hasTimeSeries()) {
     auto ts = envR.getTimeSeries();
     proms.add(dataAccessorFromTimeSeries(kj::mv(ts))
-              .then([this](const DataAccessor& da2) {
-                      _da = da2;
-                    }, [](auto&& e) {
-                      KJ_LOG(INFO,
-                             "Error while trying to get data accessor from time series: ",
-                             e);
-                    }));
+                  .then([this](const DataAccessor &da2) { _da = da2; },
+                        [](auto &&e) {
+                          KJ_LOG(INFO,
+                                 "Error while trying to get data accessor from "
+                                 "time series: ",
+                                 e);
+                        }));
   } else {
     _da = DataAccessor();
     proms.add(kj::READY_NOW);
@@ -152,33 +164,37 @@ kj::Promise<void> RunMonica::run(RunContext context) {
 
   if (envR.hasSoilProfile()) {
     auto layersProm = fromCapnpSoilProfile(envR.getSoilProfile());
-    proms.add(layersProm.then([this](auto&& layers) mutable {
-                                _soilLayers = layers;
-                              }, [](auto&& e) {
-                                KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
-                              }));
+    proms.add(layersProm.then(
+        [this](auto &&layers) mutable { _soilLayers = layers; },
+        [](auto &&e) {
+          KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
+        }));
   } else {
     _soilLayers = J11Array();
     proms.add(kj::READY_NOW);
   }
 
-  return kj::joinPromises(proms.finish()).then([context, runMonica, this]() mutable {
-                                                 auto out = runMonica(_da, _soilLayers);
-                                                 auto rs = context.getResults();
-                                                 auto res = rs.initResult();
-                                                 res.setType(mas::schema::common::StructuredText::Type::JSON);
-                                                 res.setValue(output::to_json(&out).dump());
-                                               }, [context](auto&& e) mutable {
-                                                 KJ_LOG(INFO,
-                                                        "Error while trying to gather soil and/or time series data: ",
-                                                        e);
-                                                 auto rs = context.getResults();
-                                                 auto res = rs.initResult();
-                                                 res.setType(mas::schema::common::StructuredText::Type::JSON);
-                                                 res.
-                                                   setValue(kj::str("Error while trying to gather soil and/or time series data: ",
-                                                                    e));
-                                               });
+  return kj::joinPromises(proms.finish())
+      .then(
+          [context, runMonica, this]() mutable {
+            auto out = runMonica(_da, _soilLayers);
+            auto rs = context.getResults();
+            auto res = rs.initResult();
+            res.setType(mas::schema::common::StructuredText::Type::JSON);
+            res.setValue(output::to_json(&out).dump());
+          },
+          [context](auto &&e) mutable {
+            KJ_LOG(
+                INFO,
+                "Error while trying to gather soil and/or time series data: ",
+                e);
+            auto rs = context.getResults();
+            auto res = rs.initResult();
+            res.setType(mas::schema::common::StructuredText::Type::JSON);
+            res.setValue(kj::str(
+                "Error while trying to gather soil and/or time series data: ",
+                e));
+          });
 }
 
 /*
@@ -204,8 +220,8 @@ kj::Promise<void> RunMonica::stop(StopContext context) //override
 kj::Promise<void> RunMonica::save(SaveContext context) {
   KJ_LOG(INFO, "save message received");
   if (_restorer) {
-    _restorer->save(_client, context.getResults().initSturdyRef(), context.getResults().initUnsaveSR());
+    _restorer->save(_client, context.getResults().initSturdyRef(),
+                    context.getResults().initUnsaveSR());
   }
   return kj::READY_NOW;
 }
-

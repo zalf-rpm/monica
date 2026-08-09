@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
 Authors:
@@ -13,7 +13,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-//This code is based on kernels/mobile/modules/physiology/vocjjv/vocguenther.h
+// This code is based on kernels/mobile/modules/physiology/vocjjv/vocguenther.h
 /*!
  * @brief
  *  This gas exchange module calculates only
@@ -28,23 +28,24 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
+#include <cmath>
 #include <map>
 #include <vector>
-#include <cmath>
 
 #include "voc-common.h"
 
 namespace Voc {
 
-Emissions calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
-                                                        const MicroClimateData& mc,
-                                                        double dayFraction = 1.0);
+Emissions
+calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+                                             const MicroClimateData &mc,
+                                             double dayFraction = 1.0);
 
-inline Emissions calculateGuentherVOCEmissions(const SpeciesData& species,
-                                                const MicroClimateData& mc,
-                                                double dayFraction = 1.0) {
-  return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc, dayFraction);
+inline Emissions calculateGuentherVOCEmissions(const SpeciesData &species,
+                                               const MicroClimateData &mc,
+                                               double dayFraction = 1.0) {
+  return calculateGuentherVOCEmissionsMultipleSpecies({species}, mc,
+                                                      dayFraction);
 }
 
 } // namespace Voc
-

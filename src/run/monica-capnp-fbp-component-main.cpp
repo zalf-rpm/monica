@@ -96,18 +96,16 @@ public:
   enum PORTS { CONFIG, ENV, RESULT };
 
   std::map<int, kj::StringPtr> inPortNames = {
-    {CONFIG, "conf"},
-    {ENV, "env"},
+      {CONFIG, "conf"},
+      {ENV, "env"},
   };
   std::map<int, kj::StringPtr> outPortNames = {
-    {RESULT, "result"},
+      {RESULT, "result"},
   };
 
-  explicit FBPMain(kj::ProcessContext& context)
-  : ioContext(kj::setupAsyncIo())
-  , conMan(ioContext)
-  , ports(conMan, inPortNames, outPortNames)
-  , context(context) {}
+  explicit FBPMain(kj::ProcessContext &context)
+      : ioContext(kj::setupAsyncIo()), conMan(ioContext),
+        ports(conMan, inPortNames, outPortNames), context(context) {}
 
   kj::MainBuilder::Validity setOutputJsonDefaultConfig() {
     outputJsonDefaultConfig = true;
@@ -158,7 +156,7 @@ public:
     typedef mas::schema::fbp::Channel<IP> Channel;
     typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText,
                                             mas::schema::common::StructuredText>
-      MonicaEnvInstance;
+        MonicaEnvInstance;
     typedef mas::schema::model::Env<mas::schema::common::StructuredText> Env;
 
     if (portInfosReaderSr.size() > 0) {
@@ -166,41 +164,48 @@ public:
       ports.connectFromPortInfos(portInfosReaderSr);
       KJ_LOG(INFO, "connected to portInfosReaderSr");
     } else if (envInSr.size() > 0 && resultOutSr.size() > 0) {
-      ports.connectToSrStr(inPortNames[ENV], envInSr, mas::infrastructure::common::PortConnector::IN);
+      ports.connectToSrStr(inPortNames[ENV], envInSr,
+                           mas::infrastructure::common::PortConnector::IN);
       if (configInSr.size() > 0) {
-        ports.connectToSrStr(inPortNames[CONFIG], configInSr, mas::infrastructure::common::PortConnector::IN);
+        ports.connectToSrStr(inPortNames[CONFIG], configInSr,
+                             mas::infrastructure::common::PortConnector::IN);
       }
-      ports.connectToSrStr(outPortNames[RESULT], resultOutSr, mas::infrastructure::common::PortConnector::OUT);
+      ports.connectToSrStr(outPortNames[RESULT], resultOutSr,
+                           mas::infrastructure::common::PortConnector::OUT);
     } else {
       KJ_LOG(ERROR, "At least env_in_sr and result_out_sr has to be supplied.");
       return false;
     }
 
-
     try {
       if (ports.isInConnected(CONFIG)) {
         KJ_LOG(INFO, "CONFIG port is connected");
         auto configMsg =
-          ports.in(CONFIG).readRequest().send().wait(ioContext.waitScope);
+            ports.in(CONFIG).readRequest().send().wait(ioContext.waitScope);
         KJ_LOG(INFO, "received msg from CONFIG port");
         // check for end of data from in port
         if (!configMsg.isDone()) {
           auto configIp = configMsg.getValue();
-          auto configST = configIp.getContent().getAs<mas::schema::common::StructuredText>();
+          auto configST = configIp.getContent()
+                              .getAs<mas::schema::common::StructuredText>();
           auto configJson = parseJsonString(configST.getValue().cStr());
-          if (configJson.success()) config = configJson.result;
+          if (configJson.success())
+            config = configJson.result;
         }
       }
 
       KJ_LOG(INFO, config.dump());
-      if (config["fromAttr"].is_string()) fromAttr = kj::str(config["fromAttr"].string_value());
-      if (config["toAttr"].is_string()) toAttr = kj::str(config["toAttr"].string_value());
-      if (config["monica_sr"].is_string()) monicaSr = kj::str(config["monica_sr"].string_value());
+      if (config["fromAttr"].is_string())
+        fromAttr = kj::str(config["fromAttr"].string_value());
+      if (config["toAttr"].is_string())
+        toAttr = kj::str(config["toAttr"].string_value());
+      if (config["monica_sr"].is_string())
+        monicaSr = kj::str(config["monica_sr"].string_value());
 
       MonicaEnvInstance::Client runMonicaClient(nullptr);
       if (monicaSr.size() > 0) {
         runMonicaClient =
-          conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
+            conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
       } else {
         runMonicaClient = kj::heap<RunMonica>(startedServerInDebugMode);
       }
@@ -217,8 +222,8 @@ public:
           auto inIp = msg.getValue();
 
           // simply forward open and close brackets downstream
-          if (inIp.getType() == mas::schema::fbp::IP::Type::OPEN_BRACKET
-              || inIp.getType() == mas::schema::fbp::IP::Type::CLOSE_BRACKET) {
+          if (inIp.getType() == mas::schema::fbp::IP::Type::OPEN_BRACKET ||
+              inIp.getType() == mas::schema::fbp::IP::Type::CLOSE_BRACKET) {
             auto wreq = ports.out(RESULT).writeRequest();
             auto outIp = wreq.initValue();
             outIp.setType(inIp.getType());
@@ -253,9 +258,9 @@ public:
             }
             // copy attributes, if any and set result as attribute, if requested
             auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(
-                                                                                inIp, outIp, toAttr);
+                inIp, outIp, toAttr);
             //, capnp::toAny(resJsonStr));
-            KJ_IF_MAYBE(builder, toAttrBuilder) {
+            KJ_IF_MAYBE (builder, toAttrBuilder) {
               builder->setAs<capnp::Text>(resJsonStr);
             }
             KJ_LOG(INFO, "trying to send result on OUT port");
@@ -264,7 +269,7 @@ public:
           }
         }
       }
-    } catch (const kj::Exception& e) {
+    } catch (const kj::Exception &e) {
       KJ_LOG(INFO, "Exception: ", e.getDescription());
       std::cerr << "Exception: " << e.getDescription().cStr() << endl;
     }
@@ -276,33 +281,36 @@ public:
 
   kj::MainFunc getMain() {
     return kj::MainBuilder(
-                           context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
-                           "Offers a MONICA service.")
-           .expectOptionalArg("port_infos_reader_SR",
-                              KJ_BIND_METHOD(*this, setPortInfosReaderSr))
-           .addOption({'O', "output_json_default_config"},
-                      KJ_BIND_METHOD(*this, setOutputJsonDefaultConfig),
-                      "Output JSON configuration file with default settings at "
-                      "commandline. To be used with IIP at 'conf' port.")
-           .addOptionWithArg({"env_in_sr"}, KJ_BIND_METHOD(*this, setEnvInSr),
-                             "<sturdy_ref>", "Sturdy ref to input channel.")
-           .addOptionWithArg({"config_in_sr"}, KJ_BIND_METHOD(*this, setConfigInSr),
-                             "<sturdy_ref>", "Sturdy ref to config channel.")
-           .addOptionWithArg({"result_out_sr"}, KJ_BIND_METHOD(*this, setResultOutSr),
-                             "<sturdy_ref>", "Sturdy ref to output channel.")
-           .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
-                             "<name>", "Name of process to be started.")
-           .addOptionWithArg({'l', "log_level"}, KJ_BIND_METHOD(*this, setLoglevel),
-                             "<loglevel> ", "Set logging level.")
-           .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
-           .build();
+               context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
+               "Offers a MONICA service.")
+        .expectOptionalArg("port_infos_reader_SR",
+                           KJ_BIND_METHOD(*this, setPortInfosReaderSr))
+        .addOption({'O', "output_json_default_config"},
+                   KJ_BIND_METHOD(*this, setOutputJsonDefaultConfig),
+                   "Output JSON configuration file with default settings at "
+                   "commandline. To be used with IIP at 'conf' port.")
+        .addOptionWithArg({"env_in_sr"}, KJ_BIND_METHOD(*this, setEnvInSr),
+                          "<sturdy_ref>", "Sturdy ref to input channel.")
+        .addOptionWithArg({"config_in_sr"},
+                          KJ_BIND_METHOD(*this, setConfigInSr), "<sturdy_ref>",
+                          "Sturdy ref to config channel.")
+        .addOptionWithArg({"result_out_sr"},
+                          KJ_BIND_METHOD(*this, setResultOutSr), "<sturdy_ref>",
+                          "Sturdy ref to output channel.")
+        .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
+                          "<name>", "Name of process to be started.")
+        .addOptionWithArg({'l', "log_level"},
+                          KJ_BIND_METHOD(*this, setLoglevel), "<loglevel> ",
+                          "Set logging level.")
+        .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
+        .build();
   }
 
 private:
   kj::AsyncIoContext ioContext;
   mas::infrastructure::common::ConnectionManager conMan;
   mas::infrastructure::common::PortConnector ports;
-  kj::ProcessContext& context;
+  kj::ProcessContext &context;
   kj::String portInfosReaderSr;
   kj::String monicaSr;
   kj::String fromAttr;

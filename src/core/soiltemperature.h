@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #pragma once
 
@@ -8,8 +8,8 @@
 
 #include <kj/memory.h>
 
-#include "soilcolumn.h"
 #include "monica-parameters.h"
+#include "soilcolumn.h"
 
 namespace monica {
 
@@ -17,8 +17,8 @@ class MonicaModel;
 
 //! Calculation of soil temperature is based on a model developed by PIC
 struct SoilTemperature {
-  SoilColumn* soilColumn{nullptr};
-  MonicaModel* monica{nullptr};
+  SoilColumn *soilColumn{nullptr};
+  MonicaModel *monica{nullptr};
   SoilLayer soilColumnGroundLayer;
   SoilLayer soilColumnBottomLayer;
   SoilTemperatureModuleParameters params;
@@ -43,20 +43,25 @@ struct SoilTemperature {
   std::vector<double> heatFlow;
 };
 
-kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& monica, const SoilTemperatureModuleParameters& params);
-kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& monica,
-                                             mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+kj::Own<SoilTemperature>
+makeSoilTemperature(MonicaModel &monica,
+                    const SoilTemperatureModuleParameters &params);
+kj::Own<SoilTemperature> makeSoilTemperature(
+    MonicaModel &monica,
+    mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
 
 namespace soiltemperature {
 
-void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
-void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
-void step(SoilTemperature* st, double tmin, double tmax, double globrad);
-double calcSoilSurfaceTemperature(const SoilTemperature* st,
-                                 double prevSoilSurfaceTemperature,
-                                 double tmin,
-                                 double tmax,
-                                 double globrad);
+void deserialize(
+    SoilTemperature *st,
+    mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+void serialize(
+    const SoilTemperature *st,
+    mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
+void step(SoilTemperature *st, double tmin, double tmax, double globrad);
+double calcSoilSurfaceTemperature(const SoilTemperature *st,
+                                  double prevSoilSurfaceTemperature,
+                                  double tmin, double tmax, double globrad);
 
 } // namespace soiltemperature
 

@@ -148,14 +148,15 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
   cm->pc_NitrogenResponseOn = simPs.pc_NitrogenResponseOn;
   cm->pc_NumberOfDevelopmentalStages =
       speciesparameters::numberOfDevelopmentalStages(&cps->speciesParams);
-  cm->pc_NumberOfOrgans = speciesparameters::numberOfOrgans(&cps->speciesParams);
+  cm->pc_NumberOfOrgans =
+      speciesparameters::numberOfOrgans(&cps->speciesParams);
   cm->vc_NUptakeFromLayer = std::vector<double>(cm->soilColumn->size(), 0.0);
   cm->pc_OptimumTemperature = cps->cultivarParams.pc_OptimumTemperature;
   cm->vc_OrganBiomass = std::vector<double>(cm->pc_NumberOfOrgans, 0.0);
-  cm->vc_OrganDeadBiomass =
-      std::vector<double>(speciesparameters::numberOfOrgans(&cps->speciesParams), 0.0);
-  cm->vc_OrganGreenBiomass =
-      std::vector<double>(speciesparameters::numberOfOrgans(&cps->speciesParams), 0.0);
+  cm->vc_OrganDeadBiomass = std::vector<double>(
+      speciesparameters::numberOfOrgans(&cps->speciesParams), 0.0);
+  cm->vc_OrganGreenBiomass = std::vector<double>(
+      speciesparameters::numberOfOrgans(&cps->speciesParams), 0.0);
   cm->vc_OrganGrowthIncrement = std::vector<double>(cm->pc_NumberOfOrgans, 0.0);
   cm->pc_OrganGrowthRespiration = cps->speciesParams.pc_OrganGrowthRespiration;
   cm->pc_OrganIdsForPrimaryYield =
@@ -564,10 +565,12 @@ void monica::cropmodule::deserialize(
                    reader.getOrganGrowthIncrement());
   setFromCapnpList(cm->pc_OrganGrowthRespiration,
                    reader.getPcOrganGrowthRespiration());
-  auto deserializeYieldComponents = [](std::vector<YieldComponent>& ycs, auto listReader) {
+  auto deserializeYieldComponents = [](std::vector<YieldComponent> &ycs,
+                                       auto listReader) {
     ycs.resize(listReader.size());
     uint32_t i = 0;
-    for (auto& yc : ycs) yieldcomponent::deserialize(&yc, listReader[i++]);
+    for (auto &yc : ycs)
+      yieldcomponent::deserialize(&yc, listReader[i++]);
   };
   deserializeYieldComponents(cm->pc_OrganIdsForPrimaryYield,
                              reader.getPcOrganIdsForPrimaryYield());
@@ -889,13 +892,16 @@ void monica::cropmodule::serialize(
   setCapnpList(cm->pc_OrganGrowthRespiration,
                builder.initPcOrganGrowthRespiration(
                    (capnp::uint)cm->pc_OrganGrowthRespiration.size()));
-  auto serializeYieldComponents = [](const std::vector<YieldComponent>& ycs, auto listBuilder) {
+  auto serializeYieldComponents = [](const std::vector<YieldComponent> &ycs,
+                                     auto listBuilder) {
     uint32_t i = 0;
-    for (const auto& yc : ycs) yieldcomponent::serialize(&yc, listBuilder[i++]);
+    for (const auto &yc : ycs)
+      yieldcomponent::serialize(&yc, listBuilder[i++]);
   };
-  serializeYieldComponents(cm->pc_OrganIdsForPrimaryYield,
-                           builder.initPcOrganIdsForPrimaryYield(
-                               (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
+  serializeYieldComponents(
+      cm->pc_OrganIdsForPrimaryYield,
+      builder.initPcOrganIdsForPrimaryYield(
+          (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
   serializeYieldComponents(
       cm->pc_OrganIdsForSecondaryYield,
       builder.initPcOrganIdsForSecondaryYield(
@@ -5762,10 +5768,11 @@ void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule *cm) {
       cm->perennialCropParams->speciesParams.pc_NConcentrationPN;
   cm->pc_NConcentrationRoot =
       cm->perennialCropParams->speciesParams.pc_NConcentrationRoot;
-  cm->pc_NumberOfDevelopmentalStages = speciesparameters::numberOfDevelopmentalStages(
+  cm->pc_NumberOfDevelopmentalStages =
+      speciesparameters::numberOfDevelopmentalStages(
+          &cm->perennialCropParams->speciesParams);
+  cm->pc_NumberOfOrgans = speciesparameters::numberOfOrgans(
       &cm->perennialCropParams->speciesParams);
-  cm->pc_NumberOfOrgans =
-      speciesparameters::numberOfOrgans(&cm->perennialCropParams->speciesParams);
   cm->pc_OptimumTemperature =
       cm->perennialCropParams->cultivarParams.pc_OptimumTemperature;
   cm->pc_OrganGrowthRespiration =

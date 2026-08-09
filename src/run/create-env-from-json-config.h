@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
 Authors:
@@ -17,24 +17,27 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <string>
 
-#include "tools/date.h"
-#include "run-monica.h"
-#include "json11/json11.hpp"
 #include "json11/json11-helper.h"
+#include "json11/json11.hpp"
+#include "run-monica.h"
+#include "tools/date.h"
 
 namespace monica {
 
-Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json& root, 
-                                                      const json11::Json& j);
+Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json &root,
+                                                      const json11::Json &j);
 
-json11::Json createEnvJsonFromJsonStrings(std::map<std::string, std::string> params);
+json11::Json
+createEnvJsonFromJsonStrings(std::map<std::string, std::string> params);
 
-json11::Json createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
+json11::Json
+createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
 
 Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 
 Env createEnvFromJsonObjects(std::map<std::string, json11::Json> params);
 
-Tools::Errors updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params);
+Tools::Errors
+updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params);
 
-}
+} // namespace monica

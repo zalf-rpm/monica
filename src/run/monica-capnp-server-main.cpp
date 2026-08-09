@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
 Authors:
@@ -15,17 +15,17 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <iostream>
 
+#include <capnp/ez-rpc.h>
 #include <kj/common.h>
 #include <kj/debug.h>
 #include <kj/main.h>
-#include <capnp/ez-rpc.h>
 
 #include "common/restorable-service-main.h"
 #include "resource/version.h"
 
-#include "run-monica-capnp.h"
-#include "model.capnp.h"
 #include "common.capnp.h"
+#include "model.capnp.h"
+#include "run-monica-capnp.h"
 
 #define KJ_MVCAP(var) var = kj::mv(var)
 
@@ -33,50 +33,61 @@ namespace monica {
 
 using RSM = mas::infrastructure::common::RestorableServiceMain;
 
-class MonicaCapnpServerMain : public RSM
-{
+class MonicaCapnpServerMain : public RSM {
 public:
-  explicit MonicaCapnpServerMain(kj::ProcessContext& context)
-  : RSM(context, kj::str("MONICA Cap'n Proto Server v", VER_FILE_VERSION_STR), "Offers a MONICA as a Cap'n Proto service.")
-  {}
+  explicit MonicaCapnpServerMain(kj::ProcessContext &context)
+      : RSM(context,
+            kj::str("MONICA Cap'n Proto Server v", VER_FILE_VERSION_STR),
+            "Offers a MONICA as a Cap'n Proto service.") {}
 
-  kj::MainBuilder::Validity setDebug() { startedServerInDebugMode = true; return true; }
-  kj::MainBuilder::Validity setSRT(kj::StringPtr name) { srt = kj::str(name); return true; }
+  kj::MainBuilder::Validity setDebug() {
+    startedServerInDebugMode = true;
+    return true;
+  }
+  kj::MainBuilder::Validity setSRT(kj::StringPtr name) {
+    srt = kj::str(name);
+    return true;
+  }
 
-  kj::MainBuilder::Validity startService()
-  {
-    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
+  kj::MainBuilder::Validity startService() {
+    typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText,
+                                            mas::schema::common::StructuredText>
+        MonicaEnvInstance;
 
     KJ_LOG(INFO, "Starting Cap'n Proto MONICA service");
 
-      auto ownedRunMonica = kj::heap<RunMonica>(startedServerInDebugMode);
-      auto runMonica = ownedRunMonica.get();
-      if (name.size() > 0) runMonica->setName(name);
-      MonicaEnvInstance::Client runMonicaClient = kj::mv(ownedRunMonica);
-      runMonica->setClient(runMonicaClient);
-      KJ_LOG(INFO, "created MONICA service");
+    auto ownedRunMonica = kj::heap<RunMonica>(startedServerInDebugMode);
+    auto runMonica = ownedRunMonica.get();
+    if (name.size() > 0)
+      runMonica->setName(name);
+    MonicaEnvInstance::Client runMonicaClient = kj::mv(ownedRunMonica);
+    runMonica->setClient(runMonicaClient);
+    KJ_LOG(INFO, "created MONICA service");
 
-      startRestorerSetup(runMonicaClient);
-      runMonica->setRestorer(restorer);
+    startRestorerSetup(runMonicaClient);
+    runMonica->setRestorer(restorer);
 
-      auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false).wait(ioContext.waitScope).sturdyRef;
-      if (outputSturdyRefs && monicaSR.size() > 0) std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
+    auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false)
+                        .wait(ioContext.waitScope)
+                        .sturdyRef;
+    if (outputSturdyRefs && monicaSR.size() > 0)
+      std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
 
-      // Run forever, accepting connections and handling requests.
-      kj::NEVER_DONE.wait(ioContext.waitScope);
+    // Run forever, accepting connections and handling requests.
+    kj::NEVER_DONE.wait(ioContext.waitScope);
 
     KJ_LOG(INFO, "stopped Cap'n Proto MONICA server");
     return true;
   }
 
-  kj::MainFunc getMain()
-  {
+  kj::MainFunc getMain() {
     return addRestorableServiceOptions()
-      .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug), "Activate debug output.")
-      .addOptionWithArg({'t', "srt"}, KJ_BIND_METHOD(*this, setSRT),
+        .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug),
+                   "Activate debug output.")
+        .addOptionWithArg({'t', "srt"}, KJ_BIND_METHOD(*this, setSRT),
                           "<sturdy-ref token>", "Set a fixed sturdy ref token.")
-      .callAfterParsing(KJ_BIND_METHOD(*this, startService))
-      .build();
+        .callAfterParsing(KJ_BIND_METHOD(*this, startService))
+        .build();
   }
 
 private:
@@ -84,6 +95,6 @@ private:
   kj::String srt;
 };
 
-}
+} // namespace monica
 
 KJ_MAIN(monica::MonicaCapnpServerMain)

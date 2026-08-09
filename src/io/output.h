@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
 Authors:
@@ -21,88 +21,91 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
+#include "climate/climate-common.h"
 #include "common/dll-exports.h"
 #include "json11/json11-helper.h"
-#include "climate/climate-common.h"
 #include "tools/date.h"
 
 namespace monica {
-  struct DLL_API OId {
-    enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
+struct DLL_API OId {
+  enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
 
-    enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, _UNDEFINED_ORGAN_ };
+  enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, _UNDEFINED_ORGAN_ };
 
-    int id{-1};
-    std::string name;
-    std::string displayName;
-    std::string unit;
-    std::string jsonInput;
-    OP layerAggOp{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
-    OP timeAggOp{AVG}; //! aggregate values in a second time range (e.g. monthly)
-    ORGAN organ{_UNDEFINED_ORGAN_};
-    int fromLayer{-1}, toLayer{-1};
+  int id{-1};
+  std::string name;
+  std::string displayName;
+  std::string unit;
+  std::string jsonInput;
+  OP layerAggOp{
+      NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
+  OP timeAggOp{AVG}; //! aggregate values in a second time range (e.g. monthly)
+  ORGAN organ{_UNDEFINED_ORGAN_};
+  int fromLayer{-1}, toLayer{-1};
+};
+
+//! just name
+DLL_API OId makeOId(int id);
+//! id and organ
+DLL_API OId makeOId(int id, OId::ORGAN organ);
+//! id and layer aggregation
+DLL_API OId makeOId(int id, OId::OP layerAgg);
+//! id, layer aggregation and time aggregation, shortcut for aggregating all
+//! layers in non daily setting
+DLL_API OId makeOId(int id, OId::OP layerAgg, OId::OP timeAgg);
+//! id, layer aggregation of from to (incl) to layers
+DLL_API OId makeOId(int id, int from, int to, OId::OP layerAgg);
+//! aggregate layers from to (incl) to in a non daily setting
+DLL_API OId makeOId(int id, int from, int to, OId::OP layerAgg,
+                    OId::OP timeAgg);
+DLL_API OId makeOId(json11::Json object);
+
+namespace oid {
+
+DLL_API Tools::Errors merge(OId *oid, json11::Json j);
+DLL_API json11::Json to_json(const OId *oid);
+
+inline bool isRange(const OId *oid) {
+  return oid->fromLayer >= 0 && oid->toLayer >= 0;
+} // && fromLayer < toLayer; }
+
+inline bool isOrgan(const OId *oid) {
+  return oid->organ != OId::_UNDEFINED_ORGAN_;
+}
+
+DLL_API std::string toString(const OId *oid, bool includeTimeAgg = false);
+
+DLL_API std::string toString(const OId *oid, OId::OP op);
+DLL_API std::string toString(const OId *oid, OId::ORGAN organ);
+
+DLL_API std::string outputName(const OId *oid);
+
+} // namespace oid
+
+struct DLL_API Output {
+  // std::string customId;
+  json11::Json customId;
+
+  struct Data {
+    std::string origSpec;
+    std::vector<OId> outputIds;
+    std::vector<Tools::J11Array> results;
+    std::vector<Tools::J11Object> resultsObj;
   };
+  std::vector<Data> data;
 
-  //! just name
-  DLL_API OId makeOId(int id);
-  //! id and organ
-  DLL_API OId makeOId(int id, OId::ORGAN organ);
-  //! id and layer aggregation
-  DLL_API OId makeOId(int id, OId::OP layerAgg);
-  //! id, layer aggregation and time aggregation, shortcut for aggregating all layers in non daily setting
-  DLL_API OId makeOId(int id, OId::OP layerAgg, OId::OP timeAgg);
-  //! id, layer aggregation of from to (incl) to layers
-  DLL_API OId makeOId(int id, int from, int to, OId::OP layerAgg);
-  //! aggregate layers from to (incl) to in a non daily setting
-  DLL_API OId makeOId(int id, int from, int to, OId::OP layerAgg, OId::OP timeAgg);
-  DLL_API OId makeOId(json11::Json object);
+  std::vector<std::string> errors;
+  std::vector<std::string> warnings;
+};
 
-  namespace oid {
+DLL_API Output makeOutput(std::string error);
+DLL_API Output makeOutput(json11::Json object);
 
-  DLL_API Tools::Errors merge(OId* oid, json11::Json j);
-  DLL_API json11::Json to_json(const OId* oid);
+namespace output {
 
-  inline bool isRange(const OId* oid) { return oid->fromLayer >= 0 && oid->toLayer >= 0; }// && fromLayer < toLayer; }
+DLL_API Tools::Errors merge(Output *output, json11::Json j);
+DLL_API json11::Json to_json(const Output *output);
 
-  inline bool isOrgan(const OId* oid) { return oid->organ != OId::_UNDEFINED_ORGAN_; }
+} // namespace output
 
-  DLL_API std::string toString(const OId* oid, bool includeTimeAgg = false);
-
-  DLL_API std::string toString(const OId* oid, OId::OP op);
-  DLL_API std::string toString(const OId* oid, OId::ORGAN organ);
-
-  DLL_API std::string outputName(const OId* oid);
-
-  } // namespace oid
-
-  //---------------------------------------------------------------------------
-
-  struct DLL_API Output
-  {
-    //std::string customId;
-    json11::Json customId;
-
-    struct Data
-    {
-      std::string origSpec;
-      std::vector<OId> outputIds;
-      std::vector<Tools::J11Array> results;
-      std::vector<Tools::J11Object> resultsObj;
-    };
-    std::vector<Data> data;
-
-    std::vector<std::string> errors;
-    std::vector<std::string> warnings;
-  };
-
-  DLL_API Output makeOutput(std::string error);
-  DLL_API Output makeOutput(json11::Json object);
-
-  namespace output {
-
-  DLL_API Tools::Errors merge(Output* output, json11::Json j);
-  DLL_API json11::Json to_json(const Output* output);
-
-  } // namespace output
-
-}  // namespace monica
+} // namespace monica

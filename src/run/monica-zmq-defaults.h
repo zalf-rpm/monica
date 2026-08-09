@@ -1,15 +1,15 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -37,4 +37,4 @@ static const char *defInputAddress = "tcp://localhost:6666";
 static const char *defOutputAddress = "tcp://localhost:7777";
 static const char *defServeAddress = "tcp://*:6666";
 
-}
+} // namespace monica

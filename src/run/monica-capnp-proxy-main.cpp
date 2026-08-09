@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
 Authors:
@@ -13,24 +13,24 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
 
-#include <kj/debug.h>
-#include <kj/common.h>
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/rpc-twoparty.h>
+#include <kj/common.h>
+#include <kj/debug.h>
 
-#include "tools/debug.h"
 #include "common/rpc-connection-manager.h"
+#include "tools/debug.h"
 
 #include "run-monica-capnp.h"
 
-#include "model.capnp.h"
 #include "common.capnp.h"
+#include "model.capnp.h"
 
 #include "common/sole.hpp"
 
@@ -45,20 +45,26 @@ using namespace mas::infrastructure::common;
 string appName = "monica-capnp-proxy";
 string version = "1.0.0-beta";
 
-typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstance;
-typedef mas::schema::model::EnvInstanceProxy<mas::schema::common::StructuredText, mas::schema::common::StructuredText> MonicaEnvInstanceProxy;
+typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText,
+                                        mas::schema::common::StructuredText>
+    MonicaEnvInstance;
+typedef mas::schema::model::EnvInstanceProxy<
+    mas::schema::common::StructuredText, mas::schema::common::StructuredText>
+    MonicaEnvInstanceProxy;
 
-class RunMonicaProxy final
-    : public mas::schema::model::EnvInstanceProxy<mas::schema::common::StructuredText, mas::schema::common::StructuredText>::Server {
+class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy<
+                                 mas::schema::common::StructuredText,
+                                 mas::schema::common::StructuredText>::Server {
   struct Unregister final : public MonicaEnvInstanceProxy::Unregister::Server {
     RunMonicaProxy &_proxy;
     size_t _monicaServerId;
 
-    Unregister(RunMonicaProxy &proxy, size_t monicaServerId) : _proxy(proxy), _monicaServerId(monicaServerId) {}
+    Unregister(RunMonicaProxy &proxy, size_t monicaServerId)
+        : _proxy(proxy), _monicaServerId(monicaServerId) {}
 
     virtual ~Unregister() noexcept(false) { unreg(); }
 
-    //do @0 ();
+    // do @0 ();
     kj::Promise<void> unregister(UnregisterContext context) override {
       unreg();
       context.getResults().setSuccess(true);
@@ -95,14 +101,15 @@ class RunMonicaProxy final
 public:
   RunMonicaProxy() : _uuid(sole::uuid4().str()) {}
 
-  RunMonicaProxy(vector<MonicaEnvInstance::Client> &monicas) : _uuid(sole::uuid4().str()) {
+  RunMonicaProxy(vector<MonicaEnvInstance::Client> &monicas)
+      : _uuid(sole::uuid4().str()) {
     size_t id = 0;
-    for (auto &&client: monicas) {
+    for (auto &&client : monicas) {
       _xs.push_back({kj::mv(client), id++, 0});
     }
   }
 
-  kj::Promise<void> info(InfoContext context) //override
+  kj::Promise<void> info(InfoContext context) // override
   {
     auto rs = context.getResults();
 
@@ -112,7 +119,8 @@ public:
     return kj::READY_NOW;
   }
 
-  kj::Promise<void> run(RunContext context) override //run @0 (env :Env) -> (result :Common.StructuredText);
+  kj::Promise<void> run(RunContext context)
+      override // run @0 (env :Env) -> (result :Common.StructuredText);
   {
     if (_xs.empty())
       return kj::READY_NOW;
@@ -121,49 +129,54 @@ public:
     if (min->jobs > 0 || min->jobs < 0) {
       for (size_t i = 0, size = _xs.size(); i < size; i++) {
         auto &x = _xs[i];
-        if (x.jobs < 0) //skip empty storage places
+        if (x.jobs < 0) // skip empty storage places
           continue;
         if (x.jobs < min->jobs) {
           min = &x;
-          if (min->jobs == 0) //stop searching if a worker has nothing to do
+          if (min->jobs == 0) // stop searching if a worker has nothing to do
             break;
         }
       }
     }
-    if (min->jobs < 0) //just empty storage places, no clients connected
+    if (min->jobs < 0) // just empty storage places, no clients connected
       return kj::READY_NOW;
 
     auto req = min->client.runRequest();
     req.setEnv(context.getParams().getEnv());
     min->jobs++;
     auto id = min->id;
-    cout << "added job to worker: " << id << " now " << min->jobs << " in worker queue" << endl;
-    return req.send().then([context, id, this](auto &&res) mutable {
-      if (id < this->_xs.size()) {
-        X &x = _xs[id];
-        x.jobs--;
-        cout << "finished job of worker: " << id << " now " << x.jobs << " in worker queue" << endl;
-        context.setResults(res);
-      }
-    }, [context, id, this](kj::Exception &&exception) {
-      cout << "job for worker with id: " << id << " failed" << endl;
-      cout << "Exception: " << exception.getDescription().cStr() << endl;
-      //try to erase id from map, so it can't be used anymore
-      if (id < this->_xs.size()) {
-        _xs[id].unset();
-      }
-    });
+    cout << "added job to worker: " << id << " now " << min->jobs
+         << " in worker queue" << endl;
+    return req.send().then(
+        [context, id, this](auto &&res) mutable {
+          if (id < this->_xs.size()) {
+            X &x = _xs[id];
+            x.jobs--;
+            cout << "finished job of worker: " << id << " now " << x.jobs
+                 << " in worker queue" << endl;
+            context.setResults(res);
+          }
+        },
+        [context, id, this](kj::Exception &&exception) {
+          cout << "job for worker with id: " << id << " failed" << endl;
+          cout << "Exception: " << exception.getDescription().cStr() << endl;
+          // try to erase id from map, so it can't be used anymore
+          if (id < this->_xs.size()) {
+            _xs[id].unset();
+          }
+        });
   }
 
-  kj::Promise<void> registerEnvInstance(
-      RegisterEnvInstanceContext context) override  // registerEnvInstance @0 (instance :EnvInstance) -> (unregister :Common.Callback);
+  kj::Promise<void> registerEnvInstance(RegisterEnvInstanceContext context)
+      override // registerEnvInstance @0 (instance :EnvInstance) -> (unregister
+               // :Common.Callback);
   {
     auto instance = context.getParams().getInstance();
     bool filledEmptySlot = false;
     size_t registeredAsId = 0;
-    for (X &x: _xs) {
+    for (X &x : _xs) {
       if (x.jobs < 0) {
-        //x = { kj::mv(instance), x.id, 0 };
+        // x = { kj::mv(instance), x.id, 0 };
         x.reset(kj::mv(instance));
         registeredAsId = x.id;
         filledEmptySlot = true;
@@ -176,43 +189,51 @@ public:
     }
 
     int count = 0;
-    for (X &x: _xs) {
+    for (X &x : _xs) {
       if (x.jobs >= 0)
         count++;
     }
 
-    cout << "added service to proxy: service-id: " << registeredAsId << " -> " << count << " services registered now"
-         << endl;
+    cout << "added service to proxy: service-id: " << registeredAsId << " -> "
+         << count << " services registered now" << endl;
 
-    context.getResults().setUnregister(kj::heap<Unregister>(*this, registeredAsId));
+    context.getResults().setUnregister(
+        kj::heap<Unregister>(*this, registeredAsId));
 
     return kj::READY_NOW;
   }
 };
 
-kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider, bool startMonicaThreadsInDebugMode) {
-  return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](
-      kj::AsyncIoProvider &ioProvider, kj::AsyncIoStream &stream, kj::WaitScope &waitScope) {
-    capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
-    auto server = makeRpcServer(network, kj::heap<RunMonica>(startMonicaThreadsInDebugMode,
-                                                             new mas::infrastructure::common::Restorer()));
-    network.onDisconnect().wait(waitScope);
-  });
+kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider,
+                                          bool startMonicaThreadsInDebugMode) {
+  return ioProvider.newPipeThread(
+      [startMonicaThreadsInDebugMode](kj::AsyncIoProvider &ioProvider,
+                                      kj::AsyncIoStream &stream,
+                                      kj::WaitScope &waitScope) {
+        capnp::TwoPartyVatNetwork network(stream,
+                                          capnp::rpc::twoparty::Side::SERVER);
+        auto server = makeRpcServer(
+            network,
+            kj::heap<RunMonica>(startMonicaThreadsInDebugMode,
+                                new mas::infrastructure::common::Restorer()));
+        network.onDisconnect().wait(waitScope);
+      });
 }
 
-//kj::Promise<kj::Own<kj::AsyncIoStream>> connectAttach(kj::Own<kj::NetworkAddress>&& addr) {
-//	return addr->connect().attach(kj::mv(addr));
-//}
+// kj::Promise<kj::Own<kj::AsyncIoStream>>
+// connectAttach(kj::Own<kj::NetworkAddress>&& addr) { 	return
+//addr->connect().attach(kj::mv(addr));
+// }
 
-//struct ErrorHandler : public kj::TaskSet::ErrorHandler {
+// struct ErrorHandler : public kj::TaskSet::ErrorHandler {
 //	void taskFailed(kj::Exception&& exception) override {
 //		kj::throwFatalException(kj::mv(exception));
 //	}
-//};
-//ErrorHandler eh;
-//kj::TaskSet tasks(eh);
+// };
+// ErrorHandler eh;
+// kj::TaskSet tasks(eh);
 
-//struct ServerContext {
+// struct ServerContext {
 //	kj::Own<kj::AsyncIoStream> stream;
 //	capnp::TwoPartyVatNetwork network;
 //	capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
@@ -221,22 +242,23 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider, bool 
 //		kj::Own<kj::AsyncIoStream>&& stream,
 //		capnp::ReaderOptions readerOpts)
 //		: stream(kj::mv(stream))
-//		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER, readerOpts)
-//		, rpcSystem(makeRpcServer(network, mainInterface)) {}
+//		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER,
+//readerOpts) 		, rpcSystem(makeRpcServer(network, mainInterface)) {}
 //};
 
-//void acceptLoop(kj::Own<kj::ConnectionReceiver>&& listener, capnp::ReaderOptions readerOpts) {
-//	auto ptr = listener.get();
+// void acceptLoop(kj::Own<kj::ConnectionReceiver>&& listener,
+// capnp::ReaderOptions readerOpts) { 	auto ptr = listener.get();
 //	tasks.add(ptr->accept().then(kj::mvCapture(kj::mv(listener),
 //		[readerOpts](kj::Own<kj::ConnectionReceiver>&& listener,
 //			kj::Own<kj::AsyncIoStream>&& connection) {
 //				acceptLoop(kj::mv(listener), readerOpts);
 
 //				cout << "connection from client" << endl;
-//				auto server = kj::heap<ServerContext>(kj::mv(connection), readerOpts);
+//				auto server =
+//kj::heap<ServerContext>(kj::mv(connection), readerOpts);
 
-// Arrange to destroy the server context when all references are gone, or when the
-// EzRpcServer is destroyed (which will destroy the TaskSet).
+// Arrange to destroy the server context when all references are gone, or when
+// the EzRpcServer is destroyed (which will destroy the TaskSet).
 //				tasks.add(server->network.onDisconnect().attach(kj::mv(server)));
 //		})));
 //}
@@ -247,9 +269,9 @@ struct ThreadContext {
   capnp::RpcSystem<capnp::rpc::twoparty::VatId> rpcSystem;
 
   ThreadContext(kj::AsyncIoProvider::PipeThread &&serverThread)
-      : serverThread(kj::mv(serverThread)), network(*this->serverThread.pipe, capnp::rpc::twoparty::Side::SERVER),
-        rpcSystem(makeRpcClient(network)) {
-  }
+      : serverThread(kj::mv(serverThread)),
+        network(*this->serverThread.pipe, capnp::rpc::twoparty::Side::SERVER),
+        rpcSystem(makeRpcClient(network)) {}
 };
 
 struct CMETRes {
@@ -257,8 +279,8 @@ struct CMETRes {
   MonicaEnvInstance::Client client;
 };
 
-CMETRes
-createMonicaEnvThread(kj::AsyncIoProvider &ioProvider, bool startMonicaThreadsInDebugMode) {
+CMETRes createMonicaEnvThread(kj::AsyncIoProvider &ioProvider,
+                              bool startMonicaThreadsInDebugMode) {
   auto serverThread = runServer(ioProvider, startMonicaThreadsInDebugMode);
   auto tc = kj::heap<ThreadContext>(kj::mv(serverThread));
 
@@ -281,33 +303,39 @@ int main(int argc, const char *argv[]) {
   unsigned int no_of_threads = 0;
   bool startMonicaThreadsInDebugMode = false;
 
-  //init path to db-connections.ini
-  //if (auto monicaHome = getenv("MONICA_HOME"))
+  // init path to db-connections.ini
+  // if (auto monicaHome = getenv("MONICA_HOME"))
   //{
-  //	auto pathToFile = string(monicaHome) + Tools::pathSeparator() + "db-connections.ini";
+  //	auto pathToFile = string(monicaHome) + Tools::pathSeparator() +
+  //"db-connections.ini";
   //	//init for monica-run
   //	Db::dbConnectionParameters(pathToFile);
-  //}
+  // }
 
-  //use a possibly non-default db-connections.ini
-  //Db::dbConnectionParameters("db-connections.ini");
+  // use a possibly non-default db-connections.ini
+  // Db::dbConnectionParameters("db-connections.ini");
 
   auto printHelp = [=]() {
-    cout
-        << appName << "[options]" << endl
-        << endl
-        << "options:" << endl
-        << endl
-        << " -h | --help ... this help output" << endl
-        << " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
-        << endl
-        << " -d | --debug "
-           "... show debug outputs" << endl
-        << " -p | --port ... PORT (default: none)] "
-           "... runs the server bound to the port, PORT may be ommited to choose port automatically." << endl
-        << " -t | --monica-threads ... NUMBER (default: " << no_of_threads << ")] "
-                                                                              "... starts additionally to the proxy NUMBER of MONICA threads which can be served via the proxy."
-        << endl;
+    cout << appName << "[options]" << endl
+         << endl
+         << "options:" << endl
+         << endl
+         << " -h | --help ... this help output" << endl
+         << " -v | --version ... outputs " << appName
+         << " version and ZeroMQ version being used" << endl
+         << endl
+         << " -d | --debug "
+            "... show debug outputs"
+         << endl
+         << " -p | --port ... PORT (default: none)] "
+            "... runs the server bound to the port, PORT may be ommited to "
+            "choose port automatically."
+         << endl
+         << " -t | --monica-threads ... NUMBER (default: " << no_of_threads
+         << ")] "
+            "... starts additionally to the proxy NUMBER of MONICA threads "
+            "which can be served via the proxy."
+         << endl;
   };
 
   if (argc >= 1) {
@@ -331,25 +359,26 @@ int main(int argc, const char *argv[]) {
 
     auto ioContext = kj::setupAsyncIo();
 
-    //auto paf = kj::newPromiseAndFulfiller<uint>();
-    //kj::ForkedPromise<uint> portPromise = paf.promise.fork();
+    // auto paf = kj::newPromiseAndFulfiller<uint>();
+    // kj::ForkedPromise<uint> portPromise = paf.promise.fork();
 
-    //auto& network = ioContext.provider->getNetwork();
-    //auto bindAddress = address + (port < 0 ? "" : string(":") + to_string(port));
-    //uint defaultPort = 0;
+    // auto& network = ioContext.provider->getNetwork();
+    // auto bindAddress = address + (port < 0 ? "" : string(":") +
+    // to_string(port)); uint defaultPort = 0;
 
-    //auto&& portFulfiller = paf.fulfiller;
-    //tasks.add(network.parseAddress(bindAddress, defaultPort)
-    //  .then([KJ_MVCAP(portFulfiller)](kj::Own<kj::NetworkAddress>&& addr) mutable {
-    //  auto listener = addr->listen();
-    //  portFulfiller->fulfill(listener->getPort());
-    //  acceptLoop(kj::mv(listener), capnp::ReaderOptions());
-    //}));
+    // auto&& portFulfiller = paf.fulfiller;
+    // tasks.add(network.parseAddress(bindAddress, defaultPort)
+    //   .then([KJ_MVCAP(portFulfiller)](kj::Own<kj::NetworkAddress>&& addr)
+    //   mutable { auto listener = addr->listen();
+    //   portFulfiller->fulfill(listener->getPort());
+    //   acceptLoop(kj::mv(listener), capnp::ReaderOptions());
+    // }));
 
     vector<MonicaEnvInstance::Client> clients;
     vector<kj::Promise<void>> proms;
     for (unsigned int i = 0; i < no_of_threads; i++) {
-      auto promAndClient = createMonicaEnvThread(*ioContext.provider, startMonicaThreadsInDebugMode);
+      auto promAndClient = createMonicaEnvThread(*ioContext.provider,
+                                                 startMonicaThreadsInDebugMode);
       proms.push_back(promAndClient.fp.addBranch());
       clients.push_back(kj::mv(promAndClient.client));
     }
@@ -357,16 +386,17 @@ int main(int argc, const char *argv[]) {
     capnp::Capability::Client mainInterface = kj::heap<RunMonicaProxy>(clients);
 
     ConnectionManager conMan(ioContext);
-    auto portPromise = conMan.bind(mainInterface, address, port < 0 ? 0U : kj::uint(port));
+    auto portPromise =
+        conMan.bind(mainInterface, address, port < 0 ? 0U : kj::uint(port));
     auto port = portPromise.wait(ioContext.waitScope);
 
-    //port = portPromise.addBranch().wait(ioContext.waitScope);
+    // port = portPromise.addBranch().wait(ioContext.waitScope);
 
     /*
-    auto cap = conman.connect(ioContext, "capnp://insecure@localhost:10001/abcd").wait(ioContext.waitScope);
-    auto registratorCap = cap.castAs<rpc::registry::Registrator>();
-    auto regReq = registratorCap.registerRequest();
-    regReq.setCategoryId("abc");
+    auto cap = conman.connect(ioContext,
+"capnp://insecure@localhost:10001/abcd").wait(ioContext.waitScope); auto
+registratorCap = cap.castAs<rpc::registry::Registrator>(); auto regReq =
+registratorCap.registerRequest(); regReq.setCategoryId("abc");
     regReq.setRef(mainInterface.castAs<mas::schema::common::Identifiable>());
 //{
       auto regResp = regReq.send().wait(ioContext.waitScope);
@@ -374,18 +404,17 @@ int main(int argc, const char *argv[]) {
 //		}
     //unreg.callRequest().send().wait(ioContext.waitScope);
 
-    auto bsCap = conman.connect(ioContext, "capnp://insecure@localhost:10001").wait(ioContext.waitScope);
-    auto registryCap = bsCap.castAs<rpc::registry::Registry>();
-    auto entriesReq = registryCap.entriesRequest();
-    entriesReq.setCategoryId("abc");
-    auto entriesRes = entriesReq.send().wait(ioContext.waitScope);
-    auto entries = entriesRes.getEntries();
-    auto fstEntry = entries[0];
-    //auto self = fstEntry.getRef().castAs<mas::schema::model::EnvInstanceProxy<capnp::Text, capnp::Text>>();
-    auto catId = fstEntry.getCategoryId();
-    cout << "catId: " << catId.cStr() << endl;
-    auto ref = fstEntry.getRef();
-    auto persistSelfCap = fstEntry.getRef().castAs<capnp::Persistent<capnp::Text, capnp::Text>>();
+    auto bsCap = conman.connect(ioContext,
+"capnp://insecure@localhost:10001").wait(ioContext.waitScope); auto registryCap
+= bsCap.castAs<rpc::registry::Registry>(); auto entriesReq =
+registryCap.entriesRequest(); entriesReq.setCategoryId("abc"); auto entriesRes =
+entriesReq.send().wait(ioContext.waitScope); auto entries =
+entriesRes.getEntries(); auto fstEntry = entries[0];
+    //auto self =
+fstEntry.getRef().castAs<mas::schema::model::EnvInstanceProxy<capnp::Text,
+capnp::Text>>(); auto catId = fstEntry.getCategoryId(); cout << "catId: " <<
+catId.cStr() << endl; auto ref = fstEntry.getRef(); auto persistSelfCap =
+fstEntry.getRef().castAs<capnp::Persistent<capnp::Text, capnp::Text>>();
 
     auto saveReq = persistSelfCap.saveRequest();
     auto sturdyRefRes = saveReq.send().wait(ioContext.waitScope);
@@ -398,7 +427,7 @@ int main(int argc, const char *argv[]) {
     cout << "sr2: " << sturdyRef2 << endl;
     */
 
-    //port = portPromise.addBranch().wait(ioContext.waitScope);
+    // port = portPromise.addBranch().wait(ioContext.waitScope);
     if (port == 0) {
       // The address format "unix:/path/to/socket" opens a unix domain socket,
       // in which case the port will be zero.
@@ -415,4 +444,3 @@ int main(int argc, const char *argv[]) {
 
   return 0;
 }
-

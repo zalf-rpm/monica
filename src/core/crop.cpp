@@ -102,14 +102,16 @@ void Crop::deserialize(mas::schema::model::monica::CropState::Reader reader) {
     cropparameters::deserialize(&_cropParams, reader.getCropParams());
   if (reader.hasPerennialCropParams()) {
     _separatePerennialCropParams = nullptr;
-    _separatePerennialCropParams =
-        kj::heap<CropParameters>(makeCropParameters(reader.getPerennialCropParams()));
+    _separatePerennialCropParams = kj::heap<CropParameters>(
+        makeCropParameters(reader.getPerennialCropParams()));
     _perennialCropParams = *_separatePerennialCropParams.get();
   }
-  cropresidueparameters::deserialize(&_residueParams, reader.getResidueParams());
+  cropresidueparameters::deserialize(&_residueParams,
+                                     reader.getResidueParams());
   _crossCropAdaptionFactor = reader.getCrossCropAdaptionFactor();
   _automaticHarvest = reader.getAutomaticHarvest();
-  automaticharvestparameters::deserialize(&_automaticHarvestParams, reader.getAutomaticHarvestParams());
+  automaticharvestparameters::deserialize(&_automaticHarvestParams,
+                                          reader.getAutomaticHarvestParams());
 }
 
 void Crop::serialize(
@@ -127,11 +129,14 @@ void Crop::serialize(
   if (isValid())
     cropparameters::serialize(&_cropParams, builder.initCropParams());
   if (_separatePerennialCropParams)
-    cropparameters::serialize(_separatePerennialCropParams.get(), builder.initPerennialCropParams());
-  cropresidueparameters::serialize(&_residueParams, builder.initResidueParams());
+    cropparameters::serialize(_separatePerennialCropParams.get(),
+                              builder.initPerennialCropParams());
+  cropresidueparameters::serialize(&_residueParams,
+                                   builder.initResidueParams());
   builder.setCrossCropAdaptionFactor(_crossCropAdaptionFactor);
   builder.setAutomaticHarvest(_automaticHarvest);
-  automaticharvestparameters::serialize(&_automaticHarvestParams, builder.initAutomaticHarvestParams());
+  automaticharvestparameters::serialize(&_automaticHarvestParams,
+                                        builder.initAutomaticHarvestParams());
 }
 
 Errors Crop::merge(json11::Json j) {
@@ -184,7 +189,8 @@ Errors Crop::merge(json11::Json j) {
           jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err)) {
         _separatePerennialCropParams = nullptr;
         _separatePerennialCropParams = kj::heap<CropParameters>();
-        cropparameters::merge(_separatePerennialCropParams.get(), j["cropParams"]);
+        cropparameters::merge(_separatePerennialCropParams.get(),
+                              j["cropParams"]);
         _perennialCropParams = *_separatePerennialCropParams.get();
       }
     }
@@ -223,7 +229,8 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const {
               {"harvestDate", _harvestDate.toIsoDateString()},
               {"cuttingDates", cds},
               {"automaticHarvest", _automaticHarvest},
-              {"AutomaticHarvestParams", automaticharvestparameters::to_json(&_automaticHarvestParams)}};
+              {"AutomaticHarvestParams",
+               automaticharvestparameters::to_json(&_automaticHarvestParams)}};
 
   if (_isWinterCrop.isValue())
     o["is-winter-crop"] = _isWinterCrop.value();
@@ -232,7 +239,8 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const {
     if (_isValid)
       o["cropParams"] = cropparameters::to_json(&cropParameters());
     if (_separatePerennialCropParams)
-      o["perennialCropParams"] = cropparameters::to_json(&perennialCropParameters());
+      o["perennialCropParams"] =
+          cropparameters::to_json(&perennialCropParameters());
     if (_isValid)
       o["residueParams"] = cropresidueparameters::to_json(&residueParameters());
   }

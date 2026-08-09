@@ -1,39 +1,39 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Michael Berg <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include <cstdio>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <tuple>
 
-#include "zeromq/zmq-helper.h"
-#include "json11/json11.hpp"
-#include "json11/json11-helper.h"
-#include "tools/helper.h"
-#include "tools/debug.h"
-#include "run-monica.h"
-#include "serve-monica-zmq.h"
 #include "../core/monica-model.h"
-#include "climate/climate-file-io.h"
-#include "soil/conversion.h"
-#include "create-env-from-json-config.h"
-#include "tools/algorithms.h"
 #include "../io/csv-format.h"
+#include "climate/climate-file-io.h"
+#include "create-env-from-json-config.h"
+#include "json11/json11-helper.h"
+#include "json11/json11.hpp"
 #include "monica-zmq-defaults.h"
 #include "resource/version.h"
+#include "run-monica.h"
+#include "serve-monica-zmq.h"
+#include "soil/conversion.h"
+#include "tools/algorithms.h"
+#include "tools/debug.h"
+#include "tools/helper.h"
+#include "zeromq/zmq-helper.h"
 
 using namespace std;
 using namespace monica;
@@ -41,7 +41,8 @@ using namespace Tools;
 using namespace json11;
 
 string appName = "monica-zmq-server";
-string version = VER_FILE_VERSION_STR;;
+string version = VER_FILE_VERSION_STR;
+;
 
 /*
 int main_(int argc, char** argv)
@@ -52,7 +53,7 @@ int main_(int argc, char** argv)
   //use a possibly non-default db-connections.ini
   //Db::dbConnectionParameters("db-connections.ini");
 
-  string address = defaultInputAddress; 
+  string address = defaultInputAddress;
   int port = defaultInputPort;
   string outputAddress = defaultOutputAddress;
   int outputPort = defaultOutputPort;
@@ -66,14 +67,22 @@ int main_(int argc, char** argv)
     cout
       << appName << endl
       << " [-d | --debug] ... show debug outputs" << endl
-      << " [[-c | --connect-to-proxy]] ... connect MONICA server process to a ZeroMQ proxy" << endl
-      << " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ... connect client to give IP address" << endl
-      << " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run server/connect client on/to given port" << endl
-      << " [[-od | --output-defaults] ... use different result socket (parameter is optional, when non default result address/port are used)" << endl
-      << " [[-oa | --output-address] ADDRESS (default: " << outputAddress << ")] ... bind socket to this IP address for results" << endl
-      << " [[-op | --output-port] PORT (default: " << outputPort << ")] ... bind socket to this port for results" << endl
-      << " [[-ca | --control-address] ADDRESS (default: " << controlAddress << ")] ... connect socket to this IP address for control messages" << endl
-      << " [[-cp | --control-port] PORT (default: " << controlPort << ")] ... bind socket to this port for control messages" << endl
+      << " [[-c | --connect-to-proxy]] ... connect MONICA server process to a
+ZeroMQ proxy" << endl
+      << " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ...
+connect client to give IP address" << endl
+      << " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run
+server/connect client on/to given port" << endl
+      << " [[-od | --output-defaults] ... use different result socket (parameter
+is optional, when non default result address/port are used)" << endl
+      << " [[-oa | --output-address] ADDRESS (default: " << outputAddress << ")]
+... bind socket to this IP address for results" << endl
+      << " [[-op | --output-port] PORT (default: " << outputPort << ")] ... bind
+socket to this port for results" << endl
+      << " [[-ca | --control-address] ADDRESS (default: " << controlAddress <<
+")] ... connect socket to this IP address for control messages" << endl
+      << " [[-cp | --control-port] PORT (default: " << controlPort << ")] ...
+bind socket to this port for control messages" << endl
       << " [-h | --help] ... this help output" << endl
       << " [-v | --version] ... outputs MONICA version" << endl;
   };
@@ -116,20 +125,22 @@ int main_(int argc, char** argv)
     }
 
     debug() << "starting ZeroMQ MONICA server" << endl;
-    
+
     string recvAddress = string("tcp://") + address + ":" + to_string(port);
     map<ZmqSocketRole, pair<ZmqSocketType, string>> addresses;
     if(usePipeline)
     {
       addresses[ReceiveJob] = make_pair(Pull, recvAddress);
-      addresses[SendResult] = make_pair(Push, string("tcp://") + outputAddress + ":" + to_string(outputPort));
-    } 
+      addresses[SendResult] = make_pair(Push, string("tcp://") + outputAddress +
+":" + to_string(outputPort));
+    }
     else if(connectToZmqProxy)
       addresses[ReceiveJob] = make_pair(ProxyReply, recvAddress);
     else
       addresses[ReceiveJob] = make_pair(Reply, recvAddress);
 
-    addresses[Control] = make_pair(Subscribe, string("tcp://") + controlAddress + ":" + to_string(controlPort));
+    addresses[Control] = make_pair(Subscribe, string("tcp://") + controlAddress
++ ":" + to_string(controlPort));
 
     serveZmqMonicaFull(&context, addresses);
 
@@ -166,25 +177,32 @@ int main(int argc, char **argv) {
         << "options:" << endl
         << endl
         << " -h | --help ... this help output" << endl
-        << " -v | --version ... outputs " << appName << " version and ZeroMQ version being used" << endl
+        << " -v | --version ... outputs " << appName
+        << " version and ZeroMQ version being used" << endl
         << endl
         << " -d | --debug ... show debug outputs" << endl
-        << " -s | --serve-address [ADDRESS] (default: " << serveAddress << ")] ... serve MONICA on given address"
-        << endl
-        << " -p | --proxy-address [(PROXY-)ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress
+        << " -s | --serve-address [ADDRESS] (default: " << serveAddress
+        << ")] ... serve MONICA on given address" << endl
+        << " -p | --proxy-address [(PROXY-)ADDRESS1[,ADDRESS2,...]] (default: "
+        << inputAddress
         << ")] ... receive work via proxy from given address(es)" << endl
         << " -bi | --bind-input ... bind the input port" << endl
         << " -ci | --connect-input (default) ... connect the input port" << endl
-        << " -i | --input-address [bind|connect]|[ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress
-        << ")] ... receive work from given address(es)" << endl
+        << " -i | --input-address [bind|connect]|[ADDRESS1[,ADDRESS2,...]] "
+           "(default: "
+        << inputAddress << ")] ... receive work from given address(es)" << endl
         << " -bo | --bind-output ... bind the output port" << endl
-        << " -co | --connect-output (default) ... connect the output port" << endl
-        << " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress
-        << ")] ... send results to this address(es)" << endl
-        << " -or | --router-output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress
-        << ")] ... send results to this address(es) but use a router socket" << endl
+        << " -co | --connect-output (default) ... connect the output port"
+        << endl
+        << " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: "
+        << outputAddress << ")] ... send results to this address(es)" << endl
+        << " -or | --router-output-address [ADDRESS1[,ADDRESS2,...]] (default: "
+        << outputAddress
+        << ")] ... send results to this address(es) but use a router socket"
+        << endl
         << " -c | --control-address [ADDRESS] (default: " << controlAddress
-        << ")] ... connect MONICA server to this address for control messages" << endl;
+        << ")] ... connect MONICA server to this address for control messages"
+        << endl;
   };
 
   zmq::context_t context(1);
@@ -229,8 +247,10 @@ int main(int argc, char **argv) {
       } else if (arg == "-h" || arg == "--help")
         printHelp(), exit(0);
       else if (arg == "-v" || arg == "--version")
-        cout << appName << " version " << version << " ZeroMQ version: " << major << "." << minor << "." << patch
-             << endl, exit(0);
+        cout << appName << " version " << version
+             << " ZeroMQ version: " << major << "." << minor << "." << patch
+             << endl,
+            exit(0);
     }
 
     debug() << "starting ZeroMQ MONICA server" << endl;
@@ -238,13 +258,17 @@ int main(int argc, char **argv) {
     map<SocketRole, SocketConfig> addresses;
     if (usePipeline) {
       addresses[ReceiveJob] = {Pull, splitString(inputAddress, ","), inputOp};
-      addresses[SendResult] = {useRouterOutputSocket ? Router : Push, splitString(outputAddress, ","), outputOp};
+      addresses[SendResult] = {useRouterOutputSocket ? Router : Push,
+                               splitString(outputAddress, ","), outputOp};
     } else if (connectToZmqProxy)
-      addresses[ReceiveJob] = {ProxyReply, splitString(proxyAddress, ","), monica::connect};
+      addresses[ReceiveJob] = {ProxyReply, splitString(proxyAddress, ","),
+                               monica::connect};
     else
-      addresses[ReceiveJob] = {Reply, splitString(serveAddress, ","), monica::bind};
+      addresses[ReceiveJob] = {Reply, splitString(serveAddress, ","),
+                               monica::bind};
 
-    addresses[Control] = {Subscribe, vector<string>{controlAddress}, monica::connect};
+    addresses[Control] = {Subscribe, vector<string>{controlAddress},
+                          monica::connect};
 
     serveZmqMonicaFull(&context, addresses);
 

@@ -286,10 +286,12 @@ Errors Sowing::merge(json11::Json j) {
 }
 
 json11::Json Sowing::to_json(bool includeFullCropParameters) const {
-  auto co = json11::Json::object{{"cropParams", cropparameters::to_json(&_cropParams)},
-                                 {"residueParams", cropresidueparameters::to_json(&_residueParams)}};
+  auto co = json11::Json::object{
+      {"cropParams", cropparameters::to_json(&_cropParams)},
+      {"residueParams", cropresidueparameters::to_json(&_residueParams)}};
   if (_separatePerennialCropParams)
-    co["perennialCropParams"] = cropparameters::to_json(_separatePerennialCropParams.get());
+    co["perennialCropParams"] =
+        cropparameters::to_json(_separatePerennialCropParams.get());
 
   auto o = json11::Json::object{
       {"type", type()},
@@ -322,8 +324,8 @@ bool Sowing::apply(MonicaModel *model) {
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nconc) {
       soilorganic::addOrganicMatter(model->soilOrganic.get(),
-                                  model->currentCropModule->residuePs,
-                                  layer2amount, nconc);
+                                    model->currentCropModule->residuePs,
+                                    layer2amount, nconc);
     };
     model->currentCropModule = nullptr;
     model->currentCropModule = makeCropModule(
@@ -362,9 +364,10 @@ bool Sowing::apply(MonicaModel *model) {
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = monicamodel::applyMineralFertiliserViaNMinMethod(
           model, model->simPs.p_NMinFertiliserPartition,
-          makeNMinCropParameters(_cropParams.speciesParams.pc_SamplingDepth,
-                                 _cropParams.speciesParams.pc_TargetNSamplingDepth,
-                                 _cropParams.speciesParams.pc_TargetN30));
+          makeNMinCropParameters(
+              _cropParams.speciesParams.pc_SamplingDepth,
+              _cropParams.speciesParams.pc_TargetNSamplingDepth,
+              _cropParams.speciesParams.pc_TargetN30));
       monicamodel::addDailySumFertiliser(model, fert_amount);
     }
   }
@@ -780,7 +783,8 @@ bool Harvest::apply(MonicaModel *model) {
     monicamodel::harvestCurrentCrop(model, _exported, _spec, _optCarbMgmtData,
                                     _incorporateIntoLayerNo - 1);
     if (_sowing)
-      debug() << "harvesting crop: " << cropparameters::cropName(&_sowing->_cropParams)
+      debug() << "harvesting crop: "
+              << cropparameters::cropName(&_sowing->_cropParams)
               << " at: " << date().toString() << endl;
     model->currentEvents.insert("Harvest");
   }
@@ -1003,18 +1007,21 @@ Errors MineralFertilization::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   {
     string err;
-    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err)) mineralfertilizerparameters::merge(&_partition, j["partition"]);
-    if (!err.empty()) cerr << "Error @ MineralFertilization::merge: " << err << endl;
+    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err))
+      mineralfertilizerparameters::merge(&_partition, j["partition"]);
+    if (!err.empty())
+      cerr << "Error @ MineralFertilization::merge: " << err << endl;
   }
   set_double_value(_amount, j, "amount");
   return res;
 }
 
 json11::Json MineralFertilization::to_json() const {
-  return json11::Json::object{{"type", type()},
-                              {"date", date().toIsoDateString()},
-                              {"amount", _amount},
-                              {"partition", mineralfertilizerparameters::to_json(&_partition)}};
+  return json11::Json::object{
+      {"type", type()},
+      {"date", date().toIsoDateString()},
+      {"amount", _amount},
+      {"partition", mineralfertilizerparameters::to_json(&_partition)}};
 }
 
 bool MineralFertilization::apply(MonicaModel *model) {
@@ -1049,8 +1056,10 @@ Errors NDemandFertilization::merge(json11::Json j) {
   set_double_value(_Ndemand, j, "N-demand");
   {
     string err;
-    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err)) mineralfertilizerparameters::merge(&_partition, j["partition"]);
-    if (!err.empty()) cerr << "Error @ NDemandFertilization::merge: " << err << endl;
+    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err))
+      mineralfertilizerparameters::merge(&_partition, j["partition"]);
+    if (!err.empty())
+      cerr << "Error @ NDemandFertilization::merge: " << err << endl;
   }
   set_double_value(_depth, j, "depth");
   set_int_value(_stage, j, "stage");
@@ -1059,11 +1068,11 @@ Errors NDemandFertilization::merge(json11::Json j) {
 }
 
 json11::Json NDemandFertilization::to_json() const {
-  auto o =
-      J11Object{{"type", type()},
-                {"N-demand", _Ndemand},
-                {"partition", mineralfertilizerparameters::to_json(&_partition)},
-                {"depth", J11Array{_depth, "m", "depth of Nmin measurement"}}};
+  auto o = J11Object{
+      {"type", type()},
+      {"N-demand", _Ndemand},
+      {"partition", mineralfertilizerparameters::to_json(&_partition)},
+      {"depth", J11Array{_depth, "m", "depth of Nmin measurement"}}};
   if (_initialDate.isValid())
     o["date"] = _initialDate.toIsoDateString();
   else
@@ -1342,10 +1351,11 @@ Errors Irrigation::merge(json11::Json j) {
 }
 
 json11::Json Irrigation::to_json() const {
-  return json11::Json::object{{"type", type()},
-                              {"date", date().toIsoDateString()},
-                              {"amount", _amount},
-                              {"parameters", irrigationparameters::to_json(&_params)}};
+  return json11::Json::object{
+      {"type", type()},
+      {"date", date().toIsoDateString()},
+      {"amount", _amount},
+      {"parameters", irrigationparameters::to_json(&_params)}};
 }
 
 bool Irrigation::apply(MonicaModel *model) {
@@ -1396,9 +1406,10 @@ Errors AutomaticIrrigation::merge(json11::Json j) {
 }
 
 json11::Json AutomaticIrrigation::to_json() const {
-  auto o = json11::Json::object{{"type", type()},
-                                {"irrigateCrop", irrigateCrop},
-                                {"parameters", automaticirrigationparameters::to_json(&params)}};
+  auto o = json11::Json::object{
+      {"type", type()},
+      {"irrigateCrop", irrigateCrop},
+      {"parameters", automaticirrigationparameters::to_json(&params)}};
   if (startStage > -1)
     o["startStage"] = startStage + 1;
   if (endStage > -1)
