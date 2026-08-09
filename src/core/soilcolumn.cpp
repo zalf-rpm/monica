@@ -93,7 +93,7 @@ void AOM_Properties::serialize(mas::schema::model::monica::AOMProperties::Builde
  * @param vs_LayerThickness Vertical expansion
  * @param sps Soil parameters
  */
-SoilLayer soillayer::makeSoilLayer(double vs_LayerThickness, const SoilParameters& sps) {
+SoilLayer monica::makeSoilLayer(double vs_LayerThickness, const SoilParameters& sps) {
   SoilLayer sl;
   sl.vs_LayerThickness = vs_LayerThickness;
   sl.vs_SoilNH4 = sps.vs_SoilAmmonium;
@@ -239,22 +239,22 @@ _sc->nMinFertiliserTrigger(_fp, _sd, _cntv, _cntv30, _fmaxa, _fmina, _tdd);
  * @param maxMineralisationDepth
  * @param soilParams Soil Parameter
  */
-kj::Own<SoilColumn> monica::soilcolumn::makeSoilColumn(double layerThickness,
+kj::Own<SoilColumn> monica::makeSoilColumn(double layerThickness,
                                            double maxMineralisationDepth,
                                            const Soil::SoilPMs& soilParams) {
   auto sc = kj::heap<SoilColumn>();
   sc->ps_MaxMineralisationDepth = maxMineralisationDepth;
   debug() << "makeSoilColumn: " << soilParams.size() << endl;
-  for (const auto& sp : soilParams) sc->push_back(soillayer::makeSoilLayer(layerThickness, sp));
-  sc->_vs_NumberOfOrganicLayers = calculateNumberOfOrganicLayers(sc.get());
+  for (const auto& sp : soilParams) sc->push_back(makeSoilLayer(layerThickness, sp));
+  sc->_vs_NumberOfOrganicLayers = soilcolumn::calculateNumberOfOrganicLayers(sc.get());
   return sc;
 }
 
-kj::Own<SoilColumn> monica::soilcolumn::makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
+kj::Own<SoilColumn> monica::makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
                                            CropModule* cropModule) {
   auto sc = kj::heap<SoilColumn>();
   sc->cropModule = cropModule;
-  deserialize(sc.get(), reader);
+  soilcolumn::deserialize(sc.get(), reader);
   return sc;
 }
 

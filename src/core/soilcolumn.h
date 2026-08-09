@@ -92,8 +92,6 @@ struct AOM_Properties {
   bool noVolatilization{true}; //!< true means it's a crop residue and won't participate in vo_volatilisation()
 };
 
-namespace soillayer {
-
 /**
  * @author Claas Nendel, Michael Berg
  *
@@ -131,6 +129,8 @@ struct SoilLayer {
 
 SoilLayer makeSoilLayer(double vs_LayerThickness, const Soil::SoilParameters &soilParams);
 
+namespace soillayer {
+
 void deserialize(SoilLayer* sl, mas::schema::model::monica::SoilLayerState::Reader reader);
 void serialize(const SoilLayer* sl, mas::schema::model::monica::SoilLayerState::Builder builder);
 
@@ -142,11 +142,7 @@ double soilNmin(const SoilLayer* sl);
 
 } // namespace soillayer
 
-using SoilLayer = soillayer::SoilLayer;
-
 //----------------------------------------------------------------------------
-
-namespace soilcolumn {
 
 /**
  * @author Claas Nendel, Michael Berg
@@ -202,6 +198,9 @@ kj::Own<SoilColumn> makeSoilColumn(double layerThickness,
                                    const Soil::SoilPMs& soilParams);
 kj::Own<SoilColumn> makeSoilColumn(mas::schema::model::monica::SoilColumnState::Reader reader,
                                    CropModule* cropModule = nullptr);
+
+namespace soilcolumn {
+
 void deserialize(SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Reader reader);
 void serialize(const SoilColumn* sc, mas::schema::model::monica::SoilColumnState::Builder builder);
 void putCrop(SoilColumn* sc, CropModule* cm);
@@ -243,7 +242,5 @@ void applyIrrigation(SoilColumn* sc, double amount, double nitrateConcentration)
 void applyTillage(SoilColumn* sc, double depth);
 
 } // namespace soilcolumn
-
-using SoilColumn = soilcolumn::SoilColumn;
 
 } // namespace monica

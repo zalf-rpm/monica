@@ -1726,21 +1726,6 @@ double foNH3onNitriteOxidation(SoilOrganic* so,
   return fo_NH3onNitriteOxidation;
 }
 
-kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters params) {
-  auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn, kj::mv(params)});
-  initializeFromParams(so.get());
-  return so;
-}
-
-kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn,
-                                             mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
-                                             CropModule* cropModule) {
-  auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn});
-  so->cropModule = cropModule;
-  deserialize(so.get(), reader);
-  return so;
-}
-
 void deserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
   so->params.deserialize(reader.getModuleParams());
   so->vs_NumberOfLayers = reader.getVsNumberOfLayers();
@@ -1882,4 +1867,20 @@ double foNetEcosystemExchange(SoilOrganic* so,
 }
 
 } // namespace soilorganic
+
+kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn, SoilOrganicModuleParameters params) {
+  auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn, kj::mv(params)});
+  soilorganic::initializeFromParams(so.get());
+  return so;
+}
+
+kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn& soilColumn,
+                                             mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
+                                             CropModule* cropModule) {
+  auto so = kj::heap<SoilOrganic>(SoilOrganic{soilColumn});
+  so->cropModule = cropModule;
+  soilorganic::deserialize(so.get(), reader);
+  return so;
+}
+
 } // namespace monica

@@ -31,6 +31,128 @@ const SoilLayer& soilTemperatureLayerAt(const SoilTemperature* st, size_t i) {
 namespace monica {
 namespace soiltemperature {
 
+void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
+  st->soilSurfaceTemperature = reader.getSoilSurfaceTemperature();
+  soillayer::deserialize(&st->soilColumnGroundLayer, reader.getSoilColumnVtGroundLayer());
+  soillayer::deserialize(&st->soilColumnBottomLayer, reader.getSoilColumnVtBottomLayer());
+  st->params.deserialize(reader.getModuleParams());
+  st->noOfTempLayers = reader.getNumberOfLayers();
+  st->noOfSoilLayers = reader.getVsNumberOfLayers();
+  setFromCapnpList(st->soilTemperature, reader.getSoilTemperature());
+  setFromCapnpList(st->V, reader.getV());
+  setFromCapnpList(st->volumeMatrix, reader.getVolumeMatrix());
+  setFromCapnpList(st->volumeMatrixOld, reader.getVolumeMatrixOld());
+  setFromCapnpList(st->B, reader.getB());
+  setFromCapnpList(st->matrixPrimaryDiagonal, reader.getMatrixPrimaryDiagonal());
+  setFromCapnpList(st->matrixSecondaryDiagonal, reader.getMatrixSecundaryDiagonal());
+  setFromCapnpList(st->heatConductivity, reader.getHeatConductivity());
+  setFromCapnpList(st->heatConductivityMean, reader.getHeatConductivityMean());
+  setFromCapnpList(st->heatCapacity, reader.getHeatCapacity());
+  st->dampingFactor = reader.getDampingFactor();
+  st->solution.resize(st->noOfTempLayers);
+  st->matrixDiagonal.resize(st->noOfTempLayers);
+  st->matrixLowerTriangle.resize(st->noOfTempLayers);
+  st->heatFlow.assign(st->noOfTempLayers, 0.0);
+}
+
+void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) {
+  builder.setSoilSurfaceTemperature(st->soilSurfaceTemperature);
+  soillayer::serialize(&st->soilColumnGroundLayer, builder.initSoilColumnVtGroundLayer());
+  soillayer::serialize(&st->soilColumnBottomLayer, builder.initSoilColumnVtBottomLayer());
+  st->params.serialize(builder.initModuleParams());
+  builder.setNumberOfLayers((uint16_t)st->noOfTempLayers);
+  builder.setVsNumberOfLayers((uint16_t)st->noOfSoilLayers);
+  setCapnpList(st->soilTemperature, builder.initSoilTemperature((capnp::uint)st->soilTemperature.size()));
+  setCapnpList(st->V, builder.initV((capnp::uint)st->V.size()));
+  setCapnpList(st->volumeMatrix, builder.initVolumeMatrix((capnp::uint)st->volumeMatrix.size()));
+  setCapnpList(st->volumeMatrixOld, builder.initVolumeMatrixOld((capnp::uint)st->volumeMatrixOld.size()));
+  setCapnpList(st->B, builder.initB((capnp::uint)st->B.size()));
+  setCapnpList(st->matrixPrimaryDiagonal, builder.initMatrixPrimaryDiagonal((capnp::uint)st->matrixPrimaryDiagonal.size()));
+  setCapnpList(st->matrixSecondaryDiagonal,
+               builder.initMatrixSecundaryDiagonal((capnp::uint)st->matrixSecondaryDiagonal.size()));
+  setCapnpList(st->heatConductivity, builder.initHeatConductivity((capnp::uint)st->heatConductivity.size()));
+  setCapnpList(st->heatConductivityMean, builder.initHeatConductivityMean((capnp::uint)st->heatConductivityMean.size()));
+  setCapnpList(st->heatCapacity, builder.initHeatCapacity((capnp::uint)st->heatCapacity.size()));
+  builder.setDampingFactor(st->dampingFactor);
+}
+
+void step(SoilTemperature* st, double tmin, double tmax, double globrad) {
+  const size_t groundLayer = st->noOfTempLayers - 2;
+  const size_t bottomLayer = st->noOfTempLayers - 1;
+
+  st->soilSurfaceTemperature =
+    calcSoilSurfaceTemperature(st, st->soilSurfaceTemperature, tmin, tmax, globrad);
+  st->soilColumn->vt_SoilSurfaceTemperature = st->soilSurfaceTemperature;
+  st->heatFlow[0] = st->soilSurfaceTemperature * st->B[0] * st->heatConductivityMean[0];
+
+  for (size_t i = 0; i < st->noOfTempLayers; i++) {
+    st->solution[i] =
+      (st->volumeMatrixOld[i]
+       + (st->volumeMatrix[i] - st->volumeMatrixOld[i])
+         / soilTemperatureLayerAt(st, i).vs_LayerThickness)
+      * st->soilTemperature[i] + st->heatFlow[i];
+  }
+
+  st->matrixDiagonal[0] = st->matrixPrimaryDiagonal[0];
+  for (size_t i = 1; i < st->noOfTempLayers; i++) {
+    st->matrixLowerTriangle[i] = st->matrixSecondaryDiagonal[i] / st->matrixDiagonal[i - 1];
+    st->matrixDiagonal[i] = st->matrixPrimaryDiagonal[i]
+                            - (st->matrixLowerTriangle[i] * st->matrixSecondaryDiagonal[i]);
+  }
+
+  for (size_t i = 1; i < st->noOfTempLayers; i++) {
+    st->solution[i] = st->solution[i] - (st->matrixLowerTriangle[i] * st->solution[i - 1]);
+  }
+
+  st->solution[bottomLayer] = st->solution[bottomLayer] / st->matrixDiagonal[bottomLayer];
+  for (size_t i = 0; i < bottomLayer; i++) {
+    const auto j = (bottomLayer - 1) - i;
+    const auto j_1 = j + 1;
+    st->solution[j] = (st->solution[j] / st->matrixDiagonal[j])
+                      - (st->matrixLowerTriangle[j_1] * st->solution[j_1]);
+  }
+
+  for (size_t i = 0; i < st->noOfTempLayers; i++) {
+    st->soilTemperature[i] = st->solution[i];
+  }
+
+  for (size_t i = 0; i < st->noOfSoilLayers; i++) {
+    st->volumeMatrixOld[i] = st->volumeMatrix[i];
+    soilTemperatureLayerAt(st, i).vs_SoilTemperature = st->soilTemperature[i];
+  }
+
+  st->volumeMatrixOld[groundLayer] = st->volumeMatrix[groundLayer];
+  st->volumeMatrixOld[bottomLayer] = st->volumeMatrix[bottomLayer];
+}
+
+double calcSoilSurfaceTemperature(
+  const SoilTemperature* st,
+  double prevDaySoilSurfaceTemperature,
+  double tmin,
+  double tmax,
+  double globrad) {
+  globrad = max(8.33, globrad);
+
+  const double soilCoverage = st->monica->currentCropModule ? st->monica->currentCropModule->vc_SoilCoverage : 0.0;
+  const double shadingCoefficient =
+    0.1 + ((soilCoverage * st->dampingFactor) + ((1 - soilCoverage) * (1 - st->dampingFactor)));
+
+  double soilSurfaceTemperature =
+    (1.0 - shadingCoefficient)
+    * (tmin + ((tmax - tmin) * pow((0.03 * globrad), 0.5)))
+    + shadingCoefficient * prevDaySoilSurfaceTemperature;
+
+  if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
+
+  if (st->monica->soilMoisture->snowComponent->vm_SnowDepth > 0.0) {
+    soilSurfaceTemperature = st->monica->soilMoisture->frostComponent->vm_TemperatureUnderSnow;
+  }
+
+  return soilSurfaceTemperature;
+}
+
+} // namespace soiltemperature
+
 kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& mm, const SoilTemperatureModuleParameters& params) {
   auto st = kj::heap<SoilTemperature>();
   st->soilColumn = mm.soilColumn.get();
@@ -160,129 +282,8 @@ kj::Own<SoilTemperature> makeSoilTemperature(
   st->matrixDiagonal.resize(st->noOfTempLayers);
   st->matrixLowerTriangle.resize(st->noOfTempLayers);
   st->heatFlow.assign(st->noOfTempLayers, 0.0);
-  deserialize(st.get(), reader);
+  soiltemperature::deserialize(st.get(), reader);
   return st;
 }
 
-void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader) {
-  st->soilSurfaceTemperature = reader.getSoilSurfaceTemperature();
-  soillayer::deserialize(&st->soilColumnGroundLayer, reader.getSoilColumnVtGroundLayer());
-  soillayer::deserialize(&st->soilColumnBottomLayer, reader.getSoilColumnVtBottomLayer());
-  st->params.deserialize(reader.getModuleParams());
-  st->noOfTempLayers = reader.getNumberOfLayers();
-  st->noOfSoilLayers = reader.getVsNumberOfLayers();
-  setFromCapnpList(st->soilTemperature, reader.getSoilTemperature());
-  setFromCapnpList(st->V, reader.getV());
-  setFromCapnpList(st->volumeMatrix, reader.getVolumeMatrix());
-  setFromCapnpList(st->volumeMatrixOld, reader.getVolumeMatrixOld());
-  setFromCapnpList(st->B, reader.getB());
-  setFromCapnpList(st->matrixPrimaryDiagonal, reader.getMatrixPrimaryDiagonal());
-  setFromCapnpList(st->matrixSecondaryDiagonal, reader.getMatrixSecundaryDiagonal());
-  setFromCapnpList(st->heatConductivity, reader.getHeatConductivity());
-  setFromCapnpList(st->heatConductivityMean, reader.getHeatConductivityMean());
-  setFromCapnpList(st->heatCapacity, reader.getHeatCapacity());
-  st->dampingFactor = reader.getDampingFactor();
-  st->solution.resize(st->noOfTempLayers);
-  st->matrixDiagonal.resize(st->noOfTempLayers);
-  st->matrixLowerTriangle.resize(st->noOfTempLayers);
-  st->heatFlow.assign(st->noOfTempLayers, 0.0);
-}
-
-void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder) {
-  builder.setSoilSurfaceTemperature(st->soilSurfaceTemperature);
-  soillayer::serialize(&st->soilColumnGroundLayer, builder.initSoilColumnVtGroundLayer());
-  soillayer::serialize(&st->soilColumnBottomLayer, builder.initSoilColumnVtBottomLayer());
-  st->params.serialize(builder.initModuleParams());
-  builder.setNumberOfLayers((uint16_t)st->noOfTempLayers);
-  builder.setVsNumberOfLayers((uint16_t)st->noOfSoilLayers);
-  setCapnpList(st->soilTemperature, builder.initSoilTemperature((capnp::uint)st->soilTemperature.size()));
-  setCapnpList(st->V, builder.initV((capnp::uint)st->V.size()));
-  setCapnpList(st->volumeMatrix, builder.initVolumeMatrix((capnp::uint)st->volumeMatrix.size()));
-  setCapnpList(st->volumeMatrixOld, builder.initVolumeMatrixOld((capnp::uint)st->volumeMatrixOld.size()));
-  setCapnpList(st->B, builder.initB((capnp::uint)st->B.size()));
-  setCapnpList(st->matrixPrimaryDiagonal, builder.initMatrixPrimaryDiagonal((capnp::uint)st->matrixPrimaryDiagonal.size()));
-  setCapnpList(st->matrixSecondaryDiagonal,
-               builder.initMatrixSecundaryDiagonal((capnp::uint)st->matrixSecondaryDiagonal.size()));
-  setCapnpList(st->heatConductivity, builder.initHeatConductivity((capnp::uint)st->heatConductivity.size()));
-  setCapnpList(st->heatConductivityMean, builder.initHeatConductivityMean((capnp::uint)st->heatConductivityMean.size()));
-  setCapnpList(st->heatCapacity, builder.initHeatCapacity((capnp::uint)st->heatCapacity.size()));
-  builder.setDampingFactor(st->dampingFactor);
-}
-
-void step(SoilTemperature* st, double tmin, double tmax, double globrad) {
-  const size_t groundLayer = st->noOfTempLayers - 2;
-  const size_t bottomLayer = st->noOfTempLayers - 1;
-
-  st->soilSurfaceTemperature =
-    calcSoilSurfaceTemperature(st, st->soilSurfaceTemperature, tmin, tmax, globrad);
-  st->soilColumn->vt_SoilSurfaceTemperature = st->soilSurfaceTemperature;
-  st->heatFlow[0] = st->soilSurfaceTemperature * st->B[0] * st->heatConductivityMean[0];
-
-  for (size_t i = 0; i < st->noOfTempLayers; i++) {
-    st->solution[i] =
-      (st->volumeMatrixOld[i]
-       + (st->volumeMatrix[i] - st->volumeMatrixOld[i])
-         / soilTemperatureLayerAt(st, i).vs_LayerThickness)
-      * st->soilTemperature[i] + st->heatFlow[i];
-  }
-
-  st->matrixDiagonal[0] = st->matrixPrimaryDiagonal[0];
-  for (size_t i = 1; i < st->noOfTempLayers; i++) {
-    st->matrixLowerTriangle[i] = st->matrixSecondaryDiagonal[i] / st->matrixDiagonal[i - 1];
-    st->matrixDiagonal[i] = st->matrixPrimaryDiagonal[i]
-                            - (st->matrixLowerTriangle[i] * st->matrixSecondaryDiagonal[i]);
-  }
-
-  for (size_t i = 1; i < st->noOfTempLayers; i++) {
-    st->solution[i] = st->solution[i] - (st->matrixLowerTriangle[i] * st->solution[i - 1]);
-  }
-
-  st->solution[bottomLayer] = st->solution[bottomLayer] / st->matrixDiagonal[bottomLayer];
-  for (size_t i = 0; i < bottomLayer; i++) {
-    const auto j = (bottomLayer - 1) - i;
-    const auto j_1 = j + 1;
-    st->solution[j] = (st->solution[j] / st->matrixDiagonal[j])
-                      - (st->matrixLowerTriangle[j_1] * st->solution[j_1]);
-  }
-
-  for (size_t i = 0; i < st->noOfTempLayers; i++) {
-    st->soilTemperature[i] = st->solution[i];
-  }
-
-  for (size_t i = 0; i < st->noOfSoilLayers; i++) {
-    st->volumeMatrixOld[i] = st->volumeMatrix[i];
-    soilTemperatureLayerAt(st, i).vs_SoilTemperature = st->soilTemperature[i];
-  }
-
-  st->volumeMatrixOld[groundLayer] = st->volumeMatrix[groundLayer];
-  st->volumeMatrixOld[bottomLayer] = st->volumeMatrix[bottomLayer];
-}
-
-double calcSoilSurfaceTemperature(
-  const SoilTemperature* st,
-  double prevDaySoilSurfaceTemperature,
-  double tmin,
-  double tmax,
-  double globrad) {
-  globrad = max(8.33, globrad);
-
-  const double soilCoverage = st->monica->currentCropModule ? st->monica->currentCropModule->vc_SoilCoverage : 0.0;
-  const double shadingCoefficient =
-    0.1 + ((soilCoverage * st->dampingFactor) + ((1 - soilCoverage) * (1 - st->dampingFactor)));
-
-  double soilSurfaceTemperature =
-    (1.0 - shadingCoefficient)
-    * (tmin + ((tmax - tmin) * pow((0.03 * globrad), 0.5)))
-    + shadingCoefficient * prevDaySoilSurfaceTemperature;
-
-  if (soilSurfaceTemperature < 0.0) soilSurfaceTemperature = soilSurfaceTemperature * 0.5;
-
-  if (st->monica->soilMoisture->snowComponent->vm_SnowDepth > 0.0) {
-    soilSurfaceTemperature = st->monica->soilMoisture->frostComponent->vm_TemperatureUnderSnow;
-  }
-
-  return soilSurfaceTemperature;
-}
-
-} // namespace soiltemperature
 } // namespace monica

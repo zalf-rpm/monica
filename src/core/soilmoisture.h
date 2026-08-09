@@ -27,10 +27,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica {
 struct MonicaModel;
-namespace soilcolumn { struct SoilColumn; }
+struct SoilColumn;
 struct CropModule;
-
-namespace soilmoisture {
 
 /*!
   * @brief Calculation of the water model based on THESEUS.
@@ -47,7 +45,7 @@ namespace soilmoisture {
 struct SoilMoisture {
   //void fm_SoilMoistureUpdate();
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
-  soilcolumn::SoilColumn& soilColumn;
+  SoilColumn& soilColumn;
   const SiteParameters& siteParameters;
   MonicaModel& monica;
   SoilMoistureModuleParameters params;
@@ -130,6 +128,9 @@ kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica, const SoilMoistureMo
 kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica,
                                        mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
                                        CropModule* cropModule = nullptr);
+
+namespace soilmoisture {
+
 void initializeFromParams(SoilMoisture* sm);
 void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
 void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Builder builder);
@@ -184,7 +185,5 @@ std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(const SoilMois
 double meanWaterContent(const SoilMoisture* sm, double depth_m);
 double meanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers);
 } // namespace soilmoisture
-
-using SoilMoisture = soilmoisture::SoilMoisture;
 
 } // namespace monica

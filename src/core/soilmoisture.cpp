@@ -1481,40 +1481,6 @@ double meanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers)
 }
 
 
-/**
- * @brief Returns Kc factor
- * @return Kc factor
- */
-kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
-  auto sm = kj::heap<SoilMoisture>(SoilMoisture{
-      0.0,
-      *monica.soilColumn,
-      monica.sitePs,
-      monica,
-      params,
-      monica.envPs,
-      monica.cropPs});
-  initializeFromParams(sm.get());
-  return sm;
-}
-
-kj::Own<SoilMoisture> makeSoilMoisture(
-  MonicaModel& monica,
-  mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
-  CropModule* cropModule) {
-  auto sm = kj::heap<SoilMoisture>(SoilMoisture{
-      0.0,
-      *monica.soilColumn,
-      monica.sitePs,
-      monica,
-      {},
-      monica.envPs,
-      monica.cropPs});
-  sm->cropModule = cropModule;
-  deserialize(sm.get(), reader);
-  return sm;
-}
-
 void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
   sm->params.deserialize(reader.getModuleParams());
   sm->numberOfMoistureLayers = reader.getNumberOfLayers();
@@ -1652,4 +1618,39 @@ std::pair<double, double> getSnowDepthAndCalcTemperatureUnderSnow(const SoilMois
 }
 
 } // namespace soilmoisture
+
+/**
+ * @brief Returns Kc factor
+ * @return Kc factor
+ */
+kj::Own<SoilMoisture> makeSoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& params) {
+  auto sm = kj::heap<SoilMoisture>(SoilMoisture{
+      0.0,
+      *monica.soilColumn,
+      monica.sitePs,
+      monica,
+      params,
+      monica.envPs,
+      monica.cropPs});
+  soilmoisture::initializeFromParams(sm.get());
+  return sm;
+}
+
+kj::Own<SoilMoisture> makeSoilMoisture(
+  MonicaModel& monica,
+  mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
+  CropModule* cropModule) {
+  auto sm = kj::heap<SoilMoisture>(SoilMoisture{
+      0.0,
+      *monica.soilColumn,
+      monica.sitePs,
+      monica,
+      {},
+      monica.envPs,
+      monica.cropPs});
+  sm->cropModule = cropModule;
+  soilmoisture::deserialize(sm.get(), reader);
+  return sm;
+}
+
 } // namespace monica

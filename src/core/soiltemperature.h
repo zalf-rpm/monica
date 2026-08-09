@@ -15,8 +15,6 @@ namespace monica {
 
 class MonicaModel;
 
-namespace soiltemperature {
-
 //! Calculation of soil temperature is based on a model developed by PIC
 struct SoilTemperature {
   SoilColumn* soilColumn{nullptr};
@@ -49,6 +47,8 @@ kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& monica, const SoilTemp
 kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel& monica,
                                              mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
 
+namespace soiltemperature {
+
 void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
 void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
 void step(SoilTemperature* st, double tmin, double tmax, double globrad);
@@ -59,7 +59,5 @@ double calcSoilSurfaceTemperature(const SoilTemperature* st,
                                  double globrad);
 
 } // namespace soiltemperature
-
-using SoilTemperature = soiltemperature::SoilTemperature;
 
 } // namespace monica

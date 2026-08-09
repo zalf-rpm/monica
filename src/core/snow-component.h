@@ -23,11 +23,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 namespace monica
 {
-namespace soilcolumn { struct SoilColumn; }
+struct SoilColumn;
 struct SoilMoistureModuleParameters;
 
 struct SnowComponent {
-  soilcolumn::SoilColumn* soilColumn{ nullptr };
+  SoilColumn* soilColumn{ nullptr };
 
   double vm_SnowDensity{ 0.0 }; //!< Snow density [kg dm-3]
   double vm_SnowDepth{ 0.0 }; //!< Snow depth [mm]
@@ -54,7 +54,7 @@ struct SnowComponent {
 };
 
 namespace snowcomponent {
-void initialize(SnowComponent* sc, soilcolumn::SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps);
+void initialize(SnowComponent* sc, SoilColumn* soilColumn, const SoilMoistureModuleParameters& smps);
 void deserialize(SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Reader reader);
 void serialize(const SnowComponent* sc, mas::schema::model::monica::SnowModuleState::Builder builder);
 void calcSnowLayer(SnowComponent* sc, double meanAirTemperature, double netPrecipitation);

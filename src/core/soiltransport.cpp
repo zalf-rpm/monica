@@ -32,7 +32,6 @@ using namespace monica;
 using namespace Tools;
 
 namespace monica {
-namespace soiltransport {
 
 kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
                                                  const SiteParameters& sps,
@@ -68,9 +67,11 @@ kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
   auto st = kj::heap<SoilTransport>();
   st->soilColumn = &soilColumn;
   st->cropModule = cropModule;
-  deserialize(st.get(), reader);
+  soiltransport::deserialize(st.get(), reader);
   return st;
 }
+
+namespace soiltransport {
 
 void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
   st->params.deserialize(reader.getModuleParams());

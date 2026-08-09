@@ -7,9 +7,17 @@
 3. Prefer direct named procedures over hidden anonymous-namespace orchestration.
 4. Optimize for readability/simple structure/modular testability over encapsulation in this phase.
 5. Continue stepwise (small safe conversions), preserving behavior and keeping build green.
-6. Once a module's struct + free procedures are stable, move the free procedures into their own
-   lower-case namespace (e.g. `monica::cropmodule`) so they don't need a type-name prefix, and
-   provide `monica::X = x::X` alias so external code referencing the plain type name is unaffected.
+6. Once a module's struct + free procedures are stable, move *only the free procedures* into their
+   own lower-case namespace (e.g. `monica::cropmodule`) so they don't need a type-name prefix. The
+   struct itself and its `makeXYZ(...)` constructor function(s) stay declared directly in `monica`
+   (not nested in the module namespace, no `using X = x::X;` alias) — the struct's name is already
+   unique project-wide and `makeXYZ` already bakes in the module name, so nesting them adds an
+   indirection (the alias) without solving any real name collision. External call sites therefore
+   write `makeXYZ(...)` unqualified but `x::someProcedure(...)` qualified for the free procedures.
+   (This was reached after initially nesting struct+`makeXYZ` too for several modules; see
+   `soilmoisture`/`soiltransport`/`soiltemperature`/`soilorganic`/`soilcolumn`/`soillayer` below —
+   all were converged onto the leaner pattern that `cropmodule`/`snowcomponent`/`frostcomponent`
+   used from the start.)
 
 ## File renames (done)
 
@@ -50,13 +58,13 @@ Each rename was followed by a full build + `monica-run` regression check against
 4. External wiring updated (notably `monica-model.cpp`, `build-output.cpp`, `cultivation-method.cpp`).
 5. Remaining public getters in `soilorganic.h` intentionally kept where they still provide non-trivial conversions or are still used as interface.
 6. The free procedures were moved into a `monica::soilorganic` namespace with the `soilOrganic`
-   prefix dropped (e.g. `soilOrganicFoUrea` -> `soilorganic::foUrea`), mirroring
-   `soilmoisture`/`soiltemperature`/`soiltransport`/`cropmodule`/`soillayer`. `struct SoilOrganic`
-   itself moved into the namespace too, with a `using SoilOrganic = soilorganic::SoilOrganic;`
-   alias in `monica`. Call sites (`monica-model.cpp`, `cultivation-method.cpp`, `build-output.cpp`)
-   were rewired to the qualified `soilorganic::...` names. Build + `monica-run` output comparison
-   against `sim-min-out_section_crop_3.6.60.csv` and `sim-min-out_section_daily_3.6.60.csv`
-   (mainline MONICA without the refactorings) remained identical.
+   prefix dropped (e.g. `soilOrganicFoUrea` -> `soilorganic::foUrea`). `struct SoilOrganic` and
+   `makeSoilOrganic(...)` stay directly in `monica` (leaner pattern, see goal #6 above) — no
+   `using SoilOrganic = ...` alias. Call sites (`monica-model.cpp`, `cultivation-method.cpp`,
+   `build-output.cpp`) were rewired: `makeSoilOrganic(...)` unqualified, the free procedures
+   qualified as `soilorganic::...`. Build + `monica-run` output comparison against
+   `sim-min-out_section_crop_3.6.60.csv` and `sim-min-out_section_daily_3.6.60.csv` (mainline
+   MONICA without the refactorings) remained identical.
 
 ### `soilmoisture` (status: complete)
 
@@ -66,18 +74,21 @@ Each rename was followed by a full build + `monica-run` regression check against
 4. `deserialize(...)` / `serialize(...)` contain full logic directly (no forwarding to removed members).
 5. All former `SoilMoisture` member getters/setters were removed; direct field access or free
    procedures now cover the former API surface.
-6. The free-procedure API lives in `monica::soilmoisture`, with a `monica::SoilMoisture` alias.
+6. The free-procedure API lives in `monica::soilmoisture`; `struct SoilMoisture` and
+   `makeSoilMoisture(...)` stay directly in `monica` (leaner pattern, see goal #6 above), no alias.
 
 ### `soiltransport` (status: complete)
 
 1. The flat `soilTransport...` free procedures were moved under `monica::soiltransport` and renamed
-   without the prefix.
+   without the prefix; `struct SoilTransport` and `makeSoilTransport(...)` stay directly in `monica`
+   (leaner pattern, see goal #6 above), no alias.
 2. Remaining trivial getters were removed and their call sites were inlined to direct field access.
 3. File renamed from `soiltransport_simple.*` to `soiltransport.*`.
 
 ### `soiltemperature` (status: complete)
 
-1. The module was moved under `monica::soiltemperature`, with a `monica::SoilTemperature` alias.
+1. The free procedures were moved under `monica::soiltemperature`; `struct SoilTemperature` and
+   `makeSoilTemperature(...)` stay directly in `monica` (leaner pattern, see goal #6 above), no alias.
 2. Remaining trivial accessors were inlined and removed after the namespace move.
 3. File renamed from `soiltemperature_simple.*` to `soiltemperature.*`.
 
@@ -117,13 +128,13 @@ Each rename was followed by a full build + `monica-run` regression check against
 
 ### `soilcolumn` / `SoilLayer` (status: complete)
 
-1. `SoilLayer` was converted to a plain struct (data members only) inside a new
-   `monica::soillayer` namespace, with `using SoilLayer = soillayer::SoilLayer;` in `monica` so
-   every other file referencing the type name needed no change.
-2. Its two constructors were replaced by `soillayer::makeSoilLayer(vs_LayerThickness, soilParams)`
-   (the unused reader-constructor was dropped; the default constructor is now implicit since the
-   struct is an aggregate).
-3. Member `deserialize`/`serialize` became free `soillayer::deserialize`/`soillayer::serialize`.
+1. `SoilLayer` was converted to a plain struct (data members only), declared directly in `monica`
+   (not nested in a namespace — leaner pattern, see goal #6 above).
+2. Its two constructors were replaced by `makeSoilLayer(vs_LayerThickness, soilParams)`, declared
+   directly in `monica` (the unused reader-constructor was dropped; the default constructor is now
+   implicit since the struct is an aggregate).
+3. Member `deserialize`/`serialize` became free `soillayer::deserialize`/`soillayer::serialize` in
+   a `monica::soillayer` namespace holding only the free procedures.
 4. `vs_SoilMoisture_pF()` became `soillayer::soilMoisturePF(const SoilLayer*)`; `get_SoilNmin()`
    became `soillayer::soilNmin(const SoilLayer*)` (both do real computation, unlike the getters below).
 5. All trivial getters/setters (pure field passthroughs, including simple one-line forwards to
@@ -146,12 +157,12 @@ Each rename was followed by a full build + `monica-run` regression check against
      `SoilColumn` is now a genuine aggregate (public `std::vector<SoilLayer>` base, no user-declared
      constructors).
    - Stage 3: all `soilColumnXxx` free functions moved into a `monica::soilcolumn` namespace with the
-     prefix dropped (e.g. `soilColumnApplyIrrigation` -> `soilcolumn::applyIrrigation`), with a
-     `using SoilColumn = soilcolumn::SoilColumn;` alias in `monica`. Headers that only
-     forward-declared `SoilColumn` (`frost-component.h`, `snow-component.h`, `soilmoisture.h`,
-     `soilorganic.h`, `soiltransport.h`) had to forward-declare `monica::soilcolumn::SoilColumn`
-     instead and reference the qualified name in field/parameter types, since a type alias can't
-     itself be forward-declared.
+     prefix dropped (e.g. `soilColumnApplyIrrigation` -> `soilcolumn::applyIrrigation`). `SoilColumn`
+     itself and `makeSoilColumn(...)` stay directly in `monica` (leaner pattern, see goal #6 above),
+     so headers that only need the type (`frost-component.h`, `snow-component.h`, `soilmoisture.h`,
+     `soilorganic.h`, `soiltransport.h`) forward-declare plain `struct SoilColumn;` and reference the
+     unqualified name in field/parameter types — no nested-namespace forward declaration or alias
+     needed.
 8. `DelayedNMinApplicationParams` (nested inside `SoilColumn`) and `AOM_Properties` (also declared in
    `soilcolumn.h`) still have member `serialize`/`deserialize`; untouched so far, low priority given
    their small size.

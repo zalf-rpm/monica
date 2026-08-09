@@ -69,17 +69,17 @@ void initializeMonicaModelFromParams(MonicaModel *model,
   model->cropPs = cpp.userCropParameters;
   model->simPs = cpp.simulationParameters;
   model->groundwaterInformation = cpp.groundwaterInformation;
-  model->soilColumn = soilcolumn::makeSoilColumn(
+  model->soilColumn = makeSoilColumn(
       model->simPs.p_LayerThickness,
       cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
       model->sitePs.vs_SoilParameters);
-  model->soilTemperature = soiltemperature::makeSoilTemperature(
+  model->soilTemperature = makeSoilTemperature(
       *model, cpp.userSoilTemperatureParameters);
   model->soilMoisture =
-      soilmoisture::makeSoilMoisture(*model, cpp.userSoilMoistureParameters);
+      makeSoilMoisture(*model, cpp.userSoilMoistureParameters);
   model->soilOrganic =
-      soilorganic::makeSoilOrganic(*model->soilColumn, cpp.userSoilOrganicParameters);
-  model->soilTransport = soiltransport::makeSoilTransport(
+      makeSoilOrganic(*model->soilColumn, cpp.userSoilOrganicParameters);
+  model->soilTransport = makeSoilTransport(
       *model->soilColumn, model->sitePs, cpp.userSoilTransportParameters,
       model->envPs.p_LeachingDepth, model->envPs.p_timeStep,
       model->cropPs.pc_MinimumAvailableN);
@@ -150,7 +150,7 @@ void monica::monicamodel::deserialize(
   if (soilColumn)
     soilcolumn::deserialize(soilColumn.get(), reader.getSoilColumn());
   else
-    soilColumn = soilcolumn::makeSoilColumn(reader.getSoilColumn());
+    soilColumn = makeSoilColumn(reader.getSoilColumn());
 
   if (reader.hasCurrentCropModule()) {
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
@@ -179,14 +179,14 @@ void monica::monicamodel::deserialize(
     soiltemperature::deserialize(soilTemperature.get(),
                                  reader.getSoilTemperature());
   else
-    soilTemperature = soiltemperature::makeSoilTemperature(
+    soilTemperature = makeSoilTemperature(
         *model, reader.getSoilTemperature());
 
   if (soilMoisture) {
     soilmoisture::deserialize(soilMoisture.get(), reader.getSoilMoisture());
     soilMoisture->cropModule = currentCropModule.get();
   } else {
-    soilMoisture = soilmoisture::makeSoilMoisture(
+    soilMoisture = makeSoilMoisture(
         *model, reader.getSoilMoisture(), currentCropModule.get());
   }
 
@@ -194,7 +194,7 @@ void monica::monicamodel::deserialize(
     soilorganic::deserialize(soilOrganic.get(), reader.getSoilOrganic());
     soilOrganic->cropModule = currentCropModule.get();
   } else {
-    soilOrganic = soilorganic::makeSoilOrganic(*soilColumn, reader.getSoilOrganic(),
+    soilOrganic = makeSoilOrganic(*soilColumn, reader.getSoilOrganic(),
                                   currentCropModule.get());
   }
 
@@ -202,7 +202,7 @@ void monica::monicamodel::deserialize(
     soiltransport::deserialize(soilTransport.get(), reader.getSoilTransport());
     soiltransport::putCrop(soilTransport.get(), currentCropModule.get());
   } else {
-    soilTransport = soiltransport::makeSoilTransport(
+    soilTransport = makeSoilTransport(
         *soilColumn, reader.getSoilTransport(), currentCropModule.get());
   }
 
