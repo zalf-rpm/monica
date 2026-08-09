@@ -169,8 +169,17 @@ those members. Check off each once it's built, regression-tested, committed, and
    left untouched. Leak-forward fixed in `MonicaModel` (`monica-model.cpp`:
    `deserialize`/`serialize`/the `getGroundwaterInformation` call) and
    `CentralParameterProvider::merge` (item 24, still unconverted).
-10. [ ] `SiteParameters` — leaf (holds `Soil::SoilPMs` / `Soil::SoilParameters` opaquely,
-    unconverted, that's fine).
+10. [x] `SiteParameters` — leaf (holds `Soil::SoilPMs` / `Soil::SoilParameters` opaquely,
+    unconverted, that's fine). `calculateAndSetPwpFcSatFunctions` is populated externally via
+    `operator[]` assignment in the various run-main files, unaffected either way. Leak-forward fixed
+    in `MonicaModel` (`monica-model.cpp`), `run-monica-capnp.cpp`, and
+    `CentralParameterProvider::merge`/`to_json` (item 24, still unconverted). Oddity noted but not
+    chased: `serve-monica-zmq.cpp:245` has `SiteParameters site(initMsg["site"]);` — direct-init
+    from a `json11::Json` with a single paren-arg — which compiled *before* this conversion too
+    (verified by isolating just that one object file), so whatever it actually does (likely MSVC's
+    permissive aggregate-paren-init, since the project builds with `/std:c++17` where that's
+    nonstandard) is unchanged behavior, not something this conversion introduced or fixed; left
+    alone since it's outside anything the `monica-run` regression check exercises.
 11. [ ] `AutomaticHarvestParameters` — leaf.
 12. [ ] `NMinCropParameters` — leaf.
 13. [ ] `OrganicMatterParameters` — leaf; base of `OrganicFertilizerParameters` and

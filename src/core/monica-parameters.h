@@ -390,24 +390,7 @@ DLL_API std::pair<bool, double> getGroundwaterInformation(
 
 } // namespace measuredgroundwatertableinformation
 
-struct DLL_API SiteParameters : public Tools::Json11Serializable {
-  SiteParameters() {}
-
-  SiteParameters(mas::schema::model::monica::SiteParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::SiteParameters::Reader reader);
-
-  // SiteParameters(json11::Json object);
-
-  void
-  serialize(mas::schema::model::monica::SiteParameters::Builder builder) const;
-
-  Tools::Errors merge(json11::Json j) override;
-
-  json11::Json to_json() const override;
-
+struct DLL_API SiteParameters {
   double vs_Latitude{52.5};         // ZALF latitude
   double vs_Slope{0.01};            //!< [m m-1]
   double vs_HeightNN{50.0};         //!< [m]
@@ -431,6 +414,17 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
       calculateAndSetPwpFcSatFunctions;
   // MeasuredGroundwaterTableInformation groundwaterInformation;
 };
+
+DLL_API SiteParameters makeSiteParameters(mas::schema::model::monica::SiteParameters::Reader reader);
+
+namespace siteparameters {
+
+DLL_API void deserialize(SiteParameters* sp, mas::schema::model::monica::SiteParameters::Reader reader);
+DLL_API void serialize(const SiteParameters* sp, mas::schema::model::monica::SiteParameters::Builder builder);
+DLL_API Tools::Errors merge(SiteParameters* sp, json11::Json j);
+DLL_API json11::Json to_json(const SiteParameters* sp);
+
+} // namespace siteparameters
 
 /**
  * @brief Data structure that containts all relevant parameters for the

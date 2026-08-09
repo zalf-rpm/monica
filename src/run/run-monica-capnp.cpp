@@ -94,7 +94,7 @@ kj::Promise<void> RunMonica::run(RunContext context) {
         it != errors.errors.end()) {
         errors.errors.erase(it);
       }
-      errors.append(env.params.siteParameters.merge(J11Object{{"SoilProfileParameters", soilLayers}}));
+      errors.append(siteparameters::merge(&env.params.siteParameters, J11Object{{"SoilProfileParameters", soilLayers}}));
     }
 
     Output out;

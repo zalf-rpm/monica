@@ -141,7 +141,7 @@ void monica::monicamodel::deserialize(
   auto &vs_GroundwaterDepth = model->vs_GroundwaterDepth;
   auto &cultivationMethodCount = model->cultivationMethodCount;
 
-  sitePs.deserialize(reader.getSitePs());
+  siteparameters::deserialize(&sitePs, reader.getSitePs());
   envPs.deserialize(reader.getEnvPs());
   cropPs.deserialize(reader.getCropPs());
   simPs.deserialize(reader.getSimPs());
@@ -298,7 +298,7 @@ void monica::monicamodel::serialize(
   auto &vs_GroundwaterDepth = model->vs_GroundwaterDepth;
   auto &cultivationMethodCount = model->cultivationMethodCount;
 
-  sitePs.serialize(builder.initSitePs());
+  siteparameters::serialize(&sitePs, builder.initSitePs());
   envPs.serialize(builder.initEnvPs());
   cropPs.serialize(builder.initCropPs());
   simPs.serialize(builder.initSimPs());

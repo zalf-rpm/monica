@@ -1011,72 +1011,74 @@ std::pair<bool, double> measuredgroundwatertableinformation::getGroundwaterInfor
 //std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters*)>>
 //SiteParameters::calculateAndSetPwpFcSatFunctions = std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters*)>>();
 
-void SiteParameters::deserialize(mas::schema::model::monica::SiteParameters::Reader reader) {
-  vs_Latitude = reader.getLatitude();
-  vs_Slope = reader.getSlope();
-  vs_HeightNN = reader.getHeightNN();
-  vs_GroundwaterDepth = reader.getGroundwaterDepth();
-  vs_Soil_CN_Ratio = reader.getSoilCNRatio();
-  vs_DrainageCoeff = reader.getDrainageCoeff();
-  vq_NDeposition = reader.getVqNDeposition();
-  vs_MaxEffectiveRootingDepth = reader.getMaxEffectiveRootingDepth();
-  vs_ImpenetrableLayerDepth = reader.getImpenetrableLayerDepth();
-  vs_SoilSpecificHumusBalanceCorrection = reader.getSoilSpecificHumusBalanceCorrection();
-  setFromComplexCapnpList(vs_SoilParameters, reader.getSoilParameters());
+SiteParameters monica::makeSiteParameters(mas::schema::model::monica::SiteParameters::Reader reader) {
+  SiteParameters sp;
+  siteparameters::deserialize(&sp, reader);
+  return sp;
 }
 
-void SiteParameters::serialize(mas::schema::model::monica::SiteParameters::Builder builder) const {
-  builder.setLatitude(vs_Latitude);
-  builder.setSlope(vs_Slope);
-  builder.setHeightNN(vs_HeightNN);
-  builder.setGroundwaterDepth(vs_GroundwaterDepth);
-  builder.setSoilCNRatio(vs_Soil_CN_Ratio);
-  builder.setDrainageCoeff(vs_DrainageCoeff);
-  builder.setVqNDeposition(vq_NDeposition);
-  builder.setMaxEffectiveRootingDepth(vs_MaxEffectiveRootingDepth);
-  builder.setImpenetrableLayerDepth(vs_ImpenetrableLayerDepth);
-  builder.setSoilSpecificHumusBalanceCorrection(vs_SoilSpecificHumusBalanceCorrection);
-  setComplexCapnpList(vs_SoilParameters, builder.initSoilParameters((capnp::uint)vs_SoilParameters.size()));
+void siteparameters::deserialize(SiteParameters* sp, mas::schema::model::monica::SiteParameters::Reader reader) {
+  sp->vs_Latitude = reader.getLatitude();
+  sp->vs_Slope = reader.getSlope();
+  sp->vs_HeightNN = reader.getHeightNN();
+  sp->vs_GroundwaterDepth = reader.getGroundwaterDepth();
+  sp->vs_Soil_CN_Ratio = reader.getSoilCNRatio();
+  sp->vs_DrainageCoeff = reader.getDrainageCoeff();
+  sp->vq_NDeposition = reader.getVqNDeposition();
+  sp->vs_MaxEffectiveRootingDepth = reader.getMaxEffectiveRootingDepth();
+  sp->vs_ImpenetrableLayerDepth = reader.getImpenetrableLayerDepth();
+  sp->vs_SoilSpecificHumusBalanceCorrection = reader.getSoilSpecificHumusBalanceCorrection();
+  setFromComplexCapnpList(sp->vs_SoilParameters, reader.getSoilParameters());
 }
 
-// SiteParameters::SiteParameters(json11::Json j) {
-//   merge(j);
-// }
+void siteparameters::serialize(const SiteParameters* sp, mas::schema::model::monica::SiteParameters::Builder builder) {
+  builder.setLatitude(sp->vs_Latitude);
+  builder.setSlope(sp->vs_Slope);
+  builder.setHeightNN(sp->vs_HeightNN);
+  builder.setGroundwaterDepth(sp->vs_GroundwaterDepth);
+  builder.setSoilCNRatio(sp->vs_Soil_CN_Ratio);
+  builder.setDrainageCoeff(sp->vs_DrainageCoeff);
+  builder.setVqNDeposition(sp->vq_NDeposition);
+  builder.setMaxEffectiveRootingDepth(sp->vs_MaxEffectiveRootingDepth);
+  builder.setImpenetrableLayerDepth(sp->vs_ImpenetrableLayerDepth);
+  builder.setSoilSpecificHumusBalanceCorrection(sp->vs_SoilSpecificHumusBalanceCorrection);
+  setComplexCapnpList(sp->vs_SoilParameters, builder.initSoilParameters((capnp::uint)sp->vs_SoilParameters.size()));
+}
 
-Errors SiteParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors siteparameters::merge(SiteParameters* sp, json11::Json j) {
+  Errors res = defaultMerge(j, [sp](json11::Json j2) { return merge(sp, j2); });
 
   string err;
-  set_double_value(vs_Latitude, j, "Latitude");
-  set_double_value(vs_Slope, j, "Slope");
-  set_double_value(vs_HeightNN, j, "HeightNN");
-  set_double_value(vs_GroundwaterDepth, j, "GroundwaterDepth");
-  set_double_value(vs_Soil_CN_Ratio, j, "Soil_CN_Ratio");
-  set_double_value(vs_DrainageCoeff, j, "DrainageCoeff");
-  set_double_value(vq_NDeposition, j, "NDeposition");
-  set_double_value(vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
-  set_double_value(vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
-  set_double_value(vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
-  set_double_value(bareSoilKcFactor, j, "Bare_soil_KC_factor");
-  set_string_value(pwpFcSatFunction, j, "pwpFcSatFunction");
+  set_double_value(sp->vs_Latitude, j, "Latitude");
+  set_double_value(sp->vs_Slope, j, "Slope");
+  set_double_value(sp->vs_HeightNN, j, "HeightNN");
+  set_double_value(sp->vs_GroundwaterDepth, j, "GroundwaterDepth");
+  set_double_value(sp->vs_Soil_CN_Ratio, j, "Soil_CN_Ratio");
+  set_double_value(sp->vs_DrainageCoeff, j, "DrainageCoeff");
+  set_double_value(sp->vq_NDeposition, j, "NDeposition");
+  set_double_value(sp->vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth");
+  set_double_value(sp->vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth");
+  set_double_value(sp->vs_SoilSpecificHumusBalanceCorrection, j, "SoilSpecificHumusBalanceCorrection");
+  set_double_value(sp->bareSoilKcFactor, j, "Bare_soil_KC_factor");
+  set_string_value(sp->pwpFcSatFunction, j, "pwpFcSatFunction");
 
-  set_int_value(numberOfLayers, j, "NumberOfLayers");
-  set_double_value(layerThickness, j, "LayerThickness");
+  set_int_value(sp->numberOfLayers, j, "NumberOfLayers");
+  set_double_value(sp->layerThickness, j, "LayerThickness");
 
   std::function selectedSetPwpFcSatFunction = noSetPwpFcSat;
-  if (const auto it = calculateAndSetPwpFcSatFunctions.find(pwpFcSatFunction);
-    it != calculateAndSetPwpFcSatFunctions.end()) {
+  if (const auto it = sp->calculateAndSetPwpFcSatFunctions.find(sp->pwpFcSatFunction);
+    it != sp->calculateAndSetPwpFcSatFunctions.end()) {
     selectedSetPwpFcSatFunction = it->second;
   } else {
-    res.warnings.push_back("Couldn't find pwpFcSatFunction: " + pwpFcSatFunction);
+    res.warnings.push_back("Couldn't find pwpFcSatFunction: " + sp->pwpFcSatFunction);
   }
 
   if (j.has_shape({{"SoilProfileParameters", json11::Json::ARRAY}}, err)) {
-    initSoilProfileSpec = j["SoilProfileParameters"].array_items();
-    auto r = createEqualSizedSoilPMs(selectedSetPwpFcSatFunction, initSoilProfileSpec, layerThickness, numberOfLayers);
+    sp->initSoilProfileSpec = j["SoilProfileParameters"].array_items();
+    auto r = createEqualSizedSoilPMs(selectedSetPwpFcSatFunction, sp->initSoilProfileSpec, sp->layerThickness, sp->numberOfLayers);
     if (r.success()) {
-      vs_SoilParameters = kj::mv(r.result);
-      if (vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
+      sp->vs_SoilParameters = kj::mv(r.result);
+      if (sp->vs_SoilParameters.empty()) res.appendError("Soil profile is empty!");
     } else res.append(r.errors);
   } else if (j["SoilProfileParameters"].is_string() && j["SoilProfileParameters"].string_value().find("capnp") != 0) {
     res.errors.push_back(string("Couldn't read 'SoilProfileParameters' JSON array from JSON object:\n") + j.dump());
@@ -1089,24 +1091,24 @@ Errors SiteParameters::merge(json11::Json j) {
   return res;
 }
 
-json11::Json SiteParameters::to_json() const {
+json11::Json siteparameters::to_json(const SiteParameters* sp) {
   auto sps = J11Object
   {
     {"type", "SiteParameters"},
-    {"Latitude", J11Array{vs_Latitude, "", "latitude in decimal degrees"}},
-    {"Slope", J11Array{vs_Slope, "m m-1"}},
-    {"HeightNN", J11Array{vs_HeightNN, "m", "height above sea level"}},
-    {"GroundwaterDepth", J11Array{vs_GroundwaterDepth, "m"}},
-    {"Soil_CN_Ratio", vs_Soil_CN_Ratio},
-    {"DrainageCoeff", vs_DrainageCoeff},
-    {"NDeposition", J11Array{vq_NDeposition, "kg N ha-1 y-1"}},
-    {"MaxEffectiveRootingDepth", J11Array{vs_MaxEffectiveRootingDepth, "m"}},
-    {"ImpenetrableLayerDepth", J11Array{vs_ImpenetrableLayerDepth, "m"}},
-    {"SoilSpecificHumusBalanceCorrection", J11Array{vs_SoilSpecificHumusBalanceCorrection, "humus equivalents"}},
-    {"Bare_soil_KC_factor", bareSoilKcFactor}
+    {"Latitude", J11Array{sp->vs_Latitude, "", "latitude in decimal degrees"}},
+    {"Slope", J11Array{sp->vs_Slope, "m m-1"}},
+    {"HeightNN", J11Array{sp->vs_HeightNN, "m", "height above sea level"}},
+    {"GroundwaterDepth", J11Array{sp->vs_GroundwaterDepth, "m"}},
+    {"Soil_CN_Ratio", sp->vs_Soil_CN_Ratio},
+    {"DrainageCoeff", sp->vs_DrainageCoeff},
+    {"NDeposition", J11Array{sp->vq_NDeposition, "kg N ha-1 y-1"}},
+    {"MaxEffectiveRootingDepth", J11Array{sp->vs_MaxEffectiveRootingDepth, "m"}},
+    {"ImpenetrableLayerDepth", J11Array{sp->vs_ImpenetrableLayerDepth, "m"}},
+    {"SoilSpecificHumusBalanceCorrection", J11Array{sp->vs_SoilSpecificHumusBalanceCorrection, "humus equivalents"}},
+    {"Bare_soil_KC_factor", sp->bareSoilKcFactor}
   };
 
-  sps["SoilProfileParameters"] = toJsonArray(vs_SoilParameters);
+  sps["SoilProfileParameters"] = toJsonArray(sp->vs_SoilParameters);
 
   return sps;
 }
@@ -2542,7 +2544,7 @@ Errors CentralParameterProvider::merge(json11::Json j) {
   res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
   res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
   res.append(simulationParameters.merge(j["simulationParameters"]));
-  res.append(siteParameters.merge(j["siteParameters"]));
+  res.append(siteparameters::merge(&siteParameters, j["siteParameters"]));
   if (!j["groundwaterInformation"].is_null()) {
     res.append(measuredgroundwatertableinformation::merge(&groundwaterInformation, j["groundwaterInformation"]));
   }
@@ -2563,7 +2565,7 @@ json11::Json CentralParameterProvider::to_json() const {
     {"userSoilTransportParameters", userSoilTransportParameters.to_json()},
     {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
     {"simulationParameters", simulationParameters.to_json()},
-    {"siteParameters", siteParameters.to_json()}
+    {"siteParameters", siteparameters::to_json(&siteParameters)}
     //, {"groundwaterInformation", groundwaterInformation.to_json()}
     //, {"writeOutputFiles", writeOutputFiles()}
   };
