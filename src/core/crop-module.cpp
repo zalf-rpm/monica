@@ -93,7 +93,7 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
       cps->cultivarParams.pc_CriticalTemperatureHeatStress;
   cm->pc_CropHeightP1 = cps->cultivarParams.pc_CropHeightP1;
   cm->pc_CropHeightP2 = cps->cultivarParams.pc_CropHeightP2;
-  cm->pc_CropName = cps->pc_CropName();
+  cm->pc_CropName = cropparameters::cropName(cps);
   cm->pc_CropSpecificMaxRootingDepth =
       cps->cultivarParams.pc_CropSpecificMaxRootingDepth;
   cm->vc_CurrentTemperatureSum = std::vector<double>(
@@ -5711,7 +5711,7 @@ void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule *cm) {
       cm->perennialCropParams->cultivarParams.pc_CriticalTemperatureHeatStress;
   cm->pc_CropHeightP1 = cm->perennialCropParams->cultivarParams.pc_CropHeightP1;
   cm->pc_CropHeightP2 = cm->perennialCropParams->cultivarParams.pc_CropHeightP2;
-  cm->pc_CropName = cm->perennialCropParams->pc_CropName();
+  cm->pc_CropName = cropparameters::cropName(cm->perennialCropParams);
   cm->pc_CropSpecificMaxRootingDepth =
       cm->perennialCropParams->cultivarParams.pc_CropSpecificMaxRootingDepth;
   cm->pc_DaylengthRequirement =

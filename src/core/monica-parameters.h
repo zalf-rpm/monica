@@ -244,37 +244,26 @@ inline size_t numberOfDevelopmentalStages(const CultivarParameters* cp) {
 
 typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 
-struct DLL_API CropParameters : public Tools::Json11Serializable {
-  CropParameters() = default;
-
-  explicit CropParameters(
-      mas::schema::model::monica::CropParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::CropParameters::Reader reader);
-
-  // CropParameters(json11::Json object);
-
-  // CropParameters(json11::Json speciesObject, json11::Json cultivarObject);
-
-  void
-  serialize(mas::schema::model::monica::CropParameters::Builder builder) const;
-
-  Tools::Errors merge(json11::Json j) override;
-
-  Tools::Errors merge(json11::Json sj, json11::Json cj);
-
-  json11::Json to_json() const override;
-
-  std::string pc_CropName() const {
-    return speciesParams.pc_SpeciesId + "/" + cultivarParams.pc_CultivarId;
-  }
-
+struct DLL_API CropParameters {
   SpeciesParameters speciesParams;
   CultivarParameters cultivarParams;
   kj::Maybe<bool> __enable_vernalisation_factor_fix__;
 };
+
+DLL_API CropParameters makeCropParameters(mas::schema::model::monica::CropParameters::Reader reader);
+
+namespace cropparameters {
+
+DLL_API void deserialize(CropParameters* cp, mas::schema::model::monica::CropParameters::Reader reader);
+DLL_API void serialize(const CropParameters* cp, mas::schema::model::monica::CropParameters::Builder builder);
+DLL_API Tools::Errors merge(CropParameters* cp, json11::Json j);
+DLL_API Tools::Errors merge(CropParameters* cp, json11::Json sj, json11::Json cj);
+DLL_API json11::Json to_json(const CropParameters* cp);
+inline std::string cropName(const CropParameters* cp) {
+  return cp->speciesParams.pc_SpeciesId + "/" + cp->cultivarParams.pc_CultivarId;
+}
+
+} // namespace cropparameters
 
 typedef std::shared_ptr<CropParameters> CropParametersPtr;
 

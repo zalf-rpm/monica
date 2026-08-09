@@ -429,7 +429,7 @@ void monica::monicamodel::seedCrop(
                                   model->currentCropModule->residuePs,
                                   layer2amount, nConcentration);
     };
-    CropParameters cps(reader.getCropParams());
+    CropParameters cps = makeCropParameters(reader.getCropParams());
     CropResidueParameters rps(reader.getResidueParams());
     model->currentCropModule = nullptr;
     model->currentCropModule = makeCropModule(

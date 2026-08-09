@@ -232,7 +232,7 @@ Errors Sowing::merge(json11::Json j) {
       auto jcps = jc["cropParams"];
       if (jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
           jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
-        _cropParams.merge(jcps);
+        cropparameters::merge(&_cropParams, jcps);
       else
         res.errors.push_back(string("Couldn't find 'species' or 'cultivar' key "
                                     "in JSON object 'cropParams':\n") +
@@ -259,7 +259,7 @@ Errors Sowing::merge(json11::Json j) {
             jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err)) {
           _separatePerennialCropParams = nullptr;
           _separatePerennialCropParams = kj::heap<CropParameters>();
-          _separatePerennialCropParams->merge(jcps);
+          cropparameters::merge(_separatePerennialCropParams.get(), jcps);
           // _perennialCropParams = _separatePerennialCropParams.get();
         }
       }
@@ -286,10 +286,10 @@ Errors Sowing::merge(json11::Json j) {
 }
 
 json11::Json Sowing::to_json(bool includeFullCropParameters) const {
-  auto co = json11::Json::object{{"cropParams", _cropParams.to_json()},
+  auto co = json11::Json::object{{"cropParams", cropparameters::to_json(&_cropParams)},
                                  {"residueParams", _residueParams.to_json()}};
   if (_separatePerennialCropParams)
-    co["perennialCropParams"] = _separatePerennialCropParams->to_json();
+    co["perennialCropParams"] = cropparameters::to_json(_separatePerennialCropParams.get());
 
   auto o = json11::Json::object{
       {"type", type()},
@@ -307,7 +307,7 @@ json11::Json Sowing::to_json(bool includeFullCropParameters) const {
 bool Sowing::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  debug() << "sowing crop: " << _cropParams.pc_CropName()
+  debug() << "sowing crop: " << cropparameters::cropName(&_cropParams)
           << " at: " << _sowingDate.toString() << endl;
 
   model->p_daysWithCrop = 0;
@@ -780,7 +780,7 @@ bool Harvest::apply(MonicaModel *model) {
     monicamodel::harvestCurrentCrop(model, _exported, _spec, _optCarbMgmtData,
                                     _incorporateIntoLayerNo - 1);
     if (_sowing)
-      debug() << "harvesting crop: " << _sowing->_cropParams.pc_CropName()
+      debug() << "harvesting crop: " << cropparameters::cropName(&_sowing->_cropParams)
               << " at: " << date().toString() << endl;
     model->currentEvents.insert("Harvest");
   }
@@ -980,7 +980,7 @@ bool Cutting::apply(MonicaModel *model) {
 
   assert(model->currentCropModule);
   debug() << "Cutting crop: "
-          << model->currentCropModule->cropParams.pc_CropName()
+          << cropparameters::cropName(&model->currentCropModule->cropParams)
           << " at: " << date().toString() << endl;
 
   cropmodule::applyCutting(model->currentCropModule, _organId2cuttingSpec,

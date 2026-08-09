@@ -649,43 +649,41 @@ json11::Json cultivarparameters::to_json(const CultivarParameters* cp) {
 }
 
 
-// CropParameters::CropParameters(json11::Json j) {
-//   merge(j["species"], j["cultivar"]);
-// }
-
-// CropParameters::CropParameters(json11::Json sj, json11::Json cj) {
-//   merge(sj, cj);
-// }
-
-void CropParameters::deserialize(mas::schema::model::monica::CropParameters::Reader reader) {
-  speciesparameters::deserialize(&speciesParams, reader.getSpeciesParams());
-  cultivarparameters::deserialize(&cultivarParams, reader.getCultivarParams());
+CropParameters monica::makeCropParameters(mas::schema::model::monica::CropParameters::Reader reader) {
+  CropParameters cp;
+  cropparameters::deserialize(&cp, reader);
+  return cp;
 }
 
-void CropParameters::serialize(mas::schema::model::monica::CropParameters::Builder builder) const {
-  speciesparameters::serialize(&speciesParams, builder.initSpeciesParams());
-  cultivarparameters::serialize(&cultivarParams, builder.initCultivarParams());
+void cropparameters::deserialize(CropParameters* cp, mas::schema::model::monica::CropParameters::Reader reader) {
+  speciesparameters::deserialize(&cp->speciesParams, reader.getSpeciesParams());
+  cultivarparameters::deserialize(&cp->cultivarParams, reader.getCultivarParams());
 }
 
-Errors CropParameters::merge(json11::Json j) {
+void cropparameters::serialize(const CropParameters* cp, mas::schema::model::monica::CropParameters::Builder builder) {
+  speciesparameters::serialize(&cp->speciesParams, builder.initSpeciesParams());
+  cultivarparameters::serialize(&cp->cultivarParams, builder.initCultivarParams());
+}
+
+Errors cropparameters::merge(CropParameters* cp, json11::Json j) {
   auto evff = j["__enable_vernalisation_factor_fix__"];
-  if (!evff.is_null() && evff.is_bool()) __enable_vernalisation_factor_fix__ = evff.bool_value();
-  return merge(j["species"], j["cultivar"]);
+  if (!evff.is_null() && evff.is_bool()) cp->__enable_vernalisation_factor_fix__ = evff.bool_value();
+  return merge(cp, j["species"], j["cultivar"]);
 }
 
-Errors CropParameters::merge(json11::Json sj, json11::Json cj) {
+Errors cropparameters::merge(CropParameters* cp, json11::Json sj, json11::Json cj) {
   Errors res;
-  res.append(speciesparameters::merge(&speciesParams, sj));
-  res.append(cultivarparameters::merge(&cultivarParams, cj));
+  res.append(speciesparameters::merge(&cp->speciesParams, sj));
+  res.append(cultivarparameters::merge(&cp->cultivarParams, cj));
   return res;
 }
 
-json11::Json CropParameters::to_json() const {
+json11::Json cropparameters::to_json(const CropParameters* cp) {
   return J11Object
   {
     {"type", "CropParameters"},
-    {"species", speciesparameters::to_json(&speciesParams)},
-    {"cultivar", cultivarparameters::to_json(&cultivarParams)}
+    {"species", speciesparameters::to_json(&cp->speciesParams)},
+    {"cultivar", cultivarparameters::to_json(&cp->cultivarParams)}
   };
 }
 

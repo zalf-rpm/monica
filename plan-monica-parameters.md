@@ -95,9 +95,19 @@ those members. Check off each once it's built, regression-tested, committed, and
    as before: `CropParameters::deserialize`/`serialize`/`merge`/`to_json` (still unconverted) called
    `cultivarParams.deserialize/serialize/merge/to_json(...)` as member functions — rewired to
    `cultivarparameters::...` free functions without otherwise converting `CropParameters` yet.
-4. [ ] `CropParameters` — needs `SpeciesParameters` + `CultivarParameters` done (holds both by
-   value). Has two `merge` overloads (`merge(j)` and `merge(sj, cj)`). Fix `.toString()` call site
-   in `crop.cpp`.
+4. [x] `CropParameters` — needs `SpeciesParameters` + `CultivarParameters` done (holds both by
+   value). Has two `merge` overloads (`merge(j)` and `merge(sj, cj)`) — kept as two
+   `cropparameters::merge` overloads. `pc_CropName()` (real computation, string concat) became
+   `inline cropparameters::cropName(...)`. Fixed `.toString()` call site in `crop.cpp` (replaced
+   with `cropparameters::to_json(...).dump()` since no other caller needs a `toString` override).
+   This struct had noticeably more external call sites than the previous three combined — besides
+   the usual leak-forward into still-unconverted `Crop`/`Sowing`/`Cutting`/`Harvest`
+   (`crop.cpp`, `cultivation-method.cpp`), two direct-construction call sites
+   (`CropParameters cps(reader.getCropParams());` in `monica-model.cpp`,
+   `kj::heap<CropParameters>(reader.getPerennialCropParams())` in `crop.cpp`) weren't caught by the
+   initial `CropParameters(` grep because the type name wasn't immediately followed by `(` — worth
+   remembering for future items: also grep for `Type varname(` and `kj::heap<Type>(readerOrJson)`
+   patterns, not just `Type(`.
 5. [ ] `MineralFertilizerParameters` — leaf; already had its trivial accessors inlined in an
    earlier pass (see `plan.md`), constructors/merge/serialize/deserialize/to_json still pending.
    Fix `.toString()` call site in `soilcolumn.cpp`.
