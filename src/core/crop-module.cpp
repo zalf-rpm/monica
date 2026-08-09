@@ -406,7 +406,7 @@ void monica::cropmodule::deserialize(
   cm->frostKillOn = reader.getFrostKillOn();
   // cm->speciesPs.deserialize(reader.getSpeciesParams());
   // cm->cultivarPs.deserialize(reader.getCultivarParams());
-  cm->residuePs.deserialize(reader.getResidueParams());
+  cropresidueparameters::deserialize(&cm->residuePs, reader.getResidueParams());
   cm->isWinterCrop = reader.getIsWinterCrop();
   cm->vs_Latitude = reader.getVsLatitude();
   cm->vc_AbovegroundBiomass = reader.getAbovegroundBiomass();
@@ -705,7 +705,7 @@ void monica::cropmodule::serialize(
   builder.setFrostKillOn(cm->frostKillOn);
   // cm->speciesPs.serialize(builder.initSpeciesParams());
   // cm->cultivarPs.serialize(builder.initCultivarParams());
-  cm->residuePs.serialize(builder.initResidueParams());
+  cropresidueparameters::serialize(&cm->residuePs, builder.initResidueParams());
   builder.setIsWinterCrop(cm->isWinterCrop);
   builder.setVsLatitude(cm->vs_Latitude);
   builder.setAbovegroundBiomass(cm->vc_AbovegroundBiomass);

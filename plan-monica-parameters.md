@@ -212,8 +212,14 @@ those members. Check off each once it's built, regression-tested, committed, and
     13 had already rewired its internal base-class calls, so this step was purely mechanical
     (constructors -> `makeOrganicFertilizerParameters(reader)`, `this->` becomes `ofp->`); no
     external call sites to fix.
-15. [ ] `CropResidueParameters` — needs `OrganicMatterParameters` done (inherits it). Fix
-    `.toString()` call site in `crop.cpp`.
+15. [x] `CropResidueParameters` — needed `OrganicMatterParameters` done (inherits it, kept as
+    plain-struct inheritance). Item 13 already rewired its internal base-class calls, so this step
+    converted the shell. Unlike `OrganicFertilizerParameters`, this one has real external usage:
+    fixed leak-forward in `Crop`/`Sowing` (`crop.cpp`, `cultivation-method.cpp` — including the
+    `residueParameters().toString()`/`.to_json()` sites from item 13's discovery) and
+    `CropModule::residuePs` (`crop-module.cpp`); also a direct-init constructor call
+    (`CropResidueParameters rps(reader.getResidueParams());`) in `monica-model.cpp` caught by the
+    "also grep `Type varname(`" lesson from item 4.
 16. [ ] `SimulationParameters` — needs `AutomaticIrrigationParameters`,
     `MineralFertilizerParameters`, `NMinApplicationParameters` done (holds all three by value).
 17. [ ] `CropModuleParameters` — leaf.

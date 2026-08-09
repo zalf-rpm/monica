@@ -267,7 +267,7 @@ Errors Sowing::merge(json11::Json j) {
 
     err = "";
     if (jc.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
-      _residueParams.merge(jc["residueParams"]);
+      cropresidueparameters::merge(&_residueParams, jc["residueParams"]);
     } else {
       res.errors.push_back(
           string("Couldn't find 'residueParams' key in JSON object:\n") +
@@ -287,7 +287,7 @@ Errors Sowing::merge(json11::Json j) {
 
 json11::Json Sowing::to_json(bool includeFullCropParameters) const {
   auto co = json11::Json::object{{"cropParams", cropparameters::to_json(&_cropParams)},
-                                 {"residueParams", _residueParams.to_json()}};
+                                 {"residueParams", cropresidueparameters::to_json(&_residueParams)}};
   if (_separatePerennialCropParams)
     co["perennialCropParams"] = cropparameters::to_json(_separatePerennialCropParams.get());
 

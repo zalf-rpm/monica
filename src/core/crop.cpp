@@ -106,7 +106,7 @@ void Crop::deserialize(mas::schema::model::monica::CropState::Reader reader) {
         kj::heap<CropParameters>(makeCropParameters(reader.getPerennialCropParams()));
     _perennialCropParams = *_separatePerennialCropParams.get();
   }
-  _residueParams.deserialize(reader.getResidueParams());
+  cropresidueparameters::deserialize(&_residueParams, reader.getResidueParams());
   _crossCropAdaptionFactor = reader.getCrossCropAdaptionFactor();
   _automaticHarvest = reader.getAutomaticHarvest();
   automaticharvestparameters::deserialize(&_automaticHarvestParams, reader.getAutomaticHarvestParams());
@@ -128,7 +128,7 @@ void Crop::serialize(
     cropparameters::serialize(&_cropParams, builder.initCropParams());
   if (_separatePerennialCropParams)
     cropparameters::serialize(_separatePerennialCropParams.get(), builder.initPerennialCropParams());
-  _residueParams.serialize(builder.initResidueParams());
+  cropresidueparameters::serialize(&_residueParams, builder.initResidueParams());
   builder.setCrossCropAdaptionFactor(_crossCropAdaptionFactor);
   builder.setAutomaticHarvest(_automaticHarvest);
   automaticharvestparameters::serialize(&_automaticHarvestParams, builder.initAutomaticHarvestParams());
@@ -192,7 +192,7 @@ Errors Crop::merge(json11::Json j) {
 
   err = "";
   if (j.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
-    _residueParams.merge(j["residueParams"]);
+    cropresidueparameters::merge(&_residueParams, j["residueParams"]);
   } else {
     res.errors.push_back(
         string("Couldn't find 'residueParams' key in JSON object:\n") +
@@ -234,7 +234,7 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const {
     if (_separatePerennialCropParams)
       o["perennialCropParams"] = cropparameters::to_json(&perennialCropParameters());
     if (_isValid)
-      o["residueParams"] = residueParameters().to_json();
+      o["residueParams"] = cropresidueparameters::to_json(&residueParameters());
   }
 
   return o;
@@ -266,7 +266,7 @@ string Crop::toString(bool detailed) const {
       << "CropParameters: " << endl
       << cropparameters::to_json(&cropParameters()).dump() << endl
       << "ResidueParameters: " << endl
-      << residueParameters().to_json().dump() << endl;
+      << cropresidueparameters::to_json(&residueParameters()).dump() << endl;
 
   return s.str();
 }

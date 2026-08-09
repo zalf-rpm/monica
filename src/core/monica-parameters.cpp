@@ -1424,37 +1424,42 @@ json11::Json organicfertilizerparameters::to_json(const OrganicFertilizerParamet
   return omp;
 }
 
-void CropResidueParameters::deserialize(mas::schema::model::monica::CropResidueParameters::Reader reader) {
-  organicmatterparameters::deserialize(this, reader.getParams());
-  species = reader.getSpecies();
-  residueType = reader.getResidueType();
+CropResidueParameters monica::makeCropResidueParameters(
+  mas::schema::model::monica::CropResidueParameters::Reader reader) {
+  CropResidueParameters crp;
+  cropresidueparameters::deserialize(&crp, reader);
+  return crp;
 }
 
-void CropResidueParameters::serialize(mas::schema::model::monica::CropResidueParameters::Builder builder) const {
-  organicmatterparameters::serialize(this, builder.initParams());
-  builder.setSpecies(species);
-  builder.setResidueType(residueType);
+void cropresidueparameters::deserialize(CropResidueParameters* crp,
+  mas::schema::model::monica::CropResidueParameters::Reader reader) {
+  organicmatterparameters::deserialize(crp, reader.getParams());
+  crp->species = reader.getSpecies();
+  crp->residueType = reader.getResidueType();
 }
 
-// CropResidueParameters::CropResidueParameters(json11::Json j) {
-//   merge(j);
-// }
+void cropresidueparameters::serialize(const CropResidueParameters* crp,
+  mas::schema::model::monica::CropResidueParameters::Builder builder) {
+  organicmatterparameters::serialize(crp, builder.initParams());
+  builder.setSpecies(crp->species);
+  builder.setResidueType(crp->residueType);
+}
 
-Errors CropResidueParameters::merge(json11::Json j) {
-  Errors res = defaultMerge(j, [this](json11::Json j2) { return merge(j2); });
+Errors cropresidueparameters::merge(CropResidueParameters* crp, json11::Json j) {
+  Errors res = defaultMerge(j, [crp](json11::Json j2) { return merge(crp, j2); });
 
-  res.append(organicmatterparameters::merge(this, j));
-  set_string_value(species, j, "species");
-  set_string_value(residueType, j, "residueType");
+  res.append(organicmatterparameters::merge(crp, j));
+  set_string_value(crp->species, j, "species");
+  set_string_value(crp->residueType, j, "residueType");
 
   return res;
 }
 
-json11::Json CropResidueParameters::to_json() const {
-  auto omp = organicmatterparameters::to_json(this).object_items();
+json11::Json cropresidueparameters::to_json(const CropResidueParameters* crp) {
+  auto omp = organicmatterparameters::to_json(crp).object_items();
   omp["type"] = "CropResidueParameters";
-  omp["species"] = species;
-  omp["residueType"] = residueType;
+  omp["species"] = crp->species;
+  omp["residueType"] = crp->residueType;
   return omp;
 }
 

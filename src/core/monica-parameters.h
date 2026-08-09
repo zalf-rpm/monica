@@ -555,28 +555,23 @@ typedef std::shared_ptr<OrganicFertilizerParameters>
     OrganicFertiliserParametersPtr;
 
 struct DLL_API CropResidueParameters : public OrganicMatterParameters {
-  CropResidueParameters() {}
-
-  CropResidueParameters(
-      mas::schema::model::monica::CropResidueParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::CropResidueParameters::Reader reader);
-
-  void serialize(
-      mas::schema::model::monica::CropResidueParameters::Builder builder) const;
-
-  // CropResidueParameters(json11::Json object);
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
   std::string species;
   std::string residueType;
 };
+
+DLL_API CropResidueParameters makeCropResidueParameters(
+    mas::schema::model::monica::CropResidueParameters::Reader reader);
+
+namespace cropresidueparameters {
+
+DLL_API void deserialize(CropResidueParameters* crp,
+    mas::schema::model::monica::CropResidueParameters::Reader reader);
+DLL_API void serialize(const CropResidueParameters* crp,
+    mas::schema::model::monica::CropResidueParameters::Builder builder);
+DLL_API Tools::Errors merge(CropResidueParameters* crp, json11::Json j);
+DLL_API json11::Json to_json(const CropResidueParameters* crp);
+
+} // namespace cropresidueparameters
 
 typedef std::shared_ptr<CropResidueParameters> CropResidueParametersPtr;
 
