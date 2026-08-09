@@ -233,12 +233,31 @@ those members. Check off each once it's built, regression-tested, committed, and
     corrupting a JSON string literal. Leak-forward fixed in `MonicaModel::simPs`
     (`monica-model.cpp`) and `CentralParameterProvider::simulationParameters` (item 24, still
     unconverted).
-17. [ ] `CropModuleParameters` — leaf.
-18. [ ] `EnvironmentParameters` — leaf.
-19. [ ] `SoilMoistureModuleParameters` — leaf. Its non-inline default constructor
-    (`SoilMoistureModuleParameters::SoilMoistureModuleParameters()`) only sets a default lambda
-    for `getCapillaryRiseRate`; fold that into a default member initializer so the struct needs no
-    custom default construction at all.
+17. [x] `CropModuleParameters` — leaf. Straightforward; only external usage was `MonicaModel::cropPs`
+    (`monica-model.cpp`: `deserialize`/`serialize` member calls, plain field member so no aggregate-init
+    concerns) and the still-unconverted `CentralParameterProvider::userCropParameters` leak-forward
+    (item 24, both `merge`/`to_json`). Also fixed a `.to_json()` call site in
+    `create-env-from-json-config.cpp` (`readUserCropParametersFromDatabase(...).to_json()` ->
+    `cropmoduleparameters::to_json(&...)`- style temporary handling not needed there since that
+    function itself is unrelated/pre-existing and wasn't touched; only the member-call shape mattered).
+18. [x] `EnvironmentParameters` — leaf. Same shape as item 17: external usage was `MonicaModel::envPs`
+    (`monica-model.cpp` `deserialize`/`serialize`) plus the `CentralParameterProvider` leak-forward
+    (item 24). `SoilMoisture::envPs` (`soilmoisture.h`) holds a `const EnvironmentParameters&` but only
+    does field reads, unaffected.
+19. [x] `SoilMoistureModuleParameters` — leaf. Folded the non-inline default constructor's
+    `getCapillaryRiseRate` lambda into a default member initializer as planned, so the struct needs no
+    custom default construction. External usage: `SoilMoisture::params` (`soilmoisture.h`/`.cpp`
+    `deserialize`/`serialize` member calls) and the `CentralParameterProvider` leak-forward (item 24).
+    `makeSoilMoisture(...)`'s two overloads in `soilmoisture.cpp` aggregate-brace-init a `SoilMoisture`
+    with a `SoilMoistureModuleParameters` value member (by name `params` or via `{}`
+    default-construction) — both continue to work unchanged as plain-aggregate brace-init, no fix
+    needed. **Found via full build, not grep**: `CentralParameterProvider::merge`/`to_json`
+    (`monica-parameters.cpp`, item 24, still unconverted) call `.merge(`/`.to_json(` directly on all
+    three of this batch's structs' `userXxxParameters` members — this leak-forward shape (bare
+    `memberOfThisFile.method(...)` inside another struct in the *same* file, not an external file) isn't
+    caught by a repo-wide grep restricted to "outside this file", so for future items also double-check
+    `CentralParameterProvider`'s own `merge`/`to_json` bodies directly after converting any struct it
+    holds by value, even before item 24 itself is converted.
 20. [ ] `SoilTemperatureModuleParameters` — leaf.
 21. [ ] `SoilTransportModuleParameters` — leaf.
 22. [ ] `SticsParameters` — leaf; used by `SoilOrganicModuleParameters`.

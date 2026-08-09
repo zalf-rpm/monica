@@ -1482,7 +1482,7 @@ double meanWaterContent(const SoilMoisture* sm, int layer, int number_of_layers)
 
 
 void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Reader reader) {
-  sm->params.deserialize(reader.getModuleParams());
+  soilmoisturemoduleparameters::deserialize(&sm->params, reader.getModuleParams());
   sm->numberOfMoistureLayers = reader.getNumberOfLayers();
   sm->numberOfSoilLayers = reader.getVsNumberOfLayers();
   sm->vm_ActualEvaporation = reader.getActualEvaporation();
@@ -1551,7 +1551,7 @@ void deserialize(SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModul
 }
 
 void serialize(const SoilMoisture* sm, mas::schema::model::monica::SoilMoistureModuleState::Builder builder) {
-  sm->params.serialize(builder.initModuleParams());
+  soilmoisturemoduleparameters::serialize(&sm->params, builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t)sm->numberOfMoistureLayers);
   builder.setVsNumberOfLayers((uint16_t)sm->numberOfSoilLayers);
   builder.setActualEvaporation(sm->vm_ActualEvaporation);

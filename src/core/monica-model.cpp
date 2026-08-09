@@ -142,8 +142,8 @@ void monica::monicamodel::deserialize(
   auto &cultivationMethodCount = model->cultivationMethodCount;
 
   siteparameters::deserialize(&sitePs, reader.getSitePs());
-  envPs.deserialize(reader.getEnvPs());
-  cropPs.deserialize(reader.getCropPs());
+  environmentparameters::deserialize(&envPs, reader.getEnvPs());
+  cropmoduleparameters::deserialize(&cropPs, reader.getCropPs());
   simulationparameters::deserialize(&simPs, reader.getSimPs());
   measuredgroundwatertableinformation::deserialize(&groundwaterInformation, reader.getGroundwaterInformation());
 
@@ -299,8 +299,8 @@ void monica::monicamodel::serialize(
   auto &cultivationMethodCount = model->cultivationMethodCount;
 
   siteparameters::serialize(&sitePs, builder.initSitePs());
-  envPs.serialize(builder.initEnvPs());
-  cropPs.serialize(builder.initCropPs());
+  environmentparameters::serialize(&envPs, builder.initEnvPs());
+  cropmoduleparameters::serialize(&cropPs, builder.initCropPs());
   simulationparameters::serialize(&simPs, builder.initSimPs());
   measuredgroundwatertableinformation::serialize(&groundwaterInformation, builder.initGroundwaterInformation());
   soilcolumn::serialize(soilColumn.get(), builder.initSoilColumn());

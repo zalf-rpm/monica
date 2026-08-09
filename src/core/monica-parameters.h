@@ -630,26 +630,7 @@ DLL_API json11::Json to_json(const SimulationParameters* sp);
  * Class that holds information of crop defined by user.
  * @author Xenia Specka
  */
-struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
-  CropModuleParameters() {}
-
-  CropModuleParameters(
-      mas::schema::model::monica::CropModuleParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::CropModuleParameters::Reader reader);
-
-  //  CropModuleParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::CropModuleParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API CropModuleParameters {
   double pc_CanopyReflectionCoefficient{0.0};
   double pc_ReferenceMaxAssimilationRate{0.0};
   double pc_ReferenceLeafAreaIndex{0.0};
@@ -688,30 +669,25 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   std::string pc_intercropping_writer_sr;
 };
 
+DLL_API CropModuleParameters makeCropModuleParameters(
+    mas::schema::model::monica::CropModuleParameters::Reader reader);
+
+namespace cropmoduleparameters {
+
+DLL_API void deserialize(CropModuleParameters* cmp,
+                         mas::schema::model::monica::CropModuleParameters::Reader reader);
+DLL_API void serialize(const CropModuleParameters* cmp,
+                       mas::schema::model::monica::CropModuleParameters::Builder builder);
+DLL_API Tools::Errors merge(CropModuleParameters* cmp, json11::Json j);
+DLL_API json11::Json to_json(const CropModuleParameters* cmp);
+
+} // namespace cropmoduleparameters
+
 /**
  * Class that holds information about user defined environment parameters.
  * @author Xenia Specka
  */
-struct DLL_API EnvironmentParameters : public Tools::Json11Serializable {
-  EnvironmentParameters() {}
-
-  EnvironmentParameters(
-      mas::schema::model::monica::EnvironmentParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::EnvironmentParameters::Reader reader);
-
-  //  EnvironmentParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::EnvironmentParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API EnvironmentParameters {
   double p_Albedo{0.23};
   mas::schema::climate::RCP rcp{mas::schema::climate::RCP::RCP85};
   double p_AtmosphericCO2{0.0};
@@ -727,32 +703,27 @@ struct DLL_API EnvironmentParameters : public Tools::Json11Serializable {
   int p_MinGroundwaterDepthMonth{3};
 };
 
+DLL_API EnvironmentParameters makeEnvironmentParameters(
+    mas::schema::model::monica::EnvironmentParameters::Reader reader);
+
+namespace environmentparameters {
+
+DLL_API void deserialize(EnvironmentParameters* ep,
+                         mas::schema::model::monica::EnvironmentParameters::Reader reader);
+DLL_API void serialize(const EnvironmentParameters* ep,
+                       mas::schema::model::monica::EnvironmentParameters::Builder builder);
+DLL_API Tools::Errors merge(EnvironmentParameters* ep, json11::Json j);
+DLL_API json11::Json to_json(const EnvironmentParameters* ep);
+
+} // namespace environmentparameters
+
 /**
  * Class that holds information about user defined soil moisture parameters.
  * @author Xenia Specka
  */
-struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
-  SoilMoistureModuleParameters();
-
-  SoilMoistureModuleParameters(
-      mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
-
-  //  SoilMoistureModuleParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder)
-      const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
-  std::function<double(std::string, size_t)> getCapillaryRiseRate;
+struct DLL_API SoilMoistureModuleParameters {
+  std::function<double(std::string, size_t)> getCapillaryRiseRate{
+      [](std::string soilTexture, size_t distance) { return 0.0; }};
 
   // double pm_CriticalMoistureDepth{ 0.0 };
   double pm_SaturatedHydraulicConductivity{0.0};
@@ -779,6 +750,20 @@ struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
   double pm_MaxPercolationRate{0.0};
   double pm_MoistureInitValue{0.0};
 };
+
+DLL_API SoilMoistureModuleParameters makeSoilMoistureModuleParameters(
+    mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
+
+namespace soilmoisturemoduleparameters {
+
+DLL_API void deserialize(SoilMoistureModuleParameters* smp,
+                         mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
+DLL_API void serialize(const SoilMoistureModuleParameters* smp,
+                       mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder);
+DLL_API Tools::Errors merge(SoilMoistureModuleParameters* smp, json11::Json j);
+DLL_API json11::Json to_json(const SoilMoistureModuleParameters* smp);
+
+} // namespace soilmoisturemoduleparameters
 
 /**
  * Class that holds information about user defined soil temperature parameters.

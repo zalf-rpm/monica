@@ -1627,203 +1627,221 @@ json11::Json simulationparameters::to_json(const SimulationParameters* sp) {
   };
 }
 
-void CropModuleParameters::deserialize(mas::schema::model::monica::CropModuleParameters::Reader reader) {
-  pc_CanopyReflectionCoefficient = reader.getCanopyReflectionCoefficient();
-  pc_ReferenceMaxAssimilationRate = reader.getReferenceMaxAssimilationRate();
-  pc_ReferenceLeafAreaIndex = reader.getReferenceLeafAreaIndex();
-  pc_MaintenanceRespirationParameter1 = reader.getMaintenanceRespirationParameter1();
-  pc_MaintenanceRespirationParameter2 = reader.getMaintenanceRespirationParameter2();
-  pc_MinimumNConcentrationRoot = reader.getMinimumNConcentrationRoot();
-  pc_MinimumAvailableN = reader.getMinimumAvailableN();
-  pc_ReferenceAlbedo = reader.getReferenceAlbedo();
-  pc_StomataConductanceAlpha = reader.getStomataConductanceAlpha();
-  pc_SaturationBeta = reader.getSaturationBeta();
-  pc_GrowthRespirationRedux = reader.getGrowthRespirationRedux();
-  pc_MaxCropNDemand = reader.getMaxCropNDemand();
-  pc_GrowthRespirationParameter1 = reader.getGrowthRespirationParameter1();
-  pc_GrowthRespirationParameter2 = reader.getGrowthRespirationParameter2();
-  pc_Tortuosity = reader.getTortuosity();
-  pc_AdjustRootDepthForSoilProps = reader.getAdjustRootDepthForSoilProps();
-
-  __enable_Phenology_WangEngelTemperatureResponse__ = reader.
-    getExperimentalEnablePhenologyWangEngelTemperatureResponse();
-  __enable_Photosynthesis_WangEngelTemperatureResponse__ = reader.
-    getExperimentalEnablePhotosynthesisWangEngelTemperatureResponse();
-  __enable_hourly_FvCB_photosynthesis__ = reader.getExperimentalEnableHourlyFvCBPhotosynthesis();
-  __enable_T_response_leaf_expansion__ = reader.getExperimentalEnableTResponseLeafExpansion();
-  __disable_daily_root_biomass_to_soil__ = reader.getExperimentalDisableDailyRootBiomassToSoil();
-  __enable_vernalisation_factor_fix__ = reader.getEnableVernalisationFactorFix();
-}
-
-void CropModuleParameters::serialize(mas::schema::model::monica::CropModuleParameters::Builder builder) const {
-  builder.setCanopyReflectionCoefficient(pc_CanopyReflectionCoefficient);
-  builder.setReferenceMaxAssimilationRate(pc_ReferenceMaxAssimilationRate);
-  builder.setReferenceLeafAreaIndex(pc_ReferenceLeafAreaIndex);
-  builder.setMaintenanceRespirationParameter1(pc_MaintenanceRespirationParameter1);
-  builder.setMaintenanceRespirationParameter2(pc_MaintenanceRespirationParameter2);
-  builder.setMinimumNConcentrationRoot(pc_MinimumNConcentrationRoot);
-  builder.setMinimumAvailableN(pc_MinimumAvailableN);
-  builder.setReferenceAlbedo(pc_ReferenceAlbedo);
-  builder.setStomataConductanceAlpha(pc_StomataConductanceAlpha);
-  builder.setSaturationBeta(pc_SaturationBeta);
-  builder.setGrowthRespirationRedux(pc_GrowthRespirationRedux);
-  builder.setMaxCropNDemand(pc_MaxCropNDemand);
-  builder.setGrowthRespirationParameter1(pc_GrowthRespirationParameter1);
-  builder.setGrowthRespirationParameter2(pc_GrowthRespirationParameter2);
-  builder.setTortuosity(pc_Tortuosity);
-  builder.setAdjustRootDepthForSoilProps(pc_AdjustRootDepthForSoilProps);
-
-  builder.setExperimentalEnablePhenologyWangEngelTemperatureResponse(__enable_Phenology_WangEngelTemperatureResponse__);
-  builder.setExperimentalEnablePhotosynthesisWangEngelTemperatureResponse(
-                                                                          __enable_Photosynthesis_WangEngelTemperatureResponse__);
-  builder.setExperimentalEnableHourlyFvCBPhotosynthesis(__enable_hourly_FvCB_photosynthesis__);
-  builder.setExperimentalEnableTResponseLeafExpansion(__enable_T_response_leaf_expansion__);
-  builder.setExperimentalDisableDailyRootBiomassToSoil(__disable_daily_root_biomass_to_soil__);
-  builder.setEnableVernalisationFactorFix(__enable_vernalisation_factor_fix__);
-}
-
 //CropModuleParameters::CropModuleParameters(json11::Json j) {
 //  merge(j);
 //}
 
-Errors CropModuleParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+CropModuleParameters monica::makeCropModuleParameters(
+    mas::schema::model::monica::CropModuleParameters::Reader reader) {
+  CropModuleParameters cmp;
+  cropmoduleparameters::deserialize(&cmp, reader);
+  return cmp;
+}
 
-  set_double_value(pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient");
-  set_double_value(pc_ReferenceMaxAssimilationRate, j, "ReferenceMaxAssimilationRate");
-  set_double_value(pc_ReferenceLeafAreaIndex, j, "ReferenceLeafAreaIndex");
-  set_double_value(pc_MaintenanceRespirationParameter1, j, "MaintenanceRespirationParameter1");
-  set_double_value(pc_MaintenanceRespirationParameter2, j, "MaintenanceRespirationParameter2");
-  set_double_value(pc_MinimumNConcentrationRoot, j, "MinimumNConcentrationRoot");
-  set_double_value(pc_MinimumAvailableN, j, "MinimumAvailableN");
-  set_double_value(pc_ReferenceAlbedo, j, "ReferenceAlbedo");
-  set_double_value(pc_StomataConductanceAlpha, j, "StomataConductanceAlpha");
-  set_double_value(pc_SaturationBeta, j, "SaturationBeta");
-  set_double_value(pc_GrowthRespirationRedux, j, "GrowthRespirationRedux");
-  set_double_value(pc_MaxCropNDemand, j, "MaxCropNDemand");
-  set_double_value(pc_GrowthRespirationParameter1, j, "GrowthRespirationParameter1");
-  set_double_value(pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
-  set_double_value(pc_Tortuosity, j, "Tortuosity");
-  set_bool_value(pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
+void cropmoduleparameters::deserialize(CropModuleParameters* cmp,
+                                       mas::schema::model::monica::CropModuleParameters::Reader reader) {
+  cmp->pc_CanopyReflectionCoefficient = reader.getCanopyReflectionCoefficient();
+  cmp->pc_ReferenceMaxAssimilationRate = reader.getReferenceMaxAssimilationRate();
+  cmp->pc_ReferenceLeafAreaIndex = reader.getReferenceLeafAreaIndex();
+  cmp->pc_MaintenanceRespirationParameter1 = reader.getMaintenanceRespirationParameter1();
+  cmp->pc_MaintenanceRespirationParameter2 = reader.getMaintenanceRespirationParameter2();
+  cmp->pc_MinimumNConcentrationRoot = reader.getMinimumNConcentrationRoot();
+  cmp->pc_MinimumAvailableN = reader.getMinimumAvailableN();
+  cmp->pc_ReferenceAlbedo = reader.getReferenceAlbedo();
+  cmp->pc_StomataConductanceAlpha = reader.getStomataConductanceAlpha();
+  cmp->pc_SaturationBeta = reader.getSaturationBeta();
+  cmp->pc_GrowthRespirationRedux = reader.getGrowthRespirationRedux();
+  cmp->pc_MaxCropNDemand = reader.getMaxCropNDemand();
+  cmp->pc_GrowthRespirationParameter1 = reader.getGrowthRespirationParameter1();
+  cmp->pc_GrowthRespirationParameter2 = reader.getGrowthRespirationParameter2();
+  cmp->pc_Tortuosity = reader.getTortuosity();
+  cmp->pc_AdjustRootDepthForSoilProps = reader.getAdjustRootDepthForSoilProps();
+
+  cmp->__enable_Phenology_WangEngelTemperatureResponse__ = reader.
+    getExperimentalEnablePhenologyWangEngelTemperatureResponse();
+  cmp->__enable_Photosynthesis_WangEngelTemperatureResponse__ = reader.
+    getExperimentalEnablePhotosynthesisWangEngelTemperatureResponse();
+  cmp->__enable_hourly_FvCB_photosynthesis__ = reader.getExperimentalEnableHourlyFvCBPhotosynthesis();
+  cmp->__enable_T_response_leaf_expansion__ = reader.getExperimentalEnableTResponseLeafExpansion();
+  cmp->__disable_daily_root_biomass_to_soil__ = reader.getExperimentalDisableDailyRootBiomassToSoil();
+  cmp->__enable_vernalisation_factor_fix__ = reader.getEnableVernalisationFactorFix();
+}
+
+void cropmoduleparameters::serialize(const CropModuleParameters* cmp,
+                                     mas::schema::model::monica::CropModuleParameters::Builder builder) {
+  builder.setCanopyReflectionCoefficient(cmp->pc_CanopyReflectionCoefficient);
+  builder.setReferenceMaxAssimilationRate(cmp->pc_ReferenceMaxAssimilationRate);
+  builder.setReferenceLeafAreaIndex(cmp->pc_ReferenceLeafAreaIndex);
+  builder.setMaintenanceRespirationParameter1(cmp->pc_MaintenanceRespirationParameter1);
+  builder.setMaintenanceRespirationParameter2(cmp->pc_MaintenanceRespirationParameter2);
+  builder.setMinimumNConcentrationRoot(cmp->pc_MinimumNConcentrationRoot);
+  builder.setMinimumAvailableN(cmp->pc_MinimumAvailableN);
+  builder.setReferenceAlbedo(cmp->pc_ReferenceAlbedo);
+  builder.setStomataConductanceAlpha(cmp->pc_StomataConductanceAlpha);
+  builder.setSaturationBeta(cmp->pc_SaturationBeta);
+  builder.setGrowthRespirationRedux(cmp->pc_GrowthRespirationRedux);
+  builder.setMaxCropNDemand(cmp->pc_MaxCropNDemand);
+  builder.setGrowthRespirationParameter1(cmp->pc_GrowthRespirationParameter1);
+  builder.setGrowthRespirationParameter2(cmp->pc_GrowthRespirationParameter2);
+  builder.setTortuosity(cmp->pc_Tortuosity);
+  builder.setAdjustRootDepthForSoilProps(cmp->pc_AdjustRootDepthForSoilProps);
+
+  builder.setExperimentalEnablePhenologyWangEngelTemperatureResponse(cmp->__enable_Phenology_WangEngelTemperatureResponse__);
+  builder.setExperimentalEnablePhotosynthesisWangEngelTemperatureResponse(
+                                                                          cmp->__enable_Photosynthesis_WangEngelTemperatureResponse__);
+  builder.setExperimentalEnableHourlyFvCBPhotosynthesis(cmp->__enable_hourly_FvCB_photosynthesis__);
+  builder.setExperimentalEnableTResponseLeafExpansion(cmp->__enable_T_response_leaf_expansion__);
+  builder.setExperimentalDisableDailyRootBiomassToSoil(cmp->__disable_daily_root_biomass_to_soil__);
+  builder.setEnableVernalisationFactorFix(cmp->__enable_vernalisation_factor_fix__);
+}
+
+Errors cropmoduleparameters::merge(CropModuleParameters* cmp, json11::Json j) {
+  Errors res = defaultMerge(j, [cmp](json11::Json j2) { return merge(cmp, j2); });
+
+  set_double_value(cmp->pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient");
+  set_double_value(cmp->pc_ReferenceMaxAssimilationRate, j, "ReferenceMaxAssimilationRate");
+  set_double_value(cmp->pc_ReferenceLeafAreaIndex, j, "ReferenceLeafAreaIndex");
+  set_double_value(cmp->pc_MaintenanceRespirationParameter1, j, "MaintenanceRespirationParameter1");
+  set_double_value(cmp->pc_MaintenanceRespirationParameter2, j, "MaintenanceRespirationParameter2");
+  set_double_value(cmp->pc_MinimumNConcentrationRoot, j, "MinimumNConcentrationRoot");
+  set_double_value(cmp->pc_MinimumAvailableN, j, "MinimumAvailableN");
+  set_double_value(cmp->pc_ReferenceAlbedo, j, "ReferenceAlbedo");
+  set_double_value(cmp->pc_StomataConductanceAlpha, j, "StomataConductanceAlpha");
+  set_double_value(cmp->pc_SaturationBeta, j, "SaturationBeta");
+  set_double_value(cmp->pc_GrowthRespirationRedux, j, "GrowthRespirationRedux");
+  set_double_value(cmp->pc_MaxCropNDemand, j, "MaxCropNDemand");
+  set_double_value(cmp->pc_GrowthRespirationParameter1, j, "GrowthRespirationParameter1");
+  set_double_value(cmp->pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2");
+  set_double_value(cmp->pc_Tortuosity, j, "Tortuosity");
+  set_bool_value(cmp->pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps");
   if (j["TimeUnderAnoxiaThreshold"].is_number()) {
-    std::fill(pc_TimeUnderAnoxiaThreshold.begin(), pc_TimeUnderAnoxiaThreshold.end(),
+    std::fill(cmp->pc_TimeUnderAnoxiaThreshold.begin(), cmp->pc_TimeUnderAnoxiaThreshold.end(),
               int(j["TimeUnderAnoxiaThreshold"].number_value()));
   } else if (j["TimeUnderAnoxiaThreshold"].is_array()) {
-    set_int_vector(pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
+    set_int_vector(cmp->pc_TimeUnderAnoxiaThreshold, j, "TimeUnderAnoxiaThreshold");
   }
 
-  set_bool_value(__enable_Photosynthesis_WangEngelTemperatureResponse__, j,
+  set_bool_value(cmp->__enable_Photosynthesis_WangEngelTemperatureResponse__, j,
                  "__enable_Photosynthesis_WangEngelTemperatureResponse__");
-  set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j,
+  set_bool_value(cmp->__enable_Phenology_WangEngelTemperatureResponse__, j,
                  "__enable_Phenology_WangEngelTemperatureResponse__");
-  set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
-  set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
-  set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
-  set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
-  set_bool_value(__enable_PASW_root_penetration__, j, "__enable_PASW_root_penetration__");
+  set_bool_value(cmp->__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
+  set_bool_value(cmp->__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
+  set_bool_value(cmp->__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
+  set_bool_value(cmp->__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
+  set_bool_value(cmp->__enable_PASW_root_penetration__, j, "__enable_PASW_root_penetration__");
 
-  set_bool_value(isIntercropping, j["intercropping"], "is_intercropping");
-  set_bool_value(sequentialWaterUse, j["intercropping"], "sequential_water_use");
-  set_bool_value(twoWaySync, j["intercropping"], "two_way_sync");
-  set_double_value(pc_intercropping_k_s, j["intercropping"], "k_s");
-  set_double_value(pc_intercropping_k_t, j["intercropping"], "k_t");
-  set_double_value(pc_intercropping_phRedux, j["intercropping"], "PHredux");
-  set_double_value(pc_intercropping_dvs_phr, j["intercropping"], "DVS_PHr");
-  set_bool_value(pc_intercropping_autoPhRedux, j["intercropping"], "auto_PHredux");
-  set_string_value(pc_intercropping_reader_sr, j["intercropping"], "reader_sr");
-  set_string_value(pc_intercropping_writer_sr, j["intercropping"], "writer_sr");
+  set_bool_value(cmp->isIntercropping, j["intercropping"], "is_intercropping");
+  set_bool_value(cmp->sequentialWaterUse, j["intercropping"], "sequential_water_use");
+  set_bool_value(cmp->twoWaySync, j["intercropping"], "two_way_sync");
+  set_double_value(cmp->pc_intercropping_k_s, j["intercropping"], "k_s");
+  set_double_value(cmp->pc_intercropping_k_t, j["intercropping"], "k_t");
+  set_double_value(cmp->pc_intercropping_phRedux, j["intercropping"], "PHredux");
+  set_double_value(cmp->pc_intercropping_dvs_phr, j["intercropping"], "DVS_PHr");
+  set_bool_value(cmp->pc_intercropping_autoPhRedux, j["intercropping"], "auto_PHredux");
+  set_string_value(cmp->pc_intercropping_reader_sr, j["intercropping"], "reader_sr");
+  set_string_value(cmp->pc_intercropping_writer_sr, j["intercropping"], "writer_sr");
   return res;
 }
 
-json11::Json CropModuleParameters::to_json() const {
+json11::Json cropmoduleparameters::to_json(const CropModuleParameters* cmp) {
   return json11::Json::object
   {
     {"type", "CropModuleParameters"},
-    {"CanopyReflectionCoefficient", pc_CanopyReflectionCoefficient},
-    {"ReferenceMaxAssimilationRate", pc_ReferenceMaxAssimilationRate},
-    {"ReferenceLeafAreaIndex", pc_ReferenceLeafAreaIndex},
-    {"MaintenanceRespirationParameter1", pc_MaintenanceRespirationParameter1},
-    {"MaintenanceRespirationParameter2", pc_MaintenanceRespirationParameter2},
-    {"MinimumNConcentrationRoot", pc_MinimumNConcentrationRoot},
-    {"MinimumAvailableN", pc_MinimumAvailableN},
-    {"ReferenceAlbedo", pc_ReferenceAlbedo},
-    {"StomataConductanceAlpha", pc_StomataConductanceAlpha},
-    {"SaturationBeta", pc_SaturationBeta},
-    {"GrowthRespirationRedux", pc_GrowthRespirationRedux},
-    {"MaxCropNDemand", pc_MaxCropNDemand},
-    {"GrowthRespirationParameter1", pc_GrowthRespirationParameter1},
-    {"GrowthRespirationParameter2", pc_GrowthRespirationParameter2},
-    {"Tortuosity", pc_Tortuosity},
-    {"AdjustRootDepthForSoilProps", pc_AdjustRootDepthForSoilProps},
-    {"TimeUnderAnoxiaThreshold", pc_TimeUnderAnoxiaThreshold},
-    {"__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__},
-    {"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__},
-    {"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__},
-    {"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__},
-    {"__disable_daily_root_biomass_to_soil__", __disable_daily_root_biomass_to_soil__},
-    {"__enable_vernalisation_factor_fix__", __enable_vernalisation_factor_fix__}
+    {"CanopyReflectionCoefficient", cmp->pc_CanopyReflectionCoefficient},
+    {"ReferenceMaxAssimilationRate", cmp->pc_ReferenceMaxAssimilationRate},
+    {"ReferenceLeafAreaIndex", cmp->pc_ReferenceLeafAreaIndex},
+    {"MaintenanceRespirationParameter1", cmp->pc_MaintenanceRespirationParameter1},
+    {"MaintenanceRespirationParameter2", cmp->pc_MaintenanceRespirationParameter2},
+    {"MinimumNConcentrationRoot", cmp->pc_MinimumNConcentrationRoot},
+    {"MinimumAvailableN", cmp->pc_MinimumAvailableN},
+    {"ReferenceAlbedo", cmp->pc_ReferenceAlbedo},
+    {"StomataConductanceAlpha", cmp->pc_StomataConductanceAlpha},
+    {"SaturationBeta", cmp->pc_SaturationBeta},
+    {"GrowthRespirationRedux", cmp->pc_GrowthRespirationRedux},
+    {"MaxCropNDemand", cmp->pc_MaxCropNDemand},
+    {"GrowthRespirationParameter1", cmp->pc_GrowthRespirationParameter1},
+    {"GrowthRespirationParameter2", cmp->pc_GrowthRespirationParameter2},
+    {"Tortuosity", cmp->pc_Tortuosity},
+    {"AdjustRootDepthForSoilProps", cmp->pc_AdjustRootDepthForSoilProps},
+    {"TimeUnderAnoxiaThreshold", cmp->pc_TimeUnderAnoxiaThreshold},
+    {"__enable_Phenology_WangEngelTemperatureResponse__", cmp->__enable_Phenology_WangEngelTemperatureResponse__},
+    {"__enable_Photosynthesis_WangEngelTemperatureResponse__", cmp->__enable_Photosynthesis_WangEngelTemperatureResponse__},
+    {"__enable_hourly_FvCB_photosynthesis__", cmp->__enable_hourly_FvCB_photosynthesis__},
+    {"__enable_T_response_leaf_expansion__", cmp->__enable_T_response_leaf_expansion__},
+    {"__disable_daily_root_biomass_to_soil__", cmp->__disable_daily_root_biomass_to_soil__},
+    {"__enable_vernalisation_factor_fix__", cmp->__enable_vernalisation_factor_fix__}
   };
 }
 
-void EnvironmentParameters::deserialize(mas::schema::model::monica::EnvironmentParameters::Reader reader) {
-  p_Albedo = reader.getAlbedo();
-  p_AtmosphericCO2 = reader.getAtmosphericCO2();
-
-  p_AtmosphericCO2s.clear();
-  for (auto co2 : reader.getAtmosphericCO2s()) p_AtmosphericCO2s[co2.getYear()] = co2.getValue();
-
-  p_AtmosphericO3s.clear();
-  for (auto o3 : reader.getAtmosphericO3s()) p_AtmosphericO3s[o3.getYear()] = o3.getValue();
-
-  p_WindSpeedHeight = reader.getWindSpeedHeight();
-  p_LeachingDepth = reader.getLeachingDepth();
-  p_timeStep = reader.getTimeStep();
-
-  p_MaxGroundwaterDepth = reader.getMaxGroundwaterDepth();
-  p_MinGroundwaterDepth = reader.getMinGroundwaterDepth();
-  p_MinGroundwaterDepthMonth = reader.getMinGroundwaterDepthMonth();
-
-  rcp = reader.getRcp();
+EnvironmentParameters monica::makeEnvironmentParameters(
+    mas::schema::model::monica::EnvironmentParameters::Reader reader) {
+  EnvironmentParameters ep;
+  environmentparameters::deserialize(&ep, reader);
+  return ep;
 }
 
-void EnvironmentParameters::serialize(mas::schema::model::monica::EnvironmentParameters::Builder builder) const {
-  builder.setAlbedo(p_Albedo);
-  builder.setAtmosphericCO2(p_AtmosphericCO2);
+void environmentparameters::deserialize(EnvironmentParameters* ep,
+                                        mas::schema::model::monica::EnvironmentParameters::Reader reader) {
+  ep->p_Albedo = reader.getAlbedo();
+  ep->p_AtmosphericCO2 = reader.getAtmosphericCO2();
+
+  ep->p_AtmosphericCO2s.clear();
+  for (auto co2 : reader.getAtmosphericCO2s()) ep->p_AtmosphericCO2s[co2.getYear()] = co2.getValue();
+
+  ep->p_AtmosphericO3s.clear();
+  for (auto o3 : reader.getAtmosphericO3s()) ep->p_AtmosphericO3s[o3.getYear()] = o3.getValue();
+
+  ep->p_WindSpeedHeight = reader.getWindSpeedHeight();
+  ep->p_LeachingDepth = reader.getLeachingDepth();
+  ep->p_timeStep = reader.getTimeStep();
+
+  ep->p_MaxGroundwaterDepth = reader.getMaxGroundwaterDepth();
+  ep->p_MinGroundwaterDepth = reader.getMinGroundwaterDepth();
+  ep->p_MinGroundwaterDepthMonth = reader.getMinGroundwaterDepthMonth();
+
+  ep->rcp = reader.getRcp();
+}
+
+void environmentparameters::serialize(const EnvironmentParameters* ep,
+                                      mas::schema::model::monica::EnvironmentParameters::Builder builder) {
+  builder.setAlbedo(ep->p_Albedo);
+  builder.setAtmosphericCO2(ep->p_AtmosphericCO2);
 
   {
-    auto co2s = builder.initAtmosphericCO2s((capnp::uint)p_AtmosphericCO2s.size());
+    auto co2s = builder.initAtmosphericCO2s((capnp::uint)ep->p_AtmosphericCO2s.size());
     capnp::uint i = 0;
-    for (auto p : p_AtmosphericCO2s) {
+    for (auto p : ep->p_AtmosphericCO2s) {
       co2s[i].setYear(p.first);
       co2s[i].setValue(p.second);
     }
   }
-  builder.setAtmosphericO3(p_AtmosphericO3);
+  builder.setAtmosphericO3(ep->p_AtmosphericO3);
   {
-    auto o3s = builder.initAtmosphericO3s((capnp::uint)p_AtmosphericO3s.size());
+    auto o3s = builder.initAtmosphericO3s((capnp::uint)ep->p_AtmosphericO3s.size());
     capnp::uint i = 0;
-    for (auto p : p_AtmosphericO3s) {
+    for (auto p : ep->p_AtmosphericO3s) {
       o3s[i].setYear(p.first);
       o3s[i].setValue(p.second);
     }
   }
-  builder.setWindSpeedHeight(p_WindSpeedHeight);
-  builder.setLeachingDepth(p_LeachingDepth);
-  builder.setTimeStep(p_timeStep);
+  builder.setWindSpeedHeight(ep->p_WindSpeedHeight);
+  builder.setLeachingDepth(ep->p_LeachingDepth);
+  builder.setTimeStep(ep->p_timeStep);
 
-  builder.setMaxGroundwaterDepth(p_MaxGroundwaterDepth);
-  builder.setMinGroundwaterDepth(p_MinGroundwaterDepth);
-  builder.setMinGroundwaterDepthMonth(p_MinGroundwaterDepthMonth);
+  builder.setMaxGroundwaterDepth(ep->p_MaxGroundwaterDepth);
+  builder.setMinGroundwaterDepth(ep->p_MinGroundwaterDepth);
+  builder.setMinGroundwaterDepthMonth(ep->p_MinGroundwaterDepthMonth);
 
-  builder.setRcp(rcp);
+  builder.setRcp(ep->rcp);
 }
 
 //EnvironmentParameters::EnvironmentParameters(json11::Json j) {
 //  merge(j);
 //}
 
-Errors EnvironmentParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors environmentparameters::merge(EnvironmentParameters* ep, json11::Json j) {
+  Errors res = defaultMerge(j, [ep](json11::Json j2) { return merge(ep, j2); });
 
   using namespace mas::schema::climate;
   auto rcpNo2rcpEnum = [&](int rcpNo) {
@@ -1848,56 +1866,56 @@ Errors EnvironmentParameters::merge(json11::Json j) {
     return RCP::RCP85;
   };
 
-  set_double_value(p_Albedo, j, "Albedo");
+  set_double_value(ep->p_Albedo, j, "Albedo");
 
   if (j["rcp"].is_string()) {
     try {
       switch (const auto rcpStr = j["rcp"].string_value(); rcpStr.size()) {
-      case 2: rcp = rcpNo2rcpEnum(stoi(rcpStr));
+      case 2: ep->rcp = rcpNo2rcpEnum(stoi(rcpStr));
         break;
-      case 3: rcp = rcpNo2rcpEnum(static_cast<int>(stod(rcpStr) * 10));
+      case 3: ep->rcp = rcpNo2rcpEnum(static_cast<int>(stod(rcpStr) * 10));
         break;
-      case 5: rcp = rcpNo2rcpEnum(stoi(rcpStr.substr(3)));
+      case 5: ep->rcp = rcpNo2rcpEnum(stoi(rcpStr.substr(3)));
         break;
-      case 6: rcp = rcpNo2rcpEnum(static_cast<int>(stod(rcpStr.substr(3)) * 10));
+      case 6: ep->rcp = rcpNo2rcpEnum(static_cast<int>(stod(rcpStr.substr(3)) * 10));
         break;
-      default: rcp = RCP::RCP85;
+      default: ep->rcp = RCP::RCP85;
       }
     } catch (std::exception&) {
       res.appendWarning(kj::str(j["rcp"].string_value(), " unknown. Default RCP 8.5 used.").cStr());
     }
   } else if (j["rcp"].is_number()) {
     if (const auto rcpNo = j["rcp"].number_value(); rcpNo < 10) {
-      rcp = rcpNo2rcpEnum(static_cast<int>(rcpNo * 10));
-    } else rcp = rcpNo2rcpEnum(static_cast<int>(rcpNo));
+      ep->rcp = rcpNo2rcpEnum(static_cast<int>(rcpNo * 10));
+    } else ep->rcp = rcpNo2rcpEnum(static_cast<int>(rcpNo));
   }
 
-  set_double_value(p_AtmosphericCO2, j, "AtmosphericCO2");
+  set_double_value(ep->p_AtmosphericCO2, j, "AtmosphericCO2");
   if (j["AtmosphericCO2s"].is_object()) {
-    p_AtmosphericCO2s.clear();
-    for (auto p : j["AtmosphericCO2s"].object_items()) p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
+    ep->p_AtmosphericCO2s.clear();
+    for (auto p : j["AtmosphericCO2s"].object_items()) ep->p_AtmosphericCO2s[stoi(p.first)] = p.second.number_value();
   }
-  set_double_value(p_AtmosphericO3, j, "AtmosphericO3");
+  set_double_value(ep->p_AtmosphericO3, j, "AtmosphericO3");
   if (j["AtmosphericO3s"].is_object()) {
-    p_AtmosphericO3s.clear();
-    for (auto p : j["AtmosphericO3s"].object_items()) p_AtmosphericO3s[stoi(p.first)] = p.second.number_value();
+    ep->p_AtmosphericO3s.clear();
+    for (auto p : j["AtmosphericO3s"].object_items()) ep->p_AtmosphericO3s[stoi(p.first)] = p.second.number_value();
   }
-  set_double_value(p_WindSpeedHeight, j, "WindSpeedHeight");
-  set_double_value(p_LeachingDepth, j, "LeachingDepth");
-  set_double_value(p_timeStep, j, "timeStep");
-  set_double_value(p_MaxGroundwaterDepth, j, "MaxGroundwaterDepth");
-  set_double_value(p_MinGroundwaterDepth, j, "MinGroundwaterDepth");
-  set_int_value(p_MinGroundwaterDepthMonth, j, "MinGroundwaterDepthMonth");
+  set_double_value(ep->p_WindSpeedHeight, j, "WindSpeedHeight");
+  set_double_value(ep->p_LeachingDepth, j, "LeachingDepth");
+  set_double_value(ep->p_timeStep, j, "timeStep");
+  set_double_value(ep->p_MaxGroundwaterDepth, j, "MaxGroundwaterDepth");
+  set_double_value(ep->p_MinGroundwaterDepth, j, "MinGroundwaterDepth");
+  set_int_value(ep->p_MinGroundwaterDepthMonth, j, "MinGroundwaterDepthMonth");
 
   return res;
 }
 
-json11::Json EnvironmentParameters::to_json() const {
+json11::Json environmentparameters::to_json(const EnvironmentParameters* ep) {
   json11::Json::object co2s;
-  for (auto p : p_AtmosphericCO2s) co2s[to_string(p.first)] = p.second;
+  for (auto p : ep->p_AtmosphericCO2s) co2s[to_string(p.first)] = p.second;
 
   json11::Json::object o3s;
-  for (auto p : p_AtmosphericO3s) o3s[to_string(p.first)] = p.second;
+  for (auto p : ep->p_AtmosphericO3s) o3s[to_string(p.first)] = p.second;
 
   auto rcp2str = [](auto rcp) {
     using namespace mas::schema::climate;
@@ -1923,79 +1941,84 @@ json11::Json EnvironmentParameters::to_json() const {
   return json11::Json::object
   {
     {"type", "EnvironmentParameters"},
-    {"Albedo", p_Albedo},
-    {"rcp", rcp2str(rcp)},
-    {"AtmosphericCO2", p_AtmosphericCO2},
+    {"Albedo", ep->p_Albedo},
+    {"rcp", rcp2str(ep->rcp)},
+    {"AtmosphericCO2", ep->p_AtmosphericCO2},
     {"AtmosphericCO2s", co2s},
-    {"AtmosphericO3", p_AtmosphericO3},
+    {"AtmosphericO3", ep->p_AtmosphericO3},
     {"AtmosphericO3s", o3s},
-    {"WindSpeedHeight", p_WindSpeedHeight},
-    {"LeachingDepth", p_LeachingDepth},
-    {"timeStep", p_timeStep},
-    {"MaxGroundwaterDepth", p_MaxGroundwaterDepth},
-    {"MinGroundwaterDepth", p_MinGroundwaterDepth},
-    {"MinGroundwaterDepthMonth", p_MinGroundwaterDepthMonth}
+    {"WindSpeedHeight", ep->p_WindSpeedHeight},
+    {"LeachingDepth", ep->p_LeachingDepth},
+    {"timeStep", ep->p_timeStep},
+    {"MaxGroundwaterDepth", ep->p_MaxGroundwaterDepth},
+    {"MinGroundwaterDepth", ep->p_MinGroundwaterDepth},
+    {"MinGroundwaterDepthMonth", ep->p_MinGroundwaterDepthMonth}
   };
 }
 
-SoilMoistureModuleParameters::SoilMoistureModuleParameters() {
-  getCapillaryRiseRate = [](string soilTexture, size_t distance) { return 0.0; };
+SoilMoistureModuleParameters monica::makeSoilMoistureModuleParameters(
+    mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
+  SoilMoistureModuleParameters smp;
+  soilmoisturemoduleparameters::deserialize(&smp, reader);
+  return smp;
 }
 
-void SoilMoistureModuleParameters::deserialize(
+void soilmoisturemoduleparameters::deserialize(
+  SoilMoistureModuleParameters* smp,
   mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader) {
-  //pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
-  pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
-  pm_SurfaceRoughness = reader.getSurfaceRoughness();
-  pm_GroundwaterDischarge = reader.getGroundwaterDischarge();
-  pm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
-  pm_SnowAccumulationTresholdTemperature = reader.getSnowAccumulationTresholdTemperature();
-  pm_KcFactor = reader.getKcFactor();
-  pm_TemperatureLimitForLiquidWater = reader.getTemperatureLimitForLiquidWater();
-  pm_CorrectionSnow = reader.getCorrectionSnow();
-  pm_CorrectionRain = reader.getCorrectionRain();
-  pm_SnowMaxAdditionalDensity = reader.getSnowMaxAdditionalDensity();
-  pm_NewSnowDensityMin = reader.getNewSnowDensityMin();
-  pm_SnowRetentionCapacityMin = reader.getSnowRetentionCapacityMin();
-  pm_RefreezeParameter1 = reader.getRefreezeParameter1();
-  pm_RefreezeParameter2 = reader.getRefreezeParameter2();
-  pm_RefreezeTemperature = reader.getRefreezeTemperature();
-  pm_SnowMeltTemperature = reader.getSnowMeltTemperature();
-  pm_SnowPacking = reader.getSnowPacking();
-  pm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
-  pm_EvaporationZeta = reader.getEvaporationZeta();
-  pm_XSACriticalSoilMoisture = reader.getXsaCriticalSoilMoisture();
-  pm_MaximumEvaporationImpactDepth = reader.getMaximumEvaporationImpactDepth();
-  pm_MaxPercolationRate = reader.getMaxPercolationRate();
-  pm_MoistureInitValue = reader.getMoistureInitValue();
+  //smp->pm_CriticalMoistureDepth = reader.getCriticalMoistureDepth();
+  smp->pm_SaturatedHydraulicConductivity = reader.getSaturatedHydraulicConductivity();
+  smp->pm_SurfaceRoughness = reader.getSurfaceRoughness();
+  smp->pm_GroundwaterDischarge = reader.getGroundwaterDischarge();
+  smp->pm_HydraulicConductivityRedux = reader.getHydraulicConductivityRedux();
+  smp->pm_SnowAccumulationTresholdTemperature = reader.getSnowAccumulationTresholdTemperature();
+  smp->pm_KcFactor = reader.getKcFactor();
+  smp->pm_TemperatureLimitForLiquidWater = reader.getTemperatureLimitForLiquidWater();
+  smp->pm_CorrectionSnow = reader.getCorrectionSnow();
+  smp->pm_CorrectionRain = reader.getCorrectionRain();
+  smp->pm_SnowMaxAdditionalDensity = reader.getSnowMaxAdditionalDensity();
+  smp->pm_NewSnowDensityMin = reader.getNewSnowDensityMin();
+  smp->pm_SnowRetentionCapacityMin = reader.getSnowRetentionCapacityMin();
+  smp->pm_RefreezeParameter1 = reader.getRefreezeParameter1();
+  smp->pm_RefreezeParameter2 = reader.getRefreezeParameter2();
+  smp->pm_RefreezeTemperature = reader.getRefreezeTemperature();
+  smp->pm_SnowMeltTemperature = reader.getSnowMeltTemperature();
+  smp->pm_SnowPacking = reader.getSnowPacking();
+  smp->pm_SnowRetentionCapacityMax = reader.getSnowRetentionCapacityMax();
+  smp->pm_EvaporationZeta = reader.getEvaporationZeta();
+  smp->pm_XSACriticalSoilMoisture = reader.getXsaCriticalSoilMoisture();
+  smp->pm_MaximumEvaporationImpactDepth = reader.getMaximumEvaporationImpactDepth();
+  smp->pm_MaxPercolationRate = reader.getMaxPercolationRate();
+  smp->pm_MoistureInitValue = reader.getMoistureInitValue();
 }
 
-void SoilMoistureModuleParameters::serialize(
-  mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder) const {
-  //builder.setCriticalMoistureDepth(pm_CriticalMoistureDepth);
-  builder.setSaturatedHydraulicConductivity(pm_SaturatedHydraulicConductivity);
-  builder.setSurfaceRoughness(pm_SurfaceRoughness);
-  builder.setGroundwaterDischarge(pm_GroundwaterDischarge);
-  builder.setHydraulicConductivityRedux(pm_HydraulicConductivityRedux);
-  builder.setSnowAccumulationTresholdTemperature(pm_SnowAccumulationTresholdTemperature);
-  builder.setKcFactor(pm_KcFactor);
-  builder.setTemperatureLimitForLiquidWater(pm_TemperatureLimitForLiquidWater);
-  builder.setCorrectionSnow(pm_CorrectionSnow);
-  builder.setCorrectionRain(pm_CorrectionRain);
-  builder.setSnowMaxAdditionalDensity(pm_SnowMaxAdditionalDensity);
-  builder.setNewSnowDensityMin(pm_NewSnowDensityMin);
-  builder.setSnowRetentionCapacityMin(pm_SnowRetentionCapacityMin);
-  builder.setRefreezeParameter1(pm_RefreezeParameter1);
-  builder.setRefreezeParameter2(pm_RefreezeParameter2);
-  builder.setRefreezeTemperature(pm_RefreezeTemperature);
-  builder.setSnowMeltTemperature(pm_SnowMeltTemperature);
-  builder.setSnowPacking(pm_SnowPacking);
-  builder.setSnowRetentionCapacityMax(pm_SnowRetentionCapacityMax);
-  builder.setEvaporationZeta(pm_EvaporationZeta);
-  builder.setXsaCriticalSoilMoisture(pm_XSACriticalSoilMoisture);
-  builder.setMaximumEvaporationImpactDepth(pm_MaximumEvaporationImpactDepth);
-  builder.setMaxPercolationRate(pm_MaxPercolationRate);
-  builder.setMoistureInitValue(pm_MoistureInitValue);
+void soilmoisturemoduleparameters::serialize(
+  const SoilMoistureModuleParameters* smp,
+  mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder) {
+  //builder.setCriticalMoistureDepth(smp->pm_CriticalMoistureDepth);
+  builder.setSaturatedHydraulicConductivity(smp->pm_SaturatedHydraulicConductivity);
+  builder.setSurfaceRoughness(smp->pm_SurfaceRoughness);
+  builder.setGroundwaterDischarge(smp->pm_GroundwaterDischarge);
+  builder.setHydraulicConductivityRedux(smp->pm_HydraulicConductivityRedux);
+  builder.setSnowAccumulationTresholdTemperature(smp->pm_SnowAccumulationTresholdTemperature);
+  builder.setKcFactor(smp->pm_KcFactor);
+  builder.setTemperatureLimitForLiquidWater(smp->pm_TemperatureLimitForLiquidWater);
+  builder.setCorrectionSnow(smp->pm_CorrectionSnow);
+  builder.setCorrectionRain(smp->pm_CorrectionRain);
+  builder.setSnowMaxAdditionalDensity(smp->pm_SnowMaxAdditionalDensity);
+  builder.setNewSnowDensityMin(smp->pm_NewSnowDensityMin);
+  builder.setSnowRetentionCapacityMin(smp->pm_SnowRetentionCapacityMin);
+  builder.setRefreezeParameter1(smp->pm_RefreezeParameter1);
+  builder.setRefreezeParameter2(smp->pm_RefreezeParameter2);
+  builder.setRefreezeTemperature(smp->pm_RefreezeTemperature);
+  builder.setSnowMeltTemperature(smp->pm_SnowMeltTemperature);
+  builder.setSnowPacking(smp->pm_SnowPacking);
+  builder.setSnowRetentionCapacityMax(smp->pm_SnowRetentionCapacityMax);
+  builder.setEvaporationZeta(smp->pm_EvaporationZeta);
+  builder.setXsaCriticalSoilMoisture(smp->pm_XSACriticalSoilMoisture);
+  builder.setMaximumEvaporationImpactDepth(smp->pm_MaximumEvaporationImpactDepth);
+  builder.setMaxPercolationRate(smp->pm_MaxPercolationRate);
+  builder.setMoistureInitValue(smp->pm_MoistureInitValue);
 }
 
 // SoilMoistureModuleParameters::SoilMoistureModuleParameters(json11::Json j)
@@ -2003,65 +2026,65 @@ void SoilMoistureModuleParameters::serialize(
 //   merge(j);
 // }
 
-Errors SoilMoistureModuleParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors soilmoisturemoduleparameters::merge(SoilMoistureModuleParameters* smp, json11::Json j) {
+  Errors res = defaultMerge(j, [smp](json11::Json j2) { return merge(smp, j2); });
 
-  //set_double_value(pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
-  set_double_value(pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity");
-  set_double_value(pm_SurfaceRoughness, j, "SurfaceRoughness");
-  set_double_value(pm_GroundwaterDischarge, j, "GroundwaterDischarge");
-  set_double_value(pm_HydraulicConductivityRedux, j, "HydraulicConductivityRedux");
-  set_double_value(pm_SnowAccumulationTresholdTemperature, j, "SnowAccumulationTresholdTemperature");
-  set_double_value(pm_KcFactor, j, "KcFactor");
-  set_double_value(pm_TemperatureLimitForLiquidWater, j, "TemperatureLimitForLiquidWater");
-  set_double_value(pm_CorrectionSnow, j, "CorrectionSnow");
-  set_double_value(pm_CorrectionRain, j, "CorrectionRain");
-  set_double_value(pm_SnowMaxAdditionalDensity, j, "SnowMaxAdditionalDensity");
-  set_double_value(pm_NewSnowDensityMin, j, "NewSnowDensityMin");
-  set_double_value(pm_SnowRetentionCapacityMin, j, "SnowRetentionCapacityMin");
-  set_double_value(pm_RefreezeParameter1, j, "RefreezeParameter1");
-  set_double_value(pm_RefreezeParameter2, j, "RefreezeParameter2");
-  set_double_value(pm_RefreezeTemperature, j, "RefreezeTemperature");
-  set_double_value(pm_SnowMeltTemperature, j, "SnowMeltTemperature");
-  set_double_value(pm_SnowPacking, j, "SnowPacking");
-  set_double_value(pm_SnowRetentionCapacityMax, j, "SnowRetentionCapacityMax");
-  set_double_value(pm_EvaporationZeta, j, "EvaporationZeta");
-  set_double_value(pm_XSACriticalSoilMoisture, j, "XSACriticalSoilMoisture");
-  set_double_value(pm_MaximumEvaporationImpactDepth, j, "MaximumEvaporationImpactDepth");
-  set_double_value(pm_MaxPercolationRate, j, "MaxPercolationRate");
-  set_double_value(pm_MoistureInitValue, j, "MoistureInitValue");
+  //set_double_value(smp->pm_CriticalMoistureDepth, j, "CriticalMoistureDepth");
+  set_double_value(smp->pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity");
+  set_double_value(smp->pm_SurfaceRoughness, j, "SurfaceRoughness");
+  set_double_value(smp->pm_GroundwaterDischarge, j, "GroundwaterDischarge");
+  set_double_value(smp->pm_HydraulicConductivityRedux, j, "HydraulicConductivityRedux");
+  set_double_value(smp->pm_SnowAccumulationTresholdTemperature, j, "SnowAccumulationTresholdTemperature");
+  set_double_value(smp->pm_KcFactor, j, "KcFactor");
+  set_double_value(smp->pm_TemperatureLimitForLiquidWater, j, "TemperatureLimitForLiquidWater");
+  set_double_value(smp->pm_CorrectionSnow, j, "CorrectionSnow");
+  set_double_value(smp->pm_CorrectionRain, j, "CorrectionRain");
+  set_double_value(smp->pm_SnowMaxAdditionalDensity, j, "SnowMaxAdditionalDensity");
+  set_double_value(smp->pm_NewSnowDensityMin, j, "NewSnowDensityMin");
+  set_double_value(smp->pm_SnowRetentionCapacityMin, j, "SnowRetentionCapacityMin");
+  set_double_value(smp->pm_RefreezeParameter1, j, "RefreezeParameter1");
+  set_double_value(smp->pm_RefreezeParameter2, j, "RefreezeParameter2");
+  set_double_value(smp->pm_RefreezeTemperature, j, "RefreezeTemperature");
+  set_double_value(smp->pm_SnowMeltTemperature, j, "SnowMeltTemperature");
+  set_double_value(smp->pm_SnowPacking, j, "SnowPacking");
+  set_double_value(smp->pm_SnowRetentionCapacityMax, j, "SnowRetentionCapacityMax");
+  set_double_value(smp->pm_EvaporationZeta, j, "EvaporationZeta");
+  set_double_value(smp->pm_XSACriticalSoilMoisture, j, "XSACriticalSoilMoisture");
+  set_double_value(smp->pm_MaximumEvaporationImpactDepth, j, "MaximumEvaporationImpactDepth");
+  set_double_value(smp->pm_MaxPercolationRate, j, "MaxPercolationRate");
+  set_double_value(smp->pm_MoistureInitValue, j, "MoistureInitValue");
 
   return res;
 }
 
-json11::Json SoilMoistureModuleParameters::to_json() const {
+json11::Json soilmoisturemoduleparameters::to_json(const SoilMoistureModuleParameters* smp) {
   return json11::Json::object
   {
     {"type", "SoilMoistureModuleParameters"},
-    //{"CriticalMoistureDepth",               pm_CriticalMoistureDepth},
-    {"SaturatedHydraulicConductivity", pm_SaturatedHydraulicConductivity},
-    {"SurfaceRoughness", pm_SurfaceRoughness},
-    {"GroundwaterDischarge", pm_GroundwaterDischarge},
-    {"HydraulicConductivityRedux", pm_HydraulicConductivityRedux},
-    {"SnowAccumulationTresholdTemperature", pm_SnowAccumulationTresholdTemperature},
-    {"KcFactor", pm_KcFactor},
-    {"TemperatureLimitForLiquidWater", pm_TemperatureLimitForLiquidWater},
-    {"CorrectionSnow", pm_CorrectionSnow},
-    {"CorrectionRain", pm_CorrectionRain},
-    {"SnowMaxAdditionalDensity", pm_SnowMaxAdditionalDensity},
-    {"NewSnowDensityMin", pm_NewSnowDensityMin},
-    {"SnowRetentionCapacityMin", pm_SnowRetentionCapacityMin},
-    {"RefreezeParameter1", pm_RefreezeParameter1},
-    {"RefreezeParameter2", pm_RefreezeParameter2},
-    {"RefreezeTemperature", pm_RefreezeTemperature},
-    {"SnowMeltTemperature", pm_SnowMeltTemperature},
-    {"SnowPacking", pm_SnowPacking},
-    {"SnowRetentionCapacityMax", pm_SnowRetentionCapacityMax},
-    {"EvaporationZeta", pm_EvaporationZeta},
-    {"XSACriticalSoilMoisture", pm_XSACriticalSoilMoisture},
-    {"MaximumEvaporationImpactDepth", pm_MaximumEvaporationImpactDepth},
-    {"MaxPercolationRate", pm_MaxPercolationRate},
-    {"MoistureInitValue", pm_MoistureInitValue}
+    //{"CriticalMoistureDepth",               smp->pm_CriticalMoistureDepth},
+    {"SaturatedHydraulicConductivity", smp->pm_SaturatedHydraulicConductivity},
+    {"SurfaceRoughness", smp->pm_SurfaceRoughness},
+    {"GroundwaterDischarge", smp->pm_GroundwaterDischarge},
+    {"HydraulicConductivityRedux", smp->pm_HydraulicConductivityRedux},
+    {"SnowAccumulationTresholdTemperature", smp->pm_SnowAccumulationTresholdTemperature},
+    {"KcFactor", smp->pm_KcFactor},
+    {"TemperatureLimitForLiquidWater", smp->pm_TemperatureLimitForLiquidWater},
+    {"CorrectionSnow", smp->pm_CorrectionSnow},
+    {"CorrectionRain", smp->pm_CorrectionRain},
+    {"SnowMaxAdditionalDensity", smp->pm_SnowMaxAdditionalDensity},
+    {"NewSnowDensityMin", smp->pm_NewSnowDensityMin},
+    {"SnowRetentionCapacityMin", smp->pm_SnowRetentionCapacityMin},
+    {"RefreezeParameter1", smp->pm_RefreezeParameter1},
+    {"RefreezeParameter2", smp->pm_RefreezeParameter2},
+    {"RefreezeTemperature", smp->pm_RefreezeTemperature},
+    {"SnowMeltTemperature", smp->pm_SnowMeltTemperature},
+    {"SnowPacking", smp->pm_SnowPacking},
+    {"SnowRetentionCapacityMax", smp->pm_SnowRetentionCapacityMax},
+    {"EvaporationZeta", smp->pm_EvaporationZeta},
+    {"XSACriticalSoilMoisture", smp->pm_XSACriticalSoilMoisture},
+    {"MaximumEvaporationImpactDepth", smp->pm_MaximumEvaporationImpactDepth},
+    {"MaxPercolationRate", smp->pm_MaxPercolationRate},
+    {"MoistureInitValue", smp->pm_MoistureInitValue}
   };
 }
 
@@ -2566,9 +2589,9 @@ CentralParameterProvider::CentralParameterProvider()
 Errors CentralParameterProvider::merge(json11::Json j) {
   Errors res;
 
-  res.append(userCropParameters.merge(j["userCropParameters"]));
-  res.append(userEnvironmentParameters.merge(j["userEnvironmentParameters"]));
-  res.append(userSoilMoistureParameters.merge(j["userSoilMoistureParameters"]));
+  res.append(cropmoduleparameters::merge(&userCropParameters, j["userCropParameters"]));
+  res.append(environmentparameters::merge(&userEnvironmentParameters, j["userEnvironmentParameters"]));
+  res.append(soilmoisturemoduleparameters::merge(&userSoilMoistureParameters, j["userSoilMoistureParameters"]));
   res.append(userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]));
   res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
   res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
@@ -2587,9 +2610,9 @@ json11::Json CentralParameterProvider::to_json() const {
   return json11::Json::object
   {
     {"type", "CentralParameterProvider"},
-    {"userCropParameters", userCropParameters.to_json()},
-    {"userEnvironmentParameters", userEnvironmentParameters.to_json()},
-    {"userSoilMoistureParameters", userSoilMoistureParameters.to_json()},
+    {"userCropParameters", cropmoduleparameters::to_json(&userCropParameters)},
+    {"userEnvironmentParameters", environmentparameters::to_json(&userEnvironmentParameters)},
+    {"userSoilMoistureParameters", soilmoisturemoduleparameters::to_json(&userSoilMoistureParameters)},
     {"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()},
     {"userSoilTransportParameters", userSoilTransportParameters.to_json()},
     {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
