@@ -2088,122 +2088,140 @@ json11::Json soilmoisturemoduleparameters::to_json(const SoilMoistureModuleParam
   };
 }
 
-void SoilTemperatureModuleParameters::deserialize(
-  mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
-  pt_NTau = reader.getNTau();
-  pt_InitialSurfaceTemperature = reader.getInitialSurfaceTemperature();
-  pt_QuartzRawDensity = reader.getQuartzRawDensity();
-  pt_DensityAir = reader.getDensityAir();
-  pt_DensityWater = reader.getDensityWater();
-  pt_DensityHumus = reader.getDensityHumus();
-  pt_SpecificHeatCapacityAir = reader.getSpecificHeatCapacityAir();
-  pt_SpecificHeatCapacityQuartz = reader.getSpecificHeatCapacityQuartz();
-  pt_SpecificHeatCapacityWater = reader.getSpecificHeatCapacityWater();
-  pt_SpecificHeatCapacityHumus = reader.getSpecificHeatCapacityHumus();
-  pt_SoilAlbedo = reader.getSoilAlbedo();
-  pt_SoilMoisture = reader.getSoilMoisture();
+SoilTemperatureModuleParameters monica::makeSoilTemperatureModuleParameters(
+    mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
+  SoilTemperatureModuleParameters stp;
+  soiltemperaturemoduleparameters::deserialize(&stp, reader);
+  return stp;
 }
 
-void SoilTemperatureModuleParameters::serialize(
-  mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder) const {
-  builder.setNTau(pt_NTau);
-  builder.setInitialSurfaceTemperature(pt_InitialSurfaceTemperature);
-  builder.setBaseTemperature(pt_BaseTemperature);
-  builder.setQuartzRawDensity(pt_QuartzRawDensity);
-  builder.setDensityAir(pt_DensityAir);
-  builder.setDensityWater(pt_DensityWater);
-  builder.setDensityHumus(pt_DensityHumus);
-  builder.setSpecificHeatCapacityAir(pt_SpecificHeatCapacityAir);
-  builder.setSpecificHeatCapacityQuartz(pt_SpecificHeatCapacityQuartz);
-  builder.setSpecificHeatCapacityWater(pt_SpecificHeatCapacityWater);
-  builder.setSpecificHeatCapacityHumus(pt_SpecificHeatCapacityHumus);
-  builder.setSoilAlbedo(pt_SoilAlbedo);
-  builder.setSoilMoisture(pt_SoilMoisture);
+void soiltemperaturemoduleparameters::deserialize(
+  SoilTemperatureModuleParameters* stp,
+  mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader) {
+  stp->pt_NTau = reader.getNTau();
+  stp->pt_InitialSurfaceTemperature = reader.getInitialSurfaceTemperature();
+  stp->pt_QuartzRawDensity = reader.getQuartzRawDensity();
+  stp->pt_DensityAir = reader.getDensityAir();
+  stp->pt_DensityWater = reader.getDensityWater();
+  stp->pt_DensityHumus = reader.getDensityHumus();
+  stp->pt_SpecificHeatCapacityAir = reader.getSpecificHeatCapacityAir();
+  stp->pt_SpecificHeatCapacityQuartz = reader.getSpecificHeatCapacityQuartz();
+  stp->pt_SpecificHeatCapacityWater = reader.getSpecificHeatCapacityWater();
+  stp->pt_SpecificHeatCapacityHumus = reader.getSpecificHeatCapacityHumus();
+  stp->pt_SoilAlbedo = reader.getSoilAlbedo();
+  stp->pt_SoilMoisture = reader.getSoilMoisture();
+}
+
+void soiltemperaturemoduleparameters::serialize(
+  const SoilTemperatureModuleParameters* stp,
+  mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder) {
+  builder.setNTau(stp->pt_NTau);
+  builder.setInitialSurfaceTemperature(stp->pt_InitialSurfaceTemperature);
+  builder.setBaseTemperature(stp->pt_BaseTemperature);
+  builder.setQuartzRawDensity(stp->pt_QuartzRawDensity);
+  builder.setDensityAir(stp->pt_DensityAir);
+  builder.setDensityWater(stp->pt_DensityWater);
+  builder.setDensityHumus(stp->pt_DensityHumus);
+  builder.setSpecificHeatCapacityAir(stp->pt_SpecificHeatCapacityAir);
+  builder.setSpecificHeatCapacityQuartz(stp->pt_SpecificHeatCapacityQuartz);
+  builder.setSpecificHeatCapacityWater(stp->pt_SpecificHeatCapacityWater);
+  builder.setSpecificHeatCapacityHumus(stp->pt_SpecificHeatCapacityHumus);
+  builder.setSoilAlbedo(stp->pt_SoilAlbedo);
+  builder.setSoilMoisture(stp->pt_SoilMoisture);
 }
 
 // SoilTemperatureModuleParameters::SoilTemperatureModuleParameters(json11::Json j) {
 //   merge(j);
 // }
 
-Errors SoilTemperatureModuleParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors soiltemperaturemoduleparameters::merge(SoilTemperatureModuleParameters* stp, json11::Json j) {
+  Errors res = defaultMerge(j, [stp](json11::Json j2) { return merge(stp, j2); });
 
-  set_double_value(pt_NTau, j, "NTau");
-  set_double_value(pt_InitialSurfaceTemperature, j, "InitialSurfaceTemperature");
-  set_double_value(pt_BaseTemperature, j, "BaseTemperature");
-  set_double_value(pt_QuartzRawDensity, j, "QuartzRawDensity");
-  set_double_value(pt_DensityAir, j, "DensityAir");
-  set_double_value(pt_DensityWater, j, "DensityWater");
-  set_double_value(pt_DensityHumus, j, "DensityHumus");
-  set_double_value(pt_SpecificHeatCapacityAir, j, "SpecificHeatCapacityAir");
-  set_double_value(pt_SpecificHeatCapacityQuartz, j, "SpecificHeatCapacityQuartz");
-  set_double_value(pt_SpecificHeatCapacityWater, j, "SpecificHeatCapacityWater");
-  set_double_value(pt_SpecificHeatCapacityHumus, j, "SpecificHeatCapacityHumus");
-  set_double_value(pt_SoilAlbedo, j, "SoilAlbedo");
-  set_double_value(pt_SoilMoisture, j, "SoilMoisture");
+  set_double_value(stp->pt_NTau, j, "NTau");
+  set_double_value(stp->pt_InitialSurfaceTemperature, j, "InitialSurfaceTemperature");
+  set_double_value(stp->pt_BaseTemperature, j, "BaseTemperature");
+  set_double_value(stp->pt_QuartzRawDensity, j, "QuartzRawDensity");
+  set_double_value(stp->pt_DensityAir, j, "DensityAir");
+  set_double_value(stp->pt_DensityWater, j, "DensityWater");
+  set_double_value(stp->pt_DensityHumus, j, "DensityHumus");
+  set_double_value(stp->pt_SpecificHeatCapacityAir, j, "SpecificHeatCapacityAir");
+  set_double_value(stp->pt_SpecificHeatCapacityQuartz, j, "SpecificHeatCapacityQuartz");
+  set_double_value(stp->pt_SpecificHeatCapacityWater, j, "SpecificHeatCapacityWater");
+  set_double_value(stp->pt_SpecificHeatCapacityHumus, j, "SpecificHeatCapacityHumus");
+  set_double_value(stp->pt_SoilAlbedo, j, "SoilAlbedo");
+  set_double_value(stp->pt_SoilMoisture, j, "SoilMoisture");
 
   return res;
 }
 
-json11::Json SoilTemperatureModuleParameters::to_json() const {
+json11::Json soiltemperaturemoduleparameters::to_json(const SoilTemperatureModuleParameters* stp) {
   return json11::Json::object
   {
     {"type", "SoilTemperatureModuleParameters"},
-    {"NTau", pt_NTau},
-    {"InitialSurfaceTemperature", pt_InitialSurfaceTemperature},
-    {"BaseTemperature", pt_BaseTemperature},
-    {"QuartzRawDensity", pt_QuartzRawDensity},
-    {"DensityAir", pt_DensityAir},
-    {"DensityWater", pt_DensityWater},
-    {"DensityHumus", pt_DensityHumus},
-    {"SpecificHeatCapacityAir", pt_SpecificHeatCapacityAir},
-    {"SpecificHeatCapacityQuartz", pt_SpecificHeatCapacityQuartz},
-    {"SpecificHeatCapacityWater", pt_SpecificHeatCapacityWater},
-    {"SpecificHeatCapacityHumus", pt_SpecificHeatCapacityHumus},
-    {"SoilAlbedo", pt_SoilAlbedo},
-    {"SoilMoisture", pt_SoilMoisture}
+    {"NTau", stp->pt_NTau},
+    {"InitialSurfaceTemperature", stp->pt_InitialSurfaceTemperature},
+    {"BaseTemperature", stp->pt_BaseTemperature},
+    {"QuartzRawDensity", stp->pt_QuartzRawDensity},
+    {"DensityAir", stp->pt_DensityAir},
+    {"DensityWater", stp->pt_DensityWater},
+    {"DensityHumus", stp->pt_DensityHumus},
+    {"SpecificHeatCapacityAir", stp->pt_SpecificHeatCapacityAir},
+    {"SpecificHeatCapacityQuartz", stp->pt_SpecificHeatCapacityQuartz},
+    {"SpecificHeatCapacityWater", stp->pt_SpecificHeatCapacityWater},
+    {"SpecificHeatCapacityHumus", stp->pt_SpecificHeatCapacityHumus},
+    {"SoilAlbedo", stp->pt_SoilAlbedo},
+    {"SoilMoisture", stp->pt_SoilMoisture}
   };
 }
 
-void SoilTransportModuleParameters::deserialize(
-  mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
-  pq_DispersionLength = reader.getDispersionLength();
-  pq_AD = reader.getAd();
-  pq_DiffusionCoefficientStandard = reader.getDiffusionCoefficientStandard();
-  pq_NDeposition = reader.getNDeposition();
+SoilTransportModuleParameters monica::makeSoilTransportModuleParameters(
+    mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
+  SoilTransportModuleParameters stp;
+  soiltransportmoduleparameters::deserialize(&stp, reader);
+  return stp;
 }
 
-void SoilTransportModuleParameters::serialize(
-  mas::schema::model::monica::SoilTransportModuleParameters::Builder builder) const {
-  builder.setDispersionLength(pq_DispersionLength);
-  builder.setAd(pq_AD);
-  builder.setDiffusionCoefficientStandard(pq_DiffusionCoefficientStandard);
-  builder.setNDeposition(pq_NDeposition);
+void soiltransportmoduleparameters::deserialize(
+  SoilTransportModuleParameters* stp,
+  mas::schema::model::monica::SoilTransportModuleParameters::Reader reader) {
+  stp->pq_DispersionLength = reader.getDispersionLength();
+  stp->pq_AD = reader.getAd();
+  stp->pq_DiffusionCoefficientStandard = reader.getDiffusionCoefficientStandard();
+  stp->pq_NDeposition = reader.getNDeposition();
+}
+
+void soiltransportmoduleparameters::serialize(
+  const SoilTransportModuleParameters* stp,
+  mas::schema::model::monica::SoilTransportModuleParameters::Builder builder) {
+  builder.setDispersionLength(stp->pq_DispersionLength);
+  builder.setAd(stp->pq_AD);
+  builder.setDiffusionCoefficientStandard(stp->pq_DiffusionCoefficientStandard);
+  builder.setNDeposition(stp->pq_NDeposition);
 }
 
 // SoilTransportModuleParameters::SoilTransportModuleParameters(json11::Json j) {
 //   merge(j);
 // }
 
-Errors SoilTransportModuleParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors soiltransportmoduleparameters::merge(SoilTransportModuleParameters* stp, json11::Json j) {
+  Errors res = defaultMerge(j, [stp](json11::Json j2) { return merge(stp, j2); });
 
-  set_double_value(pq_DispersionLength, j, "DispersionLength");
-  set_double_value(pq_AD, j, "AD");
-  set_double_value(pq_DiffusionCoefficientStandard, j, "DiffusionCoefficientStandard");
-  set_double_value(pq_NDeposition, j, "NDeposition");
+  set_double_value(stp->pq_DispersionLength, j, "DispersionLength");
+  set_double_value(stp->pq_AD, j, "AD");
+  set_double_value(stp->pq_DiffusionCoefficientStandard, j, "DiffusionCoefficientStandard");
+  set_double_value(stp->pq_NDeposition, j, "NDeposition");
 
   return res;
 }
 
-json11::Json SoilTransportModuleParameters::to_json() const {
+json11::Json soiltransportmoduleparameters::to_json(const SoilTransportModuleParameters* stp) {
   return json11::Json::object
   {
     {"type", "SoilTransportModuleParameters"},
-    {"DispersionLength", pq_DispersionLength},
-    {"AD", pq_AD},
-    {"DiffusionCoefficientStandard", pq_DiffusionCoefficientStandard},
-    {"NDeposition", pq_NDeposition}
+    {"DispersionLength", stp->pq_DispersionLength},
+    {"AD", stp->pq_AD},
+    {"DiffusionCoefficientStandard", stp->pq_DiffusionCoefficientStandard},
+    {"NDeposition", stp->pq_NDeposition}
   };
 }
 
@@ -2592,8 +2610,8 @@ Errors CentralParameterProvider::merge(json11::Json j) {
   res.append(cropmoduleparameters::merge(&userCropParameters, j["userCropParameters"]));
   res.append(environmentparameters::merge(&userEnvironmentParameters, j["userEnvironmentParameters"]));
   res.append(soilmoisturemoduleparameters::merge(&userSoilMoistureParameters, j["userSoilMoistureParameters"]));
-  res.append(userSoilTemperatureParameters.merge(j["userSoilTemperatureParameters"]));
-  res.append(userSoilTransportParameters.merge(j["userSoilTransportParameters"]));
+  res.append(soiltemperaturemoduleparameters::merge(&userSoilTemperatureParameters, j["userSoilTemperatureParameters"]));
+  res.append(soiltransportmoduleparameters::merge(&userSoilTransportParameters, j["userSoilTransportParameters"]));
   res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
   res.append(simulationparameters::merge(&simulationParameters, j["simulationParameters"]));
   res.append(siteparameters::merge(&siteParameters, j["siteParameters"]));
@@ -2613,8 +2631,8 @@ json11::Json CentralParameterProvider::to_json() const {
     {"userCropParameters", cropmoduleparameters::to_json(&userCropParameters)},
     {"userEnvironmentParameters", environmentparameters::to_json(&userEnvironmentParameters)},
     {"userSoilMoistureParameters", soilmoisturemoduleparameters::to_json(&userSoilMoistureParameters)},
-    {"userSoilTemperatureParameters", userSoilTemperatureParameters.to_json()},
-    {"userSoilTransportParameters", userSoilTransportParameters.to_json()},
+    {"userSoilTemperatureParameters", soiltemperaturemoduleparameters::to_json(&userSoilTemperatureParameters)},
+    {"userSoilTransportParameters", soiltransportmoduleparameters::to_json(&userSoilTransportParameters)},
     {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
     {"simulationParameters", simulationparameters::to_json(&simulationParameters)},
     {"siteParameters", siteparameters::to_json(&siteParameters)}

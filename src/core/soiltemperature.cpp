@@ -35,7 +35,7 @@ void deserialize(SoilTemperature* st, mas::schema::model::monica::SoilTemperatur
   st->soilSurfaceTemperature = reader.getSoilSurfaceTemperature();
   soillayer::deserialize(&st->soilColumnGroundLayer, reader.getSoilColumnVtGroundLayer());
   soillayer::deserialize(&st->soilColumnBottomLayer, reader.getSoilColumnVtBottomLayer());
-  st->params.deserialize(reader.getModuleParams());
+  soiltemperaturemoduleparameters::deserialize(&st->params, reader.getModuleParams());
   st->noOfTempLayers = reader.getNumberOfLayers();
   st->noOfSoilLayers = reader.getVsNumberOfLayers();
   setFromCapnpList(st->soilTemperature, reader.getSoilTemperature());
@@ -59,7 +59,7 @@ void serialize(const SoilTemperature* st, mas::schema::model::monica::SoilTemper
   builder.setSoilSurfaceTemperature(st->soilSurfaceTemperature);
   soillayer::serialize(&st->soilColumnGroundLayer, builder.initSoilColumnVtGroundLayer());
   soillayer::serialize(&st->soilColumnBottomLayer, builder.initSoilColumnVtBottomLayer());
-  st->params.serialize(builder.initModuleParams());
+  soiltemperaturemoduleparameters::serialize(&st->params, builder.initModuleParams());
   builder.setNumberOfLayers((uint16_t)st->noOfTempLayers);
   builder.setVsNumberOfLayers((uint16_t)st->noOfSoilLayers);
   setCapnpList(st->soilTemperature, builder.initSoilTemperature((capnp::uint)st->soilTemperature.size()));

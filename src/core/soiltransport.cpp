@@ -74,7 +74,7 @@ kj::Own<SoilTransport> makeSoilTransport(SoilColumn& soilColumn,
 namespace soiltransport {
 
 void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Reader reader) {
-  st->params.deserialize(reader.getModuleParams());
+  soiltransportmoduleparameters::deserialize(&st->params, reader.getModuleParams());
   setFromCapnpList(st->vq_Convection, reader.getConvection());
   setFromCapnpList(st->vq_DiffusionCoeff, reader.getDiffusionCoeff());
   setFromCapnpList(st->vq_Dispersion, reader.getDispersion());
@@ -94,7 +94,7 @@ void deserialize(SoilTransport* st, mas::schema::model::monica::SoilTransportMod
 }
 
 void serialize(const SoilTransport* st, mas::schema::model::monica::SoilTransportModuleState::Builder builder) {
-  st->params.serialize(builder.initModuleParams());
+  soiltransportmoduleparameters::serialize(&st->params, builder.initModuleParams());
   setCapnpList(st->vq_Convection, builder.initConvection((capnp::uint)st->vq_Convection.size()));
   setCapnpList(st->vq_DiffusionCoeff, builder.initDiffusionCoeff((capnp::uint)st->vq_DiffusionCoeff.size()));
   setCapnpList(st->vq_Dispersion, builder.initDispersion((capnp::uint)st->vq_Dispersion.size()));

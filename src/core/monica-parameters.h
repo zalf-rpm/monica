@@ -769,30 +769,7 @@ DLL_API json11::Json to_json(const SoilMoistureModuleParameters* smp);
  * Class that holds information about user defined soil temperature parameters.
  * @author Xenia Specka
  */
-struct DLL_API SoilTemperatureModuleParameters
-    : public Tools::Json11Serializable {
-  SoilTemperatureModuleParameters() {}
-
-  SoilTemperatureModuleParameters(
-      mas::schema::model::monica::SoilTemperatureModuleParameters::Reader
-          reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::SoilTemperatureModuleParameters::Reader
-          reader);
-
-  //  SoilTemperatureModuleParameters(json11::Json object);
-
-  void
-  serialize(mas::schema::model::monica::SoilTemperatureModuleParameters::Builder
-                builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API SoilTemperatureModuleParameters {
   double pt_NTau{0.0};
   double pt_InitialSurfaceTemperature{0.0};
   double pt_BaseTemperature{0.0};
@@ -808,38 +785,44 @@ struct DLL_API SoilTemperatureModuleParameters
   double pt_SoilMoisture{0.25};
 };
 
+DLL_API SoilTemperatureModuleParameters makeSoilTemperatureModuleParameters(
+    mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
+
+namespace soiltemperaturemoduleparameters {
+
+DLL_API void deserialize(SoilTemperatureModuleParameters* stp,
+                         mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
+DLL_API void serialize(const SoilTemperatureModuleParameters* stp,
+                       mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder);
+DLL_API Tools::Errors merge(SoilTemperatureModuleParameters* stp, json11::Json j);
+DLL_API json11::Json to_json(const SoilTemperatureModuleParameters* stp);
+
+} // namespace soiltemperaturemoduleparameters
+
 /**
  * Class that holds information about user defined soil transport parameters.
  * @author Xenia Specka
  */
-struct DLL_API SoilTransportModuleParameters
-    : public Tools::Json11Serializable {
-  SoilTransportModuleParameters() {}
-
-  SoilTransportModuleParameters(
-      mas::schema::model::monica::SoilTransportModuleParameters::Reader
-          reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
-
-  //  SoilTransportModuleParameters(json11::Json object);
-
-  void
-  serialize(mas::schema::model::monica::SoilTransportModuleParameters::Builder
-                builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API SoilTransportModuleParameters {
   double pq_DispersionLength{0.0};
   double pq_AD{0.0};
   double pq_DiffusionCoefficientStandard{0.0};
   double pq_NDeposition{0.0};
 };
+
+DLL_API SoilTransportModuleParameters makeSoilTransportModuleParameters(
+    mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
+
+namespace soiltransportmoduleparameters {
+
+DLL_API void deserialize(SoilTransportModuleParameters* stp,
+                         mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
+DLL_API void serialize(const SoilTransportModuleParameters* stp,
+                       mas::schema::model::monica::SoilTransportModuleParameters::Builder builder);
+DLL_API Tools::Errors merge(SoilTransportModuleParameters* stp, json11::Json j);
+DLL_API json11::Json to_json(const SoilTransportModuleParameters* stp);
+
+} // namespace soiltransportmoduleparameters
 
 struct DLL_API SticsParameters : public Tools::Json11Serializable {
   SticsParameters() {}

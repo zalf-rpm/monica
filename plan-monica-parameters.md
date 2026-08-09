@@ -258,8 +258,19 @@ those members. Check off each once it's built, regression-tested, committed, and
     caught by a repo-wide grep restricted to "outside this file", so for future items also double-check
     `CentralParameterProvider`'s own `merge`/`to_json` bodies directly after converting any struct it
     holds by value, even before item 24 itself is converted.
-20. [ ] `SoilTemperatureModuleParameters` — leaf.
-21. [ ] `SoilTransportModuleParameters` — leaf.
+20. [x] `SoilTemperatureModuleParameters` — leaf. External usage: `SoilTemperature::params`
+    (`soiltemperature.h`/`.cpp` `deserialize`/`serialize` member calls; copy-assignment in
+    `makeSoilTemperature(...)` untouched, works as plain aggregate) plus the
+    `CentralParameterProvider` leak-forward (item 24, both `merge`/`to_json`, same same-file
+    pattern as item 19). Note: `deserialize` doesn't set `pt_BaseTemperature` (pre-existing gap,
+    `serialize`/`merge`/`to_json` all handle it) — left as-is, not this conversion's job to fix.
+21. [x] `SoilTransportModuleParameters` — leaf. Same shape as item 20: external usage was
+    `SoilTransport::params` (`soiltransport.h`/`.cpp` `deserialize`/`serialize`) plus the
+    `CentralParameterProvider` leak-forward. Hit an unrelated transient build issue here: a stale/
+    corrupted `soilmoisture.cpp.obj` in `monica_lib.lib` (untouched by this item) caused `LNK1163`
+    ("invalid COMDAT section selection") when linking `monica-capnp-proxy`/`monica-capnp-fbp-component`;
+    deleting that one `.obj` and rebuilding fixed it. Not caused by this conversion — worth knowing
+    this class of failure exists if it recurs on later items.
 22. [ ] `SticsParameters` — leaf; used by `SoilOrganicModuleParameters`.
 23. [ ] `SoilOrganicModuleParameters` — needs `SticsParameters` done (holds it by value).
 24. [ ] `CentralParameterProvider` — convert **last**; holds almost every struct above by value.
