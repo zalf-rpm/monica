@@ -1727,7 +1727,7 @@ double foNH3onNitriteOxidation(SoilOrganic* so,
 }
 
 void deserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Reader reader) {
-  so->params.deserialize(reader.getModuleParams());
+  soilorganicmoduleparameters::deserialize(&so->params, reader.getModuleParams());
   so->vs_NumberOfLayers = reader.getVsNumberOfLayers();
   so->vs_NumberOfOrganicLayers = reader.getVsNumberOfOrganicLayers();
   so->addedOrganicMatter = reader.getAddedOrganicMatter();
@@ -1771,7 +1771,7 @@ void deserialize(SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleS
 }
 
 void serialize(const SoilOrganic* so, mas::schema::model::monica::SoilOrganicModuleState::Builder builder) {
-  so->params.serialize(builder.initModuleParams());
+  soilorganicmoduleparameters::serialize(&so->params, builder.initModuleParams());
   builder.setVsNumberOfLayers((uint16_t) so->vs_NumberOfLayers);
   builder.setVsNumberOfOrganicLayers((uint16_t) so->vs_NumberOfOrganicLayers);
   builder.setAddedOrganicMatter(so->addedOrganicMatter);

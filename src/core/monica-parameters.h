@@ -824,24 +824,7 @@ DLL_API json11::Json to_json(const SoilTransportModuleParameters* stp);
 
 } // namespace soiltransportmoduleparameters
 
-struct DLL_API SticsParameters : public Tools::Json11Serializable {
-  SticsParameters() {}
-
-  SticsParameters(mas::schema::model::monica::SticsParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::SticsParameters::Reader reader);
-
-  //  SticsParameters(json11::Json object);
-
-  void
-  serialize(mas::schema::model::monica::SticsParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API SticsParameters {
   bool use_n2o{false};
   bool use_nit{false};
   bool use_denit{false};
@@ -883,31 +866,23 @@ struct DLL_API SticsParameters : public Tools::Json11Serializable {
   double vpotdenit{2.0}; // [kg N/ha/day]
 };
 
+DLL_API SticsParameters makeSticsParameters(
+    mas::schema::model::monica::SticsParameters::Reader reader);
+
+namespace sticsparameters {
+
+DLL_API void deserialize(SticsParameters* sp, mas::schema::model::monica::SticsParameters::Reader reader);
+DLL_API void serialize(const SticsParameters* sp, mas::schema::model::monica::SticsParameters::Builder builder);
+DLL_API Tools::Errors merge(SticsParameters* sp, json11::Json j);
+DLL_API json11::Json to_json(const SticsParameters* sp);
+
+} // namespace sticsparameters
+
 /**
  * Class that holds information about user-defined soil organic parameters.
  * @author Claas Nendel
  */
-struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
-  SoilOrganicModuleParameters() {}
-
-  SoilOrganicModuleParameters(
-      mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
-
-  //  SoilOrganicModuleParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder)
-      const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API SoilOrganicModuleParameters {
   double po_SOM_SlowDecCoeffStandard{
       4.30e-5}; // 4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
   double po_SOM_FastDecCoeffStandard{
@@ -968,6 +943,20 @@ struct DLL_API SoilOrganicModuleParameters : public Tools::Json11Serializable {
   bool __enable_kaiteew_ClayOnDecompostion__{true};
   SticsParameters sticsParams;
 };
+
+DLL_API SoilOrganicModuleParameters makeSoilOrganicModuleParameters(
+    mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
+
+namespace soilorganicmoduleparameters {
+
+DLL_API void deserialize(SoilOrganicModuleParameters* sop,
+                         mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
+DLL_API void serialize(const SoilOrganicModuleParameters* sop,
+                       mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder);
+DLL_API Tools::Errors merge(SoilOrganicModuleParameters* sop, json11::Json j);
+DLL_API json11::Json to_json(const SoilOrganicModuleParameters* sop);
+
+} // namespace soilorganicmoduleparameters
 
 /**
  * @brief Central data distribution class.

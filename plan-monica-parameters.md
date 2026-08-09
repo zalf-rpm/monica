@@ -271,8 +271,18 @@ those members. Check off each once it's built, regression-tested, committed, and
     ("invalid COMDAT section selection") when linking `monica-capnp-proxy`/`monica-capnp-fbp-component`;
     deleting that one `.obj` and rebuilding fixed it. Not caused by this conversion — worth knowing
     this class of failure exists if it recurs on later items.
-22. [ ] `SticsParameters` — leaf; used by `SoilOrganicModuleParameters`.
-23. [ ] `SoilOrganicModuleParameters` — needs `SticsParameters` done (holds it by value).
+22. [x] `SticsParameters` — leaf; used by `SoilOrganicModuleParameters` (item 23). No external usage
+    outside `monica-parameters.h`/`.cpp` at all: `stics-nit-denit-n2o.*` and `soilorganic.cpp`'s local
+    `sticsParams` copies only ever take/read `SticsParameters` by value/const-ref (field reads, no
+    `.merge`/`.to_json`/`.serialize`/`.deserialize` calls), so nothing to fix there.
+23. [x] `SoilOrganicModuleParameters` — needed `SticsParameters` done (holds it by value; item 22
+    already rewired the internal `sticsParams.deserialize/serialize/merge(...)` calls to
+    `sticsparameters::...`). External usage: `SoilOrganic::params` (`soilorganic.cpp`
+    `deserialize`/`serialize` member calls) plus the `CentralParameterProvider` leak-forward (item 24,
+    same same-file pattern as items 19–21). Two aggregate-brace-init sites in `soilorganic.cpp`
+    (`SoilOrganic{soilColumn, kj::mv(params)}` and `SoilOrganic{soilColumn}`) position-depend on
+    `SoilOrganicModuleParameters` as `SoilOrganic`'s 2nd member — both keep working unchanged as
+    plain-aggregate init/default-init, no fix needed.
 24. [ ] `CentralParameterProvider` — convert **last**; holds almost every struct above by value.
     Has real methods `getPrecipCorrectionValue`/`setPrecipCorrectionValue`/`pathToOutputDir()` that
     become free functions (or get inlined if trivial enough once looked at directly).

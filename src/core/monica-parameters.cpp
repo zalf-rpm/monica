@@ -2225,374 +2225,391 @@ json11::Json soiltransportmoduleparameters::to_json(const SoilTransportModulePar
   };
 }
 
-void SticsParameters::deserialize(mas::schema::model::monica::SticsParameters::Reader reader) {
-  use_n2o = reader.getUseN2O();
-  use_nit = reader.getUseNit();
-  use_denit = reader.getUseDenit();
-  code_vnit = reader.getCodeVnit();
-  code_tnit = reader.getCodeTnit();
-  code_rationit = reader.getCodeRationit();
-  code_hourly_wfps_nit = reader.getCodeHourlyWfpsNit();
-  code_pdenit = reader.getCodePdenit();
-  code_ratiodenit = reader.getCodeRatiodenit();
-  code_hourly_wfps_denit = reader.getCodeHourlyWfpsDenit();
-  hminn = reader.getHminn();
-  hoptn = reader.getHoptn();
-  pHminnit = reader.getPHminnit();
-  pHmaxnit = reader.getPHmaxnit();
-  nh4_min = reader.getNh4Min();
-  pHminden = reader.getPHminden();
-  pHmaxden = reader.getPHmaxden();
-  wfpsc = reader.getWfpsc();
-  tdenitopt_gauss = reader.getTdenitoptGauss();
-  scale_tdenitopt = reader.getScaleTdenitopt();
-  Kd = reader.getKd();
-  k_desat = reader.getKDesat();
-  fnx = reader.getFnx();
-  vnitmax = reader.getVnitmax();
-  Kamm = reader.getKamm();
-  tnitmin = reader.getTnitmin();
-  tnitopt = reader.getTnitopt();
-  tnitop2 = reader.getTnitop2();
-  tnitmax = reader.getTnitmax();
-  tnitopt_gauss = reader.getTnitoptGauss();
-  scale_tnitopt = reader.getScaleTnitopt();
-  rationit = reader.getRationit();
-  cmin_pdenit = reader.getCminPdenit();
-  cmax_pdenit = reader.getCmaxPdenit();
-  min_pdenit = reader.getMinPdenit();
-  max_pdenit = reader.getMaxPdenit();
-  ratiodenit = reader.getRatiodenit();
-  profdenit = reader.getProfdenit();
-  vpotdenit = reader.getVpotdenit();
+SticsParameters monica::makeSticsParameters(
+    mas::schema::model::monica::SticsParameters::Reader reader) {
+  SticsParameters sp;
+  sticsparameters::deserialize(&sp, reader);
+  return sp;
 }
 
-void SticsParameters::serialize(mas::schema::model::monica::SticsParameters::Builder builder) const {
-  builder.setUseN2O(use_n2o);
-  builder.setUseNit(use_nit);
-  builder.setUseDenit(use_denit);
-  builder.setCodeVnit(code_vnit);
-  builder.setCodeTnit(code_tnit);
-  builder.setCodeRationit(code_rationit);
-  builder.setCodeHourlyWfpsNit(code_hourly_wfps_nit);
-  builder.setCodePdenit(code_pdenit);
-  builder.setCodeRatiodenit(code_ratiodenit);
-  builder.setCodeHourlyWfpsDenit(code_hourly_wfps_denit);
-  builder.setHminn(hminn);
-  builder.setHoptn(hoptn);
-  builder.setPHminnit(pHminnit);
-  builder.setPHmaxnit(pHmaxnit);
-  builder.setNh4Min(nh4_min);
-  builder.setPHminden(pHminden);
-  builder.setPHmaxden(pHmaxden);
-  builder.setWfpsc(wfpsc);
-  builder.setTdenitoptGauss(tdenitopt_gauss);
-  builder.setScaleTdenitopt(scale_tdenitopt);
-  builder.setKd(Kd);
-  builder.setKDesat(k_desat);
-  builder.setFnx(fnx);
-  builder.setVnitmax(vnitmax);
-  builder.setKamm(Kamm);
-  builder.setTnitmin(tnitmin);
-  builder.setTnitopt(tnitopt);
-  builder.setTnitop2(tnitop2);
-  builder.setTnitmax(tnitmax);
-  builder.setTnitoptGauss(tnitopt_gauss);
-  builder.setScaleTnitopt(scale_tnitopt);
-  builder.setRationit(rationit);
-  builder.setCminPdenit(cmin_pdenit);
-  builder.setCmaxPdenit(cmax_pdenit);
-  builder.setMinPdenit(min_pdenit);
-  builder.setMaxPdenit(max_pdenit);
-  builder.setRatiodenit(ratiodenit);
-  builder.setProfdenit(profdenit);
-  builder.setVpotdenit(vpotdenit);
+void sticsparameters::deserialize(SticsParameters* sp, mas::schema::model::monica::SticsParameters::Reader reader) {
+  sp->use_n2o = reader.getUseN2O();
+  sp->use_nit = reader.getUseNit();
+  sp->use_denit = reader.getUseDenit();
+  sp->code_vnit = reader.getCodeVnit();
+  sp->code_tnit = reader.getCodeTnit();
+  sp->code_rationit = reader.getCodeRationit();
+  sp->code_hourly_wfps_nit = reader.getCodeHourlyWfpsNit();
+  sp->code_pdenit = reader.getCodePdenit();
+  sp->code_ratiodenit = reader.getCodeRatiodenit();
+  sp->code_hourly_wfps_denit = reader.getCodeHourlyWfpsDenit();
+  sp->hminn = reader.getHminn();
+  sp->hoptn = reader.getHoptn();
+  sp->pHminnit = reader.getPHminnit();
+  sp->pHmaxnit = reader.getPHmaxnit();
+  sp->nh4_min = reader.getNh4Min();
+  sp->pHminden = reader.getPHminden();
+  sp->pHmaxden = reader.getPHmaxden();
+  sp->wfpsc = reader.getWfpsc();
+  sp->tdenitopt_gauss = reader.getTdenitoptGauss();
+  sp->scale_tdenitopt = reader.getScaleTdenitopt();
+  sp->Kd = reader.getKd();
+  sp->k_desat = reader.getKDesat();
+  sp->fnx = reader.getFnx();
+  sp->vnitmax = reader.getVnitmax();
+  sp->Kamm = reader.getKamm();
+  sp->tnitmin = reader.getTnitmin();
+  sp->tnitopt = reader.getTnitopt();
+  sp->tnitop2 = reader.getTnitop2();
+  sp->tnitmax = reader.getTnitmax();
+  sp->tnitopt_gauss = reader.getTnitoptGauss();
+  sp->scale_tnitopt = reader.getScaleTnitopt();
+  sp->rationit = reader.getRationit();
+  sp->cmin_pdenit = reader.getCminPdenit();
+  sp->cmax_pdenit = reader.getCmaxPdenit();
+  sp->min_pdenit = reader.getMinPdenit();
+  sp->max_pdenit = reader.getMaxPdenit();
+  sp->ratiodenit = reader.getRatiodenit();
+  sp->profdenit = reader.getProfdenit();
+  sp->vpotdenit = reader.getVpotdenit();
+}
+
+void sticsparameters::serialize(const SticsParameters* sp, mas::schema::model::monica::SticsParameters::Builder builder) {
+  builder.setUseN2O(sp->use_n2o);
+  builder.setUseNit(sp->use_nit);
+  builder.setUseDenit(sp->use_denit);
+  builder.setCodeVnit(sp->code_vnit);
+  builder.setCodeTnit(sp->code_tnit);
+  builder.setCodeRationit(sp->code_rationit);
+  builder.setCodeHourlyWfpsNit(sp->code_hourly_wfps_nit);
+  builder.setCodePdenit(sp->code_pdenit);
+  builder.setCodeRatiodenit(sp->code_ratiodenit);
+  builder.setCodeHourlyWfpsDenit(sp->code_hourly_wfps_denit);
+  builder.setHminn(sp->hminn);
+  builder.setHoptn(sp->hoptn);
+  builder.setPHminnit(sp->pHminnit);
+  builder.setPHmaxnit(sp->pHmaxnit);
+  builder.setNh4Min(sp->nh4_min);
+  builder.setPHminden(sp->pHminden);
+  builder.setPHmaxden(sp->pHmaxden);
+  builder.setWfpsc(sp->wfpsc);
+  builder.setTdenitoptGauss(sp->tdenitopt_gauss);
+  builder.setScaleTdenitopt(sp->scale_tdenitopt);
+  builder.setKd(sp->Kd);
+  builder.setKDesat(sp->k_desat);
+  builder.setFnx(sp->fnx);
+  builder.setVnitmax(sp->vnitmax);
+  builder.setKamm(sp->Kamm);
+  builder.setTnitmin(sp->tnitmin);
+  builder.setTnitopt(sp->tnitopt);
+  builder.setTnitop2(sp->tnitop2);
+  builder.setTnitmax(sp->tnitmax);
+  builder.setTnitoptGauss(sp->tnitopt_gauss);
+  builder.setScaleTnitopt(sp->scale_tnitopt);
+  builder.setRationit(sp->rationit);
+  builder.setCminPdenit(sp->cmin_pdenit);
+  builder.setCmaxPdenit(sp->cmax_pdenit);
+  builder.setMinPdenit(sp->min_pdenit);
+  builder.setMaxPdenit(sp->max_pdenit);
+  builder.setRatiodenit(sp->ratiodenit);
+  builder.setProfdenit(sp->profdenit);
+  builder.setVpotdenit(sp->vpotdenit);
 }
 
 // SticsParameters::SticsParameters(json11::Json j) {
 //   merge(j);
 // }
 
-Errors SticsParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors sticsparameters::merge(SticsParameters* sp, json11::Json j) {
+  Errors res = defaultMerge(j, [sp](json11::Json j2) { return merge(sp, j2); });
 
-  set_bool_value(use_n2o, j, "use_n2o");
-  set_bool_value(use_nit, j, "use_nit");
-  set_bool_value(use_denit, j, "use_denit");
-  set_int_value(code_vnit, j, "code_vnit");
-  set_int_value(code_tnit, j, "code_tnit");
-  set_int_value(code_rationit, j, "code_rationit");
-  set_int_value(code_hourly_wfps_nit, j, "code_hourly_wfps_nit");
-  set_int_value(code_pdenit, j, "code_pdenit");
-  set_int_value(code_ratiodenit, j, "code_ratiodenit");
-  set_int_value(code_hourly_wfps_denit, j, "code_hourly_wfps_denit");
-  set_double_value(hminn, j, "hminn");
-  set_double_value(hoptn, j, "hoptn");
-  set_double_value(pHminnit, j, "pHminnit");
-  set_double_value(pHmaxnit, j, "pHmaxnit");
-  set_double_value(nh4_min, j, "nh4_min");
-  set_double_value(pHminden, j, "pHminden");
-  set_double_value(pHmaxden, j, "pHmaxden");
-  set_double_value(wfpsc, j, "wfpsc");
-  set_double_value(tdenitopt_gauss, j, "tdenitopt_gauss");
-  set_double_value(scale_tdenitopt, j, "scale_tdenitopt");
-  set_double_value(Kd, j, "Kd");
-  set_double_value(k_desat, j, "k_desat");
-  set_double_value(fnx, j, "fnx");
-  set_double_value(vnitmax, j, "vnitmax");
-  set_double_value(Kamm, j, "Kamm");
-  set_double_value(tnitmin, j, "tnitmin");
-  set_double_value(tnitopt, j, "tnitopt");
-  set_double_value(tnitop2, j, "tnitop2");
-  set_double_value(tnitmax, j, "tnitmax");
-  set_double_value(tnitopt_gauss, j, "tnitopt_gauss");
-  set_double_value(scale_tnitopt, j, "scale_tnitopt");
-  set_double_value(rationit, j, "rationit");
-  set_double_value(cmin_pdenit, j, "cmin_pdenit");
-  set_double_value(cmax_pdenit, j, "cmax_pdenit");
-  set_double_value(min_pdenit, j, "min_pdenit");
-  set_double_value(max_pdenit, j, "max_pdenit");
-  set_double_value(ratiodenit, j, "ratiodenit");
-  set_double_value(profdenit, j, "profdenit");
-  set_double_value(vpotdenit, j, "vpotdenit");
+  set_bool_value(sp->use_n2o, j, "use_n2o");
+  set_bool_value(sp->use_nit, j, "use_nit");
+  set_bool_value(sp->use_denit, j, "use_denit");
+  set_int_value(sp->code_vnit, j, "code_vnit");
+  set_int_value(sp->code_tnit, j, "code_tnit");
+  set_int_value(sp->code_rationit, j, "code_rationit");
+  set_int_value(sp->code_hourly_wfps_nit, j, "code_hourly_wfps_nit");
+  set_int_value(sp->code_pdenit, j, "code_pdenit");
+  set_int_value(sp->code_ratiodenit, j, "code_ratiodenit");
+  set_int_value(sp->code_hourly_wfps_denit, j, "code_hourly_wfps_denit");
+  set_double_value(sp->hminn, j, "hminn");
+  set_double_value(sp->hoptn, j, "hoptn");
+  set_double_value(sp->pHminnit, j, "pHminnit");
+  set_double_value(sp->pHmaxnit, j, "pHmaxnit");
+  set_double_value(sp->nh4_min, j, "nh4_min");
+  set_double_value(sp->pHminden, j, "pHminden");
+  set_double_value(sp->pHmaxden, j, "pHmaxden");
+  set_double_value(sp->wfpsc, j, "wfpsc");
+  set_double_value(sp->tdenitopt_gauss, j, "tdenitopt_gauss");
+  set_double_value(sp->scale_tdenitopt, j, "scale_tdenitopt");
+  set_double_value(sp->Kd, j, "Kd");
+  set_double_value(sp->k_desat, j, "k_desat");
+  set_double_value(sp->fnx, j, "fnx");
+  set_double_value(sp->vnitmax, j, "vnitmax");
+  set_double_value(sp->Kamm, j, "Kamm");
+  set_double_value(sp->tnitmin, j, "tnitmin");
+  set_double_value(sp->tnitopt, j, "tnitopt");
+  set_double_value(sp->tnitop2, j, "tnitop2");
+  set_double_value(sp->tnitmax, j, "tnitmax");
+  set_double_value(sp->tnitopt_gauss, j, "tnitopt_gauss");
+  set_double_value(sp->scale_tnitopt, j, "scale_tnitopt");
+  set_double_value(sp->rationit, j, "rationit");
+  set_double_value(sp->cmin_pdenit, j, "cmin_pdenit");
+  set_double_value(sp->cmax_pdenit, j, "cmax_pdenit");
+  set_double_value(sp->min_pdenit, j, "min_pdenit");
+  set_double_value(sp->max_pdenit, j, "max_pdenit");
+  set_double_value(sp->ratiodenit, j, "ratiodenit");
+  set_double_value(sp->profdenit, j, "profdenit");
+  set_double_value(sp->vpotdenit, j, "vpotdenit");
 
   return res;
 }
 
-json11::Json SticsParameters::to_json() const {
+json11::Json sticsparameters::to_json(const SticsParameters* sp) {
   return json11::Json::object
   {
     {"type", "SticsParameters"},
-    {"use_n2o", use_n2o},
-    {"use_nit", use_nit},
-    {"use_denit", use_denit},
-    {"code_vnit", J11Array{code_vnit, ""}},
-    {"code_tnit", J11Array{code_tnit, ""}},
-    {"code_rationit", J11Array{code_rationit, ""}},
-    {"code_hourly_wfps_nit", J11Array{code_hourly_wfps_nit, ""}},
-    {"code_pdenit", J11Array{code_pdenit, ""}},
-    {"code_ratiodenit", J11Array{code_ratiodenit, ""}},
-    {"code_hourly_wfps_denit", J11Array{code_hourly_wfps_denit, ""}},
-    {"hminn", J11Array{hminn, ""}},
-    {"hoptn", J11Array{hoptn, ""}},
-    {"pHminnit", J11Array{pHminnit, ""}},
-    {"pHmaxnit", J11Array{pHmaxnit, ""}},
-    {"nh4_min", J11Array{nh4_min, ""}},
-    {"pHminden", J11Array{pHminden, ""}},
-    {"pHmaxden", J11Array{pHmaxden, ""}},
-    {"wfpsc", J11Array{wfpsc, ""}},
-    {"tdenitopt_gauss", J11Array{tdenitopt_gauss, ""}},
-    {"scale_tdenitopt", J11Array{scale_tdenitopt, ""}},
-    {"Kd", J11Array{Kd, ""}},
-    {"k_desat", J11Array{k_desat, ""}},
-    {"fnx", J11Array{fnx, ""}},
-    {"vnitmax", J11Array{vnitmax, ""}},
-    {"Kamm", J11Array{Kamm, ""}},
-    {"tnitmin", J11Array{tnitmin, ""}},
-    {"tnitopt", J11Array{tnitopt, ""}},
-    {"tnitop2", J11Array{tnitop2, ""}},
-    {"tnitmax", J11Array{tnitmax, ""}},
-    {"tnitopt_gauss", J11Array{tnitopt_gauss, ""}},
-    {"scale_tnitopt", J11Array{scale_tnitopt, ""}},
-    {"rationit", J11Array{rationit, ""}},
-    {"cmin_pdenit", J11Array{cmin_pdenit, ""}},
-    {"cmax_pdenit", J11Array{cmax_pdenit, ""}},
-    {"min_pdenit", J11Array{min_pdenit, ""}},
-    {"max_pdenit", J11Array{max_pdenit, ""}},
-    {"ratiodenit", J11Array{ratiodenit, ""}},
-    {"profdenit", J11Array{profdenit, ""}},
-    {"vpotdenit", vpotdenit}
+    {"use_n2o", sp->use_n2o},
+    {"use_nit", sp->use_nit},
+    {"use_denit", sp->use_denit},
+    {"code_vnit", J11Array{sp->code_vnit, ""}},
+    {"code_tnit", J11Array{sp->code_tnit, ""}},
+    {"code_rationit", J11Array{sp->code_rationit, ""}},
+    {"code_hourly_wfps_nit", J11Array{sp->code_hourly_wfps_nit, ""}},
+    {"code_pdenit", J11Array{sp->code_pdenit, ""}},
+    {"code_ratiodenit", J11Array{sp->code_ratiodenit, ""}},
+    {"code_hourly_wfps_denit", J11Array{sp->code_hourly_wfps_denit, ""}},
+    {"hminn", J11Array{sp->hminn, ""}},
+    {"hoptn", J11Array{sp->hoptn, ""}},
+    {"pHminnit", J11Array{sp->pHminnit, ""}},
+    {"pHmaxnit", J11Array{sp->pHmaxnit, ""}},
+    {"nh4_min", J11Array{sp->nh4_min, ""}},
+    {"pHminden", J11Array{sp->pHminden, ""}},
+    {"pHmaxden", J11Array{sp->pHmaxden, ""}},
+    {"wfpsc", J11Array{sp->wfpsc, ""}},
+    {"tdenitopt_gauss", J11Array{sp->tdenitopt_gauss, ""}},
+    {"scale_tdenitopt", J11Array{sp->scale_tdenitopt, ""}},
+    {"Kd", J11Array{sp->Kd, ""}},
+    {"k_desat", J11Array{sp->k_desat, ""}},
+    {"fnx", J11Array{sp->fnx, ""}},
+    {"vnitmax", J11Array{sp->vnitmax, ""}},
+    {"Kamm", J11Array{sp->Kamm, ""}},
+    {"tnitmin", J11Array{sp->tnitmin, ""}},
+    {"tnitopt", J11Array{sp->tnitopt, ""}},
+    {"tnitop2", J11Array{sp->tnitop2, ""}},
+    {"tnitmax", J11Array{sp->tnitmax, ""}},
+    {"tnitopt_gauss", J11Array{sp->tnitopt_gauss, ""}},
+    {"scale_tnitopt", J11Array{sp->scale_tnitopt, ""}},
+    {"rationit", J11Array{sp->rationit, ""}},
+    {"cmin_pdenit", J11Array{sp->cmin_pdenit, ""}},
+    {"cmax_pdenit", J11Array{sp->cmax_pdenit, ""}},
+    {"min_pdenit", J11Array{sp->min_pdenit, ""}},
+    {"max_pdenit", J11Array{sp->max_pdenit, ""}},
+    {"ratiodenit", J11Array{sp->ratiodenit, ""}},
+    {"profdenit", J11Array{sp->profdenit, ""}},
+    {"vpotdenit", sp->vpotdenit}
   };
 }
 
 //-----------------------------------------------------------------------------
 
-void SoilOrganicModuleParameters::deserialize(mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader) {
-  po_SOM_SlowDecCoeffStandard = reader.getSomSlowDecCoeffStandard();
-  po_SOM_FastDecCoeffStandard = reader.getSomFastDecCoeffStandard();
-  po_SMB_SlowMaintRateStandard = reader.getSmbSlowMaintRateStandard();
-  po_SMB_FastMaintRateStandard = reader.getSmbFastMaintRateStandard();
-  po_SMB_SlowDeathRateStandard = reader.getSmbSlowDeathRateStandard();
-  po_SMB_FastDeathRateStandard = reader.getSmbFastDeathRateStandard();
-  po_SMB_UtilizationEfficiency = reader.getSmbUtilizationEfficiency();
-  po_SOM_SlowUtilizationEfficiency = reader.getSomSlowUtilizationEfficiency();
-  po_SOM_FastUtilizationEfficiency = reader.getSomFastUtilizationEfficiency();
-  po_AOM_SlowUtilizationEfficiency = reader.getAomSlowUtilizationEfficiency();
-  po_AOM_FastUtilizationEfficiency = reader.getAomFastUtilizationEfficiency();
-  po_AOM_FastMaxC_to_N = reader.getAomFastMaxCtoN();
-  po_PartSOM_Fast_to_SOM_Slow = reader.getPartSOMFastToSOMSlow();
-  po_PartSMB_Slow_to_SOM_Fast = reader.getPartSMBSlowToSOMFast();
-  po_PartSMB_Fast_to_SOM_Fast = reader.getPartSMBFastToSOMFast();
-  po_PartSOM_to_SMB_Slow = reader.getPartSOMToSMBSlow();
-  po_PartSOM_to_SMB_Fast = reader.getPartSOMToSMBFast();
-  po_CN_Ratio_SMB = reader.getCnRatioSMB();
-  po_LimitClayEffect = reader.getLimitClayEffect();
-  //po_QTenFactor = reader.getQTenFactor();
-  //po_TempDecOptimal = reader.getTempDecOptimal();
-  //po_MoistureDecOptimal = reader.getMoistureDecOptimal();
-  po_AmmoniaOxidationRateCoeffStandard = reader.getAmmoniaOxidationRateCoeffStandard();
-  po_NitriteOxidationRateCoeffStandard = reader.getNitriteOxidationRateCoeffStandard();
-  po_TransportRateCoeff = reader.getTransportRateCoeff();
-  po_SpecAnaerobDenitrification = reader.getSpecAnaerobDenitrification();
-  po_ImmobilisationRateCoeffNO3 = reader.getImmobilisationRateCoeffNO3();
-  po_ImmobilisationRateCoeffNH4 = reader.getImmobilisationRateCoeffNH4();
-  po_Denit1 = reader.getDenit1();
-  po_Denit2 = reader.getDenit2();
-  po_Denit3 = reader.getDenit3();
-  po_HydrolysisKM = reader.getHydrolysisKM();
-  po_ActivationEnergy = reader.getActivationEnergy();
-  po_HydrolysisP1 = reader.getHydrolysisP1();
-  po_HydrolysisP2 = reader.getHydrolysisP2();
-  po_AtmosphericResistance = reader.getAtmosphericResistance();
-  po_N2OProductionRate = reader.getN2oProductionRate();
-  po_Inhibitor_NH3 = reader.getInhibitorNH3();
-  ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
-  sticsParams.deserialize(reader.getSticsParams());
+SoilOrganicModuleParameters monica::makeSoilOrganicModuleParameters(
+    mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader) {
+  SoilOrganicModuleParameters sop;
+  soilorganicmoduleparameters::deserialize(&sop, reader);
+  return sop;
 }
 
-void SoilOrganicModuleParameters::serialize(
-  mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder) const {
-  builder.setSomSlowDecCoeffStandard(po_SOM_SlowDecCoeffStandard);
-  builder.setSomFastDecCoeffStandard(po_SOM_FastDecCoeffStandard);
-  builder.setSmbSlowMaintRateStandard(po_SMB_SlowMaintRateStandard);
-  builder.setSmbFastMaintRateStandard(po_SMB_FastMaintRateStandard);
-  builder.setSmbSlowDeathRateStandard(po_SMB_SlowDeathRateStandard);
-  builder.setSmbFastDeathRateStandard(po_SMB_FastDeathRateStandard);
-  builder.setSmbUtilizationEfficiency(po_SMB_UtilizationEfficiency);
-  builder.setSomSlowUtilizationEfficiency(po_SOM_SlowUtilizationEfficiency);
-  builder.setSomFastUtilizationEfficiency(po_SOM_FastUtilizationEfficiency);
-  builder.setAomSlowUtilizationEfficiency(po_AOM_SlowUtilizationEfficiency);
-  builder.setAomFastUtilizationEfficiency(po_AOM_FastUtilizationEfficiency);
-  builder.setAomFastMaxCtoN(po_AOM_FastMaxC_to_N);
-  builder.setPartSOMFastToSOMSlow(po_PartSOM_Fast_to_SOM_Slow);
-  builder.setPartSMBSlowToSOMFast(po_PartSMB_Slow_to_SOM_Fast);
-  builder.setPartSMBFastToSOMFast(po_PartSMB_Fast_to_SOM_Fast);
-  builder.setPartSOMToSMBSlow(po_PartSOM_to_SMB_Slow);
-  builder.setPartSOMToSMBFast(po_PartSOM_to_SMB_Fast);
-  builder.setCnRatioSMB(po_CN_Ratio_SMB);
-  builder.setLimitClayEffect(po_LimitClayEffect);
-  //builder.setQTenFactor(po_QTenFactor);
-  //builder.setTempDecOptimal(po_TempDecOptimal);
-  //builder.setMoistureDecOptimal(po_MoistureDecOptimal);
-  builder.setAmmoniaOxidationRateCoeffStandard(po_AmmoniaOxidationRateCoeffStandard);
-  builder.setNitriteOxidationRateCoeffStandard(po_NitriteOxidationRateCoeffStandard);
-  builder.setTransportRateCoeff(po_TransportRateCoeff);
-  builder.setSpecAnaerobDenitrification(po_SpecAnaerobDenitrification);
-  builder.setImmobilisationRateCoeffNO3(po_ImmobilisationRateCoeffNO3);
-  builder.setImmobilisationRateCoeffNH4(po_ImmobilisationRateCoeffNH4);
-  builder.setDenit1(po_Denit1);
-  builder.setDenit2(po_Denit2);
-  builder.setDenit3(po_Denit3);
-  builder.setHydrolysisKM(po_HydrolysisKM);
-  builder.setActivationEnergy(po_ActivationEnergy);
-  builder.setHydrolysisP1(po_HydrolysisP1);
-  builder.setHydrolysisP2(po_HydrolysisP2);
-  builder.setAtmosphericResistance(po_AtmosphericResistance);
-  builder.setN2oProductionRate(po_N2OProductionRate);
-  builder.setInhibitorNH3(po_Inhibitor_NH3);
-  builder.setPsMaxMineralisationDepth(ps_MaxMineralisationDepth);
-  sticsParams.serialize(builder.initSticsParams());
+void soilorganicmoduleparameters::deserialize(
+  SoilOrganicModuleParameters* sop,
+  mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader) {
+  sop->po_SOM_SlowDecCoeffStandard = reader.getSomSlowDecCoeffStandard();
+  sop->po_SOM_FastDecCoeffStandard = reader.getSomFastDecCoeffStandard();
+  sop->po_SMB_SlowMaintRateStandard = reader.getSmbSlowMaintRateStandard();
+  sop->po_SMB_FastMaintRateStandard = reader.getSmbFastMaintRateStandard();
+  sop->po_SMB_SlowDeathRateStandard = reader.getSmbSlowDeathRateStandard();
+  sop->po_SMB_FastDeathRateStandard = reader.getSmbFastDeathRateStandard();
+  sop->po_SMB_UtilizationEfficiency = reader.getSmbUtilizationEfficiency();
+  sop->po_SOM_SlowUtilizationEfficiency = reader.getSomSlowUtilizationEfficiency();
+  sop->po_SOM_FastUtilizationEfficiency = reader.getSomFastUtilizationEfficiency();
+  sop->po_AOM_SlowUtilizationEfficiency = reader.getAomSlowUtilizationEfficiency();
+  sop->po_AOM_FastUtilizationEfficiency = reader.getAomFastUtilizationEfficiency();
+  sop->po_AOM_FastMaxC_to_N = reader.getAomFastMaxCtoN();
+  sop->po_PartSOM_Fast_to_SOM_Slow = reader.getPartSOMFastToSOMSlow();
+  sop->po_PartSMB_Slow_to_SOM_Fast = reader.getPartSMBSlowToSOMFast();
+  sop->po_PartSMB_Fast_to_SOM_Fast = reader.getPartSMBFastToSOMFast();
+  sop->po_PartSOM_to_SMB_Slow = reader.getPartSOMToSMBSlow();
+  sop->po_PartSOM_to_SMB_Fast = reader.getPartSOMToSMBFast();
+  sop->po_CN_Ratio_SMB = reader.getCnRatioSMB();
+  sop->po_LimitClayEffect = reader.getLimitClayEffect();
+  //sop->po_QTenFactor = reader.getQTenFactor();
+  //sop->po_TempDecOptimal = reader.getTempDecOptimal();
+  //sop->po_MoistureDecOptimal = reader.getMoistureDecOptimal();
+  sop->po_AmmoniaOxidationRateCoeffStandard = reader.getAmmoniaOxidationRateCoeffStandard();
+  sop->po_NitriteOxidationRateCoeffStandard = reader.getNitriteOxidationRateCoeffStandard();
+  sop->po_TransportRateCoeff = reader.getTransportRateCoeff();
+  sop->po_SpecAnaerobDenitrification = reader.getSpecAnaerobDenitrification();
+  sop->po_ImmobilisationRateCoeffNO3 = reader.getImmobilisationRateCoeffNO3();
+  sop->po_ImmobilisationRateCoeffNH4 = reader.getImmobilisationRateCoeffNH4();
+  sop->po_Denit1 = reader.getDenit1();
+  sop->po_Denit2 = reader.getDenit2();
+  sop->po_Denit3 = reader.getDenit3();
+  sop->po_HydrolysisKM = reader.getHydrolysisKM();
+  sop->po_ActivationEnergy = reader.getActivationEnergy();
+  sop->po_HydrolysisP1 = reader.getHydrolysisP1();
+  sop->po_HydrolysisP2 = reader.getHydrolysisP2();
+  sop->po_AtmosphericResistance = reader.getAtmosphericResistance();
+  sop->po_N2OProductionRate = reader.getN2oProductionRate();
+  sop->po_Inhibitor_NH3 = reader.getInhibitorNH3();
+  sop->ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
+  sticsparameters::deserialize(&sop->sticsParams, reader.getSticsParams());
+}
+
+void soilorganicmoduleparameters::serialize(
+  const SoilOrganicModuleParameters* sop,
+  mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder) {
+  builder.setSomSlowDecCoeffStandard(sop->po_SOM_SlowDecCoeffStandard);
+  builder.setSomFastDecCoeffStandard(sop->po_SOM_FastDecCoeffStandard);
+  builder.setSmbSlowMaintRateStandard(sop->po_SMB_SlowMaintRateStandard);
+  builder.setSmbFastMaintRateStandard(sop->po_SMB_FastMaintRateStandard);
+  builder.setSmbSlowDeathRateStandard(sop->po_SMB_SlowDeathRateStandard);
+  builder.setSmbFastDeathRateStandard(sop->po_SMB_FastDeathRateStandard);
+  builder.setSmbUtilizationEfficiency(sop->po_SMB_UtilizationEfficiency);
+  builder.setSomSlowUtilizationEfficiency(sop->po_SOM_SlowUtilizationEfficiency);
+  builder.setSomFastUtilizationEfficiency(sop->po_SOM_FastUtilizationEfficiency);
+  builder.setAomSlowUtilizationEfficiency(sop->po_AOM_SlowUtilizationEfficiency);
+  builder.setAomFastUtilizationEfficiency(sop->po_AOM_FastUtilizationEfficiency);
+  builder.setAomFastMaxCtoN(sop->po_AOM_FastMaxC_to_N);
+  builder.setPartSOMFastToSOMSlow(sop->po_PartSOM_Fast_to_SOM_Slow);
+  builder.setPartSMBSlowToSOMFast(sop->po_PartSMB_Slow_to_SOM_Fast);
+  builder.setPartSMBFastToSOMFast(sop->po_PartSMB_Fast_to_SOM_Fast);
+  builder.setPartSOMToSMBSlow(sop->po_PartSOM_to_SMB_Slow);
+  builder.setPartSOMToSMBFast(sop->po_PartSOM_to_SMB_Fast);
+  builder.setCnRatioSMB(sop->po_CN_Ratio_SMB);
+  builder.setLimitClayEffect(sop->po_LimitClayEffect);
+  //builder.setQTenFactor(sop->po_QTenFactor);
+  //builder.setTempDecOptimal(sop->po_TempDecOptimal);
+  //builder.setMoistureDecOptimal(sop->po_MoistureDecOptimal);
+  builder.setAmmoniaOxidationRateCoeffStandard(sop->po_AmmoniaOxidationRateCoeffStandard);
+  builder.setNitriteOxidationRateCoeffStandard(sop->po_NitriteOxidationRateCoeffStandard);
+  builder.setTransportRateCoeff(sop->po_TransportRateCoeff);
+  builder.setSpecAnaerobDenitrification(sop->po_SpecAnaerobDenitrification);
+  builder.setImmobilisationRateCoeffNO3(sop->po_ImmobilisationRateCoeffNO3);
+  builder.setImmobilisationRateCoeffNH4(sop->po_ImmobilisationRateCoeffNH4);
+  builder.setDenit1(sop->po_Denit1);
+  builder.setDenit2(sop->po_Denit2);
+  builder.setDenit3(sop->po_Denit3);
+  builder.setHydrolysisKM(sop->po_HydrolysisKM);
+  builder.setActivationEnergy(sop->po_ActivationEnergy);
+  builder.setHydrolysisP1(sop->po_HydrolysisP1);
+  builder.setHydrolysisP2(sop->po_HydrolysisP2);
+  builder.setAtmosphericResistance(sop->po_AtmosphericResistance);
+  builder.setN2oProductionRate(sop->po_N2OProductionRate);
+  builder.setInhibitorNH3(sop->po_Inhibitor_NH3);
+  builder.setPsMaxMineralisationDepth(sop->ps_MaxMineralisationDepth);
+  sticsparameters::serialize(&sop->sticsParams, builder.initSticsParams());
 }
 
 // SoilOrganicModuleParameters::SoilOrganicModuleParameters(json11::Json j) {
 //   merge(j);
 // }
 
-Errors SoilOrganicModuleParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors soilorganicmoduleparameters::merge(SoilOrganicModuleParameters* sop, json11::Json j) {
+  Errors res = defaultMerge(j, [sop](json11::Json j2) { return merge(sop, j2); });
 
-  set_double_value(po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard");
-  set_double_value(po_SOM_FastDecCoeffStandard, j, "SOM_FastDecCoeffStandard");
-  set_double_value(po_SMB_SlowMaintRateStandard, j, "SMB_SlowMaintRateStandard");
-  set_double_value(po_SMB_FastMaintRateStandard, j, "SMB_FastMaintRateStandard");
-  set_double_value(po_SMB_SlowDeathRateStandard, j, "SMB_SlowDeathRateStandard");
-  set_double_value(po_SMB_FastDeathRateStandard, j, "SMB_FastDeathRateStandard");
-  set_double_value(po_SMB_UtilizationEfficiency, j, "SMB_UtilizationEfficiency");
-  set_double_value(po_SOM_SlowUtilizationEfficiency, j, "SOM_SlowUtilizationEfficiency");
-  set_double_value(po_SOM_FastUtilizationEfficiency, j, "SOM_FastUtilizationEfficiency");
-  set_double_value(po_AOM_SlowUtilizationEfficiency, j, "AOM_SlowUtilizationEfficiency");
-  set_double_value(po_AOM_FastUtilizationEfficiency, j, "AOM_FastUtilizationEfficiency");
-  set_double_value(po_AOM_FastMaxC_to_N, j, "AOM_FastMaxC_to_N");
-  set_double_value(po_PartSOM_Fast_to_SOM_Slow, j, "PartSOM_Fast_to_SOM_Slow");
-  set_double_value(po_PartSMB_Slow_to_SOM_Fast, j, "PartSMB_Slow_to_SOM_Fast");
-  set_double_value(po_PartSMB_Fast_to_SOM_Fast, j, "PartSMB_Fast_to_SOM_Fast");
-  set_double_value(po_PartSOM_to_SMB_Slow, j, "PartSOM_to_SMB_Slow");
-  set_double_value(po_PartSOM_to_SMB_Fast, j, "PartSOM_to_SMB_Fast");
-  set_double_value(po_CN_Ratio_SMB, j, "CN_Ratio_SMB");
-  set_double_value(po_LimitClayEffect, j, "LimitClayEffect");
-  set_double_value(po_QTenFactor, j, "QTenFactor");
-  set_double_value(po_TempDecOptimal, j, "TempDecOptimal");
-  set_double_value(po_MoistureDecOptimal, j, "MoistureDecOptimal");
-  set_double_value(po_AmmoniaOxidationRateCoeffStandard, j, "AmmoniaOxidationRateCoeffStandard");
-  set_double_value(po_NitriteOxidationRateCoeffStandard, j, "NitriteOxidationRateCoeffStandard");
-  set_double_value(po_TransportRateCoeff, j, "TransportRateCoeff");
-  set_double_value(po_SpecAnaerobDenitrification, j, "SpecAnaerobDenitrification");
-  set_double_value(po_ImmobilisationRateCoeffNO3, j, "ImmobilisationRateCoeffNO3");
-  set_double_value(po_ImmobilisationRateCoeffNH4, j, "ImmobilisationRateCoeffNH4");
-  set_double_value(po_Denit1, j, "Denit1");
-  set_double_value(po_Denit2, j, "Denit2");
-  set_double_value(po_Denit3, j, "Denit3");
-  set_double_value(po_HydrolysisKM, j, "HydrolysisKM");
-  set_double_value(po_ActivationEnergy, j, "ActivationEnergy");
-  set_double_value(po_HydrolysisP1, j, "HydrolysisP1");
-  set_double_value(po_HydrolysisP2, j, "HydrolysisP2");
-  set_double_value(po_AtmosphericResistance, j, "AtmosphericResistance");
-  set_double_value(po_N2OProductionRate, j, "N2OProductionRate");
-  set_double_value(po_Inhibitor_NH3, j, "Inhibitor_NH3");
-  set_double_value(ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
+  set_double_value(sop->po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard");
+  set_double_value(sop->po_SOM_FastDecCoeffStandard, j, "SOM_FastDecCoeffStandard");
+  set_double_value(sop->po_SMB_SlowMaintRateStandard, j, "SMB_SlowMaintRateStandard");
+  set_double_value(sop->po_SMB_FastMaintRateStandard, j, "SMB_FastMaintRateStandard");
+  set_double_value(sop->po_SMB_SlowDeathRateStandard, j, "SMB_SlowDeathRateStandard");
+  set_double_value(sop->po_SMB_FastDeathRateStandard, j, "SMB_FastDeathRateStandard");
+  set_double_value(sop->po_SMB_UtilizationEfficiency, j, "SMB_UtilizationEfficiency");
+  set_double_value(sop->po_SOM_SlowUtilizationEfficiency, j, "SOM_SlowUtilizationEfficiency");
+  set_double_value(sop->po_SOM_FastUtilizationEfficiency, j, "SOM_FastUtilizationEfficiency");
+  set_double_value(sop->po_AOM_SlowUtilizationEfficiency, j, "AOM_SlowUtilizationEfficiency");
+  set_double_value(sop->po_AOM_FastUtilizationEfficiency, j, "AOM_FastUtilizationEfficiency");
+  set_double_value(sop->po_AOM_FastMaxC_to_N, j, "AOM_FastMaxC_to_N");
+  set_double_value(sop->po_PartSOM_Fast_to_SOM_Slow, j, "PartSOM_Fast_to_SOM_Slow");
+  set_double_value(sop->po_PartSMB_Slow_to_SOM_Fast, j, "PartSMB_Slow_to_SOM_Fast");
+  set_double_value(sop->po_PartSMB_Fast_to_SOM_Fast, j, "PartSMB_Fast_to_SOM_Fast");
+  set_double_value(sop->po_PartSOM_to_SMB_Slow, j, "PartSOM_to_SMB_Slow");
+  set_double_value(sop->po_PartSOM_to_SMB_Fast, j, "PartSOM_to_SMB_Fast");
+  set_double_value(sop->po_CN_Ratio_SMB, j, "CN_Ratio_SMB");
+  set_double_value(sop->po_LimitClayEffect, j, "LimitClayEffect");
+  set_double_value(sop->po_QTenFactor, j, "QTenFactor");
+  set_double_value(sop->po_TempDecOptimal, j, "TempDecOptimal");
+  set_double_value(sop->po_MoistureDecOptimal, j, "MoistureDecOptimal");
+  set_double_value(sop->po_AmmoniaOxidationRateCoeffStandard, j, "AmmoniaOxidationRateCoeffStandard");
+  set_double_value(sop->po_NitriteOxidationRateCoeffStandard, j, "NitriteOxidationRateCoeffStandard");
+  set_double_value(sop->po_TransportRateCoeff, j, "TransportRateCoeff");
+  set_double_value(sop->po_SpecAnaerobDenitrification, j, "SpecAnaerobDenitrification");
+  set_double_value(sop->po_ImmobilisationRateCoeffNO3, j, "ImmobilisationRateCoeffNO3");
+  set_double_value(sop->po_ImmobilisationRateCoeffNH4, j, "ImmobilisationRateCoeffNH4");
+  set_double_value(sop->po_Denit1, j, "Denit1");
+  set_double_value(sop->po_Denit2, j, "Denit2");
+  set_double_value(sop->po_Denit3, j, "Denit3");
+  set_double_value(sop->po_HydrolysisKM, j, "HydrolysisKM");
+  set_double_value(sop->po_ActivationEnergy, j, "ActivationEnergy");
+  set_double_value(sop->po_HydrolysisP1, j, "HydrolysisP1");
+  set_double_value(sop->po_HydrolysisP2, j, "HydrolysisP2");
+  set_double_value(sop->po_AtmosphericResistance, j, "AtmosphericResistance");
+  set_double_value(sop->po_N2OProductionRate, j, "N2OProductionRate");
+  set_double_value(sop->po_Inhibitor_NH3, j, "Inhibitor_NH3");
+  set_double_value(sop->ps_MaxMineralisationDepth, j, "MaxMineralisationDepth");
 
-  set_bool_value(__enable_kaiteew_TempOnDecompostion__, j, "__enable_kaiteew_TempOnDecompostion__");
-  set_bool_value(__enable_kaiteew_MoistOnDecompostion__, j, "__enable_kaiteew_MoistOnDecompostion__");
-  set_bool_value(__enable_kaiteew_ClayOnDecompostion__, j, "__enable_kaiteew_ClayOnDecompostion__");
+  set_bool_value(sop->__enable_kaiteew_TempOnDecompostion__, j, "__enable_kaiteew_TempOnDecompostion__");
+  set_bool_value(sop->__enable_kaiteew_MoistOnDecompostion__, j, "__enable_kaiteew_MoistOnDecompostion__");
+  set_bool_value(sop->__enable_kaiteew_ClayOnDecompostion__, j, "__enable_kaiteew_ClayOnDecompostion__");
 
-  if (j["stics"].is_object()) res.append(sticsParams.merge(j["stics"]));
+  if (j["stics"].is_object()) res.append(sticsparameters::merge(&sop->sticsParams, j["stics"]));
 
   return res;
 }
 
-json11::Json SoilOrganicModuleParameters::to_json() const {
+json11::Json soilorganicmoduleparameters::to_json(const SoilOrganicModuleParameters* sop) {
   return json11::Json::object
   {
     {"type", "SoilOrganicModuleParameters"},
-    {"SOM_SlowDecCoeffStandard", J11Array{po_SOM_SlowDecCoeffStandard, "d-1"}},
-    {"SOM_FastDecCoeffStandard", J11Array{po_SOM_FastDecCoeffStandard, "d-1"}},
-    {"SMB_SlowMaintRateStandard", J11Array{po_SMB_SlowMaintRateStandard, "d-1"}},
-    {"SMB_FastMaintRateStandard", J11Array{po_SMB_FastMaintRateStandard, "d-1"}},
-    {"SMB_SlowDeathRateStandard", J11Array{po_SMB_SlowDeathRateStandard, "d-1"}},
-    {"SMB_FastDeathRateStandard", J11Array{po_SMB_FastDeathRateStandard, "d-1"}},
-    {"SMB_UtilizationEfficiency", J11Array{po_SMB_UtilizationEfficiency, "d-1"}},
-    {"SOM_SlowUtilizationEfficiency", J11Array{po_SOM_SlowUtilizationEfficiency, ""}},
-    {"SOM_FastUtilizationEfficiency", J11Array{po_SOM_FastUtilizationEfficiency, ""}},
-    {"AOM_SlowUtilizationEfficiency", J11Array{po_AOM_SlowUtilizationEfficiency, ""}},
-    {"AOM_FastUtilizationEfficiency", J11Array{po_AOM_FastUtilizationEfficiency, ""}},
-    {"AOM_FastMaxC_to_N", J11Array{po_AOM_FastMaxC_to_N, ""}},
-    {"PartSOM_Fast_to_SOM_Slow", J11Array{po_PartSOM_Fast_to_SOM_Slow, ""}},
-    {"PartSMB_Slow_to_SOM_Fast", J11Array{po_PartSMB_Slow_to_SOM_Fast, ""}},
-    {"PartSMB_Fast_to_SOM_Fast", J11Array{po_PartSMB_Fast_to_SOM_Fast, ""}},
-    {"PartSOM_to_SMB_Slow", J11Array{po_PartSOM_to_SMB_Slow, ""}},
-    {"PartSOM_to_SMB_Fast", J11Array{po_PartSOM_to_SMB_Fast, ""}},
-    {"CN_Ratio_SMB", J11Array{po_CN_Ratio_SMB, ""}},
-    {"LimitClayEffect", J11Array{po_LimitClayEffect, "kg kg-1"}},
-    {"QTenFactor", J11Array{po_QTenFactor, ""}},
-    {"TempDecOptimal", J11Array{po_TempDecOptimal, "°C"}},
-    {"MoistureDecOptimal", J11Array{po_MoistureDecOptimal, "%"}},
-    {"AmmoniaOxidationRateCoeffStandard", J11Array{po_AmmoniaOxidationRateCoeffStandard, "d-1"}},
-    {"NitriteOxidationRateCoeffStandard", J11Array{po_NitriteOxidationRateCoeffStandard, "d-1"}},
-    {"TransportRateCoeff", J11Array{po_TransportRateCoeff, "d-1"}},
-    {"SpecAnaerobDenitrification", J11Array{po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1"}},
-    {"ImmobilisationRateCoeffNO3", J11Array{po_ImmobilisationRateCoeffNO3, "d-1"}},
-    {"ImmobilisationRateCoeffNH4", J11Array{po_ImmobilisationRateCoeffNH4, "d-1"}},
-    {"Denit1", J11Array{po_Denit1, ""}},
-    {"Denit2", J11Array{po_Denit2, ""}},
-    {"Denit3", J11Array{po_Denit3, ""}},
-    {"HydrolysisKM", J11Array{po_HydrolysisKM, ""}},
-    {"ActivationEnergy", J11Array{po_ActivationEnergy, ""}},
-    {"HydrolysisP1", J11Array{po_HydrolysisP1, ""}},
-    {"HydrolysisP2", J11Array{po_HydrolysisP2, ""}},
-    {"AtmosphericResistance", J11Array{po_AtmosphericResistance, "s m-1"}},
-    {"N2OProductionRate", J11Array{po_N2OProductionRate, "d-1"}},
-    {"Inhibitor_NH3", J11Array{po_Inhibitor_NH3, "kg N m-3"}},
-    {"MaxMineralisationDepth", ps_MaxMineralisationDepth}
+    {"SOM_SlowDecCoeffStandard", J11Array{sop->po_SOM_SlowDecCoeffStandard, "d-1"}},
+    {"SOM_FastDecCoeffStandard", J11Array{sop->po_SOM_FastDecCoeffStandard, "d-1"}},
+    {"SMB_SlowMaintRateStandard", J11Array{sop->po_SMB_SlowMaintRateStandard, "d-1"}},
+    {"SMB_FastMaintRateStandard", J11Array{sop->po_SMB_FastMaintRateStandard, "d-1"}},
+    {"SMB_SlowDeathRateStandard", J11Array{sop->po_SMB_SlowDeathRateStandard, "d-1"}},
+    {"SMB_FastDeathRateStandard", J11Array{sop->po_SMB_FastDeathRateStandard, "d-1"}},
+    {"SMB_UtilizationEfficiency", J11Array{sop->po_SMB_UtilizationEfficiency, "d-1"}},
+    {"SOM_SlowUtilizationEfficiency", J11Array{sop->po_SOM_SlowUtilizationEfficiency, ""}},
+    {"SOM_FastUtilizationEfficiency", J11Array{sop->po_SOM_FastUtilizationEfficiency, ""}},
+    {"AOM_SlowUtilizationEfficiency", J11Array{sop->po_AOM_SlowUtilizationEfficiency, ""}},
+    {"AOM_FastUtilizationEfficiency", J11Array{sop->po_AOM_FastUtilizationEfficiency, ""}},
+    {"AOM_FastMaxC_to_N", J11Array{sop->po_AOM_FastMaxC_to_N, ""}},
+    {"PartSOM_Fast_to_SOM_Slow", J11Array{sop->po_PartSOM_Fast_to_SOM_Slow, ""}},
+    {"PartSMB_Slow_to_SOM_Fast", J11Array{sop->po_PartSMB_Slow_to_SOM_Fast, ""}},
+    {"PartSMB_Fast_to_SOM_Fast", J11Array{sop->po_PartSMB_Fast_to_SOM_Fast, ""}},
+    {"PartSOM_to_SMB_Slow", J11Array{sop->po_PartSOM_to_SMB_Slow, ""}},
+    {"PartSOM_to_SMB_Fast", J11Array{sop->po_PartSOM_to_SMB_Fast, ""}},
+    {"CN_Ratio_SMB", J11Array{sop->po_CN_Ratio_SMB, ""}},
+    {"LimitClayEffect", J11Array{sop->po_LimitClayEffect, "kg kg-1"}},
+    {"QTenFactor", J11Array{sop->po_QTenFactor, ""}},
+    {"TempDecOptimal", J11Array{sop->po_TempDecOptimal, "°C"}},
+    {"MoistureDecOptimal", J11Array{sop->po_MoistureDecOptimal, "%"}},
+    {"AmmoniaOxidationRateCoeffStandard", J11Array{sop->po_AmmoniaOxidationRateCoeffStandard, "d-1"}},
+    {"NitriteOxidationRateCoeffStandard", J11Array{sop->po_NitriteOxidationRateCoeffStandard, "d-1"}},
+    {"TransportRateCoeff", J11Array{sop->po_TransportRateCoeff, "d-1"}},
+    {"SpecAnaerobDenitrification", J11Array{sop->po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1"}},
+    {"ImmobilisationRateCoeffNO3", J11Array{sop->po_ImmobilisationRateCoeffNO3, "d-1"}},
+    {"ImmobilisationRateCoeffNH4", J11Array{sop->po_ImmobilisationRateCoeffNH4, "d-1"}},
+    {"Denit1", J11Array{sop->po_Denit1, ""}},
+    {"Denit2", J11Array{sop->po_Denit2, ""}},
+    {"Denit3", J11Array{sop->po_Denit3, ""}},
+    {"HydrolysisKM", J11Array{sop->po_HydrolysisKM, ""}},
+    {"ActivationEnergy", J11Array{sop->po_ActivationEnergy, ""}},
+    {"HydrolysisP1", J11Array{sop->po_HydrolysisP1, ""}},
+    {"HydrolysisP2", J11Array{sop->po_HydrolysisP2, ""}},
+    {"AtmosphericResistance", J11Array{sop->po_AtmosphericResistance, "s m-1"}},
+    {"N2OProductionRate", J11Array{sop->po_N2OProductionRate, "d-1"}},
+    {"Inhibitor_NH3", J11Array{sop->po_Inhibitor_NH3, "kg N m-3"}},
+    {"MaxMineralisationDepth", sop->ps_MaxMineralisationDepth}
   };
 }
 
@@ -2612,7 +2629,7 @@ Errors CentralParameterProvider::merge(json11::Json j) {
   res.append(soilmoisturemoduleparameters::merge(&userSoilMoistureParameters, j["userSoilMoistureParameters"]));
   res.append(soiltemperaturemoduleparameters::merge(&userSoilTemperatureParameters, j["userSoilTemperatureParameters"]));
   res.append(soiltransportmoduleparameters::merge(&userSoilTransportParameters, j["userSoilTransportParameters"]));
-  res.append(userSoilOrganicParameters.merge(j["userSoilOrganicParameters"]));
+  res.append(soilorganicmoduleparameters::merge(&userSoilOrganicParameters, j["userSoilOrganicParameters"]));
   res.append(simulationparameters::merge(&simulationParameters, j["simulationParameters"]));
   res.append(siteparameters::merge(&siteParameters, j["siteParameters"]));
   if (!j["groundwaterInformation"].is_null()) {
@@ -2633,7 +2650,7 @@ json11::Json CentralParameterProvider::to_json() const {
     {"userSoilMoistureParameters", soilmoisturemoduleparameters::to_json(&userSoilMoistureParameters)},
     {"userSoilTemperatureParameters", soiltemperaturemoduleparameters::to_json(&userSoilTemperatureParameters)},
     {"userSoilTransportParameters", soiltransportmoduleparameters::to_json(&userSoilTransportParameters)},
-    {"userSoilOrganicParameters", userSoilOrganicParameters.to_json()},
+    {"userSoilOrganicParameters", soilorganicmoduleparameters::to_json(&userSoilOrganicParameters)},
     {"simulationParameters", simulationparameters::to_json(&simulationParameters)},
     {"siteParameters", siteparameters::to_json(&siteParameters)}
     //, {"groundwaterInformation", groundwaterInformation.to_json()}
