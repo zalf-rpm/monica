@@ -180,7 +180,14 @@ those members. Check off each once it's built, regression-tested, committed, and
     permissive aggregate-paren-init, since the project builds with `/std:c++17` where that's
     nonstandard) is unchanged behavior, not something this conversion introduced or fixed; left
     alone since it's outside anything the `monica-run` regression check exercises.
-11. [ ] `AutomaticHarvestParameters` — leaf.
+11. [x] `AutomaticHarvestParameters` — leaf; nested `enum HarvestTime` stays inside the struct
+    (unaffected by the struct/namespace split — `AutomaticHarvestParameters::HarvestTime` and
+    `AutomaticHarvestParameters::maturity`/`::unknown` remain valid). The `HarvestTime yt`
+    constructor had no live callers anywhere but was still ported to
+    `makeAutomaticHarvestParameters(HarvestTime)` for interface completeness. Leak-forward fixed in
+    `Crop` (`crop.cpp`: `deserialize`/`serialize`/bare-in-`J11Object` `to_json`, goal #10); `Crop`
+    doesn't actually call `.merge()` on this member in `Crop::merge` (pre-existing, unrelated to
+    this conversion).
 12. [ ] `NMinCropParameters` — leaf.
 13. [ ] `OrganicMatterParameters` — leaf; base of `OrganicFertilizerParameters` and
     `CropResidueParameters`.

@@ -109,7 +109,7 @@ void Crop::deserialize(mas::schema::model::monica::CropState::Reader reader) {
   _residueParams.deserialize(reader.getResidueParams());
   _crossCropAdaptionFactor = reader.getCrossCropAdaptionFactor();
   _automaticHarvest = reader.getAutomaticHarvest();
-  _automaticHarvestParams.deserialize(reader.getAutomaticHarvestParams());
+  automaticharvestparameters::deserialize(&_automaticHarvestParams, reader.getAutomaticHarvestParams());
 }
 
 void Crop::serialize(
@@ -131,7 +131,7 @@ void Crop::serialize(
   _residueParams.serialize(builder.initResidueParams());
   builder.setCrossCropAdaptionFactor(_crossCropAdaptionFactor);
   builder.setAutomaticHarvest(_automaticHarvest);
-  _automaticHarvestParams.serialize(builder.initAutomaticHarvestParams());
+  automaticharvestparameters::serialize(&_automaticHarvestParams, builder.initAutomaticHarvestParams());
 }
 
 Errors Crop::merge(json11::Json j) {
@@ -223,7 +223,7 @@ json11::Json Crop::to_json(bool includeFullCropParameters) const {
               {"harvestDate", _harvestDate.toIsoDateString()},
               {"cuttingDates", cds},
               {"automaticHarvest", _automaticHarvest},
-              {"AutomaticHarvestParams", _automaticHarvestParams}};
+              {"AutomaticHarvestParams", automaticharvestparameters::to_json(&_automaticHarvestParams)}};
 
   if (_isWinterCrop.isValue())
     o["is-winter-crop"] = _isWinterCrop.value();

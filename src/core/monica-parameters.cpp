@@ -1114,42 +1114,49 @@ json11::Json siteparameters::to_json(const SiteParameters* sp) {
 }
 
 
-AutomaticHarvestParameters::AutomaticHarvestParameters(HarvestTime yt)
-: _harvestTime(yt) {}
-
-void AutomaticHarvestParameters::deserialize(mas::schema::model::monica::AutomaticHarvestParameters::Reader reader) {
-  typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
-  _harvestTime = reader.getHarvestTime() == HT::MATURITY ? maturity : unknown;
-  _latestHarvestDOY = reader.getLatestHarvestDOY();
+AutomaticHarvestParameters monica::makeAutomaticHarvestParameters(AutomaticHarvestParameters::HarvestTime yt) {
+  AutomaticHarvestParameters ahp;
+  ahp._harvestTime = yt;
+  return ahp;
 }
 
-void AutomaticHarvestParameters::serialize(
-  mas::schema::model::monica::AutomaticHarvestParameters::Builder builder) const {
-  typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
-  builder.setHarvestTime(_harvestTime == maturity ? HT::MATURITY : HT::UNKNOWN);
-  builder.setLatestHarvestDOY(_latestHarvestDOY);
+AutomaticHarvestParameters monica::makeAutomaticHarvestParameters(
+  mas::schema::model::monica::AutomaticHarvestParameters::Reader reader) {
+  AutomaticHarvestParameters ahp;
+  automaticharvestparameters::deserialize(&ahp, reader);
+  return ahp;
 }
 
-// AutomaticHarvestParameters::AutomaticHarvestParameters(json11::Json j) {
-//   merge(j);
-// }
+void automaticharvestparameters::deserialize(AutomaticHarvestParameters* ahp,
+  mas::schema::model::monica::AutomaticHarvestParameters::Reader reader) {
+  typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
+  ahp->_harvestTime = reader.getHarvestTime() == HT::MATURITY ? AutomaticHarvestParameters::maturity : AutomaticHarvestParameters::unknown;
+  ahp->_latestHarvestDOY = reader.getLatestHarvestDOY();
+}
 
-Errors AutomaticHarvestParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+void automaticharvestparameters::serialize(const AutomaticHarvestParameters* ahp,
+  mas::schema::model::monica::AutomaticHarvestParameters::Builder builder) {
+  typedef mas::schema::model::monica::AutomaticHarvestParameters::HarvestTime HT;
+  builder.setHarvestTime(ahp->_harvestTime == AutomaticHarvestParameters::maturity ? HT::MATURITY : HT::UNKNOWN);
+  builder.setLatestHarvestDOY(ahp->_latestHarvestDOY);
+}
+
+Errors automaticharvestparameters::merge(AutomaticHarvestParameters* ahp, json11::Json j) {
+  Errors res = defaultMerge(j, [ahp](json11::Json j2) { return merge(ahp, j2); });
 
   int ht = -1;
   set_int_value(ht, j, "harvestTime");
-  if (ht > -1) _harvestTime = HarvestTime(ht);
-  set_int_value(_latestHarvestDOY, j, "latestHarvestDOY");
+  if (ht > -1) ahp->_harvestTime = AutomaticHarvestParameters::HarvestTime(ht);
+  set_int_value(ahp->_latestHarvestDOY, j, "latestHarvestDOY");
 
   return res;
 }
 
-json11::Json AutomaticHarvestParameters::to_json() const {
+json11::Json automaticharvestparameters::to_json(const AutomaticHarvestParameters* ahp) {
   return J11Object
   {
-    {"harvestTime", int(_harvestTime)},
-    {"latestHavestDOY", _latestHarvestDOY}
+    {"harvestTime", int(ahp->_harvestTime)},
+    {"latestHavestDOY", ahp->_latestHarvestDOY}
   };
 }
 

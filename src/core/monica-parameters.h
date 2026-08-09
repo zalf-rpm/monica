@@ -430,7 +430,7 @@ DLL_API json11::Json to_json(const SiteParameters* sp);
  * @brief Data structure that containts all relevant parameters for the
  * automatic yield trigger.
  */
-struct DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable {
+struct DLL_API AutomaticHarvestParameters {
   //! Enumeration for defining automatic harvesting times
 
   //! Definition of different harvest time definition for the automatic
@@ -440,30 +440,24 @@ struct DLL_API AutomaticHarvestParameters : public Tools::Json11Serializable {
     unknown   //!< default error value
   };
 
-  AutomaticHarvestParameters() {}
-
-  AutomaticHarvestParameters(HarvestTime yt);
-
-  AutomaticHarvestParameters(
-      mas::schema::model::monica::AutomaticHarvestParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
-
-  // AutomaticHarvestParameters(json11::Json object);
-
-  void serialize(mas::schema::model::monica::AutomaticHarvestParameters::Builder
-                     builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
   HarvestTime _harvestTime{unknown}; //!< Harvest time parameter
   int _latestHarvestDOY{-1}; //!< Fallback day for latest harvest of the crop
 };
+
+DLL_API AutomaticHarvestParameters makeAutomaticHarvestParameters(AutomaticHarvestParameters::HarvestTime yt);
+DLL_API AutomaticHarvestParameters makeAutomaticHarvestParameters(
+    mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
+
+namespace automaticharvestparameters {
+
+DLL_API void deserialize(AutomaticHarvestParameters* ahp,
+                         mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
+DLL_API void serialize(const AutomaticHarvestParameters* ahp,
+                       mas::schema::model::monica::AutomaticHarvestParameters::Builder builder);
+DLL_API Tools::Errors merge(AutomaticHarvestParameters* ahp, json11::Json j);
+DLL_API json11::Json to_json(const AutomaticHarvestParameters* ahp);
+
+} // namespace automaticharvestparameters
 
 struct DLL_API NMinCropParameters : public Tools::Json11Serializable {
   NMinCropParameters() {}
